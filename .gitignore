@@ -16,3 +16,8 @@
 **/*.log
 **/.DS_Store
 superprint/sp213-local.zip
+
+# Docs de debug / suivi interne (pas pour le repo public)
+superprint/ORGANISATION.md
+superprint/RAPPORT-MODELES.md
+superprint/VERSIONING.md
