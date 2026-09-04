@@ -1,0 +1,61 @@
+{
+  "name": "superprint",
+  "version": "1.0.75",
+  "description": "SuperPrint by 2.13 — free browser DTP and prepress editor. Use online at https://superprint.cc or run locally with npx.",
+  "keywords": [
+    "superprint",
+    "sp213",
+    "pao",
+    "dtp",
+    "layout",
+    "design",
+    "design-tool",
+    "print",
+    "prepress",
+    "cmyk",
+    "pdf",
+    "editor",
+    "affiche",
+    "catalogue",
+    "webllm",
+    "llm",
+    "local",
+    "offline-first",
+    "webgpu",
+    "2points13"
+  ],
+  "author": {
+    "name": "2.13",
+    "email": "all@2points13.fr",
+    "url": "https://2points13.fr"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "superprint": "cli.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.mjs"
+  },
+  "files": [
+    "cli.mjs",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/superprint/superprint.git"
+  },
+  "homepage": "https://superprint.cc",
+  "bugs": {
+    "url": "https://github.com/superprint/superprint/issues",
+    "email": "all@2points13.fr"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

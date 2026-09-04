@@ -1,0 +1,5 @@
+<Spread>
+  <Page GeometricBounds="0 0 841.8898 595.2756" />
+  <TextFrame Self="frame-first" ParentStory="story-main" NextTextFrame="frame-second" GeometricBounds="72 72 170 270" />
+  <TextFrame Self="frame-second" ParentStory="story-main" GeometricBounds="72 300 170 498" />
+</Spread>

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+build_out.txt
+build_out_utf8.txt
+*.log
+.DS_Store
+.vite/

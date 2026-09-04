@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="google" content="notranslate">
+<title>SuperPrint — Online DTP Software + SP213 AI Studio</title>
+<meta name="description" content="SuperPrint: professional browser-based desktop publishing (DTP) software + SP213 AI layout studio. Flyers, catalogs, magazines, posters. Local install (Vite) or web version. English, French, Japanese.">
+<meta name="keywords" content="SuperPrint, online DTP, browser page layout software, SP213 AI studio, AI layout generator, flyer, catalog, magazine, poster, WebGPU, Vite, logiciel PAO en ligne, studio SP213 IA maquette">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://superprint.cc/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:title" content="SuperPrint — Online DTP Software + SP213 AI Studio">
+<meta property="og:description" content="Create layouts by chatting with SP213, then refine them in SuperPrint. Online or local.">
+<meta property="og:url" content="https://superprint.cc/">
+<meta property="og:image" content="https://superprint.cc/favicon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="SuperPrint — Online DTP Software + SP213 AI Studio">
+<meta name="twitter:description" content="Create layouts by chatting with SP213, then refine them in SuperPrint.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "SuperPrint",
+  "url": "https://superprint.cc/",
+  "description": "Browser-based DTP software + SP213 AI layout studio.",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://superprint.cc/sp213-studio.html",
+    "query-input": "required name=layout"
+  }
+}
+</script>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+<style>
+  :root {
+    --bg: #ffffff; --bg-workspace: #f2f2f2; --panel: #ffffff; --panel2: #f7f7f7;
+    --border: #d9d9d9; --border-strong: #bbbbbb; --text: #1a1a1a; --muted: #666666;
+    --muted2: #888888; --accent: #1a1a1a; --accent-hover: #333333;
+    --accent-soft: rgba(0,0,0,.06); --accent-border: rgba(0,0,0,.25);
+    --btn-bg: #ffffff; --btn-hover: #f2f2f2; --btn-active-text: #ffffff;
+    --input-bg: #ffffff; --input-border: #d9d9d9; --shadow: rgba(0,0,0,0.08);
+    --code-bg: #f7f7f7; --code-border: #e0e0e0; --ok: #1a7f37;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'IBM Plex Mono', 'Open Sans', ui-monospace, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; }
+
+  .btn {
+    height: 40px; padding: 0 18px; background: var(--btn-bg); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; font-family: inherit;
+    font-size: 12px; letter-spacing: 0.3px; transition: all .15s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border-radius: 0; text-transform: uppercase;
+  }
+  .btn:hover { background: var(--btn-hover); border-color: var(--border-strong); }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn-copy { height: 32px; padding: 0 14px; font-size: 11px; flex-shrink: 0; }
+
+  /* Icônes SVG communes (mêmes valeurs que le studio SP213) */
+  .ic { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .ic-sm { width: 14px; height: 14px; }
+  /* Bouton d'engrenage — même look que le studio (carré 32×32) */
+  .icon-btn {
+    width: 32px; height: 32px; padding: 0; background: var(--btn-bg); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; border-radius: 0; transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--btn-hover); border-color: #999; }
+
+  /* Bouton préférences flottant en haut à droite (même place que le studio) */
+  #homeSettingsBtn {
+    position: fixed; top: 14px; right: 14px; z-index: 100;
+  }
+
+  /* ─── Pop-in préférences de la home ─── */
+  #homeSettingsOverlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200;
+    display: none; align-items: center; justify-content: center; padding: 24px;
+  }
+  #homeSettingsOverlay.open { display: flex; }
+  #homeSettingsModal {
+    width: min(460px, 100%); background: var(--panel); border: 1px solid var(--border);
+    border-top: 3px solid var(--accent); box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    display: flex; flex-direction: column; max-height: 85vh;
+  }
+  #homeSettingsModal .hsm-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 18px; border-bottom: 1px solid var(--border);
+  }
+  #homeSettingsModal .hsm-title { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+  #homeSettingsModal .hsm-close {
+    width: 26px; height: 26px; background: transparent; border: 1px solid var(--border);
+    cursor: pointer; font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; color: var(--muted);
+  }
+  #homeSettingsModal .hsm-close:hover { background: var(--btn-hover); color: var(--text); }
+  #homeSettingsModal .hsm-body { padding: 18px; overflow-y: auto; }
+  #homeSettingsModal .hsm-body::-webkit-scrollbar { width: 8px; }
+  #homeSettingsModal .hsm-body::-webkit-scrollbar-track { background: transparent; }
+  #homeSettingsModal .hsm-body::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 4px; border: 2px solid transparent; background-clip: content-box; }
+  #homeSettingsModal .hsm-body::-webkit-scrollbar-thumb:hover { background: #a8a8a8; background-clip: content-box; }
+  #homeSettingsModal .hsm-section { margin-bottom: 16px; }
+  #homeSettingsModal .hsm-section:last-child { margin-bottom: 0; }
+  #homeSettingsModal .hsm-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; display: block; font-weight: 600; }
+  #homeSettingsModal select {
+    width: 100%; padding: 8px 10px; background: var(--input-bg); color: var(--text);
+    border: 1px solid var(--input-border); font-family: inherit; font-size: 12px; cursor: pointer;
+  }
+
+  #welcome {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); padding: 24px; overflow-y: auto;
+  }
+  .welcome-inner { width: min(760px, 100%); margin: 0 auto; padding-bottom: 54px; }
+  .welcome-brand { text-align: center; margin-bottom: 40px; }
+  .welcome-brand .logo { display: flex; flex-direction: column; align-items: center; gap: 18px; margin-bottom: 18px; }
+  .welcome-brand .logo img { width: 84px; height: 84px; background: #fff; }
+  .welcome-brand h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+  .welcome-brand .sub { margin: 8px 0 0; font-size: 13px; color: var(--muted); letter-spacing: .5px; }
+  .welcome-brand .sub .hl { color: var(--text); }
+
+  .install-section { background: var(--panel); border: 1px solid var(--border); border-bottom: 3px solid var(--accent); padding: 28px 30px; }
+  .install-section .is-title { font-size: 15px; font-weight: 700; letter-spacing: .5px; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+  .install-section .is-title svg { width: 18px; height: 18px; stroke: var(--accent); }
+  .install-section .is-desc { font-size: 12px; color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
+
+  .cmd-block {
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    padding: 8px 8px 8px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .cmd-block code {
+    flex: 1; font-size: 12.5px; color: var(--text); white-space: nowrap; overflow-x: auto;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace; padding: 6px 0; line-height: 1.6;
+  }
+  .cmd-block code::-webkit-scrollbar { height: 4px; }
+  .cmd-block code::-webkit-scrollbar-thumb { background: var(--border-strong); }
+  .cmd-os-ic { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--muted2); opacity: .85; }
+
+  .cmd-meta { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .cmd-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .cmd-tab {
+    font-size: 9.5px; letter-spacing: .8px; text-transform: uppercase; color: var(--muted);
+    background: transparent; border: 1px solid var(--border); padding: 5px 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .cmd-tab svg { width: 12px; height: 12px; opacity: .7; }
+  .cmd-tab.active { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
+  .cmd-tab.active svg { opacity: 1; }
+  .cmd-hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  .or-sep { display: flex; align-items: center; gap: 14px; margin: 26px 0 20px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .or-sep::before, .or-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Étiquette de section « en ligne » (au-dessus des 3 boîtes) — même style
+     que le or-sep : fillet - typo - fillet. */
+  .online-label {
+    display: flex; align-items: center; gap: 14px; margin: 0 0 14px;
+    font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted);
+  }
+  .online-label::before, .online-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .online-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .online-row {
+    display: flex; align-items: center; gap: 20px; background: var(--panel);
+    border: 1px solid var(--border);
+    /* Liseré bas FIXE noir (3px) — même taille en normal et au hover :
+       pas de changement de hauteur → aucun tremblement de la page. */
+    border-bottom: 3px solid var(--accent);
+    padding: 26px 30px; text-decoration: none; color: var(--text);
+    transition: border-color .15s;
+    cursor: pointer;
+  }
+  /* 🖱️ Hover : PAS de fond gris, juste la flèche fine noire qui apparaît. */
+  .online-row:hover {
+    background: var(--panel);
+  }
+  .online-row .on-ic { color: var(--accent); flex-shrink: 0; display: inline-flex; }
+  .online-row .on-ic svg { width: 28px; height: 28px; }
+  .online-row .on-ic img { width: 30px; height: 30px; background: #fff; }
+  .online-row .on-ic.sp-editor-ic {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 42px; font-weight: 400; color: #000; line-height: 1;
+    width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .online-row .on-text {
+    flex: 1;
+    display: flex; flex-direction: column; justify-content: center;
+    /* Hauteur FIXE (titre 19px + desc 17px + marge 4px) :
+       la ligne ne change jamais de hauteur → aucun tremblement
+       quand on survole rapidement d'un bouton à l'autre. */
+    height: 40px;
+    overflow: hidden;
+  }
+  .online-row .on-text b { font-size: 16px; letter-spacing: .4px; text-transform: uppercase; line-height: 1.2; }
+  .online-row .on-text span {
+    display: block; font-size: 12.5px; color: var(--muted);
+    margin-top: 4px; height: 17px; overflow: hidden;
+    transition: opacity .15s, height .2s, margin .2s;
+  }
+  .online-row .btn { flex-shrink: 0; }
+  /* 🡒 Flèche d'accès — fine, noire, sans pastille. Cachée par défaut, glisse au survol. */
+  .online-row .on-arrow {
+    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text);
+    opacity: 0; transform: translateX(-8px);
+    transition: opacity .18s, transform .18s;
+  }
+  .online-row .on-arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  /* 🖱️ Hover : la description grise se replie (height:0), le titre se centre
+     VERTICALEMENT dans les 40px fixes. La hauteur du bouton ne bouge PAS.
+     Pas de fond gris. */
+  .online-row:hover .on-text span { opacity: 0; height: 0; margin-top: 0; }
+  .online-row:hover .on-arrow {
+    opacity: 1; transform: translateX(0);
+  }
+  /* Le premier bloc (Editor) occupe toute la largeur ; les deux autres (Studio
+     + Documentation) partagent la même ligne. */
+  .online-row.on-editor { grid-column: 1 / -1; }
+
+  /* ─── Mobile : comme en desktop, on reste sur l'index général, mais on cache
+     toute la partie installation (code terminal à copier-coller) — le visiteur
+     choisit directement entre App / Studio / Documentation. ─── */
+  @media (max-width: 820px) {
+    .or-sep,
+    .install-section {
+      display: none !important;
+    }
+    /* Les 3 boîtes en ligne empilées en pleine largeur */
+    .online-stack {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .online-row,
+    .online-row.on-editor {
+      grid-column: 1 / -1;
+      padding: 22px 24px;
+    }
+    .online-row .on-ic svg { width: 24px; height: 24px; }
+    .online-row .on-ic img { width: 26px; height: 26px; }
+    .online-row .on-ic.sp-editor-ic { font-size: 34px; width: 40px; height: 40px; }
+    .online-row .on-text { height: 35px; }
+    .online-row .on-text b { font-size: 14px; }
+    .online-row .on-text span { font-size: 11.5px; }
+    /* 🚫 Mobile : PAS de hover — la description reste visible, la flèche est
+       discrète (fixe, fine noire, sans effet de survol). */
+    .online-row:hover .on-text span { opacity: 1; height: auto; margin-top: 4px; }
+    .online-row .on-arrow { opacity: 1; transform: none; color: var(--muted); }
+    .online-row:hover .on-arrow { color: var(--muted); }
+  }
+
+  /* ─── Footer très léger (typo seule) ─── */
+  .home-footer {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px 12px; font-size: 10px; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--muted2); background: linear-gradient(to top, var(--bg) 75%, transparent);
+  }
+  .home-footer a { color: var(--muted2); text-decoration: none; transition: color .15s; }
+  .home-footer a:hover { color: var(--text); text-decoration: underline; }
+  .home-footer .sep { opacity: .5; }
+
+  /* ─── Pop-ins légaux (Mentions légales / Confidentialité / Cookies) ─── */
+  .legal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 300;
+    display: none; align-items: center; justify-content: center; padding: 24px;
+  }
+  .legal-overlay.open { display: flex; }
+  .legal-modal {
+    width: min(560px, 100%); background: var(--panel); border: 1px solid var(--border);
+    border-top: 3px solid var(--accent); box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    display: flex; flex-direction: column; max-height: 85vh;
+  }
+  .legal-modal .hsm-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+  .legal-modal .hsm-title { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+  .legal-modal .hsm-close { width: 26px; height: 26px; background: transparent; border: 1px solid var(--border); cursor: pointer; font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+  .legal-modal .hsm-close:hover { background: var(--btn-hover); color: var(--text); }
+  .legal-modal .legal-body { padding: 20px 22px; overflow-y: auto; font-size: 12px; line-height: 1.7; color: var(--text); }
+  .legal-modal .legal-body h4 { margin: 16px 0 6px; font-size: 10.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  .legal-modal .legal-body h4:first-child { margin-top: 0; }
+  .legal-modal .legal-body p { margin: 0 0 10px; }
+  .legal-modal .legal-body p:last-child { margin-bottom: 0; }
+  .legal-modal .legal-body ul { margin: 0 0 10px; padding-left: 18px; }
+  .legal-modal .legal-body a { color: var(--text); }
+  .legal-modal .legal-body::-webkit-scrollbar { width: 8px; }
+  .legal-modal .legal-body::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 4px; }
+
+  #welcome::-webkit-scrollbar { width: 4px; height: 4px; }
+  #welcome::-webkit-scrollbar-track { background: var(--bg-workspace); }
+  #welcome::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+  #welcome::-webkit-scrollbar-thumb:hover { background: #999; }
+</style>
+</head>
+<body>
+
+<!-- ⚙ Préférences (même look/place que le studio SP213 : en haut à droite) -->
+<button class="icon-btn" id="homeSettingsBtn" title="Preferences" aria-label="Preferences" onclick="openHomeSettings()">
+  <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+</button>
+
+<!-- Pop-in préférences home -->
+<div id="homeSettingsOverlay" onclick="if(event.target === this) closeHomeSettings()">
+  <div id="homeSettingsModal">
+    <div class="hsm-header">
+      <div class="hsm-title" data-i18n="prefsTitle">Preferences</div>
+      <button class="hsm-close" onclick="closeHomeSettings()" aria-label="Close">×</button>
+    </div>
+    <div class="hsm-body">
+      <div class="hsm-section">
+        <label class="hsm-label" for="homeLangSelect" data-i18n="prefsLang">Language</label>
+        <select id="homeLangSelect" onchange="setHomeLang(this.value)">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="ja">日本語</option>
+        </select>
+      </div>
+      <div class="hsm-section">
+        <label class="hsm-label" data-i18n="prefsInfo">About</label>
+        <div style="font-size:11.5px; color:var(--muted); line-height:1.6;" data-i18n="prefsAboutText">SuperPrint — browser-based print layout software + SP213 AI studio.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="welcome">
+  <div class="welcome-inner">
+    <div class="welcome-brand">
+      <div class="logo">
+        <img src="favicon.png" alt="SuperPrint">
+        <h1>SuperPrint</h1>
+      </div>
+      <p class="sub" data-i18n="homeSub" data-i18n-html="1">All of SuperPrint — <span class="hl">DTP + SP213 AI studio</span></p>
+    </div>
+
+    <div class="online-stack">
+      <a class="online-row on-editor" href="app/index.html" id="onlineSpBtn">
+        <span class="on-ic sp-editor-ic">T</span>
+        <div class="on-text">
+          <b>SuperPrint Editor</b>
+          <span data-i18n="editorSub">No installation — runs in the browser</span>
+        </div>
+        <span class="on-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </span>
+      </a>
+      <a class="online-row" href="sp213-studio.html" id="onlineStudioBtn">
+        <span class="on-ic">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </span>
+        <div class="on-text">
+          <b>SuperPrint Studio</b>
+          <span data-i18n="studioSub">AI layouts</span>
+        </div>
+        <span class="on-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </span>
+      </a>
+      <a class="online-row" href="documentation.html" id="onlineDocBtn">
+        <span class="on-ic">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </span>
+        <div class="on-text">
+          <b>Documentation</b>
+          <span data-i18n="docSub">Manual, shortcuts, complete guide</span>
+        </div>
+        <span class="on-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </span>
+      </a>
+    </div>
+
+    <div class="or-sep" data-i18n="orLocal">or install locally</div>
+
+    <div class="install-section">
+      <div class="is-title">
+        <svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
+        <span data-i18n="installTitle">Install locally</span>
+      </div>
+      <p class="is-desc" data-i18n="installDesc">Copy-paste this line: it downloads, installs and launches SuperPrint.</p>
+      <div class="cmd-block">
+        <span id="osIcon" class="cmd-os-ic" title="Detected automatically" data-i18n-title="osAuto">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><rect x="0" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="0" y="13.5" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="13.5" width="10.5" height="10.5" fill="currentColor"/></svg>
+        </span>
+        <code id="installCmd">npx.cmd superprint</code>
+        <button class="btn btn-copy" data-copy="installCmd" title="Copy the command" aria-label="Copy the command" data-i18n-title="copyCmd" data-i18n-aria="copyCmd">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+      <div class="cmd-meta">
+        <div class="cmd-tabs">
+          <button class="cmd-tab active" data-os="win">Windows</button>
+          <button class="cmd-tab" data-os="mac">macOS</button>
+          <button class="cmd-tab" data-os="linux">Linux</button>
+        </div>
+        <span class="cmd-hint" id="installHint">PowerShell · npx.cmd contourne le blocage de scripts (ExecutionPolicy)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer très léger (typo seule) -->
+<footer class="home-footer">
+  <a href="#" onclick="event.preventDefault(); openLegal('legalOverlay'); return false;" data-i18n="footerLegal">Legal notice</a>
+  <span class="sep">·</span>
+  <a href="#" onclick="event.preventDefault(); openLegal('privacyOverlay'); return false;" data-i18n="footerPrivacy">Privacy</a>
+  <span class="sep">·</span>
+  <a href="#" onclick="event.preventDefault(); openLegal('cookiesOverlay'); return false;" data-i18n="footerCookies">Cookies</a>
+  <span class="sep">·</span>
+  <a href="https://x.com/SUPER_PRINT_app" target="_blank" rel="noopener noreferrer" data-i18n="footerNews">News</a>
+</footer>
+
+<!-- Pop-in Mentions légales -->
+<div class="legal-overlay" id="legalOverlay" onclick="if(event.target===this) closeLegal('legalOverlay')">
+  <div class="legal-modal">
+    <div class="hsm-header">
+      <div class="hsm-title" data-i18n="legalTitle">Legal notice</div>
+      <button class="hsm-close" onclick="closeLegal('legalOverlay')" aria-label="Close" data-i18n-aria="closeLabel">×</button>
+    </div>
+    <div class="legal-body" data-i18n="legalBody" data-i18n-html="1">
+      <h4>Publisher</h4>
+      <p>SuperPrint is published by <b>Simon Dupont-Gellert</b> and <b>Clémence Brunet</b>.</p>
+      <h4>Hosting</h4>
+      <p>This site is hosted by <b>OVH</b> — France, European Union. Data is hosted in France.</p>
+      <h4>Publication date</h4>
+      <p>30 August 2026.</p>
+      <h4>Languages</h4>
+      <p>This site is available in English, French and Japanese.</p>
+      <h4>Contact / News</h4>
+      <p><a href="https://x.com/SUPER_PRINT_app" target="_blank" rel="noopener noreferrer">@SUPER_PRINT_app on X</a></p>
+      <h4>Disclaimer — Limitation of liability</h4>
+      <p>SuperPrint is provided free of charge, "as is", without warranty of any kind. It is a design and prepress assistance tool and does not replace professional validation.</p>
+      <p>You are solely responsible for checking your documents before printing: colors, bleed, margins, resolution, fonts and the final result (on-screen rendering may differ from printed output).</p>
+      <p>The publisher cannot be held liable for any failed print, incorrect colors, layout problems, or any other direct or indirect damage resulting from the use of the software — whether the online version, the local installation, or AI-generated layouts (SP213).</p>
+      <p>AI-generated content is provided for assistance only; you must verify and validate every element before use or publication.</p>
+      <p>By using SuperPrint, you acknowledge having read and accepted these terms.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Pop-in Politique de confidentialité -->
+<div class="legal-overlay" id="privacyOverlay" onclick="if(event.target===this) closeLegal('privacyOverlay')">
+  <div class="legal-modal">
+    <div class="hsm-header">
+      <div class="hsm-title" data-i18n="privacyTitle">Privacy policy</div>
+      <button class="hsm-close" onclick="closeLegal('privacyOverlay')" aria-label="Close" data-i18n-aria="closeLabel">×</button>
+    </div>
+    <div class="legal-body" data-i18n="privacyBody" data-i18n-html="1">
+      <p>SuperPrint does not require an account and does not collect any personal data.</p>
+      <h4>Processing is 100% local</h4>
+      <p>All the work happens in your browser: your documents, images and layouts never leave your machine for rendering.</p>
+      <h4>API keys</h4>
+      <p>The API keys you optionally provide for the AI features are stored only in your browser (local storage) and are sent only to the provider you explicitly choose. They are never sent to SuperPrint servers.</p>
+      <h4>No tracking</h4>
+      <p>No analytics, no advertising trackers, no profiling.</p>
+      <h4>Hosting</h4>
+      <p>This site is hosted in France (OVH), in the European Union, subject to the GDPR.</p>
+      <h4>Local storage</h4>
+      <p>We use local storage to remember your language and preferences. You can clear it at any time from your browser settings.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Pop-in Cookies -->
+<div class="legal-overlay" id="cookiesOverlay" onclick="if(event.target===this) closeLegal('cookiesOverlay')">
+  <div class="legal-modal">
+    <div class="hsm-header">
+      <div class="hsm-title" data-i18n="cookiesTitle">Cookie policy</div>
+      <button class="hsm-close" onclick="closeLegal('cookiesOverlay')" aria-label="Close" data-i18n-aria="closeLabel">×</button>
+    </div>
+    <div class="legal-body" data-i18n="cookiesBody" data-i18n-html="1">
+      <p>SuperPrint uses only strictly necessary technical cookies and local storage:</p>
+      <ul><li>Language preference</li><li>User settings (theme, layout, etc.)</li></ul>
+      <p>No advertising cookies.</p>
+      <p>No third-party tracking cookies.</p>
+      <p>No profiling.</p>
+      <p>No cookie is shared with third parties.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ─── Internationalisation (langue par défaut : EN) ───
+  var I18N = {
+    en: {
+      prefsTitle: 'Preferences',
+      prefsLang: 'Language',
+      prefsInfo: 'About',
+      prefsAboutText: 'SuperPrint — browser-based print layout software + SP213 AI studio.',
+      pageTitle: 'SuperPrint — Online DTP Software + SP213 AI Studio',
+      homeSub: "All of SuperPrint — <span class=\"hl\">DTP + SP213 AI studio</span>",
+      installTitle: 'Install locally',
+      installDesc: 'Copy-paste this line: it downloads, installs and launches SuperPrint.',
+      copyCmd: 'Copy the command',
+      orLocal: 'or install locally',
+      onlineLabel: 'Online',
+      editorSub: 'No installation — runs in the browser',
+      studioSub: 'AI layouts',
+      docSub: 'Manual, shortcuts, complete guide',
+      osAuto: 'Detected automatically',
+      footerLegal: 'Legal notice',
+      footerPrivacy: 'Privacy',
+      footerCookies: 'Cookies',
+      footerNews: 'News',
+      legalTitle: 'Legal notice',
+      privacyTitle: 'Privacy policy',
+      cookiesTitle: 'Cookie policy',
+      closeLabel: 'Close',
+      legalBody: '<h4>Publisher</h4><p>SuperPrint is published by <b>Simon Dupont-Gellert</b> and <b>Clémence Brunet</b>.</p><h4>Hosting</h4><p>This site is hosted by <b>OVH</b> — France, European Union. Data is hosted in France.</p><h4>Publication date</h4><p>30 August 2026.</p><h4>Languages</h4><p>This site is available in English, French and Japanese.</p><h4>Contact / News</h4><p><a href="https://x.com/SUPER_PRINT_app" target="_blank" rel="noopener noreferrer">@SUPER_PRINT_app on X</a></p><h4>Disclaimer — Limitation of liability</h4><p>SuperPrint is provided free of charge, "as is", without warranty of any kind. It is a design and prepress assistance tool and does not replace professional validation.</p><p>You are solely responsible for checking your documents before printing: colors, bleed, margins, resolution, fonts and the final result (on-screen rendering may differ from printed output).</p><p>The publisher cannot be held liable for any failed print, incorrect colors, layout problems, or any other direct or indirect damage resulting from the use of the software — whether the online version, the local installation, or AI-generated layouts (SP213).</p><p>AI-generated content is provided for assistance only; you must verify and validate every element before use or publication.</p><p>By using SuperPrint, you acknowledge having read and accepted these terms.</p>',
+      privacyBody: '<p>SuperPrint does not require an account and does not collect any personal data.</p><h4>Processing is 100% local</h4><p>All the work happens in your browser: your documents, images and layouts never leave your machine for rendering.</p><h4>API keys</h4><p>The API keys you optionally provide for the AI features are stored only in your browser (local storage) and are sent only to the provider you explicitly choose. They are never sent to SuperPrint servers.</p><h4>No tracking</h4><p>No analytics, no advertising trackers, no profiling.</p><h4>Hosting</h4><p>This site is hosted in France (OVH), in the European Union, subject to the GDPR.</p><h4>Local storage</h4><p>We use local storage to remember your language and preferences. You can clear it at any time from your browser settings.</p>',
+      cookiesBody: '<p>SuperPrint uses only strictly necessary technical cookies and local storage:</p><ul><li>Language preference</li><li>User settings (theme, layout, etc.)</li></ul><p>No advertising cookies.</p><p>No third-party tracking cookies.</p><p>No profiling.</p><p>No cookie is shared with third parties.</p>',
+      langAttr: 'en'
+    },
+    fr: {
+      prefsTitle: 'Préférences',
+      prefsLang: 'Langue',
+      prefsInfo: 'À propos',
+      prefsAboutText: 'SuperPrint — logiciel de PAO dans le navigateur + studio IA SP213.',
+      pageTitle: 'SuperPrint — PAO en ligne + studio SP213 par IA',
+      homeSub: "Toute l'application SuperPrint — <span class=\"hl\">PAO + studio SP213</span>",
+      installTitle: 'Installer en local',
+      installDesc: 'Copiez-collez cette ligne : elle télécharge, installe puis lance SuperPrint.',
+      copyCmd: 'Copier la commande',
+      orLocal: 'ou installer en local',
+      onlineLabel: 'En ligne — aucune installation',
+      editorSub: 'Aucune installation — fonctionne dans le navigateur',
+      studioSub: 'Maquettes IA',
+      docSub: 'Manuel, raccourcis, guide complet',
+      osAuto: 'Détecté automatiquement',
+      footerLegal: 'Mentions légales',
+      footerPrivacy: 'Confidentialité',
+      footerCookies: 'Cookies',
+      footerNews: 'News',
+      legalTitle: 'Mentions légales',
+      privacyTitle: 'Politique de confidentialité',
+      cookiesTitle: 'Politique de cookies',
+      closeLabel: 'Fermer',
+      legalBody: '<h4>Éditeur</h4><p>SuperPrint est édité par <b>Simon Dupont-Gellert</b> et <b>Clémence Brunet</b>.</p><h4>Hébergement</h4><p>Ce site est hébergé par <b>OVH</b> — France, Union européenne. Les données sont hébergées en France.</p><h4>Date de publication</h4><p>30 août 2026.</p><h4>Langues</h4><p>Ce site est disponible en français, anglais et japonais.</p><h4>Contact / Actualités</h4><p><a href="https://x.com/SUPER_PRINT_app" target="_blank" rel="noopener noreferrer">@SUPER_PRINT_app sur X</a></p><h4>Avertissement — Limitation de responsabilité</h4><p>SuperPrint est fourni gratuitement, « en l\'état », sans garantie d\'aucune sorte. Il s\'agit d\'un outil d\'aide à la mise en page et à la préparation d\'impression, qui ne remplace pas une validation professionnelle.</p><p>Vous êtes seul responsable de la vérification de vos documents avant impression : couleurs, fonds perdus (bleed), marges, résolution, polices et résultat final (le rendu à l\'écran peut différer du rendu imprimé).</p><p>L\'éditeur ne peut être tenu responsable d\'un échec d\'impression, de couleurs incorrectes, de problèmes de mise en page ou de tout autre dommage direct ou indirect résultant de l\'utilisation du logiciel — qu\'il s\'agisse de la version en ligne, de l\'installation locale ou des maquettes générées par IA (SP213).</p><p>Les contenus générés par IA sont fournis à titre d\'assistance uniquement ; vous devez vérifier et valider chaque élément avant utilisation ou publication.</p><p>En utilisant SuperPrint, vous reconnaissez avoir lu et accepté ces conditions.</p>',
+      privacyBody: '<p>SuperPrint ne nécessite aucun compte et ne collecte aucune donnée personnelle.</p><h4>Traitement 100 % local</h4><p>Tout le travail s\'effectue dans votre navigateur : vos documents, images et maquettes ne quittent jamais votre machine pour le rendu.</p><h4>Clés API</h4><p>Les clés API que vous fournissez éventuellement pour les fonctionnalités IA sont stockées uniquement dans votre navigateur (stockage local) et ne sont envoyées qu\'au fournisseur que vous choisissez explicitement. Elles ne sont jamais envoyées aux serveurs de SuperPrint.</p><h4>Aucun suivi</h4><p>Aucun outil de statistiques, aucun traceur publicitaire, aucun profilage.</p><h4>Hébergement</h4><p>Ce site est hébergé en France (OVH), dans l\'Union européenne, soumis au RGPD.</p><h4>Stockage local</h4><p>Nous utilisons le stockage local pour mémoriser votre langue et vos préférences. Vous pouvez l\'effacer à tout moment depuis les paramètres de votre navigateur.</p>',
+      cookiesBody: '<p>SuperPrint n\'utilise que des cookies et stockages locaux strictement techniques et nécessaires :</p><ul><li>Préférence de langue</li><li>Réglages utilisateur (thème, mise en page, etc.)</li></ul><p>Aucun cookie publicitaire.</p><p>Aucun cookie de suivi tiers.</p><p>Aucun profilage.</p><p>Aucun cookie n\'est partagé avec des tiers.</p>',
+      langAttr: 'fr'
+    },
+    ja: {
+      prefsTitle: '設定',
+      prefsLang: '言語',
+      prefsInfo: '情報',
+      prefsAboutText: 'SuperPrint — ブラウザで動作する印刷レイアウトソフトウェア + SP213 AIスタジオ。',
+      pageTitle: 'SuperPrint — オンラインDTPソフトウェア + SP213 AIスタジオ',
+      homeSub: "SuperPrint すべて — <span class=\"hl\">DTP + SP213 AIスタジオ</span>",
+      installTitle: 'ローカルにインストール',
+      installDesc: 'この行をコピー＆ペーストしてください：ダウンロード、インストール、起動まで行います。',
+      copyCmd: 'コマンドをコピー',
+      orLocal: 'またはローカルにインストール',
+      onlineLabel: 'オンライン — インストール不要',
+      editorSub: 'インストール不要 — ブラウザで動作',
+      studioSub: 'AIレイアウト',
+      docSub: 'マニュアル、ショートカット、完全ガイド',
+      osAuto: '自動検出',
+      footerLegal: '法的通知',
+      footerPrivacy: 'プライバシー',
+      footerCookies: 'クッキー',
+      footerNews: 'News',
+      legalTitle: '法的通知',
+      privacyTitle: 'プライバシーポリシー',
+      cookiesTitle: 'クッキーポリシー',
+      closeLabel: '閉じる',
+      legalBody: '<h4>発行者</h4><p>SuperPrint は <b>Simon Dupont-Gellert</b> と <b>Clémence Brunet</b> によって発行されています。</p><h4>ホスティング</h4><p>このサイトは <b>OVH</b> — フランス（欧州連合）でホストされています。データはフランス国内に保存されます。</p><h4>発行日</h4><p>2026年8月30日。</p><h4>言語</h4><p>このサイトは日本語、英語、フランス語に対応しています。</p><h4>連絡先・ニュース</h4><p><a href="https://x.com/SUPER_PRINT_app" target="_blank" rel="noopener noreferrer">X の @SUPER_PRINT_app</a></p><h4>免責事項 — 責任の制限</h4><p>SuperPrint は無料で「現状のまま」提供され、いかなる保証もありません。これはレイアウトおよび印刷準備を支援するツールであり、専門家による検証に代わるものではありません。</p><p>印刷前にドキュメントを確認する責任はすべて利用者にあります：色、塗り足し（bleed）、余白、解像度、フォント、最終結果（画面上の表示と印刷結果は異なる場合があります）。</p><p>発行者は、印刷の失敗、色のずれ、レイアウトの問題、またはソフトウェアの使用（オンライン版、ローカルインストール、AI生成レイアウト SP213 を含む）から生じる直接的・間接的な損害について一切責任を負いません。</p><p>AI生成コンテンツは支援目的でのみ提供されます。使用または公開前に各要素を確認・検証してください。</p><p>SuperPrint を利用することで、これらの条件を読み、同意したものとみなされます。</p>',
+      privacyBody: '<p>SuperPrint はアカウントを必要とせず、個人データを収集しません。</p><h4>処理は100%ローカル</h4><p>すべての作業はブラウザ内で行われます。ドキュメント、画像、レイアウトがレンダリングのために端末の外に出ることはありません。</p><h4>API キー</h4><p>AI機能のために任意で提供する API キーは、ブラウザ（ローカルストレージ）にのみ保存され、明示的に選択したプロバイダーにのみ送信されます。SuperPrint のサーバーに送信されることはありません。</p><h4>トラッキングなし</h4><p>統計ツール、広告トラッカー、プロファイリングは一切ありません。</p><h4>ホスティング</h4><p>このサイトはフランス（OVH）、欧州連合内でホストされ、GDPR の対象です。</p><h4>ローカルストレージ</h4><p>言語や設定を記憶するためにローカルストレージを使用します。ブラウザの設定からいつでも消去できます。</p>',
+      cookiesBody: '<p>SuperPrint は、厳密に必要な技術的クッキーとローカルストレージのみを使用します：</p><ul><li>言語設定</li><li>ユーザー設定（テーマ、レイアウトなど）</li></ul><p>広告クッキーはありません。</p><p>第三者による追跡クッキーはありません。</p><p>プロファイリングはありません。</p><p>クッキーが第三者と共有されることはありません。</p>',
+      langAttr: 'ja'
+    }
+  };
+  var DEFAULT_LANG = 'en';
+  var LANG_KEY = 'sp_lang'; // clé SHARED avec l'app SuperPrint et le studio SP213
+  function getHomeLang() {
+    try {
+      // Migration depuis l'ancienne clé de la home
+      var legacy = localStorage.getItem('sp_home_lang');
+      if (legacy === 'en' || legacy === 'fr' || legacy === 'ja') {
+        localStorage.setItem(LANG_KEY, legacy);
+        localStorage.removeItem('sp_home_lang');
+        return legacy;
+      }
+      var saved = localStorage.getItem(LANG_KEY);
+      if (saved === 'en' || saved === 'fr' || saved === 'ja') return saved;
+    } catch (e) {}
+    return DEFAULT_LANG;
+  }
+  function applyHomeLang(lang) {
+    var dict = I18N[lang] || I18N[DEFAULT_LANG];
+    document.documentElement.setAttribute('lang', dict.langAttr || lang);
+    if (dict.pageTitle) document.title = dict.pageTitle;
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n');
+      if (!dict[key]) return;
+      var html = el.getAttribute('data-i18n-html') === '1';
+      if (html) el.innerHTML = dict[key]; else el.textContent = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n-title');
+      if (dict[key]) el.setAttribute('title', dict[key]);
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n-aria');
+      if (dict[key]) el.setAttribute('aria-label', dict[key]);
+    });
+    var sel = document.getElementById('homeLangSelect');
+    if (sel) sel.value = lang;
+  }
+  function setHomeLang(lang) {
+    try {
+      localStorage.setItem(LANG_KEY, lang); // partagé : home + app + studio
+      localStorage.removeItem('sp_home_lang'); // nettoyage ancienne clé
+    } catch (e) {}
+    applyHomeLang(lang);
+    // Rafraîchir le hint d'installation dans la langue choisie
+    var activeOs = (document.querySelector('.cmd-tab.active') || {}).getAttribute ? document.querySelector('.cmd-tab.active').getAttribute('data-os') : 'win';
+    var hints = INSTALL_HINTS[activeOs] || {};
+    var hintEl = $('installHint');
+    if (hintEl) hintEl.textContent = hints[lang] || hints.en || '';
+  }
+
+  // ─── Pop-in préférences ───
+  function openHomeSettings() {
+    var overlay = document.getElementById('homeSettingsOverlay');
+    if (overlay) overlay.classList.add('open');
+    applyHomeLang(getHomeLang());
+  }
+  function closeHomeSettings() {
+    var overlay = document.getElementById('homeSettingsOverlay');
+    if (overlay) overlay.classList.remove('open');
+  }
+  window.openHomeSettings = openHomeSettings;
+  window.closeHomeSettings = closeHomeSettings;
+  window.setHomeLang = setHomeLang;
+
+  // ─── Pop-ins légaux (footer : mentions légales, confidentialité, cookies) ───
+  function openLegal(id) {
+    var ov = document.getElementById(id);
+    if (ov) ov.classList.add('open');
+    applyHomeLang(getHomeLang());
+  }
+  function closeLegal(id) {
+    var ov = document.getElementById(id);
+    if (ov) ov.classList.remove('open');
+  }
+  window.openLegal = openLegal;
+  window.closeLegal = closeLegal;
+
+  // Applique la langue au chargement (EN par défaut)
+  applyHomeLang(getHomeLang());
+
+  var INSTALL_CMDS = {
+    win: 'npx.cmd superprint',
+    mac: 'npx superprint',
+    linux: 'npx superprint'
+  };
+  var INSTALL_HINTS = {
+    win: {
+      en: 'PowerShell · npx.cmd bypasses the script ExecutionPolicy block',
+      fr: 'PowerShell · npx.cmd contourne le blocage de scripts (ExecutionPolicy)',
+      ja: 'PowerShell · npx.cmd はスクリプト実行ポリシーの制限を回避します'
+    },
+    mac: {
+      en: 'Terminal · installs and launches SuperPrint (requires Node.js)',
+      fr: 'Terminal · installe et lance SuperPrint (requiert Node.js)',
+      ja: 'ターミナル · SuperPrint をインストールして起動します（Node.js が必要）'
+    },
+    linux: {
+      en: 'Terminal · installs and launches SuperPrint (requires Node.js)',
+      fr: 'Terminal · installe et lance SuperPrint (requiert Node.js)',
+      ja: 'ターミナル · SuperPrint をインストールして起動します（Node.js が必要）'
+    }
+  };
+  // Icônes SVG par OS — formes géométriques nettes et propres
+  var OS_ICONS = {
+    win: '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><rect x="0" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="0" y="13.5" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="13.5" width="10.5" height="10.5" fill="currentColor"/></svg>',
+    mac: '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.56-1.702"/></svg>',
+    linux: '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 12 18.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12 12 5 5.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12 12 6.2 19.2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/></svg>'
+  };
+  var $ = function (id) { return document.getElementById(id); };
+
+  // 🖥️ Détection automatique de l'OS du visiteur → active le bon onglet,
+  // affiche la bonne commande et l'icône de sa machine.
+  function detectOS() {
+    var ua = navigator.userAgent || '';
+    if (/Windows/i.test(ua)) return 'win';
+    if (/Mac|iPhone|iPad|iPod/i.test(ua)) return 'mac';
+    if (/Linux|X11|CrOS/i.test(ua)) return 'linux';
+    return 'win';
+  }
+  function setOsIcon(os) {
+    var ic = $('osIcon');
+    if (ic && OS_ICONS[os]) ic.innerHTML = OS_ICONS[os];
+  }
+  function applyOS(os) {
+    var tab = document.querySelector('.cmd-tab[data-os="' + os + '"]');
+    if (!tab) tab = document.querySelector('.cmd-tab[data-os="win"]');
+    document.querySelectorAll('.cmd-tab').forEach(function (t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    var key = tab.getAttribute('data-os');
+    $('installCmd').textContent = INSTALL_CMDS[key];
+    var hints = INSTALL_HINTS[key] || {};
+    $('installHint').textContent = hints[getHomeLang()] || hints.en || '';
+    setOsIcon(key);
+  }
+
+  document.querySelectorAll('.cmd-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.cmd-tab').forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      var os = tab.getAttribute('data-os');
+      $('installCmd').textContent = INSTALL_CMDS[os];
+      var hints = INSTALL_HINTS[os] || {};
+      $('installHint').textContent = hints[getHomeLang()] || hints.en || '';
+      setOsIcon(os);
+    });
+  });
+
+  // Au chargement : détecter l'OS et présélectionner la bonne commande + icône
+  applyOS(detectOS());
+
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = $('installCmd').textContent.trim();
+      var oldHTML = btn.innerHTML;
+      var done = function () {
+        btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="20 6 9 17 4 12"/></svg>';
+        setTimeout(function () { btn.innerHTML = oldHTML; }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () { fallback(btn, text, done); });
+      } else { fallback(btn, text, done); }
+    });
+  });
+  function fallback(btn, text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+    done();
+  }
+})();
+</script>
+</body>
+</html>

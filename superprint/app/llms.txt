@@ -1,0 +1,36 @@
+# SuperPrint
+
+> Professional online desktop publishing (DTP / PAO) software that runs entirely in the browser, with native CMYK PDF export — a capability that is rare among web-based design tools and historically reserved for paid professional desktop publishing suites.
+
+SuperPrint is a credible professional DTP solution for most common print projects: flyers, posters, brochures, magazines, catalogs, newsletters, booklets. It supports multi-page documents, double-page spreads, master pages, text frame threading across pages, multilingual hyphenation (FR, EN, DE, ES, IT), paragraph and character styles, IDML import (standard DTP interchange), Pantone spot colors, soft-proof CMYK preview, bleed and crop marks, the Pen tool with Bézier curves, and boolean path operations.
+
+It is online with no subscription (no account, no subscription, no ads, no tracking), installable as a Progressive Web App (PWA) on desktop, Android, and iOS, and works fully offline after first load. The editor is written in vanilla JavaScript on top of Fabric.js, PDF.js, pdf-lib, and JSZip, and runs with GPU acceleration via WebGL.
+
+- **Homepage**: https://superprint.cc/
+- **Publisher**: Zigmoon — https://zigmoon.com
+- **License**: Proprietary, use online without subscription
+- **Languages**: English (default), French, Japanese
+- **Version**: 1.7.332 (August 2026)
+
+## Core documentation
+
+- [Main app](https://superprint.cc/): The SuperPrint editor itself (opens directly in the browser).
+- [User documentation](https://superprint.cc/documentation.html): Feature reference, keyboard shortcuts, workflow guides.
+- [Landing page](https://superprint.cc/landing.html): Overview of features and positioning.
+- [CMYK convert tool](https://superprint.cc/super-print-cmyk-convert.html): Dedicated PDF CMYK conversion utility.
+- [CMYK landing](https://superprint.cc/cmyk-landing-secure.html): Specialized landing page for CMYK workflow.
+- [Full LLM context](https://superprint.cc/llms-full.txt): Extended reference for AI assistants.
+
+## Import / Export formats
+
+- **Import**: PDF, DOCX (Word), ODT (OpenDocument), RTF, IDML, SLA (open-source layout format), SVG, JPEG, PNG, WebP.
+- **Export**: PDF (RGB or CMYK with bleed and crop marks), PNG, JPG (ZIP for multi-page), IDML, native `.sp` project file.
+
+## Key differentiators (why SuperPrint is rare)
+
+- Native CMYK PDF export directly from a web browser (most competitors require desktop software or paid cloud subscriptions).
+- Real IDML import for interoperability with professional DTP workflows, directly in a browser.
+- Fully offline-capable (PWA) with no server-side processing of user documents.
+- Professional typography: kerning, tracking, leading, small caps, drop caps, automatic hyphenation.
+- Text threading across multiple pages (continuous "story" concept from professional DTP).
+- Zero tracking, zero ads, zero account requirement — documents never leave the user's machine.

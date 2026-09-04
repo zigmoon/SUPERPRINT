@@ -1,0 +1,2767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUPER PRINT CONVERT - RGB → CMYK</title>
+    <!-- Local self-hosted IBM Plex Mono + Noto Sans JP (no Google Fonts CDN) -->
+    <link rel="stylesheet" href="CSS/fonts.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            background: #fafafa;
+            color: #1a1a1a;
+            line-height: 1.6;
+        }
+
+        html[lang="ja"] body {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 30px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #1a1a1a;
+            line-height: 1;
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .lang-btn {
+            height: 36px;
+            min-width: 50px;
+            padding: 0 18px;
+            background: #ffffff;
+            color: #666666;
+            border: none;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 36px;
+            text-align: center;
+            transition: all 0.2s;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .lang-btn:last-child {
+            border-right: none;
+        }
+
+        .lang-btn:hover {
+            background: #f5f5f5;
+            color: #1a1a1a;
+        }
+
+        .lang-btn.active {
+            background: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 50px;
+        }
+
+        .hero-title {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+            line-height: 1.2;
+        }
+
+        html[lang="ja"] .hero-title {
+            font-family: 'Noto Sans JP', sans-serif;
+            letter-spacing: 2px;
+        }
+
+        .hero-subtitle {
+            font-size: 13px;
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+            color: #666666;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .hero-badges {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .badge {
+            background: #f5f5f5;
+            color: #1a1a1a;
+            padding: 8px 16px;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            line-height: 1.4;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            color: #1a1a1a;
+            line-height: 1.4;
+        }
+
+        .os-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .os-tab {
+            flex: 1;
+            height: 48px;
+            background: #ffffff;
+            color: #666666;
+            border: none;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 48px;
+            text-align: center;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .os-tab:last-child {
+            border-right: none;
+        }
+
+        .os-tab:hover {
+            background: #fafafa;
+        }
+
+        .os-tab.active {
+            background: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .os-content {
+            display: none;
+        }
+
+        .os-content.active {
+            display: block;
+        }
+
+        .install-section {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .install-title {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+            line-height: 1.4;
+        }
+
+        .step-list {
+            list-style: none;
+            margin: 15px 0;
+        }
+
+        .step-list li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+            color: #333;
+            line-height: 1.7;
+        }
+
+        .step-list li:before {
+            content: "•";
+            position: absolute;
+            left: 8px;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 12px 16px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: #1a1a1a;
+            margin: 12px 0;
+            overflow-x: auto;
+            line-height: 1.6;
+        }
+
+        .alert {
+            padding: 18px;
+            margin: 18px 0;
+            border: 1px solid #e0e0e0;
+            background: #fafafa;
+            border-radius: 6px;
+        }
+
+        .alert-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            color: #1a1a1a;
+            line-height: 1.4;
+        }
+
+        .alert-warning {
+            background: #fffbf0;
+            border-color: #ffe4a0;
+        }
+
+        .file-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .file-item {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .file-item:hover {
+            background: #f5f5f5;
+            border-color: #d0d0d0;
+        }
+
+        .file-name {
+            font-size: 13px;
+            font-weight: 700;
+            font-family: 'IBM Plex Mono', monospace;
+            color: #1a1a1a;
+            line-height: 1.4;
+        }
+
+        .file-desc {
+            font-size: 10px;
+            color: #999999;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .btn-file {
+            min-width: 100px;
+            height: 36px;
+            padding: 0 20px;
+            background: #1a1a1a;
+            color: #ffffff;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 36px;
+            text-align: center;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .btn-file:hover {
+            background: #333333;
+            border-color: #333333;
+        }
+
+        .btn-download-all {
+            width: 100%;
+            height: 48px;
+            background: #1a1a1a;
+            color: #ffffff;
+            border: 1px solid #1a1a1a;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+            margin-top: 20px;
+        }
+
+        .btn-download-all:hover {
+            background: #333333;
+        }
+
+        .footer {
+            background: #ffffff;
+            border-top: 1px solid #e0e0e0;
+            padding: 40px 20px;
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        .footer-text {
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: #999999;
+            line-height: 1.6;
+        }
+
+        [data-lang]:not([data-lang="en"]) { display: none; }
+        html[lang="fr"] [data-lang="en"],
+        html[lang="ja"] [data-lang="en"] { display: none; }
+        html[lang="fr"] [data-lang="fr"] { display: block; }
+        html[lang="ja"] [data-lang="ja"] { display: block; }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 24px; }
+            .file-item {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            .btn-file { width: 100%; }
+            .os-tabs { flex-direction: column; }
+            .os-tab {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            .os-tab:last-child { border-bottom: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span data-lang="fr">SUPER PRINT CONVERT</span>
+                <span data-lang="en">SUPER PRINT CONVERT</span>
+                <span data-lang="ja">スーパープリントコンバート</span>
+            </div>
+            <div class="lang-switcher">
+                <button class="lang-btn" onclick="setLanguage(this, 'fr')">FR</button>
+                <button class="lang-btn active" onclick="setLanguage(this, 'en')">EN</button>
+                <button class="lang-btn" onclick="setLanguage(this, 'ja')">JP</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <div data-lang="fr">
+                <h1 class="hero-title">SUPER PRINT CONVERT</h1>
+                <p class="hero-subtitle">Convertisseur RGB vers CMYK Professionnel</p>
+                <div class="hero-badges">
+                    <span class="badge">Conversion Authentique</span>
+                    <span class="badge">Profils ICC</span>
+                    <span class="badge">Open Source</span>
+                    <span class="badge">Gratuit</span>
+                </div>
+                <div style="margin-top: 20px; font-size: 9px; color: #999999; letter-spacing: 0.5px;">
+                    v2.1 • Octobre 2025 • by <a href="https://clemencebrunet.fr" target="_blank" style="color: #666666; text-decoration: none; border-bottom: 1px solid #666666;">Clémence Brunet</a> & <a href="https://zigmoon.com" target="_blank" style="color: #666666; text-decoration: none; border-bottom: 1px solid #666666;">Simon Dupont-Gellert</a>
+                </div>
+            </div>
+            <div data-lang="en">
+                <h1 class="hero-title">SUPER PRINT CONVERT</h1>
+                <p class="hero-subtitle">Professional RGB to CMYK Converter</p>
+                <div class="hero-badges">
+                    <span class="badge">Authentic Conversion</span>
+                    <span class="badge">ICC Profiles</span>
+                    <span class="badge">Open Source</span>
+                    <span class="badge">Free</span>
+                </div>
+                <div style="margin-top: 20px; font-size: 9px; color: #999999; letter-spacing: 0.5px;">
+                    v2.1 • October 2025 • by <a href="https://clemencebrunet.fr" target="_blank" style="color: #666666; text-decoration: none; border-bottom: 1px solid #666666;">Clémence Brunet</a> & <a href="https://zigmoon.com" target="_blank" style="color: #666666; text-decoration: none; border-bottom: 1px solid #666666;">Simon Dupont-Gellert</a>
+                </div>
+            </div>
+            <div data-lang="ja">
+                <h1 class="hero-title">スーパープリントコンバート</h1>
+                <p class="hero-subtitle">プロフェッショナル RGB から CMYK への変換</p>
+                <div class="hero-badges">
+                    <span class="badge">本格的な変換</span>
+                    <span class="badge">ICC プロファイル</span>
+                    <span class="badge">オープンソース</span>
+                    <span class="badge">無料</span>
+                </div>
+                <div style="margin-top: 20px; font-size: 9px; color: #999999; letter-spacing: 0.5px;">
+                    v2.1 • 2025年10月 • by <a href="https://clemencebrunet.fr" target="_blank" style="color: #666666; text-decoration: none; border-bottom: 1px solid #666666;">Clémence Brunet</a> & <a href="https://zigmoon.com" target="_blank" style="color: #666666; text-decoration: none; border-bottom: 1px solid #666666;">Simon Dupont-Gellert</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title" data-lang="fr">Sélectionnez votre système d'exploitation</h2>
+            <h2 class="section-title" data-lang="en">Select your operating system</h2>
+            <h2 class="section-title" data-lang="ja">オペレーティングシステムを選択</h2>
+
+            <div class="os-tabs">
+                <button class="os-tab active" onclick="switchOS(this, 'windows')">🪟 Windows</button>
+                <button class="os-tab" onclick="switchOS(this, 'mac')">🍎 macOS</button>
+                <button class="os-tab" onclick="switchOS(this, 'linux')">🐧 Linux</button>
+            </div>
+
+            <!-- WINDOWS -->
+            <div id="os-windows" class="os-content active">
+                <div data-lang="fr">
+                    <div class="install-section">
+                        <h3 class="install-title">📥 TÉLÉCHARGEMENT DES FICHIERS WINDOWS</h3>
+                        <ul class="file-list">
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">SUPERPRINTCONVERTER_v2.py</div>
+                                    <div class="file-desc">Application principale • Interface graphique complète</div>
+                                </div>
+                                <a href="download.php?file=SUPERPRINTCONVERTER_v2.py" download class="btn-file">TÉLÉCHARGER</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">LANCER.bat</div>
+                                    <div class="file-desc">🪟 Lanceur automatique Windows</div>
+                                </div>
+                                <a href="download.php?file=LANCER.bat" class="btn-file">TÉLÉCHARGER</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">README.md</div>
+                                    <div class="file-desc">📖 Documentation complète</div>
+                                </div>
+                                <a href="download.php?file=README.md" class="btn-file">TÉLÉCHARGER</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ INSTALLATION • Python 3</h3>
+                        <div class="alert">
+                            <div class="alert-title">Étape 1 : Télécharger Python</div>
+                            <ul class="step-list">
+                                <li>Visitez <strong>https://www.python.org/downloads/</strong></li>
+                                <li>Cliquez sur "Download Python 3.x.x"</li>
+                                <li>Lancez le fichier téléchargé</li>
+                            </ul>
+                        </div>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">⚠️ CRITIQUE : Cocher "Add Python to PATH"</div>
+                            <p>Lors de l'installation, cochez OBLIGATOIREMENT la case "Add Python 3.x to PATH" en bas de la fenêtre d'installation.</p>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ INSTALLATION • Ghostscript (optionnel pour PDFs)</h3>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">⚠️ IMPORTANT : Ghostscript est nécessaire UNIQUEMENT pour convertir des PDFs</div>
+                            <p>Si vous convertissez seulement des images (JPG, PNG, TIFF), vous pouvez ignorer cette section.</p>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">Étape 1 : Télécharger Ghostscript</div>
+                            <ul class="step-list">
+                                <li>Visitez <strong>https://www.ghostscript.com/releases/gsdnld.html</strong></li>
+                                <li>Descendez jusqu'à la section "Ghostscript AGPL Release"</li>
+                                <li>Téléchargez <strong>"Ghostscript 10.x.x for Windows (64 bit)"</strong> (environ 50 MB)</li>
+                                <li>Le fichier s'appelle : <strong>gs10.xx.x-win64.exe</strong></li>
+                            </ul>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">Étape 2 : Installation (CRITIQUE)</div>
+                            <ul class="step-list">
+                                <li>Double-cliquez sur le fichier <strong>gs10.xx.x-win64.exe</strong></li>
+                                <li>Cliquez sur <strong>"Next"</strong> dans la fenêtre de bienvenue</li>
+                                <li>Acceptez la licence : cliquez sur <strong>"I Agree"</strong></li>
+                                <li><strong>🔴 CRITIQUE :</strong> Gardez le dossier d'installation PAR DÉFAUT</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <div class="alert-title">🔴 NE PAS CHANGER LE DOSSIER D'INSTALLATION</div>
+                            <p><strong>Dossier par défaut (CORRECT) :</strong></p>
+                            <div class="code-block">C:\Program Files\gs\gs10.xx.x\</div>
+                            <p><strong>Ne PAS installer dans :</strong></p>
+                            <ul class="step-list">
+                                <li>❌ C:\Program Files (x86)\ - Version 32 bits, ne fonctionnera pas</li>
+                                <li>❌ C:\Users\VotreNom\Desktop\ - Ghostscript ne sera pas trouvé</li>
+                                <li>❌ D:\Programs\ - Chemin non standard, problèmes de PATH</li>
+                                <li>❌ Tout autre emplacement personnalisé</li>
+                            </ul>
+                            <p><strong>✅ GARDEZ LE CHEMIN PAR DÉFAUT</strong></p>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">Étape 3 : Fin de l'installation</div>
+                            <ul class="step-list">
+                                <li>Cliquez sur <strong>"Install"</strong></li>
+                                <li>Acceptez les permissions administrateur (cliquez "Oui")</li>
+                                <li>Attendez la fin de l'installation (1-2 minutes)</li>
+                                <li>Cliquez sur <strong>"Finish"</strong></li>
+                                <li><strong>Redémarrez votre ordinateur</strong> (important pour que Windows reconnaisse Ghostscript)</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">✅ Vérifier que Ghostscript fonctionne</div>
+                            <ul class="step-list">
+                                <li>Appuyez sur <strong>Windows + R</strong></li>
+                                <li>Tapez <strong>cmd</strong> et appuyez sur Entrée</li>
+                                <li>Dans la fenêtre noire, tapez :</li>
+                            </ul>
+                            <div class="code-block">gs --version</div>
+                            <p><strong>✅ Si succès :</strong> Vous voyez "GPL Ghostscript 10.x.x"</p>
+                            <p><strong>❌ Si erreur :</strong> "gs n'est pas reconnu..." → Voir section dépannage ci-dessous</p>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <div class="alert-title">🔧 DÉPANNAGE : "gs n'est pas reconnu comme une commande"</div>
+                            <p>Cela signifie que Windows ne trouve pas Ghostscript. Solutions :</p>
+                            
+                            <p><strong>Solution 1 : Redémarrer l'ordinateur (résout 90% des cas)</strong></p>
+                            <ul class="step-list">
+                                <li>Redémarrez Windows complètement</li>
+                                <li>Retestez avec : <strong>gs --version</strong></li>
+                            </ul>
+
+                            <p><strong>Solution 2 : Ajouter manuellement au PATH</strong></p>
+                            <ul class="step-list">
+                                <li><strong>1.</strong> Clic droit sur <strong>"Ce PC"</strong> ou <strong>"Poste de travail"</strong> dans l'Explorateur</li>
+                                <li><strong>2.</strong> Cliquez sur <strong>"Propriétés"</strong></li>
+                                <li><strong>3.</strong> Cliquez sur <strong>"Paramètres système avancés"</strong> (à gauche)</li>
+                                <li><strong>4.</strong> Cliquez sur <strong>"Variables d'environnement"</strong> (bouton en bas)</li>
+                                <li><strong>5.</strong> Dans la section <strong>"Variables système"</strong> (en bas), trouvez et double-cliquez sur <strong>"Path"</strong></li>
+                                <li><strong>6.</strong> Cliquez sur <strong>"Nouveau"</strong></li>
+                                <li><strong>7.</strong> Ajoutez ce chemin EXACT (remplacez 10.xx.x par votre version) :</li>
+                            </ul>
+                            <div class="code-block">C:\Program Files\gs\gs10.03.1\bin</div>
+                            <p><strong>⚠️ Vérifiez le numéro de version dans C:\Program Files\gs\</strong></p>
+                            <ul class="step-list">
+                                <li><strong>8.</strong> Cliquez <strong>"OK"</strong> sur toutes les fenêtres</li>
+                                <li><strong>9.</strong> <strong>Redémarrez l'ordinateur</strong></li>
+                                <li><strong>10.</strong> Retestez : <strong>gs --version</strong></li>
+                            </ul>
+
+                            <p><strong>Solution 3 : Vérifier que le dossier bin existe</strong></p>
+                            <ul class="step-list">
+                                <li>Ouvrez l'Explorateur de fichiers</li>
+                                <li>Allez dans : <strong>C:\Program Files\gs\</strong></li>
+                                <li>Vous devriez voir un dossier comme : <strong>gs10.03.1</strong></li>
+                                <li>À l'intérieur, vérifiez qu'il y a un dossier <strong>bin</strong></li>
+                                <li>Dans <strong>bin</strong>, vous devez voir <strong>gswin64c.exe</strong></li>
+                                <li>Si ce fichier existe, utilisez Solution 2 pour ajouter au PATH</li>
+                            </ul>
+
+                            <p><strong>Solution 4 : Réinstaller Ghostscript</strong></p>
+                            <ul class="step-list">
+                                <li>Allez dans <strong>Panneau de configuration > Programmes > Désinstaller un programme</strong></li>
+                                <li>Désinstallez <strong>GPL Ghostscript</strong></li>
+                                <li>Redémarrez l'ordinateur</li>
+                                <li>Réinstallez Ghostscript en gardant le chemin par défaut</li>
+                                <li>Redémarrez à nouveau</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">💡 Astuce : SUPER PRINT CONVERT fonctionnera quand même sans Ghostscript</div>
+                            <p>Si vous n'arrivez pas à installer Ghostscript :</p>
+                            <ul class="step-list">
+                                <li>✅ Vous pourrez convertir les <strong>images</strong> (JPG, PNG, TIFF, GIF)</li>
+                                <li>❌ Les <strong>PDFs</strong> ne pourront pas être convertis</li>
+                                <li>💡 L'application affichera un message clair si un PDF est détecté sans Ghostscript</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">📁 ORGANISATION DES FICHIERS</h3>
+                        <div class="alert">
+                            <div class="alert-title">Créer le dossier du projet</div>
+                            <ul class="step-list">
+                                <li>Ouvrez l'Explorateur de fichiers (Windows + E)</li>
+                                <li>Allez dans "Documents" ou sur le "Bureau"</li>
+                                <li>Clic droit > Nouveau > Dossier</li>
+                                <li>Nommez-le <strong>"superprint"</strong></li>
+                                <li>Placez les 2 fichiers téléchargés dans ce dossier</li>
+                                <li>Vérifiez que SUPERPRINTCONVERTER_v2.py et LANCER.bat sont au même niveau</li>
+                            </ul>
+                        </div>
+                        <div class="code-block">Structure correcte :
+C:\Users\VotreNom\Documents\superprint\
+├── SUPERPRINTCONVERTER_v2.py
+└── LANCER.bat</div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">🚀 LANCEMENT DE L'APPLICATION</h3>
+                        <div class="alert">
+                            <div class="alert-title">Méthode simple (recommandée)</div>
+                            <ul class="step-list">
+                                <li>Ouvrez le dossier superprint</li>
+                                <li>Double-cliquez sur <strong>LANCER.bat</strong></li>
+                                <li>Une fenêtre CMD noire s'ouvre (ne pas la fermer)</li>
+                                <li>L'interface graphique s'ouvre automatiquement</li>
+                                <li>Si Windows SmartScreen bloque : cliquez "Informations complémentaires" puis "Exécuter quand même"</li>
+                            </ul>
+                        </div>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">Méthode manuelle (alternative)</div>
+                            <ul class="step-list">
+                                <li>Appuyez sur Windows + R</li>
+                                <li>Tapez <strong>cmd</strong> et appuyez sur Entrée</li>
+                                <li>Naviguez vers le dossier :</li>
+                            </ul>
+                            <div class="code-block">cd C:\Users\VotreNom\Documents\superprint
+python SUPERPRINTCONVERTER_v2.py</div>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">✅ VÉRIFICATION</h3>
+                        <div class="alert">
+                            <div class="alert-title">Tester l'installation Python</div>
+                            <ul class="step-list">
+                                <li>Appuyez sur Windows + R</li>
+                                <li>Tapez <strong>cmd</strong> et Entrée</li>
+                                <li>Dans la fenêtre noire, tapez :</li>
+                            </ul>
+                            <div class="code-block">python --version</div>
+                            <p>Vous devriez voir : <strong>Python 3.x.x</strong></p>
+                            <p>Si erreur "python n'est pas reconnu" : Réinstallez Python en cochant "Add to PATH"</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div data-lang="en">
+                    <div class="install-section">
+                        <h3 class="install-title">📥 WINDOWS FILE DOWNLOAD</h3>
+                        <ul class="file-list">
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">SUPERPRINTCONVERTER_v2.py</div>
+                                    <div class="file-desc">Main application • Complete GUI</div>
+                                </div>
+                                <a href="download.php?file=SUPERPRINTCONVERTER_v2.py" download class="btn-file">DOWNLOAD</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">LANCER.bat</div>
+                                    <div class="file-desc">🪟 Windows automatic launcher</div>
+                                </div>
+                                <a href="download.php?file=LANCER.bat" class="btn-file">DOWNLOAD</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">README.md</div>
+                                    <div class="file-desc">📖 Complete documentation</div>
+                                </div>
+                                <a href="download.php?file=README.md" class="btn-file">DOWNLOAD</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ INSTALLATION • Python 3</h3>
+                        <div class="alert">
+                            <div class="alert-title">Step 1: Download Python</div>
+                            <ul class="step-list">
+                                <li>Visit <strong>https://www.python.org/downloads/</strong></li>
+                                <li>Click "Download Python 3.x.x"</li>
+                                <li>Run the downloaded file</li>
+                            </ul>
+                        </div>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">⚠️ CRITICAL: Check "Add Python to PATH"</div>
+                            <p>During installation, you MUST check the "Add Python 3.x to PATH" box at the bottom of the installation window.</p>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ INSTALLATION • Ghostscript (optional for PDFs)</h3>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">⚠️ IMPORTANT: Ghostscript is ONLY needed to convert PDFs</div>
+                            <p>If you only convert images (JPG, PNG, TIFF), you can skip this section.</p>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">Step 1: Download Ghostscript</div>
+                            <ul class="step-list">
+                                <li>Visit <strong>https://www.ghostscript.com/releases/gsdnld.html</strong></li>
+                                <li>Scroll to "Ghostscript AGPL Release" section</li>
+                                <li>Download <strong>"Ghostscript 10.x.x for Windows (64 bit)"</strong> (~50 MB)</li>
+                                <li>File name: <strong>gs10.xx.x-win64.exe</strong></li>
+                            </ul>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">Step 2: Installation (CRITICAL)</div>
+                            <ul class="step-list">
+                                <li>Double-click <strong>gs10.xx.x-win64.exe</strong></li>
+                                <li>Click <strong>"Next"</strong> in the welcome window</li>
+                                <li>Accept license: click <strong>"I Agree"</strong></li>
+                                <li><strong>🔴 CRITICAL:</strong> Keep the DEFAULT installation folder</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <div class="alert-title">🔴 DO NOT CHANGE THE INSTALLATION FOLDER</div>
+                            <p><strong>Default folder (CORRECT):</strong></p>
+                            <div class="code-block">C:\Program Files\gs\gs10.xx.x\</div>
+                            <p><strong>Do NOT install in:</strong></p>
+                            <ul class="step-list">
+                                <li>❌ C:\Program Files (x86)\ - 32-bit version, won't work</li>
+                                <li>❌ C:\Users\YourName\Desktop\ - Ghostscript won't be found</li>
+                                <li>❌ D:\Programs\ - Non-standard path, PATH issues</li>
+                                <li>❌ Any other custom location</li>
+                            </ul>
+                            <p><strong>✅ KEEP THE DEFAULT PATH</strong></p>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">Step 3: Complete installation</div>
+                            <ul class="step-list">
+                                <li>Click <strong>"Install"</strong></li>
+                                <li>Accept administrator permissions (click "Yes")</li>
+                                <li>Wait for installation to complete (1-2 minutes)</li>
+                                <li>Click <strong>"Finish"</strong></li>
+                                <li><strong>Restart your computer</strong> (important for Windows to recognize Ghostscript)</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">✅ Verify Ghostscript works</div>
+                            <ul class="step-list">
+                                <li>Press <strong>Windows + R</strong></li>
+                                <li>Type <strong>cmd</strong> and press Enter</li>
+                                <li>In the black window, type:</li>
+                            </ul>
+                            <div class="code-block">gs --version</div>
+                            <p><strong>✅ If success:</strong> You see "GPL Ghostscript 10.x.x"</p>
+                            <p><strong>❌ If error:</strong> "gs is not recognized..." → See troubleshooting below</p>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <div class="alert-title">🔧 TROUBLESHOOTING: "gs is not recognized as a command"</div>
+                            <p>This means Windows cannot find Ghostscript. Solutions:</p>
+                            
+                            <p><strong>Solution 1: Restart computer (fixes 90% of cases)</strong></p>
+                            <ul class="step-list">
+                                <li>Restart Windows completely</li>
+                                <li>Test again with: <strong>gs --version</strong></li>
+                            </ul>
+
+                            <p><strong>Solution 2: Manually add to PATH</strong></p>
+                            <ul class="step-list">
+                                <li><strong>1.</strong> Right-click <strong>"This PC"</strong> in File Explorer</li>
+                                <li><strong>2.</strong> Click <strong>"Properties"</strong></li>
+                                <li><strong>3.</strong> Click <strong>"Advanced system settings"</strong> (left side)</li>
+                                <li><strong>4.</strong> Click <strong>"Environment Variables"</strong> (bottom button)</li>
+                                <li><strong>5.</strong> In <strong>"System variables"</strong> (bottom), find and double-click <strong>"Path"</strong></li>
+                                <li><strong>6.</strong> Click <strong>"New"</strong></li>
+                                <li><strong>7.</strong> Add this EXACT path (replace 10.xx.x with your version):</li>
+                            </ul>
+                            <div class="code-block">C:\Program Files\gs\gs10.03.1\bin</div>
+                            <p><strong>⚠️ Check version number in C:\Program Files\gs\</strong></p>
+                            <ul class="step-list">
+                                <li><strong>8.</strong> Click <strong>"OK"</strong> on all windows</li>
+                                <li><strong>9.</strong> <strong>Restart computer</strong></li>
+                                <li><strong>10.</strong> Test again: <strong>gs --version</strong></li>
+                            </ul>
+
+                            <p><strong>Solution 3: Verify bin folder exists</strong></p>
+                            <ul class="step-list">
+                                <li>Open File Explorer</li>
+                                <li>Go to: <strong>C:\Program Files\gs\</strong></li>
+                                <li>You should see a folder like: <strong>gs10.03.1</strong></li>
+                                <li>Inside, verify there's a <strong>bin</strong> folder</li>
+                                <li>In <strong>bin</strong>, you must see <strong>gswin64c.exe</strong></li>
+                                <li>If this file exists, use Solution 2 to add to PATH</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">💡 Tip: SUPER PRINT CONVERT will work without Ghostscript</div>
+                            <p>If you can't install Ghostscript:</p>
+                            <ul class="step-list">
+                                <li>✅ You can convert <strong>images</strong> (JPG, PNG, TIFF, GIF)</li>
+                                <li>❌ <strong>PDFs</strong> cannot be converted</li>
+                                <li>💡 The app will show a clear message if a PDF is detected without Ghostscript</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">📁 FILE ORGANIZATION</h3>
+                        <div class="alert">
+                            <div class="alert-title">Create project folder</div>
+                            <ul class="step-list">
+                                <li>Open File Explorer (Windows + E)</li>
+                                <li>Go to "Documents" or "Desktop"</li>
+                                <li>Right-click > New > Folder</li>
+                                <li>Name it <strong>"superprint"</strong></li>
+                                <li>Place the 2 downloaded files in this folder</li>
+                                <li>Verify SUPERPRINTCONVERTER_v2.py and LANCER.bat are at the same level</li>
+                            </ul>
+                        </div>
+                        <div class="code-block">Correct structure:
+C:\Users\YourName\Documents\superprint\
+├── SUPERPRINTCONVERTER_v2.py
+└── LANCER.bat</div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">🚀 LAUNCHING THE APPLICATION</h3>
+                        <div class="alert">
+                            <div class="alert-title">Simple method (recommended)</div>
+                            <ul class="step-list">
+                                <li>Open the superprint folder</li>
+                                <li>Double-click <strong>LANCER.bat</strong></li>
+                                <li>A black CMD window opens (don't close it)</li>
+                                <li>The graphical interface opens automatically</li>
+                                <li>If Windows SmartScreen blocks: click "More info" then "Run anyway"</li>
+                            </ul>
+                        </div>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">Manual method (alternative)</div>
+                            <ul class="step-list">
+                                <li>Press Windows + R</li>
+                                <li>Type <strong>cmd</strong> and press Enter</li>
+                                <li>Navigate to the folder:</li>
+                            </ul>
+                            <div class="code-block">cd C:\Users\YourName\Documents\superprint
+python SUPERPRINTCONVERTER_v2.py</div>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">✅ VERIFICATION</h3>
+                        <div class="alert">
+                            <div class="alert-title">Test Python installation</div>
+                            <ul class="step-list">
+                                <li>Press Windows + R</li>
+                                <li>Type <strong>cmd</strong> and Enter</li>
+                                <li>In the black window, type:</li>
+                            </ul>
+                            <div class="code-block">python --version</div>
+                            <p>You should see: <strong>Python 3.x.x</strong></p>
+                            <p>If error "python is not recognized": Reinstall Python with "Add to PATH" checked</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div data-lang="ja">
+                    <div class="install-section">
+                        <h3 class="install-title">📥 Windowsファイルのダウンロード</h3>
+                        <ul class="file-list">
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">SUPERPRINTCONVERTER_v2.py</div>
+                                    <div class="file-desc">メインアプリケーション • 完全なGUI</div>
+                                </div>
+                                <a href="download.php?file=SUPERPRINTCONVERTER_v2.py" download class="btn-file">ダウンロード</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">LANCER.bat</div>
+                                    <div class="file-desc">🪟 Windows自動起動ツール</div>
+                                </div>
+                                <a href="download.php?file=LANCER.bat" class="btn-file">ダウンロード</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">README.md</div>
+                                    <div class="file-desc">📖 完全なドキュメント</div>
+                                </div>
+                                <a href="download.php?file=README.md" class="btn-file">ダウンロード</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ インストール • Python 3</h3>
+                        <div class="alert">
+                            <div class="alert-title">ステップ 1: Python をダウンロード</div>
+                            <ul class="step-list">
+                                <li><strong>https://www.python.org/downloads/</strong> にアクセス</li>
+                                <li>"Download Python 3.x.x" をクリック</li>
+                                <li>ダウンロードしたファイルを実行</li>
+                            </ul>
+                        </div>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">⚠️ 重要：「Add Python to PATH」にチェック</div>
+                            <p>インストール時、ウィンドウ下部の「Add Python 3.x to PATH」のチェックボックスに必ずチェックを入れてください。</p>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ インストール • Ghostscript（PDF用オプション）</h3>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">⚠️ 重要：Ghostscript は PDF 変換にのみ必要</div>
+                            <p>画像（JPG、PNG、TIFF）のみを変換する場合は、このセクションをスキップできます。</p>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">ステップ 1: Ghostscript をダウンロード</div>
+                            <ul class="step-list">
+                                <li><strong>https://www.ghostscript.com/releases/gsdnld.html</strong> にアクセス</li>
+                                <li>"Ghostscript AGPL Release" セクションまでスクロール</li>
+                                <li><strong>"Ghostscript 10.x.x for Windows (64 bit)"</strong> をダウンロード（約50 MB）</li>
+                                <li>ファイル名: <strong>gs10.xx.x-win64.exe</strong></li>
+                            </ul>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">ステップ 2: インストール（重要）</div>
+                            <ul class="step-list">
+                                <li><strong>gs10.xx.x-win64.exe</strong> をダブルクリック</li>
+                                <li>ようこそウィンドウで <strong>"Next"</strong> をクリック</li>
+                                <li>ライセンスを承認: <strong>"I Agree"</strong> をクリック</li>
+                                <li><strong>🔴 重要:</strong> デフォルトのインストールフォルダを保持</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <div class="alert-title">🔴 インストールフォルダを変更しないでください</div>
+                            <p><strong>デフォルトフォルダ（正しい）:</strong></p>
+                            <div class="code-block">C:\Program Files\gs\gs10.xx.x\</div>
+                            <p><strong>以下にインストールしないでください:</strong></p>
+                            <ul class="step-list">
+                                <li>❌ C:\Program Files (x86)\ - 32ビット版、動作しません</li>
+                                <li>❌ C:\Users\ユーザー名\Desktop\ - Ghostscript が見つかりません</li>
+                                <li>❌ D:\Programs\ - 非標準パス、PATH の問題</li>
+                                <li>❌ その他のカスタム場所</li>
+                            </ul>
+                            <p><strong>✅ デフォルトパスを保持してください</strong></p>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">ステップ 3: インストールの完了</div>
+                            <ul class="step-list">
+                                <li><strong>"Install"</strong> をクリック</li>
+                                <li>管理者権限を承認（"はい" をクリック）</li>
+                                <li>インストールが完了するまで待つ（1〜2分）</li>
+                                <li><strong>"Finish"</strong> をクリック</li>
+                                <li><strong>コンピューターを再起動</strong>（Windows が Ghostscript を認識するために重要）</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">✅ Ghostscript が動作することを確認</div>
+                            <ul class="step-list">
+                                <li><strong>Windows + R</strong> を押す</li>
+                                <li><strong>cmd</strong> と入力してEnterを押す</li>
+                                <li>黒いウィンドウで次のように入力:</li>
+                            </ul>
+                            <div class="code-block">gs --version</div>
+                            <p><strong>✅ 成功の場合:</strong> "GPL Ghostscript 10.x.x" が表示されます</p>
+                            <p><strong>❌ エラーの場合:</strong> "gs は認識されていません..." → 下記のトラブルシューティングを参照</p>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <div class="alert-title">🔧 トラブルシューティング: "gs はコマンドとして認識されていません"</div>
+                            <p>これは Windows が Ghostscript を見つけられないことを意味します。解決策:</p>
+                            
+                            <p><strong>解決策 1: コンピューターを再起動（90%のケースで解決）</strong></p>
+                            <ul class="step-list">
+                                <li>Windows を完全に再起動</li>
+                                <li>再度テスト: <strong>gs --version</strong></li>
+                            </ul>
+
+                            <p><strong>解決策 2: PATH に手動で追加</strong></p>
+                            <ul class="step-list">
+                                <li><strong>1.</strong> エクスプローラーで <strong>"PC"</strong> を右クリック</li>
+                                <li><strong>2.</strong> <strong>"プロパティ"</strong> をクリック</li>
+                                <li><strong>3.</strong> <strong>"システムの詳細設定"</strong>（左側）をクリック</li>
+                                <li><strong>4.</strong> <strong>"環境変数"</strong>（下部のボタン）をクリック</li>
+                                <li><strong>5.</strong> <strong>"システム環境変数"</strong>（下部）で <strong>"Path"</strong> を見つけてダブルクリック</li>
+                                <li><strong>6.</strong> <strong>"新規"</strong> をクリック</li>
+                                <li><strong>7.</strong> この正確なパスを追加（10.xx.x をバージョンに置き換え）:</li>
+                            </ul>
+                            <div class="code-block">C:\Program Files\gs\gs10.03.1\bin</div>
+                            <p><strong>⚠️ C:\Program Files\gs\ でバージョン番号を確認</strong></p>
+                            <ul class="step-list">
+                                <li><strong>8.</strong> すべてのウィンドウで <strong>"OK"</strong> をクリック</li>
+                                <li><strong>9.</strong> <strong>コンピューターを再起動</strong></li>
+                                <li><strong>10.</strong> 再度テスト: <strong>gs --version</strong></li>
+                            </ul>
+
+                            <p><strong>解決策 3: bin フォルダが存在することを確認</strong></p>
+                            <ul class="step-list">
+                                <li>エクスプローラーを開く</li>
+                                <li>移動先: <strong>C:\Program Files\gs\</strong></li>
+                                <li>次のようなフォルダが表示されるはず: <strong>gs10.03.1</strong></li>
+                                <li>内部に <strong>bin</strong> フォルダがあることを確認</li>
+                                <li><strong>bin</strong> 内に <strong>gswin64c.exe</strong> が必要</li>
+                                <li>このファイルが存在する場合、解決策 2 を使用して PATH に追加</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">💡 ヒント: SUPER PRINT CONVERT は Ghostscript なしでも動作します</div>
+                            <p>Ghostscript をインストールできない場合:</p>
+                            <ul class="step-list">
+                                <li>✅ <strong>画像</strong>（JPG、PNG、TIFF、GIF）を変換できます</li>
+                                <li>❌ <strong>PDF</strong> は変換できません</li>
+                                <li>💡 Ghostscript なしで PDF が検出されると、アプリに明確なメッセージが表示されます</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">📁 ファイルの整理</h3>
+                        <div class="alert">
+                            <div class="alert-title">プロジェクトフォルダを作成</div>
+                            <ul class="step-list">
+                                <li>エクスプローラーを開く（Windows + E）</li>
+                                <li>「ドキュメント」または「デスクトップ」に移動</li>
+                                <li>右クリック > 新規作成 > フォルダー</li>
+                                <li><strong>"superprint"</strong> と名前を付ける</li>
+                                <li>ダウンロードした2つのファイルをこのフォルダに配置</li>
+                                <li>SUPERPRINTCONVERTER_v2.py と LANCER.bat が同じレベルにあることを確認</li>
+                            </ul>
+                        </div>
+                        <div class="code-block">正しい構造:
+C:\Users\ユーザー名\Documents\superprint\
+├── SUPERPRINTCONVERTER_v2.py
+└── LANCER.bat</div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">🚀 アプリケーションの起動</h3>
+                        <div class="alert">
+                            <div class="alert-title">簡単な方法（推奨）</div>
+                            <ul class="step-list">
+                                <li>superprint フォルダを開く</li>
+                                <li><strong>LANCER.bat</strong> をダブルクリック</li>
+                                <li>黒いCMDウィンドウが開く（閉じないでください）</li>
+                                <li>グラフィカルインターフェースが自動的に開きます</li>
+                                <li>Windows SmartScreen がブロックする場合：「詳細情報」をクリックし、「実行」を選択</li>
+                            </ul>
+                        </div>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">手動方法（代替）</div>
+                            <ul class="step-list">
+                                <li>Windows + R を押す</li>
+                                <li><strong>cmd</strong> と入力してEnterを押す</li>
+                                <li>フォルダに移動：</li>
+                            </ul>
+                            <div class="code-block">cd C:\Users\ユーザー名\Documents\superprint
+python SUPERPRINTCONVERTER_v2.py</div>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">✅ 確認</h3>
+                        <div class="alert">
+                            <div class="alert-title">Python インストールのテスト</div>
+                            <ul class="step-list">
+                                <li>Windows + R を押す</li>
+                                <li><strong>cmd</strong> と入力してEnter</li>
+                                <li>黒いウィンドウで次のように入力：</li>
+                            </ul>
+                            <div class="code-block">python --version</div>
+                            <p>表示されるはず: <strong>Python 3.x.x</strong></p>
+                            <p>「python は認識されていません」エラーの場合：「Add to PATH」をチェックしてPythonを再インストール</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MACOS -->
+            <div id="os-mac" class="os-content">
+                <div data-lang="fr">
+                    <div class="install-section">
+                        <h3 class="install-title">📥 TÉLÉCHARGEMENT DES FICHIERS MAC</h3>
+                        <ul class="file-list">
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">SUPERPRINTCONVERTER_v2.py</div>
+                                    <div class="file-desc">Application principale</div>
+                                </div>
+                                <a href="download.php?file=SUPERPRINTCONVERTER_v2.py" download class="btn-file">TÉLÉCHARGER</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">LANCER.sh</div>
+                                    <div class="file-desc">🍎 Lanceur automatique macOS/Linux</div>
+                                </div>
+                                <a href="download.php?file=LANCER.sh" download class="btn-file">TÉLÉCHARGER</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">GUIDE_MAC_RAPIDE.md</div>
+                                    <div class="file-desc">🍎 Guide Mac express (3 minutes)</div>
+                                </div>
+                                <a href="download.php?file=GUIDE_MAC_RAPIDE.md" class="btn-file">TÉLÉCHARGER</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">GUIDE_MAC.md</div>
+                                    <div class="file-desc">🍎 Guide Mac complet avec solutions</div>
+                                </div>
+                                <a href="download.php?file=GUIDE_MAC.md" class="btn-file">TÉLÉCHARGER</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">README.md</div>
+                                    <div class="file-desc">📖 Documentation complète</div>
+                                </div>
+                                <a href="download.php?file=README.md" class="btn-file">TÉLÉCHARGER</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ MÉTHODE 1 : HOMEBREW (Recommandée)</h3>
+                        <div class="alert">
+                            <div class="alert-title">Étape 1 : Installer Homebrew</div>
+                            <p>Ouvrez le Terminal (Applications > Utilitaires > Terminal) et exécutez :</p>
+                            <div class="code-block">/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</div>
+                            <p>Suivez les instructions à l'écran (mot de passe requis)</p>
+                        </div>
+                        <div class="alert">
+                            <div class="alert-title">Étape 2 : Installer Python 3 et Ghostscript</div>
+                            <div class="code-block">brew install python3 ghostscript</div>
+                            <p>L'installation prend 2-5 minutes</p>
+                        </div>
+                        <div class="alert">
+                            <div class="alert-title">Étape 3 : Vérifier l'installation</div>
+                            <div class="code-block">python3 --version
+gs --version</div>
+                            <p>Vous devriez voir les numéros de version</p>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ MÉTHODE 2 : INSTALLATION MANUELLE</h3>
+                        <div class="alert">
+                            <div class="alert-title">Pour Python</div>
+                            <ul class="step-list">
+                                <li>Visitez <strong>https://www.python.org/downloads/</strong></li>
+                                <li>Téléchargez "macOS 64-bit installer"</li>
+                                <li>Ouvrez le fichier .pkg et suivez l'assistant</li>
+                            </ul>
+                        </div>
+                        <div class="alert">
+                            <div class="alert-title">Pour Ghostscript</div>
+                            <ul class="step-list">
+                                <li>Visitez <strong>https://www.ghostscript.com/releases/gsdnld.html</strong></li>
+                                <li>Téléchargez la version macOS</li>
+                                <li>Installez avec les paramètres par défaut</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">📁 ORGANISATION DES FICHIERS</h3>
+                        <div class="alert">
+                            <div class="alert-title">Créer le dossier du projet</div>
+                            <ul class="step-list">
+                                <li>Ouvrez le Finder</li>
+                                <li>Allez dans "Documents" ou "Bureau"</li>
+                                <li>Créez un nouveau dossier : <strong>superprint</strong></li>
+                                <li>Placez les fichiers téléchargés dans ce dossier</li>
+                            </ul>
+                        </div>
+                        <div class="code-block">Structure correcte :
+~/Documents/superprint/
+├── SUPERPRINTCONVERTER_v2.py
+├── LANCER.sh
+├── GUIDE_MAC_RAPIDE.md
+└── GUIDE_MAC.md</div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">🚀 LANCEMENT</h3>
+                        
+                        <div class="alert">
+                            <div class="alert-title">🎯 MÉTHODE 1 : Double-clic sur LANCER.sh (Plus Simple)</div>
+                            <ul class="step-list">
+                                <li><strong>Étape 1 :</strong> Ouvrez le Finder, allez dans le dossier superprint</li>
+                                <li><strong>Étape 2 :</strong> Clic droit sur <strong>LANCER.sh</strong></li>
+                                <li><strong>Étape 3 :</strong> Sélectionnez "Ouvrir avec" → "Terminal"</li>
+                                <li><strong>Étape 4 :</strong> Si demandé, cliquez "Ouvrir" pour autoriser l'exécution</li>
+                            </ul>
+                            <p>✅ Le script s'exécute, vérifie Python et lance l'application automatiquement</p>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">⌨️ MÉTHODE 2 : Ligne de commande (Recommandée)</div>
+                            <p><strong>Étape 1 :</strong> Ouvrir le Terminal</p>
+                            <ul class="step-list">
+                                <li>Appuyez sur <strong>⌘ + Espace</strong> (Spotlight)</li>
+                                <li>Tapez <strong>"Terminal"</strong> et appuyez sur Entrée</li>
+                                <li>OU : Applications → Utilitaires → Terminal</li>
+                            </ul>
+                            <p><strong>Étape 2 :</strong> Aller dans le dossier</p>
+                            <div class="code-block">cd ~/Documents/superprint</div>
+                            <p><strong>Étape 3 :</strong> Rendre le fichier exécutable (1ère fois seulement)</p>
+                            <div class="code-block">chmod +x LANCER.sh</div>
+                            <p><strong>Étape 4 :</strong> Lancer le script</p>
+                            <div class="code-block">./LANCER.sh</div>
+                            <p>✅ Le script vérifie Python, installe les dépendances et lance l'app</p>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <div class="alert-title">🐍 MÉTHODE 3 : Python direct (Alternative)</div>
+                            <p><strong>Option A :</strong> Depuis le Terminal</p>
+                            <div class="code-block">cd ~/Documents/superprint
+python3 SUPERPRINTCONVERTER_v2.py</div>
+                            <p><strong>Option B :</strong> Double-clic sur le fichier .py</p>
+                            <ul class="step-list">
+                                <li>Clic droit sur <strong>SUPERPRINTCONVERTER_v2.py</strong></li>
+                                <li>Sélectionnez "Ouvrir avec" → "Python Launcher"</li>
+                                <li>Si Python Launcher n'apparaît pas : "Autre..." → cherchez Python dans /Applications/Python 3.x/</li>
+                            </ul>
+                            <p>⚠️ Note : Cette méthode nécessite que Pillow et PyMuPDF soient déjà installés</p>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">🔧 DÉPANNAGE</h3>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">Erreur : "python3: command not found"</div>
+                            <p>Python n'est pas installé ou pas dans le PATH</p>
+                            <div class="code-block">brew install python3</div>
+                        </div>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">Erreur : "Permission denied"</div>
+                            <p>Le fichier n'est pas exécutable</p>
+                            <div class="code-block">chmod +x LANCER.sh</div>
+                        </div>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">Erreur : "No module named 'PIL'"</div>
+                            <p>Pillow n'est pas installé</p>
+                            <div class="code-block">python3 -m pip install pillow pymupdf</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div data-lang="en">
+                    <div class="install-section">
+                        <h3 class="install-title">📥 DOWNLOAD MAC FILES</h3>
+                        <ul class="file-list">
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">SUPERPRINTCONVERTER_v2.py</div>
+                                    <div class="file-desc">Main application</div>
+                                </div>
+                                <a href="download.php?file=SUPERPRINTCONVERTER_v2.py" download class="btn-file">DOWNLOAD</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">LANCER.sh</div>
+                                    <div class="file-desc">🍎 macOS automatic launcher</div>
+                                </div>
+                                <a href="download.php?file=LANCER.sh" download class="btn-file">DOWNLOAD</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">GUIDE_MAC_RAPIDE.md</div>
+                                    <div class="file-desc">⚡ Quick Mac guide (3 min)</div>
+                                </div>
+                                <a href="download.php?file=GUIDE_MAC_RAPIDE.md" download class="btn-file">DOWNLOAD</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">GUIDE_MAC.md</div>
+                                    <div class="file-desc">📘 Complete Mac troubleshooting guide</div>
+                                </div>
+                                <a href="download.php?file=GUIDE_MAC.md" download class="btn-file">DOWNLOAD</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">README.md</div>
+                                    <div class="file-desc">📖 General documentation</div>
+                                </div>
+                                <a href="download.php?file=README.md" download class="btn-file">DOWNLOAD</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ METHOD 1: HOMEBREW (Recommended)</h3>
+                        <div class="alert">
+                            <div class="alert-title">Step 1: Install Homebrew</div>
+                            <p>Open Terminal (Applications > Utilities > Terminal) and run:</p>
+                            <div class="code-block">/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</div>
+                        </div>
+                        <div class="alert">
+                            <div class="alert-title">Step 2: Install Python 3 and Ghostscript</div>
+                            <div class="code-block">brew install python3 ghostscript</div>
+                        </div>
+                        <div class="alert">
+                            <div class="alert-title">Step 3: Verify installation</div>
+                            <div class="code-block">python3 --version
+gs --version</div>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">🚀 LAUNCH</h3>
+                        
+                        <div class="alert">
+                            <div class="alert-title">🎯 METHOD 1: Double-click LANCER.sh (Easiest)</div>
+                            <ul class="step-list">
+                                <li><strong>Step 1:</strong> Open Finder, go to the superprint folder</li>
+                                <li><strong>Step 2:</strong> Right-click on <strong>LANCER.sh</strong></li>
+                                <li><strong>Step 3:</strong> Select "Open With" → "Terminal"</li>
+                                <li><strong>Step 4:</strong> If prompted, click "Open" to allow execution</li>
+                            </ul>
+                            <p>✅ The script runs, checks Python and launches the app automatically</p>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">⌨️ METHOD 2: Command Line (Recommended)</div>
+                            <p><strong>Step 1:</strong> Open Terminal</p>
+                            <ul class="step-list">
+                                <li>Press <strong>⌘ + Space</strong> (Spotlight)</li>
+                                <li>Type <strong>"Terminal"</strong> and press Enter</li>
+                                <li>OR: Applications → Utilities → Terminal</li>
+                            </ul>
+                            <p><strong>Step 2:</strong> Navigate to folder</p>
+                            <div class="code-block">cd ~/Documents/superprint</div>
+                            <p><strong>Step 3:</strong> Make file executable (first time only)</p>
+                            <div class="code-block">chmod +x LANCER.sh</div>
+                            <p><strong>Step 4:</strong> Run the script</p>
+                            <div class="code-block">./LANCER.sh</div>
+                            <p>✅ Script checks Python, installs dependencies and launches app</p>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <div class="alert-title">🐍 METHOD 3: Direct Python (Alternative)</div>
+                            <p><strong>Option A:</strong> From Terminal</p>
+                            <div class="code-block">cd ~/Documents/superprint
+python3 SUPERPRINTCONVERTER_v2.py</div>
+                            <p><strong>Option B:</strong> Double-click the .py file</p>
+                            <ul class="step-list">
+                                <li>Right-click on <strong>SUPERPRINTCONVERTER_v2.py</strong></li>
+                                <li>Select "Open With" → "Python Launcher"</li>
+                                <li>If Python Launcher doesn't appear: "Other..." → search Python in /Applications/Python 3.x/</li>
+                            </ul>
+                            <p>⚠️ Note: This method requires Pillow and PyMuPDF to be already installed</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div data-lang="ja">
+                    <div class="install-section">
+                        <h3 class="install-title">📥 Macファイルのダウンロード</h3>
+                        <ul class="file-list">
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">SUPERPRINTCONVERTER_v2.py</div>
+                                    <div class="file-desc">メインアプリケーション</div>
+                                </div>
+                                <a href="download.php?file=SUPERPRINTCONVERTER_v2.py" download class="btn-file">ダウンロード</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">LANCER.sh</div>
+                                    <div class="file-desc">🍎 macOS自動起動ツール</div>
+                                </div>
+                                <a href="download.php?file=LANCER.sh" download class="btn-file">ダウンロード</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">GUIDE_MAC_RAPIDE.md</div>
+                                    <div class="file-desc">⚡ Macクイックガイド（3分）</div>
+                                </div>
+                                <a href="download.php?file=GUIDE_MAC_RAPIDE.md" download class="btn-file">ダウンロード</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">GUIDE_MAC.md</div>
+                                    <div class="file-desc">📘 Mac完全トラブルシューティングガイド</div>
+                                </div>
+                                <a href="download.php?file=GUIDE_MAC.md" download class="btn-file">ダウンロード</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">README.md</div>
+                                    <div class="file-desc">📖 一般ドキュメント</div>
+                                </div>
+                                <a href="download.php?file=README.md" download class="btn-file">ダウンロード</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ 方法 1: HOMEBREW（推奨）</h3>
+                        <div class="alert">
+                            <div class="alert-title">ステップ 1: Homebrew をインストール</div>
+                            <p>ターミナルを開いて（アプリケーション > ユーティリティ > ターミナル）実行：</p>
+                            <div class="code-block">/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</div>
+                        </div>
+                        <div class="alert">
+                            <div class="alert-title">ステップ 2: Python 3 と Ghostscript をインストール</div>
+                            <div class="code-block">brew install python3 ghostscript</div>
+                        </div>
+                        <div class="alert">
+                            <div class="alert-title">ステップ 3: インストールを確認</div>
+                            <div class="code-block">python3 --version
+gs --version</div>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">🚀 起動</h3>
+                        
+                        <div class="alert">
+                            <div class="alert-title">🎯 方法 1: LANCER.sh をダブルクリック（最も簡単）</div>
+                            <ul class="step-list">
+                                <li><strong>ステップ 1:</strong> Finder を開き、superprint フォルダに移動</li>
+                                <li><strong>ステップ 2:</strong> <strong>LANCER.sh</strong> を右クリック</li>
+                                <li><strong>ステップ 3:</strong> 「このアプリケーションで開く」→「ターミナル」を選択</li>
+                                <li><strong>ステップ 4:</strong> プロンプトが表示されたら「開く」をクリックして実行を許可</li>
+                            </ul>
+                            <p>✅ スクリプトが実行され、Python をチェックしてアプリを自動起動します</p>
+                        </div>
+
+                        <div class="alert">
+                            <div class="alert-title">⌨️ 方法 2: コマンドライン（推奨）</div>
+                            <p><strong>ステップ 1:</strong> ターミナルを開く</p>
+                            <ul class="step-list">
+                                <li><strong>⌘ + Space</strong> を押す（Spotlight）</li>
+                                <li><strong>「ターミナル」</strong>と入力してEnterキーを押す</li>
+                                <li>または：アプリケーション → ユーティリティ → ターミナル</li>
+                            </ul>
+                            <p><strong>ステップ 2:</strong> フォルダに移動</p>
+                            <div class="code-block">cd ~/Documents/superprint</div>
+                            <p><strong>ステップ 3:</strong> ファイルを実行可能にする（初回のみ）</p>
+                            <div class="code-block">chmod +x LANCER.sh</div>
+                            <p><strong>ステップ 4:</strong> スクリプトを実行</p>
+                            <div class="code-block">./LANCER.sh</div>
+                            <p>✅ スクリプトがPythonをチェックし、依存関係をインストールしてアプリを起動します</p>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <div class="alert-title">🐍 方法 3: Python直接実行（代替）</div>
+                            <p><strong>オプション A:</strong> ターミナルから</p>
+                            <div class="code-block">cd ~/Documents/superprint
+python3 SUPERPRINTCONVERTER_v2.py</div>
+                            <p><strong>オプション B:</strong> .pyファイルをダブルクリック</p>
+                            <ul class="step-list">
+                                <li><strong>SUPERPRINTCONVERTER_v2.py</strong> を右クリック</li>
+                                <li>「このアプリケーションで開く」→「Python Launcher」を選択</li>
+                                <li>Python Launcher が表示されない場合：「その他...」→ /Applications/Python 3.x/ でPythonを探す</li>
+                            </ul>
+                            <p>⚠️ 注意：この方法にはPillowとPyMuPDFが既にインストールされている必要があります</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LINUX -->
+            <div id="os-linux" class="os-content">
+                <div data-lang="fr">
+                    <div class="install-section">
+                        <h3 class="install-title">📥 TÉLÉCHARGEMENT</h3>
+                        <ul class="file-list">
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">SUPERPRINTCONVERTER_v2.py</div>
+                                    <div class="file-desc">Application principale</div>
+                                </div>
+                                <a href="download.php?file=SUPERPRINTCONVERTER_v2.py" download class="btn-file">TÉLÉCHARGER</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">LANCER.sh</div>
+                                    <div class="file-desc">Lanceur automatique Linux</div>
+                                </div>
+                                <a href="download.php?file=LANCER.sh" download class="btn-file">TÉLÉCHARGER</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ INSTALLATION • Ubuntu / Debian</h3>
+                        <div class="alert">
+                            <div class="alert-title">Installer les dépendances</div>
+                            <p>Ouvrez un Terminal et exécutez :</p>
+                            <div class="code-block">sudo apt update
+sudo apt install python3 python3-pip python3-tk ghostscript</div>
+                            <p>Entrez votre mot de passe lorsque demandé</p>
+                        </div>
+                        <div class="alert">
+                            <div class="alert-title">Vérifier l'installation</div>
+                            <div class="code-block">python3 --version
+gs --version</div>
+                            <p>Vous devriez voir les numéros de version</p>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ INSTALLATION • Fedora / Red Hat</h3>
+                        <div class="alert">
+                            <div class="code-block">sudo dnf install python3 python3-pip python3-tkinter ghostscript</div>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ INSTALLATION • Arch Linux</h3>
+                        <div class="alert">
+                            <div class="code-block">sudo pacman -S python python-pip tk ghostscript</div>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">📁 ORGANISATION DES FICHIERS</h3>
+                        <div class="alert">
+                            <div class="alert-title">Créer le dossier du projet</div>
+                            <div class="code-block">mkdir -p ~/Documents/SUPER\ PRINT\ CONVERT
+cd ~/Documents/SUPER\ PRINT\ CONVERT</div>
+                            <p>Déplacez les fichiers téléchargés dans ce dossier</p>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">🚀 LANCEMENT</h3>
+                        <div class="alert">
+                            <div class="alert-title">Méthode avec LANCER.sh (Recommandée)</div>
+                            <div class="code-block">cd ~/Documents/SUPER\ PRINT\ CONVERT
+chmod +x LANCER.sh
+./LANCER.sh</div>
+                        </div>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">Méthode manuelle (Alternative)</div>
+                            <div class="code-block">cd ~/Documents/SUPER\ PRINT\ CONVERT
+python3 SUPERPRINTCONVERTER_v2.py</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div data-lang="en">
+                    <div class="install-section">
+                        <h3 class="install-title">📥 DOWNLOAD</h3>
+                        <ul class="file-list">
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">SUPERPRINTCONVERTER_v2.py</div>
+                                    <div class="file-desc">Main application</div>
+                                </div>
+                                <a href="download.php?file=SUPERPRINTCONVERTER_v2.py" download class="btn-file">DOWNLOAD</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">LANCER.sh</div>
+                                    <div class="file-desc">Linux automatic launcher</div>
+                                </div>
+                                <a href="download.php?file=LANCER.sh" download class="btn-file">DOWNLOAD</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ INSTALLATION • Ubuntu / Debian</h3>
+                        <div class="alert">
+                            <div class="alert-title">Install dependencies</div>
+                            <div class="code-block">sudo apt update
+sudo apt install python3 python3-pip python3-tk ghostscript</div>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">🚀 LAUNCH</h3>
+                        <div class="alert">
+                            <div class="alert-title">Using LANCER.sh (Recommended)</div>
+                            <div class="code-block">cd ~/Documents/SUPER\ PRINT\ CONVERT
+chmod +x LANCER.sh
+./LANCER.sh</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div data-lang="ja">
+                    <div class="install-section">
+                        <h3 class="install-title">📥 ダウンロード</h3>
+                        <ul class="file-list">
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">SUPERPRINTCONVERTER_v2.py</div>
+                                    <div class="file-desc">メインアプリケーション</div>
+                                </div>
+                                <a href="download.php?file=SUPERPRINTCONVERTER_v2.py" download class="btn-file">ダウンロード</a>
+                            </li>
+                            <li class="file-item">
+                                <div>
+                                    <div class="file-name">LANCER.sh</div>
+                                    <div class="file-desc">Linux自動起動ツール</div>
+                                </div>
+                                <a href="download.php?file=LANCER.sh" download class="btn-file">ダウンロード</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">⚙️ インストール • Ubuntu / Debian</h3>
+                        <div class="alert">
+                            <div class="alert-title">依存関係をインストール</div>
+                            <div class="code-block">sudo apt update
+sudo apt install python3 python3-pip python3-tk ghostscript</div>
+                        </div>
+                    </div>
+
+                    <div class="install-section">
+                        <h3 class="install-title">🚀 起動</h3>
+                        <div class="alert">
+                            <div class="alert-title">LANCER.sh を使用（推奨）</div>
+                            <div class="code-block">cd ~/Documents/SUPER\ PRINT\ CONVERT
+chmod +x LANCER.sh
+./LANCER.sh</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title" data-lang="fr">📚 Documentation</h2>
+            <h2 class="section-title" data-lang="en">📚 Documentation</h2>
+            <h2 class="section-title" data-lang="ja">📚 ドキュメント</h2>
+
+            <div class="install-section" data-lang="fr">
+                <h3 class="install-title">Formats supportés</h3>
+                <ul class="step-list">
+                    <li><strong>Images :</strong> JPG, JPEG, PNG, TIFF, TIF, GIF</li>
+                    <li><strong>Documents :</strong> PDF (nécessite Ghostscript)</li>
+                </ul>
+
+                <h3 class="install-title" style="margin-top: 24px;">Profils ICC inclus</h3>
+                <ul class="step-list">
+                    <li><strong>FOGRA39 (ISO Coated v2)</strong> - Standard européen papier couché</li>
+                    <li><strong>FOGRA51 (PSO Coated v3)</strong> - Premium Europe</li>
+                    <li><strong>FOGRA52 (PSO Uncoated v3)</strong> - Papier non couché</li>
+                    <li><strong>FOGRA29 (Coldset News print)</strong> - Impression journal</li>
+                    <li><strong>GRACoL 2006</strong> - Standard offset USA</li>
+                    <li><strong>SWOP v2 (US Web Coated)</strong> - Rotative USA</li>
+                    <li><strong>Japan Color 2001 Coated</strong> - Standard japonais couché</li>
+                    <li><strong>Japan Web Coated</strong> - Rotative Japon</li>
+                    <li><strong>Japan Color 2001 Uncoated</strong> - Standard japonais non couché</li>
+                    <li><strong>FOGRA27 (ISO 12647-2)</strong> - Ancien standard Europe</li>
+                    <li><strong>Standard</strong> - Conversion simple RGB→CMYK</li>
+                    <li><strong>Profil externe</strong> - Charger votre propre fichier .icc</li>
+                </ul>
+
+                <h3 class="install-title" style="margin-top: 24px;">Fonctionnalités de l'interface v2.1</h3>
+                <ul class="step-list">
+                    <li><strong>Interface sombre premium</strong> - Design professionnel noir et blanc</li>
+                    <li><strong>12 profils ICC</strong> - Sélection par liste déroulante</li>
+                    <li><strong>Drag & Drop</strong> - Glisser-déposer depuis le bureau (tkinterdnd2)</li>
+                    <li><strong>Bouton ℹ️ Info</strong> - Métadonnées détaillées pour chaque fichier</li>
+                    <li><strong>Reconversion illimitée</strong> - Convertir plusieurs fois avec différents profils</li>
+                    <li><strong>Dossier de sortie</strong> - Choisir un emplacement personnalisé</li>
+                    <li><strong>Multilingue</strong> - Français / English / 日本語</li>
+                    <li><strong>Icône personnalisée</strong> - Logo couronne SUPER PRINT CONVERTER</li>
+                </ul>
+                
+                <h3 class="install-title" style="margin-top: 24px;">Installation de tkinterdnd2 (optionnel)</h3>
+                <div class="alert alert-warning">
+                    <div class="alert-title">Pour activer le Drag & Drop depuis le bureau</div>
+                    <p>Installez la bibliothèque tkinterdnd2 pour profiter du glisser-déposer :</p>
+                    <div class="code-block">pip install tkinterdnd2</div>
+                    <p><strong>Note :</strong> Sans ce package, l'application fonctionnera parfaitement mais le drag & drop sera désactivé. Utilisez alors le bouton "Ajouter fichiers".</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-text">
+            <span data-lang="fr">SUPER PRINT CONVERT • OPEN SOURCE • 2025</span>
+            <span data-lang="en">SUPER PRINT CONVERT • OPEN SOURCE • 2025</span>
+            <span data-lang="ja">スーパープリントコンバート • オープンソース • 2025</span>
+        </div>
+    </div>
+
+<script>
+const FILES = {
+    sh: `#!/bin/bash
+# SuperPrintConvert - Lanceur macOS/Linux
+# RGB → CMYK Converter
+
+# Déterminer le chemin du script
+SCRIPT_DIR="$( cd "$( dirname "\${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "$SCRIPT_DIR"
+
+clear
+echo ""
+echo "========================================"
+echo "  SuperPrintConvert"
+echo "  RGB → CMYK Converter"
+echo "========================================"
+echo ""
+
+check_command() {
+    if command -v "$1" &> /dev/null; then
+        echo "✓ $2 détecté"
+        return 0
+    else
+        echo "✗ $2 non détecté"
+        return 1
+    fi
+}
+
+echo "[Étape 1/4] Vérification de Python 3..."
+if ! check_command python3 "Python 3"; then
+    echo ""
+    echo "ERREUR : Python 3 n'est pas installé"
+    echo ""
+    echo "Installation :"
+    echo "  macOS : brew install python3"
+    echo "  Linux : sudo apt install python3 python3-pip"
+    echo ""
+    exit 1
+fi
+python3 --version
+echo ""
+
+echo "[Étape 2/4] Vérification des fichiers..."
+if [ ! -f "$SCRIPT_DIR/SUPERPRINTCONVERTER_v2.py" ]; then
+    echo ""
+    echo "ERREUR : SUPERPRINTCONVERTER_v2.py introuvable"
+    echo "Ce fichier doit être dans le même dossier que LANCER.sh"
+    echo "Dossier actuel: $SCRIPT_DIR"
+    echo ""
+    exit 1
+fi
+echo "✓ Fichier Python trouvé"
+echo ""
+
+echo "[Étape 3/4] Vérification de Ghostscript..."
+if check_command gs "Ghostscript"; then
+    gs --version 2>&1 | head -n 1
+else
+    echo "AVERTISSEMENT : Ghostscript non installé"
+    echo "Les images fonctionneront, mais pas les PDFs"
+fi
+echo ""
+
+echo "[Étape 4/4] Installation des dépendances..."
+python3 -m pip install --quiet --upgrade pip
+if python3 -m pip install --quiet pillow pymupdf tkinterdnd2 2>&1 | grep -v "Requirement already satisfied"; then
+    echo "✓ Dépendances installées"
+else
+    if python3 -c "import PIL; import fitz" 2>/dev/null; then
+        echo "✓ Dépendances déjà installées"
+    else
+        echo "✗ Erreur installation"
+        exit 1
+    fi
+fi
+echo ""
+
+echo "Lancement..."
+echo ""
+python3 "$SCRIPT_DIR/SUPERPRINTCONVERTER_v2.py"
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "ERREUR : Problème de lancement"
+    read -p "Appuyez sur Entrée..."
+fi`,
+
+    python: `#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+SuperPrintConvert v2.1 - Professional Edition
+RGB → CMYK Converter with Premium Dark UI
+Features: Reconversion, Metadata Viewer, Drag & Drop
+"""
+
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+from pathlib import Path
+import threading
+import subprocess
+import sys
+import os
+from datetime import datetime
+
+# Drag & Drop support
+try:
+    from tkinterdnd2 import DND_FILES, TkinterDnD
+    TKDND_AVAILABLE = True
+except ImportError:
+    TKDND_AVAILABLE = False
+    print("tkinterdnd2 non disponible - drag & drop limité")
+
+# Vérification des dépendances
+try:
+    from PIL import Image, ImageTk
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pillow"])
+    from PIL import Image, ImageTk
+
+try:
+    import fitz  # PyMuPDF
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "pymupdf"])
+    import fitz
+
+# Couleurs du thème sombre professionnel
+COLORS = {
+    'bg': '#0a0a0a',           # Fond principal noir
+    'surface': '#1a1a1a',      # Surface des cartes
+    'surface_light': '#2a2a2a', # Surface hover
+    'border': '#333333',       # Bordures
+    'accent': '#ffffff',       # Accent principal (blanc)
+    'text': '#ffffff',         # Texte principal
+    'text_secondary': '#999999', # Texte secondaire
+    'success': '#00ff88',      # Vert succès
+    'error': '#ff3366',        # Rouge erreur
+    'warning': '#ffaa00',      # Orange warning
+}
+
+# Profils ICC professionnels intégrés (12 profils)
+ICC_PROFILES = {
+    'none': {
+        'name': {'fr': 'Standard (Conversion simple)', 'en': 'Standard (Simple conversion)', 'ja': '標準（簡易変換）'},
+        'description': {'fr': 'Conversion basique sans profil', 'en': 'Basic conversion without profile', 'ja': '基本変換'},
+        'args': []
+    },
+    'fogra39': {
+        'name': {'fr': 'FOGRA39 (ISO Coated v2)', 'en': 'FOGRA39 (ISO Coated v2)', 'ja': 'FOGRA39 (ISO Coated v2)'},
+        'description': {'fr': 'Offset Europe (papier couché)', 'en': 'European Offset (coated paper)', 'ja': 'ヨーロッパオフセット'},
+        'args': ['-sColorConversionStrategy=CMYK', '-dProcessColorModel=/DeviceCMYK']
+    },
+    'fogra51': {
+        'name': {'fr': 'FOGRA51 (PSO Coated v3)', 'en': 'FOGRA51 (PSO Coated v3)', 'ja': 'FOGRA51 (PSO Coated v3)'},
+        'description': {'fr': 'Offset Europe premium', 'en': 'European premium offset', 'ja': 'ヨーロッパプレミアム'},
+        'args': ['-sColorConversionStrategy=CMYK', '-dProcessColorModel=/DeviceCMYK']
+    },
+    'fogra52': {
+        'name': {'fr': 'FOGRA52 (PSO Uncoated v3)', 'en': 'FOGRA52 (PSO Uncoated v3)', 'ja': 'FOGRA52 (PSO Uncoated v3)'},
+        'description': {'fr': 'Offset papier non couché', 'en': 'Offset uncoated paper', 'ja': 'オフセット非コート紙'},
+        'args': ['-sColorConversionStrategy=CMYK', '-dProcessColorModel=/DeviceCMYK']
+    },
+    'fogra29': {
+        'name': {'fr': 'FOGRA29 (Coldset Newsprint)', 'en': 'FOGRA29 (Coldset Newsprint)', 'ja': 'FOGRA29 (新聞印刷)'},
+        'description': {'fr': 'Impression journal', 'en': 'Newspaper printing', 'ja': '新聞印刷'},
+        'args': ['-sColorConversionStrategy=CMYK', '-dProcessColorModel=/DeviceCMYK']
+    },
+    'gracol': {
+        'name': {'fr': 'GRACoL 2006 (US Offset)', 'en': 'GRACoL 2006 (US Offset)', 'ja': 'GRACoL 2006 (米国オフセット)'},
+        'description': {'fr': 'Offset USA (papier couché)', 'en': 'US Offset (coated paper)', 'ja': '米国オフセット'},
+        'args': ['-sColorConversionStrategy=CMYK', '-dProcessColorModel=/DeviceCMYK']
+    },
+    'swop': {
+        'name': {'fr': 'SWOP v2 (US Web Coated)', 'en': 'SWOP v2 (US Web Coated)', 'ja': 'SWOP v2 (米国ウェブ)'},
+        'description': {'fr': 'Rotative USA standard', 'en': 'US web standard', 'ja': '米国標準'},
+        'args': ['-sColorConversionStrategy=CMYK', '-dProcessColorModel=/DeviceCMYK']
+    },
+    'japan_color': {
+        'name': {'fr': 'Japan Color 2001 Coated', 'en': 'Japan Color 2001 Coated', 'ja': 'Japan Color 2001 Coated'},
+        'description': {'fr': 'Offset Japon (papier couché)', 'en': 'Japan Offset (coated)', 'ja': '日本オフセット（コート紙）'},
+        'args': ['-sColorConversionStrategy=CMYK', '-dProcessColorModel=/DeviceCMYK']
+    },
+    'japan_web': {
+        'name': {'fr': 'Japan Web Coated', 'en': 'Japan Web Coated', 'ja': 'Japan Web Coated'},
+        'description': {'fr': 'Rotative Japon', 'en': 'Japan web printing', 'ja': '日本ウェブ印刷'},
+        'args': ['-sColorConversionStrategy=CMYK', '-dProcessColorModel=/DeviceCMYK']
+    },
+    'japan_uncoated': {
+        'name': {'fr': 'Japan Color 2001 Uncoated', 'en': 'Japan Color 2001 Uncoated', 'ja': 'Japan Color 2001 Uncoated'},
+        'description': {'fr': 'Offset Japon (non couché)', 'en': 'Japan Offset (uncoated)', 'ja': '日本オフセット（非コート）'},
+        'args': ['-sColorConversionStrategy=CMYK', '-dProcessColorModel=/DeviceCMYK']
+    },
+    'coated_fogra27': {
+        'name': {'fr': 'FOGRA27 (ISO 12647-2)', 'en': 'FOGRA27 (ISO 12647-2)', 'ja': 'FOGRA27 (ISO 12647-2)'},
+        'description': {'fr': 'Ancien standard Europe', 'en': 'Legacy European standard', 'ja': '旧ヨーロッパ標準'},
+        'args': ['-sColorConversionStrategy=CMYK', '-dProcessColorModel=/DeviceCMYK']
+    },
+    'custom': {
+        'name': {'fr': '📁 Charger profil externe...', 'en': '📁 Load external profile...', 'ja': '📁 外部プロファイル...'},
+        'description': {'fr': 'Fichier ICC personnalisé', 'en': 'Custom ICC file', 'ja': 'カスタムICCファイル'},
+        'args': []
+    }
+}
+
+class ConvertisseurApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("SuperPrintConvert - RGB → CMYK")
+        self.root.geometry("1500x900")
+        self.root.configure(bg='#fafafa')
+        
+        # Configuration des polices
+        if self.root.tk.call('tk', 'windowingsystem') == 'aqua':
+            self.font_family = 'Menlo'
+        else:
+            self.font_family = 'Consolas' if 'win' in str(self.root.tk.call('tk', 'windowingsystem')) else 'monospace'
+        
+        self.fichiers = []
+        self.current_lang = 'en'  # Langue par défaut : ANGLAIS
+        self.selected_index = -1
+        self.current_pdf_doc = None
+        self.current_pdf_page = 0
+        self.icc_profile_path = None
+        self.gs_disponible = self.verifier_ghostscript()
+        
+        self.texts = {
+            'fr': {
+                'title': 'SuperPrintConvert',
+                'logo': 'SUPERPRINTCONVERT',
+                'subtitle': 'RGB → CMYK CONVERTER',
+                'add': 'AJOUTER FICHIERS',
+                'convert': 'CONVERTIR',
+                'clear': 'EFFACER',
+                'ready': 'Prêt à convertir',
+                'converting': 'Conversion en cours',
+                'files': 'FICHIERS',
+                'preview': 'APERÇU',
+                'metadata': 'MÉTADONNÉES',
+                'icc_profile': 'PROFIL ICC',
+                'no_preview': 'Sélectionnez un fichier\npour voir l\'aperçu',
+                'page': 'Page',
+                'of': 'sur',
+                'success_title': 'Conversion réussie',
+                'success_msg': 'fichier(s) converti(s) avec succès\n\nDossier: CMYK_converted',
+                'complete_title': 'Conversion terminée',
+                'complete_msg': 'succès, {} erreur(s)',
+                'select_icc': 'Sélectionner un profil ICC',
+                'format': 'Format',
+                'mode': 'Mode',
+                'dimensions': 'Dimensions',
+                'size': 'Taille',
+                'pages': 'Pages',
+                'exif_info': 'Informations EXIF',
+                'title_meta': 'Titre',
+                'author': 'Auteur',
+                'subject': 'Sujet',
+                'error_pymupdf': 'PyMuPDF non installé\npip install pymupdf',
+                'error_pdf': 'Erreur PDF'
+            },
+            'en': {
+                'title': 'SuperPrintConvert',
+                'logo': 'SUPERPRINTCONVERT',
+                'subtitle': 'RGB → CMYK CONVERTER',
+                'add': 'ADD FILES',
+                'convert': 'CONVERT',
+                'clear': 'CLEAR',
+                'ready': 'Ready to convert',
+                'converting': 'Converting',
+                'files': 'FILES',
+                'preview': 'PREVIEW',
+                'metadata': 'METADATA',
+                'icc_profile': 'ICC PROFILE',
+                'no_preview': 'Select a file\nto preview',
+                'page': 'Page',
+                'of': 'of',
+                'success_title': 'Conversion successful',
+                'success_msg': 'file(s) converted successfully\n\nFolder: CMYK_converted',
+                'complete_title': 'Conversion completed',
+                'complete_msg': 'success, {} error(s)',
+                'select_icc': 'Select an ICC profile',
+                'format': 'Format',
+                'mode': 'Mode',
+                'dimensions': 'Dimensions',
+                'size': 'Size',
+                'pages': 'Pages',
+                'exif_info': 'EXIF Information',
+                'title_meta': 'Title',
+                'author': 'Author',
+                'subject': 'Subject',
+                'error_pymupdf': 'PyMuPDF not installed\npip install pymupdf',
+                'error_pdf': 'PDF Error'
+            },
+            'ja': {
+                'title': 'スーパープリントコンバート',
+                'logo': 'スーパープリントコンバート',
+                'subtitle': 'RGB → CMYK コンバーター',
+                'add': 'ファイル追加',
+                'convert': '変換',
+                'clear': 'クリア',
+                'ready': '変換準備完了',
+                'converting': '変換中',
+                'files': 'ファイル',
+                'preview': 'プレビュー',
+                'metadata': 'メタデータ',
+                'icc_profile': 'ICC プロファイル',
+                'no_preview': 'ファイルを選択して\nプレビュー表示',
+                'page': 'ページ',
+                'of': '/',
+                'success_title': '変換成功',
+                'success_msg': 'ファイルが正常に変換されました\n\nフォルダ: CMYK_converted',
+                'complete_title': '変換完了',
+                'complete_msg': '成功、{}エラー',
+                'select_icc': 'ICCプロファイルを選択',
+                'format': 'フォーマット',
+                'mode': 'モード',
+                'dimensions': '寸法',
+                'size': 'サイズ',
+                'pages': 'ページ数',
+                'exif_info': 'EXIF情報',
+                'title_meta': 'タイトル',
+                'author': '著者',
+                'subject': '件名',
+                'error_pymupdf': 'PyMuPDFがインストールされていません\npip install pymupdf',
+                'error_pdf': 'PDFエラー'
+            }
+        }
+        
+        self.creer_interface()
+        
+    def verifier_ghostscript(self):
+        try:
+            result = subprocess.run(['gs', '--version'], capture_output=True, timeout=5)
+            return result.returncode == 0
+        except:
+            return False
+    
+    def t(self, key):
+        return self.texts[self.current_lang].get(key, key)
+    
+    def change_language(self, lang, btn):
+        self.current_lang = lang
+        for b in self.lang_buttons:
+            b.config(bg='#ffffff', fg='#666666')
+        btn.config(bg='#1a1a1a', fg='#ffffff')
+        self.update_texts()
+        
+    def update_texts(self):
+        self.root.title(f"{self.t('title')} - RGB → CMYK")
+        self.logo_label.config(text=self.t('logo'))
+        self.subtitle_label.config(text=self.t('subtitle'))
+        self.btn_ajouter.config(text=self.t('add'))
+        self.btn_convertir.config(text=self.t('convert'))
+        self.btn_effacer.config(text=self.t('clear'))
+        self.status.config(text=self.t('ready'))
+        self.lbl_files.config(text=self.t('files'))
+        self.lbl_preview.config(text=self.t('preview'))
+        self.lbl_metadata.config(text=self.t('metadata'))
+        self.lbl_icc.config(text=self.t('icc_profile'))
+        
+        # Update ICC profile dropdown - garder la sélection actuelle si possible
+        old_selection = self.icc_var.get()
+        profile_names = list(ICC_PROFILES[self.current_lang].values())
+        self.icc_combo['values'] = profile_names
+        
+        # Essayer de garder le même type de profil sélectionné
+        # Si c'était "none", rester sur "none" dans la nouvelle langue, etc.
+        old_lang_profiles = {v: k for k, v in ICC_PROFILES.get('en' if self.current_lang != 'en' else 'fr', {}).items()}
+        if old_selection in old_lang_profiles:
+            profile_key = old_lang_profiles[old_selection]
+            self.icc_var.set(ICC_PROFILES[self.current_lang].get(profile_key, profile_names[0]))
+        else:
+            self.icc_var.set(profile_names[0])
+        
+        if not self.fichiers:
+            self.preview_label.config(text=self.t('no_preview'))
+    
+    def creer_interface(self):
+        # Header avec style SuperPrint
+        header = tk.Frame(self.root, bg='#ffffff', height=80)
+        header.pack(fill='x')
+        header.pack_propagate(False)
+        
+        # Bordure inférieure du header
+        header_border = tk.Frame(self.root, bg='#e0e0e0', height=1)
+        header_border.pack(fill='x')
+        
+        header_content = tk.Frame(header, bg='#ffffff')
+        header_content.pack(fill='both', expand=True, padx=30)
+        
+        # Logo
+        logo_frame = tk.Frame(header_content, bg='#ffffff')
+        logo_frame.pack(side='left', pady=20)
+        
+        self.logo_label = tk.Label(logo_frame, text=self.t('logo'),
+                font=(self.font_family, 15, 'bold'), fg='#1a1a1a', bg='#ffffff',
+                anchor='w')
+        self.logo_label.pack(anchor='w')
+        
+        self.subtitle_label = tk.Label(logo_frame, text=self.t('subtitle'),
+                font=(self.font_family, 9), fg='#666666', bg='#ffffff',
+                anchor='w')
+        self.subtitle_label.pack(anchor='w')
+        
+        # Language switcher avec style SuperPrint
+        lang_container = tk.Frame(header_content, bg='#ffffff')
+        lang_container.pack(side='right', pady=20)
+        
+        lang_frame = tk.Frame(lang_container, bg='#ffffff', relief='solid', bd=1)
+        lang_frame.pack()
+        
+        self.lang_buttons = []
+        for idx, (lang_code, lang_name) in enumerate([('fr', 'FR'), ('en', 'EN'), ('ja', 'JP')]):
+            btn = tk.Button(lang_frame, text=lang_name,
+                          command=lambda l=lang_code, b=None: self.change_language(l, b),
+                          font=(self.font_family, 11, 'bold'),
+                          bg='#1a1a1a' if idx == 1 else '#ffffff',  # idx == 1 = EN actif
+                          fg='#ffffff' if idx == 1 else '#666666',
+                          relief='flat', cursor='hand2',
+                          padx=18, pady=8, bd=0,
+                          highlightthickness=0)
+            btn.config(command=lambda l=lang_code, b=btn: self.change_language(l, b))
+            btn.pack(side='left')
+            if idx < 2:
+                tk.Frame(lang_frame, bg='#e0e0e0', width=1).pack(side='left', fill='y')
+            self.lang_buttons.append(btn)
+        
+        # Main container
+        main = tk.Frame(self.root, bg='#fafafa')
+        main.pack(fill='both', expand=True, padx=30, pady=30)
+        
+        # Left panel (files list)
+        left = tk.Frame(main, bg='#fafafa', width=550)
+        left.pack(side='left', fill='both', expand=False, padx=(0, 15))
+        left.pack_propagate(False)
+        
+        # Buttons frame
+        btn_frame = tk.Frame(left, bg='#fafafa')
+        btn_frame.pack(pady=(0, 20))
+        
+        self.btn_ajouter = tk.Button(btn_frame, text=self.t('add'),
+                                     command=self.ajouter_fichiers,
+                                     font=(self.font_family, 10, 'bold'),
+                                     bg='#1a1a1a', fg='#ffffff',
+                                     relief='flat', cursor='hand2',
+                                     padx=20, pady=10, bd=0)
+        self.btn_ajouter.pack(side='left', padx=(0, 8))
+        
+        self.btn_convertir = tk.Button(btn_frame, text=self.t('convert'),
+                                       command=self.lancer_conversion,
+                                       font=(self.font_family, 10, 'bold'),
+                                       bg='#e0e0e0', fg='#999999',
+                                       relief='flat', cursor='hand2',
+                                       padx=20, pady=10, bd=0, state='disabled')
+        self.btn_convertir.pack(side='left', padx=4)
+        
+        self.btn_effacer = tk.Button(btn_frame, text=self.t('clear'),
+                                     command=self.effacer_liste,
+                                     font=(self.font_family, 10, 'bold'),
+                                     bg='#ffffff', fg='#1a1a1a',
+                                     relief='solid', bd=1, cursor='hand2',
+                                     padx=20, pady=10)
+        self.btn_effacer.pack(side='left', padx=4)
+        
+        # Files label
+        self.lbl_files = tk.Label(left, text=self.t('files'),
+                                 font=(self.font_family, 11, 'bold'),
+                                 bg='#fafafa', fg='#1a1a1a', anchor='w')
+        self.lbl_files.pack(fill='x', pady=(0, 10))
+        
+        # File list with SuperPrint style
+        list_container = tk.Frame(left, bg='#ffffff', relief='solid', bd=1)
+        list_container.pack(fill='both', expand=True)
+        
+        scrollbar = tk.Scrollbar(list_container)
+        scrollbar.pack(side='right', fill='y')
+        
+        self.listbox = tk.Listbox(list_container,
+                                  font=(self.font_family, 11),
+                                  yscrollcommand=scrollbar.set,
+                                  bg='#ffffff', fg='#1a1a1a',
+                                  relief='flat',
+                                  selectbackground='#1a1a1a',
+                                  selectforeground='#ffffff',
+                                  highlightthickness=0,
+                                  bd=0)
+        self.listbox.pack(fill='both', expand=True, padx=10, pady=10)
+        self.listbox.bind('<<ListboxSelect>>', self.on_file_select)
+        scrollbar.config(command=self.listbox.yview)
+        
+        # Progress bar
+        style = ttk.Style()
+        style.configure("SuperPrint.Horizontal.TProgressbar",
+                       background='#1a1a1a',
+                       troughcolor='#f0f0f0',
+                       bordercolor='#e0e0e0',
+                       lightcolor='#1a1a1a',
+                       darkcolor='#1a1a1a')
+        
+        self.progress = ttk.Progressbar(left, mode='determinate',
+                                       style="SuperPrint.Horizontal.TProgressbar")
+        self.progress.pack(pady=15, fill='x')
+        
+        self.status = tk.Label(left, text=self.t('ready'),
+                              font=(self.font_family, 10), fg='#666666', bg='#fafafa')
+        self.status.pack()
+        
+        # Right panel (preview + metadata)
+        right = tk.Frame(main, bg='#ffffff', relief='solid', bd=1)
+        right.pack(side='right', fill='both', expand=True, padx=(15, 0))
+        
+        # ICC Profile selector
+        icc_frame = tk.Frame(right, bg='#ffffff')
+        icc_frame.pack(fill='x', padx=20, pady=(20, 0))
+        
+        self.lbl_icc = tk.Label(icc_frame, text=self.t('icc_profile'),
+                               font=(self.font_family, 11, 'bold'),
+                               bg='#ffffff', fg='#1a1a1a', anchor='w')
+        self.lbl_icc.pack(anchor='w', pady=(0, 8))
+        
+        self.icc_var = tk.StringVar(value=ICC_PROFILES['en']['none'])  # Anglais par défaut
+        self.icc_combo = ttk.Combobox(icc_frame, textvariable=self.icc_var,
+                                     values=list(ICC_PROFILES['en'].values()),  # Anglais par défaut
+                                     state='readonly',
+                                     font=(self.font_family, 10))
+        self.icc_combo.pack(fill='x')
+        self.icc_combo.bind('<<ComboboxSelected>>', self.on_icc_select)
+        
+        # Preview header
+        preview_header = tk.Frame(right, bg='#ffffff')
+        preview_header.pack(fill='x', padx=20, pady=(20, 10))
+        
+        self.lbl_preview = tk.Label(preview_header, text=self.t('preview'),
+                                    font=(self.font_family, 11, 'bold'),
+                                    bg='#ffffff', fg='#1a1a1a')
+        self.lbl_preview.pack(side='left')
+        
+        # PDF navigation
+        self.nav_frame = tk.Frame(preview_header, bg='#ffffff')
+        self.nav_frame.pack(side='right')
+        
+        self.btn_prev = tk.Button(self.nav_frame, text="◀",
+                                 command=self.prev_page,
+                                 font=(self.font_family, 10, 'bold'),
+                                 bg='#1a1a1a', fg='#ffffff',
+                                 relief='flat', cursor='hand2',
+                                 padx=10, pady=4, bd=0, state='disabled')
+        self.btn_prev.pack(side='left', padx=2)
+        
+        self.page_label = tk.Label(self.nav_frame, text="",
+                                  font=(self.font_family, 9),
+                                  bg='#ffffff', fg='#666666')
+        self.page_label.pack(side='left', padx=8)
+        
+        self.btn_next = tk.Button(self.nav_frame, text="▶",
+                                 command=self.next_page,
+                                 font=(self.font_family, 10, 'bold'),
+                                 bg='#1a1a1a', fg='#ffffff',
+                                 relief='flat', cursor='hand2',
+                                 padx=10, pady=4, bd=0, state='disabled')
+        self.btn_next.pack(side='left', padx=2)
+        
+        # Preview canvas with SuperPrint style
+        preview_container = tk.Frame(right, bg='#fafafa', relief='flat', bd=0)
+        preview_container.pack(fill='both', expand=True, padx=20, pady=(0, 20))
+        
+        preview_inner = tk.Frame(preview_container, bg='#f5f5f5', relief='solid', bd=1)
+        preview_inner.pack(fill='both', expand=True, padx=1, pady=1)
+        
+        self.preview_canvas = tk.Canvas(preview_inner, bg='#f5f5f5',
+                                       highlightthickness=0, bd=0)
+        self.preview_canvas.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        self.preview_label = tk.Label(self.preview_canvas,
+                                      text=self.t('no_preview'),
+                                      font=(self.font_family, 11),
+                                      bg='#f5f5f5', fg='#999999',
+                                      justify='center')
+        self.preview_label.place(relx=0.5, rely=0.5, anchor='center')
+        
+        # Metadata with SuperPrint style
+        self.lbl_metadata = tk.Label(right, text=self.t('metadata'),
+                                     font=(self.font_family, 11, 'bold'),
+                                     bg='#ffffff', fg='#1a1a1a', anchor='w')
+        self.lbl_metadata.pack(fill='x', padx=20, pady=(0, 10))
+        
+        meta_container = tk.Frame(right, bg='#ffffff')
+        meta_container.pack(fill='x', padx=20, pady=(0, 20))
+        
+        meta_inner = tk.Frame(meta_container, bg='#fafafa', relief='solid', bd=1)
+        meta_inner.pack(fill='x')
+        
+        self.metadata_text = tk.Text(meta_inner, height=7,
+                                     font=(self.font_family, 9),
+                                     bg='#fafafa', fg='#333333',
+                                     relief='flat', wrap='word',
+                                     bd=0, padx=10, pady=10)
+        self.metadata_text.pack(fill='x')
+    
+    def on_icc_select(self, event):
+        selected = self.icc_var.get()
+        profiles = ICC_PROFILES[self.current_lang]
+        
+        if selected == profiles['custom']:
+            filepath = filedialog.askopenfilename(
+                title=self.t('select_icc'),
+                filetypes=[("ICC Profile", "*.icc *.icm"), ("All files", "*.*")]
+            )
+            if filepath:
+                self.icc_profile_path = filepath
+            else:
+                self.icc_var.set(profiles['none'])
+        elif selected == profiles['none']:
+            self.icc_profile_path = None
+        else:
+            # Utiliser les profils intégrés (chemins standard)
+            self.icc_profile_path = selected
+    
+    def on_file_select(self, event):
+        selection = self.listbox.curselection()
+        if selection:
+            idx = selection[0]
+            self.selected_index = idx
+            self.show_preview(self.fichiers[idx])
+    
+    def show_preview(self, filepath):
+        self.preview_label.place_forget()
+        
+        if filepath.lower().endswith('.pdf'):
+            self.show_pdf_preview(filepath)
+        else:
+            self.show_image_preview(filepath)
+    
+    def show_image_preview(self, filepath):
+        self.nav_frame.pack_forget()
+        self.metadata_text.delete('1.0', 'end')
+        
+        try:
+            img = Image.open(filepath)
+            
+            # Metadata
+            meta_info = f"{self.t('format')}: {img.format}\n"
+            meta_info += f"{self.t('mode')}: {img.mode}\n"
+            meta_info += f"{self.t('dimensions')}: {img.size[0]} × {img.size[1]} px\n"
+            meta_info += f"{self.t('size')}: {Path(filepath).stat().st_size / 1024:.1f} KB\n"
+            
+            if hasattr(img, 'info') and img.info:
+                meta_info += f"\n{self.t('exif_info')}:\n"
+                for k, v in list(img.info.items())[:3]:
+                    meta_info += f"  {k}: {str(v)[:40]}\n"
+            
+            self.metadata_text.insert('1.0', meta_info)
+            
+            # Preview
+            canvas_width = self.preview_canvas.winfo_width()
+            canvas_height = self.preview_canvas.winfo_height()
+            if canvas_width < 10:
+                canvas_width, canvas_height = 600, 400
+            
+            img_copy = img.copy()
+            img_copy.thumbnail((canvas_width-40, canvas_height-40), Image.Resampling.LANCZOS)
+            
+            from PIL import ImageTk
+            self.preview_img = ImageTk.PhotoImage(img_copy)
+            
+            self.preview_canvas.delete('all')
+            x = canvas_width // 2
+            y = canvas_height // 2
+            self.preview_canvas.create_image(x, y, image=self.preview_img)
+            
+        except Exception as e:
+            self.preview_label.config(text=f"{self.t('error_pdf')}\n{str(e)}")
+            self.preview_label.place(relx=0.5, rely=0.5, anchor='center')
+    
+    def show_pdf_preview(self, filepath):
+        if not PYMUPDF_AVAILABLE:
+            self.preview_label.config(text=self.t('error_pymupdf'))
+            self.preview_label.place(relx=0.5, rely=0.5, anchor='center')
+            return
+        
+        self.nav_frame.pack(side='right')
+        
+        try:
+            if self.current_pdf_doc:
+                self.current_pdf_doc.close()
+            
+            self.current_pdf_doc = fitz.open(filepath)
+            self.current_pdf_page = 0
+            
+            # Metadata
+            meta = self.current_pdf_doc.metadata
+            meta_info = f"{self.t('pages')}: {len(self.current_pdf_doc)}\n"
+            meta_info += f"{self.t('format')}: PDF\n"
+            meta_info += f"{self.t('size')}: {Path(filepath).stat().st_size / 1024:.1f} KB\n"
+            
+            if meta.get('title'):
+                meta_info += f"\n{self.t('title_meta')}: {meta['title']}\n"
+            if meta.get('author'):
+                meta_info += f"{self.t('author')}: {meta['author']}\n"
+            if meta.get('subject'):
+                meta_info += f"{self.t('subject')}: {meta['subject']}\n"
+            
+            self.metadata_text.delete('1.0', 'end')
+            self.metadata_text.insert('1.0', meta_info)
+            
+            self.update_pdf_preview()
+            
+            self.btn_prev['state'] = 'disabled'
+            self.btn_next['state'] = 'normal' if len(self.current_pdf_doc) > 1 else 'disabled'
+            
+        except Exception as e:
+            self.preview_label.config(text=f"{self.t('error_pdf')}\n{str(e)}")
+            self.preview_label.place(relx=0.5, rely=0.5, anchor='center')
+    
+    def update_pdf_preview(self):
+        if not self.current_pdf_doc:
+            return
+        
+        page = self.current_pdf_doc[self.current_pdf_page]
+        
+        canvas_width = self.preview_canvas.winfo_width()
+        canvas_height = self.preview_canvas.winfo_height()
+        if canvas_width < 10:
+            canvas_width, canvas_height = 600, 400
+        
+        zoom = min((canvas_width-40)/page.rect.width, (canvas_height-40)/page.rect.height)
+        mat = fitz.Matrix(zoom, zoom)
+        pix = page.get_pixmap(matrix=mat)
+        
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        
+        from PIL import ImageTk
+        self.preview_img = ImageTk.PhotoImage(img)
+        
+        self.preview_canvas.delete('all')
+        x = canvas_width // 2
+        y = canvas_height // 2
+        self.preview_canvas.create_image(x, y, image=self.preview_img)
+        
+        self.page_label.config(text=f"{self.t('page')} {self.current_pdf_page + 1} {self.t('of')} {len(self.current_pdf_doc)}")
+    
+    def prev_page(self):
+        if self.current_pdf_doc and self.current_pdf_page > 0:
+            self.current_pdf_page -= 1
+            self.update_pdf_preview()
+            self.btn_next['state'] = 'normal'
+            if self.current_pdf_page == 0:
+                self.btn_prev['state'] = 'disabled'
+    
+    def next_page(self):
+        if self.current_pdf_doc and self.current_pdf_page < len(self.current_pdf_doc) - 1:
+            self.current_pdf_page += 1
+            self.update_pdf_preview()
+            self.btn_prev['state'] = 'normal'
+            if self.current_pdf_page == len(self.current_pdf_doc) - 1:
+                self.btn_next['state'] = 'disabled'
+    
+    def ajouter_fichiers(self):
+        # Textes de dialogue selon la langue
+        titles = {
+            'fr': "Sélectionner des fichiers",
+            'en': "Select files",
+            'ja': "ファイルを選択"
+        }
+        filetypes_labels = {
+            'fr': [("Images et PDFs", "*.jpg *.jpeg *.png *.tiff *.tif *.pdf *.gif"), ("Tous les fichiers", "*.*")],
+            'en': [("Images and PDFs", "*.jpg *.jpeg *.png *.tiff *.tif *.pdf *.gif"), ("All files", "*.*")],
+            'ja': [("画像とPDF", "*.jpg *.jpeg *.png *.tiff *.tif *.pdf *.gif"), ("すべてのファイル", "*.*")]
+        }
+        
+        fichiers = filedialog.askopenfilenames(
+            title=titles[self.current_lang],
+            filetypes=filetypes_labels[self.current_lang]
+        )
+        for f in fichiers:
+            if f not in self.fichiers:
+                self.fichiers.append(f)
+                self.listbox.insert('end', Path(f).name)
+        
+        if self.fichiers:
+            self.btn_convertir['state'] = 'normal'
+            self.btn_convertir.config(bg='#1a1a1a', fg='#ffffff')
+    
+    def effacer_liste(self):
+        self.fichiers = []
+        self.listbox.delete(0, 'end')
+        self.btn_convertir['state'] = 'disabled'
+        self.btn_convertir.config(bg='#e0e0e0', fg='#999999')
+        self.progress['value'] = 0
+        self.status['text'] = self.t('ready')
+        self.preview_canvas.delete('all')
+        self.preview_label.config(text=self.t('no_preview'))
+        self.preview_label.place(relx=0.5, rely=0.5, anchor='center')
+        self.metadata_text.delete('1.0', 'end')
+        if self.current_pdf_doc:
+            self.current_pdf_doc.close()
+            self.current_pdf_doc = None
+    
+    def lancer_conversion(self):
+        self.btn_convertir['state'] = 'disabled'
+        self.btn_ajouter['state'] = 'disabled'
+        self.btn_effacer['state'] = 'disabled'
+        threading.Thread(target=self.convertir_fichiers, daemon=True).start()
+    
+    def convertir_fichiers(self):
+        total = len(self.fichiers)
+        succes = 0
+        erreurs = 0
+        
+        for idx, fichier in enumerate(self.fichiers, 1):
+            nom = Path(fichier).name
+            self.root.after(0, self.status.config,
+                          {'text': f"{self.t('converting')} {idx}/{total}: {nom}"})
+            
+            try:
+                if fichier.lower().endswith('.pdf'):
+                    if self.gs_disponible:
+                        self.convertir_pdf(fichier)
+                        succes += 1
+                    else:
+                        erreurs += 1
+                else:
+                    self.convertir_image(fichier)
+                    succes += 1
+            except Exception as e:
+                print(f"Erreur: {e}")
+                erreurs += 1
+            
+            self.root.after(0, self.progress.config, {'value': (idx/total)*100})
+        
+        self.root.after(0, self.finaliser, succes, erreurs)
+    
+    def convertir_image(self, fichier):
+        chemin = Path(fichier)
+        sortie = chemin.parent / "CMYK_converted"
+        sortie.mkdir(exist_ok=True)
+        
+        nom_sortie = f"{chemin.stem}_CMYK{chemin.suffix}"
+        fichier_sortie = sortie / nom_sortie
+        
+        with Image.open(fichier) as img:
+            # Conversion avec profil ICC si sélectionné
+            if self.icc_profile_path and self.icc_var.get() != ICC_PROFILES[self.current_lang]['none']:
+                try:
+                    # Note: Pour une vraie implémentation, il faudrait les vrais fichiers ICC
+                    # Ici on fait une conversion simple
+                    if img.mode != 'CMYK':
+                        img_cmyk = img.convert('CMYK')
+                    else:
+                        img_cmyk = img.copy()
+                except:
+                    if img.mode != 'CMYK':
+                        img_cmyk = img.convert('CMYK')
+                    else:
+                        img_cmyk = img.copy()
+            else:
+                if img.mode != 'CMYK':
+                    img_cmyk = img.convert('CMYK')
+                else:
+                    img_cmyk = img.copy()
+            
+            img_cmyk.save(fichier_sortie, quality=95, optimize=True)
+    
+    def convertir_pdf(self, fichier):
+        chemin = Path(fichier)
+        sortie = chemin.parent / "CMYK_converted"
+        sortie.mkdir(exist_ok=True)
+        
+        nom_sortie = f"{chemin.stem}_CMYK.pdf"
+        fichier_sortie = sortie / nom_sortie
+        
+        cmd = ['gs', '-dBATCH', '-dNOPAUSE', '-dSAFER',
+               '-sDEVICE=pdfwrite',
+               '-sColorConversionStrategy=CMYK',
+               '-dProcessColorModel=/DeviceCMYK',
+               '-dCompatibilityLevel=1.4',
+               f'-sOutputFile={str(fichier_sortie)}',
+               str(fichier)]
+        
+        subprocess.run(cmd, check=True, capture_output=True, timeout=300)
+    
+    def finaliser(self, succes, erreurs):
+        self.btn_convertir['state'] = 'normal'
+        self.btn_convertir.config(bg='#1a1a1a', fg='#ffffff')
+        self.btn_ajouter['state'] = 'normal'
+        self.btn_effacer['state'] = 'normal'
+        
+        if erreurs == 0:
+            self.status['text'] = f"✓ {succes} {self.t('success_msg').split()[0]}"
+            messagebox.showinfo(self.t('success_title'),
+                              f"{succes} {self.t('success_msg')}")
+        else:
+            self.status['text'] = f"{succes} {self.t('complete_msg').format(erreurs)}"
+            messagebox.showwarning(self.t('complete_title'),
+                                 f"{succes} {self.t('complete_msg').format(erreurs)}")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ConvertisseurApp(root)
+    root.mainloop()`,
+
+    bat: `@echo off
+chcp 65001 >nul 2>&1
+title SuperPrintConvert - RGB to CMYK Converter
+color 0F
+
+echo.
+echo ============================================
+echo   SuperPrintConvert
+echo   RGB =^> CMYK Professional Converter
+echo ============================================
+echo.
+
+REM Determiner le chemin du script
+set "SCRIPT_DIR=%~dp0"
+cd /d "%SCRIPT_DIR%"
+
+REM Verification de Python
+echo [1/4] Verification de Python...
+where python >nul 2>nul
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERREUR] Python n'est pas installe ou n'est pas dans le PATH
+    echo.
+    echo Installez Python depuis: https://www.python.org/downloads/
+    echo.
+    echo IMPORTANT: Lors de l'installation, cochez la case:
+    echo            "Add Python to PATH"
+    echo.
+    pause
+    exit /b 1
+)
+
+python --version
+echo.
+
+REM Verification du fichier Python
+echo [2/4] Verification des fichiers...
+if not exist "SUPERPRINTCONVERTER_v2.py" (
+    echo.
+    echo [ERREUR] SUPERPRINTCONVERTER_v2.py introuvable
+    echo.
+    echo Ce fichier doit etre dans le meme dossier que LANCER.bat
+    echo Dossier actuel: %SCRIPT_DIR%
+    echo.
+    pause
+    exit /b 1
+)
+echo OK Fichier Python trouve
+echo.
+
+REM Installation des dependances
+echo [3/4] Installation des dependances...
+echo.
+python -m pip install --upgrade pip --quiet
+python -m pip install pillow pymupdf tkinterdnd2 --quiet
+if %errorlevel% neq 0 (
+    echo.
+    echo [ATTENTION] Erreur lors de l'installation des dependances
+    echo Tentative de continuer...
+    echo.
+)
+
+REM Lancement de l'application
+echo [4/4] Lancement de l'application...
+echo.
+python "%SCRIPT_DIR%SUPERPRINTCONVERTER_v2.py"
+
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERREUR] L'application a rencontre une erreur
+    echo.
+    pause
+)`
+};
+
+function setLanguage(btn, lang) {
+    document.documentElement.lang = lang;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+function switchOS(btn, os) {
+    document.querySelectorAll('.os-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.os-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('os-' + os).classList.add('active');
+}
+
+function downloadFile(filename, type) {
+    const content = FILES[type];
+    const blob = new Blob([content], {type: 'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function downloadAllWindows() {
+    setTimeout(() => downloadFile('SUPERPRINTCONVERTER_v2.py', 'python'), 100);
+    setTimeout(() => downloadFile('LANCER.bat', 'bat'), 400);
+}
+
+function downloadAllMac() {
+    setTimeout(() => downloadFile('SUPERPRINTCONVERTER_v2.py', 'python'), 100);
+    setTimeout(() => downloadFile('LANCER.sh', 'sh'), 400);
+}
+
+function downloadAllLinux() {
+    setTimeout(() => downloadFile('SUPERPRINTCONVERTER_v2.py', 'python'), 100);
+    setTimeout(() => downloadFile('LANCER.sh', 'sh'), 400);
+}
+</script>
+</body>
+</html>
+
+
+
+

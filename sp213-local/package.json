@@ -1,0 +1,36 @@
+{
+  "name": "sp213-local",
+  "version": "1.7.332",
+  "description": "SP213 Studio — version locale (Vite). WebLLM npm pour l'inférence en local, aucun CDN, aucune dépendance au proxy PHP.",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/start.mjs",
+    "dev:plain": "vite",
+    "setup": "node scripts/setup.mjs",
+    "build": "vite build",
+    "preview": "vite preview",
+    "print:bridge": "node scripts/print-bridge.mjs"
+  },
+  "keywords": [
+    "superprint",
+    "sp213",
+    "layout",
+    "ai",
+    "webllm",
+    "print"
+  ],
+  "author": "SuperPrint",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@mlc-ai/web-llm": "^0.2.84",
+    "bonjour-service": "^1.4.4",
+    "ipp": "^1.1.0",
+    "@e965/xlsx": "0.20.3"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true
+  }
+}

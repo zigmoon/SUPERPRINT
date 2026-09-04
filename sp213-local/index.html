@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="google" content="notranslate">
+<title>SuperPrint — Local</title>
+<meta name="description" content="SuperPrint Local (Vite): the complete DTP application and SP213 Studio, with local AI available and no document data leaving your machine.">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  /* ═══════════════════════════════════════════════
+     SUPERPRINT LOCAL — design BLANC (DA SuperPrint)
+     sobre, centré, pas d'ombre lourde.
+     ═══════════════════════════════════════════════ */
+  :root {
+    /* Thème clair (défaut, DA SuperPrint) */
+    --bg: #ffffff;
+    --bg-workspace: #f2f2f2;
+    --panel: #ffffff;
+    --panel2: #f7f7f7;
+    --border: #d9d9d9;
+    --border-strong: #bbbbbb;
+    --text: #1a1a1a;
+    --muted: #666666;
+    --muted2: #888888;
+    --accent: #1a1a1a;
+    --accent-hover: #333333;
+    --accent-soft: rgba(0,0,0,.06);
+    --accent-border: rgba(0,0,0,.25);
+    --btn-bg: #ffffff;
+    --btn-hover: #f2f2f2;
+    --btn-active-text: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #d9d9d9;
+    --shadow: rgba(0,0,0,0.08);
+    --chat-user: #1a1a1a;
+    --chat-user-text: #ffffff;
+    --chat-ai: #f5f5f5;
+    --chip-bg: #ffffff;
+    --chip-hover: #f2f2f2;
+    --ok: #1a7f37;
+    --warn: #b25b00;
+    --attach-bg: #f5f5f5;
+    --code-bg: #f7f7f7;
+    --code-border: #e0e0e0;
+    --hl: #1a1a1a;
+  }
+
+  /* Thème sombre (choix utilisateur) */
+  body.theme-dark {
+    --bg: #0d0d0d;
+    --bg-workspace: #111111;
+    --panel: #1a1a1a;
+    --panel2: #242424;
+    --border: #2e2e2e;
+    --border-strong: #3a3a3a;
+    --text: #e8e8e8;
+    --muted: #8a8a8a;
+    --muted2: #6b6b6b;
+    --accent: #10a37f;
+    --accent-hover: #0d8c6d;
+    --accent-soft: rgba(16,163,127,.12);
+    --accent-border: rgba(16,163,127,.35);
+    --btn-bg: #242424;
+    --btn-hover: #2d2d2d;
+    --btn-active-text: #ffffff;
+    --input-bg: #141414;
+    --input-border: #2e2e2e;
+    --shadow: rgba(0,0,0,.5);
+    --chat-user: #242424;
+    --chat-user-text: #e8e8e8;
+    --chat-ai: #161616;
+    --chip-bg: #1d1d1d;
+    --chip-hover: #2a2a2a;
+    --ok: #35d07f;
+    --warn: #f5b64a;
+    --attach-bg: #1e1e1e;
+    --code-bg: #0f0f0f;
+    --code-border: #2e2e2e;
+    --hl: #10a37f;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', 'Open Sans', ui-monospace, SFMono-Regular, monospace;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    /* 🔒 Interdire la sélection de texte dans l'interface (sauf zones autorisées) */
+    -webkit-user-select: none; user-select: none;
+  }
+  #previewScroll, #chatLog, #promptInput { -webkit-user-select: text; user-select: text; }
+  button { font-family: inherit; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Icônes SVG */
+  .ic { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .ic-sm { width: 14px; height: 14px; }
+  .ic-lg { width: 20px; height: 20px; }
+
+  /* ─────────── Boutons ─────────── */
+  .btn {
+    height: 36px; padding: 0 16px; background: var(--btn-bg); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; font-family: inherit;
+    font-size: 12px; letter-spacing: 0.3px; transition: all .15s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border-radius: 0; text-transform: uppercase;
+  }
+  .btn:hover { background: var(--btn-hover); border-color: var(--border-strong); }
+  .btn.active { background: var(--accent); color: var(--btn-active-text); border-color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: var(--btn-active-text); border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--border-strong); background: var(--panel2); }
+  .btn-sm { height: 30px; padding: 0 12px; font-size: 11px; }
+  .btn-copy { height: 28px; padding: 0 10px; font-size: 10px; border-radius: 0; }
+
+  .icon-btn {
+    width: 32px; height: 32px; padding: 0; background: var(--btn-bg); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; border-radius: 0; transition: all .15s;
+  }
+  .icon-btn:hover { background: var(--btn-hover); border-color: var(--border-strong); }
+  .icon-btn-sm { width: 24px; height: 24px; padding: 0; background: var(--btn-bg); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; border-radius: 4px; transition: all .15s; }
+  .icon-btn-sm:hover { background: var(--btn-hover); border-color: var(--border-strong); }
+  .icon-btn-sm .ic { width: 12px; height: 12px; }
+
+  /* ═══════════════ PRÉ-HOME (design blanc, DA SuperPrint) ═══════════════ */
+  #welcome {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    padding: 24px; overflow-y: auto;
+  }
+  #welcome.hidden { display: none; }
+  .welcome-inner { width: min(880px, 100%); }
+  .welcome-brand {
+    text-align: center; margin-bottom: 40px;
+  }
+  .welcome-brand .logo {
+    display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 18px;
+  }
+  .welcome-brand .logo img { width: 64px; height: 64px; border-radius: 0; background: #fff; }
+  .welcome-brand h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+  .welcome-brand .sub { margin: 8px 0 0; font-size: 13px; color: var(--muted); letter-spacing: .5px; }
+  .welcome-brand .sub .hl { color: var(--text); }
+
+  /* ═══ Pré-home minimaliste (façon Ollama) ═══ */
+  .welcome-inner { max-width: 760px; margin: 0 auto; position: relative; }
+
+  /* ✕ Croix pour revenir au studio (en haut à droite des réglages) */
+  .welcome-close {
+    position: absolute; top: -6px; right: -6px; width: 34px; height: 34px; padding: 0;
+    background: transparent; color: var(--muted); border: 1px solid transparent; border-radius: 0;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: all .15s; z-index: 5;
+  }
+  .welcome-close svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+  .welcome-close:hover { color: var(--text); border-color: var(--border); background: var(--panel2); }
+
+  .install-section {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 28px 30px;
+  }
+  .install-section .is-title {
+    font-size: 15px; font-weight: 700; letter-spacing: .5px; margin: 0 0 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .install-section .is-title svg { width: 18px; height: 18px; stroke: var(--accent); }
+  .install-section .is-desc { font-size: 12px; color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
+
+  /* Ligne unique à copier — le cœur de la page */
+  .cmd-block {
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    padding: 8px 8px 8px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .cmd-block code {
+    flex: 1; font-size: 12.5px; color: var(--text); white-space: nowrap; overflow-x: auto;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace; padding: 6px 0; line-height: 1.6;
+  }
+  .cmd-block code::-webkit-scrollbar { height: 4px; }
+  .cmd-block code::-webkit-scrollbar-thumb { background: var(--border-strong); }
+  .cmd-os-ic { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--muted2); opacity: .85; }
+  .btn-copy { height: 30px; padding: 0 14px; font-size: 11px; border-radius: 0; flex-shrink: 0; }
+
+  .cmd-meta { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .cmd-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .cmd-tab {
+    font-size: 9.5px; letter-spacing: .8px; text-transform: uppercase; color: var(--muted);
+    background: transparent; border: 1px solid var(--border); padding: 5px 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .cmd-tab svg { width: 12px; height: 12px; opacity: .7; }
+  .cmd-tab.active { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
+  .cmd-tab.active svg { opacity: 1; }
+  .cmd-hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  .install-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .install-actions .btn { flex: 1; height: 40px; font-size: 12px; }
+
+  /* Séparateur doux */
+  .or-sep {
+    display: flex; align-items: center; gap: 14px; margin: 26px 0 20px;
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+  }
+  .or-sep::before, .or-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Version en ligne — deux barres empilées */
+  .online-stack { display: flex; flex-direction: column; gap: 10px; }
+  .online-row {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 18px 22px;
+  }
+  .online-row .on-ic { color: var(--accent); flex-shrink: 0; display: inline-flex; }
+  .online-row .on-ic svg { width: 20px; height: 20px; }
+  .online-row .on-text { flex: 1; }
+  .online-row .on-text b { font-size: 13px; letter-spacing: .4px; text-transform: uppercase; }
+  .online-row .on-text span { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .online-row .btn { flex-shrink: 0; }
+
+  /* ═══════════════ STUDIO ═══════════════ */
+  #studio { display: none; flex-direction: column; height: 100%; }
+  #studio.active { display: flex; }
+
+  #topbar {
+    flex-shrink: 0; height: 50px; display: flex; align-items: center; gap: 10px;
+    padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--border);
+  }
+  #topbar .t-logo { font-weight: 700; letter-spacing: 1px; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 9px; }
+  #topbar .t-logo img { width: 26px; height: 26px; border-radius: 5px; background: transparent; }
+  #topbar .t-logo .badge { background: var(--accent); color: #fff; padding: 2px 7px; font-size: 9px; border-radius: 3px; text-transform: uppercase; letter-spacing: 1px; }
+  #topbar .t-title { font-size: 11px; color: var(--muted); letter-spacing: .5px; }
+  #topbar .vsep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+  #topbar .spacer { flex: 1; }
+  #topbar .btn { height: 32px; font-size: 11px; padding: 0 12px; }
+
+  #split { flex: 1; display: flex; min-height: 0; }
+  /* 🖱️ Séparateur draggable preview ↔ conversation : 1px discret GRIS (comme les autres traits), NOIR au survol/drag (blanc en sombre). */
+  #splitHandle { flex-shrink: 0; width: 1px; cursor: col-resize; background: var(--border); position: relative; z-index: 20; transition: background .15s; }
+  #splitHandle:hover, #splitHandle.dragging { background: #000; }
+  body.theme-dark #splitHandle { background: #333; }
+  body.theme-dark #splitHandle:hover, body.theme-dark #splitHandle.dragging { background: #fff; }
+  #previewPane { flex: 1 1 66.6%; min-width: 0; display: flex; flex-direction: column; background: var(--bg-workspace); }
+  #previewToolbar { flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--panel); border-bottom: 1px solid var(--border); font-size: 10px; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; min-height: 42px; }
+  #previewScroll { flex: 1; overflow: auto; padding: 28px; background: var(--bg-workspace); }
+  /* Pied de preview : bouton « Ouvrir dans SuperPrint » centré en bas — ligne grise très fine en haut */
+  #previewFooter { flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 12px; background: transparent; border-top: 1px solid #c8c8c8; }
+  body.theme-dark #previewFooter { border-top: 1px solid #333; }
+  .btn-open-sp { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 22px; height: 40px; border-radius: 999px; cursor: pointer; background: var(--accent); color: #fff; border: 1px solid var(--accent); font-family: inherit; font-size: 11px; letter-spacing: .4px; text-transform: uppercase; transition: all .15s; }
+  .btn-open-sp:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  /* Variante TRANSPARENTE : fond neutre, bordure discrète — se fond dans la preview */
+  .btn-open-sp.ghost { background: transparent; color: var(--text); border-color: var(--border); }
+  .btn-open-sp.ghost:hover { background: var(--btn-hover); border-color: var(--border-strong); }
+  body.theme-dark #previewFooter { background: transparent; }
+  #pagesStack { display: flex; flex-direction: column; align-items: center; gap: 32px; }
+  .page-card { background: transparent; position: relative; display: flex; flex-direction: column; align-items: center; }
+  .page-label { text-align: center; font-size: 10px; color: var(--muted); margin-bottom: 8px; letter-spacing: .5px; }
+  /* Corbeille de suppression de page (apparaît au survol) */
+  .sp-page-del { position: absolute; top: -6px; right: -6px; width: 26px; height: 26px; padding: 0; background: var(--panel); color: var(--muted); border: 1px solid var(--border); border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; z-index: 10; opacity: 0; pointer-events: none; transition: opacity .15s, color .15s, border-color .15s; }
+  .page-card:hover .sp-page-del { opacity: 1; pointer-events: auto; }
+  .sp-page-del:hover { color: #d32f2f; border-color: #d32f2f; }
+  .page-canvas-wrap { background: #fff; box-shadow: 0 2px 14px rgba(0,0,0,.35); line-height: 0; position: relative; }
+  .page-canvas-wrap canvas { display: block; }
+
+  /* Scrollbars — même style que SuperPrint (4px, pouce #ccc) */
+  #previewScroll::-webkit-scrollbar,
+  #chatLog::-webkit-scrollbar,
+  #welcome::-webkit-scrollbar {
+    width: 4px; height: 4px;
+  }
+  #previewScroll::-webkit-scrollbar-track,
+  #chatLog::-webkit-scrollbar-track,
+  #welcome::-webkit-scrollbar-track {
+    background: var(--bg-workspace);
+  }
+  #previewScroll::-webkit-scrollbar-thumb,
+  #chatLog::-webkit-scrollbar-thumb,
+  #welcome::-webkit-scrollbar-thumb {
+    background: #ccc; border-radius: 2px;
+  }
+  #previewScroll::-webkit-scrollbar-thumb:hover,
+  #chatLog::-webkit-scrollbar-thumb:hover,
+  #welcome::-webkit-scrollbar-thumb:hover { background: #999; }
+
+  #chatPane { flex: 1 1 33.3%; min-width: 300px; max-width: 45%; display: flex; flex-direction: column; background: var(--panel); }
+  #chatHead { flex-shrink: 0; padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; min-height: 42px; }
+  #chatHead .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  #chatHead .t { font-size: 12px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; }
+  #chatHead .m { font-size: 10px; color: var(--muted); margin-left: auto; }
+  /* 🗂️ Onglets de conversations (barre horizontale sous #chatHead) */
+  #convTabs { flex-shrink: 0; display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-bottom: 1px solid var(--border); background: var(--panel); min-height: 42px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+  #convTabs::-webkit-scrollbar { height: 4px; }
+  #convTabs::-webkit-scrollbar-thumb { background: #bbb; }
+  .conv-tab { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; max-width: 180px; padding: 6px 12px; cursor: pointer; background: var(--btn-bg); color: var(--muted); border: 1px solid var(--border); font-size: 10px; letter-spacing: .3px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .15s, color .15s, border-color .15s; }
+  .conv-tab:hover { color: var(--text); border-color: #999; background: var(--btn-hover); }
+  .conv-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .conv-tab .t-label { overflow: hidden; text-overflow: ellipsis; }
+  .conv-tab .t-x { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; font-size: 12px; line-height: 1; border-radius: 50%; color: inherit; opacity: .7; flex-shrink: 0; }
+  .conv-tab .t-x:hover { opacity: 1; color: #d32f2f; }
+  .conv-add { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; background: #ffffff; color: var(--text); border: 1px solid var(--border); cursor: pointer; border-radius: 999px; }
+  .conv-add:hover { background: var(--btn-hover); border-color: #999; }
+  body.theme-dark .conv-add { background: var(--panel2); }
+  #chatLog { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 92%; display: flex; flex-direction: column; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.assistant { align-self: flex-start; align-items: flex-start; }
+  /* Bulles style GPT/Claude : user à droite (fond doux), assistant à gauche (fond
+     très clair), coins arrondis, pas de contraste noir/blanc dur. Typo système clean. */
+  .bubble {
+    padding: 8px 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+    border-radius: 12px; max-width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  .msg.user .bubble { background: #ffffff; color: var(--text); border: 1px solid var(--border); border-bottom-right-radius: 4px; }
+  .msg.assistant .bubble { background: var(--chat-ai); color: var(--text); border-bottom-left-radius: 4px; }
+  body.theme-dark .msg.user .bubble { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  .msg .meta { font-size: 10px; color: var(--muted); margin-top: 4px; padding: 0 4px; display: flex; gap: 8px; align-items: center; }
+  .badge { font-size: 9px; padding: 2px 8px; letter-spacing: .5px; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-border); text-transform: uppercase; border-radius: 3px; }
+  .badge-warn { background: rgba(239,68,68,.12); color: #ef4444; border-color: rgba(239,68,68,.4); }
+
+  /* Actions sous un message (télécharger .sp, ouvrir dans l'app, replier le code) */
+  .msg-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+  .msg-actions .btn { height: 30px; padding: 0 12px; font-size: 10px; }
+  .msg-actions .btn svg { width: 13px; height: 13px; }
+  .code-collapse { width: 100%; margin-bottom: 4px; }
+  .code-collapse .code-pre {
+    background: var(--code-bg); border: 1px solid var(--code-border); border-radius: 6px;
+    padding: 10px 12px; font-size: 10.5px; line-height: 1.45; color: var(--text);
+    white-space: pre-wrap; word-break: break-word; max-height: 220px; overflow-y: auto;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  /* Thème sombre : code sur fond sombre + texte clair (pas de blanc aveuglant) */
+  body.theme-dark .code-collapse .code-pre {
+    background: #1a1a1a; border-color: #333; color: #d4d4d4;
+  }
+  .code-collapse.collapsed .code-pre { display: none; }
+  .code-toggle { align-self: flex-start; }
+  /* Scrollbar du code : fine et discrète */
+  .code-pre::-webkit-scrollbar { width: 6px; height: 6px; }
+  .code-pre::-webkit-scrollbar-track { background: transparent; }
+  .code-pre::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+  .code-pre::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+  .code-pre { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+
+  /* Bulles d'aide */
+  .tip-wrap { position: relative; display: inline-flex; }
+  .tip-wrap .tip {
+    position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%) translateY(-4px);
+    width: 260px; max-width: 78vw; background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border-strong); padding: 12px 14px; font-size: 11px; line-height: 1.55;
+    font-weight: 400; text-transform: none; letter-spacing: .2px; text-align: left;
+    box-shadow: 0 12px 36px rgba(0,0,0,.5); border-radius: 0; z-index: 90;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .15s, transform .15s, visibility .15s; white-space: normal;
+  }
+  .tip-wrap .tip b { display: block; margin-bottom: 3px; font-size: 11px; letter-spacing: .4px; text-transform: uppercase; }
+  .tip-wrap:hover .tip, .tip-wrap:focus-within .tip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+  .tip-wrap .tip::after { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-bottom-color: var(--border-strong); }
+  .tip-wrap.tip-up .tip { top: auto; bottom: calc(100% + 10px); transform: translateX(-50%) translateY(4px); }
+  .tip-wrap.tip-up:hover .tip, .tip-wrap.tip-up:focus-within .tip { transform: translateX(-50%) translateY(0); }
+  .tip-wrap.tip-up .tip::after { bottom: auto; top: 100%; border-bottom-color: transparent; border-top-color: var(--border-strong); }
+  /* Variante : bulle de la boîte de prompt (boutons du bas à droite) — ancrée
+     à DROITE pour ne jamais être coupée par le bord droit de l'écran. */
+  .tip-wrap.tip-up.tip-anchor-right .tip { top: auto; bottom: calc(100% + 10px); left: auto; right: 0; transform: translateX(0) translateY(4px); }
+  .tip-wrap.tip-up.tip-anchor-right:hover .tip, .tip-wrap.tip-up.tip-anchor-right:focus-within .tip { transform: translateX(0) translateY(0); }
+  .tip-wrap.tip-up.tip-anchor-right .tip::after { bottom: auto; top: 100%; left: auto; right: 14px; transform: none; border-bottom-color: transparent; border-top-color: var(--border-strong); }
+  /* Après 3 apparitions dans la session, les tooltips sont désactivés */
+  body.tips-disabled .tip-wrap .tip { display: none !important; }
+
+  /* Composer */
+  /* 🆕 Bandeau de sélection (retravail ciblé) */
+  #selectionBar { flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 7px 12px; margin: 0 10px 6px; background: rgba(16,163,127,.10); border: 1px solid rgba(16,163,127,.35); color: var(--text); font-size: 10.5px; line-height: 1.4; }
+  #selectionBar.hidden { display: none; }
+  #selectionBar .sel-clear { margin-left: auto; flex-shrink: 0; cursor: pointer; background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 2px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .3px; }
+  #selectionBar .sel-clear:hover { color: #ef4444; border-color: #ef4444; }
+  #composer { flex-shrink: 0; padding: 10px 12px 12px; border-top: 1px solid var(--border); }
+  .quickchips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  .chip { background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 0; padding: 3px 8px; cursor: pointer; font-size: 8.5px; letter-spacing: .3px; text-transform: uppercase; }
+  .chip:hover { color: var(--text); border-color: var(--accent); }
+
+  #attachBar { display: none; flex-wrap: wrap; gap: 6px; padding: 6px 0; margin-bottom: 6px; border-bottom: 1px dashed var(--border); }
+  #attachBar.visible { display: flex; }
+  .attach-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--attach-bg); border: 1px solid var(--border); padding: 4px 8px; font-size: 10px; color: var(--text); max-width: 220px; border-radius: 5px; }
+  .attach-chip .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .attach-chip .type { color: var(--muted); font-size: 9px; text-transform: uppercase; }
+  .attach-chip .rm { background: transparent; border: none; color: var(--muted); cursor: pointer; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; padding: 0; }
+  .attach-chip .rm:hover { color: #ef4444; }
+
+  #composerBox { display: flex; gap: 8px; align-items: flex-start; }
+  /* Wrapper du prompt : textarea + placeholder overlay aligné comme le texte tapé */
+  .prompt-wrap { flex: 1; position: relative; align-self: flex-start; min-height: 72px; max-height: 180px; display: flex; }
+  /* Boîte de prompt : CARRÉE, assez haute (2 lignes), texte bien aligné */
+  #promptInput { flex: 1; resize: none; min-height: 72px; max-height: 180px; width: 100%; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 0; color: var(--text); padding: 14px 16px; font-size: 14px; line-height: 1.5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  #promptInput:focus { outline: none; border-color: var(--accent); }
+  .prompt-ph { position: absolute; left: 16px; top: 0; right: 16px; padding-top: 14px; pointer-events: none; color: var(--muted); font-size: 14px; line-height: 1.5; white-space: pre-wrap; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  .prompt-wrap.has-text .prompt-ph { display: none; }
+  /* Scrollbar de la boîte de prompte : INVISIBLE (scroll à la molette), n'apparaît que si le texte dépasse */
+  #promptInput::-webkit-scrollbar { width: 6px; }
+  #promptInput::-webkit-scrollbar-track { background: transparent; }
+  #promptInput::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
+  #promptInput:hover::-webkit-scrollbar-thumb { background: var(--border); }
+  #promptInput::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+  #promptInput { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+  #promptInput:hover { scrollbar-color: var(--border) transparent; }
+  #composerActions { display: flex; flex-direction: column; gap: 6px; }
+  #attachRow { display: flex; gap: 6px; align-items: center; }
+  /* Bouton Envoyer : étiré jusqu'au bas (aligné avec le micro), fond plein */
+  #sendBtn { flex: 1; min-height: 30px; padding: 0 16px; border-radius: 0; border: none; background: var(--accent); color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 10px; letter-spacing: .5px; text-transform: uppercase; }
+  #sendBtn:disabled { opacity: .45; cursor: not-allowed; }
+  /* Icônes PJ / Micro : plus petites (20px, icône 11px), CARRÉS */
+  #attachBtn, #micBtn { flex-shrink: 0; width: 20px; height: 20px; padding: 0; border-radius: 0; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .15s; }
+  #attachBtn .ic, #micBtn .ic { width: 11px; height: 11px; }
+  #attachBtn:hover, #micBtn:hover { background: var(--btn-hover); border-color: var(--border-strong); }
+  #micBtn:disabled { opacity: .4; cursor: not-allowed; }
+  #micBtn.listening { background: #ef4444; color: #fff; border-color: #ef4444; }
+  #micBtn.listening .ic { animation: micPulse 1s infinite; }
+  @keyframes micPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+  .typing { display: inline-flex; gap: 4px; align-items: center; padding: 6px 2px; }
+  .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100% { opacity:.25; } 40% { opacity:1; } }
+  .generation-msg { width: min(100%, 440px); max-width: 100%; }
+  .generation-msg .bubble { width: 100%; padding: 11px 12px; }
+  .generation-loader { display: flex; flex-direction: column; gap: 7px; min-width: 240px; }
+  .generation-loader-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .generation-loader-title { font-size: 11px; font-weight: 700; color: var(--text); }
+  .generation-loader-step { font-size: 9px; color: var(--muted); text-align: right; }
+  .generation-loader-track { position: relative; height: 4px; overflow: hidden; background: var(--panel2); border: 1px solid var(--border); }
+  .generation-loader-track span { position: absolute; inset-block: 0; width: 38%; background: var(--accent); animation: generationSlide 1.35s ease-in-out infinite; }
+  .generation-loader-note { font-size: 9px; line-height: 1.4; color: var(--muted); }
+  @keyframes generationSlide { 0% { left: -40%; } 55% { left: 58%; } 100% { left: 102%; } }
+  @media (prefers-reduced-motion: reduce) { .generation-loader-track span { animation-duration: 3s; } }
+
+  .zoom-wrap { display: flex; align-items: center; gap: 3px; }
+  .zoom-wrap select { height: 24px; background: var(--input-bg); color: var(--text); border: 1px solid var(--input-border); font-family: inherit; font-size: 11px; padding: 0 4px; border-radius: 4px; }
+
+  /* Loader modèle */
+  #modelLoader { position: fixed; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); backdrop-filter: blur(2px); }
+  #modelLoader.active { display: flex; }
+  .loader-card { width: min(420px, 90vw); background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 28px 30px; text-align: center; }
+  .loader-card .lc-title { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .loader-card .lc-sub { font-size: 11px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+  .loader-bar { height: 6px; background: var(--panel2); border: 1px solid var(--border); position: relative; overflow: hidden; border-radius: 3px; }
+  .loader-bar .fill { height: 100%; width: 0%; background: var(--accent); transition: width .2s ease; display: flex; align-items: center; justify-content: flex-end; }
+  .loader-card .lc-pct { margin-top: 10px; font-size: 11px; color: var(--muted); }
+  .loader-card .lc-quote { margin-top: 18px; min-height: 34px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--text); line-height: 1.5; font-style: italic; border-top: 1px dashed var(--border); padding-top: 14px; opacity: 0; transition: opacity .4s ease; }
+  .loader-card .lc-quote.show { opacity: 1; }
+  .loader-card .lc-note { margin-top: 6px; font-size: 10px; color: var(--muted); opacity: .8; }
+
+  .settings-modal { position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,.55); backdrop-filter: blur(2px); }
+  .settings-modal.hidden { display: none; }
+  .settings-card { width: min(620px, 100%); max-height: calc(100dvh - 40px); overflow: auto; background: var(--panel); border: 1px solid var(--border); box-shadow: 0 24px 70px var(--shadow); }
+  .settings-head { min-height: 52px; display: flex; align-items: center; padding: 0 18px; border-bottom: 1px solid var(--border); }
+  .settings-head h2 { margin: 0; font-size: 13px; letter-spacing: .6px; text-transform: uppercase; }
+  .settings-close { margin-left: auto; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+  .settings-close:hover { color: var(--text); background: var(--btn-hover); }
+  .settings-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .settings-body { padding: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .settings-section { min-width: 0; }
+  .settings-section-title { margin-bottom: 12px; padding-bottom: 7px; border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--muted); }
+  .settings-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .settings-field.hidden { display: none; }
+  .settings-field label { font-size: 10px; font-weight: 600; color: var(--muted); }
+  .settings-field input, .settings-field select { width: 100%; height: 34px; box-sizing: border-box; padding: 0 9px; border: 1px solid var(--input-border); border-radius: 0; background: var(--input-bg); color: var(--text); font: 12px inherit; }
+  .settings-hint { font-size: 10px; line-height: 1.5; color: var(--muted); }
+  .settings-dims { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .settings-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--border); }
+  .settings-actions .btn { min-height: 34px; }
+
+  #mobileDock { display: none; }
+
+  @media (max-width: 900px) {
+    #studio { height: 100dvh; min-height: 0; }
+    #topbar { display: none !important; }
+    #split { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+    #splitHandle { display: none; }
+    #previewPane, #chatPane { position: absolute; inset: 0; width: 100%; min-width: 0; max-width: none; display: none; }
+    body.mobile-view-preview #previewPane { display: flex; }
+    body.mobile-view-chat #chatPane { display: flex; }
+    #previewPane { background: var(--bg-workspace); border: 0; }
+    #previewToolbar { min-height: 46px; padding: 8px; overflow-x: auto; overflow-y: hidden; }
+    #previewToolbar > span:first-child { position: sticky; left: 0; background: var(--panel); padding-right: 8px; z-index: 1; }
+    #previewToolbar .zoom-wrap { min-width: max-content; margin-right: 0 !important; }
+    #previewScroll { padding: 16px 12px; overscroll-behavior: contain; }
+    #previewFooter { padding: 7px 10px; min-height: 54px; }
+    .btn-open-sp { width: 100%; max-width: 320px; height: 40px; }
+    #chatPane { background: var(--panel); }
+    #chatHead { min-height: 44px; padding: 8px 12px; }
+    #chatTitle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #modelLabel { max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #convTabs { min-height: 40px; padding: 5px 8px; }
+    .conv-tab { min-height: 30px; }
+    #chatLog { padding: 12px; overscroll-behavior: contain; }
+    #selectionBar { margin: 0 8px 6px; }
+    #composer { padding: 8px 10px max(10px, env(safe-area-inset-bottom)); background: var(--panel); }
+    .quickchips { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; padding-bottom: 4px; scrollbar-width: none; }
+    .quickchips::-webkit-scrollbar { display: none; }
+    .chip { flex: 0 0 auto; min-height: 30px; padding: 5px 9px; }
+    #attachBar.visible { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+    #attachBar .attach-chip { flex: 0 0 auto; max-width: min(260px, 76vw); }
+    #composerBox { width: 100%; flex-direction: column; gap: 8px; }
+    .prompt-wrap { width: 100%; min-width: 0; align-self: stretch; }
+    .prompt-wrap, #promptInput { min-height: 76px; }
+    #promptInput { font-size: 16px; padding: 11px 12px; }
+    .prompt-ph { left: 12px; right: 12px; padding-top: 11px; font-size: 13px; }
+    #composerActions { width: 100%; flex-direction: row; gap: 8px; align-items: stretch; }
+    #attachRow { flex: 0 0 auto; }
+    #attachBtn, #micBtn { width: 42px; height: 42px; }
+    #attachBtn .ic, #micBtn .ic { width: 17px; height: 17px; }
+    #composerActions > .tip-wrap { flex: 1; min-width: 0; }
+    #sendBtn { width: 100%; min-height: 42px; }
+    .msg { max-width: 96%; }
+    .bubble { font-size: 14px; }
+    .tip-wrap .tip { display: none !important; }
+    #mobileDock {
+      flex: 0 0 calc(62px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+      padding: 5px 5px max(5px, env(safe-area-inset-bottom)); gap: 2px; background: var(--panel);
+      border-top: 1px solid var(--border); box-shadow: 0 -8px 24px rgba(0,0,0,.08); z-index: 70;
+    }
+    .mobile-dock-btn {
+      min-width: 0; border: 0; background: transparent; color: var(--muted); cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      font: 700 9px/1 'IBM Plex Mono', monospace; text-transform: uppercase;
+    }
+    .mobile-dock-btn .ic { width: 19px; height: 19px; }
+    .mobile-dock-btn.active { color: var(--text); background: var(--btn-hover); }
+    .mobile-dock-btn:active { transform: translateY(1px); }
+    .settings-body { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ PRÉ-HOME (façon Ollama : une ligne à copier) ═══════════════ -->
+<div id="welcome">
+  <div class="welcome-inner">
+    <!-- ✕ Croix pour revenir sur l'interface studio -->
+    <button class="welcome-close" id="welcomeCloseBtn" title="Back to Studio" aria-label="Back to Studio">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="welcome-brand">
+      <div class="logo">
+        <img src="favicon.png" alt="SuperPrint">
+        <h1>SuperPrint</h1>
+      </div>
+      <p class="sub">The complete SuperPrint application — <span class="hl">DTP + SP213 Studio</span></p>
+    </div>
+
+    <!-- Lancer le studio local : UNE ligne à copier -->
+    <div class="install-section">
+      <div class="is-title">
+        <svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
+        Launch SuperPrint
+      </div>
+      <p class="is-desc">SuperPrint is already installed. Copy and run this command to start the local server.</p>
+
+      <div class="cmd-block">
+        <span id="osIcon" class="cmd-os-ic" title="Detected automatically">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><rect x="0" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="0" y="13.5" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="13.5" width="10.5" height="10.5" fill="currentColor"/></svg>
+        </span>
+        <code id="installCmd">npm run dev</code>
+        <button class="btn btn-copy" data-copy="installCmd" title="Copy command" aria-label="Copy command">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+
+      <div class="cmd-meta">
+        <div class="cmd-tabs">
+          <button class="cmd-tab active" data-os="win">Windows</button>
+          <button class="cmd-tab" data-os="mac">macOS</button>
+          <button class="cmd-tab" data-os="linux">Linux</button>
+        </div>
+        <span class="cmd-hint" id="installHint">PowerShell · npm.cmd bypasses the script ExecutionPolicy restriction</span>
+      </div>
+
+      <div class="install-actions">
+        <button class="btn btn-primary" id="startLocalBtn">Start SuperPrint</button>
+      </div>
+    </div>
+
+    <div class="or-sep">or use the online version</div>
+
+    <!-- Version en ligne : deux barres empilées -->
+    <div class="online-stack">
+      <!-- Barre 1 : SuperPrint Editor (en premier) -->
+      <div class="online-row">
+        <span class="on-ic">
+          <img src="favicon.png" alt="SuperPrint" style="width:22px;height:22px;background:#fff;">
+        </span>
+        <div class="on-text">
+          <b>SuperPrint Editor</b>
+          <span>No installation — runs in your browser</span>
+        </div>
+        <button class="btn" id="onlineSpBtn">Open</button>
+      </div>
+
+      <!-- Barre 2 : Studio -->
+      <div class="online-row">
+        <span class="on-ic">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </span>
+        <div class="on-text">
+          <b>SuperPrint Studio</b>
+          <span>AI-powered layouts</span>
+        </div>
+        <button class="btn" id="onlineStudioBtn">Open</button>
+      </div>
+
+      <!-- Barre 3 : Documentation -->
+      <div class="online-row">
+        <span class="on-ic">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </span>
+        <div class="on-text">
+          <b>Documentation</b>
+          <span>Manual, shortcuts and complete guide</span>
+        </div>
+        <button class="btn" id="onlineDocBtn">Open</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="settings-modal hidden" id="localSettingsModal" role="dialog" aria-modal="true" aria-labelledby="localSettingsTitle">
+  <div class="settings-card">
+    <div class="settings-head">
+      <h2 id="localSettingsTitle">Studio preferences</h2>
+      <button class="settings-close" id="localSettingsClose" type="button" title="Close" aria-label="Close preferences">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="settings-body">
+      <section class="settings-section">
+        <div class="settings-section-title">AI engine</div>
+        <div class="settings-field">
+          <label for="prefsEngine">Execution back-end</label>
+          <select id="prefsEngine">
+            <option value="deepseek">DeepSeek (cloud)</option>
+            <option value="openrouter">OpenRouter (cloud)</option>
+            <option value="groq">Groq (cloud)</option>
+            <option value="webllm">SP213 WLLM (local)</option>
+          </select>
+        </div>
+        <div class="settings-field" id="prefsKeyField">
+          <label for="prefsApiKey" id="prefsKeyLabel">API key</label>
+          <input id="prefsApiKey" type="password" autocomplete="off" placeholder="API key">
+          <div class="settings-hint">Stored only in this browser.</div>
+        </div>
+        <div class="settings-field">
+          <label for="prefsModel">Model</label>
+          <select id="prefsModel"></select>
+        </div>
+        <div class="settings-hint" id="prefsEngineHint"></div>
+      </section>
+      <section class="settings-section">
+        <div class="settings-section-title">Document</div>
+        <div class="settings-dims">
+          <div class="settings-field">
+            <label for="prefsPageWidth">Width (mm)</label>
+            <input id="prefsPageWidth" type="number" min="20" max="2000" step="1">
+          </div>
+          <div class="settings-field">
+            <label for="prefsPageHeight">Height (mm)</label>
+            <input id="prefsPageHeight" type="number" min="20" max="2000" step="1">
+          </div>
+        </div>
+        <div class="settings-hint">The format is saved for the next new document. Your current layout is preserved.</div>
+      </section>
+    </div>
+    <div class="settings-actions">
+      <button class="btn" id="localSettingsCancel" type="button">Cancel</button>
+      <button class="btn btn-primary" id="localSettingsSave" type="button">Save preferences</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ STUDIO ═══════════════ -->
+<div id="studio">
+  <div id="topbar">
+    <span class="t-logo">
+      <img src="favicon.png" alt="SuperPrint">
+      SP213
+      <span class="badge">Local</span>
+    </span>
+    <span class="t-title">Layout &amp; Canvas</span>
+    <span class="vsep"></span>
+    <span id="pageInfo" style="font-size:9.5px;color:var(--muted);"></span>
+    <span class="spacer"></span>
+    <span class="tip-wrap" tabindex="0">
+      <button class="btn" id="themeTopBtn" title="Theme">
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M2 12h2.2M19.8 12H22M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M19.4 4.6l-1.6 1.6M6.2 17.8l-1.6 1.6"/></svg>
+      </button>
+      <span class="tip"><b>Theme</b>Switch between the light and dark Studio themes.</span>
+    </span>
+    <span class="tip-wrap" tabindex="0">
+      <button class="btn" id="newDocBtn">
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M4 4h16v16H4z" stroke="currentColor"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>
+        New
+      </button>
+      <span class="tip"><b>New document</b>Open a blank page. This replaces the current layout.</span>
+    </span>
+    <span class="tip-wrap" tabindex="0">
+      <button class="btn" id="exportSpBtn">
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export .sp
+      </button>
+      <span class="tip"><b>Export .sp</b>Download the layout in the native SuperPrint format.</span>
+    </span>
+    <span class="tip-wrap" tabindex="0">
+      <button class="btn" id="settingsBtn">
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <span class="tip"><b>Settings</b>Configure the AI engine, API key, model and document format.</span>
+    </span>
+  </div>
+
+  <div id="split">
+    <div id="previewPane">
+      <div id="previewToolbar">
+        <span>Preview</span>
+        <div class="zoom-wrap" style="margin-left:auto;margin-right:12px;">
+          <button class="icon-btn-sm" id="undoBtn" title="Undo (Ctrl+Z)"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" stroke="currentColor"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" stroke="currentColor"/></svg></button>
+          <button class="icon-btn-sm" id="redoBtn" title="Redo (Ctrl+Shift+Z / Ctrl+Y)"><svg class="ic" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5" stroke="currentColor"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" stroke="currentColor"/></svg></button>
+          <button class="icon-btn-sm" id="zoomOut" title="Zoom -"><svg class="ic" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+          <select id="zoomSelect">
+            <option value="0.25">25%</option>
+            <option value="0.5">50%</option>
+            <option value="0.75">75%</option>
+            <option value="1" selected>100%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+          </select>
+          <button class="icon-btn-sm" id="zoomIn" title="Zoom +"><svg class="ic" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+          <button class="icon-btn-sm" id="guidesToggle" title="Guides" style="margin-left:3px;">
+            <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="previewScroll"><div id="pagesStack"></div></div>
+      <!-- 🔘 Ouvrir dans SuperPrint — bas au centre de la preview -->
+      <div id="previewFooter">
+        <button id="openSpBtn" class="btn-open-sp ghost">
+          <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Open in SuperPrint
+        </button>
+      </div>
+    </div>
+
+    <!-- 🖱️ Séparateur draggable : ajuste la largeur preview / conversation -->
+    <div id="splitHandle" title="Resize (drag)"></div>
+
+    <div id="chatPane">
+      <div id="chatHead">
+        <span class="dot"></span>
+        <span class="t" id="chatTitle">Conversation SP213</span>
+        <span class="m" id="modelLabel"></span>
+      </div>
+      <!-- 🗂️ Onglets de conversations (même hauteur que #chatHead, scroll horizontal) -->
+      <div id="convTabs" title="Conversation tabs — double-click to rename"></div>
+      <div id="chatLog"></div>
+      <!-- 🆕 Bandeau de sélection (retravail ciblé) -->
+      <div id="selectionBar" class="selection-bar hidden"></div>
+      <div id="composer">
+        <div class="quickchips" id="quickChips"></div>
+        <div id="attachBar"></div>
+        <div id="composerBox">
+          <div class="prompt-wrap" id="promptWrap">
+            <textarea id="promptInput" rows="1" placeholder=" " aria-label="Prompt"></textarea>
+            <div class="prompt-ph" id="promptPh" aria-hidden="true">Describe the layout… (e.g. “A minimalist A4 poster for a jazz festival”)</div>
+          </div>
+          <div id="composerActions">
+            <div id="attachRow">
+              <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
+                <button class="icon-btn" id="attachBtn" title="Attach files">
+                  <svg class="ic" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                </button>
+                <span class="tip"><b>Attachments</b>Images, TXT/MD, Word (.docx), Excel (.xls/.xlsx) and PDF. SP213 analyzes their content and uses it in the layout.</span>
+              </span>
+              <input type="file" id="attachInput" accept=".jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.txt,.md,.rtf,.csv,.html,.doc,.docx,.xls,.xlsx,.pdf" multiple hidden>
+              <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
+                <button class="icon-btn" id="micBtn" title="Voice prompt">
+                  <svg class="ic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+                </button>
+                <span class="tip"><b>Voice prompt</b>Click and speak to transcribe your prompt. Click again to stop.</span>
+              </span>
+            </div>
+            <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
+              <button id="sendBtn">
+                <svg class="ic ic-sm" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+              <span class="tip"><b>Send</b>Generate or update the layout from your description and attachments.</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <nav id="mobileDock" aria-label="Studio actions">
+    <button class="mobile-dock-btn" id="mobilePreviewBtn" type="button" aria-label="Show preview">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Preview</span>
+    </button>
+    <button class="mobile-dock-btn active" id="mobileChatBtn" type="button" aria-label="Show chat">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+      <span>Chat</span>
+    </button>
+    <button class="mobile-dock-btn" id="mobileNewBtn" type="button" aria-label="New conversation">
+      <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><line x1="12" y1="7" x2="12" y2="17"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+      <span>New</span>
+    </button>
+    <button class="mobile-dock-btn" id="mobileExportBtn" type="button" aria-label="Export .sp">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>
+      <span>Export</span>
+    </button>
+    <button class="mobile-dock-btn" id="mobileSettingsBtn" type="button" aria-label="Studio preferences">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2.9 2.9-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21h-4v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1-2.9-2.9.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1 2.9-2.9.1.1a1.7 1.7 0 0 0 1.8.3 1.7 1.7 0 0 0 1-1.5V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1 2.9 2.9-.1.1a1.7 1.7 0 0 0-.3 1.8 1.7 1.7 0 0 0 1.5 1h.1v4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+</div>
+
+<div id="modelLoader">
+  <div class="loader-card">
+    <div class="lc-title">SP213 Local</div>
+    <div class="lc-sub" id="loaderSub">Loading local model…</div>
+    <div class="loader-bar"><div class="fill" id="loaderFill" style="width:0%"></div></div>
+    <div class="lc-pct" id="loaderPct">0 %</div>
+    <div class="lc-quote" id="loaderQuote"></div>
+    <div class="lc-note">First use only — the model is cached afterwards.</div>
+  </div>
+</div>
+
+<script src="js/fabric.min.js"></script>
+<script type="module" src="/src/main.js"></script>
+<script>
+  /* 🖼️ Fallback logo : si le favicon ne charge pas (ouverture directe du fichier,
+     hors serveur Vite), on affiche un logo SVG « SP » à la place des images vides. */
+  (function () {
+    var FALLBACK_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
+      "<svg xmlns='http://www.w3.org/2000/svg' width='500' height='500'>" +
+      "<rect width='500' height='500' fill='#1a1a1a' rx='90'/>" +
+      "<text x='250' y='330' font-family='Arial,Helvetica,sans-serif' font-size='210' font-weight='700' fill='#ffffff' text-anchor='middle'>SP</text></svg>"
+    );
+    document.addEventListener('error', function (e) {
+      var t = e.target;
+      if (t && t.tagName === 'IMG' && t.getAttribute('src') && t.getAttribute('src').indexOf('favicon') !== -1) {
+        t.src = FALLBACK_SVG;
+      }
+    }, true);
+
+    // Placeholder overlay du prompt : masqué quand le textarea contient du texte.
+    // Le placeholder NATIF reste vide (espace) : seul l'overlay .prompt-ph affiche
+    // le texte centré (évite le double placeholder).
+    function syncPromptPhLocal() {
+      var pi = document.getElementById('promptInput');
+      var wrap = document.getElementById('promptWrap');
+      if (!pi || !wrap) return;
+      wrap.classList.toggle('has-text', pi.value.trim() !== '');
+      pi.setAttribute('placeholder', ' ');
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      var pi = document.getElementById('promptInput');
+      if (!pi) return;
+      pi.addEventListener('input', syncPromptPhLocal);
+      pi.addEventListener('focus', syncPromptPhLocal);
+      pi.addEventListener('blur', syncPromptPhLocal);
+      syncPromptPhLocal();
+    });
+  })();
+</script>
+</body>
+</html>

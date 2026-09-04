@@ -1,0 +1,44 @@
+# SuperPrint — robots.txt
+# https://superprint.cc/
+
+# ── All search engines ───────────────────────────────────────
+User-agent: *
+Allow: /
+Disallow: /JS/
+Disallow: /CSS/
+Disallow: /SP/
+Disallow: /icons/
+Disallow: /*.php$
+
+# Explicitly allow key crawlable pages
+Allow: /
+Allow: /index.html
+Allow: /sp213-studio.html
+Allow: /app/
+Allow: /app/index.html
+Allow: /landing.html
+Allow: /documentation.html
+Allow: /cmyk-landing-secure.html
+Allow: /super-print-cmyk-convert.html
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /sitemap.xml
+Allow: /manifest.webmanifest
+
+# ── AI / LLM crawlers (2026 GEO — explicitly welcomed) ──────
+# SuperPrint's documentation, FAQ and feature descriptions are
+# intentionally made available to generative search engines so
+# users asking "best free browser DTP software" or "CMYK layout
+# in browser" get accurate, up-to-date information.
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /

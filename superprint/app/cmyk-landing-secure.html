@@ -1,0 +1,2489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Print Convert Installation Guide — RGB to CMYK</title>
+    <meta name="description" content="Super Print Convert installation guide to convert RGB images and PDFs to CMYK on Windows, macOS and Linux.">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://superprint.cc/cmyk-landing-secure.html">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://superprint.cc/cmyk-landing-secure.html">
+    <meta property="og:title" content="Super Print Convert Installation Guide">
+    <meta property="og:description" content="Install the RGB to CMYK converter on Windows, macOS or Linux.">
+    <meta property="og:image" content="https://superprint.cc/icons/icon-512x512.png">
+    <!-- Local self-hosted IBM Plex Mono + Noto Sans JP (no Google Fonts CDN) -->
+    <link rel="stylesheet" href="CSS/fonts.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            background: #ffffff;
+            color: #000000;
+            line-height: 1.7;
+        }
+
+        html[lang="ja"] body {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+
+        .header {
+            background: #000000;
+            color: #ffffff;
+            padding: 25px 20px;
+            border-bottom: 3px solid #000000;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 3px;
+        }
+
+        .lang-switcher {
+            display: flex;
+            gap: 0;
+            border: 2px solid #ffffff;
+        }
+
+        .lang-btn {
+            height: 32px;
+            padding: 0 16px;
+            background: transparent;
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            transition: all 0.2s;
+            border-radius: 0;
+            border-right: 2px solid #ffffff;
+        }
+
+        .lang-btn:last-child {
+            border-right: none;
+        }
+
+        .lang-btn:hover {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .lang-btn.active {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            border: 3px solid #000000;
+            margin-bottom: 40px;
+            background: #ffffff;
+        }
+
+        .hero-title {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: 5px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .hero-subtitle {
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+
+        .hero-badges {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .badge {
+            background: #000000;
+            color: #ffffff;
+            padding: 10px 20px;
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 700;
+            border: 2px solid #000000;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #000000;
+        }
+
+        .accordion {
+            border: 3px solid #000000;
+            margin-bottom: 15px;
+            background: #ffffff;
+        }
+
+        .accordion-header {
+            background: #000000;
+            color: #ffffff;
+            padding: 20px 25px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .accordion-header:hover {
+            background: #333333;
+        }
+
+        .accordion-header.active {
+            background: #ffffff;
+            color: #000000;
+            border-bottom: 2px solid #000000;
+        }
+
+        .accordion-icon {
+            font-size: 20px;
+            font-weight: 700;
+            transition: transform 0.3s;
+        }
+
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+            background: #ffffff;
+        }
+
+        .accordion-content.active {
+            max-height: 10000px;
+            transition: max-height 0.8s ease-in;
+        }
+
+        .accordion-body {
+            padding: 30px 25px;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: #000000;
+            color: #ffffff;
+            text-align: center;
+            line-height: 40px;
+            font-size: 18px;
+            font-weight: 700;
+            margin-right: 15px;
+            border: 2px solid #000000;
+        }
+
+        .step {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .step-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .step-desc {
+            font-size: 12px;
+            line-height: 2;
+            margin-bottom: 15px;
+        }
+
+        .code-block {
+            background: #000000;
+            color: #ffffff;
+            padding: 20px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 3px solid #000000;
+        }
+
+        .alert {
+            padding: 20px;
+            margin: 20px 0;
+            border: 3px solid #000000;
+            background: #ffffff;
+        }
+
+        .alert-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .alert-success {
+            background: #f5f5f5;
+        }
+
+        .alert-warning {
+            background: #ffffff;
+            border-style: dashed;
+        }
+
+        .file-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .file-item {
+            background: #f8f8f8;
+            border: 2px solid #000000;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .file-item:hover {
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .file-item:hover .btn-file {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-icon {
+            font-size: 20px;
+        }
+
+        .file-name {
+            font-size: 12px;
+            font-weight: 700;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .file-desc {
+            font-size: 10px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .btn-file {
+            height: 36px;
+            padding: 0 20px;
+            background: #000000;
+            color: #ffffff;
+            border: 2px solid #000000;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .btn-file:hover {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .btn-file:active {
+            transform: scale(0.95);
+        }
+
+        .btn-download-all {
+            width: 100%;
+            height: 50px;
+            padding: 0 30px;
+            background: #000000;
+            color: #ffffff;
+            border: 3px solid #000000;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            transition: all 0.2s;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 20px;
+        }
+
+        .btn-download-all:hover {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .os-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 30px;
+            border: 3px solid #000000;
+        }
+
+        .os-tab {
+            flex: 1;
+            height: 50px;
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            border-right: 3px solid #000000;
+        }
+
+        .os-tab:last-child {
+            border-right: none;
+        }
+
+        .os-tab:hover {
+            background: #f0f0f0;
+        }
+
+        .os-tab.active {
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .os-content {
+            display: none;
+        }
+
+        .os-content.active {
+            display: block;
+        }
+
+        .download-link {
+            display: inline-block;
+            background: #000000;
+            color: #ffffff;
+            padding: 10px 20px;
+            text-decoration: none;
+            margin: 10px 5px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border: 2px solid #000000;
+            transition: all 0.2s;
+        }
+
+        .download-link:hover {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .footer {
+            background: #000000;
+            color: #ffffff;
+            padding: 30px 20px;
+            text-align: center;
+            margin-top: 60px;
+            border-top: 3px solid #000000;
+        }
+
+        .footer-text {
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 24px;
+            }
+
+            .file-item {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .btn-file {
+                width: 100%;
+            }
+
+            .os-tabs {
+                flex-direction: column;
+            }
+
+            .os-tab {
+                border-right: none;
+                border-bottom: 3px solid #000000;
+            }
+
+            .os-tab:last-child {
+                border-bottom: none;
+            }
+        }
+
+        [data-lang]:not([data-lang="en"]) { display: none; }
+        html[lang="fr"] [data-lang="en"],
+        html[lang="ja"] [data-lang="en"] { display: none; }
+        html[lang="fr"] [data-lang="fr"] { display: block; }
+        html[lang="ja"] [data-lang="ja"] { display: block; }
+
+        .platform-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">SUPER PRINT CONVERT</div>
+            
+            <div class="lang-switcher">
+                <button class="lang-btn" onclick="setLanguage('fr')">FR</button>
+                <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
+                <button class="lang-btn" onclick="setLanguage('ja')">JP</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- HERO -->
+        <div class="hero">
+            <div data-lang="fr">
+                <h1 class="hero-title">SUPER PRINT CONVERT</h1>
+                <p class="hero-subtitle">Convertisseur RGB → CMYK Professionnel</p>
+                <div class="hero-badges">
+                    <span class="badge">✓ Vraie Conversion</span>
+                    <span class="badge">Open Source</span>
+                    <span class="badge">Gratuit</span>
+                    <span class="badge">Sans ZIP Bloqué</span>
+                </div>
+            </div>
+            <div data-lang="en">
+                <h1 class="hero-title">SUPER PRINT CONVERT</h1>
+                <p class="hero-subtitle">Professional RGB → CMYK Converter</p>
+                <div class="hero-badges">
+                    <span class="badge">✓ Real Conversion</span>
+                    <span class="badge">Open Source</span>
+                    <span class="badge">Free</span>
+                    <span class="badge">No Blocked ZIP</span>
+                </div>
+            </div>
+            <div data-lang="ja">
+                <h1 class="hero-title">SUPER PRINT CONVERT</h1>
+                <p class="hero-subtitle">プロフェッショナル RGB → CMYK コンバーター</p>
+                <div class="hero-badges">
+                    <span class="badge">✓ 実際の変換</span>
+                    <span class="badge">オープンソース</span>
+                    <span class="badge">無料</span>
+                    <span class="badge">ZIPブロックなし</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ONGLETS PLATEFORMES -->
+        <div class="section">
+            <h2 class="section-title" data-lang="fr">Choisissez votre plateforme</h2>
+            <h2 class="section-title" data-lang="en">Choose your platform</h2>
+            <h2 class="section-title" data-lang="ja">プラットフォームを選択</h2>
+
+            <div class="os-tabs">
+                <button class="os-tab active" onclick="switchOS('windows')">
+                    🪟 WINDOWS
+                </button>
+                <button class="os-tab" onclick="switchOS('mac')">
+                    🍎 MACOS
+                </button>
+                <button class="os-tab" onclick="switchOS('linux')">
+                    🐧 LINUX
+                </button>
+            </div>
+
+            <!-- ==================== CONTENU WINDOWS ==================== -->
+            <div id="os-windows" class="os-content active">
+                
+                <!-- FRANÇAIS WINDOWS -->
+                <div data-lang="fr">
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📋</span>ÉTAPE 1 • PRÉREQUIS</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="alert alert-warning">
+                                    <div class="alert-title">⚠️ À INSTALLER AVANT</div>
+                                    Python ET Ghostscript doivent être installés AVANT de télécharger les fichiers.
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">INSTALLER PYTHON 3.7+</div>
+                                        <div class="step-desc">
+                                            <strong>Télécharger :</strong>
+                                        </div>
+                                        <a href="https://www.python.org/downloads/" target="_blank" class="download-link">python.org/downloads</a>
+                                        <div class="step-desc">
+                                            <strong>Installation :</strong><br>
+                                            1. Lancez le fichier téléchargé<br>
+                                            2. ⚠️ <strong>COCHEZ "Add Python to PATH"</strong> (EN BAS !)<br>
+                                            3. Cliquez "Install Now"<br>
+                                            4. Redémarrez votre PC
+                                        </div>
+                                        <div class="step-desc"><strong>Vérification :</strong></div>
+                                        <div class="code-block">python --version</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">INSTALLER GHOSTSCRIPT (POUR PDFs)</div>
+                                        <div class="step-desc">
+                                            <strong>Télécharger :</strong>
+                                        </div>
+                                        <a href="https://www.ghostscript.com/releases/gsdnld.html" target="_blank" class="download-link">ghostscript.com</a>
+                                        <div class="step-desc">
+                                            Choisissez : <strong>Ghostscript 10.x for Windows (64 bit)</strong>
+                                        </div>
+                                        <div class="step-desc"><strong>Vérification :</strong></div>
+                                        <div class="code-block">gs --version</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📥</span>ÉTAPE 2 • TÉLÉCHARGEMENT</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul class="file-list">
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">🐍</span>
+                                            <div>
+                                                <div class="file-name">convertisseur_gui.py</div>
+                                                <div class="file-desc">Application • ~15 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('convertisseur_gui.py', 'python')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">⚙️</span>
+                                            <div>
+                                                <div class="file-name">lancer_convertisseur.bat</div>
+                                                <div class="file-desc">Lanceur • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('lancer_convertisseur.bat', 'bat')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📦</span>
+                                            <div>
+                                                <div class="file-name">creer_exe.bat</div>
+                                                <div class="file-desc">Créateur EXE • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('creer_exe.bat', 'exe')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📄</span>
+                                            <div>
+                                                <div class="file-name">README.md</div>
+                                                <div class="file-desc">Documentation • ~3 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('README.md', 'readme')">📥 DL</button>
+                                    </li>
+                                </ul>
+                                <button class="btn-download-all" onclick="downloadAllWindows()">⬇️ TOUT TÉLÉCHARGER</button>
+                                <div class="alert alert-warning">
+                                    <div class="alert-title">📂 IMPORTANT</div>
+                                    Mettez TOUS les fichiers dans le MÊME dossier !
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">🚀</span>ÉTAPE 3 • LANCEMENT</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">DOUBLE-CLIQUEZ SUR lancer_convertisseur.bat</div>
+                                        <div class="step-desc">L'application se lance automatiquement !</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ENGLISH WINDOWS -->
+                <div data-lang="en">
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📋</span>STEP 1 • REQUIREMENTS</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="alert alert-warning">
+                                    <div class="alert-title">⚠️ INSTALL FIRST</div>
+                                    Python AND Ghostscript must be installed BEFORE downloading files.
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">INSTALL PYTHON 3.7+</div>
+                                        <div class="step-desc"><strong>Download:</strong></div>
+                                        <a href="https://www.python.org/downloads/" target="_blank" class="download-link">python.org/downloads</a>
+                                        <div class="step-desc">
+                                            <strong>Installation:</strong><br>
+                                            1. Run downloaded file<br>
+                                            2. ⚠️ <strong>CHECK "Add Python to PATH"</strong> (AT BOTTOM!)<br>
+                                            3. Click "Install Now"<br>
+                                            4. Restart your PC
+                                        </div>
+                                        <div class="step-desc"><strong>Verification:</strong></div>
+                                        <div class="code-block">python --version</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">INSTALL GHOSTSCRIPT (FOR PDFs)</div>
+                                        <div class="step-desc"><strong>Download:</strong></div>
+                                        <a href="https://www.ghostscript.com/releases/gsdnld.html" target="_blank" class="download-link">ghostscript.com</a>
+                                        <div class="step-desc">Choose: <strong>Ghostscript 10.x for Windows (64 bit)</strong></div>
+                                        <div class="step-desc"><strong>Verification:</strong></div>
+                                        <div class="code-block">gs --version</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📥</span>STEP 2 • DOWNLOAD</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul class="file-list">
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">🐍</span>
+                                            <div>
+                                                <div class="file-name">convertisseur_gui.py</div>
+                                                <div class="file-desc">Application • ~15 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('convertisseur_gui.py', 'python')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">⚙️</span>
+                                            <div>
+                                                <div class="file-name">lancer_convertisseur.bat</div>
+                                                <div class="file-desc">Launcher • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('lancer_convertisseur.bat', 'bat')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📦</span>
+                                            <div>
+                                                <div class="file-name">creer_exe.bat</div>
+                                                <div class="file-desc">EXE Creator • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('creer_exe.bat', 'exe')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📄</span>
+                                            <div>
+                                                <div class="file-name">README.md</div>
+                                                <div class="file-desc">Documentation • ~3 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('README.md', 'readme')">📥 DL</button>
+                                    </li>
+                                </ul>
+                                <button class="btn-download-all" onclick="downloadAllWindows()">⬇️ DOWNLOAD ALL</button>
+                                <div class="alert alert-warning">
+                                    <div class="alert-title">📂 IMPORTANT</div>
+                                    Put ALL files in the SAME folder!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">🚀</span>STEP 3 • LAUNCH</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">DOUBLE-CLICK lancer_convertisseur.bat</div>
+                                        <div class="step-desc">Application launches automatically!</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JAPANESE WINDOWS -->
+                <div data-lang="ja">
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📋</span>ステップ 1 • 要件</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="alert alert-warning">
+                                    <div class="alert-title">⚠️ 最初にインストール</div>
+                                    ファイルをダウンロードする前に、PythonとGhostscriptをインストールする必要があります。
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">PYTHON 3.7+をインストール</div>
+                                        <div class="step-desc"><strong>ダウンロード:</strong></div>
+                                        <a href="https://www.python.org/downloads/" target="_blank" class="download-link">python.org/downloads</a>
+                                        <div class="step-desc">
+                                            <strong>インストール:</strong><br>
+                                            1. ダウンロードしたファイルを実行<br>
+                                            2. ⚠️ <strong>「Add Python to PATH」をチェック</strong>（下部！）<br>
+                                            3. 「Install Now」をクリック<br>
+                                            4. PCを再起動
+                                        </div>
+                                        <div class="step-desc"><strong>確認:</strong></div>
+                                        <div class="code-block">python --version</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">GHOSTSCRIPTをインストール（PDF用）</div>
+                                        <div class="step-desc"><strong>ダウンロード:</strong></div>
+                                        <a href="https://www.ghostscript.com/releases/gsdnld.html" target="_blank" class="download-link">ghostscript.com</a>
+                                        <div class="step-desc">選択: <strong>Ghostscript 10.x for Windows (64 bit)</strong></div>
+                                        <div class="step-desc"><strong>確認:</strong></div>
+                                        <div class="code-block">gs --version</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📥</span>ステップ 2 • ダウンロード</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul class="file-list">
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">🐍</span>
+                                            <div>
+                                                <div class="file-name">convertisseur_gui.py</div>
+                                                <div class="file-desc">アプリ • ~15 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('convertisseur_gui.py', 'python')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">⚙️</span>
+                                            <div>
+                                                <div class="file-name">lancer_convertisseur.bat</div>
+                                                <div class="file-desc">ランチャー • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('lancer_convertisseur.bat', 'bat')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📦</span>
+                                            <div>
+                                                <div class="file-name">creer_exe.bat</div>
+                                                <div class="file-desc">EXE作成 • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('creer_exe.bat', 'exe')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📄</span>
+                                            <div>
+                                                <div class="file-name">README.md</div>
+                                                <div class="file-desc">ドキュメント • ~3 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('README.md', 'readme')">📥 DL</button>
+                                    </li>
+                                </ul>
+                                <button class="btn-download-all" onclick="downloadAllWindows()">⬇️ すべてダウンロード</button>
+                                <div class="alert alert-warning">
+                                    <div class="alert-title">📂 重要</div>
+                                    すべてのファイルを同じフォルダに入れてください！
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">🚀</span>ステップ 3 • 起動</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">lancer_convertisseur.batをダブルクリック</div>
+                                        <div class="step-desc">アプリケーションが自動的に起動します！</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== CONTENU MACOS ==================== -->
+            <div id="os-mac" class="os-content">
+                
+                <!-- FRANÇAIS MACOS -->
+                <div data-lang="fr">
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📋</span>ÉTAPE 1 • PRÉREQUIS</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">INSTALLER PYTHON 3.7+</div>
+                                        <div class="step-desc"><strong>Télécharger :</strong></div>
+                                        <a href="https://www.python.org/downloads/" target="_blank" class="download-link">python.org/downloads</a>
+                                        <div class="step-desc">Choisir : "macOS 64-bit universal2 installer"</div>
+                                        <div class="step-desc"><strong>Vérification :</strong></div>
+                                        <div class="code-block">python3 --version</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">INSTALLER GHOSTSCRIPT (POUR PDFs)</div>
+                                        <div class="step-desc"><strong>Avec Homebrew :</strong></div>
+                                        <div class="code-block">brew install ghostscript</div>
+                                        <div class="step-desc"><strong>Vérification :</strong></div>
+                                        <div class="code-block">gs --version</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📥</span>ÉTAPE 2 • TÉLÉCHARGEMENT</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul class="file-list">
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">🐍</span>
+                                            <div>
+                                                <div class="file-name">convertisseur_gui.py</div>
+                                                <div class="file-desc">Application • ~15 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('convertisseur_gui.py', 'python')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">⚙️</span>
+                                            <div>
+                                                <div class="file-name">lancer_convertisseur.sh</div>
+                                                <div class="file-desc">Lanceur • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('lancer_convertisseur.sh', 'sh')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📄</span>
+                                            <div>
+                                                <div class="file-name">README.md</div>
+                                                <div class="file-desc">Documentation • ~3 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('README.md', 'readme')">📥 DL</button>
+                                    </li>
+                                </ul>
+                                <button class="btn-download-all" onclick="downloadAllMac()">⬇️ TOUT TÉLÉCHARGER</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">🚀</span>ÉTAPE 3 • LANCEMENT</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">OUVRIR LE TERMINAL</div>
+                                        <div class="step-desc">Applications → Utilitaires → Terminal</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">ALLER DANS LE DOSSIER</div>
+                                        <div class="code-block">cd ~/Downloads/SuperPrintConvert</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">3</span>
+                                    <div>
+                                        <div class="step-title">RENDRE EXÉCUTABLE ET LANCER</div>
+                                        <div class="code-block">chmod +x lancer_convertisseur.sh
+./lancer_convertisseur.sh</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ENGLISH MACOS -->
+                <div data-lang="en">
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📋</span>STEP 1 • REQUIREMENTS</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">INSTALL PYTHON 3.7+</div>
+                                        <div class="step-desc"><strong>Download:</strong></div>
+                                        <a href="https://www.python.org/downloads/" target="_blank" class="download-link">python.org/downloads</a>
+                                        <div class="step-desc">Choose: "macOS 64-bit universal2 installer"</div>
+                                        <div class="step-desc"><strong>Verification:</strong></div>
+                                        <div class="code-block">python3 --version</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">INSTALL GHOSTSCRIPT (FOR PDFs)</div>
+                                        <div class="step-desc"><strong>With Homebrew:</strong></div>
+                                        <div class="code-block">brew install ghostscript</div>
+                                        <div class="step-desc"><strong>Verification:</strong></div>
+                                        <div class="code-block">gs --version</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📥</span>STEP 2 • DOWNLOAD</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul class="file-list">
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">🐍</span>
+                                            <div>
+                                                <div class="file-name">convertisseur_gui.py</div>
+                                                <div class="file-desc">Application • ~15 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('convertisseur_gui.py', 'python')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">⚙️</span>
+                                            <div>
+                                                <div class="file-name">lancer_convertisseur.sh</div>
+                                                <div class="file-desc">Launcher • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('lancer_convertisseur.sh', 'sh')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📄</span>
+                                            <div>
+                                                <div class="file-name">README.md</div>
+                                                <div class="file-desc">Documentation • ~3 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('README.md', 'readme')">📥 DL</button>
+                                    </li>
+                                </ul>
+                                <button class="btn-download-all" onclick="downloadAllMac()">⬇️ DOWNLOAD ALL</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">🚀</span>STEP 3 • LAUNCH</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">OPEN TERMINAL</div>
+                                        <div class="step-desc">Applications → Utilities → Terminal</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">GO TO FOLDER</div>
+                                        <div class="code-block">cd ~/Downloads/SuperPrintConvert</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">3</span>
+                                    <div>
+                                        <div class="step-title">MAKE EXECUTABLE AND RUN</div>
+                                        <div class="code-block">chmod +x lancer_convertisseur.sh
+./lancer_convertisseur.sh</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JAPANESE MACOS -->
+                <div data-lang="ja">
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📋</span>ステップ 1 • 要件</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">PYTHON 3.7+をインストール</div>
+                                        <div class="step-desc"><strong>ダウンロード:</strong></div>
+                                        <a href="https://www.python.org/downloads/" target="_blank" class="download-link">python.org/downloads</a>
+                                        <div class="step-desc">選択: "macOS 64-bit universal2 installer"</div>
+                                        <div class="step-desc"><strong>確認:</strong></div>
+                                        <div class="code-block">python3 --version</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">GHOSTSCRIPTをインストール（PDF用）</div>
+                                        <div class="step-desc"><strong>Homebrewで:</strong></div>
+                                        <div class="code-block">brew install ghostscript</div>
+                                        <div class="step-desc"><strong>確認:</strong></div>
+                                        <div class="code-block">gs --version</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📥</span>ステップ 2 • ダウンロード</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul class="file-list">
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">🐍</span>
+                                            <div>
+                                                <div class="file-name">convertisseur_gui.py</div>
+                                                <div class="file-desc">アプリ • ~15 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('convertisseur_gui.py', 'python')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">⚙️</span>
+                                            <div>
+                                                <div class="file-name">lancer_convertisseur.sh</div>
+                                                <div class="file-desc">ランチャー • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('lancer_convertisseur.sh', 'sh')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📄</span>
+                                            <div>
+                                                <div class="file-name">README.md</div>
+                                                <div class="file-desc">ドキュメント • ~3 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('README.md', 'readme')">📥 DL</button>
+                                    </li>
+                                </ul>
+                                <button class="btn-download-all" onclick="downloadAllMac()">⬇️ すべてダウンロード</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">🚀</span>ステップ 3 • 起動</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">ターミナルを開く</div>
+                                        <div class="step-desc">アプリケーション → ユーティリティ → ターミナル</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">フォルダに移動</div>
+                                        <div class="code-block">cd ~/Downloads/SuperPrintConvert</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">3</span>
+                                    <div>
+                                        <div class="step-title">実行可能にして起動</div>
+                                        <div class="code-block">chmod +x lancer_convertisseur.sh
+./lancer_convertisseur.sh</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== CONTENU LINUX ==================== -->
+            <div id="os-linux" class="os-content">
+                
+                <!-- FRANÇAIS LINUX -->
+                <div data-lang="fr">
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📋</span>ÉTAPE 1 • PRÉREQUIS</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">INSTALLER PYTHON 3.7+</div>
+                                        <div class="step-desc"><strong>Ubuntu/Debian :</strong></div>
+                                        <div class="code-block">sudo apt-get update
+sudo apt-get install python3 python3-pip python3-tk</div>
+                                        <div class="step-desc"><strong>Fedora :</strong></div>
+                                        <div class="code-block">sudo dnf install python3 python3-pip python3-tkinter</div>
+                                        <div class="step-desc"><strong>Arch :</strong></div>
+                                        <div class="code-block">sudo pacman -S python python-pip tk</div>
+                                        <div class="step-desc"><strong>Vérification :</strong></div>
+                                        <div class="code-block">python3 --version</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">INSTALLER GHOSTSCRIPT (POUR PDFs)</div>
+                                        <div class="step-desc"><strong>Ubuntu/Debian :</strong></div>
+                                        <div class="code-block">sudo apt-get install ghostscript</div>
+                                        <div class="step-desc"><strong>Fedora :</strong></div>
+                                        <div class="code-block">sudo dnf install ghostscript</div>
+                                        <div class="step-desc"><strong>Arch :</strong></div>
+                                        <div class="code-block">sudo pacman -S ghostscript</div>
+                                        <div class="step-desc"><strong>Vérification :</strong></div>
+                                        <div class="code-block">gs --version</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📥</span>ÉTAPE 2 • TÉLÉCHARGEMENT</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul class="file-list">
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">🐍</span>
+                                            <div>
+                                                <div class="file-name">convertisseur_gui.py</div>
+                                                <div class="file-desc">Application • ~15 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('convertisseur_gui.py', 'python')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">⚙️</span>
+                                            <div>
+                                                <div class="file-name">lancer_convertisseur.sh</div>
+                                                <div class="file-desc">Lanceur • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('lancer_convertisseur.sh', 'sh')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📄</span>
+                                            <div>
+                                                <div class="file-name">README.md</div>
+                                                <div class="file-desc">Documentation • ~3 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('README.md', 'readme')">📥 DL</button>
+                                    </li>
+                                </ul>
+                                <button class="btn-download-all" onclick="downloadAllLinux()">⬇️ TOUT TÉLÉCHARGER</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">🚀</span>ÉTAPE 3 • LANCEMENT</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">OUVRIR UN TERMINAL</div>
+                                        <div class="step-desc">Raccourci : <strong>Ctrl + Alt + T</strong></div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">ALLER DANS LE DOSSIER</div>
+                                        <div class="code-block">cd ~/Downloads/SuperPrintConvert</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">3</span>
+                                    <div>
+                                        <div class="step-title">RENDRE EXÉCUTABLE ET LANCER</div>
+                                        <div class="code-block">chmod +x lancer_convertisseur.sh
+./lancer_convertisseur.sh</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ENGLISH LINUX -->
+                <div data-lang="en">
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📋</span>STEP 1 • REQUIREMENTS</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">INSTALL PYTHON 3.7+</div>
+                                        <div class="step-desc"><strong>Ubuntu/Debian:</strong></div>
+                                        <div class="code-block">sudo apt-get update
+sudo apt-get install python3 python3-pip python3-tk</div>
+                                        <div class="step-desc"><strong>Fedora:</strong></div>
+                                        <div class="code-block">sudo dnf install python3 python3-pip python3-tkinter</div>
+                                        <div class="step-desc"><strong>Arch:</strong></div>
+                                        <div class="code-block">sudo pacman -S python python-pip tk</div>
+                                        <div class="step-desc"><strong>Verification:</strong></div>
+                                        <div class="code-block">python3 --version</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">INSTALL GHOSTSCRIPT (FOR PDFs)</div>
+                                        <div class="step-desc"><strong>Ubuntu/Debian:</strong></div>
+                                        <div class="code-block">sudo apt-get install ghostscript</div>
+                                        <div class="step-desc"><strong>Fedora:</strong></div>
+                                        <div class="code-block">sudo dnf install ghostscript</div>
+                                        <div class="step-desc"><strong>Arch:</strong></div>
+                                        <div class="code-block">sudo pacman -S ghostscript</div>
+                                        <div class="step-desc"><strong>Verification:</strong></div>
+                                        <div class="code-block">gs --version</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📥</span>STEP 2 • DOWNLOAD</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul class="file-list">
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">🐍</span>
+                                            <div>
+                                                <div class="file-name">convertisseur_gui.py</div>
+                                                <div class="file-desc">Application • ~15 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('convertisseur_gui.py', 'python')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">⚙️</span>
+                                            <div>
+                                                <div class="file-name">lancer_convertisseur.sh</div>
+                                                <div class="file-desc">Launcher • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('lancer_convertisseur.sh', 'sh')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📄</span>
+                                            <div>
+                                                <div class="file-name">README.md</div>
+                                                <div class="file-desc">Documentation • ~3 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('README.md', 'readme')">📥 DL</button>
+                                    </li>
+                                </ul>
+                                <button class="btn-download-all" onclick="downloadAllLinux()">⬇️ DOWNLOAD ALL</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">🚀</span>STEP 3 • LAUNCH</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">OPEN A TERMINAL</div>
+                                        <div class="step-desc">Shortcut: <strong>Ctrl + Alt + T</strong></div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">GO TO FOLDER</div>
+                                        <div class="code-block">cd ~/Downloads/SuperPrintConvert</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">3</span>
+                                    <div>
+                                        <div class="step-title">MAKE EXECUTABLE AND RUN</div>
+                                        <div class="code-block">chmod +x lancer_convertisseur.sh
+./lancer_convertisseur.sh</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JAPANESE LINUX -->
+                <div data-lang="ja">
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📋</span>ステップ 1 • 要件</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">PYTHON 3.7+をインストール</div>
+                                        <div class="step-desc"><strong>Ubuntu/Debian:</strong></div>
+                                        <div class="code-block">sudo apt-get update
+sudo apt-get install python3 python3-pip python3-tk</div>
+                                        <div class="step-desc"><strong>Fedora:</strong></div>
+                                        <div class="code-block">sudo dnf install python3 python3-pip python3-tkinter</div>
+                                        <div class="step-desc"><strong>Arch:</strong></div>
+                                        <div class="code-block">sudo pacman -S python python-pip tk</div>
+                                        <div class="step-desc"><strong>確認:</strong></div>
+                                        <div class="code-block">python3 --version</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">GHOSTSCRIPTをインストール（PDF用）</div>
+                                        <div class="step-desc"><strong>Ubuntu/Debian:</strong></div>
+                                        <div class="code-block">sudo apt-get install ghostscript</div>
+                                        <div class="step-desc"><strong>Fedora:</strong></div>
+                                        <div class="code-block">sudo dnf install ghostscript</div>
+                                        <div class="step-desc"><strong>Arch:</strong></div>
+                                        <div class="code-block">sudo pacman -S ghostscript</div>
+                                        <div class="step-desc"><strong>確認:</strong></div>
+                                        <div class="code-block">gs --version</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">📥</span>ステップ 2 • ダウンロード</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <ul class="file-list">
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">🐍</span>
+                                            <div>
+                                                <div class="file-name">convertisseur_gui.py</div>
+                                                <div class="file-desc">アプリ • ~15 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('convertisseur_gui.py', 'python')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">⚙️</span>
+                                            <div>
+                                                <div class="file-name">lancer_convertisseur.sh</div>
+                                                <div class="file-desc">ランチャー • ~1 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('lancer_convertisseur.sh', 'sh')">📥 DL</button>
+                                    </li>
+                                    <li class="file-item">
+                                        <div class="file-info">
+                                            <span class="file-icon">📄</span>
+                                            <div>
+                                                <div class="file-name">README.md</div>
+                                                <div class="file-desc">ドキュメント • ~3 KB</div>
+                                            </div>
+                                        </div>
+                                        <button class="btn-file" onclick="downloadFile('README.md', 'readme')">📥 DL</button>
+                                    </li>
+                                </ul>
+                                <button class="btn-download-all" onclick="downloadAllLinux()">⬇️ すべてダウンロード</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><span class="platform-icon">🚀</span>ステップ 3 • 起動</span>
+                            <span class="accordion-icon">▼</span>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="accordion-body">
+                                <div class="step">
+                                    <span class="step-number">1</span>
+                                    <div>
+                                        <div class="step-title">ターミナルを開く</div>
+                                        <div class="step-desc">ショートカット: <strong>Ctrl + Alt + T</strong></div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">2</span>
+                                    <div>
+                                        <div class="step-title">フォルダに移動</div>
+                                        <div class="code-block">cd ~/Downloads/SuperPrintConvert</div>
+                                    </div>
+                                </div>
+
+                                <div class="step">
+                                    <span class="step-number">3</span>
+                                    <div>
+                                        <div class="step-title">実行可能にして起動</div>
+                                        <div class="code-block">chmod +x lancer_convertisseur.sh
+./lancer_convertisseur.sh</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-text">
+            <span data-lang="fr">SUPER PRINT CONVERT • OPEN SOURCE • 2025</span>
+            <span data-lang="en">SUPER PRINT CONVERT • OPEN SOURCE • 2025</span>
+            <span data-lang="ja">SUPER PRINT CONVERT • オープンソース • 2025</span>
+        </div>
+    </div>
+
+    <script>
+        // CODE PYTHON COMPLET (Du document original)
+        const PYTHON_APP = String.raw`"""
+Interface Graphique - Convertisseur RGB vers CMYK
+Application desktop avec Tkinter pour conversion professionnelle
+"""
+
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+try:
+    from tkinterdnd2 import DND_FILES, TkinterDnD
+    HAS_DND = True
+except ImportError:
+    HAS_DND = False
+from PIL import Image
+import subprocess
+import threading
+from pathlib import Path
+import os
+import sys
+
+class CMYKConverterGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("🎨 Super Print Convert - RGB → CMYK")
+        self.root.geometry("900x700")
+        self.root.resizable(True, True)
+        
+        self.input_file = None
+        self.output_file = None
+        self.is_converting = False
+        
+        self.setup_styles()
+        self.create_widgets()
+        
+    def setup_styles(self):
+        style = ttk.Style()
+        style.theme_use('clam')
+        
+        self.colors = {
+            'primary': '#667eea',
+            'secondary': '#764ba2',
+            'success': '#4caf50',
+            'danger': '#f44336',
+            'warning': '#ff9800',
+            'bg': '#f5f5f5',
+            'white': '#ffffff',
+            'text': '#333333',
+            'text_light': '#666666'
+        }
+        
+        style.configure('Primary.TButton',
+                       background=self.colors['primary'],
+                       foreground='white',
+                       borderwidth=0,
+                       focuscolor='none',
+                       padding=15,
+                       font=('Segoe UI', 11, 'bold'))
+        
+        style.configure('Success.TButton',
+                       background=self.colors['success'],
+                       foreground='white',
+                       borderwidth=0,
+                       focuscolor='none',
+                       padding=15,
+                       font=('Segoe UI', 11, 'bold'))
+        
+        style.configure('Secondary.TButton',
+                       background=self.colors['secondary'],
+                       foreground='white',
+                       borderwidth=0,
+                       focuscolor='none',
+                       padding=12,
+                       font=('Segoe UI', 10))
+        
+    def create_widgets(self):
+        main_frame = ttk.Frame(self.root, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.create_header(main_frame)
+        self.create_drop_zone(main_frame)
+        self.create_info_section(main_frame)
+        self.create_progress_section(main_frame)
+        self.create_action_buttons(main_frame)
+        
+    def create_header(self, parent):
+        header_frame = ttk.Frame(parent)
+        header_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        title = tk.Label(header_frame,
+                        text="🎨 Super Print Convert",
+                        font=('Segoe UI', 24, 'bold'),
+                        fg=self.colors['primary'],
+                        bg=self.colors['bg'])
+        title.pack()
+        
+        subtitle = tk.Label(header_frame,
+                           text="Conversion professionnelle RGB → CMYK",
+                           font=('Segoe UI', 11),
+                           fg=self.colors['text_light'],
+                           bg=self.colors['bg'])
+        subtitle.pack()
+        
+        badge_frame = ttk.Frame(header_frame)
+        badge_frame.pack(pady=5)
+        
+        badge = tk.Label(badge_frame,
+                        text="✓ Vraie conversion serveur",
+                        font=('Segoe UI', 9),
+                        fg='white',
+                        bg=self.colors['success'],
+                        padx=15,
+                        pady=5)
+        badge.pack()
+        
+    def create_drop_zone(self, parent):
+        self.drop_frame = tk.Frame(parent,
+                                   bg=self.colors['white'],
+                                   highlightbackground=self.colors['primary'],
+                                   highlightthickness=3,
+                                   highlightcolor=self.colors['secondary'])
+        self.drop_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        if HAS_DND:
+            try:
+                self.drop_frame.drop_target_register(DND_FILES)
+                self.drop_frame.dnd_bind('<<Drop>>', self.on_drop)
+            except:
+                pass
+        
+        icon_label = tk.Label(self.drop_frame,
+                             text="📤",
+                             font=('Segoe UI', 72),
+                             bg=self.colors['white'])
+        icon_label.pack(pady=(40, 10))
+        
+        main_text = tk.Label(self.drop_frame,
+                            text="Glissez-déposez votre fichier ici",
+                            font=('Segoe UI', 16, 'bold'),
+                            fg=self.colors['text'],
+                            bg=self.colors['white'])
+        main_text.pack()
+        
+        or_text = tk.Label(self.drop_frame,
+                          text="ou",
+                          font=('Segoe UI', 11),
+                          fg=self.colors['text_light'],
+                          bg=self.colors['white'])
+        or_text.pack(pady=10)
+        
+        browse_btn = ttk.Button(self.drop_frame,
+                               text="📁 Parcourir les fichiers",
+                               style='Primary.TButton',
+                               command=self.browse_file)
+        browse_btn.pack(pady=10)
+        
+        formats_text = tk.Label(self.drop_frame,
+                               text="Formats acceptés: PDF, JPG, PNG, GIF, TIFF",
+                               font=('Segoe UI', 9),
+                               fg=self.colors['text_light'],
+                               bg=self.colors['white'])
+        formats_text.pack(pady=(10, 40))
+        
+    def create_info_section(self, parent):
+        self.info_frame = ttk.Frame(parent)
+        self.info_frame.pack(fill=tk.X, pady=10)
+        self.info_frame.pack_forget()
+        
+        info_title = tk.Label(self.info_frame,
+                             text="📊 Informations du fichier",
+                             font=('Segoe UI', 14, 'bold'),
+                             fg=self.colors['text'],
+                             bg=self.colors['bg'])
+        info_title.pack(pady=(15, 10), padx=15, anchor='w')
+        
+        info_container = ttk.Frame(self.info_frame)
+        info_container.pack(fill=tk.X, padx=15, pady=(0, 15))
+        
+        self.info_labels = {}
+        info_items = [
+            ('Fichier original:', 'filename'),
+            ('Type:', 'filetype'),
+            ('Taille:', 'filesize'),
+            ('Statut:', 'status')
+        ]
+        
+        for i, (label_text, key) in enumerate(info_items):
+            row_frame = ttk.Frame(info_container)
+            row_frame.pack(fill=tk.X, pady=5)
+            
+            label = tk.Label(row_frame,
+                           text=label_text,
+                           font=('Segoe UI', 10, 'bold'),
+                           fg=self.colors['text_light'],
+                           bg=self.colors['bg'],
+                           width=20,
+                           anchor='w')
+            label.pack(side=tk.LEFT)
+            
+            value = tk.Label(row_frame,
+                           text="-",
+                           font=('Segoe UI', 10),
+                           fg=self.colors['text'],
+                           bg=self.colors['bg'],
+                           anchor='w')
+            value.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            
+            self.info_labels[key] = value
+        
+    def create_progress_section(self, parent):
+        self.progress_frame = ttk.Frame(parent)
+        self.progress_frame.pack(fill=tk.X, pady=10)
+        self.progress_frame.pack_forget()
+        
+        self.status_label = tk.Label(self.progress_frame,
+                                     text="Conversion en cours...",
+                                     font=('Segoe UI', 11, 'bold'),
+                                     fg=self.colors['primary'])
+        self.status_label.pack(pady=(0, 10))
+        
+        self.progress_bar = ttk.Progressbar(self.progress_frame,
+                                           mode='indeterminate',
+                                           length=300)
+        self.progress_bar.pack(pady=5)
+        
+    def create_action_buttons(self, parent):
+        self.action_frame = ttk.Frame(parent)
+        self.action_frame.pack(fill=tk.X, pady=20)
+        self.action_frame.pack_forget()
+        
+        button_container = ttk.Frame(self.action_frame)
+        button_container.pack()
+        
+        self.download_btn = ttk.Button(button_container,
+                                      text="📥 Ouvrir le fichier CMYK",
+                                      style='Success.TButton',
+                                      command=self.open_output_file)
+        self.download_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.folder_btn = ttk.Button(button_container,
+                                    text="📂 Ouvrir le dossier",
+                                    style='Secondary.TButton',
+                                    command=self.open_output_folder)
+        self.folder_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.new_btn = ttk.Button(button_container,
+                                 text="🔄 Nouveau fichier",
+                                 style='Secondary.TButton',
+                                 command=self.reset)
+        self.new_btn.pack(side=tk.LEFT, padx=5)
+        
+    def browse_file(self):
+        filetypes = [
+            ('Tous les fichiers supportés', '*.pdf *.jpg *.jpeg *.png *.gif *.tiff *.tif'),
+            ('PDF', '*.pdf'),
+            ('Images', '*.jpg *.jpeg *.png *.gif *.tiff *.tif'),
+            ('Tous les fichiers', '*.*')
+        ]
+        
+        filename = filedialog.askopenfilename(
+            title="Sélectionner un fichier à convertir",
+            filetypes=filetypes
+        )
+        
+        if filename:
+            self.process_file(filename)
+    
+    def on_drop(self, event):
+        file_path = event.data.strip('{}')
+        self.process_file(file_path)
+    
+    def process_file(self, file_path):
+        if self.is_converting:
+            messagebox.showwarning("Attention", "Une conversion est déjà en cours")
+            return
+        
+        self.input_file = Path(file_path)
+        
+        if not self.input_file.exists():
+            messagebox.showerror("Erreur", "Le fichier n'existe pas")
+            return
+        
+        ext = self.input_file.suffix.lower()
+        allowed = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.tiff', '.tif']
+        if ext not in allowed:
+            messagebox.showerror("Erreur", "Format de fichier non supporté")
+            return
+        
+        self.output_file = self.input_file.parent / f"{self.input_file.stem}_CMYK{self.input_file.suffix}"
+        
+        self.show_file_info()
+        self.start_conversion()
+    
+    def show_file_info(self):
+        file_size = self.input_file.stat().st_size
+        size_mb = file_size / (1024 * 1024)
+        
+        self.info_labels['filename'].config(text=self.input_file.name)
+        self.info_labels['filetype'].config(text=self.input_file.suffix[1:].upper())
+        self.info_labels['filesize'].config(text=f"{size_mb:.2f} MB")
+        self.info_labels['status'].config(text="En attente...", fg=self.colors['warning'])
+        
+        self.info_frame.pack(fill=tk.X, pady=10)
+        self.drop_frame.pack_forget()
+    
+    def start_conversion(self):
+        self.is_converting = True
+        
+        self.progress_frame.pack(fill=tk.X, pady=10)
+        self.progress_bar.start(10)
+        self.status_label.config(text="Conversion en cours...")
+        
+        thread = threading.Thread(target=self.convert_file, daemon=True)
+        thread.start()
+    
+    def convert_file(self):
+        try:
+            ext = self.input_file.suffix.lower()
+            
+            if ext == '.pdf':
+                success, message = self.convert_pdf_ghostscript()
+            else:
+                success, message = self.convert_image_pillow()
+            
+            self.root.after(0, self.conversion_complete, success, message)
+            
+        except Exception as e:
+            self.root.after(0, self.conversion_complete, False, str(e))
+    
+    def convert_pdf_ghostscript(self):
+        try:
+            gs_command = [
+                'gs',
+                '-dSAFER',
+                '-dBATCH',
+                '-dNOPAUSE',
+                '-dNOCACHE',
+                '-sDEVICE=pdfwrite',
+                '-sColorConversionStrategy=CMYK',
+                '-dProcessColorModel=/DeviceCMYK',
+                '-dCompatibilityLevel=1.4',
+                '-dPDFSETTINGS=/printer',
+                f'-sOutputFile={self.output_file}',
+                str(self.input_file)
+            ]
+            
+            result = subprocess.run(
+                gs_command,
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
+            
+            if result.returncode == 0:
+                return True, "Conversion réussie avec Ghostscript"
+            else:
+                return False, f"Erreur Ghostscript: {result.stderr}"
+                
+        except FileNotFoundError:
+            return False, "Ghostscript non installé sur votre système"
+        except subprocess.TimeoutExpired:
+            return False, "Timeout lors de la conversion (fichier trop volumineux?)"
+        except Exception as e:
+            return False, str(e)
+    
+    def convert_image_pillow(self):
+        try:
+            img = Image.open(self.input_file)
+            
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            cmyk_img = img.convert('CMYK')
+            
+            if self.output_file.suffix.lower() in ['.jpg', '.jpeg']:
+                cmyk_img.save(self.output_file, 'JPEG', quality=95, optimize=True)
+            elif self.output_file.suffix.lower() == '.png':
+                cmyk_img.convert('RGB').save(self.output_file, 'PNG', optimize=True)
+            else:
+                cmyk_img.save(self.output_file, quality=95, optimize=True)
+            
+            return True, "Conversion réussie avec Pillow"
+            
+        except Exception as e:
+            return False, str(e)
+    
+    def conversion_complete(self, success, message):
+        self.is_converting = False
+        self.progress_bar.stop()
+        self.progress_frame.pack_forget()
+        
+        if success:
+            self.info_labels['status'].config(
+                text="✅ Converti en CMYK",
+                fg=self.colors['success']
+            )
+            
+            self.action_frame.pack(fill=tk.X, pady=20)
+            
+            messagebox.showinfo(
+                "Conversion réussie",
+                f"Le fichier a été converti avec succès!\\n\\n"
+                f"Fichier de sortie:\\n{self.output_file.name}\\n\\n"
+                f"{message}"
+            )
+        else:
+            self.info_labels['status'].config(
+                text="❌ Échec",
+                fg=self.colors['danger']
+            )
+            
+            messagebox.showerror(
+                "Erreur de conversion",
+                f"La conversion a échoué:\\n\\n{message}\\n\\n"
+                "Vérifiez que Ghostscript (pour PDF) est installé."
+            )
+            
+            self.reset()
+    
+    def open_output_file(self):
+        if self.output_file and self.output_file.exists():
+            if sys.platform == 'win32':
+                os.startfile(self.output_file)
+            elif sys.platform == 'darwin':
+                subprocess.run(['open', self.output_file])
+            else:
+                subprocess.run(['xdg-open', self.output_file])
+    
+    def open_output_folder(self):
+        if self.output_file:
+            folder = self.output_file.parent
+            if sys.platform == 'win32':
+                os.startfile(folder)
+            elif sys.platform == 'darwin':
+                subprocess.run(['open', folder])
+            else:
+                subprocess.run(['xdg-open', folder])
+    
+    def reset(self):
+        self.input_file = None
+        self.output_file = None
+        
+        self.info_frame.pack_forget()
+        self.progress_frame.pack_forget()
+        self.action_frame.pack_forget()
+        self.drop_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+
+def main():
+    if HAS_DND:
+        root = TkinterDnD.Tk()
+    else:
+        root = tk.Tk()
+        print("⚠️ TkinterDnD2 non disponible - le drag & drop ne fonctionnera pas")
+    
+    root.configure(bg='#f5f5f5')
+    
+    app = CMYKConverterGUI(root)
+    
+    root.mainloop()
+
+if __name__ == "__main__":
+    print("""
+╔════════════════════════════════════════════════════════════╗
+║   🎨 SUPER PRINT CONVERT                                 ║
+║   Convertisseur RGB → CMYK professionnel                 ║
+╚════════════════════════════════════════════════════════════╝
+
+🚀 Lancement de l'interface graphique...
+""")
+    main()
+`;
+
+        const LANCER_BAT = `@echo off
+chcp 65001 > nul
+title Super Print Convert - Lancement
+
+echo.
+echo ╔════════════════════════════════════════════════════════════╗
+echo ║   🎨 SUPER PRINT CONVERT                                 ║
+echo ║   Convertisseur RGB vers CMYK professionnel               ║
+echo ╚════════════════════════════════════════════════════════════╝
+echo.
+
+echo [1/3] Vérification de Python...
+python --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo ❌ Python n'est pas installé ou pas dans le PATH
+    echo.
+    echo Installez Python depuis: https://www.python.org/downloads/
+    echo ⚠️  N'oubliez pas de cocher "Add Python to PATH" !
+    echo.
+    pause
+    exit /b 1
+)
+echo ✅ Python trouvé
+
+echo.
+echo [2/3] Installation des dépendances...
+pip install --quiet --upgrade pip
+pip install --quiet pillow tkinterdnd2
+echo ✅ Dépendances installées
+
+echo.
+echo [3/3] Lancement de l'application...
+python convertisseur_gui.py
+
+if %errorlevel% neq 0 (
+    echo.
+    echo ❌ Erreur lors du lancement
+    pause
+)
+`;
+
+        const LANCER_SH = `#!/bin/bash
+
+echo ""
+echo "╔════════════════════════════════════════════════════════════╗"
+echo "║   🎨 SUPER PRINT CONVERT                                 ║"
+echo "║   Convertisseur RGB vers CMYK professionnel               ║"
+echo "╚════════════════════════════════════════════════════════════╝"
+echo ""
+
+echo "[1/3] Vérification de Python..."
+if ! command -v python3 &> /dev/null; then
+    echo "❌ Python3 n'est pas installé"
+    echo "Installez Python depuis: https://www.python.org/downloads/"
+    exit 1
+fi
+echo "✅ Python trouvé"
+
+echo ""
+echo "[2/3] Installation des dépendances..."
+python3 -m pip install --quiet --upgrade pip
+python3 -m pip install --quiet pillow tkinterdnd2
+echo "✅ Dépendances installées"
+
+echo ""
+echo "[3/3] Lancement de l'application..."
+python3 convertisseur_gui.py
+`;
+
+        const CREER_EXE = `@echo off
+chcp 65001 > nul
+title Super Print Convert - Créateur d'EXE
+
+echo.
+echo ╔════════════════════════════════════════════════════════════╗
+echo ║   📦 CRÉATEUR D'EXÉCUTABLE WINDOWS                       ║
+echo ║   Super Print Convert - Version standalone               ║
+echo ╚════════════════════════════════════════════════════════════╝
+echo.
+
+echo [1/2] Installation de PyInstaller...
+pip install --quiet pyinstaller
+echo ✅ PyInstaller installé
+
+echo.
+echo [2/2] Création de l'exécutable...
+pyinstaller --onefile --windowed --name="SuperPrintConvert" --icon=NONE convertisseur_gui.py
+
+if %errorlevel% equ 0 (
+    echo.
+    echo ✅ Exécutable créé avec succès !
+    echo.
+    echo 📂 Fichier: dist\\SuperPrintConvert.exe
+    echo.
+    echo Vous pouvez maintenant distribuer ce fichier .exe
+    echo sans avoir besoin d'installer Python.
+) else (
+    echo.
+    echo ❌ Erreur lors de la création de l'exécutable
+)
+
+echo.
+pause
+`;
+
+        const README = `# 🎨 Super Print Convert
+
+Convertisseur professionnel RGB → CMYK pour l'impression
+
+## 🚀 Installation rapide
+
+### Windows
+1. Installez Python 3.7+ (cochez "Add to PATH" !)
+2. Installez Ghostscript (pour PDFs uniquement)
+3. Téléchargez tous les fichiers dans un dossier
+4. Double-cliquez sur \`lancer_convertisseur.bat\`
+
+### macOS / Linux
+1. Installez Python 3.7+
+2. Installez Ghostscript (pour PDFs uniquement)
+3. Téléchargez tous les fichiers dans un dossier
+4. Dans le terminal : \`chmod +x lancer_convertisseur.sh && ./lancer_convertisseur.sh\`
+
+## 📋 Prérequis
+
+### Obligatoire pour tous :
+- **Python 3.7+** : https://www.python.org/downloads/
+
+### Obligatoire uniquement pour les PDFs :
+- **Ghostscript** : https://www.ghostscript.com/releases/gsdnld.html
+
+## ✅ Formats supportés
+
+- **Images** : JPG, PNG, GIF, TIFF (seulement Python requis)
+- **PDFs** : Nécessite Ghostscript en plus de Python
+
+## 📦 Créer un .exe standalone (Windows uniquement)
+
+Double-cliquez sur \`creer_exe.bat\` pour créer un fichier .exe distributable.
+
+## 🔧 Problèmes courants
+
+### "python n'est pas reconnu..."
+→ Réinstallez Python en cochant "Add Python to PATH"
+
+### "gs n'est pas reconnu..." (pour PDFs)
+→ Installez Ghostscript depuis ghostscript.com
+
+## 📄 Licence
+
+Open Source - Gratuit pour usage professionnel et personnel
+
+---
+
+**Créé avec ❤️ pour les professionnels de l'impression**
+`;
+
+        const FILES = {
+            'python': PYTHON_APP,
+            'bat': LANCER_BAT,
+            'sh': LANCER_SH,
+            'exe': CREER_EXE,
+            'readme': README
+        };
+
+        // Fonction changement de langue
+        function setLanguage(lang) {
+            document.documentElement.lang = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Fonction toggle accordion
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            const isActive = header.classList.contains('active');
+            
+            // Fermer tous les autres accordéons
+            document.querySelectorAll('.accordion-header.active').forEach(h => {
+                if (h !== header) {
+                    h.classList.remove('active');
+                    h.nextElementSibling.classList.remove('active');
+                }
+            });
+            
+            // Toggle l'accordéon actuel
+            if (isActive) {
+                header.classList.remove('active');
+                content.classList.remove('active');
+            } else {
+                header.classList.add('active');
+                content.classList.add('active');
+            }
+        }
+
+        // Fonction switch OS
+        function switchOS(os) {
+            // Update tabs
+            document.querySelectorAll('.os-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content
+            document.querySelectorAll('.os-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById('os-' + os).classList.add('active');
+            
+            // Fermer tous les accordéons
+            document.querySelectorAll('.accordion-header').forEach(header => {
+                header.classList.remove('active');
+                header.nextElementSibling.classList.remove('active');
+            });
+        }
+
+        // Fonction téléchargement fichier
+        function downloadFile(filename, type) {
+            const content = FILES[type];
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Fonction télécharger tout Windows
+        function downloadAllWindows() {
+            setTimeout(() => downloadFile('convertisseur_gui.py', 'python'), 100);
+            setTimeout(() => downloadFile('lancer_convertisseur.bat', 'bat'), 300);
+            setTimeout(() => downloadFile('creer_exe.bat', 'exe'), 500);
+            setTimeout(() => downloadFile('README.md', 'readme'), 700);
+        }
+
+        // Fonction télécharger tout macOS
+        function downloadAllMac() {
+            setTimeout(() => downloadFile('convertisseur_gui.py', 'python'), 100);
+            setTimeout(() => downloadFile('lancer_convertisseur.sh', 'sh'), 300);
+            setTimeout(() => downloadFile('README.md', 'readme'), 500);
+        }
+
+        // Fonction télécharger tout Linux
+        function downloadAllLinux() {
+            setTimeout(() => downloadFile('convertisseur_gui.py', 'python'), 100);
+            setTimeout(() => downloadFile('lancer_convertisseur.sh', 'sh'), 300);
+            setTimeout(() => downloadFile('README.md', 'readme'), 500);
+        }
+    </script>
+</body>
+</html>
+
+        function setLanguage(lang) {
+            document.documentElement.lang = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            const isActive = header.classList.contains('active');
+            
+            document.querySelectorAll('.accordion-header.active').forEach(h => {
+                if (h !== header) {
+                    h.classList.remove('active');
+                    h.nextElementSibling.classList.remove('active');
+                }
+            });
+            
+            if (isActive) {
+                header.classList.remove('active');
+                content.classList.remove('active');
+            } else {
+                header.classList.add('active');
+                content.classList.add('active');
+            }
+        }
+
+        function switchOS(os) {
+            document.querySelectorAll('.os-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.os-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById('os-' + os).classList.add('active');
+            
+            document.querySelectorAll('.accordion-header').forEach(header => {
+                header.classList.remove('active');
+                header.nextElementSibling.classList.remove('active');
+            });
+        }
+
+        function downloadFile(filename, type) {
+            const content = FILES[type];
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadAllWindows() {
+            setTimeout(() => downloadFile('convertisseur_gui.py', 'python'), 100);
+            setTimeout(() => downloadFile('lancer_convertisseur.bat', 'bat'), 300);
+            setTimeout(() => downloadFile('creer_exe.bat', 'exe'), 500);
+            setTimeout(() => downloadFile('README.md', 'readme'), 700);
+        }
+
+        function downloadAllMac() {
+            setTimeout(() => downloadFile('convertisseur_gui.py', 'python'), 100);
+            setTimeout(() => downloadFile('lancer_convertisseur.sh', 'sh'), 300);
+            setTimeout(() => downloadFile('README.md', 'readme'), 500);
+        }
+
+        function downloadAllLinux() {
+            setTimeout(() => downloadFile('convertisseur_gui.py', 'python'), 100);
+            setTimeout(() => downloadFile('lancer_convertisseur.sh', 'sh'), 300);
+            setTimeout(() => downloadFile('README.md', 'readme'), 500);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+# SuperPrint — robots.txt
+# https://superprint.cc/
+
+# ── All search engines ───────────────────────────────────────
+User-agent: *
+Allow: /
+Disallow: /JS/
+Disallow: /CSS/
+Disallow: /SP/
+Disallow: /icons/
+Disallow: /*.php$
+
+# Explicitly allow key crawlable pages
+Allow: /
+Allow: /landing.html
+Allow: /documentation.html
+Allow: /cmyk-landing-secure.html
+Allow: /super-print-cmyk-convert.html
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /sitemap.xml
+Allow: /manifest.webmanifest
+
+# ── AI / LLM crawlers (2026 GEO — explicitly welcomed) ──────
+# SuperPrint's documentation, FAQ and feature descriptions are
+# intentionally made available to generative search engines so
+# users asking "best free browser DTP software" or "CMYK layout
+# in browser" get accurate, up-to-date information.
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Qwantify
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: MistralAI-User
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+User-agent: DiscordBot
+Allow: /
+
+# ── Sitemaps ─────────────────────────────────────────────────
+Sitemap: https://superprint.cc/sitemap.xml

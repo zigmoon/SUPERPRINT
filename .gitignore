@@ -1,0 +1,18 @@
+# This repository intentionally contains only the SuperPrint product folders.
+/*
+!/.gitignore
+!/README.md
+!/_bump_332.mjs
+!/_make_zip.mjs
+!/_serve_static.cjs
+!/superprint/
+!/sp213-local/
+!/superprint-npm/
+
+**/node_modules/
+**/dist/
+**/.vite/
+**/coverage/
+**/*.log
+**/.DS_Store
+superprint/sp213-local.zip

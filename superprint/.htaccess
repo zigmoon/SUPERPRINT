@@ -1,0 +1,60 @@
+# Activer la compression GZIP
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# Cache des ressources statiques
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/jpg "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/x-icon "access plus 1 year"
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType application/x-javascript "access plus 1 month"
+  ExpiresByType text/javascript "access plus 1 month"
+  ExpiresByType application/json "access plus 0 seconds"
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# Headers de sécurité
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "no-referrer-when-downgrade"
+  Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' cdnjs.cloudflare.com cdn.jsdelivr.net esm.run; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src * data: blob:; connect-src 'self' data: blob: https://api.anthropic.com https://api.openai.com https://api.deepseek.com https://api.groq.com https://images.unsplash.com https://picsum.photos https://api.pinata.cloud https://gateway.pinata.cloud https://huggingface.co https://raw.githubusercontent.com esm.run; worker-src 'self' blob:"
+</IfModule>
+
+# Forcer HTTPS
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Keep this rule on the legacy app.zigmoon.com/SUPERPRINT deployment.
+  # It is inactive on superprint.cc and preserves the requested path/query.
+  RewriteCond %{HTTP_HOST} ^(www\.)?app\.zigmoon\.com$ [NC]
+  RewriteRule ^(.*)$ https://superprint.cc/$1 [R=301,L,NE]
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Type MIME pour manifest
+AddType application/manifest+json .webmanifest
+AddType application/json .json
+
+# llms.txt / llms-full.txt servis en UTF-8 (GEO 2026)
+<FilesMatch "^(llms|llms-full)\.txt$">
+    ForceType "text/plain; charset=UTF-8"
+    Header set Cache-Control "public, max-age=3600"
+    Header set X-Robots-Tag "index, follow"
+</FilesMatch>
+
+# Désactiver le listing des répertoires
+Options -Indexes
+
+# Bloquer les fichiers sensibles (backups, scripts internes, docs dev)
+<FilesMatch "\.(bak|py|md)$">
+    Require all denied
+</FilesMatch>
