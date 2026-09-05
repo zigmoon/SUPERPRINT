@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint v1.7.332 — Zigmoon
+         SuperPrint v1.7.333 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint v1.7.332 — Zigmoon">
+    <meta name="generator" content="SuperPrint v1.7.333 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.332",
+          "softwareVersion": "1.7.333",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -383,7 +383,7 @@
     <!-- PWA Manifest (only served over http/https, not file://) -->
     <script>if(location.protocol!=='file:'){var l=document.createElement('link');l.rel='manifest';l.href='manifest.webmanifest';document.head.appendChild(l);}</script>
 
-    <!-- 🛡️ v1.7.332 : PRELOAD de la photo du splash EN LIGNE uniquement.
+    <!-- 🛡️ v1.7.333 : PRELOAD de la photo du splash EN LIGNE uniquement.
          Grosse rotation créative (14 thèmes : mode, archi, art, nature morte,
          nature, ville, néon) — plus de variété, plus moderne. 900px q=45,
          ~20-85 Ko, chargement quasi instantané. En local rien n'est préchargé. -->
@@ -441,7 +441,7 @@
          Si un vendor est manquant : copier depuis _backups/SUPERPRINT/. NE PAS rajouter de CDN. -->
     <script src="JS/fabric.min.js"></script>
     <script>if(!window.fabric){console.error('[SuperPrint] ❌ JS/fabric.min.js non chargé');}</script>
-    <!-- 🚀 v1.7.332 (perf 2026-09-03) : jspdf/svg2pdf/opentype/wawoff2/fontkit/pdf-lib/jszip/pdf.min
+    <!-- 🚀 v1.7.333 (perf 2026-09-03) : jspdf/svg2pdf/opentype/wawoff2/fontkit/pdf-lib/jszip/pdf.min
          (~2,95 Mo) ne servent que pendant un export PDF/imposition, un import PDF, un
          export D4/image multi-pages, ou l'import DOCX — jamais au démarrage. Chargés à
          la demande par ensureExportLibs()/ensureZipLib()/ensurePdfImportLib() (main.js)
@@ -981,7 +981,7 @@
                 <div class="splash-brand-big">SUPER PRINT</div>
             </div>
             <div class="splash-media">
-                <!-- 🛡️ v1.7.332 : image splash LOCALE par défaut → en file://,
+                <!-- 🛡️ v1.7.333 : image splash LOCALE par défaut → en file://,
                      AUCUNE requête réseau externe n'est déclenchée (picsum.photos
                      n'est JAMAIS dans le HTML en local). En version EN LIGNE (https),
                      le script ci-dessous remplace cette image par la photo picsum. -->
@@ -990,7 +990,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">v1.7.332</div>
+                <div class="splash-version">v1.7.333</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1007,7 +1007,7 @@
     (function() {
         var splash = document.getElementById('splashScreen');
         if (!splash) return;
-        // 🛡️ v1.7.332 : en mode LOCAL (file:// ou localhost), on n'affiche PAS
+        // 🛡️ v1.7.333 : en mode LOCAL (file:// ou localhost), on n'affiche PAS
         // la colonne média (l'image est déjà LOCALE, aucune requête réseau).
         // En mode EN LIGNE (https), on remplace l'image par la photo externe.
         try {
@@ -1027,7 +1027,7 @@
             } else {
                 // EN LIGNE : on affiche IMMÉDIATEMENT la photo Unsplash artistique
                 // (déjà préchargée dans le <head> via _spSplashPhoto).
-                // 🛡️ v1.7.332 : 900px q=45 — entre-deux (ni flou, ni lourd).
+                // 🛡️ v1.7.333 : 900px q=45 — entre-deux (ni flou, ni lourd).
                 // Plus de picsum (down), plus de "logo sur fond gris".
                 var _img = splash.querySelector('#splashImage');
                 if (_img) {
@@ -1059,7 +1059,7 @@
         splash.addEventListener('click', hideSplash);
         var card = splash.querySelector('.splash-card');
         if (card) card.addEventListener('click', function(e) { e.stopPropagation(); hideSplash(); });
-        // 🛡️ v1.7.332 : comportement différent selon le mode.
+        // 🛡️ v1.7.333 : comportement différent selon le mode.
         //   - LOCAL (file:// ou localhost) : pas d'image externe → on cache le
         //     splash dès que le DOM est prêt (+ court délai) pour être rapide.
         //   - EN LIGNE (https) : on garde le splash avec la photo → on attend
@@ -1070,7 +1070,7 @@
             _isLocalMode = _p2 === 'file:' || _h2 === 'localhost' || _h2 === '127.0.0.1' || _h2 === '[::1]';
         } catch (_) {}
         if (_isLocalMode) {
-            // 🛡️ v1.7.332 : splash LOCAL — plus long (2 s) pour laisser le logo
+            // 🛡️ v1.7.333 : splash LOCAL — plus long (2 s) pour laisser le logo
             // + l'identité être bien vus, harmonisé avec la version web.
             function hideSoon() { setTimeout(hideSplash, 2000); }
             if (document.readyState === 'interactive' || document.readyState === 'complete') {
@@ -1080,7 +1080,7 @@
             }
             setTimeout(hideSplash, 3500);
         } else {
-            // 🛡️ v1.7.332 : EN LIGNE — le splash reste affiché le temps de voir
+            // 🛡️ v1.7.333 : EN LIGNE — le splash reste affiché le temps de voir
             // la photo (3,5 s après son chargement). On ne bloque pas sur le
             // load global ; filet de sécurité à 6 s max.
             var _img2 = splash.querySelector('#splashImage');
@@ -1112,7 +1112,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.332</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.333</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1208,7 +1208,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.332 | 08 2026<br>
+                V 1.7.333 | 08 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1777,12 +1777,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.332). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.333). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.332 — internal cache tag: JS v332 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.333 — internal cache tag: JS v333 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v332-hotfix"
-                      data-sp-sw="v1.7.332">v1.7.332</span>
+                      data-sp-js="v333-hotfix"
+                      data-sp-sw="v1.7.333">v1.7.333</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -1905,7 +1905,7 @@
                     
                     <!-- v143: Barre de prompt IA dockée en pied de preview (activable depuis la pop-in IA) -->
                     <!-- 🆕 v1.7.174 — Barre IA dual-theme (clair/sombre) -->
-                    <!-- 🆕 v1.7.332 — Redesign compact : DA SuperPrint, drop images pointillé -->
+                    <!-- 🆕 v1.7.333 — Redesign compact : DA SuperPrint, drop images pointillé -->
                     <style>
                         #aiFooterBar {
                             display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:16px; z-index:900;
@@ -3112,7 +3112,7 @@
             <div class="sp-modal-close" id="closeExportModalBtn" onclick="closeExportModal()">✕</div>
         </div>
 
-        <!-- 🎨 v1.7.332 : boîte d'export en 2 colonnes (desktop) — ergonomie compacte -->
+        <!-- 🎨 v1.7.333 : boîte d'export en 2 colonnes (desktop) — ergonomie compacte -->
         <div id="exportModalGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start;">
         <!-- ═══ COLONNE GAUCHE : Qualité + Options ═══ -->
         <div>
@@ -3532,7 +3532,7 @@
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
                             <div>
                                 <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 900; letter-spacing: 2px; color: #1a1a1a;">SUPER PRINT</div>
-                                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: #999; margin-top: 6px;">v1.7.332</div>
+                                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: #999; margin-top: 6px;">v1.7.333</div>
                             </div>
                             <a href="documentation.html" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: #0c0c0f; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; transition: background 0.2s;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='#0c0c0f'">
                                 <span data-translate="settingsManualBtn">Manuel &amp; Documentation</span>
@@ -3621,7 +3621,7 @@
                     </div>
 
                     <div style="text-align: center; padding-top: 16px; font-size: 10px; color: #999;">
-                        SuperPrint v1.7.332 — 29 août 2026
+                        SuperPrint v1.7.333 — 29 août 2026
                     </div>
                     <div style="padding: 12px 0 0; display: flex; gap: 12px; justify-content: flex-end;">
                         <button class="btn btn-secondary" onclick="closeSettings()">Annuler</button>
@@ -5540,13 +5540,13 @@
 
     <!-- All application logic moved to JS/main.js -->    
     <!-- External scripts -->
-    <script src="JS/patches-core.js?v=20260830-v332-modules" defer></script>
+    <script src="JS/patches-core.js?v=20260830-v333-modules" defer></script>
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260830-v332-sp213" defer></script>
+    <script src="JS/main.js?v=20260830-v333-sp213" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
-    <script src="JS/virtual-printer.js?v=20260830-v332-vps" defer></script>
+    <script src="JS/virtual-printer.js?v=20260830-v333-vps" defer></script>
     <script src="JS/collab.js?v=20260507-v015-collab-resilience-disclaimer" defer></script>
     <script src="JS/pwa.js?v=20260501-no-double-splash" defer></script>
 

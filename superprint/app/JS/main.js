@@ -36631,6 +36631,77 @@ https://superprint.app
             }
         }
 
+        // 🛡️ FIX 2026-09-05 (export PDF — perte du titre/typo en CMJN + typo
+        // vectorielle + fond transparent) :
+        //   Rend une LISTE d'objets raster CROPPÉE à la bounding box réelle des
+        //   objets (au lieu d'un PNG pleine page). Pourquoi : jsPDF ajoute chaque
+        //   run raster comme un PNG transparent pleine page. En RVB le SMask est
+        //   conservé → les zones transparentes laissent voir le texte vectoriel
+        //   jsPDF écrit en dessous. Mais la conversion CMJN (convertPdfToCmyk,
+        //   FIX BUG 19/20) pré-composite l'alpha sur blanc et RETIRE le SMask :
+        //   un PNG pleine page (même quasi vide) devient un rectangle blanc
+        //   OPAQUE pleine page qui recouvre tout le texte vectoriel jsPDF dessous
+        //   → le titre / les typos disparaissent dès qu'une photo (même petite,
+        //   même éloignée) est présente sur la page. En croppant chaque run à la
+        //   bbox de ses objets, le rectangle blanc CMJN ne couvre plus que la zone
+        //   réellement occupée par l'image → le texte hors de cette zone reste
+        //   visible. Le z-order reste correct (les runs sont ajoutés dans l'ordre).
+        //   Retourne { url, left, top, width, height } en px canvas (bbox réelle),
+        //   ou null si aucun objet / échec.
+        function _renderObjectsRunToImageCropped(srcCanvas, runObjects, multiplier, rasterFormat, rasterQuality) {
+            const valid = (runObjects || []).filter(o => o && o.visible !== false);
+            if (!valid.length) return null;
+            try {
+                // Bounding box union (canvas px) des objets du run
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                for (const o of valid) {
+                    const b = o.getBoundingRect(true, true);
+                    if (!b) continue;
+                    if (b.left < minX) minX = b.left;
+                    if (b.top < minY) minY = b.top;
+                    if (b.left + b.width > maxX) maxX = b.left + b.width;
+                    if (b.top + b.height > maxY) maxY = b.top + b.height;
+                }
+                if (minX === Infinity) return null;
+                // Petite marge anti-écrêtage des pixels semi-transparents du bord
+                const PAD = 1;
+                minX = Math.max(0, Math.floor(minX) - PAD);
+                minY = Math.max(0, Math.floor(minY) - PAD);
+                maxX = Math.min(srcCanvas.width, Math.ceil(maxX) + PAD);
+                maxY = Math.min(srcCanvas.height, Math.ceil(maxY) + PAD);
+                const bw = Math.max(1, Math.round(maxX - minX));
+                const bh = Math.max(1, Math.round(maxY - minY));
+                if (bw < 1 || bh < 1) return null;
+
+                const runSet = new Set(valid);
+                const visibility = srcCanvas.getObjects().map(obj => [obj, obj.visible]);
+                let url = null;
+                try {
+                    visibility.forEach(([obj, wasVisible]) => {
+                        if (!runSet.has(obj) && wasVisible !== false) obj.visible = false;
+                    });
+                    srcCanvas.renderAll();
+                    url = srcCanvas.toDataURL({
+                        format: rasterFormat,
+                        quality: rasterQuality,
+                        multiplier: multiplier,
+                        enableRetinaScaling: false,
+                        left: minX,
+                        top: minY,
+                        width: bw,
+                        height: bh
+                    });
+                } finally {
+                    visibility.forEach(([obj, wasVisible]) => { obj.visible = wasVisible; });
+                    srcCanvas.renderAll();
+                }
+                return { url, left: minX, top: minY, width: bw, height: bh };
+            } catch (e) {
+                console.warn('[SP-hybrid] _renderObjectsRunToImageCropped failed, fallback full run:', e);
+                return null;
+            }
+        }
+
         // 🛡️ Phase 2 (2026-05-01) — v1.7.175 (2026-06-12) : TEXTE PDF-LIB.
         // Au lieu d'utiliser jsPDF pour le texte (qui a un système d'events
         // asynchrones pour addFont), on utilise font.getPath() pour convertir
@@ -37409,32 +37480,63 @@ https://superprint.app
                         if (!ok) {
                             // Fallback : rasteriser cet objet seul
                             _allVectorOk = false;
-                            let url = _renderObjectsRunToImage(srcCanvas, [obj], multiplier, rasterFormat, rasterQuality);
+                            // 🛡️ FIX 2026-09-05 : cropper à la bbox de l'objet pour
+                            //   éviter qu'un PNG pleine page redevienne un rectangle
+                            //   blanc opaque après conversion CMJN (perte des typos).
+                            let _rObj = (typeof _renderObjectsRunToImageCropped === 'function')
+                                ? _renderObjectsRunToImageCropped(srcCanvas, [obj], multiplier, rasterFormat, rasterQuality)
+                                : null;
+                            let url = (_rObj && _rObj.url) ? _rObj.url : null;
+                            let _rx = pdfOffsetX, _ry = pdfOffsetY, _rw = canvasWmm, _rh = canvasHmm;
+                            if (_rObj && _rObj.url) {
+                                _rx = pdfOffsetX + pxToMm(_rObj.left);
+                                _ry = pdfOffsetY + pxToMm(_rObj.top);
+                                _rw = pxToMm(_rObj.width);
+                                _rh = pxToMm(_rObj.height);
+                            } else {
+                                url = _renderObjectsRunToImage(srcCanvas, [obj], multiplier, rasterFormat, rasterQuality);
+                            }
                             if (url && opts.colorMode === 'bw' && typeof opts.convertToGrayscale === 'function') {
                                 url = await opts.convertToGrayscale(url, rasterFormat, rasterQuality);
                             }
                             if (url) {
-                                pdf.addImage(url, pdfImageFormat, pdfOffsetX, pdfOffsetY,
-                                             canvasWmm, canvasHmm, undefined, compression);
+                                pdf.addImage(url, pdfImageFormat, _rx, _ry, _rw, _rh, undefined, compression);
                             } else _hybridRenderComplete = false;
                         }
                     }
                 } else {
                     // Raster run : rendre tous ces objets ensemble dans une seule image
-                    let url = _renderObjectsRunToImage(srcCanvas, run.items, multiplier, rasterFormat, rasterQuality);
+                    // 🛡️ FIX 2026-09-05 : cropper le run à la bbox réelle de ses objets
+                    //   (cf. _renderObjectsRunToImageCropped) — évite qu'en CMJN le
+                    //   PNG pleine page (transparent → blanc opaque après flatten
+                    //   alpha-sur-blanc de convertPdfToCmyk) recouvre et efface le
+                    //   texte vectoriel jsPDF écrit sous le run.
+                    let _rRun = (typeof _renderObjectsRunToImageCropped === 'function')
+                        ? _renderObjectsRunToImageCropped(srcCanvas, run.items, multiplier, rasterFormat, rasterQuality)
+                        : null;
+                    let url = (_rRun && _rRun.url) ? _rRun.url : null;
+                    let _rx = pdfOffsetX, _ry = pdfOffsetY, _rw = canvasWmm, _rh = canvasHmm;
+                    if (_rRun && _rRun.url) {
+                        _rx = pdfOffsetX + pxToMm(_rRun.left);
+                        _ry = pdfOffsetY + pxToMm(_rRun.top);
+                        _rw = pxToMm(_rRun.width);
+                        _rh = pxToMm(_rRun.height);
+                    } else {
+                        url = _renderObjectsRunToImage(srcCanvas, run.items, multiplier, rasterFormat, rasterQuality);
+                    }
                     if (url && opts.colorMode === 'bw' && typeof opts.convertToGrayscale === 'function') {
                         url = await opts.convertToGrayscale(url, rasterFormat, rasterQuality);
                     }
                     if (url) {
-                        pdf.addImage(url, pdfImageFormat, pdfOffsetX, pdfOffsetY,
-                                     canvasWmm, canvasHmm, undefined, compression);
+                        pdf.addImage(url, pdfImageFormat, _rx, _ry, _rw, _rh, undefined, compression);
                     } else _hybridRenderComplete = false;
                 }
             }
-            // Chaque run raster est déjà ajouté comme PNG transparent aux dimensions
-            // exactes du canvas. Avec la typo vectorielle, le rendu hybride est donc
-            // complet même s'il contient des photos : ne pas le recouvrir ensuite par
-            // une image pleine page qui rasteriserait le texte et recalculerait l'échelle.
+            // Chaque run raster est déjà ajouté comme PNG (croppé à sa bbox) aux
+            // dimensions exactes de ses objets. Avec la typo vectorielle, le rendu
+            // hybride est donc complet même s'il contient des photos : ne pas le
+            // recouvrir ensuite par une image pleine page qui rasteriserait le texte
+            // et recalculerait l'échelle.
             return _hybridRenderComplete;
         }
 

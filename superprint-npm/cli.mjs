@@ -19,7 +19,7 @@ const isWin = process.platform === 'win32';
 // ── URLs & chemins ────────────────────────────────────────────
 const APP_VERSION_URL = 'https://superprint.cc/version.txt';
 const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
-const MIN_APP_VERSION = '1.7.332';
+const MIN_APP_VERSION = '1.7.333';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');

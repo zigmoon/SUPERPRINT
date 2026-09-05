@@ -10,7 +10,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.332 (August 2026)
+- **Version**: 1.7.333 (August 2026)
 
 ## Core documentation
 
