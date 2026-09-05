@@ -1,72 +1,70 @@
 # SuperPrint Local — Vite + WebLLM
 
-**Toute** l'application SuperPrint (PAO + studio SP213) tourne **100% en local** : les modèles IA
-sont téléchargés **une seule fois** puis exécutés sur votre machine via WebGPU. Aucune donnée ne
-quitte votre ordinateur.
+The **whole** SuperPrint application (DTP + SP213 studio) runs **100% locally**: AI models are
+downloaded **once**, then executed on your machine via WebGPU. No data leaves your computer.
 
-## ⚡ Démarrage rapide
+## ⚡ Quick start
 
-### 1. Prérequis
-Installez [Node.js LTS](https://nodejs.org) (il inclut `npm`).
+### 1. Prerequisites
+Install [Node.js LTS](https://nodejs.org) (it includes `npm`).
 
-### 2. Copiez-collez dans un terminal (une seule ligne)
+### 2. Copy-paste in a terminal (single line)
 
-**Windows (PowerShell) :**
+**Windows (PowerShell):**
 ```powershell
 npx.cmd superprint
 ```
-> ⚠️ `npx.cmd` (et non `npx`) : sur certains PC, PowerShell bloque `npx.ps1` (PSSecurityException). Le `.cmd` contourne la politique d'exécution.
+> ⚠️ Use `npx.cmd` (not `npx`): on some PCs PowerShell blocks `npx.ps1` (PSSecurityException). The `.cmd` wrapper bypasses the execution policy.
 
-**macOS / Linux (Terminal) :**
+**macOS / Linux (Terminal):**
 ```bash
 npx superprint
 ```
 
-> 💡 Vous pouvez aussi **télécharger `sp213-local.zip`** depuis app.zigmoon.com, le décompresser,
-> puis : `cd sp213-local && npm install && npm run dev`.
+> 💡 You can also **download `sp213-local.zip`** from app.zigmoon.com, unzip it,
+> then: `cd sp213-local && npm install && npm run dev`.
 
-### 3. Ouvrez la pré-home
-Au lancement, le terminal affiche une **bannière SUPERPRINT** en grosses lettres, puis l'adresse : **http://localhost:5173**
+### 3. Open the pre-home
+On launch, the terminal shows a **SUPERPRINT banner** in large letters, then the address: **http://localhost:5173**
 
-> 💡 Pour relancer sans la bannière : `npm run dev:plain`
+> 💡 To start without the banner: `npm run dev:plain`
 
-Ouvrez-la dans Chrome ou Edge (WebGPU requis pour le mode local).
+Open it in Chrome or Edge (WebGPU is required for local mode).
 
-Depuis la pré-home (design blanc SuperPrint), deux choix :
+From the pre-home (white SuperPrint design), two choices:
 
-| Choix | Ce que ça fait |
+| Choice | What it does |
 |---|---|
-| **SuperPrint Local** (recommandé) | Ouvre l'application PAO SuperPrint complète servie par Vite |
-| **Studio Web** | Ouvre le studio SP213 (WebLLM local ou Groq cloud) |
+| **SuperPrint Local** (recommended) | Opens the full SuperPrint DTP application served by Vite |
+| **Web Studio** | Opens the SP213 studio (local WebLLM or Groq cloud) |
 
-## 🧠 Modèles locaux (studio SP213)
+## 🧠 Local models (SP213 studio)
 
-| Modèle | Taille | Usage |
+| Model | Size | Use |
 |---|---|---|
-| Qwen3 4B | ~3.4 Go | ✅ Recommandé — qualité + conversation |
-| Qwen2.5 3B | ~2.4 Go | Rapide / économique |
-| Llama 3.2 3B | ~2.2 Go | Basique |
-| Qwen3 1.7B | ~2.0 Go | Très léger |
-| Qwen3 8B | ~5.7 Go | Le plus puissant (demande beaucoup de VRAM) |
+| Qwen3 4B | ~3.4 GB | ✅ Recommended — quality + conversation |
+| Qwen2.5 3B | ~2.4 GB | Fast / lightweight |
+| Llama 3.2 3B | ~2.2 GB | Basic |
+| Qwen3 1.7B | ~2.0 GB | Very light |
+| Qwen3 8B | ~5.7 GB | Most powerful (requires a lot of VRAM) |
 
-Le premier chargement télécharge le modèle (quelques minutes). Ensuite il est **en cache** : les
-lancements suivants sont quasi instantanés.
+The first load downloads the model (a few minutes). Afterwards it is **cached**: subsequent
+launches are almost instant.
 
-## ☁️ Mode Groq (optionnel)
+## ☁️ Groq mode (optional)
 
-Le mode local est indépendant. Si vous voulez des maquettes très riches, un mode **Groq (cloud)**
-est disponible depuis l'écran d'accueil — il ne nécessite qu'une clé API `gsk_...` (stockée
-uniquement dans votre navigateur).
+Local mode is self-contained. If you want very rich mockups, a **Groq (cloud)** mode is available
+from the home screen — it only requires a `gsk_...` API key (stored only in your browser).
 
 ## 🗂 Structure
 
 ```
 sp213-local/
-├── index.html              # Pré-home (design blanc SuperPrint) + studio
-├── src/main.js             # Logique complète (WebLLM npm + Groq direct)
+├── index.html              # Pre-home (white SuperPrint design) + studio
+├── src/main.js             # Full logic (WebLLM npm + direct Groq)
 ├── public/
-│   ├── superprint/         # Application SuperPrint COMPLÈTE (copie, servie telle quelle)
-│   │   ├── index.html      # L'app PAO SuperPrint
+│   ├── superprint/         # Complete SuperPrint application (copy, served as-is)
+│   │   ├── index.html      # The SuperPrint DTP app
 │   │   ├── sp213-studio.html
 │   │   ├── JS/  CSS/  img/ ...
 │   ├── js/fabric.min.js
@@ -76,21 +74,20 @@ sp213-local/
 └── vite.config.js
 ```
 
-> Le dossier `public/superprint/` est copié tel quel dans `dist/` au build (pas bundlé).
+> The `public/superprint/` folder is copied as-is into `dist/` at build time (not bundled).
 
-## 🚀 Build de production
+## 🚀 Production build
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## 🔁 Interop avec SuperPrint
+## 🔁 Interop with SuperPrint
 
-- **Exporter .sp** : télécharge la maquette au format natif SuperPrint.
-- **Ouvrir dans SuperPrint** : le fichier `.sp` s'importe via SuperPrint → Importer.
+- **Export .sp**: downloads the mockup in SuperPrint's native format.
+- **Open in SuperPrint**: the `.sp` file imports via SuperPrint → Import.
 
+## 🤖 Setup assistant
 
-## 🤖 Assistant d installation
-
-`npm run setup` lance l assistant interactif (téléchargement → décompression → installation → lancement) avec une interface claire dans le terminal.
+`npm run setup` launches the interactive assistant (download → unzip → install → launch) with a clear terminal interface.
