@@ -2863,7 +2863,7 @@
     return clean ? 'sp213-' + clean : '';
   }
 
-  // 🛡️ v1.7.334 : picsum.photos est souvent DOWN (timeout). Photos Unsplash de
+  // 🛡️ v1.7.335 : picsum.photos est souvent DOWN (timeout). Photos Unsplash de
   // secours (IDs déjà validés dans l'app/templates). Choisie aléatoirement.
   const _SPLASH_UNSPLASH_PHOTOS = [
     'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba',
@@ -2904,7 +2904,7 @@
       if (emptyEl) emptyEl.textContent = '';
     };
     img.onerror = function() {
-      // 🛡️ v1.7.334 : picsum down → bascule sur une photo Unsplash
+      // 🛡️ v1.7.335 : picsum down → bascule sur une photo Unsplash
       if (_usedUnsplash) {
         if (emptyEl) emptyEl.textContent = '⚠ Photo indisponible (hors-ligne ?).';
         return;
@@ -2993,7 +2993,7 @@
       let img = await webImgToDataUrl(url);
       let usedUnsplash = false;
       if (!img) {
-        // 🛡️ v1.7.334 : picsum down → tenter une photo Unsplash avant le fallback local
+        // 🛡️ v1.7.335 : picsum down → tenter une photo Unsplash avant le fallback local
         usedUnsplash = true;
         const fbUrl = _unsplashFallbackUrl(w, h);
         img = await webImgToDataUrl(fbUrl);
@@ -5800,7 +5800,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
   // Un fond pleine page est étendu au bleed (left:0, width:page+2*bleed) pour
   // couvrir tout le canvas — ainsi il ne chevauche pas pile le trait de coupe.
 
-  // 🛡️ v1.7.334 : styles nommés globaux (typo + nuancier) partagés avec l'app —
+  // 🛡️ v1.7.335 : styles nommés globaux (typo + nuancier) partagés avec l'app —
   // lus depuis localStorage pour rester cohérents entre le studio et SuperPrint.
   function spCollectStylesBlock() {
     return {
