@@ -1,6 +1,6 @@
 {
   "name": "sp213-local",
-  "version": "1.7.333",
+  "version": "1.7.334",
   "description": "SP213 Studio — version locale (Vite). WebLLM npm pour l'inférence en local, aucun CDN, aucune dépendance au proxy PHP.",
   "type": "module",
   "scripts": {

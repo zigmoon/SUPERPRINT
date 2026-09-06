@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-1.7.333-000000?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-1.7.334-000000?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20ready-E1237B?style=flat-square">
   <img alt="AI" src="https://img.shields.io/badge/AI-SP213%20studio-F2B90B?style=flat-square">

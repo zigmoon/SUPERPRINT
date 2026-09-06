@@ -1,3 +1,14 @@
+// 🛡️ FIX 2026-09-06 (export PDF — « la photo se réduit légèrement ») :
+//   Fabric 5.1.0 arrondit à NUM_FRACTION_DIGITS (défaut = 2) les propriétés
+//   numériques DANS toObject() : left/top/width/height/scaleX/scaleY/...
+//   → une image importée avec scaleX = 0.47297… est sérialisée à 0.47, puis
+//   rechargée depuis pages[] (JSON) à l'export avec cette valeur réduite →
+//   la photo ressort ~0.6% plus petite que dans la preview (invisible à l'œil
+//   mais réelle, et cumulable après plusieurs cycles). En passant à 6 décimales,
+//   la géométrie est préservée quasi exactement à chaque cycle save/load.
+//   Impact taille JSON : négligeable (~+2-3 octets/propriété).
+try { fabric.Object.NUM_FRACTION_DIGITS = 6; } catch (_) {}
+
 // Initialisation différée : s'assurer que tous les canvas sont interactifs
 setTimeout(() => {
     if (typeof canvases !== 'undefined' && canvases) {
@@ -4903,19 +4914,24 @@ if (window._spGpuEnabled) {
             // CRITIQUE: Restaurer les dimensions fixes AVANT tout recalcul
             // Fabric.js initDimensions() expand la hauteur pour contenir tout le texte,
             // mais nos blocs ont une hauteur fixe avec clipPath pour couper le débordement.
-            if (typeof obj._fixedHeight === 'number') {
+            // 🛡️ FIX 2026-09-06 : `_fixedHeight: 0` (ou `_fixedWidth: 0`) est un faux
+            //   positif — 0 signifie « pas de hauteur/largeur fixe », pas une taille de 0.
+            //   Certaines créations de blocs texte posent _fixedHeight = 0 ; si on applique
+            //   height = 0 ici, le textbox s'effondre à 1 px après loadFromJSON et son
+            //   rendu raster (fallback des styles mixtes) devient vide à l'export PDF.
+            if (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) {
                 obj.height = obj._fixedHeight;
             }
-            if (typeof obj._fixedWidth === 'number') {
+            if (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) {
                 obj.width = obj._fixedWidth;
             }
             
             // Ré-appliquer le monkey-patch initDimensions (perdu lors de la désérialisation)
-            if (typeof obj._fixedHeight === 'number') {
+            if (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) {
                 const originalInit = obj.initDimensions.bind(obj);
                 obj.initDimensions = function() {
                     originalInit();
-                    if (this._fixedHeight !== undefined) {
+                    if (typeof this._fixedHeight === 'number' && this._fixedHeight > 0) {
                         this.height = this._fixedHeight;
                     }
                 };
@@ -4956,8 +4972,12 @@ if (window._spGpuEnabled) {
 
             // CLIP STRICT : coupe proprement en bas (à la dernière ligne complète)
             // ET empêche tout débordement horizontal (rien ne doit dépasser visuellement)
-            const frameHeight = Math.max(1, (textbox._fixedHeight ?? textbox.height ?? 1));
-            const frameWidth = Math.max(1, (textbox._fixedWidth ?? textbox.width ?? 1));
+            // 🛡️ FIX 2026-09-06 : _fixedHeight/_fixedWidth = 0 = « non fixe » (faux positif
+            //   posé par certaines créations de bloc) → utiliser obj.height/obj.width réels.
+            const _fh = (typeof textbox._fixedHeight === 'number' && textbox._fixedHeight > 0) ? textbox._fixedHeight : textbox.height;
+            const _fw = (typeof textbox._fixedWidth === 'number' && textbox._fixedWidth > 0) ? textbox._fixedWidth : textbox.width;
+            const frameHeight = Math.max(1, (_fh ?? 1));
+            const frameWidth = Math.max(1, (_fw ?? 1));
 
             // ✨ NOUVEAU: Utiliser la taille de police MAXIMALE (inclut les styles inline)
             // pour calculer correctement la hauteur de ligne
@@ -35702,6 +35722,18 @@ https://superprint.app
             const key = _spFontKey(family, weight, style);
             if (_SP_FONT_CACHE[key] !== undefined) return _SP_FONT_CACHE[key];
 
+            // 🛡️ FIX 2026-09-05 (export vectoriel — gras/semi-gras non vectorisés) :
+            //   Le CSS (fonts.css) déclare des graisses (500/600/700) pour des
+            //   familles qui ne possèdent QUE le 400 en fichier local (Open Sans,
+            //   Montserrat, Roboto, Playfair Display…). L'UI les propose donc, le
+            //   rendu écran les synthétise, mais aucun fichier TTF/WOFF2 n'existe
+            //   pour la graisse demandée → _spLoadFontVector échouait → le texte
+            //   retombait en RASTER à l'export (ou le preflight bloquait tout).
+            //   Correctif : si la graisse exacte est introuvable, on tente un
+            //   FALLBACK de graisse (puis de style italic→normal) vers les fichiers
+            //   réellement présents, afin de TOUJOURS vectoriser le texte. La graisse
+            //   réellement chargée est conservée sur font._spResolvedWeight pour que
+            //   le draw puisse adapter le pseudo-gras si besoin.
             const promise = (async () => {
                 try {
                     const base = _spFontFileBase(family);
@@ -35709,16 +35741,23 @@ https://superprint.app
                     if (w === 'bold') w = '700';
                     else if (w === 'normal') w = '400';
                     const s = (style === 'italic' || style === 'oblique') ? 'italic' : 'normal';
-                    // 🍏 v1.7.232 : Essayer TTF d'abord, fallback WOFF2+wawoff2
-                    const ttfCandidates = [
-                        `CSS/fonts/${base}-${w}-${s}-latin.ttf`,
-                        `CSS/fonts/${base}-${w}-${s}.ttf`
-                    ];
-                    const woff2Candidates = [
-                        `CSS/fonts/${base}-${w}-${s}.woff2`,
-                        `CSS/fonts/${base}-${w}-${s}-latin.woff2`,
-                        `CSS/fonts/${base}-${w}-${s}-latin-ext.woff2`,
-                    ];
+
+                    // Ordre de repli des graisses : la demandée d'abord, puis les plus
+                    // proches (le navigateur fait pareil). 600 → 500,700,400 ; 700 → 600,400.
+                    const _spWeightFallbackOrder = (target) => {
+                        const t = Number(target) || 400;
+                        const cands = [String(t), '400', '500', '600', '700', '300', '900'];
+                        const order = [];
+                        const seenW = new Set();
+                        // Tri par distance à la graisse cible (le plus proche d'abord)
+                        const sorted = cands.map(x => ({ x, d: Math.abs((Number(x) || 400) - t) }))
+                            .sort((a, b) => a.d - b.d);
+                        for (const o of sorted) {
+                            if (!seenW.has(o.x)) { seenW.add(o.x); order.push(o.x); }
+                        }
+                        return order;
+                    };
+
                     const _spFetchWithTimeout = (url, timeoutMs) => {
                         return new Promise((resolve, reject) => {
                             const controller = new AbortController();
@@ -35726,59 +35765,93 @@ https://superprint.app
                             fetch(url, { signal: controller.signal, cache: 'force-cache' }).then(r => { clearTimeout(timer); resolve(r); }).catch(err => { clearTimeout(timer); reject(err); });
                         });
                     };
-                    // 1) Essayer TTF
-                    for (const url of ttfCandidates) {
-                        try {
-                            const resp = await _spFetchWithTimeout(url, 8000);
-                            if (resp.ok) {
-                                const ttfBuf = await resp.arrayBuffer();
-                                const font = window.opentype.parse(ttfBuf);
-                                if (font && typeof font.getPath === 'function' && font.unitsPerEm) {
-                                    font._spTtfBuffer = ttfBuf;
-                                    try { if (fabric && fabric.util && fabric.util.clearFabricFontCache) fabric.util.clearFabricFontCache(family.toLowerCase()); } catch(_) {}
-                                    console.log('[SP-vector-text] Police chargée via TTF:', key);
-                                    return font;
-                                }
-                            }
-                        } catch (_) {}
-                    }
-                    // 2) Fallback WOFF2 + wawoff2
-                    if (!window.wawoff2_decompress) {
-                        console.warn('[SP-vector-text] TTF non trouvé et wawoff2 indisponible pour:', key);
-                        return null;
-                    }
-                    let woff2Buf = null;
-                    for (const url of woff2Candidates) {
-                        let retries = 3;
-                        while (retries > 0) {
+
+                    // Tente de charger + parser UN fichier (ttf ou woff2). Retourne
+                    // { font, resolvedWeight } ou null.
+                    const _spTryLoadOne = async (tryWeight, tryStyle) => {
+                        const ttfCandidates = [
+                            `CSS/fonts/${base}-${tryWeight}-${tryStyle}-latin.ttf`,
+                            `CSS/fonts/${base}-${tryWeight}-${tryStyle}.ttf`
+                        ];
+                        const woff2Candidates = [
+                            `CSS/fonts/${base}-${tryWeight}-${tryStyle}.woff2`,
+                            `CSS/fonts/${base}-${tryWeight}-${tryStyle}-latin.woff2`,
+                            `CSS/fonts/${base}-${tryWeight}-${tryStyle}-latin-ext.woff2`
+                        ];
+                        // 1) TTF
+                        for (const url of ttfCandidates) {
                             try {
                                 const resp = await _spFetchWithTimeout(url, 8000);
-                                if (resp.ok) { woff2Buf = await resp.arrayBuffer(); break; }
-                                retries = 0;
-                            } catch (err) {
-                                retries--;
-                                if (retries > 0) {
-                                    console.warn('[SP-vector-text] Tentative ' + (4 - retries) + '/3 échouée pour ' + url + ' (' + (err.message || err) + '), retry...');
-                                } else {
-                                    console.warn('[SP-vector-text] Échec après 3 tentatives: ' + url + ' (' + (err.message || err) + ')');
+                                if (resp.ok) {
+                                    const ttfBuf = await resp.arrayBuffer();
+                                    const font = window.opentype.parse(ttfBuf);
+                                    if (font && typeof font.getPath === 'function' && font.unitsPerEm) {
+                                        font._spTtfBuffer = ttfBuf;
+                                        return { font, resolvedWeight: tryWeight, resolvedStyle: tryStyle };
+                                    }
+                                }
+                            } catch (_) {}
+                        }
+                        // 2) WOFF2 + wawoff2
+                        if (!window.wawoff2_decompress) return null;
+                        let woff2Buf = null;
+                        for (const url of woff2Candidates) {
+                            let retries = 3;
+                            while (retries > 0) {
+                                try {
+                                    const resp = await _spFetchWithTimeout(url, 8000);
+                                    if (resp.ok) { woff2Buf = await resp.arrayBuffer(); break; }
+                                    retries = 0;
+                                } catch (err) {
+                                    retries--;
+                                    if (retries > 0) {
+                                        console.warn('[SP-vector-text] Tentative ' + (4 - retries) + '/3 échouée pour ' + url + ' (' + (err.message || err) + '), retry...');
+                                    } else {
+                                        console.warn('[SP-vector-text] Échec après 3 tentatives: ' + url + ' (' + (err.message || err) + ')');
+                                    }
                                 }
                             }
+                            if (woff2Buf) break;
                         }
-                        if (woff2Buf) break;
-                    }
-                    if (!woff2Buf) {
+                        if (!woff2Buf) return null;
+                        const ttfBytes = await window.wawoff2_decompress(new Uint8Array(woff2Buf));
+                        if (!ttfBytes || !ttfBytes.byteLength) return null;
+                        const font = window.opentype.parse(
+                            ttfBytes.buffer.slice(ttfBytes.byteOffset, ttfBytes.byteOffset + ttfBytes.byteLength)
+                        );
+                        if (!font || typeof font.getPath !== 'function') return null;
+                        font._spTtfBuffer = ttfBytes.buffer.slice(ttfBytes.byteOffset, ttfBytes.byteOffset + ttfBytes.byteLength);
+                        return { font, resolvedWeight: tryWeight, resolvedStyle: tryStyle };
+                    };
+
+                    // Essaie la graisse demandée, puis les graisses de repli, puis le
+                    // même parcours en style normal si italic introuvable.
+                    const _spTryLoadChain = async () => {
+                        const stylesToTry = (s === 'italic') ? ['italic', 'normal'] : ['normal', 'italic'];
+                        for (const stTry of stylesToTry) {
+                            for (const wTry of _spWeightFallbackOrder(w)) {
+                                const loaded = await _spTryLoadOne(wTry, stTry);
+                                if (loaded) return loaded;
+                            }
+                        }
+                        return null;
+                    };
+
+                    const loaded = await _spTryLoadChain();
+                    if (!loaded) {
                         console.warn('[SP-vector-text] Aucun fichier trouvé pour', key);
                         return null;
                     }
-                    const ttfBytes = await window.wawoff2_decompress(new Uint8Array(woff2Buf));
-                    if (!ttfBytes || !ttfBytes.byteLength) return null;
-                    const font = window.opentype.parse(
-                        ttfBytes.buffer.slice(ttfBytes.byteOffset, ttfBytes.byteOffset + ttfBytes.byteLength)
-                    );
-                    if (!font || typeof font.getPath !== 'function') return null;
-                    font._spTtfBuffer = ttfBytes.buffer.slice(ttfBytes.byteOffset, ttfBytes.byteOffset + ttfBytes.byteLength);
+                    const { font } = loaded;
+                    // Mémoriser la graisse/style réellement embarqués (pour pseudo-gras éventuel)
+                    font._spRequestedKey = key;
+                    font._spResolvedWeight = loaded.resolvedWeight;
+                    font._spResolvedStyle = loaded.resolvedStyle;
+                    if (loaded.resolvedWeight !== w || loaded.resolvedStyle !== s) {
+                        console.warn('[SP-vector-text] Fallback graisse/style pour ' + key + ' → ' + loaded.resolvedWeight + '/' + loaded.resolvedStyle);
+                    }
                     try { if (fabric && fabric.util && fabric.util.clearFabricFontCache) fabric.util.clearFabricFontCache(family.toLowerCase()); } catch(_) {}
-                    console.log('[SP-vector-text] Police chargée via WOFF2+wawoff2:', key);
+                    console.log('[SP-vector-text] Police chargée via TTF/WOFF2+wawoff2:', key);
                     return font;
                 } catch (e) {
                     console.warn('[SP-vector-text] Echec chargement', key, e);
@@ -36737,58 +36810,148 @@ https://superprint.app
                 // rasterisera ce bloc avec le rendu exact de la preview.
                 if (!font || !font._spTtfBuffer) return false;
 
-                // Refus per-char styles non triviaux → raster fallback
+                // Refus per-char styles non triviaux → raster fallback.
+                // 🛡️ FIX 2026-09-06 (export PDF — typo non vectorisée hors 14pt) :
+                //   Quand l'utilisateur change la TAILLE (ou police) via le panneau en
+                //   ayant une sélection, SuperPrint pose des styles inline per-char
+                //   (setSelectionStyles) → obj.fontSize reste à la valeur de base
+                //   (ex. 14) alors que obj.styles contient {fontSize: 28}. L'ancienne
+                //   détection comparait chaque style à obj.fontSize → hasMixed=true dès
+                //   qu'une taille ≠ 14 → retour false → texte RASTERISÉ (non vectorisé)
+                //   pour toute taille ≠ la taille de base. Correctif : si les styles
+                //   inline sont UNIFORMES (toutes les valeurs identiques entre elles),
+                //   on vectorise quand même en utilisant la valeur effective du style
+                //   (taille / police / graisse / couleur) au lieu de rejeter.
+                let _effFontSize = (typeof obj.fontSize === 'number') ? obj.fontSize : 14;
+                let _effFontFamily = obj.fontFamily;
+                let _effFontWeight = obj.fontWeight;
+                let _effFontStyle = obj.fontStyle;
+                let _effFill = obj.fill;
+                let _effCharSpacing = (obj.charSpacing || 0);
                 if (obj.styles && Object.keys(obj.styles).length > 0) {
-                    let hasMixed = false;
-                    const blockCs = (obj.charSpacing || 0);
-                    Object.values(obj.styles).forEach(line => {
-                        if (!line) return;
-                        Object.values(line).forEach(st => {
-                            if (!st) return;
-                            if ((st.fontFamily && st.fontFamily !== obj.fontFamily) ||
-                                (st.fontWeight && String(st.fontWeight) !== String(obj.fontWeight)) ||
-                                (st.fontStyle && st.fontStyle !== obj.fontStyle) ||
-                                (st.fontSize && st.fontSize !== obj.fontSize) ||
-                                (st.fill && st.fill !== obj.fill)) { hasMixed = true; }
-                            if (st.charSpacing !== undefined && st.charSpacing !== null
-                                && Number(st.charSpacing) !== Number(blockCs)) { hasMixed = true; }
-                        });
-                    });
-                    if (hasMixed) return false;
+                    // 🛡️ FIX 2026-09-06 — Détection MIXTE vs UNIFORME par COUVERTURE.
+                    //   fabric ne stocke dans obj.styles que les caractères qui DIFFÈRENT
+                    //   du bloc (ex. "GRAS" en gras sur un bloc regular → seuls les 4
+                    //   caractères de "GRAS" ont un style {fontWeight:700}). Compter le
+                    //   nombre de VALEURS DISTINCTES parmi les styles est donc FAUX : un
+                    //   vrai mélange "mot en gras + reste regular" n'a qu'UNE valeur (700)
+                    //   dans les styles → il serait vectorisé uniformément (styles perdus).
+                    //   La bonne méthode : reconstruire le style EFFECTIF de chaque
+                    //   caractère de chaque ligne (styles par-dessus le bloc) et vérifier
+                    //   qu'ils sont TOUS identiques entre eux. Si oui → uniforme (on
+                    //   vectorise avec la valeur effective, ex. taille changée sur toute
+                    //   la boîte). Sinon → vrai mélange per-char → raster (fidèle preview).
+                    const rawLinesEff = (obj._textLines && obj._textLines.length) ? obj._textLines : String(obj.text || '').split('\n');
+                    const _lineTexts = rawLinesEff.map(ln => Array.isArray(ln) ? ln.join('') : String(ln));
+                    const _effOf = (st, prop, blockVal) => {
+                        if (!st) return blockVal;
+                        const v = st[prop];
+                        if (v === undefined || v === null) return blockVal;
+                        if (prop === 'fontWeight' || prop === 'fontSize' || prop === 'charSpacing') return Number(v);
+                        return v;
+                    };
+                    let _uniform = true;
+                    let _firstEff = null;
+                    let _anyStyle = false;
+                    try {
+                        const _styleLines = obj.styles || {};
+                        for (let li = 0; li < _lineTexts.length; li++) {
+                            const lineChars = _styleLines[li] || {};
+                            const line = _lineTexts[li];
+                            for (let ci = 0; ci < line.length; ci++) {
+                                const st = lineChars[ci] || null;
+                                if (st && Object.keys(st).length) _anyStyle = true;
+                                const eff = [
+                                    _effOf(st, 'fontFamily', obj.fontFamily),
+                                    _effOf(st, 'fontWeight', obj.fontWeight),
+                                    _effOf(st, 'fontStyle', obj.fontStyle),
+                                    _effOf(st, 'fontSize', obj.fontSize),
+                                    _effOf(st, 'fill', obj.fill),
+                                    _effOf(st, 'charSpacing', obj.charSpacing || 0)
+                                ];
+                                const key = eff.map(v => String(v)).join('|');
+                                if (_firstEff === null) _firstEff = key;
+                                else if (key !== _firstEff) { _uniform = false; }
+                            }
+                        }
+                    } catch (_) { _uniform = false; }
+                    // Vrai mélange per-char → on ne peut pas vectoriser fidèlement → raster.
+                    if (!_uniform) return false;
+                    // Uniforme : adopter la valeur effective (taille/police/couleur)
+                    // réellement utilisée par le style, pour vectoriser avec la BONNE
+                    // valeur même si obj.* (taille de base) diffère.
+                    if (_anyStyle && _firstEff !== null) {
+                        // Trouver une entrée de style représentative et l'appliquer.
+                        outer: for (let li = 0; li < _lineTexts.length; li++) {
+                            const lineChars = obj.styles[li] || {};
+                            for (const ciStr in lineChars) {
+                                const st = lineChars[ciStr];
+                                if (!st) continue;
+                                if (st.fontFamily) _effFontFamily = st.fontFamily;
+                                if (st.fontWeight !== undefined && st.fontWeight !== null) _effFontWeight = st.fontWeight;
+                                if (st.fontStyle) _effFontStyle = st.fontStyle;
+                                if (st.fontSize) _effFontSize = Number(st.fontSize);
+                                if (st.fill) _effFill = st.fill;
+                                if (st.charSpacing !== undefined && st.charSpacing !== null) _effCharSpacing = Number(st.charSpacing);
+                                break outer;
+                            }
+                        }
+                    }
                 }
+
+                // 🛡️ FIX 2026-09-06 : si la famille/graisse/style effective (styles
+                //   inline uniformes) diffère du bloc, re-résoudre la police à charger.
+                //   (La police a déjà été préchargée pour ce fontKey par
+                //   _spPreloadFontsForObjects via les styles per-char.)
+                let _useFontKey = fontKey;
+                let _useFont = font;
+                try {
+                    const _fkEff = _spFontKey(_effFontFamily, _effFontWeight, _effFontStyle);
+                    if (_fkEff !== fontKey) {
+                        _useFontKey = _fkEff;
+                        const _fEff = _SP_FONT_RESOLVED && _SP_FONT_RESOLVED[_fkEff];
+                        if (_fEff && _fEff._spTtfBuffer) _useFont = _fEff;
+                        else return false; // police effective indisponible → raster
+                    }
+                } catch (_) {}
 
                 // Pas de stroke
                 const strokeC = _parsePdfColor(obj.stroke);
                 if (strokeC && (strokeC[3] === undefined || strokeC[3] > 0) && (obj.strokeWidth || 0) > 0) return false;
 
-                const fillC = _parsePdfColor(obj.fill) || [0, 0, 0, 1];
-                const fontSize = obj.fontSize || 16;
+                // 🛡️ FIX 2026-09-06 : utiliser la valeur EFFECTIVE (taille/couleur)
+                //   issue des styles inline uniformes plutôt que celle du bloc, pour
+                //   que le texte vectorisé respecte la taille affichée.
+                const fillC = _parsePdfColor(_effFill !== undefined && _effFill !== null ? _effFill : obj.fill) || [0, 0, 0, 1];
+                const fontSize = _effFontSize || obj.fontSize || 16;
 
                 const rawLines = (obj._textLines && obj._textLines.length) ? obj._textLines : String(obj.text || '').split('\n');
                 const lines = rawLines.map(ln => Array.isArray(ln) ? ln.join('') : String(ln));
                 if (!lines.length) return true;
 
                 // ✏️ v1.7.206 : Embarquer la police dans jsPDF via addFont()
+                // 🛡️ FIX 2026-09-06 : utiliser la police effective (_useFont/_useFontKey)
+                //   résolue depuis les styles inline uniformes.
                 var jsPdfFontName = 'helvetica'; // fallback par défaut
-                if (font && font._spTtfBuffer && !pdf._spFontsEmbedded) pdf._spFontsEmbedded = {};
-                if (font && font._spTtfBuffer && !pdf._spFontsEmbedded[fontKey]) {
+                if (_useFont && _useFont._spTtfBuffer && !pdf._spFontsEmbedded) pdf._spFontsEmbedded = {};
+                if (_useFont && _useFont._spTtfBuffer && !pdf._spFontsEmbedded[_useFontKey]) {
                     try {
                         var ttfStr = '';
-                        var ttfBytes = new Uint8Array(font._spTtfBuffer);
+                        var ttfBytes = new Uint8Array(_useFont._spTtfBuffer);
                         for (var bi = 0; bi < ttfBytes.length; bi++) {
                             ttfStr += String.fromCharCode(ttfBytes[bi]);
                         }
-                        jsPdfFontName = [obj.fontFamily || 'CustomFont', obj.fontWeight || 400, obj.fontStyle || 'normal']
+                        jsPdfFontName = [_effFontFamily || obj.fontFamily || 'CustomFont', _effFontWeight || obj.fontWeight || 400, _effFontStyle || obj.fontStyle || 'normal']
                             .join('-').replace(/\s+/g, '-');
                         pdf.addFileToVFS(jsPdfFontName + '.ttf', ttfStr);
                         pdf.addFont(jsPdfFontName + '.ttf', jsPdfFontName, 'normal');
-                        pdf._spFontsEmbedded[fontKey] = jsPdfFontName;
+                        pdf._spFontsEmbedded[_useFontKey] = jsPdfFontName;
                     } catch(e) {
-                        console.warn('[SP-vector-text] addFont failed for', fontKey, e);
+                        console.warn('[SP-vector-text] addFont failed for', _useFontKey, e);
                         return false;
                     }
-                } else if (pdf._spFontsEmbedded && pdf._spFontsEmbedded[fontKey]) {
-                    jsPdfFontName = pdf._spFontsEmbedded[fontKey];
+                } else if (pdf._spFontsEmbedded && pdf._spFontsEmbedded[_useFontKey]) {
+                    jsPdfFontName = pdf._spFontsEmbedded[_useFontKey];
                 }
 
                 const lineHeightFactor = obj.lineHeight || 1.16;
@@ -36809,10 +36972,10 @@ https://superprint.app
                 };
 
                 let ascenderUnits = 0;
-                if (font) {
-                    try { ascenderUnits = (typeof font.ascender === 'number') ? font.ascender : (font.tables && font.tables.os2 && font.tables.os2.sTypoAscender) || 0; } catch (_) {}
+                if (_useFont) {
+                    try { ascenderUnits = (typeof _useFont.ascender === 'number') ? _useFont.ascender : (_useFont.tables && _useFont.tables.os2 && _useFont.tables.os2.sTypoAscender) || 0; } catch (_) {}
                 }
-                const ascentRatio = (ascenderUnits > 0) ? (ascenderUnits / (font ? (font.unitsPerEm || 1000) : 1000)) : 0.778;
+                const ascentRatio = (ascenderUnits > 0) ? (ascenderUnits / (_useFont ? (_useFont.unitsPerEm || 1000) : 1000)) : 0.778;
                 const baselineYInLine = fontSize * ascentRatio;
 
                 let maxLines = lines.length;
@@ -36860,8 +37023,8 @@ https://superprint.app
                     const text = lines[i];
                     if (!text) continue;
                     let lineW = 0;
-                    if (font) {
-                        try { lineW = font.getAdvanceWidth(text, fontSize); } catch (_) { lineW = text.length * fontSize * 0.6; }
+                    if (_useFont) {
+                        try { lineW = _useFont.getAdvanceWidth(text, fontSize, { letterSpacing: _effCharSpacing / 1000 }); } catch (_) { lineW = text.length * fontSize * 0.6; }
                     } else {
                         lineW = text.length * fontSize * 0.6;
                     }
@@ -36909,15 +37072,15 @@ https://superprint.app
                             text: text,
                             color: fillC,
                             opacity: (typeof obj.opacity === 'number' && obj.opacity >= 0 && obj.opacity <= 1) ? obj.opacity : 1,
-                            fontKey: fontKey,
+                            fontKey: _useFontKey,
                             angle: obj.angle || 0,
                             _pageIndex: (typeof pageIndex === 'number' && pageIndex >= 0) ? pageIndex : undefined,
                             _isLeft: undefined,
                             _sheetIndex: _impMetaIdx
                         });
-                        if (font && font._spTtfBuffer) {
-                            if (!window._spPdfFonts[fontKey]) {
-                                window._spPdfFonts[fontKey] = { name: obj.fontFamily || '', buffer: font._spTtfBuffer };
+                        if (_useFont && _useFont._spTtfBuffer) {
+                            if (!window._spPdfFonts[_useFontKey]) {
+                                window._spPdfFonts[_useFontKey] = { name: _effFontFamily || obj.fontFamily || '', buffer: _useFont._spTtfBuffer };
                             }
                         }
                     } catch (_) {}
@@ -37443,6 +37606,36 @@ https://superprint.app
             if (_spForceAllRasterCmyk) { _allVectorOk = false; _hasRasterRun = true; }
             for (const run of runs) {
                 if (run.cls === 'raster') { _allVectorOk = false; _hasRasterRun = true; break; }
+            }
+            // 🛡️ FIX 2026-09-06 (Bug B — typo absente RVB sans typo vectorielle) :
+            //   SANS vectorTypography, un textbox dont la police est chargée est classé
+            //   'vector' (_classifyObjectForHybrid), mais si la page a un run raster
+            //   (photo), ce texte reçoit collectOnly=true + skipCollect=true → il n'est
+            //   NI écrit dans jsPDF NI collecté pour pdf-lib → il disparaît du PDF.
+            //   La seule issue fidèle est de le RASTERISER avec les autres objets raster
+            //   (croppé à la bbox union) : rendu identique à la preview. On bascule donc
+            //   tous les textes des runs 'vector' vers le run raster quand
+            //   !vectorTypography et qu'il existe un run raster.
+            const _isTextObj = (o) => (o && (o.type === 'textbox' || o.type === 'text' || o.type === 'i-text'));
+            if (!(opts && opts.vectorTypography) && _hasRasterRun && !_spForceAllRasterCmyk) {
+                const _movedTexts = [];
+                for (let ri = runs.length - 1; ri >= 0; ri--) {
+                    const run = runs[ri];
+                    if (run.cls !== 'vector') continue;
+                    const kept = [];
+                    for (const o of run.items) {
+                        if (_isTextObj(o)) _movedTexts.push(o);
+                        else kept.push(o);
+                    }
+                    if (kept.length) run.items = kept;
+                    else runs.splice(ri, 1);
+                }
+                if (_movedTexts.length) {
+                    // Ajouter les textes au run raster (créer s'il n'existe pas).
+                    let _rasterRun = runs.find(r => r.cls === 'raster');
+                    if (!_rasterRun) { _rasterRun = { cls: 'raster', items: [] }; runs.push(_rasterRun); }
+                    _rasterRun.items = _rasterRun.items.concat(_movedTexts);
+                }
             }
             const _keepVectorTextOnMixedPage = !!(opts && opts.vectorTypography && opts.colorMode !== 'bw');
             let _hybridRenderComplete = true;
@@ -49670,9 +49863,6 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
 
                 // 🍏 v1.7.235 : getPath(0, 0, fontSize) → OpenType (Y↑).
                 //   On utilise scaleY:-1 sur chaque path pour inverser Y↑→Y↓.
-                //   PAS de flipY:true sur le groupe (c'était le flipY du groupe
-                //   qui causait le miroir au copier-coller, pas le scaleY:-1
-                //   des paths individuels).
                 var gp = glyph.getPath(0, 0, realFontSize);
                 if (gp && gp.commands && gp.commands.length > 0) {
                     var d = _spOtPathToSVG(gp);
@@ -49724,7 +49914,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
 
     // 🍏 v1.7.235 : Coordonnées OpenType brutes (Y↑). L'inversion Y↑→Y↓
     //   est faite par scaleY:-1 sur chaque fabric.Path.
-    //   PAS de -c.y ici, PAS de flipY sur le groupe.
+    //   PAS de -c.y ici (voir _spDoVectorize).
     function _spOtPathToSVG(otPath) {
         var d = '', cmds = otPath.commands || [];
         for (var ci = 0; ci < cmds.length; ci++) {

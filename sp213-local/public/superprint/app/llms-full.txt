@@ -8,7 +8,7 @@
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
-- **Version**: 1.7.333 (August 2026)
+- **Version**: 1.7.334 (August 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Tech stack**: Vanilla JavaScript + Fabric.js (canvas rendering), PDF.js (PDF import), pdf-lib (CMYK PDF post-processing), jsPDF (PDF export), JSZip (IDML / SLA / ODT), Paper.js (boolean path operations), Mammoth.js (DOCX import), Hypher (hyphenation).
