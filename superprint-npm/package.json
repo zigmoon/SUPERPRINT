@@ -1,6 +1,6 @@
 {
   "name": "superprint",
-  "version": "1.0.78",
+  "version": "1.0.79",
   "description": "SuperPrint by 2.13 — professional desktop publishing (DTP) and prepress, in your browser. Free, no subscription, no account. CMYK/PDF up to 600 DPI with bleed & imposition, advanced typography, vector text export, offline PWA, plus the SP213 AI layout studio (local WebLLM or cloud). Use online at https://superprint.cc or run locally with npx.",
   "keywords": [
     "superprint",
