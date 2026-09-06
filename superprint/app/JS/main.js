@@ -28838,6 +28838,78 @@ if (window._spGpuEnabled) {
     }
     window._spRefreshTextboxesAfterFontLoad = _spRefreshTextboxesAfterFontLoad;
 
+    // 🛡️ v1.7.335 — Enregistre une police EXTERNE depuis son dataURL (base64),
+    //   telle qu'embarquée dans un .sp (resources.customFonts). Réutilise la même
+    //   logique que « 📁 Charger polices » : FontFace + document.fonts + parse
+    //   opentype + _SP_FONT_CACHE/_SP_FONT_RESOLVED (pour la vectorisation PDF) +
+    //   ajout au <select id="fontFamily"> + au tableau customFonts.
+    function _spRegisterCustomFontDataUrl(fontName, dataUrl) {
+        if (!fontName || !dataUrl) return false;
+        try {
+            const already = (customFonts || []).some(f => f.name === fontName);
+            const addToSelect = () => {
+                const fontSelect = document.getElementById('fontFamily');
+                if (fontSelect && !Array.from(fontSelect.options).some(o => o.value === fontName)) {
+                    const option = document.createElement('option');
+                    option.value = fontName;
+                    option.textContent = fontName + (already ? '' : ' (Custom)');
+                    fontSelect.appendChild(option);
+                }
+                if (!fontWeights[fontName]) fontWeights[fontName] = ['400'];
+            };
+            const loadFace = (async () => {
+                const face = new FontFace(fontName, 'url(' + dataUrl + ')');
+                try {
+                    const loaded = await face.load();
+                    document.fonts.add(loaded);
+                } catch (_) {
+                    try {
+                        const face2 = new FontFace(fontName, dataUrl);
+                        const loaded2 = await face2.load();
+                        document.fonts.add(loaded2);
+                    } catch (_) {}
+                }
+                addToSelect();
+                try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
+                try { _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
+            })();
+            (async () => {
+                try {
+                    if (!window.opentype) return;
+                    const bin = atob(String(dataUrl).split(',')[1] || '');
+                    const bytes = new Uint8Array(bin.length);
+                    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                    const ttfBuf = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+                    const opFont = window.opentype.parse(ttfBuf);
+                    if (!opFont || typeof opFont.getPath !== 'function') return;
+                    opFont._spTtfBuffer = ttfBuf;
+                    window._SP_FONT_CACHE = window._SP_FONT_CACHE || {};
+                    window._SP_FONT_RESOLVED = window._SP_FONT_RESOLVED || {};
+                    ['400','500','600','700','normal','bold'].forEach(w => {
+                        ['normal','italic'].forEach(s => {
+                            const k = (fontName + '|' + w + '|' + s).toLowerCase();
+                            window._SP_FONT_CACHE[k] = Promise.resolve(opFont);
+                            window._SP_FONT_RESOLVED[k] = opFont;
+                        });
+                    });
+                } catch (err) {
+                    console.warn('[SP-vector-text] Echec parse opentype (restauration .sp)', fontName, err);
+                }
+            })();
+            if (!already) {
+                customFonts.push({ name: fontName, data: dataUrl });
+            } else {
+                const cf = customFonts.find(f => f.name === fontName);
+                if (cf) cf.data = dataUrl;
+            }
+            return true;
+        } catch (err) {
+            console.warn('[SP-font-restore] Échec enregistrement police', fontName, err);
+            return false;
+        }
+    }
+    window._spRegisterCustomFontDataUrl = _spRegisterCustomFontDataUrl;
+
     // Charger police personnalisée — v1.7.126 : multi-fichiers (Shift/Ctrl-clic).
     document.getElementById('loadCustomFont').addEventListener('click', () => {
         const input = document.createElement('input');
@@ -35721,6 +35793,39 @@ https://superprint.app
             if (!window.opentype) return null;
             const key = _spFontKey(family, weight, style);
             if (_SP_FONT_CACHE[key] !== undefined) return _SP_FONT_CACHE[key];
+
+            // 🛡️ v1.7.335 — Police EXTERNE chargée via « 📁 Charger polices » (ou
+            //   restaurée depuis un .sp) : elle vit dans customFonts sous forme de
+            //   dataURL (base64). On la parse ici directement (opentype) au lieu de
+            //   chercher un fichier dans CSS/fonts/ (qui n'existe pas pour une
+            //   police custom). Sans cela, l'export vectoriel d'un texte en police
+            //   custom était bloqué par le préflight (« vraie police non disponible »).
+            try {
+                const customEntry = (typeof customFonts !== 'undefined' && Array.isArray(customFonts))
+                    ? customFonts.find(f => f && f.name === String(family).trim())
+                    : null;
+                if (customEntry && customEntry.data) {
+                    const parsed = (async () => {
+                        try {
+                            const bin = atob(String(customEntry.data).split(',')[1] || '');
+                            const bytes = new Uint8Array(bin.length);
+                            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                            const ttfBuf = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+                            const font = window.opentype.parse(ttfBuf);
+                            if (font && typeof font.getPath === 'function') {
+                                font._spTtfBuffer = ttfBuf;
+                                font._spResolvedWeight = String(weight || '400');
+                                font._spResolvedStyle = (style === 'italic' || style === 'oblique') ? 'italic' : 'normal';
+                                return font;
+                            }
+                        } catch (_) {}
+                        return null;
+                    })();
+                    _SP_FONT_CACHE[key] = parsed;
+                    try { _SP_FONT_RESOLVED[key] = await parsed; } catch (_) {}
+                    return parsed;
+                }
+            } catch (_) {}
 
             // 🛡️ FIX 2026-09-05 (export vectoriel — gras/semi-gras non vectorisés) :
             //   Le CSS (fonts.css) déclare des graisses (500/600/700) pour des
@@ -62328,7 +62433,20 @@ window.saveProjectSP_toObject = function() {
         },
         resources: {
             fonts: _spCollectUsedFonts(),
-            colors: _spCollectUsedColors()
+            colors: _spCollectUsedColors(),
+            // 🛡️ v1.7.335 : embarque les polices EXTERNES (chargées via « 📁 Charger
+            //   polices ») réellement utilisées dans le document. Le dataURL (base64)
+            //   permet de re-registrer la police à la réouverture du .sp (FontFace +
+            //   opentype) → plus besoin de recharger la police à chaque session.
+            customFonts: (function () {
+                try {
+                    const used = _spCollectUsedFonts();
+                    const usedSet = new Set(used);
+                    return (customFonts || [])
+                        .filter(f => f && f.name && usedSet.has(f.name) && f.data)
+                        .map(f => ({ name: f.name, data: f.data }));
+                } catch (_) { return []; }
+            })()
         },
         textLinks: textLinks || {},
         guides: _spCollectGuides(),
@@ -62563,13 +62681,63 @@ window.loadProjectSP = function(fileContent) {
 
         // ── Restaurer les repères manuels (guides) ──
         _spRestoreGuides(spFile.guides);
+
+        // 🛡️ v1.7.335 — Restaurer les polices EXTERNES embarquées dans le .sp
+        //   (resources.customFonts : liste de { name, data }). On les ré-enregistre
+        //   (FontFace + opentype) AVANT de détecter les polices manquantes, pour que
+        //   les polices du .sp soient automatiquement disponibles (plus de rechargement).
+        const spEmbeddedFonts = (spFile.resources && spFile.resources.customFonts) || [];
+        const spEmbeddedNames = new Set();
+        if (Array.isArray(spEmbeddedFonts) && spEmbeddedFonts.length && typeof window._spRegisterCustomFontDataUrl === 'function') {
+            try {
+                spEmbeddedFonts.forEach(f => {
+                    if (!f || !f.name) return;
+                    spEmbeddedNames.add(f.name);
+                    try { window._spRegisterCustomFontDataUrl(f.name, f.data || ''); } catch (_) {}
+                });
+                if (document.fonts && document.fonts.ready) {
+                    document.fonts.ready.then(() => {
+                        try { if (typeof _spRefreshTextboxesAfterFontLoad === 'function') _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
+                    }).catch(() => {});
+                }
+            } catch (err) { console.warn('[LoadSP] restauration polices embarquées:', err); }
+        }
+
         const usedFonts = (spFile.resources && spFile.resources.fonts) || [];
         const missingFonts = [];
-        usedFonts.forEach(f => {
+        // 🛡️ v1.7.335 : `document.fonts.check()` renvoie TOUJOURS true pour une police
+        //   inconnue (comportement navigateur) → inutilisable pour détecter une police
+        //   manquante. On compare plutôt la famille aux polices CONNUES : intégrées à
+        //   SuperPrint (menu déroulant) OU déjà chargées (customFonts / cache opentype)
+        //   OU embarquées dans ce .sp.
+        try {
+            const _known = (typeof window._spIsKnownFontFamily === 'function')
+                ? window._spIsKnownFontFamily
+                : (() => false);
+            usedFonts.forEach(f => {
+                try {
+                    if (!f) return;
+                    if (spEmbeddedNames.has(f)) return;
+                    if (_known(f)) return;
+                    const resolved = window._SP_FONT_RESOLVED || {};
+                    const k = String(f).trim().toLowerCase();
+                    const inResolved = Object.keys(resolved).some(rk => rk.indexOf(k + '|') === 0 || rk.startsWith(k + '|'));
+                    if (inResolved) return;
+                    missingFonts.push(f);
+                } catch (_) {}
+            });
+        } catch (_) {}
+
+        // 🛡️ v1.7.335 — Si des polices utilisées ne sont ni intégrées à SuperPrint,
+        //   ni embarquées dans le .sp, ni déjà chargées → proposer à l'utilisateur de
+        //   les recharger ou de les remplacer par une police standard.
+        if (missingFonts.length > 0) {
             try {
-                if (!document.fonts.check(`12px "${f}"`)) missingFonts.push(f);
-            } catch(e) {}
-        });
+                if (typeof window._spOfferMissingFontsLoad === 'function') {
+                    window._spOfferMissingFontsLoad(missingFonts);
+                }
+            } catch (_) {}
+        }
 
         setTimeout(() => {
             disableHighPerformance();
@@ -62615,6 +62783,244 @@ window.loadProjectSP = function(fileContent) {
         alert(translatef('alertSpFileLoadError', error.message || translate('alertFormatInvalid')));
     }
 };
+
+// 🛡️ v1.7.335 — Détermine si une famille de police est « connue » de SuperPrint :
+//   1) intégrée (menu déroulant par défaut) — liste figée alignée sur
+//      <select id="fontFamily"> ;
+//   2) chargée en session (customFonts) ;
+//   3) présente dans le cache opentype résolu (_SP_FONT_RESOLVED).
+//   Utilisé après ouverture d'un .sp pour détecter les polices réellement
+//   manquantes (document.fonts.check est inutilisable : il renvoie true pour
+//   une police inconnue).
+function _spIsKnownFontFamily(family) {
+    if (!family) return false;
+    const name = String(family).trim();
+    if (!name) return false;
+    try {
+        const integrated = [
+            'Open Sans', 'Montserrat', 'Roboto', 'Lato', 'Poppins', 'Playfair Display',
+            'Bebas Neue', 'IBM Plex Mono', 'IBM Plex Sans', 'JetBrains Mono', 'Fira Code',
+            'Space Mono', 'Noto Sans JP', 'Noto Sans', 'Arial', 'Helvetica', 'Times New Roman',
+            'Georgia', 'Courier New', 'Verdana', 'Tahoma', 'Trebuchet MS', 'Impact',
+            'Comic Sans MS', 'Palatino', 'Garamond', 'Bookman', 'Avant Garde', 'sans-serif',
+            'serif', 'monospace'
+        ];
+        if (integrated.indexOf(name) !== -1) return true;
+        if (Array.isArray(customFonts) && customFonts.some(f => f && f.name === name)) return true;
+        const resolved = window._SP_FONT_RESOLVED || {};
+        const k = name.toLowerCase();
+        for (const rk in resolved) {
+            if (rk.indexOf(k + '|') === 0 || rk.indexOf('|' + k) !== -1) return true;
+        }
+    } catch (_) {}
+    return false;
+}
+window._spIsKnownFontFamily = _spIsKnownFontFamily;
+
+// 🛡️ v1.7.335 — Remplace UNE famille de police par une autre sur TOUS les objets
+//   texte de toutes les pages (bloc + styles per-char Fabric). Utilisé par la
+//   fenêtre « Polices manquantes » (validation).
+function _spReplaceFontFamilyEverywhere(fromFamily, toFamily) {
+    if (!fromFamily || !toFamily || fromFamily === toFamily) return 0;
+    let replaced = 0;
+    try {
+        const allCanvases = (typeof canvases !== 'undefined' && Array.isArray(canvases)) ? canvases.filter(Boolean) : [];
+        allCanvases.forEach(canvas => {
+            if (!canvas || typeof canvas.getObjects !== 'function') return;
+            canvas.getObjects().forEach(obj => {
+                if (!obj) return;
+                const isText = (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text');
+                if (!isText) return;
+                let touched = false;
+                if (obj.fontFamily === fromFamily) {
+                    obj.set({ fontFamily: toFamily, dirty: true });
+                    touched = true;
+                }
+                if (obj.styles && typeof obj.styles === 'object') {
+                    Object.values(obj.styles).forEach(line => {
+                        if (!line) return;
+                        Object.values(line).forEach(ch => {
+                            if (ch && ch.fontFamily === fromFamily) {
+                                ch.fontFamily = toFamily;
+                                touched = true;
+                            }
+                        });
+                    });
+                }
+                if (touched) {
+                    replaced++;
+                    try {
+                        const fixedW = obj._fixedWidth ?? obj.width;
+                        const fixedH = obj._fixedHeight ?? obj.height;
+                        if (typeof obj._clearCache === 'function') obj._clearCache();
+                        if (typeof obj.initDimensions === 'function') obj.initDimensions();
+                        if (obj._fixedWidth) obj.width = fixedW;
+                        if (obj._fixedHeight) obj.height = fixedH;
+                        if (typeof obj.setCoords === 'function') obj.setCoords();
+                        try { if (typeof applyTextboxClipPath === 'function') applyTextboxClipPath(obj); } catch (_) {}
+                    } catch (_) {}
+                }
+            });
+            try { canvas.requestRenderAll(); } catch (_) {}
+        });
+        try { if (typeof _spRefreshTextboxesAfterFontLoad === 'function') _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
+        try { saveAllPages(true); } catch (_) {}
+    } catch (err) {
+        console.warn('[SP-font-restore] remplacement police échoué:', err);
+    }
+    return replaced;
+}
+window._spReplaceFontFamilyEverywhere = _spReplaceFontFamilyEverywhere;
+
+// 🛡️ v1.7.335 — Fenêtre « Polices manquantes » (style SuperPrint, façon InDesign).
+//   À l'ouverture d'un .sp, si des polices utilisées ne sont ni intégrées, ni
+//   embarquées dans le .sp, ni déjà chargées : on liste chaque police sur une
+//   ligne avec un point d'état (rouge = non chargée, orange = échec, vert =
+//   chargée) et un bouton « Charger ». En pied : « Continuer quand même »
+//   (lien discret) et « Valider » (bouton plein).
+function _spOfferMissingFontsLoad(missingFonts) {
+    const families = (missingFonts || []).filter(Boolean);
+    if (!families.length) return;
+    try { if (!document.body) return; } catch (_) { return; }
+    if (document.getElementById('spMissingFontsOverlay')) return;
+
+    const state = {};
+    families.forEach(f => { state[f] = 'missing'; });
+
+    const overlay = document.createElement('div');
+    overlay.id = 'spMissingFontsOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100050;display:flex;align-items:center;justify-content:center;font-family:-apple-system,Segoe UI,Roboto,sans-serif;';
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:#fff;border-radius:0;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:540px;max-width:94vw;max-height:88vh;display:flex;flex-direction:column;color:#1a1a1a;';
+    card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid #e0e0e0;">
+            <div style="font-weight:600;font-size:13px;letter-spacing:0.3px;flex:1;">Polices manquantes dans ce document</div>
+            <div class="sp-mf-close" style="cursor:pointer;opacity:0.6;border:1px solid #e0e0e0;background:#fff;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;line-height:1;font-size:14px;color:#1a1a1a;">&#10005;</div>
+        </div>
+        <div style="padding:6px 16px 2px;border-bottom:1px solid #f0f0f0;">
+            <div style="font-size:12px;line-height:1.5;color:#555;padding:8px 0;">
+                Ce document utilise des polices externes qui ne sont pas chargées dans SuperPrint.
+                Pour chacune, choisissez le fichier correspondant (.ttf, .otf, .woff, .woff2) pour l’embarquer,
+                ou validez pour remplacer les polices non chargées par une police standard.
+            </div>
+        </div>
+        <div id="spMissingFontsBody" style="flex:1;overflow:auto;padding:10px 16px 14px;min-height:120px;"></div>
+        <div style="padding:12px 16px;border-top:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div id="spMissingFontsSkip" style="font-size:12px;color:#888;cursor:pointer;text-decoration:underline;text-underline-offset:3px;user-select:none;">Continuer quand même</div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div id="spMissingFontsStatus" style="font-size:11px;color:#888;"></div>
+                <button id="spMissingFontsValidate" class="btn" style="height:32px;padding:0 18px;background:#1a1a1a;border:1px solid #1a1a1a;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;border-radius:0;">Valider</button>
+            </div>
+        </div>`;
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const bodyEl = card.querySelector('#spMissingFontsBody');
+    const statusEl = card.querySelector('#spMissingFontsStatus');
+    const skipEl = card.querySelector('#spMissingFontsSkip');
+    const validateBtn = card.querySelector('#spMissingFontsValidate');
+    const closeEl = card.querySelector('.sp-mf-close');
+
+    const dotSVG = (color) => '<svg width="10" height="10" viewBox="0 0 10 10" style="display:block;"><circle cx="5" cy="5" r="4" fill="' + color + '"/></svg>';
+    const colorFor = (s) => s === 'loaded' ? '#1d8a4a' : (s === 'error' ? '#e08a00' : '#d33a2b');
+    const esc = (s) => String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const renderList = () => {
+        bodyEl.innerHTML = families.map(f => {
+            const st = state[f] || 'missing';
+            const label = st === 'loaded' ? 'Chargée' : (st === 'error' ? 'Échec du chargement' : 'Non chargée');
+            const btnLabel = st === 'loaded' ? 'Remplacer' : 'Charger';
+            return '<div class="sp-mf-row" data-family="' + esc(f) + '" style="display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid #f0f0f0;">'
+                + '<span style="display:inline-flex;align-items:center;justify-content:center;width:14px;flex:0 0 14px;" title="' + label + '">' + dotSVG(colorFor(st)) + '</span>'
+                + '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500;">' + esc(f) + '</span>'
+                + '<span style="font-size:10px;color:#999;width:104px;flex:0 0 104px;text-align:right;">' + label + '</span>'
+                + '<button class="sp-mf-load btn" style="height:26px;padding:0 10px;font-family:\'IBM Plex Mono\',monospace;font-size:9px;cursor:pointer;background:transparent;border:1px solid #1a1a1a;color:#1a1a1a;border-radius:0;flex:0 0 auto;">' + btnLabel + '</button>'
+                + '</div>';
+        }).join('') || '';
+        const allLoaded = families.every(f => state[f] === 'loaded');
+        statusEl.textContent = allLoaded ? '' : (families.filter(f => state[f] === 'loaded').length + '/' + families.length + ' chargée' + (families.length > 1 ? 's' : ''));
+    };
+
+    const pickAndLoad = (family) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.ttf,.otf,.woff,.woff2';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+        input.onchange = async () => {
+            const file = input.files && input.files[0];
+            document.body.removeChild(input);
+            if (!file) return;
+            state[family] = 'missing';
+            renderList();
+            statusEl.textContent = 'Chargement de ' + family + '…';
+            statusEl.style.color = '#888';
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                const dataUrl = ev.target.result;
+                const done = (typeof window._spRegisterCustomFontDataUrl === 'function')
+                    ? window._spRegisterCustomFontDataUrl(family, dataUrl)
+                    : false;
+                state[family] = done ? 'loaded' : 'error';
+                renderList();
+                statusEl.style.color = '#888';
+                if (done) {
+                    statusEl.textContent = family + ' chargée.';
+                    try {
+                        if (document.fonts && document.fonts.ready) {
+                            document.fonts.ready.then(() => {
+                                try { if (typeof _spRefreshTextboxesAfterFontLoad === 'function') _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
+                                try { saveAllPages(true); } catch (_) {}
+                            }).catch(() => {});
+                        }
+                    } catch (_) {}
+                } else {
+                    statusEl.textContent = 'Impossible de charger ' + family + '.';
+                }
+            };
+            reader.onerror = () => { state[family] = 'error'; renderList(); statusEl.textContent = 'Erreur de lecture du fichier.'; };
+            reader.readAsDataURL(file);
+        };
+        input.click();
+    };
+
+    const replaceWithStandard = (family) => {
+        try {
+            if (typeof _spReplaceFontFamilyEverywhere === 'function') _spReplaceFontFamilyEverywhere(family, 'Open Sans');
+        } catch (_) {}
+        state[family] = 'loaded';
+    };
+
+    bodyEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('.sp-mf-load');
+        if (!btn) return;
+        const row = btn.closest('.sp-mf-row');
+        if (!row) return;
+        const fam = row.getAttribute('data-family');
+        if (!fam) return;
+        pickAndLoad(fam);
+    });
+
+    closeEl.addEventListener('click', () => { try { overlay.remove(); } catch (_) {} });
+    skipEl.addEventListener('click', () => { try { overlay.remove(); } catch (_) {} });
+
+    validateBtn.addEventListener('click', () => {
+        families.forEach(f => {
+            const st = state[f];
+            if (st === 'loaded') return;
+            if (st === 'error' || st === 'missing') replaceWithStandard(f);
+        });
+        try { if (typeof _spRefreshTextboxesAfterFontLoad === 'function') _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
+        try { saveAllPages(true); } catch (_) {}
+        try { overlay.remove(); } catch (_) {}
+    });
+
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) { try { overlay.remove(); } catch (_) {} } });
+
+    renderList();
+}
+window._spOfferMissingFontsLoad = _spOfferMissingFontsLoad;
 
 // Nouvelle version de la fonction d'import PDF avec gestion avancée des modes
 async function importPDFPagesV2(pageNumbers, recadrageMode = 'support', importMode = 'single', insertAtPage = null) {
