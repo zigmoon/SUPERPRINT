@@ -4582,6 +4582,45 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     return callGroq(messages);
   }
 
+  // 🆕 2026-09-07 : helper « proxy OU direct ». En production le studio passe par
+  //   ai-proxy.php (cache les clés). En dev local sans PHP (python http.server, Vite
+  //   statique…), le proxy renvoie une erreur non-JSON (501/404 page HTML) → on
+  //   retombe sur un appel DIRECT à l'API (OpenRouter/DeepSeek/Groq/OpenAI autorisent
+  //   le CORS). Détection : statut hors 2xx OU body qui n'est pas du JSON.
+  function spProxyOrDirect(provider, proxyUrl, directUrl, proxyBody, extraHeaders) {
+    const makeRequest = (url, isProxy) => fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(proxyBody)
+    });
+    const parseResp = async (res) => {
+      const raw = await res.text().catch(() => '');
+      let data = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = null; }
+      if (!data) throw new Error('Réponse invalide (HTTP ' + res.status + ') : ' + raw.slice(0, 160));
+      if (!res.ok || data.error) throw new Error((data.error && (data.error.message || data.error.code)) || ('HTTP ' + res.status));
+      const choice = data.choices && data.choices[0];
+      if (!choice || !choice.message) throw new Error('Réponse ' + provider + ' vide');
+      const content = choice.message.content || '';
+      return choice.finish_reason === 'length' ? content + '\n\n__SP213_TRUNCATED__' : content;
+    };
+    // 1) Tentative via le proxy
+    return makeRequest(proxyUrl, true).then(parseResp).catch(err => {
+      // 2) Fallback direct si le proxy n'a pas fonctionné (pas de PHP / CORS / erreur).
+      //    On ne retombe en direct QUE pour les échecs « infrastructure » du proxy
+      //    (réponse non-JSON → serveur statique sans PHP, ou erreur réseau), jamais
+      //    pour une vraie erreur API (clé invalide, quota…) qui doit remonter telle quelle.
+      const msg = String(err && err.message || '');
+      const infraFail = /HTTP (501|404|500|502|503|405)/.test(msg) || /Réponse invalide/.test(msg) || /Failed to fetch/.test(msg) || /NetworkError|Load failed/.test(msg) || /Network request failed/.test(msg);
+      if (!infraFail) throw err;
+      const directBody = Object.assign({}, proxyBody);
+      delete directBody.apiKey;
+      const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (proxyBody.apiKey || '') };
+      if (extraHeaders) Object.assign(headers, extraHeaders);
+      return fetch(directUrl, { method: 'POST', headers, body: JSON.stringify(directBody) }).then(parseResp);
+    });
+  }
+
   function callOpenAI(messages) {
     const model = state.oaiModel || OPENAI_MODELS[0][0];
     const body = {
@@ -4593,21 +4632,7 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     const maxTokens = /^gpt-5/.test(model) || /^gpt-4\.1/.test(model) ? 16000 : 8192;
     if (/^gpt-5|^o[0-9]/.test(model)) body.max_completion_tokens = maxTokens;
     else body.max_tokens = maxTokens;
-    return fetch('ai-proxy.php?provider=openai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    }).then(async res => {
-      const raw = await res.text().catch(() => '');
-      let data = null;
-      try { data = raw ? JSON.parse(raw) : null; } catch (_) {}
-      if (!data) throw new Error('Réponse OpenAI invalide (HTTP ' + res.status + ') : ' + raw.slice(0, 200));
-      if (!res.ok || data.error) throw new Error((data.error && (data.error.message || data.error.code)) || ('HTTP ' + res.status));
-      const choice = data.choices && data.choices[0];
-      if (!choice || !choice.message) throw new Error('Réponse OpenAI vide');
-      const content = choice.message.content || '';
-      return choice.finish_reason === 'length' ? content + '\n\n__SP213_TRUNCATED__' : content;
-    });
+    return spProxyOrDirect('OpenAI', 'ai-proxy.php?provider=openai', 'https://api.openai.com/v1/chat/completions', body);
   }
 
   // ── Appel DeepSeek via proxy local (API OpenAI-compatible) ──
@@ -4627,29 +4652,7 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     if (/deepseek-v4/.test(body.model)) {
       body.thinking = { type: 'disabled' };
     }
-    return fetch('ai-proxy.php?provider=deepseek', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    })
-    .then(async res => {
-      const raw = await res.text().catch(() => '');
-      let data = null;
-      try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = null; }
-      if (!data) throw new Error('Réponse invalide (HTTP ' + res.status + ') : ' + raw.slice(0, 200));
-      if (!res.ok) {
-        const msg = (data.error && (data.error.message || data.error.code)) ? (data.error.message || data.error.code) : ('HTTP ' + res.status);
-        throw new Error(msg);
-      }
-      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
-      if (data.choices && data.choices[0] && data.choices[0].message) {
-        const content = data.choices[0].message.content || '';
-        const fr = data.choices[0].finish_reason;
-        if (fr === 'length') return content + '\n\n__SP213_TRUNCATED__';
-        return content;
-      }
-      throw new Error('Réponse DeepSeek vide');
-    });
+    return spProxyOrDirect('DeepSeek', 'ai-proxy.php?provider=deepseek', 'https://api.deepseek.com/v1/chat/completions', body);
   }
 
   // ── Appel OpenRouter via proxy (modèles 100% free) ──────────
@@ -4662,28 +4665,11 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
       max_tokens: 32768,
       response_format: { type: 'json_object' }
     };
-    return fetch('ai-proxy.php?provider=openrouter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    })
-    .then(async res => {
-      const raw = await res.text().catch(() => '');
-      let data = null;
-      try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = null; }
-      if (!data) throw new Error('Réponse invalide (HTTP ' + res.status + ') : ' + raw.slice(0, 200));
-      if (!res.ok) {
-        const msg = (data.error && (data.error.message || data.error.code)) ? (data.error.message || data.error.code) : ('HTTP ' + res.status);
-        throw new Error(msg);
-      }
-      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
-      if (data.choices && data.choices[0] && data.choices[0].message) {
-        const content = data.choices[0].message.content || '';
-        const fr = data.choices[0].finish_reason;
-        if (fr === 'length') return content + '\n\n__SP213_TRUNCATED__';
-        return content;
-      }
-      throw new Error('Réponse OpenRouter vide');
+    // 🆕 2026-09-07 : fallback direct OpenRouter si le proxy PHP est absent (dev local).
+    //   OpenRouter exige les headers HTTP-Referer / X-Title pour l'usage.
+    return spProxyOrDirect('OpenRouter', 'ai-proxy.php?provider=openrouter', 'https://openrouter.ai/api/v1/chat/completions', body, {
+      'HTTP-Referer': window.location.origin || 'http://localhost',
+      'X-Title': 'SuperPrint SP213'
     });
   }
 
@@ -4699,34 +4685,15 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
       //   et permet de produire des maquettes multi-pages (vérifié : 4 pages OK).
       max_tokens: 6000
     };
-    return fetch('ai-proxy.php?provider=groq', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    })
-    .then(async res => {
-      const raw = await res.text().catch(() => '');
-      let data = null;
-      try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = null; }
-      if (!data) throw new Error('Réponse invalide (HTTP ' + res.status + ') : ' + raw.slice(0, 200));
-      if (!res.ok) {
-        const msg = (data.error && (data.error.message || data.error.code)) ? (data.error.message || data.error.code) : ('HTTP ' + res.status);
-        if (/tokens per minute|TPM|Request too large/i.test(msg)) {
-          throw new Error('Limite du plan GRATUIT Groq dépassée (8 000 tokens/min). Votre demande est trop grosse pour Groq. Réduisez le nombre de pages / la longueur du texte, patientez 1 minute, ou passez au mode OpenRouter.');
-        }
-        if (/max_tokens/i.test(msg)) {
-          throw new Error('Limite Groq atteinte : sortie limitée à 6 000 tokens (TPM 8 000/min du plan gratuit). Réduisez le nombre de pages / éléments demandés.');
-        }
-        throw new Error(msg);
+    return spProxyOrDirect('Groq', 'ai-proxy.php?provider=groq', 'https://api.groq.com/openai/v1/chat/completions', body).catch(err => {
+      const msg = String(err && err.message || '');
+      if (/tokens per minute|TPM|Request too large/i.test(msg)) {
+        throw new Error('Limite du plan GRATUIT Groq dépassée (8 000 tokens/min). Votre demande est trop grosse pour Groq. Réduisez le nombre de pages / la longueur du texte, patientez 1 minute, ou passez au mode OpenRouter.');
       }
-      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
-      if (data.choices && data.choices[0] && data.choices[0].message) {
-        const content = data.choices[0].message.content || '';
-        const fr = data.choices[0].finish_reason;
-        if (fr === 'length') return content + '\n\n__SP213_TRUNCATED__';
-        return content;
+      if (/max_tokens/i.test(msg)) {
+        throw new Error('Limite Groq atteinte : sortie limitée à 6 000 tokens (TPM 8 000/min du plan gratuit). Réduisez le nombre de pages / éléments demandés.');
       }
-      throw new Error('Réponse Groq vide');
+      throw err;
     });
   }
 

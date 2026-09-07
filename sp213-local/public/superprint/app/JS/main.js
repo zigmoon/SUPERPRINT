@@ -41742,6 +41742,25 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         }
         window.openSp213Studio = openSp213Studio;
 
+        // 🆕 v1.7.336 : ouvrir SuperTyPo (décomposeur/éditeur de typo) depuis
+        // l'onglet « SuperTyPo » du Nouveau Projet. L'app vit dans /supertypo/
+        // (racine superprint), l'éditeur dans /app/ → on remonte d'un niveau.
+        function openSupertypo() {
+            const base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '');
+            const url = base + '../supertypo/index.html';
+            const win = window.open(url, '_blank', 'noopener');
+            if (!win) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.target = '_blank';
+                a.rel = 'noopener';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
+        }
+        window.openSupertypo = openSupertypo;
+
         // 🆕 Ouvrir la MAQUETTE ACTUELLE de SuperPrint dans le Studio SP213.
         // Sérialise le document courant en .sp (saveProjectSP_toObject), l'écrit
         // dans localStorage (clé « sp213_from_sp »), puis ouvre le studio avec
@@ -60741,6 +60760,19 @@ window.npSwitchTab = function(tab) {
                 window.open(url.href, '_blank');
             }
         } catch (e) { console.warn('[Studio] open failed:', e); }
+        return;
+    }
+    // 🆕 v1.7.336 : onglet SuperTyPo → ouvrir le décomposeur/éditeur de typo
+    if (tab === 'supertypo') {
+        closeNewProjectModal();
+        try {
+            if (typeof window.openSupertypo === 'function') {
+                window.openSupertypo();
+            } else {
+                const url = new URL('../supertypo/index.html', window.location.href);
+                window.open(url.href, '_blank');
+            }
+        } catch (e) { console.warn('[SuperTyPo] open failed:', e); }
         return;
     }
     const basic = document.getElementById('npPanelBasic');
