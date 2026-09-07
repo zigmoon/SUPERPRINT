@@ -34065,19 +34065,35 @@ https://superprint.app
             }
 
             var _isTextObject = obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text';
-            var _hasInlineStyles = obj.styles && Object.keys(obj.styles).some(function(lineKey) {
+            // 🛡️ v1.7.338 — EXPORT NATIF : ne rasteriser les textes QUE si le
+            //   rendu `drawText` ne peut vraiment pas les reproduire (dégradé,
+            //   contour, clip, ombre, skew/flip, fond de bloc). justify,
+            //   charSpacing, soulignement et les STYLES PER-CARACTÈRE (gras /
+            //   italique / taille / couleur par plage) sont désormais gérés en
+            //   VECTORIEL dans la boucle drawText ci-dessous (avant, tout texte
+            //   « non trivial » était rasterisé en image → en « Format fini »
+            //   seuls les titres simples sortaient en vecteur).
+            var _hasAnyInlineStyles = obj.styles && Object.keys(obj.styles).some(function(lineKey) {
                 var lineStyles = obj.styles[lineKey];
                 return lineStyles && Object.keys(lineStyles).length > 0;
             });
-            var _hasUnsupportedTextFeatures = _isTextObject && !obj.path && (
-                _hasInlineStyles || obj.underline || obj.overline || obj.linethrough ||
-                (obj.charSpacing || 0) !== 0 || obj.textBackgroundColor ||
-                (obj.stroke && (obj.strokeWidth || 0) > 0) ||
-                (obj.fill && typeof obj.fill === 'object') ||
-                obj.skewX || obj.skewY || obj.flipX || obj.flipY ||
-                obj.clipPath || obj.shadow || obj.textAlign === 'justify'
+            var _hasGradientOrPatternFill = obj.fill && typeof obj.fill === 'object';
+            var _hasTextStroke = (obj.stroke && (obj.strokeWidth || 0) > 0);
+            // 🛡️ v1.7.338 — Le clipPath d'un TEXTBOX est (presque toujours) un
+            //   simple rectangle qui masque le débordement hors du cadre : le rendu
+            //   vectoriel ci-dessous coupe déjà les lignes via _fixedHeight/maxLines,
+            //   donc ce clip n'impose PAS un repli raster. On ne rasterise que si le
+            //   clip est une vraie forme (non-rect, rotation, path…) qui façonne le
+            //   texte, ou un shadow / skew / flip / fond de bloc.
+            var _cpIsSimpleRect = !!(obj.clipPath && obj.clipPath.type === 'rect' &&
+                !obj.clipPath.angle && !obj.clipPath.skewX && !obj.clipPath.skewY &&
+                !obj.clipPath.flipX && !obj.clipPath.flipY && !obj.clipPath.path);
+            var _hasTextClipShadowSkew = !!(obj.shadow || obj.skewX || obj.skewY || obj.flipX || obj.flipY || obj.textBackgroundColor ||
+                (obj.clipPath && !_cpIsSimpleRect));
+            var _hasRasterOnlyTextFeatures = _isTextObject && !obj.path && (
+                _hasGradientOrPatternFill || _hasTextStroke || _hasTextClipShadowSkew
             );
-            if (_hasUnsupportedTextFeatures) {
+            if (_hasRasterOnlyTextFeatures) {
                 try {
                     if (await _spRenderComplexFabricObjectToPdfLib(doc, page, obj, multiplier)) return;
                 } catch (e) {
@@ -34200,6 +34216,13 @@ https://superprint.app
                 var text = obj.text || '';
                 if (!text) return;
 
+                // 🛡️ v1.7.338 — opacité effective (objet × alpha de la couleur),
+                //   calculée une fois pour toute la boucle de rendu vectoriel.
+                var _textOp = (typeof obj.opacity === 'number' && obj.opacity >= 0 && obj.opacity <= 1) ? obj.opacity : 1;
+                var _textFillA = (fillC && fillC[3] !== undefined) ? fillC[3] : 1;
+                var _finalTextOp = _textOp * _textFillA;
+                if (_finalTextOp < 0.01) _finalTextOp = 0.01; // pdf-lib exige opacity > 0
+
                 // ✏️ v1.7.230 : Utiliser _textLines (lignes wrappées par Fabric)
                 // au lieu de text.split('\n') pour respecter le wrapping des textbox.
                 var rawLines = (obj._textLines && obj._textLines.length)
@@ -34280,6 +34303,31 @@ https://superprint.app
                     }
                 }
 
+                // 🛡️ v1.7.338 — EXPORT NATIF : valeurs dérivées pour le rendu
+                //   enrichi du texte (charSpacing, justify, soulignement) qui
+                //   restent VECTORIELS. charSpacing Fabric est en 1/1000 em →
+                //   écart en points = charSpacing × fontSize / 1000.
+                var _charSpacingVal = (typeof obj.charSpacing === 'number' && isFinite(obj.charSpacing)) ? obj.charSpacing : 0;
+                var _charSpacingPt = _charSpacingVal * fontSizePt / 1000;
+                // justify / justify-left / justify-right : toutes justifient les
+                //   lignes pleines ; seule la DERNIÈRE ligne diffère (alignée à
+                //   gauche pour justify & justify-left, à droite pour justify-right).
+                var _justify = (align === 'justify' || align === 'justify-left' || align === 'justify-right');
+                var _justifyLastRight = (align === 'justify-right');
+                // Mesure la largeur (pt) d'une chaîne avec une police/une taille
+                // données (défaut : police du bloc). Tient compte du charSpacing.
+                var _measW = function(str, fnt, sizePt) {
+                    var w = 0;
+                    var f = fnt || ef;
+                    var sz = (typeof sizePt === 'number' && sizePt > 0) ? sizePt : fontSizePt;
+                    if (f && typeof f.widthOfTextAtSize === 'function') {
+                        try { w = f.widthOfTextAtSize(str, sz); } catch(_) { w = 0; }
+                    }
+                    if (!w) w = str.length * sz * 0.6;
+                    if (_charSpacingPt) w += Math.max(0, str.length - 1) * _charSpacingPt;
+                    return w;
+                };
+
                 for (var li = 0; li < maxLines; li++) {
                     var tx = lines[li];
                     if (!tx) continue;
@@ -34298,57 +34346,173 @@ https://superprint.app
                     // Diviser par sx car boxWidth est en espace local (avant scale)
                     var lineWLocal = (sx !== 0) ? lineWPt / Math.abs(sx) : lineWPt;
 
+                    // 🛡️ v1.7.338 : largeur tenant compte du charSpacing pour un
+                    //   alignement correct quand les lettres sont espacées.
+                    var _lineWSpaced = (sx !== 0) ? (_measW(tx) / Math.abs(sx)) : _measW(tx);
+
+                    // Dernière ligne du bloc (non étirée en mode justifié)
+                    var _isLastParaLine = (li >= maxLines - 1);
+
                     var xStart;
-                    if (align === 'center') xStart = (boxWidth - lineWLocal) / 2;
-                    else if (align === 'right') xStart = boxWidth - lineWLocal;
+                    var _effAlignRight = (align === 'right') || (_justify && _justifyLastRight && _isLastParaLine && align === 'justify-right');
+                    if (align === 'center') xStart = (boxWidth - _lineWSpaced) / 2;
+                    else if (_effAlignRight) xStart = boxWidth - _lineWSpaced;
                     else xStart = 0;
 
                     // Position Y de la baseline dans l'espace local (avant scale)
                     var baselineY_local = li * lineH + baselineYInLine;
 
-                    var ptPos = localToPagePt(xStart, baselineY_local);
-                    var drawX = ptPos.x;
-                    var drawY = ptPos.y;
-
-                    // 🛡️ v1.7.297 — FIX EXPORT NATIF : conserver la ROTATION (texte
-                    //   90° restait horizontal) et l'OPACITÉ (transparence perdue).
-                    //   On applique la rotation de l'objet autour de l'ancre, et
-                    //   l'opacité effective = obj.opacity × alpha de la couleur.
-                    var _textOp = (typeof obj.opacity === 'number' && obj.opacity >= 0 && obj.opacity <= 1) ? obj.opacity : 1;
-                    var _textFillA = (fillC && fillC[3] !== undefined) ? fillC[3] : 1;
-                    var _finalTextOp = _textOp * _textFillA;
-                    if (_finalTextOp < 0.01) _finalTextOp = 0.01; // pdf-lib exige opacity > 0
-
-                    var drawOpts = {
-                        x: drawX, y: drawY,
-                        size: fontSizePt,
-                        font: ef,
-                        color: PDFLib.rgb(fillC[0] / 255, fillC[1] / 255, fillC[2] / 255),
-                        opacity: _finalTextOp
+                    // 🛡️ v1.7.338 — Résout le STYLE EFFECTIF d'un caractère (gras /
+                    //   italique / taille / couleur per-char via obj.styles). Retourne
+                    //   {fontKey, font, sizePt, fillC} ; défaut = style du bloc.
+                    var _charStyleLine = (obj.styles && obj.styles[li]) || {};
+                    var _resolveCharStyle = function(ci) {
+                        var st = _charStyleLine[ci] || null;
+                        if (!st) return null;
+                        var fam = st.fontFamily || obj.fontFamily || 'Open Sans';
+                        var wt = st.fontWeight || obj.fontWeight || 'normal';
+                        var sty = st.fontStyle || obj.fontStyle || 'normal';
+                        var fsPx = (typeof st.fontSize === 'number') ? st.fontSize : fontSizePx;
+                        var fl = st.fill || obj.fill || '#000000';
+                        var fk = _spFontKey(fam, wt, sty);
+                        var fnt = fonts[fk] || null;           // police pdf-lib embarquée
+                        var sizePt2 = pxToMm(fsPx * (obj.scaleY || 1)) * mmToPt;
+                        var fillCol = _parsePdfColor(fl) || [0, 0, 0];
+                        return { key: fk, font: fnt, sizePt: sizePt2, fillC: fillCol };
                     };
-                    if (obj.angle) {
-                        // 🛡️ v1.7.303 — FIX SENS DE ROTATION : Fabric `angle` positif
-                        //   = rotation HORAIRE (repère canvas Y vers le bas), mais
-                        //   pdf-lib `rotate` positif = ANTI-HORAIRE (repère PDF Y vers
-                        //   le haut). Avant, `degrees(obj.angle)` tournait le texte
-                        //   dans le mauvais sens (90° qui « se remet droite » / sens
-                        //   inversé). On inverse le signe pour un rendu identique au
-                        //   canvas.
-                        try { drawOpts.rotate = PDFLib.degrees(-(obj.angle || 0)); } catch (_) {}
+
+                    // 🛡️ v1.7.338 — soulignement / barré : on trace des filets
+                    //   vectoriels positionnés avec la même transformation que le
+                    //   texte (le texte reste VECTORIEL, pas une image).
+                    //   `st` = style optionnel {font, sizePt, fillC} pour per-char.
+                    var _drawTextRun = function(fragment, localX, st) {
+                        var ptPos2 = localToPagePt(localX, baselineY_local);
+                        var _f = (st && st.font) ? st.font : ef;
+                        var _sz = (st && st.sizePt) ? st.sizePt : fontSizePt;
+                        var _col = (st && st.fillC) ? st.fillC : fillC;
+                        var o = {
+                            x: ptPos2.x, y: ptPos2.y,
+                            size: _sz,
+                            font: _f,
+                            color: PDFLib.rgb(_col[0] / 255, _col[1] / 255, _col[2] / 255),
+                            opacity: _finalTextOp
+                        };
+                        if (obj.angle) { try { o.rotate = PDFLib.degrees(-(obj.angle || 0)); } catch (_) {} }
+                        page.drawText(fragment, o);
+                    };
+                    var _textDecorationRuns = []; // {fromLocal, toLocal, kind}
+
+                    // 🛡️ v1.7.338 — JUSTIFICATION : on n'étire que les lignes PLEINES
+                    //   (pas la dernière ligne du bloc, qui garde son alignement).
+                    //   justify/justify-left → dernière ligne à gauche ;
+                    //   justify-right → dernière ligne à droite.
+                    if (_justify && !_isLastParaLine && tx.indexOf(' ') !== -1) {
+                        // ── JUSTIFICATION : dessine mot à mot en élargissant les
+                        //    espaces pour que la ligne remplisse exactement boxWidth.
+                        var _words = String(tx).split(' ');
+                        var _nbSpaces = _words.length - 1;
+                        var _wordsW = _measW(tx.replace(/ /g, ''));
+                        var _spaceW = (_measW(' ') || (fontSizePt * 0.25));
+                        var _availForSpaces = Math.max(0, boxWidth - _wordsW);
+                        var _extraPerSpace = _nbSpaces > 0 ? (_availForSpaces / _nbSpaces - _spaceW) : 0;
+                        if (_extraPerSpace < 0) _extraPerSpace = 0;
+                        // Reconstruire la position locale en px objet (unité cohérente
+                        //   avec boxWidth, qui est en px canvas à 72 dpi = pt / |sx|).
+                        var _cursorL = xStart;
+                        for (var _wi = 0; _wi < _words.length; _wi++) {
+                            var _wd = _words[_wi];
+                            if (_wi > 0) {
+                                // espace (normal + extra), en unité locale
+                                _cursorL += (_spaceW + _extraPerSpace) / Math.abs(sx);
+                            }
+                            if (_wd) {
+                                var _wordWpt = _measW(_wd);
+                                _drawTextRun(_wd, _cursorL);
+                                // trace soulignement sur ce mot
+                                _textDecorationRuns.push({ from: _cursorL, to: _cursorL + _wordWpt / Math.abs(sx), kind: 'base' });
+                                _cursorL += _wordWpt / Math.abs(sx);
+                            }
+                        }
+                    } else {
+                        // ── ALIGNEMENT SIMPLE (left/center/right) + charSpacing
+                        //    + STYLES PER-CARACTÈRE (gras/italique/taille/couleur).
+                        //    charSpacing ≠ 0 OU styles per-char → dessin caractère
+                        //    par caractère (chaque caractère avec SA police/sa taille).
+                        var _lineHasCharStyles = Object.keys(_charStyleLine).length > 0;
+                        var _useCharLoop = (tx.length > 1) && (_charSpacingVal !== 0 || _lineHasCharStyles);
+                        if (_useCharLoop) {
+                            var _cursorC = xStart;
+                            var _spacingStep = _charSpacingPt / Math.abs(sx);
+                            for (var _ci = 0; _ci < tx.length; _ci++) {
+                                var _ch = tx.charAt(_ci);
+                                // Style effectif du caractère (si per-char)
+                                var _stRes = _lineHasCharStyles ? _resolveCharStyle(_ci) : null;
+                                var _useFnt = (_stRes && _stRes.font) ? _stRes.font : ef;
+                                var _useSizePt = (_stRes && _stRes.sizePt) ? _stRes.sizePt : fontSizePt;
+                                // Largeur du caractère mesurée avec SA police
+                                var _chW = _measW(_ch, _useFnt, _useSizePt) / Math.abs(sx);
+                                if (_ch !== ' ') {
+                                    _drawTextRun(_ch, _cursorC, _stRes);
+                                    _textDecorationRuns.push({ from: _cursorC, to: _cursorC + _chW, kind: 'base' });
+                                }
+                                _cursorC += _chW;
+                                if (_ci < tx.length - 1) _cursorC += _spacingStep;
+                            }
+                        } else {
+                            var ptPos = localToPagePt(xStart, baselineY_local);
+                            var drawX = ptPos.x;
+                            var drawY = ptPos.y;
+                            var drawOpts = {
+                                x: drawX, y: drawY,
+                                size: fontSizePt,
+                                font: ef,
+                                color: PDFLib.rgb(fillC[0] / 255, fillC[1] / 255, fillC[2] / 255),
+                                opacity: _finalTextOp
+                            };
+                            if (obj.angle) {
+                                try { drawOpts.rotate = PDFLib.degrees(-(obj.angle || 0)); } catch (_) {}
+                            }
+                            // Faux gras : dessiner avec un léger décalage horizontal
+                            if (isBold && !fonts[fontKey]) {
+                                page.drawText(tx, {
+                                    x: drawX + fauxBoldOffsetPt, y: drawY,
+                                    size: fontSizePt,
+                                    font: ef,
+                                    color: PDFLib.rgb(fillC[0] / 255, fillC[1] / 255, fillC[2] / 255),
+                                    opacity: _finalTextOp,
+                                    rotate: drawOpts.rotate
+                                });
+                            }
+                            page.drawText(tx, drawOpts);
+                            _textDecorationRuns.push({ from: xStart, to: xStart + lineWLocal, kind: 'base' });
+                        }
                     }
 
-                    // Faux gras : dessiner avec un léger décalage horizontal
-                    if (isBold && !fonts[fontKey]) {
-                        page.drawText(tx, {
-                            x: drawX + fauxBoldOffsetPt, y: drawY,
-                            size: fontSizePt,
-                            font: ef,
-                            color: PDFLib.rgb(fillC[0] / 255, fillC[1] / 255, fillC[2] / 255),
-                            opacity: _finalTextOp,
-                            rotate: drawOpts.rotate
-                        });
+                    // 🛡️ v1.7.338 — filets de soulignement / barré / surligné (vectoriels)
+                    var _hasDeco = obj.underline || obj.linethrough || obj.overline;
+                    if (_hasDeco && _textDecorationRuns.length) {
+                        var _decOffsetY = 0;
+                        if (obj.underline) _decOffsetY = fontSizePx * 0.08;   // sous la baseline
+                        else if (obj.linethrough) _decOffsetY = -fontSizePx * 0.32; // ~milieu
+                        else if (obj.overline) _decOffsetY = -fontSizePx * (0.72);   // au-dessus du cap
+                        var _decColor = _parsePdfColor(obj.fill) || [0, 0, 0];
+                        var _decThick = Math.max(0.4, fontSizePx * 0.045) * mmToPt;
+                        for (var _ri = 0; _ri < _textDecorationRuns.length; _ri++) {
+                            var _rr = _textDecorationRuns[_ri];
+                            if (typeof _rr.from !== 'number') continue;
+                            var _p1 = localToPagePt(_rr.from, baselineY_local + _decOffsetY);
+                            var _p2 = localToPagePt(_rr.to, baselineY_local + _decOffsetY);
+                            try {
+                                page.drawLine({
+                                    start: { x: _p1.x, y: _p1.y },
+                                    end: { x: _p2.x, y: _p2.y },
+                                    thickness: _decThick,
+                                    color: PDFLib.rgb(_decColor[0] / 255, _decColor[1] / 255, _decColor[2] / 255),
+                                    opacity: _finalTextOp
+                                });
+                            } catch (_) {}
+                        }
                     }
-                    page.drawText(tx, drawOpts);
                 }
                 return;
             }

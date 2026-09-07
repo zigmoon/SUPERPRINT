@@ -21,3 +21,8 @@ superprint/sp213-local.zip
 superprint/ORGANISATION.md
 superprint/RAPPORT-MODELES.md
 superprint/VERSIONING.md
+
+# VS Code (local)
+.vscode/
+superprint/.vscode/
+
