@@ -255,9 +255,13 @@ import * as XLSX from '@e965/xlsx';
         } else { fallbackCopy(btn, text); }
       });
     });
-    // ✕ Croix en haut à droite des réglages → revient sur l'interface studio
+    // ✕ Croix en haut à droite du pre-home → ouvre le studio STANDALONE à jour.
+    //   🆕 2026-09-07 : le studio source de vérité est superprint/sp213-studio.html
+    //   (tooltips i18n FR/EN/JA + recherche d'image web). On l'ouvre en nouvel
+    //   onglet via la copie servie à /superprint/sp213-studio.html — plus de
+    //   duplication avec le studio Vite inline (resté en retard).
     const closeBtn = $('welcomeCloseBtn');
-    if (closeBtn) closeBtn.addEventListener('click', () => startStudio('webllm'));
+    if (closeBtn) closeBtn.addEventListener('click', () => openStudioStandalone());
     // Boutons d'ouverture
     // « Démarrer SuperPrint » → l'application PAO complète (superprint/app/index.html)
     $('startLocalBtn').addEventListener('click', () => openSuperPrintLocal());
@@ -266,9 +270,24 @@ import * as XLSX from '@e965/xlsx';
     const onlineSp = $('onlineSpBtn');
     if (onlineSp) onlineSp.addEventListener('click', () => openSuperPrintLocal());
     const onlineStudio = $('onlineStudioBtn');
-    if (onlineStudio) onlineStudio.addEventListener('click', () => startStudio('webllm'));
+    if (onlineStudio) onlineStudio.addEventListener('click', () => openStudioStandalone());
     const onlineDoc = $('onlineDocBtn');
     if (onlineDoc) onlineDoc.addEventListener('click', () => openSuperPrintDoc());
+  }
+
+  // 🆕 2026-09-07 : ouvre le studio STANDALONE (source de vérité, à jour) dans un
+  //   nouvel onglet. La copie est servie par Vite depuis public/superprint/.
+  function openStudioStandalone() {
+    const url = new URL('superprint/sp213-studio.html', window.location.href);
+    let win = null;
+    try { win = window.open(url.href, '_blank'); } catch (_) {}
+    if (!win) { window.location.href = url.href; return; }
+    setTimeout(() => {
+      try {
+        const bad = win.closed || !win.location || /about:blank/.test(String(win.location.href));
+        if (bad) window.location.href = url.href;
+      } catch (_) {}
+    }, 600);
   }
 
   // Ouvre l'application SuperPrint complète (servie par Vite dans /superprint/app/)
