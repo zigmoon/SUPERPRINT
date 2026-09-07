@@ -4433,9 +4433,37 @@ DOCUMENT COURANT
 • Zone sûre : 15 mm des bords pour le texte lisible
 • Fonds perdus : 3 mm (uniquement pour fonds / photos pleine page / formes décoratives).
   🔴 Fond pleine page = rectangle left:-3, top:-3, width:(largeur+6), height:(hauteur+6).
-  Ex. A4 ${state.pageW}×${state.pageH} → left:-3, top:-3, width:${state.pageW + 6}, height:${state.pageH + 6}.
+  Ex. format ${state.pageW}×${state.pageH} → left:-3, top:-3, width:${state.pageW + 6}, height:${state.pageH + 6}.
   JAMAIS left:0/top:0 (laisserait 3 mm de blanc au bord après coupe).
 • Toutes les coordonnées en MILLIMÈTRES (mm). fontSize en POINTS (pt). Couleurs #RRGGBB.
+${(function(){
+  const W = state.pageW || 210, H = state.pageH || 297;
+  const narrow = W < 120 && H > W;      // format ÉTROIT en hauteur (flyer, carte, bannière)
+  const small = W * H < 210 * 297;      // surface plus petite qu'un A4
+  const maxTextW = Math.max(20, Math.round((W - 30) * 10) / 10);       // largeur de texte utile (15+15 de marge)
+  const maxBlocW = Math.max(20, Math.round((W - 30) * 10) / 10);
+  const maxH = H - 15;                                                  // bas de page à ne pas dépasser pour un bloc (sauf fond)
+  let geomNote = '';
+  if (narrow) {
+    geomNote = 'CE FORMAT EST ÉTROIT ET HAUT (largeur ' + W + ' mm < 120 mm). Toute la composition DOIT tenir dans ' + W + ' mm de large :\n' +
+      '  • AUCUN bloc texte ni forme (hors fond pleine page) ne peut dépasser ' + W + ' mm de large, ni commencer au-delà de ' + Math.round((W - 15) * 10) / 10 + ' mm, ni avoir un left négatif.\n' +
+      '  • Structure en UNE SEULE COLONNE verticale (left ≈ 15 mm, width ≈ ' + maxBlocW + ' mm). Pas de 2 colonnes côte à côte, pas de blocs « pleine largeur » pensés pour du A4.\n' +
+      '  • Si l\'utilisateur demande plusieurs « colonnes » ou sections sur un format aussi étroit, EMPILE-les verticalement (chaque colonne devient un bloc horizontal successif) — des colonnes côte à côte de moins de ~40 mm chacune sont ILLISIBLES.\n' +
+      '  • Le contenu se lit de haut en bas : hiérarchise verticalement, laisse respirer, et ne fais JAMAIS déborder à droite (left + width ≤ ' + W + ').';
+  } else if (W < 160) {
+    geomNote = 'Format compact (largeur ' + W + ' mm) : garde une seule colonne ou 2 colonnes SERRÉES ; chaque bloc texte ≤ ' + maxTextW + ' mm de large. Ne dépasse jamais ' + W + ' mm à droite.';
+  } else {
+    geomNote = 'Format confortable (largeur ≥ ' + W + ' mm) : tu peux utiliser plusieurs colonnes, mais chaque bloc doit rester ≤ ' + maxTextW + ' mm de large et tenir dans la largeur ' + W + ' mm.';
+  }
+  const areaNote = small && !narrow ? 'Ce format est PLUS PETIT qu\'un A4 : réduis les corps (titres 28-60 pt, sous-titres 14-20 pt, corps 8-11 pt) et évite les grandes marges blanches. ' : '';
+  return '\nCONTRAINTES NUMÉRIQUES DU FORMAT COURANT (' + W + '×' + H + ' mm) :\n' +
+    '  • Largeur utile de page = ' + W + ' mm. Aucun objet (hors fond pleine page) ne doit dépasser left + width > ' + W + '.\n' +
+    '  • Hauteur utile = ' + H + ' mm. Un bloc non-fond ne doit pas dépasser top + height > ' + maxH + ' mm.\n' +
+    '  • Largeur MAXIMALE d\'un bloc de TEXTE = ' + maxTextW + ' mm (marges 15 mm de chaque côté). Si un texte est trop long pour cette largeur, augmente sa hauteur, pas sa largeur.\n' +
+    '  • TEXTES : left entre 15 et ' + Math.round((W - 15) * 10) / 10 + ' mm ; largeur recommandée 60-100% de ' + maxTextW + ' mm.\n' +
+    (small ? areaNote : '') +
+    geomNote;
+})()}
 
 PIÈCES JOINTES
 • Images : si l'utilisateur fournit des images (section PIÈCES JOINTES), place-les avec le type "image"
@@ -4470,6 +4498,12 @@ FIN DE PAGE OBLIGATOIRE :
 • Calcule la hauteur de chaque bloc texte : hauteur_mm ≈ lignes × fontSize × lineHeight × 0.353.
 • Chaque page DOIT se terminer avec top + hauteur ≤ hauteur_page (idéalement ≤ hauteur_page - 10 mm).
 • Si un texte déborde, réduis la taille de police (≥ 8 pt), raccourcis, ou passe à la page suivante.
+
+FIN DE LARGEUR OBLIGATOIRE (pour TOUS les formats, et en particulier les formats ÉTROITS) :
+• La largeur du document est ${state.pageW} mm : JAMAIS d'objet avec left + width > ${state.pageW}.
+• Un bloc de texte ne peut pas dépasser la largeur utile ${Math.max(20, state.pageW - 30)} mm (marges 15 mm).
+• Si un texte est trop long pour la largeur, il passe à la ligne (retour auto) : ne l'élargis JAMAIS
+  au-delà de la page, et ne le pose JAMAIS avec un left qui le ferait déborder à droite.
 
 ${(function(){
   const p = state.lastPrompt || '';
@@ -5258,7 +5292,36 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     }
 
     if (clone.type === 'text') {
-      clone.width = clamp(clone.width, 5, Math.max(5, state.pageW - clone.left));
+      const pageWmm = state.pageW || 210;
+      const margin = 15;
+      const rawLeft = finite(clone.left, 15);
+      const rawW = finite(clone.width, 0);
+      const pageNarrow = pageWmm < 160;
+      // 🆕 Garde-fou « format » : si l'IA a posé un texte en pensant à une page PLUS LARGE
+      // que le format courant (réflexe A4 sur un format étroit — l'utilisateur voit alors
+      // des blocs décalés / qui débordent à droite), on ramène le bloc dans la zone lisible
+      // au lieu de l'écraser (avant : un tel texte finissait en fine colonne illisible au bord).
+      // « Pensé pour A4 » = left dans la moitié droite d'un A4 (≥105) OU largeur conçue pour
+      // une page ≥ 210 OU débordement massif (> 40 mm au-delà du format courant).
+      const pensePourA4 = rawLeft >= 105 || rawW >= pageWmm + 20 || (rawLeft + rawW) > pageWmm + 40;
+      let w;
+      if (pensePourA4 && pageNarrow) {
+        // Recentrer : left à la marge, largeur plafonnée à la zone utile (marge droite 15).
+        clone.left = margin;
+        const utile = Math.max(5, pageWmm - margin - margin);
+        w = Math.min(finite(clone.width, utile), utile);
+        clone.width = Math.round(clamp(w, 5, Math.max(5, pageWmm - clone.left - 10)) * 10) / 10;
+      } else {
+        // Comportement historique (A4 et formats confortables) : on évite seulement le
+        // débordement à droite (left + width ≤ pageW). On n'impose pas de marge.
+        if (rawLeft > pageWmm - margin - 2 && rawW < 40 && rawW > 0) {
+          clone.left = Math.max(0, pageWmm - margin - Math.max(10, rawW)); // texte écrasé au bord → ramener dans la marge
+        }
+        const maxW = Math.max(5, pageWmm - clone.left);
+        w = Math.min(finite(clone.width, maxW), maxW);
+        clone.width = Math.round(clamp(w, 5, maxW) * 10) / 10;
+      }
+      clone.left = Math.round(clamp(clone.left, 0, Math.max(0, pageWmm - margin)) * 10) / 10;
       clone.text = String(clone.text || '').slice(0, 12000);
       clone.fontSize = clamp(finite(clone.fontSize, 14), 8, 240);
       clone.fontFamily = normalizeFontFamily(clone.fontFamily) || 'Open Sans';
