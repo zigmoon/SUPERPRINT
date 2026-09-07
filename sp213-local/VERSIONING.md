@@ -12,7 +12,7 @@
 |---|---|
 | Version app (affichée) | `1.7.335` |
 | Cache Service Worker | `superprint-shell-v1.7.335-no-whatsapp` |
-| Query JS (`main.js`) | `?v=20260907-v335-realbold2` |
+| Query JS (`main.js`) | `?v=20260907-v335-mf-i18n2` |
 | Badge preview (`spVersionBadge`) | `v1.7.335` |
 | Splash screen | `v1.7.335` |
 | Préférences (panneau SUPERPRINT) | `v1.7.335` |

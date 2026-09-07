@@ -116,6 +116,90 @@ import * as XLSX from '@e965/xlsx';
   function setLS(k, v) { try { localStorage.setItem(k, v); } catch (_) {} }
   function getLS(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
 
+  // ── Mesure RÉELLE du texte (canvas 2D) ─────────────────────
+  // 🛡️ v1.7.335 (audit studio) : l'ancienne estimation (largeur char ≈ 0.168–0.17×fs)
+  // ne tenait compte ni de la police réelle (Bebas Neue ≈ 30 % plus étroite
+  // qu'Open Sans) ni de la graisse (700 > 400) ni de la casse → le nombre de
+  // lignes estimé différait du wrapping réel fabric → les blocs « bougeaient »
+  // entre la preview studio (fabric mesure) et l'app SuperPrint (fabric aussi).
+  // On mesure désormais avec ctx.measureText (mêmes métriques que fabric), avec
+  // repli sur l'estimation si la police n'est pas encore chargée.
+  let _spMeasureCtx = null;
+  function _getMeasureCtx() {
+    try {
+      if (!_spMeasureCtx) {
+        const cv = document.createElement('canvas');
+        _spMeasureCtx = cv.getContext('2d');
+      }
+      return _spMeasureCtx;
+    } catch (_) { return null; }
+  }
+  function _isFontLoadedCheck(family, weight, style) {
+    try {
+      if (!document.fonts || typeof document.fonts.check !== 'function') return false;
+      const w = (weight === 'bold' || Number(weight) >= 600) ? '700' : '400';
+      const st = (style === 'italic' || style === 'oblique') ? 'italic' : 'normal';
+      return document.fonts.check(st + ' ' + w + ' 16px "' + family + '"');
+    } catch (_) { return false; }
+  }
+  // Largeur en px d'une chaîne pour une police/graisse/style donnés, à fontSize px.
+  function measureTextPx(text, fontSizePx, family, weight, style) {
+    try {
+      const ctx = _getMeasureCtx();
+      if (!ctx) return null;
+      const fam = normalizeFontFamily(family) || 'Open Sans';
+      const w = (weight === 'bold' || weight === 700 || Number(weight) >= 600) ? '700' : '400';
+      const st = (style === 'italic' || style === 'oblique') ? 'italic' : 'normal';
+      ctx.font = st + ' ' + w + ' ' + fontSizePx + 'px "' + fam + '", sans-serif';
+      return ctx.measureText(String(text || '')).width;
+    } catch (_) { return null; }
+  }
+  // Nombre de lignes d'un texte une fois wrappé dans widthPx (mêmes règles que fabric :
+  // coupe aux espaces, sans casser les mots — breakWords du studio est à true, on coupe
+  // les mots trop longs). Retourne le nb de lignes + la hauteur en px.
+  function measureWrappedLines(text, fontSizePx, lineHeight, widthPx, family, weight, style) {
+    const raw = String(text || '');
+    if (!raw) return { lines: 1, heightPx: (fontSizePx || 14) * (lineHeight || 1.4) };
+    const fsPx = fontSizePx || 14;
+    const lh = lineHeight || 1.4;
+    const wPx = Math.max(1, widthPx || 100);
+    // Découpage par retours à la ligne explicites, puis wrapping de chaque paragraphe.
+    const paragraphs = raw.split('\n');
+    let totalLines = 0;
+    for (const para of paragraphs) {
+      if (!para) { totalLines += 1; continue; }
+      const words = para.split(/(\s+)/).filter(Boolean);
+      let lineCount = 1;
+      let lineWidth = 0;
+      for (const w of words) {
+        const isSpace = /^\s+$/.test(w);
+        const wPxMeas = measureTextPx(w, fsPx, family, weight, style);
+        const ww = (wPxMeas === null || wPxMeas === undefined) ? w.length * fsPx * 0.55 : wPxMeas;
+        if (isSpace) {
+          // espace : l'ajouter à la ligne courante si elle n'est pas vide, sinon ignorer
+          if (lineWidth > 0) lineWidth += ww;
+          continue;
+        }
+        if (lineWidth + ww > wPx && lineWidth > 0) { lineCount++; lineWidth = ww; }
+        else lineWidth += ww;
+      }
+      totalLines += lineCount;
+    }
+    const heightPx = totalLines * fsPx * lh;
+    return { lines: totalLines, heightPx };
+  }
+  // Hauteur en mm d'un élément texte une fois wrappé (alignée sur les métriques réelles).
+  function spEstimateTextHeightMm(el) {
+    const fsPt = (typeof el.fontSize === 'number' && el.fontSize > 0) ? el.fontSize : 11;
+    const fsPx = fsPt * PT_TO_PX;
+    const wMm = (typeof el.width === 'number' && el.width > 10) ? el.width : (state.pageW - 30 || 180);
+    const wPx = wMm * MM_TO_PX;
+    const lh = (typeof el.lineHeight === 'number' && el.lineHeight > 0) ? el.lineHeight : 1.4;
+    const fam = normalizeFontFamily(el.fontFamily) || 'Open Sans';
+    const measured = measureWrappedLines(el.text, fsPx, lh, wPx, fam, el.fontWeight, el.fontStyle);
+    return Math.ceil(measured.heightPx / MM_TO_PX * 10) / 10;
+  }
+
   // ── Pré-home : une ligne à copier (façon Ollama) ──────────
   // ⚠️ En local, le projet est DÉJÀ installé → la commande se limite à LANCER
   //    le serveur (npm run dev). Windows : utiliser npm.cmd pour contourner la
@@ -1139,15 +1223,27 @@ import * as XLSX from '@e965/xlsx';
         objects.push({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, scaleX: 1, scaleY: 1 });
       } else if (t === 'text' || t === 'textbox') {
         const famT = normalizeFontFamily(el.fontFamily) || 'Open Sans';
-        // 🛡️ FIX 2026-08-30 : estimer la hauteur (sinon l'app verrouille _fixedHeight=0).
+        // 🛡️ v1.7.335 (audit studio) : hauteur mesurée avec les VRAIES métriques de
+        //   police (ctx.measureText) au lieu de l'estimation 0.55×fs (qui ignorait la
+        //   police et la graisse → wrapping faux → blocs décalés dans l'app). On
+        //   mesure le texte réel wrappé dans la largeur du bloc. Repli estimation.
         const _fsPx2 = (+el.fontSize || 14) * PT_TO_PX;
         const _lh2 = el.lineHeight || 1.4;
         const _widthPx2 = (+el.width || 200) * MM_TO_PX;
-        const _charW2 = _fsPx2 * 0.55;
-        const _perLine2 = Math.max(1, Math.floor(_widthPx2 / _charW2));
-        const _lines2 = Math.max(1, Math.ceil(String(el.text || '').length / _perLine2));
-        const _heightPx2 = Math.max(_fsPx2, Math.round(_lines2 * _fsPx2 * _lh2));
-        objects.push({ type: 'textbox', left, top, width: (+el.width || 200) * MM_TO_PX, height: _heightPx2, text: el.text || '', fontSize: _fsPx2, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famT, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh2, opacity: op, scaleX: 1, scaleY: 1 });
+        let _heightPx2 = Math.max(_fsPx2, Math.round(_fsPx2 * _lh2));
+        try {
+          const meas = measureWrappedLines(el.text || '', _fsPx2, _lh2, _widthPx2, famT, el.fontWeight, el.fontStyle);
+          _heightPx2 = Math.max(_fsPx2, Math.round(meas.heightPx));
+        } catch (_) {
+          const _charW2 = _fsPx2 * 0.55;
+          const _perLine2 = Math.max(1, Math.floor(_widthPx2 / _charW2));
+          const _lines2 = Math.max(1, Math.ceil(String(el.text || '').length / _perLine2));
+          _heightPx2 = Math.max(_fsPx2, Math.round(_lines2 * _fsPx2 * _lh2));
+        }
+        // 🛡️ v1.7.335 : _fixedHeight/_fixedWidth pour un .sp au niveau de l'app (cadre fixe).
+        const _fixedW2 = (+el.width || 200) * MM_TO_PX;
+        const _fixedH2 = _heightPx2 + Math.round(_fsPx2 * _lh2 * 0.5);
+        objects.push({ type: 'textbox', left, top, width: _fixedW2, height: _fixedH2, _fixedWidth: _fixedW2, _fixedHeight: _fixedH2, text: el.text || '', fontSize: _fsPx2, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famT, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh2, opacity: op, scaleX: 1, scaleY: 1 });
       } else if (t === 'image' && el.imageUrl) {
         objects.push({ type: 'image', left, top, width, height, opacity: op, scaleX: 1, scaleY: 1, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2 });
       }
@@ -2541,14 +2637,28 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       if (fs >= 14) return fs * 0.17;
       return fs * 0.168;
     }
+    // 🛡️ v1.7.335 (audit studio) : hauteur de texte mesurée avec les VRAIES
+    //   métriques de police (ctx.measureText) via spEstimateTextHeightMm, au lieu
+    //   de l'estimation générique (indépendante de la police/graisse). `fs` peut
+    //   être forcé par fitText (réduction de typo) → on mesure avec ce fs.
     function estimateTextHeightMm(el, fs) {
+      try {
+        const effEl = el;
+        if (fs && fs !== (el.fontSize || 11)) {
+          effEl = Object.assign({}, el, { fontSize: fs });
+        }
+        const h = spEstimateTextHeightMm(effEl);
+        if (h && h > 0) return h;
+      } catch (_) {}
+      // Repli : ancienne estimation si la mesure réelle échoue.
       const text = (typeof el.text === 'string' && el.text.trim()) ? el.text : ' ';
       const width = (typeof el.width === 'number' && el.width > 10) ? el.width : (pageW - 30);
       const lh = (typeof el.lineHeight === 'number' && el.lineHeight > 0) ? el.lineHeight : 1.4;
-      const cw = estimateCharWidthMm(fs);
+      const fsUse = fs || (el.fontSize || 11);
+      const cw = estimateCharWidthMm(fsUse);
       const perLine = Math.max(1, Math.floor(width / cw));
       const lines = Math.max(1, Math.ceil(text.length / perLine));
-      return lines * fs * lh * 0.353;
+      return lines * fsUse * lh * 0.353;
     }
     function isText(el) {
       const t = String((el && el.type) || '').toLowerCase();
@@ -3131,17 +3241,31 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
             objects.push({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, scaleX: 1, scaleY: 1 });
           } else if (t === 'text' || t === 'textbox') {
             const famT2 = normalizeFontFamily(el.fontFamily) || 'Open Sans';
-            // 🛡️ FIX 2026-08-30 : estimer la HAUTEUR du textbox (sinon l'app SuperPrint
-            //   verrouille _fixedHeight à 0 → texte invisible/écrasé). hauteur_px ≈
-            //   nb_lignes × fontSize_pt × lineHeight × PT_TO_PX.
+            // 🛡️ v1.7.335 (audit studio) : hauteur mesurée avec les VRAIES métriques de
+            //   police (ctx.measureText) au lieu de l'estimation 0.55×fs. Sans cela, le
+            //   height écrit dans le .sp différait du wrapping réel → l'app recalculait
+            //   un nombre de lignes différent → blocs décalés. Repli estimation.
             const _fsPx = (+el.fontSize || 14) * PT_TO_PX;
             const _lh = el.lineHeight || 1.4;
             const _widthPx = (+el.width || 200) * MM_TO_PX;
-            const _charW = _fsPx * 0.55; // largeur moyenne caractère en px (~pt×1.333×0.55)
-            const _perLine = Math.max(1, Math.floor(_widthPx / _charW));
-            const _lines = Math.max(1, Math.ceil(String(el.text || '').length / _perLine));
-            const _heightPx = Math.max(_fsPx, Math.round(_lines * _fsPx * _lh));
-            objects.push({ type: 'textbox', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 200) * MM_TO_PX, height: _heightPx, text: el.text || '', fontSize: _fsPx, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famT2, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh, opacity: op, scaleX: 1, scaleY: 1 });
+            let _heightPx = Math.max(_fsPx, Math.round(_fsPx * _lh));
+            try {
+              const meas = measureWrappedLines(el.text || '', _fsPx, _lh, _widthPx, famT2, el.fontWeight, el.fontStyle);
+              _heightPx = Math.max(_fsPx, Math.round(meas.heightPx));
+            } catch (_) {
+              const _charW = _fsPx * 0.55;
+              const _perLine = Math.max(1, Math.floor(_widthPx / _charW));
+              const _lines = Math.max(1, Math.ceil(String(el.text || '').length / _perLine));
+              _heightPx = Math.max(_fsPx, Math.round(_lines * _fsPx * _lh));
+            }
+            // 🛡️ v1.7.335 : poser _fixedHeight/_fixedWidth pour que le .sp studio se
+            //   comporte comme un .sp natif de l'app (cadre fixe, pas d'expansion
+            //   Fabric au chargement qui décalerait les blocs suivants). Petite marge
+            //   (+0.5 ligne) pour ne jamais tronquer les descendantes (g, j, p, q, y).
+            const _padPx = Math.round(_fsPx * _lh * 0.5);
+            const _fixedHPx = _heightPx + _padPx;
+            const _fixedWPx = (+el.width || 200) * MM_TO_PX;
+            objects.push({ type: 'textbox', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: _fixedWPx, height: _fixedHPx, _fixedWidth: _fixedWPx, _fixedHeight: _fixedHPx, text: el.text || '', fontSize: _fsPx, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famT2, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh, opacity: op, scaleX: 1, scaleY: 1 });
           } else if (t === 'image' && el.imageUrl) {
             objects.push({ type: 'image', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 100) * MM_TO_PX, height: (+el.height || 100) * MM_TO_PX, opacity: op, scaleX: 1, scaleY: 1, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2 });
           }
@@ -3389,7 +3513,16 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
         const link = document.createElement('link');
         link.id = 'sp213-fonts-css';
         link.rel = 'stylesheet';
-        link.href = '/superprint/CSS/fonts.css';
+        // 🛡️ v1.7.335 (audit studio) : charger le fonts.css de l'APP
+        //   (/superprint/app/CSS/fonts.css), PAS la copie racine obsolète
+        //   (/superprint/CSS/fonts.css du 27 août). L'ancienne copie déclarait
+        //   les graisses 500/600/700 vers les fichiers -400- (faux gras) →
+        //   la preview studio mesurait les métriques du 400 alors que l'app
+        //   charge la VRAIE graisse 700 → wrapping différent → blocs décalés.
+        //   Le fonts.css de l'app pointe vers les vraies graisses statiques
+        //   (OpenSans-700…woff2, etc.) désormais présentes dans
+        //   /superprint/app/CSS/fonts/.
+        link.href = '/superprint/app/CSS/fonts.css';
         document.head.appendChild(link);
         // ⏳ Précharger les polices UNE FOIS le CSS chargé/appliqué (sinon le
         // navigateur ne connaît pas encore les @font-face → rien ne se charge).

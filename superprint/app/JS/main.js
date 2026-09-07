@@ -35863,14 +35863,52 @@ https://superprint.app
                         return order;
                     };
 
+                    // 🛡️ v1.7.335 (audit graisses) : fetch des fichiers de police AVEC
+                    //   cache-buster + revalidation. Avant, cache:'force-cache' sans
+                    //   cache-buster renvoyait l'ANCIEN woff2 variable (usWeight 400)
+                    //   quand le navigateur l'avait en cache HTTP (les serveurs n'envoient
+                    //   pas de Cache-Control → cache heuristique). Résultat : l'export
+                    //   vectoriel embarquait la graisse 400 au lieu de la 600/700 réelle.
+                    //   On ajoute un cache-buster horodaté (revalidé une fois par session
+                    //   grâce à _spVectorFontCacheBust) + cache:'reload' pour forcer la
+                    //   revalidation HTTP (If-Modified-Since → 304 si inchangé, réseau
+                    //   sinon). Coût négligeable : 1 revalidation par police/session.
+                    const _spVectorFontCacheBust = (window._spVectorFontCacheBust = window._spVectorFontCacheBust || String(Date.now()));
+                    const _spBustUrl = (url) => {
+                        const sep = url.indexOf('?') >= 0 ? '&' : '?';
+                        return url + sep + '_vcb=' + _spVectorFontCacheBust;
+                    };
                     const _spFetchWithTimeout = (url, timeoutMs) => {
                         return new Promise((resolve, reject) => {
                             const controller = new AbortController();
                             const timer = setTimeout(() => { controller.abort(); reject(new Error('timeout')); }, timeoutMs);
-                            fetch(url, { signal: controller.signal, cache: 'force-cache' }).then(r => { clearTimeout(timer); resolve(r); }).catch(err => { clearTimeout(timer); reject(err); });
+                            fetch(_spBustUrl(url), { signal: controller.signal, cache: 'reload' }).then(r => { clearTimeout(timer); resolve(r); }).catch(err => { clearTimeout(timer); reject(err); });
                         });
                     };
 
+                    // 🛡️ v1.7.335 (audit graisses) : vérifier que le fichier chargé a
+                    //   bien la graisse demandée. Un woff2 variable résiduel (cache)
+                    //   expose usWeightClass par défaut (400) même pour une URL "…700…".
+                    //   Si l'écart est flagrant (>150), on rejette ce fichier pour
+                    //   continuer vers le candidat suivant (ex. -latin.woff2 statique).
+                    //   NB : on garde une tolérance pour les polices variables (fvar)
+                    //   dont le usWeightClass par défaut peut être l'instance la plus
+                    //   proche (400/700) — mais si l'URL demandait 600/700 et que le
+                    //   fichier est réellement du 400 NON variable, on le rejette.
+                    const _spWeightOfFont = (fnt) => {
+                        try { return Number(fnt.tables && fnt.tables.os2 && fnt.tables.os2.usWeightClass) || 0; } catch (_) { return 0; }
+                    };
+                    const _spFontWeightOk = (fnt, targetWeight) => {
+                        const wReal = _spWeightOfFont(fnt);
+                        const wTgt = Number(targetWeight) || 400;
+                        if (!wReal) return true; // pas d'info os2 → on accepte
+                        const isVar = !!(fnt.tables && fnt.tables.fvar);
+                        // Variable : l'instance par défaut peut être 400 ; on accepte car
+                        // le draw pourra instancier la graisse. Non-variable : écart >150
+                        // → mauvais fichier (cache résiduel), on rejette.
+                        if (isVar) return true;
+                        return Math.abs(wReal - wTgt) <= 150;
+                    };
                     // Tente de charger + parser UN fichier (ttf ou woff2). Retourne
                     // { font, resolvedWeight } ou null.
                     const _spTryLoadOne = async (tryWeight, tryStyle) => {
@@ -35890,17 +35928,20 @@ https://superprint.app
                                 if (resp.ok) {
                                     const ttfBuf = await resp.arrayBuffer();
                                     const font = window.opentype.parse(ttfBuf);
-                                    if (font && typeof font.getPath === 'function' && font.unitsPerEm) {
+                                    if (font && typeof font.getPath === 'function' && font.unitsPerEm && _spFontWeightOk(font, tryWeight)) {
                                         font._spTtfBuffer = ttfBuf;
                                         return { font, resolvedWeight: tryWeight, resolvedStyle: tryStyle };
                                     }
                                 }
                             } catch (_) {}
                         }
-                        // 2) WOFF2 + wawoff2
+                        // 2) WOFF2 + wawoff2 (parcourir les candidats et parser chacun :
+                        //    si un candidat répond mais que sa graisse réelle ne colle
+                        //    pas — cache résiduel d'un ancien fichier — on passe au
+                        //    candidat suivant au lieu d'accepter un mauvais fichier).
                         if (!window.wawoff2_decompress) return null;
-                        let woff2Buf = null;
                         for (const url of woff2Candidates) {
+                            let woff2Buf = null;
                             let retries = 3;
                             while (retries > 0) {
                                 try {
@@ -35916,17 +35957,31 @@ https://superprint.app
                                     }
                                 }
                             }
-                            if (woff2Buf) break;
+                            if (!woff2Buf) continue;
+                            try {
+                                const ttfBytes = await window.wawoff2_decompress(new Uint8Array(woff2Buf));
+                                if (!ttfBytes || !ttfBytes.byteLength) continue;
+                                const font = window.opentype.parse(
+                                    ttfBytes.buffer.slice(ttfBytes.byteOffset, ttfBytes.byteOffset + ttfBytes.byteLength)
+                                );
+                                if (!font || typeof font.getPath !== 'function') continue;
+                                // 🛡️ v1.7.335 : rejeter un woff2 dont la graisse réelle ne
+                                //   correspond pas (cache résiduel d'un ancien fichier
+                                //   variable servi sans revalidation). On continue vers le
+                                //   candidat suivant (latin puis latin-ext) qui, lui, est
+                                //   le bon fichier statique.
+                                if (!_spFontWeightOk(font, tryWeight)) {
+                                    console.warn('[SP-vector-text] Graisse incohérente (' + _spWeightOfFont(font) + ' ≠ ' + tryWeight + ') pour ' + url + ' — fichier résiduel en cache, essai du candidat suivant.');
+                                    continue;
+                                }
+                                font._spTtfBuffer = ttfBytes.buffer.slice(ttfBytes.byteOffset, ttfBytes.byteOffset + ttfBytes.byteLength);
+                                return { font, resolvedWeight: tryWeight, resolvedStyle: tryStyle };
+                            } catch (err) {
+                                console.warn('[SP-vector-text] Parse WOFF2 échoué: ' + url + ' (' + (err && err.message || err) + ')');
+                                continue;
+                            }
                         }
-                        if (!woff2Buf) return null;
-                        const ttfBytes = await window.wawoff2_decompress(new Uint8Array(woff2Buf));
-                        if (!ttfBytes || !ttfBytes.byteLength) return null;
-                        const font = window.opentype.parse(
-                            ttfBytes.buffer.slice(ttfBytes.byteOffset, ttfBytes.byteOffset + ttfBytes.byteLength)
-                        );
-                        if (!font || typeof font.getPath !== 'function') return null;
-                        font._spTtfBuffer = ttfBytes.buffer.slice(ttfBytes.byteOffset, ttfBytes.byteOffset + ttfBytes.byteLength);
-                        return { font, resolvedWeight: tryWeight, resolvedStyle: tryStyle };
+                        return null;
                     };
 
                     // Essaie la graisse demandée, puis les graisses de repli, puis le
@@ -45277,7 +45332,22 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         gpuNotDetected: "✗ Aucun GPU détecté",
         gpuNotAvailable: "WebGL non disponible sur ce navigateur",
         toastUploadSuccess: "✓ Uploadé avec succès !",
-        uploadHashLabel: "Hash"
+        uploadHashLabel: "Hash",
+        // === Pop-in Polices manquantes (v1.7.335) ===
+        missingFontsTitle: "Polices manquantes dans ce document",
+        missingFontsIntro: "Ce document utilise des polices externes qui ne sont pas chargées dans SuperPrint. Pour chacune, choisissez le fichier correspondant (.ttf, .otf, .woff, .woff2) pour l'embarquer, ou validez pour remplacer les polices non chargées par une police standard.",
+        missingFontsLoaded: "Chargée",
+        missingFontsError: "Échec du chargement",
+        missingFontsNotLoaded: "Non chargée",
+        missingFontsReplaceBtn: "Remplacer",
+        missingFontsLoadBtn: "Charger",
+        missingFontsContinue: "Continuer quand même",
+        missingFontsValidate: "Valider",
+        missingFontsStatusLoaded: "{0}/{1} chargée{2}",
+        missingFontsLoading: "Chargement de {0}…",
+        missingFontsLoadedDone: "{0} chargée.",
+        missingFontsLoadFailed: "Impossible de charger {0}.",
+        missingFontsReadError: "Erreur de lecture du fichier."
     },
     en: {
         // Interface principale
@@ -46005,6 +46075,21 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         gpuNotAvailable: "WebGL not available in this browser",
         toastUploadSuccess: "✓ Uploaded successfully!",
         uploadHashLabel: "Hash",
+        // === Pop-in Missing fonts (v1.7.335) ===
+        missingFontsTitle: "Missing fonts in this document",
+        missingFontsIntro: "This document uses external fonts that are not loaded in SuperPrint. For each one, choose the matching file (.ttf, .otf, .woff, .woff2) to embed it, or validate to replace the unloaded fonts with a standard font.",
+        missingFontsLoaded: "Loaded",
+        missingFontsError: "Load failed",
+        missingFontsNotLoaded: "Not loaded",
+        missingFontsReplaceBtn: "Replace",
+        missingFontsLoadBtn: "Load",
+        missingFontsContinue: "Continue anyway",
+        missingFontsValidate: "Validate",
+        missingFontsStatusLoaded: "{0}/{1} loaded",
+        missingFontsLoading: "Loading {0}\u2026",
+        missingFontsLoadedDone: "{0} loaded.",
+        missingFontsLoadFailed: "Unable to load {0}.",
+        missingFontsReadError: "Error reading the file.",
         shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Text</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bold</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Italic</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Underline</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Highlight selection</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Select all</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cross-block selection (chained text)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Click</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Editing</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Copy</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cut</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Paste</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Undo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo (alt.)</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Delete block / page</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Duplicate selection</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>Drag</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Objects & Layers</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Group</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Ungroup</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bring to front</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Send to back</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Link text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Unlink text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Quick Tools</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add text</span><span class=\"sp-shortcut-keys\"><kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add image</span><span class=\"sp-shortcut-keys\"><kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add rectangle</span><span class=\"sp-shortcut-keys\"><kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add circle</span><span class=\"sp-shortcut-keys\"><kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Pen tool</span><span class=\"sp-shortcut-keys\"><kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Typography panel</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Files & Navigation</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Save</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Open file</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Export PDF</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Print / Export</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">New page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Previous page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2190</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Next page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2192</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Show/hide guides</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Imposition</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Zoom</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom in</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom out</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2212</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom 100%</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">On macOS, <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>\u2318 Cmd</kbd></div>"
     },
     ja: {
@@ -46641,7 +46726,22 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         gpuNotAvailable: "このブラウザではWebGLが利用できません",
         toastUploadSuccess: "✓ アップロード成功！",
         uploadHashLabel: "ハッシュ",
-        shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">テキスト</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">太字</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">斜体</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">下線</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ハイライト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">すべて選択</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">クロスブロック選択（チェーンテキスト）</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>クリック</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">編集</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">コピー</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">カット</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペースト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">元に戻す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す（別）</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ブロック/ページを削除</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">選択を複製</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>ドラッグ</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">オブジェクトとレイヤー</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ化</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最前面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最背面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>矢印キー</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>矢印</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックをリンク</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックのリンク解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">クイックツール</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキスト追加</span><span class=\"sp-shortcut-keys\"><kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">画像追加</span><span class=\"sp-shortcut-keys\"><kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">矩形追加</span><span class=\"sp-shortcut-keys\"><kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">円追加</span><span class=\"sp-shortcut-keys\"><kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペンツール</span><span class=\"sp-shortcut-keys\"><kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">タイポグラフィパネル</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ファイルとナビゲーション</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">保存</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ファイルを開く</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">PDF書き出し</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">印刷 / エクスポート</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">新しいページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">前のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>←</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">次のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>→</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ガイドの表示/非表示</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">面付け</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ズーム</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームイン</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームアウト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>−</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">100%ズーム</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">macOSでは <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>⌘ Cmd</kbd></div>"
+        shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">テキスト</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">太字</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">斜体</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">下線</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ハイライト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">すべて選択</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">クロスブロック選択（チェーンテキスト）</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>クリック</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">編集</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">コピー</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">カット</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペースト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">元に戻す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す（別）</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ブロック/ページを削除</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">選択を複製</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>ドラッグ</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">オブジェクトとレイヤー</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ化</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最前面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最背面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>矢印キー</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>矢印</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックをリンク</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックのリンク解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">クイックツール</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキスト追加</span><span class=\"sp-shortcut-keys\"><kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">画像追加</span><span class=\"sp-shortcut-keys\"><kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">矩形追加</span><span class=\"sp-shortcut-keys\"><kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">円追加</span><span class=\"sp-shortcut-keys\"><kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペンツール</span><span class=\"sp-shortcut-keys\"><kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">タイポグラフィパネル</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ファイルとナビゲーション</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">保存</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ファイルを開く</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">PDF書き出し</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">印刷 / エクスポート</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">新しいページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">前のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>←</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">次のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>→</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ガイドの表示/非表示</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">面付け</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ズーム</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームイン</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームアウト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>−</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">100%ズーム</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">macOSでは <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>⌘ Cmd</kbd></div>",
+        // === ポップイン「不足フォント」(v1.7.335) ===
+        missingFontsTitle: "この文書に不足しているフォント",
+        missingFontsIntro: "この文書はSuperPrintに読み込まれていない外部フォントを使用しています。各フォントについて、対応するファイル（.ttf、.otf、.woff、.woff2）を選択して埋め込むか、読み込まれていないフォントを標準フォントに置き換えるには「検証」をクリックしてください。",
+        missingFontsLoaded: "読み込み済み",
+        missingFontsError: "読み込みに失敗",
+        missingFontsNotLoaded: "未読み込み",
+        missingFontsReplaceBtn: "置き換え",
+        missingFontsLoadBtn: "読み込む",
+        missingFontsContinue: "続行する",
+        missingFontsValidate: "検証",
+        missingFontsStatusLoaded: "{0}/{1} 読み込み済み",
+        missingFontsLoading: "{0} を読み込み中…",
+        missingFontsLoadedDone: "{0} を読み込みました。",
+        missingFontsLoadFailed: "{0} を読み込めませんでした。",
+        missingFontsReadError: "ファイルの読み込みエラー。",
     }
         };
 
@@ -62884,6 +62984,12 @@ function _spOfferMissingFontsLoad(missingFonts) {
     try { if (!document.body) return; } catch (_) { return; }
     if (document.getElementById('spMissingFontsOverlay')) return;
 
+    // 🛡️ v1.7.335 (i18n) : textes de la pop-in traduits EN (défaut) / FR / JP via
+    //   le système translate() de l'app (clés missingFonts* dans les 3 packs).
+    const _tr = (key, fallback) => {
+        try { const v = translate(key); return (v && v !== key) ? v : fallback; } catch (_) { return fallback; }
+    };
+
     const state = {};
     families.forEach(f => { state[f] = 'missing'; });
 
@@ -62895,22 +63001,20 @@ function _spOfferMissingFontsLoad(missingFonts) {
     card.style.cssText = 'background:#fff;border-radius:0;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:540px;max-width:94vw;max-height:88vh;display:flex;flex-direction:column;color:#1a1a1a;';
     card.innerHTML = `
         <div style="display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid #e0e0e0;">
-            <div style="font-weight:600;font-size:13px;letter-spacing:0.3px;flex:1;">Polices manquantes dans ce document</div>
+            <div style="font-weight:600;font-size:13px;letter-spacing:0.3px;flex:1;">${_tr('missingFontsTitle', 'Missing fonts in this document')}</div>
             <div class="sp-mf-close" style="cursor:pointer;opacity:0.6;border:1px solid #e0e0e0;background:#fff;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;line-height:1;font-size:14px;color:#1a1a1a;">&#10005;</div>
         </div>
         <div style="padding:6px 16px 2px;border-bottom:1px solid #f0f0f0;">
             <div style="font-size:12px;line-height:1.5;color:#555;padding:8px 0;">
-                Ce document utilise des polices externes qui ne sont pas chargées dans SuperPrint.
-                Pour chacune, choisissez le fichier correspondant (.ttf, .otf, .woff, .woff2) pour l’embarquer,
-                ou validez pour remplacer les polices non chargées par une police standard.
+                ${_tr('missingFontsIntro', 'This document uses external fonts that are not loaded in SuperPrint. For each one, choose the matching file (.ttf, .otf, .woff, .woff2) to embed it, or validate to replace the unloaded fonts with a standard font.')}
             </div>
         </div>
         <div id="spMissingFontsBody" style="flex:1;overflow:auto;padding:10px 16px 14px;min-height:120px;"></div>
         <div style="padding:12px 16px;border-top:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-            <div id="spMissingFontsSkip" style="font-size:12px;color:#888;cursor:pointer;text-decoration:underline;text-underline-offset:3px;user-select:none;">Continuer quand même</div>
+            <div id="spMissingFontsSkip" style="font-size:12px;color:#888;cursor:pointer;text-decoration:underline;text-underline-offset:3px;user-select:none;">${_tr('missingFontsContinue', 'Continue anyway')}</div>
             <div style="display:flex;align-items:center;gap:12px;">
                 <div id="spMissingFontsStatus" style="font-size:11px;color:#888;"></div>
-                <button id="spMissingFontsValidate" class="btn" style="height:32px;padding:0 18px;background:#1a1a1a;border:1px solid #1a1a1a;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;border-radius:0;">Valider</button>
+                <button id="spMissingFontsValidate" class="btn" style="height:32px;padding:0 18px;background:#1a1a1a;border:1px solid #1a1a1a;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;border-radius:0;">${_tr('missingFontsValidate', 'Validate')}</button>
             </div>
         </div>`;
     overlay.appendChild(card);
@@ -62929,8 +63033,8 @@ function _spOfferMissingFontsLoad(missingFonts) {
     const renderList = () => {
         bodyEl.innerHTML = families.map(f => {
             const st = state[f] || 'missing';
-            const label = st === 'loaded' ? 'Chargée' : (st === 'error' ? 'Échec du chargement' : 'Non chargée');
-            const btnLabel = st === 'loaded' ? 'Remplacer' : 'Charger';
+            const label = st === 'loaded' ? _tr('missingFontsLoaded', 'Loaded') : (st === 'error' ? _tr('missingFontsError', 'Load failed') : _tr('missingFontsNotLoaded', 'Not loaded'));
+            const btnLabel = st === 'loaded' ? _tr('missingFontsReplaceBtn', 'Replace') : _tr('missingFontsLoadBtn', 'Load');
             return '<div class="sp-mf-row" data-family="' + esc(f) + '" style="display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid #f0f0f0;">'
                 + '<span style="display:inline-flex;align-items:center;justify-content:center;width:14px;flex:0 0 14px;" title="' + label + '">' + dotSVG(colorFor(st)) + '</span>'
                 + '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500;">' + esc(f) + '</span>'
@@ -62939,7 +63043,9 @@ function _spOfferMissingFontsLoad(missingFonts) {
                 + '</div>';
         }).join('') || '';
         const allLoaded = families.every(f => state[f] === 'loaded');
-        statusEl.textContent = allLoaded ? '' : (families.filter(f => state[f] === 'loaded').length + '/' + families.length + ' chargée' + (families.length > 1 ? 's' : ''));
+        const loadedCount = families.filter(f => state[f] === 'loaded').length;
+        // Compteur universel X/Y (identique EN/FR/JP) — simple et sans ambiguïté.
+        statusEl.textContent = allLoaded ? '' : (loadedCount + '/' + families.length);
     };
 
     const pickAndLoad = (family) => {
@@ -62954,7 +63060,7 @@ function _spOfferMissingFontsLoad(missingFonts) {
             if (!file) return;
             state[family] = 'missing';
             renderList();
-            statusEl.textContent = 'Chargement de ' + family + '…';
+            statusEl.textContent = _tr('missingFontsLoading', 'Loading {0}…').replace('{0}', family);
             statusEl.style.color = '#888';
             const reader = new FileReader();
             reader.onload = async (ev) => {
@@ -62966,7 +63072,7 @@ function _spOfferMissingFontsLoad(missingFonts) {
                 renderList();
                 statusEl.style.color = '#888';
                 if (done) {
-                    statusEl.textContent = family + ' chargée.';
+                    statusEl.textContent = _tr('missingFontsLoadedDone', '{0} loaded.').replace('{0}', family);
                     try {
                         if (document.fonts && document.fonts.ready) {
                             document.fonts.ready.then(() => {
@@ -62976,10 +63082,10 @@ function _spOfferMissingFontsLoad(missingFonts) {
                         }
                     } catch (_) {}
                 } else {
-                    statusEl.textContent = 'Impossible de charger ' + family + '.';
+                    statusEl.textContent = _tr('missingFontsLoadFailed', 'Unable to load {0}.').replace('{0}', family);
                 }
             };
-            reader.onerror = () => { state[family] = 'error'; renderList(); statusEl.textContent = 'Erreur de lecture du fichier.'; };
+            reader.onerror = () => { state[family] = 'error'; renderList(); statusEl.textContent = _tr('missingFontsReadError', 'Error reading the file.'); };
             reader.readAsDataURL(file);
         };
         input.click();
