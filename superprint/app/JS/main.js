@@ -29886,6 +29886,46 @@ if (window._spGpuEnabled) {
                 _spBindExportFontPreflight('export');
                 _spUpdateExportFontPreflight('export');
             } catch (_) {}
+            // 🎯 v1.7.335 : « Format fini » vs options imprimerie (fond perdu / traits
+            //   de coupe / repères colorimétriques). Exclusives : cocher une option
+            //   d'impression décoche « Format fini » ; cocher « Format fini » décoche
+            //   les options d'impression. L'état par défaut = « Format fini » coché.
+            try {
+                const _finished = document.getElementById('finishedFormat');
+                const _impOpts = ['exportIncludeBleed', 'cropMarks', 'colorBars'].map(id => document.getElementById(id)).filter(Boolean);
+                // 🎯 v1.7.335 : exclusion mutuelle. Cocher une option imprimerie
+                //   décoche « Format fini ». Cocher « Format fini » décoche les
+                //   options imprimerie (le format fini = aucun repère/fond perdu).
+                const _onImpChange = function () {
+                    if (_finished) _finished.checked = false;
+                    const row = document.getElementById('finishedFormatRow');
+                    if (row) row.style.opacity = '0.6';
+                };
+                const _onFinishedChange = function () {
+                    if (!_finished) return;
+                    if (_finished.checked) {
+                        _impOpts.forEach(o => { if (o) o.checked = false; });
+                        const row = document.getElementById('finishedFormatRow');
+                        if (row) row.style.opacity = '1';
+                    }
+                };
+                const _syncFinished = function () {
+                    if (!_finished) return;
+                    const anyImp = _impOpts.some(el => el && el.checked);
+                    _finished.checked = !anyImp;
+                    const row = document.getElementById('finishedFormatRow');
+                    if (row) row.style.opacity = anyImp ? '0.6' : '1';
+                };
+                _impOpts.forEach(el => {
+                    el.removeEventListener('change', _onImpChange);
+                    el.addEventListener('change', _onImpChange);
+                });
+                if (_finished) {
+                    _finished.removeEventListener('change', _onFinishedChange);
+                    _finished.addEventListener('change', _onFinishedChange);
+                }
+                _syncFinished();
+            } catch (_) {}
         }
 
         // Restore previously-saved CMYK export prefs (colorMode, ICC profile, GCR, ink limit)
@@ -31764,6 +31804,12 @@ https://superprint.app
     const options = {
         cropMarks: document.getElementById('cropMarks').checked,
         colorBars: document.getElementById('colorBars').checked,
+        // 🎯 v1.7.335 : « Format fini » = export à la taille de création SANS fond
+        //   perdu ni repères. Si l'utilisateur coche « Inclure les fonds perdus »
+        //   (exportIncludeBleed), on ajoute le fond perdu. cropMarks/colorBars
+        //   impliquent aussi un fond perdu (nécessaire pour les repères de coupe).
+        finishedFormat: !!(document.getElementById('finishedFormat') && document.getElementById('finishedFormat').checked),
+        includeBleed: !!(document.getElementById('exportIncludeBleed') && document.getElementById('exportIncludeBleed').checked),
         pagesMode: document.querySelector('input[name="pagesMode"]:checked').value,
         colorMode: colorModeSelected,
         iccProfile: (document.getElementById('cmykIccProfile')?.value ?? 'CoatedFOGRA39'),
@@ -31874,12 +31920,18 @@ https://superprint.app
         // natif ci-dessous construit uniquement des pages simples et ne dessine
         // ni traits de coupe ni barres colorimétriques : ces options restent sur
         // le renderer hybride jsPDF, y compris en CMJN.
-        const _spUseSimpleNative = options.vectorTypography && window.PDFLib
+        // 🎯 v1.7.335 « Format fini » : quand l'utilisateur veut le format de
+        //   création sans fond perdu ni repères (finishedFormat, défaut), on
+        //   passe par le chemin natif pdf-lib qui sait produire une page à
+        //   EXACTEMENT pageFormat W×H (sans bleed) — cf. _exportSimplePdfLib.
+        const _finishedRequested = !!options.finishedFormat && !options.includeBleed && !options.cropMarks && !options.colorBars && options.pagesMode !== 'spread';
+        const _spUseSimpleNative = window.PDFLib
             && options.colorMode !== 'bw'
             && !(options.pagesMode === 'spread' && options.colorMode !== 'cmyk')
-            && !options.cropMarks && !options.colorBars;
+            && !options.cropMarks && !options.colorBars
+            && (_finishedRequested || options.vectorTypography);
         if (_spUseSimpleNative) {
-            console.log('[confirmExport] ➜ Chemin NATIF pdf-lib');
+            console.log('[confirmExport] ➜ Chemin NATIF pdf-lib (finishedFormat=' + !!options.finishedFormat + ', vectorTypography=' + !!options.vectorTypography + ')');
             _spLoaderApi.setStep((currentLanguage === 'en' ? 'Building vector PDF…' : (currentLanguage === 'ja' ? 'ベクターPDFを構築中…' : 'Construction du PDF vectoriel…')), 15);
             try {
                 await _exportSimplePdfLib(options, _spExportLoader, _spLoaderApi);
@@ -33467,11 +33519,18 @@ https://superprint.app
             var pageW = pageFormat.width;
             var pageH = pageFormat.height;
             var bleedMm = (typeof bleed === 'number' && bleed >= 0) ? bleed : 0;
-            // 🛡️ v1.7.285 — FIX D1 : le fond perdu doit être inclus dès que
-            // bleedMm > 0, indépendamment des traits de coupe. Avant, si
-            // cropMarks était décoché, le bleed était ignoré dans le PDF natif
-            // (incohérent avec le chemin jsPDF qui l'inclut toujours).
-            var hasBleed = bleedMm > 0;
+            // 🎯 v1.7.335 : « Format fini » — l'utilisateur veut le format de
+            //   création (A4 → A4) SANS fond perdu quand il coche « Format fini »
+            //   (défaut) et qu'aucune option imprimerie n'est active. Le fond
+            //   perdu n'est ajouté que si « Inclure les fonds perdus » est coché,
+            //   ou si crop marks / color bars sont actifs (les repères se posent
+            //   autour du fond perdu).
+            var _printOptsActive = !!((options && options.includeBleed) || (options && options.cropMarks) || (options && options.colorBars));
+            var _finishedOnly = !!((options && options.finishedFormat) && !_printOptsActive);
+            // 🛡️ v1.7.285 — FIX D1 : le fond perdu est inclus dès que bleedMm > 0,
+            //   SAUF quand « Format fini » est demandé (finishedFormat, défaut) sans
+            //   option imprimerie → la page fait exactement pageFormat W×H.
+            var hasBleed = !_finishedOnly && (bleedMm > 0);
             var sheetW = pageW + (hasBleed ? bleedMm * 2 : 0);
             var sheetH = pageH + (hasBleed ? bleedMm * 2 : 0);
 
@@ -33509,8 +33568,10 @@ https://superprint.app
                 // Les coordonnées des gabarits sont exprimées hors bleed : les
                 // injecter dans le même repère que les objets de page. Le CMJN
                 // conserve volontairement son comportement historique.
+                // 🎯 v1.7.335 « Format fini » : injecter les gabarits SANS fond
+                //   perdu (ils se placent alors dans le repère format fini).
                 if (!options || options.colorMode !== 'cmyk') {
-                    try { await injectMasterItemsForExport(tmpCanvas, pi, { includeBleed: true }); } catch (_) {}
+                    try { await injectMasterItemsForExport(tmpCanvas, pi, { includeBleed: !_finishedOnly }); } catch (_) {}
                 }
 
                 var objects = tmpCanvas.getObjects().filter(function(o) {
@@ -33549,12 +33610,21 @@ https://superprint.app
                     color: PDFLib.rgb(1, 1, 1)
                 });
 
-                // Offset de bleed
-                var bleedPx = hasBleed ? mmToPx(bleedMm) : 0;
+                // Offset de bleed (bleedPx = valeur RÉELLE du fond perdu en px, que
+                // le format fini l'inclue ou non — utile pour recadrer en format fini).
+                var bleedPx = mmToPx(bleedMm);
                 // Les objets de page sauvegardés incluent déjà le décalage du
                 // bleed. Ne pas l'ajouter une seconde fois en RVB.
-                var offsetX = (options && options.colorMode === 'cmyk') ? bleedPx : 0;
-                var offsetY = (options && options.colorMode === 'cmyk') ? bleedPx : 0;
+                var offsetX = (options && options.colorMode === 'cmyk') ? (hasBleed ? bleedPx : 0) : 0;
+                var offsetY = (options && options.colorMode === 'cmyk') ? (hasBleed ? bleedPx : 0) : 0;
+                // 🎯 v1.7.335 « Format fini » : la page fait pageW×pageH (sans fond
+                //   perdu) mais les objets sont stockés dans le repère du canvas
+                //   éditeur qui inclut le bleed → on les ramène au format fini en
+                //   soustrayant bleedPx (bord du format = bord du canvas + bleed).
+                if (!hasBleed && _finishedOnly) {
+                    offsetX = -bleedPx;
+                    offsetY = -bleedPx;
+                }
 
                 // Ajuster les coordonnées des objets pour le bleed
                 for (var i = 0; i < objects.length; i++) {
