@@ -52,9 +52,11 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 | Fichier | Rôle |
 |---|---|
 | `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~52 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
-| `version.txt` | Version en ligne (`1.7.260`) — permet la détection de mise à jour. **⚠️ Pas encore en ligne, à déployer.** |
+| `version.txt` | Version en ligne (`1.7.336`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
 
 > `version.txt` : si absent, le CLI affiche "Version en ligne : superprint.cc" sans version — pas bloquant, mais mieux vaut le déployer.
+
+> 📦 Le zip est régénéré par `node _make_zip.mjs` (à la racine du repo). Il n'est **pas commité** dans git (~52 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
 
 ## 📋 La commande à copier-coller (nouvelle)
 
