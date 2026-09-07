@@ -4153,6 +4153,15 @@ input[type=number] {
     background: rgba(255, 255, 255, 0.08) !important;
     border: 0 !important;
 }
+/* Label "● Nom" du bouton Collab : discret sur grand écran, masqué quand
+   l'espace manque (sinon il pousse les boutons voisins). */
+#openCollabBtn .collab-label { letter-spacing: .2px; }
+@media (max-width: 1180px) {
+    #openCollabBtn .collab-label { display: none !important; }
+}
+@media (max-width: 1400px) {
+    #openCollabBtn .collab-label { max-width: 60px; }
+}
 /* Etat actif/pressed (pasteboard toggle aria-pressed=true) — fond seul */
 #togglePasteboardBtn[aria-pressed="true"] {
     background: rgba(0, 0, 0, 0.08) !important;

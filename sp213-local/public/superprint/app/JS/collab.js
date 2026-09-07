@@ -16,7 +16,7 @@
 (function () {
     'use strict';
 
-    const VERSION = '20260507-v015-collab-resilience-disclaimer';
+    const VERSION = '20260907-v016-collab-ux';
     const DEBUG = true; // verbose console logs for collab debugging
     const STUN = [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -223,6 +223,7 @@
                     peerEl.innerHTML = (lang() === 'fr' ? 'avec ' : 'with ')
                         + '<b style="color:' + state.peer.color + '">' + escapeHtml(state.peer.name) + '</b>';
                 }
+                renderConnectedChips();
                 break;
             case 'cursor':
                 showRemoteCursor(msg);
@@ -272,21 +273,34 @@
                     if (ta) ta.value = link;
                     // v014 : also fill the visible read-only preview input
                     const preview = document.getElementById('cw-hostLinkPreview');
-                    if (preview) preview.value = link;
+                    if (preview) {
+                        preview.value = link;
+                        preview.style.borderColor = '#1a8f5e';
+                        preview.style.background = '#f2faf4';
+                    }
                     autoCopy(link).then(ok => {
                         const st = document.getElementById('cw-host-status');
                         if (st) {
                             st.textContent = ok
-                                ? (lang() === 'fr' ? 'Lien copié dans le presse-papiers. En attente de la réponse de votre invité…' : 'Link copied to clipboard. Waiting for your guest to reply…')
-                                : (lang() === 'fr' ? 'Lien prêt — copiez-le manuellement et envoyez-le à votre invité.' : 'Link ready — copy it manually and send it to your guest.');
+                                ? (lang() === 'fr' ? '✓ Lien copie dans le presse-papiers. Envoyez-le a votre invite, puis attendez sa reponse ci-dessous.' : '✓ Link copied to clipboard. Send it to your guest, then wait for their reply below.')
+                                : (lang() === 'fr' ? 'Lien pret ci-dessus — cliquez sur « Copier le lien » puis envoyez-le a votre invite.' : 'Link ready above — click "Copy the link" and send it to your guest.');
                             st.style.color = ok ? '#1a8f5e' : '#d97706';
+                            st.style.fontWeight = '600';
                         }
                     });
                 } else {
+                    const code = JSON.stringify(state.pc.localDescription);
+                    const b64 = btoa(code);
                     const ta = document.getElementById('cw-myReply');
-                    if (ta) ta.value = code;
+                    if (ta) ta.value = b64;
+                    const preview = document.getElementById('cw-replyPreview');
+                    if (preview) {
+                        preview.value = b64;
+                        preview.style.borderColor = '#1a8f5e';
+                        preview.style.background = '#f2faf4';
+                    }
                     document.getElementById('cw-replyBlock').style.display = 'block';
-                    autoCopy(code);
+                    autoCopy(b64);
                 }
             }
         };
@@ -362,10 +376,12 @@
             } else {
                 send({ type: 'request:doc' });
             }
-            // Show "connected" wizard step (auto-close after a short delay)
+            // Show "connected" wizard step — laisse le temps de lire qui est
+            // connecté (chips), puis auto-ferme doucement.
             showStep('ok');
+            renderConnectedChips();
             const modal = document.getElementById('collabModal');
-            setTimeout(() => { if (modal) modal.style.display = 'none'; }, 1800);
+            setTimeout(() => { if (modal && modal.style.display !== 'none') modal.style.display = 'none'; }, 3000);
             showToast(t('channel_open'));
         };
         state.channel.onclose = () => {
@@ -944,9 +960,40 @@
         btn.classList.toggle('collab-on', state.connected);
         const dot = btn.querySelector('.collab-dot');
         if (dot) dot.style.background = state.connected ? '#34c759' : '#aaa';
+        // Label textuel visible quand connecté : « ● nom » (utile + découvrable)
+        const label = btn.querySelector('.collab-label');
+        if (label) {
+            if (state.connected) {
+                const who = (state.peer && state.peer.name) ? state.peer.name : (lang() === 'fr' ? 'Pair' : 'Peer');
+                label.textContent = '● ' + who;
+                label.style.display = 'inline-block';
+                label.style.color = '#1a8f5e';
+            } else {
+                label.style.display = 'none';
+            }
+        }
         btn.title = state.connected
             ? `Collab actif — ${state.peer.name || 'pair'} connecté`
             : 'Collab — Mode collaboration P2P (WebRTC)';
+    }
+
+    // 🎯 Affiche les 2 participants (moi + pair) sur l'étape "connecté".
+    function renderConnectedChips() {
+        const meChip = document.getElementById('cw-meChip');
+        const peerChip = document.getElementById('cw-peerChip');
+        const peerName = document.getElementById('cw-peerName');
+        const myColor = state.me && state.me.color ? state.me.color : '#007aff';
+        const myName = (state.me && state.me.name) ? state.me.name : 'Moi';
+        const peerColor = (state.peer && state.peer.color) ? state.peer.color : '#34c759';
+        const peerNameTxt = (state.peer && state.peer.name) ? state.peer.name : (lang() === 'fr' ? 'Invité…' : 'Guest…');
+        const chip = (name, color) =>
+            '<span style="width:18px;height:18px;border-radius:50%;background:' + color + ';flex:0 0 auto;"></span>' +
+            '<span style="font-weight:600;">' + escapeHtml(name) + '</span>';
+        if (meChip) meChip.innerHTML = chip(myName, myColor) + '<span style="opacity:.6;font-size:11px;">(' + (lang() === 'fr' ? 'vous' : 'you') + ')</span>';
+        if (peerChip && state.peer && state.peer.name) {
+            peerChip.innerHTML = chip(peerNameTxt, peerColor) + '<span style="opacity:.6;font-size:11px;">(P2P)</span>';
+        }
+        if (peerName) peerName.style.display = 'none';
     }
 
     function showToast(text, kind) {
@@ -981,6 +1028,13 @@
         if (mr) mr.value = '';
         const rb = document.getElementById('cw-replyBlock');
         if (rb) rb.style.display = 'none';
+        // 🎯 Déjà connecté → on affiche directement l'état de session (récap
+        //   des 2 participants) plutôt que l'écran de choix.
+        if (state.connected && !opts.autoJoin) {
+            showStep('ok');
+            renderConnectedChips();
+            return;
+        }
         // 🛡️ v014 : safety net — if the URL still has a sp-collab hash AND
         //   no explicit autoJoin was passed, switch to join mode automatically.
         //   (Covers the case where the user opens the modal manually after clicking a link.)
@@ -1171,19 +1225,23 @@
     }
 
     function copyReply() {
+        const preview = document.getElementById('cw-replyPreview');
         const ta = document.getElementById('cw-myReply');
-        if (!ta || !ta.value) { showToast(t('nothing_to_copy'), 'warn'); return; }
-        autoCopy(ta.value).then(ok => showToast(ok ? t('copied_clipboard') : t('copied'), ok ? 'info' : 'warn'));
+        const value = (preview && preview.value) ? preview.value : (ta ? ta.value : '');
+        if (!value) { showToast(t('nothing_to_copy'), 'warn'); return; }
+        autoCopy(value).then(ok => showToast(ok ? t('copied_clipboard') : t('copied'), ok ? 'info' : 'warn'));
     }
 
     function shareInvite() {
+        const preview = document.getElementById('cw-hostLinkPreview');
         const ta = document.getElementById('collabLocalSDP');
-        if (!ta || !ta.value) { showToast(t('nothing_to_copy'), 'warn'); return; }
+        const value = (preview && preview.value) ? preview.value : (ta ? ta.value : '');
+        if (!value) { showToast(t('nothing_to_copy'), 'warn'); return; }
         const subject = encodeURIComponent(lang() === 'fr' ? 'Invitation à collaborer sur SuperPrint' : 'SuperPrint collaboration invite');
         const body = encodeURIComponent((lang() === 'fr'
             ? 'Bonjour,\n\nClique sur ce lien pour rejoindre ma session SuperPrint en pair-à-pair :\n\n'
             : 'Hello,\n\nClick this link to join my SuperPrint peer-to-peer session:\n\n')
-            + ta.value + '\n');
+            + value + '\n');
         window.open('mailto:?subject=' + subject + '&body=' + body, '_blank');
     }
 
@@ -1294,11 +1352,12 @@
     }
 
     function copyLocalSDP() {
+        const preview = document.getElementById('cw-hostLinkPreview');
         const ta = document.getElementById('collabLocalSDP');
-        if (!ta || !ta.value) { showToast(t('nothing_to_copy'), 'warn'); return; }
-        navigator.clipboard.writeText(ta.value).then(
-            () => showToast(t('copied_clipboard')),
-            () => { ta.select(); document.execCommand('copy'); showToast(t('copied')); }
+        const value = (preview && preview.value) ? preview.value : (ta ? ta.value : '');
+        if (!value) { showToast(t('nothing_to_copy'), 'warn'); return; }
+        autoCopy(value).then(
+            ok => showToast(ok ? t('copied_clipboard') : t('copied'), ok ? 'info' : 'warn')
         );
     }
 

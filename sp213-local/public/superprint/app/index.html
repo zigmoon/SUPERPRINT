@@ -615,7 +615,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20260517-cmyk-softproof-fix">
+    <link rel="stylesheet" href="CSS/main.css?v=20260907-collab-ux">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -1607,6 +1607,7 @@
                             <circle cx="17" cy="7" r="2.6"></circle>
                             <path d="M14.8 14.2c2.9.2 6.7 1.6 6.7 5.8"></path>
                         </svg>
+                        <span class="collab-label" aria-hidden="true" style="display:none; margin-left:5px; font-size:11px; font-weight:600; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
                         <span class="collab-dot" aria-hidden="true" style="position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: #aaa;"></span>
                     </button>
                     <button class="btn" id="openImportModal" title="Importer (JSON, PDF, TXT, RTF, DOCX, ODT, IDML)" aria-label="Importer" style="pointer-events: auto;">
@@ -5391,28 +5392,40 @@
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                         <span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:#1f6fb8; color:#fff; font-weight:600; font-size:13px;">1</span>
                         <span style="font-size:14px; font-weight:600; color:#222;"
-                              data-i18n-fr="Partagez le lien avec votre invite"
-                              data-i18n-en="Share the link with your guest">Share the link with your guest</span>
+                              data-i18n-fr="Envoyez ce lien a votre invite"
+                              data-i18n-en="Send this link to your guest">Send this link to your guest</span>
                     </div>
-                    <div id="cw-host-status" style="font-size:12px; color:#888; margin-bottom:12px; padding-left:34px;"
+                    <div id="cw-host-status" style="font-size:12px; color:#888; margin-bottom:10px; padding-left:34px;"
                          data-i18n-fr="Generation du lien en cours..." data-i18n-en="Generating link...">Generating link...</div>
 
-                    <div style="padding-left:34px; margin-bottom:24px;">
-                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                            <button class="modal-btn modal-btn-primary" id="cw-copyHostBtn" onclick="window.SPCollab && window.SPCollab.copyLocal()" style="flex:1 1 200px; padding:12px 16px; font-size:14px; font-weight:600;"
+                    <!-- 🎯 Lien d'invitation VISIBLE (généré par collab.js) — l'utilisateur
+                         voit enfin ce qu'il copie, au lieu d'un gros code caché. -->
+                    <div style="padding-left:34px; margin-bottom:22px;">
+                        <div style="display:flex; gap:8px; align-items:stretch;">
+                            <input type="text" id="cw-hostLinkPreview" readonly
+                                data-i18n-fr-placeholder="Votre lien apparaitra ici..."
+                                data-i18n-en-placeholder="Your link will appear here..."
+                                placeholder="Your link will appear here..."
+                                style="flex:1; min-width:0; padding:10px 12px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#1a1a1a; background:#f4f8fd; border:1px solid #c5d9ee; border-radius:6px; word-break:break-all;">
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                            <button class="modal-btn modal-btn-primary" id="cw-copyHostBtn" onclick="window.SPCollab && window.SPCollab.copyLocal()" style="flex:1 1 200px; padding:11px 16px; font-size:13px; font-weight:600;"
                                     data-i18n-fr="Copier le lien" data-i18n-en="Copy the link">Copy the link</button>
                             <button class="modal-btn modal-btn-secondary" onclick="window.SPCollab && window.SPCollab.shareInvite()"
-                                    data-i18n-fr="Email" data-i18n-en="Email">Email</button>
+                                    data-i18n-fr="Envoyer par email" data-i18n-en="Email">Email</button>
                             <button class="modal-btn modal-btn-secondary" onclick="window.SPCollab && window.SPCollab.regenerate()" title=""
                                     data-i18n-fr="Regenerer" data-i18n-en="Regenerate">Regenerate</button>
                         </div>
-                        <div style="margin-top:8px;">
+                        <div style="margin-top:8px; text-align:center;">
                             <button type="button" onclick="(function(b){var t=document.getElementById('collabLocalSDP');t.style.display=(t.style.display==='none'||!t.style.display)?'block':'none';b.textContent=(t.style.display==='block')?(window.SPCollab&&window.SPCollab.lang&&window.SPCollab.lang()==='fr'?'Masquer le code':'Hide code'):(window.SPCollab&&window.SPCollab.lang&&window.SPCollab.lang()==='fr'?'Voir le code':'Show code');})(this)"
                                     style="background:none; border:none; color:#888; font-size:11px; cursor:pointer; padding:0; text-decoration:underline;"
-                                    data-i18n-fr="Voir le code" data-i18n-en="Show code">Show code</button>
+                                    data-i18n-fr="Voir le code (avance)" data-i18n-en="Show code (advanced)">Show code (advanced)</button>
                         </div>
                         <textarea id="collabLocalSDP" readonly
                             style="display:none; width:100%; min-height:64px; margin-top:8px; padding:8px; font-family:'IBM Plex Mono',monospace; font-size:10px; border:1px solid #ddd; border-radius:4px; resize:vertical; word-break:break-all; background:#fafbfc;"></textarea>
+                        <div style="margin-top:10px; font-size:12px; color:#666; line-height:1.5; padding:8px 10px; background:#f0f7ee; border:1px solid #cde5c8; border-left:4px solid #1a8f5e; border-radius:6px;"
+                             data-i18n-fr="Astuce : apres avoir copie le lien, envoyez-le a votre invite (chat, email...). Des qu'il repond, collez sa reponse a l'etape 2 ci-dessous."
+                             data-i18n-en="Tip: after copying the link, send it to your guest (chat, email...). As soon as they reply, paste their reply in step 2 below.">Tip: after copying the link, send it to your guest (chat, email...). As soon as they reply, paste their reply in step 2 below.</div>
                     </div>
 
                     <!-- ETAPE 2 : coller la reponse -->
@@ -5496,44 +5509,64 @@
                     </div>
 
                     <div id="cw-replyBlock" style="display:none;">
-                        <!-- ETAPE 2 : renvoyer le code -->
+                        <!-- ETAPE 2 : renvoyer la réponse -->
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                             <span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:#1f6fb8; color:#fff; font-weight:600; font-size:13px;">2</span>
                             <span style="font-size:14px; font-weight:600; color:#222;"
-                                  data-i18n-fr="Envoyez votre code a votre hote"
-                                  data-i18n-en="Send your code to your host">Send your code to your host</span>
+                                  data-i18n-fr="Envoyez ce code a votre hote"
+                                  data-i18n-en="Send this code back to your host">Send this code back to your host</span>
                         </div>
                         <div style="padding-left:34px;">
-                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                                <button class="modal-btn modal-btn-primary" onclick="window.SPCollab && window.SPCollab.copyReply()" style="flex:1 1 200px; padding:12px 16px; font-size:14px; font-weight:600;"
-                                        data-i18n-fr="Copier mon code" data-i18n-en="Copy my code">Copy my code</button>
+                            <!-- 🎯 Réponse VISIBLE (remplit par collab.js) + auto-copiée -->
+                            <input type="text" id="cw-replyPreview" readonly
+                                data-i18n-fr-placeholder="Votre code apparaitra ici (copie automatique)..."
+                                data-i18n-en-placeholder="Your code will appear here (auto-copied)..."
+                                placeholder="Your code will appear here (auto-copied)..."
+                                style="width:100%; box-sizing:border-box; padding:10px 12px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#1a1a1a; background:#f4f8fd; border:1px solid #c5d9ee; border-radius:6px; word-break:break-all;">
+                            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                                <button class="modal-btn modal-btn-primary" onclick="window.SPCollab && window.SPCollab.copyReply()" style="flex:1 1 200px; padding:11px 16px; font-size:13px; font-weight:600;"
+                                        data-i18n-fr="Copier ce code" data-i18n-en="Copy this code">Copy this code</button>
                                 <button class="modal-btn modal-btn-secondary" onclick="window.SPCollab && window.SPCollab.shareReply()"
-                                        data-i18n-fr="Email" data-i18n-en="Email">Email</button>
+                                        data-i18n-fr="Envoyer par email" data-i18n-en="Email">Email</button>
                                 <button class="modal-btn modal-btn-secondary" onclick="window.SPCollab && window.SPCollab.regenerate()"
                                         data-i18n-fr="Regenerer" data-i18n-en="Regenerate">Regenerate</button>
                             </div>
-                            <div style="margin-top:8px;">
+                            <div style="margin-top:8px; text-align:center;">
                                 <button type="button" onclick="(function(b){var t=document.getElementById('cw-myReply');t.style.display=(t.style.display==='none'||!t.style.display)?'block':'none';b.textContent=(t.style.display==='block')?(window.SPCollab&&window.SPCollab.lang&&window.SPCollab.lang()==='fr'?'Masquer le code':'Hide code'):(window.SPCollab&&window.SPCollab.lang&&window.SPCollab.lang()==='fr'?'Voir le code':'Show code');})(this)"
                                         style="background:none; border:none; color:#888; font-size:11px; cursor:pointer; padding:0; text-decoration:underline;"
-                                        data-i18n-fr="Voir le code" data-i18n-en="Show code">Show code</button>
+                                        data-i18n-fr="Voir le code (avance)" data-i18n-en="Show code (advanced)">Show code (advanced)</button>
                             </div>
                             <textarea id="cw-myReply" readonly
                                 style="display:none; width:100%; min-height:64px; margin-top:8px; padding:8px; font-family:'IBM Plex Mono',monospace; font-size:10px; border:1px solid #ddd; border-radius:4px; resize:vertical; word-break:break-all; background:#fafbfc;"></textarea>
                             <div style="font-size:12px; color:#888; margin-top:12px; line-height:1.5;"
-                                 data-i18n-fr="Des que votre hote colle votre code, la connexion s'etablit automatiquement."
-                                 data-i18n-en="When your host pastes your code, the connection establishes automatically.">When your host pastes your code, the connection establishes automatically.</div>
+                                 data-i18n-fr="Des que votre hote colle ce code, la connexion s'etablit automatiquement."
+                                 data-i18n-en="As soon as your host pastes this code, the connection establishes automatically.">As soon as your host pastes this code, the connection establishes automatically.</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- ════════════════ STEP CONNECTED ════════════════ -->
-                <div class="cw-step" data-step="ok" style="display:none; text-align:center; padding:30px 0;">
-                    <div style="width:48px; height:48px; margin:0 auto 14px; border-radius:50%; background:#1a8f5e; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:600;">OK</div>
-                    <div style="font-size:16px; font-weight:600; color:#1a8f5e; margin-bottom:6px;"
-                         data-i18n-fr="Connecte" data-i18n-en="Connected">Connected</div>
-                    <div id="cw-peerName" style="font-size:13px; color:#666; margin-bottom:18px;"></div>
-                    <button class="modal-btn modal-btn-primary" onclick="window.SPCollab && window.SPCollab.close()" style="padding:10px 24px; font-size:14px;"
-                            data-i18n-fr="Commencer" data-i18n-en="Start">Start</button>
+                <div class="cw-step" data-step="ok" style="display:none; padding:24px 6px;">
+                    <div style="text-align:center; margin-bottom:18px;">
+                        <div style="width:52px; height:52px; margin:0 auto 12px; border-radius:50%; background:#1a8f5e; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:600;">✓</div>
+                        <div style="font-size:17px; font-weight:700; color:#1a8f5e; margin-bottom:4px;"
+                             data-i18n-fr="Connexion etablie"
+                             data-i18n-en="Connected">Connected</div>
+                        <div style="font-size:12px; color:#888;"
+                             data-i18n-fr="Vous editez maintenant ce document en temps reel a deux."
+                             data-i18n-en="You are now editing this document together in real time.">You are now editing this document together in real time.</div>
+                    </div>
+                    <!-- 🎯 Récap des 2 participants (moi + pair) -->
+                    <div id="cw-sessionRecap" style="display:flex; gap:10px; justify-content:center; align-items:center; margin-bottom:20px; flex-wrap:wrap;">
+                        <div id="cw-meChip" style="display:flex; gap:8px; align-items:center; padding:6px 12px; background:#f0f4f8; border:1px solid #d7e0ea; border-radius:20px; font-size:12px; color:#333;"></div>
+                        <div style="color:#aaa; font-size:16px;">⇄</div>
+                        <div id="cw-peerChip" style="display:flex; gap:8px; align-items:center; padding:6px 12px; background:#f0f7ee; border:1px solid #cde5c8; border-radius:20px; font-size:12px; color:#333;"></div>
+                    </div>
+                    <div id="cw-peerName" style="font-size:12px; color:#666; margin-bottom:16px; text-align:center; display:none;"></div>
+                    <div style="text-align:center;">
+                        <button class="modal-btn modal-btn-primary" onclick="window.SPCollab && window.SPCollab.close()" style="padding:10px 28px; font-size:14px;"
+                                data-i18n-fr="Commencer a travailler" data-i18n-en="Start working">Start working</button>
+                    </div>
                 </div>
 
                 <!-- Back button (shown on host/join steps) -->
@@ -5562,7 +5595,7 @@
     <script src="JS/main.js?v=20260907-v336-quality-dpi" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
     <script src="JS/virtual-printer.js?v=20260907-v336-quality-dpi" defer></script>
-    <script src="JS/collab.js?v=20260507-v015-collab-resilience-disclaimer" defer></script>
+    <script src="JS/collab.js?v=20260907-v016-ux" defer></script>
     <script src="JS/pwa.js?v=20260501-no-double-splash" defer></script>
 
     <!-- ── Startup session pop-in (Resume / Open / New) ───────────────────────── -->
