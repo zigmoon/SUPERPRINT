@@ -61,7 +61,7 @@
             paperA4: 'A4 (210×297 mm)', paperA3: 'A3 (297×420 mm)', paperA5: 'A5 (148×210 mm)',
             paperLetter: 'Letter (216×279 mm)', paperCustom: 'Document format',
             copiesLabel: 'copies',
-            qualityStandard: 'Standard (72 dpi)', qualityMedium: 'Medium (150 dpi)',
+            qualityStandard: 'Standard (72 dpi)', qualityMedium: 'Medium (200 dpi)',
             qualityHD: 'HD (300 dpi)', qualityUltra: 'ULTRA HD (600 dpi)',
             showBleed: 'Show bleed', showBleedHint: 'Display the bleed zone around each page',
             openImposition: 'Imposition', openImpositionHint: 'Open the imposition layout (booklet / spread) before printing',
@@ -103,7 +103,7 @@
             paperA4: 'A4 (210×297 mm)', paperA3: 'A3 (297×420 mm)', paperA5: 'A5 (148×210 mm)',
             paperLetter: 'Lettre (216×279 mm)', paperCustom: 'Format du document',
             copiesLabel: 'copies',
-            qualityStandard: 'Standard (72 dpi)', qualityMedium: 'Moyenne (150 dpi)',
+            qualityStandard: 'Standard (72 dpi)', qualityMedium: 'Moyenne (200 dpi)',
             qualityHD: 'HD (300 dpi)', qualityUltra: 'ULTRA HD (600 dpi)',
             showBleed: 'Afficher les fonds perdus', showBleedHint: 'Afficher la zone de fond perdu autour de chaque page',
             openImposition: 'Imposition', openImpositionHint: 'Ouvrir l\'imposition (livret / planche) avant l\'impression',
@@ -145,7 +145,7 @@
             paperA4: 'A4 (210×297mm)', paperA3: 'A3 (297×420mm)', paperA5: 'A5 (148×210mm)',
             paperLetter: 'レター (216×279mm)', paperCustom: 'ドキュメント形式',
             copiesLabel: '部',
-            qualityStandard: '標準 (72dpi)', qualityMedium: '中 (150dpi)',
+            qualityStandard: '標準 (72dpi)', qualityMedium: '中 (200dpi)',
             qualityHD: 'HD (300dpi)', qualityUltra: 'ULTRA HD (600dpi)',
             showBleed: '塗り足しを表示', showBleedHint: '各ページの周囲に塗り足し領域を表示',
             openImposition: '面付け', openImpositionHint: '印刷前に面付け（製本/見開き）を開く',
@@ -1168,7 +1168,7 @@
         const duplexOpt = ov.querySelector('#vpsDuplex') && ov.querySelector('#vpsDuplex').checked;
         window.PDFLib.PDFDocument.create().then(function (pdf) {
             const tasks = printIdx.map(function (origIdx) {
-                return renderPageToImageWithBleed(origIdx, 'single', quality === 'ultrahd' ? 'ultrahd' : 'standard', null, false, { format: 'png', mime: 'image/png', quality: 1.0, pdfFormat: 'PNG', compression: 'NONE' }).then(function (dataUrl) {
+                return renderPageToImageWithBleed(origIdx, 'single', quality, null, false, { format: 'png', mime: 'image/png', quality: 1.0, pdfFormat: 'PNG', compression: 'NONE' }).then(function (dataUrl) {
                     if (!dataUrl) return Promise.resolve();
                     return new Promise(function (res2) {
                         const img = new Image();
@@ -1445,7 +1445,7 @@
                     const tasks = [];
                     for (let c = 0; c < copies; c++) {
                         printIdx.forEach(function (origIdx) {
-                            tasks.push(renderPageToImageWithBleed(origIdx, 'single', quality === 'ultrahd' ? 'ultrahd' : 'standard', null, false, { format: 'png', mime: 'image/png', quality: 1.0, pdfFormat: 'PNG', compression: 'NONE' }).then(function (dataUrl) {
+                            tasks.push(renderPageToImageWithBleed(origIdx, 'single', quality, null, false, { format: 'png', mime: 'image/png', quality: 1.0, pdfFormat: 'PNG', compression: 'NONE' }).then(function (dataUrl) {
                                 if (!dataUrl) return;
                                 const img = new Image();
                                 return new Promise(function (res2) {

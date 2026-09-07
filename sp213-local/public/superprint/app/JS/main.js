@@ -29728,8 +29728,8 @@ if (window._spGpuEnabled) {
         // FONCTIONS UTILITAIRES GLOBALES POUR EXPORT PDF (optimisé - évite les doublons)
         function getQualityMultiplier(quality) {
     switch(quality) {
-        case 'standard': return 2.78;   // 200 DPI (200/72) - minimum pour typo nette
-        case 'medium': return 2.78;     // 200 DPI (même que standard)
+        case 'standard': return 1;      // 🖥️ 72 DPI (72/72) — Écran & web (léger)
+        case 'medium': return 2.78;     // 200 DPI (200/72) - minimum pour typo nette
         case 'hd': return 4.17;         // 300 DPI (300/72 à 4.17)
         case 'ultrahd': return 8.33;    // 600 DPI (600/72) — typo & images ultra nettes
         default: return 2.78;
@@ -29738,21 +29738,21 @@ if (window._spGpuEnabled) {
 
         function getQualityInfo(quality) {
     switch(quality) {
-        case 'standard': return 'Standard 200 DPI';
+        case 'standard': return 'Standard 72 DPI';
         case 'medium': return 'Medium 200 DPI';
         case 'hd': return 'HD 300 DPI';
         case 'ultrahd': return 'ULTRA HD 600 DPI';
-        default: return 'Standard 200 DPI';
+        default: return 'Medium 200 DPI';
     }
         }
 
         function getQualityLabel(quality) {
     switch(quality) {
-        case 'standard': return 'standard-200dpi';
+        case 'standard': return 'standard-72dpi';
         case 'medium': return 'medium-200dpi';
         case 'hd': return 'hd-300dpi';
         case 'ultrahd': return 'ultrahd-600dpi';
-        default: return 'standard-200dpi';
+        default: return 'medium-200dpi';
     }
         }
 
@@ -29765,7 +29765,8 @@ if (window._spGpuEnabled) {
     }
     switch(quality) {
         case 'standard':
-            return { format: 'jpeg', mime: 'image/jpeg', quality: 0.82, pdfFormat: 'JPEG', compression: 'FAST' };
+            // 72 DPI écran/web : JPEG léger, compression standard
+            return { format: 'jpeg', mime: 'image/jpeg', quality: 0.75, pdfFormat: 'JPEG', compression: 'FAST' };
         case 'medium':
             return { format: 'jpeg', mime: 'image/jpeg', quality: 0.88, pdfFormat: 'JPEG', compression: 'FAST' };
         case 'hd':
@@ -29774,7 +29775,7 @@ if (window._spGpuEnabled) {
             // PNG sans perte : aucune compression d'image, fond blanc NON rasterisé
             return { format: 'png', mime: 'image/png', quality: 1.0, pdfFormat: 'PNG', compression: 'NONE' };
         default:
-            return { format: 'jpeg', mime: 'image/jpeg', quality: 0.82, pdfFormat: 'JPEG', compression: 'FAST' };
+            return { format: 'jpeg', mime: 'image/jpeg', quality: 0.88, pdfFormat: 'JPEG', compression: 'FAST' };
     }
         }
 
@@ -29864,7 +29865,7 @@ if (window._spGpuEnabled) {
             // le checkbox « Typographie vectorielle » est verrouillé ON.
             try {
                 const _syncUltraHd = function () {
-                    const q = document.querySelector('input[name="exportQuality"]:checked')?.value || 'standard';
+                    const q = document.querySelector('input[name="exportQuality"]:checked')?.value || 'medium';
                     const vt = document.getElementById('vectorTypography');
                     const row = document.getElementById('vectorTypographyRow');
                     if (q === 'ultrahd' && vt) {
@@ -31404,7 +31405,7 @@ if (window._spGpuEnabled) {
     const modal = document.getElementById('exportModal');
     modal.classList.remove('active');
 
-    const exportQuality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'standard';
+    const exportQuality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'medium';
     const colorModeSelected = document.querySelector('input[name="colorMode"]:checked')?.value || 'rgb';
 
     const zip = new JSZip();
@@ -31778,7 +31779,7 @@ https://superprint.app
         async function confirmExport() {
     await window.ensureExportLibs(); // 🚀 Perf : jspdf/svg2pdf/opentype/wawoff2/fontkit/pdf-lib/jszip à la demande
     const modal = document.getElementById('exportModal');
-    const requestedQuality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'standard';
+    const requestedQuality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'medium';
     const requestedVectorTypography = requestedQuality === 'ultrahd'
         || !!document.getElementById('vectorTypography')?.checked;
     if (requestedVectorTypography && !(await _spEnsureVectorFontsReady('export'))) return;
@@ -31793,7 +31794,7 @@ https://superprint.app
     //   du canvas vivant (respecte _isLoading pour éviter une lecture partielle).
     try { saveAllPages(true); } catch(_) {}
 
-    const exportQuality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'standard';
+    const exportQuality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'medium';
     const colorModeSelected = document.querySelector('input[name="colorMode"]:checked')?.value || 'rgb';
     const forceHyphenation = document.getElementById('forceHyphenExport') ? document.getElementById('forceHyphenExport').checked : false;
     
@@ -32115,7 +32116,7 @@ https://superprint.app
                 }
             }
             
-            const qualityLabel = options.isHD ? 'HD-300DPI' : (options.isMedium ? 'medium-150DPI' : (options.isStandard ? 'standard-72DPI' : (options.quality === 'ultrahd' ? 'ULTRA-HD-600DPI' : options.quality || 'standard')));
+            const qualityLabel = getQualityLabel(options.quality || 'medium');
             const now = new Date();
             const dateStr = now.toISOString().slice(0, 16).replace(/[-:]/g, '').replace('T', '-');
             
@@ -32128,9 +32129,9 @@ https://superprint.app
             try {
                 pdf.setProperties({
                     title: `SuperPrint - Livre ${_spColorModeText} ${_spQualityInfo}`,
-                    subject: options.isHD ? 'Document haute qualité pour impression' : 'Document pour affichage numérique',
+                    subject: _spQualityInfo,
                     author: 'SuperPrint',
-                    keywords: `${options.colorMode === 'cmyk' ? 'CMYK' : 'RGB'}, ${options.isHD ? 'HD, 300DPI, Print' : 'Digital, Screen, 72DPI'}`,
+                    keywords: `${options.colorMode === 'cmyk' ? 'CMYK' : 'RGB'}, ${_spQualityInfo}`,
                     creator: 'SuperPrint Professional Layout Editor'
                 });
             } catch (_) {}
@@ -32619,9 +32620,9 @@ https://superprint.app
         
         pdf.setProperties({
             title: `SuperPrint - Document ${colorModeText} ${qualityInfo}`,
-            subject: options.isHD ? 'Document haute qualité pour impression' : 'Document pour affichage numérique',
+            subject: qualityInfo,
             author: 'SuperPrint',
-            keywords: `${options.colorMode === 'cmyk' ? 'CMYK' : 'RGB'}, ${options.isHD ? 'HD, 300DPI, Print' : 'Digital, Screen, 72DPI'}`,
+            keywords: `${options.colorMode === 'cmyk' ? 'CMYK' : 'RGB'}, ${qualityInfo}`,
             creator: 'SuperPrint Professional Layout Editor'
         });
 
@@ -33228,7 +33229,7 @@ https://superprint.app
 
         async function exportImposedPDF() {
             await window.ensureExportLibs(); // 🚀 Perf : jspdf/svg2pdf/opentype/wawoff2/fontkit/pdf-lib/jszip à la demande
-    const requestedImposedQuality = document.querySelector('input[name="imposedQuality"]:checked')?.value || 'standard';
+    const requestedImposedQuality = document.querySelector('input[name="imposedQuality"]:checked')?.value || 'medium';
     const requestedImposedVectorTypography = requestedImposedQuality === 'ultrahd'
         || !!document.getElementById('imposedVectorTypography')?.checked;
     if (requestedImposedVectorTypography && !(await _spEnsureVectorFontsReady('imposed'))) return;
@@ -33262,7 +33263,7 @@ https://superprint.app
     } catch (_) {}
 
     // Récupérer la qualité sélectionnée
-    const imposedQuality = document.querySelector('input[name="imposedQuality"]:checked')?.value || 'standard';
+    const imposedQuality = document.querySelector('input[name="imposedQuality"]:checked')?.value || 'medium';
     
     // ✅ Option: inclure ou exclure les fonds perdus du document
     // 🛡️ FIX 2026-05-01 : ?.checked === true (defensif).
@@ -33509,7 +33510,7 @@ https://superprint.app
             var mmToPt = 72 / 25.4;
             var fonts = {};
             var images = {};
-            var multiplier = getQualityMultiplier(options.quality || 'standard');
+            var multiplier = getQualityMultiplier(options.quality || 'medium');
             var helvetica = null;
             try { helvetica = await doc.embedStandardFont(PDFLib.StandardFonts.Helvetica); } catch(e) {}
             if (!helvetica) {
@@ -33772,7 +33773,7 @@ https://superprint.app
             var mmToPt = 72 / 25.4;
             var fonts = {};
             var images = {};
-            var multiplier = getQualityMultiplier(quality || 'standard');
+            var multiplier = getQualityMultiplier(quality || 'medium');
 
             // Charger Helvetica comme fallback
             var helvetica = null;
@@ -35042,7 +35043,7 @@ https://superprint.app
     return sheetCanvas;
         }
 
-        async function renderImposedSheet(pdf, pageNum1, pageNum2, quality = 'standard', bleedValue = null, includeBleed = true, cutApart = false, vectorTypography = false) {
+        async function renderImposedSheet(pdf, pageNum1, pageNum2, quality = 'medium', bleedValue = null, includeBleed = true, cutApart = false, vectorTypography = false) {
     const documentBleed = bleedValue !== null ? bleedValue : bleed;
     const exportBleed = includeBleed ? documentBleed : 0;
     const pageWidth = pageFormat.width;
@@ -35417,7 +35418,7 @@ https://superprint.app
     });
         }
 
-    async function renderPageToImageWithBleed(pageIndex, position, quality = 'standard', bleedValue = null, forceHyphenation = false, imageSettings = null) {
+    async function renderPageToImageWithBleed(pageIndex, position, quality = 'medium', bleedValue = null, forceHyphenation = false, imageSettings = null) {
     return new Promise((resolve) => {
         const actualBleed = bleedValue !== null ? bleedValue : bleed;
         const bleedPx = mmToPx(actualBleed);
@@ -35679,7 +35680,7 @@ https://superprint.app
         //   - Les copies cross-page (_isOverflowFromRight/Left) sont dédupliquées
         //     suivant la même règle que loadSpreadContent.
         //   - leftIndex / rightIndex peuvent être null pour une page vide.
-        async function renderSpreadToImageForExport(leftIndex, rightIndex, quality = 'standard', bleedValue = null, forceHyphenation = false, imageSettings = null, pdfHybridParams = null) {
+        async function renderSpreadToImageForExport(leftIndex, rightIndex, quality = 'medium', bleedValue = null, forceHyphenation = false, imageSettings = null, pdfHybridParams = null) {
     return new Promise((resolve) => {
         const actualBleed = bleedValue !== null ? bleedValue : bleed;
         const bleedPx = mmToPx(actualBleed);
@@ -36549,7 +36550,7 @@ https://superprint.app
             const checkbox = document.getElementById(prefix === 'export' ? 'vectorTypography' : 'imposedVectorTypography');
             if (!panel || !status || !list) return [];
             const qualityName = prefix === 'export' ? 'exportQuality' : 'imposedQuality';
-            const quality = document.querySelector('input[name="' + qualityName + '"]:checked')?.value || 'standard';
+            const quality = document.querySelector('input[name="' + qualityName + '"]:checked')?.value || 'medium';
             const enabled = !!(checkbox && checkbox.checked) || quality === 'ultrahd';
             panel.style.display = enabled ? 'block' : 'none';
             if (!enabled) return [];
@@ -45171,6 +45172,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         importHint: "Formats supportés : .json (projet SuperPrint), .pdf, .txt, .rtf, .doc, .docx, .odt, .idml (.zip)",
         // === Export modal ===
         exportQualityHeader: "Qualité",
+        exportStandardLabel: "Standard (72 DPI)",
+        exportMediumLabel: "Medium (200 DPI)",
+        exportHDLabel: "HD (300 DPI)",
         exportScreen: "Écran et web",
         exportMediumDesc: "Impression courante",
         exportHDDesc: "Impression professionnelle",
@@ -45548,7 +45552,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         impSectionQuality: "Qualité d'export",
         impQualStandard: "Standard 72 DPI",
         impQualStandardDesc: "Qualité standard pour tests et épreuves",
-        impQualMedium: "Medium 150 DPI",
+        impQualMedium: "Medium 200 DPI",
         impQualMediumDesc: "Qualité intermédiaire",
         impQualHD: "HD 300 DPI",
         impQualHDDesc: "Haute qualité pour impression finale",
@@ -45928,6 +45932,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         importHint: "Supported formats: .json (SuperPrint project), .pdf, .txt, .rtf, .doc, .docx, .odt, .idml (.zip)",
         // === Export modal ===
         exportQualityHeader: "Quality",
+        exportStandardLabel: "Standard (72 DPI)",
+        exportMediumLabel: "Medium (200 DPI)",
+        exportHDLabel: "HD (300 DPI)",
         exportScreen: "Screen & web",
         exportMediumDesc: "Standard printing",
         exportHDDesc: "Professional printing",
@@ -46305,7 +46312,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         impSectionQuality: "Export quality",
         impQualStandard: "Standard 72 DPI",
         impQualStandardDesc: "Standard quality for tests and proofs",
-        impQualMedium: "Medium 150 DPI",
+        impQualMedium: "Medium 200 DPI",
         impQualMediumDesc: "Intermediate quality",
         impQualHD: "HD 300 DPI",
         impQualHDDesc: "High quality for final printing",
@@ -46687,6 +46694,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         importHint: "対応形式: .json (SuperPrintプロジェクト), .pdf, .txt, .rtf, .doc, .docx, .odt, .idml (.zip)",
         // === Export modal ===
         exportQualityHeader: "品質",
+        exportStandardLabel: "標準 (72 DPI)",
+        exportMediumLabel: "ミディアム (200 DPI)",
+        exportHDLabel: "HD (300 DPI)",
         exportScreen: "画面 & Web",
         exportMediumDesc: "一般印刷",
         exportHDDesc: "プロフェッショナル印刷",
@@ -46769,7 +46779,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         impSectionQuality: "書き出し品質",
         impQualStandard: "標準 72 DPI",
         impQualStandardDesc: "テストや校正用の標準品質",
-        impQualMedium: "中 150 DPI",
+        impQualMedium: "中 200 DPI",
         impQualMediumDesc: "中間品質",
         impQualHD: "HD 300 DPI",
         impQualHDDesc: "最終印刷用の高品質",
@@ -47382,9 +47392,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         });
         // Qualité : titre + description de chaque niveau
         var qLevels = [
-            ['exportStandard', null, 'exportScreen'],
-            ['exportMedium', null, 'exportMediumDesc'],
-            ['exportHD', null, 'exportHDDesc'],
+            ['exportStandard', 'exportStandardLabel', 'exportScreen'],
+            ['exportMedium', 'exportMediumLabel', 'exportMediumDesc'],
+            ['exportHD', 'exportHDLabel', 'exportHDDesc'],
             ['exportUltraHD', 'exportUltraHD', 'exportUltraHDDesc']
         ];
         qLevels.forEach(function(q) {
@@ -48439,8 +48449,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         }
 
         function exportPagesAsImages(format) {
-    const quality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'standard';
-    const multiplierMap = { standard: 1, medium: 2, hd: 4 };
+    const quality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'medium';
+    const multiplierMap = { standard: 1, medium: 2.78, hd: 4.17, ultrahd: 8.33 };
     const multiplier = multiplierMap[quality] || 1;
     const ext = format === 'jpeg' ? 'jpg' : 'png';
     const isBW = !!document.getElementById('colorBW')?.checked;

@@ -3121,14 +3121,14 @@
         <div style="margin-bottom: 8px;">
             <div id="expQualityHeader" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 5px;">Qualité</div>
             <label style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin-bottom: 4px;">
-                <input type="radio" name="exportQuality" id="exportStandard" value="standard" checked style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
+                <input type="radio" name="exportQuality" id="exportStandard" value="standard" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
                 <div>
-                    <div>Standard (200 DPI)</div>
+                    <div>Standard (72 DPI)</div>
                     <div style="font-size: 9px; color: #666; margin-top: 1px;">Écran et web</div>
                 </div>
             </label>
             <label style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin-bottom: 4px;">
-                <input type="radio" name="exportQuality" id="exportMedium" value="medium" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
+                <input type="radio" name="exportQuality" id="exportMedium" value="medium" checked style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
                 <div>
                     <div>Medium (200 DPI)</div>
                     <div style="font-size: 9px; color: #666; margin-top: 1px;">Impression courante</div>
@@ -4355,14 +4355,14 @@
                     <div class="modal-section-title" data-translate="impSectionQuality">Qualité d'export</div>
                     <div class="modal-options">
                         <div class="modal-option">
-                            <input type="radio" name="imposedQuality" id="imposedStandard" value="standard" checked>
+                            <input type="radio" name="imposedQuality" id="imposedStandard" value="standard">
                             <label for="imposedStandard">
-                                <span data-translate="impQualStandard">Standard 200 DPI</span>
+                                <span data-translate="impQualStandard">Standard 72 DPI</span>
                                 <div class="modal-option-desc" data-translate="impQualStandardDesc">Qualité standard pour tests et épreuves</div>
                             </label>
                         </div>
                         <div class="modal-option">
-                            <input type="radio" name="imposedQuality" id="imposedMedium" value="medium">
+                            <input type="radio" name="imposedQuality" id="imposedMedium" value="medium" checked>
                             <label for="imposedMedium">
                                 <span data-translate="impQualMedium">Medium 200 DPI</span>
                                 <div class="modal-option-desc" data-translate="impQualMediumDesc">Qualité intermédiaire</div>
@@ -4726,13 +4726,13 @@
                     </div>
                     <div>
                         <h3 style="margin-bottom: 12px;">Double page & Export PDF HD</h3>
-                        <p>SuperPrint gère les mises en page en mode double page pour vos catalogues, livres ou magazines. L'export PDF est disponible en haute définition (72, 150, 300 DPI) pour une qualité professionnelle, avec gestion des fonds perdus et marges de sécurité.</p>
+                        <p>SuperPrint gère les mises en page en mode double page pour vos catalogues, livres ou magazines. L'export PDF est disponible en plusieurs résolutions (72 DPI écran/web, 200 DPI, 300 DPI, 600 DPI Ultra HD) pour une qualité professionnelle, avec gestion des fonds perdus et marges de sécurité.</p>
                         <ul style="padding-left: 20px;">
                             <li>Mode double page pour la création éditoriale</li>
-                            <li>Export PDF HD (jusqu'à 300 DPI)</li>
+                            <li>Export PDF HD (jusqu'à 600 DPI)</li>
                             <li>Fonds perdus et marges configurables</li>
                         </ul>
-                        <p style="margin-top: 12px; font-size: 0.95em;">Testez vos exports en 150 DPI avant la version finale en 300 DPI pour optimiser la qualité et le poids du fichier.</p>
+                        <p style="margin-top: 12px; font-size: 0.95em;">Testez vos exports en 200 DPI avant la version finale en 300 ou 600 DPI pour optimiser la qualité et le poids du fichier.</p>
                     </div>
                 </div>
             </div>
@@ -5555,13 +5555,13 @@
 
     <!-- All application logic moved to JS/main.js -->    
     <!-- External scripts -->
-    <script src="JS/patches-core.js?v=20260907-v336" defer></script>
+    <script src="JS/patches-core.js?v=20260907-v336-quality-dpi" defer></script>
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260907-v336-export-typo" defer></script>
+    <script src="JS/main.js?v=20260907-v336-quality-dpi" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
-    <script src="JS/virtual-printer.js?v=20260907-v336" defer></script>
+    <script src="JS/virtual-printer.js?v=20260907-v336-quality-dpi" defer></script>
     <script src="JS/collab.js?v=20260507-v015-collab-resilience-disclaimer" defer></script>
     <script src="JS/pwa.js?v=20260501-no-double-splash" defer></script>
 
