@@ -15,15 +15,17 @@
   <a href="https://superprint.cc"><b>🌐 superprint.cc</b></a> ·
   <a href="https://superprint.cc/landing.html">Landing</a> ·
   <a href="https://superprint.cc/sp213-studio.html">SP213 AI Studio</a> ·
+  <a href="https://superprint.cc/supertypo/">SuperTyPo</a> ·
   <a href="https://superprint.cc/documentation.html">Documentation</a> ·
   <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-1.7.335-000000?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-1.7.336-000000?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20ready-E1237B?style=flat-square">
   <img alt="AI" src="https://img.shields.io/badge/AI-SP213%20studio-F2B90B?style=flat-square">
+  <img alt="Type" src="https://img.shields.io/badge/font-SuperTyPo-8A2BE2?style=flat-square">
   <img alt="Languages" src="https://img.shields.io/badge/FR%20%7C%20EN%20%7C%20JP-17130D?style=flat-square">
 </p>
 
@@ -34,6 +36,20 @@
 **SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free, no subscription, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, fine typography, master pages…) with an **AI layout studio, SP213**, which turns a plain written brief into a print-ready, fully editable document.
 
 > Online or local, your documents stay **on your machine**. Nothing is sent to a third party unless you choose your own AI provider.
+
+---
+
+## ✦ The SuperPrint family
+
+SuperPrint is not a single tool: it is a small **family of browser-based creative applications** that share the same design language, formats and workflow.
+
+| App | What it does |
+|---|---|
+| **SuperPrint** | The full DTP / prepress **layout editor** — pages, bleed, CMYK, master pages, typography, imposition. |
+| **SP213 Studio** | The **AI layout studio** — describe a brief in plain language, get a print-ready, editable document (cloud models or fully local WebLLM). |
+| **SuperTyPo** | A **font decomposer & typeface editor** (FontGrapher / FontLab inspired) — drop a font, edit every glyph as vector contours & Bézier handles, re-export the typeface. |
+
+**SuperTyPo** ([open it](https://superprint.cc/supertypo/)) turns any `.ttf` / `.otf` / `.woff` / `.woff2` into an editable vector project: each character is **decomposed into contours** (nodes + Bézier handles) that you reshape with the pen tool, then **re-exported** as a modified typeface. It ships with an FR / EN / JP interface, **boolean operations** (union / subtract / intersect), **mirror & 90° rotation**, **advanced metrics** (glyph naming, LSB/RSB, bounding box, point counts) and a versioned native format (`.sf` — SuperFont). In the SuperPrint editor, the **« SuperTyPo »** tab of the *New project* dialog opens it directly.
 
 ---
 
@@ -94,6 +110,7 @@ This repository contains the full product. The web app can be served as static f
 - Pathfinder boolean operations, image masking, Bézier pen tool, image filters
 - GPU acceleration (WebGL), light & dark themes, keyboard-first workflow
 - **SP213 Studio** — AI-generated layouts, online (DeepSeek/Groq/OpenRouter) or fully local (WebLLM via WebGPU)
+- **SuperTyPo** — decompose & edit any font: vector contours per glyph, boolean ops, mirror/rotation, metrics, `.sf` projects & TTF re-export (FR/EN/JP)
 
 ---
 
@@ -101,7 +118,7 @@ This repository contains the full product. The web app can be served as static f
 
 | Folder | Role |
 |---|---|
-| `superprint/` | The complete web application + landing + SP213 studio + documentation |
+| `superprint/` | The complete web application + landing + SP213 studio + **SuperTyPo** + documentation |
 | `sp213-local/` | The local distribution (Vite + WebLLM), served by the npm launcher |
 | `superprint-npm/` | The `superprint` npm launcher (`npx superprint`) |
 

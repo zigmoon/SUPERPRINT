@@ -38,6 +38,10 @@ From the pre-home (white SuperPrint design), two choices:
 | **SuperPrint Local** (recommended) | Opens the full SuperPrint DTP application served by Vite |
 | **Web Studio** | Opens the SP213 studio (local WebLLM or Groq cloud) |
 
+The full editor also embeds **SuperTyPo** (the font decomposer & typeface editor) — from the
+*New project* dialog, the **« SuperTyPo »** tab opens `supertypo/` (edit any font as vector
+glyphs, then re-export it).
+
 ## 🧠 Local models (SP213 studio)
 
 | Model | Size | Use |
@@ -66,6 +70,7 @@ sp213-local/
 │   ├── superprint/         # Complete SuperPrint application (copy, served as-is)
 │   │   ├── index.html      # The SuperPrint DTP app
 │   │   ├── sp213-studio.html
+│   │   ├── supertypo/      # SuperTyPo — font decomposer & typeface editor
 │   │   ├── JS/  CSS/  img/ ...
 │   ├── js/fabric.min.js
 │   ├── js/mammoth.min.js

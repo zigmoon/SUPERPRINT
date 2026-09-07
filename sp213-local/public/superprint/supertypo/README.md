@@ -18,6 +18,25 @@ python -m http.server 8890
 Zéro dépendance externe : `opentype.min.js` (parser/générateur de polices) et
 `wawoff2.js` (décompresseur WOFF2) sont copiés depuis `app/JS/`.
 
+> Dans SuperPrint (éditeur), l'onglet **« SuperTyPo »** du dialogue *Nouveau projet*
+> ouvre directement cette application.
+
+## Fonctionnalités avancées (itération)
+
+- **Interface FR / EN / JP** — sélecteur de langue dans la topbar (persisté en
+  `localStorage` `st_lang`). Toute l'UI est traduite.
+- **Design aligné SuperPrint** — tokens repris de `superprint/app` (topbar blanche,
+  IBM Plex Mono, zone de travail `#e8e8e8`, thème sombre `#121212`). Polices
+  self-hosted (Bebas Neue + IBM Plex Mono) copiées dans `CSS/fonts/`.
+- **Booléens** (panneau Contours de l'éditeur) : sélectionnez 2 contours (boutons
+  **A/B** sur chaque ligne) puis **Union / Soustraction / Intersection**.
+  *v1 : combinaison de tracés + winding evenodd* (la soustraction/intersection
+  exige que le contour B soit entièrement dans A).
+- **Symétrie & rotation** (panneau Transformations) : **Symétrie H / Symétrie V /
+  Rotation 90°** — sur le contour sélectionné, sinon tout le glyphe.
+- **Métriques avancées** (panneau Métriques) : renommage du glyphe, débordements
+  gauche/droite (LSB/RSB), boîte englobante (BBox), nombre de points/contours.
+
 ## Workflow
 
 1. **Charger une police** — `.ttf`, `.otf`, `.woff`, `.woff2` (glisser-déposer ou bouton).
