@@ -412,40 +412,8 @@
   }
   .page-canvas-wrap canvas { display: block; }
 
-  /* ─── Barre de chargement du modèle local (WLLM) ─── */
-  #modelLoader {
-    position: fixed; inset: 0; z-index: 80; display: none;
-    align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.55); backdrop-filter: blur(2px);
-  }
-  #modelLoader.active { display: flex; }
-  .loader-card {
-    width: min(420px, 90vw); background: var(--panel); border: 1px solid var(--border);
-    border-radius: 0; padding: 28px 30px; text-align: center;
-    box-shadow: 0 30px 80px var(--shadow);
-  }
-  .loader-card .lc-title { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
-  .loader-card .lc-sub { font-size: 11px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
-  .loader-bar { height: 6px; background: var(--panel2); border: 1px solid var(--border); position: relative; overflow: hidden; }
-  .loader-bar .fill {
-    height: 100%; width: 0%; background: var(--accent);
-    transition: width .2s ease; display: flex; align-items: center; justify-content: flex-end;
-  }
-  .loader-bar .fill::after {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
-    transform: translateX(-100%); animation: shimmer 1.4s infinite;
-  }
-  @keyframes shimmer { 100% { transform: translateX(100%); } }
-  .loader-card .lc-pct { margin-top: 10px; font-size: 11px; color: var(--muted); font-family: inherit; }
-  .loader-card .lc-quote {
-    margin-top: 18px; min-height: 34px; display: flex; align-items: center; justify-content: center;
-    font-size: 13px; color: var(--text); line-height: 1.5; font-style: italic;
-    border-top: 1px dashed var(--border); padding-top: 14px;
-    opacity: 0; transition: opacity .4s ease;
-  }
-  .loader-card .lc-quote.show { opacity: 1; }
-  .loader-card .lc-note { margin-top: 6px; font-size: 10px; color: var(--muted); opacity: .8; }
+  /* 🗑️ 2026-09-07 : pop-in de chargement du modèle local (#modelLoader) retirée —
+     la bulle « SP213 is building your layout » dans le chat est l'unique loader. */
 
   /* droite : conversation — 1/3 de la largeur (2/3 pour la preview) */
   #chatPane {
@@ -805,7 +773,6 @@
     .mobile-dock-btn .ic { width: 19px; height: 19px; }
     .mobile-dock-btn.active { color: var(--text); background: var(--btn-hover); }
     .mobile-dock-btn:active { transform: translateY(1px); }
-    .loader-card { width: calc(100vw - 24px); padding: 24px 18px; }
   }
 
   /* Scrollbars — même style que SuperPrint (4px, pouce #ccc) */
@@ -1295,18 +1262,6 @@
   </nav>
 </div>
 
-<!-- Barre de chargement du modèle local (WLLM) -->
-<div id="modelLoader">
-  <div class="loader-card">
-    <div class="lc-title" id="loaderTitle">SP213 WLLM</div>
-    <div class="lc-sub" id="loaderSub">Téléchargement du modèle local…</div>
-    <div class="loader-bar"><div class="fill" id="loaderFill" style="width:0%"></div></div>
-    <div class="lc-pct" id="loaderPct">0 %</div>
-    <div class="lc-quote" id="loaderQuote"></div>
-    <div class="lc-note" id="loaderNote">Première utilisation uniquement — le modèle est ensuite mis en cache.</div>
-  </div>
-</div>
-
 <script src="JS/fabric.min.js"></script>
 <script>
 (function(){
@@ -1631,9 +1586,6 @@
       'chat.genPreview': 'Preparing the preview',
       'chat.genNote': 'Your current document remains available while format, hierarchy, typography and print safety are checked.',
       'chat.newBrief': 'New brief detected. The previous layout is preserved in its conversation tab; this request starts a new document.',
-      'loader.title': 'SP213 WLLM',
-      'loader.sub': 'Downloading local model…',
-      'loader.note': 'First use only — the model is then cached.',
       'chat.engineGroq': 'Conversation SP213 × Groq',
       'chat.engineOpenAI': 'Conversation SP213 × OpenAI GPT',
       'chat.engineOR': 'Conversation SP213 × OpenRouter',
@@ -1762,9 +1714,6 @@
       'chat.genPreview': 'Préparation de l’aperçu',
       'chat.genNote': 'Votre document courant reste disponible pendant les contrôles du format, de la hiérarchie, des typographies et de la sécurité d’impression.',
       'chat.newBrief': 'Nouveau brief détecté. La maquette précédente reste dans son onglet de conversation ; cette demande démarre un nouveau document.',
-      'loader.title': 'SP213 WLLM',
-      'loader.sub': 'Téléchargement du modèle local…',
-      'loader.note': 'Première utilisation uniquement — le modèle est ensuite mis en cache.',
       'chat.engineGroq': 'Conversation SP213 × Groq',
       'chat.engineOpenAI': 'Conversation SP213 × OpenAI GPT',
       'chat.engineOR': 'Conversation SP213 × OpenRouter',
@@ -1893,9 +1842,6 @@
       'chat.genPreview': 'プレビューを準備中',
       'chat.genNote': '形式、階層、書体、印刷の安全性を確認している間も、現在のドキュメントは保持されます。',
       'chat.newBrief': '新しい概要を検出しました。以前のレイアウトは会話タブに保持され、この依頼は新しいドキュメントで開始されます。',
-      'loader.title': 'SP213 WLLM',
-      'loader.sub': 'ローカルモデルをダウンロード中…',
-      'loader.note': '初回のみ — その後はキャッシュされます。',
       'chat.engineGroq': '会話 SP213 × Groq',
       'chat.engineOpenAI': '会話 SP213 × OpenAI GPT',
       'chat.engineOR': '会話 SP213 × OpenRouter',
@@ -1995,10 +1941,7 @@
       'webImgSection': 'webimg.section',
       'webImgToggleLabel': 'webimg.toggleLabel',
       'webImgTogglePop': 'webimg.togglePop',
-      'webImgToggleHint': 'webimg.toggleHintOn',
-      'loaderTitle': 'loader.title',
-      'loaderSub': 'loader.sub',
-      'loaderNote': 'loader.note'
+      'webImgToggleHint': 'webimg.toggleHintOn'
     };
     Object.keys(byId).forEach(id => {
       const el = document.getElementById(id);
@@ -4831,20 +4774,7 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
   }
 
   // Petites phrases « sympathiques » affichées pendant le chargement du modèle local.
-  const LOADER_QUOTES = [
-    'Un bon print commence par une bonne grille.',
-    'La typographie, c’est la voix de la page.',
-    'Le blanc, c’est aussi de la composition.',
-    'Une marge de 15 mm sauve des vies (et des massicots).',
-    'SP213 réchauffe sa logique de canevas…',
-    'Fonds perdus : 3 mm de courage.',
-    'Le folio se range toujours en bas, bien sagement.',
-    'Une belle maquette, c’est 80% de rigueur, 20% de magie.',
-    'Le papier s’arrête au bord, la créativité non.',
-    'SP213 aligne ses colonnes, gouttière comprise.',
-    'La césure, ce petit trait qui change tout.',
-    'Un titre de 72 pt, et le tour est joué.'
-  ];
+  // 🗑️ 2026-09-07 : pop-in retirée — la rotation de phrases n'est plus affichée.
 
   function initWebLLM() {
     return new Promise(function(resolve, reject) {
@@ -4852,50 +4782,20 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
       if (!window.CreateMLCEngine) { reject(new Error('WebLLM non chargé')); return; }
       // 🆕 Modèle local sélectionné par l'utilisateur (multi-choix).
       const modelId = state.wllmModel || WLLM_MODELS[0][0];
-      const loader = document.getElementById('modelLoader');
-      const loaderFill = document.getElementById('loaderFill');
-      const loaderPct = document.getElementById('loaderPct');
-      const loaderSub = document.getElementById('loaderSub');
-      const loaderQuote = document.getElementById('loaderQuote');
-      // Rotation des phrases pendant le chargement
-      let quoteIdx = -1;
-      let quoteTimer = null;
-      function nextQuote() {
-        if (!loaderQuote) return;
-        quoteIdx = (quoteIdx + 1) % LOADER_QUOTES.length;
-        loaderQuote.textContent = LOADER_QUOTES[quoteIdx];
-        loaderQuote.classList.remove('show');
-        // Force reflow pour redéclencher le fondu
-        void loaderQuote.offsetWidth;
-        loaderQuote.classList.add('show');
-      }
-      function startQuotes() {
-        if (!loaderQuote) return;
-        nextQuote();
-        quoteTimer = setInterval(nextQuote, 3200);
-      }
-      function stopQuotes() {
-        if (quoteTimer) { clearInterval(quoteTimer); quoteTimer = null; }
-      }
-      if (loader) loader.classList.add('active');
-      startQuotes();
+      // 🗑️ 2026-09-07 : plus de pop-in plein écran (#modelLoader). Le chargement
+      //   du modèle se déroule en arrière-plan ; la bulle « SP213 is building your
+      //   layout » (appendTyping) dans le chat est l'unique indicateur visible.
       window.CreateMLCEngine(modelId, {
         initProgressCallback: function(p) {
-          const prog = Math.round((p.progress || 0) * 100);
-          if (loaderFill) loaderFill.style.width = prog + '%';
-          if (loaderPct) loaderPct.textContent = prog + ' %';
-          if (loaderSub) loaderSub.textContent = (p && p.text) ? p.text : 'Téléchargement du modèle local…';
+          // Progression conservée en console uniquement (aucune UI bloquante).
+          try { if (window.console && console.debug) console.debug('[SP213] WebLLM model load: ' + Math.round((p.progress || 0) * 100) + '%'); } catch (_) {}
         }
       }).then(function(engine) {
-        stopQuotes();
-        if (loader) loader.classList.remove('active');
         state.webllm = engine;
         state.webllmLoading = false;
         if (engine) engine._sp213ModelId = modelId; // mémoriser le modèle chargé
         resolve(engine);
       }).catch(function(err) {
-        stopQuotes();
-        if (loader) loader.classList.remove('active');
         state.webllmLoading = false;
         reject(err);
       });

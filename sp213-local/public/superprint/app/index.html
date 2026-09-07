@@ -3106,7 +3106,7 @@
     </div>
 
     <!-- Export Modal -->
-    <div id="exportModal" class="sp-modal-card" style="display:none; position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 10002; min-width: 660px; max-width: 92vw; max-height: 85vh; overflow-y: auto; padding: 14px;">
+    <div id="exportModal" class="sp-modal-card" style="display:none; position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 10002; min-width: 660px; max-width: 92vw; max-height: calc(100vh - 90px); overflow-y: auto; padding: 12px 14px;">
         <div class="sp-modal-header">
             <div class="sp-modal-title">Export</div>
             <div class="sp-modal-close" id="closeExportModalBtn" onclick="closeExportModal()">✕</div>
@@ -3118,104 +3118,99 @@
         <div>
 
         <!-- Qualité et résolution -->
-        <div style="margin-bottom: 10px;">
-            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 6px;">Qualité</div>
-            <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin-bottom: 6px;">
+        <div style="margin-bottom: 8px;">
+            <div id="expQualityHeader" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 5px;">Qualité</div>
+            <label style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin-bottom: 4px;">
                 <input type="radio" name="exportQuality" id="exportStandard" value="standard" checked style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
                 <div>
                     <div>Standard (200 DPI)</div>
-                    <div style="font-size: 9px; color: #666; margin-top: 2px;">Écran et web</div>
+                    <div style="font-size: 9px; color: #666; margin-top: 1px;">Écran et web</div>
                 </div>
             </label>
-            <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin-bottom: 6px;">
+            <label style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin-bottom: 4px;">
                 <input type="radio" name="exportQuality" id="exportMedium" value="medium" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
                 <div>
                     <div>Medium (200 DPI)</div>
-                    <div style="font-size: 9px; color: #666; margin-top: 2px;">Impression courante</div>
+                    <div style="font-size: 9px; color: #666; margin-top: 1px;">Impression courante</div>
                 </div>
             </label>
-            <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
+            <label style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
                 <input type="radio" name="exportQuality" id="exportHD" value="hd" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
                 <div>
                     <div>HD (300 DPI)</div>
-                    <div style="font-size: 9px; color: #666; margin-top: 2px;">Impression professionnelle</div>
+                    <div style="font-size: 9px; color: #666; margin-top: 1px;">Impression professionnelle</div>
                 </div>
             </label>
-            <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #000; cursor: pointer; border-radius: 4px; font-size: 11px; margin-top: 6px; color: #fff;">
+            <label style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #000; cursor: pointer; border-radius: 4px; font-size: 11px; margin-top: 4px; color: #fff;">
                 <input type="radio" name="exportQuality" id="exportUltraHD" value="ultrahd" style="width: 16px; height: 16px; cursor: pointer; accent-color: #fff;">
                 <div>
                     <div style="font-weight: 700; letter-spacing: 0.5px;">ULTRA HD (600 DPI)</div>
-                    <div style="font-size: 9px; color: #bbb; margin-top: 2px;">Qualité maximale — typo & images sans compression, prêt imprimerie</div>
+                    <div style="font-size: 9px; color: #bbb; margin-top: 1px;">Qualité maximale — typo & images sans compression, prêt imprimerie</div>
                 </div>
             </label>
         </div>
 
         <!-- Options d'impression -->
         <div style="margin-bottom: 10px;">
-            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 6px;">Options</div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <!-- 🎯 v1.7.335 : « Format fini » = export à la taille de création (A4 → A4)
-                     SANS fond perdu, SANS repères. Coché par défaut. Dès qu'une option
-                     d'impression (fond perdu / traits de coupe / repères) est cochée,
-                     cette case se décoche automatiquement (export « imprimerie »). -->
-                <label id="finishedFormatRow" style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #eef3e9; border: 1px solid #c8d8b8; cursor: pointer; border-radius: 4px; font-size: 11px;">
-                    <input type="checkbox" id="finishedFormat" checked style="width: 16px; height: 16px; cursor: pointer; accent-color: #1d8a4a;">
-                    <span style="flex:1; line-height:1.35;">
-                        Format fini
-                        <span style="display:block; font-size:9px; opacity:0.6; margin-top:2px;">Export à la taille de création (ex. A4 → A4), sans fond perdu ni repères.</span>
+            <div id="expOptHeader" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 6px;">Options</div>
+            <!-- 🎯 v1.7.336 : options compactées — grille 2×2 pour les cases simples -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 5px;">
+                <!-- Format fini = export à la taille de création. Coché par défaut.
+                     Dès qu'une option imprimerie est cochée, il se décoche (exclusif). -->
+                <label id="finishedFormatRow" style="grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 8px; padding: 5px 8px; background: #eef3e9; border: 1px solid #c8d8b8; cursor: pointer; border-radius: 4px; font-size: 11px;">
+                    <input type="checkbox" id="finishedFormat" checked style="width: 16px; height: 16px; cursor: pointer; accent-color: #1d8a4a; flex-shrink: 0; margin-top: 1px;">
+                    <span style="flex:1; line-height:1.3;">
+                        <span class="exp-opt-label">Format fini</span>
+                        <span class="exp-opt-desc" style="display:block; font-size:9px; opacity:0.6; margin-top:1px;">Export à la taille de création (ex. A4 → A4), sans fond perdu ni repères.</span>
                     </span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
-                    <input type="checkbox" id="exportIncludeBleed" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
-                    <span style="flex:1; line-height:1.35;">
-                        Inclure les fonds perdus
-                        <span style="display:block; font-size:9px; opacity:0.55; margin-top:2px;">Ajoute le fond perdu du document autour de chaque page.</span>
+                <label style="grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
+                    <input type="checkbox" id="exportIncludeBleed" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000; flex-shrink: 0; margin-top: 1px;">
+                    <span style="flex:1; line-height:1.3;">
+                        <span class="exp-opt-label">Inclure les fonds perdus</span>
+                        <span class="exp-opt-desc" style="display:block; font-size:9px; opacity:0.55; margin-top:1px;">Ajoute le fond perdu du document autour de chaque page.</span>
                     </span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
-                    <input type="checkbox" id="cropMarks" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
-                    <span>Traits de coupe</span>
+                <!-- Crop marks / Color bars sur la même ligne -->
+                <label style="display: flex; align-items: center; gap: 7px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin: 0;">
+                    <input type="checkbox" id="cropMarks" style="width: 15px; height: 15px; cursor: pointer; accent-color: #000; flex-shrink: 0;">
+                    <span class="exp-opt-label">Traits de coupe</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
-                    <input type="checkbox" id="colorBars" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
-                    <span>Repères colorimétriques</span>
+                <label style="display: flex; align-items: center; gap: 7px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin: 0;">
+                    <input type="checkbox" id="colorBars" style="width: 15px; height: 15px; cursor: pointer; accent-color: #000; flex-shrink: 0;">
+                    <span class="exp-opt-label">Repères colorimétriques</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
-                    <input type="checkbox" id="forceHyphenExport" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
-                    <span>Césure automatique</span>
+                <!-- Auto hyphenation / PDF 3D (sans description) sur la même ligne -->
+                <label style="display: flex; align-items: center; gap: 7px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin: 0;">
+                    <input type="checkbox" id="forceHyphenExport" style="width: 15px; height: 15px; cursor: pointer; accent-color: #000; flex-shrink: 0;">
+                    <span class="exp-opt-label">Césure automatique</span>
                 </label>
-                <label id="pdf3DOptionRow" style="display: flex; align-items: flex-start; gap: 8px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
-                    <input type="checkbox" id="pdf3DEnabled" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000; margin-top: 2px;">
-                    <span style="flex:1; line-height:1.35;">
-                        PDF 3D RVB
-                        <span style="display:block; font-size:9px; opacity:0.55; margin-top:2px;">
-                            Attache les sources 3D (OBJ/STL) au PDF — visibles via le panneau « Pièces jointes » d'Adobe Acrobat (PDF&nbsp;1.6+).
-                        </span>
-                    </span>
+                <label id="pdf3DOptionRow" style="display: flex; align-items: center; gap: 7px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin: 0;">
+                    <input type="checkbox" id="pdf3DEnabled" style="width: 15px; height: 15px; cursor: pointer; accent-color: #000; flex-shrink: 0;">
+                    <span class="exp-opt-label">PDF 3D RVB</span>
                 </label>
-                <label id="vectorTypographyRow" style="display: flex; align-items: flex-start; gap: 8px; padding: 8px; background: #f0f4ff; border: 1px solid #c0d0f0; cursor: pointer; border-radius: 4px; font-size: 11px;">
-                    <input type="checkbox" id="vectorTypography" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000; margin-top: 1px; flex-shrink: 0;">
-                    <span style="flex:1; line-height:1.35;">
-                        Typographie vectorielle
-                        <span style="display:block; font-size:9px; opacity:0.55; margin-top:2px;">
-                            Le texte est exporté en vectoriel avec police embarquée (texte sélectionnable, net à toute échelle, poids réduit) plutôt qu'en image raster. Recommandé pour l'impression professionnelle.
-                        </span>
-                    </span>
-                </label>
-                <div id="exportFontPreflight" style="display:none; padding:8px; border:1px solid #d7dce5; background:#fff; border-radius:4px; font-size:10px; line-height:1.35;">
-                    <div id="exportFontStatus" style="font-weight:600;">Analyse des polices…</div>
-                    <div id="exportFontMissingList" style="margin-top:4px; color:#8a4b00;"></div>
-                    <label id="exportFontDropZone" for="exportFontFiles" style="display:block; margin-top:7px; padding:8px; border:1px dashed #8b96a8; text-align:center; cursor:pointer; background:#f7f9fc; border-radius:3px;">
-                        Déposer les polices manquantes (.ttf, .otf, .woff2)
-                    </label>
-                    <input id="exportFontFiles" type="file" accept=".ttf,.otf,.woff2" multiple hidden>
-                    <label id="exportFontFallbackRow" style="display:none; align-items:flex-start; gap:7px; margin-top:7px; padding:7px; background:#f8f8f8; cursor:pointer; border-radius:3px;">
-                        <input id="exportFontFallback" type="checkbox" style="width:15px; height:15px; margin-top:1px; cursor:pointer; accent-color:#000; flex-shrink:0;">
-                        <span>Exporter quand même<span style="display:block; margin-top:2px; font-size:9px; color:#667085;">Les textes sans police seront rasterisés fidèlement comme dans la preview.</span></span>
-                    </label>
-                </div>
             </div>
-        </div>
+            <!-- Typographie vectorielle (label + description courte) -->
+            <label id="vectorTypographyRow" style="display: flex; align-items: flex-start; gap: 8px; padding: 5px 8px; background: #f0f4ff; border: 1px solid #c0d0f0; cursor: pointer; border-radius: 4px; font-size: 11px; margin-bottom: 5px;">
+                <input type="checkbox" id="vectorTypography" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000; margin-top: 1px; flex-shrink: 0;">
+                <span style="flex:1; line-height:1.3;">
+                    <span class="exp-opt-label">Typographie vectorielle</span>
+                    <span class="exp-opt-desc" style="display:block; font-size:9px; opacity:0.55; margin-top:2px;">Le texte est exporté en vectoriel avec police embarquée (texte sélectionnable, net à toute échelle, poids réduit) plutôt qu'en image raster. Recommandé pour l'impression professionnelle.</span>
+                </span>
+            </label>
+            <div id="exportFontPreflight" style="display:none; padding:8px; border:1px solid #d7dce5; background:#fff; border-radius:4px; font-size:10px; line-height:1.35; margin-bottom:6px;">
+                <div id="exportFontStatus" style="font-weight:600;">Analyse des polices…</div>
+                <div id="exportFontMissingList" style="margin-top:4px; color:#8a4b00;"></div>
+                <label id="exportFontDropZone" for="exportFontFiles" style="display:block; margin-top:7px; padding:8px; border:1px dashed #8b96a8; text-align:center; cursor:pointer; background:#f7f9fc; border-radius:3px;">
+                    Déposer les polices manquantes (.ttf, .otf, .woff2)
+                </label>
+                <input id="exportFontFiles" type="file" accept=".ttf,.otf,.woff2" multiple hidden>
+                <label id="exportFontFallbackRow" style="display:none; align-items:flex-start; gap:7px; margin-top:7px; padding:7px; background:#f8f8f8; cursor:pointer; border-radius:3px;">
+                    <input id="exportFontFallback" type="checkbox" style="width:15px; height:15px; margin-top:1px; cursor:pointer; accent-color:#000; flex-shrink:0;">
+                    <span>Exporter quand même<span style="display:block; margin-top:2px; font-size:9px; color:#667085;">Les textes sans police seront rasterisés fidèlement comme dans la preview.</span></span>
+                </label>
+            </div>
+            </div><!-- /section Options -->
         </div><!-- /colonne gauche -->
 
         <!-- ═══ COLONNE DROITE : Format + Couleur + Fond PNG ═══ -->
@@ -3223,7 +3218,7 @@
 
         <!-- Format -->
         <div style="margin-bottom: 10px;">
-            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 6px;">Format</div>
+            <div id="expFormatHeader" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 6px;">Format</div>
             <div style="display: flex; gap: 6px;">
                 <label style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
                     <input type="radio" name="pagesMode" id="pagesSingle" value="single" checked style="width: 14px; height: 14px; cursor: pointer; accent-color: #000;">
@@ -3238,7 +3233,7 @@
 
         <!-- Mode couleur -->
         <div style="margin-bottom: 12px;">
-            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 6px;">Couleur</div>
+            <div id="expColorHeader" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 6px;">Couleur</div>
             <div style="display: flex; gap: 6px;">
                 <label style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
                     <input type="radio" name="colorMode" id="colorRGB" value="rgb" checked style="width: 14px; height: 14px; cursor: pointer; accent-color: #000;">
@@ -3300,7 +3295,7 @@
         <!-- Buttons -->
         <!-- v1.7.125 : choix du fond pour l'export PNG (blanc vs transparent) -->
         <div id="pngBgGroup" style="margin-bottom: 12px;">
-            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 6px;">Fond PNG</div>
+            <div id="expPngBgHeader" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 6px;">Fond PNG</div>
             <div style="display: flex; gap: 6px;">
                 <label style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
                     <input type="radio" name="pngBg" id="pngBgWhite" value="white" checked style="width: 14px; height: 14px; cursor: pointer; accent-color: #000;">
@@ -3311,7 +3306,7 @@
                     <span>Transparent</span>
                 </label>
             </div>
-            <div style="font-size: 9px; opacity: 0.55; margin-top: 4px; line-height: 1.3;">S'applique à l'export PNG uniquement (le JPG ne supporte pas la transparence).</div>
+            <div id="expPngBgNote" style="font-size: 9px; opacity: 0.55; margin-top: 4px; line-height: 1.3;">S'applique à l'export PNG uniquement (le JPG ne supporte pas la transparence).</div>
         </div>
         </div><!-- /colonne droite -->
         </div><!-- /wrapper 2 colonnes -->

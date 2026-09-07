@@ -443,19 +443,6 @@
   .zoom-wrap { display: flex; align-items: center; gap: 3px; }
   .zoom-wrap select { height: 24px; background: var(--input-bg); color: var(--text); border: 1px solid var(--input-border); font-family: inherit; font-size: 11px; padding: 0 4px; border-radius: 4px; }
 
-  /* Loader modèle */
-  #modelLoader { position: fixed; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); backdrop-filter: blur(2px); }
-  #modelLoader.active { display: flex; }
-  .loader-card { width: min(420px, 90vw); background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 28px 30px; text-align: center; }
-  .loader-card .lc-title { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
-  .loader-card .lc-sub { font-size: 11px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
-  .loader-bar { height: 6px; background: var(--panel2); border: 1px solid var(--border); position: relative; overflow: hidden; border-radius: 3px; }
-  .loader-bar .fill { height: 100%; width: 0%; background: var(--accent); transition: width .2s ease; display: flex; align-items: center; justify-content: flex-end; }
-  .loader-card .lc-pct { margin-top: 10px; font-size: 11px; color: var(--muted); }
-  .loader-card .lc-quote { margin-top: 18px; min-height: 34px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--text); line-height: 1.5; font-style: italic; border-top: 1px dashed var(--border); padding-top: 14px; opacity: 0; transition: opacity .4s ease; }
-  .loader-card .lc-quote.show { opacity: 1; }
-  .loader-card .lc-note { margin-top: 6px; font-size: 10px; color: var(--muted); opacity: .8; }
-
   .settings-modal { position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,.55); backdrop-filter: blur(2px); }
   .settings-modal.hidden { display: none; }
   .settings-card { width: min(620px, 100%); max-height: calc(100dvh - 40px); overflow: auto; background: var(--panel); border: 1px solid var(--border); box-shadow: 0 24px 70px var(--shadow); }
@@ -826,17 +813,6 @@
       <span>Settings</span>
     </button>
   </nav>
-</div>
-
-<div id="modelLoader">
-  <div class="loader-card">
-    <div class="lc-title">SP213 Local</div>
-    <div class="lc-sub" id="loaderSub">Loading local model…</div>
-    <div class="loader-bar"><div class="fill" id="loaderFill" style="width:0%"></div></div>
-    <div class="lc-pct" id="loaderPct">0 %</div>
-    <div class="lc-quote" id="loaderQuote"></div>
-    <div class="lc-note">First use only — the model is cached afterwards.</div>
-  </div>
 </div>
 
 <script src="js/fabric.min.js"></script>

@@ -15,7 +15,7 @@ console.log('dist present:', existsSync(path.join(SRC, 'dist')));
 
 // On utilise tar (présent sur Windows 10+ avec bsdtar) pour créer un zip depuis le contenu
 // en excluant les dépendances installées et les sorties de build reproductibles.
-const cmd = `cd /d "${SRC}" && tar -a -c -f "${OUT}" --exclude=node_modules --exclude=dist --exclude=sp213-local.zip *`;
+const cmd = `cd /d "${SRC}" && tar -a -c -f "${OUT}" --exclude=node_modules --exclude=dist --exclude=sp213-local.zip --exclude=vite-studio.log --exclude="*.log" *`;
 console.log('CMD:', cmd);
 try {
   execSync(cmd, { stdio: 'inherit', shell: 'cmd.exe' });

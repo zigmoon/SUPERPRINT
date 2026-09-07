@@ -45001,6 +45001,21 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportColorHeader: "Couleur",
         exportColorMode: "RVB",
         exportBW: "Noir & Blanc",
+        // v1.7.335 — libellés export (anti-franglais)
+        exportCMYK: "CMJN",
+        exportUltraHD: "ULTRA HD (600 DPI)",
+        exportUltraHDDesc: "Qualité maximale — typo & images sans compression, prêt imprimerie",
+        exportPngBg: "Fond PNG",
+        exportPngBgWhite: "Blanc",
+        exportPngBgTransparent: "Transparent",
+        exportPngBgNote: "S'applique à l'export PNG uniquement (le JPG ne supporte pas la transparence).",
+        finishedFormatLabel: "Format fini",
+        finishedFormatDesc: "Export à la taille de création (ex. A4 → A4), sans fond perdu ni repères.",
+        includeBleedLabel: "Inclure les fonds perdus",
+        includeBleedDesc: "Ajoute le fond perdu du document autour de chaque page.",
+        pdf3DLabel: "PDF 3D RVB",
+        vectorTypographyLabel: "Typographie vectorielle",
+        vectorTypographyDesc: "Le texte est exporté en vectoriel avec police embarquée (texte sélectionnable, net à toute échelle, poids réduit) plutôt qu'en image raster. Recommandé pour l'impression professionnelle.",
         // === Settings modal ===
         settingsTitle: "Réglages",
         unitMM: "Millimètres (mm)",
@@ -45741,8 +45756,23 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportSinglePages: "Single pages",
         exportSpreads: "Spreads",
         exportColorHeader: "Color",
-        exportColorMode: "RVB",
+        exportColorMode: "RGB",
         exportBW: "Black & White",
+        // v1.7.335 — libellés export (anti-franglais)
+        exportCMYK: "CMYK",
+        exportUltraHD: "ULTRA HD (600 DPI)",
+        exportUltraHDDesc: "Maximum quality — typography & images uncompressed, print-ready",
+        exportPngBg: "PNG background",
+        exportPngBgWhite: "White",
+        exportPngBgTransparent: "Transparent",
+        exportPngBgNote: "Only applies to PNG export (JPG does not support transparency).",
+        finishedFormatLabel: "Finished format",
+        finishedFormatDesc: "Export at the creation size (e.g. A4 → A4), without bleed or marks.",
+        includeBleedLabel: "Include bleeds",
+        includeBleedDesc: "Adds the document bleed around each page.",
+        pdf3DLabel: "PDF 3D RGB",
+        vectorTypographyLabel: "Vector typography",
+        vectorTypographyDesc: "Text is exported as vector with embedded font (selectable text, crisp at any scale, smaller file) instead of a raster image. Recommended for professional printing.",
         // === Settings modal ===
         settingsTitle: "Settings",
         unitMM: "Millimeters (mm)",
@@ -46485,8 +46515,22 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportSinglePages: "単ページ",
         exportSpreads: "見開き",
         exportColorHeader: "カラー",
-        exportColorMode: "RVB",
+        exportColorMode: "RGB",
         exportBW: "モノクロ",
+        exportCMYK: "CMYK",
+        exportUltraHD: "ULTRA HD (600 DPI)",
+        exportUltraHDDesc: "最高品質 — タイポグラフィーと画像を無圧縮で、印刷準備完了",
+        exportPngBg: "PNG背景",
+        exportPngBgWhite: "白",
+        exportPngBgTransparent: "透明",
+        exportPngBgNote: "PNGエクスポートにのみ適用されます（JPGは透明をサポートしません）。",
+        finishedFormatLabel: "完成サイズ",
+        finishedFormatDesc: "作成サイズ（例：A4 → A4）で、塗り足しもトンボもなしでエクスポート",
+        includeBleedLabel: "塗り足しを含める",
+        includeBleedDesc: "各ページの周りにドキュメントの塗り足しを追加します。",
+        pdf3DLabel: "PDF 3D RGB",
+        vectorTypographyLabel: "ベクトルタイポグラフィー",
+        vectorTypographyDesc: "テキストをフォント埋め込みのベクターとして出力（選択可能なテキスト、何倍でもシャープ、軽量ファイル）。ラスター画像の代わりに推奨されます。",
         // === Settings modal ===
         settingsTitle: "設定",
         unitMM: "ミリメートル (mm)",
@@ -47120,55 +47164,79 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     (function() {
         var modal = document.getElementById('exportModal');
         if (!modal) return;
-        // Section headers ("Qualité", "Options", "Format", "Couleur")
-        var headers = modal.querySelectorAll('div[style*="text-transform: uppercase"]');
-        var headerKeys = ['exportQualityHeader', 'exportOptionsHeader', 'exportFormatHeader', 'exportColorHeader'];
-        headers.forEach(function(h, i) { if (headerKeys[i]) h.textContent = translate(headerKeys[i]); });
-        // Quality descriptions
-        var stdDesc = modal.querySelector('#exportStandard');
-        if (stdDesc) {
-            var p = stdDesc.closest('label');
-            if (p) {
-                var box = p.querySelector('div');
-                if (box && box.children[0]) box.children[0].textContent = 'Standard (200 DPI)';
-                if (box && box.children[1]) box.children[1].textContent = translate('exportScreen');
+        // Helper: traduire les spans d'un label (libellé + description) à partir
+        // de l'id de son <input>. Structure attendue :
+        //   <label><input id=X><span class="exp-opt-label">…</span>
+        //                <span class="exp-opt-desc">…</span></label>
+        // Pour les cases "simples" (pas de desc), seul le libellé est traduit.
+        var setLabel = function(inputId, labelKey, descKey) {
+            var el = document.getElementById(inputId);
+            if (!el) return;
+            var lab = el.closest('label');
+            if (!lab) return;
+            var lb = lab.querySelector('.exp-opt-label');
+            if (!lb) {
+                // fallback : 1er span direct
+                lb = lab.querySelector(':scope > span');
             }
-        }
-        var medDesc = modal.querySelector('#exportMedium');
-        if (medDesc) {
-            var p = medDesc.closest('label');
-            if (p) {
-                var box = p.querySelector('div');
-                if (box && box.children[0]) box.children[0].textContent = 'Medium (200 DPI)';
-                if (box && box.children[1]) box.children[1].textContent = translate('exportMediumDesc');
+            if (lb && labelKey) lb.textContent = translate(labelKey);
+            if (descKey) {
+                var db = lab.querySelector('.exp-opt-desc');
+                if (db) db.textContent = translate(descKey);
             }
-        }
-        var hdDesc = modal.querySelector('#exportHD');
-        if (hdDesc) {
-            var p = hdDesc.closest('label');
-            if (p) {
-                var box = p.querySelector('div');
-                if (box && box.children[0]) box.children[0].textContent = 'HD (300 DPI)';
-                if (box && box.children[1]) box.children[1].textContent = translate('exportHDDesc');
-            }
-        }
-        // Options labels
-        var cropLbl = modal.querySelector('#cropMarks');
-        if (cropLbl) { var s = cropLbl.closest('label')?.querySelector('span'); if(s) s.textContent = translate('cropMarksLabel'); }
-        var colorBarsLbl = modal.querySelector('#colorBars');
-        if (colorBarsLbl) { var s = colorBarsLbl.closest('label')?.querySelector('span'); if(s) s.textContent = translate('colorBarsLabel'); }
-        var hypExport = modal.querySelector('#forceHyphenExport');
-        if (hypExport) { var s = hypExport.closest('label')?.querySelector('span'); if(s) s.textContent = translate('autoHyphenExport'); }
-        // Format: single/spread
-        var singleLbl = modal.querySelector('#pagesSingle');
-        if (singleLbl) { var s = singleLbl.closest('label')?.querySelector('span'); if(s) s.textContent = translate('exportSinglePages'); }
-        var spreadLbl = modal.querySelector('#pagesSpread');
-        if (spreadLbl) { var s = spreadLbl.closest('label')?.querySelector('span'); if(s) s.textContent = translate('exportSpreads'); }
-        // Color mode
-        var rgbLbl = modal.querySelector('#colorRGB');
-        if (rgbLbl) { var s = rgbLbl.closest('label')?.querySelector('span'); if(s) s.textContent = translate('exportColorMode'); }
-        var bwLbl = modal.querySelector('#colorBW');
-        if (bwLbl) { var s = bwLbl.closest('label')?.querySelector('span'); if(s) s.textContent = translate('exportBW'); }
+        };
+        // Section headers (IDs fiables ajoutés en v1.7.336)
+        var headerIds = {
+            expQualityHeader: 'exportQualityHeader',
+            expOptHeader: 'exportOptionsHeader',
+            expFormatHeader: 'exportFormatHeader',
+            expColorHeader: 'exportColorHeader',
+            expPngBgHeader: 'exportPngBg'
+        };
+        Object.keys(headerIds).forEach(function(id) {
+            var h = document.getElementById(id);
+            if (h) h.textContent = translate(headerIds[id]);
+        });
+        // Qualité : titre + description de chaque niveau
+        var qLevels = [
+            ['exportStandard', null, 'exportScreen'],
+            ['exportMedium', null, 'exportMediumDesc'],
+            ['exportHD', null, 'exportHDDesc'],
+            ['exportUltraHD', 'exportUltraHD', 'exportUltraHDDesc']
+        ];
+        qLevels.forEach(function(q) {
+            var el = document.getElementById(q[0]);
+            if (!el) return;
+            var p = el.closest('label');
+            if (!p) return;
+            var box = p.querySelector('div');
+            if (!box) return;
+            if (q[1] && box.children[0]) box.children[0].textContent = translate(q[1]);
+            if (box.children[1] && q[2]) box.children[1].textContent = translate(q[2]);
+        });
+        // Options d'impression (libellés + descriptions éventuelles)
+        setLabel('finishedFormat', 'finishedFormatLabel', 'finishedFormatDesc');
+        setLabel('exportIncludeBleed', 'includeBleedLabel', 'includeBleedDesc');
+        setLabel('cropMarks', 'cropMarksLabel');
+        setLabel('colorBars', 'colorBarsLabel');
+        setLabel('forceHyphenExport', 'autoHyphenExport');
+        setLabel('pdf3DEnabled', 'pdf3DLabel');
+        setLabel('vectorTypography', 'vectorTypographyLabel', 'vectorTypographyDesc');
+        // Format : pages simples / planches
+        setLabel('pagesSingle', 'exportSinglePages');
+        setLabel('pagesSpread', 'exportSpreads');
+        // Mode couleur : RGB / N&B / CMJN
+        setLabel('colorRGB', 'exportColorMode');
+        setLabel('colorBW', 'exportBW');
+        setLabel('colorCMYK', 'exportCMYK');
+        // Fond PNG (titre des boutons + note)
+        setLabel('pngBgWhite', 'exportPngBgWhite');
+        setLabel('pngBgTransparent', 'exportPngBgTransparent');
+        var pngNote = document.getElementById('expPngBgNote');
+        if (pngNote) pngNote.textContent = translate('exportPngBgNote');
+        // Titre de la modal
+        var title = modal.querySelector('.sp-modal-title');
+        if (title) title.textContent = translate('export');
     })();
 
     // --- Settings modal ---

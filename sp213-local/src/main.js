@@ -2219,21 +2219,6 @@ RÈGLES STRICTES :
   }
 
   // ── WebLLM (npm) ────────────────────────────────────────────
-  const LOADER_QUOTES = [
-    'Un bon print commence par une bonne grille.',
-    'La typographie, c’est la voix de la page.',
-    'Le blanc, c’est aussi de la composition.',
-    'Une marge de 15 mm sauve des vies (et des massicots).',
-    'SP213 réchauffe sa logique de canevas…',
-    'Fonds perdus : 3 mm de courage.',
-    'Le folio se range toujours en bas, bien sagement.',
-    'Une belle maquette, c’est 80% de rigueur, 20% de magie.',
-    'Le papier s’arrête au bord, la créativité non.',
-    'SP213 aligne ses colonnes, gouttière comprise.',
-    'La césure, ce petit trait qui change tout.',
-    'Un titre de 72 pt, et le tour est joué.'
-  ];
-
   function checkWebGPU() {
     if (!navigator.gpu) {
       return Promise.reject(new Error('WebGPU indisponible. Utilisez Chrome, Edge ou un navigateur compatible, puis vérifiez l’accélération matérielle.'));
@@ -2267,49 +2252,22 @@ RÈGLES STRICTES :
     return new Promise(function (resolve, reject) {
       if (state.webllm) { resolve(state.webllm); return; }
       const modelId = state.wllmModel || WLLM_MODELS[0][0];
-      const loader = $('modelLoader');
-      const loaderFill = $('loaderFill');
-      const loaderPct = $('loaderPct');
-      const loaderSub = $('loaderSub');
-      const loaderQuote = $('loaderQuote');
-      let quoteIdx = -1;
-      let quoteTimer = null;
-      function nextQuote() {
-        if (!loaderQuote) return;
-        quoteIdx = (quoteIdx + 1) % LOADER_QUOTES.length;
-        loaderQuote.textContent = LOADER_QUOTES[quoteIdx];
-        loaderQuote.classList.remove('show');
-        void loaderQuote.offsetWidth;
-        loaderQuote.classList.add('show');
-      }
-      function startQuotes() {
-        if (!loaderQuote) return;
-        nextQuote();
-        quoteTimer = setInterval(nextQuote, 3200);
-      }
-      function stopQuotes() {
-        if (quoteTimer) { clearInterval(quoteTimer); quoteTimer = null; }
-      }
-      if (loader) loader.classList.add('active');
-      startQuotes();
-
+      // 🗑️ 2026-09-07 : plus de pop-in plein écran (#modelLoader). Le chargement
+      //   du modèle se déroule en arrière-plan ; la bulle « SP213 is building your
+      //   layout » (appendTyping) dans le chat est l'unique indicateur visible.
       CreateMLCEngine(modelId, {
         initProgressCallback: function (p) {
-          const prog = Math.round((p.progress || 0) * 100);
-          if (loaderFill) loaderFill.style.width = prog + '%';
-          if (loaderPct) loaderPct.textContent = prog + ' %';
-          if (loaderSub) loaderSub.textContent = (p && p.text) ? p.text : 'Chargement du modèle…';
+          // Progression conservée en console uniquement (aucune UI bloquante).
+          if (typeof console !== 'undefined' && console.debug) {
+            try { console.debug('[SP213] WebLLM model load: ' + Math.round((p.progress || 0) * 100) + '%'); } catch (_) {}
+          }
         }
       }).then(function (engine) {
-        stopQuotes();
-        if (loader) loader.classList.remove('active');
         state.webllm = engine;
         state.webllmLoading = false;
         if (engine) engine._sp213ModelId = modelId;
         resolve(engine);
       }).catch(function (err) {
-        stopQuotes();
-        if (loader) loader.classList.remove('active');
         state.webllmLoading = false;
         reject(err);
       });
