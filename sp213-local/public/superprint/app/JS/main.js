@@ -28272,23 +28272,75 @@ if (window._spGpuEnabled) {
 
                 setProgress(25, 'Chargement des polices\u2026');
                 var fontCount = Object.keys(fontsFound).length;
+
+                // 🛡️ v1.7.342 (FIX polices IDML) : les textes importés référencent les
+                //   polices par leur VRAI nom de famille (« Abhaya Libre », « Minion
+                //   Pro »…) mais les fichiers fournis s'appellent par leur PostScript
+                //   name (« AbhayaLibre-Regular.ttf »…). Resources/Fonts.xml donne le
+                //   mapping PostScriptName → FontFamily/FontStyleName. On le lit pour
+                //   enregistrer chaque police sous le BON nom (sélecteur + FontFace +
+                //   export vectoriel), sinon le texte importé tombe en police de
+                //   secours.
+                var idmlPsToFamily = {};   // psName (minuscules) → { family, bold }
+                var idmlFamilyBolds = {};  // family → a-t-on un Bold ?
+                try {
+                    var fontsXmlDoc = null;
+                    if (idmlZip && idmlZip.files && idmlZip.files['Resources/Fonts.xml']) {
+                        var fontsXmlStr = await idmlZip.files['Resources/Fonts.xml'].async('string');
+                        fontsXmlDoc = new DOMParser().parseFromString(fontsXmlStr, 'application/xml');
+                    }
+                    if (fontsXmlDoc) {
+                        var allFEls = fontsXmlDoc.getElementsByTagName('*');
+                        for (var fxi = 0; fxi < allFEls.length; fxi++) {
+                            var fEl = allFEls[fxi];
+                            if (fEl.localName !== 'Font') continue;
+                            var ps = fEl.getAttribute('PostScriptName');
+                            var fam = fEl.getAttribute('FontFamily');
+                            var stName = fEl.getAttribute('FontStyleName') || '';
+                            if (ps && fam) {
+                                idmlPsToFamily[String(ps).toLowerCase()] = {
+                                    family: fam,
+                                    bold: /bold|semibold|heavy|black/i.test(stName)
+                                };
+                                if (/bold|semibold|heavy|black/i.test(stName)) idmlFamilyBolds[fam] = true;
+                            }
+                        }
+                    }
+                } catch (_) {}
+
                 if (fontCount > 0) {
                     logMsg('\uD83D\uDD24 ' + fontCount + ' police(s) trouv\u00e9e(s)');
                     for (var fontFileName of Object.keys(fontsFound)) {
-                        var fontUrl = null; // 💧 v1.7.92 : hors try pour pouvoir revoke en cas d'erreur
+                        var fontUrl = null;
                         try {
                             var baseName = fontFileName.replace(/\.(ttf|otf|woff2?)/i, '');
                             fontUrl = URL.createObjectURL(fontsFound[fontFileName]);
-                            var fontFace = new FontFace(baseName, 'url(' + fontUrl + ')');
+                            // Enregistrer sous le VRAI nom de famille IDML si connu.
+                            var psLower = String(baseName).toLowerCase();
+                            var info = idmlPsToFamily[psLower];
+                            var regName = info ? info.family : baseName;
+                            var weight = (info && info.bold) ? 'bold' : 'normal';
+                            try {
+                                if (typeof window._spRegisterCustomFontDataUrl === 'function' && info) {
+                                    // dataURL à partir du blob
+                                    var fReader = await new Promise(function(res) {
+                                        var rdr = new FileReader();
+                                        rdr.onload = function() { res(rdr.result); };
+                                        rdr.onerror = function() { res(null); };
+                                        rdr.readAsDataURL(fontsFound[fontFileName]);
+                                    });
+                                    if (fReader) {
+                                        window._spRegisterCustomFontDataUrl(info.family, fReader);
+                                    }
+                                }
+                            } catch (_) {}
+                            // FontFace direct (nom famille si connu, sinon nom fichier)
+                            var fontFace = new FontFace(regName, 'url(' + fontUrl + ')', { weight: weight });
                             await fontFace.load();
                             document.fonts.add(fontFace);
-                            // 💧 v1.7.91 : la police est parsée et copiée par le navigateur ;
-                            //   le blob URL n'est plus nécessaire (libère le Blob source).
                             try { URL.revokeObjectURL(fontUrl); fontUrl = null; } catch(_) {}
-                            logMsg('  \u2705 ' + baseName);
+                            logMsg('  \u2705 ' + regName + (info && info.bold ? ' (Bold)' : ''));
                         } catch (err) {
-                            // 💧 v1.7.92 : en cas d'échec FontFace.load (format invalide / corrompu),
-                            //   il faut quand même libérer le blob URL déjà créé.
                             if (fontUrl) { try { URL.revokeObjectURL(fontUrl); } catch(_) {} }
                             logMsg('  \u26A0\uFE0F Police ignor\u00e9e : ' + fontFileName);
                         }
@@ -28451,13 +28503,30 @@ if (window._spGpuEnabled) {
                 if (/^Stories\/Story_.*\.xml$/i.test(stPath)) {
                     var storyXml = await readXmlFile(zip, stPath);
                     if (!storyXml) continue;
-                    var storyEl = storyXml.querySelector('Story');
-                    // FIX IDML: Fallback si querySelector ne trouve pas Story
-                    if (!storyEl) {
-                        var allStEls = storyXml.getElementsByTagName('*');
-                        for (var sti = 0; sti < allStEls.length; sti++) {
-                            if (allStEls[sti].localName === 'Story') { storyEl = allStEls[sti]; break; }
+                    // 🛡️ v1.7.342 (FIX import IDML — « 0 bloc de texte ») : dans un
+                    //   fichier IDML moderne, le document racine est <idPkg:Story>
+                    //   (localName 'Story', namespace idPkg) qui contient un enfant
+                    //   <Story Self="u3b8">. querySelector('Story') ET le fallback
+                    //   getElementsByTagName('*') tombent sur le RACINE en premier
+                    //   (localName 'Story', mais SANS attribut Self) → storyId null
+                    //   → la story était ignorée → AUCUN texte importé. On cherche
+                    //   l'élément <Story> qui porte réellement l'attribut Self (et
+                    //   qui n'est pas le documentElement).
+                    var storyEl = null;
+                    if (typeof storyXml.getElementsByTagName === 'function') {
+                        var allStEls2 = storyXml.getElementsByTagName('*');
+                        for (var sti2 = 0; sti2 < allStEls2.length; sti2++) {
+                            var cand = allStEls2[sti2];
+                            if (cand === storyXml.documentElement) continue;
+                            if (cand.localName === 'Story' && cand.getAttribute('Self')) {
+                                storyEl = cand;
+                                break;
+                            }
                         }
+                    }
+                    if (!storyEl) {
+                        var storyEl0 = storyXml.querySelector('Story');
+                        if (storyEl0 && storyEl0 !== storyXml.documentElement && storyEl0.getAttribute('Self')) storyEl = storyEl0;
                     }
                     if (!storyEl) continue;
                     var storyId = storyEl.getAttribute('Self');
@@ -28515,39 +28584,70 @@ if (window._spGpuEnabled) {
                 var pageEls = spreadEl.querySelectorAll('Page');
                 var allItems = spreadEl.querySelectorAll('TextFrame, Rectangle, Oval, Polygon, GraphicLine, Group');
 
-                var pageBoundsArr = [];
-                pageEls.forEach(function(pgEl) {
-                    var gbArr = (pgEl.getAttribute('GeometricBounds') || '').split(' ').map(Number);
-                    if (gbArr.length === 4) pageBoundsArr.push({ top: gbArr[0], left: gbArr[1], bottom: gbArr[2], right: gbArr[3] });
-                });
-                if (pageBoundsArr.length === 0) {
-                    var defW = docPageW * 72 / 25.4;
-                    var defH = docPageH * 72 / 25.4;
-                    pageBoundsArr.push({ top: 0, left: 0, bottom: defH, right: defW });
+                // 🛡️ v1.7.342 (FIX géométrie) : chaque Page d'un fichier IDML moderne
+                //   a un ItemTransform (matrice page→spread) et un GeometricBounds
+                //   (dans le repère spread). Les items du spread sont exprimés en
+                //   repère spread après leur propre ItemTransform ; pour les ramener
+                //   dans la page il faut soustraire l'ORIGINE réelle de la page dans
+                //   le repère spread (= GeometricBounds.top-left + translation de la
+                //   matrice de page). On pré-calcule, par page : {gb, originX, originY}.
+                var pageMetaArr = [];
+                if (pageEls && pageEls.length) {
+                    pageEls.forEach(function(pgEl) {
+                        var gbArr = (pgEl.getAttribute('GeometricBounds') || '').split(' ').map(Number);
+                        if (gbArr.length === 4) {
+                            var pgMtx = idmlParseMtx(pgEl.getAttribute('ItemTransform'));
+                            pageMetaArr.push({
+                                el: pgEl,
+                                gb: { top: gbArr[0], left: gbArr[1], bottom: gbArr[2], right: gbArr[3] },
+                                originX: gbArr[1] + pgMtx[4],
+                                originY: gbArr[0] + pgMtx[5],
+                                mtx: pgMtx
+                            });
+                        }
+                    });
+                }
+                if (pageMetaArr.length === 0) {
+                    var defW2 = docPageW * 72 / 25.4;
+                    var defH2 = docPageH * 72 / 25.4;
+                    pageMetaArr.push({ el: null, gb: { top: 0, left: 0, bottom: defH2, right: defW2 }, originX: 0, originY: 0, mtx: idmlIdentity() });
                 }
 
-                for (var pi = 0; pi < pageBoundsArr.length; pi++) {
-                    var pgB = pageBoundsArr[pi];
+                for (var pi = 0; pi < pageMetaArr.length; pi++) {
+                    var pgMeta = pageMetaArr[pi];
+                    var pgB = pgMeta.gb;
+                    var pgOriginX = pgMeta.originX;
+                    var pgOriginY = pgMeta.originY;
                     var pageIdx = pages.length;
                     createNewPage();
 
-                    var pctVal = 60 + Math.round(35 * (pageIdx / Math.max(1, spreadPaths.length * pageBoundsArr.length)));
+                    var pctVal = 60 + Math.round(35 * (pageIdx / Math.max(1, pageMetaArr.length)));
                     setProgress(pctVal, 'Page ' + (pageIdx + 1) + '\u2026');
 
                     var itemsForPage = [];
+                    var pgW = pgB.right - pgB.left;
+                    var pgH = pgB.bottom - pgB.top;
                     allItems.forEach(function(itm) {
-                        var itmBounds = getItemGeoBounds(itm);
-                        if (!itmBounds) return;
-                        var centerX = (itmBounds.left + itmBounds.right) / 2;
-                        if (centerX >= pgB.left && centerX <= pgB.right) {
-                            itemsForPage.push({ el: itm, bounds: itmBounds });
+                        var itmSpread = idmlItemSpreadBounds(itm, null);
+                        if (!itmSpread) return;
+                        var centerX = (itmSpread.left + itmSpread.right) / 2;
+                        var centerY = (itmSpread.top + itmSpread.bottom) / 2;
+                        // Rattachement page : le centre (repère spread) doit tomber
+                        //   dans l'emplacement RÉEL de la page dans le spread =
+                        //   [origine page, origine+taille]. L'origine = GeometricBounds
+                        //   top-left + translation de la matrice de page (pgOriginX/Y).
+                        //   (Ne PAS comparer à pgB seul : dans les IDML modernes la page
+                        //   a un ItemTransform qui décale son contenu.)
+                        if (centerX >= pgOriginX && centerX <= pgOriginX + pgW &&
+                            centerY >= pgOriginY && centerY <= pgOriginY + pgH) {
+                            itemsForPage.push({ el: itm, spreadBounds: itmSpread });
                         }
                     });
 
                     var fabricObjs = [];
                     for (var ii = 0; ii < itemsForPage.length; ii++) {
                         var itemEl = itemsForPage[ii].el;
-                        var fObj = await convertToFabricObj(itemsForPage[ii].el, itemsForPage[ii].bounds, pgB, storiesMap, stylesMap, colorsMap, imagesMap);
+                        var fObj = await convertToFabricObj(itemEl, itemsForPage[ii].spreadBounds, pgOriginX, pgOriginY, storiesMap, stylesMap, colorsMap, imagesMap, idmlIdentity());
                         if (!fObj) continue;
 
                         if (itemEl.tagName === 'TextFrame') {
@@ -28557,7 +28657,7 @@ if (window._spGpuEnabled) {
                                 fObj.textLinkId = linkId;
                                 fObj.isLinkedTextBlock = true;
                                 fObj._fixedWidth = fObj.width;
-                                fObj._fixedHeight = fObj._fixedHeight || (itemsForPage[ii].bounds.bottom - itemsForPage[ii].bounds.top);
+                                fObj._fixedHeight = fObj._fixedHeight || (itemsForPage[ii].spreadBounds.bottom - itemsForPage[ii].spreadBounds.top);
 
                                 var frameInfo = {
                                     linkId: linkId,
@@ -28676,6 +28776,46 @@ if (window._spGpuEnabled) {
             return null;
         }
 
+        // ── Géométrie IDML (matrices affines ItemTransform) ─────────────────
+        // 🛡️ v1.7.342 (FIX import IDML moderne) : les fichiers InDesign récents
+        //   (DOM ≥ 16) ne portent PAS d'attribut `GeometricBounds` sur les items :
+        //   la géométrie vit dans <PathGeometry>/<PathPointArray> (coordonnées
+        //   LOCALES) et l'attribut `ItemTransform` (« a b c d tx ty », affine 2D)
+        //   mappe local → repère du parent (page/spread). Le parseur historique
+        //   lisait les PathPointType bruts SANS appliquer ItemTransform → tous les
+        //   objets tombaient à des positions absurdes / hors page → canvas vides.
+        function idmlIdentity() { return [1, 0, 0, 1, 0, 0]; }
+        function idmlParseMtx(s) {
+            if (!s) return idmlIdentity();
+            var v = String(s).trim().split(/\s+/).map(Number);
+            if (v.length < 6 || v.slice(0, 6).some(function(n) { return !isFinite(n); })) return idmlIdentity();
+            return [v[0], v[1], v[2], v[3], v[4], v[5]];
+        }
+        // compose m1 puis m2 : point p → m2(m1(p))
+        function idmlMul(m1, m2) {
+            var a1 = m1[0], b1 = m1[1], c1 = m1[2], d1 = m1[3], tx1 = m1[4], ty1 = m1[5];
+            var a2 = m2[0], b2 = m2[1], c2 = m2[2], d2 = m2[3], tx2 = m2[4], ty2 = m2[5];
+            return [
+                a2 * a1 + b2 * c1, a2 * b1 + b2 * d1,
+                c2 * a1 + d2 * c1, c2 * b1 + d2 * d1,
+                a2 * tx1 + b2 * ty1 + tx2,
+                c2 * tx1 + d2 * ty1 + ty2
+            ];
+        }
+        function idmlApplyMtx(m, x, y) {
+            return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
+        }
+        function idmlTransformBounds(b, m) {
+            var cs = [
+                idmlApplyMtx(m, b.left, b.top), idmlApplyMtx(m, b.right, b.top),
+                idmlApplyMtx(m, b.left, b.bottom), idmlApplyMtx(m, b.right, b.bottom)
+            ];
+            var mnX = Infinity, mnY = Infinity, mxX = -Infinity, mxY = -Infinity;
+            cs.forEach(function(p) { if (p[0] < mnX) mnX = p[0]; if (p[0] > mxX) mxX = p[0]; if (p[1] < mnY) mnY = p[1]; if (p[1] > mxY) mxY = p[1]; });
+            if (!isFinite(mnX)) return null;
+            return { left: mnX, top: mnY, right: mxX, bottom: mxY };
+        }
+        // Bounds LOCAUX d'un item (repère avant ItemTransform).
         function getItemGeoBounds(item) {
             var gbAttr = item.getAttribute('GeometricBounds');
             if (gbAttr) {
@@ -28692,6 +28832,23 @@ if (window._spGpuEnabled) {
                 if (isFinite(mnX)) return { top: mnY, left: mnX, bottom: mxY, right: mxX };
             }
             return null;
+        }
+        // Bounds d'un item dans le repère du SPREAD : applique l'ItemTransform de
+        //   l'item composé avec la matrice du parent (déjà en repère spread).
+        //   Retourne null si aucun bounds exploitable.
+        function idmlItemSpreadBounds(item, parentMtx) {
+            var lb = getItemGeoBounds(item);
+            if (!lb) return null;
+            var parent = parentMtx || idmlIdentity();
+            var mtx = idmlMul(idmlParseMtx(item.getAttribute('ItemTransform')), parent);
+            // Si l'item porte un GeometricBounds DIRECT, il est exprimé dans le
+            //   repère du parent (déjà « spread » si parentMtx = page→spread) :
+            //   il ne faut PAS lui ré-appliquer l'ItemTransform (qui mappe les
+            //   coords internes du path, pas le GB). Détection : GB direct présent.
+            if (item.getAttribute('GeometricBounds')) {
+                return idmlTransformBounds(lb, parent);
+            }
+            return idmlTransformBounds(lb, mtx);
         }
 
         function extractStoryText(storyEl, sMap, cMap) {
@@ -28740,32 +28897,20 @@ if (window._spGpuEnabled) {
         // pt → px : In this app, canvas uses 72dpi, so 1pt = 1px
         function ptPx(pt) { return pt; }
 
-        async function convertToFabricObj(item, gb, pgB, storiesMap, sMap, cMap, imgMap) {
+        async function convertToFabricObj(item, spreadBounds, pgOriginX, pgOriginY, storiesMap, sMap, cMap, imgMap, parentMtx) {
             var tag = item.tagName;
             var bPx = mmToPx(bleed);
-            // Convert from spread-points to page-relative px
-            var x = ptPx(gb.left - pgB.left) + bPx;
-            var y = ptPx(gb.top - pgB.top) + bPx;
-            var w = ptPx(gb.right - gb.left);
-            var h = ptPx(gb.bottom - gb.top);
+            var parent = parentMtx || idmlIdentity();
+            var itemMtx = idmlMul(idmlParseMtx(item.getAttribute('ItemTransform')), parent);
+            // Bounds dans le repère du SPREAD (le plus fidèle possible), puis
+            //   conversion → repère PAGE (soustraction de l'origine de page) puis
+            //   + décalage bleed du canvas SuperPrint.
+            var sb = spreadBounds;
+            var x = (sb.left - pgOriginX) + bPx;
+            var y = (sb.top - pgOriginY) + bPx;
+            var w = (sb.right - sb.left);
+            var h = (sb.bottom - sb.top);
             if (w < 1 || h < 1) return null;
-
-            // --- Apply ItemTransform if present ---
-            // In IDML, GeometricBounds is in local coords; ItemTransform maps local→spread
-            // For items directly on a spread (not nested), GeometricBounds is often already in spread coords
-            // We check: if bounds seem to be near origin, apply transform translation
-            var txAttr = item.getAttribute('ItemTransform');
-            if (txAttr) {
-                var txVals = txAttr.split(' ').map(Number);
-                if (txVals.length === 6) {
-                    var a = txVals[0], b = txVals[1], c = txVals[2], d = txVals[3], tx = txVals[4], ty = txVals[5];
-                    // If the matrix has significant translation and bounds are near local origin, apply transform
-                    if ((Math.abs(tx) > 1 || Math.abs(ty) > 1) && Math.abs(gb.left) < 1 && Math.abs(gb.top) < 1) {
-                        x = ptPx(tx) - ptPx(pgB.left) + bPx;
-                        y = ptPx(ty) - ptPx(pgB.top) + bPx;
-                    }
-                }
-            }
 
             // --- TextFrame ---
             if (tag === 'TextFrame') {
@@ -28844,23 +28989,72 @@ if (window._spGpuEnabled) {
                 var strokeW = parseFloat(item.getAttribute('StrokeWeight')) || 0;
                 var fillC = resolveColorRef(fillRef, cMap) || 'transparent';
                 var strokeC = resolveColorRef(strokeRef, cMap) || 'transparent';
+                var isGraphic = item.getAttribute('ContentType') === 'GraphicType';
 
-                // Check for embedded image
-                var imageEl = item.querySelector('Image');
-                var linkEl = imageEl ? imageEl.querySelector('Link') : null;
-                var linkPath = linkEl ? (linkEl.getAttribute('LinkResourceURI') || '') : '';
-                var linkName = decodeURIComponent(linkPath.split('/').pop().split('\\').pop());
-
-                if (linkName && imgMap[linkName]) {
+                // --- Image (externe liée OU embarquée base64 dans <Contents>) ---
+                // 🛡️ v1.7.342 (FIX images IDML) : deux cas possibles :
+                //   1) Image LIÉE : <Image><Properties><Link LinkResourceURI="file:.../Links/xxx.tif">
+                //      → chercher le fichier dans imgMap (déjà chargé depuis le zip).
+                //   2) Image EMBARQUÉE : <Image><Properties><Contents><![CDATA[base64 JPEG/PNG...]]>
+                //      → décoder le base64 en dataURL directement.
+                var placedImgDataUrl = null;
+                var imgEl = item.querySelector('Image');
+                if (imgEl) {
+                    // cas embarqué
                     try {
-                        var loadedImg = await loadImgAsync(imgMap[linkName]);
+                        var contentsEl = imgEl.querySelector('Contents');
+                        if (contentsEl && contentsEl.textContent) {
+                            // Le base64 InDesign est souvent coupé en lignes (CDATA) :
+                            //   retirer TOUS les whitespace (espaces, \n, \r, tab).
+                            var b64raw = String(contentsEl.textContent).replace(/\s+/g, '');
+                            if (b64raw.length > 64 && /^[A-Za-z0-9+/=]+$/.test(b64raw)) {
+                                var extGuess = /^\/9j\//.test(b64raw) ? 'image/jpeg' : (/^iVBORw0KGgo/.test(b64raw) ? 'image/png' : (/^R0lGOD/.test(b64raw) ? 'image/gif' : (/^UklGR/.test(b64raw) ? 'image/webp' : 'image/jpeg')));
+                                placedImgDataUrl = 'data:' + extGuess + ';base64,' + b64raw;
+                            }
+                        }
+                    } catch (_) {}
+                    if (!placedImgDataUrl) {
+                        // cas lié
+                        try {
+                            var linkEl = imgEl.querySelector('Link');
+                            var linkPath = linkEl ? (linkEl.getAttribute('LinkResourceURI') || '') : '';
+                            var linkName = decodeURIComponent(linkPath.split('/').pop().split('\\').pop());
+                            if (linkName && imgMap[linkName]) placedImgDataUrl = null; // handled below via loadImgAsync(imgMap)
+                            else if (linkName && imgMap[linkName] === undefined && linkName) {
+                                // try decode name variants (URL-encoded accents)
+                                var dec = null;
+                                try { dec = decodeURIComponent(linkName); } catch (_) {}
+                                var cand = dec && imgMap[dec] ? dec : linkName;
+                                if (imgMap[cand]) placedImgDataUrl = null;
+                            }
+                        } catch (_) {}
+                    }
+                }
+
+                // Essayer d'abord une image récupérable (embarquée ou liée).
+                var finalImgUrl = placedImgDataUrl;
+                if (!finalImgUrl && imgEl) {
+                    try {
+                        var linkEl2 = imgEl.querySelector('Link');
+                        var linkPath2 = linkEl2 ? (linkEl2.getAttribute('LinkResourceURI') || '') : '';
+                        var linkName2 = '';
+                        try { linkName2 = decodeURIComponent(linkPath2.split('/').pop().split('\\').pop()); } catch (_) { linkName2 = linkPath2.split('/').pop().split('\\').pop(); }
+                        var imgSrc2 = imgMap[linkName2];
+                        if (!imgSrc2) { try { imgSrc2 = imgMap[decodeURIComponent(linkName2)]; } catch (_) {} }
+                        if (imgSrc2) finalImgUrl = imgSrc2; // blob URL déjà créé par processIdmlZip
+                    } catch (_) {}
+                }
+
+                if (finalImgUrl) {
+                    try {
+                        var loadedImg = await loadImgAsync(finalImgUrl);
                         if (loadedImg) {
                             var scX = w / loadedImg.width;
                             var scY = h / loadedImg.height;
                             var sc = Math.max(scX, scY);
-                            return { type:'image', src: loadedImg.toDataURL(), left:x, top:y, scaleX: sc, scaleY: sc };
+                            return { type:'image', src: loadedImg.toDataURL(), left:x, top:y, scaleX: sc, scaleY: sc, originX:'left', originY:'top', width: loadedImg.width, height: loadedImg.height };
                         }
-                    } catch (e) { logMsg('  \u26A0\uFE0F Image ignor\u00e9e : ' + linkName); }
+                    } catch (e) { logMsg('  \u26A0\uFE0F Image ignor\u00e9e'); }
                 }
 
                 if (tag === 'Oval') {
@@ -28879,12 +29073,15 @@ if (window._spGpuEnabled) {
 
             // --- Group ---
             if (tag === 'Group') {
-                var children = item.querySelectorAll(':scope > TextFrame, :scope > Rectangle, :scope > Oval, :scope > Polygon, :scope > GraphicLine');
+                var children = item.querySelectorAll(':scope > TextFrame, :scope > Rectangle, :scope > Oval, :scope > Polygon, :scope > GraphicLine, :scope > Group');
                 var grpObjs = [];
                 for (var gi = 0; gi < children.length; gi++) {
-                    var cBounds = getItemGeoBounds(children[gi]);
-                    if (!cBounds) continue;
-                    var cObj = await convertToFabricObj(children[gi], cBounds, pgB, storiesMap, sMap, cMap, imgMap);
+                    var cSpread = idmlItemSpreadBounds(children[gi], itemMtx);
+                    if (!cSpread) continue;
+                    // Les enfants du groupe vivent dans le repère du groupe ; on
+                    //   leur applique la matrice du groupe (itemMtx) pour le spread,
+                    //   et on les convertit en positions page via pgOriginX/Y.
+                    var cObj = await convertToFabricObj(children[gi], cSpread, pgOriginX, pgOriginY, storiesMap, sMap, cMap, imgMap, itemMtx);
                     if (cObj) grpObjs.push(cObj);
                 }
                 if (grpObjs.length === 1) return grpObjs[0];
