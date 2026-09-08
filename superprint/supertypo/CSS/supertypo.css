@@ -256,11 +256,19 @@ body.theme-dark .big-btn svg.ic { stroke: #121212; }
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   gap: 10px;
   align-content: start;
+  /* 🎯 Lignes stables : une hauteur de rangée explicite (min 110px) empêche
+     les cellules de s'effondrer quand un canvas (dont la taille interne en
+     pixels est recalculée par renderGlyphToCanvas) est plus grand que le
+     contenu → plus de chevauchement entre la ligne du dessous et celle du
+     dessus (bug « les blocs se chevauchent en hauteur »). */
+  grid-auto-rows: minmax(110px, auto);
   background: var(--bg-workspace);
 }
 .glyph-cell {
   position: relative;
-  aspect-ratio: 1;
+  /* aspect-ratio supprimé : couplé à display:flex + un <canvas> à taille
+     interne recalculée, il faisait s'effondrer la rangée CSS grid et les
+     cellules se chevauchaient verticalement. */
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -270,13 +278,14 @@ body.theme-dark .big-btn svg.ic { stroke: #121212; }
   transition: border-color .1s, box-shadow .1s;
 }
 .glyph-cell:hover { border-color: var(--border-strong); box-shadow: 0 2px 8px var(--shadow); }
-.glyph-cell .gcanvas { flex: 1; min-height: 0; }
+.glyph-cell .gcanvas { flex: 1 1 auto; width: 100%; min-height: 0; display: block; }
 .glyph-cell .glabel {
   display: flex; justify-content: space-between; align-items: center;
   padding: 3px 7px;
   font-size: 10px; color: var(--muted);
   border-top: 1px solid var(--border);
   background: var(--panel2);
+  flex: 0 0 auto;
 }
 .glyph-cell .glabel .gc { font-size: 11px; font-weight: 600; color: var(--text); }
 .glyph-cell .glabel .gn { font-family: Consolas, monospace; font-size: 9px; color: var(--muted2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60px; }

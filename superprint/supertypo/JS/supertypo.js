@@ -44,7 +44,11 @@
     undoStack: [], redoStack: [],
     theme: 'light',
     // i18n minimal
-    lang: 'fr'
+    lang: 'fr',
+    // 🎯 Animation « wahou » à l'ouverture : quand une police vient d'être
+    //   chargée, les cellules de la grille « éclatent » depuis le centre puis
+    //   se rangent (démo type « squelette → grille »).
+    burstIn: false
   };
 
   const $ = (id) => document.getElementById(id);
@@ -720,7 +724,18 @@
     ctx.beginPath();
     for (const c of contours) traceContourPath(ctx, c);
     ctx.fillStyle = inkColor();
-    ctx.fill('evenodd');
+    // 🎯 Règle de remplissage « nonzero » (au lieu de 'evenodd').
+    //   Les polices importées au format OpenType/TrueType respectent la
+    //   convention de winding : contours extérieurs dans un sens, contours de
+    //   « trou » (O, B, P, g…) dans l'autre. Avec 'nonzero' :
+    //     • les vrais compteurs restent des trous (net = 0),
+    //     • DEUX FORMES PLEINES qui se chevauchent (ligatures, lettres
+    //       ornementales, glyphes dont l'auteur superpose des tracés) se
+    //       FUSIONNENT au lieu de créer un « blanc » au croisement (que
+    //       produisait 'evenodd' : chaque chevauchement = zone exclue).
+    //   C'est le comportement « exclusion » attendu à l'import. Les opérations
+    //   booléennes (soustraction = contour inversé → net 0) restent correctes.
+    ctx.fill('nonzero');
   }
 
   function drawContoursStroke(ctx, contours, lw) {
@@ -775,6 +790,80 @@
     }
     if (!count) grid.appendChild(el('div', 'empty-hint', t('gridEmpty')));
     $('gridSub').textContent = count + ' ' + (count > 1 ? t('gridGlyphPlur') : t('gridGlyphSing')) + ' · ' + ST.glyphs.length + ' ' + t('gridTotalText');
+
+    // 🎯 Animation « éclatement » à l'ouverture d'une police.
+    if (ST.burstIn) {
+      ST.burstIn = false;
+      playGridBurstIn(grid);
+    }
+  }
+
+  // 🎯 « Wahou » : les lettres partent d'un point central et se dispersent
+  //   d'un coup vers leur cellule dans la grille (effet « décomposition →
+  //   squelette rangé », comme la démo du corps humain). Utilise la WAAPI
+  //   (element.animate) : chaque cellule est d'abord ramenée au centre du
+  //   viewport (petite échelle + légère rotation aléatoire), puis animée vers
+  //   sa position finale avec un délai croissant avec la distance au centre.
+  function playGridBurstIn(grid) {
+    const cells = Array.from(grid.querySelectorAll('.glyph-cell'));
+    if (!cells.length || !grid.getBoundingClientRect) return;
+    if (!('animate' in Element.prototype)) return; // repli : aucun mouvement
+
+    const burst = cells.filter(c => {
+      const cv = c.querySelector('.gcanvas');
+      return cv && cv.width && cv.height;
+    });
+    if (!burst.length) return;
+
+    // Point de départ : centre du viewport (ou du grid si plus grand).
+    const viewCx = window.innerWidth / 2;
+    const viewCy = Math.max(window.innerHeight * 0.42, 200);
+    const D = Math.hypot;
+
+    // Préparer : position initiale = au centre, à petite échelle, opacité 0.
+    burst.forEach(c => {
+      c.style.transform = 'translate(-50%, -50%) scale(0.05)';
+      c.style.opacity = '0';
+      c.style.willChange = 'transform, opacity';
+    });
+
+    // Laisser une frame pour appliquer l'état initial, puis animer.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const dur = 640;
+      burst.forEach((c) => {
+        const r = c.getBoundingClientRect();
+        // Position finale = position naturelle dans la grille.
+        const fx = r.left + r.width / 2;
+        const fy = r.top + r.height / 2;
+        const dist = D(fx - viewCx, fy - viewCy);
+        // Délai : les cellules proches du centre partent d'abord, les plus
+        // éloignées suivent — effet de vague centrifuge.
+        const delay = Math.min(320, dist * 0.22);
+        // Rotation aléatoire légère au décollage (amplifiée près du centre).
+        const rot = (Math.random() * 24 - 12) * (dist < 120 ? 6 : 1);
+        // Décalage depuis le centre (position naturelle → centre viewport).
+        const dx = fx - viewCx, dy = fy - viewCy;
+
+        // On anime la cellule de (centre, scale≈0, rot) → (position naturelle).
+        // Le translate est exprimé en px depuis la position naturelle.
+        const anim = c.animate([
+          { transform: 'translate(' + (-dx) + 'px,' + (-dy) + 'px) scale(0.04) rotate(' + rot + 'deg)', opacity: 0, offset: 0 },
+          { transform: 'translate(' + (-dx * 0.3) + 'px,' + (-dy * 0.3) + 'px) scale(0.62) rotate(' + (rot * 0.3) + 'deg)', opacity: 0.85, offset: 0.55 },
+          { transform: 'translate(0px,0px) scale(1) rotate(0deg)', opacity: 1, offset: 1 }
+        ], {
+          duration: dur,
+          delay: delay,
+          easing: 'cubic-bezier(.22,.8,.3,1)',
+          fill: 'both'
+        });
+        // Nettoyage : retirer les styles temporaires une fois terminé.
+        anim.onfinish = () => {
+          c.style.transform = '';
+          c.style.opacity = '';
+          c.style.willChange = '';
+        };
+      });
+    }));
   }
 
   /* ────────────────────────── ÉDITEUR ────────────────────────── */
@@ -1300,12 +1389,14 @@
 
   /* ───────────────────────── BOOLÉENS (v1) ─────────────────────────
      Opérations « Pathfinder » simplifiées, en combinant les tracés et en
-     jouant sur le winding : le rendu du glyphe utilise déjà ctx.fill() en
-     mode 'evenodd' (voir drawContoursFill), donc un contour dont le sens
-     est inversé devient un « trou » quand il est imbriqué dans un autre.
+     jouant sur le winding : le rendu du glyphe utilise ctx.fill() en mode
+     'nonzero' (voir drawContoursFill). Un contour dont le sens est inversé
+     et imbriqué dans un autre a un winding net = 0 → il devient un « trou »
+     (soustraction), et des formes pleines qui se chevauchent fusionnent
+     (union) sans créer de blanc.
 
      - Union       : tous les contours du glyphe dans une même liste (déjà
-                     remplis en evenodd). On matérialise juste l'opération.
+                     remplis en nonzero, les chevauchements fusionnent).
      - Soustraction: garde A + retourne le winding de B (B devient un trou).
      - Intersection: ne garde que la partie de A couverte par B → en v1, si
                      B est entièrement dans A, A ∩ B ≈ B (on garde B seul).
@@ -1391,7 +1482,8 @@
     const ca = g.contours[a], cb = g.contours[b];
     if (!ca || !cb) return;
     if (op === 'union') {
-      // Union = garder A + ajouter B tel quel (evenodd fusionne les formes).
+      // Union = garder A + ajouter B tel quel (nonzero fusionne les formes
+      // qui se chevauchent sans créer de blanc).
       pushUndo(g);
       g.contours[a] = cloneContour(ca);
       // B est recréé à part : on le déplace après A dans la liste.
@@ -2259,6 +2351,8 @@
     $('fontView').style.display = 'flex';
     $('sampleInput').value = ST.sampleChars || defaultSample();
     ST.sampleChars = $('sampleInput').value;
+    // 🎯 Déclencher l'animation « éclatement » à l'apparition de la grille.
+    ST.burstIn = true;
     buildGlyphGrid();
   }
 
