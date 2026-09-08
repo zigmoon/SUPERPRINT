@@ -4235,6 +4235,30 @@ input[type=number] {
     background: rgba(255, 255, 255, 0.3);
 }
 
+/* 🎯 Modale IA — thème sombre : les .modal-section ont des fonds #fff/#f9f9f9
+   codés en dur dans index.html (mode clair). On les passe en sombre ici pour
+   que la pop-in reste lisible en theme-dark (sections Configuration, Moteur
+   de génération, Création Libre, etc.). */
+.theme-dark #aiModal .modal-body .modal-section {
+    background: var(--sp-dark-raised, #1c1c1e) !important;
+    border-color: var(--sp-dark-line, #333) !important;
+}
+/* Hint « la clé est utilisée automatiquement » (fond bleuté clair → sombre). */
+.theme-dark #aiModal #aiKeyHint {
+    background: rgba(59, 130, 196, 0.12) !important;
+    border-color: rgba(59, 130, 196, 0.35) !important;
+}
+.theme-dark #aiModal #aiKeyHint [data-translate="aiSaveHint"] { color: #9fc3e0 !important; }
+.theme-dark #aiModal select,
+.theme-dark #aiModal input[type="password"],
+.theme-dark #aiModal input[type="text"] {
+    background: #111;
+    color: #eaeaea;
+    border-color: var(--sp-dark-line, #333);
+}
+.theme-dark #aiModal .modal-section-title { color: #cfcfcf !important; }
+.theme-dark #aiModal .btn-secondary { background: transparent; color: #ddd; border-color: var(--sp-dark-line, #333); }
+.theme-dark #aiModal .btn-secondary:hover { background: #2a2a2e; border-color: #444; }
 
 /* ==================== MOBILE WIDGET RELOCATION ==================== */
 /* 🛡️ 2026-05-06 (v4) : ANCIEN bloc @media(max-width:800px) supprime.
