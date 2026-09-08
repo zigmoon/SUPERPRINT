@@ -21460,6 +21460,33 @@ if (window._spGpuEnabled) {
             textObj.dirty = true;
             textObj._forceClearCache = true;
             if (textObj.canvas) textObj.canvas.requestRenderAll();
+            // 🎯 v1.7.340 (FIX Ctrl+A « sélectionne puis se désélectionne ») :
+            //   Forcer le REPAINT VISIBLE du bandeau de sélection sur contextTop.
+            //   Fabric anime le curseur (_initDelayedCursor / _tick) sur contextTop :
+            //   juste après un Ctrl+A, ce tick peut repeindre contextTop SANS la
+            //   sélection (curseur seul) → l'utilisateur VOIT la sélection
+            //   « flasher puis disparaître » alors que selectionStart/End restent
+            //   corrects. On arrête l'animation curseur et on repeint la sélection
+            //   sur quelques frames (même correctif que le menu mobile « Tout
+            //   sélectionner », qui a le même symptôme).
+            try {
+                if (typeof textObj.abortCursorAnimation === 'function') textObj.abortCursorAnimation();
+            } catch (_) {}
+            const _repaintSel = () => {
+                try {
+                    if (!textObj.isEditing) return;
+                    if (textObj.selectionStart !== 0 || textObj.selectionEnd !== (textObj.text ? textObj.text.length : 0)) return;
+                    if (typeof textObj.renderCursorOrSelection === 'function') {
+                        textObj.renderCursorOrSelection();
+                    }
+                } catch (_) {}
+            };
+            try {
+                requestAnimationFrame(_repaintSel);
+                requestAnimationFrame(() => requestAnimationFrame(_repaintSel));
+                setTimeout(_repaintSel, 60);
+                setTimeout(_repaintSel, 160);
+            } catch (_) {}
         }
 
         // Attendre que l'objet soit en édition ET que le hiddenTextarea existe
@@ -24719,6 +24746,48 @@ if (window._spGpuEnabled) {
             applyColors();
         });
     }
+
+    // 🎯 v1.7.340 (retour utilisateur) : pipette de couleur à côté des carrés
+    //   Fond / Contour en mode CMJN. Utilise l'API EyeDropper (Chrome/Edge).
+    //   Récupère un hex à l'écran → le convertit en CMJN → applique aux sliders
+    //   et à l'objet sélectionné. Fallback : message si EyeDropper indisponible.
+    function _pickCmykColorWithEyeDropper(channel) {
+        const prefix = channel === 'fill' ? 'cmykFill' : 'cmykStroke';
+        const hexInput = document.getElementById(channel === 'fill' ? 'blockFill' : 'blockStroke');
+        const pick = function(hex) {
+            if (!hex || !hexInput) return;
+            // Lever le drapeau « sans fond/contour »
+            if (channel === 'fill') window._blockFillNone = false;
+            else window._blockStrokeNone = false;
+            const noneBtn = document.getElementById(channel === 'fill' ? 'blockFillNone' : 'blockStrokeNone');
+            if (noneBtn) noneBtn.style.borderColor = '#e0e0e0';
+            hexInput.value = hex;
+            hexInput.style.opacity = '1';
+            if (colorMode === 'cmyk') _syncCmykSlidersFromRgb(channel);
+            _applyCmykSliders(channel);
+            const preview = document.getElementById(prefix + 'Preview');
+            if (preview) preview.style.background = hex;
+        };
+        try {
+            if (typeof window.EyeDropper === 'function') {
+                const ed = new window.EyeDropper();
+                ed.open().then(function(res) {
+                    if (res && res.sRGBHex) pick(res.sRGBHex);
+                }).catch(function() { /* annulé par l'utilisateur */ });
+            } else {
+                // EyeDropper non supporté (Firefox/Safari) : ouvrir le picker natif.
+                if (hexInput) { hexInput.click(); }
+                else alert('Pipette non supportée par ce navigateur. Utilisez Firefox/Chrome/Edge pour la pipette.');
+            }
+        } catch (_) {
+            if (hexInput) { hexInput.click(); }
+        }
+    }
+    window._pickCmykColorWithEyeDropper = _pickCmykColorWithEyeDropper;
+    const cmykFillPickBtn = document.getElementById('cmykFillPickBtn');
+    if (cmykFillPickBtn) cmykFillPickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('fill'); });
+    const cmykStrokePickBtn = document.getElementById('cmykStrokePickBtn');
+    if (cmykStrokePickBtn) cmykStrokePickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke'); });
     
     // Pantone spot colors selection
     document.getElementById('spotColorSelect').addEventListener('change', function() {
@@ -33722,9 +33791,6 @@ https://superprint.app
                 for (var i = 0; i < objects.length; i++) {
                     var obj = objects[i];
                     if (obj && obj._spPdfReplaced) continue;
-                    if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
-                        console.log('[pdf-lib] TEXT obj:', obj.text?.slice(0,30), 'fontSize:', obj.fontSize, 'fontFamily:', obj.fontFamily, 'fontWeight:', obj.fontWeight);
-                    }
                     try {
                         await _renderObjToPdfLib(doc, page, objects[i], mmToPt, fonts, helvetica, images, multiplier);
                     } catch(e) {
@@ -33732,7 +33798,6 @@ https://superprint.app
                     }
                 }
 
-                console.log('[pdf-lib] page', pi, 'objects:', objects.length, 'fonts:', Object.keys(fonts).length);
 
                 // Nettoyer
                 try { tmpCanvas.dispose(); } catch(_) {}
@@ -34358,6 +34423,58 @@ https://superprint.app
                     return w;
                 };
 
+                // 🎯 v1.7.340 (FIX retours utilisateurs) : positionnement VERTICAL par
+                //   ligne qui reflète la PREVIEW. Fabric donne à chaque ligne la
+                //   hauteur du PLUS GRAND caractère de la ligne (getHeightOfLine =
+                //   maxFontSize × lineHeight). L'ancien code utilisait UNE seule
+                //   lineH (fontSizePx du bloc × lineHeight) pour TOUTES les lignes :
+                //   dès qu'une ligne mêlait des corps (ex. 14 pt + mot en 28 pt),
+                //   les lignes se chevauchaient / le texte débordait différemment de
+                //   la maquette. On pré-calcule le haut de chaque ligne (cumul des
+                //   hauteurs max), puis la baseline de chaque ligne = haut + tailleMax
+                //   de la ligne × ascenderRatio. Blocs uniformes → comportement
+                //   inchangé (lineH constant).
+                var _hasPerCharSizes = false;
+                var _lineTopPx = [];
+                var _lineMaxSizePx = [];
+                if (obj.styles && typeof obj._getStyleDeclaration === 'function') {
+                    try {
+                        var _lKeys = Object.keys(obj.styles);
+                        for (var _liA = 0; _liA < _lKeys.length; _liA++) {
+                            var _lob = obj.styles[_lKeys[_liA]];
+                            if (!_lob) continue;
+                            var _cK2 = Object.keys(_lob);
+                            for (var _ciA = 0; _ciA < _cK2.length; _ciA++) {
+                                var _stA = _lob[_cK2[_ciA]];
+                                if (_stA && typeof _stA.fontSize === 'number' && Math.abs(_stA.fontSize - fontSizePx) > 0.5) {
+                                    _hasPerCharSizes = true; break;
+                                }
+                            }
+                            if (_hasPerCharSizes) break;
+                        }
+                    } catch (_) {}
+                }
+                if (_hasPerCharSizes) {
+                    // Hauteur de ligne = max(taille des chars de la ligne) × lineHeight.
+                    // On reconstruit la correspondance ligne → caractères via _textLines
+                    // (graphemes par ligne) et _getStyleDeclaration pour la taille.
+                    var _curTop = 0;
+                    for (var _liB = 0; _liB < lines.length; _liB++) {
+                        var _lnChars = lines[_liB];
+                        var _mxSz = fontSizePx;
+                        for (var _ciB = 0; _ciB < _lnChars.length; _ciB++) {
+                            try {
+                                var _sd = obj._getStyleDeclaration(_liB, _ciB);
+                                if (_sd && typeof _sd.fontSize === 'number' && _sd.fontSize > _mxSz) _mxSz = _sd.fontSize;
+                            } catch (_) {}
+                        }
+                        _lineMaxSizePx[_liB] = _mxSz;
+                        _lineTopPx[_liB] = _curTop;
+                        _curTop += _mxSz * (obj.lineHeight || 1.16);
+                    }
+                }
+                var _lineHMult = (obj.lineHeight || 1.16);
+
                 for (var li = 0; li < maxLines; li++) {
                     var tx = lines[li];
                     if (!tx) continue;
@@ -34390,14 +34507,67 @@ https://superprint.app
                     else xStart = 0;
 
                     // Position Y de la baseline dans l'espace local (avant scale)
-                    var baselineY_local = li * lineH + baselineYInLine;
+                    // 🎯 v1.7.340 : si la ligne a des tailles mixtes, la baseline est
+                    //   calculée depuis le haut cumulé de la ligne + tailleMax × ratio
+                    //   d'ascender (fidèle à la preview). Sinon, comportement historique
+                    //   (li × lineH).
+                    var baselineY_local;
+                    if (_hasPerCharSizes && _lineMaxSizePx[li] !== undefined) {
+                        var _lMax = _lineMaxSizePx[li];
+                        baselineY_local = _lineTopPx[li] + _lMax * ascenderRatio;
+                        // La hauteur de ligne utilisée par le clip (maxLines) reste
+                        //   basée sur lineH global — mais on cumule correctement ici.
+                    } else {
+                        baselineY_local = li * lineH + baselineYInLine;
+                    }
 
+                    var _getCharStyle = function(ci) {
+                        // 🎯 v1.7.340 (FIX retours utilisateurs) : retrouver le style
+                        //   per-char via la méthode FABRIC officielle _getStyleDeclaration
+                        //   (qui gère le mapping ligne/position via _styleMap et la
+                        //   ré-indexation après wrapping). L'ancienne lecture directe
+                        //   `obj.styles[li][ci]` échouait quand le wrapping (initDimensions
+                        //   post-loadFromJSON) décalait les index de ligne — le gras /
+                        //   la couleur per-char tombaient alors au mauvais endroit (ou
+                        //   étaient perdus) dans l'export vectoriel.
+                        try {
+                            if (obj && typeof obj._getStyleDeclaration === 'function') {
+                                var decl = obj._getStyleDeclaration(li, ci);
+                                if (decl && typeof decl === 'object') return decl;
+                            }
+                        } catch (_) {}
+                        return (_charStyleLine && _charStyleLine[ci]) || null;
+                    };
                     // 🛡️ v1.7.338 — Résout le STYLE EFFECTIF d'un caractère (gras /
                     //   italique / taille / couleur per-char via obj.styles). Retourne
-                    //   {fontKey, font, sizePt, fillC} ; défaut = style du bloc.
+                    //   {fontKey, font, sizePt, fillC, fauxBold} ; défaut = style du bloc.
                     var _charStyleLine = (obj.styles && obj.styles[li]) || {};
+                    // 🎯 v1.7.340 (FIX) : helper — la police réellement embarquée pour
+                    //   une clé est-elle « assez grasse » ? On compare usWeightClass de
+                    //   la fonte opentype résolue à la graisse demandée. Si le fichier
+                    //   bold exact est absent, _spLoadFontVector a fait un FALLBACK de
+                    //   graisse (ex. 700→400) : la police dans fonts[] est alors en
+                    //   réalité régulière → il faut un FAUX-GRAS (double dessin décalé)
+                    //   pour que le PDF ressemble à la preview (le navigateur, lui,
+                    //   synthétise le gras via CSS).
+                    var _resolvedBoldEnough = function(fk, wantBold) {
+                        if (!wantBold) return true;
+                        var resolved = _SP_FONT_RESOLVED ? _SP_FONT_RESOLVED[fk] : null;
+                        if (!resolved) return false; // pas de police réelle → faux-gras
+                        try {
+                            var wc = (typeof resolved.usWeightClass === 'number')
+                                ? resolved.usWeightClass
+                                : (resolved.tables && resolved.tables.os2 && resolved.tables.os2.usWeightClass);
+                            if (typeof wc === 'number' && wc > 0) return wc >= 600;
+                        } catch (_) {}
+                        // Repli : la police résolue porte sa graisse résolue si fallback.
+                        if (resolved._spResolvedWeight) {
+                            return String(resolved._spResolvedWeight).indexOf('400') === -1;
+                        }
+                        return false;
+                    };
                     var _resolveCharStyle = function(ci) {
-                        var st = _charStyleLine[ci] || null;
+                        var st = _getCharStyle(ci);
                         if (!st) return null;
                         var fam = st.fontFamily || obj.fontFamily || 'Open Sans';
                         var wt = st.fontWeight || obj.fontWeight || 'normal';
@@ -34408,7 +34578,9 @@ https://superprint.app
                         var fnt = fonts[fk] || null;           // police pdf-lib embarquée
                         var sizePt2 = pxToMm(fsPx * (obj.scaleY || 1)) * mmToPt;
                         var fillCol = _parsePdfColor(fl) || [0, 0, 0];
-                        return { key: fk, font: fnt, sizePt: sizePt2, fillC: fillCol };
+                        var wantBold = (wt === 'bold' || String(wt) === '700' || String(wt) === '600');
+                        var _faux = !_resolvedBoldEnough(fk, wantBold);
+                        return { key: fk, font: fnt, sizePt: sizePt2, fillC: fillCol, fauxBold: _faux };
                     };
 
                     // 🛡️ v1.7.338 — soulignement / barré : on trace des filets
@@ -34428,15 +34600,54 @@ https://superprint.app
                             opacity: _finalTextOp
                         };
                         if (obj.angle) { try { o.rotate = PDFLib.degrees(-(obj.angle || 0)); } catch (_) {} }
+                        // 🎯 v1.7.340 (FIX retours utilisateurs) : faux-gras per-caractère.
+                        //   Quand la police bold demandée n'est pas réellement embarquée
+                        //   (fallback de graisse 700→400), on dessine 2× le caractère
+                        //   avec un léger décalage horizontal pour simuler le gras —
+                        //   exactement comme la branche « ligne entière » le fait pour
+                        //   un bloc bold sans police bold. Sans cela, un mot en gras
+                        //   dans une phrase régulière ressortait en REGULAR dans le PDF.
+                        var _fauxBoldNow = !!(st && st.fauxBold);
+                        if (_fauxBoldNow) {
+                            try {
+                                page.drawText(fragment, {
+                                    x: o.x + Math.max(0.3, _sz * 0.02),
+                                    y: o.y,
+                                    size: o.size, font: o.font,
+                                    color: o.color, opacity: o.opacity,
+                                    rotate: o.rotate
+                                });
+                            } catch (_) {}
+                        }
                         page.drawText(fragment, o);
                     };
                     var _textDecorationRuns = []; // {fromLocal, toLocal, kind}
+
+                    // 🎯 v1.7.340 (FIX) : détection fiable des styles per-char de la
+                    //   ligne via la méthode Fabric _getStyleDeclaration (qui gère le
+                    //   mapping après wrapping). L'ancien test `Object.keys(obj.styles[li])`
+                    //   ratait les lignes dont les styles ont été ré-indexés.
+                    var _lineHasCharStyles = false;
+                    if (obj.styles && typeof obj._getStyleDeclaration === 'function') {
+                        try {
+                            for (var _sci = 0; _sci < tx.length; _sci++) {
+                                var _sd = obj._getStyleDeclaration(li, _sci);
+                                if (_sd && typeof _sd === 'object') { _lineHasCharStyles = true; break; }
+                            }
+                        } catch (_) { _lineHasCharStyles = Object.keys(_charStyleLine).length > 0; }
+                    } else {
+                        _lineHasCharStyles = Object.keys(_charStyleLine).length > 0;
+                    }
 
                     // 🛡️ v1.7.338 — JUSTIFICATION : on n'étire que les lignes PLEINES
                     //   (pas la dernière ligne du bloc, qui garde son alignement).
                     //   justify/justify-left → dernière ligne à gauche ;
                     //   justify-right → dernière ligne à droite.
-                    if (_justify && !_isLastParaLine && tx.indexOf(' ') !== -1) {
+                    // 🎯 v1.7.340 (FIX) : si la ligne porte des styles PER-CARACTÈRE
+                    //   (gras/italique/taille mixte), on ne passe PAS par la justification
+                    //   mot-à-mot (qui dessinerait tout avec la police du bloc) : on
+                    //   retombe dans le char-loop ci-dessous qui respecte chaque style.
+                    if (_justify && !_isLastParaLine && !_lineHasCharStyles && tx.indexOf(' ') !== -1) {
                         // ── JUSTIFICATION : dessine mot à mot en élargissant les
                         //    espaces pour que la ligne remplisse exactement boxWidth.
                         var _words = String(tx).split(' ');
@@ -34468,15 +34679,16 @@ https://superprint.app
                         //    + STYLES PER-CARACTÈRE (gras/italique/taille/couleur).
                         //    charSpacing ≠ 0 OU styles per-char → dessin caractère
                         //    par caractère (chaque caractère avec SA police/sa taille).
-                        var _lineHasCharStyles = Object.keys(_charStyleLine).length > 0;
+                        //    (_lineHasCharStyles est déclaré avant le if justification.)
                         var _useCharLoop = (tx.length > 1) && (_charSpacingVal !== 0 || _lineHasCharStyles);
                         if (_useCharLoop) {
                             var _cursorC = xStart;
                             var _spacingStep = _charSpacingPt / Math.abs(sx);
                             for (var _ci = 0; _ci < tx.length; _ci++) {
                                 var _ch = tx.charAt(_ci);
-                                // Style effectif du caractère (si per-char)
-                                var _stRes = _lineHasCharStyles ? _resolveCharStyle(_ci) : null;
+                                // Style effectif du caractère (si per-char) — toujours
+                                //   résolu (retourne null si pas de style spécifique).
+                                var _stRes = _resolveCharStyle(_ci);
                                 var _useFnt = (_stRes && _stRes.font) ? _stRes.font : ef;
                                 var _useSizePt = (_stRes && _stRes.sizePt) ? _stRes.sizePt : fontSizePt;
                                 // Largeur du caractère mesurée avec SA police

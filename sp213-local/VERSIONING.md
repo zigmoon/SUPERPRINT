@@ -1,6 +1,6 @@
 ﻿# SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.339`** — 8 septembre 2026
+> **Dernière version : `1.7.340`** — 8 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,19 +10,19 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.339` |
-| Cache Service Worker | `superprint-shell-v1.7.339-no-whatsapp` |
-| Query JS (`main.js`) | `?v=20260908-v339-ai-fix` |
-| Badge preview (`spVersionBadge`) | `v1.7.339` |
-| Splash screen | `v1.7.339` |
-| Préférences (panneau SUPERPRINT) | `v1.7.339` |
-| Préférences (bas de page) | `SuperPrint v1.7.339 — 8 septembre 2026` |
-| Onboarding (`V 1.7.339`) | `1.7.339` |
-| Landing (`softwareVersion` + footer) | `1.7.339` |
-| Documentation | `v1.7.339` |
-| `version.txt` | `1.7.339` |
-| `llms.txt` / `llms-full.txt` | `1.7.339 (September 2026)` |
-| `package.json` (sp213-local) | `1.7.339` |
+| Version app (affichée) | `1.7.340` |
+| Cache Service Worker | `superprint-shell-v1.7.340-no-whatsapp` |
+| Query JS (`main.js`) | `?v=20260908-v340-pdf-ctrla` |
+| Badge preview (`spVersionBadge`) | `v1.7.340` |
+| Splash screen | `v1.7.340` |
+| Préférences (panneau SUPERPRINT) | `v1.7.340` |
+| Préférences (bas de page) | `SuperPrint v1.7.340 — 8 septembre 2026` |
+| Onboarding (`V 1.7.340`) | `1.7.340` |
+| Landing (`softwareVersion` + footer) | `1.7.340` |
+| Documentation | `v1.7.340` |
+| `version.txt` | `1.7.340` |
+| `llms.txt` / `llms-full.txt` | `1.7.340 (September 2026)` |
+| `package.json` (sp213-local) | `1.7.340` |
 
 > ⚠️ Le paquet **npm** (`superprint-npm`) a sa **propre version** (`1.0.x`) — c'est la version de *release du paquet*, indépendante de la version de l'app. Il lit la version de l'app depuis `https://superprint.cc/version.txt`.
 
@@ -69,7 +69,7 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
 
 Le **Service Worker** ne se met à jour que si `CACHE_NAME` change.
 ⇒ Le numéro de version dans `service-worker.js` **doit toujours être > au dernier déployé**.
-Ex. si le badge affichait `1.7.271`, bump vers `1.7.339` minimum.
+Ex. si le badge affichait `1.7.271`, bump vers `1.7.340` minimum.
 
 ---
 
@@ -82,9 +82,9 @@ Ex. si le badge affichait `1.7.271`, bump vers `1.7.339` minimum.
 
 ## 5. Procédure complète de release
 
-1. Choisir le nouveau numéro (ex. `1.7.339`) — **toujours > au cache SW actuel**.
+1. Choisir le nouveau numéro (ex. `1.7.340`) — **toujours > au cache SW actuel**.
 2. Mettre à jour TOUS les fichiers de la section 2 (web + copie locale).
-3. Vérifier : `grep -r "1.7.339" superprint/` → plus aucune occurrence (sauf changelog main.js).
+3. Vérifier : `grep -r "1.7.340" superprint/` → plus aucune occurrence (sauf changelog main.js).
 4. Vérifier synchro web/local : md5 identiques pour chaque fichier.
 5. Régénérer `sp213-local.zip` via `_make_zip.mjs`.
 6. Vérifier le zip : contient bien `app/index.html` à jour, `version.txt`, `service-worker.js`.
