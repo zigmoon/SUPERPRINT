@@ -1227,7 +1227,17 @@ const SP_CUSTOM_PROPS = [
     '_spCornerRadii',
     '_spCornersLinked',
     '_spOrigWidth',
-    '_spOrigHeight'
+    '_spOrigHeight',
+    // 🎯 v1.7.341 (AUDIT export typo) : préserver les métriques verticales LIVE du
+    //   bloc (valeurs que la PREVIEW utilise réellement) à travers la
+    //   sérialisation vers l'export. _fontSizeMult (défaut fabric 1.13, forcé à 1
+    //   par certains handlers UI : gras, reset typo, scale) et _fontSizeFraction
+    //   (fraction CSS de la baseline, défaut 0.222) pilotent getHeightOfLine().
+    //   Sans ça, un bloc dont le live _fontSizeMult=1 (ex. après un clic Gras)
+    //   était ré-exporté avec le défaut 1.13 → interlignage/position différents
+    //   de la maquette.
+    '_fontSizeMult',
+    '_fontSizeFraction'
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -21579,7 +21589,18 @@ if (window._spGpuEnabled) {
             
             const ae = document.activeElement;
             if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'SELECT')) return;
-            if (ae && ae.tagName === 'TEXTAREA' && !(ae.closest && ae.closest('.canvas-container'))) return;
+            // 🎯 v1.7.341 (FIX Ctrl+A en édition de texte) : le hiddenTextarea de
+            //   Fabric est un <textarea> SANS id, posé dans <body> (PAS dans
+            //   .canvas-container). L'ancien test `!closest('.canvas-container')`
+            //   le confondait avec un vrai champ externe → notre gestionnaire
+            //   select-all robuste ne s'exécutait JAMAIS en mode édition → le 1er
+            //   Ctrl+A après un double-clic « flashait » puis relâchait la
+            //   sélection (course avec le selectWord du dblclick / le curseur
+            //   différé de Fabric) et il fallait un 2e Ctrl+A.
+            const _isFabricHiddenTa = ae && ae.tagName === 'TEXTAREA' && !ae.id &&
+                ((ae.hasAttribute && ae.hasAttribute('data-fabric-hiddentextarea')) ||
+                 (ae.closest && ae.closest('.canvas-container')));
+            if (ae && ae.tagName === 'TEXTAREA' && !_isFabricHiddenTa) return;
             if (ae && ae.contentEditable === 'true') return;
             
             const activeCanvas = getActiveCanvas();
@@ -21720,7 +21741,10 @@ if (window._spGpuEnabled) {
             if (!_spSelectAllTarget || !_spSelectAllTimestamp) return;
             if (Date.now() - _spSelectAllTimestamp > 200) return;
             const ae = document.activeElement;
-            if (ae && ae.tagName === 'TEXTAREA' && ae.closest && ae.closest('.canvas-container')) {
+            const _isFabTa = ae && ae.tagName === 'TEXTAREA' && !ae.id &&
+                ((ae.hasAttribute && ae.hasAttribute('data-fabric-hiddentextarea')) ||
+                 (ae.closest && ae.closest('.canvas-container')));
+            if (_isFabTa) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
@@ -21732,8 +21756,12 @@ if (window._spGpuEnabled) {
         document.addEventListener('keydown', function(e) {
             if (!_crossBlockSel) return;
             const _ae = document.activeElement;
-            const _isFabricTextarea = _ae && _ae.tagName === 'TEXTAREA' &&
-                                      _ae.closest && _ae.closest('.canvas-container');
+            // 🎯 v1.7.341 : hiddenTextarea de Fabric posé dans <body> → détection
+            //   par data-fabric-hiddentextarea / absence d'id (pas seulement
+            //   closest('.canvas-container')).
+            const _isFabricTextarea = _ae && _ae.tagName === 'TEXTAREA' && !_ae.id &&
+                                      ((_ae.hasAttribute && _ae.hasAttribute('data-fabric-hiddentextarea')) ||
+                                       (_ae.closest && _ae.closest('.canvas-container')));
             // 🆕 v1.7.174 — Inclure la barre IA et la pop-in IA dans les champs protégés
             const _isProtectedField = _ae && (_ae.tagName === 'INPUT' || _ae.tagName === 'TEXTAREA' || _ae.isContentEditable) &&
                                       !_isFabricTextarea &&
@@ -21801,9 +21829,12 @@ if (window._spGpuEnabled) {
     // Détecter si on est dans un vrai champ de formulaire (pas le textarea caché de Fabric.js)
     // 🆕 v1.7.174 — Protection renforcée : tout INPUT/TEXTAREA qui n'est PAS le hiddenTextarea
     //   de Fabric est considéré comme un vrai champ. On vérifie aussi par ID pour la barre IA.
-    const isFabricTextarea = activeElement && activeElement.tagName === 'TEXTAREA' && 
-                             activeElement.closest && activeElement.closest('.canvas-container') &&
-                             !activeElement.id; // le hiddenTextarea de Fabric n'a pas d'id
+    // 🎯 v1.7.341 — le hiddenTextarea de Fabric est posé dans <body> (pas dans
+    //   .canvas-container) : le détecter via data-fabric-hiddentextarea / absence d'id.
+    const isFabricTextarea = activeElement && activeElement.tagName === 'TEXTAREA' &&
+                             !activeElement.id &&
+                             ((activeElement.hasAttribute && activeElement.hasAttribute('data-fabric-hiddentextarea')) ||
+                              (activeElement.closest && activeElement.closest('.canvas-container'))); // le hiddenTextarea de Fabric n'a pas d'id
     const isRealFormField = (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.isContentEditable) && 
                             !isFabricTextarea) ||
                             (activeElement && (activeElement.id === 'aiFooterInput' || activeElement.id === 'aiPromptModal' || activeElement.id === 'aiFooterImageInput'));
@@ -24788,6 +24819,24 @@ if (window._spGpuEnabled) {
     if (cmykFillPickBtn) cmykFillPickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('fill'); });
     const cmykStrokePickBtn = document.getElementById('cmykStrokePickBtn');
     if (cmykStrokePickBtn) cmykStrokePickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke'); });
+
+    // 🎯 v1.7.341 (AUDIT retours utilisateurs) : rendre le CARRÉ de couleur
+    //   (cmykFillPreview / cmykStrokePreview, à droite de Fond / Contour)
+    //   cliquable → ouvre la PIPETTE (EyeDropper). Avant, seul le bouton
+    //   pipette séparé (cmykFillPickBtn / cmykStrokePickBtn) déclenchait
+    //   l'eyedropper ; cliquer sur le carré lui-même ne faisait rien.
+    const cmykFillPreview = document.getElementById('cmykFillPreview');
+    if (cmykFillPreview) {
+        cmykFillPreview.style.cursor = 'pointer';
+        cmykFillPreview.title = 'Pipette couleur (Fond)';
+        cmykFillPreview.addEventListener('click', function() { _pickCmykColorWithEyeDropper('fill'); });
+    }
+    const cmykStrokePreview = document.getElementById('cmykStrokePreview');
+    if (cmykStrokePreview) {
+        cmykStrokePreview.style.cursor = 'pointer';
+        cmykStrokePreview.title = 'Pipette couleur (Contour)';
+        cmykStrokePreview.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke'); });
+    }
     
     // Pantone spot colors selection
     document.getElementById('spotColorSelect').addEventListener('change', function() {
@@ -34329,31 +34378,83 @@ https://superprint.app
                 if (!lines.length) return;
 
                 // 🍏 v1.7.235 : Toutes les coordonnées sont en 72 DPI "px" = PDF points.
-                //   fontSizePx est déjà la taille en points PDF. lineH aussi.
+                //   fontSizePx est déjà la taille en points PDF.
                 //   widthOfTextAtSize retourne en points. Pas de conversion 96/72.
-                var lineH = fontSizePx * (obj.lineHeight || 1.16);
                 var boxWidth = (obj.width || 0);
 
-                // Calculer la baseline avec l'ascender réel de la police
-                var ascenderRatio = 0.778; // fallback (Helvetica ~0.778)
-                var fntResolved = _SP_FONT_RESOLVED && _SP_FONT_RESOLVED[fontKey];
-                if (fntResolved) {
-                    try {
-                        var ascUnits = (typeof fntResolved.ascender === 'number')
-                            ? fntResolved.ascender
-                            : (fntResolved.tables && fntResolved.tables.os2 && fntResolved.tables.os2.sTypoAscender) || 0;
-                        if (ascUnits > 0) {
-                            ascenderRatio = ascUnits / (fntResolved.unitsPerEm || 1000);
+                // 🎯 v1.7.341 (AUDIT retours utilisateurs) : reproduire EXACTEMENT la
+                //   géométrie VERTICALE de la preview (Fabric).
+                //   La preview calcule la hauteur de chaque ligne via getHeightOfLine()
+                //   = max(fontSize des chars de la ligne) × lineHeight × _fontSizeMult
+                //   (app override de fabric.Text.prototype.getHeightOfLine, ~L1652).
+                //   Les vrais blocs de l'app gardent _fontSizeMult = 1.13 (défaut
+                //   fabric) après création / saisie / changement d'interligne / de
+                //   police / charSpacing — seuls quelques handlers (Bold, reset typo,
+                //   scale) le forcent à 1.
+                //   L'ANCIEN code export calculait : lineH = fontSizePx×lineHeight puis
+                //   baseline = fontSizePx×ascender(opentype). Résultat : interlignage
+                //   exporté ~13 % plus petit que la preview (1.13 manquant) + baseline
+                //   de 1re ligne décalée (ascender opentype ≠ fraction CSS) → texte qui
+                //   « déborde différemment », « plus petit », « qui ne correspond pas ».
+                //   On reconstruit ici la position des lignes avec getHeightOfLine() :
+                //     h_i       = obj.getHeightOfLine(i)          (pitch de la ligne i)
+                //     top_i     = Σ_{k<i} h_k                      (haut cumulé)
+                //     baseline  = top_i + h_i × (1-_fontSizeFraction) / lineHeight
+                //   (dérivé de _renderTextCommon/_renderChars : chaque ligne est rendue
+                //   à topOffset + cum + contentHeight puis reculée de
+                //   h×_fontSizeFraction/lineHeight pour poser la baseline CSS).
+                //   Validé pixel par pixel sur uniforme / gras par mot / Playfair bold /
+                //   tailles mixtes / lineHeight per-char (écart ≤ 0,5 px constant).
+                var _lineHeightRatio = obj.lineHeight || 1.16;
+                var _fontSizeFractionVal = (typeof obj._fontSizeFraction === 'number' && obj._fontSizeFraction >= 0)
+                    ? obj._fontSizeFraction : 0.222;
+                // Hauteur de ligne par ligne (getHeightOfLine, qui inclut _fontSizeMult
+                //   et les lineHeight per-char). En 72 DPI "px" = points PDF.
+                var _spLineH = [];
+                var _spLineTop = [];
+                var _spLineBaseline = [];
+                var _spCumH = 0;
+                var _spMaxLinesByFrame = lines.length;
+                try {
+                    for (var _sli = 0; _sli < lines.length; _sli++) {
+                        var _sH = 0;
+                        if (obj && typeof obj.getHeightOfLine === 'function') {
+                            try { _sH = Number(obj.getHeightOfLine(_sli)) || 0; } catch (_) { _sH = 0; }
                         }
-                    } catch(_) {}
+                        if (!(_sH > 0)) _sH = fontSizePx * _lineHeightRatio;
+                        _spLineH[_sli] = _sH;
+                        _spLineTop[_sli] = _spCumH;
+                        _spLineBaseline[_sli] = _spCumH + (_sH * (1 - _fontSizeFractionVal)) / _lineHeightRatio;
+                        _spCumH += _sH;
+                    }
+                    // Le texte est rendu du HAUT du cadre (comme applyTextboxClipPath) :
+                    //   découper à la dernière ligne COMPLÈTE qui tient dans frameHeight,
+                    //   exactement comme le clip de la preview (~applyTextboxClipPath).
+                    var _frameHClip = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0)
+                        ? obj._fixedHeight : (obj.height || 0);
+                    if (_frameHClip > 0) {
+                        var _accH = 0;
+                        for (var _cli = 0; _cli < _spLineH.length; _cli++) {
+                            if (_accH + _spLineH[_cli] <= _frameHClip + 0.5) { _accH += _spLineH[_cli]; }
+                            else { _spMaxLinesByFrame = Math.max(1, _cli); break; }
+                        }
+                    }
+                } catch (_) {
+                    // Fallback conservateur si getHeightOfLine indisponible.
+                    _spLineH = [];
+                    _spLineTop = [];
+                    _spLineBaseline = [];
+                    _spCumH = 0;
                 }
-                // baselineYInLine en "px" (72 DPI points) — même unité que lineH
-                var baselineYInLine = fontSizePx * ascenderRatio;
 
-                // Gérer originX/originY pour le positionnement
+                // Gérer originX/originY pour le positionnement.
+                // Le texte coule du HAUT du cadre : pour originY top (défaut), la 1re
+                // ligne est à la distance _spLineBaseline[0] du haut du bloc. Pour
+                // center/bottom on décale par rapport à la HAUTEUR TOTALE du texte
+                // (Σ h_i), pas du cadre.
                 var ox = (obj.originX === 'center') ? -boxWidth / 2
                     : (obj.originX === 'right') ? -boxWidth : 0;
-                var totalHPx = lineH * lines.length;
+                var totalHPx = (_spLineH.length ? _spLineH.reduce(function(a, b) { return a + b; }, 0) : (fontSizePx * _lineHeightRatio * lines.length));
                 var oy = (obj.originY === 'center') ? -totalHPx / 2
                     : (obj.originY === 'bottom') ? -totalHPx : 0;
 
@@ -34391,10 +34492,14 @@ https://superprint.app
                 var frameHeight = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0)
                     ? obj._fixedHeight : (obj.height || 0);
                 var maxLines = lines.length;
-                if (frameHeight > 0 && lineH > 0) {
-                    var maxByHeight = Math.floor((frameHeight + 0.5) / lineH);
-                    if (maxByHeight >= 1 && maxByHeight < maxLines) {
-                        maxLines = maxByHeight;
+                if (_spLineH.length && _spMaxLinesByFrame >= 1 && _spMaxLinesByFrame < maxLines) {
+                    maxLines = _spMaxLinesByFrame;
+                } else if (frameHeight > 0) {
+                    // Repli historique (pas de métriques getHeightOfLine dispo)
+                    var _flh = fontSizePx * _lineHeightRatio;
+                    if (_flh > 0) {
+                        var _mbf = Math.floor((frameHeight + 0.5) / _flh);
+                        if (_mbf >= 1 && _mbf < maxLines) maxLines = _mbf;
                     }
                 }
 
@@ -34423,57 +34528,13 @@ https://superprint.app
                     return w;
                 };
 
-                // 🎯 v1.7.340 (FIX retours utilisateurs) : positionnement VERTICAL par
-                //   ligne qui reflète la PREVIEW. Fabric donne à chaque ligne la
-                //   hauteur du PLUS GRAND caractère de la ligne (getHeightOfLine =
-                //   maxFontSize × lineHeight). L'ancien code utilisait UNE seule
-                //   lineH (fontSizePx du bloc × lineHeight) pour TOUTES les lignes :
-                //   dès qu'une ligne mêlait des corps (ex. 14 pt + mot en 28 pt),
-                //   les lignes se chevauchaient / le texte débordait différemment de
-                //   la maquette. On pré-calcule le haut de chaque ligne (cumul des
-                //   hauteurs max), puis la baseline de chaque ligne = haut + tailleMax
-                //   de la ligne × ascenderRatio. Blocs uniformes → comportement
-                //   inchangé (lineH constant).
-                var _hasPerCharSizes = false;
-                var _lineTopPx = [];
-                var _lineMaxSizePx = [];
-                if (obj.styles && typeof obj._getStyleDeclaration === 'function') {
-                    try {
-                        var _lKeys = Object.keys(obj.styles);
-                        for (var _liA = 0; _liA < _lKeys.length; _liA++) {
-                            var _lob = obj.styles[_lKeys[_liA]];
-                            if (!_lob) continue;
-                            var _cK2 = Object.keys(_lob);
-                            for (var _ciA = 0; _ciA < _cK2.length; _ciA++) {
-                                var _stA = _lob[_cK2[_ciA]];
-                                if (_stA && typeof _stA.fontSize === 'number' && Math.abs(_stA.fontSize - fontSizePx) > 0.5) {
-                                    _hasPerCharSizes = true; break;
-                                }
-                            }
-                            if (_hasPerCharSizes) break;
-                        }
-                    } catch (_) {}
-                }
-                if (_hasPerCharSizes) {
-                    // Hauteur de ligne = max(taille des chars de la ligne) × lineHeight.
-                    // On reconstruit la correspondance ligne → caractères via _textLines
-                    // (graphemes par ligne) et _getStyleDeclaration pour la taille.
-                    var _curTop = 0;
-                    for (var _liB = 0; _liB < lines.length; _liB++) {
-                        var _lnChars = lines[_liB];
-                        var _mxSz = fontSizePx;
-                        for (var _ciB = 0; _ciB < _lnChars.length; _ciB++) {
-                            try {
-                                var _sd = obj._getStyleDeclaration(_liB, _ciB);
-                                if (_sd && typeof _sd.fontSize === 'number' && _sd.fontSize > _mxSz) _mxSz = _sd.fontSize;
-                            } catch (_) {}
-                        }
-                        _lineMaxSizePx[_liB] = _mxSz;
-                        _lineTopPx[_liB] = _curTop;
-                        _curTop += _mxSz * (obj.lineHeight || 1.16);
-                    }
-                }
-                var _lineHMult = (obj.lineHeight || 1.16);
+                // 🎯 v1.7.341 (AUDIT retours utilisateurs) : positionnement VERTICAL des
+                //   lignes = celui de la PREVIEW. Les hauteurs _spLineH / tops
+                //   _spLineTop / baselines _spLineBaseline ont été pré-calculés plus haut
+                //   via obj.getHeightOfLine() (inclut _fontSizeMult + lineHeight per-char
+                //   + tailles mixtes). Chaque ligne est ensuite rendue sur SA baseline.
+                //   (Remplace l'ancienne heuristique _hasPerCharSizes / _lineMaxSizePx
+                //   qui ne couvrait que les tailles mixtes et ignorait _fontSizeMult.)
 
                 for (var li = 0; li < maxLines; li++) {
                     var tx = lines[li];
@@ -34506,19 +34567,16 @@ https://superprint.app
                     else if (_effAlignRight) xStart = boxWidth - _lineWSpaced;
                     else xStart = 0;
 
-                    // Position Y de la baseline dans l'espace local (avant scale)
-                    // 🎯 v1.7.340 : si la ligne a des tailles mixtes, la baseline est
-                    //   calculée depuis le haut cumulé de la ligne + tailleMax × ratio
-                    //   d'ascender (fidèle à la preview). Sinon, comportement historique
-                    //   (li × lineH).
+                    // Position Y de la baseline dans l'espace local (avant scale).
+                    // 🎯 v1.7.341 (AUDIT) : baseline pré-calculée depuis getHeightOfLine()
+                    //   (même valeur que la preview). Fallback sur l'ancien modèle si
+                    //   les métriques n'ont pas pu être calculées.
                     var baselineY_local;
-                    if (_hasPerCharSizes && _lineMaxSizePx[li] !== undefined) {
-                        var _lMax = _lineMaxSizePx[li];
-                        baselineY_local = _lineTopPx[li] + _lMax * ascenderRatio;
-                        // La hauteur de ligne utilisée par le clip (maxLines) reste
-                        //   basée sur lineH global — mais on cumule correctement ici.
+                    if (typeof _spLineBaseline[li] === 'number' && isFinite(_spLineBaseline[li])) {
+                        baselineY_local = _spLineBaseline[li];
                     } else {
-                        baselineY_local = li * lineH + baselineYInLine;
+                        var _fbLH = fontSizePx * (obj.lineHeight || 1.16);
+                        baselineY_local = li * _fbLH + fontSizePx * 0.8;
                     }
 
                     var _getCharStyle = function(ci) {
@@ -37591,14 +37649,35 @@ https://superprint.app
                 }
 
                 const lineHeightFactor = obj.lineHeight || 1.16;
-                const lineH = fontSize * lineHeightFactor;
+                const lineH = fontSize * lineHeightFactor; // fallback seulement
                 const boxWidth = (obj.width || 0);
 
                 const angle = ((obj.angle || 0) * Math.PI) / 180;
                 const cosA = Math.cos(angle), sinA = Math.sin(angle);
                 const sx = obj.scaleX || 1, sy = obj.scaleY || 1;
                 const cx_px = obj.left || 0, cy_px = obj.top || 0;
-                const totalH = lineH * lines.length;
+
+                // 🎯 v1.7.341 (AUDIT export typo) : géométrie verticale = PREVIEW.
+                //   Hauteur de ligne via obj.getHeightOfLine() (inclut _fontSizeMult
+                //   et lineHeight per-char) + baseline CSS dérivée de _renderChars
+                //   (recul de h×_fontSizeFraction/lineHeight). Cf. note détaillée dans
+                //   _renderObjToPdfLib (chemin pdf-lib natif).
+                const _spJLineH = [];
+                const _spJLineTop = [];
+                const _spJLineBaseline = [];
+                const _spJFrac = (typeof obj._fontSizeFraction === 'number' && obj._fontSizeFraction >= 0)
+                    ? obj._fontSizeFraction : 0.222;
+                let _spJCum = 0;
+                for (let _ji = 0; _ji < lines.length; _ji++) {
+                    let _jh = 0;
+                    try { _jh = (obj && typeof obj.getHeightOfLine === 'function') ? (Number(obj.getHeightOfLine(_ji)) || 0) : 0; } catch (_) { _jh = 0; }
+                    if (!(_jh > 0)) _jh = fontSize * lineHeightFactor;
+                    _spJLineH[_ji] = _jh;
+                    _spJLineTop[_ji] = _spJCum;
+                    _spJLineBaseline[_ji] = _spJCum + (_jh * (1 - _spJFrac)) / lineHeightFactor;
+                    _spJCum += _jh;
+                }
+                const totalH = (_spJLineH.length ? _spJLineH.reduce((a, b) => a + b, 0) : (lineH * lines.length));
                 const ox = (obj.originX === 'center') ? -boxWidth / 2 : (obj.originX === 'right') ? -boxWidth : 0;
                 const oy = (obj.originY === 'center') ? -totalH / 2 : (obj.originY === 'bottom') ? -totalH : 0;
 
@@ -37617,7 +37696,15 @@ https://superprint.app
                 let maxLines = lines.length;
                 try {
                     const frameH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : (obj.height || 0);
-                    if (frameH > 0 && lineH > 0) { const fc = Math.floor((frameH + 0.5) / lineH); if (fc >= 1 && fc < maxLines) maxLines = fc; }
+                    if (frameH > 0 && _spJLineH.length) {
+                        let _jAcc = 0;
+                        for (let _jci = 0; _jci < _spJLineH.length; _jci++) {
+                            if (_jAcc + _spJLineH[_jci] <= frameH + 0.5) { _jAcc += _spJLineH[_jci]; }
+                            else { maxLines = Math.max(1, _jci); break; }
+                        }
+                    } else if (frameH > 0 && lineH > 0) {
+                        const fc = Math.floor((frameH + 0.5) / lineH); if (fc >= 1 && fc < maxLines) maxLines = fc;
+                    }
                 } catch (_) {}
 
                 const align = obj.textAlign || 'left';
@@ -37668,7 +37755,14 @@ https://superprint.app
                     if (align === 'center') xStart = (boxWidth - lineW) / 2;
                     else if (align === 'right') xStart = boxWidth - lineW;
                     else xStart = 0;
-                    const baselineY_local = i * lineH + baselineYInLine;
+                    // 🎯 v1.7.341 (AUDIT) : baseline = même valeur que la preview
+                    //   (pré-calculée via getHeightOfLine). Fallback ancien modèle.
+                    let baselineY_local;
+                    if (typeof _spJLineBaseline[i] === 'number' && isFinite(_spJLineBaseline[i])) {
+                        baselineY_local = _spJLineBaseline[i];
+                    } else {
+                        baselineY_local = i * lineH + baselineYInLine;
+                    }
                     const [xMm, yMm] = localToMm(xStart, baselineY_local);
 
                     // Rotation : jsPDF text() avec angle (sautée en collectOnly)
