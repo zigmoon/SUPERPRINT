@@ -27911,8 +27911,37 @@ if (window._spGpuEnabled) {
             if (file) processIdmlZip(file);
         });
 
+        // 🛡️ v1.7.337 : le drag & drop GLOBAL d'un .idml route vers #importIdmlInput
+        //   (input caché) mais aucun listener n'était attaché → rien ne se passait.
+        //   On branche ce listener ici pour traiter le fichier comme via la modale.
+        var hiddenIdmlDropInput = document.getElementById('importIdmlInput');
+        if (hiddenIdmlDropInput) {
+            hiddenIdmlDropInput.addEventListener('change', function(e) {
+                var file = e.target.files && e.target.files[0];
+                if (!file) return;
+                e.target.value = '';
+                // Réutiliser la modale IDML (affiche la progression) puis lancer l'import.
+                var m = document.getElementById('idmlImportModal');
+                if (m) m.style.display = 'block';
+                var impM = document.getElementById('importModal');
+                if (impM) impM.style.display = 'none';
+                resetModal();
+                processIdmlZip(file);
+            });
+        }
+
         // ===================== MAIN IDML PROCESSING =====================
         async function processIdmlZip(file) {
+            // 🛡️ v1.7.337 (FIX) : JSZip est chargé à la demande (perf v1.7.323) mais
+            //   l'import IDML l'appelait sans ensureZipLib → « JSZip is not defined »
+            //   et l'import échouait systématiquement. On garantit le chargement ici.
+            try {
+                if (typeof window.ensureZipLib === 'function') {
+                    await window.ensureZipLib();
+                }
+            } catch (e) {
+                console.error('[SP] ensureZipLib IDML error', e);
+            }
             const MAX_IDML_FILE_BYTES = 100 * 1024 * 1024;
             const MAX_IDML_ENTRIES = 5000;
             const MAX_IDML_UNCOMPRESSED_BYTES = 250 * 1024 * 1024;
