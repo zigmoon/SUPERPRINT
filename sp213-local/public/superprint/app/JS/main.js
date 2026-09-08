@@ -28023,10 +28023,103 @@ if (window._spGpuEnabled) {
             e.target.value = '';
         });
 
-        // Drop file
+        // 🛡️ v1.7.342 — Support du dépôt d'un DOSSIER (package InDesign extrait :
+        //   fichier .idml + dossier Links/ + dossier Fonts/). Quand on glisse un
+        //   dossier sur la drop zone, dataTransfer.files est vide ; il faut
+        //   parcourir items[].webkitGetAsEntry() pour reconstruire l'arborescence.
+        //   On ré-emballe le tout dans un .zip mémoire puis on lance processIdmlZip.
+        function entryIsFile(entry) { return entry && entry.isFile; }
+        function entryIsDir(entry) { return entry && entry.isDirectory; }
+        function readEntry(entry) {
+            return new Promise(function(resolve) {
+                if (entryIsFile(entry)) {
+                    entry.file(function(file) { resolve({ path: entry.fullPath || entry.name, file: file }); }, function() { resolve(null); });
+                } else { resolve(null); }
+            });
+        }
+        async function walkEntry(entry, out) {
+            if (entryIsFile(entry)) {
+                var r = await readEntry(entry);
+                if (r) out.push(r);
+                return;
+            }
+            if (entryIsDir(entry)) {
+                var reader = entry.createReader();
+                // createReader ne liste que 100 entrées/appel → boucle.
+                while (true) {
+                    var batch = await new Promise(function(res) { reader.readEntries(res, function() { res([]); }); });
+                    if (!batch || !batch.length) break;
+                    for (var bi = 0; bi < batch.length; bi++) await walkEntry(batch[bi], out);
+                }
+            }
+        }
+        async function handleDroppedItems(dt) {
+            var items = dt && dt.items ? Array.from(dt.items) : [];
+            var entries = [];
+            for (var ii = 0; ii < items.length; ii++) {
+                var it = items[ii];
+                if (it && typeof it.webkitGetAsEntry === 'function') {
+                    var en = it.webkitGetAsEntry();
+                    if (en) entries.push(en);
+                }
+            }
+            // S'il n'y a pas d'entrées (ou uniquement des fichiers plats), on
+            // retombe sur le comportement historique (files[0]).
+            if (!entries.length) {
+                var file0 = dt.files && dt.files[0];
+                if (file0) processIdmlZip(file0);
+                return;
+            }
+            // Cas 1 : un SEUL fichier .idml / .zip glissé (entrée fichier) → direct.
+            var onlyFiles = entries.every(entryIsFile);
+            if (onlyFiles && entries.length === 1) {
+                var single = await readEntry(entries[0]);
+                if (single && single.file) { processIdmlZip(single.file); return; }
+            }
+            // Cas 2 : au moins un DOSSIER → tout re-packager en .zip mémoire.
+            try {
+                if (typeof window.ensureZipLib === 'function') await window.ensureZipLib();
+                var collected = [];
+                for (var ei = 0; ei < entries.length; ei++) await walkEntry(entries[ei], collected);
+                if (!collected.length) { alert(translate('alertProvideZipOrIdml')); return; }
+                // Déterminer un nom de base : répertoire racine ou premier .idml.
+                var rootName = 'import-idml';
+                var idmlEntry = collected.find(function(c) { return /\.idml$/i.test(c.path); });
+                if (idmlEntry) {
+                    var segs = idmlEntry.path.split('/').filter(Boolean);
+                    if (segs.length) rootName = segs[0].replace(/\.idml$/i, '');
+                }
+                var zout = new JSZip();
+                var used = {};
+                for (var ci = 0; ci < collected.length; ci++) {
+                    var c = collected[ci];
+                    var cleanPath = String(c.path).replace(/^\/+/, '');
+                    // ignorer __MACOSX et .DS_Store (artefacts macOS)
+                    if (/__MACOSX/.test(cleanPath) || /\.DS_Store$/.test(cleanPath)) continue;
+                    if (used[cleanPath]) continue;
+                    used[cleanPath] = true;
+                    zout.file(cleanPath, c.file);
+                }
+                var blob = await zout.generateAsync({ type: 'blob' });
+                var fName = rootName + '.zip';
+                var pack = new File([blob], fName, { type: 'application/zip' });
+                logMsg('📦 Dossier(s) re-packagé(s) → ' + fName);
+                processIdmlZip(pack);
+            } catch (err) {
+                console.error('[SP-IDML] dossier drop error', err);
+                alert(translatef('alertIdmlImportError', err.message));
+            }
+        }
+
+        // Drop file / dossier
         dropZone.addEventListener('drop', function(e) {
-            var file = e.dataTransfer.files && e.dataTransfer.files[0];
-            if (file) processIdmlZip(file);
+            e.preventDefault(); e.stopPropagation();
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length && !e.dataTransfer.items) {
+                var file = e.dataTransfer.files[0];
+                if (file) processIdmlZip(file);
+                return;
+            }
+            handleDroppedItems(e.dataTransfer);
         });
 
         // 🛡️ v1.7.337 : le drag & drop GLOBAL d'un .idml route vers #importIdmlInput
@@ -28047,6 +28140,20 @@ if (window._spGpuEnabled) {
                 processIdmlZip(file);
             });
         }
+
+        // 🛡️ v1.7.342 — API exposée aux handlers de drag & drop GLOBAUX du plan
+        //   de travail : ouvre la modale IDML et traite un .zip / .idml déposé
+        //   directement sur le canvas (l'input caché #importIdmlInput n'accepte
+        //   pas fiablement un .zip via DataTransfer — on passe par cette voie).
+        window._spOpenIdmlImport = function(file) {
+            if (!file) return;
+            var m = document.getElementById('idmlImportModal');
+            if (m) m.style.display = 'block';
+            var impM = document.getElementById('importModal');
+            if (impM) impM.style.display = 'none';
+            resetModal();
+            processIdmlZip(file);
+        };
 
         // ===================== MAIN IDML PROCESSING =====================
         async function processIdmlZip(file) {
@@ -33734,6 +33841,41 @@ https://superprint.app
                     } catch(_) {}
                 }
 
+                // 🛡️ v1.7.342 (AUDIT retours utilisateurs — police importée / custom
+                //   mal exportée en « Format fini ») : le chemin NATIF construit un
+                //   canvas temporaire via loadFromJSON AVANT que les polices (surtout
+                //   les polices custom/importées, enregistrées via FontFace) soient
+                //   réellement prêtes → Fabric calcule _textLines / métriques avec
+                //   une police de secours → le texte exporté « ne correspond pas »
+                //   (casse, taille, débordement). Le chemin « traits de coupe / fond
+                //   perdu » (jsPDF) attend document.fonts.ready puis force un
+                //   re-layout (voir renderPageToImageWithBleed) — on applique le même
+                //   correctif ici.
+                try {
+                    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+                } catch (_) {}
+                // _spResolveFontCache() a vidé fabric.charWidthsCache : on re-mesure
+                //   chaque textbox/text avec la bonne police (en restaurant le cadre
+                //   fixe, sinon Fabric gonfle la hauteur et le clip déborde).
+                objects.forEach(function(_reObj) {
+                    if (!_reObj) return;
+                    if (_reObj.type === 'textbox' || _reObj.type === 'text') {
+                        const __spFrmH = (_reObj._fixedHeight != null) ? _reObj._fixedHeight : _reObj.height;
+                        const __spFrmW = (_reObj._fixedWidth  != null) ? _reObj._fixedWidth  : _reObj.width;
+                        try { if (typeof _reObj._clearCache === 'function') _reObj._clearCache(); } catch (_) {}
+                        try { if (typeof _reObj.initDimensions === 'function') _reObj.initDimensions(); } catch (_) {}
+                        if (__spFrmH > 0 && _reObj.type === 'textbox') {
+                            _reObj.height = __spFrmH;
+                            if (_reObj._fixedHeight == null) _reObj._fixedHeight = __spFrmH;
+                        }
+                        if (__spFrmW > 0 && _reObj.type === 'textbox') {
+                            _reObj.width = __spFrmW;
+                            if (_reObj._fixedWidth == null) _reObj._fixedWidth = __spFrmW;
+                        }
+                        try { if (typeof _reObj.setCoords === 'function') _reObj.setCoords(); } catch (_) {}
+                    }
+                });
+
                 // Embarquer les polices TTF
                 for (var fk in _SP_FONT_RESOLVED) {
                     if (!_SP_FONT_RESOLVED.hasOwnProperty(fk)) continue;
@@ -34536,6 +34678,54 @@ https://superprint.app
                 //   (Remplace l'ancienne heuristique _hasPerCharSizes / _lineMaxSizePx
                 //   qui ne couvrait que les tailles mixtes et ignorait _fontSizeMult.)
 
+                // 🛡️ v1.7.342 (AUDIT retours utilisateurs — justification) : la dernière
+                //   ligne d'un PARAGRAPHE (coupure dure Enter, \n) ne doit JAMAIS être
+                //   étirée en mode justifié — comportement PAO standard, identique à la
+                //   preview (Fabric.enlargeSpaces patché, v1.7.139i) qui distingue :
+                //     • Enter  (HARD \n)  → la ligne AVANT le \n n'est PAS étirée ;
+                //     • Shift+Enter (SOFT \n) → la ligne AVANT le \n EST étirée.
+                //   L'ancien code ne regardait que la DERNIÈRE LIGNE DU BLOC (li >=
+                //   maxLines-1) : dès qu'un paragraphe contenait un retour à la ligne
+                //   dur au milieu du bloc, sa ligne de fin était (à tort) étirée, ou
+                //   à l'inverse une vraie dernière ligne courte d'un paragraphe
+                //   final était mal traitée.
+                var _spIsParaLastLine = function(_li) {
+                    // Toujours la dernière ligne RENDU (clipé) = jamais étirée.
+                    if (_li >= maxLines - 1) return true;
+                    try {
+                        // isEndOfWrapping(i) === true quand la ligne i est suivie d'un
+                        // \n (dure OU douce) dans le texte source — i.e. fin d'un
+                        // « unwrapped line » de Fabric. Si aucun \n ne suit, c'est une
+                        // ligne wrappée intra-paragraphe → on justifie.
+                        var _eow = (typeof obj.isEndOfWrapping === 'function') ? !!obj.isEndOfWrapping(_li) : false;
+                        if (_eow) {
+                            // Le \n qui clôt la ligne i est-il un SOFT break (Shift+Enter) ?
+                            // Si oui → la ligne est étirée (même comportement preview).
+                            try {
+                                var _softSet = obj.__spSoftBreakIndices;
+                                if (!(_softSet instanceof Set) && Array.isArray(obj._spSoftBreakIndices)) {
+                                    _softSet = new Set(obj._spSoftBreakIndices);
+                                    obj.__spSoftBreakIndices = _softSet;
+                                }
+                                if (_softSet instanceof Set && _softSet.size > 0 &&
+                                    typeof obj._spGetAbsLineEnd === 'function') {
+                                    var _absEnd = obj._spGetAbsLineEnd(_li);
+                                    if (_absEnd >= 0 && _softSet.has(_absEnd)) return false; // soft → justifier
+                                    // cas limite : espace(s) juste avant le \n doux
+                                    if (_absEnd >= 0) {
+                                        var _src = obj.text || '';
+                                        var _p = _absEnd;
+                                        while (_p < _src.length && (_src[_p] === ' ' || _src[_p] === '\t')) _p++;
+                                        if (_p < _src.length && _src[_p] === '\n' && _softSet.has(_p)) return false;
+                                    }
+                                }
+                            } catch (_) {}
+                            return true; // hard \n → fin de paragraphe → ne pas étirer
+                        }
+                    } catch (_) {}
+                    return false; // ligne wrappée → étirer
+                };
+
                 for (var li = 0; li < maxLines; li++) {
                     var tx = lines[li];
                     if (!tx) continue;
@@ -34558,8 +34748,8 @@ https://superprint.app
                     //   alignement correct quand les lettres sont espacées.
                     var _lineWSpaced = (sx !== 0) ? (_measW(tx) / Math.abs(sx)) : _measW(tx);
 
-                    // Dernière ligne du bloc (non étirée en mode justifié)
-                    var _isLastParaLine = (li >= maxLines - 1);
+                    // Dernière ligne du paragraphe (non étirée en mode justifié)
+                    var _isLastParaLine = _spIsParaLastLine(li);
 
                     var xStart;
                     var _effAlignRight = (align === 'right') || (_justify && _justifyLastRight && _isLastParaLine && align === 'justify-right');
@@ -37708,6 +37898,51 @@ https://superprint.app
                 } catch (_) {}
 
                 const align = obj.textAlign || 'left';
+                // 🛡️ v1.7.342 (AUDIT retours utilisateurs — justification en chemin
+                //   jsPDF traits de coupe / fond perdu) : le moteur hybride écrivait
+                //   chaque ligne en UN seul pdf.text() SANS justification → le texte
+                //   justifié ressortait « fer à gauche ». On reproduit ici la logique
+                //   du chemin pdf-lib natif : étirer les lignes PLEINES mot à mot,
+                //   sauf la dernière ligne de chaque PARAGRAPHE (coupure dure Enter),
+                //   exactement comme la preview (Fabric.enlargeSpaces patché).
+                const _spJIsJustify = (align === 'justify' || align === 'justify-left' || align === 'justify-right');
+                const _spJJustifyLastRight = (align === 'justify-right');
+                const _spJIsParaLastLine = function(_li) {
+                    if (_li >= maxLines - 1) return true;
+                    try {
+                        const _eow = (typeof obj.isEndOfWrapping === 'function') ? !!obj.isEndOfWrapping(_li) : false;
+                        if (_eow) {
+                            try {
+                                let _softSet = obj.__spSoftBreakIndices;
+                                if (!(_softSet instanceof Set) && Array.isArray(obj._spSoftBreakIndices)) {
+                                    _softSet = new Set(obj._spSoftBreakIndices);
+                                    obj.__spSoftBreakIndices = _softSet;
+                                }
+                                if (_softSet instanceof Set && _softSet.size > 0 && typeof obj._spGetAbsLineEnd === 'function') {
+                                    const _absEnd = obj._spGetAbsLineEnd(_li);
+                                    if (_absEnd >= 0 && _softSet.has(_absEnd)) return false;
+                                    if (_absEnd >= 0) {
+                                        const _src = obj.text || '';
+                                        let _p = _absEnd;
+                                        while (_p < _src.length && (_src[_p] === ' ' || _src[_p] === '\t')) _p++;
+                                        if (_p < _src.length && _src[_p] === '\n' && _softSet.has(_p)) return false;
+                                    }
+                                }
+                            } catch (_) {}
+                            return true;
+                        }
+                    } catch (_) {}
+                    return false;
+                };
+                // Mesure la largeur (unités em → mm écran) d'une chaîne avec la police
+                // opentype embarquée + charSpacing (même formule que lineW plus haut).
+                const _spJWordW = function(_s) {
+                    if (!_s) return 0;
+                    if (_useFont) {
+                        try { return _useFont.getAdvanceWidth(_s, fontSize, { letterSpacing: _effCharSpacing / 1000 }); } catch (_) {}
+                    }
+                    return _s.length * fontSize * 0.6;
+                };
 
                 // ✏️ v1.7.206 : Écrire directement dans jsPDF avec doc.text()
                 // 🛡️ v1.7.297 — FIX EXPORT : conserver l'OPACITÉ du bloc texte.
@@ -37751,9 +37986,18 @@ https://superprint.app
                     } else {
                         lineW = text.length * fontSize * 0.6;
                     }
+                    // 🛡️ v1.7.342 — JUSTIFICATION (chemin jsPDF) : décider si cette
+                    //   ligne PLEINE doit être étirée (elle a des espaces, n'est pas
+                    //   la dernière ligne d'un paragraphe, et n'est pas une fin de
+                    //   bloc). Si oui, on la décompose en mots et on distribue
+                    //   l'espace excédentaire entre les espaces (PAO standard).
+                    const _isJLast = _spJIsParaLastLine(i);
+                    const _justifyThisLine = _spJIsJustify && !_isJLast && text.indexOf(' ') !== -1 && lineW < boxWidth - 0.5;
                     let xStart;
                     if (align === 'center') xStart = (boxWidth - lineW) / 2;
                     else if (align === 'right') xStart = boxWidth - lineW;
+                    else if (_justifyThisLine) xStart = 0;
+                    else if (_spJIsJustify && _spJJustifyLastRight && _isJLast) xStart = boxWidth - lineW; // justify-right dernière ligne
                     else xStart = 0;
                     // 🎯 v1.7.341 (AUDIT) : baseline = même valeur que la preview
                     //   (pré-calculée via getHeightOfLine). Fallback ancien modèle.
@@ -37763,57 +38007,74 @@ https://superprint.app
                     } else {
                         baselineY_local = i * lineH + baselineYInLine;
                     }
-                    const [xMm, yMm] = localToMm(xStart, baselineY_local);
 
-                    // Rotation : jsPDF text() avec angle (sautée en collectOnly)
-                    if (!_collectOnly) {
-                        if (obj.angle) {
-                            pdf.text(text, xMm, yMm, { angle: obj.angle, align: 'left' });
-                        } else {
-                            pdf.text(text, xMm, yMm);
+                    // Préparer la liste des segments à dessiner : soit [la ligne
+                    //   entière] (normal), soit les [mots espacés] (justifié).
+                    let _segments = null;
+                    if (_justifyThisLine) {
+                        const _words = String(text).split(' ');
+                        const _nbSpaces = _words.length - 1;
+                        let _wordsW = 0;
+                        for (let _wi2 = 0; _wi2 < _words.length; _wi2++) if (_words[_wi2]) _wordsW += _spJWordW(_words[_wi2]);
+                        const _spaceW = (_spJWordW(' ') || (fontSize * 0.25));
+                        const _availForSpaces = Math.max(0, boxWidth - _wordsW);
+                        const _extraPerSpace = _nbSpaces > 0 ? (_availForSpaces / _nbSpaces - _spaceW) : 0;
+                        _segments = [];
+                        let _cur = 0; // position locale (unité em, même échelle que lineW/boxWidth)
+                        for (let _wi3 = 0; _wi3 < _words.length; _wi3++) {
+                            const _wd3 = _words[_wi3];
+                            if (_wi3 > 0) _cur += (_spaceW + _extraPerSpace);
+                            if (_wd3) {
+                                _segments.push({ t: _wd3, localX: _cur });
+                                _cur += _spJWordW(_wd3);
+                            }
                         }
+                    } else {
+                        _segments = [{ t: text, localX: xStart }];
                     }
 
-                    // 🛡️ v1.7.292 — FIX P1 : collecter le texte pour le post-process
-                    // pdf-lib (texte sélectionnable par-dessus l'image raster) et
-                    // le fix D3 (attribution de page exacte via _pageIndex).
-                    // 🛡️ v1.7.297 — FIX EXPORT IMPOSÉ : attribuer _sheetIndex depuis
-                    //   window._spImpositionMeta._currentSheetIndex (planche courante)
-                    //   pour que _spEmbedTextsWithPdfLib place chaque texte sur LA
-                    //   BONNE planche. Avant, tous les textes imposés tombaient sur
-                    //   la planche 0 → superposition de textes de pages différentes.
-                    // Une couverture raster opaque contient déjà ce texte : ne pas
-                    // le collecter pour pdf-lib, sinon il serait dessiné une seconde
-                    // fois avec des métriques de police différentes.
-                    if (_skipCollect) continue;
-                    try {
-                        if (!window._spPdfTexts) window._spPdfTexts = [];
-                        if (!window._spPdfFonts) window._spPdfFonts = {};
-                        var _impMetaIdx = null;
-                        try {
-                            if (window._spImpositionMeta && typeof window._spImpositionMeta._currentSheetIndex === 'number' && window._spImpositionMeta._currentSheetIndex >= 0) {
-                                _impMetaIdx = window._spImpositionMeta._currentSheetIndex;
-                            }
-                        } catch (_) {}
-                        window._spPdfTexts.push({
-                            x: xMm,
-                            y: yMm,
-                            fontSize: fontSize,
-                            text: text,
-                            color: fillC,
-                            opacity: (typeof obj.opacity === 'number' && obj.opacity >= 0 && obj.opacity <= 1) ? obj.opacity : 1,
-                            fontKey: _useFontKey,
-                            angle: obj.angle || 0,
-                            _pageIndex: (typeof pageIndex === 'number' && pageIndex >= 0) ? pageIndex : undefined,
-                            _isLeft: undefined,
-                            _sheetIndex: _impMetaIdx
-                        });
-                        if (_useFont && _useFont._spTtfBuffer) {
-                            if (!window._spPdfFonts[_useFontKey]) {
-                                window._spPdfFonts[_useFontKey] = { name: _effFontFamily || obj.fontFamily || '', buffer: _useFont._spTtfBuffer };
+                    // Dessiner chaque segment (mot ou ligne) à sa position locale.
+                    for (let _si = 0; _si < _segments.length; _si++) {
+                        const _seg = _segments[_si];
+                        const [xMm, yMm] = localToMm(_seg.localX, baselineY_local);
+                        // Rotation : jsPDF text() avec angle (sautée en collectOnly)
+                        if (!_collectOnly) {
+                            if (obj.angle) {
+                                pdf.text(_seg.t, xMm, yMm, { angle: obj.angle, align: 'left' });
+                            } else {
+                                pdf.text(_seg.t, xMm, yMm);
                             }
                         }
-                    } catch (_) {}
+                        if (_skipCollect) continue;
+                        try {
+                            if (!window._spPdfTexts) window._spPdfTexts = [];
+                            if (!window._spPdfFonts) window._spPdfFonts = {};
+                            var _impMetaIdx = null;
+                            try {
+                                if (window._spImpositionMeta && typeof window._spImpositionMeta._currentSheetIndex === 'number' && window._spImpositionMeta._currentSheetIndex >= 0) {
+                                    _impMetaIdx = window._spImpositionMeta._currentSheetIndex;
+                                }
+                            } catch (_) {}
+                            window._spPdfTexts.push({
+                                x: xMm,
+                                y: yMm,
+                                fontSize: fontSize,
+                                text: _seg.t,
+                                color: fillC,
+                                opacity: (typeof obj.opacity === 'number' && obj.opacity >= 0 && obj.opacity <= 1) ? obj.opacity : 1,
+                                fontKey: _useFontKey,
+                                angle: obj.angle || 0,
+                                _pageIndex: (typeof pageIndex === 'number' && pageIndex >= 0) ? pageIndex : undefined,
+                                _isLeft: undefined,
+                                _sheetIndex: _impMetaIdx
+                            });
+                            if (_useFont && _useFont._spTtfBuffer) {
+                                if (!window._spPdfFonts[_useFontKey]) {
+                                    window._spPdfFonts[_useFontKey] = { name: _effFontFamily || obj.fontFamily || '', buffer: _useFont._spTtfBuffer };
+                                }
+                            }
+                        } catch (_) {}
+                    }
                 }
                 // 🛡️ v1.7.297 — FIX EXPORT : reset du GState opacity après le
                 //   texte pour ne pas "fuir" sur les objets suivants.
@@ -54378,7 +54639,7 @@ canvas.requestRenderAll();
                 }
             } catch(_) {}
             if (spIsInternalPattern(e)) return { title: 'Déposez votre motif', sub: 'Ajouté comme remplissage' };
-            return { title: 'Déposez votre fichier', sub: 'Image · PDF · DOCX · 3D · IDML · .sp · …' };
+            return { title: 'Déposez votre fichier', sub: 'Image · PDF · DOCX · 3D · .sp · …' };
         }
         function spShowDragOverlay(e) {
             if (!spDragOverlay) return;
@@ -54511,7 +54772,43 @@ canvas.requestRenderAll();
                 }
                 const idmlFile = files.find(f => matchExt(f, ['.idml']));
                 if (idmlFile) {
-                    if (dispatchToInput(idmlFile, 'importIdmlInput', 'Document InDesign IDML')) return;
+                    // 🛡️ v1.7.342 — Un .idml BRUT déposé seul sur le plan de travail ne
+                    //   peut pas être importé correctement : le .idml référence des
+                    //   images (Links/) et polices (Fonts/) qui ne sont PAS dans le
+                    //   fichier. Avant, on ouvrait la modale et l'import « réussissait »
+                    //   mais sans rien afficher (préview vide). On guide l'utilisateur
+                    //   vers le package .zip complet via Importer → Import IDML.
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (window._spDragLoadingEnd) window._spDragLoadingEnd();
+                    const _idmlName = idmlFile.name || 'fichier';
+                    window.spToast(
+                        '⚠️ Le fichier « ' + _idmlName + ' » (.idml brut) ne peut pas être importé seul :\n' +
+                        'Il référence ses images (Links/) et polices (Fonts/) dans un dossier séparé.\n' +
+                        '👉 Utilisez le bouton Importer → « Import IDML » et déposez le package .zip complet\n' +
+                        '(fichier .idml + dossier Fonts/ + dossier Links/).',
+                        'error',
+                        8000
+                    );
+                    return;
+                }
+                // 🛡️ v1.7.342 — PACK IDML en .zip déposé sur le plan de travail :
+                //   un .zip peut être un package InDesign (fichier .idml + Fonts/ +
+                //   Links/). On l'envoie à l'importeur IDML qui cherche le .idml
+                //   dans l'archive (et prévient si aucun). Avant : « Format non
+                //   supporté : xxx.zip (application/zip) ».
+                const idmlZipFile = files.find(f => matchExt(f, ['.zip']));
+                if (idmlZipFile) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (window._spDragLoadingStart) window._spDragLoadingStart('Document InDesign IDML');
+                    if (typeof window._spOpenIdmlImport === 'function') {
+                        window._spOpenIdmlImport(idmlZipFile);
+                    } else {
+                        if (dispatchToInput(idmlZipFile, 'importIdmlInput', 'Document InDesign IDML')) return;
+                    }
+                    setTimeout(() => window._spDragLoadingEnd && window._spDragLoadingEnd(), 700);
+                    return;
                 }
                 const slaFile = files.find(f => matchExt(f, ['.sla']));
                 if (slaFile) {
@@ -54685,7 +54982,48 @@ canvas.requestRenderAll();
                 const odtFile = files.find(f => matchMime(f, ['opendocument.text']) || matchExt(f, ['.odt']));
                 if (odtFile) { e.preventDefault(); e.stopPropagation(); if (dispatchToInput(odtFile, 'importOdtInput', 'Document OpenDocument')) return; }
                 const idmlFile = files.find(f => matchExt(f, ['.idml']));
-                if (idmlFile) { e.preventDefault(); e.stopPropagation(); if (dispatchToInput(idmlFile, 'importIdmlInput', 'Document InDesign IDML')) return; }
+                if (idmlFile) {
+                    // 🛡️ v1.7.342 — Si le drop a lieu DANS la modale IDML (drop zone
+                    //   dédiée), on laisse la modale gérer (elle accepte un .idml seul).
+                    //   NB : ne PAS stopPropagation ici — le listener `drop` de la drop
+                    //   zone (phase bulle) doit recevoir l'événement.
+                    if (e.target && typeof e.target.closest === 'function' && e.target.closest('#idmlImportModal')) {
+                        return;
+                    } else {
+                        // .idml BRUT déposé sur le plan de travail → message d'aide.
+                        e.preventDefault(); e.stopPropagation();
+                        if (window._spDragLoadingEnd) window._spDragLoadingEnd();
+                        const _idmlName2 = idmlFile.name || 'fichier';
+                        window.spToast(
+                            '⚠️ Le fichier « ' + _idmlName2 + ' » (.idml brut) ne peut pas être importé seul :\n' +
+                            'Il référence ses images (Links/) et polices (Fonts/) dans un dossier séparé.\n' +
+                            '👉 Utilisez le bouton Importer → « Import IDML » et déposez le package .zip complet\n' +
+                            '(fichier .idml + dossier Fonts/ + dossier Links/).',
+                            'error',
+                            8000
+                        );
+                        return;
+                    }
+                }
+                // 🛡️ v1.7.342 — PACK IDML en .zip déposé sur le plan de travail :
+                //   route vers l'importeur IDML (cherche le .idml dans l'archive).
+                const idmlZipFile = files.find(f => matchExt(f, ['.zip']));
+                if (idmlZipFile) {
+                    // Laisse la modale IDML gérer un drop de .zip dans sa drop zone.
+                    if (e.target && typeof e.target.closest === 'function' && e.target.closest('#idmlImportModal')) {
+                        return; // la modale prend le relais (pas de stopPropagation)
+                    } else {
+                        e.preventDefault(); e.stopPropagation();
+                        if (window._spDragLoadingStart) window._spDragLoadingStart('Document InDesign IDML');
+                        if (typeof window._spOpenIdmlImport === 'function') {
+                            window._spOpenIdmlImport(idmlZipFile);
+                        } else {
+                            if (dispatchToInput(idmlZipFile, 'importIdmlInput', 'Document InDesign IDML')) return;
+                        }
+                        _hideSoon(700);
+                        return;
+                    }
+                }
                 const slaFile = files.find(f => matchExt(f, ['.sla']));
                 if (slaFile) { e.preventDefault(); e.stopPropagation(); if (dispatchToInput(slaFile, 'importScribusInput', 'Document Scribus')) return; }
                 const jsonFile = files.find(f => matchMime(f, ['json']) || matchExt(f, ['.json']));
