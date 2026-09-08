@@ -275,6 +275,49 @@ if ($provider === 'groq') {
     exit;
 }
 
+if ($provider === 'openrouter') {
+    $apiKey = isset($_SERVER['HTTP_X_API_KEY']) ? $_SERVER['HTTP_X_API_KEY'] : '';
+    if (!$apiKey && $json && isset($json['apiKey'])) { $apiKey = $json['apiKey']; }
+    if (!$apiKey) {
+        http_response_code(401);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'missing apiKey']);
+        exit;
+    }
+    $forwardBody = $body;
+    if ($json !== null) { unset($json['apiKey']); $forwardBody = json_encode($json); }
+    $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $apiKey,
+        'HTTP-Referer: https://superprint.cc',
+        'X-Title: SuperPrint SP213'
+    ]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $forwardBody);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HEADER, true);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 180);
+    $resp = curl_exec($ch);
+    if ($resp === false) {
+        $err = curl_error($ch);
+        curl_close($ch);
+        http_response_code(502);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'curl failed', 'detail' => $err]);
+        exit;
+    }
+    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    $respBody = substr($resp, $headerSize);
+    curl_close($ch);
+    http_response_code($status);
+    header('Content-Type: application/json');
+    echo $respBody;
+    exit;
+}
+
 http_response_code(400);
 header('Content-Type: application/json');
 echo json_encode(['error' => 'unsupported provider']);

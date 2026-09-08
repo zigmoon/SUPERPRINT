@@ -42470,7 +42470,14 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         delete directBody.apiKey;
         // Injecter la clé dans l'en-tête Authorization (comme le studio local)
         var h = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey };
-        if (provider === 'openrouter') { h['HTTP-Referer'] = 'http://localhost:5173'; h['X-Title'] = 'SuperPrint SP213'; }
+        if (provider === 'openrouter') {
+            // OpenRouter recommande d'envoyer l'origine réelle (utilisée pour l'affichage
+            // des stats / classements des modèles). On utilise l'origine courante de la page
+            // (superprint.cc en prod, localhost:8899 en dev local), jamais codée en dur.
+            var _origin = (typeof location !== 'undefined' && location.origin) ? location.origin : 'https://superprint.cc';
+            h['HTTP-Referer'] = _origin;
+            h['X-Title'] = 'SuperPrint';
+        }
         return fetch(ep, { method: 'POST', headers: h, body: JSON.stringify(directBody) })
             .then(function(r) {
                 return r.text().then(function(raw) {
@@ -42500,7 +42507,25 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             }
             var data = null;
             try { data = JSON.parse(raw); } catch (_) { data = null; }
-            if (data && data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+            // 🛡️ v1.7.338 (FIX) : le proxy PHP ne connaît pas forcément le provider
+            //   demandé (ex. openrouter absent d'une vieille copie de ai-proxy.php).
+            //   Dans ce cas le proxy renvoie `{"error":"unsupported provider"}` — une
+            //   erreur de PROXY, pas une erreur du fournisseur distant. On bascule alors
+            //   sur l'API directe (CORS OK pour openrouter/groq/deepseek/openai), au lieu
+            //   d'afficher « unsupported provider » à l'utilisateur.
+            if (data && data.error) {
+                var _proxyErr = String((data.error && data.error.message) || data.error || '');
+                // Erreurs PROXY (le proxy ne sait pas router / est cassé) → API directe.
+                // On exclut volontairement les erreurs authentiques du fournisseur distant
+                // (invalid api key 401, rate limit 429, bad request 400…) que le proxy
+                // relaie telles quelles — celles-ci doivent remonter à l'utilisateur.
+                var _isProxyLevelError = /unsupported provider|missing provider|proxy indisponible|non-json|curl failed|payload too large/i.test(_proxyErr)
+                    || String(res.status) === '501' || String(res.status) === '405' || String(res.status) === '502' && /curl failed/i.test(_proxyErr);
+                if (_isProxyLevelError && typeof _aiTryDirect === 'function') {
+                    return _aiTryDirect();
+                }
+                throw new Error(data.error.message || JSON.stringify(data.error));
+            }
             if (data && data.choices && data.choices[0] && data.choices[0].message) return data.choices[0].message.content || '';
             throw new Error('Réponse ' + provider + ' vide');
         });
