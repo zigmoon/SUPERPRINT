@@ -44,7 +44,7 @@
     undoStack: [], redoStack: [],
     theme: 'light',
     // i18n minimal
-    lang: 'fr',
+    lang: 'en',              // ✅ Anglais par défaut (clé persistée 'st_lang_v2')
     // 🎯 Animation « wahou » à l'ouverture : quand une police vient d'être
     //   chargée, les cellules de la grille « éclatent » depuis le centre puis
     //   se rangent (démo type « squelette → grille »).
@@ -53,11 +53,12 @@
 
   const $ = (id) => document.getElementById(id);
 
-  /* ════════════════════════ I18N : fr / en / ja ════════════════════════
+  /* ════════════════════════ I18N : en / fr / ja ════════════════════════
      Dictionnaire des textes visibles de l'UI. Le HTML porte déjà les
      attributs data-i18n (textContent) et data-i18n-ph (placeholder).
-     applyLang() applique la langue courante (ST.lang, persisté en
-     localStorage sous la clé 'st_lang') puis re-rend la grille / l'éditeur.
+     Langue par défaut : ANGLAIS (choix studio). applyLang() applique la
+     langue courante (ST.lang, persisté en localStorage sous la clé
+     versionnée 'st_lang_v2') puis re-rend la grille / l'éditeur.
      t(key) sert aux chaînes générées en dur dans le JS (toasts, étiquettes
      de contour, messages) ; tf(key, vars) permet la substitution {x}. */
   const I18N = {
@@ -65,8 +66,8 @@
       // ── Topbar ──
       btnLoadFont: 'Charger une police',
       btnChangeFont: 'Changer de police',
-      btnSaveSf: 'Enregistrer .sf',
-      btnExportFont: 'Exporter la typo',
+      btnSaveSf: 'Enregistrer',
+      btnExportFont: 'Exporter',
       chipPolice: 'Police',
       chipGlyphs: 'Glyphes',
       chipModified: 'Modifié',
@@ -143,6 +144,13 @@
       toastResync: 'Police re-synchronisée depuis la source.',
       errLoad: 'Impossible de charger « {name} » : {msg}',
       toastRestored: 'Travail restauré depuis l\'autosave.',
+      // ── Préférences (⚙) ──
+      prefsTitle: 'Préférences',
+      prefsLangLabel: 'Langue de l\'interface',
+      prefsThemeLabel: 'Thème',
+      themeLight: 'Clair',
+      themeDark: 'Sombre',
+      prefsEnDefault: 'Défaut',
       // ── Aide / raccourcis ──
       docTitle: 'SuperTyPo — Décomposeur & éditeur de typographie',
       helpTitle: 'SuperTyPo — Raccourcis',
@@ -159,16 +167,16 @@
       hZoom100: 'Zoom 100%',
       hZoom: 'Zoom',
       hFind: 'Chercher un glyphe',
-      hExp: 'Exporter la typo',
-      hSave: 'Enregistrer .sf',
+      hExp: 'Exporter',
+      hSave: 'Enregistrer',
       hGridZoom: 'Zoom de la grille'
     },
 
     en: {
       btnLoadFont: 'Load a font',
       btnChangeFont: 'Change font',
-      btnSaveSf: 'Save .sf',
-      btnExportFont: 'Export typeface',
+      btnSaveSf: 'Save',
+      btnExportFont: 'Export',
       chipPolice: 'Font',
       chipGlyphs: 'Glyphs',
       chipModified: 'Modified',
@@ -238,6 +246,14 @@
       toastResync: 'Font re-synced from source.',
       errLoad: 'Unable to load "{name}": {msg}',
       toastRestored: 'Work restored from autosave.',
+      // ── Preferences (⚙) ──
+      prefsTitle: 'Preferences',
+      prefsLangLabel: 'Interface language',
+      prefsThemeLabel: 'Theme',
+      themeLight: 'Light',
+      themeDark: 'Dark',
+      prefsEnDefault: 'Default',
+      // ── Help / shortcuts ──
       docTitle: 'SuperTyPo — Type decomposition & editor',
       helpTitle: 'SuperTyPo — Shortcuts',
       helpEdit: 'Editor',
@@ -253,16 +269,16 @@
       hZoom100: 'Zoom 100%',
       hZoom: 'Zoom',
       hFind: 'Find a glyph',
-      hExp: 'Export typeface',
-      hSave: 'Save .sf',
+      hExp: 'Export',
+      hSave: 'Save',
       hGridZoom: 'Grid zoom'
     },
 
     ja: {
       btnLoadFont: 'フォントを読み込む',
       btnChangeFont: 'フォントを変更',
-      btnSaveSf: '.sf を保存',
-      btnExportFont: 'フォントを書き出し',
+      btnSaveSf: '保存',
+      btnExportFont: '書き出し',
       chipPolice: 'フォント',
       chipGlyphs: 'グリフ',
       chipModified: '変更あり',
@@ -332,6 +348,14 @@
       toastResync: 'フォントを元データと再同期しました。',
       errLoad: '「{name}」を読み込めません：{msg}',
       toastRestored: 'オートセーブから復元しました。',
+      // ── 設定 (⚙) ──
+      prefsTitle: '設定',
+      prefsLangLabel: '表示言語',
+      prefsThemeLabel: 'テーマ',
+      themeLight: 'ライト',
+      themeDark: 'ダーク',
+      prefsEnDefault: 'デフォルト',
+      // ── ヘルプ・ショートカット ──
       docTitle: 'SuperTyPo — フォント分解・エディター',
       helpTitle: 'SuperTyPo — ショートカット',
       helpEdit: 'エディター',
@@ -347,8 +371,8 @@
       hZoom100: 'ズーム100%',
       hZoom: 'ズーム',
       hFind: 'グリフを検索',
-      hExp: 'フォントを書き出し',
-      hSave: '.sf を保存',
+      hExp: '書き出し',
+      hSave: '保存',
       hGridZoom: 'グリッドのズーム'
     }
   };
@@ -371,9 +395,13 @@
 
   // Applique la langue courante à toute l'UI puis re-rend.
   function applyLang() {
-    const lang = (ST.lang in I18N) ? ST.lang : 'fr';
-    const sel = $('langSel');
-    if (sel) sel.value = lang;
+    const lang = (ST.lang in I18N) ? ST.lang : 'en';
+    // état des boutons langue du panneau ⚙ Préférences
+    document.querySelectorAll('#prefsOverlay .pref-opt[data-lang]').forEach((b) => {
+      b.classList.toggle('active', b.getAttribute('data-lang') === lang);
+    });
+    // état des boutons thème du panneau ⚙ Préférences
+    syncPrefsTheme();
     // textes fixes [data-i18n] → textContent
     document.querySelectorAll('[data-i18n]').forEach((e) => {
       const k = e.getAttribute('data-i18n');
@@ -657,13 +685,43 @@
     ctx.clearRect(0, 0, w, h);
 
     const isOutline = opts && opts.outline;
-    // Échelle pour tenir dans w×h en préservant les proportions (advance).
-    const pad = 4;
+    const isThumb = !(opts && opts.full);   // vignettes de grille = échelle optique
     const upem = ST.upem;
     const bounds = glyphBounds(glyph) || { xMin: 0, xMax: (glyph.advanceWidth || upem), yMin: ST.descender, yMax: ST.ascender };
     let bw = Math.max(1, bounds.xMax - bounds.xMin);
     let bh = Math.max(1, bounds.yMax - bounds.yMin);
-    const scale = Math.min((w - pad * 2) / bw, (h - pad * 2) / bh, 10);
+
+    // 🎯 Vignettes : plus de blanc autour + proportions optiques fidèles.
+    //   Ancien code : échelle = fit sur la bbox DU GLYPHE → un « e » ou un « a »
+    //   (petits, hauteur x-height) était agrandi pour remplir la carte au même
+    //   format qu'un A majuscule → lettres minuscules « pas hautes » / énormes.
+    //   On encadre chaque glyphe dans une RÉFÉRENCE typographique commune :
+    //     • verticale  = cap-height (hauteur des capitales) + un peu de descender
+    //     • horizontale = l'avance du glyphe (bornée)
+    //   puis scale = min(fit-bbox, fit-référence) avec un PADDING généreux.
+    //   Résultat : les minuscules ressortent à leur vraie taille optique (plus
+    //   petites que les capitales), les capitales/lignes hautes gardent une marge.
+    let scale;
+    if (isThumb) {
+      const pad = Math.max(10, Math.round(Math.min(w, h) * 0.16));   // ~16 % de marge
+      const capH = (typeof ST.capHeight === 'number' && ST.capHeight > 0) ? ST.capHeight : (upem * 0.7);
+      const refH = capH + Math.max(0, -ST.descender) * 0.55;         // cap + un peu de descendant
+      const refW = Math.max(bw, Math.min(glyph.advanceWidth || upem * 0.6, upem * 0.9));
+      const availW = w - pad * 2, availH = h - pad * 2;
+      const fitRef = Math.min((availW > 0 ? availW / refW : 1), (availH > 0 ? availH / refH : 1), 10);
+      // Ne jamais dépasser le fit de la bbox (évite tout débordement)…
+      const fitBBox = Math.min((availW > 0 ? availW / bw : 1), (availH > 0 ? availH / bh : 1), 10);
+      // …mais on prend le plus PETIT des deux : les minuscules ne « gonflent » pas,
+      // les lettres larges/hautes ne débordent pas.
+      scale = Math.min(fitRef, fitBBox);
+      // Garder lisible les glyphes minuscules/punctuation : plancher raisonnable.
+      const floorS = Math.min(0.32, (availH > 0 ? availH / (upem) : 0.3));
+      if (scale < floorS) scale = Math.min(fitBBox, floorS);
+    } else {
+      // Vue plein cadre (éditeur / autre) : comportement historique, padding léger.
+      const pad = 6;
+      scale = Math.min((w - pad * 2) / bw, (h - pad * 2) / bh, 10);
+    }
     const cx = (bounds.xMin + bounds.xMax) / 2;
     const cy = (bounds.yMin + bounds.yMax) / 2;
     // centre sur canvas, Y↑ → écran
@@ -2159,6 +2217,7 @@
       }
     }
     if (editing && (e.key === 'Escape')) { closeEditor(); return; }
+    if (!editing && e.key === 'Escape' && $('prefsOverlay').style.display === 'flex') { closePrefs(); return; }
     if (!editing && e.key === 'Escape' && $('helpOverlay').style.display === 'block') { $('helpOverlay').style.display = 'none'; return; }
     if (editing && tag !== 'input' && tag !== 'textarea') {
       const k = e.key.toLowerCase();
@@ -2236,12 +2295,18 @@
     $('btnTheme').addEventListener('click', toggleTheme);
     $('btnHelp').addEventListener('click', () => $('helpOverlay').style.display = 'flex');
     $('btnCloseHelp').addEventListener('click', () => $('helpOverlay').style.display = 'none');
-    // langue
-    $('langSel').addEventListener('change', (e) => {
-      ST.lang = e.target.value;
-      try { localStorage.setItem('st_lang', ST.lang); } catch (err) {}
-      applyLang();
+    // ⚙ préférences
+    $('btnPrefs').addEventListener('click', () => {
+      if ($('prefsOverlay').style.display === 'flex') closePrefs();
+      else openPrefs();
     });
+    $('btnClosePrefs').addEventListener('click', closePrefs);
+    $('prefsOverlay').addEventListener('click', (e) => { if (e.target === $('prefsOverlay')) closePrefs(); });
+    document.querySelectorAll('#prefsOverlay .pref-opt[data-lang]').forEach(b => {
+      b.addEventListener('click', () => { setLang(b.getAttribute('data-lang')); closePrefs(); });
+    });
+    $('prefThemeLight').addEventListener('click', () => { if (ST.theme !== 'light') toggleTheme(); });
+    $('prefThemeDark').addEventListener('click', () => { if (ST.theme !== 'dark') toggleTheme(); });
     // grille
     $('btnGridView').addEventListener('click', () => { ST.gridMode = 'render'; refreshViewButtons(); buildGlyphGrid(); });
     $('btnOutlineView').addEventListener('click', () => { ST.gridMode = 'outline'; refreshViewButtons(); buildGlyphGrid(); });
@@ -2358,8 +2423,40 @@
 
   function toggleTheme() {
     ST.theme = ST.theme === 'light' ? 'dark' : 'light';
+    try { localStorage.setItem('st_theme', ST.theme); } catch (e) {}
     document.body.classList.toggle('theme-dark', ST.theme === 'dark');
+    syncPrefsTheme();
     if (ST.editing) editorRender(); else buildGlyphGrid();
+  }
+
+  // Synchronise l'état actif des boutons thème du panneau ⚙.
+  function syncPrefsTheme() {
+    const dark = ST.theme === 'dark';
+    const bL = $('prefThemeLight'), bD = $('prefThemeDark');
+    if (bL) bL.classList.toggle('active', !dark);
+    if (bD) bD.classList.toggle('active', dark);
+  }
+
+  // Ouvre / ferme le panneau ⚙ Préférences (même icône que le studio).
+  function openPrefs() {
+    $('prefsOverlay').style.display = 'flex';
+    $('btnPrefs').classList.add('active');
+    syncPrefsTheme();
+    document.querySelectorAll('#prefsOverlay .pref-opt[data-lang]').forEach((b) => {
+      b.classList.toggle('active', b.getAttribute('data-lang') === ST.lang);
+    });
+  }
+  function closePrefs() {
+    $('prefsOverlay').style.display = 'none';
+    $('btnPrefs').classList.remove('active');
+  }
+
+  // Change la langue + la persiste + ré-applique l'UI.
+  function setLang(lg) {
+    if (!(lg in I18N)) return;
+    ST.lang = lg;
+    try { localStorage.setItem('st_lang_v2', lg); } catch (e) {}
+    applyLang();
   }
 
   /* ── Init ── */
@@ -2367,9 +2464,14 @@
     if (!window.opentype) { document.getElementById('dropArea').innerHTML = '<div class="drop-card"><p>Erreur : opentype.js non chargé.</p></div>'; return; }
     ST.opentype = window.opentype;
     // thème persisté
-    try { const th = localStorage.getItem('st_theme'); if (th) { ST.theme = th; document.body.classList.toggle('theme-dark', th === 'dark'); } } catch (e) {}
-    // langue persistée
-    try { const lg = localStorage.getItem('st_lang'); if (lg && lg in I18N) ST.lang = lg; } catch (e) {}
+    try { const th = localStorage.getItem('st_theme'); if (th && (th === 'light' || th === 'dark')) { ST.theme = th; document.body.classList.toggle('theme-dark', th === 'dark'); } } catch (e) {}
+    // langue persistée — clé versionnée 'st_lang_v2' : premier lancement = ANGLAIS.
+    //   (l'ancienne clé 'st_lang' est ignorée pour forcer l'anglais par défaut,
+    //    comme le studio utilise sa propre clé 'sp213_studio_lang_v2'.)
+    let saved = null;
+    try { saved = localStorage.getItem('st_lang_v2'); } catch (e) {}
+    ST.lang = (saved && saved in I18N) ? saved : 'en';
+    try { localStorage.setItem('st_lang_v2', ST.lang); } catch (e) {}
     bindUI();
     bindSidePanel();
     bindMetricsPanel();

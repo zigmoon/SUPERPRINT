@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" translate="no">
+<html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,7 @@
 <title>SuperTyPo — Décomposeur &amp; éditeur de typographie</title>
 <meta name="description" content="SuperTyPo : déposez une police, décomposez chaque caractère en contours vectoriels, retravaillez la lettre à la plume, puis réexportez la typo modifiée. Format natif .sf (SuperFont).">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231a1a1a'/%3E%3Ctext x='32' y='44' font-family='Georgia' font-size='36' font-weight='700' fill='%23fff' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="CSS/supertypo.css?v=4">
+<link rel="stylesheet" href="CSS/supertypo.css?v=5">
 </head>
 <body>
 <!-- ═══════════════ TOPBAR (style SuperPrint) ═══════════════ -->
@@ -41,11 +41,11 @@
     </button>
     <button class="tb-btn" id="btnSaveSf" title="Enregistrer le projet SuperFont (.sf)" disabled>
       <svg class="ic" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      <span data-i18n="btnSaveSf">Enregistrer .sf</span>
+      <span data-i18n="btnSaveSf">Enregistrer</span>
     </button>
     <button class="tb-btn primary" id="btnExportFont" title="Réexporter la typo modifiée (.ttf / .otf)" disabled>
       <svg class="ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <span data-i18n="btnExportFont">Exporter la typo</span>
+      <span data-i18n="btnExportFont">Exporter</span>
     </button>
   </div>
 
@@ -54,15 +54,12 @@
     <button class="zoom-pct" id="zoomPct" title="Zoom actuel — cliquer pour 100%">100%</button>
     <button class="icon-btn" id="btnZoomIn" title="Zoom avant">+</button>
     <div class="sep"></div>
-    <!-- Sélecteur de langue (fr / en / ja) — persisté dans localStorage 'st_lang' -->
-    <select id="langSel" class="lang-sel" title="Langue / Language / 言語">
-      <option value="fr">FR</option>
-      <option value="en">EN</option>
-      <option value="ja">日本語</option>
-    </select>
-    <div class="sep"></div>
     <button class="icon-btn" id="btnHelp" title="Aide / raccourcis">?</button>
     <button class="icon-btn" id="btnTheme" title="Basculer thème clair/sombre">◐</button>
+    <!-- ⚙ Préférences — même icône que le studio SuperPrint (en haut à droite) -->
+    <button class="icon-btn" id="btnPrefs" title="Préférences" aria-label="Préférences">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -283,33 +280,75 @@
   </div>
 </div>
 
+<!-- ═══════════════ PRÉFÉRENCES (⚙, comme le studio SuperPrint) ═══════════════ -->
+<div id="prefsOverlay" style="display:none">
+  <div class="prefs-card">
+    <div class="prefs-head">
+      <span data-i18n="prefsTitle">Préférences</span>
+      <button class="icon-btn" id="btnClosePrefs">✕</button>
+    </div>
+    <div class="prefs-body">
+      <!-- Langue : Anglais par défaut / Français / 日本語 -->
+      <div class="pref-section">
+        <div class="pref-label" data-i18n="prefsLangLabel">Langue de l'interface</div>
+        <div class="pref-row">
+          <button class="pref-opt" data-lang="en" title="English">
+            <span class="pref-name">English</span>
+            <span class="pref-sub" data-i18n="prefsEnDefault">Default</span>
+          </button>
+          <button class="pref-opt" data-lang="fr" title="Français">
+            <span class="pref-name">Français</span>
+            <span class="pref-sub">Français</span>
+          </button>
+          <button class="pref-opt" data-lang="ja" title="日本語">
+            <span class="pref-name">日本語</span>
+            <span class="pref-sub">日本語</span>
+          </button>
+        </div>
+      </div>
+      <!-- Thème -->
+      <div class="pref-section">
+        <div class="pref-label" data-i18n="prefsThemeLabel">Thème</div>
+        <div class="pref-row">
+          <button class="pref-opt" id="prefThemeLight" data-theme="light">
+            <span class="pref-name" data-i18n="themeLight">Clair</span>
+          </button>
+          <button class="pref-opt" id="prefThemeDark" data-theme="dark">
+            <span class="pref-name" data-i18n="themeDark">Sombre</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ AIDE / RACCOURCIS ═══════════════ -->
 <div id="helpOverlay" style="display:none">
   <div class="help-card">
     <div class="help-head">
-      <span>SuperTyPo — Raccourcis</span>
+      <span data-i18n="helpTitle">SuperTyPo — Raccourcis</span>
       <button class="icon-btn" id="btnCloseHelp">✕</button>
     </div>
     <div class="help-body">
       <div class="help-col">
-        <h3>Éditeur</h3>
-        <div class="k"><kbd>V</kbd><span>Sélection / transformation</span></div>
-        <div class="k"><kbd>P</kbd><span>Plume — poser des points</span></div>
-        <div class="k"><kbd>N</kbd><span>Nœud / courbure</span></div>
-        <div class="k"><kbd>R</kbd><span>Formes (rectangle / ellipse)</span></div>
-        <div class="k"><kbd>A</kbd><span>Ajouter un point sur une courbe</span></div>
-        <div class="k"><kbd>Suppr</kbd><span>Supprimer la sélection</span></div>
-        <div class="k"><kbd>Échap</kbd><span>Fermer l'éditeur</span></div>
-        <div class="k"><kbd>Ctrl+Z / Ctrl+Y</kbd><span>Annuler / Rétablir</span></div>
-        <div class="k"><kbd>Ctrl+0</kbd><span>Zoom 100%</span></div>
-        <div class="k"><kbd>Ctrl+molette</kbd><span>Zoom</span></div>
+        <h3 data-i18n="helpEdit">Éditeur</h3>
+        <div class="k"><kbd>V</kbd><span data-i18n="hSel">Sélection / transformation</span></div>
+        <div class="k"><kbd>P</kbd><span data-i18n="hPen">Plume — poser des points</span></div>
+        <div class="k"><kbd>N</kbd><span data-i18n="hNode">Nœud / courbure</span></div>
+        <div class="k"><kbd>R</kbd><span data-i18n="hShape">Formes (rectangle / ellipse)</span></div>
+        <div class="k"><kbd>A</kbd><span data-i18n="hAddP">Ajouter un point sur une courbe</span></div>
+        <div class="k"><kbd>Suppr</kbd><span data-i18n="hDel">Supprimer la sélection</span></div>
+        <div class="k"><kbd>Échap</kbd><span data-i18n="hEsc">Fermer l'éditeur</span></div>
+        <div class="k"><kbd>Ctrl+Z / Ctrl+Y</kbd><span data-i18n="hUndo">Annuler / Rétablir</span></div>
+        <div class="k"><kbd>Ctrl+0</kbd><span data-i18n="hZoom100">Zoom 100%</span></div>
+        <div class="k"><kbd>Ctrl+molette</kbd><span data-i18n="hZoom">Zoom</span></div>
       </div>
       <div class="help-col">
-        <h3>Grille / globale</h3>
-        <div class="k"><kbd>Ctrl+F</kbd><span>Chercher un glyphe</span></div>
-        <div class="k"><kbd>Ctrl+E</kbd><span>Exporter la typo</span></div>
-        <div class="k"><kbd>Ctrl+S</kbd><span>Enregistrer .sf</span></div>
-        <div class="k"><kbd>+ / −</kbd><span>Zoom de la grille</span></div>
+        <h3 data-i18n="helpGrid">Grille / globale</h3>
+        <div class="k"><kbd>Ctrl+F</kbd><span data-i18n="hFind">Chercher un glyphe</span></div>
+        <div class="k"><kbd>Ctrl+E</kbd><span data-i18n="hExp">Exporter</span></div>
+        <div class="k"><kbd>Ctrl+S</kbd><span data-i18n="hSave">Enregistrer</span></div>
+        <div class="k"><kbd>+ / −</kbd><span data-i18n="hGridZoom">Zoom de la grille</span></div>
       </div>
     </div>
   </div>
@@ -317,6 +356,6 @@
 
 <!-- Chargement -->
 <script src="JS/opentype.min.js"></script>
-<script src="JS/supertypo.js?v=10"></script>
+<script src="JS/supertypo.js?v=12"></script>
 </body>
 </html>
