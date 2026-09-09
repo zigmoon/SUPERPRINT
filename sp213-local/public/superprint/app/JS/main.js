@@ -29082,10 +29082,23 @@ if (window._spGpuEnabled) {
                     //   leur applique la matrice du groupe (itemMtx) pour le spread,
                     //   et on les convertit en positions page via pgOriginX/Y.
                     var cObj = await convertToFabricObj(children[gi], cSpread, pgOriginX, pgOriginY, storiesMap, sMap, cMap, imgMap, itemMtx);
-                    if (cObj) grpObjs.push(cObj);
+                    if (!cObj) continue;
+                    // 🛡️ v1.7.343 (FIX profondeur/position des groupes) : dans Fabric,
+                    //   les enfants d'un groupe sont exprimés RELATIVEMENT au groupe
+                    //   (left/top relatifs). convertToFabricObj retourne des positions
+                    //   ABSOLUES (repère page) → il faut soustraire la position du
+                    //   groupe pour éviter un double décalage.
+                    cObj.left = (cObj.left || 0) - x;
+                    cObj.top = (cObj.top || 0) - y;
+                    grpObjs.push(cObj);
                 }
-                if (grpObjs.length === 1) return grpObjs[0];
-                if (grpObjs.length > 1) return { type:'group', left:x, top:y, objects: grpObjs };
+                if (grpObjs.length === 1) {
+                    // Un seul enfant : on le remonte (position absolue restaurée).
+                    grpObjs[0].left = (grpObjs[0].left || 0) + x;
+                    grpObjs[0].top = (grpObjs[0].top || 0) + y;
+                    return grpObjs[0];
+                }
+                if (grpObjs.length > 1) return { type:'group', left:x, top:y, originX:'left', originY:'top', objects: grpObjs };
             }
 
             return null;
