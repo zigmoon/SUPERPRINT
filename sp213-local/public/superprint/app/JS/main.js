@@ -34076,9 +34076,17 @@ https://superprint.app
                 // _spResolveFontCache() a vidé fabric.charWidthsCache : on re-mesure
                 //   chaque textbox/text avec la bonne police (en restaurant le cadre
                 //   fixe, sinon Fabric gonfle la hauteur et le clip déborde).
+                // 🛡️ v1.7.343 (césure auto par défaut) : si « Césure automatique » est
+                //   cochée dans la pop-in d'export, forcer la césure sur chaque bloc
+                //   AVANT le re-layout, pour que le wrapping recomposé inclue les
+                //   coupures de mots (même comportement que les chemins raster/jsPDF).
                 objects.forEach(function(_reObj) {
                     if (!_reObj) return;
                     if (_reObj.type === 'textbox' || _reObj.type === 'text') {
+                        if (options && options.forceHyphenation && _reObj.type === 'textbox') {
+                            _reObj.enableHyphenation = true;
+                            _reObj.hyphenLanguage = _reObj.hyphenLanguage || (typeof currentHyphenLanguage !== 'undefined' ? currentHyphenLanguage : 'fr');
+                        }
                         const __spFrmH = (_reObj._fixedHeight != null) ? _reObj._fixedHeight : _reObj.height;
                         const __spFrmW = (_reObj._fixedWidth  != null) ? _reObj._fixedWidth  : _reObj.width;
                         try { if (typeof _reObj._clearCache === 'function') _reObj._clearCache(); } catch (_) {}
