@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -19,6 +19,11 @@
     --kbd-bg: #f5f5f5; --kbd-border: #d0d0d0; --kbd-shadow: #bbb;
     --info-bg: #e7f1ff; --info-border: #a8c8f0;
     --search-focus: rgba(9,105,218,0.15);
+    /* Topbar claire alignée sur la toolbar SuperPrint */
+    --tb-bg: #ffffff; --tb-border: #e0e0e0; --tb-text: #1a1a1a; --tb-text2: #666666;
+    --tb-chip-bg: #f5f5f5; --tb-chip-border: #d9d9d9;
+    --tb-btn-hover: #f2f2f2; --tb-btn-active-bg: #0c0c0f; --tb-btn-active-text: #ffffff;
+    --tb-toggle-border: #d9d9d9;
   }
 
   /* ═══ DARK THEME ═══ */
@@ -31,6 +36,11 @@
     --kbd-bg: #2a2a2a; --kbd-border: #444; --kbd-shadow: #222;
     --info-bg: #0d1f3c; --info-border: #1f4175;
     --search-focus: rgba(88,166,255,0.15);
+    /* Topbar (dark) */
+    --tb-bg: #0c0c0f; --tb-border: #2a2a2a; --tb-text: #ffffff; --tb-text2: rgba(255,255,255,0.6);
+    --tb-chip-bg: rgba(255,255,255,0.08); --tb-chip-border: rgba(255,255,255,0.2);
+    --tb-btn-hover: rgba(255,255,255,0.08); --tb-btn-active-bg: #ffffff; --tb-btn-active-text: #0c0c0f;
+    --tb-toggle-border: rgba(255,255,255,0.25);
   }
 
   /* ═══ TAG OVERRIDES (dark) ═══ */
@@ -50,47 +60,90 @@
   a { color: var(--accent-link); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
-  /* ═══ TOPBAR ═══ */
+  /* ═══ TOPBAR (clair, aligné sur la toolbar SuperPrint) ═══ */
   .topbar {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    background: var(--topbar-bg); border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; padding: 0 24px; height: 52px; gap: 16px;
+    background: var(--tb-bg); border-bottom: 1px solid var(--tb-border);
+    display: flex; align-items: center; padding: 0 20px; height: 52px; gap: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
-  .topbar .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; color: #ffffff; }
-  .topbar .logo span { color: #ffffff; opacity: 0.7; }
-  .topbar .doc-label { font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 1px; }
-  .topbar .version { font-size: 10px; color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 12px; letter-spacing: 1px; }
+  .topbar .logo { font-size: 17px; font-weight: 900; letter-spacing: 2.5px; color: var(--tb-text); white-space: nowrap; }
+  .topbar .logo span { color: var(--tb-text); opacity: 0.55; }
+  .topbar .doc-label { font-size: 11px; color: var(--tb-text2); letter-spacing: 1px; }
+  .topbar .version {
+    font-size: 10px; color: var(--tb-text2); background: var(--tb-chip-bg);
+    border: 1px solid var(--tb-chip-border); padding: 2px 9px; border-radius: 12px; letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
 
   /* Toggle buttons group */
   .topbar-controls { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 
   .theme-toggle {
-    display: flex; gap: 0; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; overflow: hidden;
+    display: flex; gap: 0; border: 1px solid var(--tb-toggle-border); border-radius: 6px; overflow: hidden;
+    background: transparent;
   }
   .theme-toggle button {
-    background: transparent; color: rgba(255,255,255,0.5); border: none; padding: 6px 10px;
+    background: transparent; color: var(--tb-text2); border: none; padding: 6px 10px;
     cursor: pointer; font-size: 14px; transition: all .2s; line-height: 1;
   }
-  .theme-toggle button.active { background: rgba(255,255,255,0.15); color: #ffffff; }
-  .theme-toggle button:hover:not(.active) { background: rgba(255,255,255,0.08); }
+  .theme-toggle button.active { background: var(--tb-btn-active-bg); color: var(--tb-btn-active-text); }
+  .theme-toggle button:hover:not(.active) { background: var(--tb-btn-hover); }
 
   .lang-toggle {
-    display: flex; gap: 0; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; overflow: hidden;
+    display: flex; gap: 0; border: 1px solid var(--tb-toggle-border); border-radius: 6px; overflow: hidden;
+    background: transparent;
   }
   .lang-toggle button {
-    background: transparent; color: rgba(255,255,255,0.5); border: none; padding: 6px 14px;
+    background: transparent; color: var(--tb-text2); border: none; padding: 6px 14px;
     cursor: pointer; font-size: 12px; font-weight: 600; transition: all .2s;
     font-family: 'IBM Plex Mono', monospace;
   }
-  .lang-toggle button.active { background: rgba(255,255,255,0.15); color: #ffffff; }
-  .lang-toggle button:hover:not(.active) { background: rgba(255,255,255,0.08); }
+  .lang-toggle button.active { background: var(--tb-btn-active-bg); color: var(--tb-btn-active-text); }
+  .lang-toggle button:hover:not(.active) { background: var(--tb-btn-hover); }
+
+  /* Tab-toggle (Manuel / Documentation technique) — style toolbar */
+  .tab-toggle {
+    display: flex; gap: 2px; margin-left: 6px;
+    background: var(--bg3); border: 1px solid var(--tb-border); border-radius: 7px; padding: 3px;
+  }
+  .tab-toggle button {
+    background: transparent; color: var(--tb-text2); border: none;
+    padding: 5px 14px; cursor: pointer; font-size: 11px; font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace; transition: all .18s;
+    border-radius: 5px; letter-spacing: 0.3px; white-space: nowrap;
+  }
+  .tab-toggle button.active {
+    color: var(--tb-btn-active-text); background: var(--tb-btn-active-bg);
+  }
+  .tab-toggle button:hover:not(.active) {
+    color: var(--tb-text); background: var(--tb-btn-hover);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .sidebar-section { display: none; }
+  .sidebar-section.active { display: block; }
 
   /* ═══ SIDEBAR TOC ═══ */
   .sidebar {
     position: fixed; top: 52px; left: 0; bottom: 0; width: 280px;
     background: var(--sidebar-bg); border-right: 1px solid var(--border);
-    overflow-y: auto; padding: 16px 0; z-index: 50;
+    overflow-y: auto; padding: 16px 0 40px; z-index: 50;
   }
+  .sidebar-search { padding: 0 14px 10px; border-bottom: 1px solid var(--border); margin-bottom: 8px; position: sticky; top: 0; background: var(--sidebar-bg); z-index: 2; }
+  .sidebar-search .ss-wrap { position: relative; display: flex; align-items: center; }
+  .sidebar-search .ss-ic { position: absolute; left: 10px; width: 14px; height: 14px; stroke: var(--text2); fill: none; stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+  .sidebar-search input {
+    width: 100%; padding: 7px 10px 7px 30px; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 12px; outline: none;
+    font-family: 'IBM Plex Mono', monospace; transition: all .2s;
+  }
+  .sidebar-search input::placeholder { color: var(--text2); }
+  .sidebar-search input:focus { border-color: var(--accent-link); box-shadow: 0 0 0 3px var(--search-focus); background: var(--bg2); }
+  .sidebar-search .ss-count { position: absolute; right: 9px; font-size: 9px; color: var(--text2); pointer-events: none; font-family: 'IBM Plex Mono', monospace; }
+  .sidebar-search .ss-hint { display: none; margin-top: 6px; font-size: 9px; color: var(--text2); letter-spacing: 0.5px; text-align: right; font-family: 'IBM Plex Mono', monospace; }
+  .sidebar-search.has-shortcut .ss-hint { display: block; }
+  .sidebar-search kbd { font-family: 'IBM Plex Mono', monospace; font-size: 9px; background: var(--kbd-bg); border: 1px solid var(--kbd-border); border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; }
   .sidebar h3 { font-size: 10px; text-transform: uppercase; color: var(--text2); padding: 8px 20px 4px; letter-spacing: 1px; font-weight: 600; }
   .sidebar a {
     display: block; padding: 5px 20px; color: var(--text2); font-size: 12px;
@@ -217,51 +270,6 @@
   }
   body.theme-dark .count-badge { background: var(--accent-link); color: #fff; }
 
-  /* ═══ TAB SYSTEM ═══ */
-  .tab-toggle {
-    display: flex; gap: 0; margin-left: 12px;
-  }
-  .tab-toggle button {
-    background: transparent; color: rgba(255,255,255,0.4); border: none;
-    padding: 6px 16px; cursor: pointer; font-size: 11px; font-weight: 600;
-    font-family: 'IBM Plex Mono', monospace; transition: all .2s;
-    border-bottom: 2px solid transparent; letter-spacing: 0.5px;
-  }
-  .tab-toggle button.active {
-    color: #ffffff; border-bottom-color: #ffffff;
-  }
-  .tab-toggle button:hover:not(.active) {
-    color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05);
-  }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-  .sidebar-section { display: none; }
-  .sidebar-section.active { display: block; }
-
-  /* ═══ GLOBAL SEARCH (topbar) ═══ */
-  .doc-search {
-    position: relative; flex: 1; max-width: 320px; min-width: 160px;
-  }
-  .doc-search input {
-    width: 100%; padding: 8px 14px 8px 34px; background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: #fff;
-    font-size: 12px; outline: none; font-family: 'IBM Plex Mono', monospace;
-    transition: all .2s;
-  }
-  .doc-search input::placeholder { color: rgba(255,255,255,0.45); }
-  .doc-search input:focus { background: rgba(255,255,255,0.14); border-color: #fff; }
-  .doc-search .search-ic {
-    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-    width: 14px; height: 14px; stroke: rgba(255,255,255,0.5); fill: none;
-    stroke-width: 2; stroke-linecap: round; pointer-events: none;
-  }
-  .doc-search .search-count {
-    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-    font-size: 9px; color: rgba(255,255,255,0.5); font-family: 'IBM Plex Mono', monospace;
-    pointer-events: none;
-  }
-  @media (max-width: 700px) { .doc-search { display: none; } }
-
   /* Mise en évidence des sections trouvées par la recherche */
   h2[id].match, h3[id].match, h1[id].match {
     outline: 2px solid var(--accent-link); outline-offset: 4px; border-radius: 4px;
@@ -306,7 +314,7 @@
 <!-- ═══════════════════  TOP BAR  ═══════════════════ -->
 <div class="topbar">
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.344</span>
+  <span class="version">v1.7.345</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -316,11 +324,6 @@
       <span data-lang="fr">Documentation technique</span>
       <span data-lang="en">Technical Documentation</span>
     </button>
-  </div>
-  <div class="doc-search">
-    <svg class="search-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-    <input type="text" id="docSearch" placeholder="Rechercher… / Search…" oninput="searchDocs(this.value)" aria-label="Search documentation">
-    <span class="search-count" id="docSearchCount"></span>
   </div>
   <div class="topbar-controls">
     <div class="theme-toggle">
@@ -340,6 +343,15 @@
 
 <!-- ═══════════════════  SIDEBAR  ═══════════════════ -->
 <nav class="sidebar" id="sidebar">
+<!-- ═══ SIDEBAR SEARCH (recherche dans le manuel / la doc active) ═══ -->
+<div class="sidebar-search">
+  <div class="ss-wrap">
+    <svg class="ss-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+    <input type="text" id="docSearch" placeholder="Rechercher… / Search…" oninput="searchDocs(this.value)" aria-label="Search documentation">
+    <span class="ss-count" id="docSearchCount"></span>
+  </div>
+  <div class="ss-hint" id="docSearchHint"><kbd>/</kbd></div>
+</div>
 
 <!-- ═══ SIDEBAR: DOCUMENTATION ═══ -->
 <div class="sidebar-section" id="sidebar-doc">
@@ -1297,11 +1309,11 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table>
 <thead><tr><th data-lang="fr">Raccourci</th><th data-lang="en">Shortcut</th><th data-lang="fr">Action</th><th data-lang="en">Action</th></tr></thead>
 <tbody>
-<tr><td><kbd>T</kbd></td><td data-lang="fr">Outil Texte</td><td data-lang="en">Text Tool</td></tr>
-<tr><td><kbd>I</kbd></td><td data-lang="fr">Outil Image</td><td data-lang="en">Image Tool</td></tr>
-<tr><td><kbd>R</kbd></td><td data-lang="fr">Rectangle</td><td data-lang="en">Rectangle</td></tr>
-<tr><td><kbd>C</kbd></td><td data-lang="fr">Cercle</td><td data-lang="en">Circle</td></tr>
-<tr><td><kbd>P</kbd></td><td data-lang="fr">Outil Plume</td><td data-lang="en">Pen Tool</td></tr>
+<tr><td><kbd>⌥</kbd>+<kbd>T</kbd></td><td data-lang="fr">Ajouter un texte</td><td data-lang="en">Add text</td></tr>
+<tr><td><kbd>⌥</kbd>+<kbd>I</kbd></td><td data-lang="fr">Ajouter une image</td><td data-lang="en">Add image</td></tr>
+<tr><td><kbd>⌥</kbd>+<kbd>R</kbd></td><td data-lang="fr">Ajouter un rectangle</td><td data-lang="en">Add rectangle</td></tr>
+<tr><td><kbd>⌥</kbd>+<kbd>C</kbd></td><td data-lang="fr">Ajouter un cercle</td><td data-lang="en">Add circle</td></tr>
+<tr><td><kbd>⌥</kbd>+<kbd>P</kbd></td><td data-lang="fr">Outil plume</td><td data-lang="en">Pen tool</td></tr>
 </tbody>
 </table></div>
 
@@ -1392,8 +1404,8 @@ SUPERPRINT12master/
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Documentation générée le 7 septembre 2026 — v1.7.344</span>
-  <span data-lang="en">Documentation generated September 7, 2026 — v1.7.344</span>
+  <span data-lang="fr">Documentation générée le 9 septembre 2026 — v1.7.345</span>
+  <span data-lang="en">Documentation generated September 9, 2026 — v1.7.345</span>
 </div>
 
 </div><!-- #tab-doc -->
@@ -2030,14 +2042,12 @@ SUPERPRINT12master/
   <h4 data-lang="fr">Contrôles de zoom</h4>
   <h4 data-lang="en">Zoom Controls</h4>
   <ul>
-    <li data-lang="fr"><kbd>Ctrl</kbd>+<kbd>Molette</kbd> — Zoom avant/arrière</li>
-    <li data-lang="en"><kbd>Ctrl</kbd>+<kbd>Scroll</kbd> — Zoom in/out</li>
-    <li data-lang="fr"><kbd>Ctrl</kbd>+<kbd>0</kbd> — Ajuster à la fenêtre</li>
-    <li data-lang="en"><kbd>Ctrl</kbd>+<kbd>0</kbd> — Fit to window</li>
-    <li data-lang="fr"><kbd>Ctrl</kbd>+<kbd>1</kbd> — Zoom 100%</li>
-    <li data-lang="en"><kbd>Ctrl</kbd>+<kbd>1</kbd> — Zoom 100%</li>
-    <li data-lang="fr"><kbd>Ctrl</kbd>+<kbd>+</kbd> / <kbd>Ctrl</kbd>+<kbd>-</kbd> — Zoom incrémental</li>
-    <li data-lang="en"><kbd>Ctrl</kbd>+<kbd>+</kbd> / <kbd>Ctrl</kbd>+<kbd>-</kbd> — Incremental zoom</li>
+    <li data-lang="fr"><kbd>Ctrl</kbd>+<kbd>Molette</kbd> — Zoom avant/arrière libre</li>
+    <li data-lang="en"><kbd>Ctrl</kbd>+<kbd>Scroll</kbd> — Free zoom in/out</li>
+    <li data-lang="fr"><kbd>Ctrl</kbd>+<kbd>0</kbd> — Réinitialiser le zoom à 100 %</li>
+    <li data-lang="en"><kbd>Ctrl</kbd>+<kbd>0</kbd> — Reset zoom to 100%</li>
+    <li data-lang="fr"><kbd>Ctrl</kbd>+<kbd>=</kbd> / <kbd>Ctrl</kbd>+<kbd>-</kbd> — Zoom incrémental</li>
+    <li data-lang="en"><kbd>Ctrl</kbd>+<kbd>=</kbd> / <kbd>Ctrl</kbd>+<kbd>-</kbd> — Incremental zoom</li>
   </ul>
   <div class="tip" data-lang="fr">Le rendu est optimisé pour rester net à tous les niveaux de zoom grâce à l'ajustement dynamique du DPR (Device Pixel Ratio).</div>
   <div class="tip" data-lang="en">Rendering is optimized to stay sharp at all zoom levels thanks to dynamic DPR (Device Pixel Ratio) adjustment.</div>
@@ -2058,20 +2068,24 @@ SUPERPRINT12master/
 <tr><td data-lang="fr">Coller</td><td data-lang="en">Paste</td><td><kbd>Ctrl</kbd>+<kbd>V</kbd></td></tr>
 <tr><td data-lang="fr">Couper</td><td data-lang="en">Cut</td><td><kbd>Ctrl</kbd>+<kbd>X</kbd></td></tr>
 <tr><td data-lang="fr">Tout sélectionner</td><td data-lang="en">Select all</td><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td></tr>
-<tr><td data-lang="fr">Dupliquer</td><td data-lang="en">Duplicate</td><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td></tr>
+<tr><td data-lang="fr">Dupliquer (glisser)</td><td data-lang="en">Duplicate (drag)</td><td><kbd>Alt</kbd>+Glisser</td></tr>
 <tr><td data-lang="fr">Supprimer</td><td data-lang="en">Delete</td><td><kbd>Suppr</kbd> / <kbd>Backspace</kbd></td></tr>
-<tr><td data-lang="fr">Grouper</td><td data-lang="en">Group</td><td><kbd>Ctrl</kbd>+<kbd>G</kbd></td></tr>
-<tr><td data-lang="fr">Dégrouper</td><td data-lang="en">Ungroup</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></td></tr>
+<tr><td data-lang="fr">Grouper</td><td data-lang="en">Group</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd></td></tr>
+<tr><td data-lang="fr">Dégrouper</td><td data-lang="en">Ungroup</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>U</kbd></td></tr>
 <tr><td data-lang="fr">Chaîner texte</td><td data-lang="en">Chain text</td><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td></tr>
 <tr><td data-lang="fr">Déchaîner texte</td><td data-lang="en">Unchain text</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd></td></tr>
 <tr><td data-lang="fr">Sauvegarder</td><td data-lang="en">Save</td><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td></tr>
-<tr><td data-lang="fr">Zoom +</td><td data-lang="en">Zoom in</td><td><kbd>Ctrl</kbd>+<kbd>+</kbd></td></tr>
-<tr><td data-lang="fr">Zoom −</td><td data-lang="en">Zoom out</td><td><kbd>Ctrl</kbd>+<kbd>−</kbd></td></tr>
-<tr><td data-lang="fr">Zoom 100%</td><td data-lang="en">Zoom 100%</td><td><kbd>Ctrl</kbd>+<kbd>1</kbd></td></tr>
-<tr><td data-lang="fr">Ajuster à la fenêtre</td><td data-lang="en">Fit to window</td><td><kbd>Ctrl</kbd>+<kbd>0</kbd></td></tr>
+<tr><td data-lang="fr">Zoom +</td><td data-lang="en">Zoom in</td><td><kbd>Ctrl</kbd>+<kbd>=</kbd></td></tr>
+<tr><td data-lang="fr">Zoom −</td><td data-lang="en">Zoom out</td><td><kbd>Ctrl</kbd>+<kbd>-</kbd></td></tr>
+<tr><td data-lang="fr">Zoom 100%</td><td data-lang="en">Zoom 100%</td><td><kbd>Ctrl</kbd>+<kbd>0</kbd></td></tr>
 <tr><td data-lang="fr">Gras</td><td data-lang="en">Bold</td><td><kbd>Ctrl</kbd>+<kbd>B</kbd></td></tr>
 <tr><td data-lang="fr">Italique</td><td data-lang="en">Italic</td><td><kbd>Ctrl</kbd>+<kbd>I</kbd></td></tr>
 <tr><td data-lang="fr">Souligné</td><td data-lang="en">Underline</td><td><kbd>Ctrl</kbd>+<kbd>U</kbd></td></tr>
+<tr><td data-lang="fr">Ajouter un texte</td><td data-lang="en">Add text</td><td><kbd>⌥</kbd>+<kbd>T</kbd></td></tr>
+<tr><td data-lang="fr">Ajouter une image</td><td data-lang="en">Add image</td><td><kbd>⌥</kbd>+<kbd>I</kbd></td></tr>
+<tr><td data-lang="fr">Ajouter un rectangle</td><td data-lang="en">Add rectangle</td><td><kbd>⌥</kbd>+<kbd>R</kbd></td></tr>
+<tr><td data-lang="fr">Ajouter un cercle</td><td data-lang="en">Add circle</td><td><kbd>⌥</kbd>+<kbd>C</kbd></td></tr>
+<tr><td data-lang="fr">Outil plume</td><td data-lang="en">Pen tool</td><td><kbd>⌥</kbd>+<kbd>P</kbd></td></tr>
 </tbody>
 </table></div>
 
@@ -2263,8 +2277,8 @@ SUPERPRINT12master/
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Manuel mis à jour le 7 septembre 2026 — v1.7.344</span>
-  <span data-lang="en">Manual updated September 7, 2026 — v1.7.344</span>
+  <span data-lang="fr">Manuel mis à jour le 9 septembre 2026 — v1.7.345</span>
+  <span data-lang="en">Manual updated September 9, 2026 — v1.7.345</span>
 </div>
 
 </div><!-- #tab-manual -->
@@ -2312,6 +2326,18 @@ function setLang(lang) {
 // Restore preference (default: English)
 const savedLang = localStorage.getItem('sp-doc-lang');
 setLang(savedLang || 'en');
+
+// ═══ KEYBOARD: "/" pour focus la recherche (sidebar) ═══
+document.addEventListener('keydown', function (e) {
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const t = (e.target || {}).tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA' || (e.target && e.target.isContentEditable)) return;
+    const inp = document.getElementById('docSearch');
+    if (inp) { e.preventDefault(); inp.focus(); inp.select(); }
+  }
+});
+document.getElementById('docSearchHint').classList.add('has-shortcut');
+
 
 // ═══ GLOBAL SEARCH ═══
 // Filtre les sections (h2/h3) du contenu actif + met en évidence + navigue vers la 1re.
