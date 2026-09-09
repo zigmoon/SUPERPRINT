@@ -22785,7 +22785,11 @@ if (window._spGpuEnabled) {
     // zoom shortcuts handled at top
 
     // ===== RACCOURCIS DE SUPPRESSION =====
-    if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping) {
+    // 🍏 v1.7.346 : on ajoute !_editingTextbox — pendant l'édition d'un bloc texte,
+    //   le focus est sur le hiddenTextarea de Fabric (isTyping=false), donc Delete/
+    //   Backspace effaçait TOUT le bloc au lieu d'un seul caractère. On laisse alors
+    //   Fabric gérer la suppression du caractère (aucun preventDefault ici-bas).
+    if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping && !_editingTextbox) {
         e.preventDefault();
         const activeCanvas = getActiveCanvas();
         if (activeCanvas) {
