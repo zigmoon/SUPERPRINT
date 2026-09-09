@@ -6630,6 +6630,11 @@ if (window._spGpuEnabled) {
                 // éviter duplication sur guides/marges/miroirs
                 const isLockedType = !target || target.isMargin || target.isBleed || target.isGuide || target.isManualGuide || target.isTrimBox || target._isSpreadMirror;
                 if (!isLockedType) {
+                    // 🍏 v1.7.345 : un Alt+drag est une duplication, PAS une sélection de zone.
+                    //   On neutralise la "box selection manuelle" du mouse:up pour que le
+                    //   clone reste exactement à l'endroit déposé (sans regroupement parasite).
+                    canvas.__spSkipBoxSelect = true;
+                    canvas.__spSelectionStart = null;
                     // Si multi-sélection, dupliquer tous les objets sélectionnés
                     const activeObjs = canvas.getActiveObjects ? canvas.getActiveObjects() : [];
                     if (target && target.type === 'activeSelection' && activeObjs && activeObjs.length > 1) {
@@ -7297,6 +7302,9 @@ if (window._spGpuEnabled) {
     canvas.on('object:moving', (e) => {
         const obj = e.target;
         if (obj && obj._isAltDuplicateTemp) {
+            // 🍏 v1.7.345 : marquer le clone comme réellement déplacé (pour distinguer
+            //   Alt+drag d'un simple Alt+clic à la levée de souris)
+            obj._spAltDragged = true;
             // Laisser Fabric gérer le déplacement, juste redessiner
             canvas.requestRenderAll();
         }
@@ -7337,7 +7345,9 @@ if (window._spGpuEnabled) {
     canvas.on('mouse:up', (e) => {
         // 📍 PATCH: Sélection rectangulaire manuelle pour les TextBox (si oubliés par Fabric)
         // Permet de sélectionner les blocs texte même si le clipPath perturbe la détection native
-        if (canvas.__spSelectionStart && !canvas.isDrawingMode) {
+        const _skipBoxSelect = canvas.__spSkipBoxSelect;
+        canvas.__spSkipBoxSelect = false;
+        if (canvas.__spSelectionStart && !canvas.isDrawingMode && !_skipBoxSelect) {
             try {
                 const p1 = canvas.__spSelectionStart;
                 const p2 = canvas.getPointer(e.e);
@@ -8606,7 +8616,12 @@ if (window._spGpuEnabled) {
                 applyFixedHeightProtection(cloned);
             }
             
-            cloned.set({ left: (target.left || 0) + 10, top: (target.top || 0) + 10 });
+            // 🍏 v1.7.345 : Le clone démarre SUPERPOSÉ à l'original (et non +10/+10).
+            //   Fabric 5 verrouille _currentTransform sur l'objet sous la souris AVANT
+            //   nos handlers mouse:down. En créant le clone à l'identique PUIS en
+            //   redirigeant le transform vers lui, le clone prend le relais du drag :
+            //   il suit la souris tandis que l'original reste immobile.
+            cloned.set({ left: (target.left || 0), top: (target.top || 0) });
             cloned._isAltDuplicateTemp = true;
             canvas.discardActiveObject();
             _spFixVectorizedGroupFlip(cloned);
@@ -8627,14 +8642,51 @@ if (window._spGpuEnabled) {
             if (_isTextAlt) {
                 _spPasteTextboxFix(cloned, canvas);
             }
+            
+            // 🍏 v1.7.345 : REDIRIGER le drag Fabric en cours vers le clone.
+            //   Sans cela, c'est l'ORIGINAL (cible initiale de _setupCurrentTransform)
+            //   qui suit la souris pendant le Alt+drag, et le clone reste figé à +10/+10.
+            try {
+                const _ct = canvas._currentTransform;
+                if (_ct && _ct.target === target && cloned !== target) {
+                    const _pDownX = (_ct.ex != null ? _ct.ex : _ct.lastX);
+                    const _pDownY = (_ct.ey != null ? _ct.ey : _ct.lastY);
+                    _ct.target = cloned;
+                    _ct.corner = null;
+                    _ct.action = 'drag';
+                    _ct.original = window.fabric.util.saveObjectTransform(cloned);
+                    // Le clone étant superposé à l'original, l'offset de prise est préservé
+                    // → le clone suit le curseur exactement comme l'original l'aurait fait.
+                    _ct.offsetX = _pDownX - (cloned.left || 0);
+                    _ct.offsetY = _pDownY - (cloned.top || 0);
+                }
+            } catch (_) {}
+            
             canvas.requestRenderAll();
             
             let _clearTempDone = false;
             const _clearTemp = () => {
                 if (_clearTempDone) return;
                 _clearTempDone = true;
+                const _wasDragged = !!cloned._spAltDragged;
                 try { delete cloned._isAltDuplicateTemp; } catch(_) {}
+                try { delete cloned._spAltDragged; } catch(_) {}
                 try { canvas.off('mouse:up', _clearTemp); } catch(_) {}
+                // 🍏 v1.7.345 : Alt+clic / micro-drag (le clone est resté (quasi) superposé à
+                //   l'original, donc invisible) → on le décale de +10/+10 pour matérialiser
+                //   la duplication sur place, comme avant.
+                try {
+                    const _dx = Math.abs((cloned.left || 0) - (target.left || 0));
+                    const _dy = Math.abs((cloned.top || 0) - (target.top || 0));
+                    if (!_wasDragged || (_dx < 5 && _dy < 5)) {
+                        cloned.set({ left: (target.left || 0) + 10, top: (target.top || 0) + 10 });
+                        cloned.setCoords();
+                        canvas.requestRenderAll();
+                        if (typeof debouncedSaveState === 'function') {
+                            try { debouncedSaveState('Duplication (Alt)'); } catch (_) {}
+                        }
+                    }
+                } catch (_) {}
             };
             canvas.on('mouse:up', _clearTemp);
             setTimeout(_clearTemp, 5000);
