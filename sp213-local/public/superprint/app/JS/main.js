@@ -2767,6 +2767,15 @@ if (window._spGpuEnabled) {
                     base._spSoftBreakIndices = this._spSoftBreakIndices.slice();
                 }
             } catch (_) {}
+            // 🛡️ v1.7.343 (AUDIT césure) : sérialiser les flags de césure virtuelle
+            //   (__spHyphenFlags[i] = true → la ligne i se termine par un tiret de
+            //   césure). Sans ça, loadFromJSON (canvas temporaire d'export) les perd
+            //   et l'export vectoriel oublie le « - » de césure.
+            try {
+                if (Array.isArray(this.__spHyphenFlags) && this.__spHyphenFlags.length > 0) {
+                    base._spHyphenFlags = this.__spHyphenFlags.slice();
+                }
+            } catch (_) {}
             return base;
         };
     }
@@ -35188,6 +35197,30 @@ https://superprint.app
                         }
                     }
 
+                    // 🛡️ v1.7.343 (AUDIT césure) : les césures de mots sont des TIRETS
+                    //   VIRTUELS (flag obj.__spHyphenFlags[li]) — ils ne sont PAS dans le
+                    //   texte source (obj._textLines), mais la preview les dessine à la
+                    //   fin de la ligne. L'export vectoriel les ignorait → le mot coupé
+                    //   perdait son « - ». On redessine le tiret à la fin de la ligne,
+                    //   exactement comme la preview (à droite du dernier caractère).
+                    var _spHyphenFlagsArr = obj.__spHyphenFlags || obj._spHyphenFlags;
+                    var _spHyphenFlag = !!(_spHyphenFlagsArr && _spHyphenFlagsArr[li]);
+                    if (_spHyphenFlag) {
+                        // Le tiret se place à la fin de la ligne : pour une ligne
+                        //   JUSTIFIÉE, la preview réduit la largeur cible de la
+                        //   justification de la largeur du tiret → le tiret colle au
+                        //   bord droit (boxWidth - tiret). Sinon, à la fin naturelle.
+                        var _hyphenWLocal = _measW('-') / Math.abs(sx || 1);
+                        var _spLineWasJustified = _justify && !_isLastParaLine && !_lineHasCharStyles && tx.indexOf(' ') !== -1;
+                        var _hyphenLocalX = _spLineWasJustified
+                            ? (xStart + boxWidth - _hyphenWLocal)
+                            : (xStart + _lineWSpaced);
+                        try {
+                            _drawTextRun('-', _hyphenLocalX, null);
+                            _textDecorationRuns.push({ from: _hyphenLocalX, to: _hyphenLocalX + _hyphenWLocal, kind: 'base' });
+                        } catch (_) {}
+                    }
+
                     // 🛡️ v1.7.338 — filets de soulignement / barré / surligné (vectoriels)
                     var _hasDeco = obj.underline || obj.linethrough || obj.overline;
                     if (_hasDeco && _textDecorationRuns.length) {
@@ -38241,6 +38274,25 @@ https://superprint.app
                         }
                     } else {
                         _segments = [{ t: text, localX: xStart }];
+                    }
+
+                    // 🛡️ v1.7.343 (AUDIT césure) : tiret VIRTUEL de césure non présent
+                    //   dans le texte — le re-dessiner à la fin de la ligne, comme la
+                    //   preview (à droite du dernier caractère ; pour une ligne justifiée
+                    //   la preview réduit la cible de la largeur du tiret → tiret au
+                    //   bord droit).
+                    if (obj.__spHyphenFlags && obj.__spHyphenFlags[i]) {
+                        const _hyphenWJ = _spJWordW('-');
+                        const _hyphenLocalXJ = _justifyThisLine
+                            ? (xStart + boxWidth - _hyphenWJ)
+                            : (xStart + lineW);
+                        _segments.push({ t: '-', localX: _hyphenLocalXJ });
+                    } else if (obj._spHyphenFlags && obj._spHyphenFlags[i]) {
+                        const _hyphenWJ2 = _spJWordW('-');
+                        const _hyphenLocalXJ2 = _justifyThisLine
+                            ? (xStart + boxWidth - _hyphenWJ2)
+                            : (xStart + lineW);
+                        _segments.push({ t: '-', localX: _hyphenLocalXJ2 });
                     }
 
                     // Dessiner chaque segment (mot ou ligne) à sa position locale.
