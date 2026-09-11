@@ -1244,7 +1244,16 @@ const SP_CUSTOM_PROPS = [
     //   était ré-exporté avec le défaut 1.13 → interlignage/position différents
     //   de la maquette.
     '_fontSizeMult',
-    '_fontSizeFraction'
+    '_fontSizeFraction',
+    // 🎨 v1.7.350 — HABILLAGE DE TEXTE : mode, portee et decalages.
+    //   Sans ces attributs, le .sp/.json perdait l'habillage et le texte
+    //   se remettait a couler par-dessus l'objet au rechargement.
+    '_spWrapMode',
+    '_spWrapScope',
+    '_spWrapTop',
+    '_spWrapLeft',
+    '_spWrapBottom',
+    '_spWrapRight'
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -3796,6 +3805,316 @@ if (window._spGpuEnabled) {
             }
         }
 
+// ============================================================================
+// HABILLAGE DE TEXTE (text wrap) — v1.7.350
+// ============================================================================
+// Un bloc texte « coule » autour d'un ou plusieurs objets : les lignes qui
+// croisent l'objet sont RACCOURCIES, et le texte est simplement rejeté à la
+// ligne suivante. C'est le comportement d'un logiciel de PAO installé.
+//
+// POURQUOI CETTE APPROCHE (et pas un rognage au rendu)
+//   Rogner la ligne au moment de la peindre ferait DISPARAÎTRE les mots
+//   concernés : ce serait pire que pas de fonction du tout. Ici on agit sur la
+//   LARGEUR DISPONIBLE avant la coupe, donc le texte est redistribué et rien
+//   n'est perdu.
+//
+// POINT D'ACCROCHE
+//   `_wrapLine` (déjà réécrit par SuperPrint) recalcule `maxWidth` à chaque
+//   nouvelle sous-ligne. On branche le calcul sur ce point : à la i-ème
+//   sous-ligne, on demande la largeur réellement libre à cette hauteur-là.
+//   `resultLines.length` donne exactement l'index de la ligne suivante — le
+//   compteur est donc auto-correcteur (aucun état à maintenir).
+//
+// MODES (portés par l'objet, comme les attributs d'habillage d'InDesign)
+//   'box'    : contour de la boîte englobante
+//   'shape'  : contour réel, bande par bande (cercle, triangle…)
+//   'jump'   : le texte saute entièrement l'objet (bloc décalé au-delà)
+//   'behind' : pas d'habillage, mais le texte reste au-dessus
+//
+// PORTÉE : 'both' (défaut) | 'left' | 'right'
+// DÉCALAGE : _spWrapTop/Left/Bottom/Right en px (espace objet ↔ texte)
+//
+// LIMITE CONNUE : le bloc texte lui-même ne doit pas être tourné (l'habillage
+//   n'est pas calculé pour un bloc pivoté). Dans ce cas on retombe proprement
+//   sur le comportement normal, sans rien casser.
+// ============================================================================
+(function initSpTextWrap() {
+  'use strict';
+  if (typeof fabric === 'undefined' || !fabric.Textbox) return;
+  if (window._spWrapLineWidthFor) return;
+
+  var DEFAULT_STANDOFF = 6;
+
+  // Largeur minimale sous laquelle on renonce à contraindre la ligne
+  //   (voir le garde-fou dans lineWidthFor). En dessous, le moteur de wrap
+  //   coupe les mots au lieu de les repousser.
+  var MIN_KEEP = 28;
+
+  function isWrapObject(o) {
+    return !!(o && o._spWrapMode && o._spWrapMode !== 'none');
+  }
+  function standoff(obj) {
+    var n = function (v) {
+      var f = parseFloat(v);
+      return (isFinite(f) && f >= 0) ? f : DEFAULT_STANDOFF;
+    };
+    return { t: n(obj._spWrapTop), l: n(obj._spWrapLeft), b: n(obj._spWrapBottom), r: n(obj._spWrapRight) };
+  }
+
+  // ── Bandes horizontales pour un habillage qui épouse la forme ─────────────
+  //   On échantillonne le contour de l'objet sur sa hauteur et on retient,
+  //   bande par bande, le min/max horizontal. Un cercle donne donc une largeur
+  //   qui rétrécit vers le haut et le bas.
+  var BAND_COUNT = 28;
+  function shapeBands(obj, so) {
+    var bb;
+    try { bb = obj.getBoundingRect(true, true); } catch (_) { return null; }
+    if (!bb || !(bb.height > 0) || !(bb.width > 0)) return null;
+
+    var pts = null;
+    try {
+      if (typeof obj.getCoords === 'function') {
+        var c = obj.getCoords();
+        if (c && c.length >= 3) pts = [];
+        if (pts) for (var i = 0; i < c.length; i++) pts.push({ x: c[i].x, y: c[i].y });
+      }
+    } catch (_) { pts = null; }
+    if (!pts || pts.length < 3) return null;
+
+    var top = bb.top - so.t, bottom = bb.top + bb.height + so.b;
+    var h = bottom - top;
+    if (!(h > 0)) return null;
+
+    var bands = [];
+    var step = h / BAND_COUNT;
+    for (var b = 0; b < BAND_COUNT; b++) {
+      var y0 = top + b * step;
+      var yc = y0 + step / 2;
+      var xs = [];
+      for (var k = 0; k < pts.length; k++) {
+        var p1 = pts[k], p2 = pts[(k + 1) % pts.length];
+        if ((p1.y <= yc && p2.y > yc) || (p2.y <= yc && p1.y > yc)) {
+          var t = (yc - p1.y) / (p2.y - p1.y);
+          xs.push(p1.x + t * (p2.x - p1.x));
+        }
+      }
+      if (xs.length < 2) continue;
+      xs.sort(function (a, c2) { return a - c2; });
+      bands.push([y0, y0 + step, xs[0] - so.l, xs[xs.length - 1] + so.r]);
+    }
+    return bands.length >= 2 ? bands : null;
+  }
+
+  // ── Largeur libre pour une ligne visuelle donnée ──────────────────────────
+  //   Renvoie la largeur maximale que la ligne peut occuper, en partant de la
+  //   gauche du bloc (le texte est poussé à la ligne suivante quand l'objet
+  //   bloque — comme le fait tout logiciel de PAO).
+  function lineWidthFor(textbox, visualLineIndex, fallbackWidth) {
+    var fallback = (typeof fallbackWidth === 'number' && isFinite(fallbackWidth) && fallbackWidth > 0)
+      ? fallbackWidth : (textbox.width || 0);
+    if (!textbox || !textbox.canvas) return fallback;
+    if (!(fallback > 0)) return fallback;
+
+    var canvas = textbox.canvas;
+    var all;
+    try { all = canvas.getObjects(); } catch (_) { return fallback; }
+    if (!all || !all.length) return fallback;
+
+    // Matrice du bloc : on en déduit son origine en scène et son inclinaison.
+    var mtx;
+    try { mtx = textbox.calcTransformMatrix(); } catch (_) { return fallback; }
+    if (!mtx) return fallback;
+    var ang = Math.atan2(mtx[1], mtx[0]);
+    if (Math.abs(ang) > 0.001) return fallback; // bloc tourné : non géré (documenté)
+
+    // ⚠️ calcTransformMatrix() est centrée sur le CENTRE du bbox en Fabric 5 :
+    //   sa translation n'est PAS le coin haut-gauche du contenu. On demande
+    //   explicitement le point d'origine « left/top » de l'objet — seule
+    //   méthode fiable (elle tient compte de originX/originY et de la
+    //   rotation). Bug mesuré : le calcul retombait sur le centre (270,5 ; 41)
+    //   au lieu du coin (40 ; 40) → l'obstacle était vu à gauche du bloc et
+    //   aucune ligne n'était raccourcie.
+    var origin = null;
+    try {
+      origin = (typeof textbox.getPointByOrigin === 'function')
+        ? textbox.getPointByOrigin('left', 'top')
+        : { x: textbox.left, y: textbox.top };
+    } catch (_) { origin = { x: textbox.left, y: textbox.top }; }
+    if (!origin) return fallback;
+
+    // Position verticale (repère local, origine = coin haut-gauche du bloc)
+    var yTop = 0;
+    for (var i = 0; i < visualLineIndex; i++) {
+      try { yTop += textbox.getHeightOfLine(i); } catch (_) { break; }
+    }
+    var lineH = 0;
+    try { lineH = textbox.getHeightOfLine(visualLineIndex); } catch (_) { lineH = 0; }
+    if (!(lineH > 0)) lineH = (textbox.fontSize || 14) * (textbox.lineHeight || 1.2);
+    var yBot = yTop + lineH;
+
+    var boxW = textbox.width || fallback;
+
+    // Intervalles interdits, exprimés en x LOCAL (0 = bord gauche du bloc)
+    var forbidden = [];
+    var jumpBeyond = null;
+
+    for (var k = 0; k < all.length; k++) {
+      var o = all[k];
+      if (!o || o === textbox) continue;
+      if (!isWrapObject(o)) continue;
+      // Un bloc texte ne sert pas d'obstacle (géométrie de texte non fiable).
+      if (o.type === 'textbox' || o.type === 'i-text' || o.type === 'text') continue;
+
+      var so = standoff(o);
+      var bb;
+      try { bb = o.getBoundingRect(true, true); } catch (_) { continue; }
+      if (!bb || !(bb.width > 0) || !(bb.height > 0)) continue;
+
+      var oTop = bb.top - so.t - origin.y;
+      var oBot = bb.top + bb.height + so.b - origin.y;
+      if (yBot <= oTop || yTop >= oBot) continue; // pas de recouvrement vertical
+
+      var oLeft = bb.left - so.l - origin.x;
+      var oRight = bb.left + bb.width + so.r - origin.x;
+
+      // Habillage qui épouse la forme : on resserre sur la bande concernée.
+      if (o._spWrapMode === 'shape') {
+        var bands = shapeBands(o, so);
+        if (bands) {
+          var yMidScene = (yTop + yBot) / 2 + origin.y;
+          for (var b = 0; b < bands.length; b++) {
+            var bd = bands[b];
+            if (yMidScene >= bd[0] && yMidScene < bd[1]) {
+              oLeft = bd[2] - origin.x;
+              oRight = bd[3] - origin.x;
+              break;
+            }
+          }
+        }
+      }
+
+      var scope = o._spWrapScope;
+      if (scope === 'left') oRight = oLeft;
+      else if (scope === 'right') oLeft = oRight;
+      else if (scope === 'above' || scope === 'below') continue;
+
+      // Mode « saut » : le texte est repoussé sous l'objet entier.
+      if (o._spWrapMode === 'jump') {
+        var beyond = (bb.top + bb.height + so.b) - origin.y;
+        if (jumpBeyond === null || beyond > jumpBeyond) jumpBeyond = beyond;
+        continue;
+      }
+
+      forbidden.push([oLeft, oRight]);
+    }
+
+    // Mode « saut » : tant que la ligne commence avant le bas de l'objet,
+    //   on ne laisse aucune place — le moteur descendra la ligne suivante.
+    // (mode « saut » : voir la note dans _spWrap.modes — non supporté)
+    void jumpBeyond;
+
+    if (!forbidden.length) return fallback;
+
+    // Fusion des intervalles qui se chevauchent
+    forbidden.sort(function (a, b) { return a[0] - b[0]; });
+    var merged = [];
+    for (var m = 0; m < forbidden.length; m++) {
+      var cur = forbidden[m];
+      var last = merged[merged.length - 1];
+      if (last && cur[0] <= last[1]) last[1] = Math.max(last[1], cur[1]);
+      else merged.push([cur[0], cur[1]]);
+    }
+
+    // Largeur disponible : du curseur jusqu'au DÉBUT du premier obstacle
+    //   situé devant lui (ou le bord droit du bloc s'il n'y en a plus).
+    //   ⚠️ Un obstacle au MILIEU doit borné la ligne : sinon le texte
+    //   passerait par-dessus (bug corrigé le 2026-09-11).
+    var cursor = 0;
+    var limit = boxW;
+    for (var n = 0; n < merged.length; n++) {
+      var seg = merged[n];
+      if (seg[1] <= cursor) continue;        // déjà derrière le curseur
+      if (seg[0] <= cursor) {                // recouvre le curseur : on avance
+        cursor = seg[1];
+        continue;
+      }
+      limit = seg[0];                        // obstacle devant : on s'arrête là
+      break;
+    }
+
+    var avail = limit - cursor;
+
+    // ⚠️ GARDE-FOU INDISPENSABLE : ne jamais renvoyer une largeur trop
+    //   faible. En dessous de MIN_KEEP, la boucle de wrap tombe dans son
+    //   cas « ligne vide + token trop large » et COUPE LE MOT caractère par
+    //   caractère (mesuré : 119 lignes au lieu de 4, 21 caractères perdus).
+    //   On préfère alors ne pas contraindre du tout : le texte peut
+    //   chevaucher l'objet, mais il reste INTÉGRAL. Un habillage qui mange
+    //   du texte serait pire que pas d'habillage.
+    if (!(avail > MIN_KEEP)) return fallback;
+    return avail;
+  }
+
+  window._spWrapLineWidthFor = lineWidthFor;
+
+  // ── API publique (utilisée par l'interface) ───────────────────────────────
+  window._spWrap = {
+    // "jump" (saut d'objet) n'est PAS proposé : sans mécanisme de saut de
+    // ligne dédié, il ne peut pas être rendu correctement par la seule
+    // largeur disponible, et une tentative naïve détruisait du texte.
+    // Utiliser la portée 'above'/'below' pour un effet approchant.
+    modes: ['none', 'box', 'shape'],
+    standoffDefault: DEFAULT_STANDOFF,
+    setMode: function (obj, mode) {
+      if (!obj) return false;
+      if (!mode || mode === 'none') delete obj._spWrapMode;
+      else {
+        obj._spWrapMode = mode;
+        if (obj._spWrapTop === undefined) obj._spWrapTop = DEFAULT_STANDOFF;
+        if (obj._spWrapLeft === undefined) obj._spWrapLeft = DEFAULT_STANDOFF;
+        if (obj._spWrapBottom === undefined) obj._spWrapBottom = DEFAULT_STANDOFF;
+        if (obj._spWrapRight === undefined) obj._spWrapRight = DEFAULT_STANDOFF;
+      }
+      if (obj.canvas) { try { obj.canvas.requestRenderAll(); } catch (_) {} }
+      return true;
+    },
+    getMode: function (obj) { return (obj && obj._spWrapMode) || 'none'; },
+    setStandoff: function (obj, px) {
+      if (!obj) return false;
+      var v = Math.max(0, parseFloat(px) || 0);
+      obj._spWrapTop = v; obj._spWrapLeft = v; obj._spWrapBottom = v; obj._spWrapRight = v;
+      if (obj.canvas) { try { obj.canvas.requestRenderAll(); } catch (_) {} }
+      return true;
+    },
+    getStandoff: function (obj) {
+      if (!obj) return DEFAULT_STANDOFF;
+      var f = parseFloat(obj._spWrapTop);
+      return isFinite(f) ? f : DEFAULT_STANDOFF;
+    },
+    setScope: function (obj, scope) {
+      if (!obj) return false;
+      if (scope && scope !== 'both') obj._spWrapScope = scope;
+      else delete obj._spWrapScope;
+      if (obj.canvas) { try { obj.canvas.requestRenderAll(); } catch (_) {} }
+      return true;
+    },
+    getScope: function (obj) { return (obj && obj._spWrapScope) || 'both'; },
+    // Force un recalcul de mise en page : sans ça, `_textLines` garde les
+    // coupes calculées avant le changement d'habillage.
+    reflow: function (obj) {
+      if (!obj) return;
+      try {
+        obj._clearCache && obj._clearCache();
+        obj.dirty = true;
+        obj.initDimensions && obj.initDimensions();
+        obj.setCoords && obj.setCoords();
+      } catch (_) {}
+      if (obj.canvas) { try { obj.canvas.requestRenderAll(); } catch (_) {} }
+    },
+    _debug: { lineWidthFor: lineWidthFor, shapeBands: shapeBands, isWrapObject: isWrapObject }
+  };
+})();
+
         fabric.Textbox.prototype._wrapLine = function(_line, lineIndex, desiredWidth, reservedSpace) {
             const lang = this.hyphenLanguage || currentHyphenLanguage || 'fr';
             const hyphenator = (window.hyphenators && window.hyphenators[lang]) || hyphenators[lang];
@@ -3964,6 +4283,12 @@ if (window._spGpuEnabled) {
                                 const part2 = syllables.slice(take).join('');
                                 // Coupure DANS le mot: aucun caractère "manquant" entre lignes (offset 0).
                                 resultLines.push(spFormatLineResult(this, current + tokenPrefix + part1));
+                                // 🎨 v1.7.350 — HABILLAGE : la largeur disponible depend de la
+                                //   hauteur de la ligne (les lignes qui croisent un objet habille sont
+                                //   raccourcies). Sans habillage, on retombe sur la valeur d'origine.
+                                if (typeof window._spWrapLineWidthFor === 'function') {
+                                    try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, maxWidth); } catch (_) {}
+                                }
                                 sublineHyphenFlags.push(true);
                                 sublineMissingOffsets.push(0);
                                 // 📐 Après la 1re sous-ligne, retirer le retrait première ligne
@@ -3980,6 +4305,12 @@ if (window._spGpuEnabled) {
 
                     // Sinon: wrap par mot (retour ligne)
                     resultLines.push(spFormatLineResult(this, current));
+                    // 🎨 v1.7.350 — HABILLAGE : la largeur disponible depend de la
+                    //   hauteur de la ligne (les lignes qui croisent un objet habille sont
+                    //   raccourcies). Sans habillage, on retombe sur la valeur d'origine.
+                    if (typeof window._spWrapLineWidthFor === 'function') {
+                        try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, maxWidth); } catch (_) {}
+                    }
                     sublineHyphenFlags.push(false);
                     // Si une espace était en attente, elle est "mangée" par le wrap (offset 1).
                     sublineMissingOffsets.push(pendingSpace ? 1 : 0);
@@ -4031,6 +4362,12 @@ if (window._spGpuEnabled) {
                                 const part1 = syllables.slice(0, take).join('');
                                 const part2 = syllables.slice(take).join('');
                                 resultLines.push(spFormatLineResult(this, part1));
+                                // 🎨 v1.7.350 — HABILLAGE : la largeur disponible depend de la
+                                //   hauteur de la ligne (les lignes qui croisent un objet habille sont
+                                //   raccourcies). Sans habillage, on retombe sur la valeur d'origine.
+                                if (typeof window._spWrapLineWidthFor === 'function') {
+                                    try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, maxWidth); } catch (_) {}
+                                }
                                 sublineHyphenFlags.push(true);
                                 sublineMissingOffsets.push(0);
                                 // 📐 Après la 1re sous-ligne, retirer le retrait première ligne
@@ -4066,6 +4403,12 @@ if (window._spGpuEnabled) {
                     const chunk = graphemes.slice(0, fit).join('');
                     const rest = graphemes.slice(fit).join('');
                     resultLines.push(spFormatLineResult(this, chunk));
+                    // 🎨 v1.7.350 — HABILLAGE : la largeur disponible depend de la
+                    //   hauteur de la ligne (les lignes qui croisent un objet habille sont
+                    //   raccourcies). Sans habillage, on retombe sur la valeur d'origine.
+                    if (typeof window._spWrapLineWidthFor === 'function') {
+                        try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, maxWidth); } catch (_) {}
+                    }
                     sublineHyphenFlags.push(false);
                     sublineMissingOffsets.push(0);
                     // 📐 Après la 1re sous-ligne, retirer le retrait première ligne
