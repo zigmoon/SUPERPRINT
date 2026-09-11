@@ -3017,6 +3017,10 @@ if (window._spGpuEnabled) {
                     obj.__spWrapLineCounter = 0;
                     obj.__spMissingOffsets = [];
                     obj.__spMissingOffsetCounter = 0;
+                    // 🎨 HABILLAGE : nombre de sous-lignes produites par chaque
+                    //   paragraphe DURANT CE PASSAGE. Sert a convertir l'index de
+                    //   paragraphe (recu par _wrapLine) en index de ligne GLOBAL.
+                    obj.__spParaLineCounts = {};
                 }
                 obj.__spWrapDepth = depth + 1;
                 obj.__spWrapActive = true;
@@ -3909,11 +3913,19 @@ if (window._spGpuEnabled) {
   //   Renvoie la largeur maximale que la ligne peut occuper, en partant de la
   //   gauche du bloc (le texte est poussé à la ligne suivante quand l'objet
   //   bloque — comme le fait tout logiciel de PAO).
-  function lineWidthFor(textbox, visualLineIndex, fallbackWidth) {
-    var fallback = (typeof fallbackWidth === 'number' && isFinite(fallbackWidth) && fallbackWidth > 0)
-      ? fallbackWidth : (textbox.width || 0);
+  function lineWidthFor(textbox, visualLineIndex, ctx) {
+    // ctx = { free: largeur NON contrainte de cette ligne, paraOff: index global
+    //         de la 1re sous-ligne du paragraphe en cours }
+    if (!ctx || typeof ctx !== 'object') ctx = { free: visualLineIndex, paraOff: 0 };
+    var fallback = (typeof ctx.free === 'number' && isFinite(ctx.free) && ctx.free > 0)
+      ? ctx.free : ((textbox && textbox.width) || 0);
+    var paraOff = (typeof ctx.paraOff === 'number' && isFinite(ctx.paraOff)) ? ctx.paraOff : 0;
     if (!textbox || !textbox.canvas) return fallback;
     if (!(fallback > 0)) return fallback;
+    // ⚠️ Index GLOBAL : lineIndex (paragraphe) + sous-lignes des paragraphes
+    //    precedents. Sans cette conversion, un texte multi-paragraphes etait
+    //    teste a la hauteur de son PREMIER paragraphe => aucun habillage.
+    var lineIndex = paraOff + (visualLineIndex | 0);
 
     var canvas = textbox.canvas;
     var all;
@@ -3944,11 +3956,11 @@ if (window._spGpuEnabled) {
 
     // Position verticale (repère local, origine = coin haut-gauche du bloc)
     var yTop = 0;
-    for (var i = 0; i < visualLineIndex; i++) {
+    for (var i = 0; i < lineIndex; i++) {
       try { yTop += textbox.getHeightOfLine(i); } catch (_) { break; }
     }
     var lineH = 0;
-    try { lineH = textbox.getHeightOfLine(visualLineIndex); } catch (_) { lineH = 0; }
+    try { lineH = textbox.getHeightOfLine(lineIndex); } catch (_) { lineH = 0; }
     if (!(lineH > 0)) lineH = (textbox.fontSize || 14) * (textbox.lineHeight || 1.2);
     var yBot = yTop + lineH;
 
@@ -4052,7 +4064,8 @@ if (window._spGpuEnabled) {
     //   chevaucher l'objet, mais il reste INTÉGRAL. Un habillage qui mange
     //   du texte serait pire que pas d'habillage.
     if (!(avail > MIN_KEEP)) return fallback;
-    return avail;
+    // Ne jamais depasser la largeur de repli (retraits/indent inclus).
+    return Math.min(avail, fallback);
   }
 
   window._spWrapLineWidthFor = lineWidthFor;
@@ -4113,6 +4126,61 @@ if (window._spGpuEnabled) {
     },
     _debug: { lineWidthFor: lineWidthFor, shapeBands: shapeBands, isWrapObject: isWrapObject }
   };
+
+  // ── RECALCUL AUTOMATIQUE pendant/après un déplacement ────────────────────
+  //   Un obstacle qui bouge (ou le bloc texte lui-même) change la largeur
+  //   disponible des lignes : sans ce recalcul, le texte gardait la mise en
+  //   page calculée pour l'ANCIENNE position, ce qui donne l'impression que
+  //   « les réglages ne servent à rien » dès qu'on déplace la forme.
+  //
+  //   Point d'accroche UNIQUE : `Canvas.fire` reçoit tous les événements de
+  //   tous les canevas (éditeur, pages, temporaires) — aucun risque d'oublier
+  //   un canevas créé ailleurs dans l'application.
+  function reflowAllTexts(canvas) {
+    if (!canvas) return;
+    var objs;
+    try { objs = canvas.getObjects(); } catch (_) { return; }
+    if (!objs || !objs.length) return;
+    // Aucun obstacle : rien à recalculer (le cas courant reste gratuit).
+    var hasObstacle = false;
+    for (var i = 0; i < objs.length; i++) {
+      if (objs[i] && objs[i]._spWrapMode && objs[i]._spWrapMode !== 'none') { hasObstacle = true; break; }
+    }
+    if (!hasObstacle) return;
+    for (var k = 0; k < objs.length; k++) {
+      var o = objs[k];
+      if (!o) continue;
+      if (o.type === 'textbox' || o.type === 'i-text' || o.type === 'text') {
+        try { window._spWrap.reflow(o); } catch (_) {}
+      }
+    }
+    try { canvas.requestRenderAll(); } catch (_) {}
+  }
+  window._spWrapReflowAll = reflowAllTexts;
+
+  (function spWrapAutoReflow() {
+    if (typeof fabric === 'undefined' || !fabric.Canvas) return;
+    if (fabric.Canvas.prototype.__spWrapAutoReflow) return;
+    fabric.Canvas.prototype.__spWrapAutoReflow = true;
+    var origFire = fabric.Canvas.prototype.fire;
+    var pending = false;
+    var EVENTS = { 'object:moving': 1, 'object:modified': 1, 'object:scaling': 1, 'object:rotating': 1 };
+    fabric.Canvas.prototype.fire = function (name, opt) {
+      var res = origFire.apply(this, arguments);
+      try {
+        if (EVENTS[name] && opt && opt.target && !pending) {
+          var canvas = this;
+          // Throttle au frame : un drag de 60 img/s ne recalcule qu'une fois
+          // par image affichée.
+          pending = true;
+          var run = function () { pending = false; reflowAllTexts(canvas); };
+          if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+          else setTimeout(run, 16);
+        }
+      } catch (_) {}
+      return res;
+    };
+  })();
 })();
 
         fabric.Textbox.prototype._wrapLine = function(_line, lineIndex, desiredWidth, reservedSpace) {
@@ -4141,6 +4209,24 @@ if (window._spGpuEnabled) {
                 tokenQueue.push({ text: tokenMatch[0], start: tokenMatch.index });
             }
             
+            // 🎨 HABILLAGE DU TEXTE : `lineIndex` est l'index du PARAGRAPHE,
+            //   pas de la ligne visuelle. Or le moteur d'habillage a besoin de la
+            //   position VERTICALE reelle de la ligne => d'un index GLOBAL. On le
+            //   reconstitue en cumulant les sous-lignes des paragraphes
+            //   PRECEDENTS, deja produits dans CE MEME passage (ils sont traites
+            //   dans l'ordre).
+            let _spParaOff = 0;
+            try {
+                if (this.__spWrapActive && this.__spParaLineCounts) {
+                    const _spKeys = Object.keys(this.__spParaLineCounts);
+                    for (let _spi = 0; _spi < _spKeys.length; _spi++) {
+                        if (parseInt(_spKeys[_spi], 10) < lineIndex) {
+                            _spParaOff += this.__spParaLineCounts[_spKeys[_spi]] || 0;
+                        }
+                    }
+                }
+            } catch (_) {}
+
             const resultLines = [];
             const sublineHyphenFlags = [];
             const sublineMissingOffsets = [];
@@ -4167,6 +4253,22 @@ if (window._spGpuEnabled) {
             let _spIsFirstSubLine = true;
             let maxWidth = Math.max(0, rawWidth - safetyPx - _spIndentTotal - (_spIsFirstSubLine ? _spFLI : 0));
             const _spBaseMaxWidth = Math.max(0, rawWidth - safetyPx - _spIndentTotal);
+
+            // 🎨 HABILLAGE DU TEXTE — contexte transmis au moteur :
+            //   free     = largeur NON contrainte de la ligne suivante. Indispensable :
+            //              l'ancien code repassait la largeur DEJA contrainte, donc une
+            //              ligne raccourcie « collait » et les suivantes ne reprenaient
+            //              jamais la largeur pleine.
+            //   paraOff  = index GLOBAL de la 1re sous-ligne de ce paragraphe.
+            const _spWrapCtx = { free: _spBaseMaxWidth, paraOff: _spParaOff };
+            // La 1re ligne du paragraphe n'est precedee d'aucun resultat : sans cet
+            //   appel explicite, chaque 1re ligne ignorerait l'obstacle.
+            try {
+                if (typeof window._spWrapLineWidthFor === 'function') {
+                    const _spW0 = window._spWrapLineWidthFor(this, 0, { free: maxWidth, paraOff: _spParaOff });
+                    if (_spW0 > 0) maxWidth = _spW0;
+                }
+            } catch (_) {}
             
             // 📐 JUSTIFICATION: facteur d'espacement intermots (100% = normal)
             const _justWordSpaceFactor = (this._justSettings && this._justSettings.wordSpaceOpt)
@@ -4287,7 +4389,7 @@ if (window._spGpuEnabled) {
                                 //   hauteur de la ligne (les lignes qui croisent un objet habille sont
                                 //   raccourcies). Sans habillage, on retombe sur la valeur d'origine.
                                 if (typeof window._spWrapLineWidthFor === 'function') {
-                                    try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, maxWidth); } catch (_) {}
+                                    try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, _spWrapCtx); } catch (_) {}
                                 }
                                 sublineHyphenFlags.push(true);
                                 sublineMissingOffsets.push(0);
@@ -4309,7 +4411,7 @@ if (window._spGpuEnabled) {
                     //   hauteur de la ligne (les lignes qui croisent un objet habille sont
                     //   raccourcies). Sans habillage, on retombe sur la valeur d'origine.
                     if (typeof window._spWrapLineWidthFor === 'function') {
-                        try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, maxWidth); } catch (_) {}
+                        try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, _spWrapCtx); } catch (_) {}
                     }
                     sublineHyphenFlags.push(false);
                     // Si une espace était en attente, elle est "mangée" par le wrap (offset 1).
@@ -4366,7 +4468,7 @@ if (window._spGpuEnabled) {
                                 //   hauteur de la ligne (les lignes qui croisent un objet habille sont
                                 //   raccourcies). Sans habillage, on retombe sur la valeur d'origine.
                                 if (typeof window._spWrapLineWidthFor === 'function') {
-                                    try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, maxWidth); } catch (_) {}
+                                    try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, _spWrapCtx); } catch (_) {}
                                 }
                                 sublineHyphenFlags.push(true);
                                 sublineMissingOffsets.push(0);
@@ -4407,7 +4509,7 @@ if (window._spGpuEnabled) {
                     //   hauteur de la ligne (les lignes qui croisent un objet habille sont
                     //   raccourcies). Sans habillage, on retombe sur la valeur d'origine.
                     if (typeof window._spWrapLineWidthFor === 'function') {
-                        try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, maxWidth); } catch (_) {}
+                        try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, _spWrapCtx); } catch (_) {}
                     }
                     sublineHyphenFlags.push(false);
                     sublineMissingOffsets.push(0);
@@ -4449,6 +4551,15 @@ if (window._spGpuEnabled) {
                     for (let i = 0; i < sublineMissingOffsets.length; i++) {
                         this.__spMissingOffsets[this.__spMissingOffsetCounter++] = sublineMissingOffsets[i];
                     }
+                }
+            } catch (_) {}
+
+            // 🎨 HABILLAGE DU TEXTE : memoriser le nombre de sous-lignes de ce
+            //   paragraphe (base du calcul de l'index GLOBAL pour les suivants).
+            try {
+                if (this.__spWrapActive) {
+                    if (!this.__spParaLineCounts) this.__spParaLineCounts = {};
+                    this.__spParaLineCounts[lineIndex] = Math.max(1, resultLines.length);
                 }
             } catch (_) {}
 
