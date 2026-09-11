@@ -11,7 +11,7 @@
 | Champ | Valeur |
 |---|---|
 | Version app (affichée) | `1.7.349` |
-| Cache Service Worker | `superprint-shell-v1.7.349-no-whatsapp` |
+| Cache Service Worker | `superprint-shell-v1.7.349b-no-whatsapp` |
 | Query JS (`main.js`) | `?v=20260911-v349-pantone-sidebar` |
 | Badge preview (`spVersionBadge`) | `v1.7.349` |
 | Splash screen | `v1.7.349` |
