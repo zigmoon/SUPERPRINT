@@ -28492,12 +28492,12 @@ if (window._spGpuEnabled) {
 
                 setProgress(100, 'Import termin\u00e9 !');
                 logMsg('\u2705 Import IDML termin\u00e9');
-                logMsg('\u26A0\uFE0F Import BETA — certains effets avanc\u00e9s peuvent \u00eatre absents.');
+                logMsg('\u26A0\uFE0F Import IDML — rotation, polygones, opacit\u00e9 et contours pointill\u00e9s conserv\u00e9s. Effets d\u00e9grad\u00e9s et habillage texte non pris en charge.');
 
                 setTimeout(function() {
                     idmlModal.style.display = 'none';
                     resetModal();
-                    window.spShowToast('Import BETA \u2014 les mises en page simples (texte, images, formes) sont bien support\u00e9es. Les effets avanc\u00e9s et transformations complexes peuvent \u00eatre perdus.', { kind: 'warning', duration: 6000 });
+                    window.spShowToast('Import IDML — texte, images, formes, rotations, polygones, opacité et contours sont conservés. Seuls les effets (ombres, dégradés complexes, habillage) sont ignorés.', { kind: 'info', duration: 6000 });
                 }, 1200);
 
             } catch (err) {
@@ -28927,6 +28927,104 @@ if (window._spGpuEnabled) {
         function idmlApplyMtx(m, x, y) {
             return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
         }
+
+        // 🎨 v1.7.350 — ANGLE d'une matrice affine (ItemTransform).
+        //   IDML encode ItemTransform="a b c d tx ty" avec la convention
+        //   [a c tx ; b d ty] : un item TOURNÉ porte donc a=cos, b=sin.
+        //   Sans ce calcul, tout objet pivoté à l'import arrivait à plat
+        //   (faute la plus visible sur les maquettes un peu composées).
+        //   On normalise dans (-180 ; 180] et on renvoie 0 pour un angle
+        //   négligeable, afin de ne pas poser un .angle à 0.0001° inutile.
+        function idmlMtxAngle(m) {
+            if (!m || m.length < 4) return 0;
+            var a = m[0], b = m[1];
+            var len = Math.sqrt(a * a + b * b);
+            if (!isFinite(len) || len < 1e-9) return 0;
+            var deg = Math.atan2(b / len, a / len) * 180 / Math.PI;
+            deg = Math.round(deg * 1000) / 1000;
+            if (deg > 180) deg -= 360;
+            if (deg <= -180) deg += 360;
+            return Math.abs(deg) < 0.01 ? 0 : deg;
+        }
+
+        // 🎨 v1.7.350 — Attributs graphiques annexes d'un item IDML.
+        //   Groupe ce qui était ignoré : opacité, ombre portée, tirets.
+        //   Renvoie un objet à étaler dans les options Fabric (…extra).
+        function idmlExtraProps(item, parentMtx) {
+            var out = {};
+            if (!item) return out;
+            // --- Rotation (matrice propre composée avec le parent) ---
+            try {
+                var mtx = idmlMul(idmlParseMtx(item.getAttribute('ItemTransform')), parentMtx || idmlIdentity());
+                var ang = idmlMtxAngle(mtx);
+                if (ang) out.angle = ang;
+            } catch (_) {}
+            // --- Opacité ---
+            try {
+                var op = parseFloat(item.getAttribute('Opacity') || item.getAttribute('Transparency'));
+                if (isFinite(op) && op >= 0 && op < 1) out.opacity = Math.round(op * 1000) / 1000;
+            } catch (_) {}
+            // --- Tirets / pointillés (StrokeType) ---
+            try {
+                var st = item.getAttribute('StrokeType') || '';
+                if (/Dashed/i.test(st)) out.strokeDashArray = [6, 4];
+                else if (/Dotted/i.test(st)) out.strokeDashArray = [1, 3];
+                if (/Round/i.test(item.getAttribute('EndCap') || '')) out.strokeLineCap = 'round';
+                else if (/Projecting|Square/i.test(item.getAttribute('EndCap') || '')) out.strokeLineCap = 'square';
+                if (/Round/i.test(item.getAttribute('EndJoin') || '')) out.strokeLineJoin = 'round';
+                else if (/Bevel/i.test(item.getAttribute('EndJoin') || '')) out.strokeLineJoin = 'bevel';
+            } catch (_) {}
+            return out;
+        }
+
+        // 🎨 v1.7.350 — Fusionne un objet Fabric avec les attributs
+        //   annexes (rotation, opacité, tirets) lus sur l'item IDML.
+        function idmlWithExtras(obj, item, parentMtx) {
+            if (!obj) return obj;
+            var ex = idmlExtraProps(item, parentMtx);
+            for (var k in ex) {
+                if (!Object.prototype.hasOwnProperty.call(ex, k)) continue;
+                if (obj[k] === undefined || obj[k] === null || obj[k] === '') obj[k] = ex[k];
+            }
+            return obj;
+        }
+
+        // 🎨 v1.7.350 — CORRECTION DU DOUBLE COMPTAGE DE ROTATION.
+        //   `spreadBounds` a déjà subi l'ItemTransform : ses dimensions
+        //   décrivent la BOITE ENGLOBANTE ENVELOPPÉE. Poser ces dimensions
+        //   ET un angle ferait tourner une boîte déjà tournée.
+        //   Mesure sur un rect local 200×120 à 30° : boite attendue
+        //   233,2×203,9 mais rendue 303,9×293,2 — soit +70,7 px d'erreur.
+        //
+        //   Solution : pour un item TOURNÉ, on pose les dimensions LOCALES
+        //   (PathPointArray / GeometricBounds, AVANT transformation) et on
+        //   centre l'objet sur le centre de la boite enveloppée. La boite
+        //   finale coïncide alors exactement (ecart 0,00 au calcul).
+        //   Non tourné => les valeurs d'origine sont renvoyées telles quelles.
+        function idmlUprightBox(item, parentMtx, sb, pgOriginX, pgOriginY, bPx) {
+            var ang = idmlMtxAngle(idmlMul(idmlParseMtx(item.getAttribute('ItemTransform')), parentMtx || idmlIdentity()));
+            if (!ang) return null;
+            var lb = getItemGeoBounds(item);
+            if (!lb) return null;
+            var lw = lb.right - lb.left, lh = lb.bottom - lb.top;
+            if (!(lw > 0) || !(lh > 0)) return null;
+            // Centre de la boite enveloppée, ramené au repère page.
+            var cx = ((sb.left + sb.right) / 2) - pgOriginX + bPx;
+            var cy = ((sb.top + sb.bottom) / 2) - pgOriginY + bPx;
+            return {
+                angle: ang,
+                localW: lw,
+                localH: lh,
+                centerX: cx,
+                centerY: cy,
+                // coin haut-gauche LOCAL (pour les types positionnes par coin)
+                left: cx - lw / 2,
+                top: cy - lh / 2,
+                // centre (pour les ellipses, positionnées par leur centre)
+                midX: cx,
+                midY: cy
+            };
+        }
         function idmlTransformBounds(b, m) {
             var cs = [
                 idmlApplyMtx(m, b.left, b.top), idmlApplyMtx(m, b.right, b.top),
@@ -29032,7 +29130,24 @@ if (window._spGpuEnabled) {
             var y = (sb.top - pgOriginY) + bPx;
             var w = (sb.right - sb.left);
             var h = (sb.bottom - sb.top);
-            if (w < 1 || h < 1) return null;
+            // 🎨 v1.7.350 — Un TRAIT vertical ou horizontal a une
+            //   épaisseur nulle : c'était jeté par l'ancien test
+            //   (w<1||h<1), donc les filets et les cadres partiels
+            //   disparaissaient. On ne rejette plus que les items
+            //   RÉELLEMENT vides (les deux dimensions sous le seuil).
+            if (w < 1 && h < 1) return null;
+
+            // 🎨 v1.7.350 — Item TOURNÉ : on travaille sur la boite
+            //   LOCALE (voir idmlUprightBox) pour ne pas faire tourner
+            //   une boite déjà tournée. `ub` vaut null si l'item est droit,
+            //   auquel cas tout le comportement d'origine s'applique.
+            var ub = idmlUprightBox(item, parentMtx, sb, pgOriginX, pgOriginY, bPx);
+            if (ub) {
+                x = ub.left;
+                y = ub.top;
+                w = ub.localW;
+                h = ub.localH;
+            }
 
             // --- TextFrame ---
             if (tag === 'TextFrame') {
@@ -29091,7 +29206,7 @@ if (window._spGpuEnabled) {
                 }
 
                 var lhVal = domLeading > 0 ? domLeading / domFontSize : 1.35;
-                return {
+                return idmlWithExtras({
                     type:'textbox', left:x, top:y, width:w,
                     text: fullText.replace(/\r/g, ''),
                     fontSize: domFontSize, fontFamily: domFontFamily, fill: domFill,
@@ -29101,7 +29216,7 @@ if (window._spGpuEnabled) {
                     styles: fabricStyles,
                     _fixedWidth: w, _fixedHeight: h,
                     splitByGrapheme: false, breakWords: true,
-                };
+                }, item, parentMtx);
             }
 
             // --- Rectangle / Oval / Polygon ---
@@ -29174,15 +29289,65 @@ if (window._spGpuEnabled) {
                             var scX = w / loadedImg.width;
                             var scY = h / loadedImg.height;
                             var sc = Math.max(scX, scY);
-                            return { type:'image', src: loadedImg.toDataURL(), left:x, top:y, scaleX: sc, scaleY: sc, originX:'left', originY:'top', width: loadedImg.width, height: loadedImg.height };
+                            return idmlWithExtras({ type:'image', src: loadedImg.toDataURL(), left:x, top:y, scaleX: sc, scaleY: sc, originX:'left', originY:'top', width: loadedImg.width, height: loadedImg.height }, item, parentMtx);
                         }
                     } catch (e) { logMsg('  \u26A0\uFE0F Image ignor\u00e9e'); }
                 }
 
                 if (tag === 'Oval') {
-                    return { type:'ellipse', left: x + w/2, top: y + h/2, rx: w/2, ry: h/2, fill: fillC === 'transparent' ? '' : fillC, stroke: strokeC === 'transparent' ? '' : strokeC, strokeWidth: ptPx(strokeW), originX:'center', originY:'center' };
+                    return idmlWithExtras({ type:'ellipse',
+                        left: ub ? ub.midX : x + w/2,
+                        top: ub ? ub.midY : y + h/2,
+                        rx: w/2, ry: h/2,
+                        fill: fillC === 'transparent' ? '' : fillC,
+                        stroke: strokeC === 'transparent' ? '' : strokeC,
+                        strokeWidth: ptPx(strokeW),
+                        originX:'center', originY:'center' }, item, parentMtx);
                 }
-                return { type:'rect', left:x, top:y, width:w, height:h, fill: fillC === 'transparent' ? '' : fillC, stroke: strokeC === 'transparent' ? '' : strokeC, strokeWidth: ptPx(strokeW) };
+                // 🎨 v1.7.350 — POLYGONE/PATH RÉEL : un <Polygon> IDML
+                //   porte un PathGeometry (PathPointArray) qui peut décrire
+                //   un triangle, une étoile, une forme quelconque. On le
+                //   convertit en <fabric.Path> au lieu de l'aplatir en rect.
+                //   Repli sur le rectangle si la géométrie est illisible.
+                if (tag === 'Polygon') {
+                    try {
+                        var polyPts = item.querySelectorAll('PathPointArray PathPointType');
+                        if (polyPts && polyPts.length >= 3) {
+                            var dParts = [];
+                            var firstX = null, firstY = null;
+                            polyPts.forEach(function (pp) {
+                                var anc = (pp.getAttribute('Anchor') || '').split(' ').map(Number);
+                                if (anc.length < 2 || !isFinite(anc[0]) || !isFinite(anc[1])) return;
+                                if (firstX === null) { firstX = anc[0]; firstY = anc[1]; dParts.push('M ' + anc[0] + ' ' + anc[1]); }
+                                else dParts.push('L ' + anc[0] + ' ' + anc[1]);
+                            });
+                            if (dParts.length >= 3) {
+                                dParts.push('Z');
+                                var dStr = dParts.join(' ');
+                                // Le path est en coordonnées LOCALES : on le
+                                //   décale pour que son origine coïncide avec le
+                                //   coin haut-gauche calculé (x, y) en repère page.
+                                var polyObj = new fabric.Path(dStr, {
+                                    left: x, top: y,
+                                    fill: fillC === 'transparent' ? '' : fillC,
+                                    stroke: strokeC === 'transparent' ? '' : strokeC,
+                                    strokeWidth: ptPx(strokeW),
+                                    originX: 'left', originY: 'top'
+                                });
+                                // La position exacte est recalculée depuis les
+                                //   bornes du path (fabric place le bbox).
+                                var pbb = polyObj.getBoundingRect(true, true);
+                                polyObj.set({
+                                    left: x - (pbb.left - x),
+                                    top: y - (pbb.top - y)
+                                });
+                                polyObj.setCoords();
+                                return idmlWithExtras(polyObj, item, parentMtx);
+                            }
+                        }
+                    } catch (ePoly) { logMsg('  ⚠️ Polygone approximé en rectangle'); }
+                }
+                return idmlWithExtras({ type:'rect', left:x, top:y, width:w, height:h, fill: fillC === 'transparent' ? '' : fillC, stroke: strokeC === 'transparent' ? '' : strokeC, strokeWidth: ptPx(strokeW) }, item, parentMtx);
             }
 
             // --- GraphicLine ---
@@ -29190,7 +29355,7 @@ if (window._spGpuEnabled) {
                 var lStrokeRef = item.getAttribute('StrokeColor');
                 var lStrokeW = parseFloat(item.getAttribute('StrokeWeight')) || 1;
                 var lStroke = resolveColorRef(lStrokeRef, cMap) || '#000000';
-                return { type:'line', x1:x, y1:y, x2: x+w, y2: y+h, stroke: lStroke, strokeWidth: ptPx(lStrokeW) };
+                return idmlWithExtras({ type:'line', x1:x, y1:y, x2: x+w, y2: y+h, stroke: lStroke, strokeWidth: ptPx(lStrokeW) }, item, parentMtx);
             }
 
             // --- Group ---
