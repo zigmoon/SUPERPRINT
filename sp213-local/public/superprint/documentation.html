@@ -384,7 +384,7 @@
     <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
   </button>
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.346</span>
+  <span class="version">v1.7.347</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -1480,8 +1480,8 @@ SUPERPRINT12master/
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Documentation générée le 10 septembre 2026 — v1.7.346</span>
-  <span data-lang="en">Documentation generated September 10, 2026 — v1.7.346</span>
+  <span data-lang="fr">Documentation générée le 10 septembre 2026 — v1.7.347</span>
+  <span data-lang="en">Documentation generated September 10, 2026 — v1.7.347</span>
 </div>
 
 </div><!-- #tab-doc -->
@@ -2060,6 +2060,24 @@ SUPERPRINT12master/
     <li data-lang="fr"><strong>PDF imposé</strong> — Imposition en cahier pour impression recto-verso</li>
     <li data-lang="en"><strong>Imposed PDF</strong> — Booklet imposition for duplex printing</li>
   </ul>
+  <h4 data-lang="fr">Export CMJN + tons directs (Pantone)</h4>
+  <h4 data-lang="en">CMYK + spot colors (Pantone) export</h4>
+  <p data-lang="fr">Dès qu'un ton direct du nuancier Pantone est appliqué à un objet du document, la boîte d'export <strong>bascule automatiquement en mode « CMJN + Pantone »</strong>, comme dans InDesign :</p>
+  <p data-lang="en">As soon as a Pantone spot color from the swatch library is applied to an object, the export dialog <strong>switches automatically to “CMYK + Pantone” mode</strong>, as in InDesign:</p>
+  <ul>
+    <li data-lang="fr"><strong>Résolution verrouillée à 300 DPI</strong> — les autres qualités (72 / 200 / 600 DPI) sont retirées</li>
+    <li data-lang="en"><strong>Resolution locked to 300 DPI</strong> — the other qualities (72 / 200 / 600 DPI) are removed</li>
+    <li data-lang="fr"><strong>Mode couleur CMJN imposé</strong> — RVB et Noir &amp; Blanc ne sont plus proposés</li>
+    <li data-lang="en"><strong>CMYK color mode enforced</strong> — RGB and Black &amp; White are no longer offered</li>
+    <li data-lang="fr"><strong>Une couche chromatique par Pantone</strong> — 1 Pantone = CMJN (4 canaux) + 1 canal ; 2 Pantones = CMJN + 2 canaux. Chaque canal est un espace <em>Separation</em> nommé d'après le Pantone (ex. <code>PANTONE 214 C</code>), donc séparable par le RIP / l'imprimeur.</li>
+    <li data-lang="en"><strong>One color channel per Pantone</strong> — 1 Pantone = CMYK (4 channels) + 1 channel; 2 Pantones = CMYK + 2 channels. Each channel is a <em>Separation</em> color space named after the Pantone (e.g. <code>PANTONE 214 C</code>), so the RIP / printer can separate it.</li>
+    <li data-lang="fr"><strong>Fonds perdus toujours inclus</strong> et typographie vectorielle forcée (indispensable : un texte rasterisé ne peut pas être peint lettre à lettre dans la couche d'encre)</li>
+    <li data-lang="en"><strong>Bleed always included</strong> and vector typography forced (required: rasterized text cannot be painted letter by letter into the ink channel)</li>
+    <li data-lang="fr"><strong>Repères colorimétriques étendus</strong> — patchs quadri + un patch par encre directe</li>
+    <li data-lang="en"><strong>Extended color bars</strong> — process patches + one patch per spot ink</li>
+    <li data-lang="fr">Sans aucun Pantone dans le document, la boîte d'export classique reste strictement inchangée (RVB / CMJN / N&amp;B, toutes qualités).</li>
+    <li data-lang="en">With no Pantone in the document, the classic export dialog stays strictly unchanged (RGB / CMYK / B&amp;W, all qualities).</li>
+  </ul>
 </div>
 
 <div class="step-block">
@@ -2353,8 +2371,8 @@ SUPERPRINT12master/
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Manuel mis à jour le 10 septembre 2026 — v1.7.346</span>
-  <span data-lang="en">Manual updated September 10, 2026 — v1.7.346</span>
+  <span data-lang="fr">Manuel mis à jour le 10 septembre 2026 — v1.7.347</span>
+  <span data-lang="en">Manual updated September 10, 2026 — v1.7.347</span>
 </div>
 
 </div><!-- #tab-manual -->

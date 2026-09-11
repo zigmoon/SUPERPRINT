@@ -5434,6 +5434,38 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
   // ── Rendu de l'aperçu (Fabric) ──────────────────────────────
   function mmToPx(mm) { return mm * MM_TO_PX; }
 
+  // 🛡 FIX 2026-09-10 — hauteur de ligne RÉELLE du moteur SuperPrint.
+  //   Fabric calcule height = lignes × fontSize × lineHeight, MAIS sa méthode
+  //   getHeightOfLine() (que le moteur de l'app surcharge aussi) multiplie en plus
+  //   par `_fontSizeMult` = 1.13. La preview du studio utilisait la formule SANS ce
+  //   facteur → bloc ~29 % trop court ; sur UNE SEULE ligne la boîte de sélection
+  //   ne laissait pas voir la ligne (déficit constant ~14 px à fontSize 24 :
+  //   invisible au-delà de 2-3 lignes).
+  //   Cette constante reproduit le facteur de l'app pour que la preview, la
+  //   sélection et le .sp généré coïncident avec ce que SuperPrint affichera.
+  const SP_TEXT_LINE_MULT = 1.13;
+
+  /** Nombre de lignes VISUELLES estimées d'un élément texte. */
+  function spEstimateTextLines(el) {
+    const fsPx = (+el.fontSize || 14) * PT_TO_PX;
+    const wPx = (+el.width || 200) * MM_TO_PX;
+    const perLine = Math.max(1, Math.floor(wPx / (fsPx * 0.55)));
+    return Math.max(1, Math.ceil(String(el.text || '').length / perLine));
+  }
+
+  /**
+   * Hauteur de bloc (px canvas) d'un élément texte du studio :
+   *   lignes × fontSize(px) × lineHeight × SP_TEXT_LINE_MULT
+   * Aligne la preview ET la hauteur écrite dans le .sp sur ce que le moteur
+   * SuperPrint (getHeightOfLine) utilisera réellement.
+   */
+  function spTextBlockHeightPx(el) {
+    const fsPx = (+el.fontSize || 14) * PT_TO_PX;
+    const lh = (typeof el.lineHeight === 'number' && el.lineHeight > 0) ? el.lineHeight : 1.4;
+    const lines = spEstimateTextLines(el);
+    return Math.max(fsPx, Math.round(lines * fsPx * lh * SP_TEXT_LINE_MULT));
+  }
+
   function elementToFabric(el, bleedPx) {
     const ox = bleedPx, oy = bleedPx;
     const left = (el.left != null ? +el.left : 0) * MM_TO_PX + ox;
@@ -5481,7 +5513,22 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
         if (el.linethrough) opts.linethrough = true;
         if (el.overline) opts.overline = true;
         if (el.backgroundColor) opts.backgroundColor = el.backgroundColor;
-        return new fabric.Textbox(String(el.text || ''), opts);
+        const tb = new fabric.Textbox(String(el.text || ''), opts);
+        // 🛡 FIX 2026-09-10 : donner au bloc sa hauteur de cadre RÉELLE
+        //   (fontSize × lineHeight × fontSizeMult 1.13). Sans cela la boîte de
+        //   sélection d'un texte d'UNE ligne était plus courte que la ligne
+        //   elle-même et masquait le texte. On pose aussi _fixedHeight pour que
+        //   le bloc se comporte comme dans l'app (un redimensionnement vertical
+        //   ajuste la hauteur de CADRE au lieu d'étirer le texte).
+        try {
+          const _frameH = spTextBlockHeightPx(el);
+          if (_frameH > 0) {
+            tb._fixedHeight = _frameH;
+            tb.height = _frameH;
+            tb._fixedWidth = tb.width;
+          }
+        } catch (_) {}
+        return tb;
       }
       if (t === 'image' && el.imageUrl) {
         const placeholder = new fabric.Rect({ left, top, width: (+el.width || 100) * MM_TO_PX, height: (+el.height || 100) * MM_TO_PX, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, opacity });
@@ -5789,13 +5836,13 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
             //   sinon l'app reçoit le nom brut de l'IA (ex. BebasNeue / Playfair) et
             //   ne le reconnaît pas → fallback. Idem preview (normalizeFontFamily).
             const famSP = normalizeFontFamily(el.fontFamily) || 'Open Sans';
-            // 🛡️ FIX 2026-08-30 : hauteur estimée (sinon l'app verrouille _fixedHeight=0 → texte invisible).
+            // 🛡 FIX 2026-09-10 : hauteur via spTextBlockHeightPx, qui inclut
+            //   SP_TEXT_LINE_MULT = 1.13 (le _fontSizeMult de Fabric). L'ancienne
+            //   formule (lignes × fs × lh) produisait un bloc ~29 % trop court,
+            //   rogné à UNE ligne par l'app à l'ouverture.
             const _fsPx = (+el.fontSize || 14) * PT_TO_PX;
             const _lh = el.lineHeight || 1.4;
-            const _wPx = (+el.width || 200) * MM_TO_PX;
-            const _perLine = Math.max(1, Math.floor(_wPx / (_fsPx * 0.55)));
-            const _lines = Math.max(1, Math.ceil(String(el.text || '').length / _perLine));
-            const _hPx = Math.max(_fsPx, Math.round(_lines * _fsPx * _lh));
+            const _hPx = spTextBlockHeightPx(el);
             objects.push({ type: 'textbox', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 200) * MM_TO_PX, height: _hPx, text: el.text || '', fontSize: _fsPx, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh, opacity: op, scaleX: 1, scaleY: 1 });
           } else if (t === 'image' && el.imageUrl) {
             objects.push({ type: 'image', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 100) * MM_TO_PX, height: (+el.height || 100) * MM_TO_PX, opacity: op, scaleX: 1, scaleY: 1, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2 });
@@ -5961,13 +6008,10 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       } else if (t === 'text' || t === 'textbox') {
         // 🛡️ FIX 2026-08-30 : normaliser la police AVANT d'écrire dans le .sp.
         const famSP2 = normalizeFontFamily(el.fontFamily) || 'Open Sans';
-        // 🛡️ FIX 2026-08-30 : hauteur estimée (sinon l'app verrouille _fixedHeight=0).
+        // 🛡 FIX 2026-09-10 : hauteur avec SP_TEXT_LINE_MULT (idem passe précédente).
         const _fsPx2 = (+el.fontSize || 14) * PT_TO_PX;
         const _lh2 = el.lineHeight || 1.4;
-        const _wPx2 = (+el.width || 200) * MM_TO_PX;
-        const _perLine2 = Math.max(1, Math.floor(_wPx2 / (_fsPx2 * 0.55)));
-        const _lines2 = Math.max(1, Math.ceil(String(el.text || '').length / _perLine2));
-        const _hPx2 = Math.max(_fsPx2, Math.round(_lines2 * _fsPx2 * _lh2));
+        const _hPx2 = spTextBlockHeightPx(el);
         objects.push({ type: 'textbox', left, top, width: (+el.width || 200) * MM_TO_PX, height: _hPx2, text: el.text || '', fontSize: _fsPx2, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP2, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh2, opacity: op, scaleX: 1, scaleY: 1 });
       } else if (t === 'image' && el.imageUrl) {
         objects.push({ type: 'image', left, top, width, height, opacity: op, scaleX: 1, scaleY: 1, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2 });

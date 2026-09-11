@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint v1.7.346 — Zigmoon
+         SuperPrint v1.7.347 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint v1.7.346 — Zigmoon">
+    <meta name="generator" content="SuperPrint v1.7.347 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.346",
+          "softwareVersion": "1.7.347",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -990,7 +990,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">v1.7.346</div>
+                <div class="splash-version">v1.7.347</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1112,7 +1112,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.346</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.347</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1208,7 +1208,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.346 | 09 2026<br>
+                V 1.7.347 | 09 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1778,12 +1778,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.346). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.347). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.346 — internal cache tag: JS v346 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.347 — internal cache tag: JS v347 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v346"
-                      data-sp-sw="v1.7.346">v1.7.346</span>
+                      data-sp-js="v347"
+                      data-sp-sw="v1.7.347">v1.7.347</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -3127,40 +3127,85 @@
         <!-- Qualité et résolution -->
         <div style="margin-bottom: 8px;">
             <div id="expQualityHeader" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 5px;">Qualité</div>
-            <label style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin-bottom: 4px;">
+            <label id="exportStandardRow" style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin-bottom: 4px;">
                 <input type="radio" name="exportQuality" id="exportStandard" value="standard" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
                 <div>
                     <div>Standard (72 DPI)</div>
                     <div style="font-size: 9px; color: #666; margin-top: 1px;">Écran et web</div>
                 </div>
             </label>
-            <label style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin-bottom: 4px;">
+            <label id="exportMediumRow" style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px; margin-bottom: 4px;">
                 <input type="radio" name="exportQuality" id="exportMedium" value="medium" checked style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
                 <div>
                     <div>Medium (200 DPI)</div>
                     <div style="font-size: 9px; color: #666; margin-top: 1px;">Impression courante</div>
                 </div>
             </label>
-            <label style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
+            <label id="exportHDRow" style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
                 <input type="radio" name="exportQuality" id="exportHD" value="hd" style="width: 16px; height: 16px; cursor: pointer; accent-color: #000;">
                 <div>
                     <div>HD (300 DPI)</div>
                     <div style="font-size: 9px; color: #666; margin-top: 1px;">Impression professionnelle</div>
                 </div>
             </label>
-            <label style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #000; cursor: pointer; border-radius: 4px; font-size: 11px; margin-top: 4px; color: #fff;">
+            <label id="exportUltraHDRow" style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #000; cursor: pointer; border-radius: 4px; font-size: 11px; margin-top: 4px; color: #fff;">
                 <input type="radio" name="exportQuality" id="exportUltraHD" value="ultrahd" style="width: 16px; height: 16px; cursor: pointer; accent-color: #fff;">
                 <div>
                     <div style="font-weight: 700; letter-spacing: 0.5px;">ULTRA HD (600 DPI)</div>
                     <div style="font-size: 9px; color: #bbb; margin-top: 1px;">Qualité maximale — typo & images sans compression, prêt imprimerie</div>
                 </div>
             </label>
+
+            <!-- ═══ 🎨 v1.7.347 — MODE ENCRE DIRECTE (CMJN + PANTONE) ═══
+                 Affiché UNIQUEMENT quand le document contient au moins un ton
+                 direct. Dans ce mode : résolution verrouillée à 300 DPI, mode
+                 CMJN imposé, RVB et Noir & Blanc retirés. Le PDF produit
+                 comporte 4 canaux quadri + 1 canal par Pantone utilisé. -->
+            <label id="exportSpotQualityRow" style="display: none; align-items: center; gap: 8px; padding: 6px 8px; background: #000; cursor: default; border-radius: 4px; font-size: 11px; margin-top: 4px; color: #fff;">
+                <input type="radio" name="exportQuality" id="exportSpotDpi" value="hd30" checked disabled style="width: 16px; height: 16px; accent-color: #fff;">
+                <div>
+                    <div style="font-weight: 700; letter-spacing: 0.5px;">300 DPI</div>
+                    <div style="font-size: 9px; color: #bbb; margin-top: 1px;" data-translate="exportSpotDpiDesc">Résolution fixe — export imprimeur CMJN + tons directs</div>
+                </div>
+            </label>
         </div>
+
+        <!-- 🎨 Bandeau « tons directs détectés » -->
+        <div id="exportSpotBanner" style="display: none; margin-bottom: 8px; padding: 7px 9px; background: #fff3e0; border: 1px solid #f0c070; border-radius: 4px; font-size: 10px; line-height: 1.4; color: #7a5200;">
+            <strong data-translate="exportSpotBannerTitle">Document avec tons directs (Pantone)</strong>
+            <div id="exportSpotBannerList" style="margin-top: 3px; font-weight: 600;"></div>
+            <div style="margin-top: 3px; opacity: 0.85;" data-translate="exportSpotBannerHint">Le PDF est généré en CMJN + une couche chromatique supplémentaire par Pantone (comme dans InDesign).</div>
+        </div>
+        <!-- 🎨 Options de sortie dédiées au mode Pantone -->
+        <div id="exportSpotToolbarRow" style="display: none; margin-bottom: 8px; padding: 7px 9px; background: #f8f8f8; border-radius: 4px;">
+            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 5px;" data-translate="exportSpotChannelsHeader">Sortie</div>
+            <label style="display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; cursor: pointer; font-size: 11px;">
+                <input type="checkbox" id="spotColorBars" style="width: 15px; height: 15px; cursor: pointer; accent-color: #000; flex-shrink: 0; margin-top: 1px;">
+                <span style="flex: 1; line-height: 1.3;">
+                    <span class="exp-opt-label" data-translate="exportSpotColorBars">Repères colorimétriques (quadri + Pantone)</span>
+                </span>
+            </label>
+            <label style="display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; cursor: pointer; font-size: 11px;">
+                <input type="checkbox" id="spotCropMarks" style="width: 15px; height: 15px; cursor: pointer; accent-color: #000; flex-shrink: 0; margin-top: 1px;">
+                <span style="flex: 1; line-height: 1.3;">
+                    <span class="exp-opt-label" data-translate="exportSpotCropMarks">Traits de coupe</span>
+                </span>
+            </label>
+            <label style="display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; cursor: default; font-size: 11px;">
+                <input type="checkbox" id="spotBleedAlways" checked disabled style="width: 15px; height: 15px; accent-color: #000; flex-shrink: 0; margin-top: 1px;">
+                <span style="flex: 1; line-height: 1.3; opacity: 0.75;">
+                    <span class="exp-opt-label" data-translate="exportSpotBleedAlways">Fonds perdus inclus (obligatoire en export imprimeur)</span>
+                </span>
+            </label>
+        </div>
+
+        <!-- Marqueur interne : « le document contient des Pantones » -->
+        <input type="checkbox" id="exportSpotMode" style="display: none;">
 
         <!-- Options d'impression -->
         <div style="margin-bottom: 10px;">
             <div id="expOptHeader" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 6px;">Options</div>
-            <!-- 🎯 v1.7.346 : options compactées — grille 2×2 pour les cases simples -->
+            <!-- 🎯 v1.7.347 : options compactées — grille 2×2 pour les cases simples -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 5px;">
                 <!-- Format fini = export à la taille de création. Coché par défaut.
                      Dès qu'une option imprimerie est cochée, il se décoche (exclusif). -->
@@ -3241,19 +3286,24 @@
         <!-- Mode couleur -->
         <div style="margin-bottom: 12px;">
             <div id="expColorHeader" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.5; margin-bottom: 6px;">Couleur</div>
-            <div style="display: flex; gap: 6px;">
-                <label style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
+            <div id="exportColorRow" style="display: flex; gap: 6px;">
+                <label id="exportColorRgbRow" style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
                     <input type="radio" name="colorMode" id="colorRGB" value="rgb" checked style="width: 14px; height: 14px; cursor: pointer; accent-color: #000;">
                     <span>RVB</span>
                 </label>
-                <label style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
+                <label id="exportColorBwRow" style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
                     <input type="radio" name="colorMode" id="colorBW" value="bw" style="width: 14px; height: 14px; cursor: pointer; accent-color: #000;">
                     <span>Noir & Blanc</span>
                 </label>
-                <label style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
+                <label id="exportColorCmykRow" style="flex: 1; display: flex; align-items: center; gap: 6px; padding: 8px; background: #f8f8f8; cursor: pointer; border-radius: 4px; font-size: 11px;">
                     <input type="radio" name="colorMode" id="colorCMYK" value="cmyk" style="width: 14px; height: 14px; cursor: pointer; accent-color: #000;">
-                    <span>CMJN</span>
+                    <span id="exportColorCmykLabel">CMJN</span>
                 </label>
+            </div>
+            <!-- 🎨 v1.7.347 — rappel « encres directes » en mode Pantone -->
+            <div id="exportSpotChannelSummary" style="display: none; margin-top: 6px; padding: 7px 9px; background: #eef3e9; border: 1px solid #c8d8b8; border-radius: 4px; font-size: 10px; line-height: 1.4;">
+                <div id="exportSpotChannelCount" style="font-weight: 700;"></div>
+                <div id="exportSpotChannelNames" style="margin-top: 2px; opacity: 0.8;"></div>
             </div>
             <!-- ICC profile (only when CMJN) — PDF/X-3 compliance -->
             <div id="cmykIccProfileGroup" style="display: none; margin-top: 8px;">
@@ -3552,7 +3602,7 @@
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
                             <div>
                                 <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 900; letter-spacing: 2px; color: #1a1a1a;">SUPER PRINT</div>
-                                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: #999; margin-top: 6px;">v1.7.346</div>
+                                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: #999; margin-top: 6px;">v1.7.347</div>
                             </div>
                             <a href="documentation.html" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: #0c0c0f; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; transition: background 0.2s;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='#0c0c0f'">
                                 <span data-translate="settingsManualBtn">Manuel &amp; Documentation</span>
@@ -3641,7 +3691,7 @@
                     </div>
 
                     <div style="text-align: center; padding-top: 16px; font-size: 10px; color: #999;">
-                        SuperPrint v1.7.346 — 10 septembre 2026
+                        SuperPrint v1.7.347 — 10 septembre 2026
                     </div>
                     <div style="padding: 12px 0 0; display: flex; gap: 12px; justify-content: flex-end;">
                         <button class="btn btn-secondary" onclick="closeSettings()">Annuler</button>
@@ -5608,13 +5658,13 @@
 
     <!-- All application logic moved to JS/main.js -->    
     <!-- External scripts -->
-    <script src="JS/patches-core.js?v=20260907-v346-quality-dpi" defer></script>
+    <script src="JS/patches-core.js?v=20260907-v347-quality-dpi" defer></script>
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260910-v346-delete-fix" defer></script>
+    <script src="JS/main.js?v=20260911-v347g-spot-bmc" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
-    <script src="JS/virtual-printer.js?v=20260907-v346-quality-dpi" defer></script>
+    <script src="JS/virtual-printer.js?v=20260907-v347-quality-dpi" defer></script>
     <script src="JS/collab.js?v=20260907-v016-ux" defer></script>
     <script src="JS/pwa.js?v=20260501-no-double-splash" defer></script>
 

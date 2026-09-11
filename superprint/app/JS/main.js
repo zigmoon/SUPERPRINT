@@ -1175,6 +1175,13 @@ const SP_CUSTOM_PROPS = [
     // voyaient jamais le PDF importé comme vectoriel → toujours rasterisé (lourd).
     '_spPdfContentType',
     '_spPdfArchiveKey',
+    // 🎨 v1.7.347 — ENCRE DIRECTE (PANTONE). Marqueur posé sur un objet dont
+    // la couleur est un ton direct : identifie la COUCHE CHROMATIQUE
+    // supplémentaire à produire dans le PDF (CMJN + Pantone, façon InDesign).
+    // Sans cette sérialisation, le .sp/.json perdait l'information de Pantone
+    // et le document n'était plus reconnu comme « à tons directs ».
+    '_spSpotInk',
+    '_spSpotStrokeInk',
     // 🛡️ FIX 2026-05-01 : flags d'overflow spread + ID stable.
     // Sans ca, sauvegarder en mode single un projet spread strippe les
     // marqueurs et casse le dedoublonnage au retour en spread (objet
@@ -12900,6 +12907,15 @@ if (window._spGpuEnabled) {
 
     const fillValue = window._blockFillNone ? 'transparent' : document.getElementById('blockFill').value;
     const strokeValue = window._blockStrokeNone ? 'transparent' : document.getElementById('blockStroke').value;
+
+    // 🎨 v1.7.347 — changer la couleur d'un objet via le sélecteur (RVB, CMJN,
+    // pipette, nuancier, « sans fond ») RETIRE le marqueur d'encre directe :
+    // l'objet n'est plus peint dans un canal Pantone. Sans cela, le canal
+    // restait déclaré et la boîte d'export restait bloquée en mode CMJN+Pantone.
+    try {
+        if (obj._spSpotInk && String(obj._spSpotInk).toLowerCase() !== String(fillValue).toLowerCase()) delete obj._spSpotInk;
+        if (obj._spSpotStrokeInk && String(obj._spSpotStrokeInk).toLowerCase() !== String(strokeValue).toLowerCase()) delete obj._spSpotStrokeInk;
+    } catch (_) {}
 
     obj.set({
         fill: fillValue,
@@ -24928,6 +24944,16 @@ if (window._spGpuEnabled) {
                 const obj = activeCanvas.getActiveObject();
                 if (obj) {
                     obj.set('fill', selectedColor);
+                    // 🎨 v1.7.347 — marquer l'objet comme peint d'une ENCRE
+                    //   DIRECTE : c'est ce marqueur qui créera la couche
+                    //   chromatique supplémentaire « Pantone » à l'export.
+                    //   (fonction exposée par le module d'export Pantone)
+                    try {
+                        const _opt = this.options[this.selectedIndex] || null;
+                        if (typeof window._spTagSpotSelection === 'function') {
+                            window._spTagSpotSelection(obj, selectedColor, _opt ? _opt.textContent : '');
+                        }
+                    } catch (_) {}
                     activeCanvas.requestRenderAll();
                     saveState('Couleur Pantone appliquée');
                 }
@@ -30374,6 +30400,173 @@ if (window._spGpuEnabled) {
     });
         }
 
+        // ═══════════════════════════════════════════════════════════════════
+        // 🎨 v1.7.347 — ADAPTATION DE LA BOÎTE D'EXPORT AUX TONS DIRECTS
+        // ═══════════════════════════════════════════════════════════════════
+        // Règle demandée : dès qu'un Pantone est présent dans le document, la
+        // boîte d'export bascule en mode « CMJN + Pantone » :
+        //   • Qualité verrouillée sur 300 DPI (Standard / Medium / ULTRA HD retirés)
+        //   • Couleur : RVB et Noir & Blanc retirés, CMJN imposé et seul choix
+        //   • Rappel du nombre de couches chromatiques et de leurs noms
+        //   • Options dédiées : repères colorimétriques (quadri + Pantone),
+        //     traits de coupe, fonds perdus toujours inclus
+        // Le document SANS Pantone garde strictement la boîte actuelle.
+        function _spSyncExportSpotUI() {
+            const modal = document.getElementById('exportModal');
+            if (!modal) return;
+            const flag = document.getElementById('exportSpotMode');
+            const isSpot = !!(flag && flag.checked);
+
+            // ── 1. Qualité ──
+            const rowStd = document.getElementById('exportStandardRow');
+            const rowMed = document.getElementById('exportMediumRow');
+            const rowHD = document.getElementById('exportHDRow');
+            const rowUltra = document.getElementById('exportUltraHDRow');
+            const rowSpotQ = document.getElementById('exportSpotQualityRow');
+            const stdRadios = ['exportStandard', 'exportMedium', 'exportHD', 'exportUltraHD']
+                .map(function (id) { return document.getElementById(id); }).filter(Boolean);
+
+            if (isSpot) {
+                [rowStd, rowMed, rowUltra, rowHD].forEach(function (r) { if (r) r.style.display = 'none'; });
+                if (rowSpotQ) rowSpotQ.style.display = 'flex';
+                const spotRadio = document.getElementById('exportSpotDpi');
+                if (spotRadio) spotRadio.checked = true;
+            } else {
+                [rowStd, rowMed, rowHD].forEach(function (r) { if (r) r.style.display = 'flex'; });
+                if (rowUltra) rowUltra.style.display = 'flex';
+                if (rowSpotQ) rowSpotQ.style.display = 'none';
+                const spotRadio = document.getElementById('exportSpotDpi');
+                if (spotRadio) spotRadio.checked = false;
+                // Restaurer un choix utilisable si le mode Pantone avait tout désélectionné
+                if (!stdRadios.some(function (r) { return r.checked; })) {
+                    const hd = document.getElementById('exportHD');
+                    if (hd) hd.checked = true;
+                }
+            }
+
+            // ── 2. Couleur : RVB et Noir & Blanc retirés ──
+            const rgbRow = document.getElementById('exportColorRgbRow');
+            const bwRow = document.getElementById('exportColorBwRow');
+            const cmykRadio = document.getElementById('colorCMYK');
+            const cmykLabel = document.getElementById('exportColorCmykLabel');
+            const summary = document.getElementById('exportSpotChannelSummary');
+            const banner = document.getElementById('exportSpotBanner');
+            const toolbar = document.getElementById('exportSpotToolbarRow');
+
+            // La typographie vectorielle est INDISPENSABLE en mode Pantone : sans
+            // elle le texte part en raster, et un texte raster ne peut pas être
+            // peint dans la couche d'encre mot pour mot (il deviendrait un aplat).
+            // On la verrouille donc ON, comme ULTRA HD le fait.
+            const vt = document.getElementById('vectorTypography');
+            const vtRow = document.getElementById('vectorTypographyRow');
+            if (vt) { vt.checked = isSpot ? true : vt.checked; vt.disabled = isSpot; }
+            if (vtRow) vtRow.style.opacity = isSpot ? '0.75' : '1';
+
+            if (isSpot) {
+                if (rgbRow) rgbRow.style.display = 'none';
+                if (bwRow) bwRow.style.display = 'none';
+                if (cmykRadio) cmykRadio.checked = true;
+                if (cmykLabel) {
+                    const t = (typeof translate === 'function') ? translate('exportColorSpotLabel') : '';
+                    cmykLabel.textContent = (t && t !== 'exportColorSpotLabel') ? t : 'CMJN + Pantone';
+                }
+                if (summary) summary.style.display = 'block';
+                if (banner) banner.style.display = 'block';
+                if (toolbar) toolbar.style.display = 'block';
+
+                // Repères : les cases de la boîte classique sont remplacées par
+                // la variante Pantone (les deux familles restent synchronisées).
+                const cb = document.getElementById('colorBars');
+                const cm = document.getElementById('cropMarks');
+                const scb = document.getElementById('spotColorBars');
+                const scm = document.getElementById('spotCropMarks');
+                if (scb) scb.checked = !!(cb && cb.checked);
+                if (scm) scm.checked = !!(cm && cm.checked);
+                [cb, cm].forEach(function (el) {
+                    const row = el ? el.closest('label') : null;
+                    if (row) row.style.display = 'none';
+                });
+
+                // Export IMPRIMEUR : fonds perdus toujours inclus, donc on masque
+                // « Format fini » (incompatible) et « Inclure les fonds perdus »
+                // (forcé). Options RVB sans objet : PDF 3D RVB, fond PNG.
+                const finRow = document.getElementById('finishedFormatRow');
+                if (finRow) finRow.style.display = 'none';
+                const finEl = document.getElementById('finishedFormat');
+                if (finEl) finEl.checked = false;
+                const incBleedEl = document.getElementById('exportIncludeBleed');
+                if (incBleedEl) {
+                    incBleedEl.checked = true;
+                    const row = incBleedEl.closest('label');
+                    if (row) row.style.display = 'none';
+                }
+                const pdf3d = document.getElementById('pdf3DOptionRow');
+                if (pdf3d) pdf3d.style.display = 'none';
+                const pdf3dChk = document.getElementById('pdf3DEnabled');
+                if (pdf3dChk) pdf3dChk.checked = false;
+                const pngBg = document.getElementById('pngBgGroup');
+                if (pngBg) pngBg.style.display = 'none';
+
+                // Le mode couleur est désormais CMJN : rafraîchir le panneau ICC.
+                try { _spSyncCmykIccUi(); } catch (_) {}
+            } else {
+                if (rgbRow) rgbRow.style.display = 'flex';
+                if (bwRow) bwRow.style.display = 'flex';
+                if (cmykLabel) cmykLabel.textContent = 'CMJN';
+                if (summary) summary.style.display = 'none';
+                if (banner) banner.style.display = 'none';
+                if (toolbar) toolbar.style.display = 'none';
+                ['colorBars', 'cropMarks'].forEach(function (id) {
+                    const el = document.getElementById(id);
+                    const row = el ? el.closest('label') : null;
+                    if (row) row.style.display = '';
+                });
+                const finRow = document.getElementById('finishedFormatRow');
+                if (finRow) finRow.style.display = '';
+                const incBleedEl = document.getElementById('exportIncludeBleed');
+                if (incBleedEl) {
+                    const row = incBleedEl.closest('label');
+                    if (row) row.style.display = '';
+                }
+                const pdf3d = document.getElementById('pdf3DOptionRow');
+                if (pdf3d) pdf3d.style.display = '';
+                const pngBg = document.getElementById('pngBgGroup');
+                if (pngBg) pngBg.style.display = '';
+            }
+
+            // ── 3. Liste des encres détectées ──
+            if (isSpot) {
+                let inks = [];
+                try { inks = window._spSpotScanDocument().inks; } catch (_) {}
+                const list = document.getElementById('exportSpotBannerList');
+                if (list) list.textContent = inks.map(function (i) { return i.name; }).join(' · ');
+                const count = document.getElementById('exportSpotChannelCount');
+                const names = document.getElementById('exportSpotChannelNames');
+                const total = 4 + inks.length;
+                if (count) {
+                    const tpl = (typeof translate === 'function') ? translate('exportSpotChannelCountTemplate') : '';
+                    count.textContent = (tpl && tpl !== 'exportSpotChannelCountTemplate')
+                        ? tpl.replace('{n}', String(total)).replace('{p}', String(inks.length))
+                        : (total + ' couches chromatiques — CMJN (4) + ' + inks.length + ' Pantone');
+                }
+                if (names) names.textContent = inks.map(function (i) { return '• ' + i.name; }).join('  ');
+            }
+        }
+        window._spSyncExportSpotUI = _spSyncExportSpotUI;
+
+        // Évalue la présence de tons directs et ACTIVE/DÉSACTIVE le mode.
+        // Appelée à l'ouverture de la boîte d'export et après toute action
+        // susceptible d'ajouter/retirer un Pantone.
+        function _spRefreshExportSpotMode() {
+            try {
+                const has = (typeof window._spSpotDocHasInks === 'function') && window._spSpotDocHasInks();
+                const flag = document.getElementById('exportSpotMode');
+                if (flag) flag.checked = has;
+            } catch (_) {}
+            _spSyncExportSpotUI();
+        }
+        window._spRefreshExportSpotMode = _spRefreshExportSpotMode;
+
         function openExportModal() {
             document.getElementById('exportModal').style.display = 'block';
             // Restore last-used CMYK settings from localStorage
@@ -30461,7 +30654,37 @@ if (window._spGpuEnabled) {
                 }
                 _syncFinished();
             } catch (_) {}
+
+            // 🎨 v1.7.347 — Bascule de la boîte d'export en mode « CMJN +
+            //   Pantone » dès que le document contient un ton direct.
+            try { _spRefreshExportSpotMode(); } catch (_) {}
         }
+
+        // 🎨 v1.7.347 — synchronisation des options d'export en mode Pantone.
+        // Les repères de la boîte classique et leur variante Pantone restent
+        // cohérents (le document sans Pantone retrouve ses options d'origine).
+        (function _spBindSpotExportControls() {
+            [['colorBars', 'spotColorBars'], ['cropMarks', 'spotCropMarks']].forEach(function (p) {
+                const a = document.getElementById(p[0]);
+                const b = document.getElementById(p[1]);
+                if (!a || !b) return;
+                a.addEventListener('change', function () {
+                    if (a.closest('label') && a.closest('label').style.display !== 'none') b.checked = a.checked;
+                });
+                b.addEventListener('change', function () { a.checked = b.checked; });
+            });
+            // Le mode Pantone implique le CMJN : forcer le radio si l'utilisateur
+            // tente de revenir sur RVB/NB (masqués, mais un script pourrait les cocher).
+            document.addEventListener('change', function (e) {
+                if (!e.target || e.target.name !== 'colorMode') return;
+                const flag = document.getElementById('exportSpotMode');
+                if (!flag || !flag.checked) return;
+                if (e.target.value !== 'cmyk') {
+                    const c = document.getElementById('colorCMYK');
+                    if (c) c.checked = true;
+                }
+            });
+        })();
 
         // Restore previously-saved CMYK export prefs (colorMode, ICC profile, GCR, ink limit)
         function _spRestoreCmykExportPrefs() {
@@ -32331,7 +32554,65 @@ https://superprint.app
     const exportQuality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'medium';
     const colorModeSelected = document.querySelector('input[name="colorMode"]:checked')?.value || 'rgb';
     const forceHyphenation = document.getElementById('forceHyphenExport') ? document.getElementById('forceHyphenExport').checked : false;
-    
+
+    // 🎨 v1.7.347 — MODE ENCRE DIRECTE (CMJN + Pantone).
+    //   Dès que le document contient un (ou plusieurs) ton(s) direct(s), la
+    //   sortie passe par la brique dédiée : 300 DPI, CMJN + une couche par
+    //   Pantone, fonds perdus inclus, options repères dédiées. Les exporteurs
+    //   classiques (RVB/CMJN/N&B, brique « Format fini » existante) restent
+    //   intacts pour les documents sans ton direct — cette brique est un CLONE.
+    let _spSpotExport = false;
+    try {
+        _spSpotExport = (typeof window._spSpotDocHasInks === 'function') && window._spSpotDocHasInks();
+    } catch (_) {}
+    if (_spSpotExport) {
+        const _spotOpts = {
+            colorMode: 'cmyk',
+            quality: 'hd',                 // 300 DPI imposé
+            vectorTypography: true,        // typo vectorielle : requis pour colorer les lettres
+            forceHyphenation: forceHyphenation,
+            includeBleed: true,            // export imprimeur : fonds perdus conservés
+            finishedFormat: false,         // incompatible avec un export imprimeur
+            cropMarks: !!(document.getElementById('spotCropMarks') && document.getElementById('spotCropMarks').checked),
+            colorBars: !!(document.getElementById('spotColorBars') && document.getElementById('spotColorBars').checked),
+            iccProfile: (document.getElementById('cmykIccProfile')?.value ?? 'CoatedFOGRA39')
+        };
+        const _spotLoader = _spCreatePdfLoader({
+            title: (currentLanguage === 'en'
+                ? 'Generating CMYK + spot PDF'
+                : (currentLanguage === 'ja' ? 'CMYK＋スポットPDFを生成中' : 'Génération du PDF CMJN + Pantone')),
+            sub: (currentLanguage === 'en'
+                ? 'Preparing pages…'
+                : (currentLanguage === 'ja' ? 'ページを準備中…' : 'Préparation des pages…'))
+        });
+        const _spotApi = _spotLoader._spPdfLoaderApi;
+        // Réinitialiser les collecteurs de texte (le chemin natif les utilise)
+        window._spPdfTexts = [];
+        window._spPdfFonts = {};
+        window._spPdfVectorImports = [];
+        window._spImpositionMeta = null;
+        try {
+            await new Promise(function (resolve) { setTimeout(resolve, 50); });
+            await _spExportSpotPdfLib(_spotOpts, _spotLoader, _spotApi);
+            try {
+                const l = window._spSpotLastExport;
+                if (window.spToast && l) {
+                    const msg = (currentLanguage === 'en'
+                        ? ('PDF exported — ' + l.channels + ' channels: CMYK + ' + (l.channels - 4) + ' Pantone')
+                        : (currentLanguage === 'ja'
+                            ? ('PDF書き出し完了 — ' + l.channels + ' チャンネル：CMYK＋' + (l.channels - 4) + ' Pantone')
+                            : ('PDF exporté — ' + l.channels + ' couches : CMJN + ' + (l.channels - 4) + ' Pantone')));
+                    window.spToast(msg, 'success', 6000);
+                }
+            } catch (_) {}
+        } catch (spotErr) {
+            _spotLoader.remove();
+            console.error('[confirmExport] Erreur export CMJN+Pantone :', spotErr);
+            alert('Erreur export CMJN + Pantone : ' + (spotErr.message || spotErr));
+        }
+        return;
+    }
+
     // IMPORTANT : Relire la valeur de bleed depuis l'input pour s'assurer qu'elle est à jour
     const bleedInputValue = parseFloat(document.getElementById('bleed').value) || 3;
     const currentBleed = (currentLanguage === 'en') ? inToMm(bleedInputValue) : bleedInputValue;
@@ -34033,6 +34314,907 @@ https://superprint.app
         }
 
         // ✏️ v1.7.212 — EXPORT SIMPLE NATIF PDF-LIB ──────────────────────
+        // ═══════════════════════════════════════════════════════════════════
+        // 🎨 v1.7.347 — EXPORT CMJN + TONS DIRECTS (PANTONE)
+        // ═══════════════════════════════════════════════════════════════════
+        // Modèle retenu, identique à InDesign :
+        //   • Un Pantone est une ENCRE NOMMÉE. Chaque encre directe présente
+        //     dans le document devient une COUCHE CHROMATIQUE SUPPLÉMENTAIRE,
+        //     matérialisée dans le PDF par un Espace de couleur /Separation
+        //     nommé (ex. /PANTONE 214 C) avec une fonction de teinte
+        //     (TintTransform FunctionType 2) qui donne l'aspect du Pantone
+        //     lorsqu'un lecteur ne sépare pas les canaux.
+        //   • Le canevas est composé en RVB par le moteur vectoriel EXISTANT
+        //     (inchangé) puis converti en CMJN : on obtient la couche quadri.
+        //     Les objets peints d'un Pantone sont encadrés de marqueurs
+        //     /SPOT<n> BDC … EMC, réécrits APRÈS la conversion en opérateurs
+        //     d'encre directe. 1 Pantone → CMJN+1 canal, 2 Pantones → CMJN+2.
+        //   • AUCUN des exporteurs existants n'est modifié : cette brique est
+        //     un CLONE de « Format fini » (_exportSimplePdfLib) ; le rendu
+        //     réutilise le même moteur (_renderObjToPdfLib).
+        //   • L'écriture de l'encre repose sur la réécriture de
+        //     PDFContentStream#push, point de passage UNIQUE de pdf-lib
+        //     (drawText, drawRectangle, drawSvgPath, drawImage…). C'est la
+        //     technique préconisée par l'ISO 32000-2 §10.5.4 (Separation) et
+        //     celle qu'utilise Acrobat pour la sortie séparée.
+        // ═══════════════════════════════════════════════════════════════════
+
+        function _spSpotIsHex(v) { return typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v); }
+
+        // Entrées du nuancier qui sont des équivalents QUADRI, pas des encres
+        // directes : noir 100 %, blanc pur, grisés « Tint », « Process X ».
+        // Sans ce filtre, tout texte noir ou fond blanc serait pris pour un
+        // Pantone et déclencherait à tort une boîte d'export « CMJN + Pantone »
+        // avec des couches fantômes.
+        const _SP_SPOT_PROCESS_HEX = { '#000000': true, '#FFFFFF': true };
+        function _spSpotIsProcessEntry(hex, name) {
+            if (_SP_SPOT_PROCESS_HEX[String(hex || '').toUpperCase()]) return true;
+            const n = String(name || '');
+            if (!n) return false;
+            if (/\bTint\b/i.test(n)) return true;                    // grisés « 10% Tint »
+            if (/\bProcess\b/i.test(n) && !/\bPantone\b/i.test(n)) return true;
+            if (/^(Noir|Blanc)\b/i.test(n)) return true;             // « Noir 100% », « Blanc Pur »
+            if (/^Black \d+% Tint/i.test(n)) return true;
+            return false;
+        }
+        window._spSpotIsProcessEntry = _spSpotIsProcessEntry;
+
+        // Palette Pantone : hex → { hex, name, group, ambiguous }.
+        // Construite depuis le nuancier <select id="spotColorSelect"> (source
+        // unique de vérité). En cas de doublon d'hex (plusieurs noms de
+        // Pantone sur le même code), l'encre n'est pas identifiable : l'entrée
+        // est marquée `ambiguous` et n'est retenue que si l'objet porte un
+        // marqueur explicite _spSpotInk (voir _spSpotScanDocument).
+        function _spSpotBuildCatalog() {
+            const map = Object.create(null);
+            try {
+                const sel = document.getElementById('spotColorSelect');
+                if (!sel) return map;
+                Array.prototype.forEach.call(sel.querySelectorAll('option'), function (opt) {
+                    const hex = (opt.value || '').trim();
+                    if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;   // ignore l'option vide
+                    const key = hex.toLowerCase();
+                    const label = (opt.textContent || '').trim();
+                    if (_spSpotIsProcessEntry(hex, label)) return; // quadri, pas une encre directe
+                    if (!map[key]) {
+                        map[key] = {
+                            hex: hex.toUpperCase(),
+                            name: label,
+                            group: (opt.parentNode && opt.parentNode.label) || '',
+                            ambiguous: false
+                        };
+                    } else if (map[key].name !== label) {
+                        map[key].ambiguous = true;   // deux Pantones sur le même hex
+                    }
+                });
+            } catch (_) {}
+            return map;
+        }
+        window._spSpotBuildCatalog = _spSpotBuildCatalog;
+
+        // sRGB hex → composantes CMYK naïves (sans GCR ni limite d'encre).
+        // Sert de fonction de teinte : 100 % d'encre ≈ la couleur Pantone.
+        function _spSpotHexToCmyk(hex) {
+            try {
+                const p = _parsePdfColor(hex);
+                if (!p) return { c: 0, m: 0, y: 0, k: 0 };
+                const rn = p[0] / 255, gn = p[1] / 255, bn = p[2] / 255;
+                const k = 1 - Math.max(rn, gn, bn);
+                if (k >= 1) return { c: 0, m: 0, y: 0, k: 1 };
+                const inv = 1 - k;
+                return { c: (1 - rn - k) / inv, m: (1 - gn - k) / inv, y: (1 - bn - k) / inv, k: k };
+            } catch (_) { return { c: 0, m: 0, y: 0, k: 0 }; }
+        }
+
+        // Nom lisible du canal d'encre (façon InDesign : « PANTONE 214 C »).
+        // Sert d'identifiant de plaque pour le RIP / l'imprimeur.
+        function _spSpotChannelName(label, fallbackHex) {
+            let n = String(label || '')
+                .split('—')[0].split(' – ')[0].split(' - ')[0].split('(')[0]
+                .toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+            if (!n) n = 'PANTONE ' + String(fallbackHex || '').replace('#', '').toUpperCase();
+            return n.slice(0, 60);
+        }
+
+        // 🎨 Marque un objet comme peint d'une ENCRE DIRECTE. Le marqueur
+        // (_spSpotInk / _spSpotStrokeInk) est sérialisé via SP_CUSTOM_PROPS :
+        // l'information de couche chromatique survit donc au .sp, au .json et
+        // aux sauvegardes navigateur.
+        function _spTagSpotSelection(obj, hex, label) {
+            if (!obj || !_spSpotIsHex(hex)) return null;
+            const ch = (window._spSpotTargetChannel === 'stroke') ? 'stroke' : 'fill';
+            return _spTagSpotObject(obj, hex, ch, label);
+        }
+        window._spTagSpotSelection = _spTagSpotSelection;
+
+        function _spTagSpotObject(obj, hex, channel, label) {
+            if (!obj || !_spSpotIsHex(hex)) return null;
+            const up = hex.toUpperCase();
+            const chanName = _spSpotChannelName(label, up);
+            try {
+                if (channel === 'stroke') {
+                    obj._spSpotStrokeInk = up;
+                    if (label) obj._spSpotStrokeInkName = chanName;
+                } else {
+                    obj._spSpotInk = up;
+                    if (label) obj._spSpotInkName = chanName;
+                }
+            } catch (_) {}
+            // Registre document : liste les Pantones du document même quand
+            // l'analyse des objets n'est pas possible (undo, JSON brut…).
+            try {
+                if (!window._spSpotInkColors) window._spSpotInkColors = {};
+                if (!window._spSpotInkColors[up]) {
+                    window._spSpotInkColors[up] = { hex: up, name: label || up, channel: chanName, count: 0 };
+                }
+                window._spSpotInkColors[up].count++;
+            } catch (_) {}
+            // Si la boîte d'export est ouverte, elle doit refléter l'ajout.
+            // (appel via window : le module d'export vit dans une autre portée)
+            try {
+                const m = document.getElementById('exportModal');
+                if (m && m.style.display === 'block' && typeof window._spRefreshExportSpotMode === 'function') {
+                    window._spRefreshExportSpotMode();
+                }
+            } catch (_) {}
+            return up;
+        }
+        window._spTagSpotObject = _spTagSpotObject;
+
+        // Recense les ENCRES DIRECTES réellement utilisées par le document.
+        // Un objet porte une encre directe si :
+        //   • sa couleur est explicitement marquée `_spSpotInk` (nuancier), OU
+        //   • sa couleur correspond à un ton direct NON AMBIGU du nuancier.
+        // Retourne { inks:[{key,hex,name,group,cmyk,used}], byHex:{hex:ink} }.
+        function _spSpotScanDocument() {
+            const catalog = _spSpotBuildCatalog();
+            const byHex = Object.create(null);
+            const inks = [];
+
+            const consider = function (color, tag) {
+                // 🎨 v1.7.347 — DÉTECTION EXPLICITE, comme InDesign : une couleur
+                // n'est une ENCRE DIRECTE que si l'objet porte le marqueur posé
+                // par le nuancier (_spSpotInk / _spSpotStrokeInk).
+                //
+                // Avant, un hex correspondant à un code Pantone du catalogue
+                // suffisait. C'était la source de plusieurs bugs :
+                //   • retirer le Pantone (ou changer la couleur via le sélecteur)
+                //     laissait le canal fantôme actif → la boîte d'export restait
+                //     bloquée en mode CMJN + Pantone ;
+                //   • n'importe quelle couleur approchante créait une plaque non
+                //     désirée par l'imprimeur.
+                // Le marqueur est désormais la SEULE source de vérité.
+                if (!tag) return null;
+                const tHex = _spSpotIsHex(tag) ? tag.toLowerCase() : null;
+                if (!tHex) return null;
+                const cHex = _spSpotIsHex(color) ? color.toLowerCase() : null;
+                // Si la couleur a changé depuis le marquage, le marqueur est
+                // périmé : l'objet n'est plus peint de cette encre.
+                const stale = cHex && cHex !== tHex;
+                const cat = catalog[tHex];
+                if (!cat) return null;
+                if (stale) return null;
+                const key = tHex;
+                if (!byHex[key]) {
+                    byHex[key] = {
+                        key: key,
+                        hex: key.toUpperCase(),
+                        name: cat.name || ('Ton direct ' + key.toUpperCase()),
+                        group: cat.group || '',
+                        cmyk: _spSpotHexToCmyk(key),
+                        used: 0
+                    };
+                    inks.push(byHex[key]);
+                }
+                byHex[key].used++;
+                return byHex[key];
+            };
+
+            const visit = function (obj) {
+                if (!obj) return;
+                consider(obj.fill, obj._spSpotInk);
+                consider(obj.stroke, obj._spSpotStrokeInk);
+                // Texte avec styles par plage (couleur Pantone sur une sélection)
+                if (obj.styles && typeof obj.styles === 'object') {
+                    try {
+                        Object.keys(obj.styles).forEach(function (lk) {
+                            const line = obj.styles[lk];
+                            if (!line || typeof line !== 'object') return;
+                            Object.keys(line).forEach(function (ck) {
+                                const st = line[ck];
+                                if (st && st.fill) consider(st.fill, st._spSpotInk);
+                            });
+                        });
+                    } catch (_) {}
+                }
+                if (obj._objects && obj._objects.length) obj._objects.forEach(visit);
+            };
+
+            try {
+                (pages || []).forEach(function (pg) {
+                    if (!pg || !pg.objects) return;
+                    const data = typeof pg.objects === 'string' ? JSON.parse(pg.objects) : pg.objects;
+                    (data && data.objects ? data.objects : []).forEach(visit);
+                });
+            } catch (e) { console.warn('[Spot] scan failed:', e); }
+
+            return { inks: inks, byHex: byHex };
+        }
+        window._spSpotScanDocument = _spSpotScanDocument;
+
+        // Le document contient-il au moins une encre directe ? (pilote la
+        // bascule de la boîte d'export en mode « CMJN + Pantone ».)
+        function _spSpotDocHasInks() {
+            try { return _spSpotScanDocument().inks.length > 0; } catch (_) { return false; }
+        }
+        window._spSpotDocHasInks = _spSpotDocHasInks;
+
+        // Détermine l'encre directe éventuellement portée par un objet.
+        // Retourne null, ou { entry, fillHex, strokeHex }.
+        // ⚠️ Même règle conservatrice que _spSpotScanDocument : un hex ambigu
+        //    n'est retenu que s'il porte un marqueur explicite, et les entrées
+        //    quadri sont exclues du catalogue en amont.
+        function _spSpotResolveObjectInk(obj, spotCtx) {
+            if (!obj || !spotCtx || !spotCtx.inks.length) return null;
+            const check = function (color, tag) {
+                const tHex = _spSpotIsHex(tag) ? tag.toLowerCase() : null;
+                const cHex = _spSpotIsHex(color) ? color.toLowerCase() : null;
+                const key = tHex || cHex;
+                if (!key) return null;
+                const found = spotCtx.byHex[key] || null;
+                if (!found) return null;
+                if (!tHex) {
+                    // Détection par couleur seule : refuser les codes ambigus.
+                    let cat = null;
+                    try { cat = _spSpotBuildCatalog()[key]; } catch (_) {}
+                    if (!cat || cat.ambiguous) return null;
+                }
+                return found;
+            };
+            const eFill = check(obj.fill, obj._spSpotInk);
+            const eStroke = check(obj.stroke, obj._spSpotStrokeInk);
+            const entry = eFill || eStroke;
+            if (!entry) return null;
+            // Un objet peint de DEUX encres directes différentes n'est pas
+            // représentable simplement : on privilégie l'encre de remplissage
+            // (le contour reste dans son canal via les marqueurs successifs).
+            return {
+                entry: entry,
+                fillHex: eFill ? eFill.key : null,
+                strokeHex: eStroke ? eStroke.key : null
+            };
+        }
+        window._spSpotResolveObjectInk = _spSpotResolveObjectInk;
+
+        // Liste des tons directs déclarés (registre vivant + analyse objets).
+        // Sert à la persistance .sp / .json.
+        // ⚠️ Les clés du registre sont TOUJOURS en MAJUSCULES (#C6007E) : sinon
+        //    la fusion entre le registre (_spTagSpotObject, majuscules) et
+        //    l'analyse des objets (minuscules) créait deux entrées pour la même
+        //    encre — donc un canal Pantone en double à l'export.
+        window._spSpotCollectInkRegistry = function () {
+            const out = {};
+            try {
+                Object.keys(window._spSpotInkColors || {}).forEach(function (k) {
+                    out[String(k).toUpperCase()] = Object.assign({}, window._spSpotInkColors[k]);
+                });
+            } catch (_) {}
+            try {
+                _spSpotScanDocument().inks.forEach(function (i) {
+                    const key = String(i.key).toUpperCase();
+                    if (!out[key]) {
+                        out[key] = {
+                            hex: String(i.hex).toUpperCase(), name: i.name,
+                            channel: _spSpotChannelName(i.name, i.hex),
+                            count: i.used
+                        };
+                    } else {
+                        out[key].count = Math.max(out[key].count || 1, i.used);
+                    }
+                });
+            } catch (_) {}
+            return out;
+        };
+        window._spSpotRestoreInkRegistry = function (reg) {
+            try {
+                window._spSpotInkColors = {};
+                Object.keys(reg || {}).forEach(function (k) {
+                    const key = String(k).toUpperCase();
+                    window._spSpotInkColors[key] = Object.assign({}, reg[k], { hex: key });
+                });
+            } catch (_) {}
+        };
+        // ── Géométrie de la planche d'export (clone « format fini ») ─────────
+        // La zone média reçoit de la place pour les repères : +8 mm de chaque
+        // côté si traits de coupe, +8 mm en pied si barre colorimétrique.
+        // (Le fond perdu du document est déjà intégré aux coordonnées objets.)
+        function _spSpotSheetLayout(bleedMm, opts) {
+            const extraSpace = (opts && opts.cropMarks) ? 8 : 0;
+            const extraBarSpace = (opts && opts.colorBars) ? 8 : 0;
+            return {
+                extraSpace: extraSpace,
+                extraBarSpace: extraBarSpace,
+                sheetW: pageFormat.width + bleedMm * 2 + extraSpace * 2,
+                sheetH: pageFormat.height + bleedMm * 2 + extraSpace * 2 + extraBarSpace,
+                offsetX: extraSpace,
+                // ⚠️ Marge HAUTE de la planche = extraSpace (marge des traits de
+                //    coupe). La bande de la barre colorimétrique s'ajoute en BAS
+                //    (extraBarSpace) et ne doit PAS décaler les objets. Avec
+                //    offsetY = extraBarSpace, un export « traits de coupe seuls »
+                //    (extraBarSpace = 0) décalait le contenu de 8 mm vers le haut,
+                //    désaligné avec les traits de coupe et la barre.
+                offsetY: extraSpace
+            };
+        }
+
+        // Traits de coupe (4 coins), dans la marge ajoutée hors fond perdu.
+        function _spSpotDrawCropMarks(page, mmToPt, lay, bleedMm) {
+            const P = window.PDFLib;
+            const HT = lay.sheetH * mmToPt;
+            const trimL = (lay.extraSpace + bleedMm) * mmToPt;
+            const trimR = trimL + pageFormat.width * mmToPt;
+            const trimB = (lay.extraBarSpace + lay.extraSpace + bleedMm) * mmToPt;
+            const trimT = trimB + pageFormat.height * mmToPt;
+            const len = 4 * mmToPt;      // longueur du trait
+            const off = 1 * mmToPt;      // décalage par rapport au trait de coupe
+            const th = 0.25 * mmToPt;
+            const col = P.rgb(0, 0, 0);
+            const segs = [
+                [[trimL - off - len, trimB], [trimL - off, trimB]],
+                [[trimR + off, trimB], [trimR + off + len, trimB]],
+                [[trimL - off - len, trimT], [trimL - off, trimT]],
+                [[trimR + off, trimT], [trimR + off + len, trimT]],
+                [[trimL, trimB - off - len], [trimL, trimB - off]],
+                [[trimL, trimT + off], [trimL, trimT + off + len]],
+                [[trimR, trimB - off - len], [trimR, trimB - off]],
+                [[trimR, trimT + off], [trimR, trimT + off + len]]
+            ];
+            for (let i = 0; i < segs.length; i++) {
+                try {
+                    page.drawLine({
+                        start: { x: segs[i][0][0], y: HT - segs[i][0][1] },
+                        end: { x: segs[i][1][0], y: HT - segs[i][1][1] },
+                        thickness: th, color: col
+                    });
+                } catch (_) {}
+            }
+        }
+
+        // Repères colorimétriques : patchs CMJN de contrôle (quadri) + zone
+        // réservée à droite pour les patchs d'encre directe (posés APRÈS la
+        // conversion CMJN, pour qu'ils ne soient pas reconvertis).
+        function _spSpotDrawColorBar(page, mmToPt, lay) {
+            const P = window.PDFLib;
+            const pw = 5 * mmToPt, ph = 3 * mmToPt, gap = 0.8 * mmToPt;
+            const y = (lay.extraBarSpace / 2 - 1.5) * mmToPt;   // centré dans la marge basse
+            let x = 6 * mmToPt;
+            // CMJN → RVB (les patchs seront convertis en DeviceCMYK par le pipeline)
+            const cmykToRgb = function (c, m, y2, k) {
+                return [
+                    (1 - Math.min(1, c + k)),
+                    (1 - Math.min(1, m + k)),
+                    (1 - Math.min(1, y2 + k))
+                ];
+            };
+            const pat = function (c, m, y2, k) {
+                const rgb = cmykToRgb(c, m, y2, k);
+                try {
+                    page.drawRectangle({
+                        x: x, y: y, width: pw, height: ph,
+                        color: P.rgb(rgb[0], rgb[1], rgb[2])
+                    });
+                } catch (_) {}
+                x += pw + gap;
+            };
+            const patches = [
+                [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1],
+                [1, 1, 0, 0], [1, 0, 1, 0], [0, 1, 1, 0], [1, 1, 1, 0],
+                [.5, 0, 0, 0], [0, .5, 0, 0], [0, 0, .5, 0], [0, 0, 0, .5]
+            ];
+            patches.forEach(function (p) { pat(p[0], p[1], p[2], p[3]); });
+            return { x: x + 2 * mmToPt, y: y, w: pw, h: ph, gap: gap };
+        }
+
+        // Patchs d'encre directe (après conversion CMJN) : rectangles peints
+        // dans l'espace /Separation de l'encre.
+        function _spSpotAppendColorBarPatches(page, mmToPt, lay, csNames, anchor) {
+            const P = window.PDFLib;
+            const N = P.PDFOperatorNames;
+            const op = P.PDFOperator.of;
+            let x = anchor.x;
+            for (let i = 0; i < csNames.length; i++) {
+                if (!csNames[i]) continue;
+                try {
+                    page.pushOperators(
+                        op(N.PushGraphicsState),
+                        op(N.NonStrokingColorspace, [P.PDFName.of(csNames[i])]),
+                        op(N.NonStrokingColorN, [P.PDFNumber.of(1)]),
+                        op(N.AppendRectangle, [
+                            P.PDFNumber.of(x), P.PDFNumber.of(anchor.y),
+                            P.PDFNumber.of(anchor.w), P.PDFNumber.of(anchor.h)
+                        ]),
+                        op(N.FillNonZero),
+                        op(N.PopGraphicsState)
+                    );
+                } catch (e) { console.warn('[Spot] patch bar failed:', e); }
+                x += anchor.w + anchor.gap;
+            }
+        }
+
+        // ── Cœur de la mécanique « encre directe » ───────────────────────────
+        // Installe une interception des opérateurs écrits dans le flux de
+        // contenu de la page. `begin(ink, spots)` ouvre un bloc marqué
+        // /SPOT<n> : tous les opérateurs de couleur émis ensuite (remplissage
+        // ET contour) sont traduits en opérateurs d'encre directe. `end()`
+        // ferme le bloc. Repose sur la réécriture de PDFContentStream#push,
+        // point de passage UNIQUE de pdf-lib (drawText, drawRectangle,
+        // drawSvgPath, drawImage… passent tous par lui).
+        function _spSpotInstallColorHook(pdfDoc, page, spotCtx) {
+            const P = window.PDFLib;
+            const N = P.PDFOperatorNames;
+            const op = P.PDFOperator.of;
+            const cs = page.getContentStream();
+            const origPush = cs.push;
+
+            const isFill = {}, isStroke = {};
+            ['NonStrokingColorRgb', 'NonStrokingColorGray', 'NonStrokingColorCmyk', 'NonStrokingColor']
+                .forEach(function (k) { isFill[N[k]] = true; });
+            ['StrokingColorRgb', 'StrokingColorGray', 'StrokingColorCmyk', 'StrokingColor']
+                .forEach(function (k) { isStroke[N[k]] = true; });
+
+            let state = null;   // { csName, imgName, spotFill, spotStroke }
+
+            cs.push = function () {
+                const args = Array.prototype.slice.call(arguments);
+                if (!state) return origPush.apply(cs, args);
+
+                const out = [];
+                for (let i = 0; i < args.length; i++) {
+                    const o = args[i];
+                    const nm = o && o.name;
+                    if (state.imgName && nm === N.DrawObject) {
+                        // Objet raster peint d'un Pantone : l'objet est déjà
+                        // converti en image (masque/filtre). On le remplace par
+                        // un APLAT d'encre directe couvrant sa boîte : c'est un
+                        // aplat de cette encre que l'imprimeur doit recevoir.
+                        const resName = (o.operands && o.operands[0]) ? o.operands[0].toString() : '';
+                        if (resName === state.imgName) {
+                            out.push(op(N.PushGraphicsState));
+                            out.push(op(N.NonStrokingColorspace, [P.PDFName.of(state.csName)]));
+                            out.push(op(N.NonStrokingColorN, [P.PDFNumber.of(1)]));
+                            // Le CTM courant mappe [0,0,1,1] sur le rectangle image.
+                            out.push(op(N.AppendRectangle, [
+                                P.PDFNumber.of(0), P.PDFNumber.of(0),
+                                P.PDFNumber.of(1), P.PDFNumber.of(1)
+                            ]));
+                            out.push(op(N.FillNonZero));
+                            out.push(op(N.PopGraphicsState));
+                            continue;    // l'image d'origine n'est pas posée
+                        }
+                    }
+                    if (isFill[nm] && state.spotFill) {
+                        out.push(op(N.NonStrokingColorspace, [P.PDFName.of(state.csName)]));
+                        out.push(op(N.NonStrokingColorN, [P.PDFNumber.of(1)]));
+                    } else if (isStroke[nm] && state.spotStroke) {
+                        out.push(op(N.StrokingColorspace, [P.PDFName.of(state.csName)]));
+                        out.push(op(N.StrokingColorN, [P.PDFNumber.of(1)]));
+                    } else {
+                        out.push(o);
+                    }
+                }
+                return origPush.apply(cs, out);
+            };
+
+            return {
+                begin: function (ink, spots, imgName) {
+                    const csName = spotCtx.csNames[ink.index];
+                    if (!csName) return null;
+                    state = {
+                        csName: csName,
+                        imgName: imgName || null,
+                        spotFill: !!spots.fill,
+                        spotStroke: !!spots.stroke
+                    };
+                    // ⚠️ BMC (1 opérande) et NON BDC (qui en exige 2 :
+                    //    tag + liste de propriétés). Un « /SPOT0 BDC » à un
+                    //    seul opérande est INVALIDE (PDF 32000-1 §14.6) et les
+                    //    lecteurs stricts (Chrome PDFium, Acrobat) interrompent
+                    //    le rendu à cet endroit → tout ce qui suit disparaît.
+                    page.pushOperators(
+                        op(N.BeginMarkedContent, [P.PDFName.of('SPOT' + ink.index)])
+                    );
+                    return csName;
+                },
+                end: function () {
+                    if (!state) return;
+                    page.pushOperators(op(N.EndMarkedContent));
+                    state = null;
+                },
+                restore: function () { cs.push = origPush; }
+            };
+        }
+
+        // Enregistre l'espace de couleur /Separation de chaque encre dans les
+        // ressources de page et mémorise le nom logique (CS0, CS1, …).
+        // Nom du canal = nom Pantone (identifie la plaque côté RIP/imprimeur).
+        function _spSpotRegisterSeparations(pdfDoc, spotCtx) {
+            const P = window.PDFLib;
+            const ctx = pdfDoc.context;
+            const pagesInDoc = pdfDoc.getPages();
+            const csNames = spotCtx.csNames && spotCtx.csNames.length
+                ? spotCtx.csNames.slice()
+                : spotCtx.inks.map(function (_, i) { return 'CS' + i; });
+
+            for (let i = 0; i < spotCtx.inks.length; i++) {
+                const ink = spotCtx.inks[i];
+                const c = ink.cmyk;
+                const tintFn = ctx.obj({
+                    FunctionType: 2,
+                    Domain: [0, 1],
+                    C0: [0, 0, 0, 0],
+                    C1: [c.c, c.m, c.y, c.k],
+                    N: 1
+                });
+                const fnRef = ctx.register(tintFn);
+                const chan = _spSpotChannelName(ink.name, ink.hex);
+                const spotCs = ctx.obj([
+                    P.PDFName.of('Separation'),
+                    P.PDFName.of(chan),
+                    P.PDFName.of('DeviceCMYK'),
+                    fnRef
+                ]);
+                const csRef = ctx.register(spotCs);
+                const logical = 'CS' + i;
+                csNames.push(logical);
+
+                for (let p = 0; p < pagesInDoc.length; p++) {
+                    const node = pagesInDoc[p].node;
+                    const res = node.Resources();
+                    let csDict = res.get(P.PDFName.of('ColorSpace'));
+                    if (csDict instanceof P.PDFRef) csDict = ctx.lookup(csDict);
+                    if (!csDict || typeof csDict.set !== 'function') {
+                        csDict = ctx.obj({});
+                        res.set(P.PDFName.of('ColorSpace'), csDict);
+                    }
+                    csDict.set(P.PDFName.of(logical), csRef);
+                }
+            }
+            spotCtx.csNames = csNames;
+            return csNames;
+        }
+
+        // Réécrit les blocs marqués /SPOT<n> BDC … EMC en opérateurs d'encre
+        // directe. Appelé APRÈS la conversion CMJN : à ce stade le PDF ne
+        // contient plus que du DeviceCMYK, et les blocs marqués portent encore
+        // la couleur neutralisée de l'objet — on la remplace par
+        // « /CS<n> cs 1 scn » (encre pleine) ou « /CS<n> CS 1 SCN » (contour).
+        async function _spSpotApplySeparations(pdfBytes, spotCtx) {
+            const P = window.PDFLib;
+            const doc = await P.PDFDocument.load(pdfBytes);
+            const ctx = doc.context;
+            const pagesOut = doc.getPages();
+            let rewritten = 0;
+
+            for (let pi = 0; pi < pagesOut.length; pi++) {
+                const page = pagesOut[pi];
+                const contents = page.node.get(P.PDFName.of('Contents'));
+                const refs = [];
+                if (contents instanceof P.PDFRef) refs.push(contents);
+                else if (contents && contents.asArray) {
+                    contents.asArray().forEach(function (r) { if (r instanceof P.PDFRef) refs.push(r); });
+                }
+
+                for (let ri = 0; ri < refs.length; ri++) {
+                    const st = ctx.lookup(refs[ri]);
+                    if (!st || !st.contents) continue;
+                    const filter = st.dict ? st.dict.get(P.PDFName.of('Filter')) : null;
+                    const filterStr = filter ? filter.toString() : '';
+                    let raw = st.contents;
+                    let wasCompressed = false;
+                    try {
+                        if (filterStr.indexOf('FlateDecode') >= 0) { raw = await cmykInflate(raw); wasCompressed = true; }
+                    } catch (_) { continue; }
+                    let text;
+                    try { text = new TextDecoder('latin1').decode(raw); } catch (_) { continue; }
+
+                    const before = text;
+                    text = text.replace(/(\/SPOT(\d+)\s+(?:BDC|BMC)[\s\S]*?EMC)/g, function (block, whole, idxStr) {
+                        const idx = parseInt(idxStr, 10);
+                        const csName = spotCtx.csNames[idx];
+                        if (!csName) return whole;
+                        let out = whole
+                            // remplissage CMJN (rg → k après conversion)
+                            .replace(/(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+k\b/g,
+                                '/' + csName + ' cs 1 scn')
+                            // contour CMJN
+                            .replace(/(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+K\b/g,
+                                '/' + csName + ' CS 1 SCN')
+                            // replis : gris / RVB (si la conversion n'a pas eu lieu)
+                            .replace(/(-?[\d.]+)\s+g\b/g, '/' + csName + ' cs 1 scn')
+                            .replace(/(-?[\d.]+)\s+G\b/g, '/' + csName + ' CS 1 SCN')
+                            .replace(/(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+rg\b/g, '/' + csName + ' cs 1 scn')
+                            .replace(/(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+RG\b/g, '/' + csName + ' CS 1 SCN');
+                        rewritten++;
+                        return out;
+                    });
+
+                    if (text !== before) {
+                        const encoded = new TextEncoder().encode(text);
+                        if (wasCompressed) {
+                            const { bytes: compressed, useFilter } = await cmykDeflate(encoded);
+                            const nd = { Length: ctx.obj(compressed.length) };
+                            if (useFilter) nd.Filter = P.PDFName.of('FlateDecode');
+                            ctx.assign(refs[ri], ctx.stream(compressed, nd));
+                        } else {
+                            ctx.assign(refs[ri], ctx.stream(encoded, { Length: ctx.obj(encoded.length) }));
+                        }
+                    }
+                }
+            }
+            console.log('[Spot] blocs d\'encre directe réécrits : ' + rewritten);
+            return await doc.save();
+        }
+
+        // ── Brique d'export « CMJN + Pantone » ───────────────────────────────
+        // Clone de _exportSimplePdfLib (chemin « Format fini », rendu vectoriel
+        // natif pdf-lib) enrichi du traitement des encres directes. La sortie
+        // est TOUJOURS 300 DPI (HD) — seule qualité proposée en mode Pantone.
+        async function _spExportSpotPdfLib(options, loader, loaderApi) {
+            console.log('[Spot] _spExportSpotPdfLib START');
+            const _spStep = function (label, pct) {
+                try { if (loaderApi && typeof loaderApi.setStep === 'function') loaderApi.setStep(label, pct); } catch (_) {}
+            };
+            const PDFLib = window.PDFLib;
+            const doc = await PDFLib.PDFDocument.create();
+            if (window.fontkit) { try { doc.registerFontkit(window.fontkit); } catch (e) {} }
+
+            const mmToPt = 72 / 25.4;
+            const fonts = {}, images = {};
+            const multiplier = getQualityMultiplier('hd');   // 300 DPI
+            const bleedMm = (typeof bleed === 'number' && bleed >= 0) ? bleed : 0;
+            const lay = _spSpotSheetLayout(bleedMm, options);
+
+            let helvetica = null;
+            try { helvetica = await doc.embedStandardFont(PDFLib.StandardFonts.Helvetica); } catch (e) {}
+            if (!helvetica) {
+                try { helvetica = await doc.embedStandardFont(PDFLib.StandardFonts.TimesRoman); } catch (e) {}
+            }
+
+            // Encres directes du document (canaux supplémentaires).
+            const scan = _spSpotScanDocument();
+            scan.inks.forEach(function (ink, i) { ink.index = i; });
+            const spotCtx = { inks: scan.inks, byHex: scan.byHex, csNames: [], barAnchors: [] };
+            if (!spotCtx.inks.length) throw new Error('Aucune encre directe (Pantone) détectée dans le document.');
+
+            // Noms logiques des espaces /Separation (CS0, CS1, …), dans l'ordre
+            // des encres. Ils doivent être connus AVANT le rendu : c'est ce nom
+            // que l'interception écrit dans les opérateurs « cs/CS » de la page.
+            // (L'enregistrement effectif dans /Resources est fait plus bas, une
+            // fois le document CMJN stabilisé.)
+            spotCtx.csNames = spotCtx.inks.map(function (_, i) { return 'CS' + i; });
+
+            _spStep((currentLanguage === 'en' ? 'Registering spot channels…' : (currentLanguage === 'ja' ? 'スポットチャンネルを登録中…' : 'Enregistrement des couches Pantone…')), 12);
+
+            // Chaque page est composée en RVB par le moteur vectoriel existant
+            // (inchangé) puis convertie en CMJN : on obtient la couche quadri.
+            const swPt = lay.sheetW * mmToPt;
+            const shPt = lay.sheetH * mmToPt;
+
+            for (let pi = 0; pi < pages.length; pi++) {
+                _spStep((currentLanguage === 'en' ? 'Building page ' : (currentLanguage === 'ja' ? 'ページを構築中 ' : 'Construction de la page ')) + (pi + 1) + '/' + pages.length + '…', 14 + Math.round((pi / Math.max(1, pages.length)) * 50));
+                const data = pages[pi].objects;
+                if (!data) continue;
+                const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+                if (!parsed || !parsed.objects) continue;
+
+                const tmpEl = document.createElement('canvas');
+                const tmpCanvas = new fabric.Canvas(tmpEl, { width: 100, height: 100 });
+                tmpCanvas.selection = false;
+                tmpCanvas.skipTargetFind = true;
+                tmpCanvas.renderOnAddRemove = false;
+
+                await new Promise(function (resolve) {
+                    tmpCanvas.loadFromJSON(data, function () {
+                        const toRemove = [];
+                        tmpCanvas.getObjects().forEach(function (o) {
+                            if (o.isMargin || o.isBleed || o.isTrimBox || o.isGuide ||
+                                o.isManualGuide || o.isGridGuide || o.isBaselineGuide ||
+                                o._isSpreadMirror || o.excludeFromExport ||
+                                o._isChainBadge || o._isLinkArrow || o._isOverflowIndicator) {
+                                toRemove.push(o);
+                            }
+                        });
+                        toRemove.forEach(function (o) { tmpCanvas.remove(o); });
+                        resolve();
+                    });
+                });
+
+                // Gabarits : le fond perdu est conservé (l'export Pantone est un
+                // export imprimeur : il garde systématiquement les fonds perdus).
+                try { await injectMasterItemsForExport(tmpCanvas, pi, { includeBleed: true }); } catch (_) {}
+
+                const objects = tmpCanvas.getObjects().filter(function (o) { return o && o.visible !== false; });
+
+                if (window.opentype && window.wawoff2_decompress) {
+                    try { await _spPreloadFontsForObjects(objects); await _spResolveFontCache(); } catch (_) {}
+                }
+                try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
+
+                // Re-mesure des blocs texte avec les bonnes métriques de police.
+                objects.forEach(function (_reObj) {
+                    if (!_reObj) return;
+                    if (_reObj.type === 'textbox' || _reObj.type === 'text') {
+                        if (options && options.forceHyphenation && _reObj.type === 'textbox') {
+                            _reObj.enableHyphenation = true;
+                            _reObj.hyphenLanguage = _reObj.hyphenLanguage || (typeof currentHyphenLanguage !== 'undefined' ? currentHyphenLanguage : 'fr');
+                        }
+                        const fH = (_reObj._fixedHeight != null) ? _reObj._fixedHeight : _reObj.height;
+                        const fW = (_reObj._fixedWidth != null) ? _reObj._fixedWidth : _reObj.width;
+                        try { if (typeof _reObj._clearCache === 'function') _reObj._clearCache(); } catch (_) {}
+                        try { if (typeof _reObj.initDimensions === 'function') _reObj.initDimensions(); } catch (_) {}
+                        if (fH > 0 && _reObj.type === 'textbox') {
+                            _reObj.height = fH;
+                            if (_reObj._fixedHeight == null) _reObj._fixedHeight = fH;
+                        }
+                        if (fW > 0 && _reObj.type === 'textbox') {
+                            _reObj.width = fW;
+                            if (_reObj._fixedWidth == null) _reObj._fixedWidth = fW;
+                        }
+                        try { if (typeof _reObj.setCoords === 'function') _reObj.setCoords(); } catch (_) {}
+                    }
+                });
+
+                for (const fk in _SP_FONT_RESOLVED) {
+                    if (!_SP_FONT_RESOLVED.hasOwnProperty(fk)) continue;
+                    if (fonts[fk]) continue;
+                    const fnt = _SP_FONT_RESOLVED[fk];
+                    if (fnt && fnt._spTtfBuffer) {
+                        try { fonts[fk] = await doc.embedFont(new Uint8Array(fnt._spTtfBuffer), { subset: true }); }
+                        catch (e) { console.warn('[Spot] embedFont failed for', fk, e); }
+                    }
+                }
+
+                const page = doc.addPage([swPt, shPt]);
+                // Fond blanc de la planche (fond perdu compris). Posé AVANT
+                // l'installation de l'interception : ce blanc est la couche
+                // quadri de la page, pas une encre directe.
+                page.drawRectangle({ x: 0, y: 0, width: swPt, height: shPt, color: PDFLib.rgb(1, 1, 1) });
+
+                // Interception des couleurs AVANT tout rendu : elle doit couvrir
+                // l'intégralité des opérateurs de la page.
+                const hook = _spSpotInstallColorHook(doc, page, spotCtx);
+
+                // Les objets sont stockés dans le repère du canvas éditeur (qui
+                // inclut DÉJÀ le fond perdu) : seule la marge des repères est
+                // ajoutée ici.
+                for (let i = 0; i < objects.length; i++) {
+                    const obj = objects[i];
+                    // ⚠️ UNITÉS : lay.offsetX/offsetY sont en MILLIMÈTRES (cf.
+                    //    _spSpotSheetLayout) alors que obj.left/obj.top sont en
+                    //    POINTS (1 unité de canvas = 1 pt PDF). Sans la
+                    //    multiplication par mmToPt, une marge de repères de 8 mm
+                    //    ne décalait le contenu que de 8 pt (2,82 mm) → contenu
+                    //    désaligné par rapport aux traits de coupe et à la barre
+                    //    colorimétrique.
+                    if (typeof obj.left === 'number') obj.left += lay.offsetX * mmToPt;
+                    if (typeof obj.top === 'number') obj.top += lay.offsetY * mmToPt;
+                    obj.setCoords();
+                }
+
+                for (let i = 0; i < objects.length; i++) {
+                    const obj = objects[i];
+                    if (!obj) continue;
+                    const ink = _spSpotResolveObjectInk(obj, spotCtx);
+                    if (ink) {
+                        // Le texte doit rester VECTORIEL (typo vectorielle forcée) :
+                        // un texte rasterisé ne peut pas être peint lettre par
+                        // lettre dans la couche d'encre. On ouvre donc un bloc
+                        // marqué /SPOT<n> autour du rendu : les opérateurs de
+                        // couleur émis par le moteur vectoriel sont traduits en
+                        // opérateurs d'encre directe (cs/scn).
+                        hook.begin(ink.entry, { fill: !!ink.fillHex, stroke: !!ink.strokeHex });
+                        try {
+                            await _renderObjToPdfLib(doc, page, obj, mmToPt, fonts, helvetica, images, multiplier);
+                        } catch (e) {
+                            console.warn('[Spot] render (spot) failed', obj.type, e);
+                        }
+                        hook.end();
+                    } else {
+                        try {
+                            await _renderObjToPdfLib(doc, page, obj, mmToPt, fonts, helvetica, images, multiplier);
+                        } catch (e) {
+                            console.warn('[Spot] render failed', obj.type, e);
+                        }
+                    }
+                }
+
+                hook.restore();
+
+                // Repères (hors zone de fond perdu). L'ancre de la barre est
+                // mémorisée par INDEX DE PAGE RÉELLE (pas par ordre de rendu) :
+                // la barre colorimétrique est posée sur TOUTES les pages, y
+                // compris celles sautées faute d'objets, et les patchs d'encre
+                // directe sont ajoutés après conversion sur les mêmes index.
+                if (options && options.colorBars) {
+                    try { spotCtx.barAnchors[pi] = _spSpotDrawColorBar(page, mmToPt, lay); } catch (_) {}
+                }
+                if (options && options.cropMarks) {
+                    try { _spSpotDrawCropMarks(page, mmToPt, lay, bleedMm); } catch (_) {}
+                }
+
+                try { tmpCanvas.dispose(); } catch (_) {}
+                try { tmpEl.width = 0; tmpEl.height = 0; } catch (_) {}
+            }
+
+            _spStep((currentLanguage === 'en' ? 'Converting process colors to CMYK…' : (currentLanguage === 'ja' ? 'CMYK変換中…' : 'Conversion quadri (CMJN)…')), 68);
+            loader.remove();
+
+            let bytes = await doc.save();
+
+            // ── Couche QUADRI : conversion CMJN (pipeline existant, inchangé) ──
+            try {
+                const icc = (typeof options.iccProfile === 'string' && options.iccProfile.length > 0)
+                    ? options.iccProfile : '';
+                if (icc) {
+                    const iccBytes = await loadIccProfile(icc);
+                    if (iccBytes && typeof window._spLcmsPreload === 'function') {
+                        try { await window._spLcmsPreload(iccBytes, icc); } catch (_) {}
+                    }
+                }
+                bytes = await convertPdfToCmyk(bytes, { iccProfile: icc });
+                console.log('[Spot] couche quadri CMJN appliquée.');
+            } catch (e) {
+                console.warn('[Spot] conversion CMJN échouée :', e);
+            }
+
+            // ── Couches ENCRE DIRECTE : enregistrement + réécriture ──────────
+            _spStep((currentLanguage === 'en' ? 'Writing spot channels…' : (currentLanguage === 'ja' ? 'スポットチャンネルを書き込み中…' : 'Écriture des couches Pantone…')), 84);
+            try {
+                const reloaded = await PDFLib.PDFDocument.load(bytes);
+                _spSpotRegisterSeparations(reloaded, spotCtx);
+                bytes = await reloaded.save();
+
+                // Patchs d'encre directe sur la barre colorimétrique (dans le
+                // canal de l'encre, donc non reconvertis).
+                if (options && options.colorBars) {
+                    const d3 = await PDFLib.PDFDocument.load(bytes);
+                    const pgs = d3.getPages();
+                    for (let i = 0; i < pgs.length; i++) {
+                        const anchor = spotCtx.barAnchors[i];
+                        if (!anchor) continue;
+                        _spSpotAppendColorBarPatches(pgs[i], mmToPt, lay, spotCtx.csNames, anchor);
+                    }
+                    bytes = await d3.save();
+                }
+
+                bytes = await _spSpotApplySeparations(bytes, spotCtx);
+            } catch (e) {
+                console.warn('[Spot] écriture des canaux échouée :', e);
+                try {
+                    if (window.spToast) {
+                        window.spToast('Encre directe : écriture des canaux partielle (' + (e.message || e) + ')', 'warn', 6000);
+                    }
+                } catch (_) {}
+            }
+
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 16).replace(/[-:]/g, '').replace('T', '-');
+            const filename = 'superprint-cmyk-pantone-' + dateStr + '.pdf';
+            const blob = new Blob([bytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+
+            window._spSpotLastExport = {
+                inks: spotCtx.inks.map(function (i) { return i.name + ' (' + i.hex + ')'; }),
+                channels: 4 + spotCtx.inks.length
+            };
+            console.log('[Spot] DONE — ' + spotCtx.inks.length + ' couche(s) Pantone + CMJN');
+        }
+
+
         async function _exportSimplePdfLib(options, loader, loaderApi) {
             console.log('[pdf-lib] _exportSimplePdfLib START');
             const _spStep = (label, pct) => { try { if (loaderApi && typeof loaderApi.setStep === 'function') loaderApi.setStep(label, pct); } catch(_) {} };
@@ -45895,6 +47077,16 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         newProject: "Nouveau",
         newProjectTitle: "Nouveau projet",
         projectRestored: "Projet récupéré",
+        // 🎨 v1.7.347 — Export CMJN + tons directs (Pantone)
+        exportColorSpotLabel: "CMJN + Pantone",
+        exportSpotDpiDesc: "Résolution fixe — export imprimeur CMJN + tons directs",
+        exportSpotBannerTitle: "Document avec tons directs (Pantone)",
+        exportSpotBannerHint: "Le PDF est généré en CMJN + une couche chromatique supplémentaire par Pantone (comme dans InDesign).",
+        exportSpotChannelsHeader: "Sortie",
+        exportSpotColorBars: "Repères colorimétriques (quadri + Pantone)",
+        exportSpotCropMarks: "Traits de coupe",
+        exportSpotBleedAlways: "Fonds perdus inclus (obligatoire en export imprimeur)",
+        exportSpotChannelCountTemplate: "{n} couches chromatiques — CMJN (4) + {p} Pantone",
         npModalTitle: "Nouveau projet",
         npLabelName: "Nom du projet",
         npLabelFormat: "Format de page",
@@ -46657,6 +47849,16 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         newProject: "New",
         newProjectTitle: "New project",
         projectRestored: "Project restored",
+        // 🎨 v1.7.347 — CMYK + spot (Pantone) export
+        exportColorSpotLabel: "CMYK + Pantone",
+        exportSpotDpiDesc: "Fixed resolution — printer-ready CMYK + spot colors",
+        exportSpotBannerTitle: "Document contains spot colors (Pantone)",
+        exportSpotBannerHint: "The PDF is generated as CMYK + one extra color channel per Pantone (as in InDesign).",
+        exportSpotChannelsHeader: "Output",
+        exportSpotColorBars: "Color bars (process + Pantone)",
+        exportSpotCropMarks: "Crop marks",
+        exportSpotBleedAlways: "Bleed included (required for printer-ready export)",
+        exportSpotChannelCountTemplate: "{n} color channels — CMYK (4) + {p} Pantone",
         npModalTitle: "New project",
         npLabelName: "Project name",
         npLabelFormat: "Page format",
@@ -47422,6 +48624,16 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         newProject: "新規",
         newProjectTitle: "新しいプロジェクト",
         projectRestored: "プロジェクトを復元しました",
+        // 🎨 v1.7.347 — CMYK＋スポットカラー（Pantone）書き出し
+        exportColorSpotLabel: "CMYK＋Pantone",
+        exportSpotDpiDesc: "解像度固定 — 印刷入稿用 CMYK＋スポットカラー",
+        exportSpotBannerTitle: "スポットカラー（Pantone）を含むドキュメント",
+        exportSpotBannerHint: "PDF は CMYK＋Pantone ごとに 1 つの追加チャンネルで生成されます（InDesign と同様）。",
+        exportSpotChannelsHeader: "出力",
+        exportSpotColorBars: "カラーバー（プロセス＋Pantone）",
+        exportSpotCropMarks: "トンボ",
+        exportSpotBleedAlways: "裁ち落としを含める（入稿時に必須）",
+        exportSpotChannelCountTemplate: "{n} チャンネル — CMYK（4）＋Pantone {p}",
         npModalTitle: "新しいプロジェクト",
         npLabelName: "プロジェクト名",
         npLabelFormat: "ページ形式",
@@ -61525,6 +62737,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 pageMasterAssignments: typeof pageMasterAssignments !== 'undefined' ? pageMasterAssignments : {},
                 pageNumberingSettings: typeof pageNumberingSettings !== 'undefined' ? pageNumberingSettings : {},
                 projectName: window._spProjectName || '',
+                // 🎨 v1.7.347 — tons directs (Pantone) : couches chromatiques
+                //   supplémentaires à produire à l'export (CMJN + Pantone).
+                spotInks: (function () {
+                    try { return window._spSpotCollectInkRegistry ? window._spSpotCollectInkRegistry() : {}; }
+                    catch (_) { return {}; }
+                })(),
                 _autosaveTimestamp: Date.now()
             };
             
@@ -63560,6 +64778,12 @@ window.saveProjectLocal = function() {
         viewMode: viewMode,
         colorMode: _spGetColorMode(),
         guides: _spCollectGuides(),
+        // 🎨 v1.7.347 — tons directs (Pantone) du document (une entrée par
+        //   couche chromatique supplémentaire à produire à l'export).
+        spotInks: (function () {
+            try { return window._spSpotCollectInkRegistry ? window._spSpotCollectInkRegistry() : {}; }
+            catch (_) { return {}; }
+        })(),
         masterPages: masterPages,
         pageMasterAssignments: pageMasterAssignments,
         pageNumberingSettings: pageNumberingSettings,
@@ -63913,6 +65137,16 @@ window.saveProjectSP_toObject = function() {
         resources: {
             fonts: _spCollectUsedFonts(),
             colors: _spCollectUsedColors(),
+            // 🎨 v1.7.347 — TONS DIRECTS (PANTONE) du document. Chaque entrée
+            //   décrit une COUCHE CHROMATIQUE supplémentaire à produire à
+            //   l'export (CMJN + Pantone, façon InDesign). Persisté dans le
+            //   .sp ET le .json : à la réouverture, le document est de nouveau
+            //   reconnu « à tons directs » et la boîte d'export repasse en
+            //   mode CMJN + Pantone.
+            spotInks: (function () {
+                try { return window._spSpotCollectInkRegistry ? window._spSpotCollectInkRegistry() : {}; }
+                catch (_) { return {}; }
+            })(),
             // 🛡️ v1.7.335 : embarque les polices EXTERNES (chargées via « 📁 Charger
             //   polices ») réellement utilisées dans le document. Le dataURL (base64)
             //   permet de re-registrer la police à la réouverture du .sp (FontFace +
@@ -64160,6 +65394,20 @@ window.loadProjectSP = function(fileContent) {
 
         // ── Restaurer les repères manuels (guides) ──
         _spRestoreGuides(spFile.guides);
+
+        // 🎨 v1.7.347 — Restaurer les TONS DIRECTS (PANTONE) déclarés dans le
+        //   document. Ils définissent les couches chromatiques supplémentaires
+        //   à produire à l'export (CMJN + Pantone). Le registre est rechargé
+        //   AVANT l'affichage de la boîte d'export, qui repasse ainsi toute
+        //   seule en mode CMJN + Pantone pour ce document.
+        try {
+            const _spReg = (spFile.resources && spFile.resources.spotInks) || null;
+            if (_spReg && typeof window._spSpotRestoreInkRegistry === 'function') {
+                window._spSpotRestoreInkRegistry(_spReg);
+                const _n = Object.keys(_spReg).length;
+                if (_n > 0) console.log('[Spot] ' + _n + ' ton(s) direct(s) restauré(s) : ' + Object.keys(_spReg).join(', '));
+            }
+        } catch (e) { console.warn('[Spot] restauration des tons directs échouée:', e); }
 
         // 🛡️ v1.7.335 — Restaurer les polices EXTERNES embarquées dans le .sp
         //   (resources.customFonts : liste de { name, data }). On les ré-enregistre
