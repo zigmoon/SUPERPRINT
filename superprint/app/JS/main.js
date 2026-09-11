@@ -5304,6 +5304,17 @@ if (window._spGpuEnabled) {
                     // 🛡️ v1.7.284 : restaurer colorMode + guides depuis l'autosave
                     if (savedProject.colorMode) { try { _spApplyColorMode(savedProject.colorMode); } catch (_) {} }
                     if (savedProject.guides) { try { _spRestoreGuides(savedProject.guides); } catch (_) {} }
+                    // 🎨 v1.7.347b — Restaurer les TONS DIRECTS (Pantone) de l'autosave.
+                    //   Sans cela, un simple rechargement d'onglet faisait perdre les
+                    //   couches Pantone du document (retour silencieux en mode normal).
+                    try {
+                        const _spRegAuto = savedProject.spotInks || null;
+                        if (_spRegAuto && typeof window._spSpotRestoreInkRegistry === 'function') {
+                            window._spSpotRestoreInkRegistry(_spRegAuto);
+                            const _nAuto = Object.keys(_spRegAuto).length;
+                            if (_nAuto > 0) console.log('[Spot] autosave : ' + _nAuto + ' ton(s) direct(s) restauré(s).');
+                        }
+                    } catch (_) {}
                     if (savedProject.masterPages && typeof masterPages !== 'undefined') {
                         Object.assign(masterPages, savedProject.masterPages);
                     }
@@ -26892,6 +26903,21 @@ if (window._spGpuEnabled) {
                     // Restaurer le mode couleur (RVB / CMJN)
                     _spApplyColorMode(project.colorMode || 'rgb');
 
+                    // 🎨 v1.7.347b — Restaurer les TONS DIRECTS (Pantone) du JSON.
+                    //   Le .json (comme le .sp) porte spotInks : à l'import, le
+                    //   document doit redevenir « à tons directs » et la boîte
+                    //   d'export doit repasser en CMJN/RVB + Pantone.
+                    try {
+                        const _spRegJson = project.spotInks
+                            || (project.resources && project.resources.spotInks)
+                            || null;
+                        if (_spRegJson && typeof window._spSpotRestoreInkRegistry === 'function') {
+                            window._spSpotRestoreInkRegistry(_spRegJson);
+                            const _nJson = Object.keys(_spRegJson).length;
+                            if (_nJson > 0) console.log('[Spot] import JSON : ' + _nJson + ' ton(s) direct(s) restauré(s).');
+                        }
+                    } catch (_) {}
+
                     // 🛡️ v1.7.284 : restaurer les styles nommés (typo + nuancier) depuis le JSON
                     try {
                         const _st = project.styles || {};
@@ -30463,12 +30489,27 @@ if (window._spGpuEnabled) {
             if (vtRow) vtRow.style.opacity = isSpot ? '0.75' : '1';
 
             if (isSpot) {
+                // 🎨 v1.7.347b — La couche QUADRI est choisie dans la boîte
+                //   Pantone (CMJN + Pantone / RVB + Pantone). Les cases couleur
+                //   historiques (RVB / N&B / CMJN) sont masquées dans les deux
+                //   cas : le pilotage se fait par les boutons dédiés.
                 if (rgbRow) rgbRow.style.display = 'none';
                 if (bwRow) bwRow.style.display = 'none';
-                if (cmykRadio) cmykRadio.checked = true;
+                const spotRgb = document.getElementById('spotModeRgb');
+                const spotCmyk = document.getElementById('spotModeCmyk');
+                const useRgb = !!(spotRgb && spotRgb.checked);
+                // Le radio de la boîte classique suit le choix Pantone : il sert
+                // de source de vérité pour colorMode (et pour
+                // _spSyncCmykIccUi / le panneau ICC).
+                const wantedId = useRgb ? 'colorRGB' : 'colorCMYK';
+                const wanted = document.getElementById(wantedId);
+                if (wanted) wanted.checked = true;
+                if (cmykRadio && !useRgb) cmykRadio.checked = true;
                 if (cmykLabel) {
-                    const t = (typeof translate === 'function') ? translate('exportColorSpotLabel') : '';
-                    cmykLabel.textContent = (t && t !== 'exportColorSpotLabel') ? t : 'CMJN + Pantone';
+                    const t = (typeof translate === 'function')
+                        ? translate(useRgb ? 'exportColorSpotRgbLabel' : 'exportColorSpotLabel') : '';
+                    const fb = useRgb ? 'RVB + Pantone' : 'CMJN + Pantone';
+                    cmykLabel.textContent = (t && t !== 'exportColorSpotRgbLabel' && t !== 'exportColorSpotLabel') ? t : fb;
                 }
                 if (summary) summary.style.display = 'block';
                 if (banner) banner.style.display = 'block';
@@ -30673,15 +30714,31 @@ if (window._spGpuEnabled) {
                 });
                 b.addEventListener('change', function () { a.checked = b.checked; });
             });
-            // Le mode Pantone implique le CMJN : forcer le radio si l'utilisateur
-            // tente de revenir sur RVB/NB (masqués, mais un script pourrait les cocher).
+            // 🎨 v1.7.347b — En mode Pantone, la couche QUADRI est pilotée par les
+            //   boutons dédiés (CMJN + Pantone / RVB + Pantone). On refuse
+            //   uniquement le Noir & Blanc, qui n'a pas de sens avec des encres
+            //   directes, et on répercute le choix sur les radios historiques
+            //   (source de vérité de colorMode pour le reste du code).
             document.addEventListener('change', function (e) {
-                if (!e.target || e.target.name !== 'colorMode') return;
-                const flag = document.getElementById('exportSpotMode');
-                if (!flag || !flag.checked) return;
-                if (e.target.value !== 'cmyk') {
-                    const c = document.getElementById('colorCMYK');
-                    if (c) c.checked = true;
+                if (!e.target) return;
+                // (a) bascule depuis les boutons de la boîte Pantone
+                if (e.target.name === 'spotColorMode') {
+                    const flag = document.getElementById('exportSpotMode');
+                    if (!flag || !flag.checked) return;
+                    const want = (e.target.value === 'rgb') ? 'colorRGB' : 'colorCMYK';
+                    const r = document.getElementById(want);
+                    if (r) r.checked = true;
+                    try { _spSyncExportSpotUI(); } catch (_) {}
+                    return;
+                }
+                // (b) tentative de choisir N&B alors que des Pantones existent
+                if (e.target.name === 'colorMode') {
+                    const flag = document.getElementById('exportSpotMode');
+                    if (!flag || !flag.checked) return;
+                    if (e.target.value === 'bw') {
+                        const r = document.getElementById('colorRGB');
+                        if (r) r.checked = true;
+                    }
                 }
             });
         })();
@@ -32566,13 +32623,20 @@ https://superprint.app
         _spSpotExport = (typeof window._spSpotDocHasInks === 'function') && window._spSpotDocHasInks();
     } catch (_) {}
     if (_spSpotExport) {
+        // 🎨 v1.7.347b — Couche QUADRI : CMJN (défaut, imprimeur) ou RVB
+        //   (écran / numérique / épreuve). Choix exposé dans la boîte Pantone.
+        const _spotQuadriRgb = !!(document.getElementById('spotModeRgb') && document.getElementById('spotModeRgb').checked);
         const _spotOpts = {
-            colorMode: 'cmyk',
+            colorMode: _spotQuadriRgb ? 'rgb' : 'cmyk',
+            quadriMode: _spotQuadriRgb ? 'rgb' : 'cmyk',
             quality: 'hd',                 // 300 DPI imposé
             vectorTypography: true,        // typo vectorielle : requis pour colorer les lettres
             forceHyphenation: forceHyphenation,
             includeBleed: true,            // export imprimeur : fonds perdus conservés
             finishedFormat: false,         // incompatible avec un export imprimeur
+            // 🎨 v1.7.347b — Mode pages : la brique Pantone doit composer des
+            //   PLANCHES quand l'utilisateur a choisi « Planches ».
+            pagesMode: (document.querySelector('input[name="pagesMode"]:checked')?.value || 'single'),
             cropMarks: !!(document.getElementById('spotCropMarks') && document.getElementById('spotCropMarks').checked),
             colorBars: !!(document.getElementById('spotColorBars') && document.getElementById('spotColorBars').checked),
             iccProfile: (document.getElementById('cmykIccProfile')?.value ?? 'CoatedFOGRA39')
@@ -34449,6 +34513,13 @@ https://superprint.app
                 }
                 window._spSpotInkColors[up].count++;
             } catch (_) {}
+            // 🎨 v1.7.347b — Magasin PARTAGÉ avec le studio SP213 (même principe
+            //   que sp_typo_styles / sp_color_swatches). Le studio le relit pour
+            //   inscrire les tons directs dans le .sp qu'il produit, et pour ne
+            //   pas les écraser lors d'un re-téléchargement.
+            try {
+                localStorage.setItem('sp_spot_inks', JSON.stringify(window._spSpotInkColors || {}));
+            } catch (_) {}
             // Si la boîte d'export est ouverte, elle doit refléter l'ajout.
             // (appel via window : le module d'export vit dans une autre portée)
             try {
@@ -34622,6 +34693,8 @@ https://superprint.app
                     const key = String(k).toUpperCase();
                     window._spSpotInkColors[key] = Object.assign({}, reg[k], { hex: key });
                 });
+                // 🎨 v1.7.347b — tenir le magasin partagé (studio SP213) à jour.
+                localStorage.setItem('sp_spot_inks', JSON.stringify(window._spSpotInkColors || {}));
             } catch (_) {}
         };
         // ── Géométrie de la planche d'export (clone « format fini ») ─────────
@@ -34631,10 +34704,18 @@ https://superprint.app
         function _spSpotSheetLayout(bleedMm, opts) {
             const extraSpace = (opts && opts.cropMarks) ? 8 : 0;
             const extraBarSpace = (opts && opts.colorBars) ? 8 : 0;
+            // 🎨 v1.7.347b — MODE PLANCHES : la zone média reçoit DEUX pages en
+            //    largeur (reliure au centre, SANS fond perdu à la pliure) et UNE
+            //    page en hauteur — géométrie de renderSpreadToImageForExport().
+            const pagesAcross = (opts && opts.pagesAcross === 2) ? 2 : 1;
             return {
                 extraSpace: extraSpace,
                 extraBarSpace: extraBarSpace,
-                sheetW: pageFormat.width + bleedMm * 2 + extraSpace * 2,
+                pagesAcross: pagesAcross,
+                // Largeur du CONTENU (1 ou 2 pages), hors fond perdu : sert aux
+                // traits de coupe et au centrage de la barre colorimétrique.
+                pageWidth: pageFormat.width * pagesAcross,
+                sheetW: pageFormat.width * pagesAcross + bleedMm * 2 + extraSpace * 2,
                 sheetH: pageFormat.height + bleedMm * 2 + extraSpace * 2 + extraBarSpace,
                 offsetX: extraSpace,
                 // ⚠️ Marge HAUTE de la planche = extraSpace (marge des traits de
@@ -34651,8 +34732,10 @@ https://superprint.app
         function _spSpotDrawCropMarks(page, mmToPt, lay, bleedMm) {
             const P = window.PDFLib;
             const HT = lay.sheetH * mmToPt;
+            // 🎨 v1.7.347b — En mode planches, la zone de coupe couvre les 2 pages.
+            const contentWmm = lay.pageWidth || pageFormat.width;
             const trimL = (lay.extraSpace + bleedMm) * mmToPt;
-            const trimR = trimL + pageFormat.width * mmToPt;
+            const trimR = trimL + contentWmm * mmToPt;
             const trimB = (lay.extraBarSpace + lay.extraSpace + bleedMm) * mmToPt;
             const trimT = trimB + pageFormat.height * mmToPt;
             const len = 4 * mmToPt;      // longueur du trait
@@ -34972,7 +35055,36 @@ https://superprint.app
             const fonts = {}, images = {};
             const multiplier = getQualityMultiplier('hd');   // 300 DPI
             const bleedMm = (typeof bleed === 'number' && bleed >= 0) ? bleed : 0;
-            const lay = _spSpotSheetLayout(bleedMm, options);
+
+            // 🎨 v1.7.347b — Couche QUADRI : CMJN (imprimeur) ou RVB (écran /
+            //   numérique / épreuve). Dans les deux cas le PDF garde 1 couche
+            //   /Separation par Pantone. En RVB la conversion CMJN n'est PAS
+            //   exécutée : les opérateurs restent rg/RG et les blocs marqués
+            //   /SPOT<n> sont réécrits en cs/scn par _spSpotApplySeparations.
+            const quadriMode = (options && options.quadriMode === 'rgb') ? 'rgb' : 'cmyk';
+            const isRgbQuadri = (quadriMode === 'rgb');
+
+            // 🎨 v1.7.347b — MODE PLANCHES. pages[] a été scindé par
+            //   saveAllPages() : chaque entrée est UNE page. On regroupe les
+            //   entrées en planches selon l'ordre de lecture du mode planches de
+            //   l'app (même ordre que le chemin jsPDF) :
+            //     planche 1 : [vide,   page 1]
+            //     planche k : [page 2k, page 2k+1]   (ex. 2-3, 4-5, 6-7…)
+            const spreadMode = !!(options && options.pagesMode === 'spread') && pages.length > 1;
+            const lay = _spSpotSheetLayout(bleedMm, Object.assign({}, options, { pagesAcross: spreadMode ? 2 : 1 }));
+
+            // Paires de pages (index 0-based ; -1 = emplacement vide ; -2 = pas de
+            // 2e page du tout → mode pages simples).
+            const sheets = [];
+            if (spreadMode) {
+                sheets.push([-1, 0]);
+                for (let p = 1; p < pages.length; p += 2) {
+                    sheets.push([p, (p + 1 < pages.length) ? (p + 1) : -1]);
+                }
+            } else {
+                for (let p = 0; p < pages.length; p++) sheets.push([p, -2]);
+            }
+            const sheetCount = sheets.length;
 
             let helvetica = null;
             try { helvetica = await doc.embedStandardFont(PDFLib.StandardFonts.Helvetica); } catch (e) {}
@@ -35000,12 +35112,16 @@ https://superprint.app
             const swPt = lay.sheetW * mmToPt;
             const shPt = lay.sheetH * mmToPt;
 
-            for (let pi = 0; pi < pages.length; pi++) {
-                _spStep((currentLanguage === 'en' ? 'Building page ' : (currentLanguage === 'ja' ? 'ページを構築中 ' : 'Construction de la page ')) + (pi + 1) + '/' + pages.length + '…', 14 + Math.round((pi / Math.max(1, pages.length)) * 50));
-                const data = pages[pi].objects;
-                if (!data) continue;
-                const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-                if (!parsed || !parsed.objects) continue;
+            for (let pi = 0; pi < sheetCount; pi++) {
+                const _sheetLabel = spreadMode
+                    ? (currentLanguage === 'en' ? 'Building spread ' : (currentLanguage === 'ja' ? 'ページを構築中 ' : 'Construction de la planche '))
+                    : (currentLanguage === 'en' ? 'Building page ' : (currentLanguage === 'ja' ? 'ページを構築中 ' : 'Construction de la page '));
+                _spStep(_sheetLabel + (pi + 1) + '/' + sheetCount + '…', 14 + Math.round((pi / Math.max(1, sheetCount)) * 50));
+
+                const leftSlotIdx = sheets[pi][0];
+                const rightSlotIdx = sheets[pi][1];
+                // -2 = mode pages simples → la page unique est dans le slot gauche.
+                const primaryIdx = (rightSlotIdx === -2) ? pi : leftSlotIdx;
 
                 const tmpEl = document.createElement('canvas');
                 const tmpCanvas = new fabric.Canvas(tmpEl, { width: 100, height: 100 });
@@ -35013,25 +35129,89 @@ https://superprint.app
                 tmpCanvas.skipTargetFind = true;
                 tmpCanvas.renderOnAddRemove = false;
 
-                await new Promise(function (resolve) {
-                    tmpCanvas.loadFromJSON(data, function () {
-                        const toRemove = [];
-                        tmpCanvas.getObjects().forEach(function (o) {
-                            if (o.isMargin || o.isBleed || o.isTrimBox || o.isGuide ||
-                                o.isManualGuide || o.isGridGuide || o.isBaselineGuide ||
-                                o._isSpreadMirror || o.excludeFromExport ||
-                                o._isChainBadge || o._isLinkArrow || o._isOverflowIndicator) {
-                                toRemove.push(o);
-                            }
+                // ── PAGE UNIQUE (pages simples) ou PAGE GAUCHE (planche) ──
+                let _loadedAny = false;
+                if (primaryIdx >= 0 && primaryIdx < pages.length && pages[primaryIdx] && pages[primaryIdx].objects) {
+                    await new Promise(function (resolve) {
+                        tmpCanvas.loadFromJSON(pages[primaryIdx].objects, function () {
+                            const toRemove = [];
+                            tmpCanvas.getObjects().forEach(function (o) {
+                                if (o.isMargin || o.isBleed || o.isTrimBox || o.isGuide ||
+                                    o.isManualGuide || o.isGridGuide || o.isBaselineGuide ||
+                                    o._isSpreadMirror || o.excludeFromExport ||
+                                    o._isChainBadge || o._isLinkArrow || o._isOverflowIndicator ||
+                                    (spreadMode && rightSlotIdx >= 0 && o._isOverflowFromRight)) {
+                                    toRemove.push(o);
+                                }
+                            });
+                            toRemove.forEach(function (o) { tmpCanvas.remove(o); });
+                            resolve();
                         });
-                        toRemove.forEach(function (o) { tmpCanvas.remove(o); });
-                        resolve();
                     });
-                });
+                    // Gabarits : le fond perdu est conservé (l'export Pantone est un
+                    // export imprimeur : il garde systématiquement les fonds perdus).
+                    try { await injectMasterItemsForExport(tmpCanvas, primaryIdx, { includeBleed: true }); } catch (_) {}
+                    _loadedAny = true;
+                }
 
-                // Gabarits : le fond perdu est conservé (l'export Pantone est un
-                // export imprimeur : il garde systématiquement les fonds perdus).
-                try { await injectMasterItemsForExport(tmpCanvas, pi, { includeBleed: true }); } catch (_) {}
+                // ── PAGE DROITE (planche) ──
+                // Chargée dans un canvas temporaire SÉPARÉ, puis décalée de
+                // (largeur de page + fond perdu) pour reconstituer la planche.
+                // Les objets _isOverflowFromLeft (déjà posés côté gauche par
+                // saveSpreadContent) sont ignorés : pas de doublon.
+                if (spreadMode && rightSlotIdx >= 0 && rightSlotIdx < pages.length &&
+                    pages[rightSlotIdx] && pages[rightSlotIdx].objects) {
+                    const tmpElR = document.createElement('canvas');
+                    const tmpCanvasR = new fabric.Canvas(tmpElR, { width: 100, height: 100 });
+                    tmpCanvasR.selection = false;
+                    tmpCanvasR.skipTargetFind = true;
+                    tmpCanvasR.renderOnAddRemove = false;
+                    await new Promise(function (resolve) {
+                        tmpCanvasR.loadFromJSON(pages[rightSlotIdx].objects, function () {
+                            const toRemove = [];
+                            tmpCanvasR.getObjects().forEach(function (o) {
+                                if (o.isMargin || o.isBleed || o.isTrimBox || o.isGuide ||
+                                    o.isManualGuide || o.isGridGuide || o.isBaselineGuide ||
+                                    o._isSpreadMirror || o.excludeFromExport ||
+                                    o._isChainBadge || o._isLinkArrow || o._isOverflowIndicator ||
+                                    o._isOverflowFromLeft) {
+                                    toRemove.push(o);
+                                }
+                            });
+                            toRemove.forEach(function (o) { tmpCanvasR.remove(o); });
+                            resolve();
+                        });
+                    });
+                    try { await injectMasterItemsForExport(tmpCanvasR, rightSlotIdx, { includeBleed: true }); } catch (_) {}
+                    const dxRight = (pageFormat.width + bleedMm) * mmToPt;
+                    tmpCanvasR.getObjects().forEach(function (o) {
+                        if (!o) return;
+                        if (typeof o.left === 'number') o.left += dxRight;
+                        try { o.setCoords(); } catch (_) {}
+                        try { tmpCanvas.add(o); } catch (_) {}
+                    });
+                    try { tmpCanvasR.dispose(); } catch (_) {}
+                    try { tmpElR.width = 0; tmpElR.height = 0; } catch (_) {}
+                    _loadedAny = true;
+                }
+
+                if (!_loadedAny) {
+                    try { tmpCanvas.dispose(); } catch (_) {}
+                    try { tmpEl.width = 0; tmpEl.height = 0; } catch (_) {}
+                    continue;
+                }
+
+                // 🎨 v1.7.347b — CÉSURE : appliquée à TOUS les blocs de la planche
+                //   (gauche + droite). Sans cela, les blocs issus de la page de
+                //   droite n'étaient jamais césurés en mode planches.
+                if (options && options.forceHyphenation) {
+                    tmpCanvas.getObjects().forEach(function (o) {
+                        if (o && o.type === 'textbox' && !o.enableHyphenation) {
+                            o.enableHyphenation = true;
+                            o.hyphenLanguage = o.hyphenLanguage || (typeof currentHyphenLanguage !== 'undefined' ? currentHyphenLanguage : 'fr');
+                        }
+                    });
+                }
 
                 const objects = tmpCanvas.getObjects().filter(function (o) { return o && o.visible !== false; });
 
@@ -35152,19 +35332,26 @@ https://superprint.app
             let bytes = await doc.save();
 
             // ── Couche QUADRI : conversion CMJN (pipeline existant, inchangé) ──
-            try {
-                const icc = (typeof options.iccProfile === 'string' && options.iccProfile.length > 0)
-                    ? options.iccProfile : '';
-                if (icc) {
-                    const iccBytes = await loadIccProfile(icc);
-                    if (iccBytes && typeof window._spLcmsPreload === 'function') {
-                        try { await window._spLcmsPreload(iccBytes, icc); } catch (_) {}
+            //    🎨 v1.7.347b — En mode « RVB + Pantone » on NE convertit PAS : la
+            //    couche quadri reste en RVB (rg/RG) et les blocs marqués sont
+            //    réécrits en encre directe par _spSpotApplySeparations.
+            if (isRgbQuadri) {
+                console.log('[Spot] couche quadri laissée en RVB (mode RVB + Pantone).');
+            } else {
+                try {
+                    const icc = (typeof options.iccProfile === 'string' && options.iccProfile.length > 0)
+                        ? options.iccProfile : '';
+                    if (icc) {
+                        const iccBytes = await loadIccProfile(icc);
+                        if (iccBytes && typeof window._spLcmsPreload === 'function') {
+                            try { await window._spLcmsPreload(iccBytes, icc); } catch (_) {}
+                        }
                     }
+                    bytes = await convertPdfToCmyk(bytes, { iccProfile: icc });
+                    console.log('[Spot] couche quadri CMJN appliquée.');
+                } catch (e) {
+                    console.warn('[Spot] conversion CMJN échouée :', e);
                 }
-                bytes = await convertPdfToCmyk(bytes, { iccProfile: icc });
-                console.log('[Spot] couche quadri CMJN appliquée.');
-            } catch (e) {
-                console.warn('[Spot] conversion CMJN échouée :', e);
             }
 
             // ── Couches ENCRE DIRECTE : enregistrement + réécriture ──────────
@@ -35199,7 +35386,7 @@ https://superprint.app
 
             const now = new Date();
             const dateStr = now.toISOString().slice(0, 16).replace(/[-:]/g, '').replace('T', '-');
-            const filename = 'superprint-cmyk-pantone-' + dateStr + '.pdf';
+            const filename = (isRgbQuadri ? 'superprint-rgb-pantone-' : 'superprint-cmyk-pantone-') + dateStr + '.pdf';
             const blob = new Blob([bytes], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -35211,7 +35398,7 @@ https://superprint.app
                 inks: spotCtx.inks.map(function (i) { return i.name + ' (' + i.hex + ')'; }),
                 channels: 4 + spotCtx.inks.length
             };
-            console.log('[Spot] DONE — ' + spotCtx.inks.length + ' couche(s) Pantone + CMJN');
+            console.log('[Spot] DONE — ' + spotCtx.inks.length + ' couche(s) Pantone + ' + (isRgbQuadri ? 'RVB' : 'CMJN'));
         }
 
 
@@ -47079,6 +47266,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         projectRestored: "Projet récupéré",
         // 🎨 v1.7.347 — Export CMJN + tons directs (Pantone)
         exportColorSpotLabel: "CMJN + Pantone",
+        exportColorSpotRgbLabel: "RVB + Pantone",
+        exportSpotModeCmyk: "CMJN + Pantone",
+        exportSpotModeRgb: "RVB + Pantone",
+        exportSpotModeHint: "Seule la couche quadri change : les couches Pantone restent identiques.",
         exportSpotDpiDesc: "Résolution fixe — export imprimeur CMJN + tons directs",
         exportSpotBannerTitle: "Document avec tons directs (Pantone)",
         exportSpotBannerHint: "Le PDF est généré en CMJN + une couche chromatique supplémentaire par Pantone (comme dans InDesign).",
@@ -47851,6 +48042,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         projectRestored: "Project restored",
         // 🎨 v1.7.347 — CMYK + spot (Pantone) export
         exportColorSpotLabel: "CMYK + Pantone",
+        exportColorSpotRgbLabel: "RGB + Pantone",
+        exportSpotModeCmyk: "CMYK + Pantone",
+        exportSpotModeRgb: "RGB + Pantone",
+        exportSpotModeHint: "Only the process layer changes: Pantone layers stay identical.",
         exportSpotDpiDesc: "Fixed resolution — printer-ready CMYK + spot colors",
         exportSpotBannerTitle: "Document contains spot colors (Pantone)",
         exportSpotBannerHint: "The PDF is generated as CMYK + one extra color channel per Pantone (as in InDesign).",
@@ -48626,6 +48821,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         projectRestored: "プロジェクトを復元しました",
         // 🎨 v1.7.347 — CMYK＋スポットカラー（Pantone）書き出し
         exportColorSpotLabel: "CMYK＋Pantone",
+        exportColorSpotRgbLabel: "RGB＋Pantone",
+        exportSpotModeCmyk: "CMYK＋Pantone",
+        exportSpotModeRgb: "RGB＋Pantone",
+        exportSpotModeHint: "プロセス版のみが変わります。スポット版は同じです。",
         exportSpotDpiDesc: "解像度固定 — 印刷入稿用 CMYK＋スポットカラー",
         exportSpotBannerTitle: "スポットカラー（Pantone）を含むドキュメント",
         exportSpotBannerHint: "PDF は CMYK＋Pantone ごとに 1 つの追加チャンネルで生成されます（InDesign と同様）。",

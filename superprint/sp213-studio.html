@@ -5786,6 +5786,30 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     };
   }
 
+  // 🎨 v1.7.347b — TONS DIRECTS (PANTONE) : magasin partagé avec l'app
+  // SuperPrint (clé 'sp_spot_inks', même principe que sp_typo_styles /
+  // sp_color_swatches). L'app y écrit à chaque marquage / restauration d'encre.
+  // Le studio l'inscrit dans le .sp pour que le document reste « à tons
+  // directs » (export CMJN ou RVB + couches Pantone) une fois ouvert dans l'app.
+  function spCollectSpotInks() {
+    try { return JSON.parse(localStorage.getItem('sp_spot_inks') || '{}') || {}; } catch (_) { return {}; }
+  }
+
+  // Mémorise les encres d'un .sp/.json importé (pour ne pas les perdre si
+  // l'utilisateur re-télécharge ensuite la maquette).
+  function spRememberSpotInks(reg) {
+    try {
+      if (!reg || typeof reg !== 'object') return;
+      const cur = spCollectSpotInks();
+      let changed = false;
+      Object.keys(reg).forEach(function (k) {
+        const up = String(k).toUpperCase();
+        if (!cur[up]) { cur[up] = Object.assign({}, reg[k], { hex: up }); changed = true; }
+      });
+      if (changed) localStorage.setItem('sp_spot_inks', JSON.stringify(cur));
+    } catch (_) {}
+  }
+
   function buildSPFile() {
     if (!state.pages.length) return null;
     const now = new Date();
@@ -5863,7 +5887,8 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'SP213 Studio' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par SP213 Studio', tags: ['sp213'], stats: { pages: spPages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
-      resources: { fonts: usedFonts, colors: usedColors },
+      // 🎨 v1.7.347b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
+      resources: { fonts: usedFonts, colors: usedColors, spotInks: spCollectSpotInks() },
       textLinks: {},
       guides: {},
       masters: { templates: {}, assignments: {} },
@@ -5909,6 +5934,9 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       && Array.isArray(spFile.pages) && spFile.pages.length > 0
       && spFile.pages.every(page => page && Array.isArray(page.objects));
     if (!valid) throw new Error('Structure de document SuperPrint invalide.');
+    // 🎨 v1.7.347b — mémoriser les tons directs du document importé : ils
+    //   seront réinscrits dans le .sp si l'utilisateur le re-télécharge.
+    try { spRememberSpotInks(spFile.resources && spFile.resources.spotInks); } catch (_) {}
     return spFile;
   }
 
@@ -5970,7 +5998,9 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'SP213 Studio' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par SP213 Studio', tags: ['sp213'], stats: { pages: pages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
-      resources: { fonts: usedFonts, colors: usedColors },
+      // 🎨 v1.7.347b — tons directs (Pantone) : 1 entrée = 1 couche
+      //   chromatique supplémentaire à produire à l'export (CMJN ou RVB + Pantone).
+      resources: { fonts: usedFonts, colors: usedColors, spotInks: spCollectSpotInks() },
       textLinks: {}, guides: {}, masters: { templates: {}, assignments: {} },
       numbering: { enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 },
       pages
