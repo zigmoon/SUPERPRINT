@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.347-no-whatsapp';
+const CACHE_NAME = 'superprint-shell-v1.7.348-no-whatsapp';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -20,6 +20,10 @@ const APP_SHELL = [
   './JS/simple-pen-tool.js',
   './JS/mobile-widgets.js',
   './JS/collab.js',
+  // 🖨️ Chargé par index.html (bouton Imprimer / Ctrl+Alt+P). Il manquait au
+  //    précache : hors ligne, le bouton d'impression tombait sur un 503 du
+  //    cache-first. Ajouté en 1.7.348.
+  './JS/virtual-printer.js',
   './JS/fabric.min.js',
   './JS/jspdf.umd.min.js',
   './JS/svg2pdf.umd.min.js',

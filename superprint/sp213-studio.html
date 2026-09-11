@@ -5786,7 +5786,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     };
   }
 
-  // 🎨 v1.7.347b — TONS DIRECTS (PANTONE) : magasin partagé avec l'app
+  // 🎨 v1.7.348b — TONS DIRECTS (PANTONE) : magasin partagé avec l'app
   // SuperPrint (clé 'sp_spot_inks', même principe que sp_typo_styles /
   // sp_color_swatches). L'app y écrit à chaque marquage / restauration d'encre.
   // Le studio l'inscrit dans le .sp pour que le document reste « à tons
@@ -5887,7 +5887,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'SP213 Studio' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par SP213 Studio', tags: ['sp213'], stats: { pages: spPages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
-      // 🎨 v1.7.347b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
+      // 🎨 v1.7.348b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spCollectSpotInks() },
       textLinks: {},
       guides: {},
@@ -5934,7 +5934,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       && Array.isArray(spFile.pages) && spFile.pages.length > 0
       && spFile.pages.every(page => page && Array.isArray(page.objects));
     if (!valid) throw new Error('Structure de document SuperPrint invalide.');
-    // 🎨 v1.7.347b — mémoriser les tons directs du document importé : ils
+    // 🎨 v1.7.348b — mémoriser les tons directs du document importé : ils
     //   seront réinscrits dans le .sp si l'utilisateur le re-télécharge.
     try { spRememberSpotInks(spFile.resources && spFile.resources.spotInks); } catch (_) {}
     return spFile;
@@ -5998,7 +5998,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'SP213 Studio' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par SP213 Studio', tags: ['sp213'], stats: { pages: pages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
-      // 🎨 v1.7.347b — tons directs (Pantone) : 1 entrée = 1 couche
+      // 🎨 v1.7.348b — tons directs (Pantone) : 1 entrée = 1 couche
       //   chromatique supplémentaire à produire à l'export (CMJN ou RVB + Pantone).
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spCollectSpotInks() },
       textLinks: {}, guides: {}, masters: { templates: {}, assignments: {} },
