@@ -30473,6 +30473,8 @@ if (window._spGpuEnabled) {
             // ── 2. Couleur : RVB et Noir & Blanc retirés ──
             const rgbRow = document.getElementById('exportColorRgbRow');
             const bwRow = document.getElementById('exportColorBwRow');
+            const colorRow = document.getElementById('exportColorRow');
+            const colorHeader = document.getElementById('expColorHeader');
             const cmykRadio = document.getElementById('colorCMYK');
             const cmykLabel = document.getElementById('exportColorCmykLabel');
             const summary = document.getElementById('exportSpotChannelSummary');
@@ -30515,6 +30517,20 @@ if (window._spGpuEnabled) {
                 if (banner) banner.style.display = 'block';
                 if (toolbar) toolbar.style.display = 'block';
 
+                // Option C — eviter le doublon Sortie / Couleur.
+                //   Le choix de la couche quadri se fait dans le bloc
+                //   Sortie (boutons CMJN + Pantone / RVB + Pantone).
+                //   La ligne de radios historique RESTE dans le DOM (source
+                //   de verite de colorMode pour confirmExport / l'ICC) mais
+                //   est masquee visuellement. Le bloc est renomme
+                //   Couleur -> Encres : il ne sert plus qu'au
+                //   recapitulatif des plaques a produire.
+                if (colorRow) colorRow.style.display = 'none';
+                if (colorHeader) {
+                    const t = (typeof translate === 'function') ? translate('exportSpotInksHeader') : '';
+                    colorHeader.textContent = (t && t !== 'exportSpotInksHeader') ? t : 'Encres';
+                }
+
                 // Repères : les cases de la boîte classique sont remplacées par
                 // la variante Pantone (les deux familles restent synchronisées).
                 const cb = document.getElementById('colorBars');
@@ -30551,6 +30567,11 @@ if (window._spGpuEnabled) {
                 // Le mode couleur est désormais CMJN : rafraîchir le panneau ICC.
                 try { _spSyncCmykIccUi(); } catch (_) {}
             } else {
+                if (colorRow) colorRow.style.display = 'flex';
+                if (colorHeader) {
+                    const t = (typeof translate === 'function') ? translate('exportColorHeader') : '';
+                    colorHeader.textContent = (t && t !== 'exportColorHeader') ? t : 'Couleur';
+                }
                 if (rgbRow) rgbRow.style.display = 'flex';
                 if (bwRow) bwRow.style.display = 'flex';
                 if (cmykLabel) cmykLabel.textContent = 'CMJN';
@@ -30585,10 +30606,18 @@ if (window._spGpuEnabled) {
                 const names = document.getElementById('exportSpotChannelNames');
                 const total = 4 + inks.length;
                 if (count) {
+                    // La couche quadri peut etre RVB : ne PAS annoncer CMJN en dur.
+                    // useRgb vit dans le bloc if (isSpot) de la section 2 :
+                    // on relit le radio ici (section 3, portee differente).
+                    const _spotRgbEl = document.getElementById('spotModeRgb');
+                    const _useRgb = !!(_spotRgbEl && _spotRgbEl.checked);
+                    const _q = _useRgb
+                        ? ((typeof translate === 'function' && translate('exportSpotQuadriRgb')) || 'RVB')
+                        : ((typeof translate === 'function' && translate('exportSpotQuadriCmyk')) || 'CMJN');
                     const tpl = (typeof translate === 'function') ? translate('exportSpotChannelCountTemplate') : '';
                     count.textContent = (tpl && tpl !== 'exportSpotChannelCountTemplate')
-                        ? tpl.replace('{n}', String(total)).replace('{p}', String(inks.length))
-                        : (total + ' couches chromatiques — CMJN (4) + ' + inks.length + ' Pantone');
+                        ? tpl.replace('{n}', String(total)).replace('{p}', String(inks.length)).replace('{q}', _q)
+                        : (total + ' couches chromatiques — ' + _q + ' (4) + ' + inks.length + ' Pantone');
                 }
                 if (names) names.textContent = inks.map(function (i) { return '• ' + i.name; }).join('  ');
             }
@@ -47299,15 +47328,18 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportColorSpotRgbLabel: "RVB + Pantone",
         exportSpotModeCmyk: "CMJN + Pantone",
         exportSpotModeRgb: "RVB + Pantone",
+        exportSpotInksHeader: "Encres",
+        exportSpotQuadriCmyk: "CMJN",
+        exportSpotQuadriRgb: "RVB",
         exportSpotModeHint: "Seule la couche quadri change : les couches Pantone restent identiques.",
-        exportSpotDpiDesc: "Résolution fixe — export imprimeur CMJN + tons directs",
+        exportSpotDpiDesc: "Résolution fixe — export prêt à imprimer, tons directs inclus",
         exportSpotBannerTitle: "Document avec tons directs (Pantone)",
-        exportSpotBannerHint: "Le PDF est généré en CMJN + une couche chromatique supplémentaire par Pantone (comme dans InDesign).",
+        exportSpotBannerHint: "Le PDF contient la couche quadri choisie, plus une couche chromatique supplémentaire par Pantone.",
         exportSpotChannelsHeader: "Sortie",
         exportSpotColorBars: "Repères colorimétriques (quadri + Pantone)",
         exportSpotCropMarks: "Traits de coupe",
         exportSpotBleedAlways: "Fonds perdus inclus (obligatoire en export imprimeur)",
-        exportSpotChannelCountTemplate: "{n} couches chromatiques — CMJN (4) + {p} Pantone",
+        exportSpotChannelCountTemplate: "{n} couches chromatiques — {q} (4) + {p} Pantone",
         npModalTitle: "Nouveau projet",
         npLabelName: "Nom du projet",
         npLabelFormat: "Format de page",
@@ -48075,15 +48107,18 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportColorSpotRgbLabel: "RGB + Pantone",
         exportSpotModeCmyk: "CMYK + Pantone",
         exportSpotModeRgb: "RGB + Pantone",
+        exportSpotInksHeader: "Inks",
+        exportSpotQuadriCmyk: "CMYK",
+        exportSpotQuadriRgb: "RGB",
         exportSpotModeHint: "Only the process layer changes: Pantone layers stay identical.",
-        exportSpotDpiDesc: "Fixed resolution — printer-ready CMYK + spot colors",
+        exportSpotDpiDesc: "Fixed resolution — printer-ready export, spot colors included",
         exportSpotBannerTitle: "Document contains spot colors (Pantone)",
-        exportSpotBannerHint: "The PDF is generated as CMYK + one extra color channel per Pantone (as in InDesign).",
+        exportSpotBannerHint: "The PDF contains the chosen process layer, plus one extra color channel per Pantone.",
         exportSpotChannelsHeader: "Output",
         exportSpotColorBars: "Color bars (process + Pantone)",
         exportSpotCropMarks: "Crop marks",
         exportSpotBleedAlways: "Bleed included (required for printer-ready export)",
-        exportSpotChannelCountTemplate: "{n} color channels — CMYK (4) + {p} Pantone",
+        exportSpotChannelCountTemplate: "{n} color channels — {q} (4) + {p} Pantone",
         npModalTitle: "New project",
         npLabelName: "Project name",
         npLabelFormat: "Page format",
@@ -48854,15 +48889,18 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportColorSpotRgbLabel: "RGB＋Pantone",
         exportSpotModeCmyk: "CMYK＋Pantone",
         exportSpotModeRgb: "RGB＋Pantone",
+        exportSpotInksHeader: "インキ",
+        exportSpotQuadriCmyk: "CMYK",
+        exportSpotQuadriRgb: "RGB",
         exportSpotModeHint: "プロセス版のみが変わります。スポット版は同じです。",
-        exportSpotDpiDesc: "解像度固定 — 印刷入稿用 CMYK＋スポットカラー",
+        exportSpotDpiDesc: "解像度固定 — 印刷入稿用、スポットカラー付き",
         exportSpotBannerTitle: "スポットカラー（Pantone）を含むドキュメント",
-        exportSpotBannerHint: "PDF は CMYK＋Pantone ごとに 1 つの追加チャンネルで生成されます（InDesign と同様）。",
+        exportSpotBannerHint: "PDF には選択したプロセス版と、Pantone ごとの追加チャンネルが含まれます。",
         exportSpotChannelsHeader: "出力",
         exportSpotColorBars: "カラーバー（プロセス＋Pantone）",
         exportSpotCropMarks: "トンボ",
         exportSpotBleedAlways: "裁ち落としを含める（入稿時に必須）",
-        exportSpotChannelCountTemplate: "{n} チャンネル — CMYK（4）＋Pantone {p}",
+        exportSpotChannelCountTemplate: "{n} チャンネル — {q}（4）＋Pantone {p}",
         npModalTitle: "新しいプロジェクト",
         npLabelName: "プロジェクト名",
         npLabelFormat: "ページ形式",
