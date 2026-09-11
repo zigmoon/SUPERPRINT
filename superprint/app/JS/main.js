@@ -32661,11 +32661,17 @@ https://superprint.app
             try {
                 const l = window._spSpotLastExport;
                 if (window.spToast && l) {
-                    const msg = (currentLanguage === 'en'
-                        ? ('PDF exported — ' + l.channels + ' channels: CMYK + ' + (l.channels - 4) + ' Pantone')
-                        : (currentLanguage === 'ja'
-                            ? ('PDF書き出し完了 — ' + l.channels + ' チャンネル：CMYK＋' + (l.channels - 4) + ' Pantone')
-                            : ('PDF exporté — ' + l.channels + ' couches : CMJN + ' + (l.channels - 4) + ' Pantone')));
+                    // ⚠️ La couche quadri peut être RVB : ne PAS écrire « CMJN » en dur.
+                    const _isRgb = (l.quadriMode === 'rgb');
+                    const _quadri = (currentLanguage === 'en'
+                        ? (_isRgb ? 'RGB' : 'CMYK')
+                        : (_isRgb ? 'RVB' : 'CMJN'));
+                    const _units = (currentLanguage === 'en' ? ' channels: '
+                        : (currentLanguage === 'ja' ? ' チャンネル：' : ' couches : '));
+                    const _plus = (currentLanguage === 'ja' ? '＋' : ' + ');
+                    const _done = (currentLanguage === 'en' ? 'PDF exported — '
+                        : (currentLanguage === 'ja' ? 'PDF書き出し完了 — ' : 'PDF exporté — '));
+                    const msg = _done + l.channels + _units + _quadri + _plus + (l.channels - 4) + ' Pantone';
                     window.spToast(msg, 'success', 6000);
                 }
             } catch (_) {}
@@ -35396,7 +35402,10 @@ https://superprint.app
 
             window._spSpotLastExport = {
                 inks: spotCtx.inks.map(function (i) { return i.name + ' (' + i.hex + ')'; }),
-                channels: 4 + spotCtx.inks.length
+                channels: 4 + spotCtx.inks.length,
+                // 🎨 Couche quadri RÉELLEMENT écrite (cmyk | rgb) : sert au
+                //    message de fin d'export, qui annonçait « CMJN » en dur.
+                quadriMode: isRgbQuadri ? 'rgb' : 'cmyk'
             };
             console.log('[Spot] DONE — ' + spotCtx.inks.length + ' couche(s) Pantone + ' + (isRgbQuadri ? 'RVB' : 'CMJN'));
         }
