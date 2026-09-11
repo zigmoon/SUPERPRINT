@@ -30604,20 +30604,25 @@ if (window._spGpuEnabled) {
                 if (list) list.textContent = inks.map(function (i) { return i.name; }).join(' · ');
                 const count = document.getElementById('exportSpotChannelCount');
                 const names = document.getElementById('exportSpotChannelNames');
-                const total = 4 + inks.length;
+                // Nombre de canaux QUADRI selon le mode : RVB = 3 (rouge,
+                //   vert, bleu), CMJN = 4 (cyan, magenta, jaune, noir). Un
+                //   « 4 » code en dur annoncait 5 canaux pour
+                //   « RVB + 1 Pantone » — faux (3 + 1 = 4).
+                //   useRgb vit dans le bloc if (isSpot) de la section 2 : on
+                //   relit le radio ici (section 3, portee differente).
+                const _spotRgbEl = document.getElementById('spotModeRgb');
+                const _useRgb = !!(_spotRgbEl && _spotRgbEl.checked);
+                const _procCh = _useRgb ? 3 : 4;
+                const total = _procCh + inks.length;
                 if (count) {
-                    // La couche quadri peut etre RVB : ne PAS annoncer CMJN en dur.
-                    // useRgb vit dans le bloc if (isSpot) de la section 2 :
-                    // on relit le radio ici (section 3, portee differente).
-                    const _spotRgbEl = document.getElementById('spotModeRgb');
-                    const _useRgb = !!(_spotRgbEl && _spotRgbEl.checked);
                     const _q = _useRgb
                         ? ((typeof translate === 'function' && translate('exportSpotQuadriRgb')) || 'RVB')
                         : ((typeof translate === 'function' && translate('exportSpotQuadriCmyk')) || 'CMJN');
                     const tpl = (typeof translate === 'function') ? translate('exportSpotChannelCountTemplate') : '';
                     count.textContent = (tpl && tpl !== 'exportSpotChannelCountTemplate')
-                        ? tpl.replace('{n}', String(total)).replace('{p}', String(inks.length)).replace('{q}', _q)
-                        : (total + ' couches chromatiques — ' + _q + ' (4) + ' + inks.length + ' Pantone');
+                        ? tpl.replace('{n}', String(total)).replace('{p}', String(inks.length))
+                            .replace('{q}', _q).replace('{c}', String(_procCh))
+                        : (total + ' couches chromatiques — ' + _q + ' (' + _procCh + ') + ' + inks.length + ' Pantone');
                 }
                 if (names) names.textContent = inks.map(function (i) { return '• ' + i.name; }).join('  ');
             }
@@ -32700,7 +32705,13 @@ https://superprint.app
                     const _plus = (currentLanguage === 'ja' ? '＋' : ' + ');
                     const _done = (currentLanguage === 'en' ? 'PDF exported — '
                         : (currentLanguage === 'ja' ? 'PDF書き出し完了 — ' : 'PDF exporté — '));
-                    const msg = _done + l.channels + _units + _quadri + _plus + (l.channels - 4) + ' Pantone';
+                    // Le total des canaux quadri depend du mode (3 en RVB,
+                //   4 en CMJN) : « l.channels - 4 » annoncait 1 Pantone
+                //   pour 2 encres en RVB.
+                const _proc = (typeof l.processChannels === 'number')
+                    ? l.processChannels
+                    : (l.quadriMode === 'rgb' ? 3 : 4);
+                const msg = _done + l.channels + _units + _quadri + _plus + (l.channels - _proc) + ' Pantone';
                     window.spToast(msg, 'success', 6000);
                 }
             } catch (_) {}
@@ -35452,7 +35463,11 @@ https://superprint.app
 
             window._spSpotLastExport = {
                 inks: spotCtx.inks.map(function (i) { return i.name + ' (' + i.hex + ')'; }),
-                channels: 4 + spotCtx.inks.length,
+                // Canaux QUADRI reellement ecrits : 3 en RVB (rouge/vert/bleu),
+            //   4 en CMJN. Expose separement pour que le message de fin
+            //   n'ait pas a deviner (cf. l.channels - 4, faux en RVB).
+            processChannels: isRgbQuadri ? 3 : 4,
+            channels: (isRgbQuadri ? 3 : 4) + spotCtx.inks.length,
                 // 🎨 Couche quadri RÉELLEMENT écrite (cmyk | rgb) : sert au
                 //    message de fin d'export, qui annonçait « CMJN » en dur.
                 quadriMode: isRgbQuadri ? 'rgb' : 'cmyk'
@@ -47339,7 +47354,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportSpotColorBars: "Repères colorimétriques (quadri + Pantone)",
         exportSpotCropMarks: "Traits de coupe",
         exportSpotBleedAlways: "Fonds perdus inclus (obligatoire en export imprimeur)",
-        exportSpotChannelCountTemplate: "{n} couches chromatiques — {q} (4) + {p} Pantone",
+        exportSpotChannelCountTemplate: "{n} couches chromatiques — {q} ({c}) + {p} Pantone",
         npModalTitle: "Nouveau projet",
         npLabelName: "Nom du projet",
         npLabelFormat: "Format de page",
@@ -48118,7 +48133,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportSpotColorBars: "Color bars (process + Pantone)",
         exportSpotCropMarks: "Crop marks",
         exportSpotBleedAlways: "Bleed included (required for printer-ready export)",
-        exportSpotChannelCountTemplate: "{n} color channels — {q} (4) + {p} Pantone",
+        exportSpotChannelCountTemplate: "{n} color channels — {q} ({c}) + {p} Pantone",
         npModalTitle: "New project",
         npLabelName: "Project name",
         npLabelFormat: "Page format",
@@ -48900,7 +48915,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportSpotColorBars: "カラーバー（プロセス＋Pantone）",
         exportSpotCropMarks: "トンボ",
         exportSpotBleedAlways: "裁ち落としを含める（入稿時に必須）",
-        exportSpotChannelCountTemplate: "{n} チャンネル — {q}（4）＋Pantone {p}",
+        exportSpotChannelCountTemplate: "{n} チャンネル — {q}（{c}）＋Pantone {p}",
         npModalTitle: "新しいプロジェクト",
         npLabelName: "プロジェクト名",
         npLabelFormat: "ページ形式",
