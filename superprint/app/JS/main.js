@@ -69225,7 +69225,297 @@ function initObjectRightClickMenu() {
     };
 
     // ----- Icons (Lucide-like, 16x16 viewBox 24x24) -----
+// ============================================================================
+// POP-IN « HABILLAGE DU TEXTE » — v1.7.350
+// ============================================================================
+// Interface du moteur d'habillage (window._spWrap). Ouvert par le menu
+// contextuel (clic droit sur une forme/image), sur le modèle de
+// « Texte dans la forme » : même conteneur créé en JS, même palette de thème,
+// même en-tête déplaçable.
+//
+// ⚠️ Ce pop-in ne crée ni ne supprime AUCUN objet : il lit et écrit
+//    uniquement 6 attributs sur l'objet visé (_spWrapMode, _spWrapScope,
+//    _spWrapTop/Left/Bottom/Right). Un document sans habillage est donc rendu
+//    exactement comme avant.
+//
+// PORTÉE : il ne s'applique qu'aux objets NON textuels (formes, images,
+//    tracés). Sur un bloc texte il n'aurait pas de sens : on ne l'affiche pas.
+// ============================================================================
+(function initSpWrapPopin() {
+  'use strict';
+  if (window._spOpenWrapPopin) return;
+
+  var popin = null, els = {}, state = { canvas: null, obj: null, pal: null };
+  var LABELS = {
+    fr: { title: 'Habillage du texte', mode: 'Habillage', none: 'Aucun', box: 'Boîte', shape: 'Contour',
+          scope: 'Côtés', both: 'Tous', left: 'Gauche', right: 'Droite', offset: 'Décalage (px)',
+          hint: 'Les blocs texte qui croisent cet objet se replieront autour de lui.',
+          none1: 'Aucun autre bloc texte ne croise cet objet.', ok: 'Habillage appliqué.', close: 'Fermer' },
+    en: { title: 'Text wrap', mode: 'Wrap', none: 'None', box: 'Bounding box', shape: 'Contour',
+          scope: 'Sides', both: 'Both', left: 'Left', right: 'Right', offset: 'Offset (px)',
+          hint: 'Text frames crossing this object will reflow around it.',
+          none1: 'No other text frame crosses this object.', ok: 'Wrap applied.', close: 'Close' }
+  };
+  function L() {
+    var lang = 'fr';
+    try { if (typeof currentLanguage !== 'undefined' && currentLanguage === 'en') lang = 'en'; } catch (_) {}
+    return LABELS[lang];
+  }
+
+  // Palette de thème locale (l'originale vit dans un autre module).
+  function palette() {
+    var dark = !!(document.body && document.body.classList.contains('theme-dark'));
+    return dark ? {
+      bg: '#1c1c20', head: '#232327', line: 'rgba(255,255,255,0.08)', text: '#eaeaea',
+      sub: '#8f8f96', field: '#141417', fieldBorder: 'rgba(255,255,255,0.12)',
+      seg: '#141417', accent: '#ffffff', accentText: '#111111'
+    } : {
+      bg: '#ffffff', head: '#fafafa', line: '#ececec', text: '#1a1a1a',
+      sub: '#8a8a8a', field: '#f5f5f5', fieldBorder: '#e4e4e4',
+      seg: '#f0f0f0', accent: '#1a1a1a', accentText: '#ffffff'
+    };
+  }
+
+  // ── Recalcule TOUS les blocs texto du canevas (un obstacle peut concerner
+  //    plusieurs blocs). C'est ce qui rend l'effet immédiat.
+  function reflowAll(canvas) {
+    try {
+      var all = canvas.getObjects();
+      for (var i = 0; i < all.length; i++) {
+        var o = all[i];
+        if (!o) continue;
+        if (o.type === 'textbox' || o.type === 'i-text' || o.type === 'text') {
+          try { window._spWrap && window._spWrap.reflow(o); } catch (_) {}
+        }
+      }
+    } catch (_) {}
+    try { canvas.requestRenderAll(); } catch (_) {}
+  }
+
+  // Y a-t-il au moins un bloc texto qui croise l'objet ? (message d'aide)
+  function hasCrossingText(canvas, obj) {
+    try {
+      // ⚠️ getBoundingRect() renvoie {left, top, width, height} : il n'y a
+      //   PAS de .right ni de .bottom. Comparer ces proprietes revient a
+      //   comparer `undefined` -> le test renvoyait toujours false.
+      var bb = obj.getBoundingRect(true, true);
+      if (!bb || !(bb.width > 0) || !(bb.height > 0)) return false;
+      var rL = bb.left, rT = bb.top, rR = bb.left + bb.width, rB = bb.top + bb.height;
+      var all = canvas.getObjects();
+      for (var i = 0; i < all.length; i++) {
+        var o = all[i];
+        if (!o || o === obj) continue;
+        if (!(o.type === 'textbox' || o.type === 'i-text' || o.type === 'text')) continue;
+        var t = o.getBoundingRect(true, true);
+        if (!t || !(t.width > 0) || !(t.height > 0)) continue;
+        var tL = t.left, tT = t.top, tR = t.left + t.width, tB = t.top + t.height;
+        if (tR > rL && tL < rR && tB > rT && tT < rB) return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  function apply() {
+    if (!state.obj || !window._spWrap) return;
+    var obj = state.obj;
+    if (state.mode === 'none') window._spWrap.setMode(obj, 'none');
+    else window._spWrap.setMode(obj, state.mode);
+    window._spWrap.setScope(obj, state.scope);
+    window._spWrap.setStandoff(obj, state.offset);
+    reflowAll(state.canvas);
+    // Le message d'aide suit l'état réel
+    if (els.hintRoot) {
+      var txt = hasCrossingText(state.canvas, obj) ? L().hint : L().none1;
+      els.hintRoot.textContent = txt;
+      els.hintRoot.style.color = state.pal.sub;
+    }
+    try { if (typeof saveState === 'function') saveState('Habillage du texte'); } catch (_) {}
+  }
+
+  function refreshSeg() {
+    var P = state.pal;
+    var set = function (btn, on) {
+      if (!btn) return;
+      btn.style.background = on ? P.accent : 'transparent';
+      btn.style.color = on ? P.accentText : P.sub;
+    };
+    set(els.segNone, state.mode === 'none');
+    set(els.segBox, state.mode === 'box');
+    set(els.segShape, state.mode === 'shape');
+    set(els.segBoth, state.scope === 'both');
+    set(els.segLeft, state.scope === 'left');
+    set(els.segRight, state.scope === 'right');
+    // La portée n'a pas de sens sans habillage
+    if (els.scopeWrap) els.scopeWrap.style.opacity = (state.mode === 'none') ? '0.45' : '1';
+    if (els.offInput) els.offInput.disabled = (state.mode === 'none');
+  }
+
+  function ensure() {
+    if (popin) return;
+    var P = palette();
+    state.pal = P;
+
+    popin = document.createElement('div');
+    popin.id = 'spWrapPopin';
+    popin.style.cssText = [
+      'position:fixed', 'top:96px', 'right:24px', 'width:288px',
+      'background:' + P.bg, 'color:' + P.text,
+      'border:1px solid ' + P.line, 'border-radius:14px',
+      'box-shadow:0 12px 34px rgba(0,0,0,0.18)', 'z-index:10070',
+      'display:none', 'font-family:"Open Sans",-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif',
+      'font-size:12px', 'user-select:none', 'overflow:hidden'
+    ].join(';');
+
+    var lblCss = 'display:block;font-size:10px;letter-spacing:0.5px;text-transform:uppercase;color:' + P.sub + ';margin:0 0 6px;';
+
+    // ---- En-tête déplaçable ----
+    var head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:move;background:' + P.head + ';border-bottom:1px solid ' + P.line + ';';
+    var hTitle = document.createElement('div');
+    hTitle.style.cssText = 'flex:1;font-weight:700;font-size:13px;letter-spacing:0.2px;color:' + P.text + ';';
+    hTitle.textContent = L().title;
+    var hClose = document.createElement('button');
+    hClose.type = 'button';
+    hClose.innerHTML = '&times;';
+    hClose.title = L().close;
+    hClose.style.cssText = 'border:0;background:transparent;color:' + P.sub + ';font-size:20px;line-height:1;cursor:pointer;padding:0 4px;border-radius:6px;';
+    hClose.addEventListener('mouseenter', function () { hClose.style.background = P.seg; });
+    hClose.addEventListener('mouseleave', function () { hClose.style.background = 'transparent'; });
+    hClose.addEventListener('click', function () { hide(true); });
+    head.appendChild(hTitle);
+    head.appendChild(hClose);
+    els.title = hTitle;
+
+    // ---- Déplacement ----
+    (function makeDraggable() {
+      var dx = 0, dy = 0, dragging = false;
+      head.addEventListener('mousedown', function (e) {
+        if (e.target === hClose) return;
+        dragging = true;
+        var r = popin.getBoundingClientRect();
+        dx = e.clientX - r.left; dy = e.clientY - r.top;
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', function (e) {
+        if (!dragging) return;
+        var w = popin.offsetWidth, h = popin.offsetHeight;
+        var x = Math.max(4, Math.min(window.innerWidth - w - 4, e.clientX - dx));
+        var y = Math.max(4, Math.min(window.innerHeight - h - 4, e.clientY - dy));
+        popin.style.left = x + 'px'; popin.style.top = y + 'px';
+        popin.style.right = 'auto';
+      });
+      document.addEventListener('mouseup', function () { dragging = false; });
+    })();
+
+    // ---- Corps ----
+    var body = document.createElement('div');
+    body.style.cssText = 'padding:12px;display:flex;flex-direction:column;gap:12px;';
+
+    var mkSegWrap = function () {
+      var w = document.createElement('div');
+      w.style.cssText = 'display:flex;gap:3px;background:' + P.seg + ';border-radius:9px;padding:3px;';
+      return w;
+    };
+    var mkSeg = function (val, label, getter, setter) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = label;
+      b.style.cssText = 'flex:1;border:0;background:transparent;color:' + P.sub + ';font-size:12px;font-weight:700;padding:7px 6px;border-radius:7px;cursor:pointer;transition:background .12s,color .12s;';
+      b.addEventListener('click', function () { setter(val); refreshSeg(); apply(); });
+      return b;
+    };
+
+    // Habillage : 3 choix
+    var g1 = document.createElement('div');
+    var l1 = document.createElement('div'); l1.style.cssText = lblCss; l1.textContent = L().mode;
+    var segMode = mkSegWrap();
+    els.segNone = mkSeg('none', L().none, null, function (v) { state.mode = v; });
+    els.segBox = mkSeg('box', L().box, null, function (v) { state.mode = v; });
+    els.segShape = mkSeg('shape', L().shape, null, function (v) { state.mode = v; });
+    segMode.appendChild(els.segNone); segMode.appendChild(els.segBox); segMode.appendChild(els.segShape);
+    g1.appendChild(l1); g1.appendChild(segMode);
+
+    // Portée : 3 choix
+    var g2 = document.createElement('div');
+    els.scopeWrap = g2;
+    var l2 = document.createElement('div'); l2.style.cssText = lblCss; l2.textContent = L().scope;
+    var segScope = mkSegWrap();
+    els.segBoth = mkSeg('both', L().both, null, function (v) { state.scope = v; });
+    els.segLeft = mkSeg('left', L().left, null, function (v) { state.scope = v; });
+    els.segRight = mkSeg('right', L().right, null, function (v) { state.scope = v; });
+    segScope.appendChild(els.segBoth); segScope.appendChild(els.segLeft); segScope.appendChild(els.segRight);
+    g2.appendChild(l2); g2.appendChild(segScope);
+
+    // Décalage
+    var g3 = document.createElement('div');
+    var l3 = document.createElement('div'); l3.style.cssText = lblCss; l3.textContent = L().offset;
+    var off = document.createElement('input');
+    off.type = 'number'; off.min = '0'; off.max = '120'; off.step = '1';
+    off.style.cssText = 'width:100%;box-sizing:border-box;background:' + P.field + ';color:' + P.text + ';border:1px solid ' + P.fieldBorder + ';border-radius:8px;padding:8px 10px;font-size:13px;outline:none;';
+    off.addEventListener('input', function () {
+      var v = parseFloat(off.value);
+      if (isFinite(v) && v >= 0) { state.offset = v; apply(); }
+    });
+    els.offInput = off;
+    g3.appendChild(l3); g3.appendChild(off);
+
+    // Message d'aide
+    var hint = document.createElement('div');
+    hint.style.cssText = 'font-size:11px;line-height:1.45;color:' + P.sub + ';';
+    els.hintRoot = hint;
+
+    body.appendChild(g1); body.appendChild(g2); body.appendChild(g3); body.appendChild(hint);
+    popin.appendChild(head);
+    popin.appendChild(body);
+    document.body.appendChild(popin);
+  }
+
+  function hide(silent) {
+    if (!popin) return;
+    popin.style.display = 'none';
+    state.canvas = null; state.obj = null;
+    if (!silent) return;
+  }
+
+  // ── API : ouvre le pop-in sur l'objet visé ────────────────────────────────
+  window._spOpenWrapPopin = function (canvas, obj) {
+    if (!canvas || !obj || !window._spWrap) return;
+    ensure();
+    state.canvas = canvas;
+    state.obj = obj;
+    state.pal = palette();
+
+    // Reprend l'état actuel de l'objet
+    var m = window._spWrap.getMode(obj);
+    state.mode = (m && m !== 'none' && window._spWrap.modes.indexOf(m) >= 0) ? m : 'none';
+    state.scope = window._spWrap.getScope(obj);
+    state.offset = window._spWrap.getStandoff(obj);
+
+    els.title.textContent = L().title;
+    els.offInput.value = String(state.offset);
+    els.hintRoot.textContent = hasCrossingText(canvas, obj) ? L().hint : L().none1;
+    els.hintRoot.style.color = state.pal.sub;
+
+    refreshSeg();
+    popin.style.display = 'block';
+    // Repositionne si l'utilisateur l'avait déplacé hors écran
+    try {
+      var r = popin.getBoundingClientRect();
+      if (r.left < 0 || r.top < 0 || r.left > window.innerWidth || r.top > window.innerHeight) {
+        popin.style.left = 'auto'; popin.style.top = '96px'; popin.style.right = '24px';
+      }
+    } catch (_) {}
+  };
+
+  // Fermer sur Échap
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && popin && popin.style.display === 'block') hide(true);
+  });
+})();
+
     const ICON = {
+        // 🎨 v1.7.350 — HABILLAGE DU TEXTE : lignes de texte + une forme qui
+        //   les interrompt. Lisible en 16 px, aucune dependance externe.
+        wrap:     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5h6M15 5h6M3 10h3M10 10h11M3 15h6M15 15h6M3 19h6"/><rect x="9" y="7" width="6" height="10" rx="1"/></svg>',
         front:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="12" height="12" opacity="0.4"/><rect x="9" y="9" width="12" height="12" fill="currentColor" fill-opacity="0.18"/></svg>',
         forward:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>',
         backward: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
@@ -69302,6 +69592,20 @@ function initObjectRightClickMenu() {
                 }));
                 menu.appendChild(mkItem(ICON.textOutline || ICON.textEdit, t('Vectoriser (typo)', 'Vectorize (type)'), '', function() {
                     if (!canvas) return; window._spVectorizeText('typo', canvas, obj);
+                }));
+                menu.appendChild(mkSep());
+            }
+        }
+        // 🎨 v1.7.350 — HABILLAGE DU TEXTE (entree de menu).
+        //   Proposee uniquement pour un obstacle possible : un objet NON
+        //   textuel. Sur un bloc texte elle n'aurait pas de sens (c'est le bloc
+        //   qui coule autour des objets, pas l'inverse). Le pop-in ne touche a
+        //   aucun objet : il regle 6 attributs d'habillage.
+        {
+            const _isTextLikeObj = obj && (obj.type === 'textbox' || obj.type === 'i-text' || obj.type === 'text');
+            if (!_isTextLikeObj && typeof window._spOpenWrapPopin === 'function') {
+                menu.appendChild(mkItem(ICON.wrap, t('Habillage du texte…', 'Text wrap…'), '', function () {
+                    window._spOpenWrapPopin(canvas, obj);
                 }));
                 menu.appendChild(mkSep());
             }
