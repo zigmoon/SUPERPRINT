@@ -4068,6 +4068,126 @@ if (window._spGpuEnabled) {
     return Math.min(avail, fallback);
   }
 
+  // ── Hauteur du bloc : suivi de l'habillage ────────────────────────────────
+  //   Voir l'en-tete du fichier _sp_apply_wrapfit.cjs pour le detail du bug.
+  //   En resume : un habillage cree des lignes EN PLUS ; si le bloc garde la
+  //   hauteur de la zone dessinee, son masque coupe ces lignes -> le texte est
+  //   redistribue mais invisible.
+  // Rendu du liseré après l'objet (overlay visuel uniquement).
+  (function spWrapInstallMarkRender() {
+    if (typeof fabric === 'undefined' || !fabric.Textbox) return;
+    var proto = fabric.Textbox.prototype;
+    if (proto.__spWrapMarkRender) return;
+    proto.__spWrapMarkRender = true;
+    var origRender = proto._render;
+    proto._render = function (ctx) {
+      origRender.apply(this, arguments);
+      var mark = this.__spWrapMark;
+      if (!mark || !this.canvas) return;
+      // On remet le trait a l'echelle COURANTE du bloc (l'utilisateur peut
+      // redimensionner sans qu'on ait a recreer l'objet).
+      try {
+        var h = (this._fixedHeight > 0) ? this._fixedHeight : this.height;
+        var w = (this._fixedWidth > 0) ? this._fixedWidth : this.width;
+        mark.set({ x1: w, y1: 0, x2: w, y2: h, strokeWidth: (this.strokeWidth || 1) + 1 });
+        mark.render(ctx);
+      } catch (_) {}
+    };
+  })();
+
+  function spWrapCanResize(obj) {
+    if (!obj || !obj.canvas) return false;
+    if (obj.type !== 'textbox') return false;                 // text/i-text : geometrie differente
+    if (obj.textLinkId) return false;                         // chaine : le debordement va au maillon suivant
+    if (obj._isShapeClippedText) return false;                // texte DANS une forme
+    if (obj._isCtxPathText || obj.path) return false;         // texte SUR/le long d'un trace
+    return true;
+  }
+
+  // Hauteur reelle du contenu (somme des lignes), ou null si indecise.
+  function spWrapNaturalHeight(obj) {
+    var h = 0;
+    try {
+      var n = (obj._textLines && obj._textLines.length) || 0;
+      for (var i = 0; i < n; i++) h += obj.getHeightOfLine(i);
+    } catch (_) { return null; }
+    return h > 0 ? h : null;
+  }
+
+  function spWrapSetHeight(obj, h) {
+    h = Math.max(1, Math.round(h * 100) / 100);
+    obj._fixedHeight = h;
+    obj.height = h;
+    try { obj.setCoords && obj.setCoords(); } catch (_) {}
+    // Le masque depend de la hauteur ET du nombre de lignes : on le refait.
+    try { if (typeof window.applyTextboxClipPath === 'function') window.applyTextboxClipPath(obj); } catch (_) {}
+    // 🎨 Signalement VISUEL : un bloc ne doit jamais grandir « dans le dos » de
+    //   l'utilisateur. Tant qu'il est ajuste automatiquement, il porte un liseré
+    //   discret (non exporte, non imprime : overlay cote canevas uniquement).
+    try { spWrapMarkAdjusted(obj, true); } catch (_) {}
+    return true;
+  }
+
+  // Liseré « hauteur ajustee » : trait fin pointille pose le long du bord droit
+  // du bloc. Purement indicatif — jamais exporte (excludeFromExport) et jamais
+  // selectionnable.
+  function spWrapMarkAdjusted(obj, on) {
+    if (!obj) return;
+    if (!on) {
+      if (obj.__spWrapMark) { obj.__spWrapMark = null; try { obj.dirty = true; obj.canvas && obj.canvas.requestRenderAll(); } catch (_) {} }
+      return;
+    }
+    if (obj.__spWrapMark) return;
+    try {
+      var h = (obj._fixedHeight > 0) ? obj._fixedHeight : obj.height;
+      var w = (obj._fixedWidth > 0) ? obj._fixedWidth : obj.width;
+      var mark = new fabric.Line([w, 0, w, h], {
+        stroke: '#e8a33d',
+        strokeWidth: (obj.strokeWidth || 1) + 1,
+        strokeDashArray: [6, 5],
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+        originX: 'left',
+        originY: 'top',
+        opacity: 0.9
+      });
+      mark.__spWrapGhost = true;
+      // ⚠️ On n'ajoute PAS l'enfant à l'objet (cela fausserait sa bbox et donc
+      //    la geometrie de l'habillage). On le dessine APRES coup via _render.
+      obj.__spWrapMark = mark;
+      obj.dirty = true;
+    } catch (_) {}
+  }
+
+  // active = au moins un objet du canevas porte un habillage.
+  function spWrapSyncSize(obj, active) {
+    if (!spWrapCanResize(obj)) return false;
+    // ⚠️ On n'agit QUE sur les blocs a hauteur FIXE (zone dessinee par l'outil
+    //    Texte). Un bloc a hauteur AUTO est deja correctement dimensionne par
+    //    Fabric : y toucher le FIGERAIT (cf. FIX v1.7.348).
+    var fixed = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : 0;
+    if (!fixed) return false;
+    var orig = (typeof obj._spWrapOrigH === 'number' && obj._spWrapOrigH > 0) ? obj._spWrapOrigH : 0;
+
+    if (!active) {
+      // Plus aucun habillage : retour a la hauteur d'origine.
+      if (!orig) return false;
+      if (Math.abs(fixed - orig) < 0.01) { spWrapMarkAdjusted(obj, false); return false; }
+      if (spWrapSetHeight(obj, orig)) { spWrapMarkAdjusted(obj, false); return true; }
+      return false;
+    }
+
+    if (obj.isEditing) return false;         // ne pas bouger le curseur pendant la saisie
+    if (!orig) { obj._spWrapOrigH = fixed; orig = fixed; }
+
+    var natural = spWrapNaturalHeight(obj);
+    if (natural === null) return false;
+    var target = Math.max(orig, natural);
+    if (Math.abs(fixed - target) < 0.01) { spWrapMarkAdjusted(obj, target > orig + 0.01); return false; }
+    return spWrapSetHeight(obj, target);
+  }
+
   window._spWrapLineWidthFor = lineWidthFor;
 
   // ── API publique (utilisée par l'interface) ───────────────────────────────
@@ -4141,19 +4261,22 @@ if (window._spGpuEnabled) {
     var objs;
     try { objs = canvas.getObjects(); } catch (_) { return; }
     if (!objs || !objs.length) return;
-    // Aucun obstacle : rien à recalculer (le cas courant reste gratuit).
     var hasObstacle = false;
     for (var i = 0; i < objs.length; i++) {
       if (objs[i] && objs[i]._spWrapMode && objs[i]._spWrapMode !== 'none') { hasObstacle = true; break; }
     }
-    if (!hasObstacle) return;
+    var touched = false;
     for (var k = 0; k < objs.length; k++) {
       var o = objs[k];
       if (!o) continue;
-      if (o.type === 'textbox' || o.type === 'i-text' || o.type === 'text') {
-        try { window._spWrap.reflow(o); } catch (_) {}
-      }
+      var isText = (o.type === 'textbox' || o.type === 'i-text' || o.type === 'text');
+      // Sans aucun obstacle il reste utile de RESTAURER les blocs deja
+      // agrandis (cas du passage a « Aucun ») : on ne sort donc pas tout de suite.
+      if (!hasObstacle && !(o._spWrapOrigH > 0)) continue;
+      if (isText) { try { window._spWrap.reflow(o); } catch (_) {} }
+      try { if (spWrapSyncSize(o, hasObstacle)) touched = true; } catch (_) {}
     }
+    if (touched) { try { window.saveAllPages && window.saveAllPages(); } catch (_) {} }
     try { canvas.requestRenderAll(); } catch (_) {}
   }
   window._spWrapReflowAll = reflowAllTexts;
@@ -4168,6 +4291,15 @@ if (window._spGpuEnabled) {
     fabric.Canvas.prototype.fire = function (name, opt) {
       var res = origFire.apply(this, arguments);
       try {
+        // Redimensionnement MANUEL d'un bloc : la nouvelle hauteur devient la
+        // reference de l'habillage (sinon le bloc ne pourrait jamais redevenir
+        // plus court que sa taille agrandie automatiquement).
+        // ⚠️ Uniquement 'object:scaling' : un simple DEPLACEMENT ne doit pas
+        //    figer une hauteur agrandie par l'habillage.
+        if (name === 'object:scaling' && opt && opt.target && opt.target.type === 'textbox'
+            && opt.target._fixedHeight > 0 && spWrapCanResize(opt.target)) {
+          opt.target._spWrapOrigH = Math.round(opt.target._fixedHeight * 100) / 100;
+        }
         if (EVENTS[name] && opt && opt.target && !pending) {
           var canvas = this;
           // Throttle au frame : un drag de 60 img/s ne recalcule qu'une fois
@@ -69390,6 +69522,9 @@ function initObjectRightClickMenu() {
   // ── Recalcule TOUS les blocs texto du canevas (un obstacle peut concerner
   //    plusieurs blocs). C'est ce qui rend l'effet immédiat.
   function reflowAll(canvas) {
+    // Le moteur d'habillage sait aussi AJUSTER LA HAUTEUR des blocs a zone
+    // dessinee (sinon le masque couperait les lignes creees par l'habillage).
+    try { if (window._spWrapReflowAll) { window._spWrapReflowAll(canvas); return; } } catch (_) {}
     try {
       var all = canvas.getObjects();
       for (var i = 0; i < all.length; i++) {
