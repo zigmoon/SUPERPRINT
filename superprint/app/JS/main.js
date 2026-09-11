@@ -34926,30 +34926,51 @@ https://superprint.app
         // Enregistre l'espace de couleur /Separation de chaque encre dans les
         // ressources de page et mémorise le nom logique (CS0, CS1, …).
         // Nom du canal = nom Pantone (identifie la plaque côté RIP/imprimeur).
-        function _spSpotRegisterSeparations(pdfDoc, spotCtx) {
+        function _spSpotRegisterSeparations(pdfDoc, spotCtx, opts) {
             const P = window.PDFLib;
             const ctx = pdfDoc.context;
             const pagesInDoc = pdfDoc.getPages();
+            // 🎨 En mode « RVB + Pantone » l'espace d'ALTERNANCE doit être RVB :
+            //    sinon les tons directs traversent le gamut quadri (jaune vif
+            //    écrêté, jade assombri) et un colorant CMJN se retrouve dans un
+            //    document RVB. En CMJN on garde le comportement imprimeur.
+            const useRgbAlt = !!(opts && opts.quadriMode === 'rgb');
             const csNames = spotCtx.csNames && spotCtx.csNames.length
                 ? spotCtx.csNames.slice()
                 : spotCtx.inks.map(function (_, i) { return 'CS' + i; });
 
             for (let i = 0; i < spotCtx.inks.length; i++) {
                 const ink = spotCtx.inks[i];
-                const c = ink.cmyk;
-                const tintFn = ctx.obj({
-                    FunctionType: 2,
-                    Domain: [0, 1],
-                    C0: [0, 0, 0, 0],
-                    C1: [c.c, c.m, c.y, c.k],
-                    N: 1
-                });
+                let tintFn, altCs;
+                if (useRgbAlt) {
+                    // C0 = [1 1 1] → 0 % d'encre = papier blanc.
+                    // C1 = composantes sRGB du ton direct (source : nuancier).
+                    const rc = _parsePdfColor(ink.hex) || [0, 0, 0];
+                    tintFn = ctx.obj({
+                        FunctionType: 2,
+                        Domain: [0, 1],
+                        C0: [1, 1, 1],
+                        C1: [rc[0] / 255, rc[1] / 255, rc[2] / 255],
+                        N: 1
+                    });
+                    altCs = P.PDFName.of('DeviceRGB');
+                } else {
+                    const c = ink.cmyk;
+                    tintFn = ctx.obj({
+                        FunctionType: 2,
+                        Domain: [0, 1],
+                        C0: [0, 0, 0, 0],
+                        C1: [c.c, c.m, c.y, c.k],
+                        N: 1
+                    });
+                    altCs = P.PDFName.of('DeviceCMYK');
+                }
                 const fnRef = ctx.register(tintFn);
                 const chan = _spSpotChannelName(ink.name, ink.hex);
                 const spotCs = ctx.obj([
                     P.PDFName.of('Separation'),
                     P.PDFName.of(chan),
-                    P.PDFName.of('DeviceCMYK'),
+                    altCs,
                     fnRef
                 ]);
                 const csRef = ctx.register(spotCs);
@@ -35364,7 +35385,7 @@ https://superprint.app
             _spStep((currentLanguage === 'en' ? 'Writing spot channels…' : (currentLanguage === 'ja' ? 'スポットチャンネルを書き込み中…' : 'Écriture des couches Pantone…')), 84);
             try {
                 const reloaded = await PDFLib.PDFDocument.load(bytes);
-                _spSpotRegisterSeparations(reloaded, spotCtx);
+                _spSpotRegisterSeparations(reloaded, spotCtx, { quadriMode: quadriMode });
                 bytes = await reloaded.save();
 
                 // Patchs d'encre directe sur la barre colorimétrique (dans le
