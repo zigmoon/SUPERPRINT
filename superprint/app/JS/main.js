@@ -5089,11 +5089,21 @@ if (window._spGpuEnabled) {
                 textbox.dirty = true;
             } catch (_) {}
             
-            if (savedFixedW !== undefined) {
+            // 🛡️ ÉTAPE 3b : `savedFixedW !== undefined` est VRAI pour la valeur 0,
+            //   or Fabric pose _fixedWidth = 0 ET _fixedHeight = 0 sur TOUT Textbox
+            //   à la création (0 = dimension AUTO dans la convention du projet).
+            //   L'ancien code faisait donc `textbox.width = 0` et
+            //   `textbox.height = 0` sur un bloc à dimensions AUTO :
+            //   MESURE avant correctif : largeur 200 px -> 0 px, et la hauteur
+            //   s'effondrait de la même façon. C'est le même piège que le bloc
+            //   écrasé à 1 px, ici sur les DEUX dimensions.
+            const _wIsPositive = (typeof savedFixedW === 'number') && isFinite(savedFixedW) && savedFixedW > 0;
+            const _hIsPositive = (typeof savedFixedH === 'number') && isFinite(savedFixedH) && savedFixedH > 0;
+            if (_wIsPositive) {
                 textbox._fixedWidth = savedFixedW;
                 textbox.width = savedFixedW;
             }
-            if (savedFixedH !== undefined) {
+            if (_hIsPositive) {
                 textbox._fixedHeight = savedFixedH;
                 textbox.height = savedFixedH;
             }
@@ -5111,14 +5121,23 @@ if (window._spGpuEnabled) {
             const maxAttempts = (typeof options.maxAttempts === 'number') ? options.maxAttempts : 3;
             const enableTriplePass = options.triplePass !== false;
 
-            if (textbox._fixedWidth == null) {
-                textbox._fixedWidth = Math.max(1, Math.round(textbox.width ?? 1));
+            // 🛡️ ÉTAPE 3 : `_fixedWidth == null` est FAUX pour la valeur 0, et
+            //   `0 ?? width` vaut 0 (l'opérateur ?? ne rattrape que null/undefined).
+            //   Un bloc à largeur AUTO (_fixedWidth = 0 — cas des blocs créés par
+            //   l'IA, le copier-coller ou l'import) se voyait donc imposer
+            //   `targetWidth = Math.max(1, 0) = 1` -> LA LARGEUR S'EFFONDRAIT À 1 px.
+            //   Mesure avant correctif : 200 px -> 0/1 px.
+            const _fwFixed = (typeof textbox._fixedWidth === 'number') && isFinite(textbox._fixedWidth) && textbox._fixedWidth > 0;
+            if (!_fwFixed) {
+                textbox._fixedWidth = Math.max(1, Math.round(textbox.width || 1));
             }
-            const targetWidth = Math.max(1, Math.round(textbox._fixedWidth ?? textbox.width ?? 1));
+            const targetWidth = Math.max(1, Math.round(_fwFixed ? textbox._fixedWidth : (textbox.width || textbox._fixedWidth || 1)));
             
             const runLayout = () => {
                 // ✨ ÉTAPE 1: Fixer la largeur cible
-                if (textbox._fixedWidth != null) {
+                // 🛡️ ÉTAPE 3 : tester la positivité réelle, pas `!= null` (0 est
+                //   une largeur auto, pas une largeur fixe de 0).
+                if (_fwFixed) {
                     textbox.width = targetWidth;
                 }
                 
@@ -5139,7 +5158,7 @@ if (window._spGpuEnabled) {
                 if (typeof textbox.initDimensions === 'function') textbox.initDimensions();
                 
                 // ✨ ÉTAPE 4: Re-vérifier et re-fixer la largeur (Fabric peut l'avoir changée)
-                if (textbox._fixedWidth != null && Math.round(textbox.width || 0) !== targetWidth) {
+                if (_fwFixed && Math.round(textbox.width || 0) !== targetWidth) {
                     textbox.width = targetWidth;
                     if (typeof textbox._clearCache === 'function') textbox._clearCache();
                     textbox._styleMap = null;
