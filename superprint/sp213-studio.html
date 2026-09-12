@@ -4579,6 +4579,42 @@ PIÈCES JOINTES
 • Textes joints : utilise leur contenu comme base réelle des paragraphes (jamais de Lorem ipsum).
   - Pour un long texte, si l'utilisateur cherche un passage précis, réponds avec le contenu exact trouvé.
 
+═══ LES 4 MARGES CLASSIQUES — OBLIGATOIRES ═══
+🔴 UNE MAQUETTE SANS MARGE N'EST PAS UNE MAQUETTE. Aucun bloc de texte ne doit
+   jamais toucher le bord de page. Les 4 marges portent des noms précis en
+   imprimerie, et leur HIÉRARCHIE est une règle de métier — pas un détail :
+
+   PETIT FOND = marge INTÉRIEURE, côté pliure / reliure.  → la plus PETITE
+                (la couture et le pli mangent du papier : on s'en écarte moins)
+   TÊTE       = marge de HAUT.                            → moyenne
+   GRAND FOND = marge EXTÉRIEURE, côté chants.            → la plus GRANDE
+                (c'est la marge que l'œil voit en tournant la page)
+   QUEUE      = marge de BAS.                             → généreuse
+                (l'espace où le pouce tient le livre)
+
+   HIÉRARCHIE : petit fond < tête < grand fond < queue
+   Répartition classique : 2 / 3 / 4 / 5  (ex. 12 / 15 / 18 / 20 mm sur A4)
+
+⚠️ EN DOUBLE PAGE, CHAQUE PAGE A SES PROPRES MARGES :
+   Page GAUCHE : grand fond à GAUCHE (bord extérieur), petit fond à DROITE (pliure).
+   Page DROITE : petit fond à GAUCHE (pliure), grand fond à DROITE (bord extérieur).
+   C'est pour cela que le grand fond change de côté d'une page à l'autre :
+   le petit fond est TOUJOURS du côté de la reliure.
+
+VALEURS À APPLIQUER (A4 / A5, à réduire proportionnellement sur les petits formats) :
+   • Page simple : marge uniforme de 15 à 18 mm sur les 4 côtés.
+   • Double page : petit fond 12-15 mm, tête 15 mm, grand fond 18-20 mm, queue 20 mm.
+   • JAMAIS moins de 10 mm, et JAMAIS 0 mm (texte coupé à la coupe du massicot).
+
+🔴 VÉRIFICATION FINALE OBLIGATOIRE avant de répondre, pour CHAQUE bloc texte :
+   • left >= marge extérieure OU intérieure selon la page occupée ;
+   • left + width <= (largeur totale - marge du bord concerné) ;
+   • top >= tête ;
+   • top + hauteur <= (hauteur - queue) ;
+     avec hauteur = nb_lignes × fontSize × lineHeight × 1.13 × 0.353.
+   • Pour un FOND PLEINE PAGE, le contraire : il DOIT déborder de 3 mm partout
+     (left:-3, top:-3, width:largeur+6, height:hauteur+6). Ne confonds pas les
+     deux cas : le fond couvre le bord, le texte s'en écarte.
 ═══ ÉCHELLE TYPOGRAPHIQUE — LA RÈGLE LA PLUS IMPORTANTE ═══
 🔴 UNE TAILLE DE POLICE NE SE CHOISIT JAMAIS « AU FEELING » : elle se DÉDUIT de la
    LARGEUR de la colonne qui la contient. Un titre 3x trop gros est le défaut n°1.
@@ -5428,6 +5464,248 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     return doc;
   }
 
+  // ══════════════════════════════════════════════════════════════════════
+  // 🛡️ v1.7.369 — MARGES GARANTIES + HIÉRARCHIE DES 4 MARGES CLASSIQUES
+  // ══════════════════════════════════════════════════════════════════════
+  // « Il faut toujours des marges en design » : une maquette SANS marge n'est
+  // pas une maquette. Mesure du bug : sur une double page, le GRAND FOND
+  // (marge extérieure) d'un bloc tombait à 0 mm — texte collé au bord de
+  // page — et la hiérarchie était inversée (petit fond 24 > grand fond 0).
+  //
+  // Les 4 marges classiques (reliure / imprimerie) :
+  //   PETIT FOND = marge INTÉRIEURE (côté pliure)  — la plus PETITE
+  //   TÊTE       = marge de HAUT
+  //   GRAND FOND = marge EXTÉRIEURE (côté chants)  — la plus GRANDE
+  //   QUEUE      = marge de BAS (là où la main tient le livre)
+  //   HIÉRARCHIE : petit fond < tête < grand fond < queue
+  //
+  // Cette passe travaille sur le document FINAL : elle connaît le format total
+  // et le mode spread, donc quelle page est à gauche et laquelle est à droite —
+  // impossible à savoir depuis sanitizeAIElement (qui voit une seule page).
+  // Elle GARANTIT UN MINIMUM sans repositionner une maquette déjà correcte.
+  // ══════════════════════════════════════════════════════════════════════
+  // 🛡️ v1.7.369c — MISE À L'ÉCHELLE DE LA RANGÉE AUX MARGES
+  // ══════════════════════════════════════════════════════════════════════
+  // Les blocs qui partagent une BANDE VERTICALE forment une RANGÉE. Si la
+  // rangée déborde la zone de marges (grand fond / petit fond), on la réduit
+  // PROPORTIONNELLEMENT : chaque left et chaque largeur sont multipliés par le
+  // MÊME facteur. Cela CONSERVE les gouttières entre colonnes et ne peut créer
+  // aucune nouvelle collision — c'est ce qui manquait aux 3 essais précédents
+  // (recentrer rapproche, décaler les voisines entre en collision, réduire une
+  // seule largeur fait grandir le texte et rencontrer le bloc du dessous).
+  //
+  // Mesure : 2 colonnes 234-321 et 333-420 (union 186 mm) dans 180 mm utiles
+  // -> facteur 0,968 -> colonnes 222-306 et 318-402, gouttière de 12 mm
+  //    conservée, grand fond 18 mm à droite, texte replié de 3 % seulement.
+  function _spFitRowsToMargins(doc) {
+    if (!doc || !Array.isArray(doc.pages) || !doc.pages.length) return doc;
+    const W = doc.w || state.pageW || 210;
+    const H = doc.h || state.pageH || 297;
+    const isSpread = doc.viewMode === 'spread';
+    const PW = isSpread ? W / 2 : W;
+    const isText = (el) => {
+      const t = String((el && el.type) || '').toLowerCase();
+      return t === 'text' || t === 'textbox';
+    };
+    const k = Math.min(1, Math.max(0.55, PW / 210));
+    const M = {
+      petitFond: Math.round(12 * k * 10) / 10,
+      grandFond: Math.round(18 * k * 10) / 10
+    };
+    M.petitFond = Math.min(M.petitFond, M.grandFond - 3);
+
+    doc.pages.forEach((page) => {
+      if (!page || !Array.isArray(page.elements)) return;
+      // On ne traite que le TEXTE (les rectangles/fonds débordent volontairement).
+      const textes = page.elements.filter(isText);
+      if (!textes.length) return;
+      // Zone utile de la page où se trouve chaque bloc.
+      const zone = (el) => {
+        const l = Number(el.left) || 0;
+        const w = (Number(el.width) || 0) * (Number(el.scaleX) || 1);
+        if (!isSpread) return { min: M.grandFond, max: W - M.grandFond };
+        const surGauche = (l + w / 2) < PW;
+        return surGauche
+          ? { min: M.grandFond, max: PW - M.petitFond }
+          : { min: PW + M.petitFond, max: W - M.grandFond };
+      };
+      // Regroupement en RANGÉES : deux blocs sont dans la même rangée si leurs
+      // bandes verticales se recouvrent (union-find simple par propagation).
+      const n = textes.length;
+      const parent = textes.map((_, i) => i);
+      const trouver = (i) => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
+      const unir = (a, b) => { const ra = trouver(a), rb = trouver(b); if (ra !== rb) parent[rb] = ra; };
+      const bandes = textes.map((el) => {
+        const t = Number(el.top) || 0;
+        const h = (Number(el.height) || 0) * (Number(el.scaleY) || 1);
+        return { t, b: t + h };
+      });
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const recouvre = Math.min(bandes[i].b, bandes[j].b) - Math.max(bandes[i].t, bandes[j].t);
+          const hMin = Math.min(bandes[i].b - bandes[i].t, bandes[j].b - bandes[j].t);
+          // Même rangée si les bandes se recouvrent franchement (>= 60 % de
+          // la plus petite) ET que les blocs sont sur la même page.
+          const l1 = Number(textes[i].left) || 0, w1 = (Number(textes[i].width) || 0);
+          const l2 = Number(textes[j].left) || 0, w2 = (Number(textes[j].width) || 0);
+          const memePage = ((l1 + w1 / 2) < PW) === ((l2 + w2 / 2) < PW);
+          if (memePage && hMin > 0 && recouvre >= hMin * 0.6) unir(i, j);
+        }
+      }
+      // Par rangée : si l'union déborde la zone utile, mise à l'échelle.
+      const groupes = {};
+      textes.forEach((el, i) => { const r = trouver(i); (groupes[r] = groupes[r] || []).push(el); });
+      Object.keys(groupes).forEach((cle) => {
+        const els = groupes[cle];
+        if (els.length < 1) return;
+        const z = zone(els[0]);
+        const utile = z.max - z.min;
+        let gMin = Infinity, gMax = -Infinity;
+        els.forEach((el) => {
+          const l = Number(el.left) || 0;
+          const w = (Number(el.width) || 0) * (Number(el.scaleX) || 1);
+          if (l < gMin) gMin = l;
+          if (l + w > gMax) gMax = l + w;
+        });
+        const largeur = gMax - gMin;
+        if (!isFinite(largeur) || largeur <= 0) return;
+        // `depart` = position où commence la rangée après traitement.
+        //   • si elle déborde la zone utile : on RÉDUIT (facteur < 1) et elle
+        //     repart de la marge de gauche ;
+        //   • sinon : translation pure pour la ramener dans la zone.
+        let depart = gMin, facteur = 1;
+        if (largeur > utile + 0.1) {
+          facteur = utile / largeur;      // ≤ 1 : on ne fait que RÉDUIRE
+          depart = z.min;                 // la rangée commence à la marge
+        } else {
+          if (gMax > z.max) depart = gMin - (gMax - z.max);   // déborder à droite
+          if (depart < z.min) depart = z.min;                 // ne pas sortir à gauche
+        }
+        const delta = depart - gMin;
+        if (Math.abs(delta) < 0.05 && Math.abs(facteur - 1) < 0.0005) return;
+        // 🛡️ v1.7.369d — UNE SEULE FORMULE pour les 2 cas.
+        //   ⚠️ Bug mesuré : la version précédente faisait
+        //     z.min + (l - gMin) * facteur + (facteur === 1 ? delta : 0)
+        //   ce qui AJOUTAIT z.min alors que `depart` le contient déjà dans le
+        //   cas réduit, et l'ajoutait À TORT dans le cas non réduit. Résultat :
+        //   une citation de 150 mm de large placée à 309 finissait à 459 mm
+        //   sur une page de 420 -> DÉBORDEMENT de 39 mm.
+        els.forEach((el) => {
+          const l = Number(el.left) || 0;
+          const w = (Number(el.width) || 0);
+          el.left = Math.round((depart + (l - gMin) * facteur) * 10) / 10;
+          if (w > 0) el.width = Math.round(w * facteur * 10) / 10;
+        });
+      });
+    });
+    return doc;
+  }
+
+  function _spEnforceMargins(doc) {
+    if (!doc || !Array.isArray(doc.pages) || !doc.pages.length) return doc;
+    const W = doc.w || state.pageW || 210;
+    const H = doc.h || state.pageH || 297;
+    const isSpread = doc.viewMode === 'spread';
+    const PW = isSpread ? W / 2 : W;          // largeur d'UNE page
+    const isText = (el) => {
+      const t = String((el && el.type) || '').toLowerCase();
+      return t === 'text' || t === 'textbox';
+    };
+    // Un fond pleine page DOIT déborder (c'est son rôle) : on n'y touche jamais.
+    const isFullBleed = (el) => {
+      if (!el || el.type !== 'rectangle') return false;
+      const w = (el.width || 0) * (el.scaleX || 1);
+      const h = (el.height || 0) * (el.scaleY || 1);
+      const l = el.left || 0, t = el.top || 0;
+      return l <= 1 && t <= 1 && (l + w) >= W - 1 && (t + h) >= H - 1;
+    };
+    // Marges cibles (mm). Réduites proportionnellement sur les petits formats.
+    const k = Math.min(1, Math.max(0.55, PW / 210));
+    const M = {
+      petitFond: Math.round(12 * k * 10) / 10,
+      tete:      Math.round(15 * k * 10) / 10,
+      grandFond: Math.round(18 * k * 10) / 10,
+      queue:     Math.round(20 * k * 10) / 10
+    };
+    // Le petit fond (intérieur) est plus PETIT que le grand fond (extérieur).
+    M.petitFond = Math.min(M.petitFond, M.grandFond - 3);
+
+    doc.pages.forEach((page) => {
+      if (!page || !Array.isArray(page.elements)) return;
+      page.elements.forEach((el) => {
+        // 🛡️ v1.7.369 — ON NE TOUCHE PAS AUX RECTANGLES.
+        //   Un rectangle (fond pleine page, placeholder d'image, aplat
+        //   décoratif) n'est pas du TEXTE : il occupe volontairement la
+        //   largeur de sa colonne. Le rogner aux marges typographiques l'a
+        //   fait DISPARAÎTRE (mesure : le fond #FAF7F1 et le rect image
+        //   #E6DECF ont été supprimés, d'où « j'ai plus le trait noir »).
+        if (!el || el.type !== 'text' && el.type !== 'textbox') return;
+        if (isFullBleed(el)) return;
+        const w = (el.width || 0) * (el.scaleX || 1);
+        const h = (el.height || 0) * (el.scaleY || 1);
+        let left = Number(el.left) || 0;
+        let top = Number(el.top) || 0;
+        let width = Number(el.width) || 0;
+
+        // ── Bornes horizontales selon la PAGE occupée ────────────────────
+        // En page simple : marge uniforme (le grand fond, la plus généreuse).
+        // En double page : petit fond côté pliure, grand fond côté chants.
+        let minLeft, maxRight;
+        if (!isSpread) {
+          minLeft = M.grandFond;
+          maxRight = W - M.grandFond;
+        } else {
+          const surPageGauche = (left + width / 2) < PW;
+          if (surPageGauche) {
+            minLeft = M.grandFond;            // extérieur = bord gauche
+            maxRight = PW - M.petitFond;      // intérieur = pliure
+          } else {
+            minLeft = PW + M.petitFond;       // intérieur = pliure
+            maxRight = W - M.grandFond;       // extérieur = bord droit
+          }
+        }
+
+        // ⚠️ La correction HORIZONTALE n'est PAS faite ici : elle se fait au
+        //   niveau de la PAGE, par MISE À L'ÉCHELLE DE LA RANGÉE (voir
+        //   _spFitRowsToMargins ci-dessus). Corriger bloc par bloc a échoué :
+        //   recentrer rapproche les colonnes, décaler les voisines crée des
+        //   collisions, réduire une seule largeur fait grandir le texte en
+        //   hauteur et le fait rencontrer le bloc du dessous.
+        width = Math.min(width, Math.max(10, maxRight - minLeft));
+        if (width > 0 && Math.abs(width - (Number(el.width) || 0)) > 0.05) {
+          el.width = Math.round(width * 10) / 10;
+        }
+
+        // ── Bornes verticales : tête en haut, queue en bas ───────────────
+        const estTexte = isText(el);
+        const hauteur = estTexte
+          ? (function () {
+              // hauteur RÉELLE du bloc : lignes x fontSize x lineHeight x 1.13
+              const fs = Number(el.fontSize) || 11;
+              const lh = (typeof el.lineHeight === 'number' && el.lineHeight > 0) ? el.lineHeight : 1.4;
+              const carL = Math.max(1, Math.floor((width * 2.834645) / (fs * 1.3333 * 0.52)));
+              const lignes = Math.max(1, Math.ceil(String(el.text || ' ').length / carL));
+              return lignes * fs * lh * 1.13 * 0.353;
+            })()
+          : h;
+        if (top < M.tete) top = M.tete;
+        if (hauteur > 0 && (top + hauteur) > (H - M.queue)) {
+          const nouveauTop = H - M.queue - hauteur;
+          if (nouveauTop >= M.tete) {
+            top = nouveauTop;
+          } else {
+            // Le bloc est plus haut que la zone utile : on le laisse à la tête,
+            // la passe _spConstrainDocToPages (déjà existante) réduira sa police.
+            top = M.tete;
+          }
+        }
+        top = Math.round(top * 10) / 10;
+        if (isFinite(top) && Math.abs(top - (Number(el.top) || 0)) > 0.05) el.top = top;
+      });
+    });
+    return doc;
+  }
+
   function sanitizeAIElement(element) {
     if (!element || typeof element !== 'object' || Array.isArray(element)) return null;
     const aliases = { rect: 'rectangle', textbox: 'text' };
@@ -5609,6 +5887,15 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     // 🆕 2026-08-30 — Validateur de fin de page : les blocs qui dépassent sont
     //   reportés sur une nouvelle page (ou réduits en typo), jamais coupés.
     try { _spConstrainDocToPages(doc); } catch (_) {}
+    // 🛡️ v1.7.369 — puis GARANTIR les marges (grand fond / petit fond /
+    //   tête / queue). Fait APRÈS la contrainte de pages : c'est la dernière
+    //   passe avant le rendu, donc aucune étape ne peut ré-introduire un
+    //   bloc collé au bord.
+    // 1) MISE À L'ÉCHELLE DES RANGÉES (axe horizontal) — d'abord, car elle
+    //    modifie les largeurs, ce qui change la hauteur du texte replié.
+    try { _spFitRowsToMargins(doc); } catch (_) {}
+    // 2) puis les marges verticales (tête / queue) et les garde-fous.
+    try { _spEnforceMargins(doc); } catch (_) {}
     return doc;
   }
 
@@ -6059,6 +6346,42 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     try { return JSON.parse(localStorage.getItem('sp_spot_inks') || '{}') || {}; } catch (_) { return {}; }
   }
 
+  // 🛡️ v1.7.369 — FILTRE D'USAGE DES TONS DIRECTS.
+  //   Avant : le .sp généré par le studio recopiait TOUT le registre partagé
+  //   « sp_spot_inks » (localStorage), même les Pantones qui n'apparaissaient
+  //   NULLE PART dans la maquette. Conséquence mesurée : un magazine 100 %
+  //   quadri sortait avec un canal Pantone Yellow C fantôme — un calque
+  //   d'impression supplémentaire payé pour rien, et l'app basculait à tort
+  //   en mode « encre directe » (export Pantone forcé, options RVB/CMJN
+  //   remplacées par la brique dédiée).
+  //   Désormais : seules les encres réellement présentes dans un `fill` ou un
+  //   `stroke` de la maquette sont déclarées.
+  function spUsedSpotInks(spPages) {
+    const all = spCollectSpotInks();
+    const used = {};
+    try {
+      const keys = Object.keys(all || {});
+      if (!keys.length) return used;
+      const refs = {};
+      (spPages || []).forEach(function (p) {
+        (p.objects || []).forEach(function (o) {
+          const props = [o && o.fill, o && o.stroke, o && o.backgroundColor];
+          props.forEach(function (v) {
+            if (typeof v !== 'string') return;
+            const m = v.trim();
+            if (!/^#[0-9a-fA-F]{6}$/.test(m)) return;
+            refs[m.toUpperCase()] = true;
+          });
+        });
+      });
+      keys.forEach(function (k) {
+        const up = String(k).toUpperCase();
+        if (refs[up]) used[up] = all[k];
+      });
+    } catch (_) { return {}; }
+    return used;
+  }
+
   // Mémorise les encres d'un .sp/.json importé (pour ne pas les perdre si
   // l'utilisateur re-télécharge ensuite la maquette).
   function spRememberSpotInks(reg) {
@@ -6166,7 +6489,8 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par SP213 Studio', tags: ['sp213'], stats: { pages: spPages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
-      resources: { fonts: usedFonts, colors: usedColors, spotInks: spCollectSpotInks() },
+      // 🛡️ v1.7.369 — filtrés par usage réel : pas de canal fantôme.
+      resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(spPages) },
       textLinks: {},
       guides: {},
       masters: { templates: {}, assignments: {} },
@@ -6281,7 +6605,8 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       // 🛡️ v1.7.368 — styles nommés (typo + nuancier) DÉJÀ présents via
       //   spCollectStylesBlock() : ne pas les retirer, l'app les restaure à
       //   l'ouverture (.sp comme .json).
-      resources: { fonts: usedFonts, colors: usedColors, spotInks: spCollectSpotInks() },
+      // 🛡️ v1.7.369 — tons directs filtrés par usage réel (pas de canal fantôme).
+      resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(pages) },
       textLinks: {}, guides: {}, masters: { templates: {}, assignments: {} },
       numbering: { enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 },
       pages

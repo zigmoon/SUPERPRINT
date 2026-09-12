@@ -21,7 +21,9 @@
     --info-bg: #e7f1ff; --info-border: #a8c8f0;
     --warn-bg: #fff8e6; --warn-border: #e8c14a;
     --tb-bg: #ffffff; --tb-border: #e0e0e0; --tb-text: #1a1a1a; --tb-text2: #666666;
+    --tb-chip-bg: #f5f5f5; --tb-chip-border: #d9d9d9;
     --tb-btn-hover: #f2f2f2; --tb-btn-active-bg: #0c0c0f; --tb-btn-active-text: #ffffff;
+    --tb-toggle-border: #d9d9d9;
     --fn-name: #6639ba;
   }
   body.theme-dark {
@@ -34,7 +36,9 @@
     --info-bg: #0d1f3c; --info-border: #1f4175;
     --warn-bg: #2b2413; --warn-border: #6b5a20;
     --tb-bg: #0c0c0f; --tb-border: #2a2a2a; --tb-text: #ffffff; --tb-text2: rgba(255,255,255,0.6);
+    --tb-chip-bg: rgba(255,255,255,0.08); --tb-chip-border: rgba(255,255,255,0.2);
     --tb-btn-hover: rgba(255,255,255,0.08); --tb-btn-active-bg: #ffffff; --tb-btn-active-text: #0c0c0f;
+    --tb-toggle-border: rgba(255,255,255,0.25);
     --fn-name: #bc8cff;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -45,40 +49,47 @@
   }
   a { color: var(--accent-link); text-decoration: none; }
   a:hover { text-decoration: underline; }
+  :where(button, input, a):focus-visible { outline: 2px solid var(--accent-link); outline-offset: 2px; }
 
-  /* ─── TOP BAR (même patron que documentation.html) ─── */
+  /* ═══ TOPBAR (clair, aligné sur la toolbar SuperPrint — identique à documentation.html) ═══ */
   .topbar {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    height: 60px; display: flex; align-items: center; gap: 16px;
-    padding: 0 22px; background: var(--tb-bg); border-bottom: 1px solid var(--tb-border);
+    background: var(--tb-bg); border-bottom: 1px solid var(--tb-border);
+    display: flex; align-items: center; padding: 0 20px; height: 52px; gap: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
-  .topbar .logo {
-    font-size: 17px; font-weight: 700; letter-spacing: 1.4px; color: var(--tb-text);
-    text-transform: uppercase; white-space: nowrap;
-  }
-  .topbar .logo span { font-weight: 300; color: var(--tb-text2); }
+  .topbar .logo { font-size: 17px; font-weight: 900; letter-spacing: 2.5px; color: var(--tb-text); white-space: nowrap; }
+  .topbar .logo span { color: var(--tb-text); opacity: 0.55; }
   .topbar .version {
-    font-size: 10px; padding: 3px 8px; border: 1px solid var(--tb-border);
-    color: var(--tb-text2); white-space: nowrap;
+    font-size: 10px; color: var(--tb-text2); background: var(--tb-chip-bg);
+    border: 1px solid var(--tb-chip-border); padding: 2px 9px; border-radius: 12px; letter-spacing: 0.5px;
+    white-space: nowrap;
   }
-  .topbar-controls { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-  .theme-toggle { display: flex; border: 1px solid var(--tb-border); }
+  .topbar-controls { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .theme-toggle {
+    display: flex; gap: 0; border: 1px solid var(--tb-toggle-border); border-radius: 6px; overflow: hidden;
+    background: transparent;
+  }
   .theme-toggle button {
-    background: transparent; border: 0; cursor: pointer; color: var(--tb-text2);
-    padding: 5px 9px; display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; color: var(--tb-text2); border: none; padding: 6px 10px;
+    cursor: pointer; font-size: 14px; transition: all .2s; line-height: 1;
   }
   .theme-toggle button.active { background: var(--tb-btn-active-bg); color: var(--tb-btn-active-text); }
-  .theme-toggle button:hover:not(.active) { background: var(--tb-btn-hover); color: var(--tb-text); }
-  .lang-toggle { display: flex; border: 1px solid var(--tb-border); }
+  .theme-toggle button:hover:not(.active) { background: var(--tb-btn-hover); }
+  .lang-toggle {
+    display: flex; gap: 0; border: 1px solid var(--tb-toggle-border); border-radius: 6px; overflow: hidden;
+    background: transparent;
+  }
   .lang-toggle button {
-    background: transparent; border: 0; cursor: pointer; color: var(--tb-text2);
-    padding: 5px 11px; font-family: inherit; font-size: 11px;
+    background: transparent; color: var(--tb-text2); border: none; padding: 6px 14px;
+    cursor: pointer; font-size: 12px; font-weight: 600; transition: all .2s;
+    font-family: 'IBM Plex Mono', monospace;
   }
   .lang-toggle button.active { background: var(--tb-btn-active-bg); color: var(--tb-btn-active-text); }
-  .lang-toggle button:hover:not(.active) { background: var(--tb-btn-hover); color: var(--tb-text); }
+  .lang-toggle button:hover:not(.active) { background: var(--tb-btn-hover); }
 
   /* ─── LAYOUT ─── */
-  .wrap { max-width: 1000px; margin: 0 auto; padding: 96px 24px 80px; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 84px 24px 80px; }
 
   /* ─── i18n : n'afficher que la langue active ───
      `display: revert` restaure le style PAR DÉFAUT de chaque élément
@@ -112,7 +123,8 @@
   .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); padding: 12px 16px; margin-bottom: 18px; font-size: 12.5px; }
 
   /* ─── TABLE DES MÉTHODES ─── */
-  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12.5px; }
+  .tbl-wrap { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--border); background: var(--bg2); }
+  table { width: 100%; border-collapse: collapse; margin: 0; font-size: 12.5px; }
   th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
   th { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text2); font-weight: 700; }
   td.fn { font-weight: 700; color: var(--fn-name); white-space: nowrap; }
@@ -131,10 +143,21 @@
     margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--border);
     font-size: 11px; color: var(--text2); display: flex; gap: 14px; flex-wrap: wrap;
   }
-  @media (max-width: 700px) {
-    .topbar { height: auto; padding: 10px 14px; flex-wrap: wrap; }
-    .wrap { padding-top: 120px; }
-    .topbar .tab-spacer { display: none; }
+  @media (max-width: 900px) {
+    .topbar {
+      height: auto; min-height: 52px; padding: 8px 12px; gap: 8px;
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+    }
+    .topbar .logo { font-size: 15px; letter-spacing: 2px; min-width: 0; }
+    .topbar .version { display: none; }
+    .topbar-controls { margin-left: 0; gap: 5px; }
+    .wrap { padding-top: 96px; }
+    body { overflow-x: hidden; }
+  }
+  @media (max-width: 430px) {
+    .theme-toggle button { padding: 6px 8px; }
+    .lang-toggle button { padding: 6px 10px; }
+    .wrap { padding-inline: 14px; }
   }
 </style>
 </head>
@@ -142,8 +165,7 @@
 
 <div class="topbar">
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.368</span>
-  <span class="tab-spacer"></span>
+  <span class="version">v1.7.369</span>
   <div class="topbar-controls">
     <div class="theme-toggle">
       <button class="active" onclick="setTheme('light')" title="Light" id="btnLight" aria-label="Light theme">
@@ -294,6 +316,7 @@ SuperPrint.exportPDF({ quality: 'hd', colorMode: 'cmyk' });</code></pre>
 <h2 data-lang="en">Full reference</h2>
 <h2 data-lang="fr">Référence complète</h2>
 
+<div class="tbl-wrap">
 <table>
   <thead>
     <tr>
@@ -331,6 +354,7 @@ SuperPrint.exportPDF({ quality: 'hd', colorMode: 'cmyk' });</code></pre>
         <td data-lang="en">Generates a layout with AI</td><td data-lang="fr">Génère une maquette par IA</td></tr>
   </tbody>
 </table>
+</div>
 
 <h2 data-lang="en">Example: a data-driven catalogue</h2>
 <h2 data-lang="fr">Exemple : un catalogue piloté par des données</h2>

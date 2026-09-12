@@ -46844,6 +46844,42 @@ Dans ton JSON de sortie, chaque élément a un champ "type". TOUTES les valeurs 
    • Formats spéciaux disponibles : exposant, indice, petites capitales, texte creux (outline), ombre, barré, surligné, contour
 
 =============================================
+═══ LES 4 MARGES CLASSIQUES — OBLIGATOIRES ═══
+🔴 UNE MAQUETTE SANS MARGE N'EST PAS UNE MAQUETTE. Aucun bloc de texte ne doit
+   jamais toucher le bord de page. Les 4 marges portent des noms précis en
+   imprimerie, et leur HIÉRARCHIE est une règle de métier — pas un détail :
+
+   PETIT FOND = marge INTÉRIEURE, côté pliure / reliure.  → la plus PETITE
+                (la couture et le pli mangent du papier : on s'en écarte moins)
+   TÊTE       = marge de HAUT.                            → moyenne
+   GRAND FOND = marge EXTÉRIEURE, côté chants.            → la plus GRANDE
+                (c'est la marge que l'œil voit en tournant la page)
+   QUEUE      = marge de BAS.                             → généreuse
+                (l'espace où le pouce tient le livre)
+
+   HIÉRARCHIE : petit fond < tête < grand fond < queue
+   Répartition classique : 2 / 3 / 4 / 5  (ex. 12 / 15 / 18 / 20 mm sur A4)
+
+⚠️ EN DOUBLE PAGE, CHAQUE PAGE A SES PROPRES MARGES :
+   Page GAUCHE : grand fond à GAUCHE (bord extérieur), petit fond à DROITE (pliure).
+   Page DROITE : petit fond à GAUCHE (pliure), grand fond à DROITE (bord extérieur).
+   C'est pour cela que le grand fond change de côté d'une page à l'autre :
+   le petit fond est TOUJOURS du côté de la reliure.
+
+VALEURS À APPLIQUER (A4 / A5, à réduire proportionnellement sur les petits formats) :
+   • Page simple : marge uniforme de 15 à 18 mm sur les 4 côtés.
+   • Double page : petit fond 12-15 mm, tête 15 mm, grand fond 18-20 mm, queue 20 mm.
+   • JAMAIS moins de 10 mm, et JAMAIS 0 mm (texte coupé à la coupe du massicot).
+
+🔴 VÉRIFICATION FINALE OBLIGATOIRE avant de répondre, pour CHAQUE bloc texte :
+   • left >= marge extérieure OU intérieure selon la page occupée ;
+   • left + width <= (largeur totale - marge du bord concerné) ;
+   • top >= tête ;
+   • top + hauteur <= (hauteur - queue) ;
+     avec hauteur = nb_lignes × fontSize × lineHeight × 1.13 × 0.353.
+   • Pour un FOND PLEINE PAGE, le contraire : il DOIT déborder de 3 mm partout
+     (left:-3, top:-3, width:largeur+6, height:hauteur+6). Ne confonds pas les
+     deux cas : le fond couvre le bord, le texte s'en écarte.
 ═══ ÉCHELLE TYPOGRAPHIQUE — LA RÈGLE LA PLUS IMPORTANTE ═══
 🔴 UNE TAILLE DE POLICE NE SE CHOISIT JAMAIS « AU FEELING » : elle se DÉDUIT de la
    LARGEUR de la colonne qui la contient. Un titre 3x trop gros est le défaut n°1.
