@@ -12,7 +12,7 @@
 |---|---|
 | Version app (affichée) | `1.7.352` |
 | Cache Service Worker | `superprint-shell-v1.7.352c-no-whatsapp` |
-| Query JS (`main.js`) | `?v=20260912-v352c-wrap-fix2` |
+| Query JS (`main.js`) | `?v=20260912-v352-launcher-supertypo` |
 | Badge preview (`spVersionBadge`) | `v1.7.352` |
 | Splash screen | `v1.7.352` |
 | Préférences (panneau SUPERPRINT) | `v1.7.352` |
@@ -48,7 +48,8 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
 - `app/documentation.html` — topbar `.version`, footers (4 lignes)
 
 ### B. Racine (pré-home + landing + doc)
-- `index.html` — (pas de numéro de version affiché, mais vérifier)
+- `index.html` — **le lanceur** : aucun numéro de version affiché, donc rien à bumper dans le fichier. MAIS il contient des `?v=` sur `icons/*.svg` et il est **précaché par le service worker racine** → c'est le bump du `CACHE_NAME` racine qui force sa mise à jour chez les visiteurs.
+- `icons/` — logotypes du lanceur (`sper_typo.svg`, `studio_print_logo_blanc.svg`). À ajouter à l'`APP_SHELL` du service worker racine quand on en ajoute un.
 - `landing.html` — JSON-LD `softwareVersion`, `feat-tag`, footer
 - `service-worker.js` — `CACHE_NAME`
 - `llms.txt` + `llms-full.txt` — `Version: X.Y.Z`
