@@ -141,7 +141,13 @@
      naturellement sur fond CLAIR (par les tracés noirs) comme sur fond
      SOMBRE (par les formes blanches). Une plaque les aurait enfermés. */
   .welcome-brand .logo .logo-stack > .ls-plain { background: transparent; }
-  .welcome-brand h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+  /* Le titre prend le nom de l'outil au survol (.logo-stack) : fondu doux,
+     et largeur minimale reservee pour que le bloc ne « saute » pas en passant
+     de « SuperPrint » (10 car.) a « API » (3 car.). */
+  .welcome-brand h1 {
+    margin: 0; font-size: 30px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+    transition: opacity .18s ease; min-height: 38px;
+  }
   .welcome-brand .sub { margin: 8px 0 0; font-size: 13px; color: var(--muted); letter-spacing: .5px; }
   .welcome-brand .sub .hl { color: var(--text); }
 
@@ -409,7 +415,7 @@
           <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </span>
       </a>
-      <a class="online-row" href="documentation.html" id="onlineDocBtn">
+      <a class="online-row" href="documentation.html" id="onlineDocBtn" data-brand="doc">
         <!-- Pas d'icone de ligne (cf. Studio ci-dessus). -->
         <div class="on-text">
           <b>Documentation</b>
@@ -421,7 +427,7 @@
       </a>
       <!-- 🔌 API SuperPrint : pilotage par script (window.SuperPrint).
            Le 4e CTA ferme la grille 2x2 (Documentation | API). -->
-      <a class="online-row" href="api.html" id="onlineApiBtn">
+      <a class="online-row" href="api.html" id="onlineApiBtn" data-brand="api">
         <!-- Pas d'icone de ligne (cf. Studio ci-dessus). -->
         <div class="on-text">
           <b>API</b>
@@ -554,9 +560,13 @@
       prefsAboutText: 'SuperPrint — browser-based print layout software + SP213 AI studio.',
       pageTitle: 'SuperPrint — Online DTP Software + SP213 AI Studio',
       homeSub: "All of SuperPrint — <span class=\"hl\">DTP + SP213 AI studio</span>",
-      // 🎭 Phrases affichees sous le LOGOTYPE quand il change au survol
-      studioBrandSub: "SP213 Studio — <span class=\"hl\">describe a layout, the AI builds it</span>",
-      typoBrandSub: "SuperTyPo — <span class=\"hl\">decompose, redraw and export type</span>",
+      // 🎭 Phrase affichee sous le LOGO quand il change au survol.
+      //    Le NOM DE L'OUTIL est en clair (.hl) — jamais gris —, la
+      //    description reste discrete derriere le tiret.
+      studioBrandSub: "<span class=\"hl\">Studio</span> — describe a layout, the AI builds it",
+      typoBrandSub: "<span class=\"hl\">SuperTyPo</span> — decompose, redraw and export type",
+      docBrandSub: "<span class=\"hl\">Documentation</span> — manual, shortcuts, complete guide",
+      apiBrandSub: "<span class=\"hl\">API</span> — drive SuperPrint from your own code",
       installTitle: 'Install locally',
       installDesc: 'Copy-paste this line: it downloads, installs and launches SuperPrint.',
       copyCmd: 'Copy the command',
@@ -564,9 +574,9 @@
       onlineLabel: 'Online',
       editorSub: 'No installation — runs in the browser',
       studioSub: 'AI layouts',
-      typoSub: 'Font editor — decompose, redraw, export',
-      docSub: 'Manual, shortcuts, complete guide',
-      apiSub: 'Automate layouts from your own code',
+      typoSub: 'Font editor',
+      docSub: 'Manual, shortcuts',
+      apiSub: 'Automate your layouts',
       osAuto: 'Detected automatically',
       footerLegal: 'Legal notice',
       footerPrivacy: 'Privacy',
@@ -588,8 +598,10 @@
       prefsAboutText: 'SuperPrint — logiciel de PAO dans le navigateur + studio IA SP213.',
       pageTitle: 'SuperPrint — PAO en ligne + studio SP213 par IA',
       homeSub: "Toute l'application SuperPrint — <span class=\"hl\">PAO + studio SP213</span>",
-      studioBrandSub: "Studio SP213 — <span class=\"hl\">decrirez une maquette, l'IA la compose</span>",
-      typoBrandSub: "SuperTyPo — <span class=\"hl\">decomposez, retravaillez et exportez la typo</span>",
+      studioBrandSub: "<span class=\"hl\">Studio</span> — décrivez une maquette, l'IA la compose",
+      typoBrandSub: "<span class=\"hl\">SuperTyPo</span> — décomposez, retravaillez et exportez la typo",
+      docBrandSub: "<span class=\"hl\">Documentation</span> — manuel, raccourcis, guide complet",
+      apiBrandSub: "<span class=\"hl\">API</span> — pilotez SuperPrint depuis votre code",
       installTitle: 'Installer en local',
       installDesc: 'Copiez-collez cette ligne : elle télécharge, installe puis lance SuperPrint.',
       copyCmd: 'Copier la commande',
@@ -597,9 +609,9 @@
       onlineLabel: 'En ligne — aucune installation',
       editorSub: 'Aucune installation — fonctionne dans le navigateur',
       studioSub: 'Maquettes IA',
-      typoSub: 'Éditeur de police — décompose, retravaille, réexporte',
-      docSub: 'Manuel, raccourcis, guide complet',
-      apiSub: 'Automatisez vos maquettes depuis votre code',
+      typoSub: 'Éditeur de police',
+      docSub: 'Manuel, raccourcis',
+      apiSub: 'Automatisez vos maquettes',
       osAuto: 'Détecté automatiquement',
       footerLegal: 'Mentions légales',
       footerPrivacy: 'Confidentialité',
@@ -621,8 +633,10 @@
       prefsAboutText: 'SuperPrint — ブラウザで動作する印刷レイアウトソフトウェア + SP213 AIスタジオ。',
       pageTitle: 'SuperPrint — オンラインDTPソフトウェア + SP213 AIスタジオ',
       homeSub: "SuperPrint すべて — <span class=\"hl\">DTP + SP213 AIスタジオ</span>",
-      studioBrandSub: "SP213 スタジオ — <span class=\"hl\">説明するだけでAIがレイアウトを作成</span>",
-      typoBrandSub: "SuperTyPo — <span class=\"hl\">書体を分解・再編集・書き出し</span>",
+      studioBrandSub: "<span class=\"hl\">Studio</span> — 説明するだけでAIがレイアウトを作成",
+      typoBrandSub: "<span class=\"hl\">SuperTyPo</span> — 書体を分解・再編集・書き出し",
+      docBrandSub: "<span class=\"hl\">Documentation</span> — マニュアル、ショートカット、完全ガイド",
+      apiBrandSub: "<span class=\"hl\">API</span> — 自分のコードでSuperPrintを操作",
       installTitle: 'ローカルにインストール',
       installDesc: 'この行をコピー＆ペーストしてください：ダウンロード、インストール、起動まで行います。',
       copyCmd: 'コマンドをコピー',
@@ -630,9 +644,9 @@
       onlineLabel: 'オンライン — インストール不要',
       editorSub: 'インストール不要 — ブラウザで動作',
       studioSub: 'AIレイアウト',
-      typoSub: 'フォントエディタ — 分解・再描画・書き出し',
-      docSub: 'マニュアル、ショートカット、完全ガイド',
-      apiSub: '自分のコードからレイアウトを自動生成',
+      typoSub: 'フォントエディタ',
+      docSub: 'マニュアル、ショートカット',
+      apiSub: 'レイアウトを自動生成',
       osAuto: '自動検出',
       footerLegal: '法的通知',
       footerPrivacy: 'プライバシー',
@@ -856,13 +870,38 @@
 
     // Phrase sous le logotype, par couche. `homeSub` = phrase historique
     // « All of SuperPrint — DTP + SP213 AI studio ».
-    var SUB_KEY = { 'default': 'homeSub', 'studio': 'studioBrandSub', 'typo': 'typoBrandSub' };
+    var SUB_KEY = {
+      'default': 'homeSub',
+      studio: 'studioBrandSub',
+      typo: 'typoBrandSub',
+      doc: 'docBrandSub',
+      api: 'apiBrandSub'
+    };
+
+    // 🔤 TITRE (h1) : il prend le NOM DE L'OUTIL au survol (demande utilisateur).
+    //    Noms propres → identiques dans les 3 langues, aucune traduction requise.
+    var TITLE = {
+      'default': 'SuperPrint',
+      studio: 'Studio',
+      typo: 'SuperTyPo',
+      doc: 'Documentation',
+      api: 'API'
+    };
+
+    // 📄 Documentation et API n'ont PAS de logotype dedie (et l'utilisateur
+    //    n'aimait pas l'icone API) : le logo SuperPrint RESTE affiche, seuls
+    //    le titre et la phrase changent.
+    var TEXT_ONLY = { doc: true, api: true };
 
     function show(key) {
-      var target = layers[key] || layers['default'];
+      var layerKey = TEXT_ONLY[key] ? 'default' : key;
+      var target = layers[layerKey] || layers['default'];
       Object.keys(layers).forEach(function (k) {
         if (layers[k]) layers[k].classList.toggle('is-on', layers[k] === target);
       });
+      // 🔤 Le TITRE affiche le nom de l'outil survole.
+      var h1 = document.querySelector('.welcome-brand h1');
+      if (h1) h1.textContent = TITLE[key] || TITLE['default'];
       // 🔤 La phrase change AVEC le logotype (demande utilisateur).
       var keyName = SUB_KEY[key] || 'homeSub';
       stack.dataset.subKey = keyName;
@@ -875,7 +914,7 @@
     }
 
     // data-brand de la ligne → nom de la couche. Absent = logo SuperPrint.
-    var BY_BRAND = { studio: 'studio', typo: 'typo' };
+    var BY_BRAND = { studio: 'studio', typo: 'typo', doc: 'doc', api: 'api' };
 
     document.querySelectorAll('.online-row').forEach(function (row) {
       var layer = BY_BRAND[row.getAttribute('data-brand')] || 'default';
