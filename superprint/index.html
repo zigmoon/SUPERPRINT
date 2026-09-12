@@ -36,7 +36,7 @@
   "applicationSubCategory": "Desktop publishing",
   "operatingSystem": "Web browser (Chrome, Edge, Firefox, Safari)",
   "browserRequirements": "Requires JavaScript. WebGPU optional (local AI).",
-  "softwareVersion": "1.7.363",
+  "softwareVersion": "1.7.364",
   "releaseNotes": "Alpha version — features may change and defects may remain.",
   "inLanguage": ["en", "fr", "ja"],
   "isAccessibleForFree": true,
@@ -294,12 +294,18 @@
   /* 🚫 AUCUNE icône dans une ligne de CTA (règle explicite). Les visuels des
      outils n'apparaissent qu'au survol, dans le header (.logo-stack).
      Les anciennes règles .on-ic / .sp-editor-ic / .sp-typo-ic sont donc
-     supprimées : plus de glyphe « T » sur l'Editor.
+     supprimées : plus de glyphe « T » sur l'Editor. */
   .online-row .on-text {
-    flex: 1;
+    /* ⚠️ `width: auto` est INDISPENSABLE : ce bloc portait un width EXPLICITE
+       (254 px, reliquat d'une ancienne regle) qui écrasait `flex: 1` — mesure
+       `flexGrow: 0, flexBasis: auto`. La ligne ne remplissait donc pas
+       l'espace et la flèche restait COLLÉE au texte au lieu d'être à droite
+       (Editor : 445 px du bord droit, API : 168 px). */
+    width: auto;
+    flex: 1 1 auto;
     display: flex; flex-direction: column; justify-content: center;
     /* `stretch` : le bloc de texte prend TOUTE la hauteur de la ligne (dont
-       on a fixé le height ci-dessus). C'est ce qui garantit que le titre
+       on a fixé le height ailleurs). C'est ce qui garantit que le titre
        reste centré verticalement une fois la description repliée au survol. */
     align-self: stretch;
     overflow: hidden;
@@ -314,6 +320,14 @@
   /* 🡒 Flèche d'accès — fine, noire, sans pastille. Cachée par défaut, glisse au survol. */
   .online-row .on-arrow {
     flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+    /* 🠒 COLLÉE À DROITE, avec une marge de respiration.
+       `margin-left: auto` absorbe tout l'espace libre et pousse la flèche
+       contre le bord droit ; `margin-right` garde 10 px avant le bord
+       intérieur (qui s'ajoute au rembourrage de 30 px de la ligne).
+       La translation de survol est de -8px : elle donne le glissement sans
+       jamais coller la flèche au bord. */
+    margin-left: auto;
+    margin-right: 10px;
     color: var(--text);
     opacity: 0; transform: translateX(-8px);
     transition: opacity .18s, transform .18s;
