@@ -141,6 +141,19 @@
      naturellement sur fond CLAIR (par les tracés noirs) comme sur fond
      SOMBRE (par les formes blanches). Une plaque les aurait enfermés. */
   .welcome-brand .logo .logo-stack > .ls-plain { background: transparent; }
+  /* 🖊️ Icônes filaires DÉDIÉES (Documentation / API) : SVG en trait fin,
+     couleur du texte (currentColor) → lisibles en clair comme en sombre,
+     sans plaque. Elles occupent la même case de 84 px que les logotypes,
+     donc le header ne bouge pas d'un pixel quand elles apparaissent. */
+  .welcome-brand .logo .logo-stack > .ls-wire {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text);
+  }
+  .welcome-brand .logo .logo-stack > .ls-wire svg {
+    width: 62px; height: 62px;
+    fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
   /* Le titre prend le nom de l'outil au survol (.logo-stack) : fondu doux,
      et largeur minimale reservee pour que le bloc ne « saute » pas en passant
      de « SuperPrint » (10 car.) a « API » (3 car.). */
@@ -406,6 +419,22 @@
           <img class="ls-default is-on" src="favicon.png" alt="SuperPrint">
           <img class="ls-plain ls-studio" src="icons/studio_print_logo_blanc.svg" alt="" aria-hidden="true">
           <img class="ls-plain ls-typo" src="icons/sper_typo.svg" alt="" aria-hidden="true">
+          <!-- 🖊️ Documentation : document à lignes + signet -->
+          <span class="ls-wire ls-doc" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M19.5 21.5h-12A2.5 2.5 0 0 1 5 19V5.5A2.5 2.5 0 0 1 7.5 3h6.2a2 2 0 0 1 1.5.7l3.8 4.3a2 2 0 0 1 .5 1.3v10.5a2 2 0 0 1-2 1.7Z"/>
+              <path d="M13.5 3v5.5h5.5"/>
+              <path d="M8.5 13h7M8.5 16.5h5"/>
+            </svg>
+          </span>
+          <!-- 🖊️ API : accolades, symbole universel du code et des API JSON.
+               (Pas de chevrons : c'est le dessin qui avait ete rejete.) -->
+          <span class="ls-wire ls-api" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M9.6 3.5C8 3.5 7.4 4.3 7.4 5.6v4.2c0 1.1-.5 1.7-1.7 2.2 1.2.5 1.7 1.1 1.7 2.2v4.2c0 1.3.6 2.1 2.2 2.1"/>
+              <path d="M14.4 3.5c1.6 0 2.2.8 2.2 2.1v4.2c0 1.1.5 1.7 1.7 2.2-1.2.5-1.7 1.1-1.7 2.2v4.2c0 1.3-.6 2.1-2.2 2.1"/>
+            </svg>
+          </span>
         </div>
         <h1>SuperPrint</h1>
       </div>
@@ -888,11 +917,14 @@
     var layers = {
       'default': stack.querySelector('.ls-default'),
       'studio': stack.querySelector('.ls-studio'),
-      'typo': stack.querySelector('.ls-typo')
+      'typo': stack.querySelector('.ls-typo'),
+      'doc': stack.querySelector('.ls-doc'),
+      'api': stack.querySelector('.ls-api')
     };
 
     // Préchargement : sans ça, le 1er survol afficherait un carré blanc
-    // le temps que le SVG arrive du réseau.
+    // le temps que le SVG arrive du réseau. (Les icônes filaires sont des
+    // SVG INLINE : aucun charnement réseau, donc rien à précharger.)
     Object.keys(layers).forEach(function (k) {
       var el = layers[k];
       if (!el) return;
@@ -920,14 +952,11 @@
       api: 'API'
     };
 
-    // 📄 Documentation et API n'ont PAS de logotype dedie (et l'utilisateur
-    //    n'aimait pas l'icone API) : le logo SuperPrint RESTE affiche, seuls
-    //    le titre et la phrase changent.
-    var TEXT_ONLY = { doc: true, api: true };
-
+    // 🖊️ Chaque ligne a desormais SON visuel : logotype pour Studio /
+    //    SuperTyPo, icône filaire pour Documentation / API. Plus aucune
+    //    ligne ne retombe sur le logo SuperPrint.
     function show(key) {
-      var layerKey = TEXT_ONLY[key] ? 'default' : key;
-      var target = layers[layerKey] || layers['default'];
+      var target = layers[key] || layers['default'];
       Object.keys(layers).forEach(function (k) {
         if (layers[k]) layers[k].classList.toggle('is-on', layers[k] === target);
       });
