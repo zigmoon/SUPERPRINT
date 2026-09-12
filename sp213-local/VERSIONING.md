@@ -1,6 +1,6 @@
 ﻿# SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.371`** — 12 septembre 2026
+> **Dernière version : `1.7.373`** — 12 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,19 +10,19 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.371` |
-| Cache Service Worker | `superprint-shell-v1.7.371-no-whatsapp` |
-| Query JS (`main.js`) | `?v=20260913-v371-typo-clip` |
-| Badge preview (`spVersionBadge`) | `v1.7.371` |
-| Splash screen | `v1.7.371` |
-| Préférences (panneau SUPERPRINT) | `v1.7.371` |
-| Préférences (bas de page) | `SuperPrint v1.7.371 — 12 septembre 2026` |
-| Onboarding (`V 1.7.371`) | `1.7.371` |
-| Landing (`softwareVersion` + footer) | `1.7.371` |
-| Documentation | `v1.7.371` |
-| `version.txt` | `1.7.371` |
-| `llms.txt` / `llms-full.txt` | `1.7.371 (September 2026)` |
-| `package.json` (sp213-local) | `1.7.371` |
+| Version app (affichée) | `1.7.373` |
+| Cache Service Worker | `superprint-shell-v1.7.373-no-whatsapp` |
+| Query JS (`main.js`) | `?v=20260913-v373-splash-typo` |
+| Badge preview (`spVersionBadge`) | `v1.7.373` |
+| Splash screen | `v1.7.373` |
+| Préférences (panneau SUPERPRINT) | `v1.7.373` |
+| Préférences (bas de page) | `SuperPrint v1.7.373 — 12 septembre 2026` |
+| Onboarding (`V 1.7.373`) | `1.7.373` |
+| Landing (`softwareVersion` + footer) | `1.7.373` |
+| Documentation | `v1.7.373` |
+| `version.txt` | `1.7.373` |
+| `llms.txt` / `llms-full.txt` | `1.7.373 (September 2026)` |
+| `package.json` (sp213-local) | `1.7.373` |
 
 > ⚠️ Le paquet **npm** (`superprint-npm`) a sa **propre version** (`1.0.x`) — c'est la version de *release du paquet*, indépendante de la version de l'app. Il lit la version de l'app depuis `https://superprint.cc/version.txt`.
 

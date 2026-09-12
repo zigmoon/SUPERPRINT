@@ -6071,6 +6071,30 @@ if (window._spGpuEnabled) {
         const inToMm = (inch) => inch * 25.4;
         const mmToIn = (mm) => mm / 25.4;
 
+        // 🎯 v1.7.373 — QUANTIFICATION AU PAS DES CHAMPS NUMÉRIQUES.
+        //   PROBLÈME (bug 3) : les champs lisaient la valeur brute
+        //   (parseFloat) sans la ramener au pas de leur step. Résultat :
+        //   des valeurs intermédiaires s'affichaient — « 4.6 » là où l'échelle
+        //   n'a que des entiers — et le champ de dimension finissait à
+        //   209.99999999, ce qui affichait « 0 » à l'ouverture (bug 2).
+        //   On centralise l'arrondi ici, en respectant min/max du champ.
+        function spQuantizeValue(input, raw) {
+            var v = parseFloat(raw);
+            if (!isFinite(v)) return null;
+            var step = parseFloat(input && input.step);
+            if (!(step > 0)) step = 1;
+            // Nombre de décimales du pas (ex. step 0.1 -> 1 décimale)
+            var dec = (String(step).split('.')[1] || '').length;
+            var q = Math.round(v / step) * step;
+            q = parseFloat(q.toFixed(dec + 2));           // purge le bruit flottant
+            var mn = parseFloat(input && input.min);
+            var mx = parseFloat(input && input.max);
+            if (isFinite(mn) && q < mn) q = mn;
+            if (isFinite(mx) && q > mx) q = mx;
+            return parseFloat(q.toFixed(dec));
+        }
+        window.spQuantizeValue = spQuantizeValue;
+
         function getPxToUnitFn() {
     switch (currentUnit) {
         case 'cm': return pxToCm;
@@ -6739,6 +6763,35 @@ if (window._spGpuEnabled) {
                 c.requestRenderAll();
             });
         } catch(_) {}
+
+        // 🎨 v1.7.372 — REFLOW DE L'HABILLAGE APRÈS CHAQUE RENDU DE DOCUMENT.
+        //   SYMPTÔME (mesuré) : un document enregistré avec un habillage de texte
+        //   se rouvrait SANS l'habillage appliqué — le bloc affichait 4 lignes
+        //   pleines au lieu des 7 lignes recomposées autour de l'obstacle. Le mode
+        //   (_spWrapMode) était pourtant bien restauré, et forcer
+        //   window._spWrapReflowAll() recomposait correctement les 7 lignes.
+        //   Conclusion : la DONNÉE était bonne, seule la RECOMPOSITION manquait —
+        //   rien ne relançait la mise en page après le chargement. C'est très
+        //   exactement le symptôme « l'habillage ne marche pas » : le texte n'est
+        //   pas habillé tant que l'utilisateur ne touche pas l'objet.
+        //
+        //   finalizeRender est LA fin unique de tout rendu de document (chargement
+        //   .sp/.json, undo/redo, changement de page, sortie de gabarit) → un seul
+        //   point d'ancrage suffit pour tous les cas. Différé d'un tick : on laisse
+        //   Fabric terminer sa passe et les images se poser, sinon la géométrie des
+        //   obstacles est fausse.
+        try {
+            var _spWrapCvs = canvases.slice();
+            setTimeout(function() {
+                if (window._renderEpoch !== renderEpoch) return; // un autre rendu a pris la main
+                for (var _wi = 0; _wi < _spWrapCvs.length; _wi++) {
+                    var _wc = _spWrapCvs[_wi];
+                    if (!_wc) continue;
+                    // Le moteur sort immédiatement si aucun objet ne porte d'habillage.
+                    try { if (window._spWrapReflowAll) window._spWrapReflowAll(_wc); } catch (_) {}
+                }
+            }, 0);
+        } catch (_) {}
     };
     let waitingForFonts = false;
     const finalizeAfterFonts = () => {
@@ -13935,6 +13988,13 @@ if (window._spGpuEnabled) {
                 _applyOpacityToSelection(v, true);
             });
             _opacityValue.addEventListener('change', function() {
+            // 🎯 v1.7.373 — arrondi au pas AVANT toute utilisation.
+            try {
+                if (typeof spQuantizeValue === 'function') {
+                    var _q = spQuantizeValue(_opacityValue, _opacityValue.value);
+                    if (_q !== null) _opacityValue.value = _q;
+                }
+            } catch (_) {}
                 let v = parseInt(this.value, 10);
                 if (isNaN(v)) v = 100;
                 v = Math.max(0, Math.min(100, v));
@@ -25910,19 +25970,55 @@ if (window._spGpuEnabled) {
             const preview = document.getElementById(prefix + 'Preview');
             if (preview) preview.style.background = hex;
         };
+        // 🎯 v1.7.372 — REPLI SANS EyeDropper (Safari / Firefox).
+        //   L'API EyeDropper n'existe QUE sur Chromium. Sur Safari l'ancien code
+        //   appelait hexInput.click() pour ouvrir le sélecteur natif — mais un
+        //   <input type="color"> n'ouvre son sélecteur QUE sur un geste utilisateur
+        //   direct : appelé dans un .then()/.catch() asynchrone, Safari ignore le
+        //   clic et RIEN ne se passe. C'est exactement le symptôme signalé
+        //   (« dans Safari la pipette ne fonctionne pas en mode CMJN »).
+        //   Nouveau repli : on met en évidence le champ natif, on l'ouvre
+        //   SYNCHRONEMENT quand c'est possible, et on guide l'utilisateur sinon.
+        var fallbackToNativePicker = function() {
+            if (!hexInput) {
+                alert('Pipette non supportée par ce navigateur. Utilisez Chrome, Edge ou Firefox pour la pipette.');
+                return;
+            }
+            try {
+                hexInput.focus();
+                hexInput.click();            // marche sur Chromium/Firefox (geste en cours)
+            } catch (_) {}
+            // Sur Safari, le champ est un vrai color-picker : on le montre et on
+            // explique, plutôt que d'échouer en silence.
+            try {
+                hexInput.style.outline = '2px solid #4361ee';
+                hexInput.style.outlineOffset = '2px';
+                var _clear = function() { hexInput.style.outline = ''; hexInput.style.outlineOffset = ''; hexInput.removeEventListener('input', _clear); };
+                hexInput.addEventListener('input', _clear);
+                setTimeout(function() { try { _clear(); } catch (_) {} }, 8000);
+            } catch (_) {}
+            try { if (typeof showToast === 'function') showToast('Cliquez le carré de couleur pour choisir votre teinte', 'info'); } catch (_) {}
+        };
         try {
             if (typeof window.EyeDropper === 'function') {
                 const ed = new window.EyeDropper();
                 ed.open().then(function(res) {
                     if (res && res.sRGBHex) pick(res.sRGBHex);
-                }).catch(function() { /* annulé par l'utilisateur */ });
+                }).catch(function(err) {
+                    // ⚠️ On NE confond PAS « l'utilisateur a annulé » (AbortError)
+                    //    avec « la pipette a échoué ». Avant, tout échec réel était
+                    //    avalé par un catch vide : la pipette ne faisait rien, sans
+                    //    aucune explication.
+                    if (err && (err.name === 'AbortError' || /abort/i.test(String(err.message || '')))) return;
+                    console.warn('[Pipette] EyeDropper a échoué :', err);
+                    fallbackToNativePicker();
+                });
             } else {
-                // EyeDropper non supporté (Firefox/Safari) : ouvrir le picker natif.
-                if (hexInput) { hexInput.click(); }
-                else alert('Pipette non supportée par ce navigateur. Utilisez Firefox/Chrome/Edge pour la pipette.');
+                fallbackToNativePicker();
             }
-        } catch (_) {
-            if (hexInput) { hexInput.click(); }
+        } catch (e) {
+            console.warn('[Pipette] EyeDropper indisponible :', e);
+            fallbackToNativePicker();
         }
     }
     window._pickCmykColorWithEyeDropper = _pickCmykColorWithEyeDropper;
@@ -25948,6 +26044,17 @@ if (window._spGpuEnabled) {
         cmykStrokePreview.title = 'Pipette couleur (Contour)';
         cmykStrokePreview.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke'); });
     }
+
+    // 🎯 v1.7.372 — PIPETTE EN MODE RVB.
+    //   Le groupe #rgbPickersGroup (visible quand le toggle CMJN est OFF) ne
+    //   contenait AUCUNE pipette : elle n'existait que dans #cmykSlidersGroup.
+    //   _pickCmykColorWithEyeDropper alimente déjà #blockFill / #blockStroke
+    //   (les inputs natifs du mode RVB) puis synchronise les sliders CMJN, donc
+    //   elle est réutilisable telle quelle dans les deux modes.
+    const rgbFillPickBtn = document.getElementById('rgbFillPickBtn');
+    if (rgbFillPickBtn) rgbFillPickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('fill'); });
+    const rgbStrokePickBtn = document.getElementById('rgbStrokePickBtn');
+    if (rgbStrokePickBtn) rgbStrokePickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke'); });
     
     // ══════════════════════════════════════════════════════════════════════
     // 🎯 CIBLE DU NUANCIER PANTONE : FOND ou CONTOUR.
@@ -25990,13 +26097,26 @@ if (window._spGpuEnabled) {
     //   d'export mais NE SONT PAS serialises (absents de SP_CUSTOM_PROPS).
     //   On RE-DERIVE donc le nom du catalogue a partir du code hex : c'est plus
     //   robuste (le nom reste exact meme si le registre a evolue).
+    // 🎯 v1.7.372 — NOM COURT DE L'ENCRE.
+    //   Le nuancier nomme ses options « Pantone Yellow C », « Pantone 186 C »… et
+    //   ce libellé complet était réaffiché tel quel sous Fond / Contour. Retour
+    //   On retire le préfixe de marque UNIQUEMENT en tête, et on ne touche pas au
+    //   reste du libellé (010 C, Warm Red C, Yellow 012 C, 60% Tint…).
+    function spSpotShortInkName(name) {
+        if (!name) return '';
+        return String(name)
+            .replace(/^\s*PANTONE\s+/i, '')   // « PANTONE 186 C » -> « 186 C »
+            .replace(/^\s*Pantone\s+/i, '')   // « Pantone Yellow C » -> « Yellow C »
+            .trim();
+    }
+    window.spSpotShortInkName = spSpotShortInkName;
     function spSpotNameFor(hex) {
         if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return '';
         try {
             if (typeof window._spSpotBuildCatalog === 'function') {
                 const cat = window._spSpotBuildCatalog();
                 const e = cat && cat[String(hex).toLowerCase()];
-                if (e && e.name) return e.name;
+                if (e && e.name) return spSpotShortInkName(e.name);
             }
         } catch (_) {}
         return '';
@@ -30716,6 +30836,29 @@ if (window._spGpuEnabled) {
                 });
                 try { canvas.requestRenderAll(); } catch (_) {}
             });
+
+            // 🎨 v1.7.372 — REFLOW DE L'HABILLAGE ICI (et pas ailleurs).
+            //   ⚠️ CET EMPLACEMENT EST CRITIQUE — ne pas le déplacer.
+            //   Cette fonction est le DERNIER maillon de la chaîne de chargement à
+            //   écraser _textLines : elle remet _textLines à null, rappelle
+            //   initDimensions() puis RESTAURE _fixedHeight (donc elle annule
+            //   l'agrandissement qu'un reflow aurait pu faire AVANT elle).
+            //   Trace mesurée sur un chargement réel de .sp :
+            //     t=242ms  initDimensions      -> 8 lignes   (habillage actif)
+            //     t=242ms  reflowAll           -> 4 a 8 lignes  (reflow OK)
+            //     t=321ms  initDimensions      -> 4 lignes   (ECRASE tout)
+            //   Le 3e evenement est le reRefresh de loadProjectSP
+            //   (document.fonts.ready -> _spRefreshTextboxesAfterFontLoad).
+            //   Consequence : l'habillage n'etait jamais visible apres ouverture
+            //   d'un document -> « l'habillage ne marche pas ».
+            //   En reflowant ICI, la recomposition est la DERNIERE operation.
+            try {
+                targetCanvases.forEach(function(canvas) {
+                    if (!canvas) return;
+                    try { if (window._spWrapReflowAll) window._spWrapReflowAll(canvas); } catch (_) {}
+                    try { canvas.requestRenderAll(); } catch (_) {}
+                });
+            } catch (_) {}
         } catch (err) {
             console.warn('[font-refresh] failed', err);
         }

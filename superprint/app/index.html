@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint v1.7.371 — Zigmoon
+         SuperPrint v1.7.373 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint v1.7.371 — Zigmoon">
+    <meta name="generator" content="SuperPrint v1.7.373 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.371",
+          "softwareVersion": "1.7.373",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -387,39 +387,46 @@
          Grosse rotation créative (14 thèmes : mode, archi, art, nature morte,
          nature, ville, néon) — plus de variété, plus moderne. 900px q=45,
          ~20-85 Ko, chargement quasi instantané. En local rien n'est préchargé. -->
+    <!-- 🎨 v1.7.373 — SPLASH : IMAGES LOCALES (plus de CDN Unsplash).
+         POURQUOI CE CHANGEMENT
+           L'ancienne version tirait AU HASARD une des 14 photos Unsplash
+           distantes, puis la préchargeait. Trois conséquences mesurables :
+             • l'image n'apparaissait qu'après un aller-retour réseau complet
+               (impression « l'image arrive tard dans le splash ») ;
+             • 14 URL distantes = 14 points de défaillance ; si le réseau
+               tombait, la colonne média restait vide ou grise ;
+             • le poids dépendait du CDN (jusqu'à ~200 Ko par image).
+           Désormais : 15 images LOCALES (SP/splash/), 83 Ko de moyenne,
+           servies depuis le cache du Service Worker → affichage IMMÉDIAT,
+           y compris hors ligne. Les thématiques demandées sont représentées :
+           ARCHITECTURE (archi-*), TYPOGRAPHIE/ÉDITORIAL (typo-*),
+           PHOTOGRAPHIE D'ART (art-*).
+         Les fichiers sont dans l'APP_SHELL du Service Worker : précachés. -->
     <script>
     (function () {
       try {
-        if (location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '[::1]') return;
         var photos = [
-          // Mode / Fashion
-          'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&h=643&fit=crop&auto=format&q=45',
-          'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=900&h=643&fit=crop&auto=format&q=45',
-          'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&h=643&fit=crop&auto=format&q=45',
-          'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=900&h=643&fit=crop&auto=format&q=45',
-          // Architecture moderne
-          'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=900&h=643&fit=crop&auto=format&q=45',
-          'https://images.unsplash.com/photo-1448630360428-65456885c650?w=900&h=643&fit=crop&auto=format&q=45',
-          'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=900&h=643&fit=crop&auto=format&q=45',
-          // Art / Design
-          'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=900&h=643&fit=crop&auto=format&q=45',
-          'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=900&h=643&fit=crop&auto=format&q=45',
-          // Nature morte
-          'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=900&h=643&fit=crop&auto=format&q=45',
-          'https://images.unsplash.com/photo-1470813740244-df37b8c1edcb?w=900&h=643&fit=crop&auto=format&q=45',
-          // Nature / Ville
-          'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=900&h=643&fit=crop&auto=format&q=45',
-          'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=900&h=643&fit=crop&auto=format&q=45',
-          // Néon / Abstract
-          'https://images.unsplash.com/photo-1550859492-d5da9d8e45f3?w=900&h=643&fit=crop&auto=format&q=45'
+          // 🏛 Architecture — lignes, matières, volumes
+          'SP/splash/archi-01.jpg', 'SP/splash/archi-02.jpg', 'SP/splash/archi-03.jpg',
+          'SP/splash/archi-04.jpg', 'SP/splash/archi-05.jpg',
+          // 🔤 Typographie / éditorial — mise en page, lettrage, composition
+          'SP/splash/typo-01.jpg', 'SP/splash/typo-02.jpg', 'SP/splash/typo-03.jpg',
+          'SP/splash/typo-04.jpg', 'SP/splash/typo-05.jpg',
+          // 📷 Photographie d'art — lumière, texture, cadrage
+          'SP/splash/art-01.jpg', 'SP/splash/art-02.jpg', 'SP/splash/art-03.jpg',
+          'SP/splash/art-04.jpg', 'SP/splash/art-05.jpg'
         ];
         var picked = photos[Math.floor(Math.random() * photos.length)];
         window._spSplashPhoto = picked;
+        // Préchargement LOCAL : le navigateur lit depuis le disque / le cache,
+        // donc l'image est quasi toujours déjà prête au premier rendu.
         var pre = document.createElement('link');
         pre.rel = 'preload';
         pre.as = 'image';
         pre.href = picked;
         document.head.appendChild(pre);
+        // On expose la liste pour que le bloc splash n'ait pas à la redéclarer.
+        window._spSplashPhotoList = photos;
       } catch (e) {}
     })();
     </script>
@@ -1012,12 +1019,15 @@
                      AUCUNE requête réseau externe n'est déclenchée (picsum.photos
                      n'est JAMAIS dans le HTML en local). En version EN LIGNE (https),
                      le script ci-dessous remplace cette image par la photo picsum. -->
-                <img id="splashImage" alt="Splash artwork" src="SP/super_print_logo_blanc.svg"
-                     style="object-fit:cover;opacity:0.35;background:#f5f5f5;padding:80px;box-sizing:border-box;" />
+                <!-- 🎨 v1.7.373 — image LOCALE par défaut (le script choisit
+                     aléatoirement parmi SP/splash/*). Plus aucun CDN : l'image
+                     est disponible hors ligne et s'affiche immédiatement. -->
+                <img id="splashImage" alt="Splash artwork" src="SP/splash/typo-01.jpg"
+                     style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;" />
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">v1.7.371</div>
+                <div class="splash-version">v1.7.373</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1038,41 +1048,29 @@
         // la colonne média (l'image est déjà LOCALE, aucune requête réseau).
         // En mode EN LIGNE (https), on remplace l'image par la photo externe.
         try {
-            var _proto = window.location.protocol;
-            var _host = window.location.hostname || '';
-            var _local = _proto === 'file:' || _host === 'localhost' || _host === '127.0.0.1' || _host === '[::1]';
-            if (_local) {
-                splash.classList.add('sp-splash-local');
-                // On retire la colonne média du DOM (l'image locale ne sert à rien ici)
-                var _media = splash.querySelector('.splash-media');
-                if (_media) { try { _media.parentNode.removeChild(_media); } catch (_) {} }
-                // Pas de bordure entre logo et info (ils se touchent)
-                var _panel = splash.querySelector('.splash-logo-panel');
-                if (_panel) _panel.style.borderRight = 'none';
-                var _info = splash.querySelector('.splash-info');
-                if (_info) _info.style.borderLeft = 'none';
-            } else {
-                // EN LIGNE : on affiche IMMÉDIATEMENT la photo Unsplash artistique
-                // (déjà préchargée dans le <head> via _spSplashPhoto).
-                // 🛡️ v1.7.335 : 900px q=45 — entre-deux (ni flou, ni lourd).
-                // Plus de picsum (down), plus de "logo sur fond gris".
-                var _img = splash.querySelector('#splashImage');
-                if (_img) {
-                    var _photo = window._spSplashPhoto ||
-                        'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=900&h=643&fit=crop&auto=format&q=45';
-                    _img.removeAttribute('style');
-                    // Fond de la colonne média assorti à la photo (aucun flash blanc/gris)
-                    var _mediaEl = splash.querySelector('.splash-media');
-                    if (_mediaEl) _mediaEl.style.background = '#f5f5f5';
-                    // On pose la photo directement. object-fit cover + centré.
-                    _img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center;display:block;';
-                    _img.src = _photo;
-                    // Si la photo échoue (réseau coupé), on garde un fond gris neutre
-                    // SANS logo — jamais de logo sur fond gris dans le splash en ligne.
-                    _img.onerror = function () {
-                        try { _img.style.display = 'none'; } catch (_) {}
-                    };
-                }
+            // 🎨 v1.7.373 — LE SPLASH AFFICHE UNE IMAGE DANS TOUS LES CAS.
+            //   Avant : en local la colonne média était SUPPRIMÉE du DOM, et en
+            //   ligne elle dépendait d'un CDN. Désormais l'image est locale, donc
+            //   disponible partout (file://, localhost, https, hors ligne) : on
+            //   l'affiche toujours. Résultat : un splash identique et immédiat.
+            var _img = splash.querySelector('#splashImage');
+            if (_img) {
+                var _photo = window._spSplashPhoto || 'SP/splash/typo-01.jpg';
+                _img.removeAttribute('style');
+                var _mediaEl = splash.querySelector('.splash-media');
+                if (_mediaEl) _mediaEl.style.background = '#0c0c0f';
+                // object-fit cover + centré : tout ratio d'image remplit la colonne
+                // sans déformation ni bandes vides.
+                _img.style.cssText = 'width:100%;height:100%;object-fit:cover;object-position:center;display:block;';
+                _img.src = _photo;
+                // Si l'image manquait (paquet incomplet), on masque la colonne
+                // plutôt que d'afficher une icône cassée.
+                _img.onerror = function () {
+                    try {
+                        var _m = splash.querySelector('.splash-media');
+                        if (_m) _m.style.display = 'none';
+                    } catch (_) {}
+                };
             }
         } catch (_) {}
         var _hidden = false;
@@ -1091,41 +1089,32 @@
         //     splash dès que le DOM est prêt (+ court délai) pour être rapide.
         //   - EN LIGNE (https) : on garde le splash avec la photo → on attend
         //     l'événement load (+ 1,5 s) pour laisser l'image s'afficher, comme avant.
-        var _isLocalMode = false;
-        try {
-            var _p2 = window.location.protocol, _h2 = window.location.hostname || '';
-            _isLocalMode = _p2 === 'file:' || _h2 === 'localhost' || _h2 === '127.0.0.1' || _h2 === '[::1]';
-        } catch (_) {}
-        if (_isLocalMode) {
-            // 🛡️ v1.7.335 : splash LOCAL — plus long (2 s) pour laisser le logo
-            // + l'identité être bien vus, harmonisé avec la version web.
-            function hideSoon() { setTimeout(hideSplash, 2000); }
-            if (document.readyState === 'interactive' || document.readyState === 'complete') {
-                hideSoon();
-            } else {
-                document.addEventListener('DOMContentLoaded', hideSoon, { once: true });
-            }
-            setTimeout(hideSplash, 3500);
+        // 🎨 v1.7.373 — MINUTERIE UNIFIÉE.
+        //   Avant, le mode local et le mode en ligne avaient des durées
+        //   différentes (2 s contre 3,5 s APRÈS chargement de l'image distante),
+        //   et la version en ligne attendait le réseau : l'image « arrivait tard ».
+        //   L'image étant désormais LOCALE, elle est prête au premier rendu : on
+        //   n'attend plus le réseau, on affiche puis on masque après un délai fixe,
+        //   identique partout.
+        var _img2 = splash.querySelector('#splashImage');
+        var _ready = function () {
+            // 1,9 s : le temps de lire l'image et l'identité (logo + créateurs),
+            // sans jamais faire attendre l'utilisateur devant un écran figé.
+            setTimeout(hideSplash, 1900);
+        };
+        if (_img2 && (_img2.complete || _img2.naturalWidth > 0)) {
+            _ready();
+        } else if (_img2) {
+            _img2.addEventListener('load', _ready, { once: true });
+            _img2.addEventListener('error', _ready, { once: true });
+            // L'image est locale : si elle n'est pas prête en 600 ms, on n'attend
+            // pas davantage (disque lent, paquet incomplet…).
+            setTimeout(_ready, 600);
         } else {
-            // 🛡️ v1.7.335 : EN LIGNE — le splash reste affiché le temps de voir
-            // la photo (3,5 s après son chargement). On ne bloque pas sur le
-            // load global ; filet de sécurité à 6 s max.
-            var _img2 = splash.querySelector('#splashImage');
-            var _hideAfterImg = function () { setTimeout(hideSplash, 3500); };
-            if (_img2 && _img2.complete && _img2.naturalWidth > 0) {
-                _hideAfterImg();
-            } else if (_img2) {
-                var _onImgLoad = function () { _hideAfterImg(); };
-                _img2.addEventListener('load', _onImgLoad, { once: true });
-                _img2.addEventListener('error', _hideAfterImg, { once: true });
-                // Filet de sécurité : si l'image met trop longtemps, on ne bloque pas.
-                setTimeout(_hideAfterImg, 1200);
-            } else {
-                setTimeout(hideSplash, 3500);
-            }
-            // Sécurité absolue (ne jamais laisser le splash bloquer l'UI)
-            setTimeout(hideSplash, 6000);
+            _ready();
         }
+        // Sécurité absolue : le splash ne doit JAMAIS bloquer l'interface.
+        setTimeout(hideSplash, 3000);
     })();
     </script>
 
@@ -1139,7 +1128,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.371</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.373</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1235,7 +1224,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.371 | 09 2026<br>
+                V 1.7.373 | 09 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1535,11 +1524,16 @@
                 <div class="input-row" style="margin-top: 12px;">
                     <div class="input-group">
                         <label id="labelPageW">L (mm)</label>
-                        <input type="number" id="pageWidth" value="210">
+                        <!-- 🎯 v1.7.373 — BUG 2 : les champs de dimensions étaient lus avec des
+                     valeurs fractionnaires (ex. 209.9999) qui s'affichaient
+                     « 0 » à l'ouverture et empêchaient d'avancer de 1 mm net.
+                     step="1" + min="1" : incréments entiers, jamais 0. -->
+                <input type="number" id="pageWidth" step="1" min="1" value="210">
                     </div>
                     <div class="input-group">
                         <label id="labelPageH">H (mm)</label>
-                        <input type="number" id="pageHeight" value="297">
+                        <!-- 🎯 v1.7.373 — BUG 2 : idem largeur. -->
+                <input type="number" id="pageHeight" step="1" min="1" value="297">
                     </div>
                 </div>
             </div>
@@ -1805,12 +1799,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.371). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.373). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.371 — internal cache tag: JS v368 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.373 — internal cache tag: JS v368 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
                       data-sp-js="v368"
-                      data-sp-sw="v1.7.371">v1.7.371</span>
+                      data-sp-sw="v1.7.373">v1.7.373</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -2181,7 +2175,8 @@
                                 </div>
                                 <div style="margin-bottom: 16px;">
                                     <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px;">Opacité: <span id="solidOpacityValue">100%</span></label>
-                                    <input type="range" id="solidOpacitySlider" min="0" max="100" value="100" style="width: 100%;" />
+                                    <!-- 🎯 v1.7.373 — BUG 1 (2ᵉ curseur d'opacité) : pas de 1 %. -->
+                                    <input type="range" id="solidOpacitySlider" min="0" max="100" step="1" value="100" style="width: 100%;" />
                                 </div>
                             </div>
 
@@ -2433,7 +2428,9 @@
                 <div class="input-row">
                     <div class="input-group">
                         <label data-translate="lineHeightLabel">Interligne (pt)</label>
-                        <input type="number" id="lineHeight" min="1" max="200" value="16" step="0.5">
+                        <!-- 🎯 v1.7.373 — BUG 3 : pas de 0,1 (l'ancien 0,5 interdisait
+                     d'ajuster finement l'interligne demandé par l'utilisateur). -->
+                <input type="number" id="lineHeight" min="1" max="200" value="16" step="0.1">
                     </div>
                     <div class="input-group">
                         <label data-translate="charSpacingLabel">Esp. lettres</label>
@@ -2980,6 +2977,13 @@
                         <span class="sub-label" data-translate="fillLabel">Fond</span>
                         <div class="inline-row">
                             <input type="color" id="blockFill" value="#cccccc" style="flex: 1; height: 28px; border: 1px solid #e0e0e0; cursor: pointer; padding: 2px;">
+                            <!-- 🎯 v1.7.372 — PIPETTE EN MODE RVB.
+                                 Elle n'existait que dans #cmykSlidersGroup (masqué en
+                                 RVB) : en RVB l'utilisateur n'avait plus aucune pipette.
+                                 Ici elle alimente #blockFill (le picker natif RVB). -->
+                            <button type="button" id="rgbFillPickBtn" title="Pipette couleur (Fond)" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
+                            </button>
                             <button type="button" id="blockFillNone" title="Sans fond (transparent)" data-translate-title="noFill" class="transform-lock-btn">
                                 <svg width="18" height="18" viewBox="0 0 18 18" style="pointer-events:none;"><rect x="1" y="1" width="16" height="16" rx="2" fill="#fff" stroke="#ccc" stroke-width="1"/><line x1="2" y1="16" x2="16" y2="2" stroke="#e74c3c" stroke-width="2"/></svg>
                             </button>
@@ -2989,6 +2993,10 @@
                         <span class="sub-label" data-translate="strokeLabel">Contour</span>
                         <div class="inline-row">
                             <input type="color" id="blockStroke" value="#000000" style="flex: 1; height: 28px; border: 1px solid #e0e0e0; cursor: pointer; padding: 2px;">
+                            <!-- 🎯 v1.7.372 — pipette Contour en mode RVB (cf. Fond). -->
+                            <button type="button" id="rgbStrokePickBtn" title="Pipette couleur (Contour)" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
+                            </button>
                             <button type="button" id="blockStrokeNone" title="Sans contour" data-translate-title="noStroke" class="transform-lock-btn">
                                 <svg width="18" height="18" viewBox="0 0 18 18" style="pointer-events:none;"><rect x="1" y="1" width="16" height="16" rx="2" fill="#fff" stroke="#ccc" stroke-width="1"/><line x1="2" y1="16" x2="16" y2="2" stroke="#e74c3c" stroke-width="2"/></svg>
                             </button>
@@ -3083,8 +3091,13 @@
                 <div class="input-group">
                     <label data-translate="opacityLabel">Opacité</label>
                     <div class="inline-row" style="display: flex; align-items: center; gap: 8px;">
-                        <input type="range" id="opacitySlider" min="0" max="100" value="100" style="flex: 1; height: 4px; accent-color: #1a1a1a; cursor: pointer;">
-                        <input type="number" id="opacityValue" min="0" max="100" value="100" class="compact-input" style="width: 48px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px;">
+                        <!-- 🎯 v1.7.373 — BUG 1 : pas de 1 %.
+                     Sans step, le curseur tombait sur des valeurs fractionnaires
+                     (ex. 4.6 %) : la valeur affichée sautait et la barre se plaçait
+                     « au milieu » d'un cran. step="1" = 101 positions entières. -->
+                <input type="range" id="opacitySlider" min="0" max="100" step="1" value="100" style="flex: 1; height: 4px; accent-color: #1a1a1a; cursor: pointer;">
+                        <!-- 🎯 v1.7.373 — même pas de 1 pour le champ numérique jumeau. -->
+                <input type="number" id="opacityValue" min="0" max="100" step="1" value="100" class="compact-input" style="width: 48px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px;">
                         <span style="font-size: 10px; opacity: 0.6;">%</span>
                     </div>
                     <div class="hint" data-translate="opacityHint">Applique la transparence aux textes, formes et images sélectionnés.</div>
@@ -3676,7 +3689,7 @@
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
                             <div>
                                 <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 900; letter-spacing: 2px; color: #1a1a1a;">SUPER PRINT</div>
-                                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: #999; margin-top: 6px;">v1.7.371</div>
+                                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: #999; margin-top: 6px;">v1.7.373</div>
                             </div>
                             <a href="documentation.html" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: #0c0c0f; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; transition: background 0.2s;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='#0c0c0f'">
                                 <span data-translate="settingsManualBtn">Manuel &amp; Documentation</span>
@@ -3765,7 +3778,7 @@
                     </div>
 
                     <div style="text-align: center; padding-top: 16px; font-size: 10px; color: #999;">
-                        SuperPrint v1.7.371 — 12 septembre 2026
+                        SuperPrint v1.7.373 — 12 septembre 2026
                     </div>
                     <div style="padding: 12px 0 0; display: flex; gap: 12px; justify-content: flex-end;">
                         <button class="btn btn-secondary" onclick="closeSettings()">Annuler</button>
@@ -5733,13 +5746,13 @@
 
     <!-- All application logic moved to JS/main.js -->    
     <!-- External scripts -->
-    <script src="JS/patches-core.js?v=20260912-v371-typo-clip" defer></script>
+    <script src="JS/patches-core.js?v=20260912-v373-splash-typo" defer></script>
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260913-v371-typo-clip" defer></script>
+    <script src="JS/main.js?v=20260913-v373-splash-typo" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
-    <script src="JS/virtual-printer.js?v=20260912-v371-typo-clip" defer></script>
+    <script src="JS/virtual-printer.js?v=20260912-v373-splash-typo" defer></script>
     <script src="JS/collab.js?v=20260907-v016-ux" defer></script>
     <script src="JS/pwa.js?v=20260501-no-double-splash" defer></script>
 

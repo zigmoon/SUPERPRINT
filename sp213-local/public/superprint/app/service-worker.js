@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.371-no-whatsapp';
+const CACHE_NAME = 'superprint-shell-v1.7.373-no-whatsapp';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -112,6 +112,24 @@ const APP_SHELL = [
   './icons/icon-192x192.png',
   './icons/icon-384x384.png',
   './icons/icon-512x512.png',
+  // 🎨 v1.7.373 — IMAGES DU SPLASH (locales, 15 × ~83 Ko = ~1,25 Mo).
+  //   Précachées pour un affichage IMMÉDIAT et hors ligne : le splash est la
+  //   première chose que voit l'utilisateur, il ne doit jamais attendre le réseau.
+  './SP/splash/archi-01.jpg',
+  './SP/splash/archi-02.jpg',
+  './SP/splash/archi-03.jpg',
+  './SP/splash/archi-04.jpg',
+  './SP/splash/archi-05.jpg',
+  './SP/splash/typo-01.jpg',
+  './SP/splash/typo-02.jpg',
+  './SP/splash/typo-03.jpg',
+  './SP/splash/typo-04.jpg',
+  './SP/splash/typo-05.jpg',
+  './SP/splash/art-01.jpg',
+  './SP/splash/art-02.jpg',
+  './SP/splash/art-03.jpg',
+  './SP/splash/art-04.jpg',
+  './SP/splash/art-05.jpg',
   './icons/text.svg',
   './icons/image.svg',
   './icons/rect.svg',
