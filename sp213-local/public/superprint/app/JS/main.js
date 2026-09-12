@@ -4125,8 +4125,14 @@ if (window._spGpuEnabled) {
           if (o && o !== obj && o.textLinkId && o.textLinkId === obj.textLinkId) return true;
         }
       }
-      // Balise de chaine affichee par l'app = chainage reel.
-      if (obj._chainBadge || obj._chainTotal > 1 || obj._linkOrder) return true;
+      // Balises de chaine affichees par l'app = chainage reel.
+      // ATTENTION : NE PAS tester `_linkOrder` — c'est un simple numero d'ordre
+      //   d'affichage, pose par plusieurs chemins et SURVIVANT a la sortie de
+      //   chaine. Mesure en production : un bloc de l'outil Texte isolé portait
+      //   `_linkOrder = 1` avec `_chainTotal` undefined, 0 autre bloc partageant
+      //   son textLinkId et aucun _nextFrame -> faux positif qui bloquait
+      //   l'agrandissement (109,3 px de zone pour 110,1 px de contenu).
+      if (obj._chainBadge || obj._chainTotal > 1) return true;
     } catch (_) {}
     return false;
   }
@@ -4211,7 +4217,12 @@ if (window._spGpuEnabled) {
     var natural = spWrapNaturalHeight(obj);
     if (natural === null) return false;
     var target = Math.max(orig, natural);
-    if (Math.abs(fixed - target) < 0.01) { spWrapMarkAdjusted(obj, target > orig + 0.01); return false; }
+    // Marge d'arrondi : getHeightOfLine() cumule des flottants, donc le
+    //   contenu depasse souvent la zone de quelques centiemes de px. Sans
+    //   tolerance, on redimensionnait puis on revenait a la taille d'origine
+    //   a l'appel suivant (oscillation vecue comme « ca ne fait rien »).
+    //   Une difference inferieure a 0,5 px est du bruit : on ne touche a rien.
+    if (Math.abs(fixed - target) < 0.5) { spWrapMarkAdjusted(obj, target > orig + 0.01); return false; }
     return spWrapSetHeight(obj, target);
   }
 
