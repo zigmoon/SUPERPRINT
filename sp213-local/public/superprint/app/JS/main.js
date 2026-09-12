@@ -4375,6 +4375,12 @@ if (window._spGpuEnabled) {
 
     var natural = spWrapNaturalHeight(obj);
     if (natural === null) return false;
+    // 🛡️ v1.7.371 — la hauteur qui sert à clipper ne doit jamais être INFÉRIEURE
+    //   au contenu réel. Sans ce plancher, un bloc sauvegardé dans un état
+    //   transitoire (hauteur figée pendant une passe de reflow) rouvrait avec un
+    //   masque trop court → lignes invisibles au chargement du document.
+    var _natNow = (typeof spNaturalContentHeight === 'function') ? spNaturalContentHeight(obj) : null;
+    if (_natNow !== null && _natNow > natural) natural = _natNow;
     var target = Math.max(orig, natural);
     // Marge d'arrondi : getHeightOfLine() cumule des flottants, donc le
     //   contenu depasse souvent la zone de quelques centiemes de px. Sans
@@ -5886,8 +5892,25 @@ if (window._spGpuEnabled) {
                         // Ne clipper à safeHeight que s'il y a overflow.
                         // Si le texte rentre entièrement, garder frameHeight.
                         if (hasOverflow && safeHeight > 0) {
-                            clipHeight = safeHeight;
+                            // 🛡️ v1.7.371 — PLANCHER DE VISIBILITÉ.
+                            //   safeHeight est un arrondi « à la dernière ligne
+                            //   complète » : il doit pouvoir ROGNER (c'est le rôle
+                            //   du masque), mais jamais descendre sous la 1re ligne
+                            //   ni sous une valeur nulle. Un masque plus court que
+                            //   la première ligne rendait le bloc ENTIÈREMENT
+                            //   invisible (mesuré : 18 px de masque pour 185 px de
+                            //   contenu → 0 ligne visible sur 3).
+                            var _firstLineH = 0;
+                            try { _firstLineH = (H && H[0] > 0) ? H[0] : (Number(textbox.getHeightOfLine(0)) || 0); } catch (_) {}
+                            if (_firstLineH > 0) clipHeight = Math.max(clipHeight, _firstLineH);
+                            clipHeight = Math.max(clipHeight, safeHeight);
                         } else {
+                            clipHeight = Math.max(1, frameHeight);
+                        }
+                        // Filet final : un masque de hauteur nulle/négative serait
+                        // traité comme une erreur par Fabric (Math.max(1, …) plus
+                        // haut) → on garde au minimum la première ligne entière.
+                        if (!isFinite(clipHeight) || clipHeight <= 0) {
                             clipHeight = Math.max(1, frameHeight);
                         }
                     }
@@ -5923,6 +5946,85 @@ if (window._spGpuEnabled) {
             textbox._fixedWidth = null;
             textbox.dirty = true;
         }
+        // ═══════════════════════════════════════════════════════════════════
+        // 🛡️ v1.7.371 — HAUTEUR NATURELLE + PLANCHER DE VISIBILITÉ DU MASQUE
+        // ═══════════════════════════════════════════════════════════════════
+        // CONTEXTE (bug utilisateur : « le réglage de taille et d'interlignage
+        // n'est pas conservé à la dé-sélection ») :
+        //   Les handlers #fontSize / #lineHeight capturaient la hauteur AVANT la
+        //   modification puis la RESTAURAIENT après. Or changer la typographie
+        //   AUGMENTE la hauteur nécessaire : le cadre restait figé (mesuré 18 px
+        //   pour 185 px de contenu) et le masque rognait le texte, qui devenait
+        //   INVISIBLE. Le réglage n'était pas perdu — il était MASQUÉ.
+        //   Restaurer une hauteur est volontaire (éviter qu'un bloc change de
+        //   taille quand on touche la typo) : le défaut était de restaurer une
+        //   hauteur PÉRIMÉE au lieu d'une hauteur REVALIDÉE vers le haut.
+
+        // Somme réelle de la hauteur des lignes d'un bloc texte.
+        // Renvoie null si indécise (aucune ligne / objet non textuel).
+        function spNaturalContentHeight(obj) {
+            try {
+                if (!obj || !obj._textLines || !obj._textLines.length) return null;
+                var H = (typeof window.spTextMetrics === 'function') ? window.spTextMetrics(obj) : null;
+                var n = obj._textLines.length;
+                var total = 0;
+                for (var i = 0; i < n; i++) {
+                    var h = (H && H[i] > 0) ? H[i] : (Number(obj.getHeightOfLine(i)) || 0);
+                    if (!(h > 0)) continue;
+                    // Le leading bas de la DERNIÈRE ligne sort du cadre, comme dans
+                    // obj.height (cf. calcTextHeight de Fabric) : ne pas le compter
+                    // évite de surévaluer la hauteur nécessaire.
+                    total += (i === n - 1 && obj.lineHeight > 0) ? (h / obj.lineHeight) : h;
+                }
+                return total > 0 ? total : null;
+            } catch (_) { return null; }
+        }
+        window.spNaturalContentHeight = spNaturalContentHeight;
+
+        // Chorégraphie d'une modification typographique sur un bloc texte.
+        // À appeler À LA PLACE de la restauration sèche de _fixedWidth/_fixedHeight
+        // dans les handlers #fontSize / #lineHeight.
+        //
+        //   • la LARGEUR est restaurée À L'IDENTIQUE (comportement PAO voulu :
+        //     changer la typo ne doit pas déplacer ni rétrécir le bloc) ;
+        //   • la HAUTEUR ne descend JAMAIS sous la hauteur d'origine mémorisée
+        //     (_spWrapOrigH, posée par l'habillage) ni sous la hauteur d'avant —
+        //     mais elle MONTE si la typographie agrandie réclame plus de place.
+        function spReflowWithSafeHeight(obj, fixedW, fixedH) {
+            if (!obj) return fixedH;
+            // Exceptions : géométries particulières où la hauteur n'est pas un cadre.
+            try {
+                if (obj._isShapeClippedText || obj._isCtxPathText || obj.path) {
+                    obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
+                    obj.width = fixedW; obj.height = fixedH;
+                    return fixedH;
+                }
+            } catch (_) {}
+
+            var natural = spNaturalContentHeight(obj);
+            var orig = (typeof obj._spWrapOrigH === 'number' && obj._spWrapOrigH > 0) ? obj._spWrapOrigH : 0;
+            var safeH = fixedH;
+            if (natural !== null) {
+                // plancher : jamais moins que la hauteur d'origine du bloc
+                var floorH = Math.max(fixedH, orig);
+                safeH = Math.max(floorH, natural);
+            }
+            try {
+                obj._fixedWidth = fixedW;
+                obj._fixedHeight = safeH;
+                obj.width = fixedW;
+                obj.height = safeH;
+                if (safeH > (fixedH + 0.5)) {
+                    // Le bloc a grandi : la hauteur d'origine doit rester la
+                    // référence du retour (habillage / resize manuel).
+                    if (!orig) obj._spWrapOrigH = Math.round(fixedH * 100) / 100;
+                }
+                obj.setCoords && obj.setCoords();
+            } catch (_) {}
+            return safeH;
+        }
+        window.spReflowWithSafeHeight = spReflowWithSafeHeight;
+
         // 🍏 v1.7.235 : Exposer sur window pour que _spPasteTextboxFix (hors closure) puisse y accéder
         window.applyTextboxClipPath = applyTextboxClipPath;
         
@@ -22267,6 +22369,26 @@ if (window._spGpuEnabled) {
     document.getElementById('manualModal').classList.remove('active');
         }
 
+        // 🛡️ v1.7.371 — FONCTION MANQUANTE.
+        //   index.html:3577 porte onclick="if(event.target === this) closeFaqModal()"
+        //   mais AUCUNE définition de closeFaqModal n'existait dans le projet
+        //   (les 48 fichiers JS/HTML ont été balayés) → chaque clic sur
+        //   l'arrière-plan levait « ReferenceError: closeFaqModal is not defined ».
+        //   IMPACT RÉEL : nul aujourd'hui — le conteneur #faqModal n'est affiché
+        //   par AUCUN code (la FAQ visible passe par #faqTabContent dans les
+        //   Préférences). Défaut latent donc, mais on le ferme : une exception
+        //   non rattrapée dans un onclick peut casser d'autres gestionnaires.
+        //   On gère les deux mécanismes possibles (classe .active comme les
+        //   autres modals, et display inline au cas où).
+        function closeFaqModal() {
+            try {
+                var m = document.getElementById('faqModal');
+                if (!m) return;
+                m.classList.remove('active');
+                if (m.style.display === 'flex' || m.style.display === 'block') m.style.display = 'none';
+            } catch (_) {}
+        }
+
         // ========== SYSTÈME COMPLET DE RACCOURCIS CLAVIER ==========
         
         // Gestion du zoom avec la molette
@@ -22860,7 +22982,18 @@ if (window._spGpuEnabled) {
 
     if (cmdOrCtrl && e.key === 'o') {
         e.preventDefault();
-        document.getElementById('fileInput').click();
+        // 🛡️ v1.7.371 — FIX : ciblait getElementById('fileInput') qui n'existe
+        //   PAS dans index.html (les vrais inputs s'appellent importPdfInput /
+        //   importJsonInput / importSPInput…). Résultat mesuré : TypeError
+        //   « Cannot read properties of null (reading 'click') ». Aggravant :
+        //   e.preventDefault() étant déjà appelé, le sélecteur de fichier NATIF
+        //   était bloqué lui aussi → Ctrl+O ne faisait rien du tout.
+        //   On passe désormais par le vrai bouton de la barre d'outils.
+        var _oBtn = document.getElementById('openImportModal');
+        if (_oBtn) { _oBtn.click(); return; }
+        // Repli si le bouton a été retiré de l'interface.
+        var _oModal = document.getElementById('importModal');
+        if (_oModal) { _oModal.style.display = 'block'; return; }
         return;
     }
 
@@ -23832,7 +23965,12 @@ if (window._spGpuEnabled) {
 
     if (cmdOrCtrl && e.key === 'e') {
         e.preventDefault();
-        showExportModal();
+        // 🛡️ v1.7.371 — FIX : appelait showExportModal(), qui n'existe PAS
+        //   (ReferenceError « showExportModal is not defined », modale fermée).
+        //   La fonction réelle est openExportModal() — celle que Ctrl+P appelle
+        //   déjà correctement. Garde-fou typeof au cas où elle serait absente.
+        if (typeof openExportModal === 'function') { openExportModal(); return; }
+        if (typeof window.openExportModal === 'function') { window.openExportModal(); return; }
         return;
     }
 
@@ -26410,20 +26548,31 @@ if (window._spGpuEnabled) {
                 selEnd = (typeof cleanedSel.end === 'number') ? cleanedSel.end : selEnd;
             }
 
-            // ✨ RESTAURER les dimensions fixes (éviter que le bloc change de taille)
+            // ✨ v1.7.371 — RESTAURER la LARGEUR, REVALIDER la HAUTEUR.
+            //   Avant : on restaurait _fixedHeight = fixedH (hauteur d'AVANT).
+            //   Or agrandir la police AUGMENTE la hauteur nécessaire → le cadre
+            //   restait figé et le masque rognait le texte (bloc invisible).
+            //   La largeur reste, elle, strictement inchangée (comportement PAO).
+            var _safeH = fixedH;
+            if (typeof window.spReflowWithSafeHeight === 'function') {
+                try { _safeH = window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) { _safeH = fixedH; }
+            }
             obj._fixedWidth = fixedW;
-            obj._fixedHeight = fixedH;
+            obj._fixedHeight = _safeH;
             obj.width = fixedW;
-            obj.height = fixedH;
+            obj.height = _safeH;
 
             // Recalcul unique consolidé (spEnsureTextboxWrapWithinWidth fait clearCache+initDimensions+triplePass)
             try { spEnsureTextboxWrapWithinWidth(obj); } catch (_) {}
-            
-            obj._fixedWidth = fixedW;
-            obj._fixedHeight = fixedH;
-            obj.width = fixedW;
-            obj.height = fixedH;
-            
+
+            // 🛡️ v1.7.371 — même revalidation ici (2ᵉ passe, après le rewrap).
+            if (typeof window.spReflowWithSafeHeight === 'function') {
+                try { window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) {}
+            } else {
+                obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
+                obj.width = fixedW; obj.height = fixedH;
+            }
+
             if (typeof obj.setCoords === 'function') obj.setCoords();
             applyTextboxClipPath(obj);
             updateOverflowIndicator(obj, activeCanvas);
@@ -26445,10 +26594,13 @@ if (window._spGpuEnabled) {
                 // 2e passe: certains cas ne re-wrap correctement qu'après retour en édition
                 setTimeout(() => {
                     try { spEnsureTextboxWrapWithinWidth(obj); } catch (_) {}
-                    obj._fixedWidth = fixedW;
-                    obj._fixedHeight = fixedH;
-                    obj.width = fixedW;
-                    obj.height = fixedH;
+                    // 🛡️ v1.7.371 — revalidation différée (3ᵉ passe).
+                    if (typeof window.spReflowWithSafeHeight === 'function') {
+                        try { window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) {}
+                    } else {
+                        obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
+                        obj.width = fixedW; obj.height = fixedH;
+                    }
                     try { applyTextboxClipPath(obj); } catch (_) {}
                     scheduleRender(activeCanvas);
                 }, 0);
@@ -26458,11 +26610,13 @@ if (window._spGpuEnabled) {
             forceFontRefresh(obj, activeCanvas);
 
             setTimeout(() => {
-                // ✨ Dernière vérification des dimensions fixes
-                obj._fixedWidth = fixedW;
-                obj._fixedHeight = fixedH;
-                obj.width = fixedW;
-                obj.height = fixedH;
+                // ✨ v1.7.371 — Dernière vérification : hauteur revalidée (4ᵉ passe).
+                if (typeof window.spReflowWithSafeHeight === 'function') {
+                    try { window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) {}
+                } else {
+                    obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
+                    obj.width = fixedW; obj.height = fixedH;
+                }
                 applyTextboxClipPath(obj);
                 debouncedCheckTextOverflow(activeCanvas);
                 updateTransformPanel(); // Mettre à jour l'affichage de la taille
@@ -26835,12 +26989,16 @@ if (window._spGpuEnabled) {
                     }
                 }
                 
-                // ✨ RESTAURER dimensions fixes
-                obj._fixedWidth = fixedW;
-                obj._fixedHeight = fixedH;
-                obj.width = fixedW;
-                obj.height = fixedH;
-                
+                // ✨ v1.7.371 — RESTAURER la LARGEUR, REVALIDER la HAUTEUR
+                //   (même correctif que #fontSize : changer l'interlignage change
+                //   la hauteur nécessaire ; restaurer l'ancienne hauteur rognait).
+                if (typeof window.spReflowWithSafeHeight === 'function') {
+                    try { window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) {}
+                } else {
+                    obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
+                    obj.width = fixedW; obj.height = fixedH;
+                }
+
                 // Recalcul et clip
                 try { spEnsureTextboxWrapWithinWidth(obj); } catch (_) {}
                 applyTextboxClipPath(obj);
@@ -26849,10 +27007,12 @@ if (window._spGpuEnabled) {
                 forceFontRefresh(obj, activeCanvas);
                 
                 setTimeout(() => {
-                    obj._fixedWidth = fixedW;
-                    obj._fixedHeight = fixedH;
-                    obj.width = fixedW;
-                    obj.height = fixedH;
+                    if (typeof window.spReflowWithSafeHeight === 'function') {
+                        try { window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) {}
+                    } else {
+                        obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
+                        obj.width = fixedW; obj.height = fixedH;
+                    }
                     applyTextboxClipPath(obj);
                     debouncedCheckTextOverflow(activeCanvas);
                     // 🔗 Redistribuer dans la chaîne si bloc chaîné
