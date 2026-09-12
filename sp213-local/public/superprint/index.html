@@ -151,8 +151,11 @@
   .welcome-brand .sub { margin: 8px 0 0; font-size: 13px; color: var(--muted); letter-spacing: .5px; }
   .welcome-brand .sub .hl { color: var(--text); }
 
-  .install-section { background: var(--panel); border: 1px solid var(--border); border-bottom: 3px solid var(--accent); padding: 28px 30px; }
-  .install-section .is-title { font-size: 15px; font-weight: 700; letter-spacing: .5px; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+  .install-section { background: var(--panel); border: 1px solid var(--border); border-bottom: 3px solid var(--accent); padding: 28px 30px; position: relative; }
+  /* Le titre est un conteneur : icone + libelle sur UNE ligne, puis la marge
+     du BAS (11px = 6 + 5 demandes) s'applique vraiment SOUS le titre. */
+  .install-section .is-title { margin: 0 0 11px; }
+  .install-section .is-title-line { font-size: 15px; font-weight: 700; letter-spacing: .5px; display: flex; align-items: center; gap: 8px; }
   .install-section .is-title svg { width: 18px; height: 18px; stroke: var(--accent); }
   .install-section .is-desc { font-size: 12px; color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
 
@@ -168,16 +171,28 @@
   .cmd-block code::-webkit-scrollbar-thumb { background: var(--border-strong); }
   .cmd-os-ic { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--muted2); opacity: .85; }
 
-  .cmd-meta { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
-  .cmd-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  /* ─── Onglets d'OS DANS la barre, a gauche du bouton copier ───
+     Ils s'alignent a droite (margin-left:auto) : la commande occupe la
+     gauche, le choix Windows / macOS / Linux touche le bouton « copier ». */
+  .cmd-tabs { display: flex; align-items: center; gap: 3px; flex-shrink: 0; margin-left: auto; }
   .cmd-tab {
-    font-size: 9.5px; letter-spacing: .8px; text-transform: uppercase; color: var(--muted);
-    background: transparent; border: 1px solid var(--border); padding: 5px 12px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 9.5px; letter-spacing: .6px; text-transform: uppercase; color: var(--muted);
+    background: transparent; border: 1px solid transparent; padding: 4px 7px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; line-height: 1;
   }
-  .cmd-tab svg { width: 12px; height: 12px; opacity: .7; }
+  .cmd-tab:hover { color: var(--text); background: var(--btn-hover); }
   .cmd-tab.active { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
-  .cmd-tab.active svg { opacity: 1; }
+
+  /* Le hint apparait au survol de la barre, POSITIONNE DANS LA MARGE BASSE
+     de la section (28px). ⚠️ En `position: absolute` et non en flux : le
+     contenu du lanceur est centre verticalement, donc un hint qui ajoute de
+     la hauteur ferait remonter TOUTE la page au survol (mesure : 13 px de
+     saut). Ici, zero pixel de decalage. */
+  .cmd-hint {
+    position: absolute; left: 30px; right: 30px; bottom: 6px;
+    display: none; font-size: 11px; color: var(--muted); line-height: 1.4;
+  }
+  .cmd-block:hover + .cmd-hint, .cmd-hint:hover { display: block; }
   .cmd-hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
 
   .or-sep { display: flex; align-items: center; gap: 14px; margin: 26px 0 20px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
@@ -443,26 +458,28 @@
 
     <div class="install-section">
       <div class="is-title">
-        <svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
-        <span data-i18n="installTitle">Install locally</span>
+        <div class="is-title-line">
+          <svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
+          <span data-i18n="installTitle">Install locally</span>
+        </div>
       </div>
+      <!-- Les onglets d'OS sont DANS la barre, a gauche du bouton copier. -->
       <div class="cmd-block">
         <span id="osIcon" class="cmd-os-ic" title="Detected automatically" data-i18n-title="osAuto">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><rect x="0" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="0" y="13.5" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="13.5" width="10.5" height="10.5" fill="currentColor"/></svg>
         </span>
         <code id="installCmd">npx.cmd superprint</code>
-        <button class="btn btn-copy" data-copy="installCmd" title="Copy the command" aria-label="Copy the command" data-i18n-title="copyCmd" data-i18n-aria="copyCmd">
-          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        </button>
-      </div>
-      <div class="cmd-meta">
         <div class="cmd-tabs">
           <button class="cmd-tab active" data-os="win">Windows</button>
           <button class="cmd-tab" data-os="mac">macOS</button>
           <button class="cmd-tab" data-os="linux">Linux</button>
         </div>
-        <span class="cmd-hint" id="installHint">PowerShell · npx.cmd contourne le blocage de scripts (ExecutionPolicy)</span>
+        <button class="btn btn-copy" data-copy="installCmd" title="Copy the command" aria-label="Copy the command" data-i18n-title="copyCmd" data-i18n-aria="copyCmd">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
       </div>
+      <!-- Hint contextuel : masque par defaut, revele au survol de la barre. -->
+      <span class="cmd-hint" id="installHint">PowerShell · npx.cmd contourne le blocage de scripts (ExecutionPolicy)</span>
     </div>
   </div>
 </div>
@@ -473,8 +490,9 @@
   <span class="sep">·</span>
   <a href="#" onclick="event.preventDefault(); openLegal('privacyOverlay'); return false;" data-i18n="footerPrivacy">Privacy</a>
   <span class="sep">·</span>
-  <a href="#" onclick="event.preventDefault(); openLegal('cookiesOverlay'); return false;" data-i18n="footerCookies">Cookies</a>
-  <span class="sep">·</span>
+  <!-- 🍪 L'entree « Cookies » est retiree du footer : le sujet est traite
+       dans les mentions légales. La modale #cookiesOverlay reste presente
+       dans le DOM (aucun lien externe pointant vers elle n'est casse). -->
   <a href="https://x.com/SUPER_PRINT_app" target="_blank" rel="noopener noreferrer" data-i18n="footerNews">News</a>
 </footer>
 
