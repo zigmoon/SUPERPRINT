@@ -2498,7 +2498,7 @@
         $('modelLabel').textContent = state.model;
       }
       // 🆕 Restaurer les conversations + la session active (auto-save).
-      // 🛡️ v1.7.366 — l'auto-start IGNORAIT complètement ?from=sp : ouvrir le
+      // 🛡️ v1.7.367 — l'auto-start IGNORAIT complètement ?from=sp : ouvrir le
       //   studio depuis SuperPrint (« Maquette actuelle → studio ») ne montrait
       //   donc JAMAIS la maquette envoyée. On importe AVANT de restaurer la
       //   session, et on demande à ne pas écraser la preview.
@@ -2525,7 +2525,7 @@
   // page A4 vierge (la maquette sauvegardée reste accessible via le sélecteur
   // de conversations). Appelé par autoStartStudio ET startStudio.
   //
-  // 🛡️ v1.7.366 — `skipNewDocument` : quand une maquette vient d'être IMPORTÉE
+  // 🛡️ v1.7.367 — `skipNewDocument` : quand une maquette vient d'être IMPORTÉE
   //   (SuperPrint -> studio via ?from=sp), le `newDocument()` ci-dessous
   //   l'ÉCRASAIT par une page A4 vierge. L'appelant qui a déjà posé la
   //   maquette passe `true` pour que la preview soit conservée.
@@ -3117,7 +3117,7 @@
         if (t === 'triangle') {
           return Object.assign(base, { type: 'triangle', width: Math.round(((o.width || 0) / MM_TO_PX) * 10) / 10, height: Math.round(((o.height || 0) / MM_TO_PX) * 10) / 10 });
         }
-        // 🛡️ v1.7.366 — ETOILES : la branche manquait dans ce sens.
+        // 🛡️ v1.7.367 — ETOILES : la branche manquait dans ce sens.
         //   Une etoile creee dans SuperPrint (outil Formes) etait purement et
         //   simplement PERDUE au passage app -> studio, alors que le trajet
         //   inverse (elsToSPObjects / buildSPFile) la convertit depuis
@@ -3195,14 +3195,14 @@
 
     if (!pages.length) return false;
 
-    // 🎨 v1.7.366 — TONS DIRECTS (PANTONE) : le .sp recu de l'app porte
+    // 🎨 v1.7.367 — TONS DIRECTS (PANTONE) : le .sp recu de l'app porte
     //   `resources.spotInks`. Sans cette relecture, le trajet
     //   app -> studio -> app PERDAIT les Pantones (le studio regenere un .sp
     //   sans les encres, alors qu'il sait les ecrire quand il les connait).
     //   Meme magasin partage que le reste : localStorage « sp_spot_inks ».
     try { spRememberSpotInks(spFile.resources && spFile.resources.spotInks); } catch (_) {}
 
-    // 🛡️ v1.7.366 — STYLES NOMMES (typo + nuancier) : l'app les restaure a
+    // 🛡️ v1.7.367 — STYLES NOMMES (typo + nuancier) : l'app les restaure a
     //   l'ouverture d'un .sp, le studio NON. Un document arrive avec des styles
     //   que la machine ne connait pas encore etait donc « vide » de ses styles
     //   ici, puis reexporte SANS eux (mesure : typography [{Titre test}] -> []).
@@ -3314,7 +3314,7 @@
 
     // Reprendre une session éventuelle, OU importer la maquette envoyée par
     // SuperPrint (?from=sp + clé sp213_from_sp).
-    // 🛡️ v1.7.366 — restoreStudioSession() est appelé AVANT le bloc d'import
+    // 🛡️ v1.7.367 — restoreStudioSession() est appelé AVANT le bloc d'import
     //   ci-dessous : son `newDocument()` écrasait la maquette fraîchement
     //   importée (mesuré : un .sp de 2 objets ressortait à « 0 objets »).
     //   On restaure donc d'abord le chat/session SANS toucher à la preview,
@@ -5552,12 +5552,37 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
   //   sélection et le .sp généré coïncident avec ce que SuperPrint affichera.
   const SP_TEXT_LINE_MULT = 1.13;
 
-  /** Nombre de lignes VISUELLES estimées d'un élément texte. */
+  /**
+   * Nombre de lignes VISUELLES d'un élément texte.
+   *
+   * 🛡️ v1.7.367 — CORRECTIF DE TRONCATURE MESURE.
+   *   L'ancienne formule `floor(wPx / (fsPx * 0.55))` surestimait gravement la
+   *   largeur moyenne d'un caractere. Mesure sur la chaine complete (4 blocs
+   *   tronques sur 42) : le studio prevoyait 29 caracteres par ligne la ou le
+   *   rendu reel n'en tenait que 13 a 19 (majuscules, tirets, espaces
+   *   insecables). La hauteur de cadre etait donc sous-estimee (43-65 px au
+   *   lieu de 87-108 px) et l'app, respectant la hauteur FIXE, COUPAIT la fin
+   *   du texte (lignes perdues, visibles dans le PDF exporte).
+   *   Deux corrections :
+   *   1. les lignes EXPLICITES (\n) sont comptees, jamais estimees — c'est le
+   *      cas des 4 troncatures observees, ou le nombre de lignes est CERTAIN ;
+   *   2. pour le repli automatique, le facteur passe de 0.55 a 0.62 et l'on
+   *      ajoute une ligne de securite : surestimer un peu fait GRANDIR le bloc
+   *      dans l'app, sous-estimer fait DISPARAITRE du texte.
+   */
   function spEstimateTextLines(el) {
+    const txt = String(el.text || '');
+    const explicit = txt.split('\n');
     const fsPx = (+el.fontSize || 14) * PT_TO_PX;
     const wPx = (+el.width || 200) * MM_TO_PX;
-    const perLine = Math.max(1, Math.floor(wPx / (fsPx * 0.55)));
-    return Math.max(1, Math.ceil(String(el.text || '').length / perLine));
+    const perLine = Math.max(1, Math.floor(wPx / (fsPx * 0.62)));
+    // Chaque ligne explicite peut elle-meme se replier : on somme, segment par segment.
+    let total = 0;
+    for (let i = 0; i < explicit.length; i++) {
+      const seg = explicit[i];
+      total += Math.max(1, seg.length > perLine ? Math.ceil(seg.length / perLine) : 1);
+    }
+    return Math.max(1, total);
   }
 
   /**
@@ -5570,7 +5595,15 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     const fsPx = (+el.fontSize || 14) * PT_TO_PX;
     const lh = (typeof el.lineHeight === 'number' && el.lineHeight > 0) ? el.lineHeight : 1.4;
     const lines = spEstimateTextLines(el);
-    return Math.max(fsPx, Math.round(lines * fsPx * lh * SP_TEXT_LINE_MULT));
+    const h = Math.max(fsPx, Math.round(lines * fsPx * lh * SP_TEXT_LINE_MULT));
+    // 🛡️ v1.7.367 — le bloc doit pouvoir contenir ses lignes EXPLICITES.
+    //   Un texte de N lignes separees par \n ne peut pas descendre sous
+    //   N x fontSize x lineHeight (aucune estimation n'entre en jeu).
+    //   Sans ce plancher, l'app ouvrait le document avec une hauteur de cadre
+    //   trop courte et rognait les dernieres lignes.
+    const nbExplicites = String(el.text || '').split('\n').length;
+    const plancher = Math.round(nbExplicites * fsPx * lh * SP_TEXT_LINE_MULT);
+    return Math.max(h, plancher);
   }
 
   function elementToFabric(el, bleedPx) {
@@ -5961,7 +5994,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
           } else if (t === 'triangle') {
             objects.push({ type: 'triangle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 50) * MM_TO_PX, height: (+el.height || 50) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
           } else if (t === 'star') {
-            // 🛡️ v1.7.366 — ETOILES : cette branche MANQUAIT. Une etoile de la
+            // 🛡️ v1.7.367 — ETOILES : cette branche MANQUAIT. Une etoile de la
             //   preview disparaissait a l'export direct .sp alors que les autres
             //   formes passaient.
             //   ⚠️ ON ECRIT UN `polygon`, PAS UN `star` : `fabric.Star` n'existe
@@ -6121,7 +6154,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) : 1 entrée = 1 couche
       //   chromatique supplémentaire à produire à l'export (CMJN ou RVB + Pantone).
-      // 🛡️ v1.7.366 — styles nommés (typo + nuancier) DÉJÀ présents via
+      // 🛡️ v1.7.367 — styles nommés (typo + nuancier) DÉJÀ présents via
       //   spCollectStylesBlock() : ne pas les retirer, l'app les restaure à
       //   l'ouverture (.sp comme .json).
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spCollectSpotInks() },
@@ -6158,7 +6191,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       } else if (t === 'triangle') {
         objects.push({ type: 'triangle', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
       } else if (t === 'star') {
-        // 🛡️ v1.7.366 — meme conversion que buildSPFile : on ecrit un `polygon`
+        // 🛡️ v1.7.367 — meme conversion que buildSPFile : on ecrit un `polygon`
         //   (le format natif de l'app), JAMAIS un `star` : `fabric.Star` n'existe
         //   pas dans le Fabric embarque et ferait echouer tout le chargement.
         const _branches2 = Math.max(3, Math.min(24, Math.round(+el.points || 5)));
