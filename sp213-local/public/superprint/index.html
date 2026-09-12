@@ -389,11 +389,8 @@
         </span>
       </a>
       <a class="online-row" href="sp213-studio.html" id="onlineStudioBtn" data-brand="studio">
-        <!-- Logotype du studio (spirale) en icone de ligne. Sans plaque :
-             lisible a 32 px (verifie par sous-echantillonnage). -->
-        <span class="on-ic">
-          <img src="icons/studio_print_logo_blanc.svg" alt="" aria-hidden="true">
-        </span>
+        <!-- Pas d'icone de ligne : le logotype n'apparait qu'au survol,
+             dans le header (cf. .logo-stack plus haut). -->
         <div class="on-text">
           <b>SuperPrint Studio</b>
           <span data-i18n="studioSub">AI layouts</span>
@@ -403,10 +400,7 @@
         </span>
       </a>
       <a class="online-row" href="supertypo/index.html" id="onlineTypoBtn" data-brand="typo">
-        <!-- Logotype SuperTyPo en icone de ligne (sans plaque). -->
-        <span class="on-ic">
-          <img src="icons/sper_typo.svg" alt="" aria-hidden="true">
-        </span>
+        <!-- Pas d'icone de ligne (cf. Studio ci-dessus). -->
         <div class="on-text">
           <b>SuperTyPo</b>
           <span data-i18n="typoSub">Font editor — decompose, redraw, export</span>
@@ -416,9 +410,7 @@
         </span>
       </a>
       <a class="online-row" href="documentation.html" id="onlineDocBtn">
-        <span class="on-ic">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        </span>
+        <!-- Pas d'icone de ligne (cf. Studio ci-dessus). -->
         <div class="on-text">
           <b>Documentation</b>
           <span data-i18n="docSub">Manual, shortcuts, complete guide</span>
@@ -430,9 +422,7 @@
       <!-- 🔌 API SuperPrint : pilotage par script (window.SuperPrint).
            Le 4e CTA ferme la grille 2x2 (Documentation | API). -->
       <a class="online-row" href="api.html" id="onlineApiBtn">
-        <span class="on-ic">
-          <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        </span>
+        <!-- Pas d'icone de ligne (cf. Studio ci-dessus). -->
         <div class="on-text">
           <b>API</b>
           <span data-i18n="apiSub">Automate layouts from your own code</span>
@@ -450,7 +440,6 @@
         <svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
         <span data-i18n="installTitle">Install locally</span>
       </div>
-      <p class="is-desc" data-i18n="installDesc">Copy-paste this line: it downloads, installs and launches SuperPrint.</p>
       <div class="cmd-block">
         <span id="osIcon" class="cmd-os-ic" title="Detected automatically" data-i18n-title="osAuto">
           <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><rect x="0" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="0" y="13.5" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="13.5" width="10.5" height="10.5" fill="currentColor"/></svg>
@@ -565,6 +554,9 @@
       prefsAboutText: 'SuperPrint — browser-based print layout software + SP213 AI studio.',
       pageTitle: 'SuperPrint — Online DTP Software + SP213 AI Studio',
       homeSub: "All of SuperPrint — <span class=\"hl\">DTP + SP213 AI studio</span>",
+      // 🎭 Phrases affichees sous le LOGOTYPE quand il change au survol
+      studioBrandSub: "SP213 Studio — <span class=\"hl\">describe a layout, the AI builds it</span>",
+      typoBrandSub: "SuperTyPo — <span class=\"hl\">decompose, redraw and export type</span>",
       installTitle: 'Install locally',
       installDesc: 'Copy-paste this line: it downloads, installs and launches SuperPrint.',
       copyCmd: 'Copy the command',
@@ -596,6 +588,8 @@
       prefsAboutText: 'SuperPrint — logiciel de PAO dans le navigateur + studio IA SP213.',
       pageTitle: 'SuperPrint — PAO en ligne + studio SP213 par IA',
       homeSub: "Toute l'application SuperPrint — <span class=\"hl\">PAO + studio SP213</span>",
+      studioBrandSub: "Studio SP213 — <span class=\"hl\">decrirez une maquette, l'IA la compose</span>",
+      typoBrandSub: "SuperTyPo — <span class=\"hl\">decomposez, retravaillez et exportez la typo</span>",
       installTitle: 'Installer en local',
       installDesc: 'Copiez-collez cette ligne : elle télécharge, installe puis lance SuperPrint.',
       copyCmd: 'Copier la commande',
@@ -627,6 +621,8 @@
       prefsAboutText: 'SuperPrint — ブラウザで動作する印刷レイアウトソフトウェア + SP213 AIスタジオ。',
       pageTitle: 'SuperPrint — オンラインDTPソフトウェア + SP213 AIスタジオ',
       homeSub: "SuperPrint すべて — <span class=\"hl\">DTP + SP213 AIスタジオ</span>",
+      studioBrandSub: "SP213 スタジオ — <span class=\"hl\">説明するだけでAIがレイアウトを作成</span>",
+      typoBrandSub: "SuperTyPo — <span class=\"hl\">書体を分解・再編集・書き出し</span>",
       installTitle: 'ローカルにインストール',
       installDesc: 'この行をコピー＆ペーストしてください：ダウンロード、インストール、起動まで行います。',
       copyCmd: 'コマンドをコピー',
@@ -672,6 +668,15 @@
     var dict = I18N[lang] || I18N[DEFAULT_LANG];
     document.documentElement.setAttribute('lang', dict.langAttr || lang);
     if (dict.pageTitle) document.title = dict.pageTitle;
+    // 🎭 La phrase sous le logotype suit la couche AFFICHEE : le logotype
+    //    dynamique memorise sa cle i18n dans `stack.dataset.subKey`, on la
+    //    rejoue ici pour que la traduction reste juste apres un changement
+    //    de langue. Les autres elements gardent leur data-i18n statique.
+    var _stack = document.getElementById('brandLogoStack');
+    if (_stack) {
+      var _subEl = document.querySelector('.welcome-brand .sub');
+      if (_subEl) _subEl.setAttribute('data-i18n', _stack.dataset.subKey || 'homeSub');
+    }
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
       var key = el.getAttribute('data-i18n');
       if (!dict[key]) return;
@@ -849,11 +854,24 @@
       if (src) { var pre = new Image(); pre.src = src; }
     });
 
+    // Phrase sous le logotype, par couche. `homeSub` = phrase historique
+    // « All of SuperPrint — DTP + SP213 AI studio ».
+    var SUB_KEY = { 'default': 'homeSub', 'studio': 'studioBrandSub', 'typo': 'typoBrandSub' };
+
     function show(key) {
       var target = layers[key] || layers['default'];
       Object.keys(layers).forEach(function (k) {
         if (layers[k]) layers[k].classList.toggle('is-on', layers[k] === target);
       });
+      // 🔤 La phrase change AVEC le logotype (demande utilisateur).
+      var keyName = SUB_KEY[key] || 'homeSub';
+      stack.dataset.subKey = keyName;
+      var sub = document.querySelector('.welcome-brand .sub');
+      if (sub) {
+        sub.setAttribute('data-i18n', keyName);
+        var dict = I18N[getHomeLang()] || I18N[DEFAULT_LANG];
+        if (dict[keyName]) sub.innerHTML = dict[keyName];
+      }
     }
 
     // data-brand de la ligne → nom de la couche. Absent = logo SuperPrint.
