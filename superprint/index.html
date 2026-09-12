@@ -124,7 +124,22 @@
   .welcome-inner { width: min(760px, 100%); margin: 0 auto; padding-bottom: 54px; }
   .welcome-brand { text-align: center; margin-bottom: 40px; }
   .welcome-brand .logo { display: flex; flex-direction: column; align-items: center; gap: 18px; margin-bottom: 18px; }
-  .welcome-brand .logo img { width: 84px; height: 84px; background: #fff; }
+
+  /* ─── 🎭 Logotype du header : 3 couches SUPERPOSÉES qui se croisent en fondu.
+     Elles occupent toutes la même case de grille : le bloc ne bouge jamais,
+     quelle que soit la couche affichée (aucun « saut » de la page au survol). ─── */
+  .welcome-brand .logo .logo-stack { display: grid; place-items: center; width: 84px; height: 84px; }
+  .welcome-brand .logo .logo-stack > * {
+    grid-area: 1 / 1; width: 84px; height: 84px;
+    opacity: 0; transition: opacity .22s ease; pointer-events: none;
+  }
+  .welcome-brand .logo .logo-stack > .is-on { opacity: 1; }
+  /* Le logotype SuperPrint (favicon) est sombre sur fond blanc : rien à faire. */
+  .welcome-brand .logo .logo-stack > .ls-default { background: #fff; }
+  /* ⚠️ MESURÉ (analyse pixel des fichiers) : les logotypes Studio et SuperTyPo
+     sont dessinés en CLAIR — 76 % / 51 % de leur encre est blanche, donc
+     invisible sur la page blanche. On les pose sur une plaque sombre. */
+  .welcome-brand .logo .logo-stack > .ls-dark { padding: 9px; background: #0c0c0f; }
   .welcome-brand h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
   .welcome-brand .sub { margin: 8px 0 0; font-size: 13px; color: var(--muted); letter-spacing: .5px; }
   .welcome-brand .sub .hl { color: var(--text); }
@@ -192,6 +207,14 @@
     font-size: 42px; font-weight: 400; color: #000; line-height: 1;
     width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center;
   }
+  /* SuperTyPo : glyphe « A » (l'outil est un éditeur de lettres).
+     ⚠️ On n'utilise PAS icons/sper_typo.svg ici : c'est un LOGOTYPE (le mot
+     « SuperTyPo » dessiné, 4 lettres), illisible réduit à 32 px. */
+  .online-row .on-ic.sp-typo-ic {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 42px; font-weight: 400; color: #000; line-height: 1;
+    width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center;
+  }
   .online-row .on-text {
     flex: 1;
     display: flex; flex-direction: column; justify-content: center;
@@ -248,6 +271,7 @@
     .online-row .on-ic svg { width: 24px; height: 24px; }
     .online-row .on-ic img { width: 26px; height: 26px; }
     .online-row .on-ic.sp-editor-ic { font-size: 34px; width: 40px; height: 40px; }
+    .online-row .on-ic.sp-typo-ic { font-size: 34px; width: 40px; height: 40px; }
     .online-row .on-text { height: 35px; }
     .online-row .on-text b { font-size: 14px; }
     .online-row .on-text span { font-size: 11.5px; }
@@ -335,7 +359,14 @@
   <div class="welcome-inner">
     <div class="welcome-brand">
       <div class="logo">
-        <img src="favicon.png" alt="SuperPrint">
+        <!-- 🎭 Logotype dynamique : la couche visible change au survol des CTA
+             (Studio → logotype Studio, SuperTyPo → logotype SuperTyPo), puis
+             revient au logo SuperPrint dès que la souris quitte le bouton. -->
+        <div class="logo-stack" id="brandLogoStack">
+          <img class="ls-default is-on" src="favicon.png" alt="SuperPrint">
+          <img class="ls-dark ls-studio" src="icons/studio_print_logo_blanc.svg" alt="" aria-hidden="true">
+          <img class="ls-dark ls-typo" src="icons/sper_typo.svg" alt="" aria-hidden="true">
+        </div>
         <h1>SuperPrint</h1>
       </div>
       <p class="sub" data-i18n="homeSub" data-i18n-html="1">All of SuperPrint — <span class="hl">DTP + SP213 AI studio</span></p>
@@ -352,13 +383,23 @@
           <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </span>
       </a>
-      <a class="online-row" href="sp213-studio.html" id="onlineStudioBtn">
+      <a class="online-row" href="sp213-studio.html" id="onlineStudioBtn" data-brand="studio">
         <span class="on-ic">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         </span>
         <div class="on-text">
           <b>SuperPrint Studio</b>
           <span data-i18n="studioSub">AI layouts</span>
+        </div>
+        <span class="on-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </span>
+      </a>
+      <a class="online-row" href="supertypo/index.html" id="onlineTypoBtn" data-brand="typo">
+        <span class="on-ic sp-typo-ic">A</span>
+        <div class="on-text">
+          <b>SuperTyPo</b>
+          <span data-i18n="typoSub">Font editor — decompose, redraw, export</span>
         </div>
         <span class="on-arrow" aria-hidden="true">
           <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -507,6 +548,7 @@
       onlineLabel: 'Online',
       editorSub: 'No installation — runs in the browser',
       studioSub: 'AI layouts',
+      typoSub: 'Font editor — decompose, redraw, export',
       docSub: 'Manual, shortcuts, complete guide',
       osAuto: 'Detected automatically',
       footerLegal: 'Legal notice',
@@ -536,6 +578,7 @@
       onlineLabel: 'En ligne — aucune installation',
       editorSub: 'Aucune installation — fonctionne dans le navigateur',
       studioSub: 'Maquettes IA',
+      typoSub: 'Éditeur de police — décompose, retravaille, réexporte',
       docSub: 'Manuel, raccourcis, guide complet',
       osAuto: 'Détecté automatiquement',
       footerLegal: 'Mentions légales',
@@ -565,6 +608,7 @@
       onlineLabel: 'オンライン — インストール不要',
       editorSub: 'インストール不要 — ブラウザで動作',
       studioSub: 'AIレイアウト',
+      typoSub: 'フォントエディタ — 分解・再描画・書き出し',
       docSub: 'マニュアル、ショートカット、完全ガイド',
       osAuto: '自動検出',
       footerLegal: '法的通知',
@@ -752,6 +796,53 @@
     ta.remove();
     done();
   }
+
+  // ───────────────────────────────────────────────────────────────────────
+  // 🎭 Logotype dynamique du header.
+  //    Survol (ou focus clavier) d'un CTA → le logotype change ;
+  //    la souris quitte le CTA → retour au logo SuperPrint.
+  //    Les CTA sans logotype dédié (Editor, Documentation) gardent SuperPrint.
+  // ───────────────────────────────────────────────────────────────────────
+  (function () {
+    var stack = $('brandLogoStack');
+    if (!stack) return;
+
+    var layers = {
+      'default': stack.querySelector('.ls-default'),
+      'studio': stack.querySelector('.ls-studio'),
+      'typo': stack.querySelector('.ls-typo')
+    };
+
+    // Préchargement : sans ça, le 1er survol afficherait un carré blanc
+    // le temps que le SVG arrive du réseau.
+    Object.keys(layers).forEach(function (k) {
+      var el = layers[k];
+      if (!el) return;
+      var src = el.getAttribute('src');
+      if (src) { var pre = new Image(); pre.src = src; }
+    });
+
+    function show(key) {
+      var target = layers[key] || layers['default'];
+      Object.keys(layers).forEach(function (k) {
+        if (layers[k]) layers[k].classList.toggle('is-on', layers[k] === target);
+      });
+    }
+
+    // data-brand de la ligne → nom de la couche. Absent = logo SuperPrint.
+    var BY_BRAND = { studio: 'studio', typo: 'typo' };
+
+    document.querySelectorAll('.online-row').forEach(function (row) {
+      var layer = BY_BRAND[row.getAttribute('data-brand')] || 'default';
+      var onEnter = function () { show(layer); };
+      var onLeave = function () { show('default'); };
+      row.addEventListener('mouseenter', onEnter);
+      row.addEventListener('mouseleave', onLeave);
+      // Accessibilité : même comportement au clavier (Tab), sans souris.
+      row.addEventListener('focus', onEnter);
+      row.addEventListener('blur', onLeave);
+    });
+  })();
 })();
 </script>
 </body>

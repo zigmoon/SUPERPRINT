@@ -921,7 +921,7 @@
         <div class="label-row">
           <label id="dsModelLabel">Modèle DeepSeek</label>
           <span class="info-icon" tabindex="0" aria-label="Info modèle DeepSeek" data-i18n-aria="info.dsModel">?
-            <span class="info-pop" id="dsModelPop">Modèle DeepSeek. <b>deepseek-v4-flash</b> (V4) recommandé pour la maquette (raisonnement + JSON structuré). <b>deepseek-v4-pro</b> plus puissant.</span>
+            <span class="info-pop" id="dsModelPop">Modèle DeepSeek. <b>deepseek-flash</b> (V4.1) recommandé pour la maquette (1M contexte, vision, JSON structuré). <b>deepseek-v4-pro</b> plus puissant.</span>
           </span>
         </div>
         <select id="deepseekModel"></select>
@@ -1303,13 +1303,14 @@
   ];
 
   // 🆕 DeepSeek (cloud) — modèles OpenAI-compatibles. API : api.deepseek.com.
-  // V4 (juil./août 2026) : Flash (rapide/économique), Pro (puissant), Flash Vision
-  // (expérimental, accepte les images). 🛡️ 2026-08-31 : V3.2 « deepseek-chat » /
-  // « deepseek-reasoner » RETIRÉS — on ne garde que les gros modèles V4.
+  // 🛡️ 2026-09-12 — NOMS OFFICIELS (doc api-docs.deepseek.com/quick_start/pricing) :
+  //   « Use deepseek-flash as the model name. The legacy names deepseek-v4-flash and
+  //     deepseek-v4-flash-vision-exp are still accepted, but the corresponding models
+  //     have been retired » -> servis par DeepSeek-V4.1-Flash (1M contexte, 384K sortie).
+  //   Vision désormais supportée par Flash ; `deepseek-v4-pro` reste valide (Pro-0813).
   const DEEPSEEK_MODELS = [
-    ['deepseek-v4-flash', 'DeepSeek V4 Flash — recommandé (rapide / économique, JSON)'],
-    ['deepseek-v4-pro', 'DeepSeek V4 Pro — puissant / précision maximale'],
-    ['deepseek-v4-flash-vision-exp', 'DeepSeek V4 Flash Vision (expérimental) — accepte les images']
+    ['deepseek-flash', 'DeepSeek V4.1 Flash — recommandé (1M contexte, vision, JSON)'],
+    ['deepseek-v4-pro', 'DeepSeek V4 Pro — puissance / précision maximale']
   ];
 
   // 🆕 Modèles locaux (WebLLM / WebGPU) — multi-choix. 100% gratuits & open source
@@ -4679,7 +4680,7 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
   function callDeepSeek(messages) {
     const body = {
       apiKey: state.dsApiKey,
-      model: state.dsModel || 'deepseek-v4-flash',
+      model: state.dsModel || 'deepseek-flash',
       messages: messages,
       temperature: 0.4,
       max_tokens: 32768,
@@ -4689,7 +4690,9 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     //   une partie du max_tokens (reasoning_content). Pour la maquette SP213 qui
     //   nécessite de grands budgets de sortie JSON, on le désactive pour que tout
     //   le budget serve à produire la maquette (sinon les JSON longs sont tronqués).
-    if (/deepseek-v4/.test(body.model)) {
+    // 🛡️ 2026-09-12 : détection mise à jour pour `deepseek-flash` (V4.1-Flash).
+    //   THINKING actif par défaut -> sans désactivation les longs JSON sont tronqués.
+    if (/^(deepseek-flash|deepseek-v4-)/.test(body.model)) {
       body.thinking = { type: 'disabled' };
     }
     return spProxyOrDirect('DeepSeek', 'ai-proxy.php?provider=deepseek', 'https://api.deepseek.com/v1/chat/completions', body);

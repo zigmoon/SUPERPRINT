@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.351-no-whatsapp';
+const CACHE_NAME = 'superprint-shell-v1.7.352-no-whatsapp';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -11,6 +11,10 @@ const APP_SHELL = [
   './index.html',
   './manifest.webmanifest',
   './favicon.png',
+  // Logotypes affichés au survol des CTA du lanceur (index.html).
+  // ⚠️ Fichiers dessinés en CLAIR → posés sur une plaque sombre dans le CSS.
+  './icons/studio_print_logo_blanc.svg',
+  './icons/sper_typo.svg',
   './CSS/main.css',
   './CSS/mobile-widgets.css',
   './SP/super_print_logo_blanc.svg',

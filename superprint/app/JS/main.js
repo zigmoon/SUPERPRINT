@@ -45030,11 +45030,13 @@ function alignSelectedObjects(direction) {
         }
         
         const AI_MODELS = {
-    // DeepSeek — V4 (juil./août 2026) : Flash (rapide/économique), Pro (puissant),
-    // Flash Vision (expérimental, accepte les images). 🛡️ 2026-08-31 : les anciens
-    // V3.2 « deepseek-chat » / « deepseek-reasoner » sont RETIRÉS de la liste
-    // déroulante — on ne garde que les gros modèles V4.
-    deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-v4-flash-vision-exp'],
+    // DeepSeek — 🛡️ 2026-09-12 : NOMS OFFICIELS (doc api-docs.deepseek.com/quick_start/pricing)
+    //   « Use `deepseek-flash` as the model name. The legacy names `deepseek-v4-flash` and
+    //     `deepseek-v4-flash-vision-exp` are still accepted, but the corresponding models
+    //     have been retired » -> servis par DeepSeek-V4.1-Flash.
+    //   deepseek-flash   = V4.1-Flash : 1M contexte, 384K sortie, JSON, tool calls, VISION OK
+    //   deepseek-v4-pro  = V4-Pro-0813 : précision max (vision non supportée).
+    deepseek: ['deepseek-flash', 'deepseek-v4-pro'],
     // OpenRouter — modèles 100% GRATUITS (suffixe :free) vérifiés par tests réels.
     // Nemotron 3 Super 120B et MiniMax M2.7 ont produit un JSON valide 8/8 pages (2026-08-29).
     // ❌ Retirés (non fiables) : Gemma 4 31B, Inkling Small, MiniMax M3, GLM 5.2.
@@ -45075,15 +45077,14 @@ function alignSelectedObjects(direction) {
             'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5 — recommandé (qualité / vitesse)',
             'claude-haiku-4-5-20251001': 'Claude Haiku 4.5 — rapide / économique',
             'claude-opus-4-1-20250805': 'Claude Opus 4.1',
-            'deepseek-v4-flash': 'DeepSeek V4 Flash — recommandé (rapide / économique)',
-            'deepseek-v4-pro': 'DeepSeek V4 Pro — puissant / précision maximale',
-            'deepseek-v4-flash-vision-exp': 'DeepSeek V4 Flash Vision (expérimental) — accepte les images'
+            'deepseek-flash': 'DeepSeek V4.1 Flash — recommandé (1M contexte, vision, JSON)',
+            'deepseek-v4-pro': 'DeepSeek V4 Pro — puissance / précision maximale'
         };
 
         // Modèle recommandé par fournisseur (le meilleur pour la mise en page multi-pages)
         const AI_DEFAULT_MODEL = {
-            // DeepSeek V4 Flash = meilleur rapport qualité/prix/vitesse pour les sorties JSON
-            deepseek: 'deepseek-v4-flash',
+            // DeepSeek V4.1 Flash = meilleur rapport qualité/prix/vitesse (1M contexte, JSON)
+            deepseek: 'deepseek-flash',
             // OpenRouter : Nemotron 3 Super 120B (vérifié JSON 8/8 pages)
             openrouter: 'nvidia/nemotron-3-super-120b-a12b:free',
             // Groq : Qwen 3.8 27B (rapide, fiable)
@@ -45772,12 +45773,15 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         }
         messages.push({ role: 'user', content: prompt });
         // 🆕 v1.7.169 — DeepSeek V3/R1 supporte jusqu'à 16k tokens de sortie.
-        // 🆕 2026-08 — DeepSeek V4 (deepseek-v4-flash / -pro / -flash-vision-exp) :
-        //   V4 Pro peut dépasser 16k tokens de sortie ; le mode vision expérimental
-        //   accepte des images (data URI) dans le contenu user.
-        const isV4 = /deepseek-v4/.test(model);
+        // 🛡️ 2026-09-12 — DeepSeek V4.1 : noms officiels `deepseek-flash` (V4.1-Flash)
+        //   et `deepseek-v4-pro` (Pro-0813). Les anciens `deepseek-v4-flash` et
+        //   `deepseek-v4-flash-vision-exp` sont RETIRÉS (servis par V4.1-Flash).
+        //   ⚠️ THINKING est actif PAR DÉFAUT sur V4.1 : la détection DOIT matcher
+        //   `deepseek-flash`, sinon le reasoning consomme le budget et tronque les JSON.
+        //   La VISION est désormais supportée par Flash (sans suffixe -vision-exp).
+        const isV4 = /^(deepseek-flash|deepseek-v4-)/.test(model);
         const isReasoner = /reasoner|r1/i.test(model);
-        const isVision = /vision/i.test(model);
+        const isVision = /vision|flash/i.test(model);
         const maxTokDS = isV4 ? 32000 : (isReasoner ? 8192 : 16384);
         body = {
             apiKey: apiKey,
