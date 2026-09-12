@@ -4943,8 +4943,11 @@ if (window._spGpuEnabled) {
                         }
                         // Clip seulement si on a des dimensions fixes ET si le curseur dépasse
                         if (this._fixedHeight !== undefined || this._fixedWidth !== undefined) {
-                            const w = Math.max(1, (this._fixedWidth ?? this.width ?? 1));
-                            const h = Math.max(1, (this._fixedHeight ?? this.height ?? 1));
+                            // 🛡️ ÉTAPE 4 : mesuré — `_fixedHeight ?? height` renvoyait 0
+                            //   alors que la hauteur réelle était 31,19 px. Le repère de
+                            //   curseur était donc calculé sur une boîte dégénérée.
+                            const w = Math.max(1, (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(this) : (this._fixedWidth || this.width || 1));
+                            const h = Math.max(1, (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(this) : (this._fixedHeight || this.height || 1));
                             ctx.save();
                             ctx.beginPath();
                             ctx.rect(-w / 2, -h / 2, w, h);
@@ -5004,8 +5007,11 @@ if (window._spGpuEnabled) {
         function spForceInlineStyleRewrap(textbox) {
             if (!textbox || textbox.type !== 'textbox') return;
             
-            const savedW = textbox._fixedWidth ?? textbox.width;
-            const savedH = textbox._fixedHeight ?? textbox.height;
+            // 🛡️ ÉTAPE 4 : avec _fixedWidth/_fixedHeight = 0 (bloc AUTO), ces
+            //   sauvegardes valaient 0 et étaient ensuite réécrites dans width/height
+            //   (même piège que spForceTextboxRewrap, corrigé à l'étape 3b).
+            const savedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(textbox) : (textbox._fixedWidth || textbox.width);
+            const savedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(textbox) : (textbox._fixedHeight || textbox.height);
             const savedText = textbox.text;
             
             try {
@@ -13220,8 +13226,9 @@ if (window._spGpuEnabled) {
     // Affichage X/Y relatif au bord de page (hors fond perdu)
     document.getElementById('transformX').value = factor(obj.left - bleedInfo.left).toFixed(1);
     document.getElementById('transformY').value = factor(obj.top - bleedInfo.top).toFixed(1);
-    const displayW = (obj._fixedWidth != null ? obj._fixedWidth : obj.width) * (obj.scaleX || 1);
-    const displayH = (obj._fixedHeight != null ? obj._fixedHeight : obj.height) * (obj.scaleY || 1);
+// 🛡️ ÉTAPE 4 : ne pas laisser 0 devenir la dimension d'affichage.
+    const displayW = ((typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width)) * (obj.scaleX || 1);
+    const displayH = ((typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height)) * (obj.scaleY || 1);
     document.getElementById('transformW').value = factor(displayW).toFixed(1);
     document.getElementById('transformH').value = factor(displayH).toFixed(1);
     document.getElementById('transformAngle').value = (obj.angle || 0).toFixed(1);
@@ -13304,8 +13311,9 @@ if (window._spGpuEnabled) {
         // Forcer la mise à jour du cache si nécessaire (sans contracter le bloc)
         const skipAutoRecalc = obj._spSkipAutoRecalc && !obj.isEditing;
         if (obj._clearCache && !skipAutoRecalc) {
-            const fixedW = (obj._fixedWidth != null ? obj._fixedWidth : obj.width);
-            const fixedH = (obj._fixedHeight != null ? obj._fixedHeight : obj.height);
+            // 🛡️ ÉTAPE 4 : idem — 0 n'est pas une dimension exploitable.
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
             obj._clearCache();
             obj.initDimensions();
             // Restaurer les dimensions si le bloc est dimensionné (évite le retrait au clic)
@@ -15601,8 +15609,10 @@ if (window._spGpuEnabled) {
         const scaledH = this.getScaledHeight();
 
         // Par défaut on part des dimensions actuelles “fixes”
-        let targetWidth = (this._fixedWidth ?? this.width);
-        let targetHeight = (this._fixedHeight ?? this.height);
+        // 🛡️ ÉTAPE 4 : `0 ?? width` vaut 0 — une largeur cible de 0 est invalide.
+                    let targetWidth = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(this) : (this._fixedWidth || this.width);
+        // 🛡️ ÉTAPE 4 : même piège — mesuré : renvoyait 0 au lieu de la hauteur réelle.
+                    let targetHeight = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(this) : (this._fixedHeight || this.height);
 
         // Ne modifier que la dimension concernée: évite les petits changements parasites
         if (corner === 'ml' || corner === 'mr') {
@@ -21546,8 +21556,10 @@ if (window._spGpuEnabled) {
                 const corner = this.__corner; // ml/mr/mt/mb/tl/tr/bl/br
                 const scaledW = this.getScaledWidth();
                 const scaledH = this.getScaledHeight();
-                let targetWidth = (this._fixedWidth ?? this.width);
-                let targetHeight = (this._fixedHeight ?? this.height);
+                // 🛡️ ÉTAPE 4 : `0 ?? width` vaut 0 — une largeur cible de 0 est invalide.
+                    let targetWidth = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(this) : (this._fixedWidth || this.width);
+                // 🛡️ ÉTAPE 4 : même piège — mesuré : renvoyait 0 au lieu de la hauteur réelle.
+                    let targetHeight = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(this) : (this._fixedHeight || this.height);
                 if (corner === 'ml' || corner === 'mr') {
                     targetWidth = scaledW;
                 } else if (corner === 'mt' || corner === 'mb') {
@@ -21640,8 +21652,10 @@ if (window._spGpuEnabled) {
                 const corner = this.__corner;
                 const scaledW = this.getScaledWidth();
                 const scaledH = this.getScaledHeight();
-                let targetWidth = (this._fixedWidth ?? this.width);
-                let targetHeight = (this._fixedHeight ?? this.height);
+                // 🛡️ ÉTAPE 4 : `0 ?? width` vaut 0 — une largeur cible de 0 est invalide.
+                    let targetWidth = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(this) : (this._fixedWidth || this.width);
+                // 🛡️ ÉTAPE 4 : même piège — mesuré : renvoyait 0 au lieu de la hauteur réelle.
+                    let targetHeight = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(this) : (this._fixedHeight || this.height);
                 if (corner === 'ml' || corner === 'mr') {
                     targetWidth = scaledW;
                 } else if (corner === 'mt' || corner === 'mb') {
