@@ -4,29 +4,66 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="google" content="notranslate">
-<title>SuperPrint — Online DTP Software + SP213 AI Studio</title>
-<meta name="description" content="SuperPrint: professional browser-based desktop publishing (DTP) software + SP213 AI layout studio. Flyers, catalogs, magazines, posters. Local install (Vite) or web version. English, French, Japanese.">
-<meta name="keywords" content="SuperPrint, online DTP, browser page layout software, SP213 AI studio, AI layout generator, flyer, catalog, magazine, poster, WebGPU, Vite, logiciel PAO en ligne, studio SP213 IA maquette">
+<title>SuperPrint — Free Online DTP Software &amp; AI Layout Studio</title>
+<meta name="description" content="SuperPrint is a free browser-based desktop publishing (DTP) tool: design flyers, catalogs, magazines and posters, export print-ready CMYK PDFs with bleed and crop marks, and generate entire layouts with the SP213 AI studio. No account, works offline. Alpha version.">
+<meta name="keywords" content="SuperPrint, online DTP software, free desktop publishing, browser page layout, print-ready PDF, CMYK PDF export, bleed and crop marks, Pantone spot colours, IDML import, typography, text wrap, SP213 AI studio, AI layout generator, flyer maker, catalog designer, magazine layout, poster design, WebGPU, offline PWA">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://superprint.cc/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="fr_FR">
 <meta property="og:locale:alternate" content="ja_JP">
-<meta property="og:title" content="SuperPrint — Online DTP Software + SP213 AI Studio">
-<meta property="og:description" content="Create layouts by chatting with SP213, then refine them in SuperPrint. Online or local.">
+<meta property="og:title" content="SuperPrint — Free Online DTP Software &amp; AI Layout Studio">
+<meta property="og:description" content="Design flyers, catalogs, magazines and posters in your browser, export print-ready CMYK PDFs, and generate layouts with the SP213 AI studio. Free, no account, works offline.">
 <meta property="og:url" content="https://superprint.cc/">
 <meta property="og:image" content="https://superprint.cc/favicon.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="SuperPrint — Online DTP Software + SP213 AI Studio">
-<meta name="twitter:description" content="Create layouts by chatting with SP213, then refine them in SuperPrint.">
+<meta name="twitter:title" content="SuperPrint — Free Online DTP Software &amp; AI Layout Studio">
+<meta name="twitter:description" content="Browser-based DTP software with print-ready CMYK PDF export, plus the SP213 AI studio to generate layouts. Free, no account, offline-capable.">
+<!-- 🔍 Données structurées : SoftwareApplication (et non WebSite) pour que
+     les moteurs comprennent qu'il s'agit d'un LOGICIEL — avec ses auteurs,
+     son prix (gratuit), sa version et son statut alpha. Coherent avec les
+     mentions legales. -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "WebSite",
+  "@type": "SoftwareApplication",
   "name": "SuperPrint",
+  "alternateName": "SP213",
   "url": "https://superprint.cc/",
-  "description": "Browser-based DTP software + SP213 AI layout studio.",
+  "description": "Free browser-based desktop publishing (DTP) software with print-ready CMYK PDF export and the SP213 AI layout studio. Alpha version.",
+  "applicationCategory": "DesignApplication",
+  "applicationSubCategory": "Desktop publishing",
+  "operatingSystem": "Web browser (Chrome, Edge, Firefox, Safari)",
+  "browserRequirements": "Requires JavaScript. WebGPU optional (local AI).",
+  "softwareVersion": "1.7.363",
+  "releaseNotes": "Alpha version — features may change and defects may remain.",
+  "inLanguage": ["en", "fr", "ja"],
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR",
+    "availability": "https://schema.org/InStock"
+  },
+  "author": [
+    { "@type": "Person", "name": "Simon Dupont-Gellert" },
+    { "@type": "Person", "name": "Clémence Brunet" }
+  ],
+  "publisher": {
+    "@type": "Organization",
+    "name": "Zigmoon",
+    "url": "https://zigmoon.com"
+  },
+  "featureList": [
+    "Multi-page documents and double-page spreads",
+    "Print-ready PDF export (RGB or CMYK, bleed and crop marks)",
+    "Pantone spot colour channels",
+    "IDML (InDesign) import",
+    "Typography: kerning, tracking, hyphenation, text wrap",
+    "SP213 AI layout studio",
+    "Works offline (PWA) with no account"
+  ],
   "potentialAction": {
     "@type": "SearchAction",
     "target": "https://superprint.cc/sp213-studio.html",
@@ -322,7 +359,21 @@
     }
     .online-row:not(.on-editor) { height: 78px; }
     /* (aucune icône de ligne : rien à redimensionner en mobile) */
-    .online-row .on-text { /* hauteur gérée par la ligne (height explicite) */ }
+
+    /* ⚠️ LE TEXTE BOUGE AU SURVOL — CORRIGÉ ICI.
+       MESURE : le titre se décalait de -5 px (Editor) et +2 px (les 4 autres).
+       Mesure aussi : la description de l'Editor était TRONQUÉE (17 px visibles
+       pour 27 px nécessaires -> 2e ligne coupée en permanence).
+       CAUSE UNIQUE : la règle de survol plus bas remettait `height: auto`, donc
+       la description passait de 17 px à sa hauteur NATURELLE (27 px pour
+       l'Editor, 13 px pour les autres) ; le bloc de texte étant centré
+       verticalement, le titre se décalait d'autant.
+       FIX : en mobile, la description garde sa hauteur NATURELLE dans les DEUX
+       états (base et survol) -> aucune variation -> aucun déplacement, et le
+       texte n'est plus tronqué.
+       NB : en mobile le survol ne replie PAS la description (pas de souris),
+       les deux états sont donc volontairement identiques. */
+    .online-row .on-text span { height: auto; }
 
     /* ─── 📱 Sous-titre de la marque sur 2 LIGNES, SANS tiret ───
        Desktop : « Toute l'application SuperPrint — PAO + studio SP213 »
@@ -360,6 +411,7 @@
     .online-row .on-text span { font-size: 11.5px; }
     /* 🚫 Mobile : PAS de hover — la description reste visible, la flèche est
        discrète (fixe, fine noire, sans effet de survol). */
+    /* Survol mobile : AUCUN changement de hauteur (sinon le titre bouge). */
     .online-row:hover .on-text span { opacity: 1; height: auto; margin-top: 4px; }
     .online-row .on-arrow { opacity: 1; transform: none; color: var(--muted); }
     .online-row:hover .on-arrow { color: var(--muted); }
@@ -663,7 +715,7 @@
       prefsLang: 'Language',
       prefsInfo: 'About',
       prefsAboutText: 'SuperPrint — browser-based print layout software + SP213 AI studio.',
-      pageTitle: 'SuperPrint — Online DTP Software + SP213 AI Studio',
+      pageTitle: 'SuperPrint — Free Online DTP Software & AI Layout Studio',
       homeSub: "<span class=\"hl\">Professional DTP</span> right in your browser",
       // 🖊️ Phrase propre au survol de « SuperPrint Editor » (avant : il
       //    retombait sur la phrase par défaut).
@@ -705,7 +757,7 @@
       prefsLang: 'Langue',
       prefsInfo: 'À propos',
       prefsAboutText: 'SuperPrint — logiciel de PAO dans le navigateur + studio IA SP213.',
-      pageTitle: 'SuperPrint — PAO en ligne + studio SP213 par IA',
+      pageTitle: 'SuperPrint — PAO en ligne gratuite & studio IA SP213',
       homeSub: "<span class=\"hl\">PAO professionnelle</span> dans le navigateur",
       editorBrandSub: "<span class=\"hl\">Éditeur</span> — composez vos documents et vos maquettes",
       studioBrandSub: "<span class=\"hl\">Studio</span> — décrivez une maquette, l'IA la compose",
@@ -742,7 +794,7 @@
       prefsLang: '言語',
       prefsInfo: '情報',
       prefsAboutText: 'SuperPrint — ブラウザで動作する印刷レイアウトソフトウェア + SP213 AIスタジオ。',
-      pageTitle: 'SuperPrint — オンラインDTPソフトウェア + SP213 AIスタジオ',
+      pageTitle: 'SuperPrint — 無料オンラインDTP & SP213 AIスタジオ',
       homeSub: "ブラウザで本格<span class=\"hl\">DTP</span>",
       editorBrandSub: "<span class=\"hl\">エディタ</span> — 文書とレイアウトを作成",
       studioBrandSub: "<span class=\"hl\">Studio</span> — 説明するだけでAIがレイアウトを作成",
