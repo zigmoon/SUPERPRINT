@@ -4098,10 +4098,37 @@ if (window._spGpuEnabled) {
   function spWrapCanResize(obj) {
     if (!obj || !obj.canvas) return false;
     if (obj.type !== 'textbox') return false;                 // text/i-text : geometrie differente
-    if (obj.textLinkId) return false;                         // chaine : le debordement va au maillon suivant
+    // ATTENTION : textLinkId est pose sur TOUT bloc de texte par
+    //   createSimpleTextBox (c'est un identifiant UNIQUE, pas un chainage).
+    //   Le refuser ici empechait d'agrandir n'importe quel bloc de l'outil
+    //   Texte (bug constate : 114,6 px de zone pour 128,5 px de contenu).
+    //   On ne refuse donc que le VRAI chainage : un bloc relie a un AUTRE bloc.
+    if (spWrapIsTrulyChained(obj)) return false;              // chaine : le debordement va au maillon suivant
     if (obj._isShapeClippedText) return false;                // texte DANS une forme
     if (obj._isCtxPathText || obj.path) return false;         // texte SUR/le long d'un trace
     return true;
+  }
+
+  // Vrai chainage = bloc relie a au moins un AUTRE bloc. Un bloc isole qui
+  // porte simplement un textLinkId (cas de l'outil Texte) n'est PAS chaine.
+  function spWrapIsTrulyChained(obj) {
+    try {
+      if (obj._nextFrame || obj._prevFrame) return true;
+      if (!obj.textLinkId) return false;
+      if (obj._spChainPartner) return true;
+      // Un identifiant partage par un AUTRE bloc du meme canvas = chainage.
+      var c = obj.canvas;
+      if (c && typeof c.getObjects === 'function') {
+        var all = c.getObjects();
+        for (var i = 0; i < all.length; i++) {
+          var o = all[i];
+          if (o && o !== obj && o.textLinkId && o.textLinkId === obj.textLinkId) return true;
+        }
+      }
+      // Balise de chaine affichee par l'app = chainage reel.
+      if (obj._chainBadge || obj._chainTotal > 1 || obj._linkOrder) return true;
+    } catch (_) {}
+    return false;
   }
 
   // Hauteur reelle du contenu (somme des lignes), ou null si indecise.
@@ -15023,10 +15050,48 @@ if (window._spGpuEnabled) {
     return eventData && eventData.e ? canvas.getPointer(eventData.e) : null;
         }
 
-        function addText() {
+        // 🎨 FIX HABILLAGE (v1.7.351b) — addText() est un vrai TOGGLE.
+    // AVANT : on ne testait que isDrawingSimpleTextBox. Or en fin de tracé la
+    // fonction de nettoyage remet isDrawingSimpleTextBox=false MAIS laisse le
+    // bouton avec la classe active (car setActiveToolButton('addText', true)
+    // empêche le retrait automatique après 2 s). L'utilisateur voyait donc
+    // l'outil encore sélectionné, recliquait pour le couper… et ce 2e clic
+    // RÉ-ARMAIT le mode dessin : skipTargetFind=true restait posé sur le
+    // canvas. findTarget() renvoyant alors null partout, le clic droit ne
+    // trouvait plus AUCUN objet → ni menu contextuel, ni habillage.
+    function spCancelTextDrawingTool() {
+        try { if (typeof finishDrawingSimpleTextBoxSafe === 'function') finishDrawingSimpleTextBoxSafe(); } catch (_) {}
+        try {
+            var _c = getActiveCanvas();
+            if (_c) {
+                _c.off('mouse:down', startDrawingSimpleTextBox);
+                _c.off('mouse:move', updateDrawingSimpleTextBox);
+                _c.off('mouse:up', finishDrawingSimpleTextBox);
+                _c.skipTargetFind = false;
+                _c.selection = true;
+                _c.defaultCursor = 'default';
+                if (_c.requestRenderAll) _c.requestRenderAll();
+            }
+        } catch (_) {}
+        try { isDrawingSimpleTextBox = false; simpleTextBoxStartPoint = null; } catch (_) {}
+        try { setActiveToolButton(null); } catch (_) {}
+        try { var _b2 = document.getElementById('addText'); if (_b2) _b2.classList.remove('active'); } catch (_) {}
+    }
+    window._spCancelTextDrawingTool = spCancelTextDrawingTool;
+
+    function addText() {
     // 🍏 Safari : si déjà en mode dessin, un 2e clic sur le bouton annule
     if (isDrawingSimpleTextBox) {
         finishDrawingSimpleTextBoxSafe();
+        return;
+    }
+    // 🎨 v1.7.351b : bouton encore marqué actif, ou mode armé sans dessin en
+    //   cours -> c'est une demande d'ARRÊT, pas d'armement. Sans ce test, le
+    //   2e clic relançait le mode dessin et laissait skipTargetFind=true.
+    var _btnT = document.getElementById('addText');
+    var _cT = getActiveCanvas();
+    if ((_btnT && _btnT.classList.contains('active')) || (_cT && _cT.skipTargetFind)) {
+        spCancelTextDrawingTool();
         return;
     }
     
@@ -15109,6 +15174,10 @@ if (window._spGpuEnabled) {
     
     // Désactiver le bouton outil
     setActiveToolButton(null);
+    // 🎨 v1.7.351b : retirer explicitement la classe active — sinon le bouton
+    //   reste visuellement sélectionné alors que le mode dessin est terminé, et
+    //   l'utilisateur reclique (ce qui relançait le mode : clic droit mort).
+    try { var _b3 = document.getElementById('addText'); if (_b3) _b3.classList.remove('active'); } catch (_) {}
         }
         
         function startDrawingSimpleTextBox(e) {
@@ -69891,6 +69960,21 @@ function initObjectRightClickMenu() {
 
         const canvas = findCanvasFromTarget(t);
         if (!canvas) return;
+
+        // 🎨 v1.7.351b — FILET DE SÉCURITÉ : si le canvas refuse la détection
+        //   (skipTargetFind=true laissé par un outil de dessin), le clic droit
+        //   serait TOTALEMENT muet — c'est le bug « ça ne fait rien ». Un mode
+        //   de dessin n'a aucune raison d'être armé quand on fait un clic droit
+        //   pour ouvrir le menu d'un objet : on lève le verrou.
+        try {
+            if (canvas.skipTargetFind && typeof window._spCancelTextDrawingTool === 'function') {
+                window._spCancelTextDrawingTool();
+            } else if (canvas.skipTargetFind) {
+                canvas.skipTargetFind = false;
+                canvas.selection = true;
+                canvas.defaultCursor = 'default';
+            }
+        } catch (_) {}
 
         // Find object under pointer
         let target = null;
