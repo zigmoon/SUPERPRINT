@@ -478,7 +478,7 @@
       </div>
       <!-- `.sp-br` = saut de ligne affiche UNIQUEMENT en mobile (voir le
            media query) : la phrase se coupe en 2 lignes, sans tiret. -->
-      <p class="sub" data-i18n="homeSub" data-i18n-html="1">All of SuperPrint<span class="sp-dash"> — </span><span class="sp-br"></span><span class="hl">DTP + SP213 AI studio</span></p>
+      <p class="sub" data-i18n="homeSub" data-i18n-html="1"><span class="hl">Professional DTP</span> right in your browser</p>
     </div>
 
     <div class="online-stack">
@@ -664,7 +664,10 @@
       prefsInfo: 'About',
       prefsAboutText: 'SuperPrint — browser-based print layout software + SP213 AI studio.',
       pageTitle: 'SuperPrint — Online DTP Software + SP213 AI Studio',
-      homeSub: "All of SuperPrint<span class=\"sp-dash\"> — </span><span class=\"sp-br\"></span><span class=\"hl\">DTP + SP213 AI studio</span>",
+      homeSub: "<span class=\"hl\">Professional DTP</span> right in your browser",
+      // 🖊️ Phrase propre au survol de « SuperPrint Editor » (avant : il
+      //    retombait sur la phrase par défaut).
+      editorBrandSub: "<span class=\"hl\">Editor</span> — compose your documents and layouts",
       // 🎭 Phrase affichee sous le LOGO quand il change au survol.
       //    Le NOM DE L'OUTIL est en clair (.hl) — jamais gris —, la
       //    description reste discrete derriere le tiret.
@@ -703,7 +706,8 @@
       prefsInfo: 'À propos',
       prefsAboutText: 'SuperPrint — logiciel de PAO dans le navigateur + studio IA SP213.',
       pageTitle: 'SuperPrint — PAO en ligne + studio SP213 par IA',
-      homeSub: "Toute l'application SuperPrint<span class=\"sp-dash\"> — </span><span class=\"sp-br\"></span><span class=\"hl\">PAO + studio SP213</span>",
+      homeSub: "<span class=\"hl\">PAO professionnelle</span> dans le navigateur",
+      editorBrandSub: "<span class=\"hl\">Éditeur</span> — composez vos documents et vos maquettes",
       studioBrandSub: "<span class=\"hl\">Studio</span> — décrivez une maquette, l'IA la compose",
       typoBrandSub: "<span class=\"hl\">SuperTyPo</span> — décomposez, retravaillez et exportez la typo",
       docBrandSub: "<span class=\"hl\">Documentation</span> — manuel, raccourcis, guide complet",
@@ -739,7 +743,8 @@
       prefsInfo: '情報',
       prefsAboutText: 'SuperPrint — ブラウザで動作する印刷レイアウトソフトウェア + SP213 AIスタジオ。',
       pageTitle: 'SuperPrint — オンラインDTPソフトウェア + SP213 AIスタジオ',
-      homeSub: "SuperPrint すべて<span class=\"sp-dash\"> — </span><span class=\"sp-br\"></span><span class=\"hl\">DTP + SP213 AIスタジオ</span>",
+      homeSub: "ブラウザで本格<span class=\"hl\">DTP</span>",
+      editorBrandSub: "<span class=\"hl\">エディタ</span> — 文書とレイアウトを作成",
       studioBrandSub: "<span class=\"hl\">Studio</span> — 説明するだけでAIがレイアウトを作成",
       typoBrandSub: "<span class=\"hl\">SuperTyPo</span> — 書体を分解・再編集・書き出し",
       docBrandSub: "<span class=\"hl\">Documentation</span> — マニュアル、ショートカット、完全ガイド",
@@ -983,6 +988,8 @@
     // « All of SuperPrint — DTP + SP213 AI studio ».
     var SUB_KEY = {
       'default': 'homeSub',
+      // 🖊️ La ligne Editor a SA phrase (elle partageait le defaut avant).
+      editor: 'editorBrandSub',
       studio: 'studioBrandSub',
       typo: 'typoBrandSub',
       doc: 'docBrandSub',
@@ -993,6 +1000,7 @@
     //    Noms propres → identiques dans les 3 langues, aucune traduction requise.
     var TITLE = {
       'default': 'SuperPrint',
+      editor: 'SuperPrint',
       studio: 'Studio',
       typo: 'SuperTyPo',
       doc: 'Documentation',
@@ -1022,10 +1030,15 @@
     }
 
     // data-brand de la ligne → nom de la couche. Absent = logo SuperPrint.
-    var BY_BRAND = { studio: 'studio', typo: 'typo', doc: 'doc', api: 'api' };
+    // 'editor' n'a pas de data-brand (la ligne Editor n'a pas de visuel
+    // dedie) : on la reconnait a son id, et elle garde le logo SuperPrint
+    // tout en prenant SA phrase.
+    var BY_BRAND = { editor: 'editor', studio: 'studio', typo: 'typo', doc: 'doc', api: 'api' };
 
     document.querySelectorAll('.online-row').forEach(function (row) {
-      var layer = BY_BRAND[row.getAttribute('data-brand')] || 'default';
+      // La ligne Editor est identifiee par son identifiant (pas de data-brand).
+      var brand = row.getAttribute('data-brand') || (row.id === 'onlineSpBtn' ? 'editor' : null);
+      var layer = BY_BRAND[brand] || 'default';
       var onEnter = function () { show(layer); };
       var onLeave = function () { show('default'); };
       row.addEventListener('mouseenter', onEnter);
