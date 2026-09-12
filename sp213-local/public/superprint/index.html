@@ -149,8 +149,15 @@
     display: flex; align-items: center; justify-content: center;
     color: var(--text);
   }
+  /* ⚠️ ÉPAISSEUR DU TRAIT — c'est le point qui rendait ces icônes grossières.
+     Le trait est exprimé dans les unités du viewBox PUIS mis à l'échelle :
+       rendu = stroke-width × (taille affichée / largeur du viewBox)
+     1re version : 1.8 × (62 / 24) = **4,6 px** à l'écran → pâteux.
+     Version actuelle : 1.8 × (72 / 96) = **1,35 px** → vrai trait fin.
+     ⚠️ Ne PAS réduire le viewBox sans baisser le stroke-width dans la même
+     proportion, sinon le trait regrossit immédiatement. */
   .welcome-brand .logo .logo-stack > .ls-wire svg {
-    width: 62px; height: 62px;
+    width: 72px; height: 72px;
     fill: none; stroke: currentColor; stroke-width: 1.8;
     stroke-linecap: round; stroke-linejoin: round;
   }
@@ -237,26 +244,10 @@
   .online-row:hover {
     background: var(--panel);
   }
-  .online-row .on-ic { color: var(--accent); flex-shrink: 0; display: inline-flex; }
-  .online-row .on-ic svg { width: 28px; height: 28px; }
-  /* Icônes de ligne : les logotypes réels (Studio = spirale, SuperTyPo =
-     logotype-mot). ⚠️ AUCUN fond : ces SVG sont bicolores (formes blanches
-     + tracés noirs) et se lisent donc sur fond clair comme sur fond sombre.
-     Ma première version posait une plaque sombre, puis blanche — les deux
-     étaient fausses : la plaque enferme le logo et casse la lecture. */
-  .online-row .on-ic img { width: 30px; height: 30px; background: transparent; }
-  .online-row .on-ic.sp-editor-ic {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 42px; font-weight: 400; color: #000; line-height: 1;
-    width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center;
-  }
-  /* SuperTyPo : glyphe « A » — conservé comme repli visuel, mais la ligne
-     utilise désormais le LOGOTYPE réel (icons/sper_typo.svg). */
-  .online-row .on-ic.sp-typo-ic {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 42px; font-weight: 400; color: #000; line-height: 1;
-    width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center;
-  }
+  /* 🚫 AUCUNE icône dans une ligne de CTA (règle explicite). Les visuels des
+     outils n'apparaissent qu'au survol, dans le header (.logo-stack).
+     Les anciennes règles .on-ic / .sp-editor-ic / .sp-typo-ic sont donc
+     supprimées : plus de glyphe « T » sur l'Editor.
   .online-row .on-text {
     flex: 1;
     display: flex; flex-direction: column; justify-content: center;
@@ -321,10 +312,7 @@
        déclarée plus loin → c'est celle-ci qui gagne en mobile. On préserve
        un rembourrage horizontal de 24 px (écran étroit). */
     .online-row:not(.on-editor) { padding: 20px 24px; }
-    .online-row .on-ic svg { width: 24px; height: 24px; }
-    .online-row .on-ic img { width: 26px; height: 26px; }
-    .online-row .on-ic.sp-editor-ic { font-size: 34px; width: 40px; height: 40px; }
-    .online-row .on-ic.sp-typo-ic { font-size: 34px; width: 40px; height: 40px; }
+    /* (aucune icône de ligne : rien à redimensionner en mobile) */
     .online-row .on-text { height: 35px; }
     .online-row .on-text b { font-size: 14px; }
     .online-row .on-text span { font-size: 11.5px; }
@@ -419,20 +407,22 @@
           <img class="ls-default is-on" src="favicon.png" alt="SuperPrint">
           <img class="ls-plain ls-studio" src="icons/studio_print_logo_blanc.svg" alt="" aria-hidden="true">
           <img class="ls-plain ls-typo" src="icons/sper_typo.svg" alt="" aria-hidden="true">
-          <!-- 🖊️ Documentation : document à lignes + signet -->
+          <!-- 🖊️ Documentation : feuille a coin replie + lignes de texte.
+               ⚠️ viewBox 96 (et non 24) : le trait de 1,8 y est 4x plus fin
+               a l'ecran. Voir le CSS .ls-wire pour le detail du calcul. -->
           <span class="ls-wire ls-doc" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M19.5 21.5h-12A2.5 2.5 0 0 1 5 19V5.5A2.5 2.5 0 0 1 7.5 3h6.2a2 2 0 0 1 1.5.7l3.8 4.3a2 2 0 0 1 .5 1.3v10.5a2 2 0 0 1-2 1.7Z"/>
-              <path d="M13.5 3v5.5h5.5"/>
-              <path d="M8.5 13h7M8.5 16.5h5"/>
+            <svg viewBox="0 0 96 96">
+              <path d="M26 12 H56 L72 28 V84 H26 Z"/>
+              <path d="M56 12 V28 H72"/>
+              <path d="M36 44 H62 M36 58 H62 M36 72 H50"/>
             </svg>
           </span>
-          <!-- 🖊️ API : accolades, symbole universel du code et des API JSON.
+          <!-- 🖊️ API : paire d'accolades, symbole du code et des API JSON.
                (Pas de chevrons : c'est le dessin qui avait ete rejete.) -->
           <span class="ls-wire ls-api" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M9.6 3.5C8 3.5 7.4 4.3 7.4 5.6v4.2c0 1.1-.5 1.7-1.7 2.2 1.2.5 1.7 1.1 1.7 2.2v4.2c0 1.3.6 2.1 2.2 2.1"/>
-              <path d="M14.4 3.5c1.6 0 2.2.8 2.2 2.1v4.2c0 1.1.5 1.7 1.7 2.2-1.2.5-1.7 1.1-1.7 2.2v4.2c0 1.3-.6 2.1-2.2 2.1"/>
+            <svg viewBox="0 0 96 96">
+              <path d="M44 16 C36 16 34 20 34 27 V39 L23 48 L34 57 V69 C34 76 36 80 44 80"/>
+              <path d="M52 16 C60 16 62 20 62 27 V39 L73 48 L62 57 V69 C62 76 60 80 52 80"/>
             </svg>
           </span>
         </div>
@@ -443,7 +433,8 @@
 
     <div class="online-stack">
       <a class="online-row on-editor" href="app/index.html" id="onlineSpBtn">
-        <span class="on-ic sp-editor-ic">T</span>
+        <!-- Aucune icone : les visuels des outils n'apparaissent QU'AU
+             SURVOL, dans le header. Regle valable pour les 5 lignes. -->
         <div class="on-text">
           <b>SuperPrint Editor</b>
           <span data-i18n="editorSub">No installation — runs in the browser</span>
