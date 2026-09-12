@@ -236,7 +236,17 @@
     /* Liseré bas FIXE noir (3px) — même taille en normal et au hover :
        pas de changement de hauteur → aucun tremblement de la page. */
     border-bottom: 3px solid var(--accent);
-    padding: 26px 30px; text-decoration: none; color: var(--text);
+    /* ⚠️ HAUTEUR EXPLICITE — INDISPENSABLE.
+       Dans un conteneur FLEX, le rembourrage vertical ne fixe PAS la
+       hauteur : elle vient du CONTENU. Au survol la description se replie
+       (height: 0), la ligne se réduisait donc de 95 px à 74 px, la page
+       rétrécissait de 21 px et TOUT se décalait de 11 px.
+       Les 4 lignes du bas étaient protégées par la GRILLE (elles s'alignent
+       sur leur voisine) ; l'Editor, SEUL sur sa ligne, ne l'était pas.
+       On fixe donc la hauteur ici. Le rembourrage vertical devient inutile
+       (0) — le rembourrage HORIZONTAL de 30 px est conservé. */
+    height: 95px;
+    padding: 0 30px; text-decoration: none; color: var(--text);
     transition: border-color .15s;
     cursor: pointer;
   }
@@ -251,10 +261,10 @@
   .online-row .on-text {
     flex: 1;
     display: flex; flex-direction: column; justify-content: center;
-    /* Hauteur FIXE (titre 19px + desc 17px + marge 4px) :
-       la ligne ne change jamais de hauteur → aucun tremblement
-       quand on survole rapidement d'un bouton à l'autre. */
-    height: 40px;
+    /* `stretch` : le bloc de texte prend TOUTE la hauteur de la ligne (dont
+       on a fixé le height ci-dessus). C'est ce qui garantit que le titre
+       reste centré verticalement une fois la description repliée au survol. */
+    align-self: stretch;
     overflow: hidden;
   }
   .online-row .on-text b { font-size: 16px; letter-spacing: .4px; text-transform: uppercase; line-height: 1.2; }
@@ -284,11 +294,12 @@
   .online-row.on-editor { grid-column: 1 / -1; }
 
   /* 🔽 Les 4 lignes secondaires (Studio, SuperTyPo, Documentation, API) sont
-     VOLONTAIREMENT PLUS BASSES que la ligne Editor : elles ne portent qu'un
-     bloc de texte (40 px), alors que l'Editor affiche en plus son glyphe de
-     48 px. Rembourrage vertical 26 -> 18 px (~24 px de moins au total).
-     Le LISERÉ BAS reste identique : aucune ligne ne « tremble ». */
-  .online-row:not(.on-editor) { padding: 18px 30px; }
+     VOLONTAIREMENT PLUS BASSES que la ligne Editor (79 px contre 95 px) :
+     l'Editor porte un titre plus long sur 2 niveaux et sert de point
+     d'entrée principal. La GRILLE les aligne 2 à 2, donc elles ne bougent
+     jamais entre elles ; la hauteur explicite garantit qu'elles ne bougent
+     pas non plus au survol. */
+  .online-row:not(.on-editor) { height: 79px; }
 
   /* ─── Mobile : comme en desktop, on reste sur l'index général, mais on cache
      toute la partie installation (code terminal à copier-coller) — le visiteur
@@ -306,14 +317,26 @@
     .online-row,
     .online-row.on-editor {
       grid-column: 1 / -1;
-      padding: 22px 24px;
+      padding: 0 24px;
+      height: 82px;
     }
-    /* Même spécificité que la règle desktop `.online-row:not(.on-editor)`,
-       déclarée plus loin → c'est celle-ci qui gagne en mobile. On préserve
-       un rembourrage horizontal de 24 px (écran étroit). */
-    .online-row:not(.on-editor) { padding: 20px 24px; }
+    .online-row:not(.on-editor) { height: 78px; }
     /* (aucune icône de ligne : rien à redimensionner en mobile) */
-    .online-row .on-text { height: 35px; }
+    .online-row .on-text { /* hauteur gérée par la ligne (height explicite) */ }
+
+    /* ─── 📱 Sous-titre de la marque sur 2 LIGNES, SANS tiret ───
+       Desktop : « Toute l'application SuperPrint — PAO + studio SP213 »
+       Mobile  : « Toute l'application SuperPrint »
+                 « PAO + studio SP213 »
+       Le tiret cadratin est supprimé en ramenant la taille de police à 0
+       sur .sub et en la restaurant sur .hl : le tiret (texte brut)
+       disparaît, le contenu de .hl reste net.
+       Les 2 morceaux passent à la ligne : le premier est enveloppé
+       automatiquement (spans inline), le second est forcé par le <br>. */
+    /* On masque le SPAN qui contient le tiret : les 2 lignes conservent leur
+       hauteur normale (l'astuce `font-size: 0` ecrasait la 1re ligne). */
+    .welcome-brand .sub .sp-dash { display: none; }
+    .welcome-brand .sub .sp-br { display: block; }
     .online-row .on-text b { font-size: 14px; }
     .online-row .on-text span { font-size: 11.5px; }
     /* 🚫 Mobile : PAS de hover — la description reste visible, la flèche est
@@ -428,7 +451,9 @@
         </div>
         <h1>SuperPrint</h1>
       </div>
-      <p class="sub" data-i18n="homeSub" data-i18n-html="1">All of SuperPrint — <span class="hl">DTP + SP213 AI studio</span></p>
+      <!-- `.sp-br` = saut de ligne affiche UNIQUEMENT en mobile (voir le
+           media query) : la phrase se coupe en 2 lignes, sans tiret. -->
+      <p class="sub" data-i18n="homeSub" data-i18n-html="1">All of SuperPrint<span class="sp-dash"> — </span><span class="sp-br"></span><span class="hl">DTP + SP213 AI studio</span></p>
     </div>
 
     <div class="online-stack">
@@ -611,7 +636,7 @@
       prefsInfo: 'About',
       prefsAboutText: 'SuperPrint — browser-based print layout software + SP213 AI studio.',
       pageTitle: 'SuperPrint — Online DTP Software + SP213 AI Studio',
-      homeSub: "All of SuperPrint — <span class=\"hl\">DTP + SP213 AI studio</span>",
+      homeSub: "All of SuperPrint<span class=\"sp-dash\"> — </span><span class=\"sp-br\"></span><span class=\"hl\">DTP + SP213 AI studio</span>",
       // 🎭 Phrase affichee sous le LOGO quand il change au survol.
       //    Le NOM DE L'OUTIL est en clair (.hl) — jamais gris —, la
       //    description reste discrete derriere le tiret.
@@ -649,7 +674,7 @@
       prefsInfo: 'À propos',
       prefsAboutText: 'SuperPrint — logiciel de PAO dans le navigateur + studio IA SP213.',
       pageTitle: 'SuperPrint — PAO en ligne + studio SP213 par IA',
-      homeSub: "Toute l'application SuperPrint — <span class=\"hl\">PAO + studio SP213</span>",
+      homeSub: "Toute l'application SuperPrint<span class=\"sp-dash\"> — </span><span class=\"sp-br\"></span><span class=\"hl\">PAO + studio SP213</span>",
       studioBrandSub: "<span class=\"hl\">Studio</span> — décrivez une maquette, l'IA la compose",
       typoBrandSub: "<span class=\"hl\">SuperTyPo</span> — décomposez, retravaillez et exportez la typo",
       docBrandSub: "<span class=\"hl\">Documentation</span> — manuel, raccourcis, guide complet",
@@ -684,7 +709,7 @@
       prefsInfo: '情報',
       prefsAboutText: 'SuperPrint — ブラウザで動作する印刷レイアウトソフトウェア + SP213 AIスタジオ。',
       pageTitle: 'SuperPrint — オンラインDTPソフトウェア + SP213 AIスタジオ',
-      homeSub: "SuperPrint すべて — <span class=\"hl\">DTP + SP213 AIスタジオ</span>",
+      homeSub: "SuperPrint すべて<span class=\"sp-dash\"> — </span><span class=\"sp-br\"></span><span class=\"hl\">DTP + SP213 AIスタジオ</span>",
       studioBrandSub: "<span class=\"hl\">Studio</span> — 説明するだけでAIがレイアウトを作成",
       typoBrandSub: "<span class=\"hl\">SuperTyPo</span> — 書体を分解・再編集・書き出し",
       docBrandSub: "<span class=\"hl\">Documentation</span> — マニュアル、ショートカット、完全ガイド",
