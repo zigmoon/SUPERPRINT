@@ -2308,9 +2308,32 @@ if (window._spGpuEnabled) {
             const baseW = _fwOk
                 ? textObj._fixedWidth
                 : (textObj.width != null ? textObj.width : (textObj.getScaledWidth ? textObj.getScaledWidth() : 0));
-            const baseH = _fhOk
+            let baseH = _fhOk
                 ? textObj._fixedHeight
                 : (textObj.height != null ? textObj.height : (textObj.getScaledHeight ? textObj.getScaledHeight() : 0));
+            // 🛡️ v1.7.374 — MÊME PIÈGE QUE LE FIX 1.7.348, mais avec la valeur 1.
+            //   Le FIX 1.7.348 traitait _fixedHeight === 0. Ici il vaut 1 : comme
+            //   1 > 0, spIsFixedSize(1) est VRAI et ce 1 passe pour une hauteur
+            //   fixe légitime — tous les garde-fous existants le laissent passer.
+            //   Or une hauteur de 1 px n'est jamais voulue : c'est l'état
+            //   transitoire de Fabric avant que la mesure soit faite.
+            //   On la remplace par la hauteur naturelle du contenu si on peut la
+            //   mesurer, sinon on ne fige RIEN (mieux vaut un bloc auto qu'un
+            //   bloc écrasé).
+            if (!(baseH > 2)) {
+                const _nat = (typeof window.spNaturalContentHeight === 'function') ? window.spNaturalContentHeight(textObj) : null;
+                if (_nat && _nat > 2) {
+                    baseH = _nat;
+                } else {
+                    // Pas de mesure fiable : ne pas figer la hauteur du tout.
+                    if (_fwOk || baseW > 2) {
+                        const _tw = Math.max(1, baseW);
+                        if (textObj.width !== _tw) textObj.set({ width: _tw });
+                        if (!_fwOk) textObj._fixedWidth = _tw;
+                    }
+                    return;
+                }
+            }
             const targetW = Math.max(1, baseW);
             const targetH = Math.max(1, baseH);
 
@@ -5020,12 +5043,57 @@ if (window._spGpuEnabled) {
         // Cette fonction force Fabric à recalculer toutes les lignes avec les nouveaux styles
         function spForceInlineStyleRewrap(textbox) {
             if (!textbox || textbox.type !== 'textbox') return;
+
+            // 🛡️ v1.7.374 — BUG « LE BLOC IA S'EFFONDRE AU 1er CLIC ».
+            //   Le patch global Textbox.prototype.set (~L68115) appelle cette
+            //   fonction À CHAQUE set({fontSize|fontFamily|fontWeight|fontStyle|
+            //   charSpacing|lineHeight}). Or la CRÉATION d'un bloc passe ses
+            //   options par set() :  new fabric.Textbox(txt, {fontSize, lineHeight})
+            //   → le patch se déclenche PENDANT la construction.
+            //
+            //   TRACE MESURÉE (instrumentation pendant la création) :
+            //     appel 1 : hAvant=null, lignesAvant=null -> fhApres=1, hApres=1
+            //     appel 2 : hAvant=1,    lignesAvant=null -> fhApres=1, hApres=1
+            //     appel 3 : hAvant=1,    lignesAvant=null -> fhApres=1, hApres=1
+            //   lignesAvant = null : la mesure (_textLines) n'existe pas encore.
+            //   La fonction écrivait alors width/height avec des valeurs
+            //   transitoires → _fixedHeight = 1. Or 1 > 0, donc spIsFixedSize(1)
+            //   renvoie TRUE : ce 1 est ensuite traité comme une hauteur fixe
+            //   LÉGITIME, et enterEditing écrase height à 1 → bloc écrasé.
+            //   D'où le symptôme : le bloc devient minuscule dès qu'on le touche.
+            //
+            //   SANS AUCUNE LIGNE MESURÉE, il n'y a RIEN à recalculer : on sort
+            //   sans toucher aux dimensions. La mesure sera faite par
+            //   initDimensions() qui suit la construction.
+            if (!textbox._textLines || !textbox._textLines.length) {
+                try {
+                    if (typeof textbox.initDimensions === 'function') {
+                        textbox._clearCache && textbox._clearCache();
+                        textbox.initDimensions();
+                    }
+                } catch (_) {}
+                // Si la mesure reste indisponible, ne rien figer du tout.
+                if (!textbox._textLines || !textbox._textLines.length) return;
+            }
             
             // 🛡️ ÉTAPE 4 : avec _fixedWidth/_fixedHeight = 0 (bloc AUTO), ces
             //   sauvegardes valaient 0 et étaient ensuite réécrites dans width/height
             //   (même piège que spForceTextboxRewrap, corrigé à l'étape 3b).
             const savedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(textbox) : (textbox._fixedWidth || textbox.width);
-            const savedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(textbox) : (textbox._fixedHeight || textbox.height);
+            // 🛡️ v1.7.374 — PLANCHER : une hauteur ≤ 1 px n'est JAMAIS une vraie
+            //   dimension de bloc, c'est l'état transitoire de Fabric avant
+            //   mesure. La figer ÉCRASE le bloc (symptôme : bloc minuscule au
+            //   1er clic). On préfère la hauteur naturelle du contenu.
+            let savedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(textbox) : (textbox._fixedHeight || textbox.height);
+            if (!(savedH > 2)) {
+                const _nat = (typeof window.spNaturalContentHeight === 'function') ? window.spNaturalContentHeight(textbox) : null;
+                if (_nat && _nat > 2) savedH = _nat;
+                else if (textbox.height > 2) savedH = textbox.height;
+                else {
+                    // Aucune mesure fiable : NE RIEN FIGER (laisser Fabric gérer).
+                    return;
+                }
+            }
             const savedText = textbox.text;
             
             try {
