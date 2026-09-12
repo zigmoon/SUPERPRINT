@@ -1394,7 +1394,15 @@ const SP_CUSTOM_PROPS = [
     '_spWrapTop',
     '_spWrapLeft',
     '_spWrapBottom',
-    '_spWrapRight'
+    '_spWrapRight',
+    // REVUE DE PERSISTANCE (.sp / .json) - chantier bloc texte parfait.
+    //   _spWrapOrigH memorise la hauteur d'ORIGINE d'un bloc que l'habillage
+    //   a fait GRANDIR. Elle sert a la fois de PLANCHER (on ne fait
+    //   qu'agrandir) et de valeur de RETOUR quand on repasse a Aucun.
+    //   Sans cette serialisation, un .sp/.json rouvert perdait la reference :
+    //   l'agrandissement n'etait plus borne et le retour a la taille initiale
+    //   ne tombait plus juste.
+    '_spWrapOrigH'
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -13287,6 +13295,8 @@ if (window._spGpuEnabled) {
 
     // Mettre à jour l'affichage des infos couleur (hex ou CMYK)
     if (typeof window.updateColorInfo === 'function') window.updateColorInfo();
+    // 🎨 Nom du ton direct (Pantone) pose sur le fond / le contour
+    if (typeof window._spSpotRefreshInfo === 'function') window._spSpotRefreshInfo();
 
     // NOUVEAU : Afficher les contrôles d'image pour les images
     const imageControls = document.getElementById('imageControls');
@@ -25801,18 +25811,114 @@ if (window._spGpuEnabled) {
         cmykStrokePreview.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke'); });
     }
     
+    // ══════════════════════════════════════════════════════════════════════
+    // 🎯 CIBLE DU NUANCIER PANTONE : FOND ou CONTOUR.
+    //   `window._spSpotTargetChannel` est DEJA lu par le module de tons
+    //   directs (_spTagSpotSelection) : on ne fait que l'alimenter depuis
+    //   l'interface. Sans ce choix, le nuancier peignait TOUJOURS le fond —
+    //   impossible de donner un contour Pantone a une forme.
+    // ══════════════════════════════════════════════════════════════════════
+    function spSpotGetTarget() {
+        return (window._spSpotTargetChannel === 'stroke') ? 'stroke' : 'fill';
+    }
+    function spSpotSetTarget(ch) {
+        window._spSpotTargetChannel = (ch === 'stroke') ? 'stroke' : 'fill';
+        const bf = document.getElementById('spotTargetFill');
+        const bs = document.getElementById('spotTargetStroke');
+        if (bf) bf.classList.toggle('is-active', window._spSpotTargetChannel === 'fill');
+        if (bs) bs.classList.toggle('is-active', window._spSpotTargetChannel === 'stroke');
+        try { spSpotRefreshInfo(); } catch (_) {}
+    }
+    window._spSpotSetTarget = spSpotSetTarget;
+    (function () {
+        const bf = document.getElementById('spotTargetFill');
+        const bs = document.getElementById('spotTargetStroke');
+        if (bf) bf.addEventListener('click', function () { spSpotSetTarget('fill'); });
+        if (bs) bs.addEventListener('click', function () { spSpotSetTarget('stroke'); });
+        spSpotSetTarget('fill');   // defaut : le fond (comportement historique)
+        // Le nom suit l'objet selectionne (et le changement de page).
+        try {
+            canvases.forEach(function (c) {
+                if (!c) return;
+                c.on('selection:created', spSpotRefreshInfo);
+                c.on('selection:updated', spSpotRefreshInfo);
+                c.on('selection:cleared', spSpotRefreshInfo);
+            });
+        } catch (_) {}
+    })();
+
+    // Nom du ton direct pose sur le fond / le contour d'un objet.
+    //   ⚠️ `_spSpotInkName` / `_spSpotStrokeInkName` sont poses par le module
+    //   d'export mais NE SONT PAS serialises (absents de SP_CUSTOM_PROPS).
+    //   On RE-DERIVE donc le nom du catalogue a partir du code hex : c'est plus
+    //   robuste (le nom reste exact meme si le registre a evolue).
+    function spSpotNameFor(hex) {
+        if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return '';
+        try {
+            if (typeof window._spSpotBuildCatalog === 'function') {
+                const cat = window._spSpotBuildCatalog();
+                const e = cat && cat[String(hex).toLowerCase()];
+                if (e && e.name) return e.name;
+            }
+        } catch (_) {}
+        return '';
+    }
+    function spSpotRenderInfo(el, hex) {
+        if (!el) return;
+        const nom = spSpotNameFor(hex);
+        if (!nom) { el.style.display = 'none'; return; }
+        el.style.display = 'flex';
+        const dot = el.querySelector('.spot-ink-dot');
+        const nm = el.querySelector('.spot-ink-name');
+        if (dot) dot.style.background = hex;
+        if (nm) { nm.textContent = nom; nm.title = nom; }
+    }
+    function spSpotRefreshInfo() {
+        let fillHex = '', strokeHex = '';
+        try {
+            const ac = getActiveCanvas();
+            const obj = ac ? ac.getActiveObject() : null;
+            if (obj) {
+                if (obj._spSpotInk) fillHex = obj._spSpotInk;
+                if (obj._spSpotStrokeInk) strokeHex = obj._spSpotStrokeInk;
+                // Repli : couleur identique a un ton direct NON ambigu.
+                if (typeof window._spSpotBuildCatalog === 'function') {
+                    const cat = window._spSpotBuildCatalog();
+                    const pick = function (col) {
+                        if (typeof col !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(col)) return '';
+                        const e = cat && cat[col.toLowerCase()];
+                        return (e && !e.ambiguous) ? col : '';
+                    };
+                    if (!fillHex) fillHex = pick(obj.fill);
+                    if (!strokeHex) strokeHex = pick(obj.stroke);
+                }
+            }
+        } catch (_) {}
+        spSpotRenderInfo(document.getElementById('spotFillInfo'), fillHex);
+        spSpotRenderInfo(document.getElementById('spotStrokeInfo'), strokeHex);
+    }
+    window._spSpotRefreshInfo = spSpotRefreshInfo;
+
     // Pantone spot colors selection
     document.getElementById('spotColorSelect').addEventListener('change', function() {
         const selectedColor = this.value;
         if (selectedColor) {
-            // Appliquer au sélecteur de couleur de fond
-            document.getElementById('blockFill').value = selectedColor;
-            window._blockFillNone = false;
-            const _bfnBtn = document.getElementById('blockFillNone');
-            if (_bfnBtn) _bfnBtn.style.borderColor = '#e0e0e0';
-            document.getElementById('blockFill').style.opacity = '1';
+            // 🎯 Destination choisie dans la sidebar ('fill' par defaut).
+            const _spTarget = spSpotGetTarget();
+            const _spIsStroke = (_spTarget === 'stroke');
+            const _spNativePick = document.getElementById(_spIsStroke ? 'blockStroke' : 'blockFill');
+            if (_spNativePick) { _spNativePick.value = selectedColor; _spNativePick.style.opacity = '1'; }
+            if (_spIsStroke) {
+                window._blockStrokeNone = false;
+                const _bsn = document.getElementById('blockStrokeNone');
+                if (_bsn) _bsn.style.borderColor = '#e0e0e0';
+            } else {
+                window._blockFillNone = false;
+                const _bfnBtn = document.getElementById('blockFillNone');
+                if (_bfnBtn) _bfnBtn.style.borderColor = '#e0e0e0';
+            }
             // ✅ Sync CMYK sliders from new Pantone color
-            if (colorMode === 'cmyk') _syncCmykSlidersFromRgb('fill');
+            if (colorMode === 'cmyk') _syncCmykSlidersFromRgb(_spTarget);
             updateColorInfo();
             
             // Si un objet est sélectionné, appliquer la couleur
@@ -25820,7 +25926,7 @@ if (window._spGpuEnabled) {
             if (activeCanvas) {
                 const obj = activeCanvas.getActiveObject();
                 if (obj) {
-                    obj.set('fill', selectedColor);
+                    obj.set(_spTarget, selectedColor);
                     // 🎨 v1.7.347 — marquer l'objet comme peint d'une ENCRE
                     //   DIRECTE : c'est ce marqueur qui créera la couche
                     //   chromatique supplémentaire « Pantone » à l'export.
@@ -25832,7 +25938,8 @@ if (window._spGpuEnabled) {
                         }
                     } catch (_) {}
                     activeCanvas.requestRenderAll();
-                    saveState('Couleur Pantone appliquée');
+                    saveState(_spIsStroke ? 'Contour Pantone applique' : 'Couleur Pantone appliquée');
+                    try { spSpotRefreshInfo(); } catch (_) {}
                 }
             }
             

@@ -134,12 +134,13 @@
     opacity: 0; transition: opacity .22s ease; pointer-events: none;
   }
   .welcome-brand .logo .logo-stack > .is-on { opacity: 1; }
-  /* Le logotype SuperPrint (favicon) est sombre sur fond blanc : rien à faire. */
-  .welcome-brand .logo .logo-stack > .ls-default { background: #fff; }
-  /* ⚠️ MESURÉ (analyse pixel des fichiers) : les logotypes Studio et SuperTyPo
-     sont dessinés en CLAIR — 76 % / 51 % de leur encre est blanche, donc
-     invisible sur la page blanche. On les pose sur une plaque sombre. */
-  .welcome-brand .logo .logo-stack > .ls-dark { padding: 9px; background: #0c0c0f; }
+  /* ⚠️ AUCUNE plaque de fond (choix utilisateur, et c'est le bon) :
+     ces logotypes sont BICOLORES — formes pleines BLANCHES + tracés NOIRS
+     (mesuré au rendu : « studio » = spirale, trait noir sur remplissage blanc ;
+     « sper_typo » = logotype-mot dans un cadre). Ils se lisent donc
+     naturellement sur fond CLAIR (par les tracés noirs) comme sur fond
+     SOMBRE (par les formes blanches). Une plaque les aurait enfermés. */
+  .welcome-brand .logo .logo-stack > .ls-plain { background: transparent; }
   .welcome-brand h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
   .welcome-brand .sub { margin: 8px 0 0; font-size: 13px; color: var(--muted); letter-spacing: .5px; }
   .welcome-brand .sub .hl { color: var(--text); }
@@ -364,8 +365,8 @@
              revient au logo SuperPrint dès que la souris quitte le bouton. -->
         <div class="logo-stack" id="brandLogoStack">
           <img class="ls-default is-on" src="favicon.png" alt="SuperPrint">
-          <img class="ls-dark ls-studio" src="icons/studio_print_logo_blanc.svg" alt="" aria-hidden="true">
-          <img class="ls-dark ls-typo" src="icons/sper_typo.svg" alt="" aria-hidden="true">
+          <img class="ls-plain ls-studio" src="icons/studio_print_logo_blanc.svg" alt="" aria-hidden="true">
+          <img class="ls-plain ls-typo" src="icons/sper_typo.svg" alt="" aria-hidden="true">
         </div>
         <h1>SuperPrint</h1>
       </div>
@@ -384,8 +385,10 @@
         </span>
       </a>
       <a class="online-row" href="sp213-studio.html" id="onlineStudioBtn" data-brand="studio">
+        <!-- Logotype du studio (spirale) en icone de ligne. Sans plaque :
+             lisible a 32 px (verifie par sous-echantillonnage). -->
         <span class="on-ic">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <img src="icons/studio_print_logo_blanc.svg" alt="" aria-hidden="true">
         </span>
         <div class="on-text">
           <b>SuperPrint Studio</b>
@@ -396,7 +399,10 @@
         </span>
       </a>
       <a class="online-row" href="supertypo/index.html" id="onlineTypoBtn" data-brand="typo">
-        <span class="on-ic sp-typo-ic">A</span>
+        <!-- Logotype SuperTyPo en icone de ligne (sans plaque). -->
+        <span class="on-ic">
+          <img src="icons/sper_typo.svg" alt="" aria-hidden="true">
+        </span>
         <div class="on-text">
           <b>SuperTyPo</b>
           <span data-i18n="typoSub">Font editor — decompose, redraw, export</span>
@@ -412,6 +418,20 @@
         <div class="on-text">
           <b>Documentation</b>
           <span data-i18n="docSub">Manual, shortcuts, complete guide</span>
+        </div>
+        <span class="on-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </span>
+      </a>
+      <!-- 🔌 API SuperPrint : pilotage par script (window.SuperPrint).
+           Le 4e CTA ferme la grille 2x2 (Documentation | API). -->
+      <a class="online-row" href="api.html" id="onlineApiBtn">
+        <span class="on-ic">
+          <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </span>
+        <div class="on-text">
+          <b>API</b>
+          <span data-i18n="apiSub">Automate layouts from your own code</span>
         </div>
         <span class="on-arrow" aria-hidden="true">
           <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -550,6 +570,7 @@
       studioSub: 'AI layouts',
       typoSub: 'Font editor — decompose, redraw, export',
       docSub: 'Manual, shortcuts, complete guide',
+      apiSub: 'Automate layouts from your own code',
       osAuto: 'Detected automatically',
       footerLegal: 'Legal notice',
       footerPrivacy: 'Privacy',
@@ -580,6 +601,7 @@
       studioSub: 'Maquettes IA',
       typoSub: 'Éditeur de police — décompose, retravaille, réexporte',
       docSub: 'Manuel, raccourcis, guide complet',
+      apiSub: 'Automatisez vos maquettes depuis votre code',
       osAuto: 'Détecté automatiquement',
       footerLegal: 'Mentions légales',
       footerPrivacy: 'Confidentialité',
@@ -610,6 +632,7 @@
       studioSub: 'AIレイアウト',
       typoSub: 'フォントエディタ — 分解・再描画・書き出し',
       docSub: 'マニュアル、ショートカット、完全ガイド',
+      apiSub: '自分のコードからレイアウトを自動生成',
       osAuto: '自動検出',
       footerLegal: '法的通知',
       footerPrivacy: 'プライバシー',

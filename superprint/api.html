@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuperPrint — API (automate your layouts)</title>
+<meta name="description" content="SuperPrint scripting API reference: window.SuperPrint exposes addText, addRect, addCircle, addEllipse, addImage, generateGrid, bulkText, getPages, setPage, loadProject, saveProject, exportPDF and aiGenerate. Automate print layouts from your own JavaScript.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://superprint.cc/api.html">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icons/icon-192x192.png">
+<link rel="stylesheet" href="CSS/fonts.css">
+<style>
+  :root {
+    --bg: #f8f8f8; --bg2: #ffffff; --bg3: #f0f0f0; --border: #dcdcdc;
+    --text: #1a1a1a; --text2: #666666; --accent: #0c0c0f;
+    --tag-bg: #e8f0fe; --tag-text: #1d4ed8;
+    --accent-link: #0969da; --sidebar-bg: #ffffff;
+    --code-bg: #f7f7f7; --code-border: #e0e0e0;
+    --kbd-bg: #f5f5f5; --kbd-border: #d0d0d0;
+    --info-bg: #e7f1ff; --info-border: #a8c8f0;
+    --warn-bg: #fff8e6; --warn-border: #e8c14a;
+    --tb-bg: #ffffff; --tb-border: #e0e0e0; --tb-text: #1a1a1a; --tb-text2: #666666;
+    --tb-btn-hover: #f2f2f2; --tb-btn-active-bg: #0c0c0f; --tb-btn-active-text: #ffffff;
+    --fn-name: #6639ba;
+  }
+  body.theme-dark {
+    --bg: #121212; --bg2: #1e1e1e; --bg3: #2a2a2a; --border: #333333;
+    --text: #eaeaea; --text2: #999999; --accent: #ffffff;
+    --tag-bg: #1f2a38; --tag-text: #79c0ff;
+    --accent-link: #58a6ff; --sidebar-bg: #1e1e1e;
+    --code-bg: #1a1a1a; --code-border: #2f2f2f;
+    --kbd-bg: #2a2a2a; --kbd-border: #444;
+    --info-bg: #0d1f3c; --info-border: #1f4175;
+    --warn-bg: #2b2413; --warn-border: #6b5a20;
+    --tb-bg: #0c0c0f; --tb-border: #2a2a2a; --tb-text: #ffffff; --tb-text2: rgba(255,255,255,0.6);
+    --tb-btn-hover: rgba(255,255,255,0.08); --tb-btn-active-bg: #ffffff; --tb-btn-active-text: #0c0c0f;
+    --fn-name: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--bg); color: var(--text); line-height: 1.6; font-size: 13px;
+  }
+  a { color: var(--accent-link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ─── TOP BAR (même patron que documentation.html) ─── */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 60px; display: flex; align-items: center; gap: 16px;
+    padding: 0 22px; background: var(--tb-bg); border-bottom: 1px solid var(--tb-border);
+  }
+  .topbar .logo {
+    font-size: 17px; font-weight: 700; letter-spacing: 1.4px; color: var(--tb-text);
+    text-transform: uppercase; white-space: nowrap;
+  }
+  .topbar .logo span { font-weight: 300; color: var(--tb-text2); }
+  .topbar .version {
+    font-size: 10px; padding: 3px 8px; border: 1px solid var(--tb-border);
+    color: var(--tb-text2); white-space: nowrap;
+  }
+  .topbar-controls { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .theme-toggle { display: flex; border: 1px solid var(--tb-border); }
+  .theme-toggle button {
+    background: transparent; border: 0; cursor: pointer; color: var(--tb-text2);
+    padding: 5px 9px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .theme-toggle button.active { background: var(--tb-btn-active-bg); color: var(--tb-btn-active-text); }
+  .theme-toggle button:hover:not(.active) { background: var(--tb-btn-hover); color: var(--tb-text); }
+  .lang-toggle { display: flex; border: 1px solid var(--tb-border); }
+  .lang-toggle button {
+    background: transparent; border: 0; cursor: pointer; color: var(--tb-text2);
+    padding: 5px 11px; font-family: inherit; font-size: 11px;
+  }
+  .lang-toggle button.active { background: var(--tb-btn-active-bg); color: var(--tb-btn-active-text); }
+  .lang-toggle button:hover:not(.active) { background: var(--tb-btn-hover); color: var(--tb-text); }
+
+  /* ─── LAYOUT ─── */
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 96px 24px 80px; }
+
+  /* ─── i18n : n'afficher que la langue active ───
+     `display: revert` restaure le style PAR DÉFAUT de chaque élément
+     (block pour h1/h2/p/div, table-cell pour td/th, inline pour a/span).
+     Sans cela, un simple `display:block` casserait les cellules de tableau
+     et `display:inline` casserait les titres. */
+  [data-lang] { display: none; }
+  body.lang-en [data-lang="en"],
+  body.lang-fr [data-lang="fr"] { display: revert; }
+
+  h1 { font-size: 27px; font-weight: 700; letter-spacing: .4px; margin-bottom: 10px; }
+  .lede { font-size: 14px; color: var(--text2); margin-bottom: 26px; max-width: 720px; line-height: 1.7; }
+  h2 {
+    font-size: 15px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+    margin: 44px 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+  }
+  h3 { font-size: 14px; font-weight: 700; margin: 26px 0 8px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 5px; }
+  code { font-family: inherit; background: var(--code-bg); border: 1px solid var(--code-border); padding: 1px 5px; font-size: 12px; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    padding: 14px 16px; overflow-x: auto; margin: 0 0 16px; font-size: 12px; line-height: 1.65;
+  }
+  pre code { background: none; border: 0; padding: 0; }
+  kbd { font-family: inherit; background: var(--kbd-bg); border: 1px solid var(--kbd-border); border-bottom-width: 2px; padding: 1px 6px; font-size: 11px; }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); padding: 20px 22px; margin-bottom: 18px; }
+  .info { background: var(--info-bg); border: 1px solid var(--info-border); padding: 12px 16px; margin-bottom: 18px; font-size: 12.5px; }
+  .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); padding: 12px 16px; margin-bottom: 18px; font-size: 12.5px; }
+
+  /* ─── TABLE DES MÉTHODES ─── */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text2); font-weight: 700; }
+  td.fn { font-weight: 700; color: var(--fn-name); white-space: nowrap; }
+  tbody tr:hover { background: var(--bg3); }
+
+  /* ─── SIGNATURE DE MÉTHODE ─── */
+  .sig {
+    background: var(--code-bg); border-left: 3px solid var(--accent);
+    padding: 8px 12px; margin: 0 0 8px; font-size: 12.5px; font-weight: 700;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .opts { font-size: 12px; color: var(--text2); margin-bottom: 10px; }
+  .opts b { color: var(--text); }
+
+  .footer {
+    margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text2); display: flex; gap: 14px; flex-wrap: wrap;
+  }
+  @media (max-width: 700px) {
+    .topbar { height: auto; padding: 10px 14px; flex-wrap: wrap; }
+    .wrap { padding-top: 120px; }
+    .topbar .tab-spacer { display: none; }
+  }
+</style>
+</head>
+<body class="lang-en">
+
+<div class="topbar">
+  <div class="logo">SUPER<span>PRINT</span></div>
+  <span class="version">v1.7.353</span>
+  <span class="tab-spacer"></span>
+  <div class="topbar-controls">
+    <div class="theme-toggle">
+      <button class="active" onclick="setTheme('light')" title="Light" id="btnLight" aria-label="Light theme">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M2 12h2.2M19.8 12H22M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M19.4 4.6l-1.6 1.6M6.2 17.8l-1.6 1.6"/></svg>
+      </button>
+      <button onclick="setTheme('dark')" title="Dark" id="btnDark" aria-label="Dark theme">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+    <div class="lang-toggle">
+      <button onclick="setLang('fr')">FR</button>
+      <button class="active" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<h1 data-lang="en">SuperPrint API</h1>
+<h1 data-lang="fr">API SuperPrint</h1>
+
+<p class="lede blk" data-lang="en">
+  SuperPrint exposes a scripting API on the global object <code>window.SuperPrint</code> inside the
+  editor. Use it from the browser console, from a <code>&lt;script&gt;</code> you inject, or from an
+  automation tool driving the page. It lets you build layouts programmatically: add text, shapes and
+  images, manage pages, load and save documents, export PDF, and trigger AI generation.
+</p>
+<p class="lede blk" data-lang="fr">
+  SuperPrint expose une API de script sur l'objet global <code>window.SuperPrint</code> à l'intérieur de
+  l'éditeur. Utilisez-la depuis la console du navigateur, depuis un <code>&lt;script&gt;</code> que vous
+  injectez, ou depuis un outil d'automatisation qui pilote la page. Elle permet de construire des
+  maquettes par programme : ajouter du texte, des formes et des images, gérer les pages, charger et
+  enregistrer des documents, exporter en PDF et déclencher la génération par IA.
+</p>
+
+<div class="info blk" data-lang="en">
+  <b>Where to run it.</b> Open <a href="app/index.html">SuperPrint Editor</a>, then press
+  <kbd>F12</kbd> to open the console. The API only exists <b>after a document is open</b>
+  (the editor must be initialised).
+</div>
+<div class="info blk" data-lang="fr">
+  <b>Où l'exécuter.</b> Ouvrez <a href="app/index.html">SuperPrint Editor</a>, puis appuyez sur
+  <kbd>F12</kbd> pour ouvrir la console. L'API n'existe <b>qu'une fois un document ouvert</b>
+  (l'éditeur doit être initialisé).
+</div>
+
+<h2 data-lang="en">Quick start</h2>
+<h2 data-lang="fr">Prise en main</h2>
+
+<pre><code>// Afficher la surface disponible
+console.log(Object.keys(window.SuperPrint));
+
+// Un carton d'invitation, en millimètres
+SuperPrint.addRect(0, 0, 210, 297, { fill: '#f7f3ec' });
+SuperPrint.addRect(20, 20, 170, 6,  { fill: '#0c0c0f' });
+SuperPrint.addText(20, 40, 'Ouverture le 14 mars', { fontSize: 28, fontWeight: 'bold' });
+SuperPrint.addText(20, 70, 'Galerie du Port, 12 quai Sud', { fontSize: 13 });
+
+SuperPrint.exportPDF({ quality: 'hd', colorMode: 'cmyk' });</code></pre>
+
+<div class="warn blk" data-lang="en">
+  <b>Units.</b> All coordinates and sizes are in <b>millimetres</b>, relative to the top-left corner of the
+  page. They are converted to canvas pixels internally.
+</div>
+<div class="warn blk" data-lang="fr">
+  <b>Unités.</b> Toutes les coordonnées et tailles sont en <b>millimètres</b>, depuis le coin
+  supérieur gauche de la page. Elles sont converties en pixels du canevas en interne.
+</div>
+
+<h2 data-lang="en">Content methods</h2>
+<h2 data-lang="fr">Méthodes de contenu</h2>
+
+<h3>addText</h3>
+<div class="sig">SuperPrint.addText(x, y, text, options?) &rarr; fabric.Textbox</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>width</code> (mm, default 100), <code>fontSize</code>, <code>fontFamily</code>, <code>fontWeight</code>, <code>fill</code>, <code>textAlign</code>.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>width</code> (mm, défaut 100), <code>fontSize</code>, <code>fontFamily</code>, <code>fontWeight</code>, <code>fill</code>, <code>textAlign</code>.</p>
+<pre><code>SuperPrint.addText(20, 20, 'Titre', { fontSize: 24, fontWeight: 'bold', width: 120 });</code></pre>
+<div class="warn blk" data-lang="en">The first three arguments are required and validated: passing a non-string text or a non-numeric coordinate throws an explicit error.</div>
+<div class="warn blk" data-lang="fr">Les trois premiers arguments sont obligatoires et contrôlés : un texte non-chaîne ou une coordonnée non-numérique lève une erreur explicite.</div>
+
+<h3>addRect</h3>
+<div class="sig">SuperPrint.addRect(x, y, width, height, options?) &rarr; fabric.Rect</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>fill</code> (default <code>#cccccc</code>), <code>stroke</code>, <code>strokeWidth</code>.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>fill</code> (défaut <code>#cccccc</code>), <code>stroke</code>, <code>strokeWidth</code>.</p>
+<pre><code>SuperPrint.addRect(20, 20, 60, 40, { fill: '#1a1a1a', stroke: 'none', strokeWidth: 0 });</code></pre>
+
+<h3>addCircle</h3>
+<div class="sig">SuperPrint.addCircle(x, y, radius, options?)</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>x</code> / <code>y</code> position the centre.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>x</code> / <code>y</code> positionnent le centre.</p>
+
+<h3>addEllipse</h3>
+<div class="sig">SuperPrint.addEllipse(x, y, rx, ry, options?)</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>rx</code> / <code>ry</code> are the two radii, in mm.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>rx</code> / <code>ry</code> sont les deux rayons, en mm.</p>
+
+<h3>addImage</h3>
+<div class="sig">SuperPrint.addImage(x, y, imageUrl, options?) &rarr; Promise</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>scaleX</code>, <code>scaleY</code>. Returns a Promise resolving to the created image — <b>await it</b> before measuring or exporting.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>scaleX</code>, <code>scaleY</code>. Renvoie une promesse résolue avec l'image créée — <b>attendez-la</b> avant de mesurer ou d'exporter.</p>
+<pre><code>await SuperPrint.addImage(20, 120, 'photo.jpg', { scaleX: 0.5, scaleY: 0.5 });</code></pre>
+
+<h3>generateGrid</h3>
+<div class="sig">SuperPrint.generateGrid(...)</div>
+<p class="blk" data-lang="en">Creates a set of layout guides on the current page (columns / rows / gutters).</p>
+<p class="blk" data-lang="fr">Crée un jeu de repères de mise en page sur la page courante (colonnes / lignes / gouttières).</p>
+
+<h3>bulkText</h3>
+<div class="sig">SuperPrint.bulkText(...)</div>
+<p class="blk" data-lang="en">Batch text creation — inserts several text blocks in one call, useful for catalogues and lists.</p>
+<p class="blk" data-lang="fr">Création de textes en lot — insère plusieurs blocs en un seul appel, pratique pour les catalogues et les listes.</p>
+
+<h2 data-lang="en">Page &amp; document methods</h2>
+<h2 data-lang="fr">Méthodes page &amp; document</h2>
+
+<h3>getPages</h3>
+<div class="sig">SuperPrint.getPages() &rarr; Array</div>
+<p class="blk" data-lang="en">Returns one entry per page: <code>{ index, objects, active }</code>.</p>
+<p class="blk" data-lang="fr">Renvoie une entrée par page : <code>{ index, objects, active }</code>.</p>
+
+<h3>setPage</h3>
+<div class="sig">SuperPrint.setPage(pageIndex) &rarr; Boolean</div>
+<p class="blk" data-lang="en">Switches the active page. Returns <code>false</code> if the index is out of range.</p>
+<p class="blk" data-lang="fr">Change la page active. Renvoie <code>false</code> si l'index est hors limites.</p>
+
+<h3>loadProject</h3>
+<div class="sig">SuperPrint.loadProject(jsonData)</div>
+<p class="blk" data-lang="en">Loads a project from a parsed JSON object (the same structure as the <code>.json</code> export).</p>
+<p class="blk" data-lang="fr">Charge un projet depuis un objet JSON déjà analysé (même structure que l'export <code>.json</code>).</p>
+
+<h3>saveProject</h3>
+<div class="sig">SuperPrint.saveProject() &rarr; Object</div>
+<p class="blk" data-lang="en">Flushes all pages and returns the serialised project object. You can <code>JSON.stringify()</code> it and store it wherever you like.</p>
+<p class="blk" data-lang="fr">Synchronise toutes les pages et renvoie l'objet projet sérialisé. Vous pouvez le passer à <code>JSON.stringify()</code> et le stocker où vous voulez.</p>
+
+<h3>exportPDF</h3>
+<div class="sig">SuperPrint.exportPDF(options?) &rarr; confirmExport()</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>quality</code> (<code>hd</code> = 300 DPI), <code>colorMode</code> (<code>rgb</code> | <code>cmyk</code>). The options pre-set the export dialog, then the export runs.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>quality</code> (<code>hd</code> = 300 DPI), <code>colorMode</code> (<code>rgb</code> | <code>cmyk</code>). Les options pré-règlent la boîte d'export, puis l'export se lance.</p>
+<pre><code>SuperPrint.exportPDF({ quality: 'hd', colorMode: 'cmyk' });</code></pre>
+
+<h3>aiGenerate</h3>
+<div class="sig">SuperPrint.aiGenerate(prompt)</div>
+<p class="blk" data-lang="en">Sends a natural-language prompt to the configured AI engine (SP213) and builds the resulting layout on the canvas. Requires an API key configured in the AI panel.</p>
+<p class="blk" data-lang="fr">Envoie une consigne en langage naturel au moteur IA configuré (SP213) et construit la maquette résultante sur le canevas. Nécessite une clé API configurée dans le panneau IA.</p>
+<pre><code>SuperPrint.aiGenerate('A4 poster for a jazz festival, deep blue and gold, bold title');</code></pre>
+
+<h2 data-lang="en">Full reference</h2>
+<h2 data-lang="fr">Référence complète</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th data-lang="en">Method</th><th data-lang="fr">Méthode</th>
+      <th data-lang="en">Returns</th><th data-lang="fr">Renvoie</th>
+      <th data-lang="en">Purpose</th><th data-lang="fr">Rôle</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="fn">addText(x, y, text, options)</td><td>Textbox</td>
+        <td data-lang="en">Adds a text block</td><td data-lang="fr">Ajoute un bloc texte</td></tr>
+    <tr><td class="fn">addRect(x, y, w, h, options)</td><td>Rect</td>
+        <td data-lang="en">Adds a rectangle</td><td data-lang="fr">Ajoute un rectangle</td></tr>
+    <tr><td class="fn">addCircle(x, y, r, options)</td><td>Circle</td>
+        <td data-lang="en">Adds a circle</td><td data-lang="fr">Ajoute un cercle</td></tr>
+    <tr><td class="fn">addEllipse(x, y, rx, ry, options)</td><td>Ellipse</td>
+        <td data-lang="en">Adds an ellipse</td><td data-lang="fr">Ajoute une ellipse</td></tr>
+    <tr><td class="fn">addImage(x, y, url, options)</td><td>Promise</td>
+        <td data-lang="en">Adds an image (async)</td><td data-lang="fr">Ajoute une image (asynchrone)</td></tr>
+    <tr><td class="fn">generateGrid(...)</td><td>&mdash;</td>
+        <td data-lang="en">Creates layout guides</td><td data-lang="fr">Crée des repères de mise en page</td></tr>
+    <tr><td class="fn">bulkText(...)</td><td>&mdash;</td>
+        <td data-lang="en">Batch text creation</td><td data-lang="fr">Création de textes en lot</td></tr>
+    <tr><td class="fn">getPages()</td><td>Array</td>
+        <td data-lang="en">Lists the pages</td><td data-lang="fr">Liste les pages</td></tr>
+    <tr><td class="fn">setPage(i)</td><td>Boolean</td>
+        <td data-lang="en">Switches the active page</td><td data-lang="fr">Change la page active</td></tr>
+    <tr><td class="fn">loadProject(json)</td><td>&mdash;</td>
+        <td data-lang="en">Loads a project</td><td data-lang="fr">Charge un projet</td></tr>
+    <tr><td class="fn">saveProject()</td><td>Object</td>
+        <td data-lang="en">Serialises the project</td><td data-lang="fr">Sérialise le projet</td></tr>
+    <tr><td class="fn">exportPDF(options)</td><td>&mdash;</td>
+        <td data-lang="en">Exports the PDF</td><td data-lang="fr">Exporte le PDF</td></tr>
+    <tr><td class="fn">aiGenerate(prompt)</td><td>&mdash;</td>
+        <td data-lang="en">Generates a layout with AI</td><td data-lang="fr">Génère une maquette par IA</td></tr>
+  </tbody>
+</table>
+
+<h2 data-lang="en">Example: a data-driven catalogue</h2>
+<h2 data-lang="fr">Exemple : un catalogue piloté par des données</h2>
+
+<pre><code>const products = [
+  { nom: 'Vase Kano',   prix: '140 EUR', ref: 'VK-014' },
+  { nom: 'Coupe Sora',  prix: '95 EUR',  ref: 'CS-009' },
+  { nom: 'Plateau Ito', prix: '180 EUR', ref: 'PI-021' },
+  { nom: 'Bougeoir Mei',prix: '65 EUR',  ref: 'BM-007' }
+];
+
+SuperPrint.addText(15, 18, 'COLLECTION HIVER 2026', { fontSize: 11, fill: '#C7382B' });
+SuperPrint.addText(15, 26, 'Objets en pierre et laiton', { fontSize: 30, fontWeight: 'bold' });
+
+products.forEach((p, i) => {
+  const col = i % 2, row = Math.floor(i / 2);
+  const x = 15 + col * 92, y = 78 + row * 96;
+  SuperPrint.addRect(x, y, 88, 56, { fill: '#EFE9DD', stroke: 'none' });
+  SuperPrint.addText(x, y + 60, p.nom,  { fontSize: 14, fontWeight: 'bold' });
+  SuperPrint.addText(x, y + 68, p.ref,  { fontSize: 8 });
+  SuperPrint.addText(x + 60, y + 60, p.prix, { fontSize: 20, fontWeight: 'bold', fill: '#C7382B' });
+});</code></pre>
+
+<p class="blk" data-lang="en">
+  Combine this with <a href="supertypo/index.html">SuperTyPo</a> for type work, the
+  <a href="sp213-studio.html">SP213 Studio</a> for AI-first layouts, and the
+  <a href="documentation.html">documentation</a> for the interface itself.
+</p>
+<p class="blk" data-lang="fr">
+  À combiner avec <a href="supertypo/index.html">SuperTyPo</a> pour le travail typographique, le
+  <a href="sp213-studio.html">studio SP213</a> pour les maquettes pilotées par IA, et la
+  <a href="documentation.html">documentation</a> pour l'interface elle-même.
+</p>
+
+<div class="footer">
+  <span>SuperPrint</span>
+  <span>&middot;</span>
+  <a href="index.html" data-lang="en">Home</a><a href="index.html" data-lang="fr">Accueil</a>
+  <span>&middot;</span>
+  <a href="documentation.html">Documentation</a>
+  <span>&middot;</span>
+  <a href="https://github.com/zigmoon/SUPERPRINT" target="_blank" rel="noopener">GitHub</a>
+</div>
+
+</div>
+
+<script>
+  // Thème (préférence partagée avec documentation.html)
+  function setTheme(theme) {
+    document.body.classList.toggle('theme-dark', theme === 'dark');
+    document.getElementById('btnLight').classList.toggle('active', theme === 'light');
+    document.getElementById('btnDark').classList.toggle('active', theme === 'dark');
+    localStorage.setItem('sp-doc-theme', theme);
+  }
+  const savedTheme = localStorage.getItem('sp-doc-theme');
+  if (savedTheme) setTheme(savedTheme);
+
+  // Langue (préférence partagée avec documentation.html)
+  function setLang(lang) {
+    document.body.classList.toggle('lang-fr', lang === 'fr');
+    document.body.classList.toggle('lang-en', lang === 'en');
+    document.querySelectorAll('.lang-toggle button').forEach(function (b) {
+      b.classList.toggle('active', b.textContent.trim() === lang.toUpperCase());
+    });
+    document.title = lang === 'fr'
+      ? 'SuperPrint — API (automatisez vos maquettes)'
+      : 'SuperPrint — API (automate your layouts)';
+    localStorage.setItem('sp-doc-lang', lang);
+  }
+  setLang(localStorage.getItem('sp-doc-lang') || 'en');
+</script>
+</body>
+</html>

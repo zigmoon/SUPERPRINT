@@ -7,12 +7,13 @@
 <title>SP213 Studio — Layout &amp; Canvas</title>
 <meta name="description" content="SP213 Studio: compose SuperPrint layouts with AI (DeepSeek, Groq, OpenRouter and local WLLM), live preview and .sp export. Attachments: images, text, Word, Excel and PDF.">
 <script>if(location.protocol!=='file:'){var l=document.createElement('link');l.rel='manifest';l.href='manifest.webmanifest';document.head.appendChild(l);}</script>
-<link rel="icon" type="image/png" href="favicon.png">
+<!-- 🎨 Logotype du studio en favicon (spirale). Un SVG est net a toutes les
+     tailles ; le PNG sert de repli aux navigateurs sans SVG. -->
+<link rel="icon" type="image/svg+xml" href="icons/studio_print_logo_blanc.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/studio_print_logo_blanc.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
-<link rel="icon" type="image/png" sizes="96x96" href="icons/icon-96x96.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/studio_print_logo_blanc.png">
 <!-- Polices self-hosted SuperPrint : affichage correct des typos dans l'aperçu (Bebas Neue, Playfair, Montserrat, Poppins, Open Sans, etc.) -->
 <link rel="stylesheet" href="CSS/fonts.css?v=20260828-studio">
 <style>
@@ -807,7 +808,7 @@
     </button>
     <div class="welcome-brand">
       <div class="logo">
-        <img src="favicon.png" alt="SuperPrint">
+        <img src="icons/studio_print_logo_blanc.svg" alt="SP213 Studio">
         <h1>SP213 STUDIO</h1>
       </div>
       <p class="sub" id="welcomeSub">Préférences</p>
@@ -1095,7 +1096,7 @@
 <div id="studio">
   <div id="topbar">
     <span class="t-logo">
-      <img src="favicon.png" alt="SuperPrint" width="28" height="28" style="flex-shrink:0;">
+      <img src="icons/studio_print_logo_blanc.svg" alt="SP213 Studio" width="28" height="28" style="flex-shrink:0;">
       SP213
     </span>
     <span class="t-title" id="topbarTitle">Layout &amp; Canvas</span>

@@ -134,7 +134,10 @@ svg.ic { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-wid
 }
 .tb-group { display: flex; align-items: center; gap: 6px; }
 .tb-brand { gap: 10px; padding-right: 12px; border-right: 1px solid var(--border); }
-.brand-logo { font-family: 'Bebas Neue', 'Arial Narrow', sans-serif; font-size: 21px; font-weight: 400; letter-spacing: 1.5px; color: var(--text); }
+/* Le logotype remplace l'ancien texte « SuperTyPo ». Sa hauteur est calee sur
+   la topbar ; la largeur suit le ratio du fichier (pas de deformation).
+   Aucune plaque de fond : le logotype se lit sur les 2 themes. */
+.brand-mark { height: 26px; width: auto; display: block; flex-shrink: 0; }
 .brand-logo span { color: var(--muted2); }
 .brand-sub { font-size: 9px; letter-spacing: 1.5px; color: var(--muted2); }
 .tb-actions { margin-left: 4px; }
