@@ -2498,7 +2498,7 @@
         $('modelLabel').textContent = state.model;
       }
       // 🆕 Restaurer les conversations + la session active (auto-save).
-      // 🛡️ v1.7.367 — l'auto-start IGNORAIT complètement ?from=sp : ouvrir le
+      // 🛡️ v1.7.368 — l'auto-start IGNORAIT complètement ?from=sp : ouvrir le
       //   studio depuis SuperPrint (« Maquette actuelle → studio ») ne montrait
       //   donc JAMAIS la maquette envoyée. On importe AVANT de restaurer la
       //   session, et on demande à ne pas écraser la preview.
@@ -2525,7 +2525,7 @@
   // page A4 vierge (la maquette sauvegardée reste accessible via le sélecteur
   // de conversations). Appelé par autoStartStudio ET startStudio.
   //
-  // 🛡️ v1.7.367 — `skipNewDocument` : quand une maquette vient d'être IMPORTÉE
+  // 🛡️ v1.7.368 — `skipNewDocument` : quand une maquette vient d'être IMPORTÉE
   //   (SuperPrint -> studio via ?from=sp), le `newDocument()` ci-dessous
   //   l'ÉCRASAIT par une page A4 vierge. L'appelant qui a déjà posé la
   //   maquette passe `true` pour que la preview soit conservée.
@@ -3117,7 +3117,7 @@
         if (t === 'triangle') {
           return Object.assign(base, { type: 'triangle', width: Math.round(((o.width || 0) / MM_TO_PX) * 10) / 10, height: Math.round(((o.height || 0) / MM_TO_PX) * 10) / 10 });
         }
-        // 🛡️ v1.7.367 — ETOILES : la branche manquait dans ce sens.
+        // 🛡️ v1.7.368 — ETOILES : la branche manquait dans ce sens.
         //   Une etoile creee dans SuperPrint (outil Formes) etait purement et
         //   simplement PERDUE au passage app -> studio, alors que le trajet
         //   inverse (elsToSPObjects / buildSPFile) la convertit depuis
@@ -3195,14 +3195,14 @@
 
     if (!pages.length) return false;
 
-    // 🎨 v1.7.367 — TONS DIRECTS (PANTONE) : le .sp recu de l'app porte
+    // 🎨 v1.7.368 — TONS DIRECTS (PANTONE) : le .sp recu de l'app porte
     //   `resources.spotInks`. Sans cette relecture, le trajet
     //   app -> studio -> app PERDAIT les Pantones (le studio regenere un .sp
     //   sans les encres, alors qu'il sait les ecrire quand il les connait).
     //   Meme magasin partage que le reste : localStorage « sp_spot_inks ».
     try { spRememberSpotInks(spFile.resources && spFile.resources.spotInks); } catch (_) {}
 
-    // 🛡️ v1.7.367 — STYLES NOMMES (typo + nuancier) : l'app les restaure a
+    // 🛡️ v1.7.368 — STYLES NOMMES (typo + nuancier) : l'app les restaure a
     //   l'ouverture d'un .sp, le studio NON. Un document arrive avec des styles
     //   que la machine ne connait pas encore etait donc « vide » de ses styles
     //   ici, puis reexporte SANS eux (mesure : typography [{Titre test}] -> []).
@@ -3314,7 +3314,7 @@
 
     // Reprendre une session éventuelle, OU importer la maquette envoyée par
     // SuperPrint (?from=sp + clé sp213_from_sp).
-    // 🛡️ v1.7.367 — restoreStudioSession() est appelé AVANT le bloc d'import
+    // 🛡️ v1.7.368 — restoreStudioSession() est appelé AVANT le bloc d'import
     //   ci-dessous : son `newDocument()` écrasait la maquette fraîchement
     //   importée (mesuré : un .sp de 2 objets ressortait à « 0 objets »).
     //   On restaure donc d'abord le chat/session SANS toucher à la preview,
@@ -4579,6 +4579,82 @@ PIÈCES JOINTES
 • Textes joints : utilise leur contenu comme base réelle des paragraphes (jamais de Lorem ipsum).
   - Pour un long texte, si l'utilisateur cherche un passage précis, réponds avec le contenu exact trouvé.
 
+═══ ÉCHELLE TYPOGRAPHIQUE — LA RÈGLE LA PLUS IMPORTANTE ═══
+🔴 UNE TAILLE DE POLICE NE SE CHOISIT JAMAIS « AU FEELING » : elle se DÉDUIT de la
+   LARGEUR de la colonne qui la contient. Un titre 3x trop gros est le défaut n°1.
+
+FORMULE (à appliquer à CHAQUE bloc texte) :
+   largeur d'un caractère (mm) = fontSize(pt) × 0.52 × 0.353
+   caractères par ligne        = largeur de colonne (mm) ÷ largeur d'un caractère
+   ⇔ fontSize MAX pour N caractères/ligne = largeur_colonne_mm × 2.8346 ÷ (N × 0.52) ÷ 1.3333
+   (0.52 = police LARGE en gras ; 1.3333 = conversion pt→px ; 2.8346 = px→mm)
+
+TABLE DE RÉFÉRENCE (à lire directement, colonne = largeur du bloc texte) :
+   colonne   | TITRE LONG (16-20 car/ligne) | DISPLAY COURT (6-9 car/ligne) | CORPS (40-50 car/ligne)
+   ----------|------------------------------|-------------------------------|----------------------
+     60 mm   |           12 pt              |            31 pt              |        5 pt
+     80 mm   |           16 pt              |            41 pt              |        7 pt
+    100 mm   |           20 pt              |            51 pt              |        9 pt
+    120 mm   |           25 pt              |            61 pt              |       11 pt
+    130 mm   |           27 pt              |            66 pt              |       12 pt
+    150 mm   |           31 pt              |            77 pt              |       14 pt
+    174 mm   |           36 pt              |            89 pt              |       16 pt
+
+DEUX RÉGIMES — c'est ce qui permet les GRANDS titres SANS casser la lisibilité :
+ ① DISPLAY COURT (le cas des pages de citation / couverture / page-manifeste) :
+    le texte fait 1 à 3 MOTS (max ~14 caractères). Un TRÈS grand corps est
+    AUTORISÉ et MÊME SOUHAITÉ : jusqu'à la valeur « DISPLAY » du tableau.
+    Ex. « Un livre ne se défend pas » sur 150 mm de colonne → jusqu'à 77 pt. ✅
+ ② TITRE LONG (4 mots et plus) : il DOIT se replier sur 2-3 lignes lisibles.
+    Prends la valeur « TITRE LONG » du tableau. Ex. « Le papier comme matière
+    première » (31 car.) sur 130 mm → 27 pt MAXIMUM (pas 78 pt !).
+    RÈGLE SIMPLE : plus le titre est LONG, plus la police est PETITE.
+
+🔴 ANTI-DÉBORDEMENT (aucun mot ne doit sortir de la colonne ni de la page) :
+   la largeur du MOT LE PLUS LONG doit tenir dans la colonne :
+     nb_caractères_du_mot_le_plus_long × fontSize × 0.52 × 0.353 <= largeur_colonne_mm
+   Police max selon le mot le plus long (colonne de 130 mm) :
+     « annee » (5) → 106 pt · « ATELIER » (7) → 76 pt · « premiere » (8) → 66 pt ·
+     « MEDIATHEQUE » (11) → 48 pt · mot de 19 car. → 28 pt.
+   Si un titre ne tient pas : RÉDUIS LA POLICE ou AUGMENTE LA LARGEUR de colonne.
+   Ne JAMAIS poser un texte avec left + width > largeur de page.
+
+═══ PAS DE LIGNE RÉEL — LE PIÈGE INVISIBLE ═══
+🔴 Le moteur multiplie TOUJOURS le lineHeight par 1.13. La formule EXACTE est :
+     pas de ligne (pt) = fontSize × lineHeight × 1.13
+   Ce que tu écris          → pas de ligne RÉEL
+     lineHeight 1.00        → 1.13 × fontSize
+     lineHeight 1.05        → 1.19 × fontSize
+     lineHeight 1.10        → 1.24 × fontSize
+     lineHeight 1.20        → 1.36 × fontSize
+     lineHeight 1.40        → 1.58 × fontSize
+   Donc « lineHeight 1.2 » ne donne PAS 1.2 : il donne 1.36. Le pas de ligne est
+   13 % plus grand que ce que tu crois, sur CHAQUE ligne.
+
+VALEURS À UTILISER (elles tiennent compte du 1.13) :
+   • TITRES et SOUS-TITRES  : lineHeight 0.92 à 1.02   (jamais au-dessus de 1.05)
+     Un titre se lit SERRÉ : les lignes d'un titre doivent presque se toucher.
+     lineHeight 1.2 sur un titre = lignes trop espacées = défaut typographique.
+   • CORPS de texte         : lineHeight 1.25 à 1.4  (confort de lecture)
+   • CITATIONS longues      : lineHeight 1.15 à 1.25
+   • LÉGENDES / FOLIOS      : lineHeight 1.2 à 1.3
+
+HAUTEUR OCCUPÉE PAR UN BLOC (pour ne pas dépasser le bas de page) :
+   hauteur (mm) = nb_lignes × fontSize × lineHeight × 1.13 × 0.353
+   Ex. titre 36 pt / lineHeight 1.0 / 2 lignes = 2 × 36 × 1.13 × 0.353 = 28.7 mm.
+   Ex. titre 78 pt / lineHeight 1.2 / 2 lignes = 2 × 78 × 1.356 × 0.353 = 74.7 mm
+       (l'IA croyait 55 mm : 20 mm d'écart sur UN seul bloc).
+
+═══ MICRO-TYPOGRAPHIE : LES DÉTAILS QUI FONT LE « PRO » ═══
+   • FOLIOS (numéros de page)  : 7 à 9 pt, JAMAIS plus (c'est un repère, pas un titre).
+   • NUMÉROS / RÉFÉRENCES d'une liste (03, 04, 05) : jamais plus GRANDS que le texte
+     qu'ils introduisent. Utilise 9-12 pt, ou 14-18 pt SEULEMENT en display isolé.
+   • UNE LISTE (sommaire, rubriques) est de la TYPO DE CORPS : libellés 10-13 pt,
+     interligne 1.25-1.4. PAS de 15 pt avec lineHeight 2 (mesuré : lignes trop aérées).
+   • Au maximum 2 tailles fortes par page. Une page où tout crie ne dit plus rien.
+   • Une taille de titre ne se répète pas sur plus de 2 pages consécutives :
+     varie le rythme (page dense / page aérée) plutôt que d'agrandir.
+   • Le corps ne descend JAMAIS sous 8 pt, et 9-11 pt est la norme confortable.
 POLICES DISPONIBLES :
 • Display/titres : Bebas Neue, Playfair Display, Montserrat, Poppins
 • Corps : Open Sans, IBM Plex Sans, Roboto, Lato, Noto Sans JP
@@ -5434,6 +5510,54 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       clone.fontFamily = normalizeFontFamily(clone.fontFamily) || 'Open Sans';
       clone.lineHeight = clamp(finite(clone.lineHeight, 1.4), 0.8, 3);
       if (!['left', 'center', 'right', 'justify'].includes(clone.textAlign)) clone.textAlign = 'left';
+
+      // 🛡️ v1.7.368 — GARDE-FOU TYPOGRAPHIQUE (mesuré sur la chaîne réelle).
+      //   Le prompt explique l'échelle largeur→taille, mais on ne peut pas
+      //   compter sur le modèle : ce contrôle garantit qu'AUCUNE maquette ne
+      //   repart avec un titre qui déborde ou des lignes trop espacées.
+      //   3 contrôles seulement, volontairement PRUDENTS pour préserver les
+      //   partis pris typographiques légitimes (page-manifeste à 54 pt).
+      try {
+        const _gfW = Math.max(10, finite(clone.width, pageWmm - 30));
+        const _gfTxt = String(clone.text || '').trim();
+        const _gfMots = _gfTxt.split(/\s+/).filter(Boolean);
+        const _gfMotMax = _gfMots.reduce(function (m, mot) { return Math.max(m, mot.length); }, 0);
+        // largeur d'un caractère = fontSize(pt) x 0.52 x 0.353 mm  ->  on inverse.
+        const _gfPtPourCarParLigne = function (n) {
+          return (_gfW * 2.834645) / (n * 0.52) / 1.3333;
+        };
+        // 2 régimes (calibrés sur les cas réels) : un titre LONG doit rester
+        // lisible (10 car/ligne mini) ; un titre COURT (display) peut être
+        // beaucoup plus grand (7 car/ligne mini) — c'est ce qui préserve les
+        // pages-manifeste à grande typo.
+        const _gfPlancher = _gfMots.length <= 3 ? 7 : 10;
+        let _gfMax = _gfPtPourCarParLigne(_gfPlancher);
+        if (_gfMotMax > 0) {                              // (1) le mot le plus long doit tenir
+          _gfMax = Math.min(_gfMax, (_gfW * 2.834645) / (_gfMotMax * 0.52) / 1.3333);
+        }
+        _gfMax = clamp(_gfMax, 8, 240);
+        if (clone.fontSize > _gfMax) clone.fontSize = Math.round(_gfMax * 10) / 10;
+        // (3) interligne : le moteur multiplie par 1.13. Un titre se lit serré.
+        if (clone.fontSize >= 20) {
+          if (clone.lineHeight > 1.05) clone.lineHeight = 1.02;
+        } else if (clone.lineHeight > 1.5) {
+          clone.lineHeight = 1.4;
+        }
+        // (4) HAUTEUR : le bloc doit tenir sur la page (top + hauteur <= H).
+        //     hauteur = lignes × fontSize × lineHeight × 1.13 × 0.353 mm
+        try {
+          const _gfCarLigne = _gfPtPourCarParLigne(clone.fontSize);
+          const _gfLignes = Math.max(1, Math.ceil(_gfTxt.length / Math.max(1, _gfCarLigne)));
+          const _gfHmm = _gfLignes * clone.fontSize * clone.lineHeight * 1.13 * 0.353;
+          const _gfTop = finite(clone.top, 0);
+          const _gfHpage = finite(state.pageH, 297);
+          if (_gfTop + _gfHmm > _gfHpage) {
+            // réduire la police juste assez pour que le bloc tienne
+            const _gfRatio = Math.max(0.35, (_gfHpage - _gfTop) / Math.max(1, _gfHmm));
+            clone.fontSize = Math.round(Math.max(8, clone.fontSize * _gfRatio) * 10) / 10;
+          }
+        } catch (_) {}
+      } catch (_) {}
     } else if (clone.type === 'image') {
       const availableW = Math.max(1, state.pageW + bleed - clone.left);
       const availableH = Math.max(1, state.pageH + bleed - clone.top);
@@ -5555,7 +5679,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
   /**
    * Nombre de lignes VISUELLES d'un élément texte.
    *
-   * 🛡️ v1.7.367 — CORRECTIF DE TRONCATURE MESURE.
+   * 🛡️ v1.7.368 — CORRECTIF DE TRONCATURE MESURE.
    *   L'ancienne formule `floor(wPx / (fsPx * 0.55))` surestimait gravement la
    *   largeur moyenne d'un caractere. Mesure sur la chaine complete (4 blocs
    *   tronques sur 42) : le studio prevoyait 29 caracteres par ligne la ou le
@@ -5596,7 +5720,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     const lh = (typeof el.lineHeight === 'number' && el.lineHeight > 0) ? el.lineHeight : 1.4;
     const lines = spEstimateTextLines(el);
     const h = Math.max(fsPx, Math.round(lines * fsPx * lh * SP_TEXT_LINE_MULT));
-    // 🛡️ v1.7.367 — le bloc doit pouvoir contenir ses lignes EXPLICITES.
+    // 🛡️ v1.7.368 — le bloc doit pouvoir contenir ses lignes EXPLICITES.
     //   Un texte de N lignes separees par \n ne peut pas descendre sous
     //   N x fontSize x lineHeight (aucune estimation n'entre en jeu).
     //   Sans ce plancher, l'app ouvrait le document avec une hauteur de cadre
@@ -5994,7 +6118,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
           } else if (t === 'triangle') {
             objects.push({ type: 'triangle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 50) * MM_TO_PX, height: (+el.height || 50) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
           } else if (t === 'star') {
-            // 🛡️ v1.7.367 — ETOILES : cette branche MANQUAIT. Une etoile de la
+            // 🛡️ v1.7.368 — ETOILES : cette branche MANQUAIT. Une etoile de la
             //   preview disparaissait a l'export direct .sp alors que les autres
             //   formes passaient.
             //   ⚠️ ON ECRIT UN `polygon`, PAS UN `star` : `fabric.Star` n'existe
@@ -6154,7 +6278,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) : 1 entrée = 1 couche
       //   chromatique supplémentaire à produire à l'export (CMJN ou RVB + Pantone).
-      // 🛡️ v1.7.367 — styles nommés (typo + nuancier) DÉJÀ présents via
+      // 🛡️ v1.7.368 — styles nommés (typo + nuancier) DÉJÀ présents via
       //   spCollectStylesBlock() : ne pas les retirer, l'app les restaure à
       //   l'ouverture (.sp comme .json).
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spCollectSpotInks() },
@@ -6191,7 +6315,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       } else if (t === 'triangle') {
         objects.push({ type: 'triangle', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
       } else if (t === 'star') {
-        // 🛡️ v1.7.367 — meme conversion que buildSPFile : on ecrit un `polygon`
+        // 🛡️ v1.7.368 — meme conversion que buildSPFile : on ecrit un `polygon`
         //   (le format natif de l'app), JAMAIS un `star` : `fabric.Star` n'existe
         //   pas dans le Fabric embarque et ferait echouer tout le chargement.
         const _branches2 = Math.max(3, Math.min(24, Math.round(+el.points || 5)));
@@ -6347,10 +6471,13 @@ E. GRILLE & LISIBILITÉ PRINT
 • ALIGNE les blocs sur la grille : même colonne = même left, même rangée = même top.
   Largeurs = multiples cohérents des colonnes + gouttières.
 • Largeur de ligne optimale : 60-75 caractères (~80-110 mm en corps 11 pt).
-• HIÉRARCHIE TYPO PRINT : titre couverture 60-120 pt, titre intérieur 36-72 pt,
-  sous-titre 18-28 pt, chapeau 14-18 pt italique/semi-bold, corps 9-12 pt (jamais < 8 pt),
-  légende/folio 7-9 pt.
-• Interligne : 1.2 titres, 1.4-1.6 corps, 1.6-1.8 textes longs.
+• HIÉRARCHIE TYPO PRINT — ⚠️ CES FOURCHETTES SONT DES PLAFONDS, PAS DES CIBLES :
+  elles ne s'appliquent QUE si la colonne est assez large. La taille se DÉDUIT
+  d'abord de la largeur de colonne (voir « ÉCHELLE TYPOGRAPHIQUE » ci-dessus).
+  titre couverture 60-120 pt, titre intérieur 36-72 pt, sous-titre 18-28 pt,
+  chapeau 14-18 pt italique/semi-bold, corps 9-12 pt (jamais < 8 pt), légende/folio 7-9 pt.
+• Interligne — ⚠️ LE MOTEUR MULTIPLIE PAR 1.13 (voir « PAS DE LIGNE RÉEL ») :
+  titres/sous-titres 0.92-1.02 (jamais > 1.05), corps 1.25-1.4, textes longs 1.4-1.6.
 • Alignements : gauche pour le corps, justifié pour colonnes étroites (césure), centré
   uniquement titres courts / citations.
 

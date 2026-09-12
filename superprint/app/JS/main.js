@@ -46760,7 +46760,12 @@ Quand l'utilisateur ouvre une double page (mode spread) ou que la composition l'
   - Chapeau (intro article) : 14-18 pt italique ou semi-bold
   - Corps : 9-12 pt (jamais en-dessous de 8 pt sauf mentions légales)
   - Légende, folio, mentions : 7-9 pt
-• INTERLIGNE : 1.2 pour titres, 1.4-1.6 pour corps, 1.6-1.8 pour textes longs.
+• INTERLIGNE — ⚠️ LE MOTEUR MULTIPLIE PAR 1.13 (facteur _fontSizeMult de Fabric) :
+    pas de ligne RÉEL = fontSize × lineHeight × 1.13
+  Donc « lineHeight 1.2 » donne en réalité 1.36 × fontSize : 13 % de plus, sur CHAQUE ligne.
+  TITRES/sous-titres : 0.92-1.02 (jamais au-dessus de 1.05) — un titre se lit SERRÉ.
+  CORPS : 1.25-1.4. Textes longs : 1.4-1.6. Citations : 1.15-1.25. Légendes/folios : 1.2-1.3.
+  (lineHeight 1.2 sur un titre = lignes trop espacées = défaut typographique.)
 • ALIGNEMENTS : gauche pour le corps (lisible), justifié pour les colonnes étroites avec
   césure activée, centré uniquement pour titres courts ou citations.
 • ENCRAGE : un fond plein bord (couleur foncée pleine page) consomme énormément d'encre —
@@ -46839,6 +46844,82 @@ Dans ton JSON de sortie, chaque élément a un champ "type". TOUTES les valeurs 
    • Formats spéciaux disponibles : exposant, indice, petites capitales, texte creux (outline), ombre, barré, surligné, contour
 
 =============================================
+═══ ÉCHELLE TYPOGRAPHIQUE — LA RÈGLE LA PLUS IMPORTANTE ═══
+🔴 UNE TAILLE DE POLICE NE SE CHOISIT JAMAIS « AU FEELING » : elle se DÉDUIT de la
+   LARGEUR de la colonne qui la contient. Un titre 3x trop gros est le défaut n°1.
+
+FORMULE (à appliquer à CHAQUE bloc texte) :
+   largeur d'un caractère (mm) = fontSize(pt) × 0.52 × 0.353
+   caractères par ligne        = largeur de colonne (mm) ÷ largeur d'un caractère
+   ⇔ fontSize MAX pour N caractères/ligne = largeur_colonne_mm × 2.8346 ÷ (N × 0.52) ÷ 1.3333
+   (0.52 = police LARGE en gras ; 1.3333 = conversion pt→px ; 2.8346 = px→mm)
+
+TABLE DE RÉFÉRENCE (à lire directement, colonne = largeur du bloc texte) :
+   colonne   | TITRE LONG (16-20 car/ligne) | DISPLAY COURT (6-9 car/ligne) | CORPS (40-50 car/ligne)
+   ----------|------------------------------|-------------------------------|----------------------
+     60 mm   |           12 pt              |            31 pt              |        5 pt
+     80 mm   |           16 pt              |            41 pt              |        7 pt
+    100 mm   |           20 pt              |            51 pt              |        9 pt
+    120 mm   |           25 pt              |            61 pt              |       11 pt
+    130 mm   |           27 pt              |            66 pt              |       12 pt
+    150 mm   |           31 pt              |            77 pt              |       14 pt
+    174 mm   |           36 pt              |            89 pt              |       16 pt
+
+DEUX RÉGIMES — c'est ce qui permet les GRANDS titres SANS casser la lisibilité :
+ ① DISPLAY COURT (le cas des pages de citation / couverture / page-manifeste) :
+    le texte fait 1 à 3 MOTS (max ~14 caractères). Un TRÈS grand corps est
+    AUTORISÉ et MÊME SOUHAITÉ : jusqu'à la valeur « DISPLAY » du tableau.
+    Ex. « Un livre ne se défend pas » sur 150 mm de colonne → jusqu'à 77 pt. ✅
+ ② TITRE LONG (4 mots et plus) : il DOIT se replier sur 2-3 lignes lisibles.
+    Prends la valeur « TITRE LONG » du tableau. Ex. « Le papier comme matière
+    première » (31 car.) sur 130 mm → 27 pt MAXIMUM (pas 78 pt !).
+    RÈGLE SIMPLE : plus le titre est LONG, plus la police est PETITE.
+
+🔴 ANTI-DÉBORDEMENT (aucun mot ne doit sortir de la colonne ni de la page) :
+   la largeur du MOT LE PLUS LONG doit tenir dans la colonne :
+     nb_caractères_du_mot_le_plus_long × fontSize × 0.52 × 0.353 <= largeur_colonne_mm
+   Police max selon le mot le plus long (colonne de 130 mm) :
+     « annee » (5) → 106 pt · « ATELIER » (7) → 76 pt · « premiere » (8) → 66 pt ·
+     « MEDIATHEQUE » (11) → 48 pt · mot de 19 car. → 28 pt.
+   Si un titre ne tient pas : RÉDUIS LA POLICE ou AUGMENTE LA LARGEUR de colonne.
+   Ne JAMAIS poser un texte avec left + width > largeur de page.
+
+═══ PAS DE LIGNE RÉEL — LE PIÈGE INVISIBLE ═══
+🔴 Le moteur multiplie TOUJOURS le lineHeight par 1.13. La formule EXACTE est :
+     pas de ligne (pt) = fontSize × lineHeight × 1.13
+   Ce que tu écris          → pas de ligne RÉEL
+     lineHeight 1.00        → 1.13 × fontSize
+     lineHeight 1.05        → 1.19 × fontSize
+     lineHeight 1.10        → 1.24 × fontSize
+     lineHeight 1.20        → 1.36 × fontSize
+     lineHeight 1.40        → 1.58 × fontSize
+   Donc « lineHeight 1.2 » ne donne PAS 1.2 : il donne 1.36. Le pas de ligne est
+   13 % plus grand que ce que tu crois, sur CHAQUE ligne.
+
+VALEURS À UTILISER (elles tiennent compte du 1.13) :
+   • TITRES et SOUS-TITRES  : lineHeight 0.92 à 1.02   (jamais au-dessus de 1.05)
+     Un titre se lit SERRÉ : les lignes d'un titre doivent presque se toucher.
+     lineHeight 1.2 sur un titre = lignes trop espacées = défaut typographique.
+   • CORPS de texte         : lineHeight 1.25 à 1.4  (confort de lecture)
+   • CITATIONS longues      : lineHeight 1.15 à 1.25
+   • LÉGENDES / FOLIOS      : lineHeight 1.2 à 1.3
+
+HAUTEUR OCCUPÉE PAR UN BLOC (pour ne pas dépasser le bas de page) :
+   hauteur (mm) = nb_lignes × fontSize × lineHeight × 1.13 × 0.353
+   Ex. titre 36 pt / lineHeight 1.0 / 2 lignes = 2 × 36 × 1.13 × 0.353 = 28.7 mm.
+   Ex. titre 78 pt / lineHeight 1.2 / 2 lignes = 2 × 78 × 1.356 × 0.353 = 74.7 mm
+       (l'IA croyait 55 mm : 20 mm d'écart sur UN seul bloc).
+
+═══ MICRO-TYPOGRAPHIE : LES DÉTAILS QUI FONT LE « PRO » ═══
+   • FOLIOS (numéros de page)  : 7 à 9 pt, JAMAIS plus (c'est un repère, pas un titre).
+   • NUMÉROS / RÉFÉRENCES d'une liste (03, 04, 05) : jamais plus GRANDS que le texte
+     qu'ils introduisent. Utilise 9-12 pt, ou 14-18 pt SEULEMENT en display isolé.
+   • UNE LISTE (sommaire, rubriques) est de la TYPO DE CORPS : libellés 10-13 pt,
+     interligne 1.25-1.4. PAS de 15 pt avec lineHeight 2 (mesuré : lignes trop aérées).
+   • Au maximum 2 tailles fortes par page. Une page où tout crie ne dit plus rien.
+   • Une taille de titre ne se répète pas sur plus de 2 pages consécutives :
+     varie le rythme (page dense / page aérée) plutôt que d'agrandir.
+   • Le corps ne descend JAMAIS sous 8 pt, et 9-11 pt est la norme confortable.
 POLICES DISPONIBLES (TOUTES CHARGÉES)
 =============================================
 DISPLAY / TITRES :
