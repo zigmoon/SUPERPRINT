@@ -45108,7 +45108,9 @@ function alignSelectedObjects(direction) {
         return;
     }
     
-    const provider = localStorage.getItem('sp_ai_provider') || 'openai';
+    // 🆕 Défaut = DeepSeek (demande utilisateur, 2026-09-12). La préférence
+    //   ENREGISTRÉE reste prioritaire : on ne change que le repli.
+    const provider = localStorage.getItem('sp_ai_provider') || 'deepseek';
     const apiKey = getAIKeyFor(provider);
     
     document.getElementById('aiProvider').value = provider;

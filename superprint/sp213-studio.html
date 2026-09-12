@@ -872,8 +872,9 @@
           </span>
         </div>
         <select id="engineSelect">
-          <option value="openai" selected>OpenAI GPT (cloud — recommandé)</option>
-          <option value="deepseek">DeepSeek (cloud — raisonnement)</option>
+          <!-- 🆕 DeepSeek en PREMIER (demande utilisateur, 2026-09-12) -->
+          <option value="deepseek" selected>DeepSeek (cloud — raisonnement)</option>
+          <option value="openai">OpenAI GPT (cloud)</option>
           <option value="openrouter">OpenRouter (cloud — 100% free)</option>
           <option value="groq">Groq (cloud — rapide)</option>
           <option value="webllm">SP213 WLLM (local)</option>
@@ -1395,7 +1396,7 @@
     dsApiKey: '',              // 🆕 clé DeepSeek
     dsModel: DEEPSEEK_MODELS[0][0], // 🆕 modèle DeepSeek
     wllmModel: WLLM_MODELS[0][0],
-    engine: 'openai', // 'openai' | 'deepseek' | 'openrouter' | 'groq' | 'webllm'
+    engine: 'deepseek', // 🆕 défaut = DeepSeek ; 'openai' | 'deepseek' | 'openrouter' | 'groq' | 'webllm'
     pageW: 210, pageH: 297, bleed: 3,
     viewMode: 'single', // 'single' | 'spread'
     pages: [],
@@ -2452,8 +2453,13 @@
       const ork = (state.orApiKey || '').trim() || (localStorage.getItem(LS.orKey) || '').trim();
       const dsk = (state.dsApiKey || '').trim() || (localStorage.getItem(LS.dsKey) || '').trim();
       const oaik = (state.oaiApiKey || '').trim() || (localStorage.getItem(LS.oaiKey) || localStorage.getItem('sp_ai_key_openai') || '').trim();
-      const eng = localStorage.getItem('sp213_engine') || 'openai';
-      state.engine = (eng === 'openai' || eng === 'deepseek' || eng === 'webllm' || eng === 'groq' || eng === 'openrouter') ? eng : 'openai';
+      // 🆕 Défaut = DeepSeek (demande utilisateur, 2026-09-12). Le choix
+      //   ENREGISTRÉ de l'utilisateur reste prioritaire : on ne change que le
+      //   repli (avant : 'openai' codé en dur, ce qui écrasait l'attribut
+      //   `selected` du HTML et faisait afficher « × OpenAI GPT » alors que le
+      //   sélecteur montrait DeepSeek).
+      const eng = localStorage.getItem('sp213_engine') || 'deepseek';
+      state.engine = (eng === 'openai' || eng === 'deepseek' || eng === 'webllm' || eng === 'groq' || eng === 'openrouter') ? eng : 'deepseek';
       state.apiKey = key;
       state.orApiKey = ork;
       state.dsApiKey = dsk;
