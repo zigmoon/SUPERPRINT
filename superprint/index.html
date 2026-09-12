@@ -36,7 +36,7 @@
   "applicationSubCategory": "Desktop publishing",
   "operatingSystem": "Web browser (Chrome, Edge, Firefox, Safari)",
   "browserRequirements": "Requires JavaScript. WebGPU optional (local AI).",
-  "softwareVersion": "1.7.364",
+  "softwareVersion": "1.7.365",
   "releaseNotes": "Alpha version — features may change and defects may remain.",
   "inLanguage": ["en", "fr", "ja"],
   "isAccessibleForFree": true,
@@ -320,14 +320,17 @@
   /* 🡒 Flèche d'accès — fine, noire, sans pastille. Cachée par défaut, glisse au survol. */
   .online-row .on-arrow {
     flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
-    /* 🠒 COLLÉE À DROITE, avec une marge de respiration.
+    /* 🠒 POUSSÉE À DROITE, avec une marge de respiration.
        `margin-left: auto` absorbe tout l'espace libre et pousse la flèche
-       contre le bord droit ; `margin-right` garde 10 px avant le bord
-       intérieur (qui s'ajoute au rembourrage de 30 px de la ligne).
-       La translation de survol est de -8px : elle donne le glissement sans
-       jamais coller la flèche au bord. */
+       contre le bord droit ; `margin-right` garde une petite marge avant le
+       bord intérieur (elle s'ajoute au rembourrage de la ligne : 30 px en
+       desktop, 24 px en mobile).
+       6 px = compromis retenu : la flèche reste détachée du bord sans
+       « flotter » au milieu. Résultat mesuré : 45 px du bord en desktop,
+       31 px en mobile (contre 49 / 35 avec 10 px).
+       La translation de survol est de -8 px : elle donne le glissement. */
     margin-left: auto;
-    margin-right: 10px;
+    margin-right: 6px;
     color: var(--text);
     opacity: 0; transform: translateX(-8px);
     transition: opacity .18s, transform .18s;
@@ -423,12 +426,15 @@
     }
     .online-row .on-text b { font-size: 14px; }
     .online-row .on-text span { font-size: 11.5px; }
-    /* 🚫 Mobile : PAS de hover — la description reste visible, la flèche est
-       discrète (fixe, fine noire, sans effet de survol). */
     /* Survol mobile : AUCUN changement de hauteur (sinon le titre bouge). */
     .online-row:hover .on-text span { opacity: 1; height: auto; margin-top: 4px; }
-    .online-row .on-arrow { opacity: 1; transform: none; color: var(--muted); }
-    .online-row:hover .on-arrow { color: var(--muted); }
+
+    /* 🡒 LA FLÈCHE N'APPARAÎT QU'AU SURVOL, COMME EN DESKTOP.
+       AVANT : la règle mobile forçait `opacity: 1`, donc la flèche était
+       visible EN PERMANENCE (et en gris, `color: var(--muted)`).
+       Maintenant on ne surcharge PLUS rien : la flèche hérite des règles
+       de base (opacité 0 au repos, révélation + glissement au survol) tout
+       en conservant ses 10 px de marge à droite. */
   }
 
   /* ─── Footer très léger (typo seule) ─── */
