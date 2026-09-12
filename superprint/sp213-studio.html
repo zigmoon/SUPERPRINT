@@ -1485,7 +1485,7 @@
       'welcome.sub': 'Preferences',
       'welcome.engines': 'Engines',
       'welcome.engineLabel': 'Execution backend',
-      'welcome.enginePop': 'SP213 stays the layout engine. This setting chooses where it runs: Groq (cloud, fast), OpenRouter (cloud, 100% free models) or SP213 WLLM (local, built-in WebLLM).',
+      'welcome.enginePop': 'SP213 stays the layout engine. This setting chooses where it runs: DeepSeek (cloud, reasoning), OpenAI GPT (cloud), OpenRouter (cloud, 100% free models), Groq (cloud, fast) or SP213 WLLM (local, built-in WebLLM).',
       'welcome.groqLabel': 'Groq API key',
       'welcome.groqPop': 'Your <b>gsk_...</b> key is stored only in your browser (localStorage) and sent to Groq via the local proxy. It is never hardcoded or shared.',
       'welcome.groqGet': 'Get a Groq key',
@@ -1741,7 +1741,7 @@
       'welcome.sub': '設定',
       'welcome.engines': 'エンジン',
       'welcome.engineLabel': '実行バックエンド',
-      'welcome.enginePop': 'SP213はレイアウトエンジンのままです。実行場所を選びます：Groq（クラウド、高速）、OpenRouter（クラウド、100%無料モデル）、またはSP213 WLLM（ローカル、WebLLM内蔵）。',
+      'welcome.enginePop': 'SP213はレイアウトエンジンのままです。実行場所を選びます：DeepSeek（クラウド、推論）、OpenAI GPT（クラウド）、OpenRouter（クラウド、100%無料モデル）、Groq（クラウド、高速）、またはSP213 WLLM（ローカル、WebLLM内蔵）。',
       'welcome.groqLabel': 'Groq APIキー',
       'welcome.groqPop': 'あなたの <b>gsk_...</b> キーはブラウザ（localStorage）にのみ保存され、ローカルプロキシ経由でGroqに送信されます。ハードコードや共有はされません。',
       'welcome.groqGet': 'Groqキーを取得',
@@ -2498,7 +2498,25 @@
         $('modelLabel').textContent = state.model;
       }
       // 🆕 Restaurer les conversations + la session active (auto-save).
-      restoreStudioSession();
+      // 🛡️ v1.7.366 — l'auto-start IGNORAIT complètement ?from=sp : ouvrir le
+      //   studio depuis SuperPrint (« Maquette actuelle → studio ») ne montrait
+      //   donc JAMAIS la maquette envoyée. On importe AVANT de restaurer la
+      //   session, et on demande à ne pas écraser la preview.
+      let importedAuto = false;
+      if (new URLSearchParams(window.location.search).get('from') === 'sp') {
+        try {
+          const rawAuto = localStorage.getItem('sp213_from_sp');
+          if (rawAuto) {
+            localStorage.removeItem('sp213_from_sp');
+            importedAuto = importFromSuperPrint(JSON.parse(rawAuto));
+          }
+        } catch (e) { console.warn('[SP213] auto-start import from SP error:', e); }
+      }
+      restoreStudioSession(importedAuto);
+      if (importedAuto) {
+        renderDocument(state.doc);
+        appendChat('assistant', 'Maquette importée depuis SuperPrint (' + state.doc.pages.length + ' page(s)). Vous pouvez la retravailler avec SP213.');
+      }
     } catch (_) {}
   }
 
@@ -2506,15 +2524,21 @@
   // (chat auto-sauvegardé). Au DÉMARRAGE, la preview montre TOUJOURS une
   // page A4 vierge (la maquette sauvegardée reste accessible via le sélecteur
   // de conversations). Appelé par autoStartStudio ET startStudio.
-  function restoreStudioSession() {
+  //
+  // 🛡️ v1.7.366 — `skipNewDocument` : quand une maquette vient d'être IMPORTÉE
+  //   (SuperPrint -> studio via ?from=sp), le `newDocument()` ci-dessous
+  //   l'ÉCRASAIT par une page A4 vierge. L'appelant qui a déjà posé la
+  //   maquette passe `true` pour que la preview soit conservée.
+  function restoreStudioSession(skipNewDocument) {
     try { initConversations(); } catch(_) {}
     try {
       const chat = JSON.parse(localStorage.getItem(LS.chat + '_' + (state.convActive || '')) || '[]');
       state.chat = Array.isArray(chat) ? chat : [];
     } catch(e) { state.chat = []; }
 
-    // Toujours une page A4 vierge au démarrage (jamais l'ancienne maquette).
-    newDocument();
+    // Toujours une page A4 vierge au démarrage (jamais l'ancienne maquette) —
+    // SAUF si une maquette vient d'être importée depuis SuperPrint.
+    if (!skipNewDocument) newDocument();
     // Restaurer l'historique du chat dans la colonne conversation (sans
     // recharger la maquette) pour que l'utilisateur voie son fil.
     state.chat.forEach(m => appendChat(m.role, m.text, m.meta));
@@ -3093,6 +3117,51 @@
         if (t === 'triangle') {
           return Object.assign(base, { type: 'triangle', width: Math.round(((o.width || 0) / MM_TO_PX) * 10) / 10, height: Math.round(((o.height || 0) / MM_TO_PX) * 10) / 10 });
         }
+        // 🛡️ v1.7.366 — ETOILES : la branche manquait dans ce sens.
+        //   Une etoile creee dans SuperPrint (outil Formes) etait purement et
+        //   simplement PERDUE au passage app -> studio, alors que le trajet
+        //   inverse (elsToSPObjects / buildSPFile) la convertit depuis
+        //   toujours : l'asymetrie etait averee.
+        //   ⚠️ Un star de l'app est un fabric.Polygon NU (main.js ~13983) : ni
+        //   `radius`, ni `innerRadius`, ni marqueur. Le seul critere fiable est
+        //   donc GEOMETRIQUE — sinon un triangle personnalise ou une fleche de
+        //   l'outil plume serait converti en etoile, c'est-a-dire CAsSE.
+        //   Signature d'une etoile : nombre PAIR de sommets (2 x branches),
+        //   rayons ALTERNANT strictement grand/petit avec un rapport constant.
+        if (t === 'star' || t === 'polygon') {
+          let _outPx = Number(o.radius) || 0;
+          let _inPx = Number(o.innerRadius) || 0;
+          let _branches = Math.round(o.points) || 0;
+          const _pts = Array.isArray(o.points) ? o.points : null;
+          if (t === 'polygon') {
+            // Detection d'etoile : on refuse tout ce qui n'a pas l'alternance.
+            if (!_pts || _pts.length < 6 || _pts.length % 2 !== 0) return null;
+            const _r = _pts.map(function (pt) {
+              return Math.sqrt((pt.x || 0) * (pt.x || 0) + (pt.y || 0) * (pt.y || 0));
+            });
+            const _evens = _r.filter(function (_, i) { return i % 2 === 0; });
+            const _odds = _r.filter(function (_, i) { return i % 2 === 1; });
+            const _eMax = Math.max.apply(null, _evens), _eMin = Math.min.apply(null, _evens);
+            const _oMax = Math.max.apply(null, _odds), _oMin = Math.min.apply(null, _odds);
+            // Les deux familles doivent etre homogenes ET bien separees.
+            const _homogene = (_eMax - _eMin) <= _eMax * 0.02 && (_oMax - _oMin) <= _oMax * 0.02;
+            const _separe = _eMin > _oMax * 1.15;
+            if (!_homogene || !_separe) return null; // pas une etoile -> on ne trahit pas la forme
+            _outPx = _eMax;
+            _inPx = _oMax;
+            _branches = _pts.length / 2;
+          }
+          // Un objet redimensionne porte son echelle dans scaleX/scaleY : les
+          // sommets sont en coordonnees LOCALES, il faut donc les remettre a
+          // l'echelle pour obtenir la taille REELLE en px canvas.
+          const _sx = Number(o.scaleX), _sy = Number(o.scaleY);
+          const _sc = (isFinite(_sx) && _sx > 0 && isFinite(_sy) && _sy > 0) ? (_sx + _sy) / 2 : 1;
+          const _starOut = Object.assign(base, { type: 'star',
+            radius: Math.round(((_outPx * _sc || 25) / MM_TO_PX) * 10) / 10,
+            points: Math.max(3, Math.min(24, Math.round(_branches || 5))) });
+          if (_inPx > 0) _starOut.innerRadius = Math.round(((_inPx * _sc) / MM_TO_PX) * 10) / 10;
+          return _starOut;
+        }
         if (t === 'line') {
           return { type: 'line',
             x1: toMm(o.x1 || 0), y1: toMm(o.y1 || 0),
@@ -3125,6 +3194,28 @@
     }).filter(p => p.elements.length > 0);
 
     if (!pages.length) return false;
+
+    // 🎨 v1.7.366 — TONS DIRECTS (PANTONE) : le .sp recu de l'app porte
+    //   `resources.spotInks`. Sans cette relecture, le trajet
+    //   app -> studio -> app PERDAIT les Pantones (le studio regenere un .sp
+    //   sans les encres, alors qu'il sait les ecrire quand il les connait).
+    //   Meme magasin partage que le reste : localStorage « sp_spot_inks ».
+    try { spRememberSpotInks(spFile.resources && spFile.resources.spotInks); } catch (_) {}
+
+    // 🛡️ v1.7.366 — STYLES NOMMES (typo + nuancier) : l'app les restaure a
+    //   l'ouverture d'un .sp, le studio NON. Un document arrive avec des styles
+    //   que la machine ne connait pas encore etait donc « vide » de ses styles
+    //   ici, puis reexporte SANS eux (mesure : typography [{Titre test}] -> []).
+    //   Meme comportement que loadProjectSP : on republie dans les cles partagees.
+    try {
+      const _st = (spFile.document && spFile.document.styles) || {};
+      if (Array.isArray(_st.typography) && _st.typography.length) {
+        localStorage.setItem('sp_typo_styles', JSON.stringify(_st.typography));
+      }
+      if (Array.isArray(_st.swatches) && _st.swatches.length) {
+        localStorage.setItem('sp_color_swatches', JSON.stringify(_st.swatches));
+      }
+    } catch (_) {}
 
     state.pageW = w; state.pageH = h; state.bleed = bl; state.viewMode = vMode;
     state.doc = { w, h, effW: vMode === 'spread' ? w * 2 : w, viewMode: vMode, bleed: bl, pages };
@@ -3223,6 +3314,12 @@
 
     // Reprendre une session éventuelle, OU importer la maquette envoyée par
     // SuperPrint (?from=sp + clé sp213_from_sp).
+    // 🛡️ v1.7.366 — restoreStudioSession() est appelé AVANT le bloc d'import
+    //   ci-dessous : son `newDocument()` écrasait la maquette fraîchement
+    //   importée (mesuré : un .sp de 2 objets ressortait à « 0 objets »).
+    //   On restaure donc d'abord le chat/session SANS toucher à la preview,
+    //   puis l'import pose la maquette (la preview vierge est créée avant si
+    //   aucune maquette n'est importée).
     let importedFromSP = false;
     const isFromSP = new URLSearchParams(window.location.search).get('from') === 'sp';
     if (isFromSP) {
@@ -5863,6 +5960,20 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
             objects.push({ type: 'ellipse', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
           } else if (t === 'triangle') {
             objects.push({ type: 'triangle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 50) * MM_TO_PX, height: (+el.height || 50) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
+          } else if (t === 'star') {
+            // 🛡️ v1.7.366 — ETOILES : cette branche MANQUAIT. Une etoile de la
+            //   preview disparaissait a l'export direct .sp alors que les autres
+            //   formes passaient.
+            //   ⚠️ ON ECRIT UN `polygon`, PAS UN `star` : `fabric.Star` n'existe
+            //   PAS dans le Fabric embarque (typeof fabric.Star === 'undefined').
+            //   Un objet {type:'star'} fait echouer enlivenObjects sur TOUT le
+            //   document (TypeError ... reading 'fromObject'). Le format natif
+            //   de l'app pour une etoile est un `polygon` a points alternes.
+            const _b1 = Math.max(3, Math.min(24, Math.round(+el.points || 5)));
+            const _o1 = (+el.radius || 30) * MM_TO_PX;
+            const _i1 = (+el.innerRadius || 0) > 0 ? (+el.innerRadius) * MM_TO_PX : _o1 * 0.5;
+            const _starPts = []; for (let _i = 0; _i < _b1 * 2; _i++) { const _r = _i % 2 === 0 ? _o1 : _i1; const _a = (Math.PI * _i) / _b1 - Math.PI / 2; _starPts.push({ x: _r * Math.cos(_a), y: _r * Math.sin(_a) }); }
+            objects.push({ type: 'polygon', left, top, points: _starPts, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
           } else if (t === 'line') {
             objects.push({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, scaleX: 1, scaleY: 1 });
           } else if (t === 'text' || t === 'textbox') {
@@ -6010,6 +6121,9 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) : 1 entrée = 1 couche
       //   chromatique supplémentaire à produire à l'export (CMJN ou RVB + Pantone).
+      // 🛡️ v1.7.366 — styles nommés (typo + nuancier) DÉJÀ présents via
+      //   spCollectStylesBlock() : ne pas les retirer, l'app les restaure à
+      //   l'ouverture (.sp comme .json).
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spCollectSpotInks() },
       textLinks: {}, guides: {}, masters: { templates: {}, assignments: {} },
       numbering: { enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 },
@@ -6043,6 +6157,15 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
         objects.push({ type: 'ellipse', left, top, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
       } else if (t === 'triangle') {
         objects.push({ type: 'triangle', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
+      } else if (t === 'star') {
+        // 🛡️ v1.7.366 — meme conversion que buildSPFile : on ecrit un `polygon`
+        //   (le format natif de l'app), JAMAIS un `star` : `fabric.Star` n'existe
+        //   pas dans le Fabric embarque et ferait echouer tout le chargement.
+        const _branches2 = Math.max(3, Math.min(24, Math.round(+el.points || 5)));
+        const _outR2 = (+el.radius || 30) * MM_TO_PX;
+        const _inR2 = (+el.innerRadius || 0) > 0 ? (+el.innerRadius) * MM_TO_PX : _outR2 * 0.5;
+        const _starPts = []; for (let _i = 0; _i < _branches2 * 2; _i++) { const _r = _i % 2 === 0 ? _outR2 : _inR2; const _a = (Math.PI * _i) / _branches2 - Math.PI / 2; _starPts.push({ x: _r * Math.cos(_a), y: _r * Math.sin(_a) }); }
+        objects.push({ type: 'polygon', left, top, points: _starPts, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
       } else if (t === 'line') {
         objects.push({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, scaleX: 1, scaleY: 1 });
       } else if (t === 'text' || t === 'textbox') {

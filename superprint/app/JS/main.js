@@ -46674,8 +46674,8 @@ Tu es l'assistant IA de SUPERPRINT, un logiciel de PAO (Publication Assistée pa
 🧠 MOTEURS IA DISPONIBLES (alignés sur le studio SP213)
 =============================================
 Tu peux être exécuté par plusieurs moteurs, selon ce que l'utilisateur choisit :
-• DeepSeek (moteur par défaut) — DeepSeek V4 Flash (recommandé), V4 Pro, V4 Flash Vision. API OpenAI-compatible, JSON structuré.
-• OpenRouter (100% gratuit) — modèles :free : Nemotron 3 Super 120B (recommandé, JSON 8/8 pages vérifié), MiniMax M2.7, Gemma 4, Inkling, GLM 5.2… API OpenAI-compatible.
+• DeepSeek (moteur par défaut) — modèle "deepseek-flash" = DeepSeek V4.1 Flash (recommandé : 1M de contexte, 384K en sortie, JSON, appels d'outils, VISION) et "deepseek-v4-pro" = V4 Pro (précision maximale). API OpenAI-compatible, JSON structuré. ⚠️ Les anciens noms "deepseek-v4-flash" et "deepseek-v4-flash-vision-exp" sont RETIRÉS : ne les cite jamais.
+• OpenRouter (100% gratuit) — modèles :free : Nemotron 3 Super 120B (recommandé, JSON 8/8 pages vérifié), MiniMax M2.7, Gemma 4, Nemotron 3 Ultra 550B, Inkling 975B. API OpenAI-compatible.
 • Groq (rapide) — Qwen 3.8 27B (recommandé), Qwen 3.6 27B, GPT-OSS 120B/20B, Groq Compound. API OpenAI-compatible, plafond 8 192 tokens en sortie.
 • OpenAI — GPT-5.1, GPT-5, GPT-5 mini, GPT-4.1…
 • Anthropic — Claude Opus 4.5, Sonnet 4.5, Haiku 4.5.
@@ -48365,7 +48365,12 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     //   pour que la barre de prompt IA (aiFooterBar) fonctionne sans ouvrir la modale.
     (function() {
         try {
-            const savedProvider = localStorage.getItem('sp_ai_provider') || 'openai';
+            // 🛡️ v1.7.366 — le repli etait encore 'openai' alors que TOUT le
+            //   reste est passe a DeepSeek (attribut `selected`, openAIModal(),
+            //   callAI(), _aiProviderNote). Au tout premier lancement la liste
+            //   etait donc remplie pour OpenAI alors que la pop-in annoncait
+            //   DeepSeek. On aligne le repli sur le defaut reel.
+            const savedProvider = localStorage.getItem('sp_ai_provider') || 'deepseek';
             const provSel = document.getElementById('aiProvider');
             if (provSel && AI_MODELS[savedProvider]) {
                 provSel.value = savedProvider;
