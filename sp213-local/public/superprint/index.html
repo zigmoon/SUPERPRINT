@@ -151,7 +151,8 @@
   .welcome-brand .sub { margin: 8px 0 0; font-size: 13px; color: var(--muted); letter-spacing: .5px; }
   .welcome-brand .sub .hl { color: var(--text); }
 
-  .install-section { background: var(--panel); border: 1px solid var(--border); border-bottom: 3px solid var(--accent); padding: 28px 30px; position: relative; }
+  /* Rembourrage bas plus genereux (36 px) : le hint s'y loge sans coller au filet noir. */
+  .install-section { background: var(--panel); border: 1px solid var(--border); border-bottom: 3px solid var(--accent); padding: 28px 30px 36px; position: relative; }
   /* Le titre est un conteneur : icone + libelle sur UNE ligne, puis la marge
      du BAS (11px = 6 + 5 demandes) s'applique vraiment SOUS le titre. */
   .install-section .is-title { margin: 0 0 11px; }
@@ -184,16 +185,18 @@
   .cmd-tab.active { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
 
   /* Le hint apparait au survol de la barre, POSITIONNE DANS LA MARGE BASSE
-     de la section (28px). ⚠️ En `position: absolute` et non en flux : le
-     contenu du lanceur est centre verticalement, donc un hint qui ajoute de
-     la hauteur ferait remonter TOUTE la page au survol (mesure : 13 px de
-     saut). Ici, zero pixel de decalage. */
+     de la section. ⚠️ En `position: absolute` et non en flux : le contenu
+     du lanceur est centre verticalement, donc un hint qui ajoute de la
+     hauteur ferait remonter TOUTE la page au survol (mesure : 13 px de
+     saut). Ici, zero pixel de decalage.
+     `bottom: 15px` + rembourrage bas de 36 px = 6 px de respiration de
+     chaque cote, pour ne plus coller au filet noir. */
   .cmd-hint {
-    position: absolute; left: 30px; right: 30px; bottom: 6px;
+    position: absolute; left: 30px; right: 30px; bottom: 15px;
     display: none; font-size: 11px; color: var(--muted); line-height: 1.4;
+    text-align: center;
   }
   .cmd-block:hover + .cmd-hint, .cmd-hint:hover { display: block; }
-  .cmd-hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
 
   .or-sep { display: flex; align-items: center; gap: 14px; margin: 26px 0 20px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
   .or-sep::before, .or-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
@@ -276,6 +279,13 @@
      + Documentation) partagent la même ligne. */
   .online-row.on-editor { grid-column: 1 / -1; }
 
+  /* 🔽 Les 4 lignes secondaires (Studio, SuperTyPo, Documentation, API) sont
+     VOLONTAIREMENT PLUS BASSES que la ligne Editor : elles ne portent qu'un
+     bloc de texte (40 px), alors que l'Editor affiche en plus son glyphe de
+     48 px. Rembourrage vertical 26 -> 18 px (~24 px de moins au total).
+     Le LISERÉ BAS reste identique : aucune ligne ne « tremble ». */
+  .online-row:not(.on-editor) { padding: 18px 30px; }
+
   /* ─── Mobile : comme en desktop, on reste sur l'index général, mais on cache
      toute la partie installation (code terminal à copier-coller) — le visiteur
      choisit directement entre App / Studio / Documentation. ─── */
@@ -294,6 +304,10 @@
       grid-column: 1 / -1;
       padding: 22px 24px;
     }
+    /* Même spécificité que la règle desktop `.online-row:not(.on-editor)`,
+       déclarée plus loin → c'est celle-ci qui gagne en mobile. On préserve
+       un rembourrage horizontal de 24 px (écran étroit). */
+    .online-row:not(.on-editor) { padding: 20px 24px; }
     .online-row .on-ic svg { width: 24px; height: 24px; }
     .online-row .on-ic img { width: 26px; height: 26px; }
     .online-row .on-ic.sp-editor-ic { font-size: 34px; width: 40px; height: 40px; }
@@ -470,9 +484,9 @@
         </span>
         <code id="installCmd">npx.cmd superprint</code>
         <div class="cmd-tabs">
-          <button class="cmd-tab active" data-os="win">Windows</button>
-          <button class="cmd-tab" data-os="mac">macOS</button>
-          <button class="cmd-tab" data-os="linux">Linux</button>
+          <button class="cmd-tab active" data-os="win">WIN</button>
+          <button class="cmd-tab" data-os="mac">MACOS</button>
+          <button class="cmd-tab" data-os="linux">LINUX</button>
         </div>
         <button class="btn btn-copy" data-copy="installCmd" title="Copy the command" aria-label="Copy the command" data-i18n-title="copyCmd" data-i18n-aria="copyCmd">
           <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
