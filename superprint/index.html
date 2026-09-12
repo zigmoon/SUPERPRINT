@@ -202,15 +202,19 @@
   }
   .online-row .on-ic { color: var(--accent); flex-shrink: 0; display: inline-flex; }
   .online-row .on-ic svg { width: 28px; height: 28px; }
-  .online-row .on-ic img { width: 30px; height: 30px; background: #fff; }
+  /* Icônes de ligne : les logotypes réels (Studio = spirale, SuperTyPo =
+     logotype-mot). ⚠️ AUCUN fond : ces SVG sont bicolores (formes blanches
+     + tracés noirs) et se lisent donc sur fond clair comme sur fond sombre.
+     Ma première version posait une plaque sombre, puis blanche — les deux
+     étaient fausses : la plaque enferme le logo et casse la lecture. */
+  .online-row .on-ic img { width: 30px; height: 30px; background: transparent; }
   .online-row .on-ic.sp-editor-ic {
     font-family: Georgia, 'Times New Roman', serif;
     font-size: 42px; font-weight: 400; color: #000; line-height: 1;
     width: 48px; height: 48px; display: inline-flex; align-items: center; justify-content: center;
   }
-  /* SuperTyPo : glyphe « A » (l'outil est un éditeur de lettres).
-     ⚠️ On n'utilise PAS icons/sper_typo.svg ici : c'est un LOGOTYPE (le mot
-     « SuperTyPo » dessiné, 4 lettres), illisible réduit à 32 px. */
+  /* SuperTyPo : glyphe « A » — conservé comme repli visuel, mais la ligne
+     utilise désormais le LOGOTYPE réel (icons/sper_typo.svg). */
   .online-row .on-ic.sp-typo-ic {
     font-family: Georgia, 'Times New Roman', serif;
     font-size: 42px; font-weight: 400; color: #000; line-height: 1;
