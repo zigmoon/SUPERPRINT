@@ -9,6 +9,147 @@
 //   Impact taille JSON : négligeable (~+2-3 octets/propriété).
 try { fabric.Object.NUM_FRACTION_DIGITS = 6; } catch (_) {}
 
+// ============================================================================
+// 📐 GÉOMÉTRIE DE TEXTE — HELPERS GLOBAUX (étape 1 correctifs texte)
+// ============================================================================
+// ⚠️ POURQUOI CES HELPERS EXISTENT (mesuré, ne pas « simplifier ») :
+//
+//   Fabric "calcTextHeight()" — qui produit "obj.height" — EXCLUT le leading
+//   situé SOUS la dernière ligne :
+//       e += (i === n - 1) ? getHeightOfLine(i) / lineHeight : getHeightOfLine(i)
+//   Donc "obj.height" est TOUJOURS inférieur à la somme des "getHeightOfLine()".
+//   Déficits mesurés : 4,75 px (fs14/lh1.3) · 2,71 px (fs24/lh1.1) ·
+//   12,43 px (fs11/lh2.0).
+//
+//   Or le CLIP (applyTextboxClipPath) et l'EXPORT PDF (_renderObjToPdfLib)
+//   comparaient naïvement "somme des lignes <= obj.height" : la dernière ligne
+//   ne « tenait » donc jamais. Conséquence VÉRIFIÉE : 5 lignes au canvas ->
+//   4 blocs texte seulement dans le PDF (la dernière ligne était silencieusement
+//   perdue). Un texte perdu à l'impression est le pire défaut possible.
+//
+//   La bonne comparaison : pour décider si la ligne i est visible, la contrainte
+//   de hauteur ne s'applique QU'À la dernière ligne incluse (son leading bas peut
+//   déborder du cadre, exactement comme Fabric le calcule). Les lignes
+//   intermédiaires comptent leur hauteur pleine.
+//
+//   Ces helpers sont la SOURCE DE VÉRITÉ UNIQUE pour le clip ET l'export : toute
+//   correction future devra passer par eux, jamais recalculer « à la main ».
+// ============================================================================
+(function spInstallTextMetrics() {
+  if (typeof window === 'undefined') return;
+  if (window.__spTextMetricsInstalled) return;
+
+  // Hauteur de chaque ligne visuelle (px). Null si indisponible.
+  function spTextMetrics(obj) {
+    if (!obj || !obj._textLines || !obj._textLines.length) return null;
+    var n = obj._textLines.length;
+    var H = new Array(n);
+    var fallback = null;
+    if (obj.fontSize && obj.lineHeight) fallback = obj.fontSize * obj.lineHeight;
+    for (var i = 0; i < n; i++) {
+      var h = 0;
+      try { h = Number(obj.getHeightOfLine(i)) || 0; } catch (_) { h = 0; }
+      if (!(h > 0)) h = fallback || 0;
+      H[i] = h;
+    }
+    return H;
+  }
+
+  // Hauteur à RÉSERVER pour les lignes [0..last].
+  //   Les lignes < last comptent leur hauteur PLEINE ; la dernière compte sa
+  //   hauteur SANS le leading bas (/ lineHeight), pour coller à "obj.height".
+  function spLineBoxHeight(obj, last, H) {
+    if (!H) H = spTextMetrics(obj);
+    if (!H || last < 0 || last >= H.length) return null;
+    var lh = (obj && obj.lineHeight > 0) ? obj.lineHeight : 1;
+    var total = 0;
+    for (var i = 0; i <= last; i++) {
+      total += (i === last) ? (H[i] / lh) : H[i];
+    }
+    return total;
+  }
+
+  // Nombre de lignes visibles dans un cadre de hauteur "frameH".
+  //   "forceLast" (défaut true) : si AUCUNE ligne ne tient, on en garde 1 ;
+  //   et si la dernière ligne dépasse malgré tout le cadre, on l'inclut quand
+  //   même — un texte légèrement rogné vaut mieux qu'un texte PERDU.
+  //   Mettre forceLast = false pour un comptage strict (diagnostic).
+  function spCountVisibleLines(obj, frameH, forceLast) {
+    if (forceLast === undefined) forceLast = true;
+    var H = spTextMetrics(obj);
+    if (!H) return 0;
+    if (!(frameH > 0)) return H.length;
+    var box = 0;
+    for (var i = 0; i < H.length; i++) {
+      box = spLineBoxHeight(obj, i, H);
+      if (box === null) return H.length;
+      if (!(box <= frameH + 0.5)) {
+        // La ligne i ne tient pas. Filet de sécurité : ne jamais rendre 0 ligne
+        // (texte invisible) ni laisser la DERNIÈRE ligne hors du PDF.
+        if (forceLast && i === H.length - 1) return H.length;
+        return forceLast ? Math.max(1, i) : i;
+      }
+    }
+    return H.length;
+  }
+
+  window.spTextMetrics = spTextMetrics;
+  window.spLineBoxHeight = spLineBoxHeight;
+  window.spCountVisibleLines = spCountVisibleLines;
+  window.__spTextMetricsInstalled = true;
+})();
+
+// ============================================================================
+// 📐 DIMENSIONS FIXES — HELPERS GLOBAUX (étape 2 correctifs texte)
+// ============================================================================
+// ⚠️ CONVENTION DU PROJET (à respecter absolument) :
+//     _fixedHeight / _fixedWidth valant 0 SIGNIFIE « pas de dimension fixe ».
+//   Or Fabric POSE _fixedHeight = 0 sur tout Textbox pendant initialize(),
+//   et les idiomes "x != null" et "x ?? fallback" sont TOUS FAUX pour 0 :
+//       0 != null   -> true
+//       0 ?? 27     -> 0      (?? ne rattrape que null/undefined)
+//   Conséquences MESURÉES :
+//     • spLockTextboxDimensions faisait Math.max(1, 0) = 1 -> bloc écrasé à
+//       1 px en entrant en édition, ensuite impossible à cliquer ;
+//     • 40 sites recopiaient la valeur 0 dans width/height.
+//
+//   RÈGLE :
+//     • pour SAVOIR si une dimension est fixe  -> spIsFixedSize(v)
+//     • pour OBTENIR une dimension exploitable -> spFixedHeight/Width(obj, fb)
+//   ⚠️ Les résolveurs renvoient TOUJOURS >= 1 : ne jamais mémoriser leur
+//      résultat puis le tester ensuite (le test serait toujours vrai).
+// ============================================================================
+(function spInstallFixedSizeHelpers() {
+  if (typeof window === 'undefined') return;
+  if (window.__spFixedSizeHelpersInstalled) return;
+
+  // Vrai si la valeur est une dimension fixe réellement exploitable (> 0).
+  function spIsFixedSize(v) {
+    return (typeof v === 'number') && isFinite(v) && v > 0;
+  }
+
+  // Hauteur exploitable : _fixedHeight si réellement fixée, sinon obj.height.
+  // Plancher à 1 (jamais 0).
+  function spFixedHeight(obj, fallback) {
+    if (!obj) return (spIsFixedSize(fallback) ? fallback : 1);
+    if (spIsFixedSize(obj._fixedHeight)) return obj._fixedHeight;
+    if (spIsFixedSize(obj.height)) return obj.height;
+    return spIsFixedSize(fallback) ? fallback : 1;
+  }
+
+  function spFixedWidth(obj, fallback) {
+    if (!obj) return (spIsFixedSize(fallback) ? fallback : 1);
+    if (spIsFixedSize(obj._fixedWidth)) return obj._fixedWidth;
+    if (spIsFixedSize(obj.width)) return obj.width;
+    return spIsFixedSize(fallback) ? fallback : 1;
+  }
+
+  window.spIsFixedSize = spIsFixedSize;
+  window.spFixedHeight = spFixedHeight;
+  window.spFixedWidth = spFixedWidth;
+  window.__spFixedSizeHelpersInstalled = true;
+})();
+
 // Initialisation différée : s'assurer que tous les canvas sont interactifs
 setTimeout(() => {
     if (typeof canvases !== 'undefined' && canvases) {
@@ -2148,10 +2289,18 @@ if (window._spGpuEnabled) {
             if (!textObj || (textObj.type !== 'textbox' && textObj.type !== 'text')) return;
             if (textObj.isEditing) return;
 
-            const baseW = (textObj._fixedWidth != null)
+            // 🛡️ ÉTAPE 2 (correctifs texte) : "_fixedWidth == null" est FAUX pour
+            //   la valeur 0 — or Fabric pose _fixedHeight = 0 sur tout Textbox à la
+            //   création. L'ancien code faisait donc Math.max(1, 0) = 1 -> le bloc
+            //   était ÉCRASÉ À 1 px dès l'entrée en édition, puis impossible à
+            //   cliquer (findTarget ne le trouvait plus). On n'accepte une dimension
+            //   fixe que si c'est un nombre strictement positif.
+            const _fwOk = (typeof textObj._fixedWidth === 'number') && isFinite(textObj._fixedWidth) && textObj._fixedWidth > 0;
+            const _fhOk = (typeof textObj._fixedHeight === 'number') && isFinite(textObj._fixedHeight) && textObj._fixedHeight > 0;
+            const baseW = _fwOk
                 ? textObj._fixedWidth
                 : (textObj.width != null ? textObj.width : (textObj.getScaledWidth ? textObj.getScaledWidth() : 0));
-            const baseH = (textObj._fixedHeight != null)
+            const baseH = _fhOk
                 ? textObj._fixedHeight
                 : (textObj.height != null ? textObj.height : (textObj.getScaledHeight ? textObj.getScaledHeight() : 0));
             const targetW = Math.max(1, baseW);
@@ -2161,10 +2310,12 @@ if (window._spGpuEnabled) {
                 textObj.set({ width: targetW, height: targetH });
             }
 
-            if (textObj._fixedWidth == null || Math.abs(textObj._fixedWidth - targetW) > 0.5) {
+            // 🛡️ ÉTAPE 2 : même piège ici — on ne teste plus "== null" mais la vraie
+            //   positivité (sinon _fixedWidth = 0 passait pour « déjà correct »).
+            if (!_fwOk || Math.abs(textObj._fixedWidth - targetW) > 0.5) {
                 textObj._fixedWidth = targetW;
             }
-            if (textObj._fixedHeight == null || Math.abs(textObj._fixedHeight - targetH) > 0.5) {
+            if (!_fhOk || Math.abs(textObj._fixedHeight - targetH) > 0.5) {
                 textObj._fixedHeight = targetH;
             }
         } catch (_) {}
@@ -5672,14 +5823,30 @@ if (window._spGpuEnabled) {
                         let acc = 0;
                         let safeHeight = 0;
                         let hasOverflow = false;
+                        // 📐 ÉTAPE 1 : la contrainte de hauteur ne s'applique qu'à
+                        //   la DERNIÈRE ligne incluse (le leading bas de la dernière
+                        //   ligne sort du cadre, comme dans obj.height). Comparer
+                        //   la somme brute faisait déborder la dernière ligne d'un
+                        //   déficit constant (4,75 px en fs14/lh1.3) -> elle était
+                        //   rognée en preview. On utilise le helper partagé avec
+                        //   l'export pour que les deux soient TOUJOURS cohérents.
+                        const _H = (typeof window.spTextMetrics === 'function') ? window.spTextMetrics(textbox) : null;
                         for (let i = 0; i < lineCount; i++) {
-                            const lh = textbox.getHeightOfLine(i);
+                            const lh = _H ? _H[i] : textbox.getHeightOfLine(i);
                             if (!isFinite(lh) || lh <= 0) continue;
-                            if (acc + lh <= frameHeight + TOL) {
+                            const _boxH = (typeof window.spLineBoxHeight === 'function')
+                                ? window.spLineBoxHeight(textbox, i, _H)
+                                : (acc + lh);
+                            if (_boxH !== null && _boxH <= frameHeight + TOL) {
                                 acc += lh;
                                 safeHeight = acc;
                             } else {
-                                hasOverflow = true;
+                                // 🛡️ Ne jamais déclarer un débordement pour la
+                                //   DERNIÈRE ligne si aucune autre ne suit : la
+                                //   clipser la ferait disparaître de l'aperçu alors
+                                //   qu'elle figure dans le PDF. On la garde.
+                                if (i < lineCount - 1) hasOverflow = true;
+                                else if (safeHeight <= 0) { acc += lh; safeHeight = acc; }
                                 break;
                             }
                         }
@@ -16053,8 +16220,8 @@ if (window._spGpuEnabled) {
                 // assure la cohérence pour toutes les propriétés propagées).
                 _stripInlineKeys(block, propKeys);
                 if (block === obj) continue; // bloc source déjà mis à jour par l'appelant
-                const fixedW = block._fixedWidth ?? block.width;
-                const fixedH = block._fixedHeight ?? block.height;
+                const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(block) : (block._fixedWidth || block.width);
+                const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(block) : (block._fixedHeight || block.height);
                 block.set(styleProps);
                 block.dirty = true;
                 block._clearCache();
@@ -20803,8 +20970,8 @@ if (window._spGpuEnabled) {
                     block.dirty = true;
 
                     // Préserver les dimensions fixes
-                    const fixedW = block._fixedWidth ?? block.width;
-                    const fixedH = block._fixedHeight ?? block.height;
+                    const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(block) : (block._fixedWidth || block.width);
+                    const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(block) : (block._fixedHeight || block.height);
 
                     // Forcer le rewrap
                     try { spForceInlineStyleRewrap(block); } catch (_) {}
@@ -25810,8 +25977,8 @@ if (window._spGpuEnabled) {
             }
             
             // ✨ PRÉSERVER les dimensions fixes AVANT toute modification
-            const fixedW = obj._fixedWidth ?? obj.width;
-            const fixedH = obj._fixedHeight ?? obj.height;
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
 
             const hasSelection = (obj.type === 'textbox' && obj.isEditing && obj.selectionStart != null && obj.selectionEnd != null && obj.selectionEnd > obj.selectionStart);
 
@@ -26075,8 +26242,8 @@ if (window._spGpuEnabled) {
             }
 
             // ✨ PRÉSERVER les dimensions fixes AVANT toute modification
-            const fixedW = obj._fixedWidth ?? obj.width;
-            const fixedH = obj._fixedHeight ?? obj.height;
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
 
             // Si une sélection existait au moment du changement: appliquer UNIQUEMENT à la sélection
             if (obj.type === 'textbox' && wasEditing && selEnd > selStart) {
@@ -26230,8 +26397,8 @@ if (window._spGpuEnabled) {
             const weight = this.value;
             
             // ✨ PRÉSERVER les dimensions fixes AVANT toute modification
-            const fixedW = obj._fixedWidth ?? obj.width;
-            const fixedH = obj._fixedHeight ?? obj.height;
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
             
             // Optimisation graisse police
             optimizeForTypography();
@@ -26484,8 +26651,8 @@ if (window._spGpuEnabled) {
                 let fontSizeForLH = obj.fontSize || 14;
                 
                 // ✨ PRÉSERVER les dimensions fixes
-                const fixedW = obj._fixedWidth ?? obj.width;
-                const fixedH = obj._fixedHeight ?? obj.height;
+                const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+                const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
                 
                 const hasSelection = (obj.type === 'textbox' && obj.isEditing && obj.selectionStart != null && obj.selectionEnd != null && obj.selectionEnd > obj.selectionStart);
                 if (hasSelection) {
@@ -26602,8 +26769,8 @@ if (window._spGpuEnabled) {
             const charSpacing = Number.isFinite(__rawCs) ? __rawCs : 0;
             
             // ✨ PRÉSERVER les dimensions fixes
-            const fixedW = obj._fixedWidth ?? obj.width;
-            const fixedH = obj._fixedHeight ?? obj.height;
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
             
             // ✨ Utiliser la sélection capturée AVANT le focus du sidebar si dispo,
             // sinon retomber sur l'état courant de l'objet.
@@ -26695,8 +26862,8 @@ if (window._spGpuEnabled) {
             const firstLine = parseFloat(document.getElementById('indentFirstLine').value) || 0;
 
             // Préserver les dimensions fixes
-            const fixedW = obj._fixedWidth ?? obj.width;
-            const fixedH = obj._fixedHeight ?? obj.height;
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
 
             obj._spIndentLeft = indentLeft;
             obj._spIndentRight = indentRight;
@@ -26754,8 +26921,8 @@ if (window._spGpuEnabled) {
             const scaleValue = scalePercent / 100;
             
             // ✨ PRÉSERVER les dimensions fixes
-            const fixedW = obj._fixedWidth ?? obj.width;
-            const fixedH = obj._fixedHeight ?? obj.height;
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
             
             // En mode édition, ne pas appliquer un scale au bloc entier
             if (obj.isEditing && obj.type === 'textbox') {
@@ -26902,8 +27069,8 @@ if (window._spGpuEnabled) {
             }
             
             // ✨ PRÉSERVER les dimensions fixes AVANT toute modification
-            const fixedW = obj._fixedWidth ?? obj.width;
-            const fixedH = obj._fixedHeight ?? obj.height;
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
             
             // 🚀 OPTIMISATION : Recalcul immédiat sans délai
             // 🛡️ v1.7.126 : on réinitialise AUSSI __charBounds et __lineOffsets. Sans ca,
@@ -26983,8 +27150,8 @@ if (window._spGpuEnabled) {
         const obj = activeCanvas.getActiveObject();
         if (obj && obj.enableHyphenation) {
             // ✨ PRÉSERVER les dimensions fixes
-            const fixedW = obj._fixedWidth ?? obj.width;
-            const fixedH = obj._fixedHeight ?? obj.height;
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
             
             obj.hyphenLanguage = currentHyphenLanguage;
             obj._styleMap = null;
@@ -27042,8 +27209,8 @@ if (window._spGpuEnabled) {
         }
         
         // Forcer le re-rendu avec préservation des dimensions
-        const fixedW = obj._fixedWidth ?? obj.width;
-        const fixedH = obj._fixedHeight ?? obj.height;
+        const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+        const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
         
         obj._clearCache(); 
         obj.initDimensions(); 
@@ -27099,8 +27266,8 @@ if (window._spGpuEnabled) {
             obj.set({ charSpacing: charSpacingValue });
             
             // ✨ PRÉSERVER les dimensions fixes
-            const fixedW = obj._fixedWidth ?? obj.width;
-            const fixedH = obj._fixedHeight ?? obj.height;
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
             
             // Forcer le recalcul
             obj._styleMap = null;
@@ -27145,8 +27312,8 @@ if (window._spGpuEnabled) {
                 obj.set({ charSpacing: 0 });
                 
                 // ✨ PRÉSERVER les dimensions fixes
-                const fixedW = obj._fixedWidth ?? obj.width;
-                const fixedH = obj._fixedHeight ?? obj.height;
+                const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+                const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
                 
                 obj._styleMap = null;
                 obj.__spHyphenFlags = [];
@@ -27244,8 +27411,8 @@ if (window._spGpuEnabled) {
                 }
                 
                 // ✨ PRÉSERVER les dimensions fixes AVANT toute modification
-                const fixedW = obj._fixedWidth ?? obj.width;
-                const fixedH = obj._fixedHeight ?? obj.height;
+                const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+                const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
                 
                 // S'assurer que le texte reste confiné dans le bloc
                 // Ne PAS modifier splitByGrapheme ici (préserver le mode de césure choisi)
@@ -30225,8 +30392,8 @@ if (window._spGpuEnabled) {
                     if (!obj) return;
                     if (obj.type !== 'textbox' && obj.type !== 'text' && obj.type !== 'i-text') return;
                     try {
-                        const fixedW = obj._fixedWidth ?? obj.width;
-                        const fixedH = obj._fixedHeight ?? obj.height;
+                        const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+                        const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
                         obj._styleMap = null;
                         obj._textLines = null;
                         obj.__lineWidths = null;
@@ -37137,10 +37304,20 @@ https://superprint.app
                     var _frameHClip = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0)
                         ? obj._fixedHeight : (obj.height || 0);
                     if (_frameHClip > 0) {
-                        var _accH = 0;
-                        for (var _cli = 0; _cli < _spLineH.length; _cli++) {
-                            if (_accH + _spLineH[_cli] <= _frameHClip + 0.5) { _accH += _spLineH[_cli]; }
-                            else { _spMaxLinesByFrame = Math.max(1, _cli); break; }
+                        // 📐 ÉTAPE 1 : utiliser le helper partagé avec le clip de
+                        //   la preview. La dernière ligne ne compte que sa hauteur
+                        //   sans leading bas, sinon elle ne « tient » jamais dans
+                        //   obj.height (déficit Fabric constant) et était PERDUE
+                        //   du PDF (5 lignes au canvas -> 4 dans le fichier).
+                        if (typeof window.spCountVisibleLines === 'function') {
+                            var _vis = window.spCountVisibleLines(obj, _frameHClip, true);
+                            if (_vis >= 1 && _vis < _spMaxLinesByFrame) _spMaxLinesByFrame = _vis;
+                        } else {
+                            var _accH = 0;
+                            for (var _cli = 0; _cli < _spLineH.length; _cli++) {
+                                if (_accH + _spLineH[_cli] <= _frameHClip + 0.5) { _accH += _spLineH[_cli]; }
+                                else { _spMaxLinesByFrame = Math.max(1, _cli); break; }
+                            }
                         }
                     }
                 } catch (_) {
@@ -37202,7 +37379,12 @@ https://superprint.app
                     // Repli historique (pas de métriques getHeightOfLine dispo)
                     var _flh = fontSizePx * _lineHeightRatio;
                     if (_flh > 0) {
-                        var _mbf = Math.floor((frameHeight + 0.5) / _flh);
+                        // 📐 ÉTAPE 1 : ce repli divisait le cadre par la hauteur de
+                        //   ligne PLEINE -> même déficit, dernière ligne perdue. On
+                        //   passe par le helper partagé (cohérent avec le clip).
+                        var _mbf = (typeof window.spCountVisibleLines === 'function')
+                            ? window.spCountVisibleLines(obj, frameHeight, true)
+                            : Math.floor((frameHeight + 0.5) / _flh);
                         if (_mbf >= 1 && _mbf < maxLines) maxLines = _mbf;
                     }
                 }
@@ -43662,8 +43844,8 @@ function applyTextStyleToSelection(style, value) {
         const s = obj.selectionStart, e = obj.selectionEnd;
 
         // 🔒 Préserver le cadre fixe (les limites doivent rester impératives)
-        const fixedW = obj._fixedWidth ?? obj.width;
-        const fixedH = obj._fixedHeight ?? obj.height;
+        const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+        const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
         switch(style) {
             case 'bold': {
                 const styles = obj.getSelectionStyles(s, e);
@@ -51342,8 +51524,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 return; // ne pas écraser le bloc entier
             }
 
-            const fixedW = obj._fixedWidth ?? obj.width;
-            const fixedH = obj._fixedHeight ?? obj.height;
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
 
             obj.set({
                 fontFamily: style.fontFamily || obj.fontFamily,
@@ -51536,8 +51718,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         if (!c) return;
         let changed = false;
         c.getObjects().filter(o => o.type === 'textbox' && o._appliedStyleId === styleId).forEach(obj => {
-            const fixedW = obj._fixedWidth ?? obj.width;
-            const fixedH = obj._fixedHeight ?? obj.height;
+            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
             obj.set({
                 fontFamily: style.fontFamily || obj.fontFamily,
                 fontSize: style.fontSize || obj.fontSize,
@@ -66690,8 +66872,8 @@ function _spReplaceFontFamilyEverywhere(fromFamily, toFamily) {
                 if (touched) {
                     replaced++;
                     try {
-                        const fixedW = obj._fixedWidth ?? obj.width;
-                        const fixedH = obj._fixedHeight ?? obj.height;
+                        const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
+                        const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
                         if (typeof obj._clearCache === 'function') obj._clearCache();
                         if (typeof obj.initDimensions === 'function') obj.initDimensions();
                         if (obj._fixedWidth) obj.width = fixedW;
