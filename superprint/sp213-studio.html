@@ -1072,6 +1072,20 @@
         </div>
         <div class="hint" id="viewmodeHint">Une page unique fermée (format largeur × hauteur).</div>
       </div>
+
+      <!-- v1.7.392 — Fond perdu (bleed) : la valeur que l'IA doit respecter.
+           Avant, le fond perdu valait 3 mm EN DUR dans le prompt : impossible de
+           composer un fond qui deborde de 5 mm. -->
+      <div class="field field-sep">
+        <div class="label-row">
+          <label id="bleedLabel">Fond perdu (bleed)</label>
+          <span class="info-icon" tabindex="0" aria-label="Info fond perdu" data-i18n-aria="info.bleed">?
+            <span class="info-pop" id="bleedPop">Épaisseur de papier qui déborde de la page et sera coupée à la finition. <b>3 mm</b> est la valeur standard, jusqu'à <b>5 mm</b> chez certains imprimeurs. L'IA compose les fonds, photos pleine page et formes décoratives en tenant compte de cette valeur. Le texte, lui, reste toujours à l'intérieur des marges de sécurité.</span>
+          </span>
+        </div>
+        <input id="pageBleed" type="number" value="3" min="0" max="20" step="0.5">
+        <div class="hint" id="bleedHint">Les fonds et photos pleine page débordent de 3 mm et seront coupés à la finition.</div>
+      </div>
     </div>
     </div><!-- /prefs-col 1 (Format + Layout) -->
     </div><!-- /prefs-grid -->
@@ -1521,7 +1535,7 @@
     dsModel: DEEPSEEK_MODELS[0][0], // 🆕 modèle DeepSeek
     wllmModel: WLLM_MODELS[0][0],
     engine: 'deepseek', // 🆕 défaut = DeepSeek ; 'openai' | 'deepseek' | 'openrouter' | 'groq' | 'webllm'
-    pageW: 210, pageH: 297, bleed: 3,
+    pageW: 210, pageH: 297, bleed: 3, // v1.7.392 : pilote par le champ #pageBleed
     viewMode: 'single', // 'single' | 'spread'
     pages: [],
     doc: null,
@@ -1626,6 +1640,9 @@
       'welcome.wllmModels': 'WebLLM models (Hugging Face)',
       'welcome.wllmCheck': 'Check WebGPU',
       'welcome.format': 'Document format',
+      'welcome.bleed': 'Bleed',
+      'welcome.bleedPop': 'Paper that overflows the page and gets trimmed during finishing. 3 mm is the standard value, up to 5 mm with some printers. The AI composes backgrounds, full-page photos and decorative shapes using this value. Text always stays inside the safe margins.',
+      'welcome.bleedHint': 'Backgrounds and full-page photos overflow by {n} mm and will be trimmed.',
       'welcome.formatPop': 'Page width and height in millimeters (like in SuperPrint). Common formats: A4 210×297, A5 148×210, A3 297×420, card 85×55.',
       'welcome.width': 'Width (mm)',
       'welcome.widthPop': 'Page width in millimeters. E.g. A4 = 210.',
@@ -1760,6 +1777,9 @@
       'welcome.wllmModels': 'Modèles WebLLM (Hugging Face)',
       'welcome.wllmCheck': 'Vérifier WebGPU',
       'welcome.format': 'Format du document',
+      'welcome.bleed': 'Fond perdu (bleed)',
+      'welcome.bleedPop': 'Épaisseur de papier qui déborde de la page et sera coupée à la finition. 3 mm est la valeur standard, jusqu\'à 5 mm chez certains imprimeurs. L\'IA compose les fonds, photos pleine page et formes décoratives en tenant compte de cette valeur. Le texte, lui, reste toujours à l\'intérieur des marges de sécurité.',
+      'welcome.bleedHint': 'Les fonds et photos pleine page débordent de {n} mm et seront coupés à la finition.',
       'welcome.formatPop': 'Largeur et hauteur de la page en millimètres (comme dans SuperPrint). Formats courants : A4 210×297, A5 148×210, A3 297×420, carte 85×55.',
       'welcome.width': 'Largeur (mm)',
       'welcome.widthPop': 'Largeur de la page en millimètres. Ex. A4 = 210.',
@@ -1894,6 +1914,9 @@
       'welcome.wllmModels': 'WebLLMモデル（Hugging Face）',
       'welcome.wllmCheck': 'WebGPUを確認',
       'welcome.format': 'ドキュメント形式',
+      'welcome.bleed': '塗り足し（ブリード）',
+      'welcome.bleedPop': 'ページからはみ出し、仕上げで断裁される紙の幅です。標準は3mm、印刷会社によっては5mmまで。AIは背景・全面写真・装飾図形をこの値で構成します。テキストは常に安全マージンの内側に収まります。',
+      'welcome.bleedHint': '背景と全面写真は{n}mmはみ出し、仕上げで断裁されます。',
       'welcome.formatPop': 'ページの幅と高さ（ミリメートル、SuperPrintと同じ）。一般的な形式：A4 210×297、A5 148×210、A3 297×420、カード 85×55。',
       'welcome.width': '幅（mm）',
       'welcome.widthPop': 'ページ幅（ミリメートル）。例：A4 = 210。',
@@ -2129,6 +2152,8 @@
       'micBtn': 'chat.micTip',
       'imgToggleTip': 'chat.imgToggleTip',
       'imgToggleLabel': 'chat.imgToggleLabel',
+      'bleedLabel': 'welcome.bleed',
+      'bleedPop': 'welcome.bleedPop',
       'sendBtn': 'chat.sendTip',
       'welcomeCloseBtn': 'welcome.close',
       'undoBtn': 'preview.undoBtnTitle',
@@ -2525,6 +2550,9 @@
 
     // 🆕 v1.7.391 — case « Images » : habillage photo auto (DÉFAUT : décochée).
     spImagesInit();
+
+    // 🆕 v1.7.392 — fond perdu piloté par les réglages (défaut 3 mm).
+    bledInit();
 
     buildQuickChips();
 
@@ -3514,6 +3542,73 @@
       '  remplace pas. Le texte reste le contenu principal.';
   }
   window.sp213ImagesPromptNote = spImagesPromptNote;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // v1.7.392 — FOND PERDU (bleed) PILOTÉ PAR LES RÉGLAGES + DATES ACTUELLES
+  //
+  // Défaut mesuré avant : le prompt écrivait « 3 » / « + 6 » / « -3 » EN DUR à
+  // 19 endroits. Impossible de composer un fond qui déborde de 5 mm.
+  //
+  // bled() est désormais l'UNIQUE source de vérité : tous les calculs du prompt
+  // en dérivent (dépassement, largeur totale, coordonnées négatives).
+  // ══════════════════════════════════════════════════════════════════════════
+  function bled() {
+    const v = Number(state.bleed);
+    return isFinite(v) ? Math.min(20, Math.max(0, v)) : 3;
+  }
+  function bledUpdateHint() {
+    const h = $('bleedHint');
+    if (h) h.textContent = t('welcome.bleedHint', { n: bled() });
+  }
+  function bledInit() {
+    const inp = $('pageBleed');
+    if (!inp) return;
+    // Valeur par défaut : 3 mm. On relit ce que SuperPrint a mémorisé si présent.
+    let v = 3;
+    try {
+      const memo = localStorage.getItem('sp_bleed_v1');
+      if (memo !== null) v = Number(memo);
+    } catch (_) {}
+    if (!isFinite(v)) v = 3;
+    v = Math.min(20, Math.max(0, v));
+    inp.value = v;
+    state.bleed = v;
+    bledUpdateHint();
+    inp.addEventListener('input', function () {
+      let x = Number(inp.value);
+      if (!isFinite(x)) x = 3;
+      x = Math.min(20, Math.max(0, x));
+      state.bleed = x;
+      try { localStorage.setItem('sp_bleed_v1', String(x)); } catch (_) {}
+      bledUpdateHint();
+    });
+  }
+  window.sp213Bled = bled;
+  window.sp213BledInit = bledInit;
+
+  // Consigne de DATE : les modèles utilisent leur année d'entraînement et
+  // produisent « 2025 » alors que nous sommes en 2026. On passe l'année courante
+  // en clair et on interdit les années passées pour un événement à venir.
+  function spDateNote() {
+    const now = new Date();
+    const annee = now.getFullYear();
+    const mois = now.getMonth() + 1;
+    const noms = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet',
+      'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+    const enNoms = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+      'August', 'September', 'October', 'November', 'December'];
+    return '\n\n=== DATES — NOUS SOMMES EN ' + annee + ' ===\n' +
+      '• La date du jour est ' + now.getDate() + ' ' + noms[now.getMonth()] + ' ' + annee +
+      ' (' + enNoms[now.getMonth()] + ' ' + now.getDate() + ', ' + annee + ').\n' +
+      '• N\'utilise JAMAIS ' + (annee - 1) + ' ni une année antérieure pour un événement\n' +
+      '  PRÉSENT ou À VENIR : ce serait une date passée, donc fausse.\n' +
+      '• Pour un événement à venir, choisis une date RÉALISTE dans le futur proche :\n' +
+      '  mois ' + mois + ' à ' + (mois + 3 > 12 ? 12 : mois + 3) + ' ' + annee + ', ou début ' + (annee + 1) + '.\n' +
+      '• Si l\'utilisateur donne une date, RESPECTE-la exactement.\n' +
+      '• Une année passée n\'est acceptable que si l\'utilisateur la demande\n' +
+      '  explicitement (rétrospective, archives, « en 2019… »).';
+  }
+  window.sp213DateNote = spDateNote;
 
   function initWebImage() {
     const btn = $('webImgBtn');
@@ -5031,7 +5126,8 @@
 
     // v1.7.391 — la case « Images » ajoute une consigne photo au system prompt.
     const _spImgNote = spImagesPromptNote(state.attachments.filter(function (a) { return a.type === 'image'; }).length);
-    const system = buildSystemPrompt() + _spImgNote;
+    // v1.7.392 — rappel de la date courante (les modèles sortaient « 2025 »).
+    const system = spResolveBleedTokens(buildSystemPrompt()) + _spImgNote + spDateNote();
     const messages = [{ role: 'system', content: system }];
     const recent = state.chat.slice(-12);
     recent.forEach(m => messages.push({ role: m.role, content: m.text }));
@@ -5191,6 +5287,19 @@
     });
   }
 
+  // v1.7.392 — Les jetons @BLED@ / @BLED2@ resolvent le fond perdu DANS LA
+  //   CONSTANTE SP213_LAYOUT_SYSTEM. Celle-ci est evaluee UNE SEULE FOIS au
+  //   chargement, AVANT la lecture du reglage : y mettre `${bled()}` figeait la
+  //   valeur (mesure : le prompt envoyait 3 mm alors que le reglage valait 5).
+  //   Ces jetons sont resolus ici, a CHAQUE construction du prompt.
+  function spResolveBleedTokens(txt) {
+    if (!txt) return txt;
+    const b = bled();
+    return String(txt)
+      .split('@BLED2@').join(String(b * 2))
+      .split('@BLED@').join(String(b));
+  }
+
   function buildSystemPrompt() {
     // Mode LOCAL (WLLM) : le modèle 3B suit mal les longs prompts → on fournit un
     // prompt court, ultra-contraint, avec un exemple JSON complet à imiter.
@@ -5247,13 +5356,13 @@ DOCUMENT COURANT
 • Format : ${state.pageW} × ${state.pageH} mm, orientation ${state.pageW > state.pageH ? 'paysage' : 'portrait'}
 • Mode d'affichage : ${state.viewMode === 'spread' ? 'DOUBLE PAGE (spread) — largeur totale ' + (state.pageW * 2) + ' mm, deux pages côte à côte, gouttière (reliure) au centre à ' + state.pageW + ' mm. Aucun texte ne doit traverser la gouttière.' : 'PAGE SIMPLE — une page unique fermée.'}
 • Zone sûre : 15 mm des bords pour le texte lisible
-• Fonds perdus : 3 mm (uniquement pour fonds / photos pleine page / formes décoratives).
-  🔴 Fond pleine page = rectangle left:-3, top:-3, width:(largeur+6), height:(hauteur+6).
-  Ex. format ${state.pageW}×${state.pageH} → left:-3, top:-3, width:${state.pageW + 6}, height:${state.pageH + 6}.
+• Fonds perdus : ${bled()} mm (uniquement pour fonds / photos pleine page / formes décoratives).
+  🔴 Fond pleine page = rectangle left:-${bled()}, top:-${bled()}, width:(largeur+${bled() * 2}), height:(hauteur+${bled() * 2}).
+  Ex. format ${state.pageW}×${state.pageH} → left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() * 2}, height:${state.pageH + bled() * 2}.
   ⚠️ EN DOUBLE PAGE, « pleine page » = la PLANCHE ENTIÈRE : la largeur à couvrir est
-  ${state.pageW * 2} mm, donc left:-3, top:-3, width:${state.pageW * 2 + 6}, height:${state.pageH + 6}.
-  Un fond de ${state.pageW + 6} mm ne couvrirait qu'UNE des deux pages.
-  JAMAIS left:0/top:0 (laisserait 3 mm de blanc au bord après coupe).
+  ${state.pageW * 2} mm, donc left:-${bled()}, top:-${bled()}, width:${state.pageW * 2 + bled() * 2}, height:${state.pageH + bled() * 2}.
+  Un fond de ${state.pageW + bled() * 2} mm ne couvrirait qu'UNE des deux pages.
+  JAMAIS left:0/top:0 (laisserait ${bled()} mm de blanc au bord après coupe).
 • Toutes les coordonnées en MILLIMÈTRES (mm). fontSize en POINTS (pt). Couleurs #RRGGBB.
 ${(function(){
   const H = state.pageH || 297;
@@ -5293,7 +5402,7 @@ ${(function(){
       '    • INTERDIT : une forme ou un texte qui recouvre toute la plancher d\'un seul tenant,\n' +
       '      et surtout : NE METS JAMAIS DEUX PAGES côte à côte DANS une plancher.\n' +
       '      Une plancher contient DÉJÀ les deux pages.\n' +
-      '    • Fond PLEINE PLANCHE (avec fond perdu) : left:-3, top:-3, width:' + (W + 6) + ', height:' + (H + 6) + '.'
+      '    • Fond PLEINE PLANCHE (avec fond perdu) : left:-' + bled() + ', top:-' + bled() + ', width:' + (W + bled() * 2) + ', height:' + (H + bled() * 2) + '.'
     : '';
   return '\nCONTRAINTES NUMÉRIQUES DU FORMAT COURANT (' + W + '×' + H + ' mm) :\n' +
     (modeSpread ? '  ⚠️ Tu composes UNE PLANCHE de ' + W + ' mm de large (= 2 pages de ' + PW + ' mm séparées par la gouttière à ' + PW + ' mm).\n' : '') +
@@ -5359,8 +5468,8 @@ VALEURS À APPLIQUER (A4 / A5, à réduire proportionnellement sur les petits fo
    • top >= tête ;
    • top + hauteur <= (hauteur - queue) ;
      avec hauteur = nb_lignes × fontSize × lineHeight × 1.13 × 0.353.
-   • Pour un FOND PLEINE PAGE, le contraire : il DOIT déborder de 3 mm partout
-     (left:-3, top:-3, width:largeur+6, height:hauteur+6). Ne confonds pas les
+   • Pour un FOND PLEINE PAGE, le contraire : il DOIT déborder de ${bled()} mm partout
+     (left:-${bled()}, top:-${bled()}, width:largeur+${bled() * 2}, height:hauteur+${bled() * 2}). Ne confonds pas les
      deux cas : le fond couvre le bord, le texte s'en écarte.
 ═══ ÉCHELLE TYPOGRAPHIQUE — LA RÈGLE LA PLUS IMPORTANTE ═══
 🔴 UNE TAILLE DE POLICE NE SE CHOISIT JAMAIS « AU FEELING » : elle se DÉDUIT de la
@@ -5516,7 +5625,7 @@ ${(function(){
            : 'produis autant d\'entrées "pages" que de PLANCHEs, car EN DOUBLE PAGE **UNE ENTRÉE = UNE PLANCHE** (2 pages côte à côte), PAS une page de livre. ') +
         'Dans une planche, la page de GAUCHE va de 0 à ' + state.pageW + ' mm et la page de DROITE de ' + state.pageW + ' à ' + (state.pageW * 2) + ' mm ; ' +
         'une planche qui ne contient qu\'UNE page laisse l\'autre moitié VIDE. ' +
-        'Le fond perdu couvre la PLANCHE (width ' + (state.pageW * 2 + 6) + ' mm). Contenu COMPLET sur chaque page, cohérence graphique stricte (mêmes marges, folios, grille).';
+        'Le fond perdu couvre la PLANCHE (width ' + (state.pageW * 2 + bled() * 2) + ' mm). Contenu COMPLET sur chaque page, cohérence graphique stricte (mêmes marges, folios, grille).';
     }
     // 🆕 v1.7.388 — le nombre de pages doit etre CHIFFRE. Mesure : « produis le
     //   nombre demandé de entrées » (sans nombre) faisait produire UNE seule page,
@@ -5545,7 +5654,7 @@ RÈGLES STRICTES :
 • Si tu n'es pas sûr, privilégie un "reply" court et des "elements" complets.
 
 "reply" est FACULTATIF mais recommandé : un court message qui explique tes choix de composition.
-Chaque page doit contenir 8 à 20 éléments. Respecte strictement : top + height ≤ hauteur + 3 mm ET left + width ≤ largeur + 3 mm.
+Chaque page doit contenir 8 à 20 éléments. Respecte strictement : top + height ≤ hauteur + ${bled()} mm ET left + width ≤ largeur + ${bled()} mm.
 
 MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette actuelle) :
 • La section MAQUETTE ACTUELLE (dans le message) fournit des IDs stables : p{page}-b{bloc} pour
@@ -5926,7 +6035,7 @@ Produis exactement ${pageCount} pages indexées de 0 à ${pageCount - 1}. ${doma
 Format: {"pageIndex":${index},"elements":[...]}. Coordonnées en mm, fontSize en pt, couleurs #RRGGBB.
 Types: rectangle, text, circle, ellipse, triangle, line, star, image. Chaque texte exige left,top,width,text,fontSize,fill,fontFamily.
 Ordre des calques: fonds, images, formes, titres, corps, légendes, folio. Utilise 6 à 14 éléments utiles.
-Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.pageH + 6}. Texte dans les marges et jamais sous ${state.pageH - 10}mm. ${domainPack}`;
+Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() * 2}, height:${state.pageH + bled() * 2}. Texte dans les marges et jamais sous ${state.pageH - 10}mm. ${domainPack}`;
           const pageUser = 'BRIEF: ' + clipWebLLMText(state.lastPrompt || brief, 1700) +
             '\nDIRECTION COMMUNE: ' + JSON.stringify(sharedPlan) +
             '\nPAGE À PRODUIRE: ' + JSON.stringify(pageSpecs[index]);
@@ -7742,8 +7851,8 @@ B. FORMATS & LIMITES DU DOCUMENT
 • Orientation : portrait (hauteur > largeur) ou paysage (largeur > hauteur).
 • Zone visible imprimée : de 0 à LARGEUR mm en x, de 0 à HAUTEUR mm en y.
 • Zone sûre (marge typo 15 mm) : texte lisible entre 15 mm et (LARGEUR-15) / (HAUTEUR-15).
-• Fonds perdus (bleed) : 3 mm standard, RÉSERVÉS aux fonds, photos pleine page et formes
-  décoratives (coordonnées de -3 à LARGEUR+3). JAMAIS de texte dedans.
+• Fonds perdus (bleed) : @BLED@ mm, RÉSERVÉS aux fonds, photos pleine page et formes
+  décoratives (coordonnées de -@BLED@ à LARGEUR+@BLED@). JAMAIS de texte dedans.
 • RÈGLE ABSOLUE : top + height ≤ HAUTEUR + 3 ET left + width ≤ LARGEUR + 3. Sinon, raccourcis,
   réduis la typo, ou passe à la page suivante. JAMAIS de bloc qui déborde.
 
@@ -7803,16 +7912,16 @@ D. MULTIPAGE — LIVRE, MAGAZINE, CATALOGUE, BROCHURE
       "targetPages": 3,
       "pages": [
         { "pageIndex": 0, "elements": [
-            { "type": "rectangle", "left": -3, "top": -3, "width": 426, "height": 303, "fill": "#FFFFFF" },
+            { "type": "rectangle", "left": -@BLED@, "top": -@BLED@, "width": 420+@BLED2@, "height": 297+@BLED2@, "fill": "#FFFFFF" },
             { "type": "text", "left": 228, "top": 15, "width": 174, "text": "COUVERTURE", "fontSize": 30, "fill": "#0F172A", "fontFamily": "Bebas Neue" }
         ] },
         { "pageIndex": 1, "elements": [
-            { "type": "rectangle", "left": -3, "top": -3, "width": 426, "height": 303, "fill": "#FFFFFF" },
+            { "type": "rectangle", "left": -@BLED@, "top": -@BLED@, "width": 420+@BLED2@, "height": 297+@BLED2@, "fill": "#FFFFFF" },
             { "type": "text", "left": 18, "top": 15, "width": 174, "text": "Page 2 à gauche", "fontSize": 11, "fill": "#0F172A", "fontFamily": "Open Sans", "textAlign": "justify", "enableHyphenation": true, "hyphenLanguage": "fr" },
             { "type": "text", "left": 228, "top": 15, "width": 174, "text": "Page 3 à droite", "fontSize": 11, "fill": "#0F172A", "fontFamily": "Open Sans", "textAlign": "justify", "enableHyphenation": true, "hyphenLanguage": "fr" }
         ] },
         { "pageIndex": 2, "elements": [
-            { "type": "rectangle", "left": -3, "top": -3, "width": 426, "height": 303, "fill": "#FFFFFF" },
+            { "type": "rectangle", "left": -@BLED@, "top": -@BLED@, "width": 420+@BLED2@, "height": 297+@BLED2@, "fill": "#FFFFFF" },
             { "type": "text", "left": 18, "top": 15, "width": 174, "text": "Page 4 à gauche", "fontSize": 11, "fill": "#0F172A", "fontFamily": "Open Sans", "textAlign": "justify", "enableHyphenation": true, "hyphenLanguage": "fr" }
         ] }
       ]
@@ -7955,7 +8064,7 @@ G. CONSTRUCTION DES ÉLÉMENTS (ordre = ordre des calques)
   Ajoute textAlign, lineHeight, fontWeight quand pertinent.
 • Estime la hauteur de texte : hauteur_mm ≈ lignes × fontSize(pt) × lineHeight × 0.353.
   Une ligne de 11 pt à lineHeight 1.4 ≈ 5.4 mm. Dimensionne le width pour que le texte tienne.
-• Fond pleine page = rectangle left:-3, top:-3, width:LARGEUR+6, height:HAUTEUR+6.
+• Fond pleine page = rectangle left:-@BLED@, top:-@BLED@, width:LARGEUR+@BLED2@, height:HAUTEUR+@BLED2@.
 • Rythme vertical : bandes de ~12-16 mm. Espacements : 4 mm (lié), 8 mm (groupé), 12-16 mm (section).
 • Un seul point focal par page (le titre dominant = plus grand contraste de taille).
 
@@ -7966,7 +8075,7 @@ H. PIÈCES JOINTES (IMAGES & TEXTES)
   - Lis le nom, les dimensions (ex. 1200×800 px → ratio 3:2), la data URI fournie.
   - Place-les avec type "image" + "imageUrl" (data URI) + left/top/width/height en mm
     respectant leur ratio. Toujours ajouter une LÉGENDE sous l'image.
-  - Une image pleine page peut couvrir le format (avec fond perdu -3). Une image secondaire
+  - Une image pleine page peut couvrir le format (avec fond perdu -@BLED@). Une image secondaire
     s'intègre à la grille. Ne déforme JAMAIS l'image (respecte le ratio).
   - Si plusieurs images : hiérarchise-les (image principale grande, secondaires plus petites).
 • TEXTES fournis : utilise leur contenu comme base RÉELLE des paragraphes (jamais de Lorem).
@@ -7980,7 +8089,7 @@ I. FIN DE PAGE & DISCIPLINE DE SORTIE
 • FIN DE PAGE : le bas du dernier bloc de chaque page doit être ≤ HAUTEUR - 10 mm (jamais collé
   au bord). Si ça déborde : réduis la fontSize (≥ 8 pt), raccourcis, ou passe à la page suivante.
 • Réponds UNIQUEMENT en JSON valide, aucun texte autour, aucun bloc markdown, aucune balise XML.
-• Coordonnées en mm (1 décimale max). Négatif uniquement pour le fond perdu (-3 mm).
+• Coordonnées en mm (1 décimale max). Négatif uniquement pour le fond perdu (-@BLED@ mm).
 • En spread : coordonnées PAGE (0,0 = haut-gauche de chaque page), jamais de texte traversant
   la gouttière. Largeur de page = LARGEUR × 2.
 
