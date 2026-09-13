@@ -46835,7 +46835,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260913-v399-studio-noir';
+                s.src = 'JS/sp-doc-import.js?v=20260913-v400-retouche-page';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous
@@ -47882,6 +47882,72 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         }
         window._spAiFlowToNextPages = _spAiFlowToNextPages;
 
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // 🔎 v1.7.400 — INVENTAIRE DE LA MAQUETTE EN COURS
+        //
+        // Sans ce bloc, le prompt ne decrivait que le FORMAT et le numero de page :
+        // l'IA ne savait pas qu'il y avait deja un titre, une photo, un encadre. Elle
+        // regenere donc une page complete a chaque prompt, et le travail de
+        // l'utilisateur disparait (mesure : 0 occurrence de tout inventaire).
+        //
+        // On transmet uninventaire COURT et FACTUEL. Les objets systeme (fond perdu,
+        // marges, reperes, miroir de planche) sont EXCLUS : ils ne sont pas du contenu.
+        // ══════════════════════════════════════════════════════════════════════════
+        function _spAiIsSystemObj(o) {
+            return !!(o && (o.isMargin || o.isBleed || o.isGuide || o.isManualGuide ||
+                            o.isGridGuide || o.isBaselineGuide || o.isTrimBox ||
+                            o._isSpreadMirror || o._isMasterGuide || o._isMasterItem));
+        }
+
+        function _spAiDescribeCurrentLayout(canvas) {
+            if (!canvas || !canvas.getObjects) return { count: 0, texte: '' };
+            var objs = canvas.getObjects().filter(function (o) { return !_spAiIsSystemObj(o); });
+            if (!objs.length) return { count: 0, texte: '' };
+
+            var mm = (typeof pxToMm === 'function') ? pxToMm : function (v) { return v; };
+            var lignes = [];
+            var MAX = 40;                      // au-dela, on resume (prompt plus utile que long)
+            objs.slice(0, MAX).forEach(function (o, i) {
+                var t = o.type || 'objet';
+                var L = Math.round(mm(o.left || 0));
+                var T = Math.round(mm(o.top || 0));
+                var W = Math.round(mm((o.width || 0) * (o.scaleX || 1)));
+                var H = Math.round(mm((o.height || 0) * (o.scaleY || 1)));
+                var d = '  ' + (i + 1) + '. ' + t + ' — left ' + L + ', top ' + T + ', ' + W + 'x' + H + ' mm';
+                if (o.type === 'textbox' || o.type === 'i-text' || o.type === 'text') {
+                    var txt = String(o.text || '').replace(/\s+/g, ' ').trim();
+                    d += ' | " ' + txt.slice(0, 90) + (txt.length > 90 ? '…' : '') + ' "';
+                    d += ' | ' + (o.fontSize || 0) + 'pt ' + (o.fontFamily || '') +
+                         ' ' + (o.textAlign || 'left');
+                    if (o.fill && typeof o.fill === 'string' && o.fill.charAt(0) === '#') d += ' ' + o.fill;
+                } else if (o.type === 'image' || o.type === 'userImage') {
+                    d += ' | IMAGE' + (typeof o.imageIndex === 'number' ? ' #' + o.imageIndex : '');
+                } else if (o.fill && typeof o.fill === 'string' && o.fill.charAt(0) === '#') {
+                    d += ' | remplissage ' + o.fill;
+                }
+                lignes.push(d);
+            });
+            if (objs.length > MAX) {
+                lignes.push('  … et ' + (objs.length - MAX) + ' autre(s) objet(s)');
+            }
+
+            var texte = '\n\n=== MAQUETTE ACTUELLE (page ' + ((typeof currentPageIndex === 'number' ? currentPageIndex : 0) + 1) +
+                ', ' + objs.length + ' objet(s) place(s)) ===\n' +
+                'Voici CE QUI EXISTE DEJA sur cette page. Tu dois partir de cet existant :\n' +
+                lignes.join('\n') + '\n\n' +
+                '⭐ REGLE DE RETOUCHE (prioritaire) :\n' +
+                '  • Si la demande porte sur un element existant (titre, texte, photo, forme),\n' +
+                '    RENVOIE cet element MODIFIE (meme texte, nouvelles valeurs) au lieu d\'en creer un autre.\n' +
+                '  • Conserve TOUT ce que la demande ne concerne pas, a l\'identique.\n' +
+                '  • Ne reprends PAS la page de zero si la demande est une retouche.\n' +
+                '  • Une phrase comme « agrandis le titre » concerne le TITRE de la liste ci-dessus.\n' +
+                '  • Si la demande est une creation complete et nouvelle, ignore cette liste.\n';
+
+            return { count: objs.length, texte: texte };
+        }
+        window._spAiDescribeCurrentLayout = _spAiDescribeCurrentLayout;
+
         function _spAiProcessMultiPageResponse(data, opts) {
             if (!data || !Array.isArray(data.pages) || data.pages.length === 0) return -1;
             opts = opts || {};
@@ -47903,10 +47969,27 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 const idx = (typeof p.pageIndex === 'number') ? p.pageIndex
                           : (typeof p.page === 'number') ? (p.page - 1) : -1;
                 if (idx < 0 || idx >= pages.length) return;
-                if (!Array.isArray(p.elements) || p.elements.length === 0) return;
+                // 🆕 v1.7.400 — NE JAMAIS EFFACER UNE PAGE AVEC UNE REPONSE VIDE.
+                //   Mesure : cette branche REMPLACE la page. Si l'IA renvoie une page
+                //   sans element (reponse tronquee, erreur de format), le contenu de
+                //   l'utilisateur disparaissait en silence. On refuse desormais.
+                if (!Array.isArray(p.elements) || p.elements.length === 0) {
+                    log('\u26a0\ufe0f Page ' + (idx + 1) + ' : reponse vide, page laissee INTACTE');
+                    return;
+                }
+                // Trace explicite : l'utilisateur doit savoir qu'un contenu a ete remplace.
+                var _avait = 0;
+                try {
+                    var _prev = pages[idx] && pages[idx].objects ? JSON.parse(pages[idx].objects) : null;
+                    _avait = (_prev && Array.isArray(_prev.objects)) ? _prev.objects.length : 0;
+                } catch (_) {}
                 pages[idx].objects = _spAiSerializeElementsForPage(p.elements);
                 written++;
-                log('\u2705 Page ' + (idx + 1) + ' : ' + p.elements.length + ' élément(s)');
+                if (_avait > 0) {
+                    log('\u2705 Page ' + (idx + 1) + ' : ' + p.elements.length + ' element(s) (remplace ' + _avait + ' objet(s) existant(s))');
+                } else {
+                    log('\u2705 Page ' + (idx + 1) + ' : ' + p.elements.length + ' element(s)');
+                }
             });
             try { if (typeof renderAllPages === 'function') renderAllPages(); } catch {}
             try { if (typeof saveAllPages === 'function') saveAllPages(); } catch {}
@@ -48790,7 +48873,14 @@ GUIDE MAQUETTES MODERNES
         _isMultiPageRequest = false;
     }
 
-                const enrichedPrompt = `
+                // 🆕 v1.7.400 — inventaire de la maquette en cours (retouche au lieu de regeneration).
+    let _spAiCurrentLayout = '';
+    try {
+        const _d = _spAiDescribeCurrentLayout(activeCanvas);
+        if (_d.count > 0) _spAiCurrentLayout = _d.texte;
+    } catch (_eD) { _spAiCurrentLayout = ''; }
+
+    const enrichedPrompt = `
 🖨️ CONTEXTE PRINT — LIS BIEN AVANT TOUT 🖨️
 Ce document est destiné à l'IMPRESSION sur papier physique. Ce n'est PAS une page web,
 PAS un écran qui scrolle, PAS un PDF infini. Chaque page a un FORMAT FERMÉ et FINI :
@@ -48835,6 +48925,7 @@ ${pageContext}
 
 DEMANDE UTILISATEUR
 "${promptText}"
+${_spAiCurrentLayout}
 
 ${_isMultiPageRequest
     ? `🚨 MODE MULTI-PAGES OBLIGATOIRE 🚨
@@ -49660,6 +49751,13 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 saveState('Couleurs IA ajoutées');
                 logAI('\u2705 Couleurs ajoutées automatiquement!');
             }
+            // 🆕 v1.7.400 — INDISPENSABLE : ce catch n'appelait JAMAIS
+            //   _aiResetGenerating(). Des qu'une reponse n'etait pas du JSON exploitable
+            //   (reponse tronquee, format inattendu, page vide), _aiGenerating restait a
+            //   true POUR TOUJOURS : bouton bloque sur « Generation... », loader affiche,
+            //   impossible de relancer. C'est le chemin le plus courant en pratique.
+            logAI('   ↳ Aucun JSON exploitable : la maquette a ete LAISSEE INTACTE. Reformulez ou reessayez.');
+            _aiResetGenerating();
         }
     }, function(error) {
         logAI('❌ Erreur: ' + error);
