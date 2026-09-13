@@ -9,6 +9,35 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.396] — 2026-09-14
+
+_Studio: universal document import — legacy Word `.doc`, OpenDocument and RTF_
+
+### Added
+- **The studio now reads every document format, whatever its extension.** Measured before the fix:
+
+  | format | behaviour before |
+  |---|---|
+  | `.docx` | OK (mammoth + images) |
+  | `.doc` (Word 97-2003) | **0 characters** — “legacy binary format, not readable in the browser” |
+  | `.odt` / `.ods` / `.odp` | **0 characters** — fell through to “unsupported type” |
+  | `.rtf` | the **raw markup** (`{\rtf1\ansi\deff0{\fonttbl…`) was sent to the AI |
+
+- **A router that reads the real file signature, never the extension.** A `.doc` sent by Gmail, Outlook or LibreOffice is almost always a renamed `.docx` or `.rtf`; trusting the extension condemned those files. Verified both ways: a `.doc` that is actually an OpenDocument is read as one, and an `.odt` that is actually RTF is read as RTF.
+- **Word 97-2003 (`.doc`): a genuine structural decoder.** A `.doc` is an OLE (Compound File Binary) container holding several streams. The studio now opens the real structure — header, DIFAT → FAT, non-contiguous sector chains, stream directory, mini-stream for entries under 4096 bytes — then walks the FIB (signature `0xA5EC`, `fWhichTblStm`, `ccpText`, `fcClx`) → CLX → **PlcPcd** → text pieces, honouring the `FcCompressed` rule (bit `0x40000000` = 8-bit text, with the offset stored halved; a UTF-16LE piece keeps its raw offset). A mixed file (half 8-bit, half UTF-16 — the real case when text is pasted from elsewhere) is read correctly piece by piece.
+- **OpenDocument (`.odt` / `.ods` / `.odp`): fully parsed.** The archive's `content.xml` is converted into the same structure language used for `.docx`: headings with their real `text:outline-level`, bulleted lists, tables cell by cell (including the numeric `office:value` of a spreadsheet), and images from `Pictures/*` attached as genuine attachments the AI places by index.
+- **Smart text conventions in the prompt.** The decoders emit `#` for a heading, `-` for a list, `|` for a table and `[IMAGE_n]` for a photo — but **no instruction explained those conventions to the model**, so it treated them as literal text and flattened the document hierarchy. A “Conventions of the supplied text” section now tells it what each mark means: a level-1 heading opens a new page, a list becomes a real bulleted list, a table becomes a real table, and photo order is respected.
+- **RTF: specification-compliant decoding.** Ignorable destination groups are skipped (font table, colour table, generator, pictures), `\'hh` escapes are decoded through **CP1252** (essential for French quotation marks and dashes), `\uNNNN` is read as a **decimal** code point, and `\ucN` controls how many fallback characters to skip.
+- **HTML entities fully decoded.** Twelve were hard-coded; every other one — accents, symbols, typographic punctuation — reached the prompt as-is and the AI copied them into the layout. The table now covers **140** entities, with a decimal and hexadecimal numeric fallback.
+
+### Fixed
+- **A short document was wrongly rejected.** The reliability check demanded a minimum volume of text, so a document that had decoded perfectly stayed below the threshold and the user saw a failure message although the content was good. The criterion now concerns the **quality** of the recognised text, not its length. This defect only appeared **in the browser** — the automated tests had missed it.
+
+### Notes
+- The structural `.doc` decoder replaced a first heuristic approach that was **measured and then dropped**: on a real file, binary padding and text looked too much alike and the useful text was rejected along with the binary.
+- This release does **not** modify `main.js` (the editor); all changes are in `sp213-studio.html`.
+- Tooling shipped with the release: `_mk_oledoc_396.cjs` (builds real OLE containers to specification), `_mk_fixtures_396.cjs`, `_test_oledoc_396.cjs`, `_test_import_396.cjs`, `_fix_import_396.cjs` and `_reapply_396.cjs` (the patch is not idempotent, so it restores from git and reapplies).
+
 ## [1.7.395] — 2026-09-13
 
 _Studio: multi-line titles finally clear the text below them_
