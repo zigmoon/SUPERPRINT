@@ -2876,13 +2876,7 @@
               renderAttachBar();
               return;
             }
-            window.mammoth.extractRawText({ arrayBuffer: buf }).then(function(res) {
-              state.attachments.push({ id, name: file.name, type: 'text', text: res.value || '', ext, docx: true });
-              renderAttachBar();
-            }).catch(function() {
-              state.attachments.push({ id, name: file.name, type: 'text', text: '(contenu Word non lisible)', ext });
-              renderAttachBar();
-            });
+            spExtractWordRich(buf, file, id, ext);
           };
           if (window.mammoth) { doExtract(); }
           else {
@@ -2902,6 +2896,166 @@
       appendChat('assistant', 'File "' + file.name + '" ignored: unsupported type. Accepted formats: images, TXT/MD/RTF/CSV/HTML, Word (.docx), Excel (.xls/.xlsx) and PDF.');
       renderAttachBar();
     }
+  }
+
+  // 🆕 v1.7.388 — EXTRACTION RICHE D'UN .docx (images + structure).
+  //   AVANT : mammoth.extractRawText() -> texte brut seul, AUCUNE image,
+  //   AUCUN style. Une brochure Word perdait donc toutes ses photos et sa
+  //   hierarchie de titres.
+  //   MAINTENANT : convertToHtml + convertImage (comme l'app SuperPrint,
+  //   main.js ~29164) -> on garde le texte structure ET chaque image est
+  //   ajoutee comme piece jointe, donc l'IA peut la placer avec imageIndex.
+  function spExtractWordRich(buf, file, id, ext) {
+    const options = {
+      convertImage: window.mammoth.images.inline(function (element) {
+        return element.read('base64').then(function (b64) {
+          return { src: 'data:' + element.contentType + ';base64,' + b64 };
+        });
+      })
+    };
+    window.mammoth.convertToHtml({ arrayBuffer: buf }, options).then(function (result) {
+      let html = String(result.value || '');
+      // 1) Recuperer les images inline (data URI) et les declarer en pieces jointes
+      const imgs = [];
+      html = html.replace(/<img[^>]*src="(data:([^;]+);base64,([^"]+))"[^>]*>/gi, function (m, uri, mime, b64) {
+        imgs.push({ uri, mime, b64 });
+        return '[IMAGE_' + (imgs.length - 1) + ']';
+      });
+      // 2) HTML -> texte structure (titres, listes, paragraphes)
+      const texte = spHtmlToStructuredText(html);
+      state.attachments.push({
+        id, name: file.name, type: 'text', text: texte, ext, docx: true,
+        imageCount: imgs.length
+      });
+      // 3) Ajouter chaque image du document comme piece jointe image
+      imgs.forEach(function (im, k) {
+        state.attachments.push({
+          id: id + '_img' + k, name: file.name + ' — image ' + (k + 1),
+          type: 'image', dataURL: im.uri, width: 0, height: 0, ext: 'docx',
+          fromDocx: true
+        });
+      });
+      renderAttachBar();
+      appendChat('assistant', '📄 « ' + file.name + ' » : ' + texte.length + ' caractères' +
+        (imgs.length ? ' et ' + imgs.length + ' image(s) extraite(s)' : '') + '.');
+    }).catch(function (err) {
+      // Repli : texte brut seulement (l'ancien comportement ne doit pas disparaitre)
+      window.mammoth.extractRawText({ arrayBuffer: buf }).then(function (res) {
+        state.attachments.push({ id, name: file.name, type: 'text', text: res.value || '', ext, docx: true });
+        renderAttachBar();
+      }).catch(function () {
+        state.attachments.push({ id, name: file.name, type: 'text', text: '(contenu Word non lisible)', ext });
+        renderAttachBar();
+      });
+    });
+  }
+
+  // Convertit le HTML de mammoth en texte structure lisible par le modele :
+  // les titres deviennent « TITRE : », les listes « - », les tableaux des
+  // lignes separees par « | ». Les balises inconnues sont simplement retirees.
+  function spHtmlToStructuredText(html) {
+    let t = String(html || '');
+    t = t.replace(/<table[^>]*>/gi, '\n[TABLEAU]\n').replace(/<\/table>/gi, '\n[/TABLEAU]\n');
+    t = t.replace(/<tr[^>]*>/gi, '\n').replace(/<\/tr>/gi, '');
+    t = t.replace(/<t[dh][^>]*>/gi, ' | ').replace(/<\/t[dh]>/gi, '');
+    t = t.replace(/<h1[^>]*>/gi, '\n\n# ').replace(/<h2[^>]*>/gi, '\n\n## ');
+    t = t.replace(/<h3[^>]*>/gi, '\n\n### ').replace(/<h4[^>]*>/gi, '\n\n#### ');
+    t = t.replace(/<h5[^>]*>/gi, '\n\n##### ').replace(/<h6[^>]*>/gi, '\n\n###### ');
+    t = t.replace(/<\/h[1-6]>/gi, '');
+    t = t.replace(/<li[^>]*>/gi, '\n- ').replace(/<\/li>/gi, '');
+    t = t.replace(/<ul[^>]*>/gi, '\n').replace(/<\/ul>/gi, '\n');
+    t = t.replace(/<ol[^>]*>/gi, '\n').replace(/<\/ol>/gi, '\n');
+    t = t.replace(/<p[^>]*>/gi, '\n').replace(/<\/p>/gi, '\n');
+    t = t.replace(/<br\s*\/?>/gi, '\n');
+    t = t.replace(/<[^>]+>/g, '');
+    t = t.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+         .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+         .replace(/&rsquo;/g, '\u2019').replace(/&lsquo;/g, '\u2018')
+         .replace(/&laquo;/g, '\u00ab').replace(/&raquo;/g, '\u00bb')
+         .replace(/&eacute;/g, '\u00e9').replace(/&egrave;/g, '\u00e8');
+    t = t.replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ');
+    return t.trim();
+  }
+
+  // 🆕 v1.7.388 — LE DOCUMENT JOINT PILOTE LA MISE EN PAGE.
+  //   Mesure : la detection multi-pages ne lisait QUE le prompt de l'utilisateur.
+  //   Un .docx de 21 000 caracteres joint sans « N pages » -> une seule page
+  //   demandee a l'IA, qui tassait (ou tronquait) le document.
+  //   On derive ici le nombre de pages du VOLUME reel des pieces jointes.
+  function spAttachmentPageHint() {
+    const textes = (state.attachments || []).filter(function (a) { return a.type === 'text' && a.text; });
+    const images = (state.attachments || []).filter(function (a) { return a.type === 'image'; });
+    const chars = textes.reduce(function (s, a) { return s + String(a.text).length; }, 0);
+    if (!chars && !images.length) return { pages: 0, chars: 0, images: 0, docs: 0 };
+    // ~2 600 caracteres par page de corps en A4 (11 pt, interligne 1.4,
+    // marges 15 mm) : mesure realiste pour un texte courant.
+    const pagesTexte = Math.ceil(chars / 2600);
+    // Les images prennent de la place : on en compte environ 2 par page.
+    const pagesImages = Math.ceil(images.length / 2);
+    const pages = Math.max(pagesTexte, pagesImages, chars ? 1 : 0);
+    return { pages: Math.min(40, pages), chars: chars, images: images.length, docs: textes.length };
+  }
+
+  // Consigne injectee dans le prompt quand un document est joint : l'IA doit
+  // traiter le document DANS SON INTEGRALITE, un chapitre par page.
+  // 🆕 v1.7.388 — DECOUPE DU DOCUMENT JOINT EN N TRANCHES.
+  //   Sert a la generation page par page pilotee par le studio : chaque appel
+  //   recoit SA part du document, donc rien n'est oublie meme si le modele
+  //   n'obtempere pas la consigne de volume.
+  function spDocumentSlices(nPages) {
+    const docs = (state.attachments || []).filter(function (a) { return a.type === 'text' && a.text; });
+    if (!docs.length) return [];
+    const total = docs.map(function (a) { return String(a.text); }).join('\n\n');
+    const n = Math.max(1, Math.min(40, nPages || 1));
+    // On ne coupe pas au milieu d'un mot : on cherche l'espace le plus proche.
+    const taille = Math.ceil(total.length / n);
+    const tranches = [];
+    let pos = 0;
+    for (let i = 0; i < n; i++) {
+      if (pos >= total.length) { tranches.push(''); continue; }
+      let fin = Math.min(total.length, pos + taille);
+      if (fin < total.length) {
+        const esp = total.indexOf(' ', fin);
+        if (esp !== -1 && esp - fin < 200) fin = esp;
+      }
+      tranches.push(total.slice(pos, fin).trim());
+      pos = fin;
+    }
+    return tranches;
+  }
+
+  // Le studio doit-il piloter la generation page par page ?
+  //   OUI si un document long est joint et que l'utilisateur ne demande pas
+  //   explicitement UNE page. C'est ce qui garantit le traitement integral.
+  function spShouldDrivePageByPage(userText) {
+    const h = spAttachmentPageHint();
+    if (h.chars < 4000 || h.pages < 2) return false;
+    if (state.selectedIds && state.selectedIds.length) return false;
+    if (/\b(une seule page|1 page|une page unique|affiche|flyer|carte de visite)\b/i.test(userText || '')) return false;
+    return true;
+  }
+
+  function spIntegralDocumentNote() {
+    const h = spAttachmentPageHint();
+    if (!h.chars) return '';
+    const docs = (state.attachments || []).filter(function (a) { return a.type === 'text' && a.text; });
+    const titres = [];
+    docs.forEach(function (a) {
+      String(a.text).split('\n').forEach(function (l) {
+        const m = l.match(/^\s*#{1,3}\s+(.+)$/);
+        if (m && titres.length < 24) titres.push(m[1].trim().slice(0, 70));
+      });
+    });
+    let note = '\n\n═══ DOCUMENT JOINT : TRAITEMENT INTÉGRAL OBLIGATOIRE ═══\n';
+    note += 'Un document de ' + h.chars + ' caractères' + (h.images ? ' et ' + h.images + ' image(s)' : '') +
+      ' est joint. IL DOIT ÊTRE TRAITÉ EN ENTIER : ne résume pas, ne saute pas de passage,\n';
+    note += 'ne t\'arrête pas au premier chapitre. Répartis TOUT le contenu sur environ ' + h.pages + ' page(s).\n';
+    note += 'Structure attendue : une page de couverture avec le titre, puis un chapitre par page\n';
+    note += '(ou 2 chapitres par page si un chapitre est court). Conserve les titres, les listes et\n';
+    note += 'l\'ordre du document. Place les images jointes dans les pages correspondantes.\n';
+    if (titres.length) note += 'Sections repérées dans le document (' + titres.length + ') :\n' + titres.map(function (t) { return '  • ' + t; }).join('\n') + '\n';
+    note += 'Chaque page doit porter un folio. Aucune page ne doit rester vide.\n';
+    return note;
   }
 
   function renderAttachBar() {
@@ -4322,7 +4476,12 @@
   // Limite de texte par pièce jointe selon le moteur (fenêtre de contexte) :
   // DeepSeek / Groq / OpenRouter (gros contextes) peuvent absorber beaucoup ; WLLM local moins.
   function attachmentTextLimit() {
-    return (state.engine === 'openai' || state.engine === 'groq' || state.engine === 'openrouter' || state.engine === 'deepseek') ? 24000 : 12000;
+    // 🆕 v1.7.388 — 24 000 -> 60 000 caracteres. Mesure : un livre de 80 000
+    //   caracteres etait envoye tronque a 30 %, avec un message qui disait au
+    //   modele de « formuler une recherche » -> l'IA s'arretait au lieu de
+    //   traiter le document. Les moteurs cloud ont 128k+ de contexte : 60 000
+    //   caracteres (~20k tokens) laissent largement la place a la reponse.
+    return (state.engine === 'openai' || state.engine === 'groq' || state.engine === 'openrouter' || state.engine === 'deepseek') ? 60000 : 12000;
   }
 
   function buildAttachmentContext() {
@@ -4342,11 +4501,20 @@
         const full = String(att.text || '');
         const truncated = full.length > limit;
         let body = full.slice(0, limit);
-        if (truncated) body += '\n[… texte tronqué : ' + full.length + ' caractères au total. Si le passage cherché n\'est pas dans cet extrait, formulez une recherche par mots-clés et SP213 l\'analysera.]';
-        parts.push('TEXTE ' + i + ' : "' + att.name + '"' + (truncated ? ' (LONG : ' + full.length + ' caractères)' : '') + '\n' + body);
+        // 🆕 v1.7.388 — l'ancien message invitait le modele a DEMANDER une recherche
+        //   au lieu de composer : c'est ce qui le faisait « s'arreter ». On demande
+        //   desormais de TRAITER ce qui est fourni et de poursuivre la maquette.
+        if (truncated) body += '\n[… extrait de ' + limit + ' caractères sur ' + full.length + ' au total. TRAITE CE QUI EST FOURNI et compose la maquette complète à partir de cet extrait : ne t\'arrête pas, ne demande pas de précision, n\'attends pas de contenu supplémentaire. Répartis le contenu sur plusieurs pages si nécessaire.]';
+        const src = att.docx ? 'DOCUMENT WORD' : 'TEXTE';
+        parts.push(src + ' ' + i + ' : "' + att.name + '"' + (truncated ? ' (LONG : ' + full.length + ' caractères)' : '') +
+          (att.imageCount ? ' (' + att.imageCount + ' image(s) extraite(s) — voir IMAGE ' + i + ' et suivantes)' : '') + '\n' + body);
       }
     });
-    return '\n\n=== PIÈCES JOINTES UTILISATEUR ===\n' + parts.join('\n\n');
+    // 🆕 v1.7.388 — rappel « document entier » : nombre de pages derive du volume
+    //   reel, sections reperees, interdiction de s'arreter ou de resumer.
+    let note = '';
+    try { note = spIntegralDocumentNote(); } catch (_) { note = ''; }
+    return '\n\n=== PIÈCES JOINTES UTILISATEUR ===\n' + parts.join('\n\n') + note;
   }
 
   // Recherche ciblée dans les textes joints (gros documents) : extrait les
@@ -4478,6 +4646,74 @@
     pi.dispatchEvent(new Event('input', { bubbles: true }));
   }
   window.sp213ClearPrompt = sp213ClearPrompt;
+  // 🆕 v1.7.388 — GENERATION PILOTEE PAGE PAR PAGE.
+  //   Mesure : avec un .docx de 21 000 caracteres joint, DeepSeek V4.1 Flash
+  //   produisait UNE page malgre un prompt qui demandait « EXACTEMENT 9 entrees »
+  //   au FORMAT B. Le modele repond au dernier message utilisateur et ignore la
+  //   consigne de volume. On ne compte donc plus sur le prompt : le studio fait
+  //   N appels, un par page, en donnant a chacun SA tranche du document.
+  //   C'est ce qui garantit que le document est traite DANS SON INTEGRALITE.
+  function spGenerateByPages(baseMessages, userText) {
+    const hint = spAttachmentPageHint();
+    const n = Math.max(2, Math.min(40, hint.pages));
+    const slices = spDocumentSlices(n);
+    const systemMsg = baseMessages[0] && baseMessages[0].role === 'system' ? baseMessages[0] : { role: 'system', content: '' };
+    const images = (state.attachments || []).filter(function (a) { return a.type === 'image'; });
+    const pages = [];
+    const libelle = $('modelLabel') ? $('modelLabel').textContent : '';
+    let dernierTexte = '';
+
+    function suivant(i) {
+      if (i >= n) {
+        if ($('modelLabel')) $('modelLabel').textContent = libelle;
+        return Promise.resolve({ reply: 'Document traité intégralement : ' + n + ' pages composées à partir de vos ' + hint.chars + ' caractères.', pages: pages, targetPages: n });
+      }
+      if ($('modelLabel')) $('modelLabel').textContent = 'SP213 ' + (i + 1) + '/' + n;
+      const role = i === 0 ? 'COUVERTURE (titre + image si disponible + accroche)' : (i === n - 1 ? 'DERNIÈRE PAGE (conclusion, contact, 4e de couverture)' : 'PAGE DE CONTENU');
+      const part = slices[i] || '';
+      // On alterne les images sur les pages pour les repartir.
+      const imgCandidates = images.filter(function (_, k) { return k % n === i % n; });
+      const userPart =
+        'DEMANDE GLOBALE DE L\'UTILISATEUR : ' + userText + '\n\n' +
+        '═══ TU COMPOSES LA PAGE ' + (i + 1) + ' SUR ' + n + ' ═══\n' +
+        'Rôle de cette page : ' + role + '.\n' +
+        (part ? 'Voici LA PARTIE DU DOCUMENT qui doit tenir sur cette page (traite-la intégralement, ne la résume pas) :\n---\n' + part + '\n---\n' : 'Aucun texte supplémentaire : compose une page cohérente avec le document (image pleine page, page de transition, sommaire…).\n') +
+        (imgCandidates.length ? 'Images disponibles pour cette page : ' + imgCandidates.map(function (a) { return a.name; }).join(', ') + '. Utilise "imageIndex" (numéro global de l\'image) pour les placer.\n' : '') +
+        'Format : ' + state.pageW + '×' + state.pageH + ' mm. Réponds UNIQUEMENT en JSON :\n' +
+        '{"reply":"","pages":[{"pageIndex":' + i + ',"elements":[…]}]}\n' +
+        'Utilise 8 à 20 éléments utiles, du VRAI contenu (jamais de Lorem ipsum), un folio en bas.\n' +
+        'pageIndex OBLIGATOIRE : ' + i + ' (le studio assemble ensuite les pages dans l\'ordre).';
+      const msgs = [systemMsg, { role: 'user', content: userPart }];
+      return callAI(msgs).then(function (resp) {
+        const p = parseAIResponse(resp);
+        let els = [];
+        if (p.pages && p.pages.length) {
+          p.pages.forEach(function (pg) { if (pg.elements && pg.elements.length) els = els.concat(pg.elements); });
+        } else if (p.elements && p.elements.length) {
+          els = p.elements;
+        }
+        if (els.length) { pages.push({ pageIndex: i, elements: els }); }
+        else { pages.push({ pageIndex: i, elements: [] }); }
+        if (p.reply) dernierTexte = p.reply;
+        return suivant(i + 1);
+      }).catch(function (err) {
+        // Une page en echec ne doit pas arreter le document entier.
+        console.warn('[SP213] page ' + (i + 1) + ' en echec :', err && err.message);
+        pages.push({ pageIndex: i, elements: [] });
+        return suivant(i + 1);
+      });
+    }
+    return suivant(0);
+  }
+
+  // Dispatcher : generation pilotee si un document long est joint, sinon appel unique.
+  function spCallAI(messages, userText) {
+    if (spShouldDrivePageByPage(userText)) {
+      return spGenerateByPages(messages, userText);
+    }
+    return callAI(messages);
+  }
+
   function sendMessage() {
     if (state.busy) return;
     const txt = $('promptInput').value.trim();
@@ -4554,7 +4790,7 @@
       last.content = last.content + context;
     }
 
-    callAI(messages).then(response => {
+    spCallAI(messages, userText).then(response => {
       typingEl.remove();
       const parsed = parseAIResponse(response);
       const hasLayout = !!(parsed.elements && parsed.elements.length) || !!(parsed.pages && parsed.pages.length);
@@ -4688,11 +4924,16 @@
       const p = state.lastPrompt || '';
       // Détection d'une demande multipage (livre, magazine, catalogue, N pages…)
       const mp = p.match(/(\d{1,3})\s*[- ]?\s*pages?/i);
-      const isMulti = (mp && parseInt(mp[1], 10) > 1) || /\b(magazine|catalogue|catalog|livre|brochure|booklet|livret|book|journal)\b/i.test(p);
+      // 🆕 v1.7.388 — un DOCUMENT JOINT long implique un document multi-pages,
+      //   meme si l'utilisateur n'a pas tape « N pages » (mesure : sans cela un
+      //   .docx de 21 000 caracteres etait compresse sur UNE seule page).
+      const _attHint = spAttachmentPageHint();
+      const isMulti = (mp && parseInt(mp[1], 10) > 1) || _attHint.pages > 1 || /\b(magazine|catalogue|catalog|livre|brochure|booklet|livret|book|journal)\b/i.test(p);
       const isSpread = state.viewMode === 'spread';
       const spreadNote = isSpread ? `Double page (spread) : largeur totale ${state.pageW * 2} mm, deux pages côte à côte, gouttière au centre à ${state.pageW} mm. Ne fais jamais traverser un texte sur la gouttière.` : `Page simple : format ${state.pageW} × ${state.pageH} mm.`;
       if (isMulti) {
-        return `Tu es SP213, un générateur de maquettes print MULTI-PAGES pour SuperPrint.
+        const _nbPages = (mp ? parseInt(mp[1], 10) : 0) || _attHint.pages || 4;
+      return `Tu es SP213, un générateur de maquettes print MULTI-PAGES pour SuperPrint.\nTu dois produire EXACTEMENT ${_nbPages} pages (targetPages: ${_nbPages}).
 Réponds UNIQUEMENT par un JSON valide, sans texte autour, sans markdown, sans balises XML.
 ${spreadNote}
 Coordonnées en mm, fontSize en pt, couleurs #RRGGBB. Chaque page : 8 à 15 éléments, pas de débord bas de page (top + hauteur ≤ ${state.pageH} mm).
@@ -4957,7 +5198,9 @@ FIN DE LARGEUR OBLIGATOIRE (pour TOUS les formats, et en particulier les formats
 ${(function(){
   const p = state.lastPrompt || '';
   const mp = p.match(/(\d{1,3})\s*[- ]?\s*pages?/i);
-  const isMulti = (mp && parseInt(mp[1],10) > 1) || /\b(magazine|catalogue|catalog|livre|brochure|booklet|livret|book|journal)\b/i.test(p);
+  // 🆕 v1.7.388 — meme regle que plus haut : le document joint compte.
+  const _attHint2 = spAttachmentPageHint();
+  const isMulti = (mp && parseInt(mp[1],10) > 1) || _attHint2.pages > 1 || /\b(magazine|catalogue|catalog|livre|brochure|booklet|livret|book|journal)\b/i.test(p);
   if (isMulti) {
     const n = mp ? parseInt(mp[1],10) : 0;
     // 🆕 v1.7.384 — EN DOUBLE PAGE, UNE ENTRÉE = UNE PLANCHE (pas une page).
@@ -5001,7 +5244,12 @@ ${(function(){
         'une planche qui ne contient qu\'UNE page laisse l\'autre moitié VIDE. ' +
         'Le fond perdu couvre la PLANCHE (width ' + (state.pageW * 2 + 6) + ' mm). Contenu COMPLET sur chaque page, cohérence graphique stricte (mêmes marges, folios, grille).';
     }
-    return '🚨 MULTI-PAGES DÉTECTÉ : utilise le FORMAT B, produis ' + (n || 'le nombre demandé de') + ' entrées "pages" (une par page), contenu COMPLET sur chaque page, cohérence graphique stricte (mêmes marges, folios, grille), folios en bas, respecte la structure livre/magazine/catalogue (couverture, sommaire, édito, contenu, 4e de couverture).';
+    // 🆕 v1.7.388 — le nombre de pages doit etre CHIFFRE. Mesure : « produis le
+    //   nombre demandé de entrées » (sans nombre) faisait produire UNE seule page,
+    //   alors que la consigne d'integralite en annoncait 17 : messages contradictoires.
+    const _n = n || spAttachmentPageHint().pages || 4;
+    return '🚨 MULTI-PAGES DÉTECTÉ : utilise le FORMAT B. Produis EXACTEMENT ' + _n + ' entrées "pages" (une par page), contenu COMPLET sur chaque page, cohérence graphique stricte (mêmes marges, folios, grille), folios en bas, respecte la structure livre/magazine/catalogue (couverture, sommaire, édito, contenu, 4e de couverture).' +
+      '\n📄 Le document joint contient ' + (spAttachmentPageHint().chars || 0) + ' caractères : répartis TOUT son contenu sur ces ' + _n + ' pages, sans rien omettre.';
   }
   return state.viewMode === 'spread'
     ? '🚨 DOUBLE PAGE DÉTECTÉE : utilise le FORMAT A ou B en raisonnant en coordonnées PLANCHE (0,0 = haut-gauche de la PLANCHE ENTIÈRE ; la page de GAUCHE va de 0 à ' + state.pageW + ' mm, la GOUTTIÈRE est à ' + state.pageW + ' mm, la page de DROITE de ' + state.pageW + ' à ' + (state.pageW * 2) + ' mm). Ne fais JAMAIS traverser un texte sur la gouttière centrale.'
