@@ -9,6 +9,25 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.406] — 2026-09-14
+
+_Import: headings get breathing room, dialogs adopt SuperPrint’s design, PDFs arrive with their images_
+
+### Added
+- **PDF images are now extracted.** `extractPdfAttachment()` previously read **text only** (`getTextContent`) — the images inside a PDF were simply ignored, so a brochure laid out from a PDF arrived with no photos at all. The studio now walks each page’s operator list, recovers the images actually painted, renders them to PNG data URIs and adds them as **image attachments**, which the AI places by `imageIndex` like any other attachment. Both pdf.js storage forms are handled (`imgData.data` RGBA *and* `imgData.bitmap`), otherwise extraction would only work on some files. Bullets and decorative rules are filtered out (80 px threshold), at most 24 images are kept (the largest ones) and exploration stops after 60 pages.
+- **The studio page ceiling rises from 120 to 300**, through a single named constant (`SP_MAX_PAGES`) — it used to be hard-coded in three separate places. The estimated duration is announced from 40 pages upwards, with a reminder that generation can be stopped at any time while keeping the pages already composed.
+
+### Fixed
+- **Headings were glued to the previous block.** They had no space above them, an oversized heading scale (3× the body text) and too much leading (1.35). Both import modes now apply a **safety margin above** (7 mm for a main heading, 5.5 mm for a subheading, 4 mm for a minor one), a reduced scale (**2.1× / 1.65× / 1.32×**) and tighter heading leading (**1.05**, body text stays at 1.35). A heading with less than 12 mm left below it moves to the next column, avoiding orphan headings.
+- **The import dialogs did not follow SuperPrint’s design**: 12 px rounded corners, blue `#4361ee` buttons, emoji in titles, 18 px titles and 8 px button corners. They now reuse the existing classes (`.sp-modal-card`, `.sp-modal-header`, `.sp-modal-title`, `.sp-modal-close`, `.modal-btn`) and therefore inherit both the design language and the **dark theme**. Measured on the rendered dialog: 0 px radius, 13 px/600 title, 40 px black buttons in IBM Plex Mono.
+- **Two translation oversights**: the insert-page question appeared in English in the French interface, and the main button label was missing in Japanese (it fell back to French). All 7 labels are now verified in three languages, with zero emoji.
+
+### Verified
+- Real browser tests: a purpose-built PDF (3 pages, 3 RGB images 400×300, compressed text) — **3 canvases of 400×300 converted to valid PNG base64**, studio reporting “PDF read: 3 text page(s), 3 image(s) extracted”. A 120-page Word document re-imported through the actual field.
+- `node --check` on `main.js` (web and mirror), `_check_studio` on the studio (web and mirror), web/mirror parity 14/14, no leftover version markers, dist rebuilt at 1.7.406, package (56,281,340 bytes) regenerated.
+
+> ⚠️ **`superprint.cc` still serves 1.7.405.** Version 1.7.406 is invisible online until the manual FTP deployment is done.
+
 ## [1.7.405] — 2026-09-14
 
 _Word / ODT / PDF imports become linked, flowed text — and long documents finally complete in Studio IA_

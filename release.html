@@ -705,6 +705,46 @@ footer, footer a { color: var(--after-text-color); }
 <main>
 <section class="releases" aria-label="Release notes">
 
+<!-- ===== SUPER PRINT v1.7.406 — import : titres, DA, images PDF ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-406">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.406</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 14 septembre 2026" data-i18n-en="Released September 14, 2026" data-i18n-jp="2026年9月14日公開">Released September 14, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Les documents importés respirent enfin, et un PDF entre désormais <strong>avec ses images</strong>." data-i18n-en-html="Imported documents finally breathe, and a PDF now comes in <strong>with its images</strong>." data-i18n-jp-html="取り込んだ書類に余白が生まれ、PDFは<strong>画像とともに</strong>入ります。">Imported documents finally breathe, and a PDF now comes in <strong>with its images</strong>.</p>
+
+ <h3>📏 Les titres respirent <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Les <strong>titres étaient collés à la fin du bloc précédent</strong>, avec un interlignage trop large et un corps trop gros. Une <strong>marge de sécurité</strong> de 7 mm (grand titre), 5,5 mm (sous-titre) et 4 mm (petit titre) ouvre désormais l’air nécessaire au-dessus de chaque titre." data-i18n-en-html="<strong>Headings were glued to the end of the previous block</strong>, with too much leading and too large a size. A <strong>safety margin</strong> of 7 mm (main heading), 5.5 mm (subheading) and 4 mm (minor heading) now opens the space each heading needs." data-i18n-jp-html="<strong>見出しが前のブロックに寄り、行間も文字も大きすぎました</strong>。"><strong>Headings were glued to the end of the previous block</strong>, with too much leading and too large a size. A <strong>safety margin</strong> of 7 mm (main heading), 5.5 mm (subheading) and 4 mm (minor heading) now opens the space each heading needs.</li>
+  <li data-i18n-fr-html="Le corps des grands titres passe de <strong>3× à 2,1×</strong> la taille du texte courant, et leur <strong>interlignage de 1,35 à 1,05</strong> : la hiérarchie reste nette sans écraser la page. Un titre qui n’aurait pas 12 mm de place sous lui passe à la colonne suivante, pour éviter un titre orphelin en bas de colonne." data-i18n-en-html="Main heading size drops from <strong>3× to 2.1×</strong> the body text, and their <strong>leading from 1.35 to 1.05</strong>: the hierarchy stays clear without overwhelming the page. A heading left with less than 12 mm below it moves to the next column, avoiding an orphan heading at the bottom." data-i18n-jp-html="見出しのサイズを3倍から<strong>2.1倍</strong>に、行間を1.35から<strong>1.05</strong>にしました。">Main heading size drops from <strong>3× to 2.1×</strong> the body text, and their <strong>leading from 1.35 to 1.05</strong>: the hierarchy stays clear without overwhelming the page. A heading left with less than 12 mm below it moves to the next column, avoiding an orphan heading at the bottom.</li>
+ </ul>
+
+ <h3>🖼️ Un PDF entre avec ses images <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Question posée, réponse appliquée : un PDF déposé dans la boîte de prompt donne du <strong>texte coulé éditable</strong>, et le studio <strong>extrait désormais les images</strong> qu’il contient pour les replacer dans la maquette." data-i18n-en-html="Question asked, answer applied: a PDF dropped into the prompt bar yields <strong>editable flowed text</strong>, and the studio now <strong>extracts the images</strong> it contains so they can be placed in the layout." data-i18n-jp-html="PDFを入れると編集可能なテキストになり、さらに<strong>画像も抽出</strong>されるようになりました。">Question asked, answer applied: a PDF dropped into the prompt bar yields <strong>editable flowed text</strong>, and the studio now <strong>extracts the images</strong> it contains so they can be placed in the layout.</li>
+  <li data-i18n-fr-html="Les images lues deviennent des <strong>pièces jointes à part entière</strong>, que l’IA place comme n’importe quelle image jointe. Les puces et filets décoratifs sont écartés (seuil de 80 px), et sur un PDF très illustré ce sont les <strong>plus grandes images</strong> qui sont conservées — 24 au maximum." data-i18n-en-html="Images read from the PDF become <strong>attachments in their own right</strong>, placed by the AI like any other attachment. Bullets and decorative rules are filtered out (80 px threshold), and in a heavily illustrated PDF the <strong>largest images</strong> are kept — 24 at most." data-i18n-jp-html="読み取った画像は<strong>独立した添付ファイル</strong>となります。">Images read from the PDF become <strong>attachments in their own right</strong>, placed by the AI like any other attachment. Bullets and decorative rules are filtered out (80 px threshold), and in a heavily illustrated PDF the <strong>largest images</strong> are kept — 24 at most.</li>
+ </ul>
+
+ <h3>🎨 Les fenêtres d’import a la DA SuperPrint <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Les fenêtres d’import reprennent enfin <strong>l’apparence de SuperPrint</strong> : angles droits, aucun emoji, titres sobres, et boutons <strong>noirs</strong> en <em>IBM Plex Mono</em> au lieu d’un bleu étranger à la maison. Elles héritent au passage du <strong>thème sombre</strong>." data-i18n-en-html="The import dialogs finally adopt <strong>SuperPrint’s own look</strong>: square corners, no emoji, restrained titles, and <strong>black</strong> buttons in <em>IBM Plex Mono</em> instead of an off-brand blue. They also inherit the <strong>dark theme</strong>." data-i18n-jp-html="取り込みダイアログが<strong>SuperPrintのデザイン</strong>に揃いました。">The import dialogs finally adopt <strong>SuperPrint’s own look</strong>: square corners, no emoji, restrained titles, and <strong>black</strong> buttons in <em>IBM Plex Mono</em> instead of an off-brand blue. They also inherit the <strong>dark theme</strong>.</li>
+  <li data-i18n-fr-html="Tous les libellés sont vérifiés en <strong>trois langues</strong>. Deux oublis ont été corrigés : la question s’affichait <strong>en anglais</strong> dans l’interface française, et le libellé du bouton principal <strong>manquait en japonais</strong>." data-i18n-en-html="Every label is checked in <strong>three languages</strong>. Two oversights were fixed: the question appeared <strong>in English</strong> in the French interface, and the main button label was <strong>missing in Japanese</strong>." data-i18n-jp-html="全ラベルを<strong>3カ国語</strong>で確認しました。">Every label is checked in <strong>three languages</strong>. Two oversights were fixed: the question appeared <strong>in English</strong> in the French interface, and the main button label was <strong>missing in Japanese</strong>.</li>
+ </ul>
+
+ <h3>📄 300 pages, et on annonce la durée <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Le plafond de pages du studio passe de 120 à <strong>300</strong>, et la durée estimée est <strong>annoncée</strong> dès 40 pages (« environ N min, une requête par page »). Vous savez donc ce que vous lancez — et vous pouvez <strong>arrêter à tout moment</strong> en conservant les pages déjà composées." data-i18n-en-html="The studio page ceiling rises from 120 to <strong>300</strong>, and the estimated duration is <strong>announced</strong> from 40 pages upwards (“about N min, one request per page”). So you know what you are starting — and you can <strong>stop at any time</strong> while keeping the pages already composed." data-i18n-jp-html="スタジオの上限を120から<strong>300</strong>ページに引き上げました。">The studio page ceiling rises from 120 to <strong>300</strong>, and the estimated duration is <strong>announced</strong> from 40 pages upwards (“about N min, one request per page”). So you know what you are starting — and you can <strong>stop at any time</strong> while keeping the pages already composed.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.406 — vérifié par des tests réels : un document Word de 120 pages importé dans le vrai champ, et un PDF fabriqué pour l’occasion dont les 3 images 400×300 ont été extraites et converties en PNG valides. Parité web/miroir 14/14, aucun résidu de version, 7 libellés vérifiés en 3 langues, zéro emoji." data-i18n-en="SuperPrint 1.7.406 — verified with real tests: a 120-page Word document imported through the actual field, and a purpose-built PDF whose three 400×300 images were extracted and converted to valid PNGs. Web/mirror parity 14/14, no leftover version markers, 7 labels checked in 3 languages, zero emoji." data-i18n-jp="SuperPrint 1.7.406 — 実際のテストで確認済み。">Verified with real tests.</p>
+ <a class="release-cta" href="https://superprint.cc/app/index.html" data-i18n-fr="→ Ouvrir l'éditeur SuperPrint" data-i18n-en="→ Open SuperPrint Editor" data-i18n-jp="→ SuperPrintエディタを開く">→ Open SuperPrint Editor</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
 <!-- ===== SUPER PRINT v1.7.405 — import en texte coulé ===== -->
 
 <article class="release-block" data-app="superprint" id="superprint-v1-7-405">
