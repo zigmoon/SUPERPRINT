@@ -46972,9 +46972,10 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             atts.forEach(function (att, idx) {
                 var chip = document.createElement('span');
                 chip.className = 'sp-foot-chip';
+                // 🆕 v1.7.403 — meta du studio : etendue/type EN MAJUSCULES, puis compteur.
                 var info = att.type === 'image'
-                    ? (att.width ? att.width + '\u00d7' + att.height + 'px' : 'img')
-                    : (att.docLabel || att.ext || 'txt').toUpperCase();
+                    ? (att.width ? att.width + '\u00d7' + att.height + 'px' : 'IMG')
+                    : (att.ext || 'txt').toUpperCase();
                 if (att.type === 'text') {
                     var n = String(att.text || '').length;
                     info = (n >= 1000 ? (Math.round(n / 100) / 10) + 'k' : n) + ' car.';
@@ -46992,24 +46993,35 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                         ? (Math.round(ko3 / 1024 * 10) / 10) + ' Mo'
                         : Math.max(1, Math.round(ko3)) + ' Ko');
                 }
-                // 🆕 v1.7.402 — DISPOSITION ALIGNEE SUR LE STUDIO (retour utilisateur).
-                //   Icône de TYPE pour les documents, vignette réelle pour les images.
-                var ic = document.createElement('span');
-                ic.className = 'ic';
-                if (att.type === 'image' && att.dataURL) {
-                    var im = document.createElement('img');
-                    im.src = att.dataURL;
-                    im.alt = '';
-                    chip.appendChild(im);
+                // 🆕 v1.7.403 — ICONES SVG FILAIRES, EXACTEMENT CELLES DU STUDIO.
+                //   Retour utilisateur : « je veux pas d'emoji pour les PJ, meme DA
+                //   que dans le studio ». Les emoji (📘 📕 📝 📄) et la vignette
+                //   image sont remplaces par les 2 SVG de renderAttachBar() :
+                //   un cadre photo pour les images, une page a lignes pour les
+                //   documents. Aucun emoji ne subsiste.
+                var SVG_NS = 'http://www.w3.org/2000/svg';
+                var ic = document.createElementNS(SVG_NS, 'svg');
+                ic.setAttribute('class', 'ic');
+                ic.setAttribute('viewBox', '0 0 24 24');
+                if (att.type === 'image') {
+                    [['rect', { x: '3', y: '3', width: '18', height: '18' }],
+                     ['circle', { cx: '8.5', cy: '8.5', r: '1.5' }],
+                     ['polyline', { points: '21 15 16 10 5 21' }]].forEach(function (p) {
+                        var el = document.createElementNS(SVG_NS, p[0]);
+                        Object.keys(p[1]).forEach(function (k) { el.setAttribute(k, p[1][k]); });
+                        ic.appendChild(el);
+                    });
                 } else {
-                    var _e = String(att.ext || '').toLowerCase().replace(/^\./, '');
-                    ic.textContent = (_e === 'docx' || _e === 'doc') ? '\uD83D\uDCD8'
-                        : (_e === 'pdf') ? '\uD83D\uDCD5'
-                        : (_e === 'xls' || _e === 'xlsx' || _e === 'ods') ? '\uD83D\uDCCA'
-                        : (_e === 'odt' || _e === 'odp' || _e === 'rtf') ? '\uD83D\uDCDD'
-                        : '\uD83D\uDCC4';
-                    chip.appendChild(ic);
+                    [['path', { d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' }],
+                     ['polyline', { points: '14 2 14 8 20 8' }],
+                     ['line', { x1: '16', y1: '13', x2: '8', y2: '13' }],
+                     ['line', { x1: '16', y1: '17', x2: '8', y2: '17' }]].forEach(function (p) {
+                        var el = document.createElementNS(SVG_NS, p[0]);
+                        Object.keys(p[1]).forEach(function (k) { el.setAttribute(k, p[1][k]); });
+                        ic.appendChild(el);
+                    });
                 }
+                chip.appendChild(ic);
                 var nm = document.createElement('span');
                 nm.className = 'n';
                 nm.textContent = att.name || 'fichier';
@@ -47020,7 +47032,17 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 rm.className = 'rm';
                 rm.type = 'button';
                 rm.title = 'Retirer';
-                rm.textContent = '\u00d7';
+                // 🆕 v1.7.403 — croix SVG filaire comme le studio (et non un « x » texte).
+                var rsvg = document.createElementNS(SVG_NS, 'svg');
+                rsvg.setAttribute('class', 'ic');
+                rsvg.setAttribute('viewBox', '0 0 24 24');
+                [['line', { x1: '18', y1: '6', x2: '6', y2: '18' }],
+                 ['line', { x1: '6', y1: '6', x2: '18', y2: '18' }]].forEach(function (p) {
+                    var el = document.createElementNS(SVG_NS, p[0]);
+                    Object.keys(p[1]).forEach(function (k) { el.setAttribute(k, p[1][k]); });
+                    rsvg.appendChild(el);
+                });
+                rm.appendChild(rsvg);
                 rm.addEventListener('click', function () {
                     var arr = window._spDocAttachments || [];
                     // Retire l'element ET ses images filles eventuelles (un .docx
