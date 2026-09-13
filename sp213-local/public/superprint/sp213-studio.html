@@ -6329,11 +6329,26 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
           text: el.text, fontSize: fs, width: width, lineHeight: el.lineHeight,
           fontFamily: el.fontFamily, fontWeight: el.fontWeight, fontStyle: el.fontStyle
         }).hauteurMm;
-        // Empiler tant qu'on recouvre un bloc deja pose dans la meme bande.
+        // v1.7.395 — EMPILEMENT REECRIT.
+        //   AVANT : on ne repoussait QUE vers le bas, et seulement sous les blocs
+        //   deja poses. Un titre place dans une COLONNE (paragraphe a cote de lui)
+        //   descendait donc dans sa colonne pendant que le bloc voisin restait en
+        //   place -> recouvrement mesure de 47,2 mm sur le cas « Le Pave Mosaique ».
+        //   MAINTENANT :
+        //     • on ne considere comme genants que les blocs qui partagent
+        //       VERTICALEMENT la meme colonne (deux blocs cote a cote ne se genent
+        //       pas) ;
+        //     • si le titre ne peut pas se degager vers le bas (bas de page), on
+        //       REDUIT son corps jusqu'a ce qu'il tienne : un titre reste lisible.
         let garde = 0;
         while (garde++ < 40) {
           const gêne = poses.filter(function (p) {
-            return left < p.right && right > p.left && top < p.bas - 0.5 && (top + h) > p.top + 0.5;
+            // Recouvrement HORIZONTAL franc : il faut partager la colonne.
+            const recouvreH = Math.min(right, p.right) - Math.max(left, p.left);
+            const largeurMin = Math.min(right - left, p.right - p.left);
+            if (largeurMin <= 0 || recouvreH < largeurMin * 0.35) return false;
+            // Recouvrement VERTICAL.
+            return top < p.bas - 0.5 && (top + h) > p.top + 0.5;
           });
           if (!gêne.length) break;
           const cible = Math.max.apply(null, gêne.map(function (p) { return p.bas + RESPIR; }));
@@ -6581,9 +6596,36 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       const parent = textes.map((_, i) => i);
       const trouver = (i) => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
       const unir = (a, b) => { const ra = trouver(a), rb = trouver(b); if (ra !== rb) parent[rb] = ra; };
+      // ⚠️ v1.7.395 — HAUTEUR REELLE POUR LA DETECTION DES RANGEES.
+      //   MESURE DU DEFAUT : on lisait la hauteur dans `el.height`, une valeur
+      //   FOURNIE PAR L'IA. Or le prompt ne demande PAS de hauteur pour un texte
+      //   (left, top, width, text, fontSize, fill, fontFamily) : elle est donc
+      //   absente ou fantaisiste.
+      //   Consequence mesuree sur la page « Le Pave Mosaique, l'Equerre et le
+      //   Compas » : le titre (34 pt, 4 lignes, 47,2 mm REELS) etait vu comme une
+      //   bande de hauteur quasi nulle, donc considere « dans la meme rangee » que
+      //   le paragraphe place a sa droite. La passe les alignait cote a cote au
+      //   lieu de degager le titre AU-DESSUS -> 47,2 mm de recouvrement.
+      //   On mesure desormais la hauteur REELLE avec spMeasureTextBlock (Fabric),
+      //   exactement comme le fait _spResolveCollisions.
+      const _hauteurReelle = (el) => {
+        const fsPt = Number(el.fontSize) || 11;
+        const wMm = (Number(el.width) || 0) * (Number(el.scaleX) || 1);
+        const largeur = (wMm > 10) ? wMm : (PW - 30);
+        try {
+          return spMeasureTextBlock({
+            text: el.text, fontSize: fsPt, width: largeur,
+            lineHeight: el.lineHeight, fontFamily: el.fontFamily,
+            fontWeight: el.fontWeight, fontStyle: el.fontStyle
+          }).hauteurMm;
+        } catch (_) {
+          // Repli deterministe si la mesure est indisponible.
+          return (Number(el.height) || 0) * (Number(el.scaleY) || 1);
+        }
+      };
       const bandes = textes.map((el) => {
         const t = Number(el.top) || 0;
-        const h = (Number(el.height) || 0) * (Number(el.scaleY) || 1);
+        const h = _hauteurReelle(el);
         return { t, b: t + h };
       });
       for (let i = 0; i < n; i++) {
@@ -6956,20 +6998,24 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     // 🆕 2026-08-30 — Validateur de fin de page : les blocs qui dépassent sont
     //   reportés sur une nouvelle page (ou réduits en typo), jamais coupés.
     try { _spConstrainDocToPages(doc); } catch (_) {}
-    // 🆕 v1.7.389 — PASSE ANTI-RECOUVREMENT. `_spConstrainDocToPages` pousse les
-    //   blocs vers le bas, mais il ne VERIFIE PAS les collisions entre blocs :
-    //   deux elements poses par l'IA aux memes coordonnees se chevauchent, et un
-    //   titre de 3 lignes recouvre le paragraphe qui suit. Cette passe empile.
-    try { _spResolveCollisions(doc); } catch (_) {}
-    // 🛡️ v1.7.369 — puis GARANTIR les marges (grand fond / petit fond /
-    //   tête / queue). Fait APRÈS la contrainte de pages : c'est la dernière
-    //   passe avant le rendu, donc aucune étape ne peut ré-introduire un
-    //   bloc collé au bord.
-    // 1) MISE À L'ÉCHELLE DES RANGÉES (axe horizontal) — d'abord, car elle
-    //    modifie les largeurs, ce qui change la hauteur du texte replié.
+    // ⚠️ v1.7.395 — ORDRE DES PASSES CORRIGE (defaut mesure).
+    //   MESURE AVANT : l'anti-recouvrement etait appelee AVANT les passes qui
+    //   modifient les LARGEURS. Un titre qui retrecit GAGNE DES LIGNES, donc
+    //   grandit en hauteur, et le recouvrement qu'on venait de resoudre
+    //   REVENAIT : mesure « 1 chevauchement de 47,2 mm » apres
+    //   _spFitRowsToMargins, alors qu'il n'y en avait plus apres
+    //   _spResolveCollisions.
+    //   -> On met d'abord les LARGEURS au propre (marges + mise a l'echelle des
+    //      rangees), PUIS on empile verticalement. La passe d'empilement voit
+    //      ainsi les largeurs definitives, donc les vraies hauteurs de texte.
+    // 1) MISE À L'ÉCHELLE DES RANGÉES (axe horizontal).
     try { _spFitRowsToMargins(doc); } catch (_) {}
-    // 2) puis les marges verticales (tête / queue) et les garde-fous.
+    // 2) Marges (tête / queue / grand fond / petit fond).
     try { _spEnforceMargins(doc); } catch (_) {}
+    // 3) EN DERNIER : anti-recouvrement, sur les largeurs définitives.
+    //    C'est la dernière passe, donc plus rien ne peut réintroduire un
+    //    chevauchement (un titre multi-ligne degage enfin le bloc du dessous).
+    try { _spResolveCollisions(doc); } catch (_) {}
     return doc;
   }
 
