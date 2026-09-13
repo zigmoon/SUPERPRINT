@@ -46750,7 +46750,21 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             const ta = document.getElementById('aiPromptModal');
             const txt = (input && input.value || '').trim();
             if (!txt && window._aiFooterImages.length === 0) { if (input) input.focus(); return; }
-            window._aiDocType = 'single';
+            // 🆕 v1.7.401 — NE PAS FORCER LE MONO-PAGE QUAND LE TEXTE DEMANDE PLUSIEURS PAGES.
+            //   Avant : _aiDocType = 'single' en dur -> la detection « N pages » etait
+            //   neutralisee, le prompt ne demandait pas le mode multi-pages, et l'IA
+            //   choisissait elle-meme (mesure : 7 pages un essai, 1 page le suivant).
+            //   On ne force le mono-page que si la demande ne porte pas sur plusieurs pages.
+            var _txtDemande = String(txt || '');
+            var _pagesDemandees = _txtDemande.match(/(\d{1,3})\s*[- ]?\s*pages?/i);
+            var _motDoc = /\b(magazine|catalogue|catalog|livre|brochure|booklet|livret|book|journal)\b/i.test(_txtDemande);
+            var _dejaMulti = (typeof pages !== 'undefined') && Array.isArray(pages) && pages.length > 1;
+            if ((_pagesDemandees && parseInt(_pagesDemandees[1], 10) > 1) || _motDoc || _dejaMulti) {
+                // On laisse la detection normale decider (multi-pages).
+                window._aiDocType = _dejaMulti ? 'multi' : 'auto';
+            } else {
+                window._aiDocType = 'single';
+            }
 
             // 🆕 v1.7.174 — Placer les images directement sur le canvas actif
             if (window._aiFooterImages.length > 0) {
@@ -46835,7 +46849,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260913-v400-retouche-page';
+                s.src = 'JS/sp-doc-import.js?v=20260913-v401c-multipage';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous
@@ -47156,6 +47170,77 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                     }
                 }
             }, 400);
+        })();
+
+        // ══════════════════════════════════════════════════════════════════════
+        // 🆕 v1.7.401 — WORDING DYNAMIQUE DU BOUTON DE PROMPT
+        //   Maquette vierge  -> le bouton dit « Creer ».
+        //   Maquette remplie -> le bouton dit « Retoucher ».
+        //   Le meme champ sert donc a CREER puis a RETOUCHER, et le bouton
+        //   annonce l'action reelle. Un seul coup d'oeil suffit.
+        // ══════════════════════════════════════════════════════════════════════
+        function _spAiDocHasContent() {
+            try {
+                if (typeof pages === 'undefined' || !Array.isArray(pages)) return false;
+                for (var i = 0; i < pages.length; i++) {
+                    var objs = pages[i] && pages[i].objects;
+                    if (typeof objs === 'string') { try { objs = JSON.parse(objs); } catch (e) { objs = null; } }
+                    if (!objs) continue;
+                    var liste = Array.isArray(objs) ? objs : objs.objects;
+                    if (!Array.isArray(liste)) continue;
+                    for (var j = 0; j < liste.length; j++) {
+                        var o = liste[j];
+                        if (!o) continue;
+                        // ⚠️ MESURE : un document VIERGE contient deja 3 reperes
+                        //    systeme (fond perdu, marges, contour) marques
+                        //    excludeFromExport. Les compter ferait dire « Retoucher »
+                        //    sur une page blanche. On ne compte QUE le vrai contenu.
+                        var sys = false;
+                        try { sys = (typeof _spAiIsSystemObj === 'function') ? !!_spAiIsSystemObj(o) : false; } catch (e) {}
+                        if (!sys && o.excludeFromExport === true) sys = true;
+                        if (!sys) return true;
+                    }
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        // Traduction sure : retourne le libelle de secours si la cle manque.
+        function _spAiTxt(key, fallback) {
+            try { var v = translate(key); if (v && v !== key) return v; } catch (e) {}
+            return fallback;
+        }
+
+        function _spAiSyncBtnLabel() {
+            if (window._aiGenerating) return;          // ne jamais ecraser « Generation... »
+            var b = document.getElementById('aiFooterGenerateBtn');
+            if (!b) return;
+            var rempli = _spAiDocHasContent();
+            var veut = rempli
+                ? _spAiTxt('aiBtnRetouch', 'Retoucher')
+                : _spAiTxt('aiBtnCreate', 'Creer');
+            window._aiGenBtnLabelMemo = veut;
+            if (b.textContent !== veut) b.textContent = veut;
+            b.title = rempli
+                ? _spAiTxt('aiBtnRetouchTip', 'Retoucher la maquette en cours avec votre consigne')
+                : _spAiTxt('aiBtnCreateTip', 'Creer une maquette a partir de votre consigne');
+            // Le texte gris du champ dit la MEME chose que le bouton.
+            var ph = rempli
+                ? _spAiTxt('aiFooterBarPlaceholderRetouch', 'Decrivez les retouches a apporter…')
+                : _spAiTxt('aiFooterBarPlaceholder', 'Decrivez la maquette de cette page…');
+            var inp = document.getElementById('aiFooterInput');
+            if (inp && inp.getAttribute('placeholder') !== ph) inp.setAttribute('placeholder', ph);
+        }
+        window._spAiSyncBtnLabel = _spAiSyncBtnLabel;
+
+        // Surveillance legere : corrige le libelle des que l'etat change, et se
+        // repare toute seule si updateInterface() (changement de langue) l'a
+        // remis sur « Creer » alors que la maquette est remplie.
+        (function _spAiBtnLabelWatch() {
+            setInterval(function () {
+                if (window._aiGenerating) return;
+                try { _spAiSyncBtnLabel(); } catch (e) {}
+            }, 500);
         })();
 
         function updateAIModelDropdown(provider) {
@@ -47680,6 +47765,24 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                     };
                     if (e.lineHeight != null) opts.lineHeight = e.lineHeight;
                     if (e.charSpacing != null) opts.charSpacing = e.charSpacing;
+                    // 🆕 v1.7.401 — CESURE. Avant, ces deux proprietes renvoyees par
+                    //   l'IA etaient JETEES ici : le prompt demandait la cesure sur le
+                    //   texte justifie, le modele la renvoyait, et l'objet Fabric
+                    //   atterrissait sans aucune cesure (mesure : 45/45 en false + "en").
+                    //   On transmet donc la consigne, et on securise le cas justifie.
+                    if (e.enableHyphenation != null) opts.enableHyphenation = !!e.enableHyphenation;
+                    if (e.hyphenLanguage) opts.hyphenLanguage = e.hyphenLanguage;
+                    // Aucune langue fournie -> langue de l'interface (jamais « en » en dur).
+                    if (opts.hyphenLanguage == null) {
+                        opts.hyphenLanguage = (typeof spDefaultHyphenLanguage === 'function')
+                            ? spDefaultHyphenLanguage()
+                            : ((typeof currentHyphenLanguage !== 'undefined' && currentHyphenLanguage) || 'fr');
+                    }
+                    // Un texte JUSTIFIE sans cesure donne des lignes a trous beants :
+                    // si l'IA n'a rien precise, on active la cesure (regle du prompt).
+                    if (opts.enableHyphenation == null) {
+                        opts.enableHyphenation = (String(opts.textAlign || '').toLowerCase() === 'justify');
+                    }
                     if (e.underline) opts.underline = true;
                     if (e.linethrough) opts.linethrough = true;
                     if (e.overline) opts.overline = true;
@@ -47985,18 +48088,74 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 } catch (_) {}
                 pages[idx].objects = _spAiSerializeElementsForPage(p.elements);
                 written++;
+                // ⏳ Progression visible : « Assemblage des pages : k / N… »
+                try { if (typeof _aiLoaderProgress === 'function') _aiLoaderProgress(written, data.pages.length); } catch (_) {}
                 if (_avait > 0) {
                     log('\u2705 Page ' + (idx + 1) + ' : ' + p.elements.length + ' element(s) (remplace ' + _avait + ' objet(s) existant(s))');
                 } else {
                     log('\u2705 Page ' + (idx + 1) + ' : ' + p.elements.length + ' element(s)');
                 }
             });
+            // 🆕 v1.7.401 — NE JAMAIS SUPPRIMER LES PAGES NON RENSEIGNEES.
+            //   Une reponse qui ne decrit QUE la page 1 ne doit pas effacer les pages 2..N
+            //   du document : le tableau des pages est conserve tel quel, seules les pages
+            //   effectivement decrites sont ecrites. On le trace pour que ce soit visible.
+            if (written > 0 && pages.length > written) {
+                log('   \u2139\ufe0f ' + (pages.length - written) + ' autre(s) page(s) conservee(s) telles quelles');
+            }
             try { if (typeof renderAllPages === 'function') renderAllPages(); } catch {}
             try { if (typeof saveAllPages === 'function') saveAllPages(); } catch {}
             try { if (typeof updatePageIndicator === 'function') updatePageIndicator(); } catch {}
             try { if (typeof saveState === 'function') saveState('IA multi-pages: ' + written + ' page(s)'); } catch {}
             return written;
         }
+
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // ⏳ v1.7.401 — LE LOADER DIT CE QU'IL FAIT
+        //   Avant : texte FIXE « Composition de votre maquette… » quel que soit le
+        //   travail reel — d'ou le « on ne sait pas trop ce qu'il fait ». Le message
+        //   est desormais calcule a partir de l'etat REEL : presence d'une maquette,
+        //   pieces jointes, nombre de pages demande.
+        // ══════════════════════════════════════════════════════════════════════════
+        function _aiLoaderMessage(userText) {
+            var txt = String(userText || '');
+            // 1) Des pieces jointes sont presentes -> on le dit (l'inventaire peut etre long).
+            var nbPj = (window._spDocAttachments || []).length;
+            if (nbPj > 0) return 'Lecture de vos pieces jointes (' + nbPj + ')…';
+
+            // 2) Une maquette existe deja sur la page active -> c'est une RETOUCHE.
+            var objs = [];
+            try {
+                var c = (typeof getActiveCanvas === 'function') ? getActiveCanvas() : null;
+                if (c && c.getObjects) {
+                    objs = c.getObjects().filter(function (o) { return !_spAiIsSystemObj(o); });
+                }
+            } catch (_) {}
+
+            // 3) Nombre de pages demande dans le texte (« 6 pages », « 8-page »).
+            var m = txt.match(/(\d{1,3})\s*(?:pages?|p\.)/i);
+            var nbPages = m ? parseInt(m[1], 10) : 0;
+
+            if (objs.length > 0) {
+                return 'Lecture de votre maquette, puis retouche en cours…';
+            }
+            if (nbPages > 1) {
+                return 'Composition de ' + nbPages + ' pages en cours…';
+            }
+            return 'Composition de votre maquette…';
+        }
+        window._aiLoaderMessage = _aiLoaderMessage;
+
+        // Progression du rendu page a page (appele par _spAiProcessMultiPageResponse).
+        function _aiLoaderProgress(k, total) {
+            try {
+                if (typeof aiFooterLoaderOn === 'function') {
+                    aiFooterLoaderOn('Assemblage des pages : ' + k + ' / ' + total + '…');
+                }
+            } catch (_) {}
+        }
+        window._aiLoaderProgress = _aiLoaderProgress;
 
         function aiCustomPrompt() {
     // 🆕 v1.7.174 — Anti double-clic : loader + désactivation du bouton
@@ -48006,7 +48165,17 @@ remplace pas la richesse de contenu : les deux vont ensemble.
     }
     window._aiGenerating = true;
     // 🆕 v1.7.398 — loader EN SURIMPRESSION sur la barre (disparait a la fin).
-    try { if (typeof aiFooterLoaderOn === 'function') aiFooterLoaderOn('Composition de votre maquette…'); } catch (_l) {}
+    try {
+        if (typeof aiFooterLoaderOn === 'function') {
+            var _srcTxt = '';
+            try {
+                var _taP = document.getElementById('aiPromptModal');
+                var _inP = document.getElementById('aiFooterInput');
+                _srcTxt = (_taP && _taP.value) || (_inP && _inP.value) || '';
+            } catch (_) {}
+            aiFooterLoaderOn((typeof _aiLoaderMessage === 'function') ? _aiLoaderMessage(_srcTxt) : 'Composition de votre maquette…');
+        }
+    } catch (_l) {}
     var generateBtn = document.getElementById('aiFooterGenerateBtn');
     // Memorise le libelle AFFICHE (traduit) pour le restaurer a la fin.
     var _aiGenBtnLabel = generateBtn ? generateBtn.textContent : 'Create';
@@ -48021,6 +48190,9 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         //    en dur, donc le bouton repassait en ANGLAIS apres chaque generation,
         //    quelle que soit la langue de l'interface.
         if (generateBtn) { generateBtn.disabled = false; generateBtn.style.opacity = '1'; generateBtn.textContent = _aiGenBtnLabel; }
+        // 🆕 v1.7.401 — la maquette vient (peut-etre) d'etre remplie : le bouton doit
+        //   desormais annoncer « Retoucher » et non plus « Creer ».
+        try { if (typeof _spAiSyncBtnLabel === 'function') _spAiSyncBtnLabel(); } catch (_sl) {}
     }
     
     const promptText = document.getElementById('aiPromptModal').value.trim();
@@ -48832,7 +49004,11 @@ GUIDE MAQUETTES MODERNES
         const overline = el.overline === true;
         const shadow = (typeof el.shadow === 'string') ? el.shadow : undefined;
         const backgroundColor = sanitizeColor(el.backgroundColor, undefined);
-        return { ok: true, value: { type, left, top, width, text, fontSize, fill, opacity, fontFamily, fontWeight, fontStyle, textAlign, lineHeight, charSpacing, underline, linethrough, overline, shadow, backgroundColor } };
+        // 🆕 v1.7.401 — CESURE : ces deux proprietes doivent TRANSPIRER. Sans elles,
+        //   la consigne « texte justifie avec cesure » du prompt etait jetee ici.
+        const enableHyphenation = (el.enableHyphenation != null) ? !!el.enableHyphenation : undefined;
+        const hyphenLanguage = (el.hyphenLanguage && String(el.hyphenLanguage)) || undefined;
+        return { ok: true, value: { type, left, top, width, text, fontSize, fill, opacity, fontFamily, fontWeight, fontStyle, textAlign, lineHeight, charSpacing, underline, linethrough, overline, shadow, backgroundColor, enableHyphenation, hyphenLanguage } };
     }
 
     // Hyphenation heuristique (soft hyphens) pour ameliorer la justification
@@ -48869,8 +49045,21 @@ GUIDE MAQUETTES MODERNES
         _requestedPages = (!isNaN(_uiCount) && _uiCount > 1) ? _uiCount : (_requestedPages > 1 ? _requestedPages : 8);
         _isMultiPageRequest = true;
     } else if (_aiDocType === 'single' || _aiDocType === 'spread') {
-        _requestedPages = 0;
-        _isMultiPageRequest = false;
+        // 🆕 v1.7.401 — NE PAS REDUIRE UN DOCUMENT MULTI-PAGES A UNE SEULE PAGE.
+        //   Mesure : la barre IA pose _aiDocType = 'single' par defaut. Sur un magazine
+        //   de 7 pages, un simple re-prompt de retouche (« retouche le titre de la
+        //   page 1 ») passait donc en mode mono-page : le contexte des autres pages
+        //   n'etait plus transmis et le document retombait a 1 page (verifie : 7 -> 1).
+        //   On ne force le mono-page que si le document n'a PAS deja plusieurs pages.
+        var _dejaMulti = (typeof pages !== 'undefined') && Array.isArray(pages) && pages.length > 1;
+        if (_dejaMulti) {
+            // Document existant multi-pages -> on conserve le contexte multi-pages.
+            _requestedPages = pages.length;
+            _isMultiPageRequest = true;
+        } else {
+            _requestedPages = 0;
+            _isMultiPageRequest = false;
+        }
     }
 
                 // 🆕 v1.7.400 — inventaire de la maquette en cours (retouche au lieu de regeneration).
@@ -49642,9 +49831,23 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                             textAlign: e.textAlign,
                             opacity: e.opacity,
                             splitByGrapheme: false,  // Mode par mot
-                            breakWords: true,
-                            enableHyphenation: false
+                            breakWords: true
                         };
+                        // 🆕 v1.7.401 — CESURE (chemin MONO-PAGE).
+                        //   AVANT : `enableHyphenation: false` ECRIT EN DUR ici.
+                        //   Mesure : l'IA declarait bien "enableHyphenation":true dans sa
+                        //   reponse, et l'objet arrivait sur le canvas en false. Toute
+                        //   consigne de cesure etait donc annulee par cette ligne.
+                        //   Maintenant : on respecte la consigne, et un texte JUSTIFIE
+                        //   sans consigne explicite recoit la cesure (regle du prompt).
+                        var _justifie = (String(e.textAlign || '').toLowerCase() === 'justify');
+                        textOpts.enableHyphenation = (e.enableHyphenation != null)
+                            ? !!e.enableHyphenation
+                            : _justifie;
+                        textOpts.hyphenLanguage = e.hyphenLanguage
+                            || ((typeof spDefaultHyphenLanguage === 'function')
+                                ? spDefaultHyphenLanguage()
+                                : ((typeof currentHyphenLanguage !== 'undefined' && currentHyphenLanguage) || 'fr'));
                         // Propriétés optionnelles
                         if (e.lineHeight != null) textOpts.lineHeight = e.lineHeight;
                         if (e.charSpacing != null) textOpts.charSpacing = e.charSpacing;
@@ -50451,6 +50654,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiBtnNewDoc: "Nouveau Doc",
         aiBtnNewDocTitle: "Effacer tout et repartir sur une page blanche",
         aiBtnCreate: "Créer",
+        aiBtnRetouch: "Retoucher",
+        aiBtnCreateTip: "Créer une maquette à partir de votre consigne",
+        aiBtnRetouchTip: "Retoucher la maquette en cours avec votre consigne",
         aiStructureLabel: "Structure du document",
         aiDocTypeSingle: "Page simple",
         aiDocTypeSpread: "Double page",
@@ -50463,6 +50669,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiSp213OpenCurrent: "Maquette actuelle → studio",
         aiFooterBarToggle: "Afficher une barre de prompt IA en pied de la preview",
         aiFooterBarPlaceholder: "Décrivez la maquette de cette page…",
+        aiFooterBarPlaceholderRetouch: "Décrivez les retouches à apporter…",
         aiSectionExamples: "Exemples de prompts",
         aiBtnCopy: "Copier",
         saveTitle: "Sauvegarder",
@@ -51230,6 +51437,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiBtnNewDoc: "New Doc",
         aiBtnNewDocTitle: "Clear everything and start with a blank page",
         aiBtnCreate: "Create",
+        aiBtnRetouch: "Retouch",
+        aiBtnCreateTip: "Create a layout from your prompt",
+        aiBtnRetouchTip: "Retouch the current layout with your prompt",
         aiStructureLabel: "Document structure",
         aiDocTypeSingle: "Single page",
         aiDocTypeSpread: "Spread",
@@ -51242,6 +51452,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiSp213OpenCurrent: "Current layout → studio",
         aiFooterBarToggle: "Show an AI prompt bar at the bottom of the preview",
         aiFooterBarPlaceholder: "Describe the layout for this page…",
+        aiFooterBarPlaceholderRetouch: "Describe the changes to make…",
         aiSectionExamples: "Prompt examples",
         aiBtnCopy: "Copy",
         saveTitle: "Save",
@@ -52011,6 +52222,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiBtnNewDoc: "新規ドキュメント",
         aiBtnNewDocTitle: "全てクリアして空白ページから始める",
         aiBtnCreate: "作成",
+        aiBtnRetouch: "修正",
+        aiBtnCreateTip: "指示からレイアウトを作成",
+        aiBtnRetouchTip: "指示で現在のレイアウトを修正",
         aiStructureLabel: "ドキュメント構成",
         aiDocTypeSingle: "単一ページ",
         aiDocTypeSpread: "見開き",
@@ -52023,6 +52237,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiQuickInspiration: "クイックインスピレーション",
         aiFooterBarToggle: "プレビュー下部にAIプロンプトバーを表示",
         aiFooterBarPlaceholder: "このページのレイアウトを説明…",
+        aiFooterBarPlaceholderRetouch: "修正内容を説明…",
         aiSectionExamples: "プロンプト例",
         aiBtnCopy: "コピー",
         saveTitle: "保存",
