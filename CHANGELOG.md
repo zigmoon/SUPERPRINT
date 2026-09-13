@@ -9,6 +9,28 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.402] — 2026-09-14
+
+_Five interface reports: pop-in order, API key indicator, attachments, focus colour_
+
+### Added
+- **The API key indicator now reflects reality.** The dot left of the «Prompt IA» title was **hard-coded black** (`background:#1a1a1a`), so an active key and a missing one looked identical. It is now **green** (`#22c55e`, with a soft green ring) as soon as a key exists for the selected engine, and **amber** (`#f59e0b`) otherwise, with a tooltip stating it in words («DeepSeek key active» / «no key for DeepSeek»). The state is re-measured when the bar opens, when the engine changes, right after the key is saved, and by a 900 ms watcher that only touches the DOM when the signature actually changes. Verified without reloading: green → amber (key removed) → green (key restored).
+- **Attachment chips laid out like the Studio IA ones.** Each chip now shows a **type icon** (Word, PDF, ODT, spreadsheet…) or the **real thumbnail** for an image, the file name, the character count and the **actual file weight**. Several files coexist and the area keeps **zero height** when empty, so the bar stays compact. Chips already present are redrawn when the bar opens. Measured on two files: «Rapport annuel.docx · 45.2k chars · 278 KB» and «couverture.jpg · 1600×1000px · 1.2 MB».
+
+### Changed
+- **«Studio IA» and «SuperTyPo» moved to the end of the «New project» tab list**, after the configuration tabs and separated by a rule. They are **actions** (they close the dialog and open another tool), not content tabs: sitting in the middle made them read as settings for the current document, which suggested two clicks were needed. Final order: **Basic · Advanced · Automatic · Templates │ Studio IA · SuperTyPo**. Verified: the two buttons stay black (`rgb(26,26,26)`, weight 600).
+- **The prompt field focus outline is black instead of blue.** It was `#3b82f6` with a blue glow. Now `#111111` (and `#f4f4f5` in dark theme), with the drop-zone hover turned black too. The **scrollbar** was redrawn: thin, rounded, never the system blue. Verified by reading the computed styles — no blue rule left on the field, glow at `rgba(17,17,17)`.
+- **Studio page ceiling raised from 40 to 120.** A document estimated at 200 pages was silently capped at 40, with no way for the user to know the rest was never laid out. The final message now **states the cut** instead of implying everything was composed.
+
+### Fixed
+- **«`text.indexOf is not a function`» on a ~200-page `.docx`.** The fix **already existed in the repository** since 1.7.393 (`parseAIResponse` normalises string/object and `spGenerateByPages` returns a JSON **string**), but the **online** studio had stayed on 1.7.390: measured `superprint.cc/sp213-studio.html` at **427 205 bytes** against **495 843** locally, with **0 occurrences** of the `if (typeof text !== 'string')` guard online against 1 locally. No code change was needed — only the deployment was missing. This is the clearest case so far of a fixed bug that keeps being reported because the fix was never published.
+
+### Verified
+- Tab order and computed styles read in the browser; the dot cycle tested without reloading; chips measured on two files of different types.
+- Web/mirror parity 14/14, coherence 13/13, no leftover version markers, `node --check` clean on `main.js` (web and mirror), `_check_studio` clean, dist rebuilt at 1.7.402, package (56 266 279 bytes) verified by extraction.
+
+> ⚠️ **`superprint.cc` still serves 1.7.390.** The studio deployed online is twelve versions behind: the `text.indexOf` fix and everything since are invisible until the FTP deployment is done manually. This is the direct cause of the recurring report above.
+
 ## [1.7.401] — 2026-09-14
 
 _The button says what it will do, hyphenation is honoured, and an edit preserves the document_
