@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.390`** — 12 septembre 2026
+> **Dernière version : `1.7.391`** — 12 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,19 +10,19 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.390` |
-| Cache Service Worker | `superprint-shell-v1.7.390-no-whatsapp` |
+| Version app (affichée) | `1.7.391` |
+| Cache Service Worker | `superprint-shell-v1.7.391-no-whatsapp` |
 | Query JS (`main.js`) | `?v=20260913-v389-titres-conversation` |
-| Badge preview (`spVersionBadge`) | `v1.7.390` |
-| Splash screen | `v1.7.390` |
-| Préférences (panneau SUPERPRINT) | `v1.7.390` |
-| Préférences (bas de page) | `SuperPrint v1.7.390 — 12 septembre 2026` |
-| Onboarding (`V 1.7.390`) | `1.7.390` |
-| Landing (`softwareVersion` + footer) | `1.7.390` |
-| Documentation | `v1.7.390` |
-| `version.txt` | `1.7.390` |
-| `llms.txt` / `llms-full.txt` | `1.7.390 (September 2026)` |
-| `package.json` (sp213-local) | `1.7.390` |
+| Badge preview (`spVersionBadge`) | `v1.7.391` |
+| Splash screen | `v1.7.391` |
+| Préférences (panneau SUPERPRINT) | `v1.7.391` |
+| Préférences (bas de page) | `SuperPrint v1.7.391 — 12 septembre 2026` |
+| Onboarding (`V 1.7.391`) | `1.7.391` |
+| Landing (`softwareVersion` + footer) | `1.7.391` |
+| Documentation | `v1.7.391` |
+| `version.txt` | `1.7.391` |
+| `llms.txt` / `llms-full.txt` | `1.7.391 (September 2026)` |
+| `package.json` (sp213-local) | `1.7.391` |
 
 > ⚠️ Le paquet **npm** (`superprint-npm`) a sa **propre version** (`1.0.x`) — c'est la version de *release du paquet*, indépendante de la version de l'app. Il lit la version de l'app depuis `https://superprint.cc/version.txt`.
 

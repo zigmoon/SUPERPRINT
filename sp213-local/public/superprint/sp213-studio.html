@@ -649,6 +649,30 @@
   }
   #attachBtn .ic, #micBtn .ic, #webImgBtn .ic { width: 14px; height: 14px; }
   #attachBtn:hover, #micBtn:hover, #webImgBtn:hover { background: var(--btn-hover); border-color: #999; }
+  /* v1.7.391 — Case « Images » : habillage photo des maquettes.
+     Coché -> l'IA compose AVEC des photos (zones photo + légendes) et le studio
+     joint 1 à 3 photos. Décoché (DÉFAUT) -> maquette sans photo. */
+  #imgToggleWrap {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    height: 30px; padding: 0 9px; cursor: pointer; user-select: none;
+    border: 1px solid var(--border); color: var(--text); white-space: nowrap;
+    transition: all 0.15s;
+  }
+  #imgToggleWrap:hover { background: var(--btn-hover); border-color: #999; }
+  #imgToggleWrap input[type="checkbox"] {
+    width: 13px; height: 13px; margin: 0; cursor: pointer; accent-color: #3b82f6;
+  }
+  #imgToggleWrap .img-toggle-label { font-size: 11px; letter-spacing: .2px; }
+  #imgToggleWrap.on { border-color: #3b82f6; background: rgba(59,130,246,0.10); }
+  #imgToggleWrap.busy { opacity: .5; pointer-events: none; }
+  @media (max-width: 560px) {
+    #imgToggleWrap { padding: 0 6px; }
+    #imgToggleWrap .img-toggle-label { display: none; }
+  }
+  /* Taille alignee sur les icones sur mobile (la regle @media ne cite pas la case) */
+  @media (max-width: 720px) {
+    #imgToggleWrap { height: 42px; }
+  }
   #micBtn:disabled { opacity: .4; cursor: not-allowed; }
   #micBtn.listening { background: #ef4444; color: #fff; border-color: #ef4444; }
   #micBtn.listening .ic { animation: micPulse 1s infinite; }
@@ -1248,6 +1272,15 @@
                 </button>
                 <span class="tip" id="micTip"><b>Prompt vocal</b>Cliquez puis parlez : votre voix est transcrite dans la zone de saisie. Recliquez pour arrêter.</span>
               </span>
+              <!-- v1.7.391 — Case « Images » : à droite du micro, comme demandé.
+                   DÉCOCHÉE par défaut = maquette sans photo. -->
+              <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
+                <label id="imgToggleWrap" for="imgToggle">
+                  <input type="checkbox" id="imgToggle">
+                  <span class="img-toggle-label" id="imgToggleLabel">Images</span>
+                </label>
+                <span class="tip" id="imgToggleTip"><b>Images</b>Décoché (défaut) : maquette sans photo. Coché : l'IA réserve des zones photo et le studio joint 1 à 3 photos d'illustration.</span>
+              </span>
             </div>
             <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
               <button id="sendBtn">
@@ -1473,7 +1506,8 @@
     lang: 'sp213_studio_lang_v2', // Langue propre au Studio : anglais au premier lancement
     convs: 'sp213_convs_v1',   // 🆕 index des conversations
     convActive: 'sp213_conv_active_v1', // 🆕 conversation active
-    webImg: 'sp213_webimg_v1'  // 🆕 recherche d'image web (picsum) : 'on' | 'off'
+    webImg: 'sp213_webimg_v1', // 🆕 recherche d'image web (picsum) : 'on' | 'off'
+    images: 'sp213_images_v1'  // 🆕 v1.7.391 — habillage photo auto : 'on' | 'off' (défaut 'off')
   };
 
   const state = {
@@ -1506,6 +1540,7 @@
     redoStack: [],     // 🆕 historique de rétablissement
     selectedIds: [],   // 🆕 éléments sélectionnés dans l'aperçu (retravail ciblé)
     webImgEnabled: true, // 🆕 recherche d'image web (picsum) — activée par défaut
+    imagesEnabled: false, // 🆕 v1.7.391 — habillage photo auto (DÉFAUT : désactivé)
     webImgSeed: '',      // 🆕 seed picsum courant (déterministe)
     webImgBusy: false    // 🆕 chargement en cours
   };
@@ -1649,6 +1684,12 @@
       'chat.attachTip': '<b>Attachments</b>Attach images, text, Word (.docx), Excel (.xls/.xlsx) or PDF documents. SP213 analyzes and integrates their content into the layout.',
       'chat.webImgTip': '<b>Web image</b>Searches a free stock photo (picsum.photos) and adds it as an attachment so the AI can integrate it into the layout.',
       'chat.micTip': '<b>Voice prompt</b>Click then speak: your voice is transcribed into the prompt field.',
+      'chat.imgToggleTip': '<b>Images</b>Unchecked (default): layout without photos. Checked: the AI reserves photo areas and the studio attaches 1 to 3 illustration photos.',
+      'chat.imgToggleLabel': 'Images',
+      'chat.imgToggleOn': 'Images enabled: the AI will compose the layout WITH photos (photo areas + captions) and the studio will attach 1 to 3 illustration photos.',
+      'chat.imgToggleOff': 'Images disabled: layouts will be composed without photos.',
+      'chat.imgAutoAdded': '{n} illustration photo(s) attached for the layout.',
+      'chat.imgAutoFailed': 'No illustration photo could be fetched (offline?). The layout will still reserve grey photo areas.',
       'chat.sendTip': '<b>Send</b>Generates (or updates) the layout from your description and attachments. The result appears on the left.',
       'webimg.title': 'Web image — picsum.photos',
       'webimg.kwLabel': 'Keyword / theme (optional)',
@@ -1776,6 +1817,12 @@
       'chat.placeholder': 'Décrivez la maquette… (ex : « Affiche A4 minimaliste pour un festival de jazz »)',
       'chat.attachTip': '<b>Pièces jointes</b>Joignez des images, du texte, des documents Word (.docx), Excel (.xls/.xlsx) ou PDF. SP213 les analyse et les intègre dans la maquette.',
       'chat.webImgTip': '<b>Image web</b>Recherche une photo libre (picsum.photos) et l\'ajoute comme pièce jointe pour que l\'IA l\'intègre dans la maquette.',
+      'chat.imgToggleTip': '<b>Images</b>Décoché (défaut) : maquette sans photo. Coché : l\'IA réserve des zones photo et le studio joint 1 à 3 photos d\'illustration.',
+      'chat.imgToggleLabel': 'Images',
+      'chat.imgToggleOn': 'Images activées : l\'IA composera la maquette AVEC des photos (zones photo + légendes) et le studio joindra 1 à 3 photos d\'illustration.',
+      'chat.imgToggleOff': 'Images désactivées : les maquettes seront composées sans photo.',
+      'chat.imgAutoAdded': '{n} photo(s) d\'illustration jointe(s) pour la maquette.',
+      'chat.imgAutoFailed': 'Aucune photo d\'illustration n\'a pu être récupérée (hors ligne ?). La maquette réservera malgré tout des zones photo grises.',
       'chat.micTip': '<b>Prompt vocal</b>Cliquez puis parlez : votre voix est transcrite dans le champ du prompt.',
       'chat.sendTip': '<b>Envoyer</b>Génère (ou met à jour) la maquette à partir de votre description et des pièces jointes. Le résultat s\'affiche à gauche.',
       'webimg.title': 'Image web — picsum.photos',
@@ -1904,6 +1951,12 @@
       'chat.placeholder': 'レイアウトを説明してください…（例：「ジャズフェスティバルのミニマルなA4ポスター」）',
       'chat.attachTip': '<b>添付ファイル</b>画像（jpg, png, webp…）、テキスト（.txt, .md…）、Word文書（.docx）を添付します。SP213が分析してレイアウトに統合します。',
       'chat.webImgTip': '<b>ウェブ画像</b>フリー写真（picsum.photos）を検索して添付ファイルとして追加し、AIがレイアウトに統合できるようにします。',
+      'chat.imgToggleTip': '<b>画像</b>オフ（既定）：写真なしのレイアウト。オン：AIが写真エリアを確保し、スタジオが挿絵写真を1〜3点添付します。',
+      'chat.imgToggleLabel': '画像',
+      'chat.imgToggleOn': '画像を有効にしました：AIは写真ありのレイアウト（写真エリア＋キャプション）を構成し、スタジオが挿絵写真を1〜3点添付します。',
+      'chat.imgToggleOff': '画像を無効にしました：写真なしのレイアウトを構成します。',
+      'chat.imgAutoAdded': 'レイアウト用に挿絵写真を{n}点添付しました。',
+      'chat.imgAutoFailed': '挿絵写真を取得できませんでした（オフライン？）。レイアウトには灰色の写真エリアを確保します。',
       'chat.micTip': '<b>音声プロンプト</b>クリックして話すと、音声がプロンプト欄に文字起こしされます。',
       'chat.sendTip': '<b>送信</b>説明と添付ファイルからレイアウトを生成（または更新）します。結果は左側に表示されます。',
       'webimg.title': 'ウェブ画像 — picsum.photos',
@@ -2074,6 +2127,8 @@
       'attachBtn': 'chat.attachTip',
       'webImgBtn': 'chat.webImgTip',
       'micBtn': 'chat.micTip',
+      'imgToggleTip': 'chat.imgToggleTip',
+      'imgToggleLabel': 'chat.imgToggleLabel',
       'sendBtn': 'chat.sendTip',
       'welcomeCloseBtn': 'welcome.close',
       'undoBtn': 'preview.undoBtnTitle',
@@ -2467,6 +2522,9 @@
 
     // 🆕 Recherche d'image web (picsum.photos)
     initWebImage();
+
+    // 🆕 v1.7.391 — case « Images » : habillage photo auto (DÉFAUT : décochée).
+    spImagesInit();
 
     buildQuickChips();
 
@@ -3305,6 +3363,157 @@
     if (webBtn) webBtn.classList.toggle('offline', !state.webImgEnabled);
     if (wrap) wrap.style.display = state.webImgEnabled ? '' : 'none';
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // v1.7.391 — CASE « IMAGES » : habillage photo des maquettes.
+  //
+  // Deux effets complémentaires, ce qui la rend robuste même hors ligne :
+  //   1. TOUJOURS : consigne dans le system prompt -> l'IA réserve des zones
+  //      photo et écrit des légendes. Fonctionne SANS réseau.
+  //   2. SI EN LIGNE : 1 à 3 photos téléchargées et jointes AVANT l'appel,
+  //      pour que l'IA les place réellement via "imageIndex".
+  //
+  // ⚠️ Le modèle NE VOIT PAS les photos (aucun appel multimodal : image_url = 0).
+  //    Il connaît le NOM et le FORMAT, pas le SUJET. La consigne lui interdit donc
+  //    explicitement d'inventer ce que montre la photo.
+  //
+  // ⚠️ picsum.photos renvoie une photo ALÉATOIRE déterministe par "seed" : le
+  //    mot-clé n'a AUCUN effet sémantique ("jazz" ne donne pas une photo de jazz).
+  //    Une vraie recherche par mot-clé demanderait une API (clé requise) ;
+  //    spImagesFetchOne() est le point d'entrée unique prévu pour l'accueillir.
+  // ══════════════════════════════════════════════════════════════════════════
+  function spImagesEnabled() { return !!state.imagesEnabled; }
+
+  function spImagesUpdateUI() {
+    const wrap = $('imgToggleWrap');
+    const cb = $('imgToggle');
+    if (cb) cb.checked = !!state.imagesEnabled;
+    if (wrap) wrap.classList.toggle('on', !!state.imagesEnabled);
+    return true;
+  }
+
+  function spImagesSetEnabled(on, opts) {
+    state.imagesEnabled = !!on;
+    try { localStorage.setItem(LS.images, on ? 'on' : 'off'); } catch(_) {}
+    spImagesUpdateUI();
+    if (opts && opts.silent) return;
+    appendChat('assistant', t(state.imagesEnabled ? 'chat.imgToggleOn' : 'chat.imgToggleOff'));
+  }
+
+  function spImagesInit() {
+    const cb = $('imgToggle');
+    if (!cb) return;
+    // DÉFAUT : sans image.
+    let on = false;
+    try { on = localStorage.getItem(LS.images) === 'on'; } catch(_) {}
+    state.imagesEnabled = on;
+    spImagesUpdateUI();
+    cb.addEventListener('change', function() { spImagesSetEnabled(cb.checked); });
+  }
+  window.sp213ImagesInit = spImagesInit;
+  window.sp213ImagesEnabled = spImagesEnabled;
+  window.sp213ImagesSetEnabled = spImagesSetEnabled;
+
+  // Nombre de photos à joindre : 1 pour une page, jusqu'à 3 pour un document
+  // multi-pages. Volontairement sobre : évite la surcharge visuelle.
+  function spImagesTargetCount(userText) {
+    let pages = 1;
+    try {
+      if (state.doc && state.doc.pages && state.doc.pages.length) pages = state.doc.pages.length;
+    } catch(_) {}
+    const p = String(userText || '');
+    const mp = p.match(/(\d{1,3})\s*[- ]?\s*pages?/i);
+    if (mp) pages = Math.max(pages, parseInt(mp[1], 10) || 1);
+    if (/\b(magazine|catalogue|catalog|livre|brochure|booklet|livret|book)\b/i.test(p)) {
+      pages = Math.max(pages, 4);
+    }
+    if (pages <= 1) return 1;
+    if (pages <= 4) return 2;
+    return 3;
+  }
+  window.sp213ImagesTargetCount = spImagesTargetCount;
+
+  // Télécharge UNE photo d'illustration -> { dataUrl, width, height, url } | null
+  // Point d'entrée UNIQUE : c'est ici qu'une vraie recherche par mot-clé
+  // (Pexels / Unsplash API) viendra se brancher plus tard.
+  async function spImagesFetchOne(index, w, h) {
+    const W = w || 1600, H = h || 1000;
+    // Seed différent par photo pour éviter les doublons visuels.
+    const seed = 'sp213-auto-' + Date.now().toString(36) + '-' + index + '-' + Math.floor(Math.random() * 100000);
+    const picsumUrl = 'https://picsum.photos/seed/' + seed + '/' + W + '/' + H;
+    let img = await webImgToDataUrl(picsumUrl);
+    if (img) { img.url = picsumUrl; return img; }
+    // Repli : photos Unsplash libres déjà validées dans l'app.
+    const fbUrl = _unsplashFallbackUrl(W, H);
+    img = await webImgToDataUrl(fbUrl);
+    if (img) { img.url = fbUrl; return img; }
+    return null;
+  }
+  window.sp213ImagesFetchOne = spImagesFetchOne;
+
+  // Récupère N photos et les ajoute comme pièces jointes.
+  // Renvoie { added, failed }.
+  async function spImagesAttach(userText) {
+    const n = spImagesTargetCount(userText);
+    const go = $('imgToggleWrap');
+    if (go) go.classList.add('busy');
+    let added = 0, failed = 0;
+    try {
+      for (let i = 0; i < n; i++) {
+        let img = null;
+        try { img = await spImagesFetchOne(i, 1600, 1000); } catch(_) { img = null; }
+        if (!img) { failed++; continue; }
+        state.attachments.push({
+          id: Date.now() + '_autoimg' + i,
+          name: 'photo-' + (i + 1) + '.jpg',
+          type: 'image',
+          dataURL: img.dataUrl,
+          width: img.width,
+          height: img.height,
+          ext: 'jpg',
+          auto: true,
+          url: img.url || ''
+        });
+        added++;
+      }
+      if (added) { try { renderAttachBar(); } catch(_) {} }
+    } finally {
+      if (go) go.classList.remove('busy');
+    }
+    return { added, failed };
+  }
+  window.sp213ImagesAttach = spImagesAttach;
+
+  // Consigne injectée dans le SYSTEM PROMPT quand la case est cochée.
+  // Volontairement explicite sur ce que le modèle NE SAIT PAS : il ne voit pas
+  // la photo, il ne doit donc pas inventer son sujet.
+  function spImagesPromptNote(nbPhotos) {
+    if (!spImagesEnabled()) return '';
+    const n = nbPhotos || 0;
+    return '\n\n=== MAQUETTE AVEC PHOTOS — DEMANDE EXPLICITE DE L\'UTILISATEUR ===\n' +
+      'L\'utilisateur a ACTIVÉ la case « Images » : il attend une maquette HABILLÉE DE PHOTOS.\n' +
+      '• Réserve ' + (n > 0 ? n : '1 à 3') + ' ZONE(S) PHOTO dans la composition. Une zone photo doit\n' +
+      '  occuper une vraie place (au moins 30 % de la surface d\'une page, ou un bandeau\n' +
+      '  pleine largeur) — pas une vignette perdue dans un coin.\n' +
+      (n > 0
+        ? '• ' + n + ' photo(s) sont jointes : place-les avec "type":"image" et "imageIndex" 0 à ' + (n - 1) + '.\n' +
+          '  Respecte leur ratio (voir la section PIÈCES JOINTES).\n'
+        : '• Aucune photo n\'a pu être jointe : compose MALGRÉ TOUT les zones photo\n' +
+          '  (rectangle gris #E2E8F0 ou #CBD5E1) en respectant un ratio 3:2 ou 4:5.\n') +
+      '• CADRAGE : l\'image doit TOUCHER au moins un bord de page (fond perdu de 3 mm)\n' +
+      '  ou s\'inscrire dans la grille — jamais flottante au milieu du vide.\n' +
+      '• LÉGENDE : ajoute TOUJOURS une légende courte (9-10 pt) sous ou sur la photo.\n' +
+      '  ATTENTION : TU NE VOIS PAS LE CONTENU DE LA PHOTO. Tu connais seulement son\n' +
+      '  nom et son format. N\'invente donc JAMAIS ce qu\'elle montre (« photo d\'un\n' +
+      '  chanteur de jazz »). Écris une légende GÉNÉRIQUE et honnête (« Illustration »,\n' +
+      '  « Visuel d\'ouverture », « Ambiance ») ou fondée sur le THÈME du document.\n' +
+      '• Ne mets JAMAIS de photo derrière un texte lisible : soit la photo porte du\n' +
+      '  texte blanc par-dessus (contraste fort obligatoire), soit texte et photo sont\n' +
+      '  côte à côte.\n' +
+      '• La maquette reste un document PRINT : la photo SERT le propos, elle ne le\n' +
+      '  remplace pas. Le texte reste le contenu principal.';
+  }
+  window.sp213ImagesPromptNote = spImagesPromptNote;
 
   function initWebImage() {
     const btn = $('webImgBtn');
@@ -4761,7 +4970,7 @@
     return callAI(messages);
   }
 
-  function sendMessage() {
+  async function sendMessage() {
     if (state.busy) return;
     const txt = $('promptInput').value.trim();
     const hasAttach = state.attachments.length > 0;
@@ -4785,6 +4994,22 @@
     // titre de la conversation (avant même la réponse IA).
     try { persistChat(); } catch(_) {}
     try { saveCurrentConv(); } catch(_) {}
+    // 🆕 v1.7.391 — CASE « IMAGES » : si elle est cochée, on va chercher 1 à 3
+    //   photos d'illustration AVANT de construire le prompt, pour qu'elles soient
+    //   présentes dans la section PIÈCES JOINTES. En cas d'échec réseau, on
+    //   CONTINUE : la consigne texte fait réserver des zones photo grises.
+    if (spImagesEnabled()) {
+      try {
+        const _imgRes = await spImagesAttach(userText);
+        if (_imgRes.added) {
+          appendChat('assistant', t('chat.imgAutoAdded', { n: _imgRes.added }));
+        } else {
+          appendChat('assistant', t('chat.imgAutoFailed'));
+        }
+      } catch(_) {
+        appendChat('assistant', t('chat.imgAutoFailed'));
+      }
+    }
     const attachments = state.attachments.slice();
 
     // 🆕 2026-08-30 : si le prompt demande un format de page (A5, carte, etc.),
@@ -4804,7 +5029,9 @@
       typoLoaderPromise = loadFontsWithFeedback(requestedFonts);
     }
 
-    const system = buildSystemPrompt();
+    // v1.7.391 — la case « Images » ajoute une consigne photo au system prompt.
+    const _spImgNote = spImagesPromptNote(state.attachments.filter(function (a) { return a.type === 'image'; }).length);
+    const system = buildSystemPrompt() + _spImgNote;
     const messages = [{ role: 'system', content: system }];
     const recent = state.chat.slice(-12);
     recent.forEach(m => messages.push({ role: m.role, content: m.text }));

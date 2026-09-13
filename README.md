@@ -28,7 +28,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-1.7.390-000000?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-1.7.391-000000?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20ready-E1237B?style=flat-square">
   <img alt="AI" src="https://img.shields.io/badge/AI-SP213%20studio-F2B90B?style=flat-square">
@@ -134,8 +134,8 @@ This repository contains the full product. The web app can be served as static f
 Every release is git-tagged `v1.7.NNN`, so you can diff two versions directly:
 
 ```bash
-git log --oneline v1.7.386..v1.7.390      # what changed in one release
-git diff v1.7.380 v1.7.390 --stat         # full diff between two
+git log --oneline v1.7.386..v1.7.391      # what changed in one release
+git diff v1.7.380 v1.7.391 --stat         # full diff between two
 ```
 
 ---
