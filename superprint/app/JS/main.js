@@ -2518,9 +2518,80 @@ if (window._spGpuEnabled) {
             origH: h
         };
     }
+    // ══════════════════════════════════════════════════════════════════════
+    // 🎯 v1.7.379 — MAGNÉTISME DE HAUTEUR SUR LES LIGNES TYPOGRAPHIQUES.
+    //
+    //   RETOUR UTILISATEUR : en tirant les poignées d'un bloc texte, la hauteur
+    //   tombait n'importe où et COUPAIT une ligne en deux. Exigence du métier :
+    //   on ne coupe jamais une ligne, et on ne touche jamais à l'interlignage.
+    //
+    //   On ne modifie NI lineHeight NI fontSize : on choisit seulement un
+    //   NOMBRE DE LIGNES, et la hauteur en découle. C'est la différence entre
+    //   « je redimensionne un cadre » (ce qu'on veut) et « je change la
+    //   typographie » (ce qu'on ne veut pas).
+    //
+    //   Les hauteurs de ligne viennent de spTextMetrics / spLineBoxHeight :
+    //   les helpers PARTAGÉS avec l'export PDF et le clipPath. Une seule source
+    //   de vérité, donc l'aperçu et le PDF ne peuvent pas diverger.
+    //
+    //   Renvoie la hauteur aimantée, ou la valeur d'origine si le bloc n'est pas
+    //   mesurable (mieux vaut ne rien faire que figer une valeur au hasard).
+    // ══════════════════════════════════════════════════════════════════════
+    function _spSnapHeightToLines(target, hauteurDemandee) {
+        try {
+            if (!target || !(target.type === 'textbox' || target.type === 'text')) return hauteurDemandee;
+            if (!target._textLines || !target._textLines.length) return hauteurDemandee;
+            if (typeof window.spTextMetrics !== 'function' || typeof window.spLineBoxHeight !== 'function') {
+                return hauteurDemandee;
+            }
+            const H = window.spTextMetrics(target);
+            if (!H || !H.length) return hauteurDemandee;
+
+            const TOL = 0.5;
+            let dernierQuiTient = -1;
+            for (let i = 0; i < H.length; i++) {
+                const box = window.spLineBoxHeight(target, i, H);
+                if (box === null) break;
+                if (box <= hauteurDemandee + TOL) dernierQuiTient = i;
+                else break;   // les lignes suivantes sont plus hautes : inutile de continuer
+            }
+
+            // 🛡️ PLANCHER : jamais 0 ligne. Un bloc de hauteur nulle
+            //   disparaîtrait de l'écran et l'utilisateur croirait avoir perdu
+            //   son texte. On garde toujours au moins la première ligne entière.
+            if (dernierQuiTient < 0) dernierQuiTient = 0;
+
+            const hauteurAimantee = window.spLineBoxHeight(target, dernierQuiTient, H);
+            if (!(hauteurAimantee > 0)) return hauteurDemandee;
+            return hauteurAimantee;
+        } catch (_) { return hauteurDemandee; }
+    }
+    // Exposé : le chemin object:scaling vit dans une AUTRE portée et doit
+    //   appliquer exactement le même magnétisme (un seul comportement, deux
+    //   chemins d'entrée).
+    window.spSnapHeightToLines = _spSnapHeightToLines;
+
     function _spApplyLocalResize(target, newW, newH, anchorPoint, anchorOriginX, anchorOriginY) {
         const fixedW = Math.max(MIN_WIDTH, Math.round(newW));
-        const fixedH = Math.max(MIN_HEIGHT, Math.round(newH));
+        let fixedH = Math.max(MIN_HEIGHT, Math.round(newH));
+        // 🎯 v1.7.379 — HAUTEUR AIMANTÉE SUR LES LIGNES (jamais de ligne coupée).
+        //   ⚠️ PAS DE GARDE DE DISTANCE. Mesure faite en situation réelle : lors
+        //   d'un drag, la hauteur demandée peut se trouver jusqu'à UNE LIGNE
+        //   ENTIÈRE d'une frontière (27 px à Arial 18 / interligne 1,35). Un
+        //   garde « si l'écart ≤ 6 px » ne se déclenchait donc JAMAIS sur le
+        //   geste utilisateur — le magnétisme était inefficace et une ligne
+        //   restait coupée.
+        //   Aucun risque à aimanter toujours ici : cette fonction n'est appelée
+        //   QUE par les cinq handlers de poignées (ml, mr, mt, mb, coins),
+        //   vérifié par recherche des appels. C'est donc toujours un geste de
+        //   l'utilisateur — jamais une restauration de fichier, qui passerait
+        //   par un autre chemin et n'est pas concernée.
+        try {
+            const isText = target && (target.type === 'textbox' || target.type === 'text');
+            if (isText && !target.isEditing) {
+                fixedH = Math.max(MIN_HEIGHT, Math.round(_spSnapHeightToLines(target, fixedH)));
+            }
+        } catch (_) {}
         target.set({ width: fixedW, height: fixedH, scaleX: 1, scaleY: 1 });
         target._fixedWidth = fixedW;
         target._fixedHeight = fixedH;
@@ -8183,7 +8254,15 @@ if (window._spGpuEnabled) {
         const baseH = obj.__spScalingBase.h || (obj.height || 1);
 
         const newW = Math.max(obj.minWidth || 20, baseW * (obj.scaleX || 1));
-        const newH = Math.max(obj.minHeight || 20, baseH * (obj.scaleY || 1));
+        let newH = Math.max(obj.minHeight || 20, baseH * (obj.scaleY || 1));
+        // 🎯 v1.7.379 — MÊME MAGNÉTISME sur le chemin de scaling natif.
+        //   Si les contrôles personnalisés sont actifs, cet handler sort plus
+        //   haut ; il reste utile pour les cas où Fabric redimensionne lui-même
+        //   (sélection multiple, outil dédié). Le comportement doit être
+        //   identique quel que soit le chemin emprunté.
+        try {
+            if (typeof window.spSnapHeightToLines === 'function') newH = window.spSnapHeightToLines(obj, newH);
+        } catch (_) {}
 
         obj.__spScalingPending = { w: newW, h: newH };
         if (obj.__spScalingRaf) return;

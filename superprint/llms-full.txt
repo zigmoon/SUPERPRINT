@@ -8,7 +8,7 @@
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
-- **Version**: 1.7.378 (September 2026)
+- **Version**: 1.7.379 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Tech stack**: Vanilla JavaScript + Fabric.js (canvas rendering), PDF.js (PDF import), pdf-lib (CMYK PDF post-processing), jsPDF (PDF export), JSZip (IDML / SLA / ODT), Paper.js (boolean path operations), Mammoth.js (DOCX import), Hypher (hyphenation).
@@ -101,13 +101,34 @@ Yes. All document processing happens client-side in the browser. No uploads to a
 ### Colors
 - RGB and CMYK color modes.
 - CMYK values editable per object.
-- Pantone spot color library.
+- Pantone spot color library, available in **both RGB and CMYK** working modes.
+- Spot ink display names are shortened in the palette (`Yellow C` rather than `Pantone Yellow C`) so the list stays readable; the full name is retained for filters and output plates.
 - Soft-proof preview simulating coated/uncoated paper and paper types (white, cream, recycled, newsprint).
+- ICC profile loading (`.icc` / `.icm`) to frame the conversion for the target paper and press.
 - Color swatches (reusable).
+
+### Prepress — Pantone spot inks and channel separation
+- Each Pantone spot ink is emitted into its **own named colour channel** in the exported PDF.
+- That channel is declared in a `/Separation` colour space compliant with **ISO 32000-2** (`SpotsColorName` / alternate space), which is what a RIP expects in order to output a dedicated plate.
+- Process colours (RGB or CMYK) remain separate from the spot channels: the two are never flattened together.
+- The export summary reports the real channel count for the mode actually selected — e.g. `RGB (3) + 1 Pantone`, `CMYK (4) + 2 Pantone`. The process part is derived from the mode, never hard-coded.
+- Verified by decoding the exported PDF stream by stream: a spot ink placed in the application comes out as a channel under its own name, in RGB mode and in CMYK mode alike.
+
+### Text wrap (habillage)
+- Wrap modes: **none**, **bounding box**, **contour** (the text follows the sampled outline of the shape, so a circle narrows the line near the top and bottom).
+- Sides: both sides, left only, right only. Adjustable offset (standoff) in pixels.
+- The wrap is recomputed automatically when the obstacle moves.
+- Wrap also applies to a text frame placed **inside** a shape (`_isShapeClippedText`): the text folds inward, and the frame keeps the shape's box instead of overflowing it.
+
+### Line-accurate text frame resizing
+- Dragging a text frame's handles **never cuts a line in half** and **never modifies the leading**.
+- The requested height is snapped to a whole number of lines, derived from the same line metrics used by the PDF export and the clip mask (`spTextMetrics` / `spLineBoxHeight`) — so preview and output cannot diverge.
+- The floor is one full line: a frame is never reduced to zero height (which would make the text disappear).
+- The red overflow marker is still displayed whenever text remains in the frame.
 
 ### Export
 - **PDF (RGB)**: via jsPDF.
-- **PDF (CMYK)**: via pdf-lib post-processing, with bleed and crop marks.
+- **PDF (CMYK)**: via pdf-lib post-processing, with bleed and crop marks. Spot inks are written as named `/Separation` channels (ISO 32000-2), one per Pantone.
 - **PNG**: per page or multi-page ZIP.
 - **JPG**: per page or multi-page ZIP.
 - **IDML**: for interoperability with professional DTP workflows.
@@ -115,13 +136,16 @@ Yes. All document processing happens client-side in the browser. No uploads to a
 
 ### Import
 - **PDF**: page-by-page preview, selection, rasterized import.
-- **DOCX** (Word): text and basic formatting.
+- **DOCX / DOC** (Word): text and basic formatting.
 - **ODT** (OpenDocument): text and basic formatting.
 - **RTF**: text.
-- **IDML**: layout, text frames, text threads.
+- **IDML** (InDesign interchange format): text frames, stories and layout are read and rebuilt in SuperPrint, enabling a workflow that starts from an existing InDesign archive.
+- **XLSX / XLS** (spreadsheets).
 - **SLA** (open-source layout format): basic layout.
 - **SVG**: vector paths.
-- **Images**: JPEG, PNG, WebP.
+- **Images**: JPEG, PNG, WebP, TIFF, BMP, GIF, EPS, AI, PSD.
+- **Fonts**: TTF, OTF, WOFF2.
+- **ICC profiles**: `.icc` / `.icm`.
 
 ### Performance
 - GPU acceleration via WebGL (Fabric.js `objectCaching` + CSS compositor promotion).

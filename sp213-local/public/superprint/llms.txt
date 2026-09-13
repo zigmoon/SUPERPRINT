@@ -10,7 +10,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.378 (September 2026)
+- **Version**: 1.7.379 (September 2026)
 
 ## Core documentation
 
@@ -26,9 +26,23 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Import**: PDF, DOCX (Word), ODT (OpenDocument), RTF, IDML, SLA (open-source layout format), SVG, JPEG, PNG, WebP.
 - **Export**: PDF (RGB or CMYK with bleed and crop marks), PNG, JPG (ZIP for multi-page), IDML, native `.sp` project file.
 
+## Prepress — Pantone & channel separation
+
+- **Pantone spot inks**: a built-in Pantone swatch library. A spot ink can be placed on a shape, a text frame or a background, in RGB mode as well as CMYK mode. Display names are shortened in the palette (`Yellow C` instead of `Pantone Yellow C`) while the full name is preserved for filters and output plates.
+- **Channel separation**: on export, every spot ink goes into its **own named colour channel**, declared in a `/Separation` colour space compliant with **ISO 32000-2** — the technique RIPs expect in order to produce a dedicated plate. Process colours (RGB or CMYK) stay separate from the Pantone channels and are never flattened together.
+- **Accurate channel count**: the export summary states the real number of channels for the selected mode — for example `RGB (3) + 1 Pantone` or `CMYK (4) + 2 Pantone`.
+- **ICC profiles**: `.icc` / `.icm` profiles can be loaded to frame the conversion for the intended paper and press.
+- **Soft proof**: on-screen CMYK simulation, including coated / uncoated paper simulation.
+
+## Layout & typography reliability
+
+- **Text wrap**: text flows around a bounding box or a contour, with adjustable offset (standoff) and per-side control (both / left / right). The wrap recomposes on every move of the object, and also applies to a text frame placed **inside** a shape — where the text folds inward without escaping its frame.
+- **Line-accurate height resizing**: dragging a text frame's handles never cuts a line in half and never alters the leading. The height snaps to a whole number of lines, using the same line metrics as the PDF export so preview and output stay consistent. An overflow marker still appears whenever text remains in the frame.
+
 ## Key differentiators (why SuperPrint is rare)
 
 - Native CMYK PDF export directly from a web browser (most competitors require desktop software or paid cloud subscriptions).
+- Native Pantone spot inks separated into named PDF channels (`/Separation`, ISO 32000-2) — from a browser, with no installed software.
 - Real IDML import for interoperability with professional DTP workflows, directly in a browser.
 - Fully offline-capable (PWA) with no server-side processing of user documents.
 - Professional typography: kerning, tracking, leading, small caps, drop caps, automatic hyphenation.
