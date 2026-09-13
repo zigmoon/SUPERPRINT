@@ -9,6 +9,24 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.394] — 2026-09-13
+
+_Studio: targeted rework repaired, and three off-brand colours removed_
+
+### Fixed
+- **Reworking a selected block did nothing — and could silently delete it.** Reported as *“I think the earlier error happened on a re-prompt where I had selected a block (green) in the document”*. Root cause, found in the code and confirmed by test: `mergeTargetedChanges` matched the elements returned by the AI against the selected ones **by their `id`** — but **the prompt never asks the AI for an id**, so it never returns one. The lookup table stayed empty, so **no replacement ever happened**. Worse, the deletion pass that followed **removed the selected elements** when the AI returned none — the user's block vanished with no message.
+- **Fixed by matching on position** (the order of selected elements in the layout, which the model follows naturally), keeping the id-match as a first choice if the model happens to provide one, and **refusing to delete anything when the response is empty** (layout left untouched, with a console trace instead of silent loss). The replaced element keeps its original id and position.
+- **Verified** by extracting the function and running it on a real 3-element case: AI returns 1 element **without id** → element 2 replaced (text, size and colour applied), id kept, elements 1 and 3 intact. AI returns an **empty** response → the selected block is **kept** (it used to disappear). 2 targets, 2 elements → correct pairing.
+
+### Changed
+- **The “Images” checkbox is no longer blue.** Reported as *“the blue for Images right of the mic doesn't fit the design language, keep it like the others even when checked”*. Measured before: border `rgb(59,130,246)` and a blue tint when checked. Now: neutral grey border `rgb(217,217,217)` and a transparent background — **identical to the neighbouring icons, checked or not**; only the label turns bold to show the state.
+- **The targeted-rework block is amber, not green.** Reported as *“green may not be the right colour, I'd prefer we stay in dark black”*. `#1a7f37` → `#b45309` (the sober amber already in the palette), with light handles so they stay readable on dark backgrounds.
+- **Targeted rework is now clearly visible.** Reported as *“not visually strong enough when it's a rework by zone”*. The `#selectionBar` gains a thick left border (4 px), bold text and letter-spacing, so there is no doubt you are in targeted mode.
+
+### Note
+- **The prompt button was already black** — measured live at `rgb(26,26,26)` (`--accent: #1a1a1a`). Nothing green to remove there; the perception came from the green selected block, fixed above.
+- **Editor app audited**: no defect of this class to report. There is no `parseAIResponse` in `main.js`, and the two `text.indexOf` calls operate on local Fabric objects.
+
 ## [1.7.393] — 2026-09-13
 
 _Studio: “text.indexOf is not a function” when a Word document is attached_

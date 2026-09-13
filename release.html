@@ -6,7 +6,7 @@
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
 <meta name="description" content="Latest Zigmoon release notes for PDF-YZ, Bird and SuperPrint. Discover native PDF editing, local-first vector design, SuperTyPo typeface editor and SuperPrint v1.7.375 (reliable text wrap, stable AI text blocks, colour picker in RGB).">
-<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.393, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation, Word import options, body size, image width, heading hierarchy, SP213 Studio, images checkbox, photo layout, illustration photos, bleed setting, trim, print finishing, current dates, Word attachment fix, page by page generation">
+<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.394, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation, Word import options, body size, image width, heading hierarchy, SP213 Studio, images checkbox, photo layout, illustration photos, bleed setting, trim, print finishing, current dates, Word attachment fix, page by page generation, targeted rework, selected block, design tokens">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="SuperPrint v1.7.393 — fix for the studio crash on a long Word attachment (text.indexOf is not a function), verified on a 15,083-character document producing 6 full pages.">
+<meta property="og:description" content="SuperPrint v1.7.394 — targeted rework in the studio is repaired (a selected block is now really updated, and never silently deleted), and three off-brand colours are back in line with the design language.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SuperPrint v1.7.393 — the long-Word-attachment crash in the studio is fixed and verified.">
+<meta name="twitter:description" content="SuperPrint v1.7.394 — targeted rework repaired: re-prompting a selected block now really updates it, and never deletes it silently.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -704,6 +704,38 @@ footer, footer a { color: var(--after-text-color); }
 
 <main>
 <section class="releases" aria-label="Release notes">
+
+<!-- ===== SUPER PRINT v1.7.394 — retravail par zone + DA ===== -->
+<article class="release-block" data-app="superprint" id="superprint-v1-7-394">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.394</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 13 septembre 2026" data-i18n-en="Released September 13, 2026" data-i18n-jp="2026年9月13日公開">Released September 13, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="<strong>Le retravail par zone fonctionne enfin — et vos blocs ne disparaissent plus.</strong> Sélectionner un bloc, puis re-prompter, ne modifiait rien : la retouche cherchait les éléments renvoyés par l'IA par un identifiant qu'elle ne fournit jamais. Pire, quand elle ne renvoyait rien, votre bloc était <strong>supprimé sans un mot</strong>. Trois couleurs hors-charte ont aussi été corrigées." data-i18n-en-html="<strong>Targeted rework finally works — and your blocks no longer disappear.</strong> Selecting a block and re-prompting changed nothing: the rework looked for the elements returned by the AI by an identifier it never sends. Worse, when it returned nothing, your block was <strong>deleted without a word</strong>. Three off-brand colours were also fixed." data-i18n-jp-html="<strong>ゾーン単位の再編集が機能するようになり、ブロックが消えることもなくなりました。</strong>ブロックを選択して再プロンプトしても何も変わっていませんでした。再編集はAIが返す要素を、AIが決して送らないIDで照合していたためです。さらに、何も返らない場合はブロックが<strong>何の通知もなく削除</strong>されていました。ブランド外の3色も修正しました。">Targeted rework works, and blocks no longer disappear.</p>
+
+ <h3>🎯 Le retravail par zone ne faisait rien <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>La cause, trouvée dans le code et confirmée par test :</strong> la retouche ciblée appariait les éléments renvoyés par l'IA avec les vôtres <strong>par leur identifiant</strong>. Or le prompt ne demande jamais d'identifiant à l'IA, et elle n'en renvoie pas : la table de correspondance restait <strong>vide</strong>, donc <strong>aucun remplacement</strong> ne se produisait." data-i18n-en-html="<strong>The cause, found in the code and confirmed by test:</strong> the targeted rework matched the elements returned by the AI with yours <strong>by their identifier</strong>. But the prompt never asks the AI for an identifier, and it does not return one: the lookup table stayed <strong>empty</strong>, so <strong>no replacement</strong> ever happened." data-i18n-jp-html="<strong>原因はコード内で特定し、テストで確認しました：</strong>ゾーン再編集はAIが返す要素を<strong>IDで</strong>照合していました。しかしプロンプトはAIにIDを要求しておらず、AIも返しません。照合テーブルは<strong>空</strong>のままとなり、<strong>置換は一切</strong>行われていませんでした。">Matching by an identifier the AI never sends.</li>
+  <li data-i18n-fr-html="<strong>Pire :</strong> quand l'IA ne renvoyait aucun élément, la passe de nettoyage qui suivait <strong>supprimait votre bloc sélectionné</strong>, sans le moindre message. C'est ce que vous décriviez par « ça a buggé »." data-i18n-en-html="<strong>Worse:</strong> when the AI returned no element, the cleanup pass that followed <strong>removed your selected block</strong>, without a single message. That is what you described as “it bugged”." data-i18n-jp-html="<strong>さらに：</strong>AIが要素を返さなかった場合、続くクリーンアップ処理が<strong>選択したブロックを削除</strong>していました。通知は一切ありません。これが「バグった」と感じられた現象です。">When the AI returned nothing, the block was deleted silently.</li>
+  <li data-i18n-fr-html="<strong>La retouche s'apparie maintenant par position</strong> (l'ordre de vos blocs sélectionnés, que le modèle suit naturellement), l'identifiant et la position d'origine sont conservés, et <strong>plus rien n'est supprimé quand la réponse est vide</strong> : la maquette reste intacte. Vérifié sur un cas réel à 3 éléments." data-i18n-en-html="<strong>The rework now matches by position</strong> (the order of your selected blocks, which the model follows naturally), the original identifier and position are kept, and <strong>nothing is deleted when the response is empty</strong>: the layout stays intact. Verified on a real 3-element case." data-i18n-jp-html="<strong>再編集は位置で照合するようになりました</strong>（選択したブロックの順序。モデルは自然にこれに従います）。元のIDと位置は保持され、<strong>応答が空のときは何も削除されません</strong>。レイアウトはそのまま保たれます。3要素の実例で検証済み。">Now matched by position; nothing deleted on an empty reply.</li>
+ </ul>
+
+ <h3>🎨 Trois couleurs hors-charte corrigées <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>La case « Images » n'est plus bleue.</strong> Mesuré avant : bordure bleue et fond teinté quand elle est cochée. Désormais : bordure gris neutre et fond transparent — <strong>identique aux icônes voisines, cochée ou non</strong>. Seul le libellé passe en gras pour signaler l'état." data-i18n-en-html="<strong>The “Images” checkbox is no longer blue.</strong> Measured before: a blue border and a blue tint when checked. Now: neutral grey border and transparent background — <strong>identical to the neighbouring icons, checked or not</strong>. Only the label turns bold to show the state." data-i18n-jp-html="<strong>「画像」チェックボックスは青ではなくなりました。</strong>計測前：オンのとき青い枠と青い背景。現在：中立の灰色枠と透明背景 — <strong>オン・オフに関わらず隣のアイコンと同一</strong>。状態はラベルが太字になるだけで示します。">The Images checkbox is no longer blue.</li>
+  <li data-i18n-fr-html="<strong>Le bloc en retravail ciblé passe du vert à l'ambre.</strong> Vous préfériez rester dans une palette sombre : le cadre utilises désormais l'ambre sobre déjà présent dans la charte, avec des poignées claires pour rester lisibles." data-i18n-en-html="<strong>The targeted-rework block goes from green to amber.</strong> You preferred staying in a dark palette: the frame now uses the sober amber already in the palette, with light handles so they stay readable." data-i18n-jp-html="<strong>ゾーン再編集のブロックは緑から琥珀色になりました。</strong>暗いパレットに留めたいとのご希望どおり、枠は既存の落ち着いた琥珀色を使用し、ハンドルは視認できるよう明るくしました。">Green → amber for the targeted block.</li>
+  <li data-i18n-fr-html="<strong>Le retravail par zone est maintenant bien visible :</strong> la barre d'information gagne un bord gauche épais et du gras — impossible de ne pas voir qu'on travaille sur une sélection." data-i18n-en-html="<strong>Targeted rework is now clearly visible:</strong> the info bar gains a thick left border and bold text — you cannot miss that you are working on a selection." data-i18n-jp-html="<strong>ゾーン再編集がはっきり分かるようになりました：</strong>情報バーに太い左ボーダーと太字を追加。選択範囲を編集していることが一目で分かります。">Targeted rework is now clearly visible.</li>
+  <li data-i18n-fr-html="<em>Précision :</em> le bouton de prompt était <strong>déjà noir</strong> — vérifié en direct. La teinte verte perçue venait du bloc sélectionné, corrigé ci-dessus." data-i18n-en-html="<em>For accuracy:</em> the prompt button was <strong>already black</strong> — measured live. The green tone you saw came from the selected block, fixed above." data-i18n-jp-html="<em>補足：</em>プロンプトボタンは<strong>すでに黒</strong>でした（実測）。緑に見えていたのは選択ブロックの枠で、上記のとおり修正しました。">The prompt button was already black.</li>
+ </ul>
+
+ <p data-i18n-fr="Studio 1.7.394 — retravail par zone réparé et vérifié par test sur un cas réel à trois éléments, plus trois couleurs remises dans la charte." data-i18n-en="Studio 1.7.394 — targeted rework repaired and verified by test on a real three-element case, plus three colours brought back in line with the design language." data-i18n-jp="スタジオ 1.7.394 — ゾーン再編集を修正し、3要素の実例でテスト検証。加えて3色をブランドに合わせました。">Verified by test on a real three-element case.</p>
+ <a class="release-cta" href="https://superprint.cc/sp213-studio.html" data-i18n-fr="→ Ouvrir le studio SP213" data-i18n-en="→ Open SP213 Studio" data-i18n-jp="→ SP213スタジオを開く">→ Open SP213 Studio</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
 
 <!-- ===== SUPER PRINT v1.7.393 — correctif Word long en piece jointe ===== -->
 <article class="release-block" data-app="superprint" id="superprint-v1-7-393">
