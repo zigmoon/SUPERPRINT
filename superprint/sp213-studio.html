@@ -3933,8 +3933,15 @@
     const pagesTexte = Math.ceil(chars / 2600);
     // Les images prennent de la place : on en compte environ 2 par page.
     const pagesImages = Math.ceil(images.length / 2);
+    // 🆕 v1.7.402 — PLAFOND PORTE DE 40 A 120 PAGES.
+    //   Un document de ~200 pages etait silencieusement ramene a 40 : l'utilisateur
+    //   ne pouvait pas savoir que les 160 autres n'etaient jamais composees.
+    //   120 reste un garde-fou (la generation est sequentielle : un appel par page),
+    //   mais on RENVOIE le nombre brut pour que l'appelant puisse le DIRE.
     const pages = Math.max(pagesTexte, pagesImages, chars ? 1 : 0);
-    return { pages: Math.min(40, pages), chars: chars, images: images.length, docs: textes.length };
+    const plafond = 120;
+    return { pages: Math.min(plafond, pages), pagesBrutes: pages, plafond: plafond,
+             chars: chars, images: images.length, docs: textes.length };
   }
 
   // Consigne injectee dans le prompt quand un document est joint : l'IA doit
@@ -3947,7 +3954,7 @@
     const docs = (state.attachments || []).filter(function (a) { return a.type === 'text' && a.text; });
     if (!docs.length) return [];
     const total = docs.map(function (a) { return String(a.text); }).join('\n\n');
-    const n = Math.max(1, Math.min(40, nPages || 1));
+    const n = Math.max(1, Math.min(120, nPages || 1));
     // On ne coupe pas au milieu d'un mot : on cherche l'espace le plus proche.
     const taille = Math.ceil(total.length / n);
     const tranches = [];
@@ -5866,7 +5873,7 @@
   //   C'est ce qui garantit que le document est traite DANS SON INTEGRALITE.
   function spGenerateByPages(baseMessages, userText) {
     const hint = spAttachmentPageHint();
-    const n = Math.max(2, Math.min(40, hint.pages));
+    const n = Math.max(2, Math.min(120, hint.pages));
     const slices = spDocumentSlices(n);
     const systemMsg = baseMessages[0] && baseMessages[0].role === 'system' ? baseMessages[0] : { role: 'system', content: '' };
     const images = (state.attachments || []).filter(function (a) { return a.type === 'image'; });
@@ -5881,8 +5888,14 @@
         //   appel unique. Avant, on renvoyait un OBJET : les deux branches de
         //   spCallAI() avaient des types differents, et sendMessage() passait
         //   l'objet a parseAIResponse() -> « text.indexOf is not a function ».
+        // 🆕 v1.7.402 — ON DIT ce qui s'est passe. Un document de 200 pages est
+        //   ramene au plafond : sans ce message, l'utilisateur croit que tout a ete
+        //   compose alors que la fin n'a jamais ete traitee.
+        var _coupe = (hint.pagesBrutes && hint.pagesBrutes > n)
+            ? ' (document estimé à ' + hint.pagesBrutes + ' pages : plafond de ' + n + ' pages atteint, augmentez le nombre de pages si besoin)'
+            : '';
         return Promise.resolve(JSON.stringify({
-          reply: 'Document traité intégralement : ' + n + ' pages composées à partir de vos ' + hint.chars + ' caractères.',
+          reply: 'Document traité : ' + n + ' pages composées à partir de vos ' + hint.chars + ' caractères.' + _coupe,
           pages: pages,
           targetPages: n
         }));

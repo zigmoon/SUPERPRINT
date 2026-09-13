@@ -46586,6 +46586,11 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             if (bar) bar.style.display = on ? 'flex' : 'none';
             try { localStorage.setItem('sp_ai_footerbar', on ? '1' : '0'); } catch(e) {}
             if (!on) aiFooterClearImages();
+            // 🆕 v1.7.402 — la barre peut s'ouvrir APRES le chargement (reglage
+            //   memorise) : on remesure l'etat de la cle pour que la pastille soit
+            //   juste des le premier affichage.
+            if (on) { try { if (typeof window._aiFooterSyncKeyDot === 'function') window._aiFooterSyncKeyDot(); } catch (_) {} }
+            if (on) { try { if (typeof window._aiFooterRenderAtt === 'function') window._aiFooterRenderAtt(); } catch (_) {} }
         }
         window.aiToggleFooterBar = aiToggleFooterBar;
 
@@ -46596,6 +46601,12 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             if (!bar || !handle) return;
             if (bar.dataset.dragInit === '1') return;
             bar.dataset.dragInit = '1';
+
+            // 🆕 v1.7.402 — ce point tourne une fois la barre en place : on y
+            //   rafraichit la pastille d'etat de la cle et les chips de pieces
+            //   jointes, pour que l'ouverture restauree soit deja coherente.
+            try { if (typeof window._aiFooterSyncKeyDot === 'function') window._aiFooterSyncKeyDot(); } catch (_) {}
+            try { if (typeof window._aiFooterRenderAtt === 'function') window._aiFooterRenderAtt(); } catch (_) {}
 
             // Retrouver la position sauvegardée (si l'utilisateur a déjà déplacé la barre)
             try {
@@ -46966,14 +46977,38 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                     : (att.docLabel || att.ext || 'txt').toUpperCase();
                 if (att.type === 'text') {
                     var n = String(att.text || '').length;
-                    info = (att.docLabel ? att.docLabel + ' \u00b7 ' : '') +
-                           (n >= 1000 ? (Math.round(n / 100) / 10) + 'k' : n) + ' car.';
+                    info = (n >= 1000 ? (Math.round(n / 100) / 10) + 'k' : n) + ' car.';
+                    // Poids du fichier d'origine quand on l'a : repère utile pour
+                    // savoir si un .docx volumineux est bien passé en entier.
+                    if (att.size) {
+                        var ko2 = att.size / 1024;
+                        info += ' \u00b7 ' + (ko2 >= 1024
+                            ? (Math.round(ko2 / 1024 * 10) / 10) + ' Mo'
+                            : Math.max(1, Math.round(ko2)) + ' Ko');
+                    }
+                } else if (att.size) {
+                    var ko3 = att.size / 1024;
+                    info += ' \u00b7 ' + (ko3 >= 1024
+                        ? (Math.round(ko3 / 1024 * 10) / 10) + ' Mo'
+                        : Math.max(1, Math.round(ko3)) + ' Ko');
                 }
+                // 🆕 v1.7.402 — DISPOSITION ALIGNEE SUR LE STUDIO (retour utilisateur).
+                //   Icône de TYPE pour les documents, vignette réelle pour les images.
+                var ic = document.createElement('span');
+                ic.className = 'ic';
                 if (att.type === 'image' && att.dataURL) {
                     var im = document.createElement('img');
                     im.src = att.dataURL;
                     im.alt = '';
                     chip.appendChild(im);
+                } else {
+                    var _e = String(att.ext || '').toLowerCase().replace(/^\./, '');
+                    ic.textContent = (_e === 'docx' || _e === 'doc') ? '\uD83D\uDCD8'
+                        : (_e === 'pdf') ? '\uD83D\uDCD5'
+                        : (_e === 'xls' || _e === 'xlsx' || _e === 'ods') ? '\uD83D\uDCCA'
+                        : (_e === 'odt' || _e === 'odp' || _e === 'rtf') ? '\uD83D\uDCDD'
+                        : '\uD83D\uDCC4';
+                    chip.appendChild(ic);
                 }
                 var nm = document.createElement('span');
                 nm.className = 'n';
@@ -47008,6 +47043,56 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             });
         }
         window._aiFooterRenderAtt = _aiFooterRenderAtt;
+
+        // ══════════════════════════════════════════════════════════════════════
+        // 🆕 v1.7.402 — PASTILLE D'ETAT DE LA CLE API (retour utilisateur).
+        //   AVANT : la ronde a gauche de « Prompt IA » etait NOIRE ecrite en dur,
+        //   donc rien ne distinguait « cle active » de « cle absente » :
+        //   « il est noir actuellement alors que ma cle api est active ».
+        //   MAINTENANT : VERTE si une cle existe pour le moteur courant, AMBRE si
+        //   le moteur en demande une qui manque. L'infobulle dit l'etat en lettres.
+        // ══════════════════════════════════════════════════════════════════════
+        function _aiFooterSyncKeyDot() {
+            var el = document.getElementById('aiFooterKeyDot');
+            if (!el) return;
+            var provider = (document.getElementById('aiProvider') || {}).value || 'deepseek';
+            var key = '';
+            try { key = (typeof getAIKeyFor === 'function') ? (getAIKeyFor(provider) || '') : ''; } catch (_) {}
+            var aCle = !!String(key).trim();
+            el.classList.toggle('sp-key-on', aCle);
+            el.classList.toggle('sp-key-off', !aCle);
+            var moteurs = {
+                deepseek: 'DeepSeek', openai: 'OpenAI', openrouter: 'OpenRouter',
+                groq: 'Groq', anthropic: 'Anthropic', webllm: 'modèle local'
+            };
+            var nom = moteurs[provider] || provider;
+            var t = el.querySelector('.ai-key-lbl');
+            var txt = 'Prompt IA';
+            el.title = aCle
+                ? (txt + ' — clé ' + nom + ' active. L\'IA peut composer et retoucher.')
+                : (txt + ' — aucune clé pour ' + nom + '. Ouvrez le panneau IA (bouton IA) pour la saisir.');
+            if (t) t.title = el.title;
+        }
+        window._aiFooterSyncKeyDot = _aiFooterSyncKeyDot;
+
+        // Surveillance legere : la cle peut etre saisie dans le panneau IA, changee
+        // par une synchro localStorage (autre onglet) ou par un changement de moteur.
+        // On remesure l'etat reel toutes les 900 ms, sans jamais toucher au DOM
+        // quand rien n'a change (aucun cout perceptible).
+        (function _aiFooterKeyDotWatch() {
+            var dernier = null;
+            setInterval(function () {
+                var el = document.getElementById('aiFooterKeyDot');
+                if (!el) return;
+                var provider = (document.getElementById('aiProvider') || {}).value || 'deepseek';
+                var key = '';
+                try { key = (typeof getAIKeyFor === 'function') ? (getAIKeyFor(provider) || '') : ''; } catch (_) {}
+                var sig = provider + '|' + (String(key).trim() ? '1' : '0');
+                if (sig === dernier) return;
+                dernier = sig;
+                try { _aiFooterSyncKeyDot(); } catch (_) {}
+            }, 900);
+        })();
 
         // ── Extension de _aiFooterUpdateUI (definie plus bas dans ce fichier) ───
         var _aiFooterUpdateUI_orig = _aiFooterUpdateUI;
@@ -47281,6 +47366,9 @@ remplace pas la richesse de contenu : les deux vont ensemble.
     if (studioKeyName && apiKey) {
         try { localStorage.setItem(studioKeyName, apiKey); } catch(e) {}
     }
+    // 🆕 v1.7.402 — la pastille de la barre doit passer au VERT TOUT DE SUITE,
+    //   sans attendre le cycle de surveillance (900 ms).
+    try { if (typeof window._aiFooterSyncKeyDot === 'function') window._aiFooterSyncKeyDot(); } catch (_) {}
     
     // 🆕 SP213 : persister l'état du modèle layout & canevas
     const _sp213Toggle = document.getElementById('aiSp213Toggle');
@@ -50291,6 +50379,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         // Initialize AI provider dropdown on page load
         if (document.getElementById('aiProvider')) {
     document.getElementById('aiProvider').addEventListener('change', function() {
+        // 🆕 v1.7.402 — chaque moteur a sa propre cle : on remesure l'etat reel.
+        try { if (typeof window._aiFooterSyncKeyDot === 'function') window._aiFooterSyncKeyDot(); } catch (_) {}
         updateAIModelDropdown(this.value);
         updateAIKeyField();
     });
