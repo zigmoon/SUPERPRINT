@@ -580,28 +580,32 @@
   }
   .attach-chip .rm:hover { color: #d32f2f; }
 
-  #composerBox { display: flex; gap: 8px; align-items: flex-start; }
+  /* 🆕 v1.7.386 — le champ occupe TOUTE la largeur, la barre d'actions passe
+     DESSOUS (avant : colonne de 72 px collee a droite, boutons eparpilles). */
+  #composerBox { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
   /* Wrapper du prompt : contient le textarea + un placeholder overlay aligné au
      MÊME endroit que le texte tapé (même padding-top, même line-height) pour que
      curseur et placeholder coïncident parfaitement. */
+  /* 🆕 v1.7.386 — 3 lignes minimum (90 px = 3 x 21 + 24 de padding + bordure).
+     L'auto-agrandissement JS fait grandir jusqu'a 8 lignes, puis defilement. */
   .prompt-wrap {
-    flex: 1; position: relative; align-self: flex-start; min-height: 72px; max-height: 180px;
+    width: 100%; min-width: 0; position: relative; min-height: 90px; max-height: 194px;
     display: flex;
   }
   /* Boîte de prompt : CARRÉE, assez haute (2 lignes par défaut), transparente pour
      laisser voir le placeholder overlay quand le champ est vide. */
   #promptInput {
-    flex: 1; resize: none; min-height: 72px; max-height: 180px; width: 100%;
+    flex: 1; resize: none; min-height: 90px; max-height: 194px; width: 100%;
     background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 0;
-    color: var(--text); padding: 14px 16px; font-size: 14px; line-height: 1.5;
+    color: var(--text); padding: 12px 14px; font-size: 14px; line-height: 1.5; overflow-y: auto;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
   #promptInput:focus { outline: none; border-color: var(--accent); }
   /* Placeholder overlay : aligné en HAUT comme le texte tapé (même padding-top
      que le textarea) — le curseur et le placeholder coïncident. Pas de centrage. */
   .prompt-ph {
-    position: absolute; left: 16px; top: 0; right: 16px;
-    padding-top: 14px; pointer-events: none;
+    position: absolute; left: 14px; top: 0; right: 14px;
+    padding-top: 12px; pointer-events: none;
     color: var(--muted); font-size: 14px; line-height: 1.5; white-space: pre-wrap;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
@@ -617,11 +621,18 @@
   #promptInput::-webkit-scrollbar-thumb:hover { background: var(--muted); }
   #promptInput { scrollbar-width: thin; scrollbar-color: transparent transparent; }
   #promptInput:hover { scrollbar-color: var(--border) transparent; }
-  #composerActions { display: flex; flex-direction: column; gap: 6px; }
-  #attachRow { display: flex; gap: 6px; align-items: center; }
+  /* 🆕 v1.7.386 — barre d'actions HORIZONTALE sous le champ :
+     [ 📎  🌐  🎤 ] ......... [ Envoyer ]   (Envoyer pousse a droite) */
+  #composerActions { display: flex; flex-direction: row; gap: 8px; align-items: center; }
+  #attachRow { display: flex; gap: 8px; align-items: center; flex: 0 0 auto; }
+  /* ⚠️ margin-left:auto doit etre sur l'ENFANT DIRECT du flex (le .tip-wrap),
+     pas sur le bouton : un margin sur un petit-fils ne pousse rien. */
+  #composerActions > .tip-wrap:last-child { margin-left: auto; }
   /* Bouton Envoyer : étiré jusqu'au bas (aligné avec le micro) */
+  /* 🆕 v1.7.386 — pousse a droite par margin-left:auto (au lieu d'un flex:1
+     qui l'etirait sous les icones). Largeur minimale pour rester lisible. */
   #sendBtn {
-    flex: 1; min-height: 30px; padding: 0 16px; border-radius: 0; border: none;
+    flex: 0 0 auto; min-width: 104px; min-height: 30px; margin-left: auto; padding: 0 18px; border-radius: 0; border: none;
     background: var(--accent); color: var(--btn-active-text); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase;
@@ -629,13 +640,14 @@
   #sendBtn:disabled { opacity: .45; cursor: not-allowed; }
   /* Boutons pièce jointe + micro : compacts (20px, icône 12px), CARRÉS (pas de
      bord arrondi) à droite de la zone de saisie */
+  /* 🆕 v1.7.386 — 30 px (au lieu de 20) : vraie cible de clic, icone 14 px. */
   #attachBtn, #micBtn, #webImgBtn {
-    flex-shrink: 0; width: 20px; height: 20px; padding: 0; border-radius: 0;
+    flex-shrink: 0; width: 30px; height: 30px; padding: 0; border-radius: 0;
     border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: all 0.15s;
   }
-  #attachBtn .ic, #micBtn .ic, #webImgBtn .ic { width: 11px; height: 11px; }
+  #attachBtn .ic, #micBtn .ic, #webImgBtn .ic { width: 14px; height: 14px; }
   #attachBtn:hover, #micBtn:hover, #webImgBtn:hover { background: var(--btn-hover); border-color: #999; }
   #micBtn:disabled { opacity: .4; cursor: not-allowed; }
   #micBtn.listening { background: #ef4444; color: #fff; border-color: #ef4444; }
@@ -748,15 +760,18 @@
     #attachBar.visible { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
     #attachBar .attach-chip { flex: 0 0 auto; max-width: min(260px, 76vw); }
     #composerBox { width: 100%; flex-direction: column; gap: 8px; }
-    .prompt-wrap { width: 100%; min-width: 0; align-self: stretch; }
-    .prompt-wrap, #promptInput { min-height: 76px; }
+    /* 🆕 v1.7.386 — 96 px = 3 lignes a 16 px (evite aussi le zoom auto sur iOS). */
+    .prompt-wrap { width: 100%; min-width: 0; }
+    .prompt-wrap, #promptInput { min-height: 96px; max-height: 220px; }
     #promptInput { font-size: 16px; padding: 11px 12px; }
     .prompt-ph { left: 12px; right: 12px; padding-top: 11px; font-size: 13px; }
-    #composerActions { width: 100%; display: flex; flex-direction: row; gap: 8px; align-items: stretch; }
-    #composerActions > .tip-wrap { display: flex; width: 100%; min-width: 0; height: 42px; }
+    #composerActions { width: 100%; display: flex; flex-direction: row; gap: 8px; align-items: center; }
+    #composerActions > .tip-wrap { display: flex; flex: 0 0 auto; }
+    #composerActions > .tip-wrap:last-child { flex: 1; min-width: 0; margin-left: auto; }
     #attachRow { flex: 0 0 auto; }
     #attachBtn, #micBtn, #webImgBtn { width: 42px; height: 42px; }
-    #sendBtn { width: 100%; min-height: 42px; }
+    #attachBtn .ic, #micBtn .ic, #webImgBtn .ic { width: 17px; height: 17px; }
+    #sendBtn { width: 100%; min-width: 0; margin-left: 0; min-height: 42px; }
     .msg { max-width: 96%; }
     .bubble { font-size: 14px; }
     .tip-wrap .tip { display: none !important; }
@@ -1209,7 +1224,7 @@
 
         <div id="composerBox">
           <div class="prompt-wrap" id="promptWrap">
-            <textarea id="promptInput" rows="1" placeholder=" " aria-label="Prompt"></textarea>
+            <textarea id="promptInput" rows="3" placeholder=" " aria-label="Prompt"></textarea>
             <div class="prompt-ph" id="promptPh" aria-hidden="true">Décrivez la maquette… (ex : « Affiche A4 minimaliste pour un festival de jazz »)</div>
           </div>
           <div id="composerActions">
@@ -2072,7 +2087,15 @@
       if (!el || !titleMap[id]) return;
       const key = titleMap[id];
       if (dict[key]) {
-        const plain = String(dict[key]).replace(/<[^>]*>/g, '').replace(/\*\*/g, '');
+        // 🆕 v1.7.386 — le format est « <b>Titre</b>Texte d'aide ». Une simple
+        //   suppression des balises COLLAIT le titre au texte : title="Voice
+        //   promptClick then speak: ...". On remplace </b> par un tiret cadratin.
+        let plain = String(dict[key])
+          .replace(/<\/b>/gi, ' \u2014 ')
+          .replace(/<br\s*\/?>/gi, ' ')
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/\*\*/g, '');
+        plain = plain.replace(/\s+/g, ' ').replace(/\s+\u2014\s+/g, ' \u2014 ').trim();
         el.setAttribute('title', plain);
       }
     });
@@ -2336,15 +2359,41 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
     // Synchronise le placeholder overlay (centré) avec l'état du textarea.
+    // 🆕 v1.7.386 — AUTO-AGRANDISSEMENT : le champ demarre a 3 lignes et grandit
+    //   jusqu'a 8 lignes, puis defile. Avant il etait FIGE a 72 px (2 lignes) :
+    //   des la 3e ligne le texte sortait du cadre et un ascenseur apparaissait.
+    //   Les bornes sont lues dans le CSS (min-height / max-height) pour rester
+    //   coherentes entre le bureau (90/194) et le mobile (96/220).
+    function autoGrowPrompt() {
+      const pi = $('promptInput');
+      if (!pi) return;
+      const cs = getComputedStyle(pi);
+      const mini = parseFloat(cs.minHeight) || 90;
+      const maxi = parseFloat(cs.maxHeight) || 194;
+      // Mesure la hauteur NATURELLE du contenu (height auto + min-height neutralise).
+      const h0 = pi.style.height;
+      pi.style.height = 'auto';
+      const besoin = pi.scrollHeight;
+      pi.style.height = h0;
+      const cible = Math.max(mini, Math.min(besoin, maxi));
+      pi.style.height = Math.round(cible) + 'px';
+      pi.style.overflowY = besoin > maxi + 1 ? 'auto' : 'hidden';
+    }
+    window.sp213AutoGrowPrompt = autoGrowPrompt;
     function syncPromptPh() {
       const pi = $('promptInput'), wrap = $('promptWrap'), ph = $('promptPh');
       if (!pi || !wrap || !ph) return;
+      autoGrowPrompt();
       const empty = pi.value.trim() === '';
       wrap.classList.toggle('has-text', !empty);
       // Le placeholder NATIF du textarea reste VIDE (un espace) : seul l'overlay
       // .prompt-ph affiche le texte centré. Évite le double placeholder.
       pi.setAttribute('placeholder', ' ');
+      // Champ vide -> on revient exactement a la hauteur de repos (3 lignes).
+      if (empty) pi.style.height = '';
+      autoGrowPrompt();
     }
+    window.addEventListener('resize', autoGrowPrompt);
     $('promptInput').addEventListener('input', syncPromptPh);
     $('promptInput').addEventListener('focus', syncPromptPh);
     $('promptInput').addEventListener('blur', syncPromptPh);
@@ -4411,6 +4460,18 @@
     }, 900);
   }
 
+  // 🆕 v1.7.386 — Vider le champ en NOTIFIANT les listeners : un simple
+  //   `value = ''` laissait la classe `has-text` (placeholder masque) et la
+  //   hauteur du prompt precedent (jusqu'a 194 px au lieu de 90).
+  function sp213ClearPrompt() {
+    const pi = $('promptInput');
+    if (!pi) return;
+    pi.value = '';
+    pi.style.height = '';           // retour exact a la hauteur de repos CSS
+    pi.style.overflowY = 'hidden';
+    pi.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  window.sp213ClearPrompt = sp213ClearPrompt;
   function sendMessage() {
     if (state.busy) return;
     const txt = $('promptInput').value.trim();
@@ -4420,14 +4481,14 @@
     // 🎯 PREMIER PROMPT SANS MODÈLE : proposer d'aller dans les réglages.
     // On ne bloque pas : on affiche une aide + on revient sur les préférences.
     if (!hasUsableModel()) {
-      $('promptInput').value = '';
+      sp213ClearPrompt();
       offerModelChoice();
       return;
     }
 
     const userText = txt || '(avec pièce(s) jointe(s))';
     protectCurrentDocumentForPrompt(userText);
-    $('promptInput').value = '';
+    sp213ClearPrompt();
     state.lastPrompt = txt; // pour que buildSystemPrompt détecte multipage/spread
     appendChat('user', userText);
     state.chat.push({ role: 'user', text: userText });
