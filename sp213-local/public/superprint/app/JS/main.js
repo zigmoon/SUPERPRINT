@@ -46835,7 +46835,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260913-v398-release';
+                s.src = 'JS/sp-doc-import.js?v=20260913-v399-studio-noir';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous
@@ -66297,6 +66297,10 @@ window.npSwitchTab = function(tab) {
     const tAdv = document.getElementById('npTabAdvanced');
     const tAuto = document.getElementById('npTabAuto');
     const tStudio = document.getElementById('npTabStudio');
+    // 🆕 v1.7.398 — SuperTyPo est aussi une ACTION (comme Studio IA) : on la recupere
+    //    pour lui appliquer le meme style. Elle n'etait pas geree ici, donc elle
+    //    gardait son style inline par chance ; on la rend explicite.
+    const tTypo = document.getElementById('npTabSupertypo');
     const tTpl = document.getElementById('npTabTemplates');
     const isAdv = (tab === 'advanced');
     const isAuto = (tab === 'auto');
@@ -66319,8 +66323,19 @@ window.npSwitchTab = function(tab) {
     if (tAdv) { tAdv.style.borderBottomColor = isAdv ? '#1a1a1a' : 'transparent'; tAdv.style.color = isAdv ? '#1a1a1a' : '#999'; tAdv.style.fontWeight = isAdv ? '600' : '400'; tAdv.classList.toggle('active', isAdv); }
     // Tab Auto
     if (tAuto) { tAuto.style.borderBottomColor = isAuto ? '#1a1a1a' : 'transparent'; tAuto.style.color = isAuto ? '#1a1a1a' : '#999'; tAuto.style.fontWeight = isAuto ? '600' : '400'; tAuto.classList.toggle('active', isAuto); }
-    // Tab Studio (décoratif — ne reste jamais actif, il ouvre le studio)
-    if (tStudio) { tStudio.style.borderBottomColor = 'transparent'; tStudio.style.color = '#999'; tStudio.style.fontWeight = '400'; tStudio.classList.remove('active'); }
+    // 🆕 v1.7.398 — STUDIO IA et SUPERTYPO sont des ACTIONS, pas des onglets.
+    //   Mesure avant : npSwitchTab forcait '#999' sur Studio (gris d'onglet inactif)
+    //   alors que SuperTyPo restait noir -> les deux boutons n'avaient pas la meme
+    //   apparence. Ce sont pourtant deux boutons qui FERMENT cette pop-in et OUVRENT
+    //   l'outil : ils ne sont jamais « actifs » ni « inactifs », leur style est donc
+    //   CONSTANT (noir, sans soulignement), identique pour les deux.
+    [tStudio, tTypo].forEach(function (t) {
+        if (!t) return;
+        t.style.borderBottomColor = 'transparent';
+        t.style.color = '#1a1a1a';
+        t.style.fontWeight = '600';
+        t.classList.remove('active');
+    });
     // Tab Templates
     if (tTpl) { tTpl.style.borderBottomColor = isTpl ? '#1a1a1a' : 'transparent'; tTpl.style.color = isTpl ? '#1a1a1a' : '#999'; tTpl.style.fontWeight = isTpl ? '600' : '400'; tTpl.classList.toggle('active', isTpl); }
     // Re-render les templates quand on ouvre l'onglet Modèles
