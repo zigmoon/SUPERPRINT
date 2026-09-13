@@ -6,7 +6,7 @@
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
 <meta name="description" content="Latest Zigmoon release notes for PDF-YZ, Bird and SuperPrint. Discover native PDF editing, local-first vector design, SuperTyPo typeface editor and SuperPrint v1.7.375 (reliable text wrap, stable AI text blocks, colour picker in RGB).">
-<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.389, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation">
+<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.390, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation, Word import options, body size, image width, heading hierarchy">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="SuperPrint v1.7.389 — AI titles no longer overlap the text below (measured with the real engine), Word images now reach the AI, a single-column Word file now opens in one column, and the studio continues your layout instead of starting a new conversation.">
+<meta property="og:description" content="SuperPrint v1.7.390 — the editor Word import now honours all six options: body size and Word heading hierarchy drive the composition, and image width is respected. Four of the six settings previously did nothing.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SuperPrint v1.7.389 — AI titles measured with the real engine, Word import options (columns), and the studio now continues your layout by default.">
+<meta name="twitter:description" content="SuperPrint v1.7.390 — Word import: the four dead options now drive body size, heading hierarchy and image width. Measured in the browser.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -704,6 +704,42 @@ footer, footer a { color: var(--after-text-color); }
 
 <main>
 <section class="releases" aria-label="Release notes">
+
+<!-- ===== SUPER PRINT v1.7.390 — options d'import Word de l'editeur ===== -->
+<article class="release-block" data-app="superprint" id="superprint-v1-7-390">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.390</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 13 septembre 2026" data-i18n-en="Released September 13, 2026" data-i18n-jp="2026年9月13日公開">Released September 13, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="<strong>L'import Word de l'éditeur respecte enfin vos réglages.</strong> La fenêtre d'options livrée dans la version précédente proposait six réglages — mais quatre d'entre eux n'étaient lus nulle part. Le corps du texte, la hiérarchie des titres et la largeur des images étaient écrits en dur dans le code : quoi que vous choisissiez, l'import produisait la même mise en page. C'est corrigé, et mesuré." data-i18n-en-html="<strong>The editor's Word import finally honours your settings.</strong> The options window shipped in the previous release offered six settings — but four of them were read nowhere. Body size, heading hierarchy and image width were hard-coded, so whatever you chose, the import produced the same layout. Fixed, and measured." data-i18n-jp-html="<strong>エディタのWord読み込みが、ようやく設定に従うようになりました。</strong>前バージョンで追加したオプション画面には6つの設定がありましたが、そのうち4つはどこからも読まれていませんでした。本文サイズ・見出し階層・画像幅はコードに固定されており、何を選んでも同じレイアウトが生成されていました。修正し、計測しました。">The editor's Word import finally honours your settings.</p>
+
+ <h3>⚙️ Four settings that did nothing <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Mesure : sur les six réglages, deux seulement étaient lus.</strong> « Colonnes » et « Marges » fonctionnaient ; « Corps du texte », « Conserver les titres en grand », « Largeur image max » et « Images à leur taille réelle » totalisaient <strong>zéro occurrence</strong> dans le code. Quatre curseurs dans le vide." data-i18n-en-html="<strong>Measured: of the six settings, only two were read.</strong> “Columns” and “Margins” worked; “Body size”, “Keep Word headings”, “Maximum image width” and “Images at real size” amounted to <strong>zero occurrences</strong> in the code. Four knobs wired to nothing." data-i18n-jp-html="<strong>計測：6つの設定のうち、実際に読まれていたのは2つだけ。</strong>「段数」と「マージン」は機能していましたが、「本文サイズ」「Word見出しを保持」「画像の最大幅」「画像を実寸で」はコード内で<strong>出現回数ゼロ</strong>でした。4つのつまみは空回りしていました。">Only two of the six settings were actually read.</li>
+  <li data-i18n-fr-html="<strong>Le corps et les titres étaient figés à 14 / 42 / 32 / 24 points</strong>, quelle que soit votre consigne. Désormais tout dérive du corps que vous choisissez : les titres valent 3× / 2,28× / 1,7× le corps si vous gardez la hiérarchie Word, et retombent au corps (en gras) si vous la décochez." data-i18n-en-html="<strong>Body and headings were frozen at 14 / 42 / 32 / 24 points</strong>, whatever you asked for. Everything now derives from the body size you choose: headings are 3× / 2.28× / 1.7× the body if you keep the Word hierarchy, and fall back to body size (bold) if you uncheck it." data-i18n-jp-html="<strong>本文と見出しは14／42／32／24ポイントに固定</strong>されていました。現在は選択した本文サイズを基準に算出されます。Word見出し階層を保持する場合は3倍／2.28倍／1.7倍、外した場合は本文サイズ（太字）になります。">Body and headings were frozen at fixed sizes.</li>
+  <li data-i18n-fr-html="<strong>Vérifié au navigateur, avec le moteur réel</strong> sur un Word de 47 paragraphes et deux images : corps 20 pt → une seule taille de 20 pt ; titres décochés → 20 pt partout, gras conservé ; marges 25 mm → bloc de 453 px, soit exactement 210 − 2 × 25 mm ; largeur d'image 20 mm → <strong>84 px mesurés</strong> pour 87 px attendus, et 40 mm → <strong>170 px</strong> pour 175 attendus." data-i18n-en-html="<strong>Verified in the browser, with the real engine</strong>, on a 47-paragraph Word file with two images: body 20 pt → a single 20 pt size; headings unchecked → 20 pt everywhere, bold kept; 25 mm margins → a 453 px block, exactly 210 − 2 × 25 mm; image width 20 mm → <strong>84 px measured</strong> against 87 px expected, and 40 mm → <strong>170 px</strong> against 175 expected." data-i18n-jp-html="<strong>実際のエンジンを使いブラウザで検証</strong>（47段落・画像2点のWord）：本文20pt → すべて20ptに統一。見出しを外すと全体が20pt（太字は維持）。マージン25mm → ブロック幅453px（210 − 2×25mmと一致）。画像幅20mm → <strong>実測84px</strong>（理論値87px）、40mm → <strong>実測170px</strong>（理論値175px）。">Verified in the browser on a 47-paragraph Word file.</li>
+ </ul>
+
+ <h3>🖼️ Image width, finally under your control <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>La largeur d'image était calculée uniquement d'après la colonne.</strong> Vos deux réglages — largeur maximale et taille réelle — étaient donc sans effet. Un logo de 300 px arrivait à la largeur de la colonne, comme une photo pleine page." data-i18n-en-html="<strong>Image width was computed from the column alone.</strong> Your two settings — maximum width and real size — had no effect. A 300 px logo arrived at column width, just like a full-page photo." data-i18n-jp-html="<strong>画像幅は段幅だけから計算されていました。</strong>「最大幅」と「実寸」の2設定は無効でした。300pxのロゴも全面写真も、同じく段幅いっぱいに配置されていました。">Image width was computed from the column alone.</li>
+  <li data-i18n-fr-html="La largeur maximale que vous indiquez est désormais respectée, l'image est centrée dans sa colonne, et « taille réelle » garantit qu'elle n'est jamais agrandie au-delà de sa définition d'origine — seulement réduite si elle ne tient pas." data-i18n-en-html="The maximum width you enter is now respected, images are centred in their column, and “real size” guarantees they are never upscaled beyond their original resolution — only reduced if they do not fit." data-i18n-jp-html="指定した最大幅が尊重され、画像は段の中央に配置されます。「実寸」を選ぶと元の解像度を超えて拡大されることはなく、収まらない場合のみ縮小されます。">Your maximum width is respected and images are centred.</li>
+ </ul>
+
+ <h3>🔧 One pipeline, shared with drag &amp; drop <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="L'import Word passe maintenant par <strong>une seule fonction réutilisable</strong> : choix de la page d'insertion, conversion du document, extraction des images qu'il contient, puis composition page par page. Le bouton d'import et le glisser-déposer d'un fichier Word empruntent exactement le même chemin — vous obtenez donc la même fenêtre d'options et le même résultat." data-i18n-en-html="Word import now goes through <strong>a single reusable function</strong>: pick the insertion page, convert the document, extract the images it contains, then compose page by page. The import button and dropping a Word file follow exactly the same path — so you get the same options window and the same result." data-i18n-jp-html="Word読み込みは<strong>単一の再利用可能な関数</strong>を通るようになりました。挿入ページの選択、文書の変換、埋め込み画像の抽出、そしてページ単位の組版。インポートボタンもWordファイルのドロップもまったく同じ経路を通るため、同じオプション画面と同じ結果が得られます。">One shared pipeline for the button and drag &amp; drop.</li>
+  <li data-i18n-fr-html="<em>Note honnête :</em> nous avons aussi vérifié le dépôt d'un fichier Word sur la page en pensant y trouver un défaut. Il n'y en avait pas — ce chemin était déjà correctement relié. Aucune modification n'a été faite à ce niveau." data-i18n-en-html="<em>An honest note:</em> we also checked dropping a Word file onto the page, expecting to find a defect there. There was none — that path was already wired correctly. No change was made there." data-i18n-jp-html="<em>正直な補足：</em>ページへのWordファイルのドロップも不具合を想定して確認しましたが、問題はありませんでした。この経路はすでに正しく接続されており、変更は加えていません。">An honest note on the drag &amp; drop audit.</li>
+ </ul>
+
+ <p data-i18n-fr="Application 1.7.390 — trois défauts corrigés, mesurés au navigateur avec le moteur réel, et vérifiés dans le paquet distribué." data-i18n-en="Application 1.7.390 — three defects fixed, measured in the browser with the real engine, and verified inside the distributed package." data-i18n-jp="アプリ 1.7.390 — 3件の不具合を修正。実際のエンジンでブラウザ計測し、配布パッケージ内でも検証済みです。">Application 1.7.390 — three defects fixed, measured and verified.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Ouvrir SuperPrint" data-i18n-en="→ Open SuperPrint" data-i18n-jp="→ SuperPrintを開く">→ Open SuperPrint</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
 
 <!-- ===== SUPER PRINT v1.7.389 — titres IA, options Word, conversation ===== -->
 <article class="release-block" data-app="superprint" id="superprint-v1-7-389">

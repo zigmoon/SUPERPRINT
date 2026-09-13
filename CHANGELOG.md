@@ -9,6 +9,22 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.390] — 2026-09-13
+
+_Word import (editor): the four dead options now really drive the layout_
+
+### Fixed
+- **Four of the six Word-import options did nothing.** The options window shipped in 1.7.389 exposes columns, margins, body size, maximum image width, keep Word headings and real-size images. Measured: only `margin` and `cols` were read — `bodyPt`, `titres`, `imgWidth` and `imgReelle` had **zero occurrences** in the code. All four now drive the import.
+- **Body text and headings were hard-coded.** The import used fixed 14 pt (body and lists), 42 / 32 / 24 pt (h1 / h2 / h3) and 12 pt (tables), so "body size" and "keep Word headings" could never change anything. Everything now derives from the chosen body size; headings are 3× / 2.28× / 1.7× the body when the Word hierarchy is kept, and drop back to body size (bold) when it is unchecked.
+- **Image width was capped to the column and ignored the option.** The scale was computed from the column width alone, so "maximum image width" and "real-size images" were inert. The cap is now the chosen width (or the full text-block width in multi-column), images are centred in their column, and "real size" never upscales beyond the source.
+
+### Added
+- **Single reusable Word pipeline.** `importDocxFile(file, options)` and `lancerImportWord(file)` group page selection, mammoth HTML conversion with embedded-image extraction, and the page-by-page composer. The import button uses them, and they are exposed for reuse.
+
+### Verified
+- Measured in the browser with the real engine on a 47-paragraph `.docx` with two embedded PNGs: body 20 pt → single 20 pt size; headings unchecked → 20 pt everywhere, bold kept; 25 mm margins → 453 px block = 210 − 2×25 mm; image width 20 mm → **84 px** measured (87 expected) and 40 mm → **170 px** (175 expected); both images imported and placed.
+- Dropping a `.docx` onto the page was audited and **already routed correctly** to the import input — no change needed there.
+
 ## [1.7.389] — 2026-09-13
 
 _AI titles overlapping the text below · Word import options · studio conversation continues_
