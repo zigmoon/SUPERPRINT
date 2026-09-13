@@ -4640,10 +4640,20 @@ DOCUMENT COURANT
 • Fonds perdus : 3 mm (uniquement pour fonds / photos pleine page / formes décoratives).
   🔴 Fond pleine page = rectangle left:-3, top:-3, width:(largeur+6), height:(hauteur+6).
   Ex. format ${state.pageW}×${state.pageH} → left:-3, top:-3, width:${state.pageW + 6}, height:${state.pageH + 6}.
+  ⚠️ EN DOUBLE PAGE, « pleine page » = la PLANCHE ENTIÈRE : la largeur à couvrir est
+  ${state.pageW * 2} mm, donc left:-3, top:-3, width:${state.pageW * 2 + 6}, height:${state.pageH + 6}.
+  Un fond de ${state.pageW + 6} mm ne couvrirait qu'UNE des deux pages.
   JAMAIS left:0/top:0 (laisserait 3 mm de blanc au bord après coupe).
 • Toutes les coordonnées en MILLIMÈTRES (mm). fontSize en POINTS (pt). Couleurs #RRGGBB.
 ${(function(){
-  const W = state.pageW || 210, H = state.pageH || 297;
+  const H = state.pageH || 297;
+  // 🆕 v1.7.383 — EN DOUBLE PAGE, L'UNITÉ RENDUE EST LA PLANCHE.
+  //   Avant, W valait state.pageW (210 mm) : le prompt imposait donc
+  //   « largeur utile = 210 mm », « left entre 15 et 195 mm » et un fond pleine
+  //   page de 216 mm — l'IA composait chaque planche comme UNE page et posait
+  //   deux pages A4 sur la planche de 420 mm. Mesure : targetPages 2 avec un
+  //   fond de 210 mm par planche pour une demande d'UNE double page.
+  const W = (state.viewMode === 'spread') ? (state.pageW || 210) * 2 : (state.pageW || 210);
   const narrow = W < 120 && H > W;      // format ÉTROIT en hauteur (flyer, carte, bannière)
   const small = W * H < 210 * 297;      // surface plus petite qu'un A4
   const maxTextW = Math.max(20, Math.round((W - 30) * 10) / 10);       // largeur de texte utile (15+15 de marge)
@@ -4662,7 +4672,22 @@ ${(function(){
     geomNote = 'Format confortable (largeur ≥ ' + W + ' mm) : tu peux utiliser plusieurs colonnes, mais chaque bloc doit rester ≤ ' + maxTextW + ' mm de large et tenir dans la largeur ' + W + ' mm.';
   }
   const areaNote = small && !narrow ? 'Ce format est PLUS PETIT qu\'un A4 : réduis les corps (titres 28-60 pt, sous-titres 14-20 pt, corps 8-11 pt) et évite les grandes marges blanches. ' : '';
+  const modeSpread = (state.viewMode === 'spread');
+  const PW = state.pageW || 210;
+  const exLines = modeSpread
+    ? '  ⚠️ MODE DOUBLE PAGE : l\'unité que tu produis EST LA PLANCHE (' + W + ' mm de large).\n' +
+      '    La GOUTTIÈRE (reliure) est au CENTRE, À ' + PW + ' mm exactement. Une pliure n\'est pas un bord :\n' +
+      '    aucun texte ne doit la traverser (coupe le paragraphe en 2 blocs indépendants).\n' +
+      '    • Bloc sur la page de GAUCHE  : left entre 18 et ~' + Math.round(PW - 15) + ' mm, left + width ≤ ' + (PW - 15) + ' mm.\n' +
+      '    • Bloc sur la page de DROITE  : left entre ' + (PW + 15) + ' et ~' + Math.round(W - 18) + ' mm, left + width ≤ ' + (W - 18) + ' mm.\n' +
+      '    • INTERDIT : une forme ou un texte qui recouvre toute la plancher d\'un seul tenant,\n' +
+      '      et surtout : NE METS JAMAIS DEUX PAGES côte à côte DANS une plancher.\n' +
+      '      Une plancher contient DÉJÀ les deux pages.\n' +
+      '    • Fond PLEINE PLANCHE (avec fond perdu) : left:-3, top:-3, width:' + (W + 6) + ', height:' + (H + 6) + '.'
+    : '';
   return '\nCONTRAINTES NUMÉRIQUES DU FORMAT COURANT (' + W + '×' + H + ' mm) :\n' +
+    (modeSpread ? '  ⚠️ Tu composes UNE PLANCHE de ' + W + ' mm de large (= 2 pages de ' + PW + ' mm séparées par la gouttière à ' + PW + ' mm).\n' : '') +
+    exLines + (exLines ? '\n' : '')
     '  • Largeur utile de page = ' + W + ' mm. Aucun objet (hors fond pleine page) ne doit dépasser left + width > ' + W + '.\n' +
     '  • Hauteur utile = ' + H + ' mm. Un bloc non-fond ne doit pas dépasser top + height > ' + maxH + ' mm.\n' +
     '  • Largeur MAXIMALE d\'un bloc de TEXTE = ' + maxTextW + ' mm (marges 15 mm de chaque côté). Si un texte est trop long pour cette largeur, augmente sa hauteur, pas sa largeur.\n' +
@@ -4706,6 +4731,17 @@ VALEURS À APPLIQUER (A4 / A5, à réduire proportionnellement sur les petits fo
    • Page simple : marge uniforme de 15 à 18 mm sur les 4 côtés.
    • Double page : petit fond 12-15 mm, tête 15 mm, grand fond 18-20 mm, queue 20 mm.
    • JAMAIS moins de 10 mm, et JAMAIS 0 mm (texte coupé à la coupe du massicot).
+
+🔢 CHIFFRES CONCRETS EN DOUBLE PAGE (A4 : une page = 210 mm, planche = 420 mm,
+   gouttière au centre à 210 mm). Avec petit fond 15, grand fond 18, tête 15, queue 20 :
+   • PAGE DE GAUCHE  : left entre 18 et 195 mm,  left + width ≤ 195 mm  (le 195 = 210 − 15 de petit fond).
+   • PAGE DE DROITE  : left entre 225 et 402 mm, left + width ≤ 402 mm  (225 = 210 + 15).
+   • GOUTTIÈRE : la bande 195 → 225 mm est INTERDITE au texte : aucune ligne ne
+     doit la traverser. Un paragraphe qui « passe » d'une page à l'autre se coupe
+     en DEUX blocs, un par page.
+   • HAUT : top ≥ 15 mm.  BAS : top + hauteur ≤ 277 mm (= 297 − 20 de queue).
+   ⚠️ N'utilise JAMAIS « left 15 / width 180 » sur une planche : c'est une
+      composition de page SEULE, elle ne couvre qu'un quart de la planche.
 
 🔴 VÉRIFICATION FINALE OBLIGATOIRE avant de répondre, pour CHAQUE bloc texte :
    • left >= marge extérieure OU intérieure selon la page occupée ;
@@ -5600,10 +5636,16 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
   //    conservée, grand fond 18 mm à droite, texte replié de 3 % seulement.
   function _spFitRowsToMargins(doc) {
     if (!doc || !Array.isArray(doc.pages) || !doc.pages.length) return doc;
-    const W = doc.w || state.pageW || 210;
-    const H = doc.h || state.pageH || 297;
     const isSpread = doc.viewMode === 'spread';
-    const PW = isSpread ? W / 2 : W;
+    // 🆕 v1.7.383 — LARGEUR REELLE DE LA PLANCHE.
+    //   ⚠️ doc.w est la largeur d'UNE page (210 mm) ; en mode planche la surface
+    //   a traiter est la PLANCHE (420 mm) et la pliure est a 210 mm. Lire doc.w
+    //   puis diviser par 2 plaçait la pliure a 105 mm : tout ce qui est a droite
+    //   de 105 mm etait vu « page de droite », et la marge exterieure etait
+    //   cherchee a 192 mm — en plein milieu de la page de droite.
+    const PW = doc.w || state.pageW || 210;                 // largeur d'UNE page
+    const W = isSpread ? (doc.effW || PW * 2) : PW;         // largeur a composer
+    const H = doc.h || state.pageH || 297;
     const isText = (el) => {
       const t = String((el && el.type) || '').toLowerCase();
       return t === 'text' || t === 'textbox';
@@ -5704,10 +5746,14 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
 
   function _spEnforceMargins(doc) {
     if (!doc || !Array.isArray(doc.pages) || !doc.pages.length) return doc;
-    const W = doc.w || state.pageW || 210;
-    const H = doc.h || state.pageH || 297;
     const isSpread = doc.viewMode === 'spread';
-    const PW = isSpread ? W / 2 : W;          // largeur d'UNE page
+    // 🆕 v1.7.383 — voir _spFitRowsToMargins : on lit la PLANCHE (doc.effW) et
+    //   non la page (doc.w). Sans cela la pliure tombait a 105 mm au lieu de
+    //   210 mm et la hierarchie petit fond (pliage) < grand fond (chant) etait
+    //   perdue sur la page de droite.
+    const PW = doc.w || state.pageW || 210;                 // largeur d'UNE page
+    const W = isSpread ? (doc.effW || PW * 2) : PW;         // largeur a composer
+    const H = doc.h || state.pageH || 297;
     const isText = (el) => {
       const t = String((el && el.type) || '').toLowerCase();
       return t === 'text' || t === 'textbox';
