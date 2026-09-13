@@ -3906,7 +3906,13 @@
     //   planche (x = bleed + largeur d'une page), par-dessus les repères.
     let foldLine = null;
     if (isSpread && pageWpx > 0) {
-      const foldX = bleedPx + pageWpx;
+      // ⚠️ CORRIGE v1.7.387 — le parametre est la largeur de la PLANCHE
+      //   (2 pages), donc la pliure est a la MOITIE : bleedPx + pageWpx / 2.
+      //   Mesure avant : pliure a x=1199 (bord droit, 845 px d'encre) au lieu
+      //   de x=604 (milieu). Elle etait superposee au trait de coupe : invisible,
+      //   d'ou « je ne vois jamais le milieu des deux pages ».
+      //   Reference de l'app : centerX = canvasWidth / 2 (main.js ~L11244).
+      const foldX = bleedPx + pageWpx / 2;
       foldLine = new fabric.Line([foldX, bleedPx, foldX, bleedPx + pageHpx], {
         stroke: '#2a2a2a',
         strokeWidth: 1,
@@ -4961,10 +4967,35 @@ ${(function(){
     //   « livre de 4 pages » → 4 planches.
     if (state.viewMode === 'spread') {
       const planches = n ? (1 + Math.ceil((n - 1) / 2)) : 0;
+      // 🆕 v1.7.387 — TABLEAU D'IMPOSITION CONCRET (chiffré, ligne par ligne).
+      //   Mesure : pour un livre de 8 pages l'IA produisait bien 5 planches MAIS
+      //   la dernière portait « folio 8 à gauche ET folio 9 à droite » — une page
+      //   9 qui n'existe pas. La règle en prose ne suffisait pas : un modèle suit
+      //   beaucoup mieux une liste explicite avec les folios à imprimer.
+      const _impoTable = (function () {
+        if (!n || n < 2) return '';
+        const lignes = [];
+        lignes.push('    planche 1 : page 1 SEULE à DROITE (left ~' + (state.pageW + 18) + ' à ' + (state.pageW * 2 - 18) + ' mm) — folio 1 — moitié GAUCHE VIDE');
+        let pg = 2, pl = 2;
+        while (pg <= n) {
+          const reste = n - pg + 1;
+          if (reste === 1) {
+            lignes.push('    planche ' + pl + ' : page ' + pg + ' SEULE à GAUCHE (left 18 à ' + (state.pageW - 18) + ' mm) — folio ' + pg + ' — moitié DROITE VIDE');
+            pg += 1;
+          } else {
+            lignes.push('    planche ' + pl + ' : page ' + pg + ' (GAUCHE, left 18 à ' + (state.pageW - 18) + ' mm) + page ' + (pg + 1) + ' (DROITE, left ' + (state.pageW + 18) + ' à ' + (state.pageW * 2 - 18) + ' mm) — folios ' + pg + ' et ' + (pg + 1));
+            pg += 2;
+          }
+          pl += 1;
+        }
+        return '\n📐 TABLEAU D\'IMPOSITION À SUIVRE À LA LETTRE (' + n + ' pages → ' + planches + ' planches) :\n' + lignes.join('\n') +
+          '\n  ⚠️ Le DERNIER folio est ' + n + ' : n\'imprime JAMAIS de folio supérieur à ' + n + '.\n' +
+          '  ⚠️ Chaque folio apparaît UNE SEULE FOIS, sur SA page, en bas.\n';
+      })();
       return '🚨 MULTI-PAGES EN DOUBLE PAGE : utilise le FORMAT B. ' +
         (n ? 'Le livre fait ' + n + ' pages, ce qui donne ' + planches + ' PLANCHE(S) : ' +
              'produis EXACTEMENT ' + planches + ' entrées "pages", car EN DOUBLE PAGE **UNE ENTRÉE = UNE PLANCHE** (2 pages côte à côte), PAS une page de livre. ' +
-             'Imposition attendue : planche 1 = page 1 SEULE à DROITE ; puis les paires p2+p3, p4+p5… ; la dernière page seule à GAUCHE si le total est pair. '
+             'Imposition attendue : planche 1 = page 1 SEULE à DROITE ; puis les paires p2+p3, p4+p5… ; la dernière page seule à GAUCHE si le total est pair. ' + _impoTable
            : 'produis autant d\'entrées "pages" que de PLANCHEs, car EN DOUBLE PAGE **UNE ENTRÉE = UNE PLANCHE** (2 pages côte à côte), PAS une page de livre. ') +
         'Dans une planche, la page de GAUCHE va de 0 à ' + state.pageW + ' mm et la page de DROITE de ' + state.pageW + ' à ' + (state.pageW * 2) + ' mm ; ' +
         'une planche qui ne contient qu\'UNE page laisse l\'autre moitié VIDE. ' +
@@ -4973,12 +5004,14 @@ ${(function(){
     return '🚨 MULTI-PAGES DÉTECTÉ : utilise le FORMAT B, produis ' + (n || 'le nombre demandé de') + ' entrées "pages" (une par page), contenu COMPLET sur chaque page, cohérence graphique stricte (mêmes marges, folios, grille), folios en bas, respecte la structure livre/magazine/catalogue (couverture, sommaire, édito, contenu, 4e de couverture).';
   }
   return state.viewMode === 'spread'
-    ? '🚨 DOUBLE PAGE DÉTECTÉE : utilise le FORMAT A ou B en raisonnant en coordonnées PAGE (0,0 = haut-gauche de CHAQUE page), ne fais JAMAIS traverser un texte sur la gouttière centrale, largeur totale ' + (state.pageW * 2) + ' mm.'
+    ? '🚨 DOUBLE PAGE DÉTECTÉE : utilise le FORMAT A ou B en raisonnant en coordonnées PLANCHE (0,0 = haut-gauche de la PLANCHE ENTIÈRE ; la page de GAUCHE va de 0 à ' + state.pageW + ' mm, la GOUTTIÈRE est à ' + state.pageW + ' mm, la page de DROITE de ' + state.pageW + ' à ' + (state.pageW * 2) + ' mm). Ne fais JAMAIS traverser un texte sur la gouttière centrale.'
     : 'Document mono-page : utilise le FORMAT A, tout doit tenir sur cette unique page.';
 })()}
 
 FORMAT DE SORTIE — Réponds UNIQUEMENT en JSON valide (pas de markdown) :
-Pour UNE page :
+⚠️ En mode DOUBLE PAGE, "elements" décrit la PLANCHE ENTIÈRE (les deux pages,
+   coordonnées PLANCHE de 0 à ${state.pageW * 2}) — JAMAIS une demi-page.
+Pour UNE page (ou UNE planche) :
 { "reply": "phrase courte à l'utilisateur", "elements": [ ... ] }
 Pour PLUSIEURS pages :
 { "reply": "phrase courte", "targetPages": N, "pages": [ { "pageIndex": 0, "elements": [...] }, ... ] }
@@ -7047,8 +7080,16 @@ C. MODES D'AFFICHAGE
   - Aucun texte crucial (œil, mot important, chiffre) ne doit tomber dans la gouttière.
   - Le texte ne TRAVERSE JAMAIS la gouttière : coupe les paragraphes en 2 blocs indépendants.
   - Les éléments décoratifs PEUVENT traverser (filet, dégradé, fond de couleur).
-  - Tu raisonnes en COORDONNÉES PAGE : (0,0) = haut-gauche de CHAQUE page.
-  - Largeur totale utile d'une double page = LARGEUR × 2.
+  - 🔴 TU RAISONNES EN COORDONNÉES **PLANCHE** (et non par page).
+    L'origine (0,0) est le coin haut-gauche de la PLANCHE ENTIÈRE (les deux pages).
+    • la page de GAUCHE occupe  left 0 à LARGEUR mm   (contenu à left 18-195)
+    • la GOUTTIÈRE (pliure) est à LARGEUR mm exactement — le milieu de la planche
+    • la page de DROITE occupe  left LARGEUR à 2 × LARGEUR mm (contenu à left 225-402)
+    ⚠️ NE REPARS JAMAIS DE 0 POUR LA PAGE DE DROITE : un bloc de la page de droite
+       posé à left 15 atterrirait sur la page de GAUCHE.
+    ⚠️ Une planche qui ne contient qu'UNE page laisse l'autre moitié VIDE :
+       p1 seule -> contenu dans la moitié DROITE ; dernière page seule -> moitié GAUCHE.
+  - Largeur totale de la planche = LARGEUR × 2.
 
 ═══════════════════════════════════════════
 D. MULTIPAGE — LIVRE, MAGAZINE, CATALOGUE, BROCHURE
