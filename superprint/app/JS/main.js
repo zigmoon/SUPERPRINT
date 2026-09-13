@@ -28871,18 +28871,31 @@ if (window._spGpuEnabled) {
             const overlay = document.createElement('div');
             overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100010;display:flex;align-items:center;justify-content:center;';
             const card = document.createElement('div');
-            card.style.cssText = 'background:#fff;border-radius:12px;padding:28px 32px;min-width:340px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.3);font-family:system-ui,sans-serif;';
-            card.innerHTML = '<div style="font-size:18px;font-weight:700;margin-bottom:16px;">' + translate('docxInsertPageTitle') + '</div>'
-                + '<div style="font-size:13px;color:#555;margin-bottom:14px;">' + translate('docxInsertPageQuestion') + '</div>'
-                + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">'
-                + '<label style="font-size:13px;font-weight:600;">' + translate('docxInsertPageLabel') + '</label>'
-                + '<input type="number" id="_askInsertPageNum" min="1" max="' + (totalPages + 1) + '" value="' + currentP + '" style="width:70px;padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;text-align:center;">'
-                + '<span style="font-size:12px;color:#888;">/ ' + totalPages + ' (max ' + (totalPages + 1) + ')</span>'
+            // ⚠️ v1.7.406 — DA SUPERPRINT. On reutilise les CLASSES existantes
+            //   (.sp-modal-card / .sp-modal-header / .sp-modal-title / .sp-modal-close
+            //   / .modal-btn) au lieu de styles en dur. Ecarts corriges mesures :
+            //     border-radius 12px -> 0 (carre)   ·   CTA bleu #4361ee -> noir #1a1a1a
+            //     emoji retire du titre            ·   titre 18px/700 -> 13px/600
+            //     boutons radius 8px -> 0, hauteur 40px, IBM Plex Mono 11px
+            //   Effet secondaire utile : la pop-in herite du THEME SOMBRE.
+            card.className = 'sp-modal-card';
+            card.style.cssText = 'position:relative;min-width:360px;max-width:92vw;padding:20px 22px;';
+            const _q = translate('docxInsertPageQuestion');
+            const _l = translate('docxInsertPageLabel');
+            card.innerHTML = '<div class="sp-modal-header">'
+                + '<div class="sp-modal-title">' + translate('docxInsertPageTitle') + '</div>'
+                + '<div class="sp-modal-close" id="_askInsertClose">\u2715</div>'
                 + '</div>'
-                + '<div style="font-size:11px;color:#666;margin-bottom:18px;background:#f0f7ff;padding:8px 12px;border-radius:6px;">' + translatef('docxInsertPageHint', totalPages + 1) + '</div>'
-                + '<div style="display:flex;gap:10px;">'
-                + '<button id="_askInsertCancel" style="flex:1;padding:10px;border:1px solid #ddd;background:#f5f5f5;border-radius:8px;cursor:pointer;font-size:13px;">' + translate('cancel') + '</button>'
-                + '<button id="_askInsertOk" style="flex:2;padding:10px;border:none;background:#4361ee;color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">' + translate('docxInsertOkBtn') + '</button>'
+                + '<div style="font-size:12px;color:#666;margin-bottom:14px;line-height:1.5;">' + _q + '</div>'
+                + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">'
+                + '<label for="_askInsertPageNum" style="font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;">' + _l + '</label>'
+                + '<input type="number" id="_askInsertPageNum" min="1" max="' + (totalPages + 1) + '" value="' + currentP + '" style="width:72px;height:30px;padding:0 8px;border:1px solid #d9d9d9;border-radius:0;font-size:13px;text-align:center;">'
+                + '<span style="font-size:11px;color:#888;">/ ' + totalPages + ' (max ' + (totalPages + 1) + ')</span>'
+                + '</div>'
+                + '<div style="font-size:11px;color:#555;margin-bottom:18px;background:#f7f7f7;border-left:3px solid #1a1a1a;padding:9px 12px;line-height:1.5;">' + translatef('docxInsertPageHint', totalPages + 1) + '</div>'
+                + '<div style="display:flex;gap:10px;justify-content:flex-end;">'
+                + '<button id="_askInsertCancel" class="modal-btn modal-btn-secondary">' + translate('cancel') + '</button>'
+                + '<button id="_askInsertOk" class="modal-btn modal-btn-primary">' + translate('docxInsertPageOkBtn') + '</button>'
                 + '</div>';
             overlay.appendChild(card);
             document.body.appendChild(overlay);
@@ -28899,6 +28912,9 @@ if (window._spGpuEnabled) {
                 cleanup();
                 resolve(null); // null = annulé
             });
+            // Croix de la DA (meme comportement que les autres pop-in SuperPrint).
+            const _closeBtn = document.getElementById('_askInsertClose');
+            if (_closeBtn) _closeBtn.addEventListener('click', () => { cleanup(); resolve(null); });
             overlay.addEventListener('click', (ev) => { if (ev.target === overlay) { cleanup(); resolve(null); } });
             inp.addEventListener('keydown', (ev) => {
                 if (ev.key === 'Enter') { document.getElementById('_askInsertOk').click(); }
@@ -28924,7 +28940,10 @@ if (window._spGpuEnabled) {
         // ================================================================
 
         // Textbox de mesure, HORS canvas (Fabric le permet).
-        function _spFlowMakeBox(text, width, fontSize, isBold, isItalic, align) {
+        // lh : interligne. Les TITRES se serrent (1,05) — l'utilisateur a signale
+        //   un interlignage trop grand sur les gros titres, qui creusait un trou
+        //   sous chaque ligne de titre. Le corps de texte garde 1,35.
+        function _spFlowMakeBox(text, width, fontSize, isBold, isItalic, align, lh) {
             return new fabric.Textbox(text || "", {
                 left: 0, top: 0, width: width,
                 fontSize: fontSize,
@@ -28933,7 +28952,7 @@ if (window._spGpuEnabled) {
                 fontStyle: isItalic ? "italic" : "",
                 fill: "#000",
                 textAlign: align || "left",
-                lineHeight: 1.35,
+                lineHeight: (typeof lh === "number" && lh > 0) ? lh : 1.35,
                 splitByGrapheme: false,
                 breakWords: true
             });
@@ -29066,7 +29085,7 @@ if (window._spGpuEnabled) {
                 var o = opts || {};
                 var dispo = safe.bottom - cursorY;
                 var box = _spFlowMakeBox(text, colWidth,
-                    o.fontSize || bodyPt, !!o.isBold, !!o.isItalic, o.align || align);
+                    o.fontSize || bodyPt, !!o.isBold, !!o.isItalic, o.align || align, o.lh);
                 var hNaturelle = (typeof box.calcTextHeight === "function") ? box.calcTextHeight() : 0;
                 var hFrame = Math.max(1, Math.min(dispo, hNaturelle));
 
@@ -29123,14 +29142,33 @@ if (window._spGpuEnabled) {
 
                 // --- TITRE : bloc distinct, coupe la chaine ---
                 if (seg.kind === "heading") {
-                    var facteur = (seg.tag === "h1") ? 3 : (seg.tag === "h2") ? 2.28 : 1.7;
+                    // 1) TAILLES REDUITES. Avant : 3 / 2,28 / 1,7 fois le corps
+                    //    (soit 33 pt pour un h1 avec un corps de 11 pt). L'utilisateur
+                    //    les trouvait trop grands. On garde une hierarchie nette
+                    //    (2,1 / 1,65 / 1,32) sans ecraser la page.
+                    var facteur = (seg.tag === "h1") ? 2.1 : (seg.tag === "h2") ? 1.65 : 1.32;
                     var taille = titres ? Math.round(bodyPt * facteur) : bodyPt;
-                    var hTitre = taille * 1.35;
+                    // 2) INTERLIGNE DES TITRES SERRE (1,05 au lieu de 1,35).
+                    var lhTitre = 1.05;
+                    var hTitre = taille * lhTitre;
+                    // 3) MARGE DE SECURITE AU-DESSUS. Avant : le titre collait la fin
+                    //    du bloc precedent. On ouvre un blanc proportionne au niveau.
+                    var margeAvant = (seg.tag === "h1") ? mmToPx(7) : (seg.tag === "h2") ? mmToPx(5.5) : mmToPx(4);
+                    if (cursorY > safe.top + 1) { cursorY += margeAvant; }
+                    // Declare APRES la marge, puisqu'il change.
+                    var margeApres = mmToPx(3);
                     nouvelleChaine();
-                    if (hTitre > safe.bottom - cursorY) colonneSuivante();
-                    poserBloc(seg.text, { fontSize: taille, isBold: true, align: "left" });
+                    // 4) PROTECTION DU TITRE ORPHELIN : s'il reste moins de 12 mm
+                    //    sous le titre, on passe a la colonne suivante plutot que de
+                    //    laisser un titre seul en bas de colonne.
+                    var placeRestante = safe.bottom - cursorY;
+                    if (hTitre + mmToPx(12) > placeRestante) {
+                        cursorY = safe.top;
+                        colonneSuivante();
+                    }
+                    poserBloc(seg.text, { fontSize: taille, isBold: true, align: "left", lh: lhTitre });
                     blocsCrees++;
-                    cursorY += mmToPx(3);
+                    cursorY += margeApres;
                     nouvelleChaine();
                     continue;
                 }
@@ -29391,9 +29429,12 @@ if (window._spGpuEnabled) {
             //   (gras) si l'utilisateur decoche la hierarchie Word.
             let fontSize = bodyPt, isBold = false, isItalic = false, textAlign = 'left';
             if (block.kind === 'text') {
-                if (block.tag === 'h1') { fontSize = titres ? Math.round(bodyPt * 3) : bodyPt; isBold = true; }
-                else if (block.tag === 'h2') { fontSize = titres ? Math.round(bodyPt * 2.28) : bodyPt; isBold = true; }
-                else if (block.tag === 'h3') { fontSize = titres ? Math.round(bodyPt * 1.7) : bodyPt; isBold = true; }
+                // ⚠️ v1.7.406 — MEMES FACTEURS QUE LE MODE "TEXTE COULE".
+                //   Avant : 3 / 2,28 / 1,7 (h1 = 33 pt pour un corps de 11 pt).
+                //   L'utilisateur les trouvait trop grands et trop interligues.
+                if (block.tag === 'h1') { fontSize = titres ? Math.round(bodyPt * 2.1) : bodyPt; isBold = true; }
+                else if (block.tag === 'h2') { fontSize = titres ? Math.round(bodyPt * 1.65) : bodyPt; isBold = true; }
+                else if (block.tag === 'h3') { fontSize = titres ? Math.round(bodyPt * 1.32) : bodyPt; isBold = true; }
                 else { fontSize = bodyPt; isBold = !!block.isBold; isItalic = !!block.isItalic; textAlign = 'justify'; }
             } else if (block.kind === 'list-item') {
                 fontSize = bodyPt; isItalic = !!block.isItalic; textAlign = 'left';
@@ -29401,6 +29442,14 @@ if (window._spGpuEnabled) {
                 fontSize = Math.max(6, Math.round(bodyPt * 0.86)); textAlign = 'left';
             }
             const fontStyleVal = isItalic ? 'italic' : '';
+            // ⚠️ v1.7.406 — MARGE DE SECURITE AU-DESSUS DES TITRES.
+            //   Mesure du defaut signale : le titre arrivait colle sous la fin du bloc
+            //   precedent. On ouvre un blanc proportionne au niveau du titre.
+            if (block.kind === 'text' && (block.tag === 'h1' || block.tag === 'h2' || block.tag === 'h3')) {
+                if (cursorY > safe.top + 1) {
+                    cursorY += (block.tag === 'h1') ? mmToPx(7) : (block.tag === 'h2') ? mmToPx(5.5) : mmToPx(4);
+                }
+            }
             let remaining = safe.bottom - cursorY;
             let text = block.text || '';
             // Scinder si nécessaire pour tenir dans la colonne
@@ -29441,14 +29490,17 @@ if (window._spGpuEnabled) {
                 if (!gotoNextColumn()) { newPage(); }
             }
             if (text) {
+                const _isTitre = (block.kind === 'text' && (block.tag === 'h1' || block.tag === 'h2' || block.tag === 'h3'));
                 const tb = new fabric.Textbox(applySoftHyphenation(text), {
                     left: currentX(), top: cursorY, width: colWidth,
                     fontSize, fontFamily: 'IBM Plex Sans', fontWeight: isBold ? 'bold' : 'normal',
                     fontStyle: fontStyleVal,
+                    // v1.7.406 — les titres se serrent (1,05), le corps reste a 1,35.
+                    lineHeight: _isTitre ? 1.05 : 1.35,
                     fill: '#000', splitByGrapheme: false, breakWords: true, textAlign
                 });
                 serializeAndStore(tb);
-                cursorY += tb.height + (isBold ? Math.round(fontSize * 0.5) : 10);
+                cursorY += tb.height + (_isTitre ? mmToPx(3) : (isBold ? Math.round(fontSize * 0.5) : 10));
             }
         }
 
@@ -51533,10 +51585,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertColumnsGutterTooWide: "Gouttière de colonnes trop large pour {0} colonnes.",
         alertRowsGutterTooWide: "Gouttière de lignes trop large pour {0} lignes.",
         confirmDeleteMasterGuides: "Supprimer {0} repère(s) du gabarit ?",
-        docxInsertPageTitle: "📄 Page d'insertion",
+        docxInsertPageTitle: "Page d'insertion",
+        docxInsertPageOkBtn: "INSÉRER",
         docxInsertPageQuestion: "À partir de quelle page voulez-vous insérer le document ?",
         docxInsertPageLabel: "Page :",
-        docxInsertPageHint: "💡 Page 1 = début du document · Page {0} = après la dernière page",
+        docxInsertPageHint: "Page 1 = début du document · Page {0} = après la dernière page",
         docxInsertOkBtn: "Insérer",
         flowEstimationInfo: "Estimation : cela va créer environ <b>{0}</b> page(s) en corps <b>{1}</b>.",
         numberingButton: "🔢 Numérotation",
@@ -52316,11 +52369,12 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertColumnsGutterTooWide: "Column gutter too wide for {0} columns.",
         alertRowsGutterTooWide: "Row gutter too wide for {0} rows.",
         confirmDeleteMasterGuides: "Delete {0} guide(s) from the master?",
-        docxInsertPageTitle: "📄 Insertion page",
-        docxInsertPageQuestion: "From which page do you want to insert the document?",
+        docxInsertPageTitle: "Insertion page",
+        docxInsertPageOkBtn: "INSÉRER",
+        docxInsertPageQuestion: "À partir de quelle page insérer le document ?",
         docxInsertPageLabel: "Page:",
-        docxInsertPageHint: "💡 Page 1 = start of document · Page {0} = after the last page",
-        docxInsertOkBtn: "Insert",
+        docxInsertPageHint: "Page 1 = début du document · Page {0} = après la dernière page",
+        docxInsertOkBtn: "INSÉRER",
         flowEstimationInfo: "Estimate: this will create about <b>{0}</b> page(s) at body size <b>{1}</b>.",
         numberingButton: "🔢 Numbering",
         pdfImposedGenerating: "Generating imposed PDF",
@@ -53007,10 +53061,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertColumnsGutterTooWide: "{0}列に対して列のガターが広すぎます。",
         alertRowsGutterTooWide: "{0}行に対して行のガターが広すぎます。",
         confirmDeleteMasterGuides: "マスターから{0}個のガイドを削除しますか？",
-        docxInsertPageTitle: "📄 挿入ページ",
+        docxInsertPageTitle: "挿入ページ",
+        docxInsertPageOkBtn: "挿入する",
         docxInsertPageQuestion: "何ページ目からドキュメントを挿入しますか？",
         docxInsertPageLabel: "ページ：",
-        docxInsertPageHint: "💡 1ページ目 = 文書の先頭 · {0}ページ目 = 最終ページの後",
+        docxInsertPageHint: "1ページ目 = 文書の先頭 · {0}ページ目 = 最終ページの後",
         docxInsertOkBtn: "挿入",
         flowEstimationInfo: "推定：本文 <b>{1}</b> で約 <b>{0}</b> ページ作成されます。",
         numberingButton: "🔢 番号付け",

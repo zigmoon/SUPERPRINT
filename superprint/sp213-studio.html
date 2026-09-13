@@ -2886,11 +2886,99 @@
     });
   }
 
+  // ══════════════════════════════════════════════════════════════════════
+  // v1.7.406 — EXTRACTION DES IMAGES D'UN PDF.
+  //
+  //   AVANT : extractPdfAttachment() ne lisait que le TEXTE (getTextContent).
+  //   Les images du PDF etaient IGNOREES : une brochure mise en page depuis un
+  //   PDF arrivait sans aucune photo, et le modele ne pouvait rien placer.
+  //
+  //   On parcourt desormais la liste d'operations de chaque page et on recupere
+  //   les images reellement peintes, pour les ajouter comme pieces jointes de
+  //   type 'image' (le modele les place ensuite par "imageIndex").
+  //
+  //   Les logos/icones minuscules sont ECARTES : un PDF de 200 pages contient
+  //   souvent des centaines de vignettes qui pollueraient la maquette.
+  // ══════════════════════════════════════════════════════════════════════
+  const SP_PDF_IMG_MIN_SIZE = 80;      // px : en dessous, c'est une puce/un filet
+  const SP_PDF_IMG_MAX_COUNT = 24;     // garde-fou : on garde les plus grandes
+  const SP_PDF_IMG_MAX_PAGES = 60;     // on n'explore pas 300 pages en images
+
+  // Recupere une image pdf.js par son nom, en tolerant les 2 API (sync / callback).
+  function spPdfGetImage(page, name) {
+    return new Promise(function (resolve) {
+      let fait = false;
+      const finir = (v) => { if (!fait) { fait = true; resolve(v || null); } };
+      try {
+        const direct = page.objs.get(name);
+        if (direct) { finir(direct); return; }
+      } catch (_) { /* certaines versions exigent un callback */ }
+      try {
+        page.objs.get(name, finir);
+      } catch (_) { finir(null); return; }
+      setTimeout(() => finir(null), 1200);   // delai maximum : on ne bloque pas
+    });
+  }
+
+  // Rend une image pdf.js en data URI PNG, quelle que soit sa forme de stockage.
+  function spPdfImageToDataURL(img) {
+    try {
+      const cv = document.createElement('canvas');
+      cv.width = img.width; cv.height = img.height;
+      const ctx = cv.getContext('2d');
+      if (img.data) {
+        // Forme classique : RGBA pre-rendu.
+        const idata = ctx.createImageData(img.width, img.height);
+        idata.data.set(img.data);
+        ctx.putImageData(idata, 0, 0);
+      } else if (img.bitmap) {
+        // Forme moderne : ImageBitmap.
+        ctx.drawImage(img.bitmap, 0, 0);
+      } else if (img instanceof HTMLCanvasElement || img instanceof HTMLImageElement) {
+        cv.width = img.width || img.naturalWidth; cv.height = img.height || img.naturalHeight;
+        ctx.drawImage(img, 0, 0, cv.width, cv.height);
+      } else {
+        return null;
+      }
+      return cv.toDataURL('image/png');
+    } catch (e) { return null; }
+  }
+
+  // Extrait les images d'une page. Renvoie [{ dataURL, width, height, page }].
+  async function spPdfPageImages(page, pageNumber) {
+    const out = [];
+    let ops;
+    try { ops = await page.getOperatorList(); } catch (_) { return out; }
+    const OPS = window.pdfjsLib.OPS;
+    const vus = new Set();
+    for (let i = 0; i < ops.fnArray.length; i++) {
+      const fn = ops.fnArray[i];
+      // paintImageXObject (fond) ET paintImageXObjectRepeat (tuile repetee)
+      const estImage = (fn === OPS.paintImageXObject) ||
+                       (fn === OPS.paintImageXObjectRepeat) ||
+                       (fn === OPS.paintInlineImageXObject);
+      if (!estImage) continue;
+      let nom = ops.argsArray[i] && ops.argsArray[i][0];
+      if (typeof nom !== 'string') continue;
+      if (vus.has(nom)) continue;
+      vus.add(nom);
+      const img = await spPdfGetImage(page, nom);
+      if (!img || !img.width || !img.height) continue;
+      // Ecarter les vignettes : le seuil evite des centaines de puces.
+      if (img.width < SP_PDF_IMG_MIN_SIZE || img.height < SP_PDF_IMG_MIN_SIZE) continue;
+      const dataURL = spPdfImageToDataURL(img);
+      if (!dataURL) continue;
+      out.push({ dataURL: dataURL, width: img.width, height: img.height, page: pageNumber });
+    }
+    return out;
+  }
+
   async function extractPdfAttachment(file, id, ext) {
     await loadAttachmentLibrary('app/JS/pdf.min.js', () => !!window.pdfjsLib);
     window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'app/JS/pdf.worker.min.js';
     const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
     const pages = [];
+    const imagesTrouvees = [];
     try {
       for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
         const page = await pdf.getPage(pageNumber);
@@ -2901,12 +2989,50 @@
           text += item.hasEOL ? '\n' : ' ';
         });
         pages.push('--- PDF PAGE ' + pageNumber + ' / ' + pdf.numPages + ' ---\n' + text.replace(/[ \t]+\n/g, '\n').trim());
+        // 🆕 v1.7.406 — images de la page (on n'explore pas 300 pages en images).
+        if (pageNumber <= SP_PDF_IMG_MAX_PAGES) {
+          try {
+            const imgs = await spPdfPageImages(page, pageNumber);
+            imgs.forEach(im => imagesTrouvees.push(im));
+          } catch (e) { console.warn('[PDF] images page ' + pageNumber + ' :', e && e.message); }
+        }
         if (typeof page.cleanup === 'function') page.cleanup();
       }
     } finally {
       if (typeof pdf.destroy === 'function') await pdf.destroy();
     }
-    state.attachments.push({ id, name: file.name, type: 'text', text: pages.join('\n\n'), ext, pdf: true, pageCount: pages.length });
+
+    // On garde les PLUS GRANDES si le PDF en contient beaucoup : ce sont les
+    // visuels, pas les puces ni les filets decoratifs.
+    imagesTrouvees.sort((a, b) => (b.width * b.height) - (a.width * a.height));
+    const imagesRetenues = imagesTrouvees.slice(0, SP_PDF_IMG_MAX_COUNT);
+
+    state.attachments.push({ id, name: file.name, type: 'text', text: pages.join('\n\n'),
+      ext, pdf: true, pageCount: pages.length,
+      imageCount: imagesRetenues.length,
+      imagesTotal: imagesTrouvees.length });
+
+    // Chaque image devient une PIECE JOINTE SEPAREE : le modele les place par
+    // "imageIndex", exactement comme une image jointe manuellement.
+    imagesRetenues.forEach(function (im, k) {
+      state.attachments.push({
+        id: id + '_img' + k,
+        name: file.name.replace(/\.pdf$/i, '') + ' — page ' + im.page + ' (image ' + (k + 1) + ')',
+        type: 'image',
+        dataURL: im.dataURL,
+        width: im.width,
+        height: im.height,
+        fromPdf: true
+      });
+    });
+
+    if (imagesRetenues.length) {
+      appendChat('assistant', 'PDF lu : ' + pages.length + ' page(s) de texte, ' +
+        imagesRetenues.length + ' image(s) extraite(s)' +
+        (imagesTrouvees.length > imagesRetenues.length
+          ? ' sur ' + imagesTrouvees.length + ' detectee(s) — les plus grandes ont ete conservees'
+          : '') + '.');
+    }
     renderAttachBar();
   }
 
@@ -4068,6 +4194,13 @@ function spRtfLayoutInfo(src) {
   //   Un .docx de 21 000 caracteres joint sans « N pages » -> une seule page
   //   demandee a l'IA, qui tassait (ou tronquait) le document.
   //   On derive ici le nombre de pages du VOLUME reel des pieces jointes.
+  // v1.7.406 — PLAFOND DE PAGES, SOURCE UNIQUE DE VERITE.
+  //   Avant, "120" etait ecrit en dur a trois endroits (hint, slices, generation) :
+  //   impossible de le changer d'un seul coup. Demande utilisateur : 300.
+  //   ⚠️ A 300 pages la generation enchaine jusqu'a 300 appels IA sequentiels
+  //   (un par page) : c'est LONG par nature, d'ou l'avertissement chiffre.
+  const SP_MAX_PAGES = 300;
+
   function spAttachmentPageHint() {
     const textes = (state.attachments || []).filter(function (a) { return a.type === 'text' && a.text; });
     const images = (state.attachments || []).filter(function (a) { return a.type === 'image'; });
@@ -4084,8 +4217,13 @@ function spRtfLayoutInfo(src) {
     //   120 reste un garde-fou (la generation est sequentielle : un appel par page),
     //   mais on RENVOIE le nombre brut pour que l'appelant puisse le DIRE.
     const pages = Math.max(pagesTexte, pagesImages, chars ? 1 : 0);
-    const plafond = 120;
+    // v1.7.406 — plafond porte a 300 (demande utilisateur).
+    const plafond = SP_MAX_PAGES;
+    // Estimation de duree : ~7 s par page (appel IA sequentiel + rendu).
+    // Elle sert a PREVENIR sur les gros documents, pas a decourager.
+    const secondesEstimees = Math.round(Math.min(plafond, pages) * 7);
     return { pages: Math.min(plafond, pages), pagesBrutes: pages, plafond: plafond,
+             secondesEstimees: secondesEstimees,
              chars: chars, images: images.length, docs: textes.length };
   }
 
@@ -4114,7 +4252,7 @@ function spRtfLayoutInfo(src) {
     const docs = (state.attachments || []).filter(function (a) { return a.type === 'text' && a.text; });
     if (!docs.length) return [];
     const total = docs.map(function (a) { return String(a.text); }).join('\n\n');
-    const n = Math.max(1, Math.min(120, nPages || 1));
+    const n = Math.max(1, Math.min(SP_MAX_PAGES, nPages || 1));
     // On ne coupe pas au milieu d'un mot : on cherche l'espace le plus proche.
     const taille = Math.ceil(total.length / n);
     const tranches = [];
@@ -6037,7 +6175,7 @@ function spRtfLayoutInfo(src) {
     //   fermer l onglet et perdre TOUT le travail deja compose.
     state.spStopRequested = false;
     const hint = spAttachmentPageHint();
-    const n = Math.max(2, Math.min(120, hint.pages));
+    const n = Math.max(2, Math.min(SP_MAX_PAGES, hint.pages));
     const slices = spDocumentSlices(n);
     const systemMsg = baseMessages[0] && baseMessages[0].role === 'system' ? baseMessages[0] : { role: 'system', content: '' };
     const images = (state.attachments || []).filter(function (a) { return a.type === 'image'; });
@@ -6051,7 +6189,7 @@ function spRtfLayoutInfo(src) {
         if ($("modelLabel")) $("modelLabel").textContent = libelle;
         const _arrete = pages.filter(function (p) { return p.elements && p.elements.length; }).length;
         return Promise.resolve(JSON.stringify({
-          reply: "Generation arretee : " + _arrete + " page(s) conservee(s) sur " + n + ". La maquette partielle est affichee — vous pouvez la poursuivre par un nouveau prompt.",
+          reply: "Génération arrêtée : " + _arrete + " page(s) conservée(s) sur " + n + ". La maquette partielle est affichée — temps de calcul évité, vous pouvez poursuivre par un nouveau prompt.",
           pages: pages,
           targetPages: n
         }));
@@ -6068,8 +6206,11 @@ function spRtfLayoutInfo(src) {
         var _coupe = (hint.pagesBrutes && hint.pagesBrutes > n)
             ? ' (document estimé à ' + hint.pagesBrutes + ' pages : plafond de ' + n + ' pages atteint, augmentez le nombre de pages si besoin)'
             : '';
+        // v1.7.406 — sur un gros volume, on dit la DUREE avant que l'utilisateur
+        //   ne s'impatiente : 300 pages = plusieurs dizaines de minutes.
+        var _duree = (n >= 40) ? ' Temps estimé : environ ' + Math.round(n * 7 / 60) + ' min (une requête par page). Vous pouvez arrêter à tout moment : les pages déjà composées sont conservées.' : '';
         return Promise.resolve(JSON.stringify({
-          reply: 'Document traité : ' + n + ' pages composées à partir de vos ' + hint.chars + ' caractères.' + _coupe,
+          reply: 'Document traité : ' + n + ' pages composées à partir de vos ' + hint.chars + ' caractères.' + _coupe + _duree,
           pages: pages,
           targetPages: n
         }));
