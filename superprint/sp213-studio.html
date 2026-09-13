@@ -5003,7 +5003,15 @@
     function suivant(i) {
       if (i >= n) {
         if ($('modelLabel')) $('modelLabel').textContent = libelle;
-        return Promise.resolve({ reply: 'Document traité intégralement : ' + n + ' pages composées à partir de vos ' + hint.chars + ' caractères.', pages: pages, targetPages: n });
+        // v1.7.393 — On renvoie une CHAINE JSON, EXACTEMENT comme le chemin a
+        //   appel unique. Avant, on renvoyait un OBJET : les deux branches de
+        //   spCallAI() avaient des types differents, et sendMessage() passait
+        //   l'objet a parseAIResponse() -> « text.indexOf is not a function ».
+        return Promise.resolve(JSON.stringify({
+          reply: 'Document traité intégralement : ' + n + ' pages composées à partir de vos ' + hint.chars + ' caractères.',
+          pages: pages,
+          targetPages: n
+        }));
       }
       if ($('modelLabel')) $('modelLabel').textContent = 'SP213 ' + (i + 1) + '/' + n;
       const role = i === 0 ? 'COUVERTURE (titre + image si disponible + accroche)' : (i === n - 1 ? 'DERNIÈRE PAGE (conclusion, contact, 4e de couverture)' : 'PAGE DE CONTENU');
@@ -6069,6 +6077,29 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
 
   function parseAIResponse(text) {
     if (!text) return {};
+    // v1.7.393 — CERTAINES BRANCHES RENVOIENT UN OBJET, pas une chaine.
+    //   Mesure du bug : « Erreur : text.indexOf is not a function » sur un Word long
+    //   joint. spCallAI() a deux chemins : l'appel unique rend une CHAINE, la
+    //   generation page par page rendait un OBJET { reply, pages, targetPages }.
+    //   On normalise ici : le crash devient impossible quel que soit l'appelant.
+    if (typeof text !== 'string') {
+      if (text && typeof text === 'object') {
+        // Un objet deja structure se traite directement.
+        const obj = text;
+        if (obj.elements || obj.pages || obj.reply) {
+          return {
+            reply: (typeof obj.reply === 'string') ? obj.reply : '',
+            elements: Array.isArray(obj.elements) ? obj.elements : undefined,
+            pages: Array.isArray(obj.pages) ? obj.pages : undefined,
+            targetPages: obj.targetPages,
+            truncated: !!obj.truncated
+          };
+        }
+        try { text = JSON.stringify(obj); } catch (_) { return {}; }
+      } else {
+        text = String(text);
+      }
+    }
     // Marqueur de troncature ajouté par callOpenRouter / callGroq (finish_reason === 'length')
     const truncated = text.indexOf('__SP213_TRUNCATED__') !== -1;
     let clean = text.replace(/__SP213_TRUNCATED__/g, '').trim();
@@ -6142,6 +6173,8 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   // Extrait un objet JSON depuis une chaîne (même entourée de texte).
   function extractJSONObject(s) {
     if (!s) return null;
+    // v1.7.393 — peut recevoir un OBJET (branche page par page) ou une CHAINE.
+    if (typeof s === 'object') return s;
     try {
       const parsed = JSON.parse(s);
       return (parsed && typeof parsed === 'object') ? parsed : null;
