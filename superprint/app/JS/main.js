@@ -3860,11 +3860,24 @@ if (window._spGpuEnabled) {
                 const softSet = this.__spSoftBreakIndices;
                 const hasSoftBreak = !!(softSet && softSet.size > 0);
 
-                // Pas de tirets virtuels ET pas de soft break → comportement Fabric original
-                if (!hasAnyHyphen && !hasSoftBreak) {
-                    return __spOrigEnlargeSpaces.call(this);
-                }
-                // Pas de justify → comportement Fabric original
+                // 🛡️ v1.7.381 — CORRECTIF DERNIÈRE LIGNE JUSTIFIÉE (retours utilisateurs).
+                //   L'ancien code sortait IMMÉDIATEMENT vers Fabric.enlargeSpaces()
+                //   dès que le bloc n'avait NI césure NI saut doux (garde
+                //   « !hasAnyHyphen && !hasSoftBreak »).
+                //   Or Fabric.enlargeSpaces() étire TOUTE ligne dont la largeur
+                //   naturelle est inférieure à this.width — y compris la DERNIÈRE
+                //   LIGNE du paragraphe. Dès que celle-ci contenait au moins un
+                //   espace (« sa dernière ligne de paragraphe. », largeur naturelle
+                //   196,76 px), elle était peinte jusqu'à 300 px = 100 % du bloc.
+                //   C'est anti-typographique : InDesign, Word et LaTeX calent
+                //   TOUJOURS la dernière ligne d'un paragraphe justifié à gauche
+                //   (ou à droite pour justify-right), jamais aux deux bords.
+                //   Cette sortie anticipée est donc RETIRÉE : la boucle ci-dessous
+                //   traite désormais TOUS les blocs justifiés, avec ou sans césure,
+                //   avec ou sans saut doux. La preview est ainsi alignée sur les
+                //   chemins d'export vectoriels (pdf-lib : _spIsParaLastLine,
+                //   jsPDF : _spJIsParaLastLine) qui appliquaient déjà la règle.
+                //   Seul l'alignement NON justifié sort encore vers Fabric.
                 if (!this.textAlign || this.textAlign.indexOf('justify') === -1) {
                     return __spOrigEnlargeSpaces.call(this);
                 }

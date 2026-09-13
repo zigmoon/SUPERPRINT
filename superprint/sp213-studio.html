@@ -1266,6 +1266,79 @@
 
 <script src="JS/fabric.min.js"></script>
 <script>
+/* 🛡️ v1.7.381 — CORRECTIF DERNIÈRE LIGNE JUSTIFIÉE (retours utilisateurs).
+   Le studio charge son propre Fabric 5.1.0 vanilla. Son enlargeSpaces() contient :
+
+       if(("justify"===this.textAlign || a!==c-1 && !this.isEndOfWrapping(a)) && ...)
+
+   Le OU court-circuite : en mode justify, la DERNIÈRE LIGNE d'un paragraphe
+   est étirée elle aussi. Mesure : bloc 300 px, dernière ligne
+   « sa dernière ligne de paragraphe. » (largeur naturelle 196,76 px) peinte
+   jusqu'à 300 px = 100 % du bloc. Anti-typographique : InDesign, Word et
+   LaTeX calent TOUJOURS la dernière ligne d'un paragraphe justifié à gauche
+   (à droite pour justify-right), jamais aux deux bords.
+
+   Correctif : on laisse Fabric travailler, puis on DÉTEND la dernière ligne
+   de chaque paragraphe en lui retirant exactement l'espace que Fabric y a
+   ajouté (miroir de la formule Fabric). Le studio est ainsi aligné sur la
+   preview de l'app (main.js v1.7.381). */
+(function(){
+  if (!window.fabric || !fabric.Textbox || !fabric.Textbox.prototype) return;
+  var P = fabric.Textbox.prototype;
+  if (P.__spStudioLastLinePatched) return;
+  var orig = P.enlargeSpaces;
+  if (typeof orig !== 'function') return;
+  P.enlargeSpaces = function(){
+    var ret = orig.call(this);
+    try {
+      var align = this.textAlign || 'left';
+      if (align.indexOf('justify') === -1) return ret;
+      var cb = this.__charBounds, lines = this._textLines;
+      if (!cb || !lines || !cb.length) return ret;
+      var realWidth = this.width, nb = lines.length;
+      for (var i = 0; i < nb; i++) {
+        // Dernière ligne du bloc, ou ligne suivie d'un \n (Enter dur) :
+        // comportement PAO standard, elle ne doit pas être étirée.
+        var isLast = (i === nb - 1);
+        if (!isLast) { try { isLast = !!this.isEndOfWrapping(i); } catch (_) {} }
+        if (!isLast) continue;
+        var line = lines[i], C = cb[i];
+        if (!line || !C || !C.length) continue;
+        var nat = 0;
+        try { nat = this.getLineWidth(i); } catch (_) { continue; }
+        var brut = (this.textLines && this.textLines[i]) ? String(this.textLines[i]) : line.join('');
+        var esp = brut.match(this._reSpacesAndTabs);
+        var nbEsp = esp ? esp.length : 0;
+        if (nbEsp <= 0) continue;                 // un seul mot : Fabric n'a rien ajouté
+        var diff = (realWidth - nat) / nbEsp;      // ce que Fabric a ajouté par espace
+        if (!isFinite(diff) || diff === 0) continue;
+        var acc = 0;
+        for (var j = 0; j <= line.length; j++) {
+          var b = C[j];
+          if (!b) continue;
+          if (j < line.length && this._reSpaceAndTab.test(line[j])) {
+            b.width -= diff;
+            b.kernedWidth -= diff;
+            b.left += acc;
+            acc -= diff;
+          } else {
+            b.left += acc;
+          }
+        }
+        // justify-right : la dernière ligne se cale au bord DROIT,
+        // justify / justify-left : elle reste à gauche (position naturelle).
+        if (align === 'justify-right') {
+          var delta = realWidth - nat;
+          if (delta > 0) {
+            for (var q = 0; q <= line.length; q++) { if (C[q]) C[q].left += delta; }
+          }
+        }
+      }
+    } catch (_) {}
+    return ret;
+  };
+  P.__spStudioLastLinePatched = true;
+})();
 (function(){
   'use strict';
 
@@ -3101,6 +3174,18 @@
         if (o.opacity != null) base.opacity = o.opacity;
         if (o.fill && /^#/.test(o.fill)) base.fill = o.fill;
         if (o.stroke && /^#/.test(o.stroke)) { base.stroke = o.stroke; base.strokeWidth = Math.round(((o.strokeWidth || 0) / MM_TO_PX) * 10) / 10; }
+        // 🎯 v1.7.380 — HABILLAGE PORTÉ PAR UNE FORME. Dans l'app, le réglage
+        //   d'habillage est posé sur l'OBJET obstacle (la forme que le texte
+        //   contourne), pas sur le texte. On le transporte donc pour TOUS les
+        //   types, sinon un texte habillé autour d'un cercle se remet à couler
+        //   par-dessus dès qu'il passe par le studio.
+        if (o._spWrapMode) base._spWrapMode = o._spWrapMode;
+        if (o._spWrapScope) base._spWrapScope = o._spWrapScope;
+        if (typeof o._spWrapTop === 'number') base._spWrapTop = o._spWrapTop;
+        if (typeof o._spWrapLeft === 'number') base._spWrapLeft = o._spWrapLeft;
+        if (typeof o._spWrapBottom === 'number') base._spWrapBottom = o._spWrapBottom;
+        if (typeof o._spWrapRight === 'number') base._spWrapRight = o._spWrapRight;
+        if (typeof o._spWrapOrigH === 'number') base._spWrapOrigH = o._spWrapOrigH;
         if (t === 'rect' || t === 'rectangle') {
           return Object.assign(base, { type: 'rectangle',
             width: Math.round(((o.width || 0) / MM_TO_PX) * 10) / 10,
@@ -3180,6 +3265,22 @@
           if (o.fontStyle) el.fontStyle = o.fontStyle;
           if (o.textAlign) el.textAlign = o.textAlign;
           if (o.lineHeight) el.lineHeight = Math.round(o.lineHeight * 100) / 100;
+          // 🎯 v1.7.380 — RÉGLAGES TYPOGRAPHIQUES DU BLOC.
+          //   Sans cette recopie, un document passant de l'app au studio perdait :
+          //   • le RÉGLAGE DE CÉSURE — y compris « sans césure », qui redevenait
+          //     césuré au retour dans l'app ;
+          //   • la LANGUE de césure (français / anglais) ;
+          //   • l'HABILLAGE du bloc.
+          //   On transmet la valeur TELLE QUELLE (true comme false) : c'est un choix
+          //   explicite de l'utilisateur, il ne doit pas être « deviné ».
+          if (o.enableHyphenation !== undefined) el.enableHyphenation = !!o.enableHyphenation;
+          if (o.hyphenLanguage) el.hyphenLanguage = o.hyphenLanguage;
+          if (o._spWrapMode) el._spWrapMode = o._spWrapMode;
+          if (o._spWrapScope) el._spWrapScope = o._spWrapScope;
+          if (typeof o._spWrapTop === 'number') el._spWrapTop = o._spWrapTop;
+          if (typeof o._spWrapLeft === 'number') el._spWrapLeft = o._spWrapLeft;
+          if (typeof o._spWrapBottom === 'number') el._spWrapBottom = o._spWrapBottom;
+          if (typeof o._spWrapRight === 'number') el._spWrapRight = o._spWrapRight;
           return el;
         }
         if (t === 'image' && (o._spAiImageUrl || o.src || o._sp213ImageUrl)) {
@@ -5787,7 +5888,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       clone.fontSize = clamp(finite(clone.fontSize, 14), 8, 240);
       clone.fontFamily = normalizeFontFamily(clone.fontFamily) || 'Open Sans';
       clone.lineHeight = clamp(finite(clone.lineHeight, 1.4), 0.8, 3);
-      if (!['left', 'center', 'right', 'justify'].includes(clone.textAlign)) clone.textAlign = 'left';
+      if (!['left', 'center', 'right', 'justify', 'justify-left', 'justify-right'].includes(clone.textAlign)) clone.textAlign = 'left';
 
       // 🛡️ v1.7.368 — GARDE-FOU TYPOGRAPHIQUE (mesuré sur la chaîne réelle).
       //   Le prompt explique l'échelle largeur→taille, mais on ne peut pas
@@ -6397,6 +6498,27 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     } catch (_) {}
   }
 
+  // 🎯 v1.7.380 — TRANSMETTRE LES RÉGLAGES TYPOGRAPHIQUES À L'APP.
+  //   Un élément du studio est « plat » (mm, type text). L'app attend les
+  //   attributs Fabric : on réécrit ici le réglage de césure, la langue et
+  //   l'habillage, tels que l'utilisateur les avait posés.
+  //   ⚠️ On n'écrit PAS _spHyphenFlags : les marqueurs de césure dépendent du
+  //   re-wrap, et l'app les recalcule au chargement. Figer des positions de
+  //   ligne serait plus fragile qu'utile.
+  function spAppliquerReglagesTypo(obj, el) {
+    if (!obj || !el) return obj;
+    if (el.enableHyphenation !== undefined) obj.enableHyphenation = !!el.enableHyphenation;
+    if (el.hyphenLanguage) obj.hyphenLanguage = el.hyphenLanguage;
+    if (el._spWrapMode) obj._spWrapMode = el._spWrapMode;
+    if (el._spWrapScope) obj._spWrapScope = el._spWrapScope;
+    if (typeof el._spWrapTop === 'number') obj._spWrapTop = el._spWrapTop;
+    if (typeof el._spWrapLeft === 'number') obj._spWrapLeft = el._spWrapLeft;
+    if (typeof el._spWrapBottom === 'number') obj._spWrapBottom = el._spWrapBottom;
+    if (typeof el._spWrapRight === 'number') obj._spWrapRight = el._spWrapRight;
+    if (typeof el._spWrapOrigH === 'number') obj._spWrapOrigH = el._spWrapOrigH;
+    return obj;
+  }
+
   function buildSPFile() {
     if (!state.pages.length) return null;
     const now = new Date();
@@ -6432,14 +6554,14 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
           }
 
           if (t === 'rectangle' || t === 'rect') {
-            objects.push({ type: 'rect', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1,
-              stroke: stroke || '', strokeWidth: strokeW, rx: (el.rx || 0) * MM_TO_PX, ry: (el.ry || 0) * MM_TO_PX });
+            objects.push(spAppliquerReglagesTypo({ type: 'rect', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1,
+              stroke: stroke || '', strokeWidth: strokeW, rx: (el.rx || 0) * MM_TO_PX, ry: (el.ry || 0) * MM_TO_PX }, el));
           } else if (t === 'circle') {
-            objects.push({ type: 'circle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, radius: (+el.radius || 25) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
+            objects.push(spAppliquerReglagesTypo({ type: 'circle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, radius: (+el.radius || 25) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
           } else if (t === 'ellipse') {
-            objects.push({ type: 'ellipse', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
+            objects.push(spAppliquerReglagesTypo({ type: 'ellipse', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
           } else if (t === 'triangle') {
-            objects.push({ type: 'triangle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 50) * MM_TO_PX, height: (+el.height || 50) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
+            objects.push(spAppliquerReglagesTypo({ type: 'triangle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 50) * MM_TO_PX, height: (+el.height || 50) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
           } else if (t === 'star') {
             // 🛡️ v1.7.368 — ETOILES : cette branche MANQUAIT. Une etoile de la
             //   preview disparaissait a l'export direct .sp alors que les autres
@@ -6453,9 +6575,9 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
             const _o1 = (+el.radius || 30) * MM_TO_PX;
             const _i1 = (+el.innerRadius || 0) > 0 ? (+el.innerRadius) * MM_TO_PX : _o1 * 0.5;
             const _starPts = []; for (let _i = 0; _i < _b1 * 2; _i++) { const _r = _i % 2 === 0 ? _o1 : _i1; const _a = (Math.PI * _i) / _b1 - Math.PI / 2; _starPts.push({ x: _r * Math.cos(_a), y: _r * Math.sin(_a) }); }
-            objects.push({ type: 'polygon', left, top, points: _starPts, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
+            objects.push(spAppliquerReglagesTypo({ type: 'polygon', left, top, points: _starPts, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
           } else if (t === 'line') {
-            objects.push({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, scaleX: 1, scaleY: 1 });
+            objects.push(spAppliquerReglagesTypo({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, scaleX: 1, scaleY: 1 }, el));
           } else if (t === 'text' || t === 'textbox') {
             // 🛡️ FIX 2026-08-30 : normaliser la police AVANT d'écrire dans le .sp,
             //   sinon l'app reçoit le nom brut de l'IA (ex. BebasNeue / Playfair) et
@@ -6468,9 +6590,9 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
             const _fsPx = (+el.fontSize || 14) * PT_TO_PX;
             const _lh = el.lineHeight || 1.4;
             const _hPx = spTextBlockHeightPx(el);
-            objects.push({ type: 'textbox', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 200) * MM_TO_PX, height: _hPx, text: el.text || '', fontSize: _fsPx, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh, opacity: op, scaleX: 1, scaleY: 1 });
+            objects.push(spAppliquerReglagesTypo({ type: 'textbox', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 200) * MM_TO_PX, height: _hPx, text: el.text || '', fontSize: _fsPx, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh, opacity: op, scaleX: 1, scaleY: 1 }, el));
           } else if (t === 'image' && el.imageUrl) {
-            objects.push({ type: 'image', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 100) * MM_TO_PX, height: (+el.height || 100) * MM_TO_PX, opacity: op, scaleX: 1, scaleY: 1, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2 });
+            objects.push(spAppliquerReglagesTypo({ type: 'image', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 100) * MM_TO_PX, height: (+el.height || 100) * MM_TO_PX, opacity: op, scaleX: 1, scaleY: 1, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2 }, el));
           }
         });
       } catch(e) { objects = []; }
@@ -6632,13 +6754,13 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       let height = (+el.height || 50) * MM_TO_PX;
       if (isFullBleed) { left = 0; top = 0; width = pageWpx + bleedPx * 2; height = pageHpx + bleedPx * 2; }
       if (t === 'rectangle' || t === 'rect') {
-        objects.push({ type: 'rect', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW, rx: (el.rx || 0) * MM_TO_PX, ry: (el.ry || 0) * MM_TO_PX });
+        objects.push(spAppliquerReglagesTypo({ type: 'rect', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW, rx: (el.rx || 0) * MM_TO_PX, ry: (el.ry || 0) * MM_TO_PX }, el));
       } else if (t === 'circle') {
-        objects.push({ type: 'circle', left, top, radius: (+el.radius || 25) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
+        objects.push(spAppliquerReglagesTypo({ type: 'circle', left, top, radius: (+el.radius || 25) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
       } else if (t === 'ellipse') {
-        objects.push({ type: 'ellipse', left, top, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
+        objects.push(spAppliquerReglagesTypo({ type: 'ellipse', left, top, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
       } else if (t === 'triangle') {
-        objects.push({ type: 'triangle', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
+        objects.push(spAppliquerReglagesTypo({ type: 'triangle', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
       } else if (t === 'star') {
         // 🛡️ v1.7.368 — meme conversion que buildSPFile : on ecrit un `polygon`
         //   (le format natif de l'app), JAMAIS un `star` : `fabric.Star` n'existe
@@ -6647,9 +6769,9 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
         const _outR2 = (+el.radius || 30) * MM_TO_PX;
         const _inR2 = (+el.innerRadius || 0) > 0 ? (+el.innerRadius) * MM_TO_PX : _outR2 * 0.5;
         const _starPts = []; for (let _i = 0; _i < _branches2 * 2; _i++) { const _r = _i % 2 === 0 ? _outR2 : _inR2; const _a = (Math.PI * _i) / _branches2 - Math.PI / 2; _starPts.push({ x: _r * Math.cos(_a), y: _r * Math.sin(_a) }); }
-        objects.push({ type: 'polygon', left, top, points: _starPts, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW });
+        objects.push(spAppliquerReglagesTypo({ type: 'polygon', left, top, points: _starPts, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
       } else if (t === 'line') {
-        objects.push({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, scaleX: 1, scaleY: 1 });
+        objects.push(spAppliquerReglagesTypo({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, scaleX: 1, scaleY: 1 }, el));
       } else if (t === 'text' || t === 'textbox') {
         // 🛡️ FIX 2026-08-30 : normaliser la police AVANT d'écrire dans le .sp.
         const famSP2 = normalizeFontFamily(el.fontFamily) || 'Open Sans';
@@ -6657,9 +6779,9 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
         const _fsPx2 = (+el.fontSize || 14) * PT_TO_PX;
         const _lh2 = el.lineHeight || 1.4;
         const _hPx2 = spTextBlockHeightPx(el);
-        objects.push({ type: 'textbox', left, top, width: (+el.width || 200) * MM_TO_PX, height: _hPx2, text: el.text || '', fontSize: _fsPx2, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP2, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh2, opacity: op, scaleX: 1, scaleY: 1 });
+        objects.push(spAppliquerReglagesTypo({ type: 'textbox', left, top, width: (+el.width || 200) * MM_TO_PX, height: _hPx2, text: el.text || '', fontSize: _fsPx2, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP2, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh2, opacity: op, scaleX: 1, scaleY: 1 }, el));
       } else if (t === 'image' && el.imageUrl) {
-        objects.push({ type: 'image', left, top, width, height, opacity: op, scaleX: 1, scaleY: 1, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2 });
+        objects.push(spAppliquerReglagesTypo({ type: 'image', left, top, width, height, opacity: op, scaleX: 1, scaleY: 1, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2 }, el));
       }
     });
     return objects;
