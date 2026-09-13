@@ -46786,7 +46786,19 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 });
                 fullPrompt = (txt ? txt + '\n\n' : '') + '📷 IMAGES FOURNIES (à intégrer dans la maquette avec type "userImage" et imageIndex 0-' + (window._aiFooterImages.length-1) + ') :\n' + imgDescs.join('\n');
             }
+            // 🆕 v1.7.398 — pieces jointes de la barre (tous formats) + consigne Images
+            try {
+                var _pj = (typeof _spDocBuildContext === 'function') ? _spDocBuildContext() : '';
+                var _imgNote = (typeof window._aiFooterImagesNote === 'function') ? window._aiFooterImagesNote() : '';
+                if ((_pj || _imgNote) && ta) ta.value = (ta.value || '') + _pj + _imgNote;
+            } catch (_ePj) {}
+
             if (ta) ta.value = fullPrompt;
+            if ((typeof _spDocBuildContext === 'function') && (window._spDocAttachments || []).length) {
+                var _ctx = _spDocBuildContext();
+                var _note = (typeof window._aiFooterImagesNote === 'function') ? window._aiFooterImagesNote() : '';
+                ta.value = fullPrompt + _ctx + _note;
+            }
             if (txt && typeof aiCustomPrompt === 'function') aiCustomPrompt();
         }
         window.aiFooterGenerate = aiFooterGenerate;
@@ -46797,6 +46809,354 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 window.addEventListener('DOMContentLoaded', function() { aiToggleFooterBar(true); });
             }
         } catch(e) {}
+
+
+        // ══════════════════════════════════════════════════════════════════════════
+        // 📥 v1.7.398 — IMPORT DOCUMENTAIRE DE LA BARRE IA (module partage)
+        //
+        // Objectif : la barre de prompt de l'editeur doit importer et comprendre les
+        // pieces jointes EXACTEMENT comme le studio SP213. Pour garantir l'egalite,
+        // on ne duplique PAS le code : on charge le module PARTAGE
+        // app/JS/sp-doc-import.js (extrait verbatim du studio, deja valide).
+        //
+        // Le module gere : Word .doc (parseur OLE), .docx (mammoth + images),
+        // OpenDocument .odt/.ods/.odp, RTF, Excel, PDF, images et texte.
+        // ══════════════════════════════════════════════════════════════════════════
+
+        // Pieces jointes de la barre IA : une seule liste par document (pas de
+        // multi-conversation), exactement comme demande.
+        window._spDocAttachments = window._spDocAttachments || [];
+
+        // Charge le module partage (meme mecanisme lazy que les autres libs).
+        function _spDocEnsureModule() {
+            if (window.SPDocImport) return Promise.resolve(window.SPDocImport);
+            return new Promise(function (resolve, reject) {
+                var s = document.createElement('script');
+                // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
+                //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
+                //    restent invisibles (defaut mesure avec les chemins de jszip).
+                s.src = 'JS/sp-doc-import.js?v=20260913-v398-release';
+                s.onload = function () {
+                    if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
+                    // Pont hote : le module ecrit ses pieces jointes ICI et nous
+                    // previent pour rafraichir l'interface.
+                    window.SPDocImport.setHost({
+                        attachments: window._spDocAttachments,
+                        onRender: function () { _aiFooterUpdateUI(); },
+                        onMessage: function (t) { try { logAI(t); } catch (_) {} },
+                        loadLib: function (src, ready) {
+                            // Les libs du module (.docx -> JS/mammoth.min.js) sont deja
+                            // celles de l'app : on reutilise le meme chargeur.
+                            if (ready()) return Promise.resolve();
+                            return new Promise(function (res, rej) {
+                                var sc = document.createElement('script');
+                                sc.src = src;
+                                sc.onload = function () { ready() ? res() : rej(new Error('lib indisponible')); };
+                                sc.onerror = function () { rej(new Error('lib indisponible')); };
+                                document.head.appendChild(sc);
+                            });
+                        },
+                        extractWordRich: function (buf, file, id, ext) {
+                            // L'app possede deja son importeur Word : on le reutilise
+                            // pour que le studio et l'editeur rendent le MEME resultat.
+                            if (typeof window._spImportDocxFile === 'function') {
+                                return window._spImportDocxFile(file);
+                            }
+                            throw new Error('importeur Word indisponible');
+                        },
+                        engine: (document.getElementById('aiProvider') || {}).value || 'deepseek',
+                        // L'app est servie depuis /app/ : on retire le prefixe
+                        // « app/ » que le module tient du studio (servi a la racine),
+                        // sinon la requete part sur /app/app/JS/... -> 404 (bug mesure).
+                        resolveLib: function (rel) { return String(rel).replace(/^app\//, ''); }
+                    });
+                    resolve(window.SPDocImport);
+                };
+                s.onerror = function () { reject(new Error('sp-doc-import.js introuvable')); };
+                document.head.appendChild(s);
+            });
+        }
+        window._spDocEnsureModule = _spDocEnsureModule;
+
+        // Lit UN fichier par le module partage et l'ajoute aux pieces jointes.
+        function _spDocCollectFile(file) {
+            var ext = (String(file.name).split('.').pop() || '').toLowerCase();
+            var id = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+            return _spDocEnsureModule().then(function (mod) {
+                return mod.extract(file, id, ext);
+            });
+        }
+        window._spDocCollectFile = _spDocCollectFile;
+
+        // Compose le bloc « PIECES JOINTES » envoye a l'IA : meme esprit que la note
+        // d'integralite du studio (le document doit etre traite EN ENTIER).
+        function _spDocBuildContext() {
+            var atts = window._spDocAttachments || [];
+            if (!atts.length) return '';
+            var textes = atts.filter(function (a) { return a.type === 'text' && a.text; });
+            var images = atts.filter(function (a) { return a.type === 'image'; });
+            var chars = textes.reduce(function (s, a) { return s + String(a.text).length; }, 0);
+            var parts = [];
+
+            atts.forEach(function (att, i) {
+                if (att.type === 'image') {
+                    parts.push('IMAGE ' + i + ' : "' + att.name + '"' +
+                        (att.width ? ' (' + att.width + '\u00d7' + att.height + 'px)' : '') +
+                        '\nPlace cette image avec {"type":"userImage","imageIndex":' + i + ',...}.');
+                } else {
+                    var txt = String(att.text || '');
+                    var limite = 60000;
+                    var tronque = txt.length > limite;
+                    parts.push((att.docLabel || 'TEXTE') + ' ' + i + ' : "' + att.name + '"' +
+                        (att.imageCount ? ' (' + att.imageCount + ' image(s) jointe(s))' : '') +
+                        '\n' + txt.slice(0, limite) +
+                        (tronque ? '\n[... ' + limite + ' caracteres sur ' + txt.length + ' : traite ce qui est fourni et compose la maquette complete.]' : ''));
+                }
+            });
+
+            var pages = Math.max(1, Math.min(40, Math.ceil(chars / 2600) || 1));
+            var note = '\n\n\u2550\u2550\u2550 DOCUMENT JOINT : TRAITEMENT INTEGRAL OBLIGATOIRE \u2550\u2550\u2550\n' +
+                'Un document de ' + chars + ' caracteres' + (images.length ? ' et ' + images.length + ' image(s)' : '') +
+                ' est joint. IL DOIT ETRE TRAITE EN ENTIER : ne resume pas, ne saute pas de passage,\n' +
+                'ne t\'arrete pas au premier chapitre. Repartis TOUT le contenu sur environ ' + pages + ' page(s).\n' +
+                'CONVENTIONS DU TEXTE FOURNI :\n' +
+                '  \u2022 « # » a « ###### » = titre de niveau 1 a 6 (1 = le plus grand).\n' +
+                '  \u2022 « - » en debut de ligne = element de liste : restitue une vraie liste a puces.\n' +
+                '  \u2022 « | » separe les cellules d\'un tableau, encadre par [TABLEAU] \u2026 [/TABLEAU].\n' +
+                '  \u2022 « [IMAGE_n] » = emplacement d\'une photo du document, jointe separement.\n' +
+                '  \u2022 « --- PAGE --- » = saut de page du document d\'origine.';
+
+            return '\n\n=== PIECES JOINTES UTILISATEUR ===\n' + parts.join('\n\n') + note;
+        }
+        // ══════════════════════════════════════════════════════════════════════════
+        // 🎛️ v1.7.398 — LOGIQUE DE LA BARRE IA (alignee sur le studio SP213)
+        //   • import PJ : tous formats via le MODULE PARTAGE app/JS/sp-doc-import.js
+        //   • loader EN SURIMPRESSION (aucune hauteur ajoutee, disparait a la fin)
+        //   • case « Images » : l'IA prevoit des zones photo
+        //   • dictee vocale et image web, comme dans le studio
+        // ══════════════════════════════════════════════════════════════════════════
+
+        // ── Rendu des chips de pieces jointes ──────────────────────────────────
+        function _aiFooterRenderAtt() {
+            var box = document.getElementById('aiFooterAtt');
+            if (!box) return;
+            var atts = window._spDocAttachments || [];
+            box.innerHTML = '';
+            if (!atts.length) { box.classList.remove('on'); return; }
+            box.classList.add('on');
+            atts.forEach(function (att, idx) {
+                var chip = document.createElement('span');
+                chip.className = 'sp-foot-chip';
+                var info = att.type === 'image'
+                    ? (att.width ? att.width + '\u00d7' + att.height + 'px' : 'img')
+                    : (att.docLabel || att.ext || 'txt').toUpperCase();
+                if (att.type === 'text') {
+                    var n = String(att.text || '').length;
+                    info = (att.docLabel ? att.docLabel + ' \u00b7 ' : '') +
+                           (n >= 1000 ? (Math.round(n / 100) / 10) + 'k' : n) + ' car.';
+                }
+                if (att.type === 'image' && att.dataURL) {
+                    var im = document.createElement('img');
+                    im.src = att.dataURL;
+                    im.alt = '';
+                    chip.appendChild(im);
+                }
+                var nm = document.createElement('span');
+                nm.className = 'n';
+                nm.textContent = att.name || 'fichier';
+                var ty = document.createElement('span');
+                ty.className = 't';
+                ty.textContent = info;
+                var rm = document.createElement('button');
+                rm.className = 'rm';
+                rm.type = 'button';
+                rm.title = 'Retirer';
+                rm.textContent = '\u00d7';
+                rm.addEventListener('click', function () {
+                    var arr = window._spDocAttachments || [];
+                    // Retire l'element ET ses images filles eventuelles (un .docx
+                    // ajoute une piece jointe texte PUIS une image par photo).
+                    var base = att.id;
+                    window._spDocAttachments = arr.filter(function (a) {
+                        return a.id !== base && String(a.id).indexOf(base + '_img') !== 0;
+                    });
+                    _aiFooterRenderAtt();
+                    _aiFooterUpdateUI();
+                    // Re-synchronise le pont du module avec le NOUVEAU tableau.
+                    if (window.SPDocImport && window.SPDocImport.setHost) {
+                        window.SPDocImport.setHost({ attachments: window._spDocAttachments });
+                    }
+                });
+                chip.appendChild(nm);
+                chip.appendChild(ty);
+                chip.appendChild(rm);
+                box.appendChild(chip);
+            });
+        }
+        window._aiFooterRenderAtt = _aiFooterRenderAtt;
+
+        // ── Extension de _aiFooterUpdateUI (definie plus bas dans ce fichier) ───
+        var _aiFooterUpdateUI_orig = _aiFooterUpdateUI;
+        _aiFooterUpdateUI = function () {
+            _aiFooterUpdateUI_orig();
+            _aiFooterRenderAtt();
+        };
+        window._aiFooterUpdateUI = _aiFooterUpdateUI;
+
+        // ── Loader EN SURIMPRESSION ────────────────────────────────────────────
+        function aiFooterLoaderOn(txt) {
+            var el = document.getElementById('aiFooterLoader');
+            if (!el) return;
+            var t = document.getElementById('aiFooterLoaderTxt');
+            if (t) t.textContent = txt || 'Composition de votre maquette\u2026';
+            el.classList.add('on');
+        }
+        function aiFooterLoaderOff() {
+            var el = document.getElementById('aiFooterLoader');
+            if (el) el.classList.remove('on');
+        }
+        window.aiFooterLoaderOn = aiFooterLoaderOn;
+        window.aiFooterLoaderOff = aiFooterLoaderOff;
+
+        // ── Collecte de TOUS les fichiers (module partage) ─────────────────────
+        function aiFooterHandleFiles(files) {
+            if (!files || !files.length) return;
+            var liste = Array.prototype.slice.call(files);
+            var btn = document.getElementById('aiFooterAttachBtn');
+            if (btn) btn.classList.add('busy');
+            aiFooterLoaderOn('Lecture des pieces jointes\u2026');
+            var chaine = Promise.resolve();
+            liste.forEach(function (f) {
+                chaine = chaine.then(function () {
+                    return _spDocCollectFile(f).catch(function (e) {
+                        logAI('\u26a0\ufe0f « ' + f.name + ' » : ' + (e && e.message ? e.message : 'lecture impossible'));
+                    });
+                });
+            });
+            chaine.then(function () {
+                // Le module a pousse dans le tableau d'origine : on re-synchronise
+                // le pont et on rafraichit l'interface.
+                if (window.SPDocImport && window.SPDocImport.setHost) {
+                    window.SPDocImport.setHost({ attachments: window._spDocAttachments });
+                }
+                _aiFooterRenderAtt();
+                _aiFooterUpdateUI();
+                aiFooterLoaderOff();
+                if (btn) btn.classList.remove('busy');
+                var inp = document.getElementById('aiFooterFileInput');
+                if (inp) inp.value = '';
+            });
+        }
+        window.aiFooterHandleFiles = aiFooterHandleFiles;
+
+        // ── Image web libre (picsum) : ajoutee comme piece jointe image ─────────
+        function aiFooterWebImage() {
+            var btn = document.getElementById('aiFooterWebImgBtn');
+            if (btn) btn.classList.add('busy');
+            var seed = Math.random().toString(36).slice(2, 9);
+            var url = 'https://picsum.photos/seed/' + seed + '/1600/1000';
+            var img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function () {
+                try {
+                    var c = document.createElement('canvas');
+                    c.width = img.naturalWidth; c.height = img.naturalHeight;
+                    c.getContext('2d').drawImage(img, 0, 0);
+                    var uri = c.toDataURL('image/jpeg', 0.86);
+                    window._spDocAttachments.push({
+                        id: 'web_' + Date.now(), name: 'photo-' + seed + '.jpg', type: 'image',
+                        dataURL: uri, width: img.naturalWidth, height: img.naturalHeight, ext: 'jpg'
+                    });
+                    if (window.SPDocImport && window.SPDocImport.setHost) {
+                        window.SPDocImport.setHost({ attachments: window._spDocAttachments });
+                    }
+                    _aiFooterRenderAtt(); _aiFooterUpdateUI();
+                    logAI('\ud83c\udf10 Photo libre ajoutee (' + img.naturalWidth + '\u00d7' + img.naturalHeight + ')');
+                } catch (e) {
+                    logAI('\u26a0\ufe0f Photo non ajoutee (canvas indisponible)');
+                }
+                if (btn) btn.classList.remove('busy');
+            };
+            img.onerror = function () {
+                logAI('\u26a0\ufe0f Reseau indisponible : photo non ajoutee');
+                if (btn) btn.classList.remove('busy');
+            };
+            img.src = url;
+        }
+        window.aiFooterWebImage = aiFooterWebImage;
+
+        // ── Dictee vocale (Web Speech API, comme le studio) ────────────────────
+        var _aiFooterReco = null;
+        function aiFooterDictate() {
+            var btn = document.getElementById('aiFooterMicBtn');
+            var input = document.getElementById('aiFooterInput');
+            var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) { logAI('\u26a0\ufe0f Dictee vocale non disponible dans ce navigateur'); return; }
+            if (_aiFooterReco) { try { _aiFooterReco.stop(); } catch (_) {} _aiFooterReco = null; if (btn) btn.classList.remove('busy'); return; }
+            var lang = (localStorage.getItem('sp_lang') || document.documentElement.lang || 'fr');
+            _aiFooterReco = new SR();
+            _aiFooterReco.lang = lang === 'jp' ? 'ja-JP' : (lang === 'en' ? 'en-US' : 'fr-FR');
+            _aiFooterReco.interimResults = true;
+            _aiFooterReco.continuous = false;
+            var base = input ? input.value : '';
+            _aiFooterReco.onresult = function (e) {
+                var txt = '';
+                for (var i = e.resultIndex; i < e.results.length; i++) txt += e.results[i][0].transcript;
+                if (input) input.value = (base ? base + ' ' : '') + txt;
+            };
+            _aiFooterReco.onerror = function () { if (btn) btn.classList.remove('busy'); };
+            _aiFooterReco.onend = function () { _aiFooterReco = null; if (btn) btn.classList.remove('busy'); };
+            if (btn) btn.classList.add('busy');
+            try { _aiFooterReco.start(); } catch (_) { if (btn) btn.classList.remove('busy'); }
+        }
+        window.aiFooterDictate = aiFooterDictate;
+
+        // ── Case « Images » : l'IA prevoit des zones photo (coherence avec le studio)
+        function aiFooterImgToggle(on) {
+            window._aiFooterWantImages = !!on;
+            var w = document.getElementById('aiFooterImgToggleWrap');
+            if (w) w.classList.toggle('on', !!on);
+            try { localStorage.setItem('sp_ai_footer_images', on ? '1' : '0'); } catch (_) {}
+        }
+        window.aiFooterImgToggle = aiFooterImgToggle;
+        // Consigne ajoutee au prompt quand la case est cochee (l'IA ne VOIT pas la
+        // photo : elle doit prevoir la ZONE, pas inventer le sujet).
+        window._aiFooterImagesNote = function () {
+            if (!window._aiFooterWantImages) return '';
+            return '\n\n\ud83d\udcf7 IMAGES : prevois 1 a 3 ZONES PHOTO (>= 30% d\'une page, ' +
+                   'cadrage fond perdu -3 mm) avec une LEGENDE. N\'invente PAS le sujet de la photo : ' +
+                   'la photo jointe est illustrative, ecris une legende generique.';
+        };
+
+        window._spDocBuildContext = _spDocBuildContext;
+
+
+        // ── FILET DE SECURITE : le loader ne peut plus rester allume ────────────
+        //    Surveille l'etat REEL de la generation. Des que _aiGenerating repasse
+        //    a false (succes, erreur ou abandon), le loader disparait et le bouton
+        //    est reactive avec son libelle TRADUIT. Independant des sorties de
+        //    aiCustomPrompt, donc insensible aux branches ajoutees plus tard.
+        (function _aiFooterLoaderWatchdog() {
+            var dernierEtat = null;
+            setInterval(function () {
+                var enCours = !!window._aiGenerating;
+                if (enCours === dernierEtat) return;
+                dernierEtat = enCours;
+                if (!enCours) {
+                    try { if (typeof aiFooterLoaderOff === 'function') aiFooterLoaderOff(); } catch (_) {}
+                    var b = document.getElementById('aiFooterGenerateBtn');
+                    if (b) {
+                        b.disabled = false;
+                        b.style.opacity = '1';
+                        // Ne PAS ecrire un libelle en dur : on reprend celui du DOM
+                        // (traduit) sauf s'il est encore sur l'etat « Generation... ».
+                        if (/\u23f3|Generation|Generation\.\.\./i.test(b.textContent)) {
+                            b.textContent = (window._aiGenBtnLabelMemo || 'Create');
+                        }
+                    }
+                }
+            }, 400);
+        })();
 
         function updateAIModelDropdown(provider) {
     const modelSelect = document.getElementById('aiModel');
@@ -47562,12 +47922,22 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         return;
     }
     window._aiGenerating = true;
+    // 🆕 v1.7.398 — loader EN SURIMPRESSION sur la barre (disparait a la fin).
+    try { if (typeof aiFooterLoaderOn === 'function') aiFooterLoaderOn('Composition de votre maquette…'); } catch (_l) {}
     var generateBtn = document.getElementById('aiFooterGenerateBtn');
+    // Memorise le libelle AFFICHE (traduit) pour le restaurer a la fin.
+    var _aiGenBtnLabel = generateBtn ? generateBtn.textContent : 'Create';
+    window._aiGenBtnLabelMemo = _aiGenBtnLabel;
     if (generateBtn) { generateBtn.disabled = true; generateBtn.style.opacity = '0.5'; generateBtn.textContent = '⏳ Génération...'; }
     // Helper pour réactiver le bouton après génération
     function _aiResetGenerating() {
         window._aiGenerating = false;
-        if (generateBtn) { generateBtn.disabled = false; generateBtn.style.opacity = '1'; generateBtn.textContent = 'Create'; }
+        // 🆕 v1.7.398 — le loader disparait TOUJOURS (succes comme echec).
+        try { if (typeof aiFooterLoaderOff === 'function') aiFooterLoaderOff(); } catch (_lo) {}
+        // ⚠️ Restaurer le libelle REEL du bouton : l'ancien code ecrivait « Create »
+        //    en dur, donc le bouton repassait en ANGLAIS apres chaque generation,
+        //    quelle que soit la langue de l'interface.
+        if (generateBtn) { generateBtn.disabled = false; generateBtn.style.opacity = '1'; generateBtn.textContent = _aiGenBtnLabel; }
     }
     
     const promptText = document.getElementById('aiPromptModal').value.trim();

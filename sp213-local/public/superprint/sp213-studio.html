@@ -409,10 +409,11 @@
   .sp-page-del:hover { color: #d32f2f; border-color: #d32f2f; }
   .page-label {
     text-align: center; font-size: 10px; color: var(--muted); letter-spacing: 0.5px;
-    /* 📄 Pied de page : le libelle « Page N » etait place AU-DESSUS du canvas
-       (margin-bottom: 8px). Il passe SOUS le canvas avec la MEME valeur de marge
-       (margin-top: 8px) -> meme respiration, mais en pied. */
-    margin-top: 8px; margin-bottom: 0;
+    /* 📄 Pied de page : le libelle « Page N » etait place AU-DESSUS du canvas.
+       Il est desormais SOUS le canvas. Marge de 26 px (et non 8) : a 8 px le numero
+       collait encore la page, ce qui le faisait lire comme une suite du format.
+       ⚠️ Ne pas confondre avec le haut : ce sont deux respirations distinctes. */
+    margin-top: 26px; margin-bottom: 0;
   }
   .page-canvas-wrap {
     background: #fff; box-shadow: 0 4px 20px var(--shadow); line-height: 0; position: relative;

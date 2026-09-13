@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint v1.7.397 — Zigmoon
+         SuperPrint v1.7.398 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint v1.7.397 — Zigmoon">
+    <meta name="generator" content="SuperPrint v1.7.398 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.397",
+          "softwareVersion": "1.7.398",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -387,7 +387,7 @@
          Grosse rotation créative (14 thèmes : mode, archi, art, nature morte,
          nature, ville, néon) — plus de variété, plus moderne. 900px q=45,
          ~20-85 Ko, chargement quasi instantané. En local rien n'est préchargé. -->
-    <!-- 🎨 v1.7.397 — SPLASH : IMAGES LOCALES (plus de CDN Unsplash).
+    <!-- 🎨 v1.7.398 — SPLASH : IMAGES LOCALES (plus de CDN Unsplash).
          POURQUOI CE CHANGEMENT
            L'ancienne version tirait AU HASARD une des 14 photos Unsplash
            distantes, puis la préchargeait. Trois conséquences mesurables :
@@ -1019,7 +1019,7 @@
                      AUCUNE requête réseau externe n'est déclenchée (picsum.photos
                      n'est JAMAIS dans le HTML en local). En version EN LIGNE (https),
                      le script ci-dessous remplace cette image par la photo picsum. -->
-                <!-- 🎨 v1.7.397 — image LOCALE par défaut (le script choisit
+                <!-- 🎨 v1.7.398 — image LOCALE par défaut (le script choisit
                      aléatoirement parmi SP/splash/*). Plus aucun CDN : l'image
                      est disponible hors ligne et s'affiche immédiatement. -->
                 <img id="splashImage" alt="Splash artwork" src="SP/splash/typo-01.jpg"
@@ -1027,7 +1027,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">v1.7.397</div>
+                <div class="splash-version">v1.7.398</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1048,7 +1048,7 @@
         // la colonne média (l'image est déjà LOCALE, aucune requête réseau).
         // En mode EN LIGNE (https), on remplace l'image par la photo externe.
         try {
-            // 🎨 v1.7.397 — LE SPLASH AFFICHE UNE IMAGE DANS TOUS LES CAS.
+            // 🎨 v1.7.398 — LE SPLASH AFFICHE UNE IMAGE DANS TOUS LES CAS.
             //   Avant : en local la colonne média était SUPPRIMÉE du DOM, et en
             //   ligne elle dépendait d'un CDN. Désormais l'image est locale, donc
             //   disponible partout (file://, localhost, https, hors ligne) : on
@@ -1089,7 +1089,7 @@
         //     splash dès que le DOM est prêt (+ court délai) pour être rapide.
         //   - EN LIGNE (https) : on garde le splash avec la photo → on attend
         //     l'événement load (+ 1,5 s) pour laisser l'image s'afficher, comme avant.
-        // 🎨 v1.7.397 — MINUTERIE UNIFIÉE.
+        // 🎨 v1.7.398 — MINUTERIE UNIFIÉE.
         //   Avant, le mode local et le mode en ligne avaient des durées
         //   différentes (2 s contre 3,5 s APRÈS chargement de l'image distante),
         //   et la version en ligne attendait le réseau : l'image « arrivait tard ».
@@ -1128,7 +1128,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.397</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.398</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1224,7 +1224,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.397 | 09 2026<br>
+                V 1.7.398 | 09 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1524,7 +1524,7 @@
                 <div class="input-row" style="margin-top: 12px;">
                     <div class="input-group">
                         <label id="labelPageW">L (mm)</label>
-                        <!-- 🎯 v1.7.397 — BUG 2 : les champs de dimensions étaient lus avec des
+                        <!-- 🎯 v1.7.398 — BUG 2 : les champs de dimensions étaient lus avec des
                      valeurs fractionnaires (ex. 209.9999) qui s'affichaient
                      « 0 » à l'ouverture et empêchaient d'avancer de 1 mm net.
                      step="1" + min="1" : incréments entiers, jamais 0. -->
@@ -1532,7 +1532,7 @@
                     </div>
                     <div class="input-group">
                         <label id="labelPageH">H (mm)</label>
-                        <!-- 🎯 v1.7.397 — BUG 2 : idem largeur. -->
+                        <!-- 🎯 v1.7.398 — BUG 2 : idem largeur. -->
                 <input type="number" id="pageHeight" step="1" min="1" value="297">
                     </div>
                 </div>
@@ -1799,12 +1799,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.397). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.398). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.397 — internal cache tag: JS v397 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.398 — internal cache tag: JS v398 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v397"
-                      data-sp-sw="v1.7.397">v1.7.397</span>
+                      data-sp-js="v398"
+                      data-sp-sw="v1.7.398">v1.7.398</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -1863,7 +1863,7 @@
                         <div id="importHint" style="margin-top:12px; font-size:13px; line-height:1.5; opacity:0.6;">SP : projet natif SuperPrint · JSON : restauration projet · PDF : 1 page par page · TXT/RTF : texte brut · DOC/DOCX : Word · Excel : XLSX/XLS · Open Office : ODT · IDML : mise en page complète · SLA : import basique textes+formes.</div>
                     </div>
 
-                    <!-- 🆕 v1.7.397 — Options d'import Word (par-dessus la modale Importer) -->
+                    <!-- 🆕 v1.7.398 — Options d'import Word (par-dessus la modale Importer) -->
                     <div id="wordOptionsModal" class="sp-modal-card" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 10004; width: 430px; max-width: 92vw; padding: 20px;">
                         <div class="sp-modal-header">
                             <div class="sp-modal-title">Options d'import Word</div>
@@ -2037,6 +2037,77 @@
                         .theme-dark #aiFooterGenerateBtn { background:#fff; color:#1a1a1a; }
                         #aiFooterImagePreviews { display:flex; gap:6px; flex-wrap:wrap; }
                         #aiFooterImagePreviews img { width:36px; height:36px; object-fit:cover; border-radius:6px; border:1px solid rgba(0,0,0,0.1); }
+
+                        /* ══ v1.7.398 — BARRE IA ALIGNEE SUR LE STUDIO ══ */
+                        #aiFooterBar { position:fixed; }
+                        /* Loader EN SURIMPRESSION : il couvre la barre pendant la
+                           generation, puis disparait. La barre n'a donc pas besoin
+                           d'etre haute en permanence. */
+                        #aiFooterLoader {
+                            position:absolute; inset:0; z-index:5; display:none;
+                            align-items:center; justify-content:center; gap:10px;
+                            border-radius:12px; font-size:12px; font-weight:600; letter-spacing:0.3px;
+                            background:rgba(255,255,255,0.96); color:#1a1a1a;
+                            backdrop-filter:blur(4px);
+                        }
+                        .theme-dark #aiFooterLoader { background:rgba(26,26,26,0.96); color:#fff; }
+                        #aiFooterLoader.on { display:flex; }
+                        #aiFooterLoader .sp-spin {
+                            width:15px; height:15px; border-radius:50%; flex:0 0 auto;
+                            border:2px solid rgba(0,0,0,0.15); border-top-color:#1a1a1a;
+                            animation:spFootSpin 0.7s linear infinite;
+                        }
+                        .theme-dark #aiFooterLoader .sp-spin { border-color:rgba(255,255,255,0.2); border-top-color:#fff; }
+                        @keyframes spFootSpin { to { transform:rotate(360deg); } }
+
+                        /* Barre d'actions : icones a gauche, Envoyer a droite */
+                        #aiFooterActions {
+                            display:flex; align-items:center; gap:6px; width:100%;
+                        }
+                        #aiFooterActions .sp-foot-spacer { flex:1 1 auto; }
+                        .sp-foot-ic {
+                            width:30px; height:30px; flex:0 0 auto; display:inline-flex;
+                            align-items:center; justify-content:center; cursor:pointer;
+                            border-radius:8px; transition:background .15s, border-color .15s;
+                            background:transparent; border:1px solid rgba(0,0,0,0.14); color:#1a1a1a;
+                        }
+                        .theme-dark .sp-foot-ic { border-color:rgba(255,255,255,0.18); color:#fff; }
+                        .sp-foot-ic:hover { background:rgba(0,0,0,0.06); border-color:rgba(0,0,0,0.28); }
+                        .theme-dark .sp-foot-ic:hover { background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.32); }
+                        .sp-foot-ic svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+                        .sp-foot-ic.busy { opacity:.5; pointer-events:none; }
+                        /* Case « Images » : fond NEUTRE, jamais bleu (DA du studio). */
+                        .sp-foot-toggle {
+                            display:inline-flex; align-items:center; gap:5px; cursor:pointer;
+                            padding:0 8px; height:30px; border-radius:8px; font-size:11px;
+                            border:1px solid rgba(0,0,0,0.14); color:#1a1a1a; background:transparent;
+                        }
+                        .theme-dark .sp-foot-toggle { border-color:rgba(255,255,255,0.18); color:#fff; }
+                        .sp-foot-toggle input[type="checkbox"] {
+                            width:13px; height:13px; margin:0; cursor:pointer; accent-color:#111111;
+                        }
+                        .theme-dark .sp-foot-toggle input[type="checkbox"] { accent-color:#f4f4f5; }
+                        .sp-foot-toggle.on { font-weight:700; }
+
+                        /* Chips des pieces jointes (apparait seulement s'il y en a) */
+                        #aiFooterAtt {
+                            display:none; flex-wrap:wrap; gap:6px; width:100%;
+                        }
+                        #aiFooterAtt.on { display:flex; }
+                        .sp-foot-chip {
+                            display:inline-flex; align-items:center; gap:6px; max-width:100%;
+                            padding:3px 6px 3px 8px; border-radius:6px; font-size:10.5px;
+                            background:rgba(0,0,0,0.045); border:1px solid rgba(0,0,0,0.1); color:#1a1a1a;
+                        }
+                        .theme-dark .sp-foot-chip { background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.14); color:#fff; }
+                        .sp-foot-chip .n { max-width:190px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+                        .sp-foot-chip .t { opacity:.55; }
+                        .sp-foot-chip img { width:18px; height:18px; object-fit:cover; border-radius:4px; }
+                        .sp-foot-chip .rm {
+                            border:none; background:transparent; cursor:pointer; padding:0 2px;
+                            font-size:13px; line-height:1; color:inherit; opacity:.55;
+                        }
+                        .sp-foot-chip .rm:hover { opacity:1; }
                     </style>
                     <div id="aiFooterBar">
                         <div id="aiFooterBarHeader" title="Glisser pour déplacer" style="display:flex; align-items:center; justify-content:space-between; width:100%; cursor:move; user-select:none; -webkit-user-select:none; touch-action:none;">
@@ -2046,19 +2117,39 @@
                         <textarea id="aiFooterInput" data-translate-placeholder="aiFooterBarPlaceholder" placeholder="Décrivez la maquette de cette page…" rows="2"
                             onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();aiFooterGenerate();}"
                             oninput="this.style.height='auto'; this.style.height=Math.min(120, this.scrollHeight)+'px';"></textarea>
-                        <div id="aiFooterDropZone"
-                             onclick="event.stopPropagation(); document.getElementById('aiFooterImageInput').click()"
-                             ondragover="event.preventDefault(); this.classList.add('drag-over');"
-                             ondragleave="this.classList.remove('drag-over');"
-                             ondrop="event.preventDefault(); this.classList.remove('drag-over'); aiFooterHandleImages(event.dataTransfer.files);">
-                            <span id="aiFooterDropPlaceholder">Glissez vos images ici (JPG, PNG, WEBP, SVG, EPS...)</span>
-                            <div id="aiFooterImagePreviews"></div>
-                        </div>
+                        <!-- 📥 v1.7.398 — chips des pieces jointes : visible seulement s'il y en a -->
+                        <div id="aiFooterAtt"></div>
+
+                        <!-- 📎 TOUS les formats, comme le studio : Word .doc/.docx,
+                             OpenDocument .odt/.ods/.odp, RTF, Excel, PDF, images, texte. -->
+                        <input type="file" id="aiFooterFileInput" multiple style="display:none;"
+                               accept=".jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.tif,.tiff,.eps,.ai,.psd,.txt,.md,.csv,.html,.doc,.docx,.odt,.ods,.odp,.odg,.rtf,.xls,.xlsx,.pdf"
+                               onchange="aiFooterHandleFiles(this.files)">
+                        <!-- Conservé pour la compatibilité (le studio et d'anciens appels le visent) -->
                         <input type="file" id="aiFooterImageInput" accept="image/jpeg,image/png,image/webp,image/tiff,image/svg+xml,.eps,.ai,.psd,.bmp,.gif" multiple style="display:none;" onchange="aiFooterHandleImages(this.files)">
-                        <div style="display:flex; gap:8px; width:100%; justify-content:flex-end;">
-                            <button type="button" id="aiFooterClearImagesBtn" onclick="aiFooterClearImages()">✕ Tout effacer</button>
+
+                        <div id="aiFooterActions">
+                            <button type="button" class="sp-foot-ic" id="aiFooterAttachBtn" title="Pièces jointes — images, texte, Word (.doc/.docx), OpenDocument (.odt/.ods/.odp), RTF, Excel, PDF" onclick="document.getElementById('aiFooterFileInput').click()">
+                                <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                            </button>
+                            <button type="button" class="sp-foot-ic" id="aiFooterWebImgBtn" title="Image web — cherche une photo libre (picsum.photos) et l'ajoute comme pièce jointe" onclick="aiFooterWebImage()">
+                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
+                            </button>
+                            <button type="button" class="sp-foot-ic" id="aiFooterMicBtn" title="Prompt vocal — cliquez puis parlez : votre voix est transcrite dans le champ" onclick="aiFooterDictate()">
+                                <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></svg>
+                            </button>
+                            <label class="sp-foot-toggle" id="aiFooterImgToggleWrap" title="Images — l'IA cherche en plus des photos pour habiller la maquette (décoché : maquette sans photo)">
+                                <input type="checkbox" id="aiFooterImgToggle" onchange="aiFooterImgToggle(this.checked)">
+                                <span>Images</span>
+                            </label>
+                            <span class="sp-foot-spacer"></span>
+                            <button type="button" id="aiFooterClearImagesBtn" onclick="aiFooterClearImages()" style="display:none;">✕ Tout effacer</button>
                             <button type="button" id="aiFooterGenerateBtn" onclick="aiFooterGenerate()" data-translate="aiBtnCreate">Créer</button>
                         </div>
+
+                        <!-- Le loader est EN SURIMPRESSION sur la barre : il n'ajoute
+                             aucune hauteur et disparait des que la generation est finie. -->
+                        <div id="aiFooterLoader"><span class="sp-spin"></span><span id="aiFooterLoaderTxt">Composition de votre maquette…</span></div>
                     </div>
 
                     <div class="typo-styles-widget" id="typoStylesWidget" title="Styles">
@@ -2213,7 +2304,7 @@
                                 </div>
                                 <div style="margin-bottom: 16px;">
                                     <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px;">Opacité: <span id="solidOpacityValue">100%</span></label>
-                                    <!-- 🎯 v1.7.397 — BUG 1 (2ᵉ curseur d'opacité) : pas de 1 %. -->
+                                    <!-- 🎯 v1.7.398 — BUG 1 (2ᵉ curseur d'opacité) : pas de 1 %. -->
                                     <input type="range" id="solidOpacitySlider" min="0" max="100" step="1" value="100" style="width: 100%;" />
                                 </div>
                             </div>
@@ -2466,7 +2557,7 @@
                 <div class="input-row">
                     <div class="input-group">
                         <label data-translate="lineHeightLabel">Interligne (pt)</label>
-                        <!-- 🎯 v1.7.397 — BUG 3 : pas de 0,1 (l'ancien 0,5 interdisait
+                        <!-- 🎯 v1.7.398 — BUG 3 : pas de 0,1 (l'ancien 0,5 interdisait
                      d'ajuster finement l'interligne demandé par l'utilisateur). -->
                 <input type="number" id="lineHeight" min="1" max="200" value="16" step="0.1">
                     </div>
@@ -3129,12 +3220,12 @@
                 <div class="input-group">
                     <label data-translate="opacityLabel">Opacité</label>
                     <div class="inline-row" style="display: flex; align-items: center; gap: 8px;">
-                        <!-- 🎯 v1.7.397 — BUG 1 : pas de 1 %.
+                        <!-- 🎯 v1.7.398 — BUG 1 : pas de 1 %.
                      Sans step, le curseur tombait sur des valeurs fractionnaires
                      (ex. 4.6 %) : la valeur affichée sautait et la barre se plaçait
                      « au milieu » d'un cran. step="1" = 101 positions entières. -->
                 <input type="range" id="opacitySlider" min="0" max="100" step="1" value="100" style="flex: 1; height: 4px; accent-color: #1a1a1a; cursor: pointer;">
-                        <!-- 🎯 v1.7.397 — même pas de 1 pour le champ numérique jumeau. -->
+                        <!-- 🎯 v1.7.398 — même pas de 1 pour le champ numérique jumeau. -->
                 <input type="number" id="opacityValue" min="0" max="100" step="1" value="100" class="compact-input" style="width: 48px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px;">
                         <span style="font-size: 10px; opacity: 0.6;">%</span>
                     </div>
@@ -3727,7 +3818,7 @@
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
                             <div>
                                 <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 900; letter-spacing: 2px; color: #1a1a1a;">SUPER PRINT</div>
-                                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: #999; margin-top: 6px;">v1.7.397</div>
+                                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: #999; margin-top: 6px;">v1.7.398</div>
                             </div>
                             <a href="documentation.html" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: #0c0c0f; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; transition: background 0.2s;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='#0c0c0f'">
                                 <span data-translate="settingsManualBtn">Manuel &amp; Documentation</span>
@@ -3816,7 +3907,7 @@
                     </div>
 
                     <div style="text-align: center; padding-top: 16px; font-size: 10px; color: #999;">
-                        SuperPrint v1.7.397 — 12 septembre 2026
+                        SuperPrint v1.7.398 — 12 septembre 2026
                     </div>
                     <div style="padding: 12px 0 0; display: flex; gap: 12px; justify-content: flex-end;">
                         <button class="btn btn-secondary" onclick="closeSettings()">Annuler</button>
@@ -5788,13 +5879,13 @@
 
     <!-- All application logic moved to JS/main.js -->    
     <!-- External scripts -->
-    <script src="JS/patches-core.js?v=20260912-v397-studio-ia" defer></script>
+    <script src="JS/patches-core.js?v=20260912-v398-release" defer></script>
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260913-v397-studio-ia" defer></script>
+    <script src="JS/main.js?v=20260913-v398-release" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
-    <script src="JS/virtual-printer.js?v=20260912-v397-studio-ia" defer></script>
+    <script src="JS/virtual-printer.js?v=20260912-v398-release" defer></script>
     <script src="JS/collab.js?v=20260907-v016-ux" defer></script>
     <script src="JS/pwa.js?v=20260501-no-double-splash" defer></script>
 
