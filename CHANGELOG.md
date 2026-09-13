@@ -9,6 +9,30 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.401] — 2026-09-14
+
+_The button says what it will do, hyphenation is honoured, and an edit preserves the document_
+
+### Fixed
+- **An edit could shrink a 6-page magazine to a single page.** Measured with a real DeepSeek key: **7 pages / 17 objects** before, **1 page / 5 objects** after a plain correction prompt. Root cause: `aiFooterGenerate` set `window._aiDocType = 'single'` **as a hard-coded value**, which forced `_requestedPages = 0` — the AI was therefore never asked in multi-page mode again. The bar now infers the requested format from the actual sentence (“6 pages”, magazine, catalog, booklet, book, journal) and keeps multi-page context when the document already holds more than one page (`_dejaMulti`). Verified: **6 pages and 84 objects preserved** after a page-1 targeted edit.
+- **Requested hyphenation never reached the layout.** Measured across 45 text blocks generated on a 6-page magazine: **45/45** came out with `enableHyphenation: false` and `hyphenLanguage: 'en'`, even though the system prompt states that a justified block must always be hyphenated, and even when the user wrote “justified with hyphenation”. Three causes stacked along the AI path, all fixed: (a) `_spAiBuildFabricObject()` did not copy the two properties into the Fabric object; (b) `sanitizeElement()` stripped them on the single-page path; (c) `enableHyphenation: false` was **written hard** in the single-page text constructor, overriding any instruction. A justified block without an explicit instruction now receives hyphenation, and the language falls back to the interface language instead of a hard-coded English.
+- **A blank document wrongly read “Retouch”.** Measured on an empty A4 page: `canvases[0].getObjects()` returns **3 objects** — the technical marks (bleed, margins, page outline), all `excludeFromExport: true` and recognised by `_spAiIsSystemObj()`. Counting them made the button claim the layout had content. They are now excluded through the very same predicate used for the AI inventory, so button and prompt can never disagree.
+- **Remaining `enableHyphenation: false` occurrences are intentional.** They live in non-AI helpers (`createSimpleTextBox`, `addTextOriginal`, `createThreeColumnLinkedText`, `placeTextIntoDocument`, `estimatePagesForText`, `openTextFlowPreview`, `aiTypoSuggestion`, `_dropPatternOnCanvasInner`), where word-by-word wrapping is the documented behaviour for manually created text.
+
+### Added
+- **The prompt button now names its real action.** The same field served both creating and editing, with nothing to indicate which would run. The button reads **Create** on a blank layout and **Retouch** as soon as content exists, with the tooltip and the field placeholder following the same state, in French, English and Japanese. A 500 ms watcher keeps the label in sync and repairs itself if `updateInterface()` resets it on a language change.
+
+### Verified
+- **End-to-end, real DeepSeek key, no mock:** a 6-page A4 French magazine was created from the prompt bar, then edited with a page-1-only instruction.
+  - creation: **6 pages, 84 objects**, multi-page mode confirmed in the outgoing prompt;
+  - edit: **6 pages and 84 objects preserved** (the previous behaviour collapsed to 1 page);
+  - the inventory was present in the prompt (`MAQUETTE ACTUELLE` + `REGLE DE RETOUCHE`);
+  - hyphenation after the fix: justified paragraph `enableHyphenation: true`, `hyphenLanguage: 'fr'` on 8 of 8 blocks.
+- **HD vector PDF export, analysed at byte level:** 300 DPI, CMYK, PDF/X-3, vector typography → **6 pages**, **0 raster images**, **510 vector text blocks** (`BT`/`Tj`), **10 fonts of which 9 embedded**, `OutputIntent` + `DestOutputProfile` (Coated FOGRA39 ICC), and French accents correctly mapped through `ToUnicode`, so the text is genuinely selectable and sharp at any scale.
+- Web/mirror parity 14/14, 13/13 live version markers, 0 leftover traces, distributed package verified by extraction.
+
+> ⚠️ **`superprint.cc` still serves 1.7.390.** None of the last eleven releases is visible online until the FTP deployment is done manually.
+
 ## [1.7.400] — 2026-09-14
 
 _The prompt now edits the current layout instead of rebuilding it_
