@@ -2,6 +2,8 @@
 /*
 !/.gitignore
 !/README.md
+!/CHANGELOG.md
+!/release.html
 !/_bump_332.mjs
 !/_make_zip.mjs
 !/_serve_static.cjs

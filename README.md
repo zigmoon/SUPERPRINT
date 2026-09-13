@@ -17,7 +17,14 @@
   <a href="https://superprint.cc/sp213-studio.html">SP213 AI Studio</a> ·
   <a href="https://superprint.cc/supertypo/">SuperTyPo</a> ·
   <a href="https://superprint.cc/documentation.html">Documentation</a> ·
+  <a href="https://superprint.cc/api.html">Script API</a> ·
   <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>
+</p>
+
+<p align="center">
+  <a href="CHANGELOG.md"><b>📋 Changelog</b></a> ·
+  <a href="https://github.com/zigmoon/SUPERPRINT/tags">Releases</a> ·
+  <a href="https://app.zigmoon.com/release.html">Release notes (FR/EN/JP)</a>
 </p>
 
 <p align="center">
@@ -116,11 +123,20 @@ This repository contains the full product. The web app can be served as static f
 
 ## ✦ The repository
 
-| Folder | Role |
+| Folder / file | Role |
 |---|---|
-| `superprint/` | The complete web application + landing + SP213 studio + **SuperTyPo** + documentation |
+| `superprint/` | The complete web application + landing + SP213 studio + **SuperTyPo** + documentation + script API |
 | `sp213-local/` | The local distribution (Vite + WebLLM), served by the npm launcher |
 | `superprint-npm/` | The `superprint` npm launcher (`npx superprint`) |
+| `release.html` | The full release-notes page, trilingual FR / EN / JP (60 entries) — also live at `app.zigmoon.com/release.html` |
+| `CHANGELOG.md` | Condensed English changelog |
+
+Every release is git-tagged `v1.7.NNN`, so you can diff two versions directly:
+
+```bash
+git log --oneline v1.7.386..v1.7.387      # what changed in one release
+git diff v1.7.380 v1.7.387 --stat         # full diff between two
+```
 
 ---
 
