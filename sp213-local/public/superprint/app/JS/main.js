@@ -71002,6 +71002,46 @@ function initObjectRightClickMenu() {
     };
     const t = (fr, en) => (_spLang() === 'en' ? en : fr);
 
+    // 🎨 v1.7.377 — TROUVER LA FORME QUI CROISE UN BLOC TEXTE.
+    //   Scenario a l'origine du correctif : rectangle pose, puis texte
+    //   PAR-DESSUS (texte au-dessus dans l'ordre Z). Un clic droit « sur la
+    //   forme » tombe en realite sur le TEXTE : l'entree « Habillage du
+    //   texte… » n'existait que pour les objets non textuels et n'apparaissait
+    //   donc jamais. On cherche ici la forme la plus recouvrante, pour la
+    //   proposer depuis le texte lui-meme.
+    //   On renvoie l'objet NON textuel dont l'aire de recouvrement avec le bloc
+    //   texte est la plus grande (null si aucun).
+    const spWrapTrouverObstacleSousTexte = (canvas, texte) => {
+        try {
+            if (!canvas || !texte) return null;
+            var tb;
+            try { tb = texte.getBoundingRect(true, true); } catch (_) { return null; }
+            if (!tb || !(tb.width > 0) || !(tb.height > 0)) return null;
+            var tL = tb.left, tT = tb.top, tR = tb.left + tb.width, tB = tb.top + tb.height;
+            var best = null, bestAire = 0;
+            var all = canvas.getObjects();
+            for (var i = 0; i < all.length; i++) {
+                var o = all[i];
+                if (!o || o === texte) continue;
+                // Objets systeme (marges, fond perdu, reperes) : jamais obstacles.
+                if (o.isMargin || o.isBleed || o.isTrimBox || o.isGuide || o.isManualGuide || o.isPageBorder) continue;
+                // Un bloc texte n'est pas un obstacle (geometrie de texte non fiable).
+                if (o.type === 'textbox' || o.type === 'i-text' || o.type === 'text') continue;
+                if (o.visible === false) continue;
+                var bb;
+                try { bb = o.getBoundingRect(true, true); } catch (_) { continue; }
+                if (!bb || !(bb.width > 0) || !(bb.height > 0)) continue;
+                var oL = bb.left, oT = bb.top, oR = bb.left + bb.width, oB = bb.top + bb.height;
+                var w = Math.min(tR, oR) - Math.max(tL, oL);
+                var h = Math.min(tB, oB) - Math.max(tT, oT);
+                if (!(w > 0) || !(h > 0)) continue;   // pas de recouvrement
+                var aire = w * h;
+                if (aire > bestAire) { bestAire = aire; best = o; }
+            }
+            return best;
+        } catch (_) { return null; }
+    };
+
     // ----- Build & show -----
     const showMenu = (x, y, canvas, obj) => {
         ensureUI();
@@ -71062,11 +71102,28 @@ function initObjectRightClickMenu() {
         //   aucun objet : il regle 6 attributs d'habillage.
         {
             const _isTextLikeObj = obj && (obj.type === 'textbox' || obj.type === 'i-text' || obj.type === 'text');
-            if (!_isTextLikeObj && typeof window._spOpenWrapPopin === 'function') {
-                menu.appendChild(mkItem(ICON.wrap, t('Habillage du texte…', 'Text wrap…'), '', function () {
-                    window._spOpenWrapPopin(canvas, obj);
-                }));
-                menu.appendChild(mkSep());
+            if (typeof window._spOpenWrapPopin === 'function') {
+                if (!_isTextLikeObj) {
+                    // Objet (forme, image, trace) : l'habillage se pose sur CET objet.
+                    menu.appendChild(mkItem(ICON.wrap, t('Habillage du texte…', 'Text wrap…'), '', function () {
+                        window._spOpenWrapPopin(canvas, obj);
+                    }));
+                    menu.appendChild(mkSep());
+                } else {
+                    // 🎨 v1.7.377 — SUR UN BLOC TEXTE : c'est le cas le plus
+                    //   courant et il ne proposait RIEN. Un texte pose par-dessus
+                    //   une forme capte le clic droit, et l'utilisateur ne pouvait
+                    //   donc jamais atteindre l'habillage.
+                    //   On propose la FORME qui croise le plus ce texte : c'est
+                    //   l'intention reelle (« je veux que ce texte s'habille »).
+                    const _obstacle = spWrapTrouverObstacleSousTexte(canvas, obj);
+                    if (_obstacle) {
+                        menu.appendChild(mkItem(ICON.wrap, t('Habiller ce texte…', 'Wrap this text…'), '', function () {
+                            window._spOpenWrapPopin(canvas, _obstacle);
+                        }));
+                        menu.appendChild(mkSep());
+                    }
+                }
             }
         }
         menu.appendChild(mkItem(ICON.front,    t('Premier plan',  'Bring to front'),  'Ctrl+]', () => actBringToFront(canvas, obj)));
