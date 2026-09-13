@@ -9,6 +9,24 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.399] — 2026-09-14
+
+_Studio IA shown in black like SuperTyPo in the new-document window_
+
+### Fixed
+- **“Studio IA” now appears in black in the new-document window, exactly like “SuperTyPo”.** Measured on the open window before the fix: `npTabStudio` → `rgb(153,153,153)`, weight 400 (**grey**) while `npTabSupertypo` → `rgb(26,26,26)`, weight 600 (**black**) — although both were declared `color: #1a1a1a` in the page. The 1.7.397 fix was therefore **insufficient**, and only measuring the actual display could reveal it.
+- **The cause was elsewhere in the code.** `npSwitchTab()` (a legacy setting, v1.7.284) rewrites the tab colours when the dialog opens and forced the **inactive-tab grey** onto the Studio button only:
+  ```js
+  // Tab Studio (décoratif — ne reste jamais actif, il ouvre le studio)
+  if (tStudio) { tStudio.style.color = '#999'; tStudio.style.fontWeight = '400'; ... }
+  ```
+  SuperTyPo was **not listed in that rule**, so it was never touched and kept its black **by accident** — exactly the asymmetry the user was seeing.
+- **These two buttons are not tabs:** clicking them **closes the dialog and opens the tool** in a new tab, so they are never “active” nor “inactive”. Both are now handled **together**, with a constant style: black (`#1a1a1a`), weight 600, no underline. A single rule drives the two, so a future third launch action only has to join the list.
+
+### Verified
+- Same measurements as before, on the open window: `npTabStudio` and `npTabSupertypo` both `rgb(26,26,26)` / weight 600 / transparent underline. The real tabs (Advanced, Automatic, Templates) keep their inactive grey, and Basic stays black and underlined since it is active — nothing else moved.
+- Web/mirror parity 14/14, 13/13 live version markers, 0 leftover traces, distributed package verified by extraction.
+
 ## [1.7.398] — 2026-09-14
 
 _Editor prompt bar aligned with Studio IA — shared document import module_
