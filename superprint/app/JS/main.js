@@ -2981,6 +2981,37 @@ if (window._spGpuEnabled) {
 // Configuration des hyphenators pour différentes langues
         let hyphenators = {};
         let currentHyphenLanguage = 'fr'; // Langue par défaut
+        // 🎯 v1.7.380 — CORRESPONDANCE INTERFACE <-> CÉSURE.
+        //   Avant : la langue de césure était figée sur 'fr' et l'interface ne la
+        //   pilotait jamais. Un utilisateur anglophone obtenait donc de la césure
+        //   FRANÇAISE sur du texte anglais (mesure : printing -> prin-ting au lieu
+        //   de print-ing ; 11 mots sur 22 étaient faux).
+        //   'ja' n'a pas de dictionnaire : on ne césure pas (le japonais ne coupe
+        //   pas les mots par tiret).
+        let spHyphenLangTouched = false;
+        function spHyphenLangForUI(lang) {
+            if (lang === 'fr') return 'fr';
+            if (lang === 'en') return 'en';
+            return 'none';
+        }
+        // Langue de césure effective pour un NOUVEAU bloc (ou un bloc sans langue).
+        function spDefaultHyphenLanguage() {
+            if (spHyphenLangTouched) return currentHyphenLanguage;
+            return spHyphenLangForUI(currentLanguage || 'en');
+        }
+        // Le moteur est-il disponible pour cette langue ?
+        function spHyphenatorFor(lang) {
+            if (!lang || lang === 'none') return null;
+            try {
+                if (window.hyphenators && window.hyphenators[lang]) return window.hyphenators[lang];
+            } catch (_) {}
+            try { if (typeof hyphenators !== 'undefined' && hyphenators && hyphenators[lang]) return hyphenators[lang]; } catch (_) {}
+            return null;
+        }
+        // La césure est-elle pertinente pour cette langue ?
+        function spHyphenAvailableFor(lang) {
+            return !!spHyphenatorFor(lang);
+        }
         
         // Initialiser les hyphenators quand les bibliothèques sont chargées
         window.addEventListener('load', function() {
@@ -3019,7 +3050,8 @@ if (window._spGpuEnabled) {
         fabric.Textbox.prototype.toObject = function(props) {
             const base = _origToObject.call(this, props);
             base.enableHyphenation = !!this.enableHyphenation;
-            base.hyphenLanguage = this.hyphenLanguage || currentHyphenLanguage || 'fr';
+            base.hyphenLanguage = this.hyphenLanguage
+                || ((typeof spDefaultHyphenLanguage === 'function') ? spDefaultHyphenLanguage() : (currentHyphenLanguage || 'fr'));
             // ✅ Sérialiser les propriétés de hauteur/largeur fixe pour le clip
             if (this._fixedHeight) base._fixedHeight = this._fixedHeight;
             if (this._fixedWidth) base._fixedWidth = this._fixedWidth;
@@ -3244,22 +3276,110 @@ if (window._spGpuEnabled) {
         
         return w + safetyMargin; 
     }
-    
-    function fallbackHyphenate(word) {
-        // DÉcoupe approximative: privilégie une coupe après 3-5 caractères, puis avant voyelle
-        if (!word || word.length < 6) return null;
-        const candidates = [];
-        for (let i = 3; i < Math.min(word.length - 2, 8); i++) {
-            candidates.push(i);
-        }
-        const vowels = /[aeiouyàâäéèêëïîôùûüÿæœAEIOUYÀÂÄÉÈÊËÏÎÔÙÛÜŸÆŒ]/;
-        let best = null;
-        for (const i of candidates) {
-            if (vowels.test(word[i])) { best = i; break; }
-        }
-        if (!best) best = Math.floor(word.length / 2);
-        return [word.slice(0, best), word.slice(best)];
+
+    // ================= CÉSURE : RÈGLES TYPOGRAPHIQUES FRANÇAISES =============
+    // 🎯 v1.7.380 — Refonte demandée après un retour utilisateur : l'app
+    //   produisait « L'- » en coupant « L'habillage ». On ne coupe JAMAIS juste
+    //   après une apostrophe d'élision (l' d' qu' n' j' s' c' m' t') : elle
+    //   marque déjà la frontière syllabique.
+    // Règles appliquées :
+    //   • 1 consonne entre 2 voyelles        -> couper AVANT      (cé|sure)
+    //   • consonne doublée                   -> couper ENTRE     (ir|ré)
+    //   • digraphe (ch ph th gn gu qu)       -> couper AVANT     (pro|chable)
+    //   • groupe insécable (bl br cl cr dr fl fr gl gr pl pr tr vr)
+    //                                        -> couper AVANT     (ta|bleau)
+    //   • 2 consonnes simples                -> couper ENTRE     (es|paces)
+    //   • 3 consonnes et plus                -> avant la dernière (cons|ti)
+    // Dans tous les cas : au moins 2 caractères de chaque côté.
+    const SP_HYPH_MIN_AVANT = 2;
+    const SP_HYPH_MIN_APRES = 2;
+    const SP_VOYELLES = 'aeiouyàâäéèêëïîôùûüÿœæAEIOUYÀÂÄÉÈÊËÏÎÔÙÛÜŸŒÆ';
+    const SP_APOSTROPHES = "'\u2019\u02bc";
+    const SP_TIRETS = '-\u2010\u2011\u2013\u2014';
+    const SP_DIGRAPHES = ['ch', 'ph', 'th', 'gn', 'gu', 'qu'];
+    const SP_INSECABLES = ['bl', 'br', 'cl', 'cr', 'dr', 'fl', 'fr', 'gl', 'gr', 'pl', 'pr', 'tr', 'vr'];
+
+    function spEstVoyelle(c) { return !!c && SP_VOYELLES.indexOf(c) !== -1; }
+    function spEstLettre(c) { return !!c && /[A-Za-zÀ-ÿ]/.test(c); }
+
+    // Une frontière de césure est-elle admissible à la position i ?
+    function spIsValidHyphenBoundary(word, i) {
+        if (!word || i < SP_HYPH_MIN_AVANT) return false;
+        if (word.length - i < SP_HYPH_MIN_APRES) return false;
+        const av = word[i - 1], ap = word[i];
+        // Jamais juste après (ou juste avant) une apostrophe d'élision…
+        if (SP_APOSTROPHES.indexOf(av) !== -1 || SP_APOSTROPHES.indexOf(ap) !== -1) return false;
+        // …ni un trait d'union déjà présent
+        if (SP_TIRETS.indexOf(av) !== -1 || SP_TIRETS.indexOf(ap) !== -1) return false;
+        return true;
     }
+
+    // Position de coupure à l'intérieur du groupe consonantique qui commence en i
+    // (word[i - 1] est une voyelle, word[i] une consonne). -1 si aucune.
+    function spCoupeGroupe(word, i) {
+        let j = i;
+        while (j < word.length && spEstLettre(word[j]) && !spEstVoyelle(word[j])) j++;
+        if (j >= word.length) return -1;            // mot finissant par des consonnes
+        const g = word.slice(i, j);
+        const n = g.length;
+        if (n === 1) return i;
+        const deux = g.slice(0, 2).toLowerCase();
+        if (n === 2) {
+            if (g[0] === g[1]) return i + 1;                          // doublée
+            if (SP_DIGRAPHES.indexOf(deux) !== -1) return i;           // ch, ph…
+            if (SP_INSECABLES.indexOf(deux) !== -1) return i;          // bl, tr…
+            return i + 1;                                             // es|paces
+        }
+        const fin = g.slice(n - 2).toLowerCase();
+        if (SP_INSECABLES.indexOf(fin) !== -1 || SP_DIGRAPHES.indexOf(fin) !== -1) return i + n - 2;
+        return i + n - 1;
+    }
+
+    // Découpe un mot en syllabes selon les règles françaises (repli).
+    function spSyllabesFR(word) {
+        if (!word || word.length < 5) return null;
+        const coupes = [];
+        for (let i = 1; i < word.length; i++) {
+            if (!spEstVoyelle(word[i - 1])) continue;
+            if (spEstVoyelle(word[i])) continue;
+            if (!spEstLettre(word[i])) continue;
+            const c = spCoupeGroupe(word, i);
+            if (c < 0 || !spIsValidHyphenBoundary(word, c)) continue;
+            if (coupes.indexOf(c) === -1) coupes.push(c);
+        }
+        if (!coupes.length) return null;
+        coupes.sort(function (a, b) { return a - b; });
+        const out = [];
+        let prev = 0;
+        for (const c of coupes) { out.push(word.slice(prev, c)); prev = c; }
+        out.push(word.slice(prev));
+        return out.length > 1 ? out : null;
+    }
+
+    function fallbackHyphenate(word) {
+        return spSyllabesFR(word);
+    }
+
+    // Filtre les syllabes proposées par le moteur d'hyphenation : on ne garde que
+    // les frontières typographiquement admissibles. Renvoie null si aucune.
+    function spFilterSyllables(word, syl) {
+        if (!syl || syl.length <= 1 || !word) return null;
+        const positions = [];
+        let p = 0;
+        for (let k = 0; k < syl.length - 1; k++) {
+            p += String(syl[k]).length;
+            positions.push(p);
+        }
+        const valides = positions.filter(function (i) { return spIsValidHyphenBoundary(word, i); });
+        if (!valides.length) return null;
+        if (valides.length === positions.length) return syl;
+        const out = [];
+        let prev = 0;
+        for (const i of valides) { out.push(word.slice(prev, i)); prev = i; }
+        out.push(word.slice(prev));
+        return out.length > 1 ? out : null;
+    }
+    // ============ FIN RÈGLES TYPOGRAPHIQUES FRANÇAISES ======================
 
     if (fabric.Textbox) {
         const spEnterWrapSession = (obj) => {
@@ -4743,11 +4863,15 @@ if (window._spGpuEnabled) {
 })();
 
         fabric.Textbox.prototype._wrapLine = function(_line, lineIndex, desiredWidth, reservedSpace) {
-            const lang = this.hyphenLanguage || currentHyphenLanguage || 'fr';
+            // 🎯 v1.7.380 — un bloc SANS langue explicite prend celle de
+            //   l'interface (avant : 'fr' figé -> césure française sur de l'anglais).
+            const lang = this.hyphenLanguage
+                || ((typeof spDefaultHyphenLanguage === 'function') ? spDefaultHyphenLanguage() : (currentHyphenLanguage || 'fr'));
             const hyphenator = (window.hyphenators && window.hyphenators[lang]) || hyphenators[lang];
 
             // Hyphenation on/off ("retour ligne par mot" quand désactivé)
-            const hyphenationEnabled = (this.enableHyphenation !== false);
+            const hyphenationEnabled = (this.enableHyphenation !== false)
+                && (!lang || lang === 'none' || spHyphenAvailableFor(lang));
 
             // ✨ CORRECTION: Utiliser la taille de police de LA LIGNE ACTUELLE, pas la taille globale
             // Cela évite que les lignes de texte normal soient mesurées avec la taille du titre
@@ -4911,6 +5035,12 @@ if (window._spGpuEnabled) {
                     if (hyphenationEnabled && !/^\s+$/.test(token)) {
                         let syllables = null;
                         try { syllables = hyphenator && hyphenator.hyphenate ? hyphenator.hyphenate(token) : null; } catch(_) {}
+                        // 🎯 v1.7.380 — FILTRE TYPOGRAPHIQUE. Le moteur propose des
+                        //   coupes fautives : ["L'", "ha", "billage"] pour
+                        //   « L'habillage » -> l'app écrivait « L'- ». On rejette toute
+                        //   frontière collée à une apostrophe d'élision ou laissant
+                        //   moins de 2 caractères d'un côté.
+                        syllables = spFilterSyllables(token, syllables);
                         if (!syllables || syllables.length <= 1) {
                             const fb = fallbackHyphenate(token);
                             if (fb) syllables = fb; else syllables = [token];
@@ -4996,6 +5126,12 @@ if (window._spGpuEnabled) {
                     if (hyphenationEnabled) {
                         let syllables = null;
                         try { syllables = hyphenator && hyphenator.hyphenate ? hyphenator.hyphenate(token) : null; } catch(_) {}
+                        // 🎯 v1.7.380 — FILTRE TYPOGRAPHIQUE. Le moteur propose des
+                        //   coupes fautives : ["L'", "ha", "billage"] pour
+                        //   « L'habillage » -> l'app écrivait « L'- ». On rejette toute
+                        //   frontière collée à une apostrophe d'élision ou laissant
+                        //   moins de 2 caractères d'un côté.
+                        syllables = spFilterSyllables(token, syllables);
                         if (!syllables || syllables.length <= 1) {
                             const fb = fallbackHyphenate(token);
                             if (fb) syllables = fb; else syllables = [token];
@@ -15991,7 +16127,7 @@ if (window._spGpuEnabled) {
         editable: true,
         breakWords: true,        // 🔒 ACTIVÉ : Couper les mots longs qui dépassent
         enableHyphenation: false, // 🔒 Mode par mot par défaut (pas de tirets automatiques)
-        hyphenLanguage: currentHyphenLanguage || 'fr',
+        hyphenLanguage: (typeof spDefaultHyphenLanguage === 'function') ? spDefaultHyphenLanguage() : (currentHyphenLanguage || 'fr'),
         lockScalingFlip: true,
         lockScalingX: false,
         lockScalingY: false,
@@ -16297,7 +16433,7 @@ if (window._spGpuEnabled) {
         editable: true,
         breakWords: true,
         enableHyphenation: false,
-        hyphenLanguage: currentHyphenLanguage || 'fr',
+        hyphenLanguage: (typeof spDefaultHyphenLanguage === 'function') ? spDefaultHyphenLanguage() : (currentHyphenLanguage || 'fr'),
         lockScalingFlip: true,
         lockScalingX: false,
         lockScalingY: false,
@@ -22202,7 +22338,7 @@ if (window._spGpuEnabled) {
             splitByGrapheme: false,  // Mode par mot
             breakWords: true,
             enableHyphenation: false, // 🔒 Mode par mot par défaut
-            hyphenLanguage: currentHyphenLanguage || 'fr',
+            hyphenLanguage: (typeof spDefaultHyphenLanguage === 'function') ? spDefaultHyphenLanguage() : (currentHyphenLanguage || 'fr'),
             lockRotation: true,
             hasBorders: true,
             stroke: '#999',
@@ -27762,7 +27898,7 @@ if (window._spGpuEnabled) {
                 obj.breakWords = true;
                 obj.splitByGrapheme = true;
                 obj.enableHyphenation = true;
-                obj.hyphenLanguage = currentHyphenLanguage || 'fr';
+                obj.hyphenLanguage = (typeof spDefaultHyphenLanguage === 'function') ? spDefaultHyphenLanguage() : (currentHyphenLanguage || 'fr');
             }
             
             // ✨ PRÉSERVER les dimensions fixes AVANT toute modification
@@ -27841,6 +27977,9 @@ if (window._spGpuEnabled) {
 
     // Changement de langue pour la césure - OPTIMISÉ
     document.getElementById('hyphenLanguage').addEventListener('change', (e) => {
+        // 🎯 v1.7.380 — l'utilisateur a choisi : la langue d'interface ne
+        //   l'écrasera plus.
+        spHyphenLangTouched = true;
         currentHyphenLanguage = e.target.value;
         const activeCanvas = getActiveCanvas();
         if (!activeCanvas) return;
@@ -36991,7 +37130,8 @@ https://superprint.app
                 //   droite n'étaient jamais césurés en mode planches.
                 if (options && options.forceHyphenation) {
                     tmpCanvas.getObjects().forEach(function (o) {
-                        if (o && o.type === 'textbox' && !o.enableHyphenation) {
+                        if (o && o.type === 'textbox' && o.enableHyphenation === undefined) {
+                            // 🎯 v1.7.380 — idem : respecter un choix explicite du bloc.
                             o.enableHyphenation = true;
                             o.hyphenLanguage = o.hyphenLanguage || (typeof currentHyphenLanguage !== 'undefined' ? currentHyphenLanguage : 'fr');
                         }
@@ -37009,7 +37149,14 @@ https://superprint.app
                 objects.forEach(function (_reObj) {
                     if (!_reObj) return;
                     if (_reObj.type === 'textbox' || _reObj.type === 'text') {
-                        if (options && options.forceHyphenation && _reObj.type === 'textbox') {
+                        if (options && options.forceHyphenation && _reObj.type === 'textbox'
+                            && _reObj.enableHyphenation === undefined) {
+                            // 🎯 v1.7.380 — FIDELITE PREVIEW : ne forcer la cesure que sur
+                            //   les blocs dont le reglage n'a jamais ete touche. Un bloc
+                            //   volontairement sans cesure (enableHyphenation === false)
+                            //   doit ressortir SANS cesure, sinon le PDF se coupe
+                            //   autrement que la preview (mesure : 3 cesures en trop,
+                            //   repartition des lignes differente).
                             _reObj.enableHyphenation = true;
                             _reObj.hyphenLanguage = _reObj.hyphenLanguage || (typeof currentHyphenLanguage !== 'undefined' ? currentHyphenLanguage : 'fr');
                         }
@@ -37305,7 +37452,14 @@ https://superprint.app
                 objects.forEach(function(_reObj) {
                     if (!_reObj) return;
                     if (_reObj.type === 'textbox' || _reObj.type === 'text') {
-                        if (options && options.forceHyphenation && _reObj.type === 'textbox') {
+                        if (options && options.forceHyphenation && _reObj.type === 'textbox'
+                            && _reObj.enableHyphenation === undefined) {
+                            // 🎯 v1.7.380 — FIDELITE PREVIEW : ne forcer la cesure que sur
+                            //   les blocs dont le reglage n'a jamais ete touche. Un bloc
+                            //   volontairement sans cesure (enableHyphenation === false)
+                            //   doit ressortir SANS cesure, sinon le PDF se coupe
+                            //   autrement que la preview (mesure : 3 cesures en trop,
+                            //   repartition des lignes differente).
                             _reObj.enableHyphenation = true;
                             _reObj.hyphenLanguage = _reObj.hyphenLanguage || (typeof currentHyphenLanguage !== 'undefined' ? currentHyphenLanguage : 'fr');
                         }
@@ -38359,6 +38513,24 @@ https://superprint.app
                     //   (gras/italique/taille mixte), on ne passe PAS par la justification
                     //   mot-à-mot (qui dessinerait tout avec la police du bloc) : on
                     //   retombe dans le char-loop ci-dessous qui respecte chaque style.
+                    // 🎯 v1.7.380 — CÉSURE, PARITÉ AVEC LA PREVIEW.
+                    //   La preview (patch enlargeSpaces) étire une ligne portant un
+                    //   tiret de césure jusqu'à (boxWidth - largeur du tiret), puis
+                    //   dessine le tiret après le dernier caractère. L'export doit
+                    //   faire PAREIL : sinon il étire jusqu'à boxWidth PLEIN et le
+                    //   tiret, posé à boxWidth - tiret, recouvre le dernier mot
+                    //   (mesuré : -4,134 pt sur « L' », « pro », « l'é »).
+                    var _spHyphenFlagsArr = obj.__spHyphenFlags || obj._spHyphenFlags;
+                    var _spHyphenFlag = !!(_spHyphenFlagsArr && _spHyphenFlagsArr[li]);
+                    var _hyphenWLocal = _measW('-') / Math.abs(sx || 1);
+                    var _spJustifyTarget = (_spHyphenFlag && _hyphenWLocal < boxWidth)
+                        ? (boxWidth - _hyphenWLocal) : boxWidth;
+
+                    // 🎯 v1.7.380 — fin RÉELLE de la ligne, renseignée par la boucle
+                    //   caractère par caractère (styles par caractère : seul moyen
+                    //   fiable, chaque caractère ayant SA police et SA taille).
+                    var _spCharLoopEnd = null;
+
                     if (_justify && !_isLastParaLine && !_lineHasCharStyles && tx.indexOf(' ') !== -1) {
                         // ── JUSTIFICATION : dessine mot à mot en élargissant les
                         //    espaces pour que la ligne remplisse exactement boxWidth.
@@ -38366,7 +38538,7 @@ https://superprint.app
                         var _nbSpaces = _words.length - 1;
                         var _wordsW = _measW(tx.replace(/ /g, ''));
                         var _spaceW = (_measW(' ') || (fontSizePt * 0.25));
-                        var _availForSpaces = Math.max(0, boxWidth - _wordsW);
+                        var _availForSpaces = Math.max(0, _spJustifyTarget - _wordsW);
                         var _extraPerSpace = _nbSpaces > 0 ? (_availForSpaces / _nbSpaces - _spaceW) : 0;
                         if (_extraPerSpace < 0) _extraPerSpace = 0;
                         // Reconstruire la position locale en px objet (unité cohérente
@@ -38386,6 +38558,13 @@ https://superprint.app
                                 _cursorL += _wordWpt / Math.abs(sx);
                             }
                         }
+                        // 🎯 v1.7.380 — la boucle mot-à-mot connaît la fin RÉELLE de la
+                        //   ligne : on l'utilise pour ancrer le tiret de césure. Sans
+                        //   cela le tiret se plaçait avec _lineWSpaced (mesure à la
+                        //   police de base), fausse dès qu'un caractère de la ligne a
+                        //   une autre police ou une autre taille — mesuré : le tiret
+                        //   sortait 63 pt AVANT la fin du texte, au milieu de la ligne.
+                        _spCharLoopEnd = _cursorL;
                     } else {
                         // ── ALIGNEMENT SIMPLE (left/center/right) + charSpacing
                         //    + STYLES PER-CARACTÈRE (gras/italique/taille/couleur).
@@ -38394,8 +38573,31 @@ https://superprint.app
                         //    (_lineHasCharStyles est déclaré avant le if justification.)
                         var _useCharLoop = (tx.length > 1) && (_charSpacingVal !== 0 || _lineHasCharStyles);
                         if (_useCharLoop) {
-                            var _cursorC = xStart;
+                            // 🎯 v1.7.380 — 1ʳᵉ PASSE : largeur RÉELLE de la ligne,
+                            //   chaque caractère mesuré avec SA police et SA taille.
+                            //   Sans cette mesure, une ligne à styles per-char sortait à
+                            //   sa largeur naturelle (jamais justifiée) et le tiret de
+                            //   césure tombait au milieu de la ligne.
                             var _spacingStep = _charSpacingPt / Math.abs(sx);
+                            var _natW = 0;
+                            var _nbEspaces = 0;
+                            for (var _pi = 0; _pi < tx.length; _pi++) {
+                                var _pch = tx.charAt(_pi);
+                                if (_pch === ' ') _nbEspaces++;
+                                var _pst = _resolveCharStyle(_pi);
+                                var _pfnt = (_pst && _pst.font) ? _pst.font : ef;
+                                var _psz = (_pst && _pst.sizePt) ? _pst.sizePt : fontSizePt;
+                                _natW += _measW(_pch, _pfnt, _psz) / Math.abs(sx);
+                                if (_pi < tx.length - 1) _natW += _spacingStep;
+                            }
+                            // 2ᵉ PASSE : justification si la ligne est pleine.
+                            var _justifyCharLine = _justify && !_isLastParaLine && _nbEspaces > 0;
+                            var _extraSp = 0;
+                            if (_justifyCharLine) {
+                                var _availC = _spJustifyTarget - _natW;
+                                if (_availC > 0) _extraSp = _availC / _nbEspaces;
+                            }
+                            var _cursorC = xStart;
                             for (var _ci = 0; _ci < tx.length; _ci++) {
                                 var _ch = tx.charAt(_ci);
                                 // Style effectif du caractère (si per-char) — toujours
@@ -38408,10 +38610,16 @@ https://superprint.app
                                 if (_ch !== ' ') {
                                     _drawTextRun(_ch, _cursorC, _stRes);
                                     _textDecorationRuns.push({ from: _cursorC, to: _cursorC + _chW, kind: 'base' });
+                                } else if (_extraSp > 0) {
+                                    // 🎯 l'espace de justification est porté par le
+                                    //   caractère espace (comportement enlargeSpaces).
+                                    _chW += _extraSp;
                                 }
                                 _cursorC += _chW;
                                 if (_ci < tx.length - 1) _cursorC += _spacingStep;
                             }
+                            // 🎯 v1.7.380 — même ancrage côté boucle caractère.
+                            _spCharLoopEnd = (_spacingStep !== 0) ? (_cursorC - _spacingStep) : _cursorC;
                         } else {
                             var ptPos = localToPagePt(xStart, baselineY_local);
                             var drawX = ptPos.x;
@@ -38448,18 +38656,33 @@ https://superprint.app
                     //   fin de la ligne. L'export vectoriel les ignorait → le mot coupé
                     //   perdait son « - ». On redessine le tiret à la fin de la ligne,
                     //   exactement comme la preview (à droite du dernier caractère).
-                    var _spHyphenFlagsArr = obj.__spHyphenFlags || obj._spHyphenFlags;
-                    var _spHyphenFlag = !!(_spHyphenFlagsArr && _spHyphenFlagsArr[li]);
                     if (_spHyphenFlag) {
-                        // Le tiret se place à la fin de la ligne : pour une ligne
-                        //   JUSTIFIÉE, la preview réduit la largeur cible de la
-                        //   justification de la largeur du tiret → le tiret colle au
-                        //   bord droit (boxWidth - tiret). Sinon, à la fin naturelle.
-                        var _hyphenWLocal = _measW('-') / Math.abs(sx || 1);
-                        var _spLineWasJustified = _justify && !_isLastParaLine && !_lineHasCharStyles && tx.indexOf(' ') !== -1;
-                        var _hyphenLocalX = _spLineWasJustified
-                            ? (xStart + boxWidth - _hyphenWLocal)
-                            : (xStart + _lineWSpaced);
+                        // 🎯 v1.7.380 — formule IDENTIQUE à la preview :
+                        //   finDeLigne = lineW, reculée dans le bloc si nécessaire ;
+                        //   pour une ligne JUSTIFIÉE, la justification s'est arrêtée
+                        //   à _spJustifyTarget, donc le dernier caractère y finit.
+                        // 🎯 v1.7.380 — une ligne à styles per-char EST justifiée par la
+                        //   boucle caractère (l'espace distribué dans _extraSp) : elle ne
+                        //   doit donc plus être exclue du calcul de la fin de ligne.
+                        var _spLineWasJustified = _justify && !_isLastParaLine && tx.indexOf(' ') !== -1;
+                        var _hyphLineEnd;
+                        if (_spCharLoopEnd !== null && isFinite(_spCharLoopEnd)) {
+                            // 🎯 v1.7.380 — ligne dessinée caractère par caractère :
+                            //   on s'ancre sur la fin RÉELLEMENT dessinée. La mesure à
+                            //   la police de base (_lineWSpaced) est fausse dès qu'un
+                            //   caractère a une autre taille ou une autre police, ce qui
+                            //   plaçait le tiret AU MILIEU de la ligne (mesuré).
+                            _hyphLineEnd = _spCharLoopEnd - xStart;
+                        } else if (_spLineWasJustified) {
+                            _hyphLineEnd = _spJustifyTarget;
+                        } else {
+                            _hyphLineEnd = _lineWSpaced;
+                            if (boxWidth > 0 && _hyphLineEnd + _hyphenWLocal > boxWidth) {
+                                _hyphLineEnd = boxWidth - _hyphenWLocal;
+                            }
+                        }
+                        var _hyphenLocalX = xStart + _hyphLineEnd;
+                        if (_hyphenLocalX < 0) _hyphenLocalX = 0;
                         try {
                             _drawTextRun('-', _hyphenLocalX, null);
                             _textDecorationRuns.push({ from: _hyphenLocalX, to: _hyphenLocalX + _hyphenWLocal, kind: 'base' });
@@ -41481,6 +41704,13 @@ https://superprint.app
                     //   l'espace excédentaire entre les espaces (PAO standard).
                     const _isJLast = _spJIsParaLastLine(i);
                     const _justifyThisLine = _spJIsJustify && !_isJLast && text.indexOf(' ') !== -1 && lineW < boxWidth - 0.5;
+                    // 🎯 v1.7.380 — CÉSURE : même cible que la preview (cause racine
+                    //   identique au chemin pdf-lib).
+                    const _spJHyphenFlag = !!((obj.__spHyphenFlags && obj.__spHyphenFlags[i]) ||
+                                              (obj._spHyphenFlags && obj._spHyphenFlags[i]));
+                    const _hyphenWJ = _spJWordW('-');
+                    const _spJustifyTargetJ = (_spJHyphenFlag && _hyphenWJ < boxWidth)
+                        ? (boxWidth - _hyphenWJ) : boxWidth;
                     let xStart;
                     if (align === 'center') xStart = (boxWidth - lineW) / 2;
                     else if (align === 'right') xStart = boxWidth - lineW;
@@ -41505,7 +41735,7 @@ https://superprint.app
                         let _wordsW = 0;
                         for (let _wi2 = 0; _wi2 < _words.length; _wi2++) if (_words[_wi2]) _wordsW += _spJWordW(_words[_wi2]);
                         const _spaceW = (_spJWordW(' ') || (fontSize * 0.25));
-                        const _availForSpaces = Math.max(0, boxWidth - _wordsW);
+                        const _availForSpaces = Math.max(0, _spJustifyTargetJ - _wordsW);
                         const _extraPerSpace = _nbSpaces > 0 ? (_availForSpaces / _nbSpaces - _spaceW) : 0;
                         _segments = [];
                         let _cur = 0; // position locale (unité em, même échelle que lineW/boxWidth)
@@ -41526,18 +41756,35 @@ https://superprint.app
                     //   preview (à droite du dernier caractère ; pour une ligne justifiée
                     //   la preview réduit la cible de la largeur du tiret → tiret au
                     //   bord droit).
-                    if (obj.__spHyphenFlags && obj.__spHyphenFlags[i]) {
-                        const _hyphenWJ = _spJWordW('-');
-                        const _hyphenLocalXJ = _justifyThisLine
-                            ? (xStart + boxWidth - _hyphenWJ)
-                            : (xStart + lineW);
-                        _segments.push({ t: '-', localX: _hyphenLocalXJ });
-                    } else if (obj._spHyphenFlags && obj._spHyphenFlags[i]) {
-                        const _hyphenWJ2 = _spJWordW('-');
-                        const _hyphenLocalXJ2 = _justifyThisLine
-                            ? (xStart + boxWidth - _hyphenWJ2)
-                            : (xStart + lineW);
-                        _segments.push({ t: '-', localX: _hyphenLocalXJ2 });
+                    // 🎯 v1.7.380 — CÉSURE, OPTION B (tiret visible, non extractible)
+                    //   ET correction du CHEVAUCHEMENT.
+                    //
+                    //   AVANT : le tiret était posé à boxWidth - hyphenW quand la
+                    //   ligne est justifiée. Or le dernier mot finit DÉJÀ à boxWidth :
+                    //   le tiret se retrouvait 4,33 pt EN ARRIÈRE, au milieu du mot
+                    //   (mesuré : « L' » finit à 451,301, tiret à 447,167 →
+                    //   recouvrement de 4,134 pt ; idem « pro » et « l'é »).
+                    //
+                    //   MAINTENANT : le tiret est posé APRÈS le dernier caractère de
+                    //   la ligne, exactement comme la preview (qui mesure 380,00 pile).
+                    //   Il est dessiné À PART (voir plus bas), hors de _segments et
+                    //   hors de _spPdfTexts : VISIBLE sur la page, ABSENT du texte
+                    //   sélectionnable.
+                    var _spHyphenToDraw = null;
+                    if (_spJHyphenFlag) {
+                        // 🎯 v1.7.380 — le tiret se colle au dernier caractère
+                        //   (même formule que la preview et que le chemin pdf-lib).
+                        var _hyphenAnchor;
+                        if (_justifyThisLine) {
+                            _hyphenAnchor = _spJustifyTargetJ;
+                        } else {
+                            _hyphenAnchor = lineW;
+                            if (boxWidth > 0 && _hyphenAnchor + _hyphenWJ > boxWidth) {
+                                _hyphenAnchor = boxWidth - _hyphenWJ;
+                            }
+                        }
+                        if (_hyphenAnchor < 0) _hyphenAnchor = 0;
+                        _spHyphenToDraw = { x: xStart + _hyphenAnchor };
                     }
 
                     // Dessiner chaque segment (mot ou ligne) à sa position locale.
@@ -41553,6 +41800,16 @@ https://superprint.app
                             }
                         }
                         if (_skipCollect) continue;
+                        // 🎯 v1.7.380 — TIRET DE CÉSURE (option B) : tracé UNIQUEMENT
+                        //   pour l'image, APRÈS le dernier mot, et volontairement
+                        //   EXCLU de _spPdfTexts. Visible sur la page, invisible à la
+                        //   copie du texte. Une seule fois, après la boucle.
+                        if (_spHyphenToDraw && _si === _segments.length - 1) {
+                            try {
+                                const [_hxMm, _hyMm] = localToMm(_spHyphenToDraw.x, baselineY_local);
+                                if (!_collectOnly) pdf.text('-', _hxMm, _hyMm);
+                            } catch (_) {}
+                        }
                         try {
                             if (!window._spPdfTexts) window._spPdfTexts = [];
                             if (!window._spPdfFonts) window._spPdfFonts = {};
@@ -52221,6 +52478,15 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     currentLanguage = lang;
     localStorage.setItem('sp_lang', lang);
     document.documentElement.lang = lang;
+    // 🎯 v1.7.380 — la CÉSURE suit la langue de l'INTERFACE tant que
+    //   l'utilisateur n'a pas explicitement choisi une langue de césure.
+    try {
+        if (!spHyphenLangTouched) {
+            currentHyphenLanguage = spHyphenLangForUI(lang);
+            const _sel = document.getElementById('hyphenLanguage');
+            if (_sel) _sel.value = currentHyphenLanguage;
+        }
+    } catch (_) {}
     updateInterface();
     // Adapter unités et suffixes pour les labels de dimensions de page
     const wLabel = document.getElementById('labelPageW');
