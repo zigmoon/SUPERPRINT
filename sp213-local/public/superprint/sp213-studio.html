@@ -5909,9 +5909,15 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
     const validColor = value => typeof value === 'string' && (/^#[0-9a-f]{3,8}$/i.test(value) || value.toLowerCase() === 'transparent');
     const bleed = clamp(finite(state.bleed, 3), 0, 20);
+    // 🆕 v1.7.385 — SURFACE RÉELLE : en double page la planche fait 2 × pageW et
+    //   la page de DROITE commence à pageW. Borner à state.pageW ramenait TOUT
+    //   left > 210 à 210 → les blocs de la page de droite étaient écrasés à
+    //   quelques mm de large et tassés contre la pliure (mesure : left 555,9 px,
+    //   width 13,9 px, au lieu de 501,7 px de large).
+    const surfW = (state.viewMode === 'spread') ? (state.pageW * 2) : state.pageW;
     const minX = clone.type === 'text' ? 0 : -bleed;
     const minY = clone.type === 'text' ? 0 : -bleed;
-    clone.left = clamp(finite(clone.left, 0), minX, state.pageW);
+    clone.left = clamp(finite(clone.left, 0), minX, surfW);
     clone.top = clamp(finite(clone.top, 0), minY, state.pageH);
     clone.opacity = clamp(finite(clone.opacity, 1), 0, 1);
 
@@ -5923,8 +5929,8 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     });
 
     if (clone.type === 'line') {
-      clone.x1 = clamp(finite(clone.x1, 0), -bleed, state.pageW + bleed);
-      clone.x2 = clamp(finite(clone.x2, state.pageW), -bleed, state.pageW + bleed);
+      clone.x1 = clamp(finite(clone.x1, 0), -bleed, surfW + bleed);
+      clone.x2 = clamp(finite(clone.x2, state.pageW), -bleed, surfW + bleed);
       clone.y1 = clamp(finite(clone.y1, 0), -bleed, state.pageH + bleed);
       clone.y2 = clamp(finite(clone.y2, 0), -bleed, state.pageH + bleed);
       clone.stroke = validColor(clone.stroke) ? clone.stroke : '#000000';
@@ -5939,7 +5945,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       clone.rx = clamp(finite(clone.rx, 30), 0.5, state.pageW + bleed);
       clone.ry = clamp(finite(clone.ry, 20), 0.5, state.pageH + bleed);
     } else {
-      clone.width = clamp(finite(clone.width, clone.type === 'text' ? state.pageW - clone.left : 50), 0.5, state.pageW + (bleed * 2));
+      clone.width = clamp(finite(clone.width, clone.type === 'text' ? Math.max(20, surfW - clone.left) : 50), 0.5, surfW + (bleed * 2));
       clone.height = clamp(finite(clone.height, clone.type === 'image' ? clone.width : 50), 0.5, state.pageH + (bleed * 2));
     }
 
@@ -5949,31 +5955,44 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       const rawLeft = finite(clone.left, 15);
       const rawW = finite(clone.width, 0);
       const pageNarrow = pageWmm < 160;
+      // 🆕 v1.7.385 — REPERE DE PAGE EN PLANCHES (correction de la page de DROITE).
+      //   Sur une planche la page de droite commence a pageWmm : un bloc pose a
+      //   left 231 / width 174 (mesure IA) etait traite comme un bloc de page simple
+      //   et ressortait a left 195 / width 5 mm — une colonne d'un caractere collee a
+      //   la pliure, la page de droite paraissait vide. On raisonne desormais dans le
+      //   repere de LA PAGE qui contient le bloc, puis on restitue son origine.
+      const _spreadMode = (state.viewMode === 'spread');
+      //   ⚠️ Un bloc large comme la planche ENTIERE (titre pleine largeur) a son
+      //   centre sur la pliure : on ne le classe PAS « page de droite », sinon
+      //   l'origine 210 lui serait ajoutee et le pousserait hors planche.
+      const _surPageDroite = _spreadMode && rawW < pageWmm && ((rawLeft + rawW / 2) >= pageWmm);
+      const _origine = _surPageDroite ? pageWmm : 0;
+      let relLeft = rawLeft - _origine;
       // 🆕 Garde-fou « format » : si l'IA a posé un texte en pensant à une page PLUS LARGE
       // que le format courant (réflexe A4 sur un format étroit — l'utilisateur voit alors
       // des blocs décalés / qui débordent à droite), on ramène le bloc dans la zone lisible
       // au lieu de l'écraser (avant : un tel texte finissait en fine colonne illisible au bord).
       // « Pensé pour A4 » = left dans la moitié droite d'un A4 (≥105) OU largeur conçue pour
       // une page ≥ 210 OU débordement massif (> 40 mm au-delà du format courant).
-      const pensePourA4 = rawLeft >= 105 || rawW >= pageWmm + 20 || (rawLeft + rawW) > pageWmm + 40;
+      const pensePourA4 = relLeft >= 105 || rawW >= pageWmm + 20 || (relLeft + rawW) > pageWmm + 40;
       let w;
       if (pensePourA4 && pageNarrow) {
         // Recentrer : left à la marge, largeur plafonnée à la zone utile (marge droite 15).
-        clone.left = margin;
+        relLeft = margin;
         const utile = Math.max(5, pageWmm - margin - margin);
         w = Math.min(finite(clone.width, utile), utile);
-        clone.width = Math.round(clamp(w, 5, Math.max(5, pageWmm - clone.left - 10)) * 10) / 10;
+        clone.width = Math.round(clamp(w, 5, Math.max(5, pageWmm - relLeft - 10)) * 10) / 10;
       } else {
         // Comportement historique (A4 et formats confortables) : on évite seulement le
         // débordement à droite (left + width ≤ pageW). On n'impose pas de marge.
-        if (rawLeft > pageWmm - margin - 2 && rawW < 40 && rawW > 0) {
-          clone.left = Math.max(0, pageWmm - margin - Math.max(10, rawW)); // texte écrasé au bord → ramener dans la marge
+        if (relLeft > pageWmm - margin - 2 && rawW < 40 && rawW > 0) {
+          relLeft = Math.max(0, pageWmm - margin - Math.max(10, rawW)); // texte écrasé au bord → ramener dans la marge
         }
-        const maxW = Math.max(5, pageWmm - clone.left);
+        const maxW = Math.max(5, pageWmm - relLeft);
         w = Math.min(finite(clone.width, maxW), maxW);
         clone.width = Math.round(clamp(w, 5, maxW) * 10) / 10;
       }
-      clone.left = Math.round(clamp(clone.left, 0, Math.max(0, pageWmm - margin)) * 10) / 10;
+      clone.left = Math.round((clamp(relLeft, 0, Math.max(0, pageWmm - margin)) + _origine) * 10) / 10;
       clone.text = String(clone.text || '').slice(0, 12000);
       clone.fontSize = clamp(finite(clone.fontSize, 14), 8, 240);
       clone.fontFamily = normalizeFontFamily(clone.fontFamily) || 'Open Sans';
