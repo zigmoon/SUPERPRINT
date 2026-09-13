@@ -28957,6 +28957,11 @@ if (window._spGpuEnabled) {
         const wo = wordOpts || {};
         const margeMm = (typeof wo.margin === 'number') ? wo.margin : 15;
         const margePx = mmToPx(margeMm);
+        // v1.7.390 — les 4 options qui etaient MORTES sont desormais lues ici.
+        const bodyPt = (typeof wo.bodyPt === 'number') ? wo.bodyPt : 14;
+        const titres = (wo.titres === undefined) ? true : !!wo.titres;
+        const imgWidthMm = (typeof wo.imgWidth === 'number') ? wo.imgWidth : 120;
+        const imgReelle = (wo.imgReelle === undefined) ? true : !!wo.imgReelle;
         const safe = {
             left: bleedPx + margePx,
             top: bleedPx + margePx,
@@ -29062,32 +29067,43 @@ if (window._spGpuEnabled) {
                 await new Promise((resolve) => {
                     fabric.Image.fromURL(block.src, (img) => {
                         try {
-                            const maxW = colWidth;
-                            const scale = Math.min(1, maxW / img.width);
+                            // v1.7.390 — « Largeur image max » (mm) et « taille reelle » pilotees.
+                            const maxW = Math.min(colWidth * columns, mmToPx(imgWidthMm));
+                            // « Images a leur taille reelle » : on n'agrandit jamais au-dela
+                            // de la source, mais on peut reduire pour tenir dans la colonne.
+                            const scalePlafond = imgReelle ? 1 : Math.min(1, maxW / img.width);
+                            const scale = Math.min(scalePlafond, maxW / img.width);
+                            const w = img.width * scale;
                             const h = img.height * scale;
                             const remaining = safe.bottom - cursorY;
                             if (h > remaining) {
                                 if (!gotoNextColumn()) { newPage(); }
                             }
-                            img.set({ left: currentX(), top: cursorY, scaleX: scale, scaleY: scale, selectable: true });
+                            // Centrer l'image dans la colonne si elle est plus etroite
+                            const xImg = currentX() + Math.max(0, (colWidth - w) / 2);
+                            img.set({ left: xImg, top: cursorY, scaleX: scale, scaleY: scale, selectable: true });
                             serializeAndStore(img);
-                            cursorY += h + 10;
+                            cursorY += h + gap;
                             resolve();
                         } catch (e) { console.error('IMG place error', e); resolve(); }
                     }, { crossOrigin: 'anonymous' });
                 });
                 continue;
             }
-            let fontSize = 14, isBold = false, isItalic = false, textAlign = 'left';
+            // v1.7.390 — « Corps du texte » (pt) et « Conserver les titres en grand »
+            //   pilotaient RIEN : ces tailles etaient CODEES EN DUR (14 / 42 / 32 / 24 / 12).
+            //   Desormais tout derive de bodyPt, et les titres sont ramenes au corps
+            //   (gras) si l'utilisateur decoche la hierarchie Word.
+            let fontSize = bodyPt, isBold = false, isItalic = false, textAlign = 'left';
             if (block.kind === 'text') {
-                if (block.tag === 'h1') { fontSize = 42; isBold = true; }
-                else if (block.tag === 'h2') { fontSize = 32; isBold = true; }
-                else if (block.tag === 'h3') { fontSize = 24; isBold = true; }
-                else { fontSize = 14; isBold = !!block.isBold; isItalic = !!block.isItalic; textAlign = 'justify'; }
+                if (block.tag === 'h1') { fontSize = titres ? Math.round(bodyPt * 3) : bodyPt; isBold = true; }
+                else if (block.tag === 'h2') { fontSize = titres ? Math.round(bodyPt * 2.28) : bodyPt; isBold = true; }
+                else if (block.tag === 'h3') { fontSize = titres ? Math.round(bodyPt * 1.7) : bodyPt; isBold = true; }
+                else { fontSize = bodyPt; isBold = !!block.isBold; isItalic = !!block.isItalic; textAlign = 'justify'; }
             } else if (block.kind === 'list-item') {
-                fontSize = 14; isItalic = !!block.isItalic; textAlign = 'left';
+                fontSize = bodyPt; isItalic = !!block.isItalic; textAlign = 'left';
             } else if (block.kind === 'table') {
-                fontSize = 12; textAlign = 'left';
+                fontSize = Math.max(6, Math.round(bodyPt * 0.86)); textAlign = 'left';
             }
             const fontStyleVal = isItalic ? 'italic' : '';
             let remaining = safe.bottom - cursorY;
@@ -29211,36 +29227,53 @@ if (window._spGpuEnabled) {
 
     if (importDocxBtn && importDocxInput) {
         importDocxBtn.addEventListener('click', () => importDocxInput.click());
+        // 🆕 v1.7.390 — PIPELINE D'IMPORT WORD UNIQUE ET REUTILISABLE.
+        //   Le bouton de la modale Importer et le DEPOT d'un fichier .doc/.docx
+        //   passent desormais par la MEME fonction : meme pop-in d'options, meme
+        //   choix de page d'insertion, meme extraction des images (mammoth.images.inline).
+        //   Avant, seul le bouton savait le faire : un Word depose dans la page (ou
+        //   dans la boite de prompt IA) n'etait pas reconnu.
+        function importDocxFile(file, wordOpts) {
+            const opts = wordOpts;
+            return askInsertAtPage().then(startPage => {
+                if (startPage === null) return null;            // annule
+                return new Promise((resolve) => {
+                    ensureDocxLibs(() => {
+                        if (!window.mammoth) { alert(translate('alertMammothNotAvailable')); resolve(null); return; }
+                        const reader = new FileReader();
+                        reader.onload = function(ev) {
+                            const arrayBuffer = ev.target.result;
+                            const options = {
+                                convertImage: window.mammoth.images.inline(function(element) {
+                                    return element.read("base64").then(function(imageBuffer) {
+                                        return { src: "data:" + element.contentType + ";base64," + imageBuffer };
+                                    });
+                                })
+                            };
+                            mammoth.convertToHtml({ arrayBuffer }, options)
+                                .then(result => { flowHtmlIntoPages(result.value, startPage, opts); resolve(true); })
+                                .catch(err => { console.error('DOCX import error', err); alert(translatef('alertDocxImportError', err.message || err)); resolve(null); });
+                        };
+                        reader.readAsArrayBuffer(file);
+                    });
+                });
+            });
+        }
+        // Point d'entree complet : pop-in d'options PUIS import.
+        function lancerImportWord(file) {
+            return askWordOptions().then(function (wordOpts) {
+                if (!wordOpts) return null;                     // annule par l'utilisateur
+                return importDocxFile(file, wordOpts);
+            });
+        }
+        window._spImportDocxFile = importDocxFile;
+        window._spLancerImportWord = lancerImportWord;
+
         importDocxInput.addEventListener('change', (e) => {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
             importModal.style.display = 'none';
-            // 🆕 v1.7.389 — la pop-in d'options s'intercale avant l'import.
-            askWordOptions().then(function (wordOpts) {
-            if (!wordOpts) return;                              // annule par l'utilisateur
-            askInsertAtPage().then(startPage => {
-                if (startPage === null) return; // annulé
-                ensureDocxLibs(() => {
-                    if (!window.mammoth) { alert(translate('alertMammothNotAvailable')); return; }
-                    const reader = new FileReader();
-                    reader.onload = function(ev) {
-                        const arrayBuffer = ev.target.result;
-                        const options = {
-                            convertImage: window.mammoth.images.inline(function(element) {
-                                return element.read("base64").then(function(imageBuffer) {
-                                    return { src: "data:" + element.contentType + ";base64," + imageBuffer };
-                                });
-                            })
-                        };
-                        mammoth.convertToHtml({ arrayBuffer }, options)
-                            .then(result => flowHtmlIntoPages(result.value, startPage, wordOpts))
-                            .catch(err => { console.error('DOCX import error', err); alert(translatef('alertDocxImportError', err.message || err)); });
-                    };
-                    reader.readAsArrayBuffer(file);
-                });
-            });
-            });   // fin askWordOptions().then
-            e.target.value = '';
+            lancerImportWord(file).finally(function () { e.target.value = ''; });
         });
     }
 
