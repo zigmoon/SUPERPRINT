@@ -4034,7 +4034,54 @@ if (window._spGpuEnabled) {
   // Largeur minimale sous laquelle on renonce à contraindre la ligne
   //   (voir le garde-fou dans lineWidthFor). En dessous, le moteur de wrap
   //   coupe les mots au lieu de les repousser.
-  var MIN_KEEP = 28;
+    // 🎨 v1.7.376 — POINT 6 : seuil RELEVABLE.
+    //   MIN_KEEP (28) etait un plancherabsolu : au-dessous, on renoncait.
+    //   Or le vrai danger n'est pas la largeur disponible, c'est que la boucle
+    //   de wrap tombe dans son cas « ligne vide + token trop large » et COUPE
+    //   LE MOT caractere par caractere. Une largeur etroite n'est donc
+    //   dangereuse que si aucun mot du bloc ne peut y tenir.
+    //   MIN_WORD_SAFE est un plancher de SECURITE : sous cette valeur on
+    //   renonce toujours (une ligne de 12 px est inutilisable meme si un mot
+    //   court y tient). Entre les deux on laisse passer : un mot court tiendra.
+    var MIN_KEEP = 28;
+    var MIN_WORD_SAFE = 18;
+
+    // ── DIAGNOSTIC DU RENONCEMENT (POINT 2) ────────────────────────────────
+    //   Le moteur sait POURQUOI il n'a pas contraint une ligne. Sans cela,
+    //   l'utilisateur voyait un texte passer par-dessus l'objet sans explication
+    //   et concluait « ca ne fait rien ». La pop-in lit cet etat pour l'afficher.
+    var lastDiag = null;
+    function spWrapResetDiag() { lastDiag = null; }
+    function spWrapLastDiag() { return lastDiag; }
+    window._spWrapResetDiag = spWrapResetDiag;
+    window._spWrapLastDiag = spWrapLastDiag;
+
+    // Largeur du plus long MOT d'un bloc texte (mesure via Fabric).
+    function longestWordWidth(textbox) {
+      try {
+        if (!textbox || typeof textbox.text !== 'string') return null;
+        var mots = textbox.text.split(/\s+/);
+        var max = 0;
+        for (var i = 0; i < mots.length; i++) {
+          var m = mots[i];
+          if (!m) continue;
+          var w = 0;
+          try {
+            if (typeof textbox._measureChar === 'function') {
+              // Mesure caractere par caractere : fiable, tient compte de la police.
+              for (var c = 0; c < m.length; c++) w += textbox._measureChar(m[c], 0);
+            }
+          } catch (_) { w = 0; }
+          if (!(w > 0)) {
+            // Repli prudent : largeur moyenne d'un caractere.
+            var fs = textbox.fontSize || 14;
+            w = m.length * fs * 0.52;
+          }
+          if (w > max) max = w;
+        }
+        return max > 0 ? max : null;
+      } catch (_) { return null; }
+    }
 
   function isWrapObject(o) {
     return !!(o && o._spWrapMode && o._spWrapMode !== 'none');
@@ -4245,7 +4292,39 @@ if (window._spGpuEnabled) {
     //   On préfère alors ne pas contraindre du tout : le texte peut
     //   chevaucher l'objet, mais il reste INTÉGRAL. Un habillage qui mange
     //   du texte serait pire que pas d'habillage.
-    if (!(avail > MIN_KEEP)) return fallback;
+    // 🎨 v1.7.376 — GARDE-FOU INTELLIGENT (points 2 et 6).
+    //   AVANT : des que la largeur disponible passait sous MIN_KEEP (28 px),
+    //   on renoncait EN SILENCE. Mesure en production : un objet a 4, 14 ou
+    //   24 px du bord gauche du bloc donnait 4 lignes AVANT et 4 lignes APRES
+    //   -> le texte passait par-dessus, sans aucun message. C'est la cause
+    //   principale du retour « l'habillage ne fait rien ».
+    //   MAINTENANT :
+    //     - entre MIN_WORD_SAFE et MIN_KEEP, on n'abandonne plus : on contraint
+    //       des lors qu'un mot du bloc peut tenir dans la largeur disponible ;
+    //     - et dans tous les cas de renoncement, on EXPLIQUE pourquoi (lastDiag)
+    //       pour que la pop-in puisse l'afficher a l'utilisateur.
+    var _motLePlusLong = null;
+    if (!(avail > MIN_KEEP)) {
+      var _okMot = false;
+      if (avail > MIN_WORD_SAFE) {
+        _motLePlusLong = longestWordWidth(textbox);
+        _okMot = (_motLePlusLong === null) || (_motLePlusLong <= avail);
+      }
+      if (!_okMot) {
+        // On renonce : on memorise la raison et la marge manquante.
+        var _manque = Math.ceil(MIN_KEEP - avail);
+        lastDiag = {
+          raison: 'trop_proche',
+          disponible: Math.round(avail * 10) / 10,
+          minimum: MIN_KEEP,
+          manque: _manque > 0 ? _manque : 0,
+          motLarge: _motLePlusLong === null ? null : Math.round(_motLePlusLong * 10) / 10
+        };
+        return fallback;
+      }
+      // Un mot court tient : on accepte la contrainte fine (gain reel).
+      if (!lastDiag) lastDiag = { raison: 'contrainte_fine', disponible: Math.round(avail * 10) / 10 };
+    }
     // Ne jamais depasser la largeur de repli (retraits/indent inclus).
     return Math.min(avail, fallback);
   }
@@ -4286,8 +4365,38 @@ if (window._spGpuEnabled) {
     //   Texte (bug constate : 114,6 px de zone pour 128,5 px de contenu).
     //   On ne refuse donc que le VRAI chainage : un bloc relie a un AUTRE bloc.
     if (spWrapIsTrulyChained(obj)) return false;              // chaine : le debordement va au maillon suivant
-    if (obj._isShapeClippedText) return false;                // texte DANS une forme
+    if (obj._isShapeClippedText) return false;                // texte DANS une forme : voir note ci-dessous
     if (obj._isCtxPathText || obj.path) return false;         // texte SUR/le long d'un trace
+    return true;
+  }
+
+  // 🎨 v1.7.376 — POINT 5 : HABILLAGE DU TEXTE « DANS UNE FORME ».
+  //   Un texte pose dans une forme (_isShapeClippedText) a une hauteur qui
+  //   appartient a la FORME : on ne doit donc PAS laisser spWrapSyncSize y
+  //   toucher (c'est pourquoi il renvoie false juste au-dessus, et c'est
+  //   correct). Mais cela n'empeche pas l'HABILLAGE lui-meme : re-couler les
+  //   lignes autour d'un objet interieur est licite et attendu.
+  //   Mesure avant correctif : texte de 7 lignes dans une forme, largeurs
+  //   199/198/180/192/186/204/170 -> IDENTIQUES apres activation de l'habillage
+  //   sur une image qui le recouvrait. Le texte ne s'habillait jamais.
+  //   Cette fonction re-coule donc les lignes SANS toucher aux dimensions.
+  function spWrapReflowShapeText(obj, isShapeTxt, captureW, captureH) {
+    if (!obj || obj.type !== 'textbox') return false;
+    if (!obj._isShapeClippedText) return false;
+    try {
+      // Les dimensions du CADRE sont fournies par l'appelant : elles ont ete
+      //   capturees AVANT que reflow() ne touche au bloc (sinon on memorisait
+      //   une valeur deja degradee — mesure : 125 px -> 198 px).
+      var _w = (captureW > 0) ? captureW : ((typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : obj.width);
+      var _h = (captureH > 0) ? captureH : ((typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : obj.height);
+      obj._clearCache && obj._clearCache();
+      obj.dirty = true;
+      obj.initDimensions && obj.initDimensions();
+      // Restauration : la forme fait foi pour le cadre.
+      if (typeof _w === 'number' && _w > 0) obj.width = _w;
+      if (typeof _h === 'number' && _h > 0) obj.height = _h;
+      obj.setCoords && obj.setCoords();
+    } catch (_) { return false; }
     return true;
   }
 
@@ -4499,8 +4608,29 @@ if (window._spGpuEnabled) {
       // Sans aucun obstacle il reste utile de RESTAURER les blocs deja
       // agrandis (cas du passage a « Aucun ») : on ne sort donc pas tout de suite.
       if (!hasObstacle && !(o._spWrapOrigH > 0)) continue;
-      if (isText) { try { window._spWrap.reflow(o); } catch (_) {} }
-      try { if (spWrapSyncSize(o, hasObstacle)) touched = true; } catch (_) {}
+      // ⚠️ CAPTURE AVANT TOUT RECALCUL.
+      //   Pour un texte DANS une forme, la hauteur appartient a la forme et ne
+      //   doit pas bouger, meme si l'habillage ajoute des lignes : sinon le bloc
+      //   deborde de son cadre (mesure du defaut : 125 px -> 198 px).
+      //   On memorise ici, AVANT reflow() qui ecrase deja ces valeurs.
+      var _shapeW = 0, _shapeH = 0, _isShapeTxt = false;
+      if (isText && o._isShapeClippedText) {
+        _isShapeTxt = true;
+        _shapeW = (typeof o._fixedWidth === 'number' && o._fixedWidth > 0) ? o._fixedWidth : (o.width || 0);
+        _shapeH = (typeof o._fixedHeight === 'number' && o._fixedHeight > 0) ? o._fixedHeight : (o.height || 0);
+      }
+      // 🎨 v1.7.376 — POINT 5 : EXCLURE les textes DANS une forme de reflow().
+      //   reflow() appelle initDimensions(), qui RECALCULE la hauteur a partir
+      //   du nombre de lignes. Trace mesuree :
+      //     {"etape":"height=","vers":198,"avant":125}
+      //     {"etape":"initDimensions","hAvant":125,"hApres":198}
+      //     {"etape":"initDimensions","hAvant":198,"hApres":198}
+      //   La restauration du cadre etait donc ecrasee dans la foulee. Pour ces
+      //   blocs le recalcul de hauteur n'a aucun sens (la hauteur appartient a
+      //   la forme) : on re-coule les LIGNES uniquement.
+      if (isText && !_isShapeTxt) { try { window._spWrap.reflow(o); } catch (_) {} }
+      // Textes dans une forme : re-coulage des lignes, cadre restaure.
+      try { if (spWrapReflowShapeText(o, _isShapeTxt, _shapeW, _shapeH)) touched = true; } catch (_) {}
     }
     if (touched) { try { window.saveAllPages && window.saveAllPages(); } catch (_) {} }
     try { canvas.requestRenderAll(); } catch (_) {}
@@ -70394,15 +70524,45 @@ function initObjectRightClickMenu() {
     fr: { title: 'Habillage du texte', mode: 'Habillage', none: 'Aucun', box: 'Boîte', shape: 'Contour',
           scope: 'Côtés', both: 'Tous', left: 'Gauche', right: 'Droite', offset: 'Décalage (px)',
           hint: 'Les blocs texte qui croisent cet objet se replieront autour de lui.',
-          none1: 'Aucun autre bloc texte ne croise cet objet.', ok: 'Habillage appliqué.', close: 'Fermer' },
+          none1: 'Aucun autre bloc texte ne croise cet objet.', ok: 'Habillage appliqué.', close: 'Fermer',
+          valider: 'Valider', retirer: "Retirer l'habillage",
+          // 🎨 v1.7.376 — messages de RESULTAT (points 1 et 2).
+          applique: function (nb, lignes) {
+            return '✓ Habillage appliqué — ' + nb + (nb > 1 ? ' blocs texte recoulés' : ' bloc texte recoulé') + ', ' + lignes + ' ligne' + (lignes > 1 ? 's' : '') + ' au total.';
+          },
+          tropProche: function (px) {
+            return '⚠ Sans effet : un objet est trop près du bord du texte (il manque ' + px + ' px). Rapprochez-le du texte ou déplacez le bloc texte vers la droite.';
+          },
+          aucunEffet: '⚠ Aucun bloc texte ne croise cet objet : élargissez le bloc texte ou avancez-le sur l\'objet.' },
     en: { title: 'Text wrap', mode: 'Wrap', none: 'None', box: 'Bounding box', shape: 'Contour',
           scope: 'Sides', both: 'Both', left: 'Left', right: 'Right', offset: 'Offset (px)',
           hint: 'Text frames crossing this object will reflow around it.',
-          none1: 'No other text frame crosses this object.', ok: 'Wrap applied.', close: 'Close' }
+          none1: 'No other text frame crosses this object.', ok: 'Wrap applied.', close: 'Close',
+          valider: 'Apply', retirer: 'Remove wrap',
+          applique: function (nb, lignes) {
+            return '✓ Wrap applied — ' + nb + ' text frame' + (nb > 1 ? 's' : '') + ' reflowed, ' + lignes + ' line' + (lignes > 1 ? 's' : '') + ' total.';
+          },
+          tropProche: function (px) {
+            return '⚠ No effect: an object sits too close to the text edge (' + px + ' px short). Move it closer to the text or shift the text frame right.';
+          },
+          aucunEffet: '⚠ No text frame crosses this object: widen the frame or move it onto the object.' }
   };
+  // ⚠️ SOURCE DE VERITE DE LA LANGUE.
+  //   Ne PAS se fier a la variable currentLanguage seule : elle est declaree
+  //   LOCALEMENT dans une fonction de l'app (let currentLanguage, ~ligne 51287)
+  //   et n'est donc pas visible depuis ce module — la pop-in affichait alors
+  //   systematiquement une langue qui ne correspondait pas a celle de l'app.
+  //   On lit d'abord la cle localStorage ecrite par setLanguage(), puis l'attribut
+  //   lang du document : ce sont les deux marqueurs reellement persistants.
   function L() {
     var lang = 'fr';
-    try { if (typeof currentLanguage !== 'undefined' && currentLanguage === 'en') lang = 'en'; } catch (_) {}
+    try {
+      var saved = null;
+      try { saved = localStorage.getItem('sp_lang'); } catch (_) {}
+      if (!saved) { try { saved = document.documentElement.lang; } catch (_) {} }
+      if (!saved) { try { saved = (typeof currentLanguage !== 'undefined') ? currentLanguage : null; } catch (_) {} }
+      if (saved && String(saved).toLowerCase().indexOf('en') === 0) lang = 'en';
+    } catch (_) {}
     return LABELS[lang];
   }
 
@@ -70462,6 +70622,87 @@ function initObjectRightClickMenu() {
     return false;
   }
 
+  // ── SIGNATURE DES LIGNES (fiabilite de la confirmation) ──────────────────
+  //   ⚠️ NE PAS revenir a un test du type « une ligne est plus courte que le
+  //   bloc » : la DERNIERE ligne d'un paragraphe est TOUJOURS plus courte,
+  //   meme sans habillage. Ce faux positif faisait afficher « Habillage
+  //   applique » alors que le moteur venait de RENONCER (mesure : 8 px
+  //   disponibles pour 28 requis) — soit confirmer a tort.
+  //   On compare donc une SIGNATURE avant/apres reflow : l'habillage a agi si
+  //   et seulement si les largeurs de ligne ont reellement change.
+  function signatureLignes(canvas) {
+    var parts = [];
+    try {
+      var all = canvas.getObjects();
+      for (var i = 0; i < all.length; i++) {
+        var o = all[i];
+        if (!o) continue;
+        if (!(o.type === 'textbox' || o.type === 'i-text' || o.type === 'text')) continue;
+        if (!o._textLines) continue;
+        var lw = [];
+        for (var k = 0; k < o._textLines.length; k++) {
+          var w = 0;
+          try { w = o.getLineWidth(k); } catch (_) { w = 0; }
+          lw.push(Math.round(w));
+        }
+        // Index de l'objet inclus : deux blocs identiques restent distincts.
+        parts.push(i + ':' + lw.join(','));
+      }
+    } catch (_) {}
+    return parts.join('|');
+  }
+
+  // Affiche le RESULTAT de l'application (POINT 1 : ne jamais laisser
+  //   l'utilisateur sans confirmation) et, si le moteur a renonce, la RAISON
+  //   (POINT 2).
+  // Affiche le RESULTAT. Le parametre aChange vient de la comparaison des
+  //   signatures avant/apres reflow — c'est la SEULE source de verite.
+  function majMessageResultat(aChange) {
+    if (!els.hintRoot) return;
+    var obj = state.obj, canvas = state.canvas;
+    if (!obj || !canvas) return;
+    var P = state.pal || palette();
+
+    if (state.mode === 'none') {
+      els.hintRoot.textContent = hasCrossingText(canvas, obj) ? L().hint : L().none1;
+      els.hintRoot.style.color = P.sub;
+      els.hintTone = 'sub';
+      return;
+    }
+
+    var diag = (typeof window._spWrapLastDiag === 'function') ? window._spWrapLastDiag() : null;
+
+    if (aChange) {
+      // SUCCES reel : confirmation explicite.
+      var nb = 0, lignes = 0;
+      try {
+        var all = canvas.getObjects();
+        for (var i = 0; i < all.length; i++) {
+          var o = all[i];
+          if (!o || !(o.type === 'textbox' || o.type === 'i-text' || o.type === 'text')) continue;
+          if (o._textLines && o._textLines.length) { nb++; lignes += o._textLines.length; }
+        }
+      } catch (_) {}
+      els.hintRoot.textContent = L().applique(nb, lignes);
+      els.hintRoot.style.color = '#2e8b57';
+      els.hintTone = 'ok';
+      return;
+    }
+
+    // Aucun changement : on dit POURQUOI, en priorite la cause geometrique.
+    if (diag && diag.raison === 'trop_proche') {
+      var manque = diag.manque > 0 ? diag.manque : Math.ceil((diag.minimum || 28) - (diag.disponible || 0));
+      els.hintRoot.textContent = L().tropProche(manque);
+      els.hintRoot.style.color = '#c2603a';
+      els.hintTone = 'warn';
+      return;
+    }
+
+    els.hintRoot.textContent = L().aucunEffet;
+    els.hintRoot.style.color = '#c2603a';
+    els.hintTone = 'warn';
+  }
+
   function apply() {
     if (!state.obj || !window._spWrap) return;
     var obj = state.obj;
@@ -70469,13 +70710,16 @@ function initObjectRightClickMenu() {
     else window._spWrap.setMode(obj, state.mode);
     window._spWrap.setScope(obj, state.scope);
     window._spWrap.setStandoff(obj, state.offset);
+    // Remise a zero du diagnostic AVANT le reflow : c'est le reflow qui le
+    //   renseigne s'il a du renoncer a contraindre une ligne.
+    try { if (typeof window._spWrapResetDiag === 'function') window._spWrapResetDiag(); } catch (_) {}
+    // Signature AVANT : elle seule dit si le reflow a reellement change quelque
+    //   chose (cf. la note de signatureLignes : le test « ligne plus courte »
+    //   donnait un faux positif sur la derniere ligne de chaque paragraphe).
+    var _sigAvant = signatureLignes(state.canvas);
     reflowAll(state.canvas);
-    // Le message d'aide suit l'état réel
-    if (els.hintRoot) {
-      var txt = hasCrossingText(state.canvas, obj) ? L().hint : L().none1;
-      els.hintRoot.textContent = txt;
-      els.hintRoot.style.color = state.pal.sub;
-    }
+    var _sigApres = signatureLignes(state.canvas);
+    majMessageResultat(_sigAvant !== _sigApres);
     try { if (typeof saveState === 'function') saveState('Habillage du texte'); } catch (_) {}
   }
 
@@ -70610,7 +70854,45 @@ function initObjectRightClickMenu() {
     hint.style.cssText = 'font-size:11px;line-height:1.45;color:' + P.sub + ';';
     els.hintRoot = hint;
 
-    body.appendChild(g1); body.appendChild(g2); body.appendChild(g3); body.appendChild(hint);
+    // 🎨 v1.7.376 — POINT 1 : BOUTONS EXPLICITES.
+    //   Les reglages s'appliquaient deja en direct, mais RIEN ne le confirmait :
+    //   aucun bouton Valider, et le libelle « Habillage applique » n'etait
+    //   jamais affiche. L'utilisateur ne pouvait pas distinguer un habillage
+    //   applique d'un habillage abandonne -> « ca ne fait rien ».
+    var foot = document.createElement('div');
+    foot.style.cssText = 'display:flex;gap:6px;align-items:stretch;';
+
+    var btnValider = document.createElement('button');
+    btnValider.type = 'button';
+    btnValider.textContent = L().valider;
+    btnValider.style.cssText = 'flex:1;border:0;border-radius:8px;padding:9px 10px;font-size:12px;font-weight:700;cursor:pointer;background:' + P.accent + ';color:' + P.accentText + ';';
+    btnValider.addEventListener('click', function () {
+      apply();
+      // Confirmation visible meme si l'utilisateur ferme aussitot.
+      if (els.hintRoot && els.hintTone === 'ok') {
+        try { if (typeof showToast === 'function') showToast(els.hintRoot.textContent, 2600); } catch (_) {}
+      }
+      state.dirty = false;
+      hide(true);
+    });
+    els.btnValider = btnValider;
+
+    var btnRetirer = document.createElement('button');
+    btnRetirer.type = 'button';
+    btnRetirer.textContent = L().retirer;
+    btnRetirer.style.cssText = 'border:1px solid ' + P.fieldBorder + ';border-radius:8px;padding:9px 10px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:' + P.text + ';white-space:nowrap;';
+    btnRetirer.addEventListener('click', function () {
+      state.mode = 'none';
+      refreshSeg();
+      apply();
+      state.dirty = false;
+      hide(true);
+    });
+    els.btnRetirer = btnRetirer;
+
+    foot.appendChild(btnRetirer); foot.appendChild(btnValider);
+
+    body.appendChild(g1); body.appendChild(g2); body.appendChild(g3); body.appendChild(hint); body.appendChild(foot);
     popin.appendChild(head);
     popin.appendChild(body);
     document.body.appendChild(popin);
@@ -70641,6 +70923,19 @@ function initObjectRightClickMenu() {
     els.offInput.value = String(state.offset);
     els.hintRoot.textContent = hasCrossingText(canvas, obj) ? L().hint : L().none1;
     els.hintRoot.style.color = state.pal.sub;
+    els.hintTone = 'sub';
+    state.dirty = false;
+
+    // 🎨 v1.7.376 — POINT 3 : FERMER LE MENU CONTEXTUEL.
+    //   Mesure : #spObjectCtxMenu restait affiche (display:block, z-index 10061)
+    //   PENDANT que la pop-in etait ouverte. Deux panneaux superposes a l'ecran :
+    //   l'utilisateur ne savait plus lequel reagissait a ses clics.
+    try {
+      var _m = document.getElementById('spObjectCtxMenu');
+      if (_m) _m.style.display = 'none';
+      var _b = document.getElementById('spObjectCtxBackdrop');
+      if (_b) _b.style.display = 'none';
+    } catch (_) {}
 
     refreshSeg();
     popin.style.display = 'block';
@@ -70657,6 +70952,23 @@ function initObjectRightClickMenu() {
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && popin && popin.style.display === 'block') hide(true);
   });
+
+  // 🎨 v1.7.376 — POINT 4 : PLUS DE FERMETURE SUR SCROLL.
+  //   L'ancien code faisait :
+  //     window.addEventListener('scroll', hide, true);   // capture = true
+  //   En CAPTURE, l'evenement est recu pour N'IMPORTE QUELLE zone defilante de
+  //   la page, avant toute autre gestion. Or la pop-in est en position:fixed et
+  //   n'a AUCUN besoin d'etre fermee quand on defile le document.
+  //   Sur Mac, le trackpad emet des evenements de defilement parasites
+  //   (inertie, deux doigts, rebond elastique) : la pop-in disparaissait donc
+  //   toute seule pendant que l'utilisateur la reglait. Vu du cote utilisateur,
+  //   « l'habillage ne fait rien » — il n'avait pas le temps de voir l'effet.
+  //   On ne ferme plus que sur un VRAI clic a l'exterieur de la pop-in.
+  document.addEventListener('mousedown', function (e) {
+    if (!popin || popin.style.display !== 'block') return;
+    if (popin.contains(e.target)) return;
+    hide(true);
+  }, true);
 })();
 
     const ICON = {
@@ -70825,10 +71137,18 @@ function initObjectRightClickMenu() {
         showMenu(e.clientX, e.clientY, canvas, target);
     }, true);
 
-    // Hide on Escape / scroll / resize / outside click
+    // Fermeture : Escape / redimensionnement / clic a l'exterieur (backdrop).
+    // 🎨 v1.7.376 — POINT 4 : LE SCROLL NE FERME PLUS LE MENU.
+    //   Il y avait ici : window.addEventListener('scroll', hide, true);
+    //   En CAPTURE, ce listener recevait N'IMPORTE QUEL defilement de la page.
+    //   Sur Mac, le trackpad emet des evenements de defilement parasites
+    //   (inertie, rebond elastique, deux doigts) : le menu contextuel pouvait
+    //   donc se fermer pendant ou juste apres le clic droit, AVANT que
+    //   l'utilisateur atteigne « Habillage du texte… ». C'est un facteur direct
+    //   du retour « ca ne fait rien ». Le menu est en position:fixed et reste
+    //   parfaitement lisible sans cette fermeture.
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
     window.addEventListener('resize', hide);
-    window.addEventListener('scroll', hide, true);
 }
 
 // ==================== FIN DU FICHIER ====================

@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint v1.7.375 — Zigmoon
+         SuperPrint v1.7.376 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint v1.7.375 — Zigmoon">
+    <meta name="generator" content="SuperPrint v1.7.376 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.375",
+          "softwareVersion": "1.7.376",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -387,7 +387,7 @@
          Grosse rotation créative (14 thèmes : mode, archi, art, nature morte,
          nature, ville, néon) — plus de variété, plus moderne. 900px q=45,
          ~20-85 Ko, chargement quasi instantané. En local rien n'est préchargé. -->
-    <!-- 🎨 v1.7.375 — SPLASH : IMAGES LOCALES (plus de CDN Unsplash).
+    <!-- 🎨 v1.7.376 — SPLASH : IMAGES LOCALES (plus de CDN Unsplash).
          POURQUOI CE CHANGEMENT
            L'ancienne version tirait AU HASARD une des 14 photos Unsplash
            distantes, puis la préchargeait. Trois conséquences mesurables :
@@ -1019,7 +1019,7 @@
                      AUCUNE requête réseau externe n'est déclenchée (picsum.photos
                      n'est JAMAIS dans le HTML en local). En version EN LIGNE (https),
                      le script ci-dessous remplace cette image par la photo picsum. -->
-                <!-- 🎨 v1.7.375 — image LOCALE par défaut (le script choisit
+                <!-- 🎨 v1.7.376 — image LOCALE par défaut (le script choisit
                      aléatoirement parmi SP/splash/*). Plus aucun CDN : l'image
                      est disponible hors ligne et s'affiche immédiatement. -->
                 <img id="splashImage" alt="Splash artwork" src="SP/splash/typo-01.jpg"
@@ -1027,7 +1027,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">v1.7.375</div>
+                <div class="splash-version">v1.7.376</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1048,7 +1048,7 @@
         // la colonne média (l'image est déjà LOCALE, aucune requête réseau).
         // En mode EN LIGNE (https), on remplace l'image par la photo externe.
         try {
-            // 🎨 v1.7.375 — LE SPLASH AFFICHE UNE IMAGE DANS TOUS LES CAS.
+            // 🎨 v1.7.376 — LE SPLASH AFFICHE UNE IMAGE DANS TOUS LES CAS.
             //   Avant : en local la colonne média était SUPPRIMÉE du DOM, et en
             //   ligne elle dépendait d'un CDN. Désormais l'image est locale, donc
             //   disponible partout (file://, localhost, https, hors ligne) : on
@@ -1089,7 +1089,7 @@
         //     splash dès que le DOM est prêt (+ court délai) pour être rapide.
         //   - EN LIGNE (https) : on garde le splash avec la photo → on attend
         //     l'événement load (+ 1,5 s) pour laisser l'image s'afficher, comme avant.
-        // 🎨 v1.7.375 — MINUTERIE UNIFIÉE.
+        // 🎨 v1.7.376 — MINUTERIE UNIFIÉE.
         //   Avant, le mode local et le mode en ligne avaient des durées
         //   différentes (2 s contre 3,5 s APRÈS chargement de l'image distante),
         //   et la version en ligne attendait le réseau : l'image « arrivait tard ».
@@ -1128,7 +1128,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.375</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.376</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1224,7 +1224,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.375 | 09 2026<br>
+                V 1.7.376 | 09 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1524,7 +1524,7 @@
                 <div class="input-row" style="margin-top: 12px;">
                     <div class="input-group">
                         <label id="labelPageW">L (mm)</label>
-                        <!-- 🎯 v1.7.375 — BUG 2 : les champs de dimensions étaient lus avec des
+                        <!-- 🎯 v1.7.376 — BUG 2 : les champs de dimensions étaient lus avec des
                      valeurs fractionnaires (ex. 209.9999) qui s'affichaient
                      « 0 » à l'ouverture et empêchaient d'avancer de 1 mm net.
                      step="1" + min="1" : incréments entiers, jamais 0. -->
@@ -1532,7 +1532,7 @@
                     </div>
                     <div class="input-group">
                         <label id="labelPageH">H (mm)</label>
-                        <!-- 🎯 v1.7.375 — BUG 2 : idem largeur. -->
+                        <!-- 🎯 v1.7.376 — BUG 2 : idem largeur. -->
                 <input type="number" id="pageHeight" step="1" min="1" value="297">
                     </div>
                 </div>
@@ -1799,12 +1799,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.375). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.376). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.375 — internal cache tag: JS v375 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.376 — internal cache tag: JS v376 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v375"
-                      data-sp-sw="v1.7.375">v1.7.375</span>
+                      data-sp-js="v376"
+                      data-sp-sw="v1.7.376">v1.7.376</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -2175,7 +2175,7 @@
                                 </div>
                                 <div style="margin-bottom: 16px;">
                                     <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px;">Opacité: <span id="solidOpacityValue">100%</span></label>
-                                    <!-- 🎯 v1.7.375 — BUG 1 (2ᵉ curseur d'opacité) : pas de 1 %. -->
+                                    <!-- 🎯 v1.7.376 — BUG 1 (2ᵉ curseur d'opacité) : pas de 1 %. -->
                                     <input type="range" id="solidOpacitySlider" min="0" max="100" step="1" value="100" style="width: 100%;" />
                                 </div>
                             </div>
@@ -2428,7 +2428,7 @@
                 <div class="input-row">
                     <div class="input-group">
                         <label data-translate="lineHeightLabel">Interligne (pt)</label>
-                        <!-- 🎯 v1.7.375 — BUG 3 : pas de 0,1 (l'ancien 0,5 interdisait
+                        <!-- 🎯 v1.7.376 — BUG 3 : pas de 0,1 (l'ancien 0,5 interdisait
                      d'ajuster finement l'interligne demandé par l'utilisateur). -->
                 <input type="number" id="lineHeight" min="1" max="200" value="16" step="0.1">
                     </div>
@@ -3091,12 +3091,12 @@
                 <div class="input-group">
                     <label data-translate="opacityLabel">Opacité</label>
                     <div class="inline-row" style="display: flex; align-items: center; gap: 8px;">
-                        <!-- 🎯 v1.7.375 — BUG 1 : pas de 1 %.
+                        <!-- 🎯 v1.7.376 — BUG 1 : pas de 1 %.
                      Sans step, le curseur tombait sur des valeurs fractionnaires
                      (ex. 4.6 %) : la valeur affichée sautait et la barre se plaçait
                      « au milieu » d'un cran. step="1" = 101 positions entières. -->
                 <input type="range" id="opacitySlider" min="0" max="100" step="1" value="100" style="flex: 1; height: 4px; accent-color: #1a1a1a; cursor: pointer;">
-                        <!-- 🎯 v1.7.375 — même pas de 1 pour le champ numérique jumeau. -->
+                        <!-- 🎯 v1.7.376 — même pas de 1 pour le champ numérique jumeau. -->
                 <input type="number" id="opacityValue" min="0" max="100" step="1" value="100" class="compact-input" style="width: 48px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px;">
                         <span style="font-size: 10px; opacity: 0.6;">%</span>
                     </div>
@@ -3689,7 +3689,7 @@
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
                             <div>
                                 <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 900; letter-spacing: 2px; color: #1a1a1a;">SUPER PRINT</div>
-                                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: #999; margin-top: 6px;">v1.7.375</div>
+                                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: #999; margin-top: 6px;">v1.7.376</div>
                             </div>
                             <a href="documentation.html" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: #0c0c0f; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; transition: background 0.2s;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='#0c0c0f'">
                                 <span data-translate="settingsManualBtn">Manuel &amp; Documentation</span>
@@ -3778,7 +3778,7 @@
                     </div>
 
                     <div style="text-align: center; padding-top: 16px; font-size: 10px; color: #999;">
-                        SuperPrint v1.7.375 — 12 septembre 2026
+                        SuperPrint v1.7.376 — 12 septembre 2026
                     </div>
                     <div style="padding: 12px 0 0; display: flex; gap: 12px; justify-content: flex-end;">
                         <button class="btn btn-secondary" onclick="closeSettings()">Annuler</button>
@@ -5746,13 +5746,13 @@
 
     <!-- All application logic moved to JS/main.js -->    
     <!-- External scripts -->
-    <script src="JS/patches-core.js?v=20260912-v375-marqueur" defer></script>
+    <script src="JS/patches-core.js?v=20260912-v376-text-wrap" defer></script>
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260913-v375-marqueur" defer></script>
+    <script src="JS/main.js?v=20260913-v376-text-wrap" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
-    <script src="JS/virtual-printer.js?v=20260912-v375-marqueur" defer></script>
+    <script src="JS/virtual-printer.js?v=20260912-v376-text-wrap" defer></script>
     <script src="JS/collab.js?v=20260907-v016-ux" defer></script>
     <script src="JS/pwa.js?v=20260501-no-double-splash" defer></script>
 
