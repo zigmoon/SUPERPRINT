@@ -9,6 +9,20 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.393] — 2026-09-13
+
+_Studio: “text.indexOf is not a function” when a Word document is attached_
+
+### Fixed
+- **Crash on a long Word attachment.** Reported as *“Erreur : text.indexOf is not a function”*. Root cause, measured: `spCallAI()` has two paths returning **different types** — the single call returns a **string**, the page-by-page generation returned an **object** `{ reply, pages, targetPages }`. `sendMessage()` then passed either to `parseAIResponse(text)`, which starts with `text.indexOf(...)`. On an object that is an immediate `TypeError`.
+- **The trigger explains the intermittency:** the page-by-page path only starts when the attached document exceeds **4 000 characters AND 2 pages**. A short prompt on the same Word file did not crash — which is why the bug looked erratic.
+- **Fixed at three levels** so it cannot come back: `parseAIResponse` now accepts a string **or an already-parsed object**; `spGenerateByPages` returns a **JSON string** like the other path, making both branches interchangeable and keeping the truncation marker usable; `extractJSONObject` also accepts an object.
+
+### Verified
+- A test `.docx` was built with **15 083 characters and 3 images**, forcing the page-by-page path.
+- **Before:** the error, zero pages. **After:** progress `SP213 1/6` → `5/6`, then *“Document traité intégralement : 6 pages composées à partir de vos 15083 caractères”*, `Layout: 6 page(s)`.
+- **0 unhandled JS errors, 0 alerts**, and all 6 pages really drawn (per-page pixel counts measured).
+
 ## [1.7.392] — 2026-09-13
 
 _Studio: configurable bleed, and layouts finally stop dating themselves 2025_

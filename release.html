@@ -6,7 +6,7 @@
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
 <meta name="description" content="Latest Zigmoon release notes for PDF-YZ, Bird and SuperPrint. Discover native PDF editing, local-first vector design, SuperTyPo typeface editor and SuperPrint v1.7.375 (reliable text wrap, stable AI text blocks, colour picker in RGB).">
-<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.392, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation, Word import options, body size, image width, heading hierarchy, SP213 Studio, images checkbox, photo layout, illustration photos, bleed setting, trim, print finishing, current dates">
+<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.393, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation, Word import options, body size, image width, heading hierarchy, SP213 Studio, images checkbox, photo layout, illustration photos, bleed setting, trim, print finishing, current dates, Word attachment fix, page by page generation">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="SuperPrint v1.7.392 — bleed is now a studio setting (3 mm default, up to 20 mm) and every bleed value sent to the AI derives from it. Layouts also stop dating themselves 2025.">
+<meta property="og:description" content="SuperPrint v1.7.393 — fix for the studio crash on a long Word attachment (text.indexOf is not a function), verified on a 15,083-character document producing 6 full pages.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SuperPrint v1.7.392 — configurable bleed in the studio, and layouts now use current dates instead of 2025.">
+<meta name="twitter:description" content="SuperPrint v1.7.393 — the long-Word-attachment crash in the studio is fixed and verified.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -704,6 +704,35 @@ footer, footer a { color: var(--after-text-color); }
 
 <main>
 <section class="releases" aria-label="Release notes">
+
+<!-- ===== SUPER PRINT v1.7.393 — correctif Word long en piece jointe ===== -->
+<article class="release-block" data-app="superprint" id="superprint-v1-7-393">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.393</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 13 septembre 2026" data-i18n-en="Released September 13, 2026" data-i18n-jp="2026年9月13日公開">Released September 13, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="<strong>Correctif : le studio plantait quand vous joigniez un document Word long.</strong> Le message était <em>« text.indexOf is not a function »</em> et aucune page ne se générait. La cause est identifiée, corrigée à trois niveaux, et vérifiée sur un document de 15 083 caractères." data-i18n-en-html="<strong>Fix: the studio crashed when you attached a long Word document.</strong> The message was <em>“text.indexOf is not a function”</em> and no page was generated. The cause is identified, fixed at three levels, and verified on a 15,083-character document." data-i18n-jp-html="<strong>修正：長いWord文書を添付するとスタジオがクラッシュしていました。</strong>メッセージは<em>「text.indexOf is not a function」</em>で、ページが生成されませんでした。原因を特定し、3段階で修正、15,083文字の文書で検証済みです。">Fix: crash when attaching a long Word document.</p>
+
+ <h3>🔍 Une erreur incompréhensible… due à deux formats incompatibles <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Le studio a deux façons de composer.</strong> Sur un texte court, il demande toute la maquette en un seul appel — et reçoit du <strong>texte</strong>. Sur un document long, il compose <strong>page par page</strong> — et recevait un <strong>objet</strong>. Or le code qui traite la réponse attendait toujours du texte : sur un objet, il s'arrêtait net." data-i18n-en-html="<strong>The studio composes in two ways.</strong> For a short text it asks for the whole layout in one call — and gets back <strong>text</strong>. For a long document it composes <strong>page by page</strong> — and received an <strong>object</strong>. But the code handling the response always expected text: given an object, it stopped dead." data-i18n-jp-html="<strong>スタジオには2つの組版方法があります。</strong>短いテキストでは全体を1回の呼び出しで依頼し、<strong>文字列</strong>を受け取ります。長い文書では<strong>ページ単位</strong>で構成し、<strong>オブジェクト</strong>を受け取っていました。しかし応答を処理するコードは常に文字列を想定していたため、オブジェクトでは即座に停止していました。">Two paths, two incompatible return types.</li>
+  <li data-i18n-fr-html="<strong>D'où l'intermittence :</strong> le mode page par page ne se déclenche qu'au-delà de <strong>4 000 caractères et 2 pages</strong> dans la pièce jointe. Le même Word avec un prompt court ne plantait donc pas — ce qui rendait le défaut très difficile à cerner." data-i18n-en-html="<strong>Hence the intermittency:</strong> page-by-page mode only starts past <strong>4,000 characters and 2 pages</strong> in the attachment. The same Word file did not crash with a short prompt — which made the defect very hard to pin down." data-i18n-jp-html="<strong>これが断続的な原因でした：</strong>ページ単位モードは添付が<strong>4,000文字かつ2ページ</strong>を超えた場合のみ作動します。同じWord文書でも短いプロンプトではクラッシュしなかったため、特定が困難でした。">The page-by-page mode only starts past 4,000 characters.</li>
+ </ul>
+
+ <h3>🛡️ Corrigé à trois niveaux <span class="badge badge-new">verified</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Le traitement des réponses accepte désormais <strong>du texte comme un objet déjà lu</strong> : le plantage devient impossible, quel que soit l'appel. Et la génération page par page renvoie maintenant le <strong>même format</strong> que l'autre chemin — les deux sont interchangeables." data-i18n-en-html="Response handling now accepts <strong>text or an already-parsed object</strong>, so the crash is impossible whatever the caller. And page-by-page generation now returns the <strong>same format</strong> as the other path — the two are interchangeable." data-i18n-jp-html="応答処理は<strong>文字列または解析済みオブジェクト</strong>を受け付けるようになり、どの呼び出しでもクラッシュしません。ページ単位生成ももう一方と同じ<strong>形式</strong>を返すようになり、両者は互換です。">Both paths now return the same format.</li>
+  <li data-i18n-fr-html="<strong>Vérifié sur un document de 15 083 caractères et 3 images</strong>, soit exactement la configuration qui échouait. Avant : l'erreur, aucune page. Après : la progression « 1/6 … 5/6 », puis <strong>6 pages composées</strong>, toutes réellement dessinées (vérifié page par page). Zéro erreur, zéro alerte." data-i18n-en-html="<strong>Verified on a 15,083-character document with 3 images</strong> — exactly the configuration that failed. Before: the error, no page. After: progress “1/6 … 5/6”, then <strong>6 composed pages</strong>, all genuinely drawn (checked page by page). Zero errors, zero alerts." data-i18n-jp-html="<strong>15,083文字・画像3点の文書で検証</strong>（まさに失敗していた構成）。修正前：エラー、ページなし。修正後：「1/6 … 5/6」の進捗ののち<strong>6ページを構成</strong>、すべて実際に描画（ページごとに確認）。エラーゼロ、警告ゼロ。">Verified on 15,083 characters with 3 images.</li>
+ </ul>
+
+ <p data-i18n-fr="Studio 1.7.393 — correctif du blocage sur document Word long, vérifié par reproduction du défaut puis génération complète, dans le paquet distribué." data-i18n-en="Studio 1.7.393 — fix for the long-Word-document hang, verified by reproducing the defect and then generating the full document, inside the distributed package." data-i18n-jp="スタジオ 1.7.393 — 長いWord文書での停止を修正。不具合を再現したうえで完全な生成を確認し、配布パッケージ内でも検証済みです。">Verified by reproducing the defect, then generating the full document.</p>
+ <a class="release-cta" href="https://superprint.cc/sp213-studio.html" data-i18n-fr="→ Ouvrir le studio SP213" data-i18n-en="→ Open SP213 Studio" data-i18n-jp="→ SP213スタジオを開く">→ Open SP213 Studio</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
 
 <!-- ===== SUPER PRINT v1.7.392 — fond perdu reglable + dates ===== -->
 <article class="release-block" data-app="superprint" id="superprint-v1-7-392">
