@@ -6,8 +6,8 @@
 
 <!-- ═══ SEO / GEO / AEO — SuperPrint Landing ═══ -->
 <title>SuperPrint — Online DTP Software + SP213 AI Studio | Logiciel PAO en ligne | オンラインDTP</title>
-<meta name="description" content="SuperPrint: professional browser-based DTP + SP213 AI layout studio. Multi-page layout, print-ready PDF export, advanced typography. No install, no subscription. English, French, Japanese.">
-<meta name="keywords" content="online DTP software, browser desktop publishing, print layout web app, print-ready PDF export, advanced web typography, hyphenation, SP213 AI studio, AI layout generator, no-install DTP, PWA DTP, logiciel PAO en ligne, mise en page navigateur, オンラインDTP, 印刷レイアウト, SuperPrint Zigmoon">
+<meta name="description" content="SuperPrint: professional browser-based DTP + SP213 AI layout studio. Pantone spot inks separated into named PDF channels (ISO 32000-2), Word &amp; IDML import, text wrap, print-ready CMYK export, advanced typography. No install, no subscription. English, French, Japanese.">
+<meta name="keywords" content="online DTP software, browser desktop publishing, Pantone spot colours, PDF channel separation, ISO 32000-2, CMYK export, IDML import, InDesign to web, Word import, text wrap, print layout web app, advanced web typography, hyphenation, SP213 AI studio, no-install DTP, PWA DTP, logiciel PAO en ligne, Pantone, séparation de couches, IDML, import Word, habillage du texte, オンラインDTP, 印刷レイアウト, SuperPrint Zigmoon">
 <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
 <meta name="author" content="Zigmoon">
 <meta name="application-name" content="SuperPrint">
@@ -32,7 +32,7 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://superprint.cc/landing.html">
 <meta property="og:title" content="SuperPrint — Online DTP Software + SP213 AI Studio">
-<meta property="og:description" content="Professional DTP in your browser + AI layout studio. Multi-page layout, print-ready PDF export, advanced typography. No install, no subscription.">
+<meta property="og:description" content="Professional DTP in your browser + AI layout studio. Pantone spot inks as separate named PDF channels, Word &amp; IDML import, text wrap, print-ready CMYK export. No install, no subscription.">
 <meta property="og:image" content="https://superprint.cc/icons/icon-512x512.png">
 <meta property="og:image:width" content="512">
 <meta property="og:image:height" content="512">
@@ -44,7 +44,7 @@
 <!-- Twitter/X -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="SuperPrint — Online DTP Software + SP213 AI Studio">
-<meta name="twitter:description" content="Professional DTP in your browser + AI layout studio. Print-ready PDF, multi-page, advanced typography. No install.">
+<meta name="twitter:description" content="Browser DTP + AI layout studio. Pantone spot inks separated into named PDF channels, Word &amp; IDML import, text wrap, print-ready CMYK export. No install.">
 <meta name="twitter:image" content="https://superprint.cc/icons/icon-512x512.png">
 
 <!-- JSON-LD — SoftwareApplication + FAQPage + BreadcrumbList -->
@@ -62,7 +62,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.377",
+      "softwareVersion": "1.7.378",
       "dateModified": "2026-03-29",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -71,6 +71,12 @@
         "Export PDF, PNG, JPG, JSON, .sp",
         "Import PDF, DOCX, images",
         "Import Word / OpenDocument / PDF",
+        "Import IDML (InDesign) — blocs texte, stories et mise en page",
+        "Tons directs Pantone avec nom court à l'affichage",
+        "Séparation des couches : une couche PDF nommée par Pantone (espace /Separation, ISO 32000-2)",
+        "Profils ICC (.icc / .icm) pour cadrer la conversion",
+        "Habillage du texte autour d'une forme, d'une image ou d'un contour",
+        "Habillage du texte à l'intérieur d'une forme, sans débordement du cadre",
         "Studio IA SP213 — maquettes générées par IA (texte ou voix)",
         "Typographie avancée — césure automatique FR, EN, DE, ES, IT, JA",
         "Accélération GPU via WebGL",
@@ -114,6 +120,16 @@
           "@type": "Question",
           "name": "SuperPrint est-il un bon logiciel de PAO professionnel ?",
           "acceptedAnswer": {"@type": "Answer", "text": "SuperPrint propose les fonctionnalités essentielles d'un logiciel de PAO pro directement dans le navigateur : mise en page multi-pages, typographie professionnelle avec césure automatique, export PDF prêt pour l'impression, calques, gabarits, opérations booléennes. Une solution solide pour les créations professionnelles sans abonnement."}
+        },
+        {
+          "@type": "Question",
+          "name": "SuperPrint gère-t-il les tons directs Pantone et la séparation de couches ?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Oui. Un nuancier Pantone est intégré : vous posez une encre directe sur une forme, un texte ou un fond, en RVB comme en CMJN. À l'export, chaque encre directe part dans sa propre couche nommée, déclarée dans un espace de couleur /Separation conforme à l'ISO 32000-2 — la technique que les RIP attendent pour produire une plaque dédiée. La quadrichromie reste séparée des Pantone, et non aplatie avec eux. Des profils ICC (.icc / .icm) peuvent être chargés pour cadrer la conversion."}
+        },
+        {
+          "@type": "Question",
+          "name": "Peut-on importer des fichiers Word ou InDesign dans SuperPrint ?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Oui. SuperPrint importe les documents Word (.docx et .doc), les fichiers IDML exportés depuis InDesign (blocs texte, stories et mise en page sont lus puis reconstruits), l'OpenDocument (.odt), le RTF (.rtf), les tableurs (.xlsx, .xls), les PDF ainsi que les images PNG, JPG, WebP, TIFF, SVG, EPS, AI et PSD. Le texte importé est mis en page avec pagination automatique."}
         },
         {
           "@type": "Question",
@@ -593,6 +609,8 @@ nav {
   display: flex; flex-direction: column;
 }
 .vp-card:nth-child(odd) { border-right: 1px solid var(--line); }
+/* 8 cartes (v1.7.378) : la 7e est impaire et garde son fillet droit,
+   la 8e ferme la rangee. Rien a corriger sur les 6 premieres. */
 .vp-card::after {
   content:''; position:absolute; left:0; bottom:0; height:3px; width:0;
   background: linear-gradient(90deg, var(--cyan), var(--magenta), var(--yellow));
@@ -663,6 +681,67 @@ nav {
 .studio-band .sb-txt .cmymono { font-family: var(--f-mono); font-style: normal; font-size: .72em; letter-spacing: .2em; color: var(--yellow); }
 .btn-paper { background: var(--paper); color: var(--ink); }
 .btn-paper:hover { background: var(--white); }
+
+/* ——— PREPRESSE — Pantone & séparation de couches ——— */
+#prepress { position: relative; overflow: hidden; background: var(--paper-2); }
+#prepress .ghost { top: 2%; right: -3vw; font-size: clamp(110px,19vw,320px); }
+#prepress .section-head { max-width: 880px; }
+.pp-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--line); border: 1px solid var(--line);
+  margin-top: clamp(30px,4vw,50px);
+}
+.pp-card {
+  background: var(--paper-3); padding: clamp(24px,2.4vw,34px);
+  position: relative; display: flex; flex-direction: column;
+  transition: background .3s var(--ease);
+}
+.pp-card:hover { background: var(--white); }
+.pp-card::before {
+  content:''; position:absolute; left:0; top:0; width:0; height:3px;
+  background: linear-gradient(90deg, var(--cyan), var(--magenta), var(--yellow));
+  transition: width .5s var(--ease);
+}
+.pp-card:hover::before { width: 100%; }
+.pp-num {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .2em; color: var(--cyan); display: block; margin-bottom: 14px;
+}
+.pp-card h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.8vw,21px);
+  font-weight: 400; letter-spacing: .02em; line-height: 1.1;
+  margin-bottom: 10px; color: var(--ink);
+}
+.pp-card p { font-size: 13px; color: var(--ink-soft); line-height: 1.72; }
+.pp-card p strong { color: var(--ink); font-weight: 600; }
+.pp-card code {
+  font-family: var(--f-mono); font-size: .88em;
+  background: var(--paper); border: 1px solid var(--line);
+  padding: 1px 5px; color: var(--ink);
+}
+.pp-tag {
+  display: inline-block; font-family: var(--f-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: .2em; padding: 5px 10px; margin-top: 14px; align-self: flex-start;
+  border: 1px solid var(--cyan); color: var(--cyan); text-transform: uppercase;
+}
+.pp-band {
+  margin-top: clamp(24px,3vw,38px);
+  border: 1px solid var(--ink); border-left-width: 4px;
+  padding: clamp(18px,2.4vw,28px) clamp(20px,3vw,34px);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px;
+  background: var(--paper-3);
+}
+.pp-band-txt {
+  font-family: var(--f-display); font-style: italic;
+  font-size: clamp(14px,1.7vw,18px); line-height: 1.5;
+  color: var(--ink); max-width: 660px; margin: 0;
+}
+.pp-band-txt .pp-mono {
+  font-family: var(--f-mono); font-style: normal; font-size: .84em;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--magenta);
+}
+.pp-band .btn-paper { border: 1px solid var(--ink); flex: 0 0 auto; }
+.pp-band .btn-paper:hover { background: var(--ink); color: var(--paper); }
 
 /* ——— COMPARISON TABLE ——— */
 .cmp-wrapper { overflow-x: auto; margin-top: 8px; }
@@ -868,6 +947,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   .vp-grid { grid-template-columns: 1fr; }
   .vp-card:nth-child(odd) { border-right: none; }
   .feat-grid, .studio-grid { grid-template-columns: repeat(2, 1fr); }
+  .pp-grid { grid-template-columns: repeat(2, 1fr); }
   .uc-grid { grid-template-columns: repeat(2, 1fr); }
   .uc-card:nth-child(4n) { border-right: 1px solid var(--line); }
   .uc-card:nth-child(2n) { border-right: none; }
@@ -884,6 +964,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
   section { padding: 64px 20px; }
   .feat-grid, .studio-grid, .uc-grid { grid-template-columns: 1fr; }
+  .pp-grid { grid-template-columns: 1fr; }
   .uc-card:nth-child(n) { border-right: none; }
   .brand-header { padding-top: 18px; }
   table.cmp td, table.cmp th { padding: 11px 10px; font-size: 12px; }
@@ -1023,9 +1104,9 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
       <span class="dot c"></span><span class="dot m"></span><span class="dot y"></span><span class="dot k"></span>
     </div>
 
-    <p class="lead hero-lead" data-lang="fr">SuperPrint est un logiciel de PAO professionnel qui fonctionne dans votre navigateur, accompagné du <strong>studio IA SP213</strong> qui génère vos maquettes en langage naturel, par texte ou à la voix. Documents multi-pages, export PDF prêt pour l'impression.</p>
-    <p class="lead hero-lead" data-lang="en">SuperPrint is a professional DTP software that runs in your browser, together with the <strong>SP213 AI studio</strong> that generates layouts from natural language, by text or by voice. Multi-page documents, print-ready PDF export.</p>
-    <p class="lead hero-lead" data-lang="ja">SuperPrintはブラウザで動くプロ向けDTPソフトウェアです。<strong>SP213 AIスタジオ</strong>が、テキストまたは音声による自然言語からレイアウトを生成します。複数ページ、印刷対応PDF書き出し。</p>
+    <p class="lead hero-lead" data-lang="fr">SuperPrint est un logiciel de PAO professionnel qui fonctionne dans votre navigateur, accompagné du <strong>studio IA SP213</strong> qui génère vos maquettes en langage naturel, par texte ou à la voix. Documents multi-pages, import <strong>Word et IDML</strong>, <strong>tons directs Pantone séparés en couches distinctes</strong> dans le PDF, export prêt pour l'impression.</p>
+    <p class="lead hero-lead" data-lang="en">SuperPrint is a professional DTP application running in your browser, together with the <strong>SP213 AI studio</strong> that composes layouts from natural language, by text or by voice. Multi-page documents, <strong>Word and IDML import</strong>, <strong>Pantone spot inks separated into distinct PDF layers</strong>, print-ready export.</p>
+    <p class="lead hero-lead" data-lang="ja">SuperPrintはブラウザで動くプロ向けDTPソフトです。<strong>SP213 AIスタジオ</strong>が自然言語（テキスト／音声）からレイアウトを生成。<strong>Word・IDML読み込み</strong>、<strong>PantoneスポットインキをPDF内の個別レイヤーに分版</strong>、印刷対応の書き出し。</p>
   </div>
 </section>
 
@@ -1039,9 +1120,9 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
       <h2 data-lang="fr">Tout l'atelier du créateur, sans la boutique.</h2>
       <h2 data-lang="en">The whole creator's atelier — without the shop.</h2>
       <h2 data-lang="ja">クリエイターの工房を丸ごと。店は要りません。</h2>
-      <p class="lead" data-lang="fr">Six convictions, tenues par un logiciel né pour la presse et l'édition, pensé pour vivre dans le navigateur.</p>
-      <p class="lead" data-lang="en">Six convictions, held by software born for print and publishing — designed to live in the browser.</p>
-      <p class="lead" data-lang="ja">印刷と出版のために生まれ、ブラウザで生きるために設計されたソフトウェアが貫く、6つの信念。</p>
+      <p class="lead" data-lang="fr">Huit convictions, tenues par un logiciel né pour la presse et l'édition, pensé pour vivre dans le navigateur.</p>
+      <p class="lead" data-lang="en">Eight convictions, held by software born for print and publishing — designed to live in the browser.</p>
+      <p class="lead" data-lang="ja">印刷と出版のために生まれ、ブラウザで生きるために設計されたソフトウェアが貫く、8つの信念。</p>
     </div>
     <div class="vp-grid">
       <div class="vp-card">
@@ -1067,9 +1148,9 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
         <h3 data-lang="fr">Quadrichromie fidèle</h3>
         <h3 data-lang="en">Faithful CMYK</h3>
         <h3 data-lang="ja">忠実なCMYK</h3>
-        <p data-lang="fr">Mode CMYK activable, sélecteur dédié, tons directs Pantone, simulation d'épreuve écran : ce que vous voyez prépare l'offset.</p>
-        <p data-lang="en">Activatable CMYK mode, dedicated picker, Pantone spot colors, on-screen proof: what you see prepares the offset press.</p>
-        <p data-lang="ja">切り替え可能なCMYKモード、専用ピッカー、Pantone特色、画面プルーフ。見たままがオフセットを準備します。</p>
+        <p data-lang="fr">Mode CMYK activable, sélecteur dédié, <strong>tons directs Pantone séparés en couches nommées</strong>, profils ICC, simulation d'épreuve écran : ce que vous voyez prépare l'offset.</p>
+        <p data-lang="en">Activatable CMYK mode, dedicated picker, <strong>Pantone spot inks separated into named PDF channels</strong>, ICC profiles, on-screen proof: what you see prepares the offset press.</p>
+        <p data-lang="ja">切り替え可能なCMYKモード、専用ピッカー、<strong>Pantone特色を名前付きPDFチャンネルに分版</strong>、ICCプロファイル、画面プルーフ。見たままがオフセットを準備します。</p>
       </div>
       <div class="vp-card">
         <div class="vp-icon">04</div>
@@ -1091,6 +1172,24 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
       </div>
       <div class="vp-card">
         <div class="vp-icon">06</div>
+        <h3 data-lang="fr">L'habillage du texte</h3>
+        <h3 data-lang="en">Text wrap</h3>
+        <h3 data-lang="ja">テキストの回り込み</h3>
+        <p data-lang="fr">Un texte coule autour d'une forme, d'une image ou d'un contour, et se recompose quand vous déplacez l'objet. Sur un bloc posé <strong>dans</strong> une forme, le texte se replie à l'intérieur sans déborder du cadre.</p>
+        <p data-lang="en">Text flows around a shape, an image or a contour, and reflows as you move the object. On a frame placed <strong>inside</strong> a shape, the text folds inward without escaping its box.</p>
+        <p data-lang="ja">図形・画像・輪郭の周りにテキストが回り込み、オブジェクトの移動に追従します。図形の<strong>内側</strong>に置いたフレームでは、枠からはみ出さずに折り返します。</p>
+      </div>
+      <div class="vp-card">
+        <div class="vp-icon">07</div>
+        <h3 data-lang="fr">Vos fichiers, repris</h3>
+        <h3 data-lang="en">Your files, brought in</h3>
+        <h3 data-lang="ja">既存ファイルの取り込み</h3>
+        <p data-lang="fr">Importez du <strong>Word</strong> (.docx), de l'<strong>IDML</strong> (InDesign), de l'OpenDocument, du RTF, des tableurs, des PDF et vos images. SuperPrint met le texte en page et poursuit le travail.</p>
+        <p data-lang="en">Bring in <strong>Word</strong> (.docx), <strong>IDML</strong> (InDesign), OpenDocument, RTF, spreadsheets, PDF and images. SuperPrint lays the text out and carries on.</p>
+        <p data-lang="ja"><strong>Word</strong>（.docx）、<strong>IDML</strong>（InDesign）、OpenDocument、RTF、表計算、PDF、画像を読み込み。SuperPrintが組版して作業を続けます。</p>
+      </div>
+      <div class="vp-card">
+        <div class="vp-icon">08</div>
         <h3 data-lang="fr">Studio IA SP213</h3>
         <h3 data-lang="en">SP213 AI studio</h3>
         <h3 data-lang="ja">SP213 AIスタジオ</h3>
@@ -1369,21 +1468,118 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   </div>
 </section>
 
+<!-- ══════════════ PRÉPRESSE — Pantone & séparation de couches ══════════════ -->
+<section id="prepress">
+  <div class="ghost" aria-hidden="true">CMJN</div>
+  <div class="container">
+    <div class="section-head">
+      <div class="section-label" data-lang="fr">Chapitre 04 · La chambre noire</div>
+      <div class="section-label" data-lang="en">Chapter 04 · The darkroom</div>
+      <div class="section-label" data-lang="ja">第04章 · 暗室</div>
+      <h2 data-lang="fr">Le prépresse, là où le fichier devient une plaque.</h2>
+      <h2 data-lang="en">Prepress — where the file becomes a plate.</h2>
+      <h2 data-lang="ja">プリプレス — ファイルが版になる場所。</h2>
+      <p class="lead" data-lang="fr">Un imprimeur ne reçoit pas une image : il reçoit des encres, chacune sur sa plaque. SuperPrint écrit ce découpage dans le PDF lui-même, avec les espaces de couleur normalisés que les RIP savent lire.</p>
+      <p class="lead" data-lang="en">A printer does not receive a picture — they receive inks, each on its own plate. SuperPrint writes that division into the PDF itself, using the standard colour spaces that RIPs understand.</p>
+      <p class="lead" data-lang="ja">印刷所が受け取るのは絵ではなく、版ごとに分かれたインキです。SuperPrintはその分割をPDF自体に書き込み、RIPが解釈できる標準的な色空間を使用します。</p>
+    </div>
+
+    <div class="pp-grid">
+
+      <article class="pp-card">
+        <div class="pp-num">01</div>
+        <h3 data-lang="fr">Tons directs Pantone</h3>
+        <h3 data-lang="en">Pantone spot inks</h3>
+        <h3 data-lang="ja">Pantone スポットインキ</h3>
+        <p data-lang="fr">Le nuancier Pantone est intégré : posez une encre directe sur une forme, un texte ou un fond, exactement comme en quadrichromie. Le nom court s'affiche dans la liste (<code>Yellow C</code> plutôt que <code>Pantone Yellow C</code>) pour garder la palette lisible, tandis que le nom complet est conservé pour les filtres et les plaques.</p>
+        <p data-lang="en">The Pantone swatch book is built in: place a spot ink on a shape, a text or a background, exactly as you would a process colour. Short names keep the list readable (<code>Yellow C</code> rather than <code>Pantone Yellow C</code>) while the full name is retained for filters and plates.</p>
+        <p data-lang="ja">Pantoneスウォッチを内蔵。図形・テキスト・背景にスポットインキを、プロセスカラーと同じ感覚で配置できます。一覧では短縮名（<code>Pantone Yellow C</code> ではなく <code>Yellow C</code>）で見やすくし、フィルタと版には完全な名称を保持します。</p>
+        <span class="pp-tag">Spot</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">02</div>
+        <h3 data-lang="fr">Séparation des couches</h3>
+        <h3 data-lang="en">Channel separation</h3>
+        <h3 data-lang="ja">チャンネル分版</h3>
+        <p data-lang="fr">Chaque encre directe part dans sa <strong>propre couche nommée</strong>, déclarée dans un espace de couleur <code>/Separation</code> conforme à l'ISO 32000-2 : la technique que les RIP attendent pour produire une plaque dédiée. La quadrichromie reste d'un côté, le Pantone de l'autre — jamais aplatis ensemble.</p>
+        <p data-lang="en">Every spot ink leaves in its <strong>own named channel</strong>, declared in a <code>/Separation</code> colour space compliant with ISO 32000-2 — the technique RIPs expect in order to output a dedicated plate. Process stays on one side, Pantone on the other, never flattened together.</p>
+        <p data-lang="ja">各スポットインキは<strong>固有の名前付きチャンネル</strong>として出力され、ISO 32000-2 準拠の <code>/Separation</code> 色空間で宣言されます。専用の版を出力するためにRIPが求める方式です。プロセスとPantoneは決して統合されません。</p>
+        <span class="pp-tag">/Separation</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">03</div>
+        <h3 data-lang="fr">Deux modes, une même exigence</h3>
+        <h3 data-lang="en">Two modes, one standard</h3>
+        <h3 data-lang="ja">2つのモード、1つの基準</h3>
+        <p data-lang="fr">Travaillez en <strong>RVB</strong> pour l'écran ou en <strong>CMJN</strong> pour l'offset : le nuancier Pantone reste accessible dans les deux cas, et le récapitulatif d'export annonce le compte réel de couches (<code>RVB (3) + 1 Pantone</code>, <code>CMJN (4) + 2 Pantone</code>). Plus de chiffre codé en dur.</p>
+        <p data-lang="en">Work in <strong>RGB</strong> for screen or <strong>CMYK</strong> for offset: the Pantone panel stays available in both, and the export summary states the real channel count (<code>RGB (3) + 1 Pantone</code>, <code>CMYK (4) + 2 Pantone</code>). No more hard-coded figure.</p>
+        <p data-lang="ja"><strong>RGB</strong>（画面）でも<strong>CMYK</strong>（オフセット）でも、Pantoneパネルは常に利用可能。書き出し概要は実際のチャンネル数（<code>RGB (3) + Pantone 1</code>、<code>CMYK (4) + Pantone 2</code>）を表示します。固定値はもうありません。</p>
+        <span class="pp-tag">RVB · CMJN</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">04</div>
+        <h3 data-lang="fr">Épreuve écran</h3>
+        <h3 data-lang="en">Soft proof</h3>
+        <h3 data-lang="ja">画面プルーフ</h3>
+        <p data-lang="fr">La simulation CMJN projette à l'écran ce que la presse rendra, encres ternes comprises. Ce que vous validez ici n'est plus une surprise sur papier.</p>
+        <p data-lang="en">The CMYK simulation shows on screen what the press will actually render, dull inks included. What you approve here is no longer a surprise on paper.</p>
+        <p data-lang="ja">CMYKシミュレーションは、濁ったインキも含め、印刷機が再現する色を画面上に表示します。ここで承認した内容は、紙の上で驚きにはなりません。</p>
+        <span class="pp-tag">Proof</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">05</div>
+        <h3 data-lang="fr">Fond perdu &amp; traits de coupe</h3>
+        <h3 data-lang="en">Bleed &amp; crop marks</h3>
+        <h3 data-lang="ja">塗り足し＆トンボ</h3>
+        <p data-lang="fr">Fond perdu réglable, traits de coupe, imposition multi-pages : le fichier sort prêt pour le façonnage, sans reprise dans un autre outil.</p>
+        <p data-lang="en">Adjustable bleed, crop marks, multi-page imposition: the file leaves ready for finishing, with no rework in another tool.</p>
+        <p data-lang="ja">塗り足し調整、トンボ、複数ページの面付け。仕上げ工程にそのまま渡せる状態で出力されます。</p>
+        <span class="pp-tag">Print</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">06</div>
+        <h3 data-lang="fr">Profils ICC</h3>
+        <h3 data-lang="en">ICC profiles</h3>
+        <h3 data-lang="ja">ICCプロファイル</h3>
+        <p data-lang="fr">Chargez un profil ICC (<code>.icc</code> / <code>.icm</code>) pour cadrer la conversion selon le support et la presse visés, plutôt que de subir une conversion générique.</p>
+        <p data-lang="en">Load an ICC profile (<code>.icc</code> / <code>.icm</code>) to frame the conversion for the intended paper and press, instead of enduring a generic one.</p>
+        <p data-lang="ja">ICCプロファイル（<code>.icc</code> / <code>.icm</code>）を読み込み、想定する用紙と印刷機に合わせて変換を制御できます。</p>
+        <span class="pp-tag">ICC</span>
+      </article>
+
+    </div>
+
+    <div class="pp-band">
+      <p class="pp-band-txt" data-lang="fr">Un <span class="pp-mono">Pantone</span> posé dans l'application ressort dans le PDF comme une couche à son nom — vérifié en décodant le fichier flux par flux.</p>
+      <p class="pp-band-txt" data-lang="en">A <span class="pp-mono">Pantone</span> placed in the app comes out of the PDF as a channel under its own name — verified by decoding the file stream by stream.</p>
+      <p class="pp-band-txt" data-lang="ja">アプリで配置した <span class="pp-mono">Pantone</span> は、PDF内で固有の名前を持つチャンネルとして出力されます。ファイルをストリーム単位で解析して検証済み。</p>
+      <a href="index.html" class="btn-paper" data-lang="fr">Essayer l'export CMJN</a>
+      <a href="index.html" class="btn-paper" data-lang="en">Try the CMYK export</a>
+      <a href="index.html" class="btn-paper" data-lang="ja">CMYK書き出しを試す</a>
+    </div>
+  </div>
+</section>
+
 <!-- ══════════════ FEATURES DETAIL ══════════════ -->
 <section id="features">
   <div class="container">
     <div class="feat-head">
       <div>
-        <div class="section-label" data-lang="fr">Chapitre 04 · L'inventaire</div>
-        <div class="section-label" data-lang="en">Chapter 04 · The inventory</div>
-        <div class="section-label" data-lang="ja">第04章 · 目録</div>
+        <div class="section-label" data-lang="fr">Chapitre 05 · L'inventaire</div>
+        <div class="section-label" data-lang="en">Chapter 05 · The inventory</div>
+        <div class="section-label" data-lang="ja">第05章 · 目録</div>
         <h2 data-lang="fr">L'inventaire de l'atelier</h2>
         <h2 data-lang="en">The atelier inventory</h2>
         <h2 data-lang="ja">工房の目録</h2>
       </div>
-      <span class="feat-meta" data-lang="fr">12 outils — toujours à portée</span>
-      <span class="feat-meta" data-lang="en">12 tools — always within reach</span>
-      <span class="feat-meta" data-lang="ja">12の道具 — いつでも手の届く場所に</span>
+      <span class="feat-meta" data-lang="fr">15 outils — toujours à portée</span>
+      <span class="feat-meta" data-lang="en">15 tools — always within reach</span>
+      <span class="feat-meta" data-lang="ja">15の道具 — いつでも手の届く場所に</span>
     </div>
     <div class="feat-grid">
 
@@ -1437,7 +1633,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
         <p data-lang="fr">Détection WebGL automatique via WEBGL_debug_renderer_info. Promotion de couche CSS (will-change, translateZ). Cache objet Fabric.js par type. Rendu fluide même sur les grands documents.</p>
         <p data-lang="en">Automatic WebGL detection via WEBGL_debug_renderer_info. CSS layer promotion (will-change, translateZ). Per-type Fabric.js object caching. Smooth rendering even on large documents.</p>
         <p data-lang="ja">WEBGL_debug_renderer_infoによるWebGL自動検出。CSSレイヤー昇格（will-change、translateZ）。Fabric.jsのタイプ別オブジェクトキャッシュ。大きなドキュメントでも滑らかな描画。</p>
-        <span class="feat-tag new">v1.7.377</span>
+        <span class="feat-tag new">v1.7.378</span>
       </div>
 
       <div class="feat-card">
@@ -1510,6 +1706,39 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
         <p data-lang="ja">すべてのデータは端末内に100%ローカル保存。ファイルがサーバーに送信されることはありません。アカウントも不要です。</p>
       </div>
 
+      <div class="feat-card">
+        <div class="feat-num">13</div>
+        <h3 data-lang="fr">TONS DIRECTS PANTONE &amp; SÉPARATION</h3>
+        <h3 data-lang="en">PANTONE SPOT INKS &amp; SEPARATION</h3>
+        <h3 data-lang="ja">Pantone特色と分版</h3>
+        <p data-lang="fr">Nuancier Pantone intégré, pose d'une encre directe sur forme, texte ou fond. Chaque encre sort dans sa propre couche nommée, dans un espace de couleur /Separation conforme à l'ISO 32000-2 — la quadrichromie reste séparée des Pantone. Profils ICC acceptés pour cadrer la conversion.</p>
+        <p data-lang="en">Built-in Pantone panel, spot ink on a shape, text or background. Every ink leaves in its own named channel, inside an ISO 32000-2 compliant /Separation colour space — process stays apart from Pantone. ICC profiles accepted to frame the conversion.</p>
+        <p data-lang="ja">Pantoneパネル内蔵。図形・テキスト・背景にスポットインキを配置。各インキはISO 32000-2準拠の /Separation 色空間内で固有の名前付きチャンネルとして出力され、プロセス版とは分離されます。ICCプロファイルにも対応。</p>
+        <span class="feat-tag new">/Separation</span>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">14</div>
+        <h3 data-lang="fr">IMPORT IDML (INDESIGN)</h3>
+        <h3 data-lang="en">IDML IMPORT (INDESIGN)</h3>
+        <h3 data-lang="ja">IDML読み込み（InDesign）</h3>
+        <p data-lang="fr">Reprenez un fichier InDesign exporté en IDML : les blocs texte, les stories et la mise en page sont lus et reconstruits dans SuperPrint. Un pont direct depuis vos archives existantes, sans repartir de zéro.</p>
+        <p data-lang="en">Pick up an InDesign file exported as IDML: text frames, stories and layout are read and rebuilt in SuperPrint. A direct bridge from your existing archive, without starting over.</p>
+        <p data-lang="ja">InDesignからIDMLで書き出したファイルを引き継げます。テキストフレーム、ストーリー、レイアウトを読み取り、SuperPrint内で再構築。既存の資産からそのまま続けられます。</p>
+        <span class="feat-tag new">IDML</span>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">15</div>
+        <h3 data-lang="fr">HABILLAGE DU TEXTE</h3>
+        <h3 data-lang="en">TEXT WRAP</h3>
+        <h3 data-lang="ja">テキストの回り込み</h3>
+        <p data-lang="fr">Le texte coule autour d'une boîte ou d'un contour, avec un décalage réglable et un choix de côtés. L'habillage se recompose à chaque déplacement de l'objet et s'applique aussi aux blocs posés à l'intérieur d'une forme.</p>
+        <p data-lang="en">Text flows around a bounding box or a contour, with adjustable offset and per-side control. The wrap recomposes on every move and also applies to frames placed inside a shape.</p>
+        <p data-lang="ja">バウンディングボックスまたは輪郭に沿ってテキストが回り込みます。オフセットと側面を調整可能。オブジェクトの移動ごとに再構成され、図形内に置いたフレームにも適用されます。</p>
+        <span class="feat-tag new">Wrap</span>
+      </div>
+
     </div>
   </div>
 </section>
@@ -1519,9 +1748,9 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   <div class="ghost" aria-hidden="true">MAGAZINE · AFFICHE · LIVRE</div>
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 05 · Ce qu'on compose ici</div>
-      <div class="section-label" data-lang="en">Chapter 05 · What is composed here</div>
-      <div class="section-label" data-lang="ja">第05章 · ここで組むもの</div>
+      <div class="section-label" data-lang="fr">Chapitre 06 · Ce qu'on compose ici</div>
+      <div class="section-label" data-lang="en">Chapter 06 · What is composed here</div>
+      <div class="section-label" data-lang="ja">第06章 · ここで組むもの</div>
       <h2 data-lang="fr">Une presse pour chaque projet</h2>
       <h2 data-lang="en">A press for every project</h2>
       <h2 data-lang="ja">あらゆるプロジェクトに一台のプレスを</h2>
@@ -1543,9 +1772,9 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 <section id="vs-indesign">
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 06 · L'analyse</div>
-      <div class="section-label" data-lang="en">Chapter 06 · The analysis</div>
-      <div class="section-label" data-lang="ja">第06章 · 分析</div>
+      <div class="section-label" data-lang="fr">Chapitre 07 · L'analyse</div>
+      <div class="section-label" data-lang="en">Chapter 07 · The analysis</div>
+      <div class="section-label" data-lang="ja">第07章 · 分析</div>
       <h2 data-lang="fr">L'atelier du navigateur face aux grandes maisons</h2>
       <h2 data-lang="en">The browser atelier facing the great houses</h2>
       <h2 data-lang="ja">ブラウザの工房と大手メゾンの対比</h2>
@@ -1612,9 +1841,9 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 <section id="formats">
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 07 · Langues de la page</div>
-      <div class="section-label" data-lang="en">Chapter 07 · Languages of the page</div>
-      <div class="section-label" data-lang="ja">第07章 · ページの言語</div>
+      <div class="section-label" data-lang="fr">Chapitre 08 · Langues de la page</div>
+      <div class="section-label" data-lang="en">Chapter 08 · Languages of the page</div>
+      <div class="section-label" data-lang="ja">第08章 · ページの言語</div>
       <h2 data-lang="fr">Les formats que la page comprend</h2>
       <h2 data-lang="en">The formats the page understands</h2>
       <h2 data-lang="ja">ページが理解するフォーマット</h2>
@@ -1641,8 +1870,12 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
     <div class="fmt-grid">
       <span class="fmt-chip in">PDF</span>
       <span class="fmt-chip in">DOCX</span>
+      <span class="fmt-chip in">DOC</span>
+      <span class="fmt-chip in">IDML</span>
       <span class="fmt-chip in">ODT</span>
       <span class="fmt-chip in">RTF</span>
+      <span class="fmt-chip in">XLSX</span>
+      <span class="fmt-chip in">ICC</span>
       <span class="fmt-chip in">SLA</span>
       <span class="fmt-chip in">.sp</span>
       <span class="fmt-chip in">JSON</span>
@@ -1658,9 +1891,9 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 <section id="faq">
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 08 · Questions fréquentes</div>
-      <div class="section-label" data-lang="en">Chapter 08 · Frequently asked</div>
-      <div class="section-label" data-lang="ja">第08章 · よくある質問</div>
+      <div class="section-label" data-lang="fr">Chapitre 09 · Questions fréquentes</div>
+      <div class="section-label" data-lang="en">Chapter 09 · Frequently asked</div>
+      <div class="section-label" data-lang="ja">第09章 · よくある質問</div>
       <h2 data-lang="fr">Les questions que l'on pose souvent à l'atelier</h2>
       <h2 data-lang="en">Questions often asked at the atelier</h2>
       <h2 data-lang="ja">工房でよく聞かれる質問</h2>
@@ -1842,7 +2075,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Zigmoon — SuperPrint v1.7.377</span>
+      <span>© 2026 Zigmoon — SuperPrint v1.7.378</span>
       <span class="inline-fr">Logiciel de PAO en ligne · mise en page dans le navigateur</span>
       <span class="inline-en">Online DTP software · browser page layout</span>
       <span class="inline-ja">オンラインDTPソフトウェア · ブラウザのページレイアウト</span>
