@@ -9,6 +9,28 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.398] — 2026-09-14
+
+_Editor prompt bar aligned with Studio IA — shared document import module_
+
+### Added
+- **The editor's prompt bar now works exactly like the Studio IA one: same icons, same accepted formats, same structure understanding.** The studio's document-import code (Word OLE `.doc`, `.docx` via mammoth, OpenDocument `.odt`/`.ods`/`.odp`, RTF, Excel, PDF, HTML entities) was **extracted verbatim** into a new shared module `app/JS/sp-doc-import.js` (44 KB) loaded by **both** interfaces. Nothing was duplicated, so the studio and the editor cannot drift apart.
+- **New prompt bar layout:** `[ 📎 attachments ] [ 🌐 web image ] [ 🎤 voice ] [ ☑ Images ]` … `[ Create ]`. The large permanent dashed drop zone is gone — that zone was what made the bar tall. Drag and drop still works anywhere on the bar.
+- **Attachment chips** under the field, showing the character count, removable one by one. The area only appears when there really is an attachment, so it costs no height at rest.
+- **Overlay loader.** Loading is drawn **on top of** the bar (`position:absolute`), so it adds no height at all; it disappears when generation finishes and the button becomes active again. This is what keeps the bar compact during long generations.
+- **Images checkbox** (as in the studio): adds a prompt instruction to plan 1–3 photo areas with a generic caption, because the model cannot see the photo and must not invent its subject.
+- **Voice prompt** (Web Speech API, following the interface language) and **web image** (free photo via picsum) buttons.
+
+### Fixed
+- **`\u2026` displayed literally** in the loader text instead of “…”, at two places (double escaping in the generator script).
+- **The Create button reverted to English after every generation** — its label was hard-coded as `'Create'` regardless of the chosen language. It now remembers the label actually displayed and restores it, so all three languages are honoured with no translation to maintain.
+- **The loader could stay on screen and leave the button stuck.** When a response produced no usable page, the code exited through a path that never re-enabled the interface. Rather than patching that single case, a **watchdog on the real generation state** now resets the display as soon as generation is no longer running — covering every path, including ones added later.
+- **OpenDocument files failed in the editor with a silent 404** (`/app/app/JS/jszip.min.js`). The module was written for the studio, which is served from the site **root** (`app/JS/jszip.min.js`), while the editor is served from `/app/` — so the path resolved to `/app/app/JS/…`. The module now contains **no hard-coded path**: each host resolves its own via `resolveLib`, with the studio behaviour unchanged as fallback. A **cache-buster** was added to the module URL, without which the browser kept serving the previous file and the fix stayed invisible (a defect that would have been serious in production).
+
+### Verified
+- Browser test on the real flow, with `fetch` intercepted: `.doc` → “DOCUMENT WORD (ancien format .doc) · 238 car.”, `.odt` → “DOCUMENT OPEN OFFICE · 398 car.” **plus its extracted image**, `.rtf` → “DOCUMENT RTF · 218 car.”, all three attached together. The prompt contains `PIECES JOINTES UTILISATEUR`, the document text correctly decoded, and the “CONVENTIONS DU TEXTE FOURNI” instructions. 0 console errors.
+- 13/13 live version markers, 0 leftover traces, web/mirror parity 14/14, distributed package checked by extraction (version 1.7.398, module present at 45 740 bytes, `resolveLib` ×1, bar icons ×4, overlay loader ×6).
+
 ## [1.7.397] — 2026-09-14
 
 _Studio renamed “Studio IA”, studio design fixes, New document dialog reordered_
