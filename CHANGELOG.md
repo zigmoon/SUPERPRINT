@@ -9,6 +9,23 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.403] — 2026-09-14
+
+_Separator rule centred, attachments adopt the Studio IA styling_
+
+### Fixed
+- **The separator rule in the «New project» window was stuck to the top.** Measured in the rendered window: the rule occupied **0 to 18 px** while the buttons span **33 px** — 0 px of air above, 15 px below. Root cause is subtle: `.np-tabs` is a `display:flex` row **without** `align-items`, so the default is `normal` (= `stretch`). But the rule carries an inline **fixed height**, so it cannot stretch, and flex falls back to aligning it at the **top** (`flex-start`). Fixed with `align-self: center`. Measured after: **8 px above and 8 px below** — exactly centred, hence visibly lower.
+- **Attachment chips no longer use emoji.** They previously showed a per-type emoji (document, PDF, spreadsheet, page), a coloured `<img>` thumbnail for images, rounded corners (7 px) and a plain text «×» remove button. They now use the **exact line icons of the studio** `renderAttachBar()`: a photo frame for images, a lined page for documents, plus an SVG remove cross. The five emoji are gone from the code (0 occurrences).
+
+### Changed
+- **Attachment chips now match the Studio IA design, value for value.** The studio styling was read straight from `sp213-studio.html` and applied identically: background `#f2f2f2` (`--attach-bg`), border `#d9d9d9` (`--border`), text `#1a1a1a`, metadata `#555` (`--muted`) in 9 px uppercase, **square corners** (`border-radius: 0`), padding `4px 8px`, gap `6px`, 10 px type, 14 px line icons (`stroke-width: 1.6`, `fill: none`), and a remove cross that turns **red** (`#d32f2f`) on hover. Dark theme mirrors the studio variables (`#2a2a2a` / `#333333` / `#eaeaea` / `#aaaaaa`).
+
+### Verified
+- Rule position read before and after (top 0→8, bottom 18→26). Chip computed styles compared against the studio values, and emoji presence tested by regular expression: `emojiPresent = false`, no `<img>` left, `border-radius: 0px`, `fill: none`, SVGs at 14×14.
+- Web/mirror parity 14/14, coherence 13/13, no leftover version markers, `node --check` clean on `main.js` (web and mirror), `_check_studio` clean, dist rebuilt at 1.7.403, package (56 267 182 bytes) verified by extraction.
+
+> ⚠️ **`superprint.cc` still serves 1.7.390.** Thirteen versions are invisible online until the FTP deployment is done manually — including this one.
+
 ## [1.7.402] — 2026-09-14
 
 _Five interface reports: pop-in order, API key indicator, attachments, focus colour_

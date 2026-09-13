@@ -705,6 +705,35 @@ footer, footer a { color: var(--after-text-color); }
 <main>
 <section class="releases" aria-label="Release notes">
 
+<!-- ===== SUPER PRINT v1.7.403 — trait centre + pieces jointes sans emoji ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-403">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.403</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 14 septembre 2026" data-i18n-en="Released September 14, 2026" data-i18n-jp="2026年9月14日公開">Released September 14, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Deux détails d'interface, tous deux mesurés au pixel dans la fenêtre et dans la barre de prompt." data-i18n-en-html="Two interface details, both measured to the pixel in the window and in the prompt bar." data-i18n-jp-html="画面とプロンプトバーでピクセル単位で計測した2つの細部です。">Two interface details, both measured to the pixel in the window and in the prompt bar.</p>
+
+ <h3>📐 Le trait de séparation est maintenant centré <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Le trait vertical qui sépare les onglets de configuration des deux outils de lancement était <strong>collé en haut</strong> : mesuré de 0 à 18 px, alors que les boutons occupent 33 px. Il est maintenant <strong>centré</strong> — 8 px d'air en haut comme en bas, donc visiblement plus bas." data-i18n-en-html="The vertical rule separating the configuration tabs from the two launch tools was <strong>stuck to the top</strong>: measured 0 to 18 px while the buttons span 33 px. It is now <strong>centred</strong> — 8 px of air above and below, so visibly lower." data-i18n-jp-html="設定タブとツールを区切る縦線は<strong>上に寄っていました</strong>（0〜18px、ボタンは33px）。今は<strong>中央揃え</strong>です。">The vertical rule separating the configuration tabs from the two launch tools was <strong>stuck to the top</strong>: measured 0 to 18 px while the buttons span 33 px. It is now <strong>centred</strong> — 8 px of air above and below, so visibly lower.</li>
+  <li data-i18n-fr-html="La cause est discrète : la rangée est en <em>flexbox</em> sans réglage d'alignement, donc l'alignement par défaut est <em>stretch</em>. Mais le trait a une hauteur fixe : il ne peut pas s'étirer, et <em>flex</em> le range alors en haut. Une seule ligne a suffi — <code>align-self: center</code>." data-i18n-en-html="The cause is subtle: the row is a <em>flexbox</em> with no alignment set, so the default is <em>stretch</em>. But the rule has a fixed height: it cannot stretch, and <em>flex</em> then places it at the top. One line was enough — <code>align-self: center</code>." data-i18n-jp-html="原因は細かいものです。フレックスのアライン未設定で、<code>align-self: center</code>だけで解決しました。">The cause is subtle: the row is a <em>flexbox</em> with no alignment set, so the default is <em>stretch</em>. But the rule has a fixed height: it cannot stretch, and <em>flex</em> then places it at the top. One line was enough — <code>align-self: center</code>.</li>
+ </ul>
+
+ <h3>📎 Les pièces jointes adoptent la mise en forme du Studio IA <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Plus aucun <strong>émoji</strong> : les pastilles utilisent les <strong>mêmes icônes au trait</strong> que le studio — un cadre photo pour une image, une page lignée pour un document. Fini aussi la vignette colorée et les coins arrondis." data-i18n-en-html="No more <strong>emoji</strong>: the chips use the <strong>same line icons</strong> as the studio — a photo frame for an image, a lined page for a document. The coloured thumbnail and the rounded corners are gone too." data-i18n-jp-html="<strong>絵文字は廃止</strong>し、スタジオと同じ<strong>線のアイコン</strong>になりました。">No more <strong>emoji</strong>: the chips use the <strong>same line icons</strong> as the studio — a photo frame for an image, a lined page for a document. The coloured thumbnail and the rounded corners are gone too.</li>
+  <li data-i18n-fr-html="Les valeurs ont été relevées dans le studio et appliquées à l'identique : fond <code>#f2f2f2</code>, bordure <code>#d9d9d9</code>, <strong>angles droits</strong>, icônes au trait de 14 px, métadonnées en capitales, et une croix de retrait qui <strong>rougit au survol</strong>. Vérifié par mesure : plus aucun <em>emoji</em>, plus aucune vignette, coins à 0 px." data-i18n-en-html="The values were read from the studio and applied identically: background <code>#f2f2f2</code>, border <code>#d9d9d9</code>, <strong>square corners</strong>, 14 px line icons, uppercase metadata, and a remove cross that <strong>turns red on hover</strong>. Verified by measurement: no emoji left, no thumbnail, corners at 0 px." data-i18n-jp-html="スタジオの値をそのまま適用し、計測で確認しました。">The values were read from the studio and applied identically: background <code>#f2f2f2</code>, border <code>#d9d9d9</code>, <strong>square corners</strong>, 14 px line icons, uppercase metadata, and a remove cross that <strong>turns red on hover</strong>. Verified by measurement: no emoji left, no thumbnail, corners at 0 px.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.403 — vérifié au pixel : position du trait lue avant et après (0→8 en haut, 18→26 en bas), styles calculés des pastilles comparés à ceux du studio, présence d’émoji testée par expression régulière. Parité web/miroir 14/14, cohérence 13/13, paquet distribué vérifié par extraction." data-i18n-en="SuperPrint 1.7.403 — verified to the pixel: rule position read before and after (0→8 top, 18→26 bottom), chip computed styles compared with the studio ones, emoji presence tested by regular expression. Web/mirror parity 14/14, coherence 13/13, distributed package verified by extraction." data-i18n-jp="SuperPrint 1.7.403 — ピクセル単位で確認済み。ウェブ/ミラー一致14/14、整合性13/13。">Verified to the pixel.</p>
+ <a class="release-cta" href="https://superprint.cc/app/index.html" data-i18n-fr="→ Ouvrir l'éditeur SuperPrint" data-i18n-en="→ Open SuperPrint Editor" data-i18n-jp="→ SuperPrintエディタを開く">→ Open SuperPrint Editor</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
 <!-- ===== SUPER PRINT v1.7.402 — 5 retours utilisateur : pop-in, pastille de cle, PJ, focus ===== -->
 
 <article class="release-block" data-app="superprint" id="superprint-v1-7-402">
