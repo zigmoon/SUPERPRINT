@@ -4089,6 +4089,21 @@ function spRtfLayoutInfo(src) {
              chars: chars, images: images.length, docs: textes.length };
   }
 
+  // 🆕 v1.7.405 — CONTEXTE LEGER POUR LA GENERATION PAGE PAR PAGE.
+  //   On n'y met QUE la liste des images jointes : le corps des documents est deja
+  //   transmis, page par page, sous forme de TRANCHES (spDocumentSlices). Joindre le
+  //   document entier en plus multipliait le volume par ~12 (mesure : 14,6 M de
+  //   caracteres sur un .docx de 200 pages) sans rien apporter au modele.
+  function spImagesOnlyAttachmentContext() {
+    const images = (state.attachments || []).filter(function (a) { return a.type === 'image'; });
+    if (!images.length) return '';
+    const lignes = images.map(function (a, k) {
+      return 'IMAGE ' + k + ' = "' + a.name + '"' +
+        (a.width ? ' (' + a.width + '×' + a.height + 'px, ratio ' + (a.width / a.height).toFixed(2) + ')' : '');
+    });
+    return '\n\n=== IMAGES JOINtes (liste) ===\n' + lignes.join('\n');
+  }
+
   // Consigne injectee dans le prompt quand un document est joint : l'IA doit
   // traiter le document DANS SON INTEGRALITE, un chapitre par page.
   // 🆕 v1.7.388 — DECOUPE DU DOCUMENT JOINT EN N TRANCHES.
@@ -6017,6 +6032,10 @@ function spRtfLayoutInfo(src) {
   //   N appels, un par page, en donnant a chacun SA tranche du document.
   //   C'est ce qui garantit que le document est traite DANS SON INTEGRALITE.
   function spGenerateByPages(baseMessages, userText) {
+    // 🆕 v1.7.405 — ARRET PROPRE. Sur un gros document la generation enchaine
+    //   jusqu a 120 appels sequentiels : sans moyen d arreter, l utilisateur devait
+    //   fermer l onglet et perdre TOUT le travail deja compose.
+    state.spStopRequested = false;
     const hint = spAttachmentPageHint();
     const n = Math.max(2, Math.min(120, hint.pages));
     const slices = spDocumentSlices(n);
@@ -6027,6 +6046,16 @@ function spRtfLayoutInfo(src) {
     let dernierTexte = '';
 
     function suivant(i) {
+      // Arret demande par l utilisateur : on CONSERVE les pages deja composees.
+      if (state.spStopRequested) {
+        if ($("modelLabel")) $("modelLabel").textContent = libelle;
+        const _arrete = pages.filter(function (p) { return p.elements && p.elements.length; }).length;
+        return Promise.resolve(JSON.stringify({
+          reply: "Generation arretee : " + _arrete + " page(s) conservee(s) sur " + n + ". La maquette partielle est affichee — vous pouvez la poursuivre par un nouveau prompt.",
+          pages: pages,
+          targetPages: n
+        }));
+      }
       if (i >= n) {
         if ($('modelLabel')) $('modelLabel').textContent = libelle;
         // v1.7.393 — On renvoie une CHAINE JSON, EXACTEMENT comme le chemin a
@@ -6065,8 +6094,19 @@ function spRtfLayoutInfo(src) {
       //   donc AUCUNE section « PIECES JOINTES », ne connaissait pas les images et
       //   ne pouvait pas renvoyer "imageIndex" -> 0 image placee sur le canvas.
       //   On ajoute le contexte des pieces jointes a chaque appel.
+      // 🆕 v1.7.405 — NE PLUS JOINDRE LE DOCUMENT ENTIER A CHAQUE PAGE.
+      //   Mesure du defaut : pour un .docx de 200 pages (520 000 car.), la tranche
+      //   de la page etait bien dans userPart, MAIS buildAttachmentContext() rajoutait
+      //   le document complet tronque a 60 000 car. a CHAQUE appel. Sur 120 pages :
+      //   120 x (~60 000 + 5 000 + 57 000 systeme) = ~14,6 MILLIONS de caracteres,
+      //   soit plusieurs heures de generation — et un appel bloque laissait la boucle
+      //   sans fin (le loader tournait, la maquette n'arrivait jamais).
+      //   Le contexte des pieces jointes n'apporte ici que la LISTE DES IMAGES (pour
+      //   que le modele renvoie imageIndex) : on le reduit a cela.
       let pjContext = '';
-      try { pjContext = buildAttachmentContext(); } catch (_) { pjContext = ''; }
+      try {
+        pjContext = spImagesOnlyAttachmentContext();
+      } catch (_) { pjContext = ''; }
       const imagesNum = images.map(function (a, k) { return 'IMAGE ' + k + ' = "' + a.name + '"'; });
       const consigneImg = images.length
         ? '\n\n🖼️ IMAGES DISPONIBLES (place-les sur les pages où elles ont du sens) :\n' +
@@ -6100,13 +6140,30 @@ function spRtfLayoutInfo(src) {
   // Dispatcher : generation pilotee si un document long est joint, sinon appel unique.
   function spCallAI(messages, userText) {
     if (spShouldDrivePageByPage(userText)) {
-      return spGenerateByPages(messages, userText);
+      // 🆕 v1.7.405 — spGenerating permet au bouton de se transformer en
+      //   "Arreter" pendant une generation longue (un appel IA par page).
+      state.spGenerating = true;
+      return spGenerateByPages(messages, userText).then(function (r) {
+        state.spGenerating = false;
+        return r;
+      }, function (e) {
+        state.spGenerating = false;
+        throw e;
+      });
     }
     return callAI(messages);
   }
 
   async function sendMessage() {
-    if (state.busy) return;
+    // 🆕 v1.7.405 — Pendant une generation page par page, le bouton ARRETE.
+    //   Un second clic pose le drapeau au lieu de renvoyer un message.
+    if (state.busy) {
+      if (state.spGenerating) {
+        state.spStopRequested = true;
+        if ($("modelLabel")) $("modelLabel").textContent = "Arret en cours…";
+      }
+      return;
+    }
     const txt = $('promptInput').value.trim();
     const hasAttach = state.attachments.length > 0;
     if (!txt && !hasAttach) return;
@@ -6771,7 +6828,35 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
   }
 
   // ── Appel IA : route selon le moteur (DeepSeek / OpenRouter / Groq cloud ou WebLLM local) ──
+  // 🆕 v1.7.405 — DELAI MAXIMUM PAR APPEL.
+  //   Sans plafond, un seul appel qui ne repond pas (reseau, quota, proxy muet)
+  //   bloquait la generation page par page POUR TOUJOURS : la boucle suivant() ne
+  //   rappelait jamais le suivant, le loader restait affiche et rien n'atteignait le
+  //   canvas. C'etait le "il load mais ne depose jamais" sur les gros documents.
+  //   On borne donc chaque appel ; au-dela, on REJETTE pour que l'appelant puisse
+  //   passer a la page suivante (spGenerateByPages attrape deja l'erreur).
+  const SP_CALL_TIMEOUT_MS = 120000; // 2 minutes par page
+  function spWithTimeout(promise, ms, libelle) {
+    return new Promise(function (resolve, reject) {
+      let fini = false;
+      const t = setTimeout(function () {
+        if (fini) return;
+        fini = true;
+        reject(new Error('Delai depasse (' + Math.round(ms / 1000) + ' s) sur ' + libelle));
+      }, ms);
+      Promise.resolve(promise).then(function (v) {
+        if (fini) return; fini = true; clearTimeout(t); resolve(v);
+      }, function (e) {
+        if (fini) return; fini = true; clearTimeout(t); reject(e);
+      });
+    });
+  }
+
   function callAI(messages) {
+    return spWithTimeout(spCallAIProvider(messages), SP_CALL_TIMEOUT_MS, 'le moteur IA');
+  }
+
+  function spCallAIProvider(messages) {
     if (state.engine === 'webllm') return callWebLLM(messages);
     if (state.engine === 'openai') return callOpenAI(messages);
     if (state.engine === 'deepseek') return callDeepSeek(messages);

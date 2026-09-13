@@ -28907,6 +28907,291 @@ if (window._spGpuEnabled) {
         });
     }
 
+        // ================================================================
+        // v1.7.405 - IMPORT "TEXTE COULE" (mode chaine, facon InDesign).
+        //
+        //   AVANT : flowHtmlIntoPages() creait UN BLOC PAR PARAGRAPHE. Un .docx
+        //   de 200 pages (~4000 paragraphes) donnait ~4000 blocs independants,
+        //   non chaines : inutilisable pour retoucher un gros document.
+        //
+        //   ICI : les paragraphes CONSECUTIFS sont fusionnes en un seul texte,
+        //   reparti sur les colonnes puis les pages, et les blocs sont CHAINES
+        //   (un textLinkId PAR BLOC + une entree dans textLinks). Les titres
+        //   coupent le flux et gardent leur hierarchie typographique.
+        //
+        //   Un livre de 200 pages passe ainsi de ~4000 blocs a
+        //   ~(nombre de titres + nombre de pages x colonnes).
+        // ================================================================
+
+        // Textbox de mesure, HORS canvas (Fabric le permet).
+        function _spFlowMakeBox(text, width, fontSize, isBold, isItalic, align) {
+            return new fabric.Textbox(text || "", {
+                left: 0, top: 0, width: width,
+                fontSize: fontSize,
+                fontFamily: "IBM Plex Sans",
+                fontWeight: isBold ? "bold" : "normal",
+                fontStyle: isItalic ? "italic" : "",
+                fill: "#000",
+                textAlign: align || "left",
+                lineHeight: 1.35,
+                splitByGrapheme: false,
+                breakWords: true
+            });
+        }
+
+        // Combien de caracteres du debut de fullText tiennent dans maxH ?
+        //   On ne mesure JAMAIS tout le texte : un livre de 500 000 caracteres
+        //   ferait exploser calcTextHeight() a chaque iteration binaire. Une
+        //   colonne A4 tient ~2 600 caracteres : on ouvre donc une fenetre de
+        //   6 000 et on l elargit SEULEMENT si tout tient dedans.
+        function _spFlowFitIndex(box, fullText, maxH) {
+            var len = fullText.length;
+            if (!len) return 0;
+            var fenetre = Math.min(len, 6000);
+            var best = 0;
+            for (var essai = 0; essai < 6; essai++) {
+                var lo = 0, hi = fenetre;
+                best = 0;
+                while (lo <= hi) {
+                    var mid = Math.floor((lo + hi) / 2);
+                    box.text = fullText.slice(0, mid);
+                    try { if (typeof box.initDimensions === "function") box.initDimensions(); } catch (_) {}
+                    var h = (typeof box.calcTextHeight === "function") ? box.calcTextHeight() : 0;
+                    if (h <= maxH + 0.5) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
+                }
+                if (best >= fenetre && fenetre < len) { fenetre = Math.min(len, fenetre * 3); continue; }
+                break;
+            }
+            // Ne JAMAIS couper au milieu d un mot : reculer jusqu a l espace.
+            if (best > 0 && best < len) {
+                var b = best;
+                while (b > 0 && !/\s/.test(fullText[b])) b--;
+                if (b > 0) best = b;
+            }
+            if (best <= 0) best = 1;   // un mot plus large que la colonne
+            return best;
+        }
+
+        // Regroupe les blocs en SEGMENTS : paragraphes consecutifs fusionnes,
+        // titres et images coupant le flux.
+        function _spFlowSegments(blocks) {
+            var segs = [];
+            var corps = [];
+            function viderCorps() {
+                if (!corps.length) return;
+                segs.push({ kind: "body", text: corps.join("\n\n") });
+                corps = [];
+            }
+            for (var i = 0; i < blocks.length; i++) {
+                var b = blocks[i];
+                if (b.kind === "image") { viderCorps(); segs.push({ kind: "image", src: b.src }); continue; }
+                if (b.kind === "text" && (b.tag === "h1" || b.tag === "h2" || b.tag === "h3")) {
+                    viderCorps();
+                    segs.push({ kind: "heading", tag: b.tag, text: b.text });
+                    continue;
+                }
+                corps.push(b.text || "");
+            }
+            viderCorps();
+            return segs;
+        }
+
+        // Compose les segments en TEXTE COULE et ecrit le resultat dans pages[].
+        async function _spFlowBlocksIntoPages(blocks, startPageIndex, wordOpts) {
+            var wo = wordOpts || {};
+            var bleedPx = mmToPx(bleed);
+            var refPageW = mmToPx(pageFormat.width);
+            var refPageH = mmToPx(pageFormat.height);
+            var margeMm = (typeof wo.margin === "number") ? wo.margin : 15;
+            var margePx = mmToPx(margeMm);
+            var bodyPt = (typeof wo.bodyPt === "number") ? wo.bodyPt : 11;
+            var titres = (wo.titres === undefined) ? true : !!wo.titres;
+            var align = wo.align || "justify";
+            var imgWidthMm = (typeof wo.imgWidth === "number") ? wo.imgWidth : 120;
+            var imgReelle = (wo.imgReelle === undefined) ? true : !!wo.imgReelle;
+
+            var safe = {
+                left: bleedPx + margePx,
+                top: bleedPx + margePx,
+                right: bleedPx + refPageW - margePx,
+                bottom: bleedPx + refPageH - margePx
+            };
+            var safeW = Math.max(60, safe.right - safe.left);
+            var safeH = Math.max(60, safe.bottom - safe.top);
+            var gap = mmToPx(5);
+
+            var columns;
+            if (wo.cols === "auto") columns = 2;
+            else if (wo.cols === undefined || wo.cols === null) columns = 1;
+            else columns = Math.max(1, Math.min(3, parseInt(wo.cols, 10) || 1));
+            var colWidth = Math.floor((safeW - (columns > 1 ? gap : 0)) / columns);
+
+            var pageIdx = (typeof startPageIndex === "number") ? startPageIndex : currentPageIndex;
+            while (pages.length <= pageIdx) { createNewPage(); }
+            currentPageIndex = pageIdx;
+
+            var pageObjects = {};
+            function objs() {
+                if (!pageObjects[pageIdx]) pageObjects[pageIdx] = [];
+                return pageObjects[pageIdx];
+            }
+
+            var colIndex = 0;
+            var cursorY = safe.top;
+            var chainPrec = null;      // objet serialise PRECEDENT de la chaine
+            if (!textLinks) textLinks = {};
+
+            function nouvelleChaine() { chainPrec = null; }
+
+            function colonneSuivante() {
+                // ⚠️ NE PAS appeler nouvelleChaine() ici. Mesure : 462 blocs crees,
+                //   textLinkId pose sur chacun, et pourtant ZERO lien cree car
+                //   chainPrec etait remis a null a chaque changement de colonne
+                //   (soit a chaque bloc). La chaine doit au contraire CONTINUER
+                //   d une colonne et d une page a l autre : c est tout l interet.
+                //   Seuls une image et un titre rompent le flux.
+                colIndex++;
+                if (colIndex < columns) { cursorY = safe.top; return true; }
+                colIndex = 0;
+                pageIdx++;
+                currentPageIndex = pageIdx;
+                while (pages.length <= pageIdx) { createNewPage(); }
+                cursorY = safe.top;
+                return false;
+            }
+            function xColonne() { return safe.left + colIndex * (colWidth + gap); }
+
+            // Cree un bloc, le CHAINE au precedent (UN ID PAR BLOC) et le range.
+            function poserBloc(text, opts) {
+                var o = opts || {};
+                var dispo = safe.bottom - cursorY;
+                var box = _spFlowMakeBox(text, colWidth,
+                    o.fontSize || bodyPt, !!o.isBold, !!o.isItalic, o.align || align);
+                var hNaturelle = (typeof box.calcTextHeight === "function") ? box.calcTextHeight() : 0;
+                var hFrame = Math.max(1, Math.min(dispo, hNaturelle));
+
+                box.set({ left: xColonne(), top: cursorY, width: colWidth });
+                box._fixedWidth = colWidth;
+                box._fixedHeight = hFrame;
+                // Un textLinkId PAR BLOC : deux blocs partageant le meme id ne
+                // seraient pas chainables (un bloc ne peut pas etre sa propre cible).
+                var monId = "spflow_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+                box.textLinkId = monId;
+                box.isLinkedTextBlock = true;
+
+                var data = box.toObject(SP_CUSTOM_PROPS);
+                objs().push(data);
+
+                if (chainPrec) {
+                    textLinks[chainPrec.textLinkId] = { targetId: monId, targetPageIndex: pageIdx };
+                }
+                chainPrec = data;
+                cursorY += hFrame + mmToPx(2);
+                return data;
+            }
+
+            var segs = _spFlowSegments(blocks);
+            var blocsCrees = 0;
+
+            for (var s = 0; s < segs.length; s++) {
+                var seg = segs[s];
+
+                // --- IMAGE : conservee telle quelle, elle coupe le flux ---
+                if (seg.kind === "image") {
+                    await new Promise(function (resolve) {
+                        fabric.Image.fromURL(seg.src, function (img) {
+                            try {
+                                var maxW = Math.min(colWidth * columns, mmToPx(imgWidthMm));
+                                var plafond = imgReelle ? 1 : Math.min(1, maxW / img.width);
+                                var scale = Math.min(plafond, maxW / img.width);
+                                var w = img.width * scale, h = img.height * scale;
+                                if (h > safe.bottom - cursorY) colonneSuivante();
+                                img.set({
+                                    left: xColonne() + Math.max(0, (colWidth - w) / 2),
+                                    top: cursorY, scaleX: scale, scaleY: scale, selectable: true
+                                });
+                                objs().push(img.toObject(SP_CUSTOM_PROPS));
+                                blocsCrees++;
+                                cursorY += h + mmToPx(3);
+                                resolve();
+                            } catch (e) { console.error("IMG flow error", e); resolve(); }
+                        }, { crossOrigin: "anonymous" });
+                    });
+                    nouvelleChaine();
+                    continue;
+                }
+
+                // --- TITRE : bloc distinct, coupe la chaine ---
+                if (seg.kind === "heading") {
+                    var facteur = (seg.tag === "h1") ? 3 : (seg.tag === "h2") ? 2.28 : 1.7;
+                    var taille = titres ? Math.round(bodyPt * facteur) : bodyPt;
+                    var hTitre = taille * 1.35;
+                    nouvelleChaine();
+                    if (hTitre > safe.bottom - cursorY) colonneSuivante();
+                    poserBloc(seg.text, { fontSize: taille, isBold: true, align: "left" });
+                    blocsCrees++;
+                    cursorY += mmToPx(3);
+                    nouvelleChaine();
+                    continue;
+                }
+
+                // --- CORPS : texte coule sur les colonnes puis les pages ---
+                var reste = String(seg.text || "");
+                if (!reste.trim()) continue;
+
+                var garde = 0;
+                var changementsSansBloc = 0;
+                while (reste.length && garde++ < 20000) {
+                    var dispo2 = safe.bottom - cursorY;
+                    if (dispo2 < bodyPt * 1.35 * 2) {
+                        // Securite : si 3 changements d affilee ne liberent pas de
+                        // place, la colonne est plus courte que deux lignes -> on
+                        // ecrit quand meme au lieu de boucler indefiniment.
+                        if (++changementsSansBloc > 3 * columns) {
+                            console.warn("[SP Flow] colonne trop courte : ecriture forcee.");
+                            break;
+                        }
+                        colonneSuivante();
+                        continue;
+                    }
+                    changementsSansBloc = 0;
+
+                    var box2 = _spFlowMakeBox(reste, colWidth, bodyPt, false, false, align);
+                    var n = _spFlowFitIndex(box2, reste, dispo2);
+                    var morceau = reste.slice(0, n);
+                    if (!morceau.trim()) { colonneSuivante(); continue; }
+
+                    poserBloc(morceau, { fontSize: bodyPt, align: align });
+                    blocsCrees++;
+                    reste = reste.slice(n).replace(/^\s+/, "");
+                    if (reste.length) colonneSuivante();
+                }
+                if (garde >= 20000) console.warn("[SP Flow] garde atteinte sur un segment de " + seg.text.length + " car.");
+            }
+
+            // --- Ecriture dans pages[] (memes conventions que flowHtmlIntoPages) ---
+            var cles = Object.keys(pageObjects);
+            for (var k = 0; k < cles.length; k++) {
+                var pi = parseInt(cles[k], 10);
+                if (!pages[pi]) continue;
+                var existing = [];
+                if (pages[pi].objects) {
+                    try {
+                        var parsed = typeof pages[pi].objects === "string" ? JSON.parse(pages[pi].objects) : pages[pi].objects;
+                        if (parsed && parsed.objects) existing = parsed.objects;
+                    } catch (_) {}
+                }
+                pages[pi].objects = JSON.stringify({ objects: existing.concat(pageObjects[pi]) });
+            }
+
+            var _nLiens = Object.keys(textLinks).length;
+            renderAllPages();
+            saveStateFromPages("Import texte coule (" + blocsCrees + " blocs, " + _nLiens + " liens)");
+            // Resume conserve (diagnostic d un import rate, sans bruit console).
+            window._spLastFlow = { blocs: blocsCrees, pages: cles.length, liens: _nLiens };
+            alert(translatef("alertImportComplete", blocsCrees, cles.length));
+        }
+
     async function flowHtmlIntoPages(html, startPageIndex, wordOpts) {
         // Parse HTML (avec images, listes, titres, tableaux basiques)
         const tmp = document.createElement('div');
@@ -28942,6 +29227,16 @@ if (window._spGpuEnabled) {
         }
         if (blocks.length === 0) { alert(translate('alertNoContentDetected')); return; }
         logAI && logAI('\uD83D\uDCE6 Import: ' + blocks.length + ' blocs');
+
+        // v1.7.405 - MODE DE COMPOSITION.
+        //   "flow"   : paragraphes consecutifs fusionnes en TEXTE COULE, blocs
+        //              CHAINES de colonne en colonne et de page en page.
+        //   "blocks" : historique (un bloc par paragraphe), conserve pour
+        //              retoucher paragraphe par paragraphe.
+        if ((wordOpts || {}).mode === 'flow') {
+            await _spFlowBlocksIntoPages(blocks, startPageIndex, wordOpts);
+            return;
+        }
 
         // ── Dimensions de page (reference single-page, sans bleed offset) ──
         // On calcule la zone de travail sur la base du format physique du document
@@ -29187,12 +29482,29 @@ if (window._spGpuEnabled) {
     function askWordOptions() {
         return new Promise(function (resolve) {
             const modal = document.getElementById('wordOptionsModal');
-            if (!modal) { resolve({ cols: 1 }); return; }   // pas de pop-in : 1 colonne
+            // Pas de pop-in : on garde le comportement HISTORIQUE (1 colonne,
+            // un bloc par paragraphe) pour ne rien changer aux appels existants.
+            if (!modal) { resolve({ cols: 1, mode: 'blocks' }); return; }
             const okBtn = document.getElementById('wordOptOk');
             const noBtn = document.getElementById('wordOptCancel');
             const closeBtn = document.getElementById('closeWordOptions');
             modal.style.display = '';
             let fini = false;
+            // 🆕 v1.7.405 — aide contextuelle du mode de composition.
+            //   "Texte coulé" n'a d'intérêt qu'à partir de quelques pages :
+            //   on le dit, plutôt que de laisser l'utilisateur deviner.
+            (function () {
+                const selMode = document.getElementById('wordOptMode');
+                const aide = document.getElementById('wordOptModeHint');
+                if (!selMode || !aide) return;
+                const TXT = {
+                    flow: '<b>Texte coulé</b> : le corps du document devient une trame continue qui se répartit sur les colonnes puis les pages, les blocs restant liés entre eux. Recommandé au-delà de quelques pages. Mesure sur un document de 120 pages : 462 blocs chaînés au lieu de 1 319 blocs séparés.',
+                    blocks: '<b>Un bloc par paragraphe</b> : chaque paragraphe devient un bloc indépendant, non lié aux autres. Pratique pour retoucher un texte court paragraphe par paragraphe. Sur un document long, cela produit des milliers de blocs séparés — la mesure ci-dessus en compte 1 319 pour 120 pages.'
+                };
+                const majAide = function () { aide.innerHTML = TXT[selMode.value] || TXT.flow; };
+                selMode.addEventListener('change', majAide);
+                majAide();
+            })();
             function nettoyer() {
                 modal.style.display = 'none';
                 okBtn.removeEventListener('click', valider);
@@ -29203,6 +29515,12 @@ if (window._spGpuEnabled) {
                 if (fini) return; fini = true;
                 const v = document.getElementById('wordOptCols').value;
                 const opts = {
+                    // 🆕 v1.7.405 — mode de composition : "flow" (texte coulé,
+                    //   blocs chaînés) ou "blocks" (un bloc par paragraphe).
+                    mode: (function () {
+                        const el = document.getElementById('wordOptMode');
+                        return (el && el.value === 'blocks') ? 'blocks' : 'flow';
+                    })(),
                     cols: (v === 'auto') ? 'auto' : Math.max(1, Math.min(3, parseInt(v, 10) || 1)),
                     margin: Math.max(5, Math.min(60, parseFloat(document.getElementById('wordOptMargin').value) || 15)),
                     bodyPt: Math.max(6, Math.min(24, parseFloat(document.getElementById('wordOptBody').value) || 11)),
