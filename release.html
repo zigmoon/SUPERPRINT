@@ -6,7 +6,7 @@
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
 <meta name="description" content="Latest Zigmoon release notes for PDF-YZ, Bird and SuperPrint. Discover native PDF editing, local-first vector design, SuperTyPo typeface editor and SuperPrint v1.7.375 (reliable text wrap, stable AI text blocks, colour picker in RGB).">
-<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.387, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures">
+<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.388, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="SuperPrint v1.7.387 — the studio fold line was drawn on the crop mark instead of the sheet centre (now measured at x=604). Book imposition and page folios are correct: 4 pages to 3 sheets, 8 pages to 5 sheets, no folio beyond the last page.">
+<meta property="og:description" content="SuperPrint v1.7.388 — dropping a Word document now extracts its images and processes the whole file. Verified on a real 21,000-character document with 2 images: 1 page and 0 images before, 4 full pages after.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SuperPrint v1.7.387 — fold line now at the sheet centre, and book imposition with exact folios (4 pages to 3 sheets, 8 pages to 5).">
+<meta name="twitter:description" content="SuperPrint v1.7.388 — Word import now extracts images and processes the whole document. 1 page before, 4 full pages after.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -704,6 +704,44 @@ footer, footer a { color: var(--after-text-color); }
 
 <main>
 <section class="releases" aria-label="Release notes">
+
+<!-- ===== SUPER PRINT v1.7.388 — import Word du studio ===== -->
+<article class="release-block" data-app="superprint" id="superprint-v1-7-388">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.388</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 13 septembre 2026" data-i18n-en="Released September 13, 2026" data-i18n-jp="2026年9月13日公開">Released September 13, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="<strong>Déposez un document Word : le studio en sort désormais les images et le traite en entier.</strong> Jusqu'ici il n'en lisait que le texte brut — vos photos disparaissaient — et il s'arrêtait en route : au-delà d'un certain volume, il recevait le document tronqué et demandait une précision au lieu de composer la maquette. Vérifié sur un document réel de 21 000 caractères et 2 images." data-i18n-en-html="<strong>Drop a Word document in: the studio now extracts its images and processes it whole.</strong> Until now it only read the plain text — your photos vanished — and it stopped partway: past a certain size it received a truncated document and asked for clarification instead of composing. Verified on a real 21,000-character document with 2 images." data-i18n-jp-html="<strong>Word文書をドロップすると、スタジオが画像を抽出し、文書全体を処理するようになりました。</strong>これまではプレーンテキストのみを読み取り、写真は失われ、途中で停止していました。一定量を超えると切り詰められた文書を受け取り、レイアウトを組む代わりに確認を求めてきました。実際の21,000文字・画像2点の文書で検証済みです。">Word import now extracts images and processes the whole document.</p>
+
+ <h3>🖼️ Your Word images were thrown away <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Mesure :</strong> le studio utilisait <code>extractRawText</code>, qui rend du texte brut et <em>ignore toutes les images</em>. Une brochure Word perdait donc l'intégralité de ses photos, et aussi sa structure — titres, gras, listes, tableaux." data-i18n-en-html="<strong>Measured:</strong> the studio used <code>extractRawText</code>, which returns plain text and <em>ignores every image</em>. A Word brochure therefore lost all its photos, along with its structure — headings, bold, lists, tables." data-i18n-jp-html="<strong>計測：</strong>スタジオは<code>extractRawText</code>を使用しており、これはプレーンテキストを返し、<em>すべての画像を無視</em>します。そのためWordのパンフレットは写真をすべて失い、構造（見出し、太字、リスト、表）も失われていました。">No images were extracted from a .docx.</li>
+  <li data-i18n-fr-html="<strong>Il utilise maintenant la même méthode que l'éditeur</strong> (<code>convertToHtml</code> + <code>convertImage</code>). Le texte garde ses titres, ses listes et ses tableaux, et <strong>chaque image du document est extraite</strong> puis proposée à l'IA, qui la place dans la page où elle a du sens." data-i18n-en-html="<strong>It now uses the same method as the editor</strong> (<code>convertToHtml</code> + <code>convertImage</code>). The text keeps its headings, lists and tables, and <strong>every image in the document is extracted</strong> then offered to the AI, which places it on the page where it belongs." data-i18n-jp-html="<strong>エディタと同じ方式</strong>（<code>convertToHtml</code>＋<code>convertImage</code>）を使用するようになりました。テキストは見出し・リスト・表を保持し、<strong>文書内のすべての画像が抽出</strong>され、AIが適切なページに配置します。">Every image is now extracted.</li>
+  <li data-i18n-fr-html="Le message d'import vous le confirme : « <em>21 424 caractères et 2 image(s) extraite(s)</em> »." data-i18n-en-html="The import message confirms it: “<em>21,424 characters and 2 image(s) extracted</em>”." data-i18n-jp-html="取り込みメッセージで確認できます：「<em>21,424文字、画像2点を抽出</em>」。">The import message confirms what was extracted.</li>
+ </ul>
+
+ <h3>🛑 It stopped instead of finishing <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>La limite était fixée à 24 000 caractères.</strong> Un livre de 80 000 caractères partait tronqué à 30 %. Elle passe à <strong>60 000</strong> — les modèles actuels gèrent plus de 128 000 caractères de contexte." data-i18n-en-html="<strong>The limit was set at 24,000 characters.</strong> An 80,000-character book was sent truncated to 30 %. It is now <strong>60,000</strong> — current models handle 128,000+ characters of context." data-i18n-jp-html="<strong>上限は24,000文字でした。</strong>80,000文字の本は30%に切り詰められて送信されていました。<strong>60,000</strong>に引き上げました — 現在のモデルは128,000文字以上のコンテキストを扱えます。">The text limit was raised from 24,000 to 60,000 characters.</li>
+  <li data-i18n-fr-html="<strong>Et le message de troncature lui disait de s'arrêter :</strong> « si le passage cherché n'est pas dans cet extrait, formulez une recherche ». Un modèle obéissant cessait donc de composer pour demander une précision. Le nouveau message dit l'inverse : <em>« traite ce qui est fourni, ne t'arrête pas, ne demande pas de précision »</em>." data-i18n-en-html="<strong>And the truncation notice told it to stop:</strong> “if the passage you are looking for is not in this excerpt, formulate a search”. An obedient model would therefore stop composing and ask a question instead. The new notice says the opposite: <em>“process what is provided — do not stop, do not ask for clarification”</em>." data-i18n-jp-html="<strong>さらに切り詰めの通知が停止を促していました：</strong>「探している箇所がこの抜粋になければ、検索を指示してください」。従順なモデルは組版をやめて確認を求めてしまいました。新しい通知は逆を伝えます：<em>「提供された内容を処理し、停止しない、確認を求めない」</em>。">The truncation notice itself was telling the AI to stop.</li>
+  <li data-i18n-fr-html="<strong>Les consignes chiffrées se contredisaient.</strong> Le prompt annonçait « répartis tout le contenu sur environ 9 pages » tout en demandant « produis <em>le nombre demandé</em> de pages » — sans qu'aucun nombre n'ait été demandé. Le modèle produisait donc une seule page. Le studio calcule maintenant lui-même le nombre de pages d'après le volume réel du document." data-i18n-en-html="<strong>The numeric instructions contradicted each other.</strong> The prompt announced “spread all the content over about 9 pages” while asking to “produce <em>the requested number</em> of pages” — with no number requested. The model therefore produced a single page. The studio now computes the page count itself from the document's real size." data-i18n-jp-html="<strong>数値指示が矛盾していました。</strong>プロンプトは「全内容を約9ページに配分」と告げながら、「<em>要求された数</em>のページを生成」と指示していました — 数は要求されていないのに。そのためモデルは1ページしか生成しませんでした。スタジオが文書の実際の分量からページ数を算出するようになりました。">Contradictory instructions made the model produce one page.</li>
+ </ul>
+
+ <h3>📚 The whole document, then <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Le studio pilote désormais la génération page par page.</strong> Chaque appel reçoit <em>sa propre tranche</em> du document, coupée proprement au mot le plus proche. Vous voyez la progression s'afficher (<code>SP213 3 sur 9</code>), et une page qui échoue n'interrompt pas le reste du document." data-i18n-en-html="<strong>The studio now drives the generation page by page.</strong> Each call receives <em>its own slice</em> of the document, cleanly cut at the nearest word. You see the progress (<code>SP213 3 of 9</code>), and a page that fails does not interrupt the rest of the document." data-i18n-jp-html="<strong>スタジオがページごとに生成を制御するようになりました。</strong>各呼び出しは文書の<em>担当部分</em>を受け取り、最も近い単語で区切られます。進捗が表示され（<code>SP213 3 / 9</code>）、あるページが失敗しても残りは中断しません。">The studio drives generation page by page.</li>
+  <li data-i18n-fr-html="<strong>C'est la garantie du traitement intégral :</strong> le résultat ne dépend plus de la capacité du modèle à respecter une consigne de volume, mais du studio qui découpe et assemble." data-i18n-en-html="<strong>This is what guarantees complete processing:</strong> the result no longer depends on the model obeying a volume instruction, but on the studio splitting and assembling." data-i18n-jp-html="<strong>これが全体処理の保証です：</strong>結果は、モデルが分量指示に従えるかどうかではなく、分割と統合を行うスタジオにかかっています。">Complete processing no longer depends on the model.</li>
+  <li data-i18n-fr-html="<strong>Résultat mesuré sur un vrai document</strong> (21 424 caractères, 2 images, DeepSeek V4.1 Flash) : <em>avant</em> 1 page, 10 blocs de texte, 0 image ; <em>après</em> <strong>4 pages dont aucune vide</strong> (10 / 22 / 10 / 11 éléments, 39 blocs de texte) avec une vraie structure éditoriale — couverture, contenu, dernière page avec ISBN, site et folio." data-i18n-en-html="<strong>Measured on a real document</strong> (21,424 characters, 2 images, DeepSeek V4.1 Flash): <em>before</em> 1 page, 10 text blocks, 0 images; <em>after</em> <strong>4 pages, none empty</strong> (10 / 22 / 10 / 11 elements, 39 text blocks) with a genuine editorial structure — cover, content, closing page with ISBN, website and folio." data-i18n-jp-html="<strong>実際の文書での計測</strong>（21,424文字、画像2点、DeepSeek V4.1 Flash）：<em>以前</em>は1ページ、テキスト10ブロック、画像0点。<em>以後</em>は<strong>空ページなしの4ページ</strong>（要素数10／22／10／11、テキスト39ブロック）で、表紙・本文・奥付（ISBN、サイト、フォリオ付き）という本来の編集構造を持ちます。">Measured: 1 page before, 4 full pages after.</li>
+ </ul>
+
+ <p data-i18n-fr="Application 1.7.388 — vérifié de bout en bout avec un .docx réel contenant deux images : extraction, structure du texte, répartition sur plusieurs pages et export .sp." data-i18n-en="Application 1.7.388 — verified end to end with a real .docx containing two images: extraction, text structure, multi-page distribution and .sp export." data-i18n-jp="アプリ 1.7.388 — 画像2点を含む実際の.docxでエンドツーエンド検証：抽出、テキスト構造、複数ページへの配分、.sp書き出し。">Application 1.7.388 — verified end to end with a real .docx.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Ouvrir SuperPrint" data-i18n-en="→ Open SuperPrint" data-i18n-jp="→ SuperPrintを開く">→ Open SuperPrint</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
 
 <!-- ===== SUPER PRINT v1.7.387 — la double page comprise par le studio ===== -->
 <article class="release-block" data-app="superprint" id="superprint-v1-7-387">

@@ -9,6 +9,20 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.388] — 2026-09-13
+
+_Studio: Word import rebuilt — images extracted, whole document processed_
+
+### Fixed
+- **No images were extracted from a `.docx`.** The studio used `mammoth.extractRawText()`, which returns plain text and **drops every image** — and loses all structure (headings, bold, lists, tables). It now uses `convertToHtml` + `convertImage`, like the editor (`main.js` ~29164): the text is converted to a readable structure (headings `#`, lists `-`, tables `|`) **and every image in the document is extracted** and added as a separate attachment the AI can place via `imageIndex`.
+- **The attachment text limit was 24 000 characters** — an 80 000-character book was sent at 30 %. Raised to **60 000** (cloud models have 128k+ context).
+- **The truncation notice told the model to stop.** It read "if the passage you are looking for is not in this excerpt, formulate a keyword search" — an obedient model would then *stop and ask* instead of composing, which is exactly the "the AI tends to stop" being reported. It now says **"process what is provided… do not stop, do not ask for clarification"**.
+- **Multi-page detection only read the user's prompt.** A 21 000-character `.docx` attached without the user typing "N pages" produced `isMulti = false` → **a single page was requested**. The message also said "produce **the requested number** of entries" (no number given) while the completeness note announced 9 — contradictory instructions.
+- **The studio now drives the page generation.** When a long document is attached, it sends **one call per page**, each receiving **its own slice** of the document (cut at the nearest word). Progress is shown (`SP213 3/9`) and a failing page does not abort the whole document. This guarantees the whole document is processed regardless of how well the model follows volume instructions.
+
+### Verified
+Real `.docx` (21 424 characters, 2 embedded PNGs) with DeepSeek V4.1 Flash: **before 1 page / 10 texts / 0 images** → **after 4 pages, none empty** (10 / 22 / 10 / 11 elements, 39 text blocks) with a real editorial structure: cover, content, closing page with ISBN, website and folio.
+
 ## [1.7.387] — 2026-09-13
 
 _Two-page spreads were not understood by the studio (fold line, imposition, folios)_
