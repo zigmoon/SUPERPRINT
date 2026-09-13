@@ -6,7 +6,7 @@
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
 <meta name="description" content="Latest Zigmoon release notes for PDF-YZ, Bird and SuperPrint. Discover native PDF editing, local-first vector design, SuperTyPo typeface editor and SuperPrint v1.7.375 (reliable text wrap, stable AI text blocks, colour picker in RGB).">
-<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.388, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation">
+<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.389, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="SuperPrint v1.7.388 — dropping a Word document now extracts its images and processes the whole file. Verified on a real 21,000-character document with 2 images: 1 page and 0 images before, 4 full pages after.">
+<meta property="og:description" content="SuperPrint v1.7.389 — AI titles no longer overlap the text below (measured with the real engine), Word images now reach the AI, a single-column Word file now opens in one column, and the studio continues your layout instead of starting a new conversation.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SuperPrint v1.7.388 — Word import now extracts images and processes the whole document. 1 page before, 4 full pages after.">
+<meta name="twitter:description" content="SuperPrint v1.7.389 — AI titles measured with the real engine, Word import options (columns), and the studio now continues your layout by default.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -704,6 +704,49 @@ footer, footer a { color: var(--after-text-color); }
 
 <main>
 <section class="releases" aria-label="Release notes">
+
+<!-- ===== SUPER PRINT v1.7.389 — titres IA, options Word, conversation ===== -->
+<article class="release-block" data-app="superprint" id="superprint-v1-7-389">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.389</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 13 septembre 2026" data-i18n-en="Released September 13, 2026" data-i18n-jp="2026年9月13日公開">Released September 13, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="<strong>Quatre corrections issues de vos retours.</strong> Les titres placés par l'IA recouvraient le texte du dessous, l'IA ne recevait pas la liste des images de votre document Word, un Word en une colonne arrivait sur deux colonnes, et le studio ouvrait une nouvelle conversation au lieu d'améliorer la maquette affichée. Les quatre sont mesurés et corrigés." data-i18n-en-html="<strong>Four fixes from your feedback.</strong> AI-placed titles overlapped the text beneath them, the AI never received the list of images from your Word document, a single-column Word file arrived in two columns, and the studio started a new conversation instead of improving the layout on screen. All four are measured and fixed." data-i18n-jp-html="<strong>ご指摘による4件の修正。</strong>AIが配置したタイトルが下のテキストに重なっていた、AIがWord文書の画像リストを受け取っていなかった、1段組のWordが2段組で取り込まれていた、スタジオが表示中のレイアウトを改善せず新しい会話を開いていた。4件すべてを計測のうえ修正しました。">Four fixes from your feedback — all measured.</p>
+
+ <h3>📐 Titles no longer overlap the text below <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Le studio estimait la largeur d'un caractère sans tenir compte de la police, de la graisse ni du corps.</strong> Mesure : 5,22 mm pour Playfair Display 36 pt, contre <strong>15,82 mm</strong> en réalité — un facteur de 3. Un titre de 3 lignes était donc vu comme 2 lignes, et le paragraphe suivant était placé <strong>15,2 mm trop haut</strong>." data-i18n-en-html="<strong>The studio estimated a character's width without the font, the weight or the size.</strong> Measured: 5.22 mm for Playfair Display 36 pt against <strong>15.82 mm</strong> in reality — a factor of 3. A 3-line title was therefore seen as 2 lines, and the next paragraph was placed <strong>15.2 mm too high</strong>." data-i18n-jp-html="<strong>スタジオはフォント・ウェイト・サイズを考慮せず文字幅を見積もっていました。</strong>計測：Playfair Display 36ptで5.22mm、実際は<strong>15.82mm</strong> — 実に3倍。そのため3行のタイトルが2行と認識され、次の段落が<strong>15.2mmも高く</strong>配置されていました。">Character width was estimated without the font, weight or size.</li>
+  <li data-i18n-fr-html="<strong>Le studio mesure maintenant pour de vrai</strong>, avec le moteur Fabric : il crée le bloc, le laisse calculer ses lignes et additionne leur hauteur réelle. Le titre Playfair 36 pt est correctement vu sur <strong>3 lignes et 37,1 mm</strong>." data-i18n-en-html="<strong>The studio now measures for real</strong>, using the Fabric engine: it creates the block, lets it compute its lines and sums their real height. The Playfair 36 pt title is correctly seen as <strong>3 lines and 37.1 mm</strong>." data-i18n-jp-html="<strong>スタジオは実際に計測するようになりました。</strong>Fabricエンジンでブロックを生成し、行を計算させ、実際の高さを合計します。Playfair 36ptのタイトルは<strong>3行・37.1mm</strong>と正しく認識されます。">The studio now measures with the real engine.</li>
+  <li data-i18n-fr-html="<strong>Et une nouvelle passe contrôle les chevauchements :</strong> si deux blocs se recouvrent, le second descend sous le premier avec une respiration de 4 mm. Si le bas de page est atteint, le corps est réduit plutôt que de laisser le texte sortir. Vérifié sur 4 cas : 5,1 mm et 32,1 mm de recouvrement deviennent −4 mm (dégagé), un bloc déjà correct reste intact." data-i18n-en-html="<strong>And a new pass checks overlaps:</strong> if two blocks overlap, the second moves below the first with a 4 mm gap. If the page bottom is reached, the font size is reduced rather than letting text run off. Verified on 4 cases: 5.1 mm and 32.1 mm of overlap become −4 mm (clear), and an already-correct block stays untouched." data-i18n-jp-html="<strong>さらに重なりを検査するパスを追加：</strong>2つのブロックが重なる場合、2つ目は4mmの余白を空けて下へ移動します。ページ下端に達した場合は、テキストをはみ出させるのではなく文字サイズを縮小します。4ケースで検証：5.1mmと32.1mmの重なりが−4mm（解消）になり、正しく配置済みのブロックはそのままです。">A new pass detects and resolves overlaps.</li>
+ </ul>
+
+ <h3>🖼️ Your Word images now reach the AI <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Les images étaient extraites du document… mais jamais transmises à l'IA.</strong> Le moteur qui compose page par page n'incluait pas la liste des pièces jointes : le modèle ignorait donc quelles images étaient disponibles et ne pouvait pas les placer. Mesure : <em>aucune</em> mention d'image dans la requête envoyée, alors que vos deux images étaient bien là." data-i18n-en-html="<strong>The images were extracted from the document… but never passed to the AI.</strong> The page-by-page engine did not include the attachment list: the model had no idea which images were available and could not place them. Measured: <em>no</em> image mention in the outgoing request, while your two images were right there." data-i18n-jp-html="<strong>画像は文書から抽出されていましたが、AIには渡されていませんでした。</strong>ページ単位のエンジンが添付リストを含めていなかったため、モデルは利用可能な画像を把握できず配置できませんでした。計測：送信リクエストに画像の記述は<em>皆無</em>でしたが、実際には2点の画像がありました。">The images were extracted but never sent to the AI.</li>
+  <li data-i18n-fr-html="La liste des images et la consigne de placement sont désormais transmises à <strong>chaque appel</strong>. Vérifié : <code>IMAGE 0</code> et <code>IMAGE 1</code> accompagnent les 9 pages générées." data-i18n-en-html="The image list and placement instruction are now sent on <strong>every call</strong>. Verified: <code>IMAGE 0</code> and <code>IMAGE 1</code> accompany all 9 generated pages." data-i18n-jp-html="画像リストと配置指示が<strong>毎回の呼び出し</strong>に含まれるようになりました。検証：<code>IMAGE 0</code>と<code>IMAGE 1</code>が生成された9ページすべてに付随します。">The image list now travels with every call.</li>
+ </ul>
+
+ <h3>📄 Word import: you choose the layout <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>« Il arrive en multi-colonne alors que mon document est en simple colonne. »</strong> C'était exact : au-delà de <strong>40 paragraphes</strong>, l'éditeur imposait silencieusement <strong>deux colonnes</strong>. Aucun réglage ne permettait de l'éviter." data-i18n-en-html="<strong>“It arrives multi-column while my document is single column.”</strong> That was accurate: past <strong>40 paragraphs</strong>, the editor silently imposed <strong>two columns</strong>. No setting could prevent it." data-i18n-jp-html="<strong>「1段組の文書なのに2段組で取り込まれる」</strong> — そのとおりでした。<strong>40段落</strong>を超えると、エディタが黙って<strong>2段組</strong>を適用していました。回避する設定はありませんでした。">Above 40 paragraphs, two columns were silently forced.</li>
+  <li data-i18n-fr-html="<strong>Une fenêtre d'options s'affiche maintenant</strong> après le choix de votre fichier : nombre de colonnes (Auto / 1 / 2 / 3), marges, corps du texte, largeur maximale des images, conservation de la hiérarchie des titres Word, et images à leur taille réelle. <strong>Une colonne est le réglage par défaut</strong> — votre document est respecté." data-i18n-en-html="<strong>An options window now appears</strong> after you pick your file: number of columns (Auto / 1 / 2 / 3), margins, body size, maximum image width, keep the Word heading hierarchy, and images at their real size. <strong>One column is the default</strong> — your document is respected." data-i18n-jp-html="<strong>ファイル選択後にオプション画面が表示されます：</strong>段数（Auto／1／2／3）、マージン、本文サイズ、画像の最大幅、Word見出し階層の保持、画像を実寸で配置。<strong>既定は1段組</strong>で、文書が尊重されます。">An options window now appears after choosing your file.</li>
+ </ul>
+
+ <h3>💬 The studio continues your layout <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>« Si je re-prompte par dessus, il m'ouvre une nouvelle conversation au lieu de continuer sur la maquette que je vois. »</strong> Le studio décidait d'après une <em>liste de verbes</em> (modifie, change, ajoute…). Tout message sans ces verbes — « rends-le plus moderne », « le titre est trop gros », « continue » — était pris pour un nouveau projet. Mesure : <strong>7 messages sur 13</strong> basculaient à tort." data-i18n-en-html="<strong>“If I re-prompt on top, it opens a new conversation instead of continuing the layout I can see.”</strong> The studio decided from a <em>list of verbs</em> (modify, change, add…). Any message without them — “make it more modern”, “the title is too big”, “continue” — was taken for a new project. Measured: <strong>7 messages out of 13</strong> switched wrongly." data-i18n-jp-html="<strong>「上書きで再プロンプトすると、表示中のレイアウトを続けず新しい会話が開く」</strong> — スタジオは<em>動詞リスト</em>（変更、置換、追加…）で判断していました。これらの動詞を含まないメッセージ（「もっとモダンに」「タイトルが大きすぎる」「続けて」）は新規プロジェクトと見なされていました。計測：<strong>13件中7件</strong>が誤って切り替わっていました。">The studio switched to a new conversation based on a verb list.</li>
+  <li data-i18n-fr-html="<strong>La logique est inversée : le studio continue désormais par défaut.</strong> Il n'ouvre une nouvelle conversation que si vous le demandez clairement — « crée une nouvelle affiche », « fais-moi un autre catalogue », « recommence », « de zéro ». Un simple « nouveau » ne suffit pas : « mets le nouveau titre en grand » continue la maquette, comme vous l'attendez." data-i18n-en-html="<strong>The logic is inverted: the studio now continues by default.</strong> It only starts a new conversation if you clearly ask for one — “create a new poster”, “make me another catalogue”, “start over”, “from scratch”. A plain “new” is not enough: “make the new title bigger” continues the layout, as you would expect." data-i18n-jp-html="<strong>ロジックを反転：既定で継続します。</strong>新しい会話は明確に要求した場合のみ — 「新しいポスターを作って」「別のカタログを作って」「最初から」「ゼロから」。単なる「新しい」では不十分です：「新しいタイトルを大きく」は期待どおりレイアウトを継続します。">The studio now continues by default.</li>
+  <li data-i18n-fr-html="Vérifié sur 13 formulations : <strong>7 continuent la maquette, 6 créent un nouveau document</strong>. Aucune erreur." data-i18n-en-html="Verified on 13 phrasings: <strong>7 continue the layout, 6 create a new document</strong>. No mistakes." data-i18n-jp-html="13の表現で検証：<strong>7件がレイアウトを継続、6件が新規文書を作成</strong>。誤りなし。">Verified on 13 phrasings: no mistakes.</li>
+ </ul>
+
+ <p data-i18n-fr="Application 1.7.389 — les quatre corrections sont mesurées au navigateur avec le moteur réel, et vérifiées dans le paquet distribué." data-i18n-en="Application 1.7.389 — all four fixes are measured in the browser with the real engine, and verified inside the distributed package." data-i18n-jp="アプリ 1.7.389 — 4件の修正は実際のエンジンでブラウザ計測し、配布パッケージ内でも検証済みです。">Application 1.7.389 — measured in the browser and verified in the package.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Ouvrir SuperPrint" data-i18n-en="→ Open SuperPrint" data-i18n-jp="→ SuperPrintを開く">→ Open SuperPrint</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
 
 <!-- ===== SUPER PRINT v1.7.388 — import Word du studio ===== -->
 <article class="release-block" data-app="superprint" id="superprint-v1-7-388">

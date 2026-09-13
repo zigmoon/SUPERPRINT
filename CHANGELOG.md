@@ -9,6 +9,18 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.389] — 2026-09-13
+
+_AI titles overlapping the text below · Word import options · studio conversation continues_
+
+### Fixed
+- **AI titles overlapped the text beneath them.** The studio estimated a character's width **without the font, the weight or the size** — 5.22 mm for Playfair Display 36 pt against 15.82 mm measured (factor 3.0) — so a 3-line title was seen as 2 lines and the block below was placed 15.2 mm too high. The height also omitted the engine's 1.13 factor, and nothing checked collisions between blocks. The studio now **measures with Fabric** (`initDimensions` + `getHeightOfLine`) instead of guessing, and a new **collision pass** stacks overlapping blocks and shrinks the font only if the page bottom is reached. Measured: 4/4 cases fixed (5.1 → −4.0 mm, 32.1 → −4.0 mm).
+- **The AI never received the list of images.** The page-by-page generator did not include the attachment context, so the model could not return `imageIndex` — **0 images were placed** while the attachment bar held 2. Measured: 0 occurrences of `IMAGE n` in the request. After: `IMAGE 0` and `IMAGE 1` transmitted on all 9 page calls.
+- **The studio opened a new conversation instead of continuing.** The decision relied on a **list of verbs** (modify, change, add…); any prompt without them — "make it more modern", "the title is too big", "continue" — called `newConversation()` and abandoned the layout on screen. Measured: **7 of 13 prompts switched wrongly**. The logic is now inverted: it **continues by default**, and only starts a new document on an explicit request (creation verb + "new" + a document word, or "start over" / "from scratch"). 13/13 prompts classified correctly.
+
+### Added
+- **Word import options (editor).** A pop-in now appears after choosing a `.doc`/`.docx` file: columns (Auto / 1 / 2 / 3), margins, body size, max image width, keep Word heading hierarchy, images at real size. This fixes the reported "it arrives multi-column while my document is single column": `flowHtmlIntoPages` forced **2 columns above 40 text blocks**, silently. **1 column is now the default**; "Auto" reproduces the previous behaviour.
+
 ## [1.7.388] — 2026-09-13
 
 _Studio: Word import rebuilt — images extracted, whole document processed_
