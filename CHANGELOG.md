@@ -9,6 +9,25 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.405] — 2026-09-14
+
+_Word / ODT / PDF imports become linked, flowed text — and long documents finally complete in Studio IA_
+
+### Added
+- **Import documents as linked, flowed text.** Paragraphs are no longer isolated blocks: consecutive paragraphs are merged into a single flow, distributed across columns then pages, and the resulting blocks are **linked** (`textLinkId` + `textLinks`) column to column and page to page. Adjusting one block’s width now adjusts the whole document, as in professional page-layout software.
+- **A composition option in the import dialog**: **Flowed text** (recommended) or **One block per paragraph** (the previous behaviour, kept for fine-tuning short texts).
+- **Studio IA generations can be stopped.** During a long page-by-page run, a second click on *Send* stops the process cleanly and **keeps the pages already composed** — previously the only option was closing the tab and losing everything.
+
+### Fixed
+- **The studio sent the whole document with every page.** In page-by-page mode the document body was already sent as a slice, but `buildAttachmentContext()` added the **entire document** (truncated to 60,000 characters) to *each* call. Measured on a 200-page document capped at 120 pages: **120 × ~122,000 = ~14.6 million characters**. That is hours of processing — and because `callAI()` had **no timeout**, a single unresponsive call left the loop hanging forever: the loader kept spinning and nothing ever reached the canvas. The attached context now carries **only the image list** (about a 10× reduction), and every call has a **120-second timeout** so one failure no longer blocks the whole document.
+- **A flaw in our own first fix, found by measurement.** An instrumented trace showed `{ blocs: 462, liensAvantRendu: 0 }`: all 462 blocks carried an identifier but **no link existed at all**. Cause: `colonneSuivante()` reset the chain pointer at every column change — and the body changes column on almost every block (an A4 column holds ~2,600 characters), so the chain broke before it could exist. The chain now continues across columns and pages; only headings and images interrupt the flow, as they should.
+
+### Verified
+- Real browser test — a **120-page Word document** (1,319 paragraphs, 401,961 characters, built for the occasion) dropped into the actual import field: **462 linked blocks across 136 pages, 103 links persisted in the `.sp`**, and **402,446 characters found in the blocks** — no text lost (the 485-character difference is the paragraph separators).
+- `node --check` on `main.js` (web and mirror), `_check_studio` on the studio (web and mirror), web/mirror parity 14/14, no leftover version markers, dist rebuilt at 1.7.405, package (56,278,026 bytes) regenerated.
+
+> ⚠️ **`superprint.cc` still serves 1.7.404.** Version 1.7.405 is invisible online until the manual FTP deployment is done.
+
 ## [1.7.404] — 2026-09-14
 
 _RTF finally hands over its page setup: format, margins, columns and pagination_
