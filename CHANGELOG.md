@@ -9,6 +9,21 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.391] — 2026-09-13
+
+_Studio: an "Images" checkbox right of the attachments, web and mic buttons_
+
+### Added
+- **A checkbox that makes the AI compose with photos.** Unchecked by default (layouts without photos, as before). When checked, the studio does two complementary things: it tells the AI to reserve photo areas and write captions, and it fetches one to three illustration photos and attaches them so the model can place them with `imageIndex`. Verified: photo area covering **45 % of the page**, full-bleed framing (`left:-3, top:-3`), and a caption.
+- **The instruction works even offline.** If no photo can be fetched, the layout still reserves grey photo areas (3:2 or 4:5), and the chat says so plainly.
+- **Honest captions.** Measured beforehand: the model **does not see the images** (`image_url` = 0, `content: [` = 0) — it only receives the name and the format, never the subject. The instruction therefore explicitly forbids inventing what a photo shows and requires a generic caption ("Illustration", "Opening visual"). Measured output: *"Illustration — visuel d'ouverture"*.
+- **Photo count follows the document**: 1 for a single page, 2 up to 4 pages, 3 beyond — or as soon as a multi-page format is requested. The checkbox state is remembered between sessions, and the label and tooltip are translated (FR/EN/JP).
+
+### Verified
+- Checked: photo instruction present in the system prompt, 1 photo attached automatically (1600×1000, 139 KB), `IMAGE 0` sent in the request, `{"type":"image","imageIndex":0}` returned, photo rendered on the canvas (341 distinct hues).
+- Unchecked (counter-test): instruction absent, **0 photos attached, 0 `IMAGE` entries, no `image` element** in the generated layout.
+- The existing manual 🌐 web-image button is kept unchanged, as an explicit choice.
+
 ## [1.7.390] — 2026-09-13
 
 _Word import (editor): the four dead options now really drive the layout_

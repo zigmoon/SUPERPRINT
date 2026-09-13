@@ -6,7 +6,7 @@
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
 <meta name="description" content="Latest Zigmoon release notes for PDF-YZ, Bird and SuperPrint. Discover native PDF editing, local-first vector design, SuperTyPo typeface editor and SuperPrint v1.7.375 (reliable text wrap, stable AI text blocks, colour picker in RGB).">
-<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.390, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation, Word import options, body size, image width, heading hierarchy">
+<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.391, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation, Word import options, body size, image width, heading hierarchy, SP213 Studio, images checkbox, photo layout, illustration photos">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="SuperPrint v1.7.390 — the editor Word import now honours all six options: body size and Word heading hierarchy drive the composition, and image width is respected. Four of the six settings previously did nothing.">
+<meta property="og:description" content="SuperPrint v1.7.391 — a new “Images” checkbox in SP213 Studio: unchecked by default, it makes the AI reserve real photo areas and the studio fetch 1 to 3 illustration photos for your layout.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SuperPrint v1.7.390 — Word import: the four dead options now drive body size, heading hierarchy and image width. Measured in the browser.">
+<meta name="twitter:description" content="SuperPrint v1.7.391 — the studio gains an “Images” checkbox to dress your layouts with photos. Unchecked by default, measured in both states.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -704,6 +704,43 @@ footer, footer a { color: var(--after-text-color); }
 
 <main>
 <section class="releases" aria-label="Release notes">
+
+<!-- ===== SUPER PRINT v1.7.391 — case Images du studio SP213 ===== -->
+<article class="release-block" data-app="superprint" id="superprint-v1-7-391">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.391</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 13 septembre 2026" data-i18n-en="Released September 13, 2026" data-i18n-jp="2026年9月13日公開">Released September 13, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="<strong>Une case à cocher pour habiller vos maquettes de photos.</strong> Elle se trouve dans le studio, à droite des boutons pièces jointes, web et micro. <strong>Décochée par défaut</strong> : vos maquettes restent sans photo, comme avant. Cochez-la, décrivez votre projet, et l'IA compose en réservant de vraies zones photo — le studio va chercher les photos pour vous." data-i18n-en-html="<strong>A checkbox to dress your layouts with photos.</strong> It sits in the studio, right of the attachments, web and mic buttons. <strong>Unchecked by default</strong>: your layouts stay photo-free, as before. Check it, describe your project, and the AI composes with real photo areas reserved — the studio fetches the photos for you." data-i18n-jp-html="<strong>レイアウトを写真で飾るチェックボックス。</strong>スタジオの添付・ウェブ・マイクボタンの右側にあります。<strong>既定はオフ</strong>で、レイアウトは従来どおり写真なしです。オンにして内容を記述すると、AIが実際の写真エリアを確保して構成し、スタジオが写真を取得します。">A checkbox to dress your layouts with photos.</p>
+
+ <h3>📸 One checkbox, two effects <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>L'IA pense sa maquette AVEC des photos.</strong> Elle réserve une à trois zones photo — au moins 30 % de la surface d'une page, jamais une vignette perdue dans un coin — les cadre en fond perdu pour qu'elles touchent un bord, et ajoute une légende. <strong>Vérifié :</strong> zone photo mesurée à 45 % de la page A4." data-i18n-en-html="<strong>The AI designs WITH photos in mind.</strong> It reserves one to three photo areas — at least 30 % of a page, never a thumbnail lost in a corner — frames them full-bleed so they touch an edge, and adds a caption. <strong>Verified:</strong> photo area measured at 45 % of the A4 page." data-i18n-jp-html="<strong>AIは写真ありきで設計します。</strong>1〜3の写真エリア（1ページの30%以上、隅に埋もれる小さな画像は不可）を確保し、断裁で切れる前提のフチなし配置にし、キャプションを付けます。<strong>検証：</strong>写真エリアはA4ページの45%と計測。">One checkbox, two complementary effects.</li>
+  <li data-i18n-fr-html="<strong>Le studio va chercher les photos lui-même.</strong> Une photo pour une page, deux jusqu'à quatre pages, trois au-delà — ou dès qu'un format multi-pages est demandé. Elles sont jointes automatiquement et l'IA les place au bon endroit." data-i18n-en-html="<strong>The studio fetches the photos itself.</strong> One photo for a single page, two up to four pages, three beyond that — or as soon as a multi-page format is requested. They are attached automatically and the AI places them where they belong." data-i18n-jp-html="<strong>スタジオが写真を取得します。</strong>1ページなら1点、4ページまでなら2点、それ以上は3点 — 複数ページの指定があった場合も同様です。自動で添付され、AIが適切な位置に配置します。">The studio fetches the photos itself.</li>
+  <li data-i18n-fr-html="<strong>Et si le réseau est coupé ?</strong> La maquette réserve malgré tout des zones photo grises, et le studio vous le dit clairement. Vous n'obtenez jamais une page vide ou un échec silencieux." data-i18n-en-html="<strong>And if the network is down?</strong> The layout still reserves grey photo areas, and the studio tells you plainly. You never get a blank page or a silent failure." data-i18n-jp-html="<strong>ネットワークが切れていたら？</strong>それでもレイアウトは灰色の写真エリアを確保し、スタジオがはっきりと通知します。空白ページや無言の失敗にはなりません。">Offline still reserves grey photo areas.</li>
+ </ul>
+
+ <h3>🚫 No invented captions <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Nous avons mesuré une limite importante : le modèle ne voit pas les photos.</strong> Il reçoit leur nom, leur format et leur ratio — jamais leur sujet. Sans précaution, il aurait donc inventé des légendes fausses (« un chanteur de jazz » sous une photo de montagne)." data-i18n-en-html="<strong>We measured an important limit: the model does not see the photos.</strong> It receives their name, format and ratio — never their subject. Left unchecked, it would have invented false captions (“a jazz singer” under a mountain photo)." data-i18n-jp-html="<strong>重要な制約を計測しました：モデルは写真を見ていません。</strong>受け取るのは名前・形式・比率のみで、被写体は分かりません。対策なしでは誤ったキャプション（山の写真に「ジャズ歌手」）を書いてしまいます。">The model does not see the photos.</li>
+  <li data-i18n-fr-html="La consigne lui interdit donc explicitement d'inventer ce que montre une image, et lui impose une légende <strong>générique et honnête</strong>. Résultat mesuré sur une affiche de festival de jazz : « Illustration — visuel d'ouverture »." data-i18n-en-html="The instruction therefore explicitly forbids it from inventing what an image shows, and requires a <strong>generic, honest</strong> caption. Measured result on a jazz-festival poster: “Illustration — opening visual”." data-i18n-jp-html="そのため、画像の内容を推測して書くことを明示的に禁じ、<strong>汎用で正直な</strong>キャプションを義務付けています。ジャズフェスティバルのポスターでの計測結果：「Illustration — オープニングビジュアル」。">A generic, honest caption is now required.</li>
+ </ul>
+
+ <h3>✅ Checked, then unchecked <span class="badge badge-new">verified</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Avec la case cochée :</strong> consigne photo présente, une photo jointe automatiquement (1600 × 1000), <code>IMAGE 0</code> transmis, l'IA répond <code>imageIndex: 0</code>, et le rendu est bien là — 341 teintes distinctes mesurées sur le canvas." data-i18n-en-html="<strong>With the box checked:</strong> photo instruction present, one photo attached automatically (1600 × 1000), <code>IMAGE 0</code> transmitted, the AI replies <code>imageIndex: 0</code>, and the result is really there — 341 distinct hues measured on the canvas." data-i18n-jp-html="<strong>チェックあり：</strong>写真の指示が存在し、写真1点（1600×1000）を自動添付、<code>IMAGE 0</code>を送信、AIは<code>imageIndex: 0</code>を返し、描画も確認 — キャンバス上で341の異なる色調を計測。">Checked: photo attached and rendered.</li>
+  <li data-i18n-fr-html="<strong>Avec la case décochée (contre-test) :</strong> aucune consigne photo, zéro photo jointe, zéro mention d'image dans la requête, et <strong>aucun élément image</strong> dans la maquette générée. Le comportement par défaut est donc strictement inchangé." data-i18n-en-html="<strong>With the box unchecked (counter-test):</strong> no photo instruction, zero photos attached, zero image mentions in the request, and <strong>no image element</strong> in the generated layout. The default behaviour is therefore strictly unchanged." data-i18n-jp-html="<strong>チェックなし（対照テスト）：</strong>写真の指示なし、添付ゼロ、リクエスト内の画像記述ゼロ、生成レイアウトに<strong>画像要素ゼロ</strong>。既定の動作は完全に従来どおりです。">Unchecked: strictly unchanged behaviour.</li>
+  <li data-i18n-fr-html="Le bouton 🌐 de recherche manuelle d'image reste disponible, inchangé : la case est un confort automatique, pas un remplacement." data-i18n-en-html="The 🌐 manual image-search button remains available and unchanged: the checkbox is an automatic convenience, not a replacement." data-i18n-jp-html="手動の🌐画像検索ボタンはそのまま利用できます。チェックボックスは自動化の利便性であり、置き換えではありません。">The manual 🌐 search button is unchanged.</li>
+ </ul>
+
+ <p data-i18n-fr="Studio 1.7.391 — case « Images » décochée par défaut, mesurée dans les deux états avec le moteur réel, et vérifiée dans le paquet distribué." data-i18n-en="Studio 1.7.391 — the “Images” checkbox is unchecked by default, measured in both states with the real engine, and verified inside the distributed package." data-i18n-jp="スタジオ 1.7.391 — 「画像」チェックボックスは既定でオフ。両方の状態を実際のエンジンで計測し、配布パッケージ内でも検証済みです。">Studio 1.7.391 — measured in both states and verified in the package.</p>
+ <a class="release-cta" href="https://superprint.cc/sp213-studio.html" data-i18n-fr="→ Ouvrir le studio SP213" data-i18n-en="→ Open SP213 Studio" data-i18n-jp="→ SP213スタジオを開く">→ Open SP213 Studio</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
 
 <!-- ===== SUPER PRINT v1.7.390 — options d'import Word de l'editeur ===== -->
 <article class="release-block" data-app="superprint" id="superprint-v1-7-390">
