@@ -9,6 +9,26 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.397] — 2026-09-14
+
+_Studio renamed “Studio IA”, studio design fixes, New document dialog reordered_
+
+### Changed
+- **The AI studio is now called “Studio IA” everywhere.** The launch row, the name shown when hovering the logo, and the French / English / Japanese translations all use the same name. Descriptions were sharpened at the same time (“Studio de maquettes IA”, “AI layout studio”, “AIレイアウトスタジオ”).
+- **Both READMEs were aligned and updated.** The GitHub README (6 mentions plus the badge) and the npm README (5 mentions) now read “Studio IA”, each with direct links to the studio — **4** on GitHub, **2** on npm. Both also document the 1.7.396 addition: a document can be attached in Word `.doc`/`.docx`, OpenDocument `.odt`/`.ods`/`.odp`, RTF, Excel or PDF, and is read with its full structure (heading levels, lists, tables, images).
+- **Studio header** now reads the logo, then **STUDIO IA**, then “Layout & Canvas”. The browser tab title, the welcome screen and the generator name recorded inside exported documents follow the same brand.
+- **New document dialog reordered:** Basic (active, first) · Studio IA · SuperTyPo · Advanced · Automatic · Templates. Studio IA and SuperTyPo are now plain black with no underline, because they are **actions, not tabs** — clicking them closes the dialog and opens the tool in a new tab. Showed in the inactive-tab grey, they suggested a double click was needed. The real tabs (Advanced, Automatic, Templates) keep their inactive grey.
+
+### Fixed
+- **The “Images” checkbox no longer paints itself blue when ticked.** Cause: `#imgToggleWrap input[type="checkbox"] { accent-color: #3b82f6 }`. The `accent-color` property paints both the fill and the tick; it is a colour outside the design language. Now black (`#111111`), and white (`#f4f4f5`) in dark theme.
+- **The page number moved to the footer.** “Page 1” was inserted **before** the canvas with `margin-bottom: 8px`; it is now appended **after** it with `margin-top: 8px` — the same margin, but below the page, giving the top room to breathe.
+- **A second page builder had been missed.** The studio builds page cards in **two different places**: `renderBlankPage()` (startup and the New button) and the multi-page render (after an AI generation). Fixing only the second left “Page 1” at the top on load — found by a **browser test** (`indexDansLaCarte` 0, `labelTop` 126 < `canvasTop` 139), not by reading the code. Both paths are now fixed.
+- **The attachment tooltip was out of date.** It still advertised “Word (.docx), Excel or PDF” and had become **false** after 1.7.396. Corrected in all three languages with the real format list.
+
+### Notes
+- `app/JS/main.js` is **not** modified by this release. Aligning the editor's prompt bar on the studio's (attachment / mic / Images icons, document import, overlay loader, no multi-conversation) is a separate piece of work on that file and is not shipped here.
+- Verified: 13/13 live version markers, 0 leftover traces, web/mirror parity 14/14, distributed package checked by extraction (version 1.7.397, `STUDIO IA` ×11, black `accent-color` ×1, footer label in both builders, dialog order Basic · Studio IA · SuperTyPo · Advanced).
+
 ## [1.7.396] — 2026-09-14
 
 _Studio: universal document import — legacy Word `.doc`, OpenDocument and RTF_
