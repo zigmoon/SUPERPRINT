@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="google" content="notranslate">
-<title>SP213 Studio — Layout &amp; Canvas</title>
-<meta name="description" content="SP213 Studio: compose SuperPrint layouts with AI (DeepSeek, Groq, OpenRouter and local WLLM), live preview and .sp export. Attachments: images, text, Word, Excel and PDF.">
+<title>Studio IA — Layout &amp; Canvas</title>
+<meta name="description" content="Studio IA: compose SuperPrint layouts with AI (DeepSeek, Groq, OpenRouter and local WLLM), live preview and .sp export. Attachments: images, text, Word, Excel and PDF.">
 <script>if(location.protocol!=='file:'){var l=document.createElement('link');l.rel='manifest';l.href='manifest.webmanifest';document.head.appendChild(l);}</script>
 <!-- 🎨 Logotype du studio en favicon (spirale). Un SVG est net a toutes les
      tailles ; le PNG sert de repli aux navigateurs sans SVG. -->
@@ -407,7 +407,13 @@
   }
   .page-card:hover .sp-page-del { opacity: 1; pointer-events: auto; }
   .sp-page-del:hover { color: #d32f2f; border-color: #d32f2f; }
-  .page-label { text-align: center; font-size: 10px; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.5px; }
+  .page-label {
+    text-align: center; font-size: 10px; color: var(--muted); letter-spacing: 0.5px;
+    /* 📄 Pied de page : le libelle « Page N » etait place AU-DESSUS du canvas
+       (margin-bottom: 8px). Il passe SOUS le canvas avec la MEME valeur de marge
+       (margin-top: 8px) -> meme respiration, mais en pied. */
+    margin-top: 8px; margin-bottom: 0;
+  }
   .page-canvas-wrap {
     background: #fff; box-shadow: 0 4px 20px var(--shadow); line-height: 0; position: relative;
   }
@@ -665,8 +671,12 @@
   }
   #imgToggleWrap:hover { background: var(--btn-hover); border-color: #999; }
   #imgToggleWrap input[type="checkbox"] {
-    width: 13px; height: 13px; margin: 0; cursor: pointer; accent-color: #3b82f6;
+    /* 🎨 Unifie la DA : la case cochee se peignait en BLEU (#3b82f6), hors charte.
+       C'est `accent-color` qui peint le remplissage ET la coche : le passer au noir
+       aligne la case sur les autres controles du studio, meme cochee. */
+    width: 13px; height: 13px; margin: 0; cursor: pointer; accent-color: #111111;
   }
+  body.theme-dark #imgToggleWrap input[type="checkbox"] { accent-color: #f4f4f5; }
   #imgToggleWrap .img-toggle-label { font-size: 11px; letter-spacing: .2px; }
   /* v1.7.394 — RETOUR UTILISATEUR : « le bleu Images a droite du micro ca va pas
      dans la DA, reste comme les autres en couleur meme si coche ».
@@ -857,8 +867,8 @@
     </button>
     <div class="welcome-brand">
       <div class="logo">
-        <img src="icons/studio_print_logo_blanc.svg" alt="SP213 Studio">
-        <h1>SP213 STUDIO</h1>
+        <img src="icons/studio_print_logo_blanc.svg" alt="Studio IA">
+        <h1>STUDIO IA</h1>
       </div>
       <p class="sub" id="welcomeSub">Préférences</p>
     </div>
@@ -1159,8 +1169,8 @@
 <div id="studio">
   <div id="topbar">
     <span class="t-logo">
-      <img src="icons/studio_print_logo_blanc.svg" alt="SP213 Studio" width="28" height="28" style="flex-shrink:0;">
-      SP213
+      <img src="icons/studio_print_logo_blanc.svg" alt="Studio IA" width="28" height="28" style="flex-shrink:0;">
+      STUDIO IA
     </span>
     <span class="t-title" id="topbarTitle">Layout &amp; Canvas</span>
     <span class="vsep"></span>
@@ -1281,7 +1291,7 @@
                 <button class="icon-btn" id="attachBtn" title="Joindre des fichiers (image, texte, Word)">
                   <svg class="ic" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                 </button>
-                <span class="tip" id="attachTip"><b>Pièces jointes</b>Joignez des images, du texte, des documents Word (.docx), Excel (.xls/.xlsx) ou PDF. SP213 les analyse et les intègre dans la maquette.</span>
+                <span class="tip" id="attachTip"><b>Pièces jointes</b>Joignez des images, du texte, un document Word (<b>.doc</b> ou <b>.docx</b>), OpenDocument (<b>.odt</b>, <b>.ods</b>, <b>.odp</b>), RTF (<b>.rtf</b>), Excel (.xls/.xlsx) ou PDF. SP213 lit la <b>structure complète</b> (titres, listes, tableaux, images) et l'intègre dans la maquette.</span>
               </span>
               <input type="file" id="attachInput" accept=".jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.txt,.md,.csv,.html,.doc,.docx,.odt,.ods,.odp,.odg,.rtf,.xls,.xlsx,.pdf" multiple hidden>
               <span class="tip-wrap tip-up tip-anchor-right" tabindex="0" id="webImgTipWrap">
@@ -1708,7 +1718,7 @@
       'chat.convTabs': 'Conversation tabs — double-click to rename',
       'chat.renameHint': 'double-click to rename',
       'chat.placeholder': 'Describe the layout… (e.g. « Minimalist A4 poster for a jazz festival »)',
-      'chat.attachTip': '<b>Attachments</b>Attach images, text, Word (.docx), Excel (.xls/.xlsx) or PDF documents. SP213 analyzes and integrates their content into the layout.',
+      'chat.attachTip': '<b>Attachments</b>Attach images, text, a Word document (<b>.doc</b> or <b>.docx</b>), OpenDocument (<b>.odt</b>, <b>.ods</b>, <b>.odp</b>), RTF (<b>.rtf</b>), Excel (.xls/.xlsx) or PDF. SP213 reads the <b>full structure</b> (headings, lists, tables, images) and integrates it into the layout.',
       'chat.webImgTip': '<b>Web image</b>Searches a free stock photo (picsum.photos) and adds it as an attachment so the AI can integrate it into the layout.',
       'chat.micTip': '<b>Voice prompt</b>Click then speak: your voice is transcribed into the prompt field.',
       'chat.imgToggleTip': '<b>Images</b>Unchecked (default): layout without photos. Checked: the AI reserves photo areas and the studio attaches 1 to 3 illustration photos.',
@@ -1845,7 +1855,7 @@
       'chat.convTabs': 'Onglets de conversations — double-clic pour renommer',
       'chat.renameHint': 'double-clic pour renommer',
       'chat.placeholder': 'Décrivez la maquette… (ex : « Affiche A4 minimaliste pour un festival de jazz »)',
-      'chat.attachTip': '<b>Pièces jointes</b>Joignez des images, du texte, des documents Word (.docx), Excel (.xls/.xlsx) ou PDF. SP213 les analyse et les intègre dans la maquette.',
+      'chat.attachTip': '<b>Pièces jointes</b>Joignez des images, du texte, un document Word (<b>.doc</b> ou <b>.docx</b>), OpenDocument (<b>.odt</b>, <b>.ods</b>, <b>.odp</b>), RTF (<b>.rtf</b>), Excel (.xls/.xlsx) ou PDF. SP213 lit la <b>structure complète</b> (titres, listes, tableaux, images) et l\'intègre dans la maquette.',
       'chat.webImgTip': '<b>Image web</b>Recherche une photo libre (picsum.photos) et l\'ajoute comme pièce jointe pour que l\'IA l\'intègre dans la maquette.',
       'chat.imgToggleTip': '<b>Images</b>Décoché (défaut) : maquette sans photo. Coché : l\'IA réserve des zones photo et le studio joint 1 à 3 photos d\'illustration.',
       'chat.imgToggleLabel': 'Images',
@@ -1982,7 +1992,7 @@
       'chat.convTabs': '会話タブ — ダブルクリックで名前変更',
       'chat.renameHint': 'ダブルクリックで名前変更',
       'chat.placeholder': 'レイアウトを説明してください…（例：「ジャズフェスティバルのミニマルなA4ポスター」）',
-      'chat.attachTip': '<b>添付ファイル</b>画像（jpg, png, webp…）、テキスト（.txt, .md…）、Word文書（.docx）を添付します。SP213が分析してレイアウトに統合します。',
+      'chat.attachTip': '<b>添付ファイル</b>画像、テキスト、Word文書（<b>.doc</b>／<b>.docx</b>）、OpenDocument（<b>.odt</b>・<b>.ods</b>・<b>.odp</b>）、RTF（<b>.rtf</b>）、Excel（.xls/.xlsx）、PDFを添付できます。SP213が<b>構造全体</b>（見出し、リスト、表、画像）を読み取り、レイアウトに統合します。',
       'chat.webImgTip': '<b>ウェブ画像</b>フリー写真（picsum.photos）を検索して添付ファイルとして追加し、AIがレイアウトに統合できるようにします。',
       'chat.imgToggleTip': '<b>画像</b>オフ（既定）：写真なしのレイアウト。オン：AIが写真エリアを確保し、スタジオが挿絵写真を1〜3点添付します。',
       'chat.imgToggleLabel': '画像',
@@ -2767,7 +2777,7 @@
       if (hasCloudKey || state.engine === 'webllm') {
         appendChat('assistant', 'SP213 est prêt. Décrivez votre maquette (ex. « Affiche A4 minimaliste ») — ou ouvrez les réglages pour changer de modèle.');
       } else {
-        appendChat('assistant', 'Bienvenue sur SP213 Studio. Pour générer une maquette, choisissez d’abord votre modèle : tapez votre description, puis sélectionnez un modèle dans les réglages si besoin.');
+        appendChat('assistant', 'Bienvenue sur Studio IA. Pour générer une maquette, choisissez d’abord votre modèle : tapez votre description, puis sélectionnez un modèle dans les réglages si besoin.');
       }
     }
   }
@@ -5154,10 +5164,11 @@
 
     const card = document.createElement('div');
     card.className = 'page-card';
+    // 📄 Le libellé « Page 1 » est créé ICI mais AJOUTÉ EN FIN DE CARTE (en pied),
+    //    avec la même marge qu'en haut mais sous la page.
     const label = document.createElement('div');
     label.className = 'page-label';
     label.textContent = (state.viewMode === 'spread') ? 'Planche 1' : 'Page 1';
-    card.appendChild(label);
 
     const wrap = document.createElement('div');
     wrap.className = 'page-canvas-wrap';
@@ -5167,6 +5178,7 @@
     wrap.appendChild(canvasEl);
     wrap.style.width = (canvasEl.width) + 'px';
     card.appendChild(wrap);
+    card.appendChild(label);
     stack.appendChild(card);
 
     const c = new fabric.Canvas(canvasEl, {
@@ -8197,10 +8209,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       const card = document.createElement('div');
       card.className = 'page-card';
       card.style.position = 'relative';
+      // 📄 Le libellé « Page N » est créé ICI mais AJOUTÉ EN FIN DE CARTE (en pied),
+      //    après le canvas : même marge qu'en haut, mais sous la page.
       const label = document.createElement('div');
       label.className = 'page-label';
       label.textContent = (doc.viewMode === 'spread') ? 'Planche ' + (p.pageIndex + 1) : 'Page ' + (p.pageIndex + 1);
-      card.appendChild(label);
 
       // 🗑️ Corbeille : supprime cette page (visible au survol de la carte)
       const delBtn = document.createElement('button');
@@ -8219,6 +8232,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       wrap.appendChild(canvasEl);
       wrap.style.width = (canvasEl.width) + 'px';
       card.appendChild(wrap);
+      card.appendChild(label);
       stack.appendChild(card);
 
       // Sélection ACTIVE : l'utilisateur peut cliquer/glisser sur les éléments pour
@@ -8578,8 +8592,8 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const shapes = Math.max(0, totalObjects - textBlocks - images);
 
     return {
-      _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'SP213 Studio' },
-      meta: { title: 'Maquette SP213', author: '', description: 'Généré par SP213 Studio', tags: ['sp213'], stats: { pages: spPages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
+      _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
+      meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: spPages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
       // 🛡️ v1.7.369 — filtrés par usage réel : pas de canal fantôme.
@@ -8690,8 +8704,8 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const usedFonts = [...new Set(pages.flatMap(p => p.objects.filter(o => o && o.fontFamily).map(o => o.fontFamily)))];
     const usedColors = [...new Set(pages.flatMap(p => p.objects.filter(o => o && o.fill).map(o => String(o.fill))))].filter(c => /^#/.test(c));
     return {
-      _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'SP213 Studio' },
-      meta: { title: 'Maquette SP213', author: '', description: 'Généré par SP213 Studio', tags: ['sp213'], stats: { pages: pages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
+      _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
+      meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: pages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) : 1 entrée = 1 couche
       //   chromatique supplémentaire à produire à l'export (CMJN ou RVB + Pantone).

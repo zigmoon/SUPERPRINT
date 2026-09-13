@@ -36,7 +36,7 @@
   "applicationSubCategory": "Desktop publishing",
   "operatingSystem": "Web browser (Chrome, Edge, Firefox, Safari)",
   "browserRequirements": "Requires JavaScript. WebGPU optional (local AI).",
-  "softwareVersion": "1.7.396",
+  "softwareVersion": "1.7.397",
   "releaseNotes": "Alpha version — features may change and defects may remain.",
   "inLanguage": ["en", "fr", "ja"],
   "isAccessibleForFree": true,
@@ -343,11 +343,11 @@
   .online-row:hover .on-arrow {
     opacity: 1; transform: translateX(0);
   }
-  /* Le premier bloc (Editor) occupe toute la largeur ; les deux autres (Studio
+  /* Le premier bloc (Editor) occupe toute la largeur ; les deux autres (Studio IA
      + Documentation) partagent la même ligne. */
   .online-row.on-editor { grid-column: 1 / -1; }
 
-  /* 🔽 Les 4 lignes secondaires (Studio, SuperTyPo, Documentation, API) sont
+  /* 🔽 Les 4 lignes secondaires (Studio IA, SuperTyPo, Documentation, API) sont
      VOLONTAIREMENT PLUS BASSES que la ligne Editor (79 px contre 95 px) :
      l'Editor porte un titre plus long sur 2 niveaux et sert de point
      d'entrée principal. La GRILLE les aligne 2 à 2, donc elles ne bougent
@@ -393,9 +393,9 @@
     .online-row .on-text span { height: auto; }
 
     /* ─── 📱 Sous-titre de la marque sur 2 LIGNES, SANS tiret ───
-       Desktop : « Toute l'application SuperPrint — PAO + studio SP213 »
+       Desktop : « Toute l'application SuperPrint — PAO + Studio IA SP213 »
        Mobile  : « Toute l'application SuperPrint »
-                 « PAO + studio SP213 »
+                 « PAO + Studio IA SP213 »
        Le tiret cadratin est supprimé en ramenant la taille de police à 0
        sur .sub et en la restaurant sur .hl : le tiret (texte brut)
        disparaît, le contenu de .hl reste net.
@@ -409,8 +409,8 @@
     /* ⚠️ HAUTEUR DE RÉSERVE — INDISPENSABLE EN MOBILE.
        MESURE : les 5 phrases du header n'ont pas la même hauteur ici, car
        elles ne tiennent pas sur le même nombre de lignes :
-         « Toute l'application SuperPrint / PAO + studio SP213 » -> 2 lignes = 31 px
-         « Studio — décrivez une maquette… »                      -> 1 ligne  = 15 px
+         « Toute l'application SuperPrint / PAO + Studio IA SP213 » -> 2 lignes = 31 px
+         « Studio IA — décrivez une maquette… »                   -> 1 ligne  = 15 px
          « API — pilotez SuperPrint… »                            -> 1 ligne  = 15 px
        Soit 16 px d'écart : au survol, les 5 boutons se décalaient d'autant.
        On réserve donc la hauteur du cas le plus haut (2 lignes) et on
@@ -569,7 +569,7 @@
         <!-- Pas d'icone de ligne : le logotype n'apparait qu'au survol,
              dans le header (cf. .logo-stack plus haut). -->
         <div class="on-text">
-          <b>Studio</b>
+          <b>Studio IA</b>
           <span data-i18n="studioSub">AI layouts</span>
         </div>
         <span class="on-arrow" aria-hidden="true">
@@ -577,7 +577,7 @@
         </span>
       </a>
       <a class="online-row" href="supertypo/index.html" id="onlineTypoBtn" data-brand="typo">
-        <!-- Pas d'icone de ligne (cf. Studio ci-dessus). -->
+        <!-- Pas d'icone de ligne (cf. Studio IA ci-dessus). -->
         <div class="on-text">
           <b>SuperTyPo</b>
           <span data-i18n="typoSub">Font editor — decompose, redraw, export</span>
@@ -587,7 +587,7 @@
         </span>
       </a>
       <a class="online-row" href="documentation.html" id="onlineDocBtn" data-brand="doc">
-        <!-- Pas d'icone de ligne (cf. Studio ci-dessus). -->
+        <!-- Pas d'icone de ligne (cf. Studio IA ci-dessus). -->
         <div class="on-text">
           <b>Documentation</b>
           <span data-i18n="docSub">Manual, shortcuts, complete guide</span>
@@ -599,7 +599,7 @@
       <!-- 🔌 API SuperPrint : pilotage par script (window.SuperPrint).
            Le 4e CTA ferme la grille 2x2 (Documentation | API). -->
       <a class="online-row" href="api.html" id="onlineApiBtn" data-brand="api">
-        <!-- Pas d'icone de ligne (cf. Studio ci-dessus). -->
+        <!-- Pas d'icone de ligne (cf. Studio IA ci-dessus). -->
         <div class="on-text">
           <b>API</b>
           <span data-i18n="apiSub">Automate layouts from your own code</span>
@@ -743,7 +743,7 @@
       // 🎭 Phrase affichee sous le LOGO quand il change au survol.
       //    Le NOM DE L'OUTIL est en clair (.hl) — jamais gris —, la
       //    description reste discrete derriere le tiret.
-      studioBrandSub: "<span class=\"hl\">Studio</span> — describe a layout, the AI builds it",
+      studioBrandSub: "<span class=\"hl\">Studio IA</span> — describe a layout, the AI builds it",
       typoBrandSub: "<span class=\"hl\">SuperTyPo</span> — decompose, redraw and export type",
       docBrandSub: "<span class=\"hl\">Documentation</span> — manual, shortcuts, complete guide",
       apiBrandSub: "<span class=\"hl\">API</span> — drive SuperPrint from your own code",
@@ -753,7 +753,7 @@
       orLocal: 'or install locally',
       onlineLabel: 'Online',
       editorSub: 'No installation — runs in the browser',
-      studioSub: 'AI layouts',
+      studioSub: 'AI layout studio',
       typoSub: 'Font editor',
       docSub: 'Manual, shortcuts',
       apiSub: 'Automate your layouts',
@@ -780,7 +780,7 @@
       pageTitle: 'SuperPrint — PAO en ligne gratuite & studio IA SP213',
       homeSub: "<span class=\"hl\">PAO professionnelle</span> dans le navigateur",
       editorBrandSub: "<span class=\"hl\">Éditeur</span> — composez vos documents et vos maquettes",
-      studioBrandSub: "<span class=\"hl\">Studio</span> — décrivez une maquette, l'IA la compose",
+      studioBrandSub: "<span class=\"hl\">Studio IA</span> — décrivez une maquette, l'IA la compose",
       typoBrandSub: "<span class=\"hl\">SuperTyPo</span> — décomposez, retravaillez et exportez la typo",
       docBrandSub: "<span class=\"hl\">Documentation</span> — manuel, raccourcis, guide complet",
       apiBrandSub: "<span class=\"hl\">API</span> — pilotez SuperPrint depuis votre code",
@@ -790,7 +790,7 @@
       orLocal: 'ou installer en local',
       onlineLabel: 'En ligne — aucune installation',
       editorSub: 'Aucune installation — fonctionne dans le navigateur',
-      studioSub: 'Maquettes IA',
+      studioSub: 'Studio de maquettes IA',
       typoSub: 'Éditeur de police',
       docSub: 'Manuel, raccourcis',
       apiSub: 'Automatisez vos maquettes',
@@ -817,7 +817,7 @@
       pageTitle: 'SuperPrint — 無料オンラインDTP & SP213 AIスタジオ',
       homeSub: "ブラウザで本格<span class=\"hl\">DTP</span>",
       editorBrandSub: "<span class=\"hl\">エディタ</span> — 文書とレイアウトを作成",
-      studioBrandSub: "<span class=\"hl\">Studio</span> — 説明するだけでAIがレイアウトを作成",
+      studioBrandSub: "<span class=\"hl\">Studio IA</span> — 説明するだけでAIがレイアウトを作成",
       typoBrandSub: "<span class=\"hl\">SuperTyPo</span> — 書体を分解・再編集・書き出し",
       docBrandSub: "<span class=\"hl\">Documentation</span> — マニュアル、ショートカット、完全ガイド",
       apiBrandSub: "<span class=\"hl\">API</span> — 自分のコードでSuperPrintを操作",
@@ -827,7 +827,7 @@
       orLocal: 'またはローカルにインストール',
       onlineLabel: 'オンライン — インストール不要',
       editorSub: 'インストール不要 — ブラウザで動作',
-      studioSub: 'AIレイアウト',
+      studioSub: 'AIレイアウトスタジオ',
       typoSub: 'フォントエディタ',
       docSub: 'マニュアル、ショートカット',
       apiSub: 'レイアウトを自動生成',
@@ -1057,7 +1057,7 @@
     });
 
     // Phrase sous le logotype, par couche. `homeSub` = phrase historique
-    // « All of SuperPrint — DTP + SP213 AI studio ».
+    // « All of SuperPrint — DTP + SP213 AI studio » (libelle « Studio IA »).
     var SUB_KEY = {
       'default': 'homeSub',
       // 🖊️ La ligne Editor a SA phrase (elle partageait le defaut avant).
@@ -1073,7 +1073,7 @@
     var TITLE = {
       'default': 'SuperPrint',
       editor: 'SuperPrint',
-      studio: 'Studio',
+      studio: 'Studio IA',
       typo: 'SuperTyPo',
       doc: 'Documentation',
       api: 'API'

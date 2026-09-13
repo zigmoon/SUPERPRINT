@@ -14,7 +14,7 @@
 <p align="center">
   <a href="https://superprint.cc"><b>🌐 superprint.cc</b></a> ·
   <a href="https://superprint.cc/landing.html">Landing</a> ·
-  <a href="https://superprint.cc/sp213-studio.html">SP213 AI Studio</a> ·
+  <a href="https://superprint.cc/sp213-studio.html">Studio IA</a> ·
   <a href="https://superprint.cc/supertypo/">SuperTyPo</a> ·
   <a href="https://superprint.cc/documentation.html">Documentation</a> ·
   <a href="https://superprint.cc/api.html">Script API</a> ·
@@ -28,10 +28,10 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-1.7.396-000000?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-1.7.397-000000?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20ready-E1237B?style=flat-square">
-  <img alt="AI" src="https://img.shields.io/badge/AI-SP213%20studio-F2B90B?style=flat-square">
+  <img alt="AI" src="https://img.shields.io/badge/AI-Studio%20IA-F2B90B?style=flat-square">
   <img alt="Type" src="https://img.shields.io/badge/font-SuperTyPo-8A2BE2?style=flat-square">
   <img alt="Languages" src="https://img.shields.io/badge/FR%20%7C%20EN%20%7C%20JP-17130D?style=flat-square">
 </p>
@@ -40,7 +40,7 @@
 
 ## ✦ SuperPrint in one sentence
 
-**SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free, no subscription, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, fine typography, master pages…) with an **AI layout studio, SP213**, which turns a plain written brief into a print-ready, fully editable document.
+**SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free, no subscription, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, fine typography, master pages…) with an **AI layout studio (Studio IA, `sp213-studio.html`)**, which turns a plain written brief into a print-ready, fully editable document.
 
 > Online or local, your documents stay **on your machine**. Nothing is sent to a third party unless you choose your own AI provider.
 
@@ -53,7 +53,7 @@ SuperPrint is not a single tool: it is a small **family of browser-based creativ
 | App | What it does |
 |---|---|
 | **SuperPrint** | The full DTP / prepress **layout editor** — pages, bleed, CMYK, master pages, typography, imposition. |
-| **SP213 Studio** | The **AI layout studio** — describe a brief in plain language, get a print-ready, editable document (cloud models or fully local WebLLM). |
+| **Studio IA** | The **AI layout studio** — describe a brief in plain language, get a print-ready, editable document (cloud models or fully local WebLLM). Documents can be attached in **any office format**: Word `.doc` and `.docx`, OpenDocument `.odt`/`.ods`/`.odp`, RTF `.rtf`, Excel and PDF — read with their **full structure** (heading levels, lists, tables, images). |
 | **SuperTyPo** | A **font decomposer & typeface editor** (FontGrapher / FontLab inspired) — drop a font, edit every glyph as vector contours & Bézier handles, re-export the typeface. |
 
 **SuperTyPo** ([open it](https://superprint.cc/supertypo/)) turns any `.ttf` / `.otf` / `.woff` / `.woff2` into an editable vector project: each character is **decomposed into contours** (nodes + Bézier handles) that you reshape with the pen tool, then **re-exported** as a modified typeface. It ships with an FR / EN / JP interface, **boolean operations** (union / subtract / intersect), **mirror & 90° rotation**, **advanced metrics** (glyph naming, LSB/RSB, bounding box, point counts) and a versioned native format (`.sf` — SuperFont). In the SuperPrint editor, the **« SuperTyPo »** tab of the *New project* dialog opens it directly.
@@ -116,7 +116,7 @@ This repository contains the full product. The web app can be served as static f
 - Master pages, layers, guides & grids, linked text frames, multilingual hyphenation engine
 - Pathfinder boolean operations, image masking, Bézier pen tool, image filters
 - GPU acceleration (WebGL), light & dark themes, keyboard-first workflow
-- **SP213 Studio** — AI-generated layouts, online (DeepSeek/Groq/OpenRouter) or fully local (WebLLM via WebGPU)
+- **Studio IA** — AI-generated layouts, online (DeepSeek/Groq/OpenRouter) or fully local (WebLLM via WebGPU)
 - **SuperTyPo** — decompose & edit any font: vector contours per glyph, boolean ops, mirror/rotation, metrics, `.sf` projects & TTF re-export (FR/EN/JP)
 
 ---
@@ -125,7 +125,7 @@ This repository contains the full product. The web app can be served as static f
 
 | Folder / file | Role |
 |---|---|
-| `superprint/` | The complete web application + landing + SP213 studio + **SuperTyPo** + documentation + script API |
+| `superprint/` | The complete web application + landing + Studio IA + **SuperTyPo** + documentation + script API |
 | `sp213-local/` | The local distribution (Vite + WebLLM), served by the npm launcher |
 | `superprint-npm/` | The `superprint` npm launcher (`npx superprint`) |
 | `release.html` | The full release-notes page, trilingual FR / EN / JP (60 entries) — also live at `app.zigmoon.com/release.html` |
@@ -134,8 +134,8 @@ This repository contains the full product. The web app can be served as static f
 Every release is git-tagged `v1.7.NNN`, so you can diff two versions directly:
 
 ```bash
-git log --oneline v1.7.386..v1.7.396      # what changed in one release
-git diff v1.7.380 v1.7.396 --stat         # full diff between two
+git log --oneline v1.7.386..v1.7.397      # what changed in one release
+git diff v1.7.380 v1.7.397 --stat         # full diff between two
 ```
 
 ---
@@ -155,7 +155,7 @@ SuperPrint is designed to be **privacy-friendly**:
 - **Website** : [superprint.cc](https://superprint.cc)
 - **Email** : [contact@superprint.cc](mailto:contact@superprint.cc)
 - **X / Twitter** : [@SUPER_PRINT_app](https://x.com/SUPER_PRINT_app)
-- **AI Studio** : [superprint.cc/sp213-studio.html](https://superprint.cc/sp213-studio.html)
+- **Studio IA** : [superprint.cc/sp213-studio.html](https://superprint.cc/sp213-studio.html)
 
 **Built by** Simon Dupont-Gellert & Clémence Brunet — an independent project, ad-free, no data collection.
 

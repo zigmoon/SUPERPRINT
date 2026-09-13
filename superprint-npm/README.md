@@ -8,12 +8,12 @@
 <p align="center">
   <a href="https://superprint.cc"><b>🌐 superprint.cc</b></a> ·
   <a href="https://github.com/zigmoon/superprint"><b>GitHub</b></a> ·
-  <a href="https://superprint.cc/sp213-studio.html">SP213 AI Studio</a> ·
+  <a href="https://superprint.cc/sp213-studio.html">Studio IA</a> ·
   <a href="https://superprint.cc/supertypo/">SuperTyPo</a> ·
   <a href="https://superprint.cc/documentation.html">Documentation</a>
 </p>
 
-**SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free, no subscription, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, fine typography, master pages…) with an **AI layout studio, SP213**, which turns a plain written brief into a print-ready, fully editable document.
+**SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free, no subscription, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, fine typography, master pages…) with an **AI layout studio (Studio IA, `sp213-studio.html`)**, which turns a plain written brief into a print-ready, fully editable document.
 
 The application runs in your browser on Windows, macOS and Linux. Your projects use SuperPrint's native editable `.sp` format and remain **on your computer** unless you explicitly export or send content to an optional cloud AI provider.
 
@@ -24,7 +24,7 @@ The application runs in your browser on Windows, macOS and Linux. Your projects 
 This package launches SuperPrint, but it is part of a small **family of browser-based creative applications** sharing the same design language and workflow:
 
 - **SuperPrint** — the full DTP / prepress **layout editor** (pages, bleed, CMYK, master pages, typography, imposition).
-- **SP213 Studio** — the **AI layout studio**: describe a brief, get a print-ready editable document (cloud models or fully local WebLLM).
+- **Studio IA** — the **AI layout studio**: describe a brief, get a print-ready editable document (cloud models or fully local WebLLM). Attach documents in **any office format** — Word `.doc` / `.docx`, OpenDocument `.odt` / `.ods` / `.odp`, RTF `.rtf`, Excel, PDF — and they are read with their **full structure**: heading levels, lists, tables and images.
 - **SuperTyPo** — a **font decomposer & typeface editor**: drop a `.ttf` / `.otf` / `.woff` / `.woff2`, edit each glyph as vector contours with a Bézier pen, then **re-export** the modified typeface. Includes boolean operations (union / subtract / intersect), mirror & 90° rotation, advanced metrics, an FR / EN / JP interface and the versioned `.sf` (SuperFont) project format. Open it online at [superprint.cc/supertypo](https://superprint.cc/supertypo/), or from the **« SuperTyPo »** tab of the *New project* dialog inside SuperPrint.
 
 ---
@@ -90,13 +90,13 @@ On first launch, the launcher downloads the application (about 50 MB), installs 
 - Master pages, layers, guides & grids, linked text frames, multilingual hyphenation engine
 - Pathfinder boolean operations, image masking, Bézier pen tool, image filters
 - GPU acceleration (WebGL), light & dark themes, keyboard-first workflow
-- **SP213 Studio** — AI-generated layouts, online (DeepSeek/Groq/OpenRouter) or fully local (WebLLM via WebGPU)
+- **Studio IA** — AI-generated layouts, online (DeepSeek/Groq/OpenRouter) or fully local (WebLLM via WebGPU)
 
 ### What is included
 
 - **SuperPrint Editor:** multi-page layouts, precise millimetre dimensions, typography, shapes, images, layers, guides, grids, bleed and safe areas.
 - **Print and prepress tools:** RGB/CMYK document workflows, print preview, preflight checks and PDF, PNG and SVG output.
-- **SP213 AI Studio:** generate posters, brochures, catalogues, reports, menus and other editable layouts through conversation.
+- **Studio IA:** generate posters, brochures, catalogues, reports, menus and other editable layouts through conversation. Attach a document in `.doc`, `.docx`, `.odt`, `.ods`, `.odp`, `.rtf`, Excel or PDF and the AI composes from its real content and structure — nothing is lost in translation.
 - **SuperTyPo font editor:** decompose any font into editable vector glyphs, reshape them with the pen tool (booleans, mirror, rotation), and export the modified typeface.
 - **Native projects:** save, reopen and exchange editable `.sp` documents between SP213 and the full editor.
 - **Document imports:** integrate common image, SVG, PDF, Word and spreadsheet content into layouts.
@@ -140,7 +140,7 @@ Network access is opt-in. Only use `--host 0.0.0.0` on a trusted network when yo
 
 - [SuperPrint web application](https://superprint.cc)
 - [Technical documentation](https://superprint.cc/documentation.html)
-- [SP213 AI Studio](https://superprint.cc/sp213-studio.html)
+- [Studio IA](https://superprint.cc/sp213-studio.html)
 - [SuperTyPo font editor](https://superprint.cc/supertypo/)
 - [2.13 — developer and maintainer](https://2points13.fr)
 - [2.13 applications](https://2points13.fr/applications.html)
