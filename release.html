@@ -6,7 +6,7 @@
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
 <meta name="description" content="Latest Zigmoon release notes for PDF-YZ, Bird and SuperPrint. Discover native PDF editing, local-first vector design, SuperTyPo typeface editor and SuperPrint v1.7.375 (reliable text wrap, stable AI text blocks, colour picker in RGB).">
-<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.394, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation, Word import options, body size, image width, heading hierarchy, SP213 Studio, images checkbox, photo layout, illustration photos, bleed setting, trim, print finishing, current dates, Word attachment fix, page by page generation, targeted rework, selected block, design tokens">
+<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.395, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation, Word import options, body size, image width, heading hierarchy, SP213 Studio, images checkbox, photo layout, illustration photos, bleed setting, trim, print finishing, current dates, Word attachment fix, page by page generation, targeted rework, selected block, design tokens, multi-line titles, overlap, text measurement, layout passes">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="SuperPrint v1.7.394 — targeted rework in the studio is repaired (a selected block is now really updated, and never silently deleted), and three off-brand colours are back in line with the design language.">
+<meta property="og:description" content="SuperPrint v1.7.395 — multi-line titles no longer collide with the text below. Measured pass by pass: a 47.2 mm overlap was solved then re-created by a later pass; both causes are fixed.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SuperPrint v1.7.394 — targeted rework repaired: re-prompting a selected block now really updates it, and never deletes it silently.">
+<meta name="twitter:description" content="SuperPrint v1.7.395 — multi-line titles now clear the text below (47.2 mm overlap measured, then fixed).">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -704,6 +704,40 @@ footer, footer a { color: var(--after-text-color); }
 
 <main>
 <section class="releases" aria-label="Release notes">
+
+<!-- ===== SUPER PRINT v1.7.395 — titres multi-lignes degages ===== -->
+<article class="release-block" data-app="superprint" id="superprint-v1-7-395">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.395</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 13 septembre 2026" data-i18n-en="Released September 13, 2026" data-i18n-jp="2026年9月13日公開">Released September 13, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="<strong>Les titres sur plusieurs lignes dégagent enfin le texte du dessous.</strong> Sur votre page 12 — « Le Pavé Mosaïque, l'Équerre et le Compas » — un titre de quatre lignes recouvrait le paragraphe de <strong>47,2 mm</strong>. Nous avons rejoué vos quatre passes de composition et mesuré le recouvrement après chacune : il était <strong>résolu puis recréé</strong>. Deux causes distinctes, les deux corrigées." data-i18n-en-html="<strong>Multi-line titles finally clear the text below them.</strong> On your page 12 — “Le Pavé Mosaïque, l'Équerre et le Compas” — a four-line title overlapped the paragraph by <strong>47.2 mm</strong>. We replayed your four layout passes and measured the overlap after each one: it was <strong>solved and then re-created</strong>. Two distinct causes, both fixed." data-i18n-jp-html="<strong>複数行のタイトルが、下のテキストをきちんと避けるようになりました。</strong>お客様の12ページ「Le Pavé Mosaïque, l'Équerre et le Compas」では、4行のタイトルが段落に<strong>47.2mm</strong>重なっていました。4つの組版パスを再実行し、各パスの後で重なりを計測したところ、<strong>解決された後に再発生</strong>していました。原因は2つで、どちらも修正しました。">Multi-line titles finally clear the text below.</p>
+
+ <h3>📐 Cause 1 : une hauteur devinée au lieu d'être mesurée <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Une passe de composition mesurait la hauteur d'un texte avec une valeur fournie par l'IA.</strong> Or le prompt ne demande jamais de hauteur pour un texte : elle est donc absente ou fausse. Résultat mesuré : votre titre (34 pt, 4 lignes, <strong>47,2 mm réels</strong>) était vu comme une bande de hauteur quasi nulle." data-i18n-en-html="<strong>One composition pass measured text height with a value supplied by the AI.</strong> But the prompt never asks for a height on a text element, so it is missing or wrong. Measured result: your title (34 pt, 4 lines, <strong>47.2 mm in reality</strong>) was seen as a near-zero band." data-i18n-jp-html="<strong>組版パスの一つが、AIから渡された値でテキストの高さを測っていました。</strong>しかしプロンプトはテキストの高さを要求しないため、値は欠落か不正確です。計測結果：タイトル（34pt・4行・<strong>実際は47.2mm</strong>）がほぼ高さ0の帯として扱われていました。">Text height was read from an AI-supplied value.</li>
+  <li data-i18n-fr-html="<strong>Conséquence :</strong> le titre était jugé « dans la même rangée » que le paragraphe placé à sa droite. La passe les alignait côte à côte au lieu de dégager le titre au-dessus. La hauteur vient maintenant d'une <strong>mesure réelle du moteur</strong>." data-i18n-en-html="<strong>Consequence:</strong> the title was judged to be “in the same row” as the paragraph on its right. The pass aligned them side by side instead of clearing the title above. Height now comes from a <strong>real engine measurement</strong>." data-i18n-jp-html="<strong>結果：</strong>タイトルは右隣の段落と「同じ行」と判定され、パスはタイトルを上に逃がすのではなく横並びにしていました。高さは現在、<strong>エンジンによる実測値</strong>から取得します。">It was aligned beside the paragraph instead of above it.</li>
+ </ul>
+
+ <h3>🔁 Cause 2 : l'ordre des passes annulait la correction <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>L'anti-recouvrement passait AVANT les étapes qui modifient les largeurs.</strong> Or un titre qui rétrécit <strong>gagne des lignes</strong>, donc grandit en hauteur — et le chevauchement qu'on venait de résoudre <strong>revenait</strong>. Mesure : « résolu » après une passe, <strong>47,2 mm de nouveau</strong> après la suivante." data-i18n-en-html="<strong>The anti-overlap pass ran BEFORE the steps that change widths.</strong> A title that narrows <strong>gains lines</strong>, so it grows taller — and the overlap just fixed <strong>came back</strong>. Measured: “solved” after one pass, <strong>47.2 mm again</strong> after the next." data-i18n-jp-html="<strong>重なり防止処理が、幅を変更する工程より前に実行されていました。</strong>タイトルは幅が狭くなると<strong>行数が増え</strong>、高さが大きくなります。そのため直前に解消した重なりが<strong>再発</strong>していました。計測：あるパスの後は「解決」、次のパスの後は<strong>再び47.2mm</strong>。">The overlap was solved, then re-created by the next pass.</li>
+  <li data-i18n-fr-html="Les largeurs sont désormais fixées d'abord (marges et mise à l'échelle des rangées), et l'anti-recouvrement passe <strong>en dernier</strong> : plus rien ne peut réintroduire un chevauchement. <strong>Vérifié : aucun recouvrement après aucune passe</strong>, contre 47,2 mm avant. Votre titre va de 42 à 89,2 mm, le texte du dessous commence à 95,2 mm : il est dégagé, avec 6 mm de respiration." data-i18n-en-html="Widths are now settled first (margins and row scaling), and the anti-overlap pass runs <strong>last</strong>: nothing can reintroduce an overlap. <strong>Verified: no overlap after any pass</strong>, against 47.2 mm before. Your title spans 42 to 89.2 mm, the text below starts at 95.2 mm: it is clear, with 6 mm of breathing room." data-i18n-jp-html="幅を先に確定させ（マージンと行のスケーリング）、重なり防止処理を<strong>最後</strong>に実行します。これで重なりが再発することはありません。<strong>検証：どのパスの後も重なりなし</strong>（修正前は47.2mm）。タイトルは42〜89.2mm、下のテキストは95.2mmから始まり、タイトルは6mmの余白をもって分離されています。">Widths first, anti-overlap last — verified with no overlap.</li>
+ </ul>
+
+ <h3>🧩 Et un troisième défaut trouvé au passage <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="L'anti-recouvrement ne repoussait que <strong>vers le bas</strong>, et seulement les blocs qu'elle avait déjà traités : deux blocs côte à côte ne se repoussaient donc jamais. Elle exige maintenant un vrai chevauchement <strong>horizontal</strong> (partager la même colonne), pour ne plus déplacer des blocs légitimement voisins." data-i18n-en-html="The anti-overlap pass only pushed <strong>downwards</strong>, and only past blocks it had already placed: two side-by-side blocks therefore never pushed each other. It now requires a genuine <strong>horizontal</strong> overlap (sharing the same column), so legitimately adjacent blocks are no longer moved." data-i18n-jp-html="重なり防止処理は<strong>下方向</strong>にのみ押し下げ、既に配置したブロックしか考慮していませんでした。そのため横並びの2つのブロックが互いを押すことはありませんでした。現在は<strong>水平方向</strong>の実際の重なり（同じ段の共有）を必要とし、正当に隣接するブロックは動かしません。">Two adjacent blocks now never push each other.</li>
+ </ul>
+
+ <p data-i18n-fr="Studio 1.7.395 — les quatre passes de composition ont été rejouées et mesurées après chacune, sur une reproduction de votre page 12. Correctif vérifié dans le paquet distribué." data-i18n-en="Studio 1.7.395 — the four composition passes were replayed and measured after each one, on a reproduction of your page 12. Fix verified inside the distributed package." data-i18n-jp="スタジオ 1.7.395 — 4つの組版パスを再実行し、各パスの後に計測しました（お客様の12ページを再現）。修正は配布パッケージ内でも検証済みです。">Passes replayed and measured one by one, on a reproduction of page 12.</p>
+ <a class="release-cta" href="https://superprint.cc/sp213-studio.html" data-i18n-fr="→ Ouvrir le studio SP213" data-i18n-en="→ Open SP213 Studio" data-i18n-jp="→ SP213スタジオを開く">→ Open SP213 Studio</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
 
 <!-- ===== SUPER PRINT v1.7.394 — retravail par zone + DA ===== -->
 <article class="release-block" data-app="superprint" id="superprint-v1-7-394">

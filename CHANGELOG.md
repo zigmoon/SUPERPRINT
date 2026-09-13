@@ -9,6 +9,23 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.395] — 2026-09-13
+
+_Studio: multi-line titles finally clear the text below them_
+
+### Fixed
+- **A multi-line title no longer collides with the text underneath.** Reported on page 12 (“Le Pavé Mosaïque, l'Équerre et le Compas”). Method: the studio's four layout passes were **extracted from the file and chained in the real order** on a reproduction of that page, measuring overlaps **after each pass** — which showed the overlap was **solved and then re-created**:
+  ```
+  after _spResolveCollisions   → none
+  after _spFitRowsToMargins    → 47.2 mm overlap   ← reappeared here
+  ```
+- **Cause 1 — a guessed height.** `_spFitRowsToMargins` measured text height with `el.height`, a value **supplied by the AI**. But the prompt never asks for a height on a text element, so it is missing or wrong. Consequence: the 4-line/34 pt title (47.2 mm tall in reality) was seen as a near-zero band and judged to be **in the same row** as the paragraph on its right — so the pass aligned them side by side instead of clearing the title above. Row height now comes from `spMeasureTextBlock` (real Fabric measurement).
+- **Cause 2 — the passes ran in the wrong order.** The anti-overlap pass ran **before** the passes that change **widths**. A title that narrows gains lines, so it grows taller, and the overlap just fixed came back. Widths are now settled first (margins and row scaling), and the stacking pass runs **last**.
+- **Also:** `_spResolveCollisions` only pushed downwards and only past blocks it had already placed, so two side-by-side blocks never pushed each other. It now requires a genuine **horizontal** overlap (sharing the same column), so legitimately adjacent blocks are left alone.
+
+### Verified
+- Same case, same passes, same order: **no overlap after any pass** (was 47.2 mm). Final position: the 34 pt title spans 42 → 89.2 mm, the introduction starts at 95.2 mm — the title is clear, with 6 mm of breathing room.
+
 ## [1.7.394] — 2026-09-13
 
 _Studio: targeted rework repaired, and three off-brand colours removed_
