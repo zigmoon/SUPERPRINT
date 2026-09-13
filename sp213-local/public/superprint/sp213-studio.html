@@ -2127,12 +2127,12 @@
   function refreshChatHeader() {
     const titleEl = $('chatTitle');
     if (!titleEl) return;
-    const eng = (typeof state !== 'undefined' && state.engine) || 'deepseek';
-    if (eng === 'webllm') titleEl.textContent = t('chat.engineWllm');
-    else if (eng === 'openai') titleEl.textContent = t('chat.engineOpenAI');
-    else if (eng === 'deepseek') titleEl.textContent = t('chat.engineDS');
-    else if (eng === 'openrouter') titleEl.textContent = t('chat.engineOR');
-    else titleEl.textContent = t('chat.engineGroq');
+    // 🆕 v1.7.384 — TITRE NEUTRE.
+    //   Avant : « Conversation SP213 × DeepSeek » alors que #modelLabel affiche
+    //   déjà « DeepSeek V4.1 Flash » juste à droite → LE FOURNISSEUR APPARAISSAIT
+    //   DEUX FOIS sur la même ligne. Le titre redevient neutre ; le MODÈLE précis
+    //   reste à droite, c'est l'information utile.
+    titleEl.textContent = t('chat.title');
   }
 
   // ── Polices ────────────────────────────────────────────────
@@ -3810,7 +3810,7 @@
       renderOnAddRemove: false
     });
 
-    addGuides(c, effWpx, pageHpx, bleedPx);
+    addGuides(c, effWpx, pageHpx, bleedPx, state.viewMode === 'spread');
     c.requestRenderAll();
     state.pages.push({ pageIndex: 0, canvas: c, label: 'Page 1', blank: true });
 
@@ -3820,7 +3820,7 @@
 
   // Repères DA SuperPrint : trait de coupe noir 2px, fond perdu gris pointillé,
   // marges de sécurité rouges pointillées (comme drawMargins de SuperPrint).
-  function addGuides(c, pageWpx, pageHpx, bleedPx) {
+  function addGuides(c, pageWpx, pageHpx, bleedPx, isSpread) {
     // Trait de coupe (format final) — noir
     const trimBox = new fabric.Rect({
       left: bleedPx, top: bleedPx, width: pageWpx, height: pageHpx,
@@ -3850,7 +3850,34 @@
       lockRotation: true, lockScalingX: true, lockScalingY: true, lockScaling: true,
       excludeFromExport: true, isMargin: true
     });
-    [trimBox, bleedIndicator, marginRect].forEach(g => {
+    // 🆕 v1.7.384 — LIGNE DE PLIURE (mode planche uniquement).
+    //   Mesure : le studio traçait le trait de coupe, les fonds perdus et les
+    //   marges, mais AUCUNE séparation entre les deux pages d'une planche, alors
+    //   que l'app la montre. On trace donc la pliure au MILIEU EXACT de la
+    //   planche (x = bleed + largeur d'une page), par-dessus les repères.
+    let foldLine = null;
+    if (isSpread && pageWpx > 0) {
+      const foldX = bleedPx + pageWpx;
+      foldLine = new fabric.Line([foldX, bleedPx, foldX, bleedPx + pageHpx], {
+        stroke: '#2a2a2a',
+        strokeWidth: 1,
+        strokeDashArray: [6, 4],
+        selectable: false,
+        evented: false,
+        hoverCursor: 'default',
+        hasControls: false,
+        hasBorders: false,
+        lockMovementX: true,
+        lockMovementY: true,
+        lockRotation: true,
+        lockScalingX: true,
+        lockScalingY: true,
+        lockScaling: true,
+        excludeFromExport: true,
+        isFold: true
+      });
+    }
+    [trimBox, bleedIndicator, marginRect].concat(foldLine ? [foldLine] : []).forEach(g => {
       if (!state.guidesVisible) g.visible = false;
       c.add(g);
     });
@@ -3858,6 +3885,7 @@
       c.bringToFront(bleedIndicator);
       c.bringToFront(marginRect);
       c.bringToFront(trimBox);
+      if (foldLine) c.bringToFront(foldLine);
     } catch(_) {}
   }
 
@@ -4865,6 +4893,22 @@ ${(function(){
   const isMulti = (mp && parseInt(mp[1],10) > 1) || /\b(magazine|catalogue|catalog|livre|brochure|booklet|livret|book|journal)\b/i.test(p);
   if (isMulti) {
     const n = mp ? parseInt(mp[1],10) : 0;
+    // 🆕 v1.7.384 — EN DOUBLE PAGE, UNE ENTRÉE = UNE PLANCHE (pas une page).
+    //   AVANT : « produis N entrées "pages" (une par page) » → pour un livre de
+    //   4 pages le modèle produisait 4 PLANCHES au lieu de l'imposition réelle
+    //   (3 planches : p1 seule | p2+p3 | p4 seule). Mesure avant correctif :
+    //   « livre de 4 pages » → 4 planches.
+    if (state.viewMode === 'spread') {
+      const planches = n ? (1 + Math.ceil((n - 1) / 2)) : 0;
+      return '🚨 MULTI-PAGES EN DOUBLE PAGE : utilise le FORMAT B. ' +
+        (n ? 'Le livre fait ' + n + ' pages, ce qui donne ' + planches + ' PLANCHE(S) : ' +
+             'produis EXACTEMENT ' + planches + ' entrées "pages", car EN DOUBLE PAGE **UNE ENTRÉE = UNE PLANCHE** (2 pages côte à côte), PAS une page de livre. ' +
+             'Imposition attendue : planche 1 = page 1 SEULE à DROITE ; puis les paires p2+p3, p4+p5… ; la dernière page seule à GAUCHE si le total est pair. '
+           : 'produis autant d\'entrées "pages" que de PLANCHEs, car EN DOUBLE PAGE **UNE ENTRÉE = UNE PLANCHE** (2 pages côte à côte), PAS une page de livre. ') +
+        'Dans une planche, la page de GAUCHE va de 0 à ' + state.pageW + ' mm et la page de DROITE de ' + state.pageW + ' à ' + (state.pageW * 2) + ' mm ; ' +
+        'une planche qui ne contient qu\'UNE page laisse l\'autre moitié VIDE. ' +
+        'Le fond perdu couvre la PLANCHE (width ' + (state.pageW * 2 + 6) + ' mm). Contenu COMPLET sur chaque page, cohérence graphique stricte (mêmes marges, folios, grille).';
+    }
     return '🚨 MULTI-PAGES DÉTECTÉ : utilise le FORMAT B, produis ' + (n || 'le nombre demandé de') + ' entrées "pages" (une par page), contenu COMPLET sur chaque page, cohérence graphique stricte (mêmes marges, folios, grille), folios en bas, respecte la structure livre/magazine/catalogue (couverture, sommaire, édito, contenu, 4e de couverture).';
   }
   return state.viewMode === 'spread'
@@ -6313,7 +6357,7 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
         }
       });
       // Repères DA SuperPrint par-dessus (coupe, fonds perdus, marges)
-      addGuides(c, effWpx, pageHpx, bleedPx);
+      addGuides(c, effWpx, pageHpx, bleedPx, doc.viewMode === 'spread');
       // Éviter de sélectionner les repères (guides) — filet de sécurité (ils sont
       // déjà selectable:false à la création, mais on couvre aussi tout objet repère)
       c.getObjects().forEach(o => { if (o.isBleed || o.isMargin || o.isTrimBox) { o.set({ selectable: false, evented: false }); } });
@@ -6929,10 +6973,85 @@ C. MODES D'AFFICHAGE
 ═══════════════════════════════════════════
 D. MULTIPAGE — LIVRE, MAGAZINE, CATALOGUE, BROCHURE
 ═══════════════════════════════════════════
-• MULTI-PAGES = OBLIGATOIRE avec le FORMAT B : { "targetPages": N, "pages": [ { "pageIndex": i, "elements": [...] }, ... ] }.
+  • 🔴🔴 EN MODE DOUBLE PAGE, UNE ENTRÉE DE "pages" = UNE PLANCHE (PAS UNE PAGE DE LIVRE).
+    C'est LA confusion à ne pas faire : le studio AFFICHE déjà les deux pages
+    côte à côte dans une planche. Si tu produis une entrée par page de livre,
+    chaque planche ne sera remplie qu'à moitié et le nombre de planches sera
+    DOUBLE de ce qu'il devrait être.
+
+    Compte les PLANCHES, pas les pages :
+      nombre de planches = 1 + arrondi_supérieur((N − 1) / 2)
+        • 4 pages  -> 3 planches   (p1 seule | p2+p3 | p4 seule)
+        • 8 pages  -> 5 planches   (p1 seule | 2+3 | 4+5 | 6+7 | p8 seule)
+        • 12 pages -> 7 planches
+      Une planche contient 2 pages quand elles se font FACE (paires p2+p3, p4+p5…)
+      et UNE SEULE page au début (p1, à DROITE) et éventuellement à la fin
+      (dernière page si N est pair, à GAUCHE).
+
+    ⚠️ QUAND UNE PLANCHE NE CONTIENT QU'UNE PAGE, LA MOITIÉ OPPOSÉE RESTE VIDE :
+      • p1 SEULE  -> tout le contenu dans la moitié DROITE (left ≥ largeur d'une page)
+      • dernière page seule -> tout le contenu dans la moitié GAUCHE
+
+    ⚠️ Dans une planche, une page de GAUCHE occupe left 0 → largeur d'une page,
+       une page de DROITE occupe largeur d'une page → largeur de la planche.
+       La GOUTTIÈRE est au milieu exact (largeur d'une page).
+
+    ⚠️ Le FOND PERDU couvre la PLANCHE ENTIÈRE : width = (2 × largeur d'une page) + 6.
+       Un fond de (largeur d'une page + 6) ne couvrirait qu'UNE moitié.
+
+    EXEMPLE COMPLET — LIVRE DE 4 PAGES, MODE DOUBLE PAGE (A4 : page 210, planche 420).
+    À IMITER pour tout livre/brochure/magazine en double page :
+    {
+      "reply": "Livre de 4 pages imposé en 3 planches.",
+      "targetPages": 3,
+      "pages": [
+        { "pageIndex": 0, "elements": [
+            { "type": "rectangle", "left": -3, "top": -3, "width": 426, "height": 303, "fill": "#FFFFFF" },
+            { "type": "text", "left": 228, "top": 15, "width": 174, "text": "COUVERTURE", "fontSize": 30, "fill": "#0F172A", "fontFamily": "Bebas Neue" }
+        ] },
+        { "pageIndex": 1, "elements": [
+            { "type": "rectangle", "left": -3, "top": -3, "width": 426, "height": 303, "fill": "#FFFFFF" },
+            { "type": "text", "left": 18, "top": 15, "width": 174, "text": "Page 2 à gauche", "fontSize": 11, "fill": "#0F172A", "fontFamily": "Open Sans", "textAlign": "justify", "enableHyphenation": true, "hyphenLanguage": "fr" },
+            { "type": "text", "left": 228, "top": 15, "width": 174, "text": "Page 3 à droite", "fontSize": 11, "fill": "#0F172A", "fontFamily": "Open Sans", "textAlign": "justify", "enableHyphenation": true, "hyphenLanguage": "fr" }
+        ] },
+        { "pageIndex": 2, "elements": [
+            { "type": "rectangle", "left": -3, "top": -3, "width": 426, "height": 303, "fill": "#FFFFFF" },
+            { "type": "text", "left": 18, "top": 15, "width": 174, "text": "Page 4 à gauche", "fontSize": 11, "fill": "#0F172A", "fontFamily": "Open Sans", "textAlign": "justify", "enableHyphenation": true, "hyphenLanguage": "fr" }
+        ] }
+      ]
+    }
+
+  • MULTI-PAGES = OBLIGATOIRE avec le FORMAT B : { "targetPages": N, "pages": [ { "pageIndex": i, "elements": [...] }, ... ] }.
   - pageIndex est 0-based (page 1 = pageIndex 0). TU DOIS produire TOUTES les pages demandées.
   - Chaque page : 8 à 20 éléments minimum (titres, textes longs, formes, images, légendes).
   - JAMAIS de "Lorem ipsum" ni de "[ À GÉNÉRER ]" : du VRAI contenu éditorial sur chaque page.
+• 📖 IMPOSITION D'UN LIVRE — COMMENT LES PAGES SE REGROUPENT EN PLANCHES.
+    Un livre ne se lit pas « 2 pages par 2 pages » au hasard : les pages s'apparient
+    selon leur PARITÉ, parce que la page 1 est TOUJOURS une page de DROITE (impaire).
+      → page IMPAIRE (1, 3, 5, 7…) = page de DROITE
+      → page PAIRE   (2, 4, 6, 8…) = page de GAUCHE
+    Une PLANCHE (spread) = une page de GAUCHE + une page de DROITE.
+    Exemple d'un livre de 4 pages — l'imposition donne **3 PLANCHES**, pas 2 :
+      planche 1 = [ —  | p1 ]   la page 1 est SEULE, à droite (rien à sa gauche)
+      planche 2 = [ p2 | p3 ]   les deux pages se font face
+      planche 3 = [ p4 | —  ]   la page 4 est SEULE, à gauche
+    Règle générale pour N pages :
+      • planche 1 = page 1 SEULE (à droite) ;
+      • puis les paires successives : p2+p3, p4+p5, p6+p7… ;
+      • si N est PAIR, la dernière planche contient la dernière page SEULE (à gauche) ;
+      • s'il ne reste QU'UNE page après l'appariement, elle est seule sur sa planche.
+    ⚠️ Ne JAMAIS déduire le nombre de planches en divisant N par 2 : un livre de
+       4 pages fait 3 planches, un livre de 8 pages en fait 5.
+    ⚠️ Ne JAMAIS couper une double page en deux planches, ni fusionner deux
+       planches en une seule page.
+
+  • 📄 QUAND ON TE DEMANDE « UNE DOUBLE PAGE » (une seule planche).
+    Tu produis **UN SEUL enregistrement de page** dont le contenu couvre les DEUX
+    moitiés de la planche : la moitié gauche (page de GAUCHE) et la moitié droite
+    (page de DROITE), séparées par la gouttière. Tu ne produis PAS deux pages.
+    Ne demande pas « combien de pages ? » et n'invente pas de pagination : une
+    double page = une planche = un seul enregistrement.
+
 • STRUCTURE D'UN OBJET RELIÉ (livre / magazine / brochure / catalogue / livret) :
   - Pagination : page 1 = page de DROITE (impaire = droite, paire = gauche).
   - Brochure agrafée standard : nombre de pages MULTIPLE DE 4 (4, 8, 12, 16, 20, 24…).

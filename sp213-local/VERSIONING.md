@@ -1,6 +1,6 @@
 ﻿# SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.383`** — 12 septembre 2026
+> **Dernière version : `1.7.384`** — 12 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,19 +10,19 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.383` |
-| Cache Service Worker | `superprint-shell-v1.7.383-no-whatsapp` |
-| Query JS (`main.js`) | `?v=20260913-v383-studio-spread` |
-| Badge preview (`spVersionBadge`) | `v1.7.383` |
-| Splash screen | `v1.7.383` |
-| Préférences (panneau SUPERPRINT) | `v1.7.383` |
-| Préférences (bas de page) | `SuperPrint v1.7.383 — 12 septembre 2026` |
-| Onboarding (`V 1.7.383`) | `1.7.383` |
-| Landing (`softwareVersion` + footer) | `1.7.383` |
-| Documentation | `v1.7.383` |
-| `version.txt` | `1.7.383` |
-| `llms.txt` / `llms-full.txt` | `1.7.383 (September 2026)` |
-| `package.json` (sp213-local) | `1.7.383` |
+| Version app (affichée) | `1.7.384` |
+| Cache Service Worker | `superprint-shell-v1.7.384-no-whatsapp` |
+| Query JS (`main.js`) | `?v=20260913-v384-studio-dp` |
+| Badge preview (`spVersionBadge`) | `v1.7.384` |
+| Splash screen | `v1.7.384` |
+| Préférences (panneau SUPERPRINT) | `v1.7.384` |
+| Préférences (bas de page) | `SuperPrint v1.7.384 — 12 septembre 2026` |
+| Onboarding (`V 1.7.384`) | `1.7.384` |
+| Landing (`softwareVersion` + footer) | `1.7.384` |
+| Documentation | `v1.7.384` |
+| `version.txt` | `1.7.384` |
+| `llms.txt` / `llms-full.txt` | `1.7.384 (September 2026)` |
+| `package.json` (sp213-local) | `1.7.384` |
 
 > ⚠️ Le paquet **npm** (`superprint-npm`) a sa **propre version** (`1.0.x`) — c'est la version de *release du paquet*, indépendante de la version de l'app. Il lit la version de l'app depuis `https://superprint.cc/version.txt`.
 
