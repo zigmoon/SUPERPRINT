@@ -24,6 +24,19 @@ superprint/ORGANISATION.md
 superprint/RAPPORT-MODELES.md
 superprint/VERSIONING.md
 
+# ══════════════════════════════════════════════════════════════════════════
+# v1.7.404 — FILET DE SECURITE : jamais d'outillage de dev dans le site
+# ══════════════════════════════════════════════════════════════════════════
+# `!/superprint/` autorise TOUT le dossier en bloc. Les fichiers ci-dessous sont
+# donc DEJA couverts par la regle du dessus, mais on les nomme explicitement :
+# un outil de dev ne doit JAMAIS repartir sur superprint.cc (mesure : 24
+# fichiers y etaient deja deployes avant ce rangement).
+superprint/_*
+superprint/RAPPORT-*.md
+superprint/.venv/
+superprint/.vscode/
+# Outillage de travail range hors du dossier deploye.
+_dev/
 # VS Code (local)
 .vscode/
 superprint/.vscode/
