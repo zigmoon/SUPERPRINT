@@ -9,6 +9,26 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.400] — 2026-09-14
+
+_The prompt now edits the current layout instead of rebuilding it_
+
+### Added
+- **The AI finally receives an inventory of what is already on the page.** Measured in `main.js`: “OBJETS EXISTANTS” / “existingElements” / “currentLayout” → **0 occurrences** — the request carried only the page format and page number. Meanwhile `pages[idx].objects = …` (2 occurrences) **replaced the whole page**. Consequence: typing “make the title bigger” made the AI regenerate a complete page, and the user's work disappeared. This is the gap with the studio, which does know the layout.
+- **`_spAiDescribeCurrentLayout(canvas)`** builds a factual inventory of the active page — type, position and size in mm, **actual text**, font, size, colour — injected into the prompt with a **priority editing rule**: if the request concerns an existing element, return **that element modified** rather than creating another; keep everything else identical; do not start over. Technical marks (bleed, margins, crop marks, spread mirror) are **excluded** — they are not content. The inventory is capped at 40 objects then summarised.
+
+### Fixed
+- **A page could be silently emptied.** `_spAiProcessMultiPageResponse` wrote `pages[idx].objects` without checking that the AI had actually returned content, so a truncated or malformed reply wiped the page. It is now **left untouched** when the reply is empty, with an explicit message; and when objects really are replaced, the count is logged.
+- **The loader could stay stuck forever** — the “you can't tell what it's doing” report. The `catch (parseError)` block of `aiCustomPrompt` displayed the error and then ended **without ever calling `_aiResetGenerating()`**. `window._aiGenerating` therefore stayed `true` permanently: the button stuck on “Generation…”, the loader still shown, and no way to retry. This is the **most common path in practice** — any non-JSON reply lands there. The 1.7.398 watchdog could not help: it watches `_aiGenerating`, which nobody was resetting. `_aiResetGenerating()` is now called in that catch, with a message stating the layout was left untouched.
+
+### Verified
+- Browser test on a 3-object layout (background, title, paragraph) with a **deliberately non-JSON reply** to follow the faulty path:
+  - **before**: loader shown, button stuck on “Generation…”, `_aiGenerating` stayed `true`, no retry possible;
+  - **after**: loader cleared, button re-enabled, `_aiGenerating` false, **3 objects intact**, and the inventory reached the AI (`MAQUETTE ACTUELLE` + `REGLE DE RETOUCHE` both present in the prompt).
+- Web/mirror parity 14/14, 13/13 live version markers, 0 leftover traces, distributed package verified by extraction.
+
+> ⚠️ **`superprint.cc` still serves 1.7.390** (checked during this session). None of the last ten releases is visible online until the FTP deployment is done manually.
+
 ## [1.7.399] — 2026-09-14
 
 _Studio IA shown in black like SuperTyPo in the new-document window_
