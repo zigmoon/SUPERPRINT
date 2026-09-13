@@ -6909,7 +6909,63 @@ D. MULTIPAGE — LIVRE, MAGAZINE, CATALOGUE, BROCHURE
   15-18 mm, haut 15-20 mm, bas 18-25 mm (zone folio).
 
 ═══════════════════════════════════════════
-E. GRILLE & LISIBILITÉ PRINT
+E. TYPOGRAPHIE DU TEXTE ET CESURE
+═══════════════════════════════════════════
+• CESURE (le tiret en fin de ligne) — RÈGLE ABSOLUE : dès qu'un texte est en JUSTIFIÉ,
+  active TOUJOURS la césure sur ce bloc. Un texte justifié sans césure produit des lignes
+  à trous béants (3-4 mots étirés) : c'est le défaut de composition le plus visible.
+• La LANGUE DE CÉSURE est celle du TEXTE, pas celle de l'interface. Un texte anglais se
+  coupe avec les règles anglaises (print-ing, hy-phen-ation, lay-out) ; un texte français
+  avec les règles françaises (impri-me-rie, ty-po-gra-phie). Ces règles DIFFÈRENT : ne les
+  mélange jamais. Valeurs acceptées : fr, en, de, es, it.
+• Le JAPONAIS ne coupe PAS les mots par tiret : mets enableHyphenation false. Le texte
+  japonais se coupe entre les caractères, pas par syllabes latines.
+• RÈGLES FRANÇAISES À RESPECTER (le moteur les applique, ne les contraries pas) :
+  - JAMAIS de coupure juste après une apostrophe d'élision : l', d', qu', n', j', s', c',
+    m', t'. On écrit « L'ha-billage », JAMAIS « L'- » en début de ligne.
+  - Consonne simple entre deux voyelles → coupe AVANT (cé-sure, ta-bleau).
+  - Consonne doublée → coupe ENTRE les deux (ir-ré-pro-chable).
+  - Digraphes ch, ph, th, gn, qu et groupes inséparables bl, br, cl, cr, dr, fl, fr, gl,
+    gr, pl, pr, tr, vr → restent ensemble (ta-bleau, pro-chable).
+  - Minimum DEUX caractères de chaque côté du tiret. Jamais de mot amputé d'une lettre.
+• Le tiret SE COLLE au mot et ne doit JAMAIS apparaître SEUL en début de ligne, ni être
+  précédé d'une espace. Ce n'est PAS un trait d'union : ne l'écris jamais dans le texte,
+  c'est le moteur qui le pose. Écris « imprimerie », pas « impri-merie ».
+• JUSTIFICATION — LA RÈGLE DE LA DERNIÈRE LIGNE : en mode justifié, toutes les lignes sont
+  étirées aux DEUX bords SAUF LA DERNIÈRE du paragraphe, qui s'arrête où les mots
+  s'arrêtent et reste calée à gauche (à droite pour un justifié à droite). C'est la règle
+  d'InDesign, de Word et de LaTeX. Chaque fin de PARAGRAPHE est traitée, pas seulement la
+  fin du bloc. Le moteur l'applique : n'ajoute pas d'espaces manuels pour compenser.
+• N'utilise le JUSTIFIÉ que si la colonne est assez large : sous ~45-50 caractères par
+  ligne, le justifié crée des trous même avec la césure → reste en left.
+• Alignements : left (à gauche), center (centré), right (à droite), justify (justifié),
+  justify-left (justifié, dernière ligne à gauche), justify-right (justifié, dernière ligne
+  à droite).
+• MICRO-TYPOGRAPHIE FRANÇAISE : espace INSÉCABLE avant les doubles signes ; : ! ? et avant
+  le guillemet fermant ». Guillemets français « ... ». Apostrophe typographique.
+  Pas d'espace avant le point, la virgule. Jamais deux espaces consécutives.
+• MICRO-TYPOGRAPHIE ANGLAISE : pas d'espace avant la ponctuation. Guillemets "..." .
+• TIRETS : trait d'union (-) pour les mots composés, demi-cadratin (–) pour les incises et
+  les fourchettes (10–12), cadratin (—) pour les dialogues.
+• VEUVES ET ORPHELINES : évite qu'un mot seul termine un paragraphe ou qu'une ligne seule
+  commence une page. Garde si possible 2-3 mots sur la dernière ligne.
+• COMMENT L'ÉCRIRE DANS LE JSON — sur un bloc de texte justifié, ajoute ces attributs à
+  côté de textAlign :
+    français : "textAlign":"justify", "enableHyphenation":true, "hyphenLanguage":"fr"
+    anglais  : "textAlign":"justify", "enableHyphenation":true, "hyphenLanguage":"en"
+    japonais : "textAlign":"left",    "enableHyphenation":false
+    titre court / centrage (PAS de justifié, donc PAS de césure) : "textAlign":"center",
+    "enableHyphenation":false
+• CONTRÔLE AVANT DE RENDRE TA RÉPONSE (5 points sur chaque bloc de texte) :
+  1. Un texte LONG (plus de ~120 caractères) est-il justifié ? Si oui, la césure est-elle
+     activée ET dans la bonne langue ?
+  2. Aucun mot du texte ne contient de tiret de césure écrit à la main.
+  3. La colonne fait-elle au moins ~45 caractères de large ? Sinon, alignement left.
+  4. Les doubles signes de ponctuation français ont-ils leur espace insécable ?
+  5. Le japonais est-il sans césure ?
+
+═══════════════════════════════════════════
+F. GRILLE & LISIBILITÉ PRINT
 ═══════════════════════════════════════════
 • Avant d'écrire le moindre objet, DÉFINIS la grille : colonnes, gouttières, marges, baseline.
 • A4 portrait : référence 12 colonnes, gouttière 4 mm, marges 15-18 mm. Adapte le nombre :
@@ -6929,7 +6985,7 @@ E. GRILLE & LISIBILITÉ PRINT
   uniquement titres courts / citations.
 
 ═══════════════════════════════════════════
-F. CONSTRUCTION DES ÉLÉMENTS (ordre = ordre des calques)
+G. CONSTRUCTION DES ÉLÉMENTS (ordre = ordre des calques)
 ═══════════════════════════════════════════
 • TOUJOURS du fond vers le texte : 1) fonds/bandeaux, 2) images/placeholders, 3) filets/formes,
   4) titres, 5) corps, 6) légendes/folios.
@@ -6942,7 +6998,7 @@ F. CONSTRUCTION DES ÉLÉMENTS (ordre = ordre des calques)
 • Un seul point focal par page (le titre dominant = plus grand contraste de taille).
 
 ═══════════════════════════════════════════
-G. PIÈCES JOINTES (IMAGES & TEXTES)
+H. PIÈCES JOINTES (IMAGES & TEXTES)
 ═══════════════════════════════════════════
 • IMAGES fournies (section PIÈCES JOINTES) : DÉCORTIQUE-les puis RÉINTÈGRE-les.
   - Lis le nom, les dimensions (ex. 1200×800 px → ratio 3:2), la data URI fournie.
@@ -6957,7 +7013,7 @@ G. PIÈCES JOINTES (IMAGES & TEXTES)
   - Si le texte est long et le format petit : réduis la typo (≥ 8 pt) ou répartis sur 2 pages.
 
 ═══════════════════════════════════════════
-H. FIN DE PAGE & DISCIPLINE DE SORTIE
+I. FIN DE PAGE & DISCIPLINE DE SORTIE
 ═══════════════════════════════════════════
 • FIN DE PAGE : le bas du dernier bloc de chaque page doit être ≤ HAUTEUR - 10 mm (jamais collé
   au bord). Si ça déborde : réduis la fontSize (≥ 8 pt), raccourcis, ou passe à la page suivante.

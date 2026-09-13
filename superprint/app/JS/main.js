@@ -30778,6 +30778,13 @@ if (window._spGpuEnabled) {
                     var fillRef = csr.getAttribute('FillColor') || cStyle.fillColor || pStyle.fillColor;
                     run.fill = resolveColorRef(fillRef, cMap) || '#000000';
                     run.tracking = parseFloat(csr.getAttribute('Tracking')) || cStyle.tracking || pStyle.tracking || 0;
+                    // 🆕 v1.7.381 — LANGUE DU TEXTE (césure). InDesign écrit
+                    //   AppliedLanguage dans chaque CharacterStyleRange. Sans cette
+                    //   lecture, un bloc sans hyphenLanguage retombait sur la langue
+                    //   de l'INTERFACE : un document anglais importé dans une
+                    //   interface française était césuré avec les règles
+                    //   françaises (prin-ting au lieu de print-ing), en silence.
+                    run.lang = csr.getAttribute('AppliedLanguage') || cStyle.lang || pStyle.lang || '';
                     runs.push(run);
                 });
                 if (runs.length === 0) return;
@@ -30789,6 +30796,22 @@ if (window._spGpuEnabled) {
                 });
             });
             return result;
+        }
+
+        // 🆕 v1.7.381 — Langue InDesign -> code de dictionnaire de césure.
+        //   InDesign écrit « $ID/English:USA », « $ID/French:France »,
+        //   « nLanguage/english »… On reconnaît par mot-clé et on retombe sur
+        //   null si la langue n'est pas gérée (le bloc suivra alors la langue de
+        //   l'interface, comportement d'origine, donc aucune régression).
+        function idmlHyphenLang(appliedLanguage) {
+            var s = String(appliedLanguage || '').toLowerCase();
+            if (!s) return null;
+            if (s.indexOf('english') !== -1) return 'en';
+            if (s.indexOf('french') !== -1 || s.indexOf('fran') !== -1) return 'fr';
+            if (s.indexOf('german') !== -1 || s.indexOf('deutsch') !== -1) return 'de';
+            if (s.indexOf('spanish') !== -1 || s.indexOf('espa') !== -1) return 'es';
+            if (s.indexOf('italian') !== -1 || s.indexOf('italiano') !== -1) return 'it';
+            return null;
         }
 
         function justToFabricAlign(just) {
@@ -30840,7 +30863,7 @@ if (window._spGpuEnabled) {
                 }
                 var fullText = '';
                 var fabricStyles = {};
-                var domFontSize = 12, domFontFamily = 'Open Sans', domFontWeight = 'normal', domFontStyle = 'normal', domFill = '#000000', domTracking = 0, domUnderline = false, domLinethrough = false, domAlign = 'left', domLeading = 0;
+                var domFontSize = 12, domFontFamily = 'Open Sans', domFontWeight = 'normal', domFontStyle = 'normal', domFill = '#000000', domTracking = 0, domUnderline = false, domLinethrough = false, domLang = '', domAlign = 'left', domLeading = 0;
                 var hasBaseStyle = false;
                 var chIdx = 0;
 
@@ -30854,6 +30877,7 @@ if (window._spGpuEnabled) {
                             domFontStyle = run.fontStyleCSS || domFontStyle;
                             domFill = run.fill || domFill;
                             domTracking = run.tracking || 0;
+                            if (run.lang) domLang = run.lang;
                             domUnderline = run.underline;
                             domLinethrough = run.linethrough;
                             hasBaseStyle = true;
@@ -30896,6 +30920,10 @@ if (window._spGpuEnabled) {
                     textAlign: domAlign,
                     lineHeight: Math.max(1, Math.min(3, lhVal)),
                     styles: fabricStyles,
+                    // 🆕 v1.7.381 — langue du texte déduite de l'IDML : conditionne
+                    //   les règles de césure. null = langue non gérée -> le bloc
+                    //   suivra la langue de l'interface (comportement d'origine).
+                    hyphenLanguage: idmlHyphenLang(domLang) || undefined,
                     _fixedWidth: w, _fixedHeight: h,
                     splitByGrapheme: false, breakWords: true,
                 }, item, parentMtx);
@@ -47710,6 +47738,84 @@ Quand l'utilisateur ouvre une double page (mode spread) ou que la composition l'
   césure activée, centré uniquement pour titres courts ou citations.
 • ENCRAGE : un fond plein bord (couleur foncée pleine page) consomme énormément d'encre —
   acceptable pour couverture/page intercalaire, à éviter sur toutes les pages d'un livre.
+
+=============================================
+TYPOGRAPHIE DU TEXTE ET CESURE
+=============================================
+Ce bloc est ESSENTIEL : un texte mal compose se voit immediatement, meme a l'oeil nu.
+Applique-le a CHAQUE bloc de texte que tu produis.
+
+■ CESURE (le tiret en fin de ligne) — QUAND ET COMMENT
+• Regle : quand tu mets un texte en JUSTIFIE, active TOUJOURS la cesure sur ce bloc.
+  Un texte justifie sans cesure produit des lignes a trous beants (3-4 mots etires).
+  C'est le defaut de composition le plus visible.
+  -> Attributs a poser sur le bloc : enableHyphenation true et hyphenLanguage selon la langue.
+• La LANGUE DE CESURE est celle du TEXTE, pas celle de l'interface. Un texte anglais se
+  coupe avec les regles anglaises (print-ing, hy-phen-ation, lay-out) ; un texte francais
+  avec les regles francaises (impri-me-rie, ty-po-gra-phie). Ces regles DIFFERENT : ne les
+  melange jamais. Valeurs acceptees : fr, en, de, es, it.
+• Le JAPONAIS ne coupe PAS les mots par tiret : mets enableHyphenation false. Le texte
+  japonais se coupe entre les caracteres, pas par syllabes latines.
+• REGLES FRANCAISES A RESPECTER (le moteur les applique, ne les contraries pas) :
+  - JAMAIS de coupure juste apres une apostrophe d'elision : l', d', qu', n', j', s', c',
+    m', t'. On ecrit « L'ha-billage », JAMAIS « L'- / habillage ».
+  - Consonne simple entre deux voyelles -> coupe AVANT (ce-sure, ta-bleau).
+  - Consonne doublee -> coupe ENTRE les deux (ir-re-pro-chable).
+  - Digraphes ch, ph, th, gn, qu et groupes inseparables bl, br, cl, cr, dr, fl, fr, gl,
+    gr, pl, pr, tr, vr -> restent ensemble (ta-bleau, pro-chable).
+  - Minimum DEUX caracteres de chaque cote du tiret. Jamais de mot ampute d'une lettre.
+• Le tiret SE COLLE au mot (« impri- » puis « merie » sur la ligne suivante) et ne doit
+  JAMAIS apparaitre SEUL en debut de ligne, ni etre precede d'une espace.
+• Le tiret de cesure n'est PAS un trait d'union de mot compose : ne l'ecris jamais dans
+  le texte, c'est le moteur qui le pose. Ecris « imprimerie », pas « impri-merie ».
+
+■ JUSTIFICATION — LA REGLE DE LA DERNIERE LIGNE
+• En mode justifie, TOUTES les lignes sont etirees aux DEUX bords SAUF LA DERNIERE du
+  paragraphe. La derniere ligne s'arrete ou les mots s'arretent, calee a gauche (a droite
+  pour un justifie a droite). C'est la regle d'InDesign, de Word et de LaTeX. Le moteur
+  l'applique : ne cherche pas a la contourner en ajoutant des espaces manuels.
+• Chaque fin de PARAGRAPHE est traitee (pas seulement la fin du bloc) : si ton texte
+  contient des retours a la ligne (\n), chaque paragraphe a sa derniere ligne non etiree.
+• Alignements disponibles : left (a gauche), center (centre), right (a droite),
+  justify (justifie), justify-left (justifie, derniere ligne a gauche),
+  justify-right (justifie, derniere ligne a droite).
+• N'utilise le JUSTIFIE que si la colonne est assez large : en dessous de ~45-50 caracteres
+  par ligne, le justifie cree des trous meme avec la cesure. Dans ce cas, reste en left.
+• Un espace en fin de ligne ou avant une coupure est neutralise visuellement par le moteur :
+  ne l'ecris pas toi-meme dans le texte.
+
+■ MICRO-TYPOGRAPHIE FRANCAISE / ANGLAISE
+• FRANCAIS : espace INSECABLE avant les doubles signes de ponctuation : ; : ! ? et avant »
+  (guillemet fermant). Exemple : « Bonjour » -> mot + insécable + ». Pas d'espace avant le
+  point, la virgule, le point-virgule simple. Guillemets francais « ... » (pas "...").
+  On ecrit l'apostrophe typographique (l'imprimerie) et non l'apostrophe droite (l'imprimerie).
+• ANGLAIS : pas d'espace avant la ponctuation. Guillemets anglais ("...") ou typographiques
+  (curly). Apostrophe typographique.
+• Veuves et orphelines : evite qu'un mot seul termine un paragraphe (veuves) ou qu'une
+  ligne seule commence une page. Regle simple : si tu peux, garde au moins 2-3 mots sur la
+  derniere ligne, ou ajuste la longueur du texte.
+• ESPACES : jamais deux espaces consecutives, jamais d'espace avant un point ou une virgule.
+• TIRETS : trait d'union (-) pour les mots composes (peut-etre), tiret demi-cadratin (–)
+  pour les incises et les fourchettes (10–12), tiret cadratin (—) pour les dialogues.
+
+■ COMMENT L'ECRIRE DANS LE JSON
+Sur un bloc de texte JUSTIFIE, ajoute ces attributs a cote de textAlign :
+  "textAlign": "justify", "enableHyphenation": true, "hyphenLanguage": "fr"
+Pour un texte anglais :
+  "textAlign": "justify", "enableHyphenation": true, "hyphenLanguage": "en"
+Pour un texte japonais :
+  "textAlign": "left", "enableHyphenation": false
+Pour un titre court ou un centrage (PAS de justifie, donc PAS de cesure) :
+  "textAlign": "center", "enableHyphenation": false
+
+■ CONTROLE AVANT DE RENDRE TA REPONSE
+Verifie ces 5 points sur chaque bloc de texte que tu produis :
+  1. Un texte LONG (plus de ~120 caracteres) est-il justifie ? Si oui la cesure est-elle
+     activee ET dans la bonne langue ?
+  2. Aucun mot du texte ne contient de tiret de cesure ecrit a la main.
+  3. La colonne fait-elle au moins ~45 caracteres de large ? Sinon, alignement left.
+  4. Les doubles signes de ponctuation francais ont-ils leur espace insecable ?
+  5. Le japonais est-il sans cesure ?
 
 =============================================
 ARCHITECTURE DU DOCUMENT
