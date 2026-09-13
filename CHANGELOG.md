@@ -9,6 +9,25 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.404] — 2026-09-14
+
+_RTF finally hands over its page setup: format, margins, columns and pagination_
+
+### Fixed
+- **The prompt bar read an RTF’s text but discarded its entire page setup.** Measured on a purpose-built realistic RTF (A4 landscape, printer margins, gutter, 2 columns, header and footer, 2 page breaks) run through **both shipped decoders**: only **5 pieces of information out of 16** reached the AI. The 11 lost items were **page format** (\paperw 16838 / \paperh 11906), a second section in portrait, **printer margins** (\margl 1701, \margt 1417, \margr 1134, \margb 1701), **gutter** (113), **columns** (\cols2 with a 284 twip gutter), **orientation**, **page number** (\chpgn), **header** ({\header Page \chpgn}), **footer** ({\footer CONFIDENTIEL}), **page breaks** (\page) and **page count**. The page breaks were the worst loss: pagination vanished entirely, so the model could not tell where a page began.
+- **Two defects in my own first fix, found by measurement.** (a) The header and footer **leaked into the body text** — the words «Page» and «CONFIDENTIEL» appeared mid-document. I filtered them *after* extraction, but the decoder has already stripped the braces, so the `{\header` sequence no longer exists. They are now ignored in the body and read **straight from the raw source**. (b) The format came out as «landscape» instead of «A4 landscape»: the format lookup table is **sorted ascending** ('210 x 297' = A4), but the code built the pair as width × height — so `297 x 210` in landscape, which matched nothing. Sorting the pair for the lookup fixed it.
+
+### Added
+- **The AI now receives a readable page setup header** at the top of the extracted text: `FORMAT : A4 paysage (297 x 210 mm)`, the four margins in millimetres, the gutter, the number of columns with their gutter, the page count, the header and footer contents, and the detected automatic fields (page number, total pages, date).
+- **Every page break becomes a visible marker** — `[PAGE 2]`, `[PAGE 3]` — so the model knows where each page begins and can honour the document structure instead of pouring everything into one block.
+
+### Verified
+- Probe printed the **exact text sent to the AI**; all **11 targeted checks** pass (format, margins, gutter, columns, orientation, page number, header, footer, page markers, page count, body intact, no leftover markup).
+- Both decoders **return an identical result** (the app’s shared `sp-doc-import.js` module and the studio’s inline copy).
+- Web/mirror parity 14/14, coherence 13/13, no leftover version markers, `sp-doc-import.js` compilable, `_check_studio` clean, dist rebuilt at 1.7.404, package (56 272 098 bytes) regenerated.
+
+> ⚠️ **`superprint.cc` still serves 1.7.390.** Fourteen versions are invisible online until the FTP deployment is done manually — including this one.
+
 ## [1.7.403] — 2026-09-14
 
 _Separator rule centred, attachments adopt the Studio IA styling_
