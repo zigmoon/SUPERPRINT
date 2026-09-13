@@ -638,6 +638,11 @@
     font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase;
   }
   #sendBtn:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* v1.7.394 — Retour utilisateur : « je trouve pas assez fort visuellement quand
+     c'est un retravail par zone ». Le cadre du bloc passe en ambre et la barre
+     d'information #selectionBar est renforcee (bord gauche epais + graisse). */
+  #selectionBar { border-left-width: 4px !important; font-weight: 600; letter-spacing: .2px; }
   /* Boutons pièce jointe + micro : compacts (20px, icône 12px), CARRÉS (pas de
      bord arrondi) à droite de la zone de saisie */
   /* 🆕 v1.7.386 — 30 px (au lieu de 20) : vraie cible de clic, icone 14 px. */
@@ -663,7 +668,12 @@
     width: 13px; height: 13px; margin: 0; cursor: pointer; accent-color: #3b82f6;
   }
   #imgToggleWrap .img-toggle-label { font-size: 11px; letter-spacing: .2px; }
-  #imgToggleWrap.on { border-color: #3b82f6; background: rgba(59,130,246,0.10); }
+  /* v1.7.394 — RETOUR UTILISATEUR : « le bleu Images a droite du micro ca va pas
+     dans la DA, reste comme les autres en couleur meme si coche ».
+     Plus AUCUNE teinte bleue : cochee, la case garde exactement l'apparence des
+     icones voisines ; seul le libelle passe en gras pour signaler l'etat. */
+  #imgToggleWrap.on { border-color: var(--border); background: transparent; }
+  #imgToggleWrap.on .img-toggle-label { font-weight: 700; }
   #imgToggleWrap.busy { opacity: .5; pointer-events: none; }
   @media (max-width: 560px) {
     #imgToggleWrap { padding: 0 6px; }
@@ -6969,46 +6979,85 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   // conservés STRICTEMENT à l'identique (position, contenu, styles, ordre).
   function mergeTargetedChanges(oldDoc, parsed, selectedIds) {
     const selSet = new Set(selectedIds || []);
-    // Indexer les éléments renvoyés par l'IA : id → élément (avec sa page)
-    const newById = {};
     const newPages = Array.isArray(parsed.pages) && parsed.pages.length ? parsed.pages
       : (Array.isArray(parsed.elements) && parsed.elements.length ? [{ pageIndex: 0, elements: parsed.elements }] : []);
-    newPages.forEach(p => {
-      if (!Array.isArray(p.elements)) return;
-      p.elements.forEach(el => {
-        if (el && el.id) newById[el.id] = el;
+
+    // v1.7.394 — APPARIEMENT PAR POSITION (c'est ici qu'etait le bug).
+    //   AVANT : on indexait les elements renvoyes par l'IA par el.id :
+    //       newPages.forEach(p => p.elements.forEach(el => { if (el && el.id) newById[el.id] = el; }));
+    //   Or LE PROMPT NE DEMANDE JAMAIS D'ID a l'IA, et elle n'en renvoie pas :
+    //   newById restait donc VIDE, et AUCUN remplacement ne se produisait.
+    //   Pire : le filtre de suppression qui suivait RETIRAIT les elements
+    //   selectionnes quand l'IA n'en renvoyait aucun -> perte silencieuse
+    //   du bloc selectionne (le bloc vert de l'utilisateur).
+    //
+    //   MAINTENANT : on aplatit les elements renvoyes par l'IA dans l'ordre,
+    //   puis on les associe aux elements selectionnes DANS L'ORDRE DE LA
+    //   MAQUETTE (page puis position), ce que le modele respecte naturellement.
+    const newFlat = [];
+    newPages.forEach(function (p) {
+      if (Array.isArray(p.elements)) p.elements.forEach(function (el) { if (el && typeof el === 'object') newFlat.push(el); });
+    });
+
+    // Elements selectionnes, dans l'ordre de lecture
+    const cibles = [];
+    oldDoc.pages.forEach(function (p, pi) {
+      (p.elements || []).forEach(function (el, ei) {
+        if (el && el.id && selSet.has(el.id)) cibles.push({ pi: pi, ei: ei, el: el });
       });
     });
 
     // Cloner l'ancienne maquette en profondeur
     const merged = {
       w: oldDoc.w, h: oldDoc.h, effW: oldDoc.effW, viewMode: oldDoc.viewMode, bleed: oldDoc.bleed,
-      pages: oldDoc.pages.map(p => ({ pageIndex: p.pageIndex, elements: p.elements.map(e => JSON.parse(JSON.stringify(e))) }))
+      pages: oldDoc.pages.map(function (p) { return { pageIndex: p.pageIndex, elements: p.elements.map(function (e) { return JSON.parse(JSON.stringify(e)); }) }; })
     };
 
-    // Remplacer chaque élément sélectionné par sa version renvoyée (si dispo)
-    merged.pages.forEach(p => {
-      if (!Array.isArray(p.elements)) return;
-      p.elements.forEach((el, i) => {
-        if (el.id && selSet.has(el.id) && newById[el.id]) {
-          // Conserver l'id + réattacher les infos de lignes si texte
-          const replacement = JSON.parse(JSON.stringify(newById[el.id]));
-          replacement.id = el.id;
-          if (typeof replacement.text === 'string') {
-            replacement._lines = replacement.text.split('\n');
-            replacement._lineId_1 = el.id;
-            replacement._lines.forEach((ln, li) => { replacement['_lineId_' + (li + 1)] = el.id.replace(/-l\d+$/, '') + '-l' + (li + 1); });
-          }
-          p.elements[i] = replacement;
-        }
-      });
-    });
+    if (newFlat.length) {
+      let remplaces = 0;
+      cibles.forEach(function (c, k) {
+        // 1) par id, si le modele en a fabrique un
+        let r = newFlat.find(function (n) { return n.id && c.el.id && String(n.id) === String(c.el.id); });
+        // 2) sinon par POSITION
+        if (!r) r = newFlat[k];
+        // 3) si le modele n'a renvoye qu'un element pour plusieurs cibles
+        if (!r && newFlat.length === 1) r = newFlat[0];
+        if (!r || typeof r !== 'object') return;
+        // Garde-fou : ne jamais remplacer par un objet manifestement vide
+        if (!r.type && !r.text && r.fill === undefined) return;
 
-    // Si l'IA a supprimé un élément sélectionné (ex. « supprime ce bloc »), le retirer
-    merged.pages.forEach(p => {
-      if (!Array.isArray(p.elements)) return;
-      p.elements = p.elements.filter(el => !(el.id && selSet.has(el.id)) || newById[el.id]);
-    });
+        const cible = merged.pages[c.pi];
+        if (!cible || !Array.isArray(cible.elements) || !cible.elements[c.ei]) return;
+
+        const clone = JSON.parse(JSON.stringify(r));
+        clone.id = c.el.id;              // on CONSERVE l'identite de l'element
+        clone._sp213Id = c.el.id;
+        // Ne jamais perdre la position si le modele ne l'a pas fournie
+        // (sinon l'element sauterait en 0,0).
+        if (clone.left === undefined || clone.left === null) clone.left = c.el.left;
+        if (clone.top === undefined || clone.top === null) clone.top = c.el.top;
+        if (typeof clone.width !== 'number') clone.width = c.el.width;
+        // Reattacher les infos de lignes si c'est du texte
+        if (typeof clone.text === 'string') {
+          clone._lines = clone.text.split('\n');
+          clone._lineId_1 = c.el.id;
+          clone._lines.forEach(function (ln, li) {
+            clone['_lineId_' + (li + 1)] = c.el.id.replace(/-l[0-9]+$/, '') + '-l' + (li + 1);
+          });
+        }
+        cible.elements[c.ei] = clone;
+        remplaces++;
+      });
+      if (!remplaces) {
+        try { console.warn('[SP213] retravail cible : reponse non appariable, maquette inchangee'); } catch (_) {}
+      }
+    } else {
+      // v1.7.394 — AUCUN element renvoye : on NE SUPPRIME PLUS RIEN.
+      //   L'ancien filtre retirait les elements selectionnes dans ce cas
+      //   precis, ce qui faisait DISPARAITRE le bloc de l'utilisateur sans
+      //   aucun message. On laisse la maquette intacte et on trace.
+      try { console.warn('[SP213] retravail cible : reponse vide, maquette inchangee'); } catch (_) {}
+    }
 
     return merged;
   }
@@ -7283,7 +7332,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         if (fo) {
           fo.id = el.id || ('p' + (p.pageIndex + 1) + '-b' + (p.elements.indexOf(el) + 1));
           fo._sp213Id = fo.id;
-          fo.set({ selectable: true, evented: true, hasControls: true, hasBorders: true, borderColor: '#1a7f37', cornerColor: '#1a7f37', cornerSize: 8, transparentCorners: false });
+          // v1.7.394 — Retour utilisateur : « vert n'est pas forcement la bonne
+          //   couleur, j'aurais prefere qu'on reste dans le sombre noir ». On passe
+          //   a l'AMBRE SOBRE de la DA : bien visible pour le retravail par zone,
+          //   sans sortir de la palette sombre de l'outil.
+          fo.set({ selectable: true, evented: true, hasControls: true, hasBorders: true, borderColor: '#b45309', cornerColor: '#b45309', cornerStrokeColor: '#f5f5f4', cornerSize: 9, transparentCorners: false });
           c.add(fo);
         }
       });
