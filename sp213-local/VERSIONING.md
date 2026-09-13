@@ -11,8 +11,8 @@
 | Champ | Valeur |
 |---|---|
 | Version app (affichée) | `1.7.380` |
-| Cache Service Worker | `superprint-shell-v1.7.380-no-whatsapp` |
-| Query JS (`main.js`) | `?v=20260913-v380-cesure` |
+| Cache Service Worker | `superprint-shell-v1.7.380b-no-whatsapp` |
+| Query JS (`main.js`) | `?v=20260913-v380-texte-masque` |
 | Badge preview (`spVersionBadge`) | `v1.7.380` |
 | Splash screen | `v1.7.380` |
 | Préférences (panneau SUPERPRINT) | `v1.7.380` |

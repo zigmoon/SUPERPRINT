@@ -34481,6 +34481,49 @@ https://superprint.app
             return el;
         }
 
+        // 🎯 v1.7.380 — TEXTE MASQUÉ : un bloc à hauteur fixe qui contient plus de
+        //   lignes qu'il n'en peut afficher rogne le surplus (comportement PAO),
+        //   mais SANS le dire. Le PDF est fidèle à la preview, donc l'utilisateur
+        //   peut livrer un document amputé sans s'en apercevoir. On recense ces
+        //   blocs avant l'export pour l'annoncer dans le message de fin.
+        function _spCompterBlocsTronques() {
+            var total = 0, masquees = 0;
+            try {
+                var pages = (typeof canvases !== 'undefined' && canvases) ? canvases : [];
+                for (var p = 0; p < pages.length; p++) {
+                    var c = pages[p];
+                    if (!c || typeof c.getObjects !== 'function') continue;
+                    var objs = c.getObjects();
+                    for (var i = 0; i < objs.length; i++) {
+                        var o = objs[i];
+                        if (!o || (o.type !== 'textbox' && o.type !== 'text')) continue;
+                        if (o._isShapeClippedText || o._isCtxPathText || o.isEditing) continue;
+                        var h = (typeof o._fixedHeight === 'number' && o._fixedHeight > 0)
+                            ? o._fixedHeight : (o.height || 0);
+                        if (!(h > 0)) continue;
+                        var n = (o._textLines && o._textLines.length) || 0;
+                        if (!n) continue;
+                        var vis = n;
+                        try {
+                            if (typeof window.spCountVisibleLines === 'function') {
+                                vis = window.spCountVisibleLines(o, h);
+                            } else if (typeof o.getHeightOfLine === 'function') {
+                                var cum = 0; vis = 0;
+                                for (var k = 0; k < n; k++) {
+                                    cum += o.getHeightOfLine(k);
+                                    if (cum / (o.lineHeight || 1) <= h + 0.5) vis++; else break;
+                                }
+                            }
+                        } catch (_) { vis = n; }
+                        if (!isFinite(vis) || vis < 1) vis = Math.min(1, n);
+                        if (n > vis) { total++; masquees += (n - vis); }
+                    }
+                }
+            } catch (_) {}
+            return { blocs: total, lignes: masquees };
+        }
+        try { window._spCompterBlocsTronques = _spCompterBlocsTronques; } catch (_) {}
+
         async function confirmExport() {
     await window.ensureExportLibs(); // 🚀 Perf : jspdf/svg2pdf/opentype/wawoff2/fontkit/pdf-lib/jszip à la demande
     const modal = document.getElementById('exportModal');
@@ -34692,6 +34735,22 @@ https://superprint.app
         : (currentLanguage === 'ja' ? 'ページを準備中…' : 'Préparation des pages…');
     const _spExportLoader = _spCreatePdfLoader({ title: _spLoaderTitle, sub: _spLoaderSub });
     const _spLoaderApi = _spExportLoader._spPdfLoaderApi;
+
+    // 🎯 v1.7.380 — avertissement « texte masqué » (calculé AVANT l'export : une
+    //   fois le PDF écrit il est trop tard pour prévenir). Le message est ajouté
+    //   au toast de fin dans les 3 langues.
+    var _spTruncWarn = '';
+    try {
+        var _tr = _spCompterBlocsTronques();
+        if (_tr.blocs > 0) {
+            _spTruncWarn = (currentLanguage === 'en')
+                ? (' — ⚠ ' + _tr.blocs + ' text block(s) hide ' + _tr.lignes + ' line(s): enlarge the block or reduce the text')
+                : (currentLanguage === 'ja'
+                    ? (' — ⚠ ' + _tr.blocs + ' 個のテキストブロックで ' + _tr.lignes + ' 行が隠れています')
+                    : (' — ⚠ ' + _tr.blocs + ' bloc(s) texte masquent ' + _tr.lignes + ' ligne(s) : agrandissez le bloc ou réduisez le texte'));
+        }
+    } catch (_) {}
+    try { window._spExportTruncWarn = _spTruncWarn; } catch (_) {}
 
     try {
         // Laisser le navigateur peindre le loader avant de bloquer le thread
@@ -35421,6 +35480,9 @@ https://superprint.app
         await savePdfWithColorMode(pdf, filename, options.colorMode, { iccProfile: options.iccProfile, pdf3D: options.pdf3D });
 
         let message = `${translate('pdfExportSuccess')}\n${translate('pdfExportMode')}: ${colorModeText}\n${translate('pdfExportQuality')}: ${qualityInfo}\n${translate('pdfExportCropMarks')}: ${options.cropMarks ? translate('yesLabel') : translate('noLabel')}\n${translate('pdfExportColorBars')}: ${options.colorBars ? translate('yesLabel') : translate('noLabel')}`;
+        // 🎯 v1.7.380 — avertir si des blocs texte masquent des lignes (le PDF est
+        //   fidèle à la preview, mais l'utilisateur doit le savoir avant livraison).
+        try { if (window._spExportTruncWarn) message += '\n' + window._spExportTruncWarn.replace(/^\s*—\s*/, ''); } catch (_) {}
         try { _spLoaderApi && _spLoaderApi.done(); } catch(_) {}
         try { _spExportLoader && _spExportLoader.remove(); } catch(_) {}
         alert(message);
@@ -37641,6 +37703,14 @@ https://superprint.app
             // La purge cassait tout export suivant (l'archive du PDF source
             // disparaissait → fallback raster géant au 2e export).
             console.log('[pdf-lib] _exportSimplePdfLib DONE, pages:', pages.length);
+            // 🎯 v1.7.380 — le chemin NATIF pdf-lib n'affiche pas le message de fin
+            //   du chemin jsPDF : sans ce relais, l'avertissement « texte masqué »
+            //   était calculé mais jamais montré à l'utilisateur.
+            try {
+                if (window._spExportTruncWarn && window.spToast) {
+                    window.spToast(window._spExportTruncWarn.replace(/^\s*—\s*/, ''), 'warning', 9000);
+                }
+            } catch (_) {}
         }
 
         // ✏️ v1.7.207 — EXPORT IMPOSÉ NATIF PDF-LIB ──────────────────────
@@ -40530,7 +40600,27 @@ https://superprint.app
 
         function _spCollectDocumentFontRequirements() {
             const requirements = new Map();
+            // 🎯 v1.7.380 — NORMALISATION DE LA FAMILLE.
+            //   Un charStyle peut porter une PILE CSS (« Open Sans, sans-serif »)
+            //   au lieu d'un nom de police. Aucun fichier ne porte ce nom : le
+            //   préflight déclarait donc la police manquante et REFUSAIT l'export
+            //   vectoriel, alors que la police réelle était disponible.
+            //   On ne garde que la 1re famille et on écarte les génériques.
+            const spFamilleNette = (f) => {
+                let s = String(f == null ? '' : f).trim();
+                if (!s) return '';
+                // « "Open Sans", sans-serif » -> « Open Sans »
+                s = s.split(',')[0].trim();
+                s = s.replace(/^["']+|["']+$/g, '').trim();
+                const g = s.toLowerCase();
+                if (g === 'sans-serif' || g === 'serif' || g === 'monospace' ||
+                    g === 'cursive' || g === 'fantasy' || g === 'system-ui' ||
+                    g === 'ui-sans-serif' || g === 'ui-serif' || g === 'ui-monospace' ||
+                    g === 'inherit' || g === 'initial' || g === 'unset') return '';
+                return s;
+            };
             const add = (family, weight, style) => {
+                family = spFamilleNette(family);
                 if (!family) return;
                 const normalizedWeight = String(weight || 400) === 'bold' ? '700'
                     : (String(weight || 400) === 'normal' ? '400' : String(weight || 400));
