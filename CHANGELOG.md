@@ -9,6 +9,16 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.392] — 2026-09-13
+
+_Studio: configurable bleed, and layouts finally stop dating themselves 2025_
+
+### Fixed
+- **The AI did not understand bleed — it framed every full-page element flush to the trim.** Measured: the studio had **no bleed setting at all** (`state.bleed = 3` was hard-coded) and the prompt wrote `3` / `+ 6` / `-3` **in hard-coded form at 19 places**. A user who set 5 mm in SuperPrint still got a 3 mm bleed. A **"Bleed" field** now sits in the studio settings (default 3 mm, 0–20 mm, remembered), and every bleed value in the prompt derives from it.
+- **Two sources of hard-coded bleed survived the first pass** — `Bleed: 3 mm` and `negatives only for bleed (-3 mm)` — and the three JSON examples showed `"left": -3`. Found by intercepting the real API request, not by reading the code.
+- **Root cause of a subtler failure:** `SP213_LAYOUT_SYSTEM` is a **constant evaluated once at load, before the setting is read**, so a `${bled()}` placed inside it stayed frozen at 3. Those spots now use `@BLED@` / `@BLED2@` tokens resolved at every prompt build. Verified: `3 mm` occurrences went from 2 to **0**, `"left": -3` from 3 to **0**, `-5` (the actual setting) now appears **19 times**.
+- **The AI dated layouts 2025.** The prompt contained **no date instruction at all** (0 occurrences), so models used their training year. A date note is now injected: today's date, the current year stated plainly, an explicit ban on the previous year for upcoming events, and the rule that a past year is only allowed if the user asks for one. Measured: the note is present in the outgoing request with "nous sommes en 2026".
+
 ## [1.7.391] — 2026-09-13
 
 _Studio: an "Images" checkbox right of the attachments, web and mic buttons_

@@ -6,7 +6,7 @@
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
 <meta name="description" content="Latest Zigmoon release notes for PDF-YZ, Bird and SuperPrint. Discover native PDF editing, local-first vector design, SuperTyPo typeface editor and SuperPrint v1.7.375 (reliable text wrap, stable AI text blocks, colour picker in RGB).">
-<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.391, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation, Word import options, body size, image width, heading hierarchy, SP213 Studio, images checkbox, photo layout, illustration photos">
+<meta name="keywords" content="zigmoon releases, PDF-YZ update, Bird vector editor, SuperPrint 1.7.392, double page, spread, right page, gutter, margin hierarchy, book imposition, AI hyphenation, InDesign import language, justified text, typography, text block, vector PDF, SuperTyPo typeface editor, changelog, version history, web app release notes, software updates, prompt box, prompt field, studio UX, attached image, AI brief, double page, spread, fold line, gutter, book imposition, folios, signatures, Word import, docx, image extraction, mammoth, multi-page generation, text measurement, collision detection, Word import options, columns, continuing conversation, Word import options, body size, image width, heading hierarchy, SP213 Studio, images checkbox, photo layout, illustration photos, bleed setting, trim, print finishing, current dates">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="SuperPrint v1.7.391 — a new “Images” checkbox in SP213 Studio: unchecked by default, it makes the AI reserve real photo areas and the studio fetch 1 to 3 illustration photos for your layout.">
+<meta property="og:description" content="SuperPrint v1.7.392 — bleed is now a studio setting (3 mm default, up to 20 mm) and every bleed value sent to the AI derives from it. Layouts also stop dating themselves 2025.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SuperPrint v1.7.391 — the studio gains an “Images” checkbox to dress your layouts with photos. Unchecked by default, measured in both states.">
+<meta name="twitter:description" content="SuperPrint v1.7.392 — configurable bleed in the studio, and layouts now use current dates instead of 2025.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -704,6 +704,36 @@ footer, footer a { color: var(--after-text-color); }
 
 <main>
 <section class="releases" aria-label="Release notes">
+
+<!-- ===== SUPER PRINT v1.7.392 — fond perdu reglable + dates ===== -->
+<article class="release-block" data-app="superprint" id="superprint-v1-7-392">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.392</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 13 septembre 2026" data-i18n-en="Released September 13, 2026" data-i18n-jp="2026年9月13日公開">Released September 13, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="<strong>Le fond perdu se règle enfin, et les maquettes arrêtent de se dater en 2025.</strong> L'IA posait ses fonds et ses photos pleine page à ras du format : le fond perdu était <strong>écrit en dur à 3 mm</strong> dans vingt endroits du prompt, et le studio n'avait aucun réglage. Autre symptôme : les dates générées tombaient systématiquement sur l'année précédente." data-i18n-en-html="<strong>Bleed is finally configurable, and layouts stop dating themselves 2025.</strong> The AI framed backgrounds and full-page photos flush to the trim: bleed was <strong>hard-coded at 3 mm</strong> in twenty places in the prompt, and the studio had no setting at all. Second symptom: generated dates kept landing on the previous year." data-i18n-jp-html="<strong>塗り足しが設定可能になり、レイアウトが2025年と名乗ることもなくなりました。</strong>AIは背景や全面写真を仕上がり線ぴったりに配置していました。塗り足しはプロンプト内の20か所で<strong>3mmにハードコード</strong>され、スタジオには設定自体が存在しませんでした。もう一つの症状は、生成される日付が常に前年になることでした。">Bleed is configurable, and layouts stop dating themselves 2025.</p>
+
+ <h3>📐 Le fond perdu, piloté par vos réglages <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Mesure avant : aucun réglage n'existait dans le studio</strong>, et le prompt écrivait « 3 », « + 6 » et « -3 » en dur à <strong>19 endroits</strong>. Régler 5 mm dans SuperPrint ne changeait donc rien : l'IA composait toujours à 3 mm, collée au trait de coupe." data-i18n-en-html="<strong>Measured first: the studio had no setting</strong>, and the prompt wrote “3”, “+ 6” and “-3” in hard-coded form at <strong>19 places</strong>. Setting 5 mm in SuperPrint changed nothing: the AI still composed at 3 mm, flush to the trim." data-i18n-jp-html="<strong>まず計測：スタジオには設定が存在しませんでした。</strong>プロンプトは「3」「+ 6」「-3」を<strong>19か所</strong>でハードコードしていました。SuperPrintで5mmに設定しても効果はなく、AIは常に3mmで組版していました。">Hard-coded at 19 places, with no setting to change it.</li>
+  <li data-i18n-fr-html="<strong>Un champ « Fond perdu (bleed) » apparaît maintenant dans les réglages du studio</strong> : 3 mm par défaut, jusqu'à 20 mm, mémorisé d'une session à l'autre. Toutes les valeurs du prompt en découlent — dépassement, largeur totale, coordonnées négatives." data-i18n-en-html="<strong>A “Bleed” field now appears in the studio settings</strong>: 3 mm by default, up to 20 mm, remembered between sessions. Every value in the prompt derives from it — overflow, total width, negative coordinates." data-i18n-jp-html="<strong>スタジオ設定に「塗り足し」欄を追加しました。</strong>既定3mm、最大20mm、セッションをまたいで記憶されます。プロンプト内のすべての値（はみ出し量・全体幅・負の座標）がこの値から算出されます。">A bleed field in the studio settings, 3 mm by default.</li>
+  <li data-i18n-fr-html="<strong>Un défaut plus subtil a été trouvé en interceptant la vraie requête envoyée à l'IA</strong> : la grande constante de règles du studio est évaluée <em>une seule fois au chargement</em>, avant que votre réglage ne soit lu. La valeur y restait donc figée à 3. Ces endroits passent désormais par des jetons résolus à chaque génération. <strong>Vérifié :</strong> plus aucune mention de 3 mm, plus aucun exemple JSON à -3, et la valeur réellement transmise est bien la vôtre." data-i18n-en-html="<strong>A subtler defect was found by intercepting the real request sent to the AI:</strong> the studio's big rules constant is evaluated <em>once at load</em>, before your setting is read. The value stayed frozen at 3. Those spots now use tokens resolved on every generation. <strong>Verified:</strong> no mention of 3 mm left, no JSON example at -3, and the value actually transmitted is yours." data-i18n-jp-html="<strong>AIへ送信される実際のリクエストを傍受して、より微妙な不具合を発見しました：</strong>スタジオの大きなルール定数は<em>読み込み時に一度だけ</em>評価され、設定が読まれる前でした。そのため値は3で固定されていました。現在は生成のたびに解決されるトークンを使用しています。<strong>検証済み：</strong>3mmの記述ゼロ、-3のJSON例ゼロ、実際に送信される値は設定値です。">Found by intercepting the real request, not by reading code.</li>
+ </ul>
+
+ <h3>📅 Des dates actuelles, pas celles de l'année dernière <span class="badge badge-fix">fix</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Mesure : le prompt ne contenait aucune consigne de date</strong> — zéro occurrence. Les modèles se rabattaient donc sur leur année d'entraînement et dataient vos affiches de 2025." data-i18n-en-html="<strong>Measured: the prompt contained no date instruction at all</strong> — zero occurrences. Models therefore fell back on their training year and dated your posters 2025." data-i18n-jp-html="<strong>計測：プロンプトに日付の指示は一切ありませんでした</strong>（出現回数ゼロ）。そのためモデルは学習時の年を採用し、ポスターを2025年としていました。">The prompt had no date instruction at all.</li>
+  <li data-i18n-fr-html="Une consigne est désormais injectée : <strong>la date du jour et l'année en cours</strong> sont données explicitement, l'année précédente est interdite pour un événement à venir, et une date passée n'est acceptée que si vous la demandez (« rétrospective », « en 2019… »). <strong>Vérifié dans la requête sortante.</strong>" data-i18n-en-html="An instruction is now injected: <strong>today's date and the current year</strong> are stated explicitly, the previous year is banned for an upcoming event, and a past date is only accepted if you ask for one (“retrospective”, “in 2019…”). <strong>Verified in the outgoing request.</strong>" data-i18n-jp-html="指示を注入しました：<strong>今日の日付と現在の年</strong>を明示し、今後開催されるイベントには前年を禁止、過去の日付はご要望がある場合のみ許可します。<strong>送信リクエストで検証済み。</strong>">Today's date and the current year are now stated.</li>
+ </ul>
+
+ <p data-i18n-fr="Studio 1.7.392 — fond perdu réglable et dates actuelles, tous deux vérifiés dans la requête réellement envoyée à l'IA, et dans le paquet distribué." data-i18n-en="Studio 1.7.392 — configurable bleed and current dates, both verified in the request actually sent to the AI, and inside the distributed package." data-i18n-jp="スタジオ 1.7.392 — 塗り足しの設定と現在の日付。どちらもAIへ実際に送信されたリクエストと配布パッケージ内で検証済みです。">Both verified in the real outgoing request and in the package.</p>
+ <a class="release-cta" href="https://superprint.cc/sp213-studio.html" data-i18n-fr="→ Ouvrir le studio SP213" data-i18n-en="→ Open SP213 Studio" data-i18n-jp="→ SP213スタジオを開く">→ Open SP213 Studio</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
 
 <!-- ===== SUPER PRINT v1.7.391 — case Images du studio SP213 ===== -->
 <article class="release-block" data-app="superprint" id="superprint-v1-7-391">
