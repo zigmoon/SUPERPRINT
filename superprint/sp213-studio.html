@@ -3166,14 +3166,155 @@
     themedata: 1, colorschememapping: 1, latentstyles: 1, datastore: 1,
     listtable: 1, listoverridetable: 1, rsidtbl: 1, generator: 1, filetbl: 1,
     revtbl: 1, xmlnstbl: 1, upr: 1, mmathPr: 1, wgrffmtfilter: 1,
-    pgptbl: 1, docvar: 1, nonshppict: 1, shppict: 1, header: 1, footer: 1,
+    pgptbl: 1, docvar: 1, nonshppict: 1, shppict: 1,
+    // v1.7.404 — header/footer sont IGNORES PAR LE CORPS mais LUS par
+    //   spRtfLayoutInfo() depuis la source brute : leur contenu ne doit donc
+    //   PAS se melanger au texte du document (mesure : « Page » et
+    //   « CONFIDENTIEL » apparaissaient au milieu du corps).
+    header: 1, footer: 1, headerl: 1, headerr: 1, footerl: 1, footerr: 1,
     footnote: 1, annotation: 1, fldinst: 1
   };
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// 🆕 v1.7.404 — MISE EN PAGE DU RTF (format, marges, colonnes, pages)
+//   Mesure : le decodeur ne transmettait QUE le texte. Format de page, marges,
+//   colonnes, en-tete/pied de page et SAUTS DE PAGE etaient perdus :
+//   5 informations sur 16 attendues. Ce bloc lit les mots-cles de mise en page
+//   et produit un en-tete structure, SANS toucher au texte extrait.
+// ══════════════════════════════════════════════════════════════════════════
+
+// Neutralise les groupes {\header ...} et {\footer ...} DANS LE CORPS du texte.
+//   Ils ont ete sortis de SP_RTF_SKIP pour que l'analyse ci-dessous puisse les
+//   lire, mais leur contenu ne doit pas se melanger au corps du document.
+function spRtfHorsFlux(s) {
+  var out = String(s || '');
+  ['header', 'footer', 'headerl', 'headerr', 'footerl', 'footerr', 'headerf', 'footerf'].forEach(function (nom) {
+    var motif = '{\\' + nom;
+    var i = out.indexOf(motif);
+    while (i !== -1) {
+      var prof = 0, j = i, fin = -1;
+      for (; j < out.length; j++) {
+        if (out[j] === '{') prof++;
+        else if (out[j] === '}') { prof--; if (prof === 0) { fin = j; break; } }
+      }
+      if (fin === -1) break;
+      out = out.slice(0, i) + out.slice(fin + 1);
+      i = out.indexOf(motif, i);
+    }
+  });
+  return out;
+}
+
+// Lit les proprietes de page du RTF et renvoie un en-tete lisible (ou '' si rien).
+function spRtfLayoutInfo(src) {
+  var s = String(src || '');
+  if (!s) return '';
+  // 1 twip = 1/1440 pouce ; en mm : x 25,4 / 1440
+  var TW = 25.4 / 1440;
+  var mm = function (tw) { return Math.round(tw * TW * 10) / 10; };
+
+  // ⚠️ Un mot-cle de CONTROLE est precede d'un antislash : on l'ancre dessus,
+  //    sinon le mot « paperw » ecrit dans un paragraphe serait pris pour une propriete.
+  var nombre = function (kw) {
+    var m = new RegExp('\\\\' + kw + '(-?\\d+)').exec(s);
+    return m ? parseInt(m[1], 10) : null;
+  };
+  var present = function (kw) { return new RegExp('\\\\' + kw + '\\b').test(s); };
+  var compte = function (kw) { return (s.match(new RegExp('\\\\' + kw + '\\b', 'g')) || []).length; };
+
+  var paperw = nombre('paperw'), paperh = nombre('paperh');
+  var margl = nombre('margl'), margr = nombre('margr');
+  var margt = nombre('margt'), margb = nombre('margb');
+  var gutter = nombre('gutter');
+  var cols = nombre('cols');
+  var colsx = nombre('colsx');
+  var landscape = present('landscape');
+
+  var sautsPage = compte('page');
+  var sautsSect = compte('sect');
+
+  // Contenu textuel d'un groupe « {\nom ... } » (en-tete / pied).
+  var texteGroupe = function (nom) {
+    var motif = '{\\' + nom;
+    var deb = s.indexOf(motif);
+    if (deb === -1) return '';
+    var prof = 0, i = deb, fin = -1;
+    for (; i < s.length; i++) {
+      if (s[i] === '{') prof++;
+      else if (s[i] === '}') { prof--; if (prof === 0) { fin = i; break; } }
+    }
+    if (fin === -1) return '';
+    var brut = s.slice(deb, fin);
+    brut = brut.replace(/\\\'([0-9a-fA-F]{2})/g, function (_, h) {
+      var v = parseInt(h, 16);
+      return (typeof spCp1252Char === 'function') ? (spCp1252Char(v) || '') : String.fromCharCode(v);
+    });
+    brut = brut.replace(/\\u(-?\\d+)\s?\??/g, function (_, d) {
+      var c = parseInt(d, 10); if (c < 0) c += 65536;
+      return c > 0 ? String.fromCharCode(c) : '';
+    });
+    brut = brut.replace(/\\chpgn\b/g, '{N}')
+               .replace(/\\[a-zA-Z]+-?\d*\s?/g, ' ')
+               .replace(/[{}]/g, ' ')
+               .replace(/\s+/g, ' ')
+               .trim();
+    return brut;
+  };
+  var entete = texteGroupe('header');
+  var pied = texteGroupe('footer');
+
+  var champs = [];
+  if (present('chpgn')) champs.push('numero de page');
+  if (present('numpages')) champs.push('nombre total de pages');
+  if (present('chdate') || present('chtime')) champs.push('date');
+  if (present('chftn')) champs.push('note de bas de page');
+
+  // Format lisible : nom usuel + orientation + dimensions en mm.
+  var fmt = function (w, h) {
+    if (!w || !h) return null;
+    var W = mm(w), H = mm(h);
+    var pays = landscape || W > H;
+    // ⚠️ La table ci-dessous est TRIEE CROISSANTE ('210 x 297' = A4). En
+    //   paysage, W > H : sans tri, on cherchait '297 x 210' et ne trouvait
+    //   RIEN (mesure : « paysage » au lieu de « A4 paysage »).
+    var _gr = Math.max(W, H), _pt = Math.min(W, H);
+    var cote = Math.round(_pt) + ' x ' + Math.round(_gr);
+    var noms = { '210 x 297': 'A4', '297 x 420': 'A3', '148 x 210': 'A5',
+                 '216 x 279': 'Letter', '216 x 356': 'Legal', '279 x 432': 'Tabloid' };
+    return (noms[cote] ? noms[cote] + ' ' : '') + (pays ? 'paysage' : 'portrait') +
+           ' (' + W + ' x ' + H + ' mm)';
+  };
+
+  var L = [];
+  var f = fmt(paperw, paperh);
+  if (f) L.push('FORMAT : ' + f);
+  if (margl !== null || margt !== null || margr !== null || margb !== null) {
+    var q = [];
+    if (margt !== null) q.push('haut ' + mm(margt) + ' mm');
+    if (margb !== null) q.push('bas ' + mm(margb) + ' mm');
+    if (margl !== null) q.push('gauche ' + mm(margl) + ' mm');
+    if (margr !== null) q.push('droite ' + mm(margr) + ' mm');
+    L.push('MARGES : ' + q.join(', '));
+  }
+  if (gutter) L.push('RELIURE : ' + mm(gutter) + ' mm');
+  if (cols && cols > 1) L.push('COLONNES : ' + cols + (colsx ? ' (gouttiere ' + mm(colsx) + ' mm)' : ''));
+  if (sautsSect) L.push('SECTIONS : ' + (sautsSect + 1) + ' (formats pouvant differer)');
+  if (sautsPage) L.push('PAGES : au moins ' + (sautsPage + 1) +
+    ' (sauts de page explicites). Chaque saut est marque [PAGE n] dans le texte.');
+  if (entete) L.push('EN-TETE : ' + entete);
+  if (pied) L.push('PIED DE PAGE : ' + pied);
+  if (champs.length) L.push('CHAMPS AUTOMATIQUES : ' + champs.join(', '));
+  if (!L.length) return '';
+  return '\n[DOCUMENT RTF \u2014 MISE EN PAGE DETECTEE]\n' + L.join('\n') +
+         '\n[FIN DE LA MISE EN PAGE]\n';
+}
 
   function spRtfToText(src) {
     const s = String(src || '');
     const out = [];
     let i = 0, depth = 0, skipFrom = -1;
+    let _pageNo = 1;   // v1.7.404 — numerote les [PAGE n]
     // \ucN : nombre de caracteres de repli a IGNORER apres un \uNNNN.
     // Defaut = 1 (\uc1). Un document generé en \uc0 n'a AUCUN repli.
     let uc = 1;
@@ -3228,7 +3369,10 @@
           if (kw === 'uc') { uc = Math.max(0, parseInt(word[2] || '1', 10) || 0); continue; }
           if (SP_RTF_SKIP[kw] && skipFrom < 0) { skipFrom = depth; continue; }
           if (skipFrom >= 0) continue;
-          if (kw === 'par' || kw === 'line' || kw === 'sect' || kw === 'row' || kw === 'page') out.push('\n');
+          // v1.7.404 — LE SAUT DE PAGE DEVIENT VISIBLE. Avant, \page produisait un
+          //   simple saut de ligne : l'IA ne pouvait pas savoir ou commencait une page.
+          if (kw === 'page') { _pageNo++; out.push('\n[PAGE ' + _pageNo + ']\n'); }
+          else if (kw === 'par' || kw === 'line' || kw === 'sect' || kw === 'row') out.push('\n');
           else if (kw === 'tab' || kw === 'cell') out.push('\t');
           else if (kw === 'bullet') out.push('- ');
           else if (kw === 'emdash') out.push('\u2014');
@@ -3257,7 +3401,8 @@
     }
     let t = out.join('');
     t = t.replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').replace(/\n{3,}/g, '\n\n');
-    return t.trim();
+    // v1.7.404 — l'en-tete de mise en page est ajoute ICI, une seule fois.
+    return (spRtfLayoutInfo(src) + t.trim()).trim();
   }
 
   function spU8Concat(parts) {
