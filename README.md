@@ -175,15 +175,21 @@ python -m http.server 8000 --directory superprint
 
 ## ✦ The repository
 
-The repository ships **the product only** — three folders and four root files. Development tooling (scripts, logs, backups, test fixtures) lives outside the repository in a `_dev/` folder that is git-ignored.
+The repository ships **the product only** — three folders, two build helpers and four root files. All development tooling (349 scripts, 281 logs, backups, test fixtures) lives outside the repository, in a `_dev/` folder that is git-ignored.
 
 | Path | Role | Tracked |
 |---|---|---|
 | `superprint/` | The complete web application: editor, landing, Studio IA, SuperTyPo, documentation, script API | ✅ |
 | `sp213-local/` | The local distribution (Vite + WebLLM) downloaded by the npm launcher | ✅ |
 | `superprint-npm/` | The `superprint` npm launcher (`npx superprint`) | ✅ |
+| `tools/` | Two dependency-free helpers: `serve.mjs` (local static server) and `make-release-zip.mjs` | ✅ |
 | `README.md` · `CHANGELOG.md` · `release.html` · `.gitignore` | Documentation and release notes | ✅ |
 | `_dev/` | Development tooling, logs, backups, fixtures | ❌ ignored |
+
+```bash
+node tools/serve.mjs        # serve superprint/ on http://127.0.0.1:8080
+node tools/make-release-zip.mjs   # rebuild superprint/sp213-local.zip
+```
 
 ⚠️ **Everything inside `superprint/` is deployed as-is** — it *is* the published website. Development tooling must therefore never be placed there. A safety net in `.gitignore` blocks `superprint/_*`, `superprint/RAPPORT-*.md`, `superprint/.venv/` and `superprint/.vscode/`.
 

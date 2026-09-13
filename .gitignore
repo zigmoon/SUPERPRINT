@@ -1,12 +1,15 @@
-# This repository intentionally contains only the SuperPrint product folders.
+# ══════════════════════════════════════════════════════════════════════════
+# Ce depot ne contient QUE le produit. La regle `/*` ignore tout a la racine,
+# puis chaque element public est reautorise explicitement ci-dessous.
+# ══════════════════════════════════════════════════════════════════════════
 /*
 !/.gitignore
 !/README.md
 !/CHANGELOG.md
 !/release.html
-!/_bump_332.mjs
-!/_make_zip.mjs
-!/_serve_static.cjs
+# Outils de build / de service du depot (2 scripts + leur notice)
+!/tools/
+# Les 3 dossiers produit
 !/superprint/
 !/sp213-local/
 !/superprint-npm/
