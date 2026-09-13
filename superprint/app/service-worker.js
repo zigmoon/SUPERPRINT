@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.388-no-whatsapp';
+const CACHE_NAME = 'superprint-shell-v1.7.389-no-whatsapp';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

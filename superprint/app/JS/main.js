@@ -28907,7 +28907,7 @@ if (window._spGpuEnabled) {
         });
     }
 
-    async function flowHtmlIntoPages(html, startPageIndex) {
+    async function flowHtmlIntoPages(html, startPageIndex, wordOpts) {
         // Parse HTML (avec images, listes, titres, tableaux basiques)
         const tmp = document.createElement('div');
         tmp.innerHTML = html;
@@ -28948,17 +28948,33 @@ if (window._spGpuEnabled) {
         const bleedPx = mmToPx(bleed);
         const refPageW = mmToPx(pageFormat.width);
         const refPageH = mmToPx(pageFormat.height);
+        // 🆕 v1.7.389 — LES OPTIONS DE LA POP-IN PILOTENT LA COMPOSITION.
+        //   AVANT : `const autoColumns = blocks.filter(...).length > 40 ? 2 : 1;`
+        //   -> des 40 blocs de texte, DEUX COLONNES imposees sans le dire : un
+        //   document Word simple colonne arrivait sur 2 colonnes. C'est le defaut
+        //   signale "il arrive en multi-colonne alors que le doc est en simple".
+        //   MAINTENANT : 1 colonne par defaut, ou le choix explicite de l'utilisateur.
+        const wo = wordOpts || {};
+        const margeMm = (typeof wo.margin === 'number') ? wo.margin : 15;
+        const margePx = mmToPx(margeMm);
         const safe = {
-            left: bleedPx + 40,
-            top: bleedPx + 40,
-            right: bleedPx + refPageW - 40,
-            bottom: bleedPx + refPageH - 40
+            left: bleedPx + margePx,
+            top: bleedPx + margePx,
+            right: bleedPx + refPageW - margePx,
+            bottom: bleedPx + refPageH - margePx
         };
         const safeW = Math.max(60, safe.right - safe.left);
         const safeH = Math.max(60, safe.bottom - safe.top);
-        const gap = 20;
-        const autoColumns = blocks.filter(b => b.kind === 'text' || b.kind === 'list-item').length > 40 ? 2 : 1;
-        const columns = autoColumns;
+        const gap = mmToPx(5);
+        const nbBlocsTexte = blocks.filter(b => b.kind === 'text' || b.kind === 'list-item').length;
+        let columns;
+        if (wo.cols === 'auto' || wo.cols === undefined) {
+            // « Auto » : le comportement historique (2 colonnes au-dela de 40 blocs),
+            // conserve UNIQUEMENT si l'utilisateur le demande explicitement.
+            columns = (wo.cols === 'auto') ? (nbBlocsTexte > 40 ? 2 : 1) : 1;
+        } else {
+            columns = Math.max(1, Math.min(3, parseInt(wo.cols, 10) || 1));
+        }
         const colWidth = Math.floor((safeW - (columns > 1 ? gap : 0)) / columns);
         let colIndex = 0;
         let cursorY = safe.top;
@@ -29147,12 +29163,61 @@ if (window._spGpuEnabled) {
         alert(translatef('alertImportComplete', blocks.length, Object.keys(pageObjects).length));
     }
 
+    // 🆕 v1.7.389 — POP-IN D'OPTIONS D'IMPORT WORD.
+    //   Mesure du defaut signale : `flowHtmlIntoPages` forcait DEUX COLONNES des
+    //   que le document depassait 40 blocs de texte, sans aucune indication.
+    //   Un document Word en simple colonne arrivait donc compose sur 2 colonnes.
+    //   Cette pop-in laisse l'utilisateur choisir (1 colonne par DEFAUT).
+    function askWordOptions() {
+        return new Promise(function (resolve) {
+            const modal = document.getElementById('wordOptionsModal');
+            if (!modal) { resolve({ cols: 1 }); return; }   // pas de pop-in : 1 colonne
+            const okBtn = document.getElementById('wordOptOk');
+            const noBtn = document.getElementById('wordOptCancel');
+            const closeBtn = document.getElementById('closeWordOptions');
+            modal.style.display = '';
+            let fini = false;
+            function nettoyer() {
+                modal.style.display = 'none';
+                okBtn.removeEventListener('click', valider);
+                noBtn.removeEventListener('click', annuler);
+                if (closeBtn) closeBtn.removeEventListener('click', annuler);
+            }
+            function valider() {
+                if (fini) return; fini = true;
+                const v = document.getElementById('wordOptCols').value;
+                const opts = {
+                    cols: (v === 'auto') ? 'auto' : Math.max(1, Math.min(3, parseInt(v, 10) || 1)),
+                    margin: Math.max(5, Math.min(60, parseFloat(document.getElementById('wordOptMargin').value) || 15)),
+                    bodyPt: Math.max(6, Math.min(24, parseFloat(document.getElementById('wordOptBody').value) || 11)),
+                    imgWidth: Math.max(20, Math.min(400, parseFloat(document.getElementById('wordOptImgW').value) || 120)),
+                    titres: !!document.getElementById('wordOptTitles').checked,
+                    imgReelle: !!document.getElementById('wordOptImgReal').checked
+                };
+                nettoyer();
+                resolve(opts);
+            }
+            function annuler() {
+                if (fini) return; fini = true;
+                nettoyer();
+                resolve(null);
+            }
+            okBtn.addEventListener('click', valider);
+            noBtn.addEventListener('click', annuler);
+            if (closeBtn) closeBtn.addEventListener('click', annuler);
+        });
+    }
+    window._spAskWordOptions = askWordOptions;
+
     if (importDocxBtn && importDocxInput) {
         importDocxBtn.addEventListener('click', () => importDocxInput.click());
         importDocxInput.addEventListener('change', (e) => {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
             importModal.style.display = 'none';
+            // 🆕 v1.7.389 — la pop-in d'options s'intercale avant l'import.
+            askWordOptions().then(function (wordOpts) {
+            if (!wordOpts) return;                              // annule par l'utilisateur
             askInsertAtPage().then(startPage => {
                 if (startPage === null) return; // annulé
                 ensureDocxLibs(() => {
@@ -29168,12 +29233,13 @@ if (window._spGpuEnabled) {
                             })
                         };
                         mammoth.convertToHtml({ arrayBuffer }, options)
-                            .then(result => flowHtmlIntoPages(result.value, startPage))
+                            .then(result => flowHtmlIntoPages(result.value, startPage, wordOpts))
                             .catch(err => { console.error('DOCX import error', err); alert(translatef('alertDocxImportError', err.message || err)); });
                     };
                     reader.readAsArrayBuffer(file);
                 });
             });
+            });   // fin askWordOptions().then
             e.target.value = '';
         });
     }

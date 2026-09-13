@@ -4465,13 +4465,46 @@
     return /\b(modif(?:ie|ier|ication)?|change|replace|remplace|ajoute|add|supprime|remove|delete|retouche|corrige|update|mets? à jour|déplace|move|resize|agrand|réduis|couleur|color|police|font|typo|align|rends?|make it)\b/i.test(String(text || ''));
   }
 
+  // 🆕 v1.7.389 — ON CONTINUE LA MAQUETTE PAR DEFAUT.
+  //   RETOUR UTILISATEUR : « si je re-prompte par dessus il m'ouvre une nouvelle
+  //   conversation au lieu de continuer a progresser sur la maquette que je vois ».
+  //   CAUSE : la decision reposait sur une LISTE DE VERBES (modifie, change,
+  //   ajoute…). Tout prompt qui n'en contenait aucun — « rends-le plus moderne »,
+  //   « c'est bien mais le titre est trop gros », « continue » — n'etait PAS
+  //   reconnu comme une modification, donc le studio faisait newConversation()
+  //   et ABANDONNAIT la maquette affichee a gauche.
+  //   CORRECTIF : on CONTINUE par defaut (comme le fait l'outil de selection).
+  //   Une nouvelle conversation n'est creee QUE si l'utilisateur le demande
+  //   explicitement (verbe de creation + « nouveau »), ou s'il n'y a aucun
+  //   document. Dans le doute : on continue.
   function protectCurrentDocumentForPrompt(text) {
     const hasLayout = !!(state.doc && state.doc.pages && state.doc.pages.some(page => Array.isArray(page.elements) && page.elements.length));
-    if (!hasLayout || promptUpdatesCurrentDocument(text)) return false;
-    newConversation();
-    appendChat('assistant', t('chat.newBrief'));
-    return true;
+    // Aucun document : rien a proteger, l'appelant cree la conversation.
+    if (!hasLayout) return false;
+    // Nouvelle conversation seulement sur demande EXPLICITE de l'utilisateur.
+    if (promptDemandeNouveauDocument(text)) {
+      newConversation();
+      appendChat('assistant', t('chat.newBrief'));
+      return true;
+    }
+    // Sinon : on CONTINUE sur la maquette courante (amelioration, retouche,
+    // precision, question…). C'est le comportement attendu.
+    return false;
   }
+
+  // L'utilisateur demande-t-il EXPLICITEMENT un nouveau document ?
+  //   « cree une nouvelle affiche », « fais-moi un autre catalogue », « new poster ».
+  //   Un simple « nouveau » sans verbe de creation ne suffit pas (ex. « mets le
+  //   nouveau titre en grand » doit CONTINUER).
+  function promptDemandeNouveauDocument(text) {
+    const t = String(text || '').toLowerCase();
+    const verbeCreation = /\b(cr[eé]e?r?[sz]?|cr[eé]ation|g[eé]n[eè]re?r?[sz]?|fais|faire|dessine|con[cç]ois|r[eé]alise|produis|design|create|generate|make|draw)\b/;
+    const objetNouveau = /\b(nouveau|nouvelle|nouveaux|nouvelles|autre|autres|un(e)?\s+autre|new|another|fresh)\b/;
+    const motDocument = /\b(document|maquette|affiche|poster|livre|brochure|catalogue|catalog|magazine|flyer|carte|menu|rapport|booklet|livret|book|page|pages|projet|layout)\b/;
+    if (/\b(from scratch|de z[eé]ro|recommence|recommencer|repartir de z[eé]ro|oublie (tout|le pr[eé]c[eé]dent))\b/.test(t)) return true;
+    return verbeCreation.test(t) && objetNouveau.test(t) && motDocument.test(t);
+  }
+  window.sp213DemandeNouveauDocument = promptDemandeNouveauDocument;
 
   // Limite de texte par pièce jointe selon le moteur (fenêtre de contexte) :
   // DeepSeek / Groq / OpenRouter (gros contextes) peuvent absorber beaucoup ; WLLM local moins.
@@ -4683,7 +4716,21 @@
         '{"reply":"","pages":[{"pageIndex":' + i + ',"elements":[…]}]}\n' +
         'Utilise 8 à 20 éléments utiles, du VRAI contenu (jamais de Lorem ipsum), un folio en bas.\n' +
         'pageIndex OBLIGATOIRE : ' + i + ' (le studio assemble ensuite les pages dans l\'ordre).';
-      const msgs = [systemMsg, { role: 'user', content: userPart }];
+      // 🆕 v1.7.389 — LES PIECES JOINTES DOIVENT ETRE TRANSMISES. `buildAttachmentContext`
+      //   n'etait appele que dans le chemin a appel unique : le modele ne recevait
+      //   donc AUCUNE section « PIECES JOINTES », ne connaissait pas les images et
+      //   ne pouvait pas renvoyer "imageIndex" -> 0 image placee sur le canvas.
+      //   On ajoute le contexte des pieces jointes a chaque appel.
+      let pjContext = '';
+      try { pjContext = buildAttachmentContext(); } catch (_) { pjContext = ''; }
+      const imagesNum = images.map(function (a, k) { return 'IMAGE ' + k + ' = "' + a.name + '"'; });
+      const consigneImg = images.length
+        ? '\n\n🖼️ IMAGES DISPONIBLES (place-les sur les pages où elles ont du sens) :\n' +
+          imagesNum.join('\n') +
+          '\nPour placer une image, renvoie {"type":"image", "imageIndex": N, "left":…, "top":…, "width":…, "height":…}. ' +
+          'Le studio réinjecte la data URI. Ne copie JAMAIS la data URI toi-même.'
+        : '';
+      const msgs = [systemMsg, { role: 'user', content: userPart + consigneImg + pjContext }];
       return callAI(msgs).then(function (resp) {
         const p = parseAIResponse(resp);
         let els = [];
@@ -5853,6 +5900,88 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
   //   • les TEXTES qui dépassent sont d'abord réduits en typo (min 8 pt), puis si
   //     ça ne suffit pas, REPORTÉS sur une nouvelle page (jamais de débordement).
   //   • les formes décoratives/fonds pleine page (bleed) peuvent déborder (normal).
+  // 🆕 v1.7.389 — RESOLUTION DES COLLISIONS ENTRE BLOCS.
+  //   Mesure du defaut signale : un TITRE de 3 lignes (Playfair 36 pt) occupe
+  //   51,7 mm alors que le studio le croyait haut de 30,5 mm ; le paragraphe
+  //   place 6 mm plus bas passait donc SOUS ses 2 dernieres lignes.
+  //   Regles :
+  //     • on ne touche JAMAIS aux fonds/formes pleine page (bleed) ;
+  //     • deux textes qui se recouvrent verticalement ET horizontalement sont
+  //       empiles : le second descend sous le premier + une respiration ;
+  //     • l'ordre de lecture est preserve (on descend du haut vers le bas) ;
+  //     • si le bas de page est atteint, on REDUIT le corps du dernier bloc
+  //       jusqu'au minimum lisible avant de le laisser depasser.
+  function _spResolveCollisions(doc) {
+    // (exposee plus bas sur window pour les tests et le diagnostic)
+    void 0;
+    if (!doc || !Array.isArray(doc.pages) || !doc.pages.length) return doc;
+    const pageH = doc.h || state.pageH || 297;
+    const isSpread = doc.viewMode === 'spread';
+    const PW = doc.w || state.pageW || 210;
+    const W = isSpread ? (doc.effW || PW * 2) : PW;
+    const QUEUE = 20;                    // marge de pied (grand fond)
+    const BAS_MAX = pageH - QUEUE;
+    const RESPIR = 4;                    // respiration minimale entre 2 blocs
+    const MIN_FS = 8;
+    const isText = function (el) {
+      const t = String((el && el.type) || '').toLowerCase();
+      return t === 'text' || t === 'textbox';
+    };
+    // Un fond pleine page/planche ne participe jamais aux collisions.
+    const isFond = function (el) {
+      if (isText(el)) return false;
+      const w = +el.width || 0, h = +el.height || 0;
+      return w >= W - 2 && h >= pageH - 2;
+    };
+    doc.pages.forEach(function (page) {
+      if (!page || !Array.isArray(page.elements)) return;
+      const textes = page.elements.filter(function (e) { return isText(e) && e.top != null; });
+      if (textes.length < 2) return;
+      // Ordre de lecture : haut -> bas, puis gauche -> droite.
+      textes.sort(function (a, b) { return (+a.top - +b.top) || (+a.left - +b.left); });
+      const poses = [];
+      textes.forEach(function (el) {
+        let top = +el.top || 0;
+        let fs = +el.fontSize || 11;
+        const left = +el.left || 0;
+        const width = (+el.width > 10) ? +el.width : (PW - 30);
+        const right = left + width;
+        let h = spMeasureTextBlock({
+          text: el.text, fontSize: fs, width: width, lineHeight: el.lineHeight,
+          fontFamily: el.fontFamily, fontWeight: el.fontWeight, fontStyle: el.fontStyle
+        }).hauteurMm;
+        // Empiler tant qu'on recouvre un bloc deja pose dans la meme bande.
+        let garde = 0;
+        while (garde++ < 40) {
+          const gêne = poses.filter(function (p) {
+            return left < p.right && right > p.left && top < p.bas - 0.5 && (top + h) > p.top + 0.5;
+          });
+          if (!gêne.length) break;
+          const cible = Math.max.apply(null, gêne.map(function (p) { return p.bas + RESPIR; }));
+          if (cible - top < 0.3) break;
+          top = Math.round(cible * 10) / 10;
+        }
+        // Si le bloc ne tient plus dans la page, on reduit son corps.
+        if (top + h > BAS_MAX) {
+          let g2 = 0;
+          while (top + h > BAS_MAX && fs > MIN_FS && g2++ < 24) {
+            fs = Math.max(MIN_FS, Math.round((fs - 0.5) * 10) / 10);
+            h = spMeasureTextBlock({
+              text: el.text, fontSize: fs, width: width, lineHeight: el.lineHeight,
+              fontFamily: el.fontFamily, fontWeight: el.fontWeight, fontStyle: el.fontStyle
+            }).hauteurMm;
+          }
+          if (fs !== (+el.fontSize || 11)) el.fontSize = fs;
+          if (top + h > BAS_MAX) top = Math.max(15, Math.round((BAS_MAX - h) * 10) / 10);
+        }
+        el.top = Math.round(top * 10) / 10;
+        poses.push({ left: left, right: right, top: el.top, bas: el.top + h });
+      });
+    });
+    return doc;
+  }
+  window.sp213ResolveCollisions = _spResolveCollisions;
+
   function _spConstrainDocToPages(doc) {
     if (!doc || !Array.isArray(doc.pages) || !doc.pages.length) return doc;
     const pageH = doc.h || state.pageH || 297;
@@ -5868,13 +5997,22 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
       return fs * 0.168;
     }
     function estimateTextHeightMm(el, fs) {
-      const text = (typeof el.text === 'string' && el.text.trim()) ? el.text : ' ';
-      const width = (typeof el.width === 'number' && el.width > 10) ? el.width : (pageW - 30);
-      const lh = (typeof el.lineHeight === 'number' && el.lineHeight > 0) ? el.lineHeight : 1.4;
-      const cw = estimateCharWidthMm(fs);
-      const perLine = Math.max(1, Math.floor(width / cw));
-      const lines = Math.max(1, Math.ceil(text.length / perLine));
-      return lines * fs * lh * 0.353;
+      // 🆕 v1.7.389 — MESURE REELLE via Fabric (voir spMeasureTextBlock).
+      //   AVANT : `lignes x fs x lh x 0.353` avec une largeur de caractere
+      //   estimee sans la police ni la graisse -> jusqu'a 3x trop optimiste sur
+      //   les titres, et le facteur 1.13 du moteur etait omis. Mesure du bug :
+      //   Playfair Display 36 pt = 3 lignes reelles vues comme 2 -> 15,2 mm de
+      //   recouvrement sur le bloc suivant.
+      const m = spMeasureTextBlock({
+        text: el.text,
+        fontSize: (typeof fs === 'number' && fs > 0) ? fs : (el.fontSize || 11),
+        width: (typeof el.width === 'number' && el.width > 10) ? el.width : (pageW - 30),
+        lineHeight: el.lineHeight,
+        fontFamily: el.fontFamily,
+        fontWeight: el.fontWeight,
+        fontStyle: el.fontStyle
+      });
+      return m.hauteurMm;
     }
     function isText(el) {
       const t = String((el && el.type) || '').toLowerCase();
@@ -6439,6 +6577,11 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     // 🆕 2026-08-30 — Validateur de fin de page : les blocs qui dépassent sont
     //   reportés sur une nouvelle page (ou réduits en typo), jamais coupés.
     try { _spConstrainDocToPages(doc); } catch (_) {}
+    // 🆕 v1.7.389 — PASSE ANTI-RECOUVREMENT. `_spConstrainDocToPages` pousse les
+    //   blocs vers le bas, mais il ne VERIFIE PAS les collisions entre blocs :
+    //   deux elements poses par l'IA aux memes coordonnees se chevauchent, et un
+    //   titre de 3 lignes recouvre le paragraphe qui suit. Cette passe empile.
+    try { _spResolveCollisions(doc); } catch (_) {}
     // 🛡️ v1.7.369 — puis GARANTIR les marges (grand fond / petit fond /
     //   tête / queue). Fait APRÈS la contrainte de pages : c'est la dernière
     //   passe avant le rendu, donc aucune étape ne peut ré-introduire un
@@ -6533,6 +6676,64 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
    *      ajoute une ligne de securite : surestimer un peu fait GRANDIR le bloc
    *      dans l'app, sous-estimer fait DISPARAITRE du texte.
    */
+  // 🆕 v1.7.389 — MESURE REELLE D'UN BLOC TEXTE (au lieu d'une estimation).
+  //   Cause du bug des titres : `estimateCharWidthMm` sous-estimait la largeur
+  //   d'un caractere d'un facteur 1,6 a 3,0 selon la police et le corps, et
+  //   omettait le facteur 1.13 du moteur. Un titre de 3 lignes etait vu sur 2,
+  //   donc le bloc suivant etait place trop haut et passait SOUS le titre.
+  //   Fabric sait mesurer exactement : on lui demande.
+  let _spMeasureCache = {};
+  function spMeasureTextBlock(el) {
+    const txt = String(el.text || ' ');
+    const fsPt = (+el.fontSize || 14);
+    const wMm = (+el.width || 100);
+    const lh = (typeof el.lineHeight === 'number' && el.lineHeight > 0) ? el.lineHeight : 1.4;
+    const fam = String(el.fontFamily || 'Open Sans');
+    const poids = String(el.fontWeight || 'normal');
+    const style = String(el.fontStyle || 'normal');
+    const cle = [txt, fsPt, wMm, lh, fam, poids, style].join('|');
+    if (_spMeasureCache[cle]) return _spMeasureCache[cle];
+    let lignes = 0, hauteurPx = 0;
+    try {
+      const tb = new fabric.Textbox(txt, {
+        width: wMm * MM_TO_PX,
+        fontSize: fsPt * PT_TO_PX,
+        fontFamily: fam,
+        fontWeight: poids,
+        fontStyle: style,
+        lineHeight: lh,
+        splitByGrapheme: false,
+        breakWords: true
+      });
+      tb.initDimensions();
+      lignes = (tb._textLines && tb._textLines.length) || 1;
+      // Hauteur REELLE : somme des lignes du moteur (getHeightOfLine inclut
+      // _fontSizeMult = 1.13), sans le leading bas de la derniere ligne
+      // (comportement de calcTextHeight de Fabric).
+      let somme = 0;
+      for (let i = 0; i < lignes; i++) somme += tb.getHeightOfLine(i);
+      const derniere = lignes > 0 ? tb.getHeightOfLine(lignes - 1) : 0;
+      hauteurPx = Math.max(1, somme - derniere / Math.max(0.2, lh));
+    } catch (e) {
+      // Repli deterministe si Fabric ne peut pas mesurer (police non chargee).
+      const fsPx = fsPt * PT_TO_PX;
+      const perLine = Math.max(1, Math.floor((wMm * MM_TO_PX) / (fsPx * 0.62)));
+      const segs = txt.split('\n');
+      let tot = 0;
+      for (let i = 0; i < segs.length; i++) tot += Math.max(1, Math.ceil(segs[i].length / perLine));
+      lignes = Math.max(1, tot);
+      hauteurPx = lignes * fsPx * lh * SP_TEXT_LINE_MULT;
+    }
+    const res = { lignes: lignes, hauteurPx: hauteurPx, hauteurMm: hauteurPx / MM_TO_PX };
+    // Cache borne (les maquettes ont peu de blocs texte distincts).
+    const cles = Object.keys(_spMeasureCache);
+    if (cles.length > 400) _spMeasureCache = {};
+    _spMeasureCache[cle] = res;
+    return res;
+  }
+  function spClearMeasureCache() { _spMeasureCache = {}; }
+  window.sp213MeasureTextBlock = spMeasureTextBlock;
+
   function spEstimateTextLines(el) {
     const txt = String(el.text || '');
     const explicit = txt.split('\n');
