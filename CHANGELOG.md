@@ -9,6 +9,28 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.409] — 2026-09-14
+
+_With no format asked, the layout takes the document's own — and mm, cm, pt and A0–A8 are understood_
+
+### Added
+- **Paper size is read from the file structure**, never guessed from text:
+  - `.docx` → `word/document.xml`, `<w:pgSz w:w w:h/>` (twips) — **never read before**, which is why a Word file could not hand over its page setup;
+  - `.odt` → `styles.xml`, `<style:page-layout-properties fo:page-width/height>` (the size is *not* in `content.xml`);
+  - `.rtf` → the `\paperw` / `\paperh` header (already read).
+- **Units and ISO formats**: `mm`, `cm`, **`pt`** (1 pt = 25.4/72 mm), `in`/`inch`, decimal commas, and **A0 to A8**. `A4` in capitals is recognised on its own; in lower case a keyword is required, otherwise the French article “a” would be mistaken for a page size.
+
+### Fixed
+- **A `.docx` attached to the AI bar was laid out instead of being read.** Measured: **0 attachments, 0 characters sent** — and the document's texts appeared **on the canvas**, because the app pointed the shared module at its *canvas importer*. The studio had its own reader, so the same file behaved differently in each tool. The reading logic now lives in the module itself (single source), so app and studio behave identically: the Word file becomes an attachment (structured text + images) and the canvas is left untouched.
+- **The page size used to be read from the document's own prose.** A regex over the attachment block picked up any “W × H mm” it found — measured **2 false positives out of 5**: a line reading “print at 100 × 150 mm” or a table cell “300 × 400 mm” was taken for the page setup. The size now comes from the structure, and the text fallback only accepts the `FORMAT : …` line written by the decoders.
+- **Priority order, stated plainly**: your requested format → the document's format → the current format (unchanged). Nothing changes silently.
+
+### Verified
+- 21/21 checks against the real code (structured size, body ignored, `FORMAT` fallback, units, priority).
+- Browser, A5 `.docx` dropped into the actual import field: **1 attachment, 328 characters, size `148×210` read via `w:pgSz`**, canvas untouched (3 objects before and after).
+- 4/4 on the final format: no request → **A5 from the document** (starting from A4); request A4 → 210×297; A3 landscape → 420×297; “420 × 595 pt” → 148×210.
+- 13/13 live version markers coherent, 0 leftover, web/mirror parity 14/14, dist rebuilt at 1.7.409, package (56,291,145 bytes) regenerated.
+
 ## [1.7.408] — 2026-09-14
 
 _Your requested page format is now honoured, even with a Word or RTF file attached_
