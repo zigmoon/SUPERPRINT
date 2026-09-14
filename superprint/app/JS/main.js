@@ -6255,8 +6255,24 @@ if (window._spGpuEnabled) {
                 }
             } catch (_) {}
 
-            // Clip EXACT en largeur : pas d'arrondi (sinon on coupe des glyphes lateraux).
-            const clipWidth = Math.max(1, frameWidth);
+            // v1.7.410 - MARGE DE SECURITE LATERALE DU MASQUE (glyphes coupes a droite).
+            //   MESURE DU DEFAUT (meme texte, meme bloc de 300 px, seul l'alignement
+            //   change) : bord droit de l'encre a 291 px en aligne a GAUCHE contre
+            //   302 px (12 pt), 304 (18) et 307 (24) en JUSTIFIE. La justification
+            //   pousse la ligne JUSQU'AU BORD, donc l'encre du dernier glyphe depasse
+            //   son avance de +2 a +7 px selon le corps (jambage du « t », « e », « r »),
+            //   et le masque pose pile a la largeur du bloc rognait cette surepaisseur.
+            //   Comparaison d'images AVEC / SANS masque : perte d'encre dans 4 cas sur
+            //   12, jusqu'a 8 pixels, TOUJOURS exactement sur la bordure droite.
+            //   Le masque sert a empecher un DEBORDEMENT DE MISE EN PAGE : il ne doit
+            //   pas rogner les approches des glyphes, qui sont un debordement normal et
+            //   invisible de la seule zone d'encre.
+            //   Marge proportionnelle au corps : 3,84 px a 12 pt, 5,76 a 18 pt, 7,68 a
+            //   24 pt -> couvre les debordements mesures tout en restant invisible
+            //   (environ 0,65 mm a 300 dpi). Le masque garde sa fonction de rognage en
+            //   HAUTEUR (lignes en trop) et sur un mot plus large que le bloc.
+            const _glyphSlack = Math.max(2, (maxFontSize || 14) * 0.32);
+            const clipWidth = Math.max(1, frameWidth) + _glyphSlack * 2;
 
             // 🛡️ FIX 2026-05-01 : SNAP DU CLIP A LA DERNIERE LIGNE COMPLETE.
             // Sans ca, si le bloc ne mesure pas un multiple exact de la hauteur
@@ -47278,7 +47294,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260914-v409-docx-cote';
+                s.src = 'JS/sp-doc-import.js?v=20260914-v410-glyphes-droite';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous
@@ -48831,7 +48847,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         const orig = String(original == null ? prompt : original);
         const toNum = function (s) { return parseFloat(String(s).replace(',', '.')); };
         // 1) Dimensions explicites AVEC UNITE : mm, cm, pt, in.
-        //    ⚠️ v1.7.409 - le POINT (pt) etait totalement absent : « 595 x 842 pt »
+        //    ⚠️ v1.7.410 - le POINT (pt) etait totalement absent : « 595 x 842 pt »
         //    (= A4 en points) n'etait pas reconnu du tout, alors que c'est l'unite
         //    des traitements de texte et de l'imprimerie. 1 pt = 25.4/72 mm.
         const um = p.match(/(\d{1,5}(?:[.,]\d+)?)\s*[x\u00d7*]\s*(\d{1,5}(?:[.,]\d+)?)\s*(mm|cm|pt|in|inch)\b/i);
@@ -48898,7 +48914,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
     // v1.7.408 - detection du format sur la DEMANDE SEULE (pieces jointes retirees).
     const _aiCleanPrompt = _spAiCleanUserRequest(promptText);
     window.__spAiCleanPrompt = _aiCleanPrompt;
-    // v1.7.409 - ORDRE DE PRIORITE : 1) le format DEMANDE, 2) celui du DOCUMENT
+    // v1.7.410 - ORDRE DE PRIORITE : 1) le format DEMANDE, 2) celui du DOCUMENT
     //   joint, 3) sinon on GARDE le format en cours (aucun changement).
     var _aiDocHint = _spAiFormatFromDocument(promptText);
     if (_aiDocHint && _aiDocHint.paysage && _aiDocHint.w < _aiDocHint.h) {
@@ -48973,7 +48989,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         }
     } catch (_eU) {}
 
-    // v1.7.409 - SANS FORMAT DEMANDE, ON PREND CELUI DU DOCUMENT JOINT.
+    // v1.7.410 - SANS FORMAT DEMANDE, ON PREND CELUI DU DOCUMENT JOINT.
     //   Mesure prealable : le bloc « PIECES JOINTES » contient deja la mise en
     //   page du document source (ex. RTF : « FORMAT : A4 paysage (297 x 210 mm) »).
     //   Hier on revenait au format en cours (A4) ; desormais on lit le document.
@@ -48987,7 +49003,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
     }
     window._spRemplacerRepere = _spRemplacerRepere;
     function _spAiFormatFromDocument(txt) {
-        // v1.7.409 - LA COTE EST LUE DANS LA STRUCTURE, PAS DANS LE TEXTE.
+        // v1.7.410 - LA COTE EST LUE DANS LA STRUCTURE, PAS DANS LE TEXTE.
         //   MESURE : une lecture par expression reguliere donnait 2 faux positifs
         //   sur 5 — un corps citant « 100 x 150 mm » ou un tableau
         //   « 300 x 400 mm » etait pris pour la mise en page du document.
@@ -49819,7 +49835,7 @@ SORTIE : Réponds UNIQUEMENT avec un JSON valide, sans texte autour, sans bloc m
     // spécialisée AU-DESSUS du rôle créatif (elle prime sur les directives standard).
     let _spAiDocSourceBlock = '';
 
-    // v1.7.409 - MISE EN PAGE DU DOCUMENT FOURNI : exposee comme REFERENCE.
+    // v1.7.410 - MISE EN PAGE DU DOCUMENT FOURNI : exposee comme REFERENCE.
     //   L'IA n'avait AUCUNE indication du format du document source : elle
     //   pouvait donc en deduire la mise en page a suivre. On la lui donne
     //   explicitement, en precisant que la CONSIGNE est le format demande.
