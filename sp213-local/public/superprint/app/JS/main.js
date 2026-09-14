@@ -47361,7 +47361,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             var note = '\n\n\u2550\u2550\u2550 DOCUMENT JOINT : TRAITEMENT INTEGRAL OBLIGATOIRE \u2550\u2550\u2550\n' +
                 'Un document de ' + chars + ' caracteres' + (images.length ? ' et ' + images.length + ' image(s)' : '') +
                 ' est joint. IL DOIT ETRE TRAITE EN ENTIER : ne resume pas, ne saute pas de passage,\n' +
-                'ne t\'arrete pas au premier chapitre. Repartis TOUT le contenu sur environ ' + pages + ' page(s).\n' +
+                'ne t\'arrete pas au premier chapitre. Le volume de ce document equivaut a environ ' + pages + ' page(s) : c\'est une MESURE DE VOLUME, PAS une consigne de pagination (la pagination est celle demandee par l\'utilisateur).\n' +
                 'CONVENTIONS DU TEXTE FOURNI :\n' +
                 '  \u2022 « # » a « ###### » = titre de niveau 1 a 6 (1 = le plus grand).\n' +
                 '  \u2022 « - » en debut de ligne = element de liste : restitue une vraie liste a puces.\n' +
@@ -47369,7 +47369,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 '  \u2022 « [IMAGE_n] » = emplacement d\'une photo du document, jointe separement.\n' +
                 '  \u2022 « --- PAGE --- » = saut de page du document d\'origine.';
 
-            return '\n\n=== PIECES JOINTES UTILISATEUR ===\n' + parts.join('\n\n') + note;
+            return '\n\n=== PIECES JOINTES UTILISATEUR ===\n' + parts.join('\n\n') + note + '\n=== FIN DES PIECES JOINTES ===';
         }
         // ══════════════════════════════════════════════════════════════════════════
         // 🎛️ v1.7.398 — LOGIQUE DE LA BARRE IA (alignee sur le studio SP213)
@@ -48850,11 +48850,31 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         }
         return null;
     }
+    // v1.7.408 - LA DEMANDE DE L'UTILISATEUR EST LA SEULE SOURCE DE VERITE.
+    //   MESURE DU DEFAUT : aiFooterGenerate() ecrit dans #aiPromptModal le prompt
+    //   SUIVI DES PIECES JOINTES ; aiCustomPrompt() lit #aiPromptModal puis
+    //   cherchait le format dans TOUT ce texte -> le format du DOCUMENT JOINT
+    //   ecrasait celui demande par l'utilisateur.
+    //   Preuve : prompt « A5 » + RTF dont l'en-tete dit « FORMAT : A4 paysage
+    //   (297 x 210 mm) » -> format applique 297x210 au lieu de 148x210.
+    //   La marque ci-dessous delimite les pieces jointes : tout ce qui la suit
+    //   est une REFERENCE documentaire, JAMAIS une demande du document.
+    const _SP_AI_ATT_MARK = '=== PIECES JOINTES UTILISATEUR';
+    function _spAiCleanUserRequest(txt) {
+        var t = String(txt || '');
+        var i = t.indexOf(_SP_AI_ATT_MARK);
+        if (i !== -1) t = t.slice(0, i);
+        return t.trim();
+    }
+    window._spAiCleanUserRequest = _spAiCleanUserRequest;
     // Applique un format détecté : change le document + recalc les mm pour le prompt.
-    const _aiFmt = _aiDetectPageFormat(promptText);
+    // v1.7.408 - detection du format sur la DEMANDE SEULE (pieces jointes retirees).
+    const _aiCleanPrompt = _spAiCleanUserRequest(promptText);
+    const _aiUserFmt = _aiDetectPageFormat(_aiCleanPrompt);
+    const _aiFmt = _aiUserFmt;
     if (_aiFmt) {
         let fw = _aiFmt.w, fh = _aiFmt.h;
-        if (/paysage|landscape|horizontal/.test(promptText) && fw < fh) { const t = fw; fw = fh; fh = t; }
+        if (/paysage|landscape|horizontal/.test(_aiCleanPrompt) && fw < fh) { const t = fw; fw = fh; fh = t; }
         const curW = Math.round((pageFormat && pageFormat.width) || 210);
         const curH = Math.round((pageFormat && pageFormat.height) || 297);
         if (curW !== fw || curH !== fh) {
@@ -48886,6 +48906,30 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             } catch (_) {}
         }
     }
+
+    // v1.7.408 - FILET : le format du document doit etre EXACTEMENT celui DEMANDE.
+    //   Si quelque chose l'a ecarte entre la detection et ici, on le retablit
+    //   (la demande est autoritaire) et on le TRACE. Aucun changement silencieux.
+    try {
+        if (_aiUserFmt) {
+            var _fwU = _aiUserFmt.w, _fhU = _aiUserFmt.h;
+            if (/paysage|landscape|horizontal/i.test(_aiCleanPrompt) && _fwU < _fhU) { var _tU = _fwU; _fwU = _fhU; _fhU = _tU; }
+            var _cwU = Math.round((pageFormat && pageFormat.width) || 0);
+            var _chU = Math.round((pageFormat && pageFormat.height) || 0);
+            if (_cwU !== _fwU || _chU !== _fhU) {
+                pageFormat = { width: _fwU, height: _fhU };
+                var _wiU = document.getElementById('pageWidth'), _hiU = document.getElementById('pageHeight');
+                if (_wiU) _wiU.value = _fwU;
+                if (_hiU) _hiU.value = _fhU;
+                if (typeof clampObjectsToCurrentFormat === 'function') clampObjectsToCurrentFormat();
+                if (typeof saveAllPages === 'function') saveAllPages();
+                if (typeof updateCanvasSize === 'function') updateCanvasSize();
+                widthMm = _fwU; heightMm = _fhU;
+                try { if (typeof getActiveCanvas === 'function') { var _ncU = getActiveCanvas(); if (_ncU) activeCanvas = _ncU; } } catch (_) {}
+                logAI('\uD83D\uDCD0 Format retabli selon VOTRE demande : ' + _fwU + '\u00d7' + _fhU + ' mm');
+            }
+        }
+    } catch (_eU) {}
 
     // --- DESCRIPTION COMPLÈTE DE SUPERPRINT ---
     const SUPERPRINT_CONTEXT = `
@@ -49561,9 +49605,9 @@ GUIDE MAQUETTES MODERNES
     }
     
     // Détection multi-pages : "magazine 12 pages", "livre de 8 pages", "16-page brochure"…
-    const _multiPageMatch = promptText.match(/(\d{1,3})\s*[- ]?\s*pages?/i);
+    const _multiPageMatch = _spAiCleanUserRequest(promptText).match(/(\d{1,3})\s*[- ]?\s*pages?/i);
     let _requestedPages = _multiPageMatch ? parseInt(_multiPageMatch[1], 10) : 0;
-    let _isMultiPageRequest = _requestedPages > 1 || /\b(magazine|catalogue|catalog|livre|brochure|booklet|livret|book|journal)\b/i.test(promptText);
+    let _isMultiPageRequest = _requestedPages > 1 || /\b(magazine|catalogue|catalog|livre|brochure|booklet|livret|book|journal)\b/i.test(_spAiCleanUserRequest(promptText));
 
     // 🎛️ v143: le sélecteur de STRUCTURE de la pop-in IA (Page simple / Double page / Multi-pages)
     // est AUTORITAIRE quand il est présent. Cela rend la compréhension non ambiguë → résultats plus probants.
