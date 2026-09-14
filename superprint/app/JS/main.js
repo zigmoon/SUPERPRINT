@@ -6255,7 +6255,7 @@ if (window._spGpuEnabled) {
                 }
             } catch (_) {}
 
-            // v1.7.410 - MARGE DE SECURITE LATERALE DU MASQUE (glyphes coupes a droite).
+            // v1.7.411 - MARGE DE SECURITE LATERALE DU MASQUE (glyphes coupes a droite).
             //   MESURE DU DEFAUT (meme texte, meme bloc de 300 px, seul l'alignement
             //   change) : bord droit de l'encre a 291 px en aligne a GAUCHE contre
             //   302 px (12 pt), 304 (18) et 307 (24) en JUSTIFIE. La justification
@@ -7102,6 +7102,19 @@ if (window._spGpuEnabled) {
 
     const width = mmToPx(pageFormat.width);
     const height = mmToPx(pageFormat.height);
+
+    // v1.7.411 - GARDE-FOU : au-dela d'environ 16300 px de cote, le canvas du
+    //   navigateur ne dessine plus rien (mesure : dessin OK a 4000 mm, vide a
+    //   6000 mm). On PREVIENT au lieu de laisser une page blanche muette.
+    try {
+        var _coteMax = Math.max(width * (viewMode === 'spread' ? 2 : 1), height);
+        if (_coteMax > 16000 && !window._spGrandFormatAverti) {
+            window._spGrandFormatAverti = true;
+            var _mm = Math.round(_coteMax / (72 / 25.4));
+            logAI('\u26A0\uFE0F Format tres grand (' + Math.round(pageFormat.width) + '\u00D7' + Math.round(pageFormat.height) + ' mm soit ~' + _mm + ' mm de cote) : l\'apercu peut ne rien afficher. L\'impression et l\'export PDF restent possibles.');
+            setTimeout(function () { window._spGrandFormatAverti = false; }, 15000);
+        }
+    } catch (_) {}
 
     if (viewMode === 'spread') {
         // Mode double page (chemin de fer type livre)
@@ -24866,9 +24879,41 @@ if (window._spGpuEnabled) {
         });
     });
 
+    // v1.7.411 - UNITE DE PAGE : elle vient du SELECTEUR D'UNITE, plus de la langue.
+    //   MESURE DU DEFAUT : `(currentLanguage === 'en') ? inToMm(v) : v` faisait
+    //   interpreter 1115 et 1875 comme des POUCES dans une interface anglaise ->
+    //   28321 x 47625 mm, canvas de 204 757 px, ECRAN VIDE. Et comme la conversion
+    //   s'appliquait a chaque changement, remettre 210 donnait 5334 mm.
+    //   `currentUnit` est deja le selecteur visible de l'utilisateur (mm/cm/px/in).
+    function spPageUnitVersMm(valeur) {
+        var v = parseFloat(valeur);
+        if (!isFinite(v)) return null;
+        try {
+            switch (typeof currentUnit !== 'undefined' ? currentUnit : 'mm') {
+                case 'in': return inToMm(v);
+                case 'cm': return v * 10;
+                case 'px': return (v * 25.4) / 72;
+                default: return v;                 // mm
+            }
+        } catch (_) { return v; }
+    }
+    function spPageMmVersUnite(mm) {
+        try {
+            switch (typeof currentUnit !== 'undefined' ? currentUnit : 'mm') {
+                case 'in': return Math.round(mmToIn(mm) * 100) / 100;
+                case 'cm': return Math.round((mm / 10) * 100) / 100;
+                case 'px': return Math.round((mm * 72) / 25.4);
+                default: return Math.round(mm * 100) / 100;   // mm
+            }
+        } catch (_) { return Math.round(mm * 100) / 100; }
+    }
+    window.spPageUnitVersMm = spPageUnitVersMm;
+    window.spPageMmVersUnite = spPageMmVersUnite;
+
     document.getElementById('pageWidth').addEventListener('change', (e) => {
-        const v = parseFloat(e.target.value);
-        pageFormat.width = (currentLanguage === 'en') ? inToMm(v) : v;
+        // v1.7.411 - l'unite vient du selecteur d'unite, PAS de la langue.
+        const _vMm = spPageUnitVersMm(e.target.value);
+        if (_vMm !== null && _vMm > 0) pageFormat.width = _vMm;
         saveAllPages(true);
         clampObjectsToCurrentFormat();
         clampPagesDataToCurrentFormat();
@@ -24877,8 +24922,9 @@ if (window._spGpuEnabled) {
     });
 
     document.getElementById('pageHeight').addEventListener('change', (e) => {
-        const v = parseFloat(e.target.value);
-        pageFormat.height = (currentLanguage === 'en') ? inToMm(v) : v;
+        // v1.7.411 - idem largeur : unite explicite.
+        const _vMm = spPageUnitVersMm(e.target.value);
+        if (_vMm !== null && _vMm > 0) pageFormat.height = _vMm;
         saveAllPages(true);
         clampObjectsToCurrentFormat();
         clampPagesDataToCurrentFormat();
@@ -24887,16 +24933,18 @@ if (window._spGpuEnabled) {
     });
 
     document.getElementById('margin').addEventListener('change', (e) => {
-        const v = parseFloat(e.target.value);
-        margin = (currentLanguage === 'en') ? inToMm(v) : v;
+        // v1.7.411 - unite explicite (le meme piege que largeur/hauteur).
+        const _mMm = spPageUnitVersMm(e.target.value);
+        margin = (_mMm !== null && _mMm >= 0) ? _mMm : margin;
         const width = mmToPx(pageFormat.width);
         const height = mmToPx(pageFormat.height);
         canvases.forEach(c => drawMargins(c, width, height));
     });
 
     document.getElementById('bleed').addEventListener('change', (e) => {
-        const v = parseFloat(e.target.value);
-        bleed = (currentLanguage === 'en') ? inToMm(v) : v;
+        // v1.7.411 - unite explicite pour le fond perdu.
+        const _bMm = spPageUnitVersMm(e.target.value);
+        bleed = (_bMm !== null && _bMm >= 0) ? _bMm : bleed;
         // Sauvegarder avant de recréer les canvases
         saveAllPages(true);
         // Recréer toutes les pages avec le nouveau fond perdu
@@ -35199,7 +35247,13 @@ https://superprint.app
 
     // IMPORTANT : Relire la valeur de bleed depuis l'input pour s'assurer qu'elle est à jour
     const bleedInputValue = parseFloat(document.getElementById('bleed').value) || 3;
-    const currentBleed = (currentLanguage === 'en') ? inToMm(bleedInputValue) : bleedInputValue;
+    // v1.7.411 - l'unite vient du SELECTEUR D'UNITE, plus de la langue.
+    //   MESURE DU DEFAUT : avec une interface anglaise, un fond perdu de 3 mm
+    //   etait lu comme 3 POUCES = 76,2 mm a l'export.
+    var _bExport = (typeof window.spPageUnitVersMm === 'function')
+        ? window.spPageUnitVersMm(bleedInputValue)
+        : bleedInputValue;
+    const currentBleed = (_bExport !== null && _bExport >= 0) ? _bExport : bleedInputValue;
     
     const options = {
         cropMarks: document.getElementById('cropMarks').checked,
@@ -47294,7 +47348,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260914-v410-glyphes-droite';
+                s.src = 'JS/sp-doc-import.js?v=20260914-v411-grands-formats';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous
@@ -48847,7 +48901,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         const orig = String(original == null ? prompt : original);
         const toNum = function (s) { return parseFloat(String(s).replace(',', '.')); };
         // 1) Dimensions explicites AVEC UNITE : mm, cm, pt, in.
-        //    ⚠️ v1.7.410 - le POINT (pt) etait totalement absent : « 595 x 842 pt »
+        //    ⚠️ v1.7.411 - le POINT (pt) etait totalement absent : « 595 x 842 pt »
         //    (= A4 en points) n'etait pas reconnu du tout, alors que c'est l'unite
         //    des traitements de texte et de l'imprimerie. 1 pt = 25.4/72 mm.
         const um = p.match(/(\d{1,5}(?:[.,]\d+)?)\s*[x\u00d7*]\s*(\d{1,5}(?:[.,]\d+)?)\s*(mm|cm|pt|in|inch)\b/i);
@@ -48914,7 +48968,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
     // v1.7.408 - detection du format sur la DEMANDE SEULE (pieces jointes retirees).
     const _aiCleanPrompt = _spAiCleanUserRequest(promptText);
     window.__spAiCleanPrompt = _aiCleanPrompt;
-    // v1.7.410 - ORDRE DE PRIORITE : 1) le format DEMANDE, 2) celui du DOCUMENT
+    // v1.7.411 - ORDRE DE PRIORITE : 1) le format DEMANDE, 2) celui du DOCUMENT
     //   joint, 3) sinon on GARDE le format en cours (aucun changement).
     var _aiDocHint = _spAiFormatFromDocument(promptText);
     if (_aiDocHint && _aiDocHint.paysage && _aiDocHint.w < _aiDocHint.h) {
@@ -48989,7 +49043,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         }
     } catch (_eU) {}
 
-    // v1.7.410 - SANS FORMAT DEMANDE, ON PREND CELUI DU DOCUMENT JOINT.
+    // v1.7.411 - SANS FORMAT DEMANDE, ON PREND CELUI DU DOCUMENT JOINT.
     //   Mesure prealable : le bloc « PIECES JOINTES » contient deja la mise en
     //   page du document source (ex. RTF : « FORMAT : A4 paysage (297 x 210 mm) »).
     //   Hier on revenait au format en cours (A4) ; desormais on lit le document.
@@ -49003,7 +49057,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
     }
     window._spRemplacerRepere = _spRemplacerRepere;
     function _spAiFormatFromDocument(txt) {
-        // v1.7.410 - LA COTE EST LUE DANS LA STRUCTURE, PAS DANS LE TEXTE.
+        // v1.7.411 - LA COTE EST LUE DANS LA STRUCTURE, PAS DANS LE TEXTE.
         //   MESURE : une lecture par expression reguliere donnait 2 faux positifs
         //   sur 5 — un corps citant « 100 x 150 mm » ou un tableau
         //   « 300 x 400 mm » etait pris pour la mise en page du document.
@@ -49835,7 +49889,7 @@ SORTIE : Réponds UNIQUEMENT avec un JSON valide, sans texte autour, sans bloc m
     // spécialisée AU-DESSUS du rôle créatif (elle prime sur les directives standard).
     let _spAiDocSourceBlock = '';
 
-    // v1.7.410 - MISE EN PAGE DU DOCUMENT FOURNI : exposee comme REFERENCE.
+    // v1.7.411 - MISE EN PAGE DU DOCUMENT FOURNI : exposee comme REFERENCE.
     //   L'IA n'avait AUCUNE indication du format du document source : elle
     //   pouvait donc en deduire la mise en page a suivre. On la lui donne
     //   explicitement, en precisant que la CONSIGNE est le format demande.
@@ -69909,7 +69963,32 @@ async function importPDFPagesV2(pageNumbers, recadrageMode = 'support', importMo
     pageNumbers.sort((a,b) => a - b);
 
     const isSpreadImport = importMode === 'spread';
-    const renderScale = isSpreadImport ? 4.4 : 6.0;
+    // v1.7.411 - RESOLUTION D'IMPORT ADAPTEE AU FORMAT (au lieu de 6.0 fixe).
+    //   MESURE DU DEFAUT : a l'echelle 6.0, un PDF de 1115 x 1875 mm produisait un
+    //   canvas de 18 964 x 31 890 px = 605 Mpx, et `toDataURL()` renvoyait une
+    //   image VIDE : l'import ne deposait rien. Limite reelle du navigateur
+    //   mesuree : ~250 Mpx (250 OK, 300 echoue).
+    //   On plafonne donc l'echelle pour rester sous 220 Mpx (marge de securite).
+    //   Les petits formats gardent EXACTEMENT leur qualite (le plafond ne les
+    //   atteint pas : A4 = 18 Mpx, A3 = 36, A2 = 72).
+    const _spScaleVoulu = isSpreadImport ? 4.4 : 6.0;
+    var renderScale = _spScaleVoulu;
+    try {
+        var _spFmtW = (typeof pageFormat !== 'undefined' && pageFormat && pageFormat.width) ? pageFormat.width : 210;
+        var _spFmtH = (typeof pageFormat !== 'undefined' && pageFormat && pageFormat.height) ? pageFormat.height : 297;
+        // Dimensions PDF reelles quand on les connait (plus fiable avant tout rendu).
+        var _pw = _spFmtW, _ph = _spFmtH;
+        var _LIMITE_MPX = 220;
+        // px = (mm * 72/25.4) * echelle  ->  echelle max = racine(LIMITE / (w*h en mm2 factorise))
+        var _k = 72 / 25.4;
+        var _echelleMax = Math.sqrt((_LIMITE_MPX * 1e6) / (_pw * _ph * _k * _k));
+        if (isFinite(_echelleMax) && _echelleMax > 0 && _echelleMax < renderScale) {
+            renderScale = _echelleMax;
+            try {
+                logAI('\uD83D\uDCCF Grand format : resolution d\'import adaptee (' + Math.round(renderScale * 72) + ' dpi au lieu de ' + Math.round(_spScaleVoulu * 72) + ') pour rester dans les capacites du navigateur.');
+            } catch (_) {}
+        }
+    } catch (_) {}
 
     // ✨ FIX: Si mode "double page" est sélectionné, activer automatiquement le mode spread de l'interface
     // Cela garantit que les pages sont créées correctement avec la bonne disposition
@@ -70064,9 +70143,15 @@ async function importPDFPagesV2(pageNumbers, recadrageMode = 'support', importMo
                     // Fallback: toDataURL (certain browsers return null on toBlob)
                     try {
                         const dataUrl = sourceCanvas.toDataURL('image/png');
-                        return finalizeFromURL(dataUrl);
+                        // v1.7.411 - un canvas trop grand renvoie une image VIDE ('data:,') :
+                        //   on le DETECTE au lieu de deposer une image invisible.
+                        if (dataUrl && dataUrl.length > 200) return finalizeFromURL(dataUrl);
+                        console.warn('PDF import: image vide (canvas trop grand) ' + sourceCanvas.width + 'x' + sourceCanvas.height);
+                        try { logAI('\u26A0\uFE0F Image PDF trop grande pour ce navigateur (' + sourceCanvas.width + '\u00D7' + sourceCanvas.height + ' px). Reduisez la resolution d\'import ou le format.'); } catch (_) {}
+                        resolve();
                     } catch (e) {
                         console.error('PDF import: canvas export failed', e);
+                        try { logAI('\u26A0\uFE0F Echec de l\'import de l\'image PDF (canvas ' + sourceCanvas.width + '\u00D7' + sourceCanvas.height + ' px) : ce format est trop grand pour ce navigateur.'); } catch (_) {}
                         resolve();
                     }
                 }, 'image/png');
