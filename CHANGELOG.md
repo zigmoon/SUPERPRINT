@@ -9,6 +9,22 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.407] — 2026-09-14
+
+_Colour picker: the eyedropper now works on Safari, in both RGB and CMYK modes_
+
+### Fixed
+- **The eyedropper did nothing on Safari.** `EyeDropper` only exists on Chromium, so Safari took the fallback path — which targeted the native colour inputs `#blockFill` / `#blockStroke`. Measured with Safari simulated (`window.EyeDropper` deleted): in **CMYK mode the button was visible (22×22) while no `input[type=color]` was rendered anywhere in the panel**, because the RGB group is `display:none`. WebKit **silently ignores a `.click()` on a non-rendered element** — that is precisely “the eyedropper does not fire”. In RGB mode a picker did open, but somewhere else than under the button.
+- The fallback now builds a **dedicated, rendered colour input** (`_spPipetteProxy`): 1×1 px with a **non-zero opacity** (an `opacity:0` or `visibility:hidden` element is treated as non-rendered by WebKit and will not open either), positioned **on top of the clicked button** so the native picker anchors in the right place. It feeds the **same code path** as the eyedropper, so CMYK conversion is handled identically.
+- The two empty `catch` blocks are gone: a real failure is now logged and distinguished from `AbortError`, which simply means the user cancelled.
+
+### Verified
+- Real mouse clicks with `window.EyeDropper` removed: **all four eyedroppers** (fill/stroke × RGB/CMYK) create a proxy correctly aligned to their button, and `showPicker()` is called **exactly once**, with **no “A user gesture is required” warning**.
+- End-to-end value flow: `#ff0000` chosen → CMYK sliders read **C:0 M:100 Y:100 K:0**.
+- 13/13 live version markers coherent, 0 leftover, web/mirror parity 14/14, dist rebuilt at 1.7.407, package (56,282,424 bytes) verified by extraction.
+
+> The fix also repairs **Firefox**, which does not implement the `EyeDropper` API either.
+
 ## [1.7.406] — 2026-09-14
 
 _Import: headings get breathing room, dialogs adopt SuperPrint’s design, PDFs arrive with their images_
