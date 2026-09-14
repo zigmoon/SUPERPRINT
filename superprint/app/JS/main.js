@@ -26405,25 +26405,73 @@ if (window._spGpuEnabled) {
         //   (« dans Safari la pipette ne fonctionne pas en mode CMJN »).
         //   Nouveau repli : on met en évidence le champ natif, on l'ouvre
         //   SYNCHRONEMENT quand c'est possible, et on guide l'utilisateur sinon.
+        // 🎯 v1.7.407 — REPLI SANS EyeDropper : SELECTEUR NATIF DEDIE ET RENDU.
+        //
+        //   MESURE DU DEFAUT (Safari simule, EyeDropper supprime) :
+        //     mode CMJN -> cmykFillPickBtn VISIBLE (22x22) MAIS
+        //                  *** AUCUN input type=color visible dans le panneau ***
+        //                  (le groupe #rgbPickersGroup est en display:none).
+        //     Or ce repli ciblait precisement `#blockFill` / `#blockStroke`, donc
+        //     un element NON RENDU : `.click()` dessus ne fait RIEN sous WebKit,
+        //     silencieusement. C'est exactement « la pipette ne se declenche pas ».
+        //     mode RVB -> l'input est visible, donc un selecteur s'ouvre (c'est ce qui
+        //     faisait croire que « ca marche parfois »), mais il s'ouvre AILLEURS que
+        //     sous le bouton — ce n'est pas une pipette.
+        //
+        //   CORRECTIF : on cree un input couleur DEDIE, RENDU (1x1, opacite NON nulle
+        //   — un element `opacity:0` ou `visibility:hidden` est traite comme non
+        //   rendu par WebKit et ne s'ouvre pas non plus), et on le POSITIONNE SUR LE
+        //   BOUTON clique pour que le selecteur natif s'affiche au bon endroit.
+        //   Il alimente ensuite le MEME chemin que la pipette : CMJN et RVB sont
+        //   donc traites identiquement, et la conversion CMJN est faite par `pick()`.
+        //   Bonus : corrige aussi Firefox, qui n'implemente pas l'API EyeDropper.
         var fallbackToNativePicker = function() {
-            if (!hexInput) {
-                alert('Pipette non supportée par ce navigateur. Utilisez Chrome, Edge ou Firefox pour la pipette.');
-                return;
+            var proxy = document.getElementById('_spPipetteProxy');
+            if (!proxy) {
+                proxy = document.createElement('input');
+                proxy.type = 'color';
+                proxy.id = '_spPipetteProxy';
+                // ⚠️ L'input doit etre RENDU : 1x1 et TRANSPARENT (pas disable, pas
+                //    opacity:0, pas display:none) sinon WebKit n'ouvre rien.
+                proxy.style.cssText = 'position:fixed;width:1px;height:1px;padding:0;border:0;' +
+                    'background:transparent;opacity:0.01;pointer-events:none;z-index:100020;';
+                proxy.setAttribute('aria-hidden', 'true');
+                proxy.tabIndex = -1;
+                document.body.appendChild(proxy);
             }
+            // Valeur de depart : celle du canal, pour que le selecteur s'ouvre juste.
+            if (hexInput && hexInput.value) proxy.value = hexInput.value;
+            // Se positionner SUR LE BOUTON clique : le popover natif s'y ancrera.
+            var btnId = (typeof colorMode !== 'undefined' && colorMode === 'cmyk')
+                ? (channel === 'fill' ? 'cmykFillPickBtn' : 'cmykStrokePickBtn')
+                : (channel === 'fill' ? 'rgbFillPickBtn' : 'rgbStrokePickBtn');
+            var btn = document.getElementById(btnId);
+            if (btn) {
+                var r = btn.getBoundingClientRect();
+                if (r && r.width) {
+                    proxy.style.left = Math.round(r.left) + 'px';
+                    proxy.style.top  = Math.round(r.bottom) + 'px';
+                }
+            }
+            // Un seul listener, pose une fois, retire apres usage.
+            if (!proxy._spWire) {
+                proxy._spWire = true;
+                var _onPick = function() {
+                    var v = proxy.value;
+                    try { proxy.removeEventListener('input', _onPick); proxy.removeEventListener('change', _onPick); } catch (_) {}
+                    proxy._spWire = false;
+                    if (v) pick(v);   // meme chemin que la pipette (CMJN inclus)
+                };
+                proxy.addEventListener('input', _onPick);
+                proxy.addEventListener('change', _onPick);
+            }
+            // Ouvrir le selecteur natif. On NE passe PAS par hexInput : il peut etre
+            // masque (mode CMJN), et c'est le defaut corrige ici.
             try {
-                hexInput.focus();
-                hexInput.click();            // marche sur Chromium/Firefox (geste en cours)
-            } catch (_) {}
-            // Sur Safari, le champ est un vrai color-picker : on le montre et on
-            // explique, plutôt que d'échouer en silence.
-            try {
-                hexInput.style.outline = '2px solid #4361ee';
-                hexInput.style.outlineOffset = '2px';
-                var _clear = function() { hexInput.style.outline = ''; hexInput.style.outlineOffset = ''; hexInput.removeEventListener('input', _clear); };
-                hexInput.addEventListener('input', _clear);
-                setTimeout(function() { try { _clear(); } catch (_) {} }, 8000);
-            } catch (_) {}
-            try { if (typeof showToast === 'function') showToast('Cliquez le carré de couleur pour choisir votre teinte', 'info'); } catch (_) {}
+                if (typeof proxy.showPicker === 'function') proxy.showPicker();
+                else { proxy.focus(); proxy.click(); }
+            } catch (_) { try { proxy.click(); } catch (__) {} }
+            try { if (typeof showToast === 'function') showToast('Choisissez la teinte dans le sélecteur', 'info'); } catch (_) {}
         };
         try {
             if (typeof window.EyeDropper === 'function') {
