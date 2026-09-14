@@ -9,6 +9,33 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.412] — 2026-09-14
+
+_Colour picker on Safari: the window now opens under the eyedropper button instead of the bottom-left of the screen_
+
+### Fixed
+- **The fallback colour field was never positioned.** The `EyeDropper` API (a real screen eyedropper) only exists on Chromium. On Safari the fallback created a 1×1 px colour field and positioned it **only if the target button’s width was non-zero**:
+  ```js
+  if (r && r.width) { proxy.style.left = ...; proxy.style.top = ...; }
+  ```
+  As soon as the targeted button was hidden (width 0), `left`/`top` were **never set**: the `position: fixed` element stayed at its **static** position (last child of `<body>`), i.e. **at the bottom-left of the screen** — exactly the reported defect. A 1×1 px element also gives the system nothing to anchor its panel to.
+- **The window is now the application’s own, anchored under the pipette.** A self-contained **“Couleurs” window** (no dependency): saturation/lightness area, hue slider, preview, hex field and a 12-colour swatch row. It opens **under the clicked button**, right edge aligned with it, and flips above when there is not enough room below. Being an app element, its placement no longer depends on the OS. Escape and outside-click close it (no `scroll` listener — a Mac trackpad fires dozens of them and would close the window the instant it opened). A **“Sélecteur système…”** button still gives access to the macOS panel. Each pipette now passes the **actually clicked element**, so anchoring no longer depends on `colorMode`.
+- **In RGB mode the pipette replaced the picked colour with white.** Found while testing the above. `pick()` called `_applyCmykSliders()`, which **recomputes** the hex from the CMYK sliders. In RGB mode no sync takes place, so the sliders kept their default `0/0/0/0` values → `_cmykToHex(0,0,0,0)` = `#ffffff`. Measured: clicking `#0EA5E9` gave `#blockFill = #ffffff`, painting the object white. The picked colour is now applied directly in RGB mode.
+
+### Verified
+| Check | Result |
+|---|---|
+| Window position (RGB and CMYK) | **under the pipette** (gap < 20 px), right edge aligned, fully inside the viewport |
+| Swatch `#EF4444` | `#blockFill = #ef4444` (exact) |
+| RGB, swatch `#0EA5E9` | `#blockFill = #0ea5e9` — no more white |
+| Saturation/lightness drag | `#056591` · hue `120` → `#9bff9b` · typing `#FF8800` → `#ff8800` and the hue slider snaps to 32 |
+| Opening the window | applies nothing and does **not** clear the “no fill” flag (measured: flag stays `true`) |
+| Escape / outside click | closes |
+| **Chromium non-regression** | with `EyeDropper` present the API is called and the in-app window stays hidden |
+- `node --check` clean on both copies, web/mirror parity **14/14**, **13/13** live version markers coherent, package regenerated (**56,298,968 bytes**) and verified by extraction.
+- The bump script **no longer rewrites the version inside `main.js`**: its 15 occurrences of `1.7.411` are **all historical comments** (`// v1.7.411 - …`). Only the shared-module cache tag is updated there.
+- Cache: JS `20260913-v412-pipette-couleurs` · shared module `20260914-v412-pipette-couleurs` · service worker `superprint-shell-v1.7.412-no-whatsapp` (app **and** root).
+
 ## [1.7.411] — 2026-09-14
 
 _Large formats: page unit no longer tied to the UI language, and PDF import adapts its render scale_
