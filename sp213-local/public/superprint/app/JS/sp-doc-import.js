@@ -982,9 +982,11 @@ async function extractOdfAttachment(file, id, ext) {
     nbImages++;
   }
 
+  var pageOdf = null;
+  try { pageOdf = await spOdfPageInfo(zip); } catch (_po) {}
   state.attachments.push({
     id, name: file.name, type: 'text', text: texte, ext: ext || 'odt',
-    doc: true, docLabel: 'DOCUMENT OPEN OFFICE', imageCount: nbImages
+    doc: true, docLabel: 'DOCUMENT OPEN OFFICE', imageCount: nbImages, page: pageOdf
   });
   renderAttachBar();
   appendChat('assistant', '📄 « ' + file.name + ' » : ' + texte.length + ' caractères' +
@@ -994,9 +996,11 @@ async function extractOdfAttachment(file, id, ext) {
 // ── RTF : branche dediee ──────────────────────────────────────────────
 function extractRtfAttachment(bytes, file, id, ext) {
   const texte = spRtfToText(spBytesToLatin1(bytes));
+  // v1.7.409 - la cote de l'en-tete RTF est exposee en STRUCTURE.
+  const pageRtf = spRtfPageSize(spBytesToLatin1(bytes));
   state.attachments.push({
     id, name: file.name, type: 'text', text: texte, ext: ext || 'rtf',
-    doc: true, docLabel: 'DOCUMENT RTF'
+    doc: true, docLabel: 'DOCUMENT RTF', page: pageRtf
   });
   renderAttachBar();
   appendChat('assistant', '📄 « ' + file.name + ' » : ' + texte.length + ' caractères.');
@@ -1031,6 +1035,140 @@ function extractLegacyDocAttachment(bytes, file, id, ext) {
   appendChat('assistant', '📄 « ' + file.name + ' » (.doc) : ' + texte.length + ' caractères extraits.');
 }
 
+// v1.7.409 - COTE DE PAGE LUE DANS LA STRUCTURE DU FICHIER (jamais dans le texte).
+//   MESURE DU DEFAUT : une lecture par expression reguliere donnait 2 faux
+//   positifs sur 5 — un corps citant « 100 x 150 mm » ou un tableau
+//   « 300 x 400 mm » etait pris pour la mise en page du document.
+//   1 mm = 1440/25.4 twips (1440 twips = 1 pouce).
+var SP_TWIPS_PAR_MM = 1440 / 25.4;
+
+function spCoteValide(w, h) {
+  return !!(w >= 20 && w <= 2000 && h >= 20 && h <= 2000);
+}
+
+// .docx : <w:pgSz w:w="8391" w:h="11906"/> dans word/document.xml.
+//   Le DERNIER <w:pgSz> de document.xml est celui de la section finale.
+async function spDocxPageInfo(arrayBuffer) {
+  try {
+    await loadAttachmentLibrary(spLibUrl('app/JS/jszip.min.js'), function () { return !!window.JSZip; });
+    if (!window.JSZip) return null;
+    const zip = await window.JSZip.loadAsync(arrayBuffer);
+    const ordre = ['word/document.xml', 'word/styles.xml'];
+    for (let i = 0; i < ordre.length; i++) {
+      const f = zip.file(ordre[i]);
+      if (!f) continue;
+      const xml = await f.async('string');
+      const tags = xml.match(/<w:pgSz[^>]*>/g);
+      if (!tags) continue;
+      const tag = tags[tags.length - 1];
+      const mw = tag.match(/w:w="(\d+)"/), mh = tag.match(/w:h="(\d+)"/);
+      if (!mw || !mh) continue;
+      const w = Math.round(parseInt(mw[1], 10) / SP_TWIPS_PAR_MM);
+      const h = Math.round(parseInt(mh[1], 10) / SP_TWIPS_PAR_MM);
+      if (!spCoteValide(w, h)) continue;
+      const colsM = xml.match(/<w:cols[^>]*w:num="(\d+)"/);
+      const marM = xml.match(/<w:pgMar[^>]*>/);
+      let marges = null;
+      if (marM) {
+        const mt = marM[0].match(/w:top="(\d+)"/), mb = marM[0].match(/w:bottom="(\d+)"/);
+        const ml = marM[0].match(/w:left="(\d+)"/), mr = marM[0].match(/w:right="(\d+)"/);
+        if (mt && mb && ml && mr) {
+          marges = {
+            haut: Math.round(parseInt(mt[1], 10) / SP_TWIPS_PAR_MM),
+            bas: Math.round(parseInt(mb[1], 10) / SP_TWIPS_PAR_MM),
+            gauche: Math.round(parseInt(ml[1], 10) / SP_TWIPS_PAR_MM),
+            droite: Math.round(parseInt(mr[1], 10) / SP_TWIPS_PAR_MM)
+          };
+        }
+      }
+      return { w: w, h: h, paysage: w > h, source: 'w:pgSz',
+               cols: colsM ? parseInt(colsM[1], 10) : 0, marges: marges };
+    }
+    return null;
+  } catch (e) { return null; }
+}
+
+// ODT : la cote vit dans styles.xml (et NON content.xml).
+async function spOdfPageInfo(zip) {
+  try {
+    const f = zip.file('styles.xml');
+    if (!f) return null;
+    const xml = await f.async('string');
+    const tag = xml.match(/<style:page-layout-properties[^>]*>/);
+    if (!tag) return null;
+    const conv = function (m) {
+      if (!m) return null;
+      const v = parseFloat(String(m[1]).replace(',', '.'));
+      const u = m[2];
+      return Math.round(u === 'cm' ? v * 10 : u === 'mm' ? v
+                       : u === 'in' ? v * 25.4 : v * 25.4 / 72);
+    };
+    const w = conv(tag[0].match(/fo:page-width="([\d.]+)(cm|mm|in|pt)"/));
+    const h = conv(tag[0].match(/fo:page-height="([\d.]+)(cm|mm|in|pt)"/));
+    if (!spCoteValide(w, h)) return null;
+    return { w: w, h: h, paysage: w > h, source: 'odf:styles.xml', cols: 0, marges: null };
+  } catch (e) { return null; }
+}
+
+// RTF : mots-cle \paperw / \paperh (en twips).
+function spRtfPageSize(src) {
+  try {
+    const t = String(src || '');
+    const mw = t.match(/\\paperw(\d+)/), mh = t.match(/\\paperh(\d+)/);
+    if (!mw || !mh) return null;
+    const w = Math.round(parseInt(mw[1], 10) / SP_TWIPS_PAR_MM);
+    const h = Math.round(parseInt(mh[1], 10) / SP_TWIPS_PAR_MM);
+    if (!spCoteValide(w, h)) return null;
+    const cols = t.match(/\\cols(\d+)/);
+    return { w: w, h: h, paysage: w > h, source: 'rtf:paperw',
+             cols: cols ? parseInt(cols[1], 10) : 0, marges: null };
+  } catch (e) { return null; }
+}
+
+// .docx -> pieces jointes : texte structure + images. Cette logique vit
+//   desormais DANS LE MODULE (source unique). Avant, l'app delegait a son
+//   importeur CANVAS et le document n'arrivait jamais a l'IA.
+async function spDocxVersPiecesJointes(buf, file, id, ext, pageInfo) {
+  const options = {
+    convertImage: window.mammoth.images.inline(function (element) {
+      return element.read('base64').then(function (b64) {
+        return { src: 'data:' + element.contentType + ';base64,' + b64 };
+      });
+    })
+  };
+  let html = '';
+  try {
+    const result = await window.mammoth.convertToHtml({ arrayBuffer: buf }, options);
+    html = String(result && result.value || '');
+  } catch (err) {
+    try {
+      const r2 = await window.mammoth.extractRawText({ arrayBuffer: buf });
+      html = '<p>' + String(r2 && r2.value || '') + '</p>';
+    } catch (_) { html = ''; }
+  }
+  const imgs = [];
+  html = html.replace(/<img[^>]*src="(data:([^;]+);base64,([^"]+))"[^>]*>/gi,
+                      function (m, uri, mime, b64) {
+    imgs.push({ uri: uri, mime: mime, b64: b64 });
+    return '[IMAGE_' + (imgs.length - 1) + ']';
+  });
+  const texte = spHtmlToStructuredText(html);
+  state.attachments.push({
+    id: id, name: file.name, type: 'text', text: texte, ext: ext || 'docx',
+    doc: true, docLabel: 'DOCUMENT WORD (.docx)', imageCount: imgs.length,
+    page: pageInfo || null
+  });
+  imgs.forEach(function (im, k) {
+    state.attachments.push({
+      id: id + '_img' + k, name: file.name + ' — image ' + (k + 1),
+      type: 'image', dataURL: im.uri, width: 0, height: 0, ext: 'docx', fromDocx: true
+    });
+  });
+  renderAttachBar();
+  appendChat('assistant', '📄 « ' + file.name + ' » : ' + texte.length + ' caractères' +
+    (imgs.length ? ' et ' + imgs.length + ' image(s) extraite(s)' : '') +
+    (pageInfo ? ' — mise en page lue (' + pageInfo.w + '×' + pageInfo.h + ' mm)' : '') + '.');
+}
 // ── Chargement de mammoth (chemin conserve : JS/mammoth.min.js) ────────
 function spLoadMammoth() {
   return loadAttachmentLibrary(spLibUrl('JS/mammoth.min.js'), function () { return !!window.mammoth; });
@@ -1042,6 +1180,9 @@ async function extractDocumentAttachment(file, id, ext) {
   const reel = spDetectDocFormat(bytes);
 
   if (reel === 'docx') {
+    // v1.7.409 - cote de page lue dans la STRUCTURE (w:pgSz) avant tout.
+    var pageInfo = null;
+    try { pageInfo = await spDocxPageInfo(await file.arrayBuffer()); } catch (_p) {}
     try {
       await spLoadMammoth();
     } catch (_) {
@@ -1052,7 +1193,7 @@ async function extractDocumentAttachment(file, id, ext) {
       renderAttachBar();
       return;
     }
-    spExtractWordRich(bytes.buffer, file, id, ext || 'docx');
+    await spDocxVersPiecesJointes(bytes.buffer, file, id, ext, pageInfo);
     return;
   }
   if (reel === 'odf') { await extractOdfAttachment(file, id, ext); return; }
@@ -1118,6 +1259,9 @@ function spHtmlToStructuredText(html) {
     // Helpers exposes pour les tests unitaires (jamais utilises en production).
     helpers: {
       spRtfToText: spRtfToText,
+      spDocxPageInfo: spDocxPageInfo,
+      spOdfPageInfo: spOdfPageInfo,
+      spRtfPageSize: spRtfPageSize,
       spLegacyDocToText: spLegacyDocToText,
       spDocTextFromOle: spDocTextFromOle,
       spOleRead: spOleRead,

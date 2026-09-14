@@ -47278,7 +47278,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260913-v401c-multipage';
+                s.src = 'JS/sp-doc-import.js?v=20260914-v409-docx-cote';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous
@@ -48823,30 +48823,57 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         'a5 paysage': [210, 148], 'a4 paysage': [297, 210], 'a3 paysage': [420, 297],
         'a5 portrait': [148, 210], 'a4 portrait': [210, 297], 'carte': [85, 55]
     };
-    function _aiDetectPageFormat(prompt) {
+    function _aiDetectPageFormat(prompt, original) {
         if (!prompt) return null;
         const p = String(prompt).toLowerCase();
-        // 1) Format libre explicite "L×H mm" / "LxH mm" / cm
-        const mmMatch = p.match(/(\d{2,4})\s*[x×]\s*(\d{2,4})\s*(?:mm|cm|centim)/i) ||
-                        p.match(/(\d{2,4})\s*mm\s*[x×]\s*(\d{2,4})\s*mm/i);
-        if (mmMatch) {
-            let w = parseInt(mmMatch[1], 10), h = parseInt(mmMatch[2], 10);
-            if (/\bcm\b|centim/i.test(p)) { w *= 10; h *= 10; }
-            if (w >= 20 && w <= 2000 && h >= 20 && h <= 2000) return { w, h, label: w + '×' + h + ' mm' };
+        // Version NON minusculee : permet de reconnaitre « A4 » saisi en MAJUSCULES
+        // sans confondre avec l'article francais « a ».
+        const orig = String(original == null ? prompt : original);
+        const toNum = function (s) { return parseFloat(String(s).replace(',', '.')); };
+        // 1) Dimensions explicites AVEC UNITE : mm, cm, pt, in.
+        //    ⚠️ v1.7.409 - le POINT (pt) etait totalement absent : « 595 x 842 pt »
+        //    (= A4 en points) n'etait pas reconnu du tout, alors que c'est l'unite
+        //    des traitements de texte et de l'imprimerie. 1 pt = 25.4/72 mm.
+        const um = p.match(/(\d{1,5}(?:[.,]\d+)?)\s*[x\u00d7*]\s*(\d{1,5}(?:[.,]\d+)?)\s*(mm|cm|pt|in|inch)\b/i);
+        if (um) {
+            let w = toNum(um[1]), h = toNum(um[2]);
+            const u = um[3].toLowerCase();
+            const f = (u === 'cm') ? 10
+                    : (u === 'pt') ? (25.4 / 72)
+                    : (u === 'in' || u === 'inch') ? 25.4
+                    : 1;
+            w = Math.round(w * f); h = Math.round(h * f);
+            if (w >= 20 && w <= 2000 && h >= 20 && h <= 2000) {
+                return { w: w, h: h, label: w + '\u00d7' + h + ' mm' };
+            }
         }
-        // 2) Mots-clés ISO / courants (ordre longueur décroissante)
+        // 1bis) Forme « 210 mm x 297 mm » (unite ecrite DEUX fois).
+        const mm2 = p.match(/(\d{1,4})\s*mm\s*[x\u00d7]\s*(\d{1,4})\s*mm/i);
+        if (mm2) {
+            const w2 = parseInt(mm2[1], 10), h2 = parseInt(mm2[2], 10);
+            if (w2 >= 20 && w2 <= 2000 && h2 >= 20 && h2 <= 2000) {
+                return { w: w2, h: h2, label: w2 + '\u00d7' + h2 + ' mm' };
+            }
+        }
+        // 2) Mots-cles ISO / courants (ordre longueur decroissante)
         const sortedKeys = Object.keys(_AI_PAGE_FORMATS).sort((a, b) => b.length - a.length);
         for (const k of sortedKeys) {
             if (new RegExp('\\b' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(p)) {
                 const dims = _AI_PAGE_FORMATS[k];
-                return { w: dims[0], h: dims[1], label: k.toUpperCase() + ' (' + dims[0] + '×' + dims[1] + ' mm)' };
+                return { w: dims[0], h: dims[1], label: k.toUpperCase() + ' (' + dims[0] + '\u00d7' + dims[1] + ' mm)' };
             }
         }
-        // 3) "format A4" / "en A5"
-        const aMatch = p.match(/\ba([0-8])\b/);
-        if (aMatch && /format|en |au |taille|grandeur/.test(p) && _AI_PAGE_FORMATS['a' + aMatch[1]]) {
-            const dims = _AI_PAGE_FORMATS['a' + aMatch[1]];
-            return { w: dims[0], h: dims[1], label: ('a' + aMatch[1]).toUpperCase() + ' (' + dims[0] + '×' + dims[1] + ' mm)' };
+        // 3) « A0 » a « A8 ». En MAJUSCULES, le format est reconnu SEUL (« A4 »).
+        //    En minuscules, on exige un mot-cle : « a » est un mot francais courant
+        //    et « a4 » pourrait apparaitre dans une phrase sans etre le format.
+        const up = orig.match(/\bA([0-8])\b/);
+        const kw = /\b(format|taille|grandeur|en|au)\b/.test(p);
+        const lowA = p.match(/\ba([0-8])\b/);
+        const pick = (up && _AI_PAGE_FORMATS['a' + up[1]]) ? up[1]
+                   : (kw && lowA && _AI_PAGE_FORMATS['a' + lowA[1]]) ? lowA[1] : null;
+        if (pick !== null) {
+            const dims = _AI_PAGE_FORMATS['a' + pick];
+            return { w: dims[0], h: dims[1], label: 'A' + pick + ' (' + dims[0] + '\u00d7' + dims[1] + ' mm)' };
         }
         return null;
     }
@@ -48870,8 +48897,23 @@ remplace pas la richesse de contenu : les deux vont ensemble.
     // Applique un format détecté : change le document + recalc les mm pour le prompt.
     // v1.7.408 - detection du format sur la DEMANDE SEULE (pieces jointes retirees).
     const _aiCleanPrompt = _spAiCleanUserRequest(promptText);
+    window.__spAiCleanPrompt = _aiCleanPrompt;
+    // v1.7.409 - ORDRE DE PRIORITE : 1) le format DEMANDE, 2) celui du DOCUMENT
+    //   joint, 3) sinon on GARDE le format en cours (aucun changement).
+    var _aiDocHint = _spAiFormatFromDocument(promptText);
+    if (_aiDocHint && _aiDocHint.paysage && _aiDocHint.w < _aiDocHint.h) {
+        var _tmpH = _aiDocHint.w; _aiDocHint.w = _aiDocHint.h; _aiDocHint.h = _tmpH;
+    }
     const _aiUserFmt = _aiDetectPageFormat(_aiCleanPrompt);
-    const _aiFmt = _aiUserFmt;
+    // Aucune consigne -> on propose le format du document (qui peut etre null :
+    // dans ce cas le format en cours est conserve, sans trace inutile).
+    if (!_aiUserFmt && _aiDocHint) {
+        logAI('\uD83D\uDCC4 Aucun format demande : format du DOCUMENT JOINT applique (' + _aiDocHint.label + ')');
+    } else if (!_aiUserFmt && !_aiDocHint) {
+        logAI('\uD83D\uDCC4 Aucun format demande et aucun format detectable dans le document : format du document en cours conserve (' + widthMm + '\u00d7' + heightMm + ' mm)');
+    }
+    const _aiUserFmtFinal = _aiUserFmt || _aiDocHint;
+    const _aiFmt = _aiUserFmtFinal;
     if (_aiFmt) {
         let fw = _aiFmt.w, fh = _aiFmt.h;
         if (/paysage|landscape|horizontal/.test(_aiCleanPrompt) && fw < fh) { const t = fw; fw = fh; fh = t; }
@@ -48930,6 +48972,62 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             }
         }
     } catch (_eU) {}
+
+    // v1.7.409 - SANS FORMAT DEMANDE, ON PREND CELUI DU DOCUMENT JOINT.
+    //   Mesure prealable : le bloc « PIECES JOINTES » contient deja la mise en
+    //   page du document source (ex. RTF : « FORMAT : A4 paysage (297 x 210 mm) »).
+    //   Hier on revenait au format en cours (A4) ; desormais on lit le document.
+    //   Formats ou la cote est lisible : RTF (en-tete), ODF (styles de page).
+    //   .doc : non lisible (OLE). .docx : mammoth ignore w:sectPr -> a completer.
+    function _spRemplacerRepere(txt, marque, remplacement) {
+        var sT = String(txt || '');
+        var iT = sT.indexOf(marque);
+        if (iT === -1) return sT;
+        return sT.slice(0, iT) + remplacement + sT.slice(iT + marque.length);
+    }
+    window._spRemplacerRepere = _spRemplacerRepere;
+    function _spAiFormatFromDocument(txt) {
+        // v1.7.409 - LA COTE EST LUE DANS LA STRUCTURE, PAS DANS LE TEXTE.
+        //   MESURE : une lecture par expression reguliere donnait 2 faux positifs
+        //   sur 5 — un corps citant « 100 x 150 mm » ou un tableau
+        //   « 300 x 400 mm » etait pris pour la mise en page du document.
+        //   1) cote STRUCTUREE portee par la piece jointe (w:pgSz, styles.xml,
+        //      \paperw) ; 2) repli LIMITE aux lignes d'en-tete du decodeur RTF.
+        try {
+            var _atts = window._spDocAttachments || [];
+            for (var _i = 0; _i < _atts.length; _i++) {
+                var _a = _atts[_i];
+                if (_a && _a.page && _a.page.w && _a.page.h) {
+                    return {
+                        w: _a.page.w, h: _a.page.h,
+                        paysage: !!_a.page.paysage,
+                        label: _a.page.w + '\u00d7' + _a.page.h + ' mm (format du document)',
+                        source: _a.page.source || 'structure'
+                    };
+                }
+            }
+        } catch (_eS) {}
+        // Repli TEXTUEL : uniquement les lignes ECRITES PAR LE DECODEUR, jamais
+        //   le corps du document (qui peut citer n'importe quelle dimension).
+        var t = String(txt || '');
+        if (t.indexOf('PIECES JOINTES UTILISATEUR') === -1) return null;
+        var lignes = t.split('\n');
+        for (var _l = 0; _l < lignes.length; _l++) {
+            var _ln = lignes[_l];
+            // « FORMAT : … (297 x 210 mm) » est la SEULE ligne de cote emise par
+            //   les decodeurs RTF / ODF. On n'accepte rien d'autre.
+            if (_ln.indexOf('FORMAT') === -1) continue;
+            var _m = _ln.match(/(\d{2,4}(?:[.,]\d+)?)\s*[x\u00d7]\s*(\d{2,4}(?:[.,]\d+)?)\s*mm/i);
+            if (!_m) continue;
+            var _w = parseInt(_m[1], 10), _h = parseInt(_m[2], 10);
+            if (!(_w >= 20 && _w <= 2000 && _h >= 20 && _h <= 2000)) continue;
+            return { w: _w, h: _h, paysage: /paysage|landscape/i.test(_ln),
+                     label: _w + '\u00d7' + _h + ' mm (format du document)',
+                     source: 'entete' };
+        }
+        return null;
+    }
+    window._spAiFormatFromDocument = _spAiFormatFromDocument;
 
     // --- DESCRIPTION COMPLÈTE DE SUPERPRINT ---
     const SUPERPRINT_CONTEXT = `
@@ -49719,12 +49817,38 @@ SORTIE : Réponds UNIQUEMENT avec un JSON valide, sans texte autour, sans bloc m
     // Le contexte complet de l'application est envoyé en system message (hors user prompt)
     // 🆕 SP213 : si le modèle layout & canevas est actif, injecter son éducation
     // spécialisée AU-DESSUS du rôle créatif (elle prime sur les directives standard).
+    let _spAiDocSourceBlock = '';
+
+    // v1.7.409 - MISE EN PAGE DU DOCUMENT FOURNI : exposee comme REFERENCE.
+    //   L'IA n'avait AUCUNE indication du format du document source : elle
+    //   pouvait donc en deduire la mise en page a suivre. On la lui donne
+    //   explicitement, en precisant que la CONSIGNE est le format demande.
+    try {
+        var _spDocs = window._spDocAttachments || [];
+        var _cotes = [];
+        for (var _di = 0; _di < _spDocs.length; _di++) {
+            var _a = _spDocs[_di];
+            if (!_a || _a.type !== 'text' || !_a.text) continue;
+            var _mc = String(_a.text).match(/(\d{2,4}(?:[.,]\d+)?)\s*[x\u00d7]\s*(\d{2,4}(?:[.,]\d+)?)\s*mm/i);
+            if (!_mc) continue;
+            _cotes.push('  \u2022 « ' + _a.name + ' » (' + (_a.docLabel || 'document') + ') : ' + _mc[0].replace(/\s*mm$/i, ' mm'));
+        }
+        if (_cotes.length) {
+            var _sFmt = (typeof _aiUserFmtFinal !== 'undefined' && _aiUserFmtFinal) ? _aiUserFmtFinal : null;
+            _spAiDocSourceBlock = '\nDOCUMENT SOURCE \u2014 MISE EN PAGE DETECTEE (REFERENCE, PAS UNE CONSIGNE)\n' +
+                _cotes.join('\n') + '\n' +
+                (_sFmt ? '\u2192 Le format VOULU par l\u2019utilisateur est ' + _sFmt.w + '\u00d7' + _sFmt.h + ' mm.' :
+                         '\u2192 Aucun format n\u2019a ete demande : conserve le format du document en cours (' + widthMm + '\u00d7' + heightMm + ' mm).') +
+                '\n\u26a0\ufe0f Tu composes dans CE format. NE reprends PAS la cote du document : elle decrit l\u2019original, pas ta maquette.\n';
+            logAI('\uD83D\uDCD0 Mise en page du document source transmise a l\u2019IA (' + _cotes.length + ' document(s)).');
+        }
+    } catch (_eDS) {}
     const _sp213Prefix = (isSp213Enabled() || provider === 'openai') ? SP213_LAYOUT_SYSTEM : '';
     // 🆕 Note API OpenAI-compatible pour DeepSeek / OpenRouter / Groq (alignée sur le studio SP213)
     const _aiProviderNote = (['openai', 'deepseek', 'openrouter', 'groq'].indexOf(provider) >= 0)
         ? '\nTu es exécuté via une API OpenAI-compatible (' + provider + '). Réponds UNIQUEMENT en JSON valide (format json_object), sans texte autour, sans markdown.\n'
         : '';
-    const systemMessage = _sp213Prefix + SUPERPRINT_CONTEXT + userImagesContext + _aiProviderNote + `
+    const systemMessage = _sp213Prefix + SUPERPRINT_CONTEXT + userImagesContext + _spAiDocSourceBlock + _aiProviderNote + `
 
 =============================================
 RÔLE & DIRECTIVES
