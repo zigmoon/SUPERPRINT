@@ -9,6 +9,25 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.411] — 2026-09-14
+
+_Large formats: page unit no longer tied to the UI language, and PDF import adapts its render scale_
+
+### Fixed
+- **The page unit was inferred from the UI language instead of the unit selector.** Measured: with an English interface, typing `1115 × 1875` produced a canvas of **28321 × 47625 mm** — a blank screen, nothing rendered any more. The handlers converted via `currentLanguage === 'en' ? inToMm(v) : v`, while the field displayed the label “W (in)” although **no “in” button exists** (the selector only offers mm / cm / px). The real unit (`currentUnit`) was ignored.
+  - Fixed with two helpers, `spPageUnitVersMm()` / `spPageMmVersUnite()`, which read the **unit selector**. Applied to all four fields: width, height, margin, bleed.
+  - **Bleed was converted by language as well** (same defect, found in a second pass): 3 mm typed gave **76.2 mm** in the exported PDF (3 read as 3 inches).
+- **PDF import rendered at a hard-coded scale of 6.0.** Measured: a 1115 × 1875 mm page needed a **605 Mpx** canvas, while `toDataURL()` fails beyond roughly **250 Mpx** (250 OK, 300 fails) and returns an empty 6-byte string. The imported page vanished silently.
+  - The scale now adapts to the page format, capped at **220 Mpx**.
+  - An explicit message is emitted when the browser still refuses the image (“Image PDF trop grande pour ce navigateur”), instead of a silent no-op.
+- **Large-format warning** beyond a 16000 px side, emitted once every 15 s, so the user knows where the browser limit lies.
+
+### Verified
+- English interface, `1115 × 1875` → **1115 × 1875 mm**, canvas **4766 × 7997 px**, centre pixel white (page actually rendered). Back to `210 × 297` → **210 × 297**. `spPageUnitVersMm('1115')` → **1115**.
+- **Justified-block non-regression** (1.7.410): justified block still **34 px clipped** before, **0 px** after; a 40 px frame still clips 91 px of content.
+- `node --check` clean on both copies, 13/13 live version markers coherent, web/mirror parity **14/14**, package regenerated (**56,293,733 bytes**) and verified by extraction.
+- Cache: JS `20260913-v411-grands-formats` · shared module `20260914-v411-grands-formats` · service worker `superprint-shell-v1.7.411-no-whatsapp` (app **and** root).
+
 ## [1.7.410] — 2026-09-14
 
 _Letters are no longer clipped on the right edge of a justified text block_
