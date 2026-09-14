@@ -9,6 +9,28 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.410] — 2026-09-14
+
+_Letters are no longer clipped on the right edge of a justified text block_
+
+### Fixed
+- **The rightmost glyph of a justified line was being shaved.** Measured on a 300 px block holding the same text, changing only the alignment — the right edge of the **ink** at render time:
+
+  | Alignment | 12 pt | 18 pt | 24 pt |
+  |---|---|---|---|
+  | Left-aligned | 291 px | 291 px | 294 px |
+  | **Justified** | **302 px** | **304 px** | **307 px** |
+
+  Justification pushes the line **right up to the edge** (advance = block width), so the last glyph’s ink overshoots its advance by **+2 to +7 px** depending on size (the sidebearing of `t`, `e`, `r`). The mask was laid exactly on the block width and clipped that overshoot. Comparing images with and without the mask over 12 cases: ink lost in **4 cases, up to 8 pixels, always exactly on the right border**.
+- The mask exists to stop a **layout overflow** (extra lines vertically, a word wider than the block). It must not shave glyph **sidebearings**, which are a normal, invisible overflow of the ink area alone.
+- The mask now carries a **side margin proportional to the type size**: `max(2, fontSize × 0.32)` — 3.84 px at 12 pt, 5.76 px at 18 pt, 7.68 px at 24 pt. That covers the measured overshoot (7 px max) and stays invisible (≈ 0.65 mm at 300 dpi).
+
+### Verified
+- Ink beyond the block: **+2 / +4 / +7 px before → 0 px after** on all six measured cases.
+- Pixels lost sideways: **0** — none lost, including on the right border.
+- **Mask non-regression**: a block with a 40 px fixed height holding 91 px of text is **still clipped to 40 px** (ink 91 → 40).
+- 13/13 live version markers coherent, 0 leftover, web/mirror parity 14/14, dist rebuilt at 1.7.410, package (56,291,729 bytes) regenerated.
+
 ## [1.7.409] — 2026-09-14
 
 _With no format asked, the layout takes the document's own — and mm, cm, pt and A0–A8 are understood_
