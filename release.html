@@ -705,6 +705,48 @@ footer, footer a { color: var(--after-text-color); }
 <main>
 <section class="releases" aria-label="Release notes">
 
+<!-- ===== SUPER PRINT v1.7.414 — typographie stable : cesure, hauteur, interligne ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-414">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.414</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 14 septembre 2026" data-i18n-en="Released September 14, 2026" data-i18n-jp="2026年9月14日公開">Released September 14, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Les blocs de texte restent stables quand on touche à la typographie, et la dernière ligne n'est plus rognée en bas du bloc." data-i18n-en-html="Text blocks stay stable when you change the typography, and the last line is no longer clipped at the bottom of the block." data-i18n-jp-html="文字設定を変えてもテキストブロックが安定し、ブロック下端で最終行が切れなくなりました。">Text blocks stay stable when you change the typography, and the last line is no longer clipped.</p>
+
+ <h3>🩹 La dernière ligne n'est plus coupée <span class="badge badge-fix">corrigé</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Mesure : les blocs issus du coulage contenaient <strong>26 lignes (406,8 px) dans un cadre de 400 px</strong> — le masque rognait donc <strong>6,8 px</strong> en bas de la dernière ligne. Le premier bloc y échappait par hasard." data-i18n-en-html="Measured: the flowed blocks held <strong>26 lines (406.8 px) inside a 400 px frame</strong>, so the mask shaved <strong>6.8 px</strong> off the bottom of the last line. The first block escaped by chance." data-i18n-jp-html="実測：流し込んだブロックは <strong>400 px の枠に 26 行（406.8 px）</strong>入っており、マスクが最終行の下端を <strong>6.8 px</strong> 削っていました。最初のブロックは偶然助かっていました。">Measured: flowed blocks held <strong>26 lines in a 400 px frame</strong> — the mask shaved <strong>6.8 px</strong>.</li>
+  <li data-i18n-fr-html="La cause est invisible : le moteur de mise en page teste la césure par comparaison stricte, donc « non défini » signifie <strong>césure active</strong> ; mais l'enregistrement écrivait « faux ». Le bloc était donc <strong>mesuré avec la césure</strong> puis <strong>relu sans</strong> : exactement une ligne d'écart." data-i18n-en-html="The cause is invisible: the layout engine tests hyphenation by strict comparison, so “undefined” means <strong>hyphenation ON</strong>, while saving wrote “false”. The block was therefore <strong>measured with hyphenation</strong> and then <strong>read back without</strong> — exactly one line apart." data-i18n-jp-html="原因は目に見えません。組版エンジンはハイフネーションを厳密比較で判定するため「未定義」は<strong>ハイフネーション有効</strong>を意味しますが、保存時には「false」と書き出されていました。"><strong>Measured with hyphenation, read back without</strong> — exactly one line apart.</li>
+ </ul>
+
+ <h3>📐 Le cadre ne grandit plus pour rien <span class="badge badge-fix">corrigé</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Modifier l'interlignage faisait grandir le cadre (300 → 311,88 px) et il <strong>ne redescendait plus</strong> : mesuré encore à 311,88 px alors que le contenu était retombé à 162,72 px. C'est ce qui donnait l'impression que « le texte change de taille »." data-i18n-en-html="Changing the line height grew the frame (300 → 311.88 px) and it <strong>never came back down</strong>: measured still at 311.88 px while the content had fallen back to 162.72 px. That is what made the text look like it was changing size." data-i18n-jp-html="行送りを変えると枠が大きくなり（300 → 311.88 px）、<strong>元に戻らなくなりました</strong>。内容が 162.72 px に戻っても 311.88 px のままでした。">The frame grew on a line-height change and <strong>never came back down</strong>.</li>
+  <li data-i18n-fr-html="Le cadre suit désormais le contenu dans les deux sens : mesuré 300 → 311,88 → <strong>300</strong> → 300. Et si vous redimensionnez le bloc à la main (500 px), <strong>votre décision est respectée</strong>." data-i18n-en-html="The frame now follows the content both ways: measured 300 → 311.88 → <strong>300</strong> → 300. And if you resize the block by hand (500 px), <strong>your decision is respected</strong>." data-i18n-jp-html="枠は内容に合わせて上下するようになりました：実測 300 → 311.88 → <strong>300</strong> → 300。手動で 500 px に変更した場合は<strong>その値が優先されます</strong>。">The frame now follows the content both ways — and a manual resize wins.</li>
+ </ul>
+
+ <h3>✂️ Un interligne sur une sélection ne colle plus au texte <span class="badge badge-fix">corrigé</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Appliquer un interlignage sur une <strong>sélection</strong> écrivait un style par caractère (mesuré : <strong>120 styles</strong> pour 120 caractères sélectionnés). Ces styles <strong>survivaient</strong> ensuite à un changement d'interlignage du bloc entier : hauteurs mesurées <strong>33,9 puis 18,08</strong> — « un bout du texte change de taille »." data-i18n-en-html="Applying a line height to a <strong>selection</strong> wrote one style per character (measured: <strong>120 styles</strong> for 120 selected characters). Those styles then <strong>survived</strong> a block-level line-height change: measured heights <strong>33.9 then 18.08</strong> — “part of the text changes size”." data-i18n-jp-html="<strong>選択範囲</strong>に行送りを適用すると、文字ごとにスタイルが書き込まれていました（実測：120 文字で <strong>120 個</strong>）。そのスタイルはブロック全体の行送り変更後も<strong>残り</strong>、実測値は <strong>33.9 と 18.08</strong> でした。">A line height applied to a <strong>selection</strong> left <strong>120 styles</strong> behind that survived a block-level change.</li>
+  <li data-i18n-fr-html="Appliquer l'interlignage au bloc entier harmonise désormais tout le texte : mesuré <strong>0 style résiduel</strong> et des hauteurs uniformes de 18,08 px. C'est le comportement attendu en PAO." data-i18n-en-html="Applying a line height to the whole block now harmonises the text: measured <strong>0 residual styles</strong> and uniform 18.08 px heights. That is the expected DTP behaviour." data-i18n-jp-html="ブロック全体に行送りを適用すると、テキストが統一されます：実測で<strong>残存スタイル 0</strong>、行の高さは 18.08 px で均一になりました。">Applying it to the whole block now harmonises the text: <strong>0 residual styles</strong>, uniform heights.</li>
+ </ul>
+
+ <h3>✅ Résultats mesurés <span class="badge badge-new">vérifié</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Blocs coulés : <strong>25 lignes / 391,07 px dans un cadre de 400 px</strong>, soit <strong>8,93 px de marge</strong> au lieu d'un débordement de 6,8 px." data-i18n-en-html="Flowed blocks: <strong>25 lines / 391.07 px inside a 400 px frame</strong>, i.e. <strong>8.93 px of margin</strong> instead of a 6.8 px overflow." data-i18n-jp-html="流し込みブロック：<strong>400 px の枠に 25 行 / 391.07 px</strong>、つまり 6.8 px のはみ出しではなく <strong>8.93 px の余白</strong>。">Flowed blocks: <strong>25 lines / 391.07 px in a 400 px frame</strong> — 8.93 px of margin.</li>
+  <li data-i18n-fr-html="Coulage de <strong>200 000 caractères sur 154 pages</strong> : aucun bloc dont le contenu dépasse son cadre, et la césure est <strong>conservée</strong> après enregistrement puis rechargement." data-i18n-en-html="Flow of <strong>200,000 characters onto 154 pages</strong>: no block whose content exceeds its frame, and hyphenation is <strong>preserved</strong> across save and reload." data-i18n-jp-html="<strong>200,000 文字を 154 ページ</strong>に流し込み：内容が枠を超えるブロックはなく、ハイフネーションも保存・再読み込み後に<strong>維持</strong>されます。"><strong>200,000 characters onto 154 pages</strong>: no block exceeds its frame, hyphenation preserved.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.414 — mesuré dans le navigateur, chaque défaut reproduit avant correction puis revérifié après. Parité web/miroir 14/14, 13/13 marqueurs de version cohérents, pack de 56 311 572 octets vérifié par extraction." data-i18n-en="SuperPrint 1.7.414 — measured in the browser, each defect reproduced before the fix and re-checked after. Web/mirror parity 14/14, 13/13 version markers coherent, 56,311,572-byte package verified by extraction." data-i18n-jp="SuperPrint 1.7.414 — ブラウザーで測定し、各不具合は修正前に再現、修正後に再検証しています。">Measured in the browser, each defect reproduced before the fix and re-checked after.</p>
+ <a class="release-cta" href="https://superprint.cc/app/index.html" data-i18n-fr="→ Ouvrir l'éditeur SuperPrint" data-i18n-en="→ Open SuperPrint Editor" data-i18n-jp="→ SuperPrintエディタを開く">→ Open SuperPrint Editor</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
+
 <!-- ===== SUPER PRINT v1.7.413 — collage de masse : fluidification + options ===== -->
 
 <article class="release-block" data-app="superprint" id="superprint-v1-7-413">

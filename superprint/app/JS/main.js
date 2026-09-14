@@ -3049,7 +3049,19 @@ if (window._spGpuEnabled) {
         const _origToObject = fabric.Textbox.prototype.toObject;
         fabric.Textbox.prototype.toObject = function(props) {
             const base = _origToObject.call(this, props);
-            base.enableHyphenation = !!this.enableHyphenation;
+            // 🩹 v1.7.414 — SERIALISATION FIDÈLE DE LA CÉSURE.
+            //   MESURE DU DÉFAUT : tout le moteur de wrapping teste la valeur
+            //   par comparaison stricte (« enableHyphenation !== false »), donc
+            //   « undefined » signifie CÉSURE ACTIVE. Or on écrivait
+            //   !!undefined = false : un bloc neuf était MESURÉ avec césure puis
+            //   RELU sans. Mesure : le même texte tient en 1 286 caractères avec
+            //   césure contre 1 235 sans — exactement une ligne (15,73 px).
+            //   Conséquence visible : le bloc recevait une ligne de trop, le
+            //   contenu débordait du cadre de 6,8 px et le masque rognait le bas
+            //   de la dernière ligne. On sérialise donc la valeur EFFECTIVE
+            //   (true sauf false explicite), ce qui rend un aller-retour JSON
+            //   neutre pour la mise en page.
+            base.enableHyphenation = (this.enableHyphenation !== false);
             base.hyphenLanguage = this.hyphenLanguage
                 || ((typeof spDefaultHyphenLanguage === 'function') ? spDefaultHyphenLanguage() : (currentHyphenLanguage || 'fr'));
             // ✅ Sérialiser les propriétés de hauteur/largeur fixe pour le clip
@@ -6436,23 +6448,49 @@ if (window._spGpuEnabled) {
             } catch (_) {}
 
             var natural = spNaturalContentHeight(obj);
-            var orig = (typeof obj._spWrapOrigH === 'number' && obj._spWrapOrigH > 0) ? obj._spWrapOrigH : 0;
-            var safeH = fixedH;
-            if (natural !== null) {
-                // plancher : jamais moins que la hauteur d'origine du bloc
-                var floorH = Math.max(fixedH, orig);
-                safeH = Math.max(floorH, natural);
+
+            // 🩹 v1.7.414 — HAUTEUR DE RÉFÉRENCE RÉVERSIBLE.
+            //   MESURE DU DÉFAUT : le plancher valait max(fixedH, orig) où
+            //   fixedH est la hauteur COURANTE, donc déjà agrandie par un
+            //   réglage précédent. Chaque agrandissement était définitif :
+            //   mesuré 300 px -> 311,88 px à l'interligne 24 pt, puis le cadre
+            //   RESTAIT à 311,88 px alors que le contenu redescendait à
+            //   212,44 (16 pt) puis 162,72 (12 pt). C'est ce qui donne
+            //   l'impression que « le texte change de taille » et ne revient
+            //   jamais. On mémorise donc la hauteur VOULUE du bloc dans
+            //   _spReflowBaseH, et on ne la redéfinit que si la hauteur
+            //   courante n'est pas celle que ce code a posée (_spAutoGrownH),
+            //   c'est-à-dire si l'utilisateur a redimensionné le bloc à la
+            //   main — sa décision l'emporte alors sur la nôtre.
+            //   ⚠️ On lit la hauteur COURANTE de l'objet, jamais le fixedH
+            //   reçu : les handlers appellent cette fonction DEUX fois (tout de
+            //   suite, puis en différé à 0 ms et 30 ms) avec un fixedH
+            //   capturé AVANT le premier passage, donc périmé dès le deuxième
+            //   appel. Mesure de ce piège : le cadre redescendu à 300 px
+            //   remontait aussitôt à 311,88 px.
+            var courant = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : fixedH;
+            var auto = (typeof obj._spAutoGrownH === 'number') ? obj._spAutoGrownH : null;
+            if (auto === null || Math.abs(courant - auto) > 0.6) {
+                obj._spReflowBaseH = Math.round(courant * 100) / 100;
             }
+            var base = (typeof obj._spReflowBaseH === 'number' && obj._spReflowBaseH > 0)
+                     ? obj._spReflowBaseH : courant;
+            // L'habillage peut imposer un plancher plus haut : on le respecte.
+            var orig = (typeof obj._spWrapOrigH === 'number' && obj._spWrapOrigH > 0) ? obj._spWrapOrigH : 0;
+            var plancher = Math.max(base, orig);
+            var safeH = (natural !== null) ? Math.max(plancher, natural) : plancher;
             try {
                 obj._fixedWidth = fixedW;
                 obj._fixedHeight = safeH;
                 obj.width = fixedW;
                 obj.height = safeH;
-                if (safeH > (fixedH + 0.5)) {
-                    // Le bloc a grandi : la hauteur d'origine doit rester la
-                    // référence du retour (habillage / resize manuel).
-                    if (!orig) obj._spWrapOrigH = Math.round(fixedH * 100) / 100;
-                }
+                // Trace de la hauteur décidée ici : si la hauteur courante s'en
+                // écarte plus tard, c'est l'utilisateur qui a redimensionné.
+                // ⚠️ NE JAMAIS supprimer cette trace quand le bloc redescend :
+                //   le deuxième appel (différé) la relirait comme absente et
+                //   prendrait le fixedH périmé pour une nouvelle référence,
+                //   ce qui ferait remonter le cadre.
+                obj._spAutoGrownH = Math.round(safeH * 100) / 100;
                 obj.setCoords && obj.setCoords();
             } catch (_) {}
             return safeH;
@@ -24835,6 +24873,49 @@ if (window._spGpuEnabled) {
     }
         }
 
+        // 🩹 v1.7.414 — Retirer les interlignes INLINE avant d'appliquer
+        //   l'interlignage au bloc entier. Symétrique de
+        //   removeInlineFontSizeStyles, qui existait pour la police mais pas
+        //   pour l'interlignage.
+        //   MESURE DU DÉFAUT : appliquer l'interlignage sur une sélection de
+        //   120 caractères posait 120 styles {"lineHeight": 2.5}. Un
+        //   changement d'interlignage du bloc entier les laissait en place :
+        //   le bloc passait à 1,333 mais les 120 premiers caractères restaient
+        //   à 2,5, soit des hauteurs de lignes mesurées de
+        //   [33,9 ; 18,08 ; 18,08 ; …] — l'utilisateur voyait « un bout du
+        //   texte changer de taille ». Appliquer au bloc écrase désormais les
+        //   exceptions, comme dans un logiciel PAO.
+        function removeInlineLineHeightStyles(textObj) {
+    try {
+        const styles = textObj && textObj.styles;
+        if (!styles) return 0;
+        let n = 0;
+        const lineKeys = Object.keys(styles);
+        for (const lk of lineKeys) {
+            const line = styles[lk];
+            if (!line) continue;
+            const charKeys = Object.keys(line);
+            for (const ck of charKeys) {
+                const st = line[ck];
+                if (st && Object.prototype.hasOwnProperty.call(st, 'lineHeight')) {
+                    delete st.lineHeight;
+                    n++;
+                    if (Object.keys(st).length === 0) {
+                        delete line[ck];
+                    }
+                }
+            }
+            if (Object.keys(line).length === 0) {
+                delete styles[lk];
+            }
+        }
+        try { textObj.__lineHeights = null; } catch (_) {}
+        return n;
+    } catch (e) {
+        return 0;
+    }
+        }
+
         // Nettoyer uniquement les graisses inline pour éviter les inversions (conserve le fontWeight par défaut du bloc)
         function removeInlineFontWeightStyles(textObj) {
     try {
@@ -28071,6 +28152,10 @@ if (window._spGpuEnabled) {
                         obj.setSelectionStyles({ lineHeight: lineHeightRatio }, obj.selectionStart, obj.selectionEnd);
                     } catch (_) {}
                 } else {
+                    // 🩹 v1.7.414 — harmoniser le bloc entier.
+                    //   Sans ce nettoyage, les styles d'interlignage posés sur
+                    //   une sélection survivaient : mesure [33,9 ; 18,08 ; 18,08].
+                    try { removeInlineLineHeightStyles(obj); } catch (_) {}
                     obj.set({
                         lineHeight: lineHeightRatio,
                         dirty: true
@@ -35253,7 +35338,19 @@ if (window._spGpuEnabled) {
                 bloc.set('fontSize', opts.corps);
                 bloc.set('lineHeight', opts.interligne);
                 bloc.set('textAlign', opts.justifie ? 'justify' : 'left');
-                if ('enableHyphenation' in bloc) bloc.set('enableHyphenation', !!opts.cesure);
+                // 🩹 v1.7.414 — TOUJOURS poser la valeur explicitement.
+                //   MESURE : « 'enableHyphenation' in bloc » vaut FALSE sur un
+                //   Textbox neuf (la propriété n'existe pas sur le prototype),
+                //   le réglage « Césure » n'était donc JAMAIS appliqué et le bloc
+                //   restait en « undefined » — mesuré avec césure, rendu sans
+                //   après enregistrement (cf. toObject).
+                bloc.set('enableHyphenation', !!opts.cesure);
+            } else {
+                // Sans application de typographie, on fige quand même la valeur
+                // EFFECTIVE : « undefined » (= césure active) doit devenir un
+                // true persistant, sinon le wrapping change après un
+                // enregistrement/rechargement.
+                bloc.set('enableHyphenation', bloc.enableHyphenation !== false);
             }
             bloc._spIndentLeft = opts.retraitG;
             bloc._spIndentRight = opts.retraitD;
@@ -48377,7 +48474,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260914-v413-collage-masse';
+                s.src = 'JS/sp-doc-import.js?v=20260914-v414-typographie-stable';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous

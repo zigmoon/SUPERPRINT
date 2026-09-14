@@ -9,6 +9,35 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.414] — 2026-09-14
+
+_Text blocks stay stable when the typography changes, and the last line is no longer clipped_
+
+### Fixed
+- **The last line of a flowed text block was clipped.** Measured: the blocks produced by the bulk-paste flow held **26 visual lines (406.8 px) inside a 400 px frame**, so the mask shaved **6.8 px** off the bottom of the last line — while the first block was fine.
+  - Root cause, measured: the wrapping engine reads hyphenation by strict comparison (`enableHyphenation !== false`), so **`undefined` means “hyphenation ON”**. But `toObject()` wrote `!!undefined` = **`false`**. A fresh block was therefore **measured with hyphenation** (1,286 characters fit) and **rendered without** (1,235 fit) — exactly one line, 15.73 px. The first block escaped by chance: its content happened to fit in 25 lines either way.
+  - Fixed by serialising the **effective** value (true unless explicitly false), which makes a JSON round-trip neutral for layout.
+  - Also fixed in the flow: `if ('enableHyphenation' in bloc)` is **false** on a new Textbox (the property does not exist on the prototype), so the “Hyphenation” option was **never** applied. The value is now always set explicitly, inside *and* outside the typography branch.
+- **The text frame grew and never came back.** Changing the line height grew the frame (300 → 311.88 px) and it then **stayed** at 311.88 px although the content fell back to 212.44 px (16 pt) and then 162.72 px (12 pt) — the “the text changes size” symptom.
+  - Cause: `spReflowWithSafeHeight` used `max(fixedH, orig)` as the floor, where `fixedH` is the **current** height, hence already grown. Every growth was permanent.
+  - Fixed with a **reversible reference height** (`_spReflowBaseH`), redefined only when the current height is not the one this code imposed — i.e. when the user resized the block by hand. Measured: 300 → 311.88 → **300** → 300 → 300, and a manual resize to 500 px is respected.
+  - Second-pass defect found while measuring: the handlers call this function **twice** (immediately, then deferred at 0 ms and 30 ms) with a `fixedH` captured **before** the first call, so the second call took a stale height as a new reference and pushed the frame back up to 311.88 px. The function now reads the object’s **current** `_fixedHeight` instead.
+- **Part of the text kept a different line height.** Applying a line height **on a selection** wrote one style per character (measured: **120** entries `{"lineHeight": 2.5}` for 120 selected characters). Those styles **survived** a block-level line-height change: measured line heights of `[33.9 ; 18.08 ; 18.08 ; …]` — the user saw “part of the text change size”.
+  - Fixed with `removeInlineLineHeightStyles`, the counterpart of `removeInlineFontSizeStyles`, which only existed for font size. Measured after the fix: **0** residual styles and uniform line heights `[18.08 ; 18.08 ; 18.08 ; …]`.
+
+### Verified
+| Check | Result |
+|---|---|
+| Flowed blocks, 20,000 characters | **25 lines / 391.07 px** in a 400 px frame — **−8.93 px** of margin (before: 26 lines / 406.8 px, **+6.8 px** of overflow) |
+| Flow, 200,000 characters → 154 pages | every block inside its frame; **0** block with content taller than its frame |
+| Hyphenation across a save/load round-trip | preserved (`true`) instead of silently lost |
+| Frame height, 300 px block, 24 → 16 → 12 → 16 pt | 300 → 311.88 → **300** → 300 → 300 |
+| Manual resize to 500 px, then a line-height change | stays at **500 px** (the user’s decision wins) |
+| Line height on a 120-character selection, then a block-level change | 120 styles → **0**; heights `[33.9 ; 18.08…]` → `[18.08 ; 18.08…]` |
+| Non-regression | small paste and bulk-paste flow unchanged; `node --check` clean on both copies, web/mirror parity **14/14**, **13/13** version markers, no live residue, package **56,311,572 bytes** verified by extraction |
+
+- Cache: JS `20260913-v414-typographie-stable` · shared module `20260914-v414-typographie-stable` · service worker `superprint-shell-v1.7.414-no-whatsapp` (app **and** root).
+
 ## [1.7.413] — 2026-09-14
 
 _Bulk paste: the interface no longer freezes, and pasting hundreds of pages now offers layout options_
