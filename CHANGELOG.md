@@ -9,6 +9,25 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.408] — 2026-09-14
+
+_Your requested page format is now honoured, even with a Word or RTF file attached_
+
+### Fixed
+- **The attached document used to override your requested format.** When you asked to reuse the text from a **Word** or **RTF** file, it was the format **of that file** that got applied. An RTF exported from a word processor announces its own page setup — `FORMAT : A4 paysage (297 x 210 mm)` — and that figure was read as **your** instruction, overriding the “A5” you had just typed. Measured with the real detection function: prompt “A5” + such an RTF gave **297×210 instead of 148×210**, and a prompt with no format at all picked up **210×297** from a document merely mentioning “A4”.
+- **Setting the format _before_ typing the prompt changed nothing**, for the same reason: the value was rewritten once the file was attached.
+- **The application's own attachment note was counted as your request.** `_spDocBuildContext()` told the model “about 12 page(s)” as a plain **volume measurement**, and the page-count detection read that sentence as a 12-page request. The wording no longer reads as a pagination instruction.
+
+### Changed
+- **Your request is now the only source of truth** for format, orientation and page count. Attached file contents are treated as **documentary reference**, never as an instruction, and the attachment block is explicitly delimited (`=== PIECES JOINTES UTILISATEUR` … `=== FIN DES PIECES JOINTES ===`) so nothing inside it can be mistaken for a demand.
+- **Safety net:** the format finally applied is compared with the one you asked for. If they ever differ, yours is **restored** and the operation is written to the log — no format can change silently any more.
+
+### Verified
+- Against the **real code** (functions extracted from `main.js`): 10/10 checks — 6 format cases, 3 pagination cases, and the volume note now excluded.
+- In the browser with a **real RTF file** dropped into the **actual import field**: the document goes from 210×297 mm to **148×210 mm (A5)** while the RTF announces “A4 landscape”.
+- Non-regression 4/4: A4 portrait, A4 landscape, business card and free dimensions (120×80 mm) are all honoured.
+- 13/13 live version markers coherent, 0 leftover, web/mirror parity 14/14, dist rebuilt at 1.7.408, package (56,287,005 bytes) verified by extraction.
+
 ## [1.7.407] — 2026-09-14
 
 _Colour picker: the eyedropper now works on Safari, in both RGB and CMYK modes_
