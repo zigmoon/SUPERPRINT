@@ -17339,22 +17339,77 @@ if (window._spGpuEnabled) {
     const original = textbox.text;
     const originalWidth = textbox.width;
     const originalHeight = textbox.height;
-    let low = 0;
-    let high = fullText.length;
-    let best = 0;
-    while (low <= high) {
-        const mid = Math.floor((low + high) / 2);
-        textbox.text = fullText.slice(0, mid);
-        // ✅ Restore fixed width before initDimensions to prevent dimension drift
+
+    // ══════════════════════════════════════════════════════════════════
+    // 🚀 v1.7.413 — BORNE HAUTE DE LA RECHERCHE (fluidification).
+    //
+    //   MESURE DU DEFAUT : initDimensions() coute 1,9 ms a 1 000 car.,
+    //   17,6 ms a 20 000, 45,8 ms a 50 000, 1 130 ms a 120 000 et
+    //   8 270 ms a 300 000 (cout FORTEMENT super-lineaire).
+    //   Or la recherche binaire demarrait a fullText.length / 2 : sur un
+    //   texte de 600 000 caracteres (200 pages Word) le PREMIER essai
+    //   mesurait 300 000 caracteres (~8 s) alors que le bloc n'en contient
+    //   que ~2 500. Multiplie par ~20 essais et par le nombre de blocs,
+    //   cela gelait l'interface des la 3e page chainee.
+    //
+    //   CORRECTIF : on mesure UNE TRANCHE pour estimer la capacite reelle du
+    //   bloc, puis on borne la recherche a ~1,6x cette capacite. Si la borne
+    //   est atteinte (le bloc est plus grand que prevu) on l'elargit et on
+    //   recommence, jamais plus de 6 fois. Cout par bloc : O(capacite).
+    // ══════════════════════════════════════════════════════════════════
+    var SP_TRANCHE_ESTIM = 4000;
+    var _spMesurerJusqua = function (index) {
+        textbox.text = fullText.slice(0, index);
         if (typeof textbox._fixedWidth === 'number') textbox.width = textbox._fixedWidth;
+        if (typeof textbox._clearCache === 'function') textbox._clearCache();
         if (typeof textbox.initDimensions === 'function') textbox.initDimensions();
-        const h = textbox.calcTextHeight();
-        if (h <= maxHeight + 0.5) {
-            best = mid;
-            low = mid + 1;
-        } else {
-            high = mid - 1;
+        return textbox.calcTextHeight();
+    };
+
+    let high = fullText.length;
+    if (fullText.length > SP_TRANCHE_ESTIM) {
+        const hTranche = _spMesurerJusqua(SP_TRANCHE_ESTIM);
+        if (hTranche > 0 && isFinite(hTranche)) {
+            const capacite = Math.floor(SP_TRANCHE_ESTIM * maxHeight / hTranche);
+            if (capacite > 0) {
+                high = Math.min(fullText.length, Math.max(SP_TRANCHE_ESTIM, Math.ceil(capacite * 1.6)));
+            }
         }
+    }
+
+    let best = 0;
+    for (let garde = 0; garde < 6; garde++) {
+        let low = 0;
+        let limite = high;
+        let trouve = 0;
+        while (low <= limite) {
+            const mid = Math.floor((low + limite) / 2);
+            const h = _spMesurerJusqua(mid);
+            if (h <= maxHeight + 0.5) {
+                trouve = mid;
+                low = mid + 1;
+            } else {
+                limite = mid - 1;
+            }
+        }
+        best = trouve;
+        // La borne n'a PAS ete atteinte : la reponse est dans la fenetre.
+        if (best < high || high >= fullText.length) break;
+        // Borne atteinte : le bloc contient plus que prevu, on elargit.
+        high = Math.min(fullText.length, high * 2);
+    }
+
+    // 🔍 v1.7.413 — PRECISION DU POINT DE COUPURE.
+    //   La hauteur d'un Textbox progresse en ESCALIER : ajouter un caractere
+    //   ne change la hauteur que tous les ~45 caracteres (une ligne). La
+    //   recherche binaire, qui suppose une progression continue, s'arretait
+    //   donc 1 a 5 caracteres AVANT le vrai maximum (mesure : 983 au lieu de
+    //   987, 19045 au lieu de 19046, 612 au lieu de 614). On remonte
+    //   lineairement tant que cela tient : au plus une ligne de texte.
+    let _spMontee = 0;
+    while (best < fullText.length && _spMontee < 64) {
+        if (_spMesurerJusqua(best + 1) <= maxHeight + 0.5) { best++; _spMontee++; }
+        else break;
     }
     // ✅ FIX InDesign-style: Snap to word boundary (never split mid-word)
     if (best > 0 && best < fullText.length) {
@@ -21770,24 +21825,30 @@ if (window._spGpuEnabled) {
     
     if (!txt) return { head: '', tail: '' };
     
-    // Test rapide: tout le texte rentre-t-il?
+    // 🚀 v1.7.413 — Le test « tout rentre ? » mesurait le texte ENTIER :
+    //   pour 600 000 caracteres cela coutait ~40 s AVANT meme de commencer
+    //   la pagination. On le borne : au-dela de la tranche d'estimation, le
+    //   texte ne peut pas tenir dans un seul bloc, on passe donc directement
+    //   a la recherche bornee de getFittingTextIndex.
     const originalText = textbox.text;
     const originalWidth = textbox.width;
     const originalHeight = textbox.height;
-    textbox.text = txt;
-    // ✅ Restore fixed width to prevent dimension drift
-    if (typeof textbox._fixedWidth === 'number') textbox.width = textbox._fixedWidth;
-    textbox._clearCache();
-    textbox.initDimensions();
-    
-    if (textbox.calcTextHeight() <= maxHeight + 0.5) {
-        textbox.text = originalText;
-        textbox.width = originalWidth;
-        textbox.height = originalHeight;
-        return { head: txt, tail: '' };
+
+    if (txt.length <= 4000) {
+        textbox.text = txt;
+        // ✅ Restore fixed width to prevent dimension drift
+        if (typeof textbox._fixedWidth === 'number') textbox.width = textbox._fixedWidth;
+        textbox._clearCache();
+        textbox.initDimensions();
+        if (textbox.calcTextHeight() <= maxHeight + 0.5) {
+            textbox.text = originalText;
+            textbox.width = originalWidth;
+            textbox.height = originalHeight;
+            return { head: txt, tail: '' };
+        }
     }
-    
-    // Recherche binaire pour trouver le point de coupure
+
+    // Recherche binaire BORNEE pour trouver le point de coupure
     const idx = getFittingTextIndex(textbox, txt);
     textbox.text = originalText;
     textbox.width = originalWidth;
@@ -34964,6 +35025,567 @@ if (window._spGpuEnabled) {
             setTimeout(() => URL.revokeObjectURL(url), 5000);
         }
 
+        // ═══════════════════════════════════════════════════════════════════
+        // 📋 v1.7.413 — COLLAGE DE TEXTE VOLUMINEUX (options de masse)
+        //
+        //   MESURE A L'ORIGINE DU PROBLEME. Coller 200 pages Word dans un bloc
+        //   gelait l'interface des la 3e page chainee. La cause n'etait PAS les
+        //   styles de Word : aucun getData('text/html') n'existe dans tout le
+        //   code, le presse-papiers n'apporte jamais que du texte brut. La
+        //   vraie cause est le COUT DU WRAPPING, fortement super-lineaire
+        //   (mesure sur un bloc de 300 x 400 px en Open Sans 14 pt) :
+        //       1 000 car. -> 1,9 ms      20 000 -> 17,6 ms
+        //      50 000     -> 45,8 ms     120 000 -> 1 130 ms
+        //     300 000     -> 8 270 ms
+        //   Or la recherche binaire du point de coupure demarrait a
+        //   fullText.length / 2 : sur 600 000 caracteres le PREMIER essai
+        //   mesurait 300 000 caracteres (~8 s) pour un bloc qui n'en contient
+        //   que ~2 500. Multiplie par ~20 essais et par le nombre de blocs,
+        //   l'interface se figeait. (Mesure annexe : des styles par caractere
+        //   ralentissent encore le wrap de 2,9x, d'ou l'option « aplatir ».)
+        //
+        //   Cette pop-in intercepte donc les gros collages AVANT insertion et
+        //   propose : style breaker (aplatir), typographie, coulage sur pages
+        //   chainees avec marges automatiques du document, retraits de
+        //   paragraphe, avec progression et arret possible.
+        // ═══════════════════════════════════════════════════════════════════
+        var _spMassPasteSeuil = 3000;   // caracteres : en dessous, collage normal
+        var _spMassPasteEtat = null;
+
+        // Bloc de texte Fabric actuellement en edition (ou cible du collage).
+        function _spMassPasteBlocCourant() {
+            var cv = (typeof getActiveCanvas === 'function') ? getActiveCanvas() : null;
+            if (!cv) return null;
+            var o = cv.getActiveObject();
+            if (o && o.isEditing && typeof o.text === 'string') return o;
+            var t = document.activeElement;
+            if (t && t.tagName === 'TEXTAREA') {
+                var objs = cv.getObjects() || [];
+                for (var i = 0; i < objs.length; i++) {
+                    if (objs[i] && objs[i].hiddenTextarea === t) return objs[i];
+                }
+            }
+            return null;
+        }
+
+        // Capacite d'une page en caracteres, mesuree sur UNE tranche (rapide).
+        // Taille de reference des blocs de coulage : celle du bloc de depart
+        // s'il est utilisable, sinon la zone de marges du document. Partagee par
+        // l'estimation ET par le coulage, pour que le nombre de pages annonce
+        // corresponde au nombre de pages reellement produites.
+        function _spMassPasteTailleRef() {
+            var marginPx = mmToPx(margin);
+            var boxW = Math.round(mmToPx(pageFormat.width) - 2 * marginPx);
+            var boxH = Math.round(mmToPx(pageFormat.height) - 2 * marginPx);
+            var bloc = _spMassPasteEtat ? _spMassPasteEtat.bloc : null;
+            if (!bloc) return { w: boxW, h: boxH };
+            var w = (typeof bloc._fixedWidth === 'number' && bloc._fixedWidth > 40) ? bloc._fixedWidth
+                  : (bloc.width > 40 ? bloc.width : boxW);
+            var h = (typeof bloc._fixedHeight === 'number' && bloc._fixedHeight > 40) ? bloc._fixedHeight
+                  : (bloc.height > 40 ? bloc.height : boxH);
+            return { w: Math.round(w), h: Math.round(h) };
+        }
+
+        function _spMassPasteCapacitePage(corps, interligne) {
+            var canvas = (typeof getActiveCanvas === 'function') ? getActiveCanvas() : null;
+            if (!canvas) canvas = canvases[0];
+            if (!canvas || !_spMassPasteEtat) return 2000;
+            var ref = _spMassPasteTailleRef();
+            var boxWidth = ref.w;
+            var boxHeight = ref.h;
+            var probe = new fabric.Textbox('', {
+                left: -10000, top: -10000, width: boxWidth, height: boxHeight,
+                fontSize: corps || 12, fontFamily: 'Open Sans', lineHeight: interligne || 1.3,
+                splitByGrapheme: false, breakWords: true, objectCaching: false
+            });
+            probe._maxTextHeight = boxHeight;
+            canvas.add(probe);
+            var tranche = _spMassPasteEtat.texte.slice(0, 4000);
+            probe.text = tranche;
+            probe.width = boxWidth;
+            probe._clearCache();
+            probe.initDimensions();
+            var hT = probe.calcTextHeight();
+            var cap = 2000;
+            if (hT > 0 && isFinite(hT)) cap = Math.max(200, Math.floor(tranche.length * boxHeight / hT));
+            canvas.remove(probe);
+            return cap;
+        }
+
+        function _spMassPasteEstimerPages() {
+            if (!_spMassPasteEtat) return 1;
+            // Interligne reellement applique (celui du formulaire a l'ouverture,
+            // sinon celui du bloc) : un interligne code en dur faussait le
+            // nombre de pages annonce.
+            var elI = document.getElementById('spMassPasteInterligne');
+            var interligne = (elI && parseFloat(elI.value)) || parseFloat(_spMassPasteEtat.bloc && _spMassPasteEtat.bloc.lineHeight) || 1.3;
+            var cap = _spMassPasteCapacitePage(_spMassPasteEtat.corps, interligne);
+            return Math.max(1, Math.ceil(_spMassPasteEtat.texte.length / cap));
+        }
+
+        function _spMassPasteFermer() {
+            var modal = document.getElementById('spMassPasteModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function _spMassPasteInitUI() {
+            var modal = document.getElementById('spMassPasteModal');
+            if (!modal || window._spMassPasteUI) return;
+            window._spMassPasteUI = true;
+            var closeBtn = document.getElementById('spMassPasteClose');
+            var cancelBtn = document.getElementById('spMassPasteCancel');
+            var confirmBtn = document.getElementById('spMassPasteConfirm');
+            var arreter = function () {
+                if (_spMassPasteEtat && _spMassPasteEtat.enCours) _spMassPasteEtat.annule = true;
+                else _spMassPasteFermer();
+            };
+            if (closeBtn) closeBtn.addEventListener('click', arreter);
+            if (cancelBtn) cancelBtn.addEventListener('click', arreter);
+            if (confirmBtn) confirmBtn.addEventListener('click', function () { _spMassPasteValider(); });
+            document.addEventListener('keydown', function (e) {
+                if (e.key !== 'Escape') return;
+                if (!modal || modal.style.display === 'none' || modal.style.display === '') return;
+                e.preventDefault();
+                arreter();
+            });
+            var corpsEl = document.getElementById('spMassPasteCorps');
+            if (corpsEl) corpsEl.addEventListener('change', function () {
+                if (!_spMassPasteEtat) return;
+                _spMassPasteEtat.corps = parseFloat(corpsEl.value) || _spMassPasteEtat.corps;
+                _spMassPasteEtat.pagesEstimees = _spMassPasteEstimerPages();
+                var pages = document.getElementById('spMassPastePages');
+                if (pages) pages.textContent = '(' + _spMassPasteEtat.pagesEstimees + ' pages)';
+                var info = document.getElementById('spMassPasteInfo');
+                if (info) {
+                    info.innerHTML = '<b>' + _spMassPasteEtat.texte.length.toLocaleString('fr-FR')
+                        + '</b> caracteres — environ <b>' + _spMassPasteEtat.pagesEstimees
+                        + '</b> pages en corps ' + _spMassPasteEtat.corps + '.';
+                }
+            });
+        }
+
+        function _spMassPasteOuvrir(texte, bloc) {
+            var modal = document.getElementById('spMassPasteModal');
+            if (!modal) return;
+            _spMassPasteInitUI();
+            var ancien = bloc.text || '';
+            _spMassPasteEtat = {
+                texte: texte,
+                bloc: bloc,
+                canvas: bloc.canvas || getActiveCanvas(),
+                remplacer: !ancien,
+                annule: false,
+                enCours: false,
+                corps: parseFloat(bloc.fontSize) || 12,
+                pagesEstimees: 1
+            };
+            _spMassPasteEtat.pagesEstimees = _spMassPasteEstimerPages();
+            var mots = texte.split(/\s+/).filter(function (m) { return m.length > 0; }).length;
+            var info = document.getElementById('spMassPasteInfo');
+            if (info) {
+                info.innerHTML = '<b>' + texte.length.toLocaleString('fr-FR') + '</b> caracteres, <b>'
+                    + mots.toLocaleString('fr-FR') + '</b> mots — soit environ <b>'
+                    + _spMassPasteEtat.pagesEstimees + '</b> pages au format du document.';
+            }
+            var ap = document.getElementById('spMassPasteApercu');
+            if (ap) ap.textContent = texte.slice(0, 900) + (texte.length > 900 ? '\n…' : '');
+            var pages = document.getElementById('spMassPastePages');
+            if (pages) pages.textContent = '(' + _spMassPasteEtat.pagesEstimees + ' pages)';
+            // Estimation AFFINEE en differe : le comptage exact coute ~0,5 s sur
+            // 200 000 caracteres, on ne bloque donc pas l'ouverture de la pop-in
+            // (mesuree a 20 ms). L'estimation rapide surestimait de 11 % car elle
+            // extrapole une tranche de 4 000 caracteres sans tenir compte des
+            // coupures de mots.
+            setTimeout(function () {
+                try {
+                    if (!_spMassPasteEtat || _spMassPasteEtat.enCours) return;
+                    if (_spMassPasteEtat.texte !== texte) return;
+                    var elInt = document.getElementById('spMassPasteInterligne');
+                    var exact = _spMassPasteCompterPages(texte, {
+                        corps: _spMassPasteEtat.corps,
+                        interligne: (elInt && parseFloat(elInt.value)) || 1.3
+                    });
+                    if (!exact) return;
+                    _spMassPasteEtat.pagesEstimees = exact;
+                    var pEl = document.getElementById('spMassPastePages');
+                    if (pEl) pEl.textContent = '(' + exact + ' pages)';
+                    var iEl = document.getElementById('spMassPasteInfo');
+                    if (iEl) {
+                        iEl.innerHTML = '<b>' + texte.length.toLocaleString('fr-FR') + '</b> caracteres, <b>'
+                            + mots.toLocaleString('fr-FR') + '</b> mots — soit <b>' + exact
+                            + '</b> pages au format du document.';
+                    }
+                } catch (_) {}
+            }, 220);
+            var corpsEl = document.getElementById('spMassPasteCorps');
+            if (corpsEl) corpsEl.value = Math.round((parseFloat(bloc.fontSize) || 12) * 2) / 2;
+            var interEl = document.getElementById('spMassPasteInterligne');
+            if (interEl) interEl.value = (parseFloat(bloc.lineHeight) || 1.3);
+            // Mode par defaut : couler des que le texte depasse largement un bloc.
+            var gros = texte.length > 8000;
+            var radios = modal.querySelectorAll('input[name="spMassPasteMode"]');
+            for (var i = 0; i < radios.length; i++) {
+                radios[i].checked = (radios[i].value === (gros ? 'couler' : 'bloc'));
+            }
+            var prog = document.getElementById('spMassPasteProg');
+            if (prog) prog.style.display = 'none';
+            var bar = document.getElementById('spMassPasteBar');
+            if (bar) bar.style.width = '0%';
+            var conf = document.getElementById('spMassPasteConfirm');
+            if (conf) { conf.disabled = false; conf.textContent = 'Coller'; }
+            var canc = document.getElementById('spMassPasteCancel');
+            if (canc) canc.textContent = 'Annuler';
+            modal.style.display = 'block';
+        }
+
+        // Style breaker + typographie + retraits, appliques a un bloc.
+        function _spMassPastePreparerBloc(bloc, opts) {
+            if (!bloc) return;
+            if (opts.aplatir) {
+                // Aplatir = supprimer les styles inline par caractere. Mesure :
+                // c'est ce qui ralentit le wrapping de 2,9x.
+                bloc.styles = {};
+                bloc.set('fontWeight', 'normal');
+                bloc.set('fontStyle', 'normal');
+                bloc.styles = {};
+            }
+            if (opts.typo) {
+                bloc.set('fontSize', opts.corps);
+                bloc.set('lineHeight', opts.interligne);
+                bloc.set('textAlign', opts.justifie ? 'justify' : 'left');
+                if ('enableHyphenation' in bloc) bloc.set('enableHyphenation', !!opts.cesure);
+            }
+            bloc._spIndentLeft = opts.retraitG;
+            bloc._spIndentRight = opts.retraitD;
+            bloc._spFirstLineIndent = opts.retrait1;
+            bloc.dirty = true;
+        }
+
+        function _spMassPasteFinaliserBloc(bloc) {
+            if (!bloc) return;
+            bloc._clearCache();
+            if (typeof bloc.initDimensions === 'function') bloc.initDimensions();
+            if (typeof bloc._fixedHeight === 'number') bloc.height = bloc._fixedHeight;
+            if (typeof bloc._fixedWidth === 'number') bloc.width = bloc._fixedWidth;
+            bloc.setCoords();
+            try { applyTextboxClipPath(bloc); } catch (_) {}
+            try { ensureCrispText(bloc); } catch (_) {}
+            if (bloc.canvas) {
+                try { updateOverflowIndicator(bloc, bloc.canvas); } catch (_) {}
+                bloc.canvas.requestRenderAll();
+            }
+        }
+
+        function _spMassPasteProgres(page, reste, total) {
+            var prog = document.getElementById('spMassPasteProg');
+            if (prog) prog.style.display = 'block';
+            var pct = total > 0 ? Math.min(99, Math.round((total - reste) * 100 / total)) : 0;
+            var bar = document.getElementById('spMassPasteBar');
+            if (bar) bar.style.width = pct + '%';
+            var txt = document.getElementById('spMassPasteProgTxt');
+            if (txt) {
+                txt.textContent = 'Page ' + page + ' — ' + reste.toLocaleString('fr-FR')
+                    + ' caracteres restants (' + pct + ' %)';
+            }
+        }
+
+        // Mode « tout dans ce bloc » : comportement historique du collage.
+        function _spMassPasteToutDansBloc(bloc, opts) {
+            var etat = _spMassPasteEtat;
+            var ancien = etat.remplacer ? '' : (bloc.text || '');
+            var nouveau = ancien + etat.texte;
+            bloc.set('text', nouveau);
+            bloc.styles = {};
+            _spMassPastePreparerBloc(bloc, opts);
+            _spMassPasteFinaliserBloc(bloc);
+            if (bloc.hiddenTextarea) bloc.hiddenTextarea.value = nouveau;
+            try {
+                var pos = nouveau.length;
+                bloc.selectionStart = bloc.selectionEnd = pos;
+                if (bloc.hiddenTextarea) bloc.hiddenTextarea.selectionStart = bloc.hiddenTextarea.selectionEnd = pos;
+            } catch (_) {}
+        }
+
+        // Mode « couler » : repartit le texte sur des pages chainees. Chaque bloc
+        // ne recoit JAMAIS plus que sa capacite : le wrapping reste borne, donc
+        // le cout est lineaire quel que soit le volume colle.
+        // Attend que les canvas Fabric attendus soient montes et charges.
+        // Necessaire avant toute ecriture : saveAllPages() sort sans rien faire
+        // des qu'un canvas est encore en cours de chargement JSON.
+        async function _spMassPasteAttendreCanvases(jusqua) {
+            for (var essai = 0; essai < 240; essai++) {
+                var pret = true;
+                for (var i = 0; i <= jusqua; i++) {
+                    var c = canvases[i];
+                    if (!c || !c.lowerCanvasEl || c._isLoading) { pret = false; break; }
+                }
+                if (pret) return true;
+                await new Promise(function (r) { setTimeout(r, 50); });
+            }
+            return false;
+        }
+
+        // Compte le nombre REEL de pages necessaires, avec les memes regles que le
+        // coulage (meme taille de bloc, meme algorithme de coupure). Sert a creer
+        // exactement le bon nombre de pages : une extrapolation lineaire laissait
+        // des pages vides en fin de coulage.
+        function _spMassPasteCompterPages(texte, opts) {
+            var ref = _spMassPasteTailleRef();
+            var canvas = (typeof getActiveCanvas === 'function') ? getActiveCanvas() : null;
+            if (!canvas) canvas = canvases[0];
+            if (!canvas || !texte) return 1;
+            var probe = new fabric.Textbox('', {
+                left: -10000, top: -10000, width: ref.w, height: ref.h,
+                fontSize: (opts && opts.corps) || 12, fontFamily: 'Open Sans', lineHeight: (opts && opts.interligne) || 1.3,
+                splitByGrapheme: false, breakWords: true, objectCaching: false
+            });
+            probe._fixedWidth = ref.w;
+            probe._fixedHeight = ref.h;
+            probe._maxTextHeight = ref.h;
+            canvas.add(probe);
+            var cap = Math.max(200, _spMassPasteCapacitePage(opts && opts.corps, opts && opts.interligne));
+            var cursor = 0;
+            var n = 0;
+            while (cursor < texte.length && n < 10000) {
+                var fenetre = Math.min(texte.length - cursor, Math.ceil(cap * 2));
+                var idx = getFittingTextIndex(probe, texte.slice(cursor, cursor + fenetre));
+                cursor += (idx > 0 ? idx : 1);
+                n++;
+            }
+            canvas.remove(probe);
+            return Math.max(1, n);
+        }
+
+        // Mode « couler » : repartit le texte sur des pages chainees.
+        //
+        // 🔑 ARCHITECTURE DE CETTE APPLICATION. Chaque changement de page
+        //    reconstruit TOUS les canvas (goToPage -> renderAllPages ->
+        //    deepCleanupCanvas + innerHTML = '' + loadFromJSON). Une boucle qui
+        //    appellerait ensureNextPageCanvas() page par page est donc a la fois
+        //    tres lente (O(n^2), mesure 47,7 s pour 153 pages) et DESTRUCTRICE :
+        //    mesure du defaut, seules la premiere et la derniere page gardaient
+        //    leur bloc, les 151 autres etaient ecrasees avant d'avoir pu etre
+        //    serialisees dans pages[]. On procede donc en trois temps :
+        //      1. creer d'un coup toutes les pages necessaires (un seul rendu) ;
+        //      2. remplir les canvas sans JAMAIS changer de page ;
+        //      3. persister une seule fois, puis re-rendre.
+        async function _spMassPasteCouler(bloc, opts) {
+            var etat = _spMassPasteEtat;
+            var texte = etat.texte;
+            var ref = _spMassPasteTailleRef();
+            var wRef = ref.w;
+            var hRef = ref.h;
+            var depart = canvases.indexOf(etat.canvas || bloc.canvas);
+            if (depart < 0) depart = (typeof getCurrentPageIndex === 'function') ? getCurrentPageIndex() : 0;
+            if (depart < 0) depart = 0;
+            // Garde large : un coulage normal ne doit JAMAIS etre tronque.
+            var maxPages = Math.max(1, Math.min(10000, Math.ceil(etat.pagesEstimees * 3) + 10));
+            var reste = texte;
+            var page = 0;
+            var pageEchec = false;
+            var courant = bloc;
+            var garde = window._spRedistributingChain;
+            // Neutralise les reflows parasites declenches par les evenements
+            // 'changed' pendant la construction de la chaine.
+            window._spRedistributingChain = true;
+            // 🛡️ FIX 2026-09-14 — HAUTEUR DE REFERENCE DE LA CHAINE.
+            //   Un listener du canvas pose _fixedHeight = hauteur du bloc AU
+            //   MOMENT de son ajout. Or les blocs sont ajoutes VIDES : ils
+            //   recevaient _fixedHeight = 13,56 px (une ligne), valeur qui
+            //   l'emporte sur _maxTextHeight dans getFittingTextIndex. Mesure du
+            //   defaut : page 1 = 48 caracteres au lieu de ~1 300. On impose donc
+            //   la meme hauteur et la meme largeur de reference a toute la chaine.
+            var imposer = function (b) {
+                if (!b) return;
+                b._fixedWidth = wRef;
+                b._fixedHeight = hRef;
+                b._maxTextHeight = hRef;
+                b.width = wRef;
+                b.height = hRef;
+            };
+            try {
+                // ── 1. Creer d'un coup toutes les pages necessaires ────────
+                //   ⚠️ renderAllPages() DETRUIT tous les canvas et les
+                //   reconstruit depuis pages[]. Le bloc de travail devient
+                //   alors ORPHELIN. Mesure du defaut : en preparant le bloc
+                //   AVANT cette etape, la page de depart restait vide et
+                //   1 283 caracteres etaient perdus (total persiste 18 717
+                //   au lieu de 20 000). On persiste donc l'etat, on cree les
+                //   pages, on rend, PUIS on recupere le bloc reconstruit.
+                try { saveAllPages(true); } catch (_) {}
+                // Comptage EXACT : un passage a blanc, sans rien ecrire, donne le
+                // nombre reel de pages (l'extrapolation lineaire laissait 3 pages
+                // vides en fin de coulage).
+                var besoin = Math.min(maxPages, _spMassPasteCompterPages(texte, opts) + 1);
+                var aCreer = (depart + besoin) - pages.length;
+                if (aCreer > 0) {
+                    for (var k = 0; k < aCreer; k++) createNewPage();
+                    try { saveAllPages(true); } catch (_) {}
+                    renderAllPages();
+                    await _spMassPasteAttendreCanvases(pages.length - 1);
+                }
+
+                // ── 2. Recuperer le bloc de depart sur le canvas reconstruit
+                courant = bloc;
+                if (canvases[depart]) {
+                    var textesDepart = canvases[depart].getObjects().filter(function (o) {
+                        return typeof o.text === 'string';
+                    });
+                    if (textesDepart.length) courant = textesDepart[textesDepart.length - 1];
+                }
+                courant.set('text', '');
+                courant.styles = {};
+                _spMassPastePreparerBloc(courant, opts);
+                imposer(courant);
+
+                // ── 3. Remplir les blocs, sans jamais changer de page ──────
+                var idx0 = getFittingTextIndex(courant, reste);
+                var coupe0 = idx0 > 0 ? idx0 : 1;
+                if (coupe0 > reste.length) coupe0 = reste.length;
+                courant.set('text', reste.slice(0, coupe0));
+                courant.styles = {};
+                _spMassPastePreparerBloc(courant, opts);
+                _spMassPasteFinaliserBloc(courant);
+                imposer(courant);
+                reste = reste.slice(coupe0);
+                page = 1;
+                _spMassPasteProgres(page, reste.length, texte.length);
+
+                while (reste.length > 0 && page < maxPages) {
+                    if (etat.annule) break;
+                    var cible = depart + page;
+                    // Filet de securite : lots supplementaires si l'estimation
+                    // initiale s'est revelee trop basse (styles varies).
+                    if (!canvases[cible] || !canvases[cible].lowerCanvasEl) {
+                        var lot = Math.min(10, maxPages - page);
+                        for (var m = 0; m < lot; m++) createNewPage();
+                        try { saveAllPages(true); } catch (_) {}
+                        renderAllPages();
+                        var ok = await _spMassPasteAttendreCanvases(pages.length - 1);
+                        if (!ok || !canvases[cible]) { pageEchec = true; break; }
+                    }
+                    var cvCible = canvases[cible];
+                    var nouveauBloc = createTextBoxLike(courant, cvCible);
+                    if (!opts.marges) { nouveauBloc.left = courant.left; nouveauBloc.top = courant.top; }
+                    nouveauBloc.setCoords();
+                    _spMassPastePreparerBloc(nouveauBloc, opts);
+                    imposer(nouveauBloc);
+                    var idxN = getFittingTextIndex(nouveauBloc, reste);
+                    var coupeN = idxN > 0 ? idxN : 1;
+                    if (coupeN > reste.length) coupeN = reste.length;
+                    nouveauBloc.set('text', reste.slice(0, coupeN));
+                    nouveauBloc.styles = {};
+                    _spMassPastePreparerBloc(nouveauBloc, opts);
+                    _spMassPasteFinaliserBloc(nouveauBloc);
+                    imposer(nouveauBloc);
+                    linkTextBoxes(courant, nouveauBloc, cible);
+                    courant = nouveauBloc;
+                    reste = reste.slice(coupeN);
+                    page++;
+                    _spMassPasteProgres(page, reste.length, texte.length);
+                    // Rend la main a l'interface entre deux pages (pas de gel).
+                    await new Promise(function (r) { setTimeout(r, 0); });
+                }
+
+                // ── 4. Conserver, persister, re-rendre ─────────────────────
+                // Quoi qu'il arrive (arret demande, garde atteinte, page
+                // impossible), le texte restant reste dans le dernier bloc :
+                // aucune perte de contenu.
+                if (reste.length > 0) {
+                    courant.set('text', (courant.text || '') + reste);
+                    _spMassPastePreparerBloc(courant, opts);
+                    _spMassPasteFinaliserBloc(courant);
+                    imposer(courant);
+                }
+                try { saveAllPages(true); } catch (_) {}
+                try { renderAllPages(); } catch (_) {}
+                return { pages: page, reste: reste.length, annule: etat.annule, pageEchec: pageEchec };
+            } finally {
+                window._spRedistributingChain = garde;
+            }
+        }
+
+        async function _spMassPasteValider() {
+            var etat = _spMassPasteEtat;
+            if (!etat || etat.enCours) return;
+            var modal = document.getElementById('spMassPasteModal');
+            var mode = 'bloc';
+            if (modal) {
+                var radios = modal.querySelectorAll('input[name="spMassPasteMode"]');
+                for (var i = 0; i < radios.length; i++) if (radios[i].checked) mode = radios[i].value;
+            }
+            var val = function (id) { var el = document.getElementById(id); return el ? el.value : ''; };
+            var coche = function (id) { var el = document.getElementById(id); return !!(el && el.checked); };
+            var opts = {
+                aplatir: coche('spMassPasteAplatir'),
+                typo: coche('spMassPasteTypo'),
+                corps: parseFloat(val('spMassPasteCorps')) || etat.corps,
+                interligne: parseFloat(val('spMassPasteInterligne')) || 1.3,
+                justifie: coche('spMassPasteJustifie'),
+                cesure: coche('spMassPasteCesure'),
+                marges: coche('spMassPasteMarges'),
+                retrait1: mmToPx(parseFloat(val('spMassPasteRetrait1')) || 0),
+                retraitG: mmToPx(parseFloat(val('spMassPasteRetraitG')) || 0),
+                retraitD: mmToPx(parseFloat(val('spMassPasteRetraitD')) || 0)
+            };
+            etat.enCours = true;
+            var conf = document.getElementById('spMassPasteConfirm');
+            var canc = document.getElementById('spMassPasteCancel');
+            if (conf) { conf.disabled = true; conf.textContent = 'Collage…'; }
+            if (canc) canc.textContent = 'Arreter';
+            var bloc = etat.bloc;
+            try {
+                if (mode === 'couler') {
+                    var res = await _spMassPasteCouler(bloc, opts);
+                    _spMassPasteFermer();
+                    var msg = res.annule
+                        ? ('Collage arrete : ' + res.pages + ' page(s) remplie(s).')
+                        : ('Texte coule sur ' + res.pages + ' page(s) chainees.');
+                    if (window.spToast) window.spToast(msg, res.annule ? 'info' : 'success', 5000);
+                } else {
+                    _spMassPasteToutDansBloc(bloc, opts);
+                    _spMassPasteFermer();
+                    if (window.spToast) window.spToast('Texte colle dans le bloc.', 'success', 4000);
+                }
+                try { saveState('Collage de texte volumineux'); } catch (_) {}
+                if (bloc.canvas) bloc.canvas.requestRenderAll();
+                try { debouncedUpdateLayersPanel(); } catch (_) {}
+            } catch (err) {
+                console.error('[mass-paste]', err);
+                if (window.spToast) window.spToast('Le collage a echoue : ' + (err && err.message ? err.message : err), 'error', 6000);
+            } finally {
+                etat.enCours = false;
+                if (conf) { conf.disabled = false; conf.textContent = 'Coller'; }
+                if (canc) canc.textContent = 'Annuler';
+            }
+        }
+
+        function _spMassPasteInstaller() {
+            if (window._spMassPastePaste) return;
+            window._spMassPastePaste = true;
+            // CAPTURE sur document : on passe avant le handler de Fabric pour
+            // pouvoir annuler le collage et proposer les options AVANT que les
+            // 600 000 caracteres ne soient injectes dans le bloc.
+            document.addEventListener('paste', function (e) {
+                try {
+                    if (e.defaultPrevented) return;
+                    var bloc = _spMassPasteBlocCourant();
+                    if (!bloc) return;
+                    var dt = e.clipboardData;
+                    if (!dt) return;
+                    var brut = dt.getData('text/plain') || '';
+                    if (brut.length < _spMassPasteSeuil) return;   // petit collage : inchange
+                    e.preventDefault();
+                    e.stopPropagation();
+                    _spMassPasteOuvrir(brut, bloc);
+                } catch (err) {
+                    console.warn('[mass-paste] interception', err);
+                }
+            }, true);
+        }
+
+        try { _spMassPasteInstaller(); } catch (_) {}
+
         // ===== Pré-visualisation coulage texte (estimation pages) =====
         function estimatePagesForText(text, fontSize) {
     // Crée un textbox offscreen pour mesurer combien de texte tient par page
@@ -34990,11 +35612,36 @@ if (window._spGpuEnabled) {
     });
     probe._maxTextHeight = boxHeight;
     canvas.add(probe);
+    // 🚀 v1.7.413 — FLUIDIFICATION DE L'ESTIMATION.
+    //   Avant, chaque page re-mesurait tout le texte RESTANT : 200 pages =
+    //   200 recherches, chacune demarrant sur ~600 000 caracteres.
+    //   On borne desormais la tranche examinee : l'estimation de la
+    //   capacite du bloc est calculée une fois, puis chaque page ne
+    //   decoupe qu'une tranche de la taille de cette capacite.
     const totalLen = text.length;
     let cursor = 0;
     let pagesEst = 0;
+    // Capacite estimee du bloc (en caracteres), mesuree une seule fois.
+    let capaciteEstimee = 0;
+    {
+        const probeTranche = text.slice(0, 4000);
+        probe.text = probeTranche;
+        probe.width = boxWidth;
+        probe._clearCache();
+        probe.initDimensions();
+        const hT = probe.calcTextHeight();
+        if (hT > 0 && isFinite(hT)) {
+            capaciteEstimee = Math.max(200, Math.floor(probeTranche.length * boxHeight / hT));
+        } else {
+            capaciteEstimee = 2000;
+        }
+        probe.text = '';
+    }
     while (cursor < totalLen && pagesEst < 10000) { // guard
-        const chunk = text.slice(cursor);
+        // On ne presente JAMAIS plus de 2x la capacite estimee au bloc :
+        // la recherche binaire reste bornee quel que soit le volume total.
+        const fenetre = Math.min(totalLen - cursor, Math.ceil(capaciteEstimee * 2));
+        const chunk = text.slice(cursor, cursor + fenetre);
         const idx = getFittingTextIndex(probe, chunk);
         if (idx === 0) {
             // ensure progress: take at least one char
@@ -47730,7 +48377,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260914-v412-pipette-couleurs';
+                s.src = 'JS/sp-doc-import.js?v=20260914-v413-collage-masse';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous

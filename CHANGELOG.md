@@ -9,6 +9,52 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.413] — 2026-09-14
+
+_Bulk paste: the interface no longer freezes, and pasting hundreds of pages now offers layout options_
+
+### Fixed
+- **The interface froze after chaining about three pages of pasted text.** Measured first — and the reported cause turned out **not** to be the culprit: there is **no `getData('text/html')` anywhere in the code**, so Word styles never reach a text block through Ctrl+V. The real cause is the **cost of text wrapping**, which is strongly super-linear. Measured on a 300 × 400 px block in Open Sans 14 pt (`initDimensions()`):
+
+  | Characters | Time |
+  |---|---|
+  | 1,000 | 1.9 ms |
+  | 20,000 | 17.6 ms |
+  | 50,000 | 45.8 ms |
+  | 120,000 | 1,130 ms |
+  | 300,000 | 8,270 ms |
+
+  The binary search for the cut point started at `fullText.length / 2`: for 600,000 characters (about 200 Word pages) the **first** probe alone measured 300,000 characters (~8 s) in a block that only holds about 2,500. Multiplied by ~20 probes and by the number of blocks, the interface froze.
+- **Fixed — the search window is now bounded.** A single 4,000-character probe estimates the block capacity, then the binary search runs inside roughly 1.6× that capacity, widening and retrying (at most six times) if the bound is reached. A final linear climb recovers the **exact** cut point, because line height steps by whole lines and therefore defeats a binary search.
+- **`splitTextToFit` no longer measures the whole text first** ("does everything fit?"). At 600,000 characters that single test cost about 40 s before pagination had even started.
+- **`estimatePagesForText` no longer re-measures the remaining text on every page.** The block capacity is estimated once and only a bounded window is ever sliced.
+
+### Added — bulk paste options
+Pasting more than 3,000 characters into a text block now opens a **bulk paste panel before anything is inserted**, offering:
+- **Style breaker** (flatten styles) — measured: per-character styles slow wrapping down by **2.9×**;
+- **Typography** — body size, leading, justification, hyphenation;
+- **Distribution** — everything in this block, or **flow across chained pages**, with pages and linked blocks created automatically;
+- **Automatic document margins** for every new block;
+- **Paragraph indents** — first line, left, right;
+- **Live progress bar with a stop button**, plus a preview of the text.
+
+### Verified
+| Check | Result |
+|---|---|
+| `getFittingTextIndex`, 200,000 characters | **47 ms** (was: several seconds — the first probe alone measured 100,000) |
+| Cut-point accuracy vs the unbounded reference | **identical** (six block sizes, 8–30 pt); the returned index always fits and index + 1 never does |
+| Chained reflow, 4 blocks, 20,000 characters | **88 ms** (was 299 ms) |
+| Chained reflow, 4 blocks, 50,000 characters | **77 ms** (was 547 ms) |
+| Chained reflow, 4 blocks, 200,000 characters | **59 ms** (previously unusable) |
+| Flow, 200,000 characters into **153 pages** | **13.95 s**, **0 characters lost**, **1 trailing empty page** |
+| "Everything in this block", 20,000 characters | **645 ms** |
+| Small paste (500 characters) | **not intercepted** — normal paste untouched |
+| Progress / stop | page counter and percentage update live; stopping keeps the remaining text in the last block |
+
+- Three further defects were found and fixed while measuring: new blocks inherited a `_fixedHeight` of **13.56 px** (an empty block's height), which overrode `_maxTextHeight` — page 1 received 1,072 characters while every later page received **48**; `renderAllPages()` destroys every canvas, so the departure block was orphaned (1,283 characters lost, first page empty); and flowing one page at a time meant only the **first and last** pages kept their content.
+- `node --check` clean on both copies, web/mirror parity **14/14**, **13/13** live version markers coherent, no live residue, package regenerated (**56,309,703 bytes**) and verified by extraction.
+- Cache: JS `20260913-v413-collage-masse` · shared module `20260914-v413-collage-masse` · service worker `superprint-shell-v1.7.413-no-whatsapp` (app **and** root).
+
 ## [1.7.412] — 2026-09-14
 
 _Colour picker on Safari: the window now opens under the eyedropper button instead of the bottom-left of the screen_

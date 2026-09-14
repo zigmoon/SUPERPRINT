@@ -705,6 +705,49 @@ footer, footer a { color: var(--after-text-color); }
 <main>
 <section class="releases" aria-label="Release notes">
 
+<!-- ===== SUPER PRINT v1.7.413 — collage de masse : fluidification + options ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-413">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.413</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 14 septembre 2026" data-i18n-en="Released September 14, 2026" data-i18n-jp="2026年9月14日公開">Released September 14, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Coller 200 pages de texte ne fige plus l'interface, et SuperPrint propose désormais des <strong>options de mise en page</strong> au moment du collage." data-i18n-en-html="Pasting 200 pages of text no longer freezes the interface, and SuperPrint now offers <strong>layout options</strong> as you paste." data-i18n-jp-html="200 ページのテキストを貼り付けても画面が固まらなくなり、貼り付け時に<strong>レイアウトのオプション</strong>を選べるようになりました。">Pasting 200 pages of text no longer freezes the interface, and SuperPrint now offers <strong>layout options</strong> as you paste.</p>
+
+ <h3>🐌 Pourquoi l'interface se figeait <span class="badge badge-fix">corrigé</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Contrairement à ce que l'on pouvait supposer, ce ne sont <strong>pas les styles de Word</strong> : SuperPrint ne lit jamais le HTML du presse-papiers, uniquement le texte brut. La vraie cause est le <strong>coût du retour à la ligne</strong>, qui explose avec le volume. Mesure sur un bloc de 300 × 400 px : 20 000 caractères coûtent 17 ms, 120 000 en coûtent 1 130, et 300 000 en coûtent 8 270." data-i18n-en-html="Contrary to the natural assumption, it was <strong>not Word styles</strong>: SuperPrint never reads HTML from the clipboard, only plain text. The real cause is the <strong>cost of line wrapping</strong>, which explodes with volume. Measured on a 300 × 400 px block: 20,000 characters cost 17 ms, 120,000 cost 1,130, and 300,000 cost 8,270." data-i18n-jp-html="原因は <strong>Word の書式ではありません</strong>。SuperPrint はクリップボードの HTML を読まず、プレーンテキストだけを扱います。実際の原因は<strong>行折り返しのコスト</strong>が分量とともに急増することです。300 × 400 px のブロックでの実測：20,000 文字で 17 ms、120,000 文字で 1,130 ms、300,000 文字で 8,270 ms。">It was <strong>not Word styles</strong>: SuperPrint only reads plain text. The real cause is the <strong>cost of line wrapping</strong>, which explodes with volume.</li>
+  <li data-i18n-fr-html="La recherche du point de coupure démarrait à la moitié du texte : sur 600 000 caractères, le tout premier essai mesurait 300 000 caractères, soit 8 secondes, pour un bloc qui n'en contient que 2 500. La recherche est désormais <strong>bornée à la capacité réelle du bloc</strong>." data-i18n-en-html="The search for the cut point started halfway through the text: with 600,000 characters the very first probe measured 300,000 characters — eight seconds — for a block that only holds 2,500. The search is now <strong>bounded by the block's real capacity</strong>." data-i18n-jp-html="改行位置の探索がテキストの中央から始まっていました。600,000 文字では最初の試行だけで 300,000 文字（約 8 秒）を測定し、ブロックに入るのは 2,500 文字だけでした。現在は<strong>ブロックの実際の容量内に限定</strong>しています。">The cut-point search started halfway through the text. It is now <strong>bounded by the block's real capacity</strong>.</li>
+  <li data-i18n-fr-html="Résultat mesuré : 200 000 caractères analysés en <strong>47 ms</strong> au lieu de plusieurs secondes, et un chaînage de blocs <strong>deux à quatre fois plus rapide</strong>." data-i18n-en-html="Measured result: 200,000 characters analysed in <strong>47 ms</strong> instead of several seconds, and block chaining <strong>two to four times faster</strong>." data-i18n-jp-html="実測結果：200,000 文字の解析が数秒から<strong>47 ms</strong>になり、ブロックの連鎖も<strong>2〜4 倍高速</strong>になりました。">Measured: 200,000 characters analysed in <strong>47 ms</strong> instead of several seconds, and chaining <strong>two to four times faster</strong>.</li>
+ </ul>
+
+ <h3>📋 Options de collage de masse <span class="badge badge-new">nouveau</span></h3>
+ <p data-i18n-fr-html="Au-delà de 3 000 caractères, une fenêtre s'ouvre <strong>avant</strong> l'insertion et propose :" data-i18n-en-html="Beyond 3,000 characters a panel opens <strong>before</strong> anything is inserted and offers:" data-i18n-jp-html="3,000 文字を超える場合は、挿入<strong>前</strong>にウィンドウが開き、次のオプションを選べます：">Beyond 3,000 characters a panel opens <strong>before</strong> anything is inserted and offers:</p>
+ <ul>
+  <li data-i18n-fr-html="<strong>Style breaker</strong> — aplatit les styles parasites du copier-coller. Mesure : des styles par caractère ralentissent le retour à la ligne de 2,9 ×." data-i18n-en-html="<strong>Style breaker</strong> — flattens stray copy-paste styles. Measured: per-character styles slow wrapping down by 2.9×." data-i18n-jp-html="<strong>スタイルブレーカー</strong> — 貼り付け時の余分なスタイルを平坦化します。実測：文字ごとのスタイルは折り返しを 2.9 倍遅くします。"><strong>Style breaker</strong> — flattens stray copy-paste styles (measured: 2.9× slower wrapping).</li>
+  <li data-i18n-fr-html="<strong>Typographie</strong> — corps, interligne, texte justifié et césure." data-i18n-en-html="<strong>Typography</strong> — body size, leading, justified text and hyphenation." data-i18n-jp-html="<strong>文字設定</strong> — 本文サイズ、行送り、両端揃え、ハイフネーション。"><strong>Typography</strong> — body size, leading, justification and hyphenation.</li>
+  <li data-i18n-fr-html="<strong>Répartition</strong> — tout dans le bloc, ou <strong>couler sur des pages chaînées</strong> : SuperPrint crée les pages et relie les blocs automatiquement." data-i18n-en-html="<strong>Distribution</strong> — everything in this block, or <strong>flow across chained pages</strong>: SuperPrint creates the pages and links the blocks automatically." data-i18n-jp-html="<strong>割り付け</strong> — このブロックにまとめるか、<strong>連鎖したページに流し込む</strong>か。ページの作成とブロックの連結は自動です。"><strong>Distribution</strong> — everything in this block, or <strong>flow across chained pages</strong>, created and linked automatically.</li>
+  <li data-i18n-fr-html="<strong>Marges automatiques</strong> du document pour chaque nouveau bloc." data-i18n-en-html="<strong>Automatic document margins</strong> for every new block." data-i18n-jp-html="新しいブロックごとに<strong>自動でドキュメントのマージン</strong>を適用。"><strong>Automatic document margins</strong> for every new block.</li>
+  <li data-i18n-fr-html="<strong>Retraits de paragraphe</strong> — première ligne, gauche, droite." data-i18n-en-html="<strong>Paragraph indents</strong> — first line, left, right." data-i18n-jp-html="<strong>段落インデント</strong> — 先頭行、左、右。"><strong>Paragraph indents</strong> — first line, left, right.</li>
+  <li data-i18n-fr-html="<strong>Barre de progression avec arrêt</strong>, et aperçu du texte." data-i18n-en-html="<strong>Progress bar with a stop button</strong>, plus a preview of the text." data-i18n-jp-html="<strong>進行バーと中止ボタン</strong>、テキストのプレビュー付き。"><strong>Progress bar with a stop button</strong>, plus a text preview.</li>
+ </ul>
+
+ <h3>✅ Résultats mesurés <span class="badge badge-new">vérifié</span></h3>
+ <ul>
+  <li data-i18n-fr-html="200 000 caractères coulés sur <strong>153 pages en 14 secondes</strong>, <strong>aucun caractère perdu</strong> et une seule page vide en fin de coulage." data-i18n-en-html="200,000 characters flowed onto <strong>153 pages in 14 seconds</strong>, with <strong>no characters lost</strong> and a single trailing empty page." data-i18n-jp-html="200,000 文字を <strong>153 ページに 14 秒</strong>で流し込み、<strong>欠落した文字はありません</strong>（末尾の空ページは 1 枚のみ）。">200,000 characters flowed onto <strong>153 pages in 14 seconds</strong>, with <strong>no characters lost</strong>.</li>
+  <li data-i18n-fr-html="Un petit collage (moins de 3 000 caractères) reste <strong>totalement inchangé</strong>." data-i18n-en-html="A small paste (under 3,000 characters) is <strong>completely unchanged</strong>." data-i18n-jp-html="小さな貼り付け（3,000 文字未満）は<strong>従来どおり</strong>です。">A small paste (under 3,000 characters) is <strong>completely unchanged</strong>.</li>
+  <li data-i18n-fr-html="Le point de coupure reste <strong>exact</strong> : vérifié sur six tailles de bloc et quatre corps de texte, le texte retenu tient toujours et un caractère de plus ne tient jamais." data-i18n-en-html="The cut point stays <strong>exact</strong>: checked across six block sizes and body sizes, the retained text always fits and one more character never does." data-i18n-jp-html="改行位置は<strong>正確</strong>なままです。6 種類のブロックサイズと複数の文字サイズで検証し、収まる最大値であることを確認しました。">The cut point stays <strong>exact</strong> across six block sizes and body sizes.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.413 — mesuré dans le navigateur. Trois défauts supplémentaires ont été trouvés et corrigés pendant ces mesures, dont des blocs ne recevant qu'une seule ligne et une première page vidée. Parité web/miroir 14/14, 13/13 marqueurs de version cohérents, pack de 56 309 703 octets vérifié par extraction." data-i18n-en="SuperPrint 1.7.413 — measured in the browser. Three further defects were found and fixed while measuring, including blocks receiving a single line and a first page emptied of its content. Web/mirror parity 14/14, 13/13 version markers coherent, 56,309,703-byte package verified by extraction." data-i18n-jp="SuperPrint 1.7.413 — ブラウザーで測定。検証中にさらに 3 件の不具合を発見・修正しました（1 行しか入らないブロック、1 ページ目が空になる問題など）。">Measured in the browser. Three further defects were found and fixed while measuring.</p>
+ <a class="release-cta" href="https://superprint.cc/app/index.html" data-i18n-fr="→ Ouvrir l'éditeur SuperPrint" data-i18n-en="→ Open SuperPrint Editor" data-i18n-jp="→ SuperPrintエディタを開く">→ Open SuperPrint Editor</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
+
 <!-- ===== SUPER PRINT v1.7.412 — pipette : fenetre Couleurs sous le bouton ===== -->
 
 <article class="release-block" data-app="superprint" id="superprint-v1-7-412">
