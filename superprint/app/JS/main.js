@@ -26443,7 +26443,370 @@ if (window._spGpuEnabled) {
     //   Fond / Contour en mode CMJN. Utilise l'API EyeDropper (Chrome/Edge).
     //   Récupère un hex à l'écran → le convertit en CMJN → applique aux sliders
     //   et à l'objet sélectionné. Fallback : message si EyeDropper indisponible.
-    function _pickCmykColorWithEyeDropper(channel) {
+    // ══════════════════════════════════════════════════════════════════
+    // 🎨 v1.7.412 — FENETRE « COULEURS » INTEGREE A SUPERPRINT.
+    //
+    //   POURQUOI ELLE EXISTE
+    //   L'API EyeDropper (une vraie pipette qui lit un pixel de l'ecran)
+    //   n'existe QUE sur Chromium. Sur Safari et Firefox l'application
+    //   ouvrait le selecteur NATIF du systeme. Sur macOS ce selecteur est
+    //   le panneau flottant « Couleurs », dont la position appartient au
+    //   systeme : MESURE UTILISATEUR, il s'ouvrait EN BAS A GAUCHE DE
+    //   L'ECRAN, tres loin du bouton clique.
+    //
+    //   On ouvre donc NOTRE fenetre, ancree SOUS la pipette — exactement
+    //   comme le carre de couleur de la barre laterale en mode RVB. Elle se
+    //   comporte pareil sur les 3 navigateurs, et le bouton
+    //   « Selecteur systeme… » laisse malgre tout acces au panneau macOS.
+    // ══════════════════════════════════════════════════════════════════
+    var _spCwEl = null;
+    var _spCwOuverte = false;
+    var _spCwPick = null;
+    var _spCwVersSysteme = null;
+    var _spCwHexDepart = '';
+    var _spCwH = 0, _spCwS = 0, _spCwV = 0;
+    var _spCwModifie = false;
+
+    // Nuancier par defaut de la fenetre (couleurs unies).
+    var _spCwNuancier = [
+        '#000000', '#FFFFFF', '#64748B', '#334155', '#0EA5E9', '#2563EB',
+        '#8B5CF6', '#EC4899', '#EF4444', '#F97316', '#EAB308', '#10B981'
+    ];
+
+    function _spCwBorne(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+    function _spCwNettoyer(v) {
+        var t = String(v == null ? '' : v).trim().toUpperCase();
+        if (!t) return null;
+        if (t.charAt(0) !== '#') t = '#' + t;
+        if (/^#[0-9A-F]{3}$/.test(t)) {
+            return '#' + t.charAt(1) + t.charAt(1) + t.charAt(2) + t.charAt(2) + t.charAt(3) + t.charAt(3);
+        }
+        return /^#[0-9A-F]{6}$/.test(t) ? t : null;
+    }
+
+    // hex -> { h: 0..360, s: 0..1, v: 0..1 }
+    function _spCwHexVersHsv(hex) {
+        var h6 = _spCwNettoyer(hex) || '#000000';
+        var r = parseInt(h6.substr(1, 2), 16) / 255;
+        var g = parseInt(h6.substr(3, 2), 16) / 255;
+        var b = parseInt(h6.substr(5, 2), 16) / 255;
+        var max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+        var h = 0;
+        if (d > 0) {
+            if (max === r) h = 60 * (((g - b) / d) % 6);
+            else if (max === g) h = 60 * (((b - r) / d) + 2);
+            else h = 60 * (((r - g) / d) + 4);
+        }
+        if (h < 0) h += 360;
+        return { h: h, s: (max === 0 ? 0 : d / max), v: max };
+    }
+
+    function _spCwHsvVersHex(h, s, v) {
+        h = ((h % 360) + 360) % 360;
+        var c = v * s;
+        var xx = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        var m = v - c;
+        var r = 0, g = 0, b = 0;
+        if (h < 60) { r = c; g = xx; }
+        else if (h < 120) { r = xx; g = c; }
+        else if (h < 180) { g = c; b = xx; }
+        else if (h < 240) { g = xx; b = c; }
+        else if (h < 300) { r = xx; b = c; }
+        else { r = c; b = xx; }
+        var o = function (n) {
+            var t = Math.round((n + m) * 255);
+            return (t < 16 ? '0' : '') + t.toString(16);
+        };
+        return ('#' + o(r) + o(g) + o(b)).toUpperCase();
+    }
+
+    // Ancre de la fenetre : le bouton REELLEMENT clique s'il est visible,
+    // sinon le premier controle VISIBLE de la barre laterale. On ne se fie
+    // JAMAIS a colorMode seul : en mode CMJN le groupe RVB est masque.
+    function _spPipetteAncre(channel, anchorEl) {
+        var visible = function (el) {
+            if (!el || !el.getBoundingClientRect) return false;
+            var r = el.getBoundingClientRect();
+            return !!(r && r.width > 1 && r.height > 1);
+        };
+        if (visible(anchorEl)) return anchorEl;
+        var cmyk = (typeof colorMode !== 'undefined' && colorMode === 'cmyk');
+        var ids = [];
+        if (cmyk) {
+            ids.push(channel === 'fill' ? 'cmykFillPickBtn' : 'cmykStrokePickBtn');
+            ids.push(channel === 'fill' ? 'cmykFillPreview' : 'cmykStrokePreview');
+        } else {
+            ids.push(channel === 'fill' ? 'rgbFillPickBtn' : 'rgbStrokePickBtn');
+        }
+        ids.push(channel === 'fill' ? 'blockFill' : 'blockStroke');
+        for (var i = 0; i < ids.length; i++) {
+            var el = document.getElementById(ids[i]);
+            if (visible(el)) return el;
+        }
+        return null;
+    }
+    window._spPipetteAncre = _spPipetteAncre;
+
+    // Feuille de style de la fenetre, injectee une seule fois.
+    function _spCwStyle() {
+        if (document.getElementById('spColorWindowStyle')) return;
+        var css = '';
+        css += '#spColorWindow{--cw-bg:#ffffff;--cw-bd:#d9d9d9;--cw-tx:#1a1a1a;--cw-in:#f5f5f5;';
+        css += 'position:fixed;z-index:100030;width:232px;display:none;background:var(--cw-bg);color:var(--cw-tx);';
+        css += 'border:1px solid var(--cw-bd);border-radius:0;box-shadow:0 20px 60px rgba(0,0,0,.3);';
+        css += 'font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.2;}';
+        css += '.theme-dark #spColorWindow{--cw-bg:#1c1c1f;--cw-bd:#343438;--cw-tx:#eaeaea;--cw-in:#26262a;}';
+        css += '#spColorWindow .cw-head{display:flex;align-items:center;justify-content:space-between;';
+        css += 'padding:7px 9px;border-bottom:1px solid var(--cw-bd);font-weight:600;letter-spacing:.3px;}';
+        css += '#spColorWindow .cw-close{background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:0 2px;}';
+        css += '#spColorWindow .cw-sv{position:relative;height:132px;margin:9px;cursor:crosshair;touch-action:none;}';
+        css += '#spColorWindow .cw-teinte,#spColorWindow .cw-blanc,#spColorWindow .cw-noir{position:absolute;inset:0;}';
+        css += '#spColorWindow .cw-blanc{background:linear-gradient(to right,#fff,rgba(255,255,255,0));}';
+        css += '#spColorWindow .cw-noir{background:linear-gradient(to top,#000,rgba(0,0,0,0));}';
+        css += '#spColorWindow .cw-cur{position:absolute;width:11px;height:11px;border:2px solid #fff;border-radius:50%;';
+        css += 'box-shadow:0 0 0 1px rgba(0,0,0,.6);transform:translate(-50%,-50%);pointer-events:none;}';
+        css += '#spColorWindow .cw-hue{display:block;width:calc(100% - 18px);margin:0 9px 9px;accent-color:#1a1a1a;}';
+        css += '.theme-dark #spColorWindow .cw-hue{accent-color:#eaeaea;}';
+        css += '#spColorWindow .cw-row{display:flex;align-items:center;gap:7px;padding:0 9px 9px;}';
+        css += '#spColorWindow .cw-prev{width:26px;height:26px;border:1px solid var(--cw-bd);flex:0 0 auto;}';
+        css += '#spColorWindow .cw-hex{flex:1;min-width:0;padding:5px 6px;border:1px solid var(--cw-bd);';
+        css += 'background:var(--cw-in);color:inherit;font:inherit;text-transform:uppercase;}';
+        css += '#spColorWindow .cw-swatches{display:flex;flex-wrap:wrap;gap:4px;padding:0 9px 9px;}';
+        css += '#spColorWindow .cw-sw{width:18px;height:18px;border:1px solid var(--cw-bd);padding:0;cursor:pointer;}';
+        css += '#spColorWindow .cw-foot{padding:7px 9px;border-top:1px solid var(--cw-bd);text-align:right;}';
+        css += '#spColorWindow .cw-sys{background:none;border:1px solid var(--cw-bd);color:inherit;font:inherit;';
+        css += 'cursor:pointer;padding:5px 8px;letter-spacing:.3px;}';
+        var st = document.createElement('style');
+        st.id = 'spColorWindowStyle';
+        st.textContent = css;
+        document.head.appendChild(st);
+    }
+
+    function _spCwPeindre(hex, depuisChamp) {
+        if (!_spCwEl) return;
+        var val = _spCwNettoyer(hex) || '#000000';
+        var q = function (sel) { return _spCwEl.querySelector(sel); };
+        var teinte = q('.cw-teinte'), cur = q('.cw-cur'), hue = q('.cw-hue');
+        var prev = q('.cw-prev'), he = q('.cw-hex');
+        if (teinte) teinte.style.background = 'hsl(' + Math.round(_spCwH) + ',100%,50%)';
+        if (cur) {
+            cur.style.left = (_spCwS * 100) + '%';
+            cur.style.top = ((1 - _spCwV) * 100) + '%';
+            cur.style.background = val;
+        }
+        if (hue && Math.round(parseFloat(hue.value) || 0) !== Math.round(_spCwH)) hue.value = String(Math.round(_spCwH));
+        if (prev) prev.style.background = val;
+        if (he && !depuisChamp && document.activeElement !== he) he.value = val;
+    }
+
+    function _spCwAppliquer(hex, majHsv, depuisChamp) {
+        var h6 = _spCwNettoyer(hex);
+        if (!h6) return;
+        if (majHsv) {
+            var v = _spCwHexVersHsv(h6);
+            _spCwH = v.h; _spCwS = v.s; _spCwV = v.v;
+        }
+        if (_spCwHexDepart && h6 !== _spCwHexDepart) _spCwModifie = true;
+        _spCwPeindre(h6, depuisChamp === true);
+        if (typeof _spCwPick === 'function') {
+            try { _spCwPick(h6); } catch (e) { console.warn('[Fenetre couleurs] application :', e); }
+        }
+    }
+
+    function _spCwValider() {
+        if (!_spCwModifie) return;
+        _spCwModifie = false;
+        try { if (typeof saveState === 'function') saveState('Couleur appliquée'); } catch (_) {}
+    }
+
+    // Replacement de la fenetre : SOUS l'ancre, bord droit aligne sur le sien
+    // (la barre laterale est collee au bord droit de la fenetre).
+    function _spCwPlacer(anchor) {
+        if (!_spCwEl) return;
+        var w = _spCwEl.offsetWidth || 232;
+        var h = _spCwEl.offsetHeight || 250;
+        var r = (anchor && anchor.getBoundingClientRect) ? anchor.getBoundingClientRect() : null;
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var left, top;
+        if (r && (r.width || r.height)) {
+            left = r.right - w;
+            if (left < 8) left = r.left;
+            top = r.bottom + 8;
+        } else {
+            left = Math.round(vw / 2 - w / 2);
+            top = 90;
+        }
+        left = Math.max(8, Math.min(left, vw - w - 8));
+        if (top + h > vh - 8) {
+            var dessus = (r ? r.top - h - 8 : 8);
+            top = (dessus >= 8) ? dessus : Math.max(8, vh - h - 8);
+        }
+        _spCwEl.style.left = Math.round(left) + 'px';
+        _spCwEl.style.top = Math.round(top) + 'px';
+    }
+
+    function _spCwFermer(valider) {
+        if (!_spCwEl || !_spCwOuverte) return;
+        _spCwEl.style.display = 'none';
+        _spCwOuverte = false;
+        if (valider) _spCwValider();
+        _spCwPick = null;
+    }
+
+    function _spCwConstruire() {
+        _spCwStyle();
+        var w = document.createElement('div');
+        w.id = 'spColorWindow';
+        w.setAttribute('role', 'dialog');
+        w.setAttribute('aria-label', 'Couleurs');
+
+        var head = document.createElement('div');
+        head.className = 'cw-head';
+        var t = document.createElement('span');
+        t.textContent = 'Couleurs';
+        var x = document.createElement('button');
+        x.type = 'button'; x.className = 'cw-close'; x.textContent = '×'; x.title = 'Fermer';
+        x.addEventListener('click', function () { _spCwFermer(false); });
+        head.appendChild(t); head.appendChild(x);
+        w.appendChild(head);
+
+        var sv = document.createElement('div');
+        sv.className = 'cw-sv';
+        var d1 = document.createElement('div'); d1.className = 'cw-teinte';
+        var d2 = document.createElement('div'); d2.className = 'cw-blanc';
+        var d3 = document.createElement('div'); d3.className = 'cw-noir';
+        var cur = document.createElement('span'); cur.className = 'cw-cur';
+        sv.appendChild(d1); sv.appendChild(d2); sv.appendChild(d3); sv.appendChild(cur);
+        w.appendChild(sv);
+
+        var hue = document.createElement('input');
+        hue.type = 'range'; hue.className = 'cw-hue';
+        hue.min = '0'; hue.max = '360'; hue.step = '1';
+        hue.setAttribute('aria-label', 'Teinte');
+        w.appendChild(hue);
+
+        var row = document.createElement('div');
+        row.className = 'cw-row';
+        var prev = document.createElement('span'); prev.className = 'cw-prev';
+        var hex = document.createElement('input');
+        hex.type = 'text'; hex.className = 'cw-hex'; hex.maxLength = 7; hex.spellcheck = false;
+        hex.setAttribute('aria-label', 'Code couleur hexadecimal');
+        row.appendChild(prev); row.appendChild(hex);
+        w.appendChild(row);
+
+        var sws = document.createElement('div');
+        sws.className = 'cw-swatches';
+        _spCwNuancier.forEach(function (c) {
+            var b = document.createElement('button');
+            b.type = 'button'; b.className = 'cw-sw'; b.style.background = c; b.title = c;
+            b.addEventListener('click', function () { _spCwAppliquer(c, true); _spCwValider(); });
+            sws.appendChild(b);
+        });
+        w.appendChild(sws);
+
+        var foot = document.createElement('div');
+        foot.className = 'cw-foot';
+        var sys = document.createElement('button');
+        sys.type = 'button'; sys.className = 'cw-sys'; sys.textContent = 'Sélecteur système…';
+        sys.title = 'Ouvrir le selecteur de couleurs du systeme';
+        sys.addEventListener('click', function () {
+            var f = _spCwVersSysteme;
+            _spCwFermer(true);
+            if (typeof f === 'function') { try { f(); } catch (e) { console.warn('[Fenetre couleurs] systeme :', e); } }
+        });
+        foot.appendChild(sys);
+        w.appendChild(foot);
+
+        // --- Zone saturation / luminosite
+        var glisser = false;
+        var depuisZone = function (e) {
+            var r = sv.getBoundingClientRect();
+            if (!r.width || !r.height) return;
+            _spCwS = _spCwBorne((e.clientX - r.left) / r.width, 0, 1);
+            _spCwV = 1 - _spCwBorne((e.clientY - r.top) / r.height, 0, 1);
+            _spCwAppliquer(_spCwHsvVersHex(_spCwH, _spCwS, _spCwV), false);
+        };
+        sv.addEventListener('pointerdown', function (e) {
+            glisser = true;
+            try { sv.setPointerCapture(e.pointerId); } catch (_) {}
+            depuisZone(e);
+            e.preventDefault();
+        });
+        sv.addEventListener('pointermove', function (e) { if (glisser) depuisZone(e); });
+        var relacher = function () { if (glisser) { glisser = false; _spCwValider(); } };
+        sv.addEventListener('pointerup', relacher);
+        sv.addEventListener('pointercancel', relacher);
+
+        hue.addEventListener('input', function () {
+            _spCwH = parseFloat(this.value) || 0;
+            _spCwAppliquer(_spCwHsvVersHex(_spCwH, _spCwS, _spCwV), false);
+        });
+        hue.addEventListener('change', function () { _spCwValider(); });
+
+        hex.addEventListener('input', function () {
+            var h6 = _spCwNettoyer(this.value);
+            if (!h6) return;
+            var v = _spCwHexVersHsv(h6);
+            _spCwH = v.h; _spCwS = v.s; _spCwV = v.v;
+            _spCwPeindre(h6, true);
+            _spCwAppliquer(h6, false, true);
+        });
+        hex.addEventListener('change', function () { _spCwValider(); });
+
+        document.body.appendChild(w);
+        w.style.display = 'none';
+        _spCwEl = w;
+
+        // Fermeture : clic a l'exterieur, touche Echap, redimensionnement.
+        // ⚠️ PAS de listener 'scroll' : sur Mac le trackpad en genere des
+        //    dizaines (inertie, rebond elastique) et fermerait la fenetre
+        //    aussitot ouverte (defaut deja rencontre sur la pop-in habillage).
+        if (!window.__spColorWindowInited) {
+            window.__spColorWindowInited = true;
+            document.addEventListener('mousedown', function (e) {
+                if (!_spCwOuverte || !_spCwEl) return;
+                if (_spCwEl.contains(e.target)) return;
+                _spCwFermer(true);
+            }, true);
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && _spCwOuverte) _spCwFermer(true);
+            });
+            window.addEventListener('resize', function () {
+                if (_spCwOuverte) _spCwPlacer(window.__spCwAncre);
+            });
+        }
+    }
+
+    // Ouvre la fenetre sous l'ancre, sur la couleur actuelle du champ.
+    // pick() est le callback de validation de la pipette (meme chemin que
+    // l'API EyeDropper : CMJN et RVB sont donc traites identiquement).
+    function _spOuvrirFenetreCouleurs(channel, anchor, hexInput, pick, versSysteme) {
+        if (!_spCwEl) _spCwConstruire();
+        _spCwPick = pick;
+        _spCwVersSysteme = versSysteme;
+        _spCwModifie = false;
+        var depart = '#000000';
+        try {
+            var v0 = (hexInput && hexInput.value) ? _spCwNettoyer(hexInput.value) : null;
+            if (v0) depart = v0;
+        } catch (_) {}
+        _spCwHexDepart = depart;
+        var v = _spCwHexVersHsv(depart);
+        _spCwH = v.h; _spCwS = v.s; _spCwV = v.v;
+        _spCwEl.style.display = 'block';
+        _spCwOuverte = true;
+        _spCwPeindre(depart, false);
+        var he = _spCwEl.querySelector('.cw-hex');
+        if (he) he.value = depart;
+        var ancre = _spPipetteAncre(channel, anchor);
+        window.__spCwAncre = ancre;
+        _spCwPlacer(ancre);
+        // ⚠️ On n'appelle PAS pick() ici : ouvrir la fenetre ne doit rien
+        //    changer au document (pick() leve aussi le drapeau « sans fond »).
+    }
+    window._spOuvrirFenetreCouleurs = _spOuvrirFenetreCouleurs;
+    function _pickCmykColorWithEyeDropper(channel, anchorEl) {
         const prefix = channel === 'fill' ? 'cmykFill' : 'cmykStroke';
         const hexInput = document.getElementById(channel === 'fill' ? 'blockFill' : 'blockStroke');
         const pick = function(hex) {
@@ -26455,8 +26818,20 @@ if (window._spGpuEnabled) {
             if (noneBtn) noneBtn.style.borderColor = '#e0e0e0';
             hexInput.value = hex;
             hexInput.style.opacity = '1';
-            if (colorMode === 'cmyk') _syncCmykSlidersFromRgb(channel);
-            _applyCmykSliders(channel);
+            // 🎨 v1.7.412 — MESURE DU DEFAUT : en mode RVB, _applyCmykSliders()
+            //   RECALCULAIT l'hex depuis les curseurs CMJN. Or aucune synchro
+            //   n'avait lieu (elle est reservee au mode CMJN), donc les
+            //   curseurs gardaient leurs valeurs par defaut 0/0/0/0 :
+            //   _cmykToHex(0,0,0,0) = #ffffff. La couleur relevee etait donc
+            //   REMPLACEE PAR DU BLANC des la validation de la pipette, en
+            //   mode RVB. En RVB on applique directement la couleur relevee.
+            if (colorMode === 'cmyk') {
+                _syncCmykSlidersFromRgb(channel);
+                _applyCmykSliders(channel);
+            } else {
+                applyColors();
+                updateColorInfo();
+            }
             const preview = document.getElementById(prefix + 'Preview');
             if (preview) preview.style.background = hex;
         };
@@ -26497,7 +26872,7 @@ if (window._spGpuEnabled) {
                 proxy.id = '_spPipetteProxy';
                 // ⚠️ L'input doit etre RENDU : 1x1 et TRANSPARENT (pas disable, pas
                 //    opacity:0, pas display:none) sinon WebKit n'ouvre rien.
-                proxy.style.cssText = 'position:fixed;width:1px;height:1px;padding:0;border:0;' +
+                proxy.style.cssText = 'position:fixed;width:24px;height:24px;padding:0;border:0;' +
                     'background:transparent;opacity:0.01;pointer-events:none;z-index:100020;';
                 proxy.setAttribute('aria-hidden', 'true');
                 proxy.tabIndex = -1;
@@ -26506,16 +26881,21 @@ if (window._spGpuEnabled) {
             // Valeur de depart : celle du canal, pour que le selecteur s'ouvre juste.
             if (hexInput && hexInput.value) proxy.value = hexInput.value;
             // Se positionner SUR LE BOUTON clique : le popover natif s'y ancrera.
-            var btnId = (typeof colorMode !== 'undefined' && colorMode === 'cmyk')
-                ? (channel === 'fill' ? 'cmykFillPickBtn' : 'cmykStrokePickBtn')
-                : (channel === 'fill' ? 'rgbFillPickBtn' : 'rgbStrokePickBtn');
-            var btn = document.getElementById(btnId);
+            // 🎨 v1.7.412 — MESURE DU DEFAUT : ce bloc ne positionnait le
+            //   champ QUE si la largeur du bouton etait non nulle. Des que le
+            //   bouton vise etait masque (largeur 0), left/top n'etaient
+            //   JAMAIS poses : l'element `position:fixed` restait a sa position
+            //   STATIQUE (dernier enfant du <body>), c'est-a-dire EN BAS A
+            //   GAUCHE DE L'ECRAN — exactement le defaut signale.
+            //   On positionne desormais TOUJOURS, sur une ancre choisie.
+            var btn = _spPipetteAncre(channel, anchorEl);
             if (btn) {
                 var r = btn.getBoundingClientRect();
-                if (r && r.width) {
-                    proxy.style.left = Math.round(r.left) + 'px';
-                    proxy.style.top  = Math.round(r.bottom) + 'px';
-                }
+                proxy.style.left = Math.round(r.left) + 'px';
+                proxy.style.top  = Math.round(r.bottom) + 'px';
+            } else {
+                proxy.style.left = Math.round(window.innerWidth / 2) + 'px';
+                proxy.style.top  = '120px';
             }
             // Un seul listener, pose une fois, retire apres usage.
             if (!proxy._spWire) {
@@ -26549,21 +26929,23 @@ if (window._spGpuEnabled) {
                     //    aucune explication.
                     if (err && (err.name === 'AbortError' || /abort/i.test(String(err.message || '')))) return;
                     console.warn('[Pipette] EyeDropper a échoué :', err);
-                    fallbackToNativePicker();
+                    // 🎨 v1.7.412 — on ouvre NOTRE fenetre, sous la pipette.
+                    _spOuvrirFenetreCouleurs(channel, anchorEl, hexInput, pick, fallbackToNativePicker);
                 });
             } else {
-                fallbackToNativePicker();
+                // 🎨 v1.7.412 — Safari / Firefox : PAS de panneau systeme.
+                _spOuvrirFenetreCouleurs(channel, anchorEl, hexInput, pick, fallbackToNativePicker);
             }
         } catch (e) {
             console.warn('[Pipette] EyeDropper indisponible :', e);
-            fallbackToNativePicker();
+            _spOuvrirFenetreCouleurs(channel, anchorEl, hexInput, pick, fallbackToNativePicker);
         }
     }
     window._pickCmykColorWithEyeDropper = _pickCmykColorWithEyeDropper;
     const cmykFillPickBtn = document.getElementById('cmykFillPickBtn');
-    if (cmykFillPickBtn) cmykFillPickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('fill'); });
+    if (cmykFillPickBtn) cmykFillPickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('fill', this); });
     const cmykStrokePickBtn = document.getElementById('cmykStrokePickBtn');
-    if (cmykStrokePickBtn) cmykStrokePickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke'); });
+    if (cmykStrokePickBtn) cmykStrokePickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke', this); });
 
     // 🎯 v1.7.341 (AUDIT retours utilisateurs) : rendre le CARRÉ de couleur
     //   (cmykFillPreview / cmykStrokePreview, à droite de Fond / Contour)
@@ -26574,13 +26956,13 @@ if (window._spGpuEnabled) {
     if (cmykFillPreview) {
         cmykFillPreview.style.cursor = 'pointer';
         cmykFillPreview.title = 'Pipette couleur (Fond)';
-        cmykFillPreview.addEventListener('click', function() { _pickCmykColorWithEyeDropper('fill'); });
+        cmykFillPreview.addEventListener('click', function() { _pickCmykColorWithEyeDropper('fill', this); });
     }
     const cmykStrokePreview = document.getElementById('cmykStrokePreview');
     if (cmykStrokePreview) {
         cmykStrokePreview.style.cursor = 'pointer';
         cmykStrokePreview.title = 'Pipette couleur (Contour)';
-        cmykStrokePreview.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke'); });
+        cmykStrokePreview.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke', this); });
     }
 
     // 🎯 v1.7.372 — PIPETTE EN MODE RVB.
@@ -26590,9 +26972,9 @@ if (window._spGpuEnabled) {
     //   (les inputs natifs du mode RVB) puis synchronise les sliders CMJN, donc
     //   elle est réutilisable telle quelle dans les deux modes.
     const rgbFillPickBtn = document.getElementById('rgbFillPickBtn');
-    if (rgbFillPickBtn) rgbFillPickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('fill'); });
+    if (rgbFillPickBtn) rgbFillPickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('fill', this); });
     const rgbStrokePickBtn = document.getElementById('rgbStrokePickBtn');
-    if (rgbStrokePickBtn) rgbStrokePickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke'); });
+    if (rgbStrokePickBtn) rgbStrokePickBtn.addEventListener('click', function() { _pickCmykColorWithEyeDropper('stroke', this); });
     
     // ══════════════════════════════════════════════════════════════════════
     // 🎯 CIBLE DU NUANCIER PANTONE : FOND ou CONTOUR.
@@ -47348,7 +47730,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260914-v411-grands-formats';
+                s.src = 'JS/sp-doc-import.js?v=20260914-v412-pipette-couleurs';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous

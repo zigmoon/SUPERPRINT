@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <img alt="App" src="https://img.shields.io/badge/app-1.7.411-000000?style=flat-square">
+  <img alt="App" src="https://img.shields.io/badge/app-1.7.412-000000?style=flat-square">
   <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.92-CB3837?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20%2B%20Pantone-E1237B?style=flat-square">
@@ -196,11 +196,11 @@ node tools/make-release-zip.mjs   # rebuild superprint/sp213-local.zip
 Every release is git-tagged `v1.7.NNN`, so two versions can be diffed directly:
 
 ```bash
-git log --oneline v1.7.400..v1.7.411      # what changed between two releases
-git diff v1.7.380 v1.7.411 --stat         # full diff between two
+git log --oneline v1.7.400..v1.7.412      # what changed between two releases
+git diff v1.7.380 v1.7.412 --stat         # full diff between two
 ```
 
-`release.html` holds the **complete trilingual (FR / EN / JP) release notes** — **129 entries** covering the whole family (91 for SuperPrint, spanning `1.7.92` → `1.7.411`) alongside the team's other applications. It is also published at [app.zigmoon.com/release.html](https://app.zigmoon.com/release.html). `CHANGELOG.md` is the condensed English version.
+`release.html` holds the **complete trilingual (FR / EN / JP) release notes** — **129 entries** covering the whole family (91 for SuperPrint, spanning `1.7.92` → `1.7.412`) alongside the team's other applications. It is also published at [app.zigmoon.com/release.html](https://app.zigmoon.com/release.html). `CHANGELOG.md` is the condensed English version.
 
 ---
 
