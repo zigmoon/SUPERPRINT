@@ -1356,6 +1356,26 @@ details[open] > .sp-summary::before { transform: rotate(90deg); }
     color: #fff;
     border-color: #111;
 }
+.assets-search {
+    margin-left: auto;
+    margin-right: 10px;
+    width: 230px;
+    max-width: 42vw;
+    padding: 7px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-family: inherit;
+    background: #fafafa;
+    color: #111;
+    outline: none;
+    transition: all 0.15s;
+}
+.assets-search::-webkit-search-cancel-button { cursor: pointer; }
+.assets-search:focus { border-color: #111; background: #fff; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
+.assets-search::placeholder { color: #9a9a9a; }
+.theme-dark .assets-search { background: #1e1e1e; border-color: #3a3a3a; color: #eee; }
+.theme-dark .assets-search:focus { border-color: #777; background: #242424; }
 .assets-grid-wrapper {
     flex: 1;
     overflow-y: auto;
@@ -1525,6 +1545,8 @@ details[open] > .sp-summary::before { transform: rotate(90deg); }
 
 .asset-card-lock {
     position: absolute;
+    /* 🆕 v1.7.441 — le badge doit passer au-dessus du dégradé d'aperçu */
+    z-index: 2;
     top: 8px;
     right: 8px;
     background: rgba(0, 0, 0, 0.85);

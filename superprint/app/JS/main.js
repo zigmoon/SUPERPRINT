@@ -61952,6 +61952,83 @@ canvas.requestRenderAll();
         }
     } catch (eImg) {}
 
+    // 🆕 v1.7.441 — RECHERCHE + FILTRE DE LANGUE DANS LA BIBLIOTHÈQUE.
+    //   Un seul point d'entrée : filtrer les cartes de chaque grille par texte (nom, description,
+    //   paire de fontes) ET par langue (boutons ALL / EN / FR / JA).
+    function applyAssetsFilter() {
+        try {
+            const champ = document.getElementById('assetsSearch');
+            const q = (champ && champ.value ? champ.value : '').trim().toLowerCase();
+            const btn = document.querySelector('.assets-lang-btn.active');
+            const lg = btn ? (btn.dataset.assetLang || 'all') : 'all';
+            let total = 0;
+            document.querySelectorAll('.assets-grid').forEach(function (grid) {
+                let visibles = 0;
+                Array.from(grid.children).forEach(function (card) {
+                    if (!card.classList || !card.classList.contains('asset-card')) return;
+                    const okLang = (lg === 'all') || ((card.dataset.lang || 'fr') === lg);
+                    const okTexte = !q || (card.textContent || '').toLowerCase().indexOf(q) >= 0;
+                    const ok = okLang && okTexte;
+                    card.style.display = ok ? '' : 'none';
+                    if (ok) visibles++;
+                });
+                let vide = grid.querySelector('.assets-vide-filtre');
+                if (!vide) {
+                    vide = document.createElement('div');
+                    vide.className = 'assets-empty assets-vide-filtre';
+                    grid.appendChild(vide);
+                }
+                vide.textContent = q ? ('Aucun résultat pour « ' + q + ' »') : 'Aucun modèle pour cette langue.';
+                vide.style.display = visibles === 0 ? 'block' : 'none';
+                total += visibles;
+            });
+            return total;
+        } catch (e) { return -1; }
+    }
+    window.applyAssetsFilter = applyAssetsFilter;
+    (function initAssetsRecherche() {
+        const champ = document.getElementById('assetsSearch');
+        if (champ) {
+            champ.addEventListener('input', applyAssetsFilter);
+            champ.addEventListener('search', applyAssetsFilter);
+            champ.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { champ.value = ''; applyAssetsFilter(); } });
+        }
+        document.querySelectorAll('.assets-lang-btn').forEach(function (b) {
+            b.addEventListener('click', function () {
+                document.querySelectorAll('.assets-lang-btn').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+                applyAssetsFilter();
+            });
+        });
+        const panneau = document.getElementById('trappeContent');
+        if (panneau) panneau.addEventListener('click', function () { setTimeout(applyAssetsFilter, 150); });
+        // 🆕 v1.7.441 — « ALL » par défaut : l'app réactive EN à l'initialisation, on repasse
+        //   la main à ALL pour que les modèles français soient visibles d'entrée.
+        function forcerTout() {
+            const bAll = document.querySelector('.assets-lang-btn[data-asset-lang="all"]');
+            if (!bAll) return;
+            document.querySelectorAll('.assets-lang-btn').forEach(function (x) { x.classList.remove('active'); });
+            bAll.classList.add('active');
+            applyAssetsFilter();
+        }
+        setTimeout(applyAssetsFilter, 800);
+        setTimeout(forcerTout, 1600);
+        setTimeout(forcerTout, 3200);
+        // 🆕 v1.7.441 — à chaque OUVERTURE du panneau (bouton Assets de la barre latérale),
+        //   l'app réactive la langue EN : on repasse sur ALL pour que les modèles français
+        //   soient visibles immédiatement.
+        try {
+            const btnAssets = document.querySelector('img[alt="Assets"]');
+            const bouton = btnAssets ? btnAssets.closest('button') : null;
+            if (bouton) {
+                bouton.addEventListener('click', function () {
+                    setTimeout(forcerTout, 350);
+                    setTimeout(forcerTout, 1400);
+                });
+            }
+        } catch (eBtn) {}
+    })();
+
     // Bouton fermer assets
     const trappeCloseBtn = document.getElementById('trappeCloseBtn');
     if (trappeCloseBtn) {
@@ -62244,7 +62321,7 @@ canvas.requestRenderAll();
             //   anglais réécrits (les anciens modèles FR des premières versions de
             //   SuperPrint ne sont plus listés ; ils seront re-créés en FR puis JA
             //   par duplication de ces 8 modèles).
-            .filter(({ comp }) => !!comp.spEn)
+            .filter(({ comp }) => (comp.spEn || comp.spFr))
             .sort((a, b) => {
                 const aName = a.comp?.name || '';
                 const bName = b.comp?.name || '';
@@ -62294,7 +62371,7 @@ canvas.requestRenderAll();
             // 🆕 v1.7.428 — VIGNETTE RÉELLE du modèle (SVG généré depuis son gabarit,
             //   sa palette et son titre) au lieu du placeholder générique : on voit
             //   enfin à quoi ressemble la maquette avant de l'ouvrir.
-            const _thumb = (comp.spEn && typeof window.spTemplateThumb === 'function') ? window.spTemplateThumb(comp) : '';
+            const _thumb = ((comp.spEn || comp.spFr) && typeof window.spTemplateThumb === 'function') ? window.spTemplateThumb(comp) : '';
             previewImg.src = _thumb || getPrintPlaceholderDataUri(comp.name || 'MAQUETTE');
             previewImg.style.objectFit = 'contain';
             previewImg.style.background = (comp.theme && comp.theme.bg) || '#fff';
@@ -62320,11 +62397,34 @@ canvas.requestRenderAll();
                 return true;
             }, desc, { locked: !!comp.locked, meta: [((comp.fonts || {}).display), ((comp.fonts || {}).text)].filter(Boolean).join(' \u00b7 ') });
             card.dataset.lang = comp.lang || 'fr';
+            // 🆕 v1.7.441 — badge PREMIUM sur les modèles premium (mais carte utilisable)
+            if (comp.premium && card) {
+                try {
+                    const bd = document.createElement('div');
+                    bd.className = 'asset-card-lock';
+                    bd.textContent = 'PREMIUM';
+                    const pv = card.querySelector('.asset-card-preview');
+                    if (pv) pv.appendChild(bd);
+                } catch (eB) {}
+            }
             compGrid.appendChild(card);
         });
 
         // --- ONGLET MAQUETTE PREMIUM (assets verrouillés) ---
-        const premiumGrid = document.querySelector('.assets-grid[data-content="premium"]');
+        // 🆕 v1.7.441 — ONGLET PREMIUM RETIRÉ (demande utilisateur) : les anciens modèles
+        //   premium verrouillés ne sont plus listés. Les nouveaux modèles premium
+        //   (maisons de luxe, rapport d'activité) vivent dans « Layouts » avec un badge.
+        const premiumGrid = null; /* ancienne grille premium désactivée */
+        try {
+            const ongletPremium = document.querySelector('.assets-tab[data-tab="premium"]');
+            if (ongletPremium) ongletPremium.style.display = 'none';
+            const grillePremium = document.querySelector('.assets-grid[data-content="premium"]');
+            if (grillePremium) grillePremium.style.display = 'none';
+            if (document.querySelector('.assets-tab.active[data-tab="premium"]')) {
+                const premier = document.querySelector('.assets-tab:not([data-tab="premium"])');
+                if (premier) premier.click();
+            }
+        } catch (ePrem) {}
         if (premiumGrid) {
             const premiumList = compListAll
                 .filter(({ comp }) => !!comp.locked)
@@ -71552,6 +71652,97 @@ function _npBuildLayout(params, keywords, lang) {
                 jalons: 'January::Second studio opens in Lyon with four people\nFebruary::Press certification process begins\nMarch::Signet rebrand delivered, three months early\nMay::First catalogue printed in Risograph\nJuly::The team reaches forty people\nSeptember::Two exhibitions designed and installed\nNovember::ISO 12647 press certification obtained\nDecember::Backlog reaches 6.4 months of work',
                 objectifs: 'Grow without adding noise::Two more people, no new studio\nPublish in-house::Four titles under our own imprint\nTrain what we know::An open course on print production\nCut travel::Remote-first client reviews'
             }
+        },
+        {
+            key: 'fr_magazine_habitat_luxe_24p', style: 'habitat', family: 'magazine', spreadDoc: true,
+            name: 'DemEures \u2014 Maisons de luxe (24p) [PREMIUM]', desc: 'Magazine habitat & maisons de luxe \u2014 24 pages en double page, photographies, plans et mati\u00e8res',
+            format: { width: 420, height: 560, spread: true, pages: 24 },
+            lang: 'fr', spFr: true, premium: true,
+            theme: { paper: '#f7f5f1', ink: '#1a1714', accent: '#8c6b3f', soft: '#e8e2d8', night: '#171412' },
+            fonts: { display: 'Playfair Display', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/habitat', nimg: 6,
+            c: {
+                mast: 'DEMEURES', tag: 'ARCHITECTURE \u00b7 INT\u00c9RIEURS \u00b7 ART DE VIVRE', issue: 'N\u00b0 12 \u00b7 HIVER 2027', price: '14 \u20ac',
+                head: 'Maisons de lumi\u00e8re',
+                stand: 'Douze demeures o\u00f9 le luxe se mesure en silence : mati\u00e8res nobles, lignes calmes, vues sans fin.',
+                coverlines: 'Villa sur la falaise\nAppartements de collection\nLe retour du marbre',
+                sections: ['Le dossier', 'Mati\u00e8res', 'Int\u00e9rieurs', 'Portraits', 'Adresses', 'Carnet'],
+                legs: ['Maisons de lumi\u00e8re', 'Six mati\u00e8res qui font une maison', 'Le retour du marbre', 'L\u2019architecte qui refuse le bruit', 'Adresses : douze lieux', 'Le carnet d\u2019hiver'],
+                quote: 'Le luxe n\u2019est pas ce qu\u2019on ajoute. C\u2019est ce qu\u2019on a su ne pas mettre.',
+                body: 'Il y a une fa\u00e7on de visiter une maison de luxe qui ne ressemble \u00e0 aucune autre : on n\u2019y regarde pas les meubles, on y \u00e9coute le silence. Les plus belles r\u00e9alisations de ce num\u00e9ro ont en commun une chose tr\u00e8s simple \u2014 on y entend la pierre, le bois, et parfois la mer.\n\nLes mati\u00e8res reviennent au premier plan. Le marbre, longtemps r\u00e9serv\u00e9 aux salles de bain monumentales, gagne les plans de travail, les t\u00eates de lit, les sols de s\u00e9jour. Le ch\u00eane brut, lui, ne quitte plus les cuisines.\n\nCe que ces maisons vendent n\u2019est pas une surface mais une mani\u00e8re de vivre : des pi\u00e8ces qui se traversent lentement, des ouvertures calcul\u00e9es pour que la lumi\u00e8re change de pi\u00e8ce au cours de la journ\u00e9e.',
+                caption: 'Photographi\u00e9 en Europe \u00b7 num\u00e9ro d\u2019hiver',
+                credits: 'Textes : C. Berthier \u00b7 Photographies : F. Heijnsbroek \u00b7 Plans : Studio Rijn',
+                dossiers: 'La villa sur la falaise::Pos\u00e9e sur un socle de b\u00e9ton brut, la maison semble avoir \u00e9t\u00e9 taill\u00e9e dans la roche. Rien ne d\u00e9passe : la piscine est creus\u00e9e, la terrasse est un prolongement du sol, et la mer est cadr\u00e9e comme un tableau.\n\nL\u2019architecte a pass\u00e9 deux ans \u00e0 chercher le bon niveau : trois marches plus bas, la vue dispara\u00eet derri\u00e8re la v\u00e9g\u00e9tation.\n\nAucun mat\u00e9riau n\u2019a \u00e9t\u00e9 import\u00e9 \u00e0 plus de cent kilom\u00e8tres du chantier.\n\nAppartements de collection::Six niveaux, six appartements, une seule adresse. Chaque niveau a \u00e9t\u00e9 confi\u00e9 \u00e0 un architecte diff\u00e9rent, avec une seule r\u00e8gle : ne pas toucher \u00e0 la fa\u00e7ade.\n\nLe r\u00e9sultat est une collection priv\u00e9e habit\u00e9e, o\u00f9 le marbre du troisi\u00e8me ne ressemble pas au marbre du quatri\u00e8me.\n\nLe retour du marbre::Longtemps associ\u00e9 aux halls d\u2019immeubles de bureau, le marbre revient dans les maisons par la cuisine.\n\nOn le choisit vein\u00e9, mat, et jamais brillant : le poli renvoie la lumi\u00e8re et fatigue plus qu\u2019il n\u2019illumine.\n\nLe carnet d\u2019hiver::Trois livres, deux expositions et un fauteuil. La s\u00e9lection de la r\u00e9daction pour les mois o\u00f9 l\u2019on reste chez soi.',
+                materiaux: 'Marbre de Carrare::Italie::Le plus clair, le plus froid. \u00c0 r\u00e9server aux pi\u00e8ces tr\u00e8s lumineuses.\nCh\u00eane bross\u00e9::France::Chauff\u00e9 et bross\u00e9 : il vieillit mieux que le verni.\nLaiton non verni::Allemagne::Il se patine l\u00e0 o\u00f9 on le touche. C\u2019est le but.\nB\u00e9ton banch\u00e9::Pays-Bas::Le bois du coffrage laisse ses veines dans la pierre.\nPierre de Bourgogne::France::Un calcaire tendre, pos\u00e9 en grandes dalles.\nVerre extra-clair::Belgique::Sans fer : presque invisible en bord de mer.',
+                adresses: 'Maison Rijn::Amsterdam::Une cour int\u00e9rieure de 40 m\u00b2 pour trois niveaux.\nVilla Hedstrom::New York::B\u00e9ton et verre, sur une ancienne digue.\nCap Karanteen::Bretagne::Un phare transform\u00e9, ouvert aux vents.\nAtelier du Marais::Paris::Six cents m\u00e8tres carr\u00e9s sur un seul niveau.',
+                chiffres: '412 m\u00b2::Surface habitable::La plus grande maison du num\u00e9ro\n9 m::Hauteur sous plafond::Dans le s\u00e9jour de la villa\n1 200 t::Pierre pos\u00e9e::Dont 80 t de marbre\n6 ans::Dur\u00e9e du chantier::Du premier croquis \u00e0 la livraison'
+            }
+        },
+        {
+            key: 'fr_magazine_recettes_12p', style: 'recettes', family: 'magazine', spreadDoc: false,
+            name: 'À Table \u2014 Cuisine fran\u00e7aise (12p)', desc: 'Magazine de recettes fran\u00e7aises \u2014 12 pages A4, une recette par page, pas à pas',
+            format: { width: 595, height: 842, pages: 12 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#fffdf9', ink: '#201a15', accent: '#b23a25', soft: '#f3ece2', night: '#201a15' },
+            fonts: { display: 'Playfair Display', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/recettes', nimg: 6,
+            c: {
+                mast: 'À TABLE', tag: 'CUISINE FRAN\u00c7AISE \u00b7 PAS \u00c0 PAS', issue: 'N\u00b0 08 \u00b7 AUTOMNE 2027', price: '6,50 \u20ac',
+                head: 'Les recettes qui font la France',
+                stand: 'Dix plats, dix fa\u00e7ons de faire. Rien d\u2019invent\u00e9 : les gestes tels qu\u2019ils se transmettent.',
+                coverlines: '', sections: ['Sommaire'], quote: '',
+                body: 'La cuisine fran\u00e7aise n\u2019est pas une collection de recettes, c\u2019est une collection de gestes. On les apprend par r\u00e9p\u00e9tition, jamais par lecture.',
+                caption: 'Recettes test\u00e9es en cuisine \u00b7 num\u00e9ro d\u2019automne',
+                credits: 'Recettes : M. Verdier \u00b7 Photographies : Wikimedia Commons \u00b7 Tests : Atelier 12',
+                recettes: [
+                    'B\u0153uf bourguignon::Le plat du dimanche, cuisin\u00e9 la veille::4 h 30::Facile::1,2 kg de b\u0153uf \u00e0 braiser, 150 g de lardons, 2 oignons, 3 carottes, 2 gousses d\u2019ail, 75 cl de vin rouge, 2 c. \u00e0 s. de farine, 1 bouquet garni, 250 g de champignons, sel, poivre::Couper la viande en gros cubes et la faire dorer dans une cocotte. R\u00e9server.|Faire revenir lardons, oignons et carottes, singer avec la farine, puis remettre la viande.|Mouiller au vin rouge, ajouter l\u2019ail et le bouquet garni, couvrir et laisser mijoter 4 heures.|Ajouter les champignons 30 minutes avant la fin, rectifier l\u2019assaisonnement.',
+                    'Ratatouille::Cuite \u00e0 feu doux, jamais saut\u00e9e::1 h 15::Facile::2 aubergines, 3 courgettes, 2 poivrons, 6 tomates, 2 oignons, 3 gousses d\u2019ail, thym, huile d\u2019olive, sel, poivre::Couper tous les l\u00e9gumes en cubes r\u00e9guliers.|Faire revenir chaque l\u00e9gume s\u00e9par\u00e9ment \u00e0 l\u2019huile d\u2019olive.|R\u00e9unir dans une cocotte avec les tomates, l\u2019ail et le thym.|Laisser compoter 45 minutes \u00e0 feu tr\u00e8s doux, \u00e0 d\u00e9couvert en fin de cuisson.',
+                    'Coq au vin::Un vin rouge qui vaut la peine::2 h 30::Moyen::1 coq de 2 kg, 200 g de lardons, 150 g de champignons, 2 oignons, 1 bouteille de vin rouge, 2 c. \u00e0 s. de farine, 1 branche de thym, sel, poivre::D\u00e9couper le coq et le faire mariner une nuit dans le vin.|\u00c9goutter, s\u00e9cher, faire dorer, puis singer.|Mouiller avec la marinade, ajouter lardons et aromates.|Cuire 2 heures \u00e0 petit feu, ajouter les champignons a la fin.',
+                    'Tarte Tatin::Pommes, beurre, sucre : rien d\u2019autre::1 h 30::Moyen::1,5 kg de pommes, 150 g de sucre, 100 g de beurre, 1 p\u00e2te bris\u00e9e, 1 pinc\u00e9e de sel::Faire un caramel au beurre dans un moule \u00e0 bords hauts.|Ranger les quartiers de pommes tr\u00e8s serr\u00e9s sur le caramel.|Recouvrir de p\u00e2te en rentrant les bords, piquer.|Cuire 40 minutes \u00e0 190 \u00b0C puis retourner d\u00e8s la sortie du four.',
+                    'Soupe \u00e0 l\u2019oignon gratin\u00e9e::Lente, presque confite::1 h 30::Facile::6 oignons, 40 g de beurre, 1 c. \u00e0 s. de farine, 1 l de bouillon, 6 tranches de pain, 150 g de gruy\u00e8re, sel, poivre::\u00c9mincer les oignons et les faire fondre 30 minutes au beurre.|Singer, mouiller avec le bouillon, laisser fr\u00e9mir 45 minutes.|Verser dans des bols, poser le pain, couvrir de gruy\u00e8re.|Gratiner 5 minutes sous le gril avant de servir.',
+                    'Quiche lorraine::Sans fromage, comme il se doit::1 h 00::Facile::1 p\u00e2te bris\u00e9e, 200 g de lardons, 3 \u0153ufs, 25 cl de cr\u00e8me, 20 cl de lait, noix de muscade, sel, poivre::Faire revenir les lardons \u00e0 sec puis les \u00e9goutter.|Garnir le moule de p\u00e2te et r\u00e9partir les lardons.|Battre \u0153ufs, cr\u00e8me et lait, assaisonner, muscader.|Cuire 35 minutes \u00e0 180 \u00b0C jusqu\u2019\u00e0 ce que l\u2019appareil soit pris.',
+                    'Blanquette de veau::Blanche, jamais dor\u00e9e::2 h 00::Moyen::1 kg d\u2019\u00e9paule de veau, 2 carottes, 1 oignon, 1 poireau, 200 g de champignons, 40 g de beurre, 40 g de farine, 1 jaune d\u2019\u0153uf, 10 cl de cr\u00e8me::Cuire la viande 1 h 30 dans un bouillon aromatis\u00e9.|Pr\u00e9parer un roux blanc avec beurre et farine, mouiller au bouillon.|Ajouter les champignons et la viande, cuire 20 minutes.|Lier hors du feu avec le jaune et la cr\u00e8me, sans jamais faire bouillir.',
+                    'Gratin dauphinois::Ni fromage, ni \u0153uf::1 h 30::Facile::1,2 kg de pommes de terre, 50 cl de cr\u00e8me, 25 cl de lait, 1 gousse d\u2019ail, noix de muscade, sel, poivre::Frotter un plat avec l\u2019ail, beurrer largement.|Trancher les pommes de terre finement et les ranger en couches.|Chauffer cr\u00e8me et lait avec sel, poivre et muscade, puis verser.|Cuire 1 h 15 \u00e0 160 \u00b0C : la surface doit \u00eatre dor\u00e9e, l\u2019int\u00e9rieur fondant.',
+                    'Bouillabaisse::Le poisson d\u2019abord, le reste ensuite::2 h 00::Difficile::1,5 kg de poissons de roche, 500 g de moules, 2 tomates, 1 oignon, 1 poireau, 4 gousses d\u2019ail, 1 dose de safran, 1 orange, huile d\u2019olive::Pr\u00e9parer une soupe avec l\u00e9gumes, ail, tomates et safran.|Faire fr\u00e9mir 40 minutes, mixer et passer.|Cuire les poissons dans ce bouillon, du plus ferme au plus tendre.|Servir avec des cro\u00fbtons frott\u00e9s \u00e0 l\u2019ail et une rouille mont\u00e9e \u00e0 l\u2019huile.',
+                    'Cr\u00e8me br\u00fbl\u00e9e::Le sucre doit craquer::1 h 00::Facile::50 cl de cr\u00e8me, 6 jaunes d\u2019\u0153ufs, 80 g de sucre, 1 gousse de vanille, cassonade::Chauffer la cr\u00e8me avec la vanille fendue.|Blanchir les jaunes avec le sucre puis les m\u00e9langer \u00e0 la cr\u00e8me|Cuire \u00e0 90 \u00b0C jusqu\u2019\u00e0 ce que l\u2019appareil tremble l\u00e9g\u00e8rement.|Refroidir 4 heures puis caram\u00e9liser la cassonade au chalumeau.'
+                ]
+            }
+        },
+        {
+            key: 'fr_rapport_activite_premium_24p', style: 'rapport', family: 'report', spreadDoc: false,
+            name: 'Rapport d\u2019activit\u00e9 2027 \u00ab\u00a0Premium\u00a0\u00bb (24p) [PREMIUM]', desc: 'Rapport d\u2019activit\u00e9 premium tr\u00e8s complet \u2014 24 pages A4 : \u00e9dito, chiffres, graphiques, comptes, bilan, RSE, risques, perspectives',
+            format: { width: 595, height: 842, pages: 24 },
+            lang: 'fr', spFr: true, premium: true,
+            theme: { paper: '#ffffff', ink: '#0d1117', accent: '#0f4c3a', soft: '#eef3f0', night: '#0e1a16' },
+            fonts: { display: 'Playfair Display', text: 'Montserrat', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'RAPPORT D\u2019ACTIVIT\u00c9', tag: 'GROUPE M\u00c9RIDIEN \u00b7 EXERCICE 2027', issue: 'DOCUMENT DE R\u00c9F\u00c9RENCE \u00b7 MARS 2028', price: '',
+                head: 'Rapport d\u2019activit\u00e9 2027',
+                stand: 'Un exercice de consolidation : six m\u00e9tiers, quatre zones, 1 240 collaborateurs, et la premi\u00e8re ann\u00e9e o\u00f9 la marge progresse plus vite que le chiffre d\u2019affaires.',
+                coverlines: '', sections: ['\u00c9dito', 'Chiffres cl\u00e9s', 'M\u00e9tiers', 'Revenus', 'Co\u00fbts', 'Comptes', 'Bilan', 'Effectifs', 'RSE', 'Risques', 'Gouvernance', 'Perspectives'],
+                legs: ['Janvier \u00b7 Ouverture de la filiale de Lyon', 'Mars \u00b7 Certification ISO 9001 renouvel\u00e9e', 'Mai \u00b7 Rachat de la branche logistique', 'Juillet \u00b7 Premier semestre au-dessus du budget', 'Septembre \u00b7 Lancement de l\u2019offre bas carbone', 'Novembre \u00b7 1 240 collaborateurs', 'D\u00e9cembre \u00b7 Carnet de commandes record'],
+                quote: 'Cro\u00eetre n\u2019est pas le but. Faire le travail correctement \u00e0 une \u00e9chelle un peu plus grande, oui.',
+                body: 'L\u2019exercice 2027 se lit d\u2019abord comme une ann\u00e9e de consolidation. Le chiffre d\u2019affaires progresse de 12,4 %, mais c\u2019est la marge op\u00e9rationnelle, en hausse de 2,1 points, qui raconte le mieux ce qui s\u2019est pass\u00e9 dans les usines et les agences.\n\nNous avons ferm\u00e9 deux sites, ouvert une filiale, rachet\u00e9 une activit\u00e9 logistique et refus\u00e9 dix-huit appels d\u2019offres. Ces refus sont une part du r\u00e9sultat : ils ont lib\u00e9r\u00e9 les \u00e9quipes pour les projets o\u00f9 notre savoir-faire faisait vraiment la diff\u00e9rence.\n\nLe pr\u00e9sent document d\u00e9taille les comptes, les effectifs, les engagements environnementaux et les risques. Il se veut lisible par un actionnaire comme par un chef d\u2019atelier.',
+                caption: 'Groupe M\u00e9ridien \u00b7 8 avenue des Ch\u00eanes, 69003 Lyon \u00b7 groupemeridien.fr',
+                credits: 'Comptes consolid\u00e9s \u00b7 commissaires aux comptes : Fidal & Associ\u00e9s \u00b7 rapport con\u00e7u et compos\u00e9 en interne',
+                figures: '184,6 M\u20ac::Chiffre d\u2019affaires 2027::+12,4 % vs 2026\n18,3 M\u20ac::R\u00e9sultat op\u00e9rationnel::+2,1 pts de marge\n1 240::Collaborateurs::+96 recrutements\n94 %::Taux de service client::+3 points',
+                divisions: 'Industrie::72,4::19,8::486::Trois sites, dont un nouveau en Auvergne\nDistribution::48,1::11,2::312::Quatre cents points de vente\nLogistique::31,7::7,4::208::Activit\u00e9 rachet\u00e9e en mai\nIng\u00e9nierie::18,9::22,6::134::La marge la plus \u00e9lev\u00e9e du groupe\nServices::13,5::14,1::100::Maintenance et formation',
+                regions: 'France::58,2::107,4\nBenelux::18,6::34,3\nAllemagne::13,1::24,2\nEspagne::6,4::11,8\nAutres::3,7::6,9',
+                trimestres: '1er trimestre::41,2\n2e trimestre::44,6\n3e trimestre::47,1\n4e trimestre::51,7',
+                couts: 'Achats et mati\u00e8res::74,2\nSalaires et charges::62,8\n\u00c9nergie et fluides::11,4\nTransport et logistique::8,6\nAmortissements::6,9\nAutres charges::2,4',
+                compteur: 'Chiffre d\u2019affaires::184,6\nAchats consomm\u00e9s::-74,2\nMarge brute::110,4\nCharges de personnel::-62,8\nAutres charges externes::-22,4\nAmortissements::-6,9\nR\u00e9sultat op\u00e9rationnel::18,3\nR\u00e9sultat financier::-2,1\nImp\u00f4ts::-4,3\nR\u00e9sultat net::11,9',
+                actif: 'Immobilisations incorporelles::14,2\nImmobilisations corporelles::68,4\nStocks::22,6\nCr\u00e9ances clients::31,8\nTr\u00e9sorerie::26,4\nTOTAL ACTIF::163,4',
+                passif: 'Capitaux propres::72,6\nDettes financi\u00e8res::41,8\nFournisseurs::28,4\nDettes fiscales et sociales::14,2\nProvisions::6,4\nTOTAL PASSIF::163,4',
+                tresorerie: 'Ouverture::18,4\nFlux d\u2019exploitation::19,6\nInvestissements::-14,2\nAcquisitions::-6,8\nDividendes::-3,2\nFinancements::8,6\nCl\u00f4ture::22,4',
+                effectifs: '2023::986\n2024::1 042\n2025::1 108\n2026::1 144\n2027::1 240',
+                rse: 'Consommation d\u2019\u00e9nergie::-14 %::Objectif 2028 : -25 %\nPart d\u2019\u00e9nergie renouvelable::41 %::Objectif 2028 : 60 %\nD\u00e9chets valoris\u00e9s::88 %::Objectif 2028 : 95 %\nAccidents du travail::-22 %::Objectif 2028 : z\u00e9ro grave\nFormation par salari\u00e9::26 h::Objectif 2028 : 32 h\nIndex \u00e9galit\u00e9 professionnelle::92/100::Objectif 2028 : 95/100',
+                risques: 'Hausse des mati\u00e8res premi\u00e8res::\u00c9lev\u00e9::Couverture \u00e0 18 mois, clauses de r\u00e9vision annuelle\nD\u00e9pendance client::Moyen::Aucun client au-del\u00e0 de 9 % du CA\nCybers\u00e9curit\u00e9::Moyen::Audit externe, plan de reprise test\u00e9 en octobre\nP\u00e9nurie de comp\u00e9tences::\u00c9lev\u00e9::\u00c9cole interne, 38 alternants\nClimat r\u00e9glementaire::Faible::Veille et plan bas carbone d\u00e9j\u00e0 engag\u00e9',
+                projets: 'Ligne industrielle 4::Usine d\u2019Auvergne::Industrie::Livr\u00e9\nRefonte des entrep\u00f4ts::Nord::Logistique::Livr\u00e9\nPortail client v2::Groupe::Ing\u00e9nierie::Livr\u00e9\nR\u00e9seau de chaleur::Lyon::Services::En cours\nOffre bas carbone::Toutes zones::Distribution::En cours\n\u00c9cole interne::Groupe::Ing\u00e9nierie::En cours',
+                jalons: 'Janvier::Ouverture de la filiale de Lyon\nMars::Certification ISO 9001 renouvel\u00e9e\nMai::Rachat de la branche logistique\nJuillet::Premier semestre au-dessus du budget\nSeptembre::Lancement de l\u2019offre bas carbone\nNovembre::Le groupe passe 1 240 collaborateurs\nD\u00e9cembre::Carnet de commandes record',
+                objectifs: 'Marge avant volume::Objectif 8 % de marge nette en 2029\nD\u00e9carboner l\u2019outil::-35 % d\u2019\u00e9missions \u00e0 p\u00e9rim\u00e8tre constant\nGrandir par l\u2019Est::Deux acquisitions en Allemagne et en Pologne\nAncrer les comp\u00e9tences::\u00c9cole interne ouverte \u00e0 tout le groupe',
+                glossaire: 'Marge op\u00e9rationnelle::R\u00e9sultat avant \u00e9l\u00e9ments financiers et exceptionnels.\nTaux de service::Part des commandes livr\u00e9es compl\u00e8tes et \u00e0 l\u2019heure.\nCarnet de commandes::Commandes fermes non encore ex\u00e9cut\u00e9es.\nIntensit\u00e9 \u00e9nerg\u00e9tique::\u00c9nergie consomm\u00e9e par unit\u00e9 produite.\nP\u00e9rim\u00e8tre constant::\u00c0 p\u00e9rim\u00e8tre d\u2019activit\u00e9 inchang\u00e9.\nEBITDA::R\u00e9sultat op\u00e9rationnel avant amortissements.'
+            }
         }
     ];
 
@@ -71862,6 +72053,10 @@ function _npBuildLayout(params, keywords, lang) {
             else if (model.style === 'cal5') cal5Pages(S);
             else if (model.style === 'archi') archiPages(S);
             else if (model.style === 'report') reportPages(S);
+            // 🆕 v1.7.441 — modèles français
+            else if (model.style === 'habitat') habitatPages(S);
+            else if (model.style === 'recettes') recettesPages(S);
+            else if (model.style === 'rapport') rapportPages(S);
         } catch (e3) { console.warn('[SP-EN] mise en page p.' + (pi + 1) + ' :', e3); }
 
         if (typeof addAssetObjects === 'function') addAssetObjects(cv, objs, model.name + ' · p.' + (pi + 1));
@@ -73317,6 +73512,643 @@ function _npBuildLayout(params, keywords, lang) {
         }
     }
 
+    /* ═══ 20. MAGAZINE HABITAT / MAISONS DE LUXE — 24 p. double page (premium) ═══ */
+    function habitatPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        var bx = -bp, bW = W + 2 * bp, bH = H + 2 * bp, larg = W - M * 2;
+        var DOS = (c.dossiers || '').split('\n').map(function (l) { return l.split('::'); });
+        var MAT = (c.materiaux || '').split('\n').map(function (l) { return l.split('::'); });
+        var ADR = (c.adresses || '').split('\n').map(function (l) { return l.split('::'); });
+        var CHI = (c.chiffres || '').split('\n').map(function (l) { return l.split('::'); });
+        function ph(n) { return String((((n - 1) % 6) + 6) % 6 + 1); }
+        function tete(kick, tit, sous) {
+            S.T({ text: String(kick || '').toUpperCase(), x: M, y: H * 0.072, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 300 });
+            S.filet(H * 0.098, t.ink, px(0.3), M, larg);
+            if (tit) S.T({ text: tit, x: M, y: H * 0.115, w: W * 0.80, size: px(8.4), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            if (sous) S.T({ text: sous, x: M, y: H * 0.195, w: W * 0.72, size: px(2.8), italic: true, fill: t.ink, lh: 1.45, op: 0.85 });
+        }
+        function pied(n) {
+            S.filet(H - bp - px(9), t.ink, px(0.25), M, larg);
+            S.T({ text: c.mast + '  \u00b7  ' + c.issue, x: M, y: H - bp - px(6.4), w: larg * 0.72, size: px(1.8), font: F.mono, fill: t.ink, op: 0.5 });
+            S.T({ text: ('0' + n).slice(-2), x: M + larg * 0.72, y: H - bp - px(6.4), w: larg * 0.28, size: px(1.8), font: F.mono, fill: t.accent, align: 'right' });
+        }
+        if (p === 0) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, H * 0.74 + bp, '1');
+            S.voile(bx, bx, bW, H * 0.26 + bp, t.night, 0.5);
+            S.bloc(bx, H * 0.74, bW, H * 0.26 + bp, t.night);
+            S.T({ text: c.mast, x: M, y: H * 0.075, w: larg, size: px(17), font: F.display, weight: '700', fill: t.paper, align: 'center', cs: 120, lh: 1 });
+            S.bloc(M, H * 0.185, larg, px(1.2), t.accent);
+            S.T({ text: c.tag, x: M, y: H * 0.205, w: larg, size: px(2.1), font: F.mono, fill: t.paper, align: 'center', cs: 300 });
+            S.T({ text: c.issue, x: M, y: H * 0.227, w: larg, size: px(1.9), font: F.mono, fill: t.paper, align: 'center', cs: 140, op: 0.85 });
+            S.T({ text: c.head, x: M, y: H * 0.765, w: larg, size: px(11), font: F.display, weight: '700', fill: t.paper, lh: 1.02 });
+            S.T({ text: c.stand, x: M, y: H * 0.855, w: larg, size: px(2.7), fill: t.paper, lh: 1.5, op: 0.9 });
+            S.T({ text: (c.coverlines || '').replace(/\n/g, '   \u00b7   '), x: M, y: H * 0.925, w: larg, size: px(2.0), font: F.mono, fill: t.accent, lh: 1.7 });
+            S.T({ text: c.price, x: M, y: H - M * 1.2, w: larg, size: px(2.0), font: F.mono, fill: t.paper, cs: 110, op: 0.8 });
+        } else if (p === 1) {
+            S.fond(t.paper); S.tete('Sommaire', c.mast, c.stand);
+            var y = H * 0.30;
+            c.sections.forEach(function (s, i) {
+                S.T({ text: ('0' + (i + 1)).slice(-2), x: M, y: y, w: px(10), size: px(2.8), font: F.mono, fill: t.accent });
+                S.T({ text: s, x: M + px(13), y: y - px(0.8), w: W * 0.56, size: px(4.4), font: F.display, fill: t.ink });
+                S.T({ text: String(3 + i * 3), x: M + W * 0.60, y: y + px(0.4), w: px(10), size: px(2.6), font: F.mono, fill: t.ink, align: 'right', op: 0.5 });
+                S.filet(y + px(7.4), t.ink, px(0.2), M, W * 0.60 + px(10));
+                y += px(13);
+            });
+            S.photo(W * 0.66, H * 0.30, W * 0.30, H * 0.34, '2');
+            S.photo(W * 0.66, H * 0.68, W * 0.30, H * 0.22, '3');
+            pied('02');
+        } else if (p === 2) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, H * 0.76 + bp, ph(1));
+            S.voile(bx, bx, bW, H * 0.24 + bp, t.night, 0.45);
+            S.bloc(bx, H * 0.76, bW, H * 0.24 + bp, t.night);
+            S.T({ text: (c.sections[0] || '').toUpperCase(), x: M, y: H * 0.79, w: larg, size: px(2.1), font: F.mono, fill: t.accent, cs: 320 });
+            S.T({ text: (DOS[0] || [])[0] || '', x: M, y: H * 0.815, w: larg, size: px(10), font: F.display, weight: '700', fill: t.paper, lh: 1.02 });
+            S.T({ text: c.caption, x: M, y: H * 0.92, w: larg, size: px(1.9), font: F.mono, fill: t.paper, op: 0.7 });
+            pied('03');
+        } else if (p === 3) {
+            S.fond(t.paper); S.tete('Le dossier', null, null);
+            S.T({ text: (DOS[0] || [])[0] || '', x: M, y: H * 0.115, w: larg, size: px(8.6), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            S.filet(H * 0.20, t.accent, px(0.8));
+            S.colonnes(H * 0.235, 0, (DOS[0] || [])[1] || '', 3, { size: px(2.6), gout: px(4) });
+            S.bloc(M, H * 0.72, larg, px(26), t.soft);
+            S.T({ text: 'EN CHIFFRES', x: M + px(4), y: H * 0.735, w: larg - px(8), size: px(1.9), font: F.mono, fill: t.accent, cs: 260 });
+            S.T({ text: (CHI.slice(0, 2).map(function (x) { return x[0] + ' \u00b7 ' + x[1]; })).join('      '), x: M + px(4), y: H * 0.765, w: larg - px(8), size: px(2.3), font: F.mono, fill: t.ink, lh: 1.7 });
+            pied('04');
+        } else if (p === 4) {
+            S.fond(t.paper); S.tete('Int\u00e9rieurs', c.legs[2], 'Le marbre mat, vein\u00e9, pos\u00e9 en grandes dalles.');
+            S.colonnes(H * 0.30, 0, (DOS[3] || [])[1] || '', 2, { size: px(2.7) });
+            S.photo(M, H * 0.60, larg, H * 0.28, ph(5));
+            S.T({ text: c.credits, x: M, y: H * 0.90, w: larg, size: px(1.8), font: F.mono, fill: t.ink, op: 0.6 });
+            pied('05');
+        } else if (p === 5) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, bH, ph(3));
+            S.voile(bx, H * 0.62, bW, H * 0.38 + bp, t.night, 0.55);
+            S.T({ text: (DOS[1] || [])[0] || '', x: M, y: H * 0.70, w: larg, size: px(9), font: F.display, weight: '700', fill: t.paper, lh: 1.05 });
+            S.T({ text: c.caption, x: M, y: H * 0.86, w: larg, size: px(1.9), font: F.mono, fill: t.paper, op: 0.75 });
+            pied('06');
+        } else if (p === 6) {
+            S.fond(t.paper); S.tete(c.sections[1], c.legs[1], null);
+            var sw = (larg - px(3) * 2) / 3;
+            MAT.forEach(function (m, i) {
+                var x0 = M + (i % 3) * (sw + px(3)), y0 = H * 0.30 + Math.floor(i / 3) * H * 0.24;
+                S.bloc(x0, y0, sw, H * 0.14, [t.ink, t.accent, t.soft, t.night, t.accent, t.soft][i % 6], i % 6 === 4 ? 0.55 : 1);
+                S.T({ text: (m[0] || '').toUpperCase(), x: x0, y: y0 + H * 0.15, w: sw, size: px(2.1), font: F.mono, fill: t.ink, cs: 100 });
+                S.T({ text: (m[2] || ''), x: x0, y: y0 + H * 0.175, w: sw, size: px(2.3), fill: t.ink, lh: 1.4, op: 0.8 });
+            });
+            pied('07');
+        } else if (p === 7) {
+            S.fond(t.paper); S.tete('Mat\u00e8res', null, null);
+            S.T({ text: (MAT[1] || [''])[0] || '', x: M, y: H * 0.115, w: larg, size: px(8), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            S.T({ text: c.body.split('\n\n')[0] || '', x: M, y: H * 0.24, w: W * 0.55, size: px(2.7), fill: t.ink, lh: 1.55 });
+            S.filet(H * 0.42, t.accent, px(0.6), M, W * 0.45);
+            S.T({ text: c.body.split('\n\n')[1] || '', x: M, y: H * 0.45, w: W * 0.55, size: px(2.7), fill: t.ink, lh: 1.55, op: 0.9 });
+            S.photo(W * 0.60, H * 0.20, W * 0.36, H * 0.52, ph(4));
+            S.T({ text: c.credits, x: M, y: H * 0.86, w: larg, size: px(1.8), font: F.mono, fill: t.ink, op: 0.6 });
+            pied('08');
+        } else if (p === 8) {
+            S.fond(t.accent);
+            S.T({ text: '\u00ab', x: M, y: H * 0.12, w: W * 0.5, size: px(34), font: F.display, fill: t.paper, op: 0.35, lh: 0.8 });
+            S.T({ text: c.quote, x: M + px(8), y: H * 0.30, w: larg - px(16), size: px(7.6), font: F.display, italic: true, fill: t.paper, lh: 1.3 });
+            S.bloc(M + px(8), H * 0.62, px(24), px(0.7), t.paper);
+            S.T({ text: c.legs[3], x: M + px(8), y: H * 0.66, w: larg - px(16), size: px(2.6), font: F.mono, fill: t.paper, cs: 140, op: 0.9 });
+            pied('09');
+        } else if (p === 9) {
+            S.fond(t.paper); S.tete('Portrait', c.legs[3], 'Trois questions, aucune concession.');
+            S.colonnes(H * 0.30, 0, (DOS[2] || [])[1] || '', 2, { size: px(2.7) });
+            S.photo(M, H * 0.62, W * 0.42, H * 0.30, ph(2));
+            S.T({ text: c.credits, x: M + W * 0.46, y: H * 0.63, w: larg - W * 0.46, size: px(2.2), fill: t.ink, lh: 1.6, op: 0.85 });
+            pied('10');
+        } else if (p === 10) {
+            S.fond(t.soft); S.tete('Maisons de lumi\u00e8re', null, null);
+            CHI.forEach(function (f, i) {
+                var x0 = M + (i % 2) * (larg / 2 + px(4)), y0 = H * 0.20 + Math.floor(i / 2) * H * 0.32;
+                S.T({ text: f[0], x: x0, y: y0, w: larg / 2 - px(8), size: px(17), font: F.display, weight: '700', fill: t.accent, lh: 1 });
+                S.T({ text: (f[1] || '').toUpperCase(), x: x0, y: y0 + H * 0.10, w: larg / 2 - px(8), size: px(2.2), font: F.mono, fill: t.ink, cs: 110 });
+                S.T({ text: f[2] || '', x: x0, y: y0 + H * 0.135, w: larg / 2 - px(8), size: px(2.5), fill: t.ink, lh: 1.5, op: 0.8 });
+                S.filet(y0 + H * 0.185, t.ink, px(0.2), x0, larg / 2 - px(8));
+            });
+            pied('11');
+        } else if (p === 11) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, H * 0.68 + bp, ph(6));
+            S.voile(bx, bx, bW, H * 0.26 + bp, t.night, 0.5);
+            S.bloc(bx, H * 0.68, bW, H * 0.32 + bp, t.night);
+            S.T({ text: (DOS[1] || [])[0] || '', x: M, y: H * 0.72, w: larg, size: px(9.4), font: F.display, weight: '700', fill: t.paper, lh: 1.03 });
+            S.T({ text: (DOS[1] || [])[1] || '', x: M, y: H * 0.83, w: larg, size: px(2.6), fill: t.paper, lh: 1.5, op: 0.88 });
+            pied('12');
+        } else if (p === 12) {
+            S.fond(t.paper); S.tete(c.sections[4], 'Douze adresses, rien de plus', null);
+            var ya = H * 0.28;
+            ADR.forEach(function (a, i) {
+                S.T({ text: ('0' + (i + 1)).slice(-2), x: M, y: ya, w: px(10), size: px(3), font: F.mono, fill: t.accent });
+                S.T({ text: a[0], x: M + px(13), y: ya - px(0.8), w: W * 0.40, size: px(4.2), font: F.display, fill: t.ink });
+                S.T({ text: (a[1] || '').toUpperCase(), x: M + W * 0.50, y: ya + px(0.6), w: W * 0.18, size: px(2.0), font: F.mono, fill: t.ink, cs: 140, op: 0.6 });
+                S.T({ text: a[2] || '', x: M + W * 0.68, y: ya + px(0.2), w: W * 0.28, size: px(2.4), fill: t.ink, lh: 1.45, op: 0.85 });
+                S.filet(ya + px(8.4), t.ink, px(0.2), M, larg);
+                ya += px(14);
+            });
+            S.photo(M, H * 0.72, larg, H * 0.16, ph(3));
+            pied('13');
+        } else if (p === 13) {
+            S.fond(t.paper); S.tete('Carnet', c.legs[5], null);
+            S.T({ text: (DOS[3] || [])[1] || '', x: M, y: H * 0.24, w: W * 0.62, size: px(3.2), fill: t.ink, lh: 1.6 });
+            S.filet(H * 0.52, t.ink, px(0.2), M, W * 0.55);
+            S.T({ text: c.body.split('\n\n')[2] || '', x: M, y: H * 0.55, w: W * 0.62, size: px(2.7), fill: t.ink, lh: 1.55, op: 0.9 });
+            S.photo(W * 0.66, H * 0.24, W * 0.30, H * 0.50, ph(1));
+            pied('14');
+        } else if (p === 14) {
+            S.fond(t.paper); S.tete('Plans', 'Le plan, c\u2019est la d\u00e9cision', 'Rien n\u2019est dessin\u00e9 qui ne sera pas construit.');
+            var pf = px(74), py1 = H * 0.32;
+            S.cadre(M, py1, larg, pf, t.ink, px(0.6));
+            S.bloc(M + larg * 0.40, py1, px(1.2), pf * 0.52, t.ink);
+            S.bloc(M, py1 + pf * 0.52, larg * 0.34, px(1.2), t.ink);
+            S.demi(M + larg * 0.40 + px(1.2), py1 + pf * 0.16, px(17), px(17), t.accent, 0.9);
+            S.bloc(M + larg * 0.62, py1 + pf * 0.62, larg * 0.24, px(9), t.soft);
+            S.filet(py1 + pf + px(3), t.ink, px(0.2), M, larg);
+            S.T({ text: '0          5          10 m', x: M, y: py1 + pf + px(4), w: larg, size: px(1.9), font: F.mono, fill: t.ink, op: 0.6 });
+            S.T({ text: (DOS[1] || [])[1] || '', x: M, y: H * 0.74, w: W * 0.7, size: px(2.6), fill: t.ink, lh: 1.55, op: 0.9 });
+            pied('15');
+        } else if (p === 15) {
+            S.fond(t.soft); S.tete('Art de vivre', c.legs[0], null);
+            S.T({ text: c.body.split('\n\n')[1] || '', x: M, y: H * 0.24, w: W * 0.52, size: px(2.7), fill: t.ink, lh: 1.55 });
+            S.photo(M, H * 0.60, W * 0.52, H * 0.30, ph(2));
+            S.photo(W * 0.58, H * 0.20, W * 0.38, H * 0.70, ph(5));
+            pied('16');
+        } else if (p === 16) {
+            S.fond(t.paper); S.tete('Le dossier', c.legs[0], c.stand);
+            S.colonnes(H * 0.30, 0, (DOS[2] || [])[1] || '', 3, { size: px(2.6), gout: px(4) });
+            pied('17');
+        } else if (p === 17) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, bH, ph(4));
+            S.voile(bx, H * 0.58, bW, H * 0.42 + bp, t.night, 0.6);
+            S.T({ text: (DOS[2] || [])[0] || '', x: M, y: H * 0.66, w: larg, size: px(9), font: F.display, weight: '700', fill: t.paper, lh: 1.05 });
+            S.T({ text: c.caption, x: M, y: H * 0.84, w: larg, size: px(1.9), font: F.mono, fill: t.paper, op: 0.7 });
+            pied('18');
+        } else if (p === 18) {
+            S.fond(t.paper); S.tete('Mat\u00e8res', c.legs[1], null);
+            MAT.forEach(function (m, i) {
+                var x0 = M + (i % 2) * (larg / 2 + px(4)), y0 = H * 0.26 + Math.floor(i / 2) * H * 0.14;
+                S.rond(x0, y0, px(7), [t.ink, t.accent, t.soft, t.night, t.accent, t.soft][i % 6], 0.95);
+                S.T({ text: (m[0] || '').toUpperCase(), x: x0 + px(10), y: y0 + px(0.4), w: larg / 2 - px(14), size: px(2.4), font: F.mono, fill: t.ink, cs: 90 });
+                S.T({ text: (m[2] || ''), x: x0 + px(10), y: y0 + px(4), w: larg / 2 - px(14), size: px(2.4), fill: t.ink, op: 0.8, lh: 1.45 });
+            });
+            pied('19');
+        } else if (p === 19) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, H * 0.72 + bp, ph(5));
+            S.voile(bx, bx, bW, H * 0.24 + bp, t.night, 0.45);
+            S.bloc(bx, H * 0.72, bW, H * 0.28 + bp, t.night);
+            S.T({ text: (c.sections[2] || '').toUpperCase(), x: M, y: H * 0.755, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 300 });
+            S.T({ text: c.legs[2], x: M, y: H * 0.78, w: larg, size: px(9.4), font: F.display, weight: '700', fill: t.paper, lh: 1.05 });
+            S.T({ text: c.caption, x: M, y: H * 0.88, w: larg, size: px(1.9), font: F.mono, fill: t.paper, op: 0.7 });
+            pied('20');
+        } else if (p === 20) {
+            S.fond(t.paper); S.tete(c.sections[5], c.legs[5], null);
+            var yb = H * 0.26;
+            ['Trois livres pour l\u2019hiver::Trois ouvrages sur la lumi\u00e8re, le bois et le silence des maisons.',
+             'Deux expositions::Le marbre et la ville, et une r\u00e9trospective de photographie d\u2019architecture.',
+             'Un fauteuil::Bois massif, assise en cuir non trait\u00e9, finition \u00e0 l\u2019huile.',
+             'Une adresse::Un atelier de menuiserie qui travaille encore \u00e0 la main.'].forEach(function (x, i) {
+                var a = x.split('::');
+                S.T({ text: ('0' + (i + 1)).slice(-2), x: M, y: yb, w: px(10), size: px(2.8), font: F.mono, fill: t.accent });
+                S.T({ text: a[0], x: M + px(13), y: yb - px(0.8), w: W * 0.5, size: px(4.4), font: F.display, fill: t.ink });
+                S.T({ text: a[1], x: M + px(13), y: yb + px(6), w: W * 0.62, size: px(2.5), fill: t.ink, lh: 1.5, op: 0.85 });
+                S.filet(yb + px(14), t.ink, px(0.2), M, larg);
+                yb += px(17);
+            });
+            S.photo(W * 0.70, H * 0.26, W * 0.26, H * 0.44, ph(6));
+            pied('21');
+        } else if (p === 21) {
+            S.fond(t.soft);
+            S.photo(M, H * 0.14, larg, H * 0.44, ph(3));
+            S.T({ text: c.quote, x: M + px(10), y: H * 0.64, w: larg - px(20), size: px(5.6), font: F.display, italic: true, fill: t.ink, align: 'center', lh: 1.35 });
+            S.bloc(W / 2 - px(10), H * 0.84, px(20), px(0.6), t.accent);
+            pied('22');
+        } else if (p === 22) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, bH, ph(6));
+            S.voile(bx, bx, bW, bH, t.night, 0.55);
+            S.T({ text: c.mast, x: M, y: H * 0.30, w: larg, size: px(16), font: F.display, weight: '700', fill: t.paper, align: 'center', cs: 100, lh: 1 });
+            S.bloc(W / 2 - px(12), H * 0.44, px(24), px(0.7), t.accent);
+            S.T({ text: c.quote, x: M + px(14), y: H * 0.48, w: larg - px(28), size: px(5), font: F.display, italic: true, fill: t.paper, align: 'center', lh: 1.35 });
+            S.T({ text: c.credits, x: M, y: H * 0.72, w: larg, size: px(1.9), font: F.mono, fill: t.paper, align: 'center', op: 0.75 });
+            S.T({ text: (c.coverlines || '').replace(/\n/g, '   \u00b7   '), x: M, y: H * 0.80, w: larg, size: px(2.0), font: F.mono, fill: t.accent, align: 'center', lh: 1.8 });
+            pied('23');
+        } else {
+            S.fond(t.paper); S.tete('Colophon', c.mast, null);
+            S.T({ text: c.credits, x: M, y: H * 0.30, w: W * 0.72, size: px(2.6), fill: t.ink, lh: 1.7 });
+            S.filet(H * 0.42, t.ink, px(0.3), M, W * 0.72);
+            S.T({ text: c.caption, x: M, y: H * 0.45, w: W * 0.72, size: px(2.6), fill: t.ink, lh: 1.7, op: 0.85 });
+            S.bloc(M, H * 0.58, W * 0.72, px(30), t.soft);
+            S.T({ text: 'NOS PROCHAINS NUM\u00c9ROS', x: M + px(4), y: H * 0.595, w: W * 0.72 - px(8), size: px(2.0), font: F.mono, fill: t.accent, cs: 240 });
+            S.T({ text: 'N\u00b0 13 \u00b7 Printemps 2028 \u2014 Maisons de pierre\nN\u00b0 14 \u00b7 \u00c9t\u00e9 2028 \u2014 L\u2019art de la terrasse', x: M + px(4), y: H * 0.62, w: W * 0.72 - px(8), size: px(2.4), fill: t.ink, lh: 1.7 });
+            S.T({ text: c.price, x: M, y: H * 0.76, w: W * 0.72, size: px(2.4), font: F.mono, fill: t.accent, cs: 120 });
+            pied('24');
+        }
+    }
+
+    /* ═══ 21. MAGAZINE DE RECETTES FRANÇAISES — 12 p. A4, page à page ═══ */
+    function recettesPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        var bx = -bp, bW = W + 2 * bp, bH = H + 2 * bp, larg = W - M * 2;
+        var REC = (c.recettes || []).map(function (x) { return String(x).split('::'); });
+        function ph(n) { return String((((n - 1) % 6) + 6) % 6 + 1); }
+        function pied(n, droit) {
+            S.filet(H - bp - px(10), t.ink, px(0.25), M, larg);
+            S.T({ text: c.mast + '  \u00b7  ' + c.issue, x: M, y: H - bp - px(7.4), w: larg * 0.7, size: px(1.8), font: F.mono, fill: t.ink, op: 0.5 });
+            S.T({ text: droit || ('0' + n).slice(-2), x: M + larg * 0.7, y: H - bp - px(7.4), w: larg * 0.3, size: px(1.8), font: F.mono, fill: t.accent, align: 'right' });
+        }
+        if (p === 0) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, H * 0.66 + bp, '1');
+            S.voile(bx, H * 0.34, bW, H * 0.32 + bp, t.night, 0.55);
+            S.bloc(bx, H * 0.66, bW, H * 0.34 + bp, t.night);
+            S.T({ text: c.mast, x: M, y: H * 0.075, w: larg, size: px(20), font: F.display, weight: '700', fill: t.paper, align: 'center', cs: 60, lh: 1 });
+            S.bloc(M, H * 0.185, larg, px(1.2), t.accent);
+            S.T({ text: c.tag, x: M, y: H * 0.205, w: larg, size: px(2.2), font: F.mono, fill: t.paper, align: 'center', cs: 300 });
+            S.T({ text: c.issue, x: M, y: H * 0.228, w: larg, size: px(2.0), font: F.mono, fill: t.paper, align: 'center', cs: 140, op: 0.85 });
+            S.T({ text: c.head, x: M, y: H * 0.69, w: larg, size: px(12), font: F.display, weight: '700', fill: t.paper, lh: 1.02 });
+            S.T({ text: c.stand, x: M, y: H * 0.79, w: larg, size: px(3.0), fill: t.paper, lh: 1.5, op: 0.92 });
+            S.T({ text: c.body, x: M, y: H * 0.865, w: larg, size: px(2.4), italic: true, fill: t.paper, lh: 1.6, op: 0.8 });
+            S.T({ text: c.price, x: M, y: H - M * 1.2, w: larg, size: px(2.2), font: F.mono, fill: t.accent, cs: 110 });
+        } else if (p === 1) {
+            S.fond(t.paper);
+            S.T({ text: 'SOMMAIRE', x: M, y: H * 0.075, w: larg, size: px(2.2), font: F.mono, fill: t.accent, cs: 300 });
+            S.filet(H * 0.10, t.ink, px(0.4), M, larg);
+            S.T({ text: c.head, x: M, y: H * 0.115, w: larg, size: px(11), font: F.display, weight: '700', fill: t.ink, lh: 1.03 });
+            S.T({ text: c.stand, x: M, y: H * 0.225, w: W * 0.66, size: px(3.0), italic: true, fill: t.ink, lh: 1.5, op: 0.85 });
+            var y = H * 0.33;
+            REC.forEach(function (r, i) {
+                S.T({ text: ('0' + (i + 1)).slice(-2), x: M, y: y, w: px(10), size: px(2.8), font: F.mono, fill: t.accent });
+                S.T({ text: r[0] || '', x: M + px(13), y: y - px(0.8), w: W * 0.56, size: px(4.2), font: F.display, fill: t.ink });
+                S.T({ text: (r[3] || '').toUpperCase(), x: M + W * 0.62, y: y + px(0.8), w: W * 0.20, size: px(2.0), font: F.mono, fill: t.ink, cs: 140, op: 0.6 });
+                S.T({ text: ('0' + (i + 3)).slice(-2), x: M + W * 0.88, y: y + px(0.4), w: px(10), size: px(2.6), font: F.mono, fill: t.accent, align: 'right' });
+                S.filet(y + px(7.6), t.ink, px(0.2), M, larg);
+                y += px(13);
+            });
+            S.photo(M, H * 0.80, larg, H * 0.13, '2');
+            pied('02');
+        } else {
+            var r = REC[p - 2] || ['', '', '', '', '', ''];
+            var etapes = String(r[5] || '').split('|');
+            var ings = String(r[4] || '').split(',');
+            S.fond(t.paper);
+            S.T({ text: 'RECETTE ' + ('0' + (p - 1)).slice(-2) + ' / ' + ('0' + REC.length).slice(-2) + '  \u00b7  ' + String(r[2] || '').toUpperCase() + '  \u00b7  ' + String(r[3] || '').toUpperCase(), x: M, y: H * 0.055, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 200 });
+            S.filet(H * 0.078, t.ink, px(0.4), M, larg);
+            S.photo(bx, H * 0.10, bW, H * 0.26 + bp, ph(p));
+            S.T({ text: r[0] || '', x: M, y: H * 0.385, w: larg, size: px(12), font: F.display, weight: '700', fill: t.ink, lh: 1.02 });
+            if (r[1]) S.T({ text: r[1], x: M, y: H * 0.475, w: W * 0.86, size: px(3.2), italic: true, fill: t.accent, lh: 1.4 });
+            var yc = H * 0.55, cw = (larg - px(10)) / 2;
+            S.T({ text: 'INGR\u00c9DIENTS', x: M, y: yc, w: cw, size: px(2.1), font: F.mono, fill: t.accent, cs: 260 });
+            S.filet(yc + px(3.6), t.ink, px(0.3), M, cw);
+            S.T({ text: ings.join('\n'), x: M, y: yc + px(5.6), w: cw, size: px(2.5), font: F.mono, fill: t.ink, lh: 1.75 });
+            S.T({ text: 'PR\u00c9PARATION', x: M + cw + px(10), y: yc, w: cw, size: px(2.1), font: F.mono, fill: t.accent, cs: 260 });
+            S.filet(yc + px(3.6), t.ink, px(0.3), M + cw + px(10), cw);
+            var txt = etapes.map(function (e, i) { return (i + 1) + '.  ' + e; }).join('\n\n');
+            S.T({ text: txt, x: M + cw + px(10), y: yc + px(5.6), w: cw, size: px(2.6), fill: t.ink, lh: 1.6 });
+            S.bloc(M, H * 0.845, larg, px(22), t.soft);
+            S.T({ text: 'L\u2019ASTUCE DU CHEF', x: M + px(4), y: H * 0.858, w: larg - px(8), size: px(1.9), font: F.mono, fill: t.accent, cs: 240 });
+            S.T({ text: 'Pr\u00e9parez ce plat la veille : r\u00e9chauff\u00e9, il est encore meilleur. Servez avec un pain de campagne et un vin rouge de caract\u00e8re.', x: M + px(4), y: H * 0.878, w: larg - px(8), size: px(2.3), fill: t.ink, lh: 1.5 });
+            pied(p + 1);
+        }
+    }
+
+    /* ═══ 22. RAPPORT D'ACTIVITÉ PREMIUM — 24 p. A4 (premium) ═══ */
+    function rapportPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        var bx = -bp, bW = W + 2 * bp, bH = H + 2 * bp, larg = W - M * 2;
+        var FIG = (c.figures || '').split('\n').map(function (l) { return l.split('::'); });
+        var DIV = (c.divisions || '').split('\n').map(function (l) { return l.split('::'); });
+        var REG = (c.regions || '').split('\n').map(function (l) { return l.split('::'); });
+        var TRI = (c.trimestres || '').split('\n').map(function (l) { return l.split('::'); });
+        var COU = (c.couts || '').split('\n').map(function (l) { return l.split('::'); });
+        var CPT = (c.compteur || '').split('\n').map(function (l) { return l.split('::'); });
+        var ACT = (c.actif || '').split('\n').map(function (l) { return l.split('::'); });
+        var PAS = (c.passif || '').split('\n').map(function (l) { return l.split('::'); });
+        var TRS = (c.tresorerie || '').split('\n').map(function (l) { return l.split('::'); });
+        var EFF = (c.effectifs || '').split('\n').map(function (l) { return l.split('::'); });
+        var RSE = (c.rse || '').split('\n').map(function (l) { return l.split('::'); });
+        var RSQ = (c.risques || '').split('\n').map(function (l) { return l.split('::'); });
+        var PRJ = (c.projets || '').split('\n').map(function (l) { return l.split('::'); });
+        var JAL = (c.jalons || '').split('\n').map(function (l) { return l.split('::'); });
+        var OBJ = (c.objectifs || '').split('\n').map(function (l) { return l.split('::'); });
+        var GLO = (c.glossaire || '').split('\n').map(function (l) { return l.split('::'); });
+        function num(v) { return parseFloat(String(v || '0').replace(/\s/g, '').replace(',', '.')) || 0; }
+        function entete(kick, tit, sous) {
+            S.T({ text: String(kick || '').toUpperCase(), x: M, y: H * 0.072, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 300 });
+            S.filet(H * 0.096, t.ink, px(0.35), M, larg);
+            if (tit) S.T({ text: tit, x: M, y: H * 0.112, w: W * 0.84, size: px(7.6), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            if (sous) S.T({ text: sous, x: M, y: H * 0.175, w: W * 0.78, size: px(2.8), italic: true, fill: t.ink, lh: 1.45, op: 0.85 });
+        }
+        function pied(n) {
+            S.filet(H - bp - px(9), t.ink, px(0.25), M, larg);
+            S.T({ text: c.tag, x: M, y: H - bp - px(6.4), w: larg * 0.7, size: px(1.8), font: F.mono, fill: t.ink, op: 0.5 });
+            S.T({ text: ('0' + n).slice(-2), x: M + larg * 0.7, y: H - bp - px(6.4), w: larg * 0.3, size: px(1.8), font: F.mono, fill: t.accent, align: 'right' });
+        }
+        function barresH(lignes, y0, idxVal, idxNote) {
+            var maxi = 0;
+            lignes.forEach(function (l) { maxi = Math.max(maxi, num(l[idxVal])); });
+            var y = y0, lw = larg * 0.40;
+            lignes.forEach(function (l) {
+                var v = num(l[idxVal]), wd = (larg - lw - px(22)) * (maxi ? v / maxi : 0);
+                S.T({ text: l[0], x: M, y: y, w: lw, size: px(2.7), fill: t.ink });
+                S.bloc(M + lw, y + px(0.7), wd, px(5.6), t.accent);
+                S.T({ text: l[idxVal] + ' M\u20ac', x: M + lw + wd + px(2.5), y: y, w: px(28), size: px(2.5), font: F.mono, fill: t.ink });
+                if (idxNote != null && l[idxNote]) S.T({ text: l[idxNote], x: M, y: y + px(5), w: larg, size: px(2.2), fill: t.ink, op: 0.7, lh: 1.4 });
+                S.filet(y + px(11), t.ink, px(0.18), M, larg);
+                y += px(idxNote != null && l[idxNote] ? 17 : 13);
+            });
+            return y;
+        }
+        function barresV(lignes, y0, hMax, colFinale) {
+            var maxi = 0;
+            lignes.forEach(function (l) { maxi = Math.max(maxi, Math.abs(num(l[1]))); });
+            var n = lignes.length, cw = (larg - px(5) * (n - 1)) / n;
+            S.filet(y0 + hMax, t.ink, px(0.4), M, larg);
+            lignes.forEach(function (l, i) {
+                var v = num(l[1]), hh = hMax * (maxi ? Math.abs(v) / maxi : 0), x0 = M + i * (cw + px(5));
+                if (v >= 0) S.bloc(x0 + cw * 0.16, y0 + hMax - hh, cw * 0.68, hh, i === n - 1 && colFinale ? t.accent : t.ink, i === n - 1 && colFinale ? 1 : 0.8);
+                else S.bloc(x0 + cw * 0.16, y0 + hMax, cw * 0.68, hh, t.accent, 0.8);
+                S.T({ text: l[1], x: x0, y: v >= 0 ? y0 + hMax - hh - px(5.6) : y0 + hMax + hh + px(1), w: cw, size: px(2.8), font: F.mono, fill: t.accent, align: 'center' });
+                S.T({ text: l[0], x: x0, y: y0 + hMax + px(2.6), w: cw, size: px(2.2), font: F.mono, fill: t.ink, align: 'center', cs: 100, op: 0.7 });
+            });
+        }
+        function tableau(entetes, lignes, y0, cols, opt) {
+            opt = opt || {};
+            entetes.forEach(function (e, i) {
+                var right = i >= cols.length - 2;
+                S.T({ text: String(e).toUpperCase(), x: M + larg * cols[i][0], y: y0, w: larg * cols[i][1], size: px(1.9), font: F.mono, fill: t.ink, align: right ? 'right' : 'left', cs: 180, op: 0.6 });
+            });
+            S.filet(y0 + px(3.6), t.ink, px(0.45), M, larg);
+            var y = y0 + px(6.2), rh = px(opt.rh || 10.4);
+            lignes.forEach(function (l, ri) {
+                var total = /TOTAL/i.test(String(l[0] || ''));
+                if (total) S.bloc(M, y - px(1.8), larg, rh, t.soft);
+                else if (ri % 2 === 1) S.bloc(M, y - px(1.8), larg, rh, t.soft, 0.55);
+                cols.forEach(function (cl, ci) {
+                    var right = ci >= cols.length - 2, val = l[ci] == null ? '' : String(l[ci]);
+                    S.T({ text: val, x: M + larg * cl[0], y: y, w: larg * cl[1], size: px(opt.taille || 2.5), font: ci === 0 ? F.text : F.mono, fill: /^-/.test(val) ? t.accent : t.ink, align: right ? 'right' : 'left', lh: 1.4 });
+                });
+                S.filet(y + rh - px(3.4), t.ink, px(0.15), M, larg);
+                y += rh;
+            });
+            return y;
+        }
+
+        if (p === 0) {
+            S.fond(t.night);
+            S.demi(M, H * 0.34, larg * 0.42, H * 0.16, t.accent, 0.95);
+            S.bloc(M, H * 0.445, larg * 0.66, px(1.4), t.paper);
+            S.T({ text: c.mast, x: M, y: H * 0.09, w: larg, size: px(2.4), font: F.mono, fill: t.paper, cs: 300 });
+            S.T({ text: c.tag, x: M, y: H * 0.122, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 170 });
+            S.T({ text: c.head, x: M, y: H * 0.205, w: W * 0.84, size: px(12.5), font: F.display, weight: '700', fill: t.paper, lh: 1.05 });
+            S.T({ text: c.stand, x: M, y: H * 0.545, w: W * 0.88, size: px(3.0), fill: t.paper, lh: 1.5, op: 0.92 });
+            FIG.forEach(function (f, i) {
+                var x0 = M + (i % 2) * (larg / 2 + px(4)), y0 = H * 0.655 + Math.floor(i / 2) * H * 0.10;
+                S.T({ text: f[0], x: x0, y: y0, w: larg / 2 - px(8), size: px(9), font: F.display, weight: '700', fill: t.accent, lh: 1 });
+                S.T({ text: (f[1] || '').toUpperCase(), x: x0, y: y0 + px(10.5), w: larg / 2 - px(8), size: px(1.9), font: F.mono, fill: t.paper, cs: 90, op: 0.85 });
+                S.T({ text: f[2] || '', x: x0, y: y0 + px(14), w: larg / 2 - px(8), size: px(1.9), fill: t.paper, op: 0.6 });
+            });
+            S.T({ text: c.issue, x: M, y: H - bp - px(12), w: larg, size: px(1.9), font: F.mono, fill: t.paper, op: 0.6 });
+            S.T({ text: c.caption, x: M, y: H - bp - px(7.6), w: larg, size: px(1.9), font: F.mono, fill: t.paper, op: 0.5 });
+        } else if (p === 1) {
+            S.fond(t.paper); entete('Sommaire', c.head, c.stand);
+            var y = H * 0.235, colw = (larg - px(10)) / 2;
+            c.sections.forEach(function (s, i) {
+                var x0 = M + (i % 2) * (colw + px(10)), yy = y + Math.floor(i / 2) * px(9.4);
+                S.T({ text: ('0' + (i + 1)).slice(-2), x: x0, y: yy, w: px(8), size: px(2.4), font: F.mono, fill: t.accent });
+                S.T({ text: s, x: x0 + px(10), y: yy - px(0.6), w: colw - px(26), size: px(3.2), font: F.display, fill: t.ink });
+                S.T({ text: String(3 + i * 2), x: x0 + colw - px(12), y: yy + px(0.4), w: px(12), size: px(2.4), font: F.mono, fill: t.ink, align: 'right', op: 0.5 });
+            });
+            S.T({ text: 'FAITS MARQUANTS DE L\u2019EXERCICE', x: M, y: H * 0.60, w: larg, size: px(2.1), font: F.mono, fill: t.accent, cs: 240 });
+            S.filet(H * 0.625, t.ink, px(0.35), M, larg);
+            var yj = H * 0.655;
+            JAL.slice(0, 5).forEach(function (j) {
+                S.rond(M, yj + px(0.9), px(2.6), t.accent, 0.9);
+                S.T({ text: j[0], x: M + px(5), y: yj, w: larg * 0.22, size: px(2.1), font: F.mono, fill: t.ink, op: 0.65 });
+                S.T({ text: j[1] || '', x: M + larg * 0.26, y: yj - px(0.4), w: larg * 0.74, size: px(2.6), fill: t.ink, lh: 1.4 });
+                yj += px(10.6);
+            });
+            pied('02');
+        } else if (p === 2) {
+            S.fond(t.paper); entete('\u00c9dito', 'Une ann\u00e9e de consolidation', 'Le mot du pr\u00e9sident du directoire.');
+            S.colonnes(H * 0.24, 0, c.body, 2, { size: px(2.8) });
+            S.T({ text: c.quote, x: M, y: H * 0.68, w: larg * 0.82, size: px(5), font: F.display, italic: true, fill: t.accent, lh: 1.35 });
+            S.bloc(M, H * 0.80, px(16), px(0.6), t.accent);
+            S.T({ text: 'Claire Vasseur \u00b7 Pr\u00e9sidente du directoire', x: M, y: H * 0.825, w: larg, size: px(2.4), font: F.mono, fill: t.ink, cs: 80, op: 0.75 });
+            pied('03');
+        } else if (p === 3) {
+            S.fond(t.paper); entete('Chiffres cl\u00e9s', 'Quatre rep\u00e8res pour l\u2019exercice', 'Montants en millions d\u2019euros, hors taxes.');
+            FIG.forEach(function (f, i) {
+                var x0 = M + (i % 2) * (larg / 2 + px(4)), y0 = H * 0.26 + Math.floor(i / 2) * H * 0.26;
+                S.bloc(x0 - px(5), y0 - px(6), larg / 2 - px(4), H * 0.20, t.soft);
+                S.T({ text: f[0], x: x0, y: y0, w: larg / 2 - px(14), size: px(15), font: F.display, weight: '700', fill: t.accent, lh: 1 });
+                S.T({ text: (f[1] || '').toUpperCase(), x: x0, y: y0 + H * 0.055, w: larg / 2 - px(14), size: px(2.1), font: F.mono, fill: t.ink, cs: 110 });
+                S.T({ text: f[2] || '', x: x0, y: y0 + H * 0.085, w: larg / 2 - px(14), size: px(2.4), fill: t.ink, op: 0.75 });
+            });
+            S.T({ text: 'Le chiffre d\u2019affaires progresse de 12,4 % et la marge op\u00e9rationnelle de 2,1 points. La tr\u00e9sorerie nette reste positive apr\u00e8s l\u2019acquisition de mai.', x: M, y: H * 0.80, w: larg * 0.92, size: px(2.6), fill: t.ink, lh: 1.6, op: 0.85 });
+            pied('04');
+        } else if (p === 4) {
+            S.fond(t.paper); entete('Les m\u00e9tiers', 'Cinq activit\u00e9s, une seule exigence', 'Chiffre d\u2019affaires par division, en millions d\u2019euros.');
+            barresH(DIV.map(function (d) { return [d[0], d[1]]; }), H * 0.26, 1, null);
+            S.T({ text: 'L\u2019industrie reste le moteur du groupe (39 % du chiffre d\u2019affaires). L\u2019ing\u00e9nierie, plus petite, affiche la meilleure marge : 22,6 %.', x: M, y: H * 0.80, w: larg * 0.9, size: px(2.6), fill: t.ink, lh: 1.6, op: 0.85 });
+            pied('05');
+        } else if (p === 5) {
+            S.fond(t.paper); entete('Les m\u00e9tiers', 'D\u00e9tail par division', null);
+            tableau(['Division', 'CA', 'Marge', 'Effectif', 'Commentaire'],
+                DIV.map(function (d) { return [d[0], d[1] + ' M\u20ac', d[2] + ' %', d[3], d[4]]; }),
+                H * 0.26, [[0, 0.18], [0.20, 0.10], [0.32, 0.10], [0.44, 0.10], [0.56, 0.44]], { rh: 14, taille: 2.4 });
+            S.T({ text: 'Les effectifs incluent les int\u00e9rimaires en poste au 31 d\u00e9cembre 2027.', x: M, y: H * 0.78, w: larg, size: px(2.2), fill: t.ink, op: 0.65 });
+            pied('06');
+        } else if (p === 6) {
+            S.fond(t.paper); entete('Revenus', 'Le d\u00e9tail des revenus', 'Chiffre d\u2019affaires consolid\u00e9 : 184,6 M\u20ac.');
+            var y = barresH(DIV.map(function (d) { return [d[0], d[1], d[4] || '']; }), H * 0.25, 1, 2);
+            S.bloc(M, y + px(3), larg, px(20), t.soft);
+            S.T({ text: 'TOTAL CONSOLID\u00c9', x: M + px(4), y: y + px(6), w: larg * 0.6, size: px(2.6), font: F.mono, fill: t.ink, cs: 160 });
+            S.T({ text: '184,6 M\u20ac', x: M, y: y + px(6), w: larg - px(4), size: px(3.4), font: F.mono, fill: t.accent, align: 'right' });
+            pied('07');
+        } else if (p === 7) {
+            S.fond(t.paper); entete('Revenus', 'Une ann\u00e9e qui acc\u00e9l\u00e8re', 'Chiffre d\u2019affaires par trimestre, en millions d\u2019euros.');
+            barresV(TRI, H * 0.26, H * 0.32, true);
+            S.T({ text: 'Le quatri\u00e8me trimestre repr\u00e9sente \u00e0 lui seul 28 % de l\u2019ann\u00e9e. Cette saisonnalit\u00e9 est structurelle : elle suit les cycles d\u2019investissement de nos clients.', x: M, y: H * 0.70, w: larg * 0.92, size: px(2.6), fill: t.ink, lh: 1.6, op: 0.85 });
+            pied('08');
+        } else if (p === 8) {
+            S.fond(t.paper); entete('Revenus', 'R\u00e9partition g\u00e9ographique', 'Part du chiffre d\u2019affaires par zone.');
+            var y = H * 0.25;
+            REG.forEach(function (r) {
+                var part = num(r[1]);
+                S.T({ text: r[0], x: M, y: y, w: larg * 0.26, size: px(2.8), fill: t.ink });
+                S.bloc(M + larg * 0.28, y + px(0.8), larg * 0.46 * (part / 100) * 2.6, px(6), t.accent);
+                S.T({ text: r[1] + ' %', x: M + larg * 0.76, y: y, w: px(16), size: px(2.6), font: F.mono, fill: t.ink });
+                S.T({ text: r[2] + ' M\u20ac', x: M + larg * 0.86, y: y, w: larg * 0.14, size: px(2.6), font: F.mono, fill: t.accent, align: 'right' });
+                S.filet(y + px(9.4), t.ink, px(0.18), M, larg);
+                y += px(13);
+            });
+            S.bloc(M, y + px(4), larg, px(34), t.soft);
+            S.T({ text: 'CARTE DES IMPLANTATIONS', x: M + px(4), y: y + px(7), w: larg - px(8), size: px(1.9), font: F.mono, fill: t.accent, cs: 240 });
+            S.cadre(M + px(6), y + px(13), larg - px(12), px(17), t.ink, px(0.3));
+            [0.22, 0.38, 0.5, 0.62, 0.74].forEach(function (fx, i) {
+                S.rond(M + px(6) + (larg - px(12)) * fx, y + px(19), px(4.4), i < 3 ? t.accent : t.ink, 0.9);
+            });
+            pied('09');
+        } else if (p === 9) {
+            S.fond(t.paper); entete('Co\u00fbts', 'Ce que le chiffre d\u2019affaires a pay\u00e9', 'Structure de co\u00fbts, en millions d\u2019euros.');
+            var tot = 0;
+            COU.forEach(function (r) { tot += num(r[1]); });
+            tableau(['Poste', 'Montant', 'Part'], COU.map(function (r) { return [r[0], r[1] + ' M\u20ac', ((num(r[1]) / tot) * 100).toFixed(1).replace('.', ',') + ' %']; }),
+                H * 0.25, [[0, 0.62], [0.66, 0.18], [0.84, 0.16]], { rh: 13 });
+            S.T({ text: 'Les achats et l\u2019\u00e9nergie repr\u00e9sentent \u00e0 eux deux 46 % des co\u00fbts : la hausse des mati\u00e8res premi\u00e8res reste le premier risque de l\u2019exercice 2028.', x: M, y: H * 0.78, w: larg * 0.92, size: px(2.5), fill: t.ink, lh: 1.6, op: 0.85 });
+            pied('10');
+        } else if (p === 10) {
+            S.fond(t.paper); entete('Comptes', 'Compte de r\u00e9sultat simplifi\u00e9', 'Exercice clos le 31 d\u00e9cembre 2027.');
+            tableau(['Poste', 'Montant', ''], CPT.map(function (r) { return [r[0], r[1] + ' M\u20ac', '']; }),
+                H * 0.25, [[0, 0.62], [0.80, 0.20], [0, 0]], { rh: 12.4, taille: 2.5 });
+            pied('11');
+        } else if (p === 11) {
+            S.fond(t.paper); entete('Comptes', 'Bilan consolid\u00e9', 'Actif et passif au 31 d\u00e9cembre 2027.');
+            tableau(['Actif', 'Montant'], ACT, H * 0.24, [[0, 0.62], [0.80, 0.20]], { rh: 12.4, taille: 2.5 });
+            tableau(['Passif', 'Montant'], PAS, H * 0.62, [[0, 0.62], [0.80, 0.20]], { rh: 12.4, taille: 2.5 });
+            pied('12');
+        } else if (p === 12) {
+            S.fond(t.paper); entete('Comptes', 'Tableau des flux de tr\u00e9sorerie', 'En millions d\u2019euros.');
+            barresV(TRS, H * 0.30, H * 0.30, false);
+            S.T({ text: 'La tr\u00e9sorerie de cl\u00f4ture s\u2019\u00e9tablit \u00e0 22,4 M\u20ac, apr\u00e8s 14,2 M\u20ac investis et l\u2019acquisition de la branche logistique.', x: M, y: H * 0.74, w: larg * 0.92, size: px(2.6), fill: t.ink, lh: 1.6, op: 0.85 });
+            pied('13');
+        } else if (p === 13) {
+            S.fond(t.paper); entete('Effectifs', 'Un groupe qui grandit lentement', 'Effectif total par exercice.');
+            var maxi = 0;
+            EFF.forEach(function (e) { maxi = Math.max(maxi, num(e[1])); });
+            var cw = (larg - px(6) * (EFF.length - 1)) / EFF.length, y0 = H * 0.30, hMax = H * 0.26;
+            S.filet(y0 + hMax, t.ink, px(0.4), M, larg);
+            EFF.forEach(function (e, i) {
+                var hh = hMax * (num(e[1]) / maxi), x0 = M + i * (cw + px(6));
+                S.bloc(x0 + cw * 0.12, y0 + hMax - hh, cw * 0.76, hh, i === EFF.length - 1 ? t.accent : t.ink, i === EFF.length - 1 ? 1 : 0.8);
+                S.T({ text: e[1], x: x0, y: y0 + hMax - hh - px(5.4), w: cw, size: px(3.2), font: F.mono, fill: t.accent, align: 'center' });
+                S.T({ text: e[0], x: x0, y: y0 + hMax + px(2.6), w: cw, size: px(2.4), font: F.mono, fill: t.ink, align: 'center', op: 0.7 });
+            });
+            tableau(['Indicateur', '2026', '2027'], [
+                ['Recrutements', '88', '96'],
+                ['D\u00e9parts', '52', '41'],
+                ['Anciennet\u00e9 moyenne', '7,4 ans', '7,8 ans'],
+                ['Part de femmes', '38 %', '41 %'],
+                ['Alternants', '24', '38']
+            ], H * 0.66, [[0, 0.62], [0.76, 0.11], [0.90, 0.10]], { rh: 11, taille: 2.4 });
+            pied('14');
+        } else if (p === 14) {
+            S.fond(t.paper); entete('RSE', 'Engagements et r\u00e9sultats', 'Indicateurs suivis par le comit\u00e9 RSE.');
+            tableau(['Indicateur', '2027', 'Objectif'], RSE, H * 0.25, [[0, 0.56], [0.62, 0.16], [0.80, 0.20]], { rh: 13 });
+            S.T({ text: 'Le plan bas carbone couvre d\u00e9sormais les trois sites industriels et les 400 points de vente. La trajectoire est tenue \u00e0 mi-parcours.', x: M, y: H * 0.78, w: larg * 0.92, size: px(2.5), fill: t.ink, lh: 1.6, op: 0.85 });
+            pied('15');
+        } else if (p === 15) {
+            S.fond(t.paper); entete('Risques', 'Cartographie des risques', 'Probabilit\u00e9 et r\u00e9ponse.');
+            tableau(['Risque', 'Niveau', 'R\u00e9ponse'], RSQ, H * 0.25, [[0, 0.34], [0.38, 0.14], [0.56, 0.44]], { rh: 14 });
+            pied('16');
+        } else if (p === 16) {
+            S.fond(t.paper); entete('Gouvernance', 'Une organisation lisible', 'Trois niveaux, deux comit\u00e9s.');
+            var gx = M + larg / 2, gy = H * 0.28;
+            S.bloc(gx - larg * 0.16, gy, larg * 0.32, px(16), t.night);
+            S.T({ text: 'DIRECTOIRE', x: gx - larg * 0.16, y: gy + px(5.5), w: larg * 0.32, size: px(2.4), font: F.mono, fill: t.paper, align: 'center', cs: 160 });
+            S.filetv(gx, gy + px(16), px(12), t.ink, px(0.3));
+            ['Industrie', 'Distribution', 'Logistique', 'Ing\u00e9nierie', 'Services'].forEach(function (d, i) {
+                var bw = larg / 5 - px(3), x0 = M + i * (bw + px(3.75)), y1 = gy + px(28);
+                S.bloc(x0, y1, bw, px(12), t.accent, 0.9);
+                S.T({ text: d.toUpperCase(), x: x0, y: y1 + px(4.4), w: bw, size: px(1.9), font: F.mono, fill: t.paper, align: 'center', cs: 80 });
+                S.filetv(x0 + bw / 2, gy + px(16) + px(12), y1 - (gy + px(28)), t.ink, px(0.25));
+            });
+            S.T({ text: 'COMIT\u00c9S', x: M, y: H * 0.56, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 240 });
+            S.filet(H * 0.58, t.ink, px(0.3), M, larg);
+            [['Comit\u00e9 d\u2019audit', 'Quatre r\u00e9unions par an, comptes et risques'],
+             ['Comit\u00e9 RSE', 'Six r\u00e9unions par an, climat et social'],
+             ['Comit\u00e9 des r\u00e9mun\u00e9rations', 'Deux r\u00e9unions par an, dirigeants et mandataires'],
+             ['Comit\u00e9 d\u2019investissement', 'Un comit\u00e9 par projet au-del\u00e0 de 2 M\u20ac']].forEach(function (x, i) {
+                var yy = H * 0.61 + i * px(9);
+                S.T({ text: x[0], x: M, y: yy, w: larg * 0.38, size: px(2.6), fill: t.ink });
+                S.T({ text: x[1], x: M + larg * 0.42, y: yy, w: larg * 0.58, size: px(2.4), fill: t.ink, op: 0.75 });
+                S.filet(yy + px(6), t.ink, px(0.15), M, larg);
+            });
+            pied('17');
+        } else if (p === 17) {
+            S.fond(t.paper); entete('Projets', 'Ce que nous avons livr\u00e9', 'Six projets repr\u00e9sentatifs de l\u2019exercice.');
+            tableau(['Projet', 'Zone', 'M\u00e9tier', 'Statut'], PRJ, H * 0.25, [[0, 0.40], [0.42, 0.18], [0.62, 0.20], [0.84, 0.16]], { rh: 13 });
+            S.T({ text: 'Dix-huit appels d\u2019offres ont \u00e9t\u00e9 refus\u00e9s en 2027 : neuf pour des raisons de planning, six pour des prix inf\u00e9rieurs \u00e0 notre seuil, trois pour inad\u00e9quation technique.', x: M, y: H * 0.76, w: larg * 0.92, size: px(2.5), fill: t.ink, lh: 1.6, op: 0.85 });
+            pied('18');
+        } else if (p === 18) {
+            S.fond(t.paper); entete('\u00c9tudes de cas', 'Deux projets, deux m\u00e9thodes', 'Ce que nous avons appris en 2027.');
+            [['Ligne industrielle 4', 'Usine d\u2019Auvergne', '14 mois, 6,8 M\u20ac investis. La ligne tourne \u00e0 92 % de sa capacit\u00e9 nominale depuis septembre.', 0.62],
+             ['Offre bas carbone', 'Toutes zones', 'Lancement en septembre, 21 clients sign\u00e9s au 31 d\u00e9cembre, 8,4 M\u20ac de commandes.', 0.20]].forEach(function (x, i) {
+                var y0 = H * 0.26 + i * H * 0.32;
+                S.T({ text: x[0], x: M, y: y0, w: W * 0.6, size: px(4.6), font: F.display, weight: '700', fill: t.ink });
+                S.T({ text: (x[1] || '').toUpperCase(), x: M, y: y0 + px(7), w: larg, size: px(1.9), font: F.mono, fill: t.accent, cs: 160 });
+                S.T({ text: x[2], x: M, y: y0 + px(11), w: W * 0.66, size: px(2.6), fill: t.ink, lh: 1.55, op: 0.85 });
+                S.bloc(M, y0 + px(24), larg * x[3], px(7), i === 0 ? t.accent : t.ink, 0.9);
+                S.T({ text: Math.round(x[3] * 100) + ' % du budget tenu', x: M, y: y0 + px(26.5), w: larg, size: px(1.9), font: F.mono, fill: t.paper, op: 0.9 });
+                S.filet(y0 + px(34), t.ink, px(0.2), M, larg);
+            });
+            pied('19');
+        } else if (p === 19) {
+            S.fond(t.paper); entete('L\u2019ann\u00e9e', 'Douze mois, sept d\u00e9cisions', 'Ce qui a chang\u00e9 la trajectoire.');
+            var yl = H * 0.25;
+            S.bloc(M + px(15), yl, px(0.4), JAL.length * px(12), t.ink, 0.25);
+            JAL.forEach(function (j, i) {
+                S.rond(M + px(12.4), yl - px(0.6), px(6), i % 2 ? t.ink : t.accent, i % 2 ? 0.5 : 1);
+                S.T({ text: j[0], x: M, y: yl, w: larg * 0.28, size: px(2.4), font: F.mono, fill: t.accent, cs: 80 });
+                S.T({ text: j[1] || '', x: M + larg * 0.32, y: yl - px(0.6), w: larg * 0.68, size: px(2.9), fill: t.ink, lh: 1.45 });
+                yl += px(12);
+            });
+            S.T({ text: 'Deux d\u00e9cisions ont pes\u00e9 sur l\u2019exercice : l\u2019acquisition logistique de mai et le lancement de l\u2019offre bas carbone en septembre.', x: M, y: H * 0.80, w: larg * 0.92, size: px(2.6), fill: t.ink, lh: 1.6, op: 0.85 });
+            pied('20');
+        } else if (p === 20) {
+            S.fond(t.paper); entete('Innovation', 'Ce que nous construisons', 'Trois chantiers ouverts pour 2028.');
+            OBJ.slice(0, 3).forEach(function (o, i) {
+                var y0 = H * 0.25 + i * px(22);
+                S.rond(M, y0, px(10), t.accent, 0.9);
+                S.T({ text: String(i + 1), x: M, y: y0 + px(2.7), w: px(10), size: px(3.6), font: F.mono, fill: t.paper, align: 'center' });
+                S.T({ text: o[0], x: M + px(18), y: y0 - px(0.6), w: larg - px(18), size: px(3.6), font: F.display, weight: '700', fill: t.ink });
+                S.T({ text: o[1] || '', x: M + px(18), y: y0 + px(6.4), w: larg - px(18), size: px(2.5), fill: t.ink, lh: 1.45, op: 0.85 });
+                S.filet(y0 + px(14), t.ink, px(0.2), M, larg);
+            });
+            S.T({ text: 'TRAJECTOIRE DU CHIFFRE D\u2019AFFAIRES', x: M, y: H * 0.72, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 240 });
+            barresV([['2025', '158,4'], ['2026', '164,2'], ['2027', '184,6'], ['2028 cible', '201,0']], H * 0.80, H * 0.10, true);
+            pied('21');
+        } else if (p === 21) {
+            S.fond(t.paper); entete('Perspectives', 'Quatre priorit\u00e9s pour 2028', 'Objectifs arr\u00eat\u00e9s par le directoire.');
+            var yp = H * 0.25;
+            OBJ.forEach(function (o, i) {
+                S.bloc(M, yp - px(3), larg, px(20), i % 2 ? t.paper : t.soft);
+                S.rond(M + px(3), yp, px(9), t.accent, 0.9);
+                S.T({ text: String(i + 1), x: M + px(3), y: yp + px(2.4), w: px(9), size: px(3.4), font: F.mono, fill: t.paper, align: 'center' });
+                S.T({ text: o[0], x: M + px(16), y: yp - px(0.6), w: larg - px(16), size: px(3.4), font: F.display, weight: '700', fill: t.ink });
+                S.T({ text: o[1] || '', x: M + px(16), y: yp + px(5.8), w: larg - px(16), size: px(2.5), fill: t.ink, lh: 1.45, op: 0.85 });
+                yp += px(24);
+            });
+            pied('22');
+        } else if (p === 22) {
+            S.fond(t.paper); entete('Annexes', 'Glossaire', 'Les termes utilis\u00e9s dans ce rapport.');
+            GLO.forEach(function (g, i) {
+                var x0 = M + (i % 2) * (larg / 2 + px(6)), y0 = H * 0.25 + Math.floor(i / 2) * px(20);
+                S.T({ text: g[0], x: x0, y: y0, w: larg / 2 - px(10), size: px(2.7), font: F.display, weight: '700', fill: t.ink });
+                S.T({ text: g[1] || '', x: x0, y: y0 + px(4.6), w: larg / 2 - px(10), size: px(2.3), fill: t.ink, lh: 1.45, op: 0.8 });
+                S.filet(y0 + px(12), t.ink, px(0.15), x0, larg / 2 - px(10));
+            });
+            pied('23');
+        } else {
+            S.fond(t.night);
+            S.bloc(M, H * 0.14, larg * 0.62, px(1.2), t.accent);
+            S.T({ text: c.head, x: M, y: H * 0.19, w: W * 0.86, size: px(10), font: F.display, weight: '700', fill: t.paper, lh: 1.05 });
+            S.T({ text: c.quote, x: M, y: H * 0.38, w: W * 0.8, size: px(4.2), font: F.display, italic: true, fill: t.accent, lh: 1.35 });
+            S.T({ text: c.caption, x: M, y: H * 0.56, w: W * 0.76, size: px(2.7), fill: t.paper, lh: 1.6, op: 0.9 });
+            S.T({ text: c.credits, x: M, y: H * 0.68, w: W * 0.76, size: px(2.2), font: F.mono, fill: t.paper, lh: 1.7, op: 0.7 });
+            S.bloc(M, H * 0.82, larg, px(0.4), t.paper, 0.3);
+            S.T({ text: c.mast, x: M, y: H * 0.845, w: larg, size: px(2.1), font: F.mono, fill: t.paper, cs: 180, op: 0.7 });
+            S.T({ text: c.issue, x: M, y: H * 0.885, w: larg, size: px(2.1), font: F.mono, fill: t.accent, cs: 120 });
+            pied('24');
+        }
+    }
+
     // ── Vignette : SHOT RÉEL du modèle (rendu depuis l'app) + repli SVG ────
     window.spTemplateThumb = function (comp) {
         try {
@@ -73334,13 +74166,17 @@ function _npBuildLayout(params, keywords, lang) {
         }
         M.forEach(function (d) {
             compositionExamples.push({
-                name: d.name, key: d.key, lang: 'en', spEn: true, desc: d.desc,
+                name: d.name, key: d.key,
+                // 🆕 v1.7.441 — langue du MODÈLE (les modèles français ne sont plus déclarés EN)
+                lang: d.lang || 'en', spEn: !d.spFr, spFr: !!d.spFr, premium: !!d.premium,
+                desc: d.desc,
                 format: d.format,
                 theme: { bg: d.theme.paper, accent: d.theme.accent, dark: d.theme.night, light: d.theme.soft, ink: d.theme.ink },
                 themeFull: d.theme,
                 content: d.c,
                 shot: PREV + d.key + '.jpg',
                 fonts: d.fonts,
+                premium: !!d.premium,
                 buildMulti: async function () {
                     var total = d.format.pages || 1;
                     for (var i = 0; i < total; i++) {
@@ -73370,7 +74206,8 @@ window._npTemplateKeys = ['en_magazine_fashion_8p', 'en_journal_hair_4p', 'en_ma
     'en_magazine_ocean_8p', 'en_cv_editorial_1p', 'en_cv_minimal_1p', 'en_book_shapes_12p',
     'en_book_theatre_12p', 'en_calendar_a3_12p',
     'en_calendar_2027_a4_portrait_12p', 'en_calendar_2028_a4_landscape_12p',
-    'en_calendar_2027_2028_a5_portrait_12p', 'en_magazine_archi_8p', 'en_annual_report_12p'];
+    'en_calendar_2027_2028_a5_portrait_12p', 'en_magazine_archi_8p', 'en_annual_report_12p',
+    'fr_magazine_habitat_luxe_24p', 'fr_magazine_recettes_12p', 'fr_rapport_activite_premium_24p'];
 window.npRenderAssetStrip = function() {
     const strip = document.getElementById('npAssetStrip');
     if (!strip || typeof compositionExamples === 'undefined') return;
