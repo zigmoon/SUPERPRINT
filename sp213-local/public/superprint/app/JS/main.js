@@ -62174,12 +62174,88 @@ canvas.requestRenderAll();
         }
     })();
 
+    // 🆕 v1.7.446 — PALETTES + APERÇUS DE L'ONGLET TYPOGRAPHY.
+    //   Chaque association de polices a sa palette (fond, encre, corps, accent) : l'aperçu de la
+    //   carte est une VRAIE image de la combinaison, avec les couleurs — comme les maquettes.
+    window.spTypoPalettes = {
+        'Éditorial · Playfair Display + Open Sans': { bg: '#f7f4ee', ink: '#1a1714', body: '#433d36', accent: '#8c6b3f' },
+        'Magazine · Bebas Neue + Lato': { bg: '#141414', ink: '#f7f7f7', body: 'rgba(255,255,255,0.78)', accent: '#e2483d' },
+        'Suisse · Montserrat + Roboto': { bg: '#ffffff', ink: '#111318', body: '#4b5158', accent: '#2563eb' },
+        'Luxe · Playfair Display + Lato': { bg: '#f2ece3', ink: '#1c1a17', body: '#4a443c', accent: '#a16207' },
+        'Moderne · Poppins + Open Sans': { bg: '#f2f6fc', ink: '#12203a', body: '#42506b', accent: '#2563eb' },
+        'Technique · IBM Plex Mono + IBM Plex Sans': { bg: '#f3f5f7', ink: '#0f172a', body: '#3d4756', accent: '#0e7490' },
+        'Brutaliste · Bebas Neue + Space Mono': { bg: '#f5f2ea', ink: '#111111', body: '#4a463f', accent: '#e0533c' },
+        'Littéraire · Playfair Display × 2': { bg: '#fbf8f1', ink: '#191713', body: '#46413a', accent: '#8a5a2b' },
+        'Affiche · Bebas Neue + Montserrat': { bg: '#111214', ink: '#f6f6f6', body: 'rgba(255,255,255,0.8)', accent: '#f1c40f' },
+        'Startup · Poppins + IBM Plex Sans': { bg: '#ffffff', ink: '#101418', body: '#484f58', accent: '#7c3aed' },
+        'Données · IBM Plex Sans + IBM Plex Mono': { bg: '#ffffff', ink: '#101418', body: '#454b52', accent: '#0b5c4a' },
+        'Contraste · Playfair Display + Poppins': { bg: '#f6f1ea', ink: '#171310', body: '#453f38', accent: '#b3122c' },
+        'Code · JetBrains Mono + Roboto': { bg: '#0f172a', ink: '#e6edf3', body: 'rgba(230,237,243,0.8)', accent: '#38bdf8' },
+        'Gastronomie · Playfair Display + Montserrat': { bg: '#fffdf8', ink: '#1d1a15', body: '#4a443c', accent: '#b23a25' }
+    };
+    var _spTypoApercus = [];
+    window.spApercuTypo = function (pattern) {
+        try {
+            if (typeof fabric === 'undefined' || !pattern) return '';
+            var objs = (pattern.objects && pattern.objects.length) ? pattern.objects : [];
+            if (!objs.length) return '';
+            var pal = (window.spTypoPalettes && window.spTypoPalettes[pattern.name]) ||
+                      { bg: '#f6f4f0', ink: '#141414', body: '#3f3b36', accent: '#c0392b' };
+            var W = 620, H = 400, pas = 44;
+            var el = document.createElement('canvas');
+            el.width = W; el.height = H;
+            var sc = new fabric.StaticCanvas(el, { width: W, height: H, enableRetinaScaling: false });
+            sc.setBackgroundColor(pal.bg, function () {});
+            var clair = (function () {
+                var h = String(pal.bg).replace('#', '');
+                if (h.length !== 6) return true;
+                var n = parseInt(h, 16);
+                return (((n >> 16) & 255) + ((n >> 8) & 255) + (n & 255)) / 3 > 150;
+            })();
+            var encre = clair ? pal.ink : '#f7f7f7';
+            var corps = clair ? pal.body : 'rgba(255,255,255,0.78)';
+            var o0 = objs[0] || {}, o1 = objs[1] || {}, o2 = objs[2] || {};
+            var taille = Math.max(24, Math.min(58, (o0.fontSize || 40) * 0.92));
+            sc.add(new fabric.Textbox(String(pattern.name || '').toUpperCase(), {
+                left: pas, top: 30, width: W - pas * 2, fontSize: 11, fontFamily: 'IBM Plex Mono',
+                fill: pal.accent, charSpacing: 200, splitByGrapheme: false
+            }));
+            sc.add(new fabric.Textbox(String(o0.text || ''), {
+                left: pas, top: 52, width: W - pas * 2, fontSize: taille, fontWeight: '700',
+                fontFamily: o0.fontFamily || 'Poppins', fill: encre, lineHeight: 1.06, splitByGrapheme: false
+            }));
+            var y = 52 + taille * 1.22;
+            sc.add(new fabric.Line([pas, y, pas + 104, y], { stroke: pal.accent, strokeWidth: 2 }));
+            y += 13;
+            if (o1.text) {
+                sc.add(new fabric.Textbox(String(o1.text), {
+                    left: pas, top: y, width: W - pas * 2, fontSize: 15, fontStyle: 'italic',
+                    fontFamily: o1.fontFamily || 'Open Sans', fill: corps, lineHeight: 1.3, splitByGrapheme: false
+                }));
+                y += 32;
+            }
+            if (o2.text) {
+                var t = String(o2.text);
+                if (t.length > 150) t = t.slice(0, 147) + '…';
+                sc.add(new fabric.Textbox(t, {
+                    left: pas, top: y, width: W - pas * 2, fontSize: 12.5,
+                    fontFamily: o2.fontFamily || 'Open Sans', fill: corps, lineHeight: 1.55, splitByGrapheme: false
+                }));
+            }
+            sc.renderAll();
+            var url = sc.toDataURL({ format: 'jpeg', quality: 0.86 });
+            sc.dispose();
+            return url;
+        } catch (e) { return ''; }
+    };
+
     // Générer les assets Typographie
     const typoGrid = document.querySelector('.assets-grid[data-content="typo"]');
     if (typoGrid && typeof typographyPatterns !== 'undefined') {
         typographyPatterns.forEach((pattern) => {
             const previewText = document.createElement('div');
             previewText.className = 'preview-text';
+            var previewContent;   // 🆕 v1.7.446 — aperçu RÉEL (image dessinée) au lieu d'un simple texte
             // 🛡️ STABILITÉ (2026-06-05) : ne JAMAIS supposer que pattern.objects
             //   existe / est non vide / a un .text. Un seul pattern malformé faisait
             //   throw TypeError ici → toute la grille Assets restait vide (catastrophe).
@@ -62194,8 +62270,26 @@ canvas.requestRenderAll();
             previewText.textContent = (firstObj && typeof firstObj.text === 'string')
                 ? firstObj.text.substring(0, 30)
                 : (pattern.name || '');
+            // 🆕 v1.7.446 — aperçu RÉEL de la combinaison (mêmes textes, mêmes polices, mêmes
+            //   couleurs que ce que le clic dépose sur la page), comme les vignettes des maquettes.
+            try {
+                const _url = (typeof window.spApercuTypo === 'function') ? window.spApercuTypo(pattern) : '';
+                if (_url) {
+                    const _im = document.createElement('img');
+                    _im.className = 'asset-preview-img';
+                    _im.alt = pattern.name || '';
+                    _im.src = _url;
+                    _im.style.width = '100%';
+                    _im.style.height = '100%';
+                    _im.style.objectFit = 'cover';
+                    _im.style.display = 'block';
+                    previewContent = _im;
+                    _spTypoApercus.push({ motif: pattern, img: _im });
+                }
+            } catch (eAp) {}
+            if (!previewContent) previewContent = previewText;
             
-            const card = createAssetCard(pattern.name, previewText, () => {
+            const card = createAssetCard(pattern.name, previewContent, () => {
                 const canvas = getActiveCanvas();
                 if (canvas) {
                     const center = getPageCenter(canvas);
@@ -62216,6 +62310,23 @@ canvas.requestRenderAll();
             });
             typoGrid.appendChild(card);
         });
+        // 🆕 v1.7.446 — on redessine les aperçus une fois les polices chargées : sans cela le
+        //   canevas hors écran dessinerait une police de repli au premier passage.
+        try {
+            if (!window._spTypoPolicePrete && document.fonts && document.fonts.ready) {
+                window._spTypoPolicePrete = true;
+                document.fonts.ready.then(function () {
+                    setTimeout(function () {
+                        _spTypoApercus.forEach(function (a) {
+                            try {
+                                const _u = window.spApercuTypo(a.motif);
+                                if (_u) a.img.src = _u;
+                            } catch (e) {}
+                        });
+                    }, 150);
+                });
+            }
+        } catch (ePol) {}
     }
 
     // 🆕 v1.7.442 — BEAUCOUP PLUS DE FORMES (demande utilisateur) + aperçu vectoriel généré
@@ -62565,6 +62676,11 @@ canvas.requestRenderAll();
                     'Fiche produit',
                     'Magazine double page'
                 ];
+
+                // 🆕 v1.7.446 — classement : les maquettes ANGLAISES d'abord, puis les françaises
+                const aLg = (a.comp && a.comp.lang) || 'en';
+                const bLg = (b.comp && b.comp.lang) || 'en';
+                if (aLg !== bLg) return (aLg === 'en') ? -1 : 1;
 
                 const lastName = 'Carte Minimaliste';
                 if (aName === lastName && bName !== lastName) return 1;
@@ -71616,10 +71732,10 @@ function _npBuildLayout(params, keywords, lang) {
                     'Starters::Burrata, roasted grapes, hazelnut oil::12',
                     'Starters::Pumpkin velout\u00e9, sage, brown butter::11',
                     'Starters::Mackerel rillettes, rye, pickled onion::13',
-                    'Mains::Braised beef cheek, root vegetables::26',
-                    'Mains::Sea bream, fennel, citrus::24',
-                    'Mains::Wild mushroom risotto, aged parmesan::21',
-                    'Mains::Lamb shoulder, white beans, rosemary::27',
+                    'Main courses::Braised beef cheek, root vegetables::26',
+                    'Main courses::Sea bream, fennel, citrus::24',
+                    'Main courses::Wild mushroom risotto, aged parmesan::21',
+                    'Main courses::Lamb shoulder, white beans, rosemary::27',
                     'Desserts::Dark chocolate tart, sea salt::11',
                     'Desserts::Pear poached in red wine::10',
                     'Desserts::Cheese board, three ages::14',
@@ -72214,10 +72330,10 @@ function _npBuildLayout(params, keywords, lang) {
                     'Entrées::Burrata, raisins rôtis, huile de noisette::12',
                     'Entrées::Velouté de courge, sauge, beurre noisette::11',
                     'Entrées::Rillettes de maquereau, seigle, oignon mariné::13',
-                    'Mains::Joue de bœuf braisée, légumes racines::26',
-                    'Mains::Dorade, fenouil, agrumes::24',
-                    'Mains::Risotto aux champignons, parmesan affiné::21',
-                    'Mains::Épaule d’agneau, haricots blancs, romarin::27',
+                    'Plats::Joue de bœuf braisée, légumes racines::26',
+                    'Plats::Dorade, fenouil, agrumes::24',
+                    'Plats::Risotto aux champignons, parmesan affiné::21',
+                    'Plats::Épaule d’agneau, haricots blancs, romarin::27',
                     'Desserts::Tarte au chocolat noir, fleur de sel::11',
                     'Desserts::Poire pochée au vin rouge::10',
                     'Desserts::Plateau de fromages, trois affinages::14',
@@ -72277,7 +72393,7 @@ function _npBuildLayout(params, keywords, lang) {
             fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
             img: 'img/template/book', nimg: 5,
             c: {
-                mast: 'LE MÉTIER TRANQUILLE', tag: 'ESSAIS · PREMIÈRE ÉDITION', issue: 'MMXXVI', price: '',
+                mast: 'LE MÉTIER CALME', tag: 'ESSAIS · PREMIÈRE ÉDITION', issue: 'MMXXVI', price: '',
                 head: 'Petit livre sur l’art de fabriquer lentement',
                 stand: 'Douze essais sur les décisions ordinaires qui séparent un objet fabriqué d’un objet manufacturé.',
                 coverlines: '', sections: ['Préface', 'L’atelier', 'Matières', 'Le long projet', 'Erreurs', 'Épilogue'],
@@ -72945,8 +73061,8 @@ function _npBuildLayout(params, keywords, lang) {
                 'IN THIS ISSUE': 'DANS CE NUMÉRO', 'TASTING MENU': 'MENU DÉGUSTATION',
                 'WINES BY THE GLASS': 'VINS AU VERRE', 'RESERVATIONS': 'RÉSERVATIONS',
                 'Chapter one': 'Chapitre premier', 'PLATE I': 'PLANCHE I', 'PLATE II': 'PLANCHE II',
-                'PROFILE': 'PROFIL', 'EXPERIENCE': 'EXPÉRIENCE', 'SKILLS': 'COMPÉTENCES',
-                'The workshop': 'L’atelier',
+                'PROFILE': 'PROFIL', 'EXPERIENCE': 'EXPÉRIENCE', 'EDUCATION': 'FORMATION',
+                'SKILLS': 'COMPÉTENCES', 'The workshop': 'L’atelier',
                 'LANGUAGES': 'LANGUES', 'CHARACTERS': 'PERSONNAGES', 'SETTING': 'DÉCOR',
                 'CURTAIN': 'RIDEAU', 'WK': 'SEM.', 'HIGHLIGHTS OF THE YEAR': 'FAITS MARQUANTS DE L’EXERCICE',
                 'ACT TWO · SCENE TWO': 'ACTE II · SCÈNE II', 'ACT TWO · THE KEEPER ALONE': 'ACTE II · LE GARDIEN SEUL',
@@ -72968,6 +73084,13 @@ function _npBuildLayout(params, keywords, lang) {
                 for (var _kf in _dicFr) { if (Object.prototype.hasOwnProperty.call(_dicFr, _kf)) u[_kf.toUpperCase()] = String(_dicFr[_kf]).toUpperCase(); }
                 return u;
             })());
+            // 🆕 v1.7.446 — index en minuscules : les gabarits passent parfois les rubriques en
+            //   casse mixte (« Experience », « Education ») ; on les retrouve désormais aussi.
+            var _dicFrL = page._spDicFrL || (page._spDicFrL = (function () {
+                var l = {};
+                for (var _kl2 in _dicFr) { if (Object.prototype.hasOwnProperty.call(_dicFr, _kl2)) l[_kl2.toLowerCase()] = _dicFr[_kl2]; }
+                return l;
+            })());
             // remplacements par préfixe (textes construits) — ordre important
             var _rempFr = page._spRempFr || (page._spRempFr = [
                 ['ACT ', 'ACTE '],
@@ -72987,6 +73110,7 @@ function _npBuildLayout(params, keywords, lang) {
                 if (o && typeof o.text === 'string') {
                     var v = _dicFr[o.text];
                     if (v === undefined && _dicFrU[o.text] !== undefined) v = _dicFrU[o.text];
+                    if (v === undefined && _dicFrL[o.text.toLowerCase()] !== undefined) v = _dicFrL[o.text.toLowerCase()];
                     if (v === undefined) {
                         for (var _ri = 0; _ri < _rempFr.length; _ri++) {
                             if (o.text.indexOf(_rempFr[_ri][0]) >= 0) { v = o.text.split(_rempFr[_ri][0]).join(_rempFr[_ri][1]); break; }
@@ -73400,7 +73524,14 @@ function _npBuildLayout(params, keywords, lang) {
     function menuPages(S) {
         var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
         function platsDe(rub) {
-            return (c.plats || []).filter(function (l) { return l.split('::')[0] === rub; })
+            // 🆕 v1.7.446 — les rubriques peuvent être libellées « Plats » (FR) ou « Main courses » (EN)
+            return (c.plats || []).filter(function (l) {
+                var cat = l.split('::')[0];
+                if (cat === rub) return true;
+                if (rub === 'Plats' && (cat === 'Mains' || cat === 'Main courses')) return true;
+                if (rub === 'Desserts' && cat === 'Desserts') return true;
+                return false;
+            })
                 .map(function (l) { var a = l.split('::'); return { nom: a[1], prix: a[2] }; });
         }
         function liste(y0, rub) {
@@ -73444,7 +73575,7 @@ function _npBuildLayout(params, keywords, lang) {
             S.T({ text: 'TASTING MENU', x: M, y: H * 0.345, w: W - M * 2, size: px(6.4), font: F.display, fill: t.accent, align: 'center', cs: 100 });
             liste(H * 0.40, 'Desserts');
             S.cadre(M, H * 0.60, W - M * 2, H * 0.26, t.accent, px(0.4));
-            S.T({ text: 'FIVE COURSES \u00b7 58\n' + (c.plats || []).filter(function (l) { return l.indexOf('Mains::') === 0; }).map(function (l) { return '\u2014  ' + l.split('::')[1]; }).join('\n'), x: M + px(5), y: H * 0.62, w: W - M * 2 - px(10), size: px(2.7), font: F.mono, fill: t.paper, lh: 2.0 });
+            S.T({ text: 'FIVE COURSES \u00b7 58\n' + (c.plats || []).filter(function (l) { return l.indexOf('Plats::') === 0 || l.indexOf('Mains::') === 0 || l.indexOf('Main courses::') === 0; }).map(function (l) { return '\u2014  ' + l.split('::')[1]; }).join('\n'), x: M + px(5), y: H * 0.62, w: W - M * 2 - px(10), size: px(2.7), font: F.mono, fill: t.paper, lh: 2.0 });
             S.filet(H - M + px(4), t.accent, px(0.3));
             S.folio(p + 1);
         } else {

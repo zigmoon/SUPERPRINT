@@ -45,6 +45,9 @@ body {
 .splash-card {
     width: min(900px, 82vw);
     height: min(380px, 54vh);
+    /* 🆕 v1.7.446 — la carte ne dépasse jamais l'écran (défaut constaté sur fenêtre courte) */
+    max-height: 92vh;
+    max-height: 92dvh;
     background: #ffffff;
     border-radius: 16px;
     overflow: hidden;
@@ -60,16 +63,43 @@ body {
     color: #ffffff;
     display: flex;
     flex-direction: column;
+    /* 🆕 v1.7.446 — « safe center » : si le contenu est plus haut que le panneau (fenêtre courte),
+       il repart du HAUT au lieu d'être poussé hors du cadre vers le bas. */
     justify-content: center;
+    justify-content: safe center;
     align-items: flex-start;
+    gap: 12px;
     padding: 32px 24px;
     border-right: 1px solid #1a1a1a;
+    overflow: auto;
+    overscroll-behavior: contain;
+    min-height: 0;
 }
 
 .splash-logo {
     width: 140px;
     height: auto;
-    margin-bottom: 12px;
+    max-height: 44%;
+    /* ratio réservé : plus aucun décalage pendant le chargement du SVG */
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    flex: 0 0 auto;
+    margin-bottom: 0;
+}
+
+.splash-brand-big {
+    flex: 0 0 auto;
+}
+
+/* fenêtre courte : logo et nom réduits pour rester centrés */
+@media (max-height: 480px) {
+    .splash-logo { width: 92px; max-height: 38%; }
+    .splash-logo-panel { padding: 18px 16px; gap: 8px; }
+}
+
+/* écran étroit : le panneau noir passe au-dessus de la photo */
+@media (max-width: 760px) {
+    .splash-logo { width: 96px; }
 }
 
 .splash-brand-big {
@@ -174,6 +204,11 @@ body {
     .splash-card {
         grid-template-columns: 1fr;
         height: auto;
+        /* 🆕 v1.7.446 — plafond + défilement : la carte reste entièrement dans la fenêtre */
+        max-height: min(88vh, 700px);
+        max-height: min(88dvh, 700px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
     }
     .splash-logo-panel {
         border-right: none;
@@ -181,9 +216,11 @@ body {
         background: #000000;
         width: 100%;
         height: auto;
+        min-height: 150px;
         padding: 20px 16px;
         align-items: center;
         justify-content: center;
+        justify-content: safe center;
     }
     .splash-logo {
         width: min(140px, 50vw);

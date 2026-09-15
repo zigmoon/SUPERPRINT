@@ -10,7 +10,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.445 (September 2026)
+- **Version**: 1.7.446 (September 2026)
 - **Local install**: npx superprint (npm package `superprint`, launcher version 1.0.95) — the same application, downloaded once and run on your machine
 
 ## Core documentation
@@ -43,6 +43,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Line-accurate height resizing**: dragging a text frame's handles never cuts a line in half and never alters the leading. The height snaps to a whole number of lines, using the same line metrics as the PDF export so preview and output stay consistent. An overflow marker still appears whenever text remains in the frame.
 
 ## Recent releases (September 2026)
+- **1.7.446** — Asset Library: the **Typography** tab now shows a **real preview of every font pairing** — the same title, subtitle and body text, in the same fonts and the same colours, drawn as an image the way the layout thumbnails are (each pairing has its own palette: paper, ink, body and accent), so what you see is exactly what the click drops on the page. The library also **starts with the English templates** (EN, then FR), several **French labels were fixed** in the CV and restaurant-menu templates (EXPERIENCE / EDUCATION / Plats) and the **splash screen** now keeps its logo and name centred in the black panel even on short windows.
 - **1.7.445** — **Every English template now exists in French**: the library holds **43 templates** (21 EN / 22 FR) and both language filters return a full set. The 19 new French templates are: fashion magazine (8p), hair journal (4p), music magazine (8p), food magazine (8p), restaurant menu (4p), business card, professional CV, book (12p), marine life magazine (8p), editorial CV, minimal CV, book of shapes (12p), theatre play (12p), three A4 calendars and a compact A5 calendar, architecture magazine (8p) and a full 12-page activity report — each with its own cover thumbnail. The page templates (magazines, books, CVs, calendars, report) now carry **bilingual fixed labels**: a dictionary translates the studio labels on the fly, so a French template reads *Sommaire, Ingrédients, Préparation, Profil, Compétences, Langues, Personnages, Rideau, Acte II, Fais marquants, Poste, Montant, Secteur, Statut…*, and the calendars switch to French month, day and season names.
 - **1.7.444** — Asset Library layout: the **language tags** (ALL / EN / FR / JA) moved to the **right end of the tab row** (Layouts · Typography · Shapes), and the **tag bar is now centred** on its own line, so nothing competes with the title or the search field any more.
 - **1.7.443** — Asset Library: the **tag bar now has its own row** under the title and the search field (it was crowding both), and it gained **format tags**: **Single** (one page per screen) and **Spread** (magazine spread, two pages side by side) alongside the family tags (Magazines, Calendars, Books, CV, Reports, Cards, Press, Menus) and the language tags. Every group filters independently: family + format + language + free-text search combine, and **Tout** resets all of them at once.
