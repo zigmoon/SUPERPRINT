@@ -69247,6 +69247,46 @@ async function loadWeb3Save(hash) {
             currentPageIndex = 0;
             renderAllPages();
             _spApplyColorMode(project.colorMode || 'rgb');
+
+            // 🆕 v1.7.427 — L'import IPFS/Web3 applique désormais TOUT ce que le .json
+            //   transporte (aligné sur le chargeur local et sur le .sp) :
+            //   tons directs Pantone, polices externes embarquées, styles nommés.
+            try {
+                const _spRegIpfs = project.spotInks
+                    || (project.resources && project.resources.spotInks)
+                    || null;
+                if (_spRegIpfs && typeof window._spSpotRestoreInkRegistry === 'function') {
+                    window._spSpotRestoreInkRegistry(_spRegIpfs);
+                    const _nIpfs = Object.keys(_spRegIpfs).length;
+                    if (_nIpfs > 0) console.log('[Spot] import JSON (IPFS) : ' + _nIpfs + ' ton(s) direct(s) restauré(s).');
+                }
+            } catch (_) {}
+            try {
+                const _cfIpfs = project.customFonts || [];
+                if (_cfIpfs.length && typeof window._spRegisterCustomFontDataUrl === 'function') {
+                    _cfIpfs.forEach(function (f) {
+                        if (!f || !f.name) return;
+                        try { window._spRegisterCustomFontDataUrl(f.name, f.data || ''); } catch (_) {}
+                    });
+                    if (document.fonts && document.fonts.ready) {
+                        document.fonts.ready.then(function () {
+                            try { if (typeof _spRefreshTextboxesAfterFontLoad === 'function') _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
+                        }).catch(function () {});
+                    }
+                }
+            } catch (_) {}
+            try {
+                const _stIpfs = project.styles || {};
+                if (_stIpfs.typography && Array.isArray(_stIpfs.typography) && _stIpfs.typography.length) {
+                    localStorage.setItem('sp_typo_styles', JSON.stringify(_stIpfs.typography));
+                    if (typeof window._spRefreshTypographyStyles === 'function') window._spRefreshTypographyStyles(_stIpfs.typography);
+                }
+                if (_stIpfs.swatches && Array.isArray(_stIpfs.swatches) && _stIpfs.swatches.length) {
+                    localStorage.setItem('sp_color_swatches', JSON.stringify(_stIpfs.swatches));
+                    if (typeof window._spRefreshSwatches === 'function') window._spRefreshSwatches(_stIpfs.swatches);
+                }
+            } catch (_) {}
+
             _spRestoreGuides(project.guides);
             
             setTimeout(() => {

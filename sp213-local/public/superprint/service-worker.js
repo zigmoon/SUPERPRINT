@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.426-fonte-bloc';
+const CACHE_NAME = 'superprint-shell-v1.7.427-json-ipfs';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
