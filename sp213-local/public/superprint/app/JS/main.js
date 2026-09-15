@@ -72107,6 +72107,461 @@ function _npBuildLayout(params, keywords, lang) {
                 objectifs: 'Margin before volume::8% net margin targeted for 2029\nDecarbonise the tool::-35% emissions at constant scope\nGrow through the east::Two acquisitions in Germany and Poland\nAnchor the skills::In-house school open to the whole group',
                 glossaire: 'Operating margin::Profit before financial and exceptional items.\nService rate::Share of orders delivered complete and on time.\nOrder book::Firm orders not yet executed.\nEnergy intensity::Energy consumed per unit produced.\nConstant scope::At an unchanged scope of activity.\nEBITDA::Operating profit before depreciation.'
             }
+        },
+        {
+            key: 'fr_magazine_fashion_8p', style: 'mode', family: 'magazine', spreadDoc: true,
+            name: 'Magazine Mode (8p)', desc: 'Magazine de mode éditorial — 8 pages en double page',
+            format: { width: 420, height: 560, spread: true, pages: 8 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#faf8f5', ink: '#121212', accent: '#b3122c', soft: '#e7e0d7', night: '#14110f' },
+            fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/fashion', nimg: 6,
+            c: {
+                mast: 'ÉCLAT', tag: 'MODE & STYLE', issue: 'N° 12 · AUTOMNE 2026', price: 'PARIS 6,90 € · eclat-magazine.com',
+                head: 'Le vestiaire de la saison',
+                stand: 'Six silhouettes qui donnent le ton de l’automne — laine sculptée, satin fluide, cachemire brossé.',
+                coverlines: '40 pièces que vous porterez vraiment\nLes créateurs à suivre\nTailleur, velours et maille : le grand retour',
+                sections: ['Le dossier', 'Défilés', 'Dans la rue', 'Beauté', 'L’entretien', 'Guide shopping'],
+                legs: ['Les carnets d’atelier', 'Six silhouettes', 'Le retour du velours', 'Derrière les coutures', 'Entretien avec Anne Roy', 'Paris en 40 pièces'],
+                quote: 'Le style est une façon de dire qui l’on est sans avoir à parler.',
+                body: 'L’automne arrive avec une silhouette plus calme. Les épaules s’adoucissent, la taille revient et c’est le tissu qui parle. Nous avons suivi trois ateliers du premier essayage à la presse finale, et la même phrase est revenue chaque fois : moins de forme, plus de matière.\n\nLe manteau redevient long, coupé près du corps et laissé sans doublure pour qu’il bouge. La maille prend le volume que le tailleur abandonne, et la palette se pose sur le camel, l’ardoise et une seule note de rouge.\n\nCe qui change cette saison n’est pas la forme mais le poids : tout est plus léger, et c’est pour cela que les vêtements se lisent comme calmes plutôt que sévères.',
+                caption: 'Photographié à Paris pour le numéro d’automne · stylisme A. Roy',
+                credits: 'Mannequin : Inès L. · Coiffure : Studio 9 · Maquillage : Camille B. · Lumière : M. Dubois'
+            }
+        },
+        {
+            key: 'fr_journal_hair_4p', style: 'coiffure', family: 'journal', spreadDoc: false,
+            name: 'Journal Coiffure (4p)', desc: 'Journal de salon & coiffure — 4 pages A4',
+            format: { width: 595, height: 842, pages: 4 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#f4f1e8', ink: '#17150f', accent: '#8a6a3b', soft: '#e6e0d0', night: '#17150f' },
+            fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/hair', nimg: 5,
+            c: {
+                mast: 'Le Journal Coiffure', tag: 'ACTUALITÉ DU SALON, COUPES ET COULEUR', issue: 'ÉDITION SPÉCIALE · AUTOMNE 2026 · N° 07', price: '4,50 €',
+                head: 'Le carré souple est la coupe de la saison',
+                stand: 'Ligne franche, dégradé invisible et une couleur qui repousse proprement.',
+                coverlines: 'Couleur : les bruns chauds\nLe salon en 2026 : afficher ses prix\nLes outils du métier',
+                sections: ['En couverture', 'Tendance couleur', 'Le salon', 'Outils', 'Entretien', 'Agenda'],
+                legs: ['Le carré souple', 'Les bruns chauds', 'Afficher ses prix en 2026', 'Six peignes à garder', 'Entretien avec Lila M.', 'Agenda'],
+                quote: 'Une bonne coupe est celle qu’on arrive à recoiffer un lundi matin.',
+                body: 'Le carré souple se tient entre la ligne franche et le carré long. Il se coupe à sec, mèche par mèche, pour que le poids tombe exactement là où la cliente en a besoin — et il survit à trois mois de repousse sans perdre son dessin.\n\nTout est dans la tension. Trop serré, le cheveu s’affaisse ; trop souple, il disparaît au premier shampoing. Nous avons demandé à quatre patrons de salon comment ils l’expliquent à une cliente qui hésite.\n\nLa couleur suit la même logique : des bruns chauds posés avec un gloss, aucune ligne permanente, et un fondu de racines qui fait lire la repousse comme une intention plutôt qu’un oubli.',
+                caption: 'Dans les coulisses du défilé coiffure d’automne · Paris',
+                credits: 'Stylisme : S. Marchand · Photographie : L. Mercier · Salon : Maison 9'
+            }
+        },
+        {
+            key: 'fr_magazine_music_8p', style: 'musique', family: 'magazine', spreadDoc: true,
+            name: 'Magazine Musique (8p)', desc: 'Magazine musique & culture — 8 pages en double page',
+            format: { width: 420, height: 560, spread: true, pages: 8 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#f5f3ef', ink: '#f5f3ef', accent: '#ff3d71', soft: '#1d1d24', night: '#0a0a0c' },
+            fonts: { display: 'Bebas Neue', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/music', nimg: 5,
+            c: {
+                mast: 'AMPLIFY', tag: 'LE SON D’AUJOURD’HUI', issue: 'VOL. 04 · 2026', price: '5,90 €',
+                head: 'L’analogique revient dans les charts',
+                stand: 'Pourquoi les disques les plus forts de l’année ont été enregistrés sur bande — et ce que coûte une machine qu’on garde en vie.',
+                coverlines: 'Studio Nord : trois nuits\nVingt disques que vous avez manqués\nLes presses à nouveau pleines',
+                sections: ['En couverture', 'Nouveautés', 'Carnet de studio', 'Scène', 'Matériel', 'Playlist'],
+                legs: ['Enregistré sur bande', 'Vingt disques', 'Trois nuits au Nord', 'La pièce', 'Matériel : une machine', 'Playlist 04'],
+                quote: 'La bande ne pardonne pas, et c’est exactement pour cela qu’on l’utilise.',
+                body: 'Trois producteurs, une pièce louée et une machine deux pouces. Le résultat est le disque le plus direct de l’année : pas de grille, pas de montage, juste un groupe qui joue jusqu’à ce que la prise soit juste.\n\nC’est cher d’une manière que personne ne budgète. La bande coûte de l’argent, la machine demande de l’entretien, et chaque erreur coûte les deux — mais c’est cette contrainte qui rend les prises honnêtes.\n\nLes presses sont à nouveau pleines, et c’est le plus étrange de l’histoire : un format que tout le monde disait mort est aujourd’hui celui qui n’arrive plus à suivre la demande.',
+                caption: 'Nuit d’enregistrement au Studio Nord · photo L. Mercier',
+                credits: 'Textes : J. Novak · Portraits : S. Klein · Enregistré au Studio Nord',
+                list: 'Neon Divide — Second Sun\nKite & Wire — Slow Traffic\nMarta Sloane — Room 12\nLow Season — Analog Hearts\nThe Pale Hours — Rework'
+            }
+        },
+        {
+            key: 'fr_magazine_food_8p', style: 'cuisine', family: 'magazine', spreadDoc: true,
+            name: 'Magazine Cuisine (8p)', desc: 'Magazine cuisine & saveurs — 8 pages en double page',
+            format: { width: 420, height: 560, spread: true, pages: 8 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#fffdf8', ink: '#1d1a15', accent: '#1f7a4d', soft: '#eef0e6', night: '#14261c' },
+            fonts: { display: 'Playfair Display', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/food', nimg: 5,
+            c: {
+                mast: 'FLAVEURS', tag: 'LE MAGAZINE DES CUISINES DU MONDE', issue: 'N° 21 · AUTOMNE 2026', price: '5,20 €',
+                head: 'Cuisson lente, saveurs vives',
+                stand: 'Quatre mijotés qui transforment un morceau économique en meilleur repas de la semaine.',
+                coverlines: 'Le garde-manger : douze bocaux\nLe bœuf braisé, trois façons\nDu pain pour un dimanche froid',
+                sections: ['Le garde-manger', 'Les plats', 'Légumes', 'Pâtisserie', 'Vins', 'Carnet de cuisine'],
+                legs: ['Le garde-manger', 'Les plats', 'Légumes racines', 'Jour de pain', 'Une petite cave', 'Carnet de cuisine'],
+                quote: 'Le temps est le seul ingrédient qu’on ne peut pas acheter tout prêt.',
+                body: 'Un mijoté, c’est de la patience rendue visible. On colore la viande correctement, on construit la base avec oignon, carotte et tomate, puis on laisse le four faire le reste pendant trois heures tranquilles.\n\nLe morceau compte moins que la cuisson. La joue, l’épaule et le jarret se comportent pareil : il leur faut du temps, de l’humidité et un couvercle, et ils pardonnent au cuisinier qui quitte la pièce.\n\nOn termine par quelque chose de vif — vinaigre, agrumes, une poignée d’herbes — et l’assiette cesse de goûter le long après-midi pour goûter un plat.',
+                caption: 'Mijoté du dimanche, photographié au studio',
+                credits: 'Recette : M. Verdier · Stylisme : A. Costa · Cuisine : Atelier 12',
+                list: 'Huile d’olive, première pression\nSel, séché à l’air\nTomates, entières\nHaricots blancs\nAnchois à l’huile\nVinaigre de vin rouge'
+            }
+        },
+        {
+            key: 'fr_restaurant_menu_4p', style: 'menu', family: 'menu', spreadDoc: false,
+            name: 'Menu de restaurant (4p)', desc: 'Menu de restaurant — 4 pages A4',
+            format: { width: 595, height: 842, pages: 4 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#f6f0e3', ink: '#f6f0e3', accent: '#c8a15a', soft: '#33463c', night: '#0f1f19' },
+            fonts: { display: 'Playfair Display', text: 'Montserrat', mono: 'IBM Plex Mono' },
+            img: 'img/template/menu', nimg: 4,
+            c: {
+                mast: 'LA MAISON DORÉE', tag: 'CUISINE DE SAISON', issue: 'MENU 2026', price: '',
+                head: 'Cuisine de saison', stand: 'Cuisiné à la commande, servi sans qu’on attende.',
+                coverlines: '', sections: ['Entrées', 'Plats', 'Desserts', 'Vins', 'Menu dégustation', 'Réservations'],
+                legs: ['Entrées', 'Plats', 'Desserts', 'Vins'],
+                quote: 'Ce qui arrive le matin décide de ce qui sort de la cuisine le soir.',
+                body: 'Notre cuisine fait ce que le marché lui donne. La carte change quand les légumes changent, et pas avant.',
+                caption: '12 rue du Marché · 01 23 45 67 89 · tous les jours 12 h–14 h et 19 h–22 h',
+                plats: [
+                    'Entrées::Burrata, raisins rôtis, huile de noisette::12',
+                    'Entrées::Velouté de courge, sauge, beurre noisette::11',
+                    'Entrées::Rillettes de maquereau, seigle, oignon mariné::13',
+                    'Mains::Joue de bœuf braisée, légumes racines::26',
+                    'Mains::Dorade, fenouil, agrumes::24',
+                    'Mains::Risotto aux champignons, parmesan affiné::21',
+                    'Mains::Épaule d’agneau, haricots blancs, romarin::27',
+                    'Desserts::Tarte au chocolat noir, fleur de sel::11',
+                    'Desserts::Poire pochée au vin rouge::10',
+                    'Desserts::Plateau de fromages, trois affinages::14',
+                    'Vins::Sancerre, Loire 2023::9',
+                    'Vins::Côtes du Rhône, au verre::8',
+                    'Vins::Champagne, au verre::14'
+                ]
+            }
+        },
+        {
+            key: 'fr_business_card_1p', style: 'carte', family: 'card', spreadDoc: false,
+            name: 'Carte de visite', desc: 'Carte de visite bicolore — 85 × 55 mm',
+            format: { width: 241, height: 156, pages: 1 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#ffffff', ink: '#0e0e10', accent: '#2563eb', soft: '#eef2ff', night: '#0e0e10' },
+            fonts: { display: 'Montserrat', text: 'Montserrat', mono: 'IBM Plex Mono' },
+            img: 'img/template/card', nimg: 1,
+            c: {
+                mast: 'ALEX MORGAN', tag: 'DESIGNER GRAPHIQUE', issue: '', price: '', head: 'Alex Morgan',
+                stand: 'Identité de marque · design éditorial', coverlines: '', sections: [], quote: '',
+                body: 'hello@alexmorgan.studio\n+33 6 12 34 56 78\nalexmorgan.studio', caption: 'Paris · Lyon',
+                legs: []
+            }
+        },
+        {
+            key: 'fr_cv_pro_1p', style: 'cv', family: 'cv', spreadDoc: false,
+            name: 'CV professionnel', desc: 'CV une page — A4, sans photo',
+            format: { width: 595, height: 842, pages: 1 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#ffffff', ink: '#14181f', accent: '#0f766e', soft: '#f1f5f9', night: '#14181f' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/cv', nimg: 1,
+            c: {
+                mast: 'CURRICULUM VITAE', tag: 'DESIGNER PRODUIT SENIOR · PARIS', issue: '', price: '',
+                head: 'Julien Lefèvre',
+                stand: 'Designer avec neuf ans d’expérience sur des produits imprimés et numériques, du premier croquis au suivi de fabrication.',
+                coverlines: '', sections: ['Profil', 'Expérience', 'Formation', 'Compétences', 'Langues', 'Références'], quote: '',
+                body: 'EXPÉRIENCE\n2022 — aujourd’hui · Northwind Studio\nLead product designer, plateformes éditoriales\n\n2019 — 2022 · Studio Paper\nDesigner print & identité\n\n2017 — 2019 · Atelier 7\nDesigner junior, packaging',
+                caption: 'julien.lefevre@email.com · +33 6 12 34 56 78 · Paris',
+                legs: [
+                    'Experience::2022 — aujourd’hui::Northwind Studio::Lead product designer, plateformes éditoriales',
+                    'Experience::2019 — 2022::Studio Paper::Designer print & identité, systèmes de marque',
+                    'Experience::2017 — 2019::Atelier 7::Designer junior, packaging et retail',
+                    'Education::2015 — 2017::École des Arts Décoratifs::DSAA, design de communication',
+                    'Education::2011 — 2014::Université Paris 1::Licence, arts plastiques'
+                ],
+                skills: 'Design éditorial::0.95\nSystèmes de marque::0.88\nTypographie::0.92\nProduction imprimée::0.85\nUI & prototypage::0.80\nDirection d’équipe::0.75',
+                langues: 'Français · langue maternelle\nAnglais · courant\nAllemand · professionnel'
+            }
+        },
+        {
+            key: 'fr_book_text_12p', style: 'livre', family: 'book', spreadDoc: false,
+            name: 'Livre — 12p', desc: 'Livre de texte / brochure — 12 pages A5',
+            format: { width: 420, height: 595, pages: 12 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#fbf8f1', ink: '#191713', accent: '#8a5a2b', soft: '#f1ece1', night: '#191713' },
+            fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/book', nimg: 5,
+            c: {
+                mast: 'LE MÉTIER TRANQUILLE', tag: 'ESSAIS · PREMIÈRE ÉDITION', issue: 'MMXXVI', price: '',
+                head: 'Petit livre sur l’art de fabriquer lentement',
+                stand: 'Douze essais sur les décisions ordinaires qui séparent un objet fabriqué d’un objet manufacturé.',
+                coverlines: '', sections: ['Préface', 'L’atelier', 'Matières', 'Le long projet', 'Erreurs', 'Épilogue'],
+                legs: ['Préface', 'L’atelier', 'Matières', 'Le long projet', 'Erreurs', 'Épilogue'],
+                quote: 'Chaque objet porte le temps qu’il a fallu pour le faire.',
+                body: 'L’atelier est une pièce où rien n’est terminé et où tout est compris. Les outils pendent dans l’ordre où on s’en sert, et l’établi garde les marques des dix dernières années de travail.\n\nFabriquer lentement n’est pas une position morale. C’est une méthode : elle garde celui qui fabrique assez près de la matière pour remarquer quand la matière change d’avis.\n\nLa plupart des erreurs ne sont pas des erreurs de main mais d’attention. Le rabot glisse parce que l’œil a bougé le premier, et la réparation apprend plus que la première tentative.',
+                caption: 'Première édition à 500 exemplaires · imprimé sur papier non couché',
+                credits: 'Composé en Playfair Display et IBM Plex Sans · 500 exemplaires · 2026'
+            }
+        },
+        {
+            key: 'fr_magazine_ocean_8p', style: 'ocean', family: 'magazine', spreadDoc: true,
+            name: 'Magazine Vie marine (8p)', desc: 'Magazine océan & vie marine — 8 pages en double page',
+            format: { width: 420, height: 560, spread: true, pages: 8 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#f2f7f8', ink: '#07222e', accent: '#0e7490', soft: '#d3e6ea', night: '#04202c' },
+            fonts: { display: 'Bebas Neue', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/ocean', nimg: 4,
+            c: {
+                mast: 'ABYSSAL', tag: 'LE MAGAZINE DE L’OCÉAN', issue: 'N° 07 · 2027', price: '6,20 €',
+                head: 'La forêt que personne n’a cartographiée',
+                stand: 'La moitié de l’oxygène de chaque respiration vient de la mer, et l’essentiel est fabriqué par des organismes trop petits pour être vus.',
+                coverlines: 'Le récif la nuit\nSix mois avec les baleines à bosse\nCe que le courant transporte',
+                sections: ['Le récif', 'Eaux profondes', 'Migration', 'Carnet de terrain', 'Le courant', 'Espèces'],
+                legs: ['Le récif la nuit', 'Six mois avec les baleines à bosse', 'Ce que le courant transporte', 'Les jardins froids', 'Entretien avec S. Okoye', 'Douze espèces à connaître'],
+                quote: 'On a de meilleures cartes de Mars que du fond de la mer.',
+                body: 'Le récif change d’équipe au crépuscule. Les poissons qui ont passé la journée cachés dans le corail sortent, et ceux qui ont brouté toute la journée rejoignent les failles pour dormir. Pendant quatre heures, toute la structure est en mouvement.\n\nNous avons suivi une équipe de six plongeurs pendant trois semaines de transects de nuit. Leur méthode est ancienne et patiente : un fil au fond, une lampe, un carnet. Ce qu’ils rapportent chaque matin, c’est une liste d’espèces et une idée approximative de leur nombre.\n\nLe plancton est là où l’histoire devient mondiale. Ces organismes produisent une grande part de l’oxygène de l’atmosphère, et leurs efflorescences se voient depuis l’orbite. Personne n’est encore parvenu à les cartographier précisément d’une année sur l’autre.',
+                caption: 'Photographié au large des Açores · Expédition 2027',
+                credits: 'Textes : R. Vance · Photographie : M. Okonkwo · Plongée : Station 4',
+                list: 'Baleine à bosse\nCorail corne d’élan\nRequin léopard\nMéduse lune\nThon rouge\nVarech géant'
+            }
+        },
+        {
+            key: 'fr_cv_editorial_1p', style: 'cv2', family: 'cv', spreadDoc: false,
+            name: 'CV éditorial', desc: 'CV deux colonnes — A4, sans photo',
+            format: { width: 595, height: 842, pages: 1 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#ffffff', ink: '#16181d', accent: '#c2410c', soft: '#f4f1ec', night: '#16181d' },
+            fonts: { display: 'Playfair Display', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'CURRICULUM VITAE', tag: 'DESIGNER ÉDITORIALE · AMSTERDAM', issue: '', price: '',
+                head: 'Amélie Hart',
+                stand: 'Designer éditoriale entre magazines et livres. Douze ans passés à rendre les textes longs lisibles sans les rendre ennuyeux.',
+                coverlines: '', sections: ['Profil', 'Expérience', 'Formation', 'Compétences', 'Langues', 'Studio'],
+                quote: '', caption: 'amelie.hart@email.com · +31 6 1234 5678 · Amsterdam',
+                body: '',
+                legs: [
+                    'Experience::2023 — aujourd’hui::Rijn & Co::Directrice artistique, magazine trimestriel et collection de livres',
+                    'Experience::2019 — 2023::De Persgroep::Designer senior, édition du week-end',
+                    'Experience::2016 — 2019::Studio Kade::Designer, clients culturels et catalogues',
+                    'Education::2014 — 2016::Werkplaats Typografie::Master, typographie et édition',
+                    'Education::2010 — 2014::Gerrit Rietveld Academie::Licence, design graphique'
+                ],
+                skills: 'Design éditorial::0.96\nSystèmes typographiques::0.90\nFabrication de livres::0.88\nDirection d’illustration::0.74\nÉdition::0.82\nDirection d’équipe::0.86',
+                langues: 'Néerlandais · langue maternelle\nAnglais · courant\nAllemand · professionnel',
+                profil: 'Je conçois des publications longues : magazines, catalogues et livres. Mon travail commence à la grille et finit au choix du papier, et je reste présente aux bons à tirer parce que c’est là qu’une page tient ou s’effondre.\n\nL’essentiel de mon temps passe dans des systèmes typographiques qu’une équipe entière peut utiliser sans moi dans la pièce.',
+                clients: 'Rijn & Co · De Persgroep · Stedelijk Museum · Atlas Press · Festival aan de Werf · Van Oorschot'
+            }
+        },
+        {
+            key: 'fr_cv_minimal_1p', style: 'cv3', family: 'cv', spreadDoc: false,
+            name: 'CV minimal', desc: 'CV une colonne, chronologique — A4, sans photo',
+            format: { width: 595, height: 842, pages: 1 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#ffffff', ink: '#111318', accent: '#1f2937', soft: '#f3f4f6', night: '#111318' },
+            fonts: { display: 'IBM Plex Sans', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: '', tag: 'INGÉNIEUR PRODUIT · BERLIN', issue: '', price: '',
+                head: 'Noé Bernard',
+                stand: 'Ingénieur produit avec dix ans d’outils à forte densité de données. Je construis des interfaces qui restent calmes quand les chiffres grossissent.',
+                coverlines: '', sections: [], quote: '',
+                caption: 'noe.bernard@email.com · +49 30 1234 5678 · Berlin',
+                body: '',
+                legs: [
+                    'Experience::2022 — aujourd’hui::Kestrel Labs::Ingénieur principal, plateforme de données et outils de requête',
+                    'Experience::2019 — 2022::Northwind::Ingénieur senior, reporting et tableaux de bord',
+                    'Experience::2016 — 2019::Bitwise::Ingénieur, outillage interne et systèmes de design',
+                    'Education::2012 — 2016::TU Delft::Licence, informatique'
+                ],
+                skills: 'TypeScript, Rust, SQL, Postgres, React, visualisation de données, accessibilité, documentation technique',
+                langues: 'Français · langue maternelle\nAnglais · courant\nAllemand · courant',
+                profil: 'Je m’occupe des parties ennuyeuses : états de chargement, états vides, messages d’erreur, navigation au clavier. Un outil qu’on utilise huit heures par jour mérite le même soin qu’un produit présenté dans une vidéo.',
+                clients: 'Kestrel Labs · Northwind · Bitwise · Technische Universiteit Delft'
+            }
+        },
+        {
+            key: 'fr_book_shapes_12p', style: 'shapes', family: 'book', spreadDoc: false,
+            name: 'Livre de formes — 12p', desc: 'Livre complet, formes uniquement, sans image — 12 pages A5',
+            format: { width: 420, height: 595, pages: 12 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#fbfaf7', ink: '#191919', accent: '#e0533c', soft: '#efe9df', night: '#191919' },
+            fonts: { display: 'Bebas Neue', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'FORMES D’UNE PIÈCE CALME', tag: 'UN LIVRE DE FORMES', issue: 'PREMIÈRE ÉDITION · MMXXVII', price: '',
+                head: 'Un livre de formes, dessiné avec trois rectangles',
+                stand: 'Douze pages construites avec des carrés, des bandes et une marque rouge. Aucune photographie, rien d’importé — seulement ce que la page peut porter.',
+                coverlines: '', sections: ['Ouverture', 'Mesure', 'Poids', 'Silence', 'Répétition', 'Fermeture'],
+                legs: ['Ouverture', 'La mesure d’une pièce', 'Poids et lumière', 'Notes sur le silence', 'Répétition', 'Fermeture'],
+                quote: 'Une page est une pièce avant d’être une image.',
+                body: 'Une forme n’est pas une illustration. C’est une décision déjà prise, montrée de nouveau pour qu’on puisse la discuter.\n\nLes premières pages de ce livre parlent de mesure : jusqu’où une marge peut s’élargir avant de devenir un champ, jusqu’où une marque peut rétrécir en tenant encore un coin.\n\nEnsuite les formes s’alourdissent. Le poids, dans un livre, n’est pas une affaire d’encre mais de place qu’on laisse à une forme sans lui demander de compagnie.',
+                caption: 'Composé en Bebas Neue et IBM Plex Sans · imprimé sur offset 120 g',
+                credits: 'Design et formes : Studio Rijn · Première édition à 300 exemplaires · 2027'
+            }
+        },
+        {
+            key: 'fr_book_theatre_12p', style: 'theatre', family: 'book', spreadDoc: false,
+            name: 'Pièce de théâtre — 12p', desc: 'Pièce complète en trois actes, typographique — 12 pages A5',
+            format: { width: 420, height: 595, pages: 12 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#fdfaf3', ink: '#171310', accent: '#8a1c1c', soft: '#f0e8d8', night: '#171310' },
+            fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'LE GARDIEN DU PHARE', tag: 'PIÈCE EN TROIS ACTES', issue: 'HÉLÈNE MARCHETTI', price: '',
+                head: 'Le Gardien du phare',
+                stand: 'Une pièce en trois actes, pour quatre personnages et une lumière qui ne s’arrête jamais de tourner.',
+                coverlines: '', sections: ['Acte I', 'Acte II', 'Acte III', 'Personnages', 'Décor', 'Colophon'],
+                legs: [
+                    'GARDIENNE::Une femme de cinquante ans. N’a pas quitté l’île depuis neuf ans.',
+                    'VOIX::Entendue à la radio. Jamais vue. Chaleureuse, et un peu trop lente.',
+                    'LE GARDE-CÔTES::Quarante ans. Vient deux fois par mois avec des vivres et de mauvaises nouvelles.',
+                    'LA FILLE::Dix-sept ans. Arrive à l’acte II. Dit qu’elle est journaliste.',
+                    'DÉCOR::Un phare, le rocher qui le porte, et la mer autour des deux.'
+                ],
+                quote: 'Une lumière qui tourne toute la nuit ne montre pas le chemin. Elle dit que quelqu’un est encore là.',
+                body: 'Le premier acte se passe dans la salle en haut de la tour. Tout y est soit boulonné, soit mouillé. La gardienne a un journal de bord, une radio qui fonctionne quand elle veut bien, et une tempête qui arrive, déjà annoncée deux fois par le garde-côtes.\n\nLe deuxième acte arrive avec la fille, qui n’est pas journaliste, et le troisième acte arrive avec la vérité, qu’aucune des deux ne dit à voix haute.',
+                caption: 'Créée au Théâtre du Port, mars 2027',
+                credits: 'Composé en Playfair Display, IBM Plex Sans et IBM Plex Mono · Première édition à 500 exemplaires',
+                act1: 'SCÈNE PREMIÈRE · LA SALLE DE LA LAMPE, LE SOIR\n\nUne tempête approche. La gardienne écrit dans le journal de bord. La radio grésille.',
+                repliques: [
+                    'GARDIENNE::Dix-neuf heures. Vent de nord-ouest. Rien à signaler.',
+                    'VOIX::Rien à signaler ? Vous avez éteint la lampe onze minutes cette nuit.',
+                    'GARDIENNE::Je l’ai éteinte pour changer le brûleur.',
+                    'VOIX::Vous avez dit la même chose en avril.',
+                    'GARDIENNE::En avril, c’était vrai.',
+                    'VOIX::(après un silence) La vedette de relève ne viendra pas ce mois-ci.'
+                ],
+                act2: 'SCÈNE DEUX · LA MÊME SALLE, TROIS SEMAINES PLUS TARD\n\nLa fille est assise par terre, dos à la vitre. La gardienne reste debout.',
+                repliques2: [
+                    'LA FILLE::J’ai compté les marches. Il y en a soixante-quatre.',
+                    'GARDIENNE::Il y en a soixante-trois. Vous avez compté le palier deux fois.',
+                    'LA FILLE::Vous allez me demander pourquoi je suis venue ?',
+                    'GARDIENNE::Non.',
+                    'LA FILLE::Tant mieux. Parce que j’aurais menti.',
+                    'GARDIENNE::Tous ceux qui viennent ici mentent. La mer ne s’en plaint pas.'
+                ],
+                act3: 'SCÈNE TROIS · LA SALLE DE LA LAMPE, À L’AUBE\n\nLa tempête est passée. Les deux fenêtres sont ouvertes.',
+                repliques3: [
+                    'LE GARDE-CÔTES::Ils ferment la station au printemps.',
+                    'GARDIENNE::Je sais. La radio me l’a dit en janvier.',
+                    'LE GARDE-CÔTES::Et vous n’avez rien dit ?',
+                    'GARDIENNE::Je voulais un hiver de plus.',
+                    'LA FILLE::(doucement) Soixante-trois marches. Je les ai recomptées.'
+                ],
+                vers: 'La lumière tourne et ne se soucie pas\nde qui est réveillé pour la voir.\n\nElle marque le rocher, le banc, l’entrée.\nElle marque la sortie.\n\nEt quand ils fermeront la station\net dévisseront la lampe,\nquelqu’un se réveillera encore à quatre heures\net la cherchera, et ne la trouvera pas.'
+            }
+        },
+        {
+            key: 'fr_calendar_a3_12p', style: 'cal', family: 'calendar', spreadDoc: false,
+            name: 'Calendrier A3 2027-2028 (12p)', desc: 'Calendrier A3 paysage — 1 mois par page, 12 pages, septembre 2027 → août 2028',
+            format: { width: 1191, height: 842, pages: 12 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#ffffff', ink: '#101418', accent: '#1e3a8a', soft: '#eef2ff', night: '#101418' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'CALENDRIER', tag: 'SEPTEMBRE 2027 — AOÛT 2028', issue: 'A3 PAYSAGE · UN MOIS PAR PAGE', price: '',
+                head: '2027 — 2028',
+                stand: 'Douze mois, une page chacun, de septembre à août. Numéros de jours, numéros de semaine, et rien d’autre pour gêner la lecture.',
+                coverlines: '', sections: [], quote: '',
+                body: 'Grille dessinée avec les outils vectoriels de l’application · semaine du lundi',
+                caption: 'Mois de septembre 2027 à août 2028',
+                credits: 'Composé en Montserrat, Open Sans et IBM Plex Mono · A3 paysage 420 × 297 mm',
+                legs: []
+            }
+        },
+        {
+            key: 'fr_calendar_2027_a4_portrait_12p', style: 'calp', family: 'calendar', spreadDoc: false,
+            name: 'Calendrier 2027 — A4 portrait (12p)', desc: 'Calendrier A4 portrait, un mois par page — numéros de semaine, zone de notes, 12 mois de 2027',
+            format: { width: 595, height: 842, pages: 12 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#ffffff', ink: '#12161c', accent: '#0f766e', soft: '#eef4f3', night: '#12161c' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'CALENDRIER', tag: '2027 · A4 PORTRAIT', issue: 'DOUZE MOIS · UNE PAGE CHACUN', price: '',
+                head: '2027',
+                stand: 'Calendrier A4 portrait pour 2027 : un mois par page, numéros de semaine ISO, une zone de notes lignée et l’année entière rappelée au pied de chaque page.',
+                coverlines: '', sections: [], quote: '',
+                body: 'Grille des jours dessinée avec les outils vectoriels de l’application · semaine du lundi · numéros de semaine ISO',
+                caption: 'Mois de janvier à décembre 2027',
+                credits: 'Composé en Montserrat, Open Sans et IBM Plex Mono · A4 portrait 210 × 297 mm',
+                legs: []
+            }
+        },
+        {
+            key: 'fr_calendar_2028_a4_landscape_12p', style: 'call', family: 'calendar', spreadDoc: false,
+            name: 'Calendrier 2028 — A4 paysage (12p)', desc: 'Calendrier A4 paysage, un mois par page — panneau saisonnier et aperçu du mois suivant',
+            format: { width: 842, height: 595, pages: 12 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#ffffff', ink: '#14181d', accent: '#b45309', soft: '#f6f1e9', night: '#14181d' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'CALENDRIER', tag: '2028 · A4 PAYSAGE', issue: 'DOUZE MOIS · UNE PAGE CHACUN', price: '',
+                head: '2028',
+                stand: 'Calendrier A4 paysage pour 2028 : le mois se lit de gauche à droite, avec un panneau saisonnier, les numéros de semaine et un aperçu du mois suivant.',
+                coverlines: '', sections: [], quote: '',
+                body: 'Grille des jours dessinée avec les outils vectoriels de l’application · semaine du lundi · aperçu du mois suivant',
+                caption: 'Mois de janvier à décembre 2028',
+                credits: 'Composé en Montserrat, Open Sans et IBM Plex Mono · A4 paysage 297 × 210 mm',
+                legs: []
+            }
+        },
+        {
+            key: 'fr_calendar_2027_2028_a5_portrait_12p', style: 'cal5', family: 'calendar', spreadDoc: false,
+            name: 'Calendrier 2027-2028 — A5 portrait (12p)', desc: 'Calendrier A5 compact, deux mois par page — toute l’année 2027 et 2028 en 12 pages',
+            format: { width: 420, height: 595, pages: 12 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#ffffff', ink: '#101418', accent: '#1e3a8a', soft: '#eef2ff', night: '#101418' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'CALENDRIER', tag: '2027 — 2028 · A5 PORTRAIT', issue: 'DEUX MOIS PAR PAGE · VINGT-QUATRE MOIS', price: '',
+                head: '2027 — 2028',
+                stand: 'La version de poche : vingt-quatre mois sur douze pages A5, deux mois côte à côte, les numéros de jours seulement — rien d’autre pour gêner la lecture.',
+                coverlines: '', sections: [], quote: '',
+                body: 'Grille des jours dessinée avec les outils vectoriels de l’application · semaine du lundi · deux mois par page',
+                caption: 'Vingt-quatre mois : janvier 2027 à décembre 2028',
+                credits: 'Composé en Montserrat, Open Sans et IBM Plex Mono · A5 portrait 148 × 210 mm',
+                legs: []
+            }
+        },
+        {
+            key: 'fr_magazine_archi_8p', style: 'archi', family: 'magazine', spreadDoc: true,
+            name: 'Magazine Architecture (8p)', desc: 'Magazine architecture & intérieurs — 8 pages en double page, photographies réelles',
+            format: { width: 420, height: 560, spread: true, pages: 8 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#efeeea', ink: '#1c1a17', accent: '#a16207', soft: '#dcd8cf', night: '#171614' },
+            fonts: { display: 'Playfair Display', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/archi', nimg: 4,
+            c: {
+                mast: 'PLAN & COUPE', tag: 'ARCHITECTURE · INTÉRIEURS · VILLES', issue: 'N° 14 · HIVER 2027', price: '8,50 €',
+                head: 'Le bâtiment qui a appris à se taire',
+                stand: 'Quatre projets où le béton, le verre et la lumière ont été priés d’en faire moins, et ont fini par en faire plus.',
+                coverlines: 'L’escalier comme pièce publique\nDes logements sans couloir\nCe qu’un plan peut encore dire',
+                sections: ['Le dossier', 'Plans', 'Intérieurs', 'La ville', 'Matières', 'Visite d’atelier'],
+                legs: ['Le bâtiment qui a appris à se taire', 'L’escalier comme pièce publique', 'Des logements sans couloir', 'Ce qu’un plan peut encore dire', 'Entretien avec les architectes', 'Onze matières, une palette'],
+                quote: 'Un plan n’est pas le dessin d’un bâtiment. C’est le dessin d’une décision.',
+                body: 'La première chose qu’on remarque dans ce musée, c’est le bruit de ses propres pas. Le béton a été laissé presque brut, et l’escalier a été fait assez large pour qu’on s’y arrête — ce que les architectes voulaient exactement.\n\nTous les projets de ce numéro partagent la même retenue : la structure est exprimée une fois, clairement, puis laissée tranquille. Pas de faux plafond, pas de couleur ajoutée, pas de seconde peau. Ce qui semble austère sur une photographie est généreux dans la pièce.\n\nC’est aussi une question d’argent. Faire moins sur l’enveloppe libère du budget pour ce que les gens touchent : la main courante, la porte, l’interrupteur.',
+                caption: 'Photographié à Amsterdam et à Singapour · numéro d’hiver',
+                credits: 'Textes : T. Hendriks · Photographie : F. Heijnsbroek · Plans : Studio Rijn',
+                list: 'Béton banché\nAluminium anodisé\nChêne brossé\nEnduit à la chaux\nAcier noirci\nVerre extra-clair'
+            }
+        },
+        {
+            key: 'fr_annual_report_12p', style: 'report', family: 'report', spreadDoc: false,
+            name: 'Rapport d’activité 2027 (12p)', desc: 'Rapport d’activité complet — 12 pages A4 : chiffres clés, graphiques, tableaux, chronologie, perspectives',
+            format: { width: 595, height: 842, pages: 12 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#ffffff', ink: '#101418', accent: '#0b5c4a', soft: '#eef3f1', night: '#0e1513' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'RAPPORT D’ACTIVITÉ', tag: 'ATELIER NORD · DESIGN & ÉDITION', issue: 'EXERCICE 2027 · PUBLIÉ EN MARS 2028', price: '',
+                head: 'Rapport d’activité 2027',
+                stand: 'Une année entière en douze pages : ce que nous avons fait, ce que cela a rapporté, ce que cela a coûté, et ce que nous changeons ensuite.',
+                coverlines: '', sections: ['Faits marquants', 'Chiffres clés', 'Revenus', 'Coûts', 'Projets', 'Perspectives'],
+                legs: ['Janvier · Ouverture du studio de Lyon', 'Mars · Refonte de l’identité Signet livrée', 'Mai · Premier catalogue imprimé en risographie', 'Juillet · L’équipe atteint quarante personnes', 'Septembre · Deux expositions conçues', 'Novembre · Certification d’impression ISO 12647'],
+                quote: 'Croître n’est pas le but. Faire le travail correctement à une échelle un peu plus grande, oui.',
+                body: 'Deux mille vingt-sept est l’année où le studio a cessé d’être petit. Le chiffre d’affaires progresse de dix-huit pour cent, mais le chiffre le plus utile est celui qui se cache derrière : quatre-vingt-seize pour cent des projets ont été livrés à la date promise.\n\nNous avons ouvert un second studio à Lyon, recruté sept personnes et refusé onze projets. Ces refus font partie du résultat.\n\nCe rapport présente les chiffres, la méthode et les erreurs : ce que nous avons dépensé, ce que nous avons gagné, et les trois choses que nous ferons autrement en 2028.',
+                caption: 'Atelier Nord · 14 rue des Ateliers, 69001 Lyon · ateliernord.fr',
+                credits: 'Chiffres vérifiés en interne · rapport conçu et composé en Montserrat, Open Sans et IBM Plex Mono',
+                figures: '4,82 M€::Chiffre d’affaires net::+18 % vs 2026\n42::Personnes au studio::+7 recrutements, 0 départ\n118::Projets livrés::pour 64 clients\n96 %::Livraisons à l’heure::+4 points',
+                activites: 'Édition & livres::2.10\nIdentité & marque::1.26\nExpositions::0.86\nConseil & formation::0.60',
+                trimestres: 'T1::0.98\nT2::1.14\nT3::1.26\nT4::1.44',
+                couts: 'Salaires & charges::2.62\nSous-traitance::0.78\nStudio & outils::0.46\nDéplacements::0.32\nAutres charges::0.28\nRésultat d’exploitation::0.36',
+                projets: 'Catalogue raisonné::Musée Fabre::Édition::Livré\nIdentité Signet::Groupe Signet::Identité::Livré\nExposition d’hiver::Halle Nord::Exposition::Livré\nRapport d’activité::Ville de Lyon::Édition::Livré\nSignalétique::Université Lyon 2::Identité::Livré\nSérie risographie::Atelier Nord::Édition::Livré\nCampagne festival::Festival du Fleuve::Identité::En cours\nMonographie studio::Atelier Nord::Édition::En cours',
+                jalons: 'Janvier::Le second studio ouvre à Lyon avec quatre personnes\nFévrier::Démarrage de la certification d’impression\nMars::Refonte Signet livrée avec trois mois d’avance\nMai::Premier catalogue imprimé en risographie\nJuillet::L’équipe atteint quarante personnes\nSeptembre::Deux expositions conçues et installées\nNovembre::Certification ISO 12647 obtenue\nDécembre::Le carnet de commandes atteint 6,4 mois de travail',
+                objectifs: 'Grandir sans faire de bruit::Deux personnes de plus, pas de nouveau studio\nÉditer en interne::Quatre titres sous notre propre marque\nTransmettre le métier::Un cours ouvert sur la production imprimée\nRéduire les déplacements::Revues clients en visio d’abord'
+            }
         }
     ];
 
@@ -72476,6 +72931,75 @@ function _npBuildLayout(params, keywords, lang) {
                     }
                 }
                 return _Tsauv(o);
+            };
+        }
+
+        // 🆕 v1.7.445 — miroir français : les gabarits anglais (magazines, CV, livre, théâtre,
+        //   calendriers, rapport) portent des libellés fixes en anglais ; les modèles français
+        //   obtenus par duplication les traduisent à la volée. Le contenu, lui, vient du modèle.
+        if (model.lang === 'fr') {
+            var _dicFr = page._spDicFr || (page._spDicFr = {
+                'CONTENTS': 'SOMMAIRE', 'INGREDIENTS': 'INGRÉDIENTS', 'METHOD': 'PRÉPARATION',
+                'SERVES 4  ·  3 H  ·  EASY': 'POUR 4  ·  3 H  ·  FACILE',
+                'SUNDAY, THREE COURSES': 'LE DIMANCHE, TROIS SERVICES',
+                'IN THIS ISSUE': 'DANS CE NUMÉRO', 'TASTING MENU': 'MENU DÉGUSTATION',
+                'WINES BY THE GLASS': 'VINS AU VERRE', 'RESERVATIONS': 'RÉSERVATIONS',
+                'Chapter one': 'Chapitre premier', 'PLATE I': 'PLANCHE I', 'PLATE II': 'PLANCHE II',
+                'PROFILE': 'PROFIL', 'EXPERIENCE': 'EXPÉRIENCE', 'SKILLS': 'COMPÉTENCES',
+                'The workshop': 'L’atelier',
+                'LANGUAGES': 'LANGUES', 'CHARACTERS': 'PERSONNAGES', 'SETTING': 'DÉCOR',
+                'CURTAIN': 'RIDEAU', 'WK': 'SEM.', 'HIGHLIGHTS OF THE YEAR': 'FAITS MARQUANTS DE L’EXERCICE',
+                'ACT TWO · SCENE TWO': 'ACTE II · SCÈNE II', 'ACT TWO · THE KEEPER ALONE': 'ACTE II · LE GARDIEN SEUL',
+                'ACT THREE · SCENE THREE': 'ACTE III · SCÈNE III',
+                'ITEM': 'POSTE', 'SHARE': 'PART', 'AMOUNT': 'MONTANT', 'PROJECT': 'PROJET',
+                'CLIENT': 'CLIENT', 'SECTOR': 'SECTEUR', 'STATUS': 'STATUT',
+                'TIME SPENT, BY STEP': 'TEMPS PASSÉ, PAR ÉTAPE', 'REVENUE TARGET': 'OBJECTIF DE CA',
+                'All amounts in millions of euros, excluding tax. Figures audited internally and consistent throughout this report.': 'Montants en millions d’euros, hors taxes. Comptes vérifiés en interne et cohérents dans tout le rapport.',
+                'Publishing remains the backbone of the studio. Identity work grew fastest (+34 %), exhibitions were steady, consulting was deliberately kept small.': 'Édition et livres restent la colonne vertébrale du studio. L’identité de marque progresse le plus vite (+34 %), les expositions sont stables, le conseil reste volontairement modeste.',
+                'between the first and the last quarter': 'entre le premier et le dernier trimestre',
+                'The fourth quarter alone paid for the new studio, the press certification and two hires.': 'Le seul quatrième trimestre a payé le nouveau studio, la certification d’impression et deux recrutements.',
+                'Salaries are deliberately two thirds of the cost base: the work is made by people, not by tools. The operating result stayed at 7,5 %, three points below target, because of the Lyon move.': 'Les salaires représentent volontairement deux tiers des coûts : le travail est fait par des personnes, pas par des outils. Le résultat opérationnel reste à 7,5 %, trois points sous l’objectif, à cause du déménagement lyonnais.',
+                'Eleven projects were refused during the year: four for schedule, five for budget below our floor, two because we were not the right studio for them.': 'Onze projets ont été refusés dans l’année : quatre pour le planning, cinq pour un budget sous notre seuil, deux parce que nous n’étions pas le bon studio.',
+                'Research and the two directions take more than half of the studio time — that is where the project is won or lost.': 'La recherche et les deux pistes prennent plus de la moitié du temps du studio : c’est là qu’un projet se gagne ou se perd.',
+                'The two decisions that mattered were the Lyon studio in January and the press certification in November: the first bought capacity, the second bought quality.': 'Deux décisions ont compté : le studio de Lyon en janvier et la certification d’impression en novembre. La première a acheté de la capacité, la seconde de la qualité.'
+            });
+            var _dicFrU = page._spDicFrU || (page._spDicFrU = (function () {
+                var u = {};
+                for (var _kf in _dicFr) { if (Object.prototype.hasOwnProperty.call(_dicFr, _kf)) u[_kf.toUpperCase()] = String(_dicFr[_kf]).toUpperCase(); }
+                return u;
+            })());
+            // remplacements par préfixe (textes construits) — ordre important
+            var _rempFr = page._spRempFr || (page._spRempFr = [
+                ['ACT ', 'ACTE '],
+                ['SETLIST', 'PLAYLIST'],
+                ['NEXT ISSUE', 'PROCHAIN NUMÉRO'],
+                ['IN THIS ISSUE', 'DANS CE NUMÉRO'],
+                ['FIVE COURSES · 58', 'CINQ SERVICES · 58'],
+                ['NEXT · ', 'SUIVANT · '],
+                ['TWO MONTHS PER PAGE · WEEK STARTS ON MONDAY · PAGE ', 'DEUX MOIS PAR PAGE · SEMAINE DU LUNDI · PAGE '],
+                [' · MONTH ', ' · MOIS '],
+                [' · ISO WEEKS', ' · SEMAINES ISO'],
+                ['ISO WEEKS', 'SEMAINES ISO'],
+                ['MONTH ', 'MOIS ']
+            ]);
+            var _TsauvFr = S.T;
+            S.T = function (o) {
+                if (o && typeof o.text === 'string') {
+                    var v = _dicFr[o.text];
+                    if (v === undefined && _dicFrU[o.text] !== undefined) v = _dicFrU[o.text];
+                    if (v === undefined) {
+                        for (var _ri = 0; _ri < _rempFr.length; _ri++) {
+                            if (o.text.indexOf(_rempFr[_ri][0]) >= 0) { v = o.text.split(_rempFr[_ri][0]).join(_rempFr[_ri][1]); break; }
+                        }
+                    }
+                    if (v !== undefined) {
+                        var o3 = {};
+                        for (var k3 in o) { if (Object.prototype.hasOwnProperty.call(o, k3)) o3[k3] = o[k3]; }
+                        o3.text = v;
+                        return _TsauvFr(o3);
+                    }
+                }
+                return _TsauvFr(o);
             };
         }
 
@@ -73475,10 +73999,15 @@ function _npBuildLayout(params, keywords, lang) {
 
     /* ═══════════ 14. CALENDRIER A3 PAYSAGE (sept 2027 → août 2028) ══════ */
     function calPages(S) {
+        calLangue(S);
         var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
-        var NOMS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        var JOURS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-        var SAIS = ['Autumn', 'Autumn', 'Autumn', 'Winter', 'Winter', 'Winter', 'Spring', 'Spring', 'Spring', 'Summer', 'Summer', 'Summer'];
+        // 🆕 v1.7.445 — tables locales du calendrier A3 : selon la langue du modèle
+        var _spFr = (S.lang === 'fr');
+        var NOMS = _spFr ? CAL_NOMS_FR : CAL_NOMS_EN;
+        var JOURS = _spFr ? CAL_JOURS_FR : CAL_JOURS_EN;
+        var SAIS = _spFr
+            ? ['Automne', 'Automne', 'Automne', 'Hiver', 'Hiver', 'Hiver', 'Printemps', 'Printemps', 'Printemps', 'Été', 'Été', 'Été']
+            : ['Autumn', 'Autumn', 'Autumn', 'Winter', 'Winter', 'Winter', 'Spring', 'Spring', 'Spring', 'Summer', 'Summer', 'Summer'];
         var y = (p < 4 ? 2027 : 2028), m = (8 + p) % 12;
         S.fond(t.paper);
         S.bloc(0, 0, W, px(34), t.soft);
@@ -73518,9 +74047,22 @@ function _npBuildLayout(params, keywords, lang) {
     }
 
     /* ═══ CALENDRIERS : tables et calculs partagés ═════════════════════════ */
-    var CAL_NOMS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    var CAL_JOURS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-    var CAL_SAIS = ['Winter', 'Winter', 'Spring', 'Spring', 'Spring', 'Summer', 'Summer', 'Summer', 'Autumn', 'Autumn', 'Autumn', 'Winter'];
+    var CAL_NOMS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    var CAL_JOURS_EN = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    var CAL_SAIS_EN = ['Winter', 'Winter', 'Spring', 'Spring', 'Spring', 'Summer', 'Summer', 'Summer', 'Autumn', 'Autumn', 'Autumn', 'Winter'];
+    // 🆕 v1.7.445 — tables françaises (mêmes gabarits pour les modèles FR)
+    var CAL_NOMS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    var CAL_JOURS_FR = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
+    var CAL_SAIS_FR = ['Hiver', 'Hiver', 'Printemps', 'Printemps', 'Printemps', 'Été', 'Été', 'Été', 'Automne', 'Automne', 'Automne', 'Hiver'];
+    // tableaux ACTIFS : ils sont basculés selon la langue du modèle avant chaque page
+    var CAL_NOMS = CAL_NOMS_EN.slice(), CAL_JOURS = CAL_JOURS_EN.slice(), CAL_SAIS = CAL_SAIS_EN.slice();
+    function calLangue(S) {
+        var fr = !!(S && S.lang === 'fr');
+        var nm = fr ? CAL_NOMS_FR : CAL_NOMS_EN, jr = fr ? CAL_JOURS_FR : CAL_JOURS_EN, sa = fr ? CAL_SAIS_FR : CAL_SAIS_EN;
+        var i;
+        for (i = 0; i < 12; i++) { CAL_NOMS[i] = nm[i]; CAL_SAIS[i] = sa[i]; }
+        for (i = 0; i < 7; i++) { CAL_JOURS[i] = jr[i]; }
+    }
     function calInfos(y, m) {   // décalage du 1er jour (semaine du lundi), jours du mois, jours du mois précédent
         var d0 = new Date(y, m, 1).getDay();
         return { lead: (d0 + 6) % 7, jours: new Date(y, m + 1, 0).getDate(), prec: new Date(y, m, 0).getDate() };
@@ -73567,6 +74109,7 @@ function _npBuildLayout(params, keywords, lang) {
 
     /* ═══════════ 15. CALENDRIER A4 PORTRAIT — 2027 (1 mois/page) ════════ */
     function calpPages(S) {
+        calLangue(S);
         var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
         var y = 2027, m = p;
         S.fond(t.paper);
@@ -73591,6 +74134,7 @@ function _npBuildLayout(params, keywords, lang) {
 
     /* ═══════════ 16. CALENDRIER A4 PAYSAGE — 2028 (1 mois/page) ═════════ */
     function callPages(S) {
+        calLangue(S);
         var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
         var y = 2028, m = p;
         S.fond(t.paper);
@@ -73620,6 +74164,7 @@ function _npBuildLayout(params, keywords, lang) {
 
     /* ═══════════ 17. CALENDRIER A5 PORTRAIT — 2027-2028 (2 mois/page) ═══ */
     function cal5Pages(S) {
+        calLangue(S);
         var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
         S.fond(t.paper);
         S.T({ text: c.head, x: M, y: px(9), w: W - M * 2, size: px(7), font: F.display, weight: '700', fill: t.ink, lh: 1 });
@@ -74661,7 +75206,14 @@ window._npTemplateKeys = ['en_magazine_fashion_8p', 'en_journal_hair_4p', 'en_ma
     'en_calendar_2027_a4_portrait_12p', 'en_calendar_2028_a4_landscape_12p',
     'en_calendar_2027_2028_a5_portrait_12p', 'en_magazine_archi_8p', 'en_annual_report_12p',
     'fr_magazine_habitat_luxe_24p', 'fr_magazine_recettes_12p', 'fr_rapport_activite_premium_24p',
-    'en_magazine_recipes_12p', 'en_annual_report_24p'];
+    'en_magazine_recipes_12p', 'en_annual_report_24p',
+    // 🆕 v1.7.445 — les jumeaux français (parité avec l'anglais)
+    'fr_magazine_fashion_8p', 'fr_journal_hair_4p', 'fr_magazine_music_8p', 'fr_magazine_food_8p',
+    'fr_restaurant_menu_4p', 'fr_business_card_1p', 'fr_cv_pro_1p', 'fr_book_text_12p',
+    'fr_magazine_ocean_8p', 'fr_cv_editorial_1p', 'fr_cv_minimal_1p', 'fr_book_shapes_12p',
+    'fr_book_theatre_12p', 'fr_calendar_a3_12p', 'fr_calendar_2027_a4_portrait_12p',
+    'fr_calendar_2028_a4_landscape_12p', 'fr_calendar_2027_2028_a5_portrait_12p',
+    'fr_magazine_archi_8p', 'fr_annual_report_12p'];
 window.npRenderAssetStrip = function() {
     const strip = document.getElementById('npAssetStrip');
     if (!strip || typeof compositionExamples === 'undefined') return;
