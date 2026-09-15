@@ -61938,6 +61938,20 @@ canvas.requestRenderAll();
         });
     });
 
+    // 🆕 v1.7.439 — l'onglet « Images » est masqué : la bibliothèque travaille en typographie,
+    //   formes vectorielles, maquettes et premium. Les données (imageExamples) restent dans le
+    //   code : il suffit de retirer ces lignes pour réactiver l'onglet.
+    try {
+        const ongletImg = document.querySelector('.assets-tab[data-tab="img"]');
+        const grilleImg = document.querySelector('.assets-grid[data-content="img"]');
+        if (ongletImg) ongletImg.style.display = 'none';
+        if (grilleImg) grilleImg.style.display = 'none';
+        if (document.querySelector('.assets-tab.active[data-tab="img"]')) {
+            const premier = document.querySelector('.assets-tab:not([data-tab="img"])');
+            if (premier) premier.click();
+        }
+    } catch (eImg) {}
+
     // Bouton fermer assets
     const trappeCloseBtn = document.getElementById('trappeCloseBtn');
     if (trappeCloseBtn) {
@@ -61978,9 +61992,17 @@ canvas.requestRenderAll();
         nameEl.textContent = name;
         nameEl.title = name;
 
+        // 🆕 v1.7.439 — combinaison de fontes du modèle (ligne monospace sous le nom)
+        if (options.meta) {
+            const metaEl = document.createElement('div');
+            metaEl.className = 'asset-card-meta';
+            metaEl.textContent = options.meta;
+            body.appendChild(metaEl);
+        }
         const descEl = document.createElement('div');
         descEl.className = 'asset-card-desc';
         descEl.textContent = description;
+        descEl.title = description;
         
         const btn = document.createElement('button');
         btn.className = 'asset-card-btn';
@@ -62077,7 +62099,7 @@ canvas.requestRenderAll();
             shapePreview.style.alignItems = 'center';
             shapePreview.style.justifyContent = 'center';
             shapePreview.style.width = '100%';
-            shapePreview.style.height = '60px';
+            shapePreview.style.height = '100%';
             
             // Utiliser le SVG preview si disponible
             if (svgPreviews[vecto.name]) {
@@ -62116,13 +62138,16 @@ canvas.requestRenderAll();
                 shapePreview.appendChild(shape);
             }
             
+            // 🆕 v1.7.439 — description utile (type + remplissage) : même structure de carte
+            //   que partout, aperçu 100 % vectoriel (aucune image).
+            const _vd = [vecto.type || 'shape', vecto.fill ? ('fill ' + vecto.fill) : ''].filter(Boolean).join('  \u00b7  ');
             const card = createAssetCard(vecto.name, shapePreview, () => {
                 const canvas = getActiveCanvas();
                 if (canvas) {
                     const center = getPageCenter(canvas);
                     dropPatternOnCanvas({ type: 'vecto', vector: vecto }, canvas, center.left - 40, center.top - 40);
                 }
-            });
+            }, _vd);
             vectoGrid.appendChild(card);
         });
     }
@@ -62293,7 +62318,7 @@ canvas.requestRenderAll();
                     dropPatternOnCanvas({ type: 'comp', index: index }, canvas, center.left, center.top);
                 }
                 return true;
-            }, desc, { locked: !!comp.locked });
+            }, desc, { locked: !!comp.locked, meta: [((comp.fonts || {}).display), ((comp.fonts || {}).text)].filter(Boolean).join(' \u00b7 ') });
             card.dataset.lang = comp.lang || 'fr';
             compGrid.appendChild(card);
         });
@@ -62336,7 +62361,7 @@ canvas.requestRenderAll();
                         dropPatternOnCanvas({ type: 'comp', index: index }, canvas, center.left, center.top);
                     }
                     return true;
-                }, desc, { locked: !!comp.locked });
+                }, desc, { locked: !!comp.locked, meta: [((comp.fonts || {}).display), ((comp.fonts || {}).text)].filter(Boolean).join(' \u00b7 ') });
                 card.dataset.lang = comp.lang || 'fr';
                 premiumGrid.appendChild(card);
             });
@@ -73315,6 +73340,7 @@ function _npBuildLayout(params, keywords, lang) {
                 themeFull: d.theme,
                 content: d.c,
                 shot: PREV + d.key + '.jpg',
+                fonts: d.fonts,
                 buildMulti: async function () {
                     var total = d.format.pages || 1;
                     for (var i = 0; i < total; i++) {

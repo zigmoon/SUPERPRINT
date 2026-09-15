@@ -8,7 +8,7 @@
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
-- **Version**: 1.7.438 (September 2026)
+- **Version**: 1.7.439 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.95, requires application 1.7.415 or later); the launcher downloads the application once and serves it locally.
@@ -180,6 +180,7 @@ Yes. All document processing happens client-side in the browser. No uploads to a
 - Per-glyph metrics (advance width, left/right side bearings, bounding box) and re-export of a modified `.ttf` / `.otf`, plus the native `.sf` format.
 
 ### Recent releases (September 2026)
+- **1.7.439** — Asset Library rebuilt: every card now has the SAME height (the grey description is clamped to two reserved lines, the button sits at the bottom), the card typography is larger (14 px names, 12.5 px descriptions), each template card shows its **font pairing** in a monospace line, the panel scrollbar is thin and discreet (light and dark), the **Shapes** tab was redone (100 % vector previews filling the thumbnail, useful descriptions, no image) and the separate **Images** tab is hidden (its data stays in the code). A CSS rule broken since 1.7.428 (the `.preview-text` block) was repaired.
 - **1.7.438** — Five more templates: **Calendar 2027 A4 portrait** (one month per page, ISO week numbers, ruled notes area, year strip), **Calendar 2028 A4 landscape** (seasonal vector panel and a preview of the following month), **Calendar 2027–2028 A5 portrait** (two months per page — twenty-four months on twelve pages), an **Architecture magazine** (8 pages, double page, four real photographs and a vector plan with dimension line) and a complete **Annual Activity Report** (12 pages A4: key figures, revenue by activity and by quarter with charts, cost-structure table, project table, process steps, year timeline, 2028 outlook with a bar chart). The calendar engine gained shared helpers (`calInfos`, `calSemISO`, `calGrille`) used by the three layouts.
 - **1.7.437** — “Edit typography” also works with a FONT THE USER LOADED themselves: the font lookup now matches names tolerantly (“Ma Police”, “MaPolice”, ma-police … are the same font), which matters because user fonts are added through the FontFace API and therefore cannot be found in the stylesheets. If no font can be sent, SuperTyPo now says so instead of leaving a silent drop zone.
 - **1.7.436** — “Edit typography” now opens the WHOLE CHARACTER SET of the font in SuperTyPo (the grid is built with “show all glyphs” enabled, so every mapped character is decomposed at once), while the block’s text stays in the sample field — unchecking “Show all glyphs” returns to the characters of that text.
