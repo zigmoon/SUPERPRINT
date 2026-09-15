@@ -28220,16 +28220,33 @@ if (window._spGpuEnabled) {
                         redistributeLinkedTextChain(obj);
                     } catch (_) {}
                 }
-                // 🆕 v1.7.451 — le panneau reflète TOUJOURS le bloc vivant : sans cela il
-                //   gardait une valeur périmée qu'un simple clic dans le champ réinjectait
-                //   (cause du « l'interlignage se modifie tout seul »).
+                // 🆕 v1.7.453 — le panneau reflète la SÉLECTION quand il y en a une.
+                //   v1.7.451 écrivait ici les valeurs du BLOC : avec du texte sélectionné en
+                //   édition, le champ du corps ET celui de l'interlignage retombaient aussitôt
+                //   sur la valeur du bloc, donc tout réglage typographique de la sélection
+                //   semblait ne pas tenir (et la valeur du bloc était réinjectée ensuite).
                 try {
                     const _eFs = document.getElementById('fontSize');
                     const _eLh = document.getElementById('lineHeight');
-                    const _fsV = (typeof obj.fontSize === 'number' && obj.fontSize > 0) ? obj.fontSize : 14;
+                    let _fsV = (typeof obj.fontSize === 'number' && obj.fontSize > 0) ? obj.fontSize : 14;
+                    let _lhR = (typeof obj.lineHeight === 'number' && obj.lineHeight > 0) ? obj.lineHeight : 1.16;
+                    const _selOn = !!(obj.isEditing && obj.selectionStart != null && obj.selectionEnd != null && obj.selectionEnd > obj.selectionStart);
+                    if (_selOn) {
+                        try {
+                            const _st = obj.getSelectionStyles(obj.selectionStart, obj.selectionEnd) || [];
+                            for (let _i = 0; _i < _st.length; _i++) {
+                                const _s = _st[_i] || {};
+                                if (typeof _s.fontSize === 'number' && _s.fontSize > 0) { _fsV = _s.fontSize; break; }
+                            }
+                            for (let _j = 0; _j < _st.length; _j++) {
+                                const _s2 = _st[_j] || {};
+                                if (typeof _s2.lineHeight === 'number' && _s2.lineHeight > 0) { _lhR = _s2.lineHeight; break; }
+                            }
+                        } catch (_) {}
+                    }
                     if (_eFs && Math.abs((parseFloat(_eFs.value) || 0) - _fsV) > 0.01) _eFs.value = Math.round(_fsV * 100) / 100;
-                    if (_eLh && typeof obj.lineHeight === 'number' && obj.lineHeight > 0) {
-                        const _ptV = Math.round(obj.lineHeight * _fsV * 10) / 10;
+                    if (_eLh) {
+                        const _ptV = Math.round(_lhR * _fsV * 10) / 10;
                         if (Math.abs((parseFloat(_eLh.value) || 0) - _ptV) > 0.05) _eLh.value = _ptV;
                     }
                 } catch (_) {}
@@ -28643,16 +28660,33 @@ if (window._spGpuEnabled) {
                             redistributeLinkedTextChain(obj);
                         } catch (_) {}
                     }
-                // 🆕 v1.7.451 — le panneau reflète TOUJOURS le bloc vivant : sans cela il
-                //   gardait une valeur périmée qu'un simple clic dans le champ réinjectait
-                //   (cause du « l'interlignage se modifie tout seul »).
+                // 🆕 v1.7.453 — le panneau reflète la SÉLECTION quand il y en a une.
+                //   v1.7.451 écrivait ici les valeurs du BLOC : avec du texte sélectionné en
+                //   édition, le champ du corps ET celui de l'interlignage retombaient aussitôt
+                //   sur la valeur du bloc, donc tout réglage typographique de la sélection
+                //   semblait ne pas tenir (et la valeur du bloc était réinjectée ensuite).
                 try {
                     const _eFs = document.getElementById('fontSize');
                     const _eLh = document.getElementById('lineHeight');
-                    const _fsV = (typeof obj.fontSize === 'number' && obj.fontSize > 0) ? obj.fontSize : 14;
+                    let _fsV = (typeof obj.fontSize === 'number' && obj.fontSize > 0) ? obj.fontSize : 14;
+                    let _lhR = (typeof obj.lineHeight === 'number' && obj.lineHeight > 0) ? obj.lineHeight : 1.16;
+                    const _selOn = !!(obj.isEditing && obj.selectionStart != null && obj.selectionEnd != null && obj.selectionEnd > obj.selectionStart);
+                    if (_selOn) {
+                        try {
+                            const _st = obj.getSelectionStyles(obj.selectionStart, obj.selectionEnd) || [];
+                            for (let _i = 0; _i < _st.length; _i++) {
+                                const _s = _st[_i] || {};
+                                if (typeof _s.fontSize === 'number' && _s.fontSize > 0) { _fsV = _s.fontSize; break; }
+                            }
+                            for (let _j = 0; _j < _st.length; _j++) {
+                                const _s2 = _st[_j] || {};
+                                if (typeof _s2.lineHeight === 'number' && _s2.lineHeight > 0) { _lhR = _s2.lineHeight; break; }
+                            }
+                        } catch (_) {}
+                    }
                     if (_eFs && Math.abs((parseFloat(_eFs.value) || 0) - _fsV) > 0.01) _eFs.value = Math.round(_fsV * 100) / 100;
-                    if (_eLh && typeof obj.lineHeight === 'number' && obj.lineHeight > 0) {
-                        const _ptV = Math.round(obj.lineHeight * _fsV * 10) / 10;
+                    if (_eLh) {
+                        const _ptV = Math.round(_lhR * _fsV * 10) / 10;
                         if (Math.abs((parseFloat(_eLh.value) || 0) - _ptV) > 0.05) _eLh.value = _ptV;
                     }
                 } catch (_) {}
