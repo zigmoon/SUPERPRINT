@@ -42943,6 +42943,9 @@ https://superprint.app
             return ((family || '').trim() + '|' + w + '|' + s).toLowerCase();
         }
 
+        // 🆕 v1.7.426 — exposé pour « Éditer la typo » (autre portée).
+        try { window._spLoadFontVector = _spLoadFontVector; } catch (_) {}
+
         // Convertit "Bebas Neue" → "BebasNeue" (convention de nommage des
         // fichiers dans CSS/fonts/).
         function _spFontFileBase(family) {
@@ -49073,6 +49076,120 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         // 🆕 v1.7.336 : ouvrir SuperTyPo (décomposeur/éditeur de typo) depuis
         // l'onglet « SuperTyPo » du Nouveau Projet. L'app vit dans /supertypo/
         // (racine superprint), l'éditeur dans /app/ → on remonte d'un niveau.
+        // 🆕 v1.7.426 — FONTE DU BLOC SÉLECTIONNÉ.
+        //   On réutilise le résolveur de polices vectorielles de l'app (celui qui sert à
+        //   la vectorisation PDF) : il connaît les polices livrées (CSS/fonts/), les
+        //   polices Google et les polices CUSTOM chargées par l'utilisateur (dataURL/base64).
+        // Cherche l'URL d'un fichier de police pour une famille, en lisant les @font-face
+        // de la page (polices livrées, Google…). Renvoie '' si rien.
+        function spUrlPolice(family, weight, style) {
+            const fam = String(family || '').replace(/^["']|["']$/g, '').trim().toLowerCase();
+            if (!fam) return '';
+            const w0 = String(weight || '400');
+            const w = (w0 === 'bold') ? '700' : (w0 === 'normal' ? '400' : w0);
+            const it = (style === 'italic' || style === 'oblique');
+            let trouve = '', secours = '';
+            try {
+                for (const feuille of Array.from(document.styleSheets)) {
+                    let regles = null;
+                    try { regles = feuille.cssRules; } catch (e) { continue; }   // feuille distante (CORS)
+                    for (const r of Array.from(regles || [])) {
+                        if (!r || !r.style || !r.style.getPropertyValue) continue;
+                        const f2 = String(r.style.fontFamily || '').replace(/["']/g, '').trim().toLowerCase();
+                        if (!f2 || f2 !== fam) continue;
+                        const m = /url\((['"]?)([^'")]+)\1\)/.exec(r.style.getPropertyValue('src') || '');
+                        if (!m) continue;
+                        const url = m[2];
+                        const gras = String(r.style.fontWeight || '400');
+                        const ital = /italic|oblique/.test(String(r.style.fontStyle || ''));
+                        if (ital === it && (gras === w || (gras === 'normal' && w === '400'))) { trouve = url; break; }
+                        if (!secours) secours = url;
+                    }
+                    if (trouve) break;
+                }
+            } catch (_) {}
+            return trouve || secours;
+        }
+
+        // 🆕 v1.7.426 — OCTETS de la police du bloc (aucune dépendance à opentype : c'est
+        //   SuperTyPo, côté éditeur, qui parse et normalise le fichier reçu).
+        async function spPoliceDuBloc(family, weight, style) {
+            const fam = String(family || '').replace(/^["']|["']$/g, '').trim();
+            if (!fam) return null;
+            // 1) police CUSTOM de l'utilisateur (dataURL base64)
+            try {
+                const ent = (typeof customFonts !== 'undefined' && Array.isArray(customFonts))
+                    ? customFonts.find((f) => f && String(f.name || '').trim() === fam) : null;
+                if (ent && ent.data) {
+                    const bin = atob(String(ent.data).split(',')[1] || '');
+                    const u = new Uint8Array(bin.length);
+                    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+                    return u.buffer;
+                }
+            } catch (_) {}
+            // 2) @font-face de la page
+            const url = spUrlPolice(fam, weight, style);
+            if (url) { try { const r = await fetch(url, { cache: 'force-cache' }); if (r.ok) return await r.arrayBuffer(); } catch (_) {} }
+            // 3) convention de fichiers de l'app : CSS/fonts/<Famille>-<graisse>-<style>[-latin][-ext]
+            const base = fam.replace(/\s+/g, '');
+            const w0 = String(weight || 400);
+            const w = (w0 === 'bold') ? '700' : (w0 === 'normal' ? '400' : w0);
+            const st = (style === 'italic' || style === 'oblique') ? 'italic' : 'normal';
+            const essais = [];
+            [w, '400', '700'].forEach((wd) => {
+                ['-latin', '-latin-ext', ''].forEach((sub) => essais.push('CSS/fonts/' + base + '-' + wd + '-' + st + sub + '.woff2'));
+            });
+            [w, '400'].forEach((wd) => essais.push('CSS/fonts/' + base + '-' + wd + '-' + st + '.ttf'));
+            for (const u of essais) {
+                try {
+                    const r = await fetch(u, { cache: 'force-cache' });
+                    if (!r.ok) continue;
+                    const b = await r.arrayBuffer();
+                    if (b && b.byteLength > 500) return b;
+                } catch (_) {}
+            }
+            // 4) dernier recours : le résolveur opentype de l'app (exposé sur window)
+            try {
+                if (typeof window._spLoadFontVector === 'function') {
+                    const f = await window._spLoadFontVector(fam, weight, style);
+                    if (f) return f._spTtfBuffer || (typeof f.toArrayBuffer === 'function' ? f.toArrayBuffer() : null);
+                }
+            } catch (_) {}
+            return null;
+        }
+
+        // Envoie la fonte à SuperTyPo dès qu'il est prêt (handshake « sp213-ready »).
+        function spTransmetPolice(win, police, texte) {
+            let pret = false, buf = null, fait = false, essais = 0;
+            const famille = String((police && police.family) || '');
+            const poids = (police && police.weight) || 400;
+            const style = (police && police.style) || 'normal';
+            function envoie() {
+                if (fait || !pret || !buf || !win || win.closed) return;
+                fait = true;
+                try { win.postMessage({ type: 'sp213-font', name: famille, text: texte || '', buffer: buf }, window.location.origin, [buf]); } catch (_) {}
+            }
+            window.addEventListener('message', function (e) {
+                if (e.origin !== window.location.origin) return;
+                if (!e.data || e.data.type !== 'sp213-ready') return;
+                pret = true; envoie();
+            });
+            // Relances : si SuperTyPo a envoyé son « ready » avant que le buffer soit prêt.
+            const tic = setInterval(function () {
+                essais++;
+                if (fait || essais > 25) { clearInterval(tic); return; }
+                try { win.postMessage({ type: 'sp213-ping' }, window.location.origin); } catch (_) {}
+            }, 600);
+            (async () => {
+                try {
+                    // 🆕 v1.7.426 — spPoliceDuBloc renvoie désormais directement les OCTETS.
+                    buf = await spPoliceDuBloc(famille, poids, style);
+                } catch (_) {}
+                envoie();
+            })();
+        }
+        window.spTransmetPolice = spTransmetPolice;
+
         function openSupertypo(opts) {
             const base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '');
             let url = base + '../supertypo/index.html';
@@ -49085,7 +49202,12 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 if (opts.font) p.push('font=' + encodeURIComponent(String(opts.font).slice(0, 80)));
                 url += '?' + p.join('&');
             }
-            const win = window.open(url, '_blank', 'noopener');
+            // 🆕 v1.7.426 — « Éditer la typo » transmet aussi LA POLICE DU BLOC : on garde
+            //   donc un HANDLE sur la fenêtre (pas de 'noopener') pour pouvoir lui envoyer
+            //   le fichier de fonte en postMessage (même origine → le buffer est transféré,
+            //   donc aucune limite de longueur d'URL et aucune requête réseau).
+            const win = window.open(url, '_blank');
+            if (win && opts && opts.police) spTransmetPolice(win, opts.police, opts.text);
             if (!win) {
                 const a = document.createElement('a');
                 a.href = url;
@@ -75746,8 +75868,12 @@ function initObjectRightClickMenu() {
                 menu.appendChild(mkItem(ICON.textEdit, t('Éditer la typo (SuperTyPo)', 'Edit Typo (SuperTyPo)'), 'SuperTyPo', function() {
                     const fam = (obj && obj.fontFamily ? String(obj.fontFamily) : '').split(',')[0].replace(/^["']|["']$/g, '').trim();
                     const txt = (obj && typeof obj.text === 'string') ? obj.text : '';
+                    const poids = (obj && obj.fontWeight) ? obj.fontWeight : 400;
+                    const style = (obj && obj.fontStyle) ? obj.fontStyle : 'normal';
                     if (typeof window.openSupertypo === 'function') {
-                        window.openSupertypo({ text: txt, font: fam });
+                        // 🆕 v1.7.426 — la POLICE du bloc est transmise en plus du texte :
+                        //   SuperTyPo s'ouvre en édition sur la fonte réellement utilisée.
+                        window.openSupertypo({ text: txt, font: fam, police: { family: fam, weight: poids, style: style } });
                     } else {
                         window.open(window.location.origin + window.location.pathname.replace(/[^\/]*$/, '') + '../supertypo/index.html');
                     }

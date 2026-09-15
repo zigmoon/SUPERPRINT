@@ -912,6 +912,49 @@
     }
   }
   [900, 2200, 4500].forEach(function (d) { setTimeout(spApplyDeepLink, d); });
+
+  /* 🆕 v1.7.426 — RÉCEPTION DE LA POLICE ENVOYÉE PAR L'APP SUPERPRINT.
+     L'app garde un handle sur cette fenêtre et nous transmet le FICHIER de fonte du bloc
+     cliqué (postMessage, buffer transféré) : on le normalise (woff2/woff → sfnt), on
+     charge la fonte, on affiche la grille puis on ouvre l'éditeur sur le premier
+     caractère du texte transmis — « Éditer la typo » arrive donc directement en édition,
+     avec la bonne police. */
+  let _spPoliceRecue = false;
+  function spSignalPret() {
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type: 'sp213-ready' }, window.location.origin);
+      }
+    } catch (_) {}
+  }
+  async function spRecoitPolice(ev) {
+    try {
+      if (ev.origin !== window.location.origin) return;
+      const d = ev.data;
+      if (!d || typeof d !== 'object') return;
+      if (d.type === 'sp213-ping') { spSignalPret(); return; }
+      if (d.type !== 'sp213-font' || _spPoliceRecue) return;
+      if (!d.buffer) return;
+      _spPoliceRecue = true;
+      let brut = d.buffer;
+      if (ArrayBuffer.isView(brut)) brut = brut.buffer.slice(brut.byteOffset, brut.byteOffset + brut.byteLength);
+      let buf = brut;
+      try { buf = await normalizeFontBuffer(brut.slice(0)); } catch (e1) { buf = brut; }
+      loadFontFromBuffer(buf, String(d.name || 'police') + '.ttf');
+      showFontView();
+      try { toast('Police reçue de SuperPrint : ' + (ST.fontName || d.name || '')); } catch (e2) {}
+      const ch = String(d.text || '').replace(/^\s+/, '').charAt(0);
+      if (ch) setTimeout(function () { try { openEditor(ch); } catch (e3) {} }, 400);
+    } catch (e) { try { console.error(e); } catch (e2) {} }
+  }
+  window.addEventListener('message', spRecoitPolice);
+  // Handshake : on signale notre disponibilité jusqu'à recevoir la fonte (max ~15 s).
+  var _spPretTic = 0;
+  const _spPretSein = setInterval(function () {
+    _spPretTic++;
+    if (_spPoliceRecue || _spPretTic > 25) { clearInterval(_spPretSein); return; }
+    spSignalPret();
+  }, 600);
   // Sans police chargée au bout de 7 s, on arrête d'attendre (le texte reste pré-rempli).
   setTimeout(function () { _spDeepFait = true; }, 7000);
 
