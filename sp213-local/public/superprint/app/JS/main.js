@@ -62837,24 +62837,15 @@ canvas.requestRenderAll();
             previewText.textContent = (firstObj && typeof firstObj.text === 'string')
                 ? firstObj.text.substring(0, 30)
                 : (pattern.name || '');
-            // 🆕 v1.7.446 — aperçu RÉEL de la combinaison (mêmes textes, mêmes polices, mêmes
-            //   couleurs que ce que le clic dépose sur la page), comme les vignettes des maquettes.
-            try {
-                const _url = (typeof window.spApercuTypo === 'function') ? window.spApercuTypo(pattern) : '';
-                if (_url) {
-                    const _im = document.createElement('img');
-                    _im.className = 'asset-preview-img';
-                    _im.alt = pattern.name || '';
-                    _im.src = _url;
-                    _im.style.width = '100%';
-                    _im.style.height = '100%';
-                    _im.style.objectFit = 'cover';
-                    _im.style.display = 'block';
-                    previewContent = _im;
-                    _spTypoApercus.push({ motif: pattern, img: _im });
-                }
-            } catch (eAp) {}
-            if (!previewContent) previewContent = previewText;
+            // 🆕 v1.7.449 — POSE RAPIDE : la carte est montée tout de suite avec un aperçu
+            //   TYPOGRAPHIQUE (le titre dans la bonne police). Les vrais aperçus image
+            //   (22 canevas fabric hors écran + encodage JPEG, puis une 2e passe après
+            //   chargement des polices) coûtaient ~500 ms de fil principal AU DÉMARRAGE, alors
+            //   que le panneau Assets est fermé : ils sont désormais dessinés à la demande par
+            //   window.spBuildTypoApercus() (onglet Typographie ou ouverture du panneau).
+            previewContent = previewText;
+            _spTypoApercus.push({ motif: pattern, card: null, img: null });
+            const _apercuCible = _spTypoApercus[_spTypoApercus.length - 1];
             
             const card = createAssetCard(pattern.name, previewContent, () => {
                 const canvas = getActiveCanvas();
@@ -62876,24 +62867,56 @@ canvas.requestRenderAll();
                 }
             });
             typoGrid.appendChild(card);
+            _apercuCible.card = card;
         });
-        // 🆕 v1.7.446 — on redessine les aperçus une fois les polices chargées : sans cela le
-        //   canevas hors écran dessinerait une police de repli au premier passage.
+        // 🆕 v1.7.449 — DESSIN À LA DEMANDE des aperçus Typographie (gain mesuré au démarrage).
+        window.spBuildTypoApercus = function () {
+            if (window._spTypoApercusFaits) return;
+            window._spTypoApercusFaits = true;
+            _spTypoApercus.forEach(function (a) {
+                try {
+                    if (!a.card) return;
+                    const _u = (typeof window.spApercuTypo === 'function') ? window.spApercuTypo(a.motif) : '';
+                    if (!_u) return;
+                    const zone = a.card.querySelector('.asset-card-preview') || a.card;
+                    const _im = document.createElement('img');
+                    _im.className = 'asset-preview-img';
+                    _im.alt = (a.motif && a.motif.name) || '';
+                    _im.loading = 'lazy';
+                    _im.decoding = 'async';
+                    _im.src = _u;
+                    _im.style.width = '100%';
+                    _im.style.height = '100%';
+                    _im.style.objectFit = 'cover';
+                    _im.style.display = 'block';
+                    zone.innerHTML = '';
+                    zone.appendChild(_im);
+                    a.img = _im;
+                } catch (e) {}
+            });
+            // 🆕 v1.7.446 — deuxième passe après chargement des polices (sinon le canevas hors
+            //   écran dessinerait une police de repli), uniquement si le dessin a eu lieu.
+            try {
+                if (!window._spTypoPolicePrete && document.fonts && document.fonts.ready) {
+                    window._spTypoPolicePrete = true;
+                    document.fonts.ready.then(function () {
+                        setTimeout(function () {
+                            window._spTypoApercusFaits = false;
+                            window.spBuildTypoApercus();
+                        }, 120);
+                    });
+                }
+            } catch (ePol) {}
+        };
+        // déclencheurs : onglet Typographie, ou ouverture du panneau Assets
         try {
-            if (!window._spTypoPolicePrete && document.fonts && document.fonts.ready) {
-                window._spTypoPolicePrete = true;
-                document.fonts.ready.then(function () {
-                    setTimeout(function () {
-                        _spTypoApercus.forEach(function (a) {
-                            try {
-                                const _u = window.spApercuTypo(a.motif);
-                                if (_u) a.img.src = _u;
-                            } catch (e) {}
-                        });
-                    }, 150);
-                });
-            }
-        } catch (ePol) {}
+            document.querySelectorAll('.assets-tab[data-tab="typo"]').forEach(function (t) {
+                t.addEventListener('click', function () { setTimeout(function () { window.spBuildTypoApercus(); }, 30); });
+            });
+            const _icAssetTypo = document.querySelector('img[alt="Assets"]');
+            const _btnAssetTypo = _icAssetTypo ? _icAssetTypo.closest('button') : null;
+            if (_btnAssetTypo) _btnAssetTypo.addEventListener('click', function () { setTimeout(function () { window.spBuildTypoApercus(); }, 500); });
+        } catch (eDecl) {}
     }
 
     // 🆕 v1.7.442 — BEAUCOUP PLUS DE FORMES (demande utilisateur) + aperçu vectoriel généré
@@ -63267,6 +63290,7 @@ canvas.requestRenderAll();
             const previewImg = document.createElement('img');
             previewImg.className = 'asset-preview-img';
             previewImg.loading = 'lazy';
+            previewImg.decoding = 'async';
             previewImg.alt = comp.name || translate('assetPreviewAlt');
             const keywords = getCompPreviewKeywords(comp.name).join(',');
             // Endpoint "random" desactivé temporairement pour garder des blocs simples
@@ -63353,6 +63377,7 @@ canvas.requestRenderAll();
                 const previewImg = document.createElement('img');
                 previewImg.className = 'asset-preview-img';
                 previewImg.loading = 'lazy';
+                previewImg.decoding = 'async';
                 previewImg.alt = comp.name || translate('assetPreviewPremiumAlt');
                 previewImg.src = getPrintPlaceholderDataUri(comp.name || 'PREMIUM');
                 previewImg.onerror = () => {
