@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.420`** — 15 septembre 2026
+> **Dernière version : `1.7.421`** — 15 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,19 +10,19 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.420` |
-| Cache Service Worker | `superprint-shell-v1.7.420-roles-pj` |
+| Version app (affichée) | `1.7.421` |
+| Cache Service Worker | `superprint-shell-v1.7.421-roles-pj-app` |
 | Query JS (`main.js`) | `?v=20260917-v417-clavier-studio` |
-| Badge preview (`spVersionBadge`) | `v1.7.420` |
-| Splash screen | `v1.7.420` |
-| Préférences (panneau SUPERPRINT) | `v1.7.420` |
-| Préférences (bas de page) | `SuperPrint v1.7.420 — 15 septembre 2026` |
-| Onboarding (`V 1.7.420`) | `1.7.420` |
-| Landing (`softwareVersion` + footer) | `1.7.420` |
-| Documentation | `v1.7.420` |
-| `version.txt` | `1.7.420` |
-| `llms.txt` / `llms-full.txt` | `1.7.420 (September 2026)` |
-| `package.json` (sp213-local) | `1.7.420` |
+| Badge preview (`spVersionBadge`) | `v1.7.421` |
+| Splash screen | `v1.7.421` |
+| Préférences (panneau SUPERPRINT) | `v1.7.421` |
+| Préférences (bas de page) | `SuperPrint v1.7.421 — 15 septembre 2026` |
+| Onboarding (`V 1.7.421`) | `1.7.421` |
+| Landing (`softwareVersion` + footer) | `1.7.421` |
+| Documentation | `v1.7.421` |
+| `version.txt` | `1.7.421` |
+| `llms.txt` / `llms-full.txt` | `1.7.421 (September 2026)` |
+| `package.json` (sp213-local) | `1.7.421` |
 
 > ⚠️ Le paquet **npm** (`superprint-npm`) a sa **propre version** (`1.0.x`) — c'est la version de *release du paquet*, indépendante de la version de l'app. Il lit la version de l'app depuis `https://superprint.cc/version.txt`.
 
@@ -41,7 +41,7 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
   - `#spVersionBadge` : commentaire, `title`, `data-sp-js`, `data-sp-sw`, texte `vX.Y.Z`
   - panneau préférences : `vX.Y.Z` (info SUPERPRINT) + `SuperPrint vX.Y.Z — <date>`
   - onboarding : `LAYOUT EDITOR — V X.Y.Z` + `V X.Y.Z | MM YYYY`
-  - `<script src="JS/main.js?v=20260915-v420-roles-pj">`
+  - `<script src="JS/main.js?v=20260915-v421-roles-pj-app">`
 - `app/service-worker.js` — `CACHE_NAME = 'superprint-shell-vX.Y.Z-...'`
 - `app/landing.html` — JSON-LD `softwareVersion` + `feat-tag` + footer `© ... vX.Y.Z`
 - `app/llms.txt` + `app/llms-full.txt` — `Version: X.Y.Z`

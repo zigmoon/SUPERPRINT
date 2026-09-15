@@ -1176,6 +1176,34 @@ function spLoadMammoth() {
 
 // ── Aiguillage central : on lit la signature, pas l'extension ──────────
 async function extractDocumentAttachment(file, id, ext) {
+  // 🆕 v1.7.421 — IMAGES. Sans cette branche, une PHOTO etait lue comme du TEXTE :
+  //   mesure (PNG 240x120, 1135 octets) -> piece jointe `type: text`, 183 caracteres
+  //   de binaire envoyes au moteur. Le studio affichait la meme image en 8x8px, donc
+  //   seul le module partage etait en cause (il ne connaissait que les DOCUMENTS).
+  var _extImg = String(ext || '').toLowerCase();
+  if (_extImg === 'jpg' || _extImg === 'jpeg' || _extImg === 'png' || _extImg === 'webp' ||
+      _extImg === 'gif' || _extImg === 'bmp' || _extImg === 'avif' || _extImg === 'jfif') {
+    var _dataURL = await new Promise(function (res, rej) {
+      var fr = new FileReader();
+      fr.onload = function () { res(String(fr.result || '')); };
+      fr.onerror = function () { rej(new Error('lecture de l\'image impossible')); };
+      fr.readAsDataURL(file);
+    });
+    var _dim = await new Promise(function (res) {
+      var im = new Image();
+      im.onload = function () { res({ w: im.naturalWidth || 0, h: im.naturalHeight || 0 }); };
+      im.onerror = function () { res({ w: 0, h: 0 }); };
+      im.src = _dataURL;
+    });
+    state.attachments.push({
+      id: id, name: file.name, type: 'image', dataURL: _dataURL,
+      width: _dim.w, height: _dim.h, ext: _extImg, size: file.size || 0
+    });
+    renderAttachBar();
+    appendChat('assistant', '🖼️ « ' + file.name + ' » : ' +
+      (_dim.w && _dim.h ? _dim.w + '×' + _dim.h + ' px' : 'image') + ' jointe.');
+    return;
+  }
   const bytes = new Uint8Array(await file.arrayBuffer());
   const reel = spDetectDocFormat(bytes);
 

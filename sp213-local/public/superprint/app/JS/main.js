@@ -49133,7 +49133,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260917-v417-clavier-studio';
+                s.src = 'JS/sp-doc-import.js?v=20260915-v421b-roles-pj-app';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous
@@ -49186,6 +49186,129 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         }
         window._spDocCollectFile = _spDocCollectFile;
 
+        // ══════════════════════════════════════════════════════════════════════
+        // 🆕 v1.7.421 — RÔLE DES PIÈCES JOINTES (aligné sur le studio v1.7.420)
+        //   Trois rôles, traduits en CONSIGNE DANS LE PROMPT à chaque demande : ils
+        //   valent donc pour TOUS les moteurs (DeepSeek, OpenAI, Groq, OpenRouter,
+        //   WLLM local) — aucune brique spécifique à un fournisseur.
+        //     • content  : le contenu DOIT être composé dans la maquette ;
+        //     • template : sert de MODÈLE de structure / hiérarchie ;
+        //     • context  : sert seulement à COMPRENDRE (rien ne doit apparaître).
+        //   La modale est construite dynamiquement : aucun HTML externe, aucun style
+        //   global ajouté (tout est en ligne, aux couleurs du thème via currentColor).
+        // ══════════════════════════════════════════════════════════════════════
+        var spPjModePendant = null;
+        var SP_PJ_TEXTES = {
+            fr: {
+                title: 'Que doit faire l\'IA de cette pièce jointe ?',
+                sub: 'Le rôle est rappelé au moteur à chaque demande.',
+                content: 'Importer dans la maquette', contentD: 'Son texte et ses images doivent être COMPOSÉS dans le document (obligatoire).',
+                template: 'Servir de modèle', templateD: 'Sa structure, son ordre et ses styles doivent être SUIVIS : le contenu vient de votre demande.',
+                context: 'Contexte seulement', contextD: 'Sert à COMPRENDRE (sujet, ton, vocabulaire). Aucun de ses éléments ne doit apparaître dans la maquette.',
+                ok: 'Valider', cancel: 'Annuler', change: 'Cliquer pour changer le rôle de cette pièce jointe',
+                short: { content: 'maquette', template: 'modèle', context: 'contexte' }
+            },
+            en: {
+                title: 'What should the AI do with this attachment?',
+                sub: 'The role is restated to the engine on every request.',
+                content: 'Import into the layout', contentD: 'Its text and images must be TYPESET into the document (mandatory).',
+                template: 'Use as a template', templateD: 'Its structure, order and styles must be FOLLOWED: content comes from your request.',
+                context: 'Context only', contextD: 'Used to UNDERSTAND (topic, tone, wording). None of its elements may appear in the layout.',
+                ok: 'Confirm', cancel: 'Cancel', change: 'Click to change this attachment\'s role',
+                short: { content: 'layout', template: 'template', context: 'context' }
+            },
+            ja: {
+                title: 'この添付ファイルを AI にどう扱わせますか？',
+                sub: '役割は毎回の送信時にエンジンへ伝えます。',
+                content: 'レイアウトに取り込む', contentD: 'テキストと画像をドキュメントに組む必要があります（必須）。',
+                template: 'テンプレートとして使う', templateD: '構造・順序・スタイルに従います（内容はご指示から）。',
+                context: 'コンテキストのみ', contextD: '理解のためだけに使用し、要素はレイアウトに表示しません。',
+                ok: '確定', cancel: 'キャンセル', change: 'クリックして役割を変更',
+                short: { content: 'レイアウト', template: 'テンプレート', context: 'コンテキスト' }
+            }
+        };
+        function spPjLang() { var l = String(document.documentElement.lang || 'fr').slice(0, 2).toLowerCase(); return (l === 'en' || l === 'ja') ? l : 'fr'; }
+        function spPjT() { return SP_PJ_TEXTES[spPjLang()] || SP_PJ_TEXTES.fr; }
+        function spPjShort(m) { var s = spPjT().short || {}; return s[m] || m; }
+        // Consigne envoyée au moteur (le prompt de l'app est en français).
+        function spPjModeNote(att) {
+            var m = (att && att.mode) || 'content';
+            if (m === 'context') return 'RÔLE DE CETTE PIÈCE JOINTE : CONTEXTE UNIQUEMENT — n\'ajoute AUCUN de ses éléments dans la maquette (ni texte, ni image, ni couleur). Sers-t\'en seulement pour comprendre le sujet, le ton, le vocabulaire et les contraintes.';
+            if (m === 'template') return 'RÔLE DE CETTE PIÈCE JOINTE : MODÈLE À SUIVRE — reproduis sa STRUCTURE et sa HIÉRARCHIE (ordre des blocs, styles, proportions, nombre de colonnes). Ne recopie pas son contenu textuel : le contenu vient de la demande de l\'utilisateur.';
+            return 'RÔLE DE CETTE PIÈCE JOINTE : CONTENU À INTÉGRER (OBLIGATOIRE) — son contenu DOIT être composé dans la maquette (texte, images, tableaux). Ne l\'ignore pas, ne le résume pas, ne le remplace pas par du texte de substitution.';
+        }
+        window.spPjModeNote = spPjModeNote;
+        // Pop-in de choix du rôle : résout avec le mode retenu (Échap / Annuler = défaut).
+        function spPjAskRole(noms, modeInitial) {
+            return new Promise(function (resolve) {
+                var d = spPjT();
+                var choix = modeInitial || 'content';
+                var ov = document.createElement('div');
+                ov.setAttribute('role', 'dialog');
+                ov.setAttribute('aria-modal', 'true');
+                ov.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:3vh 3vw;background:rgba(12,12,12,.45);font-family:inherit;';
+                var card = document.createElement('div');
+                card.style.cssText = 'width:min(680px,96vw);max-height:92vh;overflow:auto;background:#ffffff;color:#111111;border:1px solid #d0d0d0;box-shadow:0 30px 90px rgba(0,0,0,.45);';
+                var head = document.createElement('div');
+                head.style.cssText = 'padding:14px 18px;border-bottom:1px solid #e2e2e2;';
+                var ttl = document.createElement('div');
+                ttl.style.cssText = 'font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;';
+                ttl.textContent = d.title;
+                var sub = document.createElement('div');
+                sub.style.cssText = 'margin-top:6px;font-size:11px;line-height:1.5;color:#666666;';
+                sub.textContent = (noms && noms.length ? noms.join(', ') + ' — ' : '') + d.sub;
+                head.appendChild(ttl); head.appendChild(sub);
+                var body = document.createElement('div');
+                body.style.cssText = 'padding:12px 18px 4px;display:flex;flex-direction:column;gap:8px;';
+                var boutons = {};
+                ['content', 'template', 'context'].forEach(function (m) {
+                    var b = document.createElement('button');
+                    b.type = 'button';
+                    b.style.cssText = 'display:block;width:100%;text-align:left;padding:11px 12px;border:1px solid #d0d0d0;background:transparent;color:inherit;cursor:pointer;font-family:inherit;';
+                    var pt = document.createElement('span');
+                    pt.style.cssText = 'display:block;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;';
+                    pt.textContent = d[m];
+                    var pd = document.createElement('span');
+                    pd.style.cssText = 'display:block;margin-top:4px;font-size:11px;line-height:1.45;color:#666666;';
+                    pd.textContent = d[m + 'D'] || '';
+                    b.appendChild(pt); b.appendChild(pd);
+                    if (m === choix) b.style.borderColor = '#111111';
+                    b.addEventListener('click', function () {
+                        choix = m;
+                        Object.keys(boutons).forEach(function (k) {
+                            boutons[k].style.borderColor = (k === m) ? '#111111' : '#d0d0d0';
+                        });
+                    });
+                    boutons[m] = b;
+                    body.appendChild(b);
+                });
+                var foot = document.createElement('div');
+                foot.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;';
+                var no = document.createElement('button');
+                no.type = 'button'; no.textContent = d.cancel;
+                no.style.cssText = 'padding:8px 14px;border:1px solid #d0d0d0;background:transparent;color:inherit;cursor:pointer;font-family:inherit;font-size:11px;text-transform:uppercase;letter-spacing:.6px;';
+                var ok = document.createElement('button');
+                ok.type = 'button'; ok.textContent = d.ok;
+                ok.style.cssText = 'padding:8px 14px;border:1px solid #111111;background:#111111;color:#ffffff;cursor:pointer;font-family:inherit;font-size:11px;text-transform:uppercase;letter-spacing:.6px;';
+                function fermer(val) {
+                    document.removeEventListener('keydown', esc, true);
+                    if (ov.parentNode) ov.parentNode.removeChild(ov);
+                    resolve(val);
+                }
+                function esc(e) { if (e.key === 'Escape') { e.stopPropagation(); fermer(choix); } }
+                no.addEventListener('click', function () { fermer(choix); });
+                ok.addEventListener('click', function () { fermer(choix); });
+                ov.addEventListener('click', function (e) { if (e.target === ov) fermer(choix); });
+                document.addEventListener('keydown', esc, true);
+                foot.appendChild(no); foot.appendChild(ok);
+                card.appendChild(head); card.appendChild(body); card.appendChild(foot);
+                ov.appendChild(card);
+                document.body.appendChild(ov);
+                try { ok.focus(); } catch (_) {}
+            });
+        }
+        window.spPjAskRole = spPjAskRole;
+
         // Compose le bloc « PIECES JOINTES » envoye a l'IA : meme esprit que la note
         // d'integralite du studio (le document doit etre traite EN ENTIER).
         function _spDocBuildContext() {
@@ -49198,14 +49321,14 @@ remplace pas la richesse de contenu : les deux vont ensemble.
 
             atts.forEach(function (att, i) {
                 if (att.type === 'image') {
-                    parts.push('IMAGE ' + i + ' : "' + att.name + '"' +
+                    parts.push(spPjModeNote(att) + '\nIMAGE ' + i + ' : "' + att.name + '"' +
                         (att.width ? ' (' + att.width + '\u00d7' + att.height + 'px)' : '') +
                         '\nPlace cette image avec {"type":"userImage","imageIndex":' + i + ',...}.');
                 } else {
                     var txt = String(att.text || '');
                     var limite = 60000;
                     var tronque = txt.length > limite;
-                    parts.push((att.docLabel || 'TEXTE') + ' ' + i + ' : "' + att.name + '"' +
+                    parts.push(spPjModeNote(att) + '\n' + (att.docLabel || 'TEXTE') + ' ' + i + ' : "' + att.name + '"' +
                         (att.imageCount ? ' (' + att.imageCount + ' image(s) jointe(s))' : '') +
                         '\n' + txt.slice(0, limite) +
                         (tronque ? '\n[... ' + limite + ' caracteres sur ' + txt.length + ' : traite ce qui est fourni et compose la maquette complete.]' : ''));
@@ -49245,6 +49368,8 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             atts.forEach(function (att, idx) {
                 var chip = document.createElement('span');
                 chip.className = 'sp-foot-chip';
+                // 🆕 v1.7.421 — rôle de la pièce jointe (marque les PJ arrivées sans rôle).
+                if (!att.mode) att.mode = spPjModePendant || 'content';
                 // 🆕 v1.7.403 — meta du studio : etendue/type EN MAJUSCULES, puis compteur.
                 var info = att.type === 'image'
                     ? (att.width ? att.width + '\u00d7' + att.height + 'px' : 'IMG')
@@ -49332,6 +49457,23 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                     }
                 });
                 chip.appendChild(nm);
+                // 🆕 v1.7.421 — badge de rôle, cliquable (à droite du nom), même esprit
+                //   que le studio : il rappelle ce que l'IA doit faire du fichier.
+                var mo = document.createElement('button');
+                mo.type = 'button';
+                mo.className = 'sp-mode sp-mode-' + att.mode;
+                mo.textContent = spPjShort(att.mode);
+                mo.title = spPjT().change;
+                mo.style.cssText = 'margin-left:6px;padding:1px 5px;font-size:9px;letter-spacing:.4px;text-transform:uppercase;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;font-family:inherit;opacity:.85;';
+                mo.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    spPjAskRole([att.name], att.mode).then(function (m) {
+                        att.mode = m;
+                        _aiFooterRenderAtt();
+                        _aiFooterUpdateUI();
+                    });
+                });
+                chip.appendChild(mo);
                 chip.appendChild(ty);
                 chip.appendChild(rm);
                 box.appendChild(chip);
@@ -49416,6 +49558,15 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         function aiFooterHandleFiles(files) {
             if (!files || !files.length) return;
             var liste = Array.prototype.slice.call(files);
+            // 🆕 v1.7.421 — LE RÔLE SE CHOISIT À L'IMPORT (comme dans le studio) : la
+            //   question est posée AVANT la lecture du fichier, et le mode choisi
+            //   s'applique à toutes les pièces jointes de ce dépôt.
+            spPjAskRole(liste.map(function (f) { return f.name; }), 'content').then(function (mode) {
+                spPjModePendant = mode;
+                aiFooterImportListe(liste);
+            });
+        }
+        function aiFooterImportListe(liste) {
             var btn = document.getElementById('aiFooterAttachBtn');
             if (btn) btn.classList.add('busy');
             aiFooterLoaderOn('Lecture des pieces jointes\u2026');
@@ -49435,6 +49586,9 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 }
                 _aiFooterRenderAtt();
                 _aiFooterUpdateUI();
+                // 🆕 v1.7.421 — le mode du lot est consommé : les prochaines PJ
+                //   (photo web, coller) repartent du rôle par défaut.
+                spPjModePendant = null;
                 aiFooterLoaderOff();
                 if (btn) btn.classList.remove('busy');
                 var inp = document.getElementById('aiFooterFileInput');
