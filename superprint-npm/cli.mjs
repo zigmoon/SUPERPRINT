@@ -19,6 +19,12 @@ const isWin = process.platform === 'win32';
 // ── URLs & chemins ────────────────────────────────────────────
 const APP_VERSION_URL = 'https://superprint.cc/version.txt';
 const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
+// ⚠️ MIN_APP_VERSION est un PLANCHER, pas la version courante : l'installation
+//    ÉCHOUE si le zip servi par APP_ZIP_URL est plus ANCIEN que ce plancher
+//    (ou que version.txt en ligne). Ne l'avancer donc qu'APRÈS avoir téléversé
+//    le zip ET le site, sinon `npx superprint` s'arrête sur « downloaded
+//    version is invalid or older than the online version ».
+//    La version du paquet npm, elle, vit dans package.json.
 const MIN_APP_VERSION = '1.7.415';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
