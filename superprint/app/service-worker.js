@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.414-no-whatsapp';
+const CACHE_NAME = 'superprint-shell-v1.7.415-fidelite-export';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -24,6 +24,8 @@ const APP_SHELL = [
   //    précache : hors ligne, le bouton d'impression tombait sur un 503 du
   //    cache-first. Ajouté en 1.7.350.
   './JS/virtual-printer.js',
+  './JS/sp-eps-import.js',
+  './JS/sp-doc-import.js',
   './JS/fabric.min.js',
   './JS/jspdf.umd.min.js',
   './JS/svg2pdf.umd.min.js',

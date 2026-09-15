@@ -705,6 +705,57 @@ footer, footer a { color: var(--after-text-color); }
 <main>
 <section class="releases" aria-label="Release notes">
 
+<!-- ===== SUPER PRINT v1.7.415 — Pantone studio, planches, Noir & Blanc léger ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-415">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.415</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 15 septembre 2026" data-i18n-en="Released September 15, 2026" data-i18n-jp="2026年9月15日公開">Released September 15, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Les fichiers préparés dans le studio arrivent à l'impression <strong>sans rien perdre</strong> : les tons directs survivent, le mode planches est respecté, la marge et la numérotation sont conservées, et le Noir &amp; Blanc sort en <strong>vectoriel léger</strong>." data-i18n-en-html="Files prepared in the studio reach print <strong>without losing anything</strong>: spot colours survive, spread mode is honoured, margin and numbering are preserved, and black &amp; white renders as <strong>light vector</strong>." data-i18n-jp-html="スタジオで準備したデータが<strong>失うことなく</strong>印刷に届きます。特色は保持され、見開きモードも尊重され、余白とノンブルも維持され、白黒は<strong>軽量なベクター</strong>で出力されます。">Files prepared in the studio now reach print <strong>without losing anything</strong>.</p>
+
+ <h3>🎨 Le studio ne détruit plus les tons directs <span class="badge badge-fix">corrigé</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Mesure avant : un document à <strong>3 tons directs</strong> (or, argent, Pantone) traversait le studio et revenait sans aucun marqueur — le PDF exporté contenait <strong>0 séparation</strong> au lieu de 2. Les couleurs devenaient du quadri." data-i18n-en-html="Measured before: a document with <strong>3 spot inks</strong> (gold, silver, Pantone) went through the studio and came back with no marker at all — the exported PDF held <strong>0 separations</strong> instead of 2. The colours silently became process." data-i18n-jp-html="修正前の実測：<strong>3 つの特色</strong>（金・銀・Pantone）を含むデータがスタジオを通るとマーカーが消え、書き出した PDF の<strong>分版は 2 ではなく 0</strong> でした。">A document with <strong>3 spot inks</strong> lost every marker in the studio: <strong>0 separations</strong> instead of 2.</li>
+  <li data-i18n-fr-html="Mesure après : <strong>3 marqueurs sur 3 conservés</strong> et <strong>2 /Separation</strong> dans le PDF, avec la boîte PDF/X. L'encre est transportée sur <strong>tous les types d'objets</strong> (texte, image, forme), pas seulement sur les rectangles." data-i18n-en-html="Measured after: <strong>3 of 3 markers preserved</strong> and <strong>2 /Separation</strong> entries in the PDF, with the PDF/X box. The ink is carried on <strong>every object type</strong> (text, image, shape), not only rectangles." data-i18n-jp-html="修正後の実測：<strong>3 つすべてのマーカーが保持</strong>され、PDF 内に <strong>2 つの /Separation</strong> と PDF/X ボックスが入ります。インキは矩形だけでなく<strong>すべてのオブジェクト種別</strong>に引き継がれます。"><strong>3 of 3 markers preserved</strong>, <strong>2 /Separation</strong> in the PDF, PDF/X box present.</li>
+ </ul>
+
+ <h3>📖 Le mode planches n'est plus ignoré <span class="badge badge-fix">corrigé</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Mesure avant : en mode planches, l'export natif sortait <strong>4 pages simples de 170 × 240</strong> — les planches étaient purement et simplement perdues." data-i18n-en-html="Measured before: in spread mode the native export produced <strong>4 single pages of 170 × 240</strong> — the imposed sheets were simply lost." data-i18n-jp-html="修正前の実測：見開きモードでネイティブ書き出しは<strong>170 × 240 の単ページ 4 枚</strong>を生成し、面付けは完全に失われていました。">In spread mode the native export produced <strong>4 single pages of 170 × 240</strong> — sheets lost.</li>
+  <li data-i18n-fr-html="Mesure après : <strong>3 planches de 366 × 266</strong>, en CMJN, avec la boîte PDF/X. La géométrie <strong>web et locale</strong> donne le même résultat." data-i18n-en-html="Measured after: <strong>3 sheets of 366 × 266</strong>, in CMYK, with the PDF/X box. The <strong>web and local</strong> builds return the same result." data-i18n-jp-html="修正後の実測：<strong>366 × 266 の面付け 3 枚</strong>、CMYK、PDF/X ボックス付き。<strong>Web 版とローカル版</strong>は同じ結果になります。"><strong>3 sheets of 366 × 266</strong>, CMYK, PDF/X — identical on web and local.</li>
+ </ul>
+
+ <h3>⚫ Le Noir &amp; Blanc redevient léger <span class="badge badge-fix">corrigé</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Mesure avant : un export Noir &amp; Blanc pesait <strong>134 725 Ko</strong> — soit <strong>×677</strong> le même document en RVB. Cause trouvée dans le binaire : <strong>9,5 Mo de pixels bruts</strong> écrits <strong>sans aucun filtre</strong> de compression." data-i18n-en-html="Measured before: a black &amp; white export weighed <strong>134,725 KB</strong> — <strong>×677</strong> the same document in RGB. The cause was in the binary: <strong>9.5 MB of raw pixels</strong> written <strong>with no compression filter at all</strong>." data-i18n-jp-html="修正前の実測：白黒書き出しは <strong>134,725 KB</strong>、同じ内容の RGB の <strong>677 倍</strong>。原因はバイナリ内にあり、<strong>9.5 MB の生ピクセル</strong>が<strong>無圧縮</strong>で書き込まれていました。">A black &amp; white export weighed <strong>134,725 KB</strong> — 677× the RGB version.</li>
+  <li data-i18n-fr-html="Mesure après : <strong>779 Ko</strong> une fois la compression et le fond blanc rétablis, puis <strong>189 Ko</strong> avec le texte et les traits <strong>véritablement vectoriels</strong> — le document RVB équivalent pèse 199 Ko. Le gris est calculé par luminance : <strong>gris 20 · RVB 0</strong>." data-i18n-en-html="Measured after: <strong>779 KB</strong> once compression and the white background were restored, then <strong>189 KB</strong> with text and strokes <strong>truly vector</strong> — the equivalent RGB document weighs 199 KB. Grey is derived by luminance: <strong>grey 20 · RGB 0</strong>." data-i18n-jp-html="修正後の実測：圧縮と白背景を戻して <strong>779 KB</strong>、文字と線を<strong>真のベクター</strong>にして <strong>189 KB</strong>。同等の RGB データは 199 KB です。グレーは輝度から算出されます（<strong>グレー 20 · RGB 0</strong>）。"><strong>779 KB</strong>, then <strong>189 KB</strong> with truly vector text and strokes (RGB equivalent: 199 KB).</li>
+ </ul>
+
+ <h3>📐 Marge et numérotation conservées <span class="badge badge-fix">corrigé</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Le studio écrasait la marge d'un document importé à <strong>20 mm</strong> au lieu des 15 mm demandés, et <strong>désactivait la numérotation</strong> (11 champs perdus). Les deux réglages sont maintenant capturés à l'import et réécrits dans le fichier." data-i18n-en-html="The studio overrode an imported document's margin to <strong>20 mm</strong> instead of the requested 15 mm, and <strong>switched numbering off</strong> (11 fields lost). Both settings are now captured at import and written back." data-i18n-jp-html="スタジオは読み込んだデータの余白を指定の 15 mm ではなく <strong>20 mm</strong> に上書きし、<strong>ノンブルを無効化</strong>していました（11 フィールドが消失）。どちらも読み込み時に取得し、書き戻します。">Margin forced to <strong>20 mm</strong> instead of 15, numbering <strong>switched off</strong> (11 fields). Both preserved now.</li>
+ </ul>
+
+ <h3>🔁 Export déterministe <span class="badge badge-fix">corrigé</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Le cache de polices <strong>mémorisait les échecs</strong> : si une police arrivait en retard, tout le reste de la session s'exportait en raster. Un échec n'est plus mémorisé — l'export suivant réessaie le vectoriel et <strong>prévient dans la console</strong> si la police manque." data-i18n-en-html="The font cache <strong>remembered failures</strong>: if a font arrived late, the rest of the session exported as raster. A failure is no longer cached — the next export retries vector output and <strong>warns in the console</strong> if the font is missing." data-i18n-jp-html="フォントキャッシュが<strong>失敗を記憶</strong>していたため、フォントの読み込みが遅れるとその後の書き出しがラスター化していました。失敗は記憶されなくなり、次の書き出しでベクターを再試行し、フォントが無い場合は<strong>コンソールに警告</strong>します。">The font cache <strong>cached failures</strong> — one late font rasterised the whole session. Now retried, with a console warning.</li>
+ </ul>
+
+ <h3>✅ Résultats mesurés <span class="badge badge-new">vérifié</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>27 documents testés</strong> (CMJN, RGB, tons directs, planches, Noir &amp; Blanc, 154 pages) exportés puis <strong>analysés octet par octet</strong> : boîtes PDF/X, filtres de compression, séparations, encodages de police." data-i18n-en-html="<strong>27 documents tested</strong> (CMYK, RGB, spot inks, spreads, black &amp; white, 154 pages) exported then <strong>analysed byte by byte</strong>: PDF/X boxes, compression filters, separations, font encodings." data-i18n-jp-html="<strong>27 種類のデータ</strong>（CMYK・RGB・特色・面付け・白黒・154 ページ）を書き出し、<strong>バイト単位で解析</strong>しました。"> <strong>27 documents tested</strong> and analysed byte by byte.</li>
+  <li data-i18n-fr-html="Parité web/miroir <strong>16/16</strong>, <strong>27/27</strong> marqueurs de version cohérents, <strong>600 fichiers identiques</strong> entre le web et la version locale, pack de <strong>56,339,732 octets</strong> vérifié par extraction." data-i18n-en-html="Web/mirror parity <strong>16/16</strong>, <strong>27/27</strong> version markers coherent, <strong>600 identical files</strong> between the web and the local build, <strong>56,339,732-byte</strong> package verified by extraction." data-i18n-jp-html="Web とミラーのパリティは <strong>16/16</strong>、バージョンマーカーは <strong>27/27</strong> で一致、Web とローカル版のファイルは <strong>600 個が同一</strong>、パッケージは <strong>56,339,732 バイト</strong>を展開して検証済みです。">Web/mirror parity <strong>16/16</strong>, 27/27 version markers, <strong>600 identical files</strong>, <strong>56,339,732-byte</strong> package verified.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.415 — chaque défaut a été reproduit avant correction, puis remesuré après. Les exports Noir &amp; Blanc avec traits de coupe restent en raster : c'est le prochain chantier." data-i18n-en="SuperPrint 1.7.415 — every defect was reproduced before the fix, then measured again afterwards. Black &amp; white exports with crop marks are still raster: that is the next job." data-i18n-jp="SuperPrint 1.7.415 — 各不具合は修正前に再現し、修正後に再測定しました。トンボ付きの白黒書き出しはまだラスターで、これが次の課題です。">Every defect was reproduced before the fix, then measured again after.</p>
+ <a class="release-cta" href="https://superprint.cc/app/index.html" data-i18n-fr="→ Ouvrir l'éditeur SuperPrint" data-i18n-en="→ Open SuperPrint Editor" data-i18n-jp="→ SuperPrintエディタを開く">→ Open SuperPrint Editor</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+
 <!-- ===== SUPER PRINT v1.7.414 — typographie stable : cesure, hauteur, interligne ===== -->
 
 <article class="release-block" data-app="superprint" id="superprint-v1-7-414">

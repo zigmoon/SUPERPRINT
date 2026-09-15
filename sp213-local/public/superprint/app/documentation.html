@@ -1984,6 +1984,23 @@ SUPERPRINT12master/
     <li data-lang="fr"><strong>PDF imposé</strong> — Imposition en cahier pour impression recto-verso</li>
     <li data-lang="en"><strong>Imposed PDF</strong> — Booklet imposition for duplex printing</li>
   </ul>
+
+  <h4 data-lang="fr">Géométrie des traits de coupe</h4>
+  <h4 data-lang="en">Crop marks geometry</h4>
+  <p data-lang="fr">Quand l'option <strong>Traits de coupe</strong> est cochée, SuperPrint réserve une <strong>marge technique de 10 mm de chaque côté</strong> autour de la zone de fond perdu :</p>
+  <p data-lang="en">When the <strong>Crop marks</strong> option is enabled, SuperPrint reserves a <strong>10 mm technical margin on each side</strong> around the bleed area:</p>
+  <ul>
+    <li data-lang="fr">Le format du PDF augmente de <strong>+20 mm en largeur et +20 mm en hauteur</strong> — ex. A4 sans fond perdu 210 × 297 mm ; avec 3 mm de fond perdu 216 × 303 mm ; avec traits de coupe 236 × 323 mm.</li>
+    <li data-lang="en">The PDF size increases by <strong>+20 mm width and +20 mm height</strong> — e.g. A4 without bleed 210 × 297 mm; with 3 mm bleed 216 × 303 mm; with crop marks 236 × 323 mm.</li>
+    <li data-lang="fr">Les traits commencent à <strong>2,5 mm du format fini</strong> (le trait de coupe) et mesurent <strong>5 mm</strong>. Ces valeurs sont <strong>identiques dans tous les modes d'export</strong> : pages simples, doubles pages (spreads), planches imposées et format fini PDF/X.</li>
+    <li data-lang="en">Marks start <strong>2.5 mm from the finished size</strong> (the trim line) and are <strong>5 mm</strong> long. These values are <strong>identical in every export mode</strong>: single pages, spreads, imposed sheets and PDF/X finished format.</li>
+    <li data-lang="fr">Le contenu se retrouve donc <strong>décalé de 10 mm</strong> à l'intérieur de la page PDF. <strong>C'est normal</strong> : le contenu ne bouge pas <em>par rapport aux traits</em>. Ce sont les repères qui font foi pour le façonnage, jamais le bord de la page PDF.</li>
+    <li data-lang="en">Content therefore appears <strong>shifted by 10 mm</strong> inside the PDF page. <strong>This is normal</strong>: content never moves <em>relative to the marks</em>. Only the marks are authoritative for finishing, never the PDF page edge.</li>
+    <li data-lang="fr">Sans traits de coupe, la page PDF vaut exactement la zone de fond perdu (ex. 216 × 303 mm) et le contenu reste où il est : la seule différence entre un export avec et sans traits est cette marge technique.</li>
+    <li data-lang="en">Without crop marks, the PDF page is exactly the bleed area (e.g. 216 × 303 mm) and content stays where it is: the only difference between an export with and without marks is this technical margin.</li>
+    <li data-lang="fr">Le repérage entre le raster (image de la page) et les tracés vectoriels (traits de coupe, typographie vectorielle) est <strong>exact au pixel</strong> : aucune surcote d'alignement n'est appliquée.</li>
+    <li data-lang="en">Registration between the raster (page image) and vector artwork (crop marks, vector typography) is <strong>pixel-exact</strong>: no alignment overscan is applied.</li>
+  </ul>
   <h4 data-lang="fr">Export CMJN + tons directs (Pantone)</h4>
   <h4 data-lang="en">CMYK + spot colors (Pantone) export</h4>
   <p data-lang="fr">Dès qu'un ton direct du nuancier Pantone est appliqué à un objet du document, la boîte d'export <strong>bascule automatiquement en mode « CMJN + Pantone »</strong>, comme dans InDesign :</p>

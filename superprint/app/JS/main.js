@@ -1402,7 +1402,26 @@ const SP_CUSTOM_PROPS = [
     //   Sans cette serialisation, un .sp/.json rouvert perdait la reference :
     //   l'agrandissement n'etait plus borne et le retour a la taille initiale
     //   ne tombait plus juste.
-    '_spWrapOrigH'
+    '_spWrapOrigH',
+    // 🆕 v1.7.415 — SURLIGNAGE DE TEXTE (relecture .sp/.json).
+    //   Fabric ecrit bien textBackgroundColor dans toObject pour Text et
+    //   Textbox (liste interne du moteur), mais le nom n'etait declare dans
+    //   AUCUNE liste cote SuperPrint. On le declare ici pour garantir l'aller
+    //   retour .sp ET .json : un surlignage pose par l'outil Surlignage ou par
+    //   une maquette du Studio IA etait sinon perdu a la reouverture.
+    //   Note : pour un objet non-texte la valeur est undefined et Fabric la
+    //   retire lui-meme (_removeDefaultValues) — aucun bruit dans le fichier.
+    'textBackgroundColor',
+    // 🆕 v1.7.415 — MARQUEURS D'IMPORT EPS / ILLUSTRATOR.
+    //   Le vecteur importe est un fabric.Group de fabric.Path : il se
+    //   serialise NATIVEMENT, donc le VISUEL survit deja a un aller-retour.
+    //   Ces marqueurs d'origine, eux, n'etaient conserves nulle part : on les
+    //   serialise pour pouvoir identifier et diagnostiquer un objet venu d'un
+    //   EPS apres rechargement du document.
+    '_spEpsImport',
+    '_spEpsKind',
+    '_spEpsPaths',
+    '_spEpsBBoxPS'
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -6746,6 +6765,16 @@ if (window._spGpuEnabled) {
                     if (savedProject.pageNumberingSettings && typeof pageNumberingSettings !== 'undefined') {
                         Object.assign(pageNumberingSettings, savedProject.pageNumberingSettings);
                     }
+                    // 🆕 v1.7.415 — Restaurer les POLICES EXTERNES de l'autosave.
+                    try {
+                        const _cfa = savedProject.customFonts || [];
+                        if (_cfa.length && typeof window._spRegisterCustomFontDataUrl === 'function') {
+                            _cfa.forEach(function (f) {
+                                if (!f || !f.name) return;
+                                try { window._spRegisterCustomFontDataUrl(f.name, f.data || ''); } catch (_) {}
+                            });
+                        }
+                    } catch (_) {}
                     // Restaurer le nom du projet
                     if (savedProject.projectName) {
                         window._spProjectName = savedProject.projectName;
@@ -29240,6 +29269,24 @@ if (window._spGpuEnabled) {
                         }
                     } catch (_) {}
 
+                    // 🆕 v1.7.415 — Restaurer les POLICES EXTERNES embarquées.
+                    //   Meme mecanisme que loadProjectSP : FontFace + opentype AVANT
+                    //   de detecter les polices manquantes, pour que les polices du
+                    //   document soient disponibles immediatement.
+                    try {
+                        const _cfs = project.customFonts || [];
+                        if (_cfs.length && typeof window._spRegisterCustomFontDataUrl === 'function') {
+                            _cfs.forEach(function (f) {
+                                if (!f || !f.name) return;
+                                try { window._spRegisterCustomFontDataUrl(f.name, f.data || ''); } catch (_) {}
+                            });
+                            if (document.fonts && document.fonts.ready) {
+                                document.fonts.ready.then(function () {
+                                    try { if (typeof _spRefreshTextboxesAfterFontLoad === 'function') _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
+                                }).catch(function () {});
+                            }
+                        }
+                    } catch (_) {}
                     // 🛡️ v1.7.284 : restaurer les styles nommés (typo + nuancier) depuis le JSON
                     try {
                         const _st = project.styles || {};
@@ -30630,6 +30677,156 @@ if (window._spGpuEnabled) {
             reader.readAsText(file, 'UTF-8');
             const importModal = document.getElementById('importModal');
             if (importModal) importModal.style.display = 'none';
+            e.target.value = '';
+        });
+    })();
+
+    // ════════════════════════════════════════════════════════════════════════
+    // v1.7.415 - IMPORT EPS / ILLUSTRATOR (PostScript, l'ancetre du SVG)
+    //
+    // Deux cas, tranches par SIGNATURE (jamais par extension) :
+    //   - %PDF  : le fichier EST un PDF. Les .ai modernes (Illustrator CS+) sont
+    //             TOUS dans ce cas (mesure sur un vrai .ai : 18 constructPath,
+    //             15 fill, 3 clip, 0 texte - les lettres sont converties en
+    //             courbes). On delegue a l'import PDF existant.
+    //   - %!PS  : EPS PostScript -> module PARTAGE app/JS/sp-eps-import.js
+    //             (le meme fichier sert au studio), qui produit un GROUPE
+    //             vectoriel comme l'import SVG.
+    //
+    // Le groupe suit ensuite le MEME chemin d'export que le SVG
+    // (group -> _drawSvgViaSvg2pdf), donc tous les correctifs SVG s'y appliquent.
+    // ════════════════════════════════════════════════════════════════════════
+    function _spEpsEnsureModule() {
+        if (window.SPEps) return Promise.resolve(window.SPEps);
+        return new Promise(function (resolve, reject) {
+            var s = document.createElement('script');
+            // Cache-buster OBLIGATOIRE : sans parametre de version le navigateur
+            // sert le module PRECEDENT depuis son cache HTTP.
+            s.src = 'JS/sp-eps-import.js?v=20260915-v415-fidelite-export';
+            s.onload = function () {
+                if (!window.SPEps) { reject(new Error('SPEps absent')); return; }
+                resolve(window.SPEps);
+            };
+            s.onerror = function () { reject(new Error('sp-eps-import.js introuvable')); };
+            document.head.appendChild(s);
+        });
+    }
+    window._spEpsEnsureModule = _spEpsEnsureModule;
+
+    // Route un fichier (deja en memoire) vers l'import PDF de l'app.
+    function _spEpsRouteVersImportPdf(file, label) {
+        var input = document.getElementById('importPdfInput');
+        if (!input) return false;
+        try {
+            var dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            if (window._spDragLoadingStart) window._spDragLoadingStart(label || 'PDF');
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+        } catch (err) {
+            console.warn('[EPS] routage vers l import PDF impossible :', err);
+            return false;
+        }
+    }
+
+    // Point d'entree UNIQUE (menu Importer ET depot de fichier).
+    // Retourne une promesse resolue avec un code : 'pdf' | 'eps' | 'vide' | 'inconnu' | 'erreur'.
+    function _spImportEpsFile(file) {
+        return new Promise(function (resolve) {
+            if (!file) { resolve('vide'); return; }
+            var reader = new FileReader();
+            reader.onload = function (ev) {
+                var bytes;
+                try { bytes = new Uint8Array(ev.target.result); } catch (e) { resolve('erreur'); return; }
+                _spEpsEnsureModule().then(function (mod) {
+                    var genre = mod.detect(bytes);
+
+                    // -- CAS 1 : c'est un PDF (dont les .ai modernes) --
+                    if (genre === 'pdf') {
+                        if (_spEpsRouteVersImportPdf(file, 'PDF / Illustrator')) { resolve('pdf'); return; }
+                        alert('Ce fichier est un PDF (ou un .ai moderne, qui EST un PDF) mais l import PDF n a pas pu etre ouvert.');
+                        resolve('erreur');
+                        return;
+                    }
+
+                    // -- CAS 2 : ni PDF ni PostScript --
+                    if (genre !== 'eps') {
+                        alert('Fichier non reconnu : ni PostScript (%!PS), ni PDF (%PDF).\n\n' +
+                              'Les fichiers .eps et .ai RECENTS sont pris en charge. Un .eps tres ancien\n' +
+                              'peut contenir une preview bitmap a la place du dessin vectoriel.');
+                        resolve('inconnu');
+                        return;
+                    }
+
+                    // -- CAS 3 : EPS PostScript --
+                    var texte = mod.extractPsText(bytes);
+                    var analyse = mod.parse(texte);
+                    console.log('[EPS] ' + analyse.stats.chemins + ' chemin(s) vectoriel(s), ' +
+                                analyse.stats.fills + ' remplissage(s), ' + analyse.stats.strokes + ' trait(s), ' +
+                                analyse.stats.nbInconnus + ' operateur(s) ignore(s)');
+
+                    var res = null;
+                    try { res = mod.toFabricGroup(analyse, window.fabric); } catch (e) { res = null; }
+                    if (!res || !res.group) {
+                        alert('Ce fichier EPS ne contient aucun dessin vectoriel exploitable.\n\n' +
+                              (analyse.stats.chemins ? '' : 'Aucun chemin peint n a ete trouve.\n') +
+                              'Un EPS ancien peut ne contenir qu une prevualisation bitmap.');
+                        resolve('vide');
+                        return;
+                    }
+
+                    var activeCanvas = getActiveCanvas();
+                    if (!activeCanvas) { resolve('erreur'); return; }
+                    var bleedInfo = activeCanvas.bleedInfo || { left: mmToPx(3), top: mmToPx(3) };
+                    var grp = res.group;
+                    grp.set({
+                        left: bleedInfo.left + 100,
+                        top: bleedInfo.top + 100,
+                        objectCaching: true
+                    });
+                    // Meme regle que l'import SVG : au plus 100 mm de cote.
+                    var sw = Math.max(1, Number(grp.width) || 1);
+                    var sh = Math.max(1, Number(grp.height) || 1);
+                    var maxSize = mmToPx(100);
+                    if (sw > maxSize || sh > maxSize) {
+                        var sc = Math.min(maxSize / sw, maxSize / sh);
+                        if (isFinite(sc) && sc > 0) grp.scale(sc);
+                    }
+                    activeCanvas.add(grp);
+                    activeCanvas.setActiveObject(grp);
+                    activeCanvas.requestRenderAll();
+                    try { debouncedUpdateLayersPanel(); } catch (_) {}
+                    try { saveState('EPS importe'); } catch (_) {}
+                    if (window.spToast && mod.importance(analyse) < 0.3) {
+                        window.spToast('Import EPS partiel : le fichier utilise des fonctions PostScript non gerees.', 'error', 6000);
+                    }
+                    resolve('eps');
+                }).catch(function (e) {
+                    console.error('[EPS] module indisponible :', e);
+                    alert('Module d import EPS indisponible : ' + (e && e.message || e));
+                    resolve('erreur');
+                });
+            };
+            reader.onerror = function () { alert('Lecture du fichier impossible.'); resolve('erreur'); };
+            reader.readAsArrayBuffer(file);
+        });
+    }
+    window._spImportEpsFile = _spImportEpsFile;
+    // Entree utilisee par les depots de fichier (drag & drop).
+    window._spOpenEpsImport = _spImportEpsFile;
+
+    (function initEpsImport() {
+        var btn = document.getElementById('importEpsBtn');
+        var input = document.getElementById('importEpsInput');
+        if (!btn || !input) return;
+        btn.addEventListener('click', function () { input.click(); });
+        input.addEventListener('change', function (e) {
+            var file = e.target.files && e.target.files[0];
+            if (!file) return;
+            var modale = document.getElementById('importModal');
+            if (modale) modale.style.display = 'none';
+            _spImportEpsFile(file);
             e.target.value = '';
         });
     })();
@@ -33354,7 +33551,13 @@ if (window._spGpuEnabled) {
     // (alpha), on force le PNG sans perte même en Standard/Medium/HD pour
     // éviter les fonds blancs sur les zones transparentes (limite du JPEG).
     if (forcePng) {
-        return { format: 'png', mime: 'image/png', quality: 1.0, pdfFormat: 'PNG', compression: 'NONE' };
+        // 🆕 v1.7.416 — 'NONE' NE COMPRESSE RIEN : jsPDF ecrit les pixels BRUTS.
+        //   MESURE DU DEFAUT : image 1551x2047 RGB stockee telle quelle
+        //   (/Length 9524691, AUCUN /Filter) ; un document contenant une simple
+        //   couleur rgba() declenchait ce repli et l'export N&B sortait a
+        //   131,6 Mo pour 4 pages. 'FAST' = zlib, TOUJOURS SANS PERTE (aucun
+        //   changement d'image) et 3 a 10 fois plus leger.
+        return { format: 'png', mime: 'image/png', quality: 1.0, pdfFormat: 'PNG', compression: 'FAST' };
     }
     switch(quality) {
         case 'standard':
@@ -33365,8 +33568,10 @@ if (window._spGpuEnabled) {
         case 'hd':
             return { format: 'jpeg', mime: 'image/jpeg', quality: 0.92, pdfFormat: 'JPEG', compression: 'FAST' };
         case 'ultrahd':
-            // PNG sans perte : aucune compression d'image, fond blanc NON rasterisé
-            return { format: 'png', mime: 'image/png', quality: 1.0, pdfFormat: 'PNG', compression: 'NONE' };
+            // PNG sans perte : fond blanc NON rasterisé.
+            // 🆕 v1.7.416 — 'FAST' (zlib) reste SANS PERTE ; 'NONE' ecrivait des
+            //   pixels bruts et gonflait le PDF (cf. getExportImageSettings).
+            return { format: 'png', mime: 'image/png', quality: 1.0, pdfFormat: 'PNG', compression: 'FAST' };
         default:
             return { format: 'jpeg', mime: 'image/jpeg', quality: 0.88, pdfFormat: 'JPEG', compression: 'FAST' };
     }
@@ -36272,6 +36477,54 @@ https://superprint.app
         }
         try { window._spCompterBlocsTronques = _spCompterBlocsTronques; } catch (_) {}
 
+        // v1.7.415 - FOND DE PAGE A L'EXPORT (PDF et PNG).
+        //   Le choix « Fond de page » (radio name=pngBg) gouverne desormais AUSSI
+        //   le fond peint dans le PDF.
+        //   CAUSE RACINE du defaut des blocs blancs : le chemin jsPDF peignait un
+        //   rectangle blanc au FORMAT DE LA PAGE PDF (page + fonds perdus +
+        //   2 x 10 mm de marge des traits de coupe). Consequence : la page n'etait
+        //   JAMAIS transparente, toute zone transparente devenait blanche, une
+        //   typographie blanche se fondait dans ce fond (bloc blanc a l'emplacement
+        //   du texte) et le fond changeait de TAILLE selon les traits de coupe.
+        //   MAINTENANT : on ne peint que si le fond n'est pas transparent, et
+        //   UNIQUEMENT sur la zone du fond perdu.
+        function spExportPaintOpaqueBackground() {
+            try {
+                var el = document.querySelector('input[name="pngBg"]:checked');
+                if (el && el.value === 'transparent') return false;
+            } catch (_) {}
+            return true;
+        }
+        try { window.spExportPaintOpaqueBackground = spExportPaintOpaqueBackground; } catch (_) {}
+
+        // ══════════════════════════════════════════════════════════════════
+        // v1.7.415 — STANDARD DES TRAITS DE COUPE (source unique de verite).
+        //
+        //   AVANT, chaque chemin d'export avait SES propres valeurs :
+        //     . pages simples        : decalage 2,5 mm / longueur 5 mm / marge 10 mm
+        //     . doubles pages        : decalage 2,0 mm / longueur 5 mm / marge  0 mm (!)
+        //     . planches (imposition): decalage 2,0 mm / longueur 5 mm / marge 10 mm
+        //     . format fini (PDF/X)  : decalage 1,0 mm / longueur 4 mm / marge  8 mm
+        //   Deux consequences mesurees :
+        //   1) le MEME document exporte dans deux modes donnait des reperes NON
+        //      SUPERPOSABLES — impossible a imposer par un imprimeur ;
+        //   2) en double page, la marge valait 0 : les traits etaient poses a
+        //      x NEGATIF, donc HORS de la page, tronques a 0,5 mm du bord.
+        //
+        //   GEOMETRIE STANDARD (a connaitre pour le faconnage) :
+        //     . la marge de 10 mm est ajoutee de CHAQUE cote de la zone de fond
+        //       perdu : le PDF gagne 20 mm en largeur ET 20 mm en hauteur ;
+        //     . les traits commencent a 2,5 mm du format FINI (le trait de coupe)
+        //       et mesurent 5 mm ;
+        //     . le contenu se retrouve donc decale de 10 mm dans la page PDF :
+        //       c'est NORMAL et sans consequence, le contenu ne bouge PAS par
+        //       rapport aux traits. Ce sont les reperes qui font foi pour le
+        //       faconnage, jamais le bord de la page PDF.
+        // ══════════════════════════════════════════════════════════════════
+        if (!window.SP_CROP_STD) {
+            window.SP_CROP_STD = Object.freeze({ margeMm: 10, decalageMm: 2.5, longueurMm: 5 });
+        }
+
         async function confirmExport() {
     await window.ensureExportLibs(); // 🚀 Perf : jspdf/svg2pdf/opentype/wawoff2/fontkit/pdf-lib/jszip à la demande
     const modal = document.getElementById('exportModal');
@@ -36426,7 +36679,15 @@ https://superprint.app
 
     // 🛡️ v1.7.285 — FIX D5 : si le document contient de la transparence,
     // forcer le PNG sans perte pour ne pas blanchir les zones transparentes.
-    if (imageSettings.format === 'jpeg' && typeof _spDocHasTransparency === 'function') {
+    // 🆕 v1.7.416 — NOIR & BLANC SUR FOND OPAQUE : ne PAS basculer en PNG.
+    //   En N&B la page est de toute facon aplatie sur son fond (le rectangle
+    //   blanc est peint par spExportPaintOpaqueBackground) : un JPEG niveaux de
+    //   gris suffit, reste leger, et evite le repli PNG qui — combine a
+    //   compression:'NONE' — produisait des PDF de 131,6 Mo (mesure B6).
+    //   Si le fond est TRANSPARENT, on garde le repli PNG (l'alpha compte).
+    const _spBwFlatten = (options.colorMode === 'bw')
+        && (typeof spExportPaintOpaqueBackground !== 'function' || spExportPaintOpaqueBackground());
+    if (!_spBwFlatten && imageSettings.format === 'jpeg' && typeof _spDocHasTransparency === 'function') {
         let _hasAlpha = false;
         try { _hasAlpha = _spDocHasTransparency(); } catch (_) {}
         if (_hasAlpha) {
@@ -36521,9 +36782,27 @@ https://superprint.app
         //   passe par le chemin natif pdf-lib qui sait produire une page à
         //   EXACTEMENT pageFormat W×H (sans bleed) — cf. _exportSimplePdfLib.
         const _finishedRequested = !!options.finishedFormat && !options.includeBleed && !options.cropMarks && !options.colorBars && options.pagesMode !== 'spread';
+        // 🆕 v1.7.416 — LES PLANCHES NE PASSENT PLUS JAMAIS PAR LE CHEMIN NATIF.
+        //   MESURE DU DEFAUT : la condition ci-dessous excluait seulement
+        //   « planches + couleur differente du CMJN ». En Planches + CMJN,
+        //   l'export empruntait donc _exportSimplePdfLib, qui boucle sur
+        //   pages[] et ne sait construire QUE des pages simples : un export
+        //   demande en planches ressortait en 4 pages 170x240 — mesure : PDF
+        //   identique a l'export « Format fini » a 3 octets pres — au lieu de
+        //   3 planches 366x266. Le renderer de planches (jsPDF) produit les
+        //   deux pages cote a cote, les traits de coupe ET la conversion CMJN.
         const _spUseSimpleNative = window.PDFLib
-            && options.colorMode !== 'bw'
-            && !(options.pagesMode === 'spread' && options.colorMode !== 'cmyk')
+            // 🆕 v1.7.417 — LE NOIR & BLANC PASSE AUSSI PAR LE CHEMIN VECTORIEL.
+            //   MESURE DU DEFAUT : l'exclusion ci-dessous forcait le N&B sur le
+            //   raster jsPDF — page ENTIERE + fond blanc convertis en pixels ->
+            //   779 Ko pour 4 pages la ou le RVB equivalent (meme document, meme
+            //   qualite) pesait ~200 Ko. Le N&B n'a aucune raison d'etre plus
+            //   lourd : ses couleurs sont grisees a la volee (surcharge de
+            //   PDFLib.rgb) et ses images passent par convertToGrayscale.
+            //   Les traits de coupe et reperes colorimetriques, eux, excluent
+            //   toujours le chemin natif (lignes ci-dessous) : un N&B
+            //   « imprimerie » reste donc raster, avec l'alerte documentee.
+            && options.pagesMode !== 'spread'
             && !options.cropMarks && !options.colorBars
             && (_finishedRequested || options.vectorTypography);
         if (_spUseSimpleNative) {
@@ -36554,8 +36833,21 @@ https://superprint.app
                 : mmToPx(currentBleed);
             const spreadBleed = pxToMm(_actualBleedPx);
 
-            const spreadWidth = (pageFormat.width * 2) + (spreadBleed * 2);
-            const spreadHeight = pageFormat.height + (spreadBleed * 2);
+            // 🎯 v1.7.415 — ITEM 8bis : MARGE DES REPERES EN DOUBLE PAGE.
+            //   AVANT : la page PDF valait EXACTEMENT la zone de fond perdu
+            //   (2 pages + bleed) et l'image la remplissait entierement. Les
+            //   traits, poses a (spreadBleed - 2 - 5), tombaient a x NEGATIF :
+            //   REPERES INVISIBLES (seuls 0,5 mm subsistaient au bord).
+            //   MAINTENANT : meme marge que les pages simples (10 mm par cote),
+            //   donc +20 mm en largeur et en hauteur, traits entierement visibles
+            //   et contenu toujours aligne sur eux.
+            const _spCM = (window.SP_CROP_STD || { margeMm: 10, decalageMm: 2.5, longueurMm: 5 });
+            const spreadExtra = options.cropMarks ? _spCM.margeMm : 0;
+            const spreadWidth = (pageFormat.width * 2) + (spreadBleed * 2) + (spreadExtra * 2);
+            const spreadHeight = pageFormat.height + (spreadBleed * 2) + (spreadExtra * 2);
+            // Zone de contenu (fond perdu), hors marge des reperes.
+            const spreadContentW = spreadWidth - (spreadExtra * 2);
+            const spreadContentH = spreadHeight - (spreadExtra * 2);
             // 🛡️ FIX EXPORT SPREAD : dériver l'orientation du ratio pour ne pas
             // forcer un swap des dimensions par jsPDF.
             const spreadOrientation = (spreadWidth >= spreadHeight) ? 'landscape' : 'portrait';
@@ -36646,8 +36938,16 @@ https://superprint.app
                 // 🛡️ FIX 2026-05-01 (v2) : rendre la double page comme UNE image unique
                 // (mimique exactement loadSpreadContent du preview), pour garantir un
                 // résultat identique au mode édition. Plus de stitching de 2 demi-images.
-                pdf.setFillColor(255, 255, 255);
-                pdf.rect(0, 0, spreadWidth, spreadHeight, 'F');
+                // v1.7.415 - meme regle que les pages simples : on ne peint le fond
+                //   que s'il n'est pas transparent. Ici toute la surface du media EST
+                //   deja la zone de fond perdu de la planche.
+                if (spExportPaintOpaqueBackground()) {
+                    pdf.setFillColor(255, 255, 255);
+                    // v1.7.415 — le blanc couvre la ZONE DE CONTENU (fond perdu),
+                    //   pas la marge des reperes : identique au comportement des
+                    //   pages simples et compatible avec la transparence.
+                    pdf.rect(spreadExtra, spreadExtra, spreadContentW, spreadContentH, 'F');
+                }
 
                 const imageFormat = imageSettings.pdfFormat;
                 const compression = imageSettings.compression;
@@ -36663,8 +36963,13 @@ https://superprint.app
                 // multiplier raster fallback reste pilote par options.quality.
                 const _hybridParams = {
                     pdf,
-                    pdfOffsetX: 0,
-                    pdfOffsetY: 0,
+                    // 🎯 v1.7.415 — ITEM 8 : la page double inclut desormais la
+                    //   marge des traits de coupe. Le rendu hybride doit donc
+                    //   partir de CE decalage, sinon tout le contenu (vecteurs ET
+                    //   raster de report) restait a x=0/y=0 et se retrouvait
+                    //   decale de 10 mm PAR RAPPORT AUX TRAITS.
+                    pdfOffsetX: spreadExtra,
+                    pdfOffsetY: spreadExtra,
                     colorMode: options.colorMode,
                     convertToGrayscale,
                     vectorTypography: options.vectorTypography,
@@ -36683,19 +36988,23 @@ https://superprint.app
                     spreadImg = await convertToGrayscale(spreadImg, imageSettings.format, imageSettings.quality);
                 }
                 if (spreadImg) {
-                    pdf.addImage(spreadImg, imageFormat, 0, 0, spreadWidth, spreadHeight, undefined, compression);
+                    // v1.7.415 — position EXACTE (aucune surcote : item 7) dans la
+                    //   zone de contenu, pour un alignement parfait avec les traits.
+                    pdf.addImage(spreadImg, imageFormat, spreadExtra, spreadExtra, spreadContentW, spreadContentH, undefined, compression);
                 }
                 
                 // Crop marks
                 if (options.cropMarks) {
                     pdf.setDrawColor(0, 0, 0);
                     pdf.setLineWidth(0.08);
-                    const cropLength = 5;
-                    const cropOffset = 2;
-                    const leftPageX = spreadBleed;
-                    const leftPageY = spreadBleed;
-                    const rightPageX = pageFormat.width + spreadBleed;
-                    const rightPageY = spreadBleed;
+                    // v1.7.415 — ITEM 8 : decalage unifie a 2,5 mm (etait 2 mm),
+                    //   et reperes poses DANS la marge ajoutee a la page.
+                    const cropLength = _spCM.longueurMm;
+                    const cropOffset = _spCM.decalageMm;
+                    const leftPageX = spreadExtra + spreadBleed;
+                    const leftPageY = spreadExtra + spreadBleed;
+                    const rightPageX = spreadExtra + pageFormat.width + spreadBleed;
+                    const rightPageY = spreadExtra + spreadBleed;
                     
                     // Page gauche coins extérieurs
                     pdf.line(leftPageX - cropOffset - cropLength, leftPageY, leftPageX - cropOffset, leftPageY);
@@ -36757,7 +37066,11 @@ https://superprint.app
         }
 
         // Mode pages simples
-        const extraSpace = options.cropMarks ? 10 : 0;
+        // v1.7.415 — ITEM 9 : la marge des traits de coupe vaut 10 mm de CHAQUE
+        //   cote (standard SP_CROP_STD). Le PDF gagne donc 20 mm en largeur et
+        //   20 mm en hauteur, et le contenu se retrouve decale de 10 mm : c'est
+        //   NORMAL, le contenu ne bouge pas par rapport aux traits de coupe.
+        const extraSpace = options.cropMarks ? (window.SP_CROP_STD || { margeMm: 10, decalageMm: 2.5, longueurMm: 5 }).margeMm : 0;
         
         // IMPORTANT : Utiliser le bleed des canvas ACTUELLEMENT AFFICHÉS
         // Les objets ont été créés avec le bleed qui est actuellement dans les canvas
@@ -36802,8 +37115,21 @@ https://superprint.app
             } catch (e) {}
         }
 
-        // Surcote (0,5 mm) pour éliminer tout filet aux bords
-        const overscan = 0.5; // en mm
+        // 🎯 v1.7.415 — ITEM 7 : SURCOTE SUPPRIMEE (0,5 mm -> 0).
+        //   AVANT : l'image etait posee a (imgOffsetX - 0,5) et etiree de 1 mm
+        //   (canvasWidth + 1,0). Elle etait donc a la fois DECALEE et AGRANDIE
+        //   par rapport aux coordonnees exactes, alors que les traits de coupe,
+        //   la barre colorimetrique et le texte vectoriel (pdf-lib / opentype)
+        //   sont poses aux coordonnees exactes en millimetres.
+        //   MESURE sur A4 (210 mm + 3 mm de fond perdu, marge de 10 mm) : le bord
+        //   du format fini tombait a 12,514 mm DANS le raster contre 13,000 mm
+        //   pour les traits -> 0,486 mm d'ecart entre le raster et le vecteur,
+        //   soit un double contour visible sur les textes vectoriels et un bord
+        //   blanc irregulier.
+        //   MAINTENANT : l'image est posee EXACTEMENT sur le rectangle du fond
+        //   perdu (imgOffsetX / imgOffsetY / canvasWidth / canvasHeight) :
+        //   alignement raster/vecteur exact, au pixel.
+        const overscan = 0; // mm
 
         for (let i = 0; i < pages.length; i++) {
             // 🎨 v1.7.300 — étape d'avancement par page
@@ -37051,15 +37377,25 @@ https://superprint.app
                         const imageFormat = imageSettings.pdfFormat;
                         const compression = imageSettings.compression;
 
-                        // Fond blanc exactement au format PDF
-                        pdf.setFillColor(255, 255, 255);
-                        pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
-
                         // Position de l'image dans le PDF
                         // Si extraSpace > 0 (crop marks), l'image doit être décalée pour laisser de la place
                         // L'image elle-même contient déjà les fonds perdus du canvas
                         const imgOffsetX = extraSpace;
                         const imgOffsetY = extraSpace;
+
+                        // v1.7.415 - FOND DE PAGE (correctif des blocs blancs).
+                        //   AVANT : pdf.rect(0, 0, pdfWidth, pdfHeight) peignait un blanc
+                        //   OPAQUE au format de la page PDF entiere, donc AUSSI dans la marge
+                        //   des traits de coupe et par-dessus tout fond transparent. La page
+                        //   n'etait donc jamais transparente et une typographie blanche
+                        //   disparaissait dans ce fond.
+                        //   MAINTENANT : uniquement si le fond n'est pas transparent, et
+                        //   limite a la zone du fond perdu (le canvas de l'editeur) : le fond
+                        //   est donc STRICTEMENT identique avec ou sans traits de coupe.
+                        if (spExportPaintOpaqueBackground()) {
+                            pdf.setFillColor(255, 255, 255);
+                            pdf.rect(imgOffsetX, imgOffsetY, canvasWidth, canvasHeight, 'F');
+                        }
 
                         // 🛡️ HYBRID : shapes vectorielles + texte vectoriel (Phase 1 + Phase 2)
                         // shapes simples (rect, circle, ellipse, triangle, line, polygon, path)
@@ -37174,8 +37510,10 @@ https://superprint.app
                         
                         // Dessiner les traits de coupe en vectoriel (fins)
                         if (options.cropMarks) {
-                            const cropLen = 5;     // mm
-                            const cropOff = 2.5;   // mm
+                            // v1.7.415 — ITEM 8 : valeurs issues du standard
+                            // SP_CROP_STD, donc identiques dans les 4 modes.
+                            const cropLen = (window.SP_CROP_STD || { margeMm: 10, decalageMm: 2.5, longueurMm: 5 }).longueurMm;   // mm
+                            const cropOff = (window.SP_CROP_STD || { margeMm: 10, decalageMm: 2.5, longueurMm: 5 }).decalageMm;   // mm
                             // Position du format final (page) dans le PDF = fond perdu + espace crop marks
                             const x0 = actualBleed + extraSpace; 
                             const y0 = actualBleed + extraSpace;
@@ -38417,11 +38755,14 @@ https://superprint.app
             } catch (_) {}
         };
         // ── Géométrie de la planche d'export (clone « format fini ») ─────────
-        // La zone média reçoit de la place pour les repères : +8 mm de chaque
-        // côté si traits de coupe, +8 mm en pied si barre colorimétrique.
+        // v1.7.415 — ITEM 8 : la marge et les reperes suivent le standard
+        // SP_CROP_STD comme les 3 autres modes (avant : marge 8 mm, traits de
+        // 4 mm commencant a 1 mm du format fini -> reperes non superposables
+        // avec ceux des pages simples).
         // (Le fond perdu du document est déjà intégré aux coordonnées objets.)
         function _spSpotSheetLayout(bleedMm, opts) {
-            const extraSpace = (opts && opts.cropMarks) ? 8 : 0;
+            const extraSpace = (opts && opts.cropMarks)
+                ? (window.SP_CROP_STD || { margeMm: 10 }).margeMm : 0;
             const extraBarSpace = (opts && opts.colorBars) ? 8 : 0;
             // 🎨 v1.7.347b — MODE PLANCHES : la zone média reçoit DEUX pages en
             //    largeur (reliure au centre, SANS fond perdu à la pliure) et UNE
@@ -38457,8 +38798,11 @@ https://superprint.app
             const trimR = trimL + contentWmm * mmToPt;
             const trimB = (lay.extraBarSpace + lay.extraSpace + bleedMm) * mmToPt;
             const trimT = trimB + pageFormat.height * mmToPt;
-            const len = 4 * mmToPt;      // longueur du trait
-            const off = 1 * mmToPt;      // décalage par rapport au trait de coupe
+            // v1.7.415 — ITEM 8 : identiques aux pages simples / doubles pages
+            //   (avant : longueur 4 mm et decalage 1 mm).
+            const _spCM = (window.SP_CROP_STD || { margeMm: 10, decalageMm: 2.5, longueurMm: 5 });
+            const len = _spCM.longueurMm * mmToPt;       // longueur du trait
+            const off = _spCM.decalageMm * mmToPt;       // décalage / format fini
             const th = 0.25 * mmToPt;
             const col = P.rgb(0, 0, 0);
             const segs = [
@@ -39006,7 +39350,13 @@ https://superprint.app
                 // Fond blanc de la planche (fond perdu compris). Posé AVANT
                 // l'installation de l'interception : ce blanc est la couche
                 // quadri de la page, pas une encre directe.
-                page.drawRectangle({ x: 0, y: 0, width: swPt, height: shPt, color: PDFLib.rgb(1, 1, 1) });
+                // v1.7.415 — Priorite 1 : ce fond suit desormais le choix
+                //   « Fond de page ». En mode Transparent, aucune couche blanche
+                //   opaque n'est posee (avant, une typographie blanche y
+                //   disparaissait, exactement comme dans le chemin jsPDF).
+                if ((typeof window.spExportPaintOpaqueBackground !== 'function' || window.spExportPaintOpaqueBackground())) {
+                    page.drawRectangle({ x: 0, y: 0, width: swPt, height: shPt, color: PDFLib.rgb(1, 1, 1) });
+                }
 
                 // Interception des couleurs AVANT tout rendu : elle doit couvrir
                 // l'intégralité des opérateurs de la page.
@@ -39161,6 +39511,32 @@ https://superprint.app
             console.log('[pdf-lib] _exportSimplePdfLib START');
             const _spStep = (label, pct) => { try { if (loaderApi && typeof loaderApi.setStep === 'function') loaderApi.setStep(label, pct); } catch(_) {} };
             var PDFLib = window.PDFLib;
+            // ══════════════════════════════════════════════════════════════════
+            // 🆕 v1.7.417 — MODE NOIR & BLANC VECTORIEL.
+            //   Le drapeau window._spBwVectorGray est lu par la surcharge de
+            //   PDFLib.rgb installee ci-dessous (UNE fois pour la session) : les
+            //   21 sites qui posent une couleur dans le chemin vectoriel
+            //   (texte, rect, cercle, ligne, chemin, fond de page, filets)
+            //   basculent ainsi en GRAYSCALE sans etre touches un par un.
+            //   pdf-lib exporte bien grayscale() (verifie dans le bundle) et
+            //   l'accepte partout ou une couleur est attendue.
+            //   ⚠️ Le drapeau est TOUJOURS reevalue au debut de chaque exporteur
+            //   vectoriel : aucun risque de griser un export RVB suivant.
+            // ══════════════════════════════════════════════════════════════════
+            window._spBwVectorGray = (typeof options !== 'undefined' && options && options.colorMode === 'bw');
+            try {
+                if (!PDFLib.__spBwWrapper && typeof PDFLib.grayscale === 'function') {
+                    var _spRgbOrig = PDFLib.rgb.bind(PDFLib);
+                    PDFLib.rgb = function (r, g, b) {
+                        if (!window._spBwVectorGray) return _spRgbOrig(r, g, b);
+                        var _l = (0.299 * (r || 0)) + (0.587 * (g || 0)) + (0.114 * (b || 0));
+                        if (!(_l >= 0)) _l = 0;
+                        if (_l > 1) _l = 1;
+                        return PDFLib.grayscale(_l);
+                    };
+                    PDFLib.__spBwWrapper = true;
+                }
+            } catch (_) { window._spBwVectorGray = false; }
             var doc = await PDFLib.PDFDocument.create();
             if (window.fontkit) {
                 try { doc.registerFontkit(window.fontkit); } catch(e) {}
@@ -39313,11 +39689,14 @@ https://superprint.app
                 var shPt = sheetH * mmToPt;
                 var page = doc.addPage([swPt, shPt]);
 
-                // Fond blanc
-                page.drawRectangle({
-                    x: 0, y: 0, width: swPt, height: shPt,
-                    color: PDFLib.rgb(1, 1, 1)
-                });
+                // Fond de page (v1.7.415 — Priorite 1 : suit le choix
+                //   « Fond de page » ; en mode Transparent on ne peint rien).
+                if ((typeof window.spExportPaintOpaqueBackground !== 'function' || window.spExportPaintOpaqueBackground())) {
+                    page.drawRectangle({
+                        x: 0, y: 0, width: swPt, height: shPt,
+                        color: PDFLib.rgb(1, 1, 1)
+                    });
+                }
 
                 // Offset de bleed (bleedPx = valeur RÉELLE du fond perdu en px, que
                 // le format fini l'inclue ou non — utile pour recadrer en format fini).
@@ -39474,6 +39853,32 @@ https://superprint.app
             console.log('[pdf-lib] _exportImposedPdfLib START');
             const _spStep = (label, pct) => { try { if (loaderApi && typeof loaderApi.setStep === 'function') loaderApi.setStep(label, pct); } catch(_) {} };
             var PDFLib = window.PDFLib;
+            // ══════════════════════════════════════════════════════════════════
+            // 🆕 v1.7.417 — MODE NOIR & BLANC VECTORIEL.
+            //   Le drapeau window._spBwVectorGray est lu par la surcharge de
+            //   PDFLib.rgb installee ci-dessous (UNE fois pour la session) : les
+            //   21 sites qui posent une couleur dans le chemin vectoriel
+            //   (texte, rect, cercle, ligne, chemin, fond de page, filets)
+            //   basculent ainsi en GRAYSCALE sans etre touches un par un.
+            //   pdf-lib exporte bien grayscale() (verifie dans le bundle) et
+            //   l'accepte partout ou une couleur est attendue.
+            //   ⚠️ Le drapeau est TOUJOURS reevalue au debut de chaque exporteur
+            //   vectoriel : aucun risque de griser un export RVB suivant.
+            // ══════════════════════════════════════════════════════════════════
+            window._spBwVectorGray = (typeof options !== 'undefined' && options && options.colorMode === 'bw');
+            try {
+                if (!PDFLib.__spBwWrapper && typeof PDFLib.grayscale === 'function') {
+                    var _spRgbOrig = PDFLib.rgb.bind(PDFLib);
+                    PDFLib.rgb = function (r, g, b) {
+                        if (!window._spBwVectorGray) return _spRgbOrig(r, g, b);
+                        var _l = (0.299 * (r || 0)) + (0.587 * (g || 0)) + (0.114 * (b || 0));
+                        if (!(_l >= 0)) _l = 0;
+                        if (_l > 1) _l = 1;
+                        return PDFLib.grayscale(_l);
+                    };
+                    PDFLib.__spBwWrapper = true;
+                }
+            } catch (_) { window._spBwVectorGray = false; }
             var doc = await PDFLib.PDFDocument.create();
             // ✏️ v1.7.209 : Enregistrer fontkit pour embedFont()
             if (window.fontkit) {
@@ -39546,8 +39951,9 @@ https://superprint.app
                 var shPt = sheetH * mmToPt;
                 var page = doc.addPage([swPt, shPt]);
 
-                // Fond blanc si bleed
-                if (incBleed) {
+                // Fond de page si bleed (v1.7.415 — Priorite 1 : suit aussi le
+                //   choix « Fond de page » ; en mode Transparent on ne peint rien).
+                if (incBleed && (typeof window.spExportPaintOpaqueBackground !== 'function' || window.spExportPaintOpaqueBackground())) {
                     page.drawRectangle({
                         x: 0, y: 0, width: swPt, height: shPt,
                         color: PDFLib.rgb(1, 1, 1)
@@ -39730,6 +40136,11 @@ https://superprint.app
             var objectCanvas = obj.toCanvasElement({ multiplier: rasterMultiplier });
             if (!objectCanvas) return false;
             var dataUrl = objectCanvas.toDataURL('image/png');
+            // 🆕 v1.7.417 — N&B : image grisee AVANT embarquement (sans quoi un
+            //   objet en repli raster ressortirait en couleur dans un PDF N&B).
+            if (window._spBwVectorGray && typeof convertToGrayscale === 'function') {
+                try { dataUrl = await convertToGrayscale(dataUrl, 'png', 1); } catch (_) {}
+            }
             var base64 = dataUrl.split(',')[1];
             if (!base64) return false;
             var binary = atob(base64);
@@ -40634,6 +41045,9 @@ https://superprint.app
                         var pngBytes = null;
                         try {
                             var dataUrl = tmpCanvas.toDataURL('image/png');
+                            if (window._spBwVectorGray && typeof convertToGrayscale === 'function') {
+                                try { dataUrl = await convertToGrayscale(dataUrl, 'png', 1); } catch (_) {}
+                            }
                             var base64 = dataUrl.split(',')[1];
                             var binaryStr = atob(base64);
                             pngBytes = new Uint8Array(binaryStr.length);
@@ -40760,6 +41174,9 @@ https://superprint.app
                     var grpCanvas = obj.toCanvasElement({ multiplier: grpMul });
                     if (grpCanvas) {
                         var grpDataUrl = grpCanvas.toDataURL('image/png');
+                        if (window._spBwVectorGray && typeof convertToGrayscale === 'function') {
+                            try { grpDataUrl = await convertToGrayscale(grpDataUrl, 'png', 1); } catch (_) {}
+                        }
                         var grpBase64 = grpDataUrl.split(',')[1];
                         if (grpBase64) {
                             var grpBinStr = atob(grpBase64);
@@ -41075,7 +41492,9 @@ https://superprint.app
     // 🔧 FIX 2026-05-01 : optional chaining + defaut a true (le checkbox
     // existe et est coche par defaut dans le HTML, mais soyons defensif).
     const includeCropMarks = document.getElementById('imposedCropMarks')?.checked !== false;
-    const cropMarkMargin = includeCropMarks ? 10 : 0;
+    // v1.7.415 — ITEM 9 : 10 mm de chaque cote = +20 mm au format PDF.
+    const cropMarkMargin = includeCropMarks
+        ? (window.SP_CROP_STD || { margeMm: 10 }).margeMm : 0;
     // 🆕 FIX 2026-05-10 : gouttière intérieure (cf. buildImposedSheetCanvas).
     const innerGutter = (cutApart && includeBleed) ? (exportBleed * 2) : 0;
     const sheetWidth = (pageWidth * 2) + (exportBleed * 2) + innerGutter + (cropMarkMargin * 2);
@@ -41087,7 +41506,11 @@ https://superprint.app
     //   demande mais sans contenu jusqu'au bord). On ne remplit en blanc QUE
     //   quand on inclut le fond perdu (et alors la zone bleed sans contenu
     //   reste blanche, comportement print attendu).
-    if (includeBleed || cropMarkMargin > 0) {
+    // v1.7.415 - on conserve la logique de l'imposition (ne remplir que si le fond
+    //   perdu est inclus) et on y ajoute la condition de transparence, alignee sur
+    //   les chemins pages simples et planches.
+    if ((includeBleed || cropMarkMargin > 0)
+        && (typeof window.spExportPaintOpaqueBackground !== 'function' || window.spExportPaintOpaqueBackground())) {
         pdf.setFillColor(255, 255, 255);
         pdf.rect(0, 0, sheetWidth, sheetHeight, 'F');
     }
@@ -41235,8 +41658,10 @@ https://superprint.app
         pdf.setDrawColor(0, 0, 0);
         pdf.setLineWidth(0.08);
 
-        const cropLength = 5;
-        const cropOffset = 2;
+        // v1.7.415 — ITEM 8 : decalage unifie a 2,5 mm (etait 2 mm).
+        const _spCM = (window.SP_CROP_STD || { margeMm: 10, decalageMm: 2.5, longueurMm: 5 });
+        const cropLength = _spCM.longueurMm;
+        const cropOffset = _spCM.decalageMm;
 
         // Coins de la page gauche (format final, pas du fond perdu)
         const leftPageX = cropMarkMargin + exportBleed;
@@ -41464,7 +41889,9 @@ https://superprint.app
                 o && o._spPdfImport && o._spPdfContentType && o._spPdfContentType !== 'raster'
             );
             if (_hasVectorPdf && rasterFormat === 'jpeg') {
-                settings = { format: 'png', mime: 'image/png', quality: 1.0, pdfFormat: 'PNG', compression: 'NONE' };
+                // 🆕 v1.7.417 — meme correctif que les 6 autres sites : 'NONE'
+                //   ecrivait des pixels BRUTS (aucun /Filter).
+                settings = { format: 'png', mime: 'image/png', quality: 1.0, pdfFormat: 'PNG', compression: 'FAST' };
                 rasterFormat = 'png';
                 rasterQuality = 1.0;
             }
@@ -42277,7 +42704,21 @@ https://superprint.app
                     return null;
                 }
             })();
-            _SP_FONT_CACHE[key] = promise;
+            // ══════════════════════════════════════════════════════════════════
+            // 🆕 v1.7.417 — NE PLUS MEMORISER LES ECHECS.
+            //   MESURE DU DEFAUT : la promesse etait mise en cache quel que soit
+            //   son resultat, y compris un echec (reseau indisponible, candidat
+            //   de graisse en 404, wasm pas encore pret). Une seule defaillance
+            //   condamnait alors TOUS les exports suivants de la session au
+            //   raster : le texte partait en image, definitivement et sans le
+            //   moindre message. C'est la cause du « meme reglage, deux PDF
+            //   differents » (2,8 Mo puis 80 Ko).
+            //   On ne memorise donc QUE les succes : un echec sera retente au
+            //   prochain export, et reussira des que la cause disparait.
+            // ══════════════════════════════════════════════════════════════════
+            promise.then(function (f) {
+                if (f) _SP_FONT_CACHE[key] = promise;
+            }).catch(function () { /* echec : volontairement non memorise */ });
             return promise;
         }
 
@@ -42285,7 +42726,20 @@ https://superprint.app
         // textboxes presentes dans une liste d'objets fabric. Ne fait
         // rien si opentype/wawoff2 absents.
         async function _spPreloadFontsForObjects(objects) {
-            if (!window.opentype || !window.wawoff2_decompress) return;
+            if (!window.opentype || !window.wawoff2_decompress) {
+                // 🆕 v1.7.417 — Un no-op SILENCIEUX faisait dependre le rendu
+                //   (texte en image ou en texte) de l'etat des vendors. On tente
+                //   de les charger une derniere fois, et on journalise si l'echec
+                //   persiste : l'utilisateur doit pouvoir comprendre pourquoi son
+                //   texte sort pixellise.
+                try {
+                    if (typeof window.ensureExportLibs === 'function') await window.ensureExportLibs();
+                } catch (_) {}
+                if (!window.opentype || !window.wawoff2_decompress) {
+                    console.warn('[SP-vector-text] opentype ou wawoff2 indisponible : le texte sera rasterise pour cet export.');
+                    return;
+                }
+            }
             const seen = new Set();
             const tasks = [];
             const visit = (o) => {
@@ -43811,9 +44265,15 @@ https://superprint.app
                                 y: yPt,
                                 size: tx.fontSize,
                                 font: ef,
-                                color: window.PDFLib.rgb(rgb[0], rgb[1], rgb[2]),
-                                opacity: tx.opacity
+                                color: window.PDFLib.rgb(rgb[0], rgb[1], rgb[2])
                             };
+                            // v1.7.415 - n'emettre l'opacite que si elle est REELLEMENT
+                            //   inferieure a 1 : pdf-lib appelle setFillAlpha() des qu'on lui
+                            //   passe le champ, meme a 1, ce qui cree un /ExtGState « /ca 1 »
+                            //   inutile par bloc texte (mesure : 44 sur un export vectoriel).
+                            if (typeof tx.opacity === 'number' && tx.opacity < 0.999) {
+                                _drawOptsImp.opacity = tx.opacity;
+                            }
                             // 🛡️ v1.7.297 — FIX : conserver la ROTATION du texte
                             //   (texte à 90° restait horizontal après le post-process).
                             //   Le jsPDF écrit déjà le texte vectoriel avec son angle ;
@@ -43898,8 +44358,12 @@ https://superprint.app
                                 size: tx2.fontSize,
                                 font: ef2,
                                 color: window.PDFLib.rgb(rgb2[0], rgb2[1], rgb2[2]),
-                                opacity: tx2.opacity
                             };
+                            // v1.7.415 - voir mode imposition : on n'emet un GState que
+                            //   pour une opacite REELLEMENT inferieure a 1.
+                            if (typeof tx2.opacity === 'number' && tx2.opacity < 0.999) {
+                                _drawOptsStd.opacity = tx2.opacity;
+                            }
                             // 🛡️ v1.7.297 — FIX : conserver la ROTATION du texte
                             //   (texte à 90° restait horizontal après le post-process).
                             // 🛡️ v1.7.303 — FIX SENS : Fabric angle positif = horaire,
@@ -44055,12 +44519,27 @@ https://superprint.app
                 Array.from(parsed.documentElement.childNodes).forEach(n => {
                     wrapper.appendChild(n.cloneNode(true));
                 });
-                // svg2pdf.js requiert que le SVG soit attache au DOM pour
-                // que les calculs de mise en page (getBBox) fonctionnent.
-                wrapper.style.position = 'absolute';
-                wrapper.style.left = '-99999px';
-                wrapper.style.top  = '-99999px';
-                wrapper.style.visibility = 'hidden';
+                // svg2pdf.js requiert que le SVG soit REELLEMENT RENDU dans le
+                // DOM pour que getBBox() et les calculs de style fonctionnent.
+                //
+                // v1.7.415 - CORRECTIF MAJEUR : le wrapper portait
+                //   visibility = 'hidden'. Or visibility est une propriete CSS
+                //   HERITEE : elle rend TOUS les enfants invisibles, et svg2pdf
+                //   ignorait donc tout le contenu. Le SVG n'etait PLUS DESSINE DU
+                //   TOUT dans le chemin jsPDF (traits de coupe).
+                //   Mesure isolee, meme SVG et memes options :
+                //     avec visibility:hidden  -> 0 operateur de trace
+                //     sans visibility         -> 23 operateurs de trace
+                //   Consequence visible pour l'utilisateur : a l'emplacement du
+                //   logo on ne voyait plus que le fond (donc un APLAT BLANC quand
+                //   le fond de page etait blanc).
+                //   NE JAMAIS cacher ce wrapper (ni visibility, ni opacity, ni
+                //   display). On le sort du viewport : position fixed + left
+                //   negatif (un left positif, lui, creerait un defilement).
+                wrapper.style.position = 'fixed';
+                wrapper.style.left = '-20000px';
+                wrapper.style.top  = '0px';
+                wrapper.style.pointerEvents = 'none';
                 document.body.appendChild(wrapper);
 
                 const x_mm = pdfOffsetX + pxToMm(bb.left);
@@ -48474,7 +48953,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260914-v414-typographie-stable';
+                s.src = 'JS/sp-doc-import.js?v=20260915-v415-fidelite-export';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous
@@ -49511,7 +49990,12 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                     if (e.linethrough) opts.linethrough = true;
                     if (e.overline) opts.overline = true;
                     if (e.shadow) opts.shadow = e.shadow;
-                    if (e.backgroundColor) opts.backgroundColor = e.backgroundColor;
+                    // v1.7.415 - backgroundColor N'EST PAS un surlignage : Fabric peint
+                    //   un rectangle PLEIN sur toute la boite du bloc
+                    //   (Textbox._renderBackground). Une valeur blanche masquait donc le
+                    //   texte. On IGNORE cette propriete et on ne garde que
+                    //   textBackgroundColor, qui peint derriere les glyphes.
+                    if (e.textBackgroundColor) opts.textBackgroundColor = e.textBackgroundColor;
                     return new fabric.Textbox(String(e.text || ''), opts);
                 }
                 if (t === 'image' && e.imageUrl) {
@@ -50469,7 +50953,10 @@ Dans ton JSON de sortie, chaque élément a un champ "type". TOUTES les valeurs 
               textAlign ("left"/"center"/"right"/"justify"),
               lineHeight (flottant, ex 1.2), charSpacing (entier, 0-1000),
               underline (bool), linethrough (bool), overline (bool),
-              backgroundColor (#HEX pour surlignage), shadow ("2px 2px 4px rgba(0,0,0,0.3)")
+              textBackgroundColor (#HEX, surlignage derriere le texte), shadow ("2px 2px 4px rgba(0,0,0,0.3)")
+   INTERDIT : backgroundColor. Cette propriete peint un APLAT PLEIN sur TOUTE la
+              boite du bloc (et non un surlignage) et masquerait le texte.
+              Pour surligner, utiliser EXCLUSIVEMENT textBackgroundColor.
 
    REMARQUES TEXTE :
    • Le texte est un Textbox Fabric.js : retour à la ligne automatique selon "width"
@@ -50478,6 +50965,8 @@ Dans ton JSON de sortie, chaque élément a un champ "type". TOUTES les valeurs 
    • Les blocs texte peuvent être chaînés entre eux (texte qui coule d'un bloc au suivant)
    • Styles inline : l'utilisateur peut appliquer gras, italique, souligné, taille, couleur sur une sélection de mots à l'intérieur du même bloc
    • Formats spéciaux disponibles : exposant, indice, petites capitales, texte creux (outline), ombre, barré, surligné, contour
+   • Surlignage : TOUJOURS textBackgroundColor. JAMAIS backgroundColor (aplat plein
+     sur toute la boite du bloc : le texte deviendrait invisible).
 
 =============================================
 ═══ LES 4 MARGES CLASSIQUES — OBLIGATOIRES ═══
@@ -50869,12 +51358,16 @@ GUIDE MAQUETTES MODERNES
         const linethrough = el.linethrough === true;
         const overline = el.overline === true;
         const shadow = (typeof el.shadow === 'string') ? el.shadow : undefined;
-        const backgroundColor = sanitizeColor(el.backgroundColor, undefined);
+        // v1.7.415 - on accepte textBackgroundColor (vrai surlignage derriere les
+        //   glyphes) et on IGNORE backgroundColor : cette derniere peint un aplat
+        //   plein sur toute la boite du bloc, ce qui masque le texte quand elle
+        //   est blanche.
+        const textBackgroundColor = sanitizeColor(el.textBackgroundColor, undefined);
         // 🆕 v1.7.401 — CESURE : ces deux proprietes doivent TRANSPIRER. Sans elles,
         //   la consigne « texte justifie avec cesure » du prompt etait jetee ici.
         const enableHyphenation = (el.enableHyphenation != null) ? !!el.enableHyphenation : undefined;
         const hyphenLanguage = (el.hyphenLanguage && String(el.hyphenLanguage)) || undefined;
-        return { ok: true, value: { type, left, top, width, text, fontSize, fill, opacity, fontFamily, fontWeight, fontStyle, textAlign, lineHeight, charSpacing, underline, linethrough, overline, shadow, backgroundColor, enableHyphenation, hyphenLanguage } };
+        return { ok: true, value: { type, left, top, width, text, fontSize, fill, opacity, fontFamily, fontWeight, fontStyle, textAlign, lineHeight, charSpacing, underline, linethrough, overline, shadow, textBackgroundColor, enableHyphenation, hyphenLanguage } };
     }
 
     // Hyphenation heuristique (soft hyphens) pour ameliorer la justification
@@ -51747,7 +52240,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                         if (e.linethrough) textOpts.linethrough = true;
                         if (e.overline) textOpts.overline = true;
                         if (e.shadow) textOpts.shadow = e.shadow;
-                        if (e.backgroundColor) textOpts.backgroundColor = e.backgroundColor;
+                        // v1.7.415 - voir constructeur IA : backgroundColor est un piege
+                        //   (aplat plein sur toute la boite). Seul textBackgroundColor
+                        //   realise un vrai surlignage.
+                        if (e.textBackgroundColor) textOpts.textBackgroundColor = e.textBackgroundColor;
                         fabricObj = new fabric.Textbox(hyText, textOpts);
                     } else if (e.type === 'userImage') {
                         // 🆕 v1.7.174 — Image uploadée par l'utilisateur
@@ -52589,6 +53085,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportHDDesc: "Impression professionnelle",
         exportOptionsHeader: "Options",
         cropMarksLabel: "Traits de coupe",
+        cropMarksDesc: "Ajoute 20 mm au format PDF (+10 mm de chaque côté). Le contenu reste aligné sur les traits : c'est normal.",
         colorBarsLabel: "Repères colorimétriques",
         autoHyphenExport: "Césure automatique",
         exportFormatHeader: "Format",
@@ -52601,10 +53098,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportCMYK: "CMJN",
         exportUltraHD: "ULTRA HD (600 DPI)",
         exportUltraHDDesc: "Qualité maximale — typo & images sans compression, prêt imprimerie",
-        exportPngBg: "Fond PNG",
+        exportPngBg: "Fond de page",
         exportPngBgWhite: "Blanc",
         exportPngBgTransparent: "Transparent",
-        exportPngBgNote: "S'applique à l'export PNG uniquement (le JPG ne supporte pas la transparence).",
+        exportPngBgNote: "S'applique aux exports PNG ET PDF (le JPG ne supporte pas la transparence).",
         finishedFormatLabel: "Format fini",
         finishedFormatDesc: "Export à la taille de création (ex. A4 → A4), sans fond perdu ni repères.",
         includeBleedLabel: "Inclure les fonds perdus",
@@ -53373,6 +53870,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportHDDesc: "Professional printing",
         exportOptionsHeader: "Options",
         cropMarksLabel: "Crop marks",
+        cropMarksDesc: "Adds 20 mm to the PDF size (+10 mm per side). Content stays aligned with the marks: this is normal.",
         colorBarsLabel: "Color bars",
         autoHyphenExport: "Auto hyphenation",
         exportFormatHeader: "Format",
@@ -53385,10 +53883,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportCMYK: "CMYK",
         exportUltraHD: "ULTRA HD (600 DPI)",
         exportUltraHDDesc: "Maximum quality — typography & images uncompressed, print-ready",
-        exportPngBg: "PNG background",
+        exportPngBg: "Page background",
         exportPngBgWhite: "White",
         exportPngBgTransparent: "Transparent",
-        exportPngBgNote: "Only applies to PNG export (JPG does not support transparency).",
+        exportPngBgNote: "Applies to PNG and PDF export (JPG does not support transparency).",
         finishedFormatLabel: "Finished format",
         finishedFormatDesc: "Export at the creation size (e.g. A4 → A4), without bleed or marks.",
         includeBleedLabel: "Include bleeds",
@@ -54159,6 +54657,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportHDDesc: "プロフェッショナル印刷",
         exportOptionsHeader: "オプション",
         cropMarksLabel: "トンボ",
+        cropMarksDesc: "PDFの用紙サイズが20 mm大きくなります（左右上下+10 mm）。内容はトンボとの位置関係を保ったままです（正常）。",
         colorBarsLabel: "カラーバー",
         autoHyphenExport: "自動ハイフネーション",
         exportFormatHeader: "フォーマット",
@@ -54170,10 +54669,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         exportCMYK: "CMYK",
         exportUltraHD: "ULTRA HD (600 DPI)",
         exportUltraHDDesc: "最高品質 — タイポグラフィーと画像を無圧縮で、印刷準備完了",
-        exportPngBg: "PNG背景",
+        exportPngBg: "ページ背景",
         exportPngBgWhite: "白",
         exportPngBgTransparent: "透明",
-        exportPngBgNote: "PNGエクスポートにのみ適用されます（JPGは透明をサポートしません）。",
+        exportPngBgNote: "PNGおよびPDFの書き出しに適用されます（JPGは透明をサポートしません）。",
         finishedFormatLabel: "完成サイズ",
         finishedFormatDesc: "作成サイズ（例：A4 → A4）で、塗り足しもトンボもなしでエクスポート",
         includeBleedLabel: "塗り足しを含める",
@@ -54868,7 +55367,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         // Options d'impression (libellés + descriptions éventuelles)
         setLabel('finishedFormat', 'finishedFormatLabel', 'finishedFormatDesc');
         setLabel('exportIncludeBleed', 'includeBleedLabel', 'includeBleedDesc');
-        setLabel('cropMarks', 'cropMarksLabel');
+        setLabel('cropMarks', 'cropMarksLabel', 'cropMarksDesc');
         setLabel('colorBars', 'colorBarsLabel');
         setLabel('forceHyphenExport', 'autoHyphenExport');
         setLabel('pdf3DEnabled', 'pdf3DLabel');
@@ -61677,13 +62176,23 @@ canvas.requestRenderAll();
                     return;
                 }
 
+                // v1.7.415 - EPS / ILLUSTRATOR (.eps .ai .ps) : aiguillage par SIGNATURE.
+                //   Un .ai moderne EST un PDF -> import PDF ; un .eps -> parseur PostScript.
+                //   Place ICI (juste avant le refus) pour ne jamais masquer un format deja gere.
+                const epsFile = files.find(f => matchExt(f, ['.eps', '.ai', '.ps']));
+                if (epsFile && typeof window._spOpenEpsImport === 'function') {
+                    if (window._spDragLoadingStart) window._spDragLoadingStart('EPS / Illustrator');
+                    try { window._spOpenEpsImport(epsFile); } finally { setTimeout(() => window._spDragLoadingEnd && window._spDragLoadingEnd(), 600); }
+                    return;
+                }
+
                 // ⚠️ Format non reconnu : toast in-page (au lieu d'alert)
                 if (window._spDragLoadingEnd) window._spDragLoadingEnd();
                 const f0 = files[0];
                 console.warn('[drag&drop] Format non géré :', f0 && f0.name, f0 && f0.type);
                 window.spToast(
                     'Format non supporté : ' + (f0 ? (f0.name + ' (' + (f0.type || 'type inconnu') + ')') : 'fichier inconnu') +
-                    '\nFormats acceptés : Image (PNG/JPG/WebP/GIF/SVG), PDF, DOCX, ODT, IDML, SLA, JSON, TXT, RTF, OBJ, STL, .sp',
+                    '\nFormats acceptés : Image (PNG/JPG/WebP/GIF/SVG), EPS, AI, PDF, DOCX, ODT, IDML, SLA, JSON, TXT, RTF, OBJ, STL, .sp',
                     'error',
                     6000
                 );
@@ -61888,13 +62397,23 @@ canvas.requestRenderAll();
                     return;
                 }
 
+                // v1.7.415 - EPS / ILLUSTRATOR (.eps .ai .ps) : aiguillage par SIGNATURE.
+                const epsFileG = files.find(f => matchExt(f, ['.eps', '.ai', '.ps']));
+                if (epsFileG && typeof window._spOpenEpsImport === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (window._spDragLoadingStart) window._spDragLoadingStart('EPS / Illustrator');
+                    try { window._spOpenEpsImport(epsFileG); } finally { _hideSoon(600); }
+                    return;
+                }
+
                 // Format inconnu → fermer la bulle et toast in-page
                 _hideSoon(0);
                 const f0 = files[0];
                 console.warn('[drag&drop global] Format non géré :', f0 && f0.name, f0 && f0.type);
                 window.spToast(
                     'Format non supporté : ' + (f0 ? (f0.name + ' (' + (f0.type || 'type inconnu') + ')') : 'fichier inconnu') +
-                    '\nFormats acceptés : Image (PNG/JPG/WebP/GIF/SVG), PDF, DOCX, ODT, IDML, SLA, JSON, TXT, RTF, OBJ, STL, .sp',
+                    '\nFormats acceptés : Image (PNG/JPG/WebP/GIF/SVG), EPS, AI, PDF, DOCX, ODT, IDML, SLA, JSON, TXT, RTF, OBJ, STL, .sp',
                     'error',
                     6000
                 );
@@ -68033,6 +68552,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 masterPages: typeof masterPages !== 'undefined' ? masterPages : {},
                 pageMasterAssignments: typeof pageMasterAssignments !== 'undefined' ? pageMasterAssignments : {},
                 pageNumberingSettings: typeof pageNumberingSettings !== 'undefined' ? pageNumberingSettings : {},
+                // 🆕 v1.7.415 — polices externes (cf. saveProjectLocal) : sans elles,
+                //   un simple rechargement d'onglet perdait la police embarquee.
+                customFonts: (function () {
+                try {
+                    const used = _spCollectUsedFonts();
+                    const usedSet = new Set(used);
+                    return (customFonts || [])
+                        .filter(f => f && f.name && usedSet.has(f.name) && f.data)
+                        .map(f => ({ name: f.name, data: f.data }));
+                } catch (_) { return []; }
+            })(),
                 projectName: window._spProjectName || '',
                 // 🎨 v1.7.347 — tons directs (Pantone) : couches chromatiques
                 //   supplémentaires à produire à l'export (CMJN + Pantone).
@@ -70099,6 +70629,20 @@ window.saveProjectLocal = function() {
         masterPages: masterPages,
         pageMasterAssignments: pageMasterAssignments,
         pageNumberingSettings: pageNumberingSettings,
+        // 🆕 v1.7.415 — POLICES EXTERNES UTILISEES (meme mecanisme que le .sp).
+        //   MESURE DU DEFAUT : le .sp embarquait resources.customFonts depuis la
+        //   v1.7.335, mais NI le .json NI l'autosave. Un document utilisant une
+        //   police chargee a la main (menu Charger polices) rouvrait donc avec
+        //   une police de secours selon le format choisi.
+        customFonts: (function () {
+                try {
+                    const used = _spCollectUsedFonts();
+                    const usedSet = new Set(used);
+                    return (customFonts || [])
+                        .filter(f => f && f.name && usedSet.has(f.name) && f.data)
+                        .map(f => ({ name: f.name, data: f.data }));
+                } catch (_) { return []; }
+            })(),
         styles: {
             typography: (function () { try { return JSON.parse(localStorage.getItem('sp_typo_styles') || '[]'); } catch (_) { return []; } })(),
             swatches: (function () { try { return JSON.parse(localStorage.getItem('sp_color_swatches') || '[]'); } catch (_) { return []; } })()

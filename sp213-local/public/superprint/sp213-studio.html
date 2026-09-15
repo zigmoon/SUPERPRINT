@@ -1292,9 +1292,9 @@
                 <button class="icon-btn" id="attachBtn" title="Joindre des fichiers (image, texte, Word)">
                   <svg class="ic" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                 </button>
-                <span class="tip" id="attachTip"><b>Pièces jointes</b>Joignez des images, du texte, un document Word (<b>.doc</b> ou <b>.docx</b>), OpenDocument (<b>.odt</b>, <b>.ods</b>, <b>.odp</b>), RTF (<b>.rtf</b>), Excel (.xls/.xlsx) ou PDF. SP213 lit la <b>structure complète</b> (titres, listes, tableaux, images) et l'intègre dans la maquette.</span>
+                <span class="tip" id="attachTip"><b>Pièces jointes</b>Joignez des images, du texte, un document Word (<b>.doc</b> ou <b>.docx</b>), OpenDocument (<b>.odt</b>, <b>.ods</b>, <b>.odp</b>), RTF (<b>.rtf</b>), EPS/AI (vectoriel), Excel (.xls/.xlsx) ou PDF. SP213 lit la <b>structure complète</b> (titres, listes, tableaux, images) et l'intègre dans la maquette.</span>
               </span>
-              <input type="file" id="attachInput" accept=".jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.txt,.md,.csv,.html,.doc,.docx,.odt,.ods,.odp,.odg,.rtf,.xls,.xlsx,.pdf" multiple hidden>
+              <input type="file" id="attachInput" accept=".jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.eps,.ai,.ps,.txt,.md,.csv,.html,.doc,.docx,.odt,.ods,.odp,.odg,.rtf,.xls,.xlsx,.pdf" multiple hidden>
               <span class="tip-wrap tip-up tip-anchor-right" tabindex="0" id="webImgTipWrap">
                 <button class="icon-btn" id="webImgBtn" title="Chercher une image sur le web (picsum.photos)">
                   <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1719,7 +1719,7 @@
       'chat.convTabs': 'Conversation tabs — double-click to rename',
       'chat.renameHint': 'double-click to rename',
       'chat.placeholder': 'Describe the layout… (e.g. « Minimalist A4 poster for a jazz festival »)',
-      'chat.attachTip': '<b>Attachments</b>Attach images, text, a Word document (<b>.doc</b> or <b>.docx</b>), OpenDocument (<b>.odt</b>, <b>.ods</b>, <b>.odp</b>), RTF (<b>.rtf</b>), Excel (.xls/.xlsx) or PDF. SP213 reads the <b>full structure</b> (headings, lists, tables, images) and integrates it into the layout.',
+      'chat.attachTip': '<b>Attachments</b>Attach images, text, a Word document (<b>.doc</b> or <b>.docx</b>), OpenDocument (<b>.odt</b>, <b>.ods</b>, <b>.odp</b>), RTF (<b>.rtf</b>), EPS/AI (vector), Excel (.xls/.xlsx) or PDF. SP213 reads the <b>full structure</b> (headings, lists, tables, images) and integrates it into the layout.',
       'chat.webImgTip': '<b>Web image</b>Searches a free stock photo (picsum.photos) and adds it as an attachment so the AI can integrate it into the layout.',
       'chat.micTip': '<b>Voice prompt</b>Click then speak: your voice is transcribed into the prompt field.',
       'chat.imgToggleTip': '<b>Images</b>Unchecked (default): layout without photos. Checked: the AI reserves photo areas and the studio attaches 1 to 3 illustration photos.',
@@ -1856,7 +1856,7 @@
       'chat.convTabs': 'Onglets de conversations — double-clic pour renommer',
       'chat.renameHint': 'double-clic pour renommer',
       'chat.placeholder': 'Décrivez la maquette… (ex : « Affiche A4 minimaliste pour un festival de jazz »)',
-      'chat.attachTip': '<b>Pièces jointes</b>Joignez des images, du texte, un document Word (<b>.doc</b> ou <b>.docx</b>), OpenDocument (<b>.odt</b>, <b>.ods</b>, <b>.odp</b>), RTF (<b>.rtf</b>), Excel (.xls/.xlsx) ou PDF. SP213 lit la <b>structure complète</b> (titres, listes, tableaux, images) et l\'intègre dans la maquette.',
+      'chat.attachTip': '<b>Pièces jointes</b>Joignez des images, du texte, un document Word (<b>.doc</b> ou <b>.docx</b>), OpenDocument (<b>.odt</b>, <b>.ods</b>, <b>.odp</b>), RTF (<b>.rtf</b>), EPS/AI (vectoriel), Excel (.xls/.xlsx) ou PDF. SP213 lit la <b>structure complète</b> (titres, listes, tableaux, images) et l\'intègre dans la maquette.',
       'chat.webImgTip': '<b>Image web</b>Recherche une photo libre (picsum.photos) et l\'ajoute comme pièce jointe pour que l\'IA l\'intègre dans la maquette.',
       'chat.imgToggleTip': '<b>Images</b>Décoché (défaut) : maquette sans photo. Coché : l\'IA réserve des zones photo et le studio joint 1 à 3 photos d\'illustration.',
       'chat.imgToggleLabel': 'Images',
@@ -1993,7 +1993,7 @@
       'chat.convTabs': '会話タブ — ダブルクリックで名前変更',
       'chat.renameHint': 'ダブルクリックで名前変更',
       'chat.placeholder': 'レイアウトを説明してください…（例：「ジャズフェスティバルのミニマルなA4ポスター」）',
-      'chat.attachTip': '<b>添付ファイル</b>画像、テキスト、Word文書（<b>.doc</b>／<b>.docx</b>）、OpenDocument（<b>.odt</b>・<b>.ods</b>・<b>.odp</b>）、RTF（<b>.rtf</b>）、Excel（.xls/.xlsx）、PDFを添付できます。SP213が<b>構造全体</b>（見出し、リスト、表、画像）を読み取り、レイアウトに統合します。',
+      'chat.attachTip': '<b>添付ファイル</b>画像、テキスト、Word文書（<b>.doc</b>／<b>.docx</b>）、OpenDocument（<b>.odt</b>・<b>.ods</b>・<b>.odp</b>）、RTF（<b>.rtf</b>）、EPS/AI（ベクター）、Excel（.xls/.xlsx）、PDFを添付できます。SP213が<b>構造全体</b>（見出し、リスト、表、画像）を読み取り、レイアウトに統合します。',
       'chat.webImgTip': '<b>ウェブ画像</b>フリー写真（picsum.photos）を検索して添付ファイルとして追加し、AIがレイアウトに統合できるようにします。',
       'chat.imgToggleTip': '<b>画像</b>オフ（既定）：写真なしのレイアウト。オン：AIが写真エリアを確保し、スタジオが挿絵写真を1〜3点添付します。',
       'chat.imgToggleLabel': '画像',
@@ -3047,6 +3047,111 @@
     renderAttachBar();
   }
 
+  // ══════════════════════════════════════════════════════════════════════
+  // 🆕 v1.7.415 — PIECES JOINTES VECTORIELLES : EPS / .ai / .ps.
+  //
+  //   Le Studio ne manipule que des IMAGES (dataURL) : il n'a pas de groupe
+  //   vectoriel comme l'application. Un EPS y est donc converti en image de
+  //   tres haute definition, ajoutee comme piece jointe NORMALE : l'IA la
+  //   place ensuite avec « imageIndex », exactement comme une photo.
+  //
+  //   • EPS / .ps  -> module PARTAGE app/JS/sp-eps-import.js (le MEME que
+  //                   l'application) -> SVG en data URL : l'image reste NETTE
+  //                   quand on l'agrandit dans la maquette.
+  //   • .ai        -> les .ai modernes SONT des PDF : page 1 rendue par
+  //                   pdf.js en PNG haute resolution.
+  //
+  //   AVANT ce branchement, un .ai ou un .eps etait purement et simplement
+  //   refuse (« unsupported type ») : le logo etait PERDU.
+  //
+  //   ⚠️ AUCUN FOND N'EST AJOUTE : ni aplat dans le SVG, ni fillRect() sur le
+  //   canvas du .ai. Un logo vectoriel doit rester TRANSPARENT, sinon il pose
+  //   un rectangle blanc sur la maquette (meme regle que pour les SVG).
+  // ══════════════════════════════════════════════════════════════════════
+  const SP_EPS_RENDU_PX = 2400;   // cote le plus long du rendu PDF -> PNG
+
+  // Rend la page 1 d'un PDF (donc d'un .ai moderne) en PNG TRANSPARENT.
+  function spEpsRendrePdfEnImage(file, id, ext) {
+    return loadAttachmentLibrary('app/JS/pdf.min.js', () => !!window.pdfjsLib).then(function () {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'app/JS/pdf.worker.min.js';
+      return file.arrayBuffer();
+    }).then(function (buffer) {
+      return window.pdfjsLib.getDocument({ data: buffer }).promise;
+    }).then(function (pdf) {
+      return pdf.getPage(1).then(function (page) {
+        const base = page.getViewport({ scale: 1 });
+        // Jamais plus de 8x : inutile de produire 20 000 px de large.
+        const scale = Math.max(1, Math.min(8, SP_EPS_RENDU_PX / Math.max(base.width, base.height)));
+        const viewport = page.getViewport({ scale: scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(viewport.width));
+        canvas.height = Math.max(1, Math.round(viewport.height));
+        const ctx = canvas.getContext('2d', { alpha: true });
+        // background transparent : le PDF n'a pas de fond, on n'en ajoute pas.
+        return page.render({ canvasContext: ctx, viewport: viewport, background: 'rgba(0,0,0,0)' })
+          .promise.then(function () {
+            const dataURL = canvas.toDataURL('image/png');
+            const total = pdf.numPages || 1;
+            try { if (typeof pdf.destroy === 'function') pdf.destroy(); } catch (_) {}
+            state.attachments.push({
+              id: id, name: file.name, type: 'image', dataURL: dataURL,
+              width: canvas.width, height: canvas.height, ext: ext,
+              fromEps: true, epsKind: 'pdf', pageCount: total
+            });
+            appendChat('assistant', '« ' + file.name + ' » : vecteur Illustrator (PDF interne) — page 1 sur ' +
+              total + ' rendue en image ' + canvas.width + '×' + canvas.height + ' px, sans fond ajoute.');
+            renderAttachBar();
+          });
+      });
+    });
+  }
+
+  // EPS PostScript : parsing par le module partage, puis SVG.
+  function extractEpsAttachment(file, id, ext) {
+    return file.arrayBuffer().then(function (buffer) {
+      return loadAttachmentLibrary('app/JS/sp-eps-import.js', () => !!window.SPEps).then(function () {
+        const mod = window.SPEps;
+        const bytes = new Uint8Array(buffer);
+        const typeReel = mod.detect(bytes);
+        // Un « .ai » (ou un .eps) qui contient un vrai PDF : rendu pdf.js.
+        if (typeReel === 'pdf') return spEpsRendrePdfEnImage(file, id, ext);
+        if (typeReel !== 'eps') {
+          appendChat('assistant', '⚠️ « ' + file.name + ' » : ni EPS ni PDF lisible — fichier non reconnu.');
+          renderAttachBar();
+          return;
+        }
+        const texte = mod.extractPsText(bytes);
+        const analyse = mod.parse(texte);
+        if (!analyse.paths || !analyse.paths.length) {
+          appendChat('assistant', '⚠️ « ' + file.name + ' » : aucun trace vectoriel trouve dans l\'EPS' +
+            (analyse.stats && analyse.stats.nbInconnus
+              ? ' (' + analyse.stats.nbInconnus + ' operateur(s) PostScript non interprete(s))' : '') +
+            '. Reenregistrez-le en PDF, en SVG ou en PNG.');
+          renderAttachBar();
+          return;
+        }
+        const dataURL = mod.toSvgDataUrl(analyse, { cible: 1600 });
+        if (!dataURL) {
+          appendChat('assistant', '⚠️ « ' + file.name + ' » : conversion en image impossible.');
+          renderAttachBar();
+          return;
+        }
+        state.attachments.push({
+          id: id, name: file.name, type: 'image', dataURL: dataURL,
+          width: analyse.bbox.maxX - analyse.bbox.minX,
+          height: analyse.bbox.maxY - analyse.bbox.minY,
+          ext: ext, fromEps: true, epsKind: 'ps',
+          epsPaths: analyse.paths.length, epsInconnus: analyse.stats.nbInconnus
+        });
+        const score = mod.importance(analyse);
+        appendChat('assistant', '« ' + file.name + ' » : EPS vectoriel lu — ' + analyse.paths.length +
+          ' trace(s), converti en image vectorielle transparente' +
+          (analyse.stats.nbInconnus ? ' (' + analyse.stats.nbInconnus + ' operateur(s) ignore(s))' : '') + '.' +
+          (score < 0.3 ? ' ⚠️ Ce fichier semble peu exploitable : verifiez le visuel joint.' : ''));
+        renderAttachBar();
+      });
+    });
+  }
   function addAttachment(file) {
     const ext = (file.name.split('.').pop() || '').toLowerCase();
     const id = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
@@ -3114,8 +3219,18 @@
         renderAttachBar();
         appendChat('assistant', 'Unable to read "' + file.name + '": ' + error.message);
       });
+    } else if (ext === 'eps' || ext === 'ai' || ext === 'ps') {
+      // 🆕 v1.7.415 — EPS / ILLUSTRATOR / POSTSCRIPT.
+      //   AVANT : « unsupported type », le logo vectoriel etait perdu.
+      //   Le fichier devient une piece jointe image TRANSPARENTE (SVG pour un
+      //   .eps, PNG haute definition pour un .ai) : l'IA la place ensuite par
+      //   « imageIndex », comme n'importe quelle photo.
+      extractEpsAttachment(file, id, ext).catch(function (error) {
+        appendChat('assistant', '⚠️ « ' + file.name + ' » : lecture impossible (' + error.message + ').');
+        renderAttachBar();
+      });
     } else {
-      appendChat('assistant', 'File "' + file.name + '" ignored: unsupported type. Accepted formats: images, TXT/MD/CSV/HTML, Word (.doc/.docx), OpenDocument (.odt/.ods/.odp), RTF (.rtf), Excel (.xls/.xlsx) and PDF.');
+      appendChat('assistant', 'File "' + file.name + '" ignored: unsupported type. Accepted formats: images (JPG/PNG/WebP/GIF/SVG/BMP), EPS/AI (.eps/.ai/.ps), TXT/MD/CSV/HTML, Word (.doc/.docx), OpenDocument (.odt/.ods/.odp), RTF (.rtf), Excel (.xls/.xlsx) and PDF.');
       renderAttachBar();
     }
   }
@@ -4834,6 +4949,68 @@ function spRtfLayoutInfo(src) {
 
   // ── Import depuis SuperPrint : convertit un .sp (objets Fabric en px, offset
   // bleed) vers le format interne du studio (éléments en mm).
+  // ══════════════════════════════════════════════════════════════════════
+  // 🆕 v1.7.415 — OBJETS VECTORIELS NON RECONNUS PAR LE STUDIO.
+  //
+  //   MESURE DU DEFAUT : importFromSuperPrint renvoyait null pour tout type
+  //   inconnu, et .filter(Boolean) SUPPRIMAIT l'objet. Consequence : un logo
+  //   SVG ou EPS importe dans SuperPrint (fabric.Group de fabric.Path), un
+  //   trace plume/crayon (fabric.Path) ou un polygone non etoile
+  //   DISPARAISSAIENT purement et simplement du document des qu'il passait
+  //   par le studio — sans le moindre avertissement.
+  //
+  //   On les convertit donc en IMAGE SVG (vectorielle, nette a
+  //   l'agrandissement) plutot que de les perdre. Les coordonnees des
+  //   enfants d'un groupe Fabric sont relatives a l'ORIGINE du groupe (son
+  //   centre) : le viewBox centre sur (-w/2, -h/2) est donc exactement le
+  //   bon repere, sans aucun recalcul de geometrie.
+  // ══════════════════════════════════════════════════════════════════════
+  function spVecteurVersElementImage(o, base) {
+    try {
+      var _w = Number(o && o.width) || 0;
+      var _h = Number(o && o.height) || 0;
+      if (!(_w > 0) || !(_h > 0)) return null;
+      var enfants = (o.type === 'group' && Array.isArray(o.objects)) ? o.objects : [o];
+      var parts = [];
+      for (var i = 0; i < enfants.length; i++) {
+        var c = enfants[i];
+        if (!c || !c.path) continue;
+        var d = '';
+        try {
+          d = (window.fabric && fabric.util && fabric.util.joinPath)
+            ? fabric.util.joinPath(c.path) : '';
+        } catch (_) { d = ''; }
+        if (!d) continue;
+        var attrs = 'd="' + d + '"';
+        attrs += (c.fill && c.fill !== 'transparent') ? ' fill="' + c.fill + '"' : ' fill="none"';
+        if (c.stroke && c.stroke !== 'transparent') {
+          attrs += ' stroke="' + c.stroke + '" stroke-width="' + (Number(c.strokeWidth) || 1) + '"';
+          if (c.strokeLineJoin) attrs += ' stroke-linejoin="' + c.strokeLineJoin + '"';
+          if (c.strokeLineCap) attrs += ' stroke-linecap="' + c.strokeLineCap + '"';
+        }
+        parts.push('<path ' + attrs + '/>');
+      }
+      if (!parts.length) return null;
+      var vb = (-_w / 2) + ' ' + (-_h / 2) + ' ' + _w + ' ' + _h;
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb + '" width="' +
+        Math.round(_w) + '" height="' + Math.round(_h) + '">' + parts.join('') + '</svg>';
+      var url = '';
+      try {
+        url = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+      } catch (_) {
+        url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      }
+      var el = Object.assign({}, base, {
+        type: 'image',
+        width: Math.round((_w / MM_TO_PX) * 10) / 10,
+        height: Math.round((_h / MM_TO_PX) * 10) / 10,
+        imageUrl: url
+      });
+      el._spFromVector = true;
+      return el;
+    } catch (_) { return null; }
+  }
+
   function importFromSuperPrint(spFile) {
     if (!spFile || !spFile.pages || !spFile.pages.length) return false;
     const docFmt = (spFile.document && spFile.document.format) || {};
@@ -4841,6 +5018,20 @@ function spRtfLayoutInfo(src) {
     const h = Number(docFmt.height) || 297;
     const bl = (spFile.document && typeof spFile.document.bleed === 'number') ? spFile.document.bleed : 3;
     const vMode = (spFile.document && spFile.document.viewMode === 'spread') ? 'spread' : 'single';
+    // ══════════════════════════════════════════════════════════════════════
+    // 🆕 v1.7.417 — MARGE ET NUMEROTATION DU DOCUMENT D'ORIGINE.
+    //   MESURE DU DEFAUT : aucune des deux n'etait relue ici, et les deux
+    //   ecrivains de .sp les recodaient en dur (margin: 20, numbering.enabled:
+    //   false). Un document a 15 mm avec numerotation active revenait donc a
+    //   20 mm, numerotation eteinte — sans le moindre avertissement.
+    //   On les capture dans state.doc (donc effacees naturellement par
+    //   newDocument) et on les reemet a l'export.
+    //   ⚠️ La numerotation ne sera transportee QUE par buildSPFile (document
+    //   importe) : la voie IA ecrit ses folios en TEXTE, transporter
+    //   enabled:true y ferait doubler les numeros.
+    // ══════════════════════════════════════════════════════════════════════
+    const _mgDoc = (spFile.document && typeof spFile.document.margin === 'number' && isFinite(spFile.document.margin) && spFile.document.margin >= 0) ? spFile.document.margin : null;
+    const _nbDoc = (spFile.numbering && typeof spFile.numbering === 'object') ? spFile.numbering : null;
     const bleedPx = bl * MM_TO_PX;
     const toMm = (px) => Math.round((px - bleedPx) / MM_TO_PX * 10) / 10;
 
@@ -4868,6 +5059,24 @@ function spRtfLayoutInfo(src) {
         if (typeof o._spWrapBottom === 'number') base._spWrapBottom = o._spWrapBottom;
         if (typeof o._spWrapRight === 'number') base._spWrapRight = o._spWrapRight;
         if (typeof o._spWrapOrigH === 'number') base._spWrapOrigH = o._spWrapOrigH;
+        // ══════════════════════════════════════════════════════════════════════
+        // 🆕 v1.7.416 — TONS DIRECTS (PANTONE) TRANSPORTES.
+        //   MESURE DU DEFAUT : le studio ne connaissait AUCUN marqueur d'encre
+        //   (0 occurrence de _spSpotInk dans tout le fichier). Un document
+        //   contenant 3 objets marques Pantone ressortait donc avec
+        //   resources.spotInks intact mais ZERO objet marque ; or cote app le
+        //   marqueur est la SEULE source de verite (_spSpotScanDocument) :
+        //   la boite d'export ne basculait plus en mode encres directes et le
+        //   PDF perdait ses plaques (mesure : 2 /Separation avant le studio,
+        //   0 apres). On transporte donc le marqueur TEL QUEL (HEX majuscules).
+        //   ⚠️ Le nom (_spSpotInkName) est purement informatif : si l'utilisateur
+        //   change la couleur dans l'app, le marqueur devient « perime » et
+        //   l'encre est ignoree — c'est la regle de securite de l'app.
+        // ══════════════════════════════════════════════════════════════════════
+        if (o._spSpotInk && /^#[0-9a-fA-F]{6}$/.test(o._spSpotInk)) base._spSpotInk = String(o._spSpotInk).toUpperCase();
+        if (o._spSpotStrokeInk && /^#[0-9a-fA-F]{6}$/.test(o._spSpotStrokeInk)) base._spSpotStrokeInk = String(o._spSpotStrokeInk).toUpperCase();
+        if (o._spSpotInkName) base._spSpotInkName = String(o._spSpotInkName).slice(0, 60);
+        if (o._spSpotStrokeInkName) base._spSpotStrokeInkName = String(o._spSpotStrokeInkName).slice(0, 60);
         if (t === 'rect' || t === 'rectangle') {
           return Object.assign(base, { type: 'rectangle',
             width: Math.round(((o.width || 0) / MM_TO_PX) * 10) / 10,
@@ -4902,7 +5111,7 @@ function spRtfLayoutInfo(src) {
           const _pts = Array.isArray(o.points) ? o.points : null;
           if (t === 'polygon') {
             // Detection d'etoile : on refuse tout ce qui n'a pas l'alternance.
-            if (!_pts || _pts.length < 6 || _pts.length % 2 !== 0) return null;
+            if (!_pts || _pts.length < 6 || _pts.length % 2 !== 0) return spVecteurVersElementImage(o, base);
             const _r = _pts.map(function (pt) {
               return Math.sqrt((pt.x || 0) * (pt.x || 0) + (pt.y || 0) * (pt.y || 0));
             });
@@ -4913,7 +5122,7 @@ function spRtfLayoutInfo(src) {
             // Les deux familles doivent etre homogenes ET bien separees.
             const _homogene = (_eMax - _eMin) <= _eMax * 0.02 && (_oMax - _oMin) <= _oMax * 0.02;
             const _separe = _eMin > _oMax * 1.15;
-            if (!_homogene || !_separe) return null; // pas une etoile -> on ne trahit pas la forme
+            if (!_homogene || !_separe) return spVecteurVersElementImage(o, base); // pas une etoile -> image vectorielle
             _outPx = _eMax;
             _inPx = _oMax;
             _branches = _pts.length / 2;
@@ -4947,6 +5156,35 @@ function spRtfLayoutInfo(src) {
           if (o.fontStyle) el.fontStyle = o.fontStyle;
           if (o.textAlign) el.textAlign = o.textAlign;
           if (o.lineHeight) el.lineHeight = Math.round(o.lineHeight * 100) / 100;
+          // ══════════════════════════════════════════════════════════════════════
+          // 🆕 v1.7.415 — ATTRIBUTS DE TEXTE TRANSPORTES (relecture .sp/.json).
+          //   MESURE DU DEFAUT : ces attributs etaient relus par la PREVIEW
+          //   (spElToFabric) et ECRITS dans le .sp re-exporte
+          //   (spAppliquerReglagesTypo), mais PAS TRANSPORTES a l'entree :
+          //   un surlignage pose dans l'app disparaissait donc des que le
+          //   document passait par le studio.
+          //   On transporte la valeur TELLE QUELLE, sans interpretation.
+          // ══════════════════════════════════════════════════════════════════════
+          if (o.textBackgroundColor) el.textBackgroundColor = o.textBackgroundColor;
+          if (typeof o.charSpacing === 'number') el.charSpacing = o.charSpacing;
+          if (o.underline) el.underline = true;
+          if (o.linethrough) el.linethrough = true;
+          if (o.overline) el.overline = true;
+          // 🆕 v1.7.415 — METRIQUES VERTICALES DU MOTEUR (v1.7.341).
+          //   _fontSizeMult (defaut Fabric 1.13, force a 1 par certains
+          //   reglages : gras, reset typo) et _fontSizeFraction pilotent
+          //   getHeightOfLine(). Sans transport, un bloc dont le reglage
+          //   valait 1 revenait a 1,13 et changeait de hauteur.
+          if (typeof o._fontSizeMult === 'number') el._fontSizeMult = o._fontSizeMult;
+          if (typeof o._fontSizeFraction === 'number') el._fontSizeFraction = o._fontSizeFraction;
+          // 🆕 v1.7.415 — HAUTEUR DE CADRE REELLE. L'app connait la hauteur
+          //   exacte du cadre (_fixedHeight) ; le studio, lui, ne sait
+          //   qu'ESTIMER. On transporte donc la mesure pour qu'elle serve de
+          //   PLANCHER (cf. spTextBlockHeightPx) : l'estimation se trompe,
+          //   la mesure non.
+          if (typeof o._fixedHeight === 'number' && o._fixedHeight > 0) {
+            el._spFrameHeightMm = Math.round((o._fixedHeight / MM_TO_PX) * 10) / 10;
+          }
           // 🎯 v1.7.380 — RÉGLAGES TYPOGRAPHIQUES DU BLOC.
           //   Sans cette recopie, un document passant de l'app au studio perdait :
           //   • le RÉGLAGE DE CÉSURE — y compris « sans césure », qui redevenait
@@ -4971,7 +5209,10 @@ function spRtfLayoutInfo(src) {
             height: Math.round(((o.height || 100) / MM_TO_PX) * 10) / 10,
             imageUrl: o._spAiImageUrl || o._sp213ImageUrl || o.src || '' });
         }
-        return null;
+        // 🆕 v1.7.415 — AVANT de renoncer : les objets VECTORIELS (groupe SVG/EPS,
+        //   trace plume/crayon, polygone) sont convertis en image vectorielle
+        //   plutot que d'etre silencieusement supprimes par filter(Boolean).
+        return spVecteurVersElementImage(o, base);
       }).filter(Boolean);
       return { pageIndex: idx, elements };
     }).filter(p => p.elements.length > 0);
@@ -5001,7 +5242,7 @@ function spRtfLayoutInfo(src) {
     } catch (_) {}
 
     state.pageW = w; state.pageH = h; state.bleed = bl; state.viewMode = vMode;
-    state.doc = { w, h, effW: vMode === 'spread' ? w * 2 : w, viewMode: vMode, bleed: bl, pages };
+    state.doc = { w, h, effW: vMode === 'spread' ? w * 2 : w, viewMode: vMode, bleed: bl, pages, margin: _mgDoc, numbering: _nbDoc };
     try {
       localStorage.setItem(LS.dims, JSON.stringify({ w, h }));
       localStorage.setItem(LS.doc, JSON.stringify(state.doc));
@@ -6799,7 +7040,12 @@ TYPES D'OBJETS (champ "type") :
 • triangle : left, top, width, height, fill, opacity
 • line : x1, y1, x2, y2, stroke, strokeWidth(mm)
 • star : left, top, radius, points, innerRadius, fill, opacity
-• text : left, top, width, text, fontSize(pt), fill, fontFamily, fontWeight, fontStyle, textAlign, lineHeight, charSpacing, underline, linethrough, backgroundColor
+• text : left, top, width, text, fontSize(pt), fill, fontFamily, fontWeight, fontStyle, textAlign, lineHeight, charSpacing, underline, linethrough, textBackgroundColor
+
+⚠️ SURLIGNAGE : utilise UNIQUEMENT textBackgroundColor (facultatif).
+   N'émets JAMAIS backgroundColor : dans le moteur, cette propriété peint un
+   APLAT PLEIN sur TOUTE la boîte du bloc — ce n'est PAS un surlignage — et si
+   la couleur est blanche elle rend le texte totalement invisible.
 • image : left, top, width, height, imageUrl (data URI), opacity
 
 RÈGLES DE RÉDACTION : de VRAIS textes éditoriaux/marketing (jamais de Lorem ipsum).
@@ -8070,7 +8316,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     clone.top = clamp(finite(clone.top, 0), minY, state.pageH);
     clone.opacity = clamp(finite(clone.opacity, 1), 0, 1);
 
-    ['fill', 'stroke', 'backgroundColor'].forEach(key => {
+    ['fill', 'stroke', 'textBackgroundColor'].forEach(key => {
       if (clone[key] != null && !validColor(clone[key])) delete clone[key];
     });
     ['strokeWidth', 'rx', 'ry', 'innerRadius', 'charSpacing'].forEach(key => {
@@ -8479,7 +8725,14 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     //   trop courte et rognait les dernieres lignes.
     const nbExplicites = String(el.text || '').split('\n').length;
     const plancher = Math.round(nbExplicites * fsPx * lh * SP_TEXT_LINE_MULT);
-    return Math.max(h, plancher);
+    // 🆕 v1.7.415 — PLANCHER DE LA MESURE REELLE (document venu de l'app).
+    //   L'app transporte la hauteur EXACTE de son cadre (_spFrameHeightMm).
+    //   L'estimation peut se tromper ; la mesure, non. On ne fait que
+    //   GRANDIR (regle du projet : surestimer fait grandir le bloc,
+    //   sous-estimer fait DISPARAITRE du texte).
+    const _framePx = (typeof el._spFrameHeightMm === 'number' && el._spFrameHeightMm > 0)
+      ? Math.round(el._spFrameHeightMm * MM_TO_PX) : 0;
+    return Math.max(h, plancher, _framePx);
   }
 
   function elementToFabric(el, bleedPx) {
@@ -8528,7 +8781,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         if (el.underline) opts.underline = true;
         if (el.linethrough) opts.linethrough = true;
         if (el.overline) opts.overline = true;
-        if (el.backgroundColor) opts.backgroundColor = el.backgroundColor;
+        // v1.7.415 - backgroundColor est un PIEGE : Fabric peint un rectangle PLEIN
+        //   sur toute la boite du bloc (ce n'est pas un surlignage) et une valeur
+        //   blanche masque le texte. On l'IGNORE et on accepte textBackgroundColor,
+        //   qui peint derriere les glyphes.
+        if (el.textBackgroundColor) opts.textBackgroundColor = el.textBackgroundColor;
         const tb = new fabric.Textbox(String(el.text || ''), opts);
         // 🛡 FIX 2026-09-10 : donner au bloc sa hauteur de cadre RÉELLE
         //   (fontSize × lineHeight × fontSizeMult 1.13). Sans cela la boîte de
@@ -8836,7 +9093,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       const refs = {};
       (spPages || []).forEach(function (p) {
         (p.objects || []).forEach(function (o) {
-          const props = [o && o.fill, o && o.stroke, o && o.backgroundColor];
+          const props = [o && o.fill, o && o.stroke, o && o.textBackgroundColor];
           props.forEach(function (v) {
             if (typeof v !== 'string') return;
             const m = v.trim();
@@ -8877,6 +9134,39 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   //   ligne serait plus fragile qu'utile.
   function spAppliquerReglagesTypo(obj, el) {
     if (!obj || !el) return obj;
+    // ══════════════════════════════════════════════════════════════════════
+    // 🆕 v1.7.415 — PERSISTANCE DES ATTRIBUTS DE TEXTE (relecture .sp/.json).
+    //
+    //   MESURE DU DEFAUT : la PREVIEW du Studio appliquait bien ces attributs
+    //   (spElToFabric -> options Fabric), mais les deux ECRIVAINS de .sp
+    //   (buildSPFile et elsToSPObjects) construisent un objet JSON a la main :
+    //   tout attribut absent de cet objet etait PERDU, alors que l'apercu le
+    //   montrait. Consequence : l'IA surlignait un titre, la preview affichait
+    //   le surlignage, et le document ouvert dans SuperPrint arrivait SANS
+    //   surlignage (fabric ne serialise pas textBackgroundColor par defaut :
+    //   il est absent de fabric.Object.toObject).
+    //
+    //   spAppliquerReglagesTypo est le POINT DE PASSAGE UNIQUE des deux
+    //   ecrivains : on y consolide donc ces attributs une fois pour toutes.
+    // ══════════════════════════════════════════════════════════════════════
+    if (typeof el.textBackgroundColor === 'string' && el.textBackgroundColor) {
+      obj.textBackgroundColor = el.textBackgroundColor;
+    }
+    if (typeof el.charSpacing === 'number') obj.charSpacing = el.charSpacing;
+    if (el.underline) obj.underline = true;
+    if (el.linethrough) obj.linethrough = true;
+    if (el.overline) obj.overline = true;
+    // 🆕 v1.7.415 — metriques verticales du moteur (cf. importFromSuperPrint).
+    if (typeof el._fontSizeMult === 'number') obj._fontSizeMult = el._fontSizeMult;
+    if (typeof el._fontSizeFraction === 'number') obj._fontSizeFraction = el._fontSizeFraction;
+    // 🆕 v1.7.416 — TONS DIRECTS re-emis dans le .sp (cf. importFromSuperPrint).
+    //   spAppliquerReglagesTypo est le passage UNIQUE des deux ecrivains
+    //   (buildSPFile ET elsToSPObjects) : c'est donc ici que le marqueur doit
+    //   etre reecrit pour que le trajet app -> studio -> app le conserve.
+    if (el._spSpotInk && /^#[0-9a-fA-F]{6}$/.test(el._spSpotInk)) obj._spSpotInk = String(el._spSpotInk).toUpperCase();
+    if (el._spSpotStrokeInk && /^#[0-9a-fA-F]{6}$/.test(el._spSpotStrokeInk)) obj._spSpotStrokeInk = String(el._spSpotStrokeInk).toUpperCase();
+    if (el._spSpotInkName) obj._spSpotInkName = String(el._spSpotInkName).slice(0, 60);
+    if (el._spSpotStrokeInkName) obj._spSpotStrokeInkName = String(el._spSpotStrokeInkName).slice(0, 60);
     if (el.enableHyphenation !== undefined) obj.enableHyphenation = !!el.enableHyphenation;
     if (el.hyphenLanguage) obj.hyphenLanguage = el.hyphenLanguage;
     if (el._spWrapMode) obj._spWrapMode = el._spWrapMode;
@@ -8979,14 +9269,20 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return {
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: spPages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
-      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
+      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
       // 🛡️ v1.7.369 — filtrés par usage réel : pas de canal fantôme.
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(spPages) },
       textLinks: {},
       guides: {},
       masters: { templates: {}, assignments: {} },
-      numbering: { enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 },
+      // 🆕 v1.7.417 — numerotation du document d'origine, transportee TELLE QUELLE
+      //   (documents importes uniquement : cf. importFromSuperPrint). La voie IA
+      //   ci-dessous garde enabled:false car l'IA ecrit ses folios en TEXTE :
+      //   les activer ferait doubler les numeros par l'app.
+      numbering: (state.doc && state.doc.numbering && typeof state.doc.numbering === 'object')
+        ? Object.assign({ enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 }, state.doc.numbering)
+        : { enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 },
       pages: spPages
     };
   }
@@ -9091,7 +9387,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return {
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: pages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
-      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
+      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) : 1 entrée = 1 couche
       //   chromatique supplémentaire à produire à l'export (CMJN ou RVB + Pantone).
       // 🛡️ v1.7.368 — styles nommés (typo + nuancier) DÉJÀ présents via
