@@ -62181,6 +62181,11 @@ canvas.requestRenderAll();
         // --- ONGLET MAQUETTES (non-premium uniquement) ---
         const compList = compListAll
             .filter(({ comp }) => !comp.locked)
+            // 🆕 v1.7.428 — REFONTE : la bibliothèque ne présente que les 8 modèles
+            //   anglais réécrits (les anciens modèles FR des premières versions de
+            //   SuperPrint ne sont plus listés ; ils seront re-créés en FR puis JA
+            //   par duplication de ces 8 modèles).
+            .filter(({ comp }) => !!comp.spEn)
             .sort((a, b) => {
                 const aName = a.comp?.name || '';
                 const bName = b.comp?.name || '';
@@ -62227,12 +62232,23 @@ canvas.requestRenderAll();
             const keywords = getCompPreviewKeywords(comp.name).join(',');
             // Endpoint "random" desactivé temporairement pour garder des blocs simples
             // previewImg.src = `https://source.unsplash.com/random/400x300/?${encodeURIComponent(keywords)}`;
-            previewImg.src = getPrintPlaceholderDataUri(comp.name || 'MAQUETTE');
+            // 🆕 v1.7.428 — VIGNETTE RÉELLE du modèle (SVG généré depuis son gabarit,
+            //   sa palette et son titre) au lieu du placeholder générique : on voit
+            //   enfin à quoi ressemble la maquette avant de l'ouvrir.
+            const _thumb = (comp.spEn && typeof window.spTemplateThumb === 'function') ? window.spTemplateThumb(comp) : '';
+            previewImg.src = _thumb || getPrintPlaceholderDataUri(comp.name || 'MAQUETTE');
+            previewImg.style.objectFit = 'contain';
+            previewImg.style.background = (comp.theme && comp.theme.bg) || '#fff';
             previewImg.onerror = () => {
                 // Fallback local (pas de photo aléatoire hors-sujet)
                 previewImg.src = getPrintPlaceholderDataUri(comp.name || 'MAQUETTE');
             };
-            const baseDesc = comp.desc || translate('assetDescDefault');
+            // 🆕 v1.7.428 — métadonnées lisibles sous le nom (format mm · pages)
+            const _fmt = comp.format || {};
+            const _meta = (_fmt.width && _fmt.height
+                ? Math.round(_fmt.width / 2.8346) + '×' + Math.round(_fmt.height / 2.8346) + ' mm'
+                : '') + (_fmt.pages && _fmt.pages > 1 ? ' · ' + _fmt.pages + ' p.' : '');
+            const baseDesc = (_meta ? _meta + ' — ' : '') + (comp.desc || translate('assetDescDefault'));
             const desc = comp.locked ? `${translate('assetDescPremiumPrefix')} — ${baseDesc}` : baseDesc;
             
             const card = createAssetCard(comp.name, previewImg, () => {
@@ -71015,10 +71031,306 @@ function _npBuildLayout(params, keywords, lang) {
     return { document: { format: { width: params.w, height: params.h, unit: 'mm' } }, pages: pages };
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   🆕 v1.7.428 — ASSET LIBRARY : LES 8 MODÈLES ANGLAIS (refonte intégrale).
+   Réécrits de zéro en anglais, chacun avec le THÈME et le FORMAT de son asset
+   d'origine. Aucune correction de l'existant : tout est reconstruit.
+   Les modèles FR historiques ne sont plus listés (filtre \u00ab spEn \u00bb de la grille).
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function spEnTemplates() {
+    // ── Contenus éditoriaux ANGLAIS (un jeu par modèle) ──────────────────
+    var CO = {
+        fashion: {
+            masthead: 'ÉCLAT', tag: 'FASHION & STYLE', issue: 'ISSUE 12 · AUTUMN 2026',
+            head: 'The season wardrobe', stand: 'Six silhouettes that set the tone for autumn \u2014 from sculpted wool to liquid satin.',
+            sections: ['The dossier', 'Runway report', 'On the street', 'Beauty notes', 'The interview', 'Shopping guide'],
+            quote: 'Style is a way to say who you are without having to speak.',
+            body: 'Autumn arrives with a quieter silhouette. Shoulders soften, waists return, and fabric does the talking: double-faced wool, brushed cashmere, satin that catches the last of the light.',
+            caption: 'Photographed in Paris for the autumn issue.', back: 'Subscribe at eclat-magazine.com'
+        },
+        journal: {
+            masthead: 'The Hair Journal', tag: 'SALON NEWS, CUTS AND COLOUR', issue: 'SPECIAL EDITION · AUTUMN 2026 · N° 07',
+            head: 'The soft bob is the cut of the season', stand: 'Blunt line, invisible layers and a colour that grows out gracefully.',
+            sections: ['Front page', 'Colour trend', 'Salon business', 'Tools', 'Interview', 'Diary'],
+            quote: 'A good cut is the one you can style again on Monday morning.',
+            body: 'The soft bob sits between the blunt line and the long bob. It is cut dry, point by point, so the weight falls exactly where the client needs it \u2014 and it survives three months of regrowth.',
+            caption: 'Backstage at the autumn hair show.', back: 'Advertise in The Hair Journal'
+        },
+        music: {
+            masthead: 'AMPLIFY', tag: 'THE SOUND OF NOW', issue: 'VOL. 04 · 2026',
+            head: 'Analogue is back on the charts', stand: 'Why the loudest records of the year were cut to tape.',
+            sections: ['The cover story', 'New releases', 'Studio notes', 'Live', 'Gear', 'Playlist'],
+            quote: 'Tape does not forgive, and that is exactly why we use it.',
+            body: 'Three producers, one rented room and a two-inch machine. The result is the most direct record of the year: no grid, no comping, just a band playing until the take feels right.',
+            caption: 'Tracking night at Studio Nord.', back: 'Full playlist at amplify-mag.com'
+        },
+        food: {
+            masthead: 'FLAVOURS', tag: 'THE MAGAZINE OF WORLD KITCHENS', issue: 'N° 21 · AUTUMN 2026',
+            head: 'Slow cooking, bright flavours', stand: 'Four braises that turn a cheap cut into the best meal of the week.',
+            sections: ['The pantry', 'Main courses', 'Vegetables', 'Baking', 'Wine', 'Kitchen notes'],
+            quote: 'Time is the only ingredient you cannot buy ready-made.',
+            body: 'A braise is patience made visible. Brown the meat properly, build the base with onion, carrot and tomato, then let the oven do the rest of the work for three quiet hours.',
+            caption: 'Sunday braise, photographed in the studio.', back: 'Subscribe at flavours-mag.com'
+        },
+        menu: {
+            masthead: 'RESTAURANT', head: 'The Golden House', tag: 'SEASONAL KITCHEN · MENU 2026',
+            sections: ['Starters', 'Main courses', 'Desserts', 'Wines by the glass', 'Tasting menu', 'Reservations'],
+            quote: 'Cooked to order, served with time to spare.',
+            body: 'Our menu follows the market: what arrives in the morning shapes what leaves the kitchen at night.',
+            caption: '', back: '12 Market Street · +33 1 23 45 67 89'
+        },
+        card: {
+            masthead: 'ALEX MORGAN', head: 'Graphic Designer', tag: '',
+            sections: ['Brand identity', 'Editorial design', 'Art direction', 'Print production', 'Packaging', 'Type design'],
+            quote: '', body: 'Contact', caption: '', back: 'hello@alexmorgan.studio'
+        },
+        cv: {
+            masthead: 'CURRICULUM VITAE', head: 'Jordan Lee', tag: 'Senior Product Designer · London',
+            sections: ['Profile', 'Experience', 'Education', 'Skills', 'Languages', 'References'],
+            quote: '', body: 'Designer with nine years of experience shipping print and digital products, from first sketch to production follow-up.',
+            caption: '', back: 'jordan.lee@email.com · +44 7700 900123'
+        },
+        book: {
+            masthead: 'THE QUIET CRAFT', head: 'A short book about making things slowly', tag: 'ESSAYS · FIRST EDITION',
+            sections: ['Preface', 'The workshop', 'Materials', 'The long project', 'Mistakes', 'Epilogue'],
+            quote: 'Every object carries the time it took to make it.',
+            body: 'This book collects twelve essays written over four years, each one about the ordinary decisions that separate a made object from a manufactured one.',
+            caption: '', back: 'Printed in a first edition of 500 copies'
+        }
+    };
+
+    // ── Les 8 modèles : thème + format repris de l'asset d'origine ──────
+    var MODELS = [
+        { key: 'en_magazine_fashion_8p', name: 'Fashion Magazine (8p)', desc: 'Fashion & style magazine \u2014 8 pages, spread',
+          format: { width: 420, height: 560, spread: true, pages: 8 },
+          theme: { bg: '#f6f2ee', accent: '#d6336c', dark: '#16110f', light: '#e7ddd3', ink: '#16110f', soft: '#efe7de' },
+          fonts: { title: 'Playfair Display', body: 'Open Sans', mono: 'IBM Plex Mono' },
+          images: ['img/auto/fashion/0.jpg', 'img/auto/fashion/1.jpg', 'img/auto/fashion/2.jpg'], content: CO.fashion },
+
+        { key: 'en_journal_hair_4p', name: 'Hair Journal (4p)', desc: 'Salon & hair journal \u2014 4 pages, press format',
+          format: { width: 800, height: 1200, pages: 4 },
+          theme: { bg: '#f4f0e8', accent: '#b08d57', dark: '#1b1916', light: '#e6ddcd', ink: '#1b1916', soft: '#eae2d4' },
+          fonts: { title: 'Playfair Display', body: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+          images: ['img/auto/coiffure/0.jpg', 'img/auto/coiffure/1.jpg'], content: CO.journal },
+
+        { key: 'en_magazine_music_8p', name: 'Music Magazine (8p)', desc: 'Music & culture magazine \u2014 8 pages, spread',
+          format: { width: 420, height: 560, spread: true, pages: 8 },
+          theme: { bg: '#0f0f14', accent: '#e11d6b', dark: '#16161e', light: '#1b1b24', ink: '#f4f1ea', soft: '#1b1b24' },
+          fonts: { title: 'Bebas Neue', body: 'Montserrat', mono: 'IBM Plex Mono' },
+          images: ['img/auto/musique/0.jpg', 'img/auto/musique/1.jpg'], content: CO.music },
+
+        { key: 'en_magazine_food_8p', name: 'Food Magazine (8p)', desc: 'Food & flavours magazine \u2014 8 pages, spread',
+          format: { width: 420, height: 560, spread: true, pages: 8 },
+          theme: { bg: '#fbf6ee', accent: '#c2410c', dark: '#241a12', light: '#ece1d0', ink: '#241a12', soft: '#f0e6d6' },
+          fonts: { title: 'Playfair Display', body: 'Open Sans', mono: 'IBM Plex Mono' },
+          images: ['img/auto/cuisine/0.jpg', 'img/auto/cuisine/1.jpg'], content: CO.food },
+
+        { key: 'en_restaurant_menu_4p', name: 'Restaurant Menu (4p)', desc: 'Elegant restaurant menu \u2014 4 pages, A4',
+          format: { width: 595, height: 842, pages: 4 },
+          theme: { bg: '#1a1714', accent: '#c9a96a', dark: '#0f0d0b', light: '#f3ece0', ink: '#f3ece0', soft: '#241f1a' },
+          fonts: { title: 'Playfair Display', body: 'Montserrat', mono: 'IBM Plex Mono' },
+          images: [], content: CO.menu },
+
+        { key: 'en_business_card_1p', name: 'Business Card', desc: 'Bold two-tone business card \u2014 85 × 55 mm',
+          format: { width: 240, height: 140, pages: 1 },
+          theme: { bg: '#ffffff', accent: '#111111', dark: '#111111', light: '#f4f4f4', ink: '#111111', soft: '#f0f0f0' },
+          fonts: { title: 'Bebas Neue', body: 'Open Sans', mono: 'IBM Plex Mono' },
+          images: [], content: CO.card },
+
+        { key: 'en_cv_pro_1p', name: 'Professional CV', desc: 'Clean one-page résumé \u2014 A4',
+          format: { width: 595, height: 842, pages: 1 },
+          theme: { bg: '#ffffff', accent: '#2563eb', dark: '#0f172a', light: '#f3f4f6', ink: '#111827', soft: '#e5e7eb' },
+          fonts: { title: 'Montserrat', body: 'Open Sans', mono: 'IBM Plex Mono' },
+          images: [], content: CO.cv },
+
+        { key: 'en_book_text_12p', name: 'Book \u2014 12p', desc: 'Text book / booklet \u2014 12 pages, A5',
+          format: { width: 420, height: 595, pages: 12 },
+          theme: { bg: '#fdfcf9', accent: '#8a6f4b', dark: '#1f1c18', light: '#f0ebe2', ink: '#1f1c18', soft: '#f4f0e8' },
+          fonts: { title: 'Playfair Display', body: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+          images: [], content: CO.book }
+    ];
+
+    // ── Fabrique de page (coordonnées en px, comme le format du modèle) ──
+    function spEnPage(model, canvas, pageIdx, total, ox, oy) {
+        if (!canvas || typeof fabric === 'undefined') return;
+        var OX = ox || 0, OY = oy || 0;
+        var W = model.format.width, H = model.format.height;
+        var t = model.theme, f = model.fonts, c = model.content;
+        var m = Math.round(W * 0.075), inner = W - m * 2;
+        var objs = [], texts = [];
+        var imgs = model.images || [];
+
+        function R(o) { o.left = OX + (o.left || 0); o.top = OY + (o.top || 0); var r = new fabric.Rect(o); objs.push(r); return r; }
+        function T(o) {
+            var el = new fabric.Textbox(o.text, {
+                left: OX + (o.left || 0), top: OY + (o.top || 0), width: o.width || inner,
+                fontSize: o.fontSize || 10, fontFamily: o.fontFamily || f.body,
+                fontWeight: o.fontWeight || 'normal', fontStyle: o.fontStyle || 'normal',
+                fill: o.fill || t.ink, textAlign: o.textAlign || 'left',
+                lineHeight: o.lineHeight || 1.45, charSpacing: o.charSpacing || 0,
+                opacity: o.opacity == null ? 1 : o.opacity
+            });
+            texts.push(el); return el;
+        }
+        function LINE(y, col, w, left, width) {
+            var l = new fabric.Line([OX + (left == null ? m : left), OY + y, OX + (left == null ? (W - m) : left + (width || inner)), OY + y],
+                { stroke: col || t.accent, strokeWidth: w || 1 });
+            objs.push(l); return l;
+        }
+        function number(txt, col) {
+            T({ text: txt, left: W - m - 60, top: H - m - 6, width: 60, fontSize: 8, fontFamily: f.mono, fill: col || t.ink, textAlign: 'right', opacity: 0.6 });
+        }
+        function bodyColumns(y, h, txt, col) {
+            var gap = Math.round(W * 0.028), cw = Math.round((inner - gap) / 2);
+            T({ text: txt, left: m, top: y, width: cw, fontSize: Math.max(8, Math.round(W / 52)), fill: col || t.ink, lineHeight: 1.55 });
+            T({ text: txt, left: m + cw + gap, top: y, width: cw, fontSize: Math.max(8, Math.round(W / 52)), fill: col || t.ink, lineHeight: 1.55 });
+        }
+        function imageBlock(left, top, w, h, idx) {
+            var r = R({ left: left, top: top, width: w, height: h, fill: idx % 2 ? t.soft : t.light, stroke: 'transparent', strokeWidth: 0 });
+            if (imgs.length && typeof applyImagePatternToRect === 'function') {
+                try { applyImagePatternToRect(r, imgs[idx % imgs.length], canvas); } catch (e) {}
+            }
+            return r;
+        }
+
+        var isCover = (pageIdx === 0);
+        var isBack = (total > 1 && pageIdx === total - 1);
+        var isContents = (total >= 4 && pageIdx === 1);
+        var isFeature = !isCover && !isBack && !isContents && (pageIdx % 2 === 0);
+        var heroH = Math.round(H * 0.52);
+
+        if (isCover) {
+            R({ left: 0, top: 0, width: W, height: H, fill: t.dark || t.bg, stroke: 'transparent', strokeWidth: 0 });
+            var heroTop = Math.round(H * 0.42);
+            imageBlock(0, heroTop, W, H - heroTop, 0);
+            R({ left: 0, top: heroTop, width: W, height: H - heroTop, fill: t.dark || t.bg, opacity: 0.28, stroke: 'transparent', strokeWidth: 0 });
+            T({ text: c.masthead, left: m, top: Math.round(H * 0.10), width: inner, fontSize: Math.round(W * 0.135), fontFamily: f.title, fontWeight: '900', fill: t.light || '#fff', textAlign: 'center', charSpacing: 40, lineHeight: 1 });
+            LINE(Math.round(H * 0.235), t.accent, 2, Math.round(W / 2) - 26, 52);
+            T({ text: c.tag, left: m, top: Math.round(H * 0.25), width: inner, fontSize: Math.max(7, Math.round(W / 62)), fontFamily: f.mono, fill: t.light || '#fff', textAlign: 'center', charSpacing: 220 });
+            T({ text: c.issue, left: m, top: Math.round(H * 0.275), width: inner, fontSize: Math.max(7, Math.round(W / 70)), fontFamily: f.mono, fill: t.accent, textAlign: 'center', charSpacing: 120 });
+            R({ left: m, top: heroTop - 46, width: 46, height: 4, fill: t.accent, stroke: 'transparent', strokeWidth: 0 });
+            T({ text: c.head, left: m, top: heroTop - 36, width: inner, fontSize: Math.round(W * 0.085), fontFamily: f.title, fontWeight: '700', fill: t.light || '#fff', lineHeight: 1.02 });
+            T({ text: c.stand, left: m, top: H - m - 42, width: inner, fontSize: Math.max(8, Math.round(W / 46)), fontFamily: f.body, fill: t.light || '#fff', opacity: 0.92, lineHeight: 1.4 });
+        } else if (isContents) {
+            R({ left: 0, top: 0, width: W, height: H, fill: t.bg, stroke: 'transparent', strokeWidth: 0 });
+            T({ text: 'CONTENTS', left: m, top: Math.round(H * 0.12), width: inner, fontSize: Math.max(9, Math.round(W / 52)), fontFamily: f.mono, fill: t.accent, charSpacing: 260 });
+            T({ text: c.masthead, left: m, top: Math.round(H * 0.155), width: inner, fontSize: Math.round(W * 0.1), fontFamily: f.title, fontWeight: '700', fill: t.ink, lineHeight: 1 });
+            LINE(Math.round(H * 0.265), t.ink, 1.5);
+            (c.sections || []).forEach(function (s, i) {
+                var y = Math.round(H * 0.30) + i * Math.round(H * 0.072);
+                T({ text: String(i + 1).padStart(2, '0'), left: m, top: y, width: 40, fontSize: Math.round(W / 44), fontFamily: f.mono, fill: t.accent });
+                T({ text: s, left: m + 46, top: y, width: inner - 90, fontSize: Math.round(W / 34), fontFamily: f.title, fill: t.ink, lineHeight: 1.1 });
+                LINE(y + Math.round(H * 0.05), t.ink, 0.5, m + 46, inner - 88);
+            });
+            number('02', t.ink);
+        } else if (isBack) {
+            R({ left: 0, top: 0, width: W, height: H, fill: t.bg, stroke: 'transparent', strokeWidth: 0 });
+            R({ left: 0, top: Math.round(H * 0.55), width: W, height: Math.round(H * 0.45), fill: t.ink, stroke: 'transparent', strokeWidth: 0 });
+            T({ text: c.masthead, left: m, top: Math.round(H * 0.60), width: inner, fontSize: Math.round(W * 0.10), fontFamily: f.title, fontWeight: '900', fill: t.bg, lineHeight: 1 });
+            T({ text: c.back, left: m, top: Math.round(H * 0.72), width: inner, fontSize: Math.max(8, Math.round(W / 46)), fontFamily: f.body, fill: t.bg, opacity: 0.9 });
+            if (c.sections && c.sections.length) {
+                T({ text: c.sections.join('   ·   '), left: m, top: Math.round(H * 0.80), width: inner, fontSize: Math.max(7, Math.round(W / 58)), fontFamily: f.mono, fill: t.accent, charSpacing: 80 });
+            }
+            T({ text: c.quote || '', left: m, top: Math.round(H * 0.16), width: inner, fontSize: Math.round(W * 0.055), fontFamily: f.title, fontStyle: 'italic', fill: t.ink, lineHeight: 1.2 });
+            LINE(Math.round(H * 0.22), t.accent, 2, m, 60);
+            number(String(total), t.ink);
+        } else if (isFeature) {
+            R({ left: 0, top: 0, width: W, height: H, fill: t.bg, stroke: 'transparent', strokeWidth: 0 });
+            T({ text: (c.sections && c.sections[(pageIdx / 2) % (c.sections.length || 1)]) || '', left: m, top: m, width: inner, fontSize: Math.max(7, Math.round(W / 62)), fontFamily: f.mono, fill: t.accent, charSpacing: 200 });
+            R({ left: m, top: m + 18, width: 40, height: 3, fill: t.accent, stroke: 'transparent', strokeWidth: 0 });
+            T({ text: c.head, left: m, top: m + 30, width: inner, fontSize: Math.round(W * 0.088), fontFamily: f.title, fontWeight: '700', fill: t.ink, lineHeight: 1.04 });
+            T({ text: c.stand, left: m, top: m + 30 + Math.round(W * 0.098), width: inner, fontSize: Math.max(8, Math.round(W / 44)), fontFamily: f.body, fill: t.ink, opacity: 0.85, lineHeight: 1.45 });
+            var imgTop = m + 30 + Math.round(W * 0.098) + Math.round(H * 0.075);
+            var imgH = Math.round(H * 0.30);
+            imageBlock(m, imgTop, inner, imgH, pageIdx);
+            T({ text: c.caption, left: m, top: imgTop + imgH + 6, width: inner, fontSize: Math.max(6, Math.round(W / 78)), fontFamily: f.mono, fill: t.ink, opacity: 0.6 });
+            var colTop = imgTop + imgH + Math.round(H * 0.035);
+            bodyColumns(colTop, 0, c.body, t.ink);
+            if (c.quote) T({ text: c.quote, left: m, top: colTop + Math.round(H * 0.14), width: inner, fontSize: Math.round(W / 40), fontFamily: f.title, fontStyle: 'italic', fill: t.accent, lineHeight: 1.3 });
+            number(String(pageIdx + 1), t.ink);
+        } else {
+            // Portfolio / photo essay : pleine page image + légende + citation
+            R({ left: 0, top: 0, width: W, height: H, fill: t.bg, stroke: 'transparent', strokeWidth: 0 });
+            imageBlock(0, 0, W, Math.round(H * 0.62), pageIdx + 1);
+            T({ text: c.head, left: m, top: Math.round(H * 0.67), width: inner, fontSize: Math.round(W * 0.072), fontFamily: f.title, fontWeight: '700', fill: t.ink, lineHeight: 1.05 });
+            bodyColumns(Math.round(H * 0.77), 0, c.body, t.ink);
+            T({ text: c.caption, left: m, top: Math.round(H * 0.62) - 12, width: inner, fontSize: Math.max(6, Math.round(W / 78)), fontFamily: f.mono, fill: t.ink, opacity: 0.75 });
+            number(String(pageIdx + 1), t.ink);
+        }
+
+        for (var i = 0; i < texts.length; i++) objs.push(texts[i]);
+        if (typeof addAssetObjects === 'function') addAssetObjects(canvas, objs, model.name + ' · p.' + (pageIdx + 1));
+        else { objs.forEach(function (o) { canvas.add(o); }); canvas.requestRenderAll(); }
+    }
+
+    // ── Vignette réelle : SVG généré depuis le modèle ───────────────────
+    window.spTemplateThumb = function (comp) {
+        try {
+            var W = comp && comp.format ? comp.format.width : 210, H = comp && comp.format ? comp.format.height : 297;
+            var t = (comp && comp.theme) || {}, c = (comp && comp.content) || {};
+            var bg = t.bg || '#f4f4f4', ink = t.ink || t.dark || '#111', accent = t.accent || '#1a1a1a', soft = t.soft || t.light || '#e8e8e8';
+            var vw = 300, vh = Math.round(vw * (H / W));
+            var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+            var title = (comp && comp.name ? comp.name : '').replace(/\s*\(\d+p\)/, '').toUpperCase().slice(0, 20);
+            // Taille du titre ADAPTATIVE : jamais plus large que la vignette (sinon le
+            // texte centré était rogné des deux côtés).
+            var titreFz = Math.max(12, Math.min(Math.round(vw * 0.1),
+                Math.floor((vw - Math.round(vw * 0.16)) / Math.max(7, title.length) * 1.75)));
+            var s = '<svg xmlns="http://www.w3.org/2000/svg" width="' + vw + '" height="' + vh + '" viewBox="0 0 ' + vw + ' ' + vh + '">';
+            s += '<rect width="' + vw + '" height="' + vh + '" fill="' + bg + '"/>';
+            var m = Math.round(vw * 0.08);
+            // Bandeau (masthead)
+            s += '<text x="' + (vw / 2) + '" y="' + Math.round(vh * 0.13) + '" fill="' + ink + '" font-family="Georgia,serif" font-size="' + titreFz + '" font-weight="700" text-anchor="middle">' + esc(title) + '</text>';
+            s += '<rect x="' + (vw / 2 - 14) + '" y="' + Math.round(vh * 0.155) + '" width="28" height="3" fill="' + accent + '"/>';
+            // Bloc image (motif discret)
+            var iy = Math.round(vh * 0.20), ih = Math.round(vh * 0.38);
+            s += '<rect x="' + m + '" y="' + iy + '" width="' + (vw - m * 2) + '" height="' + ih + '" fill="' + soft + '"/>';
+            s += '<path d="M' + (m + 8) + ' ' + (iy + ih - 10) + ' L' + Math.round(vw * 0.42) + ' ' + (iy + Math.round(ih * 0.35)) + ' L' + Math.round(vw * 0.62) + ' ' + (iy + ih - 10) + ' Z" fill="' + accent + '" opacity="0.35"/>';
+            s += '<circle cx="' + Math.round(vw * 0.78) + '" cy="' + (iy + Math.round(ih * 0.25)) + '" r="' + Math.round(vw * 0.045) + '" fill="' + accent + '" opacity="0.5"/>';
+            // Titre + lignes de texte
+            s += '<text x="' + m + '" y="' + Math.round(vh * 0.65) + '" fill="' + ink + '" font-family="Georgia,serif" font-size="' + Math.round(vw * 0.062) + '" font-weight="700">' + esc(String(c.head || '').slice(0, 22)) + '</text>';
+            var y = Math.round(vh * 0.70);
+            for (var i = 0; i < 6; i++) {
+                var w2 = (i % 3 === 2) ? Math.round((vw - m * 2) * 0.55) : (vw - m * 2);
+                s += '<rect x="' + m + '" y="' + y + '" width="' + w2 + '" height="4" fill="' + ink + '" opacity="0.22"/>';
+                y += 11;
+            }
+            // Pied de page
+            s += '<rect x="0" y="' + (vh - Math.round(vh * 0.06)) + '" width="' + vw + '" height="' + Math.round(vh * 0.06) + '" fill="' + ink + '" opacity="0.9"/>';
+            s += '<text x="' + m + '" y="' + (vh - Math.round(vh * 0.022)) + '" fill="' + bg + '" font-family="monospace" font-size="9">' + esc((comp.format ? Math.round(comp.format.width / 2.8346) + '×' + Math.round(comp.format.height / 2.8346) + ' mm' : '') + ' · ' + ((comp.format && comp.format.pages) || 1) + ' p.') + '</text>';
+            s += '</svg>';
+            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+        } catch (e) { return ''; }
+    };
+
+    // ── Enregistrement dans compositionExamples ─────────────────────────
+    try {
+        if (typeof compositionExamples === 'undefined' || !Array.isArray(compositionExamples)) return;
+        if (compositionExamples.some(function (c) { return c && c.spEn; })) return;
+        MODELS.forEach(function (d) {
+            compositionExamples.push({
+                name: d.name, key: d.key, lang: 'en', spEn: true, desc: d.desc,
+                format: d.format, theme: d.theme, content: d.content,
+                buildMulti: async function () {
+                    var total = d.format.pages || 1;
+                    for (var i = 0; i < total; i++) {
+                        var cv = await waitForCanvasForPageIndex(i);
+                        if (!cv) continue;
+                        try { spEnPage(d, cv, i, total, 0, 0); } catch (e) { console.warn('[SP-EN] page ' + (i + 1) + ' :', e); }
+                    }
+                },
+                build: function (canvas, x, y) {
+                    try { spEnPage(d, canvas, 0, 1, x, y); } catch (e) { console.warn('[SP-EN] build :', e); }
+                }
+            });
+        });
+        window.spEnModels = MODELS;
+    } catch (e) { console.warn('[SP-EN] enregistrement :', e); }
+})();
+
 // Template cards on the new-project modal (single source of truth: compositionExamples)
-window._npTemplateKeys = ['magazine_mode_8p', 'journal_coiffure_4p', 'magazine_cuisine_8p', 'magazine_musique_8p', 'menu_resto_4p', 'cv_pro_1p', 'livre_texte_12p',
-    // +10 modèles supplémentaires issus de la bibliothèque d'assets principale
-    'magazine_gastro_12p', 'magazine_sport_16p', 'magazine_archi_8p', 'magazine_voyage_16p', 'magazine_danse_16p', 'magazine_animaux_16p', 'magazine_burger_16p', 'flyer_restaurant_rv', 'flyer_event_rv', 'flyer_concert_rv'];
+window._npTemplateKeys = ['en_magazine_fashion_8p', 'en_journal_hair_4p', 'en_magazine_music_8p', 'en_magazine_food_8p',
+    'en_restaurant_menu_4p', 'en_business_card_1p', 'en_cv_pro_1p', 'en_book_text_12p'];
 window.npRenderAssetStrip = function() {
     const strip = document.getElementById('npAssetStrip');
     if (!strip || typeof compositionExamples === 'undefined') return;
