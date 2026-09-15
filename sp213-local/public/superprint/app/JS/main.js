@@ -27035,59 +27035,81 @@ if (window._spGpuEnabled) {
         //   Il alimente ensuite le MEME chemin que la pipette : CMJN et RVB sont
         //   donc traites identiquement, et la conversion CMJN est faite par `pick()`.
         //   Bonus : corrige aussi Firefox, qui n'implemente pas l'API EyeDropper.
+        // ══════════════════════════════════════════════════════════════════
+        // 🎨 v1.7.416 — SANS EyeDropper (Safari, Firefox) : ON OUVRE LE
+        //   SELECTEUR NATIF. C'est celui que l'utilisateur obtient en cliquant
+        //   la couleur elle-meme : la popup « Afficher les couleurs… » puis la
+        //   fenetre « Couleurs ». La fenetre interne de SuperPrint (v1.7.412)
+        //   n'est plus qu'un SECOURS, si le selecteur natif refuse de s'ouvrir.
+        //
+        //   POURQUOI : demande utilisateur sur Safari — la fenetre interne
+        //   n'etait pas le selecteur attendu.
+        //
+        //   COMMENT : on clique le champ natif DU CANAL quand il est REELLEMENT
+        //   rendu (mode RVB) — c'est exactement le geste manuel, donc le
+        //   selecteur s'ancre dessus et les gestionnaires 'input' / 'change'
+        //   du champ appliquent la couleur. Quand ce champ est masque (mode
+        //   CMJN : WebKit n'ouvre rien sur un element non rendu), on utilise un
+        //   champ dedie, rendu, POSITIONNE sur la pipette.
+        // ══════════════════════════════════════════════════════════════════
         var fallbackToNativePicker = function() {
-            var proxy = document.getElementById('_spPipetteProxy');
-            if (!proxy) {
-                proxy = document.createElement('input');
-                proxy.type = 'color';
-                proxy.id = '_spPipetteProxy';
-                // ⚠️ L'input doit etre RENDU : 1x1 et TRANSPARENT (pas disable, pas
-                //    opacity:0, pas display:none) sinon WebKit n'ouvre rien.
-                proxy.style.cssText = 'position:fixed;width:24px;height:24px;padding:0;border:0;' +
-                    'background:transparent;opacity:0.01;pointer-events:none;z-index:100020;';
-                proxy.setAttribute('aria-hidden', 'true');
-                proxy.tabIndex = -1;
-                document.body.appendChild(proxy);
-            }
-            // Valeur de depart : celle du canal, pour que le selecteur s'ouvre juste.
-            if (hexInput && hexInput.value) proxy.value = hexInput.value;
-            // Se positionner SUR LE BOUTON clique : le popover natif s'y ancrera.
-            // 🎨 v1.7.412 — MESURE DU DEFAUT : ce bloc ne positionnait le
-            //   champ QUE si la largeur du bouton etait non nulle. Des que le
-            //   bouton vise etait masque (largeur 0), left/top n'etaient
-            //   JAMAIS poses : l'element `position:fixed` restait a sa position
-            //   STATIQUE (dernier enfant du <body>), c'est-a-dire EN BAS A
-            //   GAUCHE DE L'ECRAN — exactement le defaut signale.
-            //   On positionne desormais TOUJOURS, sur une ancre choisie.
-            var btn = _spPipetteAncre(channel, anchorEl);
-            if (btn) {
-                var r = btn.getBoundingClientRect();
-                proxy.style.left = Math.round(r.left) + 'px';
-                proxy.style.top  = Math.round(r.bottom) + 'px';
-            } else {
-                proxy.style.left = Math.round(window.innerWidth / 2) + 'px';
-                proxy.style.top  = '120px';
-            }
-            // Un seul listener, pose une fois, retire apres usage.
-            if (!proxy._spWire) {
-                proxy._spWire = true;
-                var _onPick = function() {
-                    var v = proxy.value;
-                    try { proxy.removeEventListener('input', _onPick); proxy.removeEventListener('change', _onPick); } catch (_) {}
-                    proxy._spWire = false;
-                    if (v) pick(v);   // meme chemin que la pipette (CMJN inclus)
-                };
-                proxy.addEventListener('input', _onPick);
-                proxy.addEventListener('change', _onPick);
-            }
-            // Ouvrir le selecteur natif. On NE passe PAS par hexInput : il peut etre
-            // masque (mode CMJN), et c'est le defaut corrige ici.
-            try {
-                if (typeof proxy.showPicker === 'function') proxy.showPicker();
-                else { proxy.focus(); proxy.click(); }
-            } catch (_) { try { proxy.click(); } catch (__) {} }
-            try { if (typeof showToast === 'function') showToast('Choisissez la teinte dans le sélecteur', 'info'); } catch (_) {}
+            return _spOuvrirSelecteurNatif(channel, anchorEl, hexInput, pick);
         };
+        function _spOuvrirSelecteurNatif(ch, ancre, champNatif, valider) {
+            var estRendu = function (el) {
+                if (!el || !el.getBoundingClientRect) return false;
+                var r = el.getBoundingClientRect();
+                return !!(r && r.width > 1 && r.height > 1);
+            };
+            var cible = estRendu(champNatif) ? champNatif : null;
+            if (!cible) {
+                var proxy = document.getElementById('_spPipetteProxy');
+                if (!proxy) {
+                    proxy = document.createElement('input');
+                    proxy.type = 'color';
+                    proxy.id = '_spPipetteProxy';
+                    // ⚠️ L'input doit etre RENDU : ni display:none, ni opacity:0,
+                    //    ni disabled — WebKit n'ouvre rien dans ces cas.
+                    proxy.style.cssText = 'position:fixed;width:24px;height:24px;padding:0;border:0;' +
+                        'background:transparent;opacity:0.01;pointer-events:none;z-index:100020;';
+                    proxy.setAttribute('aria-hidden', 'true');
+                    proxy.tabIndex = -1;
+                    document.body.appendChild(proxy);
+                }
+                if (champNatif && champNatif.value) proxy.value = champNatif.value;
+                var b = _spPipetteAncre(ch, ancre);
+                if (b) {
+                    var rb = b.getBoundingClientRect();
+                    proxy.style.left = Math.round(rb.left) + 'px';
+                    proxy.style.top = Math.round(rb.bottom) + 'px';
+                } else {
+                    proxy.style.left = Math.round(window.innerWidth / 2) + 'px';
+                    proxy.style.top = '120px';
+                }
+                if (!proxy._spWire) {
+                    proxy._spWire = true;
+                    var _onPick = function () {
+                        var v = proxy.value;
+                        try { proxy.removeEventListener('input', _onPick); proxy.removeEventListener('change', _onPick); } catch (_) {}
+                        proxy._spWire = false;
+                        if (v && typeof valider === 'function') valider(v);
+                    };
+                    proxy.addEventListener('input', _onPick);
+                    proxy.addEventListener('change', _onPick);
+                }
+                cible = proxy;
+            }
+            try {
+                if (typeof cible.showPicker === 'function') cible.showPicker();
+                else { cible.focus(); cible.click(); }
+                try { if (typeof showToast === 'function') showToast('Choisissez la teinte dans le sélecteur', 'info'); } catch (_) {}
+                return true;
+            } catch (e) {
+                console.warn('[Pipette] sélecteur natif indisponible :', e);
+                try { cible.click(); return true; } catch (e2) { return false; }
+            }
+        }
+
         try {
             if (typeof window.EyeDropper === 'function') {
                 const ed = new window.EyeDropper();
@@ -27100,16 +27122,25 @@ if (window._spGpuEnabled) {
                     //    aucune explication.
                     if (err && (err.name === 'AbortError' || /abort/i.test(String(err.message || '')))) return;
                     console.warn('[Pipette] EyeDropper a échoué :', err);
-                    // 🎨 v1.7.412 — on ouvre NOTRE fenetre, sous la pipette.
-                    _spOuvrirFenetreCouleurs(channel, anchorEl, hexInput, pick, fallbackToNativePicker);
+                    // 🎨 v1.7.415 — EyeDropper en echec : selecteur NATIF.
+                    // 🎨 Sélecteur NATIF d'abord ; fenêtre interne seulement en secours.
+                    if (!_spOuvrirSelecteurNatif(channel, anchorEl, hexInput, pick)) {
+                        _spOuvrirFenetreCouleurs(channel, anchorEl, hexInput, pick, fallbackToNativePicker);
+                    }
                 });
             } else {
-                // 🎨 v1.7.412 — Safari / Firefox : PAS de panneau systeme.
-                _spOuvrirFenetreCouleurs(channel, anchorEl, hexInput, pick, fallbackToNativePicker);
+                // 🎨 v1.7.415 — Safari / Firefox : selecteur NATIF (pas d'EyeDropper).
+                // 🎨 Sélecteur NATIF d'abord ; fenêtre interne seulement en secours.
+                if (!_spOuvrirSelecteurNatif(channel, anchorEl, hexInput, pick)) {
+                    _spOuvrirFenetreCouleurs(channel, anchorEl, hexInput, pick, fallbackToNativePicker);
+                }
             }
         } catch (e) {
             console.warn('[Pipette] EyeDropper indisponible :', e);
-            _spOuvrirFenetreCouleurs(channel, anchorEl, hexInput, pick, fallbackToNativePicker);
+            // 🎨 Sélecteur NATIF d'abord ; fenêtre interne seulement en secours.
+            if (!_spOuvrirSelecteurNatif(channel, anchorEl, hexInput, pick)) {
+                _spOuvrirFenetreCouleurs(channel, anchorEl, hexInput, pick, fallbackToNativePicker);
+            }
         }
     }
     window._pickCmykColorWithEyeDropper = _pickCmykColorWithEyeDropper;

@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.415-fidelite-export-racine';
+const CACHE_NAME = 'superprint-shell-v1.7.415-pipette-native-racine';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
