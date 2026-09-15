@@ -25974,6 +25974,303 @@ if (window._spGpuEnabled) {
     // Appliquer le zoom initial après un court délai pour s'assurer que tout est chargé
     setTimeout(setInitialZoom, 100);
 
+    // 🆕 v1.7.423 — LA PAGE DOIT ÊTRE ENTIÈREMENT VISIBLE À L'OUVERTURE.
+    //   Défaut mesuré : setInitialZoom s'exécute 100 ms après le chargement, donc AVANT
+    //   qu'un document existe ; son calcul retombe alors sur 100 % et, sur un téléphone
+    //   (390 × 844), la page (1122 px de large + fonds perdus) débordait de l'écran.
+    //   On rejoue l'ajustement dès que la zone de travail est mesurable, puis à chaque
+    //   changement de taille — TANT QUE la valeur courante est celle qu'on a calculée :
+    //   un zoom choisi par l'utilisateur n'est jamais écrasé.
+    let _spZoomAuto = 0;
+    function spFitPageZoom() {
+        try {
+            const zone = document.getElementById('canvasScrollArea');
+            if (!zone) return;
+            const vw = zone.clientWidth, vh = zone.clientHeight;
+            if (!(vw > 60 && vh > 60)) return;               // zone non mesurable (onglet caché)
+            let pw = 0, ph = 0;
+            // 1) taille NATURELLE réelle du conteneur de pages (mesure ÷ zoom courant)
+            if (pagesContainer && pagesContainer.getBoundingClientRect) {
+                const r = pagesContainer.getBoundingClientRect();
+                const z = (zoomLevel > 0 ? zoomLevel : 1);
+                if (r.width > 4 && r.height > 4) { pw = r.width / z; ph = r.height / z; }
+            }
+            // 2) repli : format de page connu (+ fonds perdus)
+            if (!(pw > 4 && ph > 4) && typeof mmToPx === 'function'
+                && pageFormat && isFinite(pageFormat.width) && isFinite(pageFormat.height)) {
+                const bl = (typeof bleed !== 'undefined' && isFinite(bleed)) ? bleed : 0;
+                pw = mmToPx(pageFormat.width + bl * 2);
+                ph = mmToPx(pageFormat.height + bl * 2);
+            }
+            if (!(pw > 4 && ph > 4)) return;
+            const marge = Math.max(10, Math.min(72, Math.round(Math.min(vw, vh) * 0.05)));
+            let fit = Math.min((vw - marge * 2) / pw, (vh - marge * 2) / ph);
+            if (!isFinite(fit) || fit <= 0) return;
+            fit = Math.max(0.1, Math.min(1, fit));
+            const cible = Math.floor(fit * 100) / 100;       // arrondi VERS LE BAS : jamais de débordement
+            if (Math.abs(cible - zoomLevel) > 0.004) { zoomLevel = cible; applyZoom(); }
+            _spZoomAuto = cible;
+        } catch (_) {}
+    }
+    window.spFitPageZoom = spFitPageZoom;
+    [120, 700, 1800, 4000].forEach((d) => setTimeout(spFitPageZoom, d));
+    (function spSurveilleAjustement() {
+        const zone = document.getElementById('canvasScrollArea');
+        if (!zone || typeof ResizeObserver === 'undefined') return;
+        let t = null;
+        const ro = new ResizeObserver(function () {
+            if (_spZoomAuto !== 0 && Math.abs(zoomLevel - _spZoomAuto) > 0.004) return; // zoom manuel : on n'y touche pas
+            if (t) clearTimeout(t);
+            t = setTimeout(spFitPageZoom, 200);
+        });
+        try { ro.observe(zone); } catch (_) {}
+        try { if (pagesContainer) ro.observe(pagesContainer); } catch (_) {}
+    })();
+    window.addEventListener('orientationchange', () => setTimeout(spFitPageZoom, 350));
+
+    // 🆕 v1.7.423 — SUPER-CLAVIER DANS LA BOÎTE DE PROMPT DE L'APP.
+    //   Demande utilisateur : « dans la boîte de prompt de superprint l'app, je ne vois
+    //   pas le super-clavier du studio à droite de l'icône micro ». On reprend donc le
+    //   clavier du studio SP213 (mêmes dispositions, mêmes touche utilitaires, allumage
+    //   des touches physiques) et on l'affiche AU CENTRE de l'écran dans l'app, avec le
+    //   thème clair et le thème sombre. La saisie se fait dans #aiFooterInput, au
+    //   curseur, et « Envoyer » rejoue le vrai keydown Entrée : le chemin d'envoi de
+    //   l'app reste l'unique source de vérité.
+    (function spKbApp() {
+        var LAYOUTS = { lettres: [['a','z','e','r','t','y','u','i','o','p'], ['q','s','d','f','g','h','j','k','l','m'], ['@shift','w','x','c','v','b','n',"'",'"','@back'], ['é','è','ê','à','ç','ù','â','î','ô','œ'], ['@switch','@space','@enter']], glyphes: [['1','2','3','4','5','6','7','8','9','0'], ['.',',',';',':','?','!','-','_','/','\\'], ['@','#','€','$','£','%','&','*','+','='], ['(',')','[',']','{','}','|','~','^','°'], ['@switch','«','»','—','…','§','@space','@enter']] };
+        var kbOpen = false, kbLayer = 'lettres', kbShift = false, kbCaps = false, kbWired = false, kbTimer = null;
+        function id(x) { return document.getElementById(x); }
+        function champ() { return id('aiFooterInput'); }
+        function lang() { try { if (typeof spPjLang === 'function') return spPjLang(); } catch (_) {} var l = document.documentElement.getAttribute('lang') || 'fr'; return l.slice(0, 2); }
+        function L(fr, en, ja) { var l = lang(); if (l === 'ja' && ja) return ja; return (l === 'en') ? en : fr; }
+        function label(tok) {
+            if (tok === '@shift') return L('Maj', 'Shift', 'シフト');
+            if (tok === '@back') return L('Effacer', 'Back', '削除');
+            if (tok === '@space') return L('Espace', 'Space', '空白');
+            if (tok === '@enter') return L('Envoyer', 'Send', '送信') + ' ⏎';
+            if (tok === '@switch') return (kbLayer === 'lettres') ? L('Glyphes', 'Glyphs', '記号') : L('Lettres', 'Letters', '文字');
+            return (kbShift || kbCaps) && tok.length === 1 && /[a-zàâäéèêëîïôöùûüçœ]/.test(tok) ? tok.toUpperCase() : tok;
+        }
+        function style() {
+            if (id('spKbStyle')) return;
+            var st = document.createElement('style');
+            st.id = 'spKbStyle';
+            st.textContent = [
+                '#spKbOverlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);padding:12px;box-sizing:border-box}',
+                '#spKbOverlay.hidden{display:none}',
+                '#spKbPanel{width:min(760px,96vw);max-height:92vh;overflow:auto;background:#fff;color:#111;border:1px solid #d8d8d8;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,.35);padding:12px 14px 14px;box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}',
+                '.theme-dark #spKbPanel{background:#1e1e1e;color:#eaeaea;border-color:#3a3a3a}',
+                '#spKbHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}',
+                '#spKbTitle{font-weight:700;font-size:14px}',
+                '#kbCloseBtn{cursor:pointer;border:1px solid #d8d8d8;background:transparent;color:inherit;border-radius:8px;width:30px;height:30px;font-size:15px;line-height:1}',
+                '#kbView{max-height:74px;overflow:auto;border:1px solid #e6e6e6;background:#fafafa;border-radius:10px;padding:8px 10px;font-size:13px;white-space:pre-wrap;word-break:break-word;margin-bottom:10px}',
+                '.theme-dark #kbView{background:#151515;border-color:#3a3a3a}',
+                '#kbText.kb-empty{opacity:.45}',
+                '.kb-row{display:flex;gap:6px;justify-content:center;margin-bottom:6px}',
+                '.kb-key{flex:0 0 auto;min-width:42px;height:44px;padding:0 8px;border:1px solid #d8d8d8;background:#f4f4f5;color:#111;border-radius:9px;font-size:15px;cursor:pointer;user-select:none}',
+                '.kb-key:hover{background:#e8e8ea}',
+                '.kb-key:active{transform:translateY(1px)}',
+                '.kb-key.kb-util{font-size:12px;background:#ececef;min-width:64px}',
+                '.kb-key.kb-wide{flex:1 1 auto;min-width:170px}',
+                '.kb-key.kb-on{background:#2563eb;border-color:#2563eb;color:#fff}',
+                '.theme-dark .kb-key{background:#2a2a2a;border-color:#3f3f3f;color:#eaeaea}',
+                '.theme-dark .kb-key:hover{background:#343434}',
+                '.theme-dark .kb-key.kb-util{background:#242424}',
+                '.theme-dark .kb-key.kb-on{background:#3b82f6;border-color:#3b82f6;color:#fff}',
+                '#spKbFoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;font-size:11px;opacity:.7}',
+                '.sp-kb-btn{position:relative}',
+                '.sp-kb-btn.sp-kb-active{color:#2563eb}',
+            ].join('');
+            document.head.appendChild(st);
+        }
+        function build() {
+            var ov = id('spKbOverlay');
+            if (!ov) {
+                ov = document.createElement('div');
+                ov.id = 'spKbOverlay'; ov.className = 'hidden';
+                ov.innerHTML = '<div id="spKbPanel"><div id="spKbHead"><span id="spKbTitle"></span>'
+                    + '<button type="button" id="kbCloseBtn" title="">✕</button></div>'
+                    + '<div id="kbView"><span id="kbText"></span></div>'
+                    + '<div id="kbRows"></div>'
+                    + '<div id="spKbFoot"><span id="kbCount"></span><span id="kbHint"></span></div></div>';
+                document.body.appendChild(ov);
+            }
+            var t = id('spKbTitle');
+            if (t) t.textContent = L('Clavier typographique', 'Typographic keyboard', '文字キーボード');
+            var h = id('kbHint');
+            if (h) h.textContent = L('Tape au clavier physique : les touches s\u2019allument. Échap ferme.', 'Type on your physical keyboard: keys light up. Esc closes.', '物理キーボード入力でキーが光ります。Esc で閉じます。');
+            var c = id('kbCloseBtn');
+            if (c) c.setAttribute('title', L('Fermer', 'Close', '閉じる'));
+            var rows = id('kbRows');
+            if (!rows) return;
+            rows.innerHTML = '';
+            LAYOUTS[kbLayer].forEach(function (rang) {
+                var r = document.createElement('div'); r.className = 'kb-row';
+                rang.forEach(function (tok) {
+                    var b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'kb-key' + (tok.charAt(0) === '@' ? ' kb-util' : '') + (tok === '@space' ? ' kb-wide' : '');
+                    b.setAttribute('data-k', tok);
+                    b.textContent = label(tok);
+                    b.addEventListener('click', function () { press(tok); });
+                    r.appendChild(b);
+                });
+                rows.appendChild(r);
+            });
+            refresh();
+        }
+        function typeIn(ch) {
+            var p = champ(); if (!p) return;
+            var s = (p.selectionStart == null) ? p.value.length : p.selectionStart;
+            var e = (p.selectionEnd == null) ? p.value.length : p.selectionEnd;
+            p.value = p.value.slice(0, s) + ch + p.value.slice(e);
+            var pos = s + ch.length;
+            try { p.setSelectionRange(pos, pos); } catch (_) {}
+            p.dispatchEvent(new Event('input', { bubbles: true }));
+            try { p.focus({ preventScroll: true }); } catch (_) { try { p.focus(); } catch (__) {} }
+            refresh();
+        }
+        function back() {
+            var p = champ(); if (!p) return;
+            var s = (p.selectionStart == null) ? p.value.length : p.selectionStart;
+            var e = (p.selectionEnd == null) ? p.value.length : p.selectionEnd;
+            if (s !== e) { p.value = p.value.slice(0, s) + p.value.slice(e); }
+            else if (s > 0) { p.value = p.value.slice(0, s - 1) + p.value.slice(s); }
+            else { return; }
+            var pos = (s === e) ? Math.max(0, s - 1) : s;
+            try { p.setSelectionRange(pos, pos); } catch (_) {}
+            p.dispatchEvent(new Event('input', { bubbles: true }));
+            try { p.focus({ preventScroll: true }); } catch (_) { try { p.focus(); } catch (__) {} }
+            refresh();
+        }
+        // Envoyer : on rejoue le VRAI keydown Entrée du champ de prompt de l'app.
+        function send() {
+            var p = champ(); if (!p) return;
+            close();
+            try { p.focus({ preventScroll: true }); } catch (_) { try { p.focus(); } catch (__) {} }
+            p.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        }
+        function press(tok) {
+            if (tok === '@space') { typeIn(' '); return; }
+            if (tok === '@enter') { send(); return; }
+            if (tok === '@back') { back(); return; }
+            if (tok === '@switch') { kbLayer = (kbLayer === 'lettres') ? 'glyphes' : 'lettres'; kbShift = false; kbCaps = false; build(); return; }
+            if (tok === '@shift') { if (kbShift && !kbCaps) { kbCaps = true; } else if (kbCaps) { kbCaps = false; kbShift = false; } else { kbShift = true; } refresh(); return; }
+            var ch = tok;
+            if ((kbShift || kbCaps) && tok.length === 1) ch = tok.toUpperCase();
+            typeIn(ch);
+            if (kbShift && !kbCaps) kbShift = false;
+        }
+        function refresh() {
+            var p = champ(); if (!p) return;
+            var val = p.value || '';
+            var txt = id('kbText');
+            if (txt) {
+                var vide = val.trim() === '';
+                txt.classList.toggle('kb-empty', vide);
+                txt.textContent = vide ? L('Ton texte apparaît ici…', 'Your text appears here…', 'ここに入力されます…') : val;
+                var v = id('kbView'); if (v) v.scrollTop = v.scrollHeight;
+            }
+            var cnt = id('kbCount');
+            if (cnt) cnt.textContent = val.length ? (val.length + ' ' + L('caractères', 'characters', '文字')) : '';
+            var up = (kbShift || kbCaps);
+            var keys = document.querySelectorAll('#kbRows .kb-key[data-k]');
+            for (var i = 0; i < keys.length; i++) {
+                var el = keys[i], k = el.getAttribute('data-k');
+                if (k.charAt(0) === '@') { if (k === '@shift') el.classList.toggle('kb-on', up); if (k === '@switch') el.textContent = label(k); continue; }
+                el.textContent = label(k);
+            }
+        }
+        function keyEl(tok) {
+            if (!tok) return null;
+            var rows = id('kbRows'); if (!rows) return null;
+            for (var i = 0; i < rows.children.length; i++) {
+                var ks = rows.children[i].children;
+                for (var j = 0; j < ks.length; j++) { if (ks[j].getAttribute('data-k') === tok) return ks[j]; }
+            }
+            return null;
+        }
+        function elForEvent(e) {
+            var k = e && e.key; if (!k) return null;
+            if (k === 'Backspace') return keyEl('@back');
+            if (k === 'Enter') return keyEl('@enter');
+            if (k === ' ' || k === 'Spacebar') return keyEl('@space');
+            if (k === 'Shift') return keyEl('@shift');
+            if (k.length === 1) return keyEl(k) || keyEl(k.toLowerCase()) || keyEl(k.toUpperCase());
+            return null;
+        }
+        function flash(el) {
+            if (!el) return;
+            el.classList.add('kb-on');
+            if (el.getAttribute('data-k') === '@shift') return;
+            clearTimeout(el._spKbT);
+            el._spKbT = setTimeout(function () { el.classList.remove('kb-on'); }, 160);
+        }
+        function flashOff(el) { if (!el) return; clearTimeout(el._spKbT); if (el.getAttribute('data-k') !== '@shift') el.classList.remove('kb-on'); }
+        function wire() {
+            if (kbWired) return;
+            var c = id('kbCloseBtn'); if (!c) return;
+            kbWired = true;
+            c.addEventListener('click', close);
+            var ov = id('spKbOverlay');
+            if (ov) ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
+            document.addEventListener('keydown', function (e) {
+                if (!kbOpen) return;
+                if (e.key === 'Escape') { e.stopPropagation(); close(); return; }
+                flash(elForEvent(e));
+            }, true);
+            document.addEventListener('keyup', function (e) { if (kbOpen) flashOff(elForEvent(e)); }, true);
+        }
+        function open() {
+            style();
+            build();
+            wire();
+            var ov = id('spKbOverlay'); if (!ov) return;
+            ov.classList.remove('hidden');
+            kbOpen = true;
+            var b = id('aiFooterKbBtn');
+            if (b) { b.classList.add('sp-kb-active'); b.setAttribute('aria-pressed', 'true'); }
+            var p = champ();
+            if (p) { try { p.focus({ preventScroll: true }); } catch (_) { try { p.focus(); } catch (__) {} } }
+            // Le champ garde le focus : le clavier PHYSIQUE continue de fonctionner.
+            if (kbTimer) clearInterval(kbTimer);
+            kbTimer = setInterval(function () { if (kbOpen) refresh(); }, 400);
+        }
+        function close() {
+            var ov = id('spKbOverlay'); if (!ov) return;
+            ov.classList.add('hidden');
+            kbOpen = false;
+            if (kbTimer) { clearInterval(kbTimer); kbTimer = null; }
+            var b = id('aiFooterKbBtn');
+            if (b) { b.classList.remove('sp-kb-active'); b.setAttribute('aria-pressed', 'false'); }
+            var p = champ();
+            if (p) { try { p.focus({ preventScroll: true }); } catch (_) { try { p.focus(); } catch (__) {} } }
+        }
+        function toggle() { if (kbOpen) { close(); } else { open(); } }
+        window.aiFooterToggleKeyboard = toggle;
+        // Bouton ⌨ : inséré JUSTE À DROITE de l'icône micro de la barre de prompt.
+        function place() {
+            if (id('aiFooterKbBtn')) return true;
+            var mic = id('aiFooterMicBtn');
+            var zone = id('aiFooterActions') || (mic ? mic.parentNode : null);
+            if (!zone) return false;
+            var b = document.createElement('button');
+            b.type = 'button'; b.id = 'aiFooterKbBtn'; b.className = 'sp-kb-btn';
+            b.setAttribute('aria-pressed', 'false');
+            b.setAttribute('title', L('Clavier typographique', 'Typographic keyboard', '文字キーボード'));
+            b.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"></rect><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"></path></svg>';
+            b.addEventListener('click', function (e) { e.preventDefault(); toggle(); });
+            if (mic && mic.parentNode === zone) zone.insertBefore(b, mic.nextSibling);
+            else zone.appendChild(b);
+            return true;
+        }
+        place();
+        if (!place()) { var essais = 0; var t = setInterval(function () { if (place() || ++essais > 40) clearInterval(t); }, 250); }
+        var p = champ();
+        if (p) p.addEventListener('input', function () { if (kbOpen) refresh(); });
+        window.addEventListener('resize', function () { if (kbOpen) refresh(); });
+    })();
+
     // Ajouter un Écouteur sur la zone de scroll ET sur le conteneur des pages pour le zoom
     const canvasScrollArea = document.getElementById('canvasScrollArea');
     
@@ -48776,9 +49073,18 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         // 🆕 v1.7.336 : ouvrir SuperTyPo (décomposeur/éditeur de typo) depuis
         // l'onglet « SuperTyPo » du Nouveau Projet. L'app vit dans /supertypo/
         // (racine superprint), l'éditeur dans /app/ → on remonte d'un niveau.
-        function openSupertypo() {
+        function openSupertypo(opts) {
             const base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '');
-            const url = base + '../supertypo/index.html';
+            let url = base + '../supertypo/index.html';
+            // 🆕 v1.7.423 — LIEN PROFOND « ÉDITER LA TYPO » : on transmet le texte du bloc
+            //   et sa police pour que SuperTyPo s'ouvre sur la décomposition du texte de
+            //   l'utilisateur, l'éditeur ouvert sur son premier caractère.
+            if (opts && (opts.text || opts.font)) {
+                const p = ['sp_edit=1'];
+                if (opts.text) p.push('text=' + encodeURIComponent(String(opts.text).slice(0, 400)));
+                if (opts.font) p.push('font=' + encodeURIComponent(String(opts.font).slice(0, 80)));
+                url += '?' + p.join('&');
+            }
             const win = window.open(url, '_blank', 'noopener');
             if (!win) {
                 const a = document.createElement('a');
@@ -75434,6 +75740,17 @@ function initObjectRightClickMenu() {
                 }));
                 menu.appendChild(mkItem(ICON.textOutline || ICON.textEdit, t('Vectoriser (typo)', 'Vectorize (type)'), '', function() {
                     if (!canvas) return; window._spVectorizeText('typo', canvas, obj);
+                }));
+                // 🆕 v1.7.423 — « Éditer la typo » : ouvre SuperTyPo (décomposeur/éditeur de
+                //   typographie) en mode édition, avec LE TEXTE du bloc et SA police.
+                menu.appendChild(mkItem(ICON.textEdit, t('Éditer la typo (SuperTyPo)', 'Edit Typo (SuperTyPo)'), 'SuperTyPo', function() {
+                    const fam = (obj && obj.fontFamily ? String(obj.fontFamily) : '').split(',')[0].replace(/^["']|["']$/g, '').trim();
+                    const txt = (obj && typeof obj.text === 'string') ? obj.text : '';
+                    if (typeof window.openSupertypo === 'function') {
+                        window.openSupertypo({ text: txt, font: fam });
+                    } else {
+                        window.open(window.location.origin + window.location.pathname.replace(/[^\/]*$/, '') + '../supertypo/index.html');
+                    }
                 }));
                 menu.appendChild(mkSep());
             }

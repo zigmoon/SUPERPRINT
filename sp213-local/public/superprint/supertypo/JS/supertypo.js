@@ -806,6 +806,40 @@
     }
   }
 
+  /* 🆕 v1.7.423 — LIEN PROFOND DEPUIS L'APP SUPERPRINT (« Éditer la typo »).
+     Clic droit dans l'app sur un bloc texte → ../supertypo/index.html?sp_edit=1
+     &text=<texte du bloc>&font=<police>. On pré-remplit l'échantillon avec SON
+     texte puis on ouvre l'éditeur sur son premier caractère : l'utilisateur arrive
+     directement en mode édition, sur sa propre typographie. La police ne peut être
+     appliquée que si elle est chargée ici (fichier .ttf/.otf) : on se contente donc
+     de rappeler son nom. */
+  let _spDeepFait = false;
+  function spApplyDeepLink() {
+    if (_spDeepFait) return;
+    let q = null;
+    try { q = new URLSearchParams(window.location.search); } catch (e) { return; }
+    if (!q || q.get('sp_edit') !== '1') { _spDeepFait = true; return; }
+    const txt = (q.get('text') || '').replace(/\s+$/, '').slice(0, 200);
+    const fam = (q.get('font') || '').slice(0, 60);
+    if (txt) {
+      ST.sampleChars = txt;
+      const si = $('sampleInput');
+      if (si) si.value = txt;
+      try { buildGlyphGrid(); } catch (e) {}
+    }
+    if (txt && ST.glyphs && ST.glyphs.length) {
+      _spDeepFait = true;
+      const ch = txt.replace(/^\s+/, '').charAt(0);
+      if (ch) { try { openEditor(ch); } catch (e) {} }
+      if (fam) {
+        try { toast('SuperTyPo — ' + fam + ' · « ' + txt.slice(0, 24) + (txt.length > 24 ? '…' : '') + ' »'); } catch (e) {}
+      }
+    }
+  }
+  [900, 2200, 4500].forEach(function (d) { setTimeout(spApplyDeepLink, d); });
+  // Sans police chargée au bout de 7 s, on arrête d'attendre (le texte reste pré-rempli).
+  setTimeout(function () { _spDeepFait = true; }, 7000);
+
   function buildGlyphGrid() {
     const grid = $('glyphGrid');
     grid.innerHTML = '';
