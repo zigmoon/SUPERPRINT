@@ -904,8 +904,10 @@
     }
     if (txt && ST.glyphs && ST.glyphs.length) {
       _spDeepFait = true;
-      const ch = txt.replace(/^\s+/, '').charAt(0);
-      if (ch) { try { openEditor(ch); } catch (e) {} }
+      // 🆕 v1.7.435 — on ouvre la typographie ENTIÈRE (vue police + grille de tous les
+      //   glyphes), plus la lettre de démarrage. L'utilisateur voit l'ensemble de sa
+      //   police, avec le texte de son bloc en échantillon, et clique le glyphe voulu.
+      try { showFontView(); } catch (e0) {}
       if (fam) {
         try { toast('SuperTyPo — ' + fam + ' · « ' + txt.slice(0, 24) + (txt.length > 24 ? '…' : '') + ' »'); } catch (e) {}
       }
@@ -940,11 +942,18 @@
       if (ArrayBuffer.isView(brut)) brut = brut.buffer.slice(brut.byteOffset, brut.byteOffset + brut.byteLength);
       let buf = brut;
       try { buf = await normalizeFontBuffer(brut.slice(0)); } catch (e1) { buf = brut; }
+      // 🆕 v1.7.435 — le texte du bloc devient l'échantillon AVANT l'affichage, puis on
+      //   montre la typographie entière (showFontView lit ST.sampleChars et reconstruit la
+      //   grille) : plus d'ouverture automatique sur la première lettre.
+      const txtBloc = String(d.text || '').replace(/\s+$/, '').slice(0, 200);
+      if (txtBloc) {
+        ST.sampleChars = txtBloc;
+        const si = $('sampleInput');
+        if (si) si.value = txtBloc;
+      }
       loadFontFromBuffer(buf, String(d.name || 'police') + '.ttf');
       showFontView();
-      try { toast('Police reçue de SuperPrint : ' + (ST.fontName || d.name || '')); } catch (e2) {}
-      const ch = String(d.text || '').replace(/^\s+/, '').charAt(0);
-      if (ch) setTimeout(function () { try { openEditor(ch); } catch (e3) {} }, 400);
+      try { toast('Police reçue de SuperPrint : ' + (ST.fontName || d.name || '') + (txtBloc ? ' \u00b7 « ' + txtBloc.slice(0, 24) + (txtBloc.length > 24 ? '\u2026' : '') + ' »' : '')); } catch (e2) {}
     } catch (e) { try { console.error(e); } catch (e2) {} }
   }
   window.addEventListener('message', spRecoitPolice);

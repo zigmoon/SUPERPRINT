@@ -8,7 +8,7 @@
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
-- **Version**: 1.7.434 (September 2026)
+- **Version**: 1.7.435 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.95, requires application 1.7.415 or later); the launcher downloads the application once and serves it locally.
@@ -180,6 +180,7 @@ Yes. All document processing happens client-side in the browser. No uploads to a
 - Per-glyph metrics (advance width, left/right side bearings, bounding box) and re-export of a modified `.ttf` / `.otf`, plus the native `.sf` format.
 
 ### Recent releases (September 2026)
+- **1.7.435** — “Edit typography” (right-click on a text block in the editor) now opens the WHOLE typeface in SuperTyPo: the font view with the full glyph grid of the block’s own characters, instead of jumping straight into the single-letter editor on the first character. The block’s text becomes the sample; clicking a glyph still opens the letter editor.
 - **1.7.434** — Six new English templates: **Marine Life Magazine** (8 p., double page, four real underwater photographs), **Editorial CV** and **Minimal CV** (A4, no photo), **Book of Shapes** (12 p., drawn with rectangles and circles only, no image), **Theatre Play** (12 p., three acts with drop caps, small-caps speakers and indented verse) and **Calendar A3 2027–2028** (12 pages, one month per page from September 2027 to August 2028, real weekday grids). The Professional CV no longer uses a photo. Two vector primitives (`round`, `dome`) were added to the template engine.
 - **1.7.433** — “Page N” labels are now BOUNDED by the page: the counter-scale is capped so that the label never takes more than ~45 % of the page width (measured on a 85 × 55 mm card at 10 % zoom: it covered 140 % of the page before, 45 % now), while staying strictly constant (12.67 px) as soon as the page is at least ~80 px wide on screen. `--sp-zoom-label` is computed in `applyZoom()`.
 - **1.7.432** — Two editor fixes. (1) The automatic zoom-to-fit is now WIDTH based: a 12-page document no longer opens at a microscopic zoom (measured: 8.9 % before, 100 % after on a 13-page A5 file); vertical scrolling is allowed and double-page spreads are detected automatically from the measured container width. (2) The “Page N” labels under the pages keep a CONSTANT on-screen size (measured 12.67 px at 10 %, 25 %, 100 %, 300 % and 400 %) and stay glued to the page (0.1–5 px below it, left edge aligned) instead of growing when you zoom out.
