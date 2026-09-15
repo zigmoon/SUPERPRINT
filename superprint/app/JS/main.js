@@ -49313,7 +49313,271 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             const ta = document.getElementById('aiPromptModal');
             if (ta) { ta.value = map[label] || label; ta.focus(); }
         }
+        // 🆕 v1.7.447 — FOURNISSEURS : cartes cliquables avec pastille colorée, lien vers la page
+        //   officielle de création de clé et info-bulle explicative.
+        window.spAiProviders = [
+            { id: 'deepseek', nom: 'DeepSeek', initiale: 'D', couleur: '#4D6BFE', reco: true,
+              cle: 'https://platform.deepseek.com/api_keys',
+              note: 'Recommandé : tarif très bas, 1M de contexte, JSON et vision. Clé à créer sur platform.deepseek.com.' },
+            { id: 'openrouter', nom: 'OpenRouter', initiale: 'R', couleur: '#6E56CF',
+              cle: 'https://openrouter.ai/keys',
+              note: 'Modèles gratuits (suffixe :free) : idéal pour essayer sans payer. Clé sur openrouter.ai/keys.' },
+            { id: 'openai', nom: 'OpenAI', initiale: 'O', couleur: '#10A37F',
+              cle: 'https://platform.openai.com/api-keys',
+              note: 'GPT-5.1 : maquettes les plus riches (payant). Clé sur platform.openai.com.' },
+            { id: 'groq', nom: 'Groq', initiale: 'G', couleur: '#F55036',
+              cle: 'https://console.groq.com/keys',
+              note: 'Très rapide, mais plafond de 8 192 tokens en sortie. Clé sur console.groq.com.' },
+            { id: 'anthropic', nom: 'Anthropic', initiale: 'A', couleur: '#D97757',
+              cle: 'https://console.anthropic.com/settings/keys',
+              note: 'Claude Sonnet 4.5 : excellent en textes longs. Clé sur console.anthropic.com.' }
+        ];
+
+        // 🆕 v1.7.447 — BIBLIOTHÈQUE D'EXEMPLES (réécrite) : organisée en ONGLETS, comme la pop-in
+        //   « nouveau projet ». Chaque exemple : titre court, explication d'une ligne, prompt complet.
+        window.spAiExamples = [
+            { onglet: 'Idées rapides', chips: [
+                { t: 'Couverture magazine percutante', p: 'Couverture de magazine percutante : grand titre impactant, accroche, image pleine page, numéro et date.' },
+                { t: 'Page éditoriale 2 colonnes', p: 'Page éditoriale sur deux colonnes : titre, chapeau, texte long justifié, citation extraite et légende.' },
+                { t: 'Affiche événement', p: 'Affiche pour un événement : titre énorme, date, lieu, visuel fort et informations pratiques en bas.' },
+                { t: 'Catalogue produits', p: 'Page de catalogue : grille de produits avec image, nom, courte description et prix.' },
+                { t: 'Menu de restaurant', p: 'Menu de restaurant élégant : entrées, plats, desserts avec descriptions et prix, mise en page raffinée.' },
+                { t: 'CV moderne', p: 'CV moderne et clair : nom, titre, coordonnées, expériences, compétences et formation, typographie soignée.' },
+                { t: 'Flyer promotionnel', p: 'Flyer promotionnel : offre choc, accroche, visuel, conditions et appel à l’action.' },
+                { t: 'Page de garde sobre', p: 'Page de garde sobre et minimaliste : titre centré, sous-titre, beaucoup d’espace blanc.' }
+            ]},
+
+            { onglet: 'Couvertures', exemples: [
+                { t: 'Magazine — titre choc', d: 'Grand titre serif, bandeau accent, pastille numéro.',
+                  p: 'A4 portrait 210x297mm.\nPalette : fond #F5F2EC, encre #14110F, accent #C8341B, gris #7A736B.\nBandeau accent #C8341B pleine largeur, hauteur 8mm, en haut de page.\nTitre display serif 84pt bold #14110F à 190mm, largeur 174mm, 2 lignes maximum : « Le retour du papier ».\nSous-titre italique 20pt #7A736B à 240mm, largeur 174mm, 2 lignes.\n3 accroches en mono 10pt #14110F à partir de 262mm, interligne 7mm.\nPastille cercle accent 18mm de diamètre en haut à droite (x=174mm, y=24mm), « 04 » en blanc 14pt centré.\nMarges 18mm, aucun élément ne dépasse.' },
+                { t: 'Livre — sobre', d: 'Titre centré, filet, nom d’auteur : rien d’autre.',
+                  p: 'A5 portrait 148x210mm.\nPalette : fond #FBFAF7, encre #191713, accent #8A5A2B.\nTitre serif 40pt bold centré à 66mm, largeur 112mm, 2 lignes : « Le métier calme ».\nFilet 0,5pt #8A5A2B largeur 24mm centré à 112mm.\nNom d’auteur en mono 11pt majuscules #8A5A2B centré à 124mm.\nAucune image. Marges 18mm.' },
+                { t: 'Rapport annuel', d: 'Bandeau sombre, logo, titre, baseline.',
+                  p: 'A4 portrait 210x297mm.\nPalette : fond #FFFFFF, encre #0E1B2C, accent #1F7AE0, gris #8C95A6.\nBandeau plein #0E1B2C pleine largeur hauteur 80mm en haut.\nLogo en mono 12pt blanc à 24mm (x=20mm), filet accent largeur 24mm à 32mm.\nTitre sans-serif 52pt bold #0E1B2C à 108mm, largeur 170mm, 2 lignes.\nBaseline 14pt #8C95A6 à 168mm, largeur 170mm, 2 lignes.\nMention mono 9pt #8C95A6 à 278mm.\nMarges 20mm.' }
+            ]},
+
+            { onglet: 'Pages éditoriales', exemples: [
+                { t: 'Article deux colonnes', d: 'Sur-titre, titre, chapeau, deux colonnes justifiées, image.',
+                  p: 'A4 portrait 210x297mm, marges 18mm.\nPalette : fond #FFFFFF, encre #111111, accent #2B5F8B, gris #6B6660.\nSur-titre mono 9pt #2B5F8B à 22mm : « ARTISANAT ».\nTitre serif 44pt bold #111111 à 30mm, largeur 174mm, 2 lignes.\nChapeau italique 15pt #6B6660 à 78mm, largeur 174mm, 3 lignes.\nFilet 0,5pt #111111 largeur 174mm à 108mm.\nDeux colonnes de texte justifié (84mm chacune, gouttière 6mm) à partir de 116mm, 10pt, interligne 14pt, 6 phrases réelles par colonne.\nImage 84x56mm en bas à gauche à 224mm, légende 8pt italique en dessous.' },
+                { t: 'Interview + portrait', d: 'Portrait à droite, questions en gras, réponses en texte.',
+                  p: 'A4 portrait 210x297mm, marges 20mm.\nPalette : fond #FAFAF7, encre #111111, accent #8B2A2A, gris #6E6862.\nSur-titre mono 9pt #8B2A2A à 24mm : « ENTRETIEN ».\nTitre serif 40pt bold à 34mm, largeur 112mm, 3 lignes.\nPortrait : rectangle image #DCD5C7 74x96mm en haut à droite (x=116mm, y=34mm).\nQuestions en bold 12pt accent, réponses en 10,5pt justifié, interligne 15pt, à partir de 150mm sur largeur 170mm.\nCitation extraite en italique 20pt accent encadrée à droite, largeur 60mm.' },
+                { t: 'Portfolio photo pleine page', d: 'Une image pleine page, légende discrète.',
+                  p: 'A4 portrait 210x297mm.\nImage pleine page (rectangle #D9D2C7) 210x240mm en haut, sans marge.\nBandeau blanc largeur 210mm hauteur 57mm en bas.\nTitre serif 28pt bold #111111 à 252mm (x=18mm), largeur 174mm.\nLégende mono 9pt #7A736B à 268mm.\nNuméro de page mono 9pt aligné à droite à 280mm.' }
+            ]},
+
+            { onglet: 'Affiches & flyers', exemples: [
+                { t: 'Affiche événement', d: 'Titre énorme, date, lieu, infos pratiques.',
+                  p: 'A4 portrait 210x297mm.\nFond plein #102542 couvrant toute la page.\nPalette : jaune #F4D35E, corail #EF6F6C, blanc #F7F7F2.\nSur-titre mono 11pt #F4D35E à 18mm (x=16mm).\nTitre sans-serif black 96pt #F7F7F2 à 40mm, largeur 178mm, 2 lignes maximum.\nDate et lieu en bold 24pt #F4D35E à 160mm.\nParagraphe 13pt #F7F7F2 à 176mm, largeur 178mm, 4 phrases réelles.\n3 pastilles rondes 38mm de diamètre à 224mm (x=18, 86 et 154mm) avec un texte centré 11pt bold.\nLigne d’intervenants mono 9pt à 272mm. Aucun débord.' },
+                { t: 'Flyer promotion', d: 'Offre très visible, visuel, conditions, appel à l’action.',
+                  p: 'A5 portrait 148x210mm, marges 12mm.\nPalette : fond #FFFFFF, encre #1A1A1A, accent #E8590C.\nBandeau accent pleine largeur hauteur 46mm en haut, texte blanc centré : « -30 % » en 54pt bold puis « cette semaine » en 14pt.\nVisuel : rectangle #F1F3F5 124x70mm à 60mm.\nTitre 22pt bold à 138mm.\n3 puces 11pt interligne 16pt à 150mm.\nConditions mono 8pt gris à 186mm. Bouton plein accent 124x14mm à 190mm avec « J’en profite » en blanc 12pt centré.' },
+                { t: 'Affiche concert', d: 'Typographie brute, fond sombre, programme.',
+                  p: 'A3 portrait 297x420mm.\nFond plein #0A0A0A.\nPalette : blanc #F2F2F2, néon #C6FF00, rouge #FF2D2D.\nArtiste en sans-serif black 120pt #F2F2F2 à 60mm (x=24mm), largeur 249mm.\nFilet néon 4pt largeur 80mm à 200mm.\nDate 32pt néon à 214mm. Lieu 20pt blanc à 240mm.\nProgramme : 5 lignes mono 12pt blanc interligne 10mm à partir de 270mm.\nBloc prix : rectangle néon 90x26mm en bas à droite à 360mm avec texte noir 16pt centré.\nMarges 24mm.' }
+            ]},
+
+            { onglet: 'Commerce', exemples: [
+                { t: 'Catalogue 2 x 2', d: 'Quatre produits : image, nom, description, prix.',
+                  p: 'A4 portrait 210x297mm, marges 15mm.\nPalette : fond #FFFFFF, encre #1A1A1A, accent #D62828, beige #EFE9DD.\nSur-titre mono 9pt #D62828 à 18mm : « COLLECTION 2027 ».\nTitre sans-serif 36pt bold à 26mm, largeur 180mm.\nFilet 0,3pt #1A1A1A largeur 180mm à 62mm.\nGrille 2x2 : cellules de 88x96mm, gouttière 4mm, à partir de 70mm.\nDans chaque cellule : rectangle image beige 88x56mm en haut, nom produit 13pt bold 6mm sous l’image, description 9pt gris 3 lignes, référence mono 8pt à gauche et prix 18pt bold accent à droite sur la même ligne.\n4 produits réels avec prix. Bandeau bas #1A1A1A 180x14mm avec mention blanche 9pt centrée.' },
+                { t: 'Menu de restaurant', d: 'Rubriques, plats, descriptions, prix alignés.',
+                  p: 'A4 portrait 210x297mm, marges 18mm.\nPalette : fond #F6F0E3, encre #0F1F19, accent #C8A15A.\nNom de la maison en serif 34pt bold #0F1F19 centré à 24mm.\nFilet accent largeur 30mm centré à 46mm.\nRubrique « ENTRÉES » mono 10pt accent à 62mm, puis 3 plats : nom en serif 13pt, description 9pt gris, prix en mono 10pt aligné à droite, interligne 12mm.\nRubrique « PLATS » à 118mm, 4 plats.\nRubrique « DESSERTS » à 200mm, 3 plats.\nRubrique « VINS » à 250mm, 3 vins au verre.\nAucun débord.' },
+                { t: 'Fiche produit', d: 'Grand visuel, argumentaire, caractéristiques, prix.',
+                  p: 'A4 portrait 210x297mm, marges 16mm.\nPalette : fond #FFFFFF, encre #111111, accent #0F766E, gris #6B7280.\nVisuel : rectangle #F3F4F6 178x120mm à 16mm.\nSur-titre mono 9pt accent à 146mm : « NOUVEAU ».\nTitre sans-serif 32pt bold à 156mm, largeur 178mm.\nArgumentaire 11pt gris interligne 16pt à 178mm, largeur 110mm, 5 phrases.\nTableau de caractéristiques à droite (x=140mm) : 5 lignes libellé/valeur mono 9pt, filets fins.\nBloc prix : rectangle accent 70x18mm à 250mm avec prix blanc 20pt centré.\nMention livraison mono 8pt gris à 276mm.' }
+            ]},
+
+            { onglet: 'Documents', exemples: [
+                { t: 'CV une page', d: 'En-tête, profil, expériences, compétences, langues.',
+                  p: 'A4 portrait 210x297mm, marges 18mm.\nPalette : fond #FFFFFF, encre #14181F, accent #0F766E, gris #6B7280.\nNom en sans-serif 26pt bold à 20mm. Titre de poste en mono 10pt accent juste dessous.\nFilet 0,5pt #14181F largeur 174mm à 44mm.\n« PROFIL » mono 9pt accent à 52mm, paragraphe 10,5pt interligne 15pt, 3 lignes.\n« EXPÉRIENCE » à 84mm puis 3 postes (période en mono 9pt à gauche, intitulé bold 12pt, entreprise 10pt gris, 2 lignes de mission).\nColonne droite à partir de x=120mm : « COMPÉTENCES » avec 6 barres de niveau, puis « LANGUES » 3 lignes.\nPied : coordonnées mono 9pt centrées à 282mm.' },
+                { t: 'Lettre de motivation', d: 'Expéditeur, corps justifié, signature.',
+                  p: 'A4 portrait 210x297mm, marges 25mm.\nPalette : fond #FFFFFF, encre #1A1A1A, accent #1F4E79.\nExpéditeur mono 9pt en haut à droite sur 4 lignes.\nDestinataire mono 9pt à 70mm sur 4 lignes.\nDate alignée à droite à 70mm.\nObjet en bold 12pt à 100mm.\nCorps justifié 11pt interligne 16pt à 118mm, 3 paragraphes séparés de 6mm, 6 phrases chacun, avec des trous à compléter entre crochets.\nFormule de politesse à 250mm puis signature laissée vide 30mm plus bas.' },
+                { t: 'Plaquette 2 volets', d: 'Couverture et contenu côte à côte.',
+                  p: 'A4 paysage 297x210mm, marges 14mm, pli vertical au milieu (x=148,5mm).\nPalette : fond #FFFFFF, encre #16213E, accent #E94560, gris #6B7280.\nVolet gauche : rectangle plein #16213E 140x182mm, titre blanc 30pt bold à 40mm, sous-titre 12pt à 96mm, 3 puces blanches 10pt à 130mm.\nVolet droit : sur-titre mono 9pt accent à 20mm, titre 22pt bold à 30mm, 2 colonnes de texte 9,5pt interligne 14pt à 60mm, et un encadré gris clair avec les contacts en bas.\nAucun texte ne traverse le pli.' }
+            ]},
+
+            { onglet: 'Multi-pages', exemples: [
+                { t: 'Livret 4 pages', d: 'Couverture, présentation, services, contact.',
+                  p: 'Crée un document de 4 pages A4 portrait 210x297mm, cohérent d’une page à l’autre.\nMarges 18mm. Palette commune : fond #F5F2EB, encre #161616, accent #D2492A, gris #767068.\nPage 1 couverture : bandeau accent hauteur 8mm, nom de l’entreprise en mono 10pt, titre 64pt bold 2 lignes, sous-titre italique 17pt, adresse 9pt en bas.\nPage 2 présentation : sur-titre accent, titre 34pt, 3 paragraphes de 5 phrases, encadré chiffres clés à droite (4 chiffres).\nPage 3 services : titre 34pt, 3 blocs de service (numéro accent 28pt, intitulé 16pt bold, description 4 phrases) empilés.\nPage 4 contact : titre 34pt, coordonnées sur 5 lignes mono, formulaire (4 champs rectangles), mention légale 8pt.\nFolio mono 9pt en bas de chaque page sauf la couverture.' },
+                { t: 'Catalogue 8 pages', d: 'Couverture, sommaire, 5 pages produits, contact.',
+                  p: 'Crée un document de 8 pages A4 portrait 210x297mm.\nMarges 15mm. Palette : fond #FFFFFF, encre #111111, accent #C7382B, gris fond #EFEAE0, gris texte #7B746B.\nPage 1 couverture : visuel beige plein cadre 210x200mm, logo mono 11pt accent, titre 60pt bold 2 lignes, bandeau blanc 90mm avec accroche 13pt.\nPage 2 sommaire : liste de 6 entrées avec numéros de page en mono accent, encadré éditorial à droite.\nPages 3 à 7 : une catégorie par page (sièges, tables, rangements, luminaires, textiles) avec sur-titre accent, titre 30pt, filet, puis une grille de 4 produits (image beige, nom, description 3 lignes, référence, prix).\nPage 8 contact : coordonnées, conditions de commande, 3 questions fréquentes.\nFolio mono 9pt centré, sauf page 1.' },
+                { t: 'Magazine 12 pages', d: 'Couverture, édito, sommaire, 6 pages rédactionnelles, fin.',
+                  p: 'Crée un document de 12 pages A4 portrait 210x297mm, cohérence éditoriale stricte.\nMarges 18mm haut/bas, 16mm côtés. Palette : fond #F7F4ED, encre #0F0F0F, accent #B33A3A, bleu #2E5266, gris #6F6862.\nPage 1 couverture : image pleine page, logo 34pt, numéro mono accent, titre 54pt 2 lignes, 3 accroches 10pt.\nPage 2 éditorial : sur-titre accent, titre 34pt, texte 11pt justifié sur 116mm, portrait 56x70mm à droite, signature.\nPage 3 sommaire : 5 sections avec vignette, numéro de page et accroche.\nPages 4 à 10 : deux reportages (3 pages chacun) alternant pleine page photo, texte 2 colonnes, citation extraite 22pt italique.\nPage 11 portfolio : 6 images en grille 2x3 avec légendes mono 8pt.\nPage 12 colophon : mentions, crédits, adresses. Folio mono 9pt sauf page 1.' },
+                { t: 'Rapport 6 pages', d: 'Couverture, sommaire, indicateurs, ESG, perspectives.',
+                  p: 'Crée un document de 6 pages A4 portrait 210x297mm, style corporate.\nMarges 20mm. Palette : fond #FFFFFF, encre #0E1B2C, accent #1F7AE0, vert #2EB872, rouge #E0444A, gris #8C95A6.\nPage 1 couverture : bandeau sombre 80mm, logo mono blanc, sur-titre accent, titre 50pt 2 lignes, baseline 14pt.\nPage 2 sommaire et mot du directeur : liste de 4 entrées à gauche, texte de 4 phrases justifié à droite avec signature.\nPage 3 indicateurs clés : 4 cartes (libellé mono 8pt, grand chiffre 34pt, variation colorée) en grille 2x2, puis un graphique en barres légendé.\nPage 4 activités : 3 blocs d’activité avec chiffre, description 4 phrases et part du chiffre d’affaires en barre.\nPage 5 engagements : tableau de 5 indicateurs (valeur, objectif) et 2 paragraphes.\nPage 6 perspectives : 4 priorités numérotées et un calendrier de 4 jalons. Folio mono 9pt sauf page 1.' },
+                { t: 'Livre 16 pages', d: 'Faux-titre, préface, 8 pages de texte, colophon.',
+                  p: 'Crée un document de 16 pages A5 portrait 148x210mm, mise en page de lecture.\nMarges 18mm, marge de reliure supplémentaire de 5mm sur les pages paires.\nPalette : fond #FBFAF7, encre #191713, accent #8A5A2B.\nPage 1 faux-titre : titre 26pt centré, filet accent.\nPage 2 mentions et colophon.\nPage 3 préface : titre 20pt, texte 10,5pt interligne 16pt justifié, lettrine accent de 3 lignes.\nPages 4 à 14 : texte courant 10,5pt interligne 16pt sur une colonne de 112mm, titres de section 20pt, deux pages avec un bloc image 112x70mm légendé.\nPage 15 table des matières.\nPage 16 colophon final. Folio mono 9pt centré.' }
+            ]}
+        ];
         window.aiQuickFill = aiQuickFill;
+
+        // 🆕 v1.7.447 — construction de la nouvelle interface de la pop-in IA.
+        (function spAiUiInit() {
+            function parId(id) { return document.getElementById(id); }
+
+            /* ── choix du fournisseur (cartes) ── */
+            window.aiPickProvider = function (id) {
+                const champ = parId('aiProvider');
+                if (!champ) return;
+                champ.value = id;
+                try { champ.dispatchEvent(new Event('change')); } catch (e) {}
+                document.querySelectorAll('.ai-prov').forEach(function (b) {
+                    b.classList.toggle('active', b.dataset.provider === id);
+                });
+            };
+
+            const zone = parId('aiProviderCards');
+            if (zone) {
+                (window.spAiProviders || []).forEach(function (p) {
+                    const enveloppe = document.createElement('div');
+                    enveloppe.className = 'ai-prov-wrap';
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'ai-prov';
+                    b.dataset.provider = p.id;
+                    b.title = p.note;
+                    b.innerHTML = '<span class="ai-prov-logo" style="background:' + p.couleur + '">' + p.initiale + '</span>'
+                                + '<span class="ai-prov-name">' + p.nom + '</span>'
+                                + (p.reco ? '<span class="ai-prov-star" title="Recommandé">★</span>' : '');
+                    b.addEventListener('click', function () { window.aiPickProvider(p.id); });
+                    const a = document.createElement('a');
+                    a.className = 'ai-prov-key';
+                    a.href = p.cle;
+                    a.target = '_blank';
+                    a.rel = 'noopener';
+                    a.textContent = 'clé ↗';
+                    a.title = 'Créer une clé ' + p.nom + ' (' + p.cle.replace('https://', '') + ')';
+                    enveloppe.appendChild(b);
+                    enveloppe.appendChild(a);
+                    zone.appendChild(enveloppe);
+                });
+            }
+
+            /* ── exemples en onglets ── */
+            const barre = parId('aiExampleTabs');
+            const panneaux = parId('aiExamplePanels');
+            let exempleCourant = { g: 0, e: 0 };
+            function texteExemple(gi, ei) {
+                const g = (window.spAiExamples || [])[gi];
+                if (!g) return '';
+                if (g.chips) return (g.chips[ei] || {}).p || '';
+                return ((g.exemples || [])[ei] || {}).p || '';
+            }
+            window.aiUseExample = function (gi, ei, btn) {
+                const ta = parId('aiPromptModal');
+                if (ta) {
+                    ta.value = texteExemple(gi, ei);
+                    ta.focus();
+                    try { ta.setSelectionRange(0, 0); } catch (e) {}
+                }
+                document.querySelectorAll('.ai-ex-btn.is-used').forEach(function (x) { x.classList.remove('is-used'); });
+                if (btn) { btn.classList.add('is-used'); btn.textContent = 'Utilisé ✓'; }
+                try { if (typeof logAI === 'function') logAI('Exemple chargé dans la zone de texte.'); } catch (e) {}
+            };
+            window.aiCopyExample = function (gi, ei) {
+                const t = texteExemple(gi, ei);
+                try {
+                    navigator.clipboard.writeText(t).then(function () {
+                        if (typeof logAI === 'function') logAI('Prompt copié dans le presse-papier.');
+                    }).catch(function () {});
+                } catch (e) {}
+            };
+            window.aiSwitchExampleTab = function (i) {
+                if (barre) barre.querySelectorAll('.ai-tab').forEach(function (t, k) { t.classList.toggle('active', k === i); });
+                if (panneaux) panneaux.querySelectorAll('.ai-panel').forEach(function (p, k) { p.classList.toggle('active', k === i); });
+            };
+            if (barre && panneaux) {
+                (window.spAiExamples || []).forEach(function (g, i) {
+                    const t = document.createElement('button');
+                    t.type = 'button';
+                    t.className = 'ai-tab' + (i === 0 ? ' active' : '');
+                    t.textContent = g.onglet;
+                    t.addEventListener('click', function () { window.aiSwitchExampleTab(i); });
+                    barre.appendChild(t);
+
+                    const pan = document.createElement('div');
+                    pan.className = 'ai-panel' + (i === 0 ? ' active' : '');
+                    if (g.chips) {
+                        const rangee = document.createElement('div');
+                        rangee.className = 'ai-chips';
+                        (g.chips || []).forEach(function (c, j) {
+                            const b = document.createElement('button');
+                            b.type = 'button';
+                            b.className = 'ai-quick-chip';
+                            b.textContent = c.t;
+                            b.title = c.p;
+                            b.addEventListener('click', function () { window.aiUseExample(i, j, null); });
+                            rangee.appendChild(b);
+                        });
+                        pan.appendChild(rangee);
+                    } else {
+                        (g.exemples || []).forEach(function (ex, j) {
+                            const carte = document.createElement('div');
+                            carte.className = 'ai-ex';
+                            const tete = document.createElement('div');
+                            tete.className = 'ai-ex-head';
+                            const strong = document.createElement('strong');
+                            strong.textContent = ex.t;
+                            const desc = document.createElement('span');
+                            desc.className = 'ai-ex-desc';
+                            desc.textContent = ex.d || '';
+                            tete.appendChild(strong);
+                            tete.appendChild(desc);
+                            const apercu = document.createElement('div');
+                            apercu.className = 'ai-ex-prompt';
+                            apercu.textContent = ex.p;
+                            const actions = document.createElement('div');
+                            actions.className = 'ai-ex-actions';
+                            const bU = document.createElement('button');
+                            bU.type = 'button';
+                            bU.className = 'btn btn-primary ai-ex-btn';
+                            bU.textContent = 'Utiliser';
+                            bU.addEventListener('click', function () { window.aiUseExample(i, j, bU); });
+                            const bC = document.createElement('button');
+                            bC.type = 'button';
+                            bC.className = 'btn btn-secondary ai-ex-btn';
+                            bC.textContent = 'Copier';
+                            bC.addEventListener('click', function () { window.aiCopyExample(i, j); });
+                            actions.appendChild(bU);
+                            actions.appendChild(bC);
+                            carte.appendChild(tete);
+                            carte.appendChild(apercu);
+                            carte.appendChild(actions);
+                            pan.appendChild(carte);
+                        });
+                    }
+                    panneaux.appendChild(pan);
+                });
+            }
+
+            /* ── raccourcis ── */
+            window.aiToggleKeyVisible = function (btn) {
+                const inp = parId('aiApiKey');
+                if (!inp) return;
+                inp.type = (inp.type === 'password') ? 'text' : 'password';
+                if (btn) btn.textContent = (inp.type === 'password') ? '👁' : '🙈';
+            };
+            window.aiPastePrompt = function () {
+                const ta = parId('aiPromptModal');
+                if (!ta) return;
+                navigator.clipboard.readText().then(function (t) {
+                    ta.value = t;
+                    ta.focus();
+                }).catch(function () {
+                    if (typeof logAI === 'function') logAI('Collage impossible : autorisez le presse-papier dans le navigateur.');
+                });
+            };
+            window.aiScrollToExamples = function () {
+                const bloc = parId('aiExamplesBlock');
+                if (bloc && bloc.scrollIntoView) bloc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+
+            /* ── état initial des cartes ── */
+            try {
+                const prov = parId('aiProvider') ? parId('aiProvider').value : 'deepseek';
+                document.querySelectorAll('.ai-prov').forEach(function (b) {
+                    b.classList.toggle('active', b.dataset.provider === prov);
+                });
+            } catch (e) {}
+        })();
+
+
 
         // Barre de prompt IA dockée en pied de preview
         function aiToggleFooterBar(on) {
@@ -50366,6 +50630,16 @@ remplace pas la richesse de contenu : les deux vont ensemble.
     
     const timestamp = new Date().toLocaleTimeString('fr-FR');
     log.value += '[' + timestamp + '] ' + message + '\n';
+    // 🆕 v1.7.447 — pastille d'état sur le soufflet « Journal »
+    try {
+        const badge = document.getElementById('aiLogBadge');
+        if (badge) {
+            const ko = message.indexOf('❌') >= 0;
+            const ok = message.indexOf('✅') >= 0;
+            badge.textContent = ko ? 'erreur' : (ok ? 'ok' : '…');
+            badge.className = 'ai-acc-badge' + (ko ? ' is-ko' : (ok ? ' is-ok' : ''));
+        }
+    } catch (e) {}
     log.scrollTop = log.scrollHeight;
         }
 
@@ -53519,6 +53793,20 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             };
             keyInput.placeholder = placeholders[prov] || 'sk-...';
             keyInput.value = getAIKeyFor(prov);
+            // 🆕 v1.7.447 — lien « obtenir une clé » + carte de fournisseur active
+            try {
+                const V = window.spAiProviders || [];
+                let info = null;
+                for (let i = 0; i < V.length; i++) { if (V[i].id === prov) info = V[i]; }
+                const lien = document.getElementById('aiKeyLink');
+                if (lien && info) {
+                    lien.href = info.cle;
+                    lien.title = 'Créer une clé ' + info.nom + ' — ' + info.cle.replace('https://', '');
+                }
+                document.querySelectorAll('.ai-prov').forEach(function (b) {
+                    b.classList.toggle('active', b.dataset.provider === prov);
+                });
+            } catch (e) {}
         }
         window.updateAIKeyField = updateAIKeyField;
 
@@ -53883,6 +54171,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiQuickCatalog8: "Catalogue 8p",
         aiQuickMagazine12: "Magazine 12p",
         aiQuickReport6: "Rapport 6p",
+        aiConnectHint: "Choisissez un fournisseur, collez votre clé : elle reste dans ce navigateur et n’est envoyée qu’au fournisseur choisi.",
+        aiHowKeyTitle: "Où trouver ma clé ?",
+        aiHowKeyText: "Cliquez sur le lien « clé ↗ » du fournisseur : la page officielle de création s’ouvre dans un nouvel onglet. Créez la clé, copiez-la, collez-la ici, puis cliquez sur Test.",
+        aiFooterBarHelp: "Affiche une barre de saisie sous la page : décrivez votre besoin sans ouvrir cette fenêtre.",
+        aiExamplesHint: "Cliquez sur « Utiliser » : le texte est placé dans la zone de l’étape 2, il ne reste qu’à lancer la création.",
         aiPromptLabel: "Décrivez la maquette souhaitée (page simple, double page, ou multi-pages)",
         aiPromptPlaceholder: "Ex: Double page magazine avec photo panoramique + texte 2 colonnes. Ou : Créer un livret 6 pages (couverture, sommaire, 3 pages contenu, contact).",
         aiBtnPaste: "Coller",
@@ -54668,6 +54961,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiQuickCatalog8: "8-page catalog",
         aiQuickMagazine12: "12-page magazine",
         aiQuickReport6: "6-page report",
+        aiConnectHint: "Pick a provider and paste your key: it stays in this browser and is only sent to the provider you choose.",
+        aiHowKeyTitle: "Where do I get a key?",
+        aiHowKeyText: "Click the provider’s « clé ↗ » link: the official key page opens in a new tab. Create the key, copy it, paste it here, then press Test.",
+        aiFooterBarHelp: "Shows an input bar under the page: describe what you need without opening this window.",
+        aiExamplesHint: "Click « Utiliser »: the text goes into the step 2 box, all that is left is to start the creation.",
         aiPromptLabel: "Describe the layout you want (single page, spread, or multi-page)",
         aiPromptPlaceholder: "Ex: Magazine spread with panoramic photo + 2-column text. Or: Create a 6-page booklet (cover, table of contents, 3 content pages, contact).",
         aiBtnPaste: "Paste",
@@ -55455,6 +55753,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiQuickCatalog8: "8ページカタログ",
         aiQuickMagazine12: "12ページマガジン",
         aiQuickReport6: "6ページレポート",
+        aiConnectHint: "プロバイダーを選び、キーを貼り付けてください。キーはこのブラウザに保存され、選んだプロバイダーにのみ送信されます。",
+        aiHowKeyTitle: "キーはどこで取得できますか？",
+        aiHowKeyText: "プロバイダーの「clé ↗」リンクをクリックすると、公式のキー発行ページが新しいタブで開きます。キーを作成してコピーし、ここに貼り付けてから Test を押してください。",
+        aiFooterBarHelp: "ページの下に入力バーを表示します。この画面を開かずに指示を書けます。",
+        aiExamplesHint: "「Utiliser」をクリックすると、テキストが手順 2 の欄に入ります。あとは作成を実行するだけです。",
         aiPromptLabel: "作成したいレイアウトを記述してください（シングルページ、見開き、または複数ページ）",
         aiPromptPlaceholder: "例: パノラマ写真と2段組テキストのマガジン見開き。または: 6ページの冊子を作成（表紙、目次、3つのコンテンツページ、コンタクト）。",
         aiBtnPaste: "貼り付け",
