@@ -10,7 +10,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.417 (September 2026)
+- **Version**: 1.7.418 (September 2026)
 - **Local install**: npx superprint (npm package `superprint`, launcher version 1.0.95) — the same application, downloaded once and run on your machine
 
 ## Core documentation
@@ -43,7 +43,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Line-accurate height resizing**: dragging a text frame's handles never cuts a line in half and never alters the leading. The height snaps to a whole number of lines, using the same line metrics as the PDF export so preview and output stay consistent. An overflow marker still appears whenever text remains in the frame.
 
 ## Recent releases (September 2026)
-- **1.7.417** — the SP213 studio has an on-screen keyboard: a button next to the microphone opens a large centred keyboard (letters, accents, and a glyph layer with digits, punctuation, currency, brackets and « » — … §), with sticky shift, backspace, space and send. The prompt is shown in very large type above the keys.
+- **1.7.418** — text vectorisation is repaired end to end: the right-click “Vectorize” command now loads the font engines on demand (until now it silently produced an ordinary, still editable text block), glyphs are laid out on Fabric’s own wrapped lines with the right baseline, size and rotation, and they are exported to PDF as **real vector traces** — exact curves, no embedded image, no text — including groups of glyphs saved by earlier versions. The SP213 studio keyboard now sits at the bottom of the screen, shows your attached files (PJ) under the large prompt, and lights up the on-screen key you press on the physical keyboard.
 
 - **1.7.416** — the eyedropper in the sidebar now opens the real system colour picker (the “Show Colors…” popup and the Colors window) on Safari and Firefox, instead of the application’s own colour window. Chromium keeps the native eyedropper that samples a pixel on screen.
 - **1.7.415** — accuracy through the SP213 studio: Pantone spot inks survive the round-trip and are still exported as separate `/Separation` plates; spread mode is honoured by the native export (3 sheets of 366 × 266 mm in CMYK + PDF/X, instead of four 170 × 240 mm pages); black &amp; white export is now light vector (134,725 KB → 779 KB → 189 KB with vector text, against 199 KB for the equivalent RGB file); document margin and page numbering are no longer overwritten by the studio; a font-loading failure is no longer cached, so the next export retries vector output.

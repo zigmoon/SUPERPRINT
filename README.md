@@ -196,8 +196,8 @@ node tools/make-release-zip.mjs   # rebuild superprint/sp213-local.zip
 Every release is git-tagged `v1.7.NNN`, so two versions can be diffed directly:
 
 ```bash
-git log --oneline v1.7.400..v1.7.417      # what changed between two releases
-git diff v1.7.380 v1.7.417 --stat         # full diff between two
+git log --oneline v1.7.400..v1.7.418      # what changed between two releases
+git diff v1.7.380 v1.7.418 --stat         # full diff between two
 ```
 
 `release.html` holds the **complete trilingual (FR / EN / JP) release notes** — **129 entries** covering the whole family (91 for SuperPrint, spanning `1.7.92` → `1.7.417`) alongside the team's other applications. It is also published at [app.zigmoon.com/release.html](https://app.zigmoon.com/release.html). `CHANGELOG.md` is the condensed English version.

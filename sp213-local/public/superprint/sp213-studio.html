@@ -703,7 +703,7 @@
   #webImgBtn.offline { opacity: .35; pointer-events: none; }
 
   /* ════════════════════════════════════════════════════════════════
-     🆕 v1.7.417 — CLAVIER VIRTUEL DU STUDIO
+     🆕 v1.7.418 — CLAVIER VIRTUEL DU STUDIO
      Icone a droite du micro : ouvre un GRAND clavier au centre de
      l'interface, le prompt s'ecrit EN TRES GRAND au-dessus, et
      l'interface reste visible derriere (voile leger, sans flou).
@@ -711,7 +711,10 @@
      collantes, accents francais, teleprompteur sur la fin du texte.
      ════════════════════════════════════════════════════════════════ */
   #kbBtn.active { background: var(--btn-active); color: var(--btn-active-text); border-color: var(--btn-active); }
-  #spKbOverlay { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; padding: 2vh 2vw; }
+  /* 🆕 v1.7.418 — RETOUR UTILISATEUR : « les lettres du clavier sont trop haut ».
+     Le clavier est desormais ANCRE EN BAS (comme un vrai clavier), le texte
+     saisi et les pieces jointes occupent l'espace au-dessus. */
+  #spKbOverlay { position: fixed; inset: 0; z-index: 120; display: flex; align-items: flex-end; justify-content: center; padding: 2vh 2vw; }
   #spKbOverlay.hidden { display: none; }
   #spKbBackdrop { position: absolute; inset: 0; background: rgba(12,12,12,.32); }
   body.theme-dark #spKbBackdrop { background: rgba(0,0,0,.52); }
@@ -733,6 +736,13 @@
   .kb-text::after { content: ''; display: inline-block; width: .48em; height: .92em; margin-left: .08em;
     background: currentColor; vertical-align: -.12em; animation: kbBlink 1s steps(1,end) infinite; }
   @keyframes kbBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+  /* 🆕 v1.7.418 — PIECES JOINTES rappelees dans l'espace du clavier : on recopie
+     la barre du prompt (vignettes, noms, tailles). Copie NON interactive : la
+     barre d'origine, juste derriere, reste seule a porter les boutons. */
+  .kb-files { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; pointer-events: none; }
+  .kb-files.hidden { display: none; }
+  .kb-files img { max-height: 44px; max-width: 88px; object-fit: cover; border: 1px solid var(--border); }
+  .kb-files > * { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .kb-rows { padding: 16px 16px 4px; display: flex; flex-direction: column; gap: 8px; }
   .kb-row { display: flex; gap: 8px; justify-content: center; }
   .kb-key { flex: 1 1 0; min-width: 0; height: clamp(38px, 5.1vw, 62px); border: 1px solid var(--border);
@@ -2699,6 +2709,16 @@
       const v = $('kbView');
       if (v) v.scrollTop = v.scrollHeight;
     }
+    // 🆕 v1.7.418 — PIECES JOINTES : on recopie les vignettes de la barre du
+    //   prompt (#attachBar) dans cet espace pour tout voir au meme endroit.
+    //   Copie uniquement quand le contenu change (evite de casser le rendu).
+    const kf = $('kbFiles'), ab = $('attachBar');
+    if (kf) {
+      const src = ab ? ab.innerHTML : '';
+      const vide = !src || !ab || ab.children.length === 0;
+      if (kf._spSrc !== src) { kf._spSrc = src; kf.innerHTML = src; }
+      kf.classList.toggle('hidden', vide);
+    }
     const cnt = $('kbCount');
     if (cnt) cnt.textContent = (val.length ? (val.length + ' ' + (d['kb.chars'] || '')) : '');
     const up = (kbShift || kbCaps);
@@ -2708,6 +2728,39 @@
       el.textContent = kbLabel(k);
     });
   }
+  // 🆕 v1.7.418 — RETOUR UTILISATEUR : « je ne vois pas les lettres s'allumer quand
+  //   je tape au clavier ». On allume la touche AFFICHEE correspondant a la touche
+  //   PHYSIQUE enfoncee (majuscule/minuscule confondues), y compris Espace,
+  //   Effacer, Entree et Maj. 160 ms de maintien : une touche enfoncee reste
+  //   allumee, une touche tapee brievement clignote a peine.
+  function kbKeyEl(tok) {
+    const rows = $('kbRows'); if (!rows || !tok) return null;
+    const q = (window.CSS && CSS.escape) ? CSS.escape(tok) : String(tok).replace(/["\\]/g, '\\$&');
+    return rows.querySelector('.kb-key[data-k="' + q + '"]');
+  }
+  function kbElForEvent(e) {
+    const k = e && e.key; if (!k) return null;
+    if (k === 'Backspace') return kbKeyEl('@back');
+    if (k === 'Enter') return kbKeyEl('@enter');
+    if (k === ' ' || k === 'Spacebar') return kbKeyEl('@space');
+    if (k === 'Shift') return kbKeyEl('@shift');
+    if (k.length === 1) {
+      return kbKeyEl(k) || kbKeyEl(k.toLowerCase()) || kbKeyEl(k.toUpperCase());
+    }
+    return null;
+  }
+  function kbFlash(el) {
+    if (!el) return;
+    el.classList.add('kb-on');
+    if (el.getAttribute('data-k') === '@shift') return;   // etat gere par kbRefresh
+    clearTimeout(el._spKbT);
+    el._spKbT = setTimeout(function () { el.classList.remove('kb-on'); }, 160);
+  }
+  function kbFlashOff(el) {
+    if (!el) return;
+    clearTimeout(el._spKbT);
+    if (el.getAttribute('data-k') !== '@shift') el.classList.remove('kb-on');
+  }
   function kbWire() {
     if (kbWired) return;
     const c = $('kbCloseBtn'); if (!c) return;   // overlay pas encore analysé
@@ -2715,7 +2768,14 @@
     c.addEventListener('click', kbClose);
     const bd = $('spKbBackdrop'); if (bd) bd.addEventListener('click', kbClose);
     document.addEventListener('keydown', function (e) {
-      if (kbOpen && e.key === 'Escape') { e.stopPropagation(); kbClose(); }
+      if (!kbOpen) return;
+      if (e.key === 'Escape') { e.stopPropagation(); kbClose(); return; }
+      // 🆕 v1.7.418 — la touche du clavier affiche s'allume.
+      kbFlash(kbElForEvent(e));
+    }, true);
+    document.addEventListener('keyup', function (e) {
+      if (!kbOpen) return;
+      kbFlashOff(kbElForEvent(e));
     }, true);
   }
   function kbOpenIt() {
@@ -10062,7 +10122,10 @@ La précision de layout et la richesse de contenu vont ensemble.`;
         <svg class="ic" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
       </button>
     </div>
-    <div class="kb-view" id="kbView"><div class="kb-text kb-empty" id="kbText"></div></div>
+    <div class="kb-view" id="kbView"><div class="kb-text kb-empty" id="kbText"></div>
+      <!-- 🆕 v1.7.418 — Pieces jointes (PJ) rappelees dans cet espace -->
+      <div class="kb-files hidden" id="kbFiles"></div>
+    </div>
     <div class="kb-rows" id="kbRows"></div>
     <div class="kb-foot"><span class="kb-count" id="kbCount"></span></div>
   </div>

@@ -8,7 +8,7 @@
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
-- **Version**: 1.7.417 (September 2026)
+- **Version**: 1.7.418 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.95, requires application 1.7.415 or later); the launcher downloads the application once and serves it locally.
@@ -180,7 +180,7 @@ Yes. All document processing happens client-side in the browser. No uploads to a
 - Per-glyph metrics (advance width, left/right side bearings, bounding box) and re-export of a modified `.ttf` / `.otf`, plus the native `.sf` format.
 
 ### Recent releases (September 2026)
-- **1.7.417** — the SP213 studio gets an on-screen keyboard: a button next to the microphone opens a large centred keyboard with a letter/accents layer, a glyph layer, sticky shift, backspace, space and send; the prompt is typed in very large type above the keys.
+- **1.7.418** — text vectorisation repaired end to end: the right-click “Vectorize” command now loads the font engines on demand (before, it fell back to a plain editable text block, with no vectorisation points), glyphs follow the lines as Fabric composes them — including the automatic word wrap — with the correct baseline, size and rotation, and are exported to PDF as **real vector traces** (quadratic curves preserved, zero embedded raster images, zero text), including groups of glyphs saved by older versions. Studio keyboard: anchored at the bottom of the screen, the attached files (PJ) are shown in the display area under the large prompt, and pressing a key on the physical keyboard lights up the matching on-screen key.
 - **1.7.416** — the sidebar eyedropper opens the real system colour picker on Safari and Firefox (Chromium keeps the on-screen pixel eyedropper).
 - **1.7.415** — Pantone spot inks survive the studio round-trip and still export as separate `/Separation` plates; spread mode honoured by the native export (3 sheets of 366 × 266 mm, CMYK + PDF/X); black &amp; white export is light vector (134,725 KB → 189 KB against 199 KB for RGB); margin and page numbering preserved through the studio.
 

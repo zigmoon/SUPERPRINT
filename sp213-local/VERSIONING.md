@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.417`** — 15 septembre 2026
+> **Dernière version : `1.7.418`** — 15 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,19 +10,19 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.417` |
-| Cache Service Worker | `superprint-shell-v1.7.417-fidelite-export` |
+| Version app (affichée) | `1.7.418` |
+| Cache Service Worker | `superprint-shell-v1.7.418-vectorisation-clavier` |
 | Query JS (`main.js`) | `?v=20260917-v417-clavier-studio` |
-| Badge preview (`spVersionBadge`) | `v1.7.417` |
-| Splash screen | `v1.7.417` |
-| Préférences (panneau SUPERPRINT) | `v1.7.417` |
-| Préférences (bas de page) | `SuperPrint v1.7.417 — 15 septembre 2026` |
-| Onboarding (`V 1.7.417`) | `1.7.417` |
-| Landing (`softwareVersion` + footer) | `1.7.417` |
-| Documentation | `v1.7.417` |
-| `version.txt` | `1.7.417` |
-| `llms.txt` / `llms-full.txt` | `1.7.417 (September 2026)` |
-| `package.json` (sp213-local) | `1.7.417` |
+| Badge preview (`spVersionBadge`) | `v1.7.418` |
+| Splash screen | `v1.7.418` |
+| Préférences (panneau SUPERPRINT) | `v1.7.418` |
+| Préférences (bas de page) | `SuperPrint v1.7.418 — 15 septembre 2026` |
+| Onboarding (`V 1.7.418`) | `1.7.418` |
+| Landing (`softwareVersion` + footer) | `1.7.418` |
+| Documentation | `v1.7.418` |
+| `version.txt` | `1.7.418` |
+| `llms.txt` / `llms-full.txt` | `1.7.418 (September 2026)` |
+| `package.json` (sp213-local) | `1.7.418` |
 
 > ⚠️ Le paquet **npm** (`superprint-npm`) a sa **propre version** (`1.0.x`) — c'est la version de *release du paquet*, indépendante de la version de l'app. Il lit la version de l'app depuis `https://superprint.cc/version.txt`.
 
@@ -41,7 +41,7 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
   - `#spVersionBadge` : commentaire, `title`, `data-sp-js`, `data-sp-sw`, texte `vX.Y.Z`
   - panneau préférences : `vX.Y.Z` (info SUPERPRINT) + `SuperPrint vX.Y.Z — <date>`
   - onboarding : `LAYOUT EDITOR — V X.Y.Z` + `V X.Y.Z | MM YYYY`
-  - `<script src="JS/main.js?v=YYYYMMDD-vXYZ-...">`
+  - `<script src="JS/main.js?v=20260917-v418-vectorisation-clavier">`
 - `app/service-worker.js` — `CACHE_NAME = 'superprint-shell-vX.Y.Z-...'`
 - `app/landing.html` — JSON-LD `softwareVersion` + `feat-tag` + footer `© ... vX.Y.Z`
 - `app/llms.txt` + `app/llms-full.txt` — `Version: X.Y.Z`

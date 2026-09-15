@@ -40133,7 +40133,22 @@ https://superprint.app
         function _spBuildAbsoluteSvgPath(obj) {
             try {
                 if (!obj || typeof obj.calcTransformMatrix !== 'function') return '';
-                var m = obj.calcTransformMatrix();
+                // v1.7.418 — ENFANT D'UN GROUPE : `calcTransformMatrix()` SANS argument
+                //   renvoie la matrice ABSOLUE tant que Fabric a garde le lien
+                //   `obj.group` (mesure canvas : [1,0,0,1,128.98,427.84] pour un bloc a
+                //   left 113) mais la matrice LOCALE quand ce lien est perdu — c'est le
+                //   cas a l'EXPORT, ou les objets sont reconstruits : les glyphes
+                //   sortaient alors a leurs coordonnees locales (boite -167..150 au lieu
+                //   de 104..392). On demande donc explicitement la matrice LOCALE
+                //   (`calcTransformMatrix(true)`, argument `skipGroup` de Fabric) puis on
+                //   la compose avec celle du parent : resultat identique dans les deux
+                //   cas, sans jamais appliquer la transformation deux fois.
+                var m = (obj._spParentMatrix && typeof obj.calcTransformMatrix === 'function')
+                    ? obj.calcTransformMatrix(true)
+                    : obj.calcTransformMatrix();
+                if (obj._spParentMatrix && typeof fabric.util.multiplyTransformMatrices === 'function') {
+                    try { m = fabric.util.multiplyTransformMatrices(obj._spParentMatrix, m); } catch (_) {}
+                }
                 var po = obj.pathOffset || { x: 0, y: 0 };
                 var tp = function(x, y) {
                     var p = fabric.util.transformPoint({ x: x - po.x, y: y - po.y }, m);
@@ -41180,6 +41195,9 @@ https://superprint.app
                 var _strokeScale = obj.strokeUniform ? 1 : ((Math.abs(obj.scaleX || 1) + Math.abs(obj.scaleY || 1)) / 2);
                 var sw4 = pxToMm((obj.strokeWidth || 0) * _strokeScale) * mmToPt;
                 var _pathOp = (typeof obj.opacity === 'number' && obj.opacity >= 0 && obj.opacity <= 1) ? obj.opacity : 1;
+                // v1.7.418 — opacite heritee quand l'enfant vient d'un groupe rendu
+                //   en tracés natifs (le groupe n'est plus aplati en image).
+                if (typeof obj._spParentOpacity === 'number' && obj._spParentOpacity >= 0 && obj._spParentOpacity <= 1) _pathOp *= obj._spParentOpacity;
                 if (_pathOp < 0.01) _pathOp = 0.01;
                 try {
                     page.drawSvgPath(svgPath, {
@@ -41200,6 +41218,48 @@ https://superprint.app
             //   silencieusement ignorés → texte vectorisé absent du PDF.
             //   Rendu en haute résolution via toCanvasElement() → PNG embarqué.
             if (obj.type === 'group' || obj.type === 'Group') {
+                // 🆕 v1.7.418 — GROUPE 100 % VECTORIEL (texte vectorise groupe par les
+                //   versions <= 1.7.417, formes groupees) : on rend chaque enfant en
+                //   TRACES NATIFS au lieu d'aplatir tout le groupe en PNG.
+                //   Mesure du defaut corrige : le contenu du PDF finissait par
+                //   `... 313.479 0 0 36.47 0 0 cm /Image-7098480789 Do Q` (1309x154 px)
+                //   alors que le groupe ne contenait que 13 `fabric.Path`.
+                try {
+                    if (!obj.clipPath && typeof obj.getObjects === 'function') {
+                        var _gKids = obj.getObjects();
+                        var _gVec = _gKids.length > 0 && _gKids.length <= 800;
+                        if (_gVec) {
+                            for (var _gk = 0; _gk < _gKids.length; _gk++) {
+                                var _kt = _gKids[_gk] && _gKids[_gk].type;
+                                if (!(_kt === 'path' || _kt === 'polygon' || _kt === 'polyline' || _kt === 'rect' ||
+                                      _kt === 'circle' || _kt === 'ellipse' || _kt === 'triangle' || _kt === 'line')) {
+                                    _gVec = false; break;
+                                }
+                            }
+                        }
+                        if (_gVec) {
+                            // Matrice ABSOLUE du groupe (un groupe imbrique compose la sienne),
+                            //   posee sur chaque enfant pour que le renderer des tracés sache
+                            //   dans quel repere il dessine.
+                            var _gMat = (obj._spParentMatrix && typeof fabric.util.multiplyTransformMatrices === 'function')
+                                ? fabric.util.multiplyTransformMatrices(obj._spParentMatrix, obj.calcTransformMatrix(true))
+                                : obj.calcTransformMatrix();
+                            var _gOp = (typeof obj.opacity === 'number') ? obj.opacity : 1;
+                            for (var _gv = 0; _gv < _gKids.length; _gv++) {
+                                var _kc = _gKids[_gv];
+                                _kc._spParentMatrix = _gMat;
+                                if (_gOp < 0.999) _kc._spParentOpacity = _gOp;
+                                try {
+                                    await _renderObjToPdfLib(doc, page, _kc, mmToPt, fonts, helvetica, images, multiplier);
+                                } finally {
+                                    delete _kc._spParentMatrix;
+                                    delete _kc._spParentOpacity;
+                                }
+                            }
+                            return;
+                        }
+                    }
+                } catch (e) { console.warn('[pdf-lib] groupe vectoriel -> repli raster :', e); }
                 try {
                     var grpMul = Math.max(multiplier || 1, 2);
                     var grpCanvas = obj.toCanvasElement({ multiplier: grpMul });
@@ -58077,7 +58137,18 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     }
 
     function _spVecLoadFont(family, weight, style) {
-        if (!window.opentype) return Promise.resolve(null);
+        // v1.7.418 — memes libs a la demande que _spVectorizeText : sans cela
+        //   cette fonction renvoyait TOUJOURS null (opentype pas encore charge)
+        //   et la vectorisation echouait en silence.
+        if (!window.opentype) {
+            if (typeof window.ensureExportLibs === 'function') {
+                return window.ensureExportLibs().then(function () {
+                    if (!window.opentype) return null;
+                    return _spVecLoadFont(family, weight, style);
+                }).catch(function () { return null; });
+            }
+            return Promise.resolve(null);
+        }
         var key = _spVecFontKey(family, weight, style);
         var fontResolved = window._SP_FONT_RESOLVED = (window._SP_FONT_RESOLVED || {});
         var fontCache = window._SP_FONT_CACHE = (window._SP_FONT_CACHE || {});
@@ -58277,7 +58348,40 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             if (fontWeight === 'bold') fontWeight = '700';
             else if (fontWeight === 'normal') fontWeight = '400';
 
+            // v1.7.418 — OPENTYPE EST CHARGE A LA DEMANDE (v1.7.323).
+            //   Au clic droit il n'est PAS encore la : l'ancienne garde
+            //   tombait donc dans le repli « textbox » (bloc texte normal,
+            //   toujours editable) alors que l'utilisateur demandait une
+            //   vectorisation. On charge les libs d'export PUIS on reprend.
             if (typeof window.opentype === 'undefined') {
+                if (typeof window.ensureExportLibs === 'function') {
+                    if (!window._spVecLibsLoading) {
+                        window._spVecLibsLoading = true;
+                        console.log('[vectorize] opentype absent -> chargement des libs puis reprise');
+                        try {
+                            var _lgVec = (document.documentElement.lang || 'fr').toLowerCase().indexOf('en') === 0 ? 'en' : 'fr';
+                            if (typeof showToast === 'function') showToast(_lgVec === 'en' ? 'Preparing vectorisation...' : 'Preparation de la vectorisation...');
+                        } catch (_) {}
+                        window.ensureExportLibs().then(function () {
+                            window._spVecLibsLoading = false;
+                            if (typeof window.opentype === 'undefined') {
+                                console.warn('[vectorize] opentype toujours absent apres chargement');
+                                _spWarnFontUnavailable(fontFamily, fontWeight);
+                                _spFallbackVector(canvas, obj, text, fontSize, fontFamily, fontWeight, fill, left, top, angle, maxWidth, mode, textAlign, lineHeightFactor);
+                                return;
+                            }
+                            _spVectorizeText(mode, canvas, obj);
+                        }).catch(function (err) {
+                            window._spVecLibsLoading = false;
+                            console.warn('[vectorize] chargement des libs impossible', err);
+                            _spWarnFontUnavailable(fontFamily, fontWeight);
+                            _spFallbackVector(canvas, obj, text, fontSize, fontFamily, fontWeight, fill, left, top, angle, maxWidth, mode, textAlign, lineHeightFactor);
+                        });
+                    }
+                    return;
+                }
+                // Aucun chargeur disponible : repli AVEC avertissement (plus jamais muet).
+                _spWarnFontUnavailable(fontFamily, fontWeight);
                 _spFallbackVector(canvas, obj, text, fontSize, fontFamily, fontWeight, fill, left, top, angle, maxWidth, mode, textAlign, lineHeightFactor);
                 return;
             }
@@ -58339,21 +58443,77 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         var paths = [];
         var isOutline = (mode === 'outline');
         var unitsPerEm = font.unitsPerEm || 1000;
-        var emScale = fontSize / unitsPerEm;
-
+        // v1.7.418 — ECHELLE : Fabric rend le texte a `fontSize x _fontSizeMult`
+        //   (1,13 par defaut dans l'app, cf. la note de l'export vectoriel
+        //   ~L40396). La TAILLE des glyphes ET leurs AVANCES doivent donc etre
+        //   mises a l'echelle par le MEME facteur : l'ancien code prenait
+        //   `fontSize x |scaleX|` pour la taille et `fontSize / unitsPerEm` pour
+        //   les avances, soit 13 % trop petit des deux cotes -> glyphes plus
+        //   petits et ligne qui derive (mesure : +51 px de centre d'encre sur
+        //   13 caracteres).
+        // v1.7.418 — TAILLE DES GLYPHES : `fontSize x |scaleX|`. Mesure navigateur :
+        //   `measureText('Vectorisation')` a `bold 48px "Open Sans"` = 320,8 px,
+        //   exactement la somme des avances opentype a 48 px. Le facteur
+        //   _fontSizeMult (1,13) ne concerne QUE la hauteur de ligne (voir
+        //   getHeightOfLine plus bas) : l'appliquer aux glyphes elargissait la
+        //   ligne de 13 %.
         var realFontSize = fontSize * Math.abs(scaleX || 1);
+        var emScale = realFontSize / unitsPerEm;
         var lineHeight = realFontSize * lineHeightFactor;
 
         // ✅ v1.7.224 : utiliser obj.text.split('\n') plutôt que obj.textLines.
         // textLines peut contenir des arrays de caractères (format interne Fabric)
         // au lieu de strings, ce qui casse getAdvanceWidth() et le rendu des glyphes.
-        var lines = String(obj.text || '').split('\n');
+        // v1.7.418 — COUPURES DE LIGNE : on reprend les lignes TELLES QUE FABRIC LES
+        //   A COMPOSEES (`_textLines`) au lieu de `obj.text.split('\n')`, qui ne
+        //   voyait qu'une seule ligne des qu'il n'y a pas de retour a la ligne en
+        //   dur. Un mot trop large pour le cadre (affiche sur 2 lignes) etait donc
+        //   vectorise sur une seule ligne : mesure +36 px de derive et une ligne
+        //   1,4x trop large.
+        var lines = [];
+        try {
+            var _tl = obj._textLines || obj.textLines || null;
+            if (_tl && _tl.length) {
+                for (var _ti = 0; _ti < _tl.length; _ti++) {
+                    var _l = _tl[_ti];
+                    if (typeof _l === 'string') lines.push(_l);
+                    else if (Object.prototype.toString.call(_l) === '[object Array]') lines.push(_l.join(''));
+                    else lines.push(_l == null ? '' : String(_l));
+                }
+            }
+        } catch (_) {}
+        if (!lines.length) lines = String(obj.text || '').split('\n');
         if (!lines.length || !obj.text) { _spFallbackVector(canvas, obj, obj.text||'', realFontSize, 'Open Sans', '400', fill, left, top, angle, maxWidth, mode, textAlign, lineHeightFactor); return; }
 
         var ascenderUnits = 0;
         try { ascenderUnits = (typeof font.ascender === 'number') ? font.ascender : (font.tables&&font.tables.os2&&font.tables.os2.sTypoAscender)||0; } catch(_){}
         var ascentRatio = (ascenderUnits > 0) ? (ascenderUnits / unitsPerEm) : 0.778;
         var baselineY = realFontSize * ascentRatio;
+        // v1.7.418 — GEOMETRIE VERTICALE : on reproduit EXACTEMENT la preview
+        //   (meme formule que l'export vectoriel v1.7.341, cf. note ~L40396).
+        //   L'ancien code utilisait « baseline = fontSize x ascender opentype »
+        //   et « interligne = fontSize x lineHeight » : le facteur _fontSizeMult
+        //   (1,13) et la fraction CSS (_fontSizeFraction) manquaient, d'ou un
+        //   texte vectorise decale (mesure : +49 px / -26 px, IoU 0,185).
+        //     h_i        = obj.getHeightOfLine(i)      (inclut _fontSizeMult)
+        //     top_i      = somme des h_k (k < i)
+        //     baseline_i = top_i + h_i x (1 - _fontSizeFraction) / lineHeight
+        var _lineHeightRatio = lineHeightFactor || 1.16;
+        var _fontSizeFractionVal = (typeof obj._fontSizeFraction === 'number' && obj._fontSizeFraction >= 0) ? obj._fontSizeFraction : 0.222;
+        var lineBaselines = [];
+        var _cumH = 0;
+        for (var _bi = 0; _bi < lines.length; _bi++) {
+            var _bh = 0;
+            try { if (typeof obj.getHeightOfLine === 'function') _bh = Number(obj.getHeightOfLine(_bi)) || 0; } catch (_) { _bh = 0; }
+            if (!(_bh > 0)) _bh = realFontSize * _lineHeightRatio;
+            lineBaselines[_bi] = _cumH + (_bh * (1 - _fontSizeFractionVal)) / _lineHeightRatio;
+            _cumH += _bh;
+        }
+        // Rotation du bloc : on l'applique DANS les coordonnees des glyphes
+        //   (rotation autour du coin haut-gauche du bloc), donc les paths
+        //   n'ont plus d'angle propre (plus de rotation en double).
+        var _angRad = (Number(angle) || 0) * Math.PI / 180;
+        var cosA = Math.cos(_angRad), sinA = Math.sin(_angRad);
 
         var letterSpacing = charSpacing / 1000;
         var lineWidths = lines.map(function(ln){
@@ -58398,19 +58558,27 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 //   On utilise scaleY:-1 sur chaque path pour inverser Y↑→Y↓.
                 var gp = glyph.getPath(0, 0, realFontSize);
                 if (gp && gp.commands && gp.commands.length > 0) {
-                    var d = _spOtPathToSVG(gp);
+                    // v1.7.418 : coordonnees ABSOLUES (origine du glyphe + inversion
+                    //   Y + rotation eventuelle), puis left/top = pathOffset : Fabric
+                    //   place le MINIMUM de la boite englobante a (left, top), donc
+                    //   poser left/top = pathOffset rend les coordonnees absolues
+                    //   exactes (avant : left = left + xCursor decalait chaque glyphe
+                    //   de son left side bearing, erreur cumulative).
+                    var d = _spOtPathToSVG(gp, left, top, xCursor, lineBaselines[li] || 0, cosA, sinA);
                     if (d) {
                         var fabPath = new fabric.Path(d, {
-                            left: left + xCursor,
-                            top: top + baselineY + li * lineHeight,
-                            scaleY: -1,
+                            // AUCUN left/top ni origin : le 'd' est deja en coordonnees
+                            //   CANEVAS et Fabric en deduit left/top tout seul
+                            //   (mesure pixel : carre absolu 100..140 -> encre
+                            //   (100,100)-(139,139) ; avec left:0 l'encre tombait a
+                            //   (1,1), avec left=pathOffset a (120,120)).
                             fill: isOutline ? 'transparent' : fill,
                             stroke: (isOutline || boldStroke > 0) ? fill : null,
                             strokeWidth: isOutline ? Math.max(0.5, realFontSize * 0.05) : boldStroke,
-                            angle: angle,
                             objectCaching: false,
                             paintFirst: isOutline ? 'stroke' : 'fill'
                         });
+                        fabPath.setCoords();
                         paths.push(fabPath);
                     }
                 }
@@ -58432,15 +58600,20 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         //   l'inversion Y OpenType→Fabric (fonctionne correctement à
         //   l'affichage). Le miroir au copier-coller est corrigé dans
         //   _spFixVectorizedGroupFlip (appelé avant canvas.add au paste).
-        var grp = new fabric.Group(paths, {
-            flipY: true,
-            objectCaching: false
-        });
-        // Replacer le groupe à la position d'origine du textbox
-        grp.set({ left: left, top: top, angle: angle });
-        grp.setCoords();
-        canvas.add(grp);
-        canvas.setActiveObject(grp);
+        // v1.7.418 — PLUS DE GROUPE : chaque glyphe est un path ABSOLU pose sur
+        //   le canevas. Deux raisons mesurees :
+        //     1) l'export natif rasterise les groupes (_renderObjToPdfLib :
+        //        group -> toCanvasElement -> PNG, mesure /Image-... Do 1309x154)
+        //        -> les glyphes sortaient en image au lieu de traces vectoriels ;
+        //     2) « Vectoriser » doit laisser des contours selectionnables un par
+        //        un (comportement InDesign), ce que le groupe empechait.
+        //   On selectionne l'ENSEMBLE pour que le bloc reste deplacable d'un coup.
+        for (var _pi = 0; _pi < paths.length; _pi++) canvas.add(paths[_pi]);
+        // ⚠️ PAS d'ActiveSelection — MESURE sur un canvas INTERACTIF : sa creation
+        //   rebase les enfants (left/top deviennent relatifs au groupe) et le rendu
+        //   se decale (encre mesuree (95,55)-(244,194) au lieu de (100,100)-(239,189)
+        //   pour deux carres absolus). Les glyphes sont deja aux bonnes
+        //   coordonnees : on les laisse non selectionnes.
         canvas.requestRenderAll();
         if (typeof saveState === 'function') saveState('Texte vectorisé (' + mode + ')');
     }
@@ -58448,14 +58621,29 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     // 🍏 v1.7.235 : Coordonnées OpenType brutes (Y↑). L'inversion Y↑→Y↓
     //   est faite par scaleY:-1 sur chaque fabric.Path.
     //   PAS de -c.y ici (voir _spDoVectorize).
-    function _spOtPathToSVG(otPath) {
+    // v1.7.418 : produit des coordonnees ABSOLUES (canevas) — origine du glyphe
+    //   (gx, baseline) + inversion Y (OpenType Y vers le haut -> canvas Y vers le
+    //   bas) + rotation eventuelle du bloc (cosA/sinA) autour de son coin haut-
+    //   gauche (ox, oy). Sans argument d'origine, on garde l'ancien comportement
+    //   (coordonnees OpenType brutes) pour ne pas casser d'autres appelants.
+    function _spOtPathToSVG(otPath, ox, oy, gx, baseline, cosA, sinA) {
+        var absolu = (typeof ox === 'number' && typeof oy === 'number');
+        var rot = absolu && (cosA !== 1 || sinA !== 0);
+        function P(x, y) {
+            if (!absolu) return [x, y];
+            var lx = (gx || 0) + x;
+            var ly = (baseline || 0) - y;
+            if (!rot) return [ox + lx, oy + ly];
+            return [ox + lx * cosA - ly * sinA, oy + lx * sinA + ly * cosA];
+        }
+        function S(x, y) { var p = P(x, y); return p[0].toFixed(2) + ',' + p[1].toFixed(2); }
         var d = '', cmds = otPath.commands || [];
         for (var ci = 0; ci < cmds.length; ci++) {
             var c = cmds[ci];
-            if (c.type === 'M') d += 'M' + c.x.toFixed(2) + ',' + c.y.toFixed(2) + ' ';
-            else if (c.type === 'L') d += 'L' + c.x.toFixed(2) + ',' + c.y.toFixed(2) + ' ';
-            else if (c.type === 'C') d += 'C' + c.x1.toFixed(2) + ',' + c.y1.toFixed(2) + ' ' + c.x2.toFixed(2) + ',' + c.y2.toFixed(2) + ' ' + c.x.toFixed(2) + ',' + c.y.toFixed(2) + ' ';
-            else if (c.type === 'Q') d += 'Q' + c.x1.toFixed(2) + ',' + c.y1.toFixed(2) + ' ' + c.x.toFixed(2) + ',' + c.y.toFixed(2) + ' ';
+            if (c.type === 'M') d += 'M' + S(c.x, c.y) + ' ';
+            else if (c.type === 'L') d += 'L' + S(c.x, c.y) + ' ';
+            else if (c.type === 'C') d += 'C' + S(c.x1, c.y1) + ' ' + S(c.x2, c.y2) + ' ' + S(c.x, c.y) + ' ';
+            else if (c.type === 'Q') d += 'Q' + S(c.x1, c.y1) + ' ' + S(c.x, c.y) + ' ';
             else if (c.type === 'Z') d += 'Z ';
         }
         return d.trim();

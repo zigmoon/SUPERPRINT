@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.417-clavier-studio';
+const CACHE_NAME = 'superprint-shell-v1.7.418-vectorisation-clavier';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
