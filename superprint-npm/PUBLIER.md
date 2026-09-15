@@ -26,7 +26,7 @@ npm login
 npm publish
 ```
 
-C'est tout. Le package `superprint@1.0.0` est en ligne.
+C'est tout. Le package `superprint` est en ligne (version actuelle : **1.0.96**).
 
 ## 4. Mettre à jour plus tard (après modification)
 
@@ -51,12 +51,14 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 
 | Fichier | Rôle |
 |---|---|
-| `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~52 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
-| `version.txt` | Version en ligne (`1.7.336`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
+| `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~58 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
+| `version.txt` | Version en ligne (`1.7.450`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
 
 > `version.txt` : si absent, le CLI affiche "Version en ligne : superprint.cc" sans version — pas bloquant, mais mieux vaut le déployer.
 
-> 📦 Le zip est régénéré par `node _make_zip.mjs` (à la racine du repo). Il n'est **pas commité** dans git (~52 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
+> 📦 Le zip est régénéré par **`node _dev/scripts/_make_zip.cjs`** (à la racine du repo : il crée `superprint/sp213-local.zip` puis le contrôle). Il n'est **pas commité** dans git (~58 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
+
+> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.450** (zip et site 1.7.450 en ligne depuis le 15/09/2026).
 
 ## 📋 La commande à copier-coller (nouvelle)
 
