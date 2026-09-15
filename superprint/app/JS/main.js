@@ -61935,6 +61935,11 @@ canvas.requestRenderAll();
             if (langFilter) {
                 langFilter.style.display = (targetTab === 'comp' || targetTab === 'premium') ? 'flex' : 'none';
             }
+            // 🆕 v1.7.442 — le bandeau de tags ne concerne que les maquettes
+            const tagsStrip = document.getElementById('assetsTags');
+            if (tagsStrip) {
+                tagsStrip.style.display = (targetTab === 'comp' || targetTab === 'premium') ? 'flex' : 'none';
+            }
         });
     });
 
@@ -61961,14 +61966,20 @@ canvas.requestRenderAll();
             const q = (champ && champ.value ? champ.value : '').trim().toLowerCase();
             const btn = document.querySelector('.assets-lang-btn.active');
             const lg = btn ? (btn.dataset.assetLang || 'all') : 'all';
+            // 🆕 v1.7.442 — tag de famille actif
+            const tagActif = document.querySelector('.assets-tag.active');
+            const catActive = tagActif ? (tagActif.dataset.assetCat || 'all') : 'all';
             let total = 0;
             document.querySelectorAll('.assets-grid').forEach(function (grid) {
                 let visibles = 0;
                 Array.from(grid.children).forEach(function (card) {
                     if (!card.classList || !card.classList.contains('asset-card')) return;
-                    const okLang = (lg === 'all') || ((card.dataset.lang || 'fr') === lg);
+                    const aLang = card.getAttribute('data-lang');
+                    const okLang = (lg === 'all') || (aLang === null) || (aLang === lg);
+                    const aCat = card.getAttribute('data-cat');
+                    const okCat = (catActive === 'all') || (aCat === null) || (aCat === catActive);
                     const okTexte = !q || (card.textContent || '').toLowerCase().indexOf(q) >= 0;
-                    const ok = okLang && okTexte;
+                    const ok = okLang && okCat && okTexte;
                     card.style.display = ok ? '' : 'none';
                     if (ok) visibles++;
                 });
@@ -61997,6 +62008,7 @@ canvas.requestRenderAll();
             b.addEventListener('click', function () {
                 document.querySelectorAll('.assets-lang-btn').forEach(function (x) { x.classList.remove('active'); });
                 b.classList.add('active');
+                window._spLangChoisiManuellement = true;
                 applyAssetsFilter();
             });
         });
@@ -62007,10 +62019,24 @@ canvas.requestRenderAll();
         function forcerTout() {
             const bAll = document.querySelector('.assets-lang-btn[data-asset-lang="all"]');
             if (!bAll) return;
+            window._spLangChoisiManuellement = false;
             document.querySelectorAll('.assets-lang-btn').forEach(function (x) { x.classList.remove('active'); });
             bAll.classList.add('active');
             applyAssetsFilter();
         }
+        // 🆕 v1.7.442 — l'application relance son propre filtre de langue à l'ouverture du panneau
+        //   et masque alors les maquettes françaises. Tant que l'utilisateur n'a pas cliqué
+        //   lui-même sur une langue, on neutralise cet appel et on applique « ALL ».
+        try {
+            const _filtreApp = window.filterAssetsByLang;
+            if (typeof _filtreApp === 'function' && !window._spFiltreLangNeutralise) {
+                window._spFiltreLangNeutralise = true;
+                window.filterAssetsByLang = function (lang) {
+                    if (!window._spLangChoisiManuellement) { applyAssetsFilter(); return; }
+                    return _filtreApp.call(this, lang);
+                };
+            }
+        } catch (eF) {}
         setTimeout(applyAssetsFilter, 800);
         setTimeout(forcerTout, 1600);
         setTimeout(forcerTout, 3200);
@@ -62099,6 +62125,51 @@ canvas.requestRenderAll();
         return card;
     }
 
+    // 🆕 v1.7.442 — ASSOCIATIONS DE POLICES (demande utilisateur) : quatorze combinaisons
+    //   qui fonctionnent réellement en imprimé — un display pour le titre, un texte pour le
+    //   corps, un monospace pour le surtitre. Chaque carte s'affiche dans la police du titre
+    //   et dépose une mise en page complète et éditable.
+    (function () {
+        var combos = [
+            { n: 'Éditorial · Playfair Display + Open Sans', d: 'Playfair Display', c: 'Open Sans', s: 40, t: 'L’art de composer', a: 'Le classique de l’édition', e: 'ÉDITORIAL CLASSIQUE', b: 'Un texte courant lisible, largeur de 90 signes et interlignage de 1,55 pour les lectures longues.' },
+            { n: 'Magazine · Bebas Neue + Lato', d: 'Bebas Neue', c: 'Lato', s: 56, t: 'GRAND ANGLE', a: 'Le titre qui prend toute la page', e: 'MAGAZINE · NUMÉRO 12', b: 'Un display très condensé pour les gros titres, un texte neutre et large pour tenir les colonnes serrées.' },
+            { n: 'Suisse · Montserrat + Roboto', d: 'Montserrat', c: 'Roboto', s: 38, t: 'Clarté avant tout', a: 'Deux géométriques, une seule hiérarchie', e: 'MISE EN PAGE SUISSE', b: 'Montserrat pour les titres, Roboto pour le corps : la combinaison la plus sobre pour un rapport ou un dépliant.' },
+            { n: 'Luxe · Playfair Display + Lato', d: 'Playfair Display', c: 'Lato', s: 44, t: 'Maison de caractère', a: 'Le contraste fait tout', e: 'ART DE VIVRE', b: 'Un didone pour le titre, un humaniste discret pour le texte : la recette des catalogues haut de gamme.' },
+            { n: 'Moderne · Poppins + Open Sans', d: 'Poppins', c: 'Open Sans', s: 38, t: 'Nouvelle formule', a: 'Rond, lisible, contemporain', e: 'LANCEMENT PRODUIT', b: 'Poppins arrondit les titres, Open Sans garde le corps très lisible, même en petit corps sur papier mat.' },
+            { n: 'Technique · IBM Plex Mono + IBM Plex Sans', d: 'IBM Plex Mono', c: 'IBM Plex Sans', s: 30, t: 'Documentation', a: 'Références, codes et mesures', e: 'NOTICE TECHNIQUE 04', b: 'Le monospace pour les références et les chiffres, le sans pour les explications : deux fontes d’une même famille.' },
+            { n: 'Brutaliste · Bebas Neue + Space Mono', d: 'Bebas Neue', c: 'Space Mono', s: 60, t: 'SANS FILTRE', a: 'Le contraste brut', e: 'AFFICHE / ÉDITION LIMITÉE', b: 'Un display massif contre un monospace à empattements : idéal pour une affiche ou une couverture manifeste.' },
+            { n: 'Littéraire · Playfair Display × 2', d: 'Playfair Display', c: 'Playfair Display', s: 36, t: 'Chapitre premier', a: 'Une seule famille, deux voix', e: 'ROMAN', b: 'Tout en didone : les titres en romain, les accroches en italique, le texte en romain. Trois registres, une seule fonte.' },
+            { n: 'Affiche · Bebas Neue + Montserrat', d: 'Bebas Neue', c: 'Montserrat', s: 64, t: 'SOIRÉE', a: 'Vendredi 24 septembre · 20 h', e: 'ÉVÉNEMENT', b: 'Conditions, tarifs et adresse en Montserrat : l’affiche se lit en trois secondes depuis la rue.' },
+            { n: 'Startup · Poppins + IBM Plex Sans', d: 'Poppins', c: 'IBM Plex Sans', s: 38, t: 'Lancement', a: 'Ce que fait le produit, en une phrase', e: 'PITCH DECK', b: 'Le titre rond de Poppins pour l’énergie, IBM Plex Sans pour les tableaux et les chiffres du dossier.' },
+            { n: 'Données · IBM Plex Sans + IBM Plex Mono', d: 'IBM Plex Sans', c: 'IBM Plex Mono', s: 34, t: 'Rapport annuel', a: 'Les chiffres d’abord', e: 'EXERCICE 2027', b: 'Les libellés en sans, les montants et les pourcentages en monospace : les colonnes tombent juste.' },
+            { n: 'Contraste · Playfair Display + Poppins', d: 'Playfair Display', c: 'Poppins', s: 42, t: 'Élégance moderne', a: 'Le serif rencontre le géométrique', e: 'COLLECTION', b: 'Un serif classique pour le titre, un géométrique pour le texte : la combinaison contemporaine la plus sûre.' },
+            { n: 'Code · JetBrains Mono + Roboto', d: 'JetBrains Mono', c: 'Roboto', s: 28, t: 'Interface', a: 'Extraits, commandes, captures', e: 'MANUEL DÉVELOPPEUR', b: 'Le monospace pour les extraits de code, Roboto pour les explications et les légendes d’écran.' },
+            { n: 'Gastronomie · Playfair Display + Montserrat', d: 'Playfair Display', c: 'Montserrat', s: 40, t: 'À table', a: 'La carte du mois', e: 'MENU · HIVER', b: 'Les intitulés de plats en italique, les prix en Montserrat alignés à droite : une carte lisible à la bougie.' }
+        ];
+        var i;
+        for (i = combos.length - 1; i >= 0; i--) {
+            (function (k) {
+                typographyPatterns.unshift({
+                    name: k.n, fonts: [k.d, k.c],
+                    objects: [
+                        { type: 'text', text: k.t, fontSize: k.s, fontWeight: '700', fontFamily: k.d, width: 460 },
+                        { type: 'text', text: k.a, top: k.s + 12, fontSize: 14, fontStyle: 'italic', fontFamily: k.c, width: 460, fill: '#555' },
+                        { type: 'text', text: k.b, top: k.s + 38, width: 460, fontSize: 11.5, fontFamily: k.c, lineHeight: 1.55, fill: '#444' }
+                    ],
+                    build: function (canvas, x, y) {
+                        var o = [];
+                        o.push(new fabric.Textbox(k.e, { left: x, top: y, width: 460, fontSize: 9.5, fontFamily: 'IBM Plex Mono', fill: '#9a9a9a', charSpacing: 220, splitByGrapheme: false }));
+                        o.push(new fabric.Textbox(k.t, { left: x, top: y + 16, width: 460, fontSize: k.s, fontWeight: '700', fontFamily: k.d, fill: '#111111', lineHeight: 1.06, splitByGrapheme: false }));
+                        o.push(new fabric.Textbox(k.a, { left: x, top: y + 19 + k.s * 1.15, width: 460, fontSize: 14, fontStyle: 'italic', fontFamily: k.c, fill: '#555555', lineHeight: 1.3, splitByGrapheme: false }));
+                        o.push(new fabric.Textbox(k.b, { left: x, top: y + 27 + k.s * 1.15 + 18, width: 460, fontSize: 11.5, fontFamily: k.c, fill: '#3c3c3c', lineHeight: 1.55, splitByGrapheme: false }));
+                        o.push(new fabric.Line([x, y + 33 + k.s * 1.15 + 62, x + 120, y + 33 + k.s * 1.15 + 62], { stroke: '#111111', strokeWidth: 1 }));
+                        addAssetObjects(canvas, o, k.n);
+                    }
+                });
+            })(combos[i]);
+        }
+    })();
+
     // Générer les assets Typographie
     const typoGrid = document.querySelector('.assets-grid[data-content="typo"]');
     if (typoGrid && typeof typographyPatterns !== 'undefined') {
@@ -62111,6 +62182,11 @@ canvas.requestRenderAll();
             const firstObj = (pattern.objects && pattern.objects.length) ? pattern.objects[0] : null;
             previewText.style.fontWeight = (firstObj && firstObj.fontWeight) || 'normal';
             previewText.style.fontStyle = (firstObj && firstObj.fontStyle) || 'normal';
+            // 🆕 v1.7.442 — l'aperçu s'affiche dans la police du titre (associations de polices)
+            try {
+                const _pf = (firstObj && firstObj.fontFamily) || (pattern.fonts && pattern.fonts[0]);
+                if (_pf) previewText.style.fontFamily = '"' + _pf + '", sans-serif';
+            } catch (ePF) {}
             previewText.textContent = (firstObj && typeof firstObj.text === 'string')
                 ? firstObj.text.substring(0, 30)
                 : (pattern.name || '');
@@ -62137,6 +62213,143 @@ canvas.requestRenderAll();
             typoGrid.appendChild(card);
         });
     }
+
+    // 🆕 v1.7.442 — BEAUCOUP PLUS DE FORMES (demande utilisateur) + aperçu vectoriel généré
+    //   automatiquement depuis la définition (plus besoin d'un SVG dessiné à la main).
+    (function () {
+        var nouvelles = [
+            {"name":"Hexagone","tag":"Géométrie","type":"polygon","points":[{"x":24,"y":2},{"x":43.05,"y":13},{"x":43.05,"y":35},{"x":24,"y":46},{"x":4.95,"y":35},{"x":4.95,"y":13}],"fill":"#2d9cdb"},
+            {"name":"Pentagone","tag":"Géométrie","type":"polygon","points":[{"x":24,"y":2},{"x":44.92,"y":17.2},{"x":36.93,"y":41.8},{"x":11.07,"y":41.8},{"x":3.08,"y":17.2}],"fill":"#27ae60"},
+            {"name":"Octogone","tag":"Géométrie","type":"polygon","points":[{"x":15.58,"y":3.67},{"x":32.42,"y":3.67},{"x":44.33,"y":15.58},{"x":44.33,"y":32.42},{"x":32.42,"y":44.33},{"x":15.58,"y":44.33},{"x":3.67,"y":32.42},{"x":3.67,"y":15.58}],"fill":"#8e44ad"},
+            {"name":"Losange","tag":"Géométrie","type":"polygon","points":[{"x":24,"y":2},{"x":46,"y":24},{"x":24,"y":46},{"x":2,"y":24}],"fill":"#9b59b6"},
+            {"name":"Trapèze","tag":"Géométrie","type":"polygon","points":[{"x":10,"y":2},{"x":38,"y":2},{"x":46,"y":44},{"x":2,"y":44}],"fill":"#16a085"},
+            {"name":"Parallélogramme","tag":"Géométrie","type":"polygon","points":[{"x":16,"y":4},{"x":46,"y":4},{"x":32,"y":44},{"x":2,"y":44}],"fill":"#e67e22"},
+            {"name":"Triangle inversé","tag":"Géométrie","type":"polygon","points":[{"x":2,"y":4},{"x":46,"y":4},{"x":24,"y":44}],"fill":"#c0392b"},
+            {"name":"Croix épaisse","tag":"Géométrie","type":"polygon","points":[{"x":17,"y":2},{"x":31,"y":2},{"x":31,"y":17},{"x":46,"y":17},{"x":46,"y":31},{"x":31,"y":31},{"x":31,"y":46},{"x":17,"y":46},{"x":17,"y":31},{"x":2,"y":31},{"x":2,"y":17},{"x":17,"y":17}],"fill":"#34495e"},
+            {"name":"Croix fine","tag":"Géométrie","type":"path","path":"M8 8 L40 40 M40 8 L8 40","stroke":"#e74c3c","strokeWidth":5,"fill":null},
+            {"name":"Anneau","tag":"Géométrie","type":"circle","radius":21,"fill":null,"stroke":"#8e44ad","strokeWidth":8},
+            {"name":"Disque","tag":"Géométrie","type":"circle","radius":21,"fill":"#2c3e50"},
+            {"name":"Demi-disque","tag":"Géométrie","type":"path","path":"M3 40 A21 21 0 0 1 45 40 Z","fill":"#f39c12"},
+            {"name":"Quart de cercle","tag":"Géométrie","type":"path","path":"M4 44 L4 10 A34 34 0 0 1 38 44 Z","fill":"#27ae60"},
+            {"name":"Goutte","tag":"Géométrie","type":"path","path":"M24 4 C24 4 38 22 38 30 A14 14 0 1 1 10 30 C10 22 24 4 24 4 Z","fill":"#3498db"},
+            {"name":"Vague","tag":"Géométrie","type":"path","path":"M3 28 C9 15 15 15 24 28 C33 41 39 41 45 28","stroke":"#2980b9","strokeWidth":5,"fill":null},
+            {"name":"Étoile 4 branches","tag":"Géométrie","type":"star","points":4,"radius":22,"fill":"#f1c40f"},
+            {"name":"Étoile 6 branches","tag":"Géométrie","type":"star","points":6,"radius":22,"fill":"#f1c40f"},
+            {"name":"Étoile 8 branches","tag":"Géométrie","type":"star","points":8,"radius":22,"fill":"#f39c12"},
+            {"name":"Étoile 12 branches","tag":"Géométrie","type":"star","points":12,"radius":22,"fill":"#f1c40f"},
+            {"name":"Hachures","tag":"Géométrie","type":"path","path":"M4 4 L44 44 M16 4 L44 32 M4 16 L32 44","stroke":"#888888","strokeWidth":4,"fill":null},
+            {"name":"Flèche droite","tag":"Flèches","type":"polygon","points":[{"x":2,"y":16},{"x":30,"y":16},{"x":30,"y":6},{"x":46,"y":24},{"x":30,"y":42},{"x":30,"y":32},{"x":2,"y":32}],"fill":"#1a1a1a"},
+            {"name":"Flèche gauche","tag":"Flèches","type":"polygon","points":[{"x":46,"y":16},{"x":18,"y":16},{"x":18,"y":6},{"x":2,"y":24},{"x":18,"y":42},{"x":18,"y":32},{"x":46,"y":32}],"fill":"#1a1a1a"},
+            {"name":"Flèche haut","tag":"Flèches","type":"polygon","points":[{"x":16,"y":46},{"x":16,"y":18},{"x":6,"y":18},{"x":24,"y":2},{"x":42,"y":18},{"x":32,"y":18},{"x":32,"y":46}],"fill":"#1a1a1a"},
+            {"name":"Flèche bas","tag":"Flèches","type":"polygon","points":[{"x":16,"y":2},{"x":16,"y":30},{"x":6,"y":30},{"x":24,"y":46},{"x":42,"y":30},{"x":32,"y":30},{"x":32,"y":2}],"fill":"#2c3e50"},
+            {"name":"Flèche double","tag":"Flèches","type":"polygon","points":[{"x":2,"y":24},{"x":14,"y":12},{"x":14,"y":20},{"x":34,"y":20},{"x":34,"y":12},{"x":46,"y":24},{"x":34,"y":36},{"x":34,"y":28},{"x":14,"y":28},{"x":14,"y":36}],"fill":"#333333"},
+            {"name":"Flèche fine","tag":"Flèches","type":"path","path":"M4 24 H42 M32 14 L42 24 L32 34","stroke":"#1a1a1a","strokeWidth":4,"fill":null},
+            {"name":"Flèche courbe","tag":"Flèches","type":"path","path":"M5 43 C5 17 23 6 43 11 M35 5 L43 11 L37 21","stroke":"#e67e22","strokeWidth":4,"fill":null},
+            {"name":"Chevron double","tag":"Flèches","type":"path","path":"M6 8 L18 24 L6 40 M22 8 L34 24 L22 40","stroke":"#333333","strokeWidth":5,"fill":null},
+            {"name":"Ruban","tag":"Bandeaux","type":"polygon","points":[{"x":2,"y":8},{"x":46,"y":8},{"x":46,"y":34},{"x":38,"y":26},{"x":30,"y":34},{"x":24,"y":34},{"x":16,"y":26},{"x":8,"y":34},{"x":2,"y":26}],"fill":"#e74c3c"},
+            {"name":"Étiquette","tag":"Bandeaux","type":"polygon","points":[{"x":4,"y":16},{"x":18,"y":2},{"x":44,"y":2},{"x":44,"y":44},{"x":18,"y":44},{"x":4,"y":30}],"fill":"#8e44ad"},
+            {"name":"Étiquette prix","tag":"Bandeaux","type":"polygon","points":[{"x":4,"y":14},{"x":16,"y":2},{"x":46,"y":2},{"x":46,"y":34},{"x":24,"y":46},{"x":4,"y":30}],"fill":"#27ae60"},
+            {"name":"Sceau","tag":"Bandeaux","type":"group","items":[{"type":"circle","radius":22,"left":2,"top":2,"fill":"#e67e22"},{"type":"circle","radius":14,"left":10,"top":10,"fill":"#ffffff"},{"type":"circle","radius":8,"left":16,"top":16,"fill":"#e67e22"}]},
+            {"name":"Pastille bordée","tag":"Bandeaux","type":"circle","radius":20,"fill":"#f1c40f","stroke":"#1a1a1a","strokeWidth":3},
+            {"name":"Bannière","tag":"Bandeaux","type":"polygon","points":[{"x":2,"y":10},{"x":34,"y":10},{"x":44,"y":24},{"x":34,"y":38},{"x":2,"y":38},{"x":10,"y":24}],"fill":"#2980b9"},
+            {"name":"Enveloppe","tag":"Communication","type":"path","path":"M4 11 H44 V35 H4 Z M4 11 L24 25 L44 11","fill":"#ecf0f1","stroke":"#34495e","strokeWidth":2.4},
+            {"name":"Globe","tag":"Communication","type":"path","path":"M5 24 a19 19 0 0 1 38 0 a19 19 0 0 1 -38 0 M24 5 v38 M7 15 h34 M7 33 h34","stroke":"#2980b9","strokeWidth":2.2,"fill":null},
+            {"name":"Horloge","tag":"Communication","type":"group","items":[{"type":"circle","radius":21,"left":1,"top":1,"fill":"#ffffff","stroke":"#333333","strokeWidth":2.5},{"type":"rect","width":3,"height":14,"left":23,"top":8,"fill":"#333333"},{"type":"rect","width":12,"height":3,"left":24,"top":22,"fill":"#333333"}]},
+            {"name":"Calendrier","tag":"Communication","type":"group","items":[{"type":"rect","width":42,"height":36,"rx":3,"left":2,"top":6,"fill":"#ffffff","stroke":"#e74c3c","strokeWidth":2.4},{"type":"rect","width":42,"height":10,"left":2,"top":6,"fill":"#e74c3c"},{"type":"rect","width":5,"height":5,"left":9,"top":22,"fill":"#7f8c8d"},{"type":"rect","width":5,"height":5,"left":20,"top":22,"fill":"#7f8c8d"},{"type":"rect","width":5,"height":5,"left":31,"top":22,"fill":"#7f8c8d"},{"type":"rect","width":5,"height":5,"left":9,"top":32,"fill":"#bdc3c7"},{"type":"rect","width":5,"height":5,"left":20,"top":32,"fill":"#bdc3c7"}]},
+            {"name":"Moniteur","tag":"Communication","type":"group","items":[{"type":"rect","width":42,"height":28,"rx":3,"left":2,"top":6,"fill":"#34495e"},{"type":"rect","width":16,"height":4,"left":15,"top":36,"fill":"#34495e"}]},
+            {"name":"Document","tag":"Communication","type":"path","path":"M8 3 H28 L40 14 V45 H8 Z","fill":"#ecf0f1","stroke":"#7f8c8d","strokeWidth":2.2},
+            {"name":"Dossier","tag":"Communication","type":"path","path":"M3 12 H16 L20 17 H45 V42 H3 Z","fill":"#f39c12","stroke":"#c9810a","strokeWidth":1.6},
+            {"name":"Graphique","tag":"Communication","type":"group","items":[{"type":"rect","width":8,"height":18,"left":5,"top":20,"fill":"#3498db"},{"type":"rect","width":8,"height":28,"left":18,"top":10,"fill":"#2ecc71"},{"type":"rect","width":8,"height":38,"left":31,"top":0,"fill":"#e74c3c"},{"type":"rect","width":42,"height":2,"left":3,"top":42,"fill":"#333333"}]},
+            {"name":"Camembert","tag":"Communication","type":"path","path":"M24 24 L24 3 A21 21 0 0 1 43 33 Z","fill":"#9b59b6"},
+            {"name":"Panier","tag":"Commerce","type":"path","path":"M4 13 H44 L38 41 H10 Z M12 13 L18 3 M36 13 L30 3","fill":"#e67e22","stroke":"#b95c0c","strokeWidth":1.8},
+            {"name":"Sac","tag":"Commerce","type":"path","path":"M7 17 H41 V45 H7 Z M17 17 V12 a7 7 0 0 1 14 0 v5","fill":"#c0392b","stroke":"#8e2a20","strokeWidth":1.8},
+            {"name":"Marqueur de carte","tag":"Commerce","type":"path","path":"M24 3 a13 13 0 0 1 13 13 c0 10 -13 29 -13 29 S11 26 11 16 A13 13 0 0 1 24 3 Z M24 11 a6 6 0 1 1 0 12 a6 6 0 1 1 0 -12","fill":"#e74c3c"},
+            {"name":"Coche cerclée","tag":"Symboles","type":"path","path":"M24 4 a20 20 0 1 0 0 40 a20 20 0 1 0 0 -40 M14 24 l7 8 12 -16","stroke":"#27ae60","strokeWidth":4,"fill":null},
+            {"name":"Croix cerclée","tag":"Symboles","type":"path","path":"M24 4 a20 20 0 1 0 0 40 a20 20 0 1 0 0 -40 M16 16 l16 16 M32 16 l-16 16","stroke":"#e74c3c","strokeWidth":4,"fill":null},
+            {"name":"Interdit","tag":"Symboles","type":"path","path":"M24 4 a20 20 0 1 0 0 40 a20 20 0 1 0 0 -40 M10 10 l28 28","stroke":"#e74c3c","strokeWidth":4.5,"fill":null},
+            {"name":"Information","tag":"Symboles","type":"path","path":"M24 4 a20 20 0 1 0 0 40 a20 20 0 1 0 0 -40 M24 21 v15 M24 14 v2","stroke":"#2980b9","strokeWidth":4,"fill":null},
+            {"name":"Attention","tag":"Symboles","type":"polygon","points":[{"x":24,"y":3},{"x":46,"y":43},{"x":2,"y":43}],"fill":"#f1c40f","stroke":"#b7950b","strokeWidth":2},
+            {"name":"Feuille","tag":"Nature","type":"path","path":"M6 44 C6 21 22 6 44 6 C44 29 28 44 6 44 Z M6 44 L29 21","fill":"#27ae60"},
+            {"name":"Arbre","tag":"Nature","type":"path","path":"M24 45 V33 M24 33 c-9 0 -14 -6 -14 -12 0 -5 3 -8 7 -9 1 -5 5 -8 9 -8 4 0 8 3 9 8 4 1 7 4 7 9 0 6 -5 12 -14 12 z","fill":"#2e7d32"},
+            {"name":"Fleur","tag":"Nature","type":"group","items":[{"type":"circle","radius":9,"left":15,"top":5,"fill":"#f4a3b8"},{"type":"circle","radius":9,"left":27,"top":13,"fill":"#f4a3b8"},{"type":"circle","radius":9,"left":23,"top":27,"fill":"#f4a3b8"},{"type":"circle","radius":9,"left":9,"top":27,"fill":"#f4a3b8"},{"type":"circle","radius":9,"left":5,"top":13,"fill":"#f4a3b8"},{"type":"circle","radius":7,"left":17,"top":17,"fill":"#f1c40f"}]},
+            {"name":"Montagne","tag":"Nature","type":"polygon","points":[{"x":2,"y":44},{"x":16,"y":14},{"x":25,"y":27},{"x":33,"y":8},{"x":46,"y":44}],"fill":"#5d6d7e"},
+            {"name":"Cadre","tag":"Déco","type":"group","items":[{"type":"rect","width":46,"height":4,"left":1,"top":1,"fill":"#333333"},{"type":"rect","width":46,"height":4,"left":1,"top":43,"fill":"#333333"},{"type":"rect","width":4,"height":38,"left":1,"top":5,"fill":"#333333"},{"type":"rect","width":4,"height":38,"left":43,"top":5,"fill":"#333333"}]},
+            {"name":"Trame de points","tag":"Déco","type":"group","items":[{"type":"circle","radius":2.5,"left":6,"top":6,"fill":"#666666"},{"type":"circle","radius":2.5,"left":21,"top":6,"fill":"#666666"},{"type":"circle","radius":2.5,"left":36,"top":6,"fill":"#666666"},{"type":"circle","radius":2.5,"left":6,"top":21,"fill":"#666666"},{"type":"circle","radius":2.5,"left":21,"top":21,"fill":"#666666"},{"type":"circle","radius":2.5,"left":36,"top":21,"fill":"#666666"},{"type":"circle","radius":2.5,"left":6,"top":36,"fill":"#666666"},{"type":"circle","radius":2.5,"left":21,"top":36,"fill":"#666666"},{"type":"circle","radius":2.5,"left":36,"top":36,"fill":"#666666"}]},
+            {"name":"Pointillés","tag":"Déco","type":"group","items":[{"type":"circle","radius":4,"left":4,"top":20,"fill":"#555555"},{"type":"circle","radius":4,"left":20,"top":20,"fill":"#555555"},{"type":"circle","radius":4,"left":36,"top":20,"fill":"#555555"}]},
+            {"name":"Bulle ronde","tag":"Déco","type":"path","path":"M24 6 c-11 0 -20 7 -20 16 0 5 3 10 8 13 v9 l10 -6 c1 0 1 0 2 0 11 0 20 -7 20 -16 S35 6 24 6 Z","fill":"#2980b9"},
+            {"name":"Pion","tag":"Déco","type":"path","path":"M24 5 a8 8 0 1 1 0 16 a8 8 0 1 1 0 -16 M11 44 c0 -11 5 -18 13 -18 s13 7 13 18 z","fill":"#34495e"},
+            {"name":"Croissant","tag":"Déco","type":"path","path":"M30 4 A21 21 0 1 0 30 44 A17 17 0 1 1 30 4 Z","fill":"#f4d03f"}
+        ];
+        var ajoutees = 0, i, j;
+        for (i = 0; i < nouvelles.length; i++) {
+            var ns = nouvelles[i];
+            if (!ns || !ns.name) continue;
+            var existe = false;
+            for (j = 0; j < vectorExamples.length; j++) {
+                if (vectorExamples[j] && vectorExamples[j].name === ns.name) { existe = true; break; }
+            }
+            if (!existe) { vectorExamples.push(ns); ajoutees++; }
+        }
+        console.log('[SP] formes ajoutées : ' + ajoutees + ' (total ' + vectorExamples.length + ')');
+
+        window.spShapeSvg = function (v) {
+            try {
+                var box = v.box || '0 0 48 48';
+                var fill = (v.fill === undefined || v.fill === null) ? 'none' : v.fill;
+                var stroke = v.stroke || 'none';
+                var sw = v.strokeWidth ? v.strokeWidth : 0;
+                var enveloppe = function (inner) {
+                    return '<svg viewBox="' + box + '" width="48" height="48" xmlns="http://www.w3.org/2000/svg"><g fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '" stroke-linejoin="round" stroke-linecap="round">' + inner + '</g></svg>';
+                };
+                var t = v.type, i, k;
+                if (t === 'rect') {
+                    var h = Math.max(8, Math.round(40 * (v.height || 40) / (v.width || 40)));
+                    return enveloppe('<rect x="4" y="' + Math.round((48 - h) / 2) + '" width="40" height="' + h + '" rx="' + Math.min(12, v.rx || 0) + '"/>');
+                }
+                if (t === 'circle') return enveloppe('<circle cx="24" cy="24" r="' + Math.min(22, v.radius || 20) + '"/>');
+                if (t === 'ellipse') return enveloppe('<ellipse cx="24" cy="24" rx="' + Math.min(22, v.rx || 20) + '" ry="' + Math.min(22, v.ry || 12) + '"/>');
+                if (t === 'triangle') return enveloppe('<polygon points="24,6 44,42 4,42"/>');
+                if (t === 'star') {
+                    var spikes = Math.max(3, v.points || 5), ro = 21, ri = ro / 2, pts = [];
+                    for (i = 0; i < spikes * 2; i++) {
+                        var rr = (i % 2 === 0) ? ro : ri, an = (i * Math.PI) / spikes - Math.PI / 2;
+                        pts.push((24 + Math.cos(an) * rr).toFixed(2) + ',' + (24 + Math.sin(an) * rr).toFixed(2));
+                    }
+                    return enveloppe('<polygon points="' + pts.join(' ') + '"/>');
+                }
+                if (t === 'polygon' && v.points && v.points.length) {
+                    var xs = [], ys = [], minX, maxX, minY, maxY, wv, hv, f, out = [];
+                    for (k = 0; k < v.points.length; k++) { xs.push(v.points[k].x); ys.push(v.points[k].y); }
+                    minX = Math.min.apply(null, xs); maxX = Math.max.apply(null, xs);
+                    minY = Math.min.apply(null, ys); maxY = Math.max.apply(null, ys);
+                    wv = Math.max(1, maxX - minX); hv = Math.max(1, maxY - minY);
+                    f = Math.min(40 / wv, 40 / hv);
+                    for (k = 0; k < v.points.length; k++) {
+                        out.push((4 + (v.points[k].x - minX) * f + (40 - wv * f) / 2).toFixed(2) + ',' + (4 + (v.points[k].y - minY) * f + (40 - hv * f) / 2).toFixed(2));
+                    }
+                    return enveloppe('<polygon points="' + out.join(' ') + '"/>');
+                }
+                if (t === 'path' && typeof v.path === 'string') return enveloppe('<path d="' + v.path + '"/>');
+                if (t === 'group' && v.items) {
+                    var g = '';
+                    for (k = 0; k < v.items.length; k++) {
+                        var it = v.items[k];
+                        if (!it) continue;
+                        var f2 = (it.fill === undefined || it.fill === null) ? 'none' : it.fill;
+                        var s2 = it.stroke || 'none';
+                        var w2 = it.strokeWidth ? it.strokeWidth : 0;
+                        if (it.type === 'circle') {
+                            g += '<circle cx="' + ((it.left || 0) + (it.radius || 10)) + '" cy="' + ((it.top || 0) + (it.radius || 10)) + '" r="' + (it.radius || 10) + '" fill="' + f2 + '" stroke="' + s2 + '" stroke-width="' + w2 + '"/>';
+                        } else {
+                            g += '<rect x="' + (it.left || 0) + '" y="' + (it.top || 0) + '" width="' + (it.width || 20) + '" height="' + (it.height || 10) + '" rx="' + (it.rx || 0) + '" fill="' + f2 + '" stroke="' + s2 + '" stroke-width="' + w2 + '"/>';
+                        }
+                    }
+                    return '<svg viewBox="' + box + '" width="48" height="48" xmlns="http://www.w3.org/2000/svg">' + g + '</svg>';
+                }
+                return '';
+            } catch (e) { return ''; }
+        };
+    })();
 
     // Générer les assets Formes (Vecto)
     const vectoGrid = document.querySelector('.assets-grid[data-content="vecto"]');
@@ -62179,8 +62392,11 @@ canvas.requestRenderAll();
             shapePreview.style.height = '100%';
             
             // Utiliser le SVG preview si disponible
+            var _svgAuto = (typeof window.spShapeSvg === 'function') ? window.spShapeSvg(vecto) : '';
             if (svgPreviews[vecto.name]) {
                 shapePreview.innerHTML = svgPreviews[vecto.name];
+            } else if (_svgAuto) {
+                shapePreview.innerHTML = _svgAuto;
             } else {
                 // Fallback générique
                 const shape = document.createElement('div');
@@ -62217,7 +62433,7 @@ canvas.requestRenderAll();
             
             // 🆕 v1.7.439 — description utile (type + remplissage) : même structure de carte
             //   que partout, aperçu 100 % vectoriel (aucune image).
-            const _vd = [vecto.type || 'shape', vecto.fill ? ('fill ' + vecto.fill) : ''].filter(Boolean).join('  \u00b7  ');
+            const _vd = [vecto.tag || '', vecto.type || 'shape', vecto.fill ? ('fill ' + vecto.fill) : ''].filter(Boolean).join('  \u00b7  ');
             const card = createAssetCard(vecto.name, shapePreview, () => {
                 const canvas = getActiveCanvas();
                 if (canvas) {
@@ -62397,8 +62613,10 @@ canvas.requestRenderAll();
                 return true;
             }, desc, { locked: !!comp.locked, meta: [((comp.fonts || {}).display), ((comp.fonts || {}).text)].filter(Boolean).join(' \u00b7 ') });
             card.dataset.lang = comp.lang || 'fr';
+            if (comp.family) card.dataset.cat = comp.family;
             // 🆕 v1.7.441 — badge PREMIUM sur les modèles premium (mais carte utilisable)
-            if (comp.premium && card) {
+            // v1.7.442 — badge PREMIUM désactivé à la demande (mettre false -> comp.premium pour le réactiver)
+            if (false && comp.premium && card) {
                 try {
                     const bd = document.createElement('div');
                     bd.className = 'asset-card-lock';
@@ -62467,6 +62685,67 @@ canvas.requestRenderAll();
             });
         }
     }
+
+    // 🆕 v1.7.442 — BANDEAU DE TAGS (familles de maquettes + langues) à gauche de la recherche.
+    (function initAssetsTags() {
+        try {
+            const header = document.querySelector('.assets-header');
+            const champ = document.getElementById('assetsSearch');
+            if (!header || !champ) return;
+            let strip = document.getElementById('assetsTags');
+            if (!strip) {
+                strip = document.createElement('div');
+                strip.id = 'assetsTags';
+                strip.className = 'assets-tags';
+                header.insertBefore(strip, champ);
+            }
+            const LIB = { magazine: 'Magazines', book: 'Livres', cv: 'CV', calendar: 'Calendriers', menu: 'Menus', report: 'Rapports', journal: 'Presse', card: 'Cartes', carte: 'Cartes', thesis: 'Mémoires' };
+            const parFamille = {};
+            const cartesComp = document.querySelectorAll('.assets-grid[data-content="comp"] .asset-card');
+            Array.prototype.forEach.call(cartesComp, function (c) {
+                const f = (c.dataset.cat || '').trim();
+                if (!f) return;
+                parFamille[f] = (parFamille[f] || 0) + 1;
+            });
+            const familles = Object.keys(parFamille).sort(function (a, b) {
+                if (parFamille[b] !== parFamille[a]) return parFamille[b] - parFamille[a];
+                return a.localeCompare(b);
+            });
+            function boutonTag(libelle, nb, cat) {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'assets-tag';
+                b.dataset.assetCat = cat;
+                b.appendChild(document.createTextNode(libelle));
+                if (nb != null) {
+                    const n = document.createElement('b');
+                    n.textContent = String(nb);
+                    b.appendChild(n);
+                }
+                b.addEventListener('click', function () {
+                    Array.prototype.forEach.call(strip.querySelectorAll('.assets-tag'), function (x) { x.classList.remove('active'); });
+                    b.classList.add('active');
+                    applyAssetsFilter();
+                });
+                return b;
+            }
+            const tout = boutonTag('Tout', cartesComp.length, 'all');
+            tout.classList.add('active');
+            strip.appendChild(tout);
+            familles.forEach(function (f) {
+                strip.appendChild(boutonTag(LIB[f] || (f.charAt(0).toUpperCase() + f.slice(1)), parFamille[f], f));
+            });
+            // le filtre de langue rejoint le bandeau, séparé par un filet
+            const lg = document.getElementById('assetsLangFilter');
+            if (lg) {
+                const sep = document.createElement('span');
+                sep.className = 'assets-tags-sep';
+                strip.appendChild(sep);
+                strip.appendChild(lg);
+            }
+            window.spTagsStrip = strip;
+        } catch (eTags) { console.warn('[SP] bandeau de tags :', eTags); }
+    })();
 
     // Message si grilles vides
     document.querySelectorAll('.assets-grid').forEach(grid => {
@@ -71655,9 +71934,9 @@ function _npBuildLayout(params, keywords, lang) {
         },
         {
             key: 'fr_magazine_habitat_luxe_24p', style: 'habitat', family: 'magazine', spreadDoc: true,
-            name: 'DemEures \u2014 Maisons de luxe (24p) [PREMIUM]', desc: 'Magazine habitat & maisons de luxe \u2014 24 pages en double page, photographies, plans et mati\u00e8res',
+            name: 'DemEures \u2014 Maisons de luxe (24p)', desc: 'Magazine habitat & maisons de luxe \u2014 24 pages en double page, photographies, plans et mati\u00e8res',
             format: { width: 420, height: 560, spread: true, pages: 24 },
-            lang: 'fr', spFr: true, premium: true,
+            lang: 'fr', spFr: true,
             theme: { paper: '#f7f5f1', ink: '#1a1714', accent: '#8c6b3f', soft: '#e8e2d8', night: '#171412' },
             fonts: { display: 'Playfair Display', text: 'Open Sans', mono: 'IBM Plex Mono' },
             img: 'img/template/habitat', nimg: 6,
@@ -71710,9 +71989,9 @@ function _npBuildLayout(params, keywords, lang) {
         },
         {
             key: 'fr_rapport_activite_premium_24p', style: 'rapport', family: 'report', spreadDoc: false,
-            name: 'Rapport d\u2019activit\u00e9 2027 \u00ab\u00a0Premium\u00a0\u00bb (24p) [PREMIUM]', desc: 'Rapport d\u2019activit\u00e9 premium tr\u00e8s complet \u2014 24 pages A4 : \u00e9dito, chiffres, graphiques, comptes, bilan, RSE, risques, perspectives',
+            name: 'Rapport d\u2019activit\u00e9 2027 (24p)', desc: 'Rapport d\u2019activit\u00e9 tr\u00e8s complet \u2014 24 pages A4 : \u00e9dito, chiffres, graphiques, comptes, bilan, RSE, risques, perspectives',
             format: { width: 595, height: 842, pages: 24 },
-            lang: 'fr', spFr: true, premium: true,
+            lang: 'fr', spFr: true,
             theme: { paper: '#ffffff', ink: '#0d1117', accent: '#0f4c3a', soft: '#eef3f0', night: '#0e1a16' },
             fonts: { display: 'Playfair Display', text: 'Montserrat', mono: 'IBM Plex Mono' },
             img: '', nimg: 0,
@@ -71742,6 +72021,72 @@ function _npBuildLayout(params, keywords, lang) {
                 jalons: 'Janvier::Ouverture de la filiale de Lyon\nMars::Certification ISO 9001 renouvel\u00e9e\nMai::Rachat de la branche logistique\nJuillet::Premier semestre au-dessus du budget\nSeptembre::Lancement de l\u2019offre bas carbone\nNovembre::Le groupe passe 1 240 collaborateurs\nD\u00e9cembre::Carnet de commandes record',
                 objectifs: 'Marge avant volume::Objectif 8 % de marge nette en 2029\nD\u00e9carboner l\u2019outil::-35 % d\u2019\u00e9missions \u00e0 p\u00e9rim\u00e8tre constant\nGrandir par l\u2019Est::Deux acquisitions en Allemagne et en Pologne\nAncrer les comp\u00e9tences::\u00c9cole interne ouverte \u00e0 tout le groupe',
                 glossaire: 'Marge op\u00e9rationnelle::R\u00e9sultat avant \u00e9l\u00e9ments financiers et exceptionnels.\nTaux de service::Part des commandes livr\u00e9es compl\u00e8tes et \u00e0 l\u2019heure.\nCarnet de commandes::Commandes fermes non encore ex\u00e9cut\u00e9es.\nIntensit\u00e9 \u00e9nerg\u00e9tique::\u00c9nergie consomm\u00e9e par unit\u00e9 produite.\nP\u00e9rim\u00e8tre constant::\u00c0 p\u00e9rim\u00e8tre d\u2019activit\u00e9 inchang\u00e9.\nEBITDA::R\u00e9sultat op\u00e9rationnel avant amortissements.'
+            }
+        },
+        {
+            key: 'en_magazine_recipes_12p', style: 'recettes', family: 'magazine', spreadDoc: false,
+            name: 'At the Table — French Cooking (12p)', desc: 'French recipes magazine — 12 A4 pages, one recipe per page, ingredients and numbered steps',
+            format: { width: 595, height: 842, pages: 12 },
+            lang: 'en',
+            theme: { paper: '#fffdf9', ink: '#201a15', accent: '#b23a25', soft: '#f3ece2', night: '#201a15' },
+            fonts: { display: 'Playfair Display', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/recettes', nimg: 6,
+            c: {
+                mast: 'AT THE TABLE', tag: 'FRENCH COOKING · STEP BY STEP', issue: 'No. 08 · AUTUMN 2027', price: '€6.50',
+                head: 'The recipes that built France',
+                stand: 'Ten dishes, ten methods. Nothing invented here: the gestures exactly as they are handed down.',
+                coverlines: '', sections: ['Contents'], quote: '',
+                body: 'French cooking is not a collection of recipes, it is a collection of gestures. You learn them by repeating them, never by reading them.',
+                caption: 'Recipes tested in the kitchen · autumn issue',
+                credits: 'Recipes: M. Verdier · Photographs: Wikimedia Commons · Testing: Atelier 12',
+                recettes: [
+                    'Beef Bourguignon::The Sunday dish, cooked the day before::4 h 30::Easy::1.2 kg braising beef, 150 g smoked lardons, 2 onions, 3 carrots, 2 garlic cloves, 75 cl red wine, 2 tbsp flour, 1 bouquet garni, 250 g mushrooms, salt, pepper::Cut the beef into large cubes and brown it in a casserole. Set aside.|Fry the lardons with the onions and carrots, dust with flour, then return the meat.|Pour in the red wine, add the garlic and the bouquet garni, cover and simmer for 4 hours.|Add the mushrooms 30 minutes before the end and adjust the seasoning.',
+                    'Ratatouille::Slow-cooked, never sautéed::1 h 15::Easy::2 aubergines, 3 courgettes, 2 peppers, 6 tomatoes, 2 onions, 3 garlic cloves, thyme, olive oil, salt, pepper::Cut every vegetable into even cubes.|Fry each vegetable separately in olive oil.|Bring them together in a casserole with the tomatoes, the garlic and the thyme.|Simmer for 45 minutes over a very low heat, uncovered at the end.',
+                    'Coq au Vin::A red wine worth the trouble::2 h 30::Medium::1 cockerel of 2 kg, 200 g lardons, 150 g mushrooms, 2 onions, 1 bottle red wine, 2 tbsp flour, 1 sprig thyme, salt, pepper::Joint the cockerel and marinate it overnight in the wine.|Drain it, dry it, brown it, then dust with flour.|Pour in the marinade, add the lardons and the aromatics.|Cook for 2 hours over a low heat and add the mushrooms at the end.',
+                    'Tarte Tatin::Apples, butter, sugar: nothing else::1 h 30::Medium::1.5 kg apples, 150 g sugar, 100 g butter, 1 shortcrust pastry, 1 pinch salt::Make a butter caramel in a deep-sided tin.|Arrange the apple quarters tightly on the caramel.|Cover with the pastry, tucking the edges in, and prick it.|Bake for 40 minutes at 190 °C, then turn it out as soon as it leaves the oven.',
+                    'Onion Soup Gratinée::Slow, almost confit::1 h 30::Easy::6 onions, 40 g butter, 1 tbsp flour, 1 l stock, 6 slices bread, 150 g Gruyère, salt, pepper::Slice the onions and sweat them in butter for 30 minutes.|Dust with flour, pour in the stock and simmer for 45 minutes.|Pour into bowls, add the bread and cover with Gruyère.|Grill for 5 minutes before serving.',
+                    'Quiche Lorraine::No cheese, as it should be::1 h 00::Easy::1 shortcrust pastry, 200 g lardons, 3 eggs, 25 cl cream, 20 cl milk, nutmeg, salt, pepper::Fry the lardons dry, then drain them.|Line the tin with the pastry and scatter the lardons.|Whisk the eggs with the cream and the milk, season and add nutmeg.|Bake for 35 minutes at 180 °C until the custard is just set.',
+                    'Blanquette de Veau::White, never browned::2 h 00::Medium::1 kg veal shoulder, 2 carrots, 1 onion, 1 leek, 200 g mushrooms, 40 g butter, 40 g flour, 1 egg yolk, 10 cl cream::Cook the meat for 1 h 30 in a seasoned stock.|Make a white roux with the butter and the flour and moisten it with the stock.|Add the mushrooms and the meat and cook for 20 minutes.|Bind off the heat with the yolk and the cream, never letting it boil.',
+                    'Gratin Dauphinois::No cheese, no egg::1 h 30::Easy::1.2 kg potatoes, 50 cl cream, 25 cl milk, 1 garlic clove, nutmeg, salt, pepper::Rub a dish with the garlic and butter it generously.|Slice the potatoes thinly and layer them.|Heat the cream and the milk with salt, pepper and nutmeg, then pour them over.|Bake for 1 h 15 at 160 °C: the top golden, the inside soft.',
+                    'Bouillabaisse::Fish first, everything else after::2 h 00::Hard::1.5 kg rock fish, 500 g mussels, 2 tomatoes, 1 onion, 1 leek, 4 garlic cloves, 1 pinch saffron, 1 orange, olive oil::Make a soup with the vegetables, the garlic, the tomatoes and the saffron.|Simmer for 40 minutes, blend and strain.|Cook the fish in that broth, from the firmest to the softest.|Serve with croutons rubbed with garlic and a rouille whisked with oil.',
+                    'Crème Brûlée::The sugar has to crack::1 h 00::Easy::50 cl cream, 6 egg yolks, 80 g sugar, 1 vanilla pod, brown sugar::Heat the cream with the split vanilla pod.|Whisk the yolks with the sugar and combine them with the cream.|Bake at 90 °C until the custard trembles slightly.|Chill for 4 hours, then caramelise the brown sugar with a blowtorch.'
+                ]
+            }
+        },
+        {
+            key: 'en_annual_report_24p', style: 'rapport', family: 'report', spreadDoc: false,
+            name: 'Annual Report 2027 (24p)', desc: 'Full 24-page activity report — editorial, key figures, charts, accounts, balance sheet, cash flow, CSR, risks, outlook',
+            format: { width: 595, height: 842, pages: 24 },
+            lang: 'en',
+            theme: { paper: '#ffffff', ink: '#0d1117', accent: '#0f4c3a', soft: '#eef3f0', night: '#0e1a16' },
+            fonts: { display: 'Playfair Display', text: 'Montserrat', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'ANNUAL REPORT', tag: 'MERIDIEN GROUP · FINANCIAL YEAR 2027', issue: 'REFERENCE DOCUMENT · MARCH 2028', price: '',
+                head: 'Annual Report 2027',
+                stand: 'A year of consolidation: six business lines, four regions, 1 240 employees, and the first year in which margin grew faster than revenue.',
+                coverlines: '', sections: ['Editorial', 'Key figures', 'Business lines', 'Revenue', 'Costs', 'Accounts', 'Balance sheet', 'Headcount', 'CSR', 'Risks', 'Governance', 'Outlook'],
+                legs: ['January · New subsidiary opens in Lyon', 'March · ISO 9001 certification renewed', 'May · Logistics division acquired', 'July · First half ahead of budget', 'September · Low-carbon offer launched', 'November · 1 240 employees', 'December · Record order book'],
+                quote: 'Growth is not the point. Doing the work properly at a slightly larger scale is the point.',
+                body: 'The 2027 financial year reads first as a year of consolidation. Revenue grew by 12.4%, but it is the operating margin, up 2.1 points, that tells the story of what happened in the plants and the branches.\n\nWe closed two sites, opened a subsidiary, acquired a logistics business and turned down eighteen tenders. Those refusals are part of the result: they freed the teams for the projects where our know-how really made a difference.\n\nThis document sets out the accounts, the headcount, the environmental commitments and the risks. It is meant to be readable by a shareholder and by a workshop foreman alike.',
+                caption: 'Meridien Group · 8 avenue des Chênes, 69003 Lyon · groupemeridien.fr',
+                credits: 'Consolidated accounts · statutory auditors: Fidal & Associés · report designed and typeset in-house',
+                figures: '184.6 M€::2027 revenue::+12.4% vs 2026\n18.3 M€::Operating profit::+2.1 points of margin\n1 240::Employees::+96 hires\n94%::Customer service rate::+3 points',
+                divisions: 'Industry::72.4::19.8::486::Three sites, one new in Auvergne\nDistribution::48.1::11.2::312::Four hundred retail points\nLogistics::31.7::7.4::208::Business acquired in May\nEngineering::18.9::22.6::134::The highest margin in the group\nServices::13.5::14.1::100::Maintenance and training',
+                regions: 'France::58.2::107.4\nBenelux::18.6::34.3\nGermany::13.1::24.2\nSpain::6.4::11.8\nOther::3.7::6.9',
+                trimestres: 'Q1::41.2\nQ2::44.6\nQ3::47.1\nQ4::51.7',
+                couts: 'Purchases and materials::74.2\nSalaries and charges::62.8\nEnergy and utilities::11.4\nTransport and logistics::8.6\nDepreciation::6.9\nOther charges::2.4',
+                compteur: 'Revenue::184.6\nPurchases::-74.2\nGross margin::110.4\nPersonnel costs::-62.8\nOther external charges::-22.4\nDepreciation::-6.9\nOperating profit::18.3\nFinancial result::-2.1\nTax::-4.3\nNet profit::11.9',
+                actif: 'Intangible assets::14.2\nProperty, plant and equipment::68.4\nInventories::22.6\nTrade receivables::31.8\nCash and equivalents::26.4\nTOTAL ASSETS::163.4',
+                passif: 'Equity::72.6\nFinancial debt::41.8\nSuppliers::28.4\nTax and social liabilities::14.2\nProvisions::6.4\nTOTAL LIABILITIES::163.4',
+                tresorerie: 'Opening::18.4\nOperating cash flow::19.6\nCapital expenditure::-14.2\nAcquisitions::-6.8\nDividends::-3.2\nFinancing::8.6\nClosing::22.4',
+                effectifs: '2023::986\n2024::1 042\n2025::1 108\n2026::1 144\n2027::1 240',
+                rse: 'Energy consumption::-14%::2028 target: -25%\nRenewable energy share::41%::2028 target: 60%\nWaste recovered::88%::2028 target: 95%\nWorkplace accidents::-22%::2028 target: zero serious\nTraining per employee::26 h::2028 target: 32 h\nGender equality index::92/100::2028 target: 95/100',
+                risques: 'Rising raw materials::High::18-month hedging, annual revision clauses\nCustomer concentration::Medium::No client above 9% of revenue\nCybersecurity::Medium::External audit, recovery plan tested in October\nSkills shortage::High::In-house school, 38 apprentices\nRegulatory climate::Low::Monitoring, low-carbon plan already under way',
+                projets: 'Industrial line 4::Auvergne plant::Industry::Delivered\nWarehouse overhaul::North::Logistics::Delivered\nCustomer portal v2::Group::Engineering::Delivered\nDistrict heating::Lyon::Services::In progress\nLow-carbon offer::All regions::Distribution::In progress\nIn-house school::Group::Engineering::In progress',
+                jalons: 'January::New subsidiary opens in Lyon\nMarch::ISO 9001 certification renewed\nMay::Logistics division acquired\nJuly::First half ahead of budget\nSeptember::Low-carbon offer launched\nNovember::The group passes 1 240 employees\nDecember::Record order book',
+                objectifs: 'Margin before volume::8% net margin targeted for 2029\nDecarbonise the tool::-35% emissions at constant scope\nGrow through the east::Two acquisitions in Germany and Poland\nAnchor the skills::In-house school open to the whole group',
+                glossaire: 'Operating margin::Profit before financial and exceptional items.\nService rate::Share of orders delivered complete and on time.\nOrder book::Firm orders not yet executed.\nEnergy intensity::Energy consumed per unit produced.\nConstant scope::At an unchanged scope of activity.\nEBITDA::Operating profit before depreciation.'
             }
         }
     ];
@@ -72023,12 +72368,99 @@ function _npBuildLayout(params, keywords, lang) {
         var S = {
             cv: cv, g: g, W: W, H: H, bp: bp, X: X, Y: Y, t: t, F: F, c: c, M: M0, COL: COL,
             pi: pi, total: total, IMG: IMG, spread: !!model.spreadDoc,
+            lang: (model.lang || 'fr'), en: (model.lang === 'en'),
             couv: (pi === 0), fin: (total > 1 && pi === total - 1),
             reste: suite(c.body, 2), slim: W / H,
             fond: fond, bloc: bloc, voile: voile, cache: cache, filet: filet, filetv: filetv, cadre: cadre,
             photo: photo, T: T, folio: folio, tete: tete, colonnes: colonnes, legende: legende,
             rond: rond, demi: demi
         };
+
+        if (model.lang === 'en') {
+            // v1.7.442 — les gabarits « recettes » et « rapport » ont des libellés fixes en
+            //   français ; les modèles anglais les traduisent à la volée (le contenu vient du
+            //   modèle). Le dictionnaire n'est construit qu'une seule fois.
+            var _dicEn = page._spDicEn || (page._spDicEn = {
+                'SOMMAIRE': 'CONTENTS', 'INGRÉDIENTS': 'INGREDIENTS', 'PRÉPARATION': 'METHOD', 'L’ASTUCE DU CHEF': 'CHEF TIP',
+                'Préparez ce plat la veille : réchauffé, il est encore meilleur. Servez avec un pain de campagne et un vin rouge de caractère.': 'Cook this dish the day before: reheated it is even better. Serve with country bread and a red wine with character.',
+                'Sommaire': 'Contents', 'FAITS MARQUANTS DE L’EXERCICE': 'HIGHLIGHTS OF THE YEAR',
+                'Édito': 'Editorial', 'Une année de consolidation': 'A year of consolidation', 'Le mot du président du directoire.': 'A word from the chair of the board.',
+                'Claire Vasseur · Présidente du directoire': 'Claire Vasseur · Chair of the board',
+                'Chiffres clés': 'Key figures', 'Quatre repères pour l’exercice': 'Four markers for the year',
+                'Montants en millions d’euros, hors taxes.': 'Amounts in millions of euros, excluding tax.',
+                'Le chiffre d’affaires progresse de 12,4 % et la marge opérationnelle de 2,1 points. La trésorerie nette reste positive après l’acquisition de mai.': 'Revenue grew by 12.4% and the operating margin by 2.1 points. Net cash remains positive after the May acquisition.',
+                'Les métiers': 'Business lines', 'Cinq activités, une seule exigence': 'Five activities, one standard',
+                'Chiffre d’affaires par division, en millions d’euros.': 'Revenue by division, in millions of euros.',
+                'L’industrie reste le moteur du groupe (39 % du chiffre d’affaires). L’ingénierie, plus petite, affiche la meilleure marge : 22,6 %.': 'Industry remains the engine of the group (39% of revenue). Engineering, the smallest, shows the best margin: 22.6%.',
+                'Détail par division': 'Division detail', 'Division': 'Division', 'CA': 'Revenue', 'Marge': 'Margin', 'Effectif': 'Headcount', 'Commentaire': 'Comment',
+                'Les effectifs incluent les intérimaires en poste au 31 décembre 2027.': 'Headcount includes temporary staff on the payroll at 31 December 2027.',
+                'Revenus': 'Revenue', 'Le détail des revenus': 'How the revenue is built',
+                'Chiffre d’affaires consolidé : 184,6 M€.': 'Consolidated revenue: 184.6 M€.',
+                'TOTAL CONSOLIDÉ': 'CONSOLIDATED TOTAL', '184,6 M€': '184.6 M€', 'Une année qui accélère': 'A year that accelerates',
+                'Chiffre d’affaires par trimestre, en millions d’euros.': 'Revenue by quarter, in millions of euros.',
+                'Le quatrième trimestre représente à lui seul 28 % de l’année. Cette saisonnalité est structurelle : elle suit les cycles d’investissement de nos clients.': 'The fourth quarter alone accounts for 28% of the year. That seasonality is structural: it follows our customers investment cycles.',
+                'Répartition géographique': 'Geographic split', 'Part du chiffre d’affaires par zone.': 'Share of revenue by region.',
+                'CARTE DES IMPLANTATIONS': 'SITE MAP',
+                'Coûts': 'Costs', 'Ce que le chiffre d’affaires a payé': 'What the revenue paid for',
+                'Structure de coûts, en millions d’euros.': 'Cost structure, in millions of euros.',
+                'Poste': 'Item', 'Montant': 'Amount', 'Part': 'Share',
+                'Les achats et l’énergie représentent à eux deux 46 % des coûts : la hausse des matières premières reste le premier risque de l’exercice 2028.': 'Purchases and energy together account for 46% of costs: rising raw materials remain the main risk for 2028.',
+                'Comptes': 'Accounts', 'Compte de résultat simplifié': 'Simplified income statement',
+                'Exercice clos le 31 décembre 2027.': 'Financial year ended 31 December 2027.',
+                'Bilan consolidé': 'Consolidated balance sheet', 'Actif et passif au 31 décembre 2027.': 'Assets and liabilities at 31 December 2027.',
+                'Actif': 'Assets', 'Passif': 'Liabilities',
+                'Tableau des flux de trésorerie': 'Cash flow statement', 'En millions d’euros.': 'In millions of euros.',
+                'La trésorerie de clôture s’établit à 22,4 M€, après 14,2 M€ investis et l’acquisition de la branche logistique.': 'Closing cash stands at 22.4 M€, after 14.2 M€ invested and the acquisition of the logistics business.',
+                'Effectifs': 'Headcount', 'Un groupe qui grandit lentement': 'A group that grows slowly',
+                'Effectif total par exercice.': 'Total headcount per financial year.',
+                'Indicateur': 'Indicator', 'Recrutements': 'Hires', 'Départs': 'Leavers', 'Ancienneté moyenne': 'Average tenure', 'Part de femmes': 'Share of women', 'Alternants': 'Apprentices',
+                'RSE': 'CSR', 'Engagements et résultats': 'Commitments and results', 'Indicateurs suivis par le comité RSE.': 'Indicators monitored by the CSR committee.',
+                'Le plan bas carbone couvre désormais les trois sites industriels et les 400 points de vente. La trajectoire est tenue à mi-parcours.': 'The low-carbon plan now covers all three plants and the 400 retail points. The trajectory is on track at the halfway point.',
+                'Risques': 'Risks', 'Cartographie des risques': 'Risk map', 'Probabilité et réponse.': 'Likelihood and response.',
+                'Risque': 'Risk', 'Niveau': 'Level', 'Réponse': 'Response',
+                'Gouvernance': 'Governance', 'Une organisation lisible': 'A readable organisation', 'Trois niveaux, deux comités.': 'Three levels, two committees.',
+                'DIRECTOIRE': 'BOARD', 'COMITÉS': 'COMMITTEES',
+                'Comité d’audit': 'Audit committee', 'Quatre réunions par an, comptes et risques': 'Four meetings a year, accounts and risks',
+                'Comité RSE': 'CSR committee', 'Six réunions par an, climat et social': 'Six meetings a year, climate and people',
+                'Comité des rémunérations': 'Remuneration committee', 'Deux réunions par an, dirigeants et mandataires': 'Two meetings a year, executives and officers',
+                'Comité d’investissement': 'Investment committee', 'Un comité par projet au-delà de 2 M€': 'One committee per project above 2 M€',
+                'Projets': 'Projects', 'Ce que nous avons livré': 'What we delivered', 'Six projets représentatifs de l’exercice.': 'Six projects that sum up the year.',
+                'Projet': 'Project', 'Zone': 'Region', 'Métier': 'Business line', 'Statut': 'Status',
+                'Dix-huit appels d’offres ont été refusés en 2027 : neuf pour des raisons de planning, six pour des prix inférieurs à notre seuil, trois pour inadéquation technique.': 'Eighteen tenders were declined in 2027: nine for scheduling reasons, six because the price was below our threshold, three for a technical mismatch.',
+                'Études de cas': 'Case studies', 'Deux projets, deux méthodes': 'Two projects, two methods', 'Ce que nous avons appris en 2027.': 'What we learned in 2027.',
+                'Ligne industrielle 4': 'Industrial line 4', 'Usine d’Auvergne': 'Auvergne plant', '14 mois, 6,8 M€ investis. La ligne tourne à 92 % de sa capacité nominale depuis septembre.': '14 months, 6.8 M€ invested. The line has been running at 92% of nominal capacity since September.',
+                'Offre bas carbone': 'Low-carbon offer', 'Toutes zones': 'All regions', 'Lancement en septembre, 21 clients signés au 31 décembre, 8,4 M€ de commandes.': 'Launched in September, 21 clients signed by 31 December, 8.4 M€ of orders.',
+                'L’année': 'The year', 'Douze mois, sept décisions': 'Twelve months, seven decisions', 'Ce qui a changé la trajectoire.': 'What changed the trajectory.',
+                'Deux décisions ont pesé sur l’exercice : l’acquisition logistique de mai et le lancement de l’offre bas carbone en septembre.': 'Two decisions shaped the year: the logistics acquisition in May and the launch of the low-carbon offer in September.',
+                'Innovation': 'Innovation', 'Ce que nous construisons': 'What we are building', 'Trois chantiers ouverts pour 2028.': 'Three projects open for 2028.',
+                'TRAJECTOIRE DU CHIFFRE D’AFFAIRES': 'REVENUE TRAJECTORY', '2028 cible': '2028 target',
+                'Perspectives': 'Outlook', 'Quatre priorités pour 2028': 'Four priorities for 2028', 'Objectifs arrêtés par le directoire.': 'Targets set by the board.',
+                'Annexes': 'Appendix', 'Glossaire': 'Glossary', 'Les termes utilisés dans ce rapport.': 'The terms used in this report.'
+            });
+            var _dicEnU = page._spDicEnU || (page._spDicEnU = (function () {
+                var u = {};
+                for (var _k in _dicEn) { if (Object.prototype.hasOwnProperty.call(_dicEn, _k)) u[_k.toUpperCase()] = String(_dicEn[_k]).toUpperCase(); }
+                return u;
+            })());
+            var _Tsauv = S.T;
+            S.T = function (o) {
+                if (o && typeof o.text === 'string') {
+                    var v = _dicEn[o.text];
+                    if (v === undefined && _dicEnU[o.text] !== undefined) v = _dicEnU[o.text];
+                    if (v === undefined && o.text.indexOf('RECETTE ') === 0) v = 'RECIPE ' + o.text.slice(8);
+                    if (v === undefined && o.text.indexOf('% du budget tenu') > 0) v = o.text.replace('% du budget tenu', '% of budget held');
+                    if (v !== undefined) {
+                        var o2 = {};
+                        for (var k in o) { if (Object.prototype.hasOwnProperty.call(o, k)) o2[k] = o[k]; }
+                        o2.text = v;
+                        return _Tsauv(o2);
+                    }
+                }
+                return _Tsauv(o);
+            };
+        }
+
+        
 
         // ── routage par modèle ──
         try {
@@ -74169,6 +74601,7 @@ function _npBuildLayout(params, keywords, lang) {
                 name: d.name, key: d.key,
                 // 🆕 v1.7.441 — langue du MODÈLE (les modèles français ne sont plus déclarés EN)
                 lang: d.lang || 'en', spEn: !d.spFr, spFr: !!d.spFr, premium: !!d.premium,
+                family: d.family || '',
                 desc: d.desc,
                 format: d.format,
                 theme: { bg: d.theme.paper, accent: d.theme.accent, dark: d.theme.night, light: d.theme.soft, ink: d.theme.ink },
@@ -74207,7 +74640,8 @@ window._npTemplateKeys = ['en_magazine_fashion_8p', 'en_journal_hair_4p', 'en_ma
     'en_book_theatre_12p', 'en_calendar_a3_12p',
     'en_calendar_2027_a4_portrait_12p', 'en_calendar_2028_a4_landscape_12p',
     'en_calendar_2027_2028_a5_portrait_12p', 'en_magazine_archi_8p', 'en_annual_report_12p',
-    'fr_magazine_habitat_luxe_24p', 'fr_magazine_recettes_12p', 'fr_rapport_activite_premium_24p'];
+    'fr_magazine_habitat_luxe_24p', 'fr_magazine_recettes_12p', 'fr_rapport_activite_premium_24p',
+    'en_magazine_recipes_12p', 'en_annual_report_24p'];
 window.npRenderAssetStrip = function() {
     const strip = document.getElementById('npAssetStrip');
     if (!strip || typeof compositionExamples === 'undefined') return;
