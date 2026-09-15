@@ -49238,60 +49238,109 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             return 'RÔLE DE CETTE PIÈCE JOINTE : CONTENU À INTÉGRER (OBLIGATOIRE) — son contenu DOIT être composé dans la maquette (texte, images, tableaux). Ne l\'ignore pas, ne le résume pas, ne le remplace pas par du texte de substitution.';
         }
         window.spPjModeNote = spPjModeNote;
+        // 🆕 v1.7.422 — FEUILLE DE STYLE DU POP-IN, injectée une seule fois.
+        //   Elle porte la MISE EN PAGE (3 colonnes ≥ 721 px, cascade en dessous) et le
+        //   THÈME (clair / sombre via l'ancêtre `.theme-dark` de l'app). Aucun style en
+        //   ligne avec une couleur figée : le fond du studio resterait blanc en sombre.
+        var SP_PJ_ICONES = {
+            content: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>',
+            template: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
+            context: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0-3.5 10.9V17h7v-3.1A6 6 0 0 0 12 3z"/><line x1="9.5" y1="20" x2="14.5" y2="20"/></svg>'
+        };
+        function spPjInjectStyle() {
+            if (document.getElementById('spPjStyle')) return;
+            var st = document.createElement('style');
+            st.id = 'spPjStyle';
+            st.textContent = [
+                '.sp-pj-ov{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:3vh 3vw;background:rgba(12,12,12,.45);font-family:inherit;}',
+                '.sp-pj-card{width:min(760px,96vw);max-height:92vh;overflow:auto;background:#ffffff;color:#111111;border:1px solid #d0d0d0;box-shadow:0 30px 90px rgba(0,0,0,.45);}',
+                '.sp-pj-head{padding:14px 18px;border-bottom:1px solid #e2e2e2;}',
+                '.sp-pj-title{display:block;font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;}',
+                '.sp-pj-sub{display:block;margin-top:6px;font-size:11px;line-height:1.5;color:#666666;}',
+                '.sp-pj-opts{padding:12px 18px 4px;display:grid;grid-template-columns:1fr;gap:8px;}',
+                '.sp-pj-opt{display:flex;gap:10px;align-items:flex-start;height:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #d0d0d0;background:transparent;color:inherit;cursor:pointer;text-align:left;font-family:inherit;}',
+                '.sp-pj-opt:hover{background:rgba(0,0,0,.05);}',
+                '.sp-pj-opt.on{border-color:#111111;}',
+                '.sp-pj-ico{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;color:#666666;}',
+                '.sp-pj-ico svg{width:22px;height:22px;}',
+                '.sp-pj-opt.on .sp-pj-ico{color:inherit;}',
+                '.sp-pj-t{display:block;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;}',
+                '.sp-pj-d{display:block;margin-top:4px;font-size:11px;line-height:1.45;color:#666666;}',
+                '.sp-pj-foot{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;}',
+                '.sp-pj-btn{padding:8px 14px;border:1px solid #d0d0d0;background:transparent;color:inherit;cursor:pointer;font-family:inherit;font-size:11px;text-transform:uppercase;letter-spacing:.6px;}',
+                '.sp-pj-btn.pri{border-color:#111111;background:#111111;color:#ffffff;}',
+                '.theme-dark .sp-pj-card{background:#1e1e1e;color:#eaeaea;border-color:#3a3a3a;}',
+                '.theme-dark .sp-pj-head{border-bottom-color:#333333;}',
+                '.theme-dark .sp-pj-sub,.theme-dark .sp-pj-d{color:#a8a8a8;}',
+                '.theme-dark .sp-pj-opt{border-color:#3a3a3a;}',
+                '.theme-dark .sp-pj-opt:hover{background:rgba(255,255,255,.06);}',
+                '.theme-dark .sp-pj-opt.on{border-color:#eaeaea;}',
+                '.theme-dark .sp-pj-ico{color:#a8a8a8;}',
+                '.theme-dark .sp-pj-btn{border-color:#3a3a3a;}',
+                '.theme-dark .sp-pj-btn.pri{border-color:#eaeaea;background:#eaeaea;color:#111111;}',
+                '@media (min-width:721px){.sp-pj-opts{grid-template-columns:repeat(3,1fr);gap:12px;align-items:stretch;}.sp-pj-opt{flex-direction:column;gap:8px;padding:14px 14px 16px;}.sp-pj-ico svg{width:30px;height:30px;}}'
+            ].join('');
+            document.head.appendChild(st);
+        }
         // Pop-in de choix du rôle : résout avec le mode retenu (Échap / Annuler = défaut).
         function spPjAskRole(noms, modeInitial) {
             return new Promise(function (resolve) {
+                spPjInjectStyle();
                 var d = spPjT();
                 var choix = modeInitial || 'content';
                 var ov = document.createElement('div');
+                ov.className = 'sp-pj-ov';
                 ov.setAttribute('role', 'dialog');
                 ov.setAttribute('aria-modal', 'true');
-                ov.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:3vh 3vw;background:rgba(12,12,12,.45);font-family:inherit;';
                 var card = document.createElement('div');
-                card.style.cssText = 'width:min(680px,96vw);max-height:92vh;overflow:auto;background:#ffffff;color:#111111;border:1px solid #d0d0d0;box-shadow:0 30px 90px rgba(0,0,0,.45);';
+                card.className = 'sp-pj-card';
                 var head = document.createElement('div');
-                head.style.cssText = 'padding:14px 18px;border-bottom:1px solid #e2e2e2;';
-                var ttl = document.createElement('div');
-                ttl.style.cssText = 'font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;';
+                head.className = 'sp-pj-head';
+                var ttl = document.createElement('span');
+                ttl.className = 'sp-pj-title';
                 ttl.textContent = d.title;
-                var sub = document.createElement('div');
-                sub.style.cssText = 'margin-top:6px;font-size:11px;line-height:1.5;color:#666666;';
+                var sub = document.createElement('span');
+                sub.className = 'sp-pj-sub';
                 sub.textContent = (noms && noms.length ? noms.join(', ') + ' — ' : '') + d.sub;
                 head.appendChild(ttl); head.appendChild(sub);
                 var body = document.createElement('div');
-                body.style.cssText = 'padding:12px 18px 4px;display:flex;flex-direction:column;gap:8px;';
+                body.className = 'sp-pj-opts';
                 var boutons = {};
                 ['content', 'template', 'context'].forEach(function (m) {
                     var b = document.createElement('button');
                     b.type = 'button';
-                    b.style.cssText = 'display:block;width:100%;text-align:left;padding:11px 12px;border:1px solid #d0d0d0;background:transparent;color:inherit;cursor:pointer;font-family:inherit;';
+                    b.className = 'sp-pj-opt' + (m === choix ? ' on' : '');
+                    b.setAttribute('data-m', m);
+                    var ico = document.createElement('span');
+                    ico.className = 'sp-pj-ico';
+                    ico.innerHTML = SP_PJ_ICONES[m] || '';
+                    var wrap = document.createElement('span');
                     var pt = document.createElement('span');
-                    pt.style.cssText = 'display:block;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;';
+                    pt.className = 'sp-pj-t';
                     pt.textContent = d[m];
                     var pd = document.createElement('span');
-                    pd.style.cssText = 'display:block;margin-top:4px;font-size:11px;line-height:1.45;color:#666666;';
+                    pd.className = 'sp-pj-d';
                     pd.textContent = d[m + 'D'] || '';
-                    b.appendChild(pt); b.appendChild(pd);
-                    if (m === choix) b.style.borderColor = '#111111';
+                    wrap.appendChild(pt); wrap.appendChild(pd);
+                    b.appendChild(ico); b.appendChild(wrap);
                     b.addEventListener('click', function () {
                         choix = m;
                         Object.keys(boutons).forEach(function (k) {
-                            boutons[k].style.borderColor = (k === m) ? '#111111' : '#d0d0d0';
+                            boutons[k].classList.toggle('on', k === m);
                         });
                     });
                     boutons[m] = b;
                     body.appendChild(b);
                 });
                 var foot = document.createElement('div');
-                foot.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;';
+                foot.className = 'sp-pj-foot';
                 var no = document.createElement('button');
-                no.type = 'button'; no.textContent = d.cancel;
-                no.style.cssText = 'padding:8px 14px;border:1px solid #d0d0d0;background:transparent;color:inherit;cursor:pointer;font-family:inherit;font-size:11px;text-transform:uppercase;letter-spacing:.6px;';
+                no.type = 'button'; no.className = 'sp-pj-btn'; no.textContent = d.cancel;
                 var ok = document.createElement('button');
-                ok.type = 'button'; ok.textContent = d.ok;
-                ok.style.cssText = 'padding:8px 14px;border:1px solid #111111;background:#111111;color:#ffffff;cursor:pointer;font-family:inherit;font-size:11px;text-transform:uppercase;letter-spacing:.6px;';
+                ok.type = 'button'; ok.className = 'sp-pj-btn pri'; ok.textContent = d.ok;
                 function fermer(val) {
                     document.removeEventListener('keydown', esc, true);
+                    try { window.removeEventListener('resize', spPjReflow); } catch (_) {}
                     if (ov.parentNode) ov.parentNode.removeChild(ov);
                     resolve(val);
                 }
@@ -49307,6 +49356,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 try { ok.focus(); } catch (_) {}
             });
         }
+        function spPjReflow() { /* la grille suit le média query : rien à recalculer */ }
         window.spPjAskRole = spPjAskRole;
 
         // Compose le bloc « PIECES JOINTES » envoye a l'IA : meme esprit que la note
