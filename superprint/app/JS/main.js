@@ -71045,7 +71045,7 @@ function _npBuildLayout(params, keywords, lang) {
             format: { width: 420, height: 560, spread: true, pages: 8 },
             theme: { paper: '#faf8f5', ink: '#121212', accent: '#b3122c', soft: '#ece5dc', night: '#14110f' },
             fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
-            img: 'img/auto/tpl/fashion',
+            img: 'img/template/fashion',
             c: {
                 mast: 'ÉCLAT', tag: 'FASHION & STYLE', issue: 'N° 12 · AUTUMN 2026', price: 'PARIS 6,90 € · eclat-magazine.com',
                 head: 'The season\u2019s wardrobe', stand: 'Six silhouettes that set the tone for autumn \u2014 sculpted wool, liquid satin, brushed cashmere.',
@@ -71062,7 +71062,7 @@ function _npBuildLayout(params, keywords, lang) {
             format: { width: 800, height: 1200, pages: 4 },
             theme: { paper: '#f4f1e8', ink: '#17150f', accent: '#8a6a3b', soft: '#e8e2d2', night: '#17150f' },
             fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
-            img: 'img/auto/tpl/hair',
+            img: 'img/template/hair',
             c: {
                 mast: 'The Hair Journal', tag: 'SALON NEWS, CUTS AND COLOUR', issue: 'SPECIAL EDITION · AUTUMN 2026 · N° 07', price: '€ 4,50',
                 head: 'The soft bob is the cut of the season', stand: 'Blunt line, invisible layers and a colour that grows out gracefully.',
@@ -71079,7 +71079,7 @@ function _npBuildLayout(params, keywords, lang) {
             format: { width: 420, height: 560, spread: true, pages: 8 },
             theme: { paper: '#0a0a0c', ink: '#f5f3ef', accent: '#ff3d71', soft: '#17171d', night: '#050506' },
             fonts: { display: 'Bebas Neue', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
-            img: 'img/auto/tpl/music',
+            img: 'img/template/music',
             c: {
                 mast: 'AMPLIFY', tag: 'THE SOUND OF NOW', issue: 'VOL. 04 · 2026', price: '€ 5,90',
                 head: 'Analogue is back on the charts', stand: 'Why the loudest records of the year were cut to tape.',
@@ -71096,7 +71096,7 @@ function _npBuildLayout(params, keywords, lang) {
             format: { width: 420, height: 560, spread: true, pages: 8 },
             theme: { paper: '#fffdf8', ink: '#1d1a15', accent: '#1f7a4d', soft: '#eef0e6', night: '#14261c' },
             fonts: { display: 'Playfair Display', text: 'Open Sans', mono: 'IBM Plex Mono' },
-            img: 'img/auto/tpl/food',
+            img: 'img/template/food',
             c: {
                 mast: 'FLAVOURS', tag: 'THE MAGAZINE OF WORLD KITCHENS', issue: 'N° 21 · AUTUMN 2026', price: '€ 5,20',
                 head: 'Slow cooking, bright flavours', stand: 'Four braises that turn a cheap cut into the best meal of the week.',
@@ -71113,7 +71113,7 @@ function _npBuildLayout(params, keywords, lang) {
             format: { width: 595, height: 842, pages: 4 },
             theme: { paper: '#f6f0e3', ink: '#f6f0e3', accent: '#c8a15a', soft: '#1a2c24', night: '#0f1f19' },
             fonts: { display: 'Playfair Display', text: 'Montserrat', mono: 'IBM Plex Mono' },
-            img: 'img/auto/tpl/menu',
+            img: 'img/template/menu',
             c: {
                 mast: 'THE GOLDEN HOUSE', tag: 'SEASONAL KITCHEN', issue: 'MENU 2026', price: '',
                 head: 'Seasonal kitchen', stand: 'Cooked to order, served with time to spare.',
@@ -71156,7 +71156,7 @@ function _npBuildLayout(params, keywords, lang) {
             format: { width: 420, height: 595, pages: 12 },
             theme: { paper: '#fbf8f1', ink: '#191713', accent: '#8a5a2b', soft: '#f1ece1', night: '#191713' },
             fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
-            img: 'img/auto/tpl/book',
+            img: 'img/template/book',
             c: {
                 mast: 'THE QUIET CRAFT', tag: 'ESSAYS · FIRST EDITION', issue: 'MMXXVI', price: '',
                 head: 'A short book about making things slowly', stand: 'Twelve essays on the ordinary decisions that separate a made object from a manufactured one.',
@@ -71187,6 +71187,8 @@ function _npBuildLayout(params, keywords, lang) {
     }
 
     // ── Pose des photos (objets Image « cover » + clip rect) ─────────────
+    var SP_EN_PENDING = [];   // références vivantes tant que le chargement n'est pas fini
+    function spEnLibere(el) { try { var i = SP_EN_PENDING.indexOf(el); if (i >= 0) SP_EN_PENDING.splice(i, 1); } catch (e) {} }
     function flushImgs(canvas) {
         if (!canvas || !canvas.__spEnImgs || !canvas.__spEnImgs.length) return;
         var fileImgs = canvas.__spEnImgs.slice();
@@ -71194,7 +71196,8 @@ function _npBuildLayout(params, keywords, lang) {
         fileImgs.forEach(function (p) {
             try {
                 var elImg = new Image();
-                if (p.url.indexOf('img/auto/') !== 0) elImg.crossOrigin = 'anonymous';
+                SP_EN_PENDING.push(elImg);
+                if (/^https?:/i.test(p.url)) elImg.crossOrigin = 'anonymous';
                 elImg.onload = function () {
                     try {
                         if (!elImg.naturalWidth || !elImg.naturalHeight) return;
@@ -71208,12 +71211,26 @@ function _npBuildLayout(params, keywords, lang) {
                         try {
                             img.clipPath = new fabric.Rect({ left: p.gx + p.x, top: p.gy + p.y, width: p.w, height: p.h, absolutePositioned: true });
                         } catch (e7) {}
-                        canvas.add(img);
-                        img.bringToFront();
+                        // 🆕 v1.7.430d — L'app pose un aplat (groupe/rect) plein page : on insère
+                        //   l'image APRÈS le DERNIER objet couvrant ≥ 90 % de la page, donc
+                        //   au-dessus des fonds et sous les voiles/textes du modèle.
+                        var cw0 = canvas.getWidth(), ch0 = canvas.getHeight();
+                        var objs0 = canvas.getObjects();
+                        var iIns = 0;
+                        for (var z0 = 0; z0 < objs0.length; z0++) {
+                            var o0 = objs0[z0];
+                            if (!o0 || o0.type === 'image' || o0.type === 'textbox') continue;
+                            var w0 = (o0.width || 0) * (o0.scaleX || 1), h0 = (o0.height || 0) * (o0.scaleY || 1);
+                            if (w0 >= cw0 * 0.9 && h0 >= ch0 * 0.9) iIns = z0 + 1;
+                        }
+                        if (iIns > 0 && iIns <= objs0.length) canvas.insertAt(img, iIns, false);
+                        else canvas.add(img);
+                        try { img.set('selectable', true); } catch (e1) {}
                         canvas.requestRenderAll();
                     } catch (e8) { console.warn('[SP-EN] image :', e8); }
+                    spEnLibere(elImg);
                 };
-                elImg.onerror = function () { /* l'aplat de couleur du thème reste visible */ };
+                elImg.onerror = function () { /* l'aplat de couleur du thème reste visible */ spEnLibere(elImg); };
                 elImg.src = p.url;
             } catch (e9) {}
         });
@@ -71245,11 +71262,11 @@ function _npBuildLayout(params, keywords, lang) {
         // Les photos sont posées APRÈS l'ajout au canvas, en objets Image clippés
         // (le rect-masque de l'app ne se peignait pas ici).
         if (!canvas.__spEnImgs) canvas.__spEnImgs = [];
-        function photo(x0, y0, w0, h0, url) {
-            var r = rect(x0, y0, w0, h0, t.soft, 1);
+        function photo(x0, y0, w0, h0, url, col) {
+            var r = rect(x0, y0, w0, h0, col || t.soft, 1);
             // 🆕 v1.7.429f — on mémorise aussi l'origine de la page : les photos seront
             //   posées après la construction COMPLÈTE (un spread = 1 canvas / 2 pages).
-            if (url) canvas.__spEnImgs.push({ x: x0, y: y0, w: w0, h: h0, url: url, gx: g.x, gy: g.y });
+            if (url) canvas.__spEnImgs.push({ r: r, x: x0, y: y0, w: w0, h: h0, url: url, gx: g.x, gy: g.y });
             return r;
         }
         function txt(o) {
@@ -71320,21 +71337,22 @@ function _npBuildLayout(params, keywords, lang) {
                 txt({ text: c.head, x: MARGE, y: H * 0.35, w: W - MARGE * 2, size: px(13), font: F.display, fill: t.paper, align: 'center', lh: 1.05 });
                 txt({ text: c.stand, x: MARGE, y: H * 0.55, w: W - MARGE * 2, size: px(3), font: F.display, italic: true, fill: t.accent, align: 'center' });
                 txt({ text: c.caption, x: MARGE, y: H - MARGE * 3, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.soft, align: 'center' });
-                photo(MARGE, H * 0.62, W - MARGE * 2, H * 0.24, IMG('r1'));
+                photo(MARGE, H * 0.62, W - MARGE * 2, H * 0.24, IMG('1'));
             } else if (model.family === 'book' && pi === 0) {
                 plein(t.paper);
                 rect(MARGE * 2, H * 0.22, W - MARGE * 4, px(0.4), t.accent);
                 txt({ text: c.mast, x: MARGE * 2, y: H * 0.26, w: W - MARGE * 4, size: px(9), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
                 txt({ text: c.head, x: MARGE * 2, y: H * 0.40, w: W - MARGE * 4, size: px(4.4), font: F.text, italic: true, fill: t.ink, lh: 1.35 });
-                photo(MARGE, H * 0.50, W - MARGE * 2, H * 0.30, IMG('b1'));
+                photo(MARGE, H * 0.50, W - MARGE * 2, H * 0.30, IMG('1'));
                 txt({ text: c.tag, x: MARGE, y: H * 0.83, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.accent, cs: 220, align: 'center' });
                 txt({ text: c.caption, x: MARGE, y: H * 0.87, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.ink, align: 'center', op: 0.7 });
             } else {
                 // COUVERTURE MAGAZINE : photo pleine page à fond perdu + voiles + nameplate
                 plein(t.night);
-                photo(-MARGE, -MARGE, W + MARGE * 2, H + MARGE * 2, IMG('f1'));
-                bg(t.night, g.bx, g.by, g.bW, H * 0.34 + bp, 0.45);
-                bg(t.night, g.bx, g.y + H * 0.62 - bp, g.bW, H * 0.38 + bp, 0.55);
+                // 🆕 v1.7.430e — cadrage photo DANS la page (le pleine page passait sous
+                //   l'aplat noir de l'app → couverture noire).
+                photo(MARGE, H * 0.27, W - MARGE * 2, H * 0.37, IMG('1'), t.soft);
+                rect(MARGE, H * 0.27, W - MARGE * 2, H * 0.37, 'transparent');
                 txt({ text: c.mast, x: MARGE, y: H * 0.075, w: W - MARGE * 2, size: px(15), font: F.display, weight: '700', fill: t.paper, align: 'center', cs: 40, lh: 1 });
                 rect(W / 2 - px(14), H * 0.185, px(28), px(0.8), t.accent);
                 txt({ text: c.tag, x: MARGE, y: H * 0.205, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.paper, align: 'center', cs: 240 });
@@ -71369,11 +71387,10 @@ function _npBuildLayout(params, keywords, lang) {
         else if (estEditorial) {
             if (g.onLeft) {
                 plein(t.night);
-                photo(-MARGE, -MARGE, W + MARGE * 2, H + MARGE * 2, IMG(variante === 0 ? 'f2' : (variante === 1 ? 'f1' : 'f3')));
-                bg(t.night, g.bx, g.by, g.bW, H * 0.34 + bp, 0.36);
                 txt({ text: (c.sections[variante] || c.sections[0] || '').toUpperCase(), x: MARGE, y: H * 0.065, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.paper, cs: 260 });
-                rect(MARGE, H * 0.60, px(16), px(1.2), t.accent);
-                txt({ text: c.head, x: MARGE, y: H * 0.625, w: W - MARGE * 2, size: px(11), font: F.display, weight: '700', fill: t.paper, lh: 1.03 });
+                photo(MARGE, H * 0.12, W - MARGE * 2, H * 0.46, IMG(variante === 0 ? '2' : (variante === 1 ? '1' : '3')), t.soft);
+                rect(MARGE, H * 0.62, px(16), px(1.2), t.accent);
+                txt({ text: c.head, x: MARGE, y: H * 0.645, w: W - MARGE * 2, size: px(11), font: F.display, weight: '700', fill: t.paper, lh: 1.03 });
                 txt({ text: c.caption, x: MARGE, y: H * 0.88, w: W - MARGE * 2, size: px(2.2), font: F.mono, fill: t.paper, op: 0.82 });
                 folio(pi + 1, 'left');
             } else if (g.onRight) {
@@ -71390,8 +71407,7 @@ function _npBuildLayout(params, keywords, lang) {
                 // page seule : photo en haut (débordante), texte dessous
                 plein(t.paper);
                 tete();
-                photo(-MARGE, -MARGE, W + MARGE * 2, H * 0.46, IMG(variante === 0 ? 'f2' : 'f1'));
-                bg(t.paper, g.bx, g.y + H * 0.44 - bp, g.bW, H * 0.12 + bp, 0.55);
+                photo(0, 0, W, H * 0.44, IMG(variante === 0 ? '2' : '1'), t.soft);
                 txt({ text: (c.sections[variante] || '').toUpperCase(), x: MARGE, y: H * 0.48, w: W - MARGE * 2, size: px(2.6), font: F.mono, fill: t.accent, cs: 240 });
                 txt({ text: c.head, x: MARGE, y: H * 0.515, w: W - MARGE * 2, size: px(9.5), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
                 filet(H * 0.635, t.ink, px(0.3));
@@ -71427,7 +71443,7 @@ function _npBuildLayout(params, keywords, lang) {
             txt({ text: (c.sections[(pi - 1) % c.sections.length] || '').toUpperCase(), x: MARGE, y: H * 0.18, w: W - MARGE * 2, size: px(2.6), font: F.mono, fill: t.accent, cs: 240 });
             txt({ text: pi === 1 ? c.head : (c.head + ' — ' + (c.sections[(pi - 1) % c.sections.length] || '')), x: MARGE, y: H * 0.22, w: W - MARGE * 2, size: px(7), font: F.display, weight: '700', fill: t.ink, lh: 1.1 });
             corps(H * 0.40, H * 0.42, c.body, 1);
-            if (pi % 4 === 0) photo(MARGE, H * 0.62, W - MARGE * 2, H * 0.22, IMG('b2'));
+            if (pi % 4 === 0) photo(MARGE, H * 0.62, W - MARGE * 2, H * 0.22, IMG('2'));
             folio(pi + 1);
         } else {
             // journal : gros titre + chapô + 3 colonnes de texte + photo
@@ -71436,7 +71452,7 @@ function _npBuildLayout(params, keywords, lang) {
             txt({ text: c.head, x: MARGE, y: H * 0.14, w: W - MARGE * 2, size: px(16), font: F.display, weight: '700', fill: t.ink, lh: 1.02 });
             filet(H * 0.30, t.ink, px(0.6));
             txt({ text: c.stand, x: MARGE, y: H * 0.325, w: W - MARGE * 2, size: px(4.4), italic: true, fill: t.ink, lh: 1.4 });
-            photo(MARGE, H * 0.40, W - MARGE * 2, H * 0.24, IMG(pi === 1 ? 'h1' : 'h2'));
+            photo(MARGE, H * 0.40, W - MARGE * 2, H * 0.24, IMG(pi === 1 ? '1' : '2'));
             txt({ text: c.caption, x: MARGE, y: H * 0.645, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.ink, op: 0.7 });
             corps(H * 0.70, H * 0.16, c.body, 3);
             folio(pi + 1);
@@ -71445,7 +71461,7 @@ function _npBuildLayout(params, keywords, lang) {
         for (var i = 0; i < texts.length; i++) objs.push(texts[i]);
         if (typeof addAssetObjects === 'function') addAssetObjects(canvas, objs, model.name + ' · p.' + (pi + 1));
         else { objs.forEach(function (o) { canvas.add(o); }); canvas.requestRenderAll(); }
-        try { if (model.format && !model.format.spread) flushImgs(canvas); } catch (e10) {}
+        try { flushImgs(canvas); } catch (e10) {}
     }
 
     // ── Vignette : SVG du modèle (thème réel + double page si spread) ────
@@ -71515,11 +71531,12 @@ function _npBuildLayout(params, keywords, lang) {
                     try { (typeof canvases !== 'undefined' ? canvases : []).forEach(function (c) { flushImgs(c); }); } catch (e) {}
                 },
                 build: function (canvas, x, y) {
-                    // Dépôt depuis la bibliothèque : on dessine la couverture au point de dépôt.
+                    // Dépôt depuis la bibliothèque : couverture au point de dépôt + photos.
                     try {
                         var g0 = canvas.bleedInfo || {};
                         canvas.bleedInfo = g0;
                         page(d, canvas, 0, 1);
+                        flushImgs(canvas);
                     } catch (e) { console.warn('[SP-EN] build :', e); }
                 }
             });
