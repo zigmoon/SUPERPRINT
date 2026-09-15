@@ -1420,6 +1420,10 @@ details[open] > .sp-summary::before { transform: rotate(90deg); }
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+    /* 🆕 v1.7.440 — la vignette doit passer AU-DESSUS du dégradé de fond (::before),
+       sinon le dégradé opaque la recouvre (régression 1.7.439). */
+    position: relative;
+    z-index: 1;
 }
 .asset-card-preview .preview-shape {
     width: 100%;
