@@ -62702,7 +62702,8 @@ canvas.requestRenderAll();
                 strip = document.createElement('div');
                 strip.id = 'assetsTags';
                 strip.className = 'assets-tags';
-                header.insertBefore(strip, champ);
+                // repli : le bandeau se pose sur SA PROPRE ligne, entre l'en-tête et les onglets
+                if (header.parentNode) header.parentNode.insertBefore(strip, header.nextSibling);
             }
             const LIB = { magazine: 'Magazines', book: 'Livres', cv: 'CV', calendar: 'Calendriers', menu: 'Menus', report: 'Rapports', journal: 'Presse', card: 'Cartes', carte: 'Cartes', thesis: 'Mémoires' };
             const parFamille = {};
@@ -62758,14 +62759,9 @@ canvas.requestRenderAll();
             strip.appendChild(sepFormat);
             strip.appendChild(boutonTag('Single', nSingle, 'assetDoc', 'single', 'Pages simples : une page par écran'));
             strip.appendChild(boutonTag('Spread', nSpread, 'assetDoc', 'spread', 'Pages en double : magazine ouvert, deux pages côte à côte'));
-            // le filtre de langue rejoint le bandeau, séparé par un filet
-            const lg = document.getElementById('assetsLangFilter');
-            if (lg) {
-                const sep = document.createElement('span');
-                sep.className = 'assets-tags-sep';
-                strip.appendChild(sep);
-                strip.appendChild(lg);
-            }
+            // 🆕 v1.7.444 — le filtre de langue (ALL / EN / FR / JA) vit désormais à droite de la
+            //   ligne des onglets : on ne le déplace plus ici.
+            if (!document.getElementById('assetsLangFilter')) console.warn('[SP] filtre de langue introuvable');
             window.spTagsStrip = strip;
         } catch (eTags) { console.warn('[SP] bandeau de tags :', eTags); }
     })();

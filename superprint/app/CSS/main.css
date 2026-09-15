@@ -1331,6 +1331,7 @@ details[open] > .sp-summary::before { transform: rotate(90deg); }
 .assets-tags {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     flex: 0 0 auto;
     min-width: 0;
@@ -1366,16 +1367,21 @@ details[open] > .sp-summary::before { transform: rotate(90deg); }
 .assets-tag.active b { opacity: 0.8; }
 .assets-tags-sep { flex: 0 0 auto; width: 1px; height: 18px; background: #e2e2e2; margin: 0 3px; }
 /* le filtre de langue devient un groupe de tags dans l'en-tête */
-.assets-tags .assets-lang-filter {
+/* le filtre de langue vit dans la ligne des onglets, poussé à droite */
+.assets-tabs .assets-lang-filter {
     display: flex;
     gap: 6px;
     padding: 0;
-    margin: 0;
+    margin: 0 0 0 auto;
     border: none;
     background: transparent;
     flex: 0 0 auto;
 }
-.assets-tags .assets-lang-btn { padding: 5px 12px; font-size: 11px; }
+.assets-tabs .assets-lang-btn { padding: 4px 12px; font-size: 11px; }
+/* écran plus étroit : le bandeau centré repasse à gauche pour rester défilable */
+@media (max-width: 1100px) {
+    .assets-tags { justify-content: flex-start; }
+}
 .theme-dark .assets-tag { background: #242424; border-color: #3a3a3a; color: #ccc; }
 .theme-dark .assets-tag.active { background: #eee; border-color: #eee; color: #111; }
 .theme-dark .assets-tags-sep { background: #3a3a3a; }
