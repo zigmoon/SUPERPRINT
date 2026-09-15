@@ -586,6 +586,29 @@
     font-size: 14px; padding: 0;
   }
   .attach-chip .rm:hover { color: #d32f2f; }
+  /* 🆕 v1.7.420 — BADGE DE RÔLE de la pièce jointe (cliquable pour changer) */
+  .attach-chip .mode { font-size: 9px; letter-spacing: .4px; text-transform: uppercase; padding: 1px 5px;
+    border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-family: inherit; }
+  .attach-chip .mode:hover { border-color: #999; color: var(--text); }
+  .attach-chip .mode.mode-content { color: #1a7f37; border-color: #1a7f37; }
+  .attach-chip .mode.mode-template { color: #8a6d00; border-color: #8a6d00; }
+  .attach-chip .mode.mode-context { color: var(--muted); }
+  /* 🆕 v1.7.420 — POP-IN de choix du rôle (à l'import d'une PJ) */
+  .pj-overlay { position: fixed; inset: 0; z-index: 130; display: flex; align-items: center; justify-content: center; padding: 3vh 3vw; background: rgba(12,12,12,.42); }
+  body.theme-dark .pj-overlay { background: rgba(0,0,0,.6); }
+  .pj-overlay.hidden { display: none; }
+  .pj-card { width: min(680px, 96vw); max-height: 92vh; overflow: auto; background: var(--panel); border: 1px solid var(--border); box-shadow: 0 30px 90px var(--shadow); }
+  .pj-head { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .pj-title { display: block; font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+  .pj-sub { display: block; margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .pj-opts { padding: 12px 18px 4px; display: flex; flex-direction: column; gap: 8px; }
+  .pj-opt { display: flex; gap: 12px; align-items: flex-start; padding: 11px 12px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; text-align: left; font-family: inherit; }
+  .pj-opt:hover { background: var(--btn-hover); }
+  .pj-opt.on { border-color: var(--btn-active); background: var(--btn-hover); }
+  .pj-opt .pt { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; }
+  .pj-opt .pd { display: block; margin-top: 4px; font-size: 11px; color: var(--muted); line-height: 1.45; }
+  .pj-opt .pk { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .pj-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 18px 16px; }
 
   /* 🆕 v1.7.386 — le champ occupe TOUTE la largeur, la barre d'actions passe
      DESSOUS (avant : colonne de 72 px collee a droite, boutons eparpilles). */
@@ -703,7 +726,7 @@
   #webImgBtn.offline { opacity: .35; pointer-events: none; }
 
   /* ════════════════════════════════════════════════════════════════
-     🆕 v1.7.419 — CLAVIER VIRTUEL DU STUDIO
+     🆕 v1.7.420 — CLAVIER VIRTUEL DU STUDIO
      Icone a droite du micro : ouvre un GRAND clavier au centre de
      l'interface, le prompt s'ecrit EN TRES GRAND au-dessus, et
      l'interface reste visible derriere (voile leger, sans flou).
@@ -3162,10 +3185,105 @@
     });
   }
 
+  // ══════════════════════════════════════════════════════════════
+  // 🆕 v1.7.420 — RÔLE DES PIÈCES JOINTES (pop-in à l'import)
+  //   Trois modes, traduits en CONSIGNES DANS LE PROMPT à chaque envoi :
+  //   ils valent donc pour TOUS les moteurs du studio (DeepSeek, OpenAI, Groq,
+  //   OpenRouter, WLLM local) — aucune brique spécifique à un moteur.
+  //     • content  : le contenu DOIT être placé dans la maquette ;
+  //     • template : sert de MODÈLE de structure / hiérarchie ;
+  //     • context  : sert seulement à COMPRENDRE (rien de ce fichier ne doit
+  //                  apparaître dans la maquette).
+  // ══════════════════════════════════════════════════════════════
+  const PJ_LABELS = {
+    fr: {
+      title: 'Que doit faire l\'IA de cette pièce jointe ?',
+      sub: 'Choisissez le rôle de ce fichier. Il sera rappelé au moteur à chaque demande.',
+      content: 'Importer dans la maquette', contentD: 'Son texte et ses images doivent être COMPOSÉS dans le document (obligatoire).',
+      template: 'Servir de modèle', templateD: 'Sa structure, son ordre et ses styles doivent être SUIVIS : le contenu vient de votre demande.',
+      context: 'Contexte seulement', contextD: 'Sert à COMPRENDRE (sujet, ton, vocabulaire). Aucun de ses éléments ne doit apparaître dans la maquette.',
+      ok: 'Valider', cancel: 'Annuler', change: 'Cliquer pour changer le rôle de cette pièce jointe',
+      short: { content: 'maquette', template: 'modèle', context: 'contexte' }
+    },
+    en: {
+      title: 'What should the AI do with this attachment?',
+      sub: 'Pick the role of this file. It is restated to the engine on every request.',
+      content: 'Import into the layout', contentD: 'Its text and images must be TYPESET into the document (mandatory).',
+      template: 'Use as a template', templateD: 'Its structure, order and styles must be FOLLOWED: content comes from your request.',
+      context: 'Context only', contextD: 'Used to UNDERSTAND (topic, tone, wording). None of its elements may appear in the layout.',
+      ok: 'Confirm', cancel: 'Cancel', change: 'Click to change this attachment\'s role',
+      short: { content: 'layout', template: 'template', context: 'context' }
+    },
+    jp: {
+      title: 'この添付ファイルを AI にどう扱わせますか？',
+      sub: 'このファイルの役割を選択してください。毎回の送信時にエンジンへ伝えます。',
+      content: 'レイアウトに取り込む', contentD: 'テキストと画像をドキュメントに組む必要があります（必須）。',
+      template: 'テンプレートとして使う', templateD: '構造・順序・スタイルに従います（内容はご指示から）。',
+      context: 'コンテキストのみ', contextD: '理解のためだけに使用し、要素はレイアウトに表示しません。',
+      ok: '確定', cancel: 'キャンセル', change: 'クリックして役割を変更',
+      short: { content: 'レイアウト', template: 'テンプレート', context: 'コンテキスト' }
+    }
+  };
+  function pjL() { return PJ_LABELS[curLang] || PJ_LABELS.fr; }
+  function pjShort(m) { const s = pjL().short || {}; return s[m] || m; }
+  let pjModePendant = null;
+  // Affiche le pop-in et résout avec le mode choisi (Echap / Annuler = défaut).
+  function pjAskMode(noms, modeInitial) {
+    return new Promise(function (resolve) {
+      const ov = $('pjModal'), opts = $('pjOpts'), t = $('pjTitle'), s = $('pjSub');
+      if (!ov || !opts) { resolve(modeInitial || 'content'); return; }
+      const d = pjL();
+      let choix = modeInitial || 'content';
+      if (t) t.textContent = d.title;
+      if (s) s.textContent = (noms && noms.length ? noms.join(', ') + ' — ' : '') + d.sub;
+      opts.innerHTML = '';
+      ['content', 'template', 'context'].forEach(function (m) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pj-opt' + (m === choix ? ' on' : '');
+        b.setAttribute('data-m', m);
+        b.innerHTML = '<span><span class="pt">' + d[m] + '</span><span class="pd">' + (d[m + 'D'] || '') + '</span></span>';
+        b.addEventListener('click', function () {
+          choix = m;
+          opts.querySelectorAll('.pj-opt').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-m') === m); });
+        });
+        opts.appendChild(b);
+      });
+      const ok = $('pjOk'), no = $('pjCancel');
+      if (ok) ok.textContent = d.ok;
+      if (no) no.textContent = d.cancel;
+      function fermer(val) {
+        ov.classList.add('hidden');
+        document.removeEventListener('keydown', esc, true);
+        if (ok) ok.onclick = null;
+        if (no) no.onclick = null;
+        ov.onclick = null;
+        resolve(val);
+      }
+      function esc(e) { if (e.key === 'Escape') { e.stopPropagation(); fermer(choix); } }
+      if (ok) ok.onclick = function () { fermer(choix); };
+      if (no) no.onclick = function () { fermer(choix); };
+      ov.onclick = function (e) { if (e.target === ov) fermer(choix); };
+      document.addEventListener('keydown', esc, true);
+      ov.classList.remove('hidden');
+    });
+  }
+  // Consigne envoyée au moteur pour une pièce jointe (FR : le prompt du studio est en FR).
+  function pjModeNote(att) {
+    const m = (att && att.mode) || 'content';
+    if (m === 'context') return 'RÔLE DE CETTE PIÈCE JOINTE : CONTEXTE UNIQUEMENT — n\'ajoute AUCUN de ses éléments dans la maquette (ni texte, ni image, ni couleur). Sers-t\'en seulement pour comprendre le sujet, le ton, le vocabulaire et les contraintes.';
+    if (m === 'template') return 'RÔLE DE CETTE PIÈCE JOINTE : MODÈLE À SUIVRE — reproduis sa STRUCTURE et sa HIÉRARCHIE (ordre des blocs, styles, proportions, nombre de colonnes). Ne recopie pas son contenu textuel : le contenu vient de la demande de l\'utilisateur.';
+    return 'RÔLE DE CETTE PIÈCE JOINTE : CONTENU À INTÉGRER (OBLIGATOIRE) — son contenu DOIT être composé dans la maquette (texte, images, tableaux). Ne l\'ignore pas, ne le résume pas, ne le remplace pas par du texte de substitution.';
+  }
+
   // ── Pièces jointes ──────────────────────────────────────────
-  function handleAttachFiles(files) {
+  async function handleAttachFiles(files) {
     if (!files || !files.length) return;
-    Array.from(files).forEach(f => addAttachment(f));
+    // 🆕 v1.7.420 — LE RÔLE SE CHOISIT À L'IMPORT : le pop-in précède la lecture,
+    //   et le mode choisi s'applique à toutes les pièces jointes de ce dépôt.
+    const _liste = Array.from(files);
+    pjModePendant = await pjAskMode(_liste.map(f => f.name), 'content');
+    _liste.forEach(f => addAttachment(f));
     $('attachInput').value = '';
   }
 
@@ -4784,6 +4902,18 @@ function spRtfLayoutInfo(src) {
         info += ' · ' + (n >= 1000 ? (Math.round(n / 100) / 10) + 'k' : n) + ' car.';
       }
       chip.innerHTML = icon + '<span class="name">' + escapeHtml(att.name) + '</span><span class="type">' + info + '</span>';
+      // 🆕 v1.7.420 — rôle de la pièce jointe (badge cliquable)
+      if (!att.mode) att.mode = pjModePendant || 'content';
+      const badge = document.createElement('button');
+      badge.type = 'button';
+      badge.className = 'mode mode-' + att.mode;
+      badge.textContent = pjShort(att.mode);
+      badge.title = pjL().change;
+      badge.addEventListener('click', async function () {
+        att.mode = await pjAskMode([att.name], att.mode);
+        renderAttachBar();
+      });
+      chip.appendChild(badge);
       const rm = document.createElement('button');
       rm.className = 'rm';
       rm.innerHTML = '<svg class="ic ic-sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
@@ -6580,7 +6710,7 @@ function spRtfLayoutInfo(src) {
         // modèle renvoie "imageIndex" et le studio réinjecte la data URI.
         // On ne passe la data URI que si elle est minuscule (< 1500 caractères).
         const dataUri = (att.dataURL && att.dataURL.length <= 1500) ? att.dataURL : '';
-        parts.push('IMAGE ' + i + ' : "' + att.name + '"' + (att.width ? ' (' + att.width + '×' + att.height + 'px, ratio ' + (att.width / att.height).toFixed(2) + ')' : '') +
+        parts.push(pjModeNote(att) + '\nIMAGE ' + i + ' : "' + att.name + '"' + (att.width ? ' (' + att.width + '×' + att.height + 'px, ratio ' + (att.width / att.height).toFixed(2) + ')' : '') +
           '\nPour placer cette image, renvoie un objet {"type":"image", "imageIndex": ' + i + ', "left":…, "top":…, "width":…, "height":…}. Le studio réinjectera automatiquement la data URI. Ne copie JAMAIS la data URI elle-même dans ta réponse.' +
           (dataUri ? '\nData URI (courte) : ' + dataUri : ''));
       } else {
@@ -6594,7 +6724,7 @@ function spRtfLayoutInfo(src) {
         // 🆕 v1.7.396 — le libelle du format d'origine est desormais exact
         //   (.doc et .odt sont de vrais documents Word/OpenDocument, pas « TEXTE »).
         const src = att.docLabel || (att.docx ? 'DOCUMENT WORD' : 'TEXTE');
-        parts.push(src + ' ' + i + ' : "' + att.name + '"' + (truncated ? ' (LONG : ' + full.length + ' caractères)' : '') +
+        parts.push(pjModeNote(att) + '\n' + src + ' ' + i + ' : "' + att.name + '"' + (truncated ? ' (LONG : ' + full.length + ' caractères)' : '') +
           (att.imageCount ? ' (' + att.imageCount + ' image(s) extraite(s) — voir IMAGE ' + i + ' et suivantes)' : '') + '\n' + body);
       }
     });
@@ -10108,6 +10238,16 @@ La précision de layout et la richesse de contenu vont ensemble.`;
   init();
 })();
 </script>
+
+<!-- 🆕 v1.7.420 — POP-IN « RÔLE DE LA PIÈCE JOINTE » (à l'import) : contenu à placer,
+     modèle de structure à suivre, ou contexte pour la compréhension seulement. -->
+<div id="pjModal" class="pj-overlay hidden" role="dialog" aria-modal="true">
+  <div class="pj-card">
+    <div class="pj-head"><span class="pj-title" id="pjTitle"></span><span class="pj-sub" id="pjSub"></span></div>
+    <div class="pj-opts" id="pjOpts"></div>
+    <div class="pj-foot"><button class="btn" id="pjCancel" type="button"></button><button class="btn btn-primary" id="pjOk" type="button"></button></div>
+  </div>
+</div>
 
 <!-- 🆕 v1.7.417 — Clavier virtuel (icône à droite du micro). Voile léger :
      l'interface du studio reste visible derrière le clavier. -->

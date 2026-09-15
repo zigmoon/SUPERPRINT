@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.419-vectorisation-fixe';
+const CACHE_NAME = 'superprint-shell-v1.7.420-roles-pj';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

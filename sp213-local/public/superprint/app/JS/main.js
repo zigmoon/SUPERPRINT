@@ -41283,13 +41283,17 @@ https://superprint.app
                     if (!obj.clipPath && typeof obj.getObjects === 'function') {
                         var _gKids = obj.getObjects();
                         var _gVec = _gKids.length > 0 && _gKids.length <= 800;
-                        if (_gVec) {
+                        // 🆕 v1.7.420 — `_gMixte` : enfants gerables par le rendu NATIF
+                        //   (formes + textes + images) mais pas seulement des formes.
+                        var _gMixte = _gKids.length > 0 && _gKids.length <= 800;
+                        if (_gVec || _gMixte) {
                             for (var _gk = 0; _gk < _gKids.length; _gk++) {
                                 var _kt = _gKids[_gk] && _gKids[_gk].type;
-                                if (!(_kt === 'path' || _kt === 'polygon' || _kt === 'polyline' || _kt === 'rect' ||
-                                      _kt === 'circle' || _kt === 'ellipse' || _kt === 'triangle' || _kt === 'line')) {
-                                    _gVec = false; break;
-                                }
+                                var _kForme = (_kt === 'path' || _kt === 'polygon' || _kt === 'polyline' || _kt === 'rect' ||
+                                    _kt === 'circle' || _kt === 'ellipse' || _kt === 'triangle' || _kt === 'line');
+                                var _kNatif = _kForme || _kt === 'text' || _kt === 'i-text' || _kt === 'textbox' || _kt === 'image';
+                                if (!_kForme) _gVec = false;
+                                if (!_kNatif) { _gVec = false; _gMixte = false; break; }
                             }
                         }
                         if (_gVec) {
@@ -41312,6 +41316,36 @@ https://superprint.app
                                 }
                             }
                             return;
+                        }
+                        // 🆕 v1.7.420 — ENFANTS TEXTE / IMAGE + FORMES : on eclate une
+                        //   COPIE du groupe puis on rend chaque enfant en natif.
+                        //   Mesure du defaut corrige : un SVG importe (formes + <text>)
+                        //   sortait en UNE image de 834 x 500 px (`Do 1`, zero trace) —
+                        //   le fond blanc du SVG devenait un bloc opaque qui masquait la
+                        //   composition. `_restoreObjectsState` est la mecanique du bouton
+                        //   Degrouper : chaque enfant reprend la transformation du groupe
+                        //   et redevient un objet independant en coordonnees canevas.
+                        if (_gMixte) {
+                            var _clGrp = null;
+                            try {
+                                _clGrp = await new Promise(function (res) {
+                                    try { obj.clone(function (cl) { res(cl || null); }); } catch (_) { res(null); }
+                                });
+                            } catch (_) { _clGrp = null; }
+                            if (_clGrp && typeof _clGrp._restoreObjectsState === 'function') {
+                                var _opGrp = (typeof obj.opacity === 'number') ? obj.opacity : 1;
+                                _clGrp._restoreObjectsState();
+                                var _enfants = (_clGrp._objects || []).slice();
+                                for (var _gi4 = 0; _gi4 < _enfants.length; _gi4++) {
+                                    var _ke = _enfants[_gi4];
+                                    if (_opGrp < 0.999) _ke._spParentOpacity = _opGrp;
+                                    try {
+                                        await _renderObjToPdfLib(doc, page, _ke, mmToPt, fonts, helvetica, images, multiplier);
+                                    } catch (_) { /* un enfant en echec ne doit pas tout perdre */ }
+                                    finally { delete _ke._spParentOpacity; }
+                                }
+                                return;
+                            }
                         }
                     }
                 } catch (e) { console.warn('[pdf-lib] groupe vectoriel -> repli raster :', e); }
