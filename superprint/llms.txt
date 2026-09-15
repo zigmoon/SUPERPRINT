@@ -10,7 +10,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.436 (September 2026)
+- **Version**: 1.7.437 (September 2026)
 - **Local install**: npx superprint (npm package `superprint`, launcher version 1.0.95) — the same application, downloaded once and run on your machine
 
 ## Core documentation
@@ -43,6 +43,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Line-accurate height resizing**: dragging a text frame's handles never cuts a line in half and never alters the leading. The height snaps to a whole number of lines, using the same line metrics as the PDF export so preview and output stay consistent. An overflow marker still appears whenever text remains in the frame.
 
 ## Recent releases (September 2026)
+- **1.7.437** — “Edit typography” also works with a FONT THE USER LOADED themselves: the font lookup now matches names tolerantly (“Ma Police”, “MaPolice”, ma-police … are the same font), which matters because user fonts are added through the FontFace API and therefore cannot be found in the stylesheets. If no font can be sent, SuperTyPo now says so instead of leaving a silent drop zone.
 - **1.7.436** — “Edit typography” now opens the WHOLE CHARACTER SET of the font in SuperTyPo (the grid is built with “show all glyphs” enabled, so every mapped character is decomposed at once), while the block’s text stays in the sample field — unchecking “Show all glyphs” returns to the characters of that text.
 - **1.7.435** — “Edit typography” (right-click on a text block in the editor) now opens the WHOLE typeface in SuperTyPo: the font view with the full glyph grid of the block’s own characters, instead of jumping straight into the single-letter editor on the first character. The block’s text becomes the sample; clicking a glyph still opens the letter editor.
 - **1.7.434** — Six new English templates: **Marine Life Magazine** (8 p., double page, four real underwater photographs), **Editorial CV** and **Minimal CV** (A4, no photo), **Book of Shapes** (12 p., drawn with rectangles and circles only, no image), **Theatre Play** (12 p., three acts with drop caps, small-caps speakers and indented verse) and **Calendar A3 2027–2028** (12 pages, one month per page from September 2027 to August 2028, real weekday grids). The Professional CV no longer uses a photo. Two vector primitives (`round`, `dome`) were added to the template engine.

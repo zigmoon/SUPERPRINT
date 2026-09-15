@@ -977,7 +977,29 @@
     spSignalPret();
   }, 600);
   // Sans police chargée au bout de 7 s, on arrête d'attendre (le texte reste pré-rempli).
-  setTimeout(function () { _spDeepFait = true; }, 7000);
+  // 🆕 v1.7.437 — si AUCUNE fonte n'est arrivée (police système ou distante, ou transmission
+  //   bloquée), on le dit clairement : l'utilisateur dépose le fichier pour décomposer tout
+  //   le jeu de caractères. Avant, l'écran restait muet devant une zone de dépôt vide.
+  setTimeout(function () {
+    _spDeepFait = true;
+    if (_spPoliceRecue) return;
+    const msg = (ST.lang === 'en')
+      ? 'SuperPrint could not send the block\u2019s font \u2014 drop its .ttf/.otf file here to decompose the whole character set.'
+      : (ST.lang === 'ja')
+        ? 'SuperPrint \u304b\u3089\u30d5\u30a9\u30f3\u30c8\u3092\u53d7\u3051\u53d6\u308c\u307e\u305b\u3093\u3067\u3057\u305f\u3002.ttf/.otf \u30d5\u30a1\u30a4\u30eb\u3092\u3053\u3053\u306b\u30c9\u30ed\u30c3\u30d7\u3057\u3066\u304f\u3060\u3055\u3044\u3002'
+        : 'SuperPrint n\u2019a pas pu envoyer la police du bloc \u2014 d\u00e9posez son fichier .ttf/.otf ici pour d\u00e9composer tout le jeu de caract\u00e8res.';
+    try { toast(msg, true); } catch (e0) {}
+    try {
+      const dz = $('dropArea'), fv = $('fontView');
+      if (dz && (!fv || getComputedStyle(fv).display === 'none') && !dz.querySelector('.sp-deep-hint')) {
+        const hint = document.createElement('div');
+        hint.className = 'sp-deep-hint';
+        hint.textContent = msg;
+        hint.style.cssText = 'margin-top:14px;padding:10px 14px;border:1px solid rgba(120,120,120,.45);border-radius:8px;font-size:13px;line-height:1.5;max-width:460px;';
+        dz.appendChild(hint);
+      }
+    } catch (e1) {}
+  }, 9000);
 
   function buildGlyphGrid() {
     const grid = $('glyphGrid');

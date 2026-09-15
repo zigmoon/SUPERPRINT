@@ -49145,8 +49145,15 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             if (!fam) return null;
             // 1) police CUSTOM de l'utilisateur (dataURL base64)
             try {
-                const ent = (typeof customFonts !== 'undefined' && Array.isArray(customFonts))
-                    ? customFonts.find((f) => f && String(f.name || '').trim() === fam) : null;
+                // 🆕 v1.7.437 — recherche TOLÉRANTE : « Ma Police », "MaPolice", ma-police… désignent
+                //   la même police. C'est LE chemin des polices chargées par l'utilisateur : elles
+                //   sont ajoutées par l'API FontFace (document.fonts.add) et n'existent donc PAS
+                //   dans les feuilles de style — spUrlPolice ne peut pas les voir.
+                const _spNorm = (s) => String(s == null ? '' : s).replace(/["']/g, '').replace(/[^0-9a-zA-Z]/g, '').toLowerCase();
+                const _spCible = _spNorm(fam);
+                const _spListe = (typeof customFonts !== 'undefined' && Array.isArray(customFonts)) ? customFonts : [];
+                const ent = _spListe.find((f) => f && _spNorm(f.name) === _spCible)
+                    || (_spCible.length >= 4 ? _spListe.find((f) => f && _spNorm(f.name) && (_spNorm(f.name).indexOf(_spCible) === 0 || _spCible.indexOf(_spNorm(f.name)) === 0)) : null);
                 if (ent && ent.data) {
                     const bin = atob(String(ent.data).split(',')[1] || '');
                     const u = new Uint8Array(bin.length);
