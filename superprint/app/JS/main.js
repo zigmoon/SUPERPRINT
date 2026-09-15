@@ -71426,6 +71426,107 @@ function _npBuildLayout(params, keywords, lang) {
                 credits: 'Set in Montserrat, Open Sans and IBM Plex Mono \u00b7 A3 landscape 420 \u00d7 297 mm',
                 legs: []
             }
+        },
+        {
+            key: 'en_calendar_2027_a4_portrait_12p', style: 'calp', family: 'calendar', spreadDoc: false,
+            name: 'Calendar 2027 \u2014 A4 portrait (12p)', desc: 'A4 portrait calendar, one month per page \u2014 week numbers, notes area, 12 months of 2027',
+            format: { width: 595, height: 842, pages: 12 },
+            theme: { paper: '#ffffff', ink: '#12161c', accent: '#0f766e', soft: '#eef4f3', night: '#12161c' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'CALENDAR', tag: '2027 \u00b7 A4 PORTRAIT', issue: 'TWELVE MONTHS \u00b7 ONE PAGE EACH', price: '',
+                head: '2027',
+                stand: 'A4 portrait calendar for 2027: one month per page, ISO week numbers, a ruled notes area and the whole year at a glance at the foot of every page.',
+                coverlines: '', sections: [], quote: '',
+                body: 'Day grid drawn with the app vector tools \u00b7 week starts on Monday \u00b7 ISO week numbers',
+                caption: 'Months of January to December 2027',
+                credits: 'Set in Montserrat, Open Sans and IBM Plex Mono \u00b7 A4 portrait 210 \u00d7 297 mm',
+                legs: []
+            }
+        },
+        {
+            key: 'en_calendar_2028_a4_landscape_12p', style: 'call', family: 'calendar', spreadDoc: false,
+            name: 'Calendar 2028 \u2014 A4 landscape (12p)', desc: 'A4 landscape calendar, one month per page \u2014 seasonal panel and next-month preview',
+            format: { width: 842, height: 595, pages: 12 },
+            theme: { paper: '#ffffff', ink: '#14181d', accent: '#b45309', soft: '#f6f1e9', night: '#14181d' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'CALENDAR', tag: '2028 \u00b7 A4 LANDSCAPE', issue: 'TWELVE MONTHS \u00b7 ONE PAGE EACH', price: '',
+                head: '2028',
+                stand: 'A4 landscape calendar for 2028: the month reads from left to right, with a seasonal panel, week numbers and a preview of the month that comes next.',
+                coverlines: '', sections: [], quote: '',
+                body: 'Day grid drawn with the app vector tools \u00b7 week starts on Monday \u00b7 next-month preview',
+                caption: 'Months of January to December 2028',
+                credits: 'Set in Montserrat, Open Sans and IBM Plex Mono \u00b7 A4 landscape 297 \u00d7 210 mm',
+                legs: []
+            }
+        },
+        {
+            key: 'en_calendar_2027_2028_a5_portrait_12p', style: 'cal5', family: 'calendar', spreadDoc: false,
+            name: 'Calendar 2027-2028 \u2014 A5 portrait (12p)', desc: 'Compact A5 calendar, two months per page \u2014 the whole of 2027 and 2028 in 12 pages',
+            format: { width: 420, height: 595, pages: 12 },
+            theme: { paper: '#ffffff', ink: '#101418', accent: '#1e3a8a', soft: '#eef2ff', night: '#101418' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'CALENDAR', tag: '2027 \u2014 2028 \u00b7 A5 PORTRAIT', issue: 'TWO MONTHS PER PAGE \u00b7 TWENTY-FOUR MONTHS', price: '',
+                head: '2027 \u2014 2028',
+                stand: 'The pocket version: twenty-four months on twelve A5 pages, two months side by side, day numbers only \u2014 nothing else in the way.',
+                coverlines: '', sections: [], quote: '',
+                body: 'Day grid drawn with the app vector tools \u00b7 week starts on Monday \u00b7 two months per page',
+                caption: 'Twenty-four months: January 2027 to December 2028',
+                credits: 'Set in Montserrat, Open Sans and IBM Plex Mono \u00b7 A5 portrait 148 \u00d7 210 mm',
+                legs: []
+            }
+        },
+        {
+            key: 'en_magazine_archi_8p', style: 'archi', family: 'magazine', spreadDoc: true,
+            name: 'Architecture Magazine (8p)', desc: 'Architecture & interiors magazine \u2014 8 pages, double page, real photographs',
+            format: { width: 420, height: 560, spread: true, pages: 8 },
+            theme: { paper: '#efeeea', ink: '#1c1a17', accent: '#a16207', soft: '#dcd8cf', night: '#171614' },
+            fonts: { display: 'Playfair Display', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/archi', nimg: 4,
+            c: {
+                mast: 'PLAN & SECTION', tag: 'ARCHITECTURE \u00b7 INTERIORS \u00b7 CITIES', issue: 'N\u00b0 14 \u00b7 WINTER 2027', price: '\u20ac 8,50',
+                head: 'The building that learned to keep quiet',
+                stand: 'Four projects where concrete, glass and daylight were asked to do less, and ended up doing more.',
+                coverlines: 'The staircase as a public room\nHousing without corridors\nWhat a plan can still say',
+                sections: ['The dossier', 'Plans', 'Interiors', 'The city', 'Materials', 'Studio visit'],
+                legs: ['The building that learned to keep quiet', 'The staircase as a public room', 'Housing without corridors', 'What a plan can still say', 'A word with the architects', 'Eleven materials, one palette'],
+                quote: 'A plan is not a drawing of a building. It is a drawing of a decision.',
+                body: 'The first thing you notice inside the museum is the sound of your own steps. The concrete has been left almost raw, and the staircase has been made wide enough that people stop on it \u2014 which is exactly what the architects wanted.\n\nEvery project in this issue shares the same restraint: the structure is expressed once, clearly, and then left alone. No suspended ceilings, no added colour, no second skin. What looks austere in a photograph feels generous in the room.\n\nIt is also a question of money. Doing less with the envelope leaves budget for what people touch: the handrail, the door, the light switch.',
+                caption: 'Photographed in Amsterdam and Singapore \u00b7 winter issue',
+                credits: 'Words: T. Hendriks \u00b7 Photography: F. Heijnsbroek \u00b7 Plans: Studio Rijn',
+                list: 'Board-marked concrete\nAnodised aluminium\nOak, brushed\nLime plaster\nBlackened steel\nGlass, low iron'
+            }
+        },
+        {
+            key: 'en_annual_report_12p', style: 'report', family: 'report', spreadDoc: false,
+            name: 'Annual Report 2027 (12p)', desc: 'Complete annual activity report \u2014 12 pages, A4: key figures, charts, tables, timeline, outlook',
+            format: { width: 595, height: 842, pages: 12 },
+            theme: { paper: '#ffffff', ink: '#101418', accent: '#0b5c4a', soft: '#eef3f1', night: '#0e1513' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'ANNUAL ACTIVITY REPORT', tag: 'ATELIER NORD \u00b7 DESIGN & PUBLISHING', issue: 'YEAR 2027 \u00b7 PUBLISHED MARCH 2028', price: '',
+                head: 'Annual activity report 2027',
+                stand: 'A full year in twelve pages: what we made, what it earned, what it cost, and what we are changing next.',
+                coverlines: '', sections: ['Highlights', 'Key figures', 'Revenue', 'Costs', 'Projects', 'Outlook'],
+                legs: ['January \u00b7 New studio opened in Lyon', 'March \u00b7 Signet rebrand delivered', 'May \u00b7 First catalogue printed in Risograph', 'July \u00b7 Team reached forty people', 'September \u00b7 Two exhibitions designed', 'November \u00b7 ISO 12647 press certification'],
+                quote: 'Growth is not the point. Doing the work properly at a slightly larger scale is the point.',
+                body: 'Twenty twenty-seven was the year the studio stopped being small. Revenue grew by eighteen percent, but the more useful number is the one behind it: ninety-six percent of projects were delivered on the date we promised.\n\nWe opened a second studio in Lyon, hired seven people and turned down eleven projects. The refusals are part of the result.\n\nThis report sets out the figures, the method and the mistakes: what we spent, what we earned, and the three things we intend to do differently in 2028.',
+                caption: 'Atelier Nord \u00b7 14 rue des Ateliers, 69001 Lyon \u00b7 ateliernord.fr',
+                credits: 'Figures audited internally \u00b7 report designed and set in Montserrat, Open Sans and IBM Plex Mono',
+                figures: '4,82 M\u20ac::Net revenue::+18 % vs 2026\n42::People in the studio::+7 hires, 0 departures\n118::Projects delivered::for 64 clients\n96 %::On-time delivery::+4 points',
+                activites: 'Publishing & books::2.10\nIdentity & brand::1.26\nExhibitions::0.86\nConsulting & training::0.60',
+                trimestres: 'Q1::0.98\nQ2::1.14\nQ3::1.26\nQ4::1.44',
+                couts: 'Salaries & charges::2.62\nSubcontracting::0.78\nStudio & tools::0.46\nTravel::0.32\nOther charges::0.28\nOperating result::0.36',
+                projets: 'Catalogue raisonné::Musée Fabre::Publishing::Delivered\nSignet identity::Signet Group::Identity::Delivered\nWinter exhibition::Halle Nord::Exhibition::Delivered\nAnnual report::Ville de Lyon::Publishing::Delivered\nWayfinding system::Université Lyon 2::Identity::Delivered\nRisograph series::Atelier Nord::Publishing::Delivered\nFestival campaign::Festival du Fleuve::Identity::In progress\nStudio monograph::Atelier Nord::Publishing::In progress',
+                jalons: 'January::Second studio opens in Lyon with four people\nFebruary::Press certification process begins\nMarch::Signet rebrand delivered, three months early\nMay::First catalogue printed in Risograph\nJuly::The team reaches forty people\nSeptember::Two exhibitions designed and installed\nNovember::ISO 12647 press certification obtained\nDecember::Backlog reaches 6.4 months of work',
+                objectifs: 'Grow without adding noise::Two more people, no new studio\nPublish in-house::Four titles under our own imprint\nTrain what we know::An open course on print production\nCut travel::Remote-first client reviews'
+            }
         }
     ];
 
@@ -71730,6 +71831,12 @@ function _npBuildLayout(params, keywords, lang) {
             else if (model.style === 'shapes') shapesPages(S);
             else if (model.style === 'theatre') theatrePages(S);
             else if (model.style === 'cal') calPages(S);
+            // 🆕 v1.7.438
+            else if (model.style === 'calp') calpPages(S);
+            else if (model.style === 'call') callPages(S);
+            else if (model.style === 'cal5') cal5Pages(S);
+            else if (model.style === 'archi') archiPages(S);
+            else if (model.style === 'report') reportPages(S);
         } catch (e3) { console.warn('[SP-EN] mise en page p.' + (pi + 1) + ' :', e3); }
 
         if (typeof addAssetObjects === 'function') addAssetObjects(cv, objs, model.name + ' · p.' + (pi + 1));
@@ -72739,6 +72846,452 @@ function _npBuildLayout(params, keywords, lang) {
         S.T({ text: c.caption, x: M, y: H - bp - px(4), w: W - M * 2, size: px(1.9), font: F.mono, fill: t.ink, op: 0.45 });
     }
 
+    /* ═══ CALENDRIERS : tables et calculs partagés ═════════════════════════ */
+    var CAL_NOMS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    var CAL_JOURS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    var CAL_SAIS = ['Winter', 'Winter', 'Spring', 'Spring', 'Spring', 'Summer', 'Summer', 'Summer', 'Autumn', 'Autumn', 'Autumn', 'Winter'];
+    function calInfos(y, m) {   // décalage du 1er jour (semaine du lundi), jours du mois, jours du mois précédent
+        var d0 = new Date(y, m, 1).getDay();
+        return { lead: (d0 + 6) % 7, jours: new Date(y, m + 1, 0).getDate(), prec: new Date(y, m, 0).getDate() };
+    }
+    function calSemISO(d) {     // numéro de semaine ISO d'une date
+        try {
+            var t2 = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            var j = t2.getUTCDay() || 7;
+            t2.setUTCDate(t2.getUTCDate() + 4 - j);
+            var a = new Date(Date.UTC(t2.getUTCFullYear(), 0, 1));
+            return { an: t2.getUTCFullYear(), no: Math.ceil((((t2 - a) / 86400000) + 1) / 7) };
+        } catch (e) { return { an: d.getFullYear(), no: 1 }; }
+    }
+    function calBandeauAnne(S, moisActif) {   // bandeau des 12 mois, mois courant en accent
+        var t = S.t, M = S.M, W = S.W, H = S.H, bp = S.bp;
+        var by = H - bp - px(20), bw = (W - M * 2) / 12;
+        for (var q = 0; q < 12; q++) {
+            var actif = (q === moisActif);
+            if (actif) S.bloc(M + q * bw, by, bw, px(10), t.accent);
+            S.T({ text: CAL_NOMS[q].slice(0, 3).toUpperCase(), x: M + q * bw, y: by + px(3.2), w: bw, size: px(2.2), font: S.F.mono, fill: actif ? t.paper : t.ink, align: 'center', cs: 80, op: actif ? 1 : 0.5 });
+        }
+    }
+    function calGrille(S, y, m, gx, gy, gw, ch, opt) {   // jours + filets (+ numéros de semaine si opt.sem)
+        opt = opt || {};
+        var t = S.t, F = S.F, cw = gw / 7, inf = calInfos(y, m);
+        for (var row = 0; row < 6; row++) {
+            var y0 = gy + row * ch;
+            if (opt.sem) {
+                var lundi = new Date(y, m, 1 - inf.lead + row * 7), iso = calSemISO(lundi);
+                S.T({ text: (iso.no < 10 ? '0' : '') + iso.no, x: opt.sx, y: y0 + px(1.6), w: px(10), size: px(2.2), font: F.mono, fill: t.accent, op: 0.8 });
+            }
+            S.filet(y0, t.ink, px(0.2), opt.lx0 == null ? gx : opt.lx0, opt.lw == null ? gw : opt.lw);
+            for (var col = 0; col < 7; col++) {
+                var num = row * 7 + col - inf.lead + 1, hors = (num < 1 || num > inf.jours);
+                var val = (num < 1 ? inf.prec + num : (num > inf.jours ? num - inf.jours : num));
+                S.T({
+                    text: String(val), x: gx + col * cw, y: y0 + px(opt.dy == null ? 1.4 : opt.dy), w: cw,
+                    size: px(opt.taille || 6.2), font: F.mono, fill: col === 6 ? t.accent : t.ink,
+                    align: opt.align || 'left', op: hors ? 0.2 : 1
+                });
+            }
+        }
+    }
+
+    /* ═══════════ 15. CALENDRIER A4 PORTRAIT — 2027 (1 mois/page) ════════ */
+    function calpPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        var y = 2027, m = p;
+        S.fond(t.paper);
+        S.bloc(0, 0, W, px(46), t.soft);
+        S.bloc(0, px(46), W, px(0.8), t.accent);
+        S.T({ text: CAL_NOMS[m].toUpperCase(), x: M, y: px(7.5), w: W - M * 2, size: px(15), font: F.display, weight: '700', fill: t.ink, lh: 1 });
+        S.T({ text: String(y), x: M, y: px(28.5), w: px(40), size: px(5.2), font: F.mono, fill: t.accent, cs: 160 });
+        S.T({ text: CAL_SAIS[m].toUpperCase() + '  \u00b7  MONTH ' + (m + 1) + ' / 12  \u00b7  ISO WEEKS', x: M + px(40), y: px(31), w: W - M * 2 - px(40), size: px(2.1), font: F.mono, fill: t.ink, align: 'right', cs: 150, op: 0.7 });
+        var gx = M + px(12), gw = W - M - gx, cw = gw / 7, ch = px(23), gy = px(58);
+        S.T({ text: 'WK', x: M, y: gy, w: px(10), size: px(2), font: F.mono, fill: t.ink, op: 0.45 });
+        CAL_JOURS.forEach(function (j, i) {
+            S.T({ text: j, x: gx + i * cw, y: gy, w: cw, size: px(2.1), font: F.mono, fill: i === 6 ? t.accent : t.ink, align: 'center', cs: 120, op: i === 6 ? 1 : 0.55 });
+        });
+        S.filet(gy + px(3.4), t.ink, px(0.3), M, W - M * 2);
+        calGrille(S, y, m, gx, gy + px(4.6), gw, ch, { sem: true, sx: M, lx0: M, lw: W - M * 2 });
+        var bas = gy + px(4.6) + 6 * ch;
+        S.T({ text: 'NOTES', x: M, y: bas + px(4), w: W - M * 2, size: px(2), font: F.mono, fill: t.accent, cs: 260 });
+        for (var n = 0; n < 5; n++) S.filet(bas + px(9) + n * px(9), t.ink, px(0.2), M, W - M * 2);
+        calBandeauAnne(S, m);
+        S.T({ text: c.caption, x: M, y: H - bp - px(6), w: W - M * 2, size: px(1.8), font: F.mono, fill: t.ink, op: 0.45 });
+    }
+
+    /* ═══════════ 16. CALENDRIER A4 PAYSAGE — 2028 (1 mois/page) ═════════ */
+    function callPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        var y = 2028, m = p;
+        S.fond(t.paper);
+        var pw = (W - M * 2) * 0.30, px0 = M, py0 = px(18), phh = H - py0 - px(14);
+        S.bloc(px0, py0, pw, phh, t.soft);
+        S.T({ text: CAL_NOMS[m].toUpperCase(), x: px0 + px(6), y: py0 + px(6), w: pw - px(12), size: px(11), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+        S.T({ text: String(y), x: px0 + px(6), y: py0 + px(24), w: pw - px(12), size: px(4.6), font: F.mono, fill: t.accent, cs: 160 });
+        S.demi(px0 + pw * 0.10, py0 + phh * 0.30, pw * 0.80, phh * 0.30, t.accent);
+        S.bloc(px0 + pw * 0.10, py0 + phh * 0.66, pw * 0.34, phh * 0.09, t.ink);
+        S.bloc(px0 + pw * 0.52, py0 + phh * 0.70, pw * 0.38, phh * 0.05, t.accent, 0.55);
+        S.T({ text: CAL_SAIS[m].toUpperCase(), x: px0, y: py0 + phh - px(9), w: pw, size: px(2.4), font: F.mono, fill: t.ink, align: 'center', cs: 240, op: 0.8 });
+        var gx = px0 + pw + (W - M * 2) * 0.05, gw = W - M - gx, cw = gw / 7, ch = px(21), gy = py0 + px(13);
+        S.T({ text: 'WK', x: gx - px(11), y: gy, w: px(10), size: px(2), font: F.mono, fill: t.ink, op: 0.45, align: 'right' });
+        CAL_JOURS.forEach(function (j, i) {
+            S.T({ text: j, x: gx + i * cw, y: gy, w: cw, size: px(2.1), font: F.mono, fill: i === 6 ? t.accent : t.ink, align: 'center', cs: 120, op: i === 6 ? 1 : 0.55 });
+        });
+        S.filet(gy + px(3.4), t.ink, px(0.3), gx - px(12), gw + px(12));
+        calGrille(S, y, m, gx, gy + px(4.6), gw, ch, { sem: true, sx: gx - px(12), lx0: gx - px(12), lw: gw + px(12), taille: 6.4 });
+        // aperçu du mois suivant
+        var mn = (m + 1) % 12, yn = (m === 11 ? y + 1 : y);
+        var mgx = gx + gw * 0.46, mgw = gw * 0.54, mgy = gy + px(4.6) + 6 * ch + px(14);
+        S.T({ text: 'NEXT \u00b7 ' + CAL_NOMS[mn].toUpperCase() + ' ' + yn, x: mgx, y: mgy, w: mgw, size: px(2.1), font: F.mono, fill: t.accent, cs: 200 });
+        S.filet(mgy + px(3.4), t.ink, px(0.25), mgx, mgw);
+        calGrille(S, yn, mn, mgx, mgy + px(4.4), mgw, px(8.2), { taille: 2.8, dy: 0.7 });
+        S.T({ text: c.caption, x: M, y: H - bp - px(5), w: W - M * 2, size: px(1.8), font: F.mono, fill: t.ink, op: 0.45 });
+    }
+
+    /* ═══════════ 17. CALENDRIER A5 PORTRAIT — 2027-2028 (2 mois/page) ═══ */
+    function cal5Pages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        S.fond(t.paper);
+        S.T({ text: c.head, x: M, y: px(9), w: W - M * 2, size: px(7), font: F.display, weight: '700', fill: t.ink, lh: 1 });
+        S.T({ text: 'TWO MONTHS PER PAGE \u00b7 WEEK STARTS ON MONDAY \u00b7 PAGE ' + (p + 1) + ' / 12', x: M, y: px(18), w: W - M * 2, size: px(1.8), font: F.mono, fill: t.accent, cs: 130 });
+        S.filet(px(21.5), t.ink, px(0.3), M, W - M * 2);
+        for (var slot = 0; slot < 2; slot++) {
+            var i = p * 2 + slot, y = 2027 + Math.floor(i / 12), m = i % 12;
+            var gy = px(26) + slot * px(84);
+            S.T({ text: CAL_NOMS[m].toUpperCase(), x: M, y: gy, w: W - M * 2, size: px(7.5), font: F.display, weight: '700', fill: t.ink, lh: 1 });
+            S.T({ text: String(y), x: M, y: gy + px(8), w: W - M * 2, size: px(2.6), font: F.mono, fill: t.accent, cs: 160 });
+            var cw = (W - M * 2) / 7, gy2 = gy + px(12);
+            CAL_JOURS.forEach(function (j, k) {
+                S.T({ text: j.slice(0, 2), x: M + k * cw, y: gy2, w: cw, size: px(1.8), font: F.mono, fill: k === 6 ? t.accent : t.ink, align: 'center', cs: 100, op: k === 6 ? 1 : 0.5 });
+            });
+            S.filet(gy2 + px(3), t.ink, px(0.25), M, W - M * 2);
+            calGrille(S, y, m, M, gy2 + px(4), W - M * 2, px(10.6), { taille: 3.4, dy: 0.8 });
+        }
+        S.filet(H - bp - px(11), t.ink, px(0.25), M, W - M * 2);
+        S.T({ text: c.caption, x: M, y: H - bp - px(7), w: W - M * 2, size: px(1.7), font: F.mono, fill: t.ink, op: 0.45 });
+    }
+
+    /* ═══════════ 18. MAGAZINE ARCHITECTURE (8 p., double page) ══════════ */
+    function archiPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        var bx = -bp, bW = W + 2 * bp, bH = H + 2 * bp, larg = W - M * 2;
+        if (p === 0) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, H * 0.70 + bp, '2');
+            S.voile(bx, bx, bW, H * 0.26 + bp, t.night, 0.45);
+            S.bloc(bx, H * 0.70, bW, H * 0.30 + bp, t.night);
+            S.T({ text: c.mast, x: M, y: H * 0.07, w: larg, size: px(13), font: F.display, weight: '700', fill: t.paper, align: 'center', lh: 1 });
+            S.bloc(M, H * 0.175, larg, px(1.2), t.accent);
+            S.T({ text: c.tag, x: M, y: H * 0.195, w: larg, size: px(2.2), font: F.mono, fill: t.paper, align: 'center', cs: 300 });
+            S.T({ text: c.issue, x: M, y: H * 0.218, w: larg, size: px(2.0), font: F.mono, fill: t.paper, align: 'center', cs: 140, op: 0.85 });
+            S.T({ text: c.head, x: M, y: H * 0.735, w: larg, size: px(9.4), font: F.display, weight: '700', fill: t.paper, lh: 1.02 });
+            S.T({ text: c.stand, x: M, y: H * 0.835, w: larg, size: px(2.7), fill: t.paper, lh: 1.5, op: 0.9 });
+            S.T({ text: (c.coverlines || '').replace(/\n/g, '   \u00b7   '), x: M, y: H * 0.915, w: larg, size: px(2.1), font: F.mono, fill: t.accent, lh: 1.7 });
+            S.T({ text: c.price, x: M, y: H - M * 1.2, w: larg, size: px(2.0), font: F.mono, fill: t.paper, cs: 110, op: 0.8 });
+        } else if (p === 1) {
+            S.fond(t.paper); S.tete();
+            S.T({ text: 'CONTENTS', x: M, y: H * 0.085, w: larg, size: px(2.3), font: F.mono, fill: t.accent, cs: 300 });
+            S.T({ text: c.mast, x: M, y: H * 0.108, w: W * 0.62, size: px(11), font: F.display, weight: '700', fill: t.ink, lh: 1 });
+            S.filet(H * 0.20, t.ink, px(0.4));
+            c.sections.forEach(function (s, i) {
+                var yy = H * 0.235 + i * H * 0.062;
+                S.T({ text: ('0' + (i + 1)).slice(-2), x: M, y: yy, w: px(10), size: px(3), font: F.mono, fill: t.accent });
+                S.T({ text: s, x: M + px(13), y: yy + px(0.4), w: W * 0.60, size: px(4.2), font: F.display, fill: t.ink, lh: 1.1 });
+                S.T({ text: String(3 + i), x: M + W * 0.62, y: yy + px(0.6), w: px(10), size: px(2.6), font: F.mono, fill: t.ink, align: 'right', op: 0.5 });
+                S.T({ text: c.legs[i] || '', x: M + px(13), y: yy + px(6.2), w: W * 0.60, size: px(2.2), fill: t.ink, op: 0.65, lh: 1.4 });
+            });
+            S.photo(W * 0.68, H * 0.235, W * 0.28, H * 0.44, '4');
+            S.T({ text: c.caption, x: W * 0.68, y: H * 0.685, w: W * 0.28, size: px(1.8), font: F.mono, fill: t.ink, op: 0.65 });
+            S.folio(p + 1);
+        } else if (p === 2) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, H * 0.72 + bp, '1');
+            S.voile(bx, bx, bW, H * 0.22 + bp, t.night, 0.42);
+            S.bloc(bx, H * 0.72, bW, H * 0.28 + bp, t.night);
+            S.bloc(M, H * 0.075, px(15), px(1.1), t.accent);
+            S.T({ text: (c.sections[1] || '').toUpperCase(), x: M, y: H * 0.10, w: larg, size: px(2.2), font: F.mono, fill: t.accent, cs: 300 });
+            S.T({ text: c.legs[0], x: M, y: H * 0.755, w: larg, size: px(9.6), font: F.display, weight: '700', fill: t.paper, lh: 1.05 });
+            S.T({ text: c.caption, x: M, y: H * 0.885, w: larg, size: px(1.9), font: F.mono, fill: t.paper, op: 0.75 });
+            S.folio(p + 1, 'left');
+        } else if (p === 3) {
+            S.fond(t.paper); S.tete();
+            S.T({ text: c.stand, x: M, y: H * 0.105, w: larg, size: px(3.6), italic: true, fill: t.ink, lh: 1.45 });
+            S.filet(H * 0.195, t.accent, px(0.8));
+            S.colonnes(H * 0.225, 0, c.body, 3, { size: px(2.6), gout: px(4) });
+            // plan vectoriel (murs, porte, cote) — le thème du numéro
+            var pf = px(56), py1 = H * 0.615;
+            S.cadre(M, py1, larg, pf, t.ink, px(0.5));
+            S.bloc(M + larg * 0.42, py1, px(1.1), pf * 0.55, t.ink);
+            S.bloc(M, py1 + pf * 0.55, larg * 0.30, px(1.1), t.ink);
+            S.demi(M + larg * 0.42 + px(1.1), py1 + pf * 0.18, px(15), px(15), t.accent, 0.9);
+            S.filet(py1 + pf + px(2.6), t.ink, px(0.2), M, larg);
+            S.T({ text: '0          5          10 m', x: M, y: py1 + pf + px(3.6), w: larg, size: px(1.9), font: F.mono, fill: t.ink, op: 0.6 });
+            S.T({ text: c.credits, x: M, y: H * 0.90, w: larg, size: px(1.8), font: F.mono, fill: t.ink, op: 0.6 });
+            S.folio(p + 1);
+        } else if (p === 4) {
+            S.fond(t.soft);
+            S.T({ text: c.legs[1], x: M, y: H * 0.07, w: W * 0.8, size: px(9), font: F.display, weight: '700', fill: t.ink, lh: 1.02 });
+            S.filet(H * 0.155, t.ink, px(0.3));
+            var dw = (W - M * 2 - S.COL) / 2;
+            S.photo(M, H * 0.185, dw, H * 0.44, '3');
+            S.photo(M + dw + S.COL, H * 0.185, dw, H * 0.44, '4');
+            S.T({ text: c.legs[2], x: M, y: H * 0.645, w: dw, size: px(2.6), font: F.display, fill: t.ink });
+            S.T({ text: c.legs[3], x: M + dw + S.COL, y: H * 0.645, w: dw, size: px(2.6), font: F.display, fill: t.ink });
+            S.colonnes(H * 0.72, 0, c.body, 2, { size: px(2.6) });
+            S.folio(p + 1, 'left');
+        } else if (p === 5) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, bH, '4');
+            S.voile(bx, bx, bW, bH, t.night, 0.32);
+            S.cache(M, H * 0.58, larg, H * 0.28, t.paper);
+            S.T({ text: (c.sections[4] || '').toUpperCase(), x: M + px(5), y: H * 0.605, w: larg - px(10), size: px(2.0), font: F.mono, fill: t.accent, cs: 280 });
+            S.T({ text: c.quote, x: M + px(5), y: H * 0.635, w: larg - px(10), size: px(6.2), font: F.display, italic: true, fill: t.ink, lh: 1.15 });
+            S.T({ text: c.legs[4], x: M + px(5), y: H * 0.785, w: larg - px(10), size: px(2.6), fill: t.ink, op: 0.85 });
+            S.folio(p + 1);
+        } else if (p === 6) {
+            S.fond(t.paper);
+            S.T({ text: c.legs[5], x: M, y: H * 0.07, w: W * 0.85, size: px(8), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            S.filet(H * 0.145, t.accent, px(0.8), M, W * 0.5);
+            // palette : 6 pastilles + liste des matériaux
+            var mats = (c.list || '').split('\n');
+            var sw = (larg - px(4) * 5) / 6;
+            for (var i = 0; i < 6; i++) {
+                var col = [t.ink, t.accent, t.soft, t.night, t.accent, t.ink][i];
+                S.bloc(M + i * (sw + px(4)), H * 0.20, sw, px(18), col, i === 2 || i === 4 ? 0.6 : 1);
+                S.T({ text: (mats[i] || ''), x: M + i * (sw + px(4)), y: H * 0.20 + px(20), w: sw, size: px(1.9), font: F.mono, fill: t.ink, lh: 1.4, op: 0.8 });
+            }
+            S.photo(M, H * 0.52, W * 0.42, H * 0.36, '1');
+            S.T({ text: c.credits, x: M + W * 0.46, y: H * 0.53, w: larg - W * 0.46, size: px(2.2), fill: t.ink, lh: 1.6, op: 0.85 });
+            S.T({ text: c.caption, x: M + W * 0.46, y: H * 0.80, w: larg - W * 0.46, size: px(1.8), font: F.mono, fill: t.ink, op: 0.6 });
+            S.folio(p + 1, 'left');
+        } else {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, H * 0.60 + bp, '3');
+            S.voile(bx, H * 0.46, bW, H * 0.14 + bp, t.night, 0.5);
+            S.T({ text: c.quote, x: M, y: H * 0.655, w: larg, size: px(6.6), font: F.display, italic: true, fill: t.paper, align: 'center', lh: 1.28 });
+            S.bloc(W / 2 - px(12), H * 0.80, px(24), px(0.7), t.accent);
+            S.T({ text: c.credits, x: M, y: H * 0.845, w: larg, size: px(2.0), font: F.mono, fill: t.paper, align: 'center', op: 0.75 });
+            S.T({ text: c.price, x: M, y: H * 0.90, w: larg, size: px(2.0), font: F.mono, fill: t.accent, align: 'center', cs: 110 });
+            S.folio(p + 1);
+        }
+    }
+
+    /* ═══════════ 19. RAPPORT D'ACTIVITÉ ANNUEL (12 p., A4) ══════════════ */
+    function reportPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        var larg = W - M * 2;
+        var F1 = (c.figures || '').split('\n').map(function (l) { return l.split('::'); });
+        var AC = (c.activites || '').split('\n').map(function (l) { return l.split('::'); });
+        var TR = (c.trimestres || '').split('\n').map(function (l) { return l.split('::'); });
+        var CO = (c.couts || '').split('\n').map(function (l) { return l.split('::'); });
+        var PR = (c.projets || '').split('\n').map(function (l) { return l.split('::'); });
+        var JA = (c.jalons || '').split('\n').map(function (l) { return l.split('::'); });
+        var OB = (c.objectifs || '').split('\n').map(function (l) { return l.split('::'); });
+        function entete(txt, sous) {
+            S.T({ text: String(txt || '').toUpperCase(), x: M, y: H * 0.082, w: larg, size: px(2.1), font: F.mono, fill: t.accent, cs: 260 });
+            S.filet(H * 0.105, t.ink, px(0.3), M, larg);
+            if (sous) S.T({ text: sous, x: M, y: H * 0.125, w: larg, size: px(2.9), italic: true, fill: t.ink, lh: 1.45, op: 0.85 });
+        }
+        function pied(num) {
+            S.filet(H - bp - px(11), t.ink, px(0.25), M, larg);
+            S.T({ text: c.tag, x: M, y: H - bp - px(7.6), w: larg * 0.7, size: px(1.8), font: F.mono, fill: t.ink, op: 0.5 });
+            S.T({ text: num, x: M + larg * 0.7, y: H - bp - px(7.6), w: larg * 0.3, size: px(1.8), font: F.mono, fill: t.ink, align: 'right', op: 0.5 });
+        }
+        if (p === 0) {
+            S.fond(t.paper);
+            S.bloc(-bp, -bp, W + 2 * bp, H * 0.46 + bp, t.night);
+            S.demi(M, H * 0.30, larg * 0.38, H * 0.15, t.accent, 0.95);
+            S.bloc(M, H * 0.405, larg * 0.62, px(1.4), t.paper);
+            S.T({ text: c.mast, x: M, y: H * 0.095, w: larg, size: px(2.4), font: F.mono, fill: t.paper, cs: 300 });
+            S.T({ text: c.tag, x: M, y: H * 0.128, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 170 });
+            S.T({ text: c.head, x: M, y: H * 0.215, w: larg * 0.82, size: px(12.5), font: F.display, weight: '700', fill: t.paper, lh: 1.05 });
+            S.T({ text: c.stand, x: M, y: H * 0.505, w: larg * 0.88, size: px(3.1), fill: t.ink, lh: 1.5 });
+            F1.slice(0, 4).forEach(function (f, i) {
+                var fx = M + (i % 2) * (larg / 2 + px(4)), fyy = H * 0.63 + Math.floor(i / 2) * px(34);
+                S.T({ text: f[0], x: fx, y: fyy, w: larg / 2 - px(8), size: px(9), font: F.display, weight: '700', fill: t.accent, lh: 1 });
+                S.T({ text: (f[1] || '').toUpperCase(), x: fx, y: fyy + px(10.5), w: larg / 2 - px(8), size: px(2.0), font: F.mono, fill: t.ink, cs: 90 });
+                S.T({ text: f[2] || '', x: fx, y: fyy + px(14.5), w: larg / 2 - px(8), size: px(2.0), fill: t.ink, op: 0.65 });
+                S.filet(fyy + px(19), t.ink, px(0.2), fx, larg / 2 - px(8));
+            });
+            S.T({ text: c.issue, x: M, y: H - bp - px(13), w: larg, size: px(1.9), font: F.mono, fill: t.ink, op: 0.6 });
+            S.T({ text: c.caption, x: M, y: H - bp - px(8.5), w: larg, size: px(1.9), font: F.mono, fill: t.ink, op: 0.5 });
+        } else if (p === 1) {
+            S.fond(t.paper); entete('Contents', c.stand);
+            var y = H * 0.24;
+            c.sections.forEach(function (s, i) {
+                S.T({ text: ('0' + (i + 1)).slice(-2), x: M, y: y, w: px(10), size: px(2.8), font: F.mono, fill: t.accent });
+                S.T({ text: s, x: M + px(13), y: y - px(0.6), w: larg * 0.5, size: px(4.2), font: F.display, fill: t.ink });
+                S.T({ text: String(2 + i * 2), x: M + larg * 0.52, y: y + px(0.4), w: px(10), size: px(2.4), font: F.mono, fill: t.ink, align: 'right', op: 0.55 });
+                S.filet(y + px(7), t.ink, px(0.2), M, larg * 0.52 + px(10));
+                y += px(17);
+            });
+            S.T({ text: 'HIGHLIGHTS OF THE YEAR', x: M, y: H * 0.60, w: larg, size: px(2.1), font: F.mono, fill: t.accent, cs: 240 });
+            S.filet(H * 0.625, t.ink, px(0.3), M, larg);
+            var yj = H * 0.65;
+            JA.slice(0, 5).forEach(function (j) {
+                S.rond(M, yj + px(0.9), px(2.6), t.accent, 0.9);
+                S.T({ text: j[0], x: M + px(5), y: yj, w: larg * 0.2, size: px(2.1), font: F.mono, fill: t.ink, op: 0.65 });
+                S.T({ text: j[1] || '', x: M + larg * 0.24, y: yj - px(0.4), w: larg * 0.76, size: px(2.7), fill: t.ink, lh: 1.4 });
+                yj += px(11);
+            });
+            pied('02');
+        } else if (p === 2) {
+            S.fond(t.paper); entete('Key figures', 'Four numbers that describe the year.');
+            F1.forEach(function (f, i) {
+                var fx = M + (i % 2) * (larg / 2 + px(6)), fy = H * 0.26 + Math.floor(i / 2) * px(60);
+                S.bloc(fx - px(6), fy - px(6), larg / 2 - px(2), px(52), t.soft);
+                S.T({ text: f[0], x: fx, y: fy, w: larg / 2 - px(14), size: px(16), font: F.display, weight: '700', fill: t.accent, lh: 1 });
+                S.T({ text: (f[1] || '').toUpperCase(), x: fx, y: fy + px(20), w: larg / 2 - px(14), size: px(2.2), font: F.mono, fill: t.ink, cs: 110 });
+                S.T({ text: f[2] || '', x: fx, y: fy + px(26), w: larg / 2 - px(14), size: px(2.4), fill: t.ink, op: 0.75 });
+            });
+            S.T({ text: 'All amounts in millions of euros, excluding tax. Figures audited internally and consistent throughout this report.', x: M, y: H * 0.78, w: larg, size: px(2.2), fill: t.ink, lh: 1.6, op: 0.7 });
+            pied('03');
+        } else if (p === 3) {
+            S.fond(t.paper); entete('Revenue by activity', 'Where the 4,82 M\u20ac came from.');
+            var maxA = 0;
+            AC.forEach(function (a) { maxA = Math.max(maxA, parseFloat(String(a[1]).replace(',', '.')) || 0); });
+            var yb = H * 0.28, lw2 = larg * 0.42;
+            AC.forEach(function (a) {
+                var v = parseFloat(String(a[1]).replace(',', '.')) || 0, wd = (larg - lw2 - px(20)) * (maxA ? v / maxA : 0);
+                S.T({ text: a[0], x: M, y: yb, w: lw2, size: px(2.8), fill: t.ink });
+                S.bloc(M + lw2, yb + px(0.6), wd, px(6.4), t.accent);
+                S.T({ text: a[1] + ' M\u20ac', x: M + lw2 + wd + px(3), y: yb, w: px(30), size: px(2.6), font: F.mono, fill: t.ink });
+                S.filet(yb + px(10), t.ink, px(0.2), M, larg);
+                yb += px(20);
+            });
+            S.T({ text: 'Publishing remains the backbone of the studio. Identity work grew fastest (+34 %), exhibitions were steady, consulting was deliberately kept small.', x: M, y: H * 0.68, w: larg * 0.86, size: px(2.8), fill: t.ink, lh: 1.6, op: 0.9 });
+            pied('04');
+        } else if (p === 4) {
+            S.fond(t.paper); entete('Revenue by quarter', 'A year that got stronger as it went.');
+            var maxT = 0;
+            TR.forEach(function (q) { maxT = Math.max(maxT, parseFloat(String(q[1]).replace(',', '.')) || 0); });
+            var bx0 = M, pw2 = (larg - px(6) * 3) / 4, hMax = H * 0.40, yBase = H * 0.60;
+            S.filet(yBase, t.ink, px(0.4), M, larg);
+            TR.forEach(function (q, i) {
+                var v = parseFloat(String(q[1]).replace(',', '.')) || 0, hh = hMax * (maxT ? v / maxT : 0);
+                var x0 = bx0 + i * (pw2 + px(6));
+                S.bloc(x0 + pw2 * 0.18, yBase - hh, pw2 * 0.64, hh, i === 3 ? t.accent : t.ink, i === 3 ? 1 : 0.82);
+                S.T({ text: q[1], x: x0, y: yBase - hh - px(6), w: pw2, size: px(3.2), font: F.mono, fill: t.accent, align: 'center' });
+                S.T({ text: q[0], x: x0, y: yBase + px(2.4), w: pw2, size: px(2.4), font: F.mono, fill: t.ink, align: 'center', cs: 120, op: 0.7 });
+            });
+            S.T({ text: '+47 %', x: M, y: H * 0.66, w: px(30), size: px(5), font: F.display, weight: '700', fill: t.accent });
+            S.T({ text: 'between the first and the last quarter', x: M + px(32), y: H * 0.685, w: larg - px(32), size: px(2.4), fill: t.ink, op: 0.75 });
+            S.T({ text: 'The fourth quarter alone paid for the new studio, the press certification and two hires.', x: M, y: H * 0.74, w: larg * 0.9, size: px(2.7), fill: t.ink, lh: 1.6, op: 0.9 });
+            pied('05');
+        } else if (p === 5) {
+            S.fond(t.paper); entete('Cost structure', 'What the revenue paid for.');
+            S.T({ text: 'ITEM', x: M, y: H * 0.19, w: larg * 0.4, size: px(2.0), font: F.mono, fill: t.ink, cs: 200, op: 0.6 });
+            S.T({ text: 'SHARE', x: M + larg * 0.42, y: H * 0.19, w: larg * 0.34, size: px(2.0), font: F.mono, fill: t.ink, cs: 200, op: 0.6 });
+            S.T({ text: 'AMOUNT', x: M + larg * 0.80, y: H * 0.19, w: larg * 0.2, size: px(2.0), font: F.mono, fill: t.ink, cs: 200, op: 0.6, align: 'right' });
+            S.filet(H * 0.205, t.ink, px(0.5), M, larg);
+            var yc = H * 0.23, tot = 0;
+            CO.forEach(function (r) { tot += parseFloat(String(r[1]).replace(',', '.')) || 0; });
+            CO.forEach(function (r, i) {
+                var v = parseFloat(String(r[1]).replace(',', '.')) || 0, part = tot ? v / tot : 0;
+                if (i % 2 === 0) S.bloc(M, yc - px(1.6), larg, px(9), t.soft, 0.75);
+                S.T({ text: r[0], x: M + px(1), y: yc, w: larg * 0.4, size: px(2.7), fill: t.ink });
+                S.bloc(M + larg * 0.42, yc + px(1.4), larg * 0.34, px(3.4), '#e2e8e6');
+                S.bloc(M + larg * 0.42, yc + px(1.4), larg * 0.34 * part, px(3.4), i === CO.length - 1 ? t.ink : t.accent);
+                S.T({ text: (part * 100).toFixed(1).replace('.', ',') + ' %', x: M + larg * 0.42, y: yc + px(5.4), w: larg * 0.34, size: px(2.0), font: F.mono, fill: t.ink, op: 0.7 });
+                S.T({ text: r[1] + ' M\u20ac', x: M + larg * 0.80, y: yc, w: larg * 0.2, size: px(2.6), font: F.mono, fill: t.ink, align: 'right' });
+                S.filet(yc + px(10.4), t.ink, px(0.15), M, larg);
+                yc += px(11.4);
+            });
+            S.T({ text: 'Salaries are deliberately two thirds of the cost base: the work is made by people, not by tools. The operating result stayed at 7,5 %, three points below target, because of the Lyon move.', x: M, y: yc + px(4), w: larg * 0.92, size: px(2.6), fill: t.ink, lh: 1.6, op: 0.9 });
+            pied('06');
+        } else if (p === 6) {
+            S.fond(t.paper); entete('Projects delivered', 'Eight of the 118 projects of the year.');
+            S.T({ text: 'PROJECT', x: M, y: H * 0.19, w: larg * 0.34, size: px(2.0), font: F.mono, fill: t.ink, cs: 200, op: 0.6 });
+            S.T({ text: 'CLIENT', x: M + larg * 0.36, y: H * 0.19, w: larg * 0.24, size: px(2.0), font: F.mono, fill: t.ink, cs: 200, op: 0.6 });
+            S.T({ text: 'SECTOR', x: M + larg * 0.62, y: H * 0.19, w: larg * 0.2, size: px(2.0), font: F.mono, fill: t.ink, cs: 200, op: 0.6 });
+            S.T({ text: 'STATUS', x: M + larg * 0.84, y: H * 0.19, w: larg * 0.16, size: px(2.0), font: F.mono, fill: t.ink, cs: 200, op: 0.6, align: 'right' });
+            S.filet(H * 0.205, t.ink, px(0.5), M, larg);
+            var yt = H * 0.235;
+            PR.forEach(function (r, i) {
+                if (i % 2 === 0) S.bloc(M, yt - px(1.8), larg, px(13.6), t.soft, 0.7);
+                S.T({ text: r[0], x: M + px(1), y: yt, w: larg * 0.34, size: px(2.6), fill: t.ink });
+                S.T({ text: r[1], x: M + larg * 0.36, y: yt, w: larg * 0.24, size: px(2.4), fill: t.ink, op: 0.8 });
+                S.T({ text: (r[2] || '').toUpperCase(), x: M + larg * 0.62, y: yt, w: larg * 0.2, size: px(2.0), font: F.mono, fill: t.ink, cs: 120, op: 0.65 });
+                S.T({ text: r[3], x: M + larg * 0.84, y: yt, w: larg * 0.16, size: px(2.0), font: F.mono, fill: /progress/i.test(r[3]) ? t.accent : t.ink, align: 'right', cs: 60, op: /progress/i.test(r[3]) ? 1 : 0.7 });
+                S.filet(yt + px(14.6), t.ink, px(0.15), M, larg);
+                yt += px(15.6);
+            });
+            S.T({ text: 'Eleven projects were refused during the year: four for schedule, five for budget below our floor, two because we were not the right studio for them.', x: M, y: yt + px(4), w: larg * 0.9, size: px(2.6), fill: t.ink, lh: 1.6, op: 0.9 });
+            pied('07');
+        } else if (p === 7 || p === 8) {
+            S.fond(p === 7 ? t.paper : t.soft);
+            entete(p === 7 ? 'How a project runs' : 'Case study \u2014 Signet identity', p === 7
+                ? 'Five steps, the same on every project we accept.'
+                : 'Eight weeks, four people, one identity system.');
+            var etapes = ['Brief and floor price', 'Research and references', 'Two directions, no more', 'Production and files', 'Handover and support'];
+            var ye = H * 0.24;
+            etapes.forEach(function (e, i) {
+                S.rond(M, ye, px(9), i === (p === 7 ? 2 : 1) ? t.accent : t.ink, i === (p === 7 ? 2 : 1) ? 1 : 0.85);
+                S.T({ text: String(i + 1), x: M, y: ye + px(2.4), w: px(9), size: px(3.4), font: F.mono, fill: t.paper, align: 'center' });
+                S.T({ text: e, x: M + px(12), y: ye - px(0.4), w: larg * 0.5, size: px(3.0), font: F.display, fill: t.ink });
+                S.T({ text: ['1 week', '2 weeks', '3 weeks', '1 week', 'ongoing'][i], x: M + larg * 0.64, y: ye + px(0.6), w: larg * 0.36, size: px(2.2), font: F.mono, fill: t.accent, op: 0.9 });
+                S.filet(ye + px(9.6), t.ink, px(0.2), M, larg);
+                ye += px(13);
+            });
+            if (p === 7) {
+                S.T({ text: c.quote, x: M, y: H * 0.70, w: larg * 0.8, size: px(4.4), font: F.display, italic: true, fill: t.accent, lh: 1.35 });
+            } else {
+                // mini graphique : temps passé par étape
+                S.T({ text: 'TIME SPENT, BY STEP', x: M, y: H * 0.70, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 220 });
+                var parts = [0.12, 0.26, 0.30, 0.22, 0.10], xx = M;
+                parts.forEach(function (v, i) {
+                    S.bloc(xx, H * 0.735, larg * v - px(1), px(8), i === 1 ? t.accent : t.ink, i === 1 ? 1 : 0.7);
+                    xx += larg * v;
+                });
+                S.T({ text: 'Research and the two directions take more than half of the studio time \u2014 that is where the project is won or lost.', x: M, y: H * 0.78, w: larg * 0.9, size: px(2.5), fill: t.ink, lh: 1.6, op: 0.85 });
+            }
+            pied(p === 7 ? '08' : '09');
+        } else if (p === 9) {
+            S.fond(t.paper); entete('The year, month by month', 'Eight dates that changed how the studio works.');
+            var yl = H * 0.24;
+            S.bloc(M + px(14), yl, px(0.4), JA.length * px(13), t.ink, 0.25);
+            JA.forEach(function (j, i) {
+                S.rond(M + px(11.4), yl - px(0.6), px(6), i % 2 ? t.ink : t.accent, i % 2 ? 0.5 : 1);
+                S.T({ text: j[0], x: M, y: yl, w: larg * 0.26, size: px(2.4), font: F.mono, fill: t.accent, cs: 80 });
+                S.T({ text: j[1] || '', x: M + larg * 0.30, y: yl - px(0.6), w: larg * 0.70, size: px(2.9), fill: t.ink, lh: 1.45 });
+                yl += px(13);
+            });
+            S.T({ text: 'The two decisions that mattered were the Lyon studio in January and the press certification in November: the first bought capacity, the second bought quality.', x: M, y: H * 0.78, w: larg * 0.92, size: px(2.6), fill: t.ink, lh: 1.6, op: 0.9 });
+            pied('10');
+        } else if (p === 10) {
+            S.fond(t.paper); entete('Outlook 2028', 'Four things we intend to do differently.');
+            var yo = H * 0.24;
+            OB.forEach(function (o, i) {
+                S.bloc(M, yo - px(3), larg, px(26), i % 2 ? t.paper : t.soft);
+                S.rond(M + px(4), yo, px(10), t.accent, 0.9);
+                S.T({ text: String(i + 1), x: M + px(4), y: yo + px(2.7), w: px(10), size: px(3.6), font: F.mono, fill: t.paper, align: 'center' });
+                S.T({ text: o[0], x: M + px(18), y: yo - px(0.6), w: larg - px(18), size: px(3.6), font: F.display, weight: '700', fill: t.ink });
+                S.T({ text: o[1] || '', x: M + px(18), y: yo + px(6.4), w: larg - px(18), size: px(2.5), fill: t.ink, lh: 1.45, op: 0.85 });
+                yo += px(30);
+            });
+            S.T({ text: 'REVENUE TARGET', x: M, y: H * 0.66, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 220 });
+            var xg = M, vl = [4.82, 5.10, 5.55, 5.90, 6.40], vmax = 6.40, wg = (larg - px(4) * 4) / 5;
+            vl.forEach(function (v, i) {
+                var hh = H * 0.14 * (v / vmax);
+                S.bloc(xg + wg * 0.2, H * 0.88 - hh, wg * 0.6, hh, i === 4 ? t.accent : t.ink, i === 4 ? 1 : 0.75);
+                S.T({ text: String(v).replace('.', ',') , x: xg, y: H * 0.885, w: wg, size: px(1.9), font: F.mono, fill: t.ink, align: 'center', op: 0.7 });
+                xg += wg + px(4);
+            });
+            S.T({ text: '2027       2028 cible      2029      2030      2031', x: M, y: H * 0.905, w: larg, size: px(1.9), font: F.mono, fill: t.ink, align: 'center', op: 0.55 });
+            pied('11');
+        } else {
+            S.fond(t.night);
+            S.bloc(M, H * 0.16, larg * 0.6, px(1.2), t.accent);
+            S.T({ text: c.head, x: M, y: H * 0.22, w: larg * 0.86, size: px(10), font: F.display, weight: '700', fill: t.paper, lh: 1.05 });
+            S.T({ text: c.quote, x: M, y: H * 0.42, w: larg * 0.8, size: px(4), font: F.display, italic: true, fill: t.accent, lh: 1.35 });
+            S.T({ text: c.caption, x: M, y: H * 0.60, w: larg * 0.74, size: px(2.7), fill: t.paper, lh: 1.6, op: 0.9 });
+            S.T({ text: c.credits, x: M, y: H * 0.72, w: larg * 0.74, size: px(2.2), font: F.mono, fill: t.paper, lh: 1.7, op: 0.7 });
+            S.bloc(M, H * 0.84, larg, px(0.4), t.paper, 0.3);
+            S.T({ text: c.mast, x: M, y: H * 0.865, w: larg, size: px(2.1), font: F.mono, fill: t.paper, cs: 180, op: 0.7 });
+            S.T({ text: c.issue, x: M, y: H * 0.905, w: larg, size: px(2.1), font: F.mono, fill: t.accent, cs: 120 });
+            pied('12');
+        }
+    }
+
     // ── Vignette : SHOT RÉEL du modèle (rendu depuis l'app) + repli SVG ────
     window.spTemplateThumb = function (comp) {
         try {
@@ -72789,7 +73342,9 @@ function _npBuildLayout(params, keywords, lang) {
 window._npTemplateKeys = ['en_magazine_fashion_8p', 'en_journal_hair_4p', 'en_magazine_music_8p', 'en_magazine_food_8p',
     'en_restaurant_menu_4p', 'en_business_card_1p', 'en_cv_pro_1p', 'en_book_text_12p',
     'en_magazine_ocean_8p', 'en_cv_editorial_1p', 'en_cv_minimal_1p', 'en_book_shapes_12p',
-    'en_book_theatre_12p', 'en_calendar_a3_12p'];
+    'en_book_theatre_12p', 'en_calendar_a3_12p',
+    'en_calendar_2027_a4_portrait_12p', 'en_calendar_2028_a4_landscape_12p',
+    'en_calendar_2027_2028_a5_portrait_12p', 'en_magazine_archi_8p', 'en_annual_report_12p'];
 window.npRenderAssetStrip = function() {
     const strip = document.getElementById('npAssetStrip');
     if (!strip || typeof compositionExamples === 'undefined') return;
