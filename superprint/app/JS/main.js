@@ -7363,6 +7363,9 @@ if (window._spGpuEnabled) {
         function createPageCanvas(container, index, width, height, position = 'single') {
     const pageWrapper = document.createElement('div');
     pageWrapper.className = 'page-wrapper';
+    // 🆕 v1.7.448 — « sp-lone-page » = page seule d'un projet en double page (première / dernière).
+    //   Elle reçoit la MÊME boîte qu'une page simple pour que la pagination tombe au même endroit.
+    pageWrapper.classList.add(position === 'single' ? 'sp-page-simple' : 'sp-lone-page');
     
     // FIX: Ajouter dataset pour la détection de drag & drop
     pageWrapper.dataset.pageIndex = index;
@@ -11164,7 +11167,7 @@ if (window._spGpuEnabled) {
         
         function createSpreadCanvas(container, leftIndex, rightIndex, width, height) {
     const spreadWrapper = document.createElement('div');
-    spreadWrapper.className = 'spread-wrapper';
+    spreadWrapper.className = 'spread-wrapper sp-pair-page';
     spreadWrapper.style.position = 'relative';
     spreadWrapper.style.display = 'flex';
     spreadWrapper.style.justifyContent = 'center';
@@ -48916,6 +48919,9 @@ function alignSelectedObjects(direction) {
     modal.classList.add('active');
     modal.style.display = 'flex';
 
+    // 🆕 v1.7.448 — la pop-in suit la langue de l'application (onglets, pastilles, boutons)
+    try { if (typeof window.spAiSyncLang === 'function') window.spAiSyncLang(); } catch (_) {}
+
     // v143: réinitialise la structure sur "Page simple" et synchronise le toggle barre IA
     if (typeof aiSetDocType === 'function') aiSetDocType(window._aiDocType || 'single');
     const _fbToggle = document.getElementById('aiFooterBarToggle');
@@ -49411,6 +49417,113 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         (function spAiUiInit() {
             function parId(id) { return document.getElementById(id); }
 
+            /* 🆕 v1.7.448 — traductions du CONTENU généré (onglets, pastilles, titres d'exemples).
+               Le texte des prompts reste en français : c'est le contenu envoyé au modèle. */
+            window.spAiI18n = {
+                en: {
+                    'Idées rapides': 'Quick ideas',
+                    'Couvertures': 'Covers',
+                    'Pages éditoriales': 'Editorial pages',
+                    'Affiches & flyers': 'Posters & flyers',
+                    'Commerce': 'Commerce',
+                    'Documents': 'Documents',
+                    'Multi-pages': 'Multi-page',
+                    'Couverture magazine percutante': 'Punchy magazine cover',
+                    'Page éditoriale 2 colonnes': 'Two-column editorial page',
+                    'Affiche événement': 'Event poster',
+                    'Catalogue produits': 'Product catalogue',
+                    'Menu de restaurant': 'Restaurant menu',
+                    'CV moderne': 'Modern CV',
+                    'Flyer promotionnel': 'Promotional flyer',
+                    'Page de garde sobre': 'Sober title page',
+                    'Magazine — titre choc': 'Magazine — bold headline',
+                    'Livre — sobre': 'Book — sober',
+                    'Rapport annuel': 'Annual report',
+                    'Article deux colonnes': 'Two-column article',
+                    'Interview + portrait': 'Interview + portrait',
+                    'Portfolio photo pleine page': 'Full-page photo portfolio',
+                    'Flyer promotion': 'Promo flyer',
+                    'Affiche concert': 'Concert poster',
+                    'Catalogue 2 x 2': '2 x 2 catalogue',
+                    'Fiche produit': 'Product sheet',
+                    'CV une page': 'One-page CV',
+                    'Lettre de motivation': 'Cover letter',
+                    'Plaquette 2 volets': 'Two-panel brochure',
+                    'Livret 4 pages': '4-page booklet',
+                    'Catalogue 8 pages': '8-page catalogue',
+                    'Magazine 12 pages': '12-page magazine',
+                    'Rapport 6 pages': '6-page report',
+                    'Livre 16 pages': '16-page book'
+                },
+                ja: {
+                    'Idées rapides': 'アイデア集',
+                    'Couvertures': '表紙',
+                    'Pages éditoriales': '誌面ページ',
+                    'Affiches & flyers': 'ポスターとチラシ',
+                    'Commerce': '商品',
+                    'Documents': '書類',
+                    'Multi-pages': 'マルチページ',
+                    'Couverture magazine percutante': 'インパクトのある雑誌表紙',
+                    'Page éditoriale 2 colonnes': '2段組の誌面ページ',
+                    'Affiche événement': 'イベントポスター',
+                    'Catalogue produits': '商品カタログ',
+                    'Menu de restaurant': 'レストランのメニュー',
+                    'CV moderne': 'モダンな履歴書',
+                    'Flyer promotionnel': '販促チラシ',
+                    'Page de garde sobre': 'シンプルな扉ページ',
+                    'Magazine — titre choc': '雑誌 — 強烈な見出し',
+                    'Livre — sobre': '書籍 — シンプル',
+                    'Rapport annuel': '年次報告書',
+                    'Article deux colonnes': '2段組の記事',
+                    'Interview + portrait': 'インタビュー＋ポートレート',
+                    'Portfolio photo pleine page': '全面写真のポートフォリオ',
+                    'Flyer promotion': '販促チラシ',
+                    'Affiche concert': 'コンサートポスター',
+                    'Catalogue 2 x 2': '2×2 カタログ',
+                    'Fiche produit': '商品ページ',
+                    'CV une page': '1ページ履歴書',
+                    'Lettre de motivation': 'カバーレター',
+                    'Plaquette 2 volets': '2面リーフレット',
+                    'Livret 4 pages': '4ページ冊子',
+                    'Catalogue 8 pages': '8ページカタログ',
+                    'Magazine 12 pages': '12ページ雑誌',
+                    'Rapport 6 pages': '6ページレポート',
+                    'Livre 16 pages': '16ページ書籍'
+                }
+            };
+            // langue courante, lue « à l'abri » (currentLanguage vit dans une zone morte au chargement)
+            window.spAiLangue = function () {
+                try { return (typeof currentLanguage === 'string' && currentLanguage) || 'fr'; } catch (e) { return 'fr'; }
+            };
+            window.spAiT = function (s) {
+                if (!s) return s;
+                const l = window.spAiLangue();
+                if (l === 'fr') return s;
+                const m = window.spAiI18n[l];
+                return (m && m[s]) || s;
+            };
+            // dictionnaire sûr (translate() peut aussi être indisponible au chargement)
+            window.spAiDic = function (cle, repli) {
+                try {
+                    const v = translate(cle);
+                    if (v && v !== cle) return v;
+                } catch (e) {}
+                return repli != null ? repli : cle;
+            };
+            // reconstruit les parties générées quand la langue change (appelé à l'ouverture)
+            window.spAiSyncLang = function () {
+                const l = window.spAiLangue();
+                if (window._spAiLangBuilt === l) return;
+                window._spAiLangBuilt = l;
+                try { if (window.spAiBuildProviders) window.spAiBuildProviders(); } catch (e) {}
+                try { if (window.spAiBuildExamples) window.spAiBuildExamples(); } catch (e) {}
+                try {
+                    const prov = document.getElementById('aiProvider');
+                    if (prov) window.aiPickProvider(prov.value || 'deepseek');
+                } catch (e) {}
+            };
+
+
             /* ── choix du fournisseur (cartes) ── */
             window.aiPickProvider = function (id) {
                 const champ = parId('aiProvider');
@@ -49422,7 +49535,9 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 });
             };
 
+            window.spAiBuildProviders = function () {
             const zone = parId('aiProviderCards');
+            if (zone) zone.innerHTML = '';
             if (zone) {
                 (window.spAiProviders || []).forEach(function (p) {
                     const enveloppe = document.createElement('div');
@@ -49434,25 +49549,29 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                     b.title = p.note;
                     b.innerHTML = '<span class="ai-prov-logo" style="background:' + p.couleur + '">' + p.initiale + '</span>'
                                 + '<span class="ai-prov-name">' + p.nom + '</span>'
-                                + (p.reco ? '<span class="ai-prov-star" title="Recommandé">★</span>' : '');
+                                + (p.reco ? '<span class="ai-prov-star" title="' + window.spAiDic('aiRecommended', 'Recommandé') + '">★</span>' : '');
                     b.addEventListener('click', function () { window.aiPickProvider(p.id); });
                     const a = document.createElement('a');
                     a.className = 'ai-prov-key';
                     a.href = p.cle;
                     a.target = '_blank';
                     a.rel = 'noopener';
-                    a.textContent = 'clé ↗';
-                    a.title = 'Créer une clé ' + p.nom + ' (' + p.cle.replace('https://', '') + ')';
+                    a.textContent = window.spAiDic('aiKeyShort', 'clé ↗');
+                    a.title = window.spAiDic('aiKeyShortTitle', 'Créer une clé {fournisseur}').replace('{fournisseur}', p.nom) + ' (' + p.cle.replace('https://', '') + ')';
                     enveloppe.appendChild(b);
                     enveloppe.appendChild(a);
                     zone.appendChild(enveloppe);
                 });
             }
+            };
 
             /* ── exemples en onglets ── */
+            window.spAiBuildExamples = function () {
             const barre = parId('aiExampleTabs');
             const panneaux = parId('aiExamplePanels');
-            let exempleCourant = { g: 0, e: 0 };
+            if (!barre || !panneaux) return;
+            barre.innerHTML = '';
+            panneaux.innerHTML = '';
             function texteExemple(gi, ei) {
                 const g = (window.spAiExamples || [])[gi];
                 if (!g) return '';
@@ -49467,14 +49586,14 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                     try { ta.setSelectionRange(0, 0); } catch (e) {}
                 }
                 document.querySelectorAll('.ai-ex-btn.is-used').forEach(function (x) { x.classList.remove('is-used'); });
-                if (btn) { btn.classList.add('is-used'); btn.textContent = 'Utilisé ✓'; }
-                try { if (typeof logAI === 'function') logAI('Exemple chargé dans la zone de texte.'); } catch (e) {}
+                if (btn) { btn.classList.add('is-used'); btn.textContent = spAiT('Utilise') + ' ✓'; }
+                try { if (typeof logAI === 'function') logAI(translate('aiLogExample')); } catch (e) {}
             };
             window.aiCopyExample = function (gi, ei) {
                 const t = texteExemple(gi, ei);
                 try {
                     navigator.clipboard.writeText(t).then(function () {
-                        if (typeof logAI === 'function') logAI('Prompt copié dans le presse-papier.');
+                        if (typeof logAI === 'function') logAI(translate('aiLogCopied'));
                     }).catch(function () {});
                 } catch (e) {}
             };
@@ -49482,12 +49601,12 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 if (barre) barre.querySelectorAll('.ai-tab').forEach(function (t, k) { t.classList.toggle('active', k === i); });
                 if (panneaux) panneaux.querySelectorAll('.ai-panel').forEach(function (p, k) { p.classList.toggle('active', k === i); });
             };
-            if (barre && panneaux) {
+            if (true) {
                 (window.spAiExamples || []).forEach(function (g, i) {
                     const t = document.createElement('button');
                     t.type = 'button';
                     t.className = 'ai-tab' + (i === 0 ? ' active' : '');
-                    t.textContent = g.onglet;
+                    t.textContent = spAiT(g.onglet);
                     t.addEventListener('click', function () { window.aiSwitchExampleTab(i); });
                     barre.appendChild(t);
 
@@ -49500,7 +49619,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                             const b = document.createElement('button');
                             b.type = 'button';
                             b.className = 'ai-quick-chip';
-                            b.textContent = c.t;
+                            b.textContent = spAiT(c.t);
                             b.title = c.p;
                             b.addEventListener('click', function () { window.aiUseExample(i, j, null); });
                             rangee.appendChild(b);
@@ -49513,10 +49632,10 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                             const tete = document.createElement('div');
                             tete.className = 'ai-ex-head';
                             const strong = document.createElement('strong');
-                            strong.textContent = ex.t;
+                            strong.textContent = spAiT(ex.t);
                             const desc = document.createElement('span');
                             desc.className = 'ai-ex-desc';
-                            desc.textContent = ex.d || '';
+                            desc.textContent = spAiT(ex.d || '');
                             tete.appendChild(strong);
                             tete.appendChild(desc);
                             const apercu = document.createElement('div');
@@ -49527,12 +49646,12 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                             const bU = document.createElement('button');
                             bU.type = 'button';
                             bU.className = 'btn btn-primary ai-ex-btn';
-                            bU.textContent = 'Utiliser';
+                            bU.textContent = spAiT('Utiliser');
                             bU.addEventListener('click', function () { window.aiUseExample(i, j, bU); });
                             const bC = document.createElement('button');
                             bC.type = 'button';
                             bC.className = 'btn btn-secondary ai-ex-btn';
-                            bC.textContent = 'Copier';
+                            bC.textContent = spAiT('Copier');
                             bC.addEventListener('click', function () { window.aiCopyExample(i, j); });
                             actions.appendChild(bU);
                             actions.appendChild(bC);
@@ -49545,6 +49664,10 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                     panneaux.appendChild(pan);
                 });
             }
+            };
+            window.spAiBuildProviders();
+            window.spAiBuildExamples();
+            window._spAiLangBuilt = window.spAiLangue();
 
             /* ── raccourcis ── */
             window.aiToggleKeyVisible = function (btn) {
@@ -49560,7 +49683,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                     ta.value = t;
                     ta.focus();
                 }).catch(function () {
-                    if (typeof logAI === 'function') logAI('Collage impossible : autorisez le presse-papier dans le navigateur.');
+                    if (typeof logAI === 'function') logAI(translate('aiLogPasteFail'));
                 });
             };
             window.aiScrollToExamples = function () {
@@ -54176,6 +54299,32 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiHowKeyText: "Cliquez sur le lien « clé ↗ » du fournisseur : la page officielle de création s’ouvre dans un nouvel onglet. Créez la clé, copiez-la, collez-la ici, puis cliquez sur Test.",
         aiFooterBarHelp: "Affiche une barre de saisie sous la page : décrivez votre besoin sans ouvrir cette fenêtre.",
         aiExamplesHint: "Cliquez sur « Utiliser » : le texte est placé dans la zone de l’étape 2, il ne reste qu’à lancer la création.",
+        frTitle: "Rechercher & remplacer",
+        frFind: "Rechercher",
+        frFindPh: "Texte à trouver…",
+        frReplace: "Remplacer par",
+        frReplacePh: "Remplacement…",
+        frPrev: "← Précédent",
+        frNext: "Suivant →",
+        frOne: "Remplacer",
+        frAll: "Tout remplacer",
+        frDrag: "Glisser pour déplacer",
+        frClose: "Fermer",
+        aiIntroNew: "Décrivez une maquette en une phrase : l’IA compose la page active (ou tout le document) avec une grille propre, votre palette et vos textes.",
+        aiBtnExamples: "Exemples ↓",
+        aiModelHelpTitle: "Choisissez le modèle utilisé pour composer la maquette.",
+        aiShowKeyTitle: "Afficher / masquer la clé",
+        aiGetKey: "Obtenir une clé ↗",
+        aiGetKeyTitle: "Ouvrir la page officielle de création de clé",
+        aiLogPlaceholder: "Les échanges avec l’IA s’affichent ici.",
+        aiLogHint: "Historique des demandes et des réponses : utile pour comprendre une erreur.",
+        aiKeyShort: "clé ↗",
+        aiKeyShortTitle: "Créer une clé {fournisseur}",
+        aiRecommended: "Recommandé",
+        Utilise: "Utilisé",
+        aiLogExample: "Exemple chargé dans la zone de texte.",
+        aiLogCopied: "Prompt copié dans le presse-papier.",
+        aiLogPasteFail: "Collage impossible : autorisez le presse-papier dans le navigateur.",
         aiPromptLabel: "Décrivez la maquette souhaitée (page simple, double page, ou multi-pages)",
         aiPromptPlaceholder: "Ex: Double page magazine avec photo panoramique + texte 2 colonnes. Ou : Créer un livret 6 pages (couverture, sommaire, 3 pages contenu, contact).",
         aiBtnPaste: "Coller",
@@ -54966,6 +55115,32 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiHowKeyText: "Click the provider’s « clé ↗ » link: the official key page opens in a new tab. Create the key, copy it, paste it here, then press Test.",
         aiFooterBarHelp: "Shows an input bar under the page: describe what you need without opening this window.",
         aiExamplesHint: "Click « Utiliser »: the text goes into the step 2 box, all that is left is to start the creation.",
+        frTitle: "Find & replace",
+        frFind: "Find",
+        frFindPh: "Text to find…",
+        frReplace: "Replace with",
+        frReplacePh: "Replacement…",
+        frPrev: "← Previous",
+        frNext: "Next →",
+        frOne: "Replace",
+        frAll: "Replace all",
+        frDrag: "Drag to move",
+        frClose: "Close",
+        aiIntroNew: "Describe a layout in one sentence: the AI builds the active page (or the whole document) with a clean grid, your palette and your text.",
+        aiBtnExamples: "Examples ↓",
+        aiModelHelpTitle: "Pick the model used to build the layout.",
+        aiShowKeyTitle: "Show / hide the key",
+        aiGetKey: "Get a key ↗",
+        aiGetKeyTitle: "Open the official API key page",
+        aiLogPlaceholder: "Exchanges with the AI show up here.",
+        aiLogHint: "History of requests and answers: useful to understand an error.",
+        aiKeyShort: "key ↗",
+        aiKeyShortTitle: "Create a {fournisseur} key",
+        aiRecommended: "Recommended",
+        Utilise: "Used",
+        aiLogExample: "Example loaded into the text box.",
+        aiLogCopied: "Prompt copied to the clipboard.",
+        aiLogPasteFail: "Paste failed: allow clipboard access in your browser.",
         aiPromptLabel: "Describe the layout you want (single page, spread, or multi-page)",
         aiPromptPlaceholder: "Ex: Magazine spread with panoramic photo + 2-column text. Or: Create a 6-page booklet (cover, table of contents, 3 content pages, contact).",
         aiBtnPaste: "Paste",
@@ -55758,6 +55933,32 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         aiHowKeyText: "プロバイダーの「clé ↗」リンクをクリックすると、公式のキー発行ページが新しいタブで開きます。キーを作成してコピーし、ここに貼り付けてから Test を押してください。",
         aiFooterBarHelp: "ページの下に入力バーを表示します。この画面を開かずに指示を書けます。",
         aiExamplesHint: "「Utiliser」をクリックすると、テキストが手順 2 の欄に入ります。あとは作成を実行するだけです。",
+        frTitle: "検索と置換",
+        frFind: "検索",
+        frFindPh: "検索するテキスト…",
+        frReplace: "置換後",
+        frReplacePh: "置換テキスト…",
+        frPrev: "← 前へ",
+        frNext: "次へ →",
+        frOne: "置換",
+        frAll: "すべて置換",
+        frDrag: "ドラッグして移動",
+        frClose: "閉じる",
+        aiIntroNew: "レイアウトを一文で説明してください。AI がグリッド・配色・テキストを使って現在のページ（または文書全体）を構成します。",
+        aiBtnExamples: "作例 ↓",
+        aiModelHelpTitle: "レイアウト生成に使うモデルを選びます。",
+        aiShowKeyTitle: "キーの表示 / 非表示",
+        aiGetKey: "キーを取得 ↗",
+        aiGetKeyTitle: "公式の API キー発行ページを開く",
+        aiLogPlaceholder: "AI とのやり取りがここに表示されます。",
+        aiLogHint: "リクエストと応答の履歴：エラーの確認に便利です。",
+        aiKeyShort: "キー ↗",
+        aiKeyShortTitle: "{fournisseur} のキーを作成",
+        aiRecommended: "推奨",
+        Utilise: "使用済み",
+        aiLogExample: "作例をテキスト欄に読み込みました。",
+        aiLogCopied: "プロンプトをクリップボードにコピーしました。",
+        aiLogPasteFail: "貼り付けできません：ブラウザのクリップボード許可を確認してください。",
         aiPromptLabel: "作成したいレイアウトを記述してください（シングルページ、見開き、または複数ページ）",
         aiPromptPlaceholder: "例: パノラマ写真と2段組テキストのマガジン見開き。または: 6ページの冊子を作成（表紙、目次、3つのコンテンツページ、コンタクト）。",
         aiBtnPaste: "貼り付け",
@@ -57395,10 +57596,69 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         let _frMatches = [];
         let _frCurrentIdx = 0;
 
+        // 🆕 v1.7.448 — le panneau se déplace à la souris par son en-tête (comme les widgets
+        //   du document). La position est mémorisée et rejouée à chaque ouverture.
+        (function spFindReplaceDrag() {
+            try {
+                const panel = document.getElementById('findReplacePanel');
+                const poignee = document.getElementById('frDragHandle');
+                if (!panel || !poignee) return;
+                const CLE = 'sp_fr_pos';
+                const lirePos = function () {
+                    try { const s = localStorage.getItem(CLE); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+                };
+                const borner = function (x, y) {
+                    const w = panel.offsetWidth, h = panel.offsetHeight;
+                    return {
+                        x: Math.max(4, Math.min(Math.max(4, window.innerWidth - w - 4), x)),
+                        y: Math.max(4, Math.min(Math.max(4, window.innerHeight - h - 4), y))
+                    };
+                };
+                window._spFrRestorePos = function () {
+                    const pos = lirePos();
+                    if (!pos) return;
+                    const p = borner(pos.x, pos.y);
+                    panel.style.left = p.x + 'px';
+                    panel.style.top = p.y + 'px';
+                    panel.style.right = 'auto';
+                };
+                window._spFrRestorePos();
+                let dx = 0, dy = 0, bouge = false;
+                poignee.addEventListener('mousedown', function (e) {
+                    if (e.button !== 0) return;
+                    if (e.target && e.target.closest && e.target.closest('.fr-close')) return;
+                    const r = panel.getBoundingClientRect();
+                    dx = e.clientX - r.left;
+                    dy = e.clientY - r.top;
+                    bouge = true;
+                    e.preventDefault();
+                });
+                document.addEventListener('mousemove', function (e) {
+                    if (!bouge) return;
+                    const p = borner(e.clientX - dx, e.clientY - dy);
+                    panel.style.left = p.x + 'px';
+                    panel.style.top = p.y + 'px';
+                    panel.style.right = 'auto';
+                });
+                document.addEventListener('mouseup', function () {
+                    if (!bouge) return;
+                    bouge = false;
+                    try {
+                        localStorage.setItem(CLE, JSON.stringify({
+                            x: parseInt(panel.style.left, 10) || 0,
+                            y: parseInt(panel.style.top, 10) || 0
+                        }));
+                    } catch (e) {}
+                });
+                window.addEventListener('resize', function () { window._spFrRestorePos(); });
+            } catch (e) { console.warn('[SP] recherche & remplacer (déplacement) :', e); }
+        })();
+
         function openFindReplace(showReplace) {
     const panel = document.getElementById('findReplacePanel');
     if (!panel) return;
     panel.style.display = 'block';
+    try { if (typeof window._spFrRestorePos === 'function') window._spFrRestorePos(); } catch (_) {}
     const inp = document.getElementById('findInput');
     if (inp) { inp.value = ''; inp.focus(); }
     const cnt = document.getElementById('findMatchCount'); if (cnt) cnt.textContent = '';
@@ -62296,7 +62556,8 @@ canvas.requestRenderAll();
                     vide.className = 'assets-empty assets-vide-filtre';
                     grid.appendChild(vide);
                 }
-                vide.textContent = q ? ('Aucun résultat pour « ' + q + ' »') : 'Aucun modèle pour cette langue.';
+                const _lg = (window.spTagsLib[window.spTagsLangue()] || window.spTagsLib.en);
+                vide.textContent = q ? _lg.aucunResultat.replace('{q}', q) : _lg.vide;
                 vide.style.display = visibles === 0 ? 'block' : 'none';
                 total += visibles;
             });
@@ -62323,12 +62584,15 @@ canvas.requestRenderAll();
         if (panneau) panneau.addEventListener('click', function () { setTimeout(applyAssetsFilter, 150); });
         // 🆕 v1.7.441 — « ALL » par défaut : l'app réactive EN à l'initialisation, on repasse
         //   la main à ALL pour que les modèles français soient visibles d'entrée.
-        function forcerTout() {
-            const bAll = document.querySelector('.assets-lang-btn[data-asset-lang="all"]');
-            if (!bAll) return;
-            window._spLangChoisiManuellement = false;
+        // 🆕 v1.7.448 — le bouton « ALL » est retiré : la bibliothèque démarre en ANGLAIS.
+        //   Dès que l'utilisateur a cliqué une langue (FR / JA), on ne la change plus.
+        function forcerAnglais() {
+            if (window._spLangChoisiManuellement) return;
+            const bEn = document.querySelector('.assets-lang-btn[data-asset-lang="en"]');
+            if (!bEn) return;
             document.querySelectorAll('.assets-lang-btn').forEach(function (x) { x.classList.remove('active'); });
-            bAll.classList.add('active');
+            bEn.classList.add('active');
+            if (typeof window.spBuildAssetsTags === 'function') window.spBuildAssetsTags('en');
             applyAssetsFilter();
         }
         // 🆕 v1.7.442 — l'application relance son propre filtre de langue à l'ouverture du panneau
@@ -62345,8 +62609,8 @@ canvas.requestRenderAll();
             }
         } catch (eF) {}
         setTimeout(applyAssetsFilter, 800);
-        setTimeout(forcerTout, 1600);
-        setTimeout(forcerTout, 3200);
+        setTimeout(forcerAnglais, 1600);
+        setTimeout(forcerAnglais, 3200);
         // 🆕 v1.7.441 — à chaque OUVERTURE du panneau (bouton Assets de la barre latérale),
         //   l'app réactive la langue EN : on repasse sur ALL pour que les modèles français
         //   soient visibles immédiatement.
@@ -62355,8 +62619,8 @@ canvas.requestRenderAll();
             const bouton = btnAssets ? btnAssets.closest('button') : null;
             if (bouton) {
                 bouton.addEventListener('click', function () {
-                    setTimeout(forcerTout, 350);
-                    setTimeout(forcerTout, 1400);
+                    setTimeout(forcerAnglais, 350);
+                    setTimeout(forcerAnglais, 1400);
                 });
             }
         } catch (eBtn) {}
@@ -63110,8 +63374,9 @@ canvas.requestRenderAll();
         }
     }
 
-    // 🆕 v1.7.442 — BANDEAU DE TAGS (familles de maquettes + langues) à gauche de la recherche.
-    (function initAssetsTags() {
+    // 🆕 v1.7.442 / v1.7.448 — BANDEAU DE TAGS (familles + format) RECONSTRUIT à chaque
+    //   changement de langue : libellés ET compteurs dans la langue affichée (EN par défaut).
+    window.spBuildAssetsTags = function (langImpose) {
         try {
             const header = document.querySelector('.assets-header');
             const champ = document.getElementById('assetsSearch');
@@ -63124,9 +63389,21 @@ canvas.requestRenderAll();
                 // repli : le bandeau se pose sur SA PROPRE ligne, entre l'en-tête et les onglets
                 if (header.parentNode) header.parentNode.insertBefore(strip, header.nextSibling);
             }
-            const LIB = { magazine: 'Magazines', book: 'Livres', cv: 'CV', calendar: 'Calendriers', menu: 'Menus', report: 'Rapports', journal: 'Presse', card: 'Cartes', carte: 'Cartes', thesis: 'Mémoires' };
+            if (!window.spTagsLib) return; // table de libellés pas encore prête (appelée plus bas)
+            const langActive = (langImpose === 'en' || langImpose === 'fr' || langImpose === 'ja')
+                ? langImpose : window.spTagsLangue();
+            const L = window.spTagsLib[langActive] || window.spTagsLib.en;
+            const LIB = L.familles;
+            // filtres déjà choisis : conservés après reconstruction
+            const catAvant = (function () { const a = strip.querySelector('.assets-tag[data-groupe="assetCat"].active'); return a ? a.dataset.valeur : 'all'; })();
+            const docAvant = (function () { const a = strip.querySelector('.assets-tag[data-groupe="assetDoc"].active'); return a ? a.dataset.valeur : 'all'; })();
+            strip.innerHTML = '';
+            // 🆕 v1.7.448 — on ne compte QUE les maquettes de la langue affichée
+            const cartesComp = Array.prototype.filter.call(
+                document.querySelectorAll('.assets-grid[data-content="comp"] .asset-card'),
+                function (c) { return (c.dataset.lang || 'fr') === langActive; }
+            );
             const parFamille = {};
-            const cartesComp = document.querySelectorAll('.assets-grid[data-content="comp"] .asset-card');
             Array.prototype.forEach.call(cartesComp, function (c) {
                 const f = (c.dataset.cat || '').trim();
                 if (!f) return;
@@ -63162,11 +63439,11 @@ canvas.requestRenderAll();
                 });
                 return b;
             }
-            const tout = boutonTag('Tout', cartesComp.length, 'assetCat', 'all', 'Toutes les maquettes');
+            const tout = boutonTag(L.tout, cartesComp.length, 'assetCat', 'all', L.toutes);
             tout.classList.add('active');
             strip.appendChild(tout);
             familles.forEach(function (f) {
-                strip.appendChild(boutonTag(LIB[f] || (f.charAt(0).toUpperCase() + f.slice(1)), parFamille[f], 'assetCat', f, 'Maquettes : ' + (LIB[f] || f)));
+                strip.appendChild(boutonTag(LIB[f] || (f.charAt(0).toUpperCase() + f.slice(1)), parFamille[f], 'assetCat', f, L.titreFamille + (LIB[f] || f)));
             });
             // ── tags de FORMAT : pages simples / pages en double (magazine ouvert) ──
             let nSingle = 0, nSpread = 0;
@@ -63176,14 +63453,22 @@ canvas.requestRenderAll();
             const sepFormat = document.createElement('span');
             sepFormat.className = 'assets-tags-sep';
             strip.appendChild(sepFormat);
-            strip.appendChild(boutonTag('Single', nSingle, 'assetDoc', 'single', 'Pages simples : une page par écran'));
-            strip.appendChild(boutonTag('Spread', nSpread, 'assetDoc', 'spread', 'Pages en double : magazine ouvert, deux pages côte à côte'));
+            strip.appendChild(boutonTag(L.single, nSingle, 'assetDoc', 'single', L.titreSingle));
+            strip.appendChild(boutonTag(L.spread, nSpread, 'assetDoc', 'spread', L.titreSpread));
             // 🆕 v1.7.444 — le filtre de langue (ALL / EN / FR / JA) vit désormais à droite de la
             //   ligne des onglets : on ne le déplace plus ici.
             if (!document.getElementById('assetsLangFilter')) console.warn('[SP] filtre de langue introuvable');
+            // on réapplique la famille / le format choisis avant la reconstruction
+            Array.prototype.forEach.call(strip.querySelectorAll('.assets-tag'), function (b) {
+                const garde = (b.dataset.groupe === 'assetCat' && b.dataset.valeur === catAvant)
+                           || (b.dataset.groupe === 'assetDoc' && b.dataset.valeur === docAvant);
+                if (garde) b.classList.add('active');
+            });
             window.spTagsStrip = strip;
+            if (typeof applyAssetsFilter === 'function') applyAssetsFilter();
         } catch (eTags) { console.warn('[SP] bandeau de tags :', eTags); }
-    })();
+    };
+    window.spBuildAssetsTags();
 
     // Message si grilles vides
     document.querySelectorAll('.assets-grid').forEach(grid => {
@@ -63193,9 +63478,56 @@ canvas.requestRenderAll();
     });
 
     // --- FILTRE LANGUE ASSETS ---
-    let currentAssetLang = currentLanguage || 'en';
-    // Map lang JA → EN pour les assets (pas d'assets JA pour l'instant)
+    // 🆕 v1.7.448 — le bouton « ALL » est retiré : la bibliothèque DÉMARRE EN ANGLAIS.
+    //   L'utilisateur peut basculer sur FR ou JA quand il le souhaite (son choix est gardé).
+    let currentAssetLang = 'en';
     if (currentAssetLang === 'ja') currentAssetLang = 'en';
+
+    // 🆕 v1.7.448 — LIBELLÉS DU BANDEAU DE TAGS PAR LANGUE (le bandeau suit le filtre de langue).
+    window.spTagsLib = {
+        fr: {
+            tout: 'Tout', toutes: 'Toutes les maquettes', familles: {
+                magazine: 'Magazines', book: 'Livres', cv: 'CV', calendar: 'Calendriers', menu: 'Menus',
+                report: 'Rapports', journal: 'Presse', card: 'Cartes', carte: 'Cartes', thesis: 'Mémoires'
+            },
+            single: 'Page simple', spread: 'Double page',
+            titreSingle: 'Pages simples : une page par écran',
+            titreSpread: 'Pages en double : magazine ouvert, deux pages côte à côte',
+            titreFamille: 'Maquettes : ', vide: 'Aucun modèle pour cette langue.',
+            aucunResultat: 'Aucun résultat pour « {q} »'
+        },
+        en: {
+            tout: 'All', toutes: 'All layouts', familles: {
+                magazine: 'Magazines', book: 'Books', cv: 'CVs', calendar: 'Calendars', menu: 'Menus',
+                report: 'Reports', journal: 'Press', card: 'Cards', carte: 'Cards', thesis: 'Theses'
+            },
+            single: 'Single', spread: 'Spread',
+            titreSingle: 'Single pages: one page per screen',
+            titreSpread: 'Spreads: open magazine, two pages side by side',
+            titreFamille: 'Layouts: ', vide: 'No layout in this language.',
+            aucunResultat: 'No result for “{q}”'
+        },
+        ja: {
+            tout: 'すべて', toutes: 'すべてのレイアウト', familles: {
+                magazine: '雑誌', book: '書籍', cv: '履歴書', calendar: 'カレンダー', menu: 'メニュー',
+                report: 'レポート', journal: '新聞', card: 'カード', carte: 'カード', thesis: '論文'
+            },
+            single: 'シングル', spread: '見開き',
+            titreSingle: 'シングルページ：1画面に1ページ',
+            titreSpread: '見開き：2ページを並べて表示',
+            titreFamille: 'レイアウト：', vide: 'この言語のレイアウトはありません。',
+            aucunResultat: '「{q}」に一致する結果はありません'
+        }
+    };
+    window.spTagsLangue = function () {
+        var l = currentAssetLang || 'en';
+        if (l !== 'fr' && l !== 'ja') l = 'en';
+        return l;
+    };
+    window.spTagsMot = function (cle) {
+        var L = window.spTagsLib[window.spTagsLangue()] || window.spTagsLib.en;
+        return L[cle] != null ? L[cle] : (window.spTagsLib.en[cle] || '');
+    };
 
     window.filterAssetsByLang = function filterAssetsByLang(lang) {
         currentAssetLang = lang;
@@ -63228,6 +63560,8 @@ canvas.requestRenderAll();
                 emptyMsg.style.display = 'none';
             }
         });
+        // 🆕 v1.7.448 — la langue choisie fait aussi la langue du bandeau de tags.
+        if (typeof window.spBuildAssetsTags === 'function') window.spBuildAssetsTags(lang);
     }
 
     // Event listeners pour le filtre langue
