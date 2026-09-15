@@ -41434,11 +41434,14 @@ https://superprint.app
                             var _opP = (typeof obj.opacity === 'number' && obj.opacity >= 0 && obj.opacity <= 1) ? obj.opacity : 1;
                             if (_opP < 0.01) _opP = 0.01;
                             if (typeof obj._spParentOpacity === 'number') _opP *= obj._spParentOpacity;
+                            // 🆕 v1.7.452 — pas de bordure sans couleur : sinon pdf-lib dessine
+                            //   un liseré NOIR (son défaut) sur une forme sans contour.
+                            var _bwP = (_scP && _swP > 0) ? _swP : 0;
                             page.drawSvgPath(_dPrim, {
                                 x: 0, y: page.getHeight(), scale: 1,
                                 color: _fcP ? PDFLib.rgb(_fcP[0] / 255, _fcP[1] / 255, _fcP[2] / 255) : undefined,
-                                borderWidth: _swP,
-                                borderColor: (_scP && _swP > 0) ? PDFLib.rgb(_scP[0] / 255, _scP[1] / 255, _scP[2] / 255) : undefined,
+                                borderWidth: _bwP,
+                                borderColor: _bwP > 0 ? PDFLib.rgb(_scP[0] / 255, _scP[1] / 255, _scP[2] / 255) : undefined,
                                 opacity: _opP
                             });
                             return;
@@ -41462,11 +41465,13 @@ https://superprint.app
                 // 🛡️ v1.7.297 — FIX EXPORT NATIF : opacité conservée
                 var _rectOp = (typeof obj.opacity === 'number' && obj.opacity >= 0 && obj.opacity <= 1) ? obj.opacity : 1;
                 if (_rectOp < 0.01) _rectOp = 0.01;
+                // 🆕 v1.7.452 — bordure seulement si une couleur de contour existe
+                var _swRect = (sc && sw > 0) ? sw : 0;
                 page.drawRectangle({
                     x: xPt, y: yPt, width: wPt, height: hPt,
                     color: fc ? PDFLib.rgb(fc[0] / 255, fc[1] / 255, fc[2] / 255) : undefined,
-                    borderWidth: sw,
-                    borderColor: sc && sw > 0 ? PDFLib.rgb(sc[0] / 255, sc[1] / 255, sc[2] / 255) : undefined,
+                    borderWidth: _swRect,
+                    borderColor: _swRect > 0 ? PDFLib.rgb(sc[0] / 255, sc[1] / 255, sc[2] / 255) : undefined,
                     opacity: _rectOp
                 });
                 return;
@@ -41483,13 +41488,15 @@ https://superprint.app
                 var sw2 = pxToMm(obj.strokeWidth || 0) * mmToPt;
                 var _ellOp = (typeof obj.opacity === 'number' && obj.opacity >= 0 && obj.opacity <= 1) ? obj.opacity : 1;
                 if (_ellOp < 0.01) _ellOp = 0.01;
+                // 🆕 v1.7.452 — bordure seulement si une couleur de contour existe
+                var _swEll = (sc2 && sw2 > 0) ? sw2 : 0;
                 page.drawEllipse({
                     x: cxPt, y: cyPt,
                     xScale: pxToMm(rx) * mmToPt,
                     yScale: pxToMm(ry) * mmToPt,
                     color: fc2 ? PDFLib.rgb(fc2[0] / 255, fc2[1] / 255, fc2[2] / 255) : undefined,
-                    borderWidth: sw2,
-                    borderColor: sc2 && sw2 > 0 ? PDFLib.rgb(sc2[0] / 255, sc2[1] / 255, sc2[2] / 255) : undefined,
+                    borderWidth: _swEll,
+                    borderColor: _swEll > 0 ? PDFLib.rgb(sc2[0] / 255, sc2[1] / 255, sc2[2] / 255) : undefined,
                     opacity: _ellOp
                 });
                 return;
@@ -41522,12 +41529,23 @@ https://superprint.app
                                 _srcEl = obj.toCanvasElement({ multiplier: 1 });
                             }
                         } catch (_) { _srcEl = null; }
-                        if (!_srcEl) {
-                            _srcEl = obj.getElement ? obj.getElement() : (obj._element || obj._originalElement || null);
-                        }
                         if (_srcEl) {
                             try { tmpCtx.drawImage(_srcEl, 0, 0, iw, ih); }
                             catch (_) {}
+                        } else {
+                            // 🆕 v1.7.452 — repli image : respecter le CROP. Avant, on dessinait
+                            //   l'élément brut en 0,0 : une image recadrée (cropX/cropY) sortait
+                            //   décalée, avec une sous-région vide qui apparaissait comme un
+                            //   « carré blanc » dans le PDF.
+                            var _el2 = obj.getElement ? obj.getElement() : (obj._element || obj._originalElement || null);
+                            if (_el2) {
+                                var _cx2 = (typeof obj.cropX === 'number' && obj.cropX > 0) ? obj.cropX : 0;
+                                var _cy2 = (typeof obj.cropY === 'number' && obj.cropY > 0) ? obj.cropY : 0;
+                                var _cw2 = (typeof obj.width === 'number' && obj.width > 0) ? obj.width : (obj.getElement && obj.getElement() ? obj.getElement().naturalWidth : iw);
+                                var _ch2 = (typeof obj.height === 'number' && obj.height > 0) ? obj.height : (obj.getElement && obj.getElement() ? obj.getElement().naturalHeight : ih);
+                                try { tmpCtx.drawImage(_el2, _cx2, _cy2, _cw2, _ch2, 0, 0, iw, ih); }
+                                catch (_) { try { tmpCtx.drawImage(_el2, 0, 0, iw, ih); } catch (_) {} }
+                            }
                         }
                         var pngBytes = null;
                         try {
@@ -41611,7 +41629,7 @@ https://superprint.app
                             page.drawSvgPath(svgPath, {
                                 x: xPt, y: yPt, scale: mmToPt,
                                 color: _fcL ? PDFLib.rgb(_fcL[0]/255, _fcL[1]/255, _fcL[2]/255) : undefined,
-                                borderWidth: _swL,
+                                borderWidth: (_scL && _swL > 0) ? _swL : 0,
                                 borderColor: (_scL && _swL > 0) ? PDFLib.rgb(_scL[0]/255, _scL[1]/255, _scL[2]/255) : undefined
                             });
                         } catch(_) {}
@@ -41645,7 +41663,7 @@ https://superprint.app
                         // d déjà en px canvas absolus → x:0, y:hauteur page, scale:1 (px=pt).
                         x: 0, y: page.getHeight(), scale: 1,
                         color: fc3 ? PDFLib.rgb(fc3[0] / 255, fc3[1] / 255, fc3[2] / 255) : undefined,
-                        borderWidth: sw4,
+                        borderWidth: (sc4 && sw4 > 0) ? sw4 : 0,
                         borderColor: (sc4 && sw4 > 0) ? PDFLib.rgb(sc4[0] / 255, sc4[1] / 255, sc4[2] / 255) : undefined,
                         opacity: _pathOp
                     });
