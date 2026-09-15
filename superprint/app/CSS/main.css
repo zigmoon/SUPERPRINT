@@ -82,10 +82,10 @@ body {
        il repart du HAUT au lieu d'être poussé hors du cadre vers le bas. */
     justify-content: center;
     justify-content: safe center;
-    /* 🆕 v1.7.449 — centrage VERTICAL (justify-content) ET HORIZONTAL (align-items)
-       du logo et de la typographie dans le bloc noir. */
-    align-items: center;
-    text-align: center;
+    /* 🆕 v1.7.449 — centrage VERTICAL du bloc (justify-content: center juste au-dessus).
+       🆕 v1.7.450 — retour au calage À GAUCHE demandé pour le logo et la typographie. */
+    align-items: flex-start;
+    text-align: left;
     gap: 12px;
     padding: 32px 24px;
     border-right: 1px solid #1a1a1a;
@@ -4773,3 +4773,17 @@ input[type=number] {
     contain-intrinsic-size: auto 148px;
 }
 .asset-preview-img { content-visibility: auto; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   🆕 v1.7.450 — réglages fins
+   ═══════════════════════════════════════════════════════════════════════ */
+/* Splash : typographie (et logo) calés À GAUCHE dans le bloc noir ;
+   le centrage VERTICAL est conservé (justify-content: center). */
+.splash-logo-panel {
+    align-items: flex-start;
+    text-align: left;
+}
+/* Pop-in Assistant IA : un peu d'air sous « Tester la connexion »
+   avant le soufflet Journal (étape 1 « Configuration »). */
+.ai-block > details.ai-acc { margin-top: 16px; }
+.ai-block > .ai-actions { margin-bottom: 2px; }
