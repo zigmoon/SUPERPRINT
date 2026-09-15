@@ -25856,6 +25856,25 @@ if (window._spGpuEnabled) {
             const inv = (zoomLevel > 0 ? (1 / zoomLevel) : 1);
             pagesContainer.style.setProperty('--sp-zoom', String(zoomLevel));
             pagesContainer.style.setProperty('--sp-zoom-inv', String(inv));
+            // 🆕 v1.7.433 — Taille du libellé « Page N » : CONSTANTE tant que la page reste
+            //   lisible à l'écran, puis PROPORTIONNELLE à la page quand on dézoome très fort.
+            //   Mesuré en 1.7.432 : à 10 % le libellé (36 px) restait plus large que la page
+            //   (44 px) et paraissait « énorme » sous un petit format. Plafond = page/110 px,
+            //   jamais moins de 0,35 (le libellé reste lisible en vue d'ensemble).
+            let invLibelle = inv;
+            try {
+                // `offsetWidth` = largeur de MISE EN PAGE : insensible au zoom et aux transitions
+                // CSS (getBoundingClientRect() renvoyait une largeur animée, donc périmée).
+                const largeurPage = pagesContainer.offsetWidth || 0;
+                if (largeurPage > 0) {
+                    // Le libellé (« Page N », 36 px de large à 10 px de corps) ne dépasse jamais
+                    // ~45 % de la largeur de page : seuil exprimé en coordonnées page, donc
+                    // indépendant du zoom (un petit format ne se fait plus écraser par le libellé).
+                    const plafond = (0.45 * largeurPage) / 36;
+                    invLibelle = Math.min(inv, Math.max(0.35, plafond));
+                }
+            } catch (_) {}
+            pagesContainer.style.setProperty('--sp-zoom-label', String(invLibelle));
             // 🆕 v1.7.432 — numéros de page : taille STABLE à l'écran. La contre-échelle est
             //   faite en CSS (transform: scale(var(--sp-zoom-inv))) : elle s'applique donc
             //   aussi aux libellés recréés après un changement de zoom, et uniquement DANS le

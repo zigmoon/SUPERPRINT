@@ -1791,13 +1791,14 @@ textarea[data-fabric-hiddentextarea] {
     text-align: left;
     font-size: 10px;
     opacity: 0.5;
-    margin-top: calc(-4px * var(--sp-zoom-inv, 1));
+    margin-top: calc(-4px * var(--sp-zoom-label, var(--sp-zoom-inv, 1)));
     margin-left: 0;
     font-family: 'IBM Plex Mono', monospace;
-    /* 🆕 v1.7.432 — taille STABLE à l'écran quel que soit le zoom : contre-échelle par
-       la variable CSS posée sur le conteneur zoomé (#pagesContainer). Les libellés qui
-       ne sont pas dans ce conteneur ne sont donc plus agrandis quand on dézoome. */
-    transform: scale(var(--sp-zoom-inv, 1));
+    /* 🆕 v1.7.433 — contre-échelle du libellé : `--sp-zoom-label` (calculée dans applyZoom)
+       = 1/zoom tant que la page garde au moins ~110 px de large à l'écran, puis
+       proportionnelle à la page (jamais < 0,35) pour ne pas la dépasser en dézoom extrême.
+       Repli sur `--sp-zoom-inv` pour les libellés hors du conteneur zoomé. */
+    transform: scale(var(--sp-zoom-label, var(--sp-zoom-inv, 1)));
     transform-origin: left top;
 }
 .preset-formats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
