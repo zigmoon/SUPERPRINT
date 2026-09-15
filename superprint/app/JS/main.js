@@ -30733,7 +30733,7 @@ if (window._spGpuEnabled) {
             var s = document.createElement('script');
             // Cache-buster OBLIGATOIRE : sans parametre de version le navigateur
             // sert le module PRECEDENT depuis son cache HTTP.
-            s.src = 'JS/sp-eps-import.js?v=20260917-v417-clavier-studio';
+            s.src = 'JS/sp-eps-import.js?v=20260915-v418b-eps-arc';
             s.onload = function () {
                 if (!window.SPEps) { reject(new Error('SPEps absent')); return; }
                 resolve(window.SPEps);
@@ -40165,6 +40165,34 @@ https://superprint.app
                         else if (t === 'C') d += 'C ' + tp(c[1], c[2]) + ' ' + tp(c[3], c[4]) + ' ' + tp(c[5], c[6]) + ' ';
                         else if (t === 'Z' || t === 'z') d += 'Z ';
                     }
+                } else if (obj.type === 'rect' || obj.type === 'circle' || obj.type === 'ellipse') {
+                    // 🆕 v1.7.419 — PRIMITIVES PIVOTEES EN TRACES. Mesure avant ce
+                    //   correctif : un rectangle sous rotate(-15) importe par SVG
+                    //   sortait en IMAGE (/Image-… Do, 35,4 x 28,3 pt) alors que le
+                    //   reste du dessin sortait en tracés. Geometrie LOCALE centree
+                    //   sur le centre de l'objet (convention de `calcTransformMatrix` :
+                    //   `pathOffset` vaut 0 pour une primitive), transformee par la
+                    //   matrice complete -> position, rotation et echelle fideles.
+                    var _hw = (Number(obj.width) || 0) / 2, _hh = (Number(obj.height) || 0) / 2;
+                    var _kk = 0.5522847498307936;   // 4/3 x tan(45 deg / 2)
+                    var _segs;
+                    if (obj.type === 'rect') {
+                        _segs = [['M', -_hw, -_hh], ['L', _hw, -_hh], ['L', _hw, _hh], ['L', -_hw, _hh], ['Z']];
+                    } else {
+                        _segs = [
+                            ['M', -_hw, 0],
+                            ['C', -_hw, -_hh * _kk, -_hw * _kk, -_hh, 0, -_hh],
+                            ['C', _hw * _kk, -_hh, _hw, -_hh * _kk, _hw, 0],
+                            ['C', _hw, _hh * _kk, _hw * _kk, _hh, 0, _hh],
+                            ['C', -_hw * _kk, _hh, -_hw, _hh * _kk, -_hw, 0],
+                            ['Z']
+                        ];
+                    }
+                    for (var _sg2 = 0; _sg2 < _segs.length; _sg2++) {
+                        var _s2 = _segs[_sg2];
+                        d += _s2[0] + ' ';
+                        for (var _vi2 = 1; _vi2 + 1 < _s2.length; _vi2 += 2) d += tp(_s2[_vi2], _s2[_vi2 + 1]) + ' ';
+                    }
                 } else if ((obj.type === 'polygon' || obj.type === 'polyline') && Array.isArray(obj.points)) {
                     for (var j = 0; j < obj.points.length; j++) {
                         var pt = obj.points[j]; if (!pt) continue;
@@ -41004,8 +41032,35 @@ https://superprint.app
             var _hasComplexStroke = obj.stroke && typeof obj.stroke === 'object';
             var _hasUnsupportedTransform = !!(obj.angle || obj.skewX || obj.skewY);
             var _hasRoundedRect = obj.type === 'rect' && ((obj.rx || 0) > 0 || (obj.ry || 0) > 0);
-            if (_isPrimitive && (_hasComplexPaint || _hasComplexStroke || _hasUnsupportedTransform ||
-                _hasRoundedRect || obj.clipPath || obj.shadow)) {
+            var _hasComplexPrimitive = !!(_hasComplexPaint || _hasComplexStroke || _hasRoundedRect || obj.clipPath || obj.shadow);
+            if (_isPrimitive && (_hasComplexPrimitive || _hasUnsupportedTransform)) {
+                // 🆕 v1.7.419 — UNE PRIMITIVE SIMPLEMENT PIVOTEE RESTE VECTORIELLE :
+                //   on la dessine en tracé (contour absolu + drawSvgPath) au lieu de
+                //   l'aplatir en image. Le repli raster ne concerne plus que les cas
+                //   vraiment complexes (dégradé, motif, coin arrondi, clipPath, ombre).
+                if (!_hasComplexPrimitive && _hasUnsupportedTransform) {
+                    try {
+                        var _dPrim = _spBuildAbsoluteSvgPath(obj);
+                        if (_dPrim) {
+                            var _fcP = _parsePdfColor(obj.fill), _scP = _parsePdfColor(obj.stroke);
+                            var _scaleP = obj.strokeUniform ? 1 : ((Math.abs(obj.scaleX || 1) + Math.abs(obj.scaleY || 1)) / 2);
+                            var _swP = pxToMm((obj.strokeWidth || 0) * _scaleP) * mmToPt;
+                            var _opP = (typeof obj.opacity === 'number' && obj.opacity >= 0 && obj.opacity <= 1) ? obj.opacity : 1;
+                            if (_opP < 0.01) _opP = 0.01;
+                            if (typeof obj._spParentOpacity === 'number') _opP *= obj._spParentOpacity;
+                            page.drawSvgPath(_dPrim, {
+                                x: 0, y: page.getHeight(), scale: 1,
+                                color: _fcP ? PDFLib.rgb(_fcP[0] / 255, _fcP[1] / 255, _fcP[2] / 255) : undefined,
+                                borderWidth: _swP,
+                                borderColor: (_scP && _swP > 0) ? PDFLib.rgb(_scP[0] / 255, _scP[1] / 255, _scP[2] / 255) : undefined,
+                                opacity: _opP
+                            });
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('[pdf-lib] primitive pivotee : trace impossible, repli raster', e);
+                    }
+                }
                 try {
                     if (await _spRenderComplexFabricObjectToPdfLib(doc, page, obj, multiplier)) return;
                 } catch (e) {
@@ -58436,9 +58491,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     };
 
     // ── Rendu vectoriel glyphe par glyphe ──
-    // glyph.getPath(0, 0, fontSize) → coordonnées OpenType pures (Y↑).
-    // _spOtPathToSVG inverse Y : -c.y → Y↓ (Fabric).
-    // Path positionné à top + baselineY + li*lineHeight (baseline = y=0 du path).
+    // glyph.getPath(0, 0, fontSize) → coordonnées écran (Y vers le BAS, cf. v1.7.418b).
+    // _spOtPathToSVG place les contours en coordonnées CANEVAS absolues, sans
+    //   inverser Y. Path positionné à top + baseline + li*lineHeight.
     function _spDoVectorize(canvas, obj, fontSize, fill, left, top, angle, scaleX, scaleY, maxWidth, mode, textAlign, lineHeightFactor, charSpacing, font, isFakeBold) {
         var paths = [];
         var isOutline = (mode === 'outline');
@@ -58622,17 +58677,25 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     //   est faite par scaleY:-1 sur chaque fabric.Path.
     //   PAS de -c.y ici (voir _spDoVectorize).
     // v1.7.418 : produit des coordonnees ABSOLUES (canevas) — origine du glyphe
-    //   (gx, baseline) + inversion Y (OpenType Y vers le haut -> canvas Y vers le
-    //   bas) + rotation eventuelle du bloc (cosA/sinA) autour de son coin haut-
-    //   gauche (ox, oy). Sans argument d'origine, on garde l'ancien comportement
-    //   (coordonnees OpenType brutes) pour ne pas casser d'autres appelants.
+    //   (gx, baseline) + rotation eventuelle du bloc (cosA/sinA) autour de son coin
+    //   haut-gauche (ox, oy). Sans argument d'origine, on garde l'ancien
+    //   comportement (coordonnees OpenType brutes) pour ne pas casser d'autres
+    //   appelants.
+    // v1.7.418b : AUCUNE inversion Y (les contours opentype sont deja Y vers le
+    //   bas) — voir la mesure dans P() ci-dessous.
     function _spOtPathToSVG(otPath, ox, oy, gx, baseline, cosA, sinA) {
         var absolu = (typeof ox === 'number' && typeof oy === 'number');
         var rot = absolu && (cosA !== 1 || sinA !== 0);
         function P(x, y) {
             if (!absolu) return [x, y];
             var lx = (gx || 0) + x;
-            var ly = (baseline || 0) - y;
+            // 🆕 v1.7.418b — PLUS D'INVERSION Y ICI. Mesure : avec `baseline - y`
+            //   les lettres sortaient TETE EN BAS (encre texte 377..410 px, encre
+            //   glyphes 410..444 px : miroir exact autour de la ligne de base 410,5).
+            //   `opentype.glyph.getPath(0,0,size)` renvoie DEJA des coordonnees Y
+            //   vers le BAS (repere ecran : ligne de base a y=0, corps du glyphe en
+            //   y NEGATIF) : il suffit donc d'AJOUTER y a la ligne de base.
+            var ly = (baseline || 0) + y;
             if (!rot) return [ox + lx, oy + ly];
             return [ox + lx * cosA - ly * sinA, oy + lx * sinA + ly * cosA];
         }

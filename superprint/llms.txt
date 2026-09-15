@@ -10,7 +10,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.418 (September 2026)
+- **Version**: 1.7.419 (September 2026)
 - **Local install**: npx superprint (npm package `superprint`, launcher version 1.0.95) — the same application, downloaded once and run on your machine
 
 ## Core documentation
@@ -43,6 +43,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Line-accurate height resizing**: dragging a text frame's handles never cuts a line in half and never alters the leading. The height snaps to a whole number of lines, using the same line metrics as the PDF export so preview and output stay consistent. An overflow marker still appears whenever text remains in the frame.
 
 ## Recent releases (September 2026)
+- **1.7.419** — text vectorisation is now geometrically exact: the outline converter no longer flips the Y axis a second time (opentype already returns screen coordinates, so every glyph came out upside-down — measured +32 px), glyphs are laid out on the lines Fabric actually composes (automatic word wrap included), the geometry survives a `.sp` round trip (ink overlap 0.987 between the document and itself after reopening) and the PDF export writes real traces aligned on the text baseline. EPS import now draws genuine `arc`/`arcn` arcs (a 18 px radius circle used to come out as a 118 x 80 px blob) plus rounded corners (`arct`/`arcto`). A rotated shape (rect, circle, ellipse) is no longer flattened into an image in the PDF: it is exported as a path, exactly like vectorised type.
 - **1.7.418** — text vectorisation is repaired end to end: the right-click “Vectorize” command now loads the font engines on demand (until now it silently produced an ordinary, still editable text block), glyphs are laid out on Fabric’s own wrapped lines with the right baseline, size and rotation, and they are exported to PDF as **real vector traces** — exact curves, no embedded image, no text — including groups of glyphs saved by earlier versions. The SP213 studio keyboard now sits at the bottom of the screen, shows your attached files (PJ) under the large prompt, and lights up the on-screen key you press on the physical keyboard.
 
 - **1.7.416** — the eyedropper in the sidebar now opens the real system colour picker (the “Show Colors…” popup and the Colors window) on Safari and Firefox, instead of the application’s own colour window. Chromium keeps the native eyedropper that samples a pixel on screen.

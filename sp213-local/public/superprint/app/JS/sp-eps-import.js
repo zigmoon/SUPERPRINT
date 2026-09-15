@@ -550,17 +550,86 @@
                 courant = null;   // 're' termine le sous-chemin : la peinture suit
                 continue;
             }
-            if (op === 'arc' || op === 'arcn' || op === 'arct' || op === 'arcto') {
-                // Approximation : on consomme les operandes et on trace une ligne
-                // vers le point d'arrivee (cas marginal pour un logo).
-                var nargs = (op === 'arcto') ? 5 : 5;
-                var args = [];
-                for (var ai = 0; ai < nargs; ai++) args.unshift(nombre());
-                var ax = args[0], ay = args[1], aw = args[2], ah = args[3];
-                var pa = pt(ax + aw, ay + ah / 2);
+            // 🆕 v1.7.418b — ARCS : `x y r ang1 ang2 arc|arcn`. Avant, une simple
+            //   ligne etait tracee vers un point arbitraire : un cercle de 18 px de
+            //   rayon ressortait en 118 x 80 px (mesure). On genere de VRAIS arcs :
+            //   decoupes en segments de 90 deg au plus, chacun converti en cubique
+            //   (k = 4/3 x tan(theta/4)). Les points sont transformes par la matrice
+            //   courante : une transformation affine conserve les cubiques.
+            if (op === 'arc' || op === 'arcn') {
+                var ang2d = nombre(), ang1d = nombre(), rayon = nombre(), ayc = nombre(), axc = nombre();
+                var d1 = ang1d * Math.PI / 180, d2 = ang2d * Math.PI / 180;
+                if (op === 'arcn') {                 // arc = sens trigonometrique
+                    while (d2 > d1) d2 -= 2 * Math.PI;
+                } else {
+                    while (d2 < d1) d2 += 2 * Math.PI;
+                }
                 if (!courant) nouveauSousChemin();
-                courant.push(['L', pa[0], pa[1]]);
-                stats.inconnus[op] = (stats.inconnus[op] || 0) + 1;
+                var dernierA = courant.length ? courant[courant.length - 1] : null;
+                var pd = pt(axc + rayon * Math.cos(d1), ayc + rayon * Math.sin(d1));
+                courant.push([dernierA ? 'L' : 'M', pd[0], pd[1]]);
+                var totalA = d2 - d1;
+                var nseg = Math.max(1, Math.ceil(Math.abs(totalA) / (Math.PI / 2)));
+                var pas = totalA / nseg;
+                var kk = (4 / 3) * Math.tan(pas / 4);
+                var ang = d1;
+                for (var sa = 0; sa < nseg; sa++) {
+                    var finA = ang + pas;
+                    var c1u = [axc + rayon * (Math.cos(ang) - kk * Math.sin(ang)), ayc + rayon * (Math.sin(ang) + kk * Math.cos(ang))];
+                    var c2u = [axc + rayon * (Math.cos(finA) + kk * Math.sin(finA)), ayc + rayon * (Math.sin(finA) - kk * Math.cos(finA))];
+                    var C1a = pt(c1u[0], c1u[1]), C2a = pt(c2u[0], c2u[1]);
+                    var Fa = pt(axc + rayon * Math.cos(finA), ayc + rayon * Math.sin(finA));
+                    courant.push(['C', C1a[0], C1a[1], C2a[0], C2a[1], Fa[0], Fa[1]]);
+                    ang = finA;
+                }
+                continue;
+            }
+            if (op === 'arct' || op === 'arcto') {
+                // Arcto/arct : arrondit le coin (x1,y1) entre le point courant et
+                //   (x2,y2) avec le rayon `r`. `arcto` empile en plus les 2 points de
+                //   tangence : on les ignore (aucun usage dans nos imports) mais on
+                //   trace le vrai arrondi. Geometrie : t = r / tan(theta/2).
+                var y2a = nombre(), x2a = nombre(), y1a = nombre(), x1a = nombre(), ra2 = nombre();
+                if (!courant) nouveauSousChemin();
+                var pAr = courant.length ? courant[courant.length - 1] : null;
+                var px0 = pAr ? pAr[pAr.length - 2] : 0, py0 = pAr ? pAr[pAr.length - 1] : 0;
+                var v1x = px0 - x1a, v1y = py0 - y1a, v2x = x2a - x1a, v2y = y2a - y1a;
+                var n1 = Math.sqrt(v1x * v1x + v1y * v1y), n2 = Math.sqrt(v2x * v2x + v2y * v2y);
+                var P1 = pt(x1a, y1a), P2 = pt(x2a, y2a);
+                if (ra2 > 0 && n1 > 0.0001 && n2 > 0.0001) {
+                    var cosT = (v1x * v2x + v1y * v2y) / (n1 * n2);
+                    if (cosT > 1) cosT = 1; if (cosT < -1) cosT = -1;
+                    var th = Math.acos(cosT);
+                    if (th > 0.02 && th < 3.12) {
+                        var dist = ra2 / Math.tan(th / 2);
+                        var t1u = [x1a + v1x / n1 * dist, y1a + v1y / n1 * dist];
+                        var t2u = [x1a + v2x / n2 * dist, y1a + v2y / n2 * dist];
+                        var T1 = pt(t1u[0], t1u[1]), T2 = pt(t2u[0], t2u[1]);
+                        courant.push(['L', T1[0], T1[1]]);
+                        // centre : sur la bissectrice interieure, a r / sin(theta/2)
+                        var bsx = v1x / n1 + v2x / n2, bsy = v1y / n1 + v2y / n2;
+                        var nb = Math.sqrt(bsx * bsx + bsy * bsy);
+                        if (nb > 0.0001) {
+                            var dc = ra2 / Math.sin(th / 2);
+                            var cxa = x1a + bsx / nb * dc, cya = y1a + bsy / nb * dc;
+                            var th1 = Math.atan2(t1u[1] - cya, t1u[0] - cxa);
+                            var th2 = Math.atan2(t2u[1] - cya, t2u[0] - cxa);
+                            var dT = th2 - th1;
+                            while (dT > Math.PI) dT -= 2 * Math.PI;
+                            while (dT < -Math.PI) dT += 2 * Math.PI;
+                            var nS = Math.max(2, Math.ceil(Math.abs(dT) / (Math.PI / 6)));
+                            for (var sA = 1; sA <= nS; sA++) {
+                                var aa = th1 + dT * (sA / nS);
+                                var PA = pt(cxa + ra2 * Math.cos(aa), cya + ra2 * Math.sin(aa));
+                                courant.push(['L', PA[0], PA[1]]);
+                            }
+                        }
+                    }
+                    courant.push(['L', P2[0], P2[1]]);
+                } else {
+                    courant.push(['L', P1[0], P1[1]]);
+                    courant.push(['L', P2[0], P2[1]]);
+                }
                 continue;
             }
 
