@@ -14063,10 +14063,30 @@ if (window._spGpuEnabled) {
         
         // Mettre à jour les valeurs des contrôles avec les valeurs détectées
         document.getElementById('fontFamily').value = fontFamily;
-        document.getElementById('fontSize').value = Math.round(currentFontSize);
-        // Convertir l'interligne en points pour l'affichage
-        const lineHeightPt = Math.round(lineHeightValue * currentFontSize);
+        // 🆕 v1.7.451 — AFFICHER LA VALEUR RÉELLE. Avant : Math.round() sur le corps et sur
+        //   l'interlignage en points réinjectait une valeur fausse dès qu'on touchait le champ
+        //   (5,953 pt affichait « 6 » ; 8,63 pt affichait « 9 » → lineHeight 1,45 devenait 1,512
+        //   après un simple Entrée, soit +4 % de pas de ligne : « l'interlignage bouge tout seul »).
+        const _fsAff = Math.round(currentFontSize * 100) / 100;
+        document.getElementById('fontSize').value = _fsAff;
+        // Convertir l'interligne en points pour l'affichage (1 décimale, sans perte)
+        const lineHeightPt = Math.round(lineHeightValue * currentFontSize * 10) / 10;
         document.getElementById('lineHeight').value = lineHeightPt;
+        // 🆕 v1.7.451 — rappel dans l'info-bulle : points ET multiplicateur du corps
+        //   (c'est le multiplicateur qui est conservé quand on change le corps).
+        try {
+            const _lhEl = document.getElementById('lineHeight');
+            if (_lhEl) {
+                const _mult = Math.round(lineHeightValue * 100) / 100;
+                const _lg = (typeof currentLanguage === 'string') ? currentLanguage : 'fr';
+                const _txt = (_lg === 'en')
+                    ? 'Line spacing: ' + lineHeightPt + ' pt (×' + _mult + ' of the body size). The multiplier is kept when you change the body size.'
+                    : (_lg === 'ja')
+                        ? '行送り：' + lineHeightPt + ' pt（本文サイズの ×' + _mult + '）。本文サイズを変えても倍率は保持されます。'
+                        : 'Interlignage : ' + lineHeightPt + ' pt (soit ×' + _mult + ' du corps). Le multiplicateur est conservé quand vous changez le corps.';
+                _lhEl.title = _txt;
+            }
+        } catch (_) {}
         document.getElementById('charSpacing').value = Math.round(charSpacingValue);
         document.getElementById('textScaleX').value = Math.round((obj.scaleX || 1) * 100);
         document.getElementById('textFill').value = textFill;
@@ -28200,6 +28220,19 @@ if (window._spGpuEnabled) {
                         redistributeLinkedTextChain(obj);
                     } catch (_) {}
                 }
+                // 🆕 v1.7.451 — le panneau reflète TOUJOURS le bloc vivant : sans cela il
+                //   gardait une valeur périmée qu'un simple clic dans le champ réinjectait
+                //   (cause du « l'interlignage se modifie tout seul »).
+                try {
+                    const _eFs = document.getElementById('fontSize');
+                    const _eLh = document.getElementById('lineHeight');
+                    const _fsV = (typeof obj.fontSize === 'number' && obj.fontSize > 0) ? obj.fontSize : 14;
+                    if (_eFs && Math.abs((parseFloat(_eFs.value) || 0) - _fsV) > 0.01) _eFs.value = Math.round(_fsV * 100) / 100;
+                    if (_eLh && typeof obj.lineHeight === 'number' && obj.lineHeight > 0) {
+                        const _ptV = Math.round(obj.lineHeight * _fsV * 10) / 10;
+                        if (Math.abs((parseFloat(_eLh.value) || 0) - _ptV) > 0.05) _eLh.value = _ptV;
+                    }
+                } catch (_) {}
                 saveState('Taille de police modifiée');
             }, 30);
         }
@@ -28511,6 +28544,19 @@ if (window._spGpuEnabled) {
                     return;
                 }
                 const lineHeightPt = Math.max(1, parseFloat(this.value) || 16);
+                // 🆕 v1.7.451 — Entrée « à vide » : si la valeur demandée est déjà celle du bloc
+                //   (sans sous-sélection), on ne réécrit RIEN : aucune dérive possible et pas de
+                //   reflow inutile. C'était la dernière source de « l'interlignage bouge tout seul ».
+                try {
+                    // ⚠️ `hasSelection` n'est pas encore déclaré ici (il l'est plus bas) :
+                    //   on recalcule la condition sur place, sinon ReferenceError avalée.
+                    const _enEditionInterligne = !!(obj.isEditing && obj.selectionStart != null &&
+                        obj.selectionEnd != null && obj.selectionEnd > obj.selectionStart);
+                    if (!_enEditionInterligne) {
+                        const _ptBloc = Math.round((obj.lineHeight || 1.16) * (obj.fontSize || 14) * 10) / 10;
+                        if (Math.abs(lineHeightPt - _ptBloc) < 0.05) return;
+                    }
+                } catch (_) {}
                 let fontSizeForLH = obj.fontSize || 14;
                 
                 // ✨ PRÉSERVER les dimensions fixes
@@ -28597,6 +28643,19 @@ if (window._spGpuEnabled) {
                             redistributeLinkedTextChain(obj);
                         } catch (_) {}
                     }
+                // 🆕 v1.7.451 — le panneau reflète TOUJOURS le bloc vivant : sans cela il
+                //   gardait une valeur périmée qu'un simple clic dans le champ réinjectait
+                //   (cause du « l'interlignage se modifie tout seul »).
+                try {
+                    const _eFs = document.getElementById('fontSize');
+                    const _eLh = document.getElementById('lineHeight');
+                    const _fsV = (typeof obj.fontSize === 'number' && obj.fontSize > 0) ? obj.fontSize : 14;
+                    if (_eFs && Math.abs((parseFloat(_eFs.value) || 0) - _fsV) > 0.01) _eFs.value = Math.round(_fsV * 100) / 100;
+                    if (_eLh && typeof obj.lineHeight === 'number' && obj.lineHeight > 0) {
+                        const _ptV = Math.round(obj.lineHeight * _fsV * 10) / 10;
+                        if (Math.abs((parseFloat(_eLh.value) || 0) - _ptV) > 0.05) _eLh.value = _ptV;
+                    }
+                } catch (_) {}
                     saveState('Interligne modifié');
                 }, 30);
             }
