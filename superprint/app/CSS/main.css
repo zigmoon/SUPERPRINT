@@ -1787,13 +1787,18 @@ textarea[data-fabric-hiddentextarea] {
 .ruler-tick { position: absolute; background: #666; }
 .ruler-tick.major { background: #333; }
 .ruler-label { position: absolute; font-size: 9.6px; color: #666; font-family: 'IBM Plex Mono', monospace; }
-.page-number { 
-    text-align: left; 
-    font-size: 10px; 
-    opacity: 0.5; 
-    margin-top: -4px; 
+.page-number {
+    text-align: left;
+    font-size: 10px;
+    opacity: 0.5;
+    margin-top: calc(-4px * var(--sp-zoom-inv, 1));
     margin-left: 0;
-    font-family: 'IBM Plex Mono', monospace; 
+    font-family: 'IBM Plex Mono', monospace;
+    /* 🆕 v1.7.432 — taille STABLE à l'écran quel que soit le zoom : contre-échelle par
+       la variable CSS posée sur le conteneur zoomé (#pagesContainer). Les libellés qui
+       ne sont pas dans ce conteneur ne sont donc plus agrandis quand on dézoome. */
+    transform: scale(var(--sp-zoom-inv, 1));
+    transform-origin: left top;
 }
 .preset-formats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .format-btn { padding: 8px 8px; background: #f8f8f8; border: 1px solid #e0e0e0; cursor: pointer; text-align: center; font-size: 10px; transition: all 0.2s; }

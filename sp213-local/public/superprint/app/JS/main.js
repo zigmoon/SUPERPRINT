@@ -25856,11 +25856,14 @@ if (window._spGpuEnabled) {
             const inv = (zoomLevel > 0 ? (1 / zoomLevel) : 1);
             pagesContainer.style.setProperty('--sp-zoom', String(zoomLevel));
             pagesContainer.style.setProperty('--sp-zoom-inv', String(inv));
-            // Rendre les numéros de page non-zoomables
+            // 🆕 v1.7.432 — numéros de page : taille STABLE à l'écran. La contre-échelle est
+            //   faite en CSS (transform: scale(var(--sp-zoom-inv))) : elle s'applique donc
+            //   aussi aux libellés recréés après un changement de zoom, et uniquement DANS le
+            //   conteneur zoomé (les libellés extérieurs ne grandissent plus).
             document.querySelectorAll('.page-number').forEach((el) => {
-                el.style.transformOrigin = 'left top';
-                el.style.transform = `scale(${inv})`;
-                el.style.marginTop = `${-4 * inv}px`;
+                el.style.transform = '';
+                el.style.marginTop = '';
+                el.style.transformOrigin = '';
             });
         }
         if (zoomDisplay) {
@@ -26003,8 +26006,13 @@ if (window._spGpuEnabled) {
                 ph = mmToPx(pageFormat.height + bl * 2);
             }
             if (!(pw > 4 && ph > 4)) return;
-            const marge = Math.max(10, Math.min(72, Math.round(Math.min(vw, vh) * 0.05)));
-            let fit = Math.min((vw - marge * 2) / pw, (vh - marge * 2) / ph);
+            // 🆕 v1.7.432 — AJUSTEMENT EN LARGEUR UNIQUEMENT (demande utilisateur) : sur un
+                        //   document de 12 pages, l'ajustement en hauteur rendait les pages minuscules.
+                        //   On cadre donc la LARGEUR seule (le défilement vertical reste possible) ; la
+                        //   mesure de `pagesContainer` inclut déjà les DEUX pages quand le document est
+                        //   en double page : la détection double page est donc automatique.
+                        const marge = Math.max(8, Math.min(48, Math.round(vw * 0.03)));
+            let fit = (vw - marge * 2) / pw;
             if (!isFinite(fit) || fit <= 0) return;
             fit = Math.max(0.1, Math.min(1, fit));
             const cible = Math.floor(fit * 100) / 100;       // arrondi VERS LE BAS : jamais de débordement
