@@ -907,6 +907,12 @@
       // 🆕 v1.7.435 — on ouvre la typographie ENTIÈRE (vue police + grille de tous les
       //   glyphes), plus la lettre de démarrage. L'utilisateur voit l'ensemble de sa
       //   police, avec le texte de son bloc en échantillon, et clique le glyphe voulu.
+      // 🆕 v1.7.436 — TOUT LE JEU DE CARACTÈRES : on demande la police COMPLÈTE dans la
+      //   grille (pas seulement les caractères du bloc). La case « tous les glyphes » est
+      //   cochée en conséquence ; la décocher ramène aux caractères de l'échantillon.
+      ST.showEmpty = true;
+      var cbTout = $('optGridShowEmpty');
+      if (cbTout) cbTout.checked = true;
       try { showFontView(); } catch (e0) {}
       if (fam) {
         try { toast('SuperTyPo — ' + fam + ' · « ' + txt.slice(0, 24) + (txt.length > 24 ? '…' : '') + ' »'); } catch (e) {}
@@ -952,6 +958,12 @@
         if (si) si.value = txtBloc;
       }
       loadFontFromBuffer(buf, String(d.name || 'police') + '.ttf');
+      // 🆕 v1.7.436 — TOUT LE JEU DE CARACTÈRES : on demande la police COMPLÈTE dans la
+      //   grille (pas seulement les caractères du bloc). La case « tous les glyphes » est
+      //   cochée en conséquence ; la décocher ramène aux caractères de l'échantillon.
+      ST.showEmpty = true;
+      var cbTout = $('optGridShowEmpty');
+      if (cbTout) cbTout.checked = true;
       showFontView();
       try { toast('Police reçue de SuperPrint : ' + (ST.fontName || d.name || '') + (txtBloc ? ' \u00b7 « ' + txtBloc.slice(0, 24) + (txtBloc.length > 24 ? '\u2026' : '') + ' »' : '')); } catch (e2) {}
     } catch (e) { try { console.error(e); } catch (e2) {} }
