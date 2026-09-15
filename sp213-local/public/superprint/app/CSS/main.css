@@ -1327,16 +1327,18 @@ details[open] > .sp-summary::before { transform: rotate(90deg); }
     color: #fff;
 }
 
-/* 🆕 v1.7.442 — bandeau de tags à gauche du moteur de recherche (bureau) */
+/* 🆕 v1.7.442 — bandeau de tags : sa propre ligne, sous le titre et la recherche */
 .assets-tags {
     display: flex;
     align-items: center;
     gap: 6px;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-width: 0;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 2px 0;
+    padding: 8px 16px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
     scrollbar-width: thin;
 }
 .assets-tags::-webkit-scrollbar { height: 6px; }
@@ -1364,7 +1366,7 @@ details[open] > .sp-summary::before { transform: rotate(90deg); }
 .assets-tag.active b { opacity: 0.8; }
 .assets-tags-sep { flex: 0 0 auto; width: 1px; height: 18px; background: #e2e2e2; margin: 0 3px; }
 /* le filtre de langue devient un groupe de tags dans l'en-tête */
-.assets-header .assets-lang-filter {
+.assets-tags .assets-lang-filter {
     display: flex;
     gap: 6px;
     padding: 0;
@@ -1373,11 +1375,7 @@ details[open] > .sp-summary::before { transform: rotate(90deg); }
     background: transparent;
     flex: 0 0 auto;
 }
-.assets-header .assets-lang-btn { padding: 5px 12px; font-size: 11px; }
-@media (max-width: 820px) {
-    .assets-header { flex-wrap: wrap; }
-    .assets-tags { order: 3; flex: 1 1 100%; }
-}
+.assets-tags .assets-lang-btn { padding: 5px 12px; font-size: 11px; }
 .theme-dark .assets-tag { background: #242424; border-color: #3a3a3a; color: #ccc; }
 .theme-dark .assets-tag.active { background: #eee; border-color: #eee; color: #111; }
 .theme-dark .assets-tags-sep { background: #3a3a3a; }

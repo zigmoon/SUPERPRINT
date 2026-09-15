@@ -61966,9 +61966,11 @@ canvas.requestRenderAll();
             const q = (champ && champ.value ? champ.value : '').trim().toLowerCase();
             const btn = document.querySelector('.assets-lang-btn.active');
             const lg = btn ? (btn.dataset.assetLang || 'all') : 'all';
-            // 🆕 v1.7.442 — tag de famille actif
-            const tagActif = document.querySelector('.assets-tag.active');
-            const catActive = tagActif ? (tagActif.dataset.assetCat || 'all') : 'all';
+            // 🆕 v1.7.442 — tags actifs : famille + format (chaque groupe est indépendant)
+            const tagCat = document.querySelector('.assets-tag[data-groupe="assetCat"].active');
+            const catActive = tagCat ? (tagCat.dataset.valeur || 'all') : 'all';
+            const tagDoc = document.querySelector('.assets-tag[data-groupe="assetDoc"].active');
+            const docActive = tagDoc ? (tagDoc.dataset.valeur || 'all') : 'all';
             let total = 0;
             document.querySelectorAll('.assets-grid').forEach(function (grid) {
                 let visibles = 0;
@@ -61978,8 +61980,10 @@ canvas.requestRenderAll();
                     const okLang = (lg === 'all') || (aLang === null) || (aLang === lg);
                     const aCat = card.getAttribute('data-cat');
                     const okCat = (catActive === 'all') || (aCat === null) || (aCat === catActive);
+                    const aDoc = card.getAttribute('data-doc');
+                    const okDoc = (docActive === 'all') || (aDoc === null) || (aDoc === docActive);
                     const okTexte = !q || (card.textContent || '').toLowerCase().indexOf(q) >= 0;
-                    const ok = okLang && okCat && okTexte;
+                    const ok = okLang && okCat && okDoc && okTexte;
                     card.style.display = ok ? '' : 'none';
                     if (ok) visibles++;
                 });
@@ -62614,6 +62618,7 @@ canvas.requestRenderAll();
             }, desc, { locked: !!comp.locked, meta: [((comp.fonts || {}).display), ((comp.fonts || {}).text)].filter(Boolean).join(' \u00b7 ') });
             card.dataset.lang = comp.lang || 'fr';
             if (comp.family) card.dataset.cat = comp.family;
+            card.dataset.doc = comp.spread ? 'spread' : 'single';
             // 🆕 v1.7.441 — badge PREMIUM sur les modèles premium (mais carte utilisable)
             // v1.7.442 — badge PREMIUM désactivé à la demande (mettre false -> comp.premium pour le réactiver)
             if (false && comp.premium && card) {
@@ -62711,11 +62716,13 @@ canvas.requestRenderAll();
                 if (parFamille[b] !== parFamille[a]) return parFamille[b] - parFamille[a];
                 return a.localeCompare(b);
             });
-            function boutonTag(libelle, nb, cat) {
+            function boutonTag(libelle, nb, groupe, valeur, titre) {
                 const b = document.createElement('button');
                 b.type = 'button';
                 b.className = 'assets-tag';
-                b.dataset.assetCat = cat;
+                b.dataset.groupe = groupe;
+                b.dataset.valeur = valeur;
+                if (titre) b.title = titre;
                 b.appendChild(document.createTextNode(libelle));
                 if (nb != null) {
                     const n = document.createElement('b');
@@ -62723,18 +62730,34 @@ canvas.requestRenderAll();
                     b.appendChild(n);
                 }
                 b.addEventListener('click', function () {
-                    Array.prototype.forEach.call(strip.querySelectorAll('.assets-tag'), function (x) { x.classList.remove('active'); });
-                    b.classList.add('active');
+                    // « Tout » remet à zéro TOUS les groupes ; sinon on ne touche qu'au sien.
+                    if (valeur === 'all') {
+                        Array.prototype.forEach.call(strip.querySelectorAll('.assets-tag'), function (x) { x.classList.remove('active'); });
+                        Array.prototype.forEach.call(strip.querySelectorAll('.assets-tag[data-valeur="all"]'), function (x) { x.classList.add('active'); });
+                    } else {
+                        Array.prototype.forEach.call(strip.querySelectorAll('.assets-tag[data-groupe="' + groupe + '"]'), function (x) { x.classList.remove('active'); });
+                        b.classList.add('active');
+                    }
                     applyAssetsFilter();
                 });
                 return b;
             }
-            const tout = boutonTag('Tout', cartesComp.length, 'all');
+            const tout = boutonTag('Tout', cartesComp.length, 'assetCat', 'all', 'Toutes les maquettes');
             tout.classList.add('active');
             strip.appendChild(tout);
             familles.forEach(function (f) {
-                strip.appendChild(boutonTag(LIB[f] || (f.charAt(0).toUpperCase() + f.slice(1)), parFamille[f], f));
+                strip.appendChild(boutonTag(LIB[f] || (f.charAt(0).toUpperCase() + f.slice(1)), parFamille[f], 'assetCat', f, 'Maquettes : ' + (LIB[f] || f)));
             });
+            // ── tags de FORMAT : pages simples / pages en double (magazine ouvert) ──
+            let nSingle = 0, nSpread = 0;
+            Array.prototype.forEach.call(cartesComp, function (c) {
+                if ((c.dataset.doc || 'single') === 'spread') nSpread++; else nSingle++;
+            });
+            const sepFormat = document.createElement('span');
+            sepFormat.className = 'assets-tags-sep';
+            strip.appendChild(sepFormat);
+            strip.appendChild(boutonTag('Single', nSingle, 'assetDoc', 'single', 'Pages simples : une page par écran'));
+            strip.appendChild(boutonTag('Spread', nSpread, 'assetDoc', 'spread', 'Pages en double : magazine ouvert, deux pages côte à côte'));
             // le filtre de langue rejoint le bandeau, séparé par un filet
             const lg = document.getElementById('assetsLangFilter');
             if (lg) {
@@ -74602,6 +74625,7 @@ function _npBuildLayout(params, keywords, lang) {
                 // 🆕 v1.7.441 — langue du MODÈLE (les modèles français ne sont plus déclarés EN)
                 lang: d.lang || 'en', spEn: !d.spFr, spFr: !!d.spFr, premium: !!d.premium,
                 family: d.family || '',
+                spread: !!d.spreadDoc || !!(d.format && d.format.spread),
                 desc: d.desc,
                 format: d.format,
                 theme: { bg: d.theme.paper, accent: d.theme.accent, dark: d.theme.night, light: d.theme.soft, ink: d.theme.ink },
