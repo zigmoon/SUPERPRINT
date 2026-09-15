@@ -9,7 +9,7 @@
 <!-- 🎨 Logotype SuperTyPo en favicon (dossier « superprint/icons »). -->
 <link rel="icon" type="image/svg+xml" href="../icons/sper_typo.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="../icons/sper_typo.png">
-<link rel="stylesheet" href="CSS/supertypo.css?v=5">
+<link rel="stylesheet" href="CSS/supertypo.css?v=6">
 </head>
 <body>
 <!-- ═══════════════ TOPBAR (style SuperPrint) ═══════════════ -->
@@ -290,23 +290,16 @@
       <button class="icon-btn" id="btnClosePrefs">✕</button>
     </div>
     <div class="prefs-body">
-      <!-- Langue : Anglais par défaut / Français / 日本語 -->
+      <!-- 🆕 v1.7.424 — Langue : LISTE DÉROULANTE (au lieu de 3 boutons), comme
+           le select #langSelect du studio SuperPrint. -->
       <div class="pref-section">
         <div class="pref-label" data-i18n="prefsLangLabel">Langue de l'interface</div>
-        <div class="pref-row">
-          <button class="pref-opt" data-lang="en" title="English">
-            <span class="pref-name">English</span>
-            <span class="pref-sub" data-i18n="prefsEnDefault">Default</span>
-          </button>
-          <button class="pref-opt" data-lang="fr" title="Français">
-            <span class="pref-name">Français</span>
-            <span class="pref-sub">Français</span>
-          </button>
-          <button class="pref-opt" data-lang="ja" title="日本語">
-            <span class="pref-name">日本語</span>
-            <span class="pref-sub">日本語</span>
-          </button>
-        </div>
+        <select class="pref-select" id="prefLang" aria-label="Language">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="ja">日本語</option>
+        </select>
+        <div class="pref-hint" data-i18n="prefsEnDefault">Default</div>
       </div>
       <!-- Thème -->
       <div class="pref-section">
@@ -358,6 +351,6 @@
 
 <!-- Chargement -->
 <script src="JS/opentype.min.js"></script>
-<script src="JS/supertypo.js?v=12"></script>
+<script src="JS/supertypo.js?v=13"></script>
 </body>
 </html>

@@ -395,16 +395,20 @@ body.theme-dark .tool-btn.active { color: #111; }
 .contour-item .ci-del { margin-left: auto; background: none; border: 0; color: var(--muted2); cursor: pointer; font-size: 13px; }
 .contour-item .ci-del:hover { color: var(--danger); }
 
-/* ═══════════ AIDE ═══════════ */
+/* ═══════════ AIDE ═══════════
+   🆕 v1.7.424 — pop-in à COINS CARRÉS, alignée sur celles de SuperPrint / studio :
+   même voile, mêmes angles droits, même ombre que .pj-overlay / .pj-card. */
 #helpOverlay {
   position: fixed; inset: 0; z-index: 90;
-  background: rgba(0,0,0,.5);
+  background: rgba(12,12,12,.42);
   display: flex; align-items: center; justify-content: center;
+  padding: 3vh 3vw;
 }
+body.theme-dark #helpOverlay { background: rgba(0,0,0,.6); }
 .help-card {
   width: min(680px, 92vw);
   background: var(--panel); border: 1px solid var(--border);
-  border-radius: 10px; box-shadow: 0 20px 60px var(--shadow);
+  border-radius: 0; box-shadow: 0 30px 90px var(--shadow);
 }
 .help-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -417,7 +421,7 @@ body.theme-dark .tool-btn.active { color: #111; }
 .k kbd {
   min-width: 52px; text-align: center;
   padding: 3px 7px; border: 1px solid var(--border-strong); border-bottom-width: 2px;
-  border-radius: 4px; background: var(--panel2);
+  border-radius: 0; background: var(--panel2);
   font-family: Consolas, monospace; font-size: 11px;
 }
 .k span { color: var(--text); }
@@ -426,13 +430,15 @@ body.theme-dark .tool-btn.active { color: #111; }
 #btnPrefs.active { background: var(--accent-soft); border-color: var(--border-strong); }
 #prefsOverlay {
   position: fixed; inset: 0; z-index: 90;
-  background: rgba(0,0,0,.5);
+  background: rgba(12,12,12,.42);
   display: flex; align-items: center; justify-content: center;
+  padding: 3vh 3vw;
 }
+body.theme-dark #prefsOverlay { background: rgba(0,0,0,.6); }
 .prefs-card {
   width: min(520px, 92vw);
   background: var(--panel); border: 1px solid var(--border);
-  border-radius: 10px; box-shadow: 0 20px 60px var(--shadow);
+  border-radius: 0; box-shadow: 0 30px 90px var(--shadow);
 }
 .prefs-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -452,7 +458,7 @@ body.theme-dark .tool-btn.active { color: #111; }
   display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
   padding: 10px 12px; text-align: left;
   background: var(--panel2); color: var(--text);
-  border: 1px solid var(--border); border-radius: 6px;
+  border: 1px solid var(--border); border-radius: 0;
   font-size: 13px; cursor: pointer; transition: background .12s, border-color .12s;
 }
 .pref-opt:hover { background: var(--panel3); border-color: var(--border-strong); }
@@ -464,13 +470,25 @@ body.theme-dark .tool-btn.active { color: #111; }
 body.theme-dark .pref-opt.active { color: #121212; }
 body.theme-dark .pref-opt.active .pref-sub { color: rgba(0,0,0,.6); }
 .pref-opt.active .pref-sub { color: rgba(255,255,255,.75); }
+/* 🆕 v1.7.424 — LISTE DÉROULANTE DES LANGUES (mêmes choix que le studio
+   SuperPrint, mêmes angles droits). */
+.pref-select {
+  display: block; width: 100%; max-width: 260px; height: 34px; padding: 0 9px;
+  background: var(--panel2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 0;
+  font-family: inherit; font-size: 12.5px; line-height: 1.4; cursor: pointer; outline: none;
+}
+.pref-select:focus { border-color: var(--border-strong); }
+.pref-hint { margin-top: 7px; font-size: 10px; color: var(--muted2); }
+/* Croix de fermeture des pop-in : angle droit comme le studio. */
+.prefs-head .icon-btn, .help-head .icon-btn { border-radius: 0; }
 
 
 /* Toast */
 #toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
   background: var(--accent); color: #fff;
-  padding: 10px 18px; border-radius: 6px; font-size: 13px;
+  padding: 10px 18px; border-radius: 0; font-size: 13px;
   opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
   z-index: 100; box-shadow: 0 8px 24px var(--shadow);
   max-width: 80vw;

@@ -73,7 +73,7 @@
       chipModified: 'Modifié',
       // ── Intro (drop) ──
       dropTitle: 'Décomposez chaque lettre, retravaillez-la, réexportez-la.',
-      dropSub: 'Déposez une police ici, ou cliquez pour parcourir vos fichiers. Chaque caractère sera décomposé en contours vectoriels que vous pourrez éditer à la plume, à la manière d\'un FontGrapher.',
+      dropSub: 'Déposez une police ici, ou cliquez pour choisir un fichier. Chaque caractère devient des contours vectoriels éditables.',
       dropPick: 'Choisir un fichier .ttf .otf .woff .woff2',
       dropHint: 'Astuce : vous pouvez aussi ouvrir un fichier .sf (SuperFont) pour continuer un travail.',
       // ── Grille ──
@@ -181,7 +181,7 @@
       chipGlyphs: 'Glyphs',
       chipModified: 'Modified',
       dropTitle: 'Break down each letter, rework it, export it again.',
-      dropSub: 'Drop a font here, or click to browse your files. Every character is decomposed into vector contours you can edit with the pen, FontGrapher-style.',
+      dropSub: 'Drop a font here, or click to browse. Every character becomes editable vector outlines.',
       dropPick: 'Choose a .ttf .otf .woff .woff2 file',
       dropHint: 'Tip: you can also open a .sf (SuperFont) file to keep working.',
       glyphGridTitle: 'Decomposed characters',
@@ -283,7 +283,7 @@
       chipGlyphs: 'グリフ',
       chipModified: '変更あり',
       dropTitle: '文字をパスに分解し、編集し、書き出しましょう。',
-      dropSub: 'ここにフォントをドロップするか、クリックしてファイルを選択します。各文字はベクターのパス（アウトライン）に分解され、ペンツールでFontGrapherのように編集できます。',
+      dropSub: 'ここにフォントをドロップ、またはクリックして選択。各文字は編集できるアウトラインになります。',
       dropPick: '.ttf .otf .woff .woff2 を選択',
       dropHint: 'ヒント：.sf（SuperFont）ファイルを開いて作業を続けることもできます。',
       glyphGridTitle: '分解された文字',
@@ -396,10 +396,9 @@
   // Applique la langue courante à toute l'UI puis re-rend.
   function applyLang() {
     const lang = (ST.lang in I18N) ? ST.lang : 'en';
-    // état des boutons langue du panneau ⚙ Préférences
-    document.querySelectorAll('#prefsOverlay .pref-opt[data-lang]').forEach((b) => {
-      b.classList.toggle('active', b.getAttribute('data-lang') === lang);
-    });
+    // 🆕 v1.7.424 — état de la LISTE DÉROULANTE des langues (panneau ⚙).
+    const selPrefLang = $('prefLang');
+    if (selPrefLang && selPrefLang.value !== lang) selPrefLang.value = lang;
     // état des boutons thème du panneau ⚙ Préférences
     syncPrefsTheme();
     // textes fixes [data-i18n] → textContent
@@ -2336,9 +2335,12 @@
     });
     $('btnClosePrefs').addEventListener('click', closePrefs);
     $('prefsOverlay').addEventListener('click', (e) => { if (e.target === $('prefsOverlay')) closePrefs(); });
-    document.querySelectorAll('#prefsOverlay .pref-opt[data-lang]').forEach(b => {
-      b.addEventListener('click', () => { setLang(b.getAttribute('data-lang')); closePrefs(); });
-    });
+    // 🆕 v1.7.424 — la langue se choisit dans une liste déroulante : le panneau
+    //   reste ouvert et l'interface se ré-affiche immédiatement dans la langue choisie.
+    const selPrefLang = $('prefLang');
+    if (selPrefLang) {
+      selPrefLang.addEventListener('change', () => { setLang(selPrefLang.value); selPrefLang.blur(); });
+    }
     $('prefThemeLight').addEventListener('click', () => { if (ST.theme !== 'light') toggleTheme(); });
     $('prefThemeDark').addEventListener('click', () => { if (ST.theme !== 'dark') toggleTheme(); });
     // grille
@@ -2476,9 +2478,8 @@
     $('prefsOverlay').style.display = 'flex';
     $('btnPrefs').classList.add('active');
     syncPrefsTheme();
-    document.querySelectorAll('#prefsOverlay .pref-opt[data-lang]').forEach((b) => {
-      b.classList.toggle('active', b.getAttribute('data-lang') === ST.lang);
-    });
+    const selPrefLang = $('prefLang');
+    if (selPrefLang) selPrefLang.value = ST.lang;
   }
   function closePrefs() {
     $('prefsOverlay').style.display = 'none';
