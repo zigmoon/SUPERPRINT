@@ -71215,7 +71215,7 @@ function _npBuildLayout(params, keywords, lang) {
         },
         {
             key: 'en_cv_pro_1p', style: 'cv', family: 'cv', spreadDoc: false,
-            name: 'Professional CV', desc: 'One-page résumé — A4, portrait photo',
+            name: 'Professional CV', desc: 'One-page résumé — A4, no photo',
             format: { width: 595, height: 842, pages: 1 },
             theme: { paper: '#ffffff', ink: '#14181f', accent: '#0f766e', soft: '#f1f5f9', night: '#14181f' },
             fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
@@ -71255,6 +71255,169 @@ function _npBuildLayout(params, keywords, lang) {
                 body: 'The workshop is a room where nothing is finished and everything is understood. Tools hang in the order they are used, and the bench keeps the marks of the last ten years of work.\n\nMaking slowly is not a moral position. It is a method: it keeps the maker close enough to the material to notice when the material changes its mind.\n\nMost mistakes are not errors of the hand but of attention. The plane slips because the eye moved first, and the repair teaches more than the first attempt ever did.',
                 caption: 'First edition of 500 copies \u00b7 printed on uncoated paper',
                 credits: 'Set in Playfair Display and IBM Plex Sans \u00b7 500 copies \u00b7 2026'
+            }
+        },
+        {
+            key: 'en_magazine_ocean_8p', style: 'ocean', family: 'magazine', spreadDoc: true,
+            name: 'Marine Life Magazine (8p)', desc: 'Ocean & marine life magazine \u2014 8 pages, double page',
+            format: { width: 420, height: 560, spread: true, pages: 8 },
+            theme: { paper: '#f2f7f8', ink: '#07222e', accent: '#0e7490', soft: '#d3e6ea', night: '#04202c' },
+            fonts: { display: 'Bebas Neue', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: 'img/template/ocean', nimg: 4,
+            c: {
+                mast: 'ABYSSAL', tag: 'THE MAGAZINE OF THE OCEAN', issue: 'N\u00b0 07 \u00b7 2027', price: '\u20ac 6,20',
+                head: 'The forest nobody has mapped',
+                stand: 'Half of the oxygen in every breath comes from the sea, and most of it is made by organisms too small to see.',
+                coverlines: 'The reef at night\nSix months with the humpbacks\nWhat the current carries',
+                sections: ['The reef', 'Deep water', 'Migration', 'Field notes', 'The current', 'Species'],
+                legs: ['The reef at night', 'Six months with the humpbacks', 'What the current carries', 'The cold gardens', 'A word with Dr S. Okoye', 'Twelve species to know'],
+                quote: 'We have better maps of Mars than of the sea floor.',
+                body: 'The reef changes shift at dusk. The fish that spent the day hiding in the coral come out, and the ones that spent the day grazing move into the crevices to sleep. For four hours the whole structure is in motion.\n\nWe followed a team of six divers through three weeks of night transects. Their method is old and patient: a line on the bottom, a light, and a notebook. What they bring back each morning is a list of species, and a rough idea of how many.\n\nPlankton is where the story becomes global. These organisms produce a large share of the oxygen in the atmosphere, and their blooms can be seen from orbit. Nobody has yet managed to map them accurately from one year to the next.',
+                caption: 'Photographed off the Azores \u00b7 Expedition 2027',
+                credits: 'Words: R. Vance \u00b7 Photography: M. Okonkwo \u00b7 Diving: Station 4',
+                list: 'Humpback whale\nElkhorn coral\nLeopard shark\nMoon jellyfish\nBluefin tuna\nGiant kelp'
+            }
+        },
+        {
+            key: 'en_cv_editorial_1p', style: 'cv2', family: 'cv', spreadDoc: false,
+            name: 'Editorial CV', desc: 'Two-column r\u00e9sum\u00e9 \u2014 A4, no photo',
+            format: { width: 595, height: 842, pages: 1 },
+            theme: { paper: '#ffffff', ink: '#16181d', accent: '#c2410c', soft: '#f4f1ec', night: '#16181d' },
+            fonts: { display: 'Playfair Display', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'CURRICULUM VITAE', tag: 'EDITORIAL DESIGNER \u00b7 AMSTERDAM', issue: '', price: '',
+                head: 'Amelia Hart',
+                stand: 'Editorial designer working between magazines and books. Twelve years spent making long texts readable without making them dull.',
+                coverlines: '', sections: ['Profile', 'Experience', 'Education', 'Skills', 'Languages', 'Studio'],
+                quote: '', caption: 'amelia.hart@email.com \u00b7 +31 6 1234 5678 \u00b7 Amsterdam',
+                body: '',
+                legs: [
+                    'Experience::2023 \u2014 now::Rijn & Co::Design director, quarterly magazine and book list',
+                    'Experience::2019 \u2014 2023::De Persgroep::Senior designer, weekend edition',
+                    'Experience::2016 \u2014 2019::Studio Kade::Designer, cultural clients and catalogues',
+                    'Education::2014 \u2014 2016::Werkplaats Typografie::MA, typography and editing',
+                    'Education::2010 \u2014 2014::Gerrit Rietveld Academie::BA, graphic design'
+                ],
+                skills: 'Editorial design::0.96\nType systems::0.90\nBook production::0.88\nIllustration direction::0.74\nEditing::0.82\nTeam leadership::0.86',
+                langues: 'Dutch \u00b7 native\nEnglish \u00b7 fluent\nGerman \u00b7 working',
+                profil: 'I design long-form publications: magazines, catalogues and books. My work starts with the grid and ends with the paper stock, and I stay involved in the press checks because that is where a page either holds up or falls apart.\n\nMost of my time goes to type systems that a whole team can use without me in the room.',
+                clients: 'Rijn & Co \u00b7 De Persgroep \u00b7 Stedelijk Museum \u00b7 Atlas Press \u00b7 Festival aan de Werf \u00b7 Van Oorschot'
+            }
+        },
+        {
+            key: 'en_cv_minimal_1p', style: 'cv3', family: 'cv', spreadDoc: false,
+            name: 'Minimal CV', desc: 'Single-column timeline r\u00e9sum\u00e9 \u2014 A4, no photo',
+            format: { width: 595, height: 842, pages: 1 },
+            theme: { paper: '#ffffff', ink: '#111318', accent: '#1f2937', soft: '#f3f4f6', night: '#111318' },
+            fonts: { display: 'IBM Plex Sans', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: '', tag: 'PRODUCT ENGINEER \u00b7 BERLIN', issue: '', price: '',
+                head: 'Noah Bennett',
+                stand: 'Product engineer with ten years in data-heavy tools. I build interfaces that stay calm when the numbers get large.',
+                coverlines: '', sections: [], quote: '',
+                caption: 'noah.bennett@email.com \u00b7 +49 30 1234 5678 \u00b7 Berlin',
+                body: '',
+                legs: [
+                    'Experience::2022 \u2014 now::Kestrel Labs::Staff engineer, data platform and query tools',
+                    'Experience::2019 \u2014 2022::Northwind::Senior engineer, reporting and dashboards',
+                    'Experience::2016 \u2014 2019::Bitwise::Engineer, internal tooling and design systems',
+                    'Education::2012 \u2014 2016::TU Delft::BSc, computer science'
+                ],
+                skills: 'TypeScript, Rust, SQL, Postgres, React, data visualisation, accessibility, technical writing',
+                langues: 'English \u00b7 fluent\nGerman \u00b7 fluent',
+                profil: 'I care about the boring parts: loading states, empty states, error messages, key navigation. Tools used eight hours a day deserve the same care as the ones shown in a launch video.',
+                clients: 'Kestrel Labs \u00b7 Northwind \u00b7 Bitwise \u00b7 Technische Universiteit Delft'
+            }
+        },
+        {
+            key: 'en_book_shapes_12p', style: 'shapes', family: 'book', spreadDoc: false,
+            name: 'Book of Shapes \u2014 12p', desc: 'Complete book, shapes only, no images \u2014 12 pages, A5',
+            format: { width: 420, height: 595, pages: 12 },
+            theme: { paper: '#fbfaf7', ink: '#191919', accent: '#e0533c', soft: '#efe9df', night: '#191919' },
+            fonts: { display: 'Bebas Neue', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'SHAPES OF A QUIET ROOM', tag: 'A BOOK OF FORMS', issue: 'FIRST EDITION \u00b7 MMXXVII', price: '',
+                head: 'A book of forms, drawn with three rectangles',
+                stand: 'Twelve pages built from squares, bands and one red mark. No photographs, nothing imported \u2014 only what the page can carry.',
+                coverlines: '', sections: ['Opening', 'Measure', 'Weight', 'Silence', 'Repetition', 'Closing'],
+                legs: ['Opening', 'The measure of a room', 'Weight and light', 'Notes on silence', 'Repetition', 'Closing'],
+                quote: 'A page is a room before it is a picture.',
+                body: 'A form is not an illustration. It is a decision that has already been made, shown again so that it can be questioned.\n\nThe first pages of this book are about measure: how wide a margin can become before it is a field, how small a mark can be and still hold a corner.\n\nLater the forms get heavier. Weight, in a book, is not a matter of ink but of the space a shape is allowed to occupy without asking for company.',
+                caption: 'Set in Bebas Neue and IBM Plex Sans \u00b7 printed on uncoated 120 g',
+                credits: 'Design and forms: Studio Rijn \u00b7 First edition of 300 copies \u00b7 2027'
+            }
+        },
+        {
+            key: 'en_book_theatre_12p', style: 'theatre', family: 'book', spreadDoc: false,
+            name: 'Theatre Play \u2014 12p', desc: 'Complete play in three acts, typographic \u2014 12 pages, A5',
+            format: { width: 420, height: 595, pages: 12 },
+            theme: { paper: '#fdfaf3', ink: '#171310', accent: '#8a1c1c', soft: '#f0e8d8', night: '#171310' },
+            fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'THE LIGHTHOUSE KEEPER', tag: 'A PLAY IN THREE ACTS', issue: 'ELENA MARCHETTI', price: '',
+                head: 'The Lighthouse Keeper',
+                stand: 'A play in three acts, for four actors and one light that never stops turning.',
+                coverlines: '', sections: ['Act one', 'Act two', 'Act three', 'Characters', 'Setting', 'Colophon'],
+                legs: [
+                    'KEEPER::A woman of fifty. Has not left the island in nine years.',
+                    'VOICE::Heard from the radio. Never seen. Warm, and slightly too slow.',
+                    'THE COASTGUARD::Forty. Comes twice a month with supplies and bad news.',
+                    'THE GIRL::Seventeen. Arrives in act two. Says she is a journalist.',
+                    'SETTING::A lighthouse, the rock it stands on, and the sea around both.'
+                ],
+                quote: 'A light that turns all night is not showing the way. It is saying that someone is still here.',
+                body: 'The first act is the room at the top of the tower. Everything in it is either bolted down or wet. The keeper has a logbook, a radio that works when it wants to, and a storm coming that the coastguard has already mentioned twice.\n\nThe second act arrives with the girl, who is not a journalist, and the third act arrives with the truth, which neither of them says out loud.',
+                caption: 'First performed at the Harbour Theatre, March 2027',
+                credits: 'Set in Playfair Display, IBM Plex Sans and IBM Plex Mono \u00b7 First edition of 500 copies',
+                act1: 'SCENE ONE \u00b7 THE LAMP ROOM, EVENING\n\nA storm is closing. The keeper is writing in the logbook. The radio hisses.',
+                repliques: [
+                    'KEEPER::Nineteen hundred hours. Wind from the north-west. Nothing to report.',
+                    'VOICE::Nothing to report? You put the light out for eleven minutes last night.',
+                    'KEEPER::I put it out to change the lamp.',
+                    'VOICE::You said that in April as well.',
+                    'KEEPER::In April it was true.',
+                    'VOICE::(after a pause) The relief boat is not coming this month.'
+                ],
+                act2: 'SCENE TWO \u00b7 THE SAME ROOM, THREE WEEKS LATER\n\nThe girl sits on the floor with her back to the glass. The keeper stands.',
+                repliques2: [
+                    'GIRL::I counted the steps. There are sixty-four.',
+                    'KEEPER::There are sixty-three. You counted the landing twice.',
+                    'GIRL::Are you going to ask why I came?',
+                    'KEEPER::No.',
+                    'GIRL::Good. Because I would have lied.',
+                    'KEEPER::Everyone who comes here lies. The sea does not mind.'
+                ],
+                act3: 'SCENE THREE \u00b7 THE LAMP ROOM, DAWN\n\nThe storm has passed. Both windows are open.',
+                repliques3: [
+                    'COASTGUARD::They are closing the station in the spring.',
+                    'KEEPER::I know. The radio told me in January.',
+                    'COASTGUARD::And you said nothing?',
+                    'KEEPER::I wanted one more winter of it.',
+                    'GIRL::(quietly) Sixty-three steps. I counted them again.'
+                ],
+                vers: 'The light goes round and does not care\nwho is awake to see it.\n\nIt marks the rock, the shoal, the way in.\nIt marks the way out.\n\nAnd when they close the station\nand unscrew the lamp,\nsomeone will still wake at four\nand look for it, and not find it.'
+            }
+        },
+        {
+            key: 'en_calendar_a3_12p', style: 'cal', family: 'calendar', spreadDoc: false,
+            name: 'Calendar A3 2027-2028 (12p)', desc: 'A3 landscape calendar \u2014 1 month per page, 12 pages, Sep 2027 \u2192 Aug 2028',
+            format: { width: 1191, height: 842, pages: 12 },
+            theme: { paper: '#ffffff', ink: '#101418', accent: '#1e3a8a', soft: '#eef2ff', night: '#101418' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'CALENDAR', tag: 'SEPTEMBER 2027 \u2014 AUGUST 2028', issue: 'A3 LANDSCAPE \u00b7 ONE MONTH PER PAGE', price: '',
+                head: '2027 \u2014 2028',
+                stand: 'Twelve months, one page each, from September to August. Day numbers, week numbers, and nothing else in the way.',
+                coverlines: '', sections: [], quote: '',
+                body: 'Grid drawn with the app vector tools \u00b7 week starts on Monday',
+                caption: 'Months of September 2027 to August 2028',
+                credits: 'Set in Montserrat, Open Sans and IBM Plex Mono \u00b7 A3 landscape 420 \u00d7 297 mm',
+                legs: []
             }
         }
     ];
@@ -71521,13 +71684,26 @@ function _npBuildLayout(params, keywords, lang) {
             T({ text: '0' + n + '  ' + (c.legs[(n - 1) % c.legs.length] || ''), x: x0, y: y0, w: w0, size: px(2), font: F.mono, fill: opt.fill || t.ink, op: opt.op == null ? 0.7 : opt.op, cs: 60 });
         }
 
+        // 🆕 v1.7.434 — deux primitives vectorielles (aucune image nécessaire)
+        function rond(x0, y0, d0, col, op) {
+            var o = new fabric.Circle({ left: X + x0, top: Y + y0, radius: d0 / 2, fill: col, strokeWidth: 0, opacity: op == null ? 1 : op });
+            objs.push(o); reg(cv, o, 2); return o;
+        }
+        function demi(x0, y0, w0, h0, col, op) {   // dôme : demi-disque posé sur sa base
+            var rr = w0 / 2;
+            var o = new fabric.Circle({ left: X + x0, top: Y + y0, radius: rr, fill: col, strokeWidth: 0, opacity: op == null ? 1 : op });
+            o.clipPath = new fabric.Rect({ left: -rr, top: -rr, width: w0, height: h0, strokeWidth: 0, fill: '#000' });
+            objs.push(o); reg(cv, o, 2); return o;
+        }
+
         var S = {
             cv: cv, g: g, W: W, H: H, bp: bp, X: X, Y: Y, t: t, F: F, c: c, M: M0, COL: COL,
             pi: pi, total: total, IMG: IMG, spread: !!model.spreadDoc,
             couv: (pi === 0), fin: (total > 1 && pi === total - 1),
             reste: suite(c.body, 2), slim: W / H,
             fond: fond, bloc: bloc, voile: voile, cache: cache, filet: filet, filetv: filetv, cadre: cadre,
-            photo: photo, T: T, folio: folio, tete: tete, colonnes: colonnes, legende: legende
+            photo: photo, T: T, folio: folio, tete: tete, colonnes: colonnes, legende: legende,
+            rond: rond, demi: demi
         };
 
         // ── routage par modèle ──
@@ -71540,6 +71716,13 @@ function _npBuildLayout(params, keywords, lang) {
             else if (model.style === 'livre') livrePages(S);
             else if (model.style === 'cv') cvPage(S);
             else if (model.style === 'carte') cartePage(S);
+            // 🆕 v1.7.434
+            else if (model.style === 'ocean') oceanPages(S);
+            else if (model.style === 'cv2') cv2Pages(S);
+            else if (model.style === 'cv3') cv3Pages(S);
+            else if (model.style === 'shapes') shapesPages(S);
+            else if (model.style === 'theatre') theatrePages(S);
+            else if (model.style === 'cal') calPages(S);
         } catch (e3) { console.warn('[SP-EN] mise en page p.' + (pi + 1) + ' :', e3); }
 
         if (typeof addAssetObjects === 'function') addAssetObjects(cv, objs, model.name + ' · p.' + (pi + 1));
@@ -72072,9 +72255,8 @@ function _npBuildLayout(params, keywords, lang) {
     function cvPage(S) {
         var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, bp = S.bp;
         S.fond(t.paper);
-        // portrait en cercle
-        var d = W * 0.19;
-        S.photo(W - M - d, M, d, d, '1', { forme: 'cercle' });
+        // 🆕 v1.7.434 — plus de portrait (demande utilisateur) : en-tête pleine largeur.
+        var d = 0;
         S.T({ text: c.mast, x: M, y: M - px(2), w: W - M * 2 - d - px(6), size: px(2.1), font: F.mono, fill: t.accent, cs: 260 });
         S.T({ text: c.head, x: M, y: M + px(3), w: W - M * 2 - d - px(8), size: px(15), font: F.display, weight: '700', fill: t.ink, lh: 1.0 });
         S.T({ text: c.tag, x: M, y: M + px(17), w: W - M * 2 - d - px(8), size: px(2.6), font: F.mono, fill: t.ink, cs: 140, op: 0.75 });
@@ -72128,6 +72310,428 @@ function _npBuildLayout(params, keywords, lang) {
         S.T({ text: c.caption, x: W * 0.45, y: H * 0.895, w: W * 0.50, size: px(1.8), font: F.mono, fill: t.accent, cs: 120 });
     }
 
+    /* ═══════════════════ 9. MAGAZINE ANIMAUX MARINS ════════════════════ */
+    function oceanPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        var bx = -bp, bW = W + 2 * bp, bH = H + 2 * bp;
+        if (p === 0) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, H * 0.68 + bp, '1');
+            S.voile(bx, bx, bW, H * 0.30 + bp, t.night, 0.5);
+            S.bloc(bx, H * 0.68, bW, H * 0.32 + bp, t.night);
+            S.T({ text: c.mast, x: M, y: H * 0.065, w: W - M * 2, size: px(19), font: F.display, weight: '700', fill: t.paper, align: 'center', cs: 90, lh: 1 });
+            S.bloc(M, H * 0.175, W - M * 2, px(1.4), t.accent);
+            S.T({ text: c.tag, x: M, y: H * 0.198, w: W - M * 2, size: px(2.3), font: F.mono, fill: t.paper, align: 'center', cs: 300 });
+            S.T({ text: c.issue, x: M, y: H * 0.220, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.paper, align: 'center', cs: 140, op: 0.85 });
+            S.T({ text: c.head, x: M, y: H * 0.715, w: W - M * 2, size: px(9.6), font: F.display, weight: '700', fill: t.paper, lh: 1.0 });
+            S.T({ text: c.stand, x: M, y: H * 0.815, w: W - M * 2, size: px(2.8), fill: t.paper, lh: 1.5, op: 0.92 });
+            S.T({ text: 'IN THIS ISSUE', x: M, y: H * 0.892, w: W - M * 2, size: px(1.9), font: F.mono, fill: t.accent, cs: 260 });
+            S.T({ text: (c.coverlines || '').replace(/\n/g, '   \u00b7   '), x: M, y: H * 0.912, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.paper, lh: 1.6 });
+            S.T({ text: c.price, x: M, y: H - M * 1.2, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.accent, cs: 110 });
+        } else if (p === 1) {
+            S.fond(t.paper); S.tete();
+            S.T({ text: 'CONTENTS', x: M, y: H * 0.085, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.accent, cs: 300 });
+            S.T({ text: c.mast, x: M, y: H * 0.110, w: W - M * 2, size: px(12), font: F.display, weight: '700', fill: t.ink, lh: 1 });
+            S.filet(H * 0.20, t.ink, px(0.4));
+            c.sections.forEach(function (s, i) {
+                var y = H * 0.235 + i * H * 0.058;
+                S.T({ text: ('0' + (i + 1)).slice(-2), x: M, y: y, w: px(10), size: px(3.2), font: F.mono, fill: t.accent });
+                S.T({ text: s, x: M + px(13), y: y + px(0.4), w: W - M * 2 - px(34), size: px(4.0), font: F.display, fill: t.ink, lh: 1.1 });
+                S.T({ text: String(3 + i), x: W - M - px(8), y: y + px(0.5), w: px(8), size: px(2.6), font: F.mono, fill: t.ink, align: 'right', op: 0.5 });
+            });
+            var vw = (W - M * 2 - S.COL * 3) / 4, vh = H * 0.22, yv = H * 0.66;
+            ['1', '2', '3', '4'].forEach(function (n, i) { S.photo(M + i * (vw + S.COL), yv, vw, vh, n); });
+            S.T({ text: c.caption, x: M, y: yv + vh + px(2), w: W - M * 2, size: px(1.9), font: F.mono, fill: t.ink, op: 0.65 });
+            S.folio(p + 1);
+        } else if (p === 2) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, H * 0.70 + bp, '4');
+            S.voile(bx, bx, bW, H * 0.26 + bp, t.night, 0.45);
+            S.bloc(bx, H * 0.70, bW, H * 0.30 + bp, t.night);
+            S.bloc(M, H * 0.075, px(16), px(1.1), t.accent);
+            S.T({ text: (c.sections[1] || '').toUpperCase(), x: M, y: H * 0.10, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.accent, cs: 300 });
+            S.T({ text: c.legs[1], x: M, y: H * 0.735, w: W - M * 2, size: px(10), font: F.display, weight: '700', fill: t.paper, lh: 1.05 });
+            S.T({ text: c.caption, x: M, y: H * 0.875, w: W - M * 2, size: px(2.0), font: F.mono, fill: t.paper, op: 0.75 });
+            S.folio(p + 1, 'left');
+        } else if (p === 3) {
+            S.fond(t.paper); S.tete();
+            S.T({ text: c.stand, x: M, y: H * 0.11, w: W - M * 2, size: px(3.8), italic: true, fill: t.ink, lh: 1.45 });
+            S.filet(H * 0.205, t.accent, px(0.8));
+            S.colonnes(H * 0.235, 0, c.body, 2, { size: px(2.9) });
+            S.photo(M, H * 0.55, W - M * 2, H * 0.21, '2');
+            S.T({ text: c.legs[0], x: M, y: H * 0.775, w: W * 0.6, size: px(4.2), font: F.display, fill: t.ink });
+            S.colonnes(H * 0.802, 0, S.reste, 2, { size: px(2.7) });
+            S.folio(p + 1);
+        } else if (p === 4) {
+            S.fond(t.soft);
+            S.T({ text: c.legs[3], x: M, y: H * 0.07, w: W - M * 2, size: px(9.5), font: F.display, weight: '700', fill: t.ink, lh: 1.02 });
+            S.filet(H * 0.155, t.ink, px(0.3));
+            var dw = (W - M * 2 - S.COL) / 2;
+            S.photo(M, H * 0.185, dw, H * 0.42, '3');
+            S.photo(M + dw + S.COL, H * 0.185, dw, H * 0.42, '1');
+            S.T({ text: c.caption, x: M, y: H * 0.615, w: dw, size: px(1.9), font: F.mono, fill: t.ink, op: 0.7 });
+            S.T({ text: c.credits, x: M + dw + S.COL, y: H * 0.615, w: dw, size: px(1.9), font: F.mono, fill: t.ink, op: 0.7 });
+            S.colonnes(H * 0.67, 0, c.body, 3, { size: px(2.6), gout: px(4) });
+            S.folio(p + 1, 'left');
+        } else if (p === 5) {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, bH, '2');
+            S.voile(bx, bx, bW, bH, t.night, 0.3);
+            S.cache(M, H * 0.56, W - M * 2, H * 0.30, t.paper);
+            S.T({ text: (c.sections[4] || '').toUpperCase(), x: M + px(5), y: H * 0.585, w: W - M * 2 - px(10), size: px(2.1), font: F.mono, fill: t.accent, cs: 280 });
+            S.T({ text: c.legs[4], x: M + px(5), y: H * 0.615, w: W - M * 2 - px(10), size: px(7), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            S.T({ text: c.quote, x: M + px(5), y: H * 0.755, w: W - M * 2 - px(10), size: px(3), italic: true, fill: t.ink, lh: 1.35 });
+            S.folio(p + 1);
+        } else if (p === 6) {
+            S.fond(t.paper);
+            S.T({ text: c.legs[5], x: M, y: H * 0.07, w: W * 0.85, size: px(8.5), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            S.filet(H * 0.15, t.accent, px(0.8), M, W * 0.45);
+            var g2 = (W - M * 2 - S.COL) / 2, gh2 = H * 0.30, ph2 = ['1', '2', '3', '4'];
+            for (var i2 = 0; i2 < 4; i2++) {
+                var x2 = M + (i2 % 2) * (g2 + S.COL), y2 = H * 0.19 + Math.floor(i2 / 2) * (gh2 + H * 0.085);
+                S.photo(x2, y2, g2, gh2, ph2[i2]);
+                S.T({ text: (c.list || '').split('\n')[i2] || '', x: x2, y: y2 + gh2 + px(1.8), w: g2, size: px(1.9), font: F.mono, fill: t.ink, cs: 70, op: 0.8 });
+            }
+            S.folio(p + 1, 'left');
+        } else {
+            S.fond(t.night);
+            S.photo(bx, bx, bW, H * 0.55 + bp, '3');
+            S.voile(bx, H * 0.42, bW, H * 0.14 + bp, t.night, 0.55);
+            S.T({ text: c.quote, x: M, y: H * 0.60, w: W - M * 2, size: px(5.6), font: F.display, italic: true, fill: t.paper, align: 'center', lh: 1.3 });
+            S.bloc(W / 2 - px(12), H * 0.715, px(24), px(0.7), t.accent);
+            S.T({ text: (c.list || '').split('\n').slice(0, 3).join('   \u00b7   '), x: M, y: H * 0.75, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.paper, align: 'center', lh: 1.8, op: 0.85 });
+            S.T({ text: c.credits, x: M, y: H * 0.86, w: W - M * 2, size: px(1.9), font: F.mono, fill: t.paper, align: 'center', op: 0.6 });
+            S.folio(p + 1);
+        }
+    }
+
+    /* ═══════════════════ 10. CV ÉDITORIAL (2 colonnes) ══════════════════ */
+    function cv2Pages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, bp = S.bp;
+        S.fond(t.paper);
+        var cw = (W - M * 2) * 0.34, cx0 = M, mx0 = M + cw + px(9), mw = W - M - mx0;
+        S.bloc(cx0 - px(4), px(9), cw + px(8), H - px(18), t.soft);
+        S.T({ text: c.mast, x: cx0, y: px(11), w: cw, size: px(2.0), font: F.mono, fill: t.accent, cs: 220 });
+        S.T({ text: c.head, x: mx0, y: px(9.5), w: mw, size: px(13), font: F.display, weight: '700', fill: t.ink, lh: 1.0 });
+        S.T({ text: c.tag, x: mx0, y: px(24), w: mw, size: px(2.3), font: F.mono, fill: t.accent, cs: 140 });
+        S.filet(px(29), t.ink, px(1.0), mx0, mw * 0.5);
+        S.T({ text: c.profil, x: mx0, y: px(32), w: mw, size: px(2.8), fill: t.ink, lh: 1.5 });
+        var yl = H * 0.30;
+        S.T({ text: 'SKILLS', x: cx0, y: yl, w: cw, size: px(2.1), font: F.mono, fill: t.accent, cs: 260 });
+        var sy = yl + px(5.5);
+        (c.skills || '').split('\n').forEach(function (l) {
+            var a = l.split('::'), nv = parseFloat(a[1] || '0.7');
+            if (!a[0]) return;
+            S.T({ text: a[0], x: cx0, y: sy, w: cw, size: px(2.3), fill: t.ink, lh: 1.3 });
+            S.bloc(cx0, sy + px(4.4), cw, px(0.9), '#dcd6cd');
+            S.bloc(cx0, sy + px(4.4), cw * nv, px(0.9), t.accent);
+            sy += px(8.8);
+        });
+        S.T({ text: 'LANGUAGES', x: cx0, y: sy + px(4), w: cw, size: px(2.1), font: F.mono, fill: t.accent, cs: 260 });
+        S.T({ text: c.langues, x: cx0, y: sy + px(8.5), w: cw, size: px(2.3), fill: t.ink, lh: 1.6 });
+        var y = H * 0.40;
+        ['Experience', 'Education'].forEach(function (bloc) {
+            S.T({ text: bloc.toUpperCase(), x: mx0, y: y, w: mw, size: px(2.2), font: F.mono, fill: t.accent, cs: 260 });
+            y += px(6);
+            (c.legs || []).filter(function (l) { return l.indexOf(bloc + '::') === 0; }).forEach(function (l) {
+                var a = l.split('::');
+                S.T({ text: a[1], x: mx0, y: y, w: mw * 0.26, size: px(2.2), font: F.mono, fill: t.ink, op: 0.62 });
+                S.T({ text: a[2], x: mx0 + mw * 0.28, y: y - px(0.7), w: mw * 0.72, size: px(3.4), font: F.display, weight: '700', fill: t.ink, lh: 1.1 });
+                S.T({ text: a[3], x: mx0 + mw * 0.28, y: y + px(5.8), w: mw * 0.72, size: px(2.6), fill: t.ink, lh: 1.4, op: 0.85 });
+                S.filet(y + px(11.6), t.ink, px(0.2), mx0 + mw * 0.28, mw * 0.72);
+                y += px(15.8);
+            });
+            y += px(4);
+        });
+        S.bloc(-bp, H - px(15), W + 2 * bp, px(15) + bp, t.night);
+        S.T({ text: c.caption, x: M, y: H - px(12), w: W - M * 2, size: px(2.4), font: F.mono, fill: t.paper, cs: 60 });
+        S.T({ text: c.clients, x: M, y: H - px(8), w: W - M * 2, size: px(1.9), font: F.mono, fill: t.paper, lh: 1.6, op: 0.7 });
+    }
+
+    /* ═══════════════════ 11. CV MINIMAL (1 colonne) ═════════════════════ */
+    function cv3Pages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M;
+        S.fond(t.paper);
+        var larg = W - M * 2, lw = larg * 0.20, rw = larg * 0.76, rx = M + larg * 0.24;
+        S.T({ text: c.head, x: M, y: H * 0.085, w: larg, size: px(10.5), font: F.display, weight: '700', fill: t.ink, align: 'center', cs: 40, lh: 1 });
+        S.T({ text: c.tag, x: M, y: H * 0.135, w: larg, size: px(2.1), font: F.mono, fill: t.accent, align: 'center', cs: 240 });
+        S.filet(H * 0.165, t.ink, px(0.4), M, larg);
+        S.T({ text: c.stand, x: M + px(10), y: H * 0.185, w: larg - px(20), size: px(3.0), italic: true, fill: t.ink, align: 'center', lh: 1.5 });
+        var y = H * 0.25;
+        ['Experience', 'Education'].forEach(function (bloc) {
+            S.T({ text: bloc.toUpperCase(), x: M, y: y, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 280 });
+            y += px(5.4);
+            (c.legs || []).filter(function (l) { return l.indexOf(bloc + '::') === 0; }).forEach(function (l) {
+                var a = l.split('::');
+                S.T({ text: a[1], x: M, y: y, w: lw, size: px(2.1), font: F.mono, fill: t.ink, op: 0.6 });
+                S.T({ text: a[2], x: rx, y: y - px(0.5), w: rw, size: px(3.0), font: F.display, fill: t.ink, lh: 1.15 });
+                S.T({ text: a[3], x: rx, y: y + px(5.4), w: rw, size: px(2.4), fill: t.ink, lh: 1.45, op: 0.8 });
+                y += px(13.8);
+            });
+            y += px(3.5);
+        });
+        S.T({ text: 'SKILLS', x: M, y: y, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 280 });
+        S.T({ text: c.skills, x: rx, y: y - px(0.5), w: rw, size: px(2.4), fill: t.ink, lh: 1.7 });
+        y += px(12);
+        S.T({ text: 'LANGUAGES', x: M, y: y, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 280 });
+        S.T({ text: (c.langues || '').replace(/\n/g, '   \u00b7   '), x: rx, y: y - px(0.5), w: rw, size: px(2.4), fill: t.ink, lh: 1.7 });
+        S.filet(H * 0.90, t.ink, px(0.3), M, larg);
+        S.T({ text: c.caption, x: M, y: H * 0.92, w: larg, size: px(2.3), font: F.mono, fill: t.ink, align: 'center' });
+    }
+
+    /* ═══════════════ 12. LIVRE DE FORMES (sans image) ═══════════════════ */
+    function shapesPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        var larg = W - M * 2;
+        function compo(v, x0, y0, w0, h0) {
+            var u = w0 / 6;
+            if (v === 0) {
+                S.bloc(x0, y0, w0, h0, t.accent);
+                S.bloc(x0 + u * 1.2, y0 + h0 * 0.18, u * 2.4, h0 * 0.5, t.paper);
+                S.rond(x0 + u * 4.0, y0 + h0 * 0.52, u * 1.5, t.ink);
+            } else if (v === 1) {
+                for (var i = 0; i < 5; i++) S.bloc(x0, y0 + (h0 / 5) * i, w0 * (0.28 + i * 0.16), h0 / 5 - px(1.8), i % 2 ? t.soft : t.ink);
+                S.bloc(x0 + w0 * 0.60, y0 + h0 * 0.12, w0 * 0.26, h0 * 0.22, t.accent);
+            } else if (v === 2) {
+                S.cadre(x0, y0, w0, h0, t.ink, px(0.5));
+                S.cadre(x0 + w0 * 0.14, y0 + h0 * 0.14, w0 * 0.72, h0 * 0.72, t.accent, px(0.8));
+                S.cadre(x0 + w0 * 0.30, y0 + h0 * 0.30, w0 * 0.40, h0 * 0.40, t.ink, px(0.3));
+                S.rond(x0 + w0 * 0.40, y0 + h0 * 0.40, w0 * 0.20, t.accent, 0.9);
+            } else if (v === 3) {
+                for (var a = 0; a < 3; a++) for (var b = 0; b < 3; b++) {
+                    S.bloc(x0 + (w0 / 3) * a, y0 + (h0 / 3) * b, w0 / 3 - px(1.4), h0 / 3 - px(1.4), (a + b) % 2 ? t.ink : t.soft);
+                }
+                S.rond(x0 + w0 * 0.30, y0 + h0 * 0.30, w0 * 0.40, t.accent, 0.92);
+            } else if (v === 4) {
+                S.demi(x0, y0 + h0 * 0.42, w0, h0 * 0.58, t.ink);
+                S.bloc(x0 + w0 * 0.60, y0, w0 * 0.18, h0 * 0.52, t.accent);
+            } else {
+                S.bloc(x0 + w0 * 0.22, y0, w0 * 0.78, h0 * 0.40, t.accent);
+                S.bloc(x0, y0 + h0 * 0.48, w0 * 0.32, h0 * 0.52, t.ink);
+                S.rond(x0 + w0 * 0.50, y0 + h0 * 0.54, w0 * 0.36, t.soft);
+            }
+        }
+        var paras = String(c.body || '').split('\n\n');
+        if (p === 0) {
+            S.fond(t.paper);
+            S.bloc(W / 2 - px(14), H * 0.108, px(28), px(0.8), t.accent);
+            S.T({ text: c.mast, x: M, y: H * 0.15, w: larg, size: px(13), font: F.display, weight: '700', fill: t.ink, align: 'center', lh: 1.05 });
+            S.T({ text: c.tag, x: M, y: H * 0.345, w: larg, size: px(2.2), font: F.mono, fill: t.accent, align: 'center', cs: 280 });
+            compo(0, M, H * 0.42, larg, H * 0.36);
+            S.T({ text: c.issue, x: M, y: H * 0.83, w: larg, size: px(2.0), font: F.mono, fill: t.ink, align: 'center', cs: 160, op: 0.75 });
+            S.T({ text: c.caption, x: M, y: H * 0.87, w: larg, size: px(1.8), font: F.mono, fill: t.ink, align: 'center', op: 0.6 });
+        } else if (p === 1) {
+            S.fond(t.soft);
+            S.T({ text: c.stand, x: M + px(14), y: H * 0.20, w: larg - px(28), size: px(3.4), fill: t.ink, lh: 1.6 });
+            S.T({ text: c.quote, x: M + px(14), y: H * 0.56, w: larg - px(28), size: px(4.6), font: F.display, italic: true, fill: t.accent, lh: 1.35 });
+            S.filet(H * 0.70, t.ink, px(0.3), M + px(14), px(30));
+            S.T({ text: c.credits, x: M, y: H - px(20), w: larg, size: px(1.9), font: F.mono, fill: t.ink, align: 'center', op: 0.65 });
+            S.folio(p + 1, 'center');
+        } else if (p === 2 || p === 5 || p === 8) {
+            var v = (p === 2 ? 2 : (p === 5 ? 4 : 1));
+            S.fond(t.paper);
+            S.T({ text: (c.sections[Math.round(p / 2)] || '').toUpperCase(), x: M, y: H * 0.075, w: larg, size: px(2.0), font: F.mono, fill: t.accent, cs: 280 });
+            S.T({ text: c.legs[Math.round(p / 2)] || '', x: M, y: H * 0.105, w: W * 0.82, size: px(7), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            compo(v, M, H * 0.28, larg, H * 0.40);
+            S.colonnes(H * 0.735, 0, c.body, 2, { size: px(2.6) });
+            S.folio(p + 1, p === 2 ? 'left' : 'right');
+        } else if (p === 3 || p === 6 || p === 9) {
+            var v2 = (p === 3 ? 3 : (p === 6 ? 5 : 0));
+            S.fond(t.paper);
+            compo(v2, M, H * 0.10, larg, H * 0.52);
+            S.T({ text: c.legs[1] || '', x: M, y: H * 0.68, w: larg, size: px(4.4), font: F.display, fill: t.ink });
+            S.T({ text: paras[1] || '', x: M, y: H * 0.755, w: larg, size: px(2.7), fill: t.ink, lh: 1.55, op: 0.9 });
+            S.folio(p + 1, p === 3 ? 'right' : 'left');
+        } else if (p === 4) {
+            S.fond(t.accent);
+            S.T({ text: c.quote, x: M + px(16), y: H * 0.28, w: larg - px(32), size: px(6.4), font: F.display, italic: true, fill: t.paper, align: 'center', lh: 1.35 });
+            S.bloc(W / 2 - px(10), H * 0.60, px(20), px(0.7), t.paper);
+            S.T({ text: c.mast, x: M, y: H * 0.66, w: larg, size: px(2.4), font: F.mono, fill: t.paper, align: 'center', cs: 300, op: 0.85 });
+            S.folio(p + 1, 'center');
+        } else if (p === 7) {
+            S.fond(t.night);
+            compo(1, M, H * 0.16, larg, H * 0.44);
+            S.T({ text: (c.sections[3] || '').toUpperCase(), x: M, y: H * 0.655, w: larg, size: px(6), font: F.display, weight: '700', fill: t.paper, align: 'center', cs: 60 });
+            S.T({ text: paras[2] || '', x: M + px(10), y: H * 0.755, w: larg - px(20), size: px(2.6), fill: t.paper, align: 'center', lh: 1.6, op: 0.85 });
+            S.folio(p + 1, 'center');
+        } else if (p === 10) {
+            S.fond(t.paper);
+            S.T({ text: c.legs[5] || '', x: M, y: H * 0.14, w: larg, size: px(8), font: F.display, weight: '700', fill: t.ink, align: 'center', lh: 1.05 });
+            S.T({ text: paras[0] || '', x: M + px(12), y: H * 0.42, w: larg - px(24), size: px(3.0), fill: t.ink, align: 'center', lh: 1.6 });
+            S.rond(W / 2 - px(9), H * 0.66, px(18), t.accent, 0.9);
+            S.folio(p + 1, 'center');
+        } else {
+            S.fond(t.soft);
+            S.T({ text: 'COLOPHON', x: M, y: H * 0.22, w: larg, size: px(2.0), font: F.mono, fill: t.accent, align: 'center', cs: 300 });
+            S.T({ text: c.mast, x: M, y: H * 0.27, w: larg, size: px(8), font: F.display, weight: '700', fill: t.ink, align: 'center', lh: 1.05 });
+            S.filet(H * 0.40, t.ink, px(0.3), W * 0.25, W * 0.5);
+            S.T({ text: c.caption, x: M + px(16), y: H * 0.45, w: larg - px(32), size: px(2.6), fill: t.ink, align: 'center', lh: 1.7 });
+            S.T({ text: c.credits, x: M + px(16), y: H * 0.60, w: larg - px(32), size: px(2.4), font: F.mono, fill: t.ink, align: 'center', lh: 1.7, op: 0.75 });
+            S.T({ text: c.quote, x: M + px(16), y: H * 0.74, w: larg - px(32), size: px(3.4), font: F.display, italic: true, fill: t.accent, align: 'center', lh: 1.4 });
+            S.folio(p + 1, 'center');
+        }
+    }
+
+    /* ═══════════════ 13. LIVRE — PIÈCE DE THÉÂTRE ═══════════════════════ */
+    function theatrePages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi;
+        var larg = W - M * 2;
+        function repliques(list, y0) {
+            var y = y0;
+            (list || []).forEach(function (l) {
+                var a = String(l).split('::');
+                var txt = a[1] || '';
+                S.T({ text: a[0], x: M, y: y, w: larg * 0.3, size: px(2.1), font: F.mono, fill: t.accent, cs: 130 });
+                S.T({ text: txt, x: M, y: y + px(3.6), w: larg, size: px(3.0), fill: t.ink, lh: 1.5 });
+                var lignes = Math.max(1, Math.ceil(String(txt).length / 58));
+                y += px(4.6) + lignes * px(4.8) + px(2.4);
+            });
+            return y;
+        }
+        if (p === 0) {
+            S.fond(t.paper);
+            S.T({ text: c.issue, x: M, y: H * 0.125, w: larg, size: px(2.2), font: F.mono, fill: t.ink, align: 'center', cs: 260 });
+            S.filet(H * 0.155, t.ink, px(0.3), M, larg);
+            S.T({ text: c.head, x: M + px(14), y: H * 0.30, w: larg - px(28), size: px(17), font: F.display, weight: '700', fill: t.ink, align: 'center', lh: 1.08 });
+            S.bloc(W / 2 - px(14), H * 0.535, px(28), px(0.8), t.accent);
+            S.T({ text: c.tag, x: M, y: H * 0.565, w: larg, size: px(2.6), font: F.mono, fill: t.accent, align: 'center', cs: 300 });
+            S.T({ text: c.stand, x: M + px(18), y: H * 0.66, w: larg - px(36), size: px(3.0), italic: true, fill: t.ink, align: 'center', lh: 1.6 });
+            S.filet(H * 0.845, t.ink, px(0.3), M, larg);
+            S.T({ text: c.caption, x: M, y: H * 0.87, w: larg, size: px(2.0), font: F.mono, fill: t.ink, align: 'center', op: 0.75 });
+        } else if (p === 1) {
+            S.fond(t.soft);
+            S.T({ text: 'CHARACTERS', x: M, y: H * 0.10, w: larg, size: px(2.2), font: F.mono, fill: t.accent, cs: 300 });
+            S.filet(H * 0.135, t.ink, px(0.3), M, larg);
+            var y = H * 0.175, regl = null, setg = '';
+            (c.legs || []).forEach(function (l) {
+                var a = l.split('::');
+                if (a[0] === 'SETTING') { setg = a[1] || ''; return; }
+                S.T({ text: a[0], x: M, y: y, w: larg, size: px(3.4), font: F.display, weight: '700', fill: t.ink, cs: 60 });
+                S.T({ text: a[1], x: M, y: y + px(5.2), w: larg, size: px(2.7), fill: t.ink, lh: 1.5, op: 0.85 });
+                y += px(15);
+            });
+            S.T({ text: 'SETTING', x: M, y: y + px(2), w: larg, size: px(2.2), font: F.mono, fill: t.accent, cs: 300 });
+            S.T({ text: setg, x: M, y: y + px(6.8), w: larg, size: px(2.8), italic: true, fill: t.ink, lh: 1.5 });
+            S.folio(p + 1, 'center');
+        } else if (p === 2 || p === 5 || p === 8) {
+            var n = (p === 2 ? 'ONE' : (p === 5 ? 'TWO' : 'THREE'));
+            var acte = (p === 2 ? c.act1 : (p === 5 ? c.act2 : c.act3));
+            if (p === 8) {
+                S.fond(t.accent);
+                S.T({ text: 'ACT ' + n, x: M, y: H * 0.345, w: larg, size: px(16), font: F.display, weight: '700', fill: t.paper, align: 'center', cs: 80, lh: 1 });
+                S.filet(H * 0.52, t.paper, px(0.5), W * 0.30, W * 0.40);
+                S.T({ text: c.quote, x: M + px(16), y: H * 0.58, w: larg - px(32), size: px(3.4), italic: true, fill: t.paper, align: 'center', lh: 1.5 });
+            } else {
+                S.fond(t.paper);
+                S.filet(H * 0.30, t.ink, px(0.3), M, larg);
+                S.T({ text: 'ACT ' + n, x: M, y: H * 0.34, w: larg, size: px(15), font: F.display, weight: '700', fill: t.ink, align: 'center', cs: 90, lh: 1 });
+                S.bloc(W / 2 - px(12), H * 0.50, px(24), px(0.7), t.accent);
+                S.T({ text: String(acte || '').split('\n')[0], x: M + px(14), y: H * 0.555, w: larg - px(28), size: px(2.4), font: F.mono, fill: t.accent, align: 'center', cs: 140 });
+                S.T({ text: String(acte || '').split('\n\n')[1] || '', x: M + px(20), y: H * 0.615, w: larg - px(40), size: px(3.0), italic: true, fill: t.ink, align: 'center', lh: 1.6 });
+                S.filet(H * 0.825, t.ink, px(0.3), W * 0.30, W * 0.40);
+            }
+            S.folio(p + 1, 'center');
+        } else if (p === 3) {
+            S.fond(t.paper);
+            S.T({ text: String(c.act1 || '').split('\n')[0], x: M, y: H * 0.08, w: larg, size: px(2.1), font: F.mono, fill: t.accent, cs: 220 });
+            S.filet(H * 0.108, t.ink, px(0.3), M, larg);
+            S.T({ text: String(c.act1 || '').split('\n\n')[1] || '', x: M, y: H * 0.135, w: larg, size: px(2.8), italic: true, fill: t.ink, lh: 1.55, op: 0.85 });
+            var prem = (c.repliques || [])[0] || '', a0 = prem.split('::');
+            S.T({ text: String(a0[1] || 'N').charAt(0), x: M, y: H * 0.245, w: px(13), size: px(15), font: F.display, weight: '700', fill: t.accent, lh: 1 });
+            S.T({ text: a0[0], x: M + px(15), y: H * 0.25, w: larg - px(15), size: px(2.1), font: F.mono, fill: t.accent, cs: 130 });
+            S.T({ text: String(a0[1] || '').slice(1), x: M + px(15), y: H * 0.275, w: larg - px(15), size: px(3.0), fill: t.ink, lh: 1.5 });
+            repliques((c.repliques || []).slice(1), H * 0.355);
+            S.folio(p + 1);
+        } else if (p === 4) {
+            S.fond(t.paper);
+            S.T({ text: String(c.act1 || '').split('\n')[0], x: M, y: H * 0.085, w: larg, size: px(2.1), font: F.mono, fill: t.accent, cs: 220 });
+            S.filet(H * 0.112, t.ink, px(0.3), M, larg);
+            repliques(c.repliques, H * 0.16);
+            S.T({ text: c.quote, x: M + px(16), y: H * 0.72, w: larg - px(32), size: px(4.2), font: F.display, italic: true, fill: t.accent, align: 'center', lh: 1.4 });
+            S.folio(p + 1, 'left');
+        } else if (p === 6) {
+            S.fond(t.paper);
+            S.T({ text: 'ACT TWO \u00b7 SCENE TWO', x: M, y: H * 0.08, w: larg, size: px(2.1), font: F.mono, fill: t.accent, cs: 220 });
+            S.filet(H * 0.108, t.ink, px(0.3), M, larg);
+            S.T({ text: String(c.act2 || '').split('\n\n')[1] || '', x: M, y: H * 0.135, w: larg, size: px(2.8), italic: true, fill: t.ink, lh: 1.55, op: 0.85 });
+            repliques(c.repliques2, H * 0.225);
+            S.folio(p + 1, 'left');
+        } else if (p === 7) {
+            S.fond(t.soft);
+            S.T({ text: 'ACT TWO \u00b7 THE KEEPER ALONE', x: M, y: H * 0.10, w: larg, size: px(2.1), font: F.mono, fill: t.accent, cs: 240 });
+            S.filet(H * 0.13, t.ink, px(0.3), M, px(46));
+            S.T({ text: c.vers, x: M + px(20), y: H * 0.20, w: larg - px(40), size: px(3.6), font: F.display, italic: true, fill: t.ink, lh: 1.9 });
+            S.folio(p + 1, 'center');
+        } else if (p === 9) {
+            S.fond(t.paper);
+            S.T({ text: 'ACT THREE \u00b7 SCENE THREE', x: M, y: H * 0.08, w: larg, size: px(2.1), font: F.mono, fill: t.accent, cs: 220 });
+            S.filet(H * 0.108, t.ink, px(0.3), M, larg);
+            S.T({ text: String(c.act3 || '').split('\n\n')[1] || '', x: M, y: H * 0.135, w: larg, size: px(2.8), italic: true, fill: t.ink, lh: 1.55, op: 0.85 });
+            repliques(c.repliques3, H * 0.245);
+            S.folio(p + 1, 'left');
+        } else if (p === 10) {
+            S.fond(t.paper);
+            S.T({ text: c.quote, x: M + px(22), y: H * 0.20, w: larg - px(44), size: px(5), font: F.display, italic: true, fill: t.ink, align: 'center', lh: 1.45 });
+            S.bloc(W / 2 - px(10), H * 0.44, px(20), px(0.6), t.accent);
+            S.T({ text: String(c.body || '').split('\n\n')[0], x: M + px(22), y: H * 0.49, w: larg - px(44), size: px(2.9), fill: t.ink, align: 'center', lh: 1.6 });
+            S.T({ text: 'CURTAIN', x: M, y: H * 0.78, w: larg, size: px(2.4), font: F.mono, fill: t.accent, align: 'center', cs: 300 });
+            S.folio(p + 1, 'center');
+        } else {
+            S.fond(t.soft);
+            S.T({ text: 'COLOPHON', x: M, y: H * 0.24, w: larg, size: px(2.1), font: F.mono, fill: t.accent, align: 'center', cs: 300 });
+            S.T({ text: c.head, x: M + px(10), y: H * 0.30, w: larg - px(20), size: px(9), font: F.display, weight: '700', fill: t.ink, align: 'center', lh: 1.05 });
+            S.filet(H * 0.46, t.ink, px(0.3), W * 0.28, W * 0.44);
+            S.T({ text: c.credits, x: M + px(18), y: H * 0.51, w: larg - px(36), size: px(2.6), fill: t.ink, align: 'center', lh: 1.7 });
+            S.T({ text: c.caption, x: M + px(18), y: H * 0.63, w: larg - px(36), size: px(2.4), font: F.mono, fill: t.ink, align: 'center', lh: 1.7, op: 0.7 });
+            S.T({ text: c.tag, x: M, y: H * 0.76, w: larg, size: px(2.4), font: F.mono, fill: t.accent, align: 'center', cs: 260 });
+            S.folio(p + 1, 'center');
+        }
+    }
+
+    /* ═══════════ 14. CALENDRIER A3 PAYSAGE (sept 2027 → août 2028) ══════ */
+    function calPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        var NOMS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        var JOURS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+        var SAIS = ['Autumn', 'Autumn', 'Autumn', 'Winter', 'Winter', 'Winter', 'Spring', 'Spring', 'Spring', 'Summer', 'Summer', 'Summer'];
+        var y = (p < 4 ? 2027 : 2028), m = (8 + p) % 12;
+        S.fond(t.paper);
+        S.bloc(0, 0, W, px(34), t.soft);
+        S.bloc(0, px(34), W, px(0.6), t.accent);
+        S.T({ text: NOMS[m].toUpperCase(), x: M, y: px(6.5), w: W * 0.6, size: px(17), font: F.display, weight: '700', fill: t.ink, lh: 1 });
+        S.T({ text: String(y), x: M, y: px(24), w: px(44), size: px(4.6), font: F.mono, fill: t.accent, cs: 160 });
+        S.T({ text: SAIS[p].toUpperCase() + '  \u00b7  MONTH ' + (p + 1) + ' / 12', x: W * 0.42, y: px(20), w: W * 0.5 - M, size: px(2.3), font: F.mono, fill: t.ink, align: 'right', cs: 180, op: 0.72 });
+        var px0 = M, py0 = px(42), pw = (W - M * 2) * 0.30, phh = H - py0;
+        S.bloc(px0, py0, pw, phh - bp - px(26), t.soft);
+        S.demi(px0 + pw * 0.10, py0 + phh * 0.13, pw * 0.80, phh * 0.42, t.accent);
+        S.bloc(px0 + pw * 0.10, py0 + phh * 0.56, pw * 0.30, phh * 0.24, t.ink);
+        S.bloc(px0 + pw * 0.48, py0 + phh * 0.60, pw * 0.42, phh * 0.05, t.accent);
+        S.bloc(px0 + pw * 0.48, py0 + phh * 0.69, pw * 0.42, phh * 0.05, t.ink, 0.45);
+        S.T({ text: NOMS[m].toUpperCase(), x: px0, y: py0 + phh - px(34), w: pw, size: px(2.2), font: F.mono, fill: t.ink, align: 'center', cs: 200, op: 0.8 });
+        var gx = px0 + pw + (W - M * 2) * 0.05, gw = W - M - gx, cw = gw / 7, ch = (H - py0 - px(32)) / 6.45;
+        JOURS.forEach(function (j, i) {
+            S.T({ text: j, x: gx + i * cw, y: py0, w: cw, size: px(2.2), font: F.mono, fill: i === 6 ? t.accent : t.ink, align: 'center', cs: 150, op: i === 6 ? 1 : 0.55 });
+        });
+        S.filet(py0 + px(3.8), t.ink, px(0.35), gx, gw);
+        var d0 = new Date(y, m, 1).getDay(), lead = (d0 + 6) % 7;
+        var nb = new Date(y, m + 1, 0).getDate(), nbPrec = new Date(y, m, 0).getDate();
+        for (var k = 0; k < 42; k++) {
+            var col = k % 7, row = Math.floor(k / 7);
+            var num = k - lead + 1, hors = (num < 1 || num > nb);
+            var val = (num < 1 ? nbPrec + num : (num > nb ? num - nb : num));
+            var x1 = gx + col * cw, y1 = py0 + px(5.6) + row * ch;
+            S.filet(y1, t.ink, px(0.2), x1, cw - px(1.6));
+            S.T({ text: String(val), x: x1, y: y1 + px(1.6), w: cw - px(1.6), size: px(5.4), font: F.mono, fill: col === 6 ? t.accent : t.ink, align: 'left', op: hors ? 0.22 : 1 });
+        }
+        var by = H - bp - px(17), bcw = (W - M * 2) / 12;
+        for (var q = 0; q < 12; q++) {
+            var actif = (q === p);
+            if (actif) S.bloc(M + q * bcw, by, bcw, px(11), t.accent);
+            S.T({ text: NOMS[q].slice(0, 3).toUpperCase(), x: M + q * bcw, y: by + px(3.5), w: bcw, size: px(2.4), font: F.mono, fill: actif ? t.paper : t.ink, align: 'center', cs: 90, op: actif ? 1 : 0.5 });
+        }
+        S.T({ text: c.caption, x: M, y: H - bp - px(4), w: W - M * 2, size: px(1.9), font: F.mono, fill: t.ink, op: 0.45 });
+    }
+
     // ── Vignette : SHOT RÉEL du modèle (rendu depuis l'app) + repli SVG ────
     window.spTemplateThumb = function (comp) {
         try {
@@ -72176,7 +72780,9 @@ function _npBuildLayout(params, keywords, lang) {
 
 // Template cards on the new-project modal (single source of truth: compositionExamples)
 window._npTemplateKeys = ['en_magazine_fashion_8p', 'en_journal_hair_4p', 'en_magazine_music_8p', 'en_magazine_food_8p',
-    'en_restaurant_menu_4p', 'en_business_card_1p', 'en_cv_pro_1p', 'en_book_text_12p'];
+    'en_restaurant_menu_4p', 'en_business_card_1p', 'en_cv_pro_1p', 'en_book_text_12p',
+    'en_magazine_ocean_8p', 'en_cv_editorial_1p', 'en_cv_minimal_1p', 'en_book_shapes_12p',
+    'en_book_theatre_12p', 'en_calendar_a3_12p'];
 window.npRenderAssetStrip = function() {
     const strip = document.getElementById('npAssetStrip');
     if (!strip || typeof compositionExamples === 'undefined') return;
