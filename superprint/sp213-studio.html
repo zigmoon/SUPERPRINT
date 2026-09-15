@@ -653,14 +653,14 @@
   /* Boutons pièce jointe + micro : compacts (20px, icône 12px), CARRÉS (pas de
      bord arrondi) à droite de la zone de saisie */
   /* 🆕 v1.7.386 — 30 px (au lieu de 20) : vraie cible de clic, icone 14 px. */
-  #attachBtn, #micBtn, #webImgBtn {
+  #attachBtn, #micBtn, #webImgBtn, #kbBtn {
     flex-shrink: 0; width: 30px; height: 30px; padding: 0; border-radius: 0;
     border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: all 0.15s;
   }
-  #attachBtn .ic, #micBtn .ic, #webImgBtn .ic { width: 14px; height: 14px; }
-  #attachBtn:hover, #micBtn:hover, #webImgBtn:hover { background: var(--btn-hover); border-color: #999; }
+  #attachBtn .ic, #micBtn .ic, #webImgBtn .ic, #kbBtn .ic { width: 14px; height: 14px; }
+  #attachBtn:hover, #micBtn:hover, #webImgBtn:hover, #kbBtn:hover { background: var(--btn-hover); border-color: #999; }
   /* v1.7.391 — Case « Images » : habillage photo des maquettes.
      Coché -> l'IA compose AVEC des photos (zones photo + légendes) et le studio
      joint 1 à 3 photos. Décoché (DÉFAUT) -> maquette sans photo. */
@@ -702,6 +702,60 @@
   #webImgBtn { border-color: var(--border); }
   #webImgBtn.offline { opacity: .35; pointer-events: none; }
 
+  /* ════════════════════════════════════════════════════════════════
+     🆕 v1.7.417 — CLAVIER VIRTUEL DU STUDIO
+     Icone a droite du micro : ouvre un GRAND clavier au centre de
+     l'interface, le prompt s'ecrit EN TRES GRAND au-dessus, et
+     l'interface reste visible derriere (voile leger, sans flou).
+     Bascule « Lettres / Glyphes » sur le clavier, majuscules
+     collantes, accents francais, teleprompteur sur la fin du texte.
+     ════════════════════════════════════════════════════════════════ */
+  #kbBtn.active { background: var(--btn-active); color: var(--btn-active-text); border-color: var(--btn-active); }
+  #spKbOverlay { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; padding: 2vh 2vw; }
+  #spKbOverlay.hidden { display: none; }
+  #spKbBackdrop { position: absolute; inset: 0; background: rgba(12,12,12,.32); }
+  body.theme-dark #spKbBackdrop { background: rgba(0,0,0,.52); }
+  #spKbPanel { position: relative; width: min(1180px, 97vw); max-height: 96vh; display: flex; flex-direction: column;
+    background: var(--panel); border: 1px solid var(--border); box-shadow: 0 30px 90px var(--shadow); }
+  .kb-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .kb-title { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+  .kb-hint { font-size: 10px; letter-spacing: .4px; color: var(--muted); text-transform: uppercase; }
+  .kb-grow { flex: 1 1 auto; }
+  .kb-close { width: 30px; height: 30px; padding: 0; border: 1px solid var(--border); background: transparent; color: var(--text);
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .kb-close:hover { background: var(--btn-hover); border-color: #999; }
+  .kb-view { padding: 20px 26px 18px; border-bottom: 1px solid var(--border); max-height: 30vh; overflow: hidden; }
+  .kb-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: clamp(22px, 3.1vw, 44px); line-height: 1.26; letter-spacing: -.4px; color: var(--text);
+    white-space: pre-wrap; word-break: break-word; }
+  .kb-text.kb-empty { color: var(--muted); font-weight: 300; }
+  /* Curseur clignotant, colle a la fin du texte (comme un teleprompteur) */
+  .kb-text::after { content: ''; display: inline-block; width: .48em; height: .92em; margin-left: .08em;
+    background: currentColor; vertical-align: -.12em; animation: kbBlink 1s steps(1,end) infinite; }
+  @keyframes kbBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+  .kb-rows { padding: 16px 16px 4px; display: flex; flex-direction: column; gap: 8px; }
+  .kb-row { display: flex; gap: 8px; justify-content: center; }
+  .kb-key { flex: 1 1 0; min-width: 0; height: clamp(38px, 5.1vw, 62px); border: 1px solid var(--border);
+    background: var(--btn-bg); color: var(--text); cursor: pointer; border-radius: 0;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: clamp(15px, 1.9vw, 24px);
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background .12s, border-color .12s, transform .06s; }
+  .kb-key:hover { background: var(--btn-hover); border-color: #999; }
+  .kb-key:active { background: var(--btn-active); color: var(--btn-active-text); border-color: var(--btn-active); transform: translateY(1px); }
+  .kb-key.kb-util { font-size: clamp(10px, 1.15vw, 14px); letter-spacing: .6px; text-transform: uppercase; }
+  .kb-key.kb-wide { flex: 4 1 0; }
+  .kb-key.kb-on { background: var(--btn-active); color: var(--btn-active-text); border-color: var(--btn-active); }
+  .kb-foot { display: flex; align-items: center; padding: 8px 16px 14px; }
+  .kb-count { font-size: 10px; letter-spacing: .7px; color: var(--muted); text-transform: uppercase; }
+  @media (max-width: 720px) {
+    #spKbOverlay { padding: 0; }
+    #spKbPanel { width: 100%; max-height: 100vh; }
+    .kb-view { padding: 14px 16px 12px; max-height: 26vh; }
+    .kb-rows { padding: 10px 8px 4px; gap: 5px; }
+    .kb-row { gap: 5px; }
+    .kb-key { height: 46px; font-size: 18px; }
+    .kb-foot { padding: 6px 10px 10px; }
+  }
   /* ── Modale image web (picsum) ── */
   .webimg-modal {
     position: fixed; inset: 0; z-index: 90; display: flex;
@@ -814,8 +868,8 @@
     #composerActions > .tip-wrap { display: flex; flex: 0 0 auto; }
     #composerActions > .tip-wrap:last-child { flex: 1; min-width: 0; margin-left: auto; }
     #attachRow { flex: 0 0 auto; }
-    #attachBtn, #micBtn, #webImgBtn { width: 42px; height: 42px; }
-    #attachBtn .ic, #micBtn .ic, #webImgBtn .ic { width: 17px; height: 17px; }
+    #attachBtn, #micBtn, #webImgBtn, #kbBtn { width: 42px; height: 42px; }
+    #attachBtn .ic, #micBtn .ic, #webImgBtn .ic, #kbBtn .ic { width: 17px; height: 17px; }
     #sendBtn { width: 100%; min-width: 0; margin-left: 0; min-height: 42px; }
     .msg { max-width: 96%; }
     .bubble { font-size: 14px; }
@@ -1306,6 +1360,15 @@
                   <svg class="ic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
                 </button>
                 <span class="tip" id="micTip"><b>Prompt vocal</b>Cliquez puis parlez : votre voix est transcrite dans la zone de saisie. Recliquez pour arrêter.</span>
+              </span>
+              <!-- 🆕 v1.7.417 — Clavier virtuel : à droite du micro, comme demandé.
+                   Ouvre un grand clavier au centre de l'interface ; le prompt
+                   s'écrit en très grand et l'interface reste visible derrière. -->
+              <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
+                <button class="icon-btn" id="kbBtn" type="button" title="Clavier à l'écran (grande saisie)" aria-pressed="false">
+                  <svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12"/><path d="M6 9.5h1.5M10 9.5h1.5M14 9.5h1.5M17.5 9.5H18M6 12.5h1.5M10 12.5h1.5M14 12.5h1.5M17.5 12.5H18M7.5 15.5h9"/></svg>
+                </button>
+                <span class="tip" id="kbTip"><b>Clavier</b>Ouvre un grand clavier à l'écran : ce que vous tapez s'affiche en très grand au-dessus, l'interface reste visible derrière. Basculez entre lettres et glyphes sur le clavier. Échap le referme.</span>
               </span>
               <!-- v1.7.391 — Case « Images » : à droite du micro, comme demandé.
                    DÉCOCHÉE par défaut = maquette sans photo. -->
@@ -2042,6 +2105,52 @@
     }
   };
 
+  // 🆕 v1.7.417 — Textes du CLAVIER VIRTUEL (3 langues), fusionnés dans I18N.
+  Object.assign(I18N.en, {
+    "kb.btn": "On-screen keyboard — write your prompt in large type",
+    "kb.tip": "<b>Keyboard</b>Opens a large on-screen keyboard: what you type appears in very large type above it, while the studio stays visible behind. Switch between letters and glyphs on the keyboard. Escape closes it.",
+    "kb.title": "Keyboard",
+    "kb.hint": "Type: your prompt is written in large type. Escape to close.",
+    "kb.close": "Close",
+    "kb.placeholder": "Your prompt will be written here, in large type…",
+    "kb.chars": "characters",
+    "kb.shift": "Shift",
+    "kb.back": "Delete",
+    "kb.space": "Space",
+    "kb.enter": "Send",
+    "kb.toGlyphs": "Glyphs",
+    "kb.toLetters": "Letters"
+  });
+  Object.assign(I18N.fr, {
+    "kb.btn": "Clavier à l'écran — rédigez votre prompt en grandes lettres",
+    "kb.tip": "<b>Clavier</b>Ouvre un grand clavier à l'écran : ce que vous tapez s'affiche en très grand au-dessus, l'interface reste visible derrière. Basculez entre lettres et glyphes sur le clavier. Échap le referme.",
+    "kb.title": "Clavier",
+    "kb.hint": "Tapez : votre prompt s'écrit en grand. Échap pour fermer.",
+    "kb.close": "Fermer",
+    "kb.placeholder": "Votre prompt s'écrira ici, en grandes lettres…",
+    "kb.chars": "caractères",
+    "kb.shift": "Maj",
+    "kb.back": "Effacer",
+    "kb.space": "Espace",
+    "kb.enter": "Envoyer",
+    "kb.toGlyphs": "Glyphes",
+    "kb.toLetters": "Lettres"
+  });
+  Object.assign(I18N.jp, {
+    "kb.btn": "オンスクリーンキーボード — 大きな文字でプロンプトを入力",
+    "kb.tip": "<b>キーボード</b>大きなオンスクリーンキーボードを開きます。入力した内容は上に大きく表示され、スタジオは後ろに見えたままです。キーボード上で文字と記号を切り替えられます。Esc で閉じます。",
+    "kb.title": "キーボード",
+    "kb.hint": "入力した内容は上に大きく表示されます。Esc で閉じます。",
+    "kb.close": "閉じる",
+    "kb.placeholder": "ここに大きな文字でプロンプトが表示されます…",
+    "kb.chars": "文字",
+    "kb.shift": "シフト",
+    "kb.back": "削除",
+    "kb.space": "スペース",
+    "kb.enter": "送信",
+    "kb.toGlyphs": "記号",
+    "kb.toLetters": "文字"
+  });
   // Langue active (EN par défaut)
   let curLang = 'en';
   function setLang(lang, persist) {
@@ -2115,6 +2224,7 @@
       'convTabsTitle': 'chat.convTabs',
       'attachTip': 'chat.attachTip',
       'micTip': 'chat.micTip',
+      'kbTip': 'kb.tip',
       'webImgTip': 'chat.webImgTip',
       'sendTip': 'chat.sendTip',
       'webImgModalTitle': 'webimg.title',
@@ -2171,6 +2281,7 @@
       'attachBtn': 'chat.attachTip',
       'webImgBtn': 'chat.webImgTip',
       'micBtn': 'chat.micTip',
+      'kbBtn': 'kb.btn',
       'imgToggleTip': 'chat.imgToggleTip',
       'imgToggleLabel': 'chat.imgToggleLabel',
       'bleedLabel': 'welcome.bleed',
@@ -2481,6 +2592,166 @@
       pi.style.overflowY = besoin > maxi + 1 ? 'auto' : 'hidden';
     }
     window.sp213AutoGrowPrompt = autoGrowPrompt;
+
+  // ══════════════════════════════════════════════════════════════════
+  // 🆕 v1.7.417 — CLAVIER VIRTUEL DU STUDIO
+  //   Icône à droite du micro. Grand clavier au CENTRE de l'interface,
+  //   prompt affiché EN TRÈS GRAND au-dessus (téléprompteur sur la fin du
+  //   texte), interface visible derrière un voile léger. Bascule
+  //   Lettres / Glyphes SUR le clavier, majuscules collantes (2 clics =
+  //   verrouillage), accents français, télécommande du champ prompt :
+  //   on écrit dans #promptInput puis on déclenche « input » — les
+  //   gestionnaires existants (auto-grow, placeholder, autosave) suivent.
+  //   Entrée passe par un VRAI keydown pour réutiliser l'envoi existant.
+  // ══════════════════════════════════════════════════════════════════
+  const KB_LAYOUTS = {"lettres":[["a","z","e","r","t","y","u","i","o","p"],["q","s","d","f","g","h","j","k","l","m"],["@shift","w","x","c","v","b","n","'","\"","@back"],["é","è","ê","à","ç","ù","â","î","ô","œ"],["@switch","@space","@enter"]],"glyphes":[["1","2","3","4","5","6","7","8","9","0"],[".",",",";",":","?","!","-","_","/","\\"],["@","#","€","$","£","%","&","*","+","="],["(",")","[","]","{","}","|","~","^","°"],["@switch","«","»","—","…","§","@space","@enter"]]};
+  let kbOpen = false, kbLayer = 'lettres', kbShift = false, kbCaps = false, kbWired = false, kbTimer = null;
+  function kbD() { return I18N[curLang] || I18N.en; }
+  function kbLabel(tok) {
+    const d = kbD();
+    if (tok === '@shift') return d['kb.shift'] || 'Maj';
+    if (tok === '@back') return d['kb.back'] || 'Effacer';
+    if (tok === '@space') return d['kb.space'] || 'Espace';
+    if (tok === '@enter') return (d['kb.enter'] || 'Envoyer') + ' ⏎';
+    if (tok === '@switch') return (kbLayer === 'lettres') ? (d['kb.toGlyphs'] || 'Glyphes') : (d['kb.toLetters'] || 'Lettres');
+    return (kbShift || kbCaps) && tok.length === 1 && /[a-zàâäéèêëîïôöùûüçœ]/.test(tok) ? tok.toUpperCase() : tok;
+  }
+  function kbBuild() {
+    const rows = $('kbRows'); if (!rows) return;
+    const d = kbD();
+    const t = $('kbTitle'), h = $('kbHint'), c = $('kbCloseBtn');
+    if (t) t.textContent = d['kb.title'] || 'Clavier';
+    if (h) h.textContent = d['kb.hint'] || '';
+    if (c) c.setAttribute('title', d['kb.close'] || 'Fermer');
+    rows.innerHTML = '';
+    KB_LAYOUTS[kbLayer].forEach(function (rang) {
+      const r = document.createElement('div'); r.className = 'kb-row';
+      rang.forEach(function (tok) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'kb-key' + (tok.charAt(0) === '@' ? ' kb-util' : '') + (tok === '@space' ? ' kb-wide' : '');
+        b.setAttribute('data-k', tok);
+        b.textContent = kbLabel(tok);
+        b.addEventListener('click', function () { kbPress(tok); });
+        r.appendChild(b);
+      });
+      rows.appendChild(r);
+    });
+    kbRefresh();
+  }
+  // Majuscules collantes : 1 clic = la prochaine lettre, 2 clics = verrouillé.
+  function kbPress(tok) {
+    if (tok === '@space') { kbType(' '); return; }
+    if (tok === '@enter') { kbSend(); return; }
+    if (tok === '@back') { kbBack(); return; }
+    if (tok === '@switch') { kbLayer = (kbLayer === 'lettres') ? 'glyphes' : 'lettres'; kbShift = false; kbCaps = false; kbBuild(); return; }
+    if (tok === '@shift') {
+      if (kbShift && !kbCaps) { kbCaps = true; } else if (kbCaps) { kbCaps = false; kbShift = false; } else { kbShift = true; }
+      kbRefresh(); return;
+    }
+    let ch = tok;
+    if ((kbShift || kbCaps) && tok.length === 1) ch = tok.toUpperCase();
+    kbType(ch);
+    if (kbShift && !kbCaps) { kbShift = false; }
+  }
+  function kbType(ch) {
+    const pi = $('promptInput'); if (!pi) return;
+    const s = (pi.selectionStart == null) ? pi.value.length : pi.selectionStart;
+    const e = (pi.selectionEnd == null) ? pi.value.length : pi.selectionEnd;
+    pi.value = pi.value.slice(0, s) + ch + pi.value.slice(e);
+    const pos = s + ch.length;
+    try { pi.setSelectionRange(pos, pos); } catch (_) {}
+    pi.dispatchEvent(new Event('input', { bubbles: true }));
+    try { pi.focus({ preventScroll: true }); } catch (_) { pi.focus(); }
+    kbRefresh();
+  }
+  function kbBack() {
+    const pi = $('promptInput'); if (!pi) return;
+    const s = (pi.selectionStart == null) ? pi.value.length : pi.selectionStart;
+    const e = (pi.selectionEnd == null) ? pi.value.length : pi.selectionEnd;
+    if (s !== e) { pi.value = pi.value.slice(0, s) + pi.value.slice(e); }
+    else if (s > 0) { pi.value = pi.value.slice(0, s - 1) + pi.value.slice(s); }
+    else { return; }
+    const pos = (s === e) ? Math.max(0, s - 1) : s;
+    try { pi.setSelectionRange(pos, pos); } catch (_) {}
+    pi.dispatchEvent(new Event('input', { bubbles: true }));
+    try { pi.focus({ preventScroll: true }); } catch (_) { pi.focus(); }
+    kbRefresh();
+  }
+  // Envoi : on rejoue le VRAI keydown Entrée du champ, donc exactement le
+  // meme chemin que le clavier physique (aucune duplication de logique).
+  function kbSend() {
+    const pi = $('promptInput'); if (!pi) return;
+    kbClose();
+    try { pi.focus({ preventScroll: true }); } catch (_) { pi.focus(); }
+    pi.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+  }
+  function kbRefresh() {
+    const pi = $('promptInput'); if (!pi) return;
+    const d = kbD();
+    const val = pi.value || '';
+    const txt = $('kbText');
+    if (txt) {
+      const vide = val.trim() === '';
+      txt.classList.toggle('kb-empty', vide);
+      txt.textContent = vide ? (d['kb.placeholder'] || '') : val;
+      // Téléprompteur : on garde TOUJOURS la fin du texte à l'écran.
+      const v = $('kbView');
+      if (v) v.scrollTop = v.scrollHeight;
+    }
+    const cnt = $('kbCount');
+    if (cnt) cnt.textContent = (val.length ? (val.length + ' ' + (d['kb.chars'] || '')) : '');
+    const up = (kbShift || kbCaps);
+    document.querySelectorAll('#kbRows .kb-key[data-k]').forEach(function (el) {
+      const k = el.getAttribute('data-k');
+      if (k.charAt(0) === '@') { if (k === '@shift') el.classList.toggle('kb-on', up); if (k === '@switch') el.textContent = kbLabel(k); return; }
+      el.textContent = kbLabel(k);
+    });
+  }
+  function kbWire() {
+    if (kbWired) return;
+    const c = $('kbCloseBtn'); if (!c) return;   // overlay pas encore analysé
+    kbWired = true;
+    c.addEventListener('click', kbClose);
+    const bd = $('spKbBackdrop'); if (bd) bd.addEventListener('click', kbClose);
+    document.addEventListener('keydown', function (e) {
+      if (kbOpen && e.key === 'Escape') { e.stopPropagation(); kbClose(); }
+    }, true);
+  }
+  function kbOpenIt() {
+    const ov = $('spKbOverlay'); if (!ov) return;
+    kbWire();
+    kbBuild();
+    ov.classList.remove('hidden');
+    kbOpen = true;
+    const b = $('kbBtn'); if (b) { b.classList.add('active'); b.setAttribute('aria-pressed', 'true'); }
+    // Le champ garde le focus : le clavier PHYSIQUE doit continuer à marcher.
+    const pi = $('promptInput');
+    if (pi) { try { pi.focus({ preventScroll: true }); } catch (_) { pi.focus(); } }
+    // Rafraîchissement doux : couvre aussi la dictée vocale, qui écrit
+    // dans le champ sans émettre d'événement « input ».
+    if (kbTimer) clearInterval(kbTimer);
+    kbTimer = setInterval(function () { if (kbOpen) kbRefresh(); }, 400);
+  }
+  function kbClose() {
+    const ov = $('spKbOverlay'); if (!ov) return;
+    ov.classList.add('hidden');
+    kbOpen = false;
+    if (kbTimer) { clearInterval(kbTimer); kbTimer = null; }
+    const b = $('kbBtn'); if (b) { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); }
+    const pi = $('promptInput');
+    if (pi) { try { pi.focus({ preventScroll: true }); } catch (_) { pi.focus(); } }
+  }
+  function kbToggle() { if (kbOpen) { kbClose(); } else { kbOpenIt(); } }
+  (function kbInit() {
+    const b = $('kbBtn');
+    if (b) { b.addEventListener('click', kbToggle); const d = kbD(); b.setAttribute('title', d['kb.btn'] || 'Clavier'); }
+    const pi = $('promptInput');
+    if (pi) pi.addEventListener('input', function () { if (kbOpen) kbRefresh(); });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', kbWire); else kbWire();
+    window.sp213ToggleKeyboard = kbToggle;
+  })();
+
     function syncPromptPh() {
       const pi = $('promptInput'), wrap = $('promptWrap'), ph = $('promptPh');
       if (!pi || !wrap || !ph) return;
@@ -9777,5 +10048,24 @@ La précision de layout et la richesse de contenu vont ensemble.`;
   init();
 })();
 </script>
+
+<!-- 🆕 v1.7.417 — Clavier virtuel (icône à droite du micro). Voile léger :
+     l'interface du studio reste visible derrière le clavier. -->
+<div id="spKbOverlay" class="hidden" role="dialog" aria-modal="true" aria-label="Clavier">
+  <div id="spKbBackdrop"></div>
+  <div id="spKbPanel">
+    <div class="kb-head">
+      <span class="kb-title" id="kbTitle" data-i18n="kb.title">Clavier</span>
+      <span class="kb-hint" id="kbHint" data-i18n="kb.hint">Tapez : votre prompt s'écrit en grand. Échap pour fermer.</span>
+      <span class="kb-grow"></span>
+      <button class="kb-close" id="kbCloseBtn" type="button" title="Fermer">
+        <svg class="ic" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="kb-view" id="kbView"><div class="kb-text kb-empty" id="kbText"></div></div>
+    <div class="kb-rows" id="kbRows"></div>
+    <div class="kb-foot"><span class="kb-count" id="kbCount"></span></div>
+  </div>
+</div>
 </body>
 </html>

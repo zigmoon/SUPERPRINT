@@ -30733,7 +30733,7 @@ if (window._spGpuEnabled) {
             var s = document.createElement('script');
             // Cache-buster OBLIGATOIRE : sans parametre de version le navigateur
             // sert le module PRECEDENT depuis son cache HTTP.
-            s.src = 'JS/sp-eps-import.js?v=20260916-v416-pipette-native';
+            s.src = 'JS/sp-eps-import.js?v=20260917-v417-clavier-studio';
             s.onload = function () {
                 if (!window.SPEps) { reject(new Error('SPEps absent')); return; }
                 resolve(window.SPEps);
@@ -48984,7 +48984,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 // ⚠️ Cache-buster OBLIGATOIRE : sans parametre de version, le navigateur
                 //    sert le module PRECEDENT depuis son cache HTTP et les correctifs
                 //    restent invisibles (defaut mesure avec les chemins de jszip).
-                s.src = 'JS/sp-doc-import.js?v=20260916-v416-pipette-native';
+                s.src = 'JS/sp-doc-import.js?v=20260917-v417-clavier-studio';
                 s.onload = function () {
                     if (!window.SPDocImport) { reject(new Error('SPDocImport absent')); return; }
                     // Pont hote : le module ecrit ses pieces jointes ICI et nous

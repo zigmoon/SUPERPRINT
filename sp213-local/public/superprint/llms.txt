@@ -10,7 +10,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.416 (September 2026)
+- **Version**: 1.7.417 (September 2026)
 - **Local install**: npx superprint (npm package `superprint`, launcher version 1.0.95) — the same application, downloaded once and run on your machine
 
 ## Core documentation
@@ -21,7 +21,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - [CMYK convert tool](https://superprint.cc/super-print-cmyk-convert.html): Dedicated PDF CMYK conversion utility.
 - [CMYK landing](https://superprint.cc/cmyk-landing-secure.html): Specialized landing page for CMYK workflow.
 - [Full LLM context](https://superprint.cc/llms-full.txt): Extended reference for AI assistants.
-- [SP213 AI layout studio](https://superprint.cc/sp213-studio.html): turns a written brief — or an attached DOCX, ODT, RTF, PDF or XLSX — into a print-ready, fully editable layout (local WebLLM or cloud engines).
+- [SP213 AI layout studio](https://superprint.cc/sp213-studio.html): turns a written brief — or an attached DOCX, ODT, RTF, PDF or XLSX — into a print-ready, fully editable layout (local WebLLM or cloud engines). A built-in on-screen keyboard — letters, accents and a glyph layer — makes long briefs comfortable to write on touch screens.
 - [SuperTyPo font editor](https://superprint.cc/supertypo/): decomposes any TTF/OTF/WOFF/WOFF2 into editable outlines and re-exports the typeface.
 
 ## Import / Export formats
@@ -43,6 +43,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Line-accurate height resizing**: dragging a text frame's handles never cuts a line in half and never alters the leading. The height snaps to a whole number of lines, using the same line metrics as the PDF export so preview and output stay consistent. An overflow marker still appears whenever text remains in the frame.
 
 ## Recent releases (September 2026)
+- **1.7.417** — the SP213 studio has an on-screen keyboard: a button next to the microphone opens a large centred keyboard (letters, accents, and a glyph layer with digits, punctuation, currency, brackets and « » — … §), with sticky shift, backspace, space and send. The prompt is shown in very large type above the keys.
 
 - **1.7.416** — the eyedropper in the sidebar now opens the real system colour picker (the “Show Colors…” popup and the Colors window) on Safari and Firefox, instead of the application’s own colour window. Chromium keeps the native eyedropper that samples a pixel on screen.
 - **1.7.415** — accuracy through the SP213 studio: Pantone spot inks survive the round-trip and are still exported as separate `/Separation` plates; spread mode is honoured by the native export (3 sheets of 366 × 266 mm in CMYK + PDF/X, instead of four 170 × 240 mm pages); black &amp; white export is now light vector (134,725 KB → 779 KB → 189 KB with vector text, against 199 KB for the equivalent RGB file); document margin and page numbering are no longer overwritten by the studio; a font-loading failure is no longer cached, so the next export retries vector output.

@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.416`** — 15 septembre 2026
+> **Dernière version : `1.7.417`** — 15 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,19 +10,19 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.416` |
-| Cache Service Worker | `superprint-shell-v1.7.416-fidelite-export` |
-| Query JS (`main.js`) | `?v=20260916-v416-pipette-native` |
-| Badge preview (`spVersionBadge`) | `v1.7.416` |
-| Splash screen | `v1.7.416` |
-| Préférences (panneau SUPERPRINT) | `v1.7.416` |
-| Préférences (bas de page) | `SuperPrint v1.7.416 — 15 septembre 2026` |
-| Onboarding (`V 1.7.416`) | `1.7.416` |
-| Landing (`softwareVersion` + footer) | `1.7.416` |
-| Documentation | `v1.7.416` |
-| `version.txt` | `1.7.416` |
-| `llms.txt` / `llms-full.txt` | `1.7.416 (September 2026)` |
-| `package.json` (sp213-local) | `1.7.416` |
+| Version app (affichée) | `1.7.417` |
+| Cache Service Worker | `superprint-shell-v1.7.417-fidelite-export` |
+| Query JS (`main.js`) | `?v=20260917-v417-clavier-studio` |
+| Badge preview (`spVersionBadge`) | `v1.7.417` |
+| Splash screen | `v1.7.417` |
+| Préférences (panneau SUPERPRINT) | `v1.7.417` |
+| Préférences (bas de page) | `SuperPrint v1.7.417 — 15 septembre 2026` |
+| Onboarding (`V 1.7.417`) | `1.7.417` |
+| Landing (`softwareVersion` + footer) | `1.7.417` |
+| Documentation | `v1.7.417` |
+| `version.txt` | `1.7.417` |
+| `llms.txt` / `llms-full.txt` | `1.7.417 (September 2026)` |
+| `package.json` (sp213-local) | `1.7.417` |
 
 > ⚠️ Le paquet **npm** (`superprint-npm`) a sa **propre version** (`1.0.x`) — c'est la version de *release du paquet*, indépendante de la version de l'app. Il lit la version de l'app depuis `https://superprint.cc/version.txt`.
 
