@@ -72,9 +72,11 @@
       chipGlyphs: 'Glyphes',
       chipModified: 'Modifié',
       // ── Intro (drop) ──
-      dropTitle: 'Décomposez chaque lettre, retravaillez-la, réexportez-la.',
+      brandSub: 'TYPO ÉDITEUR',
+      dropTitle: 'Décomposez chaque lettre, retravaillez-la, réexportez.',
       dropSub: 'Déposez une police ici, ou cliquez pour choisir un fichier. Chaque caractère devient des contours vectoriels éditables.',
       dropPick: 'Choisir un fichier .ttf .otf .woff .woff2',
+      kbdDel: 'Suppr', kbdEsc: 'Échap', kbdWheel: 'Ctrl+molette',
       dropHint: 'Astuce : vous pouvez aussi ouvrir un fichier .sf (SuperFont) pour continuer un travail.',
       // ── Grille ──
       glyphGridTitle: 'Caractères décomposés',
@@ -180,9 +182,11 @@
       chipPolice: 'Font',
       chipGlyphs: 'Glyphs',
       chipModified: 'Modified',
-      dropTitle: 'Break down each letter, rework it, export it again.',
+      brandSub: 'FONT EDITOR',
+      dropTitle: 'Break down each letter, rework it, export it.',
       dropSub: 'Drop a font here, or click to browse. Every character becomes editable vector outlines.',
       dropPick: 'Choose a .ttf .otf .woff .woff2 file',
+      kbdDel: 'Del', kbdEsc: 'Esc', kbdWheel: 'Ctrl+wheel',
       dropHint: 'Tip: you can also open a .sf (SuperFont) file to keep working.',
       glyphGridTitle: 'Decomposed characters',
       searchPlaceholder: 'Search for a character…',
@@ -282,9 +286,11 @@
       chipPolice: 'フォント',
       chipGlyphs: 'グリフ',
       chipModified: '変更あり',
+      brandSub: 'フォントエディター',
       dropTitle: '文字をパスに分解し、編集し、書き出しましょう。',
       dropSub: 'ここにフォントをドロップ、またはクリックして選択。各文字は編集できるアウトラインになります。',
       dropPick: '.ttf .otf .woff .woff2 を選択',
+      kbdDel: '削除', kbdEsc: 'Esc', kbdWheel: 'Ctrl+ホイール',
       dropHint: 'ヒント：.sf（SuperFont）ファイルを開いて作業を続けることもできます。',
       glyphGridTitle: '分解された文字',
       searchPlaceholder: '文字を検索…',
@@ -410,6 +416,76 @@
     document.querySelectorAll('[data-i18n-ph]').forEach((e) => {
       const k = e.getAttribute('data-i18n-ph');
       if (k && t(k) !== k) e.setAttribute('placeholder', t(k));
+    });
+    // 🆕 v1.7.425 — INFOBULLES (attributs title) : elles n'étaient jamais traduites et
+    //   restaient en français dans l'interface anglaise. Table par langue, appliquée à
+    //   chaque changement de langue.
+    const TITRES = {
+      fr: {
+        btnLoadFont: 'Charger une police (.ttf, .otf, .woff, .woff2)',
+        fontNameChip: 'Police chargée', glyphCountChip: 'Nombre de caractères',
+        modifiedChip: 'Modifications non sauvegardées', btnChangeFont: 'Changer de police',
+        btnSaveSf: 'Enregistrer le projet SuperFont (.sf)',
+        btnExportFont: 'Réexporter la typo modifiée (.ttf / .otf)',
+        btnZoomOut: 'Zoom arrière', zoomPct: 'Zoom actuel — cliquer pour 100 %',
+        btnZoomIn: 'Zoom avant', btnHelp: 'Aide / raccourcis',
+        btnTheme: 'Basculer thème clair / sombre', btnPrefs: 'Préférences',
+        btnCloseEditor: "Fermer l'éditeur (Échap)", btnGridView: 'Vue grille (rendu)',
+        btnOutlineView: 'Vue contours', btnRefresh: "Re-synchroniser depuis la fonte d'origine"
+      },
+      en: {
+        btnLoadFont: 'Load a font (.ttf, .otf, .woff, .woff2)',
+        fontNameChip: 'Loaded font', glyphCountChip: 'Number of characters',
+        modifiedChip: 'Unsaved changes', btnChangeFont: 'Change font',
+        btnSaveSf: 'Save the SuperFont project (.sf)',
+        btnExportFont: 'Re-export the edited typeface (.ttf / .otf)',
+        btnZoomOut: 'Zoom out', zoomPct: 'Current zoom — click for 100%',
+        btnZoomIn: 'Zoom in', btnHelp: 'Help / shortcuts',
+        btnTheme: 'Toggle light / dark theme', btnPrefs: 'Preferences',
+        btnCloseEditor: 'Close the editor (Esc)', btnGridView: 'Grid view (rendered)',
+        btnOutlineView: 'Outline view', btnRefresh: 'Re-sync from the source font'
+      },
+      ja: {
+        btnLoadFont: 'フォントを読み込む（.ttf / .otf / .woff / .woff2）',
+        fontNameChip: '読み込み済みフォント', glyphCountChip: '文字数',
+        modifiedChip: '未保存の変更', btnChangeFont: 'フォントを変更',
+        btnSaveSf: 'SuperFont プロジェクトを保存（.sf）',
+        btnExportFont: '編集した書体を書き出す（.ttf / .otf）',
+        btnZoomOut: 'ズームアウト', zoomPct: '現在のズーム — クリックで 100%',
+        btnZoomIn: 'ズームイン', btnHelp: 'ヘルプ / ショートカット',
+        btnTheme: 'ライト / ダークテーマ切替', btnPrefs: '環境設定',
+        btnCloseEditor: 'エディターを閉じる（Esc）', btnGridView: 'グリッド表示',
+        btnOutlineView: 'アウトライン表示', btnRefresh: '元のフォントから再同期'
+      }
+    };
+    const dTit = TITRES[lang] || TITRES.en;
+    Object.keys(dTit).forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.setAttribute('title', dTit[id]);
+      if (id === 'btnPrefs') el.setAttribute('aria-label', dTit[id]);
+    });
+    // 🆕 v1.7.425 — DERNIER LOT : infobulles des barres d'outils de l'éditeur de glyphe
+    //   (outils, couper, ajuster, annuler/rétablir, zoom, miroirs). Ces boutons n'ont pas
+    //   tous un id : on les désigne par sélecteur, avec les trois langues dans la table.
+    const TT_OUTILS = [
+      ['[data-tool="select"]', { fr: 'Sélection / transformer (V)', en: 'Select / transform (V)', ja: '選択 / 変形（V）' }],
+      ['[data-tool="pen"]', { fr: 'Plume — tracer / ajouter des points (P)', en: 'Pen — draw / add points (P)', ja: 'ペン — 描画 / 点の追加（P）' }],
+      ['[data-tool="node"]', { fr: 'Nœud / courbure (N)', en: 'Node / curve (N)', ja: 'ノード / カーブ（N）' }],
+      ['[data-tool="shape"]', { fr: 'Formes (rectangle / ellipse) (R)', en: 'Shapes (rectangle / ellipse) (R)', ja: '図形（長方形 / 楕円）（R）' }],
+      ['[data-tool="delete"]', { fr: 'Supprimer (Suppr)', en: 'Delete (Del)', ja: '削除（Del）' }],
+      ['[data-action="cut"]', { fr: 'Couper au point (tronquer)', en: 'Cut at point (truncate)', ja: 'ポイントで切断' }],
+      ['[data-action="fit"]', { fr: "Ajuster à l'écran", en: 'Fit to screen', ja: '画面に合わせる' }],
+      ['btnUndo', { fr: 'Annuler (Ctrl+Z)', en: 'Undo (Ctrl+Z)', ja: '元に戻す（Ctrl+Z）' }],
+      ['btnRedo', { fr: 'Rétablir (Ctrl+Y)', en: 'Redo (Ctrl+Y)', ja: 'やり直し（Ctrl+Y）' }],
+      ['edZoomPct', { fr: 'Zoom éditeur — Ctrl+0 = 100%', en: 'Editor zoom — Ctrl+0 = 100%', ja: 'エディターズーム — Ctrl+0 = 100%' }],
+      ['btnMirrorH', { fr: 'Symétrie horizontale', en: 'Horizontal mirror', ja: '左右反転' }],
+      ['btnMirrorV', { fr: 'Symétrie verticale', en: 'Vertical mirror', ja: '上下反転' }],
+      ['btnRotate90', { fr: 'Rotation 90°', en: 'Rotate 90°', ja: '90° 回転' }]
+    ];
+    TT_OUTILS.forEach((paire) => {
+      const el = paire[0].charAt(0) === '#' || paire[0].charAt(0) === '[' ? document.querySelector(paire[0]) : $(paire[0]);
+      if (el) el.setAttribute('title', paire[1][lang] || paire[1].en);
     });
     // titre de page + langue du document
     try { document.title = t('docTitle'); } catch (e2) {}
@@ -2500,12 +2576,13 @@
     ST.opentype = window.opentype;
     // thème persisté
     try { const th = localStorage.getItem('st_theme'); if (th && (th === 'light' || th === 'dark')) { ST.theme = th; document.body.classList.toggle('theme-dark', th === 'dark'); } } catch (e) {}
-    // langue persistée — clé versionnée 'st_lang_v2' : premier lancement = ANGLAIS.
-    //   (l'ancienne clé 'st_lang' est ignorée pour forcer l'anglais par défaut,
-    //    comme le studio utilise sa propre clé 'sp213_studio_lang_v2'.)
-    let saved = null;
-    try { saved = localStorage.getItem('st_lang_v2'); } catch (e) {}
-    ST.lang = (saved && saved in I18N) ? saved : 'en';
+    // 🆕 v1.7.425 — L'INTERFACE DÉMARRE TOUJOURS EN ANGLAIS (demande utilisateur).
+    //   Avant, la dernière langue choisie était restaurée : après un passage par le
+    //   français, l'ouverture suivante s'affichait donc en français. Désormais chaque
+    //   ouverture repart en anglais ; la langue choisie dans ⚙ Préférences s'applique
+    //   à la session en cours (et reste mémorisée comme dernier choix).
+    try { /* on ne RELIT plus 'st_lang_v2' au démarrage */ } catch (e) {}
+    ST.lang = 'en';
     try { localStorage.setItem('st_lang_v2', ST.lang); } catch (e) {}
     bindUI();
     bindSidePanel();

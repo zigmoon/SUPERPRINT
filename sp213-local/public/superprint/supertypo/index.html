@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="google" content="notranslate">
-<title>SuperTyPo — Décomposeur &amp; éditeur de typographie</title>
+<title>SuperTyPo — Font &amp; type editor</title>
 <meta name="description" content="SuperTyPo : déposez une police, décomposez chaque caractère en contours vectoriels, retravaillez la lettre à la plume, puis réexportez la typo modifiée. Format natif .sf (SuperFont).">
 <!-- 🎨 Logotype SuperTyPo en favicon (dossier « superprint/icons »). -->
 <link rel="icon" type="image/svg+xml" href="../icons/sper_typo.svg">
@@ -16,7 +16,7 @@
 <header id="topbar">
   <div class="tb-group tb-brand">
     <img class="brand-mark" src="../icons/sper_typo.svg" alt="SuperTyPo" title="SuperTyPo">
-    <div class="brand-sub" id="brandSub">DÉCOMPOSEUR DE TYPO</div>
+    <div class="brand-sub" id="brandSub" data-i18n="brandSub">FONT EDITOR</div>
   </div>
 
   <div class="tb-group" id="fontInfoGroup" style="display:none">
@@ -69,13 +69,13 @@
 <div id="dropArea">
   <div class="drop-card">
     <div class="drop-glyph">Aa</div>
-    <h1 data-i18n="dropTitle">Décomposez chaque lettre, retravaillez-la, réexportez-la.</h1>
-    <p data-i18n="dropSub">Déposez une police ici, ou cliquez pour parcourir vos fichiers. Chaque caractère sera décomposé en contours vectoriels que vous pourrez éditer à la plume, à la manière d'un FontGrapher.</p>
+    <h1 data-i18n="dropTitle">Break down each letter, rework it, export it.</h1>
+    <p data-i18n="dropSub">Drop a font here, or click to browse. Every character becomes editable vector outlines.</p>
     <button class="big-btn" id="btnPickFont">
       <svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
-      <span data-i18n="dropPick">Choisir un fichier .ttf .otf .woff .woff2</span>
+      <span data-i18n="dropPick">Choose a .ttf .otf .woff .woff2 file</span>
     </button>
-    <div class="drop-hint" id="dropHint" data-i18n="dropHint">Astuce : vous pouvez aussi ouvrir un fichier .sf (SuperFont) pour continuer un travail.</div>
+    <div class="drop-hint" id="dropHint" data-i18n="dropHint">Tip: you can also open a .sf (SuperFont) file to keep working.</div>
     <input type="file" id="fileInput" accept=".ttf,.otf,.woff,.woff2,.sf" hidden>
   </div>
 </div>
@@ -332,11 +332,11 @@
         <div class="k"><kbd>N</kbd><span data-i18n="hNode">Nœud / courbure</span></div>
         <div class="k"><kbd>R</kbd><span data-i18n="hShape">Formes (rectangle / ellipse)</span></div>
         <div class="k"><kbd>A</kbd><span data-i18n="hAddP">Ajouter un point sur une courbe</span></div>
-        <div class="k"><kbd>Suppr</kbd><span data-i18n="hDel">Supprimer la sélection</span></div>
-        <div class="k"><kbd>Échap</kbd><span data-i18n="hEsc">Fermer l'éditeur</span></div>
+        <div class="k"><kbd data-i18n="kbdDel">Suppr</kbd><span data-i18n="hDel">Supprimer la sélection</span></div>
+        <div class="k"><kbd data-i18n="kbdEsc">Échap</kbd><span data-i18n="hEsc">Fermer l'éditeur</span></div>
         <div class="k"><kbd>Ctrl+Z / Ctrl+Y</kbd><span data-i18n="hUndo">Annuler / Rétablir</span></div>
         <div class="k"><kbd>Ctrl+0</kbd><span data-i18n="hZoom100">Zoom 100%</span></div>
-        <div class="k"><kbd>Ctrl+molette</kbd><span data-i18n="hZoom">Zoom</span></div>
+        <div class="k"><kbd data-i18n="kbdWheel">Ctrl+molette</kbd><span data-i18n="hZoom">Zoom</span></div>
       </div>
       <div class="help-col">
         <h3 data-i18n="helpGrid">Grille / globale</h3>
@@ -351,6 +351,6 @@
 
 <!-- Chargement -->
 <script src="JS/opentype.min.js"></script>
-<script src="JS/supertypo.js?v=13"></script>
+<script src="JS/supertypo.js?v=16"></script>
 </body>
 </html>

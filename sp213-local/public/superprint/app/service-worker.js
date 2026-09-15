@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.424-clavier-zoom-typo';
+const CACHE_NAME = 'superprint-shell-v1.7.425-supertypo-popins';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
