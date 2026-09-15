@@ -71032,148 +71032,224 @@ function _npBuildLayout(params, keywords, lang) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   🆕 v1.7.429 — ASSET LIBRARY : LES 8 MODÈLES ANGLAIS (moteur v2).
-   Géométrie corrigée : getPageOrigin() → fonds perdus couverts + chaque page d'un
-   spread reçoit son origine (vraie double page). Thèmes REFaits, tailles en mm,
-   images locales (img/auto/tpl/…). Les modèles FR historiques ne sont plus listés.
+   🆕 v1.7.431 — ASSET LIBRARY : LES 8 MODÈLES ANGLAIS (moteur v3).
+
+   1. ORDRE DES CALQUES — déterministe. Chaque objet du modèle reçoit un RÔLE
+      (1 fond / 2 bloc / 3 aplat photo / 4 image / 5 décor / 6 texte) et un
+      repassage final rétablit l'empilement complet, même si l'application a
+      ajouté ses propres calques après coup :
+          [calques étrangers plein page] → [autres] → fonds → blocs →
+          aplats photo → photos → décors → textes.
+      Le repassage tourne à chaque image chargée, à la fin de chaque page, et
+      pendant 2 s après (debounce sur « object:added »), puis se désarme pour
+      ne plus jamais toucher aux ajouts de l'utilisateur.
+
+   2. PHOTOS — 32 visuels dédiés : img/template/<modele>/1..n.jpg (local).
+      Cadres variés : pleine page à fond perdu, bandeau, cartouche, cercle,
+      arche, pente, planche, diptyque, grille. Les masques sont des clipPath
+      RELATIFS : ils suivent l'image quand on la déplace ou la redimensionne.
+
+   3. MISE EN PAGE — chaque modèle a sa propre grille (aucun fond commun) :
+      magazine mode / musique / cuisine, journal coiffure, menu restaurant,
+      livre, CV, carte de visite.
    ═══════════════════════════════════════════════════════════════════════════ */
 (function spEnTemplates() {
+    var PREV = 'img/template/preview/';
+
+    // ── Modèles ────────────────────────────────────────────────────────────
     var M = [
         {
-            key: 'en_magazine_fashion_8p', family: 'magazine', spreadDoc: true,
+            key: 'en_magazine_fashion_8p', style: 'mode', family: 'magazine', spreadDoc: true,
             name: 'Fashion Magazine (8p)', desc: 'Editorial fashion magazine — 8 pages, double page',
             format: { width: 420, height: 560, spread: true, pages: 8 },
-            theme: { paper: '#faf8f5', ink: '#121212', accent: '#b3122c', soft: '#ece5dc', night: '#14110f' },
+            theme: { paper: '#faf8f5', ink: '#121212', accent: '#b3122c', soft: '#e7e0d7', night: '#14110f' },
             fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
-            img: 'img/template/fashion',
+            img: 'img/template/fashion', nimg: 6,
             c: {
                 mast: 'ÉCLAT', tag: 'FASHION & STYLE', issue: 'N° 12 · AUTUMN 2026', price: 'PARIS 6,90 € · eclat-magazine.com',
-                head: 'The season\u2019s wardrobe', stand: 'Six silhouettes that set the tone for autumn \u2014 sculpted wool, liquid satin, brushed cashmere.',
-                coverlines: '40 pieces you will actually wear\nThe designers to follow\nTailoring, velvet, knit: the big return',
+                head: 'The season\u2019s wardrobe',
+                stand: 'Six silhouettes that set the tone for autumn \u2014 sculpted wool, liquid satin, brushed cashmere.',
+                coverlines: '40 pieces you will actually wear\nThe designers to follow\nTailoring, velvet and knit: the big return',
                 sections: ['The dossier', 'Runway report', 'On the street', 'Beauty notes', 'The interview', 'Shopping guide'],
+                legs: ['The atelier diaries', 'Six silhouettes', 'Velvet returns', 'Behind the seams', 'A word with Anne Roy', 'Paris in 40 pieces'],
                 quote: 'Style is a way to say who you are without having to speak.',
-                body: 'Autumn arrives with a quieter silhouette. Shoulders soften, waists return and the fabric does the talking. We followed three ateliers from the first fitting to the final press.',
-                caption: 'Photographed in Paris for the autumn issue · styling by A. Roy'
+                body: 'Autumn arrives with a quieter silhouette. Shoulders soften, waists return and the fabric does the talking. We followed three ateliers from the first fitting to the final press, and the same sentence came back every time: less shape, more material.\n\nThe coat is long again, cut close to the body and left unlined so it moves. Knitwear takes the volume the tailoring gave up, and the palette settles into camel, slate and a single note of red \u2014 worn head to toe or not at all.\n\nWhat changes this season is not the shape but the weight. Everything is lighter, which is why the clothes read as calm rather than austere.',
+                caption: 'Photographed in Paris for the autumn issue \u00b7 styling by A. Roy',
+                credits: 'Model: Ines L. \u00b7 Hair: Studio 9 \u00b7 Make-up: Camille B. \u00b7 Light: M. Dubois'
             }
         },
         {
-            key: 'en_journal_hair_4p', family: 'journal', spreadDoc: false,
-            name: 'Hair Journal (4p)', desc: 'Salon & hair journal — 4 pages, press format',
-            format: { width: 800, height: 1200, pages: 4 },
-            theme: { paper: '#f4f1e8', ink: '#17150f', accent: '#8a6a3b', soft: '#e8e2d2', night: '#17150f' },
+            key: 'en_journal_hair_4p', style: 'coiffure', family: 'journal', spreadDoc: false,
+            name: 'Hair Journal (4p)', desc: 'Salon & hair journal — 4 pages, A4',
+            format: { width: 595, height: 842, pages: 4 },
+            theme: { paper: '#f4f1e8', ink: '#17150f', accent: '#8a6a3b', soft: '#e6e0d0', night: '#17150f' },
             fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
-            img: 'img/template/hair',
+            img: 'img/template/hair', nimg: 5,
             c: {
-                mast: 'The Hair Journal', tag: 'SALON NEWS, CUTS AND COLOUR', issue: 'SPECIAL EDITION · AUTUMN 2026 · N° 07', price: '€ 4,50',
-                head: 'The soft bob is the cut of the season', stand: 'Blunt line, invisible layers and a colour that grows out gracefully.',
+                mast: 'The Hair Journal', tag: 'SALON NEWS, CUTS AND COLOUR', issue: 'SPECIAL EDITION \u00b7 AUTUMN 2026 \u00b7 N\u00b0 07', price: '\u20ac 4,50',
+                head: 'The soft bob is the cut of the season',
+                stand: 'Blunt line, invisible layers and a colour that grows out gracefully.',
                 coverlines: 'Colour: warm brunettes\nSalon business: pricing in 2026\nTools of the trade',
                 sections: ['Front page', 'Colour trend', 'Salon business', 'Tools', 'Interview', 'Diary'],
+                legs: ['The soft bob', 'Warm brunettes', 'Pricing in 2026', 'Six combs to keep', 'A word with Lila M.', 'Diary'],
                 quote: 'A good cut is the one you can style again on Monday morning.',
-                body: 'The soft bob sits between the blunt line and the long bob. It is cut dry, point by point, so the weight falls exactly where the client needs it \u2014 and it survives three months of regrowth.',
-                caption: 'Backstage at the autumn hair show · Paris'
+                body: 'The soft bob sits between the blunt line and the long bob. It is cut dry, point by point, so the weight falls exactly where the client needs it \u2014 and it survives three months of regrowth without losing its edge.\n\nThe trick is in the tension. Cut too tight and the hair collapses; cut too soft and it disappears after the first wash. We asked four salon owners how they explain it to a client who is hesitating.\n\nColour follows the same logic: warm brunettes with a gloss, no permanent line, and a root shadow that lets the regrowth read as intent rather than neglect.',
+                caption: 'Backstage at the autumn hair show \u00b7 Paris',
+                credits: 'Styling: S. Marchand \u00b7 Photography: L. Mercier \u00b7 Salon: Maison 9'
             }
         },
         {
-            key: 'en_magazine_music_8p', family: 'magazine', spreadDoc: true,
+            key: 'en_magazine_music_8p', style: 'musique', family: 'magazine', spreadDoc: true,
             name: 'Music Magazine (8p)', desc: 'Music & culture magazine — 8 pages, double page',
             format: { width: 420, height: 560, spread: true, pages: 8 },
-            theme: { paper: '#0a0a0c', ink: '#f5f3ef', accent: '#ff3d71', soft: '#17171d', night: '#050506' },
+            theme: { paper: '#f5f3ef', ink: '#f5f3ef', accent: '#ff3d71', soft: '#1d1d24', night: '#0a0a0c' },
             fonts: { display: 'Bebas Neue', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
-            img: 'img/template/music',
+            img: 'img/template/music', nimg: 5,
             c: {
                 mast: 'AMPLIFY', tag: 'THE SOUND OF NOW', issue: 'VOL. 04 · 2026', price: '€ 5,90',
-                head: 'Analogue is back on the charts', stand: 'Why the loudest records of the year were cut to tape.',
-                coverlines: 'Studio Nord: 3 nights\nThe new wave of pressing plants\n20 records you missed',
+                head: 'Analogue is back on the charts',
+                stand: 'Why the loudest records of the year were cut to tape \u2014 and what it costs to keep a machine alive.',
+                coverlines: 'Studio Nord: three nights\nTwenty records you missed\nPressing plants are full again',
                 sections: ['Cover story', 'New releases', 'Studio notes', 'Live', 'Gear', 'Playlist'],
+                legs: ['Cut to tape', 'Twenty records', 'Three nights at Nord', 'The room', 'Gear: one machine', 'Playlist 04'],
                 quote: 'Tape does not forgive, and that is exactly why we use it.',
-                body: 'Three producers, one rented room and a two-inch machine. The result is the most direct record of the year: no grid, no comping, just a band playing until the take feels right.',
-                caption: 'Tracking night at Studio Nord · photo by L. Mercier'
+                body: 'Three producers, one rented room and a two-inch machine. The result is the most direct record of the year: no grid, no comping, just a band playing until the take feels right.\n\nIt is expensive in a way that nobody budgets for. Tape costs money, the machine costs maintenance, and every mistake costs both \u2014 but the constraint is what makes the performances honest.\n\nThe pressing plants are full again, which is the strangest part of the story. A format everyone declared dead is now the one that cannot keep up with demand.',
+                caption: 'Tracking night at Studio Nord \u00b7 photo by L. Mercier',
+                credits: 'Words: J. Novak \u00b7 Portraits: S. Klein \u00b7 Recorded at Studio Nord',
+                list: 'Neon Divide \u2014 Second Sun\nKite & Wire \u2014 Slow Traffic\nMarta Sloane \u2014 Room 12\nLow Season \u2014 Analog Hearts\nThe Pale Hours \u2014 Rework'
             }
         },
         {
-            key: 'en_magazine_food_8p', family: 'magazine', spreadDoc: true,
+            key: 'en_magazine_food_8p', style: 'cuisine', family: 'magazine', spreadDoc: true,
             name: 'Food Magazine (8p)', desc: 'Food & flavours magazine — 8 pages, double page',
             format: { width: 420, height: 560, spread: true, pages: 8 },
             theme: { paper: '#fffdf8', ink: '#1d1a15', accent: '#1f7a4d', soft: '#eef0e6', night: '#14261c' },
             fonts: { display: 'Playfair Display', text: 'Open Sans', mono: 'IBM Plex Mono' },
-            img: 'img/template/food',
+            img: 'img/template/food', nimg: 5,
             c: {
                 mast: 'FLAVOURS', tag: 'THE MAGAZINE OF WORLD KITCHENS', issue: 'N° 21 · AUTUMN 2026', price: '€ 5,20',
-                head: 'Slow cooking, bright flavours', stand: 'Four braises that turn a cheap cut into the best meal of the week.',
-                coverlines: 'The pantry: 12 jars\nBraised beef, three ways\nBread for a cold Sunday',
+                head: 'Slow cooking, bright flavours',
+                stand: 'Four braises that turn a cheap cut into the best meal of the week.',
+                coverlines: 'The pantry: twelve jars\nBraised beef, three ways\nBread for a cold Sunday',
                 sections: ['The pantry', 'Main courses', 'Vegetables', 'Baking', 'Wine', 'Kitchen notes'],
+                legs: ['The pantry', 'Main courses', 'Root vegetables', 'Bread day', 'A short cellar', 'Kitchen notes'],
                 quote: 'Time is the only ingredient you cannot buy ready-made.',
-                body: 'A braise is patience made visible. Brown the meat properly, build the base with onion, carrot and tomato, then let the oven do the rest of the work for three quiet hours.',
-                caption: 'Sunday braise, photographed in the studio'
+                body: 'A braise is patience made visible. Brown the meat properly, build the base with onion, carrot and tomato, then let the oven do the rest of the work for three quiet hours.\n\nThe cut matters less than the cooking. Cheek, shoulder and shin all behave the same way: they need time, moisture and a lid, and they forgive a cook who leaves the room.\n\nFinish with something sharp \u2014 vinegar, citrus, a handful of herbs \u2014 and the plate stops tasting like a long afternoon and starts tasting like a dish.',
+                caption: 'Sunday braise, photographed in the studio',
+                credits: 'Recipe: M. Verdier \u00b7 Styling: A. Costa \u00b7 Kitchen: Atelier 12',
+                list: 'Olive oil, first press\nSalt, dry-cured\nTomatoes, whole\nBeans, white\nAnchovies in oil\nVinegar, red wine'
             }
         },
         {
-            key: 'en_restaurant_menu_4p', family: 'menu', spreadDoc: false,
+            key: 'en_restaurant_menu_4p', style: 'menu', family: 'menu', spreadDoc: false,
             name: 'Restaurant Menu (4p)', desc: 'Restaurant menu — 4 pages, A4',
             format: { width: 595, height: 842, pages: 4 },
-            theme: { paper: '#f6f0e3', ink: '#f6f0e3', accent: '#c8a15a', soft: '#1a2c24', night: '#0f1f19' },
+            theme: { paper: '#f6f0e3', ink: '#f6f0e3', accent: '#c8a15a', soft: '#33463c', night: '#0f1f19' },
             fonts: { display: 'Playfair Display', text: 'Montserrat', mono: 'IBM Plex Mono' },
-            img: 'img/template/menu',
+            img: 'img/template/menu', nimg: 4,
             c: {
                 mast: 'THE GOLDEN HOUSE', tag: 'SEASONAL KITCHEN', issue: 'MENU 2026', price: '',
                 head: 'Seasonal kitchen', stand: 'Cooked to order, served with time to spare.',
-                coverlines: '', sections: ['Starters', 'Main courses', 'Desserts', 'Wines by the glass', 'Tasting menu', 'Reservations'],
+                coverlines: '', sections: ['Starters', 'Main courses', 'Desserts', 'Wines', 'Tasting menu', 'Reservations'],
+                legs: ['Starters', 'Main courses', 'Desserts', 'Wines'],
                 quote: 'What arrives in the morning shapes what leaves the kitchen at night.',
-                body: 'Starters\nBurrata, roasted grapes, hazelnut oil · 12\nPumpkin velouté, sage, brown butter · 11\n\nMain courses\nBraised beef cheek, root vegetables · 26\nSea bream, fennel, citrus · 24\nWild mushroom risotto · 21',
-                caption: '12 Market Street · +33 1 23 45 67 89'
+                body: 'Our kitchen cooks what the market gives us. The menu changes when the vegetables do, and not before.',
+                caption: '12 Market Street \u00b7 +33 1 23 45 67 89 \u00b7 every day 12\u201314 h and 19\u201322 h',
+                plats: [
+                    'Starters::Burrata, roasted grapes, hazelnut oil::12',
+                    'Starters::Pumpkin velout\u00e9, sage, brown butter::11',
+                    'Starters::Mackerel rillettes, rye, pickled onion::13',
+                    'Mains::Braised beef cheek, root vegetables::26',
+                    'Mains::Sea bream, fennel, citrus::24',
+                    'Mains::Wild mushroom risotto, aged parmesan::21',
+                    'Mains::Lamb shoulder, white beans, rosemary::27',
+                    'Desserts::Dark chocolate tart, sea salt::11',
+                    'Desserts::Pear poached in red wine::10',
+                    'Desserts::Cheese board, three ages::14',
+                    'Wines::Sancerre, Loire 2023::9',
+                    'Wines::C\u00f4tes du Rh\u00f4ne, glass::8',
+                    'Wines::Champagne, by the glass::14'
+                ]
             }
         },
         {
-            key: 'en_business_card_1p', family: 'card', spreadDoc: false,
+            key: 'en_business_card_1p', style: 'carte', family: 'card', spreadDoc: false,
             name: 'Business Card', desc: 'Two-tone business card — 85 × 55 mm',
-            format: { width: 240, height: 140, pages: 1 },
-            theme: { paper: '#ffffff', ink: '#0e0e10', accent: '#2563eb', soft: '#f2f3f5', night: '#0e0e10' },
+            format: { width: 241, height: 156, pages: 1 },
+            theme: { paper: '#ffffff', ink: '#0e0e10', accent: '#2563eb', soft: '#eef2ff', night: '#0e0e10' },
             fonts: { display: 'Montserrat', text: 'Montserrat', mono: 'IBM Plex Mono' },
-            img: '',
+            img: 'img/template/card', nimg: 1,
             c: {
-                mast: 'ALEX MORGAN', tag: 'GRAPHIC DESIGNER', issue: '', price: '', head: 'Alex Morgan', stand: 'Brand identity · editorial design',
-                coverlines: '', sections: [], quote: '',
-                body: 'hello@alexmorgan.studio\n+33 6 12 34 56 78\nalexmorgan.studio', caption: 'Paris · Lyon'
+                mast: 'ALEX MORGAN', tag: 'GRAPHIC DESIGNER', issue: '', price: '', head: 'Alex Morgan',
+                stand: 'Brand identity \u00b7 editorial design', coverlines: '', sections: [], quote: '',
+                body: 'hello@alexmorgan.studio\n+33 6 12 34 56 78\nalexmorgan.studio', caption: 'Paris \u00b7 Lyon',
+                legs: []
             }
         },
         {
-            key: 'en_cv_pro_1p', family: 'cv', spreadDoc: false,
-            name: 'Professional CV', desc: 'One-page résumé — A4',
+            key: 'en_cv_pro_1p', style: 'cv', family: 'cv', spreadDoc: false,
+            name: 'Professional CV', desc: 'One-page résumé — A4, portrait photo',
             format: { width: 595, height: 842, pages: 1 },
             theme: { paper: '#ffffff', ink: '#14181f', accent: '#0f766e', soft: '#f1f5f9', night: '#14181f' },
             fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
-            img: '',
+            img: 'img/template/cv', nimg: 1,
             c: {
-                mast: 'CURRICULUM VITAE', tag: 'SENIOR PRODUCT DESIGNER · LONDON', issue: '', price: '', head: 'Jordan Lee', stand: 'Designer with nine years of experience shipping print and digital products, from first sketch to production follow-up.',
+                mast: 'CURRICULUM VITAE', tag: 'SENIOR PRODUCT DESIGNER \u00b7 LONDON', issue: '', price: '',
+                head: 'Jordan Lee',
+                stand: 'Designer with nine years of experience shipping print and digital products, from the first sketch to the production follow-up.',
                 coverlines: '', sections: ['Profile', 'Experience', 'Education', 'Skills', 'Languages', 'References'], quote: '',
-                body: 'EXPERIENCE\n2022 — now · Northwind Studio\nLead product designer, editorial platforms\n\n2019 — 2022 · Studio Paper\nPrint & identity designer\n\n2017 — 2019 · Atelier 7\nJunior designer, packaging',
-                caption: 'jordan.lee@email.com · +44 7700 900123 · London'
+                body: 'EXPERIENCE\n2022 \u2014 now \u00b7 Northwind Studio\nLead product designer, editorial platforms\n\n2019 \u2014 2022 \u00b7 Studio Paper\nPrint & identity designer\n\n2017 \u2014 2019 \u00b7 Atelier 7\nJunior designer, packaging',
+                caption: 'jordan.lee@email.com \u00b7 +44 7700 900123 \u00b7 London',
+                legs: [
+                    'Experience::2022 \u2014 now::Northwind Studio::Lead product designer, editorial platforms',
+                    'Experience::2019 \u2014 2022::Studio Paper::Print & identity designer, brand systems',
+                    'Experience::2017 \u2014 2019::Atelier 7::Junior designer, packaging and retail',
+                    'Education::2015 \u2014 2017::Royal College of Art::MA, Communication Design',
+                    'Education::2011 \u2014 2014::University of Leeds::BA, Graphic Design'
+                ],
+                skills: 'Editorial design::0.95\nBrand systems::0.88\nTypography::0.92\nPrint production::0.85\nUI & prototyping::0.80\nTeam leadership::0.75',
+                langues: 'English \u00b7 native\nFrench \u00b7 fluent\nGerman \u00b7 working'
             }
         },
         {
-            key: 'en_book_text_12p', family: 'book', spreadDoc: false,
+            key: 'en_book_text_12p', style: 'livre', family: 'book', spreadDoc: false,
             name: 'Book — 12p', desc: 'Text book / booklet — 12 pages, A5',
             format: { width: 420, height: 595, pages: 12 },
             theme: { paper: '#fbf8f1', ink: '#191713', accent: '#8a5a2b', soft: '#f1ece1', night: '#191713' },
             fonts: { display: 'Playfair Display', text: 'IBM Plex Sans', mono: 'IBM Plex Mono' },
-            img: 'img/template/book',
+            img: 'img/template/book', nimg: 5,
             c: {
                 mast: 'THE QUIET CRAFT', tag: 'ESSAYS · FIRST EDITION', issue: 'MMXXVI', price: '',
-                head: 'A short book about making things slowly', stand: 'Twelve essays on the ordinary decisions that separate a made object from a manufactured one.',
-                coverlines: '', sections: ['Preface', 'The workshop', 'Materials', 'The long project', 'Mistakes', 'Epilogue'], quote: 'Every object carries the time it took to make it.',
-                body: 'The workshop is a room where nothing is finished and everything is understood. Tools hang in the order they are used, and the bench keeps the marks of the last ten years of work.',
-                caption: 'First edition of 500 copies'
+                head: 'A short book about making things slowly',
+                stand: 'Twelve essays on the ordinary decisions that separate a made object from a manufactured one.',
+                coverlines: '', sections: ['Preface', 'The workshop', 'Materials', 'The long project', 'Mistakes', 'Epilogue'],
+                legs: ['Preface', 'The workshop', 'Materials', 'The long project', 'Mistakes', 'Epilogue'],
+                quote: 'Every object carries the time it took to make it.',
+                body: 'The workshop is a room where nothing is finished and everything is understood. Tools hang in the order they are used, and the bench keeps the marks of the last ten years of work.\n\nMaking slowly is not a moral position. It is a method: it keeps the maker close enough to the material to notice when the material changes its mind.\n\nMost mistakes are not errors of the hand but of attention. The plane slips because the eye moved first, and the repair teaches more than the first attempt ever did.',
+                caption: 'First edition of 500 copies \u00b7 printed on uncoated paper',
+                credits: 'Set in Playfair Display and IBM Plex Sans \u00b7 500 copies \u00b7 2026'
             }
         }
     ];
 
-    // ── Outils ──────────────────────────────────────────────────────────
+    // ── Outils ─────────────────────────────────────────────────────────────
     function px(mm) { return mmToPx(mm); }
     function esc(s) { return String(s == null ? '' : s); }
-    function colonnes(txt, n) {
+    function paragraphes(txt, n) {
         var out = [], t = String(txt || ''), parts = t.split('\n\n');
         for (var i = 0; i < n; i++) out.push(parts[i] || (i === 0 ? t : ''));
         return out;
+    }
+    function suite(txt, n) {  // texte restant après les n premiers paragraphes
+        var p = String(txt || '').split('\n\n');
+        return p.slice(n).join('\n\n') || txt;
+    }
+    function luminance(hex) {
+        var h = String(hex || '#ffffff').replace('#', '');
+        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+        var r = parseInt(h.substr(0, 2), 16) / 255, g = parseInt(h.substr(2, 2), 16) / 255, b = parseInt(h.substr(4, 2), 16) / 255;
+        if (isNaN(r) || isNaN(g) || isNaN(b)) return 1;
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
     }
     function geo(canvas, pi) {
         var g = getPageOrigin(canvas, pi);
@@ -71186,339 +71262,868 @@ function _npBuildLayout(params, keywords, lang) {
         return g;
     }
 
-    // ── Pose des photos (objets Image « cover » + clip rect) ─────────────
-    var SP_EN_PENDING = [];   // références vivantes tant que le chargement n'est pas fini
-    function spEnLibere(el) { try { var i = SP_EN_PENDING.indexOf(el); if (i >= 0) SP_EN_PENDING.splice(i, 1); } catch (e) {} }
-    function flushImgs(canvas) {
-        if (!canvas || !canvas.__spEnImgs || !canvas.__spEnImgs.length) return;
-        var fileImgs = canvas.__spEnImgs.slice();
-        canvas.__spEnImgs = [];
-        fileImgs.forEach(function (p) {
+    // ═══ ORDRE DES CALQUES ═════════════════════════════════════════════════
+    //  1 fond plein page · 2 bloc de couleur · 3 aplat sous photo ·
+    //  4 photo · 5 décor (filets, cadres, voiles) · 6 texte.
+    function reg(cv, o, role) {
+        if (!cv.__spEnReg) cv.__spEnReg = [];
+        cv.__spEnReg.push({ o: o, role: role || 3 });
+        return o;
+    }
+    function ordonne(cv) {
+        if (!cv || cv.__spEnBusy) return;
+        var regs = cv.__spEnReg;
+        if (!regs || !regs.length) return;
+        var tous = cv.getObjects();
+        if (!tous || !tous.length) return;
+        cv.__spEnBusy = true;
+        try {
+            var dedans = [];
+            for (var a = 0; a < regs.length; a++) if (tous.indexOf(regs[a].o) >= 0) dedans.push(regs[a]);
+            if (!dedans.length) return;
+            var cw = cv.getWidth(), ch = cv.getHeight();
+            var fonds = [], autres = [];
+            for (var z = 0; z < tous.length; z++) {
+                var o = tous[z], connu = false;
+                for (var b = 0; b < dedans.length; b++) if (dedans[b].o === o) { connu = true; break; }
+                if (connu) continue;
+                var w0 = Math.abs((o.width || 0) * (o.scaleX || 1));
+                var h0 = Math.abs((o.height || 0) * (o.scaleY || 1));
+                if (w0 >= cw * 0.9 && h0 >= ch * 0.9) fonds.push(o); else autres.push(o);
+            }
+            var par = function (r) {
+                var arr = [];
+                for (var c = 0; c < dedans.length; c++) if (dedans[c].role === r) arr.push(dedans[c].o);
+                return arr;
+            };
+            var ordre = fonds.concat(autres, par(1), par(2), par(3), par(4), par(5), par(6));
+            // Affectation UNIQUE du tableau : pas d'événement object:added/removed,
+            // donc pas de réaction des garde-fous de l'application.
             try {
-                var elImg = new Image();
-                SP_EN_PENDING.push(elImg);
-                if (/^https?:/i.test(p.url)) elImg.crossOrigin = 'anonymous';
-                elImg.onload = function () {
+                cv._objects = ordre;
+            } catch (e5) {
+                for (var n = 0; n < ordre.length; n++) if (cv._objects[n] !== ordre[n]) cv.moveTo(ordre[n], n);
+            }
+            cv.requestRenderAll();
+        } catch (e) { console.warn('[SP-EN] ordre :', e); }
+        finally { cv.__spEnBusy = false; }
+    }
+    function armerOrdre(cv) {
+        if (cv.__spEnHook) { cv.__spEnActif = true; return; }
+        cv.__spEnHook = true;
+        cv.__spEnActif = true;
+        cv.on('object:added', function () {
+            if (cv.__spEnBusy || !cv.__spEnActif) return;
+            if (cv.__spEnT) clearTimeout(cv.__spEnT);
+            cv.__spEnT = setTimeout(function () { ordonne(cv); }, 80);
+        });
+    }
+    function desarmer(cv) {
+        if (cv.__spEnT2) clearTimeout(cv.__spEnT2);
+        cv.__spEnT2 = setTimeout(function () { cv.__spEnActif = false; }, 4200);
+    }
+    // Repassage FINAL : l'application ajoute encore des calques (fonds de page,
+    // pages voisines, guides) après la construction → on réordonne quelques fois
+    // puis on laisse la main à l'utilisateur.
+    function ordonneTout() {
+        try { (typeof canvases !== 'undefined' ? canvases : []).forEach(function (c) { ordonne(c); }); } catch (e) {}
+    }
+    function ordreDiffere() {
+        [60, 300, 900, 1800, 3200, 5000].forEach(function (d) { setTimeout(ordonneTout, d); });
+    }
+
+    // ═══ PHOTOS ════════════════════════════════════════════════════════════
+    var SP_EN_PENDING = [];
+    function spEnLibere(el) {
+        try { var i = SP_EN_PENDING.indexOf(el); if (i >= 0) SP_EN_PENDING.splice(i, 1); } catch (e) {}
+    }
+    // Masque RELATIF (suit l'objet) : coordonnées exprimées dans la quadri
+    // locale de l'image, centrées sur son centre.
+    function masque(forme, w, h) {
+        var W = w, H = h, r;
+        if (forme === 'cercle') {
+            r = Math.min(W, H) / 2;
+            return new fabric.Circle({ left: -r, top: -r, radius: r, strokeWidth: 0 });
+        }
+        if (forme === 'arche') {
+            r = W / 2;
+            return new fabric.Path('M ' + (-W / 2) + ' ' + (H / 2) + ' L ' + (-W / 2) + ' ' + (-H / 2 + r) +
+                ' A ' + r + ' ' + r + ' 0 0 1 ' + (W / 2) + ' ' + (-H / 2 + r) + ' L ' + (W / 2) + ' ' + (H / 2) + ' Z',
+                { strokeWidth: 0, fill: '#000' });
+        }
+        if (forme === 'pente') {
+            var t = W * 0.18;
+            return new fabric.Path('M ' + (-W / 2) + ' ' + (-H / 2) + ' L ' + (W / 2) + ' ' + (-H / 2) +
+                ' L ' + (W / 2) + ' ' + (H / 2) + ' L ' + (-W / 2) + ' ' + (H / 2 - t) + ' Z',
+                { strokeWidth: 0, fill: '#000' });
+        }
+        return new fabric.Rect({ left: -W / 2, top: -H / 2, width: W, height: H, strokeWidth: 0 });
+    }
+    function flushImgs(cv) {
+        if (!cv) return;
+        if (!cv.__spEnImgs || !cv.__spEnImgs.length) { ordonne(cv); return; }
+        var file = cv.__spEnImgs.slice();
+        cv.__spEnImgs = [];
+        file.forEach(function (p) {
+            try {
+                var el = new Image();
+                SP_EN_PENDING.push(el);
+                if (/^https?:/i.test(p.url)) el.crossOrigin = 'anonymous';
+                el.onload = function () {
                     try {
-                        if (!elImg.naturalWidth || !elImg.naturalHeight) return;
-                        var img = new fabric.Image(elImg);
-                        var sc = Math.max(p.w / elImg.naturalWidth, p.h / elImg.naturalHeight);
-                        img.set({
-                            left: p.gx + p.x + (p.w - elImg.naturalWidth * sc) / 2,
-                            top: p.gy + p.y + (p.h - elImg.naturalHeight * sc) / 2,
+                        if (!el.naturalWidth || !el.naturalHeight) { spEnLibere(el); return; }
+                        var obj = new fabric.Image(el);
+                        var sc = Math.max(p.w / el.naturalWidth, p.h / el.naturalHeight);
+                        if (p.tenir) sc = Math.min(p.w / el.naturalWidth, p.h / el.naturalHeight);
+                        var iw = el.naturalWidth * sc, ih = el.naturalHeight * sc;
+                        // centre de l'image placé sur le centre du cadre (le masque est relatif)
+                        obj.set({
+                            left: p.gx + p.x + (p.w - iw) / 2,
+                            top: p.gy + p.y + (p.h - ih) / 2,
                             scaleX: sc, scaleY: sc, selectable: true, evented: true, objectCaching: false
                         });
-                        try {
-                            img.clipPath = new fabric.Rect({ left: p.gx + p.x, top: p.gy + p.y, width: p.w, height: p.h, absolutePositioned: true });
-                        } catch (e7) {}
-                        // 🆕 v1.7.430d — L'app pose un aplat (groupe/rect) plein page : on insère
-                        //   l'image APRÈS le DERNIER objet couvrant ≥ 90 % de la page, donc
-                        //   au-dessus des fonds et sous les voiles/textes du modèle.
-                        var cw0 = canvas.getWidth(), ch0 = canvas.getHeight();
-                        var objs0 = canvas.getObjects();
-                        var iIns = 0;
-                        for (var z0 = 0; z0 < objs0.length; z0++) {
-                            var o0 = objs0[z0];
-                            if (!o0 || o0.type === 'image' || o0.type === 'textbox') continue;
-                            var w0 = (o0.width || 0) * (o0.scaleX || 1), h0 = (o0.height || 0) * (o0.scaleY || 1);
-                            if (w0 >= cw0 * 0.9 && h0 >= ch0 * 0.9) iIns = z0 + 1;
-                        }
-                        if (iIns > 0 && iIns <= objs0.length) canvas.insertAt(img, iIns, false);
-                        else canvas.add(img);
-                        try { img.set('selectable', true); } catch (e1) {}
-                        canvas.requestRenderAll();
-                    } catch (e8) { console.warn('[SP-EN] image :', e8); }
-                    spEnLibere(elImg);
+                        var m = masque(p.forme, p.w / sc, p.h / sc);
+                        if (m) obj.clipPath = m;
+                        cv.add(obj);
+                        reg(cv, obj, 4);
+                        ordonne(cv);
+                    } catch (e) { console.warn('[SP-EN] photo :', e); }
+                    spEnLibere(el);
                 };
-                elImg.onerror = function () { /* l'aplat de couleur du thème reste visible */ spEnLibere(elImg); };
-                elImg.src = p.url;
-            } catch (e9) {}
+                el.onerror = function () { spEnLibere(el); };
+                el.src = p.url;
+            } catch (e2) {}
         });
     }
     window.spEnFlushImages = function () {
         try { (typeof canvases !== 'undefined' ? canvases : []).forEach(function (c) { flushImgs(c); }); } catch (e) {}
     };
+    // Accès de contrôle (tests / support) : les canvas de l'application.
+    window.spEnCanvases = function () {
+        try { return (typeof canvases !== 'undefined' ? canvases : []); } catch (e) { return []; }
+    };
 
-    // ── Constructeur de page ────────────────────────────────────────────
+    // ═══ CONSTRUCTION D'UNE PAGE ═══════════════════════════════════════════
     function page(model, canvas, pi, total) {
         if (!canvas || typeof fabric === 'undefined') return;
         var t = model.theme, F = model.fonts, c = model.c;
         var g = geo(canvas, pi);
-        var W = g.pageW, H = g.pageH, bp = g.bp;
-        var MARGE = px(11), COL = px(5);
-        var objs = [], texts = [];
+        var W = g.pageW, H = g.pageH, bp = g.bp, X = g.x, Y = g.y;
+        var M0 = px(11), COL = px(5);
+        var objs = [], textes = [];
+        var cv = canvas;
+        armerOrdre(cv);
+        if (!cv.__spEnImgs) cv.__spEnImgs = [];
         var IMG = function (n) { return model.img ? (model.img + '/' + n + '.jpg') : ''; };
-        function bg(col, x0, y0, w0, h0) {
-            var r = new fabric.Rect({ left: x0, top: y0, width: w0, height: h0, fill: col, strokeWidth: 0, stroke: 'transparent' });
-            objs.push(r); return r;
+
+        // ── primitives ──
+        var fondActuel = t.paper;
+        function encreSurFond() { return luminance(fondActuel) < 0.5 ? '#ffffff' : t.ink; }
+        function fond(col, op) {
+            if (col) fondActuel = col;
+            var r = new fabric.Rect({ left: g.bx, top: g.by, width: g.bW, height: g.bH, fill: col || t.paper, strokeWidth: 0, opacity: op == null ? 1 : op });
+            objs.push(r); reg(cv, r, 1); return r;
         }
-        function plein(col, op) { // couvre TOUT le fond perdu de la page
-            return bg(col || t.paper, g.bx, g.by, g.bW, g.bH).set({ opacity: op == null ? 1 : op });
+        function bloc(x0, y0, w0, h0, col, op) {
+            var r = new fabric.Rect({ left: X + x0, top: Y + y0, width: w0, height: h0, fill: col, strokeWidth: 0, opacity: op == null ? 1 : op });
+            objs.push(r); reg(cv, r, 2); return r;
         }
-        function rect(x0, y0, w0, h0, col, op) {
-            var r = new fabric.Rect({ left: g.x + x0, top: g.y + y0, width: w0, height: h0, fill: col, strokeWidth: 0, stroke: 'transparent', opacity: op == null ? 1 : op });
-            objs.push(r); return r;
+        function voile(x0, y0, w0, h0, col, op) {
+            var r = new fabric.Rect({ left: X + x0, top: Y + y0, width: w0, height: h0, fill: col, strokeWidth: 0, opacity: op == null ? 0.5 : op });
+            objs.push(r); reg(cv, r, 5); return r;
         }
-        // Les photos sont posées APRÈS l'ajout au canvas, en objets Image clippés
-        // (le rect-masque de l'app ne se peignait pas ici).
-        if (!canvas.__spEnImgs) canvas.__spEnImgs = [];
-        function photo(x0, y0, w0, h0, url, col) {
-            var r = rect(x0, y0, w0, h0, col || t.soft, 1);
-            // 🆕 v1.7.429f — on mémorise aussi l'origine de la page : les photos seront
-            //   posées après la construction COMPLÈTE (un spread = 1 canvas / 2 pages).
-            if (url) canvas.__spEnImgs.push({ r: r, x: x0, y: y0, w: w0, h: h0, url: url, gx: g.x, gy: g.y });
+        // Cartouche : boîte de couleur posée SUR les photos/voiles (rôle 5),
+        // donc toujours au-dessus des images et sous les textes.
+        function cache(x0, y0, w0, h0, col, op) {
+            var r = new fabric.Rect({ left: X + x0, top: Y + y0, width: w0, height: h0, fill: col, strokeWidth: 0, opacity: op == null ? 1 : op });
+            objs.push(r); reg(cv, r, 5); return r;
+        }
+        function filet(y0, col, ep, x0, lg) {
+            var l = new fabric.Line([X + (x0 == null ? M0 : x0), Y + y0, X + (x0 == null ? W - M0 : x0 + lg), Y + y0],
+                { stroke: col || t.ink, strokeWidth: ep || px(0.3) });
+            objs.push(l); reg(cv, l, 5); return l;
+        }
+        function filetv(x0, y0, h0, col, ep) {
+            var l = new fabric.Line([X + x0, Y + y0, X + x0, Y + y0 + h0], { stroke: col || t.ink, strokeWidth: ep || px(0.3) });
+            objs.push(l); reg(cv, l, 5); return l;
+        }
+        function cadre(x0, y0, w0, h0, col, ep) {
+            var r = new fabric.Rect({ left: X + x0, top: Y + y0, width: w0, height: h0, fill: 'transparent', stroke: col || t.ink, strokeWidth: ep || px(0.3) });
+            objs.push(r); reg(cv, r, 5); return r;
+        }
+        function photo(x0, y0, w0, h0, n, opt) {
+            opt = opt || {};
+            var col = opt.col || t.soft;
+            var r = new fabric.Rect({ left: X + x0, top: Y + y0, width: w0, height: h0, fill: col, strokeWidth: 0 });
+            objs.push(r); reg(cv, r, 3);
+            if (n) cv.__spEnImgs.push({ x: x0, y: y0, w: w0, h: h0, url: IMG(n), gx: X, gy: Y, forme: opt.forme || '', tenir: !!opt.tenir });
             return r;
         }
-        function txt(o) {
+        function T(o) {
             var el = new fabric.Textbox(o.text, {
-                left: g.x + o.x, top: g.y + o.y, width: o.w,
+                left: X + o.x, top: Y + o.y, width: o.w,
                 fontSize: o.size, fontFamily: o.font || F.text,
                 fontWeight: o.weight || 'normal', fontStyle: o.italic ? 'italic' : 'normal',
                 fill: o.fill || t.ink, textAlign: o.align || 'left',
                 lineHeight: o.lh || 1.45, charSpacing: o.cs || 0, opacity: o.op == null ? 1 : o.op
             });
-            texts.push(el); return el;
-        }
-        function filet(y0, col, ep, x0, lg) {
-            var l = new fabric.Line([g.x + (x0 == null ? MARGE : x0), g.y + y0, g.x + (x0 == null ? W - MARGE : x0 + lg), g.y + y0], { stroke: col || t.ink, strokeWidth: ep || px(0.3) });
-            objs.push(l); return l;
+            objs.push(el); reg(cv, el, 6); textes.push(el); return el;
         }
         function folio(n, align) {
-            txt({ text: String(n), x: align === 'left' ? MARGE : W - MARGE - px(20), y: H - MARGE - px(4), w: px(20), size: px(2.4), font: F.mono, fill: t.ink, align: align || 'right', op: 0.65 });
+            T({ text: String(n), x: align === 'left' ? M0 : (align === 'center' ? W / 2 - px(10) : W - M0 - px(20)), y: H - M0 - px(3.6), w: px(20), size: px(2.4), font: F.mono, fill: encreSurFond(), align: align === 'left' ? 'left' : (align === 'center' ? 'center' : 'right'), op: 0.6 });
         }
-        function tete() { // bandeau courant : rubrique + filet
-            txt({ text: esc(c.tag).toUpperCase(), x: MARGE, y: MARGE - px(4), w: W - MARGE * 2, size: px(2.2), font: F.mono, fill: t.ink, cs: 120, op: 0.7 });
-            filet(MARGE + px(2), t.ink, px(0.25), MARGE, W - MARGE * 2);
+        function tete() {
+            T({ text: esc(c.tag).toUpperCase(), x: M0, y: M0 - px(4), w: W - M0 * 2, size: px(2.1), font: F.mono, fill: encreSurFond(), cs: 120, op: 0.7 });
+            filet(M0 + px(1.6), encreSurFond(), px(0.25), M0, W - M0 * 2);
         }
-        function corps(y0, h0, texte, ncol) {
-            var n = ncol || 2, gout = COL, cw = (W - MARGE * 2 - gout * (n - 1)) / n, parts = colonnes(texte, n);
-            for (var i = 0; i < n; i++) {
-                txt({ text: parts[i], x: MARGE + i * (cw + gout), y: y0, w: cw, size: px(3.1), fill: t.ink, lh: 1.5 });
+        function colonnes(y0, hauteur, texte, n, opt) {
+            opt = opt || {};
+            var nn = n || 2, gout = opt.gout == null ? COL : opt.gout;
+            var lw = opt.lw || (W - M0 * 2), lx = opt.lx == null ? M0 : opt.lx;
+            var cw = (lw - gout * (nn - 1)) / nn, parts = paragraphes(texte, nn);
+            for (var i = 0; i < nn; i++) {
+                T({
+                    text: parts[i], x: lx + i * (cw + gout), y: y0, w: cw,
+                    size: opt.size || px(3.1), fill: opt.fill || t.ink, lh: opt.lh || 1.5, align: opt.align || 'left'
+                });
             }
-            return y0 + h0;
+            return y0 + (hauteur || 0);
+        }
+        function legende(n, x0, y0, w0, opt) {
+            opt = opt || {};
+            T({ text: '0' + n + '  ' + (c.legs[(n - 1) % c.legs.length] || ''), x: x0, y: y0, w: w0, size: px(2), font: F.mono, fill: opt.fill || t.ink, op: opt.op == null ? 0.7 : opt.op, cs: 60 });
         }
 
-        var estCouverture = (pi === 0);
-        var estSommaire = (total >= 6 && pi === 1);
-        var estFin = (total > 1 && pi === total - 1);
-        // 🆕 v1.7.429e — on raisonne sur le CÔTÉ de la page dans le spread, pas sur la parité
-        //   de l'index (c'est ce décalage qui laissait les spreads sans photo).
-        var estEditorial = !estCouverture && !estSommaire && !estFin;
-        var variante = Math.floor(pi / 4) % 3;
+        var S = {
+            cv: cv, g: g, W: W, H: H, bp: bp, X: X, Y: Y, t: t, F: F, c: c, M: M0, COL: COL,
+            pi: pi, total: total, IMG: IMG, spread: !!model.spreadDoc,
+            couv: (pi === 0), fin: (total > 1 && pi === total - 1),
+            reste: suite(c.body, 2), slim: W / H,
+            fond: fond, bloc: bloc, voile: voile, cache: cache, filet: filet, filetv: filetv, cadre: cadre,
+            photo: photo, T: T, folio: folio, tete: tete, colonnes: colonnes, legende: legende
+        };
 
-        /* ═══ COUVERTURE ═══ */
-        if (estCouverture || model.family === 'card' || model.family === 'cv' || (model.family === 'book' && pi === 0)) {
-            if (model.family === 'card') {
-                plein(t.paper);
-                bg(t.night, g.x, g.y, W * 0.5, H);
-                txt({ text: c.mast, x: MARGE * 0.7, y: H * 0.30, w: W * 0.5 - MARGE * 1.2, size: px(7.5), font: F.display, weight: '700', fill: t.paper, lh: 1 });
-                txt({ text: c.tag, x: MARGE * 0.7, y: H * 0.52, w: W * 0.5 - MARGE * 1.2, size: px(2.2), font: F.mono, fill: t.accent, cs: 160, lh: 1.4 });
-                txt({ text: c.stand, x: W * 0.5 + MARGE * 0.7, y: H * 0.30, w: W * 0.5 - MARGE * 1.2, size: px(3), font: F.text, fill: t.ink, lh: 1.5 });
-                txt({ text: c.body, x: W * 0.5 + MARGE * 0.7, y: H * 0.52, w: W * 0.5 - MARGE * 1.2, size: px(2.6), font: F.mono, fill: t.ink, lh: 1.7 });
-                txt({ text: c.caption, x: W * 0.5 + MARGE * 0.7, y: H - MARGE * 2.2, w: W * 0.5 - MARGE * 1.2, size: px(2), font: F.mono, fill: t.ink, op: 0.6 });
-            } else if (model.family === 'cv') {
-                plein(t.paper);
-                bg(t.night, g.x, g.y, W, H * 0.30);
-                txt({ text: c.head, x: MARGE, y: H * 0.09, w: W - MARGE * 2, size: px(11), font: F.display, weight: '700', fill: t.paper, lh: 1 });
-                txt({ text: c.tag, x: MARGE, y: H * 0.205, w: W - MARGE * 2, size: px(2.6), font: F.mono, fill: t.accent, cs: 140 });
-                bg(t.accent, g.x, g.y + H * 0.30, W, px(1.2));
-                txt({ text: 'PROFILE', x: MARGE, y: H * 0.345, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.accent, cs: 200 });
-                txt({ text: c.stand, x: MARGE, y: H * 0.375, w: W - MARGE * 2, size: px(3.2), fill: t.ink, lh: 1.5 });
-                txt({ text: c.body, x: MARGE, y: H * 0.50, w: (W - MARGE * 2 - COL) * 0.62, size: px(2.9), fill: t.ink, lh: 1.55 });
-                txt({ text: c.sections.slice(3).join('\n'), x: MARGE + (W - MARGE * 2 - COL) * 0.66, y: H * 0.50, w: (W - MARGE * 2 - COL) * 0.34, size: px(2.7), font: F.mono, fill: t.ink, lh: 2.1 });
-                filet(H * 0.86, t.ink, px(0.25));
-                txt({ text: c.caption, x: MARGE, y: H * 0.875, w: W - MARGE * 2, size: px(2.5), font: F.mono, fill: t.ink, op: 0.75 });
-            } else if (model.family === 'menu' && pi === 0) {
-                plein(t.night);
-                rect(MARGE, MARGE, W - MARGE * 2, H - MARGE * 2, 'transparent');
-                filet(MARGE, t.accent, px(0.4));
-                filet(H - MARGE, t.accent, px(0.4));
-                txt({ text: c.tag, x: MARGE, y: H * 0.30, w: W - MARGE * 2, size: px(2.6), font: F.mono, fill: t.accent, cs: 420, align: 'center' });
-                txt({ text: c.head, x: MARGE, y: H * 0.35, w: W - MARGE * 2, size: px(13), font: F.display, fill: t.paper, align: 'center', lh: 1.05 });
-                txt({ text: c.stand, x: MARGE, y: H * 0.55, w: W - MARGE * 2, size: px(3), font: F.display, italic: true, fill: t.accent, align: 'center' });
-                txt({ text: c.caption, x: MARGE, y: H - MARGE * 3, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.soft, align: 'center' });
-                photo(MARGE, H * 0.62, W - MARGE * 2, H * 0.24, IMG('1'));
-            } else if (model.family === 'book' && pi === 0) {
-                plein(t.paper);
-                rect(MARGE * 2, H * 0.22, W - MARGE * 4, px(0.4), t.accent);
-                txt({ text: c.mast, x: MARGE * 2, y: H * 0.26, w: W - MARGE * 4, size: px(9), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
-                txt({ text: c.head, x: MARGE * 2, y: H * 0.40, w: W - MARGE * 4, size: px(4.4), font: F.text, italic: true, fill: t.ink, lh: 1.35 });
-                photo(MARGE, H * 0.50, W - MARGE * 2, H * 0.30, IMG('1'));
-                txt({ text: c.tag, x: MARGE, y: H * 0.83, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.accent, cs: 220, align: 'center' });
-                txt({ text: c.caption, x: MARGE, y: H * 0.87, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.ink, align: 'center', op: 0.7 });
-            } else {
-                // COUVERTURE MAGAZINE : photo pleine page à fond perdu + voiles + nameplate
-                plein(t.night);
-                // 🆕 v1.7.430e — cadrage photo DANS la page (le pleine page passait sous
-                //   l'aplat noir de l'app → couverture noire).
-                photo(MARGE, H * 0.27, W - MARGE * 2, H * 0.37, IMG('1'), t.soft);
-                rect(MARGE, H * 0.27, W - MARGE * 2, H * 0.37, 'transparent');
-                txt({ text: c.mast, x: MARGE, y: H * 0.075, w: W - MARGE * 2, size: px(15), font: F.display, weight: '700', fill: t.paper, align: 'center', cs: 40, lh: 1 });
-                rect(W / 2 - px(14), H * 0.185, px(28), px(0.8), t.accent);
-                txt({ text: c.tag, x: MARGE, y: H * 0.205, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.paper, align: 'center', cs: 240 });
-                txt({ text: c.issue, x: MARGE, y: H * 0.232, w: W - MARGE * 2, size: px(2.2), font: F.mono, fill: t.paper, align: 'center', cs: 140, op: 0.85 });
-                rect(MARGE, H * 0.655, px(16), px(1.2), t.accent);
-                txt({ text: c.head, x: MARGE, y: H * 0.675, w: W - MARGE * 2, size: px(11), font: F.display, weight: '700', fill: t.paper, lh: 1.03 });
-                txt({ text: c.stand, x: MARGE, y: H * 0.79, w: W - MARGE * 2, size: px(3.2), fill: t.paper, op: 0.94, lh: 1.45 });
-                txt({ text: c.coverlines, x: MARGE, y: H * 0.865, w: W - MARGE * 2 - px(28), size: px(2.6), font: F.mono, fill: t.paper, lh: 1.75, op: 0.9 });
-                txt({ text: c.issue.split('·')[0].trim(), x: W - MARGE - px(26), y: H * 0.865, w: px(26), size: px(2.4), font: F.mono, fill: t.paper, align: 'right', lh: 1.7, op: 0.8 });
-                txt({ text: c.price, x: MARGE, y: H - MARGE * 1.1, w: W - MARGE * 2, size: px(2.1), font: F.mono, fill: t.paper, cs: 100, op: 0.75 });
-            }
-        }
-        /* ═══ SOMMAIRE ═══ */
-        else if (estSommaire) {
-            plein(t.paper);
-            tete();
-            txt({ text: 'CONTENTS', x: MARGE, y: H * 0.16, w: W - MARGE * 2, size: px(2.8), font: F.mono, fill: t.accent, cs: 300 });
-            txt({ text: c.mast, x: MARGE, y: H * 0.20, w: W - MARGE * 2, size: px(12), font: F.display, weight: '700', fill: t.ink, lh: 1 });
-            filet(H * 0.30, t.ink, px(0.4));
-            (c.sections || []).forEach(function (s, i) {
-                var y = H * 0.335 + i * H * 0.085;
-                txt({ text: ('0' + (i + 1)).slice(-2), x: MARGE, y: y, w: px(14), size: px(4.6), font: F.mono, fill: t.accent });
-                txt({ text: s, x: MARGE + px(18), y: y + px(1), w: W - MARGE * 2 - px(60), size: px(4.6), font: F.display, fill: t.ink, lh: 1.1 });
-                txt({ text: String(2 + i * 2), x: W - MARGE - px(10), y: y + px(1), w: px(10), size: px(3), font: F.mono, fill: t.ink, align: 'right', op: 0.6 });
-                filet(y + px(7.5), t.ink, px(0.2), MARGE + px(18), W - MARGE * 2 - px(60));
-            });
-            folio(pi + 1);
-        }
-        /* ═══ DOUBLES PAGES ÉDITORIALES ═══
-           Photo pleine page sur la page de GAUCHE (fond perdu jusqu'à la reliure),
-           texte composé sur la page de DROITE. Hors spread : photo en haut + texte. */
-        else if (estEditorial) {
-            if (g.onLeft) {
-                plein(t.night);
-                txt({ text: (c.sections[variante] || c.sections[0] || '').toUpperCase(), x: MARGE, y: H * 0.065, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.paper, cs: 260 });
-                photo(MARGE, H * 0.12, W - MARGE * 2, H * 0.46, IMG(variante === 0 ? '2' : (variante === 1 ? '1' : '3')), t.soft);
-                rect(MARGE, H * 0.62, px(16), px(1.2), t.accent);
-                txt({ text: c.head, x: MARGE, y: H * 0.645, w: W - MARGE * 2, size: px(11), font: F.display, weight: '700', fill: t.paper, lh: 1.03 });
-                txt({ text: c.caption, x: MARGE, y: H * 0.88, w: W - MARGE * 2, size: px(2.2), font: F.mono, fill: t.paper, op: 0.82 });
-                folio(pi + 1, 'left');
-            } else if (g.onRight) {
-                plein(t.paper);
-                tete();
-                txt({ text: c.stand, x: MARGE, y: H * 0.20, w: W - MARGE * 2, size: px(4.2), italic: true, fill: t.ink, lh: 1.4 });
-                filet(H * 0.30, t.accent, px(0.8));
-                corps(H * 0.34, H * 0.28, c.body, 2);
-                rect(MARGE, H * 0.68, px(16), px(1), t.accent);
-                txt({ text: c.quote, x: MARGE, y: H * 0.705, w: W - MARGE * 2, size: px(5.4), font: F.display, italic: true, fill: t.accent, lh: 1.25 });
-                corps(H * 0.86, H * 0.10, c.body, 2);
-                folio(pi + 1);
-            } else {
-                // page seule : photo en haut (débordante), texte dessous
-                plein(t.paper);
-                tete();
-                photo(0, 0, W, H * 0.44, IMG(variante === 0 ? '2' : '1'), t.soft);
-                txt({ text: (c.sections[variante] || '').toUpperCase(), x: MARGE, y: H * 0.48, w: W - MARGE * 2, size: px(2.6), font: F.mono, fill: t.accent, cs: 240 });
-                txt({ text: c.head, x: MARGE, y: H * 0.515, w: W - MARGE * 2, size: px(9.5), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
-                filet(H * 0.635, t.ink, px(0.3));
-                corps(H * 0.665, H * 0.19, c.body, 2);
-                rect(MARGE, H * 0.885, W - MARGE * 2, px(0.3), t.ink, 0.4);
-                txt({ text: c.caption, x: MARGE, y: H * 0.90, w: W - MARGE * 2, size: px(2.2), font: F.mono, fill: t.ink, op: 0.7 });
-                folio(pi + 1);
-            }
-        }
-        /* ═══ PAGE DE FIN / COLOPHON ═══ */
-        else if (estFin) {
-            plein(t.paper);
-            bg(t.night, g.x, g.y + H * 0.42, W, H * 0.58);
-            txt({ text: c.mast, x: MARGE, y: H * 0.50, w: W - MARGE * 2, size: px(10), font: F.display, weight: '700', fill: t.paper, lh: 1 });
-            txt({ text: c.price || c.caption, x: MARGE, y: H * 0.66, w: W - MARGE * 2, size: px(3.2), font: F.mono, fill: t.paper, op: 0.9, lh: 1.6 });
-            txt({ text: (c.sections || []).join('   ·   '), x: MARGE, y: H * 0.78, w: W - MARGE * 2, size: px(2.3), font: F.mono, fill: t.accent, cs: 90, lh: 1.6 });
-            txt({ text: c.quote || c.stand, x: MARGE, y: H * 0.16, w: W - MARGE * 2, size: px(6), font: F.display, italic: true, fill: t.ink, lh: 1.25 });
-            filet(H * 0.34, t.accent, px(1.2), MARGE, px(20));
-            folio(pi + 1);
-        }
-        /* ═══ PAGES DE TEXTE (livre, menu, journal) ═══ */
-        else if (model.family === 'menu') {
-            plein(pi % 2 ? t.night : t.night);
-            filet(MARGE, t.accent, px(0.3));
-            txt({ text: (c.sections[(pi - 1) % c.sections.length] || '').toUpperCase(), x: MARGE, y: MARGE + px(6), w: W - MARGE * 2, size: px(3.4), font: F.mono, fill: t.accent, cs: 300, align: 'center' });
-            txt({ text: c.body, x: MARGE, y: H * 0.22, w: W - MARGE * 2, size: px(3.4), fill: t.paper, lh: 2.0 });
-            filet(H - MARGE, t.accent, px(0.3));
-            txt({ text: c.caption, x: MARGE, y: H - MARGE + px(3), w: W - MARGE * 2, size: px(2.2), font: F.mono, fill: t.soft, align: 'center', op: 0.8 });
-            folio(pi + 1);
-        } else if (model.family === 'book') {
-            plein(t.paper);
-            txt({ text: c.mast, x: MARGE, y: MARGE - px(2), w: W - MARGE * 2, size: px(2.2), font: F.mono, fill: t.ink, cs: 180, op: 0.6 });
-            txt({ text: (c.sections[(pi - 1) % c.sections.length] || '').toUpperCase(), x: MARGE, y: H * 0.18, w: W - MARGE * 2, size: px(2.6), font: F.mono, fill: t.accent, cs: 240 });
-            txt({ text: pi === 1 ? c.head : (c.head + ' — ' + (c.sections[(pi - 1) % c.sections.length] || '')), x: MARGE, y: H * 0.22, w: W - MARGE * 2, size: px(7), font: F.display, weight: '700', fill: t.ink, lh: 1.1 });
-            corps(H * 0.40, H * 0.42, c.body, 1);
-            if (pi % 4 === 0) photo(MARGE, H * 0.62, W - MARGE * 2, H * 0.22, IMG('2'));
-            folio(pi + 1);
-        } else {
-            // journal : gros titre + chapô + 3 colonnes de texte + photo
-            plein(t.paper);
-            tete();
-            txt({ text: c.head, x: MARGE, y: H * 0.14, w: W - MARGE * 2, size: px(16), font: F.display, weight: '700', fill: t.ink, lh: 1.02 });
-            filet(H * 0.30, t.ink, px(0.6));
-            txt({ text: c.stand, x: MARGE, y: H * 0.325, w: W - MARGE * 2, size: px(4.4), italic: true, fill: t.ink, lh: 1.4 });
-            photo(MARGE, H * 0.40, W - MARGE * 2, H * 0.24, IMG(pi === 1 ? '1' : '2'));
-            txt({ text: c.caption, x: MARGE, y: H * 0.645, w: W - MARGE * 2, size: px(2.4), font: F.mono, fill: t.ink, op: 0.7 });
-            corps(H * 0.70, H * 0.16, c.body, 3);
-            folio(pi + 1);
-        }
+        // ── routage par modèle ──
+        try {
+            if (model.style === 'mode') modePages(S);
+            else if (model.style === 'musique') musiquePages(S);
+            else if (model.style === 'cuisine') cuisinePages(S);
+            else if (model.style === 'coiffure') coiffurePages(S);
+            else if (model.style === 'menu') menuPages(S);
+            else if (model.style === 'livre') livrePages(S);
+            else if (model.style === 'cv') cvPage(S);
+            else if (model.style === 'carte') cartePage(S);
+        } catch (e3) { console.warn('[SP-EN] mise en page p.' + (pi + 1) + ' :', e3); }
 
-        for (var i = 0; i < texts.length; i++) objs.push(texts[i]);
-        if (typeof addAssetObjects === 'function') addAssetObjects(canvas, objs, model.name + ' · p.' + (pi + 1));
-        else { objs.forEach(function (o) { canvas.add(o); }); canvas.requestRenderAll(); }
-        try { flushImgs(canvas); } catch (e10) {}
+        if (typeof addAssetObjects === 'function') addAssetObjects(cv, objs, model.name + ' · p.' + (pi + 1));
+        else { objs.forEach(function (o) { cv.add(o); }); cv.requestRenderAll(); }
+        ordonne(cv);
+        try { flushImgs(cv); } catch (e10) {}
+        desarmer(cv);
     }
 
-    // ── Vignette : SVG du modèle (thème réel + double page si spread) ────
+    /* ═══════════════════════════ 1. MAGAZINE MODE ═══════════════════════ */
+    function modePages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        if (p === 0) {
+            // couverture : photo PLEINE PAGE à fond perdu + voile + nameplate
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H + 2 * bp, '1');
+            S.voile(-bp, H * 0.56, W + 2 * bp, H * 0.44 + bp, t.night, 0.66);
+            S.voile(-bp, -bp, W + 2 * bp, H * 0.20 + bp, t.night, 0.30);
+            S.T({ text: c.mast, x: M, y: H * 0.075, w: W - M * 2, size: px(15), font: F.display, weight: '700', fill: t.paper, align: 'center', cs: 60, lh: 1 });
+            S.bloc(W / 2 - px(16), H * 0.185, px(32), px(0.9), t.accent);
+            S.T({ text: c.tag, x: M, y: H * 0.202, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.paper, align: 'center', cs: 240 });
+            S.T({ text: c.issue, x: M, y: H * 0.228, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.paper, align: 'center', cs: 140, op: 0.85 });
+            S.T({ text: c.head, x: M, y: H * 0.645, w: W - M * 2, size: px(11.5), font: F.display, weight: '700', fill: t.paper, lh: 1.02 });
+            S.bloc(M, H * 0.625, px(14), px(1.1), t.accent);
+            S.T({ text: c.stand, x: M, y: H * 0.785, w: W - M * 2, size: px(3.2), fill: t.paper, op: 0.95, lh: 1.45 });
+            S.T({ text: c.coverlines, x: M, y: H * 0.868, w: (W - M * 2) * 0.62, size: px(2.5), font: F.mono, fill: t.paper, lh: 1.8, op: 0.9 });
+            S.T({ text: c.issue.split('\u00b7')[0].trim(), x: W - M - px(24), y: H * 0.868, w: px(24), size: px(2.3), font: F.mono, fill: t.paper, align: 'right', lh: 1.8, op: 0.8 });
+            S.T({ text: c.price, x: M, y: H - M * 1.2, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.paper, cs: 100, op: 0.75 });
+        } else if (p === 1) {
+            // sommaire : liste + trois vignettes basses
+            S.fond(t.paper); S.tete();
+            S.T({ text: 'CONTENTS', x: M, y: H * 0.085, w: W - M * 2, size: px(2.5), font: F.mono, fill: t.accent, cs: 300 });
+            S.T({ text: c.mast, x: M, y: H * 0.115, w: W - M * 2, size: px(13), font: F.display, weight: '700', fill: t.ink, lh: 1 });
+            S.filet(H * 0.205, t.ink, px(0.4));
+            c.sections.forEach(function (s, i) {
+                var y = H * 0.24 + i * H * 0.062;
+                S.T({ text: ('0' + (i + 1)).slice(-2), x: M, y: y, w: px(12), size: px(3.6), font: F.mono, fill: t.accent });
+                S.T({ text: s, x: M + px(15), y: y + px(0.6), w: W - M * 2 - px(40), size: px(4.4), font: F.display, fill: t.ink, lh: 1.1 });
+                S.T({ text: String(4 + i * 2), x: W - M - px(8), y: y + px(0.6), w: px(8), size: px(3), font: F.mono, fill: t.ink, align: 'right', op: 0.55 });
+            });
+            var vw = (W - M * 2 - S.COL * 2) / 3, vh = H * 0.20;
+            [2, 3, 4].forEach(function (n, i) {
+                S.photo(M + i * (vw + S.COL), H * 0.665, vw, vh, String(n));
+                S.T({ text: (c.legs[i] || '').toUpperCase(), x: M + i * (vw + S.COL), y: H * 0.665 + vh + px(2), w: vw, size: px(1.9), font: F.mono, fill: t.ink, cs: 80, op: 0.75 });
+            });
+            S.folio(p + 1);
+        } else if (p === 2) {
+            // double page 1 — page de GAUCHE : photo pleine haut + panneau bas
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H * 0.64 + bp, '5');
+            S.bloc(-bp, H * 0.64, W + 2 * bp, H * 0.36 + bp, t.night);
+            S.T({ text: (c.sections[1] || '').toUpperCase(), x: M, y: H * 0.685, w: W - M * 2, size: px(2.3), font: F.mono, fill: t.accent, cs: 280 });
+            S.T({ text: c.legs[1], x: M, y: H * 0.715, w: W - M * 2, size: px(11), font: F.display, weight: '700', fill: t.paper, lh: 1.02 });
+            S.T({ text: c.caption, x: M, y: H * 0.87, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.paper, op: 0.75 });
+            S.folio(p + 1, 'left');
+        } else if (p === 3) {
+            // page de DROITE : chapô, colonnes, photo in-page, colonnes
+            S.fond(t.paper); S.tete();
+            S.T({ text: c.stand, x: M, y: H * 0.115, w: W - M * 2, size: px(4.2), italic: true, fill: t.ink, lh: 1.4 });
+            S.filet(H * 0.215, t.accent, px(0.8));
+            S.colonnes(H * 0.245, 0, c.body, 2);
+            S.photo(M, H * 0.52, W - M * 2, H * 0.26, '6');
+            S.T({ text: c.caption, x: M, y: H * 0.785, w: W - M * 2, size: px(2), font: F.mono, fill: t.ink, op: 0.7 });
+            S.colonnes(H * 0.815, 0, S.reste, 2, { size: px(2.9) });
+            S.folio(p + 1);
+        } else if (p === 4) {
+            // "The dossier" : diptyque + texte
+            S.fond(t.paper);
+            S.T({ text: (c.sections[0] || 'The dossier').toUpperCase(), x: M, y: H * 0.075, w: W - M * 2, size: px(2.3), font: F.mono, fill: t.accent, cs: 280 });
+            S.T({ text: c.legs[0], x: M, y: H * 0.10, w: W - M * 2, size: px(9), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            S.filet(H * 0.185, t.ink, px(0.3));
+            var dw = (W - M * 2 - S.COL) / 2;
+            S.photo(M, H * 0.215, dw, H * 0.40, '2');
+            S.photo(M + dw + S.COL, H * 0.215, dw, H * 0.40, '3');
+            S.T({ text: c.caption, x: M, y: H * 0.625, w: dw, size: px(1.9), font: F.mono, fill: t.ink, op: 0.7 });
+            S.T({ text: c.credits, x: M + dw + S.COL, y: H * 0.625, w: dw, size: px(1.9), font: F.mono, fill: t.ink, op: 0.7 });
+            S.colonnes(H * 0.685, 0, c.body, 2);
+            S.folio(p + 1, 'left');
+        } else if (p === 5) {
+            // page de DROITE : photo pleine page + cartouche
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H + 2 * bp, '4');
+            S.voile(-bp, -bp, W + 2 * bp, H * 0.28 + bp, t.night, 0.45);
+            S.T({ text: (c.sections[2] || '').toUpperCase(), x: M, y: H * 0.065, w: W - M * 2, size: px(2.3), font: F.mono, fill: t.paper, cs: 300, op: 0.9 });
+            S.cache(M, H * 0.60, W - M * 2, H * 0.24, t.paper);
+            S.T({ text: (c.sections[2] || ''), x: M + px(5), y: H * 0.628, w: W - M * 2 - px(10), size: px(6.4), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            S.T({ text: c.caption, x: M + px(5), y: H * 0.775, w: W - M * 2 - px(10), size: px(2), font: F.mono, fill: t.ink, op: 0.8 });
+            S.folio(p + 1);
+        } else if (p === 6) {
+            // "Runway report" : planche 2x2
+            S.fond(t.paper);
+            S.T({ text: c.legs[1], x: M, y: H * 0.075, w: W * 0.7, size: px(9), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            S.filet(H * 0.155, t.ink, px(0.3), M, W * 0.5);
+            var gx = (W - M * 2 - S.COL) / 2, gh = H * 0.29;
+            var phs = ['1', '3', '5', '6'];
+            for (var i = 0; i < 4; i++) {
+                var px0 = M + (i % 2) * (gx + S.COL), py0 = H * 0.19 + Math.floor(i / 2) * (gh + H * 0.075);
+                S.photo(px0, py0, gx, gh, phs[i]);
+                S.T({ text: ('0' + (i + 1)) + '  ' + c.legs[i], x: px0, y: py0 + gh + px(2), w: gx, size: px(1.9), font: F.mono, fill: t.ink, cs: 60, op: 0.75 });
+            }
+            S.folio(p + 1, 'left');
+        } else {
+            // page de fin : photo haut + citation
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H * 0.52 + bp, '2');
+            S.voile(-bp, H * 0.40, W + 2 * bp, H * 0.12 + bp, t.night, 0.5);
+            S.T({ text: c.quote, x: M, y: H * 0.575, w: W - M * 2, size: px(6), font: F.display, italic: true, fill: t.paper, align: 'center', lh: 1.25 });
+            S.bloc(W / 2 - px(12), H * 0.70, px(24), px(0.7), t.accent);
+            S.T({ text: (c.sections || []).join('   \u00b7   '), x: M, y: H * 0.735, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.paper, align: 'center', cs: 90, lh: 1.7, op: 0.85 });
+            S.T({ text: c.credits, x: M, y: H * 0.86, w: W - M * 2, size: px(2), font: F.mono, fill: t.paper, align: 'center', op: 0.6 });
+            S.T({ text: c.price, x: M, y: H - M * 1.2, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.accent, align: 'center', cs: 100 });
+            S.folio(p + 1);
+        }
+    }
+
+    /* ══════════════════════════ 2. MAGAZINE MUSIQUE ═════════════════════ */
+    function musiquePages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        if (p === 0) {
+            S.fond(t.night);
+            S.photo(-bp, H * 0.21, W + 2 * bp, H * 0.43, '1');
+            S.bloc(-bp, H * 0.21 - px(1.4), W + 2 * bp, px(1.4), t.accent);
+            S.T({ text: c.mast, x: -px(2), y: H * 0.085, w: W + px(4), size: px(22), font: F.display, weight: '700', fill: t.paper, align: 'center', cs: 40, lh: 0.9 });
+            S.T({ text: c.tag, x: M, y: H * 0.185, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.accent, align: 'center', cs: 300 });
+            S.bloc(W - M - px(20), H * 0.685, px(20), px(20), t.accent);
+            S.T({ text: c.issue.replace('\u00b7', '\n'), x: W - M - px(20), y: H * 0.695, w: px(20), size: px(2.1), font: F.mono, fill: t.night, align: 'center', lh: 1.35 });
+            S.T({ text: c.head, x: M, y: H * 0.675, w: W - M * 2 - px(26), size: px(9.5), font: F.display, weight: '700', fill: t.paper, lh: 1.0 });
+            S.T({ text: c.stand, x: M, y: H * 0.795, w: W - M * 2, size: px(2.9), fill: t.paper, op: 0.85, lh: 1.5 });
+            S.T({ text: (c.coverlines || '').replace(/\n/g, '  \u00b7  '), x: M, y: H * 0.885, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.accent, lh: 1.7, op: 0.95 });
+            S.T({ text: c.price, x: M, y: H - M * 1.2, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.paper, cs: 120, op: 0.7 });
+        } else if (p === 1) {
+            S.fond(t.night); S.tete();
+            S.T({ text: 'CONTENTS', x: M, y: H * 0.085, w: W - M * 2, size: px(2.5), font: F.mono, fill: t.accent, cs: 320 });
+            S.T({ text: c.mast, x: M, y: H * 0.11, w: W - M * 2, size: px(16), font: F.display, weight: '700', fill: t.paper, lh: 0.95 });
+            S.filet(H * 0.195, t.accent, px(0.8));
+            var sw = (W - M * 2 - S.COL * 2) / 3;
+            [2, 3, 4].forEach(function (n, i) {
+                S.photo(M + i * (sw + S.COL), H * 0.235, sw, sw, String(n));
+                S.T({ text: ('0' + (i + 1)), x: M + i * (sw + S.COL), y: H * 0.235 + sw + px(2), w: sw, size: px(2), font: F.mono, fill: t.accent });
+            });
+            c.sections.forEach(function (s, i) {
+                var y = H * 0.235 + sw + H * 0.075 + Math.floor(i / 2) * H * 0.115;
+                var x0 = M + (i % 2) * ((W - M * 2) / 2 + px(4));
+                S.T({ text: ('0' + (i + 1)).slice(-2), x: x0, y: y, w: px(8), size: px(3.4), font: F.mono, fill: t.accent });
+                S.T({ text: s, x: x0 + px(10), y: y + px(0.5), w: (W - M * 2) / 2 - px(14), size: px(3.6), font: F.mono, fill: t.paper, lh: 1.25 });
+            });
+            S.folio(p + 1);
+        } else if (p === 2) {
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H + 2 * bp, '5');
+            S.voile(-bp, H * 0.52, W + 2 * bp, H * 0.48 + bp, t.night, 0.72);
+            S.T({ text: c.quote, x: M, y: H * 0.66, w: W - M * 2, size: px(7.4), font: F.display, fill: t.accent, lh: 1.1 });
+            S.filet(H * 0.60, t.accent, px(1.2), M, px(18));
+            S.T({ text: c.caption, x: M, y: H * 0.88, w: W - M * 2, size: px(2), font: F.mono, fill: t.paper, op: 0.8 });
+            S.folio(p + 1, 'left');
+        } else if (p === 3) {
+            S.fond(t.night); S.tete();
+            S.T({ text: c.head, x: M, y: H * 0.11, w: W - M * 2, size: px(10), font: F.display, weight: '700', fill: t.paper, lh: 1.0 });
+            S.filet(H * 0.205, t.accent, px(0.8));
+            S.colonnes(H * 0.235, 0, c.body, 2, { fill: t.paper, size: px(3.0) });
+            S.photo(M, H * 0.545, W - M * 2, H * 0.24, '1');
+            S.bloc(M, H * 0.815, W - M * 2, H * 0.13, t.soft);
+            S.T({ text: (c.list || '').replace(/\n/g, '   \u00b7   '), x: M + px(4), y: H * 0.835, w: W - M * 2 - px(8), size: px(2.2), font: F.mono, fill: t.paper, lh: 1.8 });
+            S.folio(p + 1);
+        } else if (p === 4) {
+            S.fond(t.night);
+            S.T({ text: (c.sections[1] || 'New releases').toUpperCase(), x: M, y: H * 0.07, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.accent, cs: 320 });
+            S.T({ text: c.legs[1], x: M, y: H * 0.095, w: W - M * 2, size: px(10), font: F.display, weight: '700', fill: t.paper, lh: 1.0 });
+            var g2 = (W - M * 2 - S.COL) / 2, sq = H * 0.30;
+            var alb = [['2', 'Neon Divide'], ['3', 'Kite & Wire'], ['4', 'Marta Sloane'], ['5', 'Low Season']];
+            for (var i = 0; i < 4; i++) {
+                var ax = M + (i % 2) * (g2 + S.COL), ay = H * 0.24 + Math.floor(i / 2) * (sq + H * 0.10);
+                S.photo(ax, ay, g2, sq, alb[i][0]);
+                S.T({ text: ('0' + (i + 1)), x: ax, y: ay + sq + px(1.5), w: px(8), size: px(2.4), font: F.mono, fill: t.accent });
+                S.T({ text: alb[i][1].toUpperCase(), x: ax + px(9), y: ay + sq + px(1.5), w: g2 - px(9), size: px(2.2), font: F.mono, fill: t.paper, cs: 60 });
+            }
+            S.folio(p + 1, 'left');
+        } else if (p === 5) {
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H * 0.78 + bp, '4');
+            S.voile(-bp, H * 0.62, W + 2 * bp, H * 0.16 + bp, t.night, 0.55);
+            S.bloc(M, H * 0.20, W - M * 2, px(0.9), t.accent);
+            S.T({ text: c.legs[3], x: M, y: H * 0.225, w: W - M * 2, size: px(9), font: F.display, weight: '700', fill: t.paper, lh: 1.0 });
+            S.cadre(M, H * 0.78, W - M * 2, H * 0.16, t.accent, px(0.5));
+            S.T({ text: 'SETLIST\n' + (c.list || '').split('\n').slice(0, 3).join('\n'), x: M + px(4), y: H * 0.805, w: W - M * 2 - px(8), size: px(2.2), font: F.mono, fill: t.paper, lh: 1.8 });
+            S.folio(p + 1);
+        } else if (p === 6) {
+            S.fond(t.night);
+            S.T({ text: '\u201c', x: M - px(3), y: H * 0.045, w: W * 0.5, size: px(30), font: F.display, fill: t.accent, op: 0.35, lh: 0.8 });
+            S.T({ text: (c.sections[4] || 'Interview').toUpperCase(), x: M, y: H * 0.22, w: W - M * 2, size: px(2.3), font: F.mono, fill: t.accent, cs: 300 });
+            S.T({ text: c.legs[4], x: M, y: H * 0.245, w: W - M * 2, size: px(8.5), font: F.display, weight: '700', fill: t.paper, lh: 1.02 });
+            S.filet(H * 0.325, t.paper, px(0.4));
+            S.colonnes(H * 0.35, 0, c.body, 2, { fill: t.paper, size: px(3.0) });
+            S.photo(M, H * 0.70, (W - M * 2 - S.COL) * 0.45, H * 0.20, '3');
+            S.T({ text: c.credits, x: M + (W - M * 2 - S.COL) * 0.45 + S.COL, y: H * 0.71, w: (W - M * 2 - S.COL) * 0.55, size: px(2.0), font: F.mono, fill: t.paper, lh: 1.7, op: 0.8 });
+            S.folio(p + 1, 'left');
+        } else {
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H + 2 * bp, '2');
+            S.voile(-bp, -bp, W + 2 * bp, H + 2 * bp, t.night, 0.62);
+            S.T({ text: c.mast, x: M, y: H * 0.28, w: W - M * 2, size: px(18), font: F.display, weight: '700', fill: t.paper, align: 'center', cs: 40, lh: 0.9 });
+            S.bloc(W / 2 - px(14), H * 0.44, px(28), px(0.8), t.accent);
+            S.T({ text: c.quote, x: M, y: H * 0.47, w: W - M * 2, size: px(5.4), font: F.display, italic: true, fill: t.paper, align: 'center', lh: 1.3 });
+            S.T({ text: (c.sections || []).join('  \u00b7  '), x: M, y: H * 0.60, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.accent, align: 'center', lh: 1.8 });
+            S.cache(M, H * 0.70, W - M * 2, H * 0.12, t.accent);
+            S.T({ text: 'NEXT ISSUE\n' + c.legs[5], x: M + px(4), y: H * 0.715, w: W - M * 2 - px(8), size: px(2.4), font: F.mono, fill: t.night, lh: 1.9 });
+            S.T({ text: c.caption, x: M, y: H * 0.86, w: W - M * 2, size: px(2), font: F.mono, fill: t.paper, op: 0.7 });
+            S.folio(p + 1);
+        }
+    }
+
+    /* ══════════════════════════ 3. MAGAZINE CUISINE ═════════════════════ */
+    function cuisinePages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        if (p === 0) {
+            // couverture inversée : photo haut, titre dans le bandeau crème du bas
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H * 0.70 + bp, '1');
+            S.bloc(-bp, H * 0.70, W + 2 * bp, H * 0.30 + bp, t.paper);
+            S.T({ text: c.mast, x: M, y: H * 0.725, w: W - M * 2, size: px(16), font: F.display, weight: '700', fill: t.ink, lh: 0.95 });
+            S.bloc(M, H * 0.855, px(20), px(0.9), t.accent);
+            S.T({ text: c.tag, x: M, y: H * 0.872, w: W - M * 2, size: px(2.3), font: F.mono, fill: t.accent, cs: 260 });
+            S.T({ text: c.issue + '   \u00b7   ' + c.price, x: M, y: H * 0.905, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.ink, cs: 100, op: 0.75 });
+            S.T({ text: c.head, x: M, y: H * 0.80, w: W - M * 2, size: px(4.4), font: F.display, italic: true, fill: t.ink, lh: 1.25 });
+        } else if (p === 1) {
+            S.fond(t.paper); S.tete();
+            S.T({ text: (c.sections[0] || 'The pantry').toUpperCase(), x: M, y: H * 0.08, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.accent, cs: 320 });
+            S.T({ text: c.legs[0], x: M, y: H * 0.105, w: W - M * 2, size: px(12), font: F.display, weight: '700', fill: t.ink, lh: 1.0 });
+            S.filet(H * 0.195, t.accent, px(0.8));
+            var sw = (W - M * 2 - S.COL * 2) / 3;
+            [2, 3, 4].forEach(function (n, i) {
+                S.photo(M + i * (sw + S.COL), H * 0.225, sw, H * 0.28, String(n));
+                S.T({ text: ('0' + (i + 1)), x: M + i * (sw + S.COL), y: H * 0.225 + H * 0.28 + px(2), w: sw, size: px(2.2), font: F.mono, fill: t.accent });
+            });
+            S.colonnes(H * 0.575, 0, c.body, 2);
+            S.photo(M, H * 0.855, (W - M * 2) * 0.42, H * 0.10, '5');
+            S.T({ text: (c.list || '').replace(/\n/g, '  \u00b7  '), x: M + (W - M * 2) * 0.46, y: H * 0.86, w: (W - M * 2) * 0.54, size: px(2.0), font: F.mono, fill: t.ink, lh: 1.9, op: 0.8 });
+            S.folio(p + 1);
+        } else if (p === 2) {
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H + 2 * bp, '2');
+            S.voile(-bp, H * 0.44, W + 2 * bp, H * 0.56 + bp, t.night, 0.70);
+            S.T({ text: (c.sections[1] || '').toUpperCase(), x: M, y: H * 0.50, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.accent, cs: 300 });
+            S.T({ text: c.legs[1], x: M, y: H * 0.53, w: W - M * 2, size: px(12), font: F.display, weight: '700', fill: t.paper, lh: 1.0 });
+            S.T({ text: c.stand, x: M, y: H * 0.70, w: W - M * 2, size: px(3.2), italic: true, fill: t.paper, lh: 1.4, op: 0.95 });
+            S.T({ text: c.caption, x: M, y: H * 0.88, w: W - M * 2, size: px(2.0), font: F.mono, fill: t.paper, op: 0.75 });
+            S.folio(p + 1, 'left');
+        } else if (p === 3) {
+            S.fond(t.paper); S.tete();
+            S.filetv(M + (W - M * 2) * 0.42, H * 0.10, H * 0.74, t.accent, px(0.8));
+            S.T({ text: 'INGREDIENTS', x: M, y: H * 0.105, w: (W - M * 2) * 0.38, size: px(2.2), font: F.mono, fill: t.accent, cs: 200 });
+            S.T({ text: (c.list || '').split('\n').map(function (l) { return '\u2014  ' + l; }).join('\n'), x: M, y: H * 0.135, w: (W - M * 2) * 0.38, size: px(2.7), fill: t.ink, lh: 2.0 });
+            S.T({ text: 'METHOD', x: M + (W - M * 2) * 0.46, y: H * 0.105, w: (W - M * 2) * 0.54, size: px(2.2), font: F.mono, fill: t.accent, cs: 200 });
+            S.colonnes(H * 0.14, 0, c.body, 1, { lx: M + (W - M * 2) * 0.46, lw: (W - M * 2) * 0.54, size: px(3.2) });
+            S.photo(M, H * 0.66, (W - M * 2) * 0.38, H * 0.24, '3');
+            S.T({ text: 'SERVES 4  \u00b7  3 H  \u00b7  EASY', x: M + (W - M * 2) * 0.46, y: H * 0.70, w: (W - M * 2) * 0.54, size: px(2.4), font: F.mono, fill: t.accent, lh: 1.9, cs: 100 });
+            S.folio(p + 1);
+        } else if (p === 4) {
+            S.fond(t.paper);
+            S.T({ text: c.legs[3], x: M, y: H * 0.075, w: W - M * 2, size: px(10), font: F.display, weight: '700', fill: t.ink, lh: 1.0 });
+            S.filet(H * 0.165, t.ink, px(0.3));
+            var dcw = (W - M * 2 - S.COL) / 2;
+            S.photo(M, H * 0.20, dcw, H * 0.32, '4');
+            S.photo(M, H * 0.54, dcw, H * 0.32, '5');
+            S.T({ text: c.caption, x: M, y: H * 0.87, w: dcw, size: px(1.9), font: F.mono, fill: t.ink, op: 0.7 });
+            S.colonnes(H * 0.21, 0, c.body, 1, { lx: M + dcw + S.COL, lw: dcw, size: px(3.0) });
+            S.T({ text: c.quote, x: M + dcw + S.COL, y: H * 0.60, w: dcw, size: px(4.4), font: F.display, italic: true, fill: t.accent, lh: 1.3 });
+            S.folio(p + 1, 'left');
+        } else if (p === 5) {
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H + 2 * bp, '1');
+            S.voile(-bp, -bp, W + 2 * bp, H + 2 * bp, t.night, 0.45);
+            S.cache(M, H * 0.24, W - M * 2, H * 0.52, t.paper, 0.96);
+            S.T({ text: 'SUNDAY, THREE COURSES', x: M + px(6), y: H * 0.28, w: W - M * 2 - px(12), size: px(2.4), font: F.mono, fill: t.accent, cs: 200 });
+            S.T({ text: c.head, x: M + px(6), y: H * 0.31, w: W - M * 2 - px(12), size: px(8), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            S.T({ text: (c.list || '').split('\n').slice(0, 4).map(function (l, i) { return '0' + (i + 1) + '   ' + l; }).join('\n'), x: M + px(6), y: H * 0.45, w: W - M * 2 - px(12), size: px(2.8), fill: t.ink, lh: 2.1 });
+            S.T({ text: c.caption, x: M + px(6), y: H * 0.70, w: W - M * 2 - px(12), size: px(2.0), font: F.mono, fill: t.ink, op: 0.7 });
+            S.folio(p + 1);
+        } else if (p === 6) {
+            S.fond(t.paper); S.tete();
+            S.T({ text: c.legs[2], x: M, y: H * 0.10, w: W - M * 2, size: px(9), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            S.filet(H * 0.19, t.accent, px(0.8));
+            S.colonnes(H * 0.215, 0, c.body, 2);
+            S.T({ text: c.quote, x: M, y: H * 0.52, w: W - M * 2, size: px(4.6), font: F.display, italic: true, fill: t.accent, lh: 1.3 });
+            S.photo(M, H * 0.615, W - M * 2, H * 0.30, '2');
+            S.T({ text: c.credits, x: M, y: H * 0.925, w: W - M * 2, size: px(2.0), font: F.mono, fill: t.ink, op: 0.7 });
+            S.folio(p + 1, 'left');
+        } else {
+            S.fond(t.night);
+            S.T({ text: c.quote, x: M, y: H * 0.13, w: W - M * 2, size: px(7), font: F.display, italic: true, fill: t.paper, align: 'center', lh: 1.25 });
+            S.filet(H * 0.34, t.accent, px(1.2), W / 2 - px(14), px(28));
+            c.sections.forEach(function (s, i) {
+                S.T({ text: String(6 + i * 2) + '   ' + s, x: M, y: H * 0.37 + i * H * 0.05, w: W - M * 2, size: px(3.0), font: F.mono, fill: t.accent, align: 'center', lh: 1.4 });
+            });
+            S.photo(-bp, H * 0.68, W + 2 * bp, H * 0.32 + bp, '4');
+            S.voile(-bp, H * 0.68, W + 2 * bp, px(14), t.night, 0.35);
+            S.T({ text: c.caption, x: M, y: H * 0.86, w: W - M * 2, size: px(2.0), font: F.mono, fill: t.paper, align: 'center', op: 0.8 });
+            S.folio(p + 1);
+        }
+    }
+
+    /* ═══════════════════════ 4. JOURNAL COIFFURE ════════════════════════ */
+    function coiffurePages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        if (p === 0) {
+            // couverture : photo en ARCHE (signature du journal)
+            S.fond(t.paper);
+            S.photo(M * 1.6, H * 0.155, W - M * 3.2, H * 0.44, '1', { forme: 'arche' });
+            S.T({ text: c.mast, x: M, y: H * 0.045, w: W - M * 2, size: px(13), font: F.display, weight: '700', fill: t.ink, align: 'center', lh: 1.0 });
+            S.filet(H * 0.115, t.accent, px(0.8), W / 2 - px(16), px(32));
+            S.T({ text: c.tag, x: M, y: H * 0.125, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.ink, align: 'center', cs: 220, op: 0.8 });
+            S.T({ text: c.head, x: M, y: H * 0.635, w: W - M * 2, size: px(11), font: F.display, weight: '700', fill: t.ink, align: 'center', lh: 1.05 });
+            S.T({ text: c.stand, x: M * 1.5, y: H * 0.755, w: W - M * 3, size: px(3.2), italic: true, fill: t.ink, align: 'center', lh: 1.45 });
+            S.filet(H * 0.825, t.ink, px(0.3), M * 1.5, W - M * 3);
+            S.T({ text: c.issue, x: M, y: H * 0.845, w: (W - M * 2) * 0.6, size: px(2.1), font: F.mono, fill: t.ink, op: 0.7 });
+            S.T({ text: c.price, x: W - M - px(24), y: H * 0.845, w: px(24), size: px(2.4), font: F.mono, fill: t.accent, align: 'right' });
+            S.T({ text: (c.coverlines || '').replace(/\n/g, '   \u00b7   '), x: M, y: H * 0.905, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.ink, lh: 1.7, op: 0.75 });
+        } else if (p === 1) {
+            S.fond(t.paper); S.tete();
+            S.T({ text: c.head, x: M, y: H * 0.10, w: W - M * 2, size: px(14), font: F.display, weight: '700', fill: t.ink, lh: 1.02 });
+            S.filet(H * 0.19, t.ink, px(0.5));
+            S.T({ text: c.stand, x: M, y: H * 0.215, w: W - M * 2, size: px(4.2), italic: true, fill: t.ink, lh: 1.4 });
+            var cw = (W - M * 2 - S.COL * 2) / 3;
+            S.colonnes(H * 0.31, 0, c.body, 3);
+            S.photo(M, H * 0.565, cw * 2 + S.COL, H * 0.24, '2');
+            S.T({ text: c.caption, x: M, y: H * 0.815, w: cw * 2 + S.COL, size: px(2.1), font: F.mono, fill: t.ink, op: 0.7 });
+            S.bloc(M + cw * 2 + S.COL * 2, H * 0.565, cw, H * 0.24, t.soft);
+            S.T({ text: 'IN THIS ISSUE\n' + (c.legs || []).slice(1, 4).map(function (l, i) { return '0' + (i + 2) + '  ' + l; }).join('\n'), x: M + cw * 2 + S.COL * 2 + px(3), y: H * 0.585, w: cw - px(6), size: px(2.2), font: F.mono, fill: t.ink, lh: 2.0 });
+            S.photo(M, H * 0.815, (W - M * 2 - S.COL) / 2, H * 0.095, '3');
+            S.photo(M + (W - M * 2 - S.COL) / 2 + S.COL, H * 0.815, (W - M * 2 - S.COL) / 2, H * 0.095, '4');
+            S.folio(p + 1);
+        } else if (p === 2) {
+            S.fond(t.paper);
+            S.T({ text: (c.sections[1] || '').toUpperCase(), x: M, y: H * 0.075, w: W - M * 2, size: px(2.3), font: F.mono, fill: t.accent, cs: 300 });
+            S.T({ text: c.legs[1], x: M, y: H * 0.10, w: W - M * 2, size: px(17), font: F.display, weight: '700', fill: t.ink, lh: 0.98 });
+            S.photo(-bp, H * 0.245, W + 2 * bp, H * 0.34, '4');
+            S.voile(-bp, H * 0.50, W + 2 * bp, H * 0.085, t.night, 0.45);
+            S.T({ text: c.caption, x: M, y: H * 0.525, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.paper, op: 0.95 });
+            var n = 6, sw = (W - M * 2 - (n - 1) * px(2)) / n, teintes = ['#3d2a20', '#5c3b2a', '#7a5433', '#9c7a4a', '#c2a877', '#e0d3bb'];
+            for (var i = 0; i < n; i++) {
+                S.bloc(M + i * (sw + px(2)), H * 0.615, sw, px(9), teintes[i]);
+                S.T({ text: teintes[i].toUpperCase(), x: M + i * (sw + px(2)), y: H * 0.615 + px(10), w: sw, size: px(1.6), font: F.mono, fill: t.ink, align: 'center', op: 0.7 });
+            }
+            S.filet(H * 0.685, t.ink, px(0.3));
+            S.colonnes(H * 0.71, 0, c.body, 2);
+            S.folio(p + 1);
+        } else {
+            S.fond(t.paper);
+            S.bloc(-bp, -bp, W + 2 * bp, H * 0.16, t.night);
+            S.T({ text: (c.sections[2] || '').toUpperCase(), x: M, y: H * 0.06, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.accent, cs: 300 });
+            S.T({ text: c.legs[2], x: M, y: H * 0.085, w: W - M * 2, size: px(9), font: F.display, weight: '700', fill: t.paper, lh: 1.05 });
+            S.colonnes(H * 0.215, 0, c.body, 2);
+            S.bloc(M, H * 0.52, W - M * 2, H * 0.16, t.soft);
+            S.T({ text: c.quote, x: M + px(5), y: H * 0.545, w: W - M * 2 - px(10), size: px(4.6), font: F.display, italic: true, fill: t.accent, lh: 1.3 });
+            var rw = (W - M * 2 - S.COL * 2) / 3;
+            [1, 5, 3].forEach(function (n, i) {
+                S.photo(M + i * (rw + S.COL), H * 0.71, rw, H * 0.14, String(n));
+                S.T({ text: (c.legs[i] || '').toUpperCase(), x: M + i * (rw + S.COL), y: H * 0.855, w: rw, size: px(1.8), font: F.mono, fill: t.ink, cs: 60, op: 0.75 });
+            });
+            S.T({ text: c.caption, x: M, y: H * 0.90, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.ink, align: 'center', op: 0.7 });
+            S.folio(p + 1, 'center');
+        }
+    }
+
+    /* ══════════════════════════ 5. MENU RESTAURANT ══════════════════════ */
+    function menuPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        function platsDe(rub) {
+            return (c.plats || []).filter(function (l) { return l.split('::')[0] === rub; })
+                .map(function (l) { var a = l.split('::'); return { nom: a[1], prix: a[2] }; });
+        }
+        function liste(y0, rub) {
+            var items = platsDe(rub), y = y0;
+            items.forEach(function (it) {
+                S.T({ text: it.nom, x: M, y: y, w: (W - M * 2) * 0.8, size: px(3.1), fill: t.ink, lh: 1.4 });
+                S.T({ text: it.prix, x: W - M - px(14), y: y, w: px(14), size: px(3.1), font: F.mono, fill: t.accent, align: 'right' });
+                y += px(8.5);
+            });
+            return y;
+        }
+        if (p === 0) {
+            S.fond(t.night);
+            S.cadre(M * 0.7, M * 0.7, W - M * 1.4, H - M * 1.4, t.accent, px(0.5));
+            S.cadre(M * 1.1, M * 1.1, W - M * 2.2, H - M * 2.2, t.accent, px(0.25));
+            S.photo(W * 0.5 - W * 0.19, H * 0.155, W * 0.38, W * 0.38, '1', { forme: 'cercle' });
+            S.T({ text: c.tag, x: M, y: H * 0.545, w: W - M * 2, size: px(2.6), font: F.mono, fill: t.accent, align: 'center', cs: 400 });
+            S.T({ text: c.mast, x: M, y: H * 0.585, w: W - M * 2, size: px(12), font: F.display, fill: t.paper, align: 'center', lh: 1.05 });
+            S.filet(H * 0.665, t.accent, px(0.6), W / 2 - px(20), px(40));
+            S.T({ text: c.stand, x: M, y: H * 0.69, w: W - M * 2, size: px(3.2), font: F.display, italic: true, fill: t.accent, align: 'center', lh: 1.4 });
+            S.T({ text: c.issue, x: M, y: H * 0.775, w: W - M * 2, size: px(2.6), font: F.mono, fill: t.soft, align: 'center', cs: 200 });
+            S.T({ text: c.caption, x: M, y: H * 0.855, w: W - M * 2, size: px(2.3), font: F.mono, fill: t.soft, align: 'center', lh: 1.7, op: 0.85 });
+        } else if (p === 1) {
+            S.fond(t.night);
+            S.filet(M, t.accent, px(0.4)); S.filet(H - M, t.accent, px(0.4));
+            S.T({ text: (c.legs[0] || 'Starters').toUpperCase(), x: M, y: H * 0.075, w: W - M * 2, size: px(5.4), font: F.display, fill: t.accent, align: 'center', cs: 120 });
+            S.filet(H * 0.105, t.accent, px(0.25), W / 2 - px(16), px(32));
+            var y1 = liste(H * 0.145, 'Starters');
+            S.T({ text: (c.legs[1] || 'Main courses').toUpperCase(), x: M, y: y1 + px(8), w: W - M * 2, size: px(5.4), font: F.display, fill: t.accent, align: 'center', cs: 120 });
+            S.filet(y1 + px(16), t.accent, px(0.25), W / 2 - px(16), px(32));
+            liste(y1 + px(22), 'Mains');
+            S.photo(-bp, H * 0.78, W + 2 * bp, H * 0.22 + bp, '2');
+            S.voile(-bp, H * 0.78, W + 2 * bp, px(16), t.night, 0.4);
+            S.T({ text: c.quote, x: M, y: H * 0.815, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.paper, align: 'center', lh: 1.6 });
+            S.folio(p + 1);
+        } else if (p === 2) {
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H * 0.30 + bp, '3');
+            S.voile(-bp, H * 0.18, W + 2 * bp, H * 0.12 + bp, t.night, 0.55);
+            S.T({ text: (c.legs[3] || 'Wines').toUpperCase(), x: M, y: H * 0.055, w: W - M * 2, size: px(2.6), font: F.mono, fill: t.paper, align: 'center', cs: 300, op: 0.9 });
+            S.T({ text: 'TASTING MENU', x: M, y: H * 0.345, w: W - M * 2, size: px(6.4), font: F.display, fill: t.accent, align: 'center', cs: 100 });
+            liste(H * 0.40, 'Desserts');
+            S.cadre(M, H * 0.60, W - M * 2, H * 0.26, t.accent, px(0.4));
+            S.T({ text: 'FIVE COURSES \u00b7 58\n' + (c.plats || []).filter(function (l) { return l.indexOf('Mains::') === 0; }).map(function (l) { return '\u2014  ' + l.split('::')[1]; }).join('\n'), x: M + px(5), y: H * 0.62, w: W - M * 2 - px(10), size: px(2.7), font: F.mono, fill: t.paper, lh: 2.0 });
+            S.filet(H - M + px(4), t.accent, px(0.3));
+            S.folio(p + 1);
+        } else {
+            S.fond(t.night);
+            S.filet(M, t.accent, px(0.4));
+            S.T({ text: (c.legs[2] || 'Desserts').toUpperCase(), x: M, y: H * 0.075, w: W - M * 2, size: px(5.4), font: F.display, fill: t.accent, align: 'center', cs: 120 });
+            S.filet(H * 0.105, t.accent, px(0.25), W / 2 - px(16), px(32));
+            var y3 = liste(H * 0.15, 'Desserts');
+            S.T({ text: 'WINES BY THE GLASS', x: M, y: y3 + px(10), w: W - M * 2, size: px(4.6), font: F.display, fill: t.accent, align: 'center', cs: 120 });
+            liste(y3 + px(20), 'Wines');
+            S.photo(-bp, H * 0.72, W + 2 * bp, H * 0.28 + bp, '4');
+            S.voile(-bp, H * 0.72, W + 2 * bp, H * 0.12, t.night, 0.5);
+            S.T({ text: 'RESERVATIONS', x: M, y: H * 0.755, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.accent, align: 'center', cs: 300 });
+            S.T({ text: c.caption, x: M, y: H * 0.925, w: W - M * 2, size: px(2.3), font: F.mono, fill: t.paper, align: 'center', lh: 1.6 });
+            S.folio(p + 1);
+        }
+    }
+
+    /* ══════════════════════════════ 6. LIVRE ════════════════════════════ */
+    function livrePages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+        var rub = (c.sections[Math.min(p, c.sections.length - 1)] || '');
+        if (p === 0) {
+            S.fond(t.paper);
+            S.filet(M * 1.4, t.accent, px(0.5), M, W - M * 2);
+            S.T({ text: c.mast, x: M, y: H * 0.10, w: W - M * 2, size: px(11), font: F.display, weight: '700', fill: t.ink, align: 'center', lh: 1.05 });
+            S.T({ text: c.tag, x: M, y: H * 0.185, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.accent, align: 'center', cs: 240 });
+            // planche montée (photo avec marge blanche + filet)
+            S.photo(M * 1.5, H * 0.245, W - M * 3, H * 0.40, '1');
+            S.cadre(M * 1.5, H * 0.245, W - M * 3, H * 0.40, t.ink, px(0.25));
+            S.T({ text: c.head, x: M, y: H * 0.70, w: W - M * 2, size: px(5.2), font: F.text, italic: true, fill: t.ink, align: 'center', lh: 1.35 });
+            S.filet(H * 0.80, t.accent, px(0.4), W / 2 - px(14), px(28));
+            S.T({ text: c.caption, x: M, y: H * 0.83, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.ink, align: 'center', op: 0.7 });
+            S.T({ text: c.issue, x: M, y: H - M * 1.6, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.ink, align: 'center', cs: 200, op: 0.6 });
+        } else if (p === 1) {
+            // frontispice : photo plein fond perdu + cartouche de chapitre
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H + 2 * bp, '2');
+            S.voile(-bp, H * 0.66, W + 2 * bp, H * 0.34 + bp, t.night, 0.62);
+            S.cache(M, H * 0.72, W - M * 2, H * 0.16, t.paper, 0.96);
+            S.T({ text: (c.legs[1] || '').toUpperCase(), x: M + px(4), y: H * 0.74, w: W - M * 2 - px(8), size: px(2.1), font: F.mono, fill: t.accent, cs: 200 });
+            S.T({ text: 'Chapter one', x: M + px(4), y: H * 0.765, w: W - M * 2 - px(8), size: px(7), font: F.display, weight: '700', fill: t.ink, lh: 1.05 });
+            S.T({ text: c.caption, x: M, y: H * 0.91, w: W - M * 2, size: px(2.0), font: F.mono, fill: t.paper, op: 0.8 });
+            S.folio(p + 1, 'left');
+        } else if (p === 3) {
+            // page de texte + photo bas de page
+            S.fond(t.paper);
+            S.T({ text: c.mast, x: M, y: M - px(3), w: W - M * 2, size: px(2.0), font: F.mono, fill: t.ink, cs: 160, op: 0.55 });
+            S.T({ text: rub.toUpperCase(), x: M, y: H * 0.13, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.accent, cs: 240 });
+            S.T({ text: c.legs[2], x: M, y: H * 0.16, w: W - M * 2, size: px(7.4), font: F.display, weight: '700', fill: t.ink, lh: 1.1 });
+            S.colonnes(H * 0.30, 0, c.body, 1, { size: px(3.0), lh: 1.62 });
+            S.photo(M, H * 0.68, W - M * 2, H * 0.22, '3');
+            S.T({ text: c.caption, x: M, y: H * 0.905, w: W - M * 2, size: px(1.9), font: F.mono, fill: t.ink, op: 0.7 });
+            S.folio(p + 1);
+        } else if (p === 4) {
+            // planche plein fond perdu + légende en cartouche
+            S.fond(t.night);
+            S.photo(-bp, -bp, W + 2 * bp, H + 2 * bp, '4');
+            S.cache(M, M, W * 0.55, H * 0.14, t.paper, 0.94);
+            S.T({ text: 'PLATE I', x: M + px(4), y: M + px(4), w: W * 0.55 - px(8), size: px(2.1), font: F.mono, fill: t.accent, cs: 220 });
+            S.T({ text: c.legs[3], x: M + px(4), y: M + px(9), w: W * 0.55 - px(8), size: px(4), font: F.display, fill: t.ink, lh: 1.2 });
+            S.folio(p + 1, 'left');
+        } else if (p === 5) {
+            S.fond(t.paper);
+            S.photo(-bp, -bp, W + 2 * bp, H * 0.30 + bp, '1');
+            S.voile(-bp, H * 0.20, W + 2 * bp, H * 0.10 + bp, t.night, 0.5);
+            S.T({ text: rub.toUpperCase(), x: M, y: H * 0.225, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.paper, cs: 260 });
+            S.T({ text: c.legs[1], x: M, y: H * 0.345, w: W - M * 2, size: px(7), font: F.display, weight: '700', fill: t.ink, lh: 1.1 });
+            S.filet(H * 0.42, t.accent, px(0.6));
+            S.colonnes(H * 0.45, 0, c.body, 1, { size: px(3.0), lh: 1.62 });
+            S.folio(p + 1);
+        } else if (p === 8) {
+            // planche II : deux photos côte à côte
+            S.fond(t.paper);
+            S.T({ text: 'PLATE II', x: M, y: M - px(3), w: W - M * 2, size: px(2.1), font: F.mono, fill: t.accent, cs: 220 });
+            S.photo(M, H * 0.14, (W - M * 2 - S.COL) / 2, H * 0.56, '3');
+            S.photo(M + (W - M * 2 - S.COL) / 2 + S.COL, H * 0.14, (W - M * 2 - S.COL) / 2, H * 0.56, '5');
+            S.T({ text: c.legs[3], x: M, y: H * 0.72, w: (W - M * 2 - S.COL) / 2, size: px(1.9), font: F.mono, fill: t.ink, op: 0.75 });
+            S.T({ text: c.legs[4], x: M + (W - M * 2 - S.COL) / 2 + S.COL, y: H * 0.72, w: (W - M * 2 - S.COL) / 2, size: px(1.9), font: F.mono, fill: t.ink, op: 0.75 });
+            S.colonnes(H * 0.79, 0, c.body, 1, { size: px(2.6), lh: 1.55 });
+            S.folio(p + 1, 'center');
+        } else if (p === 9) {
+            S.fond(t.paper);
+            S.T({ text: c.quote, x: M * 1.4, y: H * 0.24, w: W - M * 2.8, size: px(6), font: F.display, italic: true, fill: t.accent, align: 'center', lh: 1.3 });
+            S.filet(H * 0.44, t.ink, px(0.3), W / 2 - px(12), px(24));
+            S.colonnes(H * 0.49, 0, c.body, 1, { size: px(3.0), lh: 1.62 });
+            S.folio(p + 1);
+        } else if (p === 11) {
+            // colophon
+            S.fond(t.paper);
+            S.bloc(-bp, H * 0.30, W + 2 * bp, H * 0.70 + bp, t.night);
+            S.T({ text: c.mast, x: M, y: H * 0.36, w: W - M * 2, size: px(9), font: F.display, weight: '700', fill: t.paper, lh: 1.05 });
+            S.filet(H * 0.45, t.accent, px(0.8), M, px(20));
+            S.T({ text: c.credits, x: M, y: H * 0.48, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.paper, lh: 1.9, op: 0.9 });
+            S.T({ text: c.caption, x: M, y: H * 0.60, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.accent, lh: 1.9 });
+            S.photo(M, H * 0.70, W - M * 2, H * 0.18, '2');
+            S.T({ text: c.quote, x: M, y: H * 0.125, w: W - M * 2, size: px(5.6), font: F.display, italic: true, fill: t.ink, align: 'center', lh: 1.3 });
+            S.folio(p + 1);
+        } else {
+            // pages de texte courantes (2, 6, 7, 10)
+            S.fond(t.paper);
+            S.T({ text: c.mast, x: M, y: M - px(3), w: W - M * 2, size: px(2.0), font: F.mono, fill: t.ink, cs: 160, op: 0.55 });
+            S.T({ text: rub.toUpperCase(), x: M, y: H * 0.13, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.accent, cs: 240 });
+            S.T({ text: (p === 2 ? 'The workshop' : c.legs[(p % 6)]), x: M, y: H * 0.16, w: W - M * 2, size: px(7.4), font: F.display, weight: '700', fill: t.ink, lh: 1.1 });
+            S.colonnes(H * 0.30, 0, c.body, 1, { size: px(3.0), lh: 1.62 });
+            if (p === 6) S.photo(M, H * 0.72, (W - M * 2) * 0.6, H * 0.18, '4');
+            if (p === 7) S.photo(M, H * 0.70, W - M * 2, H * 0.20, '5');
+            if (p === 10) {
+                S.photo(M, H * 0.70, W - M * 2, H * 0.17, '4');
+                S.T({ text: c.caption, x: M, y: H * 0.885, w: W - M * 2, size: px(1.9), font: F.mono, fill: t.ink, op: 0.7 });
+            }
+            S.folio(p + 1);
+        }
+    }
+
+    /* ═══════════════════════════════ 7. CV ═══════════════════════════════ */
+    function cvPage(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, bp = S.bp;
+        S.fond(t.paper);
+        // portrait en cercle
+        var d = W * 0.19;
+        S.photo(W - M - d, M, d, d, '1', { forme: 'cercle' });
+        S.T({ text: c.mast, x: M, y: M - px(2), w: W - M * 2 - d - px(6), size: px(2.1), font: F.mono, fill: t.accent, cs: 260 });
+        S.T({ text: c.head, x: M, y: M + px(3), w: W - M * 2 - d - px(8), size: px(15), font: F.display, weight: '700', fill: t.ink, lh: 1.0 });
+        S.T({ text: c.tag, x: M, y: M + px(17), w: W - M * 2 - d - px(8), size: px(2.6), font: F.mono, fill: t.ink, cs: 140, op: 0.75 });
+        S.filet(M + px(24), t.accent, px(1.2));
+        S.T({ text: 'PROFILE', x: M, y: H * 0.145, w: W - M * 2, size: px(2.3), font: F.mono, fill: t.accent, cs: 300 });
+        S.T({ text: c.stand, x: M, y: H * 0.175, w: W - M * 2, size: px(3.2), fill: t.ink, lh: 1.55 });
+        // expériences sur deux colonnes avec filet vertical
+        S.T({ text: 'EXPERIENCE', x: M, y: H * 0.30, w: (W - M * 2) * 0.6, size: px(2.3), font: F.mono, fill: t.accent, cs: 300 });
+        var exps = (c.legs || []).filter(function (l) { return l.indexOf('Experience::') === 0; });
+        var y = H * 0.335;
+        exps.forEach(function (l) {
+            var a = l.split('::');
+            S.T({ text: a[1], x: M, y: y, w: (W - M * 2) * 0.24, size: px(2.4), font: F.mono, fill: t.ink, op: 0.7 });
+            S.T({ text: a[2], x: M + (W - M * 2) * 0.26, y: y, w: (W - M * 2) * 0.74, size: px(3.6), font: F.display, weight: '700', fill: t.ink, lh: 1.15 });
+            S.T({ text: a[3], x: M + (W - M * 2) * 0.26, y: y + px(6.5), w: (W - M * 2) * 0.74, size: px(2.9), fill: t.ink, lh: 1.45, op: 0.85 });
+            S.filet(y + px(13), t.ink, px(0.2), M + (W - M * 2) * 0.26, (W - M * 2) * 0.74);
+            y += H * 0.088;
+        });
+        // colonne droite : compétences + langues
+        var cx = M + (W - M * 2) * 0.52;
+        S.bloc(cx - px(6), H * 0.30, W - M - cx + px(6), H * 0.44, t.soft);
+        S.T({ text: 'SKILLS', x: cx, y: H * 0.325, w: W - M - cx, size: px(2.3), font: F.mono, fill: t.accent, cs: 300 });
+        var sy = H * 0.36;
+        (c.skills || '').split('\n').forEach(function (l, i) {
+            var a = l.split('::');
+            if (!a[0]) return;
+            var nv = parseFloat(a[1] || '0.7');
+            S.T({ text: a[0], x: cx, y: sy, w: W - M - cx, size: px(2.7), fill: t.ink, lh: 1.3 });
+            S.bloc(cx, sy + px(4.6), (W - M - cx) * 0.72, px(1.1), '#d8dee6');
+            S.bloc(cx, sy + px(4.6), (W - M - cx) * 0.72 * nv, px(1.1), t.accent);
+            sy += px(9.5);
+        });
+        S.T({ text: 'LANGUAGES', x: cx, y: sy + px(4), w: W - M - cx, size: px(2.3), font: F.mono, fill: t.accent, cs: 300 });
+        S.T({ text: (c.langues || '').replace(/\n/g, '\n'), x: cx, y: sy + px(9), w: W - M - cx, size: px(2.7), fill: t.ink, lh: 1.7 });
+        // pied
+        S.bloc(-bp, H - M * 1.4, W + 2 * bp, M * 1.4 + bp, t.night);
+        S.T({ text: c.caption, x: M, y: H - M * 1.05, w: W - M * 2, size: px(2.5), font: F.mono, fill: t.paper, cs: 60 });
+    }
+
+    /* ═════════════════════════ CARTE DE VISITE ═══════════════════════════ */
+    function cartePage(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, bp = S.bp;
+        S.fond(t.paper);
+        S.photo(-bp, -bp, W * 0.38 + bp, H + 2 * bp, '1');
+        S.bloc(-bp, -bp, W * 0.38 + bp, H + 2 * bp, t.accent, 0.22);
+        S.T({ text: c.head, x: W * 0.45, y: H * 0.24, w: W * 0.52, size: px(6), font: F.display, weight: '700', fill: t.ink, lh: 1.0 });
+        S.bloc(W * 0.45, H * 0.44, px(10), px(0.5), t.accent);
+        S.T({ text: c.tag, x: W * 0.45, y: H * 0.475, w: W * 0.50, size: px(1.9), font: F.mono, fill: t.ink, cs: 160, op: 0.85 });
+        S.T({ text: c.stand, x: W * 0.45, y: H * 0.55, w: W * 0.50, size: px(2.1), fill: t.ink, lh: 1.4, op: 0.9 });
+        S.T({ text: c.body, x: W * 0.45, y: H * 0.68, w: W * 0.50, size: px(2.0), font: F.mono, fill: t.ink, lh: 1.6 });
+        S.T({ text: c.caption, x: W * 0.45, y: H * 0.895, w: W * 0.50, size: px(1.8), font: F.mono, fill: t.accent, cs: 120 });
+    }
+
+    // ── Vignette : SHOT RÉEL du modèle (rendu depuis l'app) + repli SVG ────
     window.spTemplateThumb = function (comp) {
         try {
-            var W = comp && comp.format ? comp.format.width : 210, H = comp && comp.format ? comp.format.height : 297;
-            var t = (comp && comp.theme) || {}, c = (comp && comp.content) || {};
-            var paper = t.paper || t.bg || '#f4f4f4', ink = t.ink || t.dark || '#111', acc = t.accent || '#1a1a1a', soft = t.soft || t.light || '#e8e8e8';
-            var dbl = !!(comp.format && comp.format.spread);
-            var pw = 210, ph = Math.round(pw * (H / W));
-            var vw = dbl ? pw * 2 : pw, vh = ph;
-            var titre = String(comp.name || '').replace(/\s*\(\d+p\)/, '').toUpperCase().slice(0, 20);
-            var fz = Math.max(11, Math.min(Math.round(pw * 0.085), Math.floor((pw - 30) / Math.max(7, titre.length) * 1.7)));
-            var s = '<svg xmlns="http://www.w3.org/2000/svg" width="' + vw + '" height="' + vh + '" viewBox="0 0 ' + vw + ' ' + vh + '">';
-            var m = Math.round(pw * 0.08);
-            for (var p = 0; p < (dbl ? 2 : 1); p++) {
-                var ox = p * pw;
-                s += '<rect x="' + ox + '" y="0" width="' + pw + '" height="' + ph + '" fill="' + paper + '"/>';
-                if (p === 0) {
-                    s += '<rect x="' + (ox + m) + '" y="' + Math.round(ph * 0.17) + '" width="' + (pw - m * 2) + '" height="' + Math.round(ph * 0.40) + '" fill="' + soft + '"/>';
-                    s += '<circle cx="' + Math.round(ox + pw * 0.72) + '" cy="' + Math.round(ph * 0.29) + '" r="' + Math.round(pw * 0.09) + '" fill="' + acc + '" opacity="0.55"/>';
-                    s += '<path d="M' + (ox + m) + ' ' + Math.round(ph * 0.57) + ' L' + Math.round(ox + pw * 0.45) + ' ' + Math.round(ph * 0.30) + ' L' + Math.round(ox + pw * 0.72) + ' ' + Math.round(ph * 0.57) + ' Z" fill="' + ink + '" opacity="0.25"/>';
-                    s += '<text x="' + (ox + pw / 2) + '" y="' + Math.round(ph * 0.11) + '" fill="' + ink + '" font-family="Georgia,serif" font-size="' + fz + '" font-weight="700" text-anchor="middle">' + titre + '</text>';
-                    s += '<rect x="' + (ox + pw / 2 - 12) + '" y="' + Math.round(ph * 0.125) + '" width="24" height="2.5" fill="' + acc + '"/>';
-                    s += '<text x="' + (ox + m) + '" y="' + Math.round(ph * 0.645) + '" fill="' + ink + '" font-family="Georgia,serif" font-size="' + Math.round(pw * 0.055) + '" font-weight="700">' + String(c.head || '').slice(0, 20) + '</text>';
-                } else {
-                    s += '<rect x="' + (ox + m) + '" y="' + Math.round(ph * 0.14) + '" width="' + (pw - m * 2) + '" height="' + Math.round(ph * 0.30) + '" fill="' + ink + '" opacity="0.10"/>';
-                    s += '<text x="' + (ox + m) + '" y="' + Math.round(ph * 0.11) + '" fill="' + acc + '" font-family="monospace" font-size="9" letter-spacing="2">CONTENTS</text>';
-                }
-                var y = Math.round(ph * (p === 0 ? 0.70 : 0.52));
-                for (var i = 0; i < (p === 0 ? 5 : 8); i++) {
-                    var w2 = (i % 4 === 3) ? Math.round((pw - m * 2) * 0.6) : (pw - m * 2);
-                    s += '<rect x="' + (ox + m) + '" y="' + y + '" width="' + w2 + '" height="3" fill="' + ink + '" opacity="0.22"/>';
-                    y += 9;
-                }
-                s += '<rect x="' + ox + '" y="' + (ph - Math.round(ph * 0.055)) + '" width="' + pw + '" height="' + Math.round(ph * 0.055) + '" fill="' + ink + '" opacity="0.92"/>';
-                s += '<text x="' + (ox + m) + '" y="' + (ph - Math.round(ph * 0.019)) + '" fill="' + paper + '" font-family="monospace" font-size="8">' + (p === 0 ? Math.round(W / 2.8346) + '×' + Math.round(H / 2.8346) + ' mm' : (comp.format && comp.format.pages ? comp.format.pages + ' pages' : '')) + '</text>';
-            }
-            if (dbl) s += '<rect x="' + (pw - 1) + '" y="0" width="2" height="' + ph + '" fill="' + ink + '" opacity="0.18"/>';
-            s += '</svg>';
-            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
-        } catch (e) { return ''; }
+            var key = (comp && comp.key) || '';
+            if (key) return PREV + key + '.jpg';
+        } catch (e) {}
+        return '';
     };
 
-    // ── Enregistrement ──────────────────────────────────────────────────
+    // ── Enregistrement ─────────────────────────────────────────────────────
     try {
         if (typeof compositionExamples === 'undefined' || !Array.isArray(compositionExamples)) return;
-        // on retire les éventuels modèles enregistrés par la version précédente
         for (var k = compositionExamples.length - 1; k >= 0; k--) {
             if (compositionExamples[k] && compositionExamples[k].spEn) compositionExamples.splice(k, 1);
         }
         M.forEach(function (d) {
             compositionExamples.push({
                 name: d.name, key: d.key, lang: 'en', spEn: true, desc: d.desc,
-                format: d.format, theme: { bg: d.theme.paper, accent: d.theme.accent, dark: d.theme.night, light: d.theme.soft, ink: d.theme.ink },
+                format: d.format,
+                theme: { bg: d.theme.paper, accent: d.theme.accent, dark: d.theme.night, light: d.theme.soft, ink: d.theme.ink },
                 themeFull: d.theme,
                 content: d.c,
+                shot: PREV + d.key + '.jpg',
                 buildMulti: async function () {
                     var total = d.format.pages || 1;
                     for (var i = 0; i < total; i++) {
@@ -71526,17 +72131,14 @@ function _npBuildLayout(params, keywords, lang) {
                         if (!cv) continue;
                         try { page(d, cv, i, total); } catch (e) { console.warn('[SP-EN] page ' + (i + 1) + ' :', e); }
                     }
-                    // 🆕 v1.7.429f — photos posées APRÈS toute la construction : un spread
-                    //   partage un canvas entre deux pages, un flush par page se perdait.
                     try { (typeof canvases !== 'undefined' ? canvases : []).forEach(function (c) { flushImgs(c); }); } catch (e) {}
+                    ordreDiffere();
                 },
                 build: function (canvas, x, y) {
-                    // Dépôt depuis la bibliothèque : couverture au point de dépôt + photos.
                     try {
-                        var g0 = canvas.bleedInfo || {};
-                        canvas.bleedInfo = g0;
                         page(d, canvas, 0, 1);
                         flushImgs(canvas);
+                        ordreDiffere();
                     } catch (e) { console.warn('[SP-EN] build :', e); }
                 }
             });
@@ -71561,7 +72163,8 @@ window.npRenderAssetStrip = function() {
         const hMmApprox = fmt.height ? Math.round(fmt.height / 2.8346) : 0;
         const pgTxt = (fmt.pages || 1) + ' p.';
         const ar = fmt.width && fmt.height ? (fmt.width / fmt.height) : 0.71;
-        const thW = 54, thH = Math.round(thW / Math.max(0.3, ar));
+        const thW = 84, thH = Math.round(thW / Math.max(0.3, ar));
+        const shot = comp.shot || ('img/template/preview/' + key + '.jpg');
         const accent = (comp.theme && (comp.theme.accent || comp.theme.gold)) || '#1a1a1a';
         const bg = (comp.theme && comp.theme.bg) || '#f2f2f2';
         const card = document.createElement('button');
@@ -71574,10 +72177,7 @@ window.npRenderAssetStrip = function() {
         card.onmouseout = function(){ this.style.borderColor = '#e6e6e6'; this.style.boxShadow = 'none'; };
         card.onclick = function(){ npApplyTemplateByKey(key); };
         const thumb = document.createElement('div');
-        thumb.style.cssText = 'width:' + thW + 'px; height:' + Math.min(thH, 78) + 'px; background:' + bg + '; border:1px solid #ddd; border-radius:3px; position:relative; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.1);';
-        const band = document.createElement('div');
-        band.style.cssText = 'position:absolute; left:0; right:0; bottom:0; height:34%; background:' + accent + '; opacity:0.85;';
-        thumb.appendChild(band);
+        thumb.style.cssText = 'width:' + thW + 'px; height:' + Math.min(thH, 116) + 'px; background:' + bg + ' url("' + shot + '") center/contain no-repeat; border:1px solid #ddd; border-radius:3px; position:relative; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.1);';
         const nm = document.createElement('div');
         nm.textContent = comp.name.replace(/\s*\(\d+p\)/, '');
         nm.style.cssText = 'font-size:11px; font-weight:600; color:#222; text-align:center; line-height:1.25;';
