@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.424`** — 15 septembre 2026
+> **Dernière version : `1.7.455`** — 16 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,19 +10,19 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.424` |
-| Cache Service Worker | `superprint-shell-v1.7.424-clavier-zoom-typo` |
-| Query JS (`main.js`) | `?v=20260917-v417-clavier-studio` |
-| Badge preview (`spVersionBadge`) | `v1.7.421` |
-| Splash screen | `v1.7.421` |
-| Préférences (panneau SUPERPRINT) | `v1.7.421` |
-| Préférences (bas de page) | `SuperPrint v1.7.421 — 15 septembre 2026` |
-| Onboarding (`V 1.7.424`) | `1.7.424` |
-| Landing (`softwareVersion` + footer) | `1.7.424` |
-| Documentation | `v1.7.421` |
-| `version.txt` | `1.7.424` |
-| `llms.txt` / `llms-full.txt` | `1.7.424 (September 2026)` |
-| `package.json` (sp213-local) | `1.7.424` |
+| Version app (affichée) | `1.7.455` |
+| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.455-no-whatsapp` |
+| Query JS (`main.js`) | `?v=20260916-v455-release` |
+| Badge preview (`spVersionBadge`) | `v1.7.455` — 5 marqueurs : commentaire, `title` (`JS v455`), `data-sp-js="v455"`, `data-sp-sw`, texte |
+| Splash screen | `1.7.455` |
+| Onboarding | `LAYOUT EDITOR — V 1.7.455` + `V 1.7.455 \| 09 2026` |
+| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html`) | `1.7.455` |
+| Documentation (racine **et** `app/`) | `v1.7.455` (pastille + pieds de page datés) |
+| `api.html` (pastille `.version`) | `v1.7.455` |
+| `version.txt` | `1.7.455` |
+| `llms.txt` / `llms-full.txt` | `1.7.455 (September 2026)` |
+| `package.json` + `package-lock.json` (sp213-local) | `1.7.455` |
+| Lanceur npm (`superprint-npm/package.json`) | `1.0.96` (version **indépendante**, voir plus bas) |
 
 > ⚠️ Le paquet **npm** (`superprint-npm`) a sa **propre version** (`1.0.x`) — c'est la version de *release du paquet*, indépendante de la version de l'app. Il lit la version de l'app depuis `https://superprint.cc/version.txt`.
 
@@ -33,36 +33,29 @@
 Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit être mis à jour** lors d'un bump. Ils existent en **double** (dossier web `superprint/` + copie locale `sp213-local/public/superprint/`) → toujours mettre à jour les 2.
 
 ### A. App (web)
-- `app/index.html` — 12 occurrences :
-  - commentaire SEO `SuperPrint vX.Y.Z — Zigmoon`
-  - `<meta name="generator" content="SuperPrint vX.Y.Z — Zigmoon">`
-  - JSON-LD `"softwareVersion": "X.Y.Z"`
-  - `.splash-version` → `vX.Y.Z`
-  - `#spVersionBadge` : commentaire, `title`, `data-sp-js`, `data-sp-sw`, texte `vX.Y.Z`
-  - panneau préférences : `vX.Y.Z` (info SUPERPRINT) + `SuperPrint vX.Y.Z — <date>`
-  - onboarding : `LAYOUT EDITOR — V X.Y.Z` + `V X.Y.Z | MM YYYY`
-  - `<script src="JS/main.js?v=20260915-v424-supertypo-popins">`
-- `app/service-worker.js` — `CACHE_NAME = 'superprint-shell-vX.Y.Z-...'`
-- `app/landing.html` — JSON-LD `softwareVersion` + `feat-tag` + footer `© ... vX.Y.Z`
-- `app/llms.txt` + `app/llms-full.txt` — `Version: X.Y.Z`
-- `app/documentation.html` — topbar `.version`, footers (4 lignes)
+- `app/index.html` — 17 occurrences de la version, dont **7 COMMENTAIRES HISTORIQUES** (`<!-- 🆕 vX.Y.Z — … -->`) à **NE PAS** toucher. Marqueurs VIVANTS : commentaire SEO (`SuperPrint vX.Y.Z — Zigmoon`), `<meta name="generator">`, JSON-LD `softwareVersion`, `.splash-version`, onboarding (`LAYOUT EDITOR — V X.Y.Z` + `V X.Y.Z | MM YYYY`), `#spVersionBadge` (commentaire + `title` + `data-sp-js` + `data-sp-sw` + texte), `<script src="JS/main.js?v=…">`.
+- `app/service-worker.js` — `CACHE_NAME = 'superprint-shell-vX.Y.Z-…'`
+- `app/landing.html` — JSON-LD `softwareVersion` + footer
+- `app/llms.txt` + `app/llms-full.txt` — **uniquement** la ligne `- **Version**: X.Y.Z` + **AJOUTER** le billet de la version (les billets `- **X.Y.Z** — …` sont de l'HISTORIQUE : ne jamais les renommer)
+- `app/documentation.html` — pastille `.version` + 2 pieds de page datés (⚠️ ce fichier est **souvent oublié** : il était resté en 1.7.404)
 
 ### B. Racine (pré-home + landing + doc)
-- `index.html` — **le lanceur** : aucun numéro de version affiché, donc rien à bumper dans le fichier. MAIS il contient des `?v=` sur `icons/*.svg` et il est **précaché par le service worker racine** → c'est le bump du `CACHE_NAME` racine qui force sa mise à jour chez les visiteurs.
-- `icons/` — logotypes du lanceur (`sper_typo.svg`, `studio_print_logo_blanc.svg`). À ajouter à l'`APP_SHELL` du service worker racine quand on en ajoute un.
-- `landing.html` — JSON-LD `softwareVersion`, `feat-tag`, footer
+- `index.html` — **le lanceur** : pas de version affichée, mais le JSON-LD `softwareVersion` + les `?v=` sur `icons/*.svg` ; il est **précaché par le service worker racine** → c'est le bump du `CACHE_NAME` racine qui force sa mise à jour.
+- `icons/` — logotypes du lanceur, à ajouter à l'`APP_SHELL` du SW racine quand on en ajoute un.
+- `landing.html` — JSON-LD `softwareVersion` + footer
 - `service-worker.js` — `CACHE_NAME`
-- `llms.txt` + `llms-full.txt` — `Version: X.Y.Z`
-- `documentation.html` — topbar `.version`, footers (4 lignes)
+- `llms.txt` + `llms-full.txt` — ligne `- **Version**:` + nouveau billet (voir ci-dessus)
+- `documentation.html` — pastille `.version` + 2 pieds de page datés
 - `version.txt` — `X.Y.Z` (source de vérité pour le CLI npm)
 
 ### C. Studio SP213
-- `sp213-studio.html` — pas de version affichée directement, mais le fichier doit être re-synchronisé
-- `src/main.js` (sp213-local) — pas de version affichée
+- `sp213-studio.html` — aucun numéro de version affiché, mais le fichier doit être **re-synchronisé** (copie locale). Il est ouvert depuis l'app avec `?v=…` (cache-busting) : voir `app/JS/main.js`.
 
 ### D. Local (zip + package)
 - `sp213-local/package.json` + `package-lock.json` — `"version": "X.Y.Z"`
-- `sp213-local.zip` — régénéré après chaque bump
+- `sp213-local.zip` — régénéré après chaque bump (`_dev/scripts/_make_zip.cjs`)
+- ⚠️ **NE PAS** bumper `main.js` : ses occurrences de version sont TOUTES des commentaires historiques.
+- ⚠️ **NE PAS** avancer `MIN_APP_VERSION` (`superprint-npm/cli.mjs`) avant le téléversement du zip (le CLI refuse un zip plus ancien que ce plancher).
 
 ---
 
@@ -83,26 +76,35 @@ Ex. si le badge affichait `1.7.271`, bump vers `1.7.368` minimum.
 
 ## 5. Procédure complète de release
 
-1. Choisir le nouveau numéro (ex. `1.7.368`) — **toujours > au cache SW actuel**.
-2. Mettre à jour TOUS les fichiers de la section 2 (web + copie locale).
-3. Vérifier : `grep -r "1.7.368" superprint/` → plus aucune occurrence (sauf changelog main.js).
-4. Vérifier synchro web/local : md5 identiques pour chaque fichier.
-5. Régénérer `sp213-local.zip` via `_make_zip.mjs`.
-6. Vérifier le zip : contient bien `app/index.html` à jour, `version.txt`, `service-worker.js`.
-7. Publier sur superprint.cc + app.zigmoon.com (zip + fichiers).
-8. Si changement du CLI : bump `superprint-npm/package.json` (`npm version patch`) + `npm publish`.
+1. Choisir le nouveau numéro (ex. `1.7.455`) — **toujours > au cache SW actuel**.
+2. **Bump ciblé** : `node _dev/scripts/_mk_bump_XXX.cjs` (dry-run) puis `--apply`.
+   ⚠️ Un `replaceAll` global est INTERDIT : il renomme les commentaires historiques `🆕 vX.Y.Z`
+   de `app/index.html` et les billets des llms. Chaque remplacement du plan est compté (throw si ≠ attendu).
+3. **Documentation** : `node _dev/scripts/_patch455_doc.cjs` régénère les **214 numéros de ligne**
+   de la table des fonctions (mesuré : 213/214 étaient périmés) et corrige les pieds de page datés.
+4. **Synchro web ↔ copie locale** : `node _dev/scripts/_parite_382.cjs` (16 paires clés) +
+   `node _dev/scripts/_sync_450_full.cjs` → attendu **« différents : 0 »**.
+5. **Cohérence** : `node _dev/scripts/_verif_coherence.cjs` → marqueurs vivants cohérents, 0 résidu.
+6. **Build local** : `npm run build` dans `sp213-local` (régénère `dist/`).
+7. **Zip** : `node _dev/scripts/_make_zip.cjs` → `superprint/sp213-local.zip` + contrôles internes
+   (`--verif` pour contrôler sans recréer).
+8. **Billet** : `release.html` (racine du dépôt, **gitignoré**, déployé séparément sur
+   app.zigmoon.com) + `CHANGELOG.md` (sans BOM).
+9. **Git** : commit (message via `-F fichier`, jamais `-m` avec accents/apostrophes) + `git tag vX.Y.Z` + push.
+10. Publier sur superprint.cc + app.zigmoon.com (zip + fichiers) **puis** avancer `MIN_APP_VERSION`.
+11. Si changement du CLI : bump `superprint-npm/package.json` (`npm version patch`) + `npm publish`
+    (2FA validée par l'utilisateur dans le navigateur).
 
 ---
 
-## 6. Scripts utiles
+## 6. Scripts utiles (`_dev/scripts/`, gitignorés)
 
 ```bash
-# Vérifier toutes les occurrences de version dans le projet
-grep -r "1\.7\.2[0-9][0-9]" superprint/
-
-# Vérifier qu'aucune ancienne version ne traîne
-grep -r "1\.7\.26[0-3]" superprint/
-
-# Comparer synchro web/local
-# (voir script md5 dans les notes du projet)
+node _dev/scripts/_mk_bump_455.cjs          # bump ciblé (dry-run, --apply)
+node _dev/scripts/_patch455_doc.cjs         # doc : contenu + 214 numéros de ligne
+node _dev/scripts/_audit_doc_455.cjs        # audit doc + inventaire des versions/tags
+node _dev/scripts/_sync_450_full.cjs        # synchro récursive web ↔ copie locale (md5)
+node _dev/scripts/_parite_382.cjs           # 16 paires clés
+node _dev/scripts/_verif_coherence.cjs      # marqueurs de version vivants
+node _dev/scripts/_make_zip.cjs             # zip du paquet local (+ --verif)
 ```

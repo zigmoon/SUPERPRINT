@@ -884,7 +884,13 @@
     #previewToolbar > span:first-child { position: sticky; left: 0; background: var(--panel); padding-right: 8px; z-index: 1; }
     #previewToolbar .zoom-wrap { min-width: max-content; margin-right: 0 !important; }
     #previewScroll { padding: 16px 12px; overscroll-behavior: contain; }
-    #previewFooter { padding: 7px 10px; min-height: 54px; }
+    /* 🎨 MOBILE UNIQUEMENT : la barre qui soutient « Ouvrir dans SuperPrint » est
+       BLANCHE — le fond du pied était TRANSPARENT, donc on voyait le gris de
+       l'espace de travail (#e8e8e8) derrière le bouton. On reprend exactement la
+       couleur du canevas (#ffffff clair / #1a1a1a sombre) pour que la barre et la
+       zone des pages se lisent d'un seul tenant. */
+    #previewFooter { padding: 7px 10px; min-height: 54px; background: #ffffff; }
+    body.theme-dark #previewFooter { background: #1a1a1a; }
     .btn-open-sp { width: 100%; max-width: 320px; min-height: 40px; }
     #chatPane { background: var(--panel); }
     #chatHead { min-height: 44px; padding: 8px 12px; }
@@ -5661,6 +5667,26 @@ function spRtfLayoutInfo(src) {
           if (typeof o._fixedHeight === 'number' && o._fixedHeight > 0) {
             el._spFrameHeightMm = Math.round((o._fixedHeight / MM_TO_PX) * 10) / 10;
           }
+          // 🎯 v1.7.455i — RETOUR EXACT DANS L'APP (cf. spAppliquerReglagesTypo).
+          //   On garde ici, EN PX, la géométrie d'origine du bloc et son réglage
+          //   lettre par lettre (mot plus grand). Sans eux, le Studio renvoyait une
+          //   hauteur RECALCULEE et sans marqueurs de cadre : au retour le bloc
+          //   n'était plus à taille fixe (il pouvait donc changer de taille en
+          //   touchant la typo) et le mot mis en avant revenait à la taille du bloc.
+          try {
+            el._spOrigGeom = {
+              left: (typeof o.left === 'number' && isFinite(o.left)) ? o.left : null,
+              top: (typeof o.top === 'number' && isFinite(o.top)) ? o.top : null,
+              width: (typeof o.width === 'number' && isFinite(o.width)) ? o.width : null,
+              height: (typeof o.height === 'number' && isFinite(o.height)) ? o.height : null,
+              fixedW: (typeof o._fixedWidth === 'number' && o._fixedWidth > 0) ? o._fixedWidth : null,
+              fixedH: (typeof o._fixedHeight === 'number' && o._fixedHeight > 0) ? o._fixedHeight : null
+            };
+            if (o.styles && typeof o.styles === 'object' && Object.keys(o.styles).length) {
+              el._spCharStyles = JSON.parse(JSON.stringify(o.styles));
+              el._spCharStylesText = String(o.text || '');
+            }
+          } catch (_) {}
           // 🎯 v1.7.380 — RÉGLAGES TYPOGRAPHIQUES DU BLOC.
           //   Sans cette recopie, un document passant de l'app au studio perdait :
           //   • le RÉGLAGE DE CÉSURE — y compris « sans césure », qui redevenait
@@ -5718,7 +5744,11 @@ function spRtfLayoutInfo(src) {
     } catch (_) {}
 
     state.pageW = w; state.pageH = h; state.bleed = bl; state.viewMode = vMode;
-    state.doc = { w, h, effW: vMode === 'spread' ? w * 2 : w, viewMode: vMode, bleed: bl, pages, margin: _mgDoc, numbering: _nbDoc };
+    state.doc = { w, h, effW: vMode === 'spread' ? w * 2 : w, viewMode: vMode, bleed: bl, pages, margin: _mgDoc, numbering: _nbDoc,
+      // 🎯 v1.7.455i — MODE COULEUR D'ORIGINE (RVB / CMJN) : les deux écrivains
+      //   de .sp l'écrivaient en dur à 'rgb', donc un document CMJN revenait en
+      //   RVB (et la boîte d'export ne repassait plus en CMJN + Pantone).
+      colorMode: (spFile.document && spFile.document.colorMode) ? spFile.document.colorMode : 'rgb' };
     try {
       localStorage.setItem(LS.dims, JSON.stringify({ w, h }));
       localStorage.setItem(LS.doc, JSON.stringify(state.doc));
@@ -9652,6 +9682,49 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     if (typeof el._spWrapBottom === 'number') obj._spWrapBottom = el._spWrapBottom;
     if (typeof el._spWrapRight === 'number') obj._spWrapRight = el._spWrapRight;
     if (typeof el._spWrapOrigH === 'number') obj._spWrapOrigH = el._spWrapOrigH;
+    // ══════════════════════════════════════════════════════════════════════
+    // 🎯 v1.7.455i — CADRE, POSITION ET « MOT PLUS GRAND » : RETOUR EXACT.
+    //   Restitution uniquement si l'élément n'a pas été déplacé / redimensionné
+    //   dans le Studio (comparaison en mm, même conversion que l'import,
+    //   tolérance 0,15 mm). On réécrit alors les valeurs d'ORIGINE en PX, y
+    //   compris _fixedWidth / _fixedHeight : le bloc retrouve donc sa taille et
+    //   sa position à l'identique dans l'app (et reste un cadre FIXE).
+    //   Les styles lettre par lettre ne reviennent que si le TEXTE est identique :
+    //   après une réécriture par l'IA les index de caractères ne désignent plus
+    //   les mêmes lettres, on ne restaure rien plutôt que de grossir les
+    //   mauvaises lettres.
+    // ══════════════════════════════════════════════════════════════════════
+    if (el._spOrigGeom && obj.type === 'textbox') {
+      try {
+        const _og = el._spOrigGeom;
+        const _bx = ((typeof state !== 'undefined' && state && typeof state.bleed === 'number') ? state.bleed : 3) * MM_TO_PX;
+        const _toElMm = (v) => (typeof v === 'number' && isFinite(v)) ? Math.round((v - _bx) / MM_TO_PX * 10) / 10 : null;
+        const _same = (a, b) => (a === null || typeof b !== 'number') ? true : Math.abs(a - b) <= 0.15;
+        // Largeur : le Studio l'exprime SANS le fond perdu (l'export ne l'ajoute que
+        // sur left/top) et l'arrondit au 0,05 mm : on accepte donc les deux
+        // références. Un VRAI redimensionnement par l'utilisateur reste détecté,
+        // ces écarts-là se comptent en millimètres.
+        const _sameL = (v, val) => (v === null || typeof val !== 'number') ? true
+          : (Math.abs(_toElMm(v) - val) <= 0.15 || Math.abs((v / MM_TO_PX) - val) <= 0.35);
+        // Position : restituée seulement si le bloc n'a pas bougé.
+        if (_same(_toElMm(_og.left), el.left) && _same(_toElMm(_og.top), el.top)) {
+          if (_og.left !== null) obj.left = _og.left;
+          if (_og.top !== null) obj.top = _og.top;
+        }
+        // Taille : restituée seulement si le bloc n'a pas été redimensionné
+        // (le bloc déplacé, lui, garde donc sa taille d'origine et la
+        //  NOUVELLE position ; le bloc redimensionné garde la nouvelle taille).
+        if (_sameL(_og.width, el.width)) {
+          if (_og.width !== null) obj.width = _og.width;
+          if (_og.height !== null) obj.height = _og.height;
+          if (_og.fixedW !== null) obj._fixedWidth = _og.fixedW;
+          if (_og.fixedH !== null) obj._fixedHeight = _og.fixedH;
+        }
+      } catch (_) {}
+    }
+    if (obj.type === 'textbox' && el._spCharStyles && String(el.text || '') === String(el._spCharStylesText || '')) {
+      try { obj.styles = JSON.parse(JSON.stringify(el._spCharStyles)); } catch (_) {}
+    }
     return obj;
   }
 
@@ -9745,7 +9818,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return {
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: spPages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
-      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
+      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
       // 🛡️ v1.7.369 — filtrés par usage réel : pas de canal fantôme.
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(spPages) },
@@ -9863,7 +9936,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return {
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: pages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
-      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: 'rgb', styles: spCollectStylesBlock() },
+      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) : 1 entrée = 1 couche
       //   chromatique supplémentaire à produire à l'export (CMJN ou RVB + Pantone).
       // 🛡️ v1.7.368 — styles nommés (typo + nuancier) DÉJÀ présents via

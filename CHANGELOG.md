@@ -9,6 +9,37 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.455] — 2026-09-16
+
+_Text blocks keep their frame, the PDF export is faithful, and the SP213 Studio round trip loses nothing_
+
+### Fixed
+- **Changing the size or the leading resized the text frame.** Measured: a 300 × 160 px block went 14 → 30 → 60 pt and back and its frame **stayed at 166.62 px** — an auto-height block still follows its content.
+  - The mask no longer slices the last line: it now snaps to **whole lines** (it used to cut **6.95 px** under the previous line) and leaves a 0.4 px margin below it.
+  - The leading no longer shifts around an enlarged word on click or move: `getHeightOfLine` reused cached line heights computed **during** the previous wrapping pass.
+- **A bigger word enlarged the whole block in the PDF export.** The export took that single word's size as the block size (measured: **15 text blocks at 30 pt** instead of 14 pt). The heuristic now only applies when the inline size covers ≥ 90 % of the characters.
+- **The last line was missing from the PDF.** `obj.height` excludes the leading below the last line (deficit measured 2.71 → 12.43 px depending on `lineHeight`), so 5 lines on screen produced **4 text blocks** in the file. Fixed in both the clip mask and the exporter through the shared `spTextMetrics` / `spCountVisibleLines` helpers.
+- **The bleed was applied twice in CMYK.** The whole page shifted **5 mm** down and right when bleed was requested without crop marks. After the fix the offset is +8 pt, i.e. exactly the 3 mm of bleed.
+- **The SP213 Studio round trip lost settings.** App → Studio → App returned a recalculated height with **no** `_fixedWidth` / `_fixedHeight` marker (so the block resized again at the first typography change), dropped per-character styles (an enlarged word came back at block size) and forced `colorMode` back to `rgb`. All three are now transported, with the Studio restoring the frame and position **exactly** (measured 28.5039 / 42.5197 px, 300 × 120 px) and keeping the original colour mode.
+- **“Open from computer” restored neither spot colours nor embedded fonts** in a project file. Fixed and verified (ink registry went from `#FCEE21` to the file's real ink).
+- **`breakWords` and `splitByGrapheme` were serialised nowhere**, so the first layout after reopening a `.sp` / `.json` stopped breaking long words. Now serialised as their effective value and restored **before any measurement**.
+- **Mobile Studio**: the bar under “OPEN IN SUPERPRINT” is entirely white (the dark theme stays dark).
+- **Documentation**: the manual described `.sp` as a ZIP archive although `saveProjectSP` writes plain JSON (`application/x-superprint+json`); all **214** line numbers of its function table were stale (213 wrong) and are regenerated from the real code.
+
+### Verified
+| Check | Result |
+|---|---|
+| Frame height, 14 → 30 → 60 → 14 pt | **166.62 px constant** (measured on the real UI path) |
+| Text block on screen / in the PDF | **5 lines / 5 lines** (was 5 / 4) |
+| Bigger word in a 14 pt block | `A:14 A:14 A:14 B:30 B:30 B:30 C:14` (was 15 blocks at 30 pt) |
+| Bleed without crop marks (CMYK) | +8 pt = 3 mm exactly (was +17 pt) |
+| App → Studio → App round trip | frame, position, per-character styles and CMYK mode returned **identical** |
+| Manual date / version markers | 13/13 coherent · web ↔ mirror parity **16/16** · recursive sync **0 different** |
+
+- Cache: JS `20260916-v455-release` · shared module `JS/sp-doc-import.js` · service worker `superprint-shell-v1.7.455-no-whatsapp` (app **and** root).
+- Versions **1.7.415 → 1.7.454** are grouped in the release page recap (“Since 1.7.422”), published at https://app.zigmoon.com/release.html — each one also carries its own git tag.
+
+---
 ## [1.7.414] — 2026-09-14
 
 _Text blocks stay stable when the typography changes, and the last line is no longer clipped_

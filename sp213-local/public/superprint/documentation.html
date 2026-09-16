@@ -384,7 +384,7 @@
     <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
   </button>
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.454</span>
+  <span class="version">v1.7.455</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -613,12 +613,12 @@ SUPERPRINT12master/
 ├── manifest.webmanifest    ─ PWA manifest
 ├── robots.txt / sitemap.xml
 ├── JS/
-│   ├── main.js             ─ Logique applicative complète (42 692 lignes)
+│   ├── main.js             ─ Logique applicative complète (81 434 lignes)
 │   ├── simple-pen-tool.js  ─ Module outil plume standalone
 │   ├── mobile-widgets.js   ─ Widgets mobiles
 │   ├── fabric.min.js       ─ Fabric.js 5.3.0
 │   ├── jspdf.umd.min.js   ─ Génération PDF
-│   ├── jszip.min.js        ─ Gestion ZIP (IDML, ODT, .sp)
+│   ├── jszip.min.js        ─ Gestion ZIP (IDML, ODT, Print-to-Web)
 │   ├── pdf.min.js          ─ PDF.js (import PDF)
 │   ├── paper-full.min.js   ─ Paper.js (opérations booléennes)
 │   ├── mammoth.min.js      ─ Conversion DOCX → HTML
@@ -638,7 +638,7 @@ SUPERPRINT12master/
 <tbody>
 <tr><td>Fabric.js</td><td>5.3.0</td><td data-lang="fr">Moteur de rendu canvas (objets, texte, images, événements)</td><td data-lang="en">Canvas rendering engine (objects, text, images, events)</td></tr>
 <tr><td>jsPDF</td><td>2.x</td><td data-lang="fr">Génération PDF multi-pages avec fond perdu</td><td data-lang="en">Multi-page PDF generation with bleed</td></tr>
-<tr><td>JSZip</td><td>3.x</td><td data-lang="fr">Gestion fichiers ZIP (import IDML/ODT, format .sp)</td><td data-lang="en">ZIP file handling (IDML/ODT import, .sp format)</td></tr>
+<tr><td>JSZip</td><td>3.x</td><td data-lang="fr">Gestion fichiers ZIP (import IDML/ODT, export Print-to-Web)</td><td data-lang="en">ZIP file handling (IDML/ODT import, Print-to-Web export)</td></tr>
 <tr><td>PDF.js</td><td>3.x</td><td data-lang="fr">Rendu PDF pour import page par page</td><td data-lang="en">PDF rendering for page-by-page import</td></tr>
 <tr><td>Paper.js</td><td>0.12</td><td data-lang="fr">Opérations booléennes de tracés (Pathfinder)</td><td data-lang="en">Boolean path operations (Pathfinder)</td></tr>
 <tr><td>Mammoth.js</td><td>1.x</td><td data-lang="fr">Conversion DOCX → HTML</td><td data-lang="en">DOCX to HTML conversion</td></tr>
@@ -666,22 +666,22 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th data-lang="fr">Fonction</th><th data-lang="en">Function</th><th>Ligne</th><th>Type</th><th data-lang="fr">Paramètres</th><th data-lang="en">Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">createNewPage</td><td class="fn-line">8728</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Crée une page vierge et l'ajoute au document</td><td data-lang="en">Creates a new blank page and appends it</td></tr>
-<tr><td>2</td><td class="fn-name">renderAllPages</td><td class="fn-line">3742</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Détruit les canvas existants et recrée tous les conteneurs de pages</td><td data-lang="en">Destroys existing canvases and re-creates all page containers</td></tr>
-<tr><td>3</td><td class="fn-name">createPageCanvas</td><td class="fn-line">3864</td><td><span class="fn-type">decl</span></td><td class="fn-params">container, index, width, height, position</td><td data-lang="fr">Crée un canvas Fabric pour une page simple</td><td data-lang="en">Creates a Fabric canvas for a single page</td></tr>
-<tr><td>4</td><td class="fn-name">goToPage</td><td class="fn-line">830</td><td><span class="fn-type">decl</span></td><td class="fn-params">pageIndex</td><td data-lang="fr">Fait défiler la vue vers une page spécifique</td><td data-lang="en">Scrolls viewport to a specific page</td></tr>
-<tr><td>5</td><td class="fn-name">updatePage</td><td class="fn-line">23796</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Met à jour l'affichage de la page courante</td><td data-lang="en">Updates the current page display/indicator</td></tr>
-<tr><td>6</td><td class="fn-name">changePage</td><td class="fn-line">23802</td><td><span class="fn-type">decl</span></td><td class="fn-params">delta</td><td data-lang="fr">Navigue en avant/arrière de delta pages</td><td data-lang="en">Navigate forward/backward by delta pages</td></tr>
-<tr><td>7</td><td class="fn-name">updatePageIndicator</td><td class="fn-line">15395</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Met à jour le badge de numéro de page dans l'UI</td><td data-lang="en">Updates the page number UI badge</td></tr>
-<tr><td>8</td><td class="fn-name">getCurrentPageIndex</td><td class="fn-line">17481</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Retourne l'index de la page active</td><td data-lang="en">Returns the index of the currently active page</td></tr>
-<tr><td>9</td><td class="fn-name">getActiveCanvas</td><td class="fn-line">8696</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Retourne le canvas Fabric actuellement actif</td><td data-lang="en">Returns the currently active Fabric canvas</td></tr>
-<tr><td>10</td><td class="fn-name">drawMargins</td><td class="fn-line">8735</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, pageWidth, pageHeight</td><td data-lang="fr">Dessine les repères de marge et de fond perdu</td><td data-lang="en">Draws margin/bleed guide lines on a canvas</td></tr>
-<tr><td>11</td><td class="fn-name">saveAllPages</td><td class="fn-line">6785</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Sérialise tous les canvas en JSON</td><td data-lang="en">Serializes all page canvases to JSON</td></tr>
-<tr><td>12</td><td class="fn-name">applySelectionHighlightAfterRender</td><td class="fn-line">3850</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Surligne la page active en mode planche après le rendu</td><td data-lang="en">Highlights the active spread page after render</td></tr>
-<tr><td>13</td><td class="fn-name">duplicateObject</td><td class="fn-line">15369</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Duplique l'objet sélectionné</td><td data-lang="en">Duplicates the currently selected object</td></tr>
-<tr><td>14</td><td class="fn-name">calculateImposition</td><td class="fn-line">17496</td><td><span class="fn-type">decl</span></td><td class="fn-params">numPages</td><td data-lang="fr">Calcule l'ordre d'imposition (cahier)</td><td data-lang="en">Calculates imposition (booklet) page order</td></tr>
-<tr><td>15</td><td class="fn-name">closeImpositionModal</td><td class="fn-line">17552</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Ferme la modale d'imposition</td><td data-lang="en">Closes the imposition configuration modal</td></tr>
-<tr><td>16</td><td class="fn-name">closeManualModal</td><td class="fn-line">17566</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Ferme la modale d'imposition manuelle</td><td data-lang="en">Closes the manual imposition modal</td></tr>
+<tr><td>1</td><td class="fn-name">createNewPage</td><td class="fn-line">13339</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Crée une page vierge et l'ajoute au document</td><td data-lang="en">Creates a new blank page and appends it</td></tr>
+<tr><td>2</td><td class="fn-name">renderAllPages</td><td class="fn-line">7255</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Détruit les canvas existants et recrée tous les conteneurs de pages</td><td data-lang="en">Destroys existing canvases and re-creates all page containers</td></tr>
+<tr><td>3</td><td class="fn-name">createPageCanvas</td><td class="fn-line">7531</td><td><span class="fn-type">decl</span></td><td class="fn-params">container, index, width, height, position</td><td data-lang="fr">Crée un canvas Fabric pour une page simple</td><td data-lang="en">Creates a Fabric canvas for a single page</td></tr>
+<tr><td>4</td><td class="fn-name">goToPage</td><td class="fn-line">1623</td><td><span class="fn-type">decl</span></td><td class="fn-params">pageIndex</td><td data-lang="fr">Fait défiler la vue vers une page spécifique</td><td data-lang="en">Scrolls viewport to a specific page</td></tr>
+<tr><td>5</td><td class="fn-name">updatePage</td><td class="fn-line">36893</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Met à jour l'affichage de la page courante</td><td data-lang="en">Updates the current page display/indicator</td></tr>
+<tr><td>6</td><td class="fn-name">changePage</td><td class="fn-line">36899</td><td><span class="fn-type">decl</span></td><td class="fn-params">delta</td><td data-lang="fr">Navigue en avant/arrière de delta pages</td><td data-lang="en">Navigate forward/backward by delta pages</td></tr>
+<tr><td>7</td><td class="fn-name">updatePageIndicator</td><td class="fn-line">20907</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Met à jour le badge de numéro de page dans l'UI</td><td data-lang="en">Updates the page number UI badge</td></tr>
+<tr><td>8</td><td class="fn-name">getCurrentPageIndex</td><td class="fn-line">23049</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Retourne l'index de la page active</td><td data-lang="en">Returns the index of the currently active page</td></tr>
+<tr><td>9</td><td class="fn-name">getActiveCanvas</td><td class="fn-line">13307</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Retourne le canvas Fabric actuellement actif</td><td data-lang="en">Returns the currently active Fabric canvas</td></tr>
+<tr><td>10</td><td class="fn-name">drawMargins</td><td class="fn-line">13346</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, pageWidth, pageHeight</td><td data-lang="fr">Dessine les repères de marge et de fond perdu</td><td data-lang="en">Draws margin/bleed guide lines on a canvas</td></tr>
+<tr><td>11</td><td class="fn-name">saveAllPages</td><td class="fn-line">11095</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Sérialise tous les canvas en JSON</td><td data-lang="en">Serializes all page canvases to JSON</td></tr>
+<tr><td>12</td><td class="fn-name">applySelectionHighlightAfterRender</td><td class="fn-line">7517</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Surligne la page active en mode planche après le rendu</td><td data-lang="en">Highlights the active spread page after render</td></tr>
+<tr><td>13</td><td class="fn-name">duplicateObject</td><td class="fn-line">20870</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Duplique l'objet sélectionné</td><td data-lang="en">Duplicates the currently selected object</td></tr>
+<tr><td>14</td><td class="fn-name">calculateImposition</td><td class="fn-line">23064</td><td><span class="fn-type">decl</span></td><td class="fn-params">numPages</td><td data-lang="fr">Calcule l'ordre d'imposition (cahier)</td><td data-lang="en">Calculates imposition (booklet) page order</td></tr>
+<tr><td>15</td><td class="fn-name">closeImpositionModal</td><td class="fn-line">23172</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Ferme la modale d'imposition</td><td data-lang="en">Closes the imposition configuration modal</td></tr>
+<tr><td>16</td><td class="fn-name">closeManualModal</td><td class="fn-line">23202</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Ferme la modale d'imposition manuelle</td><td data-lang="en">Closes the manual imposition modal</td></tr>
 </tbody>
 </table></div>
 
@@ -694,24 +694,24 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th data-lang="fr">Fonction</th><th data-lang="en">Function</th><th>Ligne</th><th>Type</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">setupCanvasEvents</td><td class="fn-line">4128</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, index</td><td data-lang="fr">Attache tous les gestionnaires d'événements Fabric à un canvas</td><td data-lang="en">Attaches all Fabric event handlers to a canvas</td></tr>
-<tr><td>2</td><td class="fn-name">setupCrossBlockDragSelection</td><td class="fn-line">5896</td><td><span class="fn-type">IIFE</span></td><td class="fn-params">—</td><td data-lang="fr">Active la sélection de texte par glissement cross-textbox</td><td data-lang="en">Enables cross-textbox text drag selection</td></tr>
-<tr><td>3</td><td class="fn-name">renderVerticalHandle</td><td class="fn-line">1012</td><td><span class="fn-type">decl</span></td><td class="fn-params">ctx, left, top, styleOverride, fabricObject</td><td data-lang="fr">Rend une poignée de redimensionnement verticale</td><td data-lang="en">Renders a vertical resize control</td></tr>
-<tr><td>4</td><td class="fn-name">renderHorizontalHandle</td><td class="fn-line">1032</td><td><span class="fn-type">decl</span></td><td class="fn-params">ctx, left, top, styleOverride, fabricObject</td><td data-lang="fr">Rend une poignée de redimensionnement horizontale</td><td data-lang="en">Renders a horizontal resize control</td></tr>
-<tr><td>5</td><td class="fn-name">renderCornerHandle</td><td class="fn-line">1052</td><td><span class="fn-type">decl</span></td><td class="fn-params">ctx, left, top, styleOverride, fabricObject</td><td data-lang="fr">Rend une poignée de coin</td><td data-lang="en">Renders a corner resize control</td></tr>
-<tr><td>6</td><td class="fn-name">getCanvasPoint</td><td class="fn-line">1073</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, eventData</td><td data-lang="fr">Convertit un événement souris/touch en coordonnées canvas</td><td data-lang="en">Converts mouse/touch event to canvas coordinates</td></tr>
-<tr><td>7</td><td class="fn-name">createTextboxControls</td><td class="fn-line">1632</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Crée les contrôles de redimensionnement personnalisés des Textbox</td><td data-lang="en">Creates custom Fabric textbox resize controls</td></tr>
+<tr><td>1</td><td class="fn-name">setupCanvasEvents</td><td class="fn-line">7862</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, index</td><td data-lang="fr">Attache tous les gestionnaires d'événements Fabric à un canvas</td><td data-lang="en">Attaches all Fabric event handlers to a canvas</td></tr>
+<tr><td>2</td><td class="fn-name">setupCrossBlockDragSelection</td><td class="fn-line">9896</td><td><span class="fn-type">IIFE</span></td><td class="fn-params">—</td><td data-lang="fr">Active la sélection de texte par glissement cross-textbox</td><td data-lang="en">Enables cross-textbox text drag selection</td></tr>
+<tr><td>3</td><td class="fn-name">renderVerticalHandle</td><td class="fn-line">2214</td><td><span class="fn-type">decl</span></td><td class="fn-params">ctx, left, top, styleOverride, fabricObject</td><td data-lang="fr">Rend une poignée de redimensionnement verticale</td><td data-lang="en">Renders a vertical resize control</td></tr>
+<tr><td>4</td><td class="fn-name">renderHorizontalHandle</td><td class="fn-line">2239</td><td><span class="fn-type">decl</span></td><td class="fn-params">ctx, left, top, styleOverride, fabricObject</td><td data-lang="fr">Rend une poignée de redimensionnement horizontale</td><td data-lang="en">Renders a horizontal resize control</td></tr>
+<tr><td>5</td><td class="fn-name">renderCornerHandle</td><td class="fn-line">2263</td><td><span class="fn-type">decl</span></td><td class="fn-params">ctx, left, top, styleOverride, fabricObject</td><td data-lang="fr">Rend une poignée de coin</td><td data-lang="en">Renders a corner resize control</td></tr>
+<tr><td>6</td><td class="fn-name">getCanvasPoint</td><td class="fn-line">2287</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, eventData</td><td data-lang="fr">Convertit un événement souris/touch en coordonnées canvas</td><td data-lang="en">Converts mouse/touch event to canvas coordinates</td></tr>
+<tr><td>7</td><td class="fn-name">createTextboxControls</td><td class="fn-line">2821</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Crée les contrôles de redimensionnement personnalisés des Textbox</td><td data-lang="en">Creates custom Fabric textbox resize controls</td></tr>
 <tr><td>8</td><td class="fn-name">actionHandlerML/MR/MT/MB</td><td class="fn-line">1301–1450</td><td><span class="fn-type">decl</span></td><td class="fn-params">eventData, transformData, x, y</td><td data-lang="fr">Gestionnaires de redimensionnement par poignée (gauche, droite, haut, bas)</td><td data-lang="en">Resize handle action handlers (left, right, top, bottom)</td></tr>
-<tr><td>9</td><td class="fn-name">createCornerHandler</td><td class="fn-line">1497</td><td><span class="fn-type">decl</span></td><td class="fn-params">cornerType</td><td data-lang="fr">Fabrique de gestionnaires de coin</td><td data-lang="en">Factory for corner resize handlers</td></tr>
-<tr><td>10</td><td class="fn-name">commonMouseUpHandler</td><td class="fn-line">1582</td><td><span class="fn-type">decl</span></td><td class="fn-params">eventData, transformData</td><td data-lang="fr">Gestionnaire commun après toute transformation</td><td data-lang="en">Common handler after any transform completes</td></tr>
-<tr><td>11</td><td class="fn-name">getObjectBounds</td><td class="fn-line">1166</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Retourne le bounding box d'un objet Fabric</td><td data-lang="en">Returns bounding box of a Fabric object</td></tr>
-<tr><td>12</td><td class="fn-name">setObjectFromBounds</td><td class="fn-line">1225</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj, bounds</td><td data-lang="fr">Positionne/dimensionne un objet depuis un bounding box</td><td data-lang="en">Sets object position/size from bounding box</td></tr>
-<tr><td>13</td><td class="fn-name">optimizedRender</td><td class="fn-line">3270</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, delay=0</td><td data-lang="fr">Rendu canvas avec debounce/pooling</td><td data-lang="en">Debounced/pooled canvas render</td></tr>
-<tr><td>14</td><td class="fn-name">serializeObject</td><td class="fn-line">6796</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Sérialise un objet Fabric en JSON</td><td data-lang="en">Serializes a single Fabric object to JSON</td></tr>
-<tr><td>15</td><td class="fn-name">onCanvasLoaded</td><td class="fn-line">9138</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Initialisation post-chargement du canvas</td><td data-lang="en">Post-load canvas initialization</td></tr>
-<tr><td>16</td><td class="fn-name">_postLoadCanvas</td><td class="fn-line">9152</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, isSpread</td><td data-lang="fr">Traitement des objets après chargement JSON</td><td data-lang="en">Processes objects after canvas JSON load</td></tr>
-<tr><td>17</td><td class="fn-name">spApplySmartControls</td><td class="fn-line">2645</td><td><span class="fn-type">window</span></td><td class="fn-params">textbox</td><td data-lang="fr">Applique les contrôles de redimensionnement précis à une Textbox</td><td data-lang="en">Applies precise resize controls to a textbox</td></tr>
-<tr><td>18</td><td class="fn-name">deepCleanupCanvas</td><td class="fn-line">3655</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas</td><td data-lang="fr">Nettoyage profond du canvas (GPU, mémoire, listeners)</td><td data-lang="en">Deep cleanup of canvas GPU/memory</td></tr>
+<tr><td>9</td><td class="fn-name">createCornerHandler</td><td class="fn-line">2737</td><td><span class="fn-type">decl</span></td><td class="fn-params">cornerType</td><td data-lang="fr">Fabrique de gestionnaires de coin</td><td data-lang="en">Factory for corner resize handlers</td></tr>
+<tr><td>10</td><td class="fn-name">commonMouseUpHandler</td><td class="fn-line">2767</td><td><span class="fn-type">decl</span></td><td class="fn-params">eventData, transformData</td><td data-lang="fr">Gestionnaire commun après toute transformation</td><td data-lang="en">Common handler after any transform completes</td></tr>
+<tr><td>11</td><td class="fn-name">getObjectBounds</td><td class="fn-line">2411</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Retourne le bounding box d'un objet Fabric</td><td data-lang="en">Returns bounding box of a Fabric object</td></tr>
+<tr><td>12</td><td class="fn-name">setObjectFromBounds</td><td class="fn-line">2470</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj, bounds</td><td data-lang="fr">Positionne/dimensionne un objet depuis un bounding box</td><td data-lang="en">Sets object position/size from bounding box</td></tr>
+<tr><td>13</td><td class="fn-name">optimizedRender</td><td class="fn-line">6694</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, delay=0</td><td data-lang="fr">Rendu canvas avec debounce/pooling</td><td data-lang="en">Debounced/pooled canvas render</td></tr>
+<tr><td>14</td><td class="fn-name">serializeObject</td><td class="fn-line">11114</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Sérialise un objet Fabric en JSON</td><td data-lang="en">Serializes a single Fabric object to JSON</td></tr>
+<tr><td>15</td><td class="fn-name">onCanvasLoaded</td><td class="fn-line">13842</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Initialisation post-chargement du canvas</td><td data-lang="en">Post-load canvas initialization</td></tr>
+<tr><td>16</td><td class="fn-name">_postLoadCanvas</td><td class="fn-line">13858</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, isSpread</td><td data-lang="fr">Traitement des objets après chargement JSON</td><td data-lang="en">Processes objects after canvas JSON load</td></tr>
+<tr><td>17</td><td class="fn-name">spApplySmartControls</td><td class="fn-line">3017</td><td><span class="fn-type">window</span></td><td class="fn-params">textbox</td><td data-lang="fr">Applique les contrôles de redimensionnement précis à une Textbox</td><td data-lang="en">Applies precise resize controls to a textbox</td></tr>
+<tr><td>18</td><td class="fn-name">deepCleanupCanvas</td><td class="fn-line">7146</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas</td><td data-lang="fr">Nettoyage profond du canvas (GPU, mémoire, listeners)</td><td data-lang="en">Deep cleanup of canvas GPU/memory</td></tr>
 </tbody>
 </table></div>
 
@@ -723,12 +723,12 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Type</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">applyZoom</td><td class="fn-line">19407</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Applique le niveau de zoom via CSS transform + MàJ DPR</td><td data-lang="en">Applies zoom level via CSS transform + DPR update</td></tr>
-<tr><td>2</td><td class="fn-name">setInitialZoom</td><td class="fn-line">19435</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Calcule et applique le zoom initial adapté au viewport</td><td data-lang="en">Calculates and sets zoom to fit viewport</td></tr>
-<tr><td>3</td><td class="fn-name">normalizeZoomLevel</td><td class="fn-line">19401</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Clamp le zoom dans la plage valide</td><td data-lang="en">Clamps zoom to valid min/max range</td></tr>
-<tr><td>4</td><td class="fn-name">_updateCanvasDPRForZoom</td><td class="fn-line">19377</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Ajuste le DPR des canvas selon le zoom pour un texte net</td><td data-lang="en">Adjusts canvas DPR based on zoom for sharp text</td></tr>
-<tr><td>5</td><td class="fn-name">handleWheelZoom</td><td class="fn-line">19484</td><td><span class="fn-type">arrow</span></td><td class="fn-params">event</td><td data-lang="fr">Gestionnaire zoom molette (Ctrl+scroll)</td><td data-lang="en">Mouse wheel zoom handler (Ctrl+scroll)</td></tr>
-<tr><td>6</td><td class="fn-name">handleZoomShortcut</td><td class="fn-line">17637</td><td><span class="fn-type">decl</span></td><td class="fn-params">e</td><td data-lang="fr">Raccourcis clavier de zoom (Ctrl+/Ctrl-)</td><td data-lang="en">Keyboard zoom shortcuts (Ctrl+/Ctrl-)</td></tr>
+<tr><td>1</td><td class="fn-name">applyZoom</td><td class="fn-line">26042</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Applique le niveau de zoom via CSS transform + MàJ DPR</td><td data-lang="en">Applies zoom level via CSS transform + DPR update</td></tr>
+<tr><td>2</td><td class="fn-name">setInitialZoom</td><td class="fn-line">26144</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Calcule et applique le zoom initial adapté au viewport</td><td data-lang="en">Calculates and sets zoom to fit viewport</td></tr>
+<tr><td>3</td><td class="fn-name">normalizeZoomLevel</td><td class="fn-line">26036</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Clamp le zoom dans la plage valide</td><td data-lang="en">Clamps zoom to valid min/max range</td></tr>
+<tr><td>4</td><td class="fn-name">_updateCanvasDPRForZoom</td><td class="fn-line">25981</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Ajuste le DPR des canvas selon le zoom pour un texte net</td><td data-lang="en">Adjusts canvas DPR based on zoom for sharp text</td></tr>
+<tr><td>5</td><td class="fn-name">handleWheelZoom</td><td class="fn-line">26495</td><td><span class="fn-type">arrow</span></td><td class="fn-params">event</td><td data-lang="fr">Gestionnaire zoom molette (Ctrl+scroll)</td><td data-lang="en">Mouse wheel zoom handler (Ctrl+scroll)</td></tr>
+<tr><td>6</td><td class="fn-name">handleZoomShortcut</td><td class="fn-line">23293</td><td><span class="fn-type">decl</span></td><td class="fn-params">e</td><td data-lang="fr">Raccourcis clavier de zoom (Ctrl+/Ctrl-)</td><td data-lang="en">Keyboard zoom shortcuts (Ctrl+/Ctrl-)</td></tr>
 </tbody>
 </table></div>
 
@@ -741,17 +741,17 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Type</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">saveState</td><td class="fn-line">8941</td><td><span class="fn-type">decl</span></td><td class="fn-params">action</td><td data-lang="fr">Sauvegarde l'état courant dans l'historique d'annulation</td><td data-lang="en">Saves current state to undo history</td></tr>
-<tr><td>2</td><td class="fn-name">saveStateFromPages</td><td class="fn-line">8994</td><td><span class="fn-type">decl</span></td><td class="fn-params">action</td><td data-lang="fr">Sauvegarde l'état directement depuis le tableau pages</td><td data-lang="en">Saves state from pages array directly</td></tr>
-<tr><td>3</td><td class="fn-name">undo</td><td class="fn-line">9028</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Annule la dernière action</td><td data-lang="en">Undo last action</td></tr>
-<tr><td>4</td><td class="fn-name">redo</td><td class="fn-line">9034</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Rétablit la dernière action annulée</td><td data-lang="en">Redo last undone action</td></tr>
-<tr><td>5</td><td class="fn-name">restoreState</td><td class="fn-line">9045</td><td><span class="fn-type">decl</span></td><td class="fn-params">state</td><td data-lang="fr">Restaure un état sauvegardé</td><td data-lang="en">Restores a saved history state</td></tr>
-<tr><td>6</td><td class="fn-name">_doRestoreState</td><td class="fn-line">9059</td><td><span class="fn-type">decl</span></td><td class="fn-params">state</td><td data-lang="fr">Logique interne de restauration d'état</td><td data-lang="en">Internal state restoration logic</td></tr>
-<tr><td>7</td><td class="fn-name">_fastRestoreCanvases</td><td class="fn-line">9122</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Restauration rapide des canvas sans re-rendu complet</td><td data-lang="en">Fast canvas restoration without full re-render</td></tr>
-<tr><td>8</td><td class="fn-name">updateHistoryPanel</td><td class="fn-line">9309</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Met à jour le panneau UI d'historique</td><td data-lang="en">Updates the undo/redo history UI panel</td></tr>
-<tr><td>9</td><td class="fn-name">debouncedSaveState</td><td class="fn-line">746</td><td><span class="fn-type">decl</span></td><td class="fn-params">action</td><td data-lang="fr">Sauvegarde d'état avec debounce (évite les sauvegardes rapides)</td><td data-lang="en">Debounced state save (avoids rapid saves)</td></tr>
-<tr><td>10</td><td class="fn-name">_spRestoreSaveHistory</td><td class="fn-line">3546</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Restaure l'historique de sauvegarde depuis IndexedDB</td><td data-lang="en">Restores save history from IndexedDB</td></tr>
-<tr><td>11</td><td class="fn-name">_spRestoreSaveHistoryFallback</td><td class="fn-line">3599</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Restauration de secours en cas d'erreur</td><td data-lang="en">Fallback history restoration on error</td></tr>
+<tr><td>1</td><td class="fn-name">saveState</td><td class="fn-line">13559</td><td><span class="fn-type">decl</span></td><td class="fn-params">action</td><td data-lang="fr">Sauvegarde l'état courant dans l'historique d'annulation</td><td data-lang="en">Saves current state to undo history</td></tr>
+<tr><td>2</td><td class="fn-name">saveStateFromPages</td><td class="fn-line">13621</td><td><span class="fn-type">decl</span></td><td class="fn-params">action</td><td data-lang="fr">Sauvegarde l'état directement depuis le tableau pages</td><td data-lang="en">Saves state from pages array directly</td></tr>
+<tr><td>3</td><td class="fn-name">undo</td><td class="fn-line">13655</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Annule la dernière action</td><td data-lang="en">Undo last action</td></tr>
+<tr><td>4</td><td class="fn-name">redo</td><td class="fn-line">13665</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Rétablit la dernière action annulée</td><td data-lang="en">Redo last undone action</td></tr>
+<tr><td>5</td><td class="fn-name">restoreState</td><td class="fn-line">13683</td><td><span class="fn-type">decl</span></td><td class="fn-params">state</td><td data-lang="fr">Restaure un état sauvegardé</td><td data-lang="en">Restores a saved history state</td></tr>
+<tr><td>6</td><td class="fn-name">_doRestoreState</td><td class="fn-line">13719</td><td><span class="fn-type">decl</span></td><td class="fn-params">state</td><td data-lang="fr">Logique interne de restauration d'état</td><td data-lang="en">Internal state restoration logic</td></tr>
+<tr><td>7</td><td class="fn-name">_fastRestoreCanvases</td><td class="fn-line">13808</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Restauration rapide des canvas sans re-rendu complet</td><td data-lang="en">Fast canvas restoration without full re-render</td></tr>
+<tr><td>8</td><td class="fn-name">updateHistoryPanel</td><td class="fn-line">14017</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Met à jour le panneau UI d'historique</td><td data-lang="en">Updates the undo/redo history UI panel</td></tr>
+<tr><td>9</td><td class="fn-name">debouncedSaveState</td><td class="fn-line">1477</td><td><span class="fn-type">decl</span></td><td class="fn-params">action</td><td data-lang="fr">Sauvegarde d'état avec debounce (évite les sauvegardes rapides)</td><td data-lang="en">Debounced state save (avoids rapid saves)</td></tr>
+<tr><td>10</td><td class="fn-name">_spRestoreSaveHistory</td><td class="fn-line">7039</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Restaure l'historique de sauvegarde depuis IndexedDB</td><td data-lang="en">Restores save history from IndexedDB</td></tr>
+<tr><td>11</td><td class="fn-name">_spRestoreSaveHistoryFallback</td><td class="fn-line">7091</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Restauration de secours en cas d'erreur</td><td data-lang="en">Fallback history restoration on error</td></tr>
 </tbody>
 </table></div>
 
@@ -764,30 +764,30 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Type</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">forceTextRecalc</td><td class="fn-line">1080</td><td><span class="fn-type">decl</span></td><td class="fn-params">target</td><td data-lang="fr">Force le recalcul de la mise en page du texte</td><td data-lang="en">Forces text layout recalculation</td></tr>
-<tr><td>2</td><td class="fn-name">spLockTextboxDimensions</td><td class="fn-line">1132</td><td><span class="fn-type">decl</span></td><td class="fn-params">textObj</td><td data-lang="fr">Verrouille les dimensions d'une textbox</td><td data-lang="en">Locks textbox width/height to prevent resize</td></tr>
-<tr><td>3</td><td class="fn-name">spGraphemeSplit</td><td class="fn-line">1879</td><td><span class="fn-type">decl</span></td><td class="fn-params">str</td><td data-lang="fr">Découpe une chaîne par clusters de graphèmes</td><td data-lang="en">Splits string by grapheme clusters</td></tr>
-<tr><td>4</td><td class="fn-name">getFontDecl</td><td class="fn-line">1888</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Retourne la déclaration CSS de police</td><td data-lang="en">Gets CSS font declaration string</td></tr>
-<tr><td>5</td><td class="fn-name">getMaxFontSizeFromStyles</td><td class="fn-line">1899</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Retourne la taille de police max depuis les styles inline</td><td data-lang="en">Gets max font size from inline styles</td></tr>
-<tr><td>6</td><td class="fn-name">measureRawWithFont</td><td class="fn-line">1997</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj, text, fontSize, fontWeight, fontFamily</td><td data-lang="fr">Mesure la largeur du texte avec une police explicite</td><td data-lang="en">Measures text width with explicit font params</td></tr>
-<tr><td>7</td><td class="fn-name">fallbackHyphenate</td><td class="fn-line">2067</td><td><span class="fn-type">decl</span></td><td class="fn-params">word</td><td data-lang="fr">Césure basique par syllabes (fallback)</td><td data-lang="en">Basic syllable-based hyphenation fallback</td></tr>
-<tr><td>8</td><td class="fn-name">spForceInlineStyleRewrap</td><td class="fn-line">2735</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox</td><td data-lang="fr">Force le ré-enveloppement avec styles inline</td><td data-lang="en">Forces rewrap respecting inline styles</td></tr>
-<tr><td>9</td><td class="fn-name">spForceTextboxRewrap</td><td class="fn-line">2827</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox</td><td data-lang="fr">Force un ré-enveloppement complet de la textbox</td><td data-lang="en">Forces complete textbox rewrap</td></tr>
-<tr><td>10</td><td class="fn-name">addSpecialTextObjectsToCanvas</td><td class="fn-line">3024</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, pageIndex, position</td><td data-lang="fr">Ajoute les numéros de page automatiques</td><td data-lang="en">Adds auto page numbers to canvas</td></tr>
-<tr><td>11</td><td class="fn-name">restoreTextboxAfterLoad</td><td class="fn-line">3154</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Restaure les propriétés SP d'une textbox après chargement JSON</td><td data-lang="en">Restores textbox SP properties after JSON load</td></tr>
-<tr><td>12</td><td class="fn-name">applyTextboxClipPath</td><td class="fn-line">3197</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox</td><td data-lang="fr">Applique un clip path pour masquer le débordement</td><td data-lang="en">Applies clip path to hide overflow</td></tr>
-<tr><td>13</td><td class="fn-name">applyTextStyleToSelection</td><td class="fn-line">26801</td><td><span class="fn-type">decl</span></td><td class="fn-params">style, value</td><td data-lang="fr">Applique un style de texte à la sélection</td><td data-lang="en">Applies a text style to current selection</td></tr>
-<tr><td>14</td><td class="fn-name">toggleButton</td><td class="fn-line">26830</td><td><span class="fn-type">decl</span></td><td class="fn-params">style</td><td data-lang="fr">Bascule gras/italique/souligné</td><td data-lang="en">Toggles bold/italic/underline</td></tr>
-<tr><td>15</td><td class="fn-name">applyHyphenation</td><td class="fn-line">20651</td><td><span class="fn-type">decl</span></td><td class="fn-params">mode</td><td data-lang="fr">Définit le mode de césure (auto/manuel/aucun)</td><td data-lang="en">Sets hyphenation mode (auto/manual/none)</td></tr>
-<tr><td>16</td><td class="fn-name">toggleScript</td><td class="fn-line">20924</td><td><span class="fn-type">decl</span></td><td class="fn-params">type</td><td data-lang="fr">Bascule exposant/indice</td><td data-lang="en">Toggles superscript/subscript</td></tr>
-<tr><td>17</td><td class="fn-name">transformCase</td><td class="fn-line">20948</td><td><span class="fn-type">decl</span></td><td class="fn-params">mode</td><td data-lang="fr">Transforme la casse (MAJ/min/Titre)</td><td data-lang="en">Transforms text case (upper/lower/title)</td></tr>
-<tr><td>18</td><td class="fn-name">addText</td><td class="fn-line">11033</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Active l'outil de création de texte (dessiner-pour-créer)</td><td data-lang="en">Activates text creation tool (draw-to-create)</td></tr>
-<tr><td>19</td><td class="fn-name">createSimpleTextBox</td><td class="fn-line">11183</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, left, top, width, height</td><td data-lang="fr">Crée une zone de texte à la position/taille donnée</td><td data-lang="en">Creates a text box at given position/size</td></tr>
-<tr><td>20</td><td class="fn-name">applyFixedHeightProtection</td><td class="fn-line">11142</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox</td><td data-lang="fr">Empêche la textbox de grandir automatiquement en hauteur</td><td data-lang="en">Prevents textbox from auto-growing height</td></tr>
-<tr><td>21</td><td class="fn-name">applyCrossBlockStyle</td><td class="fn-line">16399</td><td><span class="fn-type">decl</span></td><td class="fn-params">styleProps</td><td data-lang="fr">Applique un style à la sélection cross-block</td><td data-lang="en">Applies style to cross-block text selection</td></tr>
-<tr><td>22</td><td class="fn-name">ensureCrispText</td><td class="fn-line">12217</td><td><span class="fn-type">decl</span></td><td class="fn-params">tb</td><td data-lang="fr">Assure un rendu texte net au sous-pixel</td><td data-lang="en">Ensures crisp subpixel text rendering</td></tr>
-<tr><td>23</td><td class="fn-name">softHyphenateWord</td><td class="fn-line">28359</td><td><span class="fn-type">decl</span></td><td class="fn-params">word</td><td data-lang="fr">Insère des césures optionnelles dans un mot</td><td data-lang="en">Soft-hyphenates a single word</td></tr>
-<tr><td>24</td><td class="fn-name">forceFontRefresh</td><td class="fn-line">18618</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj, canvas</td><td data-lang="fr">Force le rechargement de la police d'un objet</td><td data-lang="en">Forces font refresh for an object</td></tr>
+<tr><td>1</td><td class="fn-name">forceTextRecalc</td><td class="fn-line">2294</td><td><span class="fn-type">decl</span></td><td class="fn-params">target</td><td data-lang="fr">Force le recalcul de la mise en page du texte</td><td data-lang="en">Forces text layout recalculation</td></tr>
+<tr><td>2</td><td class="fn-name">spLockTextboxDimensions</td><td class="fn-line">2346</td><td><span class="fn-type">decl</span></td><td class="fn-params">textObj</td><td data-lang="fr">Verrouille les dimensions d'une textbox</td><td data-lang="en">Locks textbox width/height to prevent resize</td></tr>
+<tr><td>3</td><td class="fn-name">spGraphemeSplit</td><td class="fn-line">3165</td><td><span class="fn-type">decl</span></td><td class="fn-params">str</td><td data-lang="fr">Découpe une chaîne par clusters de graphèmes</td><td data-lang="en">Splits string by grapheme clusters</td></tr>
+<tr><td>4</td><td class="fn-name">getFontDecl</td><td class="fn-line">3174</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Retourne la déclaration CSS de police</td><td data-lang="en">Gets CSS font declaration string</td></tr>
+<tr><td>5</td><td class="fn-name">getMaxFontSizeFromStyles</td><td class="fn-line">3185</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Retourne la taille de police max depuis les styles inline</td><td data-lang="en">Gets max font size from inline styles</td></tr>
+<tr><td>6</td><td class="fn-name">measureRawWithFont</td><td class="fn-line">3308</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj, text, fontSize, fontWeight, fontFamily</td><td data-lang="fr">Mesure la largeur du texte avec une police explicite</td><td data-lang="en">Measures text width with explicit font params</td></tr>
+<tr><td>7</td><td class="fn-name">fallbackHyphenate</td><td class="fn-line">3472</td><td><span class="fn-type">decl</span></td><td class="fn-params">word</td><td data-lang="fr">Césure basique par syllabes (fallback)</td><td data-lang="en">Basic syllable-based hyphenation fallback</td></tr>
+<tr><td>8</td><td class="fn-name">spForceInlineStyleRewrap</td><td class="fn-line">5521</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox</td><td data-lang="fr">Force le ré-enveloppement avec styles inline</td><td data-lang="en">Forces rewrap respecting inline styles</td></tr>
+<tr><td>9</td><td class="fn-name">spForceTextboxRewrap</td><td class="fn-line">5633</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox</td><td data-lang="fr">Force un ré-enveloppement complet de la textbox</td><td data-lang="en">Forces complete textbox rewrap</td></tr>
+<tr><td>10</td><td class="fn-name">addSpecialTextObjectsToCanvas</td><td class="fn-line">5849</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, pageIndex, position</td><td data-lang="fr">Ajoute les numéros de page automatiques</td><td data-lang="en">Adds auto page numbers to canvas</td></tr>
+<tr><td>11</td><td class="fn-name">restoreTextboxAfterLoad</td><td class="fn-line">6276</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Restaure les propriétés SP d'une textbox après chargement JSON</td><td data-lang="en">Restores textbox SP properties after JSON load</td></tr>
+<tr><td>12</td><td class="fn-name">applyTextboxClipPath</td><td class="fn-line">6361</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox</td><td data-lang="fr">Applique un clip path pour masquer le débordement</td><td data-lang="en">Applies clip path to hide overflow</td></tr>
+<tr><td>13</td><td class="fn-name">applyTextStyleToSelection</td><td class="fn-line">47828</td><td><span class="fn-type">decl</span></td><td class="fn-params">style, value</td><td data-lang="fr">Applique un style de texte à la sélection</td><td data-lang="en">Applies a text style to current selection</td></tr>
+<tr><td>14</td><td class="fn-name">toggleButton</td><td class="fn-line">47892</td><td><span class="fn-type">decl</span></td><td class="fn-params">style</td><td data-lang="fr">Bascule gras/italique/souligné</td><td data-lang="en">Toggles bold/italic/underline</td></tr>
+<tr><td>15</td><td class="fn-name">applyHyphenation</td><td class="fn-line">29205</td><td><span class="fn-type">decl</span></td><td class="fn-params">mode</td><td data-lang="fr">Définit le mode de césure (auto/manuel/aucun)</td><td data-lang="en">Sets hyphenation mode (auto/manual/none)</td></tr>
+<tr><td>16</td><td class="fn-name">toggleScript</td><td class="fn-line">29500</td><td><span class="fn-type">decl</span></td><td class="fn-params">type</td><td data-lang="fr">Bascule exposant/indice</td><td data-lang="en">Toggles superscript/subscript</td></tr>
+<tr><td>17</td><td class="fn-name">transformCase</td><td class="fn-line">29524</td><td><span class="fn-type">decl</span></td><td class="fn-params">mode</td><td data-lang="fr">Transforme la casse (MAJ/min/Titre)</td><td data-lang="en">Transforms text case (upper/lower/title)</td></tr>
+<tr><td>18</td><td class="fn-name">addText</td><td class="fn-line">16172</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Active l'outil de création de texte (dessiner-pour-créer)</td><td data-lang="en">Activates text creation tool (draw-to-create)</td></tr>
+<tr><td>19</td><td class="fn-name">createSimpleTextBox</td><td class="fn-line">16409</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, left, top, width, height</td><td data-lang="fr">Crée une zone de texte à la position/taille donnée</td><td data-lang="en">Creates a text box at given position/size</td></tr>
+<tr><td>20</td><td class="fn-name">applyFixedHeightProtection</td><td class="fn-line">16368</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox</td><td data-lang="fr">Empêche la textbox de grandir automatiquement en hauteur</td><td data-lang="en">Prevents textbox from auto-growing height</td></tr>
+<tr><td>21</td><td class="fn-name">applyCrossBlockStyle</td><td class="fn-line">21918</td><td><span class="fn-type">decl</span></td><td class="fn-params">styleProps</td><td data-lang="fr">Applique un style à la sélection cross-block</td><td data-lang="en">Applies style to cross-block text selection</td></tr>
+<tr><td>22</td><td class="fn-name">ensureCrispText</td><td class="fn-line">17578</td><td><span class="fn-type">decl</span></td><td class="fn-params">tb</td><td data-lang="fr">Assure un rendu texte net au sous-pixel</td><td data-lang="en">Ensures crisp subpixel text rendering</td></tr>
+<tr><td>23</td><td class="fn-name">softHyphenateWord</td><td class="fn-line">30732</td><td><span class="fn-type">decl</span></td><td class="fn-params">word</td><td data-lang="fr">Insère des césures optionnelles dans un mot</td><td data-lang="en">Soft-hyphenates a single word</td></tr>
+<tr><td>24</td><td class="fn-name">forceFontRefresh</td><td class="fn-line">25010</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj, canvas</td><td data-lang="fr">Force le rechargement de la police d'un objet</td><td data-lang="en">Forces font refresh for an object</td></tr>
 </tbody>
 </table></div>
 
@@ -806,26 +806,26 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Type</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">checkTextOverflow</td><td class="fn-line">11566</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas</td><td data-lang="fr">Vérifie le débordement de toutes les textbox du canvas</td><td data-lang="en">Checks all textboxes on canvas for overflow</td></tr>
-<tr><td>2</td><td class="fn-name">updateOverflowIndicator</td><td class="fn-line">11657</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox, canvas</td><td data-lang="fr">Affiche/masque l'indicateur de débordement</td><td data-lang="en">Shows/hides overflow indicator on textbox</td></tr>
-<tr><td>3</td><td class="fn-name">propagateBaseStyleToChain</td><td class="fn-line">11806</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj, styleProps</td><td data-lang="fr">Propage le style de base à toute la chaîne</td><td data-lang="en">Propagates base style to all chain blocks</td></tr>
-<tr><td>4</td><td class="fn-name">cleanupChainOnBlockDelete</td><td class="fn-line">11843</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Nettoie les liens de chaîne lors de la suppression d'un bloc</td><td data-lang="en">Cleans chain links when a block is deleted</td></tr>
-<tr><td>5</td><td class="fn-name">_redistributeWithStyles</td><td class="fn-line">12013</td><td><span class="fn-type">decl</span></td><td class="fn-params">chain, fullText, allStyles</td><td data-lang="fr">Redistribue le texte+styles à travers la chaîne</td><td data-lang="en">Redistributes text+styles across chain</td></tr>
-<tr><td>6</td><td class="fn-name">redistributeLinkedTextChain</td><td class="fn-line">12110</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Redistribue le texte dans tous les blocs liés</td><td data-lang="en">Reflows text across all linked blocks</td></tr>
-<tr><td>7</td><td class="fn-name">getFittingTextIndex</td><td class="fn-line">12230</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox, fullText</td><td data-lang="fr">Trouve combien de texte tient dans une textbox</td><td data-lang="en">Finds how much text fits in a textbox</td></tr>
-<tr><td>8</td><td class="fn-name">flowTailAcrossPages</td><td class="fn-line">12347</td><td><span class="fn-type">async</span></td><td class="fn-params">tailText, sourceObj, sourceCanvas, pageIndex</td><td data-lang="fr">Distribue le texte excédentaire sur les pages suivantes</td><td data-lang="en">Flows overflow text to new pages</td></tr>
-<tr><td>9</td><td class="fn-name">autoFlowTextToNextPage</td><td class="fn-line">12422</td><td><span class="fn-type">decl</span></td><td class="fn-params">textObj, canvas, pageIndex</td><td data-lang="fr">Auto-flow du débordement vers la page suivante</td><td data-lang="en">Auto-flows overflow to next page</td></tr>
-<tr><td>10</td><td class="fn-name">createLinkedTextBlock</td><td class="fn-line">12447</td><td><span class="fn-type">decl</span></td><td class="fn-params">sourceObj, sourceCanvas, targetCanvas, targetPageIdx</td><td data-lang="fr">Crée un nouveau bloc lié sur la page cible</td><td data-lang="en">Creates a new linked block on target page</td></tr>
-<tr><td>11</td><td class="fn-name">findFirstBlockInChain</td><td class="fn-line">15613</td><td><span class="fn-type">decl</span></td><td class="fn-params">textObj</td><td data-lang="fr">Remonte au premier bloc d'une chaîne</td><td data-lang="en">Walks backward to first block in chain</td></tr>
-<tr><td>12</td><td class="fn-name">buildLinkedChain</td><td class="fn-line">15668</td><td><span class="fn-type">decl</span></td><td class="fn-params">firstBlock</td><td data-lang="fr">Construit le tableau ordonné de tous les blocs d'une chaîne</td><td data-lang="en">Builds ordered array of all chain blocks</td></tr>
-<tr><td>13</td><td class="fn-name">findBlockById</td><td class="fn-line">15700</td><td><span class="fn-type">decl</span></td><td class="fn-params">textLinkId</td><td data-lang="fr">Trouve une textbox par son textLinkId</td><td data-lang="en">Finds a textbox by its textLinkId</td></tr>
-<tr><td>14</td><td class="fn-name">addOrUpdateChainBadge</td><td class="fn-line">15712</td><td><span class="fn-type">decl</span></td><td class="fn-params">tb, color</td><td data-lang="fr">Ajoute/met à jour le badge d'index de chaîne</td><td data-lang="en">Adds/updates chain index badge on textbox</td></tr>
-<tr><td>15</td><td class="fn-name">updateLinkArrowsForChain</td><td class="fn-line">15776</td><td><span class="fn-type">decl</span></td><td class="fn-params">startObj</td><td data-lang="fr">Redessine les flèches de liaison pour toute la chaîne</td><td data-lang="en">Redraws link arrows for entire chain</td></tr>
-<tr><td>16</td><td class="fn-name">drawCrossBlockHighlight</td><td class="fn-line">16050</td><td><span class="fn-type">decl</span></td><td class="fn-params">tb, fromChar, toChar</td><td data-lang="fr">Dessine la surbrillance sur une plage de texte cross-bloc</td><td data-lang="en">Draws highlight overlay on a block range</td></tr>
-<tr><td>17</td><td class="fn-name">getCrossBlockSelectedText</td><td class="fn-line">16279</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Retourne le texte sélectionné à travers les blocs</td><td data-lang="en">Returns selected text across blocks</td></tr>
-<tr><td>18</td><td class="fn-name">breakTextLink</td><td class="fn-line">16642</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Rompt un lien entre deux blocs connectés</td><td data-lang="en">Breaks a link between two connected blocks</td></tr>
-<tr><td>19</td><td class="fn-name">autoLinkTextBlocks</td><td class="fn-line">16823</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Lie automatiquement les textbox sélectionnées dans l'ordre</td><td data-lang="en">Auto-links selected textboxes in order</td></tr>
-<tr><td>20</td><td class="fn-name">createThreeColumnLinkedText</td><td class="fn-line">17113</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Crée une mise en page à 3 colonnes liées</td><td data-lang="en">Creates a 3-column linked text layout</td></tr>
+<tr><td>1</td><td class="fn-name">checkTextOverflow</td><td class="fn-line">16818</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas</td><td data-lang="fr">Vérifie le débordement de toutes les textbox du canvas</td><td data-lang="en">Checks all textboxes on canvas for overflow</td></tr>
+<tr><td>2</td><td class="fn-name">updateOverflowIndicator</td><td class="fn-line">16957</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox, canvas</td><td data-lang="fr">Affiche/masque l'indicateur de débordement</td><td data-lang="en">Shows/hides overflow indicator on textbox</td></tr>
+<tr><td>3</td><td class="fn-name">propagateBaseStyleToChain</td><td class="fn-line">17087</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj, styleProps</td><td data-lang="fr">Propage le style de base à toute la chaîne</td><td data-lang="en">Propagates base style to all chain blocks</td></tr>
+<tr><td>4</td><td class="fn-name">cleanupChainOnBlockDelete</td><td class="fn-line">17162</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Nettoie les liens de chaîne lors de la suppression d'un bloc</td><td data-lang="en">Cleans chain links when a block is deleted</td></tr>
+<tr><td>5</td><td class="fn-name">_redistributeWithStyles</td><td class="fn-line">17332</td><td><span class="fn-type">decl</span></td><td class="fn-params">chain, fullText, allStyles</td><td data-lang="fr">Redistribue le texte+styles à travers la chaîne</td><td data-lang="en">Redistributes text+styles across chain</td></tr>
+<tr><td>6</td><td class="fn-name">redistributeLinkedTextChain</td><td class="fn-line">17448</td><td><span class="fn-type">decl</span></td><td class="fn-params">obj</td><td data-lang="fr">Redistribue le texte dans tous les blocs liés</td><td data-lang="en">Reflows text across all linked blocks</td></tr>
+<tr><td>7</td><td class="fn-name">getFittingTextIndex</td><td class="fn-line">17591</td><td><span class="fn-type">decl</span></td><td class="fn-params">textbox, fullText</td><td data-lang="fr">Trouve combien de texte tient dans une textbox</td><td data-lang="en">Finds how much text fits in a textbox</td></tr>
+<tr><td>8</td><td class="fn-name">flowTailAcrossPages</td><td class="fn-line">17763</td><td><span class="fn-type">async</span></td><td class="fn-params">tailText, sourceObj, sourceCanvas, pageIndex</td><td data-lang="fr">Distribue le texte excédentaire sur les pages suivantes</td><td data-lang="en">Flows overflow text to new pages</td></tr>
+<tr><td>9</td><td class="fn-name">autoFlowTextToNextPage</td><td class="fn-line">17838</td><td><span class="fn-type">decl</span></td><td class="fn-params">textObj, canvas, pageIndex</td><td data-lang="fr">Auto-flow du débordement vers la page suivante</td><td data-lang="en">Auto-flows overflow to next page</td></tr>
+<tr><td>10</td><td class="fn-name">createLinkedTextBlock</td><td class="fn-line">17863</td><td><span class="fn-type">decl</span></td><td class="fn-params">sourceObj, sourceCanvas, targetCanvas, targetPageIdx</td><td data-lang="fr">Crée un nouveau bloc lié sur la page cible</td><td data-lang="en">Creates a new linked block on target page</td></tr>
+<tr><td>11</td><td class="fn-name">findFirstBlockInChain</td><td class="fn-line">21132</td><td><span class="fn-type">decl</span></td><td class="fn-params">textObj</td><td data-lang="fr">Remonte au premier bloc d'une chaîne</td><td data-lang="en">Walks backward to first block in chain</td></tr>
+<tr><td>12</td><td class="fn-name">buildLinkedChain</td><td class="fn-line">21187</td><td><span class="fn-type">decl</span></td><td class="fn-params">firstBlock</td><td data-lang="fr">Construit le tableau ordonné de tous les blocs d'une chaîne</td><td data-lang="en">Builds ordered array of all chain blocks</td></tr>
+<tr><td>13</td><td class="fn-name">findBlockById</td><td class="fn-line">21219</td><td><span class="fn-type">decl</span></td><td class="fn-params">textLinkId</td><td data-lang="fr">Trouve une textbox par son textLinkId</td><td data-lang="en">Finds a textbox by its textLinkId</td></tr>
+<tr><td>14</td><td class="fn-name">addOrUpdateChainBadge</td><td class="fn-line">21231</td><td><span class="fn-type">decl</span></td><td class="fn-params">tb, color</td><td data-lang="fr">Ajoute/met à jour le badge d'index de chaîne</td><td data-lang="en">Adds/updates chain index badge on textbox</td></tr>
+<tr><td>15</td><td class="fn-name">updateLinkArrowsForChain</td><td class="fn-line">21295</td><td><span class="fn-type">decl</span></td><td class="fn-params">startObj</td><td data-lang="fr">Redessine les flèches de liaison pour toute la chaîne</td><td data-lang="en">Redraws link arrows for entire chain</td></tr>
+<tr><td>16</td><td class="fn-name">drawCrossBlockHighlight</td><td class="fn-line">21569</td><td><span class="fn-type">decl</span></td><td class="fn-params">tb, fromChar, toChar</td><td data-lang="fr">Dessine la surbrillance sur une plage de texte cross-bloc</td><td data-lang="en">Draws highlight overlay on a block range</td></tr>
+<tr><td>17</td><td class="fn-name">getCrossBlockSelectedText</td><td class="fn-line">21798</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Retourne le texte sélectionné à travers les blocs</td><td data-lang="en">Returns selected text across blocks</td></tr>
+<tr><td>18</td><td class="fn-name">breakTextLink</td><td class="fn-line">22167</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Rompt un lien entre deux blocs connectés</td><td data-lang="en">Breaks a link between two connected blocks</td></tr>
+<tr><td>19</td><td class="fn-name">autoLinkTextBlocks</td><td class="fn-line">22359</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Lie automatiquement les textbox sélectionnées dans l'ordre</td><td data-lang="en">Auto-links selected textboxes in order</td></tr>
+<tr><td>20</td><td class="fn-name">createThreeColumnLinkedText</td><td class="fn-line">22671</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Crée une mise en page à 3 colonnes liées</td><td data-lang="en">Creates a 3-column linked text layout</td></tr>
 </tbody>
 </table></div>
 
@@ -838,23 +838,23 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Type</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">importSVG</td><td class="fn-line">10306</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Importe un fichier SVG via sélecteur de fichier</td><td data-lang="en">Imports SVG file via file picker</td></tr>
-<tr><td>2</td><td class="fn-name">flowHtmlIntoPages</td><td class="fn-line">21420</td><td><span class="fn-type">async</span></td><td class="fn-params">html, startPageIndex</td><td data-lang="fr">Importe du contenu HTML dans les pages</td><td data-lang="en">Imports HTML content into pages</td></tr>
-<tr><td>3</td><td class="fn-name">importWordDocument</td><td class="fn-line">39630</td><td><span class="fn-type">async</span></td><td class="fn-params">file, startPageIndex</td><td data-lang="fr">Importe un document Word .docx</td><td data-lang="en">Imports Word .docx document</td></tr>
-<tr><td>4</td><td class="fn-name">extractOdtHtml</td><td class="fn-line">21688</td><td><span class="fn-type">decl</span></td><td class="fn-params">arrayBuffer</td><td data-lang="fr">Extrait le HTML d'un fichier ODT</td><td data-lang="en">Extracts HTML from ODT file</td></tr>
-<tr><td>5</td><td class="fn-name">importScribusFile</td><td class="fn-line">21928</td><td><span class="fn-type">decl</span></td><td class="fn-params">xmlStr</td><td data-lang="fr">Importe un fichier .sla (format PAO XML open source)</td><td data-lang="en">Imports a .sla file (open-source DTP XML format)</td></tr>
-<tr><td>6</td><td class="fn-name">processIdmlZip</td><td class="fn-line">22202</td><td><span class="fn-type">async</span></td><td class="fn-params">file</td><td data-lang="fr">Traite un fichier IDML (archive ZIP)</td><td data-lang="en">Processes an IDML file (ZIP archive)</td></tr>
-<tr><td>7</td><td class="fn-name">parseIdmlAndBuild</td><td class="fn-line">22330</td><td><span class="fn-type">async</span></td><td class="fn-params">zip, fontsMap, imagesMap</td><td data-lang="fr">Parse la structure IDML et construit les pages</td><td data-lang="en">Parses IDML structure and builds pages</td></tr>
-<tr><td>8</td><td class="fn-name">importPDFPages</td><td class="fn-line">39734</td><td><span class="fn-type">async</span></td><td class="fn-params">pageNumbers, recadrageMode</td><td data-lang="fr">Importe des pages PDF sélectionnées</td><td data-lang="en">Imports selected pages from a PDF</td></tr>
-<tr><td>9</td><td class="fn-name">showPDFImportModal</td><td class="fn-line">39331</td><td><span class="fn-type">async</span></td><td class="fn-params">file</td><td data-lang="fr">Affiche la modale d'import PDF avec aperçus</td><td data-lang="en">Shows the PDF import dialog with previews</td></tr>
-<tr><td>10</td><td class="fn-name">renderPageToImageWithBleed</td><td class="fn-line">25329</td><td><span class="fn-type">async</span></td><td class="fn-params">pageIndex, position, quality, bleed, ...</td><td data-lang="fr">Rend une page en image pour l'export (avec fond perdu)</td><td data-lang="en">Renders a page to image for export (with bleed)</td></tr>
-<tr><td>11</td><td class="fn-name">confirmExport</td><td class="fn-line">23935</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Confirme et exécute l'export PDF</td><td data-lang="en">Confirms and executes standard PDF export</td></tr>
-<tr><td>12</td><td class="fn-name">exportImposedPDF</td><td class="fn-line">25020</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Exporte un PDF imposé (cahier/livret)</td><td data-lang="en">Exports imposed/booklet PDF</td></tr>
-<tr><td>13</td><td class="fn-name">confirmD4Export</td><td class="fn-line">23644</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Export D4/Print-to-Web (mini-site HTML en ZIP)</td><td data-lang="en">D4/Print-to-Web export (HTML mini-site in ZIP)</td></tr>
-<tr><td>14</td><td class="fn-name">saveProjectLocal</td><td class="fn-line">41273</td><td><span class="fn-type">window</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde le projet en JSON local</td><td data-lang="en">Saves project to local JSON file</td></tr>
-<tr><td>15</td><td class="fn-name">saveProjectWeb3</td><td class="fn-line">41305</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde le projet sur Web3/IPFS</td><td data-lang="en">Saves project to Web3/IPFS</td></tr>
-<tr><td>16</td><td class="fn-name">saveProjectSP</td><td class="fn-line">41436</td><td><span class="fn-type">window</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde au format .sp (archive ZIP)</td><td data-lang="en">Saves project in .sp format (zip)</td></tr>
-<tr><td>17</td><td class="fn-name">loadProjectSP</td><td class="fn-line">41552</td><td><span class="fn-type">window</span></td><td class="fn-params">fileContent</td><td data-lang="fr">Charge un fichier projet .sp</td><td data-lang="en">Loads a .sp project file</td></tr>
+<tr><td>1</td><td class="fn-name">importSVG</td><td class="fn-line">15406</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Importe un fichier SVG via sélecteur de fichier</td><td data-lang="en">Imports SVG file via file picker</td></tr>
+<tr><td>2</td><td class="fn-name">flowHtmlIntoPages</td><td class="fn-line">30600</td><td><span class="fn-type">async</span></td><td class="fn-params">html, startPageIndex</td><td data-lang="fr">Importe du contenu HTML dans les pages</td><td data-lang="en">Imports HTML content into pages</td></tr>
+<tr><td>3</td><td class="fn-name">importWordDocument</td><td class="fn-line">69998</td><td><span class="fn-type">async</span></td><td class="fn-params">file, startPageIndex</td><td data-lang="fr">Importe un document Word .docx</td><td data-lang="en">Imports Word .docx document</td></tr>
+<tr><td>4</td><td class="fn-name">extractOdtHtml</td><td class="fn-line">31080</td><td><span class="fn-type">decl</span></td><td class="fn-params">arrayBuffer</td><td data-lang="fr">Extrait le HTML d'un fichier ODT</td><td data-lang="en">Extracts HTML from ODT file</td></tr>
+<tr><td>5</td><td class="fn-name">importScribusFile</td><td class="fn-line">31546</td><td><span class="fn-type">decl</span></td><td class="fn-params">xmlStr</td><td data-lang="fr">Importe un fichier .sla (format PAO XML open source)</td><td data-lang="en">Imports a .sla file (open-source DTP XML format)</td></tr>
+<tr><td>6</td><td class="fn-name">processIdmlZip</td><td class="fn-line">31949</td><td><span class="fn-type">async</span></td><td class="fn-params">file</td><td data-lang="fr">Traite un fichier IDML (archive ZIP)</td><td data-lang="en">Processes an IDML file (ZIP archive)</td></tr>
+<tr><td>7</td><td class="fn-name">parseIdmlAndBuild</td><td class="fn-line">32193</td><td><span class="fn-type">async</span></td><td class="fn-params">zip, fontsMap, imagesMap</td><td data-lang="fr">Parse la structure IDML et construit les pages</td><td data-lang="en">Parses IDML structure and builds pages</td></tr>
+<tr><td>8</td><td class="fn-name">importPDFPages</td><td class="fn-line">70102</td><td><span class="fn-type">async</span></td><td class="fn-params">pageNumbers, recadrageMode</td><td data-lang="fr">Importe des pages PDF sélectionnées</td><td data-lang="en">Imports selected pages from a PDF</td></tr>
+<tr><td>9</td><td class="fn-name">showPDFImportModal</td><td class="fn-line">69613</td><td><span class="fn-type">async</span></td><td class="fn-params">file</td><td data-lang="fr">Affiche la modale d'import PDF avec aperçus</td><td data-lang="en">Shows the PDF import dialog with previews</td></tr>
+<tr><td>10</td><td class="fn-name">renderPageToImageWithBleed</td><td class="fn-line">42741</td><td><span class="fn-type">async</span></td><td class="fn-params">pageIndex, position, quality, bleed, ...</td><td data-lang="fr">Rend une page en image pour l'export (avec fond perdu)</td><td data-lang="en">Renders a page to image for export (with bleed)</td></tr>
+<tr><td>11</td><td class="fn-name">confirmExport</td><td class="fn-line">37208</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Confirme et exécute l'export PDF</td><td data-lang="en">Confirms and executes standard PDF export</td></tr>
+<tr><td>12</td><td class="fn-name">exportImposedPDF</td><td class="fn-line">38846</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Exporte un PDF imposé (cahier/livret)</td><td data-lang="en">Exports imposed/booklet PDF</td></tr>
+<tr><td>13</td><td class="fn-name">confirmD4Export</td><td class="fn-line">36741</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Export D4/Print-to-Web (mini-site HTML en ZIP)</td><td data-lang="en">D4/Print-to-Web export (HTML mini-site in ZIP)</td></tr>
+<tr><td>14</td><td class="fn-name">saveProjectLocal</td><td class="fn-line">76981</td><td><span class="fn-type">window</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde le projet en JSON local</td><td data-lang="en">Saves project to local JSON file</td></tr>
+<tr><td>15</td><td class="fn-name">saveProjectWeb3</td><td class="fn-line">77039</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde le projet sur Web3/IPFS</td><td data-lang="en">Saves project to Web3/IPFS</td></tr>
+<tr><td>16</td><td class="fn-name">saveProjectSP</td><td class="fn-line">77272</td><td><span class="fn-type">window</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde au format .sp (JSON)</td><td data-lang="en">Saves project in .sp format (JSON)</td></tr>
+<tr><td>17</td><td class="fn-name">loadProjectSP</td><td class="fn-line">77475</td><td><span class="fn-type">window</span></td><td class="fn-params">fileContent</td><td data-lang="fr">Charge un fichier projet .sp</td><td data-lang="en">Loads a .sp project file</td></tr>
 </tbody>
 </table></div>
 
@@ -867,19 +867,19 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Type</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">toggleSidebar</td><td class="fn-line">120</td><td><span class="fn-type">decl</span></td><td class="fn-params">side</td><td data-lang="fr">Bascule la barre latérale gauche/droite</td><td data-lang="en">Toggles left/right sidebar collapse</td></tr>
-<tr><td>2</td><td class="fn-name">showPageLoader</td><td class="fn-line">768</td><td><span class="fn-type">decl</span></td><td class="fn-params">message</td><td data-lang="fr">Affiche l'overlay de chargement</td><td data-lang="en">Shows loading overlay with message</td></tr>
-<tr><td>3</td><td class="fn-name">hidePageLoader</td><td class="fn-line">784</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Masque l'overlay de chargement</td><td data-lang="en">Hides loading overlay</td></tr>
-<tr><td>4</td><td class="fn-name">updateLayersPanel</td><td class="fn-line">15273</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Met à jour le panneau couches/objets</td><td data-lang="en">Updates the layers/objects panel UI</td></tr>
-<tr><td>5</td><td class="fn-name">updateTransformPanel</td><td class="fn-line">9354</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Met à jour le panneau de propriétés de transformation</td><td data-lang="en">Updates the transform properties panel</td></tr>
-<tr><td>6</td><td class="fn-name">applyTransform</td><td class="fn-line">9554</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Applique les valeurs de transformation depuis les inputs</td><td data-lang="en">Applies transform values from panel inputs</td></tr>
-<tr><td>7</td><td class="fn-name">applyColors</td><td class="fn-line">9645</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Applique les couleurs fond/contour depuis le panneau</td><td data-lang="en">Applies fill/stroke colors from panel</td></tr>
-<tr><td>8</td><td class="fn-name">rgbToCMYK</td><td class="fn-line">19772</td><td><span class="fn-type">decl</span></td><td class="fn-params">hex</td><td data-lang="fr">Convertit une couleur hex RGB en valeurs CMYK</td><td data-lang="en">Converts hex RGB to CMYK values</td></tr>
-<tr><td>9</td><td class="fn-name">setupShapesDropdown</td><td class="fn-line">9876</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Initialise le menu déroulant des formes</td><td data-lang="en">Initializes shapes dropdown menu</td></tr>
-<tr><td>10</td><td class="fn-name">setupImportDropdown</td><td class="fn-line">9914</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Initialise le menu déroulant d'import</td><td data-lang="en">Initializes import dropdown menu</td></tr>
-<tr><td>11</td><td class="fn-name">initNumberSpinners</td><td class="fn-line">588</td><td><span class="fn-type">decl</span></td><td class="fn-params">root</td><td data-lang="fr">Initialise les inputs numériques avec boutons +/-</td><td data-lang="en">Initializes numeric spinner inputs</td></tr>
-<tr><td>12</td><td class="fn-name">showTooltipAt</td><td class="fn-line">13195</td><td><span class="fn-type">decl</span></td><td class="fn-params">x, y, text</td><td data-lang="fr">Affiche un tooltip à une position écran</td><td data-lang="en">Shows tooltip at screen position</td></tr>
-<tr><td>13</td><td class="fn-name">enablePerformanceMode</td><td class="fn-line">18614</td><td><span class="fn-type">decl</span></td><td class="fn-params">enabled</td><td data-lang="fr">Active/désactive le mode haute performance</td><td data-lang="en">Toggle performance mode UI</td></tr>
+<tr><td>1</td><td class="fn-name">toggleSidebar</td><td class="fn-line">314</td><td><span class="fn-type">decl</span></td><td class="fn-params">side</td><td data-lang="fr">Bascule la barre latérale gauche/droite</td><td data-lang="en">Toggles left/right sidebar collapse</td></tr>
+<tr><td>2</td><td class="fn-name">showPageLoader</td><td class="fn-line">1522</td><td><span class="fn-type">decl</span></td><td class="fn-params">message</td><td data-lang="fr">Affiche l'overlay de chargement</td><td data-lang="en">Shows loading overlay with message</td></tr>
+<tr><td>3</td><td class="fn-name">hidePageLoader</td><td class="fn-line">1545</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Masque l'overlay de chargement</td><td data-lang="en">Hides loading overlay</td></tr>
+<tr><td>4</td><td class="fn-name">updateLayersPanel</td><td class="fn-line">20774</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Met à jour le panneau couches/objets</td><td data-lang="en">Updates the layers/objects panel UI</td></tr>
+<tr><td>5</td><td class="fn-name">updateTransformPanel</td><td class="fn-line">14068</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Met à jour le panneau de propriétés de transformation</td><td data-lang="en">Updates the transform properties panel</td></tr>
+<tr><td>6</td><td class="fn-name">applyTransform</td><td class="fn-line">14503</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Applique les valeurs de transformation depuis les inputs</td><td data-lang="en">Applies transform values from panel inputs</td></tr>
+<tr><td>7</td><td class="fn-name">applyColors</td><td class="fn-line">14595</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Applique les couleurs fond/contour depuis le panneau</td><td data-lang="en">Applies fill/stroke colors from panel</td></tr>
+<tr><td>8</td><td class="fn-name">rgbToCMYK</td><td class="fn-line">26951</td><td><span class="fn-type">decl</span></td><td class="fn-params">hex</td><td data-lang="fr">Convertit une couleur hex RGB en valeurs CMYK</td><td data-lang="en">Converts hex RGB to CMYK values</td></tr>
+<tr><td>9</td><td class="fn-name">setupShapesDropdown</td><td class="fn-line">14891</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Initialise le menu déroulant des formes</td><td data-lang="en">Initializes shapes dropdown menu</td></tr>
+<tr><td>10</td><td class="fn-name">setupImportDropdown</td><td class="fn-line">15007</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Initialise le menu déroulant d'import</td><td data-lang="en">Initializes import dropdown menu</td></tr>
+<tr><td>11</td><td class="fn-name">initNumberSpinners</td><td class="fn-line">895</td><td><span class="fn-type">decl</span></td><td class="fn-params">root</td><td data-lang="fr">Initialise les inputs numériques avec boutons +/-</td><td data-lang="en">Initializes numeric spinner inputs</td></tr>
+<tr><td>12</td><td class="fn-name">showTooltipAt</td><td class="fn-line">18668</td><td><span class="fn-type">decl</span></td><td class="fn-params">x, y, text</td><td data-lang="fr">Affiche un tooltip à une position écran</td><td data-lang="en">Shows tooltip at screen position</td></tr>
+<tr><td>13</td><td class="fn-name">enablePerformanceMode</td><td class="fn-line">25006</td><td><span class="fn-type">decl</span></td><td class="fn-params">enabled</td><td data-lang="fr">Active/désactive le mode haute performance</td><td data-lang="en">Toggle performance mode UI</td></tr>
 </tbody>
 </table></div>
 
@@ -892,9 +892,9 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Type</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">applyMasterToPage</td><td class="fn-line">26141</td><td><span class="fn-type">decl</span></td><td class="fn-params">pageIndex, masterId</td><td data-lang="fr">Applique un gabarit à une page</td><td data-lang="en">Applies a master page template to a page</td></tr>
-<tr><td>2</td><td class="fn-name">openMasterEditor</td><td class="fn-line">26222</td><td><span class="fn-type">decl</span></td><td class="fn-params">masterId</td><td data-lang="fr">Ouvre l'éditeur de page maîtresse</td><td data-lang="en">Opens the master page editor</td></tr>
-<tr><td>3</td><td class="fn-name">closeMasterEditor</td><td class="fn-line">26331</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Ferme l'éditeur de page maîtresse</td><td data-lang="en">Closes the master page editor</td></tr>
+<tr><td>1</td><td class="fn-name">applyMasterToPage</td><td class="fn-line">46918</td><td><span class="fn-type">decl</span></td><td class="fn-params">pageIndex, masterId</td><td data-lang="fr">Applique un gabarit à une page</td><td data-lang="en">Applies a master page template to a page</td></tr>
+<tr><td>2</td><td class="fn-name">openMasterEditor</td><td class="fn-line">46988</td><td><span class="fn-type">decl</span></td><td class="fn-params">masterId</td><td data-lang="fr">Ouvre l'éditeur de page maîtresse</td><td data-lang="en">Opens the master page editor</td></tr>
+<tr><td>3</td><td class="fn-name">closeMasterEditor</td><td class="fn-line">47103</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Ferme l'éditeur de page maîtresse</td><td data-lang="en">Closes the master page editor</td></tr>
 </tbody>
 </table></div>
 
@@ -907,16 +907,16 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Type</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">createSpreadCanvas</td><td class="fn-line">6889</td><td><span class="fn-type">decl</span></td><td class="fn-params">container, leftIdx, rightIdx, w, h</td><td data-lang="fr">Crée un canvas double-page (planche)</td><td data-lang="en">Creates a double-page spread canvas</td></tr>
-<tr><td>2</td><td class="fn-name">loadSpreadContent</td><td class="fn-line">7090</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, leftIdx, rightIdx</td><td data-lang="fr">Charge le contenu des pages dans la planche</td><td data-lang="en">Loads page content into spread</td></tr>
-<tr><td>3</td><td class="fn-name">setupSpreadEventHandlers</td><td class="fn-line">7213</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, leftIdx, rightIdx</td><td data-lang="fr">Attache les gestionnaires d'événements spécifiques au spread</td><td data-lang="en">Attaches spread-specific event handlers</td></tr>
-<tr><td>4</td><td class="fn-name">saveSpreadContent</td><td class="fn-line">7443</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, leftIdx, rightIdx</td><td data-lang="fr">Sauvegarde le contenu du spread dans le tableau pages</td><td data-lang="en">Saves spread content back to pages array</td></tr>
-<tr><td>5</td><td class="fn-name">addSpreadGuides</td><td class="fn-line">7632</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, w, h, bleedPx, forceRecreate</td><td data-lang="fr">Ajoute les repères de marge/gouttière au spread</td><td data-lang="en">Adds margin/gutter guides to spread</td></tr>
-<tr><td>6</td><td class="fn-name">convertSpreadToSingle</td><td class="fn-line">7857</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Convertit la vue planche en pages simples</td><td data-lang="en">Converts spread view back to single pages</td></tr>
-<tr><td>7</td><td class="fn-name">handleSpreadPageOverflow</td><td class="fn-line">7943</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, pageIdx, obj</td><td data-lang="fr">Gère le débordement d'objets au-delà de la limite du spread</td><td data-lang="en">Handles object crossing spread boundary</td></tr>
-<tr><td>8</td><td class="fn-name">createSpreadMirrorObject</td><td class="fn-line">8080</td><td><span class="fn-type">decl</span></td><td class="fn-params">sourceObj, sourceCanvas, ...</td><td data-lang="fr">Crée un miroir d'objet sur la page adjacente</td><td data-lang="en">Creates mirror of object on adjacent page</td></tr>
-<tr><td>9</td><td class="fn-name">syncMirrorWithSource</td><td class="fn-line">8455</td><td><span class="fn-type">decl</span></td><td class="fn-params">sourceObj</td><td data-lang="fr">Synchronise l'objet miroir avec sa source</td><td data-lang="en">Syncs mirror object with its source</td></tr>
-<tr><td>10</td><td class="fn-name">checkAllObjectsForSpreadOverflow</td><td class="fn-line">8598</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Re-vérifie tous les objets pour le débordement de spread</td><td data-lang="en">Re-checks all objects for spread overflow</td></tr>
+<tr><td>1</td><td class="fn-name">createSpreadCanvas</td><td class="fn-line">11336</td><td><span class="fn-type">decl</span></td><td class="fn-params">container, leftIdx, rightIdx, w, h</td><td data-lang="fr">Crée un canvas double-page (planche)</td><td data-lang="en">Creates a double-page spread canvas</td></tr>
+<tr><td>2</td><td class="fn-name">loadSpreadContent</td><td class="fn-line">11553</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, leftIdx, rightIdx</td><td data-lang="fr">Charge le contenu des pages dans la planche</td><td data-lang="en">Loads page content into spread</td></tr>
+<tr><td>3</td><td class="fn-name">setupSpreadEventHandlers</td><td class="fn-line">11700</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, leftIdx, rightIdx</td><td data-lang="fr">Attache les gestionnaires d'événements spécifiques au spread</td><td data-lang="en">Attaches spread-specific event handlers</td></tr>
+<tr><td>4</td><td class="fn-name">saveSpreadContent</td><td class="fn-line">11951</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, leftIdx, rightIdx</td><td data-lang="fr">Sauvegarde le contenu du spread dans le tableau pages</td><td data-lang="en">Saves spread content back to pages array</td></tr>
+<tr><td>5</td><td class="fn-name">addSpreadGuides</td><td class="fn-line">12192</td><td><span class="fn-type">decl</span></td><td class="fn-params">fabricCanvas, w, h, bleedPx, forceRecreate</td><td data-lang="fr">Ajoute les repères de marge/gouttière au spread</td><td data-lang="en">Adds margin/gutter guides to spread</td></tr>
+<tr><td>6</td><td class="fn-name">convertSpreadToSingle</td><td class="fn-line">12465</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Convertit la vue planche en pages simples</td><td data-lang="en">Converts spread view back to single pages</td></tr>
+<tr><td>7</td><td class="fn-name">handleSpreadPageOverflow</td><td class="fn-line">12551</td><td><span class="fn-type">decl</span></td><td class="fn-params">canvas, pageIdx, obj</td><td data-lang="fr">Gère le débordement d'objets au-delà de la limite du spread</td><td data-lang="en">Handles object crossing spread boundary</td></tr>
+<tr><td>8</td><td class="fn-name">createSpreadMirrorObject</td><td class="fn-line">12688</td><td><span class="fn-type">decl</span></td><td class="fn-params">sourceObj, sourceCanvas, ...</td><td data-lang="fr">Crée un miroir d'objet sur la page adjacente</td><td data-lang="en">Creates mirror of object on adjacent page</td></tr>
+<tr><td>9</td><td class="fn-name">syncMirrorWithSource</td><td class="fn-line">13066</td><td><span class="fn-type">decl</span></td><td class="fn-params">sourceObj</td><td data-lang="fr">Synchronise l'objet miroir avec sa source</td><td data-lang="en">Syncs mirror object with its source</td></tr>
+<tr><td>10</td><td class="fn-name">checkAllObjectsForSpreadOverflow</td><td class="fn-line">13209</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Re-vérifie tous les objets pour le débordement de spread</td><td data-lang="en">Re-checks all objects for spread overflow</td></tr>
 </tbody>
 </table></div>
 
@@ -932,12 +932,12 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">activateFreeformDrawing</td><td class="fn-line">10224</td><td class="fn-params">—</td><td data-lang="fr">Active le mode dessin libre (pinceau)</td><td data-lang="en">Activates freeform brush drawing mode</td></tr>
-<tr><td>2</td><td class="fn-name">activatePenTool</td><td class="fn-line">10326</td><td class="fn-params">—</td><td data-lang="fr">Active l'outil plume Bézier</td><td data-lang="en">Activates the Bézier pen tool</td></tr>
+<tr><td>1</td><td class="fn-name">activateFreeformDrawing</td><td class="fn-line">15321</td><td class="fn-params">—</td><td data-lang="fr">Active le mode dessin libre (pinceau)</td><td data-lang="en">Activates freeform brush drawing mode</td></tr>
+<tr><td>2</td><td class="fn-name">activatePenTool</td><td class="fn-line">15426</td><td class="fn-params">—</td><td data-lang="fr">Active l'outil plume Bézier</td><td data-lang="en">Activates the Bézier pen tool</td></tr>
 <tr><td>3</td><td class="fn-name">penMouseDown / penMouseMove / penMouseUp</td><td class="fn-line">10365–10500</td><td class="fn-params">e</td><td data-lang="fr">Gestionnaires souris de l'outil plume</td><td data-lang="en">Pen tool mouse handlers</td></tr>
-<tr><td>4</td><td class="fn-name">buildSVGPath</td><td class="fn-line">10687</td><td class="fn-params">points, closePath</td><td data-lang="fr">Construit une chaîne SVG path à partir de points</td><td data-lang="en">Builds SVG path string from points</td></tr>
-<tr><td>5</td><td class="fn-name">finalizePenPath</td><td class="fn-line">10734</td><td class="fn-params">closePath</td><td data-lang="fr">Finalise le tracé plume en objet Fabric</td><td data-lang="en">Finalizes pen path into Fabric object</td></tr>
-<tr><td>6</td><td class="fn-name">editExistingPenPath</td><td class="fn-line">10812</td><td class="fn-params">pathObject</td><td data-lang="fr">Entre en mode édition d'un tracé existant</td><td data-lang="en">Enters edit mode for existing path</td></tr>
+<tr><td>4</td><td class="fn-name">buildSVGPath</td><td class="fn-line">15787</td><td class="fn-params">points, closePath</td><td data-lang="fr">Construit une chaîne SVG path à partir de points</td><td data-lang="en">Builds SVG path string from points</td></tr>
+<tr><td>5</td><td class="fn-name">finalizePenPath</td><td class="fn-line">15834</td><td class="fn-params">closePath</td><td data-lang="fr">Finalise le tracé plume en objet Fabric</td><td data-lang="en">Finalizes pen path into Fabric object</td></tr>
+<tr><td>6</td><td class="fn-name">editExistingPenPath</td><td class="fn-line">15912</td><td class="fn-params">pathObject</td><td data-lang="fr">Entre en mode édition d'un tracé existant</td><td data-lang="en">Enters edit mode for existing path</td></tr>
 </tbody>
 </table></div>
 
@@ -946,9 +946,9 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">addRect</td><td class="fn-line">9744</td><td class="fn-params">—</td><td data-lang="fr">Ajoute un rectangle</td><td data-lang="en">Adds a rectangle</td></tr>
-<tr><td>2</td><td class="fn-name">addCircle</td><td class="fn-line">9778</td><td class="fn-params">—</td><td data-lang="fr">Ajoute un cercle/ellipse</td><td data-lang="en">Adds a circle/ellipse</td></tr>
-<tr><td>3</td><td class="fn-name">addStar</td><td class="fn-line">9822</td><td class="fn-params">—</td><td data-lang="fr">Ajoute une étoile</td><td data-lang="en">Adds a star shape</td></tr>
+<tr><td>1</td><td class="fn-name">addRect</td><td class="fn-line">14759</td><td class="fn-params">—</td><td data-lang="fr">Ajoute un rectangle</td><td data-lang="en">Adds a rectangle</td></tr>
+<tr><td>2</td><td class="fn-name">addCircle</td><td class="fn-line">14793</td><td class="fn-params">—</td><td data-lang="fr">Ajoute un cercle/ellipse</td><td data-lang="en">Adds a circle/ellipse</td></tr>
+<tr><td>3</td><td class="fn-name">addStar</td><td class="fn-line">14837</td><td class="fn-params">—</td><td data-lang="fr">Ajoute une étoile</td><td data-lang="en">Adds a star shape</td></tr>
 </tbody>
 </table></div>
 
@@ -957,14 +957,14 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">addImage</td><td class="fn-line">12622</td><td class="fn-params">—</td><td data-lang="fr">Ouvre le sélecteur de fichier pour ajouter une image</td><td data-lang="en">Opens file picker to add an image</td></tr>
-<tr><td>2</td><td class="fn-name">importImageIntoShape</td><td class="fn-line">12552</td><td class="fn-params">shapePath, canvas</td><td data-lang="fr">Importe une image dans un masque de forme</td><td data-lang="en">Imports image into a shape mask</td></tr>
-<tr><td>3</td><td class="fn-name">applyImageMaskToShape</td><td class="fn-line">13514</td><td class="fn-params">shapeObj, imageObj, canvas, url</td><td data-lang="fr">Applique une image comme remplissage masqué</td><td data-lang="en">Applies image as fill to shape mask</td></tr>
-<tr><td>4</td><td class="fn-name">fitImageToShape</td><td class="fn-line">13827</td><td class="fn-params">shapeObj, canvas, mode, options</td><td data-lang="fr">Adapte l'image à la forme (cover/contain)</td><td data-lang="en">Fits image to shape (cover/contain)</td></tr>
-<tr><td>5</td><td class="fn-name">openCropModal</td><td class="fn-line">14294</td><td class="fn-params">imageObjOverride</td><td data-lang="fr">Ouvre la modale de recadrage</td><td data-lang="en">Opens the crop modal</td></tr>
-<tr><td>6</td><td class="fn-name">applyCrop</td><td class="fn-line">15054</td><td class="fn-params">—</td><td data-lang="fr">Applique le recadrage en cours</td><td data-lang="en">Applies current crop to image</td></tr>
-<tr><td>7</td><td class="fn-name">replaceImageForObject</td><td class="fn-line">12979</td><td class="fn-params">imageObj, opts</td><td data-lang="fr">Remplace la source d'image d'un objet</td><td data-lang="en">Replaces image source for an object</td></tr>
-<tr><td>8</td><td class="fn-name">restoreImageMasksAfterLoad</td><td class="fn-line">13225</td><td class="fn-params">canvas</td><td data-lang="fr">Restaure les masques d'image après chargement JSON</td><td data-lang="en">Restores image masks after JSON load</td></tr>
+<tr><td>1</td><td class="fn-name">addImage</td><td class="fn-line">18054</td><td class="fn-params">—</td><td data-lang="fr">Ouvre le sélecteur de fichier pour ajouter une image</td><td data-lang="en">Opens file picker to add an image</td></tr>
+<tr><td>2</td><td class="fn-name">importImageIntoShape</td><td class="fn-line">17968</td><td class="fn-params">shapePath, canvas</td><td data-lang="fr">Importe une image dans un masque de forme</td><td data-lang="en">Imports image into a shape mask</td></tr>
+<tr><td>3</td><td class="fn-name">applyImageMaskToShape</td><td class="fn-line">18987</td><td class="fn-params">shapeObj, imageObj, canvas, url</td><td data-lang="fr">Applique une image comme remplissage masqué</td><td data-lang="en">Applies image as fill to shape mask</td></tr>
+<tr><td>4</td><td class="fn-name">fitImageToShape</td><td class="fn-line">19328</td><td class="fn-params">shapeObj, canvas, mode, options</td><td data-lang="fr">Adapte l'image à la forme (cover/contain)</td><td data-lang="en">Fits image to shape (cover/contain)</td></tr>
+<tr><td>5</td><td class="fn-name">openCropModal</td><td class="fn-line">19795</td><td class="fn-params">imageObjOverride</td><td data-lang="fr">Ouvre la modale de recadrage</td><td data-lang="en">Opens the crop modal</td></tr>
+<tr><td>6</td><td class="fn-name">applyCrop</td><td class="fn-line">20555</td><td class="fn-params">—</td><td data-lang="fr">Applique le recadrage en cours</td><td data-lang="en">Applies current crop to image</td></tr>
+<tr><td>7</td><td class="fn-name">replaceImageForObject</td><td class="fn-line">18452</td><td class="fn-params">imageObj, opts</td><td data-lang="fr">Remplace la source d'image d'un objet</td><td data-lang="en">Replaces image source for an object</td></tr>
+<tr><td>8</td><td class="fn-name">restoreImageMasksAfterLoad</td><td class="fn-line">18698</td><td class="fn-params">canvas</td><td data-lang="fr">Restaure les masques d'image après chargement JSON</td><td data-lang="en">Restores image masks after JSON load</td></tr>
 </tbody>
 </table></div>
 
@@ -973,11 +973,11 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">uniteShapes</td><td class="fn-line">40277</td><td class="fn-params">objects</td><td data-lang="fr">Union booléenne de formes</td><td data-lang="en">Boolean unite (union) of shapes</td></tr>
-<tr><td>2</td><td class="fn-name">subtractShapes</td><td class="fn-line">40281</td><td class="fn-params">objects</td><td data-lang="fr">Soustraction booléenne</td><td data-lang="en">Boolean subtract of shapes</td></tr>
-<tr><td>3</td><td class="fn-name">intersectShapes</td><td class="fn-line">40285</td><td class="fn-params">objects</td><td data-lang="fr">Intersection booléenne</td><td data-lang="en">Boolean intersect of shapes</td></tr>
-<tr><td>4</td><td class="fn-name">excludeShapes</td><td class="fn-line">40289</td><td class="fn-params">objects</td><td data-lang="fr">Exclusion booléenne (XOR)</td><td data-lang="en">Boolean exclude (XOR) of shapes</td></tr>
-<tr><td>5</td><td class="fn-name">applyPathfinderOperation</td><td class="fn-line">39997</td><td class="fn-params">operation</td><td data-lang="fr">Applique l'opération Pathfinder sélectionnée</td><td data-lang="en">Applies selected pathfinder boolean op</td></tr>
+<tr><td>1</td><td class="fn-name">uniteShapes</td><td class="fn-line">70676</td><td class="fn-params">objects</td><td data-lang="fr">Union booléenne de formes</td><td data-lang="en">Boolean unite (union) of shapes</td></tr>
+<tr><td>2</td><td class="fn-name">subtractShapes</td><td class="fn-line">70680</td><td class="fn-params">objects</td><td data-lang="fr">Soustraction booléenne</td><td data-lang="en">Boolean subtract of shapes</td></tr>
+<tr><td>3</td><td class="fn-name">intersectShapes</td><td class="fn-line">70684</td><td class="fn-params">objects</td><td data-lang="fr">Intersection booléenne</td><td data-lang="en">Boolean intersect of shapes</td></tr>
+<tr><td>4</td><td class="fn-name">excludeShapes</td><td class="fn-line">70688</td><td class="fn-params">objects</td><td data-lang="fr">Exclusion booléenne (XOR)</td><td data-lang="en">Boolean exclude (XOR) of shapes</td></tr>
+<tr><td>5</td><td class="fn-name">applyPathfinderOperation</td><td class="fn-line">70365</td><td class="fn-params">operation</td><td data-lang="fr">Applique l'opération Pathfinder sélectionnée</td><td data-lang="en">Applies selected pathfinder boolean op</td></tr>
 </tbody>
 </table></div>
 
@@ -986,8 +986,8 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">applySoftProof</td><td class="fn-line">10153</td><td class="fn-params">proof</td><td data-lang="fr">Applique un profil ICC d'épreuvage aux canvas</td><td data-lang="en">Applies ICC soft proof to canvases</td></tr>
-<tr><td>2</td><td class="fn-name">updateActiveSoftProof</td><td class="fn-line">10190</td><td class="fn-params">—</td><td data-lang="fr">Met à jour le profil d'épreuvage actif</td><td data-lang="en">Updates which soft proof is active</td></tr>
+<tr><td>1</td><td class="fn-name">applySoftProof</td><td class="fn-line">15246</td><td class="fn-params">proof</td><td data-lang="fr">Applique un profil ICC d'épreuvage aux canvas</td><td data-lang="en">Applies ICC soft proof to canvases</td></tr>
+<tr><td>2</td><td class="fn-name">updateActiveSoftProof</td><td class="fn-line">15283</td><td class="fn-params">—</td><td data-lang="fr">Met à jour le profil d'épreuvage actif</td><td data-lang="en">Updates which soft proof is active</td></tr>
 </tbody>
 </table></div>
 
@@ -1000,12 +1000,12 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">alignSelectedObjects</td><td class="fn-line">27293</td><td class="fn-params">direction</td><td data-lang="fr">Aligne plusieurs objets sélectionnés</td><td data-lang="en">Aligns multiple selected objects</td></tr>
-<tr><td>2</td><td class="fn-name">alignObject</td><td class="fn-line">15213</td><td class="fn-params">align</td><td data-lang="fr">Aligne un objet sur le plan de travail</td><td data-lang="en">Aligns single object on artboard</td></tr>
-<tr><td>3</td><td class="fn-name">centerObjectOnArtboard</td><td class="fn-line">33503</td><td class="fn-params">axis</td><td data-lang="fr">Centre l'objet sur le plan de travail (H/V/les deux)</td><td data-lang="en">Centers object on artboard (H/V/both)</td></tr>
-<tr><td>4</td><td class="fn-name">altDuplicateSingle</td><td class="fn-line">6220</td><td class="fn-params">canvas, target</td><td data-lang="fr">Duplication Alt+glisser (objet unique)</td><td data-lang="en">Alt+drag duplicate single object</td></tr>
-<tr><td>5</td><td class="fn-name">handleCrossPageDrag</td><td class="fn-line">6312</td><td class="fn-params">e, sourceCanvas</td><td data-lang="fr">Gère le glisser d'objets entre pages</td><td data-lang="en">Handles drag of object across page boundaries</td></tr>
-<tr><td>6</td><td class="fn-name">moveObjectToPage</td><td class="fn-line">6704</td><td class="fn-params">obj, sourceCanvas, sourceIdx, targetIdx</td><td data-lang="fr">Déplace un objet vers une autre page</td><td data-lang="en">Moves object to another page</td></tr>
+<tr><td>1</td><td class="fn-name">alignSelectedObjects</td><td class="fn-line">48405</td><td class="fn-params">direction</td><td data-lang="fr">Aligne plusieurs objets sélectionnés</td><td data-lang="en">Aligns multiple selected objects</td></tr>
+<tr><td>2</td><td class="fn-name">alignObject</td><td class="fn-line">20714</td><td class="fn-params">align</td><td data-lang="fr">Aligne un objet sur le plan de travail</td><td data-lang="en">Aligns single object on artboard</td></tr>
+<tr><td>3</td><td class="fn-name">centerObjectOnArtboard</td><td class="fn-line">60557</td><td class="fn-params">axis</td><td data-lang="fr">Centre l'objet sur le plan de travail (H/V/les deux)</td><td data-lang="en">Centers object on artboard (H/V/both)</td></tr>
+<tr><td>4</td><td class="fn-name">altDuplicateSingle</td><td class="fn-line">10266</td><td class="fn-params">canvas, target</td><td data-lang="fr">Duplication Alt+glisser (objet unique)</td><td data-lang="en">Alt+drag duplicate single object</td></tr>
+<tr><td>5</td><td class="fn-name">handleCrossPageDrag</td><td class="fn-line">10475</td><td class="fn-params">e, sourceCanvas</td><td data-lang="fr">Gère le glisser d'objets entre pages</td><td data-lang="en">Handles drag of object across page boundaries</td></tr>
+<tr><td>6</td><td class="fn-name">moveObjectToPage</td><td class="fn-line">10991</td><td class="fn-params">obj, sourceCanvas, sourceIdx, targetIdx</td><td data-lang="fr">Déplace un objet vers une autre page</td><td data-lang="en">Moves object to another page</td></tr>
 </tbody>
 </table></div>
 
@@ -1017,11 +1017,11 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">_t</td><td class="fn-line">30959</td><td class="fn-params">sel, key</td><td data-lang="fr">Traduit le contenu texte d'un élément</td><td data-lang="en">Translates text content of element</td></tr>
-<tr><td>2</td><td class="fn-name">_tt</td><td class="fn-line">30964</td><td class="fn-params">sel, key</td><td data-lang="fr">Traduit le tooltip d'un élément</td><td data-lang="en">Translates tooltip of element</td></tr>
-<tr><td>3</td><td class="fn-name">_th</td><td class="fn-line">30969</td><td class="fn-params">sel, key</td><td data-lang="fr">Traduit le innerHTML d'un élément</td><td data-lang="en">Translates innerHTML of element</td></tr>
-<tr><td>4</td><td class="fn-name">_npUpdateLabels</td><td class="fn-line">31120</td><td class="fn-params">—</td><td data-lang="fr">Met à jour les labels de la modale Nouveau projet</td><td data-lang="en">Updates new project modal labels</td></tr>
-<tr><td>5</td><td class="fn-name">filterAssetsByLang</td><td class="fn-line">35873</td><td class="fn-params">lang</td><td data-lang="fr">Filtre les assets par langue</td><td data-lang="en">Filters assets panel by language</td></tr>
+<tr><td>1</td><td class="fn-name">_t</td><td class="fn-line">56815</td><td class="fn-params">sel, key</td><td data-lang="fr">Traduit le contenu texte d'un élément</td><td data-lang="en">Translates text content of element</td></tr>
+<tr><td>2</td><td class="fn-name">_tt</td><td class="fn-line">56820</td><td class="fn-params">sel, key</td><td data-lang="fr">Traduit le tooltip d'un élément</td><td data-lang="en">Translates tooltip of element</td></tr>
+<tr><td>3</td><td class="fn-name">_th</td><td class="fn-line">56825</td><td class="fn-params">sel, key</td><td data-lang="fr">Traduit le innerHTML d'un élément</td><td data-lang="en">Translates innerHTML of element</td></tr>
+<tr><td>4</td><td class="fn-name">_npUpdateLabels</td><td class="fn-line">56975</td><td class="fn-params">—</td><td data-lang="fr">Met à jour les labels de la modale Nouveau projet</td><td data-lang="en">Updates new project modal labels</td></tr>
+<tr><td>5</td><td class="fn-name">filterAssetsByLang</td><td class="fn-line">63002</td><td class="fn-params">lang</td><td data-lang="fr">Filtre les assets par langue</td><td data-lang="en">Filters assets panel by language</td></tr>
 </tbody>
 </table></div>
 
@@ -1034,16 +1034,16 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">openDB</td><td class="fn-line">40695</td><td class="fn-params">—</td><td data-lang="fr">Ouvre/crée la base IndexedDB (SuperPrintDB V2)</td><td data-lang="en">Opens/creates IndexedDB database</td></tr>
-<tr><td>2</td><td class="fn-name">autoSaveProject</td><td class="fn-line">40715</td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde automatique dans IndexedDB</td><td data-lang="en">Auto-saves project to IndexedDB</td></tr>
-<tr><td>3</td><td class="fn-name">loadAutoSavedProject</td><td class="fn-line">40775</td><td class="fn-params">—</td><td data-lang="fr">Charge le projet auto-sauvegardé</td><td data-lang="en">Loads auto-saved project from IndexedDB</td></tr>
-<tr><td>4</td><td class="fn-name">clearAutoSave</td><td class="fn-line">40793</td><td class="fn-params">—</td><td data-lang="fr">Supprime la sauvegarde automatique</td><td data-lang="en">Clears auto-save data</td></tr>
-<tr><td>5</td><td class="fn-name">pushSaveHistory</td><td class="fn-line">40815</td><td class="fn-params">type</td><td data-lang="fr">Ajoute une entrée dans l'historique de sauvegarde</td><td data-lang="en">Pushes save entry to history</td></tr>
-<tr><td>6</td><td class="fn-name">saveSessionHistory</td><td class="fn-line">40909</td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde l'historique undo/redo de session</td><td data-lang="en">Saves undo/redo session history</td></tr>
-<tr><td>7</td><td class="fn-name">loadSessionHistory</td><td class="fn-line">40934</td><td class="fn-params">—</td><td data-lang="fr">Charge l'historique undo/redo de session</td><td data-lang="en">Loads undo/redo session history</td></tr>
-<tr><td>8</td><td class="fn-name">startAutoSave</td><td class="fn-line">40952</td><td class="fn-params">—</td><td data-lang="fr">Démarre le timer de sauvegarde automatique</td><td data-lang="en">Starts auto-save interval timer</td></tr>
-<tr><td>9</td><td class="fn-name">uploadToIPFS</td><td class="fn-line">40425</td><td class="fn-params">apiKey, jsonData</td><td data-lang="fr">Upload le projet sur IPFS via Pinata</td><td data-lang="en">Uploads project to IPFS via Pinata</td></tr>
-<tr><td>10</td><td class="fn-name">loadWeb3Save</td><td class="fn-line">40452</td><td class="fn-params">hash</td><td data-lang="fr">Charge un projet depuis IPFS par hash</td><td data-lang="en">Loads project from IPFS by hash</td></tr>
+<tr><td>1</td><td class="fn-name">openDB</td><td class="fn-line">71142</td><td class="fn-params">—</td><td data-lang="fr">Ouvre/crée la base IndexedDB (SuperPrintDB V2)</td><td data-lang="en">Opens/creates IndexedDB database</td></tr>
+<tr><td>2</td><td class="fn-name">autoSaveProject</td><td class="fn-line">71162</td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde automatique dans IndexedDB</td><td data-lang="en">Auto-saves project to IndexedDB</td></tr>
+<tr><td>3</td><td class="fn-name">loadAutoSavedProject</td><td class="fn-line">71253</td><td class="fn-params">—</td><td data-lang="fr">Charge le projet auto-sauvegardé</td><td data-lang="en">Loads auto-saved project from IndexedDB</td></tr>
+<tr><td>4</td><td class="fn-name">clearAutoSave</td><td class="fn-line">71271</td><td class="fn-params">—</td><td data-lang="fr">Supprime la sauvegarde automatique</td><td data-lang="en">Clears auto-save data</td></tr>
+<tr><td>5</td><td class="fn-name">pushSaveHistory</td><td class="fn-line">71307</td><td class="fn-params">type</td><td data-lang="fr">Ajoute une entrée dans l'historique de sauvegarde</td><td data-lang="en">Pushes save entry to history</td></tr>
+<tr><td>6</td><td class="fn-name">saveSessionHistory</td><td class="fn-line">71406</td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde l'historique undo/redo de session</td><td data-lang="en">Saves undo/redo session history</td></tr>
+<tr><td>7</td><td class="fn-name">loadSessionHistory</td><td class="fn-line">71469</td><td class="fn-params">—</td><td data-lang="fr">Charge l'historique undo/redo de session</td><td data-lang="en">Loads undo/redo session history</td></tr>
+<tr><td>8</td><td class="fn-name">startAutoSave</td><td class="fn-line">71487</td><td class="fn-params">—</td><td data-lang="fr">Démarre le timer de sauvegarde automatique</td><td data-lang="en">Starts auto-save interval timer</td></tr>
+<tr><td>9</td><td class="fn-name">uploadToIPFS</td><td class="fn-line">70824</td><td class="fn-params">apiKey, jsonData</td><td data-lang="fr">Upload le projet sur IPFS via Pinata</td><td data-lang="en">Uploads project to IPFS via Pinata</td></tr>
+<tr><td>10</td><td class="fn-name">loadWeb3Save</td><td class="fn-line">70851</td><td class="fn-params">hash</td><td data-lang="fr">Charge un projet depuis IPFS par hash</td><td data-lang="en">Loads project from IPFS by hash</td></tr>
 </tbody>
 </table></div>
 
@@ -1056,12 +1056,12 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">newProject</td><td class="fn-line">41012</td><td class="fn-params">—</td><td data-lang="fr">Propose de sauvegarder puis lance un nouveau projet</td><td data-lang="en">Prompts to save then starts new project</td></tr>
-<tr><td>2</td><td class="fn-name">openNewProjectModal</td><td class="fn-line">41027</td><td class="fn-params">—</td><td data-lang="fr">Ouvre la modale de nouveau projet</td><td data-lang="en">Opens the new project modal</td></tr>
-<tr><td>3</td><td class="fn-name">createNewProjectFromModal</td><td class="fn-line">41118</td><td class="fn-params">—</td><td data-lang="fr">Crée le projet avec les paramètres de la modale</td><td data-lang="en">Creates project with modal settings</td></tr>
-<tr><td>4</td><td class="fn-name">npSelectFormat</td><td class="fn-line">41062</td><td class="fn-params">btn</td><td data-lang="fr">Sélectionne un format de page prédéfini</td><td data-lang="en">Selects a page format preset</td></tr>
-<tr><td>5</td><td class="fn-name">npUpdatePreview</td><td class="fn-line">41081</td><td class="fn-params">—</td><td data-lang="fr">Met à jour l'aperçu de format</td><td data-lang="en">Updates the format preview thumbnail</td></tr>
-<tr><td>6</td><td class="fn-name">npSetViewMode</td><td class="fn-line">41111</td><td class="fn-params">mode</td><td data-lang="fr">Définit le mode de vue (simple/planche)</td><td data-lang="en">Sets view mode (single/spread)</td></tr>
+<tr><td>1</td><td class="fn-name">newProject</td><td class="fn-line">71552</td><td class="fn-params">—</td><td data-lang="fr">Propose de sauvegarder puis lance un nouveau projet</td><td data-lang="en">Prompts to save then starts new project</td></tr>
+<tr><td>2</td><td class="fn-name">openNewProjectModal</td><td class="fn-line">71567</td><td class="fn-params">—</td><td data-lang="fr">Ouvre la modale de nouveau projet</td><td data-lang="en">Opens the new project modal</td></tr>
+<tr><td>3</td><td class="fn-name">createNewProjectFromModal</td><td class="fn-line">76541</td><td class="fn-params">—</td><td data-lang="fr">Crée le projet avec les paramètres de la modale</td><td data-lang="en">Creates project with modal settings</td></tr>
+<tr><td>4</td><td class="fn-name">npSelectFormat</td><td class="fn-line">76485</td><td class="fn-params">btn</td><td data-lang="fr">Sélectionne un format de page prédéfini</td><td data-lang="en">Selects a page format preset</td></tr>
+<tr><td>5</td><td class="fn-name">npUpdatePreview</td><td class="fn-line">76504</td><td class="fn-params">—</td><td data-lang="fr">Met à jour l'aperçu de format</td><td data-lang="en">Updates the format preview thumbnail</td></tr>
+<tr><td>6</td><td class="fn-name">npSetViewMode</td><td class="fn-line">76534</td><td class="fn-params">mode</td><td data-lang="fr">Définit le mode de vue (simple/planche)</td><td data-lang="en">Sets view mode (single/spread)</td></tr>
 </tbody>
 </table></div>
 
@@ -1073,12 +1073,12 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">enableHighPerformance</td><td class="fn-line">3345</td><td class="fn-params">—</td><td data-lang="fr">Active le mode rendu haute performance</td><td data-lang="en">Enables high-performance rendering mode</td></tr>
-<tr><td>2</td><td class="fn-name">deepCleanupCanvas</td><td class="fn-line">3655</td><td class="fn-params">fabricCanvas</td><td data-lang="fr">Nettoyage profond du canvas (GPU/mémoire/listeners)</td><td data-lang="en">Deep cleanup of canvas GPU/memory/listeners</td></tr>
-<tr><td>3</td><td class="fn-name">preloadFonts</td><td class="fn-line">3364</td><td class="fn-params">—</td><td data-lang="fr">Précharge toutes les polices disponibles</td><td data-lang="en">Preloads all available fonts</td></tr>
-<tr><td>4</td><td class="fn-name">optimizeForTypography</td><td class="fn-line">3413</td><td class="fn-params">—</td><td data-lang="fr">Désactive temporairement les animations pour les opérations texte</td><td data-lang="en">Temporarily disables animations for text ops</td></tr>
-<tr><td>5</td><td class="fn-name">_spReleaseMemoryPressure</td><td class="fn-line">369</td><td class="fn-params">aggressive</td><td data-lang="fr">Libère la pression mémoire GPU/RAM</td><td data-lang="en">Releases GPU/memory pressure</td></tr>
-<tr><td>6</td><td class="fn-name">init</td><td class="fn-line">3432</td><td class="fn-params">—</td><td data-lang="fr">Initialisation principale de l'application</td><td data-lang="en">Main application initialization</td></tr>
+<tr><td>1</td><td class="fn-name">enableHighPerformance</td><td class="fn-line">6796</td><td class="fn-params">—</td><td data-lang="fr">Active le mode rendu haute performance</td><td data-lang="en">Enables high-performance rendering mode</td></tr>
+<tr><td>2</td><td class="fn-name">deepCleanupCanvas</td><td class="fn-line">7146</td><td class="fn-params">fabricCanvas</td><td data-lang="fr">Nettoyage profond du canvas (GPU/mémoire/listeners)</td><td data-lang="en">Deep cleanup of canvas GPU/memory/listeners</td></tr>
+<tr><td>3</td><td class="fn-name">preloadFonts</td><td class="fn-line">6815</td><td class="fn-params">—</td><td data-lang="fr">Précharge toutes les polices disponibles</td><td data-lang="en">Preloads all available fonts</td></tr>
+<tr><td>4</td><td class="fn-name">optimizeForTypography</td><td class="fn-line">6864</td><td class="fn-params">—</td><td data-lang="fr">Désactive temporairement les animations pour les opérations texte</td><td data-lang="en">Temporarily disables animations for text ops</td></tr>
+<tr><td>5</td><td class="fn-name">_spReleaseMemoryPressure</td><td class="fn-line">581</td><td class="fn-params">aggressive</td><td data-lang="fr">Libère la pression mémoire GPU/RAM</td><td data-lang="en">Releases GPU/memory pressure</td></tr>
+<tr><td>6</td><td class="fn-name">init</td><td class="fn-line">6883</td><td class="fn-params">—</td><td data-lang="fr">Initialisation principale de l'application</td><td data-lang="en">Main application initialization</td></tr>
 </tbody>
 </table></div>
 
@@ -1091,17 +1091,17 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">mmToPx</td><td class="fn-line">3282</td><td class="fn-params">mm</td><td data-lang="fr">Conversion millimètres → pixels (72 DPI)</td><td data-lang="en">Millimeters to pixels (72 DPI)</td></tr>
-<tr><td>2</td><td class="fn-name">pxToMm</td><td class="fn-line">3283</td><td class="fn-params">px</td><td data-lang="fr">Conversion pixels → millimètres</td><td data-lang="en">Pixels to millimeters</td></tr>
+<tr><td>1</td><td class="fn-name">mmToPx</td><td class="fn-line">6706</td><td class="fn-params">mm</td><td data-lang="fr">Conversion millimètres → pixels (72 DPI)</td><td data-lang="en">Millimeters to pixels (72 DPI)</td></tr>
+<tr><td>2</td><td class="fn-name">pxToMm</td><td class="fn-line">6707</td><td class="fn-params">px</td><td data-lang="fr">Conversion pixels → millimètres</td><td data-lang="en">Pixels to millimeters</td></tr>
 <tr><td>3</td><td class="fn-name">pxToCm / cmToPx</td><td class="fn-line">3284–3303</td><td class="fn-params">val</td><td data-lang="fr">Conversion pixels ↔ centimètres</td><td data-lang="en">Pixels ↔ centimeters conversion</td></tr>
 <tr><td>4</td><td class="fn-name">inToPx / pxToIn</td><td class="fn-line">3304–3305</td><td class="fn-params">val</td><td data-lang="fr">Conversion pixels ↔ pouces</td><td data-lang="en">Pixels ↔ inches conversion</td></tr>
-<tr><td>5</td><td class="fn-name">getPxToUnitFn</td><td class="fn-line">3309</td><td class="fn-params">—</td><td data-lang="fr">Retourne la fonction de conversion pour l'unité en cours</td><td data-lang="en">Returns conversion fn for current unit</td></tr>
-<tr><td>6</td><td class="fn-name">getPageCenter</td><td class="fn-line">812</td><td class="fn-params">canvas</td><td data-lang="fr">Retourne le centre de la page active</td><td data-lang="en">Gets center point of active page</td></tr>
-<tr><td>7</td><td class="fn-name">toNumber</td><td class="fn-line">28247</td><td class="fn-params">v, defVal</td><td data-lang="fr">Convertit en nombre avec fallback</td><td data-lang="en">Converts value to number with fallback</td></tr>
-<tr><td>8</td><td class="fn-name">clamp</td><td class="fn-line">28251</td><td class="fn-params">n, min, max</td><td data-lang="fr">Borne un nombre dans un intervalle</td><td data-lang="en">Clamps number to range</td></tr>
-<tr><td>9</td><td class="fn-name">sanitizeColor</td><td class="fn-line">28253</td><td class="fn-params">c, def</td><td data-lang="fr">Assainit une chaîne couleur</td><td data-lang="en">Sanitizes color string</td></tr>
-<tr><td>10</td><td class="fn-name">setupEventListeners</td><td class="fn-line">18775</td><td class="fn-params">—</td><td data-lang="fr">Configuration maître de tous les écouteurs clavier/souris</td><td data-lang="en">Master keyboard/mouse event listener setup</td></tr>
-<tr><td>11</td><td class="fn-name">startSystemMonitoring</td><td class="fn-line">308</td><td class="fn-params">—</td><td data-lang="fr">Démarre le monitoring des ressources système</td><td data-lang="en">Starts system resource monitoring</td></tr>
+<tr><td>5</td><td class="fn-name">getPxToUnitFn</td><td class="fn-line">6757</td><td class="fn-params">—</td><td data-lang="fr">Retourne la fonction de conversion pour l'unité en cours</td><td data-lang="en">Returns conversion fn for current unit</td></tr>
+<tr><td>6</td><td class="fn-name">getPageCenter</td><td class="fn-line">1579</td><td class="fn-params">canvas</td><td data-lang="fr">Retourne le centre de la page active</td><td data-lang="en">Gets center point of active page</td></tr>
+<tr><td>7</td><td class="fn-name">toNumber</td><td class="fn-line">52861</td><td class="fn-params">v, defVal</td><td data-lang="fr">Convertit en nombre avec fallback</td><td data-lang="en">Converts value to number with fallback</td></tr>
+<tr><td>8</td><td class="fn-name">clamp</td><td class="fn-line">52865</td><td class="fn-params">n, min, max</td><td data-lang="fr">Borne un nombre dans un intervalle</td><td data-lang="en">Clamps number to range</td></tr>
+<tr><td>9</td><td class="fn-name">sanitizeColor</td><td class="fn-line">52867</td><td class="fn-params">c, def</td><td data-lang="fr">Assainit une chaîne couleur</td><td data-lang="en">Sanitizes color string</td></tr>
+<tr><td>10</td><td class="fn-name">setupEventListeners</td><td class="fn-line">25210</td><td class="fn-params">—</td><td data-lang="fr">Configuration maître de tous les écouteurs clavier/souris</td><td data-lang="en">Master keyboard/mouse event listener setup</td></tr>
+<tr><td>11</td><td class="fn-name">startSystemMonitoring</td><td class="fn-line">515</td><td class="fn-params">—</td><td data-lang="fr">Démarre le monitoring des ressources système</td><td data-lang="en">Starts system resource monitoring</td></tr>
 </tbody>
 </table></div>
 
@@ -1114,12 +1114,12 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">setSnapToGuidesEnabled</td><td class="fn-line">22969</td><td class="fn-params">next</td><td data-lang="fr">Active/désactive l'aimantation aux repères</td><td data-lang="en">Toggles snap-to-guides</td></tr>
-<tr><td>2</td><td class="fn-name">getGridSettings</td><td class="fn-line">22982</td><td class="fn-params">—</td><td data-lang="fr">Retourne les paramètres de grille actuels</td><td data-lang="en">Returns current grid settings</td></tr>
-<tr><td>3</td><td class="fn-name">buildLayoutGridForArea</td><td class="fn-line">23015</td><td class="fn-params">canvas, area, settings</td><td data-lang="fr">Construit la grille de colonnes/rangées</td><td data-lang="en">Builds column/row layout grid</td></tr>
-<tr><td>4</td><td class="fn-name">buildBaselineGridForArea</td><td class="fn-line">23049</td><td class="fn-params">canvas, area, settings</td><td data-lang="fr">Construit la grille de ligne de base typographique</td><td data-lang="en">Builds typographic baseline grid</td></tr>
-<tr><td>5</td><td class="fn-name">applyGridToCanvas</td><td class="fn-line">23067</td><td class="fn-params">canvas, settings</td><td data-lang="fr">Applique les paramètres de grille à un canvas</td><td data-lang="en">Applies grid settings to a canvas</td></tr>
-<tr><td>6</td><td class="fn-name">rebuildGridAll</td><td class="fn-line">23112</td><td class="fn-params">—</td><td data-lang="fr">Reconstruit la grille sur toutes les pages</td><td data-lang="en">Rebuilds grid on all pages</td></tr>
+<tr><td>1</td><td class="fn-name">setSnapToGuidesEnabled</td><td class="fn-line">33538</td><td class="fn-params">next</td><td data-lang="fr">Active/désactive l'aimantation aux repères</td><td data-lang="en">Toggles snap-to-guides</td></tr>
+<tr><td>2</td><td class="fn-name">getGridSettings</td><td class="fn-line">33551</td><td class="fn-params">—</td><td data-lang="fr">Retourne les paramètres de grille actuels</td><td data-lang="en">Returns current grid settings</td></tr>
+<tr><td>3</td><td class="fn-name">buildLayoutGridForArea</td><td class="fn-line">33604</td><td class="fn-params">canvas, area, settings</td><td data-lang="fr">Construit la grille de colonnes/rangées</td><td data-lang="en">Builds column/row layout grid</td></tr>
+<tr><td>4</td><td class="fn-name">buildBaselineGridForArea</td><td class="fn-line">33645</td><td class="fn-params">canvas, area, settings</td><td data-lang="fr">Construit la grille de ligne de base typographique</td><td data-lang="en">Builds typographic baseline grid</td></tr>
+<tr><td>5</td><td class="fn-name">applyGridToCanvas</td><td class="fn-line">33663</td><td class="fn-params">canvas, settings</td><td data-lang="fr">Applique les paramètres de grille à un canvas</td><td data-lang="en">Applies grid settings to a canvas</td></tr>
+<tr><td>6</td><td class="fn-name">rebuildGridAll</td><td class="fn-line">33725</td><td class="fn-params">—</td><td data-lang="fr">Reconstruit la grille sur toutes les pages</td><td data-lang="en">Rebuilds grid on all pages</td></tr>
 </tbody>
 </table></div>
 
@@ -1132,10 +1132,10 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">spInsertSpecialChar</td><td class="fn-line">33162</td><td class="fn-params">charToInsert</td><td data-lang="fr">Insère un caractère spécial au curseur</td><td data-lang="en">Inserts a special character at cursor</td></tr>
-<tr><td>2</td><td class="fn-name">openGlyphsModal</td><td class="fn-line">33298</td><td class="fn-params">—</td><td data-lang="fr">Ouvre la modale de glyphes/caractères spéciaux</td><td data-lang="en">Opens the glyphs/special chars modal</td></tr>
-<tr><td>3</td><td class="fn-name">populateGlyphsGrid</td><td class="fn-line">33354</td><td class="fn-params">—</td><td data-lang="fr">Remplit la grille de glyphes pour la police active</td><td data-lang="en">Populates the glyph grid for current font</td></tr>
-<tr><td>4</td><td class="fn-name">glyphsInsertChar</td><td class="fn-line">33457</td><td class="fn-params">—</td><td data-lang="fr">Insère le glyphe sélectionné dans le texte</td><td data-lang="en">Inserts selected glyph into text</td></tr>
+<tr><td>1</td><td class="fn-name">spInsertSpecialChar</td><td class="fn-line">59488</td><td class="fn-params">charToInsert</td><td data-lang="fr">Insère un caractère spécial au curseur</td><td data-lang="en">Inserts a special character at cursor</td></tr>
+<tr><td>2</td><td class="fn-name">openGlyphsModal</td><td class="fn-line">59603</td><td class="fn-params">—</td><td data-lang="fr">Ouvre la modale de glyphes/caractères spéciaux</td><td data-lang="en">Opens the glyphs/special chars modal</td></tr>
+<tr><td>3</td><td class="fn-name">populateGlyphsGrid</td><td class="fn-line">59659</td><td class="fn-params">—</td><td data-lang="fr">Remplit la grille de glyphes pour la police active</td><td data-lang="en">Populates the glyph grid for current font</td></tr>
+<tr><td>4</td><td class="fn-name">glyphsInsertChar</td><td class="fn-line">59762</td><td class="fn-params">—</td><td data-lang="fr">Insère le glyphe sélectionné dans le texte</td><td data-lang="en">Inserts selected glyph into text</td></tr>
 </tbody>
 </table></div>
 
@@ -1147,8 +1147,8 @@ SUPERPRINT12master/
 <div class="tbl-wrap"><table class="fn-table">
 <thead><tr><th>#</th><th>Function</th><th>Line</th><th>Params</th><th>Description FR</th><th>Description EN</th></tr></thead>
 <tbody>
-<tr><td>1</td><td class="fn-name">initMobileBurgerMenu</td><td class="fn-line">42219</td><td class="fn-params">—</td><td data-lang="fr">Initialise le menu hamburger mobile</td><td data-lang="en">Initializes mobile hamburger menu</td></tr>
-<tr><td>2</td><td class="fn-name">initMobileTouchContextMenu</td><td class="fn-line">42318</td><td class="fn-params">—</td><td data-lang="fr">Initialise le menu contextuel tactile</td><td data-lang="en">Initializes mobile touch context menu</td></tr>
+<tr><td>1</td><td class="fn-name">initMobileBurgerMenu</td><td class="fn-line">78617</td><td class="fn-params">—</td><td data-lang="fr">Initialise le menu hamburger mobile</td><td data-lang="en">Initializes mobile hamburger menu</td></tr>
+<tr><td>2</td><td class="fn-name">initMobileTouchContextMenu</td><td class="fn-line">78738</td><td class="fn-params">—</td><td data-lang="fr">Initialise le menu contextuel tactile</td><td data-lang="en">Initializes mobile touch context menu</td></tr>
 <tr><td>3</td><td class="fn-name">spMobileSelectAll</td><td class="fn-line">~42479</td><td class="fn-params">—</td><td data-lang="fr">Tout sélectionner (mobile)</td><td data-lang="en">Select all objects (mobile)</td></tr>
 <tr><td>4</td><td class="fn-name">spMobileCopy / Paste / Delete</td><td class="fn-line">~42501–42583</td><td class="fn-params">—</td><td data-lang="fr">Copier / Coller / Supprimer (mobile)</td><td data-lang="en">Copy / Paste / Delete (mobile)</td></tr>
 </tbody>
@@ -1323,7 +1323,7 @@ SUPERPRINT12master/
       <li data-lang="fr">PDF imposé (cahier/livret)</li><li data-lang="en">Imposed PDF (booklet imposition)</li>
       <li data-lang="fr">Import : JSON, PDF, TXT, DOCX, ODT, IDML, .sla, SVG</li><li data-lang="en">Import: JSON, PDF, TXT, DOCX, ODT, IDML, .sla, SVG</li>
       <li data-lang="fr">Print-to-Web (mini-site HTML en ZIP)</li><li data-lang="en">Print-to-Web (HTML mini-site in ZIP)</li>
-      <li data-lang="fr">Format .sp (archive ZIP propriétaire)</li><li data-lang="en">.sp format (proprietary ZIP archive)</li>
+      <li data-lang="fr">Format .sp (JSON propriétaire)</li><li data-lang="en">.sp format (proprietary JSON)</li>
     </ul>
   </div>
   <div class="feature-card">
@@ -1439,7 +1439,7 @@ SUPERPRINT12master/
 <tr><td><span class="tag tag-orange">.sla</span></td><td>XML parser</td><td data-lang="fr">Texte + formes basiques (BETA)</td><td data-lang="en">Basic text + shapes (BETA)</td></tr>
 <tr><td><span class="tag tag-green">SVG</span></td><td>Fabric.js</td><td data-lang="fr">Graphiques vectoriels</td><td data-lang="en">Vector graphics</td></tr>
 <tr><td><span class="tag tag-pink">Images</span></td><td>Fabric.js</td><td data-lang="fr">PNG, JPG, WebP (fichier ou presse-papiers)</td><td data-lang="en">PNG, JPG, WebP (file or clipboard)</td></tr>
-<tr><td><span class="tag tag-blue">.sp</span></td><td>JSZip</td><td data-lang="fr">Archive projet SuperPrint (JSON+assets en ZIP)</td><td data-lang="en">SuperPrint project archive (JSON+assets in ZIP)</td></tr>
+<tr><td><span class="tag tag-blue">.sp</span></td><td>JSON</td><td data-lang="fr">Projet complet en JSON (images et polices embarquées)</td><td data-lang="en">Complete project as JSON (images and fonts embedded)</td></tr>
 </tbody>
 </table></div>
 
@@ -1451,7 +1451,7 @@ SUPERPRINT12master/
 <tr><td><span class="tag tag-red">PDF</span></td><td>jsPDF</td><td data-lang="fr">Multi-pages, 72/150/300 DPI, fond perdu, repères d'impression</td><td data-lang="en">Multi-page, 72/150/300 DPI, bleed, trim marks</td></tr>
 <tr><td><span class="tag tag-red">PDF imposé</span></td><td>jsPDF</td><td data-lang="fr">Imposition cahier pour impression</td><td data-lang="en">Booklet imposition for print</td></tr>
 <tr><td><span class="tag tag-green">Print-to-Web</span></td><td>JSZip</td><td data-lang="fr">Mini-site HTML en ZIP (D4Export)</td><td data-lang="en">HTML mini-site in ZIP (D4Export)</td></tr>
-<tr><td><span class="tag tag-blue">.sp</span></td><td>JSZip</td><td data-lang="fr">Archive projet SuperPrint</td><td data-lang="en">SuperPrint project archive</td></tr>
+<tr><td><span class="tag tag-blue">.sp</span></td><td>JSON</td><td data-lang="fr">Projet complet en JSON (images intégrées)</td><td data-lang="en">Complete project as JSON (images embedded)</td></tr>
 </tbody>
 </table></div>
 
@@ -1466,7 +1466,7 @@ SUPERPRINT12master/
 <tbody>
 <tr><td><strong>Fabric.js</strong></td><td>5.3.0</td><td>JS/fabric.min.js</td><td data-lang="fr">Moteur de rendu canvas — objets, texte, images, événements, sélection</td><td data-lang="en">Canvas rendering engine — objects, text, images, events, selection</td></tr>
 <tr><td><strong>jsPDF</strong></td><td>2.x</td><td>JS/jspdf.umd.min.js</td><td data-lang="fr">Génération PDF multi-pages côté client</td><td data-lang="en">Client-side multi-page PDF generation</td></tr>
-<tr><td><strong>JSZip</strong></td><td>3.x</td><td>JS/jszip.min.js</td><td data-lang="fr">Lecture/écriture ZIP pour IDML, ODT, .sp</td><td data-lang="en">ZIP read/write for IDML, ODT, .sp</td></tr>
+<tr><td><strong>JSZip</strong></td><td>3.x</td><td>JS/jszip.min.js</td><td data-lang="fr">Lecture/écriture ZIP pour IDML, ODT et l'export Print-to-Web</td><td data-lang="en">ZIP read/write for IDML, ODT and Print-to-Web export</td></tr>
 <tr><td><strong>PDF.js</strong></td><td>3.x</td><td>JS/pdf.min.js</td><td data-lang="fr">Rendu PDF pour import page par page</td><td data-lang="en">PDF rendering for page-by-page import</td></tr>
 <tr><td><strong>Paper.js</strong></td><td>0.12</td><td>JS/paper-full.min.js</td><td data-lang="fr">Opérations booléennes de tracés vectoriels (Pathfinder)</td><td data-lang="en">Boolean path operations (Pathfinder)</td></tr>
 <tr><td><strong>Mammoth.js</strong></td><td>1.x</td><td>JS/mammoth.min.js</td><td data-lang="fr">Conversion DOCX → HTML structuré</td><td data-lang="en">DOCX to structured HTML conversion</td></tr>
@@ -1480,8 +1480,8 @@ SUPERPRINT12master/
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Documentation générée le 12 septembre 2026 — v1.7.421</span>
-  <span data-lang="en">Documentation generated September 12, 2026 — v1.7.421</span>
+  <span data-lang="fr">Documentation générée le 16 septembre 2026 — v1.7.455</span>
+  <span data-lang="en">Documentation generated September 16, 2026 — v1.7.455</span>
 </div>
 
 </div><!-- #tab-doc -->
@@ -2000,8 +2000,8 @@ SUPERPRINT12master/
 <div class="step-block">
   <h4 data-lang="fr">Sauvegarde manuelle (.sp)</h4>
   <h4 data-lang="en">Manual Save (.sp)</h4>
-  <p data-lang="fr">Cliquez sur <strong>SAVE</strong> dans la toolbar pour créer un fichier <code>.sp</code> — une archive ZIP contenant le JSON du projet et tous les assets (images). Ce fichier peut être rechargé plus tard via Import.</p>
-  <p data-lang="en">Click <strong>SAVE</strong> in the toolbar to create an <code>.sp</code> file — a ZIP archive containing the project JSON and all assets (images). This file can be reloaded later via Import.</p>
+  <p data-lang="fr">Cliquez sur <strong>SAVE</strong> dans la toolbar pour créer un fichier <code>.sp</code> — un fichier JSON contenant le projet complet, images et polices embarquées. Ce fichier peut être rechargé plus tard via Import.</p>
+  <p data-lang="en">Click <strong>SAVE</strong> in the toolbar to create an <code>.sp</code> file — a JSON file containing the complete project, with images and fonts embedded. This file can be reloaded later via Import.</p>
 </div>
 
 <div class="step-block">
@@ -2032,7 +2032,7 @@ SUPERPRINT12master/
       <tr><td><span class="tag tag-orange">.sla</span></td><td data-lang="fr">Texte + formes basiques (BETA)</td><td data-lang="en">Basic text + shapes (BETA)</td></tr>
       <tr><td><span class="tag tag-green">SVG</span></td><td data-lang="fr">Graphiques vectoriels</td><td data-lang="en">Vector graphics</td></tr>
       <tr><td><span class="tag tag-pink">Images</span></td><td data-lang="fr">PNG, JPG, WebP (fichier ou presse-papiers)</td><td data-lang="en">PNG, JPG, WebP (file or clipboard)</td></tr>
-      <tr><td><span class="tag tag-blue">.sp</span></td><td data-lang="fr">Projet SuperPrint (archive ZIP)</td><td data-lang="en">SuperPrint project (ZIP archive)</td></tr>
+      <tr><td><span class="tag tag-blue">.sp</span></td><td data-lang="fr">Projet SuperPrint (JSON)</td><td data-lang="en">SuperPrint project (JSON)</td></tr>
       <tr><td><span class="tag tag-orange">TXT / RTF</span></td><td data-lang="fr">Texte brut ou enrichi</td><td data-lang="en">Plain or rich text</td></tr>
       <tr><td><span class="tag tag-purple">JSON</span></td><td data-lang="fr">Données Fabric.js brutes</td><td data-lang="en">Raw Fabric.js data</td></tr>
     </tbody>
@@ -2086,8 +2086,8 @@ SUPERPRINT12master/
   <ul>
     <li data-lang="fr"><strong>Print-to-Web (D4Export)</strong> — Génère un mini-site HTML dans un ZIP pour diffusion numérique</li>
     <li data-lang="en"><strong>Print-to-Web (D4Export)</strong> — Generates an HTML mini-site in a ZIP for digital distribution</li>
-    <li data-lang="fr"><strong>.sp</strong> — Archive projet complète (JSON + images en ZIP)</li>
-    <li data-lang="en"><strong>.sp</strong> — Complete project archive (JSON + images in ZIP)</li>
+    <li data-lang="fr"><strong>.sp</strong> — Projet complet en JSON (images et polices embarquées)</li>
+    <li data-lang="en"><strong>.sp</strong> — Complete project as JSON (images and fonts embedded)</li>
   </ul>
 </div>
 
@@ -2371,8 +2371,8 @@ SUPERPRINT12master/
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Manuel mis à jour le 12 septembre 2026 — v1.7.421</span>
-  <span data-lang="en">Manual updated September 12, 2026 — v1.7.421</span>
+  <span data-lang="fr">Manuel mis à jour le 16 septembre 2026 — v1.7.455</span>
+  <span data-lang="en">Manual updated September 16, 2026 — v1.7.455</span>
 </div>
 
 </div><!-- #tab-manual -->

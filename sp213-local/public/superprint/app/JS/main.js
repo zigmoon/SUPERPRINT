@@ -93,9 +93,24 @@ try { fabric.Object.NUM_FRACTION_DIGITS = 6; } catch (_) {}
     return H.length;
   }
 
+  // 🛡️ v1.7.455c — EPSILON DE BAS DU MASQUE (0,4 px), volontairement MINUSCULE.
+  //   La marge visible demandée (« un peu d'air entre la dernière ligne et le bord
+  //   du bloc ») vient du SNAP du masque en bas de la dernière ligne COMPLÈTE, pas
+  //   de cette valeur : tout l'espace restant du cadre joue ce rôle.
+  //   Mesuré au canvas 1:1 (14 pt, interligne 1,16, boîte de ligne 18,35 px,
+  //   frontière de ligne à 55,05) : l'encre de la ligne SUIVANTE commence à 55,00 px
+  //   quand elle débute par une majuscule accentuée (« ÉLAN »), 57,00 px sinon.
+  //   Une marge de 1,4 px faisait donc réapparaître 2 rangées de la ligne masquée,
+  //   3 px -> 6 rangées. On se limite à un epsilon anti-crénelage : le masque ne
+  //   doit jamais s'arrêter EXACTEMENT sur l'arête de la boîte de ligne.
+  function spMargeBasTexte(obj) {
+    return 0.4;
+  }
+
   window.spTextMetrics = spTextMetrics;
   window.spLineBoxHeight = spLineBoxHeight;
   window.spCountVisibleLines = spCountVisibleLines;
+  window.spMargeBasTexte = spMargeBasTexte;
   window.__spTextMetricsInstalled = true;
 })();
 
@@ -1844,7 +1859,21 @@ function goToPage(pageIndex) {
     // This lets the user change line-height for a sub-selection only — exactly
     // like Word / Affinity / InDesign. 2026-04-26.
     fabric.Text.prototype.getHeightOfLine = function(lineIndex) {
-        if (this.__lineHeights && this.__lineHeights[lineIndex]) {
+        // 🛡️ v1.7.455 — NI LECTURE NI ÉCRITURE DU CACHE PENDANT UN WRAP.
+        //   MESURE DU DÉFAUT (« un mot plus grand que les autres ») : le hook
+        //   d'habillage lineWidthFor est appelé DEPUIS _wrapLine, donc PENDANT que
+        //   Fabric replie les lignes. À cet instant _styleMap (qui traduit l'index de
+        //   ligne VISUELLE en ligne LOGIQUE) est encore celle du wrap PRÉCÉDENT : les
+        //   hauteurs calculées là appartenaient à l'ANCIENNE mise en page, et elles
+        //   restaient dans __lineHeights. calcTextHeight (appelé juste après, avec la
+        //   bonne table) relisait donc ce cache et ne recalculait RIEN.
+        //   Conséquence mesurée : bloc de 200 px, mot passé à 30 pt => sa ligne gardait
+        //   18,35 px au lieu de 39,32 px ; il fallait un reflow ultérieur (clic ou
+        //   déplacement du bloc) pour que l'interlignage soit enfin correct — d'où
+        //   « l'interlignage bouge autour de ce mot quand je clique sur le bloc ».
+        //   Fabric applique déjà ce garde dans styleHas (!this.isWrapping) : on s'aligne.
+        var _enWrap = !!this.isWrapping;
+        if (!_enWrap && this.__lineHeights && this.__lineHeights[lineIndex]) {
             return this.__lineHeights[lineIndex];
         }
         const line = this._textLines[lineIndex] || [];
@@ -1867,8 +1896,11 @@ function goToPage(pageIndex) {
         }
         const ratio = (maxStyleLH > 0) ? maxStyleLH : this.lineHeight;
         const out = maxHeight * ratio * this._fontSizeMult;
-        if (!this.__lineHeights) this.__lineHeights = [];
-        this.__lineHeights[lineIndex] = out;
+        // v1.7.455 : aucune mise en cache pendant le wrap (voir ci-dessus).
+        if (!_enWrap) {
+            if (!this.__lineHeights) this.__lineHeights = [];
+            this.__lineHeights[lineIndex] = out;
+        }
         return out;
     };
     
@@ -6402,9 +6434,39 @@ if (window._spGpuEnabled) {
             // des qu'ajouter la suivante ferait depasser frameHeight : le clip
             // colle pile en bas de la derniere ligne qui rentre entierement.
             let clipHeight = Math.max(1, frameHeight);
+            // 🛡️ v1.7.455c — MASQUE SUR LIGNES ENTIÈRES + PETITE MARGE.
+            //   AVANT : clipHeight valait frameHeight dès qu'il y avait un
+            //   débordement (Math.max(frameHeight, safeHeight) : le max gagnait
+            //   toujours) -> un cadre qui ne tombait pas pile sur une frontière de
+            //   ligne tranchait la dernière ligne AU MILIEU DES GLYPHES.
+            //   MESURÉ : masque 62,39 px sur 6 lignes de 18,35 px (frontières
+            //   18,35/36,70/55,05/73,40) -> 4e ligne coupée à 6,95 px sous la 3e.
+            //   MAINTENANT : le nombre de lignes visibles vient du helper PARTAGÉ
+            //   avec l'export PDF (spCountVisibleLines, source de vérité unique) et
+            //   le masque couvre ces lignes ENTIÈRES plus une petite marge de bas :
+            //   aucune ligne coupée, un peu d'air sous la dernière ligne.
+            //   (Le calcul « historique » ci-dessous reste en repli : il ne
+            //   s'exécute que si les métriques sont indisponibles.)
+            let _masqueLignesFait = false;
             try {
                 if (typeof textbox.getHeightOfLine === 'function' && textbox._textLines) {
-                    const lineCount = textbox._textLines.length;
+                    var _Hm = (typeof window.spTextMetrics === 'function') ? window.spTextMetrics(textbox) : null;
+                    var _nVis = null;
+                    if (_Hm && typeof window.spCountVisibleLines === 'function') {
+                        try { _nVis = window.spCountVisibleLines(textbox, frameHeight, true); } catch (_) { _nVis = null; }
+                    }
+                    if (_Hm && _nVis > 0) {
+                        var _besoin = 0;
+                        for (var _mi = 0; _mi < _nVis && _mi < _Hm.length; _mi++) {
+                            if (_Hm[_mi] > 0) _besoin += _Hm[_mi];
+                        }
+                        if (_besoin > 0) {
+                            var _margeBas = (typeof window.spMargeBasTexte === 'function') ? window.spMargeBasTexte(textbox) : 2;
+                            clipHeight = _besoin + _margeBas;
+                            _masqueLignesFait = true;
+                        }
+                    }
+                    const lineCount = _masqueLignesFait ? 0 : textbox._textLines.length;
                     if (lineCount > 0) {
                         // 🍏 v1.7.236 : Calculer la hauteur totale du texte et ne
                         //   clipper que s'il y a OVERFLOW. Sinon garder frameHeight.
@@ -6475,7 +6537,16 @@ if (window._spGpuEnabled) {
             // Si clipHeight < frameHeight (snap a la derniere ligne complete), il faut
             // remonter le clip pour qu'il colle au HAUT du bloc (le texte coule du haut),
             // sinon Fabric centre le clip et coupe symetriquement haut+bas (bug visuel).
-            const clipTopOffset = (clipHeight - frameHeight) / 2;
+            // 🛡️ v1.7.455c — ancrage du masque sur le HAUT DU BLOC.
+            //   Fabric applique le clipPath relativement au CENTRE de l'objet :
+            //   pour que le haut du masque colle au haut du bloc, il faut décaler
+            //   de (clipHeight - HAUTEUR DE L'OBJET) / 2. L'ancien code utilisait
+            //   frameHeight : correct seulement quand obj.height === frameHeight
+            //   (cas courant), faux sinon — MESURÉ : masque de 62,39 px sur un objet
+            //   de 107,50 px -> 11 px d'encre perdus EN HAUT et une ligne de trop
+            //   visible EN BAS.
+            const _hObjClip = (typeof textbox.height === 'number' && textbox.height > 0) ? textbox.height : frameHeight;
+            const clipTopOffset = (clipHeight - _hObjClip) / 2;
             const clipRect = new fabric.Rect({
                 width: clipWidth,
                 height: clipHeight,
@@ -6544,64 +6615,72 @@ if (window._spGpuEnabled) {
         //   • la HAUTEUR ne descend JAMAIS sous la hauteur d'origine mémorisée
         //     (_spWrapOrigH, posée par l'habillage) ni sous la hauteur d'avant —
         //     mais elle MONTE si la typographie agrandie réclame plus de place.
-        function spReflowWithSafeHeight(obj, fixedW, fixedH) {
+        // 🛡️ v1.7.455 — LE CADRE GARDE SA TAILLE QUAND ON TOUCHE LA TYPOGRAPHIE.
+        //   DEMANDE UTILISATEUR : « lorsque je change la taille ou l'interlignage d'un
+        //   texte placé dans un bloc texte, celui-ci doit absolument conserver sa taille
+        //   initiale ». C'est la règle des logiciels de PAO : on change la typographie
+        //   DANS un cadre, le cadre ne bouge pas ; si le texte dépasse, il est rogné et
+        //   le repère de débordement s'affiche (comportement InDesign).
+        //
+        //   ANCIEN COMPORTEMENT (mesuré) : le cadre GRANDISSAIT dès que le contenu
+        //   dépassait (safeH = max(plancher, hauteur du contenu)).
+        //     • bloc 300 x 159,96 px, corps 14 -> 30 pt  =>  cadre 191,20 px ;
+        //     • un mot passé à 30 pt dans un cadre de 200 x 60 px  =>  cadre 162,63 px.
+        //
+        //   NOUVELLE RÈGLE :
+        //     • cadre à hauteur FIXE (dimension réellement fixée > 0) :
+        //       largeur ET hauteur restaurées À L'IDENTIQUE — le cadre ne bouge JAMAIS ;
+        //     • hauteur AUTO (0/absente = « pas de dimension fixe ») : on NE FIGE RIEN,
+        //       Fabric fait suivre la hauteur au contenu. Figer ici remettrait le défaut
+        //       documenté en v1.7.348 (bloc qui cesse de grandir dès qu'on le touche).
+        //
+        //   ⚠️ frameFixe doit être évalué AVANT la première écriture (dans les handlers) :
+        //   les passes intermédiaires (spForceInlineStyleRewrap) figent parfois une
+        //   hauteur qui ne l'était pas, et un bloc AUTO ne doit pas devenir fixe à cause
+        //   de ça.
+        function spApplyReflowDimensions(obj, fixedW, fixedH, frameFixe) {
             if (!obj) return fixedH;
-            // Exceptions : géométries particulières où la hauteur n'est pas un cadre.
+            var estFixe = (typeof frameFixe === 'boolean')
+                ? frameFixe
+                : ((typeof window.spIsFixedSize === 'function')
+                    ? window.spIsFixedSize(obj._fixedHeight)
+                    : (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0));
+            var w = (typeof fixedW === 'number' && fixedW > 0) ? fixedW : obj.width;
             try {
+                // Géométries particulières (texte dans une forme, texte sur un tracé) :
+                // la hauteur n'est pas un cadre, on laisse les choses en place.
                 if (obj._isShapeClippedText || obj._isCtxPathText || obj.path) {
-                    obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
-                    obj.width = fixedW; obj.height = fixedH;
+                    if (typeof fixedW === 'number' && fixedW > 0) { obj._fixedWidth = fixedW; obj.width = fixedW; }
+                    if (typeof fixedH === 'number' && fixedH > 0) { obj._fixedHeight = fixedH; obj.height = fixedH; }
+                    try { obj.setCoords && obj.setCoords(); } catch (_) {}
+                    return obj.height;
+                }
+                obj._fixedWidth = w;
+                obj.width = w;
+                if (estFixe && typeof fixedH === 'number' && fixedH > 0) {
+                    obj._fixedHeight = fixedH;
+                    obj.height = fixedH;
+                    // Trace de la hauteur décidée ici : si la valeur courante s'en écarte
+                    // plus tard, c'est l'utilisateur qui a redimensionné le bloc.
+                    obj._spAutoGrownH = fixedH;
+                    obj._spReflowBaseH = fixedH;
+                    try { obj.setCoords && obj.setCoords(); } catch (_) {}
                     return fixedH;
                 }
+                // Hauteur AUTO : ne JAMAIS figer la hauteur (le bloc suit son contenu).
+                obj._fixedHeight = undefined;
+                try { obj.setCoords && obj.setCoords(); } catch (_) {}
+                return obj.height;
             } catch (_) {}
+            return fixedH;
+        }
+        window.spApplyReflowDimensions = spApplyReflowDimensions;
 
-            var natural = spNaturalContentHeight(obj);
-
-            // 🩹 v1.7.414 — HAUTEUR DE RÉFÉRENCE RÉVERSIBLE.
-            //   MESURE DU DÉFAUT : le plancher valait max(fixedH, orig) où
-            //   fixedH est la hauteur COURANTE, donc déjà agrandie par un
-            //   réglage précédent. Chaque agrandissement était définitif :
-            //   mesuré 300 px -> 311,88 px à l'interligne 24 pt, puis le cadre
-            //   RESTAIT à 311,88 px alors que le contenu redescendait à
-            //   212,44 (16 pt) puis 162,72 (12 pt). C'est ce qui donne
-            //   l'impression que « le texte change de taille » et ne revient
-            //   jamais. On mémorise donc la hauteur VOULUE du bloc dans
-            //   _spReflowBaseH, et on ne la redéfinit que si la hauteur
-            //   courante n'est pas celle que ce code a posée (_spAutoGrownH),
-            //   c'est-à-dire si l'utilisateur a redimensionné le bloc à la
-            //   main — sa décision l'emporte alors sur la nôtre.
-            //   ⚠️ On lit la hauteur COURANTE de l'objet, jamais le fixedH
-            //   reçu : les handlers appellent cette fonction DEUX fois (tout de
-            //   suite, puis en différé à 0 ms et 30 ms) avec un fixedH
-            //   capturé AVANT le premier passage, donc périmé dès le deuxième
-            //   appel. Mesure de ce piège : le cadre redescendu à 300 px
-            //   remontait aussitôt à 311,88 px.
-            var courant = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : fixedH;
-            var auto = (typeof obj._spAutoGrownH === 'number') ? obj._spAutoGrownH : null;
-            if (auto === null || Math.abs(courant - auto) > 0.6) {
-                obj._spReflowBaseH = Math.round(courant * 100) / 100;
-            }
-            var base = (typeof obj._spReflowBaseH === 'number' && obj._spReflowBaseH > 0)
-                     ? obj._spReflowBaseH : courant;
-            // L'habillage peut imposer un plancher plus haut : on le respecte.
-            var orig = (typeof obj._spWrapOrigH === 'number' && obj._spWrapOrigH > 0) ? obj._spWrapOrigH : 0;
-            var plancher = Math.max(base, orig);
-            var safeH = (natural !== null) ? Math.max(plancher, natural) : plancher;
-            try {
-                obj._fixedWidth = fixedW;
-                obj._fixedHeight = safeH;
-                obj.width = fixedW;
-                obj.height = safeH;
-                // Trace de la hauteur décidée ici : si la hauteur courante s'en
-                // écarte plus tard, c'est l'utilisateur qui a redimensionné.
-                // ⚠️ NE JAMAIS supprimer cette trace quand le bloc redescend :
-                //   le deuxième appel (différé) la relirait comme absente et
-                //   prendrait le fixedH périmé pour une nouvelle référence,
-                //   ce qui ferait remonter le cadre.
-                obj._spAutoGrownH = Math.round(safeH * 100) / 100;
-                obj.setCoords && obj.setCoords();
-            } catch (_) {}
-            return safeH;
+        // Compatibilité : l'ancien nom est conservé (mêmes règles que ci-dessus).
+        // ⚠️ Ne plus jamais y remettre « max(hauteur du contenu) » : c'est le défaut
+        //    corrigé en v1.7.455 (le cadre grandissait tout seul).
+        function spReflowWithSafeHeight(obj, fixedW, fixedH) {
+            return spApplyReflowDimensions(obj, fixedW, fixedH, undefined);
         }
         window.spReflowWithSafeHeight = spReflowWithSafeHeight;
 
@@ -28200,6 +28279,18 @@ if (window._spGpuEnabled) {
             // ✨ PRÉSERVER les dimensions fixes AVANT toute modification
             const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
             const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            // ✨ v1.7.455 — Ce cadre est-il un CADRE VOULU ou un bloc AUTO ?
+            //   Un cadre dessiné à la main (outil Texte) ou redimensionné par l'utilisateur a une
+            //   hauteur SANS RAPPORT avec son contenu : il doit rester exactement tel quel.
+            //   Un bloc dont la hauteur COLLE à son contenu (blocs IA / API, qui ont reçu une
+            //   hauteur « naturelle ») doit continuer de suivre son contenu, sinon on réintroduit
+            //   le défaut v1.7.348 (texte masqué dès qu'on touche le bloc).
+            //   Mesure AVANT la modification : après, le contenu n'est plus comparable.
+            const _natAvant = (typeof window.spNaturalContentHeight === 'function') ? window.spNaturalContentHeight(obj) : null;
+            const _frameFixe = ((typeof window.spIsFixedSize === 'function')
+                    ? window.spIsFixedSize(obj._fixedHeight)
+                    : (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0))
+                && !(_natAvant !== null && Math.abs(obj._fixedHeight - _natAvant) <= 1.5);
 
             // Si une sélection existait au moment du changement: appliquer UNIQUEMENT à la sélection
             if (obj.type === 'textbox' && wasEditing && selEnd > selStart) {
@@ -28226,26 +28317,25 @@ if (window._spGpuEnabled) {
                 selEnd = (typeof cleanedSel.end === 'number') ? cleanedSel.end : selEnd;
             }
 
-            // ✨ v1.7.371 — RESTAURER la LARGEUR, REVALIDER la HAUTEUR.
-            //   Avant : on restaurait _fixedHeight = fixedH (hauteur d'AVANT).
-            //   Or agrandir la police AUGMENTE la hauteur nécessaire → le cadre
-            //   restait figé et le masque rognait le texte (bloc invisible).
-            //   La largeur reste, elle, strictement inchangée (comportement PAO).
-            var _safeH = fixedH;
-            if (typeof window.spReflowWithSafeHeight === 'function') {
-                try { _safeH = window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) { _safeH = fixedH; }
+            // ✨ v1.7.455 — LE CADRE GARDE SA TAILLE (demande utilisateur) :
+            //   un cadre à hauteur FIXE est restauré à l'identique (largeur ET hauteur),
+            //   donc changer le corps ou l'interlignage ne déplace plus le bloc ;
+            //   un bloc à hauteur AUTO reste automatique (aucune hauteur n'est figée).
+                        // 1re passe.
+            if (typeof window.spApplyReflowDimensions === 'function') {
+                try { window.spApplyReflowDimensions(obj, fixedW, fixedH, _frameFixe); } catch (_) {}
+            } else {
+                obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
+                obj.width = fixedW; obj.height = fixedH;
             }
-            obj._fixedWidth = fixedW;
-            obj._fixedHeight = _safeH;
-            obj.width = fixedW;
-            obj.height = _safeH;
 
             // Recalcul unique consolidé (spEnsureTextboxWrapWithinWidth fait clearCache+initDimensions+triplePass)
             try { spEnsureTextboxWrapWithinWidth(obj); } catch (_) {}
 
-            // 🛡️ v1.7.371 — même revalidation ici (2ᵉ passe, après le rewrap).
-            if (typeof window.spReflowWithSafeHeight === 'function') {
-                try { window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) {}
+            // 2e passe (après le rewrap).
+                        // v1.7.455 : mêmes règles.
+            if (typeof window.spApplyReflowDimensions === 'function') {
+                try { window.spApplyReflowDimensions(obj, fixedW, fixedH, _frameFixe); } catch (_) {}
             } else {
                 obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
                 obj.width = fixedW; obj.height = fixedH;
@@ -28272,9 +28362,9 @@ if (window._spGpuEnabled) {
                 // 2e passe: certains cas ne re-wrap correctement qu'après retour en édition
                 setTimeout(() => {
                     try { spEnsureTextboxWrapWithinWidth(obj); } catch (_) {}
-                    // 🛡️ v1.7.371 — revalidation différée (3ᵉ passe).
-                    if (typeof window.spReflowWithSafeHeight === 'function') {
-                        try { window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) {}
+                                        // 3e passe (différée).
+                    if (typeof window.spApplyReflowDimensions === 'function') {
+                        try { window.spApplyReflowDimensions(obj, fixedW, fixedH, _frameFixe); } catch (_) {}
                     } else {
                         obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
                         obj.width = fixedW; obj.height = fixedH;
@@ -28288,9 +28378,9 @@ if (window._spGpuEnabled) {
             forceFontRefresh(obj, activeCanvas);
 
             setTimeout(() => {
-                // ✨ v1.7.371 — Dernière vérification : hauteur revalidée (4ᵉ passe).
-                if (typeof window.spReflowWithSafeHeight === 'function') {
-                    try { window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) {}
+                                // 4e passe (différée 30 ms).
+                if (typeof window.spApplyReflowDimensions === 'function') {
+                    try { window.spApplyReflowDimensions(obj, fixedW, fixedH, _frameFixe); } catch (_) {}
                 } else {
                     obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
                     obj.width = fixedW; obj.height = fixedH;
@@ -28668,6 +28758,18 @@ if (window._spGpuEnabled) {
                 // ✨ PRÉSERVER les dimensions fixes
                 const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
                 const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+                // ✨ v1.7.455 — Ce cadre est-il un CADRE VOULU ou un bloc AUTO ?
+                //   Un cadre dessiné à la main (outil Texte) ou redimensionné par l'utilisateur a une
+                //   hauteur SANS RAPPORT avec son contenu : il doit rester exactement tel quel.
+                //   Un bloc dont la hauteur COLLE à son contenu (blocs IA / API, qui ont reçu une
+                //   hauteur « naturelle ») doit continuer de suivre son contenu, sinon on réintroduit
+                //   le défaut v1.7.348 (texte masqué dès qu'on touche le bloc).
+                //   Mesure AVANT la modification : après, le contenu n'est plus comparable.
+                const _natAvant = (typeof window.spNaturalContentHeight === 'function') ? window.spNaturalContentHeight(obj) : null;
+                const _frameFixe = ((typeof window.spIsFixedSize === 'function')
+                        ? window.spIsFixedSize(obj._fixedHeight)
+                        : (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0))
+                    && !(_natAvant !== null && Math.abs(obj._fixedHeight - _natAvant) <= 1.5);
                 
                 const hasSelection = (obj.type === 'textbox' && obj.isEditing && obj.selectionStart != null && obj.selectionEnd != null && obj.selectionEnd > obj.selectionStart);
                 if (hasSelection) {
@@ -28714,11 +28816,9 @@ if (window._spGpuEnabled) {
                     }
                 }
                 
-                // ✨ v1.7.371 — RESTAURER la LARGEUR, REVALIDER la HAUTEUR
-                //   (même correctif que #fontSize : changer l'interlignage change
-                //   la hauteur nécessaire ; restaurer l'ancienne hauteur rognait).
-                if (typeof window.spReflowWithSafeHeight === 'function') {
-                    try { window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) {}
+                                // v1.7.455 : le cadre ne bouge plus (voir #fontSize).
+                if (typeof window.spApplyReflowDimensions === 'function') {
+                    try { window.spApplyReflowDimensions(obj, fixedW, fixedH, _frameFixe); } catch (_) {}
                 } else {
                     obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
                     obj.width = fixedW; obj.height = fixedH;
@@ -28732,8 +28832,9 @@ if (window._spGpuEnabled) {
                 forceFontRefresh(obj, activeCanvas);
                 
                 setTimeout(() => {
-                    if (typeof window.spReflowWithSafeHeight === 'function') {
-                        try { window.spReflowWithSafeHeight(obj, fixedW, fixedH); } catch (_) {}
+                                        // v1.7.455 : mêmes règles.
+                    if (typeof window.spApplyReflowDimensions === 'function') {
+                        try { window.spApplyReflowDimensions(obj, fixedW, fixedH, _frameFixe); } catch (_) {}
                     } else {
                         obj._fixedWidth = fixedW; obj._fixedHeight = fixedH;
                         obj.width = fixedW; obj.height = fixedH;
@@ -29601,6 +29702,45 @@ if (window._spGpuEnabled) {
                     // Réinitialiser l'historique pour le nouveau projet
                     history = [];
                     historyStep = -1;
+                    // ✨ v1.7.455f — MÊME RESTAURATION QUE LE MODAL IMPORT.
+                    //   Ce chemin (bouton « Ouvrir un projet », fichier .json)
+                    //   oubliait les styles nommés, les tons directs et les polices
+                    //   externes embarquées : le même fichier importé par le modal
+                    //   Import les restaurait, pas ici. Ordre identique au modal
+                    //   Import : polices -> tons directs -> styles, AVANT le rendu.
+                    try {
+                        const _cfsJson = project.customFonts || [];
+                        if (Array.isArray(_cfsJson) && _cfsJson.length && typeof window._spRegisterCustomFontDataUrl === 'function') {
+                            _cfsJson.forEach(function (f) {
+                                if (!f || !f.name) return;
+                                try { window._spRegisterCustomFontDataUrl(f.name, f.data || ''); } catch (_) {}
+                            });
+                            if (document.fonts && document.fonts.ready) {
+                                document.fonts.ready.then(function () {
+                                    try { if (typeof _spRefreshTextboxesAfterFontLoad === 'function') _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
+                                }).catch(function () {});
+                            }
+                        }
+                    } catch (_) {}
+                    try {
+                        const _spRegJson = project.spotInks
+                            || (project.resources && project.resources.spotInks)
+                            || null;
+                        if (_spRegJson && typeof window._spSpotRestoreInkRegistry === 'function') {
+                            window._spSpotRestoreInkRegistry(_spRegJson);
+                        }
+                    } catch (_) {}
+                    try {
+                        const _stJson = project.styles || {};
+                        if (_stJson.typography && Array.isArray(_stJson.typography) && _stJson.typography.length) {
+                            localStorage.setItem('sp_typo_styles', JSON.stringify(_stJson.typography));
+                            if (typeof window._spRefreshTypographyStyles === 'function') window._spRefreshTypographyStyles(_stJson.typography);
+                        }
+                        if (_stJson.swatches && Array.isArray(_stJson.swatches) && _stJson.swatches.length) {
+                            localStorage.setItem('sp_color_swatches', JSON.stringify(_stJson.swatches));
+                            if (typeof window._spRefreshSwatches === 'function') window._spRefreshSwatches(_stJson.swatches);
+                        }
+                    } catch (_) {}
                     renderAllPages();
                     _spApplyColorMode(project.colorMode || 'rgb');
                     _spRestoreGuides(project.guides);
@@ -40243,8 +40383,18 @@ https://superprint.app
                 var bleedPx = mmToPx(bleedMm);
                 // Les objets de page sauvegardés incluent déjà le décalage du
                 // bleed. Ne pas l'ajouter une seconde fois en RVB.
-                var offsetX = (options && options.colorMode === 'cmyk') ? (hasBleed ? bleedPx : 0) : 0;
-                var offsetY = (options && options.colorMode === 'cmyk') ? (hasBleed ? bleedPx : 0) : 0;
+                // ✨ v1.7.455e — AUCUN décalage positif, y compris en CMJN.
+                //   MESURÉ (titre 30 pt + image + texte, export CMJN + fond perdu 3 mm,
+                //   sans traits de coupe) : la 1re rangée d'encre du titre tombait à
+                //   y = 34 pt contre 17 pt en « Format fini », soit +17 pt (= 2 x le
+                //   fond perdu) au lieu des +8,5 pt légitimes (la page passe de
+                //   210x297 à 216x303 mm) -> tout le contenu était décalé en bas à
+                //   droite : c'est le défaut « la page se décale de 5 mm ».
+                //   Les objets sont déjà enregistrés dans le repère du canvas éditeur
+                //   (fond perdu INCLUS) : seul le recadrage « Format fini » ci-dessous
+                //   doit retirer le fond perdu.
+                var offsetX = 0;
+                var offsetY = 0;
                 // 🎯 v1.7.335 « Format fini » : la page fait pageW×pageH (sans fond
                 //   perdu) mais les objets sont stockés dans le repère du canvas
                 //   éditeur qui inclut le bleed → on les ramène au format fini en
@@ -40898,6 +41048,11 @@ https://superprint.app
                     var _stl = obj.styles;
                     if (_stl && typeof _stl === 'object') {
                         var _szs = [], _hasFs = false;
+                        // ✨ v1.7.455d — COMPTER les caractères porteurs d'une taille inline.
+                        //   L'heuristique ci-dessous ne doit s'appliquer qu'au cas
+                        //   « tout le texte a reçu cette taille » (sélection globale),
+                        //   jamais à un mot isolé mis en avant.
+                        var _nbCarStyle = 0;
                         var _lks = Object.keys(_stl);
                         for (var _i = 0; _i < _lks.length; _i++) {
                             var _ln = _stl[_lks[_i]];
@@ -40907,11 +41062,20 @@ https://superprint.app
                                 var _s = _ln[_cks[_j]];
                                 if (_s && typeof _s.fontSize === 'number') {
                                     _hasFs = true;
+                                    _nbCarStyle++;
                                     if (_szs.indexOf(_s.fontSize) === -1) _szs.push(_s.fontSize);
                                 }
                             }
                         }
-                        if (_hasFs && _szs.length === 1) {
+                        // Nombre de caractères réellement rendus (hors saut de ligne).
+                        var _nbCarTotal = String(obj.text || '').replace(/[\r\n]/g, '').length;
+                        // ✨ v1.7.455d — La taille inline ne devient la taille du BLOC que
+                        //   si elle couvre (presque) tout le texte. Sinon la taille d'un
+                        //   mot mis en avant s'appliquait à TOUT le bloc dans le PDF
+                        //   (mesuré : bloc 14 pt + un mot à 30 pt -> PDF entièrement en
+                        //   30 pt, encre 2,1x trop grande et lignes qui se chevauchent).
+                        if (_hasFs && _szs.length === 1 && _nbCarTotal > 0 &&
+                            _nbCarStyle >= _nbCarTotal * 0.9) {
                             fontSizePx = _szs[0];
                         }
                     }
@@ -49290,7 +49454,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             logAI('SP213 activé — ouverture du studio…');
             const base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '');
             // Le studio est à la racine, l'app dans /app/ → remonter d'un niveau
-            const url = base + '../sp213-studio.html';
+            const url = base + '../sp213-studio.html?v=455i';
             const win = window.open(url, '_blank', 'noopener');
             if (!win) {
                 // Popup bloqué → fallback par lien cliquable
@@ -49473,7 +49637,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 localStorage.setItem('sp213_from_sp', JSON.stringify(spFile));
                 const base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '');
                 // Le studio est à la racine, l'app dans /app/ → remonter d'un niveau
-                const url = base + '../sp213-studio.html?from=sp';
+                const url = base + '../sp213-studio.html?from=sp&v=455i';
                 const win = window.open(url, '_blank', 'noopener');
                 if (!win) {
                     const a = document.createElement('a');
@@ -60704,6 +60868,39 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 }
             } catch (_) {}
 
+            // ✨ v1.7.455g — TONS DIRECTS (PANTONE) : même relecture que le modal
+            //   Import et le lecteur IPFS. Sans elle, un .json ouvert par
+            //   « Open from computer » (ou via l'API) perdait ses encres directes :
+            //   le document n'était plus reconnu « à tons directs » et la boîte
+            //   d'export ne repassait plus en CMJN + Pantone.
+            try {
+                const _spRegJson = project.spotInks
+                    || (project.resources && project.resources.spotInks)
+                    || null;
+                if (_spRegJson && typeof window._spSpotRestoreInkRegistry === 'function') {
+                    window._spSpotRestoreInkRegistry(_spRegJson);
+                }
+            } catch (_) {}
+
+            // ✨ v1.7.455g — POLICES EXTERNES EMBARQUÉES (même mécanisme que le
+            //   modal Import / loadProjectSP) : re-enregistrement FontFace +
+            //   opentype AVANT le rendu, sinon le texte sort avec une police de
+            //   substitution.
+            try {
+                const _cfsJson = project.customFonts || [];
+                if (Array.isArray(_cfsJson) && _cfsJson.length && typeof window._spRegisterCustomFontDataUrl === 'function') {
+                    _cfsJson.forEach(function (f) {
+                        if (!f || !f.name) return;
+                        try { window._spRegisterCustomFontDataUrl(f.name, f.data || ''); } catch (_) {}
+                    });
+                    if (document.fonts && document.fonts.ready) {
+                        document.fonts.ready.then(function () {
+                            try { if (typeof _spRefreshTextboxesAfterFontLoad === 'function') _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
+                        }).catch(function () {});
+                    }
+                }
+            } catch (_) {}
+
             document.getElementById('pageWidth').value = pageFormat.width;
             document.getElementById('pageHeight').value = pageFormat.height;
             document.getElementById('margin').value = margin;
@@ -71449,7 +71646,7 @@ window.npSwitchTab = function(tab) {
             } else if (typeof window.openSuperPrintStudio === 'function') {
                 window.openSuperPrintStudio();
             } else {
-                const url = new URL('sp213-studio.html', window.location.href);
+                const url = new URL('sp213-studio.html?v=455i', window.location.href);
                 window.open(url.href, '_blank');
             }
         } catch (e) { console.warn('[Studio] open failed:', e); }
