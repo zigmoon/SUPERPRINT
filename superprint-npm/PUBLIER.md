@@ -26,7 +26,7 @@ npm login
 npm publish
 ```
 
-C'est tout. Le package `superprint` est en ligne (version actuelle : **1.0.96**).
+C'est tout. Le package `superprint` est en ligne (version actuelle : **1.0.97**).
 
 ## 4. Mettre à jour plus tard (après modification)
 
@@ -52,7 +52,7 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 | Fichier | Rôle |
 |---|---|
 | `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~58 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
-| `version.txt` | Version en ligne (`1.7.450`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
+| `version.txt` | Version en ligne (`1.7.456`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
 
 > `version.txt` : si absent, le CLI affiche "Version en ligne : superprint.cc" sans version — pas bloquant, mais mieux vaut le déployer.
 

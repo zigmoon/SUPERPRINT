@@ -25,8 +25,8 @@ const APP_ZIP_URL = 'https://app.zigmoon.com/sp213-local.zip';
 //    le zip ET le site, sinon `npx superprint` s'arrête sur « downloaded
 //    version is invalid or older than the online version ».
 //    La version du paquet npm, elle, vit dans package.json.
-// 📌 Dernier plancher avancé : 1.7.450 (zip et site 1.7.450 en ligne depuis le 15/09/2026).
-const MIN_APP_VERSION = '1.7.450';
+// 📌 Dernier plancher avancé : 1.7.456 (zip et site 1.7.456 en ligne depuis le 16/09/2026).
+const MIN_APP_VERSION = '1.7.456';
 const APP_DIR = path.join(os.homedir(), '.superprint', 'app');
 const ZIP_PATH = path.join(os.homedir(), '.superprint', 'sp213-local.zip');
 const VERSION_FILE = path.join(APP_DIR, 'version.txt');

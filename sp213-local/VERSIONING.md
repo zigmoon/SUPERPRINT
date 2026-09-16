@@ -22,7 +22,7 @@
 | `version.txt` | `1.7.456` |
 | `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.456 (September 2026)` |
 | `package.json` + `package-lock.json` (sp213-local) | `1.7.456` |
-| Lanceur npm (`superprint-npm/package.json`) | `1.0.96` (version **indépendante**, voir plus bas) |
+| Lanceur npm (`superprint-npm/package.json`) | `1.0.97` (version **indépendante**, voir plus bas) |
 
 > ⚠️ Trois fichiers sont restés en arrière pendant des releases sans que rien ne le signale :
 > `app/landing.html`, `app/llms.txt` et `app/llms-full.txt` (tous en `1.7.404` jusqu'au

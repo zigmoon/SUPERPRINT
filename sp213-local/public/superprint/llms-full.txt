@@ -11,7 +11,7 @@
 - **Version**: 1.7.456 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
-- **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.96, requires application 1.7.415 or later); the launcher downloads the application once and serves it locally.
+- **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.97, requires application 1.7.456 or later); the launcher downloads the application once and serves it locally.
 - **Tech stack**: Vanilla JavaScript + Fabric.js (canvas rendering), PDF.js (PDF import), pdf-lib (CMYK PDF post-processing), jsPDF (PDF export), JSZip (IDML / SLA / ODT), Paper.js (boolean path operations), Mammoth.js (DOCX import), Hypher (hyphenation).
 
 ## One-line summary

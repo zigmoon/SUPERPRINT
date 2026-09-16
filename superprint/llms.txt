@@ -11,7 +11,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
 - **Version**: 1.7.456 (September 2026)
-- **Local install**: npx superprint (npm package `superprint`, launcher version 1.0.96) — the same application, downloaded once and run on your machine
+- **Local install**: npx superprint (npm package `superprint`, launcher version 1.0.97) — the same application, downloaded once and run on your machine
 
 ## Core documentation
 
