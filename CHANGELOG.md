@@ -9,6 +9,45 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.456] — 2026-09-16
+
+_A squarer top bar, a search button where you expect it, and a full advanced search panel_
+
+### Changed
+- **Toolbar boxes are true squares now.** Measured before: `+` was 28.1 × 32 px (ratio 0.88), `−` 31.3 × 32 (0.98), `⚙` 29.1 × 32 (0.91) — taller than wide, which is exactly what made them look rectangular. All four icon buttons (`+`, search, `−`, preferences) are strict **32 × 32** squares with `padding: 0`; `Page +` and `EXPORT` keep their label at the same 32 px height.
+- **The vertical rule between `+` (new document) and `Page +` is gone**, in the markup and in the CSS.
+- **Search button in the top bar**, right after the AI assistant: borderless (`border: 0`), `rgb(26,26,26)` like the print and AI icons (it used to be `rgb(85,85,85)` with a grey 1 px frame), 1.8 px stroke, 32 × 32. It opens Find & replace — the real shortcut is **Ctrl+F** (Ctrl+H opens it with the replacement field).
+- **“Replace” is black and sits on the same row as “Replace all”** (the black style used to span a full grid row, pushing the two buttons apart).
+- **New project pop-in**: the obsolete **Automatic** tab is removed — button, panel and the three functions (`npAutoGenerate`, `npAutoRandomPrompt`, `_npRenderChips`) that only lived for it; the **Studio IA** and **SuperTyPo** tabs now show their logo (15 px, two-colour SVG, no background plate, checked on light **and** dark).
+
+### Added
+- **Advanced options in Find & replace.** The row with the chevron widens the window from 400 to 470 px and reveals: **match case**, **whole words**, **regular expressions**, **whole-document / current-page** scope, **eleven special characters insertable in one click** (non-breaking space, narrow non-breaking space, discretionary hyphen, forced line break, tab, typographic apostrophe, French quotes, em dash, en dash, middle dot, ellipsis) and **three French typography checks** (ordinary space before `; : ! ?`, repeated spaces, space before a comma or a period).
+  - The matcher was rewritten: each match now stores its **real length**, so highlighting and replacement stay exact in regular-expression mode, and capture groups (`$1`, `$2`…) work in the replacement; an invalid pattern reports “Expression régulière invalide” instead of failing silently.
+  - Whole words are boundary-checked against Unicode letters (accents included) and digits; “whole document / current page” maps the scope through `bleedInfo`, so it also works in spread mode.
+  - The opened/closed state is remembered (`sp_fr_adv`), and the panel keeps its screen width on mobile (measured 676 px at a 700 px viewport).
+
+### Fixed
+- **The dark theme made the active tab label invisible.** `npSwitchTab` wrote the tab colours as hard-coded HEX, so the active tab and the two action tabs rendered `rgb(26,26,26)` on a `rgb(12,12,15)` modal body — black on black. Colours are now theme-aware (`#f2f2f2` / `#8f8f8f` in dark).
+- **Three files had been stuck on old versions for dozens of releases**: `app/landing.html` (1.7.404 — JSON-LD, feature tag and footer), `app/llms.txt` and `app/llms-full.txt` (1.7.404). Bumped and checked, and flagged in `VERSIONING.md`.
+- **Documentation**: the 214 line numbers of the function table were regenerated from the real `main.js` (28 of them had moved since the previous release) and the four dated footers per file were updated — on all four copies.
+
+### Verified
+| Check | Result |
+|---|---|
+| Toolbar icon boxes | `+` / search / `−` / `⚙` = **32 × 32, ratio 1.00** (measured in the browser) |
+| Search button | border `0px none` · colour `rgb(26,26,26)` · stroke `rgb(26,26,26)` at 1.8 px · sits right after `#openAIBtn` |
+| Replace / Replace all | both `rgb(17,17,17)`, same row, same width |
+| Advanced panel | 400 → **470 px** wide, chips laid out 7 + 4 per row, always fully on screen |
+| Mobile ≤ 760 px | panel 676 px wide on a 700 px viewport, no overflow |
+| Special characters | clicking the chips inserts exactly `U+00A0` and `« »` (`U+AB U+A0 U+BB`) |
+| Search engine | `bonjour` finds “Bonjour”, 0 with match case · `n.j` literal 0 / regex 1 · invalid regex reported |
+| Inline handlers | **102 handlers, 0 orphan** · web ↔ mirror parity **16/16** · recursive sync **0 different** |
+
+- Cache: JS/CSS `20260916-v456-release` · service worker `superprint-shell-v1.7.456-no-whatsapp` (app **and** root).
+- Version **1.7.456** follows 1.7.455 (text blocks / Studio round trip), whose notes are below.
+
+---
+
 ## [1.7.455] — 2026-09-16
 
 _Text blocks keep their frame, the PDF export is faithful, and the SP213 Studio round trip loses nothing_

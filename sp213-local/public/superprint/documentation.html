@@ -384,7 +384,7 @@
     <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
   </button>
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.455</span>
+  <span class="version">v1.7.456</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -613,7 +613,7 @@ SUPERPRINT12master/
 ├── manifest.webmanifest    ─ PWA manifest
 ├── robots.txt / sitemap.xml
 ├── JS/
-│   ├── main.js             ─ Logique applicative complète (81 434 lignes)
+│   ├── main.js             ─ Logique applicative complète (81 481 lignes)
 │   ├── simple-pen-tool.js  ─ Module outil plume standalone
 │   ├── mobile-widgets.js   ─ Widgets mobiles
 │   ├── fabric.min.js       ─ Fabric.js 5.3.0
@@ -840,21 +840,21 @@ SUPERPRINT12master/
 <tbody>
 <tr><td>1</td><td class="fn-name">importSVG</td><td class="fn-line">15406</td><td><span class="fn-type">decl</span></td><td class="fn-params">—</td><td data-lang="fr">Importe un fichier SVG via sélecteur de fichier</td><td data-lang="en">Imports SVG file via file picker</td></tr>
 <tr><td>2</td><td class="fn-name">flowHtmlIntoPages</td><td class="fn-line">30600</td><td><span class="fn-type">async</span></td><td class="fn-params">html, startPageIndex</td><td data-lang="fr">Importe du contenu HTML dans les pages</td><td data-lang="en">Imports HTML content into pages</td></tr>
-<tr><td>3</td><td class="fn-name">importWordDocument</td><td class="fn-line">69998</td><td><span class="fn-type">async</span></td><td class="fn-params">file, startPageIndex</td><td data-lang="fr">Importe un document Word .docx</td><td data-lang="en">Imports Word .docx document</td></tr>
+<tr><td>3</td><td class="fn-name">importWordDocument</td><td class="fn-line">70173</td><td><span class="fn-type">async</span></td><td class="fn-params">file, startPageIndex</td><td data-lang="fr">Importe un document Word .docx</td><td data-lang="en">Imports Word .docx document</td></tr>
 <tr><td>4</td><td class="fn-name">extractOdtHtml</td><td class="fn-line">31080</td><td><span class="fn-type">decl</span></td><td class="fn-params">arrayBuffer</td><td data-lang="fr">Extrait le HTML d'un fichier ODT</td><td data-lang="en">Extracts HTML from ODT file</td></tr>
 <tr><td>5</td><td class="fn-name">importScribusFile</td><td class="fn-line">31546</td><td><span class="fn-type">decl</span></td><td class="fn-params">xmlStr</td><td data-lang="fr">Importe un fichier .sla (format PAO XML open source)</td><td data-lang="en">Imports a .sla file (open-source DTP XML format)</td></tr>
 <tr><td>6</td><td class="fn-name">processIdmlZip</td><td class="fn-line">31949</td><td><span class="fn-type">async</span></td><td class="fn-params">file</td><td data-lang="fr">Traite un fichier IDML (archive ZIP)</td><td data-lang="en">Processes an IDML file (ZIP archive)</td></tr>
 <tr><td>7</td><td class="fn-name">parseIdmlAndBuild</td><td class="fn-line">32193</td><td><span class="fn-type">async</span></td><td class="fn-params">zip, fontsMap, imagesMap</td><td data-lang="fr">Parse la structure IDML et construit les pages</td><td data-lang="en">Parses IDML structure and builds pages</td></tr>
-<tr><td>8</td><td class="fn-name">importPDFPages</td><td class="fn-line">70102</td><td><span class="fn-type">async</span></td><td class="fn-params">pageNumbers, recadrageMode</td><td data-lang="fr">Importe des pages PDF sélectionnées</td><td data-lang="en">Imports selected pages from a PDF</td></tr>
-<tr><td>9</td><td class="fn-name">showPDFImportModal</td><td class="fn-line">69613</td><td><span class="fn-type">async</span></td><td class="fn-params">file</td><td data-lang="fr">Affiche la modale d'import PDF avec aperçus</td><td data-lang="en">Shows the PDF import dialog with previews</td></tr>
+<tr><td>8</td><td class="fn-name">importPDFPages</td><td class="fn-line">70277</td><td><span class="fn-type">async</span></td><td class="fn-params">pageNumbers, recadrageMode</td><td data-lang="fr">Importe des pages PDF sélectionnées</td><td data-lang="en">Imports selected pages from a PDF</td></tr>
+<tr><td>9</td><td class="fn-name">showPDFImportModal</td><td class="fn-line">69788</td><td><span class="fn-type">async</span></td><td class="fn-params">file</td><td data-lang="fr">Affiche la modale d'import PDF avec aperçus</td><td data-lang="en">Shows the PDF import dialog with previews</td></tr>
 <tr><td>10</td><td class="fn-name">renderPageToImageWithBleed</td><td class="fn-line">42741</td><td><span class="fn-type">async</span></td><td class="fn-params">pageIndex, position, quality, bleed, ...</td><td data-lang="fr">Rend une page en image pour l'export (avec fond perdu)</td><td data-lang="en">Renders a page to image for export (with bleed)</td></tr>
 <tr><td>11</td><td class="fn-name">confirmExport</td><td class="fn-line">37208</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Confirme et exécute l'export PDF</td><td data-lang="en">Confirms and executes standard PDF export</td></tr>
 <tr><td>12</td><td class="fn-name">exportImposedPDF</td><td class="fn-line">38846</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Exporte un PDF imposé (cahier/livret)</td><td data-lang="en">Exports imposed/booklet PDF</td></tr>
 <tr><td>13</td><td class="fn-name">confirmD4Export</td><td class="fn-line">36741</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Export D4/Print-to-Web (mini-site HTML en ZIP)</td><td data-lang="en">D4/Print-to-Web export (HTML mini-site in ZIP)</td></tr>
-<tr><td>14</td><td class="fn-name">saveProjectLocal</td><td class="fn-line">76981</td><td><span class="fn-type">window</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde le projet en JSON local</td><td data-lang="en">Saves project to local JSON file</td></tr>
-<tr><td>15</td><td class="fn-name">saveProjectWeb3</td><td class="fn-line">77039</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde le projet sur Web3/IPFS</td><td data-lang="en">Saves project to Web3/IPFS</td></tr>
-<tr><td>16</td><td class="fn-name">saveProjectSP</td><td class="fn-line">77272</td><td><span class="fn-type">window</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde au format .sp (JSON)</td><td data-lang="en">Saves project in .sp format (JSON)</td></tr>
-<tr><td>17</td><td class="fn-name">loadProjectSP</td><td class="fn-line">77475</td><td><span class="fn-type">window</span></td><td class="fn-params">fileContent</td><td data-lang="fr">Charge un fichier projet .sp</td><td data-lang="en">Loads a .sp project file</td></tr>
+<tr><td>14</td><td class="fn-name">saveProjectLocal</td><td class="fn-line">77028</td><td><span class="fn-type">window</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde le projet en JSON local</td><td data-lang="en">Saves project to local JSON file</td></tr>
+<tr><td>15</td><td class="fn-name">saveProjectWeb3</td><td class="fn-line">77086</td><td><span class="fn-type">async</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde le projet sur Web3/IPFS</td><td data-lang="en">Saves project to Web3/IPFS</td></tr>
+<tr><td>16</td><td class="fn-name">saveProjectSP</td><td class="fn-line">77319</td><td><span class="fn-type">window</span></td><td class="fn-params">—</td><td data-lang="fr">Sauvegarde au format .sp (JSON)</td><td data-lang="en">Saves project in .sp format (JSON)</td></tr>
+<tr><td>17</td><td class="fn-name">loadProjectSP</td><td class="fn-line">77522</td><td><span class="fn-type">window</span></td><td class="fn-params">fileContent</td><td data-lang="fr">Charge un fichier projet .sp</td><td data-lang="en">Loads a .sp project file</td></tr>
 </tbody>
 </table></div>
 
@@ -1480,8 +1480,8 @@ SUPERPRINT12master/
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Documentation générée le 16 septembre 2026 — v1.7.455</span>
-  <span data-lang="en">Documentation generated September 16, 2026 — v1.7.455</span>
+  <span data-lang="fr">Documentation générée le 16 septembre 2026 — v1.7.456</span>
+  <span data-lang="en">Documentation generated September 16, 2026 — v1.7.456</span>
 </div>
 
 </div><!-- #tab-doc -->
@@ -2371,8 +2371,8 @@ SUPERPRINT12master/
 <br><br>
 <div style="text-align:center; color:var(--text2); font-size:12px; padding: 40px 0 20px; border-top: 1px solid var(--border);">
   <strong>SuperPrint</strong> — simon@2points13.fr<br>
-  <span data-lang="fr">Manuel mis à jour le 16 septembre 2026 — v1.7.455</span>
-  <span data-lang="en">Manual updated September 16, 2026 — v1.7.455</span>
+  <span data-lang="fr">Manuel mis à jour le 16 septembre 2026 — v1.7.456</span>
+  <span data-lang="en">Manual updated September 16, 2026 — v1.7.456</span>
 </div>
 
 </div><!-- #tab-manual -->

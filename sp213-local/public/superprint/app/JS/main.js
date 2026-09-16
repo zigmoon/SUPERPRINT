@@ -54674,6 +54674,18 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         frAll: "Tout remplacer",
         frDrag: "Glisser pour déplacer",
         frClose: "Fermer",
+        frTypoVirgule: "Espace avant , .",
+        frTypoDouble: "Espaces consécutifs",
+        frTypoPonc: "Espace avant ; : ! ?",
+        frAdvTypo: "Vérifications typographiques",
+        frAdvChars: "Insérer un caractère spécial",
+        frScopePage: "Page courante",
+        frScopeAll: "Tout le document",
+        frRegex: "Expression régulière",
+        frWord: "Mots entiers",
+        frCase: "Respecter la casse (Aa)",
+        frAdvMatch: "Recherche",
+        frAdv: "Options avancées",
         aiIntroNew: "Décrivez une maquette en une phrase : l’IA compose la page active (ou tout le document) avec une grille propre, votre palette et vos textes.",
         aiBtnExamples: "Exemples ↓",
         aiModelHelpTitle: "Choisissez le modèle utilisé pour composer la maquette.",
@@ -55490,6 +55502,18 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         frAll: "Replace all",
         frDrag: "Drag to move",
         frClose: "Close",
+        frTypoVirgule: "Space before , .",
+        frTypoDouble: "Repeated spaces",
+        frTypoPonc: "Space before ; : ! ?",
+        frAdvTypo: "Typographic checks",
+        frAdvChars: "Insert a special character",
+        frScopePage: "Current page",
+        frScopeAll: "Whole document",
+        frRegex: "Regular expression",
+        frWord: "Whole words",
+        frCase: "Match case (Aa)",
+        frAdvMatch: "Matching",
+        frAdv: "Advanced options",
         aiIntroNew: "Describe a layout in one sentence: the AI builds the active page (or the whole document) with a clean grid, your palette and your text.",
         aiBtnExamples: "Examples ↓",
         aiModelHelpTitle: "Pick the model used to build the layout.",
@@ -56308,6 +56332,18 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         frAll: "すべて置換",
         frDrag: "ドラッグして移動",
         frClose: "閉じる",
+        frTypoVirgule: "，． の前の空白",
+        frTypoDouble: "連続する空白",
+        frTypoPonc: "；：！？ の前の空白",
+        frAdvTypo: "組版チェック",
+        frAdvChars: "特殊文字を挿入",
+        frScopePage: "現在のページ",
+        frScopeAll: "文書全体",
+        frRegex: "正規表現",
+        frWord: "単語単位",
+        frCase: "大文字小文字を区別 (Aa)",
+        frAdvMatch: "検索条件",
+        frAdv: "詳細オプション",
         aiIntroNew: "レイアウトを一文で説明してください。AI がグリッド・配色・テキストを使って現在のページ（または文書全体）を構成します。",
         aiBtnExamples: "作例 ↓",
         aiModelHelpTitle: "レイアウト生成に使うモデルを選びます。",
@@ -58041,25 +58077,77 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     _frMatches = []; _frCurrentIdx = 0;
         }
 
+        // ═══ v1.7.455j — OPTIONS DE RECHERCHE (mode avancé) ═══
+        //   Compile le motif, scanne les blocs texte des canvas concernés et
+        //   mémorise pour chaque résultat sa longévité exacte (len), ce qui rend
+        //   le surlignage et le remplacement corrects même en expression
+        //   régulière (avant, on utilisait la longueur du champ de recherche).
+        function _frOpts() {
+    const coche = function (id) { const e = document.getElementById(id); return !!(e && e.checked); };
+    let portee = 'all';
+    const radio = document.querySelector('#frScope input[name="frScope"]:checked');
+    if (radio) portee = radio.value;
+    return { casse: coche('frCase'), mot: coche('frWord'), regex: coche('frRegex'), portee: portee };
+        }
+
+        // Renvoie { re, err } : re = motif compilé (global), err = message lisible.
+        function _frCompile(q, opts) {
+    if (!q) return { re: null, err: null };
+    const drapeaux = opts.casse ? 'g' : 'gi';
+    if (opts.regex) {
+        try { return { re: new RegExp(q, drapeaux), err: null }; }
+        catch (e) { return { re: null, err: 'Expression régulière invalide : ' + e.message }; }
+    }
+    const esc = q.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&');
+    return { re: new RegExp(esc, drapeaux), err: null };
+        }
+
+        // Un « mot » = lettre (accents compris), chiffre ou underscore.
+        function _frEstMot(ch) { return !!ch && /[\p{L}\p{N}_]/u.test(ch); }
+
+        // Canvas à balayer selon la portée choisie.
+        function _frCanvases() {
+    const opts = _frOpts();
+    const cible = (typeof currentPageIndex === 'number') ? currentPageIndex : 0;
+    const liste = [];
+    canvases.forEach(function (c, i) {
+        if (!c) return;
+        if (opts.portee === 'page') {
+            const bi = c.bleedInfo || {};
+            const concerne = (bi.pageIndex === cible) || (bi.leftPageIndex === cible)
+                || (bi.rightPageIndex === cible) || (i === cible);
+            if (!concerne) return;
+        }
+        liste.push({ c: c, i: i });
+    });
+    return liste;
+        }
+
         function findInDocument() {
     const query = document.getElementById('findInput')?.value || '';
     _frMatches = []; _frCurrentIdx = 0;
     const cnt = document.getElementById('findMatchCount');
     const st = document.getElementById('findReplaceStatus');
     if (!query) { if (cnt) cnt.textContent = ''; if (st) st.textContent = ''; return; }
-    const lower = query.toLowerCase();
-    canvases.forEach((c, ci) => {
-        if (!c) return;
-        c.getObjects().filter(o => (o.type === 'textbox' || o.type === 'text') && !o.excludeFromExport && !o.isMargin).forEach(obj => {
+    const opts = _frOpts();
+    const compile = _frCompile(query, opts);
+    if (compile.err) { if (cnt) cnt.textContent = '⚠'; if (st) st.textContent = compile.err; return; }
+    const re = compile.re;
+    _frCanvases().forEach(function (item) {
+        item.c.getObjects().filter(o => (o.type === 'textbox' || o.type === 'text') && !o.excludeFromExport && !o.isMargin).forEach(function (obj) {
             const text = obj.text || '';
-            let pos = 0;
-            while ((pos = text.toLowerCase().indexOf(lower, pos)) !== -1) {
-                _frMatches.push({ ci, obj, start: pos });
-                pos += lower.length;
+            re.lastIndex = 0;
+            let m;
+            while ((m = re.exec(text)) !== null) {
+                const len = m[0].length;
+                if (len === 0) { re.lastIndex++; continue; }   // motif vide : on avance d'un caractère
+                if (opts.mot && (_frEstMot(text[m.index - 1]) || _frEstMot(text[m.index + len]))) continue;
+                _frMatches.push({ ci: item.i, obj: obj, start: m.index, len: len, texte: m[0] });
             }
         });
     });
-    if (cnt) cnt.textContent = _frMatches.length ? `${_frMatches.length} rés.` : '∅';
+    if (cnt) cnt.textContent = _frMatches.length ? _frMatches.length + ' rés.' : '∅';
+    if (st && _frMatches.length && !opts.regex) st.textContent = '';
     if (_frMatches.length > 0) { _frCurrentIdx = 0; _frHighlight(_frCurrentIdx); }
         }
 
@@ -58072,13 +58160,12 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     canvas.setActiveObject(match.obj);
     try {
         match.obj.enterEditing();
-        const q = document.getElementById('findInput')?.value || '';
         match.obj.setSelectionStart(match.start);
-        match.obj.setSelectionEnd(match.start + q.length);
+        match.obj.setSelectionEnd(match.start + match.len);
     } catch (_) {}
     canvas.requestRenderAll();
     const cnt = document.getElementById('findMatchCount');
-    if (cnt) cnt.textContent = `${idx + 1}/${_frMatches.length}`;
+    if (cnt) cnt.textContent = (idx + 1) + '/' + _frMatches.length;
         }
 
         function findNext() {
@@ -58099,8 +58186,16 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     if (!match) return;
     const q = document.getElementById('findInput')?.value || '';
     const rep = document.getElementById('replaceInput')?.value || '';
+    const opts = _frOpts();
     const obj = match.obj;
-    obj.text = obj.text.substring(0, match.start) + rep + obj.text.substring(match.start + q.length);
+    // En expression régulière, on rejoue le motif SUR LE TEXTE TROUVÉ pour que
+    // les groupes de capture ($1, $2…) fonctionnent ; sinon remplacement littéral.
+    let remplacement = rep;
+    if (opts.regex) {
+        try { remplacement = match.texte.replace(new RegExp(q, opts.casse ? '' : 'i'), rep); }
+        catch (e) { remplacement = rep; }
+    }
+    obj.text = (obj.text || '').substring(0, match.start) + remplacement + (obj.text || '').substring(match.start + match.len);
     obj.dirty = true;
     if (canvases[match.ci]) canvases[match.ci].requestRenderAll();
     saveState('Remplacement');
@@ -58110,21 +58205,101 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         function _spReplaceAll() {
     const q = document.getElementById('findInput')?.value || '';
     const rep = document.getElementById('replaceInput')?.value || '';
+    const st = document.getElementById('findReplaceStatus');
     if (!q || !_frMatches.length) return;
-    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    const opts = _frOpts();
+    const compile = _frCompile(q, opts);
+    if (compile.err || !compile.re) { if (st) st.textContent = compile.err || 'Rien à remplacer'; return; }
+    const drapeaux = opts.casse ? 'g' : 'gi';
+    const motif = opts.regex ? q : q.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&');
     const touched = new Set(_frMatches.map(m => m.obj));
     let count = 0;
-    touched.forEach(obj => {
-        const before = obj.text;
-        obj.text = obj.text.replace(re, rep);
-        if (obj.text !== before) { count++; obj.dirty = true; }
+    touched.forEach(function (obj) {
+        const before = obj.text || '';
+        let apres = before;
+        try { apres = before.replace(new RegExp(motif, drapeaux), rep); } catch (_) {}
+        if (apres !== before) { obj.text = apres; obj.dirty = true; count++; }
     });
     canvases.forEach(c => { if (c) c.requestRenderAll(); });
-    const status = document.getElementById('findReplaceStatus');
-    if (status) status.textContent = count ? `${count} remplacement${count > 1 ? 's' : ''} effectué${count > 1 ? 's' : ''}` : 'Aucun remplacement';
+    if (st) st.textContent = count ? count + ' remplacement' + (count > 1 ? 's' : '') + ' effectué' + (count > 1 ? 's' : '') : 'Aucun remplacement';
     if (count > 0) saveState('Remplacer tout');
     findInDocument();
         }
+
+        // ═══ v1.7.455j — MODE AVANCÉ ═══
+        function frToggleAdvanced() {
+    const panel = document.getElementById('findReplacePanel');
+    const adv = document.getElementById('frAdvanced');
+    const btn = document.getElementById('frAdvToggle');
+    if (!panel || !adv) return;
+    const ouvre = adv.hasAttribute('hidden');
+    if (ouvre) adv.removeAttribute('hidden'); else adv.setAttribute('hidden', '');
+    panel.classList.toggle('fr-adv-open', ouvre);
+    if (btn) btn.setAttribute('aria-expanded', ouvre ? 'true' : 'false');
+    try { localStorage.setItem('sp_fr_adv', ouvre ? '1' : '0'); } catch (e) {}
+    try { if (typeof window._spFrRestorePos === 'function') window._spFrRestorePos(); } catch (e) {}
+        }
+        window.frToggleAdvanced = frToggleAdvanced;
+
+        // L'état ouvert/fermé est mémorisé d'une session à l'autre.
+        (function _frRestoreAdvanced() {
+    try {
+        if (localStorage.getItem('sp_fr_adv') !== '1') return;
+        const adv = document.getElementById('frAdvanced');
+        const panel = document.getElementById('findReplacePanel');
+        const btn = document.getElementById('frAdvToggle');
+        if (adv) adv.removeAttribute('hidden');
+        if (panel) panel.classList.add('fr-adv-open');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+    } catch (e) {}
+        })();
+
+        // Dernier champ touché : c'est lui qui reçoit les caractères spéciaux.
+        let _frChamp = 'find';
+        (function _frChampSuivi() {
+    const f = document.getElementById('findInput');
+    const r = document.getElementById('replaceInput');
+    if (f) f.addEventListener('focus', function () { _frChamp = 'find'; });
+    if (r) r.addEventListener('focus', function () { _frChamp = 'replace'; });
+        })();
+
+        // Insère un caractère (ou une séquence) au curseur du champ actif.
+        function frInsertChar(quoi) {
+    if (quoi == null) return;
+    const inp = document.getElementById(_frChamp === 'replace' ? 'replaceInput' : 'findInput');
+    if (!inp) return;
+    let inserer = quoi;
+    let regexAuto = false;
+    if (quoi === '\\n') { inserer = '\\n'; regexAuto = true; }   // saut de ligne forcé, lisible en regex
+    const debut = inp.selectionStart == null ? inp.value.length : inp.selectionStart;
+    const fin = inp.selectionEnd == null ? debut : inp.selectionEnd;
+    inp.value = inp.value.slice(0, debut) + inserer + inp.value.slice(fin);
+    const pos = debut + inserer.length;
+    try { inp.setSelectionRange(pos, pos); } catch (e) {}
+    inp.focus();
+    if (regexAuto) { const r = document.getElementById('frRegex'); if (r && !r.checked) r.checked = true; }
+    if (_frChamp === 'find') findInDocument();
+        }
+        window.frInsertChar = frInsertChar;
+
+        // 3 vérifications typographiques prêtes à l'emploi (règles françaises).
+        function frCheck(quoi) {
+    const motifs = {
+        ponctuation: { re: '\\u0020[;:!?]', msg: 'Espace ORDINAIRE avant « ; : ! ? » — en typographie française on utilise une espace fine insécable (U+202F).' },
+        espaces: { re: '\\u0020{2,}', msg: 'Espaces consécutifs : 2 espaces ou plus, souvent une double frappe.' },
+        virgule: { re: '\\u0020[,.]', msg: 'Espace ORDINAIRE avant « , » ou « . » — il ne doit pas y en avoir.' }
+    };
+    const m = motifs[quoi];
+    const inp = document.getElementById('findInput');
+    const rx = document.getElementById('frRegex');
+    const st = document.getElementById('findReplaceStatus');
+    if (!m || !inp) return;
+    if (rx) rx.checked = true;
+    inp.value = m.re;
+    findInDocument();
+    if (st) st.textContent = m.msg;
+        }
+        window.frCheck = frCheck;
 
         // ── Export PNG / JPG ──
         function _spRenderCanvasForImageExport(c, format, multiplier, opts) {
@@ -71667,11 +71842,9 @@ window.npSwitchTab = function(tab) {
     }
     const basic = document.getElementById('npPanelBasic');
     const adv = document.getElementById('npPanelAdvanced');
-    const auto = document.getElementById('npPanelAuto');
     const tpl = document.getElementById('npPanelTemplates');
     const tBasic = document.getElementById('npTabBasic');
     const tAdv = document.getElementById('npTabAdvanced');
-    const tAuto = document.getElementById('npTabAuto');
     const tStudio = document.getElementById('npTabStudio');
     // 🆕 v1.7.398 — SuperTyPo est aussi une ACTION (comme Studio IA) : on la recupere
     //    pour lui appliquer le meme style. Elle n'etait pas geree ici, donc elle
@@ -71679,11 +71852,9 @@ window.npSwitchTab = function(tab) {
     const tTypo = document.getElementById('npTabSupertypo');
     const tTpl = document.getElementById('npTabTemplates');
     const isAdv = (tab === 'advanced');
-    const isAuto = (tab === 'auto');
     const isTpl = (tab === 'templates');
-    if (basic) basic.style.display = (isAdv || isAuto || isTpl) ? 'none' : 'block';
+    if (basic) basic.style.display = (isAdv || isTpl) ? 'none' : 'block';
     if (adv) adv.style.display = isAdv ? 'block' : 'none';
-    if (auto) auto.style.display = isAuto ? 'block' : 'none';
     if (tpl) tpl.style.display = isTpl ? 'block' : 'none';
     // 🛡️ v1.7.284 : l'onglet Modèles masque le nom + la colonne droite (preview)
     // pour donner toute la place à la grille de templates.
@@ -71693,12 +71864,18 @@ window.npSwitchTab = function(tab) {
     if (nameField) nameField.style.display = isTpl ? 'none' : '';
     if (colRight) colRight.style.display = isTpl ? 'none' : '';
     if (colLeft) colLeft.style.flex = isTpl ? '1 1 100%' : '';
+    // 🆕 v1.7.455j — COULEURS D'ONGLETS SENSIBLES AU THÈME.
+    //   Elles étaient écrites en dur (#1a1a1a / #999) : en thème sombre, le corps
+    //   du modal vaut rgb(12,12,15), donc l'onglet actif et les deux actions
+    //   Studio IA / SuperTyPo s'affichaient noir sur noir (invisibles).
+    const _npDark = document.documentElement.classList.contains('theme-dark')
+        || document.body.classList.contains('theme-dark');
+    const _npCouleurOn = _npDark ? '#f2f2f2' : '#1a1a1a';
+    const _npCouleurOff = _npDark ? '#8f8f8f' : '#999';
     // Tab Basic
-    if (tBasic) { tBasic.style.borderBottomColor = (isAdv || isAuto || isTpl) ? 'transparent' : '#1a1a1a'; tBasic.style.color = (isAdv || isAuto || isTpl) ? '#999' : '#1a1a1a'; tBasic.style.fontWeight = (isAdv || isAuto || isTpl) ? '400' : '600'; tBasic.classList.toggle('active', !isAdv && !isAuto && !isTpl); }
+    if (tBasic) { tBasic.style.borderBottomColor = (isAdv || isTpl) ? 'transparent' : _npCouleurOn; tBasic.style.color = (isAdv || isTpl) ? _npCouleurOff : _npCouleurOn; tBasic.style.fontWeight = (isAdv || isTpl) ? '400' : '600'; tBasic.classList.toggle('active', !isAdv && !isTpl); }
     // Tab Advanced
-    if (tAdv) { tAdv.style.borderBottomColor = isAdv ? '#1a1a1a' : 'transparent'; tAdv.style.color = isAdv ? '#1a1a1a' : '#999'; tAdv.style.fontWeight = isAdv ? '600' : '400'; tAdv.classList.toggle('active', isAdv); }
-    // Tab Auto
-    if (tAuto) { tAuto.style.borderBottomColor = isAuto ? '#1a1a1a' : 'transparent'; tAuto.style.color = isAuto ? '#1a1a1a' : '#999'; tAuto.style.fontWeight = isAuto ? '600' : '400'; tAuto.classList.toggle('active', isAuto); }
+    if (tAdv) { tAdv.style.borderBottomColor = isAdv ? _npCouleurOn : 'transparent'; tAdv.style.color = isAdv ? _npCouleurOn : _npCouleurOff; tAdv.style.fontWeight = isAdv ? '600' : '400'; tAdv.classList.toggle('active', isAdv); }
     // 🆕 v1.7.398 — STUDIO IA et SUPERTYPO sont des ACTIONS, pas des onglets.
     //   Mesure avant : npSwitchTab forcait '#999' sur Studio (gris d'onglet inactif)
     //   alors que SuperTyPo restait noir -> les deux boutons n'avaient pas la meme
@@ -71708,12 +71885,12 @@ window.npSwitchTab = function(tab) {
     [tStudio, tTypo].forEach(function (t) {
         if (!t) return;
         t.style.borderBottomColor = 'transparent';
-        t.style.color = '#1a1a1a';
+        t.style.color = _npCouleurOn;
         t.style.fontWeight = '600';
         t.classList.remove('active');
     });
     // Tab Templates
-    if (tTpl) { tTpl.style.borderBottomColor = isTpl ? '#1a1a1a' : 'transparent'; tTpl.style.color = isTpl ? '#1a1a1a' : '#999'; tTpl.style.fontWeight = isTpl ? '600' : '400'; tTpl.classList.toggle('active', isTpl); }
+    if (tTpl) { tTpl.style.borderBottomColor = isTpl ? _npCouleurOn : 'transparent'; tTpl.style.color = isTpl ? _npCouleurOn : _npCouleurOff; tTpl.style.fontWeight = isTpl ? '600' : '400'; tTpl.classList.toggle('active', isTpl); }
     // Re-render les templates quand on ouvre l'onglet Modèles
     if (isTpl && typeof window.npRenderAssetStrip === 'function') { try { window.npRenderAssetStrip(); } catch (_) {} }
 };
@@ -71845,147 +72022,17 @@ var _npKeywordMap = {
     'bleed': { hasBleed:true }, 'fond perdu': { hasBleed:true }, 'full bleed': { hasBleed:true, full:true }
 };
 
-// Génère un layout à partir des mots-clés
-window.npAutoGenerate = function() {
-    var promptEl = document.getElementById('npAutoPrompt');
-    var statusEl = document.getElementById('npAutoStatus');
-    var previewEl = document.getElementById('npAutoPreview');
-    var input = (promptEl && promptEl.value || '').trim();
-    if (!input) {
-        if (statusEl) { statusEl.textContent = 'Enter keywords above.'; statusEl.style.color = '#c00'; }
-        return;
-    }
-    var lang = (typeof currentLanguage !== 'undefined' && currentLanguage) || 'en';
-    // Parse keywords
-    var raw = input.toLowerCase().split(/[,;]+/).map(function(s){ return s.trim(); }).filter(Boolean);
-    // Also split by spaces for single-word keywords
-    var keywords = [];
-    raw.forEach(function(r) {
-        if (r.split(/\s+/).length <= 3) { keywords.push(r); return; }
-        r.split(/\s+/).forEach(function(w) { keywords.push(w); });
-    });
-    // Detect page count from "X pages" pattern
-    var pgMatch = input.match(/(\d+)\s*pages?/i);
-    if (pgMatch) keywords.push(pgMatch[1] + ' pages');
-    // Merge params
-    var params = { w:210, h:297, pages:1, cols:2, theme:'modern' };
-    keywords.forEach(function(kw) {
-        var mapped = _npKeywordMap[kw];
-        if (!mapped) return;
-        Object.keys(mapped).forEach(function(key) { params[key] = mapped[key]; });
-    });
-    // Swap if landscape
-    if (params.swap) { var tmp = params.w; params.w = params.h; params.h = tmp; delete params.swap; }
-    // Clamp pages
-    params.pages = Math.max(1, Math.min(32, params.pages || 1));
-    // Build layout
-    var layout = _npBuildLayout(params, keywords, lang);
-    window._npAutoLayout = layout;
-    // Update preview
-    if (previewEl) {
-        previewEl.style.display = 'block';
-        var elCount = 0; layout.pages.forEach(function(p){ elCount += (p.elements||[]).length; });
-        previewEl.textContent = (lang==='en'?'✓ Layout ready: ':'✓ Maquette prête : ') + params.pages + ' page(s), ' + params.w + '×' + params.h + ' mm, ' + elCount + ' elements, ' + params.cols + ' column(s). ' + (lang==='en'?'Click Create.':'Cliquez Créer.');
-    }
-    if (statusEl) { statusEl.textContent = (lang==='en'?'Ready!':'Prêt !'); statusEl.style.color = '#2a7d2a'; }
-    // Update chips
-    _npRenderChips(keywords);
-};
-
-// 🎲 Random prompt examples v8 — Designs propres, texte ET images séparés, qualité pro
-window.npAutoRandomPrompt = function() {
-    var prompts = [
-        // ═══════════ A3 POSTERS — Impact maximal, une seule page ═══════════
-        'musique, poster, swiss, a3, 1 page, full page, title, image, full bleed, 1 column',
-        'photo, poster, editorial, a3, 1 page, full page, title, image, full bleed, 1 column',
-        'fashion, poster, luxury, a3, 1 page, full page, title, image, full bleed, 1 column',
-        'architecture, poster, swiss, a3, 1 page, full page, title, image, full bleed, 1 column',
-
-        // ═══════════ A5 BOOKLETS — Format poche, mise en page littéraire ═══════════
-        'cuisine, book, warm, a5, 20 pages, 1 column, cover, images, title, bleed, full bleed',
-        'voyage, book, nature, a5, 16 pages, 1 column, cover, images, title, bleed, full bleed',
-        'editorial, book, editorial, a5, 12 pages, 1 column, cover, title, bleed',
-
-        // ═══════════ A4 MAGAZINES — Éditorial pro, doubles pages ═══════════
-        'musique, magazine, swiss, spread, double page, 16 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'sport, magazine, modern, spread, double page, 12 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'fashion, magazine, luxury, spread, double page, 20 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'voyage, magazine, nature, spread, double page, 12 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'tech, magazine, tech, spread, double page, 8 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'architecture, magazine, swiss, spread, double page, 16 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'auto, magazine, tech, spread, double page, 12 pages, 3 columns, cover, images, title, bleed, full bleed',
-
-        // ═══════════ A4 BROCHURES — Corporate, équilibré ═══════════
-        'corporate, brochure, corporate, spread, double page, 8 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'architecture, brochure, modern, spread, double page, 8 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'nature, brochure, nature, spread, double page, 6 pages, 3 columns, cover, images, title, bleed, full bleed',
-
-        // ═══════════ A4 CATALOGS — Grille produits ═══════════
-        'auto, catalog, tech, spread, double page, 20 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'cuisine, catalog, warm, spread, double page, 16 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'fashion, catalog, luxury, spread, double page, 16 pages, 3 columns, cover, images, title, bleed, full bleed',
-
-        // ═══════════ A4 REPORTS — Structuré, lisible ═══════════
-        'corporate, report, corporate, 20 pages, 2 columns, cover, images, title, bleed',
-        'tech, report, tech, 16 pages, 2 columns, cover, images, title, bleed',
-        'creative, report, editorial, 12 pages, 2 columns, cover, images, title, bleed',
-
-        // ═══════════ A4 PORTFOLIOS — Grandes images, respiration ═══════════
-        'photography, portfolio, creative, spread, double page, 16 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'architecture, portfolio, swiss, spread, double page, 12 pages, 3 columns, cover, images, title, bleed, full bleed',
-
-        // ═══════════ A4 LOOKBOOKS — Mode, image pleine page ═══════════
-        'fashion, lookbook, luxury, spread, double page, 16 pages, 2 columns, cover, images, title, bleed, full bleed',
-        'mode, lookbook, pastel, spread, double page, 12 pages, 3 columns, cover, images, title, bleed, full bleed',
-
-        // ═══════════ A4 NEWSLETTERS — 4 pages, impact immédiat ═══════════
-        'creative, newsletter, creative, spread, double page, 4 pages, 3 columns, images, title, bleed, full bleed',
-        'corporate, newsletter, corporate, spread, double page, 4 pages, 2 columns, images, title, bleed',
-
-        // ═══════════ FLYERS — 1 page qui vend ═══════════
-        'cuisine, flyer, warm, 1 page, full page, title, image, full bleed',
-        'sport, flyer, modern, 1 page, full page, title, image, full bleed',
-
-        // ═══════════ COVERS ONLY ═══════════
-        'musique, cover, swiss, 1 page, full page, title, image, full bleed',
-        'fashion, cover, luxury, 1 page, full page, title, image, full bleed',
-
-        // ═══════════ LETTER — Format US ═══════════
-        'corporate, report, corporate, letter, 8 pages, 2 columns, cover, images, title, bleed',
-
-        // ═══════════ TABLOID — Grand format ═══════════
-        'photo, magazine, creative, tabloid, spread, double page, 8 pages, 3 columns, cover, images, title, bleed, full bleed',
-        'architecture, poster, modern, tabloid, 1 page, full page, title, image, full bleed'
-    ];
-    var pick = prompts[Math.floor(Math.random() * prompts.length)];
-    var promptEl = document.getElementById('npAutoPrompt');
-    if (promptEl) { promptEl.value = pick; }
-    _npRenderChips(pick.split(/[,;]+/).map(function(s){ return s.trim(); }).filter(Boolean));
-    // Auto-generate
-    window.npAutoGenerate();
-};
-
-// Render keyword chips
-function _npRenderChips(keywords) {
-    var chipsEl = document.getElementById('npAutoChips');
-    if (!chipsEl) return;
-    chipsEl.innerHTML = '';
-    var seen = {};
-    keywords.forEach(function(kw) {
-        if (seen[kw] || kw.length < 2) return;
-        seen[kw] = true;
-        var chip = document.createElement('span');
-        chip.textContent = kw;
-        chip.style.cssText = 'display:inline-block;padding:3px 8px;background:#f0f0f0;border:1px solid #ddd;border-radius:12px;font-size:10px;font-family:"IBM Plex Mono",monospace;cursor:pointer;';
-        chip.onclick = function() {
-            var input = document.getElementById('npAutoPrompt');
-            if (input) { input.value = input.value.replace(new RegExp('\\b' + kw + '\\b', 'i'), '').replace(/\s*,\s*,/g, ',').replace(/^,\s*|,\s*$/g, ''); }
-            chip.remove();
-        };
-        chipsEl.appendChild(chip);
-    });
-}
-
+// 🆕 v1.7.455j — MOTEUR DE MISE EN PAGE AUTOMATIQUE : PLUS D'ENTRÉE UI.
+//   L'onglet « Automatic » de la pop-in Nouveau projet a été retiré (demande
+//   utilisateur) : les onglets Basic / Advanced couvrent le besoin. Les trois
+//   fonctions qui n'existaient que pour ce panneau (window.npAutoGenerate,
+//   window.npAutoRandomPrompt, _npRenderChips) partent avec lui — sans elles,
+//   les deux onclick du panneau n'auraient plus de cible et l'audit
+//   « handler inline orphelin » remonterait 2 erreurs.
+//   Le moteur de composition (_npColorThemes, _npFontPairs, _npKeywordMap,
+//   _npBuildLayout) reste en place : createNewProjectFromModal applique
+//   toujours window._npAutoLayout quand il est fourni (canal IA).
+//
 // ── Layout builder engine v4 (bleed mm + spread + real images) ──
 function _npBuildLayout(params, keywords, lang) {
     var theme = _npColorThemes[params.theme] || _npColorThemes['modern'];

@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.455 — Zigmoon
+         SuperPrint 1.7.456 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.455 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.456 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.455",
+          "softwareVersion": "1.7.456",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -622,7 +622,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20260908-ai-ergo">
+    <link rel="stylesheet" href="CSS/main.css?v=20260916-v456-release">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -1029,7 +1029,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.455</div>
+                <div class="splash-version">1.7.456</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1131,7 +1131,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.455</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.456</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1227,7 +1227,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.455 | 09 2026<br>
+                V 1.7.456 | 09 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1588,13 +1588,12 @@
                 </button>
                 
                 <div class="toolbar-left">
-                    <button class="btn btn-secondary" id="newProjectBtn" title="Nouveau projet" data-translate-title="newProjectTitle" style="display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; margin-right: 6px; min-width: 28px; min-height: 28px;">
+                    <button class="btn btn-secondary btn-square" id="newProjectBtn" title="Nouveau projet" data-translate-title="newProjectTitle">
                         <span style="font-size: 18px; font-weight: 300; line-height: 1; opacity: 0.8; position: relative; top: -1px;">+</span>
                     </button>
-                    <div class="toolbar-vsep" aria-hidden="true"></div>
                     <div style="display: flex; gap: 0; align-items: center;">
                         <button class="btn" id="addPage" title="Ajouter une page" data-translate="addPage">Page +</button>
-                        <button class="btn btn-secondary" id="deletePage" title="Supprimer la page">-</button>
+                        <button class="btn btn-secondary btn-square" id="deletePage" title="Supprimer la page">-</button>
                         <span id="pageIndicator" style="margin-left: 8px; opacity: 0.6; font-size: 10px;">P 1/1</span>
                     </div>
                 </div>
@@ -1624,6 +1623,12 @@
                         </svg>
                     </button>
                     <button class="btn" id="openAIBtn" title="Assistant IA pour maquette & design" style="pointer-events: auto;" onclick="openAIModal()">IA</button>
+                    <button class="btn btn-square" id="openSearchTopBtn" title="Rechercher et remplacer (Ctrl+F)" aria-label="Rechercher et remplacer" onclick="openFindReplace(false)" style="pointer-events: auto; border: 0; color: #1a1a1a;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="10.5" cy="10.5" r="6.5"></circle>
+                            <line x1="15.4" y1="15.4" x2="20.5" y2="20.5"></line>
+                        </svg>
+                    </button>
                     <button class="btn collab-btn" id="openCollabBtn" title="Collab — Mode collaboration P2P (WebRTC)" aria-label="Collaboration P2P" onclick="window.SPCollab && window.SPCollab.open()" style="pointer-events: auto; position: relative; display: inline-flex; align-items: center; justify-content: center; padding: 6px 8px;">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="9" cy="8" r="3.2"></circle>
@@ -1654,7 +1659,7 @@
                 </div>
                 <div class="toolbar-right">
                     <button class="btn" id="exportPDF" title="Exporter (PDF, PNG, JPG, IDML, .sp)" aria-label="Exporter" data-translate-title="export" style="pointer-events: auto;">EXPORT</button>
-                    <button class="btn btn-secondary" id="topbarSettingsBtn" title="Préférences" data-translate-title="settings" onclick="openSettings()" style="display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; min-width: 28px; min-height: 28px; white-space: nowrap; font-size: 14px; line-height: 1;">⚙</button>
+                    <button class="btn btn-secondary btn-square" id="topbarSettingsBtn" title="Préférences" data-translate-title="settings" onclick="openSettings()" style="font-size: 14px; line-height: 1;">⚙</button>
                 </div>
             </div>
 
@@ -1807,12 +1812,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.455). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.456). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.455 — internal cache tag: JS v455 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.456 — internal cache tag: JS v456 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v455"
-                      data-sp-sw="v1.7.455">v1.7.455</span>
+                      data-sp-js="v456"
+                      data-sp-sw="v1.7.456">v1.7.456</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -3803,8 +3808,51 @@
             <div class="fr-actions">
                 <button class="fr-btn" type="button" onclick="findPrev()"><span data-translate="frPrev">← Précédent</span></button>
                 <button class="fr-btn" type="button" onclick="findNext()"><span data-translate="frNext">Suivant →</span></button>
-                <button class="fr-btn" type="button" onclick="replaceOne()"><span data-translate="frOne">Remplacer</span></button>
+                <button class="fr-btn fr-btn-primary" type="button" onclick="replaceOne()"><span data-translate="frOne">Remplacer</span></button>
                 <button class="fr-btn fr-btn-primary" type="button" onclick="_spReplaceAll()"><span data-translate="frAll">Tout remplacer</span></button>
+            </div>
+            <!-- 🆕 v1.7.455j — Options avancées : ouvre un bloc qui AGRANDIT la fenêtre. -->
+            <button class="fr-adv-toggle" type="button" id="frAdvToggle" onclick="frToggleAdvanced()" aria-expanded="false" aria-controls="frAdvanced">
+                <span class="fr-adv-arrow" aria-hidden="true">›</span>
+                <span data-translate="frAdv">Options avancées</span>
+            </button>
+            <div class="fr-adv" id="frAdvanced" hidden>
+                <div class="fr-adv-sec">
+                    <div class="fr-adv-titre" data-translate="frAdvMatch">Recherche</div>
+                    <label class="fr-chk"><input type="checkbox" id="frCase" onchange="findInDocument()"><span data-translate="frCase">Respecter la casse (Aa)</span></label>
+                    <label class="fr-chk"><input type="checkbox" id="frWord" onchange="findInDocument()"><span data-translate="frWord">Mots entiers</span></label>
+                    <label class="fr-chk"><input type="checkbox" id="frRegex" onchange="findInDocument()"><span data-translate="frRegex">Expression régulière</span></label>
+                    <div class="fr-scope" id="frScope">
+                        <label class="fr-chk"><input type="radio" name="frScope" value="all" checked onchange="findInDocument()"><span data-translate="frScopeAll">Tout le document</span></label>
+                        <label class="fr-chk"><input type="radio" name="frScope" value="page" onchange="findInDocument()"><span data-translate="frScopePage">Page courante</span></label>
+                    </div>
+                </div>
+
+                <div class="fr-adv-sec">
+                    <div class="fr-adv-titre" data-translate="frAdvChars">Insérer un caractère spécial</div>
+                    <div class="fr-chars">
+                        <button class="fr-char" type="button" data-char="&#160;" onclick="frInsertChar(this.dataset.char)" title="Espace insécable U+00A0 — indissociable du mot précédent">␣ inséc.</button>
+                        <button class="fr-char" type="button" data-char="&#8239;" onclick="frInsertChar(this.dataset.char)" title="Espace fine insécable U+202F — celle qui précède ; : ! ? et le »">␣ fine</button>
+                        <button class="fr-char" type="button" data-char="&#173;" onclick="frInsertChar(this.dataset.char)" title="Tiret conditionnel U+00AD — césure invisible, n’apparaît qu’en fin de ligne">¬</button>
+                        <button class="fr-char" type="button" data-char="&#92;n" onclick="frInsertChar(this.dataset.char)" title="Saut de ligne forcé (inséré en \n, mode expression régulière activé)">↵</button>
+                        <button class="fr-char" type="button" data-char="&#9;" onclick="frInsertChar(this.dataset.char)" title="Tabulation U+0009">→|</button>
+                        <button class="fr-char" type="button" data-char="&#8217;" onclick="frInsertChar(this.dataset.char)" title="Apostrophe typographique U+2019 (l’apostrophe droite est une faute d’imprimerie)">’</button>
+                        <button class="fr-char" type="button" data-char="&#171;&#160;&#187;" onclick="frInsertChar(this.dataset.char)" title="Guillemets français avec espace insécable à l’intérieur">« »</button>
+                        <button class="fr-char" type="button" data-char="&#8212;" onclick="frInsertChar(this.dataset.char)" title="Tiret cadratin U+2014 (incise)">—</button>
+                        <button class="fr-char" type="button" data-char="&#8211;" onclick="frInsertChar(this.dataset.char)" title="Tiret demi-cadratin U+2013 (intervalle)">–</button>
+                        <button class="fr-char" type="button" data-char="&#183;" onclick="frInsertChar(this.dataset.char)" title="Point médian U+00B7">·</button>
+                        <button class="fr-char" type="button" data-char="&#8230;" onclick="frInsertChar(this.dataset.char)" title="Points de suspension U+2026 (un seul caractère, insécable)">…</button>
+                    </div>
+                </div>
+
+                <div class="fr-adv-sec">
+                    <div class="fr-adv-titre" data-translate="frAdvTypo">Vérifications typographiques</div>
+                    <div class="fr-typo">
+                        <button class="fr-btn" type="button" onclick="frCheck('ponctuation')" data-translate="frTypoPonc">Espace avant ; : ! ?</button>
+                        <button class="fr-btn" type="button" onclick="frCheck('espaces')" data-translate="frTypoDouble">Espaces consécutifs</button>
+                        <button class="fr-btn" type="button" onclick="frCheck('virgule')" data-translate="frTypoVirgule">Espace avant , .</button>
+                    </div>
+                </div>
             </div>
             <div id="findReplaceStatus" class="fr-status"></div>
         </div>
@@ -5389,30 +5437,28 @@
                 <button class="modal-close sp-modal-close" onclick="closeNewProjectModal()" style="position: absolute; right: 12px; top: 8px;">×</button>
             </div>
             <div class="modal-body" style="padding: 18px 20px 10px;">
-                <!-- Onglets de configuration : Basic · Advanced · Automatic · Templates,
-                     puis (separes par un trait) les 2 ACTIONS Studio IA / SuperTyPo. -->
+                <!-- Onglets de configuration : Basic · Advanced · Templates, puis
+                     (separes par un trait) les 2 ACTIONS Studio IA / SuperTyPo. -->
                 <div class="np-tabs" style="display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #eee;">
                     <button class="np-tab active" id="npTabBasic" onclick="npSwitchTab('basic')" style="padding: 8px 16px; border: none; background: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; border-bottom: 2px solid #1a1a1a; color: #1a1a1a; font-weight: 600;"
                         data-i18n-fr="Basique" data-i18n-en="Basic" data-i18n-jp="基本">Basic</button>
                     <button class="np-tab" id="npTabAdvanced" onclick="npSwitchTab('advanced')" style="padding: 8px 16px; border: none; background: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; color: #999;"
                         data-i18n-fr="Avancé" data-i18n-en="Advanced" data-i18n-jp="詳細">Advanced</button>
-                    <button class="np-tab" id="npTabAuto" onclick="npSwitchTab('auto')" style="padding: 8px 16px; border: none; background: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; color: #999; display: inline-flex; align-items: center; gap: 5px;"
-                        data-i18n-fr="Automatique" data-i18n-en="Automatic" data-i18n-jp="自動">Automatic</button>
                     <button class="np-tab" id="npTabTemplates" onclick="npSwitchTab('templates')" style="padding: 8px 16px; border: none; background: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; color: #999; display: inline-flex; align-items: center; gap: 5px;"
                         data-i18n-fr="Modèles" data-i18n-en="Templates" data-i18n-jp="テンプレート">Templates</button>
                     <!-- v1.7.417 — Ces DEUX boutons sont des ACTIONS : ils FERMENT la pop-in
                          et ouvrent un autre outil. Ils sont donc places APRES les onglets de
                          configuration, separes par un trait, pour qu'on ne les confonde pas
                          avec les reglages du document en cours.
-                         Ordre final : Basic · Advanced · Automatic · Templates | Studio IA · SuperTyPo -->
+                         Ordre final : Basic · Advanced · Templates | Studio IA · SuperTyPo -->
                     <!-- v1.7.417 — align-self:center : sans lui, la ligne (hauteur fixe 18 px)
                          se calait en HAUT de la rangee flex (33 px de haut). Mesure avant :
                          ligne 0-18, bouton 0-33 -> ecart bas de 15 px. -->
                     <span aria-hidden="true" style="display:inline-block;width:1px;height:18px;margin:0 6px;align-self:center;background:rgba(0,0,0,0.12);"></span>
                     <button class="np-tab" id="npTabStudio" onclick="npSwitchTab('studio')" style="padding: 8px 16px; border: none; background: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; color: #1a1a1a; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;"
-                        data-i18n-fr="Studio IA" data-i18n-en="Studio IA" data-i18n-jp="Studio IA">Studio IA</button>
+                        data-i18n-fr="Studio IA" data-i18n-en="Studio IA" data-i18n-jp="Studio IA"><img src="../icons/studio_print_logo_blanc.svg" alt="" width="15" height="15" aria-hidden="true" style="display: block; flex: 0 0 auto;">Studio IA</button>
                     <button class="np-tab" id="npTabSupertypo" onclick="npSwitchTab('supertypo')" style="padding: 8px 16px; border: none; background: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; color: #1a1a1a; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;"
-                        data-i18n-fr="SuperTyPo" data-i18n-en="SuperTyPo" data-i18n-jp="SuperTyPo">SuperTyPo</button>
+                        data-i18n-fr="SuperTyPo" data-i18n-en="SuperTyPo" data-i18n-jp="SuperTyPo"><img src="../icons/sper_typo.svg" alt="" width="15" height="15" aria-hidden="true" style="display: block; flex: 0 0 auto;">SuperTyPo</button>
                 </div>
 
                 <div class="np-columns" style="display: flex; gap: 24px;">
@@ -5561,33 +5607,6 @@
                                     <button class="np-format-btn" id="npColorCmyk" onclick="npSetColorMode('cmyk')" style="padding: 6px 16px;">CMJN <span style="opacity:.6;font-size:10px;">impression</span></button>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- ===== AUTOMATIC PANEL ===== -->
-                        <div id="npPanelAuto" style="display: none;">
-                            <div class="np-field" style="margin-bottom: 10px;">
-                                <label class="np-label" id="npLabelAutoKeywords" data-i18n-fr="Mots-clés (séparez par des virgules)" data-i18n-en="Keywords (separate with commas)" data-i18n-jp="キーワード（カンマ区切り）">Keywords (separate with commas)</label>
-                                <input type="text" id="npAutoPrompt" class="np-input"
-                                    data-i18n-fr-placeholder="brochure, restaurant, 8 pages, menu, photos, colonnes..."
-                                    data-i18n-en-placeholder="brochure, restaurant, 8 pages, menu, photos, columns..."
-                                    data-i18n-jp-placeholder="パンフレット、レストラン、8ページ、メニュー、写真、段組..."
-                                    placeholder="brochure, restaurant, 8 pages, menu, photos, columns..."
-                                    style="width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; transition: border-color 0.2s;"
-                                    onfocus="this.style.borderColor='#1a1a1a'" onblur="this.style.borderColor='#ddd'"
-                                    onkeydown="if(event.key==='Enter')npAutoGenerate()">
-                            </div>
-                            <!-- Keyword chips -->
-                            <div id="npAutoChips" style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px;"></div>
-                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                                <button id="npAutoGenerateBtn" onclick="npAutoGenerate()" class="modal-btn modal-btn-primary"
-                                    style="padding: 10px 20px; font-weight: 600; font-size: 13px;"
-                                    data-i18n-fr="Générer la maquette" data-i18n-en="Generate layout" data-i18n-jp="レイアウト生成">Generate layout</button>
-                                <button id="npAutoRandomBtn" onclick="npAutoRandomPrompt()" class="modal-btn modal-btn-secondary"
-                                    style="padding: 10px 14px; font-size: 12px;"
-                                    data-i18n-fr="🎲 Exemple aléatoire" data-i18n-en="🎲 Random example" data-i18n-jp="🎲 ランダム例">🎲 Random example</button>
-                                <span id="npAutoStatus" style="font-size: 11px; color: #999; font-family: 'IBM Plex Mono', monospace;"></span>
-                            </div>
-                            <div id="npAutoPreview" style="margin-top: 12px; padding: 10px 12px; background: #f0f7f0; border-radius: 6px; border: 1px solid #c8e6c9; font-size: 11px; color: #2e7d32; font-family: 'IBM Plex Mono', monospace; line-height: 1.5; display: none;"></div>
                         </div>
 
                         <!-- ===== TEMPLATES PANEL ===== -->
@@ -5926,7 +5945,7 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260916-v455-release" defer></script>
+    <script src="JS/main.js?v=20260916-v456-release" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
     <script src="JS/virtual-printer.js?v=20260912-v417-clavier-studio" defer></script>
     <script src="JS/collab.js?v=20260907-v016-ux" defer></script>

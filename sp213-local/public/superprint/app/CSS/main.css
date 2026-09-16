@@ -1823,6 +1823,23 @@ details[open] > .sp-summary::before { transform: rotate(90deg); }
 .toolbar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; user-select: none; -webkit-user-select: none; position: relative; }
 .toolbar-left,
 .toolbar-right { display: flex; gap: 8px; align-items: center; }
+
+/* 🆕 v1.7.455j — BOÎTES CARRÉES 32 × 32 (+, loupe, −, ⚙).
+   Mesure avant : le bouton « + » faisait 28,1 × 32 px (ratio 0,88), « − »
+   31,3 × 32 (0,98), « ⚙ » 29,1 × 32 (0,91) : toutes PLUS HAUTES QUE LARGES,
+   d'où l'effet « rectangle » signalé. Ces quatre boîtes ne portent qu'une
+   icône (ou un glyphe) : elles deviennent des carrés stricts.
+   « Page + » et « EXPORT » gardent leur libellé et leur hauteur de 32 px. */
+.toolbar .btn-square {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+}
+.toolbar .btn-square > svg,
+.toolbar .btn-square > span,
+.toolbar .btn-square > img {
+    display: block;
+}
 .canvas-wrapper { flex: 1; overflow: hidden; position: relative; background: #e8e8e8; display: flex; user-select: none; -webkit-user-select: none; }
 
 /* 🔒 Empêcher le caret (curseur texte) hors champs utiles */
@@ -3918,18 +3935,6 @@ input[type=number] {
 .theme-dark .spinner-button:hover { background: #2a2a2e; }
 .theme-dark .spinner-button:active { background: #34343a; }
 
-/* --- 4. Toolbar vertical separator (entre + et le reste) -------------- */
-/* Auparavant inline `background: #ddd` -> ligne blanche en dark.
-   Nouvelle classe utilisable dans toute la toolbar. */
-.toolbar-vsep {
-    width: 1px;
-    height: 24px;
-    background: #ddd;
-    margin: 0 4px;
-    align-self: center;
-}
-.theme-dark .toolbar-vsep { background: var(--sp-dark-line); }
-
 /* --- 5. NEW PROJECT MODAL — finition dark complete ------------------- */
 /* Le modal #newProjectModal est truffe d'inline `border: 1px solid #ddd`
    et `background: #fff` qui battent les regles theme classiques.
@@ -4754,11 +4759,51 @@ input[type=number] {
     cursor: pointer; font-size: 12px; font-family: inherit; font-weight: 600; color: #333;
 }
 .fr-btn:hover { background: #ededed; border-color: #cfcfcf; }
-.fr-btn-primary { grid-column: 1 / -1; background: #111; border-color: #111; color: #fff; }
+.fr-btn-primary { background: #111; border-color: #111; color: #fff; }
 .fr-btn-primary:hover { background: #000; }
 .fr-status { margin-top: 10px; font-size: 11px; color: #8a8a8a; min-height: 15px; }
+/* 🆕 v1.7.455j — MODE AVANCÉ DU PANNEAU RECHERCHER & REMPLACER.
+   La fenêtre s'élargit (400 -> 470 px) quand le bloc est ouvert, pour que les
+   puces de caractères spéciaux tiennent sur une ligne confortable. */
+.fr-panel.fr-adv-open { width: 470px; }
+.fr-adv-toggle {
+    display: flex; align-items: center; gap: 6px; width: 100%;
+    margin: 12px 0 0; padding: 7px 8px; background: none; border: none;
+    border-top: 1px solid #eee; cursor: pointer;
+    font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+    text-transform: uppercase; color: #7a7a7a; text-align: left;
+}
+.fr-adv-toggle:hover { color: #111; }
+.fr-adv-arrow { display: inline-block; font-size: 15px; line-height: 1; transition: transform 0.15s; }
+.fr-adv-toggle[aria-expanded="true"] .fr-adv-arrow { transform: rotate(90deg); }
+.fr-adv { padding-top: 4px; }
+.fr-adv-sec { padding: 8px 0 2px; }
+.fr-adv-sec + .fr-adv-sec { border-top: 1px dashed #eee; margin-top: 4px; }
+.fr-adv-titre { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #9a9a9a; margin-bottom: 7px; }
+.fr-chk {
+    display: flex; align-items: center; gap: 7px; margin: 0 0 6px;
+    font-size: 12px; color: #333; cursor: pointer;
+}
+.fr-chk input { margin: 0; accent-color: #111; cursor: pointer; }
+.fr-scope {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    margin-top: 2px; padding-top: 7px; border-top: 1px solid #f2f2f2;
+}
+.fr-chars { display: flex; flex-wrap: wrap; gap: 5px; }
+.fr-char {
+    flex: 1 1 52px; min-width: 46px; text-align: center;
+    padding: 6px 8px; background: #fafafa;
+    border: 1px solid #e2e2e2; border-radius: 6px; cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #333; line-height: 1;
+}
+.fr-char:hover { background: #f0f0f0; border-color: #cfcfcf; color: #000; }
+.fr-typo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fr-typo .fr-btn:last-child { grid-column: 1 / -1; }
 @media (max-width: 760px) {
     .fr-panel { width: calc(100vw - 20px); right: 10px; left: 10px !important; }
+    /* v1.7.455j — le mode avancé élargit le panneau à 470 px : sur mobile on
+       garde la largeur d'écran, sinon la fenêtre déborde. */
+    .fr-panel.fr-adv-open { width: calc(100vw - 20px); }
     .fr-actions { grid-template-columns: 1fr 1fr; }
 }
 
