@@ -3083,6 +3083,16 @@ if (window._spGpuEnabled) {
             base.enableHyphenation = (this.enableHyphenation !== false);
             base.hyphenLanguage = this.hyphenLanguage
                 || ((typeof spDefaultHyphenLanguage === 'function') ? spDefaultHyphenLanguage() : (currentHyphenLanguage || 'fr'));
+            // 🆕 v1.7.454 — ALLER-RETOUR NEUTRE POUR LA COUPE DES MOTS.
+            //   Fabric ne sérialise ni breakWords ni splitByGrapheme (Textbox.toObject
+            //   n'écrit que minWidth) et ils n'étaient dans aucune liste SuperPrint.
+            //   MESURÉ : après save/reload, obj.breakWords valait undefined alors que
+            //   le moteur de wrapping le force à true — la première mise en page
+            //   après relecture ne coupait donc plus les mots trop longs : la ligne
+            //   débordait du bloc à droite (et une ligne de plus pouvait passer sous
+            //   le masque). On écrit la valeur EFFECTIVE, comme pour la césure.
+            base.breakWords = (this.breakWords !== false);
+            base.splitByGrapheme = (this.splitByGrapheme !== false);
             // ✅ Sérialiser les propriétés de hauteur/largeur fixe pour le clip
             if (this._fixedHeight) base._fixedHeight = this._fixedHeight;
             if (this._fixedWidth) base._fixedWidth = this._fixedWidth;
@@ -3237,25 +3247,65 @@ if (window._spGpuEnabled) {
         return family;
     }
 
+    // 🆕 v1.7.454 — ESPACEMENT DE LETTRES EFFECTIF D'UNE PLAGE (styles inline).
+    //   La mesure du wrap n'utilisait que `obj.charSpacing` (valeur du BLOC). Or le
+    //   tracking (interlettre) s'applique par SÉLECTION — `obj.styles[ligne][car].charSpacing`
+    //   — avec `obj.charSpacing` resté à 0. La ligne était donc remplie comme s'il n'y
+    //   avait aucun espacement supplémentaire, puis rendue AVEC (le patch _measureChar
+    //   l'ajoute bien) : débordement à droite, hors du bloc. Mesuré : bloc 260 px,
+    //   interlettre 150 sur la sélection 0-60 => ligne de 331,22 px, soit +71,22 px.
+    //   Cette fonction renvoie l'espacement MAX effectif de la plage.
+    function getMaxCharSpacingForSpan(obj, lineIndex, start, end) {
+        const baseCS = (typeof obj.charSpacing === 'number' && isFinite(obj.charSpacing)) ? obj.charSpacing : 0;
+        const s = Math.max(0, start || 0);
+        const e = Math.max(s, end || s);
+        if (s === e) return baseCS;
+        if (!obj.styles || !obj.styles[lineIndex]) return baseCS;
+        const lineStyles = obj.styles[lineIndex];
+        let max = baseCS;
+        for (let i = s; i < e; i++) {
+            const style = lineStyles[i];
+            if (style && typeof style.charSpacing === 'number' && isFinite(style.charSpacing) && style.charSpacing > max) {
+                max = style.charSpacing;
+            }
+        }
+        return max;
+    }
+
     // Mesure brute (sans marge de sécurité), utile pour additionner des segments
-    function measureRawWithFont(obj, text, fontSize, fontWeight, fontFamily) {
+    function measureRawWithFont(obj, text, fontSize, fontWeight, fontFamily, charSpacingOverride) {
         const style = obj.fontStyle || 'normal';
         const weight = fontWeight || obj.fontWeight || '400';
         const family = fontFamily || obj.fontFamily || 'sans-serif';
         const safeFamily = family.includes(' ') || !family.startsWith("'") ? `'${family.replace(/'/g, "\\'")}'` : family;
         measureCtx.font = `${style} ${weight} ${fontSize}px ${safeFamily}`;
         let w = measureCtx.measureText(text).width;
-        if (obj.charSpacing && text.length > 1) {
-            w += (text.length - 1) * (obj.charSpacing * fontSize / 1000);
+        // 🆕 v1.7.454 — espacement effectif : celui de la PLAGE (styles inline) s'il est fourni,
+        //   sinon la valeur du bloc (comportement inchangé pour tous les autres appels).
+        const _csEff = (typeof charSpacingOverride === 'number' && isFinite(charSpacingOverride))
+            ? charSpacingOverride : ((typeof obj.charSpacing === 'number') ? obj.charSpacing : 0);
+        if (_csEff && text.length > 1) {
+            // 🆕 v1.7.454b — CONVENTION MESURÉE : un espacement de PLAGE (styles inline)
+            //   est ajouté APRÈS CHAQUE caractère (n espacements — mesuré 19 car. à 20 px /
+            //   150 => +57 px), alors que l'espacement de BLOC n'en ajoute que (n-1)
+            //   (mesuré 8 car. à 20 px / 100 => +14 px). Compter n quand une valeur de
+            //   plage est fournie est le choix sûr : au pire la ligne casse un peu plus
+            //   tôt, jamais de débordement à droite.
+            const _nGaps = (typeof charSpacingOverride === 'number' && isFinite(charSpacingOverride))
+                ? text.length : (text.length - 1);
+            w += _nGaps * (_csEff * fontSize / 1000);
         }
         return w;
     }
 
-    function measureSpanRaw(obj, text, lineIndex, start, end) {
+    function measureSpanRaw(obj, text, lineIndex, start, end, charSpacingOverride) {
         const spanFontSize = getMaxFontSizeForSpan(obj, lineIndex, start, end);
         const spanFontWeight = getMaxFontWeightForSpan(obj, lineIndex, start, end);
         const spanFontFamily = getFontFamilyForSpan(obj, lineIndex, start, end);
-        return measureRawWithFont(obj, text, spanFontSize, spanFontWeight, spanFontFamily);
+        // 🆕 v1.7.454 — inclure l'espacement de lettres des caractères stylés de la plage
+        const spanCharSpacing = (typeof charSpacingOverride === 'number')
+            ? charSpacingOverride : getMaxCharSpacingForSpan(obj, lineIndex, start, end);
+        return measureRawWithFont(obj, text, spanFontSize, spanFontWeight, spanFontFamily, spanCharSpacing);
     }
 
     // Mesure "intelligente" qui scanne les styles inline (important pour les sélections mixtes)
@@ -4960,6 +5010,13 @@ if (window._spGpuEnabled) {
             let current = '';
             let currentWidth = 0;
             let currentMaxFontSize = this.fontSize || 14;
+            // 🆕 v1.7.454 — espacement de lettres MAX de la ligne logique (styles inline inclus).
+            //   Sert à réserver la respiration ENTRE la fin de la ligne courante et le token
+            //   suivant (l'ancien code ne lisait que this.charSpacing, soit 0 dans le cas
+            //   d'une sélection avec interlettre). Sur-estimer ici est sûr : cela ne peut
+            //   que faire casser la ligne plus tôt, jamais déborder.
+            let _spLineMaxCS = 0;
+            try { _spLineMaxCS = getMaxCharSpacingForSpan(this, lineIndex, 0, (line || '').length); } catch (_) { _spLineMaxCS = this.charSpacing || 0; }
             // Important: Fabric Textbox omet l'espace de coupure entre lignes wrapées.
             // On reproduit ce comportement avec un espace "en attente".
             // ⚠️ Mais les espaces en fin de ligne source (avant un '\n' tapé par l'utilisateur)
@@ -5023,8 +5080,9 @@ if (window._spGpuEnabled) {
                             const _spLineMaxFontSize = getMaxFontSizeForSpan(this, lineIndex, tokenStart, tokenEnd) || effectiveFontSize;
                             const _spLineMaxFontWeight = getMaxFontWeightForSpan(this, lineIndex, tokenStart, tokenEnd);
                             const _spLineFontFamily = getFontFamilyForSpan(this, lineIndex, tokenStart, tokenEnd);
+                            const _spLineCharSpacing = getMaxCharSpacingForSpan(this, lineIndex, tokenStart, tokenEnd);
                             current = token;
-                            currentWidth = measureRawWithFont(this, token, _spLineMaxFontSize, _spLineMaxFontWeight, _spLineFontFamily);
+                            currentWidth = measureRawWithFont(this, token, _spLineMaxFontSize, _spLineMaxFontWeight, _spLineFontFamily, _spLineCharSpacing);
                             currentMaxFontSize = Math.max(currentMaxFontSize, _spLineMaxFontSize);
                             pendingSpace = null;
                             continue;
@@ -5047,15 +5105,19 @@ if (window._spGpuEnabled) {
                 const tokenMaxFontSize = getMaxFontSizeForSpan(this, lineIndex, prefixedStart, prefixedEnd);
                 const tokenMaxFontWeight = getMaxFontWeightForSpan(this, lineIndex, prefixedStart, prefixedEnd);
                 const tokenFontFamily = getFontFamilyForSpan(this, lineIndex, prefixedStart, prefixedEnd);
-                let tokenWidth = measureRawWithFont(this, prefixedToken, tokenMaxFontSize, tokenMaxFontWeight, tokenFontFamily);
+                const tokenCharSpacing = getMaxCharSpacingForSpan(this, lineIndex, prefixedStart, prefixedEnd);
+                let tokenWidth = measureRawWithFont(this, prefixedToken, tokenMaxFontSize, tokenMaxFontWeight, tokenFontFamily, tokenCharSpacing);
                 // 📐 Appliquer le facteur d'espacement intermots sur la partie espace
                 if (pendingSpace && _justWordSpaceFactor !== 1.0) {
-                    const spaceWidth = measureRawWithFont(this, tokenPrefix, tokenMaxFontSize, tokenMaxFontWeight, tokenFontFamily);
+                    const spaceWidth = measureRawWithFont(this, tokenPrefix, tokenMaxFontSize, tokenMaxFontWeight, tokenFontFamily, tokenCharSpacing);
                     const wordOnlyWidth = tokenWidth - spaceWidth;
                     tokenWidth = (spaceWidth * _justWordSpaceFactor) + wordOnlyWidth;
                 }
-                const boundarySpacing = (current.length && this.charSpacing)
-                    ? (this.charSpacing * Math.max(currentMaxFontSize, tokenMaxFontSize) / 1000)
+                // 🆕 v1.7.454 — la frontière entre la ligne courante et le token doit réserver
+                //   l'espacement de lettres effectif (avant : this.charSpacing, donc 0 pour un
+                //   tracking appliqué à la sélection).
+                const boundarySpacing = (current.length && _spLineMaxCS)
+                    ? (_spLineMaxCS * Math.max(currentMaxFontSize, tokenMaxFontSize) / 1000)
                     : 0;
                 const candidateWidth = currentWidth + boundarySpacing + tokenWidth;
                 if (candidateWidth <= maxWidth) {
@@ -5101,9 +5163,10 @@ if (window._spGpuEnabled) {
                                 const partMaxFontWeight = getMaxFontWeightForSpan(this, lineIndex, partStart, partEnd);
                                 const partFontFamily = getFontFamilyForSpan(this, lineIndex, partStart, partEnd);
                                 // Mesurer avec '-' (tiret standard) pour réserver la place du tiret
-                                const partWithHyphenWidth = measureRawWithFont(this, partText + '-', partMaxFontSize, partMaxFontWeight, partFontFamily);
-                                const partBoundarySpacing = (current.length && this.charSpacing)
-                                    ? (this.charSpacing * Math.max(currentMaxFontSize, partMaxFontSize) / 1000)
+                                const partCharSpacing = getMaxCharSpacingForSpan(this, lineIndex, partStart, partEnd);
+                                const partWithHyphenWidth = measureRawWithFont(this, partText + '-', partMaxFontSize, partMaxFontWeight, partFontFamily, partCharSpacing);
+                                const partBoundarySpacing = (current.length && _spLineMaxCS)
+                                    ? (_spLineMaxCS * Math.max(currentMaxFontSize, partMaxFontSize) / 1000)
                                     : 0;
                                 const candidateWidthWithHyphen = currentWidth + partBoundarySpacing + partWithHyphenWidth;
                                 if (candidateWidthWithHyphen <= maxWidth) {
@@ -5191,7 +5254,8 @@ if (window._spGpuEnabled) {
                                 const partMaxFontSize = getMaxFontSizeForSpan(this, lineIndex, partStart, partEnd);
                                 const partMaxFontWeight = getMaxFontWeightForSpan(this, lineIndex, partStart, partEnd);
                                 const partFontFamily = getFontFamilyForSpan(this, lineIndex, partStart, partEnd);
-                                const candidateWidth = measureRawWithFont(this, part + '-', partMaxFontSize, partMaxFontWeight, partFontFamily); // Tiret simple (-)
+                                const partCharSpacing = getMaxCharSpacingForSpan(this, lineIndex, partStart, partEnd);
+                                const candidateWidth = measureRawWithFont(this, part + '-', partMaxFontSize, partMaxFontWeight, partFontFamily, partCharSpacing); // Tiret simple (-)
                                 if (candidateWidth <= maxWidth) {
                                     take = s;
                                 } else {
@@ -6189,6 +6253,16 @@ if (window._spGpuEnabled) {
                 obj._cacheCanvas = null;
                 obj._cacheContext = null;
             }
+
+            // 🆕 v1.7.454 — RÉTABLIR LES RÈGLES DE MISE EN PAGE AVANT TOUTE MESURE.
+            //   Un fichier .sp/.json enregistré AVANT cette version ne contient pas
+            //   breakWords/splitByGrapheme : sans ces lignes, la première mise en page
+            //   après relecture serait faite avec des règles différentes de celles de
+            //   l'enregistrement (mots longs non coupés = débordement à droite).
+            if (obj.type === 'textbox') {
+                if (obj.breakWords === undefined) obj.breakWords = true;
+                if (obj.splitByGrapheme === undefined) obj.splitByGrapheme = true;
+            }
             
             if (!obj.selectionColor) {
                 obj.selectionColor = 'rgba(13, 153, 255, 0.3)';
@@ -6224,6 +6298,21 @@ if (window._spGpuEnabled) {
                         this.height = this._fixedHeight;
                     }
                 };
+            }
+
+            // 🆕 v1.7.454 — REMETTRE LE TEXTE EN PAGE avec ces règles (le premier
+            //   initDimensions de la désérialisation avait lieu avant qu'on puisse
+            //   les rétablir). La hauteur fixe est immédiatement restaurée par le
+            //   monkey-patch ci-dessus, donc la géométrie du bloc ne change pas.
+            if (obj.type === 'textbox') {
+                try {
+                    if (typeof obj._clearCache === 'function') obj._clearCache();
+                    obj._styleMap = null;
+                    obj._textLines = null;
+                    obj.__lineWidths = null;
+                    obj.__lineHeights = null;
+                    if (typeof obj.initDimensions === 'function') obj.initDimensions();
+                } catch (_) {}
             }
             
             // Recalculer les coordonnées avec les bonnes dimensions
