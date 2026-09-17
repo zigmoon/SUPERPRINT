@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.456 — Zigmoon
+         SuperPrint 1.7.457 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.456 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.457 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.456",
+          "softwareVersion": "1.7.457",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -622,7 +622,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20260916-v456-release">
+    <link rel="stylesheet" href="CSS/main.css?v=20260917-v457-release">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -1029,7 +1029,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.456</div>
+                <div class="splash-version">1.7.457</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1131,7 +1131,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.456</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.457</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1227,7 +1227,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.456 | 09 2026<br>
+                V 1.7.457 | 09 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1364,6 +1364,41 @@
                                 <img src="icons/grid.svg" alt="Grille" class="tool-icon">
                                 <span>Grille</span>
                             </button>
+                            <button class="dropdown-item" id="toggleTabs" title="Tabulations — taquets du bloc texte">
+                                <svg width="18" height="14" viewBox="0 0 18 14" class="tool-icon" style="flex:0 0 auto;">
+                                    <line x1="10" y1="2.5" x2="17" y2="2.5" stroke="currentColor" stroke-width="1.4"/>
+                                    <line x1="10" y1="11.5" x2="17" y2="11.5" stroke="currentColor" stroke-width="1.4"/>
+                                    <line x1="1" y1="7" x2="6" y2="7" stroke="currentColor" stroke-width="1.4"/>
+                                    <path d="M6 4.6 L9 7 L6 9.4 M9 4.6 L9 9.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span>Tabulation</span>
+                            </button>
+                        </div>
+                        <div class="tool-dropdown-menu grid-menu" id="tabsMenu">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 6px;">
+                                <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; opacity: 0.7;">Taquets de tabulation</div>
+                                <span id="closeTabsMenuX" style="cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; padding: 4px 8px; opacity: 0.6;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">×</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px; padding: 0 6px 4px 6px;">
+                                <input type="checkbox" id="tabsVisibleToggle" style="width: 12px; height: 12px;">
+                                <label for="tabsVisibleToggle" style="font-size: 10px;">Taquets actifs sur le bloc</label>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px 6px;">
+                                <div class="input-group" style="margin: 0;">
+                                    <label style="font-size: 8px;">Intervalle (px)</label>
+                                    <input type="number" id="tabStep" value="40" min="4" max="400" step="1" style="height: 22px; font-size: 10px;">
+                                </div>
+                                <div class="input-group" style="margin: 0;">
+                                    <label style="font-size: 8px;">Position (px)</label>
+                                    <input type="number" id="tabNewPos" value="40" min="0" max="5000" step="1" style="height: 22px; font-size: 10px;">
+                                </div>
+                            </div>
+                            <div id="tabStopsList" style="display: flex; flex-direction: column; gap: 3px; padding: 2px 6px;"></div>
+                            <div style="display: flex; gap: 6px; padding: 6px;">
+                                <button class="btn btn-secondary" id="tabAddBtn" style="flex: 1; font-size: 10px;" title="Ajouter un taquet à cette position">+ Taquet</button>
+                                <button class="btn btn-secondary" id="tabClearBtn" style="flex: 1; font-size: 10px;" title="Retirer tous les taquets du bloc">Effacer</button>
+                            </div>
+                            <div class="hint" style="padding: 0 6px 8px 6px;">Touche Tab dans le texte : la frappe avance au taquet suivant.</div>
                         </div>
                         <div class="tool-dropdown-menu grid-menu" id="gridMenu">
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 6px;">
@@ -1812,12 +1847,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.456). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.457). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.456 — internal cache tag: JS v456 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.457 — internal cache tag: JS v457 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v456"
-                      data-sp-sw="v1.7.456">v1.7.456</span>
+                      data-sp-js="v457"
+                      data-sp-sw="v1.7.457">v1.7.457</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -2020,50 +2055,50 @@
                     </style>
                     <div id="spMassPasteModal">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <div style="font-weight:600; font-size:15px;">Collage de texte volumineux</div>
+                            <div style="font-weight:600; font-size:15px;" id="spmpTitle">Collage de texte volumineux</div>
                             <div style="margin-left:auto; cursor:pointer; opacity:.55; font-size:15px;" id="spMassPasteClose">✕</div>
                         </div>
                         <div style="font-size:12px; color:#555; margin-top:6px;" id="spMassPasteInfo">Analyse…</div>
 
-                        <div class="spmp-h">Répartition</div>
+                        <div class="spmp-h" id="spmpH1">Répartition</div>
                         <label class="spmp-line">
                             <input type="radio" name="spMassPasteMode" value="bloc" checked>
-                            <span>Tout dans ce bloc<br><span class="spmp-note">Le bloc débordera de sa zone. Utile pour un petit surplus.</span></span>
+                            <span><span id="spmpBlocTxt">Tout dans ce bloc</span><br><span class="spmp-note" id="spmpBlocNote">Le bloc débordera de sa zone. Utile pour un petit surplus.</span></span>
                         </label>
                         <label class="spmp-line">
                             <input type="radio" name="spMassPasteMode" value="couler">
-                            <span>Couler sur des pages chaînées <span class="spmp-note" id="spMassPastePages"></span><br><span class="spmp-note">Crée les pages et les blocs liés automatiquement.</span></span>
+                            <span><span id="spmpCoulerTxt">Couler sur des pages chaînées</span> <span class="spmp-note" id="spMassPastePages"></span><br><span class="spmp-note" id="spmpCoulerNote">Crée les pages et les blocs liés automatiquement.</span></span>
                         </label>
 
-                        <div class="spmp-h">Texte</div>
+                        <div class="spmp-h" id="spmpH2">Texte</div>
                         <label class="spmp-line">
                             <input type="checkbox" id="spMassPasteAplatir" checked>
-                            <span>Aplatir les styles (style breaker)<br><span class="spmp-note">Supprime gras, italique, tailles et couleurs parasites venus du copier-coller. Recommandé.</span></span>
+                            <span><span id="spmpAplatirTxt">Aplatir les styles (style breaker)</span><br><span class="spmp-note" id="spmpAplatirNote">Supprime gras, italique, tailles et couleurs parasites venus du copier-coller. Recommandé.</span></span>
                         </label>
                         <label class="spmp-line">
                             <input type="checkbox" id="spMassPasteTypo" checked>
-                            <span>Appliquer la typographie choisie</span>
+                            <span id="spmpTypoTxt">Appliquer la typographie choisie</span>
                         </label>
                         <div class="spmp-row">
-                            <span>Corps</span><input type="number" id="spMassPasteCorps" min="6" max="72" step="0.5" value="12"><span>pt</span>
-                            <span style="margin-left:8px;">Interligne</span><input type="number" id="spMassPasteInterligne" min="0.8" max="3" step="0.05" value="1.3">
-                            <label><input type="checkbox" id="spMassPasteJustifie"> Justifié</label>
-                            <label><input type="checkbox" id="spMassPasteCesure" checked> Césure</label>
+                            <span id="spmpCorpsLbl">Corps</span><input type="number" id="spMassPasteCorps" min="6" max="72" step="0.5" value="12"><span>pt</span>
+                            <span style="margin-left:8px;" id="spmpInterLbl">Interligne</span><input type="number" id="spMassPasteInterligne" min="0.8" max="3" step="0.05" value="1.3">
+                            <label id="spmpJustLbl"><input type="checkbox" id="spMassPasteJustifie"> Justifié</label>
+                            <label id="spmpCesureLbl"><input type="checkbox" id="spMassPasteCesure" checked> Césure</label>
                         </div>
 
-                        <div class="spmp-h">Marges et retraits</div>
+                        <div class="spmp-h" id="spmpH3">Marges et retraits</div>
                         <label class="spmp-line">
                             <input type="checkbox" id="spMassPasteMarges" checked>
-                            <span>Marges automatiques du document<br><span class="spmp-note">Chaque nouveau bloc est placé dans la zone de marges de la page.</span></span>
+                            <span><span id="spmpMargesTxt">Marges automatiques du document</span><br><span class="spmp-note" id="spmpMargesNote">Chaque nouveau bloc est placé dans la zone de marges de la page.</span></span>
                         </label>
                         <div class="spmp-row">
-                            <span>Retrait 1re ligne</span><input type="number" id="spMassPasteRetrait1" min="0" max="100" step="0.5" value="0"><span>mm</span>
-                            <span style="margin-left:8px;">Gauche</span><input type="number" id="spMassPasteRetraitG" min="0" max="100" step="0.5" value="0"><span>mm</span>
-                            <span style="margin-left:8px;">Droite</span><input type="number" id="spMassPasteRetraitD" min="0" max="100" step="0.5" value="0"><span>mm</span>
+                            <span id="spmpRet1Lbl">Retrait 1re ligne</span><input type="number" id="spMassPasteRetrait1" min="0" max="100" step="0.5" value="0"><span>mm</span>
+                            <span style="margin-left:8px;" id="spmpGaucheLbl">Gauche</span><input type="number" id="spMassPasteRetraitG" min="0" max="100" step="0.5" value="0"><span>mm</span>
+                            <span style="margin-left:8px;" id="spmpDroiteLbl">Droite</span><input type="number" id="spMassPasteRetraitD" min="0" max="100" step="0.5" value="0"><span>mm</span>
                         </div>
 
                         <details>
-                            <summary>Aperçu du texte</summary>
+                            <summary id="spmpApercuLbl">Aperçu du texte</summary>
                             <pre id="spMassPasteApercu"></pre>
                         </details>
 
@@ -2664,7 +2699,7 @@
                 <div class="input-group" id="shapeCornerRadius" style="display: none; margin-top: 12px;">
                     <div class="inline-row" style="align-items: center; justify-content: space-between; margin-bottom: 6px;">
                         <label data-translate="cornerRadius" style="margin: 0;">Coins arrondis</label>
-                        <button type="button" id="cornerLinkToggle" class="btn btn-secondary" title="Lier/délier les coins" style="padding: 2px 8px; font-size: 14px; line-height: 1;" data-translate-title="cornerLinkToggle">🔗</button>
+                        <button type="button" id="cornerLinkToggle" class="btn btn-secondary" title="Lier/délier les coins" style="padding: 2px 8px; font-size: 14px; line-height: 1;" data-translate-title="cornerLinkToggle">Lier</button>
                     </div>
                     <!-- Mode lié : un slider pour les 4 coins -->
                     <div id="cornerLinkedMode" class="inline-row" style="align-items: center; gap: 8px;">
@@ -2712,17 +2747,17 @@
                 <div class="input-group">
                     <label data-translate="fontLabel">Police</label>
                     <select id="fontFamily">
-                        <option value="Open Sans" selected>Open Sans ⚡ Light & Fast</option>
-                        <option value="Montserrat">Montserrat ⚡ Light & Fast</option>
-                        <option value="Roboto">Roboto ⚡ Light & Fast</option>
-                        <option value="Lato">Lato ⚡ Light & Fast</option>
-                        <option value="Poppins">Poppins ⚡ Light & Fast</option>
-                        <option value="Playfair Display">Playfair Display ⚡ Light & Fast</option>
-                        <option value="Bebas Neue">Bebas Neue ⚡ Light & Fast</option>
-                        <option value="IBM Plex Mono">IBM Plex Mono ⚡ Mono Classic</option>
-                        <option value="JetBrains Mono">JetBrains Mono 🚀 Trendy Code</option>
-                        <option value="Fira Code">Fira Code 🚀 Trendy Code</option>
-                        <option value="Space Mono">Space Mono 🚀 Trendy Space</option>
+                        <option value="Open Sans" selected>Open Sans</option>
+                        <option value="Montserrat">Montserrat</option>
+                        <option value="Roboto">Roboto</option>
+                        <option value="Lato">Lato</option>
+                        <option value="Poppins">Poppins</option>
+                        <option value="Playfair Display">Playfair Display</option>
+                        <option value="Bebas Neue">Bebas Neue</option>
+                        <option value="IBM Plex Mono">IBM Plex Mono</option>
+                        <option value="JetBrains Mono">JetBrains Mono</option>
+                        <option value="Fira Code">Fira Code</option>
+                        <option value="Space Mono">Space Mono</option>
                     </select>
                 </div>
                 <div class="input-row">
@@ -2774,15 +2809,37 @@
                     </div>
                     <div class="hint" data-translate="formatSelectionHint">💡 Double-cliquez le texte et sélectionnez des mots pour formater uniquement la sélection</div>
                 </div>
-                <div class="input-group">
-                    <label data-translate="textAlignLabel">Alignement</label>
-                    <div class="btn-group">
-                        <button class="btn btn-secondary" data-text-align="left" title="Fer à gauche" data-translate-title="alignLeft"><svg width="16" height="14" viewBox="0 0 16 14"><line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" stroke-width="1.6"/><line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" stroke-width="1.6"/><line x1="0" y1="9" x2="12" y2="9" stroke="currentColor" stroke-width="1.6"/><line x1="0" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="1.6"/></svg></button>
-                        <button class="btn btn-secondary" data-text-align="center" title="Centré" data-translate-title="alignCenter"><svg width="16" height="14" viewBox="0 0 16 14"><line x1="1" y1="1" x2="15" y2="1" stroke="currentColor" stroke-width="1.6"/><line x1="3" y1="5" x2="13" y2="5" stroke="currentColor" stroke-width="1.6"/><line x1="2" y1="9" x2="14" y2="9" stroke="currentColor" stroke-width="1.6"/><line x1="4" y1="13" x2="12" y2="13" stroke="currentColor" stroke-width="1.6"/></svg></button>
-                        <button class="btn btn-secondary" data-text-align="right" title="Fer à droite" data-translate-title="alignRight"><svg width="16" height="14" viewBox="0 0 16 14"><line x1="2" y1="1" x2="16" y2="1" stroke="currentColor" stroke-width="1.6"/><line x1="6" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.6"/><line x1="4" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="1.6"/><line x1="8" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="1.6"/></svg></button>
-                        <button class="btn btn-secondary" data-text-align="justify" title="Justifier (dernière ligne libre)" data-translate-title="justify"><svg width="16" height="14" viewBox="0 0 16 14"><line x1="0" y1="1" x2="16" y2="1" stroke="currentColor" stroke-width="1.6"/><line x1="0" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.6"/><line x1="0" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="1.6"/><line x1="0" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="1.6"/></svg></button>
-                        <button class="btn btn-secondary" data-text-align="justify-left" title="Justifié à gauche (dernière ligne à gauche)" data-translate-title="justifyLeft"><svg width="16" height="14" viewBox="0 0 16 14"><line x1="0" y1="1" x2="16" y2="1" stroke="currentColor" stroke-width="1.6"/><line x1="0" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.6"/><line x1="0" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="1.6"/><line x1="0" y1="13" x2="9" y2="13" stroke="currentColor" stroke-width="1.6"/></svg></button>
-                        <button class="btn btn-secondary" data-text-align="justify-right" title="Justifié à droite (dernière ligne à droite)" data-translate-title="justifyRight"><svg width="16" height="14" viewBox="0 0 16 14"><line x1="0" y1="1" x2="16" y2="1" stroke="currentColor" stroke-width="1.6"/><line x1="0" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.6"/><line x1="0" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="1.6"/></svg></button>
+                <!-- 🆕 v1.7.457 — OPTIONS DE BLOC TEXTE. Remplace l'« Alignement »
+                     qui était ici en DOUBLE : la section Alignement complète
+                     (texte / entre objets / plan de travail) reste plus bas dans
+                     la colonne, et c'est elle qui porte les alignements.
+                     Les retraits sont les mêmes unités que le reste du panneau (px). -->
+                                                <div class="input-group" id="spFrameOptions">
+                    <label data-translate="frameOptionsLabel">Options de bloc texte</label>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Haut</label>
+                            <input type="number" id="spInsetTop" step="1" value="0" title="Retrait interne haut (px)" oninput="spApplyFrameOptions()">
+                        </div>
+                        <div class="input-group">
+                            <label>Bas</label>
+                            <input type="number" id="spInsetBottom" step="1" value="0" title="Retrait interne bas (px)" oninput="spApplyFrameOptions()">
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Gauche</label>
+                            <input type="number" id="spInsetLeft" step="1" value="0" title="Retrait interne gauche (px) — appliqué par le moteur de mise en page" oninput="spApplyFrameOptions()">
+                        </div>
+                        <div class="input-group">
+                            <label>Droite</label>
+                            <input type="number" id="spInsetRight" step="1" value="0" title="Retrait interne droit (px) — appliqué par le moteur de mise en page" oninput="spApplyFrameOptions()">
+                        </div>
+                    </div>
+                    <div class="btn-group" id="spVAlignGroup" style="margin-top: 6px;">
+                        <button class="btn btn-secondary active" data-sp-valign="top" onclick="spSetVAlign('top', this)" title="Texte collé en haut du cadre">Haut</button>
+                        <button class="btn btn-secondary" data-sp-valign="center" onclick="spSetVAlign('center', this)" title="Texte centré verticalement">Centre</button>
+                        <button class="btn btn-secondary" data-sp-valign="bottom" onclick="spSetVAlign('bottom', this)" title="Texte collé en bas du cadre">Bas</button>
                     </div>
                 </div>
                 <div class="input-group">
@@ -2793,11 +2850,11 @@
                     </div>
                     <div class="inline-row">
                         <select id="hyphenLanguage" class="compact-select">
-                            <option value="fr" selected>🇫🇷 Français</option>
-                            <option value="en">🇬🇧 English</option>
-                            <option value="de">🇩🇪 Deutsch</option>
-                            <option value="es">🇪🇸 Español</option>
-                            <option value="it">🇮🇹 Italiano</option>
+                            <option value="fr" selected>Français</option>
+                            <option value="en">English</option>
+                            <option value="de">Deutsch</option>
+                            <option value="es">Español</option>
+                            <option value="it">Italiano</option>
                         </select>
                         <button class="btn btn-secondary" id="applyHyphenNow" title="Appliquer la césure maintenant" data-translate-title="applyHyphen">↻</button>
                     </div>
@@ -2834,9 +2891,9 @@
                 </div>
                 <div class="input-group" id="paragraphIndentSection">
                     <label data-translate="paragraphIndentLabel">Retrait de paragraphe</label>
+                    <!-- v1.7.457 : un réglage par ligne, champ court -->
                     <div class="sp-indent-grid">
-                        <div class="sp-indent-row">
-                            <div class="sp-indent-field">
+                        <div class="sp-indent-field">
                                 <svg width="16" height="14" viewBox="0 0 16 14" title="Retrait à gauche">
                                     <line x1="5" y1="1" x2="16" y2="1" stroke="currentColor" stroke-width="1.4"/>
                                     <line x1="5" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.4"/>
@@ -2848,7 +2905,7 @@
                                 <input type="number" id="indentLeft" min="0" max="200" value="0" step="1" title="Retrait gauche (pt)">
                                 <span class="sp-indent-unit">pt</span>
                             </div>
-                            <div class="sp-indent-field">
+                        <div class="sp-indent-field">
                                 <svg width="16" height="14" viewBox="0 0 16 14" title="Retrait à droite">
                                     <line x1="0" y1="1" x2="11" y2="1" stroke="currentColor" stroke-width="1.4"/>
                                     <line x1="0" y1="5" x2="11" y2="5" stroke="currentColor" stroke-width="1.4"/>
@@ -2860,9 +2917,7 @@
                                 <input type="number" id="indentRight" min="0" max="200" value="0" step="1" title="Retrait droit (pt)">
                                 <span class="sp-indent-unit">pt</span>
                             </div>
-                        </div>
-                        <div class="sp-indent-row">
-                            <div class="sp-indent-field sp-indent-field-wide">
+                        <div class="sp-indent-field">
                                 <svg width="16" height="14" viewBox="0 0 16 14" title="Retrait première ligne">
                                     <line x1="8" y1="1" x2="16" y2="1" stroke="currentColor" stroke-width="1.4"/>
                                     <line x1="3" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.4"/>
@@ -2874,9 +2929,7 @@
                                 <input type="number" id="indentFirstLine" min="0" max="200" value="0" step="1" title="Retrait première ligne (pt)">
                                 <span class="sp-indent-unit">pt</span>
                             </div>
-                        </div>
                     </div>
-                    <div class="hint" data-translate="indentHint">Retrait en points. Double-cliquez un texte pour l'éditer.</div>
                 </div>
                 <div class="input-group">
                     <label data-translate="formatsLabel">Formats</label>
@@ -5945,7 +5998,7 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260916-v456-release" defer></script>
+    <script src="JS/main.js?v=20260917-v457-release" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
     <script src="JS/virtual-printer.js?v=20260912-v417-clavier-studio" defer></script>
     <script src="JS/collab.js?v=20260907-v016-ux" defer></script>

@@ -33,7 +33,7 @@
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20%2B%20Pantone-E1237B?style=flat-square">
   <img alt="AI" src="https://img.shields.io/badge/AI-cloud%20or%20local-F2B90B?style=flat-square">
   <img alt="UI" src="https://img.shields.io/badge/UI-FR%20%7C%20EN%20%7C%20JP-17130D?style=flat-square">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-3DA639?style=flat-square">
+  <img alt="License" src="https://img.shields.io/badge/license-Proprietary-red?style=flat-square">
 </p>
 
 ---
@@ -235,6 +235,23 @@ SuperPrint is designed to be **privacy-friendly**:
 
 ## ✦ License
 
-**MIT** — see [`superprint-npm/LICENSE`](superprint-npm/LICENSE). SuperPrint is developed by 2.13.
+**Proprietary license — all rights reserved.** SuperPrint is **not** open source. It runs in a
+browser, so its code is readable, but readable is not free to reuse.
+See the full text in [LICENSE](LICENSE).
 
-*SuperPrint is provided free of charge, "as is". Trademarks belong to their respective owners.*
+Copyright (c) 2026 Simon Dupont-Gellert (Zigmoon) · 2.13. All rights reserved.
+
+You may **use** SuperPrint at [superprint.cc](https://superprint.cc) and through its local launcher
+(`npx superprint`), and **everything you produce belongs to you** — your documents, images, fonts,
+templates and your exported PDF / PNG / JPG files.
+
+You may **not** copy, redistribute, resell, host, mirror, modify, create derivative works from,
+remove the copyright notices, or reuse the code, the templates and the asset library — including to
+build, train or improve a competing product or an AI model — without written permission.
+
+Commercial licensing, custom builds, white-labelling, self-hosting and partnerships:
+**contact@superprint.cc** · **all@2points13.fr**
+
+Third-party components bundled with the application (Fabric.js, pdf-lib, pdf.js, JSZip, Mammoth,
+SheetJS, WebLLM, Little CMS `lcms-wasm`), the bundled fonts and the Pantone ink names keep their own
+licenses and trademarks, which prevail over this one for the parts they cover.

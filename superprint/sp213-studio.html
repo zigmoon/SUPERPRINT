@@ -5703,6 +5703,36 @@ function spRtfLayoutInfo(src) {
           if (typeof o._spWrapLeft === 'number') el._spWrapLeft = o._spWrapLeft;
           if (typeof o._spWrapBottom === 'number') el._spWrapBottom = o._spWrapBottom;
           if (typeof o._spWrapRight === 'number') el._spWrapRight = o._spWrapRight;
+          // ══════════════════════════════════════════════════════════════════════
+          // 🆕 v1.7.458 — OPTIONS DE BLOC TEXTE v1.7.457 + RETRAITS + SAUTS DOUX.
+          //   MESURE DU DEFAUT : 0 occurrence de _spInsetTop / _spInsetBottom /
+          //   _spVAlign / _spTabs / _spIndentLeft / _spIndentRight /
+          //   _spFirstLineIndent / _spSoftBreakIndices dans tout le studio. Or
+          //   les deux écrivains construisent le .sp à la main : ces réglages
+          //   (cadre haut/bas, alignement vertical, moteur d'onglets, retraits de
+          //   paragraphe, sauts de ligne doux) étaient donc PERDUS au passage
+          //   app → studio → app, alors que l'app les transporte (SP_CUSTOM_PROPS).
+          //   On copie la valeur TELLE QUELLE, en PX, sans conversion d'unité :
+          //   le retour dans l'app est ainsi exact.
+          // ══════════════════════════════════════════════════════════════════════
+          if (typeof o._spInsetTop === 'number' && isFinite(o._spInsetTop)) el._spInsetTop = o._spInsetTop;
+          if (typeof o._spInsetBottom === 'number' && isFinite(o._spInsetBottom)) el._spInsetBottom = o._spInsetBottom;
+          if (o._spVAlign === 'top' || o._spVAlign === 'center' || o._spVAlign === 'bottom') el._spVAlign = o._spVAlign;
+          if (typeof o._spIndentLeft === 'number' && isFinite(o._spIndentLeft)) el._spIndentLeft = o._spIndentLeft;
+          if (typeof o._spIndentRight === 'number' && isFinite(o._spIndentRight)) el._spIndentRight = o._spIndentRight;
+          if (typeof o._spFirstLineIndent === 'number' && isFinite(o._spFirstLineIndent)) el._spFirstLineIndent = o._spFirstLineIndent;
+          // Onglets : { active, step, stops:[{ pos, type }] } — données pures.
+          if (o._spTabs && typeof o._spTabs === 'object' && Array.isArray(o._spTabs.stops)) {
+            try { el._spTabs = JSON.parse(JSON.stringify(o._spTabs)); } catch (_) {}
+          }
+          if (Array.isArray(o._spSoftBreakIndices) && o._spSoftBreakIndices.length) {
+            el._spSoftBreakIndices = o._spSoftBreakIndices.slice();
+          }
+          // Mémorise le TEXTE au moment de la capture : les onglets et les sauts
+          // doux désignent des POSITIONS dans ce texte. Si l'IA le réécrit, les
+          // indices ne désignent plus les mêmes caractères → on ne restitue rien
+          // (même règle que _spCharStyles / _spCharStylesText).
+          if (el._spTabs || el._spSoftBreakIndices) el._spOptsText = String(o.text || '');
           return el;
         }
         if (t === 'image' && (o._spAiImageUrl || o.src || o._sp213ImageUrl)) {
@@ -9724,6 +9754,32 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     }
     if (obj.type === 'textbox' && el._spCharStyles && String(el.text || '') === String(el._spCharStylesText || '')) {
       try { obj.styles = JSON.parse(JSON.stringify(el._spCharStyles)); } catch (_) {}
+    }
+    /* ══════════════════════════════════════════════════════════════════════
+       🆕 v1.7.458 — OPTIONS DE BLOC TEXTE v1.7.457 AU RETOUR (cf. import).
+         spAppliquerReglagesTypo est le passage UNIQUE des deux écrivains
+         (buildSPFile ET elsToSPObjects) : c'est donc ici que ces réglages
+         doivent être ré-écrits pour survivre à app → studio → app.
+         Restitution :
+           · cadre (haut/bas), alignement vertical, retraits : TOUJOURS
+             (réglages du bloc, indépendants du contenu) ;
+           · onglets et sauts doux : SEULEMENT si le texte n'a pas changé
+             (leurs positions sont des indices de caractères).
+       ══════════════════════════════════════════════════════════════════════ */
+    if (obj.type === 'textbox') {
+      if (typeof el._spInsetTop === 'number' && isFinite(el._spInsetTop)) obj._spInsetTop = el._spInsetTop;
+      if (typeof el._spInsetBottom === 'number' && isFinite(el._spInsetBottom)) obj._spInsetBottom = el._spInsetBottom;
+      if (el._spVAlign === 'top' || el._spVAlign === 'center' || el._spVAlign === 'bottom') obj._spVAlign = el._spVAlign;
+      if (typeof el._spIndentLeft === 'number' && isFinite(el._spIndentLeft)) obj._spIndentLeft = el._spIndentLeft;
+      if (typeof el._spIndentRight === 'number' && isFinite(el._spIndentRight)) obj._spIndentRight = el._spIndentRight;
+      if (typeof el._spFirstLineIndent === 'number' && isFinite(el._spFirstLineIndent)) obj._spFirstLineIndent = el._spFirstLineIndent;
+      const _texteInchange = String(el.text || '') === String(el._spOptsText || '');
+      if (_texteInchange && el._spTabs && typeof el._spTabs === 'object' && Array.isArray(el._spTabs.stops)) {
+        try { obj._spTabs = JSON.parse(JSON.stringify(el._spTabs)); } catch (_) {}
+      }
+      if (_texteInchange && Array.isArray(el._spSoftBreakIndices) && el._spSoftBreakIndices.length) {
+        obj._spSoftBreakIndices = el._spSoftBreakIndices.slice();
+      }
     }
     return obj;
   }

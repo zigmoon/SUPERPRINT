@@ -2359,6 +2359,203 @@ textarea[data-fabric-hiddentextarea] {
 .theme-dark .sp-indent-field input:focus { border-color: #666; }
 .theme-dark .sp-indent-unit { color: #666; }
 
+/* ── v1.7.457 : retraits — UN RÉGLAGE PAR LIGNE, champ court, aligné ── */
+.sp-indent-grid {
+    gap: 4px;
+}
+.sp-indent-field {
+    flex: 1 0 100%;
+}
+.sp-indent-field label {
+    flex: 1 1 auto;
+    font-size: 10px;
+}
+.sp-indent-field input {
+    width: 48px;
+    height: 22px;
+}
+.sp-indent-field .sp-indent-unit {
+    width: 12px;
+    text-align: left;
+}
+
+/* ── v1.7.457 : titres de section prêts à recevoir le bouton + / − ── */
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sp-detach-btn {
+    margin-left: auto;
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font-size: 14px;
+    line-height: 16px;
+    text-align: center;
+    opacity: 0.35;
+    cursor: pointer;
+    transition: opacity 0.15s ease, background 0.15s ease;
+}
+.sp-detach-btn:hover { opacity: 1; background: rgba(0, 0, 0, 0.06); }
+.sp-detach-btn.sp-on { opacity: 0.8; }
+.theme-dark .sp-detach-btn:hover { background: rgba(255, 255, 255, 0.09); }
+
+/* ── v1.7.457 : widgets détachés — même gabarit que Pathfinder / Styles / Nuancier ── */
+.sp-widget-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    pointer-events: none;
+}
+.sp-dock-host.rightbar {
+    position: absolute;
+    display: block;
+    pointer-events: auto;
+    width: 200px;
+    min-width: 160px;
+    max-width: 220px;
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    backdrop-filter: saturate(1.2) blur(2px);
+    transition: none;
+    scrollbar-gutter: auto;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.theme-dark .sp-dock-host.rightbar {
+    background: rgba(24, 24, 24, 0.96);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e6e6e6;
+}
+.sp-dock-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    cursor: move;
+}
+.sp-dock-head .dot { flex: 0 0 auto; width: 5px; height: 5px; border-radius: 50%; background: #111; }
+.theme-dark .sp-dock-head .dot { background: #e6e6e6; }
+.sp-dock-title { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-dock-arrow { flex: 0 0 auto; font-size: 10px; opacity: 0.6; transition: transform 0.2s; }
+.sp-dock-host.expanded .sp-dock-arrow { transform: rotate(180deg); }
+.sp-dock-body {
+    display: none;
+    max-height: 58vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 8px 8px 8px;
+}
+.sp-dock-host.expanded .sp-dock-body { display: block; }
+.sp-dock-body::-webkit-scrollbar { width: 6px; }
+.sp-dock-body::-webkit-scrollbar-track { background: transparent; }
+.sp-dock-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+.sp-dock-body::-webkit-scrollbar-thumb:hover { background: #aaa; }
+.theme-dark .sp-dock-body::-webkit-scrollbar-thumb { background: #444; }
+.theme-dark .sp-dock-body::-webkit-scrollbar-thumb:hover { background: #555; }
+.sp-dock-body > .sp-docked {
+    pointer-events: auto;
+    position: relative;
+    display: block !important;
+    width: auto;
+    max-height: none;
+    overflow: visible;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+.sp-dock-body > .sp-docked > .section-title,
+.sp-dock-body > .sp-docked > label { display: none; }
+.sp-dock-body .hint { display: none; }
+.sp-dock-body .number-spinner-wrap { width: 52px; min-width: 52px; }
+.sp-dock-body .input-row { gap: 6px; }
+.sp-dock-body .just-grid { gap: 4px; }
+/* Le bouton + / − doit être EN FACE du libellé, collé au bord droit du panneau.
+   Deux pistes ont été mesurées puis écartées : display:flex seul ne s'appliquait pas
+   (une règle de l'app, plus spécifique, forçait block) et les marges automatiques se
+   résolvaient à 0 dès que la ligne débordait (bouton mesuré jusqu'à 82 px HORS du
+   panneau). On ancre donc le bouton en absolu, avec une réserve de 22 px pour que le
+   texte ne vienne jamais dessous. */
+.rightbar .sp-dock-anchor,
+#rightSidebar .sp-dock-anchor {
+    position: relative;
+    display: block !important;
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 22px;
+}
+.rightbar .sp-dock-anchor > .sp-detach-btn,
+#rightSidebar .sp-dock-anchor > .sp-detach-btn {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+}
+/* même garantie pour les titres de section (l'icône doit être en face du titre) */
+.section-title > .sp-detach-btn { margin-left: auto; }
+
+/* ── v1.7.457 : lignes de taquets ── */
+.tab-stop-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.tab-stop-row input[type="number"] { width: 56px; height: 22px; font-size: 10px; }
+.tab-stop-row select { flex: 1; height: 22px; font-size: 10px; }
+.tab-stop-row button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    opacity: 0.5;
+    font-size: 13px;
+    padding: 0 4px;
+    cursor: pointer;
+}
+.tab-stop-row button:hover { opacity: 1; }
+.tab-empty { font-size: 10px; opacity: 0.55; padding: 2px 0; }
+
+/* ── v1.7.457 : retraits — champ court, flèches ▲▼ DANS le champ (bug mesuré) ──
+   .number-spinner-wrap est en width:100% et sa règle input[type=number] (0,2,1)
+   l'emporte sur .sp-indent-field input (0,1,1) : l'input prenait 183 px et les
+   flèches partaient à l'autre bout de la ligne. On contraint le CONTENEUR. */
+.sp-indent-field .number-spinner-wrap {
+    flex: 0 0 auto;
+    width: 64px;
+    min-width: 64px;
+    margin-left: auto;
+}
+.sp-indent-field .number-spinner-wrap input[type="number"] {
+    width: 100%;
+    min-width: 0;
+    height: 22px;
+    font-size: 10px;
+    text-align: left;
+}
+.sp-indent-field .number-spinner-btn { width: 15px; font-size: 7px; }
+.sp-indent-field .sp-indent-unit { margin-left: 3px; }
+
+
+
 /* Image resize presets — uniform small buttons */
 .rightbar .preset-row {
     display: flex;

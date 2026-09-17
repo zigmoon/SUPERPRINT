@@ -78,15 +78,32 @@ try { fabric.Object.NUM_FRACTION_DIGITS = 6; } catch (_) {}
     if (forceLast === undefined) forceLast = true;
     var H = spTextMetrics(obj);
     if (!H) return 0;
+    // 🆕 v1.7.457 — les retraits internes haut/bas réduisent la hauteur UTILE du
+    //   cadre. Appliqué ICI (et pas chez les appelants) parce que ce helper est le
+    //   point partagé entre le clip de la preview et la coupe du PDF : une seule
+    //   règle, donc aucune divergence possible entre les deux.
+    if (obj) {
+        var _riT = (typeof obj._spInsetTop === 'number' && obj._spInsetTop > 0) ? obj._spInsetTop : 0;
+        var _riB = (typeof obj._spInsetBottom === 'number' && obj._spInsetBottom > 0) ? obj._spInsetBottom : 0;
+        if (_riT || _riB) frameH = Math.max(0, frameH - _riT - _riB);
+    }
     if (!(frameH > 0)) return H.length;
     var box = 0;
     for (var i = 0; i < H.length; i++) {
       box = spLineBoxHeight(obj, i, H);
       if (box === null) return H.length;
       if (!(box <= frameH + 0.5)) {
-        // La ligne i ne tient pas. Filet de sécurité : ne jamais rendre 0 ligne
-        // (texte invisible) ni laisser la DERNIÈRE ligne hors du PDF.
-        if (forceLast && i === H.length - 1) return H.length;
+        // La ligne i ne tient pas : elle n'est ni comptée ni dessinée.
+        // ⚠️ v1.7.457s — le raccourci « si c'est la dernière ligne, on l'inclut
+        //   quand même » produisait une DEMI-LIGNE : mesuré 127,48 px de texte
+        //   dans un cadre de 120 px, la 5e ligne débordait de 7,5 px. Le masque
+        //   de la preview la coupait à la dernière ligne complète, mais le PDF la
+        //   dessinait en entier → preview ≠ PDF. Le déficit de leading de Fabric
+        //   sur la dernière ligne, qui motivait ce raccourci, est désormais
+        //   compensé par spLineBoxHeight (48,8 px pour 2 lignes dans 60 px) : une
+        //   ligne qui ne tient pas est signalée par l'indicateur de débordement,
+        //   jamais dessinée à moitié — comportement InDesign.
+        //   On garde Math.max(1, i) : jamais zéro ligne (texte invisible).
         return forceLast ? Math.max(1, i) : i;
       }
     }
@@ -1319,6 +1336,11 @@ const SP_CUSTOM_PROPS = [
     '_spIndentLeft',
     '_spIndentRight',
     '_spFirstLineIndent',
+    // 🆕 v1.7.457 — options de bloc texte
+    '_spInsetTop',
+    '_spInsetBottom',
+    '_spVAlign',
+    '_spTabs',
     '_sp3DSource',
     '_spPdfImport',
     '_spPdfPageNumber',
@@ -1663,6 +1685,41 @@ function goToPage(pageIndex) {
     fabric.devicePixelRatio = window.devicePixelRatio || 1;
     
     // Configuration globale pour un meilleur rendu texte
+    // 🆕 v1.7.457 — OPTIONS DE BLOC TEXTE : retrait haut + justification verticale.
+    //   On surcharge _getTopOffset (déjà utilisé par le rendu Fabric et par notre
+    //   propre scan de caractères) : tout ce qui se dessine — encre, curseur,
+    //   sélection — suit automatiquement le décalage.
+    //   Retrait bas : il ne déplace rien, il réduit la hauteur utile, et c'est
+    //   spCountVisibleLines qui l'applique (helper partagé preview ↔ PDF).
+    if (typeof fabric.Text.prototype._getTopOffset === 'function' && !fabric.Text.prototype.__spFrameOptionsPatched) {
+        const __spOrigGetTopOffset = fabric.Text.prototype._getTopOffset;
+        fabric.Text.prototype._getTopOffset = function () {
+            let base = __spOrigGetTopOffset.call(this);
+            try {
+                const inTop = (typeof this._spInsetTop === 'number' && this._spInsetTop > 0) ? this._spInsetTop : 0;
+                const inBot = (typeof this._spInsetBottom === 'number' && this._spInsetBottom > 0) ? this._spInsetBottom : 0;
+                const val = this._spVAlign || 'top';
+                if (inTop) base += inTop;
+                if (val !== 'top') {
+                    const frameH = (typeof this._fixedHeight === 'number' && this._fixedHeight > 0) ? this._fixedHeight : (this.height || 0);
+                    const utile = Math.max(0, frameH - inTop - inBot);
+                    const H = (typeof window.spTextMetrics === 'function') ? window.spTextMetrics(this) : null;
+                    // Hauteur réellement occupée : la dernière ligne ne compte que sa
+                    // hauteur SANS leading bas — même règle que spLineBoxHeight, donc
+                    // même mesure que le comptage des lignes et que le PDF.
+                    let total = 0;
+                    if (typeof window.spLineBoxHeight === 'function' && H && H.length) {
+                        total = Number(window.spLineBoxHeight(this, H.length - 1, H)) || 0;
+                    } else if (H) { for (let i = 0; i < H.length; i++) total += H[i]; }
+                    const reste = Math.max(0, utile - total);
+                    if (val === 'center') base += reste / 2;
+                    else if (val === 'bottom') base += reste;
+                }
+            } catch (e) {}
+            return base;
+        };
+        fabric.Text.prototype.__spFrameOptionsPatched = true;
+    }
     fabric.Text.prototype.objectCaching = false; // Pas de cache pour texte net
     fabric.Textbox.prototype.objectCaching = false;
     fabric.Text.prototype.noScaleCache = true;
@@ -4841,6 +4898,804 @@ if (window._spGpuEnabled) {
   }
 
   window._spWrapLineWidthFor = lineWidthFor;
+
+/* 🔗 v1.7.457 — SUIVI DES PASTILLES DE CHAÎNAGE.
+   setupAutoFlowListeners() n'installe le handler d'événement moving que pour un
+   bloc DÉJÀ chaîné, et une seule fois par bloc (_hasAutoFlowListener) : un document
+   rouvert ou un chaînage créé après coup se retrouve sans suivi, et la pastille ne
+   bouge qu'au relâchement de la souris. Ce filet, posé au niveau du CANVAS, couvre
+   tous les chemins de déplacement et suffit pour que pastilles et flèches suivent. */
+(function spChainBadgeFollow() {
+    'use strict';
+    if (window.__spChainBadgeFollow) return;
+    window.__spChainBadgeFollow = true;
+
+    function suivre(obj) {
+        if (!obj || !obj.textLinkId) return;
+        try { if (typeof window.positionChainBadge === 'function') window.positionChainBadge(obj); } catch (_) {}
+        try { if (typeof window.updateLinkArrowsForChain === 'function') window.updateLinkArrowsForChain(obj); } catch (_) {}
+    }
+
+    function brancher(canvas) {
+        if (!canvas || canvas._spChainFollow || typeof canvas.on !== 'function') return;
+        canvas._spChainFollow = true;
+        ['object:moving', 'object:scaling', 'object:rotating', 'object:skewing', 'object:modified'].forEach(function (ev) {
+            canvas.on(ev, function (e) { suivre(e && e.target); });
+        });
+    }
+    window.spChainBadgeBrancher = brancher;
+
+/* 🧪 v1.7.457 — POINT D'ENTRÉE DE TEST (chaînage piloté depuis l'extérieur).
+   Ne contient AUCUNE logique de chaînage : on sélectionne le bloc voulu sur le
+   canvas de la page, puis on clique l'action « Chain ⌘L » de l'application, comme
+   le ferait un utilisateur. Nécessaire aux tests automatisés, qui n'ont pas accès à
+   la variable interne activeCanvas. */
+window.spTestGoToPage = function (pageIndex) {
+    try {
+        if (typeof goToPage === 'function') { goToPage(pageIndex); return 'goToPage'; }
+    } catch (_) {}
+    try {
+        var els = Array.prototype.filter.call(document.querySelectorAll('div,span,button'), function (e) {
+            return !e.children.length && (e.textContent || '').trim() === 'Page ' + (pageIndex + 1);
+        });
+        if (els.length) { els[0].click(); return 'onglet'; }
+    } catch (_) {}
+    return 'introuvable';
+};
+
+window.spTestSelectBlock = function (pageIndex, which) {
+    try {
+        var c = (typeof canvases !== 'undefined' && canvases && canvases[pageIndex]) ? canvases[pageIndex] : null;
+        if (!c) return 'pas de canvas ' + pageIndex;
+        var blocs = c.getObjects().filter(function (o) { return o.type === 'textbox' || o.type === 'text'; });
+        var o = blocs[which || 0];
+        if (!o) return 'pas de bloc sur la page ' + (pageIndex + 1);
+        try { c.setActiveObject(o); c.requestRenderAll(); } catch (_) {}
+        try { if (typeof activeCanvas !== 'undefined' && activeCanvas && activeCanvas.setActiveObject) activeCanvas.setActiveObject(o); } catch (_) {}
+        return 'ok';
+    } catch (e) { return 'err ' + (e && e.message); }
+};
+
+window.spTestPressChain = function () {
+    try {
+        var t = document.getElementById('chainToggle');
+        if (!t) return 'pas de bouton de chaînage';
+        t.click();
+        var btns = document.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {
+            var txt = (btns[i].textContent || '').trim();
+            if (/^Chain\b/i.test(txt) && !/Unchain/i.test(txt) && btns[i].offsetParent) {
+                btns[i].click();
+                return 'Chain cliqué';
+            }
+        }
+        return 'action Chain introuvable';
+    } catch (e) { return 'err ' + (e && e.message); }
+};
+
+/* 🧪 v1.7.457 — DIAGNOSTIC (lecture seule) du test de livret chaîné.
+   Renvoie l'état réel du document : index de page courant, nombre de pages,
+   et pour chaque canvas son rectangle écran + ses objets. Aucune écriture. */
+window.spTestDiag = function () {
+    var res = { cur: null, pagesLen: null, viewMode: null, nCanvases: 0, activeIdx: null, liens: 0, pages: [] };
+    try { res.cur = (typeof currentPageIndex !== 'undefined') ? currentPageIndex : null; } catch (_) {}
+    try { res.pagesLen = (typeof pages !== 'undefined' && pages) ? pages.length : null; } catch (_) {}
+    try { res.viewMode = (typeof viewMode !== 'undefined') ? viewMode : null; } catch (_) {}
+    try { res.liens = (typeof textLinks !== 'undefined' && textLinks) ? Object.keys(textLinks).length : 0; } catch (_) {}
+    try { res.nCanvases = (typeof canvases !== 'undefined' && canvases) ? canvases.length : 0; } catch (_) {}
+    try {
+        var act = (typeof getActiveCanvas === 'function') ? getActiveCanvas() : null;
+        res.activeIdx = (act && canvases) ? canvases.indexOf(act) : null;
+    } catch (_) {}
+    try {
+        for (var i = 0; i < canvases.length; i++) {
+            var c = canvases[i];
+            if (!c) { res.pages.push({ i: i, vide: true }); continue; }
+            var objs = [];
+            try {
+                var list = c.getObjects() || [];
+                for (var j = 0; j < list.length; j++) {
+                    var o = list[j];
+                    objs.push({
+                        t: o.type,
+                        x: Math.round(o.left), y: Math.round(o.top),
+                        w: Math.round(o.width), h: Math.round(o.height),
+                        lid: o.textLinkId || null,
+                        txt: o.text ? String(o.text).slice(0, 16) : null,
+                        ord: (o._linkOrder != null) ? o._linkOrder : null,
+                        tot: (o._chainTotal != null) ? o._chainTotal : null,
+                        ncar: o.text ? String(o.text).length : null
+                    });
+                }
+            } catch (e) { objs = ['err ' + e.message]; }
+            var rect = null;
+            try {
+                var r = c.upperCanvasEl.getBoundingClientRect();
+                rect = { l: Math.round(r.left), t: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
+            } catch (_) {}
+            res.pages.push({
+                i: i,
+                idx: (c.bleedInfo && c.bleedInfo.pageIndex != null) ? c.bleedInfo.pageIndex : null,
+                n: objs.length, rect: rect, objs: objs
+            });
+        }
+    } catch (e) { res.err = e.message; }
+    return res;
+};
+
+    var proto = fabric.Canvas.prototype;
+    ['setActiveObject', 'getActiveObject', 'getActiveObjects', 'setActiveObjects'].forEach(function (nom) {
+        var orig = proto[nom];
+        if (typeof orig !== 'function') return;
+        var f = function () { brancher(this); return orig.apply(this, arguments); };
+        f._spChainFollowWrap = true;
+        proto[nom] = f;
+    });
+
+    /* Branchement immédiat des canvas déjà en service. */
+    try {
+        if (typeof canvases !== 'undefined' && canvases && canvases.length) {
+            for (var i = 0; i < canvases.length; i++) brancher(canvases[i]);
+        }
+    } catch (_) {}
+    try { if (typeof activeCanvas !== 'undefined' && activeCanvas) brancher(activeCanvas); } catch (_) {}
+})();
+
+
+/* ═══════ v1.7.457 : TAQUETS DE TABULATION ═══════ */
+(function spSetupTabStops() {
+    'use strict';
+
+    /* Résolution du canvas : window.canvas n'est PAS exposé par l'app (mesuré),
+       et les API globales du dépôt prennent l'objet puis lisent obj.canvas. On
+       mémorise donc le canvas dès qu'une sélection passe par Fabric. */
+    function leCanvas() {
+        if (window.canvas && window.canvas.getActiveObject) return window.canvas;
+        if (window._spLastCanvas) return window._spLastCanvas;
+        try { if (typeof activeCanvas !== 'undefined' && activeCanvas && activeCanvas.getActiveObject) return activeCanvas; } catch (_) {}
+        try {
+            if (typeof canvases !== 'undefined' && canvases && canvases.length) {
+                for (var i = 0; i < canvases.length; i++) {
+                    if (canvases[i] && canvases[i].getActiveObject) return canvases[i];
+                }
+            }
+        } catch (_) {}
+        try { if (typeof canvas !== 'undefined' && canvas && canvas.getActiveObject) return canvas; } catch (_) {}
+        return null;
+    }
+    (function capturer() {
+        var proto = fabric.Canvas.prototype;
+        ['setActiveObject', 'getActiveObject', 'getActiveObjects', 'setActiveObjects'].forEach(function (nom) {
+            var orig = proto[nom];
+            if (typeof orig !== 'function' || orig._spCapture) return;
+            var f = function () { window._spLastCanvas = this; return orig.apply(this, arguments); };
+            f._spCapture = true;
+            proto[nom] = f;
+        });
+    })();
+
+    function modele(obj) {
+        if (!obj._spTabs) obj._spTabs = { active: false, step: 40, stops: [] };
+        var t = obj._spTabs;
+        if (!Array.isArray(t.stops)) t.stops = [];
+        if (!(t.step > 0)) t.step = 40;
+        t.stops.sort(function (a, b) { return a.pos - b.pos; });
+        return t;
+    }
+    window.spTabModele = modele;
+
+    /* Largeur du morceau de texte qui suit le taquet, jusqu'au taquet suivant. */
+    function largeurMorceau(obj, lineIndex, charIndex) {
+        var ligne = (obj._textLines && obj._textLines[lineIndex]) || '';
+        var lg = 0, prec = '';
+        for (var k = charIndex + 1; k < ligne.length && ligne[k] !== '\t'; k++) {
+            var style = obj.getCompleteStyleDeclaration(lineIndex, k);
+            var stylePrec = prec ? obj.getCompleteStyleDeclaration(lineIndex, k - 1) : {};
+            var m = obj._measureChar(ligne[k], style, prec, stylePrec);
+            lg += (m && typeof m.kernedWidth === 'number') ? m.kernedWidth : 0;
+            prec = ligne[k];
+        }
+        return lg;
+    }
+
+    /* Avance du curseur pour une tabulation : jusqu'au taquet suivant. */
+    function avance(obj, pen, lineIndex, charIndex, t) {
+        var stop = null;
+        for (var i = 0; i < t.stops.length; i++) {
+            if (t.stops[i].pos > pen + 0.5) { stop = t.stops[i]; break; }
+        }
+        if (!stop) {
+            var pas = t.step || 40;
+            return Math.max(1, (Math.floor(pen / pas) + 1) * pas - pen);
+        }
+        var type = stop.type || 'left';
+        if (type === 'left') return Math.max(1, stop.pos - pen);
+        if (type === 'center') return Math.max(1, stop.pos - pen - largeurMorceau(obj, lineIndex, charIndex) / 2);
+        if (type === 'right') return Math.max(1, stop.pos - pen - largeurMorceau(obj, lineIndex, charIndex));
+        /* decimal : la virgule / le point s'aligne sur le taquet */
+        var ligne = (obj._textLines && obj._textLines[lineIndex]) || '';
+        var lg = 0, prec = '';
+        for (var k = charIndex + 1; k < ligne.length && ligne[k] !== '\t'; k++) {
+            if (ligne[k] === '.' || ligne[k] === ',') break;
+            var style = obj.getCompleteStyleDeclaration(lineIndex, k);
+            var stylePrec = prec ? obj.getCompleteStyleDeclaration(lineIndex, k - 1) : {};
+            var m = obj._measureChar(ligne[k], style, prec, stylePrec);
+            lg += (m && typeof m.kernedWidth === 'number') ? m.kernedWidth : 0;
+            prec = ligne[k];
+        }
+        return Math.max(1, stop.pos - pen - lg);
+    }
+    window.spTabAvance = avance;
+
+    var origBox = fabric.Text.prototype._getGraphemeBox;
+    fabric.Text.prototype._getGraphemeBox = function (grapheme, lineIndex, charIndex, prevChar, skipLeft) {
+        if (grapheme === '\t' && this._spTabs && this._spTabs.active) {
+            var t = modele(this);
+            var pen = 0;
+            var bounds = this.__charBounds && this.__charBounds[lineIndex];
+            if (charIndex > 0 && bounds && bounds[charIndex - 1]) {
+                pen = bounds[charIndex - 1].left + bounds[charIndex - 1].width;
+            }
+            var av = avance(this, pen, lineIndex, charIndex, t);
+            var style = this.getCompleteStyleDeclaration(lineIndex, charIndex);
+            return { width: av, left: pen, height: style.fontSize, kernedWidth: av, deltaY: style.deltaY || 0 };
+        }
+        return origBox.call(this, grapheme, lineIndex, charIndex, prevChar, skipLeft);
+    };
+    window._spTabBoxPatched = true;
+
+    function blocsTexte() {
+        var c = leCanvas();
+        if (!c) return [];
+        var sel = [];
+        try {
+            sel = (c.getActiveObjects && c.getActiveObjects()) || [];
+            if (!sel.length) { var a = c.getActiveObject(); if (a) sel = [a]; }
+        } catch (_) { sel = []; }
+        return sel.filter(function (o) {
+            return o && (o.type === 'textbox' || o.type === 'text' || o.type === 'i-text');
+        });
+    }
+    window.spTabBlocs = blocsTexte;
+
+    function rafraichir(obj) {
+        try {
+            obj._textLines = null;
+            obj.__charBounds = [];
+            if (typeof window._spWrapEnsureLayout === 'function') window._spWrapEnsureLayout(obj);
+            if (typeof obj.initDimensions === 'function') obj.initDimensions();
+            /* Fabric ne remplit pas toujours __charBounds (même constat que le
+               correctif de l'app) → on mesure les lignes dont les boîtes manquent. */
+            var nb = (obj._textLines || []).length;
+            for (var i = 0; i < nb; i++) {
+                if (!obj.__charBounds || !obj.__charBounds[i]) { try { obj._measureLine(i); } catch (_) {} }
+            }
+            obj.set('dirty', true);
+        } catch (_) {}
+        try { var c = leCanvas(); if (c) c.requestRenderAll(); } catch (_) {}
+    }
+    window.spTabRafraichir = rafraichir;
+
+    /* Applique une modification à tous les blocs texte sélectionnés. */
+    function modifier(fn) {
+        var blocs = blocsTexte();
+        blocs.forEach(function (obj) {
+            var t = modele(obj);
+            fn(t, obj);
+            rafraichir(obj);
+        });
+        return blocs.length;
+    }
+    window.spTabModifier = modifier;
+
+    /* ── Interface du pop-in ── */
+    var TYPES = [['left', 'Gauche'], ['center', 'Centre'], ['right', 'Droite'], ['decimal', 'Décimale']];
+
+    function rendreListe() {
+        var liste = document.getElementById('tabStopsList');
+        if (!liste) return;
+        var blocs = blocsTexte();
+        var t = blocs.length ? modele(blocs[0]) : null;
+        var chk = document.getElementById('tabsVisibleToggle');
+        var pas = document.getElementById('tabStep');
+        if (t) {
+            if (chk) chk.checked = !!t.active;
+            if (pas && document.activeElement !== pas) pas.value = t.step;
+        } else if (chk) { chk.checked = false; }
+        while (liste.firstChild) liste.removeChild(liste.firstChild);
+        if (!t) {
+            var d0 = document.createElement('div');
+            d0.className = 'tab-empty';
+            d0.textContent = 'Sélectionnez un bloc texte.';
+            liste.appendChild(d0);
+            return;
+        }
+        if (!t.stops.length) {
+            var d1 = document.createElement('div');
+            d1.className = 'tab-empty';
+            d1.textContent = 'Aucun taquet : avance par pas de ' + t.step + ' px.';
+            liste.appendChild(d1);
+        }
+        t.stops.forEach(function (s, i) {
+            var row = document.createElement('div');
+            row.className = 'tab-stop-row';
+
+            var pos = document.createElement('input');
+            pos.type = 'number';
+            pos.min = '0'; pos.max = '5000'; pos.step = '1';
+            pos.value = Math.round(s.pos);
+            pos.title = 'Position du taquet (px)';
+            pos.addEventListener('input', function () {
+                var v = parseFloat(pos.value);
+                if (!isFinite(v) || v < 0) return;
+                modifier(function (modeleBloc) { if (modeleBloc.stops[i]) modeleBloc.stops[i].pos = v; });
+            });
+
+            var sel = document.createElement('select');
+            sel.title = 'Type de taquet';
+            TYPES.forEach(function (ty) {
+                var o = document.createElement('option');
+                o.value = ty[0];
+                o.textContent = ty[1];
+                if ((s.type || 'left') === ty[0]) o.selected = true;
+                sel.appendChild(o);
+            });
+            sel.addEventListener('change', function () {
+                modifier(function (modeleBloc) { if (modeleBloc.stops[i]) modeleBloc.stops[i].type = sel.value; });
+            });
+
+            var sup = document.createElement('button');
+            sup.type = 'button';
+            sup.textContent = '×';
+            sup.title = 'Retirer ce taquet';
+            sup.addEventListener('click', function () {
+                modifier(function (modeleBloc) { modeleBloc.stops.splice(i, 1); });
+                rendreListe();
+            });
+
+            row.appendChild(pos);
+            row.appendChild(sel);
+            row.appendChild(sup);
+            liste.appendChild(row);
+        });
+    }
+    window.spTabRendreListe = rendreListe;
+
+    /* Les écouteurs de sélection ne peuvent être posés qu'une fois le canvas
+       connu : on (re)tente à chaque ouverture du pop-in. */
+    function filSelection() {
+        var c = leCanvas();
+        if (!c || c._spTabsWire) return;
+        c._spTabsWire = true;
+        ['selection:created', 'selection:updated', 'selection:cleared'].forEach(function (ev) {
+            c.on(ev, function () { setTimeout(rendreListe, 30); });
+        });
+    }
+
+    function ouvrirPopin() {
+        var popin = document.getElementById('tabsMenu');
+        if (!popin) return;
+        var menu = document.getElementById('rulersMenu');
+        if (menu) menu.classList.remove('open');
+        var sidebar = document.getElementById('leftSidebar');
+        var ouverte = sidebar && !sidebar.classList.contains('collapsed');
+        if (ouverte) {
+            popin.classList.add('open', 'popin-mode');
+            var ov = document.getElementById('tabsPopinOverlay');
+            if (!ov) {
+                ov = document.createElement('div');
+                ov.id = 'tabsPopinOverlay';
+                ov.className = 'grid-popin-overlay';
+                document.body.appendChild(ov);
+                ov.addEventListener('click', fermerPopin);
+            }
+            ov.classList.add('active');
+        } else {
+            popin.classList.add('open');
+            popin.classList.remove('popin-mode');
+        }
+        filSelection();
+        rendreListe();
+    }
+    function fermerPopin() {
+        var popin = document.getElementById('tabsMenu');
+        if (popin) popin.classList.remove('open', 'popin-mode');
+        var ov = document.getElementById('tabsPopinOverlay');
+        if (ov) ov.classList.remove('active');
+    }
+    window._closeTabsPopin = fermerPopin;
+
+    function boot() {
+        var btn = document.getElementById('toggleTabs');
+        var popin = document.getElementById('tabsMenu');
+        if (btn && !btn._spTabsWire) {
+            btn._spTabsWire = true;
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (popin && popin.classList.contains('open')) fermerPopin(); else ouvrirPopin();
+                var icone = document.getElementById('rulersIcon');
+                if (icone) { icone.src = 'icons/rulers.svg'; icone.alt = 'Règles'; }
+            });
+        }
+        var croix = document.getElementById('closeTabsMenuX');
+        if (croix && !croix._spTabsWire) { croix._spTabsWire = true; croix.addEventListener('click', function (e) { e.stopPropagation(); fermerPopin(); }); }
+        var chk = document.getElementById('tabsVisibleToggle');
+        if (chk && !chk._spTabsWire) {
+            chk._spTabsWire = true;
+            chk.addEventListener('change', function () { modifier(function (t) { t.active = !!chk.checked; }); rendreListe(); });
+        }
+        var pas = document.getElementById('tabStep');
+        if (pas && !pas._spTabsWire) {
+            pas._spTabsWire = true;
+            pas.addEventListener('change', function () {
+                var v = parseFloat(pas.value);
+                if (!isFinite(v) || v < 4) { v = 40; pas.value = '40'; }
+                modifier(function (t) { t.step = v; });
+                rendreListe();
+            });
+        }
+        var ajouter = document.getElementById('tabAddBtn');
+        if (ajouter && !ajouter._spTabsWire) {
+            ajouter._spTabsWire = true;
+            ajouter.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var champ = document.getElementById('tabNewPos');
+                var v = champ ? parseFloat(champ.value) : NaN;
+                if (!isFinite(v) || v < 0) v = 40;
+                modifier(function (t) { t.stops.push({ pos: v, type: 'left' }); t.active = true; });
+                rendreListe();
+            });
+        }
+        var effacer = document.getElementById('tabClearBtn');
+        if (effacer && !effacer._spTabsWire) {
+            effacer._spTabsWire = true;
+            effacer.addEventListener('click', function (e) {
+                e.stopPropagation();
+                modifier(function (t) { t.stops = []; });
+                rendreListe();
+            });
+        }
+        document.addEventListener('click', function (e) {
+            if (!popin || !popin.classList.contains('open')) return;
+            var dd = document.getElementById('rulersDropdown');
+            if (dd && dd.contains(e.target)) return;
+            if (e.target && e.target.id === 'tabsPopinOverlay') return;
+            fermerPopin();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') fermerPopin();
+            /* Tab dans un texte en cours d'édition : insertion d'une vraie tabulation
+               (le placement est assuré par le moteur ci-dessus). */
+            if (e.key === 'Tab' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                var c = leCanvas();
+                var obj = null;
+                try { obj = c && ((c.getActiveObjects() || [])[0] || c.getActiveObject()); } catch (_) {}
+                if (obj && obj.isEditing && typeof obj.insertChars === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try { obj.insertChars('\t'); obj.dirty = true; c.requestRenderAll(); } catch (_) {}
+                }
+            }
+        });
+        filSelection();
+    }
+    window.spTabBoot = boot;
+    window.addEventListener('load', boot);
+    setTimeout(boot, 1500);
+})();
+
+
+/* ═══════ v1.7.457 : WIDGETS DÉTACHABLES (bouton + / − sur les titres de la barre de droite) ═══════
+   Le « + » posé à droite d'un titre de section ouvre un panneau flottant qui
+   contient une COPIE de cette section. La section réelle n'est jamais déplacée :
+   la barre de droite reste intacte, et un pont d'événements applique chaque action
+   du widget sur les contrôles d'origine (mêmes id, mêmes handlers, même logique).
+   Les valeurs sont resynchronisées en continu dans l'autre sens, la position est
+   mémorisée par section (comme les widgets Pathfinder / Nuancier / Filtres), et le
+   bouton repassé en « − » referme le widget. */
+(function spSetupDockWidgets() {
+    'use strict';
+    var LAYER_ID = 'spWidgetLayer';
+    var docks = {};      /* nom de section -> { host, origine, clone } */
+    var veille = null;   /* intervalle de resynchronisation */
+
+    function couche() {
+        var l = document.getElementById(LAYER_ID);
+        if (!l) {
+            l = document.createElement('div');
+            l.id = LAYER_ID;
+            l.className = 'sp-widget-layer';
+            document.body.appendChild(l);
+        }
+        return l;
+    }
+    function clef(nom) { return 'sp_dock_pos_' + nom; }
+
+    /* Copie de la section : id neutralisés (sinon doublons dans le document),
+       références conservées dans data-sp-ref, boutons de détachement retirés. */
+    function copier(origine) {
+        var clone = origine.cloneNode(true);
+        Array.prototype.forEach.call(clone.querySelectorAll('[id]'), function (el) {
+            el.setAttribute('data-sp-ref', el.id);
+            el.removeAttribute('id');
+        });
+        Array.prototype.forEach.call(clone.querySelectorAll('[for],[aria-labelledby],[aria-describedby],[aria-controls]'), function (el) {
+            el.removeAttribute('for');
+            el.removeAttribute('aria-labelledby');
+            el.removeAttribute('aria-describedby');
+            el.removeAttribute('aria-controls');
+        });
+        Array.prototype.forEach.call(clone.querySelectorAll('.sp-detach-btn'), function (el) {
+            if (el.parentNode) el.parentNode.removeChild(el);
+        });
+        clone.classList.add('sp-docked');
+        return clone;
+    }
+
+    function origineDe(el) {
+        var porteur = (el && el.closest) ? el.closest('[data-sp-ref]') : null;
+        if (!porteur) return null;
+        return document.getElementById(porteur.getAttribute('data-sp-ref'));
+    }
+
+    /* Pont d'événements : le widget agit TOUJOURS sur les contrôles d'origine. */
+    function ponter(clone) {
+        clone.addEventListener('click', function (e) {
+            /* flèches ▲▼ du widget : elles visent l'INPUT d'origine, pas le conteneur
+               (le clone n'a plus d'id, le seul data-sp-ref est celui du champ). */
+            var fl = (e.target && e.target.closest) ? e.target.closest('.number-spinner-btn') : null;
+            if (fl) {
+                var champClone = fl.parentNode ? fl.parentNode.querySelector('input[data-sp-ref]') : null;
+                var champOrig = champClone ? document.getElementById(champClone.getAttribute('data-sp-ref')) : null;
+                if (champOrig) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try {
+                        if (fl.classList.contains('up')) champOrig.stepUp(); else champOrig.stepDown();
+                        champOrig.dispatchEvent(new Event('input', { bubbles: true }));
+                        champOrig.dispatchEvent(new Event('change', { bubbles: true }));
+                    } catch (_) {}
+                }
+                return;
+            }
+            var cible = (e.target && e.target.closest) ? e.target.closest('button,[data-sp-ref]') : null;
+            if (!cible) return;
+            var orig = origineDe(cible);
+            if (!orig || orig === cible) return;
+            e.preventDefault();
+            e.stopPropagation();
+            try { orig.click(); } catch (_) {}
+        }, true);
+
+        function reporter(e) {
+            var cible = e.target;
+            if (!cible || !cible.tagName) return;
+            var orig = origineDe(cible);
+            if (!orig) return;
+            if (cible.type === 'checkbox' || cible.type === 'radio') orig.checked = cible.checked;
+            else if (cible.tagName === 'SELECT') orig.selectedIndex = cible.selectedIndex;
+            else orig.value = cible.value;
+            var nom = (e.type === 'change') ? 'change' : 'input';
+            try { orig.dispatchEvent(new Event(nom, { bubbles: true })); } catch (_) {}
+        }
+        clone.addEventListener('input', reporter, true);
+        clone.addEventListener('change', reporter, true);
+    }
+
+    /* Sens inverse : l'app met à jour la barre de droite, le widget suit. */
+    function synchroniser() {
+        Object.keys(docks).forEach(function (nom) {
+            var d = docks[nom];
+            Array.prototype.forEach.call(d.clone.querySelectorAll('input,select,textarea'), function (c) {
+                var orig = origineDe(c);
+                if (!orig || c === document.activeElement) return;
+                if (c.type === 'checkbox' || c.type === 'radio') { if (c.checked !== orig.checked) c.checked = orig.checked; }
+                else if (c.tagName === 'SELECT') { if (c.selectedIndex !== orig.selectedIndex) c.selectedIndex = orig.selectedIndex; }
+                else if (c.value !== orig.value) c.value = orig.value;
+            });
+        });
+    }
+
+    /* Tous les boutons d'une section (il peut y en avoir eu plusieurs si un titre
+       a été retraduit entre-temps) partagent le même état. */
+    function majBouton(nom, ouvert) {
+        Array.prototype.forEach.call(document.querySelectorAll('.sp-detach-btn[data-dock-btn="' + nom + '"]'), function (b) {
+            b.textContent = ouvert ? '−' : '+';
+            b.title = ouvert ? 'Retirer le widget' : 'Détacher en widget';
+            if (ouvert) b.classList.add('sp-on'); else b.classList.remove('sp-on');
+        });
+    }
+
+    function poser(host, x, y) {
+        var w = host.offsetWidth || 250;
+        var h = host.offsetHeight || 160;
+        x = Math.max(2, Math.min(x, window.innerWidth - w - 2));
+        y = Math.max(2, Math.min(y, window.innerHeight - h - 2));
+        host.style.left = Math.round(x) + 'px';
+        host.style.top = Math.round(y) + 'px';
+    }
+
+    function glisser(host, poignee) {
+        poignee.addEventListener('mousedown', function (e) {
+            if (e.button !== 0) return;
+            if (e.target && e.target.closest && e.target.closest('input,select,button,textarea')) return;
+            e.preventDefault();
+            var r = host.getBoundingClientRect();
+            var dx = e.clientX - r.left;
+            var dy = e.clientY - r.top;
+            function mv(ev) { poser(host, ev.clientX - dx, ev.clientY - dy); }
+            function fin() {
+                document.removeEventListener('mousemove', mv);
+                document.removeEventListener('mouseup', fin);
+                try {
+                    localStorage.setItem(clef(host.getAttribute('data-dock')), JSON.stringify({
+                        x: parseInt(host.style.left, 10) || 0,
+                        y: parseInt(host.style.top, 10) || 0
+                    }));
+                } catch (_) {}
+            }
+            document.addEventListener('mousemove', mv);
+            document.addEventListener('mouseup', fin);
+        });
+    }
+
+    function ouvrir(sec, btn) {
+        var nom = sec.getAttribute('data-section') || sec.id;
+        if (!nom || docks[nom]) return;
+        var host = document.createElement('div');
+        host.className = 'rightbar sp-dock-host expanded';
+        host.setAttribute('data-dock', nom);
+        var clone = copier(sec);
+        /* En-tête identique aux widgets existants : point, titre en capitales,
+           petit triangle à droite pour le soufflet. Le titre du clone est masqué :
+           le widget porte le sien. */
+        var source = sec.querySelector(':scope > .section-title') || sec.querySelector(':scope > label');
+        var texte = nom;
+        if (source) {
+            /* le titre est lu sur une copie sans le bouton + / − (sinon il apparaît
+               dans l'en-tête du widget : mesuré « Text frame options+ ») */
+            var copieTitre = source.cloneNode(true);
+            Array.prototype.forEach.call(copieTitre.querySelectorAll('.sp-detach-btn'), function (b) {
+                if (b.parentNode) b.parentNode.removeChild(b);
+            });
+            texte = (copieTitre.textContent || '').trim() || nom;
+        }
+        var tete = document.createElement('div');
+        tete.className = 'sp-dock-head';
+        var point = document.createElement('span');
+        point.className = 'dot';
+        var libelle = document.createElement('span');
+        libelle.className = 'sp-dock-title';
+        libelle.textContent = texte;
+        var fleche = document.createElement('span');
+        fleche.className = 'sp-dock-arrow';
+        fleche.textContent = '▾';
+        tete.appendChild(point);
+        tete.appendChild(libelle);
+        tete.appendChild(fleche);
+        var corps = document.createElement('div');
+        corps.className = 'sp-dock-body';
+        corps.appendChild(clone);
+        host.appendChild(tete);
+        host.appendChild(corps);
+        host._spTete = tete;
+
+        var pos = null;
+        try { pos = JSON.parse(localStorage.getItem(clef(nom)) || 'null'); } catch (_) {}
+        var nb = Object.keys(docks).length;
+        docks[nom] = { host: host, origine: sec, clone: clone };
+        couche().appendChild(host);
+
+        var x = (pos && pos.x) ? pos.x : 70 + nb * 24;
+        var y = (pos && pos.y) ? pos.y : 120 + nb * 24;
+        host.style.left = x + 'px';
+        host.style.top = y + 'px';
+        poser(host, x, y);
+
+        ponter(clone);
+        glisser(host, tete);
+        tete.addEventListener('click', function (e) {
+            host.classList.toggle('expanded');
+        });
+        majBouton(nom, true);
+        if (!veille) veille = setInterval(synchroniser, 450);
+        synchroniser();
+    }
+
+    function fermer(nom, btn) {
+        var d = docks[nom];
+        if (!d) return;
+        if (d.host.parentNode) d.host.parentNode.removeChild(d.host);
+        delete docks[nom];
+        if (!Object.keys(docks).length && veille) { clearInterval(veille); veille = null; }
+        majBouton(nom, false);
+    }
+
+    /* Un bouton discret sur chaque titre. Idempotent : rappelé après chaque
+       mutation (les libellés traduits réécrivent le titre et effacent le bouton). */
+    /* Zones détachables : les sections de la barre de droite ET les trois blocs de
+       travail du panneau Typographie (Options de bloc texte, Retraits, Justification). */
+    function cibles() {
+        var liste = [];
+        Array.prototype.forEach.call(document.querySelectorAll('#rightSidebar > .section'), function (sec) {
+            var t = sec.querySelector(':scope > .section-title');
+            if (t) liste.push({ noeud: sec, ancre: t, nom: sec.getAttribute('data-section') || sec.id || 'section' });
+        });
+        var blocs = [document.getElementById('spFrameOptions'), document.getElementById('paragraphIndentSection')];
+        var just = document.getElementById('justLetterSpaceMin');
+        if (just) blocs.push(just.closest('.input-group'));
+        blocs.forEach(function (b) {
+            if (!b || !b.querySelector(':scope > label')) return;
+            if (!b.id) b.id = 'spBloc' + liste.length + '_' + Math.round(b.getBoundingClientRect().top);
+            liste.push({ noeud: b, ancre: b.querySelector(':scope > label'), nom: b.id });
+        });
+        return liste;
+    }
+
+    function init() {
+        cibles().forEach(function (c) {
+            if (!c.ancre || c.ancre.querySelector('.sp-detach-btn')) return;
+            c.ancre.classList.add('sp-dock-anchor');
+            var nom = c.nom;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sp-detach-btn';
+            btn.textContent = docks[nom] ? '−' : '+';
+            btn.title = docks[nom] ? 'Retirer le widget' : 'Détacher en widget';
+            btn.setAttribute('data-dock-btn', nom);
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (docks[nom]) fermer(nom, btn); else ouvrir(c.noeud, btn);
+            });
+            c.ancre.appendChild(btn);
+        });
+    }
+
+    var obs = null;
+    function surveiller() {
+        if (obs || !window.MutationObserver) return;
+        var cible = document.getElementById('rightSidebar');
+        if (!cible) return;
+        obs = new MutationObserver(function () { init(); });
+        obs.observe(cible, { childList: true, subtree: true });
+    }
+
+    window.spDockWidgets = { init: init, ouvrir: ouvrir, fermer: fermer, synchroniser: synchroniser };
+    window.addEventListener('load', function () { init(); surveiller(); });
+    setTimeout(function () { init(); surveiller(); }, 1500);
+})();
+
+
+  // 🎨 v1.7.457 — GARANTIR QUE LE CACHE DES LIGNES CONTIENT L'HABILLAGE.
+  //   Les exports PDF/PNG relisent \`_textLines\` (et \`getLineWidth\`). Or ce cache
+  //   n'est habillé que si une remise en page a eu lieu APRÈS la pose de
+  //   l'obstacle : mesuré, un bloc dont \`_textLines\` dataient d'avant l'obstacle
+  //   exporter 317 px de large là où le moteur annonçait 214 px disponibles (les
+  //   lignes habillées, elles, font 205 px). On force donc la remise en page au
+  //   moment de l'export. Renvoie true si une remise en page a été déclenchée.
+  function spWrapEnsureLayout(obj) {
+    try {
+      if (!obj || (obj.type !== 'textbox' && obj.type !== 'text')) return false;
+      const cv = obj.canvas;
+      if (!cv || typeof cv.getObjects !== 'function') return false;
+      let aObstacle = false;
+      const liste = cv.getObjects();
+      for (let i = 0; i < liste.length && !aObstacle; i++) {
+        const o = liste[i];
+        if (!o || o === obj) continue;
+        try { if (isWrapObject(o)) aObstacle = true; } catch (e) {}
+      }
+      if (!aObstacle) return false;          // rien à faire : aucun habillage sur la page
+      obj._textLines = null;                 // invalide le cache
+      if (typeof obj.initDimensions === 'function') obj.initDimensions();   // repasse par _wrapLine
+      try { spWrapSyncSize(obj, true); } catch (e) {}                        // hauteur du bloc
+      obj.dirty = true;
+      return true;
+    } catch (e) { return false; }
+  }
+  window._spWrapEnsureLayout = spWrapEnsureLayout;
+
 
   // ── API publique (utilisée par l'interface) ───────────────────────────────
   window._spWrap = {
@@ -13584,6 +14439,17 @@ if (window._spGpuEnabled) {
         timestamp: new Date().toLocaleTimeString('fr-FR'),
         _viewMode: viewMode,
         _pageCount: pages.length,
+        /* 🆕 v1.7.458 — CONFIGURATION DE PAGE DANS L'ÉTAT D'HISTORIQUE.
+           MESURE : #pageWidth / #pageHeight poussaient « Format personnalisé » et
+           #bleed « Fond perdu modifié », mais l'état ne contenait ni format, ni
+           marge, ni fond perdu → Ctrl+Z rendait les pages sans le réglage
+           (entrée trompeuse, changement irréversible). Les décorations de marge /
+           fond perdu étant filtrées de pages[] (isMargin / isBleed / isTrimBox /
+           excludeFromExport, cf. saveAllPages), ces valeurs doivent être portées
+           par l'état lui-même. */
+        _pageFormat: { width: pageFormat.width, height: pageFormat.height },
+        _margin: margin,
+        _bleed: bleed,
         // 🆕 v1.7.174 — Sauvegarder la page active pour que undo/redo y revienne
         _currentPageIndex: currentPageIndex
     };
@@ -13637,6 +14503,17 @@ if (window._spGpuEnabled) {
         timestamp: new Date().toLocaleTimeString('fr-FR'),
         _viewMode: viewMode,
         _pageCount: pages.length,
+        /* 🆕 v1.7.458 — CONFIGURATION DE PAGE DANS L'ÉTAT D'HISTORIQUE.
+           MESURE : #pageWidth / #pageHeight poussaient « Format personnalisé » et
+           #bleed « Fond perdu modifié », mais l'état ne contenait ni format, ni
+           marge, ni fond perdu → Ctrl+Z rendait les pages sans le réglage
+           (entrée trompeuse, changement irréversible). Les décorations de marge /
+           fond perdu étant filtrées de pages[] (isMargin / isBleed / isTrimBox /
+           excludeFromExport, cf. saveAllPages), ces valeurs doivent être portées
+           par l'état lui-même. */
+        _pageFormat: { width: pageFormat.width, height: pageFormat.height },
+        _margin: margin,
+        _bleed: bleed,
         _currentPageIndex: currentPageIndex
     };
     
@@ -13716,6 +14593,20 @@ if (window._spGpuEnabled) {
     }, 10000);
         }
         
+        /* 🆕 v1.7.458 — Resynchronise les champs de configuration après une
+           restauration d'état (format / marges / fond perdu). L'unité d'affichage
+           (mm / pouces) est respectée via spPageMmVersUnite ; une affectation de
+           .value ne déclenche aucun événement change, donc pas de boucle. */
+        function _spSyncConfigUI() {
+    try {
+        const conv = (v) => (typeof window.spPageMmVersUnite === 'function') ? window.spPageMmVersUnite(v) : v;
+        const wI = document.getElementById('pageWidth'); if (wI) wI.value = conv(pageFormat.width);
+        const hI = document.getElementById('pageHeight'); if (hI) hI.value = conv(pageFormat.height);
+        const mI = document.getElementById('margin'); if (mI) mI.value = conv(margin);
+        const bI = document.getElementById('bleed'); if (bI) bI.value = conv(bleed);
+    } catch (_) {}
+        }
+
         function _doRestoreState(state) {
     _isRestoringState = true;
     // FIX UNDO CRITIQUE: Annuler tout save débounce résiduel (en cas de timer planifié
@@ -13738,9 +14629,19 @@ if (window._spGpuEnabled) {
     // ⚡ FAST PATH: Si même nombre de pages, recharger dans les canvases existants
     // ✨ FIX UNDO SPREAD: Activé aussi en mode spread (utilise loadSpreadContent pour recharger)
     const prevPageCount = pages.length; // avant remplacement
+    /* 🆕 v1.7.458 — La configuration de page fait partie de l'état : si le format,
+       les marges ou le fond perdu changent entre deux états, le fast-restore (qui
+       recharge dans les canvases EXISTANTS, à leur taille actuelle) produirait un
+       document incohérent → on force la reconstruction complète. */
+    const _cfgChange = !!(
+        (state._pageFormat && (state._pageFormat.width !== pageFormat.width || state._pageFormat.height !== pageFormat.height)) ||
+        (typeof state._margin === 'number' && state._margin !== margin) ||
+        (typeof state._bleed === 'number' && state._bleed !== bleed)
+    );
     const canFastRestore = (
         canvases.length > 0 &&
-        newPages.length === prevPageCount
+        newPages.length === prevPageCount &&
+        !_cfgChange
     );
     
     pages = newPages;
@@ -13748,6 +14649,23 @@ if (window._spGpuEnabled) {
     if (state.masterPages) masterPages = cloneMethod(state.masterPages);
     if (state.pageMasterAssignments) pageMasterAssignments = cloneMethod(state.pageMasterAssignments);
     if (state.pageNumberingSettings) pageNumberingSettings = cloneMethod(state.pageNumberingSettings);
+    /* 🆕 v1.7.458 — RESTAURER LA CONFIGURATION DE PAGE (format / marges / fond
+       perdu). Valeurs bornées comme à l'import d'un .sp : on refuse NaN, <= 0 et
+       les négatifs plutôt que de corrompre le document. */
+    if (state._pageFormat) {
+        const _pfW = Number(state._pageFormat.width), _pfH = Number(state._pageFormat.height);
+        if (isFinite(_pfW) && _pfW > 0) pageFormat.width = _pfW;
+        if (isFinite(_pfH) && _pfH > 0) pageFormat.height = _pfH;
+    }
+    if (typeof state._margin === 'number' && isFinite(state._margin) && state._margin >= 0) margin = state._margin;
+    if (typeof state._bleed === 'number' && isFinite(state._bleed) && state._bleed >= 0) bleed = state._bleed;
+    if (_cfgChange) {
+        _spSyncConfigUI();
+        // L'autosave ne sérialise que si le drapeau dirty est levé ; un undo ne le
+        // lève pas tout seul. Sans ça, un rechargement ramènerait l'ANCIENNE
+        // configuration (celle encore stockée en IndexedDB) avec les nouvelles pages.
+        window._spDirtyFlag = true;
+    }
     // 🆕 v1.7.174 — Restaurer la page active sauvegardée dans l'historique
     if (typeof state._currentPageIndex === 'number' && state._currentPageIndex >= 0 && state._currentPageIndex < pages.length) {
         currentPageIndex = state._currentPageIndex;
@@ -14065,6 +14983,68 @@ if (window._spGpuEnabled) {
     if (redoBtn) redoBtn.disabled = (historyStep >= history.length - 1);
         }
 
+        // 🆕 v1.7.457 — OPTIONS DE BLOC TEXTE : écriture (panneau → bloc) et
+        //   relecture (bloc sélectionné → panneau). Les retraits gauche/droite
+        //   alimentent _spIndentLeft/_spIndentRight, déjà honorés par la mise en
+        //   page et déjà sérialisés : rien de nouveau dans le moteur pour eux.
+        function spBlocsSelectionnes() {
+    const act = (typeof activeCanvas !== 'undefined' && activeCanvas && activeCanvas.getActiveObject)
+        ? activeCanvas.getActiveObject() : null;
+    if (act && (act.type === 'textbox' || act.type === 'text')) return [act];
+    return (typeof canvases !== 'undefined' ? canvases : []).reduce(function (acc, c) {
+        if (!c || typeof c.getActiveObject !== 'function') return acc;
+        const o = c.getActiveObject();
+        if (o && (o.type === 'textbox' || o.type === 'text')) acc.push(o);
+        return acc;
+    }, []);
+        }
+
+        function spRelayout(bloc) {
+    try {
+        bloc._textLines = null;                       // le cache des lignes doit repartir
+        if (typeof bloc.initDimensions === 'function') bloc.initDimensions();
+        bloc.dirty = true;
+        if (bloc.canvas && typeof bloc.canvas.requestRenderAll === 'function') bloc.canvas.requestRenderAll();
+    } catch (e) {}
+        }
+
+        function spApplyFrameOptions() {
+    const num = function (id) { const e = document.getElementById(id); const v = e ? parseFloat(e.value) : NaN; return isFinite(v) ? v : 0; };
+    const t = num('spInsetTop'), b = num('spInsetBottom'), g = num('spInsetLeft'), d = num('spInsetRight');
+    spBlocsSelectionnes().forEach(function (bloc) {
+        bloc._spInsetTop = Math.max(0, t);
+        bloc._spInsetBottom = Math.max(0, b);
+        bloc._spIndentLeft = Math.max(0, g);
+        bloc._spIndentRight = Math.max(0, d);
+        spRelayout(bloc);
+    });
+    if (typeof saveState === 'function' && spBlocsSelectionnes().length) saveState('Options de bloc texte');
+        }
+        window.spApplyFrameOptions = spApplyFrameOptions;
+
+        function spSetVAlign(val, btn) {
+    const groupe = document.getElementById('spVAlignGroup');
+    if (groupe) groupe.querySelectorAll('button').forEach(function (x) { x.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    spBlocsSelectionnes().forEach(function (bloc) { bloc._spVAlign = val || 'top'; spRelayout(bloc); });
+    if (typeof saveState === 'function' && spBlocsSelectionnes().length) saveState('Justification verticale');
+        }
+        window.spSetVAlign = spSetVAlign;
+
+        function spFillFrameOptions(obj) {
+    const set = function (id, v) { const e = document.getElementById(id); if (e) e.value = Math.round(v || 0); };
+    set('spInsetTop', obj._spInsetTop);
+    set('spInsetBottom', obj._spInsetBottom);
+    set('spInsetLeft', obj._spIndentLeft);
+    set('spInsetRight', obj._spIndentRight);
+    const val = obj._spVAlign || 'top';
+    const groupe = document.getElementById('spVAlignGroup');
+    if (groupe) groupe.querySelectorAll('button').forEach(function (x) {
+        x.classList.toggle('active', x.getAttribute('data-sp-valign') === val);
+    });
+        }
+        window.spFillFrameOptions = spFillFrameOptions;
+
         function updateTransformPanel() {
     const activeCanvas = getActiveCanvas();
     if (!activeCanvas) return;
@@ -14266,6 +15246,10 @@ if (window._spGpuEnabled) {
         if (ilEl) ilEl.value = Math.round(obj._spIndentLeft || 0);
         if (irEl) irEl.value = Math.round(obj._spIndentRight || 0);
         if (iflEl) iflEl.value = Math.round(obj._spFirstLineIndent || 0);
+        // 🆕 v1.7.457 — le panneau « Options de bloc texte » suit le bloc sélectionné.
+        if (typeof spFillFrameOptions === 'function' && (obj.type === 'textbox' || obj.type === 'text')) {
+            try { spFillFrameOptions(obj); } catch (e) {}
+        }
         
         // Mettre à jour les graisses disponibles et sélectionner la graisse actuelle
         updateFontWeightOptions(fontFamily);
@@ -21292,6 +22276,12 @@ if (window._spGpuEnabled) {
         }
 
         // ===== Tracé visuel entre blocs liés (flèche bleue légère) =====
+        // 🔗 v1.7.457 — exposés pour que le suivi des pastilles soit branché au
+        //   niveau du CANVAS (voir spChainBadgeFollow plus bas) : ces deux fonctions
+        //   vivent dans une closure locale, le filet canvas ne peut pas les voir.
+        try { window.positionChainBadge = positionChainBadge; } catch (_) {}
+        try { window.updateLinkArrowsForChain = updateLinkArrowsForChain; } catch (_) {}
+
         function updateLinkArrowsForChain(startObj) {
     const first = findFirstBlockInChain(startObj);
     if (!first) return;
@@ -25301,6 +26291,10 @@ if (window._spGpuEnabled) {
         const width = mmToPx(pageFormat.width);
         const height = mmToPx(pageFormat.height);
         canvases.forEach(c => drawMargins(c, width, height));
+        // 🆕 v1.7.458 — La marge est désormais portée par l'état d'historique : on
+        //   pousse une entrée (avant, modifier la marge n'était PAS annulable).
+        //   Aucun saveAllPages() ici : la marge ne touche pas le contenu des pages.
+        saveStateFromPages('Marges modifiées');
     });
 
     document.getElementById('bleed').addEventListener('change', (e) => {
@@ -36124,20 +37118,159 @@ if (window._spGpuEnabled) {
                 _spMassPasteEtat.corps = parseFloat(corpsEl.value) || _spMassPasteEtat.corps;
                 _spMassPasteEtat.pagesEstimees = _spMassPasteEstimerPages();
                 var pages = document.getElementById('spMassPastePages');
-                if (pages) pages.textContent = '(' + _spMassPasteEtat.pagesEstimees + ' pages)';
+                if (pages) pages.textContent = '(' + _spMassPasteT('pages', { n: _spMassPasteEtat.pagesEstimees }) + ')';
                 var info = document.getElementById('spMassPasteInfo');
                 if (info) {
-                    info.innerHTML = '<b>' + _spMassPasteEtat.texte.length.toLocaleString('fr-FR')
-                        + '</b> caracteres — environ <b>' + _spMassPasteEtat.pagesEstimees
-                        + '</b> pages en corps ' + _spMassPasteEtat.corps + '.';
+                    info.innerHTML = _spMassPasteT('infoCorps', {
+                        car: '<b>' + _spMassPasteEtat.texte.length.toLocaleString('fr-FR') + '</b>',
+                        n: '<b>' + _spMassPasteEtat.pagesEstimees + '</b>',
+                        corps: _spMassPasteEtat.corps
+                    });
                 }
             });
+        }
+
+        /* 🌍 v1.7.457 — POP-IN « COLLAGE DE TEXTE VOLUMINEUX » : 3 LANGUES.
+           MESURE AVANT : la pop-in n'existait qu'en français (17 libellés HTML en
+           clair, sans data-translate, et 4 messages dynamiques en littéral).
+           Traducteur AUTONOME et volontairement local : on ne touche pas aux 3
+           blocs du dictionnaire général, où des libellés proches cohabitent
+           (piège déjà rencontré : corriger l'anglais en croyant corriger le
+           français). Aucune logique métier n'est modifiée. */
+        function _spMassPasteDico() {
+            var l = 'fr';
+            try {
+                var v = localStorage.getItem('sp_lang') || document.documentElement.lang || 'fr';
+                l = String(v).slice(0, 2).toLowerCase();
+            } catch (_) {}
+            if (l === 'jp' || l === 'ja') l = 'ja';
+            else if (l === 'en') l = 'en';
+            else l = 'fr';
+            var D = {
+                fr: {
+                    title: "Collage de texte volumineux", h1: "Répartition",
+                    blocTxt: "Tout dans ce bloc",
+                    blocNote: "Le bloc débordera de sa zone. Utile pour un petit surplus.",
+                    coulerTxt: "Couler sur des pages chaînées",
+                    coulerNote: "Crée les pages et les blocs liés automatiquement.",
+                    h2: "Texte", aplatirTxt: "Aplatir les styles (style breaker)",
+                    aplatirNote: "Supprime gras, italique, tailles et couleurs parasites venus du copier-coller. Recommandé.",
+                    typoTxt: "Appliquer la typographie choisie",
+                    corps: "Corps", interligne: "Interligne", justifie: " Justifié", cesure: " Césure",
+                    h3: "Marges et retraits",
+                    margesTxt: "Marges automatiques du document",
+                    margesNote: "Chaque nouveau bloc est placé dans la zone de marges de la page.",
+                    retrait1: "Retrait 1re ligne", gauche: "Gauche", droite: "Droite",
+                    apercu: "Aperçu du texte", analyse: "Analyse…", annuler: "Annuler", coller: "Coller",
+                    pages: "{n} pages",
+                    infoCorps: "{car} caractères — environ {n} pages en corps {corps}.",
+                    infoMain: "{car} caractères, {mots} mots — soit environ {n} pages au format du document.",
+                    infoExact: "{car} caractères, {mots} mots — soit {n} pages au format du document.",
+                    progres: "Page {p} — {r} caractères restants ({pct} %)"
+                },
+                en: {
+                    title: "Large text paste", h1: "Layout",
+                    blocTxt: "All in this block",
+                    blocNote: "The block will overflow its area. Useful for a small surplus.",
+                    coulerTxt: "Flow onto chained pages",
+                    coulerNote: "Creates the pages and the linked blocks automatically.",
+                    h2: "Text", aplatirTxt: "Flatten styles (style breaker)",
+                    aplatirNote: "Removes bold, italic, sizes and stray colours coming from copy-paste. Recommended.",
+                    typoTxt: "Apply the chosen typography",
+                    corps: "Size", interligne: "Leading", justifie: " Justified", cesure: " Hyphenation",
+                    h3: "Margins and indents",
+                    margesTxt: "Automatic document margins",
+                    margesNote: "Each new block is placed inside the page margin area.",
+                    retrait1: "First-line indent", gauche: "Left", droite: "Right",
+                    apercu: "Text preview", analyse: "Analyse…", annuler: "Cancel", coller: "Paste",
+                    pages: "{n} pages",
+                    infoCorps: "{car} characters — about {n} pages at {corps} pt.",
+                    infoMain: "{car} characters, {mots} words — about {n} pages at the document size.",
+                    infoExact: "{car} characters, {mots} words — i.e. {n} pages at the document size.",
+                    progres: "Page {p} — {r} characters left ({pct} %)"
+                },
+                ja: {
+                    title: "大量テキストの貼り付け", h1: "割り付け",
+                    blocTxt: "このブロックにすべて",
+                    blocNote: "ブロックからあふれます。少しだけ余る場合に有効です。",
+                    coulerTxt: "連結したページに流し込む",
+                    coulerNote: "ページとリンクしたブロックを自動作成します。",
+                    h2: "テキスト", aplatirTxt: "スタイルを平坦化（スタイルブレーカー）",
+                    aplatirNote: "コピー＆ペースト由来の太字・斜体・サイズ・不要な色を削除します。推奨。",
+                    typoTxt: "選択したタイポグラフィを適用",
+                    corps: "サイズ", interligne: "行送り", justifie: " 両端揃え", cesure: " ハイフネーション",
+                    h3: "マージンとインデント",
+                    margesTxt: "ドキュメントのマージンを自動適用",
+                    margesNote: "新しいブロックはページのマージン内に配置されます。",
+                    retrait1: "1行目のインデント", gauche: "左", droite: "右",
+                    apercu: "テキストのプレビュー", analyse: "解析中…", annuler: "キャンセル", coller: "貼り付け",
+                    pages: "{n} ページ",
+                    infoCorps: "{car} 文字 — 約 {n} ページ（本文 {corps} pt）。",
+                    infoMain: "{car} 文字、{mots} 語 — 約 {n} ページ（ドキュメントの本文サイズ）。",
+                    infoExact: "{car} 文字、{mots} 語 — {n} ページ（ドキュメントの本文サイズ）。",
+                    progres: "{p} ページ — 残り {r} 文字（{pct} %）"
+                }
+            };
+            return D[l] || D.fr;
+        }
+        function _spMassPasteT(cle, vals) {
+            var d = _spMassPasteDico();
+            var s = (d && d[cle]) || cle;
+            if (vals) {
+                for (var k in vals) {
+                    if (Object.prototype.hasOwnProperty.call(vals, k)) {
+                        s = s.split('{' + k + '}').join(String(vals[k]));
+                    }
+                }
+            }
+            return s;
+        }
+        function _spMassPasteTraduire() {
+            var d = _spMassPasteDico();
+            var set = function (id, txt) {
+                if (!txt) return;
+                var e = document.getElementById(id);
+                if (e) e.textContent = txt;
+            };
+            set('spmpTitle', d.title);
+            set('spmpH1', d.h1);
+            set('spmpBlocTxt', d.blocTxt);
+            set('spmpBlocNote', d.blocNote);
+            set('spmpCoulerTxt', d.coulerTxt);
+            set('spmpCoulerNote', d.coulerNote);
+            set('spmpH2', d.h2);
+            set('spmpAplatirTxt', d.aplatirTxt);
+            set('spmpAplatirNote', d.aplatirNote);
+            set('spmpTypoTxt', d.typoTxt);
+            set('spmpCorpsLbl', d.corps);
+            set('spmpInterLbl', d.interligne);
+            set('spmpH3', d.h3);
+            set('spmpMargesTxt', d.margesTxt);
+            set('spmpMargesNote', d.margesNote);
+            set('spmpRet1Lbl', d.retrait1);
+            set('spmpGaucheLbl', d.gauche);
+            set('spmpDroiteLbl', d.droite);
+            set('spmpApercuLbl', d.apercu);
+            /* Les 2 cases « Justifié » / « Césure » : le libelle suit l'input, on
+               ecrit donc le DERNIER noeud texte du label (jamais textContent, qui
+               effacerait la case a cocher). */
+            var lab = function (id, txt) {
+                if (!txt) return;
+                var e = document.getElementById(id);
+                if (e && e.lastChild && e.lastChild.nodeType === 3) e.lastChild.nodeValue = txt;
+            };
+            lab('spmpJustLbl', d.justifie);
+            lab('spmpCesureLbl', d.cesure);
+            set('spMassPasteInfo', d.analyse);
+            set('spMassPasteConfirm', d.coller);
+            set('spMassPasteCancel', d.annuler);
         }
 
         function _spMassPasteOuvrir(texte, bloc) {
             var modal = document.getElementById('spMassPasteModal');
             if (!modal) return;
             _spMassPasteInitUI();
+            try { _spMassPasteTraduire(); } catch (_) {}
             var ancien = bloc.text || '';
             _spMassPasteEtat = {
                 texte: texte,
@@ -36153,14 +37286,16 @@ if (window._spGpuEnabled) {
             var mots = texte.split(/\s+/).filter(function (m) { return m.length > 0; }).length;
             var info = document.getElementById('spMassPasteInfo');
             if (info) {
-                info.innerHTML = '<b>' + texte.length.toLocaleString('fr-FR') + '</b> caracteres, <b>'
-                    + mots.toLocaleString('fr-FR') + '</b> mots — soit environ <b>'
-                    + _spMassPasteEtat.pagesEstimees + '</b> pages au format du document.';
+                info.innerHTML = _spMassPasteT('infoMain', {
+                    car: '<b>' + texte.length.toLocaleString('fr-FR') + '</b>',
+                    mots: '<b>' + mots.toLocaleString('fr-FR') + '</b>',
+                    n: '<b>' + _spMassPasteEtat.pagesEstimees + '</b>'
+                });
             }
             var ap = document.getElementById('spMassPasteApercu');
             if (ap) ap.textContent = texte.slice(0, 900) + (texte.length > 900 ? '\n…' : '');
             var pages = document.getElementById('spMassPastePages');
-            if (pages) pages.textContent = '(' + _spMassPasteEtat.pagesEstimees + ' pages)';
+            if (pages) pages.textContent = '(' + _spMassPasteT('pages', { n: _spMassPasteEtat.pagesEstimees }) + ')';
             // Estimation AFFINEE en differe : le comptage exact coute ~0,5 s sur
             // 200 000 caracteres, on ne bloque donc pas l'ouverture de la pop-in
             // (mesuree a 20 ms). L'estimation rapide surestimait de 11 % car elle
@@ -36178,12 +37313,14 @@ if (window._spGpuEnabled) {
                     if (!exact) return;
                     _spMassPasteEtat.pagesEstimees = exact;
                     var pEl = document.getElementById('spMassPastePages');
-                    if (pEl) pEl.textContent = '(' + exact + ' pages)';
+                    if (pEl) pEl.textContent = '(' + _spMassPasteT('pages', { n: exact }) + ')';
                     var iEl = document.getElementById('spMassPasteInfo');
                     if (iEl) {
-                        iEl.innerHTML = '<b>' + texte.length.toLocaleString('fr-FR') + '</b> caracteres, <b>'
-                            + mots.toLocaleString('fr-FR') + '</b> mots — soit <b>' + exact
-                            + '</b> pages au format du document.';
+                        iEl.innerHTML = _spMassPasteT('infoExact', {
+                            car: '<b>' + texte.length.toLocaleString('fr-FR') + '</b>',
+                            mots: '<b>' + mots.toLocaleString('fr-FR') + '</b>',
+                            n: '<b>' + exact + '</b>'
+                        });
                     }
                 } catch (_) {}
             }, 220);
@@ -36202,9 +37339,9 @@ if (window._spGpuEnabled) {
             var bar = document.getElementById('spMassPasteBar');
             if (bar) bar.style.width = '0%';
             var conf = document.getElementById('spMassPasteConfirm');
-            if (conf) { conf.disabled = false; conf.textContent = 'Coller'; }
+            if (conf) { conf.disabled = false; conf.textContent = _spMassPasteT('coller'); }
             var canc = document.getElementById('spMassPasteCancel');
-            if (canc) canc.textContent = 'Annuler';
+            if (canc) canc.textContent = _spMassPasteT('annuler');
             modal.style.display = 'block';
         }
 
@@ -36266,8 +37403,7 @@ if (window._spGpuEnabled) {
             if (bar) bar.style.width = pct + '%';
             var txt = document.getElementById('spMassPasteProgTxt');
             if (txt) {
-                txt.textContent = 'Page ' + page + ' — ' + reste.toLocaleString('fr-FR')
-                    + ' caracteres restants (' + pct + ' %)';
+                txt.textContent = _spMassPasteT('progres', { p: page, r: reste.toLocaleString('fr-FR'), pct: pct });
             }
         }
 
@@ -36537,8 +37673,8 @@ if (window._spGpuEnabled) {
                 if (window.spToast) window.spToast('Le collage a echoue : ' + (err && err.message ? err.message : err), 'error', 6000);
             } finally {
                 etat.enCours = false;
-                if (conf) { conf.disabled = false; conf.textContent = 'Coller'; }
-                if (canc) canc.textContent = 'Annuler';
+                if (conf) { conf.disabled = false; conf.textContent = _spMassPasteT('coller'); }
+                if (canc) canc.textContent = _spMassPasteT('annuler');
             }
         }
 
@@ -41094,6 +42230,14 @@ https://superprint.app
                 var _finalTextOp = _textOp * _textFillA;
                 if (_finalTextOp < 0.01) _finalTextOp = 0.01; // pdf-lib exige opacity > 0
 
+                // 🎨 v1.7.457 — HABILLAGE : les lignes du PDF viennent de _textLines.
+                //   Si ce cache a été calculé AVANT la pose de l'obstacle, le PDF
+                //   sortait SANS habillage (le texte passait dans la forme) alors que
+                //   la preview était bonne. On force la remise en page habillée ici,
+                //   juste avant de lire les lignes.
+                if (typeof window._spWrapEnsureLayout === 'function') {
+                    try { window._spWrapEnsureLayout(obj); } catch (_) {}
+                }
                 // ✏️ v1.7.230 : Utiliser _textLines (lignes wrappées par Fabric)
                 // au lieu de text.split('\n') pour respecter le wrapping des textbox.
                 var rawLines = (obj._textLines && obj._textLines.length)
@@ -41194,6 +42338,29 @@ https://superprint.app
                 var totalHPx = (_spLineH.length ? _spLineH.reduce(function(a, b) { return a + b; }, 0) : (fontSizePx * _lineHeightRatio * lines.length));
                 var oy = (obj.originY === 'center') ? -totalHPx / 2
                     : (obj.originY === 'bottom') ? -totalHPx : 0;
+                // 🆕 v1.7.457 — OPTIONS DE BLOC TEXTE : mêmes retraits et même
+                //   justification verticale que la preview (sinon le PDF se
+                //   recollait en haut du cadre et ignorait les retraits).
+                try {
+                    var _riT = (typeof obj._spInsetTop === 'number' && obj._spInsetTop > 0) ? obj._spInsetTop : 0;
+                    var _riB = (typeof obj._spInsetBottom === 'number' && obj._spInsetBottom > 0) ? obj._spInsetBottom : 0;
+                    var _vAl = obj._spVAlign || 'top';
+                    if (_riT) oy += _riT;
+                    if (_vAl !== 'top') {
+                        var _frH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : (obj.height || 0);
+                        var _utile = Math.max(0, _frH - _riT - _riB);
+                        // Même mesure que la preview : la dernière ligne sans leading bas.
+                        var _totalBloc = totalHPx;
+                        try {
+                            if (typeof window.spLineBoxHeight === 'function' && _spLineH.length) {
+                                _totalBloc = Number(window.spLineBoxHeight(obj, _spLineH.length - 1)) || totalHPx;
+                            }
+                        } catch (_) {}
+                        var _reste = Math.max(0, _utile - _totalBloc);
+                        if (_vAl === 'center') oy += _reste / 2;
+                        else if (_vAl === 'bottom') oy += _reste;
+                    }
+                } catch (_) {}
 
                 // Gérer rotation et scale
                 var angleRad = ((obj.angle || 0) * Math.PI) / 180;
@@ -42463,23 +43630,65 @@ https://superprint.app
                 //   l'ouverture dans Adobe. On peint un fond blanc dans le canvas
                 //   AVANT toDataURL, puis on restaure la transparence du canvas.
                 try {
+                    /* ══════════════════════════════════════════════════════════
+                       🆕 v1.7.458c — COPIE DU PIPELINE IMAGE DE L'EXPORT TOP-NAV.
+                       MESURE DU DÉFAUT : cette couverture était TOUJOURS en PNG
+                       (sans perte), regrisée en PNG (qualité 1) puis écrite avec
+                       compression 'NONE' — pixels BRUTS, aucun filtre : la taille
+                       ne dépendait plus du contenu (~60 Mo pour une planche HD
+                       de ~20 MP). Trois causes de poids cumulées.
+                       On reprend ici les fonctions de confirmExport (inchangé) :
+                       mêmes getExportImageSettings / convertToGrayscale / règle
+                       de transparence / pdfFormat + compression. Le correctif
+                       v1.7.416 de l'export classique (« mesure B6 » : PNG +
+                       'NONE' → 131,6 Mo) est donc appliqué à l'imposition.
+                       ══════════════════════════════════════════════════════════ */
+                    // Réglages image : identiques à ceux passés à addCanvasHybridToPdf
+                    // (standard jpeg 0.75 · medium jpeg 0.88 · hd jpeg 0.92 · ultrahd png).
+                    const _impImgSet = getExportImageSettings(quality);
+                    // N&B aplati sur fond opaque → le JPEG niveaux de gris suffit
+                    // (v1.7.416). Sinon, si le document contient de l'alpha, le JPEG
+                    // blanchirait les zones transparentes → repli PNG sans perte,
+                    // mais COMPRESSÉ (zlib) — jamais 'NONE'.
+                    const _impOpaque = (typeof window.spExportPaintOpaqueBackground !== 'function'
+                        || window.spExportPaintOpaqueBackground());
+                    const _impBwFlatten = (_imposedColorMode === 'bw') && _impOpaque;
+                    if (!_impBwFlatten && _impImgSet.format === 'jpeg' && typeof _spDocHasTransparency === 'function') {
+                        let _impHasAlpha = false;
+                        try { _impHasAlpha = _spDocHasTransparency(); } catch (_) {}
+                        if (_impHasAlpha) {
+                            const _impPng = getExportImageSettings(quality, true);
+                            _impImgSet.format = _impPng.format;
+                            _impImgSet.mime = _impPng.mime;
+                            _impImgSet.quality = _impPng.quality;
+                            _impImgSet.pdfFormat = _impPng.pdfFormat;
+                            _impImgSet.compression = _impPng.compression;
+                        }
+                    }
                     const _prevBg = sheetCanvas.backgroundColor;
-                    sheetCanvas.backgroundColor = '#ffffff';
+                    // MÊME règle de fond que l'export classique : opaque si le format
+                    // ne porte pas d'alpha (JPEG), en N&B, ou si l'utilisateur a
+                    // demandé un fond opaque ; transparent sinon (PNG seulement).
+                    sheetCanvas.backgroundColor = (_impImgSet.format === 'jpeg' || _imposedColorMode === 'bw' || _impOpaque)
+                        ? '#ffffff' : 'rgba(0,0,0,0)';
                     sheetCanvas.renderAll();
                     let _sheetImg = sheetCanvas.toDataURL({
-                        format: 'png',
+                        format: _impImgSet.format,
+                        quality: _impImgSet.quality,
                         multiplier: getQualityMultiplier(quality),
                         enableRetinaScaling: false
                     });
+                    // Regrisage dans le MÊME format/qualité que l'export classique
+                    // (et non plus « png », 1).
                     if (_sheetImg && _imposedColorMode === 'bw') {
-                        _sheetImg = await convertToGrayscale(_sheetImg, 'png', 1);
+                        _sheetImg = await convertToGrayscale(_sheetImg, _impImgSet.format, _impImgSet.quality);
                     }
                     sheetCanvas.backgroundColor = _prevBg;
                     sheetCanvas.renderAll();
                     if (_sheetImg) {
                         const _sheetWmm = pxToMm(sheetCanvas.width);
                         const _sheetHmm = pxToMm(sheetCanvas.height);
-                        pdf.addImage(_sheetImg, 'PNG', cropMarkMargin, cropMarkMargin, _sheetWmm, _sheetHmm, undefined, 'NONE');
+                        pdf.addImage(_sheetImg, _impImgSet.pdfFormat, cropMarkMargin, cropMarkMargin, _sheetWmm, _sheetHmm, undefined, _impImgSet.compression);
                     }
                 } catch (_) {}
             }
@@ -42507,7 +43716,9 @@ https://superprint.app
             if (pages[pageIndex]) {
                 const imgData = await renderPageToImageWithBleed(pageIndex, leftPosition, quality, documentBleed);
                 const imgFmt = (imgData && imgData.indexOf('data:image/jpeg') === 0) ? 'JPEG' : 'PNG';
-                const imgComp = imgFmt === 'JPEG' ? 'FAST' : ((quality === 'hd' || quality === 'ultrahd') ? 'NONE' : 'MEDIUM');
+                // 🆕 v1.7.458c — 'NONE' écrivait des PIXELS BRUTS : même correctif que
+                //   l'export classique (v1.7.416). PNG + 'FAST' (zlib) reste SANS PERTE.
+                const imgComp = (imgFmt === 'JPEG' || quality === 'hd' || quality === 'ultrahd') ? 'FAST' : 'MEDIUM';
                 pdf.addImage(imgData, imgFmt, cropMarkMargin, cropMarkMargin, halfW, fullH, undefined, imgComp);
             }
         }
@@ -42516,7 +43727,9 @@ https://superprint.app
             if (pages[pageIndex]) {
                 const imgData = await renderPageToImageWithBleed(pageIndex, rightPosition, quality, documentBleed);
                 const imgFmt = (imgData && imgData.indexOf('data:image/jpeg') === 0) ? 'JPEG' : 'PNG';
-                const imgComp = imgFmt === 'JPEG' ? 'FAST' : ((quality === 'hd' || quality === 'ultrahd') ? 'NONE' : 'MEDIUM');
+                // 🆕 v1.7.458c — 'NONE' écrivait des PIXELS BRUTS : même correctif que
+                //   l'export classique (v1.7.416). PNG + 'FAST' (zlib) reste SANS PERTE.
+                const imgComp = (imgFmt === 'JPEG' || quality === 'hd' || quality === 'ultrahd') ? 'FAST' : 'MEDIUM';
                 // 🆕 FIX 2026-05-10 : décaler la page droite de la gouttière
                 // intérieure quand le mode "découpe page par page" est actif.
                 pdf.addImage(imgData, imgFmt, cropMarkMargin + halfW + innerGutter, cropMarkMargin, halfW, fullH, undefined, imgComp);
@@ -54827,7 +56040,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         imageMaskFitWidth: "↔ Ajuster largeur",
         imageMaskFitHeight: "↕ Ajuster hauteur",
         // === Typography panel ===
-        loadFontBtn: "📁 Charger polices (.ttf / .otf)",
+        loadFontBtn: "Charger une police (.ttf / .otf)",
         fontLabel: "Police",
         fontSizeLabel: "Taille (pt)",
         fontWeightLabel: "Graisse",
@@ -54841,6 +56054,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         underlineTitle: "Souligné — Sélectionnez du texte pour formater des mots individuels",
         formatSelectionHint: "💡 Double-cliquez le texte et sélectionnez des mots pour appliquer gras, italique, souligné par mot.",
         textAlignLabel: "Alignement",
+        frameOptionsLabel: "Options de bloc texte",
+        paragraphIndentLabel: "Retrait",
+        indentLeftLabel: "Gauche",
+        indentRightLabel: "Droite",
+        indentFirstLineLabel: "1re ligne",
         alignLeft: "Fer à gauche",
         alignCenter: "Centré",
         alignRight: "Fer à droite",
@@ -55655,7 +56873,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         imageMaskFitWidth: "↔ Fit width",
         imageMaskFitHeight: "↕ Fit height",
         // === Typography panel ===
-        loadFontBtn: "📁 Load fonts (.ttf / .otf)",
+        loadFontBtn: "Load a font (.ttf / .otf)",
         fontLabel: "Font",
         fontSizeLabel: "Size (pt)",
         fontWeightLabel: "Weight",
@@ -55669,6 +56887,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         underlineTitle: "Underline — Select text to format individual words",
         formatSelectionHint: "💡 Double-click text and select words to apply bold, italic, underline per word.",
         textAlignLabel: "Alignment",
+        frameOptionsLabel: "Text frame options",
+        paragraphIndentLabel: "Indent",
+        indentLeftLabel: "Left",
+        indentRightLabel: "Right",
+        indentFirstLineLabel: "First line",
         alignLeft: "Align left",
         alignCenter: "Center",
         alignRight: "Align right",
@@ -56514,7 +57737,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         imageMaskFitWidth: "↔ 幅に合わせる",
         imageMaskFitHeight: "↕ 高さに合わせる",
         // === Typography panel ===
-        loadFontBtn: "📁 フォント読み込み (.ttf / .otf)",
+        loadFontBtn: "フォント読み込み (.ttf / .otf)",
         fontLabel: "フォント",
         fontSizeLabel: "サイズ (pt)",
         fontWeightLabel: "ウェイト",
@@ -56528,6 +57751,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         underlineTitle: "下線 — テキストを選択して個別の単語をフォーマット",
         formatSelectionHint: "💡 テキストをダブルクリックして単語を選択し、太字・斜体・下線を適用。",
         textAlignLabel: "整列",
+        frameOptionsLabel: "テキストフレーム",
+        paragraphIndentLabel: "字下げ",
+        indentLeftLabel: "左",
+        indentRightLabel: "右",
+        indentFirstLineLabel: "1行目",
         alignLeft: "左揃え",
         alignCenter: "中央揃え",
         alignRight: "右揃え",
@@ -57250,14 +58478,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         // Load font button
         var loadFont = document.getElementById('loadCustomFont');
         if (loadFont) loadFont.textContent = translate('loadFontBtn');
-        // All DIRECT-CHILD input-group labels (excludes nested ones inside .input-row)
-        var groups = sec.querySelectorAll(':scope > .input-group');
-        var labelKeys = ['fontLabel', 'textStyleLabel', 'textAlignLabel', 'hyphenationLabel', 'justificationLabel', 'formatsLabel', 'advancedOptions', 'specialSpaces'];
-        groups.forEach(function(g, i) {
-            var lbl = g.querySelector(':scope > label');
-            if (!lbl) return;
-            if (labelKeys[i]) lbl.textContent = translate(labelKeys[i]);
-        });
+        // 🆕 v1.7.457 — PLUS DE MAPPING PAR POSITION ICI.
+        //   Ces libellés portent déjà un attribut data-translate et sont traduits
+        //   par la passe générique ; la liste positionnelle se décalait dès qu'on
+        //   ajoutait ou retirait un groupe (mesuré : le titre du panneau « Options de
+        //   bloc texte » s'affichait « Alignment » après le retrait du doublon).
         // Font size + weight labels (in input-row)
         var inputRows = sec.querySelectorAll('.input-row');
         if (inputRows[0]) {
@@ -58303,6 +59528,15 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
 
         // ── Export PNG / JPG ──
         function _spRenderCanvasForImageExport(c, format, multiplier, opts) {
+    // 🎨 v1.7.457 — Même garantie que pour le PDF : l'habillage vit dans le cache
+    //   \`_textLines\`, donc on s'assure que les lignes sont à jour AVANT de peindre.
+    try {
+        if (typeof window._spWrapEnsureLayout === 'function' && c && typeof c.getObjects === 'function') {
+            c.getObjects().forEach(function (o) {
+                if (o && (o.type === 'textbox' || o.type === 'text')) window._spWrapEnsureLayout(o);
+            });
+        }
+    } catch (_) {}
             opts = opts || {};
             const transparent = !!opts.transparent && format === 'png';
             // Exporter la PAGE ENTIÈRE (incluant les fonds perdus / bleed), comme le PDF.
@@ -61005,6 +62239,28 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             masterPages: masterPages,
             pageMasterAssignments: pageMasterAssignments,
             pageNumberingSettings: pageNumberingSettings,
+            /* 🆕 v1.7.457y — FIX ASYMÉTRIE MESURÉE (écriture Web3/IPFS).
+               Le LECTEUR IPFS (v1.7.427) restaure project.spotInks et
+               project.customFonts ; cet ÉCRIVAIN ne les produisait pas : un
+               document sauvegardé puis rouvert via IPFS perdait donc ses TONS
+               DIRECTS (Pantone) et ses POLICES EXTERNES embarquées — la
+               correction du lecteur ne pouvait rien restaurer.
+               Alignement strict sur saveProjectLocal (.json) et sur le .sp :
+               mêmes blocs, mêmes filtres (polices réellement utilisées,
+               data-URL présente). */
+            spotInks: (function () {
+                try { return window._spSpotCollectInkRegistry ? window._spSpotCollectInkRegistry() : {}; }
+                catch (_) { return {}; }
+            })(),
+            customFonts: (function () {
+                try {
+                    const used = _spCollectUsedFonts();
+                    const usedSet = new Set(used);
+                    return (customFonts || [])
+                        .filter(f => f && f.name && usedSet.has(f.name) && f.data)
+                        .map(f => ({ name: f.name, data: f.data }));
+                } catch (_) { return []; }
+            })(),
             styles: {
                 typography: (function () { try { return JSON.parse(localStorage.getItem('sp_typo_styles') || '[]'); } catch (_) { return []; } })(),
                 swatches: (function () { try { return JSON.parse(localStorage.getItem('sp_color_swatches') || '[]'); } catch (_) { return []; } })()
@@ -77112,6 +78368,28 @@ window.saveProjectWeb3 = async function() {
             masterPages: masterPages,
             pageMasterAssignments: pageMasterAssignments,
             pageNumberingSettings: pageNumberingSettings,
+            /* 🆕 v1.7.457y — FIX ASYMÉTRIE MESURÉE (écriture Web3/IPFS).
+               Le LECTEUR IPFS (v1.7.427) restaure project.spotInks et
+               project.customFonts ; cet ÉCRIVAIN ne les produisait pas : un
+               document sauvegardé puis rouvert via IPFS perdait donc ses TONS
+               DIRECTS (Pantone) et ses POLICES EXTERNES embarquées — la
+               correction du lecteur ne pouvait rien restaurer.
+               Alignement strict sur saveProjectLocal (.json) et sur le .sp :
+               mêmes blocs, mêmes filtres (polices réellement utilisées,
+               data-URL présente). */
+            spotInks: (function () {
+                try { return window._spSpotCollectInkRegistry ? window._spSpotCollectInkRegistry() : {}; }
+                catch (_) { return {}; }
+            })(),
+            customFonts: (function () {
+                try {
+                    const used = _spCollectUsedFonts();
+                    const usedSet = new Set(used);
+                    return (customFonts || [])
+                        .filter(f => f && f.name && usedSet.has(f.name) && f.data)
+                        .map(f => ({ name: f.name, data: f.data }));
+                } catch (_) { return []; }
+            })(),
             styles: {
                 typography: (function () { try { return JSON.parse(localStorage.getItem('sp_typo_styles') || '[]'); } catch (_) { return []; } })(),
                 swatches: (function () { try { return JSON.parse(localStorage.getItem('sp_color_swatches') || '[]'); } catch (_) { return []; } })()

@@ -1,6 +1,6 @@
 {
   "name": "sp213-local",
-  "version": "1.7.456",
+  "version": "1.7.457",
   "description": "SP213 Studio — version locale (Vite). WebLLM npm pour l'inférence en local, aucun CDN, aucune dépendance au proxy PHP.",
   "type": "module",
   "scripts": {
@@ -20,7 +20,7 @@
     "print"
   ],
   "author": "SuperPrint",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
     "@mlc-ai/web-llm": "^0.2.84",
     "bonjour-service": "^1.4.4",

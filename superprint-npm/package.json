@@ -38,7 +38,7 @@
     "email": "all@2points13.fr",
     "url": "https://2points13.fr"
   },
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "bin": {
     "superprint": "cli.mjs"
