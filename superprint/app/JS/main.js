@@ -50796,7 +50796,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             logAI('SP213 activé — ouverture du studio…');
             const base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '');
             // Le studio est à la racine, l'app dans /app/ → remonter d'un niveau
-            const url = base + '../sp213-studio.html?v=455i';
+            const url = base + '../sp213-studio.html?v=457-chat-en';
             const win = window.open(url, '_blank', 'noopener');
             if (!win) {
                 // Popup bloqué → fallback par lien cliquable
@@ -50979,7 +50979,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 localStorage.setItem('sp213_from_sp', JSON.stringify(spFile));
                 const base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '');
                 // Le studio est à la racine, l'app dans /app/ → remonter d'un niveau
-                const url = base + '../sp213-studio.html?from=sp&v=455i';
+                const url = base + '../sp213-studio.html?from=sp&v=457-chat-en';
                 const win = window.open(url, '_blank', 'noopener');
                 if (!win) {
                     const a = document.createElement('a');
@@ -73215,7 +73215,7 @@ window.npSwitchTab = function(tab) {
             } else if (typeof window.openSuperPrintStudio === 'function') {
                 window.openSuperPrintStudio();
             } else {
-                const url = new URL('sp213-studio.html?v=455i', window.location.href);
+                const url = new URL('sp213-studio.html?v=457-chat-en', window.location.href);
                 window.open(url.href, '_blank');
             }
         } catch (e) { console.warn('[Studio] open failed:', e); }
