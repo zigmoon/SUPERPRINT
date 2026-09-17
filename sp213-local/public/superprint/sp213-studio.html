@@ -2199,6 +2199,22 @@
     "kb.toGlyphs": "記号",
     "kb.toLetters": "文字"
   });
+
+  // 🆕 v1.7.457 — Messages de BIENVENUE de la colonne de conversation (3 langues).
+  //   Ils étaient écrits en FRANÇAIS EN DUR : le studio s'ouvre en anglais, le
+  //   message apparaissait donc en français dans la colonne de conversation.
+  Object.assign(I18N.en, {
+    "chat.welcomeReady": "SP213 is ready. Describe your layout (e.g. “Minimalist A4 poster”) — or open the settings to change the model.",
+    "chat.welcomeNoKey": "Welcome to Studio IA. To generate a layout, choose your model first: type your description, then select a model in the settings if needed."
+  });
+  Object.assign(I18N.fr, {
+    "chat.welcomeReady": "SP213 est prêt. Décrivez votre maquette (ex. « Affiche A4 minimaliste ») — ou ouvrez les réglages pour changer de modèle.",
+    "chat.welcomeNoKey": "Bienvenue sur Studio IA. Pour générer une maquette, choisissez d’abord votre modèle : tapez votre description, puis sélectionnez un modèle dans les réglages si besoin."
+  });
+  Object.assign(I18N.jp, {
+    "chat.welcomeReady": "SP213 の準備ができました。レイアウトを説明してください（例：「ミニマルな A4 ポスター」）。モデルを変えるには設定を開いてください。",
+    "chat.welcomeNoKey": "Studio IA へようこそ。レイアウトを生成するには、まずモデルを選んでください。説明を入力し、必要に応じて設定でモデルを選択します。"
+  });
   // Langue active (EN par défaut)
   let curLang = 'en';
   function setLang(lang, persist) {
@@ -2464,6 +2480,19 @@
 
   // ── Init UI ─────────────────────────────────────────────────
   function init() {
+    /* 🌍 v1.7.457 — LA LANGUE ENREGISTRÉE DOIT ÊTRE APPLIQUÉE AVANT TOUT.
+       init() est appelé à la FIN du script (balise <script> en bas de page),
+       alors que l'écouteur DOMContentLoaded qui appelait setLang ne se déclenche
+       qu'APRÈS. Mesuré : la colonne de conversation recevait ses messages de
+       démarrage (« New blank document… », message de bienvenue) alors que
+       curLang valait encore 'en' — ils restaient donc en anglais même en
+       français ou en japonais, et la bascule de langue arrivait trop tard.
+       On restaure la langue ICI, avant le premier appendChat(). L'appel de
+       DOMContentLoaded est conservé : il gère le menu et le select. */
+    try {
+      const _langSauv = localStorage.getItem(LS.lang) || 'en';
+      setLang((_langSauv === 'fr' || _langSauv === 'ja') ? (_langSauv === 'ja' ? 'jp' : 'fr') : 'en', false);
+    } catch (_) {}
     const sel = $('groqModel');
     GROQ_MODELS.forEach(([v, l]) => {
       const o = document.createElement('option');
@@ -3145,9 +3174,9 @@
     if (!state.chat.some(m => m.role === 'user')) {
       const hasCloudKey = state.engine === 'groq' ? !!(state.apiKey) : (state.engine === 'openrouter' ? !!(state.orApiKey) : (state.engine === 'deepseek' ? !!(state.dsApiKey) : (state.engine === 'openai' ? !!(state.oaiApiKey) : true)));
       if (hasCloudKey || state.engine === 'webllm') {
-        appendChat('assistant', 'SP213 est prêt. Décrivez votre maquette (ex. « Affiche A4 minimaliste ») — ou ouvrez les réglages pour changer de modèle.');
+        appendChat('assistant', t('chat.welcomeReady'));
       } else {
-        appendChat('assistant', 'Bienvenue sur Studio IA. Pour générer une maquette, choisissez d’abord votre modèle : tapez votre description, puis sélectionnez un modèle dans les réglages si besoin.');
+        appendChat('assistant', t('chat.welcomeNoKey'));
       }
     }
   }
