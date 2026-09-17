@@ -4280,6 +4280,15 @@ if (window._spGpuEnabled) {
                 var textAlign = this.textAlign;
 
                 for (var i = 0, len = this._textLines.length; i < len; i++) {
+                    /* 🎨 v1.7.460 — HABILLAGE : la justification remplit le SEGMENT
+                       disponible, pas la largeur totale du bloc. Sans cela
+                       `enlargeSpaces` étirait chaque ligne contrainte jusqu'à
+                       `this.width` : MESURÉ sur un bloc 400 px avec un objet au
+                       milieu, la ligne passait de 145,4 px à 400 px et recouvrait
+                       la forme sur 8 lignes (retour utilisateur : « la forme doit
+                       repousser le texte ... en justifier »). */
+                    var _wLine = (this.__spWrapWidths && this.__spWrapWidths[i]) || 0;
+                    realWidth = (_wLine > 0 && _wLine < this.width - 0.5) ? _wLine : this.width;
                     // ✅ Comportement PAO standard (césure active) :
                     // La dernière ligne de chaque paragraphe n'est JAMAIS étirée.
                     // isEndOfWrapping(i) détecte : dernière ligne OU ligne avant un \n (Enter).
@@ -4722,6 +4731,43 @@ if (window._spGpuEnabled) {
   //   Renvoie la largeur maximale que la ligne peut occuper, en partant de la
   //   gauche du bloc (le texte est poussé à la ligne suivante quand l'objet
   //   bloque — comme le fait tout logiciel de PAO).
+  /* ── v1.7.460 — DÉCALAGE VERTICAL RÉEL DU TEXTE DANS SON CADRE ─────────
+     Le texte n'est pas toujours dessiné depuis le haut du cadre : le
+     retrait haut (_spInsetTop) et la justification verticale (Centre /
+     Pied) le descendent. MESURÉ (bloc 400 × 280) : encre à 2,7 px sous le
+     coin haut-gauche sans réglage, 42,8 px avec _spInsetTop = 40 et
+     77,4 px en Pied — le bloc, lui, ne bouge pas. Le masque appliquait déjà
+     cette quantité ; l'habillage doit lire LA MÊME valeur, sinon le bandeau
+     testé et le bandeau dessiné divergent (défaut mesuré : lignes
+     contraintes identiques avec ET sans retrait haut).
+     Une seule formule, deux appelants : masque + habillage. */
+  function masqueDecalage(textbox, frameHeightOption) {
+    var res = 0;
+    try {
+      if (!textbox) return 0;
+      var inTop = (typeof textbox._spInsetTop === 'number' && textbox._spInsetTop > 0) ? textbox._spInsetTop : 0;
+      var inBot = (typeof textbox._spInsetBottom === 'number' && textbox._spInsetBottom > 0) ? textbox._spInsetBottom : 0;
+      var val = textbox._spVAlign || 'top';
+      res += inTop;
+      if (val !== 'top') {
+        var frameH = (typeof frameHeightOption === 'number' && frameHeightOption > 0)
+          ? frameHeightOption
+          : ((typeof textbox._fixedHeight === 'number' && textbox._fixedHeight > 0) ? textbox._fixedHeight : (textbox.height || 0));
+        var utile = Math.max(0, frameH - inTop - inBot);
+        var total = 0;
+        var Hm = (typeof window.spTextMetrics === 'function') ? window.spTextMetrics(textbox) : null;
+        if (Hm && Hm.length && typeof window.spLineBoxHeight === 'function') {
+          total = Number(window.spLineBoxHeight(textbox, Hm.length - 1, Hm)) || 0;
+        } else if (Hm) { for (var im = 0; im < Hm.length; im++) total += Hm[im]; }
+        var reste = Math.max(0, utile - total);
+        if (val === 'center') res += reste / 2;
+        else if (val === 'bottom') res += reste;
+      }
+    } catch (_) { res = 0; }
+    return res;
+  }
+  window.spMasqueDecalage = masqueDecalage;
+
   function lineWidthFor(textbox, visualLineIndex, ctx) {
     // ctx = { free: largeur NON contrainte de cette ligne, paraOff: index global
     //         de la 1re sous-ligne du paragraphe en cours }
@@ -4735,6 +4781,17 @@ if (window._spGpuEnabled) {
     //    precedents. Sans cette conversion, un texte multi-paragraphes etait
     //    teste a la hauteur de son PREMIER paragraphe => aucun habillage.
     var lineIndex = paraOff + (visualLineIndex | 0);
+    /* 🎨 v1.7.460 — PAS DE CONTRAINTE FANTÔME : la table est nettoyée AVANT
+       que la ligne ne soit recalculée, puis republiée si (et seulement si) un
+       obstacle la contraint. Sans ce nettoyage, une ligne redevenue libre
+       gardait la largeur d'un état précédent — MESURÉ : les lignes 0 et 1
+       restaient à 152 px en portée « gauche » après être sorties du bandeau
+       de l'objet — et les alignements centré / droite la repositionnaient
+       dans l'ancien segment, ainsi que la justification (enlargeSpaces). */
+    try {
+      if (textbox.__spWrapWidths) delete textbox.__spWrapWidths[lineIndex];
+      if (textbox.__spWrapOffsets) delete textbox.__spWrapOffsets[lineIndex];
+    } catch (_) {}
 
     var canvas = textbox.canvas;
     var all;
@@ -4764,13 +4821,50 @@ if (window._spGpuEnabled) {
     if (!origin) return fallback;
 
     // Position verticale (repère local, origine = coin haut-gauche du bloc)
-    var yTop = 0;
+    /* 🎨 v1.7.460 — LE BANDEAU SUIT LE TEXTE RÉELLEMENT DESSINÉ (retour
+       utilisateur : « fragile ... haut - bas »). MESURÉ : avec
+       _spInsetTop = 40 le texte descend de 40 px (2,4 lignes) mais les
+       lignes contraintes restaient [2..9], identiques au cas sans réglage :
+       l'habillage repoussait donc les MAUVAISES lignes. Même défaut avec la
+       justification verticale (Centre / Pied). On part du décalage réel du
+       texte (helper partagé avec le masque) au lieu de zéro. */
+    var _dec = 0;
+    try { _dec = (typeof window.spMasqueDecalage === 'function') ? (Number(window.spMasqueDecalage(textbox)) || 0) : 0; } catch (_) { _dec = 0; }
+    /* 🎨 v1.7.460 — BANDEAU FIABLE MÊME SANS _textLines (cause racine du PDF).
+       MESURÉ (export « Format fini », 2e re-layout) : _textLines n'est pas
+       encore construit, donc getHeightOfLine() échoue pour TOUTES les lignes →
+       yTop restait à 0 et chaque ligne était testée au bandeau de la PREMIÈRE :
+       l'obstacle (local y 52 → 189) n'était jamais rencontré et le PDF sortait
+       SANS habillage — 6 lignes pleine largeur au lieu de 11, alors que le JSON
+       portait bien l'obstacle (mesuré : isWrapObject=true, obsCount=1).
+       On réutilise les hauteurs RÉELLES mesurées lors de la dernière passe fiable
+       (l'aperçu, ou le 1er re-layout de l'export) : le bandeau de l'export
+       coïncide alors avec celui de l'aperçu. */
+    var _hCache = (textbox.__spWrapLineH && textbox.__spWrapLineH.length) ? textbox.__spWrapLineH : null;
+    var _cumul = 0, _cumulOk = true;
     for (var i = 0; i < lineIndex; i++) {
-      try { yTop += textbox.getHeightOfLine(i); } catch (_) { break; }
+      var _hi = 0;
+      try { _hi = Number(textbox.getHeightOfLine(i)) || 0; } catch (_) { _hi = 0; }
+      if (!(_hi > 0)) { _cumulOk = false; break; }
+      _cumul += _hi;
     }
+    if (!_cumulOk && _hCache) {
+      _cumul = 0;
+      for (var ih = 0; ih < lineIndex && ih < _hCache.length; ih++) _cumul += (Number(_hCache[ih]) || 0);
+    }
+    var yTop = _dec + _cumul;
     var lineH = 0;
-    try { lineH = textbox.getHeightOfLine(lineIndex); } catch (_) { lineH = 0; }
+    try { lineH = Number(textbox.getHeightOfLine(lineIndex)) || 0; } catch (_) { lineH = 0; }
+    if (!(lineH > 0) && _hCache && _hCache.length > lineIndex) lineH = Number(_hCache[lineIndex]) || 0;
     if (!(lineH > 0)) lineH = (textbox.fontSize || 14) * (textbox.lineHeight || 1.2);
+    /* Mémorise la hauteur RÉELLE de cette ligne (passes fiables uniquement). */
+    try {
+      var _hiReel = Number(textbox.getHeightOfLine(lineIndex)) || 0;
+      if (_hiReel > 0) {
+        if (!textbox.__spWrapLineH) textbox.__spWrapLineH = [];
+        textbox.__spWrapLineH[lineIndex] = _hiReel;
+      }
+    } catch (_) {}
     var yBot = yTop + lineH;
 
     var boxW = textbox.width || fallback;
@@ -4778,18 +4872,15 @@ if (window._spGpuEnabled) {
     // Intervalles interdits, exprimés en x LOCAL (0 = bord gauche du bloc)
     var forbidden = [];
     var jumpBeyond = null;
+    /* 🎨 v1.7.460 — Borne imposée par une portée « gauche » (voir plus bas) :
+       la ligne doit S'ARRÊTER au bord gauche de l'objet. */
+    var limitMax = null;
     /* 🎨 v1.7.458 — Départ de ligne imposé par un habillage « à droite » :
        le texte doit se tenir à DROITE de l'objet, donc la ligne commence
        après lui. Sans cette valeur, le curseur restait à zéro et le texte
        s'écrivait par-dessus l'objet (retour utilisateur : « l'habillage ne
        fonctionne pas à gauche »). */
-    var advanceInitial = 0;
-    /* 🎨 v1.7.458 — Départ de ligne imposé par un habillage « à droite » :
-       le texte doit se tenir à DROITE de l'objet, donc la ligne commence
-       après lui. Sans cette valeur, le curseur restait à zéro et le texte
-       s'écrivait par-dessus l'objet (retour utilisateur : « l'habillage ne
-       fonctionne pas à gauche »). */
-    var advanceInitial = 0;
+    var advanceInitial = 0;   /* 🎨 v1.7.460 — doublon retiré */
 
     for (var k = 0; k < all.length; k++) {
       var o = all[k];
@@ -4833,7 +4924,16 @@ if (window._spGpuEnabled) {
          l'objet, le curseur restait à zéro et le texte s'écrivait PAR-DESSUS.
          On avance donc le curseur au-delà de l'objet — même mécanique que pour
          un intervalle qui recouvre le début de la ligne. */
-      if (scope === 'left') oRight = oLeft;
+      /* 🎨 v1.7.460 — PORTÉE « GAUCHE » : le texte se tient à GAUCHE de
+         l'objet. L'ancien code ramenait l'intervalle interdit à un POINT
+         (oRight = oLeft), lecture que l'analyse traduit par « le texte
+         démarre APRÈS l'objet » : « Gauche » se comportait donc exactement
+         comme « Droite » (mesuré : même jeu de lignes contraintes, texte
+         repoussé du mauvais côté). On borne ici la FIN de la ligne. */
+      if (scope === 'left') {
+        if (limitMax === null || oLeft < limitMax) limitMax = oLeft;
+        continue;
+      }
       else if (scope === 'right') oLeft = oRight;
       else if (scope === 'above' || scope === 'below') continue;
 
@@ -4870,7 +4970,7 @@ if (window._spGpuEnabled) {
             return _cw;
         }
     }
-    if (!forbidden.length) return fallback;
+    if (!forbidden.length && limitMax === null) return fallback;
 
     // Fusion des intervalles qui se chevauchent
     forbidden.sort(function (a, b) { return a[0] - b[0]; });
@@ -4888,6 +4988,8 @@ if (window._spGpuEnabled) {
     //   passerait par-dessus (bug corrigé le 2026-09-11).
     var cursor = 0;
     var limit = boxW;
+    if (limitMax !== null && limitMax < limit) limit = limitMax;   // v1.7.460 : portée « gauche »
+
     for (var n = 0; n < merged.length; n++) {
       var seg = merged[n];
       if (seg[1] <= cursor) continue;        // déjà derrière le curseur
@@ -5645,16 +5747,35 @@ window.spTestDiag = function () {
             if (e.key === 'Escape') fermerPopin();
             /* Tab dans un texte en cours d'édition : insertion d'une vraie tabulation
                (le placement est assuré par le moteur ci-dessus). */
+            /* 🎨 v1.7.460 — TABULATION vs TAB INTÉGRÉ (retour utilisateur n° 3).
+               AVANT : la tabulation n'était possible que POP-IN OUVERTE (option
+               activée puis pop-in refermée = aucun avancement de curseur),
+               l'insertion s'appliquait même taquets DÉSACTIVÉS, et Option+Tab
+               était avalé par ce même gestionnaire.
+               MAINTENANT : la tabulation est pilotée par l'OPTION « taquets de
+               tabulation » du bloc sélectionné (ou la pop-in ouverte), et
+               Option / Maj / Cmd + Tab rendent la main au comportement NATIF
+               (tab intégré = champ suivant). Sur Windows, Alt+Tab est réservé au
+               système : Maj + Tab joue le même rôle.
+               Raccourcis repris dans Préférences ▸ Raccourcis et documentation.html. */
+            var _spTabsOption = false;
+            try {
+                var _c0 = leCanvas();
+                var _o0 = _c0 && ((_c0.getActiveObjects() || [])[0] || _c0.getActiveObject());
+                _spTabsOption = !!(_o0 && _o0._spTabs && _o0._spTabs.active);
+            } catch (_) {}
+            /* Option (⌥) / Cmd / Maj + Tab : tab intégré d'origine, on ne touche à rien. */
+            if (e.key === 'Tab' && (e.altKey || e.metaKey || e.shiftKey)) return;
             if (e.key === 'Tab' && !e.ctrlKey && !e.altKey && !e.metaKey) {
                 var c = leCanvas();
                 var obj = null;
                 try { obj = c && ((c.getActiveObjects() || [])[0] || c.getActiveObject()); } catch (_) {}
                 var estTexte = !!(obj && (obj.type === 'textbox' || obj.type === 'i-text' || obj.type === 'text'));
+                var optionTabs = _spTabsOption || !!(popin && popin.classList.contains('open'));
                 /* Bloc simplement SÉLECTIONNÉ (pas encore en édition) : la touche
                    Tab entre en édition et avance le curseur au taquet suivant,
                    comme le fait un logiciel de mise en page. */
-                if (estTexte && !obj.isEditing && typeof obj.enterEditing === 'function'
-                    && popin && popin.classList.contains('open')) {
+                if (estTexte && optionTabs && !obj.isEditing && typeof obj.enterEditing === 'function') {
                     e.preventDefault();
                     e.stopPropagation();
                     try {
@@ -5666,7 +5787,7 @@ window.spTestDiag = function () {
                     } catch (_) {}
                     return;
                 }
-                if (estTexte && obj.isEditing && typeof obj.insertChars === 'function') {
+                if (estTexte && optionTabs && obj.isEditing && typeof obj.insertChars === 'function') {
                     e.preventDefault();
                     e.stopPropagation();
                     try { obj.insertChars('\t'); obj.dirty = true; c.requestRenderAll(); } catch (_) {}
@@ -6632,14 +6753,36 @@ window.spTestDiag = function () {
                    en alignement centré ou droite). Quand des retraits de paragraphe
                    sont posés, on garde le calcul d'origine : les deux décalages ne
                    sont pas encore cumulés (limite connue, à traiter avec les colonnes). */
+                /* 🎨 v1.7.460 — LA LIGNE SE PLACE DANS LE SEGMENT DISPONIBLE.
+                   MESURÉ (bloc 400 px, objet local x 160 → 281, lignes 2 à 9
+                   contraintes à 152 px) : en CENTRÉ les lignes étaient posées à
+                   127,3 → 272,7 (DANS l'objet) et en DROITE à 254,6 → 400 : 8
+                   lignes sur 8 passaient par-dessus la forme. L'ancien calcul
+                   ajoutait au décalage Fabric (établi sur la LARGEUR TOTALE du
+                   bloc) une marge bornée qui vaut 0 dès que la ligne ne tient
+                   plus dans la largeur restante : le décalage restait celui du
+                   bloc entier. On aligne désormais la ligne DANS le segment
+                   rendu par l'habillage [curseur ; curseur + largeur], pour les
+                   quatre alignements, retraits de paragraphe compris. */
                 const wrapOffset = (this.__spWrapOffsets && this.__spWrapOffsets[lineIndex]) || 0;
-                let wrapAdd = 0;
-                if (wrapOffset > 0) {
+                const wrapWidth = (this.__spWrapWidths && this.__spWrapWidths[lineIndex]) || 0;
+                if (wrapWidth > 0 && wrapWidth < this.width - 0.5) {
                   let largeurLigne = 0;
                   try { largeurLigne = this.getLineWidth(lineIndex) || 0; } catch (_) {}
-                  wrapAdd = Math.max(0, Math.min(wrapOffset, this.width - largeurLigne - baseOffset));
+                  let segLeft = wrapOffset + indentLeft;
+                  let segWidth = Math.max(0, wrapWidth - indentLeft);
+                  let _premierPara = (lineIndex === 0);
+                  if (!_premierPara && this._styleMap && this._styleMap[lineIndex] && this._styleMap[lineIndex].offset === 0) _premierPara = true;
+                  if (_premierPara && firstLineIndent) {
+                    segLeft += firstLineIndent;
+                    segWidth = Math.max(0, segWidth - firstLineIndent);
+                  }
+                  const _al = this.textAlign || 'left';
+                  if (_al === 'center') return segLeft + Math.max(0, (segWidth - largeurLigne) / 2);
+                  if (_al === 'right') return segLeft + Math.max(0, segWidth - largeurLigne);
+                  return segLeft;
                 }
-                if (!indentLeft && !firstLineIndent) return baseOffset + wrapAdd;
+                if (!indentLeft && !firstLineIndent) return baseOffset;
 
                 // Déterminer si cette ligne wrappée est la première d'un paragraphe logique
                 let isFirstOfParagraph = false;
@@ -7788,25 +7931,13 @@ window.spTestDiag = function () {
                justification verticale, cf. _renderObjToPdfLib).
                Sans _spInsetTop ni _spVAlign, _masqueDecalage vaut 0 : comportement
                historique STRICTEMENT inchange. */
+            /* 🎨 v1.7.460 — même valeur que l'habillage (window.spMasqueDecalage) :
+               une seule formule, donc aucun risque de divergence aperçu / export. */
             var _masqueDecalage = 0;
             try {
-                var _mdInTop = (typeof textbox._spInsetTop === 'number' && textbox._spInsetTop > 0) ? textbox._spInsetTop : 0;
-                var _mdInBot = (typeof textbox._spInsetBottom === 'number' && textbox._spInsetBottom > 0) ? textbox._spInsetBottom : 0;
-                var _mdVal = textbox._spVAlign || 'top';
-                _masqueDecalage += _mdInTop;
-                if (_mdVal !== 'top') {
-                    var _mdUtile = Math.max(0, frameHeight - _mdInTop - _mdInBot);
-                    var _mdTotal = 0;
-                    var _mdH = (typeof window.spTextMetrics === 'function') ? window.spTextMetrics(textbox) : null;
-                    if (_mdH && _mdH.length) {
-                        _mdTotal = (typeof window.spLineBoxHeight === 'function')
-                            ? (Number(window.spLineBoxHeight(textbox, _mdH.length - 1, _mdH)) || 0)
-                            : 0;
-                    }
-                    var _mdReste = Math.max(0, _mdUtile - _mdTotal);
-                    if (_mdVal === 'center') _masqueDecalage += _mdReste / 2;
-                    else if (_mdVal === 'bottom') _masqueDecalage += _mdReste;
-                }
+                _masqueDecalage = (typeof window.spMasqueDecalage === 'function')
+                    ? (Number(window.spMasqueDecalage(textbox, frameHeight)) || 0)
+                    : 0;
             } catch (_) { _masqueDecalage = 0; }
             const clipTopOffset = (clipHeight - _hObjClip) / 2 + _masqueDecalage;
             const clipRect = new fabric.Rect({
@@ -43008,6 +43139,26 @@ https://superprint.app
                             }
                         } catch (_) {}
                     }
+                    /* 🎨 v1.7.460 — HABILLAGE À L'EXPORT (retour utilisateur n° 2).
+                       MESURÉ : `xStart` et la cible de justification étaient
+                       calculés sur la LARGEUR TOTALE du bloc (`boxWidth`), alors
+                       que le découpage des lignes (`obj._textLines`) venait bien de
+                       l'habillage → le PDF posait/étirait chaque ligne par-dessus la
+                       forme, donc l'habillage « disparaissait » à l'export. On
+                       réutilise exactement la mécanique des colonnes (_colW/_colOX),
+                       ce qui couvre aussi la cible de justification (`_spJustifyTarget`)
+                       et l'ancrage du tiret de césure. */
+                    else {
+                        var _wrW = (obj.__spWrapWidths && obj.__spWrapWidths[li]) || 0;
+                        if (_wrW > 0 && _wrW < boxWidth - 0.5) {
+                            _colW = _wrW;
+                            _colOX = (obj.__spWrapOffsets && obj.__spWrapOffsets[li]) || 0;
+                            _colOY = 0;
+                            if (align === 'center') xStart = _colOX + (_colW - _lineWSpaced) / 2;
+                            else if (_effAlignRight) xStart = _colOX + _colW - _lineWSpaced;
+                            else xStart = _colOX;
+                        }
+                    }
 
                     // Position Y de la baseline dans l'espace local (avant scale).
                     // 🎯 v1.7.341 (AUDIT) : baseline pré-calculée depuis getHeightOfLine()
@@ -46590,6 +46741,17 @@ https://superprint.app
                             const _cgj = window.spColGeomFor(obj, i);
                             if (_cgj) { _colWJ = _cgj.w; _colOXJ = _cgj.x; _colOYJ = _cgj.shift; }
                         } catch (_) {}
+                    }
+                    /* 🎨 v1.7.460 — HABILLAGE À L'EXPORT jsPDF : même correctif que
+                       le chemin pdf-lib (xStart et cible de justification bornés au
+                       segment rendu par l'habillage). */
+                    else {
+                        var _wrWJ = (obj.__spWrapWidths && obj.__spWrapWidths[i]) || 0;
+                        if (_wrWJ > 0 && _wrWJ < boxWidth - 0.5) {
+                            _colWJ = _wrWJ;
+                            _colOXJ = (obj.__spWrapOffsets && obj.__spWrapOffsets[i]) || 0;
+                            _colOYJ = 0;
+                        }
                     }
                     const _spJustifyTargetJ = (_spJHyphenFlag && _hyphenWJ < _colWJ)
                         ? (_colWJ - _hyphenWJ) : _colWJ;
@@ -57753,7 +57915,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         missingFontsLoadedDone: "{0} loaded.",
         missingFontsLoadFailed: "Unable to load {0}.",
         missingFontsReadError: "Error reading the file.",
-        shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Text</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bold</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Italic</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Underline</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Highlight selection</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Select all</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Tabulation (inserts a tab, moves to the next tab stop)</span><span class=\"sp-shortcut-keys\"><kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cross-block selection (chained text)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Click</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Editing</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Copy</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cut</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Paste</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Undo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo (alt.)</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Delete block / page</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Duplicate selection</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>Drag</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Objects & Layers</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Group</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Ungroup</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bring to front</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Send to back</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Link text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Unlink text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Quick Tools</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add text</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add image</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add rectangle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add circle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Pen tool</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Typography panel</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Files & Navigation</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Save</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Open file</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Export PDF</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Print / Export</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">New page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Previous page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2190</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Next page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2192</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Show/hide guides</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Imposition</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Zoom</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom in</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom out</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2212</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom 100%</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">On macOS, <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>\u2318 Cmd</kbd></div>"
+        shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Text</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bold</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Italic</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Underline</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Highlight selection</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Select all</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Tab (text block with tab stops enabled: inserts a tab, moves to the next tab stop)</span><span class=\"sp-shortcut-keys\"><kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Built-in Tab (move to the next field)</span><span class=\"sp-shortcut-keys\"><kbd>Option</kbd> + <kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cross-block selection (chained text)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Click</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Editing</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Copy</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cut</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Paste</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Undo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo (alt.)</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Delete block / page</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Duplicate selection</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>Drag</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Objects & Layers</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Group</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Ungroup</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bring to front</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Send to back</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Link text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Unlink text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Quick Tools</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add text</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add image</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add rectangle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add circle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Pen tool</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Typography panel</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Files & Navigation</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Save</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Open file</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Export PDF</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Print / Export</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">New page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Previous page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2190</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Next page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2192</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Show/hide guides</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Imposition</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Zoom</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom in</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom out</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2212</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom 100%</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">On macOS, <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>\u2318 Cmd</kbd></div>"
     },
     ja: {
         // Interface principale
@@ -58483,7 +58645,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         gpuNotAvailable: "このブラウザではWebGLが利用できません",
         toastUploadSuccess: "✓ アップロード成功！",
         uploadHashLabel: "ハッシュ",
-        shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">テキスト</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">太字</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">斜体</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">下線</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ハイライト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">すべて選択</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">タブ（タブを挿入し、次のタブ位置へ）</span><span class=\"sp-shortcut-keys\"><kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">クロスブロック選択（チェーンテキスト）</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>クリック</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">編集</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">コピー</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">カット</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペースト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">元に戻す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す（別）</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ブロック/ページを削除</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">選択を複製</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>ドラッグ</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">オブジェクトとレイヤー</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ化</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最前面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最背面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>矢印キー</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>矢印</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックをリンク</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックのリンク解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">クイックツール</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキスト追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">画像追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">矩形追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">円追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペンツール</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">タイポグラフィパネル</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ファイルとナビゲーション</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">保存</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ファイルを開く</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">PDF書き出し</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">印刷 / エクスポート</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">新しいページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">前のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>←</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">次のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>→</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ガイドの表示/非表示</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">面付け</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ズーム</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームイン</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームアウト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>−</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">100%ズーム</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">macOSでは <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>⌘ Cmd</kbd></div>",
+        shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">テキスト</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">太字</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">斜体</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">下線</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ハイライト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">すべて選択</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">タブ（タブ位置を有効にしたテキストブロック：タブを挿入し、次のタブ位置へ移動）</span><span class=\"sp-shortcut-keys\"><kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">標準のタブ移動（次のフィールドへ）</span><span class=\"sp-shortcut-keys\"><kbd>Option</kbd> + <kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">クロスブロック選択（チェーンテキスト）</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>クリック</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">編集</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">コピー</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">カット</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペースト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">元に戻す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す（別）</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ブロック/ページを削除</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">選択を複製</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>ドラッグ</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">オブジェクトとレイヤー</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ化</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最前面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最背面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>矢印キー</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>矢印</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックをリンク</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックのリンク解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">クイックツール</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキスト追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">画像追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">矩形追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">円追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペンツール</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">タイポグラフィパネル</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ファイルとナビゲーション</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">保存</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ファイルを開く</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">PDF書き出し</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">印刷 / エクスポート</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">新しいページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">前のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>←</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">次のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>→</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ガイドの表示/非表示</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">面付け</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ズーム</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームイン</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームアウト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>−</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">100%ズーム</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">macOSでは <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>⌘ Cmd</kbd></div>",
         // === ポップイン「不足フォント」(v1.7.335) ===
         missingFontsTitle: "この文書に不足しているフォント",
         missingFontsIntro: "この文書はSuperPrintに読み込まれていない外部フォントを使用しています。各フォントについて、対応するファイル（.ttf、.otf、.woff、.woff2）を選択して埋め込むか、読み込まれていないフォントを標準フォントに置き換えるには「検証」をクリックしてください。",
