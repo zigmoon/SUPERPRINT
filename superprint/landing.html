@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1066,6 +1066,36 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   .shot:nth-child(even) .shot-img { order: 0; }
   .news { grid-template-columns: 1fr; }
 }
+
+/* ——— GALERIE DES OUTILS — captures d'écran, une par outil ——— */
+.tools { margin-top: clamp(38px,5.4vw,72px); }
+.tools-head { max-width: 760px; margin-bottom: clamp(24px,3.4vw,40px); }
+.tools-head h3 {
+  font-family: var(--f-caps); font-size: clamp(21px,2.6vw,32px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.06; color: var(--ink); margin-bottom: 12px;
+}
+.tools-head p { font-size: 14.5px; line-height: 1.75; color: var(--ink-soft); }
+.tgrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(16px,2.4vw,32px); }
+.tcard {
+  display: flex; flex-direction: column; background: var(--paper-2);
+  border: 1px solid var(--line); transition: border-color .3s var(--ease), transform .3s var(--ease);
+}
+.tcard:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.tcard-img { overflow: hidden; border-bottom: 1px solid var(--line); }
+.tcard-img img { display: block; width: 100%; height: auto; }
+.tcard-body { padding: clamp(14px,1.7vw,22px); }
+.tcard-num {
+  display: block; font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.tcard h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.9vw,23px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.06; color: var(--ink); margin-bottom: 8px;
+}
+.tcard p { font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); }
+@media (max-width: 760px) {
+  .tgrid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 
@@ -1272,6 +1302,165 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
         </figcaption>
       </figure>
 
+    </div>
+
+    <!-- ===== GALERIE DES OUTILS — une capture par outil, une maquette par capture ===== -->
+    <div class="tools">
+      <div class="tools-head">
+        <h3 data-lang="fr">Les outils, un par un.</h3>
+        <h3 data-lang="en">The tools, one by one.</h3>
+        <h3 data-lang="ja">道具をひとつずつ。</h3>
+        <p data-lang="fr">Chaque capture est prise dans l'application, sur une maquette différente : le clic droit, l'habillage, l'écriture dans une forme, la typographie, les couleurs, les calques, les règles et les grilles.</p>
+        <p data-lang="en">Every screenshot is taken inside the application, on a different layout each time: right-click, text wrap, writing inside a shape, typography, colours, layers, rulers and grids.</p>
+        <p data-lang="ja">すべて実際のアプリ画面で、毎回違うレイアウトを使っています。右クリック、回り込み、図形内の文字、タイポグラフィ、カラー、レイヤー、定規とグリッド。</p>
+      </div>
+
+      <div class="tgrid">
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/clic-droit-forme.jpg" width="1600" height="1000" loading="lazy" alt="Clic droit sur une forme"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">01</span>
+            <h3 data-lang="fr">Le clic droit, sur une forme</h3>
+            <h3 data-lang="en">Right-click on a shape</h3>
+            <h3 data-lang="ja">右クリック（図形）</h3>
+            <p data-lang="fr">Écrire dans la forme…, habillage du texte, ordre d'empilement, duplication, suppression : tout part de ce menu.</p>
+            <p data-lang="en">Write in shape…, text wrap, stacking order, duplicate, delete: everything starts here.</p>
+            <p data-lang="ja">図形内に文字を書く、テキストの回り込み、重ね順、複製、削除。すべてこのメニューから。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/clic-droit-texte.jpg" width="1600" height="1000" loading="lazy" alt="Clic droit sur un bloc de texte"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">02</span>
+            <h3 data-lang="fr">Le clic droit, sur un texte</h3>
+            <h3 data-lang="en">Right-click on text</h3>
+            <h3 data-lang="ja">右クリック（テキスト）</h3>
+            <p data-lang="fr">Éditer le texte, vectoriser les contours ou la typo, ouvrir l'atelier SuperTyPo.</p>
+            <p data-lang="en">Edit the text, vectorise outlines or type, open the SuperTyPo workshop.</p>
+            <p data-lang="ja">テキスト編集、輪郭と書体のベクター化、SuperTyPo工房を開く。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/habillage-deux-cotes.jpg" width="1600" height="1000" loading="lazy" alt="Habillage du texte autour d'une forme"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">03</span>
+            <h3 data-lang="fr">L'habillage du texte</h3>
+            <h3 data-lang="en">Text wrap</h3>
+            <h3 data-lang="ja">テキストの回り込み</h3>
+            <p data-lang="fr">Les lignes se replient autour de la forme, la largeur se recalcule ligne après ligne, le décalage se règle en pixels.</p>
+            <p data-lang="en">Lines fold around the shape, the width is recomputed line after line, the standoff is set in pixels.</p>
+            <p data-lang="ja">行が図形を避けて折り返し、各行で有効幅を再計算。余白はピクセル単位で指定できます。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/habillage-popin.jpg" width="1600" height="1000" loading="lazy" alt="Réglage de l'habillage du texte"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">04</span>
+            <h3 data-lang="fr">Régler l'habillage</h3>
+            <h3 data-lang="en">Setting the wrap</h3>
+            <h3 data-lang="ja">回り込みの設定</h3>
+            <p data-lang="fr">Aucun, boîte ou contour ; les côtés à habiller, et le décalage en pixels. La page se recompose à la validation.</p>
+            <p data-lang="en">None, box or shape; which sides to wrap, and the standoff in pixels. The page reflows when you confirm.</p>
+            <p data-lang="ja">なし／ボックス／図形に沿う、回り込ませる側、ピクセル単位の余白。確定すると組版がやり直されます。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/habillage-produit.jpg" width="1600" height="1000" loading="lazy" alt="Habillage sur une fiche produit"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">05</span>
+            <h3 data-lang="fr">Habillage sur une fiche</h3>
+            <h3 data-lang="en">Wrap on a product page</h3>
+            <h3 data-lang="ja">商品ページの回り込み</h3>
+            <p data-lang="fr">Un paragraphe, une forme : la composition se refait d'elle-même dès que la forme bouge.</p>
+            <p data-lang="en">One paragraph, one shape: the composition rebuilds itself as soon as the shape moves.</p>
+            <p data-lang="ja">段落ひとつ、図形ひとつ。図形を動かすと組版が自動でやり直されます。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/ecrire-dans-forme.jpg" width="1600" height="1000" loading="lazy" alt="Écrire dans une forme"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">06</span>
+            <h3 data-lang="fr">Écrire dans une forme</h3>
+            <h3 data-lang="en">Write inside a shape</h3>
+            <h3 data-lang="ja">図形の中に書く</h3>
+            <p data-lang="fr">Le texte se replie à l'intérieur d'un cercle, d'un carré ou d'un tracé, sans déborder du cadre.</p>
+            <p data-lang="en">Text folds inside a circle, a square or a path, without escaping the frame.</p>
+            <p data-lang="ja">円・四角・パスの中に文字を流し込みます。枠からはみ出しません。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/panneau-typographie.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Typographie"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">07</span>
+            <h3 data-lang="fr">Typographie</h3>
+            <h3 data-lang="en">Typography</h3>
+            <h3 data-lang="ja">タイポグラフィ</h3>
+            <p data-lang="fr">Césure, interlignage, interlettrage, retraits, filets de paragraphe, taquets de tabulation.</p>
+            <p data-lang="en">Hyphenation, leading, tracking, indents, paragraph rules, tab stops.</p>
+            <p data-lang="ja">ハイフネーション、行送り、字間、インデント、タブ位置。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/panneau-couleurs.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Couleurs"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">08</span>
+            <h3 data-lang="fr">Couleurs</h3>
+            <h3 data-lang="en">Colours</h3>
+            <h3 data-lang="ja">カラー</h3>
+            <p data-lang="fr">Quadrichromie, tons directs nommés, nuanciers : la teinte garde son nom jusqu'au fichier final.</p>
+            <p data-lang="en">CMYK, named spot inks, swatches: the colour keeps its name all the way to the final file.</p>
+            <p data-lang="ja">CMYK、名前付き特色、スウォッチ。色の名前は最終ファイルまで保たれます。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/panneau-calques.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Calques"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">09</span>
+            <h3 data-lang="fr">Calques</h3>
+            <h3 data-lang="en">Layers</h3>
+            <h3 data-lang="ja">レイヤー</h3>
+            <p data-lang="fr">Chaque objet sur sa ligne : verrouiller, masquer, renommer, remonter d'un cran.</p>
+            <p data-lang="en">One line per object: lock, hide, rename, move up a level.</p>
+            <p data-lang="ja">オブジェクトごとに1行。ロック、非表示、名前変更、並べ替え。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/reperes-grille.jpg" width="1600" height="1000" loading="lazy" alt="Règles et grilles"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">10</span>
+            <h3 data-lang="fr">Règles &amp; grilles</h3>
+            <h3 data-lang="en">Rulers &amp; grids</h3>
+            <h3 data-lang="ja">定規とグリッド</h3>
+            <p data-lang="fr">Repères, grille, magnétisme, césure de la grille : la mise en place au millimètre.</p>
+            <p data-lang="en">Guides, grid, snapping: the layout is set to the millimetre.</p>
+            <p data-lang="ja">ガイド、グリッド、スナップ。ミリ単位で配置します。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/atelier-voyage.jpg" width="1600" height="1000" loading="lazy" alt="Une maquette ouverte dans l'atelier"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">11</span>
+            <h3 data-lang="fr">Une maquette dans l'atelier</h3>
+            <h3 data-lang="en">A layout in the atelier</h3>
+            <h3 data-lang="ja">工房の中のレイアウト</h3>
+            <p data-lang="fr">Les outils à gauche, la page au centre, l'export à droite : rien d'autre à installer.</p>
+            <p data-lang="en">Tools on the left, page in the centre, export on the right: nothing else to install.</p>
+            <p data-lang="ja">左にツール、中央にページ、右に書き出し。ほかに何も要りません。</p>
+          </figcaption>
+        </figure>
+
+      </div>
     </div>
 
     <div class="news">
