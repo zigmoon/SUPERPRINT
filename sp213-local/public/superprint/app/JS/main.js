@@ -5556,6 +5556,7 @@ window.spTestDiag = function () {
 
     /* Sens inverse : l'app met à jour la barre de droite, le widget suit. */
     function synchroniser() {
+        recadrer();   /* un widget ne peut pas rester hors du plan de travail */
         Object.keys(docks).forEach(function (nom) {
             var d = docks[nom];
             Array.prototype.forEach.call(d.clone.querySelectorAll('input,select,textarea'), function (c) {
@@ -5578,13 +5579,48 @@ window.spTestDiag = function () {
         });
     }
 
+    /* 🆕 v1.7.458 — ZONE DES WIDGETS DÉTACHÉS = L'ESPACE DE PRÉVISUALISATION.
+       Un widget détaché ne peut NI s'ouvrir NI être glissé sur les barres latérales
+       (gauche ou droite) : sa zone est exactement le plan de travail, comme les 4
+       widgets déjà en place (Pathfinder / Styles / Nuancier / Filtres), qui vivent
+       dans #canvasScrollArea. Le cadre est relu À CHAQUE placement : si une barre
+       s'ouvre ou se ferme, ou si la fenêtre est redimensionnée, le widget rentre
+       seul dans la nouvelle zone. */
+    function zonePlan() {
+        var z = document.getElementById('canvasScrollArea');
+        var r = (z && z.getBoundingClientRect) ? z.getBoundingClientRect() : null;
+        var l = 0, t = 0, d = window.innerWidth, b = window.innerHeight;
+        if (r && r.width > 80 && r.height > 80) { l = r.left; t = r.top; d = r.right; b = r.bottom; }
+        var m = 8;
+        var gauche = l + m, haut = t + m, droite = d - m, bas = b - m;
+        if (droite - gauche < 120 || bas - haut < 80) {
+            gauche = l + 2; haut = t + 2;
+            droite = Math.max(droite, gauche + 60); bas = Math.max(bas, haut + 40);
+        }
+        return { gauche: gauche, haut: haut, droite: droite, bas: bas };
+    }
+
     function poser(host, x, y) {
-        var w = host.offsetWidth || 250;
-        var h = host.offsetHeight || 160;
-        x = Math.max(2, Math.min(x, window.innerWidth - w - 2));
-        y = Math.max(2, Math.min(y, window.innerHeight - h - 2));
+        var zone = zonePlan();
+        var w = Math.max(80, Math.min(host.offsetWidth || 250, zone.droite - zone.gauche));
+        var h = Math.max(40, Math.min(host.offsetHeight || 160, zone.bas - zone.haut));
+        x = Math.max(zone.gauche, Math.min(x, zone.droite - w));
+        y = Math.max(zone.haut, Math.min(y, zone.bas - h));
         host.style.left = Math.round(x) + 'px';
         host.style.top = Math.round(y) + 'px';
+    }
+
+    /* Ramène dans le plan de travail un widget dont la position (mémorisée ou
+       courante) est devenue hors cadre : barre latérale rouverte, fenêtre
+       rétrécie, changement de mode simple / double page… */
+    function recadrer() {
+        Object.keys(docks).forEach(function (nom) {
+            var d = docks[nom];
+            if (!d || !d.host || d.host._spDrag) return;
+            var x = parseInt(d.host.style.left, 10);
+            var y = parseInt(d.host.style.top, 10);
+            poser(d.host, isNaN(x) ? 0 : x, isNaN(y) ? 0 : y);
+        });
     }
 
     function glisser(host, poignee) {
@@ -5595,10 +5631,13 @@ window.spTestDiag = function () {
             var r = host.getBoundingClientRect();
             var dx = e.clientX - r.left;
             var dy = e.clientY - r.top;
+            host._spDrag = true;   /* le recadrage périodique ne doit pas se battre avec le glisser */
             function mv(ev) { poser(host, ev.clientX - dx, ev.clientY - dy); }
             function fin() {
                 document.removeEventListener('mousemove', mv);
                 document.removeEventListener('mouseup', fin);
+                host._spDrag = false;
+                poser(host, parseInt(host.style.left, 10) || 0, parseInt(host.style.top, 10) || 0);
                 try {
                     localStorage.setItem(clef(host.getAttribute('data-dock')), JSON.stringify({
                         x: parseInt(host.style.left, 10) || 0,
@@ -5658,8 +5697,12 @@ window.spTestDiag = function () {
         docks[nom] = { host: host, origine: sec, clone: clone };
         couche().appendChild(host);
 
-        var x = (pos && pos.x) ? pos.x : 70 + nb * 24;
-        var y = (pos && pos.y) ? pos.y : 120 + nb * 24;
+        /* Position par défaut : DANS l'espace de prévisualisation, en cascade
+           comme les widgets historiques — jamais sur une barre latérale. Une
+           position mémorisée hors du plan de travail est recadrée par poser(). */
+        var zone0 = zonePlan();
+        var x = (pos && pos.x) ? pos.x : zone0.gauche + 16 + nb * 24;
+        var y = (pos && pos.y) ? pos.y : zone0.haut + 16 + nb * 24;
         host.style.left = x + 'px';
         host.style.top = y + 'px';
         poser(host, x, y);
@@ -5733,8 +5776,9 @@ window.spTestDiag = function () {
         obs.observe(cible, { childList: true, subtree: true });
     }
 
-    window.spDockWidgets = { init: init, ouvrir: ouvrir, fermer: fermer, synchroniser: synchroniser };
+    window.spDockWidgets = { init: init, ouvrir: ouvrir, fermer: fermer, synchroniser: synchroniser, recadrer: recadrer, zonePlan: zonePlan };
     window.addEventListener('load', function () { init(); surveiller(); });
+    window.addEventListener('resize', recadrer);
     setTimeout(function () { init(); surveiller(); }, 1500);
 })();
 
