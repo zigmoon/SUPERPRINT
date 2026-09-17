@@ -4572,6 +4572,18 @@ if (window._spGpuEnabled) {
     // Intervalles interdits, exprimés en x LOCAL (0 = bord gauche du bloc)
     var forbidden = [];
     var jumpBeyond = null;
+    /* 🎨 v1.7.458 — Départ de ligne imposé par un habillage « à droite » :
+       le texte doit se tenir à DROITE de l'objet, donc la ligne commence
+       après lui. Sans cette valeur, le curseur restait à zéro et le texte
+       s'écrivait par-dessus l'objet (retour utilisateur : « l'habillage ne
+       fonctionne pas à gauche »). */
+    var advanceInitial = 0;
+    /* 🎨 v1.7.458 — Départ de ligne imposé par un habillage « à droite » :
+       le texte doit se tenir à DROITE de l'objet, donc la ligne commence
+       après lui. Sans cette valeur, le curseur restait à zéro et le texte
+       s'écrivait par-dessus l'objet (retour utilisateur : « l'habillage ne
+       fonctionne pas à gauche »). */
+    var advanceInitial = 0;
 
     for (var k = 0; k < all.length; k++) {
       var o = all[k];
@@ -4609,6 +4621,12 @@ if (window._spGpuEnabled) {
       }
 
       var scope = o._spWrapScope;
+      /* 🎨 v1.7.458 — « droite » veut dire : le texte se tient à DROITE de
+         l'objet. Avant, on ramenait l'intervalle interdit à un point
+         (oLeft = oRight) : la ligne ne pouvait alors plus « démarrer après »
+         l'objet, le curseur restait à zéro et le texte s'écrivait PAR-DESSUS.
+         On avance donc le curseur au-delà de l'objet — même mécanique que pour
+         un intervalle qui recouvre le début de la ligne. */
       if (scope === 'left') oRight = oLeft;
       else if (scope === 'right') oLeft = oRight;
       else if (scope === 'above' || scope === 'below') continue;
@@ -4649,6 +4667,18 @@ if (window._spGpuEnabled) {
     for (var n = 0; n < merged.length; n++) {
       var seg = merged[n];
       if (seg[1] <= cursor) continue;        // déjà derrière le curseur
+      /* 🎨 v1.7.458 — Un intervalle RÉDUIT À UN POINT vient d'une portée
+         « droite » : l'objet occupe le début du bloc et le texte doit DÉMARRER
+         après lui. Avant, ce point était lu comme un obstacle DEVANT la ligne :
+         la largeur était bornée mais la ligne continuait de partir du bord
+         gauche, donc le texte s'écrivait par-dessus l'objet (retour
+         utilisateur : « l'habillage ne fonctionne pas à gauche »). On avance
+         ici le curseur : la ligne démarre après l'objet, et la largeur
+         disponible devient le reste du bloc. */
+      if (Math.abs(seg[1] - seg[0]) < 0.5) {
+        if (seg[1] > cursor) cursor = seg[1];
+        continue;
+      }
       if (seg[0] <= cursor) {                // recouvre le curseur : on avance
         cursor = seg[1];
         continue;
@@ -4700,6 +4730,19 @@ if (window._spGpuEnabled) {
       if (!lastDiag) lastDiag = { raison: 'contrainte_fine', disponible: Math.round(avail * 10) / 10 };
     }
     // Ne jamais depasser la largeur de repli (retraits/indent inclus).
+    // 🎨 v1.7.458 — On PUBLIE la contrainte de la ligne : sa largeur ET son
+    //   décalage à gauche. Sans le décalage, un objet placé à GAUCHE du bloc
+    //   réduisait bien la largeur disponible, mais le texte continuait de partir
+    //   du bord gauche et passait donc par-dessus l'objet — retour utilisateur :
+    //   « l'habillage ne fonctionne pas sur le côté gauche ». Le décalage est
+    //   consommé par l'override de _getLineLeftOffset (plus bas) et la largeur
+    //   par le rendu justifié.
+    try {
+      if (!textbox.__spWrapOffsets) textbox.__spWrapOffsets = [];
+      if (!textbox.__spWrapWidths) textbox.__spWrapWidths = [];
+      textbox.__spWrapOffsets[lineIndex] = cursor;
+      textbox.__spWrapWidths[lineIndex] = Math.min(avail, fallback);
+    } catch (_) {}
     return Math.min(avail, fallback);
   }
 
@@ -5191,6 +5234,18 @@ window.spTestDiag = function () {
     /* ── Interface du pop-in ── */
     var TYPES = [['left', 'Gauche'], ['center', 'Centre'], ['right', 'Droite'], ['decimal', 'Décimale']];
 
+    /* Conversion millimètres ↔ pixels du document.
+       Le document est à 72 dpi (mmToPx = mm × 72 / 25,4) : on reprend
+       EXACTEMENT ce facteur pour qu'une position de taquet de 10 mm tombe sur
+       la même distance qu'une marge de 10 mm. Les réglages restent STOCKÉS en
+       pixels dans le document (aucun format de fichier ne change) ; seule la
+       saisie de l'utilisateur se fait en millimètres. */
+    var SP_MM_PAR_PX = 72 / 25.4;
+    function spTabMmDe(px) { return Math.round((px / SP_MM_PAR_PX) * 100) / 100; }
+    function spTabMmVers(mm) { return mm * SP_MM_PAR_PX; }
+    window.spTabMmDe = spTabMmDe;
+    window.spTabMmVers = spTabMmVers;
+
     function rendreListe() {
         var liste = document.getElementById('tabStopsList');
         if (!liste) return;
@@ -5200,7 +5255,7 @@ window.spTestDiag = function () {
         var pas = document.getElementById('tabStep');
         if (t) {
             if (chk) chk.checked = !!t.active;
-            if (pas && document.activeElement !== pas) pas.value = t.step;
+            if (pas && document.activeElement !== pas) pas.value = spTabMmDe(t.step);
         } else if (chk) { chk.checked = false; }
         while (liste.firstChild) liste.removeChild(liste.firstChild);
         if (!t) {
@@ -5213,7 +5268,7 @@ window.spTestDiag = function () {
         if (!t.stops.length) {
             var d1 = document.createElement('div');
             d1.className = 'tab-empty';
-            d1.textContent = 'Aucun taquet : avance par pas de ' + t.step + ' px.';
+            d1.textContent = 'Aucun taquet : avance par pas de ' + spTabMmDe(t.step) + ' mm.';
             liste.appendChild(d1);
         }
         t.stops.forEach(function (s, i) {
@@ -5222,13 +5277,13 @@ window.spTestDiag = function () {
 
             var pos = document.createElement('input');
             pos.type = 'number';
-            pos.min = '0'; pos.max = '5000'; pos.step = '1';
-            pos.value = Math.round(s.pos);
-            pos.title = 'Position du taquet (px)';
+            pos.min = '0'; pos.max = '500'; pos.step = '0.5';
+            pos.value = spTabMmDe(s.pos);
+            pos.title = 'Position du taquet (mm)';
             pos.addEventListener('input', function () {
                 var v = parseFloat(pos.value);
                 if (!isFinite(v) || v < 0) return;
-                modifier(function (modeleBloc) { if (modeleBloc.stops[i]) modeleBloc.stops[i].pos = v; });
+                modifier(function (modeleBloc) { if (modeleBloc.stops[i]) modeleBloc.stops[i].pos = spTabMmVers(v); });
             });
 
             var sel = document.createElement('select');
@@ -5329,8 +5384,8 @@ window.spTestDiag = function () {
             pas._spTabsWire = true;
             pas.addEventListener('change', function () {
                 var v = parseFloat(pas.value);
-                if (!isFinite(v) || v < 4) { v = 40; pas.value = '40'; }
-                modifier(function (t) { t.step = v; });
+                if (!isFinite(v) || v < 1) { v = 10; pas.value = '10'; }
+                modifier(function (t) { t.step = spTabMmVers(v); });
                 rendreListe();
             });
         }
@@ -5341,8 +5396,8 @@ window.spTestDiag = function () {
                 e.stopPropagation();
                 var champ = document.getElementById('tabNewPos');
                 var v = champ ? parseFloat(champ.value) : NaN;
-                if (!isFinite(v) || v < 0) v = 40;
-                modifier(function (t) { t.stops.push({ pos: v, type: 'left' }); t.active = true; });
+                if (!isFinite(v) || v < 0) v = 10;
+                modifier(function (t) { t.stops.push({ pos: spTabMmVers(v), type: 'left' }); t.active = true; });
                 rendreListe();
             });
         }
@@ -5370,7 +5425,24 @@ window.spTestDiag = function () {
                 var c = leCanvas();
                 var obj = null;
                 try { obj = c && ((c.getActiveObjects() || [])[0] || c.getActiveObject()); } catch (_) {}
-                if (obj && obj.isEditing && typeof obj.insertChars === 'function') {
+                var estTexte = !!(obj && (obj.type === 'textbox' || obj.type === 'i-text' || obj.type === 'text'));
+                /* Bloc simplement SÉLECTIONNÉ (pas encore en édition) : la touche
+                   Tab entre en édition et avance le curseur au taquet suivant,
+                   comme le fait un logiciel de mise en page. */
+                if (estTexte && !obj.isEditing && typeof obj.enterEditing === 'function'
+                    && popin && popin.classList.contains('open')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try {
+                        obj.enterEditing();
+                        var ta = obj.hiddenTextarea;
+                        if (ta) { ta.selectionStart = ta.selectionEnd = (obj.text || '').length; }
+                        obj.dirty = true;
+                        c.requestRenderAll();
+                    } catch (_) {}
+                    return;
+                }
+                if (estTexte && obj.isEditing && typeof obj.insertChars === 'function') {
                     e.preventDefault();
                     e.stopPropagation();
                     try { obj.insertChars('\t'); obj.dirty = true; c.requestRenderAll(); } catch (_) {}
@@ -6270,7 +6342,20 @@ window.spTestDiag = function () {
                 let baseOffset = _origGetLineLeftOffset.call(this, lineIndex);
                 const indentLeft = this._spIndentLeft || 0;
                 const firstLineIndent = this._spFirstLineIndent || 0;
-                if (!indentLeft && !firstLineIndent) return baseOffset;
+                /* 🎨 v1.7.458 — Décalage d'HABILLAGE : quand un objet occupe le bord
+                   GAUCHE du bloc, la ligne doit COMMENCER après l'objet. La marge est
+                   bornée pour que le bord droit de la ligne reste dans le bloc (utile
+                   en alignement centré ou droite). Quand des retraits de paragraphe
+                   sont posés, on garde le calcul d'origine : les deux décalages ne
+                   sont pas encore cumulés (limite connue, à traiter avec les colonnes). */
+                const wrapOffset = (this.__spWrapOffsets && this.__spWrapOffsets[lineIndex]) || 0;
+                let wrapAdd = 0;
+                if (wrapOffset > 0) {
+                  let largeurLigne = 0;
+                  try { largeurLigne = this.getLineWidth(lineIndex) || 0; } catch (_) {}
+                  wrapAdd = Math.max(0, Math.min(wrapOffset, this.width - largeurLigne - baseOffset));
+                }
+                if (!indentLeft && !firstLineIndent) return baseOffset + wrapAdd;
 
                 // Déterminer si cette ligne wrappée est la première d'un paragraphe logique
                 let isFirstOfParagraph = false;
@@ -61623,10 +61708,19 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             if (textAlign === 'center') xStart = (boxWidth - lineWidths[li]) / 2;
             else if (textAlign === 'right') xStart = boxWidth - lineWidths[li];
 
+            /* 🎨 v1.7.458 — Largeur de ligne EFFECTIVE : un objet en habillage
+               réduit la largeur de la ligne, et la justification doit s'arrêter à
+               cette largeur. Sinon la ligne s'étale jusqu'au bord du bloc et passe
+               par-dessus l'objet — retour utilisateur : « l'habillage ne fonctionne
+               pas sur un texte justifié ». */
+            var boxWidthJustif = boxWidth;
+            try {
+                if (obj.__spWrapWidths && obj.__spWrapWidths[li] > 0) boxWidthJustif = obj.__spWrapWidths[li];
+            } catch (_) {}
             var spaces = (lineText.match(/ /g) || []).length;
             var extraSpace = 0;
-            if ((textAlign === 'justify' || textAlign.indexOf('justify-') === 0) && spaces > 0 && boxWidth > lineWidths[li]) {
-                extraSpace = (boxWidth - lineWidths[li]) / spaces;
+            if ((textAlign === 'justify' || textAlign.indexOf('justify-') === 0) && spaces > 0 && boxWidthJustif > lineWidths[li]) {
+                extraSpace = (boxWidthJustif - lineWidths[li]) / spaces;
             }
 
             var xCursor = xStart;
