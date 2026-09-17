@@ -5750,6 +5750,12 @@ function spRtfLayoutInfo(src) {
           if (typeof o._spIndentLeft === 'number' && isFinite(o._spIndentLeft)) el._spIndentLeft = o._spIndentLeft;
           if (typeof o._spIndentRight === 'number' && isFinite(o._spIndentRight)) el._spIndentRight = o._spIndentRight;
           if (typeof o._spFirstLineIndent === 'number' && isFinite(o._spFirstLineIndent)) el._spFirstLineIndent = o._spFirstLineIndent;
+          /* 🆕 v1.7.458 — COLONNES : nombre (> 1), largeur de colonne en px
+             (0 = automatique) et gouttière en px. Copiés tels quels : le
+             retour dans l'app doit être exact. */
+          if (typeof o._spCols === 'number' && isFinite(o._spCols) && o._spCols > 1) el._spCols = Math.round(o._spCols);
+          if (typeof o._spColW === 'number' && isFinite(o._spColW)) el._spColW = o._spColW;
+          if (typeof o._spColGutter === 'number' && isFinite(o._spColGutter)) el._spColGutter = o._spColGutter;
           // Onglets : { active, step, stops:[{ pos, type }] } — données pures.
           if (o._spTabs && typeof o._spTabs === 'object' && Array.isArray(o._spTabs.stops)) {
             try { el._spTabs = JSON.parse(JSON.stringify(o._spTabs)); } catch (_) {}
@@ -9802,6 +9808,10 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       if (typeof el._spIndentLeft === 'number' && isFinite(el._spIndentLeft)) obj._spIndentLeft = el._spIndentLeft;
       if (typeof el._spIndentRight === 'number' && isFinite(el._spIndentRight)) obj._spIndentRight = el._spIndentRight;
       if (typeof el._spFirstLineIndent === 'number' && isFinite(el._spFirstLineIndent)) obj._spFirstLineIndent = el._spFirstLineIndent;
+      /* 🆕 v1.7.458 — COLONNES : nombre (> 1) / largeur (0 = auto) / gouttière. */
+      if (typeof el._spCols === 'number' && isFinite(el._spCols) && el._spCols > 1) obj._spCols = Math.round(el._spCols);
+      if (typeof el._spColW === 'number' && isFinite(el._spColW)) obj._spColW = el._spColW;
+      if (typeof el._spColGutter === 'number' && isFinite(el._spColGutter)) obj._spColGutter = el._spColGutter;
       const _texteInchange = String(el.text || '') === String(el._spOptsText || '');
       if (_texteInchange && el._spTabs && typeof el._spTabs === 'object' && Array.isArray(el._spTabs.stops)) {
         try { obj._spTabs = JSON.parse(JSON.stringify(el._spTabs)); } catch (_) {}

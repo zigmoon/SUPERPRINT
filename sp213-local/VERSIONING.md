@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.457`** — 17 septembre 2026
+> **Dernière version : `1.7.458`** — 17 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,23 +10,23 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.457` |
-| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.457-no-whatsapp` |
-| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20260917-v457-release` |
-| Badge preview (`spVersionBadge`) | `v1.7.457` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
-| Splash screen | `1.7.457` |
-| Onboarding | `LAYOUT EDITOR — V 1.7.457` + `V 1.7.457 \| 09 2026` |
-| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.457` |
-| Documentation (racine **et** `app/`) | `v1.7.457` (pastille + pieds de page datés + 214 numéros de ligne) |
-| `api.html` (pastille `.version`) | `v1.7.457` |
-| `version.txt` | `1.7.457` |
-| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.457 (September 2026)` |
-| `package.json` + `package-lock.json` (sp213-local) | `1.7.457` |
+| Version app (affichée) | `1.7.458` |
+| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.458-marges-colonnes` |
+| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20260917-v458-marges-colonnes` |
+| Badge preview (`spVersionBadge`) | `v1.7.458` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
+| Splash screen | `1.7.458` |
+| Onboarding | `LAYOUT EDITOR — V 1.7.458` + `V 1.7.458 \| 09 2026` |
+| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.458` |
+| Documentation (racine **et** `app/`) | `v1.7.458` (pastille + pieds de page datés + 214 numéros de ligne) |
+| `api.html` (pastille `.version`) | `v1.7.458` |
+| `version.txt` | `1.7.458` |
+| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.458 (September 2026)` |
+| `package.json` + `package-lock.json` (sp213-local) | `1.7.458` |
 | Lanceur npm (`superprint-npm/package.json`) | `1.0.97` (version **indépendante**, voir plus bas) |
 
 > ⚠️ Trois fichiers sont restés en arrière pendant des releases sans que rien ne le signale :
 > `app/landing.html`, `app/llms.txt` et `app/llms-full.txt` (tous en `1.7.404` jusqu'au
-> 17 septembre 2026). Le bump 1.7.457 les a remis à niveau — **vérifier leur présence dans
+> 17 septembre 2026). Le bump 1.7.458 les a remis à niveau — **vérifier leur présence dans
 > le plan de bump**, pas seulement `app/index.html`.
 
 > ⚠️ Le paquet **npm** (`superprint-npm`) a sa **propre version** (`1.0.x`) — c'est la version de *release du paquet*, indépendante de la version de l'app. Il lit la version de l'app depuis `https://superprint.cc/version.txt`.

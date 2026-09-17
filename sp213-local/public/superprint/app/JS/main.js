@@ -87,6 +87,12 @@ try { fabric.Object.NUM_FRACTION_DIGITS = 6; } catch (_) {}
         var _riB = (typeof obj._spInsetBottom === 'number' && obj._spInsetBottom > 0) ? obj._spInsetBottom : 0;
         if (_riT || _riB) frameH = Math.max(0, frameH - _riT - _riB);
     }
+    /* 🆕 v1.7.458 — COLONNES : la capacité du bloc est n × (lignes par
+       colonne). Source unique : l'aperçu (masque) ET l'export la lisent ici. */
+    if (obj && obj._spCols > 1 && typeof window.spColCapacite === 'function') {
+        var _cc = window.spColCapacite(obj);
+        if (_cc > 0) return Math.min(H.length, _cc);
+    }
     if (!(frameH > 0)) return H.length;
     var box = 0;
     for (var i = 0; i < H.length; i++) {
@@ -993,6 +999,192 @@ let pages = [];
 let currentPageIndex = 0;
 let pageFormat = { width: 210, height: 297 };
 let margin = 20;
+/* 🆕 v1.7.458 — MARGES PAR CÔTÉ (mm). « margins » est la SOURCE DE VÉRITÉ
+   (haut / droite / bas / gauche) ; « margin » reste la marge UNIFORME historique,
+   tenue à jour au MAXIMUM des quatre côtés : c'est la valeur encore lue par les
+   grilles de repères, le gabarit et les couloirs de coulage, qui raisonnent par
+   construction en marge symétrique. Un document ancien (un seul nombre) ou un
+   appel d'API qui ne fournit qu'une valeur donne les QUATRE mêmes marges :
+   le comportement d'origine est donc préservé à l'identique. */
+let margins = { top: 20, right: 20, bottom: 20, left: 20 };
+function spMargeNombre(v, repli) {
+    var n = Number(v);
+    return (isFinite(n) && n >= 0) ? n : repli;
+}
+function spMargesMm() {
+    var d = spMargeNombre(margin, 20);
+    return {
+        top: spMargeNombre(margins && margins.top, d),
+        right: spMargeNombre(margins && margins.right, d),
+        bottom: spMargeNombre(margins && margins.bottom, d),
+        left: spMargeNombre(margins && margins.left, d)
+    };
+}
+function spMargesPx() {
+    var m = spMargesMm();
+    return { top: mmToPx(m.top), right: mmToPx(m.right), bottom: mmToPx(m.bottom), left: mmToPx(m.left) };
+}
+/* Fixe les marges : « parCote » ({top,right,bottom,left}) s'il est valide,
+   sinon la valeur UNIQUE « uniforme » est appliquée aux quatre côtés. */
+function spSetMargesMm(parCote, uniforme) {
+    var d = spMargeNombre(uniforme, spMargeNombre(margin, 20));
+    var o = (parCote && typeof parCote === 'object') ? parCote : null;
+    if (!o && typeof parCote === 'number') d = spMargeNombre(parCote, d);
+    margins = {
+        top: spMargeNombre(o && o.top, d),
+        right: spMargeNombre(o && o.right, d),
+        bottom: spMargeNombre(o && o.bottom, d),
+        left: spMargeNombre(o && o.left, d)
+    };
+    margin = Math.max(margins.top, margins.right, margins.bottom, margins.left);
+    try { spSyncMarginInputs(); } catch (_) {}
+    return spMargesMm();
+}
+/* Recopie les quatre marges dans les champs de la barre latérale, dans l'unité
+   d'affichage courante. Une affectation de .value ne déclenche aucun événement :
+   il n'y a donc aucune boucle possible avec les gestionnaires « change ». */
+function spSyncMarginInputs() {
+    try {
+        var conv = (typeof window.spPageMmVersUnite === 'function') ? window.spPageMmVersUnite : function (v) { return v; };
+        var m = spMargesMm();
+        var map = { marginTop: m.top, marginBottom: m.bottom, marginLeft: m.left, marginRight: m.right, margin: margin };
+        for (var id in map) {
+            if (!Object.prototype.hasOwnProperty.call(map, id)) continue;
+            var el = document.getElementById(id);
+            if (el) el.value = conv(map[id]);
+        }
+    } catch (_) {}
+}
+window.spMargesMm = spMargesMm;
+window.spMargesPx = spMargesPx;
+window.spSetMargesMm = spSetMargesMm;
+window.spSyncMarginInputs = spSyncMarginInputs;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🆕 v1.7.458 — COLONNES D'UN BLOC TEXTE
+
+   Le texte coule de haut en bas dans la colonne 1, puis remonte en haut de la
+   colonne 2, etc. Toutes les colonnes ont la même largeur, donc :
+     · le REPLI n'a besoin que d'UNE largeur (celle de la colonne) ;
+     · le PLACEMENT (colonne, x, y) se déduit de la mise en page FINALE, par un
+       coulage séquentiel : une ligne qui ne tient pas dans la colonne en cours
+       passe en haut de la suivante. Aucune dépendance à l'ordre du repli.
+   Au-delà de la dernière colonne, la ligne n'est plus dessinée (ni dans
+   l'aperçu, ni dans le PDF) : c'est le débordement, comme en PAO.
+   Pendant la SAISIE, le bloc repasse en UNE colonne pour que le curseur et la
+   sélection restent exacts ; les colonnes reviennent à la sortie d'édition.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function spColsActives(obj) {
+    if (!obj) return false;
+    if (obj.isEditing) return false;                 // saisie : une seule colonne
+    var n = Number(obj._spCols);
+    return (isFinite(n) && n >= 2);
+}
+/* Géométrie des colonnes d'un bloc — null si le bloc n'a pas de colonnes. */
+function spColGeom(obj) {
+    if (!spColsActives(obj)) return null;
+    var n = Math.max(2, Math.min(20, Math.round(Number(obj._spCols) || 1)));
+    var inT = (typeof obj._spInsetTop === 'number' && obj._spInsetTop > 0) ? obj._spInsetTop : 0;
+    var inB = (typeof obj._spInsetBottom === 'number' && obj._spInsetBottom > 0) ? obj._spInsetBottom : 0;
+    var frameH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : 0;
+    var boxW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : (obj.width || 0);
+    if (!(frameH > 0) || !(boxW > 0)) return null;   // cadre obligatoire
+    var g = Number(obj._spColGutter);
+    if (!isFinite(g) || g < 0) g = 12;
+    var w = Number(obj._spColW);
+    if (!isFinite(w) || w <= 0) w = (boxW - (n - 1) * g) / n;   // 0 = remplir le bloc
+    if (!(w > 8)) w = Math.max(8, (boxW - (n - 1) * g) / n);
+    var colH = frameH - inT - inB;
+    if (!(colH > 8)) return null;
+    return { n: n, w: w, gutter: g, colH: colH, frameH: frameH, boxW: boxW, inTop: inT };
+}
+window.spColGeom = spColGeom;
+/* Coulage : pour chaque ligne, sa colonne et sa position DANS la colonne.
+   Résultat mis en cache par bloc (clé O(1) : toute modification de texte, de
+   taille ou de cadre change la clé) — le rendu appelle cette fonction pour
+   CHAQUE CARACTÈRE, le cache est donc indispensable. */
+function spColMap(obj) {
+    var geo = spColGeom(obj);
+    if (!geo) return null;
+    var nl = (obj._textLines && obj._textLines.length) ? obj._textLines.length : -1;
+    var key = [geo.n, Math.round(geo.w * 100), Math.round(geo.gutter * 100), Math.round(geo.colH * 100),
+               nl, (obj.text ? obj.text.length : -1),
+               Math.round((obj.fontSize || 0) * 100), Math.round((obj.lineHeight || 0) * 1000)].join('|');
+    var c = obj.__spColMap;
+    if (c && c.key === key) return c.map;
+    var H = (typeof window.spTextMetrics === 'function') ? window.spTextMetrics(obj) : null;
+    if (!H || !H.length) return null;
+    var idx = new Array(H.length), yIn = new Array(H.length), yNat = new Array(H.length);
+    var col = 0, yc = 0, yNatAcc = 0;
+    for (var i = 0; i < H.length; i++) {
+        var h = Number(H[i]) || 0;
+        if (h > 0 && yc > 0 && (yc + h) > geo.colH + 0.5) { col++; yc = 0; }
+        idx[i] = col;
+        yIn[i] = yc;
+        yNat[i] = yNatAcc;
+        yc += h;
+        yNatAcc += h;
+    }
+    var capacite = 0;
+    for (var k = 0; k < H.length; k++) { if (idx[k] < geo.n) capacite++; }
+    var map = { geo: geo, n: geo.n, idx: idx, yIn: yIn, yNat: yNat, total: H.length, capacite: capacite, maxCol: col };
+    obj.__spColMap = { key: key, map: map };
+    return map;
+}
+window.spColMap = spColMap;
+/* Géométrie d'UNE ligne (aperçu ET export : même source de vérité).
+   -> { i, x, w, y, shift, skip } — « skip » = au-delà de la dernière colonne. */
+function spColGeomFor(obj, lineIndex) {
+    var m = spColMap(obj);
+    if (!m) return null;
+    var li = Math.max(0, Math.min(lineIndex | 0, m.total - 1));
+    var i = m.idx[li];
+    var geo = m.geo;
+    return {
+        i: i,
+        x: i * (geo.w + geo.gutter),
+        w: geo.w,
+        y: m.yIn[li],
+        shift: (m.yNat ? (m.yNat[li] - m.yIn[li]) : 0) * -1,
+        skip: i >= geo.n
+    };
+}
+window.spColGeomFor = spColGeomFor;
+/* Nombre de lignes affichables : la capacité du bloc à colonnes. */
+function spColCapacite(obj) {
+    var m = spColMap(obj);
+    return m ? m.capacite : 0;
+}
+window.spColCapacite = spColCapacite;
+/* Le dessin d'un caractère reçoit sa position ABSOLUE dans le bloc : on y ajoute
+   le décalage VERTICAL de sa colonne, et on écarte les lignes hors capacité.
+   Posé APRÈS le correctif _renderChar de l'application : le décalage est donc
+   appliqué avant elle, qui ne fait que dessiner le glyphe reçu. */
+function spInstallerColonnesRender() {
+    if (typeof fabric === 'undefined' || !fabric.Text || !fabric.Text.prototype) {
+        setTimeout(spInstallerColonnesRender, 60);
+        return;
+    }
+    var proto = fabric.Text.prototype;
+    if (proto.__spColRenderPatched) return;
+    var precedent = proto._renderChar;
+    if (typeof precedent !== 'function') return;
+    proto._renderChar = function (method, ctx, lineIndex, charIndex, ch, left, top) {
+        if (this._spCols > 1 && !this.isEditing) {
+            try {
+                var cg = spColGeomFor(this, lineIndex);
+                if (cg) {
+                    if (cg.skip) return;
+                    if (cg.shift) top += cg.shift;
+                }
+            } catch (_) {}
+        }
+        return precedent.call(this, method, ctx, lineIndex, charIndex, ch, left, top);
+    };
+    proto.__spColRenderPatched = true;
+}
+window.spInstallerColonnesRender = spInstallerColonnesRender;
+try { spInstallerColonnesRender(); } catch (_) {}
 let bleed = 3;
 let history = [];
 let historyStep = -1;
@@ -1340,6 +1532,9 @@ const SP_CUSTOM_PROPS = [
     '_spInsetTop',
     '_spInsetBottom',
     '_spVAlign',
+    '_spCols',
+    '_spColW',
+    '_spColGutter',
     '_spTabs',
     '_sp3DSource',
     '_spPdfImport',
@@ -1699,8 +1894,12 @@ function goToPage(pageIndex) {
                 const inTop = (typeof this._spInsetTop === 'number' && this._spInsetTop > 0) ? this._spInsetTop : 0;
                 const inBot = (typeof this._spInsetBottom === 'number' && this._spInsetBottom > 0) ? this._spInsetBottom : 0;
                 const val = this._spVAlign || 'top';
+                /* 🆕 v1.7.458 — avec des COLONNES, la justification verticale
+                   n'a plus de sens (les colonnes remplissent le cadre) : ignorée
+                   ici comme dans l'export, pour que l'aperçu et le PDF concordent. */
+                const _colActives = (typeof window.spColsActives === 'function') && window.spColsActives(this);
                 if (inTop) base += inTop;
-                if (val !== 'top') {
+                if (val !== 'top' && !_colActives) {
                     const frameH = (typeof this._fixedHeight === 'number' && this._fixedHeight > 0) ? this._fixedHeight : (this.height || 0);
                     const utile = Math.max(0, frameH - inTop - inBot);
                     const H = (typeof window.spTextMetrics === 'function') ? window.spTextMetrics(this) : null;
@@ -4646,6 +4845,24 @@ if (window._spGpuEnabled) {
     // (mode « saut » : voir la note dans _spWrap.modes — non supporté)
     void jumpBeyond;
 
+    /* 🆕 v1.7.458 — COLONNES : toutes les colonnes ont la même largeur, le
+       moteur de repli n'a donc besoin que de cette largeur (le placement x/y de
+       chaque ligne se déduit ensuite de la mise en page finale, cf. spColMap).
+       Les obstacles (habillage) sont ignorés dans un bloc à colonnes : le
+       coulage prime, et la largeur reste DÉTERMINISTE. */
+    if (typeof spColGeom === 'function') {
+        var _cg = spColGeom(textbox);
+        if (_cg) {
+            var _cw = Math.min(_cg.w, fallback > 0 ? fallback : _cg.w);
+            try {
+                if (!textbox.__spWrapWidths) textbox.__spWrapWidths = [];
+                textbox.__spWrapWidths[lineIndex] = _cw;
+                if (!textbox.__spWrapOffsets) textbox.__spWrapOffsets = [];
+                textbox.__spWrapOffsets[lineIndex] = 0;
+            } catch (_) {}
+            return _cw;
+        }
+    }
     if (!forbidden.length) return fallback;
 
     // Fusion des intervalles qui se chevauchent
@@ -6384,6 +6601,22 @@ window.spTestDiag = function () {
             if (typeof _origGetLineLeftOffset !== 'function') return;
             fabric.Textbox.prototype._getLineLeftOffset = function(lineIndex) {
                 let baseOffset = _origGetLineLeftOffset.call(this, lineIndex);
+                /* 🆕 v1.7.458 — COLONNES : la ligne est alignée DANS SA
+                   COLONNE (gauche / centre / droite / justifié), pas dans le bloc. */
+                if (this._spCols > 1 && !this.isEditing && typeof window.spColGeomFor === 'function') {
+                    try {
+                        const _cg = window.spColGeomFor(this, lineIndex);
+                        if (_cg) {
+                            let _lw = 0;
+                            try { _lw = this.getLineWidth(lineIndex) || 0; } catch (_) {}
+                            const _diff = _cg.w - _lw;
+                            const _al = this.textAlign || 'left';
+                            if (_al === 'center') return _cg.x + _diff / 2;
+                            if (_al === 'right') return _cg.x + _diff;
+                            return _cg.x;
+                        }
+                    } catch (_) {}
+                }
                 const indentLeft = this._spIndentLeft || 0;
                 const firstLineIndent = this._spFirstLineIndent || 0;
                 /* 🎨 v1.7.458 — Décalage d'HABILLAGE : quand un objet occupe le bord
@@ -7529,8 +7762,46 @@ window.spTestDiag = function () {
             //   (cas courant), faux sinon — MESURÉ : masque de 62,39 px sur un objet
             //   de 107,50 px -> 11 px d'encre perdus EN HAUT et une ligne de trop
             //   visible EN BAS.
+            /* 🆕 v1.7.458 — COLONNES : le masque couvre le CADRE entier (les
+               colonnes s'y inscrivent) ; les lignes au-delà de la dernière colonne
+               ne sont pas dessinées du tout (voir _renderChar). */
+            if (typeof window.spColsActives === 'function' && window.spColsActives(textbox)) {
+                clipHeight = Math.max(1, frameHeight);
+            }
             const _hObjClip = (typeof textbox.height === 'number' && textbox.height > 0) ? textbox.height : frameHeight;
-            const clipTopOffset = (clipHeight - _hObjClip) / 2;
+            /* 🆕 v1.7.458 — LE MASQUE SUIT LES RETRAITS ET LA JUSTIFICATION VERTICALE.
+               Le texte n'est pas toujours dessine depuis le haut du cadre : _getTopOffset
+               le decale de _spInsetTop, puis de (utile - contenu) / 2 en Centre et de
+               (utile - contenu) en Pied. Le masque, lui, restait ancre sur le HAUT DU CADRE :
+               MESURE sur un bloc reel 300 x 169,95 px (une ligne de 18,75 px de boite) —
+               texte a 77,07 px du haut en Centre et 154,14 px en Pied, donc ENTIEREMENT
+               hors du masque (bloc vide) ; a mi-chemin, coupe en haut ET en bas.
+               On decale le masque de la MEME quantite que le texte : ce que l'apercu
+               montre est ce que le PDF dessine (le PDF applique deja retraits et
+               justification verticale, cf. _renderObjToPdfLib).
+               Sans _spInsetTop ni _spVAlign, _masqueDecalage vaut 0 : comportement
+               historique STRICTEMENT inchange. */
+            var _masqueDecalage = 0;
+            try {
+                var _mdInTop = (typeof textbox._spInsetTop === 'number' && textbox._spInsetTop > 0) ? textbox._spInsetTop : 0;
+                var _mdInBot = (typeof textbox._spInsetBottom === 'number' && textbox._spInsetBottom > 0) ? textbox._spInsetBottom : 0;
+                var _mdVal = textbox._spVAlign || 'top';
+                _masqueDecalage += _mdInTop;
+                if (_mdVal !== 'top') {
+                    var _mdUtile = Math.max(0, frameHeight - _mdInTop - _mdInBot);
+                    var _mdTotal = 0;
+                    var _mdH = (typeof window.spTextMetrics === 'function') ? window.spTextMetrics(textbox) : null;
+                    if (_mdH && _mdH.length) {
+                        _mdTotal = (typeof window.spLineBoxHeight === 'function')
+                            ? (Number(window.spLineBoxHeight(textbox, _mdH.length - 1, _mdH)) || 0)
+                            : 0;
+                    }
+                    var _mdReste = Math.max(0, _mdUtile - _mdTotal);
+                    if (_mdVal === 'center') _masqueDecalage += _mdReste / 2;
+                    else if (_mdVal === 'bottom') _masqueDecalage += _mdReste;
+                }
+            } catch (_) { _masqueDecalage = 0; }
+            const clipTopOffset = (clipHeight - _hObjClip) / 2 + _masqueDecalage;
             const clipRect = new fabric.Rect({
                 width: clipWidth,
                 height: clipHeight,
@@ -7890,7 +8161,7 @@ window.spTestDiag = function () {
                         if (wInput) wInput.value = pageFormat.width;
                         if (hInput) hInput.value = pageFormat.height;
                     }
-                    if (typeof savedProject.margin === 'number') margin = savedProject.margin;
+                    if (typeof savedProject.margin === 'number' || savedProject.margins) spSetMargesMm(savedProject.margins, savedProject.margin);
                     if (typeof savedProject.bleed === 'number') bleed = savedProject.bleed;
                     if (savedProject.textLinks) textLinks = savedProject.textLinks;
                     if (savedProject.viewMode) viewMode = savedProject.viewMode;
@@ -13299,11 +13570,13 @@ window.spTestDiag = function () {
     });
     
     // 4. MARGES DE SÉCURITÉ (pointillés rouges comme pages simples)
+    /* 🆕 v1.7.458 — marges par côté (les quatre valeurs sont ici). */
+    const _mpS = spMargesPx();
     const leftMarginRect = new fabric.Rect({
-        left: bleedPx + marginPx,
-        top: bleedPx + marginPx,
-        width: width - (marginPx * 2),
-        height: height - (marginPx * 2),
+        left: bleedPx + _mpS.left,
+        top: bleedPx + _mpS.top,
+        width: width - _mpS.left - _mpS.right,
+        height: height - _mpS.top - _mpS.bottom,
         fill: 'transparent',
         stroke: '#ff0000',
         strokeWidth: 0.5,
@@ -13315,10 +13588,10 @@ window.spTestDiag = function () {
     });
     
     const rightMarginRect = new fabric.Rect({
-        left: bleedPx + width + marginPx,
-        top: bleedPx + marginPx,
-        width: width - (marginPx * 2),
-        height: height - (marginPx * 2),
+        left: bleedPx + width + _mpS.left,
+        top: bleedPx + _mpS.top,
+        width: width - _mpS.left - _mpS.right,
+        height: height - _mpS.top - _mpS.bottom,
         fill: 'transparent',
         stroke: '#ff0000',
         strokeWidth: 0.5,
@@ -14449,11 +14722,13 @@ window.spTestDiag = function () {
 
     // Marges de sécurité en rouge (é l'intérieur du format final)
     const marginPx = mmToPx(margin);
+    /* 🆕 v1.7.458 — les quatre côtés peuvent différer. */
+    const _mp = spMargesPx();
     const marginRect = new fabric.Rect({
-        left: bleedInfo.left + marginPx,
-        top: bleedInfo.top + marginPx,
-        width: pageWidth - (marginPx * 2),
-        height: pageHeight - (marginPx * 2),
+        left: bleedInfo.left + _mp.left,
+        top: bleedInfo.top + _mp.top,
+        width: pageWidth - _mp.left - _mp.right,
+        height: pageHeight - _mp.top - _mp.bottom,
         fill: 'transparent',
         stroke: '#ff0000',
         strokeWidth: 0.5,
@@ -14578,6 +14853,7 @@ window.spTestDiag = function () {
            par l'état lui-même. */
         _pageFormat: { width: pageFormat.width, height: pageFormat.height },
         _margin: margin,
+        _margins: spMargesMm(),
         _bleed: bleed,
         // 🆕 v1.7.174 — Sauvegarder la page active pour que undo/redo y revienne
         _currentPageIndex: currentPageIndex
@@ -14642,6 +14918,7 @@ window.spTestDiag = function () {
            par l'état lui-même. */
         _pageFormat: { width: pageFormat.width, height: pageFormat.height },
         _margin: margin,
+        _margins: spMargesMm(),
         _bleed: bleed,
         _currentPageIndex: currentPageIndex
     };
@@ -14731,7 +15008,7 @@ window.spTestDiag = function () {
         const conv = (v) => (typeof window.spPageMmVersUnite === 'function') ? window.spPageMmVersUnite(v) : v;
         const wI = document.getElementById('pageWidth'); if (wI) wI.value = conv(pageFormat.width);
         const hI = document.getElementById('pageHeight'); if (hI) hI.value = conv(pageFormat.height);
-        const mI = document.getElementById('margin'); if (mI) mI.value = conv(margin);
+        spSyncMarginInputs();
         const bI = document.getElementById('bleed'); if (bI) bI.value = conv(bleed);
     } catch (_) {}
         }
@@ -14765,6 +15042,7 @@ window.spTestDiag = function () {
     const _cfgChange = !!(
         (state._pageFormat && (state._pageFormat.width !== pageFormat.width || state._pageFormat.height !== pageFormat.height)) ||
         (typeof state._margin === 'number' && state._margin !== margin) ||
+        (state._margins && (state._margins.top !== spMargesMm().top || state._margins.right !== spMargesMm().right || state._margins.bottom !== spMargesMm().bottom || state._margins.left !== spMargesMm().left)) ||
         (typeof state._bleed === 'number' && state._bleed !== bleed)
     );
     const canFastRestore = (
@@ -14786,7 +15064,7 @@ window.spTestDiag = function () {
         if (isFinite(_pfW) && _pfW > 0) pageFormat.width = _pfW;
         if (isFinite(_pfH) && _pfH > 0) pageFormat.height = _pfH;
     }
-    if (typeof state._margin === 'number' && isFinite(state._margin) && state._margin >= 0) margin = state._margin;
+    if (typeof state._margin === 'number' && isFinite(state._margin) && state._margin >= 0) spSetMargesMm(state._margins, state._margin);
     if (typeof state._bleed === 'number' && isFinite(state._bleed) && state._bleed >= 0) bleed = state._bleed;
     if (_cfgChange) {
         _spSyncConfigUI();
@@ -15130,6 +15408,7 @@ window.spTestDiag = function () {
 
         function spRelayout(bloc) {
     try {
+        bloc.__spColMap = null;                       // 🆕 v1.7.458 : coulage des colonnes
         bloc._textLines = null;                       // le cache des lignes doit repartir
         if (typeof bloc.initDimensions === 'function') bloc.initDimensions();
         bloc.dirty = true;
@@ -15140,7 +15419,20 @@ window.spTestDiag = function () {
         function spApplyFrameOptions() {
     const num = function (id) { const e = document.getElementById(id); const v = e ? parseFloat(e.value) : NaN; return isFinite(v) ? v : 0; };
     const t = num('spInsetTop'), b = num('spInsetBottom'), g = num('spInsetLeft'), d = num('spInsetRight');
+    /* 🆕 v1.7.458 — COLONNES : nombre, largeur (0 = remplir le bloc) et
+       gouttière. Un bloc à colonnes DOIT avoir une hauteur de cadre : on la fige
+       sur la hauteur courante au moment où l'on passe à plusieurs colonnes. */
+    const nbCols = Math.max(1, Math.min(20, Math.round(num('spCols'))));
+    const largeurCol = Math.max(0, num('spColW'));
+    const gouttiereCol = Math.max(0, num('spColGutter'));
     spBlocsSelectionnes().forEach(function (bloc) {
+        bloc._spCols = nbCols;
+        bloc._spColW = largeurCol;
+        bloc._spColGutter = gouttiereCol;
+        if (nbCols > 1 && !(typeof bloc._fixedHeight === 'number' && bloc._fixedHeight > 0)) {
+            const hh = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(bloc) : (bloc.height || 0);
+            if (hh > 0) { bloc._fixedHeight = hh; bloc.height = hh; }
+        }
         bloc._spInsetTop = Math.max(0, t);
         bloc._spInsetBottom = Math.max(0, b);
         bloc._spIndentLeft = Math.max(0, g);
@@ -15166,10 +15458,20 @@ window.spTestDiag = function () {
     set('spInsetBottom', obj._spInsetBottom);
     set('spInsetLeft', obj._spIndentLeft);
     set('spInsetRight', obj._spIndentRight);
+    /* 🆕 v1.7.458 — COLONNES : nombre / largeur (0 = auto) / gouttière. */
+    set('spCols', (obj._spCols && obj._spCols > 1) ? obj._spCols : 1);
+    set('spColW', obj._spColW);
+    const _gEl = document.getElementById('spColGutter');
+    if (_gEl) _gEl.value = (typeof obj._spColGutter === 'number' && obj._spColGutter >= 0) ? obj._spColGutter : 12;
     const val = obj._spVAlign || 'top';
     const groupe = document.getElementById('spVAlignGroup');
+    const _colOn = !!(obj._spCols && obj._spCols > 1);
     if (groupe) groupe.querySelectorAll('button').forEach(function (x) {
         x.classList.toggle('active', x.getAttribute('data-sp-valign') === val);
+        /* Avec des colonnes, la justification verticale est sans effet :
+           les boutons sont désactivés pour que ce soit visible. */
+        x.disabled = _colOn;
+        x.title = _colOn ? 'Sans effet avec des colonnes (les colonnes remplissent le cadre)' : x.getAttribute('data-sp-title') || x.title;
     });
         }
         window.spFillFrameOptions = spFillFrameOptions;
@@ -18835,11 +19137,13 @@ window.spTestDiag = function () {
         }
 
         function createTextBoxLike(sourceObj, targetCanvas) {
+    /* 🆕 v1.7.458 — le bloc part du coin haut-gauche de la ZONE DE MARGES. */
     const marginPx = mmToPx(margin);
+    const _mpT = spMargesPx();
     const bleedPx = mmToPx(bleed);
     const newBlock = new fabric.Textbox('', {
-        left: Math.round(bleedPx + marginPx) + 0.5,
-        top: Math.round(bleedPx + marginPx) + 0.5,
+        left: Math.round(bleedPx + _mpT.left) + 0.5,
+        top: Math.round(bleedPx + _mpT.top) + 0.5,
         width: Math.round(sourceObj.width),
         height: Math.round(sourceObj.height),
         fontSize: sourceObj.fontSize,
@@ -18974,12 +19278,14 @@ window.spTestDiag = function () {
     }, 50);
         }        // Fonction helper pour créer le bloc lié
         function createLinkedTextBlock(sourceObj, sourceCanvas, targetCanvas, targetPageIndex) {
+    /* 🆕 v1.7.458 — marges par côté. */
     const marginPx = mmToPx(margin);
+    const _mpC = spMargesPx();
     const bleedPx = mmToPx(bleed);
     
     // Position en haut à gauche (avec marges)
-    const newX = bleedPx + marginPx;
-    const newY = bleedPx + marginPx;
+    const newX = bleedPx + _mpC.left;
+    const newY = bleedPx + _mpC.top;
     
     
     // Créer le nouveau bloc avec les mêmes propriétés
@@ -26413,6 +26719,30 @@ window.spTestDiag = function () {
         saveStateFromPages('Format personnalisé');
     });
 
+    /* 🆕 v1.7.458 — MARGES PAR CÔTÉ : un seul gestionnaire pour les quatre
+       champs (Haut / Bas / Gauche / Droite). Chaque champ écrit SON côté dans le
+       modèle ; « margin » (scalaire historique) est recalculé au maximum des
+       quatre par spSetMargesMm. Le redessin des guides et l'entrée d'historique
+       sont exactement ceux du champ « marge » d'origine. */
+    (function () {
+        var paires = [['marginTop', 'top'], ['marginBottom', 'bottom'], ['marginLeft', 'left'], ['marginRight', 'right']];
+        paires.forEach(function (paire) {
+            var el = document.getElementById(paire[0]);
+            if (!el) return;
+            el.addEventListener('change', function (e) {
+                var v = spPageUnitVersMm(e.target.value);
+                if (v === null || !(v >= 0)) { spSyncMarginInputs(); return; }
+                var m = spMargesMm();
+                m[paire[1]] = v;
+                spSetMargesMm(m, null);
+                var width = mmToPx(pageFormat.width);
+                var height = mmToPx(pageFormat.height);
+                canvases.forEach(function (c) { drawMargins(c, width, height); });
+                saveStateFromPages('Marges modifiées');
+            });
+        });
+    })();
+
     document.getElementById('margin').addEventListener('change', (e) => {
         // v1.7.411 - unite explicite (le meme piege que largeur/hauteur).
         const _mMm = spPageUnitVersMm(e.target.value);
@@ -30797,7 +31127,7 @@ window.spTestDiag = function () {
                     // L'operateur ?? laisse passer NaN car NaN n'est pas nullish.
                     const _mRaw = project.margin ?? project.settings?.margin;
                     const _mNum = Number(_mRaw);
-                    margin = (isFinite(_mNum) && _mNum >= 0) ? _mNum : 20;
+                    spSetMargesMm(null, (isFinite(_mNum) && _mNum >= 0) ? _mNum : 20);
                     const _bRaw = project.bleed ?? project.settings?.bleed;
                     const _bNum = Number(_bRaw);
                     bleed = (isFinite(_bNum) && _bNum >= 0) ? _bNum : 3;
@@ -31035,7 +31365,7 @@ window.spTestDiag = function () {
                     // 🛡️ FIX 2026-05-01 : valider margin/bleed (?? laisse passer NaN)
                     const _mRaw = project.margin ?? project.settings?.margin;
                     const _mNum = Number(_mRaw);
-                    margin = (isFinite(_mNum) && _mNum >= 0) ? _mNum : 20;
+                    spSetMargesMm(null, (isFinite(_mNum) && _mNum >= 0) ? _mNum : 20);
                     const _bRaw = project.bleed ?? project.settings?.bleed;
                     const _bNum = Number(_bRaw);
                     bleed = (isFinite(_bNum) && _bNum >= 0) ? _bNum : 3;
@@ -37168,8 +37498,10 @@ window.spTestDiag = function () {
         // corresponde au nombre de pages reellement produites.
         function _spMassPasteTailleRef() {
             var marginPx = mmToPx(margin);
-            var boxW = Math.round(mmToPx(pageFormat.width) - 2 * marginPx);
-            var boxH = Math.round(mmToPx(pageFormat.height) - 2 * marginPx);
+            /* 🆕 v1.7.458 — marges par côté. */
+            var _mpR = spMargesPx();
+            var boxW = Math.round(mmToPx(pageFormat.width) - _mpR.left - _mpR.right);
+            var boxH = Math.round(mmToPx(pageFormat.height) - _mpR.top - _mpR.bottom);
             var bloc = _spMassPasteEtat ? _spMassPasteEtat.bloc : null;
             if (!bloc) return { w: boxW, h: boxH };
             var w = (typeof bloc._fixedWidth === 'number' && bloc._fixedWidth > 40) ? bloc._fixedWidth
@@ -37842,8 +38174,10 @@ window.spTestDiag = function () {
     const bleedPx = mmToPx(bleed);
     const widthPx = mmToPx(pageFormat.width);
     const heightPx = mmToPx(pageFormat.height);
-    const boxWidth = Math.round(widthPx - 2 * marginPx);
-    const boxHeight = Math.round(heightPx - 2 * marginPx);
+    /* 🆕 v1.7.458 — marges par côté. */
+    const _mpE = spMargesPx();
+    const boxWidth = Math.round(widthPx - _mpE.left - _mpE.right);
+    const boxHeight = Math.round(heightPx - _mpE.top - _mpE.bottom);
     const probe = new fabric.Textbox('', {
         left: -10000,
         top: -10000,
@@ -42652,6 +42986,21 @@ https://superprint.app
                     if (align === 'center') xStart = (boxWidth - _lineWSpaced) / 2;
                     else if (_effAlignRight) xStart = boxWidth - _lineWSpaced;
                     else xStart = 0;
+                    /* 🆕 v1.7.458 — COLONNES : largeur de colonne, décalage X
+                       et décalage Y pour CETTE ligne. Le nombre de lignes dessinées
+                       est déjà limité à la capacité (spCountVisibleLines). */
+                    var _colW = boxWidth, _colOX = 0, _colOY = 0;
+                    if (obj._spCols > 1 && typeof window.spColGeomFor === 'function') {
+                        try {
+                            var _cgx = window.spColGeomFor(obj, li);
+                            if (_cgx) {
+                                _colW = _cgx.w; _colOX = _cgx.x; _colOY = _cgx.shift;
+                                if (align === 'center') xStart = _colOX + (_colW - _lineWSpaced) / 2;
+                                else if (_effAlignRight) xStart = _colOX + _colW - _lineWSpaced;
+                                else xStart = _colOX;
+                            }
+                        } catch (_) {}
+                    }
 
                     // Position Y de la baseline dans l'espace local (avant scale).
                     // 🎯 v1.7.341 (AUDIT) : baseline pré-calculée depuis getHeightOfLine()
@@ -42664,6 +43013,7 @@ https://superprint.app
                         var _fbLH = fontSizePx * (obj.lineHeight || 1.16);
                         baselineY_local = li * _fbLH + fontSizePx * 0.8;
                     }
+                    baselineY_local += _colOY;   // 🆕 v1.7.458 — colonnes
 
                     var _getCharStyle = function(ci) {
                         // 🎯 v1.7.340 (FIX retours utilisateurs) : retrouver le style
@@ -42801,8 +43151,8 @@ https://superprint.app
                     var _spHyphenFlagsArr = obj.__spHyphenFlags || obj._spHyphenFlags;
                     var _spHyphenFlag = !!(_spHyphenFlagsArr && _spHyphenFlagsArr[li]);
                     var _hyphenWLocal = _measW('-') / Math.abs(sx || 1);
-                    var _spJustifyTarget = (_spHyphenFlag && _hyphenWLocal < boxWidth)
-                        ? (boxWidth - _hyphenWLocal) : boxWidth;
+                    var _spJustifyTarget = (_spHyphenFlag && _hyphenWLocal < _colW)
+                        ? (_colW - _hyphenWLocal) : _colW;
 
                     // 🎯 v1.7.380 — fin RÉELLE de la ligne, renseignée par la boucle
                     //   caractère par caractère (styles par caractère : seul moyen
@@ -42955,8 +43305,8 @@ https://superprint.app
                             _hyphLineEnd = _spJustifyTarget;
                         } else {
                             _hyphLineEnd = _lineWSpaced;
-                            if (boxWidth > 0 && _hyphLineEnd + _hyphenWLocal > boxWidth) {
-                                _hyphLineEnd = boxWidth - _hyphenWLocal;
+                            if (_colW > 0 && _hyphLineEnd + _hyphenWLocal > _colW) {
+                                _hyphLineEnd = _colW - _hyphenWLocal;
                             }
                         }
                         var _hyphenLocalX = xStart + _hyphLineEnd;
@@ -46223,14 +46573,25 @@ https://superprint.app
                     const _spJHyphenFlag = !!((obj.__spHyphenFlags && obj.__spHyphenFlags[i]) ||
                                               (obj._spHyphenFlags && obj._spHyphenFlags[i]));
                     const _hyphenWJ = _spJWordW('-');
-                    const _spJustifyTargetJ = (_spJHyphenFlag && _hyphenWJ < boxWidth)
-                        ? (boxWidth - _hyphenWJ) : boxWidth;
+                    /* 🆕 v1.7.458 — COLONNES : la justification et l'alignement
+                       se calculent sur la LARGEUR DE COLONNE, la ligne étant
+                       dessinée dans SA colonne (décalage X) et à sa position
+                       verticale propre (décalage Y). */
+                    var _colWJ = boxWidth, _colOXJ = 0, _colOYJ = 0;
+                    if (obj._spCols > 1 && typeof window.spColGeomFor === 'function') {
+                        try {
+                            const _cgj = window.spColGeomFor(obj, i);
+                            if (_cgj) { _colWJ = _cgj.w; _colOXJ = _cgj.x; _colOYJ = _cgj.shift; }
+                        } catch (_) {}
+                    }
+                    const _spJustifyTargetJ = (_spJHyphenFlag && _hyphenWJ < _colWJ)
+                        ? (_colWJ - _hyphenWJ) : _colWJ;
                     let xStart;
-                    if (align === 'center') xStart = (boxWidth - lineW) / 2;
-                    else if (align === 'right') xStart = boxWidth - lineW;
-                    else if (_justifyThisLine) xStart = 0;
-                    else if (_spJIsJustify && _spJJustifyLastRight && _isJLast) xStart = boxWidth - lineW; // justify-right dernière ligne
-                    else xStart = 0;
+                    if (align === 'center') xStart = _colOXJ + (_colWJ - lineW) / 2;
+                    else if (align === 'right') xStart = _colOXJ + _colWJ - lineW;
+                    else if (_justifyThisLine) xStart = _colOXJ;
+                    else if (_spJIsJustify && _spJJustifyLastRight && _isJLast) xStart = _colOXJ + _colWJ - lineW; // justify-right dernière ligne
+                    else xStart = _colOXJ;
                     // 🎯 v1.7.341 (AUDIT) : baseline = même valeur que la preview
                     //   (pré-calculée via getHeightOfLine). Fallback ancien modèle.
                     let baselineY_local;
@@ -46239,6 +46600,7 @@ https://superprint.app
                     } else {
                         baselineY_local = i * lineH + baselineYInLine;
                     }
+                    baselineY_local += _colOYJ;   // 🆕 v1.7.458 — colonnes
 
                     // Préparer la liste des segments à dessiner : soit [la ligne
                     //   entière] (normal), soit les [mots espacés] (justifié).
@@ -48372,6 +48734,8 @@ https://superprint.app
             // Helper: ajouter le rectangle de marges
             function _addMasterEditorMargins() {
                 const marginPx = mmToPx(margin);
+                /* 🆕 v1.7.458 — marges par côté. */
+                const _mpG = spMargesPx();
                 const marginRect = new fabric.Rect({
                     left: marginPx, top: marginPx,
                     width: w - marginPx * 2, height: h - marginPx * 2,
@@ -55710,6 +56074,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         // Interface principale
         format: "Format",
         margins: "Marges (mm)",
+        marginTop: "Haut",
+        marginBottom: "Bas",
+        marginLeft: "Gauche",
+        marginRight: "Droite",
         tools: "Outils",
         textBlocks: "Blocs de texte",
         layers: "Calques",
@@ -56542,7 +56910,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     en: {
         // Interface principale
         format: "Format",
-        margins: "Margins (in)",
+        margins: "Margins (mm)",
+        marginTop: "Top",
+        marginBottom: "Bottom",
+        marginLeft: "Left",
+        marginRight: "Right",
         tools: "Tools",
         textBlocks: "Text Blocks",
         layers: "Layers",
@@ -57377,6 +57749,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         // Interface principale
         format: "フォーマット",
         margins: "マージン (mm)",
+        marginTop: "上",
+        marginBottom: "下",
+        marginLeft: "左",
+        marginRight: "右",
         tools: "ツール",
         textBlocks: "テキストブロック",
         layers: "レイヤー",
@@ -58341,8 +58717,12 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             var title = sec.querySelector('.section-title[data-translate="margins"]');
             if (!title) return;
             var labels = sec.querySelectorAll('.input-group label');
-            if (labels[0]) labels[0].textContent = translate('marginLabel');
-            if (labels[1]) labels[1].textContent = translate('bleedLabel');
+            /* 🆕 v1.7.458 — quatre côtés, puis le fond perdu. */
+            if (labels[0]) labels[0].textContent = translate('marginTop');
+            if (labels[1]) labels[1].textContent = translate('marginBottom');
+            if (labels[2]) labels[2].textContent = translate('marginLeft');
+            if (labels[3]) labels[3].textContent = translate('marginRight');
+            if (labels[4]) labels[4].textContent = translate('bleedLabel');
         });
     })();
 
@@ -62369,6 +62749,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             pageFormat: pageFormat,
             pages: pages,
             margin: margin,
+            margins: spMargesMm(),
             bleed: bleed,
             textLinks: textLinks,
             viewMode: viewMode,
@@ -62413,7 +62794,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             const project = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
             
             pageFormat = project.pageFormat || { width: 210, height: 297 };
-            margin = (project.margin ?? project.settings?.margin ?? margin ?? 20);
+            spSetMargesMm(project.margins || (project.settings && project.settings.margins), (project.margin ?? project.settings?.margin ?? margin ?? 20));
             bleed = (project.bleed ?? project.settings?.bleed ?? bleed ?? 3);
             textLinks = project.textLinks || {};
             masterPages = project.masterPages || {};
@@ -72440,7 +72821,7 @@ async function loadWeb3Save(hash) {
             
             pages = project.pages || [];
             pageFormat = project.pageFormat || { width: 210, height: 297 };
-            margin = project.margin || 20;
+            spSetMargesMm(project.margins, project.margin || 20);
             bleed = project.bleed || 3;
             textLinks = project.textLinks || {};
             if (project.projectName) window._spProjectName = project.projectName;
@@ -72587,6 +72968,7 @@ async function loadWeb3Save(hash) {
                     pages: pages,
                     pageFormat: pageFormat,
                     margin: margin,
+            margins: spMargesMm(),
                     bleed: bleed,
                     textLinks: textLinks,
                     viewMode: viewMode,
@@ -72749,6 +73131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 pages: pages,
                 pageFormat: pageFormat,
                 margin: margin,
+            margins: spMargesMm(),
                 bleed: bleed,
                 textLinks: textLinks,
                 viewMode: viewMode,
@@ -72889,6 +73272,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 pages: strippedPages,
                 pageFormat: { ...pageFormat },
                 margin: margin,
+            margins: spMargesMm(),
                 bleed: bleed,
                 textLinks: _spClone(textLinks || {}),
                 viewMode: viewMode,
@@ -73198,6 +73582,12 @@ window.npSetCols = function(n, btn) {
     if (btn) btn.classList.add('active');
 };
 window.npSetMargin = function(val, btn) {
+    /* 🆕 v1.7.458 — le préréglage pose la MÊME valeur sur les quatre côtés. */
+    var n = (typeof val === 'number' && isFinite(val) && val >= 0) ? val : 20;
+    ['npMarginTop', 'npMarginBottom', 'npMarginLeft', 'npMarginRight'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.value = n;
+    });
     document.getElementById('npMargin').value = val;
     document.querySelectorAll('#npPanelAdvanced .np-format-btn').forEach(function(b){ if(b.textContent.indexOf('troites')>0||b.textContent.indexOf('Normales')>0||b.textContent.indexOf('Larges')>0) b.classList.remove('active'); });
     if (btn) btn.classList.add('active');
@@ -77983,7 +78373,19 @@ window.createNewProjectFromModal = function() {
     const projName = (document.getElementById('npProjectName').value || '').trim();
     const w = parseFloat(document.getElementById('npWidth').value) || 210;
     const h = parseFloat(document.getElementById('npHeight').value) || 297;
-    const m = parseFloat(document.getElementById('npMargin').value);
+    /* 🆕 v1.7.458 — marges par côté : les quatre champs, avec repli sur
+       le champ unique historique (npMargin) si l'un d'eux est vide. */
+    const _npM = (function () {
+        const unique = parseFloat(document.getElementById('npMargin').value);
+        const repli = (isFinite(unique) && unique >= 0) ? unique : 20;
+        const lire = (id) => {
+            const el = document.getElementById(id);
+            const v = el ? parseFloat(el.value) : NaN;
+            return (isFinite(v) && v >= 0) ? v : repli;
+        };
+        return { top: lire('npMarginTop'), bottom: lire('npMarginBottom'), left: lire('npMarginLeft'), right: lire('npMarginRight') };
+    })();
+    const m = _npM.top;
     const bInputEl = document.getElementById('npBleed');
     const hasBleedCb = document.getElementById('npHasBleed');
     const b = (hasBleedCb && !hasBleedCb.checked) ? 0 : (parseFloat(bInputEl ? bInputEl.value : 0) || 3);
@@ -78041,7 +78443,7 @@ window.createNewProjectFromModal = function() {
     
     // Apply new format
     pageFormat = { width: w, height: h };
-    margin = isNaN(m) ? 20 : m;
+    spSetMargesMm(_npM, isNaN(m) ? 20 : m);
     bleed = isNaN(b) ? 3 : b;
     
     // Update sidebar inputs
@@ -78427,6 +78829,7 @@ window.saveProjectLocal = function() {
         pages: pages,
         pageFormat: pageFormat,
         margin: margin,
+            margins: spMargesMm(),
         bleed: bleed,
         textLinks: textLinks,
         viewMode: viewMode,
@@ -78498,6 +78901,7 @@ window.saveProjectWeb3 = async function() {
             pages: pages,
             pageFormat: pageFormat,
             margin: margin,
+            margins: spMargesMm(),
             bleed: bleed,
             textLinks: textLinks,
             viewMode: viewMode,
@@ -78815,6 +79219,7 @@ window.saveProjectSP_toObject = function() {
                 orientation: pageFormat.width > pageFormat.height ? 'landscape' : 'portrait'
             },
             margin: margin,
+            margins: spMargesMm(),
             bleed: bleed,
             viewMode: viewMode,
             colorMode: _spGetColorMode(),
@@ -78976,7 +79381,7 @@ window.loadProjectSP = function(fileContent) {
         pageFormat = (isFinite(_spW) && _spW > 0 && isFinite(_spH) && _spH > 0)
             ? { width: _spW, height: _spH }
             : { width: 210, height: 297 };
-        margin = (typeof doc.margin === 'number' && isFinite(doc.margin) && doc.margin >= 0) ? doc.margin : 20;
+        spSetMargesMm(doc.margins, (typeof doc.margin === 'number' && isFinite(doc.margin) && doc.margin >= 0) ? doc.margin : 20);
         bleed = (typeof doc.bleed === 'number' && isFinite(doc.bleed) && doc.bleed >= 0) ? doc.bleed : 3;
         viewMode = doc.viewMode || 'single';
 
@@ -79566,7 +79971,7 @@ async function importPDFPagesV2(pageNumbers, recadrageMode = 'support', importMo
             if (!isNaN(b)) document.getElementById('bleed').value = b;
             if (!isNaN(m)) document.getElementById('margin').value = m;
             bleed = isNaN(b) ? bleed : b;
-            margin = isNaN(m) ? margin : m;
+            spSetMargesMm(null, isNaN(m) ? margin : m);
         }
         
         if (newPageFormat && recadrageMode !== 'none') {
