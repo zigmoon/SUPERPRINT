@@ -5542,6 +5542,16 @@ function spRtfLayoutInfo(src) {
     //   enabled:true y ferait doubler les numeros.
     // ══════════════════════════════════════════════════════════════════════
     const _mgDoc = (spFile.document && typeof spFile.document.margin === 'number' && isFinite(spFile.document.margin) && spFile.document.margin >= 0) ? spFile.document.margin : null;
+    /* 🆕 v1.7.459 — MARGES PAR CÔTÉ (4 valeurs en mm) : transportées TELLES
+       QUELLES. Sans elles, un document à marges différentes revenait avec les
+       4 côtés égaux à la marge uniforme (app → studio → app). */
+    let _mgDoc4 = null;
+    if (spFile.document && spFile.document.margins && typeof spFile.document.margins === 'object') {
+      const _m4 = spFile.document.margins;
+      if (['top', 'right', 'bottom', 'left'].every(k => typeof _m4[k] === 'number' && isFinite(_m4[k]) && _m4[k] >= 0)) {
+        _mgDoc4 = { top: _m4.top, right: _m4.right, bottom: _m4.bottom, left: _m4.left };
+      }
+    }
     const _nbDoc = (spFile.numbering && typeof spFile.numbering === 'object') ? spFile.numbering : null;
     const bleedPx = bl * MM_TO_PX;
     const toMm = (px) => Math.round((px - bleedPx) / MM_TO_PX * 10) / 10;
@@ -5809,7 +5819,7 @@ function spRtfLayoutInfo(src) {
     } catch (_) {}
 
     state.pageW = w; state.pageH = h; state.bleed = bl; state.viewMode = vMode;
-    state.doc = { w, h, effW: vMode === 'spread' ? w * 2 : w, viewMode: vMode, bleed: bl, pages, margin: _mgDoc, numbering: _nbDoc,
+    state.doc = { w, h, effW: vMode === 'spread' ? w * 2 : w, viewMode: vMode, bleed: bl, pages, margin: _mgDoc, margins: _mgDoc4, numbering: _nbDoc,
       // 🎯 v1.7.455i — MODE COULEUR D'ORIGINE (RVB / CMJN) : les deux écrivains
       //   de .sp l'écrivaient en dur à 'rgb', donc un document CMJN revenait en
       //   RVB (et la boîte d'export ne repassait plus en CMJN + Pantone).
@@ -9913,7 +9923,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return {
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: spPages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
-      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb', styles: spCollectStylesBlock() },
+      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20,
+      /* 🆕 v1.7.459 — 4 marges du document d'origine, telles quelles (null = clé absente). */
+      margins: (state.doc && state.doc.margins) ? state.doc.margins : undefined, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
       // 🛡️ v1.7.369 — filtrés par usage réel : pas de canal fantôme.
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(spPages) },
@@ -10031,7 +10043,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return {
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: pages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
-      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb', styles: spCollectStylesBlock() },
+      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20,
+      /* 🆕 v1.7.459 — 4 marges du document d'origine, telles quelles (null = clé absente). */
+      margins: (state.doc && state.doc.margins) ? state.doc.margins : undefined, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb', styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) : 1 entrée = 1 couche
       //   chromatique supplémentaire à produire à l'export (CMJN ou RVB + Pantone).
       // 🛡️ v1.7.368 — styles nommés (typo + nuancier) DÉJÀ présents via

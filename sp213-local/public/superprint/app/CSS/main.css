@@ -5047,3 +5047,29 @@ input[type=number] {
 .ai-note strong { color: #2b3a8f; font-size: 12.5px; }
 .ai-note-key { box-shadow: 0 1px 2px rgba(77,107,254,0.10); }
 .theme-dark .ai-note { background: #1d2540; border-color: #35406b; border-left-color: #7d92ff; color: #d7def7; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   🆕 v1.7.459 — BARRE LATÉRALE RÉTRACTÉE : PLUS DE TRAITS PARASITES
+   En mode rétracté, les sections sont réduites à 16 px. Les boutons ▲▼ des
+   compteurs numériques (position:absolute dans un conteneur de hauteur nulle)
+   s'échappaient et laissaient une marque de 1,33 px sous la colonne d'outils ;
+   un intercalaire anonyme de 0,67 px s'échappait aussi.
+   ⚠️ PAS d'`overflow:hidden` sur `.section` : les menus déroulants des outils
+   (#penMenu, #chainMenu, #importMenu…) y sont en position ABSOLUE et seraient
+   rognés. On masque donc exactement ce qui dépasse. Aucun effet sur la barre
+   déployée (les règles ne s'appliquent qu'à `.collapsed`).
+   ══════════════════════════════════════════════════════════════════════════ */
+.sidebar.collapsed .number-spinner-wrap,
+.sidebar.collapsed .number-spinner-btn {
+    display: none !important;
+}
+.sidebar.collapsed .section > div:not([class]) {
+    display: none !important;
+}
+
+/* ⚠️ v1.7.459 — l'intervalle des icônes CENTRALES de la top navigation
+   (`gap` de `.toolbar-center`) se règle dans app/index.html : cet élément porte
+   un STYLE EN LIGNE (centrage absolu + gap) écrit dans le HTML, et un style en
+   ligne l'emporte sur TOUTE règle de feuille de style. Ne pas ajouter ici de
+   règle `gap` : elle serait morte (mesuré : la règle existait, le gap calculé
+   restait 8 px). Modifier l'attribut `style` du div `.toolbar-center`. */
