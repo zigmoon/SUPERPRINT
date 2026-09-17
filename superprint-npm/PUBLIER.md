@@ -1,4 +1,4 @@
-# Publier SuperPrint sur npm
+﻿# Publier SuperPrint sur npm
 
 Le package est **prêt** dans le dossier `superprint-npm/`.
 Une seule commande pour l'utilisateur final : **`npx superprint`** (identique Mac + PC).
@@ -26,7 +26,7 @@ npm login
 npm publish
 ```
 
-C'est tout. Le package `superprint` est en ligne (version actuelle : **1.0.98**).
+C'est tout. Le package `superprint` est en ligne (version actuelle : **1.0.99**).
 
 ## 4. Mettre à jour plus tard (après modification)
 
