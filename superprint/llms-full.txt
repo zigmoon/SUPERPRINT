@@ -8,7 +8,7 @@
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
-- **Version**: 1.7.463 (September 2026)
+- **Version**: 1.7.464 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.97, requires application 1.7.456 or later); the launcher downloads the application once and serves it locally.
@@ -180,6 +180,7 @@ Yes. All document processing happens client-side in the browser. No uploads to a
 - Per-glyph metrics (advance width, left/right side bearings, bounding box) and re-export of a modified `.ttf` / `.otf`, plus the native `.sf` format.
 
 ### Recent releases (September 2026)
+- **1.7.464** — **Larger logos in the three entry cards.** The logotype of the SuperPrint, Studio SP213 and SuperTyPo cards on the home page is 15 % bigger (56 to 64.4 px). Measured at 1440 px: the three cards stay the same height as each other, the centring offset remains 0 px and there is no horizontal overflow at 420 px either.
 - **1.7.463** — **Centred entry cards.** The three entry cards of the home page (SuperPrint, Studio SP213, SuperTyPo) are now centred columns: the name comes first, then the logotype on its own line without its black plate, then the description and the opening link. Measured at 1440 px: three equal columns, identical card heights, and a centring offset of exactly 0 px for the four elements of each card; no horizontal overflow at 420 px either. The black plate behind the logos was removed after checking that each file keeps dark strokes (22 %, 46 % and 20 % of the ink) and therefore stays legible on the light card.
 - **1.7.462** — **Full-width divider.** Follow-up on the previous release: the thin grey rule at the bottom of the collapsed left sidebar was back, but it did not span the sidebar. Measured in the browser: 47.33 px wide, because the rule lives inside a section that keeps 4 px of horizontal padding in the collapsed state, whereas the reference rule of the right sidebar (55.33 px) is a direct child of the sidebar. Two negative margins cancel that padding, so the line now runs edge to edge at exactly the same width as the one on the right.
 - **1.7.461** — **The divider is back.** The thin grey rule at the bottom of the collapsed left sidebar had gone missing: it was a classless <div> that the previous release's rule (meant for the numeric spinners that escaped a zero-height container) hid as well. Measured before the fix: display none on the left, display block / 0.67 px on the right sidebar's own divider, which served as the reference. The rule now carries a class, the hiding rule no longer matches any element that draws a top border, and the divider is shown in the collapsed state — with its dark-theme colour — exactly like the one on the right.
