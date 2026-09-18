@@ -79509,6 +79509,125 @@ window._spLoadStudioImport = function() {
     }
 })();
 
+/* 🆕 v1.7.465 — LANCEMENT DIRECT D'UN MODÈLE (app/index.html?tpl=<clé>).
+   Pendant de ?from=sp213 pour le studio : la page d'accueil présente un
+   carrousel de modèles et chaque carte ouvre l'application déjà composée
+   (« OPEN IN SUPERPRINT »). Le travail est délégué à npApplyTemplateByKey,
+   qui purge l'auto-sauvegarde et construit la maquette. */
+(function() {
+    var _tplKey = null;
+    try { _tplKey = new URLSearchParams(window.location.search).get('tpl'); } catch (e) { _tplKey = null; }
+    if (!_tplKey) return;
+
+    // Le visiteur a demandé un MODÈLE : la pop-in de reprise de session et
+    // l'onboarding n'ont pas lieu d'être (sinon ils recouvrent la maquette).
+    function _spMasquerAccueilModele() {
+        ['sp-startup-overlay', 'onboardingOverlay', 'newProjectModal'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            try { el.classList.remove('is-open'); } catch (e) {}
+            try { el.setAttribute('hidden', ''); } catch (e) {}
+            try { el.style.display = 'none'; } catch (e) {}
+        });
+    }
+
+    function _spLancerModele() {
+        _spMasquerAccueilModele();
+        var ok = false;
+        try {
+            if (typeof window.npApplyTemplateByKey === 'function') {
+                window.npApplyTemplateByKey(_tplKey);
+                ok = true;
+            }
+        } catch (e) { console.warn('[SuperPrint] lancement du modèle impossible :', e); }
+        if (!ok) console.warn('[SuperPrint] modèle introuvable ou non lancé : ' + _tplKey);
+        // Paramètre retiré de l'URL : un rechargement ne re-applique pas le
+        // modèle par-dessus le travail en cours.
+        try {
+            var u = new URL(window.location.href);
+            u.searchParams.delete('tpl');
+            var q = u.searchParams.toString();
+            window.history.replaceState(null, '', u.pathname + (q ? '?' + q : '') + u.hash);
+        } catch (e) {}
+        // Filet : la pop-in d'accueil peut être ré-affichée APRÈS le premier
+        // masquage (elle vit dans index.html, hors de cette IIFE).
+        setTimeout(_spMasquerAccueilModele, 1500);
+    }
+
+    // ⚠️ La pop-in d'accueil BLOQUE l'initialisation : on choisit « Nouveau
+    // document » à la place du visiteur, puis on sonde l'éditeur (l'événement
+    // sp:initReady ne part pas dans ce cas — mesuré : encore faux après 11 s).
+    // ⚠️ NE PAS masquer la pop-in ici : c'est le clic « Nouveau document » qui
+    // démarre l'application. Masquée trop tôt, elle n'est jamais cliquée et
+    // l'app reste sur son écran de chargement (mesuré : canvases 0 après 14 s).
+    var _clique = false, _cree = false, _essais = 0;
+
+    // La modale « New project » attend un clic sur « Create » : sans lui,
+    // l'application ne crée aucun canvas et le modèle ne peut pas s'appliquer.
+    function _spCliquerCreate() {
+        var mod = document.getElementById('newProjectModal');
+        if (!mod || getComputedStyle(mod).display === 'none') return false;
+        var btns = mod.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {
+            var t = (btns[i].textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            if (btns[i].id === 'npCreateBtn' || t === 'create' || t === 'créer') {
+                try { btns[i].click(); return true; } catch (e) { return false; }
+            }
+        }
+        return false;
+    }
+
+    // ⚠️ `window.canvases` / `window.pages` N'EXISTENT PAS dans main.js
+    // (vérifié : aucune affectation de ce type) : ne jamais s'en servir comme
+    // signal de disponibilité, la condition serait toujours fausse.
+    var _initPrete = false;
+    window.addEventListener('sp:initReady', function() { _initPrete = true; }, { once: true });
+
+    function _spEditeurPret() {
+        if (window._spInitReadyDone === true || _initPrete) return true;
+        // Dernier recours : l'écran de démarrage se retire quand l'app est prête.
+        var sp = document.getElementById('splashScreen');
+        if (sp && (sp.classList.contains('hidden') || getComputedStyle(sp).display === 'none')) return true;
+        return false;
+    }
+
+    // Le bouton « Reprendre » est MASQUÉ (`display: none`) mais NON désactivé
+    // lorsqu'il n'y a pas de sauvegarde, et son écouteur n'est alors pas posé :
+    // le cliquer ne fait rien. On ne le retient donc que s'il est bien visible.
+    function _spVisible(el) {
+        if (!el) return false;
+        if (el.hasAttribute('hidden')) return false;
+        if (el.disabled) return false;
+        var st = getComputedStyle(el);
+        if (st.display === 'none' || st.visibility === 'hidden') return false;
+        return el.offsetParent !== null || st.position === 'fixed';
+    }
+
+    function _spGuetterEditeur() {
+        _essais++;
+        if (!_clique) {
+            var ov = document.getElementById('sp-startup-overlay');
+            var accueilOuvert = !!ov && !ov.hasAttribute('hidden') && getComputedStyle(ov).display !== 'none';
+            if (accueilOuvert) {
+                var d = document.getElementById('sp-startup-resume');
+                // « Reprendre » restaure la session et initialise l'application en
+                // une seule fois ; le document restauré est ensuite remplacé par le
+                // modèle demandé. Sinon « Nouveau document ».
+                var b = _spVisible(d) ? d : document.getElementById('sp-startup-new');
+                if (b) { _clique = true; try { b.click(); } catch (e) {} }
+            }
+        } else if (!_cree) {
+            if (_spCliquerCreate()) _cree = true;
+        }
+        if (_spEditeurPret() || _essais > 150) { setTimeout(_spLancerModele, 500); return; }
+        setTimeout(_spGuetterEditeur, 200);
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window._spInitReadyDone) { setTimeout(_spLancerModele, 500); return; }
+        _spGuetterEditeur();
+    });
+})();
+
 /**
  * Charge un fichier .sp (format natif SuperPrint)
  */

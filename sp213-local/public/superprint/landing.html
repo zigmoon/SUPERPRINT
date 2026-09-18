@@ -62,7 +62,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.464",
+      "softwareVersion": "1.7.465",
       "dateModified": "2026-03-29",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1119,7 +1119,8 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 }
 .entry:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: 0 16px 34px rgba(23,19,13,.13); }
 .entry-logo {
-  flex: 0 0 auto; width: 64.4px; height: 64.4px; background: none;
+  flex: 0 0 auto; width: 80.4px; height: 80.4px; background: var(--ink);
+  border-radius: 5px;
   display: flex; align-items: center; justify-content: center; padding: 0;
 }
 .entry-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
@@ -1137,6 +1138,101 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   .entries { grid-template-columns: 1fr; }
   .entry { align-items: center; }
 }
+
+/* ——— CARROUSEL DES MODÈLES (v1.7.465) — pleine largeur, swipe natif ——— */
+#templates {
+  padding: clamp(46px,5.4vw,84px) 0 clamp(34px,4vw,56px);
+  background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+.tpl-head { padding: 0 max(24px, calc((100% - 1180px) / 2)) clamp(22px,2.6vw,34px); }
+.tpl-kicker {
+  display: block; font-family: var(--f-mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+#templates h2 {
+  font-family: var(--f-display); font-size: clamp(26px,3.4vw,42px); line-height: 1.08;
+  color: var(--ink); margin: 0 0 12px; font-weight: 500;
+}
+#templates .tpl-head p { font-size: 15px; line-height: 1.7; color: var(--ink-soft); max-width: 720px; margin: 0; }
+#templates .tpl-head p + p { margin-top: 10px; }
+.tpl-wrap { position: relative; }
+.tpl-rail {
+  display: flex; gap: clamp(12px,1.4vw,18px); align-items: stretch;
+  overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+  scroll-behavior: smooth; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  padding: 4px max(24px, calc((100% - 1180px) / 2)) 22px;
+  scroll-padding-left: max(24px, calc((100% - 1180px) / 2));
+  scroll-padding-right: max(24px, calc((100% - 1180px) / 2));
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.tpl-rail::-webkit-scrollbar { display: none; }
+.tpl-rail:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.tpl-card {
+  flex: 0 0 clamp(196px,19.5vw,244px); scroll-snap-align: start;
+  display: flex; flex-direction: column; text-decoration: none;
+  background: var(--paper-3); border: 1px solid var(--line);
+  padding: 10px 10px 12px;
+  transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+.tpl-card:hover, .tpl-card:focus-visible {
+  transform: translateY(-4px); border-color: var(--line-strong);
+  box-shadow: 0 16px 34px rgba(23,19,13,.14); outline: none;
+}
+.tpl-shot {
+  display: flex; align-items: center; justify-content: center;
+  height: clamp(196px,21.5vw,246px); background: var(--paper);
+  border: 1px solid var(--line); overflow: hidden; margin-bottom: 12px;
+}
+.tpl-shot img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.tpl-info { display: block; margin-bottom: 10px; }
+.tpl-name {
+  display: block; font-family: var(--f-caps); font-size: clamp(16px,1.55vw,19px);
+  line-height: 1.1; letter-spacing: .015em; color: var(--ink);
+}
+.tpl-sub { display: block; margin-top: 4px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.tpl-open {
+  display: flex; align-items: center; gap: 7px; margin-top: auto;
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--ink); padding-top: 9px; border-top: 1px solid var(--line);
+}
+.tpl-arr { transition: transform .3s var(--ease); }
+.tpl-card:hover .tpl-arr { transform: translateX(4px); }
+.tpl-arrow {
+  position: absolute; top: calc(14px + clamp(196px,21.5vw,246px) / 2); transform: translateY(-50%);
+  width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+  background: var(--paper-3); border: 1px solid var(--line-strong); color: var(--ink);
+  cursor: pointer; z-index: 3; transition: background .25s var(--ease), opacity .25s var(--ease);
+}
+.tpl-arrow:hover { background: var(--white); }
+.tpl-arrow[disabled] { opacity: .32; cursor: default; }
+.tpl-arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tpl-prev { left: max(10px, calc((100% - 1180px) / 2 - 54px)); }
+.tpl-next { right: max(10px, calc((100% - 1180px) / 2 - 54px)); }
+.tpl-foot {
+  padding: 14px max(24px, calc((100% - 1180px) / 2)) 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+}
+.tpl-count { color: var(--ink); }
+@media (max-width: 1000px) {
+  #templates { padding: 42px 0 32px; }
+  .tpl-head, .tpl-foot { padding-left: 20px; padding-right: 20px; }
+  .tpl-rail { padding-left: 20px; padding-right: 20px; }
+  .tpl-card { flex-basis: 214px; }
+  .tpl-shot { height: 214px; }
+  .tpl-arrow { top: calc(14px + 214px / 2); width: 38px; height: 38px; }
+  .tpl-prev { left: 6px; } .tpl-next { right: 6px; }
+  .tpl-hint { display: none; }
+}
+@media (max-width: 620px) {
+  .tpl-card { flex-basis: min(74vw, 260px); }
+  .tpl-shot { height: 232px; }
+  .tpl-arrow { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .tpl-rail { scroll-behavior: auto; } }
+
 </style>
 </head>
 
@@ -1172,7 +1268,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
     <div class="lang-toggle">
       <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
       <button id="btn-fr" onclick="setLang('fr')">FR</button>
-      <button id="btn-ja" onclick="setLang('ja')">JP</button>
+      <button id="btn-ja" onclick="setLang('ja')">JA</button>
     </div>
     <button type="button" class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
       <span></span><span></span><span></span>
@@ -1297,6 +1393,384 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
     </div>
 
 
+  </div>
+</section>
+
+
+<!-- ══════════════ CARROUSEL DES MODÈLES — v1.7.465 ══════════════
+     Pleine largeur, défilement horizontal natif (swipe mobile), 43 maquettes.
+     Chaque carte ouvre l'application avec le modèle déjà composé. -->
+<section id="templates" aria-labelledby="tpl-title">
+  <div class="tpl-head">
+    <span class="tpl-kicker" data-lang="fr">Modèles inclus</span>
+    <span class="tpl-kicker" data-lang="en">Included templates</span>
+    <span class="tpl-kicker" data-lang="ja">同梱テンプレート</span>
+    <h2 id="tpl-title" data-lang="fr">43 maquettes prêtes à ouvrir.</h2>
+    <h2 data-lang="en">43 layouts ready to open.</h2>
+    <h2 data-lang="ja">そのまま開ける 43 点のレイアウト。</h2>
+    <p data-lang="fr">Magazines, rapports, CV, calendriers, livres, menus, cartes de visite : chaque maquette est composée dans SuperPrint, aux bonnes marges et au bon format. Un clic l'ouvre dans l'application, prête à éditer.</p>
+    <p data-lang="en">Magazines, reports, CVs, calendars, books, menus, business cards: every layout is composed in SuperPrint, with the right margins and page size. One click opens it in the application, ready to edit.</p>
+    <p data-lang="ja">雑誌、レポート、履歴書、カレンダー、書籍、メニュー、名刺。すべて SuperPrint で、正しい余白と判型で組んであります。クリックするとアプリで開き、そのまま編集できます。</p>
+  </div>
+
+  <div class="tpl-wrap">
+    <button class="tpl-arrow tpl-prev" type="button" aria-label="Précédent">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="tpl-rail" id="tplRail" role="list" tabindex="0" aria-label="Modèles SuperPrint">
+        <a class="tpl-card" href="app/index.html?tpl=en_magazine_fashion_8p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_fashion_8p.jpg" alt="Fashion Magazine — 148×198mm · 8 p." width="336" height="448" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Fashion Magazine</span>
+            <span class="tpl-sub">148×198mm · 8 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_journal_hair_4p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_journal_hair_4p.jpg" alt="Hair Journal — 210×297mm · 4 p." width="475" height="673" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Hair Journal</span>
+            <span class="tpl-sub">210×297mm · 4 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_magazine_music_8p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_music_8p.jpg" alt="Music Magazine — 148×198mm · 8 p." width="336" height="448" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Music Magazine</span>
+            <span class="tpl-sub">148×198mm · 8 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_magazine_food_8p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_food_8p.jpg" alt="Food Magazine — 148×198mm · 8 p." width="336" height="448" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Food Magazine</span>
+            <span class="tpl-sub">148×198mm · 8 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_restaurant_menu_4p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_restaurant_menu_4p.jpg" alt="Restaurant Menu — 210×297mm · 4 p." width="475" height="673" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Restaurant Menu</span>
+            <span class="tpl-sub">210×297mm · 4 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_business_card_1p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_business_card_1p.jpg" alt="Business Card — 85×55mm · 1 p." width="192" height="124" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Business Card</span>
+            <span class="tpl-sub">85×55mm · 1 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_cv_pro_1p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_cv_pro_1p.jpg" alt="Professional CV — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Professional CV</span>
+            <span class="tpl-sub">210×297mm · 1 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_book_text_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_book_text_12p.jpg" alt="Book — 12p — 148×210mm · 12 p." width="336" height="475" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Book — 12p</span>
+            <span class="tpl-sub">148×210mm · 12 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_magazine_ocean_8p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_ocean_8p.jpg" alt="Marine Life Magazine — 148×198mm · 8 p." width="640" height="863" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Marine Life Magazine</span>
+            <span class="tpl-sub">148×198mm · 8 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_cv_editorial_1p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_cv_editorial_1p.jpg" alt="Editorial CV — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Editorial CV</span>
+            <span class="tpl-sub">210×297mm · 1 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_cv_minimal_1p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_cv_minimal_1p.jpg" alt="Minimal CV — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Minimal CV</span>
+            <span class="tpl-sub">210×297mm · 1 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_book_shapes_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_book_shapes_12p.jpg" alt="Book of Shapes — 12p — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Book of Shapes — 12p</span>
+            <span class="tpl-sub">148×210mm · 12 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_book_theatre_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_book_theatre_12p.jpg" alt="Theatre Play — 12p — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Theatre Play — 12p</span>
+            <span class="tpl-sub">148×210mm · 12 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_calendar_a3_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_calendar_a3_12p.jpg" alt="Calendar A3 2027-2028 — 420×297mm · 12 p." width="640" height="455" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Calendar A3 2027-2028</span>
+            <span class="tpl-sub">420×297mm · 12 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_calendar_2027_a4_portrait_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_calendar_2027_a4_portrait_12p.jpg" alt="Calendar 2027 — A4 portrait — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Calendar 2027 — A4 portrait</span>
+            <span class="tpl-sub">210×297mm · 12 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_calendar_2028_a4_landscape_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_calendar_2028_a4_landscape_12p.jpg" alt="Calendar 2028 — A4 landscape — 297×210mm · 12 p." width="640" height="456" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Calendar 2028 — A4 landscape</span>
+            <span class="tpl-sub">297×210mm · 12 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_calendar_2027_2028_a5_portrait_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_calendar_2027_2028_a5_portrait_12p.jpg" alt="Calendar 2027-2028 — A5 portrait — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Calendar 2027-2028 — A5 portrait</span>
+            <span class="tpl-sub">148×210mm · 12 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_magazine_archi_8p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_archi_8p.jpg" alt="Architecture Magazine — 148×198mm · 8 p." width="640" height="863" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Architecture Magazine</span>
+            <span class="tpl-sub">148×198mm · 8 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_annual_report_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_annual_report_12p.jpg" alt="Annual Report — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Annual Report</span>
+            <span class="tpl-sub">210×297mm · 12 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_annual_report_24p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_annual_report_24p.jpg" alt="Annual Report — 210×297mm · 24 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Annual Report</span>
+            <span class="tpl-sub">210×297mm · 24 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=en_magazine_recipes_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_recipes_12p.jpg" alt="At the Table — French Cooking — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">At the Table — French Cooking</span>
+            <span class="tpl-sub">210×297mm · 12 p. · EN</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_habitat_luxe_24p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_habitat_luxe_24p.jpg" alt="DemEures — Maisons de luxe — 148×198mm · 24 p." width="640" height="863" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">DemEures — Maisons de luxe</span>
+            <span class="tpl-sub">148×198mm · 24 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_recettes_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_recettes_12p.jpg" alt="À Table — Cuisine française — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">À Table — Cuisine française</span>
+            <span class="tpl-sub">210×297mm · 12 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_rapport_activite_premium_24p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_rapport_activite_premium_24p.jpg" alt="Rapport d’activité — 210×297mm · 24 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Rapport d’activité</span>
+            <span class="tpl-sub">210×297mm · 24 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_annual_report_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_annual_report_12p.jpg" alt="Rapport d’activité — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Rapport d’activité</span>
+            <span class="tpl-sub">210×297mm · 12 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_fashion_8p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_fashion_8p.jpg" alt="Magazine Mode — 148×198mm · 8 p." width="640" height="861" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Magazine Mode</span>
+            <span class="tpl-sub">148×198mm · 8 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_journal_hair_4p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_journal_hair_4p.jpg" alt="Journal Coiffure — 210×297mm · 4 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Journal Coiffure</span>
+            <span class="tpl-sub">210×297mm · 4 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_music_8p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_music_8p.jpg" alt="Magazine Musique — 148×198mm · 8 p." width="640" height="861" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Magazine Musique</span>
+            <span class="tpl-sub">148×198mm · 8 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_food_8p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_food_8p.jpg" alt="Magazine Cuisine — 148×198mm · 8 p." width="640" height="861" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Magazine Cuisine</span>
+            <span class="tpl-sub">148×198mm · 8 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_restaurant_menu_4p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_restaurant_menu_4p.jpg" alt="Menu de restaurant — 210×297mm · 4 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Menu de restaurant</span>
+            <span class="tpl-sub">210×297mm · 4 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_business_card_1p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_business_card_1p.jpg" alt="Carte de visite — 85×55mm · 1 p." width="640" height="429" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Carte de visite</span>
+            <span class="tpl-sub">85×55mm · 1 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_cv_pro_1p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_cv_pro_1p.jpg" alt="CV professionnel — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">CV professionnel</span>
+            <span class="tpl-sub">210×297mm · 1 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_book_text_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_book_text_12p.jpg" alt="Livre — 12p — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Livre — 12p</span>
+            <span class="tpl-sub">148×210mm · 12 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_ocean_8p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_ocean_8p.jpg" alt="Magazine Vie marine — 148×198mm · 8 p." width="640" height="861" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Magazine Vie marine</span>
+            <span class="tpl-sub">148×198mm · 8 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_cv_editorial_1p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_cv_editorial_1p.jpg" alt="CV éditorial — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">CV éditorial</span>
+            <span class="tpl-sub">210×297mm · 1 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_cv_minimal_1p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_cv_minimal_1p.jpg" alt="CV minimal — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">CV minimal</span>
+            <span class="tpl-sub">210×297mm · 1 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_book_shapes_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_book_shapes_12p.jpg" alt="Livre de formes — 12p — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Livre de formes — 12p</span>
+            <span class="tpl-sub">148×210mm · 12 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_book_theatre_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_book_theatre_12p.jpg" alt="Pièce de théâtre — 12p — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Pièce de théâtre — 12p</span>
+            <span class="tpl-sub">148×210mm · 12 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_calendar_a3_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_calendar_a3_12p.jpg" alt="Calendrier A3 2027-2028 — 420×297mm · 12 p." width="640" height="455" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Calendrier A3 2027-2028</span>
+            <span class="tpl-sub">420×297mm · 12 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_calendar_2027_a4_portrait_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_calendar_2027_a4_portrait_12p.jpg" alt="Calendrier 2027 — A4 portrait — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Calendrier 2027 — A4 portrait</span>
+            <span class="tpl-sub">210×297mm · 12 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_calendar_2028_a4_landscape_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_calendar_2028_a4_landscape_12p.jpg" alt="Calendrier 2028 — A4 paysage — 297×210mm · 12 p." width="640" height="455" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Calendrier 2028 — A4 paysage</span>
+            <span class="tpl-sub">297×210mm · 12 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_calendar_2027_2028_a5_portrait_12p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_calendar_2027_2028_a5_portrait_12p.jpg" alt="Calendrier 2027-2028 — A5 portrait — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Calendrier 2027-2028 — A5 portrait</span>
+            <span class="tpl-sub">148×210mm · 12 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_archi_8p" role="listitem">
+          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_archi_8p.jpg" alt="Magazine Architecture — 148×198mm · 8 p." width="640" height="861" loading="lazy" decoding="async"></span>
+          <span class="tpl-info">
+            <span class="tpl-name">Magazine Architecture</span>
+            <span class="tpl-sub">148×198mm · 8 p. · FR</span>
+          </span>
+          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
+        </a>
+    </div>
+    <button class="tpl-arrow tpl-next" type="button" aria-label="Suivant">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+
+  <div class="tpl-foot">
+    <span class="tpl-count" id="tplCount">1 / 43</span>
+    <span class="tpl-hint"><span class="inline-fr">Glissez, ou utilisez les flèches</span><span class="inline-en">Drag, or use the arrows</span><span class="inline-ja">ドラッグ、または矢印キー</span></span>
   </div>
 </section>
 
@@ -1532,6 +2006,32 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
             <p data-lang="fr">Les outils à gauche, la page au centre, l'export à droite : rien d'autre à installer.</p>
             <p data-lang="en">Tools on the left, page in the centre, export on the right: nothing else to install.</p>
             <p data-lang="ja">左にツール、中央にページ、右に書き出し。ほかに何も要りません。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/supertypo.jpg" width="1600" height="1000" loading="lazy" alt="SuperTyPo, le composeur typographique"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">12</span>
+            <h3 data-lang="fr">SuperTyPo</h3>
+            <h3 data-lang="en">SuperTyPo</h3>
+            <h3 data-lang="ja">SuperTyPo</h3>
+            <p data-lang="fr">L'atelier typographique : étirer, pencher, fondre une lettre sur l'autre, puis renvoyer le mot dans la page.</p>
+            <p data-lang="en">A type workshop: stretch, slant, blend one letter into the next, then send the word back into the page.</p>
+            <p data-lang="ja">文字を伸ばし、傾け、重ねて組み、その単語をページへ戻すタイポグラフィ工房です。</p>
+          </figcaption>
+        </figure>
+
+        <figure class="tcard">
+          <div class="tcard-img"><img src="img/landing/studio-ia.jpg" width="1600" height="1000" loading="lazy" alt="Le Studio IA et sa conversation"></div>
+          <figcaption class="tcard-body">
+            <span class="tcard-num">13</span>
+            <h3 data-lang="fr">Studio IA</h3>
+            <h3 data-lang="en">Studio IA</h3>
+            <h3 data-lang="ja">Studio IA</h3>
+            <p data-lang="fr">Décrivez la maquette en une phrase : l'assistant propose la grille, les textes et les images, prêts à ouvrir dans SuperPrint.</p>
+            <p data-lang="en">Describe the layout in one sentence: the assistant drafts the grid, the copy and the images, ready to open in SuperPrint.</p>
+            <p data-lang="ja">レイアウトを一言で説明すると、グリッド・文章・画像を提案し、そのままSuperPrintで開けます。</p>
           </figcaption>
         </figure>
 
@@ -2664,5 +3164,69 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 </script>
 
+
+<!-- 🎠 CARROUSEL DES MODÈLES : flèches, compteur, glisser à la souris.
+     Le SWIPE tactile est celui du navigateur (défilement natif + scroll-snap). -->
+<script>
+(function () {
+  var rail = document.getElementById('tplRail');
+  if (!rail) return;
+  var cartes = Array.prototype.slice.call(rail.querySelectorAll('.tpl-card'));
+  var prev = document.querySelector('.tpl-prev'), next = document.querySelector('.tpl-next');
+  var compteur = document.getElementById('tplCount');
+  var total = cartes.length;
+
+  function pas() {
+    if (cartes.length < 2) return 240;
+    return Math.max(120, Math.round(cartes[1].offsetLeft - cartes[0].offsetLeft));
+  }
+  function majEtat() {
+    var g = rail.scrollLeft, max = rail.scrollWidth - rail.clientWidth;
+    var i = 0;
+    for (var k = 0; k < cartes.length; k++) { if (cartes[k].offsetLeft - g <= pas() * 0.5) i = k; }
+    // En butée droite les dernières cartes s'arrêtent avant le bord : sans ce
+    // garde le compteur restait bloqué sur « 39 / 43 » au bout du rail.
+    if (max - g <= 2) i = total - 1;
+    if (compteur) compteur.textContent = (i + 1) + ' / ' + total;
+    if (prev) prev.disabled = g <= 2;
+    if (next) next.disabled = g >= max - 2;
+  }
+  function aller(d) { rail.scrollBy({ left: d * pas(), behavior: 'smooth' }); }
+  if (prev) prev.addEventListener('click', function () { aller(-1); });
+  if (next) next.addEventListener('click', function () { aller(1); });
+  rail.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') { aller(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { aller(-1); e.preventDefault(); }
+  });
+
+  // Glisser à la souris (le tactile est déjà géré par le navigateur).
+  var actif = false, departX = 0, departScroll = 0, bouge = false;
+  rail.addEventListener('pointerdown', function (e) {
+    if (e.pointerType !== 'mouse') return;
+    actif = true; bouge = false; departX = e.clientX; departScroll = rail.scrollLeft;
+    rail.style.scrollBehavior = 'auto';
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!actif) return;
+    var d = e.clientX - departX;
+    if (!bouge && Math.abs(d) > 5) { bouge = true; rail.style.cursor = 'grabbing'; }
+    if (bouge) { rail.scrollLeft = departScroll - d; e.preventDefault(); }
+  });
+  window.addEventListener('pointerup', function () {
+    if (!actif) return;
+    actif = false; rail.style.scrollBehavior = ''; rail.style.cursor = '';
+  });
+  rail.addEventListener('click', function (e) { if (bouge) { e.preventDefault(); bouge = false; } }, true);
+
+  var planifie = false;
+  rail.addEventListener('scroll', function () {
+    if (planifie) return; planifie = true;
+    requestAnimationFrame(function () { planifie = false; majEtat(); });
+  }, { passive: true });
+  window.addEventListener('resize', majEtat);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(majEtat);
+  majEtat();
+})();
+</script>
 </body>
 </html>
