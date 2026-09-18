@@ -5071,6 +5071,13 @@ input[type=number] {
    Aucun effet sur la barre déployée (règle limitée à `.collapsed`). */
 .sidebar.collapsed .sidebar-divider {
     display: block !important;
+    /* 🆕 v1.7.462 — BORD À BORD. Le filet vit dans un `.section` qui porte
+       `padding: 8px 4px` en rétracté : il ne mesurait que 47,33 px au lieu
+       des 55,33 px de la référence de droite (mesuré au navigateur). Les
+       marges négatives annulent exactement ce rembourrage ; le style EN LIGNE
+       du filet (`margin: 12px 0`) impose `!important`. Après : 0 -> 55,33 px. */
+    margin-left: -4px !important;
+    margin-right: -4px !important;
 }
 .theme-dark .sidebar-divider {
     border-top: 1px solid #333 !important;
