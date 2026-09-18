@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.479-fonds-taquets';
+const CACHE_NAME = 'superprint-shell-v1.7.480-export-taquets';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

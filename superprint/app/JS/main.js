@@ -43645,7 +43645,18 @@ https://superprint.app
                         //    charSpacing ≠ 0 OU styles per-char → dessin caractère
                         //    par caractère (chaque caractère avec SA police/sa taille).
                         //    (_lineHasCharStyles est déclaré avant le if justification.)
-                        var _useCharLoop = (tx.length > 1) && (_charSpacingVal !== 0 || _lineHasCharStyles);
+                        /* 🆕 v1.7.480 — TAQUETS : une ligne sans style par caractère était
+                           dessinée d'un seul drawText(tx). Un \t y est alors mesuré avec les
+                           métriques de la POLICE (avance minuscule) au lieu de « avance jusqu'au
+                           taquet suivant » : le PDF tassait les colonnes de texte (mesuré : Qté à
+                           43,8 pt au lieu de 130). On force donc la boucle caractère par caractère
+                           dès qu'un taquet actif est présent, et on y applique window.spTabAvance
+                           (le moteur de l'aperçu) : une seule source de vérité. */
+                        var _tabsModele = (obj._spTabs && obj._spTabs.active && tx.indexOf('\t') !== -1
+                            && typeof window.spTabAvance === 'function' && typeof window.spTabModele === 'function')
+                            ? window.spTabModele(obj) : null;
+                        var _tabsActifs = !!(_tabsModele && _tabsModele.active);
+                        var _useCharLoop = (tx.length > 1) && (_charSpacingVal !== 0 || _lineHasCharStyles || _tabsActifs);
                         if (_useCharLoop) {
                             // 🎯 v1.7.380 — 1ʳᵉ PASSE : largeur RÉELLE de la ligne,
                             //   chaque caractère mesuré avec SA police et SA taille.
@@ -43658,6 +43669,13 @@ https://superprint.app
                             for (var _pi = 0; _pi < tx.length; _pi++) {
                                 var _pch = tx.charAt(_pi);
                                 if (_pch === ' ') _nbEspaces++;
+                                /* 🆕 v1.7.480 — taquet : l'avance du moteur remplace la
+                                   mesure du caractère \t (pen = largeur déjà cumulée). */
+                                if (_tabsActifs && _pch === '\t') {
+                                    _natW += Math.max(1, window.spTabAvance(obj, _natW, li, _pi, _tabsModele));
+                                    if (_pi < tx.length - 1) _natW += _spacingStep;
+                                    continue;
+                                }
                                 var _pst = _resolveCharStyle(_pi);
                                 var _pfnt = (_pst && _pst.font) ? _pst.font : ef;
                                 var _psz = (_pst && _pst.sizePt) ? _pst.sizePt : fontSizePt;
@@ -43680,6 +43698,14 @@ https://superprint.app
                                 var _useFnt = (_stRes && _stRes.font) ? _stRes.font : ef;
                                 var _useSizePt = (_stRes && _stRes.sizePt) ? _stRes.sizePt : fontSizePt;
                                 // Largeur du caractère mesurée avec SA police
+                                /* 🆕 v1.7.480 — taquet : aucune encre, et l'avance vient du
+                                   moteur (pen RELATIF à la ligne, comme l'aperçu, qui lit
+                                   __charBounds depuis le début de la ligne). */
+                                if (_tabsActifs && _ch === '\t') {
+                                    _cursorC += Math.max(1, window.spTabAvance(obj, _cursorC - xStart, li, _ci, _tabsModele));
+                                    if (_ci < tx.length - 1) _cursorC += _spacingStep;
+                                    continue;
+                                }
                                 var _chW = _measW(_ch, _useFnt, _useSizePt) / Math.abs(sx);
                                 if (_ch !== ' ') {
                                     _drawTextRun(_ch, _cursorC, _stRes);
@@ -46998,10 +47024,29 @@ https://superprint.app
                     pdf.setFontSize(fontSize);
                 }
 
+                /* 🆕 v1.7.480 — TAQUETS : index ABSOLU de chaque \t dans la ligne
+                   (même convention que l'aperçu, qui mesure depuis obj._textLines). */
+                const _spJTabsModele = (obj._spTabs && obj._spTabs.active
+                    && typeof window.spTabAvance === 'function' && typeof window.spTabModele === 'function')
+                    ? window.spTabModele(obj) : null;
+                const _spJTabsActifs = !!(_spJTabsModele && _spJTabsModele.active);
+                const _tabsIdx = [];
+                if (_spJTabsActifs) {
+                    for (let _ti = 0; _ti < lines.length; _ti++) {
+                        const _lt = String(lines[_ti] || '');
+                        const _ix = [];
+                        for (let _k = 0; _k < _lt.length; _k++) if (_lt.charAt(_k) === '\t') _ix.push(_k);
+                        _tabsIdx[_ti] = _ix;
+                    }
+                }
                 for (let i = 0; i < maxLines; i++) {
                     const text = lines[i];
                     if (!text) continue;
                     let lineW = 0;
+                    /* Une ligne à taquets ne doit pas passer par le chemin justifié
+                       mot-à-mot (qui coupe sur les ESPACES seulement et perdrait les
+                       taquets) : on force les segments par morceaux ci-dessous. */
+                    const _justifyLineTabs = _spJTabsActifs && text.indexOf('\t') !== -1;
                     if (_useFont) {
                         try { lineW = _useFont.getAdvanceWidth(text, fontSize, { letterSpacing: _effCharSpacing / 1000 }); } catch (_) { lineW = text.length * fontSize * 0.6; }
                     } else {
@@ -47013,7 +47058,7 @@ https://superprint.app
                     //   bloc). Si oui, on la décompose en mots et on distribue
                     //   l'espace excédentaire entre les espaces (PAO standard).
                     const _isJLast = _spJIsParaLastLine(i);
-                    const _justifyThisLine = _spJIsJustify && !_isJLast && text.indexOf(' ') !== -1 && lineW < boxWidth - 0.5;
+                    const _justifyThisLine = _spJIsJustify && !_isJLast && !_justifyLineTabs && text.indexOf(' ') !== -1 && lineW < boxWidth - 0.5;
                     // 🎯 v1.7.380 — CÉSURE : même cible que la preview (cause racine
                     //   identique au chemin pdf-lib).
                     const _spJHyphenFlag = !!((obj.__spHyphenFlags && obj.__spHyphenFlags[i]) ||
@@ -47071,13 +47116,41 @@ https://superprint.app
                         const _availForSpaces = Math.max(0, _spJustifyTargetJ - _wordsW);
                         const _extraPerSpace = _nbSpaces > 0 ? (_availForSpaces / _nbSpaces - _spaceW) : 0;
                         _segments = [];
-                        let _cur = 0; // position locale (unité em, même échelle que lineW/boxWidth)
+                        /* 🩹 v1.7.480 — COLONNES : la boucle partait de 0 au lieu de xStart,
+                           donc une ligne JUSTIFIÉE d'une colonne > 0 était dessinée au bord
+                           du bloc (l'aperçu, lui, la place dans sa colonne). xStart vaut ici
+                           _colOXJ : repartir de xStart remet les colonnes justifiées à leur
+                           place. Bloc à une colonne et aligné à gauche : xStart = 0, donc
+                           aucun changement. */
+                        let _cur = xStart; // position locale (unité em, même échelle que lineW/boxWidth)
                         for (let _wi3 = 0; _wi3 < _words.length; _wi3++) {
                             const _wd3 = _words[_wi3];
                             if (_wi3 > 0) _cur += (_spaceW + _extraPerSpace);
                             if (_wd3) {
                                 _segments.push({ t: _wd3, localX: _cur });
                                 _cur += _spJWordW(_wd3);
+                            }
+                        }
+                    } else if (_spJTabsActifs) {
+                        /* 🆕 v1.7.480 — TAQUETS (chemin jsPDF) : un \t était mesuré par les
+                           métriques de la police (avance minuscule) puisque la ligne partait
+                           en UN seul segment. On découpe aux taquets et on prend l'avance du
+                           moteur de l'aperçu (window.spTabAvance) : une seule source de vérité. */
+                        _segments = [];
+                        let _curT = xStart;                      // position locale du curseur
+                        let _penT = 0;                           // avance depuis le DÉBUT de ligne
+                        const _morceaux = String(text).split('\t');
+                        for (let _mi = 0; _mi < _morceaux.length; _mi++) {
+                            if (_mi > 0) {
+                                const _av = Math.max(1, window.spTabAvance(obj, _penT, i, _tabsIdx[i][_mi - 1], _spJTabsModele));
+                                _curT += _av;
+                                _penT += _av;
+                            }
+                            if (_morceaux[_mi]) {
+                                _segments.push({ t: _morceaux[_mi], localX: _curT });
+                                const _w = _spJWordW(_morceaux[_mi]);
+                                _curT += _w;
+                                _penT += _w;
                             }
                         }
                     } else {

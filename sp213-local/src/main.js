@@ -2620,7 +2620,12 @@ Fond pleine page: left:-3, top:-3, width:${state.pageW + 6}, height:${state.page
     //   être forcé par fitText (réduction de typo) → on mesure avec ce fs.
     function estimateTextHeightMm(el, fs) {
       try {
-        const effEl = el;
+        /* 🩹 v1.7.480 — « const » puis affectation : esbuild refusait le fichier
+           (Cannot assign to "effEl" because it is a constant) → l'optimisation des
+           dépendances de Vite échouait et `npm run build` était cassé. La mesure
+           réelle des métriques retombait donc TOUJOURS sur l'estimation grossière
+           (le throw était avalé par le try/catch ci-dessous). */
+        let effEl = el;
         if (fs && fs !== (el.fontSize || 11)) {
           effEl = Object.assign({}, el, { fontSize: fs });
         }

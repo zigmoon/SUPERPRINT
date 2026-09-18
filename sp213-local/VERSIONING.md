@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.479`** — 18 septembre 2026
+> **Dernière version : `1.7.480`** — 18 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,23 +10,23 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.479` |
-| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.479-fonds-taquets` |
-| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20260918-v479-fonds-taquets` |
-| Badge preview (`spVersionBadge`) | `v1.7.479` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
-| Splash screen | `1.7.479` |
-| Onboarding | `LAYOUT EDITOR — V 1.7.479` + `V 1.7.479 \| 09 2026` |
-| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.479` |
-| Documentation (racine **et** `app/`) | `v1.7.479` (pastille + pieds de page datés + 214 numéros de ligne) |
-| `api.html` (pastille `.version`) | `v1.7.479` |
-| `version.txt` | `1.7.479` |
-| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.479 (September 2026)` |
-| `package.json` + `package-lock.json` (sp213-local) | `1.7.479` |
+| Version app (affichée) | `1.7.480` |
+| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.480-export-taquets` |
+| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20260918-v480-export-taquets` |
+| Badge preview (`spVersionBadge`) | `v1.7.480` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
+| Splash screen | `1.7.480` |
+| Onboarding | `LAYOUT EDITOR — V 1.7.480` + `V 1.7.480 \| 09 2026` |
+| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.480` |
+| Documentation (racine **et** `app/`) | `v1.7.480` (pastille + pieds de page datés + 214 numéros de ligne) |
+| `api.html` (pastille `.version`) | `v1.7.480` |
+| `version.txt` | `1.7.480` |
+| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.480 (September 2026)` |
+| `package.json` + `package-lock.json` (sp213-local) | `1.7.480` |
 | Lanceur npm (`superprint-npm/package.json`) | `1.0.97` (version **indépendante**, voir plus bas) |
 
 > ⚠️ Trois fichiers sont restés en arrière pendant des releases sans que rien ne le signale :
 > `app/landing.html`, `app/llms.txt` et `app/llms-full.txt` (tous en `1.7.404` jusqu'au
-> 18 septembre 2026). Le bump 1.7.479 les a remis à niveau — **vérifier leur présence dans
+> 18 septembre 2026). Le bump 1.7.480 les a remis à niveau — **vérifier leur présence dans
 > le plan de bump**, pas seulement `app/index.html`.
 
 > ⚠️ Le paquet **npm** (`superprint-npm`) a sa **propre version** (`1.0.x`) — c'est la version de *release du paquet*, indépendante de la version de l'app. Il lit la version de l'app depuis `https://superprint.cc/version.txt`.
@@ -63,8 +63,19 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
 
 ### D. Local (zip + package)
 - `sp213-local/package.json` + `package-lock.json` — `"version": "X.Y.Z"`
-- `sp213-local.zip` — régénéré après chaque bump (`_dev/scripts/_make_zip.cjs`)
-- ⚠️ **NE PAS** bumper `main.js` : ses occurrences de version sont TOUTES des commentaires historiques.
+- `sp213-local/index.html` — 🆕 v1.7.480 : **le lanceur du paquet** (la page que Vite
+  sert à `http://127.0.0.1:5173`), copie adaptée de `superprint/install.html` :
+  liens préfixés par `superprint/` (= `public/` servi à la racine par Vite) +
+  une entrée « Studio IA hors ligne » vers `studio.html`. Seul marqueur : le
+  JSON-LD `softwareVersion`. ⚠️ **NE PAS l'éditer à la main** : le régénérer avec
+  `node _dev/scripts/_mk_index_paquet_479.cjs --apply` (dry-run par défaut), qui
+  repart d'`install.html` — sinon la page reprend du retard sur le site.
+- `sp213-local/studio.html` — 🆕 v1.7.480 : l'**ancienne page racine** (pré-accueil +
+  Studio IA hors ligne WebLLM), conservée et rendue atteignable depuis le lanceur.
+  Aucun numéro de version affiché → ne rien y bumper.
+- `sp213-local.zip` — régénéré après chaque bump (`node tools/make-release-zip.mjs`)
+- ⚠️ **NE PAS** bumper `main.js` : ses occurrences de version sont TOUTES des commentaires historiques
+  (à la seule exception des commentaires 🆕/🩹 du code **nouveau**, datés à la main à la version qui les livre).
 - ⚠️ **NE PAS** avancer `MIN_APP_VERSION` (`superprint-npm/cli.mjs`) avant le téléversement du zip (le CLI refuse un zip plus ancien que ce plancher).
 
 ---
@@ -96,7 +107,9 @@ Ex. si le badge affichait `1.7.271`, bump vers `1.7.368` minimum.
    `node _dev/scripts/_sync_450_full.cjs` → attendu **« différents : 0 »**.
 5. **Cohérence** : `node _dev/scripts/_verif_coherence.cjs` → marqueurs vivants cohérents, 0 résidu.
 6. **Build local** : `npm run build` dans `sp213-local` (régénère `dist/`).
-7. **Zip** : `node _dev/scripts/_make_zip.cjs` → `superprint/sp213-local.zip` + contrôles internes
+7. **Page d'entrée du paquet** (si `install.html` a bougé) :
+   `node _dev/scripts/_mk_index_paquet_479.cjs --apply` → réécrit `sp213-local/index.html`.
+8. **Zip** : `node tools/make-release-zip.mjs` depuis la racine du dépôt → `superprint/sp213-local.zip`
    (`--verif` pour contrôler sans recréer).
 8. **Billet** : `release.html` (racine du dépôt, **gitignoré**, déployé séparément sur
    app.zigmoon.com) + `CHANGELOG.md` (sans BOM).

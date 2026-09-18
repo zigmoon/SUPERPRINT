@@ -24,19 +24,27 @@ npx superprint
 > 💡 You can also **download `sp213-local.zip`** from app.zigmoon.com, unzip it,
 > then: `cd sp213-local && npm install && npm run dev`.
 
-### 3. Open the pre-home
+### 3. Open the launcher
 On launch, the terminal shows a **SUPERPRINT banner** in large letters, then the address: **http://localhost:5173**
 
 > 💡 To start without the banner: `npm run dev:plain`
 
 Open it in Chrome or Edge (WebGPU is required for local mode).
 
-From the pre-home (white SuperPrint design), two choices:
+The root page is the **launcher** (`index.html`, the same page as `install.html` on the
+website). It lists, in one click:
 
-| Choice | What it does |
+| Row | What it does |
 |---|---|
-| **SuperPrint Local** (recommended) | Opens the full SuperPrint DTP application served by Vite |
-| **Web Studio** | Opens the SP213 studio (local WebLLM or Groq cloud) |
+| **SuperPrint** (recommended) | Opens the full SuperPrint DTP application served by Vite (`superprint/app/index.html`) |
+| **AI Studio** | Opens the SP213 studio bundled with the application (`superprint/sp213-studio.html`) |
+| **Local AI Studio** | Opens the **offline** WebLLM studio (`studio.html` + `src/main.js`), models cached in the browser |
+| **SuperTyPo** | Font decomposer & typeface editor |
+| **Documentation / API** | Reference pages |
+
+> ℹ️ `studio.html` is the old root page: it needs Vite (it imports `@mlc-ai/web-llm` and
+> `@e965/xlsx` from npm) and a WebGPU browser. The local AI Studio runs with no key and
+> no network once the model is cached.
 
 The full editor also embeds **SuperTyPo** (the font decomposer & typeface editor) — from the
 *New project* dialog, the **« SuperTyPo »** tab opens `supertypo/` (edit any font as vector
@@ -64,8 +72,9 @@ from the home screen — it only requires a `gsk_...` API key (stored only in yo
 
 ```
 sp213-local/
-├── index.html              # Pre-home (white SuperPrint design) + studio
-├── src/main.js             # Full logic (WebLLM npm + direct Groq)
+├── index.html              # Launcher (same page as install.html on the website)
+├── studio.html             # Local AI Studio (offline WebLLM) — old root page
+├── src/main.js             # Local AI Studio logic (WebLLM npm + direct Groq)
 ├── public/
 │   ├── superprint/         # Complete SuperPrint application (copy, served as-is)
 │   │   ├── index.html      # The SuperPrint DTP app
