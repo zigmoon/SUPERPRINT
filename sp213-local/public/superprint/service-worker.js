@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.462-filet-largeur';
+const CACHE_NAME = 'superprint-shell-v1.7.463-landing-cartes';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
