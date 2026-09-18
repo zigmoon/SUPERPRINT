@@ -79603,8 +79603,22 @@ window._spLoadStudioImport = function() {
         return el.offsetParent !== null || st.position === 'fixed';
     }
 
+    // ⚠️ « L'accueil » (onboarding) peut être masqué à tout moment : il n'attend
+    // aucun clic. LE PORTAIL DE DÉMARRAGE, lui, ne doit JAMAIS être masqué ici —
+    // c'est le clic sur son bouton qui initialise l'application (mesuré : app
+    // bloquée sur « Loading… » si on le masque avant de le cliquer). Depuis la
+    // v1.7.466, index.html ne l'affiche plus du tout quand ?tpl= est demandé.
+    function _spMasquerOnboarding() {
+        var el = document.getElementById('onboardingOverlay');
+        if (!el) return;
+        try { el.classList.remove('is-open'); } catch (e) {}
+        try { el.setAttribute('hidden', ''); } catch (e) {}
+        try { el.style.display = 'none'; } catch (e) {}
+    }
+
     function _spGuetterEditeur() {
         _essais++;
+        _spMasquerOnboarding();
         if (!_clique) {
             var ov = document.getElementById('sp-startup-overlay');
             var accueilOuvert = !!ov && !ov.hasAttribute('hidden') && getComputedStyle(ov).display !== 'none';
@@ -79623,6 +79637,9 @@ window._spLoadStudioImport = function() {
         setTimeout(_spGuetterEditeur, 200);
     }
     document.addEventListener('DOMContentLoaded', function() {
+        // Masqué dès l'arrivée : l'accueil de bienvenue n'a rien à faire devant
+        // une maquette que le visiteur a explicitement demandée depuis la landing.
+        _spMasquerOnboarding();
         if (window._spInitReadyDone) { setTimeout(_spLancerModele, 500); return; }
         _spGuetterEditeur();
     });

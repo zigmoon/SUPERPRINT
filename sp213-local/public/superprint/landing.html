@@ -62,7 +62,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.465",
+      "softwareVersion": "1.7.466",
       "dateModified": "2026-03-29",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1120,8 +1120,10 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 .entry:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: 0 16px 34px rgba(23,19,13,.13); }
 .entry-logo {
   flex: 0 0 auto; width: 80.4px; height: 80.4px; background: var(--ink);
-  border-radius: 5px;
-  display: flex; align-items: center; justify-content: center; padding: 0;
+  border-radius: 12px;
+  /* v1.7.466 — garde intérieure : le logotype ne touche plus les bords de la plaque
+     (image 56,4 px au lieu de 80,4), et les coins sont plus arrondis. */
+  display: flex; align-items: center; justify-content: center; padding: 12px;
 }
 .entry-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .entry-body { min-width: 0; width: 100%; }
@@ -1311,7 +1313,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 
       <a class="entry" href="app/index.html" style="--entry-accent:#00A7C7">
         <span class="entry-name">SuperPrint</span>
-        <span class="entry-logo"><img src="icons/icon-192x192.png" alt="" width="64" height="64"></span>
+        <span class="entry-logo"><img src="icons/icon-192x192.png" alt="" width="56" height="56"></span>
         <span class="entry-body">
           <span class="entry-desc"><span class="inline-fr">L'atelier de PAO complet : mise en page, prépresse, export.</span><span class="inline-en">The complete DTP atelier: layout, prepress, export.</span><span class="inline-ja">DTP工房のすべて — 組版、プリプレス、書き出し。</span></span>
           <span class="entry-go"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open the app</span><span class="inline-ja">アプリを開く</span> →</span>
@@ -1320,7 +1322,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 
       <a class="entry" href="sp213-studio.html" style="--entry-accent:#E1237B">
         <span class="entry-name">Studio SP213</span>
-        <span class="entry-logo"><img src="icons/studio_print_logo_blanc.png" alt="" width="64" height="64"></span>
+        <span class="entry-logo"><img src="icons/studio_print_logo_blanc.png" alt="" width="56" height="56"></span>
         <span class="entry-body">
           <span class="entry-desc"><span class="inline-fr">Décrivez la maquette : l'IA la compose, vous la signez.</span><span class="inline-en">Describe the layout: the AI composes it, you sign it off.</span><span class="inline-ja">レイアウトを言葉に。AIが組み、あなたが仕上げる。</span></span>
           <span class="entry-go"><span class="inline-fr">Ouvrir le studio</span><span class="inline-en">Open the studio</span><span class="inline-ja">スタジオを開く</span> →</span>
@@ -1329,7 +1331,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 
       <a class="entry" href="supertypo/index.html" style="--entry-accent:#F2B90B">
         <span class="entry-name">SuperTyPo</span>
-        <span class="entry-logo"><img src="icons/sper_typo.png" alt="" width="64" height="64"></span>
+        <span class="entry-logo"><img src="icons/sper_typo.png" alt="" width="56" height="56"></span>
         <span class="entry-body">
           <span class="entry-desc"><span class="inline-fr">Les caractères décomposés, redessinés en courbes.</span><span class="inline-en">Letterforms decomposed, redrawn as curves.</span><span class="inline-ja">書体を分解し、曲線で描き直す。</span></span>
           <span class="entry-go"><span class="inline-fr">Ouvrir SuperTyPo</span><span class="inline-en">Open SuperTyPo</span><span class="inline-ja">SuperTyPo を開く</span> →</span>
