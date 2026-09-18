@@ -5892,6 +5892,36 @@ window.spTestDiag = function () {
     }
     window.spVarMajBouton = majPanneau;
 
+    /* ── Remplissage de la piste : MÊME MOTIF QUE LES AUTRES TIRETTES DU PROJET ──
+       (coins arrondis / CMJN : `linear-gradient` + `background-size`, réglé en JS).
+       ⚠️ Nos axes ne partent PAS de 0 (graisse 300–700 en général) : on rapporte donc
+       la position à la PLAGE [min, max], pas à `value / max`.
+       La copie du widget porte un `data-sp-ref` et n'a plus d'id : on remplit les
+       DEUX pour que la barre du widget suive celle de la colonne. */
+    function remplirPiste(inp) {
+        if (!inp) return;
+        var min = parseFloat(inp.min), max = parseFloat(inp.max), v = parseFloat(inp.value);
+        if (!isFinite(min) || !isFinite(max) || !(max > min) || !isFinite(v)) return;
+        var pct = Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100));
+        try { inp.style.backgroundSize = pct + '% 100%'; } catch (_) {}
+    }
+    function majPiste(tag) {
+        var orig = document.querySelector('#spVarAxes input[data-sp-var-axe="' + tag + '"]');
+        var liste = document.querySelectorAll('#spVarAxes input[data-sp-var-axe="' + tag + '"],[data-sp-ref="spVarAxe_' + tag + '"]');
+        Array.prototype.forEach.call(liste, function (inp) {
+            /* ⚠️ MESURÉ EN 1.7.483 : la copie du widget garde la valeur BRUTE du glisser
+               (83) alors que le panneau a rangé la valeur au cran (87,5 → arrondie à 88
+               par le `step`) : les deux barres affichaient un remplissage différent
+               (32 % dans le widget contre 52 % dans la colonne) pour la MÊME valeur, et
+               la poignée du widget ne tombait plus en face du nombre affiché. On réaligne
+               donc chaque copie sur le curseur d'origine AVANT de calculer le
+               remplissage. Écrire `.value` en JS ne déclenche aucun `input` : pas de
+               boucle avec le pont du widget. */
+            if (orig && inp !== orig) { try { inp.value = orig.value; } catch (_) {} }
+            remplirPiste(inp);
+        });
+    }
+
     /* ── Les curseurs du panneau ────────────────────────────────────────────────
        Une ligne par axe pilotable, la plus COMPACTE possible : nom + valeur sur une
        ligne, barre en dessous. La signature évite de reconstruire les curseurs à
@@ -5929,6 +5959,7 @@ window.spTestDiag = function () {
                     '<input type="range" id="spVarAxe_' + a.tag + '" data-sp-var-axe="' + a.tag + '" min="' + min +
                     '" max="' + max + '" step="' + pas + '" value="' + val + '">';
                 host.appendChild(ligne);
+                majPiste(a.tag);
             });
         } else {
             liste.forEach(function (a) {
@@ -5939,6 +5970,7 @@ window.spTestDiag = function () {
                    FIGÉ sur une ancienne valeur et le widget clonait cette valeur périmée. */
                 if (inp && !host._spGlisse) { try { inp.value = val; } catch (_) {} }
                 etiquette('spVarVal_' + a.tag, String(val));
+                majPiste(a.tag);
             });
         }
     }
@@ -5964,6 +5996,7 @@ window.spTestDiag = function () {
         v[tag] = val;
         appliquerVariation(v, true);
         etiquette('spVarVal_' + tag, String(val));
+        majPiste(tag);
     }
 
     /* Variation affichée par les curseurs (celle du bloc sélectionné, complétée par
@@ -7004,6 +7037,12 @@ window.spTestDiag = function () {
         var host = document.createElement('div');
         host.className = 'rightbar sp-dock-host expanded';
         host.setAttribute('data-dock', nom);
+        /* 🆕 v1.7.483 — Le panneau « Police variable » a besoin de PLUS DE LARGEUR que
+           les widgets historiques (200 px fixes) : ses curseurs y étaient écrasés et
+           illisibles une fois détachés. On ajoute une classe dédiée au lieu d'élargir
+           TOUS les widgets (Pathfinder / Styles / Nuancier / Filtres sont calibrés
+           pour 200 px). */
+        if (nom === 'spVarSection') host.classList.add('sp-dock-large');
         var clone = copier(sec);
         /* En-tête identique aux widgets existants : point, titre en capitales,
            petit triangle à droite pour le soufflet. Le titre du clone est masqué :
@@ -33679,19 +33718,27 @@ window.spTestDiag = function () {
     // ===== XLSX IMPORT (Excel) =====
     function ensureXlsxLibs(callback) {
         if (window.XLSX) { callback(); return; }
-        // SheetJS — chargé en lazy uniquement lors d'un import Excel
-        const s = document.createElement('script');
-        s.src = 'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js';
-        s.onload = callback;
-        s.onerror = function () {
-            // Fallback : le fichier local s'il existe
-            const l = document.createElement('script');
-            l.src = 'JS/xlsx.full.min.js';
-            l.onload = callback;
-            l.onerror = function () { alert(translate('alertXlsxNotAvailable')); };
-            document.head.appendChild(l);
+        /* 🆕 v1.7.483 — LOCAL D'ABORD. Le paquet installé par `npx superprint` est
+           prévu pour tourner SANS Internet (il déclare même `@e965/xlsx` en
+           dépendance et son README annonce « aucun CDN »). Or la 1.7.482 et avant
+           chargeaient le CDN EN PREMIER : sans réseau, l'import Excel échouait.
+           Ordre désormais : copie embarquée dans `JS/` → dépendance installée
+           (`node_modules`, servie par Vite) → CDN en dernier recours. */
+        const sources = [
+            'JS/xlsx.full.min.js',
+            '../../node_modules/@e965/xlsx/dist/xlsx.full.min.js',
+            'https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js'
+        ];
+        let i = 0;
+        const essayer = function () {
+            if (i >= sources.length) { alert(translate('alertXlsxNotAvailable')); return; }
+            const s = document.createElement('script');
+            s.src = sources[i++];
+            s.onload = function () { if (window.XLSX) callback(); else essayer(); };
+            s.onerror = essayer;
+            document.head.appendChild(s);
         };
-        document.head.appendChild(s);
+        essayer();
     }
     if (importXlsxBtn && importXlsxInput) {
         importXlsxBtn.addEventListener('click', () => importXlsxInput.click());

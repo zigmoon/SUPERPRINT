@@ -2567,23 +2567,122 @@ textarea[data-fabric-hiddentextarea] {
     font-size: 10px;
     line-height: 1.2;
 }
+/* La valeur courante en monospace : c'est la fonte des champs de l'app (IBM Plex
+   Mono) et elle ne « danse » plus quand le nombre change de largeur. */
+.sp-var-row .sp-var-tete b {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+}
 .sp-var-axe { opacity: 0.5; font-size: 9px; }
 .sp-var-borne { opacity: 0.5; font-size: 9px; }
+/* ── v1.7.483 : curseurs du panneau « Police variable » ────────────────────────
+   MÊME LOOK QUE LES AUTRES TIRETTES DU PROJET (coins arrondis / CMJN) : piste de
+   4 px arrondie, remplissage noir à gauche, poignée blanche cernée de noir.
+   L'accent rose de la 1.7.482 est retiré — l'app est noir / blanc / gris.
+   La piste est remplie en JS (`background-size`, cf. majPiste) : nos axes ne
+   partent pas de 0 (graisse 300–700), la position est donc rapportée à la PLAGE. */
 .sp-var-row input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
     width: 100%;
-    height: 14px;
-    margin: 1px 0 0;
-    accent-color: #d81b60;
+    height: 4px;
+    min-height: 4px;
+    max-height: 4px;
+    margin: 7px 0 2px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    outline: none;
     cursor: pointer;
+    background-color: #e2e2e2;
+    background-image: linear-gradient(to right, #1a1a1a, #1a1a1a);
+    background-repeat: no-repeat;
+    background-size: 0% 100%;
+    transition: background-color 0.15s ease;
 }
+.sp-var-row input[type="range"]:hover { background-color: #d4d4d4; }
+.sp-var-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #1a1a1a;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    cursor: grab;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.sp-var-row input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+.sp-var-row input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.2); }
+.sp-var-row input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #1a1a1a;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    cursor: grab;
+}
+.sp-var-row input[type="range"]::-moz-range-track { height: 4px; border-radius: 999px; background: #e2e2e2; }
+.sp-var-row input[type="range"]::-moz-range-progress { height: 4px; border-radius: 999px; background: #1a1a1a; }
+/* Thème sombre : même inversion que les tirettes de coins. */
+.theme-dark .sp-var-row input[type="range"] {
+    background-color: #3a3a3a;
+    background-image: linear-gradient(to right, #e6e6e6, #e6e6e6);
+}
+.theme-dark .sp-var-row input[type="range"]:hover { background-color: #454545; }
+.theme-dark .sp-var-row input[type="range"]::-webkit-slider-thumb { background: #2a2a2a; border-color: #e0e0e0; }
+.theme-dark .sp-var-row input[type="range"]::-moz-range-thumb { background: #2a2a2a; border-color: #e0e0e0; }
+.theme-dark .sp-var-row input[type="range"]::-moz-range-track { background: #3a3a3a; }
+.theme-dark .sp-var-row input[type="range"]::-moz-range-progress { background: #e6e6e6; }
+
+/* 🆕 v1.7.483 — Le widget « Police variable » reçoit une classe dédiée : à 200 px
+   (gabarit des widgets historiques), ses curseurs étaient écrasés et illisibles
+   une fois détachés dans le plan de travail. */
+.sp-dock-host.rightbar.sp-dock-large {
+    width: 320px;
+    min-width: 260px;
+    max-width: 360px;
+}
+.sp-dock-host.sp-dock-large .sp-dock-head { font-size: 12px; padding: 8px 12px; }
+.sp-dock-host.sp-dock-large .sp-dock-body { padding: 0 12px 12px; }
+.sp-dock-host.sp-dock-large .sp-var-famille { font-size: 11px; }
+.sp-dock-host.sp-dock-large .sp-var-row .sp-var-tete { font-size: 11px; }
+.sp-dock-host.sp-dock-large .sp-var-axe,
+.sp-dock-host.sp-dock-large .sp-var-borne { font-size: 10px; }
+.sp-dock-host.sp-dock-large .sp-var-reset { font-size: 11px; padding: 5px 8px; }
+/* … sauf la largeur des tirettes dans le WIDGET : mêmes curseurs, plus longs. */
+.sp-dock-host.sp-dock-large .sp-var-row input[type="range"] { margin: 8px 0 3px; }
+/* Dans le widget, le panneau perd ses MARGES NÉGATIVES : elles n'existent que pour
+   faire courir les traits de séparation d'un bord à l'autre de la COLONNE (elles
+   dépassaient de 4 px dans le widget, dont le corps est remis à zéro). */
+.sp-dock-body > .sp-docked.sp-var-panel { margin: 0; }
+/* … et son TITRE y faisait doublon avec celui de la pastille : « Police variable »
+   s'affichait deux fois, l'une sous l'autre (constaté à l'écran en 1.7.483). La règle
+   générique qui masque ce genre de libellé dans un widget (`.sp-dock-body > .sp-docked
+   > label`) perdait ici contre le `display: block !important` du bouton + de la
+   colonne : il faut donc la redire avec `!important` et une spécificité supérieure.
+   `copier()` retire le bouton +/− du clone : masquer ce libellé ne prive de rien. */
+.sp-dock-body > .sp-docked.sp-var-panel > label.sp-dock-anchor { display: none !important; }
 .sp-var-pied { display: flex; gap: 6px; margin-top: 8px; }
 .sp-var-reset { flex: 1; font-size: 10px; padding: 4px 6px; }
 .sp-var-panel .hint { font-size: 9.5px; opacity: 0.6; line-height: 1.35; margin-top: 6px; }
 
-/* Le bouton de la fiche typo : libellé plus PETIT et vraie respiration verticale
-   (mesuré en 1.7.481 : le texte touchait le haut et le bas du bouton). */
-.sp-var-btn {
+/* Le bouton de la fiche typo : libellé plus PETIT et vraie respiration verticale.
+   ⚠️ MESURÉ : `.rightbar .btn` (0,2,0) impose height 28px / padding 0 10px /
+   font-size 9px et écrasait une règle de classe (0,1,0). On monte donc la
+   spécificité avec l'id du conteneur, et on laisse la hauteur libre (auto) pour
+   qu'un libellé sur deux lignes ne soit plus écrasé en haut et en bas. */
+#spVarRow .sp-var-btn {
     width: 100%;
+    height: auto;
+    min-height: 28px;
     font-size: 10px;
     line-height: 1.3;
     padding: 7px 8px;

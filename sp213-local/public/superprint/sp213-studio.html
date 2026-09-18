@@ -3536,7 +3536,12 @@
   }
 
   async function extractExcelAttachment(file, id, ext) {
-    await loadAttachmentLibrary('https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js', () => !!window.XLSX);
+    /* 🆕 v1.7.483 — LOCAL D'ABORD (comme pdf.js, jszip et mammoth juste au-dessus) :
+       la librairie est embarquée dans l'app, le CDN n'est qu'un filet de sécurité.
+       Sans cela, le studio installé par `npx superprint` ne savait pas lire un
+       classeur Excel sans Internet. */
+    await loadAttachmentLibrary('app/JS/xlsx.full.min.js', () => !!window.XLSX)
+      .catch(() => loadAttachmentLibrary('https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js', () => !!window.XLSX));
     const workbook = window.XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
     const sheets = workbook.SheetNames.map(name => {
       const rows = window.XLSX.utils.sheet_to_csv(workbook.Sheets[name], { FS: '\t', RS: '\n', blankrows: false });
@@ -7985,7 +7990,15 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     state.webllmLoading = true;
     state.webllmPromise = checkWebGPU().then(function() {
       if (window.CreateMLCEngine) return initWebLLM();
-      return import('https://esm.run/@mlc-ai/web-llm').then(function(mod) {
+      /* 🆕 v1.7.483 — LOCAL D'ABORD. Le paquet installé par `npx superprint` contient
+         `@mlc-ai/web-llm` dans node_modules : servi par Vite, cet import se résout
+         SUR LE DISQUE et l'atelier IA local ne dépend plus d'Internet pour se
+         charger (seuls les MODÈLES se téléchargent, à la demande).
+         Servi statiquement (site en ligne, fichier ouvert directement), l'import
+         « nu » échoue et on retombe sur le CDN — comportement d'avant, inchangé. */
+      return import('@mlc-ai/web-llm').catch(function () {
+        return import('https://esm.run/@mlc-ai/web-llm');
+      }).then(function(mod) {
         if (!mod || !mod.CreateMLCEngine) throw new Error('module WebLLM incomplet');
         window.CreateMLCEngine = mod.CreateMLCEngine;
         return initWebLLM();

@@ -9,6 +9,39 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.483] — 2026-09-18
+
+_Sober sliders for the variable-font panel, a readable detached widget, and a local package that works without any CDN_
+
+### Changed
+- **The panel slider now uses the project’s canonical slider look.** The pink accent of 1.7.482 is gone (the application is black / white / grey); the sliders copy the corner-radius and CMYK sliders exactly: 4 px rounded track, black fill on the left, white thumb ringed in black, same hover and drag reactions.
+- **The track is filled over the axis RANGE, not over `value / max`.** A weight axis running 300–700 starts at 25 % of the bar instead of 57 %. The fill follows the value live, in the panel **and** in the detached widget.
+- **The detached “Variable font” widget gets its own 320 px layout.** It was handed the historical 200 px widget template, where its two sliders were crushed and unreadable; font sizes are raised one step, the panel’s negative margins (meant for the full-width separators of the column) are reset, and its duplicate title is hidden.
+
+### Fixed
+- **The panel and the widget no longer show two different fills for the same value.** Measured: dragging the slider *of the widget* kept the RAW dragged value (83) while the panel snapped it to the rendering step (87.5, stored as 88 because of the `step`), so the two tracks displayed 32 % and 52 % for the same value and the widget’s thumb no longer sat in front of the number it showed. `majPiste` now realigns every copy on the original slider before computing the fill (writing `.value` in JavaScript fires no `input` event, so there is no loop with the widget bridge).
+- **The duplicate title in the widget is gone.** “Variable font” was written twice, one line under the other: the generic rule that hides such a label inside a widget (`.sp-dock-body > .sp-docked > label`) was losing against the `display: block !important` of the column’s “+” button, so it is now repeated with `!important` and a higher specificity. `copier()` strips the +/− button from the clone, so hiding the label takes nothing away.
+- **The local package no longer calls a CDN for the Excel library.** The audit that walks the launcher and its five destination pages found the Excel library was loaded from a CDN *first*, which contradicted the “everything runs locally” promise of the `npx` installer.
+
+### Added
+- **`app/JS/xlsx.full.min.js`** — the Excel library (930 KB) is now vendored **inside the application**, like the other libraries already shipped locally (Word reading, type engine, PDF reading). `ensureXlsxLibs()` tries the local copy, then the `public/`-mounted `node_modules/@e965/xlsx` build, then the SheetJS CDN — the alert only appears when all three fail.
+- **The AI studio loads Excel and WebLLM locally first too** (`app/JS/xlsx.full.min.js`, then `@mlc-ai/web-llm`, then the CDN/module-CDN fallbacks).
+- **`_dev/scripts/_audit_liens_paquet_483.cjs`** — walks the six pages of the local package (launcher, editor, studio, SuperTyPo, documentation, API) link by link, resolving each URL to a file on disk with the **exact case** (macOS and Linux are case-sensitive), and checks that the launcher holds no absolute path and that `vite.config.js` declares a single build entry.
+
+### Verified
+| Check | Result |
+|---|---|
+| Sliders | height 4 px, fill `linear-gradient(#1a1a1a)`, `background-size: 25% 100%` on a 300–700 axis, `accent-color: auto` (no pink left, in both themes) |
+| Widget | `sp-dock-host … sp-dock-large`, width **320 px**, panel margins reset, duplicate label `display: none` |
+| Panel vs widget | after a drag on the widget slider: both inputs `88`, both fills `52 %`, both labels `87.5`, block instance `{wdth: 87.5}` |
+| Width on screen | ink columns 70 / 60 / 53 and ink width **119 / 102 / 85 px** for width 100 / 87.5 / 75 |
+| Local package links | **68 local links, 0 problem**, exact-case resolution, no absolute path in the launcher, one build entry |
+| Local package chain | served from the **extracted zip**: 5 pages (`/`, editor, studio, SuperTyPo, documentation, API) loaded, **0 console error**, **66 / 66 URLs at 200**, editor canvas present |
+| Offline libraries | `app/JS/xlsx.full.min.js` present in both trees and served 200 by Vite, plus `/node_modules/@e965/xlsx/dist/xlsx.full.min.js` |
+| Parity web ↔ mirror | **22 / 22 identical**, 0 different, 0 missing (full tree diff: 0 different) |
+| `node --check` · markers | clean on both `main.js` · 13 version markers consistent (1.7.483) |
+| Package | `sp213-local.zip` rebuilt and verified file by file |
+
 ## [1.7.482] — 2026-09-18
 
 _The variable-font control becomes a detachable panel, and the PDF embeds the configured font instance (the preview applies the width at last)_
