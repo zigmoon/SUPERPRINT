@@ -68,7 +68,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.475",
+      "softwareVersion": "1.7.476",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -434,6 +434,14 @@ nav {
    disparaît : elle faisait SAUTER le logotype de 5 px à l’instant où la barre se
    colle, et c’est ce saut qui se voyait — pas un mauvais centrage de la barre. */
 .nav-logo span { color: var(--muted); letter-spacing: .08em; }
+/* 🆕 v1.7.476 — BARRE RÉTRACTÉE SEULEMENT : le logotype descend de 5 px.
+   Demande précise de l'utilisateur : « en mode rétracté, à gauche, la typo SUPERPRINT est trop
+   haute de 5 px ; ne touche pas à la version non rétractée ». La règle ne s'applique donc QUE
+   lorsque le script pose la classe `is-stuck` (barre collée en haut au scroll) — la barre au
+   repos garde exactement ses 2 px mesurés en v1.7.472. 7 = 2 px de centrage optique + les 5 px
+   demandés. ⚠️ Cette classe n'était utilisée par AUCUN style jusqu'ici : c'est sa première règle,
+   il n'y a donc rien à annuler ailleurs. */
+nav.is-stuck .nav-logo { transform: translateY(7px); }
 .nav-links { display: flex; gap: 2px; align-items: center; height: 100%; }
 .nav-links a {
   display: inline-flex; align-items: center; justify-content: center; height: 100%; padding: 0 14px;
@@ -1629,7 +1637,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.475</span>
+    <span>SuperPrint v1.7.476</span>
   </div>
 </div>
 
@@ -3301,7 +3309,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.475</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.476</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
@@ -3685,6 +3693,12 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
       o.classList.remove('open');
       document.body.style.overflow = '';
     };
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
     /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
