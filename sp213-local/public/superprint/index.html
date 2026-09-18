@@ -68,7 +68,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.473",
+      "softwareVersion": "1.7.474",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1294,6 +1294,27 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   .tgrid { grid-template-columns: 1fr; }
 }
 
+/* ═══ v1.7.473 — LES TROIS APPLICATIONS (à la place des captures) ═══
+   Même dessin que les entrées du hero : la plaque du logotype, le nom, le texte, un bouton.
+   Deux des trois logotypes sont bicolores : leur plaque passe en blanc bordé, comme ailleurs. */
+.apps { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: clamp(14px,1.8vw,22px); }
+@media (max-width: 900px) { .apps { grid-template-columns: 1fr; } }
+.app { background: var(--paper-3); border: 1px solid var(--line); padding: clamp(18px,2.2vw,26px); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.app .entry-logo { width: 64px; height: 64px; padding: 11px; margin-bottom: 2px; }
+.app h3 { font-family: var(--f-caps); font-size: clamp(20px,2.2vw,26px); font-weight: 400; letter-spacing: .02em; line-height: 1; color: var(--ink); }
+.app p { font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); }
+.app p strong { color: var(--ink); font-weight: 600; }
+.app-go { margin-top: auto; padding-top: 16px; font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); text-decoration: none; }
+.app-go:hover { color: var(--muted); }
+
+/* ═══ v1.7.473 — REPLI GÉNÉRIQUE : mêmes règles que la galerie d'outils, pour le tableau ═══
+   Rien n'est retiré du document (moteurs de recherche, Ctrl+F) : on masque, et le bouton
+   affiche. Un « display:none » suffit aussi à empêcher les images différées de partir. */
+table tr.is-folded { display: none; }
+table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ease) both; }
+@keyframes foldIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { table.is-open tr.is-folded { animation: none; } }
+
 /* ——— HERO : TROIS ENTRÉES — app, studio, SuperTyPo ——— */
 .entries {
   display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
@@ -1562,7 +1583,6 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     SUPER<span>PRINT</span>
   </a>
   <div class="nav-links">
-    <a href="#value-props"><span class="inline-fr">Atouts</span><span class="inline-en">Why us</span><span class="inline-ja">特徴</span></a>
     <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
     <a href="#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
@@ -1589,7 +1609,6 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="mm-colo" aria-hidden="true">
     <img src="favicon.png" alt="" width="56" height="56">
   </div>
-  <a href="#value-props"><span class="inline-fr">Atouts</span><span class="inline-en">Why us</span><span class="inline-ja">特徴</span></a>
   <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
@@ -1610,7 +1629,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.473</span>
+    <span>SuperPrint v1.7.474</span>
   </div>
 </div>
 
@@ -2096,83 +2115,48 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
 <!-- ══════════════ L'ATELIER EN IMAGES — CAPTURES RÉELLES DE L'APPLICATION ══════════════ -->
 <section id="showcase">
-  <div class="ghost" aria-hidden="true">DÉMO</div>
+  <div class="ghost" aria-hidden="true">APPS</div>
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Captures d'écran · l'application telle qu'elle est</div>
-      <div class="section-label" data-lang="en">Screenshots · the application as it is</div>
-      <div class="section-label" data-lang="ja">スクリーンショット · 実際のアプリ画面</div>
-      <!-- 🆕 v1.7.472 — Le titre porte désormais l’IDÉE DIRECTRICE de la page (« la PAO, entièrement
-           réinventée dans votre navigateur ») et non la seule preuve. La preuve ne disparaît pas :
-           elle passe dans le chapô, là où elle se démontre au lieu de se proclamer. -->
+      <div class="section-label" data-lang="fr">Trois applications · un seul atelier</div>
+      <div class="section-label" data-lang="en">Three applications · one atelier</div>
+      <div class="section-label" data-lang="ja">3つのアプリ、ひとつの工房</div>
       <h2 data-lang="fr">La PAO, entièrement réinventée dans votre navigateur.</h2>
       <h2 data-lang="en">DTP, entirely reinvented in your browser.</h2>
       <h2 data-lang="ja">DTPを、ブラウザでまるごと作り直す。</h2>
-      <p class="lead" data-lang="fr">Habillage du texte, composition, typographie vectorisée : ce ne sont pas des promesses, ce sont des captures — la même maquette, ouverte dans l'application, sans retouche ni rendu publicitaire.</p>
-      <p class="lead" data-lang="en">Text wrap, composition, vectorised type: not promises but screenshots — one and the same layout, opened inside the application, with no retouching and no marketing render.</p>
-      <p class="lead" data-lang="ja">テキストの回り込み、組版、書体のベクター化。約束ではなく、実際の画面です。同じレイアウトをアプリで開いたまま、加工なしで。</p>
+      <p class="lead" data-lang="fr">L'atelier de PAO, le studio d'IA et l'atelier typographique : trois applications, un seul projet, rien à installer. Chacune s'ouvre d'un clic, chacune travaille dans votre navigateur — et les maquettes passent de l'une à l'autre.</p>
+      <p class="lead" data-lang="en">The DTP atelier, the AI studio and the type workshop: three applications, one project, nothing to install. Each opens in one click, each works in your browser — and layouts travel from one to the next.</p>
+      <p class="lead" data-lang="ja">DTP工房、AIスタジオ、書体工房。3つのアプリ、ひとつのプロジェクト、インストール不要。どれもワンクリックで開き、ブラウザで動きます。レイアウトは行き来します。</p>
     </div>
 
-    <div class="shots">
+    <div class="apps">
 
-      <figure class="shot">
-        <div class="shot-img">
-          <img src="img/landing/atelier.jpg" width="1600" height="1000" loading="lazy"
-               alt="SuperPrint : une maquette A4 ouverte dans le navigateur">
-        </div>
-        <figcaption class="shot-txt">
-          <span class="shot-num">01</span>
-          <h3 data-lang="fr">L'atelier</h3>
-          <h3 data-lang="en">The atelier</h3>
-          <h3 data-lang="ja">工房</h3>
-          <p data-lang="fr">Un document A4 ouvert dans le navigateur : les outils à gauche, la page au centre, l'export à droite. Pas d'onglet caché, pas de fenêtre flottante à retrouver.</p>
-          <p data-lang="en">An A4 document open in the browser: tools on the left, the page in the centre, export on the right. No hidden tab, no floating window to hunt down.</p>
-          <p data-lang="ja">ブラウザで開いたA4ドキュメント。左にツール、中央にページ、右に書き出し。隠れたタブも、探し回るウインドウもありません。</p>
-        </figcaption>
-      </figure>
+      <article class="app">
+        <span class="entry-logo"><img src="icons/icon-192x192.png" alt="SuperPrint" width="50" height="50"></span>
+        <h3>SuperPrint</h3>
+        <p class="inline-fr">L'atelier de PAO complet : habillage du texte, typographie éditoriale, CMJN fidèle, pages maîtresses, export PDF. Un document ouvert dans le navigateur — les outils à gauche, la page au centre, l'export à droite.</p>
+        <p class="inline-en">The complete DTP atelier: text wrap, editorial typography, faithful CMYK, master pages, PDF export. A document open in the browser — tools on the left, the page in the centre, export on the right.</p>
+        <p class="inline-ja">本格的なDTP工房。テキストの回り込み、組版タイポグラフィ、忠実なCMYK、マスターページ、PDF書き出し。ブラウザで開いたドキュメント、左にツール、中央にページ、右に書き出し。</p>
+        <a class="app-go" href="app/index.html"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open the app</span><span class="inline-ja">アプリを開く</span> <span class="arr" aria-hidden="true">→</span></a>
+      </article>
 
-      <figure class="shot">
-        <div class="shot-img">
-          <img src="img/landing/habillage.jpg" width="1600" height="1000" loading="lazy"
-               alt="Habillage du texte : les lignes se replient autour de la forme">
-        </div>
-        <figcaption class="shot-txt">
-          <span class="shot-num">02</span>
-          <h3 data-lang="fr">L'habillage du texte</h3>
-          <h3 data-lang="en">Text wrap</h3>
-          <h3 data-lang="ja">テキストの回り込み</h3>
-          <p data-lang="fr">Le texte se replie autour de la forme, ligne après ligne : la largeur disponible est recalculée à chaque ligne, la césure reste active, la dernière ligne n'est pas étirée.</p>
-          <p data-lang="en">Text folds around the shape, line after line: available width is recomputed for every line, hyphenation stays active, the last line is not stretched.</p>
-          <p data-lang="ja">行ごとにテキストが図形を避けて折り返します。各行で有効幅を再計算し、ハイフネーションも維持。最終行は伸ばしません。</p>
-          <ul>
-            <li data-lang="fr">Épouser la forme, ou sauter sous l'objet</li>
-            <li data-lang="en">Hug the shape, or jump below the object</li>
-            <li data-lang="ja">図形に沿わせる／オブジェクトの下へ送る</li>
-            <li data-lang="fr">Décalage réglable en pixels, côté par côté</li>
-            <li data-lang="en">Standoff in pixels, side by side</li>
-            <li data-lang="ja">余白は4辺それぞれピクセル単位</li>
-            <li data-lang="fr">Recomposition dès l'instant où la forme bouge</li>
-            <li data-lang="en">Reflows the moment the shape moves</li>
-            <li data-lang="ja">図形を動かすと即座に再組版</li>
-          </ul>
-        </figcaption>
-      </figure>
+      <article class="app">
+        <span class="entry-logo entry-clair"><img src="icons/studio_print_logo_blanc.png" alt="Studio IA" width="50" height="50"></span>
+        <h3>Studio IA</h3>
+        <p class="inline-fr">L'assistant de mise en page : décrivez la maquette, par texte ou par <strong>voix</strong>, il compose un document complet — affiche, flyer, brochure, catalogue, magazine, rapport — que vous ouvrez ensuite dans l'éditeur. Quatre moteurs au choix, dont un moteur local qui travaille hors-ligne.</p>
+        <p class="inline-en">The layout assistant: describe the layout, by text or by <strong>voice</strong>, and it composes a complete document — poster, flyer, brochure, catalog, magazine, report — which you then open in the editor. Four engines to choose from, including a local one that works offline.</p>
+        <p class="inline-ja">レイアウトの助手。テキストまたは<strong>音声</strong>で説明すると、ポスター、フライヤー、パンフレット、カタログ、雑誌、レポートなど完全なドキュメントを組み上げ、そのままエディタで開けます。オフラインで動くローカルエンジンを含む4つのエンジンから選択。</p>
+        <a class="app-go" href="sp213-studio.html"><span class="inline-fr">Ouvrir le studio</span><span class="inline-en">Open the studio</span><span class="inline-ja">スタジオを開く</span> <span class="arr" aria-hidden="true">→</span></a>
+      </article>
 
-      <figure class="shot">
-        <div class="shot-img">
-          <img src="img/landing/supertypo.jpg" width="1600" height="1000" loading="lazy"
-               alt="SuperTyPo : la typographie redessinée en courbes">
-        </div>
-        <figcaption class="shot-txt">
-          <span class="shot-num">03</span>
-          <h3 data-lang="fr">La typographie vectorisée</h3>
-          <h3 data-lang="en">Vectorised type</h3>
-          <h3 data-lang="ja">書体のベクター化</h3>
-          <p data-lang="fr">L'atelier SuperTyPo redessine le caractère en courbes : le lettrage devient un dessin vectoriel, exploitable à l'échelle d'une affiche.</p>
-          <p data-lang="en">The SuperTyPo workshop redraws the character as curves: the lettering becomes a vector drawing, usable at poster scale.</p>
-          <p data-lang="ja">SuperTyPoは文字を曲線として描き直します。レタリングはベクター図形になり、ポスターサイズでも使えます。</p>
-        </figcaption>
-      </figure>
+      <article class="app">
+        <span class="entry-logo entry-clair"><img src="icons/sper_typo.png" alt="SuperTyPo" width="50" height="50"></span>
+        <h3>SuperTyPo</h3>
+        <p class="inline-fr">L'atelier typographique : le caractère est redessiné en courbes, le lettrage devient un dessin vectoriel, exploitable à l'échelle d'une affiche.</p>
+        <p class="inline-en">The type workshop: the character is redrawn as curves, the lettering becomes a vector drawing, usable at poster scale.</p>
+        <p class="inline-ja">書体の工房。文字を曲線として描き直し、レタリングをベクター図形に。ポスターサイズでも使えます。</p>
+        <a class="app-go" href="supertypo/index.html"><span class="inline-fr">Ouvrir SuperTyPo</span><span class="inline-en">Open SuperTyPo</span><span class="inline-ja">SuperTyPoを開く</span> <span class="arr" aria-hidden="true">→</span></a>
+      </article>
 
     </div>
 
@@ -2390,201 +2374,15 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 </section>
 
 <!-- ══════════════ VALUE PROPS — 6 ARGUMENTS ══════════════ -->
-<section id="value-props">
-  <div class="container">
-    <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 01 · Pourquoi SuperPrint</div>
-      <div class="section-label" data-lang="en">Chapter 01 · Why SuperPrint</div>
-      <div class="section-label" data-lang="ja">第01章 · SuperPrintの特徴</div>
-      <h2 data-lang="fr">Tout l'atelier du créateur, sans la boutique.</h2>
-      <h2 data-lang="en">The whole creator's atelier — without the shop.</h2>
-      <h2 data-lang="ja">クリエイターの工房を丸ごと。店は要りません。</h2>
-      <p class="lead" data-lang="fr">Huit convictions, tenues par un logiciel né pour la presse et l'édition, pensé pour vivre dans le navigateur.</p>
-      <p class="lead" data-lang="en">Eight convictions, held by software born for print and publishing — designed to live in the browser.</p>
-      <p class="lead" data-lang="ja">印刷と出版のために生まれ、ブラウザで生きるために設計されたソフトウェアが貫く、8つの信念。</p>
-    </div>
-    <div class="vp-grid">
-      <div class="vp-card">
-        <div class="vp-icon">01</div>
-        <h3 data-lang="fr">Sans abonnement</h3>
-        <h3 data-lang="en">No subscription</h3>
-        <h3 data-lang="ja">サブスク不要</h3>
-        <p data-lang="fr">Les suites de PAO professionnelles coûtent des dizaines d'euros chaque mois. SuperPrint s'utilise sans abonnement et sans limite cachée.</p>
-        <p data-lang="en">Professional DTP suites cost tens of euros every month. SuperPrint works with no subscription and no hidden limit.</p>
-        <p data-lang="ja">プロ向けDTPスイートは毎月数十ユーロかかります。SuperPrintはサブスクなし、隠れた制限もなし。</p>
-      </div>
-      <div class="vp-card">
-        <div class="vp-icon">02</div>
-        <h3 data-lang="fr">100% navigateur</h3>
-        <h3 data-lang="en">100% browser</h3>
-        <h3 data-lang="ja">100%ブラウザ</h3>
-        <p data-lang="fr">Chrome, Firefox, Safari ou Edge : ouvrez la page, travaillez. Rien à télécharger, rien à installer, aucun plugin.</p>
-        <p data-lang="en">Chrome, Firefox, Safari or Edge: open the page, start working. Nothing to download, nothing to install, no plugin.</p>
-        <p data-lang="ja">Chrome、Firefox、Safari、Edge — 開いてすぐ作業。ダウンロードもインストールもプラグインも不要。</p>
-      </div>
-      <div class="vp-card">
-        <div class="vp-icon">03</div>
-        <h3 data-lang="fr">Quadrichromie fidèle</h3>
-        <h3 data-lang="en">Faithful CMYK</h3>
-        <h3 data-lang="ja">忠実なCMYK</h3>
-        <p data-lang="fr">Mode CMYK activable, sélecteur dédié, <strong>tons directs Pantone séparés en couches nommées</strong>, profils ICC, simulation d'épreuve écran : ce que vous voyez prépare l'offset.</p>
-        <p data-lang="en">Activatable CMYK mode, dedicated picker, <strong>Pantone spot inks separated into named PDF channels</strong>, ICC profiles, on-screen proof: what you see prepares the offset press.</p>
-        <p data-lang="ja">切り替え可能なCMYKモード、専用ピッカー、<strong>Pantone特色を名前付きPDFチャンネルに分版</strong>、ICCプロファイル、画面プルーフ。見たままがオフセットを準備します。</p>
-      </div>
-      <div class="vp-card">
-        <div class="vp-icon">04</div>
-        <h3 data-lang="fr">Multi-pages &amp; gabarits</h3>
-        <h3 data-lang="en">Multi-page &amp; masters</h3>
-        <h3 data-lang="ja">複数ページ＆マスター</h3>
-        <p data-lang="fr">Documents multi-pages illimités, gabarits réutilisables, pagination et numérotation automatiques.</p>
-        <p data-lang="en">Unlimited multi-page documents, reusable master pages, automatic pagination and numbering.</p>
-        <p data-lang="ja">無制限の複数ページ、再利用できるマスターページ、自動ページ番号。</p>
-      </div>
-      <div class="vp-card">
-        <div class="vp-icon">05</div>
-        <h3 data-lang="fr">Typographie d'éditeur</h3>
-        <h3 data-lang="en">Editorial typography</h3>
-        <h3 data-lang="ja">エディトリアルな組版</h3>
-        <p data-lang="fr">Césure automatique en six langues, crénage, interlignage, chaînage des blocs texte, styles de paragraphe.</p>
-        <p data-lang="en">Automatic hyphenation in six languages, kerning, leading, text-frame chaining, paragraph styles.</p>
-        <p data-lang="ja">6言語の自動ハイフネーション、カーニング、行送り、テキストフレーム連結、段落スタイル。</p>
-      </div>
-      <div class="vp-card">
-        <div class="vp-icon">06</div>
-        <h3 data-lang="fr">L'habillage du texte</h3>
-        <h3 data-lang="en">Text wrap</h3>
-        <h3 data-lang="ja">テキストの回り込み</h3>
-        <p data-lang="fr">Un texte coule autour d'une forme, d'une image ou d'un contour, et se recompose quand vous déplacez l'objet. Sur un bloc posé <strong>dans</strong> une forme, le texte se replie à l'intérieur sans déborder du cadre.</p>
-        <p data-lang="en">Text flows around a shape, an image or a contour, and reflows as you move the object. On a frame placed <strong>inside</strong> a shape, the text folds inward without escaping its box.</p>
-        <p data-lang="ja">図形・画像・輪郭の周りにテキストが回り込み、オブジェクトの移動に追従します。図形の<strong>内側</strong>に置いたフレームでは、枠からはみ出さずに折り返します。</p>
-      </div>
-      <div class="vp-card">
-        <div class="vp-icon">07</div>
-        <h3 data-lang="fr">Vos fichiers, repris</h3>
-        <h3 data-lang="en">Your files, brought in</h3>
-        <h3 data-lang="ja">既存ファイルの取り込み</h3>
-        <p data-lang="fr">Importez du <strong>Word</strong> (.docx), de l'<strong>IDML</strong> (InDesign), de l'OpenDocument, du RTF, des tableurs, des PDF et vos images. SuperPrint met le texte en page et poursuit le travail.</p>
-        <p data-lang="en">Bring in <strong>Word</strong> (.docx), <strong>IDML</strong> (InDesign), OpenDocument, RTF, spreadsheets, PDF and images. SuperPrint lays the text out and carries on.</p>
-        <p data-lang="ja"><strong>Word</strong>（.docx）、<strong>IDML</strong>（InDesign）、OpenDocument、RTF、表計算、PDF、画像を読み込み。SuperPrintが組版して作業を続けます。</p>
-      </div>
-      <div class="vp-card">
-        <div class="vp-icon">08</div>
-        <h3 data-lang="fr">Studio IA SP213</h3>
-        <h3 data-lang="en">SP213 AI studio</h3>
-        <h3 data-lang="ja">SP213 AIスタジオ</h3>
-        <p data-lang="fr">Décrivez la maquette, à l'écrit ou à la voix : l'IA compose le document, vous le signez dans SuperPrint.</p>
-        <p data-lang="en">Describe the layout, in writing or by voice: the AI composes the document, you sign it in SuperPrint.</p>
-        <p data-lang="ja">レイアウトを文章か音声で説明するとAIが組版。仕上げはSuperPrintで。</p>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ══════════════ SP213 STUDIO ══════════════ -->
 <!-- ══════════════ STUDIO SP213 — L'ASSISTANT ══════════════ -->
-<section id="studio">
-  <div class="ghost" aria-hidden="true">SP213</div>
-  <div class="container">
-    <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 02 · Le studio SP213</div>
-      <div class="section-label" data-lang="en">Chapter 02 · SP213 Studio</div>
-      <div class="section-label" data-lang="ja">第02章 · SP213スタジオ</div>
-    </div>
-    <div class="studio-intro">
-      <div>
-        <h2 data-lang="fr">Décrivez la maquette.<br>L'IA la compose.</h2>
-        <h2 data-lang="en">Describe the layout.<br>The AI composes it.</h2>
-        <h2 data-lang="ja">レイアウトを言葉に。<br>AIが組み上げます。</h2>
-        <p class="lead" data-lang="fr">Le studio SP213 est l'assistant de mise en page de SuperPrint. En langage naturel, par texte ou par <strong>voix</strong>, il génère un document complet — affiche, flyer, brochure, catalogue, magazine, rapport — que vous ouvrez ensuite dans l'éditeur pour le retravailler.</p>
-        <p class="lead" data-lang="en">SP213 Studio is SuperPrint's layout assistant. In natural language, by text or by <strong>voice</strong>, it generates a complete document — poster, flyer, brochure, catalog, magazine, report — which you then open in the editor to refine.</p>
-        <p class="lead" data-lang="ja">SP213スタジオはSuperPrintのレイアウトアシスタント。自然言語、テキストまたは<strong>音声</strong>で、ポスター、フライヤー、パンフレット、カタログ、雑誌、レポートなど完全なドキュメントを生成。その後エディタで仕上げられます。</p>
-        <div class="studio-engine" role="list" aria-label="Moteurs / Engines / エンジン">
-          <span class="eng on">DeepSeek</span>
-          <span class="eng">OpenRouter</span>
-          <span class="eng">Groq</span>
-          <span class="eng">WebLLM · WebGPU</span>
-        </div>
-      </div>
-      <div class="studio-aside">
-        <p class="lead" style="max-width:none;" data-lang="fr">Un aller-retour sans couture entre l'idée et la page finale : l'IA propose la première épreuve, l'atelier SuperPrint garde le dernier mot.</p>
-        <p class="lead" style="max-width:none;" data-lang="en">A seamless round-trip between idea and final page: the AI offers the first proof, the SuperPrint atelier keeps the final word.</p>
-        <p class="lead" style="max-width:none;" data-lang="ja">アイデアから完成ページまで、切れ目のない往復を。AIが最初の校正刷りを提示し、SuperPrint工房が最終決定権を持ちます。</p>
-      </div>
-    </div>
-    <div class="studio-grid">
-      <div class="studio-card">
-        <span class="studio-num">I.</span>
-        <h3 data-lang="fr">Prompt, texte ou voix</h3>
-        <h3 data-lang="en">Prompt, text or voice</h3>
-        <h3 data-lang="ja">プロンプト — テキスト／音声</h3>
-        <p data-lang="fr">Décrivez la maquette ou dictez-la au micro (Web Speech API). SP213 comprend et compose le document entier.</p>
-        <p data-lang="en">Describe the layout or dictate it to the microphone (Web Speech API). SP213 understands and composes the whole document.</p>
-        <p data-lang="ja">レイアウトを説明するか、マイクに話すだけ（Web Speech API）。SP213が理解し、ドキュメント全体を組み上げます。</p>
-      </div>
-      <div class="studio-card">
-        <span class="studio-num">II.</span>
-        <h3 data-lang="fr">Quatre moteurs au choix</h3>
-        <h3 data-lang="en">Four engines of your choice</h3>
-        <h3 data-lang="ja">選べる4つのエンジン</h3>
-        <p data-lang="fr"><strong>DeepSeek</strong> par défaut, <strong>OpenRouter</strong> gratuit, <strong>Groq</strong> ultra-rapide, et <strong>SP213 WLLM</strong> local et hors-ligne via WebGPU.</p>
-        <p data-lang="en"><strong>DeepSeek</strong> by default, <strong>OpenRouter</strong> for free, <strong>Groq</strong> ultra-fast, and <strong>SP213 WLLM</strong> local and offline via WebGPU.</p>
-        <p data-lang="ja"><strong>DeepSeek</strong>（デフォルト）、<strong>OpenRouter</strong>（無料）、<strong>Groq</strong>（超高速）、WebGPUによるローカル・オフラインの<strong>SP213 WLLM</strong>。</p>
-      </div>
-      <div class="studio-card">
-        <span class="studio-num">III.</span>
-        <h3 data-lang="fr">Sources jointes</h3>
-        <h3 data-lang="en">Attached sources</h3>
-        <h3 data-lang="ja">素材の添付</h3>
-        <p data-lang="fr">Images, texte, documents Word : SP213 analyse vos pièces et les intègre naturellement à la composition.</p>
-        <p data-lang="en">Images, text, Word documents: SP213 analyzes your files and weaves them naturally into the composition.</p>
-        <p data-lang="ja">画像、テキスト、Word文書を添付。SP213が解析して自然に組版へ織り込みます。</p>
-      </div>
-      <div class="studio-card">
-        <span class="studio-num">IV.</span>
-        <h3 data-lang="fr">Retouche ciblée</h3>
-        <h3 data-lang="en">Targeted retouching</h3>
-        <h3 data-lang="ja">選択箇所の修正</h3>
-        <p data-lang="fr">Sélectionnez un ou plusieurs éléments dans l'aperçu : le prochain prompt ne modifiera qu'eux, le reste reste intact.</p>
-        <p data-lang="en">Select one or more elements in the preview: the next prompt will change only those — everything else stays untouched.</p>
-        <p data-lang="ja">プレビューで要素を選択すると、次のプロンプトはそこだけを修正。他の部分は完全に保持されます。</p>
-      </div>
-      <div class="studio-card">
-        <span class="studio-num">V.</span>
-        <h3 data-lang="fr">Conversations en onglets</h3>
-        <h3 data-lang="en">Tabbed conversations</h3>
-        <h3 data-lang="ja">タブ形式の会話</h3>
-        <p data-lang="fr">Chaque conversation garde sa maquette et son historique, sauvegardés automatiquement dans le navigateur.</p>
-        <p data-lang="en">Each conversation keeps its own layout and history, auto-saved in the browser.</p>
-        <p data-lang="ja">各会話が独自のレイアウトと履歴を保持。ブラウザに自動保存されます。</p>
-      </div>
-      <div class="studio-card">
-        <span class="studio-num">VI.</span>
-        <h3 data-lang="fr">Aller-retour avec l'app</h3>
-        <h3 data-lang="en">Round-trip with the app</h3>
-        <h3 data-lang="ja">アプリとの連携</h3>
-        <p data-lang="fr">« Ouvrir dans SuperPrint » transfère la maquette vers l'éditeur complet. Exportez aussi en .sp pour plus tard.</p>
-        <p data-lang="en">"Open in SuperPrint" transfers the layout to the full editor. You can also export as .sp for later.</p>
-        <p data-lang="ja">「SuperPrintで開く」でレイアウトを本編エディタへ転送。後で使うため.sp書き出しも可能です。</p>
-      </div>
-    </div>
-    <div class="studio-band">
-      <p class="sb-txt" data-lang="fr">Chaque bonne maquette commence par une première épreuve. <span class="cmymono">SP213 — LA COMPOSITION</span></p>
-      <p class="sb-txt" data-lang="en">Every good layout begins with a first proof. <span class="cmymono">SP213 — THE COMPOSITION</span></p>
-      <p class="sb-txt" data-lang="ja">良いレイアウトは最初の校正刷りから始まります。 <span class="cmymono">SP213 — 組版</span></p>
-      <a href="sp213-studio.html" class="btn btn-paper" data-lang="fr">Ouvrir le studio <span class="arr" aria-hidden="true">→</span></a>
-      <a href="sp213-studio.html" class="btn btn-paper" data-lang="en">Open the studio <span class="arr" aria-hidden="true">→</span></a>
-      <a href="sp213-studio.html" class="btn btn-paper" data-lang="ja">スタジオを開く <span class="arr" aria-hidden="true">→</span></a>
-    </div>
-  </div>
-</section>
-
 <!-- ══════════════ COMPARISON TABLE ══════════════ -->
 <section id="comparison">
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 03 · Sur la table d'atelier</div>
-      <div class="section-label" data-lang="en">Chapter 03 · On the worktable</div>
-      <div class="section-label" data-lang="ja">第03章 · 作業台の上で</div>
+      <div class="section-label" data-lang="fr">Chapitre 01 · Sur la table d'atelier</div>
+      <div class="section-label" data-lang="en">Chapter 01 · On the worktable</div>
+      <div class="section-label" data-lang="ja">第01章 · 作業台の上で</div>
       <h2 data-lang="fr">SuperPrint face aux autres familles de PAO</h2>
       <h2 data-lang="en">SuperPrint against the other DTP families</h2>
       <h2 data-lang="ja">SuperPrint vs 他のDTP各系譜</h2>
@@ -2593,7 +2391,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <p class="lead" data-lang="ja">プロのレイアウトに必要な機能を客観比較。黒い欄＝あり。空欄＝なし。</p>
     </div>
     <div class="cmp-wrapper">
-      <table class="cmp" aria-label="Comparison SuperPrint vs DTP categories">
+      <table class="cmp" id="cmpTable" aria-label="Comparison SuperPrint vs DTP categories">
         <thead>
           <tr>
             <th data-lang="fr">Fonctionnalité</th>
@@ -2669,7 +2467,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <td class="cross">○</td>
             <td class="partial">Limitée</td>
           </tr>
-          <tr>
+          <tr class="is-folded">
             <td class="feat" data-lang="fr">Gabarits (Master pages)</td>
             <td class="feat" data-lang="en">Master pages</td>
             <td class="feat" data-lang="ja">マスターページ</td>
@@ -2678,7 +2476,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <td class="cross">○</td>
             <td class="chk">●</td>
           </tr>
-          <tr>
+          <tr class="is-folded">
             <td class="feat" data-lang="fr">Calques</td>
             <td class="feat" data-lang="en">Layers</td>
             <td class="feat" data-lang="ja">レイヤー</td>
@@ -2687,7 +2485,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <td class="partial">Limité</td>
             <td class="chk">●</td>
           </tr>
-          <tr>
+          <tr class="is-folded">
             <td class="feat" data-lang="fr">Opérations booléennes</td>
             <td class="feat" data-lang="en">Boolean operations</td>
             <td class="feat" data-lang="ja">ブーリアン演算</td>
@@ -2696,7 +2494,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <td class="cross">○</td>
             <td class="partial">Partiel</td>
           </tr>
-          <tr>
+          <tr class="is-folded">
             <td class="feat" data-lang="fr">Import PDF</td>
             <td class="feat" data-lang="en">PDF import</td>
             <td class="feat" data-lang="ja">PDF読み込み</td>
@@ -2705,7 +2503,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <td class="partial">Images only</td>
             <td class="partial">Partiel</td>
           </tr>
-          <tr>
+          <tr class="is-folded">
             <td class="feat" data-lang="fr">Sauvegarde automatique</td>
             <td class="feat" data-lang="en">Auto-save</td>
             <td class="feat" data-lang="ja">自動保存</td>
@@ -2714,7 +2512,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <td class="chk">● Cloud</td>
             <td class="cross">○</td>
           </tr>
-          <tr>
+          <tr class="is-folded">
             <td class="feat" data-lang="fr">Mode hors-ligne (PWA)</td>
             <td class="feat" data-lang="en">Offline mode (PWA)</td>
             <td class="feat" data-lang="ja">オフライン（PWA）</td>
@@ -2723,7 +2521,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <td class="cross">○</td>
             <td class="chk">●</td>
           </tr>
-          <tr>
+          <tr class="is-folded">
             <td class="feat" data-lang="fr">Accélération GPU</td>
             <td class="feat" data-lang="en">GPU Acceleration</td>
             <td class="feat" data-lang="ja">GPUアクセラレーション</td>
@@ -2732,7 +2530,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <td class="cross">○</td>
             <td class="cross">○</td>
           </tr>
-          <tr>
+          <tr class="is-folded">
             <td class="feat" data-lang="fr">Confidentialité (données locales)</td>
             <td class="feat" data-lang="en">Privacy (local data)</td>
             <td class="feat" data-lang="ja">プライバシー（ローカル保存）</td>
@@ -2743,6 +2541,14 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
           </tr>
         </tbody>
       </table>
+      <div class="tools-more-wrap">
+        <button class="tools-more" type="button" data-fold="cmpTable" aria-expanded="false" aria-controls="cmpTable">
+          <span class="tm-more"><span class="inline-fr">Voir la suite du tableau</span><span class="inline-en">Show the rest of the table</span><span class="inline-ja">表の続きを見る</span></span>
+          <span class="tm-less"><span class="inline-fr">Réduire</span><span class="inline-en">Collapse</span><span class="inline-ja">たたむ</span></span>
+          <span class="tm-count" aria-hidden="true">+8</span>
+          <svg class="tm-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 </section>
@@ -2752,9 +2558,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="ghost" aria-hidden="true">CMJN</div>
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 04 · La chambre noire</div>
-      <div class="section-label" data-lang="en">Chapter 04 · The darkroom</div>
-      <div class="section-label" data-lang="ja">第04章 · 暗室</div>
+      <div class="section-label" data-lang="fr">Chapitre 02 · La chambre noire</div>
+      <div class="section-label" data-lang="en">Chapter 02 · The darkroom</div>
+      <div class="section-label" data-lang="ja">第02章 · 暗室</div>
       <h2 data-lang="fr">Le prépresse, là où le fichier devient une plaque.</h2>
       <h2 data-lang="en">Prepress — where the file becomes a plate.</h2>
       <h2 data-lang="ja">プリプレス — ファイルが版になる場所。</h2>
@@ -2849,9 +2655,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="container">
     <div class="feat-head">
       <div>
-        <div class="section-label" data-lang="fr">Chapitre 05 · L'inventaire</div>
-        <div class="section-label" data-lang="en">Chapter 05 · The inventory</div>
-        <div class="section-label" data-lang="ja">第05章 · 目録</div>
+        <div class="section-label" data-lang="fr">Chapitre 03 · L'inventaire</div>
+        <div class="section-label" data-lang="en">Chapter 03 · The inventory</div>
+        <div class="section-label" data-lang="ja">第03章 · 目録</div>
         <h2 data-lang="fr">L'inventaire de l'atelier</h2>
         <h2 data-lang="en">The atelier inventory</h2>
         <h2 data-lang="ja">工房の目録</h2>
@@ -3027,9 +2833,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="ghost" aria-hidden="true">MAGAZINE · AFFICHE · LIVRE</div>
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 06 · Ce qu'on compose ici</div>
-      <div class="section-label" data-lang="en">Chapter 06 · What is composed here</div>
-      <div class="section-label" data-lang="ja">第06章 · ここで組むもの</div>
+      <div class="section-label" data-lang="fr">Chapitre 04 · Ce qu'on compose ici</div>
+      <div class="section-label" data-lang="en">Chapter 04 · What is composed here</div>
+      <div class="section-label" data-lang="ja">第04章 · ここで組むもの</div>
       <h2 data-lang="fr">Une presse pour chaque projet</h2>
       <h2 data-lang="en">A press for every project</h2>
       <h2 data-lang="ja">あらゆるプロジェクトに一台のプレスを</h2>
@@ -3051,9 +2857,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <section id="vs-indesign">
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 07 · L'analyse</div>
-      <div class="section-label" data-lang="en">Chapter 07 · The analysis</div>
-      <div class="section-label" data-lang="ja">第07章 · 分析</div>
+      <div class="section-label" data-lang="fr">Chapitre 05 · L'analyse</div>
+      <div class="section-label" data-lang="en">Chapter 05 · The analysis</div>
+      <div class="section-label" data-lang="ja">第05章 · 分析</div>
       <h2 data-lang="fr">L'atelier du navigateur face aux grandes maisons</h2>
       <h2 data-lang="en">The browser atelier facing the great houses</h2>
       <h2 data-lang="ja">ブラウザの工房と大手メゾンの対比</h2>
@@ -3120,9 +2926,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <section id="formats">
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 08 · Langues de la page</div>
-      <div class="section-label" data-lang="en">Chapter 08 · Languages of the page</div>
-      <div class="section-label" data-lang="ja">第08章 · ページの言語</div>
+      <div class="section-label" data-lang="fr">Chapitre 06 · Langues de la page</div>
+      <div class="section-label" data-lang="en">Chapter 06 · Languages of the page</div>
+      <div class="section-label" data-lang="ja">第06章 · ページの言語</div>
       <h2 data-lang="fr">Les formats que la page comprend</h2>
       <h2 data-lang="en">The formats the page understands</h2>
       <h2 data-lang="ja">ページが理解するフォーマット</h2>
@@ -3170,9 +2976,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <section id="faq">
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 09 · Questions fréquentes</div>
-      <div class="section-label" data-lang="en">Chapter 09 · Frequently asked</div>
-      <div class="section-label" data-lang="ja">第09章 · よくある質問</div>
+      <div class="section-label" data-lang="fr">Chapitre 07 · Questions fréquentes</div>
+      <div class="section-label" data-lang="en">Chapter 07 · Frequently asked</div>
+      <div class="section-label" data-lang="ja">第07章 · よくある質問</div>
       <h2 data-lang="fr">Les questions que l'on pose souvent à l'atelier</h2>
       <h2 data-lang="en">Questions often asked at the atelier</h2>
       <h2 data-lang="ja">工房でよく聞かれる質問</h2>
@@ -3280,9 +3086,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <section id="manuel">
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 10 · Le manuel</div>
-      <div class="section-label" data-lang="en">Chapter 10 · The manual</div>
-      <div class="section-label" data-lang="ja">第10章 · マニュアル</div>
+      <div class="section-label" data-lang="fr">Chapitre 08 · Le manuel</div>
+      <div class="section-label" data-lang="en">Chapter 08 · The manual</div>
+      <div class="section-label" data-lang="ja">第08章 · マニュアル</div>
       <h2 data-lang="fr">Tout est écrit, noir sur blanc.</h2>
       <h2 data-lang="en">Everything is written down.</h2>
       <h2 data-lang="ja">すべて、文字で書いてあります。</h2>
@@ -3349,9 +3155,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="ghost" aria-hidden="true">AUTEURS</div>
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 11 · Les auteurs</div>
-      <div class="section-label" data-lang="en">Chapter 11 · The authors</div>
-      <div class="section-label" data-lang="ja">第11章 · 著者</div>
+      <div class="section-label" data-lang="fr">Chapitre 09 · Les auteurs</div>
+      <div class="section-label" data-lang="en">Chapter 09 · The authors</div>
+      <div class="section-label" data-lang="ja">第09章 · 著者</div>
       <h2 data-lang="fr">Deux auteurs, un atelier.</h2>
       <h2 data-lang="en">Two authors, one atelier.</h2>
       <h2 data-lang="ja">ふたりの著者、ひとつの工房。</h2>
@@ -3495,7 +3301,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.473</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.474</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
@@ -3736,6 +3542,33 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 </script>
 
 
+<!-- ══════════════ v1.7.473 — REPLI GÉNÉRIQUE (data-fold) ══════════════
+     Même geste que « Voir tous les outils », pour tout bloc long : le tableau du comparatif.
+     Le compteur est déduit du nombre réel d'éléments repliés, jamais écrit à la main. -->
+<script>
+(function () {
+  var boutons = Array.prototype.slice.call(document.querySelectorAll('[data-fold]'));
+  boutons.forEach(function (bouton) {
+    var cible = document.getElementById(bouton.getAttribute('data-fold'));
+    if (!cible) return;
+    var plies = cible.querySelectorAll('.is-folded');
+    if (!plies.length) { if (bouton.parentNode) bouton.parentNode.style.display = 'none'; return; }
+    var compteur = bouton.querySelector('.tm-count');
+    if (compteur) compteur.textContent = '+' + plies.length;
+    bouton.addEventListener('click', function () {
+      var ouvert = cible.classList.toggle('is-open');
+      bouton.classList.toggle('is-open', ouvert);
+      bouton.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+      if (!ouvert) {
+        var barre = document.querySelector('nav');
+        var h = barre ? Math.round(barre.getBoundingClientRect().height) : 0;
+        window.scrollTo({ top: window.pageYOffset + cible.getBoundingClientRect().top - h - 24, behavior: 'smooth' });
+      }
+    });
+  });
+})();
+</script>
+
 <!-- 🎠 CARROUSEL DES MODÈLES : flèches, compteur, glisser à la souris.
      Le SWIPE tactile est celui du navigateur (défilement natif + scroll-snap). -->
 <script>
@@ -3852,6 +3685,18 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
       o.classList.remove('open');
       document.body.style.overflow = '';
     };
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
     /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
