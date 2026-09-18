@@ -180,6 +180,23 @@ function dependenciesReady() {
     path.join(APP_DIR, 'node_modules', '@e965', 'xlsx', 'package.json')
   ].every(existsSync);
 }
+// 🛡️ v1.0.102 : une installation ABÎMÉE (dossier vidé, extraction interrompue,
+// vieux paquet sans le studio local) ne doit jamais être considérée comme bonne :
+// sinon `npx superprint` sert un lanceur auquel il manque des pages — c'est le
+// symptôme « je ne peux pas ouvrir le Studio IA en local ».
+// ⚠️ Les 7 pages du lanceur : s'il en manque UNE, on retélécharge tout.
+function installationComplete() {
+  return [
+    path.join(APP_DIR, 'index.html'),
+    path.join(APP_DIR, 'vite.config.js'),
+    path.join(APP_DIR, 'public', 'superprint', 'version.txt'),
+    path.join(APP_DIR, 'public', 'superprint', 'app', 'index.html'),
+    path.join(APP_DIR, 'public', 'superprint', 'sp213-studio.html'),
+    path.join(APP_DIR, 'public', 'superprint', 'supertypo', 'index.html'),
+    path.join(APP_DIR, 'public', 'superprint', 'documentation.html'),
+    path.join(APP_DIR, 'public', 'superprint', 'api.html')
+  ].every(existsSync);
+}
 function runNpmInstall() {
   return spawnSync(isWin ? 'npm.cmd' : 'npm', ['install', '--no-audit', '--no-fund'], {
     stdio: 'inherit', cwd: APP_DIR, shell: isWin
@@ -200,7 +217,10 @@ async function main() {
   const localVer = installedVersion();
 
   if (isInstalled()) {
-    if (!localVer || compareVersions(localVer, onlineVersion) < 0) {
+    if (!installationComplete()) {
+      warn('The local installation is incomplete (pages missing) — reinstalling.');
+    }
+    if (!localVer || compareVersions(localVer, onlineVersion) < 0 || !installationComplete()) {
       info('Online version (' + onlineVersion + ') is newer than local (' + (localVer || '?') + ') — updating.');
       // Remove the old app to re-download the new one
       const { rmSync } = await import('node:fs');
@@ -276,20 +296,72 @@ async function main() {
 
   // ---- Launch Vite ----
   const viteBin = path.join(APP_DIR, 'node_modules', 'vite', 'bin', 'vite.js');
+  // v1.0.102 : plus de port calculé ici — c'est Vite qui décide (il bascule de port
+  // si 5173 est occupé) et on relaie SON adresse (voir plus bas).
   const userArgs = process.argv.slice(2);
   const hasExplicitHost = userArgs.some(arg => arg === '--host' || arg.startsWith('--host='));
-  const portArgIndex = userArgs.findIndex(arg => arg === '--port');
-  const inlinePort = userArgs.find(arg => arg.startsWith('--port='));
-  const displayPort = inlinePort ? inlinePort.slice('--port='.length) : (portArgIndex >= 0 ? userArgs[portArgIndex + 1] : '5173');
   const args = hasExplicitHost ? userArgs : ['--host', '127.0.0.1', ...userArgs];
 
   console.log(SEP);
   console.log(C.green + C.bold + '  Starting SuperPrint…' + C.reset);
-  console.log(C.dim + '  Open your browser at: http://127.0.0.1:' + displayPort + C.reset);
+  console.log(C.dim + '  The address is displayed below as soon as the server is ready.' + C.reset);
+  console.log(C.dim + '  (the port changes automatically if 5173 is already taken)' + C.reset);
   console.log(SEP);
+
+  // 🛡️ v1.0.102 : on ne DEVINE plus l'adresse. Avant, le message annonçait 5173 en dur
+  // (la valeur par défaut) alors que Vite bascule sur 5174/5175 si 5173 est occupé :
+  // l'utilisateur atterrissait sur une AUTRE application et croyait que SuperPrint
+  // ne s'ouvrait pas (« je ne peux pas ouvrir le studio en local »).
+  // Ici on SONDE les ports, en écartant d'abord ceux qui répondent DÉJÀ (un autre
+  // outil, un ancien serveur, une autre copie de SuperPrint) : seuls les ports
+  // ouverts APRÈS notre démarrage sont candidats.
+  const portDemande = (() => {
+    const enLigne = userArgs.find((arg) => arg.startsWith('--port='));
+    if (enLigne) return enLigne.slice('--port='.length);
+    const index = userArgs.indexOf('--port');
+    return index >= 0 ? userArgs[index + 1] : null;
+  })();
+  const ports = [];
+  if (portDemande) ports.push(String(portDemande));
+  for (let p = 5173; p <= 5185; p++) if (!ports.includes(String(p))) ports.push(String(p));
+
+  const dejaOuverts = new Set();
+  for (const port of ports) {
+    try {
+      const reponse = await fetch('http://127.0.0.1:' + port + '/', { redirect: 'manual', signal: AbortSignal.timeout(800) });
+      await reponse.text();
+      dejaOuverts.add(port);
+    } catch (_) { /* personne sur ce port : c'est un candidat */ }
+  }
+  if (dejaOuverts.size) {
+    info('Port(s) already busy (ignored): ' + [...dejaOuverts].join(', '));
+  }
+
   const child = spawn(process.execPath, [viteBin, ...args], {
     stdio: 'inherit', cwd: APP_DIR
   });
+
+  (async () => {
+    for (let essai = 0; essai < 80; essai++) {
+      for (const port of ports) {
+        if (dejaOuverts.has(port)) continue;
+        let texte = '';
+        try {
+          const reponse = await fetch('http://127.0.0.1:' + port + '/', { redirect: 'manual', signal: AbortSignal.timeout(1500) });
+          if (!reponse.ok) continue;
+          texte = await reponse.text();
+        } catch (_) { continue; }
+        if (texte.indexOf('SuperPrint') < 0) continue; // un autre outil a pris ce port
+        console.log('');
+        console.log(C.green + C.bold + '  ✔  SuperPrint runs at: http://127.0.0.1:' + port + '/' + C.reset);
+        console.log(C.dim + '     Open that exact address, then pick Editor, Studio IA, SuperTyPo,' + C.reset);
+        console.log(C.dim + '     Documentation or API on the page.' + C.reset);
+        return;
+      }
+      await new Promise((suite) => setTimeout(suite, 250));
+    }
+  })();
+
   child.on('close', (code) => {
     if (code !== 0 && code !== null) {
       console.log(C.yellow + '\n  The server stopped (code ' + code + ').' + C.reset);
