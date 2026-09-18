@@ -9,6 +9,31 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.479] — 2026-09-18
+
+_Small / large margins applied again, a graduated tab-stop ruler, and a 22-release catch-up_
+
+### Fixed
+- **The “small margin / large margin” fields of the sidebar were ignored.** One margin was stored under two names at once (`inner`/`left` for the small margin, `outer`/`right` for the large one). The four sidebar fields wrote `left` and `right`, while the engine read `inner` and `outer` first — so the typed value was discarded. Top and Bottom worked; the small and large margins had been dead since 1.7.469. A margin now has a single slot with two names, so writing either one updates the same value (measured: 8 of 10 checks failed before, 10 of 10 after).
+- **Changing a margin wiped a sheet’s guides on double pages.** The sidebar ran the single-page margin routine on spread canvases, replacing the two mirrored guides with one page-wide rectangle. It now goes through the same single entry point as the rest of the application, and the optimisation guard compares a signature of all four margins (`20/20/10/30`) instead of the single maximum.
+- **A page alone on the left used right-hand geometry**, so its two margins came out swapped. That case — the last page of an even document — is now treated as a verso: large margin on the trimmed edge, small margin on the fold side. Measured on a 4-page document (small 8 mm / large 32 mm): page 1 → 8 mm, sheet [2-3] → 32 mm left / 8 mm right, page 4 alone → 32 mm.
+- **Runaway “Guide removed accidentally, restoring…” loop.** The safety net that rebuilds a spread’s guides expected 8 guides where a healthy sheet holds 7, so it considered itself short every time: it removed and rebuilt the guides every 100 ms, endlessly — the log grew and the tab stopped responding. Deliberate removals are now flagged, and the threshold is correct (measured: 0 warnings while creating a 4-page document and while changing a margin on a double page).
+
+### Added
+- **A graduated ruler above the text block shows where the tab stops are.** Millimetre ticks every 10 mm, numbers every 50 mm, the default step as short ticks, and one symbol per stop — left, right, centred, decimal. It is attached to the block (zoom, dragging, resizing, rotation) and repositioned rather than rebuilt when nothing changed. It shows while the Tabulation window is open or when the selected block carries stops, and is flagged “do not export”: it never enters `.sp`, `.json`, the autosave, the PDF or the PNG.
+- **Catch-up release notes for 1.7.458 → 1.7.478** (21 releases that had no entry): text block columns and per-side margins (1.7.458–459), text wrap in both PDF exports and the divider of the collapsed sidebar (1.7.460–462), the reworked home page with the 43-template carousel and the trilingual legal pop-ins (1.7.463–467), the home page becoming the superprint.cc entry page with per-language canonical/hreflang and a rebuilt sitemap, the print-shop cursor, the “Help us” page, the authors section (1.7.468–472), then the fix for templates losing their photos, the simplified home page, the “Take part” naming, the pixel-adjusted collapsed-sidebar logotype, preloaded critical fonts and refreshed structured data (1.7.473–478).
+
+### Verified
+| Check | Result |
+|---|---|
+| Margin model | 10 / 10 audit checks (2 failures before), 6 keys serialised, `structuredClone` clean |
+| Margin guides, 4-page document | page 1 → 8 mm · sheet [2-3] → 32 / 8 mm · page 4 alone → 32 mm |
+| Guide-restore warnings | **0** while creating the document and while changing a margin on a spread |
+| Tab-stop ruler | 1 group, 34 children, left edge on the block’s left edge, 5 px above, not serialised, not exported |
+| Parity web ↔ mirror | **22 / 22 identical**, 0 different, 0 missing |
+| `node --check` | clean on both `main.js` · version coherence 13 / 13 markers |
+| Local package | `sp213-local.zip` rebuilt and verified |
+
 ## [1.7.456] — 2026-09-16
 
 _A squarer top bar, a search button where you expect it, and a full advanced search panel_

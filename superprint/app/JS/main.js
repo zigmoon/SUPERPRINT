@@ -1040,12 +1040,23 @@ function spMargesMm() {
        sienne. inner et left sont la MÊME valeur, comme outer et right. */
     var inner = spMargeNombre(margins && (margins.inner !== undefined ? margins.inner : margins.left), d);
     var outer = spMargeNombre(margins && (margins.outer !== undefined ? margins.outer : margins.right), d);
-    return {
+    var o = {
         top: spMargeNombre(margins && margins.top, d),
-        bottom: spMargeNombre(margins && margins.bottom, d),
-        inner: inner, outer: outer,
-        left: inner, right: outer
+        bottom: spMargeNombre(margins && margins.bottom, d)
     };
+    /* 🆕 v1.7.479 — UN SEUL EMPLACEMENT PAR MARGE, DEUX NOMS.
+       inner/outer (vocabulaire imprimeur) et left/right (vocabulaire physique)
+       désignent la MÊME valeur : ce sont des ALIAS, pas deux champs. Sans cela,
+       un appelant qui écrivait « left » — c'est le cas des champs « Petit fond »
+       et « Grand fond » de la barre latérale — était SILENCIEUSEMENT IGNORÉ :
+       spSetMargesMm relisait « inner », resté à l'ancienne valeur.
+       Mesuré : petit fond et grand fond sans aucun effet de la v1.7.469 à la
+       v1.7.478, alors que Haut et Bas fonctionnaient parfaitement. */
+    Object.defineProperty(o, 'inner', { enumerable: true, configurable: true, get: function () { return inner; }, set: function (v) { inner = v; } });
+    Object.defineProperty(o, 'outer', { enumerable: true, configurable: true, get: function () { return outer; }, set: function (v) { outer = v; } });
+    Object.defineProperty(o, 'left', { enumerable: true, configurable: true, get: function () { return inner; }, set: function (v) { inner = v; } });
+    Object.defineProperty(o, 'right', { enumerable: true, configurable: true, get: function () { return outer; }, set: function (v) { outer = v; } });
+    return o;
 }
 function spMargesPx() {
     var m = spMargesMm();
@@ -1109,10 +1120,18 @@ function spSyncMarginInputs() {
         }
     } catch (_) {}
 }
+/* 🆕 v1.7.479 — Signature des marges. Le scalaire « margin » ne suffit PAS à
+   savoir qu'un repère doit être recréé : il vaut le MAXIMUM des quatre, donc
+   réduire un côté déjà inférieur au maximum ne le change pas. */
+function spSignatureMarges() {
+    var m = spMargesMm();
+    return [m.top, m.bottom, m.inner, m.outer].join('/');
+}
 window.spMargesMm = spMargesMm;
 window.spMargesPx = spMargesPx;
 window.spSetMargesMm = spSetMargesMm;
 window.spSyncMarginInputs = spSyncMarginInputs;
+window.spSignatureMarges = spSignatureMarges;
 
 /* ═══════════════════════════════════════════════════════════════════════════
    🆕 v1.7.458 — COLONNES D'UN BLOC TEXTE
@@ -5613,9 +5632,146 @@ window.spTestDiag = function () {
             fn(t, obj);
             rafraichir(obj);
         });
+        /* 🆕 v1.7.479 — la règle suit CHAQUE réglage : ajout, retrait, position,
+           type, pas, activation. */
+        majRegleTab();
         return blocs.length;
     }
     window.spTabModifier = modifier;
+
+    /* ═══════════ v1.7.479 — RÈGLE DES TAQUETS, SOLIDAIRE DU BLOC ═══════════
+       Demande utilisateur : « ajouter une règle au-dessus du bloc texte concerné
+       qui indiquerait les taquets, car on a du mal à situer où se trouve le
+       taquet ». La règle est dessinée DANS le canvas (objets Fabric) : elle est
+       donc toujours alignée sur le bloc et suit le zoom, le déplacement et la
+       rotation sans aucun calcul d'écran. Origine x = 0 : bord GAUCHE du bloc,
+       exactement l'origine des positions de taquets du moteur d'avance.
+       Contenu : bande graduée en mm (repère fort et chiffre tous les 50 mm),
+       pas de tabulation par défaut en petits traits, et UN symbole par taquet à
+       sa position exacte (Gauche, Centre, Droite, Décimale).
+       La règle est un objet UTILITAIRE : selectable/evented false,
+       excludeFromExport true (elle n'entre ni dans les pages, ni dans le PDF). */
+    var REGLE_H = 17;          /* hauteur de la bande, en px du document */
+    var REGLE_GAP = 5;         /* air entre la règle et le haut du bloc */
+    var REGLE_PAS_MM = 10;     /* une graduation tous les 10 mm */
+    var REGLE_LABEL_MM = 50;   /* un chiffre tous les 50 mm */
+    var _regle = null;         /* le groupe Fabric en place */
+
+    function regleEstVisible() {
+        var popin = document.getElementById('tabsMenu');
+        if (popin && popin.classList.contains('open')) return true;
+        var b = blocsTexte()[0];
+        return !!(b && b._spTabs && b._spTabs.active);
+    }
+
+    /* Symbole du taquet, dessiné dans le repère LOCAL de la règle. */
+    function regleSymbole(type, x) {
+        var pts;
+        if (type === 'center') {
+            pts = [{ x: x, y: 2.5 }, { x: x + 5, y: 7.5 }, { x: x, y: 12.5 }, { x: x - 5, y: 7.5 }];
+        } else if (type === 'right') {
+            pts = [{ x: x, y: 2.5 }, { x: x - 7, y: 7.5 }, { x: x, y: 12.5 }];
+        } else if (type === 'decimal') {
+            pts = [];
+            for (var i = 0; i < 8; i++) {
+                var a = Math.PI / 8 + i * Math.PI / 4;
+                pts.push({ x: x + 2.6 * Math.cos(a), y: 7.5 + 2.6 * Math.sin(a) });
+            }
+        } else {
+            pts = [{ x: x, y: 2.5 }, { x: x + 7, y: 7.5 }, { x: x, y: 12.5 }];
+        }
+        return new fabric.Polygon(pts, { fill: '#1a1a1a', stroke: undefined, strokeWidth: 0 });
+    }
+
+    /* Met à jour (ou retire) la règle du bloc texte sélectionné. Idempotente :
+       tant que le contenu ne change pas, on DÉPLACE la règle au lieu de la
+       reconstruire (sinon un simple glisser-déposer fabriquerait des dizaines
+       d'objets). */
+    function majRegleTab(canvasForce) {
+        try {
+            var c = canvasForce || leCanvas();
+            if (!c || !c.getObjects) return;
+            var obj = blocsTexte()[0];
+            if (!regleEstVisible() || !obj) {
+                /* ⚠️ Fabric pose obj.canvas = undefined DANS remove() : lire le
+                   canvas AVANT de retirer l'objet, sinon la ligne suivante
+                   lève « Cannot read properties of undefined ». */
+                var _cvRegle = _regle && _regle.canvas;
+                if (_cvRegle) {
+                    _cvRegle.remove(_regle);
+                    _cvRegle.requestRenderAll();
+                }
+                _regle = null;
+                return;
+            }
+            var t = modele(obj);
+            var sc = (typeof obj.scaleX === 'number' && obj.scaleX > 0) ? obj.scaleX : 1;
+            var largeur = Math.max(60, (obj.width || 0) * sc);
+            var maxStop = 0;
+            t.stops.forEach(function (s) { if (s.pos > maxStop) maxStop = s.pos; });
+            if (maxStop * sc + 10 > largeur) largeur = maxStop * sc + 10;
+            var sig = [Math.round(largeur), t.step, t.active ? 1 : 0, JSON.stringify(t.stops)].join('|');
+            var tl = obj.getPointByOrigin('left', 'top');
+            var ang = (obj.angle || 0) * Math.PI / 180;
+            /* Le décalage doit être PERPENDICULAIRE au bord haut du bloc :
+               décaler vers le haut d'un bloc pivoté ferait chevaucher la règle. */
+            var gx = tl.x + REGLE_GAP * Math.sin(ang);
+            var gy = tl.y - REGLE_GAP * Math.cos(ang);
+            var posSig = [Math.round(gx * 10) / 10, Math.round(gy * 10) / 10, Math.round((obj.angle || 0) * 10) / 10].join('|');
+            if (_regle && _regle.canvas === c && _regle._spTabSig === sig) {
+                if (_regle._spTabPos !== posSig) {
+                    _regle.set({ left: gx, top: gy, angle: obj.angle || 0 });
+                    _regle._spTabPos = posSig;
+                    if (typeof _regle.setCoords === 'function') _regle.setCoords();
+                    try { c.bringToFront(_regle); } catch (_) {}
+                    c.requestRenderAll();
+                }
+                return;
+            }
+            if (_regle && _regle.canvas) _regle.canvas.remove(_regle);
+            _regle = null;
+            var enfants = [];
+            enfants.push(new fabric.Rect({ left: 0, top: 0, width: largeur, height: REGLE_H, fill: '#ffffff', stroke: '#b9b9b9', strokeWidth: 0.5, strokeUniform: true }));
+            var pxParMm = SP_MM_PAR_PX;
+            for (var mm = 0; mm * pxParMm <= largeur; mm += REGLE_PAS_MM) {
+                var xg = mm * pxParMm;
+                var fort = (mm % REGLE_LABEL_MM === 0);
+                enfants.push(new fabric.Line([xg, REGLE_H, xg, REGLE_H - (fort ? 9 : 4)], { stroke: fort ? '#555555' : '#b0b0b0', strokeWidth: 0.5 }));
+                if (fort && mm > 0) {
+                    enfants.push(new fabric.Text(String(mm), { left: xg + 1.5, top: 0.5, fontSize: 7, fontFamily: 'IBM Plex Mono', fill: '#666666' }));
+                }
+            }
+            var pas = (t.step > 0) ? t.step : 40;
+            var nbPas = Math.floor(largeur / pas);
+            for (var k = 1; k <= nbPas && k < 200; k++) {
+                var xp = k * pas;
+                enfants.push(new fabric.Line([xp, REGLE_H, xp, REGLE_H - 3], { stroke: '#d2d2d2', strokeWidth: 0.5 }));
+            }
+            t.stops.forEach(function (s) {
+                var xs = s.pos * sc;
+                if (xs < -20 || xs > largeur + 20) return;
+                enfants.push(regleSymbole(s.type, xs));
+            });
+            var grp = new fabric.Group(enfants, {
+                left: gx, top: gy,
+                originX: 'left', originY: 'bottom',
+                angle: obj.angle || 0,
+                selectable: false, evented: false,
+                hasControls: false, hasBorders: false,
+                hoverCursor: 'default',
+                excludeFromExport: true,
+                objectCaching: false,
+                _isTabRuler: true
+            });
+            grp._spTabSig = sig;
+            grp._spTabPos = posSig;
+            c.add(grp);
+            try { c.bringToFront(grp); } catch (_) {}
+            _regle = grp;
+            c.requestRenderAll();
+        } catch (e) { try { console.warn('[taquets] regle :', e); } catch (_) {} }
+    }
+    window.spTabRegleMaj = majRegleTab;
 
     /* ── Interface du pop-in ── */
     var TYPES = [['left', 'Gauche'], ['center', 'Centre'], ['right', 'Droite'], ['decimal', 'Décimale']];
@@ -5709,7 +5865,13 @@ window.spTestDiag = function () {
         if (!c || c._spTabsWire) return;
         c._spTabsWire = true;
         ['selection:created', 'selection:updated', 'selection:cleared'].forEach(function (ev) {
-            c.on(ev, function () { setTimeout(rendreListe, 30); });
+            /* 🆕 v1.7.479 — la règle des taquets suit la sélection. */
+            c.on(ev, function () { setTimeout(function () { rendreListe(); majRegleTab(c); }, 30); });
+        });
+        /* 🆕 v1.7.479 — la règle suit le bloc quand on le déplace, le redimensionne,
+           le pivote, ou pendant la frappe. */
+        ['object:moving', 'object:scaling', 'object:rotating', 'object:modified', 'text:changed'].forEach(function (ev) {
+            c.on(ev, function () { majRegleTab(c); });
         });
     }
 
@@ -5737,12 +5899,14 @@ window.spTestDiag = function () {
         }
         filSelection();
         rendreListe();
+        majRegleTab();
     }
     function fermerPopin() {
         var popin = document.getElementById('tabsMenu');
         if (popin) popin.classList.remove('open', 'popin-mode');
         var ov = document.getElementById('tabsPopinOverlay');
         if (ov) ov.classList.remove('active');
+        majRegleTab();
     }
     window._closeTabsPopin = fermerPopin;
 
@@ -10887,7 +11051,7 @@ window.spTestDiag = function () {
         }
         
         // Marquer pour mise à jour différée
-        if (viewMode === 'spread' && e.target && !e.target.isMargin && !e.target.isBleed && !e.target.isGuide && !e.target._isSpreadMirror) {
+        if (viewMode === 'spread' && e.target && !e.target._isTabRuler && !e.target.isMargin && !e.target.isBleed && !e.target.isGuide && !e.target._isSpreadMirror) {
             e.target._needsSpreadUpdate = true;
         }
         
@@ -10939,7 +11103,7 @@ window.spTestDiag = function () {
 
     // ACTIVATION : Gestion automatique des nouveaux objets
     canvas.on('object:added', (e) => {
-        if (viewMode === 'spread' && e.target && !e.target.isMargin && !e.target.isBleed && !e.target.isGuide && !e.target._isSpreadMirror) {
+        if (viewMode === 'spread' && e.target && !e.target._isTabRuler && !e.target.isMargin && !e.target.isBleed && !e.target.isGuide && !e.target._isSpreadMirror) {
             // Délai pour permettre à l'objet de se positionner
             setTimeout(() => {
                 // Calculer l'index de page réel depuis bleedInfo
@@ -13356,6 +13520,9 @@ window.spTestDiag = function () {
     });
     
     fabricCanvas.on('object:removed', (e) => {
+        /* 🆕 v1.7.479c — un redessin VOLONTAIRE des guides ne doit pas
+           déclencher la restauration (c'était une boucle infinie à 100 ms). */
+        if (fabricCanvas._spRecreatingGuides) return;
         // Vérifier si on supprime accidentellement un guide
         if (e.target && (e.target.isMargin || e.target.isBleed || e.target.isTrimBox || e.target.isPage || e.target.isGuide)) {
             console.warn('Guide supprimé accidentellement, restauration...');
@@ -13669,7 +13836,10 @@ window.spTestDiag = function () {
         const expectedW = (width * 2) + (bleedPx * 2);
         const expectedH = height + (bleedPx * 2);
         const samePairing = (bi._guidesLeftIdx === bi.leftPageIndex && bi._guidesRightIdx === bi.rightPageIndex);
-        if (bi._guidesW === expectedW && bi._guidesH === expectedH && bi._guidesM === margin && samePairing) {
+        /* 🆕 v1.7.479 — la SIGNATURE des quatre marges entre dans la garde :
+           le scalaire « margin » (maximum des quatre) ne change pas quand on
+           réduit le petit fond seul, donc la recréation était sautée à tort. */
+        if (bi._guidesW === expectedW && bi._guidesH === expectedH && bi._guidesM === margin && bi._guidesSig === spSignatureMarges() && samePairing) {
             log(`✅ Guides spread inchangés pour ${pageInfo}, recréation ignorée`);
             return;
         }
@@ -13683,7 +13853,13 @@ window.spTestDiag = function () {
     
     // Supprimer les guides existants si on force la recréation
     if (forceRecreate && existingGuides.length > 0) {
-        existingGuides.forEach(obj => fabricCanvas.remove(obj));
+        /* 🆕 v1.7.479c — recréation VOLONTAIRE : on coupe le filet de
+           restauration de object:removed (qui sinon bouclait à 100 ms). */
+        var _spGuidesAvantS = fabricCanvas._spRecreatingGuides;
+        fabricCanvas._spRecreatingGuides = true;
+        try {
+            existingGuides.forEach(obj => fabricCanvas.remove(obj));
+        } finally { fabricCanvas._spRecreatingGuides = _spGuidesAvantS; }
         log(`Guides spread supprimés pour recréation forcée: ${pageInfo}`);
     }
     
@@ -13867,6 +14043,7 @@ window.spTestDiag = function () {
         fabricCanvas.bleedInfo._guidesW = (width * 2) + (bleedPx * 2);
         fabricCanvas.bleedInfo._guidesH = height + (bleedPx * 2);
         fabricCanvas.bleedInfo._guidesM = margin;
+        fabricCanvas.bleedInfo._guidesSig = spSignatureMarges();
         // 🛡️ FIX 2026-05-08 : mémoriser AUSSI le pairage de pages pour que la
         //   short-circuit d'optimisation puisse détecter un changement de pairage
         //   (ex : drag-drop chemin de fer qui modifie leftPageIndex/rightPageIndex).
@@ -13906,11 +14083,19 @@ window.spTestDiag = function () {
         return;
     }
     
-    // Si moins de 8 guides (on devrait en avoir plus), les recréer
-    if (existingGuides.length < 8) {
+    /* 🆕 v1.7.479c — SEUIL CORRIGÉ. Un canvas planche SAIN compte 7 guides
+       (fond perdu + 2 traits de coupe + 2 zones de page + 2 repères de
+       marges) : la ligne de pliure est exclue du filtre (isBindingLine).
+       Avec « < 8 », la restauration se croyait TOUJOURS en manque de guides
+       et bouclait indéfiniment. */
+    if (existingGuides.length < 7) {
         log('Guides manquants détectés, restauration...');
-        // Supprimer les guides partiels
-        existingGuides.forEach(obj => fabricCanvas.remove(obj));
+        // Supprimer les guides partiels (retrait VOLONTAIRE)
+        var _spGuidesAvantE = fabricCanvas._spRecreatingGuides;
+        fabricCanvas._spRecreatingGuides = true;
+        try {
+            existingGuides.forEach(obj => fabricCanvas.remove(obj));
+        } finally { fabricCanvas._spRecreatingGuides = _spGuidesAvantE; }
         // Recréer tous les guides
         try {
             addSpreadGuides(fabricCanvas, width, height, bleedPx);
@@ -14802,6 +14987,28 @@ window.spTestDiag = function () {
     });
         }
 
+        /* 🆕 v1.7.479 — Redessine les repères de marges de TOUS les canvas.
+           Point de passage unique après un changement de marges : une planche
+           reçoit addSpreadGuides (repères MIROIR des deux pages), une page
+           simple reçoit drawMargins. */
+        function spRedessinerReperesMarges() {
+            try {
+                var w = mmToPx(pageFormat.width);
+                var h = mmToPx(pageFormat.height);
+                var bp = mmToPx(bleed);
+                canvases.forEach(function (c) {
+                    if (!c) return;
+                    var bi = c.bleedInfo || {};
+                    if (bi.isSpread && typeof addSpreadGuides === 'function') {
+                        addSpreadGuides(c, w, h, bp, true);
+                    } else {
+                        drawMargins(c, w, h);
+                    }
+                });
+            } catch (e) { console.warn('[marges] redessin des reperes :', e); }
+        }
+        window.spRedessinerReperesMarges = spRedessinerReperesMarges;
+
         function drawMargins(canvas, pageWidth, pageHeight) {
     if (!canvas) return;
     
@@ -14812,7 +15019,15 @@ window.spTestDiag = function () {
             objectsToRemove.push(obj);
         }
     });
-    objectsToRemove.forEach(obj => canvas.remove(obj));
+    /* 🆕 v1.7.479c — ces retraits sont VOLONTAIRES : on coupe le filet
+       « guide supprimé accidentellement » du gestionnaire object:removed,
+       sinon il relançait une restauration de guides en boucle (mesuré :
+       boucle infinie de 100 ms sur un canvas double page). */
+    var _spGuidesAvant = canvas._spRecreatingGuides;
+    canvas._spRecreatingGuides = true;
+    try {
+        objectsToRemove.forEach(obj => canvas.remove(obj));
+    } finally { canvas._spRecreatingGuides = _spGuidesAvant; }
     
     // Forcer le rendu avant d'ajouter de nouveaux éléments
     canvas.requestRenderAll();
@@ -14924,8 +15139,13 @@ window.spTestDiag = function () {
 
     // Marges de sécurité en rouge (é l'intérieur du format final)
     const marginPx = mmToPx(margin);
-    /* 🆕 v1.7.458 — les quatre côtés peuvent différer. */
-    const _mp = spMargesPx();
+    /* 🆕 v1.7.458 — les quatre côtés peuvent différer.
+       🆕 v1.7.479 — MIROIR PAR POSITION : une page SEULE à GAUCHE (dernière
+       page d'un document pair) est un VERSO ; elle reçoit donc le GRAND fond
+       côté chants, c'est-à-dire À GAUCHE. Avant, elle recevait la géométrie
+       RECTO et ses deux fonds étaient inversés. Page simple : RECTO, comme
+       avant (position « single » ou absente). */
+    const _mp = (bleedInfo.position === 'left') ? spMargesPagePx(false) : spMargesPagePx(true);
     const marginRect = new fabric.Rect({
         left: bleedInfo.left + _mp.left,
         top: bleedInfo.top + _mp.top,
@@ -26927,7 +27147,10 @@ window.spTestDiag = function () {
        quatre par spSetMargesMm. Le redessin des guides et l'entrée d'historique
        sont exactement ceux du champ « marge » d'origine. */
     (function () {
-        var paires = [['marginTop', 'top'], ['marginBottom', 'bottom'], ['marginLeft', 'left'], ['marginRight', 'right']];
+        /* 🆕 v1.7.479 — les deux colonnes écrivent les clés CANONIQUES du
+           vocabulaire imprimeur : left/right fonctionnent aussi (alias), mais
+           écrire inner/outer dit exactement ce que la marge représente. */
+        var paires = [['marginTop', 'top'], ['marginBottom', 'bottom'], ['marginLeft', 'inner'], ['marginRight', 'outer']];
         paires.forEach(function (paire) {
             var el = document.getElementById(paire[0]);
             if (!el) return;
@@ -26937,9 +27160,10 @@ window.spTestDiag = function () {
                 var m = spMargesMm();
                 m[paire[1]] = v;
                 spSetMargesMm(m, null);
-                var width = mmToPx(pageFormat.width);
-                var height = mmToPx(pageFormat.height);
-                canvases.forEach(function (c) { drawMargins(c, width, height); });
+                /* 🆕 v1.7.479 — point de passage COMMUN du redessin : en double
+                   page il faut addSpreadGuides (deux pages miroir), drawMargins
+                   ne connaissant qu'UNE page. */
+                spRedessinerReperesMarges();
                 saveStateFromPages('Marges modifiées');
             });
         });
