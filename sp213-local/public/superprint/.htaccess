@@ -26,7 +26,7 @@
   Header set X-XSS-Protection "1; mode=block"
   Header set Referrer-Policy "no-referrer-when-downgrade"
   Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
-  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' cdnjs.cloudflare.com cdn.jsdelivr.net esm.run; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src * data: blob:; connect-src 'self' data: blob: https://api.anthropic.com https://api.openai.com https://api.deepseek.com https://api.groq.com https://images.unsplash.com https://picsum.photos https://api.pinata.cloud https://gateway.pinata.cloud https://huggingface.co https://raw.githubusercontent.com esm.run; worker-src 'self' blob:"
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' cdnjs.cloudflare.com cdn.jsdelivr.net esm.run https://www.paypal.com https://www.paypalobjects.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com https://www.paypalobjects.com; img-src * data: blob:; connect-src 'self' data: blob: https://api.anthropic.com https://api.openai.com https://api.deepseek.com https://api.groq.com https://images.unsplash.com https://picsum.photos https://api.pinata.cloud https://gateway.pinata.cloud https://huggingface.co https://raw.githubusercontent.com esm.run https://www.paypal.com https://www.paypalobjects.com; frame-src https://www.paypal.com; worker-src 'self' blob:"
 </IfModule>
 
 # Forcer HTTPS

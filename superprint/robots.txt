@@ -18,6 +18,7 @@ Allow: /app/
 Allow: /app/index.html
 # /install.html : page de démarrage de l'installation locale, volontairement en noindex
 Allow: /documentation.html
+Allow: /help-us.html
 Allow: /cmyk-landing-secure.html
 Allow: /super-print-cmyk-convert.html
 Allow: /llms.txt
