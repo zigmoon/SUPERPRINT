@@ -43,6 +43,14 @@
 <!-- 🆕 v1.7.472 — LES FONTES DE LA LANDING. Sans cette feuille, la page d’aide tombait sur les
      polices système et n’avait plus DU TOUT la typographie de la home (Bebas Neue pour les
      capitales, IBM Plex Mono pour les libellés, IBM Plex Sans et Noto Sans JP pour le texte). -->
+<!-- 🆕 v1.7.477 — LES DEUX POLICES CRITIQUES SONT PRÉCHARGÉES.
+     « Bebas Neue » (le mot SUPERPRINT de la barre) et « Playfair Display » (les grands titres)
+     sont en « font-display: swap » : sans préchargement, le navigateur peint d'abord une police
+     de repli — le mot apparaît dans une autre typo, plus claire — puis la remplace dès que le
+     fichier arrive. Le préchargement les fait partir AVEC le HTML, donc à la première peinture.
+     « crossorigin » est obligatoire : les polices sont toujours demandées en CORS. -->
+<link rel="preload" href="CSS/fonts/BebasNeue-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="CSS/fonts/PlayfairDisplay-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="CSS/fonts.css">
 
 <style>
@@ -267,7 +275,7 @@ nav {
    repos garde exactement ses 2 px mesurés en v1.7.472. 7 = 2 px de centrage optique + les 5 px
    demandés. ⚠️ Cette classe n'était utilisée par AUCUN style jusqu'ici : c'est sa première règle,
    il n'y a donc rien à annuler ailleurs. */
-nav.is-stuck .nav-logo { transform: translateY(7px); }
+nav.is-stuck .nav-logo { transform: translateY(5px); }
 .nav-links { display: flex; gap: 2px; align-items: center; height: 100%; }
 .nav-links a {
   display: inline-flex; align-items: center; justify-content: center; height: 100%; padding: 0 14px;
@@ -1523,6 +1531,44 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 .nav-links a[aria-current="page"] { color: var(--ink); }
 .nav-links a[aria-current="page"]::after { transform: scaleX(1); }
 </style>
+<!-- 🆕 v1.7.477 — DONNÉES STRUCTURÉES DE CETTE PAGE. Elle n'en avait aucune (mesuré :
+     0 bloc JSON-LD), alors qu'elle est publique et indexable. Trois objets autonomes, sans
+     référence à un identifiant défini ailleurs : la page, son fil d'Ariane, et l'éditeur.
+     Volontairement AUCUN balisage « don » ou « prix » : le montant est fixé chez PayPal et une
+     donnée structurée doit être exacte — mieux vaut rien qu'une valeur qu'on ne peut pas tenir. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://superprint.cc/help-us.html#page",
+      "url": "https://superprint.cc/help-us.html",
+      "name": "Participer — SuperPrint is independent",
+      "description": "SuperPrint is independent: no investor, no advertising, no subscription, no data resale. What a contribution pays for, and what it does not buy.",
+      "inLanguage": "en",
+      "isPartOf": { "@type": "WebSite", "url": "https://superprint.cc/", "name": "SuperPrint" },
+      "primaryImageOfPage": "https://superprint.cc/img/og-superprint-1200x630.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "SuperPrint", "item": "https://superprint.cc/" },
+        { "@type": "ListItem", "position": 2, "name": "Participer", "item": "https://superprint.cc/help-us.html" }
+      ]
+    },
+    {
+      "@type": "Organization",
+      "name": "Zigmoon",
+      "url": "https://superprint.cc/",
+      "founder": [
+        { "@type": "Person", "name": "Simon Dupont-Gellert" },
+        { "@type": "Person", "name": "Clémence Brunet" }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 
 <body>
@@ -1592,7 +1638,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.476</span>
+    <span>SuperPrint v1.7.477</span>
   </div>
 </div>
 
@@ -1842,7 +1888,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.476</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.477</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>

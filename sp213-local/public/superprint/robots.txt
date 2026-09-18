@@ -24,6 +24,9 @@ Allow: /super-print-cmyk-convert.html
 Allow: /llms.txt
 Allow: /llms-full.txt
 Allow: /sitemap.xml
+
+# 🆕 v1.7.477 — le plan du site est DÉCLARÉ ici : les moteurs le trouvent au lieu de le deviner.
+Sitemap: https://superprint.cc/sitemap.xml
 Allow: /manifest.webmanifest
 
 # ── AI / LLM crawlers (2026 GEO — explicitly welcomed) ──────
