@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.477-typo-seo';
+const CACHE_NAME = 'superprint-shell-v1.7.478-participer';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

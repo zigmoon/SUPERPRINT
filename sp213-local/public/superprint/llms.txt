@@ -10,7 +10,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.477 (September 2026)
+- **Version**: 1.7.478 (September 2026)
 - **Local install**: npx superprint (npm package `superprint`, launcher version 1.0.97) — the same application, downloaded once and run on your machine
 
 ## Core documentation
@@ -18,7 +18,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - [Main app](https://superprint.cc/): The SuperPrint editor itself (opens directly in the browser).
 - [User documentation](https://superprint.cc/documentation.html): Feature reference, keyboard shortcuts, workflow guides.
 - [Home page](https://superprint.cc/): Overview of features and positioning.
-- [Help us](https://superprint.cc/help-us.html): Why the project is independent (no investor, no advertising, no subscription, no data resale), what a donation pays for, and how to support it with a PayPal donation.
+- [Take part](https://superprint.cc/help-us.html): Why the project is independent (no investor, no advertising, no subscription, no data resale), what a donation pays for, and how to support it with a PayPal donation.
 - [CMYK convert tool](https://superprint.cc/super-print-cmyk-convert.html): Dedicated PDF CMYK conversion utility.
 - [CMYK landing](https://superprint.cc/cmyk-landing-secure.html): Specialized landing page for CMYK workflow.
 - [Full LLM context](https://superprint.cc/llms-full.txt): Extended reference for AI assistants.
@@ -44,6 +44,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Line-accurate height resizing**: dragging a text frame's handles never cuts a line in half and never alters the leading. The height snaps to a whole number of lines, using the same line metrics as the PDF export so preview and output stay consistent. An overflow marker still appears whenever text remains in the frame.
 
 ## Recent releases (September 2026)
+- **1.7.478** — **The page is called "Take part" everywhere now.** Renaming a menu entry is easy; renaming the page is not. Three places still carried the old name: the page TITLE — which is what a visitor reads in a search result — with its og:title, its twitter:title and the name of its WebPage object; the llms files, which listed the page as "[Help us]" and therefore described a navigation that no longer exists to the generative engines; and the FOOTER of both pages, which had kept "Nous aider / Help us / 支援する" in the three languages, just below the legal links, so a reader who scrolled down found the old name again. All three now say Participer, Take part and 参加する — the same words as the menu. The card heading "Why help us" inside the page is deliberately untouched: it is a question put to the reader, not the name of the page.
 - **1.7.477** — **No more flash of the wrong typeface, and two missing pieces of SEO.** On a fast reload the SUPERPRINT wordmark used to appear first in a lighter, rounder typeface and then snap into its own — a flash of unstyled text. Both critical faces ("Bebas Neue" for the wordmark in the bar, "Playfair Display" for the big headings) are now PRELOADED, on the home page and on the *Help us* page alike, so they travel with the HTML instead of arriving after it. The wordmark in the retracted bar also moves back up by 2 px. On the SEO side, two things were missing and are fixed: robots.txt did not DECLARE the sitemap (the "Sitemap:" line was absent, so crawlers had to guess it), and the *Help us* page carried no structured data at all — it now has a WebPage, a breadcrumb and the publisher, three self-contained objects. Deliberately absent: any donation or price markup, since the amount is fixed inside PayPal and structured data has to be accurate.
 - **1.7.476** — **The wordmark sits 5 px lower in the retracted bar.** In the sticky bar — the one that stays when you scroll — the SUPERPRINT wordmark was sitting five pixels too high for the eye. That bar now carries its own rule: the word descends by 5 px, and only there. The bar at rest, the default state, is untouched — measured on six widths from 1440 down to 390: at rest the ink of the word does not move by a single pixel, and in the retracted bar it goes down by exactly five.
 - **1.7.475** — **The help entry in the top bar is now called "Take part".** The home page and the *Help us* page are one and the same gesture — the page states what the project needs and what a contribution pays for — so the menu entry no longer names the request ("Help us", "Nous aider", "支援する") but the act: PARTICIPER, "Take part", 参加する. Same destination, same three languages, in the wide bar and in the mobile menu alike; the Help page composes its own bar from the home page, so it follows without a second edit. The footer link keeps its older wording for now.
