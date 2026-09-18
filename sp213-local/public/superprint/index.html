@@ -68,7 +68,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.470",
+      "softwareVersion": "1.7.471",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1307,15 +1307,19 @@ html[lang="fr"] .foot-links a[data-lang="fr"],
 html[lang="en"] .foot-links a[data-lang="en"],
 html[lang="ja"] .foot-links a[data-lang="ja"] { display: inline-flex; }
 
-/* ── v1.7.469 — CURSEUR IMPRIMERIE ─────────────────────────────────────────
-   Croix de repérage, cadre de page et les quatre repères de coupe. Dessiné en SVG
-   dans le CSS (aucune requête, aucun fichier à déployer), doublé blanc + encre pour
-   rester lisible sur le papier comme sur un aplat. Le curseur dit « on est dans
-   l’atelier » : les liens et les boutons gardent leur main, la page porte la croix. */
-html, body { cursor: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'32' height%3D'32' viewBox%3D'0 0 32 32'%3E%3Cg fill%3D'none' stroke%3D'%23F7F3EC' stroke-width%3D'3' stroke-linecap%3D'butt'%3E%3Cpath d%3D'M2 9.5H9.5M9.5 2v7.5M22.5 2v7.5M30 9.5h-7.5M2 22.5h7.5M9.5 30v-7.5M22.5 30v-7.5M30 22.5h-7.5'%2F%3E%3Crect x%3D'9.5' y%3D'9.5' width%3D'13' height%3D'13'%2F%3E%3Cpath d%3D'M16 12v3M16 20v-3M12 16h3M20 16h-3'%2F%3E%3C%2Fg%3E%3Cg fill%3D'none' stroke%3D'%2317130D' stroke-width%3D'1'%3E%3Cpath d%3D'M2 9.5H9.5M9.5 2v7.5M22.5 2v7.5M30 9.5h-7.5M2 22.5h7.5M9.5 30v-7.5M22.5 30v-7.5M30 22.5h-7.5'%2F%3E%3Crect x%3D'9.5' y%3D'9.5' width%3D'13' height%3D'13'%2F%3E%3Cpath d%3D'M16 12v3M16 20v-3M12 16h3M20 16h-3'%2F%3E%3C%2Fg%3E%3Ccircle cx%3D'16' cy%3D'16' r%3D'1.2' fill%3D'%2317130D'%2F%3E%3C%2Fsvg%3E") 16 16, crosshair; }
-body :is(p, h1, h2, h3, h4, li, span, div, section, header, footer, table, img, figure) { cursor: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'32' height%3D'32' viewBox%3D'0 0 32 32'%3E%3Cg fill%3D'none' stroke%3D'%23F7F3EC' stroke-width%3D'3' stroke-linecap%3D'butt'%3E%3Cpath d%3D'M2 9.5H9.5M9.5 2v7.5M22.5 2v7.5M30 9.5h-7.5M2 22.5h7.5M9.5 30v-7.5M22.5 30v-7.5M30 22.5h-7.5'%2F%3E%3Crect x%3D'9.5' y%3D'9.5' width%3D'13' height%3D'13'%2F%3E%3Cpath d%3D'M16 12v3M16 20v-3M12 16h3M20 16h-3'%2F%3E%3C%2Fg%3E%3Cg fill%3D'none' stroke%3D'%2317130D' stroke-width%3D'1'%3E%3Cpath d%3D'M2 9.5H9.5M9.5 2v7.5M22.5 2v7.5M30 9.5h-7.5M2 22.5h7.5M9.5 30v-7.5M22.5 30v-7.5M30 22.5h-7.5'%2F%3E%3Crect x%3D'9.5' y%3D'9.5' width%3D'13' height%3D'13'%2F%3E%3Cpath d%3D'M16 12v3M16 20v-3M12 16h3M20 16h-3'%2F%3E%3C%2Fg%3E%3Ccircle cx%3D'16' cy%3D'16' r%3D'1.2' fill%3D'%2317130D'%2F%3E%3C%2Fsvg%3E") 16 16, crosshair; }
-a, button, [role="button"], summary, label, select, input, .tpl-card, .tcard { cursor: pointer; }
+
+/* ── v1.7.471 — CURSEUR : UN PLUS TRÈS FIN ────────────────────────────────
+   Deux traits, c’est tout : un plus fin à l’encre sur la page, le MÊME plus en
+   magenta quadri sur les liens, boutons et cartes — la couleur dit « c’est
+   cliquable » sans faire sauter la forme sous le doigt. Dessiné en SVG dans le
+   CSS (aucune requête, aucun fichier à déployer), doublé d’un halo couleur
+   papier pour rester lisible sur les aplats sombres. */
+html, body { cursor: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'24' height%3D'24' viewBox%3D'0 0 24 24'%3E%3Cg fill%3D'none' stroke%3D'%23F7F3EC' stroke-width%3D'3' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3Cg fill%3D'none' stroke%3D'%2317130D' stroke-width%3D'1' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 12 12, crosshair; }
+body :is(p, h1, h2, h3, h4, li, span, div, section, header, footer, table, img, figure) { cursor: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'24' height%3D'24' viewBox%3D'0 0 24 24'%3E%3Cg fill%3D'none' stroke%3D'%23F7F3EC' stroke-width%3D'3' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3Cg fill%3D'none' stroke%3D'%2317130D' stroke-width%3D'1' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 12 12, crosshair; }
+a, button, [role="button"], summary, .btn, .nav-cta, .entry, .tpl-card, .tcard, .help-card, .help-don { cursor: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'24' height%3D'24' viewBox%3D'0 0 24 24'%3E%3Cg fill%3D'none' stroke%3D'%23F7F3EC' stroke-width%3D'3' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3Cg fill%3D'none' stroke%3D'%23E1237B' stroke-width%3D'1' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 12 12, pointer; }
+input, select, textarea, label { cursor: pointer; }
 .legal-body { cursor: text; }
+
 </style>
 </head>
 
@@ -3110,7 +3114,7 @@ a, button, [role="button"], summary, label, select, input, .tpl-card, .tcard { c
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Zigmoon — SuperPrint v1.7.470</span>
+      <span>© 2026 Zigmoon — SuperPrint v1.7.471</span>
       <span class="inline-fr">Logiciel de PAO en ligne · mise en page dans le navigateur</span>
       <span class="inline-en">Online DTP software · browser page layout</span>
       <span class="inline-ja">オンラインDTPソフトウェア · ブラウザのページレイアウト</span>
@@ -3392,6 +3396,18 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
       o.classList.remove('open');
       document.body.style.overflow = '';
     };
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
     /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
