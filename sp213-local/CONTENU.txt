@@ -1,0 +1,49 @@
+SUPERPRINT 1.7.480 - CONTENU DU PAQUET
+======================================
+
+Ce paquet n'est PAS un site web : c'est le paquet de l'APPLICATION LOCALE,
+celui que telecharge l'installeur « npx superprint ».
+
+OU EST QUOI
+-----------
+index.html ........................ LE LANCEUR (c'est la page du site
+                                    install.html, adaptee au paquet).
+                                    Ouvrir le serveur local affiche cette page.
+studio.html ....................... Studio IA HORS LIGNE (WebLLM) : l'IA tourne
+                                    sur votre machine, aucune cle necessaire.
+package.json, package-lock.json ... dependances du paquet (npm install).
+src/ .............................. code du Studio IA hors ligne (Vite).
+vite.config.js .................... configuration du serveur local.
+scripts/ .......................... aide au demarrage.
+public/ ........................... racine servie par le serveur local :
+  public/superprint/app/index.html ....... L'APPLICATION SuperPrint (PAO)
+  public/superprint/sp213-studio.html .... Studio IA de l'application
+  public/superprint/supertypo/index.html . SUPERTYPO (editeur de police)
+  public/superprint/documentation.html ... documentation
+  public/superprint/api.html ............. API
+  public/superprint/install.html ......... page du site (source du lanceur)
+  public/superprint/version.txt .......... version du paquet : 1.7.480
+  public/js/fabric.min.js ................ moteur canvas (fabric)
+  public/js/mammoth.min.js ............... import de documents Word
+
+ADRESSES UNE FOIS LE SERVEUR LOCAL LANCE
+----------------------------------------
+  http://localhost:5173/ ............................. le lanceur
+  http://localhost:5173/superprint/app/index.html .... l'application
+  http://localhost:5173/studio.html .................. Studio IA hors ligne
+  http://localhost:5173/superprint/sp213-studio.html . Studio IA de l'app
+  http://localhost:5173/superprint/supertypo/index.html  SuperTyPo
+
+POURQUOI public/ ?
+------------------
+L'installeur a besoin de package.json A LA RACINE du paquet, et Vite sert le
+dossier public/ comme racine du site : l'application vit donc sous
+public/superprint/. Rien ne manque, la liste ci-dessus est complete.
+
+INSTALLATION
+------------
+    npx superprint
+
+Telecharge le paquet, installe les dependances et lance le serveur local.
+
+SuperPrint 1.7.480 - 18 septembre 2026 - https://superprint.cc
