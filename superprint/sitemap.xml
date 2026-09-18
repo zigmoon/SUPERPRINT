@@ -4,7 +4,11 @@
 
   <url>
        <loc>https://superprint.cc/</loc>
-       <lastmod>2026-08-30T00:00:00+00:00</lastmod>
+       <lastmod>2026-09-18T00:00:00+00:00</lastmod>
+       <xhtml:link rel="alternate" hreflang="en" href="https://superprint.cc/"/>
+       <xhtml:link rel="alternate" hreflang="fr" href="https://superprint.cc/?lang=fr"/>
+       <xhtml:link rel="alternate" hreflang="ja" href="https://superprint.cc/?lang=ja"/>
+       <xhtml:link rel="alternate" hreflang="x-default" href="https://superprint.cc/"/>
        <changefreq>weekly</changefreq>
        <priority>1.0000</priority>
   </url>
@@ -37,12 +41,6 @@
        <lastmod>2026-08-30T00:00:00+00:00</lastmod>
        <changefreq>daily</changefreq>
        <priority>0.8000</priority>
-  </url>
-  <url>
-       <loc>https://superprint.cc/landing.html</loc>
-       <lastmod>2026-08-30T00:00:00+00:00</lastmod>
-       <changefreq>monthly</changefreq>
-       <priority>0.6000</priority>
   </url>
   <url>
        <loc>https://superprint.cc/super-print-cmyk-convert.html</loc>

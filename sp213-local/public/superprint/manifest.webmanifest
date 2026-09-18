@@ -2,7 +2,7 @@
   "name": "SUPER PRINT - Éditeur de Mise en Page",
   "short_name": "SUPER PRINT",
   "description": "Éditeur de mise en page professionnel pour créer flyers, affiches et documents",
-  "start_url": "./index.html",
+  "start_url": "./app/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",

@@ -16,7 +16,7 @@ Allow: /index.html
 Allow: /sp213-studio.html
 Allow: /app/
 Allow: /app/index.html
-Allow: /landing.html
+# /install.html : page de démarrage de l'installation locale, volontairement en noindex
 Allow: /documentation.html
 Allow: /cmyk-landing-secure.html
 Allow: /super-print-cmyk-convert.html

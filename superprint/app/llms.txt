@@ -10,13 +10,13 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.467 (September 2026)
+- **Version**: 1.7.468 (September 2026)
 
 ## Core documentation
 
 - [Main app](https://superprint.cc/): The SuperPrint editor itself (opens directly in the browser).
 - [User documentation](https://superprint.cc/documentation.html): Feature reference, keyboard shortcuts, workflow guides.
-- [Landing page](https://superprint.cc/landing.html): Overview of features and positioning.
+- [Home page](https://superprint.cc/): Overview of features and positioning.
 - [CMYK convert tool](https://superprint.cc/super-print-cmyk-convert.html): Dedicated PDF CMYK conversion utility.
 - [CMYK landing](https://superprint.cc/cmyk-landing-secure.html): Specialized landing page for CMYK workflow.
 - [Full LLM context](https://superprint.cc/llms-full.txt): Extended reference for AI assistants.

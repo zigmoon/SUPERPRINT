@@ -38,6 +38,10 @@
   RewriteRule ^(.*)$ https://superprint.cc/$1 [R=301,L,NE]
   RewriteCond %{HTTPS} off
   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  # 🆕 v1.7.468 — la landing est devenue la page d'accueil du site.
+  # L'ancienne URL est déjà indexée et servait de canonical : redirection 301 vers la
+  # racine, en conservant ?lang=fr / ?lang=ja (QSA) pour ne pas perdre la langue.
+  RewriteRule ^landing\.html$ / [R=301,L,NE,QSA]
 </IfModule>
 
 # Type MIME pour manifest

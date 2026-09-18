@@ -12,7 +12,6 @@ Disallow: /*.php$
 
 # Explicitly allow key crawlable pages
 Allow: /
-Allow: /landing.html
 Allow: /documentation.html
 Allow: /cmyk-landing-secure.html
 Allow: /super-print-cmyk-convert.html
