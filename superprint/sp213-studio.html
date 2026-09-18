@@ -5770,6 +5770,15 @@ function spRtfLayoutInfo(src) {
           if (o._spTabs && typeof o._spTabs === 'object' && Array.isArray(o._spTabs.stops)) {
             try { el._spTabs = JSON.parse(JSON.stringify(o._spTabs)); } catch (_) {}
           }
+          /* 🆕 v1.7.482 — POLICE VARIABLE : réglage d'instance du bloc (graisse /
+             largeur / inclinaison des axes de la police). Données pures, copiées
+             TELLES QUELLES : sans cette recopie, un document passant par le studio
+             revenait dans l'app SANS son réglage de police variable.
+             Le studio, lui, compose avec l'instance par défaut de la police : le
+             réglage est TRANSPORTÉ, pas rendu (limite assumée, identique en 1.7.481). */
+          if (o.spVarFont && typeof o.spVarFont === 'object') {
+            try { el.spVarFont = JSON.parse(JSON.stringify(o.spVarFont)); } catch (_) {}
+          }
           if (Array.isArray(o._spSoftBreakIndices) && o._spSoftBreakIndices.length) {
             el._spSoftBreakIndices = o._spSoftBreakIndices.slice();
           }
@@ -9825,6 +9834,13 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       const _texteInchange = String(el.text || '') === String(el._spOptsText || '');
       if (_texteInchange && el._spTabs && typeof el._spTabs === 'object' && Array.isArray(el._spTabs.stops)) {
         try { obj._spTabs = JSON.parse(JSON.stringify(el._spTabs)); } catch (_) {}
+      }
+      /* 🆕 v1.7.482 — POLICE VARIABLE au RETOUR (cf. import ci-dessus). Le réglage
+         appartient au BLOC (pas au contenu) : on le réécrit TOUJOURS, même si le
+         texte a changé — contrairement aux taquets, ses valeurs ne désignent pas
+         des positions de caractères. C'est ce qui rend app → studio → app exact. */
+      if (el.spVarFont && typeof el.spVarFont === 'object') {
+        try { obj.spVarFont = JSON.parse(JSON.stringify(el.spVarFont)); } catch (_) {}
       }
       if (_texteInchange && Array.isArray(el._spSoftBreakIndices) && el._spSoftBreakIndices.length) {
         obj._spSoftBreakIndices = el._spSoftBreakIndices.slice();

@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.481-taquets-police-variable';
+const CACHE_NAME = 'superprint-shell-v1.7.482-panneau-police-variable';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

@@ -2538,6 +2538,63 @@ textarea[data-fabric-hiddentextarea] {
 .tab-empty-warn { opacity: 0.9; color: #d81b60; font-weight: 600; line-height: 1.35; }
 .tab-stop-row .sp-tab-del { opacity: 0.5; }
 
+/* ── 🆕 v1.7.482 : PANNEAU « POLICE VARIABLE » (sous les styles B / I / U) ─────
+   Demande utilisateur : « un panneau complet, avec un trait de séparation complet
+   en haut et en bas, placé sous les styles B / I / U, détachable en widget par le
+   petit + ». Les marges négatives annulent le padding de #typographySection (16 px)
+   pour que les deux traits courent d'un bord à l'autre de la colonne. */
+.sp-var-panel {
+    border-top: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+    margin: 14px -16px 12px;
+    padding: 10px 16px 12px;
+}
+.theme-dark .sp-var-panel { border-top-color: #333; border-bottom-color: #333; }
+.sp-var-panel > label { font-size: 11px; font-weight: 600; opacity: 0.85; }
+.sp-var-famille {
+    font-size: 10px;
+    opacity: 0.6;
+    margin: -2px 0 7px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sp-var-axes { display: flex; flex-direction: column; gap: 7px; }
+.sp-var-row .sp-var-tete {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 10px;
+    line-height: 1.2;
+}
+.sp-var-axe { opacity: 0.5; font-size: 9px; }
+.sp-var-borne { opacity: 0.5; font-size: 9px; }
+.sp-var-row input[type="range"] {
+    width: 100%;
+    height: 14px;
+    margin: 1px 0 0;
+    accent-color: #d81b60;
+    cursor: pointer;
+}
+.sp-var-pied { display: flex; gap: 6px; margin-top: 8px; }
+.sp-var-reset { flex: 1; font-size: 10px; padding: 4px 6px; }
+.sp-var-panel .hint { font-size: 9.5px; opacity: 0.6; line-height: 1.35; margin-top: 6px; }
+
+/* Le bouton de la fiche typo : libellé plus PETIT et vraie respiration verticale.
+   ⚠️ MESURÉ : `.rightbar .btn` (0,2,0) impose height 28px / padding 0 10px /
+   font-size 9px et écrasait une règle de classe (0,1,0). On monte donc la
+   spécificité avec l'id du conteneur, et on laisse la hauteur libre (auto) pour
+   qu'un libellé sur deux lignes ne soit plus écrasé en haut et en bas. */
+#spVarRow .sp-var-btn {
+    width: 100%;
+    height: auto;
+    min-height: 28px;
+    font-size: 10px;
+    line-height: 1.3;
+    padding: 7px 8px;
+    letter-spacing: 0.2px;
+}
+
 /* ── v1.7.457 : retraits — champ court, flèches ▲▼ DANS le champ (bug mesuré) ──
    .number-spinner-wrap est en width:100% et sa règle input[type=number] (0,2,1)
    l'emporte sur .sp-indent-field input (0,1,1) : l'input prenait 183 px et les

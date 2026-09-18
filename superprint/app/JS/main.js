@@ -5493,19 +5493,31 @@ window.spTestDiag = function () {
 })();
 
 
-/* ═══════════ v1.7.481 : POLICES VARIABLES ═══════════
-   Demande utilisateur : « si on importe une police variable et qu'on la sélectionne,
-   ajouter à côté de la typo un bouton "police variable" qui ouvrirait une petite popin
-   avec graisse, largeur, inclinaison, chacun avec une barre d'avancement ».
+/* ═══════════ v1.7.481 / v1.7.482 : POLICES VARIABLES ═══════════
+   Demande utilisateur (1.7.481) : « si on importe une police variable et qu'on la
+   sélectionne, ajouter à côté de la typo un bouton "police variable" ouvrant un
+   réglage graisse / largeur / inclinaison ».
+   Demande utilisateur (1.7.482) : « le réglage doit être un PANNEAU complet sous les
+   styles B / I / U, détachable en widget par le petit + » et « le PDF doit
+   correspondre exactement à l'aperçu ».
    • Détection RÉELLE : lecture de la table `fvar` du fichier de la police (parseur
      minimal, aucune dépendance). Une police qui ne déclare aucun axe n'affiche rien.
-   • Réglage rangé SUR LE BLOC (`spVarFont`) → sérialisé dans .sp / .json.
-   • Rendu : Fabric mesure et dessine via un contexte 2D ; on y pousse
-     `ctx.fontVariationSettings`, donc la mesure, la césure, les taquets et l'aperçu
-     suivent la variation. C'est la MÊME valeur qui sert au dessin et à la mesure.
-   ⚠️ Export PDF « format fini » (pdf-lib, police embarquée) : l'instance par défaut est
-      utilisée (limite connue, signalée dans la popin). L'export vectoriel jsPDF suit la
-      variation quand opentype sait instancier la police. */
+   • Réglage rangé SUR LE BLOC (`spVarFont`) → sérialisé dans .sp / .json et
+     transporté par le studio (app → studio → app).
+   • Rendu APERÇU — ce qui est MESURÉ comme efficace en canvas :
+       1. la police est réenregistrée avec ses PLAGES (weight / stretch) ;
+       2. la graisse passe par `fontWeight` (instance réelle de l'axe wght) ;
+       3. la largeur passe par `ctx.fontStretch` (les 9 mots-clés CSS), poussé dans
+          `_setTextStyles` — donc la MESURE, la césure et les taquets suivent.
+     ⚠️ `ctx.fontVariationSettings` a été essayé d'abord : propriété ACCEPTÉE mais
+        SANS AUCUN EFFET, ni au dessin ni à la mesure (vérifié). Ne pas y revenir.
+   • Rendu PDF « format fini » — l'INSTANCE est embarquée. Mesuré dans le bundle :
+     pdf-lib ré-encode la police à partir de l'objet rendu par le fontkit ENREGISTRÉ
+     (`fontkit.create(...)`, puis `subset = font.createSubset()` et
+     `subset.encodeStream()`). On enveloppe donc fontkit pour lui rendre
+     `font.getVariation(coords)` : le PDF reçoit les contours de l'INSTANCE réglée,
+     plus ceux de la police par défaut. La largeur est RAMENÉE AU CRAN CSS (seule
+     valeur que l'aperçu sait dessiner) : aperçu et PDF partagent la même instance. */
 (function spPolicesVariables() {
     'use strict';
     if (window._spVarFontsInstalle) return;
@@ -5516,6 +5528,72 @@ window.spTestDiag = function () {
     var NOMS = { wght: 'Graisse', wdth: 'Largeur', slnt: 'Inclinaison', ital: 'Italique', opsz: 'Optique' };
     var ORDRE = ['wght', 'wdth', 'slnt', 'ital', 'opsz'];
     var REGISTRE = (window._SP_VARFONTS = window._SP_VARFONTS || {});
+
+    /* 🆕 v1.7.482 — LA COHÉRENCE APERÇU ↔ PDF PASSE PAR LA CLÉ DE POLICE.
+       L'export identifie une police par `_spFontKey(famille, graisse, style)` : deux
+       blocs de même famille et même graisse mais de LARGEURS différentes ne peuvent
+       donc pas partager la même police embarquée. On suffixe la clé par la largeur
+       d'instance (« |d87.5 »), et cette clé devient la source unique :
+         • du cache opentype (_SP_FONT_CACHE / _SP_FONT_RESOLVED) ;
+         • de l'embarquement pdf-lib (l'instance est fabriquée DEPUIS la clé) ;
+         • du dessin (chaque bloc retrouve SA police).
+       Le 4e argument de `_spFontKey` est OPTIONNEL : sans lui (styles par caractère,
+       appels historiques) la clé reste exactement celle d'avant — aucun document
+       existant ne change donc de comportement. */
+    function sigCle(obj) {
+        if (!obj || !obj.spVarFont) return '';
+        var v = obj.spVarFont;
+        return (typeof v.wdth === 'number') ? ('d' + v.wdth) : '';
+    }
+    window._spVarSigCle = sigCle;
+
+    /* Relecture inverse : « bahnschrift|700|normal|d87.5 » → { wght: 700, wdth: 87.5 },
+       coordonnées d'axe à demander à fontkit pour instancier la police du PDF. */
+    function coordsDepuisCle(cle) {
+        var p = String(cle == null ? '' : cle).split('|');
+        if (p.length < 4) return null;
+        var m = /^d([0-9.]+)$/.exec(String(p[3]).trim());
+        if (!m) return null;
+        var coords = { wdth: parseFloat(m[1]) };
+        var w = parseFloat(p[1]);
+        if (isFinite(w)) coords.wght = w;
+        return coords;
+    }
+    window._spVarCoordsDepuisCle = coordsDepuisCle;
+
+    /* La clé désigne-t-elle une INSTANCE ? (⇒ le PDF embarque la graisse réelle,
+       donc surtout PAS de faux-gras par-dessus). */
+    function instancePourCle(cle) {
+        return !!coordsDepuisCle(cle);
+    }
+    window._spVarInstancePourCle = instancePourCle;
+
+    /* Axes que le canvas sait réellement piloter : graisse (fontWeight) et largeur
+       (fontStretch). Les autres (opsz, GRAD…) ne sont pas pilotables en canvas : les
+       proposer créerait un écart avec le PDF, on les affiche donc pour information. */
+    function axesPilotables(axes) {
+        return (axes || []).filter(function (a) { return a.tag === 'wght' || a.tag === 'wdth'; });
+    }
+    window._spVarAxesPilotables = axesPilotables;
+
+    /* Les largeurs que l'aperçu sait dessiner DANS la plage de l'axe : les 9 crans
+       CSS de font-stretch. C'est aussi ce que le PDF recevra. */
+    function cransDansPlage(axe) {
+        if (!axe) return [];
+        var l = [];
+        for (var i = 0; i < CRANS.length; i++) {
+            if (CRANS[i][0] >= axe.min - 0.01 && CRANS[i][0] <= axe.max + 0.01) l.push(CRANS[i][0]);
+        }
+        return l;
+    }
+    function cranLePlusProche(crans, pct) {
+        var meilleur = crans[0], ecart = 1e9;
+        for (var i = 0; i < crans.length; i++) {
+            var e = Math.abs(crans[i] - pct);
+            if (e < ecart) { ecart = e; meilleur = crans[i]; }
+        }
+        return meilleur;
+    }
 
     function fix16(v) { return Math.round((v / 65536) * 1000) / 1000; }
 
@@ -5575,7 +5653,7 @@ window.spTestDiag = function () {
             if (axes) {
                 REGISTRE[nom] = axes;
                 enregistrerFaceVariable(nom, buffer, axes);
-                try { majBouton(); } catch (_) {}
+                try { majPanneau(); } catch (_) {}
             }
         } catch (_) {}
         return REGISTRE[nom] || null;
@@ -5599,12 +5677,26 @@ window.spTestDiag = function () {
             face.load().then(function (chargee) {
                 try {
                     document.fonts.add(chargee);
+                    try { chargee._spVarRange = true; } catch (_) {}
                     /* on retire les faces FIXES du même nom : deux faces identiques
                        rendraient le choix de graisse ambigu (mesuré : la face 400
                        exacte l'emportait sur la plage). */
-                    Array.from(document.fonts).forEach(function (f) {
-                        if (f !== chargee && f.family === fam) { try { document.fonts.delete(f); } catch (_) {} }
-                    });
+                    var nettoyer = function () {
+                        try {
+                            Array.from(document.fonts).forEach(function (f) {
+                                if (f === chargee || f._spVarRange) return;
+                                if (f.family === fam) { try { document.fonts.delete(f); } catch (_) {} }
+                            });
+                        } catch (_) {}
+                    };
+                    nettoyer();
+                    /* ⚠️ MESURÉ : la face FIXE est posée par l'app EN PARALLÈLE de
+                       nous (_spRegisterCustomFontDataUrl enregistre la sienne) et
+                       elle gagnait sur la plage, quel que soit l'ordre d'arrivée.
+                       On repasse donc plusieurs fois, jusqu'à ce que la plage soit
+                       seule face de la famille. */
+                    [120, 400, 1200, 2600].forEach(function (d) { setTimeout(nettoyer, d); });
+                    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(nettoyer); } catch (_) {}
                     REGISTRE[fam]._face = true;
                 } catch (_) {}
             }).catch(function () {});
@@ -5675,6 +5767,37 @@ window.spTestDiag = function () {
     }
     window._spVarCranLargeur = cranLargeur;
 
+    /* ⚠️⚠️ MESURÉ (Electron/Chromium 148) — LA RAISON DE CETTE FONCTION :
+       `ctx.font = '… 40px "Police"'` RÉINITIALISE font-stretch (le raccourci `font`
+       remet TOUTES ses sous-propriétés à leur valeur initiale). Or Fabric réaffecte
+       le raccourci dans `Text.prototype._renderChar`, JUSTE AVANT `fillText` : la
+       largeur posée par `_setTextStyles` était donc perdue au DESSIN, alors que la
+       MESURE (`measureText`, appelée avant) la respectait. Conséquence mesurée :
+       avance calculée 118,48 px mais glyphes dessinés à la largeur par défaut
+       (164 px) → lettres tassées à l'écran, et PDF plus étroit que l'aperçu.
+       On installe donc sur le contexte un accesseur qui RÉTABLIT la largeur après
+       chaque affectation de `ctx.font`. (Le bundle ne contient que 2 affectations
+       de `.font` : `_setTextStyles` et `_renderChar` — les deux sont couvertes.) */
+    function rendreLargeurTenace(ctx) {
+        if (!ctx || ctx.__spStretchTenace) return;
+        var desc = null;
+        try { desc = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(ctx), 'font'); } catch (_) {}
+        if (!desc || typeof desc.set !== 'function' || typeof desc.get !== 'function') return;
+        try {
+            Object.defineProperty(ctx, 'font', {
+                configurable: true,
+                get: function () { return desc.get.call(this); },
+                set: function (val) {
+                    desc.set.call(this, val);
+                    if (this.__spStretch && this.__spStretch !== 'normal') {
+                        try { this.fontStretch = this.__spStretch; } catch (_) {}
+                    }
+                }
+            });
+            Object.defineProperty(ctx, '__spStretchTenace', { value: true, configurable: true, writable: true });
+        } catch (_) {}
+    }
+
     try {
         if (window.fabric && fabric.Text && fabric.Text.prototype._setTextStyles) {
             var _origStyles = fabric.Text.prototype._setTextStyles;
@@ -5683,7 +5806,10 @@ window.spTestDiag = function () {
                 try {
                     var v = this.spVarFont;
                     if (ctx) {
-                        ctx.fontStretch = (v && typeof v.wdth === 'number') ? cranLargeur(v.wdth) : 'normal';
+                        var cran = (v && typeof v.wdth === 'number') ? cranLargeur(v.wdth) : 'normal';
+                        rendreLargeurTenace(ctx);
+                        try { ctx.__spStretch = cran; } catch (_) {}
+                        ctx.fontStretch = cran;
                     }
                 } catch (_) {}
                 return r;
@@ -5703,73 +5829,141 @@ window.spTestDiag = function () {
         return [];
     }
 
-    /* ── Interface : bouton dans le panneau Typographie ── */
-    function bouton() { return document.getElementById('spVarRow'); }
+    /* ── Interface : le PANNEAU « Police variable » (sous les styles B / I / U) ──
+       v1.7.482 : la popin a été remplacée par un VRAI PANNEAU de la colonne. Il est
+       encadré de deux traits de séparation pleine largeur (voir main.css) et il est
+       détachable en widget par le « + » de son titre, comme les autres panneaux de la
+       barre de droite (cf. spSetupDockWidgets). Un panneau détaché est une COPIE :
+       les curseurs du widget agissent sur les curseurs d'origine par le pont
+       d'événements du système de widgets — d'où l'écoute par DÉLÉGATION ici. */
+    function panneau() { return document.getElementById('spVarSection'); }
+    function rangee() { return document.getElementById('spVarRow'); }
+    function hostAxes() { return document.getElementById('spVarAxes'); }
 
-    function majBouton() {
-        var row = bouton();
-        if (!row) return;
-        var blocs = blocsTexteSel();
-        var axes = null;
-        for (var i = 0; i < blocs.length && !axes; i++) axes = axesDeFamille(blocs[i].fontFamily);
-        var ok = !!(axes && axes.length && blocs.length);
-        row.style.display = ok ? '' : 'none';
-        if (ok) {
-            var lib = document.getElementById('spVarBtn');
-            if (lib) {
-                var v = blocs[0].spVarFont;
-                var res = [];
-                if (v) ORDRE.forEach(function (t) { if (typeof v[t] === 'number') res.push((NOMS[t] || t) + ' ' + v[t]); });
-                lib.textContent = res.length ? 'Police variable — ' + res.join(' · ') : 'Police variable — graisse, largeur, inclinaison…';
-            }
-        } else if (popinOuverte()) fermerPopin();
+    function widgetOuvert() {
+        try {
+            var l = document.getElementById('spWidgetLayer');
+            return l ? l.querySelector('[data-dock="spVarSection"]') : null;
+        } catch (_) {}
+        return null;
     }
-    window.spVarMajBouton = majBouton;
 
-    var _popin = null;
-    function popinOuverte() { return !!(_popin && _popin.style.display !== 'none'); }
+    /* Une même étiquette existe DEUX fois dès que le panneau est détaché : l'originale
+       (id) et la copie du widget (data-sp-ref). On écrit dans les deux. */
+    function etiquette(id, texte) {
+        var liste = document.querySelectorAll('[id="' + id + '"],[data-sp-ref="' + id + '"]');
+        Array.prototype.forEach.call(liste, function (el) { el.textContent = texte; });
+    }
 
-    function construirePopin() {
-        if (_popin) return _popin;
-        var p = document.createElement('div');
-        p.id = 'spVarPopin';
-        p.className = 'tool-dropdown-menu grid-menu';
-        p.style.cssText = 'position: fixed; z-index: 10050; display: none; min-width: 280px; padding: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.18);';
-        p.innerHTML =
-            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
-              '<div style="font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;opacity:.7;">Police variable</div>' +
-              '<span id="spVarClose" style="cursor:pointer;font-size:18px;font-weight:bold;line-height:1;padding:2px 6px;opacity:.6;">×</span>' +
-            '</div>' +
-            '<div id="spVarNom" style="font-size:11px;opacity:.8;padding:2px 2px 6px;"></div>' +
-            '<div id="spVarAxes" style="display:flex;flex-direction:column;gap:8px;padding:2px;"></div>' +
-            '<div class="hint" style="padding:6px 2px 2px;font-size:10px;opacity:.65;">Le réglage est rangé dans le document (.sp / .json). Export PDF « format fini » : instance par défaut de la police.</div>' +
-            '<div style="display:flex;gap:6px;padding:8px 2px 2px;">' +
-              '<button class="btn btn-secondary" id="spVarReset" type="button" style="flex:1;font-size:10px;">Réinitialiser</button>' +
-              '<button class="btn btn-secondary" id="spVarFermer" type="button" style="flex:1;font-size:10px;">Fermer</button>' +
-            '</div>';
-        document.body.appendChild(p);
-        p.addEventListener('click', function (e) {
-            var id = e.target && e.target.id;
-            if (id === 'spVarClose' || id === 'spVarFermer') { fermerPopin(); }
-            else if (id === 'spVarReset') { appliquerVariation(null); }
-        });
-        p.addEventListener('input', function (e) {
-            var t = e.target;
-            if (!t || !t.dataset || !t.dataset.spVarAxe) return;
-            var tag = t.dataset.spVarAxe;
-            var val = parseFloat(t.value);
-            var lbl = document.getElementById('spVarVal_' + tag);
-            if (lbl) lbl.textContent = String(val);
-            var v = variationCourante() || {};
-            v[tag] = val;
-            appliquerVariation(v, true);
-            majBouton();
-        });
-        p.addEventListener('change', function (e) {
-            if (e.target && e.target.dataset && e.target.dataset.spVarAxe) appliquerVariation(variationCourante(), false, true);
-        });
-        _popin = p;
-        return p;
+    function blocsAvecAxes() {
+        var blocs = blocsTexteSel();
+        for (var i = 0; i < blocs.length; i++) {
+            var ax = axesDeFamille(blocs[i].fontFamily);
+            if (ax && ax.length) return { bloc: blocs[i], axes: ax, blocs: blocs };
+        }
+        return { bloc: blocs[0] || null, axes: null, blocs: blocs };
+    }
+
+    function majPanneau() {
+        var info = blocsAvecAxes();
+        var pilotables = info.axes ? axesPilotables(info.axes) : [];
+        var ok = !!(pilotables.length && info.blocs.length);
+        var p = panneau(), r = rangee();
+        if (r) r.style.display = ok ? '' : 'none';
+        if (p) p.style.display = ok ? '' : 'none';
+        if (!ok) {
+            /* plus rien de réglable : un widget ouvert resterait figé sur une
+               sélection disparue → on le referme. */
+            if (widgetOuvert()) { try { window.spDockWidgets.fermer('spVarSection'); } catch (_) {} }
+            return;
+        }
+        etiquette('spVarNom', info.blocs.length > 1
+            ? (info.blocs.length + ' blocs sélectionnés — ' + pilotables.length + ' axe(s)')
+            : (info.bloc.fontFamily + ' — ' + pilotables.length + ' axe(s)'));
+        var note = [];
+        var autres = (info.axes || []).filter(function (a) { return pilotables.indexOf(a) < 0; });
+        if (autres.length) {
+            note.push('Autres axes de la police (non réglables dans l\'aperçu) : '
+                + autres.map(function (a) { return a.tag + ' ' + a.min + '–' + a.max; }).join(', ') + '.');
+        }
+        note.push('Réglage rangé dans le document (.sp / .json) et repris à l\'identique par l\'export PDF.');
+        etiquette('spVarNote', note.join(' '));
+        remplirAxes(pilotables);
+    }
+    window.spVarMajBouton = majPanneau;
+
+    /* ── Les curseurs du panneau ────────────────────────────────────────────────
+       Une ligne par axe pilotable, la plus COMPACTE possible : nom + valeur sur une
+       ligne, barre en dessous. La signature évite de reconstruire les curseurs à
+       chaque clic (une reconstruction pendant un glisser interromprait la barre). */
+    var _sigAxes = '';
+    function remplirAxes(liste) {
+        var host = hostAxes();
+        if (!host) return;
+        var courant = variationCourante() || {};
+        var sig = liste.map(function (a) { return a.tag + ':' + a.min + ':' + a.max; }).join(',');
+        if (sig !== _sigAxes) {
+            _sigAxes = sig;
+            /* les axes ont changé (autre police, autre sélection) : le widget ouvert
+               porterait des curseurs périmés → on le referme, il se rouvrira juste. */
+            if (widgetOuvert()) { try { window.spDockWidgets.fermer('spVarSection'); } catch (_) {} }
+            host.innerHTML = '';
+            liste.forEach(function (a) {
+                var crans = (a.tag === 'wdth') ? cransDansPlage(a) : [];
+                var min = crans.length ? crans[0] : a.min;
+                var max = crans.length ? crans[crans.length - 1] : a.max;
+                var pas = (a.tag === 'opsz') ? 0.5 : 1;
+                var val = (typeof courant[a.tag] === 'number') ? courant[a.tag] : a.def;
+                var ligne = document.createElement('div');
+                ligne.className = 'sp-var-row';
+                ligne.innerHTML =
+                    '<div class="sp-var-tete">' +
+                      '<span>' + (NOMS[a.tag] || a.tag) + ' <span class="sp-var-axe">' + a.tag + '</span></span>' +
+                      '<span><b id="spVarVal_' + a.tag + '">' + val + '</b>' +
+                      '<span class="sp-var-borne"> / ' + a.min + '–' + a.max + '</span></span>' +
+                    '</div>' +
+                    /* ⚠️ L'ID EST INDISPENSABLE : le widget détaché est une COPIE dont
+                       les id sont convertis en data-sp-ref ; c'est par ce data-sp-ref
+                       que le pont du système de widgets retrouve LE curseur d'origine
+                       (sans id, le widget bougeait sans rien piloter — mesuré). */
+                    '<input type="range" id="spVarAxe_' + a.tag + '" data-sp-var-axe="' + a.tag + '" min="' + min +
+                    '" max="' + max + '" step="' + pas + '" value="' + val + '">';
+                host.appendChild(ligne);
+            });
+        } else {
+            liste.forEach(function (a) {
+                var inp = host.querySelector('input[data-sp-var-axe="' + a.tag + '"]');
+                var val = (typeof courant[a.tag] === 'number') ? courant[a.tag] : a.def;
+                /* on ne réécrit pas un curseur EN COURS DE GLISSER (la barre sauterait),
+                   mais on le resynchronise dès que le glisser est fini : sinon il restait
+                   FIGÉ sur une ancienne valeur et le widget clonait cette valeur périmée. */
+                if (inp && !host._spGlisse) { try { inp.value = val; } catch (_) {} }
+                etiquette('spVarVal_' + a.tag, String(val));
+            });
+        }
+    }
+
+    /* Un curseur bouge : on applique tout de suite (aperçu vivant) et on range la
+       valeur ARRONDIE AU CRAN pour la largeur — l'aperçu et le PDF reçoivent ainsi
+       exactement la même instance. */
+    function actionAxe(cible) {
+        if (!cible || !cible.dataset) return;
+        var tag = cible.dataset.spVarAxe;
+        var info = blocsAvecAxes();
+        var axe = (info.axes || []).filter(function (a) { return a.tag === tag; })[0] || null;
+        var val = parseFloat(cible.value);
+        if (!isFinite(val)) return;
+        if (axe && axe.tag === 'wdth') {
+            var crans = cransDansPlage(axe);
+            if (crans.length) {
+                val = cranLePlusProche(crans, val);
+                try { cible.value = val; } catch (_) {}
+            }
+        }
+        var v = variationCourante() || {};
+        v[tag] = val;
+        appliquerVariation(v, true);
+        etiquette('spVarVal_' + tag, String(val));
     }
 
     /* Variation affichée par les curseurs (celle du bloc sélectionné, complétée par
@@ -5796,48 +5990,10 @@ window.spTestDiag = function () {
         return v;
     }
 
-    function remplirPopin() {
-        var blocs = blocsTexteSel();
-        var axes = blocs.length ? (axesDeFamille(blocs[0].fontFamily) || []) : [];
-        axes.sort(function (a, b) {
-            var ia = ORDRE.indexOf(a.tag), ib = ORDRE.indexOf(b.tag);
-            if (ia < 0) ia = 99; if (ib < 0) ib = 99;
-            return ia - ib;
-        });
-        var host = document.getElementById('spVarAxes');
-        var nom = document.getElementById('spVarNom');
-        if (nom) nom.textContent = blocs.length ? (blocs[0].fontFamily + ' — ' + axes.length + ' axe(s)') : '';
-        if (!host) return;
-        host.innerHTML = '';
-        var courant = variationCourante() || {};
-        axes.forEach(function (a) {
-            var bloc = document.createElement('div');
-            var etiq = NOMS[a.tag] || a.tag;
-            bloc.innerHTML =
-                '<div style="display:flex;justify-content:space-between;font-size:10px;">' +
-                  '<span>' + etiq + ' <span style="opacity:.5">(' + a.tag + ')</span></span>' +
-                  '<span><b id="spVarVal_' + a.tag + '">' + courant[a.tag] + '</b> <span style="opacity:.5">/ ' + a.min + '–' + a.max + '</span></span>' +
-                '</div>' +
-                '<input type="range" data-sp-var-axe="' + a.tag + '" min="' + a.min + '" max="' + a.max + '" step="' + (a.tag === 'opsz' ? '0.5' : '1') + '" value="' + courant[a.tag] + '" style="width:100%;accent-color:#d81b60;">';
-            host.appendChild(bloc);
-        });
-        if (!axes.length) host.innerHTML = '<div class="tab-empty">Aucun axe détecté.</div>';
-    }
-
-    function ouvrirPopin() {
-        var p = construirePopin();
-        remplirPopin();
-        var row = bouton();
-        var r = row ? row.getBoundingClientRect() : { left: 40, top: 120, bottom: 150 };
-        p.style.display = 'block';
-        var h = p.getBoundingClientRect().height;
-        var y = r.top - h - 8;
-        if (y < 8) y = Math.min(window.innerHeight - h - 8, r.bottom + 8);
-        p.style.left = Math.round(Math.max(8, Math.min(window.innerWidth - p.getBoundingClientRect().width - 8, r.left))) + 'px';
-        p.style.top = Math.round(y) + 'px';
-    }
-    function fermerPopin() { if (_popin) _popin.style.display = 'none'; }
-    window._spVarPopinFermer = fermerPopin;
+    /* v1.7.482 — La POP-IN de la 1.7.481 est SUPPRIMÉE : elle était trop longue et
+       flottait au-dessus de l'interface. Son contenu vit désormais dans le panneau
+       `#spVarSection` (sous les styles B / I / U), détachable en widget. Rien à
+       garder ici : `remplirAxes` + `actionAxe` ci-dessus font tout. */
 
     /* ── Application au bloc sélectionné ── */
     /* Applique la variation au(x) bloc(s) sélectionné(s).
@@ -5865,7 +6021,13 @@ window.spTestDiag = function () {
                     if (Math.abs(v.wght - w.def) > 1e-6) propre.wght = v.wght;
                 }
                 if (d && typeof v.wdth === 'number') {
-                    if (Math.abs(v.wdth - d.def) > 1e-6) propre.wdth = v.wdth;
+                    /* ⚠️ MESURÉ : le canvas ne connaît que les 9 mots-clés CSS de
+                       font-stretch. On range donc la largeur RAMENÉE AU CRAN :
+                       c'est la seule valeur que l'aperçu sait dessiner, donc la
+                       seule que le PDF doit recevoir pour être identique. */
+                    var crans = cransDansPlage(d);
+                    var largeur = crans.length ? cranLePlusProche(crans, v.wdth) : v.wdth;
+                    if (Math.abs(largeur - d.def) > 1e-6) propre.wdth = largeur;
                 }
                 var s = axe('slnt') || axe('ital');
                 if (s && typeof v.slnt === 'number') {
@@ -5882,46 +6044,129 @@ window.spTestDiag = function () {
         if (!silencieux) {
             try { if (typeof saveState === 'function') saveState('Police variable'); } catch (_) {}
         }
-        majBouton();
+        majPanneau();
         return blocs.length;
     }
     window.spVarAppliquer = appliquerVariation;
 
+    /* ═══════════ v1.7.482 : LE PDF EMBARQUE L'INSTANCE, PAS LA POLICE PAR DÉFAUT ═══════════
+       MESURÉ dans le bundle pdf-lib livré : pour une police custom, l'embarquement passe
+       par le fontkit ENREGISTRÉ — `const font = await fontkit.create(data)`, puis
+       `subset = font.createSubset()` … `subset.encodeStream()`. Autrement dit le fichier
+       écrit dans le PDF est RÉ-ENCODÉ à partir de l'objet fontkit rendu par `create`.
+       En lui rendant `font.getVariation(coords)`, le PDF reçoit donc réellement les
+       contours de l'INSTANCE réglée (graisse ET largeur) — mêmes contours que l'aperçu.
+       MESURÉ avec le fontkit livré (Node) :
+         • wght 700 change bien les contours (bbox d'un « H » : 1210 → 1230) ;
+         • wdth 75 change l'avance (largeur pdf-lib d'une phrase : 95,31 → 69,17 pt).
+       L'enveloppe est posée sur le DOCUMENT (chaque export a son PDFDocument) et la
+       variation « en attente » est consommée par le prochain `create`, ce qui suit
+       exactement le rythme des `await doc.embedFont(...)` de l'export. */
+    function kitVariable(doc) {
+        if (!doc || !window.fontkit) return null;
+        if (doc._spVarKit) return doc._spVarKit;
+        var base = window.fontkit;
+        var kit = {
+            _spEnAttente: null,
+            create: function (buffer, features) {
+                var f = null;
+                try { f = base.create(buffer, features); } catch (_) { return null; }
+                var coords = kit._spEnAttente;
+                kit._spEnAttente = null;
+                if (coords && f && typeof f.getVariation === 'function') {
+                    try {
+                        var instance = f.getVariation(coords);
+                        if (instance) return instance;
+                    } catch (_) {}
+                }
+                return f;
+            }
+        };
+        try {
+            Object.keys(base).forEach(function (k) {
+                if (k === 'create' || (k in kit)) return;
+                kit[k] = base[k];
+            });
+        } catch (_) {}
+        try { doc.registerFontkit(kit); doc._spVarKit = kit; } catch (_) { return null; }
+        return kit;
+    }
+
+    /* Appelé JUSTE AVANT chaque `doc.embedFont(bytes)`. Renvoie false quand la clé ne
+       désigne aucune instance (cas normal) : le fontkit d'origine reste alors en place,
+       donc le comportement de l'export est inchangé pour tout document sans réglage. */
+    function poserVariationPdf(doc, cle) {
+        var coords = coordsDepuisCle(cle);
+        if (!coords) return false;
+        var kit = kitVariable(doc);
+        if (!kit) return false;
+        kit._spEnAttente = coords;
+        return true;
+    }
+    window._spVarPdfPose = poserVariationPdf;
+
     /* ── Branchements ── */
     function brancher() {
         surveillerImports();
+        var host = hostAxes();
+        if (host && !host._spVarWire) {
+            host._spVarWire = true;
+            /* Écoute par DÉLÉGATION : les curseurs sont reconstruits dès que les axes
+               changent, et le widget détaché renvoie ses mouvements sur ces MÊMES
+               curseurs d'origine (pont d'événements du système de widgets). */
+            host.addEventListener('input', function (e) {
+                var t = e.target;
+                if (t && t.dataset && t.dataset.spVarAxe) actionAxe(t);
+            });
+            host.addEventListener('change', function (e) {
+                var t = e.target;
+                if (!t || !t.dataset || !t.dataset.spVarAxe) return;
+                try { if (typeof saveState === 'function') saveState('Police variable'); } catch (_) {}
+            });
+            /* suivi du glisser : tant qu'une barre est tenue, on ne la réécrit pas */
+            host.addEventListener('pointerdown', function () { host._spGlisse = true; });
+            document.addEventListener('pointerup', function () { host._spGlisse = false; });
+            document.addEventListener('mouseup', function () { host._spGlisse = false; });
+        }
+        var rst = document.getElementById('spVarReset');
+        if (rst && !rst._spVarWire) {
+            rst._spVarWire = true;
+            rst.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                appliquerVariation(null);
+            });
+        }
         var b = document.getElementById('spVarBtn');
         if (b && !b._spVarWire) {
             b._spVarWire = true;
+            /* Le bouton de la fiche typo ouvre le panneau en WIDGET détaché — c'est
+               exactement ce que fait le « + » du titre du panneau. Un deuxième clic
+               le referme. */
             b.addEventListener('click', function (e) {
+                e.preventDefault();
                 e.stopPropagation();
-                if (popinOuverte()) fermerPopin(); else ouvrirPopin();
+                if (widgetOuvert()) { try { window.spDockWidgets.fermer('spVarSection'); } catch (_) {} return; }
+                try { window.spDockWidgets.ouvrir(panneau(), b); } catch (_) {}
             });
         }
         var sel = document.getElementById('fontFamily');
         if (sel && !sel._spVarWire) {
             sel._spVarWire = true;
-            sel.addEventListener('change', function () { setTimeout(majBouton, 60); });
+            sel.addEventListener('change', function () { setTimeout(majPanneau, 60); });
         }
         if (!document._spVarDocWire) {
             document._spVarDocWire = true;
-            /* la sélection change par des clics : on réévalue le bouton (léger) */
-            document.addEventListener('mouseup', function () { setTimeout(majBouton, 40); }, true);
-            document.addEventListener('keyup', function () { setTimeout(majBouton, 40); }, true);
-            document.addEventListener('click', function (e) {
-                if (_popin && _popin.style.display !== 'none' && !_popin.contains(e.target)) {
-                    var row = bouton();
-                    if (!(row && row.contains(e.target))) fermerPopin();
-                }
-            });
-            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fermerPopin(); });
+            /* la sélection change par des clics : on réévalue le panneau (léger) */
+            document.addEventListener('mouseup', function () { setTimeout(majPanneau, 40); }, true);
+            document.addEventListener('keyup', function () { setTimeout(majPanneau, 40); }, true);
         }
-        majBouton();
+        majPanneau();
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', brancher);
     else brancher();
-    window.addEventListener('load', function () { setTimeout(majBouton, 300); });
+    window.addEventListener('load', function () { setTimeout(majPanneau, 300); });
 })();
 
 /* ═══════ v1.7.457 : TAQUETS DE TABULATION ═══════ */
@@ -6586,6 +6831,10 @@ window.spTestDiag = function () {
        références conservées dans data-sp-ref, boutons de détachement retirés. */
     function copier(origine) {
         var clone = origine.cloneNode(true);
+        /* ⚠️ querySelectorAll ne renvoie QUE les DESCENDANTS : sans cette ligne, le
+           nœud racine gardait son id → deux éléments du même id dans la page (mesuré
+           avec le panneau « Police variable », dont la racine porte #spVarSection). */
+        if (clone.id) clone.removeAttribute('id');
         Array.prototype.forEach.call(clone.querySelectorAll('[id]'), function (el) {
             el.setAttribute('data-sp-ref', el.id);
             el.removeAttribute('id');
@@ -6836,6 +7085,10 @@ window.spTestDiag = function () {
             if (t) liste.push({ noeud: sec, ancre: t, nom: sec.getAttribute('data-section') || sec.id || 'section' });
         });
         var blocs = [document.getElementById('spFrameOptions'), document.getElementById('paragraphIndentSection')];
+        /* 🆕 v1.7.482 — le panneau « Police variable » (#spVarSection, posé sous les
+           styles B / I / U) est détachable comme les blocs de travail ci-dessus : il
+           porte un <label> direct, ce qui suffit au « + » du titre. */
+        blocs.push(document.getElementById('spVarSection'));
         var just = document.getElementById('justLetterSpaceMin');
         if (just) blocs.push(just.closest('.input-group'));
         blocs.forEach(function (b) {
@@ -42576,6 +42829,7 @@ https://superprint.app
                     if (fonts[fk]) continue;
                     const fnt = _SP_FONT_RESOLVED[fk];
                     if (fnt && fnt._spTtfBuffer) {
+                        try { window._spVarPdfPose(doc, fk); } catch (_) {}
                         try { fonts[fk] = await doc.embedFont(new Uint8Array(fnt._spTtfBuffer), { subset: true }); }
                         catch (e) { console.warn('[Spot] embedFont failed for', fk, e); }
                     }
@@ -42913,6 +43167,10 @@ https://superprint.app
                     var fnt = _SP_FONT_RESOLVED[fk];
                     if (fnt && fnt._spTtfBuffer) {
                         try {
+                            /* 🆕 v1.7.482 — si la clé porte un réglage de police
+                               variable, on rend à fontkit l'INSTANCE demandée : le
+                               PDF reçoit alors les mêmes contours que l'aperçu. */
+                            try { window._spVarPdfPose(doc, fk); } catch (_) {}
                             fonts[fk] = await doc.embedFont(new Uint8Array(fnt._spTtfBuffer), { subset: true });
                         } catch(e) {
                             console.warn('[pdf-lib] embedFont failed for', fk, e);
@@ -43184,6 +43442,9 @@ https://superprint.app
                     var fnt = _SP_FONT_RESOLVED[fk];
                     if (fnt && fnt._spTtfBuffer) {
                         try {
+                            /* 🆕 v1.7.482 — police variable : instance réelle (cf.
+                               _spVarPdfPose). Sans réglage, rien ne change. */
+                            try { window._spVarPdfPose(doc, fk); } catch (_) {}
                             var ttfBytes = new Uint8Array(fnt._spTtfBuffer);
                             fonts[fk] = await doc.embedFont(ttfBytes, { subset: true });
                         } catch(e) {
@@ -43529,7 +43790,7 @@ https://superprint.app
                 //   vectoriel et sélectionnable, aligné sur la courbe.
                 if (obj.path) {
                     try {
-                        var _ptFontKey = _spFontKey(obj.fontFamily, obj.fontWeight, obj.fontStyle);
+                        var _ptFontKey = _spFontKey(obj.fontFamily, obj.fontWeight, obj.fontStyle, obj);
                         var _ptFont = fonts[_ptFontKey] || helvetica;
                         var _ptFill = _parsePdfColor(obj.fill) || [0, 0, 0];
                         var _ptFsPx = (obj.fontSize || 16) * Math.abs(obj.scaleY || 1);
@@ -43590,7 +43851,7 @@ https://superprint.app
                     } catch(e) { console.warn('[pdf-lib] path-text vector error:', e); }
                     return;
                 }
-                var fontKey = _spFontKey(obj.fontFamily, obj.fontWeight, obj.fontStyle);
+                var fontKey = _spFontKey(obj.fontFamily, obj.fontWeight, obj.fontStyle, obj);
                 var ef = fonts[fontKey] || helvetica;
                 if (!ef) return;
                 var fillC = _parsePdfColor(obj.fill) || [0, 0, 0];
@@ -44022,6 +44283,14 @@ https://superprint.app
                     //   synthétise le gras via CSS).
                     var _resolvedBoldEnough = function(fk, wantBold) {
                         if (!wantBold) return true;
+                        /* 🆕 v1.7.482 — POLICE VARIABLE : quand la clé désigne une
+                           INSTANCE, le PDF embarque la graisse demandée
+                           (font.getVariation({wght:700}) → contours 700 réels).
+                           L'ancien test lisait `usWeightClass` de la fonte opentype,
+                           qui reste 400 pour une police variable → il concluait « pas
+                           assez gras » et ajoutait un FAUX-GRAS par-dessus : le PDF
+                           sortait deux fois trop gras. Mesuré, corrigé. */
+                        try { if (window._spVarInstancePourCle && window._spVarInstancePourCle(fk)) return true; } catch (_) {}
                         var resolved = _SP_FONT_RESOLVED ? _SP_FONT_RESOLVED[fk] : null;
                         if (!resolved) return false; // pas de police réelle → faux-gras
                         try {
@@ -46020,7 +46289,7 @@ https://superprint.app
         // qu'on a deja essaye et echoue → ne pas reessayer.
         const _SP_FONT_CACHE = (window._SP_FONT_CACHE = window._SP_FONT_CACHE || {});
 
-        function _spFontKey(family, weight, style) {
+        function _spFontKey(family, weight, style, obj) {
             // ✏️ v1.7.213 : Normaliser fontWeight (bold→700, normal→400)
             var w = String(weight || 400);
             if (w === 'bold') w = '700';
@@ -46028,7 +46297,17 @@ https://superprint.app
             else if (w === 'italic') w = '400'; // italic est dans style, pas weight
             var s = (style === 'italic' || style === 'oblique') ? 'italic' : 'normal';
             // toLowerCase pour matcher les polices custom
-            return ((family || '').trim() + '|' + w + '|' + s).toLowerCase();
+            var k = ((family || '').trim() + '|' + w + '|' + s).toLowerCase();
+            /* 🆕 v1.7.482 — POLICE VARIABLE : la LARGEUR d'instance fait partie de
+               l'identité de la police réellement dessinée. Deux blocs de même famille
+               et même graisse mais de largeurs différentes ne peuvent donc PAS
+               partager la même police embarquée. La clé porte le réglage (« |d87.5 »)
+               et devient la source unique : cache opentype, embarquement pdf-lib,
+               et dessin. Le 4e argument est OPTIONNEL : sans lui (styles par
+               caractère, appels historiques) la clé reste EXACTEMENT celle d'avant,
+               donc aucun document existant ne change de comportement. */
+            var sig = (typeof window._spVarSigCle === 'function') ? window._spVarSigCle(obj) : '';
+            return sig ? (k + '|' + sig) : k;
         }
 
         // 🆕 v1.7.426 — exposé pour « Éditer la typo » (autre portée).
@@ -46040,10 +46319,31 @@ https://superprint.app
             return String(family || '').replace(/\s+/g, '');
         }
 
+        /* 🆕 v1.7.482 — ENVELOPPE « POLICE VARIABLE ». Les OCTETS de la police ne
+           dépendent pas de la variation : la clé variée et la clé de base partagent
+           donc la MÊME promesse (aucun parsing en double), et les deux entrées sont
+           posées dans les caches pour que les appels historiques à 3 arguments
+           (styles par caractère, _spIsFontReadySync) continuent de trouver la police.
+           Le 4e argument est optionnel : sans lui, comportement d'origine à l'identique. */
+        async function _spLoadFontVector(family, weight, style, obj) {
+            const cleVar = _spFontKey(family, weight, style, obj);
+            const cleBase = _spFontKey(family, weight, style);
+            const p = _spLoadFontVectorBrut(family, weight, style);
+            if (cleVar === cleBase) return p;
+            if (_SP_FONT_CACHE[cleVar] === undefined) _SP_FONT_CACHE[cleVar] = p;
+            return p.then(function (police) {
+                try {
+                    if (_SP_FONT_RESOLVED[cleBase] === undefined) _SP_FONT_RESOLVED[cleBase] = police || null;
+                    _SP_FONT_RESOLVED[cleVar] = _SP_FONT_RESOLVED[cleBase];
+                } catch (_) {}
+                return police;
+            });
+        }
+
         // Charge et parse une police pour la vectorisation. Lazy : ne
         // declenche le fetch+decompress qu'une fois par (family,weight,style).
         // Prefere le subset 'latin' ; tente 'latin-ext' en fallback.
-        async function _spLoadFontVector(family, weight, style) {
+        async function _spLoadFontVectorBrut(family, weight, style) {
             if (!window.opentype) return null;
             const key = _spFontKey(family, weight, style);
             if (_SP_FONT_CACHE[key] !== undefined) return _SP_FONT_CACHE[key];
@@ -46316,10 +46616,10 @@ https://superprint.app
                 var _isText = (o.type === 'textbox' || o.type === 'text' || o.type === 'i-text');
                 if (!_isText && o.visible === false) return;
                 if (o.type === 'textbox' || o.type === 'text' || o.type === 'i-text') {
-                    const k = _spFontKey(o.fontFamily, o.fontWeight, o.fontStyle);
+                    const k = _spFontKey(o.fontFamily, o.fontWeight, o.fontStyle, o);
                     if (!seen.has(k)) {
                         seen.add(k);
-                        tasks.push(_spLoadFontVector(o.fontFamily, o.fontWeight, o.fontStyle));
+                        tasks.push(_spLoadFontVector(o.fontFamily, o.fontWeight, o.fontStyle, o));
                     }
                     // Per-char styles (textbox.styles : { lineIdx: { charIdx: { fontFamily, fontWeight, fontStyle } } })
                     if (o.styles && typeof o.styles === 'object') {
@@ -46395,26 +46695,32 @@ https://superprint.app
                     g === 'inherit' || g === 'initial' || g === 'unset') return '';
                 return s;
             };
-            const add = (family, weight, style) => {
+            const add = (family, weight, style, obj) => {
                 family = spFamilleNette(family);
                 if (!family) return;
                 const normalizedWeight = String(weight || 400) === 'bold' ? '700'
                     : (String(weight || 400) === 'normal' ? '400' : String(weight || 400));
                 const normalizedStyle = (style === 'italic' || style === 'oblique') ? 'italic' : 'normal';
-                const key = _spFontKey(family, normalizedWeight, normalizedStyle);
+                /* 🆕 v1.7.482 — la LARGEUR d'instance fait partie de la clé : le
+                   préflight doit donc réclamer la police VARIÉE, sinon l'export la
+                   croit absente et bloque (ou rasterise) le texte. */
+                const key = _spFontKey(family, normalizedWeight, normalizedStyle, obj);
                 if (!requirements.has(key)) {
                     requirements.set(key, {
                         key,
                         family: String(family).trim(),
                         weight: normalizedWeight,
-                        style: normalizedStyle
+                        style: normalizedStyle,
+                        /* le réglage est transporté pour que le rechargement de la
+                           police se fasse sous la MÊME clé que le dessin. */
+                        spVar: (obj && obj.spVarFont) ? Object.assign({}, obj.spVarFont) : null
                     });
                 }
             };
             const visit = obj => {
                 if (!obj || obj.visible === false) return;
                 if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
-                    add(obj.fontFamily, obj.fontWeight, obj.fontStyle);
+                    add(obj.fontFamily, obj.fontWeight, obj.fontStyle, obj);
                     if (obj.styles && typeof obj.styles === 'object') {
                         Object.values(obj.styles).forEach(line => {
                             if (!line) return;
@@ -46442,7 +46748,11 @@ https://superprint.app
         async function _spGetMissingVectorFonts() {
             await window.ensureExportLibs();
             const requirements = _spCollectDocumentFontRequirements();
-            await Promise.all(requirements.map(req => _spLoadFontVector(req.family, req.weight, req.style)));
+            await Promise.all(requirements.map(req => _spLoadFontVector(
+                req.family, req.weight, req.style,
+                /* même clé que le dessin, réglage variable compris */
+                req.spVar ? { spVarFont: req.spVar } : null
+            )));
             await _spResolveFontCache();
             return requirements.filter(req => {
                 const font = _SP_FONT_RESOLVED[req.key];
@@ -46744,7 +47054,7 @@ https://superprint.app
                 // sûr si la police n'a pas pu être chargée.
                 if (opts.vectorTypography) return 'vector';
                 try {
-                    const _fk = _spFontKey(obj.fontFamily, obj.fontWeight, obj.fontStyle);
+                    const _fk = _spFontKey(obj.fontFamily, obj.fontWeight, obj.fontStyle, obj);
                     if (window._SP_FONT_RESOLVED && window._SP_FONT_RESOLVED[_fk]) return 'vector';
                 } catch (_) {}
                 return 'raster';
@@ -47262,7 +47572,16 @@ https://superprint.app
             const _skipCollect = !!(opts && opts.skipCollect);
             try {
                 if (obj && obj.path) return false;
-                const fontKey = _spFontKey(obj.fontFamily, obj.fontWeight, obj.fontStyle);
+                /* 🆕 v1.7.482 — POLICE VARIABLE : ce chemin écrit le texte dans jsPDF
+                   avec la police TELLE QUELLE, c'est-à-dire son INSTANCE PAR DÉFAUT.
+                   Or la mise en page de ce bloc vient de l'aperçu (largeur réglée,
+                   donc avances plus courtes) : les glyphes se CHEVAUCHERAIENT dans
+                   le PDF. On refuse donc la vectorisation pour ce bloc — le moteur
+                   hybride le RASTRÉISE au rendu exact de la preview. Le chemin par
+                   défaut (« Format fini », pdf-lib) embarque, lui, la VRAIE instance
+                   et garde le texte vectoriel. */
+                if (obj && obj.spVarFont) return false;
+                const fontKey = _spFontKey(obj.fontFamily, obj.fontWeight, obj.fontStyle, obj);
                 const font = _SP_FONT_RESOLVED[fontKey];
 
                 // La preview peut utiliser une police système connue du navigateur
@@ -47367,7 +47686,7 @@ https://superprint.app
                 let _useFontKey = fontKey;
                 let _useFont = font;
                 try {
-                    const _fkEff = _spFontKey(_effFontFamily, _effFontWeight, _effFontStyle);
+                    const _fkEff = _spFontKey(_effFontFamily, _effFontWeight, _effFontStyle, obj);
                     if (_fkEff !== fontKey) {
                         _useFontKey = _fkEff;
                         const _fEff = _SP_FONT_RESOLVED && _SP_FONT_RESOLVED[_fkEff];
@@ -47822,6 +48141,10 @@ https://superprint.app
                     var fi = fonts[fk];
                     try {
                         if (fi.buffer) {
+                            /* 🆕 v1.7.482 — police variable : la clé du texte
+                               (tx.fontKey) porte la largeur d'instance, on rend donc
+                               l'instance à fontkit avant l'embarquement. */
+                            try { window._spVarPdfPose(doc, fk); } catch (_) {}
                             var fontBytes = new Uint8Array(fi.buffer);
                             var pdfFont = await doc.embedFont(fontBytes, { subset: true });
                             embeddedFonts[fk] = pdfFont;

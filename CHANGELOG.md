@@ -9,6 +9,42 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.482] — 2026-09-18
+
+_The variable-font control becomes a detachable panel, and the PDF embeds the configured font instance (the preview applies the width at last)_
+
+### Added
+- **The variable-font control is now a full panel of the right column**, placed under the B / I / U styles and framed by a full-width separator above and below. It appears only when the selected block's font declares axes.
+- **Detachable as a widget**: the “+” of its title (and the “Variable font” button of the typography card) opens it as a floating widget over the workspace, movable like the other right-hand panels; the widget and the column stay in sync in both directions, and the widget position is remembered.
+- **Only the axes the preview can really drive get a slider** (weight, width). The others (optical size…) are listed for information, so as not to promise a setting the preview cannot render.
+
+### Changed
+- **The typography-card button is smaller (10 px) and breathes vertically.** It was crushed by `.rightbar .btn` (28 px high, `padding: 0 10px`, 9 px) and a long label wrapped on two tight lines; the label is now short (“Variable font”) and the height is free.
+- **The font key carries the instance width** (`family|weight|style|d87.5`) and is the single source for the opentype cache, the pdf-lib embedding and the drawing. The 4th argument is optional: without it the key is exactly what it was, so **no existing document changes behaviour**.
+
+### Fixed
+- **The preview really applies the width now.** Measured cause: on canvas, assigning `ctx.font = …` resets `font-stretch`, and Fabric re-assigns that shorthand in `Text.prototype._renderChar` right before drawing each chunk. The width was therefore honoured by the *metrics* (hyphenation, tab stops, advances) but **not by the drawing** — letters came out crowded on screen, and the PDF could never match the preview. An accessor installed on the drawing context restores the width after every font assignment (the bundle contains only two `.font` assignments: `_setTextStyles` and `_renderChar` — both covered). Measured ink / drawn width for “Hamburg” at 40 px: **4 461 / 237** at 700-100, **4 028 / 205** at 700-87.5, **3 656 / 171** at 700-75.
+- **The width is snapped to the CSS width step** (the only value the canvas can draw) and **that value is what the document stores**, so preview and PDF work on the same instance. Numeric check: advance measured on screen **118.48 px** = advance reported by the instancing engine **118.48 pt** for the same text at the same size.
+- **The “Finished format” (pdf-lib) export embeds the instance.** Measured in the bundle: pdf-lib re-encodes the font from the object returned by the registered fontkit (`fontkit.create`, then `font.createSubset()` and `subset.encodeStream()`). Wrapping fontkit so it returns `font.getVariation(coords)` therefore puts the real outlines in the PDF. Measured on a real PDF rendered with pdf.js: “Hamburg” at 40 pt measures **119.36 pt** at width 75 % instead of **164.45 pt** on the default instance, and the ink grows from **17 436 to 26 292 px** between weight 300 and weight 700.
+- **No more fake bold on top of the instance.** The old test read `usWeightClass` from the opentype font, which stays 400 on a variable font, so it concluded “not bold enough” and added a fake bold — the PDF came out twice as bold. A key carrying an instance is now recognised as already bold.
+- **The hybrid jsPDF path (crop marks, colour bars, spreads) no longer vectorises those blocks.** jsPDF writes the font as it is (default instance) while the layout comes from the preview: glyphs would overlap. Those blocks are **rasterised at the exact preview rendering** instead.
+
+### Verified
+| Check | Result |
+|---|---|
+| Panel | appears for a variable font, 2 sliders (wght 300–700, wdth 75–100 from the real `fvar` table), “Réinitialiser” → `fontWeight` 400 and the setting removed |
+| Widget | opened from the “+” **and** from the button; widget slider drives the block (`spVarFont` updated) and the column slider follows; both labels in sync |
+| Width in the preview | ink / drawn width 4 461/237 → 4 028/205 → 3 656/171 for width 100 → 87.5 → 75 |
+| Weight in the preview | ink 2 574 / 4 461 for weight 300 / 700 at the same width |
+| Width in the PDF | text item **119.36 pt** at width 75 (default instance: 164.45 pt) |
+| Weight in the PDF | ink 17 436 → 26 292 px between weight 300 and 700 |
+| `.sp` round-trip | written by `saveProjectSP_toObject()` with `spVarFont`, restored by `loadProjectSP()` after the property was deleted |
+| `.json` | same whitelist (`SP_CUSTOM_PROPS`) and same loader as the `.sp` |
+| Studio trip | app → studio: `spVarFont` on the element; studio → app: present in the re-written `.sp` |
+| Parity web ↔ mirror | **22 / 22 identical**, 0 different, 0 missing |
+| `node --check` · markers | clean on both `main.js` · 13 version markers consistent (1.7.482) |
+| Package | `sp213-local.zip` rebuilt and verified file by file |
+
 ## [1.7.481] — 2026-09-18
 
 _Tab stops visible on the ruler, the Tabulation panel working again, and a variable-font control_
