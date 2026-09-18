@@ -999,13 +999,26 @@ let pages = [];
 let currentPageIndex = 0;
 let pageFormat = { width: 210, height: 297 };
 let margin = 20;
-/* 🆕 v1.7.458 — MARGES PAR CÔTÉ (mm). « margins » est la SOURCE DE VÉRITÉ
-   (haut / droite / bas / gauche) ; « margin » reste la marge UNIFORME historique,
-   tenue à jour au MAXIMUM des quatre côtés : c'est la valeur encore lue par les
-   grilles de repères, le gabarit et les couloirs de coulage, qui raisonnent par
-   construction en marge symétrique. Un document ancien (un seul nombre) ou un
-   appel d'API qui ne fournit qu'une valeur donne les QUATRE mêmes marges :
-   le comportement d'origine est donc préservé à l'identique. */
+/* 🆕 v1.7.458 — MARGES PAR CÔTÉ (mm). « margins » est la SOURCE DE VÉRITÉ ;
+   « margin » reste la marge UNIFORME historique, tenue à jour au MAXIMUM des quatre
+   côtés : c'est la valeur encore lue par les grilles de repères, le gabarit et les
+   couloirs de coulage, qui raisonnent par construction en marge symétrique. Un
+   document ancien (un seul nombre) ou un appel d'API qui ne fournit qu'une valeur
+   donne les QUATRE mêmes marges : le comportement d'origine est préservé.
+
+   🆕 v1.7.469 — VOCABULAIRE IMPRIMERIE (retour utilisateur). Les deux marges
+   horizontales portent enfin leur nom de métier :
+     PETIT FOND = marge INTÉRIEURE, côté pliure / reliure.
+     GRAND FOND = marge EXTÉRIEURE, côté chants, vers le bord de la page.
+   Correspondance conservée pour que les fichiers .sp et .json existants se
+   relisent sans conversion :  inner (petit fond) == left · outer (grand fond) == right.
+   Les deux vocabulaires sont ÉCRITS dans les sauvegardes et ACCEPTÉS au chargement.
+   Page simple : la page est traitée comme un RECTO (page 1 = page de droite), soit
+   petit fond à gauche — exactement la géométrie d'avant.
+   Double page : les marges sont MIROITÉES page par page (spMargesPagePx) ; la pliure
+   reçoit donc le petit fond des DEUX côtés, et les chants le grand fond des deux
+   côtés. Avant, les deux pages recevaient la même gauche et la même droite, si bien
+   qu'une pliure asymétrique était impossible à composer. */
 let margins = { top: 20, right: 20, bottom: 20, left: 20 };
 function spMargeNombre(v, repli) {
     /* 🆕 v1.7.459 — CORRECTIF MESURE : Number(null) vaut 0, pas NaN.
@@ -1020,30 +1033,64 @@ function spMargeNombre(v, repli) {
 }
 function spMargesMm() {
     var d = spMargeNombre(margin, 20);
+    /* 🆕 v1.7.469 — petit fond (intérieur) et grand fond (extérieur) sont les noms
+       de métier de left et right. On lit les deux vocabulaires (les fichiers récents
+       portent inner/outer, les anciens left/right) et on renvoie les quatre clés,
+       pour qu'un lecteur — app, studio, script ou fichier .sp — trouve toujours la
+       sienne. inner et left sont la MÊME valeur, comme outer et right. */
+    var inner = spMargeNombre(margins && (margins.inner !== undefined ? margins.inner : margins.left), d);
+    var outer = spMargeNombre(margins && (margins.outer !== undefined ? margins.outer : margins.right), d);
     return {
         top: spMargeNombre(margins && margins.top, d),
-        right: spMargeNombre(margins && margins.right, d),
         bottom: spMargeNombre(margins && margins.bottom, d),
-        left: spMargeNombre(margins && margins.left, d)
+        inner: inner, outer: outer,
+        left: inner, right: outer
     };
 }
 function spMargesPx() {
     var m = spMargesMm();
-    return { top: mmToPx(m.top), right: mmToPx(m.right), bottom: mmToPx(m.bottom), left: mmToPx(m.left) };
+    return {
+        top: mmToPx(m.top), bottom: mmToPx(m.bottom),
+        inner: mmToPx(m.inner), outer: mmToPx(m.outer),
+        left: mmToPx(m.left), right: mmToPx(m.right)
+    };
 }
+/* 🆕 v1.7.469 — MARGES PHYSIQUES D'UNE PAGE, côté pliure compris.
+   estPageDeDroite = true  (RECTO, page impaire : page 1, 3, 5…)
+       → petit fond à GAUCHE (pliure à gauche), grand fond à DROITE (chants).
+   estPageDeDroite = false (VERSO, page paire : page 2, 4, 6…)
+       → grand fond à GAUCHE (chants), petit fond à DROITE (pliure).
+   left/right sont la géométrie physique à peindre, inner/outer restent le
+   vocabulaire imprimerie : l'appelant lit ce qui correspond à son intention. */
+function spMargesPagePx(estPageDeDroite) {
+    var m = spMargesPx();
+    if (estPageDeDroite === false) {
+        return { top: m.top, bottom: m.bottom, inner: m.inner, outer: m.outer, left: m.outer, right: m.inner };
+    }
+    return { top: m.top, bottom: m.bottom, inner: m.inner, outer: m.outer, left: m.inner, right: m.outer };
+}
+/* Une page est un RECTO (page de droite) quand son NUMÉRO est impair : page 1 = recto. */
+function spPageEstRecto(numeroDePage) { return (Math.round(Number(numeroDePage) || 1) % 2) === 1; }
+window.spMargesPagePx = spMargesPagePx;
+window.spPageEstRecto = spPageEstRecto;
 /* Fixe les marges : « parCote » ({top,right,bottom,left}) s'il est valide,
    sinon la valeur UNIQUE « uniforme » est appliquée aux quatre côtés. */
 function spSetMargesMm(parCote, uniforme) {
     var d = spMargeNombre(uniforme, spMargeNombre(margin, 20));
     var o = (parCote && typeof parCote === 'object') ? parCote : null;
     if (!o && typeof parCote === 'number') d = spMargeNombre(parCote, d);
+    /* 🆕 v1.7.469 — les deux vocabulaires sont acceptés (inner/outer des fichiers
+       récents, left/right des fichiers existants) et les QUATRE clés sont écrites :
+       un ancien lecteur retrouve left/right, un nouveau lit inner/outer. */
+    var inner = spMargeNombre(o && (o.inner !== undefined ? o.inner : o.left), d);
+    var outer = spMargeNombre(o && (o.outer !== undefined ? o.outer : o.right), d);
     margins = {
         top: spMargeNombre(o && o.top, d),
-        right: spMargeNombre(o && o.right, d),
         bottom: spMargeNombre(o && o.bottom, d),
-        left: spMargeNombre(o && o.left, d)
+        inner: inner, outer: outer,
+        left: inner, right: outer
     };
-    margin = Math.max(margins.top, margins.right, margins.bottom, margins.left);
+    margin = Math.max(margins.top, margins.bottom, margins.inner, margins.outer);
     try { spSyncMarginInputs(); } catch (_) {}
     return spMargesMm();
 }
@@ -1093,17 +1140,27 @@ function spColGeom(obj) {
     var n = Math.max(2, Math.min(20, Math.round(Number(obj._spCols) || 1)));
     var inT = (typeof obj._spInsetTop === 'number' && obj._spInsetTop > 0) ? obj._spInsetTop : 0;
     var inB = (typeof obj._spInsetBottom === 'number' && obj._spInsetBottom > 0) ? obj._spInsetBottom : 0;
+    /* 🆕 v1.7.469 — RETRAITS GAGNÉS SUR LES COLONNES (retour utilisateur n° 3) : en
+       colonnes, la largeur partait de la largeur TOTALE du bloc et les retraits
+       gauche/droite étaient ignorés ; la première colonne était collée au bord.
+       Les retraits rognent maintenant la largeur utile AVANT de diviser. */
+    var inL = (typeof obj._spIndentLeft === 'number' && obj._spIndentLeft > 0) ? obj._spIndentLeft : 0;
+    var inR = (typeof obj._spIndentRight === 'number' && obj._spIndentRight > 0) ? obj._spIndentRight : 0;
     var frameH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : 0;
     var boxW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : (obj.width || 0);
     if (!(frameH > 0) || !(boxW > 0)) return null;   // cadre obligatoire
+    var innerW = boxW - inL - inR;                   // largeur utile, retraits déduits
+    if (!(innerW > 24)) { inL = 0; inR = 0; innerW = boxW; }   // bloc trop étroit : on ne rogne pas
     var g = Number(obj._spColGutter);
     if (!isFinite(g) || g < 0) g = 12;
     var w = Number(obj._spColW);
-    if (!isFinite(w) || w <= 0) w = (boxW - (n - 1) * g) / n;   // 0 = remplir le bloc
-    if (!(w > 8)) w = Math.max(8, (boxW - (n - 1) * g) / n);
+    if (!isFinite(w) || w <= 0) w = (innerW - (n - 1) * g) / n;   // 0 = remplir le bloc
+    if (!(w > 8)) w = Math.max(8, (innerW - (n - 1) * g) / n);
+    if (w > innerW) w = innerW;                       // une colonne ne dépasse pas la zone utile
     var colH = frameH - inT - inB;
     if (!(colH > 8)) return null;
-    return { n: n, w: w, gutter: g, colH: colH, frameH: frameH, boxW: boxW, inTop: inT };
+    return { n: n, w: w, gutter: g, colH: colH, frameH: frameH, boxW: boxW, inTop: inT,
+             inLeft: inL, inRight: inR, innerW: innerW };
 }
 window.spColGeom = spColGeom;
 /* Coulage : pour chaque ligne, sa colonne et sa position DANS la colonne.
@@ -1115,6 +1172,7 @@ function spColMap(obj) {
     if (!geo) return null;
     var nl = (obj._textLines && obj._textLines.length) ? obj._textLines.length : -1;
     var key = [geo.n, Math.round(geo.w * 100), Math.round(geo.gutter * 100), Math.round(geo.colH * 100),
+               Math.round((geo.inLeft || 0) * 100), Math.round((geo.inRight || 0) * 100),
                nl, (obj.text ? obj.text.length : -1),
                Math.round((obj.fontSize || 0) * 100), Math.round((obj.lineHeight || 0) * 1000)].join('|');
     var c = obj.__spColMap;
@@ -1149,7 +1207,9 @@ function spColGeomFor(obj, lineIndex) {
     var geo = m.geo;
     return {
         i: i,
-        x: i * (geo.w + geo.gutter),
+        /* 🆕 v1.7.469 — la première colonne part du retrait gauche (et la dernière
+           s'arrête au retrait droit, la largeur geo.w étant déjà rognée). */
+        x: (geo.inLeft || 0) + i * (geo.w + geo.gutter),
         w: geo.w,
         y: m.yIn[li],
         shift: (m.yNat ? (m.yNat[li] - m.yIn[li]) : 0) * -1,
@@ -13708,8 +13768,12 @@ window.spTestDiag = function () {
     });
     
     // 4. MARGES DE SÉCURITÉ (pointillés rouges comme pages simples)
-    /* 🆕 v1.7.458 — marges par côté (les quatre valeurs sont ici). */
-    const _mpS = spMargesPx();
+    /* 🆕 v1.7.458 — marges par côté (les quatre valeurs sont ici).
+       🆕 v1.7.469 — MIROIR : la page de GAUCHE a son GRAND fond côté chants et son
+       PETIT fond côté pliure ; la page de DROITE reçoit l'inverse. Les deux marges
+       de la pliure sont donc le même petit fond, ce qui est le but en double page. */
+    const _mpS = spMargesPagePx(false);   // page de gauche (verso)
+    const _mpD = spMargesPagePx(true);    // page de droite (recto)
     const leftMarginRect = new fabric.Rect({
         left: bleedPx + _mpS.left,
         top: bleedPx + _mpS.top,
@@ -13726,10 +13790,10 @@ window.spTestDiag = function () {
     });
     
     const rightMarginRect = new fabric.Rect({
-        left: bleedPx + width + _mpS.left,
-        top: bleedPx + _mpS.top,
-        width: width - _mpS.left - _mpS.right,
-        height: height - _mpS.top - _mpS.bottom,
+        left: bleedPx + width + _mpD.left,
+        top: bleedPx + _mpD.top,
+        width: width - _mpD.left - _mpD.right,
+        height: height - _mpD.top - _mpD.bottom,
         fill: 'transparent',
         stroke: '#ff0000',
         strokeWidth: 0.5,
@@ -56248,8 +56312,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         margins: "Marges (mm)",
         marginTop: "Haut",
         marginBottom: "Bas",
-        marginLeft: "Gauche",
-        marginRight: "Droite",
+        marginLeft: "Petit fond",
+        marginRight: "Grand fond",
         tools: "Outils",
         textBlocks: "Blocs de texte",
         layers: "Calques",
@@ -56351,6 +56415,12 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         npLabelW: "Largeur (mm)",
         npLabelH: "Hauteur (mm)",
         npLabelMargin: "Marges (mm)",
+    npMarginTop: "Haut",
+    npMarginBottom: "Bas",
+    npMarginInner: "Petit fond",
+    npMarginOuter: "Grand fond",
+    npMarginLegend: "Petit fond = marge intérieure (côté pliure) · grand fond = marge extérieure (côté chants)",
+    marginsFondsNote: "Petit fond = marge intérieure (côté pliure) · grand fond = marge extérieure (côté chants)",
         npLabelBleed: "Fond perdu (mm)",
         npLabelPages: "Nombre de pages",
         npLabelCustom: "Personnalisé",
@@ -57085,8 +57155,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         margins: "Margins (mm)",
         marginTop: "Top",
         marginBottom: "Bottom",
-        marginLeft: "Left",
-        marginRight: "Right",
+        marginLeft: "Inner margin",
+        marginRight: "Outer margin",
         tools: "Tools",
         textBlocks: "Text Blocks",
         layers: "Layers",
@@ -57188,6 +57258,12 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         npLabelW: "Width (mm)",
         npLabelH: "Height (mm)",
         npLabelMargin: "Margins (mm)",
+    npMarginTop: "Top",
+    npMarginBottom: "Bottom",
+    npMarginInner: "Inner margin",
+    npMarginOuter: "Outer margin",
+    npMarginLegend: "Inner margin = spine side · outer margin = fore-edge side",
+    marginsFondsNote: "Inner margin = spine side · outer margin = fore-edge side",
         npLabelBleed: "Bleed (mm)",
         npLabelPages: "Number of pages",
         npLabelCustom: "Custom",
@@ -57923,8 +57999,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         margins: "マージン (mm)",
         marginTop: "上",
         marginBottom: "下",
-        marginLeft: "左",
-        marginRight: "右",
+        marginLeft: "内側",
+        marginRight: "外側",
         tools: "ツール",
         textBlocks: "テキストブロック",
         layers: "レイヤー",
@@ -58028,6 +58104,12 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         npLabelW: "幅 (mm)",
         npLabelH: "高さ (mm)",
         npLabelMargin: "余白 (mm)",
+    npMarginTop: "上",
+    npMarginBottom: "下",
+    npMarginInner: "内側",
+    npMarginOuter: "外側",
+    npMarginLegend: "内側＝ノド側の余白 ／ 外側＝小口側の余白",
+    marginsFondsNote: "内側＝ノド側の余白 ／ 外側＝小口側の余白",
         npLabelBleed: "裁ち落とし (mm)",
         npLabelPages: "ページ数",
         npLabelCustom: "カスタム",
