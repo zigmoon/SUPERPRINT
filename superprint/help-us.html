@@ -6,7 +6,7 @@
 
 <!-- ═══ SEO / GEO / AEO — Nous aider (SuperPrint) ═══ -->
 <title>Help us — SuperPrint is independent | Nous aider | 支援する</title>
-<meta name="description" content="SuperPrint is independent: no investor, no advertising, no subscription, no data resale. Here is what a donation pays for, and what it does not buy. Voluntary donation via PayPal, free amount.">
+<meta name="description" content="SuperPrint is independent: no investor, no advertising, no subscription, no data resale. Here is what a donation pays for, and what it does not buy. Voluntary donation via PayPal, €19 once.">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="author" content="Zigmoon">
 <meta name="theme-color" content="#F7F3EC">
@@ -1367,9 +1367,20 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
 
 /* ═══ v1.7.470 — page « nous aider » : mêmes jetons que la landing, mise en page dédiée ═══ */
-.help-wrap { max-width: 1120px; margin: 0 auto; padding: clamp(34px,5vw,72px) clamp(18px,4vw,40px) clamp(40px,6vw,80px); }
+.help-wrap { max-width: 1180px; margin: 0 auto; padding: clamp(34px,5vw,72px) clamp(18px,4vw,40px) clamp(40px,6vw,80px); }
 .help-kicker { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
-.help-h1 { margin: 14px 0 0; font-family: var(--f-caps); font-weight: 400; line-height: 1.04; letter-spacing: .01em; font-size: clamp(30px,4.4vw,58px); color: var(--ink); }
+.help-h1 { margin: 14px 0 0; font-family: var(--f-display); font-weight: 700; line-height: 1.1; letter-spacing: -.012em; font-size: clamp(28px,3.4vw,44px); color: var(--ink); }
+/* ═══ v1.7.473 — DEUX COLONNES DÈS LE HAUT : LE TEXTE ÉTROIT, LE PAIEMENT LARGE ═══
+   Le texte est plafonné à 400 px (une colonne de lecture, pas une pleine largeur), le cadre
+   PayPal prend tout le reste ET toute la hauteur de la ligne : c'est la zone d'action qui
+   porte l'importance. Sous 900 px, une seule colonne, le texte d'abord. */
+.help-top { display: grid; grid-template-columns: minmax(0,400px) minmax(0,1fr); gap: clamp(20px,3vw,48px); align-items: stretch; }
+@media (max-width: 900px) { .help-top { grid-template-columns: 1fr; gap: clamp(18px,3vw,28px); } }
+.help-intro { display: flex; flex-direction: column; }
+.help-don-txt { margin-top: clamp(20px,2.6vw,30px); padding-top: clamp(14px,1.8vw,20px); border-top: 1px solid var(--line); }
+.help-don-h2 { margin: 0 0 8px; font-family: var(--f-caps); font-weight: 400; font-size: clamp(20px,2.2vw,26px); letter-spacing: .01em; color: var(--ink); }
+.help-don-txt p { margin: 0 0 8px; font-size: 13px; line-height: 1.7; color: var(--ink-soft); }
+.help-don-txt .tiny { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--muted); }
 .help-lead { margin: 18px 0 0; max-width: 68ch; font-size: clamp(14px,1.3vw,16.5px); line-height: 1.7; color: var(--ink-soft); }
 .help-rule { height: 1px; background: var(--line); border: 0; margin: clamp(28px,4vw,46px) 0; }
 .help-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: clamp(14px,1.6vw,20px); }
@@ -1434,7 +1445,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 .help-don { margin: clamp(22px,3vw,34px) 0 0; align-items: stretch; }
 .help-pay {
   background: var(--paper); border: 1px solid var(--line-strong); padding: clamp(20px,2.4vw,30px);
-  min-height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 16px;
+  min-height: 100%; display: flex; flex-direction: column; justify-content: flex-start; gap: 16px;
 }
 .help-pay-titre {
   font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .22em;
@@ -1542,7 +1553,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.472</span>
+    <span>SuperPrint v1.7.473</span>
   </div>
 </div>
 
@@ -1550,28 +1561,31 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <!-- ══════════════ CONTENU ══════════════ -->
 <div class="help-wrap">
 
+  <div class="help-top">
+    <div class="help-intro">
   <p class="help-kicker" data-lang="fr">Projet indépendant</p>
   <p class="help-kicker" data-lang="en">Independent project</p>
   <p class="help-kicker" data-lang="ja">独立プロジェクト</p>
 
-  <h1 class="help-h1" data-lang="fr">SuperPrint est indépendant, gratuit, sans publicité et sans abonnement. Votre aide est ce qui le garde libre.</h1>
-  <h1 class="help-h1" data-lang="en">SuperPrint is independent, free, with no advertising and no subscription. Your help is what keeps it free.</h1>
-  <h1 class="help-h1" data-lang="ja">SuperPrint は独立していて、無料、広告もサブスクもありません。その自由を保っているのは、あなたの支援です。</h1>
+  <h1 class="help-h1" data-lang="fr">SuperPrint est indépendant, gratuit, sans publicité et sans abonnement.</h1>
+  <h1 class="help-h1" data-lang="en">SuperPrint is independent, free, with no advertising and no subscription.</h1>
+  <h1 class="help-h1" data-lang="ja">SuperPrint は独立していて、無料、広告もサブスクもありません。</h1>
 
   <p class="help-lead" data-lang="fr">Pas d'investisseur, pas de publicité, pas d'abonnement, aucune revente de données. Le logiciel est conçu, écrit et maintenu par deux personnes, et il reste gratuit — y compris pour un usage professionnel. C'est un choix, pas une promesse de circonstance : chaque contribution sert à acheter du temps de développement et à payer ce que le logiciel consomme.</p>
   <p class="help-lead" data-lang="en">No investor, no advertising, no subscription, no data resale. The software is designed, written and maintained by two people, and it stays free — including for professional use. That is a deliberate choice, not a temporary promise: every contribution buys development time and pays for what the software consumes.</p>
   <p class="help-lead" data-lang="ja">投資家も広告もサブスクリプションもなく、データの転売も行いません。ソフトウェアは二人で設計・開発・保守しており、業務利用を含めて無料です。これは場当たり的な約束ではなく選択です。いただいた支援は開発時間と、ソフトウェアの運用費に充てられます。</p>
 
-  <section class="help-don">
-    <div>
+      <div class="help-don-txt">
       <h2 data-lang="fr">Faire un don</h2><h2 data-lang="en">Make a donation</h2><h2 data-lang="ja">寄付する</h2>
-      <p data-lang="fr">Montant libre, paiement traité par PayPal — votre carte reste chez PayPal, nous ne voyons ni votre numéro ni votre adresse. Aucun compte PayPal n'est nécessaire pour payer par carte.</p>
-      <p data-lang="en">Free amount, payment handled by PayPal — your card stays with PayPal, we never see your number or your address. No PayPal account is needed to pay by card.</p>
-      <p data-lang="ja">金額は自由、決済はPayPalが処理します。カード情報はPayPalが保持し、こちらには届きません。カード決済にPayPalアカウントは不要です。</p>
-      <p class="tiny" data-lang="fr">Don ponctuel, ou mensuel si vous préférez — réglable dans le formulaire PayPal.</p>
-      <p class="tiny" data-lang="en">One-off, or monthly if you prefer — you choose inside the PayPal form.</p>
-      <p class="tiny" data-lang="ja">都度または毎月、PayPalのフォームで選べます。</p>
+      <p data-lang="fr">Paiement traité par PayPal : votre carte reste chez PayPal, nous ne voyons ni votre numéro ni votre adresse. Aucun compte PayPal n'est nécessaire pour payer par carte.</p>
+      <p data-lang="en">Payment handled by PayPal — your card stays with PayPal, we never see your number or your address. No PayPal account is needed to pay by card.</p>
+      <p data-lang="ja">決済はPayPalが処理します。カード情報はPayPalが保持し、こちらには届きません。カード決済にPayPalアカウントは不要です。</p>
+      <p class="tiny" data-lang="fr">19 €, une fois. Le montant est fixé par le bouton ci-contre et ne se règle pas depuis cette page.</p>
+      <p class="tiny" data-lang="en">€19, once. The amount is set by the button beside this text and is not chosen on this page.</p>
+      <p class="tiny" data-lang="ja">19 ユーロの一度のお支払いです。金額は右のボタンのもので、このページでは設定しません。</p>
+      </div>
     </div>
+
     <div class="help-pay">
       <div class="help-pay-titre">
         <span data-lang="fr">Paiement par PayPal</span>
@@ -1579,11 +1593,11 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         <span data-lang="ja">PayPal でのお支払い</span>
       </div>
       <div id="paypal-container-DHFGPJBRF88Q4"></div>
-      <p class="help-pay-note" data-lang="fr">Montant et périodicité se règlent dans le formulaire PayPal. Votre carte reste chez PayPal : nous ne voyons ni votre numéro, ni votre adresse, ni votre nom.</p>
-      <p class="help-pay-note" data-lang="en">Amount and frequency are set inside the PayPal form. Your card stays with PayPal: we never see your number, your address or your name.</p>
-      <p class="help-pay-note" data-lang="ja">金額と頻度は PayPal のフォームで設定します。カード情報は PayPal が保持し、番号・住所・氏名がこちらに届くことはありません。</p>
+      <p class="help-pay-note" data-lang="fr">Le montant est fixé par le bouton PayPal : 19 €. Votre carte reste chez PayPal : nous ne voyons ni votre numéro, ni votre adresse, ni votre nom.</p>
+      <p class="help-pay-note" data-lang="en">The amount is fixed by the PayPal button: €19. Your card stays with PayPal: we never see your number, your address or your name.</p>
+      <p class="help-pay-note" data-lang="ja">金額は PayPal のボタンで決まります（19 ユーロ）。カード情報は PayPal が保持し、番号・住所・氏名がこちらに届くことはありません。</p>
     </div>
-  </section>
+  </div>
 
   <hr class="help-rule">
 
@@ -1789,7 +1803,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.472</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.473</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>
@@ -2033,7 +2047,7 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 </script>
 
-<!-- ═══ Bouton de don PayPal (bouton hébergé, montant libre) ═══ -->
+<!-- ═══ Bouton de don PayPal (bouton hébergé, 19 € — montant fixé chez PayPal) ═══ -->
 <script src="https://www.paypal.com/sdk/js?client-id=BAAquYvIhLx-TZn41GHOZViIFLsBZAHw5qCpMSiwnh-UxVNGfQ4dcaKXu7dir8JGoogPhAGSupxrlEUfBY&components=hosted-buttons&disable-funding=venmo&currency=EUR"></script>
 <script>
   if (window.paypal && paypal.HostedButtons) {

@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.472`** — 18 septembre 2026
+> **Dernière version : `1.7.473`** — 18 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,23 +10,23 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.472` |
-| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.472-mobile` |
-| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20260918-v472-mobile` |
-| Badge preview (`spVersionBadge`) | `v1.7.472` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
-| Splash screen | `1.7.472` |
-| Onboarding | `LAYOUT EDITOR — V 1.7.472` + `V 1.7.472 \| 09 2026` |
-| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.472` |
-| Documentation (racine **et** `app/`) | `v1.7.472` (pastille + pieds de page datés + 214 numéros de ligne) |
-| `api.html` (pastille `.version`) | `v1.7.472` |
-| `version.txt` | `1.7.472` |
-| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.472 (September 2026)` |
-| `package.json` + `package-lock.json` (sp213-local) | `1.7.472` |
+| Version app (affichée) | `1.7.473` |
+| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.473-maquettes` |
+| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20260918-v473-maquettes` |
+| Badge preview (`spVersionBadge`) | `v1.7.473` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
+| Splash screen | `1.7.473` |
+| Onboarding | `LAYOUT EDITOR — V 1.7.473` + `V 1.7.473 \| 09 2026` |
+| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.473` |
+| Documentation (racine **et** `app/`) | `v1.7.473` (pastille + pieds de page datés + 214 numéros de ligne) |
+| `api.html` (pastille `.version`) | `v1.7.473` |
+| `version.txt` | `1.7.473` |
+| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.473 (September 2026)` |
+| `package.json` + `package-lock.json` (sp213-local) | `1.7.473` |
 | Lanceur npm (`superprint-npm/package.json`) | `1.0.97` (version **indépendante**, voir plus bas) |
 
 > ⚠️ Trois fichiers sont restés en arrière pendant des releases sans que rien ne le signale :
 > `app/landing.html`, `app/llms.txt` et `app/llms-full.txt` (tous en `1.7.404` jusqu'au
-> 18 septembre 2026). Le bump 1.7.472 les a remis à niveau — **vérifier leur présence dans
+> 18 septembre 2026). Le bump 1.7.473 les a remis à niveau — **vérifier leur présence dans
 > le plan de bump**, pas seulement `app/index.html`.
 
 > ⚠️ Le paquet **npm** (`superprint-npm`) a sa **propre version** (`1.0.x`) — c'est la version de *release du paquet*, indépendante de la version de l'app. Il lit la version de l'app depuis `https://superprint.cc/version.txt`.
@@ -45,14 +45,14 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
 - `app/documentation.html` — pastille `.version` + 2 pieds de page datés (⚠️ ce fichier est **souvent oublié** : il était resté en 1.7.404)
 
 ### B. Racine (pré-home + landing + doc)
-- `install.html` — 🆕 v1.7.472 : **le lanceur** (ex-`index.html` de la racine) : pas de
+- `install.html` — 🆕 v1.7.473 : **le lanceur** (ex-`index.html` de la racine) : pas de
   version affichée, mais le JSON-LD `softwareVersion` ; il est **précaché par le
   service worker racine** → c'est le bump du `CACHE_NAME` racine qui force sa mise
   à jour. Il est en `noindex` (page de démarrage locale, pas une page publique).
 - `icons/` — logotypes du lanceur, à ajouter à l'`APP_SHELL` du SW racine quand on en ajoute un.
-- `index.html` — 🆕 v1.7.472 : c'est LA LANDING (page d'accueil). JSON-LD
+- `index.html` — 🆕 v1.7.473 : c'est LA LANDING (page d'accueil). JSON-LD
   `softwareVersion` + footer `© ... vX.Y.Z`
-- `landing.html` — 🆕 v1.7.472 : page de secours 301, aucun numéro de version
+- `landing.html` — 🆕 v1.7.473 : page de secours 301, aucun numéro de version
 - `service-worker.js` — `CACHE_NAME`
 - `llms.txt` + `llms-full.txt` — ligne `- **Version**:` + nouveau billet (voir ci-dessus)
 - `documentation.html` — pastille `.version` + 2 pieds de page datés

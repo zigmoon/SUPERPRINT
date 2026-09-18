@@ -73690,6 +73690,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // 🆕 v1.7.473 — jeter la pile undo/redo PERSISTÉE.
+    // Elle appartient à la session précédente : la garder fait ressortir un autre document au
+    // premier Ctrl+Z. Utilisée par le lanceur de maquettes (app/index.html?tpl=...).
+    async function clearSessionHistory() {
+        try {
+            const db = await openDB();
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            tx.objectStore(STORE_NAME).delete(SESSION_HISTORY_KEY);
+            await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = reject; });
+            await saveSessionHistory(true);
+            return true;
+        } catch (err) {
+            console.warn('[SessionHistory] Clear error:', err);
+            return false;
+        }
+    }
+
     // Démarrer l'auto-save périodique (non-bloquant avec requestIdleCallback)
     function startAutoSave() {
         if (_autosaveTimer) clearInterval(_autosaveTimer);
@@ -73712,6 +73729,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window._spLoadSaveHistory = loadSaveHistory;
     window._spSaveSessionHistory = (force) => saveSessionHistory(force);
     window._spLoadSessionHistory = loadSessionHistory;
+    window._spClearSessionHistory = clearSessionHistory;
 
     // Sauvegarder avant fermeture / rechargement
     window.addEventListener('beforeunload', () => {
@@ -79634,6 +79652,58 @@ window._spLoadStudioImport = function() {
         // Filet : la pop-in d'accueil peut être ré-affichée APRÈS le premier
         // masquage (elle vit dans index.html, hors de cette IIFE).
         setTimeout(_spMasquerAccueilModele, 1500);
+        // 🆕 v1.7.473 — et on remet la pile d'annulation d'aplomb (voir ci-dessous).
+        _spAssainirHistoriqueModele();
+    }
+
+    /* 🆕 v1.7.473 — LA PILE D'ANNULATION NE DOIT PLUS CONTENIR L'AVANT-MAQUETTE.
+       Mesuré : maquette ouverte depuis la page d'accueil (130 objets, photos en route), puis trois
+       Ctrl+Z → 21 objets et ZÉRO image : la maquette disparaissait entièrement, photos comprises.
+       On attend donc que la construction ET le chargement des photos soient terminés, puis on
+       repart d'une pile propre dont le premier état est la maquette FINIE — et l'on jette la pile
+       persistée, qui appartient à une autre session. */
+    function _spAssainirHistoriqueModele() {
+        var LIMITE = 60000, PAS = 250, ecoule = 0, seconde = false;
+        function imagesChargees() {
+            var attendues = 0;
+            try {
+                if (typeof canvases === 'undefined' || !canvases || !canvases.length) return false;
+                for (var i = 0; i < canvases.length; i++) {
+                    var c = canvases[i];
+                    if (!c || typeof c.getObjects !== 'function') continue;
+                    var objs = c.getObjects() || [];
+                    for (var j = 0; j < objs.length; j++) {
+                        var o = objs[j];
+                        if (!o || o.type !== 'image') continue;
+                        attendues++;
+                        var el = o._element || o._originalElement;
+                        if (!el || !el.complete || !el.naturalWidth) return false;
+                    }
+                }
+            } catch (e) { return false; }
+            return attendues > 0;
+        }
+        function assainir() {
+            try {
+                /* mêmes précautions que « nouveau projet » : on detache les gros etats avant de les jeter */
+                if (history && history.length) history.forEach(function (h) { if (h) { h.pages = null; h.textLinks = null; } });
+                history = [];
+                historyStep = -1;
+                if (typeof saveState === 'function') saveState('Modèle ' + _tplKey);
+                if (typeof window._spClearSessionHistory === 'function') { try { window._spClearSessionHistory(); } catch (e) {} }
+                console.info('[SuperPrint] historique remis à zéro sur la maquette « ' + _tplKey + ' »');
+            } catch (e) { console.warn('[SuperPrint] historique de la maquette :', e); }
+        }
+        (function etape() {
+            ecoule += PAS;
+            if (imagesChargees() || ecoule >= LIMITE) {
+                assainir();
+                /* la restauration de session est asynchrone : une seconde passe, une seule */
+                if (!seconde) { seconde = true; setTimeout(function () { assainir(); }, 4000); }
+                return;
+            }
+            setTimeout(etape, PAS);
+        })();
     }
 
     // ⚠️ La pop-in d'accueil BLOQUE l'initialisation : on choisit « Nouveau
@@ -79709,7 +79779,9 @@ window._spLoadStudioImport = function() {
                 // « Reprendre » restaure la session et initialise l'application en
                 // une seule fois ; le document restauré est ensuite remplacé par le
                 // modèle demandé. Sinon « Nouveau document ».
-                var b = _spVisible(d) ? d : document.getElementById('sp-startup-new');
+                // 🆕 v1.7.473 — JAMAIS « Reprendre » : on a demandé une MAQUETTE, pas la session
+                // d'hier. La reprise injectait le document précédent ET sa pile d'annulation.
+                var b = document.getElementById('sp-startup-new') || (_spVisible(d) ? d : null);
                 if (b) { _clique = true; try { b.click(); } catch (e) {} }
             }
         } else if (!_cree) {
