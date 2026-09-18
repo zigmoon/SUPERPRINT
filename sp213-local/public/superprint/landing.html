@@ -11,6 +11,7 @@
 <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
 <meta name="author" content="Zigmoon">
 <meta name="application-name" content="SuperPrint">
+<meta name="theme-color" content="#F7F3EC">
 
 <!-- GEO -->
 <meta name="geo.region" content="FR">
@@ -62,7 +63,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.466",
+      "softwareVersion": "1.7.467",
       "dateModified": "2026-03-29",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1121,9 +1122,9 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 .entry-logo {
   flex: 0 0 auto; width: 80.4px; height: 80.4px; background: var(--ink);
   border-radius: 12px;
-  /* v1.7.466 — garde intérieure : le logotype ne touche plus les bords de la plaque
-     (image 56,4 px au lieu de 80,4), et les coins sont plus arrondis. */
-  display: flex; align-items: center; justify-content: center; padding: 12px;
+  /* v1.7.467 — garde intérieure : le logotype ne touche plus les bords de la plaque
+     (image 50,4 px, coins plus arrondis). */
+  display: flex; align-items: center; justify-content: center; padding: 15px;
 }
 .entry-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .entry-body { min-width: 0; width: 100%; }
@@ -1178,8 +1179,9 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
 }
 .tpl-card:hover, .tpl-card:focus-visible {
-  transform: translateY(-4px); border-color: var(--line-strong);
-  box-shadow: 0 16px 34px rgba(23,19,13,.14); outline: none;
+  /* v1.7.467 — ombre adoucie (elle « écrasait » la maquette) et soulèvement réduit. */
+  transform: translateY(-2px); border-color: var(--line-strong);
+  box-shadow: 0 8px 18px rgba(23,19,13,.06); outline: none;
 }
 .tpl-shot {
   display: flex; align-items: center; justify-content: center;
@@ -1235,6 +1237,68 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 }
 @media (prefers-reduced-motion: reduce) { .tpl-rail { scroll-behavior: auto; } }
 
+
+/* ─── v1.7.467 — POP-INS LÉGAUX (Mentions légales / Confidentialité) ───
+   Textes repris de index.html (source unique) et affichés dans les 3 langues.
+   DA de la landing : papier, filets fins, monospace pour les titres. ─── */
+.legal-overlay {
+  position: fixed; inset: 0; z-index: 300; display: none;
+  align-items: center; justify-content: center; padding: 24px;
+  background: rgba(23,19,13,.55);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+.legal-overlay.open { display: flex; }
+.legal-modal {
+  width: 100%; max-width: 760px; max-height: min(86vh, 900px);
+  display: flex; flex-direction: column;
+  background: var(--paper-3); border: 1px solid var(--line-strong);
+  box-shadow: 0 30px 80px rgba(23,19,13,.3);
+}
+.legal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 15px 20px; border-bottom: 1px solid var(--line);
+}
+.legal-title {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink);
+}
+.legal-close {
+  flex: 0 0 auto; width: 30px; height: 30px; cursor: pointer;
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
+}
+.legal-close:hover { background: var(--paper-2); color: var(--ink); }
+.legal-alpha {
+  padding: 10px 20px; border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--yellow) 20%, var(--paper-3));
+  font-family: var(--f-mono); font-size: 10.5px; line-height: 1.5; letter-spacing: .04em; color: var(--ink);
+}
+.legal-body { padding: 22px 24px; overflow-y: auto; font-size: 13px; line-height: 1.75; color: var(--ink-soft); }
+.legal-body h4 {
+  margin: 18px 0 6px; font-family: var(--f-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink);
+}
+.legal-body h4:first-child { margin-top: 0; }
+.legal-body p { margin: 0 0 10px; }
+.legal-body p:last-child { margin-bottom: 0; }
+.legal-body ul { margin: 0 0 10px; padding-left: 18px; }
+.legal-body b, .legal-body strong { color: var(--ink); }
+.legal-body a { color: var(--ink); text-decoration: underline; }
+.legal-body::-webkit-scrollbar { width: 8px; }
+.legal-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+@media (max-width: 700px) {
+  .legal-overlay { padding: 12px; }
+  .legal-head { padding: 12px 14px; }
+  .legal-body { padding: 16px 14px; font-size: 12.5px; line-height: 1.7; }
+  .legal-alpha { padding: 9px 14px; font-size: 10px; }
+}
+
+/* v1.7.467 — les liens du pied de page sont en display:inline-flex (règle .foot-links a),
+   ce qui écrase le masquage par langue : on rétablit la priorité ici. */
+.foot-links a[data-lang] { display: none; }
+html[lang="fr"] .foot-links a[data-lang="fr"],
+html[lang="en"] .foot-links a[data-lang="en"],
+html[lang="ja"] .foot-links a[data-lang="ja"] { display: inline-flex; }
 </style>
 </head>
 
@@ -1313,7 +1377,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 
       <a class="entry" href="app/index.html" style="--entry-accent:#00A7C7">
         <span class="entry-name">SuperPrint</span>
-        <span class="entry-logo"><img src="icons/icon-192x192.png" alt="" width="56" height="56"></span>
+        <span class="entry-logo"><img src="icons/icon-192x192.png" alt="" width="50" height="50"></span>
         <span class="entry-body">
           <span class="entry-desc"><span class="inline-fr">L'atelier de PAO complet : mise en page, prépresse, export.</span><span class="inline-en">The complete DTP atelier: layout, prepress, export.</span><span class="inline-ja">DTP工房のすべて — 組版、プリプレス、書き出し。</span></span>
           <span class="entry-go"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open the app</span><span class="inline-ja">アプリを開く</span> →</span>
@@ -1322,7 +1386,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 
       <a class="entry" href="sp213-studio.html" style="--entry-accent:#E1237B">
         <span class="entry-name">Studio SP213</span>
-        <span class="entry-logo"><img src="icons/studio_print_logo_blanc.png" alt="" width="56" height="56"></span>
+        <span class="entry-logo"><img src="icons/studio_print_logo_blanc.png" alt="" width="50" height="50"></span>
         <span class="entry-body">
           <span class="entry-desc"><span class="inline-fr">Décrivez la maquette : l'IA la compose, vous la signez.</span><span class="inline-en">Describe the layout: the AI composes it, you sign it off.</span><span class="inline-ja">レイアウトを言葉に。AIが組み、あなたが仕上げる。</span></span>
           <span class="entry-go"><span class="inline-fr">Ouvrir le studio</span><span class="inline-en">Open the studio</span><span class="inline-ja">スタジオを開く</span> →</span>
@@ -1331,7 +1395,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
 
       <a class="entry" href="supertypo/index.html" style="--entry-accent:#F2B90B">
         <span class="entry-name">SuperTyPo</span>
-        <span class="entry-logo"><img src="icons/sper_typo.png" alt="" width="56" height="56"></span>
+        <span class="entry-logo"><img src="icons/sper_typo.png" alt="" width="50" height="50"></span>
         <span class="entry-body">
           <span class="entry-desc"><span class="inline-fr">Les caractères décomposés, redessinés en courbes.</span><span class="inline-en">Letterforms decomposed, redrawn as curves.</span><span class="inline-ja">書体を分解し、曲線で描き直す。</span></span>
           <span class="entry-go"><span class="inline-fr">Ouvrir SuperTyPo</span><span class="inline-en">Open SuperTyPo</span><span class="inline-ja">SuperTyPo を開く</span> →</span>
@@ -3007,6 +3071,12 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
           <a href="https://app.zigmoon.com/release.html" data-lang="en">Changelog</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="ja">変更履歴</a>
           <a href="https://x.com/SUPER_PRINT_app" rel="noopener noreferrer" target="_blank">@SUPER_PRINT_app</a>
+          <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
+          <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
+          <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="ja">法的情報</a>
+          <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="fr">Confidentialité</a>
+          <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="en">Privacy</a>
+          <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="ja">プライバシー</a>
         </div>
       </div>
       <div>
@@ -3021,7 +3091,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Zigmoon — SuperPrint v1.7.421</span>
+      <span>© 2026 Zigmoon — SuperPrint v1.7.467</span>
       <span class="inline-fr">Logiciel de PAO en ligne · mise en page dans le navigateur</span>
       <span class="inline-en">Online DTP software · browser page layout</span>
       <span class="inline-ja">オンラインDTPソフトウェア · ブラウザのページレイアウト</span>
@@ -3072,7 +3142,11 @@ function setLang(lang) {
 // ── Smooth anchor scrolling for nav ──
 document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   a.addEventListener('click', function(e) {
-    var target = document.querySelector(this.getAttribute('href'));
+    /* v1.7.467 — `href="#"` (liens des pop-ins légaux) donnait querySelector('#') :
+       sélecteur invalide, erreur en console. On ignore les ancres vides. */
+    var href = this.getAttribute('href');
+    if (!href || href.length < 2) return;
+    var target = document.querySelector(href);
     if (target) {
       e.preventDefault();
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3230,5 +3304,68 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   majEtat();
 })();
 </script>
+
+<!-- ══════════════ v1.7.467 — MENTIONS LÉGALES + CONFIDENTIALITÉ (pop-ins, 3 langues) ══════════════
+     Textes repris de index.html (mêmes formulations, source unique). Le sélecteur de langue
+     de la landing (data-lang + html[lang]) les affiche dans la bonne langue. -->
+<div class="legal-overlay" id="legalOverlay" onclick="if(event.target===this)closeLegal('legalOverlay')">
+  <div class="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+    <div class="legal-head">
+      <div class="legal-title" id="legalTitle" data-lang="fr">Mentions légales</div>
+      <div class="legal-title" data-lang="en">Legal notice</div>
+      <div class="legal-title" data-lang="ja">法的通知</div>
+      <button class="legal-close" type="button" onclick="closeLegal('legalOverlay')" aria-label="Close">×</button>
+    </div>
+      <div class="legal-alpha" data-lang="en">Alpha software — provided as is, no warranty. Always check your document before printing.</div>
+      <div class="legal-alpha" data-lang="fr">Logiciel en version alpha — fourni en l'état, sans garantie. Vérifiez toujours votre document avant impression.</div>
+      <div class="legal-alpha" data-lang="ja">アルファ版ソフトウェア — 現状のまま提供、無保証。印刷前に必ず文書を確認してください。</div>
+      <div class="legal-body" data-lang="en"><h4>1. Publisher and authors</h4><p>SuperPrint is designed, written and published by <b>Simon Dupont-Gellert</b> and <b>Clémence Brunet</b>, who jointly hold the authorship and the exploitation rights of the software, of its source code, of its visual identity and of this website.</p><p>Publisher and publication director: <b>Simon Dupont-Gellert</b>. Contact: <a href="https://x.com/SUPER_PRINT_app" target="_blank" rel="noopener noreferrer">@SUPER_PRINT_app</a>.</p><h4>2. Hosting</h4><p>This site and the online version are hosted by <b>OVH</b> — France, European Union. Data is hosted in France.</p><h4>3. ALPHA / BETA version — IMPORTANT</h4><p><b>SuperPrint is currently released as an ALPHA version.</b> It is under active development and may contain bugs, incomplete features, calculation errors or display defects. It is provided as an experimentation and assistance tool, not as a finished product.</p><h4>4. No warranty</h4><p>The software is provided <b>free of charge and "as is"</b>, without warranty of any kind, express or implied, including but not limited to merchantability, fitness for a particular purpose, or non-infringement of third-party rights. No guarantee is given that the software will operate without interruption or free of errors, or that the results obtained will be accurate or reliable.</p><h4>5. Printing and production — limitation of liability</h4><p>You are <b>solely responsible</b> for verifying your documents before any printing, publishing or industrial use: colours, colour space (RGB/CMYK/Pantone), bleed, margins, resolution, fonts, overprint, transparency flattening, trapping, page geometry and the final result.</p><p>The screen rendering, the soft-proof, the generated PDF and the exported files may differ from the printed result, depending on the press, the substrate, the ink, the RIP and the profile used.</p><p>To the fullest extent permitted by law, the publisher and the authors <b>shall not be liable</b> for any failed print run, any colour deviation, any misregistration, any misfeed or imposition error, any production downtime, any additional cost, or any direct or indirect, material or immaterial damage resulting from the use of the software or of the files it produces — including when the online version, the local installation, an AI-generated layout (SP213) or an AI-assisted function is involved.</p><h4>6. AI-generated content</h4><p>Layouts, texts, translations and images proposed by the artificial intelligence functions are provided <b>as assistance only</b>. They may be inaccurate, incomplete, biased or unsuitable. You remain fully responsible for reviewing, correcting, adapting and validating every element before any use or publication. No AI output may be considered as legal, accounting, medical or professional advice.</p><h4>7. Your responsibility as user</h4><p>You agree not to use the software for unlawful, misleading, defamatory or infringing purposes, and to hold all necessary rights over the contents (texts, images, logos, fonts) that you import or create. You are responsible for keeping a backup of your documents: the publisher cannot be held liable for any data loss, corruption or unavailability.</p><h4>8. Intellectual property</h4><p>All rights reserved. The name, the source code, the interface, the graphic identity and this site are protected by copyright and constitute the joint property of their authors. Any reproduction, distribution, decompilation, reverse engineering or commercial exploitation not expressly authorised is prohibited.</p><h4>9. Updates</h4><p>The publisher may modify, suspend or discontinue all or part of the software at any time, without notice and without liability, particularly during the alpha phase.</p><h4>10. Governing law</h4><p>These terms are governed by French law. In the event of a dispute, and subject to mandatory legal provisions to the contrary, the French courts shall have exclusive jurisdiction.</p><h4>11. Acceptance</h4><p>By using SuperPrint, you acknowledge having read, understood and accepted these terms without reservation. If you do not accept them, you must not use the software.</p></div>
+      <div class="legal-body" data-lang="fr"><h4>1. Éditeur et auteurs</h4><p>SuperPrint est conçu, écrit et édité par <b>Simon Dupont-Gellert</b> et <b>Clémence Brunet</b>, qui détiennent conjointement la qualité d'auteurs et les droits d'exploitation du logiciel, de son code source, de son identité visuelle et du présent site.</p><p>Éditeur et directeur de la publication : <b>Simon Dupont-Gellert</b>. Contact : <a href="https://x.com/SUPER_PRINT_app" target="_blank" rel="noopener noreferrer">@SUPER_PRINT_app</a>.</p><h4>2. Hébergement</h4><p>Ce site et la version en ligne sont hébergés par <b>OVH</b> — France, Union européenne. Les données sont hébergées en France.</p><h4>3. Version ALPHA / BETA — IMPORTANT</h4><p><b>SuperPrint est actuellement diffusé en version ALPHA.</b> Il est en cours de développement et peut contenir des anomalies, des fonctions incomplètes, des erreurs de calcul ou des défauts d'affichage. Il est fourni comme outil d'expérimentation et d'assistance, et non comme un produit fini.</p><h4>4. Absence de garantie</h4><p>Le logiciel est fourni <b>gratuitement et « en l'état »</b>, sans garantie d'aucune sorte, expresse ou implicite, y compris, sans limitation, la qualité marchande, l'adéquation à un usage particulier ou l'absence de contrefaçon de droits de tiers. Aucune garantie n'est donnée que le logiciel fonctionnera sans interruption ou sans erreur, ni que les résultats obtenus seront exacts ou fiables.</p><h4>5. Impression et fabrication — limitation de responsabilité</h4><p>Vous êtes <b>seul responsable</b> de la vérification de vos documents avant toute impression, publication ou exploitation industrielle : couleurs, espace colorimétrique (RVB/CMJN/Pantone), fonds perdus, marges, résolution, polices, surimpression, aplatissement des transparences, trapping, géométrie des pages et résultat final.</p><p>Le rendu à l'écran, la simulation, le PDF généré et les fichiers exportés peuvent différer du résultat imprimé, selon la presse, le support, l'encre, le RIP et le profil utilisés.</p><p>Dans toute la mesure permise par la loi, l'éditeur et les auteurs <b>ne sauraient être tenus responsables</b> d'un échec d'impression, d'un écart de couleur, d'un défaut de repérage, d'une erreur d'imposition ou d'alimentation, d'un arrêt de production, d'un surcoût, ni d'aucun dommage direct ou indirect, matériel ou immatériel, résultant de l'utilisation du logiciel ou des fichiers qu'il produit — y compris lorsque la version en ligne, l'installation locale, une maquette générée par IA (SP213) ou une fonction assistée par IA sont en cause.</p><h4>6. Contenus générés par IA</h4><p>Les maquettes, textes, traductions et images proposés par les fonctions d'intelligence artificielle sont fournis <b>à titre d'assistance uniquement</b>. Ils peuvent être inexacts, incomplets, biaisés ou inadaptés. Vous demeurez entièrement responsable de la relecture, de la correction, de l'adaptation et de la validation de chaque élément avant tout usage ou publication. Aucun résultat d'IA ne peut être considéré comme un conseil juridique, comptable, médical ou professionnel.</p><h4>7. Vos responsabilités d'utilisateur</h4><p>Vous vous engagez à ne pas utiliser le logiciel à des fins illicites, trompeuses, diffamatoires ou contrefaisantes, et à détenir l'ensemble des droits nécessaires sur les contenus (textes, images, logos, polices) que vous importez ou créez. Il vous appartient de conserver une sauvegarde de vos documents : l'éditeur ne peut être tenu responsable d'une perte, d'une corruption ou d'une indisponibilité de données.</p><h4>8. Propriété intellectuelle</h4><p>Tous droits réservés. Le nom, le code source, l'interface, l'identité graphique et le présent site sont protégés par le droit d'auteur et constituent la propriété conjointe de leurs auteurs. Toute reproduction, diffusion, décompilation, ingénierie inverse ou exploitation commerciale non expressément autorisée est interdite.</p><h4>9. Évolutions</h4><p>L'éditeur peut modifier, suspendre ou interrompre tout ou partie du logiciel à tout moment, sans préavis et sans engager sa responsabilité, particulièrement pendant la phase alpha.</p><h4>10. Droit applicable</h4><p>Les présentes conditions sont soumises au droit français. En cas de litige, et sous réserve des dispositions légales impératives contraires, les tribunaux français seront seuls compétents.</p><h4>11. Acceptation</h4><p>En utilisant SuperPrint, vous reconnaissez avoir lu, compris et accepté sans réserve les présentes conditions. Si vous ne les acceptez pas, vous ne devez pas utiliser le logiciel.</p></div>
+      <div class="legal-body" data-lang="ja"><h4>1. 発行者および著作者</h4><p>SuperPrint は <b>Simon Dupont-Gellert</b> と <b>Clémence Brunet</b> によって設計・制作・発行されています。両名は、本ソフトウェア、そのソースコード、ビジュアルアイデンティティおよび本サイトの著作者としての権利ならびに利用権を共同で保有します。</p><p>発行者および出版責任者：<b>Simon Dupont-Gellert</b>。連絡先：<a href="https://x.com/SUPER_PRINT_app" target="_blank" rel="noopener noreferrer">@SUPER_PRINT_app</a>。</p><h4>2. ホスティング</h4><p>本サイトおよびオンライン版は <b>OVH</b>（フランス、欧州連合）がホストしています。データはフランス国内に保管されます。</p><h4>3. ALPHA／BETA 版 — 重要</h4><p><b>SuperPrint は現在 ALPHA 版として公開されています。</b> 開発中のため、不具合、未完成の機能、計算誤り、表示上の欠陥が含まれる可能性があります。完成品ではなく、実験および支援のためのツールとして提供されます。</p><h4>4. 無保証</h4><p>本ソフトウェアは<b>無償かつ「現状のまま」</b>提供され、明示・黙示を問わずいかなる保証も行いません。商品性、特定目的への適合性、第三者の権利の非侵害を含みますがこれらに限定されません。中断やエラーなく動作すること、得られる結果が正確または信頼できることは保証されません。</p><h4>5. 印刷および製造 — 責任の制限</h4><p>印刷、公開、産業利用の前に文書を確認する責任は<b>すべて利用者にあります</b>：色、色空間（RGB／CMYK／Pantone）、塗り足し、余白、解像度、フォント、オーバープリント、透明の平坦化、トラッピング、ページ形状、最終結果。</p><p>画面表示、ソフトプルーフ、生成された PDF および書き出したファイルは、使用する印刷機、用紙、インキ、RIP、プロファイルによって印刷結果と異なる場合があります。</p><p>法律で認められる最大限の範囲において、発行者および著作者は、印刷の失敗、色のずれ、見当ずれ、面付けや給紙のエラー、生産停止、追加費用、その他直接的・間接的、有形・無形の損害について<b>一切責任を負いません</b>。オンライン版、ローカル版、AI 生成レイアウト（SP213）、AI 支援機能による場合も同様です。</p><h4>6. AI 生成コンテンツ</h4><p>人工知能機能が提案するレイアウト、テキスト、翻訳、画像は<b>支援目的のみ</b>で提供されます。不正確、不完全、偏り、不適切である可能性があります。使用または公開の前に、各要素を確認・修正・調整・検証する責任は利用者にあります。AI の出力は、法的・会計的・医学的・専門的助言とみなされません。</p><h4>7. 利用者の責任</h4><p>違法、誤解を招く、名誉毀損的、または権利侵害的な目的で本ソフトウェアを使用しないこと、および取り込む・作成するコンテンツ（テキスト、画像、ロゴ、フォント）に関する必要な権利をすべて保有することを約束するものとします。文書のバックアップは利用者の責任です。データの損失、破損、利用不能について発行者は責任を負いません。</p><h4>8. 知的財産</h4><p>All rights reserved. 名称、ソースコード、インターフェース、グラフィックアイデンティティおよび本サイトは著作権で保護され、著作者の共同財産です。明示的に許可されていない複製、配布、逆コンパイル、リバースエンジニアリング、商業利用は禁止されます。</p><h4>9. 変更</h4><p>発行者は、特にアルファ段階において、予告なく本ソフトウェアの全部または一部を変更、停止、終了することができ、責任を負いません。</p><h4>10. 準拠法</h4><p>本条件はフランス法に準拠します。紛争が生じた場合、強行的な法規定に反しない限り、フランスの裁判所が専属的管轄権を有します。</p><h4>11. 同意</h4><p>SuperPrint を使用することにより、本条件を読み、理解し、留保なく同意したものとみなされます。同意されない場合は、本ソフトウェアを使用しないでください。</p></div>
+  </div>
+</div>
+
+<div class="legal-overlay" id="privacyOverlay" onclick="if(event.target===this)closeLegal('privacyOverlay')">
+  <div class="legal-modal" role="dialog" aria-modal="true">
+    <div class="legal-head">
+      <div class="legal-title" data-lang="fr">Politique de confidentialité</div>
+      <div class="legal-title" data-lang="en">Privacy policy</div>
+      <div class="legal-title" data-lang="ja">プライバシーポリシー</div>
+      <button class="legal-close" type="button" onclick="closeLegal('privacyOverlay')" aria-label="Close">×</button>
+    </div>
+      <div class="legal-body" data-lang="en"><p>SuperPrint does not require an account and does not collect any personal data.</p><h4>Processing is 100% local</h4><p>All the work happens in your browser: your documents, images and layouts never leave your machine for rendering.</p><h4>API keys</h4><p>The API keys you optionally provide for the AI features are stored only in your browser (local storage) and are sent only to the provider you explicitly choose. They are never sent to SuperPrint servers.</p><h4>No tracking</h4><p>No analytics, no advertising trackers, no profiling.</p><h4>Hosting</h4><p>This site is hosted in France (OVH), in the European Union, subject to the GDPR.</p><h4>Local storage</h4><p>We use local storage to remember your language and preferences. You can clear it at any time from your browser settings.</p></div>
+      <div class="legal-body" data-lang="fr"><p>SuperPrint ne nécessite aucun compte et ne collecte aucune donnée personnelle.</p><h4>Traitement 100 % local</h4><p>Tout le travail s'effectue dans votre navigateur : vos documents, images et maquettes ne quittent jamais votre machine pour le rendu.</p><h4>Clés API</h4><p>Les clés API que vous fournissez éventuellement pour les fonctionnalités IA sont stockées uniquement dans votre navigateur (stockage local) et ne sont envoyées qu'au fournisseur que vous choisissez explicitement. Elles ne sont jamais envoyées aux serveurs de SuperPrint.</p><h4>Aucun suivi</h4><p>Aucun outil de statistiques, aucun traceur publicitaire, aucun profilage.</p><h4>Hébergement</h4><p>Ce site est hébergé en France (OVH), dans l'Union européenne, soumis au RGPD.</p><h4>Stockage local</h4><p>Nous utilisons le stockage local pour mémoriser votre langue et vos préférences. Vous pouvez l'effacer à tout moment depuis les paramètres de votre navigateur.</p></div>
+      <div class="legal-body" data-lang="ja"><p>SuperPrint はアカウントを必要とせず、個人データを収集しません。</p><h4>処理は100%ローカル</h4><p>すべての作業はブラウザ内で行われます。ドキュメント、画像、レイアウトがレンダリングのために端末の外に出ることはありません。</p><h4>API キー</h4><p>AI機能のために任意で提供する API キーは、ブラウザ（ローカルストレージ）にのみ保存され、明示的に選択したプロバイダーにのみ送信されます。SuperPrint のサーバーに送信されることはありません。</p><h4>トラッキングなし</h4><p>統計ツール、広告トラッカー、プロファイリングは一切ありません。</p><h4>ホスティング</h4><p>このサイトはフランス（OVH）、欧州連合内でホストされ、GDPR の対象です。</p><h4>ローカルストレージ</h4><p>言語や設定を記憶するためにローカルストレージを使用します。ブラウザの設定からいつでも消去できます。</p></div>
+  </div>
+</div>
+
+<script>
+  /* Pop-ins légaux de la landing — ouverts depuis le pied de page. */
+  (function () {
+    var IDS = ['legalOverlay', 'privacyOverlay'];
+    window.openLegal = function (id) {
+      var o = document.getElementById(id);
+      if (!o) return;
+      o.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      var f = o.querySelector('.legal-close');
+      if (f) try { f.focus(); } catch (e) {}
+    };
+    window.closeLegal = function (id) {
+      var o = document.getElementById(id);
+      if (!o) return;
+      o.classList.remove('open');
+      document.body.style.overflow = '';
+    };
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      IDS.forEach(function (id) {
+        var o = document.getElementById(id);
+        if (o && o.classList.contains('open')) window.closeLegal(id);
+      });
+    });
+  })();
+</script>
+
 </body>
 </html>
