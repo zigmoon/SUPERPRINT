@@ -1,4 +1,4 @@
-SUPERPRINT 1.7.480 - CONTENU DU PAQUET
+SUPERPRINT 1.7.481 - CONTENU DU PAQUET
 ======================================
 
 Ce paquet n'est PAS un site web : c'est le paquet de l'APPLICATION LOCALE,
@@ -14,8 +14,7 @@ vite.config.js .................... configuration du serveur local.
 scripts/ .......................... aide au demarrage (npm run dev).
 src/ .............................. ancien moteur du studio local, debranche
                                     depuis la 1.7.480 (le studio de l'app le
-                                    remplace) - conserve pour l'historique.
-public/ ........................... racine servie par le serveur local :
+                                    remplace) - conserve pour l'historique.public/ ........................... racine servie par le serveur local :
   public/superprint/app/index.html ....... L'APPLICATION SuperPrint (PAO)
   public/superprint/sp213-studio.html .... LE STUDIO IA. Il tourne EN LOCAL :
                                            les modeles travaillent sur votre
@@ -27,7 +26,7 @@ public/ ........................... racine servie par le serveur local :
   public/superprint/documentation.html ... documentation
   public/superprint/api.html ............. API
   public/superprint/install.html ......... page du site (source du lanceur)
-  public/superprint/version.txt .......... version du paquet : 1.7.480
+  public/superprint/version.txt .......... version du paquet : 1.7.481
   public/js/fabric.min.js ................ moteur canvas (fabric)
   public/js/mammoth.min.js ............... import de documents Word
 
@@ -52,4 +51,4 @@ INSTALLATION
 
 Telecharge le paquet, installe les dependances et lance le serveur local.
 
-SuperPrint 1.7.480 - 18 septembre 2026 - https://superprint.cc
+SuperPrint 1.7.481 - 18 septembre 2026 - https://superprint.cc

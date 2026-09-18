@@ -9,6 +9,31 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.481] — 2026-09-18
+
+_Tab stops visible on the ruler, the Tabulation panel working again, and a variable-font control_
+
+### Fixed
+- **The tab-stop ruler showed no mark for the stops.** The band was drawn, but a stop was only a small symbol on its lower edge. Each stop now carries a vertical line through the band, an **arrow pointing down at the text** and the symbol of its type (left, centre, right, decimal), in a strong colour — the stop is located at a glance.
+- **The Tabulation panel looked dead**: the checkbox “tab stops active on the block”, “+ Stop” and “Clear” did nothing (and the checkbox unchecked itself). Cause measured: the panel searched the selected block in *the last canvas it had remembered* (`window._spLastCanvas`), which the application overwrites as soon as another canvas asks for its active object (text measurement, page switch…). The panel now asks **every known canvas** and keeps the one carrying a selection; the ruler and the controls therefore always act on the block you selected.
+- **Wiring and feedback**: the panel is wired by delegation on its container (it survives its elements being rebuilt, where a page reload used to be needed), the row “×” removes the right stop (it used to aim at the wrong one after a removal in the middle of the list), and when no text block is selected the buttons are greyed out with an explicit message.
+
+### Added
+- **Variable font control.** When a text block uses an imported font that declares axes, a “Variable font” button appears under the font list and opens a popin with one slider per axis (weight, width, slant) plus the axis range. Detection is real: the file's `fvar` table is parsed (no guess from the name) — measured examples: `Bahnschrift` → weight 300–700 + width 75–100 %, `Segoe UI Variable` → weight 300–700 + optical size 5–36.
+- **The variation is really applied, not merely stored.** The font is re-registered with its weight/stretch **ranges** so the browser instances the axis (canvas `fontVariationSettings` was measured to be accepted but ineffective). Ink measured on the drawn text: 3482 / 4666 / 5997 pixels for weight 300 / 400 / 700; width 524 → 386 at “width 75 %”. The setting is stored on the block (`spVarFont`) and travels with `.sp`, `.json` and copy-paste.
+
+### Verified
+| Check | Result |
+|---|---|
+| Tab ruler | 4 stops of 4 types: line + arrow + type symbol each, drawn above the block, never exported |
+| Tabulation panel | checkbox → `active`, “+ Stop” → 1 stop, “Clear” → 0, row “×” → the right stop, **0 JS error** |
+| Variable font detection | `Bahnschrift` (wght + wdth), `Segoe UI Variable` (wght + opsz) read from the real `fvar` table |
+| Variation applied | ink 3482 / 4666 / 5997 (wght 300 / 400 / 700) · width 524 → 386 (wdth 75) |
+| Known limit (documented in the popin) | the “Finished format” PDF export embeds the font as-is → default instance |
+| Parity web ↔ mirror | **22 / 22 identical**, 0 different, 0 missing |
+| `node --check` · markers | clean on both `main.js` · 13 version markers consistent (1.7.481) |
+| Package | `sp213-local.zip` rebuilt and verified file by file |
+
 ## [1.7.480] — 2026-09-18
 
 _Tab stops and columns reach the PDF, and the local package opens on its launcher with a single AI-studio entry_

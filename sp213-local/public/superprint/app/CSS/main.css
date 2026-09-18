@@ -2533,6 +2533,10 @@ textarea[data-fabric-hiddentextarea] {
 }
 .tab-stop-row button:hover { opacity: 1; }
 .tab-empty { font-size: 10px; opacity: 0.55; padding: 2px 0; }
+/* 🆕 v1.7.481 — quand rien n'est sélectionné, on le DIT (et les boutons sont
+   grisés côté JS) : l'utilisateur ne croit plus que le panneau est cassé. */
+.tab-empty-warn { opacity: 0.9; color: #d81b60; font-weight: 600; line-height: 1.35; }
+.tab-stop-row .sp-tab-del { opacity: 0.5; }
 
 /* ── v1.7.457 : retraits — champ court, flèches ▲▼ DANS le champ (bug mesuré) ──
    .number-spinner-wrap est en width:100% et sa règle input[type=number] (0,2,1)

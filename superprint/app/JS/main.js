@@ -1622,6 +1622,9 @@ const SP_CUSTOM_PROPS = [
     '_spColW',
     '_spColGutter',
     '_spTabs',
+    // 🆕 v1.7.481 — RÉGLAGE D'UNE POLICE VARIABLE sur le bloc (graisse, largeur,
+    //   inclinaison…). Sans cette ligne, le .sp/.json perdait le réglage.
+    'spVarFont',
     '_sp3DSource',
     '_spPdfImport',
     '_spPdfPageNumber',
@@ -5490,6 +5493,437 @@ window.spTestDiag = function () {
 })();
 
 
+/* ═══════════ v1.7.481 : POLICES VARIABLES ═══════════
+   Demande utilisateur : « si on importe une police variable et qu'on la sélectionne,
+   ajouter à côté de la typo un bouton "police variable" qui ouvrirait une petite popin
+   avec graisse, largeur, inclinaison, chacun avec une barre d'avancement ».
+   • Détection RÉELLE : lecture de la table `fvar` du fichier de la police (parseur
+     minimal, aucune dépendance). Une police qui ne déclare aucun axe n'affiche rien.
+   • Réglage rangé SUR LE BLOC (`spVarFont`) → sérialisé dans .sp / .json.
+   • Rendu : Fabric mesure et dessine via un contexte 2D ; on y pousse
+     `ctx.fontVariationSettings`, donc la mesure, la césure, les taquets et l'aperçu
+     suivent la variation. C'est la MÊME valeur qui sert au dessin et à la mesure.
+   ⚠️ Export PDF « format fini » (pdf-lib, police embarquée) : l'instance par défaut est
+      utilisée (limite connue, signalée dans la popin). L'export vectoriel jsPDF suit la
+      variation quand opentype sait instancier la police. */
+(function spPolicesVariables() {
+    'use strict';
+    if (window._spVarFontsInstalle) return;
+    window._spVarFontsInstalle = true;
+
+    /* Axes connus : nom affiché + pas du curseur. Les autres axes trouvés dans la
+       police sont affichés aussi, avec leur étiquette OpenType brute. */
+    var NOMS = { wght: 'Graisse', wdth: 'Largeur', slnt: 'Inclinaison', ital: 'Italique', opsz: 'Optique' };
+    var ORDRE = ['wght', 'wdth', 'slnt', 'ital', 'opsz'];
+    var REGISTRE = (window._SP_VARFONTS = window._SP_VARFONTS || {});
+
+    function fix16(v) { return Math.round((v / 65536) * 1000) / 1000; }
+
+    /* ── Lecture de la table fvar (spec OpenType : aximum 4x4 + axes) ── */
+    function lireFvar(buffer) {
+        try {
+            var dv = new DataView(buffer);
+            if (dv.byteLength < 16) return null;
+            var tag = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3));
+            if (tag === 'ttcf') return null;              /* collection : hors périmètre */
+            var nb = dv.getUint16(4);
+            for (var i = 0; i < nb; i++) {
+                var off = 12 + i * 16;
+                if (off + 16 > dv.byteLength) break;
+                var t = String.fromCharCode(dv.getUint8(off), dv.getUint8(off + 1), dv.getUint8(off + 2), dv.getUint8(off + 3));
+                if (t !== 'fvar') continue;
+                var p = dv.getUint32(off + 8);
+                if (p + 16 > dv.byteLength) return null;
+                var axesOffset = dv.getUint16(p + 4);
+                var nbAxes = dv.getUint16(p + 8);
+                var taille = dv.getUint16(p + 10);
+                if (!taille) taille = 20;
+                var axes = [];
+                for (var a = 0; a < nbAxes; a++) {
+                    var q = p + axesOffset + a * taille;
+                    if (q + 20 > dv.byteLength) break;
+                    axes.push({
+                        tag: String.fromCharCode(dv.getUint8(q), dv.getUint8(q + 1), dv.getUint8(q + 2), dv.getUint8(q + 3)),
+                        min: fix16(dv.getInt32(q + 4)),
+                        def: fix16(dv.getInt32(q + 8)),
+                        max: fix16(dv.getInt32(q + 12))
+                    });
+                }
+                return axes.length ? axes : null;
+            }
+        } catch (_) {}
+        return null;
+    }
+    window._spFvarLire = lireFvar;
+
+    function dataUrlVersBuffer(dataUrl) {
+        var b64 = String(dataUrl).split(',')[1] || '';
+        var bin = atob(b64);
+        var u = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+        return u.buffer.slice(u.byteOffset, u.byteOffset + u.byteLength);
+    }
+
+    /* ── Registre : famille → axes ── */
+    function detecter(nom, dataUrl) {
+        nom = String(nom || '').trim();
+        if (!nom || !dataUrl) return REGISTRE[nom] || null;
+        if (REGISTRE[nom]) return REGISTRE[nom];
+        try {
+            var buffer = dataUrlVersBuffer(dataUrl);
+            var axes = lireFvar(buffer);
+            if (axes) {
+                REGISTRE[nom] = axes;
+                enregistrerFaceVariable(nom, buffer, axes);
+                try { majBouton(); } catch (_) {}
+            }
+        } catch (_) {}
+        return REGISTRE[nom] || null;
+    }
+
+    /* ⚠️ MESURÉ : le canvas n'applique PAS `ctx.fontVariationSettings` (propriété
+       acceptée, sans effet). En revanche, une FontFace déclarée avec des PLAGES
+       (weight / stretch) est réellement instanciée par le navigateur : demander
+       la graisse 700 donne bien le dessin de 700 (encre mesurée : 3482 → 4666 →
+       5997 pour 300 / 400 / 700) et « condensed » donne la largeur 75 %.
+       On réenregistre donc la police avec ses plages, sous le MÊME nom de famille. */
+    function enregistrerFaceVariable(fam, buffer, axes) {
+        try {
+            var w = null, d = null;
+            axes.forEach(function (a) { if (a.tag === 'wght') w = a; if (a.tag === 'wdth') d = a; });
+            if (!w && !d) return false;                    /* aucun axe pilotable au canvas */
+            var desc = {};
+            if (w) desc.weight = Math.round(w.min) + ' ' + Math.round(w.max);
+            if (d) desc.stretch = d.min + '% ' + d.max + '%';
+            var face = new FontFace(fam, buffer, desc);
+            face.load().then(function (chargee) {
+                try {
+                    document.fonts.add(chargee);
+                    /* on retire les faces FIXES du même nom : deux faces identiques
+                       rendraient le choix de graisse ambigu (mesuré : la face 400
+                       exacte l'emportait sur la plage). */
+                    Array.from(document.fonts).forEach(function (f) {
+                        if (f !== chargee && f.family === fam) { try { document.fonts.delete(f); } catch (_) {} }
+                    });
+                    REGISTRE[fam]._face = true;
+                } catch (_) {}
+            }).catch(function () {});
+            return true;
+        } catch (_) { return false; }
+    }
+    window._spVarFace = enregistrerFaceVariable;
+
+    /* Détection à l'IMPORT : on intercepte les ajouts à customFonts (les polices
+       importées y arrivent sous forme { name, data: dataURL }). */
+    function surveillerImports() {
+        try {
+            if (typeof customFonts === 'undefined' || !customFonts || customFonts._spVarSurveille) return;
+            var orig = customFonts.push;
+            customFonts.push = function () {
+                for (var i = 0; i < arguments.length; i++) {
+                    var f = arguments[i];
+                    try { if (f && f.name && f.data) detecter(f.name, f.data); } catch (_) {}
+                }
+                return orig.apply(this, arguments);
+            };
+            customFonts._spVarSurveille = true;
+            customFonts.forEach(function (f) { try { if (f && f.name && f.data) detecter(f.name, f.data); } catch (_) {} });
+        } catch (_) {}
+    }
+
+    /* Le sélecteur de l'app expose une police importée sous « Nom (Custom) » alors
+       que customFonts et le registre portent « Nom » (nom du fichier importé) :
+       sans normalisation, le bouton ne s'affichait JAMAIS (mesuré). */
+    function baseFamille(fam) {
+        return String(fam || '').replace(/\s*\(custom\)\s*$/i, '').trim();
+    }
+    function axesDeFamille(fam) {
+        var brut = String(fam || '').trim();
+        if (!brut) return null;
+        var base = baseFamille(brut);
+        if (REGISTRE[brut]) return REGISTRE[brut];
+        if (REGISTRE[base]) return REGISTRE[base];
+        var cle = Object.keys(REGISTRE).filter(function (k) { return k.toLowerCase() === base.toLowerCase(); })[0];
+        if (cle) return REGISTRE[cle];
+        try {
+            if (typeof customFonts !== 'undefined' && customFonts) {
+                var entree = customFonts.filter(function (f) {
+                    return f && (String(f.name).trim() === brut || baseFamille(f.name).toLowerCase() === base.toLowerCase());
+                })[0];
+                if (entree && entree.data) return detecter(entree.name, entree.data);
+            }
+        } catch (_) {}
+        return null;
+    }
+
+    /* ── Fabric : la variation entre dans le contexte de dessin ET de mesure ── */
+    /* Largeur : le canvas ne connaît QUE les mots-clés CSS (9 crans), on y projette
+       le pourcentage demandé sur l'axe wdth. C'est ce cran qui est appliqué à la
+       mesure ET au dessin (la césure et les taquets suivent donc). */
+    var CRANS = [
+        [50, 'ultra-condensed'], [62.5, 'extra-condensed'], [75, 'condensed'],
+        [87.5, 'semi-condensed'], [100, 'normal'], [112.5, 'semi-expanded'],
+        [125, 'expanded'], [150, 'extra-expanded'], [200, 'ultra-expanded']
+    ];
+    function cranLargeur(pct) {
+        var meilleur = 'normal', ecart = 1e9;
+        for (var i = 0; i < CRANS.length; i++) {
+            var e = Math.abs(CRANS[i][0] - pct);
+            if (e < ecart) { ecart = e; meilleur = CRANS[i][1]; }
+        }
+        return meilleur;
+    }
+    window._spVarCranLargeur = cranLargeur;
+
+    try {
+        if (window.fabric && fabric.Text && fabric.Text.prototype._setTextStyles) {
+            var _origStyles = fabric.Text.prototype._setTextStyles;
+            fabric.Text.prototype._setTextStyles = function (ctx) {
+                var r = _origStyles.apply(this, arguments);
+                try {
+                    var v = this.spVarFont;
+                    if (ctx) {
+                        ctx.fontStretch = (v && typeof v.wdth === 'number') ? cranLargeur(v.wdth) : 'normal';
+                    }
+                } catch (_) {}
+                return r;
+            };
+        }
+    } catch (_) {}
+
+    /* ── Bloc(s) texte sélectionné(s) : même résolution que le panneau des taquets ── */
+    function blocsTexteSel() {
+        try { if (typeof window.spTabBlocs === 'function') { var b = window.spTabBlocs(); if (b && b.length) return b; } } catch (_) {}
+        try {
+            var c = window._spLastCanvas;
+            var sel = c && c.getActiveObjects ? (c.getActiveObjects() || []) : [];
+            if (!sel.length && c && c.getActiveObject) { var a = c.getActiveObject(); if (a) sel = [a]; }
+            return sel.filter(function (o) { return o && (o.type === 'textbox' || o.type === 'text' || o.type === 'i-text'); });
+        } catch (_) {}
+        return [];
+    }
+
+    /* ── Interface : bouton dans le panneau Typographie ── */
+    function bouton() { return document.getElementById('spVarRow'); }
+
+    function majBouton() {
+        var row = bouton();
+        if (!row) return;
+        var blocs = blocsTexteSel();
+        var axes = null;
+        for (var i = 0; i < blocs.length && !axes; i++) axes = axesDeFamille(blocs[i].fontFamily);
+        var ok = !!(axes && axes.length && blocs.length);
+        row.style.display = ok ? '' : 'none';
+        if (ok) {
+            var lib = document.getElementById('spVarBtn');
+            if (lib) {
+                var v = blocs[0].spVarFont;
+                var res = [];
+                if (v) ORDRE.forEach(function (t) { if (typeof v[t] === 'number') res.push((NOMS[t] || t) + ' ' + v[t]); });
+                lib.textContent = res.length ? 'Police variable — ' + res.join(' · ') : 'Police variable — graisse, largeur, inclinaison…';
+            }
+        } else if (popinOuverte()) fermerPopin();
+    }
+    window.spVarMajBouton = majBouton;
+
+    var _popin = null;
+    function popinOuverte() { return !!(_popin && _popin.style.display !== 'none'); }
+
+    function construirePopin() {
+        if (_popin) return _popin;
+        var p = document.createElement('div');
+        p.id = 'spVarPopin';
+        p.className = 'tool-dropdown-menu grid-menu';
+        p.style.cssText = 'position: fixed; z-index: 10050; display: none; min-width: 280px; padding: 8px; background: #fff; border: 1px solid #d9d9d9; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.18);';
+        p.innerHTML =
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+              '<div style="font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;opacity:.7;">Police variable</div>' +
+              '<span id="spVarClose" style="cursor:pointer;font-size:18px;font-weight:bold;line-height:1;padding:2px 6px;opacity:.6;">×</span>' +
+            '</div>' +
+            '<div id="spVarNom" style="font-size:11px;opacity:.8;padding:2px 2px 6px;"></div>' +
+            '<div id="spVarAxes" style="display:flex;flex-direction:column;gap:8px;padding:2px;"></div>' +
+            '<div class="hint" style="padding:6px 2px 2px;font-size:10px;opacity:.65;">Le réglage est rangé dans le document (.sp / .json). Export PDF « format fini » : instance par défaut de la police.</div>' +
+            '<div style="display:flex;gap:6px;padding:8px 2px 2px;">' +
+              '<button class="btn btn-secondary" id="spVarReset" type="button" style="flex:1;font-size:10px;">Réinitialiser</button>' +
+              '<button class="btn btn-secondary" id="spVarFermer" type="button" style="flex:1;font-size:10px;">Fermer</button>' +
+            '</div>';
+        document.body.appendChild(p);
+        p.addEventListener('click', function (e) {
+            var id = e.target && e.target.id;
+            if (id === 'spVarClose' || id === 'spVarFermer') { fermerPopin(); }
+            else if (id === 'spVarReset') { appliquerVariation(null); }
+        });
+        p.addEventListener('input', function (e) {
+            var t = e.target;
+            if (!t || !t.dataset || !t.dataset.spVarAxe) return;
+            var tag = t.dataset.spVarAxe;
+            var val = parseFloat(t.value);
+            var lbl = document.getElementById('spVarVal_' + tag);
+            if (lbl) lbl.textContent = String(val);
+            var v = variationCourante() || {};
+            v[tag] = val;
+            appliquerVariation(v, true);
+            majBouton();
+        });
+        p.addEventListener('change', function (e) {
+            if (e.target && e.target.dataset && e.target.dataset.spVarAxe) appliquerVariation(variationCourante(), false, true);
+        });
+        _popin = p;
+        return p;
+    }
+
+    /* Variation affichée par les curseurs (celle du bloc sélectionné, complétée par
+       les valeurs par défaut de la police). */
+    function variationCourante() {
+        var blocs = blocsTexteSel();
+        if (!blocs.length) return null;
+        var obj = blocs[0];
+        var base = obj.spVarFont || {};
+        var axes = axesDeFamille(obj.fontFamily) || [];
+        var v = {};
+        axes.forEach(function (a) {
+            if (a.tag === 'wght') {
+                var p = parseFloat(obj.fontWeight);
+                v.wght = (base.wght != null) ? base.wght : (isFinite(p) ? p : a.def);
+            } else if (a.tag === 'wdth') {
+                v.wdth = (base.wdth != null) ? base.wdth : a.def;
+            } else if (a.tag === 'slnt' || a.tag === 'ital') {
+                v.slnt = (obj.fontStyle === 'italic' || obj.fontStyle === 'oblique') ? (base.slnt != null ? base.slnt : Math.max(1, a.min)) : a.def;
+            } else {
+                v[a.tag] = (base[a.tag] != null) ? base[a.tag] : a.def;
+            }
+        });
+        return v;
+    }
+
+    function remplirPopin() {
+        var blocs = blocsTexteSel();
+        var axes = blocs.length ? (axesDeFamille(blocs[0].fontFamily) || []) : [];
+        axes.sort(function (a, b) {
+            var ia = ORDRE.indexOf(a.tag), ib = ORDRE.indexOf(b.tag);
+            if (ia < 0) ia = 99; if (ib < 0) ib = 99;
+            return ia - ib;
+        });
+        var host = document.getElementById('spVarAxes');
+        var nom = document.getElementById('spVarNom');
+        if (nom) nom.textContent = blocs.length ? (blocs[0].fontFamily + ' — ' + axes.length + ' axe(s)') : '';
+        if (!host) return;
+        host.innerHTML = '';
+        var courant = variationCourante() || {};
+        axes.forEach(function (a) {
+            var bloc = document.createElement('div');
+            var etiq = NOMS[a.tag] || a.tag;
+            bloc.innerHTML =
+                '<div style="display:flex;justify-content:space-between;font-size:10px;">' +
+                  '<span>' + etiq + ' <span style="opacity:.5">(' + a.tag + ')</span></span>' +
+                  '<span><b id="spVarVal_' + a.tag + '">' + courant[a.tag] + '</b> <span style="opacity:.5">/ ' + a.min + '–' + a.max + '</span></span>' +
+                '</div>' +
+                '<input type="range" data-sp-var-axe="' + a.tag + '" min="' + a.min + '" max="' + a.max + '" step="' + (a.tag === 'opsz' ? '0.5' : '1') + '" value="' + courant[a.tag] + '" style="width:100%;accent-color:#d81b60;">';
+            host.appendChild(bloc);
+        });
+        if (!axes.length) host.innerHTML = '<div class="tab-empty">Aucun axe détecté.</div>';
+    }
+
+    function ouvrirPopin() {
+        var p = construirePopin();
+        remplirPopin();
+        var row = bouton();
+        var r = row ? row.getBoundingClientRect() : { left: 40, top: 120, bottom: 150 };
+        p.style.display = 'block';
+        var h = p.getBoundingClientRect().height;
+        var y = r.top - h - 8;
+        if (y < 8) y = Math.min(window.innerHeight - h - 8, r.bottom + 8);
+        p.style.left = Math.round(Math.max(8, Math.min(window.innerWidth - p.getBoundingClientRect().width - 8, r.left))) + 'px';
+        p.style.top = Math.round(y) + 'px';
+    }
+    function fermerPopin() { if (_popin) _popin.style.display = 'none'; }
+    window._spVarPopinFermer = fermerPopin;
+
+    /* ── Application au bloc sélectionné ── */
+    /* Applique la variation au(x) bloc(s) sélectionné(s).
+       • graisse  → `fontWeight` (le navigateur instancie la vraie graisse)
+       • largeur  → rangée dans `spVarFont.wdth`, lue par le hook `_setTextStyles`
+                    (équivalent canvas : `fontStretch`, 9 crans)
+       • penché   → `fontStyle` italic/normal (axe slnt/ital si la police en a un)
+       Les trois sont ensuite relus par la popin et par le bouton. */
+    function appliquerVariation(v, silencieux) {
+        var blocs = blocsTexteSel();
+        if (!blocs.length) return 0;
+        blocs.forEach(function (obj) {
+            var axes = axesDeFamille(obj.fontFamily) || [];
+            var axe = function (tag) { return axes.filter(function (a) { return a.tag === tag; })[0] || null; };
+            if (!v) {
+                try { delete obj.spVarFont; } catch (_) { obj.spVarFont = null; }
+                var aw = axe('wght');
+                obj.set('fontWeight', String(aw ? Math.round(aw.def) : 400));
+                obj.set('fontStyle', 'normal');
+            } else {
+                var propre = {};
+                var w = axe('wght'), d = axe('wdth');
+                if (w && typeof v.wght === 'number') {
+                    obj.set('fontWeight', String(Math.round(v.wght)));
+                    if (Math.abs(v.wght - w.def) > 1e-6) propre.wght = v.wght;
+                }
+                if (d && typeof v.wdth === 'number') {
+                    if (Math.abs(v.wdth - d.def) > 1e-6) propre.wdth = v.wdth;
+                }
+                var s = axe('slnt') || axe('ital');
+                if (s && typeof v.slnt === 'number') {
+                    obj.set('fontStyle', Math.abs(v.slnt) > 1e-6 ? 'italic' : 'normal');
+                    if (Math.abs(v.slnt) > 1e-6) propre.slnt = v.slnt;
+                }
+                if (Object.keys(propre).length) obj.spVarFont = propre;
+                else { try { delete obj.spVarFont; } catch (_) { obj.spVarFont = null; } }
+            }
+            try { if (typeof window.spTabRafraichir === 'function') window.spTabRafraichir(obj); } catch (_) {}
+            try { obj.dirty = true; } catch (_) {}
+        });
+        try { if (window._spLastCanvas && window._spLastCanvas.requestRenderAll) window._spLastCanvas.requestRenderAll(); } catch (_) {}
+        if (!silencieux) {
+            try { if (typeof saveState === 'function') saveState('Police variable'); } catch (_) {}
+        }
+        majBouton();
+        return blocs.length;
+    }
+    window.spVarAppliquer = appliquerVariation;
+
+    /* ── Branchements ── */
+    function brancher() {
+        surveillerImports();
+        var b = document.getElementById('spVarBtn');
+        if (b && !b._spVarWire) {
+            b._spVarWire = true;
+            b.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (popinOuverte()) fermerPopin(); else ouvrirPopin();
+            });
+        }
+        var sel = document.getElementById('fontFamily');
+        if (sel && !sel._spVarWire) {
+            sel._spVarWire = true;
+            sel.addEventListener('change', function () { setTimeout(majBouton, 60); });
+        }
+        if (!document._spVarDocWire) {
+            document._spVarDocWire = true;
+            /* la sélection change par des clics : on réévalue le bouton (léger) */
+            document.addEventListener('mouseup', function () { setTimeout(majBouton, 40); }, true);
+            document.addEventListener('keyup', function () { setTimeout(majBouton, 40); }, true);
+            document.addEventListener('click', function (e) {
+                if (_popin && _popin.style.display !== 'none' && !_popin.contains(e.target)) {
+                    var row = bouton();
+                    if (!(row && row.contains(e.target))) fermerPopin();
+                }
+            });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') fermerPopin(); });
+        }
+        majBouton();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', brancher);
+    else brancher();
+    window.addEventListener('load', function () { setTimeout(majBouton, 300); });
+})();
+
 /* ═══════ v1.7.457 : TAQUETS DE TABULATION ═══════ */
 (function spSetupTabStops() {
     'use strict';
@@ -5497,19 +5931,31 @@ window.spTestDiag = function () {
     /* Résolution du canvas : window.canvas n'est PAS exposé par l'app (mesuré),
        et les API globales du dépôt prennent l'objet puis lisent obj.canvas. On
        mémorise donc le canvas dès qu'une sélection passe par Fabric. */
+    /* 🩹 v1.7.481 — SÉLECTION ROBUSTE (retour utilisateur : « la case Taquets
+       actifs sur le bloc ne fonctionne plus, + Taquet et Effacer non plus »).
+       Mesuré : ces trois contrôles ne font RIEN quand aucun bloc n'est trouvé —
+       le panneau ne regardait que « le dernier canvas mémorisé »
+       (window._spLastCanvas), que l'app réécrit dès qu'un AUTRE canvas appelle
+       getActiveObject() (mesure des textes, changement de page…). On interroge
+       donc TOUS les canvas connus, et on préfère celui qui PORTE une sélection. */
+    function canvasCandidats() {
+        var l = [];
+        function pousse(c) { try { if (c && c.getObjects && l.indexOf(c) === -1) l.push(c); } catch (_) {} }
+        try { if (typeof activeCanvas !== 'undefined') pousse(activeCanvas); } catch (_) {}
+        pousse(window.canvas);
+        pousse(window._spLastCanvas);
+        try { if (typeof canvases !== 'undefined' && canvases) for (var i = 0; i < canvases.length; i++) pousse(canvases[i]); } catch (_) {}
+        try { if (typeof canvas !== 'undefined') pousse(canvas); } catch (_) {}
+        return l;
+    }
+    window._spCanvasCandidats = canvasCandidats;
+
     function leCanvas() {
-        if (window.canvas && window.canvas.getActiveObject) return window.canvas;
-        if (window._spLastCanvas) return window._spLastCanvas;
-        try { if (typeof activeCanvas !== 'undefined' && activeCanvas && activeCanvas.getActiveObject) return activeCanvas; } catch (_) {}
-        try {
-            if (typeof canvases !== 'undefined' && canvases && canvases.length) {
-                for (var i = 0; i < canvases.length; i++) {
-                    if (canvases[i] && canvases[i].getActiveObject) return canvases[i];
-                }
-            }
-        } catch (_) {}
-        try { if (typeof canvas !== 'undefined' && canvas && canvas.getActiveObject) return canvas; } catch (_) {}
-        return null;
+        var l = canvasCandidats();
+        for (var i = 0; i < l.length; i++) {
+            try { if (l[i].getActiveObject && l[i].getActiveObject()) return l[i]; } catch (_) {}
+        }
+        return l[0] || null;
     }
     (function capturer() {
         var proto = fabric.Canvas.prototype;
@@ -5593,16 +6039,32 @@ window.spTestDiag = function () {
     window._spTabBoxPatched = true;
 
     function blocsTexte() {
-        var c = leCanvas();
-        if (!c) return [];
-        var sel = [];
-        try {
-            sel = (c.getActiveObjects && c.getActiveObjects()) || [];
-            if (!sel.length) { var a = c.getActiveObject(); if (a) sel = [a]; }
-        } catch (_) { sel = []; }
-        return sel.filter(function (o) {
-            return o && (o.type === 'textbox' || o.type === 'text' || o.type === 'i-text');
+        var res = [], vus = [];
+        canvasCandidats().forEach(function (c) {
+            var sel = [];
+            try {
+                sel = (c.getActiveObjects && c.getActiveObjects()) || [];
+                if (!sel.length) { var a = c.getActiveObject(); if (a) sel = [a]; }
+            } catch (_) { sel = []; }
+            sel.forEach(function (o) {
+                if (!o) return;
+                var cand = [o];
+                /* Sélection GROUPÉE (ou cadre de texte chaîné) : on prend les textes
+                   qu'elle contient, sinon le panneau croirait n'avoir rien. */
+                if (o.type === 'group' && o._objects) {
+                    cand = o._objects.filter(function (x) {
+                        return x && (x.type === 'textbox' || x.type === 'text' || x.type === 'i-text');
+                    });
+                }
+                cand.forEach(function (b) {
+                    if (b && (b.type === 'textbox' || b.type === 'text' || b.type === 'i-text') && vus.indexOf(b) === -1) {
+                        vus.push(b);
+                        res.push(b);
+                    }
+                });
+            });
         });
+        return res;
     }
     window.spTabBlocs = blocsTexte;
 
@@ -5652,7 +6114,12 @@ window.spTestDiag = function () {
        La règle est un objet UTILITAIRE : selectable/evented false,
        excludeFromExport true (elle n'entre ni dans les pages, ni dans le PDF). */
     var REGLE_H = 17;          /* hauteur de la bande, en px du document */
-    var REGLE_GAP = 5;         /* air entre la règle et le haut du bloc */
+    /* 🆕 v1.7.481 — l'air sous la bande sert désormais à la FLÈCHE de chaque
+       taquet. Demande utilisateur : « on ne voit pas de marque correspondant aux
+       taquets ; un point ou une petite flèche vers le bas ». */
+    var REGLE_GAP = 9;             /* air entre la règle et le haut du bloc */
+    var REGLE_MARQUE = '#d81b60';  /* couleur d'un taquet sur la règle */
+    var REGLE_FLECHE = 7;          /* hauteur de la flèche, sous la bande */
     var REGLE_PAS_MM = 10;     /* une graduation tous les 10 mm */
     var REGLE_LABEL_MM = 50;   /* un chiffre tous les 50 mm */
     var _regle = null;         /* le groupe Fabric en place */
@@ -5665,22 +6132,37 @@ window.spTestDiag = function () {
     }
 
     /* Symbole du taquet, dessiné dans le repère LOCAL de la règle. */
+    /* Symbole du TYPE de taquet, dans la bande (repère local de la règle). */
     function regleSymbole(type, x) {
         var pts;
         if (type === 'center') {
-            pts = [{ x: x, y: 2.5 }, { x: x + 5, y: 7.5 }, { x: x, y: 12.5 }, { x: x - 5, y: 7.5 }];
+            pts = [{ x: x, y: 3 }, { x: x + 5.5, y: 8.5 }, { x: x, y: 14 }, { x: x - 5.5, y: 8.5 }];
         } else if (type === 'right') {
-            pts = [{ x: x, y: 2.5 }, { x: x - 7, y: 7.5 }, { x: x, y: 12.5 }];
+            pts = [{ x: x, y: 3 }, { x: x - 7.5, y: 8.5 }, { x: x, y: 14 }];
         } else if (type === 'decimal') {
             pts = [];
             for (var i = 0; i < 8; i++) {
                 var a = Math.PI / 8 + i * Math.PI / 4;
-                pts.push({ x: x + 2.6 * Math.cos(a), y: 7.5 + 2.6 * Math.sin(a) });
+                pts.push({ x: x + 3 * Math.cos(a), y: 8.5 + 3 * Math.sin(a) });
             }
         } else {
-            pts = [{ x: x, y: 2.5 }, { x: x + 7, y: 7.5 }, { x: x, y: 12.5 }];
+            pts = [{ x: x, y: 3 }, { x: x + 7.5, y: 8.5 }, { x: x, y: 14 }];
         }
-        return new fabric.Polygon(pts, { fill: '#1a1a1a', stroke: undefined, strokeWidth: 0 });
+        return new fabric.Polygon(pts, { fill: REGLE_MARQUE, stroke: undefined, strokeWidth: 0 });
+    }
+
+    /* 🆕 v1.7.481 — LA MARQUE D'UN TAQUET SUR LA RÈGLE : un trait vertical dans
+       toute la bande, une FLÈCHE qui descend vers le bloc (on voit tout de suite
+       où le texte va s'aligner) et le symbole du type. Trois objets, même couleur. */
+    function regleMarqueTaquet(type, x) {
+        return [
+            new fabric.Line([x, 0, x, REGLE_H + 2], { stroke: REGLE_MARQUE, strokeWidth: 1 }),
+            new fabric.Polygon(
+                [{ x: x - 4.5, y: REGLE_H - 1 }, { x: x + 4.5, y: REGLE_H - 1 }, { x: x, y: REGLE_H + REGLE_FLECHE }],
+                { fill: REGLE_MARQUE, stroke: undefined, strokeWidth: 0 }
+            ),
+            regleSymbole(type, x)
+        ];
     }
 
     /* Met à jour (ou retire) la règle du bloc texte sélectionné. Idempotente :
@@ -5750,7 +6232,7 @@ window.spTestDiag = function () {
             t.stops.forEach(function (s) {
                 var xs = s.pos * sc;
                 if (xs < -20 || xs > largeur + 20) return;
-                enfants.push(regleSymbole(s.type, xs));
+                regleMarqueTaquet(s.type, xs).forEach(function (o) { enfants.push(o); });
             });
             var grp = new fabric.Group(enfants, {
                 left: gx, top: gy,
@@ -5788,11 +6270,27 @@ window.spTestDiag = function () {
     window.spTabMmDe = spTabMmDe;
     window.spTabMmVers = spTabMmVers;
 
+    /* 🩹 v1.7.481 — retour visible : sans bloc sélectionné, les réglages ne
+       peuvent rien faire. On le montre (boutons grisés) au lieu de laisser croire
+       que le panneau est cassé. */
+    function actionsActives(ok) {
+        ['tabAddBtn', 'tabClearBtn'].forEach(function (id) {
+            var b = document.getElementById(id);
+            if (!b) return;
+            b.disabled = !ok;
+            b.style.opacity = ok ? '' : '0.45';
+            b.style.cursor = ok ? '' : 'not-allowed';
+        });
+        var p = document.getElementById('tabsMenu');
+        if (p) p.classList[ok ? 'remove' : 'add']('tabs-sans-bloc');
+    }
+
     function rendreListe() {
         var liste = document.getElementById('tabStopsList');
         if (!liste) return;
         var blocs = blocsTexte();
         var t = blocs.length ? modele(blocs[0]) : null;
+        actionsActives(!!t);
         var chk = document.getElementById('tabsVisibleToggle');
         var pas = document.getElementById('tabStep');
         if (t) {
@@ -5802,8 +6300,8 @@ window.spTestDiag = function () {
         while (liste.firstChild) liste.removeChild(liste.firstChild);
         if (!t) {
             var d0 = document.createElement('div');
-            d0.className = 'tab-empty';
-            d0.textContent = 'Sélectionnez un bloc texte.';
+            d0.className = 'tab-empty tab-empty-warn';
+            d0.textContent = '⚠️ Sélectionnez d\'abord un bloc texte sur la page : les réglages s\'appliquent au bloc sélectionné.';
             liste.appendChild(d0);
             return;
         }
@@ -5822,11 +6320,12 @@ window.spTestDiag = function () {
             pos.min = '0'; pos.max = '500'; pos.step = '0.5';
             pos.value = spTabMmDe(s.pos);
             pos.title = 'Position du taquet (mm)';
-            pos.addEventListener('input', function () {
-                var v = parseFloat(pos.value);
-                if (!isFinite(v) || v < 0) return;
-                modifier(function (modeleBloc) { if (modeleBloc.stops[i]) modeleBloc.stops[i].pos = spTabMmVers(v); });
-            });
+            /* 🩹 v1.7.481 — plus d'écouteur par ligne : le panneau est câblé par
+               DÉLÉGATION (cabler). Les deux jeux d'écouteurs se marchaient dessus :
+               la croix « × » retirait le taquet DEUX fois (et le second passage
+               lisait une ligne déjà détachée). L'index est retrouvé par la
+               POSITION de la ligne. */
+            pos.setAttribute('data-sp-tab-pos', '1');
 
             var sel = document.createElement('select');
             sel.title = 'Type de taquet';
@@ -5837,18 +6336,10 @@ window.spTestDiag = function () {
                 if ((s.type || 'left') === ty[0]) o.selected = true;
                 sel.appendChild(o);
             });
-            sel.addEventListener('change', function () {
-                modifier(function (modeleBloc) { if (modeleBloc.stops[i]) modeleBloc.stops[i].type = sel.value; });
-            });
-
             var sup = document.createElement('button');
             sup.type = 'button';
             sup.textContent = '×';
             sup.title = 'Retirer ce taquet';
-            sup.addEventListener('click', function () {
-                modifier(function (modeleBloc) { modeleBloc.stops.splice(i, 1); });
-                rendreListe();
-            });
 
             row.appendChild(pos);
             row.appendChild(sel);
@@ -5898,6 +6389,7 @@ window.spTestDiag = function () {
             popin.classList.remove('popin-mode');
         }
         filSelection();
+        cabler();
         rendreListe();
         majRegleTab();
     }
@@ -5909,6 +6401,74 @@ window.spTestDiag = function () {
         majRegleTab();
     }
     window._closeTabsPopin = fermerPopin;
+
+    /* Câblage par délégation : n'importe quel clic / changement À L'INTÉRIEUR du
+       panneau est traité ici, même si le panneau a été reconstruit entre-temps. */
+    function cabler() {
+        var popin = document.getElementById('tabsMenu');
+        if (!popin || popin._spTabsDeleg) return;
+        popin._spTabsDeleg = true;
+        popin.addEventListener('click', function (e) {
+            var cible = e.target;
+            var id = cible && cible.id ? cible.id : '';
+            var ligne = cible && cible.closest ? cible.closest('.tab-stop-row') : null;
+            var idx = (ligne && ligne.parentNode) ? Array.prototype.indexOf.call(ligne.parentNode.children, ligne) : -1;
+
+            if (id === 'tabAddBtn') {
+                e.stopPropagation();
+                var champ = document.getElementById('tabNewPos');
+                var v = champ ? parseFloat(champ.value) : NaN;
+                if (!isFinite(v) || v < 0) v = 10;
+                var n = modifier(function (t) { t.stops.push({ pos: spTabMmVers(v), type: 'left' }); t.active = true; });
+                if (n && champ) champ.value = spTabMmDe(v + 10);
+                rendreListe();
+                return;
+            }
+            if (id === 'tabClearBtn') {
+                e.stopPropagation();
+                modifier(function (t) { t.stops = []; });
+                rendreListe();
+                return;
+            }
+            if (id === 'closeTabsMenuX') { fermerPopin(); return; }
+            /* croix « × » d'une ligne : index DÉDUIT DE LA POSITION dans la liste
+               (les écouteurs d'origine mémorisaient l'index : après un retrait au
+               milieu, ils visaient le mauvais taquet). */
+            if (idx >= 0 && cible && cible.tagName === 'BUTTON' && cible.textContent.trim() === '×') {
+                modifier(function (t) { t.stops.splice(idx, 1); });
+                rendreListe();
+            }
+        });
+        popin.addEventListener('change', function (e) {
+            var id = e.target && e.target.id ? e.target.id : '';
+            if (id === 'tabsVisibleToggle') {
+                var chk = e.target;
+                modifier(function (t) { t.active = !!chk.checked; });
+                rendreListe();
+                return;
+            }
+            if (id === 'tabStep') {
+                var pas = e.target;
+                var v = parseFloat(pas.value);
+                if (!isFinite(v) || v < 1) { v = 10; pas.value = '10'; }
+                modifier(function (t) { t.step = spTabMmVers(v); });
+                rendreListe();
+                return;
+            }
+            if (e.target && e.target.dataset && e.target.dataset.spTabPos && e.target.closest) {
+                var lig = e.target.closest('.tab-stop-row');
+                var j = (lig && lig.parentNode) ? Array.prototype.indexOf.call(lig.parentNode.children, lig) : -1;
+                var val = parseFloat(e.target.value);
+                if (j >= 0 && isFinite(val) && val >= 0) modifier(function (t) { if (t.stops[j]) t.stops[j].pos = spTabMmVers(val); });
+                return;
+            }
+            if (e.target && e.target.tagName === 'SELECT' && e.target.closest) {
+                var l2 = e.target.closest('.tab-stop-row');
+                var k = (l2 && l2.parentNode) ? Array.prototype.indexOf.call(l2.parentNode.children, l2) : -1;
+                if (k >= 0) { var ty = e.target.value; modifier(function (t) { if (t.stops[k]) t.stops[k].type = ty; }); }
+            }
+        });
+    }
 
     function boot() {
         var btn = document.getElementById('toggleTabs');
@@ -5924,42 +6484,12 @@ window.spTestDiag = function () {
         }
         var croix = document.getElementById('closeTabsMenuX');
         if (croix && !croix._spTabsWire) { croix._spTabsWire = true; croix.addEventListener('click', function (e) { e.stopPropagation(); fermerPopin(); }); }
-        var chk = document.getElementById('tabsVisibleToggle');
-        if (chk && !chk._spTabsWire) {
-            chk._spTabsWire = true;
-            chk.addEventListener('change', function () { modifier(function (t) { t.active = !!chk.checked; }); rendreListe(); });
-        }
-        var pas = document.getElementById('tabStep');
-        if (pas && !pas._spTabsWire) {
-            pas._spTabsWire = true;
-            pas.addEventListener('change', function () {
-                var v = parseFloat(pas.value);
-                if (!isFinite(v) || v < 1) { v = 10; pas.value = '10'; }
-                modifier(function (t) { t.step = spTabMmVers(v); });
-                rendreListe();
-            });
-        }
-        var ajouter = document.getElementById('tabAddBtn');
-        if (ajouter && !ajouter._spTabsWire) {
-            ajouter._spTabsWire = true;
-            ajouter.addEventListener('click', function (e) {
-                e.stopPropagation();
-                var champ = document.getElementById('tabNewPos');
-                var v = champ ? parseFloat(champ.value) : NaN;
-                if (!isFinite(v) || v < 0) v = 10;
-                modifier(function (t) { t.stops.push({ pos: spTabMmVers(v), type: 'left' }); t.active = true; });
-                rendreListe();
-            });
-        }
-        var effacer = document.getElementById('tabClearBtn');
-        if (effacer && !effacer._spTabsWire) {
-            effacer._spTabsWire = true;
-            effacer.addEventListener('click', function (e) {
-                e.stopPropagation();
-                modifier(function (t) { t.stops = []; });
-                rendreListe();
-            });
-        }
+        /* 🩹 v1.7.481 — câblage par DÉLÉGATION sur le panneau : les écouteurs
+           individuels disparaissaient dès que les nœuds internes étaient
+           remplacés (et il fallait rouvrir la page pour les retrouver). Ici on
+           écoute une fois pour toutes sur le conteneur, et on répare à chaque
+           ouverture du panneau (ouvrirPopin → cabler). */
+        cabler();
         document.addEventListener('click', function (e) {
             if (!popin || !popin.classList.contains('open')) return;
             var dd = document.getElementById('rulersDropdown');
