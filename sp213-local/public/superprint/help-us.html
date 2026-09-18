@@ -40,6 +40,11 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png">
 
+<!-- 🆕 v1.7.472 — LES FONTES DE LA LANDING. Sans cette feuille, la page d’aide tombait sur les
+     polices système et n’avait plus DU TOUT la typographie de la home (Bebas Neue pour les
+     capitales, IBM Plex Mono pour les libellés, IBM Plex Sans et Noto Sans JP pour le texte). -->
+<link rel="stylesheet" href="CSS/fonts.css">
+
 <style>
 /* ═══════════════════════════════════════════════════════════════
    SuperPrint Landing — "Le livre d'atelier" (craft × rêve)
@@ -241,8 +246,19 @@ nav {
   /* 🆕 v1.7.470 — retour utilisateur : « la typo est trop haute de 5 px » dans la barre
      rétractée (au scroll). Le centrage optique d'origine valait 0,5 px ; on descend de
      5 px de plus pour tomber sur l'œil. */
-  transform: translateY(5.5px);
+  /* 🆕 v1.7.472 — le décalage optique de 0,5 px ne vaut QUE pour la barre au repos.
+     Dans la barre RÉTRACTÉE (collée en haut au scroll, classe .is-stuck posée par le
+     script), le mot est 5 px trop haut : c’est là qu’on applique les 5,5 px. */
+  transform: translateY(2px);
 }
+/* 🆕 v1.7.472 — LA VALEUR EST MESURÉE, ET ELLE VAUT POUR LES DEUX ÉTATS.
+   On a mesuré l’ENCRE du mot (le haut des capitales, « SUPERPRINT » n’ayant pas de
+   descendante) contre le milieu exact de la barre :
+     · barre au repos : encre à −1,5 px → le mot était 1,5 px TROP HAUT ;
+     · barre collée    : encre à +3,5 px → le mot était 3,5 px TROP BAS.
+   Une seule valeur, 2 px, corrige les deux. La règle spéciale « is-stuck » (5,5 px)
+   disparaît : elle faisait SAUTER le logotype de 5 px à l’instant où la barre se
+   colle, et c’est ce saut qui se voyait — pas un mauvais centrage de la barre. */
 .nav-logo span { color: var(--muted); letter-spacing: .08em; }
 .nav-links { display: flex; gap: 2px; align-items: center; height: 100%; }
 .nav-links a {
@@ -269,7 +285,11 @@ nav {
 }
 .nav-cta::after { display: none; }
 .nav-cta:hover { background: var(--ink-2); }
-.lang-toggle { display: flex; gap: 0; margin-left: 10px; border: 1px solid var(--line-strong); }
+/* 🆕 v1.7.472 — le sélecteur de langue était 0,5 px trop haut : les éléments se centrent
+   dans la zone de contenu de la barre (65 px), alors que la barre en fait 66 avec son
+   filet bas. Une marge haute de 1 px décale le bloc d’un demi-pixel vers le bas, sans
+   transformation (donc sans texte flou). L’encre atterrit alors pile au milieu. */
+.lang-toggle { display: flex; gap: 0; margin-left: 10px; margin-top: 1px; border: 1px solid var(--line-strong); }
 .lang-toggle button {
   background: transparent; border: none;
   color: var(--muted); font-family: var(--f-mono);
@@ -301,14 +321,26 @@ nav {
   border-bottom: 1px solid var(--line);
   display: none; flex-direction: column;
   padding: 10px 20px 20px;
-  max-height: calc(100vh - 80px); overflow-y: auto;
+  /* 🆕 v1.7.472 — PLEIN ÉCRAN (demande utilisateur) : le menu couvre toute la page.
+     Il se place SOUS la barre (z-index 118 contre 120) pour que le bouton burger reste
+     cliquable, et son contenu commence sous la barre grâce au padding-top mesuré à
+     l’ouverture par le script. Il défile si la liste dépasse l’écran. */
+  inset: 0; max-height: none; height: auto; z-index: 118;
+  /* 🆕 v1.7.472 — il défile si la liste dépasse (grande police, petits écrans, japonais) :
+     le colophon et la ligne du bas restent atteignables. */
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
 }
 .mobile-menu.open { display: flex; }
 .mobile-menu a {
+  /* 🆕 v1.7.472 — MÊME TYPO QUE LA NAV, MAIS PLUS GRANDE ET PLUS HAUTE.
+     Le retour du 18/09 (« on dirait que ce n’est pas la même typo ») avait ramené les entrées
+     aux 11 px de la barre : c’était juste, mais sec sur un écran de téléphone. On garde la
+     famille et l’approche de la nav (IBM Plex Mono, .16em, capitales) et on monte à 13 px,
+     avec des lignes de 57 px : le doigt tombe juste, l’œil suit. */
   font-family: var(--f-mono); font-size: 13px; font-weight: 600;
   letter-spacing: .16em; text-transform: uppercase;
   color: var(--ink); text-decoration: none;
-  padding: 14px 4px; border-bottom: 1px solid var(--line);
+  padding: 19px 4px; border-bottom: 1px solid var(--line);
 }
 .mobile-menu a.mm-cta { border-bottom: none; background: var(--ink); color: var(--paper); text-align: center; margin-top: 10px; border-radius: 10px; }
 
@@ -788,29 +820,128 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 .cta-registration { margin-top: 36px; display:flex; justify-content:center; gap:14px; }
 .cta-registration span { font-family: var(--f-mono); font-size: 10px; letter-spacing: .3em; color: rgba(247,243,236,.5); text-transform: uppercase; }
 
+/* ══════════════ 🆕 v1.7.472 — LE MANUEL, DANS LA PAGE ══════════════
+   « Manuel » quitte la barre du haut (une entrée de nav pour renvoyer vers une autre page,
+   c’était un menu, pas une réponse) et il reste au pied de page. À la place, une vraie zone :
+   quatre portes d’entrée réelles dans documentation.html (#m-start, #m-prefs-intro, #m-export,
+   #fn-tools — des ancres vérifiées, pas des liens vers le haut de la page). */
+.man-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: clamp(12px,1.6vw,20px); }
+@media (max-width: 980px) { .man-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 560px) { .man-grid { grid-template-columns: 1fr; } }
+.man-card {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: clamp(16px,2vw,24px); background: var(--paper-2);
+  border: 1px solid var(--line); text-decoration: none;
+  transition: border-color .3s var(--ease), transform .3s var(--ease);
+}
+.man-card:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.man-num { font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.man-card h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.8vw,22px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.08; color: var(--ink);
+}
+.man-card p { font-size: 13px; line-height: 1.65; color: var(--ink-soft); }
+/* margin-top:auto : les quatre fiches n’ont pas la même longueur de texte, les flèches
+   s’alignent tout en bas des quatre. */
+.man-arr { margin-top: auto; padding-top: 12px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; color: var(--ink); }
+.man-cta { margin-top: clamp(22px,3vw,34px); display: flex; justify-content: center; }
+
+/* ══════════════ 🆕 v1.7.472 — LES AUTEURS ══════════════
+   Le logiciel est signé par deux personnes, et la page ne le disait nulle part : leurs
+   deux noms n’existaient qu’au fond des mentions légales, derrière un clic. Deux fiches,
+   en clair, avec ce que chacune a fait. Même papier que les fiches d’outils, même quadri
+   en pastille, deux colonnes (une seule en mobile). */
+.auteurs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(16px,2.4vw,32px); }
+.auteur {
+  display: flex; flex-direction: column;
+  background: var(--paper-2); border: 1px solid var(--line);
+  padding: clamp(20px,2.6vw,34px);
+  transition: border-color .3s var(--ease);
+}
+.auteur:hover { border-color: var(--line-strong); }
+.auteur-tete { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.auteur-tete .cmyk { margin: 0; }
+.auteur-num {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted);
+}
+.auteur-nom {
+  font-family: var(--f-caps); font-size: clamp(24px,2.9vw,38px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1; color: var(--ink); margin-bottom: 10px;
+}
+.auteur-role {
+  display: block; font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
+  padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line);
+}
+.auteur p { font-size: 13.5px; line-height: 1.72; color: var(--ink-soft); }
+.auteur p + p { margin-top: 12px; }
+/* margin-top:auto : les deux fiches n’ont pas la même longueur de texte, les liens
+   restent collés au bas des deux — alignés entre eux, sans hauteur forcée. */
+.auteur-liens { margin-top: auto; padding-top: 20px; display: flex; flex-wrap: wrap; gap: 16px; }
+.auteur-liens a {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; color: var(--ink);
+  text-decoration: none; border-bottom: 1px solid var(--line-strong); padding-bottom: 2px;
+  transition: color .25s var(--ease), border-color .25s var(--ease);
+}
+.auteur-liens a:hover { color: var(--muted); border-color: var(--muted); }
+.auteurs-note {
+  margin-top: clamp(22px,3vw,38px); padding-top: clamp(18px,2.4vw,30px);
+  border-top: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 18px 32px;
+}
+.auteurs-note p { font-size: 13.5px; line-height: 1.72; color: var(--ink-soft); max-width: 620px; }
+.auteurs-note p strong { color: var(--ink); }
+@media (max-width: 760px) { .auteurs { grid-template-columns: 1fr; } }
+
 /* ——— FOOTER (colophon) ——— */
 footer {
   background: var(--ink-2); color: var(--muted);
-  padding: clamp(40px,6vw,70px) 24px 40px; position: relative;
+  padding: clamp(34px,4.6vw,58px) 24px 32px; position: relative;
 }
 footer .container { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 30px; }
-.foot-brand { display:flex; flex-direction:column; gap: 14px; max-width: 320px; }
+/* 🆕 v1.7.472 — 320 → 420 px : la ligne des deux noms (58 caractères en monospace, avec
+   l’approche) ne tenait pas sur 320 px et « BRUNET » partait seul à la ligne. Mesuré :
+   il faut 397 px. Le pavé de marque respire mieux et remplit le vide du milieu. */
+.foot-brand { display:flex; flex-direction:column; gap: 12px; max-width: 420px; }
 .foot-logo { font-family: var(--f-caps); font-size: 30px; letter-spacing: .05em; color: var(--paper); text-decoration: none; }
 .foot-brand p { font-size: 12.5px; line-height: 1.7; color: var(--muted); }
+/* 🆕 v1.7.472 — les deux noms dans le colophon : ils ne coûtent pas une ligne de plus
+   puisque le pavé de marque respirait déjà, et ils disent qui publie. */
+.foot-auteurs {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--paper); padding-top: 4px;
+}
 .foot-cols { display:flex; gap: clamp(30px,5vw,80px); flex-wrap: wrap; }
-.foot-cols h4 { font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--paper); margin-bottom: 16px; }
-.foot-links { display: flex; flex-direction: column; gap: 10px; }
+.foot-cols h4 { font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--paper); margin-bottom: 14px; }
+.foot-links { display: flex; flex-direction: column; gap: 8px; }
 .foot-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color .25s var(--ease), transform .25s var(--ease); display:inline-flex; align-items:center; gap:8px; }
 .foot-links a::before { content:''; width:0; height:1px; background: var(--yellow); transition: width .25s var(--ease); }
 .foot-links a:hover { color: var(--paper); }
 .foot-links a:hover::before { width: 14px; }
 .foot-copy {
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; color: var(--muted);
-  width: 100%; text-align: center; padding-top: 24px;
-  border-top: 1px solid rgba(247,243,236,.12); margin-top: 20px;
-  display: flex; flex-direction: column; gap: 8px;
+  width: 100%; text-align: center; padding-top: 20px;
+  border-top: 1px solid rgba(247,243,236,.12); margin-top: 18px;
+  display: flex; flex-direction: column; gap: 10px; align-items: center;
 }
 .foot-note { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .06em; color: rgba(139,129,114,.8); }
+/* 🆕 v1.7.472 — LES LIENS LÉGAUX PASSENT AU CENTRE, SUR UNE SEULE LIGNE.
+   Ils occupaient trois rangées dans la colonne « Projet », qui donnait sa hauteur à tout
+   le pied de page — et la dernière phrase se retrouvait calée à gauche, seule rescapée de
+   la rangée précédente, ce qui ne se lisait pas. Ici, le PIÈGE DE LA v1.7.467 menace de
+   nouveau : ces liens portent data-lang, or une règle de classe (0,1,1) bat le
+   « [data-lang] { display: none } » (0,1,0) — sans l’exception ci-dessous, les six
+   s’afficheraient d’un coup, dans les trois langues. */
+.foot-legal { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 14px; }
+.foot-legal a { font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color .25s var(--ease); }
+.foot-legal a[data-lang] { display: none; }
+html[lang="fr"] .foot-legal a[data-lang="fr"],
+html[lang="en"] .foot-legal a[data-lang="en"],
+html[lang="ja"] .foot-legal a[data-lang="ja"] { display: inline; }
+.foot-legal a:hover { color: var(--paper); }
+.foot-legal .sep { color: rgba(139,129,114,.55); }
 
 /* ── LANG VISIBILITY (inchangé, fonctionnel) ── */
 [data-lang="en"], [data-lang="ja"] { display: none; }
@@ -840,7 +971,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   .nav-links { display: none; }
   .nav-burger { display: flex; }
   .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
-  .mobile-menu { top: 66px; } /* 🎯 v1.7.417 : aligne sur la hauteur de nav */
+  .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */
 }
 @media(max-width: 700px){
   /* 🎯 v1.7.417 — hauteur mobile alignee sur le desktop (66 px) : le menu
@@ -856,7 +987,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   table.cmp td, table.cmp th { padding: 11px 10px; font-size: 12px; }
   .foot-cols { gap: 24px; }
   .btn { padding: 15px 22px; font-size: 11px; }
-  .mobile-menu { top: 66px; }
+  .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran */
   .brand-header img { height: clamp(44px,12vw,56px); }
   .brand-tag { display: none; }
   #hero { padding-top: 64px; }
@@ -946,6 +1077,45 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   letter-spacing: .02em; line-height: 1.06; color: var(--ink); margin-bottom: 8px;
 }
 .tcard p { font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); }
+
+/* 🆕 v1.7.472 — « LES OUTILS, UN PAR UN » : QUATRE CARTES AU DÉPART, LA SUITE SUR DEMANDE.
+   Treize captures d’affilée noyaient le propos et faisaient télécharger neuf images avant
+   qu’on ait rien lu. Les neuf dernières RESTENT ÉCRITES dans le document — donc lisibles par
+   les moteurs de recherche et trouvables au Ctrl+F — on ne fait que les masquer : un
+   « display:none » suffit à empêcher les images « loading=lazy » de partir sur le réseau. */
+.tgrid > .tcard.is-folded { display: none; }
+.tgrid.is-open > .tcard.is-folded { display: flex; animation: tcardIn .55s var(--ease) both; }
+@keyframes tcardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tgrid.is-open > .tcard.is-folded { animation: none; } }
+
+/* ——— Bouton « Voir tous les outils » ——— (pas de « cursor » ici : le réticule + du site
+   vient de la règle générale « button », une valeur locale l’écraserait) */
+.tools-more-wrap { display: flex; justify-content: center; margin-top: clamp(26px,3.4vw,44px); }
+.tools-more {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink); background: transparent;
+  border: 1px solid var(--line-strong); padding: 15px 22px;
+  transition: background .3s var(--ease), color .3s var(--ease), border-color .3s var(--ease);
+}
+.tools-more:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.tools-more .tm-count {
+  font-size: 10px; letter-spacing: .08em; padding: 2px 7px;
+  border: 1px solid currentColor; opacity: .6;
+}
+.tools-more .tm-less { display: none; }
+.tools-more.is-open .tm-more { display: none; }
+.tools-more.is-open .tm-less { display: inline; }
+/* Déplié, le compteur « +9 » n’a plus rien à annoncer : les neuf sont à l’écran. */
+.tools-more.is-open .tm-count { display: none; }
+.tools-more .tm-chev {
+  width: 14px; height: 14px; flex: 0 0 14px; stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .3s var(--ease);
+}
+.tools-more.is-open .tm-chev { transform: rotate(180deg); }
+
 @media (max-width: 760px) {
   .tgrid { grid-template-columns: 1fr; }
 }
@@ -975,6 +1145,14 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   display: flex; align-items: center; justify-content: center; padding: 15px;
 }
 .entry-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* 🆕 v1.7.472 — LES DEUX ENTRÉES « CLAIRES » (Studio IA et SuperTyPo).
+   Leur plaque de logotype quitte le noir pour un fond blanc bordé d'un gris léger. C'est
+   possible parce que ces deux logotypes sont BICOLORES — vérifié dans les fichiers : du blanc
+   ET du noir dans le même dessin. Sur plaque noire on ne voyait que la part blanche, sur
+   plaque blanche on voit l'autre — le dessin change de lecture, il ne disparaît pas.
+   L'entrée de l'application garde sa plaque noire : son icône est blanche, et c'est son
+   identité. */
+.entry-clair .entry-logo { background: var(--white); border: 1px solid var(--line-strong); }
 .entry-body { min-width: 0; width: 100%; }
 .entry-name {
   display: block; font-family: var(--f-caps); font-size: clamp(19px,2.1vw,25px);
@@ -1161,6 +1339,31 @@ a, button, [role="button"], summary, .btn, .nav-cta, .entry, .tpl-card, .tcard, 
 input, select, textarea, label { cursor: pointer; }
 .legal-body { cursor: text; }
 
+/* 🆕 v1.7.472 — SÉLECTEUR DE LANGUE DU MENU BURGER : trois blocs carrés qui se touchent,
+   comme la barre du haut (mêmes .lang-toggle / button). Les mots sont courts (FR EN JA),
+   donc les blocs restent des carrés réguliers. */
+.mm-lang-toggle { display: flex; gap: 0; width: max-content; margin: 6px auto 0; }
+.mm-lang-toggle button { flex: 0 0 auto; min-width: 68px; min-height: 44px; font-size: 11px; letter-spacing: .12em; border-radius: 0; }
+
+/* 🆕 v1.7.472 — LE COLOPHON DANS LE MENU (voir le commentaire du HTML) : mêmes métriques
+   que la bande d'origine, pour que rien ne change à l'œil sinon la position. */
+.mm-colo { display: flex; justify-content: center; padding: 10px 24px 6px; border-bottom: 1px solid var(--line); }
+.mm-colo img { height: clamp(44px, 12vw, 56px); width: auto; display: block; }
+
+/* 🆕 v1.7.472 — le bas du menu : qui signe, et la version. Petit, espacé, arrêté par un filet. */
+.mm-bas {
+  margin-top: auto; padding: 20px 4px 6px; border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 5px;
+  font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+}
+/* 🆕 v1.7.472 — CES BOUTONS PORTENT data-lang, ET C’EST LE PIÈGE : le mécanisme trilingue
+   masque tout [data-lang] qui n’est pas la langue courante, donc FR et JA DISPARAISSAIENT du
+   menu (« le sélecteur ne marche pas »). Ce sont des COMMANDES, pas du contenu : elles
+   doivent rester visibles dans les trois cas. */
+html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
+
+
 
 
 /* ═══ v1.7.470 — page « nous aider » : mêmes jetons que la landing, mise en page dédiée ═══ */
@@ -1178,14 +1381,92 @@ input, select, textarea, label { cursor: pointer; }
 .help-card p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); }
 .help-card p:last-child { margin-bottom: 0; }
 .help-card ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); }
-.help-don { margin: clamp(28px,4vw,46px) 0 0; border: 1px solid var(--line-strong); background: var(--paper-3); padding: clamp(20px,2.6vw,34px); display: grid; grid-template-columns: minmax(0,1fr) minmax(240px,340px); gap: clamp(18px,2.4vw,34px); align-items: center; }
+.help-don { margin: clamp(28px,4vw,46px) 0 0; border: 1px solid var(--line-strong); background: var(--paper-3); padding: clamp(20px,2.6vw,34px); display: grid; grid-template-columns: minmax(0,1fr) minmax(240px,340px); gap: clamp(18px,2.4vw,34px); align-items: start; }
 @media (max-width: 820px) { .help-don { grid-template-columns: 1fr; } }
 .help-don h2 { margin: 0 0 8px; font-family: var(--f-caps); font-weight: 400; font-size: clamp(22px,2.4vw,30px); color: var(--ink); }
 .help-don p { margin: 0 0 8px; font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); }
 .help-don .tiny { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--muted); }
-.help-pay { min-height: 120px; display: flex; align-items: center; justify-content: center; background: var(--paper); border: 1px dashed var(--line-strong); padding: 16px; }
-.help-note { margin: 18px 0 0; font-size: 13px; line-height: 1.7; color: var(--muted); }
-.help-note a { color: var(--ink); }
+.help-pay { background: var(--paper); border: 1px dashed var(--line-strong); padding: 18px 16px; min-height: 96px; }
+/* ⚠️ v1.7.472 — LA CAUSE RÉELLE DU BOUTON INVISIBLE, TROUVÉE ENFIN, ET CE N'ÉTAIT PAS LA CSP.
+   Le SDK PayPal enveloppe le bouton dans un conteneur qui porte
+   « container-type: inline-size ». Or un élément « inline-size container » a une contribution
+   intrinsèque NULLE (c'est la contrepartie obligatoire de contain: inline-size). Placé comme
+   ENFANT FLEX d'un bloc en « display: flex », il réclame donc une largeur de 0 : mesuré
+   width = 0. Le titre et la description se replient alors à UN CARACTÈRE PAR LIGNE — le titre
+   faisait 1457 px de haut, la description 2408 px — et le bouton de 42 px partait à 5037 px.
+   Mon « overflow: hidden » + « max-height: 148px » d'alors ne corrigeait pas la cause : il
+   COUPAIT le bouton au lieu de le montrer, d'où « le bouton ne marche pas ».
+   Le conteneur doit donc être un BLOC ordinaire (« display: block », la valeur par défaut) :
+   la largeur vaut alors celle du cadre, et le bouton se pose juste après. Aucun plafond de
+   hauteur, aucun overflow caché. */
+.help-pay [id^="paypal-form-fields-container"] { margin: 0 !important; }
+/* ═══ v1.7.472 — LES TROIS OUTILS AVEC LEURS ICÔNES, ET LE DÉTAIL DU DON ═══
+   Les mêmes plaques que le hero de la landing (.entry-logo, .entry-clair) : le SuperPrint
+   garde la sienne, noire, parce que son icône est blanche ; les deux autres passent en blanc
+   bordé de gris, parce que leurs logotypes sont bicolores et lisibles sur les deux fonds.
+   On ne réinvente donc rien : c'est le même dessin que la page d'accueil. */
+.help-h2 { margin: 0 0 10px; font-family: var(--f-caps); font-weight: 400; font-size: clamp(22px,2.8vw,34px); letter-spacing: .01em; line-height: 1.06; color: var(--ink); }
+.help-apps { margin-top: clamp(30px,4vw,50px); }
+.help-apps-intro { max-width: 68ch; margin: 0 0 clamp(18px,2.4vw,28px); font-size: clamp(14px,1.3vw,16px); line-height: 1.7; color: var(--ink-soft); }
+.help-apps-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: clamp(14px,1.8vw,22px); }
+@media (max-width: 820px) { .help-apps-grid { grid-template-columns: 1fr; } }
+.help-app { background: var(--paper-3); border: 1px solid var(--line); padding: clamp(18px,2.2vw,26px); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.help-app .entry-logo { width: 64px; height: 64px; padding: 11px; margin-bottom: 4px; }
+.help-app h3 { font-family: var(--f-caps); font-size: clamp(19px,2.1vw,25px); font-weight: 400; letter-spacing: .02em; line-height: 1; color: var(--ink); }
+.help-app p { font-size: 13px; line-height: 1.7; color: var(--ink-soft); }
+.help-app-go { margin-top: auto; padding-top: 14px; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); text-decoration: none; }
+.help-app-go:hover { color: var(--muted); }
+.help-more { margin-top: clamp(30px,4vw,50px); }
+.help-more-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(14px,1.8vw,22px); }
+@media (max-width: 820px) { .help-more-grid { grid-template-columns: 1fr; } }
+.help-more-grid article { background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--cyan); padding: clamp(16px,2vw,24px); }
+.help-more-grid article:nth-child(2) { border-left-color: var(--magenta); }
+.help-more-grid article:nth-child(3) { border-left-color: var(--yellow); }
+.help-more-grid article:nth-child(4) { border-left-color: var(--ink); }
+.help-more-grid h3 { font-family: var(--f-caps); font-size: clamp(18px,2vw,23px); font-weight: 400; line-height: 1.06; color: var(--ink); margin-bottom: 8px; }
+.help-more-grid p { font-size: 13.5px; line-height: 1.75; color: var(--ink-soft); }
+.help-more-sig { margin: clamp(18px,2.4vw,28px) 0 0; font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+/* ═══ v1.7.472 — LA COLONNE DE DON, ET LE FORMULAIRE DE SIGNALEMENT ═══
+   Le don remonte juste sous le titre : c'est la raison de la page, il ne doit pas falloir
+   défiler pour le trouver. Et il redevient une VRAIE colonne : les deux côtés de la grille
+   s'étirent à la même hauteur, le cadre PayPal se remplit au lieu de flotter plus petit que
+   son contenu. */
+.help-don { margin: clamp(22px,3vw,34px) 0 0; align-items: stretch; }
+.help-pay {
+  background: var(--paper); border: 1px solid var(--line-strong); padding: clamp(20px,2.4vw,30px);
+  min-height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 16px;
+}
+.help-pay-titre {
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--muted);
+  padding-bottom: 14px; border-bottom: 1px solid var(--line);
+}
+.help-pay-note { font-size: 12px; line-height: 1.65; color: var(--muted); }
+
+.help-bug { margin-top: clamp(30px,4vw,50px); border: 1px solid var(--line); background: var(--paper-3); padding: clamp(20px,2.6vw,32px); }
+.help-bug-intro { max-width: 74ch; margin: 0 0 clamp(16px,2vw,24px); font-size: clamp(13.5px,1.25vw,15px); line-height: 1.75; color: var(--ink-soft); }
+.help-bug-intro a { color: var(--ink); }
+.help-bug-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(12px,1.6vw,18px); }
+.help-bug-grid .plein { grid-column: 1 / -1; }
+@media (max-width: 700px) { .help-bug-grid { grid-template-columns: 1fr; } }
+.help-bug label { display: block; margin-bottom: 6px; font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  /* v1.7.472 — les étiquettes portent data-lang : sans cette règle, la mise en
+     forme « .help-bug label » l'emporte sur le masquage global et les trois langues
+     s'empilent au-dessus de chaque champ. Même correctif que sur la page d'accueil. */
+  html[lang="fr"] .help-bug label[data-lang]:not([data-lang="fr"]),
+  html[lang="en"] .help-bug label[data-lang]:not([data-lang="en"]),
+  html[lang="ja"] .help-bug label[data-lang]:not([data-lang="ja"]) { display: none; }
+.help-bug input, .help-bug textarea {
+  width: 100%; font-family: var(--f-sans); font-size: 13.5px; line-height: 1.6;
+  padding: 11px 13px; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line-strong); border-radius: 0;
+}
+.help-bug input:focus, .help-bug textarea:focus { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.help-bug textarea { min-height: 150px; resize: vertical; }
+.help-bug-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 6px; }
+.help-bug-note { font-size: 12px; line-height: 1.6; color: var(--muted); max-width: 46ch; }
+
+.help-note { margin: 18px 0 0; font-size: 13px; line-height: 1.7; color: var(--muted); }.help-note a { color: var(--ink); }
 /* la page courante garde le trait de la nav, comme au survol (la landing n'a que :hover) */
 .nav-links a[aria-current="page"] { color: var(--ink); }
 .nav-links a[aria-current="page"]::after { transform: scaleX(1); }
@@ -1214,12 +1495,11 @@ input, select, textarea, label { cursor: pointer; }
   </a>
   <div class="nav-links">
     <a href="index.html#value-props"><span class="inline-fr">Atouts</span><span class="inline-en">Why us</span><span class="inline-ja">特徴</span></a>
-    <a href="index.html#studio"><span class="inline-fr">Studio IA</span><span class="inline-en">AI Studio</span><span class="inline-ja">AIスタジオ</span></a>
     <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
     <a href="index.html#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-    <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+    <a href="index.html#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
     <a href="help-us.html" class="active" aria-current="page"><span class="inline-fr">Nous aider</span><span class="inline-en">Help us</span><span class="inline-ja">支援する</span></a>
-    <a href="index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+    <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
   </div>
   <div class="nav-tools">
     <div class="lang-toggle">
@@ -1233,22 +1513,36 @@ input, select, textarea, label { cursor: pointer; }
   </div>
 </nav>
 <div class="mobile-menu" id="mobileMenu">
+  <!-- 🆕 v1.7.472 — LE COLOPHON NE DISPARAÎT PLUS QUAND LE MENU S'OUVRE.
+       Le menu couvre toute la page (demande précédente) ; en s'ouvrant, il cachait donc la
+       bande du logotype et son filet — « on perd le logo icon le filet dessous ». On la
+       reproduit ici à l'identique : la même icône, les mêmes respirations (les 8 px mesurés
+       par le script + les 10 px d'ici = les 18 px de la bande d'origine) et le même filet. -->
+  <div class="mm-colo" aria-hidden="true">
+    <img src="favicon.png" alt="" width="56" height="56">
+  </div>
   <a href="index.html#value-props"><span class="inline-fr">Atouts</span><span class="inline-en">Why us</span><span class="inline-ja">特徴</span></a>
-  <a href="index.html#studio"><span class="inline-fr">Studio IA</span><span class="inline-en">AI Studio</span><span class="inline-ja">AIスタジオ</span></a>
   <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="index.html#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-  <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+  <a href="index.html#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
+  <a href="index.html#manuel"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
   <a href="help-us.html"><span class="inline-fr">Nous aider</span><span class="inline-en">Help us</span><span class="inline-ja">支援する</span></a>
-  <a href="index.html" class="mm-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+  <a href="app/index.html" class="mm-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+  <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
+       Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
+       que setLang() continue de marquer la langue choisie. -->
   <div class="mm-lang">
-    <span class="mm-lang-label" data-lang="fr">Langue</span>
-    <span class="mm-lang-label" data-lang="en">Language</span>
-    <span class="mm-lang-label" data-lang="ja">言語</span>
-    <div class="mm-lang-btns">
-      <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')">English</button>
-      <button class="mbtn-lang" data-lang="fr" onclick="setLang('fr')">Français</button>
-      <button class="mbtn-lang" data-lang="ja" onclick="setLang('ja')">日本語</button>
+    <div class="lang-toggle mm-lang-toggle" role="group" aria-label="Language">
+      <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')" title="English">EN</button>
+      <button class="mbtn-lang" data-lang="fr" onclick="setLang('fr')" title="Français">FR</button>
+      <button class="mbtn-lang" data-lang="ja" onclick="setLang('ja')" title="日本語">JA</button>
     </div>
+  </div>
+  <!-- 🆕 v1.7.472 — le bas du menu était un grand vide. Deux lignes l'arrêtent : qui signe,
+       et quelle version — comme au colophon du pied de page, en plus petit. -->
+  <div class="mm-bas">
+    <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
+    <span>SuperPrint v1.7.472</span>
   </div>
 </div>
 
@@ -1260,13 +1554,36 @@ input, select, textarea, label { cursor: pointer; }
   <p class="help-kicker" data-lang="en">Independent project</p>
   <p class="help-kicker" data-lang="ja">独立プロジェクト</p>
 
-  <h1 class="help-h1" data-lang="fr">SuperPrint est indépendant. Votre aide le garde libre.</h1>
-  <h1 class="help-h1" data-lang="en">SuperPrint is independent. Your help keeps it free.</h1>
-  <h1 class="help-h1" data-lang="ja">SuperPrint は独立しています。あなたの支援が自由を保ちます。</h1>
+  <h1 class="help-h1" data-lang="fr">SuperPrint est indépendant, gratuit, sans publicité et sans abonnement. Votre aide est ce qui le garde libre.</h1>
+  <h1 class="help-h1" data-lang="en">SuperPrint is independent, free, with no advertising and no subscription. Your help is what keeps it free.</h1>
+  <h1 class="help-h1" data-lang="ja">SuperPrint は独立していて、無料、広告もサブスクもありません。その自由を保っているのは、あなたの支援です。</h1>
 
   <p class="help-lead" data-lang="fr">Pas d'investisseur, pas de publicité, pas d'abonnement, aucune revente de données. Le logiciel est conçu, écrit et maintenu par deux personnes, et il reste gratuit — y compris pour un usage professionnel. C'est un choix, pas une promesse de circonstance : chaque contribution sert à acheter du temps de développement et à payer ce que le logiciel consomme.</p>
   <p class="help-lead" data-lang="en">No investor, no advertising, no subscription, no data resale. The software is designed, written and maintained by two people, and it stays free — including for professional use. That is a deliberate choice, not a temporary promise: every contribution buys development time and pays for what the software consumes.</p>
   <p class="help-lead" data-lang="ja">投資家も広告もサブスクリプションもなく、データの転売も行いません。ソフトウェアは二人で設計・開発・保守しており、業務利用を含めて無料です。これは場当たり的な約束ではなく選択です。いただいた支援は開発時間と、ソフトウェアの運用費に充てられます。</p>
+
+  <section class="help-don">
+    <div>
+      <h2 data-lang="fr">Faire un don</h2><h2 data-lang="en">Make a donation</h2><h2 data-lang="ja">寄付する</h2>
+      <p data-lang="fr">Montant libre, paiement traité par PayPal — votre carte reste chez PayPal, nous ne voyons ni votre numéro ni votre adresse. Aucun compte PayPal n'est nécessaire pour payer par carte.</p>
+      <p data-lang="en">Free amount, payment handled by PayPal — your card stays with PayPal, we never see your number or your address. No PayPal account is needed to pay by card.</p>
+      <p data-lang="ja">金額は自由、決済はPayPalが処理します。カード情報はPayPalが保持し、こちらには届きません。カード決済にPayPalアカウントは不要です。</p>
+      <p class="tiny" data-lang="fr">Don ponctuel, ou mensuel si vous préférez — réglable dans le formulaire PayPal.</p>
+      <p class="tiny" data-lang="en">One-off, or monthly if you prefer — you choose inside the PayPal form.</p>
+      <p class="tiny" data-lang="ja">都度または毎月、PayPalのフォームで選べます。</p>
+    </div>
+    <div class="help-pay">
+      <div class="help-pay-titre">
+        <span data-lang="fr">Paiement par PayPal</span>
+        <span data-lang="en">Payment by PayPal</span>
+        <span data-lang="ja">PayPal でのお支払い</span>
+      </div>
+      <div id="paypal-container-DHFGPJBRF88Q4"></div>
+      <p class="help-pay-note" data-lang="fr">Montant et périodicité se règlent dans le formulaire PayPal. Votre carte reste chez PayPal : nous ne voyons ni votre numéro, ni votre adresse, ni votre nom.</p>
+      <p class="help-pay-note" data-lang="en">Amount and frequency are set inside the PayPal form. Your card stays with PayPal: we never see your number, your address or your name.</p>
+      <p class="help-pay-note" data-lang="ja">金額と頻度は PayPal のフォームで設定します。カード情報は PayPal が保持し、番号・住所・氏名がこちらに届くことはありません。</p>
+    </div>
+  </section>
 
   <hr class="help-rule">
 
@@ -1291,19 +1608,133 @@ input, select, textarea, label { cursor: pointer; }
     </article>
   </div>
 
-  <section class="help-don">
-    <div>
-      <h2 data-lang="fr">Faire un don</h2><h2 data-lang="en">Make a donation</h2><h2 data-lang="ja">寄付する</h2>
-      <p data-lang="fr">Montant libre, paiement traité par PayPal — votre carte reste chez PayPal, nous ne voyons ni votre numéro ni votre adresse. Aucun compte PayPal n'est nécessaire pour payer par carte.</p>
-      <p data-lang="en">Free amount, payment handled by PayPal — your card stays with PayPal, we never see your number or your address. No PayPal account is needed to pay by card.</p>
-      <p data-lang="ja">金額は自由、決済はPayPalが処理します。カード情報はPayPalが保持し、こちらには届きません。カード決済にPayPalアカウントは不要です。</p>
-      <p class="tiny" data-lang="fr">Don ponctuel, ou mensuel si vous préférez — réglable dans le formulaire PayPal.</p>
-      <p class="tiny" data-lang="en">One-off, or monthly if you prefer — you choose inside the PayPal form.</p>
-      <p class="tiny" data-lang="ja">都度または毎月、PayPalのフォームで選べます。</p>
+  <!-- ═══ v1.7.472 — CE QUE VOTRE AIDE FAIT VIVRE : les trois outils et leurs icônes ═══
+       Mêmes plaques que le hero de la landing (.entry-logo, .entry-clair) : SuperPrint garde
+       la sienne, noire (son icône est blanche) ; les deux autres passent en blanc bordé de
+       gris, parce que leurs logotypes sont bicolores et lisibles sur les deux fonds. -->
+  <section class="help-apps">
+    <h2 class="help-h2" data-lang="fr">Trois outils, deux personnes, aucune boutique.</h2>
+    <h2 class="help-h2" data-lang="en">Three tools, two people, no shop.</h2>
+    <h2 class="help-h2" data-lang="ja">三つの道具、二人、店はありません。</h2>
+    <p class="help-apps-intro" data-lang="fr">Votre aide ne finance pas un catalogue : elle finance ces trois-là, et rien d'autre. Ils partagent le même atelier, le même code, et la même absence de compte à créer.</p>
+    <p class="help-apps-intro" data-lang="en">Your help does not fund a catalogue: it funds these three, and nothing else. They share the same atelier, the same code, and the same absence of an account to create.</p>
+    <p class="help-apps-intro" data-lang="ja">ご支援はカタログを支えるものではありません。この三つだけを支えます。同じ工房、同じコード、アカウントを作らなくていいことも同じです。</p>
+    <div class="help-apps-grid">
+      <article class="help-app">
+        <span class="entry-logo"><img src="icons/icon-192x192.png" alt="" width="50" height="50"></span>
+        <h3>SuperPrint</h3>
+        <p data-lang="fr">L'atelier de PAO complet, dans le navigateur : mise en page multipage, typographie, calques, gabarits, export PDF prêt pour l'impression.</p>
+        <p data-lang="en">The complete DTP atelier, in the browser: multi-page layout, typography, layers, master pages, print-ready PDF export.</p>
+        <p data-lang="ja">ブラウザの中のDTP工房。マルチページ組版、タイポグラフィ、レイヤー、マスターページ、印刷対応のPDF書き出し。</p>
+        <a class="help-app-go" href="app/index.html"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open the app</span><span class="inline-ja">アプリを開く</span> →</a>
+      </article>
+      <article class="help-app entry-clair">
+        <span class="entry-logo"><img src="icons/studio_print_logo_blanc.png" alt="" width="50" height="50"></span>
+        <h3>Studio IA</h3>
+        <p data-lang="fr">Décrivez la maquette en une phrase, au clavier ou à la voix : le studio compose le document entier, et vous le reprenez ensuite à la main.</p>
+        <p data-lang="en">Describe the layout in one sentence, typed or spoken: the studio composes the whole document, then you take it over by hand.</p>
+        <p data-lang="ja">レイアウトを一言、キーボードでも音声でも。スタジオが文書全体を組み、あとは手で仕上げます。</p>
+        <a class="help-app-go" href="sp213-studio.html"><span class="inline-fr">Ouvrir le Studio IA</span><span class="inline-en">Open Studio IA</span><span class="inline-ja">Studio IA を開く</span> →</a>
+      </article>
+      <article class="help-app entry-clair">
+        <span class="entry-logo"><img src="icons/sper_typo.png" alt="" width="50" height="50"></span>
+        <h3>SuperTyPo</h3>
+        <p data-lang="fr">Les caractères décomposés et redessinés en courbes, pour un lettrage exploitable à l'échelle d'une affiche.</p>
+        <p data-lang="en">Letterforms taken apart and redrawn as curves, for lettering you can use at poster scale.</p>
+        <p data-lang="ja">書体を分解し、曲線として描き直す。ポスターサイズでも使えるレタリングに。</p>
+        <a class="help-app-go" href="supertypo/index.html"><span class="inline-fr">Ouvrir SuperTyPo</span><span class="inline-en">Open SuperTyPo</span><span class="inline-ja">SuperTyPo を開く</span> →</a>
+      </article>
     </div>
-    <div class="help-pay">
-      <div id="paypal-container-DHFGPJBRF88Q4"></div>
+  </section>
+
+
+  <!-- ═══ v1.7.472 — CE QU'UN DON REPRÉSENTE, DÉTAIL DEMANDÉ ═══
+       Aucun montant inventé : on dit à quoi sert l'argent, en temps et en factures réelles.
+       Une échelle de prix serait un mensonge tant que le bouton PayPal porte un montant fixe. -->
+  <section class="help-more">
+    <h2 class="help-h2" data-lang="fr">Ce qu'un don représente, concrètement.</h2>
+    <h2 class="help-h2" data-lang="en">What a donation means, concretely.</h2>
+    <h2 class="help-h2" data-lang="ja">寄付が具体的に何になるのか。</h2>
+    <div class="help-more-grid">
+      <article>
+        <h3 data-lang="fr">Corriger un bug d'export</h3>
+        <h3 data-lang="en">Fixing an export bug</h3>
+        <h3 data-lang="ja">書き出しの不具合を直す</h3>
+        <p data-lang="fr">Reproduire le fichier qui pose problème, comprendre la cause, corriger, réexporter, puis faire tirer une épreuve pour vérifier que la presse confirme. Une correction d'export PDF, c'est typiquement une journée de travail.</p>
+        <p data-lang="en">Reproduce the file that misbehaves, find the cause, fix it, export again, then have a proof printed to make sure the press agrees. An export fix is typically a day's work.</p>
+        <p data-lang="ja">問題のファイルを再現し、原因を突き止め、修正し、書き出し直し、印刷所で検証用の校正を刷る。書き出しの修正には、ふつう丸一日かかります。</p>
+      </article>
+      <article>
+        <h3 data-lang="fr">Faire tourner le studio</h3>
+        <h3 data-lang="en">Keeping the studio running</h3>
+        <h3 data-lang="ja">スタジオを動かし続ける</h3>
+        <p data-lang="fr">Les serveurs, le nom de domaine et la surveillance se paient tous les mois, que quelqu'un s'en serve ou non. C'est le seul coût du projet qui ne dépend pas de notre temps, et il tombe même quand nous dormons.</p>
+        <p data-lang="en">Servers, domain name and monitoring are billed every month, whether anyone uses them or not. It is the project's only cost that does not depend on our time — and it lands while we sleep.</p>
+        <p data-lang="ja">サーバー、ドメイン、監視は、誰が使っていてもいなくても毎月請求されます。私たちの時間に依存しない唯一の費用で、眠っている間にも発生します。</p>
+      </article>
+      <article>
+        <h3 data-lang="fr">Payer les licences</h3>
+        <h3 data-lang="en">Paying the licences</h3>
+        <h3 data-lang="ja">ライセンスを支払う</h3>
+        <p data-lang="fr">Profils ICC pour cadrer les conversions, fontes pour les gabarits, correcteur orthographique : ce sont des licences et des redevances, pas des dons à une fondation. Elles se paient une par une, et elles restent à payer même si personne ne donne.</p>
+        <p data-lang="en">ICC profiles to frame the conversions, fonts for the templates, a spell checker: these are licences and royalties, not donations to a foundation. They are paid one by one, and they stay due even when nobody gives.</p>
+        <p data-lang="ja">変換を正しく行うためのICCプロファイル、テンプレート用のフォント、スペルチェッカー。これらは財団への寄付ではなく、ライセンス料と使用料です。一つずつ支払い、誰も寄付しなくても請求は来ます。</p>
+      </article>
+      <article>
+        <h3 data-lang="fr">Personne d'autre que nous</h3>
+        <h3 data-lang="en">Nobody but the two of us</h3>
+        <h3 data-lang="ja">間に入る人はいません</h3>
+        <p data-lang="fr">Aucun intermédiaire, aucune commission, aucune équipe à financer : deux personnes, un serveur, des licences. Tout le reste du don, c'est du temps de développement et de correction — c'est-à-dire la seule chose que nous ne pouvons pas acheter autrement.</p>
+        <p data-lang="en">No middleman, no commission, no team to fund: two people, one server, some licences. Every remaining euro is development and bug-fixing time — the one thing we cannot buy any other way.</p>
+        <p data-lang="ja">仲介も手数料も、養うべきチームもありません。二人と、一つのサーバーと、ライセンスだけです。残りはすべて開発と修正の時間 — ほかの方法では買えない唯一のものです。</p>
+      </article>
     </div>
+    <p class="help-more-sig" data-lang="fr">Pas de palier, pas de contrepartie, pas de badge : donnez ce que l'outil vaut pour vous, une fois ou chaque mois.</p>
+    <p class="help-more-sig" data-lang="en">No tiers, no reward, no badge: give what the tool is worth to you, once or every month.</p>
+    <p class="help-more-sig" data-lang="ja">段階も、見返りも、バッジもありません。この道具があなたにとって価値ある分を、一度でも毎月でも。</p>
+  </section>
+
+  <!-- ═══ v1.7.472 — SIGNALER UN BUG (formulaire sans serveur) ═══ -->
+  <section class="help-bug">
+    <h2 class="help-h2" data-lang="fr">Trouvé un bug ? Dites-le-nous.</h2>
+    <h2 class="help-h2" data-lang="en">Found a bug? Tell us.</h2>
+    <h2 class="help-h2" data-lang="ja">不具合を見つけましたか？</h2>
+    <p class="help-bug-intro" data-lang="fr">Un rendu qui ne correspond pas à l'écran, un PDF qui sort de travers, une césure fautive, une traduction manquante, un raccourci qui ne fait rien : un rapport précis vaut un don. Il n'y a <strong>pas de serveur derrière ce formulaire</strong> — le site est statique : le bouton ouvre votre logiciel de courrier avec le message déjà rédigé, adressé à <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>. Vous pouvez aussi écrire directement à cette adresse.</p>
+    <p class="help-bug-intro" data-lang="en">A rendering that does not match the screen, a PDF that comes out crooked, a wrong hyphenation, a missing translation, a shortcut that does nothing: a precise report is worth a donation. There is <strong>no server behind this form</strong> — the site is static: the button opens your mail software with the message already written, addressed to <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>. You can also write to that address directly.</p>
+    <p class="help-bug-intro" data-lang="ja">画面と出力が違う、PDF がずれる、改行位置がおかしい、翻訳が抜けている、ショートカットが効かない。正確な報告は寄付と同じくらい力になります。このサイトは静的で、<strong>フォームの後ろにサーバーはありません</strong>。ボタンを押すと、<a href="mailto:contact@superprint.cc">contact@superprint.cc</a> 宛ての文面が作成された状態でメールソフトが開きます。直接メールしていただいても構いません。</p>
+
+    <form id="bugForm" class="help-bug-grid" novalidate>
+      <div class="plein">
+        <label for="bugOu" data-lang="fr">Où ? (écran, outil, ou nom du fichier .sp)</label>
+        <label for="bugOu" data-lang="en">Where? (screen, tool, or .sp file name)</label>
+        <label for="bugOu" data-lang="ja">どこで？（画面、ツール、.sp ファイル名）</label>
+        <input id="bugOu" name="ou" type="text" autocomplete="off">
+      </div>
+      <div>
+        <label for="bugQuoi" data-lang="fr">Ce que vous faisiez</label>
+        <label for="bugQuoi" data-lang="en">What you were doing</label>
+        <label for="bugQuoi" data-lang="ja">何をしていたか</label>
+        <input id="bugQuoi" name="quoi" type="text" autocomplete="off">
+      </div>
+      <div>
+        <label for="bugMail" data-lang="fr">Votre courriel (facultatif, pour la réponse)</label>
+        <label for="bugMail" data-lang="en">Your e-mail (optional, for the reply)</label>
+        <label for="bugMail" data-lang="ja">メールアドレス（任意、返信用）</label>
+        <input id="bugMail" name="mail" type="email" autocomplete="email">
+      </div>
+      <div class="plein">
+        <label for="bugCorps" data-lang="fr">Ce qui se passe, et ce que vous attendiez</label>
+        <label for="bugCorps" data-lang="en">What happens, and what you expected</label>
+        <label for="bugCorps" data-lang="ja">起きていること、期待していたこと</label>
+        <textarea id="bugCorps" name="corps"></textarea>
+      </div>
+      <div class="help-bug-actions plein">
+        <button type="submit" class="btn btn-primary"><span class="inline-fr">Ouvrir mon courrier</span><span class="inline-en">Open my mail</span><span class="inline-ja">メールを開く</span> <span class="arr" aria-hidden="true">→</span></button>
+        <span class="help-bug-note" data-lang="fr">La version de SuperPrint, votre navigateur et l'adresse de la page sont ajoutés automatiquement au message.</span>
+        <span class="help-bug-note" data-lang="en">The SuperPrint version, your browser and the page address are added to the message automatically.</span>
+        <span class="help-bug-note" data-lang="ja">SuperPrint のバージョン、ブラウザ、ページのアドレスは自動的に文面に追加されます。</span>
+      </div>
+    </form>
   </section>
 
   <p class="help-note" data-lang="fr">Vous préférez aider autrement ? C'est aussi précieux : <a href="documentation.html">signalez un bug ou une traduction manquante</a>, montrez SuperPrint autour de vous, ou envoyez-nous une maquette composée avec — elle finit souvent en modèle dans le carrousel de la <a href="index.html">page d'accueil</a>.</p>
@@ -1315,10 +1746,13 @@ input, select, textarea, label { cursor: pointer; }
 <footer>
   <div class="container">
     <div class="foot-brand">
-      <a class="foot-logo" href="https://zigmoon.com">SUPERPRINT</a>
+      <a class="foot-logo" href="index.html">SUPERPRINT</a>
       <p class="inline-fr">Un atelier de mise en page professionnelle, né pour la presse et l'édition — dans votre navigateur.</p>
       <p class="inline-en">A professional layout atelier, born for print and publishing — in your browser.</p>
       <p class="inline-ja">印刷と出版のために生まれたプロのレイアウト工房 — ブラウザの中で。</p>
+      <!-- 🆕 v1.7.472 — les deux auteurs, dans le colophon : ils ne coûtent pas une ligne de
+           plus et ils disent qui publie. Le copyright les nomme aussi, plus bas. -->
+      <p class="foot-auteurs">Simon Dupont-Gellert &amp; Clémence Brunet</p>
     </div>
     <div class="foot-cols">
       <div>
@@ -1333,6 +1767,9 @@ input, select, textarea, label { cursor: pointer; }
           <a href="documentation.html" data-lang="fr">Manuel</a>
           <a href="documentation.html" data-lang="en">Manual</a>
           <a href="documentation.html" data-lang="ja">マニュアル</a>
+          <a href="index.html#auteurs" data-lang="fr">Les auteurs</a>
+          <a href="index.html#auteurs" data-lang="en">The authors</a>
+          <a href="index.html#auteurs" data-lang="ja">著者</a>
         </div>
       </div>
       <div>
@@ -1341,38 +1778,31 @@ input, select, textarea, label { cursor: pointer; }
         <h4 data-lang="ja">プロジェクト</h4>
         <div class="foot-links">
           <a href="https://zigmoon.com">zigmoon.com</a>
+          <a href="help-us.html" data-lang="fr">Nous aider</a>
+          <a href="help-us.html" data-lang="en">Help us</a>
+          <a href="help-us.html" data-lang="ja">支援する</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="fr">Journal des versions</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="en">Changelog</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="ja">変更履歴</a>
           <a href="https://x.com/SUPER_PRINT_app" rel="noopener noreferrer" target="_blank">@SUPER_PRINT_app</a>
-          <a href="index.html#legal" data-lang="fr">Mentions légales</a>
-          <a href="index.html#legal" data-lang="en">Legal notice</a>
-          <a href="index.html#legal" data-lang="ja">法的情報</a>
-          <a href="index.html#privacy" data-lang="fr">Confidentialité</a>
-          <a href="index.html#privacy" data-lang="en">Privacy</a>
-          <a href="index.html#privacy" data-lang="ja">プライバシー</a>
-        </div>
-      </div>
-      <div>
-        <h4 data-lang="fr">Langues</h4>
-        <h4 data-lang="en">Languages</h4>
-        <h4 data-lang="ja">言語</h4>
-        <div class="foot-links">
-          <a href="#" onclick="setLang('en');return false;">English</a>
-          <a href="#" onclick="setLang('fr');return false;">Français</a>
-          <a href="#" onclick="setLang('ja');return false;">日本語</a>
         </div>
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Zigmoon — SuperPrint v1.7.471</span>
-      <span class="inline-fr">Logiciel de PAO en ligne · mise en page dans le navigateur</span>
-      <span class="inline-en">Online DTP software · browser page layout</span>
-      <span class="inline-ja">オンラインDTPソフトウェア · ブラウザのページレイアウト</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.472</span>
+      <div class="foot-legal">
+        <a href="index.html#legal" data-lang="fr">Mentions légales</a>
+        <a href="index.html#legal" data-lang="en">Legal notice</a>
+        <a href="index.html#legal" data-lang="ja">法的情報</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="index.html#privacy" data-lang="fr">Confidentialité</a>
+        <a href="index.html#privacy" data-lang="en">Privacy</a>
+        <a href="index.html#privacy" data-lang="ja">プライバシー</a>
+      </div>
+      <span class="foot-note" data-lang="fr">SuperPrint est un projet indépendant de Zigmoon. Les marques citées appartiennent à leurs détenteurs.</span>
+      <span class="foot-note" data-lang="en">SuperPrint is an independent project by Zigmoon. All trademarks belong to their owners.</span>
+      <span class="foot-note" data-lang="ja">SuperPrintはZigmoonの独立プロジェクトです。商標はすべて各権利者に帰属します。</span>
     </div>
-    <div class="foot-note" data-lang="fr">SuperPrint est un projet indépendant de Zigmoon. Les marques citées appartiennent à leurs détenteurs.</div>
-    <div class="foot-note" data-lang="en">SuperPrint is an independent project by Zigmoon. All trademarks belong to their owners.</div>
-    <div class="foot-note" data-lang="ja">SuperPrintはZigmoonの独立プロジェクトです。商標はすべて各権利者に帰属します。</div>
   </div>
 </footer>
 
@@ -1454,10 +1884,49 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     menu.classList.remove('open');
     burger.setAttribute('aria-expanded', 'false');
   }
+  /* 🆕 v1.7.472 — LE MENU SE POSE SOUS LA BARRE COLLANTE, ET PAS SOUS UNE HAUTEUR FIXE.
+     Le header mobile n’est pas une bande unique : bandeau quadri + colophon (logo) + nav
+     collante. Un « top: 66px » figé recouvrait donc le colophon et laissait la fin du menu
+     sortir de l’écran. On mesure le bas de la nav À L’OUVERTURE et on borne la hauteur au
+     reste visible ; on refait la mesure au redimensionnement et à la rotation. */
+  function spPlacerMenu() {
+    var barre = document.querySelector('nav');
+    var bas = barre ? Math.round(barre.getBoundingClientRect().bottom) : 0;
+    if (!(bas > 0) || bas > window.innerHeight - 90) bas = 66;
+    /* 🆕 v1.7.472 — menu PLEIN ÉCRAN : il occupe tout le viewport et c’est son contenu qui
+       démarre sous la barre (padding), la barre restant au-dessus pour fermer. */
+    menu.style.paddingTop = (bas + 8) + 'px';
+    menu.style.maxHeight = '';
+    menu.style.top = '';
+  }
+  /* 🆕 v1.7.472 — LA BARRE EST « RÉTRACTÉE » QUAND ELLE EST COLLÉE EN HAUT.
+     Le logotype n’a pas le même centrage optique au repos et une fois collé : on pose une
+     classe quand le défilement atteint le haut de la nav (mesuré, pas une valeur en dur). */
+  (function () {
+    var barre = document.querySelector('nav');
+    if (!barre) return;
+    function majEtat() {
+      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      var haut = barre.getBoundingClientRect().top + y;   /* position naturelle dans la page */
+      var colle = y >= (haut - 1);
+      barre.classList.toggle('is-stuck', colle);
+      if (menu.classList.contains('open')) spPlacerMenu();
+    }
+    window.addEventListener('scroll', majEtat, { passive: true });
+    window.addEventListener('resize', majEtat);
+    majEtat();
+  })();
+  window.addEventListener('resize', function () { if (menu.classList.contains('open')) spPlacerMenu(); });
+  window.addEventListener('orientationchange', function () { if (menu.classList.contains('open')) spPlacerMenu(); });
   burger.addEventListener('click', function () {
     var open = menu.classList.toggle('open');
     burger.classList.toggle('open', open);
     burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) spPlacerMenu();          /* mesure au moment où l’on ouvre */
+  });
+  /* Un ancrage du menu referme et remet la barre en haut, prête pour la prochaine ouverture. */
+  menu.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', function () { menu.style.paddingTop = ''; menu.style.top = ''; menu.style.maxHeight = ''; });
   });
   menu.querySelectorAll('a').forEach(function (a) {
     a.addEventListener('click', close);
@@ -1527,6 +1996,40 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     try { document.execCommand('copy'); } catch (e) {}
     ta.remove(); done();
   }
+})();
+</script>
+
+<!-- ═══ v1.7.472 — FORMULAIRE DE SIGNALEMENT : composition du courrier (aucun serveur) ═══ -->
+<script>
+(function () {
+  var form = document.getElementById('bugForm');
+  if (!form) return;
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var val = function (id) { var el = document.getElementById(id); return el ? (el.value || '').trim() : ''; };
+    var ou = val('bugOu'), quoi = val('bugQuoi'), mail = val('bugMail'), corps = val('bugCorps');
+    if (!corps && !ou) {
+      var el = document.getElementById('bugCorps');
+      if (el) el.focus();
+      return;
+    }
+    var titre = '[SuperPrint] ' + (ou ? ou.slice(0, 60) : 'rapport de bug');
+    var lignes = [
+      'Où : ' + (ou || '(non précisé)'),
+      'Ce que je faisais : ' + (quoi || '(non précisé)'),
+      'Ce qui se passe :',
+      corps || '(à compléter)',
+      '',
+      'Courriel : ' + (mail || '(non fourni)'),
+      '',
+      '—— informations techniques, ajoutées automatiquement ——',
+      'Version de SuperPrint : ' + (document.querySelector('.splash-version') ? document.querySelector('.splash-version').textContent : 'la page d’aide'),
+      'Navigateur : ' + navigator.userAgent,
+      'Page : ' + location.href
+    ];
+    var lien = 'mailto:contact@superprint.cc?subject=' + encodeURIComponent(titre) + '&body=' + encodeURIComponent(lignes.join(String.fromCharCode(10)));
+    window.location.href = lien;
+  });
 })();
 </script>
 

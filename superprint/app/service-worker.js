@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.471-curseur';
+const CACHE_NAME = 'superprint-shell-v1.7.472-mobile';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -117,21 +117,16 @@ const APP_SHELL = [
   // 🎨 v1.7.373 — IMAGES DU SPLASH (locales, 15 × ~83 Ko = ~1,25 Mo).
   //   Précachées pour un affichage IMMÉDIAT et hors ligne : le splash est la
   //   première chose que voit l'utilisateur, il ne doit jamais attendre le réseau.
-  './SP/splash/archi-01.jpg',
-  './SP/splash/archi-02.jpg',
-  './SP/splash/archi-03.jpg',
-  './SP/splash/archi-04.jpg',
-  './SP/splash/archi-05.jpg',
-  './SP/splash/typo-01.jpg',
-  './SP/splash/typo-02.jpg',
-  './SP/splash/typo-03.jpg',
-  './SP/splash/typo-04.jpg',
-  './SP/splash/typo-05.jpg',
-  './SP/splash/art-01.jpg',
-  './SP/splash/art-02.jpg',
-  './SP/splash/art-03.jpg',
-  './SP/splash/art-04.jpg',
-  './SP/splash/art-05.jpg',
+  './SP/splash/light-01.jpg',
+  './SP/splash/light-02.jpg',
+  './SP/splash/light-03.jpg',
+  './SP/splash/light-04.jpg',
+  './SP/splash/light-05.jpg',
+  './SP/splash/light-06.jpg',
+  './SP/splash/light-07.jpg',
+  './SP/splash/light-08.jpg',
+  './SP/splash/light-09.jpg',
+  './SP/splash/light-10.jpg',
   './icons/text.svg',
   './icons/image.svg',
   './icons/rect.svg',

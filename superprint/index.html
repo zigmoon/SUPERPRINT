@@ -68,7 +68,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.471",
+      "softwareVersion": "1.7.472",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -106,7 +106,27 @@
         "availability": "https://schema.org/InStock",
         "description": "Sans abonnement ni compte requis"
       },
-      "author": {
+      "author": [
+        {
+          "@type": "Person",
+          "@id": "https://superprint.cc/#simon-dupont-gellert",
+          "name": "Simon Dupont-Gellert",
+          "jobTitle": "Founder · Art direction · Development",
+          "description": "Designer and creative director. He designs and writes SuperPrint: the typographic engine, text wrap around shapes, boolean operations and print-ready PDF export.",
+          "url": "https://zigmoon.com",
+          "sameAs": ["https://zigmoon.com", "https://x.com/zigmoon"]
+        },
+        {
+          "@type": "Person",
+          "@id": "https://superprint.cc/#clemence-brunet",
+          "name": "Clémence Brunet",
+          "jobTitle": "Founder · Graphic design",
+          "description": "Graphic designer specialising in typography, visual identity and art direction. She gives SuperPrint its graphic identity and its editorial precision.",
+          "url": "https://clemencebrunet.fr",
+          "sameAs": ["https://clemencebrunet.fr"]
+        }
+      ],
+      "publisher": {
         "@type": "Organization",
         "name": "Zigmoon",
         "url": "https://zigmoon.com",
@@ -400,8 +420,19 @@ nav {
   /* 🆕 v1.7.470 — retour utilisateur : « la typo est trop haute de 5 px » dans la barre
      rétractée (au scroll). Le centrage optique d'origine valait 0,5 px ; on descend de
      5 px de plus pour tomber sur l'œil. */
-  transform: translateY(5.5px);
+  /* 🆕 v1.7.472 — le décalage optique de 0,5 px ne vaut QUE pour la barre au repos.
+     Dans la barre RÉTRACTÉE (collée en haut au scroll, classe .is-stuck posée par le
+     script), le mot est 5 px trop haut : c’est là qu’on applique les 5,5 px. */
+  transform: translateY(2px);
 }
+/* 🆕 v1.7.472 — LA VALEUR EST MESURÉE, ET ELLE VAUT POUR LES DEUX ÉTATS.
+   On a mesuré l’ENCRE du mot (le haut des capitales, « SUPERPRINT » n’ayant pas de
+   descendante) contre le milieu exact de la barre :
+     · barre au repos : encre à −1,5 px → le mot était 1,5 px TROP HAUT ;
+     · barre collée    : encre à +3,5 px → le mot était 3,5 px TROP BAS.
+   Une seule valeur, 2 px, corrige les deux. La règle spéciale « is-stuck » (5,5 px)
+   disparaît : elle faisait SAUTER le logotype de 5 px à l’instant où la barre se
+   colle, et c’est ce saut qui se voyait — pas un mauvais centrage de la barre. */
 .nav-logo span { color: var(--muted); letter-spacing: .08em; }
 .nav-links { display: flex; gap: 2px; align-items: center; height: 100%; }
 .nav-links a {
@@ -428,7 +459,11 @@ nav {
 }
 .nav-cta::after { display: none; }
 .nav-cta:hover { background: var(--ink-2); }
-.lang-toggle { display: flex; gap: 0; margin-left: 10px; border: 1px solid var(--line-strong); }
+/* 🆕 v1.7.472 — le sélecteur de langue était 0,5 px trop haut : les éléments se centrent
+   dans la zone de contenu de la barre (65 px), alors que la barre en fait 66 avec son
+   filet bas. Une marge haute de 1 px décale le bloc d’un demi-pixel vers le bas, sans
+   transformation (donc sans texte flou). L’encre atterrit alors pile au milieu. */
+.lang-toggle { display: flex; gap: 0; margin-left: 10px; margin-top: 1px; border: 1px solid var(--line-strong); }
 .lang-toggle button {
   background: transparent; border: none;
   color: var(--muted); font-family: var(--f-mono);
@@ -460,14 +495,26 @@ nav {
   border-bottom: 1px solid var(--line);
   display: none; flex-direction: column;
   padding: 10px 20px 20px;
-  max-height: calc(100vh - 80px); overflow-y: auto;
+  /* 🆕 v1.7.472 — PLEIN ÉCRAN (demande utilisateur) : le menu couvre toute la page.
+     Il se place SOUS la barre (z-index 118 contre 120) pour que le bouton burger reste
+     cliquable, et son contenu commence sous la barre grâce au padding-top mesuré à
+     l’ouverture par le script. Il défile si la liste dépasse l’écran. */
+  inset: 0; max-height: none; height: auto; z-index: 118;
+  /* 🆕 v1.7.472 — il défile si la liste dépasse (grande police, petits écrans, japonais) :
+     le colophon et la ligne du bas restent atteignables. */
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
 }
 .mobile-menu.open { display: flex; }
 .mobile-menu a {
+  /* 🆕 v1.7.472 — MÊME TYPO QUE LA NAV, MAIS PLUS GRANDE ET PLUS HAUTE.
+     Le retour du 18/09 (« on dirait que ce n’est pas la même typo ») avait ramené les entrées
+     aux 11 px de la barre : c’était juste, mais sec sur un écran de téléphone. On garde la
+     famille et l’approche de la nav (IBM Plex Mono, .16em, capitales) et on monte à 13 px,
+     avec des lignes de 57 px : le doigt tombe juste, l’œil suit. */
   font-family: var(--f-mono); font-size: 13px; font-weight: 600;
   letter-spacing: .16em; text-transform: uppercase;
   color: var(--ink); text-decoration: none;
-  padding: 14px 4px; border-bottom: 1px solid var(--line);
+  padding: 19px 4px; border-bottom: 1px solid var(--line);
 }
 .mobile-menu a.mm-cta { border-bottom: none; background: var(--ink); color: var(--paper); text-align: center; margin-top: 10px; border-radius: 10px; }
 
@@ -947,29 +994,128 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 .cta-registration { margin-top: 36px; display:flex; justify-content:center; gap:14px; }
 .cta-registration span { font-family: var(--f-mono); font-size: 10px; letter-spacing: .3em; color: rgba(247,243,236,.5); text-transform: uppercase; }
 
+/* ══════════════ 🆕 v1.7.472 — LE MANUEL, DANS LA PAGE ══════════════
+   « Manuel » quitte la barre du haut (une entrée de nav pour renvoyer vers une autre page,
+   c’était un menu, pas une réponse) et il reste au pied de page. À la place, une vraie zone :
+   quatre portes d’entrée réelles dans documentation.html (#m-start, #m-prefs-intro, #m-export,
+   #fn-tools — des ancres vérifiées, pas des liens vers le haut de la page). */
+.man-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: clamp(12px,1.6vw,20px); }
+@media (max-width: 980px) { .man-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 560px) { .man-grid { grid-template-columns: 1fr; } }
+.man-card {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: clamp(16px,2vw,24px); background: var(--paper-2);
+  border: 1px solid var(--line); text-decoration: none;
+  transition: border-color .3s var(--ease), transform .3s var(--ease);
+}
+.man-card:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.man-num { font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.man-card h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.8vw,22px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.08; color: var(--ink);
+}
+.man-card p { font-size: 13px; line-height: 1.65; color: var(--ink-soft); }
+/* margin-top:auto : les quatre fiches n’ont pas la même longueur de texte, les flèches
+   s’alignent tout en bas des quatre. */
+.man-arr { margin-top: auto; padding-top: 12px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; color: var(--ink); }
+.man-cta { margin-top: clamp(22px,3vw,34px); display: flex; justify-content: center; }
+
+/* ══════════════ 🆕 v1.7.472 — LES AUTEURS ══════════════
+   Le logiciel est signé par deux personnes, et la page ne le disait nulle part : leurs
+   deux noms n’existaient qu’au fond des mentions légales, derrière un clic. Deux fiches,
+   en clair, avec ce que chacune a fait. Même papier que les fiches d’outils, même quadri
+   en pastille, deux colonnes (une seule en mobile). */
+.auteurs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(16px,2.4vw,32px); }
+.auteur {
+  display: flex; flex-direction: column;
+  background: var(--paper-2); border: 1px solid var(--line);
+  padding: clamp(20px,2.6vw,34px);
+  transition: border-color .3s var(--ease);
+}
+.auteur:hover { border-color: var(--line-strong); }
+.auteur-tete { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.auteur-tete .cmyk { margin: 0; }
+.auteur-num {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted);
+}
+.auteur-nom {
+  font-family: var(--f-caps); font-size: clamp(24px,2.9vw,38px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1; color: var(--ink); margin-bottom: 10px;
+}
+.auteur-role {
+  display: block; font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
+  padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line);
+}
+.auteur p { font-size: 13.5px; line-height: 1.72; color: var(--ink-soft); }
+.auteur p + p { margin-top: 12px; }
+/* margin-top:auto : les deux fiches n’ont pas la même longueur de texte, les liens
+   restent collés au bas des deux — alignés entre eux, sans hauteur forcée. */
+.auteur-liens { margin-top: auto; padding-top: 20px; display: flex; flex-wrap: wrap; gap: 16px; }
+.auteur-liens a {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; color: var(--ink);
+  text-decoration: none; border-bottom: 1px solid var(--line-strong); padding-bottom: 2px;
+  transition: color .25s var(--ease), border-color .25s var(--ease);
+}
+.auteur-liens a:hover { color: var(--muted); border-color: var(--muted); }
+.auteurs-note {
+  margin-top: clamp(22px,3vw,38px); padding-top: clamp(18px,2.4vw,30px);
+  border-top: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 18px 32px;
+}
+.auteurs-note p { font-size: 13.5px; line-height: 1.72; color: var(--ink-soft); max-width: 620px; }
+.auteurs-note p strong { color: var(--ink); }
+@media (max-width: 760px) { .auteurs { grid-template-columns: 1fr; } }
+
 /* ——— FOOTER (colophon) ——— */
 footer {
   background: var(--ink-2); color: var(--muted);
-  padding: clamp(40px,6vw,70px) 24px 40px; position: relative;
+  padding: clamp(34px,4.6vw,58px) 24px 32px; position: relative;
 }
 footer .container { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 30px; }
-.foot-brand { display:flex; flex-direction:column; gap: 14px; max-width: 320px; }
+/* 🆕 v1.7.472 — 320 → 420 px : la ligne des deux noms (58 caractères en monospace, avec
+   l’approche) ne tenait pas sur 320 px et « BRUNET » partait seul à la ligne. Mesuré :
+   il faut 397 px. Le pavé de marque respire mieux et remplit le vide du milieu. */
+.foot-brand { display:flex; flex-direction:column; gap: 12px; max-width: 420px; }
 .foot-logo { font-family: var(--f-caps); font-size: 30px; letter-spacing: .05em; color: var(--paper); text-decoration: none; }
 .foot-brand p { font-size: 12.5px; line-height: 1.7; color: var(--muted); }
+/* 🆕 v1.7.472 — les deux noms dans le colophon : ils ne coûtent pas une ligne de plus
+   puisque le pavé de marque respirait déjà, et ils disent qui publie. */
+.foot-auteurs {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--paper); padding-top: 4px;
+}
 .foot-cols { display:flex; gap: clamp(30px,5vw,80px); flex-wrap: wrap; }
-.foot-cols h4 { font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--paper); margin-bottom: 16px; }
-.foot-links { display: flex; flex-direction: column; gap: 10px; }
+.foot-cols h4 { font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--paper); margin-bottom: 14px; }
+.foot-links { display: flex; flex-direction: column; gap: 8px; }
 .foot-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color .25s var(--ease), transform .25s var(--ease); display:inline-flex; align-items:center; gap:8px; }
 .foot-links a::before { content:''; width:0; height:1px; background: var(--yellow); transition: width .25s var(--ease); }
 .foot-links a:hover { color: var(--paper); }
 .foot-links a:hover::before { width: 14px; }
 .foot-copy {
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; color: var(--muted);
-  width: 100%; text-align: center; padding-top: 24px;
-  border-top: 1px solid rgba(247,243,236,.12); margin-top: 20px;
-  display: flex; flex-direction: column; gap: 8px;
+  width: 100%; text-align: center; padding-top: 20px;
+  border-top: 1px solid rgba(247,243,236,.12); margin-top: 18px;
+  display: flex; flex-direction: column; gap: 10px; align-items: center;
 }
 .foot-note { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .06em; color: rgba(139,129,114,.8); }
+/* 🆕 v1.7.472 — LES LIENS LÉGAUX PASSENT AU CENTRE, SUR UNE SEULE LIGNE.
+   Ils occupaient trois rangées dans la colonne « Projet », qui donnait sa hauteur à tout
+   le pied de page — et la dernière phrase se retrouvait calée à gauche, seule rescapée de
+   la rangée précédente, ce qui ne se lisait pas. Ici, le PIÈGE DE LA v1.7.467 menace de
+   nouveau : ces liens portent data-lang, or une règle de classe (0,1,1) bat le
+   « [data-lang] { display: none } » (0,1,0) — sans l’exception ci-dessous, les six
+   s’afficheraient d’un coup, dans les trois langues. */
+.foot-legal { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 14px; }
+.foot-legal a { font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color .25s var(--ease); }
+.foot-legal a[data-lang] { display: none; }
+html[lang="fr"] .foot-legal a[data-lang="fr"],
+html[lang="en"] .foot-legal a[data-lang="en"],
+html[lang="ja"] .foot-legal a[data-lang="ja"] { display: inline; }
+.foot-legal a:hover { color: var(--paper); }
+.foot-legal .sep { color: rgba(139,129,114,.55); }
 
 /* ── LANG VISIBILITY (inchangé, fonctionnel) ── */
 [data-lang="en"], [data-lang="ja"] { display: none; }
@@ -999,7 +1145,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   .nav-links { display: none; }
   .nav-burger { display: flex; }
   .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
-  .mobile-menu { top: 66px; } /* 🎯 v1.7.417 : aligne sur la hauteur de nav */
+  .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */
 }
 @media(max-width: 700px){
   /* 🎯 v1.7.417 — hauteur mobile alignee sur le desktop (66 px) : le menu
@@ -1015,7 +1161,7 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   table.cmp td, table.cmp th { padding: 11px 10px; font-size: 12px; }
   .foot-cols { gap: 24px; }
   .btn { padding: 15px 22px; font-size: 11px; }
-  .mobile-menu { top: 66px; }
+  .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran */
   .brand-header img { height: clamp(44px,12vw,56px); }
   .brand-tag { display: none; }
   #hero { padding-top: 64px; }
@@ -1105,6 +1251,45 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   letter-spacing: .02em; line-height: 1.06; color: var(--ink); margin-bottom: 8px;
 }
 .tcard p { font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); }
+
+/* 🆕 v1.7.472 — « LES OUTILS, UN PAR UN » : QUATRE CARTES AU DÉPART, LA SUITE SUR DEMANDE.
+   Treize captures d’affilée noyaient le propos et faisaient télécharger neuf images avant
+   qu’on ait rien lu. Les neuf dernières RESTENT ÉCRITES dans le document — donc lisibles par
+   les moteurs de recherche et trouvables au Ctrl+F — on ne fait que les masquer : un
+   « display:none » suffit à empêcher les images « loading=lazy » de partir sur le réseau. */
+.tgrid > .tcard.is-folded { display: none; }
+.tgrid.is-open > .tcard.is-folded { display: flex; animation: tcardIn .55s var(--ease) both; }
+@keyframes tcardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tgrid.is-open > .tcard.is-folded { animation: none; } }
+
+/* ——— Bouton « Voir tous les outils » ——— (pas de « cursor » ici : le réticule + du site
+   vient de la règle générale « button », une valeur locale l’écraserait) */
+.tools-more-wrap { display: flex; justify-content: center; margin-top: clamp(26px,3.4vw,44px); }
+.tools-more {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink); background: transparent;
+  border: 1px solid var(--line-strong); padding: 15px 22px;
+  transition: background .3s var(--ease), color .3s var(--ease), border-color .3s var(--ease);
+}
+.tools-more:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.tools-more .tm-count {
+  font-size: 10px; letter-spacing: .08em; padding: 2px 7px;
+  border: 1px solid currentColor; opacity: .6;
+}
+.tools-more .tm-less { display: none; }
+.tools-more.is-open .tm-more { display: none; }
+.tools-more.is-open .tm-less { display: inline; }
+/* Déplié, le compteur « +9 » n’a plus rien à annoncer : les neuf sont à l’écran. */
+.tools-more.is-open .tm-count { display: none; }
+.tools-more .tm-chev {
+  width: 14px; height: 14px; flex: 0 0 14px; stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .3s var(--ease);
+}
+.tools-more.is-open .tm-chev { transform: rotate(180deg); }
+
 @media (max-width: 760px) {
   .tgrid { grid-template-columns: 1fr; }
 }
@@ -1134,6 +1319,14 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
   display: flex; align-items: center; justify-content: center; padding: 15px;
 }
 .entry-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* 🆕 v1.7.472 — LES DEUX ENTRÉES « CLAIRES » (Studio IA et SuperTyPo).
+   Leur plaque de logotype quitte le noir pour un fond blanc bordé d'un gris léger. C'est
+   possible parce que ces deux logotypes sont BICOLORES — vérifié dans les fichiers : du blanc
+   ET du noir dans le même dessin. Sur plaque noire on ne voyait que la part blanche, sur
+   plaque blanche on voit l'autre — le dessin change de lecture, il ne disparaît pas.
+   L'entrée de l'application garde sa plaque noire : son icône est blanche, et c'est son
+   identité. */
+.entry-clair .entry-logo { background: var(--white); border: 1px solid var(--line-strong); }
 .entry-body { min-width: 0; width: 100%; }
 .entry-name {
   display: block; font-family: var(--f-caps); font-size: clamp(19px,2.1vw,25px);
@@ -1320,6 +1513,31 @@ a, button, [role="button"], summary, .btn, .nav-cta, .entry, .tpl-card, .tcard, 
 input, select, textarea, label { cursor: pointer; }
 .legal-body { cursor: text; }
 
+/* 🆕 v1.7.472 — SÉLECTEUR DE LANGUE DU MENU BURGER : trois blocs carrés qui se touchent,
+   comme la barre du haut (mêmes .lang-toggle / button). Les mots sont courts (FR EN JA),
+   donc les blocs restent des carrés réguliers. */
+.mm-lang-toggle { display: flex; gap: 0; width: max-content; margin: 6px auto 0; }
+.mm-lang-toggle button { flex: 0 0 auto; min-width: 68px; min-height: 44px; font-size: 11px; letter-spacing: .12em; border-radius: 0; }
+
+/* 🆕 v1.7.472 — LE COLOPHON DANS LE MENU (voir le commentaire du HTML) : mêmes métriques
+   que la bande d'origine, pour que rien ne change à l'œil sinon la position. */
+.mm-colo { display: flex; justify-content: center; padding: 10px 24px 6px; border-bottom: 1px solid var(--line); }
+.mm-colo img { height: clamp(44px, 12vw, 56px); width: auto; display: block; }
+
+/* 🆕 v1.7.472 — le bas du menu : qui signe, et la version. Petit, espacé, arrêté par un filet. */
+.mm-bas {
+  margin-top: auto; padding: 20px 4px 6px; border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 5px;
+  font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+}
+/* 🆕 v1.7.472 — CES BOUTONS PORTENT data-lang, ET C’EST LE PIÈGE : le mécanisme trilingue
+   masque tout [data-lang] qui n’est pas la langue courante, donc FR et JA DISPARAISSAIENT du
+   menu (« le sélecteur ne marche pas »). Ce sont des COMMANDES, pas du contenu : elles
+   doivent rester visibles dans les trois cas. */
+html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
+
+
 </style>
 </head>
 
@@ -1345,12 +1563,11 @@ input, select, textarea, label { cursor: pointer; }
   </a>
   <div class="nav-links">
     <a href="#value-props"><span class="inline-fr">Atouts</span><span class="inline-en">Why us</span><span class="inline-ja">特徴</span></a>
-    <a href="#studio"><span class="inline-fr">Studio IA</span><span class="inline-en">AI Studio</span><span class="inline-ja">AIスタジオ</span></a>
     <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
     <a href="#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-    <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+    <a href="#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
     <a href="help-us.html"><span class="inline-fr">Nous aider</span><span class="inline-en">Help us</span><span class="inline-ja">支援する</span></a>
-    <a href="index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+    <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
   </div>
   <div class="nav-tools">
     <div class="lang-toggle">
@@ -1364,22 +1581,36 @@ input, select, textarea, label { cursor: pointer; }
   </div>
 </nav>
 <div class="mobile-menu" id="mobileMenu">
+  <!-- 🆕 v1.7.472 — LE COLOPHON NE DISPARAÎT PLUS QUAND LE MENU S'OUVRE.
+       Le menu couvre toute la page (demande précédente) ; en s'ouvrant, il cachait donc la
+       bande du logotype et son filet — « on perd le logo icon le filet dessous ». On la
+       reproduit ici à l'identique : la même icône, les mêmes respirations (les 8 px mesurés
+       par le script + les 10 px d'ici = les 18 px de la bande d'origine) et le même filet. -->
+  <div class="mm-colo" aria-hidden="true">
+    <img src="favicon.png" alt="" width="56" height="56">
+  </div>
   <a href="#value-props"><span class="inline-fr">Atouts</span><span class="inline-en">Why us</span><span class="inline-ja">特徴</span></a>
-  <a href="#studio"><span class="inline-fr">Studio IA</span><span class="inline-en">AI Studio</span><span class="inline-ja">AIスタジオ</span></a>
   <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-  <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+  <a href="#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
+  <a href="#manuel"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
   <a href="help-us.html"><span class="inline-fr">Nous aider</span><span class="inline-en">Help us</span><span class="inline-ja">支援する</span></a>
-  <a href="index.html" class="mm-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+  <a href="app/index.html" class="mm-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+  <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
+       Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
+       que setLang() continue de marquer la langue choisie. -->
   <div class="mm-lang">
-    <span class="mm-lang-label" data-lang="fr">Langue</span>
-    <span class="mm-lang-label" data-lang="en">Language</span>
-    <span class="mm-lang-label" data-lang="ja">言語</span>
-    <div class="mm-lang-btns">
-      <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')">English</button>
-      <button class="mbtn-lang" data-lang="fr" onclick="setLang('fr')">Français</button>
-      <button class="mbtn-lang" data-lang="ja" onclick="setLang('ja')">日本語</button>
+    <div class="lang-toggle mm-lang-toggle" role="group" aria-label="Language">
+      <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')" title="English">EN</button>
+      <button class="mbtn-lang" data-lang="fr" onclick="setLang('fr')" title="Français">FR</button>
+      <button class="mbtn-lang" data-lang="ja" onclick="setLang('ja')" title="日本語">JA</button>
     </div>
+  </div>
+  <!-- 🆕 v1.7.472 — le bas du menu était un grand vide. Deux lignes l'arrêtent : qui signe,
+       et quelle version — comme au colophon du pied de page, en plus petit. -->
+  <div class="mm-bas">
+    <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
+    <span>SuperPrint v1.7.472</span>
   </div>
 </div>
 
@@ -1407,8 +1638,8 @@ input, select, textarea, label { cursor: pointer; }
         </span>
       </a>
 
-      <a class="entry" href="sp213-studio.html" style="--entry-accent:#E1237B">
-        <span class="entry-name">Studio SP213</span>
+      <a class="entry entry-clair" href="sp213-studio.html" style="--entry-accent:#E1237B">
+        <span class="entry-name">Studio IA</span>
         <span class="entry-logo"><img src="icons/studio_print_logo_blanc.png" alt="" width="50" height="50"></span>
         <span class="entry-body">
           <span class="entry-desc"><span class="inline-fr">Décrivez la maquette : l'IA la compose, vous la signez.</span><span class="inline-en">Describe the layout: the AI composes it, you sign it off.</span><span class="inline-ja">レイアウトを言葉に。AIが組み、あなたが仕上げる。</span></span>
@@ -1416,7 +1647,7 @@ input, select, textarea, label { cursor: pointer; }
         </span>
       </a>
 
-      <a class="entry" href="supertypo/index.html" style="--entry-accent:#F2B90B">
+      <a class="entry entry-clair" href="supertypo/index.html" style="--entry-accent:#F2B90B">
         <span class="entry-name">SuperTyPo</span>
         <span class="entry-logo"><img src="icons/sper_typo.png" alt="" width="50" height="50"></span>
         <span class="entry-body">
@@ -1427,9 +1658,9 @@ input, select, textarea, label { cursor: pointer; }
 
     </div>
 
-<p class="lead hero-lead" data-lang="fr">La mise en page professionnelle dans votre navigateur, avec le <strong>studio IA SP213</strong> qui compose une maquette sur une phrase. Import <strong>Word et IDML</strong>, <strong>tons directs Pantone séparés dans le PDF</strong>, export prêt pour l'impression.</p>
-    <p class="lead hero-lead" data-lang="en">Professional page layout in your browser, with the <strong>SP213 AI studio</strong> that composes a layout from a sentence. <strong>Word and IDML import</strong>, <strong>Pantone spot inks separated in the PDF</strong>, print-ready export.</p>
-    <p class="lead hero-lead" data-lang="ja">ブラウザでプロの組版を。<strong>SP213 AIスタジオ</strong>が一文からレイアウトを組みます。<strong>Word・IDML読み込み</strong>、<strong>Pantone特色をPDFで分版</strong>、印刷対応の書き出し。</p>
+<p class="lead hero-lead" data-lang="fr">La mise en page professionnelle dans votre navigateur, avec le <strong>studio IA</strong> qui compose une maquette sur une phrase. Import <strong>Word et IDML</strong>, <strong>tons directs Pantone séparés dans le PDF</strong>, export prêt pour l'impression.</p>
+    <p class="lead hero-lead" data-lang="en">Professional page layout in your browser, with <strong>Studio IA</strong>, which composes a layout from a sentence. <strong>Word and IDML import</strong>, <strong>Pantone spot inks separated in the PDF</strong>, print-ready export.</p>
+    <p class="lead hero-lead" data-lang="ja">ブラウザでプロの組版を。<strong>Studio IA</strong> が一文からレイアウトを組みます。<strong>Word・IDML読み込み</strong>、<strong>Pantone特色をPDFで分版</strong>、印刷対応の書き出し。</p>
 
     <div class="hero-install">
       <div class="install-shell">
@@ -1440,7 +1671,7 @@ input, select, textarea, label { cursor: pointer; }
             <span data-lang="en">Install SuperPrint locally</span>
             <span data-lang="ja">SuperPrintをローカルにインストール</span>
           </div>
-          <a href="index.html" class="inst-online"><span class="inline-fr">Ouvrir l'app en ligne</span><span class="inline-en">Open the online app</span><span class="inline-ja">オンラインアプリを開く</span> <span class="arr" aria-hidden="true">→</span></a>
+          <a href="app/index.html" class="inst-online"><span class="inline-fr">Ouvrir l'app en ligne</span><span class="inline-en">Open the online app</span><span class="inline-ja">オンラインアプリを開く</span> <span class="arr" aria-hidden="true">→</span></a>
         </div>
         <p class="inst-desc" data-lang="fr">Copiez cette ligne dans votre terminal : elle télécharge le paquet, installe puis lance l'application sur votre machine.</p>
         <p class="inst-desc" data-lang="en">Copy this line into your terminal: it downloads the package, installs and launches the app on your machine.</p>
@@ -1871,12 +2102,15 @@ input, select, textarea, label { cursor: pointer; }
       <div class="section-label" data-lang="fr">Captures d'écran · l'application telle qu'elle est</div>
       <div class="section-label" data-lang="en">Screenshots · the application as it is</div>
       <div class="section-label" data-lang="ja">スクリーンショット · 実際のアプリ画面</div>
-      <h2 data-lang="fr">Ce ne sont pas des promesses : ce sont des captures.</h2>
-      <h2 data-lang="en">Not promises — these are screenshots.</h2>
-      <h2 data-lang="ja">約束ではなく、実際の画面です。</h2>
-      <p class="lead" data-lang="fr">Habillage du texte, composition, typographie vectorisée : la même maquette, ouverte dans l'application, sans retouche ni rendu publicitaire.</p>
-      <p class="lead" data-lang="en">Text wrap, composition, vectorised type: one and the same layout, opened inside the application — no retouching, no marketing render.</p>
-      <p class="lead" data-lang="ja">テキストの回り込み、組版、書体のベクター化。同じレイアウトをアプリで開いたまま、加工なしで。</p>
+      <!-- 🆕 v1.7.472 — Le titre porte désormais l’IDÉE DIRECTRICE de la page (« la PAO, entièrement
+           réinventée dans votre navigateur ») et non la seule preuve. La preuve ne disparaît pas :
+           elle passe dans le chapô, là où elle se démontre au lieu de se proclamer. -->
+      <h2 data-lang="fr">La PAO, entièrement réinventée dans votre navigateur.</h2>
+      <h2 data-lang="en">DTP, entirely reinvented in your browser.</h2>
+      <h2 data-lang="ja">DTPを、ブラウザでまるごと作り直す。</h2>
+      <p class="lead" data-lang="fr">Habillage du texte, composition, typographie vectorisée : ce ne sont pas des promesses, ce sont des captures — la même maquette, ouverte dans l'application, sans retouche ni rendu publicitaire.</p>
+      <p class="lead" data-lang="en">Text wrap, composition, vectorised type: not promises but screenshots — one and the same layout, opened inside the application, with no retouching and no marketing render.</p>
+      <p class="lead" data-lang="ja">テキストの回り込み、組版、書体のベクター化。約束ではなく、実際の画面です。同じレイアウトをアプリで開いたまま、加工なしで。</p>
     </div>
 
     <div class="shots">
@@ -1953,7 +2187,7 @@ input, select, textarea, label { cursor: pointer; }
         <p data-lang="ja">すべて実際のアプリ画面で、毎回違うレイアウトを使っています。右クリック、回り込み、図形内の文字、タイポグラフィ、カラー、レイヤー、定規とグリッド。</p>
       </div>
 
-      <div class="tgrid">
+      <div class="tgrid" id="tgridOutils">
 
         <figure class="tcard">
           <div class="tcard-img"><img src="img/landing/clic-droit-forme.jpg" width="1600" height="1000" loading="lazy" alt="Clic droit sur une forme"></div>
@@ -2007,7 +2241,7 @@ input, select, textarea, label { cursor: pointer; }
           </figcaption>
         </figure>
 
-        <figure class="tcard">
+        <figure class="tcard is-folded">
           <div class="tcard-img"><img src="img/landing/habillage-produit.jpg" width="1600" height="1000" loading="lazy" alt="Habillage sur une fiche produit"></div>
           <figcaption class="tcard-body">
             <span class="tcard-num">05</span>
@@ -2020,7 +2254,7 @@ input, select, textarea, label { cursor: pointer; }
           </figcaption>
         </figure>
 
-        <figure class="tcard">
+        <figure class="tcard is-folded">
           <div class="tcard-img"><img src="img/landing/ecrire-dans-forme.jpg" width="1600" height="1000" loading="lazy" alt="Écrire dans une forme"></div>
           <figcaption class="tcard-body">
             <span class="tcard-num">06</span>
@@ -2033,7 +2267,7 @@ input, select, textarea, label { cursor: pointer; }
           </figcaption>
         </figure>
 
-        <figure class="tcard">
+        <figure class="tcard is-folded">
           <div class="tcard-img"><img src="img/landing/panneau-typographie.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Typographie"></div>
           <figcaption class="tcard-body">
             <span class="tcard-num">07</span>
@@ -2046,7 +2280,7 @@ input, select, textarea, label { cursor: pointer; }
           </figcaption>
         </figure>
 
-        <figure class="tcard">
+        <figure class="tcard is-folded">
           <div class="tcard-img"><img src="img/landing/panneau-couleurs.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Couleurs"></div>
           <figcaption class="tcard-body">
             <span class="tcard-num">08</span>
@@ -2059,7 +2293,7 @@ input, select, textarea, label { cursor: pointer; }
           </figcaption>
         </figure>
 
-        <figure class="tcard">
+        <figure class="tcard is-folded">
           <div class="tcard-img"><img src="img/landing/panneau-calques.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Calques"></div>
           <figcaption class="tcard-body">
             <span class="tcard-num">09</span>
@@ -2072,7 +2306,7 @@ input, select, textarea, label { cursor: pointer; }
           </figcaption>
         </figure>
 
-        <figure class="tcard">
+        <figure class="tcard is-folded">
           <div class="tcard-img"><img src="img/landing/reperes-grille.jpg" width="1600" height="1000" loading="lazy" alt="Règles et grilles"></div>
           <figcaption class="tcard-body">
             <span class="tcard-num">10</span>
@@ -2085,7 +2319,7 @@ input, select, textarea, label { cursor: pointer; }
           </figcaption>
         </figure>
 
-        <figure class="tcard">
+        <figure class="tcard is-folded">
           <div class="tcard-img"><img src="img/landing/atelier-voyage.jpg" width="1600" height="1000" loading="lazy" alt="Une maquette ouverte dans l'atelier"></div>
           <figcaption class="tcard-body">
             <span class="tcard-num">11</span>
@@ -2098,7 +2332,7 @@ input, select, textarea, label { cursor: pointer; }
           </figcaption>
         </figure>
 
-        <figure class="tcard">
+        <figure class="tcard is-folded">
           <div class="tcard-img"><img src="img/landing/supertypo.jpg" width="1600" height="1000" loading="lazy" alt="SuperTyPo, le composeur typographique"></div>
           <figcaption class="tcard-body">
             <span class="tcard-num">12</span>
@@ -2111,7 +2345,7 @@ input, select, textarea, label { cursor: pointer; }
           </figcaption>
         </figure>
 
-        <figure class="tcard">
+        <figure class="tcard is-folded">
           <div class="tcard-img"><img src="img/landing/studio-ia.jpg" width="1600" height="1000" loading="lazy" alt="Le Studio IA et sa conversation"></div>
           <figcaption class="tcard-body">
             <span class="tcard-num">13</span>
@@ -2124,6 +2358,18 @@ input, select, textarea, label { cursor: pointer; }
           </figcaption>
         </figure>
 
+      </div>
+
+      <!-- 🆕 v1.7.472 — L’ARRÊT DE LA GALERIE : quatre captures, puis « voir tous les outils ».
+           Le « soufflet » est un bouton : la suite s’ouvre DANS la page, sans quitter la
+           landing. Le compteur « +9 » est calculé par script, jamais écrit à la main. -->
+      <div class="tools-more-wrap">
+        <button class="tools-more" id="toolsMore" type="button" aria-expanded="false" aria-controls="tgridOutils">
+          <span class="tm-more"><span class="inline-fr">Voir tous les outils</span><span class="inline-en">See all the tools</span><span class="inline-ja">すべての道具を見る</span></span>
+          <span class="tm-less"><span class="inline-fr">Replier la galerie</span><span class="inline-en">Collapse the gallery</span><span class="inline-ja">ギャラリーを閉じる</span></span>
+          <span class="tm-count" aria-hidden="true">+9</span>
+          <svg class="tm-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
       </div>
     </div>
 
@@ -3027,6 +3273,148 @@ input, select, textarea, label { cursor: pointer; }
   </div>
 </section>
 
+<!-- ══════════════ 🆕 v1.7.472 — LE MANUEL ══════════════
+     « Manuel » sort de la barre du haut : une entrée de nav qui renvoie vers une autre page
+     n’apprend rien. À la place, une zone qui dit ce qu’il y a dedans, et quatre portes
+     d’entrée réelles dans le manuel (ancres vérifiées dans documentation.html). -->
+<section id="manuel">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-label" data-lang="fr">Chapitre 10 · Le manuel</div>
+      <div class="section-label" data-lang="en">Chapter 10 · The manual</div>
+      <div class="section-label" data-lang="ja">第10章 · マニュアル</div>
+      <h2 data-lang="fr">Tout est écrit, noir sur blanc.</h2>
+      <h2 data-lang="en">Everything is written down.</h2>
+      <h2 data-lang="ja">すべて、文字で書いてあります。</h2>
+      <p class="lead" data-lang="fr">Pas de tutoriel vidéo à regarder en accéléré : le manuel fait le tour de l'atelier, panneau par panneau, et le catalogue des fonctions en recense <strong>475</strong>. Il se cherche au clavier, il est dans les trois langues, et il ne demande aucun compte.</p>
+      <p class="lead" data-lang="en">No video tutorial to speed through: the manual walks the whole atelier, panel by panel, and the function catalogue lists <strong>475</strong> of them. It is searchable from the keyboard, written in three languages, and needs no account.</p>
+      <p class="lead" data-lang="ja">早送りで見るチュートリアル動画はありません。マニュアルは工房のすべてをパネルごとに説明し、機能カタログには<strong>475</strong>の機能が並びます。キーボードで検索でき、3言語、アカウントも不要です。</p>
+    </div>
+
+    <div class="man-grid">
+      <a class="man-card" href="documentation.html#m-start">
+        <span class="man-num">01</span>
+        <h3 data-lang="fr">Démarrage rapide</h3>
+        <h3 data-lang="en">Quick start</h3>
+        <h3 data-lang="ja">クイックスタート</h3>
+        <p data-lang="fr">Du document vide à la première page composée, sans détour.</p>
+        <p data-lang="en">From an empty document to a composed first page, no detours.</p>
+        <p data-lang="ja">空のドキュメントから、最初のページを組むまで。</p>
+        <span class="man-arr" aria-hidden="true">→</span>
+      </a>
+      <a class="man-card" href="documentation.html#m-prefs-intro">
+        <span class="man-num">02</span>
+        <h3 data-lang="fr">Préférences</h3>
+        <h3 data-lang="en">Preferences</h3>
+        <h3 data-lang="ja">環境設定</h3>
+        <p data-lang="fr">À lire en premier : unités, marges par défaut et sauvegarde automatique se règlent là.</p>
+        <p data-lang="en">Read this one first: units, default margins and autosave are set here.</p>
+        <p data-lang="ja">最初に読むところ。単位、既定のマージン、自動保存はここで設定します。</p>
+        <span class="man-arr" aria-hidden="true">→</span>
+      </a>
+      <a class="man-card" href="documentation.html#m-export">
+        <span class="man-num">03</span>
+        <h3 data-lang="fr">Export &amp; PDF</h3>
+        <h3 data-lang="en">Export &amp; PDF</h3>
+        <h3 data-lang="ja">書き出しとPDF</h3>
+        <p data-lang="fr">Fond perdu, traits de coupe, tons directs, profils ICC : ce que la presse attend de votre fichier.</p>
+        <p data-lang="en">Bleed, crop marks, spot inks, ICC profiles: what the press expects from your file.</p>
+        <p data-lang="ja">塗り足し、トンボ、特色、ICCプロファイル。印刷所が求めるものを。</p>
+        <span class="man-arr" aria-hidden="true">→</span>
+      </a>
+      <a class="man-card" href="documentation.html#fn-tools">
+        <span class="man-num">04</span>
+        <h3 data-lang="fr">Catalogue des fonctions</h3>
+        <h3 data-lang="en">Function catalogue</h3>
+        <h3 data-lang="ja">機能カタログ</h3>
+        <p data-lang="fr">475 fonctions classées par famille, avec leur raccourci. La réponse à « est-ce que ça sait faire… ? »</p>
+        <p data-lang="en">475 functions grouped by family, with their shortcut. The answer to “can it do…?”</p>
+        <p data-lang="ja">475の機能を分類別に、ショートカット付きで。「これ、できる？」の答え。</p>
+        <span class="man-arr" aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    <div class="man-cta">
+      <a class="btn btn-primary" href="documentation.html"><span class="inline-fr">Lire le manuel</span><span class="inline-en">Read the manual</span><span class="inline-ja">マニュアルを読む</span> <span class="arr" aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 🆕 v1.7.472 — LES AUTEURS — SIMON DUPONT-GELLERT &amp; CLÉMENCE BRUNET ══════════════
+     Le logiciel est signé, et la page ne le disait nulle part : les deux noms n'existaient
+     qu'au fond des mentions légales, derrière un clic. Ils sont maintenant sur la page, en
+     clair, avec ce que chacun a fait. Le balisage schema.org les déclare aussi (author),
+     pour que les moteurs et les assistants sachent à qui attribuer l'application. -->
+<section id="auteurs">
+  <div class="ghost" aria-hidden="true">AUTEURS</div>
+  <div class="container">
+    <div class="section-head">
+      <div class="section-label" data-lang="fr">Chapitre 11 · Les auteurs</div>
+      <div class="section-label" data-lang="en">Chapter 11 · The authors</div>
+      <div class="section-label" data-lang="ja">第11章 · 著者</div>
+      <h2 data-lang="fr">Deux auteurs, un atelier.</h2>
+      <h2 data-lang="en">Two authors, one atelier.</h2>
+      <h2 data-lang="ja">ふたりの著者、ひとつの工房。</h2>
+      <p class="lead" data-lang="fr">SuperPrint n'est pas un produit de catalogue : il est écrit, dessiné et composé par deux personnes. Pas d'équipe marketing, pas d'actionnaire, pas de version « entreprise » gardée pour plus tard — le logiciel et cette page sortent du même atelier, et les deux la signent.</p>
+      <p class="lead" data-lang="en">SuperPrint is not a catalogue product: it is written, drawn and composed by two people. No marketing department, no shareholder, no “enterprise edition” held back for later — the software and this page come out of the same atelier, and both carry the same two signatures.</p>
+      <p class="lead" data-lang="ja">SuperPrintはカタログ製品ではありません。二人が書き、描き、組み立てています。マーケティング部門も株主も、「あとで出す上位版」もありません。ソフトウェアもこのページも同じ工房から出て、同じ二人の名前が入っています。</p>
+    </div>
+
+    <div class="auteurs">
+
+      <article class="auteur">
+        <div class="auteur-tete">
+          <span class="cmyk" aria-hidden="true"><i class="c"></i><i class="m"></i><i class="y"></i><i class="k"></i></span>
+          <span class="auteur-num">01</span>
+        </div>
+        <h3 class="auteur-nom">Simon Dupont-Gellert</h3>
+        <span class="auteur-role" data-lang="fr">Fondateur · Direction artistique · Développement</span>
+        <span class="auteur-role" data-lang="en">Founder · Art direction · Development</span>
+        <span class="auteur-role" data-lang="ja">創設者 · アートディレクション · 開発</span>
+        <p data-lang="fr">Designer et directeur créatif. Il conçoit et écrit le logiciel : le moteur typographique, l'habillage du texte autour des formes, les opérations booléennes, l'export PDF prêt pour l'impression — et l'interface qui va avec.</p>
+        <p data-lang="en">Designer and creative director. He designs and writes the software: the typographic engine, text wrap around shapes, boolean operations, print-ready PDF export — and the interface that goes with it.</p>
+        <p data-lang="ja">デザイナーでありクリエイティブディレクター。組版エンジン、図形に沿ったテキストの回り込み、ブール演算、印刷用PDF書き出し、そしてそれらを包むインターフェースまで、設計と実装を担っています。</p>
+        <p data-lang="fr">Sa pratique relie direction artistique, UX/UI et technologies créatives. Il a travaillé pour Samsung, Microsoft, ARTE, la Cinémathèque française, Sony, le château de Versailles, Radio Classique et LVMH.</p>
+        <p data-lang="en">His practice links art direction, UX/UI and creative technology. He has worked for Samsung, Microsoft, ARTE, the Cinémathèque française, Sony, the Palace of Versailles, Radio Classique and LVMH.</p>
+        <p data-lang="ja">アートディレクション、UX/UI、クリエイティブテクノロジーを横断して仕事をしています。Samsung、Microsoft、ARTE、シネマテーク・フランセーズ、Sony、ヴェルサイユ宮殿、Radio Classique、LVMH のプロジェクトを手がけてきました。</p>
+        <div class="auteur-liens">
+          <a href="https://zigmoon.com" target="_blank" rel="noopener">zigmoon.com</a>
+          <a href="https://x.com/zigmoon" target="_blank" rel="noopener">@zigmoon</a>
+        </div>
+      </article>
+
+      <article class="auteur">
+        <div class="auteur-tete">
+          <span class="cmyk" aria-hidden="true"><i class="c"></i><i class="m"></i><i class="y"></i><i class="k"></i></span>
+          <span class="auteur-num">02</span>
+        </div>
+        <h3 class="auteur-nom">Clémence Brunet</h3>
+        <span class="auteur-role" data-lang="fr">Fondatrice · Design graphique</span>
+        <span class="auteur-role" data-lang="en">Founder · Graphic design</span>
+        <span class="auteur-role" data-lang="ja">創設者 · グラフィックデザイン</span>
+        <p data-lang="fr">Designer graphique, spécialisée en typographie, identité visuelle et direction artistique. Elle donne à SuperPrint son identité graphique et sa précision éditoriale : le dessin des gabarits, la composition des pages, la tenue du détail typographique.</p>
+        <p data-lang="en">Graphic designer, specialising in typography, visual identity and art direction. She gives SuperPrint its graphic identity and its editorial precision: how the templates are drawn, how the pages are composed, how the typographic detail is held.</p>
+        <p data-lang="ja">タイポグラフィ、ビジュアルアイデンティティ、アートディレクションを専門とするグラフィックデザイナー。SuperPrintのグラフィックアイデンティティと編集的な精度 — テンプレートの設計、ページの組み方、文字組みの細部 — を担っています。</p>
+        <p data-lang="fr">Sa pratique relie la culture imprimée, la composition et les interfaces numériques : des systèmes clairs, expressifs et faits pour durer.</p>
+        <p data-lang="en">Her practice links printed culture, composition and digital interfaces: clear, expressive systems built to last.</p>
+        <p data-lang="ja">印刷文化、組版、デジタルインターフェースをつなぐ仕事。明快で、表現力があり、長く使える仕組みをつくります。</p>
+        <div class="auteur-liens">
+          <a href="https://clemencebrunet.fr" target="_blank" rel="noopener">clemencebrunet.fr</a>
+          <a href="https://x.com/2points13" target="_blank" rel="noopener">@2points13</a>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="auteurs-note">
+      <p data-lang="fr">SuperPrint est publié par <strong>Zigmoon</strong>, le studio de Simon Dupont-Gellert, en synergie avec <strong>2.13</strong> — le collectif d'indépendants qu'ils ont fondé tous les deux.</p>
+      <p data-lang="en">SuperPrint is published by <strong>Zigmoon</strong>, Simon Dupont-Gellert's studio, in synergy with <strong>2.13</strong> — the collective of senior freelances the two of them founded together.</p>
+      <p data-lang="ja">SuperPrint は Simon Dupont-Gellert のスタジオ <strong>Zigmoon</strong> から、<strong>2.13</strong> との協働で公開されています。2.13 は二人が共同で立ち上げたシニア・フリーランスの集まりです。</p>
+      <a class="btn btn-secondary" href="https://2points13.fr/agency.html" target="_blank" rel="noopener"><span class="inline-fr">Découvrir 2.13</span><span class="inline-en">Discover 2.13</span><span class="inline-ja">2.13 を見る</span> <span class="arr" aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
 <!-- ══════════════ FINAL CTA — LA PRESSE ══════════════ -->
 <section id="cta-final">
   <div class="ghost" aria-hidden="true">FEUILLET</div>
@@ -3041,9 +3429,9 @@ input, select, textarea, label { cursor: pointer; }
     <p class="lead" data-lang="en">SuperPrint opens in seconds. Your documents save themselves, on your device. No sign-up, no subscription.</p>
     <p class="lead" data-lang="ja">SuperPrintは数秒で開きます。ドキュメントは端末に自動保存。登録もサブスクも不要です。</p>
     <div class="cta-btns">
-      <a href="index.html" class="btn btn-black" data-lang="fr">Lancer SuperPrint <span class="arr" aria-hidden="true">→</span></a>
-      <a href="index.html" class="btn btn-black" data-lang="en">Open SuperPrint <span class="arr" aria-hidden="true">→</span></a>
-      <a href="index.html" class="btn btn-black" data-lang="ja">SuperPrintを開く <span class="arr" aria-hidden="true">→</span></a>
+      <a href="app/index.html" class="btn btn-black" data-lang="fr">Lancer SuperPrint <span class="arr" aria-hidden="true">→</span></a>
+      <a href="app/index.html" class="btn btn-black" data-lang="en">Open SuperPrint <span class="arr" aria-hidden="true">→</span></a>
+      <a href="app/index.html" class="btn btn-black" data-lang="ja">SuperPrintを開く <span class="arr" aria-hidden="true">→</span></a>
       <a href="sp213-studio.html" class="btn btn-outline-black" data-lang="fr">Ouvrir le studio IA</a>
       <a href="sp213-studio.html" class="btn btn-outline-black" data-lang="en">Open the AI studio</a>
       <a href="sp213-studio.html" class="btn btn-outline-black" data-lang="ja">AIスタジオを開く</a>
@@ -3064,10 +3452,13 @@ input, select, textarea, label { cursor: pointer; }
 <footer>
   <div class="container">
     <div class="foot-brand">
-      <a class="foot-logo" href="https://zigmoon.com">SUPERPRINT</a>
+      <a class="foot-logo" href="index.html">SUPERPRINT</a>
       <p class="inline-fr">Un atelier de mise en page professionnelle, né pour la presse et l'édition — dans votre navigateur.</p>
       <p class="inline-en">A professional layout atelier, born for print and publishing — in your browser.</p>
       <p class="inline-ja">印刷と出版のために生まれたプロのレイアウト工房 — ブラウザの中で。</p>
+      <!-- 🆕 v1.7.472 — les deux auteurs, dans le colophon : ils ne coûtent pas une ligne de
+           plus et ils disent qui publie. Le copyright les nomme aussi, plus bas. -->
+      <p class="foot-auteurs">Simon Dupont-Gellert &amp; Clémence Brunet</p>
     </div>
     <div class="foot-cols">
       <div>
@@ -3082,6 +3473,9 @@ input, select, textarea, label { cursor: pointer; }
           <a href="documentation.html" data-lang="fr">Manuel</a>
           <a href="documentation.html" data-lang="en">Manual</a>
           <a href="documentation.html" data-lang="ja">マニュアル</a>
+          <a href="#auteurs" data-lang="fr">Les auteurs</a>
+          <a href="#auteurs" data-lang="en">The authors</a>
+          <a href="#auteurs" data-lang="ja">著者</a>
         </div>
       </div>
       <div>
@@ -3090,38 +3484,31 @@ input, select, textarea, label { cursor: pointer; }
         <h4 data-lang="ja">プロジェクト</h4>
         <div class="foot-links">
           <a href="https://zigmoon.com">zigmoon.com</a>
+          <a href="help-us.html" data-lang="fr">Nous aider</a>
+          <a href="help-us.html" data-lang="en">Help us</a>
+          <a href="help-us.html" data-lang="ja">支援する</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="fr">Journal des versions</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="en">Changelog</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="ja">変更履歴</a>
           <a href="https://x.com/SUPER_PRINT_app" rel="noopener noreferrer" target="_blank">@SUPER_PRINT_app</a>
-          <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
-          <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
-          <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="ja">法的情報</a>
-          <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="fr">Confidentialité</a>
-          <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="en">Privacy</a>
-          <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="ja">プライバシー</a>
-        </div>
-      </div>
-      <div>
-        <h4 data-lang="fr">Langues</h4>
-        <h4 data-lang="en">Languages</h4>
-        <h4 data-lang="ja">言語</h4>
-        <div class="foot-links">
-          <a href="#" onclick="setLang('en');return false;">English</a>
-          <a href="#" onclick="setLang('fr');return false;">Français</a>
-          <a href="#" onclick="setLang('ja');return false;">日本語</a>
         </div>
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Zigmoon — SuperPrint v1.7.471</span>
-      <span class="inline-fr">Logiciel de PAO en ligne · mise en page dans le navigateur</span>
-      <span class="inline-en">Online DTP software · browser page layout</span>
-      <span class="inline-ja">オンラインDTPソフトウェア · ブラウザのページレイアウト</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.472</span>
+      <div class="foot-legal">
+        <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
+        <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
+        <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="ja">法的情報</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="fr">Confidentialité</a>
+        <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="en">Privacy</a>
+        <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="ja">プライバシー</a>
+      </div>
+      <span class="foot-note" data-lang="fr">SuperPrint est un projet indépendant de Zigmoon. Les marques citées appartiennent à leurs détenteurs.</span>
+      <span class="foot-note" data-lang="en">SuperPrint is an independent project by Zigmoon. All trademarks belong to their owners.</span>
+      <span class="foot-note" data-lang="ja">SuperPrintはZigmoonの独立プロジェクトです。商標はすべて各権利者に帰属します。</span>
     </div>
-    <div class="foot-note" data-lang="fr">SuperPrint est un projet indépendant de Zigmoon. Les marques citées appartiennent à leurs détenteurs.</div>
-    <div class="foot-note" data-lang="en">SuperPrint is an independent project by Zigmoon. All trademarks belong to their owners.</div>
-    <div class="foot-note" data-lang="ja">SuperPrintはZigmoonの独立プロジェクトです。商標はすべて各権利者に帰属します。</div>
   </div>
 </footer>
 
@@ -3203,10 +3590,49 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     menu.classList.remove('open');
     burger.setAttribute('aria-expanded', 'false');
   }
+  /* 🆕 v1.7.472 — LE MENU SE POSE SOUS LA BARRE COLLANTE, ET PAS SOUS UNE HAUTEUR FIXE.
+     Le header mobile n’est pas une bande unique : bandeau quadri + colophon (logo) + nav
+     collante. Un « top: 66px » figé recouvrait donc le colophon et laissait la fin du menu
+     sortir de l’écran. On mesure le bas de la nav À L’OUVERTURE et on borne la hauteur au
+     reste visible ; on refait la mesure au redimensionnement et à la rotation. */
+  function spPlacerMenu() {
+    var barre = document.querySelector('nav');
+    var bas = barre ? Math.round(barre.getBoundingClientRect().bottom) : 0;
+    if (!(bas > 0) || bas > window.innerHeight - 90) bas = 66;
+    /* 🆕 v1.7.472 — menu PLEIN ÉCRAN : il occupe tout le viewport et c’est son contenu qui
+       démarre sous la barre (padding), la barre restant au-dessus pour fermer. */
+    menu.style.paddingTop = (bas + 8) + 'px';
+    menu.style.maxHeight = '';
+    menu.style.top = '';
+  }
+  /* 🆕 v1.7.472 — LA BARRE EST « RÉTRACTÉE » QUAND ELLE EST COLLÉE EN HAUT.
+     Le logotype n’a pas le même centrage optique au repos et une fois collé : on pose une
+     classe quand le défilement atteint le haut de la nav (mesuré, pas une valeur en dur). */
+  (function () {
+    var barre = document.querySelector('nav');
+    if (!barre) return;
+    function majEtat() {
+      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      var haut = barre.getBoundingClientRect().top + y;   /* position naturelle dans la page */
+      var colle = y >= (haut - 1);
+      barre.classList.toggle('is-stuck', colle);
+      if (menu.classList.contains('open')) spPlacerMenu();
+    }
+    window.addEventListener('scroll', majEtat, { passive: true });
+    window.addEventListener('resize', majEtat);
+    majEtat();
+  })();
+  window.addEventListener('resize', function () { if (menu.classList.contains('open')) spPlacerMenu(); });
+  window.addEventListener('orientationchange', function () { if (menu.classList.contains('open')) spPlacerMenu(); });
   burger.addEventListener('click', function () {
     var open = menu.classList.toggle('open');
     burger.classList.toggle('open', open);
     burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) spPlacerMenu();          /* mesure au moment où l’on ouvre */
+  });
+  /* Un ancrage du menu referme et remet la barre en haut, prête pour la prochaine ouverture. */
+  menu.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', function () { menu.style.paddingTop = ''; menu.style.top = ''; menu.style.maxHeight = ''; });
   });
   menu.querySelectorAll('a').forEach(function (a) {
     a.addEventListener('click', close);
@@ -3276,6 +3702,36 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     try { document.execCommand('copy'); } catch (e) {}
     ta.remove(); done();
   }
+})();
+</script>
+
+
+<!-- ══════════════ v1.7.472 — « LES OUTILS, UN PAR UN » : QUATRE AU DÉPART, LA SUITE SUR DEMANDE ══════════════
+     Les neuf dernières cartes sont dans le document depuis l'origine (moteurs de recherche, Ctrl+F) :
+     on ne fait que les afficher. Le compteur est déduit du nombre réel de cartes repliées. -->
+<script>
+(function () {
+  var bouton = document.getElementById('toolsMore');
+  var grille = document.getElementById('tgridOutils');
+  if (!bouton || !grille) return;
+  var pliees = Array.prototype.slice.call(grille.querySelectorAll('.tcard.is-folded'));
+  var compteur = bouton.querySelector('.tm-count');
+  if (!pliees.length) { bouton.parentNode.style.display = 'none'; return; }  /* rien à déplier : pas de bouton */
+  if (compteur) compteur.textContent = '+' + pliees.length;
+  bouton.addEventListener('click', function () {
+    var ouvert = grille.classList.toggle('is-open');
+    bouton.classList.toggle('is-open', ouvert);
+    bouton.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+    if (!ouvert) {
+      /* Replié, les neuf cartes disparaissent AU-DESSUS du bouton : la page raccourcit d'un coup
+         et la vue reste dans le vide. On la repose sur le titre de la galerie, sous la barre. */
+      var cible = document.querySelector('.tools-head');
+      if (!cible) return;
+      var barre = document.querySelector('nav');
+      var h = barre ? Math.round(barre.getBoundingClientRect().height) : 0;
+      window.scrollTo({ top: window.pageYOffset + cible.getBoundingClientRect().top - h - 16, behavior: 'smooth' });
+    }
+  });
 })();
 </script>
 
@@ -3396,6 +3852,66 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
       o.classList.remove('open');
       document.body.style.overflow = '';
     };
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
     /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
