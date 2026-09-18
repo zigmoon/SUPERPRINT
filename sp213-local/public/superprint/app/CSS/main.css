@@ -5063,7 +5063,30 @@ input[type=number] {
 .sidebar.collapsed .number-spinner-btn {
     display: none !important;
 }
+/* 🆕 v1.7.461 — FILET DE SÉPARATION DE LA BARRE GAUCHE RÉTRACTÉE.
+   Référence : `.rightbar.collapsed .rightbar-divider` (barre DROITE),
+   mesurée à 0,67 px de haut, 55,33 px de large, bordure 1 px #e0e0e0.
+   Le filet gauche porte le même style en ligne (bordure haute 1 px #e0e0e0,
+   marges 12 px) ; il est affiché en rétracté et suivi en thème sombre.
+   Aucun effet sur la barre déployée (règle limitée à `.collapsed`). */
+.sidebar.collapsed .sidebar-divider {
+    display: block !important;
+}
+.theme-dark .sidebar-divider {
+    border-top: 1px solid #333 !important;
+}
 .sidebar.collapsed .section > div:not([class]) {
+    display: none !important;
+}
+/* 🎨 v1.7.461 — SAUF les filets de séparation : la règle ci-dessus, écrite
+   pour les boutons ▲▼ des compteurs, masquait aussi le filet anonyme de la
+   barre GAUCHE (`<div style="border-top: 1px solid #e0e0e0; margin: 12px 0">`),
+   qui a disparu de la barre rétractée (retour utilisateur). Mesure avant :
+   `display: none` sur la barre gauche, `display: block` / 0,67 px sur la
+   `.rightbar-divider` de la barre droite. On exclut donc tout élément qui
+   porte une bordure haute en ligne — et le filet gauche a maintenant une
+   classe (voir `.sidebar-divider` juste après). */
+.sidebar.collapsed .section > div:not([class]):not([style*="border-top"]) {
     display: none !important;
 }
 
