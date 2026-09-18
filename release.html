@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.483 — sober sliders for the variable-font panel, a readable 320 px detached widget, and a local package that no longer calls a CDN (Excel library vendored, 68 local links audited).">
-<meta name="keywords" content="SUPER PRINT 1.7.483, SuperPrint, browser DTP editor, variable font, panel sliders, detached widget, local package, npx installer, offline, Excel library, SP213 Studio">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.484 — the local package launcher no longer offers to install itself: the “Install locally” box, the command, the WIN / MACOS / LINUX tabs and the copy button are removed.">
+<meta name="keywords" content="SUPER PRINT 1.7.484, SuperPrint, browser DTP editor, local package, npx installer, launcher, offline, SP213 Studio">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.483 — sober sliders for the variable-font panel, a readable 320 px detached widget, and a local package that no longer calls a CDN (Excel library vendored, 68 local links audited).">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.484 — the local package launcher no longer offers to install itself: the “Install locally” box, the command, the WIN / MACOS / LINUX tabs and the copy button are removed.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SUPER PRINT v1.7.483 — sober sliders, a readable detached widget, and a local package that no longer calls a CDN.">
+<meta name="twitter:description" content="SUPER PRINT v1.7.484 — the local package launcher no longer offers to install itself.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -706,6 +706,29 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.484 — le lanceur du paquet local ne propose plus de s'installer (bloc « Install locally » retire) ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-484">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.484</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 18 septembre 2026" data-i18n-en="Released September 18, 2026" data-i18n-jp="2026年9月18日公開">Released September 18, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le <strong>lanceur du paquet local</strong> (la page que <code>npx superprint</code> ouvre) proposait encore, sous ses cinq destinations, une boîte <strong>« Installer en local »</strong> avec la commande, les onglets WIN / MACOS / LINUX et un bouton copier. Elle n'a plus de raison d'être une fois le paquet installé : elle est <strong>retirée</strong>." data-i18n-en-html="The <strong>local package launcher</strong> (the page <code>npx superprint</code> opens) still offered, under its five destinations, an <strong>“Install locally”</strong> box with the command, the WIN / MACOS / LINUX tabs and a copy button. Once the package is installed it has no reason to be there any more: it is <strong>removed</strong>." data-i18n-jp-html="<strong>ローカルパッケージのランチャー</strong>（<code>npx superprint</code> が開くページ）は、5つの行き先の下に<strong>「ローカルにインストール」</strong>のボックス（コマンド、WIN / MACOS / LINUX タブ、コピーボタン）をまだ表示していました。パッケージを入れたあとに意味はないので<strong>削除しました</strong>。">The local package launcher no longer shows the “Install locally” box (command, WIN / MACOS / LINUX tabs, copy button): once installed, it has no reason to be there.</p>
+
+ <h3 data-i18n-fr-html="🧹 Le lanceur du paquet ne propose plus de s'installer <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🧹 The package launcher no longer offers to install itself <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🧹 パッケージのランチャーは自己インストールを提案しません <span class=&quot;badge badge-fix&quot;>修正</span>">🧹 The package launcher no longer offers to install itself <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Sont donc supprimés du lanceur du paquet : le séparateur <strong>« or install locally »</strong>, la boîte <strong>« Install locally »</strong> et tout ce qu'elle contient — la commande <code>npx.cmd superprint</code>, les onglets <strong>WIN / MACOS / LINUX</strong> et le bouton de copie. Les cinq destinations (éditeur, Studio IA, SuperTyPo, documentation, API) restent, inchangées." data-i18n-en-html="Removed from the package launcher: the <strong>“or install locally”</strong> separator, the <strong>“Install locally”</strong> box and everything inside it — the <code>npx.cmd superprint</code> command, the <strong>WIN / MACOS / LINUX</strong> tabs and the copy button. The five destinations (editor, AI studio, SuperTyPo, documentation, API) stay, unchanged." data-i18n-jp-html="パッケージのランチャーから削除：<strong>「or install locally」</strong>の区切り、<strong>「Install locally」</strong>のボックスとその中身（<code>npx.cmd superprint</code>、<strong>WIN / MACOS / LINUX</strong> タブ、コピーボタン）。5つの行き先（エディタ・AI スタジオ・SuperTyPo・ドキュメント・API）はそのままです。">Removed: the “or install locally” separator, the “Install locally” box, the command, the OS tabs and the copy button. The five destinations stay.</li>
+  <li data-i18n-fr-html="Le retrait est fait <strong>à la génération du lanceur</strong>, pas à la main : la page restera sans cette boîte à chaque reconstruction du paquet. La page du <strong>site</strong> (<code>install.html</code>) la garde, elle : c'est là qu'elle a du sens, puisqu'on y arrive sans avoir rien installé." data-i18n-en-html="The removal happens <strong>when the launcher is generated</strong>, not by hand: the page will stay without that box at every rebuild of the package. The <strong>site</strong> page (<code>install.html</code>) keeps it: that is where it makes sense, since one reaches it without having installed anything." data-i18n-jp-html="削除は<strong>ランチャー生成時</strong>に行われ、手作業ではありません。パッケージを再生成しても、このボックスは戻りません。<strong>サイト</strong>のページ（<code>install.html</code>）はそのまま残します — 何もインストールしていない状態で開くページなので、そこには意味があります。">The removal is done at generation time, so the box never comes back; the site page keeps it, where it makes sense.</li>
+  <li data-i18n-fr-html="<strong>Piège mesuré :</strong> la page ne se contentait pas d'afficher la boîte, son script s'appuyait dessus. <code>applyOS()</code> cherchait l'onglet de l'OS et faisait immédiatement <code>tab.classList.add('active')</code> — plus de boîte, plus d'onglet, donc une erreur qui <strong>tuait la suite du script de la page</strong>. Une sortie anticipée a été posée, et la page a été éprouvée au navigateur : <strong>0 erreur</strong>, les 5 destinations répondent, la bascule de langue fonctionne." data-i18n-en-html="<strong>Measured trap:</strong> the page did not merely display that box, its script relied on it. <code>applyOS()</code> looked up the OS tab and immediately ran <code>tab.classList.add('active')</code> — no box, no tab, so an error that <strong>killed the rest of the page script</strong>. An early return was added, and the page was exercised in the browser: <strong>0 error</strong>, the 5 destinations answer, the language switch works." data-i18n-jp-html="<strong>実測した落とし穴：</strong>ページはボックスを表示するだけでなく、スクリプトがそれに依存していました。<code>applyOS()</code> は OS タブを探し、すぐに <code>tab.classList.add('active')</code> を実行します — ボックスがなければタブも無く、<strong>ページのスクリプトの残りが停止</strong>しました。早期リターンを追加し、ブラウザで検証：<strong>エラー 0</strong>、5つの行き先は応答、言語切り替えも動作。">Measured trap: <code>applyOS()</code> relied on the tab and threw, killing the rest of the page script; an early return was added and the page is now error-free.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.484 — paquet local. Contrôles : parité web ↔ copie locale 22/22, 13 marqueurs de version cohérents, aucun reste du bloc d'installation dans le HTML, page ouverte dans le navigateur (0 erreur, 5 destinations en 200, bascule de langue), générateur du lanceur rendu idempotent, zip reconstruit et vérifié fichier par fichier." data-i18n-en="SuperPrint 1.7.484 — local package. Checks: web ↔ local copy parity 22/22, 13 version markers consistent, no leftover of the installation block in the HTML, page opened in the browser (0 error, 5 destinations at 200, language switch), launcher generator made repeatable, zip rebuilt and verified file by file." data-i18n-jp="SuperPrint 1.7.484 — ローカルパッケージ。検証：Web ↔ ローカルコピーの一致 22/22、13 のバージョン指標は整合、HTML にインストールブロックの残りなし、ブラウザでページを開いて確認（エラー 0、5つの行き先は 200、言語切り替え）、ランチャー生成は繰り返し可能、zip は再生成してファイル単位で検証済み。">SuperPrint 1.7.484 — local package. Checks: parity 22/22, 13 markers consistent, no leftover of the install block, page opened in the browser (0 error, 5 destinations at 200), zip rebuilt and verified.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Ouvrir SuperPrint" data-i18n-en="→ Open SuperPrint" data-i18n-jp="→ SuperPrint を開く">→ Open SuperPrint</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.483 — tirettes sobres du panneau Police variable, widget détaché élargi, et paquet local sans dépendance à un CDN ===== -->
 

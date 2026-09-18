@@ -38,7 +38,7 @@
   "applicationSubCategory": "Desktop publishing",
   "operatingSystem": "Web browser (Chrome, Edge, Firefox, Safari)",
   "browserRequirements": "Requires JavaScript. WebGPU optional (local AI).",
-  "softwareVersion": "1.7.483",
+  "softwareVersion": "1.7.484",
   "releaseNotes": "Alpha version — features may change and defects may remain.",
   "inLanguage": ["en", "fr", "ja"],
   "isAccessibleForFree": true,
@@ -612,33 +612,6 @@
       </a>
     </div>
 
-    <div class="or-sep" data-i18n="orLocal">or install locally</div>
-
-    <div class="install-section">
-      <div class="is-title">
-        <div class="is-title-line">
-          <svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
-          <span data-i18n="installTitle">Install locally</span>
-        </div>
-      </div>
-      <!-- Les onglets d'OS sont DANS la barre, a gauche du bouton copier. -->
-      <div class="cmd-block">
-        <span id="osIcon" class="cmd-os-ic" title="Detected automatically" data-i18n-title="osAuto">
-          <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><rect x="0" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="0" width="10.5" height="10.5" fill="currentColor"/><rect x="0" y="13.5" width="10.5" height="10.5" fill="currentColor"/><rect x="13.5" y="13.5" width="10.5" height="10.5" fill="currentColor"/></svg>
-        </span>
-        <code id="installCmd">npx.cmd superprint</code>
-        <div class="cmd-tabs">
-          <button class="cmd-tab active" data-os="win">WIN</button>
-          <button class="cmd-tab" data-os="mac">MACOS</button>
-          <button class="cmd-tab" data-os="linux">LINUX</button>
-        </div>
-        <button class="btn btn-copy" data-copy="installCmd" title="Copy the command" aria-label="Copy the command" data-i18n-title="copyCmd" data-i18n-aria="copyCmd">
-          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        </button>
-      </div>
-      <!-- Hint contextuel : masque par defaut, revele au survol de la barre. -->
-      <span class="cmd-hint" id="installHint">PowerShell · npx.cmd contourne le blocage de scripts (ExecutionPolicy)</span>
-    </div>
   </div>
 </div>
 
@@ -984,6 +957,7 @@
   function applyOS(os) {
     var tab = document.querySelector('.cmd-tab[data-os="' + os + '"]');
     if (!tab) tab = document.querySelector('.cmd-tab[data-os="win"]');
+    if (!tab) return;   // v1.7.484 : bloc d'installation absent du paquet local
     document.querySelectorAll('.cmd-tab').forEach(function (t) { t.classList.remove('active'); });
     tab.classList.add('active');
     var key = tab.getAttribute('data-os');

@@ -9,6 +9,28 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.484] — 2026-09-18
+
+_The local package launcher no longer offers to install itself_
+
+### Changed
+- **The package launcher loses its “Install locally” box.** The page `npx superprint` opens still showed, under its five destinations, an “or install locally” separator, an “Install locally” panel, the `npx.cmd superprint` command, WIN / MACOS / LINUX tabs and a copy button. Inside the package itself that box is pointless — the user asked for it to go (“it does not make much sense to offer it again”). The site page (`superprint/install.html`) keeps it: that is where it makes sense, since one reaches it without having installed anything.
+- **The removal happens at generation time**, in `_dev/scripts/_mk_index_paquet_480.cjs` (1 942 characters dropped from the HTML, plus the guard below), so the box cannot come back at the next rebuild of the package. The launcher keeps the same five destinations and the same CSS/JS: only the dead markup is gone.
+
+### Fixed
+- **The launcher script died without its installation block.** `applyOS()` looked up `.cmd-tab[data-os="win"]` and immediately called `tab.classList.add('active')`: with the block removed, `querySelector` returned `null` and the TypeError **killed the rest of the page script** (copy handlers, language panel, legal pop-ins). An early return `if (!tab) return;` was added.
+
+### Verified
+| Check | Result |
+|---|---|
+| Launcher HTML | no `.or-sep`, no `.install-section`, no `#installCmd`, no `#osIcon`, no `.cmd-tab`, no “npx” text (measured on the served page) |
+| Destinations | editor, AI studio, SuperTyPo, documentation, API — **5 links, all 200** |
+| Page script | **0 console error, 0 pageerror**; language switch EN → FR → EN works |
+| Generator | removal + guard anchored and counted; 0 failed control; tag balance `<div>/<span>/<a>` verified |
+| Parity web ↔ mirror | **22 / 22 identical**, 0 different, 0 missing |
+| `node --check` · markers | clean · 13 version markers consistent (1.7.484) |
+| Package | `sp213-local.zip` rebuilt and verified file by file |
+
 ## [1.7.483] — 2026-09-18
 
 _Sober sliders for the variable-font panel, a readable detached widget, and a local package that works without any CDN_
