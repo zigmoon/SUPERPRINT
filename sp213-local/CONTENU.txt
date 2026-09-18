@@ -9,15 +9,20 @@ OU EST QUOI
 index.html ........................ LE LANCEUR (c'est la page du site
                                     install.html, adaptee au paquet).
                                     Ouvrir le serveur local affiche cette page.
-studio.html ....................... Studio IA HORS LIGNE (WebLLM) : l'IA tourne
-                                    sur votre machine, aucune cle necessaire.
 package.json, package-lock.json ... dependances du paquet (npm install).
-src/ .............................. code du Studio IA hors ligne (Vite).
 vite.config.js .................... configuration du serveur local.
-scripts/ .......................... aide au demarrage.
+scripts/ .......................... aide au demarrage (npm run dev).
+src/ .............................. ancien moteur du studio local, debranche
+                                    depuis la 1.7.480 (le studio de l'app le
+                                    remplace) - conserve pour l'historique.
 public/ ........................... racine servie par le serveur local :
   public/superprint/app/index.html ....... L'APPLICATION SuperPrint (PAO)
-  public/superprint/sp213-studio.html .... Studio IA de l'application
+  public/superprint/sp213-studio.html .... LE STUDIO IA. Il tourne EN LOCAL :
+                                           les modeles travaillent sur votre
+                                           machine (WebLLM, sans cle, sans
+                                           reseau une fois le modele en cache),
+                                           ou avec une cle Groq si vous
+                                           preferez le cloud.
   public/superprint/supertypo/index.html . SUPERTYPO (editeur de police)
   public/superprint/documentation.html ... documentation
   public/superprint/api.html ............. API
@@ -28,11 +33,12 @@ public/ ........................... racine servie par le serveur local :
 
 ADRESSES UNE FOIS LE SERVEUR LOCAL LANCE
 ----------------------------------------
-  http://localhost:5173/ ............................. le lanceur
-  http://localhost:5173/superprint/app/index.html .... l'application
-  http://localhost:5173/studio.html .................. Studio IA hors ligne
-  http://localhost:5173/superprint/sp213-studio.html . Studio IA de l'app
+  http://localhost:5173/ ............................... le lanceur
+  http://localhost:5173/superprint/app/index.html ...... l'application
+  http://localhost:5173/superprint/sp213-studio.html ... le studio IA (local)
   http://localhost:5173/superprint/supertypo/index.html  SuperTyPo
+  http://localhost:5173/superprint/documentation.html .. documentation
+  http://localhost:5173/superprint/api.html ............ API
 
 POURQUOI public/ ?
 ------------------

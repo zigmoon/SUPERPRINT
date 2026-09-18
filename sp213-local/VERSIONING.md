@@ -65,14 +65,15 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
 - `sp213-local/package.json` + `package-lock.json` — `"version": "X.Y.Z"`
 - `sp213-local/index.html` — 🆕 v1.7.480 : **le lanceur du paquet** (la page que Vite
   sert à `http://127.0.0.1:5173`), copie adaptée de `superprint/install.html` :
-  liens préfixés par `superprint/` (= `public/` servi à la racine par Vite) +
-  une entrée « Studio IA hors ligne » vers `studio.html`. Seul marqueur : le
-  JSON-LD `softwareVersion`. ⚠️ **NE PAS l'éditer à la main** : le régénérer avec
-  `node _dev/scripts/_mk_index_paquet_479.cjs --apply` (dry-run par défaut), qui
-  repart d'`install.html` — sinon la page reprend du retard sur le site.
-- `sp213-local/studio.html` — 🆕 v1.7.480 : l'**ancienne page racine** (pré-accueil +
-  Studio IA hors ligne WebLLM), conservée et rendue atteignable depuis le lanceur.
-  Aucun numéro de version affiché → ne rien y bumper.
+  **10 liens préfixés par `superprint/`** (= `public/` servi à la racine par Vite),
+  **rien d'autre**. Seul marqueur de version : le JSON-LD `softwareVersion`.
+  ⚠️ **NE PAS l'éditer à la main** : le régénérer avec
+  `node _dev/scripts/_mk_index_paquet_480.cjs --apply` (dry-run par défaut), qui repart
+  d'`install.html` — sinon la page reprend du retard sur le site.
+- ⚠️ **PLUS de `sp213-local/studio.html`** (retiré en 1.7.480) : il faisait doublon avec le
+  studio de l'application, `superprint/sp213-studio.html`, qui tourne déjà en local
+  (modèles WebLLM hors ligne) ou avec une clé Groq. Idem côté build :
+  `vite.config.js` ne déclare plus que `index.html`.
 - `sp213-local.zip` — régénéré après chaque bump (`node tools/make-release-zip.mjs`)
 - ⚠️ **NE PAS** bumper `main.js` : ses occurrences de version sont TOUTES des commentaires historiques
   (à la seule exception des commentaires 🆕/🩹 du code **nouveau**, datés à la main à la version qui les livre).
@@ -108,7 +109,7 @@ Ex. si le badge affichait `1.7.271`, bump vers `1.7.368` minimum.
 5. **Cohérence** : `node _dev/scripts/_verif_coherence.cjs` → marqueurs vivants cohérents, 0 résidu.
 6. **Build local** : `npm run build` dans `sp213-local` (régénère `dist/`).
 7. **Page d'entrée du paquet** (si `install.html` a bougé) :
-   `node _dev/scripts/_mk_index_paquet_479.cjs --apply` → réécrit `sp213-local/index.html`.
+   `node _dev/scripts/_mk_index_paquet_480.cjs --apply` → réécrit `sp213-local/index.html`.
 8. **Zip** : `node tools/make-release-zip.mjs` depuis la racine du dépôt → `superprint/sp213-local.zip`
    (`--verif` pour contrôler sans recréer).
 8. **Billet** : `release.html` (racine du dépôt, **gitignoré**, déployé séparément sur

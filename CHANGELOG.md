@@ -11,17 +11,19 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ## [1.7.480] — 2026-09-18
 
-_Tab stops and columns reach the PDF, the local package opens on its launcher, and the offline AI studio is repaired_
+_Tab stops and columns reach the PDF, and the local package opens on its launcher with a single AI-studio entry_
 
 ### Fixed
 - **Tab stops and columns were ignored by the PDF export.** Both export chains drew a text line in one single run, so the tabs only existed in the editor and the preview. Measured on a real PDF: a column announced at 130 pt came out at 43.8 pt — the width of the first word. The pen advance now comes from the same function as the editor (`spTabAvance`), and the measured values match everywhere: 0 / 130 / 220.4 / 313.3 pt for stops left 130, right 240 (the text really aligns on 240) and decimal 330.
 - **The jsPDF chain lost the column offset on justified lines.** A justified line started at 0 instead of the block left edge, so every column fell back on the block margin. The loop now starts at `xStart` (the pdf-lib chain, used by default, was already correct).
-- **The offline studio could not be compiled.** `sp213-local/src/main.js` declared `const effEl` and then assigned to it: esbuild rejected the file (“Cannot assign to `effEl` because it is a constant”), so Vite's dependency optimisation failed at startup and `npm run build` was broken. The real text-height measurement (true font metrics) was therefore never obtained — the error was swallowed by the surrounding `try/catch` and the studio fell back on a rough estimate. Fixed (`let`).
+- **The legacy local-studio engine could not be compiled.** `sp213-local/src/main.js` declared `const effEl` and then assigned to it: esbuild rejected the file (“Cannot assign to `effEl` because it is a constant”), so Vite's dependency optimisation failed at startup and `npm run build` was broken. Fixed (`let`). The engine was no longer used — the application's studio does the job — and its page has been removed (see *Removed*).
 
 ### Added
-- **The local package now opens on its launcher.** The home page of the package installed by `npx superprint` was the old pre-home, with no version number and always behind: it is now the website launcher (`install.html`), adapted to the package, with six rows.
-- **Offline AI studio row and `studio.html`.** The old root page is kept, repaired, as `studio.html` — the AI studio that runs the model on your machine (WebLLM), no key needed — reachable from a dedicated “Offline AI studio” row. Subtitles are translated (FR/EN/JA).
-- **`npm run build` now emits both pages.** `studio.html` is declared in `vite.config.js` (`build.rollupOptions.input`); before, the build produced only `dist/index.html` and left the studio out of the output folder.
+- **The local package now opens on its launcher.** The home page of the package installed by `npx superprint` was the old pre-home, with no version number and always behind: it is now the website launcher (`install.html`), adapted to the package with ten rewritten links and nothing else. Five rows: application, AI studio, SuperTyPo, documentation, API.
+- **A map of the package**: `CONTENU.txt` at the root of the zip says where the launcher, the application, the studio and SuperTyPo live, and lists the local addresses once the server is running.
+
+### Removed
+- **`sp213-local/studio.html`,** a duplicate of the application's studio: the one bundled with the app (`public/superprint/sp213-studio.html`) already runs locally — models executed on your machine through WebLLM (no key, no network once the model is cached) — or with a Groq key for the cloud. Its build entry went with it: `vite.config.js` now declares `index.html` only.
 
 ### Verified
 | Check | Result |
@@ -30,8 +32,9 @@ _Tab stops and columns reach the PDF, the local package opens on its launcher, a
 | Tab stops in the PDF (jsPDF hybrid) | same four values, plus the justified-line offset fixed |
 | Known limit (documented) | the jsPDF chain re-wraps its own lines (hyphenation) → column 2 of a 2-column block can stay empty |
 | `.sp` / `.json` round-trips | tab stops, columns and margins preserved, geometry identical |
-| Package | 922 entries, 58 MB, no `node_modules` / `dist` / `*.log`, every file compared byte for byte |
-| Installer test | zip extracted into a clean folder then served by Vite: launcher, offline studio and app (badge v1.7.480) load with **0 console errors** |
+| Package audit | every file of the zip byte-identical to the working folder; the site copy embedded in the package identical to `superprint/` |
+| Installer test | zip extracted into a clean folder then served by Vite: launcher (5 rows), application (badge v1.7.480), local AI studio and SuperTyPo open with **0 console errors** |
+| Build | `npm run build` passes and emits the launcher page |
 | Parity web ↔ mirror | **22 / 22 identical**, 0 different, 0 missing |
 | `node --check` · markers | clean on both `main.js` · 13 version markers consistent (1.7.480) |
 

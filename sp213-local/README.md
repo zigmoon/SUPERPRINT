@@ -38,13 +38,12 @@ website). It lists, in one click:
 |---|---|
 | **SuperPrint** (recommended) | Opens the full SuperPrint DTP application served by Vite (`superprint/app/index.html`) |
 | **AI Studio** | Opens the SP213 studio bundled with the application (`superprint/sp213-studio.html`) |
-| **Local AI Studio** | Opens the **offline** WebLLM studio (`studio.html` + `src/main.js`), models cached in the browser |
 | **SuperTyPo** | Font decomposer & typeface editor |
 | **Documentation / API** | Reference pages |
 
-> ℹ️ `studio.html` is the old root page: it needs Vite (it imports `@mlc-ai/web-llm` and
-> `@e965/xlsx` from npm) and a WebGPU browser. The local AI Studio runs with no key and
-> no network once the model is cached.
+> ℹ️ The **AI Studio works locally**: it can run its models on your machine (WebLLM,
+> WebGPU — no key, no network once the model is cached) or use a Groq API key. There is no
+> second studio page: the one of the application does both.
 
 The full editor also embeds **SuperTyPo** (the font decomposer & typeface editor) — from the
 *New project* dialog, the **« SuperTyPo »** tab opens `supertypo/` (edit any font as vector
@@ -73,8 +72,7 @@ from the home screen — it only requires a `gsk_...` API key (stored only in yo
 ```
 sp213-local/
 ├── index.html              # Launcher (same page as install.html on the website)
-├── studio.html             # Local AI Studio (offline WebLLM) — old root page
-├── src/main.js             # Local AI Studio logic (WebLLM npm + direct Groq)
+├── src/main.js             # Legacy local-studio engine (unused since 1.7.480)
 ├── public/
 │   ├── superprint/         # Complete SuperPrint application (copy, served as-is)
 │   │   ├── index.html      # The SuperPrint DTP app

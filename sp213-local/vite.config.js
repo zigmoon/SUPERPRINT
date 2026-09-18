@@ -13,13 +13,12 @@ export default defineConfig({
     outDir: 'dist',
     target: 'es2022',
     chunkSizeWarningLimit: 4096,
-    /* 🆕 v1.7.480 : DEUX pages à la racine. Sans cette entrée, `npm run build` ne
-       produisait que `dist/index.html` (le lanceur) et laissait `studio.html`
-       (Studio IA hors ligne) hors du dossier de sortie. */
+    /* 🆕 v1.7.480 : une SEULE page à la racine. `studio.html` (ancienne page du studio
+       local) a été retiré : le studio de l'application, `public/superprint/sp213-studio.html`,
+       tourne déjà en local (modèles WebLLM) comme en ligne (clé Groq). */
     rollupOptions: {
       input: {
-        main: 'index.html',
-        studio: 'studio.html'
+        main: 'index.html'
       }
     }
   },
