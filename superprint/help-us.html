@@ -933,9 +933,18 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 .foot-cols h4 { font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--paper); margin-bottom: 14px; }
 .foot-links { display: flex; flex-direction: column; gap: 8px; }
 .foot-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color .25s var(--ease), transform .25s var(--ease); display:inline-flex; align-items:center; gap:8px; }
-.foot-links a::before { content:''; width:0; height:1px; background: var(--yellow); transition: width .25s var(--ease); }
+/* 🆕 v1.7.497 — LE TIRET NE POUSSE PLUS LA COLONNE.
+   Le tiret du survol grandissait de 0 à 14 px. Le lien étant un flex, la ligne s'élargissait de
+   22 px (le tiret + la gouttière de 8 px), la colonne suivait, puis la colonne voisine : tout le
+   pied de page se décalait au passage de la souris. Le tiret garde maintenant SA PLACE et c'est
+   lui qui s'ouvre, par une mise à l'échelle (transform n'occupe pas de place) :
+   rien ne bouge d'un pixel, l'effet reste le même. */
+.foot-links a::before {
+  content:''; flex: 0 0 14px; width: 14px; height:1px; background: var(--yellow);
+  transform: scaleX(0); transform-origin: left center; transition: transform .25s var(--ease);
+}
 .foot-links a:hover { color: var(--paper); }
-.foot-links a:hover::before { width: 14px; }
+.foot-links a:hover::before { transform: scaleX(1); }
 .foot-copy {
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; color: var(--muted);
   width: 100%; text-align: center; padding-top: 20px;
@@ -1474,7 +1483,14 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 .help-don-txt { margin-top: clamp(18px,2.2vw,26px); }
 .help-h2, .help-don-h2, .help-card h2, .help-more-grid h3, .help-apps .help-h2 { margin: 0 0 12px; }
 .help-rule { margin: clamp(26px,3.4vw,40px) 0; }
-.help-grid, .help-apps, .help-more, .help-bug { margin-top: clamp(26px,3.4vw,42px); }
+/* 🆕 v1.7.497 — LES MÊMES MARGES QUE L'ACCUEIL (v1.7.496).
+   Les sections de cette page portaient le rembourrage général du site — section { padding:
+   clamp(72px,10vw,140px) } — soit jusqu'à 140 px de vide vertical, quand l'accueil est à 34-56.
+   Mesuré : plus du double d'une page à l'autre. Elles prennent exactement le demi-souffle de
+   l'accueil, et l'écart entre les blocs suit : 112 px entre deux rubriques en desktop. */
+section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw,56px) 24px; }
+.help-apps, .help-more, .help-bug { margin-top: clamp(34px,4vw,56px); }
+.help-rule { margin: clamp(34px,4vw,56px) 0; }
 .help-card p:last-child, .help-more-grid p:last-child { margin-bottom: 0; }
 .help-kicker { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
 .help-h1 { margin: 14px 0 0; font-family: var(--f-display); font-weight: 700; line-height: 1.1; letter-spacing: -.012em; font-size: clamp(28px,3.4vw,44px); color: var(--ink); }
@@ -1487,8 +1503,13 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 .help-intro { display: flex; flex-direction: column; }
 .help-don-txt { margin-top: clamp(20px,2.6vw,30px); padding-top: clamp(14px,1.8vw,20px); border-top: 1px solid var(--line); }
 .help-don-h2 { margin: 0 0 8px; font-family: var(--f-caps); font-weight: 400; font-size: clamp(20px,2.2vw,26px); letter-spacing: .01em; color: var(--ink); }
-.help-don-txt p { margin: 0 0 8px; font-size: 13px; line-height: 1.7; color: var(--ink-soft); }
-.help-don-txt .tiny { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--muted); }
+/* 🆕 v1.7.497 — MÊME TAILLE QUE LE RESTE (13 px → la taille du texte courant de la page).
+   La ligne des 19 € était en 10,5 px mono, la phrase PayPal en 13 px : sous le chapeau, qui est
+   à 14-16,5 px, la partie la plus utile de la page se lisait en tout petit. Tout passe à la
+   taille du texte courant, et la phrase de consentement (voir le HTML) prend un filet à gauche
+   pour se distinguer sans rétrécir. */
+.help-don-txt p { margin: 0 0 10px; font-size: clamp(14px,1.3vw,16.5px); line-height: 1.7; color: var(--ink-soft); }
+.help-don-news { border-left: 3px solid var(--yellow); padding-left: 14px; color: var(--ink) !important; }
 .help-lead { margin: 14px 0 0; max-width: 68ch; font-size: clamp(14px,1.3vw,16.5px); line-height: 1.7; color: var(--ink-soft); }
 .help-rule { height: 1px; background: var(--line); border: 0; margin: clamp(28px,4vw,46px) 0; }
 .help-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: clamp(14px,1.6vw,20px); }
@@ -1589,6 +1610,18 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 /* la page courante garde le trait de la nav, comme au survol (la landing n'a que :hover) */
 .nav-links a[aria-current="page"] { color: var(--ink); }
 .nav-links a[aria-current="page"]::after { transform: scaleX(1); }
+/* ——— v1.7.497 — LE RYTHME DE LA PAGE D'AIDE, ALIGNÉ SUR L'ACCUEIL (posé en fin de feuille).
+   Le rembourrage de ces sections valait encore celui du site entier — section { padding:
+   clamp(72px,10vw,140px) } — soit jusqu'à 140 px de vide vertical, quand l'accueil est à 34-56.
+   Mesuré, plus du double d'une page à l'autre : « elles sont très trop grandes ». Elles prennent
+   le demi-souffle de l'accueil, et c'est CE REMBOURRAGE SEUL qui fait l'écart entre deux grandes
+   rubriques : 112 px en desktop, 80 px à 1000, 68 px à 390 — les valeurs exactes de l'accueil.
+   ⚠️ La marge propre de .help-apps et .help-more (50 px, écrite plus haut) doit tomber : sans ça,
+   elle s'ajoute au rembourrage. Le filet de séparation, lui, prend la moitié de ce souffle de
+   chaque côté, pour tomber au milieu de l'écart. */
+section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw,56px) 24px; }
+.help-apps, .help-more, .help-bug { margin-top: 0; }
+.help-rule { margin: clamp(17px,2vw,28px) 0; }
 </style>
 <!-- 🆕 v1.7.477 — DONNÉES STRUCTURÉES DE CETTE PAGE. Elle n'en avait aucune (mesuré :
      0 bloc JSON-LD), alors qu'elle est publique et indexable. Trois objets autonomes, sans
@@ -1700,7 +1733,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.496</span>
+    <span>SuperPrint v1.7.497</span>
   </div>
 </div>
 
@@ -1724,12 +1757,18 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
       <div class="help-don-txt">
       <h2 data-lang="fr">Faire un don</h2><h2 data-lang="en">Make a donation</h2><h2 data-lang="ja">寄付する</h2>
+      <!-- 🆕 v1.7.497 — LA PHRASE DE CONSENTEMENT DE PAYPAL, AVANT LE PAIEMENT.
+           Elle vient du bouton de don (le texte que le donateur accepte) : elle est donc
+           affichée ici, dans les trois langues, avant tout le reste. -->
+      <p class="help-don-news" data-lang="fr">Je souhaite recevoir gratuitement les actualités et les nouveautés des applications d'app.zigmoon.com.</p>
+      <p class="help-don-news" data-lang="en">I would like to receive the latest news and features regarding the app.zigmoon.com applications for free.</p>
+      <p class="help-don-news" data-lang="ja">app.zigmoon.com のアプリに関する最新情報と新機能を、無料で受け取りたいと思います。</p>
       <p data-lang="fr">Paiement traité par PayPal : votre carte reste chez PayPal, nous ne voyons ni votre numéro ni votre adresse. Aucun compte PayPal n'est nécessaire pour payer par carte.</p>
       <p data-lang="en">Payment handled by PayPal — your card stays with PayPal, we never see your number or your address. No PayPal account is needed to pay by card.</p>
       <p data-lang="ja">決済はPayPalが処理します。カード情報はPayPalが保持し、こちらには届きません。カード決済にPayPalアカウントは不要です。</p>
-      <p class="tiny" data-lang="fr">19 €, une fois. Le montant est fixé par le bouton ci-contre et ne se règle pas depuis cette page.</p>
-      <p class="tiny" data-lang="en">€19, once. The amount is set by the button beside this text and is not chosen on this page.</p>
-      <p class="tiny" data-lang="ja">19 ユーロの一度のお支払いです。金額は右のボタンのもので、このページでは設定しません。</p>
+      <p data-lang="fr">19 €, une fois. Le montant est fixé par le bouton ci-contre et ne se règle pas depuis cette page.</p>
+      <p data-lang="en">€19, once. The amount is set by the button beside this text and is not chosen on this page.</p>
+      <p data-lang="ja">19 ユーロの一度のお支払いです。金額は右のボタンのもので、このページでは設定しません。</p>
       </div>
     </div>
 
@@ -1748,26 +1787,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
   <hr class="help-rule">
 
-  <div class="help-grid">
-    <article class="help-card">
-      <h2 data-lang="fr">Pourquoi nous aider</h2><h2 data-lang="en">Why help us</h2><h2 data-lang="ja">なぜ支援が必要か</h2>
-      <p data-lang="fr">Un logiciel de PAO en navigateur, sans installation, sans compte et sans licence, n'a aucun revenu par construction. Nous refusons les trois modèles habituels : la publicité, l'abonnement, et la revente de ce que vous composez.</p>
-      <p data-lang="en">Browser DTP software with no install, no account and no licence has no built-in revenue. We turn down the three usual models: advertising, subscription, and selling what you typeset.</p>
-      <p data-lang="ja">インストール不要・アカウント不要・ライセンス不要のブラウザDTPには、そもそも収益がありません。広告・サブスクリプション・制作物のデータ販売という三つの方法を、私たちは採りません。</p>
-    </article>
-    <article class="help-card">
-      <h2 data-lang="fr">Ce que ça finance</h2><h2 data-lang="en">What it pays for</h2><h2 data-lang="ja">何に使われるか</h2>
-      <ul data-lang="fr"><li>Le temps de développement et de correction.</li><li>Les serveurs, le nom de domaine et l'assistance par courriel.</li><li>Les licences techniques (profils ICC, fontes, épellation).</li><li>Les épreuves d'impression qui valident l'export PDF.</li></ul>
-      <ul data-lang="en"><li>Development and bug-fixing time.</li><li>Servers, domain name and e-mail support.</li><li>Technical licences (ICC profiles, fonts, spelling).</li><li>The print proofs that validate the PDF export.</li></ul>
-      <ul data-lang="ja"><li>開発と不具合修正の時間。</li><li>サーバー、ドメイン、メールサポート。</li><li>技術ライセンス（ICCプロファイル、フォント、スペル）。</li><li>PDF書き出しを検証する校正刷り。</li></ul>
-    </article>
-    <article class="help-card">
-      <h2 data-lang="fr">Ce que ça n'achète pas</h2><h2 data-lang="en">What it does not buy</h2><h2 data-lang="ja">買えないもの</h2>
-      <p data-lang="fr">Aucun don ne donne de droits particuliers : tout le monde a la même version, les mêmes fonctions et le même accès. Pas de version « pro », pas de file d'attente prioritaire, pas de badge. Nous ne vendons rien, donc il n'y a rien à vendre.</p>
-      <p data-lang="en">No donation grants special rights: everyone gets the same version, the same features and the same access. No "pro" edition, no priority queue, no badge. We sell nothing, so there is nothing to sell.</p>
-      <p data-lang="ja">寄付によって特別な権利が生まれることはありません。誰もが同じバージョン、同じ機能、同じアクセスを得ます。「Pro版」も優先対応もバッジもありません。何も売っていないので、売るものもありません。</p>
-    </article>
-  </div>
+
 
   <!-- ═══ v1.7.472 — CE QUE VOTRE AIDE FAIT VIVRE : les trois outils et leurs icônes ═══
        Mêmes plaques que le hero de la landing (.entry-logo, .entry-clair) : SuperPrint garde
@@ -1777,16 +1797,16 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <h2 class="help-h2" data-lang="fr">Trois outils, deux personnes, aucune boutique.</h2>
     <h2 class="help-h2" data-lang="en">Three tools, two people, no shop.</h2>
     <h2 class="help-h2" data-lang="ja">三つの道具、二人、店はありません。</h2>
-    <p class="help-apps-intro" data-lang="fr">Votre aide ne finance pas un catalogue : elle finance ces trois-là, et rien d'autre. Ils partagent le même atelier, le même code, et la même absence de compte à créer.</p>
-    <p class="help-apps-intro" data-lang="en">Your help does not fund a catalogue: it funds these three, and nothing else. They share the same atelier, the same code, and the same absence of an account to create.</p>
-    <p class="help-apps-intro" data-lang="ja">ご支援はカタログを支えるものではありません。この三つだけを支えます。同じ工房、同じコード、アカウントを作らなくていいことも同じです。</p>
+    <p class="help-apps-intro" data-lang="fr">Votre aide ne finance pas un catalogue : elle finance ces trois-là, et rien d'autre. Ils partagent le même bureau, le même code, et la même absence de compte à créer.</p>
+    <p class="help-apps-intro" data-lang="en">Your help does not fund a catalogue: it funds these three, and nothing else. They share the same desk, the same code, and the same absence of an account to create.</p>
+    <p class="help-apps-intro" data-lang="ja">ご支援はカタログを支えるものではありません。この三つだけを支えます。同じデスク、同じコード、アカウントを作らなくていいことも同じです。</p>
     <div class="help-apps-grid">
       <article class="help-app">
         <span class="entry-logo"><img src="icons/icon-192x192.png" alt="" width="50" height="50"></span>
         <h3>SuperPrint</h3>
-        <p data-lang="fr">L'atelier de PAO complet, dans le navigateur : mise en page multipage, typographie, calques, gabarits, export PDF prêt pour l'impression.</p>
-        <p data-lang="en">The complete DTP atelier, in the browser: multi-page layout, typography, layers, master pages, print-ready PDF export.</p>
-        <p data-lang="ja">ブラウザの中のDTP工房。マルチページ組版、タイポグラフィ、レイヤー、マスターページ、印刷対応のPDF書き出し。</p>
+        <p data-lang="fr">Le bureau de PAO complet, dans le navigateur : mise en page multipage, typographie, calques, gabarits, export PDF prêt pour l'impression.</p>
+        <p data-lang="en">The complete DTP desk, in the browser: multi-page layout, typography, layers, master pages, print-ready PDF export.</p>
+        <p data-lang="ja">ブラウザの中のDTPデスク。マルチページ組版、タイポグラフィ、レイヤー、マスターページ、印刷対応のPDF書き出し。</p>
         <a class="help-app-go" href="app/index.html"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open the app</span><span class="inline-ja">アプリを開く</span> →</a>
       </article>
       <article class="help-app entry-clair">
@@ -1908,40 +1928,47 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="container">
     <div class="foot-brand">
       <a class="foot-logo" href="index.html">SUPERPRINT</a>
-      <p class="inline-fr">Un atelier de mise en page professionnelle, né pour la presse et l'édition — dans votre navigateur.</p>
-      <p class="inline-en">A professional layout atelier, born for print and publishing — in your browser.</p>
-      <p class="inline-ja">印刷と出版のために生まれたプロのレイアウト工房 — ブラウザの中で。</p>
+      <p class="inline-fr">Un bureau de mise en page professionnelle, né pour la presse et l'édition — dans votre navigateur.</p>
+      <p class="inline-en">A professional layout desk, born for print and publishing — in your browser.</p>
+      <p class="inline-ja">印刷と出版のために生まれたプロのレイアウトデスク — ブラウザの中で。</p>
       <!-- 🆕 v1.7.472 — les deux auteurs, dans le colophon : ils ne coûtent pas une ligne de
            plus et ils disent qui publie. Le copyright les nomme aussi, plus bas. -->
       <p class="foot-auteurs">Simon Dupont-Gellert &amp; Clémence Brunet</p>
     </div>
     <div class="foot-cols">
       <div>
-        <h4 data-lang="fr">L'atelier</h4>
-        <h4 data-lang="en">The atelier</h4>
-        <h4 data-lang="ja">工房</h4>
+        <h4 data-lang="fr">Bureau SuperPrint</h4>
+        <h4 data-lang="en">The SuperPrint desk</h4>
+        <h4 data-lang="ja">SuperPrint デスク</h4>
         <div class="foot-links">
-          <a href="index.html">SuperPrint</a>
+          <a href="app/index.html">SuperPrint Editor</a>
           <a href="sp213-studio.html" data-lang="fr">Studio SP213</a>
           <a href="sp213-studio.html" data-lang="en">SP213 Studio</a>
           <a href="sp213-studio.html" data-lang="ja">SP213スタジオ</a>
+          <a href="supertypo/index.html">SuperTyPo</a>
+          <a href="index.html#features" data-lang="fr">Fonctions</a>
+          <a href="index.html#features" data-lang="en">Features</a>
+          <a href="index.html#features" data-lang="ja">機能</a>
           <a href="documentation.html" data-lang="fr">Manuel</a>
           <a href="documentation.html" data-lang="en">Manual</a>
           <a href="documentation.html" data-lang="ja">マニュアル</a>
-          <a href="index.html#auteurs" data-lang="fr">Les auteurs</a>
-          <a href="index.html#auteurs" data-lang="en">The authors</a>
+          <a href="index.html#auteurs" data-lang="fr">Auteurs</a>
+          <a href="index.html#auteurs" data-lang="en">Authors</a>
           <a href="index.html#auteurs" data-lang="ja">著者</a>
-        </div>
-      </div>
-      <div>
-        <h4 data-lang="fr">Projet</h4>
-        <h4 data-lang="en">Project</h4>
-        <h4 data-lang="ja">プロジェクト</h4>
-        <div class="foot-links">
-          <a href="https://zigmoon.com">zigmoon.com</a>
+          <a href="index.html#faq" data-lang="fr">Questions fréquentes</a>
+          <a href="index.html#faq" data-lang="en">FAQ</a>
+          <a href="index.html#faq" data-lang="ja">よくある質問</a>
           <a href="help-us.html" data-lang="fr">Participer</a>
           <a href="help-us.html" data-lang="en">Take part</a>
           <a href="help-us.html" data-lang="ja">参加する</a>
+        </div>
+      </div>
+      <div>
+        <h4 data-lang="fr">Le projet</h4>
+        <h4 data-lang="en">The project</h4>
+        <h4 data-lang="ja">プロジェクト</h4>
+        <div class="foot-links">
+          <a href="https://zigmoon.com">zigmoon.com</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="fr">Journal des versions</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="en">Changelog</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="ja">変更履歴</a>
@@ -1950,7 +1977,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.496</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.497</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>

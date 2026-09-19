@@ -1,4 +1,4 @@
-﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,37 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.497] — 2026-09-20
+
+_The footer holds still and follows the top bar, “atelier” becomes “bureau”, and the help page is trimmed_
+
+### Fixed
+- **The footer no longer shifts on hover.** The yellow dash grew from `0` to `14px`; the link being an inline flex, the line widened by 22 px (dash + 8 px gutter), the column followed and the next column moved with it. The dash now keeps its place (`flex: 0 0 14px`) and opens through `transform: scaleX()`, which takes no space: measured, the first link (141 px), the next column (x = 1161) and the whole footer (362 px) are **identical before and after hovering**.
+
+### Changed
+- **The footer follows the top bar.** The first column — now headed **Bureau SuperPrint** — opens with the three applications (**SuperPrint Editor**, **Studio SP213**, **SuperTyPo**) then repeats the top bar in order (Fonctions, Manuel, Auteurs, Questions fréquentes, Participer); the second keeps the project links.
+
+### Changed (wording)
+- **“atelier” gives way to “bureau”** — `desk` in English, `デスク` in Japanese: 26 sentences in the three languages, on the home page and the help page (cover kicker, the three application blurbs, the features lead, the prepress band button, the format cards, the authors, the questions, the footer brand and heading, the JSON-LD and the visible FAQ answer). Measured: **zero** “atelier”, “workshop” or “工房” left in the painted text of either page, in the three languages.
+
+### Help page
+- **“Make a donation”**: the PayPal button’s consent sentence (`I would like to receive the latest news and features regarding the app.zigmoon.com applications for free.`) now comes first, translated into the three languages, and **the whole block takes the body text size** — 16.5 px like the heading above, where it was 13 px and the €19 line 10.5 px monospace.
+- **The three columns “Pourquoi nous aider” / “Ce que ça finance” / “Ce que ça n’achète pas” are removed** (0 cards left).
+- **The big sections follow the home page’s margins**: they carried the general `section` padding (72-140 px); they now take the home’s half-breath — **112 px** between two sections on desktop, 80 px at 1000, 68 px at 390. The two later rules (`.help-apps`/`.help-more { margin-top: 50px }`) had to fall too, otherwise their margin added to the padding.
+
+### Verified
+| Check | Result |
+|---|---|
+| Footer hover | first link 141 px, next column x = 1161, footer 362 px — identical before/after |
+| Footer content | 3 applications + the 6 top-bar entries + the project links |
+| “atelier” / “workshop” / “工房” | **0** in `fr` / `en` / `ja`, both pages |
+| Donation block | 3 sentences at 16.5 px = the heading above |
+| Amputated translations | **none** on either page |
+| Legal windows | 11 sub-headings (legal) / 5 (privacy) in the three languages, same links |
+| Help page rhythm | 112 / 80 / 68 px — the home page’s values |
+| Markers | `data-sp-js="v497"`, cache tag `20260920-v497-bureau-et-pied-de-page`, `CACHE_NAME` bumped |
+
 
 ## [1.7.496] — 2026-09-20
 

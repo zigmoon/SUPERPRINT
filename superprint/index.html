@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.496",
+      "softwareVersion": "1.7.497",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1117,9 +1117,18 @@ footer .container { display: flex; justify-content: space-between; align-items: 
 .foot-cols h4 { font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--paper); margin-bottom: 14px; }
 .foot-links { display: flex; flex-direction: column; gap: 8px; }
 .foot-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color .25s var(--ease), transform .25s var(--ease); display:inline-flex; align-items:center; gap:8px; }
-.foot-links a::before { content:''; width:0; height:1px; background: var(--yellow); transition: width .25s var(--ease); }
+/* 🆕 v1.7.497 — LE TIRET NE POUSSE PLUS LA COLONNE.
+   Le tiret du survol grandissait de 0 à 14 px. Le lien étant un flex, la ligne s'élargissait de
+   22 px (le tiret + la gouttière de 8 px), la colonne suivait, puis la colonne voisine : tout le
+   pied de page se décalait au passage de la souris. Le tiret garde maintenant SA PLACE et c'est
+   lui qui s'ouvre, par une mise à l'échelle (transform n'occupe pas de place) :
+   rien ne bouge d'un pixel, l'effet reste le même. */
+.foot-links a::before {
+  content:''; flex: 0 0 14px; width: 14px; height:1px; background: var(--yellow);
+  transform: scaleX(0); transform-origin: left center; transition: transform .25s var(--ease);
+}
 .foot-links a:hover { color: var(--paper); }
-.foot-links a:hover::before { width: 14px; }
+.foot-links a:hover::before { transform: scaleX(1); }
 .foot-copy {
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; color: var(--muted);
   width: 100%; text-align: center; padding-top: 20px;
@@ -1958,7 +1967,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       "name": "Can I import my Word or PDF documents?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. SuperPrint imports your Word (.docx), OpenDocument (.odt), text (.txt, .rtf) and PDF documents, then lays them out automatically with pagination. Your sources arrive as-is in the atelier."
+        "text": "Yes. SuperPrint imports your Word (.docx), OpenDocument (.odt), text (.txt, .rtf) and PDF documents, then lays them out automatically with pagination. Your sources arrive as-is on the desk."
       }
     },
     {
@@ -2077,7 +2086,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.496</span>
+    <span>SuperPrint v1.7.497</span>
   </div>
 </div>
 
@@ -2085,9 +2094,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <section id="hero">
   <div class="ghost" aria-hidden="true">PRINT</div>
   <div class="container">
-    <div class="hero-kicker" data-lang="fr">Atelier de PAO · n° 01 — SuperPrint</div>
-    <div class="hero-kicker" data-lang="en">The layout atelier · n° 01 — SuperPrint</div>
-    <div class="hero-kicker" data-lang="ja">レイアウト工房 · n° 01 — SuperPrint</div>
+    <div class="hero-kicker" data-lang="fr">Bureau de PAO · n° 01 — SuperPrint</div>
+    <div class="hero-kicker" data-lang="en">The layout desk · n° 01 — SuperPrint</div>
+    <div class="hero-kicker" data-lang="ja">レイアウトデスク · n° 01 — SuperPrint</div>
 
     <h1 data-lang="fr"><span class="line">La mise en page</span> <span class="line">professionnelle,</span> <span class="line"><em class="italic">dans votre navigateur.</em></span></h1>
     <h1 data-lang="en"><span class="line">The professional</span> <span class="line">page layout,</span> <span class="line"><em class="italic">in your browser.</em></span></h1>
@@ -2100,7 +2109,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         <span class="entry-name">SuperPrint</span>
         <span class="entry-logo"><img src="icons/icon-192x192.png" alt="" width="50" height="50"></span>
         <span class="entry-body">
-          <span class="entry-desc"><span class="inline-fr">L'atelier de PAO complet : mise en page, prépresse, export.</span><span class="inline-en">The complete DTP atelier: layout, prepress, export.</span><span class="inline-ja">DTP工房のすべて — 組版、プリプレス、書き出し。</span></span>
+          <span class="entry-desc"><span class="inline-fr">Le bureau de PAO complet : mise en page, prépresse, export.</span><span class="inline-en">The complete DTP desk: layout, prepress, export.</span><span class="inline-ja">DTPデスクのすべて — 組版、プリプレス、書き出し。</span></span>
           <span class="entry-go"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open the app</span><span class="inline-ja">アプリを開く</span> →</span>
         </span>
       </a>
@@ -2572,9 +2581,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <h2 data-lang="fr">La PAO, entièrement réinventée dans votre navigateur.</h2>
       <h2 data-lang="en">DTP, entirely reinvented in your browser.</h2>
       <h2 data-lang="ja">DTPを、ブラウザでまるごと作り直す。</h2>
-<p class="lead" data-lang="fr">L'atelier de PAO, le studio d'IA et l'atelier typographique : trois applications, un seul projet, rien à installer. Chacune s'ouvre d'un clic, chacune travaille dans votre navigateur — et les maquettes passent de l'une à l'autre.</p>
-      <p class="lead" data-lang="en">The DTP atelier, the AI studio and the type workshop: three applications, one project, nothing to install. Each opens in one click, each works in your browser — and layouts travel from one to the next.</p>
-      <p class="lead" data-lang="ja">DTP工房、AIスタジオ、書体工房。3つのアプリ、ひとつのプロジェクト、インストール不要。どれもワンクリックで開き、ブラウザで動きます。レイアウトは行き来します。</p>
+<p class="lead" data-lang="fr">Le bureau de PAO, le studio d'IA et le bureau typographique : trois applications, un seul projet, rien à installer. Chacune s'ouvre d'un clic, chacune travaille dans votre navigateur — et les maquettes passent de l'une à l'autre.</p>
+      <p class="lead" data-lang="en">The DTP desk, the AI studio and the type desk: three applications, one project, nothing to install. Each opens in one click, each works in your browser — and layouts travel from one to the next.</p>
+      <p class="lead" data-lang="ja">DTPデスク、AIスタジオ、書体デスク。3つのアプリ、ひとつのプロジェクト、インストール不要。どれもワンクリックで開き、ブラウザで動きます。レイアウトは行き来します。</p>
       <p class="spf-note" data-lang="fr">Tout est là, rangé dans l'ordre où l'on s'en sert : ouvrez le bloc qui vous intéresse, refermez-le ensuite.</p>
       <p class="spf-note" data-lang="en">Everything is here, in the order you use it: open the block you need, close it again afterwards.</p>
       <p class="spf-note" data-lang="ja">使う順に並んでいます。必要なブロックだけを開いて、また閉じてください。</p>
@@ -2594,9 +2603,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <article class="app">
         <span class="entry-logo"><img src="icons/icon-192x192.png" alt="SuperPrint" width="50" height="50"></span>
         <h3>SuperPrint</h3>
-        <p class="inline-fr">L'atelier de PAO complet : habillage du texte, typographie éditoriale, CMJN fidèle, pages maîtresses, export PDF. Un document ouvert dans le navigateur — les outils à gauche, la page au centre, l'export à droite.</p>
-        <p class="inline-en">The complete DTP atelier: text wrap, editorial typography, faithful CMYK, master pages, PDF export. A document open in the browser — tools on the left, the page in the centre, export on the right.</p>
-        <p class="inline-ja">本格的なDTP工房。テキストの回り込み、組版タイポグラフィ、忠実なCMYK、マスターページ、PDF書き出し。ブラウザで開いたドキュメント、左にツール、中央にページ、右に書き出し。</p>
+        <p class="inline-fr">Le bureau de PAO complet : habillage du texte, typographie éditoriale, CMJN fidèle, pages maîtresses, export PDF. Un document ouvert dans le navigateur — les outils à gauche, la page au centre, l'export à droite.</p>
+        <p class="inline-en">The complete DTP desk: text wrap, editorial typography, faithful CMYK, master pages, PDF export. A document open in the browser — tools on the left, the page in the centre, export on the right.</p>
+        <p class="inline-ja">本格的なDTPデスク。テキストの回り込み、組版タイポグラフィ、忠実なCMYK、マスターページ、PDF書き出し。ブラウザで開いたドキュメント、左にツール、中央にページ、右に書き出し。</p>
         <a class="app-go" href="app/index.html"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open the app</span><span class="inline-ja">アプリを開く</span> <span class="arr" aria-hidden="true">→</span></a>
       </article>
 
@@ -2612,9 +2621,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <article class="app">
         <span class="entry-logo entry-clair"><img src="icons/sper_typo.png" alt="SuperTyPo" width="50" height="50"></span>
         <h3>SuperTyPo</h3>
-        <p class="inline-fr">L'atelier typographique : le caractère est redessiné en courbes, le lettrage devient un dessin vectoriel, exploitable à l'échelle d'une affiche.</p>
-        <p class="inline-en">The type workshop: the character is redrawn as curves, the lettering becomes a vector drawing, usable at poster scale.</p>
-        <p class="inline-ja">書体の工房。文字を曲線として描き直し、レタリングをベクター図形に。ポスターサイズでも使えます。</p>
+        <p class="inline-fr">Le bureau typographique : le caractère est redessiné en courbes, le lettrage devient un dessin vectoriel, exploitable à l'échelle d'une affiche.</p>
+        <p class="inline-en">The type desk: the character is redrawn as curves, the lettering becomes a vector drawing, usable at poster scale.</p>
+        <p class="inline-ja">書体のデスク。文字を曲線として描き直し、レタリングをベクター図形に。ポスターサイズでも使えます。</p>
         <a class="app-go" href="supertypo/index.html"><span class="inline-fr">Ouvrir SuperTyPo</span><span class="inline-en">Open SuperTyPo</span><span class="inline-ja">SuperTyPoを開く</span> <span class="arr" aria-hidden="true">→</span></a>
       </article>
 
@@ -2796,9 +2805,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <p class="pp-band-txt" data-lang="fr">Les <span class="pp-mono">quinze outils</span> tiennent dans une seule page ouverte — rien à installer, rien à mettre à jour.</p>
       <p class="pp-band-txt" data-lang="en">All <span class="pp-mono">fifteen tools</span> live in a single open page — nothing to install, nothing to update.</p>
       <p class="pp-band-txt" data-lang="ja">15の道具は開いた<span class="pp-mono">ひとつのページ</span>の中に。インストールも更新も不要です。</p>
-      <a href="app/index.html" class="btn-paper" data-lang="fr">Ouvrir l’atelier</a>
-      <a href="app/index.html" class="btn-paper" data-lang="en">Open the workshop</a>
-      <a href="app/index.html" class="btn-paper" data-lang="ja">工房を開く</a>
+      <a href="app/index.html" class="btn-paper" data-lang="fr">Ouvrir le Bureau SuperPrint</a>
+      <a href="app/index.html" class="btn-paper" data-lang="en">Open the SuperPrint desk</a>
+      <a href="app/index.html" class="btn-paper" data-lang="ja">SuperPrint デスクを開く</a>
     </div>
         </div>
     </details>
@@ -2904,7 +2913,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
           <span class="spf-plus" aria-hidden="true">+</span>
         </summary>
         <div class="spf-in">
-<div class="spf-lead"><p data-lang="fr">Un flyer, une affiche, un catalogue : le format décide des outils. Voici ce qui sort de l’atelier, du A5 au grand format.</p><p data-lang="en">A flyer, a poster, a catalogue: the format decides the tools. Here is what leaves the workshop, from A5 to large format.</p><p data-lang="ja">フライヤー、ポスター、カタログ。形式が道具を決めます。A5から大判まで、工房から出てくるもの。</p></div>
+<div class="spf-lead"><p data-lang="fr">Un flyer, une affiche, un catalogue : le format décide des outils. Voici ce qui sort du bureau, du A5 au grand format.</p><p data-lang="en">A flyer, a poster, a catalogue: the format decides the tools. Here is what leaves the desk, from A5 to large format.</p><p data-lang="ja">フライヤー、ポスター、カタログ。形式が道具を決めます。A5から大判まで、デスクから出てくるもの。</p></div>
 
 <div class="pp-grid">
       <article class="pp-card"><div class="pp-num">01</div><h3 data-lang="fr">Flyers</h3><h3 data-lang="en">Flyers</h3><h3 data-lang="ja">フライヤー</h3><p data-lang="fr">Événements, promotions — A5, A4, carré.</p><p data-lang="en">Events, promotions — A5, A4, square.</p><p data-lang="ja">イベント・販促 — A5、A4、正方形。</p><span class="pp-tag" data-lang="fr">Événement</span><span class="pp-tag" data-lang="en">Event</span><span class="pp-tag" data-lang="ja">イベント</span></article>
@@ -3186,7 +3195,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <div class="pp-grid">
       <article class="pp-card">
         <div class="pp-num">01</div>
-        <h3 data-lang="fr">Sortie d’atelier</h3><h3 data-lang="en">Leaving the atelier</h3><h3 data-lang="ja">工房を出る</h3>
+        <h3 data-lang="fr">Sortie du bureau</h3><h3 data-lang="en">Out of the desk</h3><h3 data-lang="ja">デスクを出る</h3>
         <div class="fmt-grid">
       <span class="fmt-chip out">PDF CMYK</span>
       <span class="fmt-chip out">PDF écran</span>
@@ -3199,7 +3208,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </article>
       <article class="pp-card">
         <div class="pp-num">02</div>
-        <h3 data-lang="fr">Entrée d’atelier</h3><h3 data-lang="en">Entering the atelier</h3><h3 data-lang="ja">工房に入る</h3>
+        <h3 data-lang="fr">Entrée dans le bureau</h3><h3 data-lang="en">Into the desk</h3><h3 data-lang="ja">デスクに入る</h3>
         <div class="fmt-grid">
       <span class="fmt-chip in">PDF</span>
       <span class="fmt-chip in">DOCX</span>
@@ -3264,9 +3273,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <h3 data-lang="fr">Le clic droit, sur un texte</h3>
             <h3 data-lang="en">Right-click on text</h3>
             <h3 data-lang="ja">右クリック（テキスト）</h3>
-            <p data-lang="fr">Éditer le texte, vectoriser les contours ou la typo, ouvrir l'atelier SuperTyPo.</p>
-            <p data-lang="en">Edit the text, vectorise outlines or type, open the SuperTyPo workshop.</p>
-            <p data-lang="ja">テキスト編集、輪郭と書体のベクター化、SuperTyPo工房を開く。</p>
+            <p data-lang="fr">Éditer le texte, vectoriser les contours ou la typo, ouvrir le bureau SuperTyPo.</p>
+            <p data-lang="en">Edit the text, vectorise outlines or type, open the SuperTyPo desk.</p>
+            <p data-lang="ja">テキスト編集、輪郭と書体のベクター化、SuperTyPo デスクを開く。</p>
           </figcaption>
         </figure>
 
@@ -3375,12 +3384,12 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         </figure>
 
         <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/atelier-voyage.jpg" width="1600" height="1000" loading="lazy" alt="Une maquette ouverte dans l'atelier"></div>
+          <div class="tcard-img"><img src="img/landing/atelier-voyage.jpg" width="1600" height="1000" loading="lazy" alt="Une maquette ouverte sur le bureau"></div>
           <figcaption class="tcard-body">
             <span class="tcard-num">11</span>
-            <h3 data-lang="fr">Une maquette dans l'atelier</h3>
-            <h3 data-lang="en">A layout in the atelier</h3>
-            <h3 data-lang="ja">工房の中のレイアウト</h3>
+            <h3 data-lang="fr">Une maquette sur le bureau</h3>
+            <h3 data-lang="en">A layout on the desk</h3>
+            <h3 data-lang="ja">デスクの上のレイアウト</h3>
             <p data-lang="fr">Les outils à gauche, la page au centre, l'export à droite : rien d'autre à installer.</p>
             <p data-lang="en">Tools on the left, page in the centre, export on the right: nothing else to install.</p>
             <p data-lang="ja">左にツール、中央にページ、右に書き出し。ほかに何も要りません。</p>
@@ -3394,9 +3403,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
             <h3 data-lang="fr">SuperTyPo</h3>
             <h3 data-lang="en">SuperTyPo</h3>
             <h3 data-lang="ja">SuperTyPo</h3>
-            <p data-lang="fr">L'atelier typographique : étirer, pencher, fondre une lettre sur l'autre, puis renvoyer le mot dans la page.</p>
-            <p data-lang="en">A type workshop: stretch, slant, blend one letter into the next, then send the word back into the page.</p>
-            <p data-lang="ja">文字を伸ばし、傾け、重ねて組み、その単語をページへ戻すタイポグラフィ工房です。</p>
+            <p data-lang="fr">Le bureau typographique : étirer, pencher, fondre une lettre sur l'autre, puis renvoyer le mot dans la page.</p>
+            <p data-lang="en">A type desk: stretch, slant, blend one letter into the next, then send the word back into the page.</p>
+            <p data-lang="ja">文字を伸ばし、傾け、重ねて組み、その単語をページへ戻すタイポグラフィ・デスクです。</p>
           </figcaption>
         </figure>
 
@@ -3452,12 +3461,12 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <div class="section-label" data-lang="fr">Les auteurs</div>
       <div class="section-label" data-lang="en">The authors</div>
       <div class="section-label" data-lang="ja">著者</div>
-      <h2 data-lang="fr">Deux auteurs, un atelier.</h2>
-      <h2 data-lang="en">Two authors, one atelier.</h2>
-      <h2 data-lang="ja">ふたりの著者、ひとつの工房。</h2>
-      <p class="lead" data-lang="fr">SuperPrint n'est pas un produit de catalogue : il est écrit, dessiné et composé par deux personnes. Pas d'équipe marketing, pas d'actionnaire, pas de version « entreprise » gardée pour plus tard — le logiciel et cette page sortent du même atelier, et les deux la signent.</p>
-      <p class="lead" data-lang="en">SuperPrint is not a catalogue product: it is written, drawn and composed by two people. No marketing department, no shareholder, no “enterprise edition” held back for later — the software and this page come out of the same atelier, and both carry the same two signatures.</p>
-      <p class="lead" data-lang="ja">SuperPrintはカタログ製品ではありません。二人が書き、描き、組み立てています。マーケティング部門も株主も、「あとで出す上位版」もありません。ソフトウェアもこのページも同じ工房から出て、同じ二人の名前が入っています。</p>
+      <h2 data-lang="fr">Deux auteurs, un bureau.</h2>
+      <h2 data-lang="en">Two authors, one desk.</h2>
+      <h2 data-lang="ja">ふたりの著者、ひとつのデスク。</h2>
+      <p class="lead" data-lang="fr">SuperPrint n'est pas un produit de catalogue : il est écrit, dessiné et composé par deux personnes. Pas d'équipe marketing, pas d'actionnaire, pas de version « entreprise » gardée pour plus tard — le logiciel et cette page sortent du même bureau, et les deux la signent.</p>
+      <p class="lead" data-lang="en">SuperPrint is not a catalogue product: it is written, drawn and composed by two people. No marketing department, no shareholder, no “enterprise edition” held back for later — the software and this page come out of the same desk, and both carry the same two signatures.</p>
+      <p class="lead" data-lang="ja">SuperPrintはカタログ製品ではありません。二人が書き、描き、組み立てています。マーケティング部門も株主も、「あとで出す上位版」もありません。ソフトウェアもこのページも同じデスクから出て、同じ二人の名前が入っています。</p>
     </div>
 
     <div class="auteurs">
@@ -3522,9 +3531,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <div class="section-label" data-lang="fr">Questions fréquentes</div>
       <div class="section-label" data-lang="en">Frequently asked</div>
       <div class="section-label" data-lang="ja">よくある質問</div>
-      <h2 data-lang="fr">Les questions que l'on pose souvent à l'atelier</h2>
-      <h2 data-lang="en">Questions often asked at the atelier</h2>
-      <h2 data-lang="ja">工房でよく聞かれる質問</h2>
+      <h2 data-lang="fr">Les questions que l'on pose souvent au bureau</h2>
+      <h2 data-lang="en">Questions often asked at the desk</h2>
+      <h2 data-lang="ja">デスクでよく聞かれる質問</h2>
     </div>
 
     <div class="faq-search" role="search">
@@ -3594,9 +3603,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         <summary class="faq-q" data-lang="fr">Puis-je importer mes documents Word ou PDF ?</summary>
         <summary class="faq-q" data-lang="en">Can I import my Word or PDF documents?</summary>
         <summary class="faq-q" data-lang="ja">WordやPDFのドキュメントを読み込めますか？</summary>
-        <p class="faq-a" data-lang="fr">Oui. SuperPrint importe vos documents Word (.docx), OpenDocument (.odt), textes (.txt, .rtf) et pages PDF, puis les met en page automatiquement avec pagination. Vos sources arrivent telles quelles dans l'atelier.</p>
-        <p class="faq-a" data-lang="en">Yes. SuperPrint imports your Word (.docx), OpenDocument (.odt), text (.txt, .rtf) and PDF documents, then lays them out automatically with pagination. Your sources arrive as-is in the atelier.</p>
-        <p class="faq-a" data-lang="ja">はい。SuperPrintはWord（.docx）、OpenDocument（.odt）、テキスト（.txt / .rtf）、PDFページを読み込み、自動ページ番号付きでレイアウトします。素材はそのまま工房へ届きます。</p>
+        <p class="faq-a" data-lang="fr">Oui. SuperPrint importe vos documents Word (.docx), OpenDocument (.odt), textes (.txt, .rtf) et pages PDF, puis les met en page automatiquement avec pagination. Vos sources arrivent telles quelles dans le bureau.</p>
+        <p class="faq-a" data-lang="en">Yes. SuperPrint imports your Word (.docx), OpenDocument (.odt), text (.txt, .rtf) and PDF documents, then lays them out automatically with pagination. Your sources arrive as-is on the desk.</p>
+        <p class="faq-a" data-lang="ja">はい。SuperPrintはWord（.docx）、OpenDocument（.odt）、テキスト（.txt / .rtf）、PDFページを読み込み、自動ページ番号付きでレイアウトします。素材はそのままデスクへ届きます。</p>
       </details>
 
       <details class="faq-item">
@@ -3685,40 +3694,47 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="container">
     <div class="foot-brand">
       <a class="foot-logo" href="index.html">SUPERPRINT</a>
-      <p class="inline-fr">Un atelier de mise en page professionnelle, né pour la presse et l'édition — dans votre navigateur.</p>
-      <p class="inline-en">A professional layout atelier, born for print and publishing — in your browser.</p>
-      <p class="inline-ja">印刷と出版のために生まれたプロのレイアウト工房 — ブラウザの中で。</p>
+      <p class="inline-fr">Un bureau de mise en page professionnelle, né pour la presse et l'édition — dans votre navigateur.</p>
+      <p class="inline-en">A professional layout desk, born for print and publishing — in your browser.</p>
+      <p class="inline-ja">印刷と出版のために生まれたプロのレイアウトデスク — ブラウザの中で。</p>
       <!-- 🆕 v1.7.472 — les deux auteurs, dans le colophon : ils ne coûtent pas une ligne de
            plus et ils disent qui publie. Le copyright les nomme aussi, plus bas. -->
       <p class="foot-auteurs">Simon Dupont-Gellert &amp; Clémence Brunet</p>
     </div>
     <div class="foot-cols">
       <div>
-        <h4 data-lang="fr">L'atelier</h4>
-        <h4 data-lang="en">The atelier</h4>
-        <h4 data-lang="ja">工房</h4>
+        <h4 data-lang="fr">Bureau SuperPrint</h4>
+        <h4 data-lang="en">The SuperPrint desk</h4>
+        <h4 data-lang="ja">SuperPrint デスク</h4>
         <div class="foot-links">
-          <a href="index.html">SuperPrint</a>
+          <a href="app/index.html">SuperPrint Editor</a>
           <a href="sp213-studio.html" data-lang="fr">Studio SP213</a>
           <a href="sp213-studio.html" data-lang="en">SP213 Studio</a>
           <a href="sp213-studio.html" data-lang="ja">SP213スタジオ</a>
+          <a href="supertypo/index.html">SuperTyPo</a>
+          <a href="#features" data-lang="fr">Fonctions</a>
+          <a href="#features" data-lang="en">Features</a>
+          <a href="#features" data-lang="ja">機能</a>
           <a href="documentation.html" data-lang="fr">Manuel</a>
           <a href="documentation.html" data-lang="en">Manual</a>
           <a href="documentation.html" data-lang="ja">マニュアル</a>
-          <a href="#auteurs" data-lang="fr">Les auteurs</a>
-          <a href="#auteurs" data-lang="en">The authors</a>
+          <a href="#auteurs" data-lang="fr">Auteurs</a>
+          <a href="#auteurs" data-lang="en">Authors</a>
           <a href="#auteurs" data-lang="ja">著者</a>
-        </div>
-      </div>
-      <div>
-        <h4 data-lang="fr">Projet</h4>
-        <h4 data-lang="en">Project</h4>
-        <h4 data-lang="ja">プロジェクト</h4>
-        <div class="foot-links">
-          <a href="https://zigmoon.com">zigmoon.com</a>
+          <a href="#faq" data-lang="fr">Questions fréquentes</a>
+          <a href="#faq" data-lang="en">FAQ</a>
+          <a href="#faq" data-lang="ja">よくある質問</a>
           <a href="help-us.html" data-lang="fr">Participer</a>
           <a href="help-us.html" data-lang="en">Take part</a>
           <a href="help-us.html" data-lang="ja">参加する</a>
+        </div>
+      </div>
+      <div>
+        <h4 data-lang="fr">Le projet</h4>
+        <h4 data-lang="en">The project</h4>
+        <h4 data-lang="ja">プロジェクト</h4>
+        <div class="foot-links">
+          <a href="https://zigmoon.com">zigmoon.com</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="fr">Journal des versions</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="en">Changelog</a>
           <a href="https://app.zigmoon.com/release.html" data-lang="ja">変更履歴</a>
@@ -3727,7 +3743,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.496</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.497</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
