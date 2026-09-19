@@ -1,4 +1,4 @@
-﻿﻿﻿# Changelog
+﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,30 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.496] — 2026-09-20
+
+_One single margin between the big sections, and the help page’s burger menu_
+
+### Changed
+- **One single margin between the four content sections** (templates, features, authors, questions): they all take `padding: clamp(34px,4vw,56px) 24px` — the values “The SuperPrint inventory” already had. Measured before: 113 px between templates and features, **56 px only** before the authors, 94 px before the questions (which started *higher* than the others, 26-44 px instead of 34-56). Now: **112 px** between two sections on desktop, 80 px at 1000 px, 68 px at 390 px.
+- **The ending of the questions is wider**: `#faq { padding-bottom: clamp(56px,7vw,96px) }` — the last margin of the page, before the final band, was 50 px.
+
+### Fixed
+- **The burger menu of `help-us.html`** (composed from the home page, hence the same fault): the logotype band is now out of flow and laid exactly on the page’s own band, so the logo icon no longer drops 146 px when the menu opens. Measured on both pages at 390 / 700 / 820 / 1000 px: **0 px difference**.
+
+### Verified
+| Check | Result |
+|---|---|
+| Gaps between sections (1440 px) | 112 / 112 / 112 px + **96 px** after the questions |
+| Same at 1000 px / 390 px | 80 / 80 / 80 px + 70 px · 68 / 68 / 68 px + 56 px |
+| FAQ top padding | `56px` = the features section’s own value |
+| Burger menu, index | 0 px at 390 / 700 / 820 / 1000 px |
+| Burger menu, `help-us.html` | 0 px at 390 / 700 / 820 / 1000 px |
+| Language leaks | **0** in `fr` / `en` / `ja`, on both pages |
+| JavaScript errors | none |
+| Markers | `data-sp-js="v496"`, cache tag `20260920-v496-marges-et-menu-aide`, `CACHE_NAME` bumped |
+
 
 ## [1.7.495] — 2026-09-20
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.495 — on phones the logo icon no longer drops when the burger menu opens, and the browser bar (Chrome Android, Safari iOS) is declared black.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.496 — one single margin between the big sections of the home page, a wider ending after the questions, and the burger-menu fix on the help page.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.495 — on phones the logo icon no longer drops when the burger menu opens, and the browser bar (Chrome Android, Safari iOS) is declared black.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.496 — one single margin between the big sections of the home page, a wider ending after the questions, and the burger-menu fix on the help page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,35 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.496 — une seule marge entre les grandes rubriques, et le menu de la page d'aide ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-496">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.496</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 20 septembre 2026" data-i18n-en="Released September 20, 2026" data-i18n-jp="2026年9月20日公開">Released September 20, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Les grandes rubriques respirent enfin du même souffle : <strong>une seule marge</strong> entre les maquettes, les fonctions, les auteurs et les questions, et <strong>une fin plus large</strong> après les questions. La page d'aide reçoit la correction du menu burger." data-i18n-en-html="The big sections finally breathe the same: <strong>one single margin</strong> between the templates, the features, the authors and the questions, and <strong>a wider ending</strong> after the questions. The help page receives the burger-menu fix." data-i18n-jp-html="大きなセクションの余白が統一されました。テンプレート、機能、著者、質問の間は<strong>ひとつの余白</strong>、質問の後は<strong>より広い余白</strong>。ヘルプページにもバーガーメニューの修正を適用。">The big sections now breathe the same: one single margin between them, and a wider ending after the questions. The help page receives the burger-menu fix.</p>
+
+ <h3 data-i18n-fr-html="📐 Une seule marge entre les grandes rubriques <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="📐 One single margin between the big sections <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="📐 大きなセクションの余白を統一 <span class=&quot;badge badge-fix&quot;>修正</span>">📐 One single margin between the big sections <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Mesuré en desktop, l'écart d'une rubrique à l'autre valait <strong>113 px</strong> entre les maquettes et les fonctions, puis <strong>56 px</strong> seulement avant les auteurs, <strong>94 px</strong> avant les questions — et celles-ci commençaient <strong>plus haut que les autres</strong> (26-44 px au lieu de 34-56). Quatre jeux de valeurs pour quatre rubriques : l'œil sentait le trou." data-i18n-en-html="Measured on desktop, the gap from one section to the next was <strong>113 px</strong> between the templates and the features, then <strong>56 px</strong> only before the authors, <strong>94 px</strong> before the questions — and those started <strong>higher than the others</strong> (26-44 px instead of 34-56). Four sets of values for four sections: the eye felt the hole." data-i18n-jp-html="デスクトップでの実測：テンプレートと機能の間は<strong>113px</strong>、著者の前はわずか<strong>56px</strong>、質問の前は<strong>94px</strong>。しかも質問は<strong>他より高い位置から</strong>始まっていました（34-56px ではなく 26-44px）。4つのセクションに4つの値でした。">Measured on desktop: 113 px between templates and features, 56 px only before the authors, 94 px before the questions, and those started higher than the others.</li>
+  <li data-i18n-fr-html="Les quatre rubriques de contenu prennent maintenant <strong>exactement la même marge</strong> — celle de « L'inventaire de SuperPrint », qui était déjà à 34-56 px. Il y a donc <strong>112 px</strong> entre deux rubriques en desktop, 80 px à 1000 px de large, 68 px à 390 px : le même souffle partout." data-i18n-en-html="The four content sections now take <strong>exactly the same margin</strong> — the one of “The SuperPrint inventory”, which was already at 34-56 px. So there is <strong>112 px</strong> between two sections on desktop, 80 px at 1000 px wide, 68 px at 390 px: the same breath everywhere." data-i18n-jp-html="4つのセクションは<strong>まったく同じ余白</strong>になりました（すでに34-56pxだった「SuperPrintの目録」の値）。デスクトップで<strong>112px</strong>、1000px幅で80px、390pxで68px。どこも同じ呼吸です。">The four content sections now share exactly the same margin — the one of “The SuperPrint inventory” (34-56 px): 112 px on desktop, 80 px at 1000, 68 px at 390.</li>
+  <li data-i18n-fr-html="Et <strong>la fin des questions est plus large</strong> (56-96 px) : c'est la dernière marge de la page, avant le bandeau final — elle méritait un vrai souffle, là où elle valait 50 px." data-i18n-en-html="And <strong>the end of the questions is wider</strong> (56-96 px): it is the last margin of the page, before the final band — it deserved a real breath, where it was 50 px." data-i18n-jp-html="そして<strong>質問の後の余白を広げました</strong>（56-96px）。ページ最後の余白であり、以前は50pxでした。">And the end of the questions is wider (56-96 px): it is the last margin of the page, it was 50 px.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧭 Le menu burger de la page d'aide <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🧭 The help page’s burger menu <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🧭 ヘルプページのバーガーメニュー <span class=&quot;badge badge-fix&quot;>修正</span>">🧭 The help page’s burger menu <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="La page d'aide est composée depuis l'accueil : elle portait le même menu mobile, donc le même défaut — le logo icon descendait de 146 px à l'ouverture. Elle reçoit la <strong>même correction</strong> : la bande du logotype est hors flux et le script la pose exactement sur celle de la page." data-i18n-en-html="The help page is composed from the home page: it carried the same mobile menu, hence the same fault — the logo icon dropped by 146 px when opening. It receives the <strong>same correction</strong>: the logotype band is out of flow and the script lays it exactly on the page’s own band." data-i18n-jp-html="ヘルプページはホームページから生成されており、同じモバイルメニュー、つまり同じ不具合（開いたときにロゴが146px下がる）がありました。<strong>同じ修正</strong>を適用し、ロゴ帯をフロー外にしてページの帯とまったく同じ位置に置きます。">The help page carried the same mobile menu and therefore the same fault; it now gets the same correction.</li>
+  <li data-i18n-fr-html="Contrôle des deux pages à 390 / 700 / 820 / 1000 px : <strong>0 px d'écart</strong> entre la bande de la page et celle du menu, image et bande confondues." data-i18n-en-html="Both pages checked at 390 / 700 / 820 / 1000 px: <strong>0 px difference</strong> between the page’s band and the menu’s, image and band alike." data-i18n-jp-html="両ページを390 / 700 / 820 / 1000pxで検証：ページの帯とメニューの帯の差は<strong>0px</strong>（画像も帯も）。">Both pages checked at 390 / 700 / 820 / 1000 px: 0 px difference between the page band and the menu band, image included.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.496 — contrôles : les cinq écarts entre rubriques relevés en desktop (112 px partout, 96 px après les questions), les mêmes valeurs tenues à 1000 et 390 px (80 et 68 px), menu burger mesuré sur l'accueil ET sur la page d'aide à 390 / 700 / 820 / 1000 px (écart 0 px), zéro fuite de langue en FR / EN / JA sur les deux pages, aucune erreur JavaScript, parité site ↔ copie locale, paquet local reconstruit." data-i18n-en="SuperPrint 1.7.496 — checks: the five gaps between sections measured on desktop (112 px everywhere, 96 px after the questions), the same values held at 1000 and 390 px (80 and 68 px), the burger menu measured on the home page AND the help page at 390 / 700 / 820 / 1000 px (0 px difference), zero language leak in FR / EN / JA on both pages, no JavaScript error, web ↔ local copy parity, local package rebuilt." data-i18n-jp="SuperPrint 1.7.496 — 検証：セクション間の5つの余白をデスクトップで実測（どこも112px、質問の後は96px）、1000pxと390pxでも同じ値（80pxと68px）、バーガーメニューはホームとヘルプの両方で390 / 700 / 820 / 1000pxを測定（差0px）、両ページで FR / EN / JA の言語漏れゼロ、JavaScript エラーなし、Web ↔ ローカルコピーの一致、パッケージ再生成済み。">SuperPrint 1.7.496 — checks: the section gaps measured on desktop and at 1000 / 390 px, the burger menu measured on both pages (0 px difference), zero language leak on both, no JavaScript error, parity, package rebuilt.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Voir la page" data-i18n-en="→ See the page" data-i18n-jp="→ ページを見る">→ See the page</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.495 — le logo du menu ne descend plus, et la barre du navigateur passe au noir sur téléphone ===== -->
 

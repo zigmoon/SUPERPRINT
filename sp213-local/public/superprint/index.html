@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.495",
+      "softwareVersion": "1.7.496",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1456,6 +1456,19 @@ details.spf-fold > summary.spf-bar { padding: 19px 0 15px; }
   .spf-m, .spf-m2 { margin-left: 0; text-align: left; }
 }
 
+/* ——— v1.7.496 — UNE SEULE MARGE ENTRE LES GRANDES RUBRIQUES.
+   Les quatre rubriques de contenu portaient quatre jeux de valeurs : la fin de la partie
+   « Fonctions » valait 0, celle des maquettes 30-50, celle des auteurs 30-50, et les questions
+   fréquentes commençaient plus haut que les autres (26-44 au lieu de 34-56). Mesuré en desktop :
+   175 px après la couverture, 113 entre les maquettes et les fonctions, puis 56 seulement avant
+   les auteurs et 94 avant les questions, et 50 avant le bandeau final — l'œil sentait le trou.
+   Les quatre rubriques prennent donc EXACTEMENT la même marge — celles de « L'inventaire de
+   SuperPrint », qui était déjà à 34-56 px — soit 112 px entre deux rubriques en desktop.
+   Et la fin des questions est plus large (56-96 px) : c'est la dernière marge de la page avant
+   le bandeau final, elle mérite un vrai souffle. */
+#templates, #features, #auteurs, #faq { padding: clamp(34px,4vw,56px) 24px; }
+#faq { padding-bottom: clamp(56px,7vw,96px); }
+
 /* ── RESPONSIVE ── */
 @media(max-width: 1000px){
   .vp-grid { grid-template-columns: 1fr; }
@@ -2064,7 +2077,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.495</span>
+    <span>SuperPrint v1.7.496</span>
   </div>
 </div>
 
@@ -3714,7 +3727,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.495</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.496</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>

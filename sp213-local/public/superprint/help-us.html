@@ -1425,9 +1425,26 @@ input, select, textarea, label { cursor: pointer; }
 .mm-lang-toggle button { flex: 0 0 auto; min-width: 68px; min-height: 44px; font-size: 11px; letter-spacing: .12em; border-radius: 0; }
 
 /* 🆕 v1.7.472 — LE COLOPHON DANS LE MENU (voir le commentaire du HTML) : mêmes métriques
-   que la bande d'origine, pour que rien ne change à l'œil sinon la position. */
-.mm-colo { display: flex; justify-content: center; padding: 10px 24px 6px; border-bottom: 1px solid var(--line); }
-.mm-colo img { height: clamp(44px, 12vw, 56px); width: auto; display: block; }
+   que la bande d'origine, pour que rien ne change à l'œil sinon la position.
+   🆕 v1.7.496 — IL NE DESCEND PLUS (même correction que sur l'accueil en v1.7.495). Le menu
+   occupe tout l'écran et recouvrait la bande du logotype (« on perd le logo icon le filet
+   dessous ») : on la repose donc dans le menu — mais elle était empilée SOUS la barre collante,
+   après le décalage mesuré de la nav, si bien que le logo descendait de 146 px à l'ouverture.
+   La bande est maintenant HORS FLUX et le script la pose exactement sur celle de la page (même
+   haut, même hauteur, même filet) : le logo icon ne bouge pas d'un pixel. Si la bande est sortie
+   de l'écran (page défilée), elle se range sous la barre, comme avant. */
+.mm-colo {
+  position: absolute; left: 0; right: 0; top: 5px;      /* 5 px = la hauteur de la barre quadri */
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 6px 24px;                 /* LES MÊMES RESPIRATIONS QUE .brand-header, à la lettre */
+  background: var(--paper); border-bottom: 1px solid var(--line);
+  pointer-events: none;
+}
+.mm-colo img { height: 40px; width: auto; display: block; }
+@media(max-width: 700px){
+  .mm-colo { padding-top: 18px; }                          /* idem .brand-header en mobile */
+  .mm-colo img { height: clamp(44px, 12vw, 56px); }
+}
 
 /* 🆕 v1.7.472 — le bas du menu : qui signe, et la version. Petit, espacé, arrêté par un filet. */
 .mm-bas {
@@ -1656,8 +1673,10 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <!-- 🆕 v1.7.472 — LE COLOPHON NE DISPARAÎT PLUS QUAND LE MENU S'OUVRE.
        Le menu couvre toute la page (demande précédente) ; en s'ouvrant, il cachait donc la
        bande du logotype et son filet — « on perd le logo icon le filet dessous ». On la
-       reproduit ici à l'identique : la même icône, les mêmes respirations (les 8 px mesurés
-       par le script + les 10 px d'ici = les 18 px de la bande d'origine) et le même filet. -->
+       reproduit ici à l'identique : la même icône, les mêmes respirations et le même filet.
+       🆕 v1.7.496 — ET ELLE RESTE À SA PLACE : la bande est hors flux, et le script la pose
+       exactement sur celle de la page (même haut, même hauteur). Avant, elle suivait le
+       décalage de la barre collante et le logo descendait de 146 px à l'ouverture. -->
   <div class="mm-colo" aria-hidden="true">
     <img src="favicon.png" alt="" width="56" height="56">
   </div>
@@ -1681,7 +1700,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.495</span>
+    <span>SuperPrint v1.7.496</span>
   </div>
 </div>
 
@@ -1931,7 +1950,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.495</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.496</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>
@@ -2033,11 +2052,25 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
      reste visible ; on refait la mesure au redimensionnement et à la rotation. */
   function spPlacerMenu() {
     var barre = document.querySelector('nav');
+    var bande = document.querySelector('.brand-header');
+    var colo = menu.querySelector('.mm-colo');
     var bas = barre ? Math.round(barre.getBoundingClientRect().bottom) : 0;
     if (!(bas > 0) || bas > window.innerHeight - 90) bas = 66;
-    /* 🆕 v1.7.472 — menu PLEIN ÉCRAN : il occupe tout le viewport et c’est son contenu qui
-       démarre sous la barre (padding), la barre restant au-dessus pour fermer. */
-    menu.style.paddingTop = (bas + 8) + 'px';
+    /* 🆕 v1.7.496 — LE LOGO NE DESCEND PLUS. Le colophon du menu n'est plus empilé sous la barre
+       collante : on le repose EXACTEMENT sur la bande de la page (même haut, même hauteur),
+       donc le logo icon ne bouge pas à l'ouverture. Quand la bande de la page est sortie de
+       l'écran (page défilée), on la range sous la barre — sinon elle passerait derrière elle. */
+    var rb = bande ? bande.getBoundingClientRect() : null;
+    var hB = rb ? Math.round(rb.height) : 0;
+    var haut = (rb && rb.top >= -1) ? Math.round(rb.top) : (bas + 8);
+    if (colo) {
+      colo.style.top = haut + 'px';
+      colo.style.height = hB ? (hB + 'px') : '';
+    }
+    /* 🆕 v1.7.472 — menu PLEIN ÉCRAN : il occupe tout le viewport et c'est son contenu qui
+       démarre sous la barre (padding), la barre restant au-dessus pour fermer — et sous le
+       colophon s'il a été rangé là. */
+    menu.style.paddingTop = (Math.max(bas, haut + hB) + 8) + 'px';
     menu.style.maxHeight = '';
     menu.style.top = '';
   }
