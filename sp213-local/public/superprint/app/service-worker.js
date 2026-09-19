@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.485-ia-robuste-tabulation';
+const CACHE_NAME = 'superprint-shell-v1.7.486-home-allegee';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

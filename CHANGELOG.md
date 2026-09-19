@@ -9,6 +9,38 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.486] — 2026-09-19
+
+_One language at a time on the home page, and a home page that follows the navigation bar_
+
+### Fixed — trilingual display (home page and help page)
+- **French had no strong hiding rule.** The site hid English and Japanese with `[data-lang="en"], [data-lang="ja"] { display: none }` (specificity 0,1,0) — a rule that **any class rule (0,1,1) beats**. Strong rules existed for `html[lang="en"]` and `html[lang="ja"]`, but not for `html[lang="fr"]`, the default language.
+- **Measured consequence:** inside the ten FAQ items, **the twenty summaries of the three languages were displayed at once in the same panel**; the template grid also mixed two English kickers and four English headings into the French text.
+- **The missing rule is added** — `html[lang="fr"] [data-lang="en"], html[lang="fr"] [data-lang="ja"]` (0,2,1) — **without `!important`**, so the EN / FR / JA buttons (`html .mm-lang-toggle button[data-lang] { display: inline-flex !important }`) keep showing. Checked afterwards: **zero leak in the three languages** on both pages.
+
+### Changed — the home page follows the navigation bar
+- The page carried thirteen chapters in a row. What the navigation bar offers now stays **visible** (the three applications, the tool inventory “Fonctions”, the FAQ, the manual, the authors); **the other chapters announce themselves by their title and fold away** behind a “Read on”: comparison, prepress, presses, analysis, formats, and the tool gallery.
+- **Nothing is deleted and nothing is moved**: the “Chapter 0X” labels encode the document order, and folded content stays in the DOM (findable with `Ctrl+F`, readable by search engines).
+- A folded chapter **opens by itself** when reached from a menu link, a shared anchor or a reload (native `<details>`, no dependency on JavaScript for opening).
+- **Measured:** visible text `17,312 → 12,892` characters in French (−26 %), page height `16,678 → 13,214 px` (−21 %). Header, hero and template grid **untouched** — 133,649 characters compared character by character.
+
+### Fixed — a name collision found on the way
+- The home **already** had a generic fold (1.7.473) that scans every `[data-fold]`, looks up the id equal to the attribute value and, **if the target holds no `.is-folded`, hides the button’s parent**. The new chapter folds first carried `data-fold` too: the script took them for its own buttons and **made whole chapters disappear** (only the watermark word was left). They now carry `data-chapitre`, and the warning is written in the CSS.
+
+### Verified
+| Check | Result |
+|---|---|
+| Language leaks | **0** in `fr` / `en` / `ja`, on the home page and on the help page (checked on every `[data-lang]` element whose language differs) |
+| Folded chapters | 6 folds, 0 open at start-up; each opens (`#prepress` 53 → 814 px) and closes back to the pixel |
+| Hidden anchors | arriving on `#cmpTable` opens the `comparison` fold; a chapter opens from a menu link |
+| Original folds | comparison table (8 folded rows) and tool gallery button still wired and visible |
+| Header / hero | untouched character by character (133,649 identical characters, CSS block aside) |
+| Help page | regenerated from the home (same `<style>`), 0 leak in three languages, form intact, no JS error |
+| Visible text · height | FR 17,312 → 12,892 chars (−26 %) · 16,678 → 13,214 px (−21 %) |
+| Parity web ↔ mirror | **22 / 22 identical**, 0 different, 0 missing |
+| Markers | `version.txt`, footer colophon, `data-sp-js="v486"`, `data-sp-sw="v1.7.486"`, cache tag `20260919-v486-home-allegee`, `CACHE_NAME` bumped |
+| Package | `sp213-local.zip` rebuilt and verified file by file |
+
 ## [1.7.485] — 2026-09-19
 
 _A local AI that can no longer lock the editor, a Tabulation tool that is actually usable, and three interface details_

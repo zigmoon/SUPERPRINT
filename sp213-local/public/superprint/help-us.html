@@ -973,6 +973,41 @@ html[lang="ja"] .inline-ja { display: inline; }
 html[lang="ja"] body, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 { letter-spacing: .01em; }
 html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight: 700; }
 
+/* 🆕 v1.7.486 — LE PIÈGE DU FRANÇAIS, RÉGLÉ POUR DE BON.
+   La langue par défaut n’avait aucune règle forte : tout reposait sur
+   « [data-lang="en"], [data-lang="ja"] { display: none } » (0,1,0), qu’une simple règle de
+   classe (0,1,1) bat. Résultat : dans les dix questions de la FAQ, les summaries des trois
+   langues s’affichaient d’un coup, et la grille des maquettes mêlait deux kickers et quatre
+   titres anglais au texte français. Les règles fortes existaient pour l’anglais et le
+   japonais, pas pour le français : la voici, au même poids (0,2,1). Pas de !important — les
+   boutons EN/FR/JA du menu mobile portent déjà le leur (« html .mm-lang-toggle
+   button[data-lang] ») et continuent de s’afficher. */
+html[lang="fr"] [data-lang="en"], html[lang="fr"] [data-lang="ja"] { display: none; }
+
+/* 🆕 v1.7.486 — ATTENTION AU NOM « data-fold ». La home a déjà son repli générique
+   (v1.7.473) : il balaie « [data-fold] », cherche l’id égal à la valeur, et s’il ne trouve
+   aucun « .is-folded » dans la cible il masque le parent du bouton. Un repli de chapitre
+   porte donc « data-chapitre », pas « data-fold » — sinon le chapitre entier disparaît. */
+/* ——— « VOIR PLUS » : un chapitre annoncé, son corps à la demande (data-chapitre) ——— */
+.fold { margin: clamp(18px,2.4vw,28px) 0 clamp(6px,1vw,10px); border: 1px solid var(--line-strong); background: var(--paper); }
+.fold > summary.fold-sum {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink); padding: 16px 18px; cursor: pointer;
+  list-style: none; transition: background .25s var(--ease);
+}
+.fold > summary.fold-sum::-webkit-details-marker { display: none; }
+.fold > summary.fold-sum:hover { background: var(--paper-2); }
+.fold > summary.fold-sum::after {
+  content: '+'; font-family: var(--f-mono); font-size: 18px; line-height: 1; color: var(--magenta);
+  transition: transform .35s var(--ease); flex-shrink: 0;
+}
+.fold[open] > summary.fold-sum { border-bottom: 1px solid var(--line-strong); background: var(--paper-2); }
+.fold[open] > summary.fold-sum::after { transform: rotate(45deg); }
+.fold > .fold-inner { padding: 4px 0 2px; }
+[data-chapitre] > .fold-inner > .pp-band:last-child,
+[data-chapitre] > .fold-inner > .cmp-wrapper:last-child { margin-bottom: 0; }
+
 /* ── RESPONSIVE ── */
 @media(max-width: 1000px){
   .vp-grid { grid-template-columns: 1fr; }
@@ -1638,7 +1673,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.478</span>
+    <span>SuperPrint v1.7.486</span>
   </div>
 </div>
 
@@ -1888,7 +1923,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.478</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.486</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>

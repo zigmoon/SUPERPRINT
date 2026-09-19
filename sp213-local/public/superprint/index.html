@@ -68,7 +68,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.485",
+      "softwareVersion": "1.7.486",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1147,6 +1147,41 @@ html[lang="ja"] .inline-ja { display: inline; }
 html[lang="ja"] body, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 { letter-spacing: .01em; }
 html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight: 700; }
 
+/* 🆕 v1.7.486 — LE PIÈGE DU FRANÇAIS, RÉGLÉ POUR DE BON.
+   La langue par défaut n’avait aucune règle forte : tout reposait sur
+   « [data-lang="en"], [data-lang="ja"] { display: none } » (0,1,0), qu’une simple règle de
+   classe (0,1,1) bat. Résultat : dans les dix questions de la FAQ, les summaries des trois
+   langues s’affichaient d’un coup, et la grille des maquettes mêlait deux kickers et quatre
+   titres anglais au texte français. Les règles fortes existaient pour l’anglais et le
+   japonais, pas pour le français : la voici, au même poids (0,2,1). Pas de !important — les
+   boutons EN/FR/JA du menu mobile portent déjà le leur (« html .mm-lang-toggle
+   button[data-lang] ») et continuent de s’afficher. */
+html[lang="fr"] [data-lang="en"], html[lang="fr"] [data-lang="ja"] { display: none; }
+
+/* 🆕 v1.7.486 — ATTENTION AU NOM « data-fold ». La home a déjà son repli générique
+   (v1.7.473) : il balaie « [data-fold] », cherche l’id égal à la valeur, et s’il ne trouve
+   aucun « .is-folded » dans la cible il masque le parent du bouton. Un repli de chapitre
+   porte donc « data-chapitre », pas « data-fold » — sinon le chapitre entier disparaît. */
+/* ——— « VOIR PLUS » : un chapitre annoncé, son corps à la demande (data-chapitre) ——— */
+.fold { margin: clamp(18px,2.4vw,28px) 0 clamp(6px,1vw,10px); border: 1px solid var(--line-strong); background: var(--paper); }
+.fold > summary.fold-sum {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink); padding: 16px 18px; cursor: pointer;
+  list-style: none; transition: background .25s var(--ease);
+}
+.fold > summary.fold-sum::-webkit-details-marker { display: none; }
+.fold > summary.fold-sum:hover { background: var(--paper-2); }
+.fold > summary.fold-sum::after {
+  content: '+'; font-family: var(--f-mono); font-size: 18px; line-height: 1; color: var(--magenta);
+  transition: transform .35s var(--ease); flex-shrink: 0;
+}
+.fold[open] > summary.fold-sum { border-bottom: 1px solid var(--line-strong); background: var(--paper-2); }
+.fold[open] > summary.fold-sum::after { transform: rotate(45deg); }
+.fold > .fold-inner { padding: 4px 0 2px; }
+[data-chapitre] > .fold-inner > .pp-band:last-child,
+[data-chapitre] > .fold-inner > .cmp-wrapper:last-child { margin-bottom: 0; }
+
 /* ── RESPONSIVE ── */
 @media(max-width: 1000px){
   .vp-grid { grid-template-columns: 1fr; }
@@ -1645,7 +1680,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.485</span>
+    <span>SuperPrint v1.7.486</span>
   </div>
 </div>
 
@@ -2187,6 +2222,10 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         <p data-lang="ja">すべて実際のアプリ画面で、毎回違うレイアウトを使っています。右クリック、回り込み、図形内の文字、タイポグラフィ、カラー、レイヤー、定規とグリッド。</p>
       </div>
 
+      <details class="fold" data-chapitre="galerie">
+        <summary class="fold-sum"><span class="inline-fr">Voir la galerie des outils</span><span class="inline-en">See the tool gallery</span><span class="inline-ja">道具のギャラリーを見る</span></summary>
+        <div class="fold-inner">
+
       <div class="tgrid" id="tgridOutils">
 
         <figure class="tcard">
@@ -2371,6 +2410,8 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
           <svg class="tm-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         </button>
       </div>
+            </div>
+      </details>
     </div>
 
     <div class="news">
@@ -2406,6 +2447,10 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <p class="lead" data-lang="en">An objective comparison of the features that matter for professional layout. Filled cell: included. Empty cell: absent.</p>
       <p class="lead" data-lang="ja">プロのレイアウトに必要な機能を客観比較。黒い欄＝あり。空欄＝なし。</p>
     </div>
+
+    <details class="fold" data-chapitre="comparison">
+      <summary class="fold-sum"><span class="inline-fr">Voir la suite</span><span class="inline-en">Read on</span><span class="inline-ja">続きを読む</span></summary>
+      <div class="fold-inner">
     <div class="cmp-wrapper">
       <table class="cmp" id="cmpTable" aria-label="Comparison SuperPrint vs DTP categories">
         <thead>
@@ -2566,6 +2611,8 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         </button>
       </div>
     </div>
+        </div>
+    </details>
   </div>
 </section>
 
@@ -2584,6 +2631,10 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <p class="lead" data-lang="en">A printer does not receive a picture — they receive inks, each on its own plate. SuperPrint writes that division into the PDF itself, using the standard colour spaces that RIPs understand.</p>
       <p class="lead" data-lang="ja">印刷所が受け取るのは絵ではなく、版ごとに分かれたインキです。SuperPrintはその分割をPDF自体に書き込み、RIPが解釈できる標準的な色空間を使用します。</p>
     </div>
+
+    <details class="fold" data-chapitre="prepress">
+      <summary class="fold-sum"><span class="inline-fr">Voir la suite</span><span class="inline-en">Read on</span><span class="inline-ja">続きを読む</span></summary>
+      <div class="fold-inner">
 
     <div class="pp-grid">
 
@@ -2663,6 +2714,8 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <a href="index.html" class="btn-paper" data-lang="en">Try the CMYK export</a>
       <a href="index.html" class="btn-paper" data-lang="ja">CMYK書き出しを試す</a>
     </div>
+        </div>
+    </details>
   </div>
 </section>
 
@@ -2856,6 +2909,10 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <h2 data-lang="en">A press for every project</h2>
       <h2 data-lang="ja">あらゆるプロジェクトに一台のプレスを</h2>
     </div>
+
+    <details class="fold" data-chapitre="use-cases">
+      <summary class="fold-sum"><span class="inline-fr">Voir la suite</span><span class="inline-en">Read on</span><span class="inline-ja">続きを読む</span></summary>
+      <div class="fold-inner">
     <div class="uc-grid">
       <div class="uc-card"><span class="uc-idx">01</span><h3 data-lang="fr">Flyers</h3><h3 data-lang="en">Flyers</h3><h3 data-lang="ja">フライヤー</h3><p data-lang="fr">Événements, promotions — A5, A4, carré.</p><p data-lang="en">Events, promotions — A5, A4, square.</p><p data-lang="ja">イベント・販促 — A5、A4、正方形。</p></div>
       <div class="uc-card"><span class="uc-idx">02</span><h3 data-lang="fr">Affiches</h3><h3 data-lang="en">Posters</h3><h3 data-lang="ja">ポスター</h3><p data-lang="fr">A3, A2, A1, jusqu'au grand format 40×60.</p><p data-lang="en">A3, A2, A1, up to large 40×60 cm.</p><p data-lang="ja">A3、A2、A1、40×60cmの大判まで。</p></div>
@@ -2866,6 +2923,8 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <div class="uc-card"><span class="uc-idx">07</span><h3 data-lang="fr">Documents pro</h3><h3 data-lang="en">Business documents</h3><h3 data-lang="ja">ビジネス文書</h3><p data-lang="fr">Rapports annuels, propositions, présentations.</p><p data-lang="en">Annual reports, proposals, presentations.</p><p data-lang="ja">年次報告、提案書、プレゼン資料。</p></div>
       <div class="uc-card"><span class="uc-idx">08</span><h3 data-lang="fr">Créations culturelles</h3><h3 data-lang="en">Cultural work</h3><h3 data-lang="ja">文化作品</h3><p data-lang="fr">Pochettes, programmes de concert, livrets.</p><p data-lang="en">Album covers, concert programs, booklets.</p><p data-lang="ja">ジャケット、コンサートプログラム、小冊子。</p></div>
     </div>
+        </div>
+    </details>
   </div>
 </section>
 
@@ -2883,6 +2942,10 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <p class="lead" data-lang="en">Desktop DTP suites remain the historical reference of layout. SuperPrint takes their essential gestures and opens them, in the browser.</p>
       <p class="lead" data-lang="ja">デスクトップDTPスイートは今も組版の歴史的な基準です。SuperPrintはその本質的な所作を受け継ぎ、ブラウザで開きます。</p>
     </div>
+
+    <details class="fold" data-chapitre="vs-indesign">
+      <summary class="fold-sum"><span class="inline-fr">Voir la suite</span><span class="inline-en">Read on</span><span class="inline-ja">続きを読む</span></summary>
+      <div class="fold-inner">
     <div class="vs-cols">
       <div class="vs-col vs-win">
         <h3 data-lang="fr">Ce que SuperPrint apporte</h3>
@@ -2935,6 +2998,8 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         </ul>
       </div>
     </div>
+        </div>
+    </details>
   </div>
 </section>
 
@@ -2952,6 +3017,10 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <p class="lead" data-lang="en">The language of the document — from print PDF to interchange file — is part of the craft. SuperPrint speaks both directions fluently.</p>
       <p class="lead" data-lang="ja">ドキュメントの言語 — 印刷用PDFから交換ファイルまで — もまた職人の技。SuperPrintは双方向を流暢に話します。</p>
     </div>
+
+    <details class="fold" data-chapitre="formats">
+      <summary class="fold-sum"><span class="inline-fr">Voir la suite</span><span class="inline-en">Read on</span><span class="inline-ja">続きを読む</span></summary>
+      <div class="fold-inner">
 
     <p class="fmt-label" data-lang="fr">Sortie d'atelier</p>
     <p class="fmt-label" data-lang="en">Leaving the atelier</p>
@@ -2985,6 +3054,8 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <span class="fmt-chip in">SVG</span>
       <span class="fmt-chip in">WebP</span>
     </div>
+        </div>
+    </details>
   </div>
 </section>
 
@@ -3317,7 +3388,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.485</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.486</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
@@ -3911,6 +3982,12 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
+    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+       le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
+    try {
+      if (location.hash === '#legal') window.openLegal('legalOverlay');
+      else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
+    } catch (e) {}
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
       IDS.forEach(function (id) {
@@ -3921,5 +3998,29 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   })();
 </script>
 
+<script>
+/* 🆕 v1.7.486 — si l’on arrive par une ancre rangée derrière un « Voir la suite »
+   (lien du menu, lien partagé, rechargement avec #hash), le chapitre s’ouvre tout seul. */
+(function () {
+  function ouvrir() {
+    if (!location.hash || location.hash.length < 2) return;
+    var c;
+    try { c = document.querySelector(location.hash); } catch (e) { return; }
+    if (!c || !c.closest) return;
+    var d = c.closest("details.fold");
+    if (d) d.open = true;
+  }
+  document.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+    if (!a) return;
+    var c = document.querySelector(a.getAttribute("href"));
+    var d = c && c.closest ? c.closest("details.fold") : null;
+    if (d) d.open = true;
+  }, true);
+  window.addEventListener("hashchange", ouvrir);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ouvrir);
+  else ouvrir();
+})();
+</script>
 </body>
 </html>
