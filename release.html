@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.487 — the whole technical zone of the home page becomes one readable part: eight blocks, one shared bar, a different treatment inside each, and the old chapter intros moved inside the blocks.">
-<meta name="keywords" content="SUPER PRINT 1.7.487, SuperPrint, browser DTP editor, features, home page, prepress, Pantone, comparison, formats, local package, SP213 Studio">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.488 — the FAQ becomes its own page (faq.html, numbered questions, FAQPage markup), the manual enters the navigation bar before the authors, every block starts folded and no card keeps a lighter background than the page.">
+<meta name="keywords" content="SUPER PRINT 1.7.488, SuperPrint, browser DTP editor, FAQ, help, manual, navigation, home page, local package, SP213 Studio">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.487 — the whole technical zone of the home page becomes one readable part: eight blocks, one shared bar, a different treatment inside each, and the old chapter intros moved inside the blocks.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.488 — the FAQ becomes its own page (faq.html, numbered questions, FAQPage markup), the manual enters the navigation bar before the authors, every block starts folded and no card keeps a lighter background than the page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SUPER PRINT v1.7.487 — one readable part for all the features, eight blocks in the order of the tools.">
+<meta name="twitter:description" content="SUPER PRINT v1.7.488 — the FAQ has its own page, the manual enters the bar, every block starts folded.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -706,6 +706,35 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.488 — la FAQ a sa page, le manuel entre dans la barre, les soufflets se ferment ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-488">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.488</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 19 septembre 2026" data-i18n-en="Released September 19, 2026" data-i18n-jp="2026年9月19日公開">Released September 19, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Quatre retouches demandées, toutes sur la page d'accueil : <strong>la FAQ part sur sa propre page</strong>, <strong>le manuel entre dans la barre de navigation</strong>, <strong>tous les soufflets se ferment au départ</strong>, et <strong>aucune carte ne garde un fond plus clair que la page</strong>." data-i18n-en-html="Four requested touches, all on the home page: <strong>the FAQ moves to its own page</strong>, <strong>the manual enters the navigation bar</strong>, <strong>all blocks start folded</strong>, and <strong>no card keeps a background lighter than the page</strong>." data-i18n-jp-html="ご要望の4点、いずれもホームページについて：<strong>FAQ は専用ページへ</strong>、<strong>マニュアルをナビゲーションバーに追加</strong>、<strong>折りたたみは初期状態ですべて閉じる</strong>、<strong>カードの背景はページより明るくしない</strong>。">Four requested touches on the home page: the FAQ gets its own page, the manual enters the bar, every block starts folded, and no card keeps a lighter background.</p>
+
+ <h3 data-i18n-fr-html="📄 La FAQ a sa page <span class=&quot;badge badge-new&quot;>nouveau</span>" data-i18n-en-html="📄 The FAQ has its own page <span class=&quot;badge badge-new&quot;>new</span>" data-i18n-jp-html="📄 FAQ は専用ページに <span class=&quot;badge badge-new&quot;>新規</span>">📄 The FAQ has its own page <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Les dix questions quittent l'accueil — qui s'allongeait — et deviennent <strong><code>faq.html</code></strong>, bâtie sur le même modèle que la page de participation : mêmes en-tête, barre, menu mobile, pied de page, styles et script de langue. Les questions sont <strong>numérotées</strong> (01 → 10) et chaque réponse s'ouvre sous sa question." data-i18n-en-html="The ten questions leave the home page — which kept getting longer — and become <strong><code>faq.html</code></strong>, built on the same model as the take-part page: same header, bar, mobile menu, footer, styles and language script. The questions are <strong>numbered</strong> (01 → 10) and each answer opens under its question." data-i18n-jp-html="10の質問は長くなり続けていたホームページを離れ、<strong><code>faq.html</code></strong> になりました。参加ページと同じ構成（ヘッダー、バー、モバイルメニュー、フッター、スタイル、言語スクリプト）。質問は<strong>番号付き</strong>（01 → 10）で、回答は質問の下に開きます。">The ten questions leave the home page and become <code>faq.html</code>, same chrome as the take-part page, with numbered questions and answers opening underneath.</li>
+  <li data-i18n-fr-html="La page porte son propre <strong>balisage <code>FAQPage</code></strong> (elle héritait du schéma de la page de don), la barre y mène depuis l'accueil, la page d'aide et elle-même, et le <strong>plan du site</strong> gagne l'adresse. L'accueil, lui, s'allège de 12 300 caractères." data-i18n-en-html="The page carries its own <strong><code>FAQPage</code> markup</strong> (it inherited the donation page schema), the bar leads there from the home page, the help page and itself, and the <strong>sitemap</strong> gains the URL. The home page loses 12,300 characters." data-i18n-jp-html="ページは独自の <strong><code>FAQPage</code> マークアップ</strong>を持ちます（以前は寄付ページのスキーマを継承）。バーからホーム・ヘルプ・自身へ導線があり、<strong>サイトマップ</strong>にも追加。ホームページは12,300文字軽くなりました。">The page carries its own <code>FAQPage</code> schema, the bar and the sitemap point to it, and the home page loses 12,300 characters.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧭 La barre, les soufflets, les fonds <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🧭 The bar, the blocks, the backgrounds <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🧭 バー、折りたたみ、背景 <span class=&quot;badge badge-fix&quot;>修正</span>">🧭 The bar, the blocks, the backgrounds <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Le manuel entre dans la barre de navigation, avant les auteurs</strong> — il n'existait que dans le menu mobile. Il est maintenant des deux côtés, sur l'accueil, la page d'aide et la page FAQ." data-i18n-en-html="<strong>The manual enters the navigation bar, before the authors</strong> — it only existed in the mobile menu. It is now in both, on the home page, the help page and the FAQ page." data-i18n-jp-html="<strong>マニュアルをナビゲーションバーに追加（著者の前）</strong>。これまではモバイルメニューだけでしたが、ホーム・ヘルプ・FAQ の各ページで両方に表示されます。">The manual now sits in the desktop bar before the authors, as well as in the mobile menu, on all three pages.</li>
+  <li data-i18n-fr-html="<strong>Tous les soufflets sont fermés au départ</strong> : les huit blocs de la partie « Fonctions » sont annoncés par leur titre, et on ouvre celui que l'on veut." data-i18n-en-html="<strong>Every block starts folded</strong>: the eight blocks of the « Fonctions » part announce themselves by their title, and you open the one you need." data-i18n-jp-html="<strong>折りたたみは初期状態ですべて閉じています</strong>。「Fonctions」の8つのブロックは見出しだけを見せ、必要なものを開きます。">Every block starts folded: the eight blocks announce themselves by their title and you open the one you need.</li>
+  <li data-i18n-fr-html="<strong>Plus aucun fond plus clair que la page dans les soufflets</strong> : les cartes, les grilles, le tableau et les pastilles faisaient des taches blanches à l'ouverture — tout est transparent désormais, seuls les filets restent. Deux exceptions voulues : la ligne « Prix » du comparatif et le bloc du prépresse, qui gardent leur fond à l'encre." data-i18n-en-html="<strong>No opening block keeps a lighter background than the page any more</strong>: the cards, the grids, the table and the chips made white patches — everything is transparent now, only the rules remain. Two deliberate exceptions: the « Prix » row of the comparison and the prepress block, which keep their ink background." data-i18n-jp-html="<strong>開いたブロック内にページより明るい背景はもうありません</strong>。カード、グリッド、表、タグの白い染みをなくし、すべて透明に（罫線のみ残します）。意図的な例外は2つ：比較表の「価格」行と、プリプレスブロックのインク背景です。">No block keeps a lighter background than the page (except the comparison’s « Prix » row and the prepress block, which stay in ink on purpose).</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.488 — contrôles : page FAQ servie (HTTP 200, dix questions, réponses dans une seule langue, aucune erreur JavaScript), accueil sans section FAQ, huit soufflets fermés au départ, barre manuel-avant-auteurs sur les trois pages, fonds de tous les blocs et cartes mesurés transparents ou au papier de la page, zéro fuite de langue en FR / EN / JA, sitemap complété, parité site ↔ copie locale 22/22, paquet local reconstruit avec la page FAQ dedans." data-i18n-en="SuperPrint 1.7.488 — checks: FAQ page served (ten questions, one language per answer, no JavaScript error), home page without the FAQ section, eight blocks folded on arrival, manual-before-authors in the bar on all three pages, every block and card background measured transparent or the page paper, zero language leak in FR / EN / JA, sitemap completed, web ↔ local copy parity 22/22, local package rebuilt with the FAQ page inside." data-i18n-jp="SuperPrint 1.7.488 — 検証：FAQ ページ配信（HTTP 200、10問、回答は1言語、JavaScript エラーなし）、ホームに FAQ セクションなし、8ブロックは初期状態で閉、3ページでバーはマニュアルが著者の前、全ブロックとカードの背景は透明かページの紙色、FR / EN / JA で漏れゼロ、サイトマップ更新、Web ↔ ローカルコピーの一致 22/22、パッケージに FAQ ページを含めて再生成。">SuperPrint 1.7.488 — checks: FAQ page served (twelve questions, one language, no JS error), home without the FAQ section, eight blocks folded, manual before authors on three pages, backgrounds measured transparent, zero language leak, sitemap updated, parity 22/22, package rebuilt.</p>
+ <a class="release-cta" href="https://superprint.cc/faq.html" data-i18n-fr="→ Lire la FAQ" data-i18n-en="→ Read the FAQ" data-i18n-jp="→ FAQ を読む">→ Read the FAQ</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.487 — la partie « Fonctions » : huit blocs, une seule présentation ===== -->
 

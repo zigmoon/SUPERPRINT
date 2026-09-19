@@ -9,6 +9,33 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.488] — 2026-09-19
+
+_The FAQ has its own page, the manual enters the bar, every block starts folded, no lighter background_
+
+### Added — `faq.html`
+- **The ten questions leave the home page** (which kept getting longer) and become their own page, built on the same chrome as `help-us.html`: same header, navigation bar, mobile menu, footer, styles and language script. Questions are **numbered** (01 → 10) and each answer opens under its question.
+- The page carries its own **`FAQPage`** structured data (it inherited the donation schema before), the bar leads to it from the home page, the help page and itself, the **sitemap** gains the URL, and the home page loses **12,300 characters**.
+- The PayPal SDK inherited from the help page was removed there (it threw “Element with id js-sdk-container-… not found”).
+
+### Changed
+- **The manual enters the navigation bar, before the authors**: it only existed in the mobile menu. It is now in both, on the home page, the help page and the FAQ page. The following chapters were renumbered once more (manual 02, authors 03) so the numbering stays continuous.
+- **Every block of the « Fonctions » part starts folded** — each announces what it holds by its bar, and you open the one you need.
+- **No block keeps a background lighter than the page**: the cards, grids, table and chips were measured and are now transparent (only the rules remain). Two deliberate exceptions: the « Prix » row of the comparison table and the whole prepress block, which keep their ink background.
+
+### Verified
+| Check | Result |
+|---|---|
+| FAQ page | `HTTP 200`, 10 questions, numbered, one language shown per answer, **no JavaScript error** |
+| Home page | no `#faq` section, **8 blocks, 0 open** on arrival |
+| Navigation | `manuel` before `auteurs` in the desktop bar and the mobile menu, on the home, help and FAQ pages |
+| Backgrounds | every block, grid, card and chip measured `rgba(0, 0, 0, 0)` or the page paper (`rgb(247, 243, 236)`) |
+| Language leaks | **0** in `fr` / `en` / `ja` on the home page, the help page and the FAQ page |
+| Sitemap | `faq.html` added with its three `hreflang` alternates |
+| Parity web ↔ mirror | **22 / 22 identical**, 0 different, 0 missing |
+| Markers | `version.txt`, footer colophon, `data-sp-js="v488"`, `data-sp-sw="v1.7.488"`, cache tag `20260919-v488-faq-a-part`, `CACHE_NAME` bumped |
+| Package | `sp213-local.zip` rebuilt and verified file by file, **FAQ page inside** |
+
 ## [1.7.487] — 2026-09-19
 
 _One readable part for every feature: eight blocks, one shared bar, a different treatment inside each_

@@ -45,15 +45,15 @@
   </url>
 
   <!-- Nous aider : pourquoi le projet est indépendant, et comment le soutenir. -->
-  <url>
-       <loc>https://superprint.cc/help-us.html</loc>
-       <lastmod>2026-09-18T00:00:00+00:00</lastmod>
-       <changefreq>monthly</changefreq>
-       <priority>0.6000</priority>
-       <xhtml:link rel="alternate" hreflang="en" href="https://superprint.cc/help-us.html"/>
-       <xhtml:link rel="alternate" hreflang="fr" href="https://superprint.cc/help-us.html?lang=fr"/>
-       <xhtml:link rel="alternate" hreflang="ja" href="https://superprint.cc/help-us.html?lang=ja"/>
-       <xhtml:link rel="alternate" hreflang="x-default" href="https://superprint.cc/help-us.html"/>
+    <url>
+    <loc>https://superprint.cc/faq.html</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://superprint.cc/faq.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://superprint.cc/faq.html?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://superprint.cc/faq.html?lang=ja"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://superprint.cc/faq.html"/>
   </url>
 
   <!-- SuperTyPo : atelier de fontes et de typographie. -->
