@@ -36,6 +36,33 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
+## [1.7.491] — 2026-09-19
+
+_No chapters, one background everywhere, a held rhythm, and the FAQ back on the home page in two columns_
+
+### Changed
+- **The chapter idea is gone**: no more “Chapter 01 · …” labels nor numbers, and **“atelier” gives way to SuperPrint** in the headings of the technical part (“L’inventaire de SuperPrint”, “SuperPrint face aux grandes maisons”, “Les trois applications de SuperPrint”, “Sur la table de SuperPrint”).
+- **One single background inside the blocks**: prepress was the only one set in ink (light text on black) — it is like the others now. The variety stays in the layout and the cards.
+- **The rhythm is held**: the general section padding (72 to 140 px) also applied to that zone. The sections are aligned on 34–56 px, the part has no bottom padding, its heading sits 22 px above the first bar, the blocks stay 18 px apart, and the FAQ’s bottom follows the same breath.
+
+### Added — the FAQ comes home
+- The ten questions are back on the home page, **numbered and on two columns** on desktop (one on mobile), with the number hanging on the left and the `+` pinned right, so a question no longer breaks before its “?”.
+- **`faq.html` is deleted** (both trees, sitemap cleaned). The navigation bar and the help page point back to `#faq`, and the home page gains the **`FAQPage`** structured data.
+
+### Verified
+| Check | Result |
+|---|---|
+| Kickers | no chapter numbers, no “atelier” left in the part’s headings |
+| Block backgrounds | the eight `.spf-in` measured `rgba(0, 0, 0, 0)` (page paper) |
+| Rhythm | heading → first bar 22 px · between blocks 18/18/18/18/18/18/18 px |
+| FAQ | 10 questions, `columns: 2` on desktop (2 horizontal positions), 1 column on mobile |
+| `faq.html` | HTTP 404 — the page no longer exists |
+| Mobile 390 px | 1 column, no horizontal overflow, block bar 105 px, no JavaScript error |
+| Language leaks | **0** in `fr` / `en` / `ja` |
+| Parity web ↔ mirror | **22 / 22 identical** |
+| Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.491"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
+| Package | `sp213-local.zip` rebuilt and verified file by file |
+
 ## [1.7.489] — 2026-09-19
 
 _Clean backgrounds, a tighter pile, and the manual section leaves the home page_
