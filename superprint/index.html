@@ -68,7 +68,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.489",
+      "softwareVersion": "1.7.490",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1236,24 +1236,7 @@ details.spf-fold[open] > summary.spf-bar { color: var(--ink); }
 }
 #inventaire .feat-card h3 { font-size: 12.5px; letter-spacing: .06em; }
 
-/* ——— 3 · le prépresse : le seul bloc à l'encre, texte clair ——— */
-#prepress.spf-fold { border-top-color: var(--ink); }
-#prepress .spf-in {
-  background: var(--ink); color: var(--paper); padding: clamp(24px,3vw,42px) clamp(20px,2.6vw,38px);
-  margin-bottom: 4px;
-}
-#prepress .pp-card { background: transparent; border-color: rgba(247,243,236,.16); }
-#prepress .pp-grid, #prepress .pp-band, #prepress .spf-in > * { background: transparent; }
-#prepress .pp-card:hover { background: rgba(247,243,236,.07); }
-#prepress .pp-card h3 { color: var(--paper); }
-#prepress .pp-card p, #prepress .pp-card p strong { color: rgba(247,243,236,.78); }
-#prepress .pp-card code { background: rgba(247,243,236,.1); color: var(--paper); border-color: rgba(247,243,236,.2); }
-#prepress .pp-num { color: var(--yellow); }
-#prepress .spf-lead p { color: rgba(247,243,236,.8); }
-#prepress .pp-band { border-color: rgba(247,243,236,.2); }
-#prepress .pp-band-txt { color: rgba(247,243,236,.8); }
-#prepress .pp-band .btn-paper { background: var(--paper); border-color: var(--paper); color: var(--ink); }
-#prepress .pp-band .btn-paper:hover { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+
 
 /* ——— 4 · les presses : pastilles serrées ——— */
 #use-cases .uc-grid { grid-template-columns: repeat(4, minmax(0,1fr)); margin-top: 4px; }
@@ -1278,21 +1261,21 @@ details.spf-fold[open] > summary.spf-bar { color: var(--ink); }
    que la page — et faisaient des taches blanches dans les blocs ouverts. Tout redevient
    transparent : seuls les filets subsistent, et la structure se lit toujours. Le bloc du
    prépresse est exclu de la règle : c'est le seul qui DOIT garder son fond (encre). */
-details.spf-fold:not(#prepress) .spf-in > *,
-details.spf-fold:not(#prepress) .spf-in .feat-card,
-details.spf-fold:not(#prepress) .spf-in .uc-card,
-details.spf-fold:not(#prepress) .spf-in .tcard,
-details.spf-fold:not(#prepress) .spf-in .tcard-img,
-details.spf-fold:not(#prepress) .spf-in .tcard-body,
-details.spf-fold:not(#prepress) .spf-in .vs-cols,
-details.spf-fold:not(#prepress) .spf-in .vs-col,
-details.spf-fold:not(#prepress) .spf-in .cmp-wrapper,
-details.spf-fold:not(#prepress) .spf-in .cmp th,
-details.spf-fold:not(#prepress) .spf-in .cmp td,
-details.spf-fold:not(#prepress) .spf-in .fmt-chip { background-color: transparent; }
-details.spf-fold:not(#prepress) .spf-in .feat-card:hover,
-details.spf-fold:not(#prepress) .spf-in .uc-card:hover,
-details.spf-fold:not(#prepress) .spf-in .tcard:hover { background-color: var(--paper-2); }
+details.spf-fold .spf-in > *, details.spf-fold .spf-in .pp-grid, details.spf-fold .spf-in .pp-band, details.spf-fold .spf-in .pp-card,
+details.spf-fold .spf-in .feat-card,
+details.spf-fold .spf-in .uc-card,
+details.spf-fold .spf-in .tcard,
+details.spf-fold .spf-in .tcard-img,
+details.spf-fold .spf-in .tcard-body,
+details.spf-fold .spf-in .vs-cols,
+details.spf-fold .spf-in .vs-col,
+details.spf-fold .spf-in .cmp-wrapper,
+details.spf-fold .spf-in .cmp th,
+details.spf-fold .spf-in .cmp td,
+details.spf-fold .spf-in .fmt-chip { background-color: transparent; }
+details.spf-fold .spf-in .feat-card:hover,
+details.spf-fold .spf-in .uc-card:hover,
+details.spf-fold .spf-in .tcard:hover { background-color: var(--paper-2); }
 /* ——— v1.7.489 — LES BLOCS NE PORTENT PLUS LE FOND DE L'ANCIENNE SECTION.
    Les identifiants des chapitres ont été gardés — #showcase, #comparison, #formats étaient en
    papier-3, #prepress et #vs-indesign en papier-2 — et leurs règles de fond avec eux : les blocs
@@ -1305,6 +1288,34 @@ details.spf-fold:not(#prepress) .spf-in .tcard:hover { background-color: var(--p
 /* ——— ET MOINS D'AIR ENTRE LES CHAPITRES : la pile respirait trop ——— */
 details.spf-fold { margin-top: clamp(12px,1.5vw,18px); }
 details.spf-fold > summary.spf-bar { padding: 15px 0 12px; }
+/* ——— v1.7.490 — LE RYTHME ET L'UNITÉ DES FONDS.
+   (1) Le rembourrage général des sections (72 à 140 px) s'appliquait aussi à cette zone : entre
+   les blocs serrés (18 px) et la section suivante, le vide devenait énorme. On l'aligne.
+   (2) Tous les intérieurs de soufflet sont désormais au même fond : plus de bloc à l'encre.
+   (3) La FAQ revient sur la page, numérotée et sur deux colonnes en desktop. */
+#features, #faq, #auteurs { padding: clamp(34px,4vw,56px) 24px; }
+#features, #faq { padding-bottom: 0; }
+.spf-head { max-width: 900px; margin-bottom: clamp(14px,1.8vw,22px); }
+#faq .section-head { margin-bottom: clamp(16px,2.2vw,28px); }
+
+.faq-list { counter-reset: q; }
+.faq-item { counter-increment: q; }
+/* retrait suspendu : le numéro à gauche, le signe + à droite, le texte au milieu */
+#faq summary.faq-q { display: block; position: relative; padding: 20px 44px 20px 46px; }
+#faq summary.faq-q::before {
+  content: counter(q, decimal-leading-zero);
+  position: absolute; left: 0; top: 24px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  color: var(--magenta);
+}
+#faq summary.faq-q::after { position: absolute; right: 0; top: 50%; margin: 0; transform: translateY(-50%); }
+#faq details[open] summary.faq-q::after { transform: translateY(-50%) rotate(45deg); }
+@media (max-width: 980px) { #faq summary.faq-q { padding-left: 40px; } }
+#faq .faq-a { padding-left: 46px; }
+/* deux colonnes en desktop : la colonne ne coupe jamais une question */
+#faq .faq-list { columns: 2; column-gap: clamp(30px,3.6vw,68px); }
+#faq .faq-item { break-inside: avoid; }
+@media (max-width: 980px) { #faq .faq-list { columns: 1; } #faq .faq-a { padding-left: 0; } }
 /* ── RESPONSIVE ── */
 @media(max-width: 1000px){
   .vp-grid { grid-template-columns: 1fr; }
@@ -1734,6 +1745,95 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
 
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "en",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does SuperPrint really require no subscription?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, SuperPrint works with no subscription, no account required, no ads. You open your browser and start creating immediately. Zigmoon develops SuperPrint with an open spirit to democratize professional creation."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is SuperPrint a good professional DTP tool?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SuperPrint provides the essential features of a professional DTP tool directly in the browser: multi-page layout, professional typography with automatic hyphenation, print-ready PDF export, layers, master pages, boolean operations. A solid solution for professional creations without any monthly subscription."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does SuperPrint need to be installed?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. SuperPrint runs entirely in the web browser (Chrome, Firefox, Safari, Edge). No installation, no download, no plugin. It can also be installed as a PWA desktop app from Chrome or Edge by clicking the install icon in the address bar."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can SuperPrint export PDF CMYK for commercial printing?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. SuperPrint has an integrated RGB→CMYK converter and exports PDFs suitable for professional offset printing. It supports CMYK colors, Pantone spot colors and screen proof simulation. The SUPER PRINT CONVERT tool guides you through this workflow."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I import my Word or PDF documents?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. SuperPrint imports your Word (.docx), OpenDocument (.odt), text (.txt, .rtf) and PDF documents, then lays them out automatically with pagination. Your sources arrive as-is in the atelier."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is SP213 Studio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SP213 is SuperPrint's AI layout assistant. Describe your layout by text or voice: it generates a complete document (poster, flyer, brochure, catalog, magazine, report) that you then refine in the editor. It runs on DeepSeek, OpenRouter (free), Groq, or a local offline WebLLM model via WebGPU."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are my files secure and private?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. All your data stays 100% local on your device. SuperPrint uses IndexedDB (browser database) for auto-save. No files are ever sent to any server. No account required. Auto-save triggers every 12 seconds."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does SuperPrint work offline?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. SuperPrint is a Progressive Web App (PWA) with a Service Worker. Once loaded at least once, it works entirely offline. Perfect for working on trains, planes or on limited connections."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "SuperPrint vs generalist web design tools — what's the difference?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Unlike generalist web design tools, SuperPrint is focused on professional publishing (DTP): real CMYK color management, master pages, layers, text frame chaining, professional typographic engine with hyphenation. SuperPrint is made for designers, graphic artists and printing professionals. General-audience tools aim at quick creation with predefined templates. SuperPrint gives you total control over your layout."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What operating systems does SuperPrint support?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SuperPrint works on any system with a modern browser: Windows 10/11, macOS, Linux, Chrome OS (Chromebook), iPad (Safari/Chrome). There is no dependency on the operating system."
+      }
+    }
+  ]
+}
+</script>
 </head>
 
 <body>
@@ -1758,7 +1858,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   </a>
   <div class="nav-links">
     <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
-    <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
+    <a href="#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
     <a href="#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
     <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
@@ -1785,7 +1885,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <img src="favicon.png" alt="" width="56" height="56">
   </div>
   <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
-  <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
+  <a href="#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
   <a href="#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
   <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
@@ -1804,7 +1904,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.489</span>
+    <span>SuperPrint v1.7.490</span>
   </div>
 </div>
 
@@ -2293,9 +2393,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="ghost" aria-hidden="true">FONCTIONS</div>
   <div class="container">
     <div class="section-head spf-head">
-      <div class="section-label" data-lang="fr">Chapitre 01 · L'inventaire de l'atelier</div>
-      <div class="section-label" data-lang="en">Chapter 01 · The atelier inventory</div>
-      <div class="section-label" data-lang="ja">第01章 · 工房の目録</div>
+      <div class="section-label" data-lang="fr">L'inventaire de SuperPrint</div>
+      <div class="section-label" data-lang="en">The SuperPrint inventory</div>
+      <div class="section-label" data-lang="ja">SuperPrintの目録</div>
 <h2 data-lang="fr">La PAO, entièrement réinventée dans votre navigateur.</h2>
       <h2 data-lang="en">DTP, entirely reinvented in your browser.</h2>
       <h2 data-lang="ja">DTPを、ブラウザでまるごと作り直す。</h2>
@@ -2310,7 +2410,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <!-- 1 · LES TROIS APPLICATIONS — ouvertes : ce sont les portes d'entrée -->
     <details class="spf-fold" id="showcase" data-chapitre="showcase">
         <summary class="spf-bar">
-          <div class="spf-t"><h3 data-lang="fr">Trois applications · un seul atelier</h3><h3 data-lang="en">Three applications · one atelier</h3><h3 data-lang="ja">3つのアプリ、ひとつの工房</h3></div>
+          <div class="spf-t"><h3 data-lang="fr">Les trois applications de SuperPrint</h3><h3 data-lang="en">The three SuperPrint applications</h3><h3 data-lang="ja">SuperPrintの3つのアプリ</h3></div>
           <span class="spf-m">SuperPrint · Studio IA · SuperTyPo</span>
           <span class="spf-plus" aria-hidden="true">+</span>
         </summary>
@@ -2353,7 +2453,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <details class="spf-fold" id="inventaire" data-chapitre="inventaire">
         <summary class="spf-bar">
           <div class="spf-k"><span data-lang="fr">L'inventaire</span><span data-lang="en">The inventory</span><span data-lang="ja">目録</span></div>
-          <div class="spf-t"><h3 data-lang="fr">L'inventaire de l'atelier</h3><h3 data-lang="en">The atelier inventory</h3><h3 data-lang="ja">工房の目録</h3></div>
+          <div class="spf-t"><h3 data-lang="fr">L'inventaire de SuperPrint</h3><h3 data-lang="en">The SuperPrint inventory</h3><h3 data-lang="ja">SuperPrintの目録</h3></div>
           <span class="spf-m"><span class="spf-m2" data-lang="fr">15 outils — toujours à portée</span><span class="spf-m2" data-lang="en">15 tools — always within reach</span><span class="spf-m2" data-lang="ja">15の道具 — いつでも手の届く場所に</span></span>
           <span class="spf-plus" aria-hidden="true">+</span>
         </summary>
@@ -2639,7 +2739,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <!-- 5 · LE BANC D'ESSAI — replié : le tableau du comparatif -->
     <details class="spf-fold" id="comparison" data-chapitre="comparison">
         <summary class="spf-bar">
-          <div class="spf-k"><span data-lang="fr">Sur la table d'atelier</span><span data-lang="en">On the worktable</span><span data-lang="ja">作業台の上で</span></div>
+          <div class="spf-k"><span data-lang="fr">Sur la table de SuperPrint</span><span data-lang="en">On the worktable</span><span data-lang="ja">作業台の上で</span></div>
           <div class="spf-t"><h3 data-lang="fr">SuperPrint face aux autres familles de PAO</h3><h3 data-lang="en">SuperPrint against the other DTP families</h3><h3 data-lang="ja">SuperPrint vs 他のDTP各系譜</h3></div>
           <span class="spf-m">07</span>
           <span class="spf-plus" aria-hidden="true">+</span>
@@ -2822,7 +2922,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <details class="spf-fold" id="vs-indesign" data-chapitre="vs-indesign">
         <summary class="spf-bar">
           <div class="spf-k"><span data-lang="fr">L'analyse</span><span data-lang="en">The analysis</span><span data-lang="ja">分析</span></div>
-          <div class="spf-t"><h3 data-lang="fr">L'atelier du navigateur face aux grandes maisons</h3><h3 data-lang="en">The browser atelier facing the great houses</h3><h3 data-lang="ja">ブラウザの工房と大手メゾンの対比</h3></div>
+          <div class="spf-t"><h3 data-lang="fr">SuperPrint face aux grandes maisons</h3><h3 data-lang="en">SuperPrint facing the great houses</h3><h3 data-lang="ja">SuperPrintと大手メゾンの対比</h3></div>
           <span class="spf-m">12</span>
           <span class="spf-plus" aria-hidden="true">+</span>
         </summary>
@@ -3134,6 +3234,115 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
      d’entrée réelles dans le manuel (ancres vérifiées dans documentation.html). -->
 
 
+<!-- ══════════════ FAQ ══════════════ -->
+<section id="faq">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-label" data-lang="fr">Questions fréquentes</div>
+      <div class="section-label" data-lang="en">Frequently asked</div>
+      <div class="section-label" data-lang="ja">よくある質問</div>
+      <h2 data-lang="fr">Les questions que l'on pose souvent à l'atelier</h2>
+      <h2 data-lang="en">Questions often asked at the atelier</h2>
+      <h2 data-lang="ja">工房でよく聞かれる質問</h2>
+    </div>
+
+    <div class="faq-list">
+
+      <details class="faq-item">
+        <summary class="faq-q" data-lang="fr">SuperPrint est-il vraiment sans abonnement ?</summary>
+        <summary class="faq-q" data-lang="en">Does SuperPrint really require no subscription?</summary>
+        <summary class="faq-q" data-lang="ja">SuperPrintは本当にサブスク不要ですか？</summary>
+        <p class="faq-a" data-lang="fr">Oui, SuperPrint fonctionne <strong>sans abonnement, sans compte requis, sans publicité</strong>. Vous ouvrez votre navigateur et vous travaillez immédiatement. Zigmoon développe SuperPrint en open-spirit dans le but de démocratiser la création professionnelle.</p>
+        <p class="faq-a" data-lang="en">Yes, SuperPrint works <strong>with no subscription, no account required, no ads</strong>. You open your browser and start creating immediately. Zigmoon develops SuperPrint with an open spirit to democratize professional creation.</p>
+        <p class="faq-a" data-lang="ja">はい、SuperPrintは<strong>サブスク不要、アカウント不要、広告なし</strong>で動作します。ブラウザを開くだけですぐに制作を開始できます。Zigmoonはプロの創作を民主化するためにオープンな精神でSuperPrintを開発しています。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q" data-lang="fr">SuperPrint est-il un bon logiciel de PAO professionnel ?</summary>
+        <summary class="faq-q" data-lang="en">Is SuperPrint a good professional DTP tool?</summary>
+        <summary class="faq-q" data-lang="ja">SuperPrintは優れたプロ向けDTPツールですか？</summary>
+        <p class="faq-a" data-lang="fr">SuperPrint propose les fonctionnalités essentielles d'un logiciel de PAO pro directement dans le navigateur : mise en page multi-pages, typographie professionnelle avec césure automatique, export PDF prêt pour l'impression, calques, gabarits, opérations booléennes. Une solution solide pour les créations professionnelles sans abonnement mensuel.</p>
+        <p class="faq-a" data-lang="en">SuperPrint provides the essential features of a professional DTP tool directly in the browser: multi-page layout, professional typography with automatic hyphenation, print-ready PDF export, layers, master pages, boolean operations. A solid solution for professional creations without any monthly subscription.</p>
+        <p class="faq-a" data-lang="ja">SuperPrintはプロ向けDTPツールの主要機能をブラウザで提供します：複数ページレイアウト、自動ハイフネーション付きのプロ仕様タイポグラフィ、印刷対応PDF書き出し、レイヤー、マスターページ、ブーリアン演算。月額サブスクなしでプロ品質の制作ができる堅実なソリューションです。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q" data-lang="fr">Faut-il installer SuperPrint ?</summary>
+        <summary class="faq-q" data-lang="en">Does SuperPrint need to be installed?</summary>
+        <summary class="faq-q" data-lang="ja">SuperPrintのインストールは必要ですか？</summary>
+        <p class="faq-a" data-lang="fr">Non. SuperPrint fonctionne entièrement dans le navigateur web (Chrome, Firefox, Safari, Edge). Aucune installation, aucun téléchargement, aucun plugin. Il peut également être installé comme application PWA sur votre bureau depuis Chrome ou Edge en cliquant sur l'icône d'installation dans la barre d'adresse.</p>
+        <p class="faq-a" data-lang="en">No. SuperPrint runs entirely in the web browser (Chrome, Firefox, Safari, Edge). No installation, no download, no plugin. It can also be installed as a PWA desktop app from Chrome or Edge by clicking the install icon in the address bar.</p>
+        <p class="faq-a" data-lang="ja">いいえ。SuperPrintは完全にWebブラウザ（Chrome、Firefox、Safari、Edge）内で動作します。インストールもダウンロードもプラグインも不要です。また、ChromeやEdgeのアドレスバーのインストールアイコンから、PWAとしてデスクトップにインストールすることもできます。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q" data-lang="fr">SuperPrint peut-il exporter en PDF CMYK pour l'imprimerie ?</summary>
+        <summary class="faq-q" data-lang="en">Can SuperPrint export PDF CMYK for commercial printing?</summary>
+        <summary class="faq-q" data-lang="ja">商業印刷用のCMYK PDFを書き出せますか？</summary>
+        <p class="faq-a" data-lang="fr">Oui. SuperPrint dispose d'un convertisseur RGB→CMYK intégré et exporte des fichiers PDF adaptés à l'impression professionnelle offset. Il prend en charge les couleurs CMYK, les tons directs Pantone et la simulation d'épreuve écran. L'outil <code>SUPER PRINT CONVERT</code> vous accompagne dans ce workflow.</p>
+        <p class="faq-a" data-lang="en">Yes. SuperPrint has an integrated RGB→CMYK converter and exports PDFs suitable for professional offset printing. It supports CMYK colors, Pantone spot colors and screen proof simulation. The <code>SUPER PRINT CONVERT</code> tool guides you through this workflow.</p>
+        <p class="faq-a" data-lang="ja">はい。SuperPrintはRGB→CMYK変換を内蔵し、プロのオフセット印刷に対応したPDFを書き出します。CMYKカラー、Pantone特色、画面プルーフシミュレーションに対応。<code>SUPER PRINT CONVERT</code>ツールがこのワークフローを案内します。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q" data-lang="fr">Puis-je importer mes documents Word ou PDF ?</summary>
+        <summary class="faq-q" data-lang="en">Can I import my Word or PDF documents?</summary>
+        <summary class="faq-q" data-lang="ja">WordやPDFのドキュメントを読み込めますか？</summary>
+        <p class="faq-a" data-lang="fr">Oui. SuperPrint importe vos documents Word (.docx), OpenDocument (.odt), textes (.txt, .rtf) et pages PDF, puis les met en page automatiquement avec pagination. Vos sources arrivent telles quelles dans l'atelier.</p>
+        <p class="faq-a" data-lang="en">Yes. SuperPrint imports your Word (.docx), OpenDocument (.odt), text (.txt, .rtf) and PDF documents, then lays them out automatically with pagination. Your sources arrive as-is in the atelier.</p>
+        <p class="faq-a" data-lang="ja">はい。SuperPrintはWord（.docx）、OpenDocument（.odt）、テキスト（.txt / .rtf）、PDFページを読み込み、自動ページ番号付きでレイアウトします。素材はそのまま工房へ届きます。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q" data-lang="fr">Qu'est-ce que le studio SP213 ?</summary>
+        <summary class="faq-q" data-lang="en">What is SP213 Studio?</summary>
+        <summary class="faq-q" data-lang="ja">SP213スタジオとは何ですか？</summary>
+        <p class="faq-a" data-lang="fr">SP213 est l'assistant de mise en page par IA de SuperPrint. Décrivez votre maquette en texte ou à la voix : il génère un document complet (affiche, flyer, brochure, catalogue, magazine, rapport) que vous retravaillez ensuite dans l'éditeur. Il fonctionne avec DeepSeek, OpenRouter (gratuit), Groq, ou un modèle local WebLLM hors-ligne via WebGPU.</p>
+        <p class="faq-a" data-lang="en">SP213 is SuperPrint's AI layout assistant. Describe your layout by text or voice: it generates a complete document (poster, flyer, brochure, catalog, magazine, report) that you then refine in the editor. It runs on DeepSeek, OpenRouter (free), Groq, or a local offline WebLLM model via WebGPU.</p>
+        <p class="faq-a" data-lang="ja">SP213はSuperPrintのAIレイアウトアシスタントです。テキストまたは音声でレイアウトを説明すると、完全なドキュメント（ポスター、フライヤー、パンフレット、カタログ、雑誌、レポート）を生成し、その後エディタで仕上げられます。DeepSeek、OpenRouter（無料）、Groq、またはWebGPUによるローカル・オフラインのWebLLMモデルで動作します。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q" data-lang="fr">Mes fichiers sont-ils sécurisés et privés ?</summary>
+        <summary class="faq-q" data-lang="en">Are my files secure and private?</summary>
+        <summary class="faq-q" data-lang="ja">ファイルは安全でプライベートですか？</summary>
+        <p class="faq-a" data-lang="fr">Oui. Toutes vos données restent <strong>100% locales sur votre appareil</strong>. SuperPrint utilise IndexedDB (base de données du navigateur) pour la sauvegarde automatique. Aucun fichier n'est jamais envoyé sur un serveur. Aucun compte n'est requis. La sauvegarde automatique se déclenche toutes les 12 secondes.</p>
+        <p class="faq-a" data-lang="en">Yes. All your data stays <strong>100% local on your device</strong>. SuperPrint uses IndexedDB (browser database) for auto-save. No files are ever sent to any server. No account required. Auto-save triggers every 12 seconds.</p>
+        <p class="faq-a" data-lang="ja">はい。すべてのデータは<strong>端末内に100%ローカル保存</strong>されます。SuperPrintは自動保存にIndexedDB（ブラウザのデータベース）を使用。ファイルがサーバーに送信されることはありません。アカウントも不要です。自動保存は12秒ごとに実行されます。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q" data-lang="fr">SuperPrint fonctionne-t-il hors-ligne ?</summary>
+        <summary class="faq-q" data-lang="en">Does SuperPrint work offline?</summary>
+        <summary class="faq-q" data-lang="ja">SuperPrintはオフラインで動作しますか？</summary>
+        <p class="faq-a" data-lang="fr">Oui. SuperPrint est une Progressive Web App (PWA) avec Service Worker. Une fois chargé au moins une fois, il fonctionne entièrement hors-ligne. Parfait pour travailler dans le train, en avion ou sur des connexions limitées.</p>
+        <p class="faq-a" data-lang="en">Yes. SuperPrint is a Progressive Web App (PWA) with a Service Worker. Once loaded at least once, it works entirely offline. Perfect for working on trains, planes or on limited connections.</p>
+        <p class="faq-a" data-lang="ja">はい。SuperPrintはService Workerを備えたプログレッシブWebアプリ（PWA）です。一度読み込めば、完全にオフラインで動作します。電車や飛行機、通信制限のある環境での作業に最適です。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q" data-lang="fr">SuperPrint vs les outils de design web généralistes — quelle est la différence ?</summary>
+        <summary class="faq-q" data-lang="en">SuperPrint vs generalist web design tools — what's the difference?</summary>
+        <summary class="faq-q" data-lang="ja">一般的なWebデザインツールとの違いは？</summary>
+        <p class="faq-a" data-lang="fr">Contrairement aux outils de design web généralistes, SuperPrint est orienté <strong>publication professionnelle (PAO)</strong> : véritable gestion des couleurs CMYK, gabarits, calques, chaînage de blocs texte, moteur typographique professionnel avec césure. SuperPrint est destiné aux designers, graphistes et professionnels de l'impression. Les outils grand public ciblent la création rapide avec des templates prédéfinis. SuperPrint donne le contrôle total sur votre mise en page.</p>
+        <p class="faq-a" data-lang="en">Unlike generalist web design tools, SuperPrint is focused on <strong>professional publishing (DTP)</strong>: real CMYK color management, master pages, layers, text frame chaining, professional typographic engine with hyphenation. SuperPrint is made for designers, graphic artists and printing professionals. General-audience tools aim at quick creation with predefined templates. SuperPrint gives you total control over your layout.</p>
+        <p class="faq-a" data-lang="ja">一般的なWebデザインツールと異なり、SuperPrintは<strong>プロの出版（DTP）</strong>に特化：本格的なCMYKカラーマネジメント、マスターページ、レイヤー、テキストフレーム連結、ハイフネーション付きプロ仕様タイポグラフィエンジンを備えます。SuperPrintはデザイナー、グラフィックアーティスト、印刷のプロ向けです。一般向けツールが定型テンプレートでの手軽な作成を狙うのに対し、SuperPrintはレイアウトを完全にコントロールできます。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q" data-lang="fr">Sur quels systèmes d'exploitation SuperPrint fonctionne-t-il ?</summary>
+        <summary class="faq-q" data-lang="en">What operating systems does SuperPrint support?</summary>
+        <summary class="faq-q" data-lang="ja">対応OSを教えてください。</summary>
+        <p class="faq-a" data-lang="fr">SuperPrint fonctionne sur <strong>tout système disposant d'un navigateur moderne</strong> : Windows 10/11, macOS, Linux, Chrome OS (Chromebook), iPad (Safari/Chrome). Il n'y a aucune dépendance au système d'exploitation.</p>
+        <p class="faq-a" data-lang="en">SuperPrint works on <strong>any system with a modern browser</strong>: Windows 10/11, macOS, Linux, Chrome OS (Chromebook), iPad (Safari/Chrome). There is no dependency on the operating system.</p>
+        <p class="faq-a" data-lang="ja">SuperPrintは<strong>最新のブラウザを搭載したすべてのシステム</strong>で動作します：Windows 10/11、macOS、Linux、Chrome OS（Chromebook）、iPad（Safari / Chrome）。OSへの依存はありません。</p>
+      </details>
+
+    </div>
+
+  </div>
+</section>
+
 <!-- ══════════════ 🆕 v1.7.472 — LES AUTEURS — SIMON DUPONT-GELLERT &amp; CLÉMENCE BRUNET ══════════════
      Le logiciel est signé, et la page ne le disait nulle part : les deux noms n'existaient
      qu'au fond des mentions légales, derrière un clic. Ils sont maintenant sur la page, en
@@ -3143,9 +3352,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="ghost" aria-hidden="true">AUTEURS</div>
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 02 · Les auteurs</div>
-      <div class="section-label" data-lang="en">Chapter 02 · The authors</div>
-      <div class="section-label" data-lang="ja">第02章 · 著者</div>
+      <div class="section-label" data-lang="fr">Les auteurs</div>
+      <div class="section-label" data-lang="en">The authors</div>
+      <div class="section-label" data-lang="ja">著者</div>
       <h2 data-lang="fr">Deux auteurs, un atelier.</h2>
       <h2 data-lang="en">Two authors, one atelier.</h2>
       <h2 data-lang="ja">ふたりの著者、ひとつの工房。</h2>
@@ -3289,7 +3498,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.489</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.490</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>

@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.489-fonds-et-manuel';
+const CACHE_NAME = 'superprint-shell-v1.7.490-rythme-et-faq-2colonnes';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
