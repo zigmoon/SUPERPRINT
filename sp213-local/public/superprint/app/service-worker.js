@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.493-recherche-faq';
+const CACHE_NAME = 'superprint-shell-v1.7.494-traitement-unifie';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

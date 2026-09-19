@@ -1,4 +1,4 @@
-﻿# Changelog
+﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,34 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.494] — 2026-09-19
+
+_The prepress block’s interior treatment, given to the other blocks_
+
+### Changed
+- **One single interior treatment for the blocks of the “Fonctions” part.** The recipe of the favouried block (`#prepress`, “La chambre noire”) is now the rule for all: a lead paragraph, a **framed grid of numbered cards** (cyan number, capitalised title, 13 px text, bordered tag) and a **closing band** (italic Playfair sentence + `.btn-paper` button). Applied to `#inventaire` (15 cards), `#use-cases` (8 cards, four per row), `#vs-indesign` (the two facing lists become two cards) and `#formats` (the two format families become two cards).
+- **No content was retyped**: every trilingual text is reused as is. Only the lead paragraphs and the closing bands are new — written in French, English and Japanese.
+
+### Fixed
+- **The comparison table had two identical buttons** (“Voir la suite du tableau”): the one living *inside* `.cmp-wrapper` (hence scrolling with the table) is removed; the one below the table stays.
+- **The output chips were unreadable** (`#formats .fmt-chip.out`): the 1.7.488 background flattening had left them with `background: transparent` while their text colour was still `var(--paper)` — paper on paper. The ink background is restored.
+- **On a phone**, the `+` of the formats block wrapped alone to the left (its right-hand marker takes two lines): the sign is now pinned in the corner and the marker set flush left.
+- **Version drift repaired**: `help-us.html` was still stamped 1.7.492 and `VERSIONING.md` had not been bumped since 1.7.492.
+
+### Verified
+| Check | Result |
+|---|---|
+| Blocks 2 · 4 · 6 · 7 vs block 3 | same classes measured identical (`pp-grid` / `pp-card` / `pp-band`) |
+| Cards | `#inventaire` 15 · `#use-cases` 8 · `#vs-indesign` 2 · `#formats` 2 |
+| Columns | 3 / 4 / 2 / 2 on desktop, 1 at 390 px |
+| Table buttons | **1** (was 2) |
+| Output chips | `rgb(23, 19, 13)` on `rgb(247, 243, 236)` |
+| Language leaks | **0** in `fr` / `en` / `ja` |
+| Mobile 390 px | 1 column, no horizontal overflow |
+| JavaScript errors | none |
+| Markers | `data-sp-js="v494"`, cache tag `20260919-v494-traitement-unifie`, `CACHE_NAME` bumped |
+
 
 ## [1.7.493] — 2026-09-19
 
