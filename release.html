@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.494 — the prepress block’s interior treatment is given to four other blocks (heading, framed grid of numbered cards, closing band) and the comparison table now has a single button.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.495 — on phones the logo icon no longer drops when the burger menu opens, and the browser bar (Chrome Android, Safari iOS) is declared black.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.494 — the prepress block’s interior treatment is given to four other blocks (heading, framed grid of numbered cards, closing band) and the comparison table now has a single button.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.495 — on phones the logo icon no longer drops when the burger menu opens, and the browser bar (Chrome Android, Safari iOS) is declared black.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -76,7 +76,7 @@
 	"name": "Releases — Zigmoon Apps",
 	"description": "Release notes for CUT THE FLOW, SuperPrint, PDF-YZ, Bird and the complete Zigmoon application collection.",
 	"url": "https://app.zigmoon.com/release.html",
-	"dateModified": "2026-09-19",
+	"dateModified": "2026-09-20",
 	"inLanguage": "en-US",
 	"isPartOf": {"@type": "WebSite", "url": "https://app.zigmoon.com/", "name": "Zigmoon Apps"},
 	"publisher": {"@type": "Organization", "name": "Zigmoon", "url": "https://zigmoon.com"}
@@ -706,6 +706,33 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.495 — le logo du menu ne descend plus, et la barre du navigateur passe au noir sur téléphone ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-495">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.495</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 20 septembre 2026" data-i18n-en="Released September 20, 2026" data-i18n-jp="2026年9月20日公開">Released September 20, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Deux finitions sur téléphone : <strong>le logo icon ne descend plus</strong> quand le menu burger s'ouvre, et <strong>la barre du navigateur passe au noir</strong> — dans Chrome comme dans Safari." data-i18n-en-html="Two mobile refinements: <strong>the logo icon no longer drops</strong> when the burger menu opens, and <strong>the browser bar turns black</strong> — in Chrome as in Safari." data-i18n-jp-html="モバイル向けの仕上げ2点：バーガーメニューを開いても<strong>ロゴアイコンが下がらなくなり</strong>、<strong>ブラウザのバーが黒</strong>になります（Chrome も Safari も）。">Two mobile refinements: the logo icon no longer drops when the burger menu opens, and the browser bar turns black in Chrome as in Safari.</p>
+
+ <h3 data-i18n-fr-html="🧭 Le logo reste à sa place <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🧭 The logo stays put <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🧭 ロゴが動かない <span class=&quot;badge badge-fix&quot;>修正</span>">🧭 The logo stays put <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Le menu occupe tout l'écran et recouvrait la bande du logotype ; on la repose donc dans le menu. Mais elle était <strong>empilée sous la barre collante</strong>, après un décalage mesuré : à l'ouverture, le logo icon <strong>descendait de 146 px</strong> — sur un écran de téléphone, il sautait le tiers de la hauteur visible." data-i18n-en-html="The menu covers the whole screen and used to hide the logotype band, so that band is laid out again inside the menu. But it was <strong>stacked under the sticky bar</strong>, after a measured offset: on opening, the logo icon <strong>dropped by 146 px</strong> — on a phone screen, a third of the visible height." data-i18n-jp-html="メニューは全画面でロゴ帯を覆うため、メニュー内にロゴ帯を再現していました。しかし<strong>追従バーの下に積まれ</strong>、開いた瞬間にロゴが<strong>146px 下がって</strong>いました。スマートフォンでは画面の1/3に相当します。">The band laid out again inside the menu was stacked under the sticky bar: on opening, the logo dropped by 146 px, a third of a phone screen.</li>
+  <li data-i18n-fr-html="La bande est maintenant <strong>hors flux</strong> et posée exactement sur celle de la page : même haut, même hauteur, même filet, mêmes respirations (6 px en haut, 18 px sous 700 px). Mesuré de 390 à 1000 px de large : <strong>0 px d'écart</strong>, le logo ne bouge pas d'un pixel. Si la bande est sortie de l'écran (page défilée), elle se range sous la barre, comme avant." data-i18n-en-html="The band is now <strong>out of flow</strong> and laid exactly on the page’s own band: same top, same height, same rule, same paddings (6 px, 18 px below 700 px). Measured from 390 to 1000 px wide: <strong>0 px difference</strong> — the logo does not move a pixel. If the band has left the screen (scrolled page), it tucks under the bar as before." data-i18n-jp-html="ロゴ帯は<strong>フロー外</strong>になり、ページの帯とまったく同じ位置・高さ・罫線・余白（6px、700px以下は18px）に置かれます。幅390〜1000pxで測定して<strong>差は0px</strong>。スクロールして帯が画面外にあるときは、これまでどおりバーの下に収まります。">The band is now out of flow and laid exactly on the page’s band — same top, same height, same paddings. Measured 390 to 1000 px wide: 0 px difference.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🌑 La barre du navigateur en noir <span class=&quot;badge badge-new&quot;>nouveau</span>" data-i18n-en-html="🌑 A black browser bar <span class=&quot;badge badge-new&quot;>new</span>" data-i18n-jp-html="🌑 ブラウザのバーを黒に <span class=&quot;badge badge-new&quot;>新規</span>">🌑 A black browser bar <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="La page déclare <strong>le noir pour la barre du navigateur sur téléphone</strong> (Chrome sur Android, Safari sur iOS : barre d'adresse et de statut), et garde le papier au-delà de 1000 px. Le noir est déclaré sans condition : un navigateur qui ne sait pas lire la condition media prend celui-là, donc le téléphone est servi dans tous les cas." data-i18n-en-html="The page now declares <strong>black for the browser bar on phones</strong> (Chrome on Android, Safari on iOS: address and status bar) and keeps the paper colour above 1000 px. Black is declared without a condition: a browser that cannot read the media condition takes that one, so phones are served either way." data-i18n-jp-html="スマートフォンでは<strong>ブラウザのバーを黒</strong>と宣言し（Android の Chrome、iOS の Safari：アドレスバーとステータスバー）、1000px を超えると紙色のままにします。黒は条件なしで宣言しているため、media 条件を読めないブラウザでも黒になります。">The page declares black for the phone browser bar (Chrome Android, Safari iOS) and keeps paper above 1000 px; black is declared without a condition, so phones get it either way.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.495 — contrôles : position du logo mesurée avant et après l'ouverture du menu à 390 / 700 / 820 / 1000 px (écart 0 px, image et bande confondues), barre collante et premier lien du menu inchangés sous la bande, deux déclarations theme-color lues dans l'ordre voulu (noir, puis papier au-delà de 1000 px), aucun débordement, zéro fuite de langue en FR / EN / JA, aucune erreur JavaScript, parité site ↔ copie locale, paquet local reconstruit." data-i18n-en="SuperPrint 1.7.495 — checks: logo position measured before and after opening the menu at 390 / 700 / 820 / 1000 px (0 px difference, image and band alike), sticky bar and first menu link unchanged under the band, both theme-color declarations read in the intended order (black, then paper above 1000 px), no overflow, zero language leak in FR / EN / JA, no JavaScript error, web ↔ local copy parity, local package rebuilt." data-i18n-jp="SuperPrint 1.7.495 — 検証：メニュー開閉前後でロゴ位置を390 / 700 / 820 / 1000pxで測定（差0px、画像も帯も）、追従バーと最初のリンクの位置は不変、theme-color は意図した順（黒、次に1000px超で紙色）、横スクロールなし、FR / EN / JA で言語漏れゼロ、JavaScript エラーなし、Web ↔ ローカルコピーの一致、パッケージ再生成済み。">SuperPrint 1.7.495 — checks: logo position measured before and after opening the menu at 390 / 700 / 820 / 1000 px (0 px difference), theme-color declarations in the intended order, no overflow, zero language leak, no JavaScript error, parity, package rebuilt.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Voir la page" data-i18n-en="→ See the page" data-i18n-jp="→ ページを見る">→ See the page</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.494 — le traitement intérieur du bloc prépresse donné aux autres ===== -->
 

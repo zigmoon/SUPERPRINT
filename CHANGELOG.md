@@ -1,4 +1,4 @@
-﻿﻿# Changelog
+﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,28 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.495] — 2026-09-20
+
+_The burger menu keeps the logo in place, and the browser bar turns black on phones_
+
+### Added
+- **A black browser bar on phones.** `index.html` declares `theme-color` twice: black without a media condition (so a browser that cannot read media conditions — Safari — takes that one), then the paper colour above 1000 px (Chrome keeps the last declaration whose condition is true). Chrome on Android and Safari on iOS tint the address / status bar with it.
+
+### Fixed
+- **The logo icon no longer drops when the burger menu opens.** The full-screen menu reproduces the page’s logotype band (it used to hide it), but that band was stacked *under* the sticky bar after the measured offset: on opening, the logo fell **146 px** — a third of a phone screen. The band is now **out of flow** and the script lays it exactly on the page’s own band (same top, same height, same paddings, same rule). Measured at 390 / 700 / 820 / 1000 px wide: **0 px difference**, image and band alike. If the band has left the screen (scrolled page), it tucks under the bar as before.
+
+### Verified
+| Check | Result |
+|---|---|
+| Logo before / after opening | 390 px: `5→77` both · 700 px: `5→86` · 820 px: `5→58` · 1000 px: `5→58` |
+| Difference | **0 px** at all four widths (band and image) |
+| First menu link | 151 / 160 / 132 px — unchanged, under the band |
+| `theme-color` | `#000000` then `#F7F3EC` `(min-width: 1001px)` |
+| Language leaks | **0** in `fr` / `en` / `ja` |
+| JavaScript errors | none |
+| Markers | `data-sp-js="v495"`, cache tag `20260920-v495-menu-et-theme`, `CACHE_NAME` bumped, `title` follow-through |
+
 
 ## [1.7.494] — 2026-09-19
 
