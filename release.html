@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.488 — the FAQ becomes its own page (faq.html, numbered questions, FAQPage markup), the manual enters the navigation bar before the authors, every block starts folded and no card keeps a lighter background than the page.">
-<meta name="keywords" content="SUPER PRINT 1.7.488, SuperPrint, browser DTP editor, FAQ, help, manual, navigation, home page, local package, SP213 Studio">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.489 — the blocks no longer carry the background of the old chapters, the pile between chapters is tighter (18 px, 72 px bars), and the manual section leaves the home page for documentation.html.">
+<meta name="keywords" content="SUPER PRINT 1.7.489, SuperPrint, browser DTP editor, home page, blocks, background, spacing, manual, documentation">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.488 — the FAQ becomes its own page (faq.html, numbered questions, FAQPage markup), the manual enters the navigation bar before the authors, every block starts folded and no card keeps a lighter background than the page.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.489 — the blocks no longer carry the background of the old chapters, the pile between chapters is tighter (18 px, 72 px bars), and the manual section leaves the home page for documentation.html.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SUPER PRINT v1.7.488 — the FAQ has its own page, the manual enters the bar, every block starts folded.">
+<meta name="twitter:description" content="SUPER PRINT v1.7.489 — clean backgrounds, a tighter pile, the manual section removed.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -706,6 +706,33 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.489 — fonds des blocs, pile resserrée, la partie manuel s'en va ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-489">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.489</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 19 septembre 2026" data-i18n-en="Released September 19, 2026" data-i18n-jp="2026年9月19日公開">Released September 19, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Trois finitions sur l'accueil : <strong>les blocs ne portent plus le fond des anciennes sections</strong>, <strong>la pile respire moins</strong>, et <strong>la partie « Le manuel » quitte la page</strong> — la barre de navigation mène déjà à la documentation." data-i18n-en-html="Three refinements on the home page: <strong>the blocks no longer carry the background of the old chapters</strong>, <strong>the pile breathes less</strong>, and <strong>the manual section leaves the page</strong> — the navigation bar already leads to the documentation." data-i18n-jp-html="ホームページの3つの調整：<strong>ブロックは旧章の背景を引き継がなくなり</strong>、<strong>積み重ねの余白を詰め</strong>、<strong>マニュアルの章を削除</strong>しました（ナビゲーションバーからすでにドキュメントへ行けます）。">Three refinements: the blocks no longer carry the old chapters’ background, the pile is tighter, and the manual section leaves the page.</p>
+
+ <h3 data-i18n-fr-html="🎨 Les fonds et l'air <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🎨 Backgrounds and air <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🎨 背景と余白 <span class=&quot;badge badge-fix&quot;>修正</span>">🎨 Backgrounds and air <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Les blocs gardaient le fond de l'ancienne section.</strong> Les identifiants avaient été conservés — et leurs règles avec : trois blocs étaient en papier-3, le prépresse et l'analyse en papier-2. D'où des blocs plus clairs que la page, et un prépresse « pas comme les autres ». Les huit blocs sont maintenant au papier de la page, les filigranes qui vivaient dans ces anciennes sections sont cachés, et le cadre du tableau est transparent lui aussi." data-i18n-en-html="<strong>The blocks kept the background of the old chapters.</strong> The ids had been kept — and their rules with them: three blocks were set in paper-3, prepress and the analysis in paper-2. Hence blocks lighter than the page, and a prepress that looked “not like the others”. All eight blocks now use the page paper, the watermarks that lived in those old sections are hidden, and the table frame is transparent too." data-i18n-jp-html="<strong>ブロックが旧章の背景を引き継いでいました。</strong>id を保持したため、そのルールも残っていました（3つは paper-3、プリプレスと分析は paper-2）。ページより明るいブロックや、他と違って見えるプリプレスが生じていました。現在は8つともページの紙色になり、旧章の透かし文字は非表示、表の枠も透明です。">The blocks kept the background of the old chapters (paper-3 for three of them, paper-2 for prepress and the analysis) — all eight are now on the page paper, the old watermarks are hidden and the table frame is transparent.</li>
+  <li data-i18n-fr-html="<strong>Il y avait trop d'air entre les chapitres</strong> : 26 à 44 px de marge plus 20/16 px de rembourrage. Mesuré après coup : <strong>18 px d'écart</strong> et une barre de 72 px au lieu de 104 — les huit blocs se lisent enfin comme une seule liste." data-i18n-en-html="<strong>There was too much air between the chapters</strong>: 26 to 44 px of margin plus 20/16 px of padding. Measured afterwards: <strong>an 18 px gap</strong> and a 72 px bar instead of 104 — the eight blocks finally read as one single list." data-i18n-jp-html="<strong>章の間の余白が大きすぎました</strong>（マージン26〜44px＋パディング20/16px）。修正後は<strong>18px の間隔</strong>、バーは104pxから72pxになり、8つのブロックがひとつのリストとして読めます。">There was too much air between chapters (26–44 px plus padding): an 18 px gap and a 72 px bar now, so the eight blocks read as one list.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="📕 La partie « Le manuel » quitte l'accueil <span class=&quot;badge badge-new&quot;>nouveau</span>" data-i18n-en-html="📕 The manual section leaves the home page <span class=&quot;badge badge-new&quot;>new</span>" data-i18n-jp-html="📕 マニュアルの章を削除 <span class=&quot;badge badge-new&quot;>新規</span>">📕 The manual section leaves the home page <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Le chapitre « Tout est écrit, noir sur blanc. » et ses quatre entrées (démarrage, préférences, export, catalogue) sont <strong>retirés de la page</strong> : la barre de navigation mène déjà au manuel, c'est suffisant. L'entrée « Manuel » de la barre et du menu pointe désormais directement sur <code>documentation.html</code>, sur l'accueil, la page d'aide et la page FAQ — et les auteurs remontent au chapitre 02." data-i18n-en-html="The chapter “Everything is written, in black and white” and its four entries (start, preferences, export, catalogue) are <strong>removed from the page</strong>: the navigation bar already leads to the manual, which is enough. The “Manual” entry in the bar and the menu now points straight to <code>documentation.html</code>, on the home page, the help page and the FAQ page — and the authors move up to chapter 02." data-i18n-jp-html="「すべては白黒で書かれています」の章と4つの入口（はじめに、環境設定、書き出し、機能一覧）を<strong>ページから削除</strong>しました。ナビゲーションバーからすでにマニュアルへ行けるためです。「マニュアル」の項目はホーム・ヘルプ・FAQ の各ページで <code>documentation.html</code> を直接指し、著者の章は02に繰り上がります。">The “Everything is written, in black and white” chapter and its four entries are removed: the bar already leads to the manual. The “Manual” entry now points straight to <code>documentation.html</code>, and the authors move up to chapter 02.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.489 — contrôles : fonds des huit blocs mesurés transparents ou au papier de la page, filigranes des anciennes sections éteints, écart entre les blocs ramené à 18 px (mesuré 18/18/18/18/18/18/18), barre de 72 px, partie manuel absente de la page et plus aucun lien #manuel, navigation menant à documentation.html, zéro fuite de langue en FR / EN / JA, aucune erreur JavaScript, parité site ↔ copie locale 22/22, paquet local reconstruit." data-i18n-en="SuperPrint 1.7.489 — checks: the eight blocks measured transparent or on the page paper, the old section watermarks switched off, the gap between blocks brought down to 18 px (measured 18/18/18/18/18/18/18), a 72 px bar, the manual section gone from the page with no #manuel link left, the navigation leading to documentation.html, zero language leak in FR / EN / JA, no JavaScript error, web ↔ local copy parity 22/22, local package rebuilt." data-i18n-jp="SuperPrint 1.7.489 — 検証：8ブロックの背景は透明かページの紙色、旧章の透かしは停止、ブロック間の間隔は18px（実測 18/18/18/18/18/18/18）、バーは72px、マニュアルの章は削除され #manuel リンクも無し、ナビは documentation.html へ、FR / EN / JA で漏れゼロ、JavaScript エラーなし、Web ↔ ローカルコピーの一致 22/22、パッケージ再生成済み。">SuperPrint 1.7.489 — checks: eight blocks transparent or on the page paper, old watermarks off, an 18 px gap (measured), a 72 px bar, no manual section nor #manuel link, the navigation leading to documentation.html, zero language leak, parity 22/22, package rebuilt.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Ouvrir SuperPrint" data-i18n-en="→ Open SuperPrint" data-i18n-jp="→ SuperPrint を開く">→ Open SuperPrint</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.488 — la FAQ a sa page, le manuel entre dans la barre, les soufflets se ferment ===== -->
 

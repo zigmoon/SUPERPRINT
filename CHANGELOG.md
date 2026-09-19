@@ -9,6 +9,30 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.489] — 2026-09-19
+
+_Clean backgrounds, a tighter pile, and the manual section leaves the home page_
+
+### Fixed
+- **The blocks kept the background of the old chapters.** The chapter ids were kept when the six chapters became one part — and their background rules with them: `#showcase`, `#comparison` and `#formats` were set in `paper-3`, `#prepress` and `#vs-indesign` in `paper-2`. The blocks therefore stood out lighter than the page, and prepress looked “not like the others”. All eight blocks are neutralised (only the rules between them remain), the watermarks that lived inside those old sections are hidden, and the frame around the comparison table is transparent too.
+- **Too much air between the chapters**: 26 to 44 px of margin plus 20/16 px of padding. Measured at **18 px** now, with a **72 px bar** instead of 104 px, so the eight blocks read as one single list.
+
+### Changed
+- **The “Chapitre 02 · Le manuel” section leaves the home page** (3,900 characters): the navigation bar already leads to the documentation. The “Manual” entry of the bar and the mobile menu now points straight to `documentation.html`, on the home page, the help page and the FAQ page, and the authors move up to chapter 02.
+
+### Verified
+| Check | Result |
+|---|---|
+| Block backgrounds | the eight blocks measured `rgba(0, 0, 0, 0)` or the page paper (`rgb(247, 243, 236)`) |
+| Old section watermarks | hidden (0 remaining inside the blocks) |
+| Spacing | gap between blocks `18 / 18 / 18 / 18 / 18 / 18 / 18 px`, bar 72 px |
+| Manual section | absent from the page, no `#manuel` link left, navigation leads to `documentation.html` |
+| Language leaks | **0** in `fr` / `en` / `ja` |
+| JavaScript | no page error |
+| Parity web ↔ mirror | **22 / 22 identical** |
+| Markers | `version.txt`, colophon, `data-sp-js="v489"`, `data-sp-sw="v1.7.489"`, cache tag `20260919-v489-fonds-et-manuel`, `CACHE_NAME` bumped |
+| Package | `sp213-local.zip` rebuilt and verified file by file |
+
 ## [1.7.488] — 2026-09-19
 
 _The FAQ has its own page, the manual enters the bar, every block starts folded, no lighter background_

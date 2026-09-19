@@ -68,7 +68,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.488",
+      "softwareVersion": "1.7.489",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1293,6 +1293,18 @@ details.spf-fold:not(#prepress) .spf-in .fmt-chip { background-color: transparen
 details.spf-fold:not(#prepress) .spf-in .feat-card:hover,
 details.spf-fold:not(#prepress) .spf-in .uc-card:hover,
 details.spf-fold:not(#prepress) .spf-in .tcard:hover { background-color: var(--paper-2); }
+/* ——— v1.7.489 — LES BLOCS NE PORTENT PLUS LE FOND DE L'ANCIENNE SECTION.
+   Les identifiants des chapitres ont été gardés — #showcase, #comparison, #formats étaient en
+   papier-3, #prepress et #vs-indesign en papier-2 — et leurs règles de fond avec eux : les blocs
+   sortaient plus clairs que la page, et le prépresse « pas comme les autres ». On neutralise,
+   et on cache les filigranes qui vivaient dans ces sections (celui de la partie suffit). */
+#features details.spf-fold { background: transparent; }
+#features details.spf-fold > .spf-in .ghost { display: none; }
+#comparison .cmp-wrapper { background: transparent; }
+
+/* ——— ET MOINS D'AIR ENTRE LES CHAPITRES : la pile respirait trop ——— */
+details.spf-fold { margin-top: clamp(12px,1.5vw,18px); }
+details.spf-fold > summary.spf-bar { padding: 15px 0 12px; }
 /* ── RESPONSIVE ── */
 @media(max-width: 1000px){
   .vp-grid { grid-template-columns: 1fr; }
@@ -1747,7 +1759,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="nav-links">
     <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
     <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-    <a href="#manuel"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+    <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
     <a href="#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
     <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
     <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
@@ -1774,7 +1786,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   </div>
   <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-  <a href="#manuel"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+  <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
   <a href="#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
   <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
   <a href="app/index.html" class="mm-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
@@ -1792,7 +1804,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.488</span>
+    <span>SuperPrint v1.7.489</span>
   </div>
 </div>
 
@@ -3120,68 +3132,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
      « Manuel » sort de la barre du haut : une entrée de nav qui renvoie vers une autre page
      n’apprend rien. À la place, une zone qui dit ce qu’il y a dedans, et quatre portes
      d’entrée réelles dans le manuel (ancres vérifiées dans documentation.html). -->
-<section id="manuel">
-  <div class="container">
-    <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 02 · Le manuel</div>
-      <div class="section-label" data-lang="en">Chapter 02 · The manual</div>
-      <div class="section-label" data-lang="ja">第02章 · マニュアル</div>
-      <h2 data-lang="fr">Tout est écrit, noir sur blanc.</h2>
-      <h2 data-lang="en">Everything is written down.</h2>
-      <h2 data-lang="ja">すべて、文字で書いてあります。</h2>
-      <p class="lead" data-lang="fr">Pas de tutoriel vidéo à regarder en accéléré : le manuel fait le tour de l'atelier, panneau par panneau, et le catalogue des fonctions en recense <strong>475</strong>. Il se cherche au clavier, il est dans les trois langues, et il ne demande aucun compte.</p>
-      <p class="lead" data-lang="en">No video tutorial to speed through: the manual walks the whole atelier, panel by panel, and the function catalogue lists <strong>475</strong> of them. It is searchable from the keyboard, written in three languages, and needs no account.</p>
-      <p class="lead" data-lang="ja">早送りで見るチュートリアル動画はありません。マニュアルは工房のすべてをパネルごとに説明し、機能カタログには<strong>475</strong>の機能が並びます。キーボードで検索でき、3言語、アカウントも不要です。</p>
-    </div>
 
-    <div class="man-grid">
-      <a class="man-card" href="documentation.html#m-start">
-        <span class="man-num">01</span>
-        <h3 data-lang="fr">Démarrage rapide</h3>
-        <h3 data-lang="en">Quick start</h3>
-        <h3 data-lang="ja">クイックスタート</h3>
-        <p data-lang="fr">Du document vide à la première page composée, sans détour.</p>
-        <p data-lang="en">From an empty document to a composed first page, no detours.</p>
-        <p data-lang="ja">空のドキュメントから、最初のページを組むまで。</p>
-        <span class="man-arr" aria-hidden="true">→</span>
-      </a>
-      <a class="man-card" href="documentation.html#m-prefs-intro">
-        <span class="man-num">02</span>
-        <h3 data-lang="fr">Préférences</h3>
-        <h3 data-lang="en">Preferences</h3>
-        <h3 data-lang="ja">環境設定</h3>
-        <p data-lang="fr">À lire en premier : unités, marges par défaut et sauvegarde automatique se règlent là.</p>
-        <p data-lang="en">Read this one first: units, default margins and autosave are set here.</p>
-        <p data-lang="ja">最初に読むところ。単位、既定のマージン、自動保存はここで設定します。</p>
-        <span class="man-arr" aria-hidden="true">→</span>
-      </a>
-      <a class="man-card" href="documentation.html#m-export">
-        <span class="man-num">03</span>
-        <h3 data-lang="fr">Export &amp; PDF</h3>
-        <h3 data-lang="en">Export &amp; PDF</h3>
-        <h3 data-lang="ja">書き出しとPDF</h3>
-        <p data-lang="fr">Fond perdu, traits de coupe, tons directs, profils ICC : ce que la presse attend de votre fichier.</p>
-        <p data-lang="en">Bleed, crop marks, spot inks, ICC profiles: what the press expects from your file.</p>
-        <p data-lang="ja">塗り足し、トンボ、特色、ICCプロファイル。印刷所が求めるものを。</p>
-        <span class="man-arr" aria-hidden="true">→</span>
-      </a>
-      <a class="man-card" href="documentation.html#fn-tools">
-        <span class="man-num">04</span>
-        <h3 data-lang="fr">Catalogue des fonctions</h3>
-        <h3 data-lang="en">Function catalogue</h3>
-        <h3 data-lang="ja">機能カタログ</h3>
-        <p data-lang="fr">475 fonctions classées par famille, avec leur raccourci. La réponse à « est-ce que ça sait faire… ? »</p>
-        <p data-lang="en">475 functions grouped by family, with their shortcut. The answer to “can it do…?”</p>
-        <p data-lang="ja">475の機能を分類別に、ショートカット付きで。「これ、できる？」の答え。</p>
-        <span class="man-arr" aria-hidden="true">→</span>
-      </a>
-    </div>
-
-    <div class="man-cta">
-      <a class="btn btn-primary" href="documentation.html"><span class="inline-fr">Lire le manuel</span><span class="inline-en">Read the manual</span><span class="inline-ja">マニュアルを読む</span> <span class="arr" aria-hidden="true">→</span></a>
-    </div>
-  </div>
-</section>
 
 <!-- ══════════════ 🆕 v1.7.472 — LES AUTEURS — SIMON DUPONT-GELLERT &amp; CLÉMENCE BRUNET ══════════════
      Le logiciel est signé, et la page ne le disait nulle part : les deux noms n'existaient
@@ -3192,9 +3143,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="ghost" aria-hidden="true">AUTEURS</div>
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 03 · Les auteurs</div>
-      <div class="section-label" data-lang="en">Chapter 03 · The authors</div>
-      <div class="section-label" data-lang="ja">第03章 · 著者</div>
+      <div class="section-label" data-lang="fr">Chapitre 02 · Les auteurs</div>
+      <div class="section-label" data-lang="en">Chapter 02 · The authors</div>
+      <div class="section-label" data-lang="ja">第02章 · 著者</div>
       <h2 data-lang="fr">Deux auteurs, un atelier.</h2>
       <h2 data-lang="en">Two authors, one atelier.</h2>
       <h2 data-lang="ja">ふたりの著者、ひとつの工房。</h2>
@@ -3338,7 +3289,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.488</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.489</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
