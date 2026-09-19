@@ -36,6 +36,26 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
+## [1.7.492] — 2026-09-19
+
+_Eight aligned bars, and the sections stop sticking together_
+
+### Fixed
+- **The first and last blocks had no pink kicker** (the three applications, the screenshots), so their bar was shorter than the six others and the pile never lined up. Each has its own now — “Trois portes d’entrée” / “Une capture par outil” — and all **eight bars measure 90 px**, 30 px apart (measured: a single distinct height).
+- **The bottoms of sections were at zero**: the paragraph “SuperPrint est publié par Zigmoon…” stuck to the part that follows, and the FAQ stuck to the closing call. Both sections get a real bottom again (30 to 50 px).
+
+### Verified
+| Check | Result |
+|---|---|
+| Bar heights | `showcase=90 · inventaire=90 · prepress=90 · use-cases=90 · comparison=90 · vs-indesign=90 · formats=90 · planches=90` — 1 distinct height |
+| Kickers | 8 of 8 (18 px each) |
+| Rhythm | 30 px between blocks, 30 px from the heading to the first bar |
+| Section bottoms | authors 50 px, FAQ 50 px |
+| Language leaks | **0** in `fr` / `en` / `ja` |
+| Parity web ↔ mirror | **22 / 22 identical** |
+| Markers | `data-sp-js="v492"`, `data-sp-sw="v1.7.492"`, cache tag `20260919-v492-huit-surtitres`, `CACHE_NAME` bumped |
+| Package | `sp213-local.zip` rebuilt and verified file by file |
+
 ## [1.7.491] — 2026-09-19
 
 _No chapters, one background everywhere, a held rhythm, and the FAQ back on the home page in two columns_
