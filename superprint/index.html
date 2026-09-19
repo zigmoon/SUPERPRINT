@@ -967,7 +967,8 @@ table.cmp tbody tr.price-row:hover td { background: var(--ink) !important; }
 #faq { background: var(--paper-2); }
 .faq-list { margin-top: clamp(24px,4vw,40px); border-top: 2px solid var(--ink); }
 details.faq-item { border-bottom: 1px solid var(--line-strong); background: transparent; transition: background .3s var(--ease); }
-details.faq-item[open] { background: var(--paper-3); }
+/* v1.7.493 — la question ouverte ne prend AUCUN fond : elle se distingue par son numéro et son signe */
+details.faq-item[open] { background: transparent; }
 summary.faq-q {
   font-family: var(--f-display);
   font-size: clamp(17px,2vw,22px); font-weight: 600; color: var(--ink);
@@ -1352,6 +1353,46 @@ details.spf-fold > summary.spf-bar { padding: 19px 0 15px; }
    collait à l'appel final : les deux sections avaient reçu « padding-bottom: 0 » pour aligner les
    souffles — trop court. Un vrai bas de section, de la même famille que les autres (30 à 50 px). */
 #auteurs { padding-bottom: clamp(30px,3.6vw,50px); }
+/* ——— v1.7.493 — LE MOTEUR DE RECHERCHE DE LA FAQ.
+   Un champ unique entre le chapeau et les questions : il filtre les dix questions à la frappe,
+   dans les trois langues (chaque question porte ses trois variantes), efface d'un clic, et
+   prévient quand rien ne correspond. Sans JavaScript, le champ reste là et la liste entière
+   s'affiche — rien n'est perdu. */
+.faq-search { margin: clamp(18px,2.2vw,30px) 0 clamp(8px,1vw,14px); max-width: 720px; }
+.faq-search-lab {
+  display: block; font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--magenta); margin-bottom: 8px;
+}
+.faq-search-boite {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--ink); background: var(--paper);
+  padding: 0 12px; transition: box-shadow .25s var(--ease);
+}
+.faq-search-boite:focus-within { box-shadow: 0 0 0 3px rgba(226,35,123,.16); border-color: var(--magenta); }
+.faq-search-ico { font-family: var(--f-mono); font-size: 17px; color: var(--ink-soft); flex: 0 0 auto; }
+#faqRecherche {
+  flex: 1 1 auto; min-width: 0; border: 0; background: transparent; outline: none;
+  font-family: var(--f-sans); font-size: 15px; color: var(--ink); padding: 13px 0;
+  -webkit-appearance: none; appearance: none;
+}
+#faqRecherche::placeholder { color: var(--muted); }
+#faqRecherche::-webkit-search-cancel-button { display: none; }
+.faq-search-eff {
+  flex: 0 0 auto; font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted); background: transparent; border: 0;
+  cursor: pointer; padding: 6px 2px; display: none;
+}
+.faq-search-boite.pleine .faq-search-eff { display: block; }
+.faq-search-eff:hover { color: var(--magenta); }
+.faq-search-etat {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .12em; color: var(--muted);
+  margin-top: 8px; min-height: 12px;
+}
+.faq-search-vide {
+  font-family: var(--f-sans); font-size: 14.5px; color: var(--ink-soft); margin-top: 10px;
+}
+#faq .faq-item.faq-cache { display: none; }
+#faq .faq-list.vide { border-top-color: var(--line-strong); }
 /* ── RESPONSIVE ── */
 @media(max-width: 1000px){
   .vp-grid { grid-template-columns: 1fr; }
@@ -3362,6 +3403,31 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <h2 data-lang="ja">工房でよく聞かれる質問</h2>
     </div>
 
+    <div class="faq-search" role="search">
+      <label class="faq-search-lab" for="faqRecherche">
+        <span data-lang="fr">Chercher dans la FAQ</span>
+        <span data-lang="en">Search the FAQ</span>
+        <span data-lang="ja">FAQ を検索</span>
+      </label>
+      <div class="faq-search-boite">
+        <span class="faq-search-ico" aria-hidden="true">⌕</span>
+        <input id="faqRecherche" type="search" autocomplete="off" spellcheck="false"
+               aria-describedby="faqRechercheAide"
+               data-ph-fr="Un mot, un sujet : export, Pantone, hors-ligne…"
+               data-ph-en="A word, a subject: export, Pantone, offline…"
+               data-ph-ja="キーワード：書き出し、Pantone、オフライン…">
+        <button type="button" class="faq-search-eff" id="faqRechercheEff" aria-label="Effacer">
+          <span data-lang="fr">Effacer</span><span data-lang="en">Clear</span><span data-lang="ja">消去</span>
+        </button>
+      </div>
+      <p class="faq-search-etat" id="faqRechercheAide"></p>
+      <p class="faq-search-vide" id="faqRechercheVide" hidden>
+        <span data-lang="fr">Aucune question ne correspond — essayez un mot plus court.</span>
+        <span data-lang="en">No question matches — try a shorter word.</span>
+        <span data-lang="ja">該当する質問がありません。短い語でお試しください。</span>
+      </p>
+    </div>
+
     <div class="faq-list">
 
       <details class="faq-item">
@@ -4169,6 +4235,61 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   window.addEventListener("hashchange", ouvrir);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ouvrir);
   else ouvrir();
+})();
+</script>
+<script>
+/* 🆕 v1.7.493 — LE FILTRE DE LA FAQ. Il cherche dans le TEXTE des questions et des réponses,
+   qui porte les trois langues : une requête en français, en anglais ou en japonais trouve la
+   même question. Échap (ou le bouton Effacer) remet tout. */
+(function () {
+  var champ = document.getElementById('faqRecherche');
+  var vide = document.getElementById('faqRechercheVide');
+  var etat = document.getElementById('faqRechercheAide');
+  var boite = document.querySelector('.faq-search-boite');
+  var effacer = document.getElementById('faqRechercheEff');
+  var liste = document.querySelector('#faq .faq-list');
+  if (!champ || !liste) return;
+  var items = Array.prototype.slice.call(liste.querySelectorAll('details.faq-item'));
+
+  function langue() { return document.documentElement.lang === 'fr' ? 'fr' : (document.documentElement.lang === 'ja' ? 'ja' : 'en'); }
+  function majExemple() {
+    var l = langue();
+    champ.setAttribute('placeholder', champ.getAttribute('data-ph-' + l) || '');
+    champ.setAttribute('title', champ.getAttribute('data-ph-' + l) || '');
+  }
+  function compterTexte() {
+    var l = langue();
+    var n = items.filter(function (d) { return !d.classList.contains('faq-cache'); }).length;
+    if (!champ.value.trim()) { etat.textContent = ''; return; }
+    if (l === 'ja') { etat.textContent = n + ' / 10 件'; }
+    else if (l === 'fr') { etat.textContent = n + (n > 1 ? ' questions sur 10' : ' question sur 10'); }
+    else { etat.textContent = n + ' of 10 questions'; }
+  }
+  function filtrer() {
+    var q = champ.value.trim().toLowerCase();
+    var n = 0;
+    items.forEach(function (d) {
+      var ok = !q || d.textContent.toLowerCase().indexOf(q) >= 0;
+      d.classList.toggle('faq-cache', !ok);
+      if (ok) n++;
+    });
+    liste.classList.toggle('vide', n === 0);
+    vide.hidden = n !== 0;
+    boite.classList.toggle('pleine', !!q);
+    compterTexte();
+  }
+  champ.addEventListener('input', filtrer);
+  champ.addEventListener('keydown', function (e) { if (e.key === 'Escape') { champ.value = ''; filtrer(); } });
+  if (effacer) effacer.addEventListener('click', function () { champ.value = ''; filtrer(); champ.focus(); });
+  /* le libellé d'exemple suit la langue choisie */
+  var _setLang = window.setLang;
+  if (typeof _setLang === 'function') {
+    window.setLang = function (l) { _setLang(l); majExemple(); filtrer(); };
+  }
+  majExemple();
+  filtrer();
+  /* la page peut poser la langue APRÈS ce script : on remet l'exemple d'aplomb au chargement */
+  window.addEventListener('load', function () { majExemple(); filtrer(); });
 })();
 </script>
 </body>

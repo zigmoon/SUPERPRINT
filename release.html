@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.492 — the two blocks without a pink kicker now have one (all eight bars measure 90 px) and the bottoms of the authors and FAQ sections are restored.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.493 — the FAQ gains a search field (it filters the ten questions as you type, in the three languages) and open questions no longer get a background.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.492 — the two blocks without a pink kicker now have one (all eight bars measure 90 px) and the bottoms of the authors and FAQ sections are restored.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.493 — the FAQ gains a search field (it filters the ten questions as you type, in the three languages) and open questions no longer get a background.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -731,6 +731,29 @@ footer, footer a { color: var(--after-text-color); }
  </ul>
 
  <p data-i18n-fr="SuperPrint 1.7.490 — contrôles : surtitres sans numéro de chapitre, plus aucun « atelier » dans les titres de la partie, intérieurs des huit soufflets mesurés au papier de la page, chapeau à 22 px de la première barre et 18 px entre les blocs, FAQ à dix questions en deux colonnes (une en mobile), faq.html en 404, zéro fuite de langue en FR / EN / JA, aucune erreur JavaScript, parité site ↔ copie locale 22/22, paquet local reconstruit." data-i18n-en="SuperPrint 1.7.490 — checks: kickers without chapter numbers, no “atelier” left in the headings of the part, the eight blocks’ interiors measured on the page paper, a 22 px gap from the heading to the first bar and 18 px between blocks, a ten-question FAQ on two columns (one on mobile), faq.html returning 404, zero language leak in FR / EN / JA, no JavaScript error, web ↔ local copy parity 22/22, local package rebuilt." data-i18n-jp="SuperPrint 1.7.490 — 検証：章番号なし、その領域のタイトルに「工房」なし、8ブロックの内部はページの紙色、見出しから最初のバーまで22px、ブロック間18px、FAQ は10問2カラム（モバイルは1カラム）、faq.html は404、FR / EN / JA で漏れゼロ、JavaScript エラーなし、Web ↔ ローカルコピーの一致 22/22、パッケージ再生成済み。">SuperPrint 1.7.490 — checks: no chapter numbers, no “atelier” in the part’s headings, interiors on the page paper, 22 px / 18 px rhythm, a two-column FAQ, faq.html returning 404, zero language leak, parity 22/22.</p>
+ <a class="release-cta" href="https://superprint.cc/#faq" data-i18n-fr="→ Lire la FAQ" data-i18n-en="→ Read the FAQ" data-i18n-jp="→ FAQ を読む">→ Read the FAQ</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
+
+<!-- ===== SUPER PRINT v1.7.493 — la FAQ a un moteur de recherche, et plus de fond à l'ouverture ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-493">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.493</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 19 septembre 2026" data-i18n-en="Released September 19, 2026" data-i18n-jp="2026年9月19日公開">Released September 19, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="La FAQ gagne <strong>un moteur de recherche</strong> — un champ entre le titre et les questions — et <strong>les questions ouvertes ne prennent plus de fond</strong>." data-i18n-en-html="The FAQ gains <strong>a search field</strong> — between the title and the questions — and <strong>open questions no longer get a background</strong>." data-i18n-jp-html="FAQ に<strong>検索欄</strong>（見出しと質問の間）を追加し、<strong>開いた質問の背景を廃止</strong>しました。">The FAQ gains a search field between the title and the questions, and open questions no longer get a background.</p>
+
+ <h3 data-i18n-fr-html="🔎 Chercher dans la FAQ <span class=&quot;badge badge-new&quot;>nouveau</span>" data-i18n-en-html="🔎 Search the FAQ <span class=&quot;badge badge-new&quot;>new</span>" data-i18n-jp-html="🔎 FAQ を検索 <span class=&quot;badge badge-new&quot;>新規</span>">🔎 Search the FAQ <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Un champ unique, entre le chapeau et les questions : il <strong>filtre les dix questions à la frappe</strong>, et il cherche dans les trois langues à la fois — chaque question porte ses variantes française, anglaise et japonaise, donc « Pantone », « offline » ou « サブスク » trouvent la même réponse. Un <strong>compteur</strong> dit combien de questions restent, un bouton <strong>Effacer</strong> apparaît dès qu'on écrit, et <strong>Échap</strong> remet tout." data-i18n-en-html="A single field, between the heading and the questions: it <strong>filters the ten questions as you type</strong>, and it searches all three languages at once — every question carries its French, English and Japanese variants, so “Pantone”, “offline” or “サブスク” find the same answer. A <strong>counter</strong> says how many questions are left, a <strong>Clear</strong> button appears as soon as you type, and <strong>Escape</strong> resets everything." data-i18n-jp-html="見出しと質問の間の1つの入力欄。入力に応じて<strong>10の質問を絞り込み</strong>、3言語を同時に検索します（各質問が仏・英・日の変種を持つため、「Pantone」「offline」「サブスク」は同じ回答に辿り着きます）。<strong>件数表示</strong>、入力時に現れる<strong>消去</strong>ボタン、<strong>Esc</strong> で全解除。">A single field filters the ten questions as you type, searching all three languages at once, with a result counter, a Clear button and Escape to reset.</li>
+  <li data-i18n-fr-html="Le libellé et l'exemple <strong>suivent la langue choisie</strong> (français, anglais, japonais). Et <strong>sans JavaScript, rien ne casse</strong> : le champ reste là, la liste entière s'affiche." data-i18n-en-html="The label and the example <strong>follow the chosen language</strong>. And <strong>without JavaScript nothing breaks</strong>: the field stays, the whole list shows." data-i18n-jp-html="ラベルと例文は<strong>選択した言語に追従</strong>します。JavaScript が無くても<strong>壊れません</strong>（欄は残り、全リストが表示されます）。">The label and the example follow the chosen language, and without JavaScript nothing breaks.</li>
+  <li data-i18n-fr-html="<strong>Les questions ouvertes ne prennent plus de fond</strong> : la question ouverte se distingue par son numéro, son signe × et le filet, pas par une tache de couleur." data-i18n-en-html="<strong>Open questions no longer get a background</strong>: an open question is told apart by its number, its × sign and the rule, not by a patch of colour." data-i18n-jp-html="<strong>開いた質問の背景を廃止</strong>。番号・×印・罫線で区別し、色の染みは使いません。">Open questions no longer get a background — the number, the × and the rule are enough.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.493 — contrôles : question ouverte sans fond (mesuré rgba(0,0,0,0)), champ présent entre le chapeau et la liste, « Pantone » 1/10, « hors-ligne » 2/10, « サブスク » 2/10, message affiché quand rien ne correspond, Échap qui remet 10/10, libellé et exemple dans les trois langues, zéro fuite de langue, aucune erreur JavaScript, mobile à une colonne sans débordement, parité site ↔ copie locale 22/22, paquet local reconstruit." data-i18n-en="SuperPrint 1.7.493 — checks: open question with no background (measured rgba(0,0,0,0)), field between the heading and the list, “Pantone” 1/10, “hors-ligne” 2/10, “サブスク” 2/10, a message when nothing matches, Escape restoring 10/10, label and example in three languages, zero language leak, no JavaScript error, mobile single column without overflow, web ↔ local copy parity 22/22, local package rebuilt." data-i18n-jp="SuperPrint 1.7.493 — 検証：開いた質問の背景なし（rgba(0,0,0,0)）、見出しとリストの間に入力欄、「Pantone」1/10、「hors-ligne」2/10、「サブスク」2/10、該当なしのメッセージ、Esc で10/10に復帰、ラベルと例文は3言語、言語漏れゼロ、JavaScript エラーなし、モバイル1カラムで横スクロールなし、Web ↔ ローカルコピーの一致 22/22、パッケージ再生成済み。">SuperPrint 1.7.493 — checks: no background on open questions, the field between the heading and the list, filtered searches in three languages, a message when nothing matches, Escape resetting, zero leak, parity 22/22.</p>
  <a class="release-cta" href="https://superprint.cc/#faq" data-i18n-fr="→ Lire la FAQ" data-i18n-en="→ Read the FAQ" data-i18n-jp="→ FAQ を読む">→ Read the FAQ</a>
 </article>
 

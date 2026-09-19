@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,30 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.493] — 2026-09-19
+
+_A search field in the FAQ, and no background on open questions_
+
+### Added
+- **A search field in the FAQ**, between the heading and the questions: it filters the ten questions as you type and searches **all three languages at once** (each question carries its French, English and Japanese variants). A counter shows how many are left, a **Clear** button appears as soon as you type, **Escape** resets, and without JavaScript nothing breaks (the field stays, the whole list shows).
+
+### Fixed
+- **Open questions no longer get a background** (`details.faq-item[open]` was set in `paper-3`): an open question is told apart by its number, its × sign and the rule.
+
+### Verified
+| Check | Result |
+|---|---|
+| Open question background | measured `rgba(0, 0, 0, 0)` |
+| Search | “Pantone” → 1/10 · “hors-ligne” → 2/10 · “サブスク” → 2/10 · “zzzz” → 0 with a message · Escape → 10/10 |
+| Counter | “1 question sur 10” / “2 questions sur 10” / “2 / 10 件” |
+| Placeholder | follows the language (fr / en / ja) |
+| Language leaks | **0** in `fr` / `en` / `ja` |
+| Mobile 390 px | 1 column, no overflow |
+| Parity web ↔ mirror | **22 / 22 identical** |
+| Markers | `data-sp-js="v493"`, cache tag `20260919-v493-recherche-faq`, `CACHE_NAME` bumped |
+| Package | `sp213-local.zip` rebuilt
+
 
 ## [1.7.492] — 2026-09-19
 
