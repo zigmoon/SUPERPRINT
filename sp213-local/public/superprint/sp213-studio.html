@@ -8897,7 +8897,21 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
 
   function sanitizeAIElement(element) {
     if (!element || typeof element !== 'object' || Array.isArray(element)) return null;
-    const aliases = { rect: 'rectangle', textbox: 'text' };
+    // 🆕 v1.7.485 — MÊMES SYNONYMES QUE L'APP : un modèle qui écrit « rect » ou
+    //   « paragraph » ne doit pas faire perdre l'élément (il était ignoré sans trace).
+    const aliases = {
+      rect: 'rectangle', rects: 'rectangle', square: 'rectangle', box: 'rectangle',
+      bg: 'rectangle', background: 'rectangle', band: 'rectangle', banner: 'rectangle',
+      bar: 'rectangle', card: 'rectangle', frame: 'rectangle', bloc: 'rectangle',
+      round: 'circle', dot: 'circle', rond: 'circle', bullet: 'circle',
+      oval: 'ellipse', ovale: 'ellipse',
+      img: 'image', photo: 'image', picture: 'image',
+      rule: 'line', hr: 'line', divider: 'line', separator: 'line', filet: 'line',
+      textbox: 'text', text_box: 'text', 'i-text': 'text', itext: 'text',
+      paragraph: 'text', paragraphe: 'text', title: 'text', titre: 'text',
+      subtitle: 'text', sous_titre: 'text', heading: 'text', label: 'text',
+      caption: 'text', legende: 'text', body: 'text', quote: 'text', citation: 'text'
+    };
     const allowedTypes = new Set(['rectangle', 'text', 'circle', 'ellipse', 'triangle', 'line', 'star', 'image']);
     const clone = JSON.parse(JSON.stringify(element));
     clone.type = aliases[String(clone.type || '').toLowerCase()] || String(clone.type || '').toLowerCase();

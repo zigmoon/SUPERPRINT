@@ -6246,11 +6246,17 @@ window.spTestDiag = function () {
         });
     })();
 
+    /* 🆕 v1.7.485 — PAS PAR DÉFAUT EN MILLIMÈTRES. Les 40 px hérités valaient
+       14,1 mm : illisible et sans rapport avec les 10 mm annoncés par le panneau.
+       Un bloc sans taquet reçoit désormais les taquets par défaut d'un logiciel
+       de PAO : un pas régulier de 10 mm. */
+    var SP_PAS_DEFAUT_MM = 10;
+
     function modele(obj) {
-        if (!obj._spTabs) obj._spTabs = { active: false, step: 40, stops: [] };
+        if (!obj._spTabs) obj._spTabs = { active: false, step: spTabMmVers(SP_PAS_DEFAUT_MM), stops: [] };
         var t = obj._spTabs;
         if (!Array.isArray(t.stops)) t.stops = [];
-        if (!(t.step > 0)) t.step = 40;
+        if (!(t.step > 0)) t.step = spTabMmVers(SP_PAS_DEFAUT_MM);
         t.stops.sort(function (a, b) { return a.pos - b.pos; });
         return t;
     }
@@ -6277,7 +6283,7 @@ window.spTestDiag = function () {
             if (t.stops[i].pos > pen + 0.5) { stop = t.stops[i]; break; }
         }
         if (!stop) {
-            var pas = t.step || 40;
+            var pas = t.step || spTabMmVers(SP_PAS_DEFAUT_MM);
             return Math.max(1, (Math.floor(pen / pas) + 1) * pas - pen);
         }
         var type = stop.type || 'left';
@@ -6429,18 +6435,112 @@ window.spTestDiag = function () {
         return new fabric.Polygon(pts, { fill: REGLE_MARQUE, stroke: undefined, strokeWidth: 0 });
     }
 
-    /* 🆕 v1.7.481 — LA MARQUE D'UN TAQUET SUR LA RÈGLE : un trait vertical dans
-       toute la bande, une FLÈCHE qui descend vers le bloc (on voit tout de suite
-       où le texte va s'aligner) et le symbole du type. Trois objets, même couleur. */
-    function regleMarqueTaquet(type, x) {
-        return [
-            new fabric.Line([x, 0, x, REGLE_H + 2], { stroke: REGLE_MARQUE, strokeWidth: 1 }),
+    /* ═══════════ v1.7.485 — MARQUES INDÉPENDANTES ET SAISISSABLES ═══════════
+       Demandes utilisateur : « j'ai du mal à utiliser les points triangle rouge
+       dans la barre » et « il manque à mon avis une étape de validation ».
+       MESURE AVANT : la règle était un groupe selectable/evented = false et les
+       marques vivaient DEDANS → c.findTarget() ne renvoyait RIEN sur la bande :
+       aucun moyen de saisir un taquet à la souris.
+       MAINTENANT : la bande reste un objet d'affichage ; chaque taquet est une
+       marque INDÉPENDANTE, saisissable sur la règle (curseur ↔, aimant au
+       1/2 mm, recomposition du texte en direct, Échap pour annuler). Le moteur
+       d'avance (spTabAvance) et le rendu ne sont PAS modifiés : on déplace une
+       marque et on écrit sa position dans le modèle du bloc. */
+
+    var _marques = [];          /* [{ marque, stop }] — une entrée par taquet affiché */
+    var _glisser = null;        /* état de la saisie en cours */
+    var _regleGeom = null;      /* géométrie courante de la bande */
+    var REGLE_TOL = 9;          /* rayon de saisie autour d'un taquet, en px ÉCRAN */
+
+    /* Boîte réservée d'une marque, en repère « enfant » (0,0 = le taquet sur le
+       bord HAUT de la bande, y vers le bas). Elle est IMPOSÉE par un rectangle
+       invisible : le placement ne dépend donc pas du calcul de boîte englobante
+       de Fabric (qui recentre les enfants d'un groupe). */
+    var MARQUE_X0 = -9, MARQUE_X1 = 10, MARQUE_Y0 = -2;
+    var MARQUE_Y1 = REGLE_H + REGLE_FLECHE + 2;
+
+    /* Position CANVAS d'un point du repère de la bande. La bande est posée par
+       son coin BAS-GAUCHE (gx,gy) et pivotée de `ang` degrés : ce coin ne bouge
+       pas quelle que soit la rotation, d'où la formule. */
+    function bandeVersCanvas(geom, x, y) {
+        var a = (geom.ang || 0) * Math.PI / 180, co = Math.cos(a), si = Math.sin(a);
+        var dy = y - REGLE_H;
+        return { x: geom.gx + x * co - dy * si, y: geom.gy + x * si + dy * co };
+    }
+
+    /* Inverse : point du CONTENU de la bande à partir d'un point du document
+       (changement de base inverse : rotation de −angle, puis translation). */
+    function sceneVersBande(sceneX, sceneY) {
+        if (!_regleGeom) return null;
+        var a = (_regleGeom.ang || 0) * Math.PI / 180, co = Math.cos(a), si = Math.sin(a);
+        var dx = sceneX - _regleGeom.gx, dy = sceneY - _regleGeom.gy;
+        return { x: dx * co + dy * si, y: -dx * si + dy * co + REGLE_H };
+    }
+
+    /* Coin BAS-GAUCHE réel de la bande, MESURÉ auprès de Fabric : c'est l'ancre
+       de tout le repère. On ne réutilise pas calcTransformMatrix : un groupe a
+       un repère interne recalé sur son centre, dont la convention a changé entre
+       les versions de Fabric. Ce coin, lui, ne bouge pas quand le bloc pivote. */
+    function origineBande(grp) {
+        try {
+            if (grp && typeof grp.getPointByOrigin === 'function') {
+                var p = grp.getPointByOrigin('left', 'bottom');
+                if (p && isFinite(p.x) && isFinite(p.y)) return { x: p.x, y: p.y };
+            }
+        } catch (_) {}
+        return { x: (grp && grp.left) || 0, y: (grp && grp.top) || 0 };
+    }
+
+    function placerMarque(marque, geom, posDoc) {
+        if (!marque || !geom) return;
+        /* On pose le CENTRE de la boîte de la marque : avec originX/originY =
+           'center', ce centre est aussi le pivot de rotation, donc le résultat
+           est exact quelle que soit la convention interne de Fabric. */
+        var cx = (MARQUE_X0 + MARQUE_X1) / 2, cy = (MARQUE_Y0 + MARQUE_Y1) / 2;
+        var P = bandeVersCanvas(geom, posDoc * geom.sc + cx, cy);
+        if (typeof marque.setPositionByOrigin === 'function') {
+            marque.set({ angle: geom.ang || 0 });
+            marque.setPositionByOrigin(new fabric.Point(P.x, P.y), 'center', 'center');
+        } else {
+            marque.set({ left: P.x, top: P.y, originX: 'center', originY: 'center', angle: geom.ang || 0 });
+        }
+        if (typeof marque.setCoords === 'function') marque.setCoords();
+    }
+
+    /* LA MARQUE D'UN TAQUET : un trait vertical dans la bande, une FLÈCHE qui
+       descend vers le bloc (on voit où le texte va s'aligner) et le symbole du
+       type. INDÉPENDANTE, donc déplaçable — c'est tout l'objet de la 1.7.485. */
+    function creerMarqueTaquet(type, geom, stop) {
+        var enfants = [
+            new fabric.Rect({
+                left: MARQUE_X0, top: MARQUE_Y0,
+                width: MARQUE_X1 - MARQUE_X0, height: MARQUE_Y1 - MARQUE_Y0,
+                fill: 'rgba(0,0,0,0)', stroke: undefined, strokeWidth: 0, excludeFromExport: true
+            }),
+            new fabric.Line([0, -1, 0, REGLE_H + 2], { stroke: REGLE_MARQUE, strokeWidth: 1, strokeUniform: true }),
             new fabric.Polygon(
-                [{ x: x - 4.5, y: REGLE_H - 1 }, { x: x + 4.5, y: REGLE_H - 1 }, { x: x, y: REGLE_H + REGLE_FLECHE }],
+                [{ x: -5, y: REGLE_H - 1 }, { x: 5, y: REGLE_H - 1 }, { x: 0, y: REGLE_H + REGLE_FLECHE }],
                 { fill: REGLE_MARQUE, stroke: undefined, strokeWidth: 0 }
             ),
-            regleSymbole(type, x)
+            regleSymbole(type, 0)
         ];
+        var grp = new fabric.Group(enfants, {
+            originX: 'center', originY: 'center',
+            selectable: false, evented: false, hasControls: false, hasBorders: false,
+            excludeFromExport: true, objectCaching: false,
+            _isTabMark: true, _isTabRuler: true   /* jamais exportées, comme la bande */
+        });
+        grp._spStop = stop;
+        placerMarque(grp, geom, stop.pos);
+        return grp;
+    }
+
+    /* Retire toutes les marques (masquage de la règle ou reconstruction). */
+    function retirerMarques() {
+        _marques.forEach(function (m) {
+            try { var cm = m.marque && m.marque.canvas; if (cm) cm.remove(m.marque); } catch (_) {}
+        });
+        _marques = [];
     }
 
     /* Met à jour (ou retire) la règle du bloc texte sélectionné. Idempotente :
@@ -6449,19 +6549,28 @@ window.spTestDiag = function () {
        d'objets). */
     function majRegleTab(canvasForce) {
         try {
+            /* 🆕 v1.7.485 — pendant la saisie d'un taquet, on ne rebâtit RIEN :
+               la marque saisie et la règle doivent rester en place. */
+            if (_glisser) return;
             var c = canvasForce || leCanvas();
             if (!c || !c.getObjects) return;
+            /* La saisie à la souris doit fonctionner SANS avoir ouvert le panneau :
+               on (re)tente le câblage du canvas ici (idempotent). */
+            try { filSelection(); } catch (_) {}
+            try { cablerSaisieTaquets(c); } catch (_) {}
             var obj = blocsTexte()[0];
             if (!regleEstVisible() || !obj) {
                 /* ⚠️ Fabric pose obj.canvas = undefined DANS remove() : lire le
                    canvas AVANT de retirer l'objet, sinon la ligne suivante
                    lève « Cannot read properties of undefined ». */
+                retirerMarques();
                 var _cvRegle = _regle && _regle.canvas;
                 if (_cvRegle) {
                     _cvRegle.remove(_regle);
                     _cvRegle.requestRenderAll();
                 }
                 _regle = null;
+                _regleGeom = null;
                 return;
             }
             var t = modele(obj);
@@ -6478,19 +6587,39 @@ window.spTestDiag = function () {
             var gx = tl.x + REGLE_GAP * Math.sin(ang);
             var gy = tl.y - REGLE_GAP * Math.cos(ang);
             var posSig = [Math.round(gx * 10) / 10, Math.round(gy * 10) / 10, Math.round((obj.angle || 0) * 10) / 10].join('|');
+            var geom = { gx: gx, gy: gy, ang: obj.angle || 0, sc: sc };
             if (_regle && _regle.canvas === c && _regle._spTabSig === sig) {
                 if (_regle._spTabPos !== posSig) {
                     _regle.set({ left: gx, top: gy, angle: obj.angle || 0 });
                     _regle._spTabPos = posSig;
                     if (typeof _regle.setCoords === 'function') _regle.setCoords();
-                    try { c.bringToFront(_regle); } catch (_) {}
+                    /* on REMESURE l'ancre sur la bande réellement placée */
+                    var oMoved = origineBande(_regle);
+                    geom = { gx: oMoved.x, gy: oMoved.y, ang: obj.angle || 0, sc: sc };
+                    _regleGeom = geom;
+                    /* les marques suivent la bande (déplacement du BLOC, pas d'un taquet) */
+                    _marques.forEach(function (m) {
+                        try { placerMarque(m.marque, geom, m.stop ? m.stop.pos : 0); } catch (_) {}
+                    });
+                    try {
+                        c.bringToFront(_regle);
+                        _marques.forEach(function (m) { c.bringToFront(m.marque); });
+                    } catch (_) {}
                     c.requestRenderAll();
                 }
                 return;
             }
+            /* Reconstruction complète : contenu, types, pas ou activation modifiés */
+            retirerMarques();
             if (_regle && _regle.canvas) _regle.canvas.remove(_regle);
             _regle = null;
             var enfants = [];
+            /* 🆕 v1.7.485 — rectangle TRANSPARENT (sans contour) qui FIXE la boîte
+               englobante de la bande à (0,0)-(largeur, REGLE_H) : le coin
+               bas-gauche mesuré par getPointByOrigin('left','bottom') est alors
+               exactement le coin (0, REGLE_H) du contenu — le repère des marques
+               ne dépend plus d'un éventuel débordement des graduations. */
+            enfants.push(new fabric.Rect({ left: 0, top: 0, width: largeur, height: REGLE_H, fill: 'rgba(0,0,0,0)', stroke: undefined, strokeWidth: 0, excludeFromExport: true }));
             enfants.push(new fabric.Rect({ left: 0, top: 0, width: largeur, height: REGLE_H, fill: '#ffffff', stroke: '#b9b9b9', strokeWidth: 0.5, strokeUniform: true }));
             var pxParMm = SP_MM_PAR_PX;
             for (var mm = 0; mm * pxParMm <= largeur; mm += REGLE_PAS_MM) {
@@ -6501,17 +6630,15 @@ window.spTestDiag = function () {
                     enfants.push(new fabric.Text(String(mm), { left: xg + 1.5, top: 0.5, fontSize: 7, fontFamily: 'IBM Plex Mono', fill: '#666666' }));
                 }
             }
-            var pas = (t.step > 0) ? t.step : 40;
+            var pas = (t.step > 0) ? t.step : spTabMmVers(SP_PAS_DEFAUT_MM);
             var nbPas = Math.floor(largeur / pas);
             for (var k = 1; k <= nbPas && k < 200; k++) {
                 var xp = k * pas;
                 enfants.push(new fabric.Line([xp, REGLE_H, xp, REGLE_H - 3], { stroke: '#d2d2d2', strokeWidth: 0.5 }));
             }
-            t.stops.forEach(function (s) {
-                var xs = s.pos * sc;
-                if (xs < -20 || xs > largeur + 20) return;
-                regleMarqueTaquet(s.type, xs).forEach(function (o) { enfants.push(o); });
-            });
+            /* 🆕 v1.7.485 — les marques de taquet ne sont PLUS dans la bande :
+               elles sont des objets indépendants (voir la fin de cette fonction),
+               sinon elles resteraient insaisissables (mesuré : findTarget → null). */
             var grp = new fabric.Group(enfants, {
                 left: gx, top: gy,
                 originX: 'left', originY: 'bottom',
@@ -6528,6 +6655,20 @@ window.spTestDiag = function () {
             c.add(grp);
             try { c.bringToFront(grp); } catch (_) {}
             _regle = grp;
+            /* ancre RE-MESURÉE sur la bande qui vient d'être créée (voir origineBande) */
+            var oNew = origineBande(grp);
+            geom = { gx: oNew.x, gy: oNew.y, ang: obj.angle || 0, sc: sc };
+            _regleGeom = geom;
+            /* 🆕 v1.7.485 — une MARQUE INDÉPENDANTE par taquet (déplaçable). */
+            t.stops.forEach(function (s) {
+                var xs = s.pos * sc;
+                if (xs < -20 || xs > largeur + 20) return;
+                var m = creerMarqueTaquet(s.type || 'left', geom, s);
+                m._spOwner = obj;
+                c.add(m);
+                try { c.bringToFront(m); } catch (_) {}
+                _marques.push({ marque: m, stop: s });
+            });
             c.requestRenderAll();
         } catch (e) { try { console.warn('[taquets] regle :', e); } catch (_) {} }
     }
@@ -6552,7 +6693,9 @@ window.spTestDiag = function () {
        peuvent rien faire. On le montre (boutons grisés) au lieu de laisser croire
        que le panneau est cassé. */
     function actionsActives(ok) {
-        ['tabAddBtn', 'tabClearBtn'].forEach(function (id) {
+        /* 🆕 v1.7.485 — le bouton de validation se grise comme les autres quand
+           aucun bloc texte n'est sélectionné. */
+        ['tabAddBtn', 'tabClearBtn', 'tabApplyBtn'].forEach(function (id) {
             var b = document.getElementById(id);
             if (!b) return;
             b.disabled = !ok;
@@ -6569,6 +6712,19 @@ window.spTestDiag = function () {
         var blocs = blocsTexte();
         var t = blocs.length ? modele(blocs[0]) : null;
         actionsActives(!!t);
+        /* 🆕 v1.7.485 — ON DIT SUR QUOI ON TRAVAILLE. Sans cela, impossible de
+           valider en confiance quand deux blocs se ressemblent. */
+        var cible = document.getElementById('tabCible');
+        if (cible) {
+            if (t) {
+                var apercu = String(blocs[0].text || '').replace(/\s+/g, ' ').trim();
+                if (apercu.length > 24) apercu = apercu.slice(0, 24) + '…';
+                cible.textContent = (apercu ? '« ' + apercu + ' » · ' : '')
+                    + t.stops.length + ' taquet(s)' + (t.active ? '' : ' · désactivés');
+            } else {
+                cible.textContent = 'Aucun bloc texte sélectionné';
+            }
+        }
         var chk = document.getElementById('tabsVisibleToggle');
         var pas = document.getElementById('tabStep');
         if (t) {
@@ -6627,6 +6783,189 @@ window.spTestDiag = function () {
     }
     window.spTabRendreListe = rendreListe;
 
+
+    /* ═══════════ v1.7.485 — RETOUR VISIBLE, INSERTION, SAISIE À LA SOURIS ═══════════
+       « Il manque à mon avis une étape de validation » : le panneau ne disait ni sur
+       quel bloc on travaille, ni ce qui venait d'être fait, et il n'y avait aucun
+       geste de validation explicite. On ajoute donc : ligne de statut, bloc ciblé,
+       bouton Valider, et une info-bulle qui dit la vérité sur la touche Tab. */
+
+    var _statutTimer = null;
+    function majStatut(texte, genre) {
+        var el = document.getElementById('tabStatus');
+        if (!el) return;
+        el.textContent = texte || '';
+        el.className = 'tab-status' + (texte ? '' : ' tab-status-vide') + (genre ? ' tab-status-' + genre : '');
+        if (_statutTimer) { clearTimeout(_statutTimer); _statutTimer = null; }
+        if (texte && genre !== 'info') {
+            /* Le message s'efface tout seul : le panneau reste sobre. */
+            _statutTimer = setTimeout(function () {
+                el.textContent = '';
+                el.className = 'tab-status tab-status-vide';
+            }, 6000);
+        }
+    }
+    window.spTabStatut = majStatut;
+
+    /* Place le curseur (objet Fabric + champ caché) sans casser la sélection. */
+    function poserCurseur(obj, pos) {
+        try {
+            obj.selectionStart = obj.selectionEnd = pos;
+            var ta = obj.hiddenTextarea;
+            if (ta) {
+                ta.value = obj.text || '';
+                ta.selectionStart = ta.selectionEnd = pos;
+                ta.focus();
+            }
+            if (typeof spSyncHiddenTextareaSelection === 'function') spSyncHiddenTextareaSelection(obj);
+        } catch (_) {}
+    }
+
+    /* 🎯 INSERTION D'UNE VRAIE TABULATION (le correctif du défaut n° 1).
+       Le moteur d'avance place déjà le texte au taquet suivant : il ne manquait
+       que le caractère. Si le bloc n'a pas encore de taquets, on les active avec
+       le pas par défaut (10 mm) — sinon le \t serait mesuré comme un caractère
+       ordinaire et n'avancerait à rien. */
+    function insererTabulation(obj, c) {
+        var t = modele(obj);
+        var activeMaintenant = false;
+        if (!t.active) {
+            t.active = true;
+            if (!(t.step > 0)) t.step = spTabMmVers(SP_PAS_DEFAUT_MM);
+            activeMaintenant = true;
+        }
+        var p0 = (typeof obj.selectionStart === 'number') ? obj.selectionStart : (obj.text || '').length;
+        try { if (typeof obj.insertChars === 'function') obj.insertChars('\t'); } catch (_) {}
+        /* 🩹 Fabric ne déplace PAS le curseur dans insertChars (mesuré : 2 → 2 après
+           insertion) : sans ce repositionnement, le caractère suivant partait AVANT
+           la tabulation. poserCurseur resynchronise aussi le champ caché. */
+        poserCurseur(obj, p0 + 1);
+        rafraichir(obj);
+        rendreListe();
+        majRegleTab(c);
+        majStatut(activeMaintenant
+            ? 'Tabulation posée · taquets activés (pas de ' + SP_PAS_DEFAUT_MM + ' mm).'
+            : 'Tabulation posée au taquet suivant.', 'ok');
+    }
+    /* ═══ SAISIE D'UN TAQUET À LA SOURIS ═══
+       La règle n'est pas un objet Fabric événementiel : on interroge donc la
+       géométrie de la bande, et on intercepte l'appui sur le canvas EN CAPTURE —
+       sans cela, un appui sur la règle démarrait une sélection de zone et
+       désélectionnait le bloc (donc la règle disparaissait). */
+    function taquetSousLeCurseur(e) {
+        if (_glisser) return null;
+        var c = leCanvas();
+        if (!c || !_regle || !_regle.canvas) return null;
+        var obj = blocsTexte()[0];
+        if (!obj) return null;
+        var z = Math.max(0.05, (c.getZoom && c.getZoom()) || 1);
+        var tol = REGLE_TOL / z;
+        var marge = 8 / z;
+        var pt = c.getPointer(e);
+        var loc = sceneVersBande(pt.x, pt.y);
+        if (!loc) return null;
+        var w = _regle.width || 0, h = _regle.height || 0;
+        if (loc.x < -marge || loc.x > w + marge) return null;
+        if (loc.y < -marge || loc.y > h + REGLE_FLECHE + marge) return null;
+        var t = modele(obj);
+        var sc = (typeof obj.scaleX === 'number' && obj.scaleX > 0) ? obj.scaleX : 1;
+        var idx = -1, dMin = 1e9;
+        t.stops.forEach(function (s, i) {
+            var d = Math.abs(loc.x - s.pos * sc);
+            if (d < dMin) { dMin = d; idx = i; }
+        });
+        if (idx < 0 || dMin > tol) return null;
+        return { obj: obj, canvas: c, stop: t.stops[idx], d: dMin };
+    }
+
+    /* Curseur ↔ quand on survole un taquet (posé APRÈS Fabric, qui écrit le sien). */
+    function survolRegle(e) {
+        if (_glisser) return;
+        var c = leCanvas();
+        if (!c || !c.upperCanvasEl) return;
+        var hit = null;
+        try { hit = taquetSousLeCurseur(e); } catch (_) {}
+        try { c.upperCanvasEl.style.cursor = hit ? 'ew-resize' : ''; } catch (_) {}
+    }
+
+    function debutGlisser(e) {
+        if (e.button !== undefined && e.button !== 0) return;
+        var hit = null;
+        try { hit = taquetSousLeCurseur(e); } catch (_) {}
+        if (!hit) return;
+        /* On empêche Fabric de démarrer une sélection : le bloc doit RESTER sélectionné. */
+        e.preventDefault();
+        e.stopPropagation();
+        var sc = (hit.obj.scaleX > 0) ? hit.obj.scaleX : 1;
+        var marque = null;
+        _marques.forEach(function (m) { if (m.stop === hit.stop) marque = m.marque; });
+        _glisser = {
+            obj: hit.obj, canvas: hit.canvas, stop: hit.stop,
+            depart: hit.stop.pos, sc: sc, marque: marque, bouge: false
+        };
+        try { hit.canvas.upperCanvasEl.style.cursor = 'ew-resize'; } catch (_) {}
+        majStatut('Taquet saisi à ' + spTabMmDe(hit.stop.pos) + ' mm — glissez (Échap annule).', 'info');
+        window.addEventListener('mousemove', pendantGlisser, true);
+        window.addEventListener('mouseup', finGlisser, true);
+    }
+
+    function pendantGlisser(e) {
+        if (!_glisser) return;
+        e.preventDefault();
+        e.stopPropagation();
+        var c = _glisser.canvas;
+        var pt = c.getPointer(e);
+        var loc = sceneVersBande(pt.x, pt.y);
+        if (!loc) return;
+        var px = Math.max(0, loc.x) / (_glisser.sc || 1);
+        var mm = Math.round((px / SP_MM_PAR_PX) * 2) / 2;      /* aimant au 1/2 mm */
+        if (!(mm >= 0.5)) mm = 0.5;
+        px = spTabMmVers(mm);
+        if (Math.abs(px - _glisser.stop.pos) < 0.2) return;
+        _glisser.stop.pos = px;
+        _glisser.bouge = true;
+        if (_glisser.marque) placerMarque(_glisser.marque, _regleGeom, px);
+        if (_glisser.marque && _glisser.marque.canvas) {
+            try { _glisser.marque.canvas.bringToFront(_glisser.marque); } catch (_) {}
+        }
+        majStatut('Taquet à ' + String(mm.toFixed(1)).replace('.', ',') + ' mm…', 'info');
+        rafraichir(_glisser.obj);          /* le texte se recompose EN DIRECT */
+        c.requestRenderAll();
+    }
+
+    function finGlisser() {
+        if (!_glisser) return;
+        var g = _glisser;
+        _glisser = null;
+        window.removeEventListener('mousemove', pendantGlisser, true);
+        window.removeEventListener('mouseup', finGlisser, true);
+        try { g.canvas.upperCanvasEl.style.cursor = ''; } catch (_) {}
+        if (g.bouge) {
+            try { saveState('Déplacement d\'un taquet'); } catch (_) {}
+            majRegleTab(g.canvas);
+            rendreListe();
+            majStatut('Taquet à ' + String(spTabMmDe(g.stop.pos)).replace('.', ',') + ' mm — appliqué.', 'ok');
+        } else {
+            majRegleTab(g.canvas);
+        }
+    }
+
+    function annulerGlisser() {
+        if (!_glisser) return;
+        var g = _glisser;
+        _glisser = null;
+        window.removeEventListener('mousemove', pendantGlisser, true);
+        window.removeEventListener('mouseup', finGlisser, true);
+        try { g.canvas.upperCanvasEl.style.cursor = ''; } catch (_) {}
+        g.stop.pos = g.depart;
+        majRegleTab(g.canvas);
+        rendreListe();
+        rafraichir(g.obj);
+        majStatut('Déplacement annulé.', 'warn');
+    }
+    window.spTabAnnulerGlisser = annulerGlisser;
+
+
     /* Les écouteurs de sélection ne peuvent être posés qu'une fois le canvas
        connu : on (re)tente à chaque ouverture du pop-in. */
     function filSelection() {
@@ -6642,6 +6981,32 @@ window.spTestDiag = function () {
         ['object:moving', 'object:scaling', 'object:rotating', 'object:modified', 'text:changed'].forEach(function (ev) {
             c.on(ev, function () { majRegleTab(c); });
         });
+        cablerSaisieTaquets(c);
+    }
+
+    /* 🆕 v1.7.485 — SAISIE DES TAQUETS À LA SOURIS (idempotente, une fois par canvas).
+       Les écouteurs sont posés en CAPTURE sur le canvas du haut : on intercepte
+       l'appui AVANT Fabric, sinon un clic sur la règle (non événementielle)
+       démarrait une sélection de zone et DÉSÉLECTIONNAIT le bloc — la règle
+       disparaissait donc au moment précis où l'on voulait saisir un taquet.
+       ⚠️ Appelée AUSSI à chaque rafraîchissement de la règle : placée dans
+       filSelection(), qui sort tout de suite quand le canvas est déjà marqué, elle
+       ne pouvait plus être posée si le canvas du haut n'était pas prêt ce jour-là
+       (défaut mesuré : aucun curseur ↔, aucun taquet saisissable). */
+    function cablerSaisieTaquets(canvasForce) {
+        var c = canvasForce || leCanvas();
+        if (!c) return;
+        try {
+            var haut = c.upperCanvasEl;
+            if (!haut || haut._spTabsSaisie) return;
+            haut._spTabsSaisie = true;
+            haut.addEventListener('mousedown', debutGlisser, true);
+            haut.addEventListener('mousemove', survolRegle, false);
+            haut.addEventListener('mouseleave', function () {
+                if (_glisser) return;
+                try { haut.style.cursor = ''; } catch (_) {}
+            });
+        } catch (_) {}
     }
 
     function ouvrirPopin() {
@@ -6668,8 +7033,21 @@ window.spTestDiag = function () {
         }
         filSelection();
         cabler();
+        /* 🆕 v1.7.485 — le champ « Position » propose la place LIBRE suivante :
+           on n'ajoute plus un taquet au même endroit par inadvertance. */
+        try {
+            var b0 = blocsTexte()[0];
+            var champP = document.getElementById('tabNewPos');
+            if (b0 && champP) {
+                var t0 = modele(b0), dernier = 0;
+                t0.stops.forEach(function (s) { if (s.pos > dernier) dernier = s.pos; });
+                var libre = (dernier > 0) ? (spTabMmDe(dernier) + SP_PAS_DEFAUT_MM) : SP_PAS_DEFAUT_MM;
+                champP.value = String(Math.round(libre * 2) / 2);
+            }
+        } catch (_) {}
         rendreListe();
         majRegleTab();
+        majStatut('', '');
     }
     function fermerPopin() {
         var popin = document.getElementById('tabsMenu');
@@ -6709,6 +7087,25 @@ window.spTestDiag = function () {
                 return;
             }
             if (id === 'closeTabsMenuX') { fermerPopin(); return; }
+            /* 🆕 v1.7.485 — ÉTAPE DE VALIDATION : enregistre les taquets,
+               confirme par un message ET par un avis flottant, puis ferme. */
+            if (id === 'tabApplyBtn') {
+                e.stopPropagation();
+                var blocsV = blocsTexte();
+                if (!blocsV.length) {
+                    majStatut('Sélectionnez d\'abord un bloc texte sur la page.', 'warn');
+                    return;
+                }
+                var tV = modele(blocsV[0]);
+                try { saveState('Taquets de tabulation'); } catch (_) {}
+                var msgV = 'Taquets validés : ' + tV.stops.length + ' taquet(s)'
+                    + (tV.active ? ' actifs' : ' (désactivés)')
+                    + ', pas de ' + String(spTabMmDe(tV.step)).replace('.', ',') + ' mm.';
+                majStatut(msgV, 'ok');
+                try { if (window.spShowToast) window.spShowToast(msgV, { kind: 'info', duration: 3200 }); } catch (_) {}
+                rendreListe();
+                return;
+            }
             /* croix « × » d'une ligne : index DÉDUIT DE LA POSITION dans la liste
                (les écouteurs d'origine mémorisaient l'index : après un retrait au
                milieu, ils visaient le mauvais taquet). */
@@ -6768,64 +7165,105 @@ window.spTestDiag = function () {
            écoute une fois pour toutes sur le conteneur, et on répare à chaque
            ouverture du panneau (ouvrirPopin → cabler). */
         cabler();
-        document.addEventListener('click', function (e) {
-            if (!popin || !popin.classList.contains('open')) return;
-            var dd = document.getElementById('rulersDropdown');
-            if (dd && dd.contains(e.target)) return;
-            if (e.target && e.target.id === 'tabsPopinOverlay') return;
-            fermerPopin();
-        });
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') fermerPopin();
-            /* Tab dans un texte en cours d'édition : insertion d'une vraie tabulation
-               (le placement est assuré par le moteur ci-dessus). */
-            /* 🎨 v1.7.460 — TABULATION vs TAB INTÉGRÉ (retour utilisateur n° 3).
-               AVANT : la tabulation n'était possible que POP-IN OUVERTE (option
-               activée puis pop-in refermée = aucun avancement de curseur),
-               l'insertion s'appliquait même taquets DÉSACTIVÉS, et Option+Tab
-               était avalé par ce même gestionnaire.
-               MAINTENANT : la tabulation est pilotée par l'OPTION « taquets de
-               tabulation » du bloc sélectionné (ou la pop-in ouverte), et
-               Option / Maj / Cmd + Tab rendent la main au comportement NATIF
-               (tab intégré = champ suivant). Sur Windows, Alt+Tab est réservé au
-               système : Maj + Tab joue le même rôle.
-               Raccourcis repris dans Préférences ▸ Raccourcis et documentation.html. */
-            var _spTabsOption = false;
-            try {
-                var _c0 = leCanvas();
-                var _o0 = _c0 && ((_c0.getActiveObjects() || [])[0] || _c0.getActiveObject());
-                _spTabsOption = !!(_o0 && _o0._spTabs && _o0._spTabs.active);
-            } catch (_) {}
-            /* Option (⌥) / Cmd / Maj + Tab : tab intégré d'origine, on ne touche à rien. */
+        if (!window._spTabsClicExterieur) {
+            window._spTabsClicExterieur = true;
+            document.addEventListener('click', function (e) {
+                if (!popin || !popin.classList.contains('open')) return;
+                var dd = document.getElementById('rulersDropdown');
+                if (dd && dd.contains(e.target)) return;
+                if (e.target && e.target.id === 'tabsPopinOverlay') return;
+                fermerPopin();
+            });
+        }
+        /* ⚠️ v1.7.485 — ÉCOUTE EN CAPTURE, SUR window (correctif mesuré).
+           Pendant l'édition, Fabric pose son propre écouteur keydown sur le
+           champ caché et ARRÊTE la propagation : la phase « bulle » sur document
+           ne recevait donc JAMAIS la touche Tab. Le navigateur poursuivait son
+           comportement par défaut — focus hors du bloc, édition terminée (mesuré :
+           isEditing true → false, activeElement → BODY, AUCUNE tabulation). C'est
+           exactement le « ça fait bouger le bloc et ça ne fait pas de tab » signalé.
+           En CAPTURE, on voit l'événement avant Fabric et avant le navigateur : on
+           peut insérer la tabulation ET empêcher le focus de quitter le bloc.
+           On ne consomme RIEN quand le clavier écrit ailleurs (voir les garde-fous).
+           ⚠️ UNE SEULE FOIS : boot() est appelé DEUX fois (événement « load » +
+           minuterie de 1,5 s). Sans ce garde-fou, l'écouteur était posé deux fois et
+           un appui sur Tab insérait DEUX tabulations (mesuré à la trace :
+           insertChars appelé deux fois, « ARTICLE » → « ART\t\tICLE »). */
+        if (!window._spTabsTouche) window._spTabsTouche = (function (popin) {
+        window.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                /* Pendant une saisie de taquet, Échap annule le déplacement
+                   (au lieu de fermer le panneau). */
+                if (_glisser) { annulerGlisser(); return; }
+                fermerPopin();
+                return;
+            }
+            /* ═══ TOUCHE TAB — LE DÉFAUT CORRIGÉ EN v1.7.485 ═══
+               MESURE AVANT (bloc en édition, taquets non activés = état par
+               défaut) : personne ne traitait Tab, le navigateur déplaçait le
+               focus hors du champ caché de Fabric, l'édition se terminait
+               (isEditing true → false, focus → BODY) et AUCUNE tabulation
+               n'était insérée. D'où le retour « ça fait bouger le bloc et ça ne
+               fait pas de tab ».
+               MAINTENANT :
+                 • bloc EN ÉDITION + Tab → TABULATION (taquets activés au besoin,
+                   pas par défaut de 10 mm) et le focus NE QUITTE PLUS le bloc ;
+                 • bloc SÉLECTIONNÉ (pas en édition) + Tab, avec taquets actifs ou
+                   panneau ouvert → entrée en édition, curseur à la FIN (aucune
+                   insertion surprise : le code précédent insérait le \t en tête
+                   de bloc, mesuré « \tARTICLE ») ;
+                 • partout ailleurs : comportement d'origine inchangé.
+               ⌥ / Cmd / Maj + Tab restent rendus au navigateur (tab intégré).
+               Raccourci repris dans Préférences ▸ Raccourcis et documentation. */
             if (e.key === 'Tab' && (e.altKey || e.metaKey || e.shiftKey)) return;
             if (e.key === 'Tab' && !e.ctrlKey && !e.altKey && !e.metaKey) {
-                var c = leCanvas();
-                var obj = null;
-                try { obj = c && ((c.getActiveObjects() || [])[0] || c.getActiveObject()); } catch (_) {}
-                var estTexte = !!(obj && (obj.type === 'textbox' || obj.type === 'i-text' || obj.type === 'text'));
-                var optionTabs = _spTabsOption || !!(popin && popin.classList.contains('open'));
-                /* Bloc simplement SÉLECTIONNÉ (pas encore en édition) : la touche
-                   Tab entre en édition et avance le curseur au taquet suivant,
-                   comme le fait un logiciel de mise en page. */
-                if (estTexte && optionTabs && !obj.isEditing && typeof obj.enterEditing === 'function') {
+                var cT = leCanvas();
+                var objT = null;
+                try { objT = cT && ((cT.getActiveObjects() || [])[0] || cT.getActiveObject()); } catch (_) {}
+                var estTexteT = !!(objT && (objT.type === 'textbox' || objT.type === 'i-text' || objT.type === 'text'));
+                /* GARDE-FOUS : l'écoute est désormais en CAPTURE, elle voit donc
+                   aussi les frappes destinées aux champs de l'interface. On ne
+                   touche à Tab que si le clavier écrit dans le bloc ou dans le
+                   canevas — jamais dans un champ de saisie du panneau. */
+                var champActif = document.activeElement || null;
+                /* Le champ caché de Fabric n'est PAS un champ de saisie de l'interface :
+                   après exitEditing(), le focus peut y rester (mesuré) et le compter
+                   comme « champ » bloquait toute entrée en édition par Tab. */
+                var estChampFabric = !!(champActif && champActif.tagName === 'TEXTAREA' &&
+                    typeof champActif.getAttribute === 'function' &&
+                    champActif.getAttribute('data-fabric-hiddentextarea') !== null);
+                var dansUnChamp = !!(champActif && !estChampFabric && (champActif.tagName === 'INPUT' ||
+                    champActif.tagName === 'TEXTAREA' || champActif.tagName === 'SELECT' || champActif.isContentEditable));
+                /* 1) LE CAS QUI COMPTE : le bloc est en édition ET le clavier écrit
+                      bien dedans (c'est le champ caché de Fabric qui a le focus). */
+                if (estTexteT && objT.isEditing && champActif === objT.hiddenTextarea && typeof objT.insertChars === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    insererTabulation(objT, cT);
+                    return;
+                }
+                /* 2) Bloc simplement sélectionné (le clavier n'écrit dans aucun champ) :
+                      Tab ENTRE en édition, curseur à la fin. On n'insère rien :
+                      le message de statut annonce que Tab insère la tabulation, ce qui
+                      évite l'insertion surprise en tête de bloc de la version 1.7.460.
+                      Un second appui insère donc la tabulation. */
+                var optionTabsT = estTexteT && (!!(objT._spTabs && objT._spTabs.active) || !!(popin && popin.classList.contains('open')));
+                if (estTexteT && !objT.isEditing && !dansUnChamp && optionTabsT && typeof objT.enterEditing === 'function') {
                     e.preventDefault();
                     e.stopPropagation();
                     try {
-                        obj.enterEditing();
-                        var ta = obj.hiddenTextarea;
-                        if (ta) { ta.selectionStart = ta.selectionEnd = (obj.text || '').length; }
-                        obj.dirty = true;
-                        c.requestRenderAll();
+                        objT.enterEditing();
+                        poserCurseur(objT, (objT.text || '').length);
+                        objT.dirty = true;
+                        cT.requestRenderAll();
+                        majStatut('Bloc en édition : appuyez à nouveau sur Tab pour poser la tabulation.', 'info');
                     } catch (_) {}
                     return;
                 }
-                if (estTexte && optionTabs && obj.isEditing && typeof obj.insertChars === 'function') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    try { obj.insertChars('\t'); obj.dirty = true; c.requestRenderAll(); } catch (_) {}
-                }
             }
-        });
+        }, true);   /* capture : voir le commentaire en tête de cet écouteur */
+            return true;
+        })(popin);
         filSelection();
     }
     window.spTabBoot = boot;
@@ -53446,7 +53884,14 @@ remplace pas la richesse de contenu : les deux vont ensemble.
                 var _note = (typeof window._aiFooterImagesNote === 'function') ? window._aiFooterImagesNote() : '';
                 ta.value = fullPrompt + _ctx + _note;
             }
-            if (txt && typeof aiCustomPrompt === 'function') aiCustomPrompt();
+            if (txt && typeof aiCustomPrompt === 'function') {
+                // 🆕 v1.7.485 — une exception ici laissait le moulin allumé POUR TOUJOURS
+                //   (drapeau _aiGenerating bloqué) et tout clic suivant était refusé.
+                try { aiCustomPrompt(); } catch (_eGen) {
+                    logAI('⚠️ Erreur au lancement de la génération : ' + (_eGen && _eGen.message ? _eGen.message : _eGen));
+                    if (typeof window._spAiResetUI === 'function') window._spAiResetUI();
+                }
+            }
         }
         window.aiFooterGenerate = aiFooterGenerate;
 
@@ -55111,13 +55556,59 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         }
         window._aiLoaderProgress = _aiLoaderProgress;
 
+        // ════════════════════════════════════════════════════════════
+        // 🆕 v1.7.485 — GARDE-FOU ANTI-BLOCAGE DE LA GÉNÉRATION IA
+        //   Défaut observé en test : si la génération échoue AVANT l'envoi de la
+        //   requête (erreur inattendue) ou si aucune réponse n'arrive jamais, le
+        //   drapeau window._aiGenerating restait à true : le moulin tournait sans
+        //   fin et CHAQUE clic suivant était refusé sans message (« ça ne fait rien »).
+        //   Trois filets : remise à zéro appelable de partout, chien de garde de
+        //   3 minutes, et second clic qui FORCE la reprise passé 45 s.
+        // ════════════════════════════════════════════════════════════
+        function _spAiResetUI() {
+            window._aiGenerating = false;
+            window._aiGenStartedAt = 0;
+            try { clearTimeout(window._aiGenWatchdog); } catch (_nw) {}
+            try { if (typeof aiFooterLoaderOff === 'function') aiFooterLoaderOff(); } catch (_nl) {}
+            var _bReset = document.getElementById('aiFooterGenerateBtn');
+            if (_bReset) {
+                _bReset.disabled = false;
+                _bReset.style.opacity = '1';
+                if (window._aiGenBtnLabelMemo) _bReset.textContent = window._aiGenBtnLabelMemo;
+            }
+            // Le libellé suit l'état RÉEL de la maquette (Créer / Retoucher)
+            try { if (typeof _spAiSyncBtnLabel === 'function') _spAiSyncBtnLabel(); } catch (_ns) {}
+            try { if (typeof window._aiFooterUpdateUI === 'function') window._aiFooterUpdateUI(); } catch (_nu) {}
+        }
+        window._spAiResetUI = _spAiResetUI;
+
+        function _spAiArmWatchdog() {
+            try { clearTimeout(window._aiGenWatchdog); } catch (_nw2) {}
+            window._aiGenStartedAt = Date.now();
+            window._aiGenWatchdog = setTimeout(function () {
+                if (!window._aiGenerating) return;
+                try { logAI('⚠️ Aucune réponse après 3 minutes — génération réinitialisée, vous pouvez réessayer.'); } catch (_nz) {}
+                _spAiResetUI();
+            }, 180000);
+        }
+
         function aiCustomPrompt() {
     // 🆕 v1.7.174 — Anti double-clic : loader + désactivation du bouton
     if (window._aiGenerating) {
-        logAI('⏳ Génération en cours, veuillez patienter...');
-        return;
+        // 🆕 v1.7.485 — un second clic NE RESTE PLUS sans effet quand la génération
+        //   est bloquée : passé 45 s sans réponse, on remet tout à zéro et on repart.
+        //   Sinon on annonce le temps d'attente réel (l'utilisateur sait où il en est).
+        var _attenteS = window._aiGenStartedAt ? Math.round((Date.now() - window._aiGenStartedAt) / 1000) : 0;
+        if (!_attenteS || _attenteS > 45) {
+            try { logAI('↻ Génération bloquée depuis ' + _attenteS + ' s — relance.'); } catch (_nr) {}
+            _spAiResetUI();
+        } else {
+            logAI('⏳ Génération en cours (' + _attenteS + ' s), veuillez patienter...');
+            return;
+        }
     }
     window._aiGenerating = true;
+    _spAiArmWatchdog();
     // 🆕 v1.7.398 — loader EN SURIMPRESSION sur la barre (disparait a la fin).
     try {
         if (typeof aiFooterLoaderOn === 'function') {
@@ -55138,6 +55629,9 @@ remplace pas la richesse de contenu : les deux vont ensemble.
     // Helper pour réactiver le bouton après génération
     function _aiResetGenerating() {
         window._aiGenerating = false;
+        // 🆕 v1.7.485 — le chien de garde s'arrête avec la génération.
+        window._aiGenStartedAt = 0;
+        try { clearTimeout(window._aiGenWatchdog); } catch (_ng) {}
         // 🆕 v1.7.398 — le loader disparait TOUJOURS (succes comme echec).
         try { if (typeof aiFooterLoaderOff === 'function') aiFooterLoaderOff(); } catch (_lo) {}
         // ⚠️ Restaurer le libelle REEL du bouton : l'ancien code ecrivait « Create »
@@ -56011,8 +56505,30 @@ GUIDE MAQUETTES MODERNES
     function sanitizeElement(el) {
         if (!el || !el.type) return { ok: false, reason: 'Element sans type' };
 
-        const type = String(el.type).toLowerCase();
-        const ALLOWED_TYPES = ['rectangle', 'circle', 'ellipse', 'triangle', 'line', 'star', 'text'];
+        // 🆕 v1.7.485 — TOLÉRANCE D'ÉCRITURE DES TYPES.
+        //   Un modèle écrit parfois « rect », « square », « textbox », « paragraph »,
+        //   « oval », « divider »… Un SEUL mot différent suffisait à IGNORER l'élément
+        //   (simple avertissement console) : la page sortait incomplète alors que le
+        //   modèle avait bien répondu. On TRADUIT au lieu de jeter.
+        const _AI_TYPE_ALIASES = {
+            rect: 'rectangle', rects: 'rectangle', square: 'rectangle', box: 'rectangle',
+            bg: 'rectangle', background: 'rectangle', band: 'rectangle', banner: 'rectangle',
+            bar: 'rectangle', card: 'rectangle', frame: 'rectangle', bloc: 'rectangle',
+            round: 'circle', dot: 'circle', rond: 'circle', bullet: 'circle',
+            oval: 'ellipse', ovale: 'ellipse',
+            rule: 'line', hr: 'line', divider: 'line', separator: 'line', filet: 'line',
+            textbox: 'text', text_box: 'text', 'i-text': 'text', itext: 'text',
+            paragraph: 'text', paragraphe: 'text', title: 'text', titre: 'text',
+            subtitle: 'text', sous_titre: 'text', heading: 'text', label: 'text',
+            caption: 'text', legende: 'text', body: 'text', quote: 'text', citation: 'text',
+            image: 'userimage', img: 'userimage', photo: 'userimage', picture: 'userimage'
+        };
+        let type = String(el.type).toLowerCase();
+        if (_AI_TYPE_ALIASES[type] && _AI_TYPE_ALIASES[type] !== type) {
+            try { console.warn('[AI] type « ' + type + ' » interprété comme « ' + _AI_TYPE_ALIASES[type] + ' »'); } catch (_) {}
+            type = _AI_TYPE_ALIASES[type];
+        }
+        const ALLOWED_TYPES = ['rectangle', 'circle', 'ellipse', 'triangle', 'line', 'star', 'text', 'userimage'];
         if (!ALLOWED_TYPES.includes(type)) {
             return { ok: false, reason: 'Type non autorisé: ' + type };
         }
@@ -56083,6 +56599,20 @@ GUIDE MAQUETTES MODERNES
             const points = clamp(toNumber(el.points, 5), 3, 12);
             const innerRadius = clamp(toNumber(el.innerRadius, Math.floor(radius * 0.5)), 5, radius - 2);
             return { ok: true, value: { type, left, top, radius, innerRadius, points, fill, stroke, strokeWidth, opacity } };
+        }
+        // 🆕 v1.7.485 — IMAGES FOURNIES PAR L'UTILISATEUR (type « userImage »).
+        //   ⚠️ DÉFAUT TROUVÉ EN TEST : le prompt demandait ce type depuis la 1.7.174,
+        //   le générateur d'objets avait bien sa branche (« e.type === 'userImage' »),
+        //   mais le VALIDATEUR ne l'autorisait pas : chaque image jointe était jetée
+        //   comme « Type non autorisé » et n'arrivait JAMAIS sur la page.
+        if (type === 'userimage') {
+            let iw = clamp(toNumber(el.width, 200), 5, MAXW);
+            let ih = clamp(toNumber(el.height, 150), 5, MAXH);
+            let left = clamp(toNumber(el.left, SAFE.left), SAFE.left, SAFE.right - iw);
+            let top = clamp(toNumber(el.top, SAFE.top), SAFE.top, SAFE.bottom - ih);
+            const opacity = clamp01(el.opacity, 1);
+            const imageIndex = Math.max(0, Math.round(toNumber(el.imageIndex, 0)));
+            return { ok: true, value: { type: 'userImage', left, top, width: iw, height: ih, imageIndex, opacity } };
         }
         // text
         const text = (typeof el.text === 'string' && el.text.trim().length > 0) ? el.text : 'Texte';
@@ -59188,7 +59718,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         missingFontsLoadedDone: "{0} loaded.",
         missingFontsLoadFailed: "Unable to load {0}.",
         missingFontsReadError: "Error reading the file.",
-        shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Text</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bold</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Italic</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Underline</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Highlight selection</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Select all</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Tab (text block with tab stops enabled: inserts a tab, moves to the next tab stop)</span><span class=\"sp-shortcut-keys\"><kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Built-in Tab (move to the next field)</span><span class=\"sp-shortcut-keys\"><kbd>Option</kbd> + <kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cross-block selection (chained text)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Click</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Editing</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Copy</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cut</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Paste</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Undo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo (alt.)</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Delete block / page</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Duplicate selection</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>Drag</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Objects & Layers</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Group</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Ungroup</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bring to front</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Send to back</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Link text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Unlink text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Quick Tools</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add text</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add image</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add rectangle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add circle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Pen tool</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Typography panel</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Files & Navigation</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Save</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Open file</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Export PDF</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Print / Export</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">New page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Previous page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2190</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Next page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2192</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Show/hide guides</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Imposition</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Zoom</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom in</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom out</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2212</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom 100%</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">On macOS, <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>\u2318 Cmd</kbd></div>"
+        shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Text</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bold</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Italic</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Underline</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Highlight selection</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Select all</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Tab (block being edited: inserts a tab; tab stops enabled if needed — default step 10 mm)</span><span class=\"sp-shortcut-keys\"><kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Built-in Tab (move to the next field)</span><span class=\"sp-shortcut-keys\"><kbd>Option</kbd> + <kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cross-block selection (chained text)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Click</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Editing</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Copy</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Cut</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Paste</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Undo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Redo (alt.)</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Delete block / page</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Duplicate selection</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>Drag</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Objects & Layers</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Group</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Ungroup</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Bring to front</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Send to back</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Move object (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>Arrows</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Link text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Unlink text blocks</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Quick Tools</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add text</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add image</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add rectangle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Add circle</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Pen tool</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Typography panel</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Files & Navigation</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Save</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Open file</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Export PDF</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Print / Export</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">New page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Previous page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2190</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Next page</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2192</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Show/hide guides</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Imposition</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">Zoom</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom in</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom out</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>\u2212</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">Zoom 100%</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">On macOS, <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>\u2318 Cmd</kbd></div>"
     },
     ja: {
         // Interface principale
@@ -59924,7 +60454,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         gpuNotAvailable: "このブラウザではWebGLが利用できません",
         toastUploadSuccess: "✓ アップロード成功！",
         uploadHashLabel: "ハッシュ",
-        shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">テキスト</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">太字</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">斜体</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">下線</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ハイライト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">すべて選択</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">タブ（タブ位置を有効にしたテキストブロック：タブを挿入し、次のタブ位置へ移動）</span><span class=\"sp-shortcut-keys\"><kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">標準のタブ移動（次のフィールドへ）</span><span class=\"sp-shortcut-keys\"><kbd>Option</kbd> + <kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">クロスブロック選択（チェーンテキスト）</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>クリック</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">編集</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">コピー</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">カット</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペースト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">元に戻す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す（別）</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ブロック/ページを削除</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">選択を複製</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>ドラッグ</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">オブジェクトとレイヤー</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ化</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最前面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最背面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>矢印キー</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>矢印</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックをリンク</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックのリンク解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">クイックツール</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキスト追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">画像追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">矩形追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">円追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペンツール</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">タイポグラフィパネル</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ファイルとナビゲーション</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">保存</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ファイルを開く</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">PDF書き出し</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">印刷 / エクスポート</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">新しいページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">前のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>←</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">次のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>→</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ガイドの表示/非表示</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">面付け</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ズーム</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームイン</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームアウト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>−</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">100%ズーム</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">macOSでは <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>⌘ Cmd</kbd></div>",
+        shortcutsContent: "<div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">テキスト</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">太字</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>B</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">斜体</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">下線</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ハイライト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">すべて選択</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>A</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">タブ（編集中のブロック：タブを挿入／未設定なら既定 10 mm でタブ位置を有効化）</span><span class=\"sp-shortcut-keys\"><kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">標準のタブ移動（次のフィールドへ）</span><span class=\"sp-shortcut-keys\"><kbd>Option</kbd> + <kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">クロスブロック選択（チェーンテキスト）</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>クリック</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">編集</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">コピー</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">カット</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>X</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペースト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">元に戻す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">やり直す（別）</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ブロック/ページを削除</span><span class=\"sp-shortcut-keys\"><kbd>Delete</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">選択を複製</span><span class=\"sp-shortcut-keys\"><kbd>Alt</kbd> + <kbd>ドラッグ</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">オブジェクトとレイヤー</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ化</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">グループ解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>U</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最前面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>]</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">最背面へ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>[</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (1 px)</span><span class=\"sp-shortcut-keys\"><kbd>矢印キー</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">オブジェクト移動 (10 px)</span><span class=\"sp-shortcut-keys\"><kbd>Shift</kbd> + <kbd>矢印</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックをリンク</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>L</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキストブロックのリンク解除</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">クイックツール</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">テキスト追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>T</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">画像追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>I</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">矩形追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>R</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">円追加</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>C</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ペンツール</span><span class=\"sp-shortcut-keys\"><kbd>⌥</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">タイポグラフィパネル</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>T</kbd></span></div></div></div><div style=\"margin-bottom: 18px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ファイルとナビゲーション</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">保存</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ファイルを開く</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>O</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">PDF書き出し</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>E</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">印刷 / エクスポート</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>P</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">新しいページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>N</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">前のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>←</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">次のページ</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>→</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ガイドの表示/非表示</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">面付け</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd></span></div></div></div><div style=\"margin-bottom: 12px;\"><div style=\"font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #999; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eee;\">ズーム</div><div class=\"sp-shortcut-grid\"><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームイン</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>=</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">ズームアウト</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>−</kbd></span></div><div class=\"sp-shortcut-row\"><span class=\"sp-shortcut-desc\">100%ズーム</span><span class=\"sp-shortcut-keys\"><kbd>Ctrl</kbd> + <kbd>0</kbd></span></div></div></div><div style=\"font-size: 11px; color: #999; margin-top: 14px; padding-top: 10px; border-top: 1px solid #eee; text-align: center;\">macOSでは <kbd style='font-size:10px;'>Ctrl</kbd> = <kbd style='font-size:10px;'>⌘ Cmd</kbd></div>",
         // === ポップイン「不足フォント」(v1.7.335) ===
         missingFontsTitle: "この文書に不足しているフォント",
         missingFontsIntro: "この文書はSuperPrintに読み込まれていない外部フォントを使用しています。各フォントについて、対応するファイル（.ttf、.otf、.woff、.woff2）を選択して埋め込むか、読み込まれていないフォントを標準フォントに置き換えるには「検証」をクリックしてください。",

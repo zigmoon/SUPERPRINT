@@ -355,6 +355,15 @@ html[lang="ja"] .sidebar.collapsed .logo::before {
 .sidebar.collapsed .preset-formats {
     display: none !important;
 }
+
+/* 🆕 v1.7.485 — le DERNIER outil (Simulation papier & CMYK) reste dans la barre
+   OUVERTE seulement : en barre repliée, on ne garde que les outils de création
+   et les règles. Demande utilisateur : « en replié, on ne met pas PAPER 1 /
+   SIMULATION CMYK ; on le verra quand la barre sera ouverte ». */
+.sidebar.collapsed #softProofDropdown {
+    display: none !important;
+}
+
 /* Icon-only presentation for the left tools group */
 .tools-icons { 
     display: grid !important; 

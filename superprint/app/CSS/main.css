@@ -485,6 +485,15 @@ html[lang="ja"] .sidebar.collapsed .logo::before {
 .sidebar.collapsed .preset-formats {
     display: none !important;
 }
+
+/* 🆕 v1.7.485 — le DERNIER outil (Simulation papier & CMYK) reste dans la barre
+   OUVERTE seulement : en barre repliée, on ne garde que les outils de création
+   et les règles. Demande utilisateur : « en replié, on ne met pas PAPER 1 /
+   SIMULATION CMYK ; on le verra quand la barre sera ouverte ». */
+.sidebar.collapsed #softProofDropdown {
+    display: none !important;
+}
+
 /* Icon-only presentation for the left tools group */
 .tools-icons { 
     display: grid !important; 
@@ -2537,6 +2546,40 @@ textarea[data-fabric-hiddentextarea] {
    grisés côté JS) : l'utilisateur ne croit plus que le panneau est cassé. */
 .tab-empty-warn { opacity: 0.9; color: #d81b60; font-weight: 600; line-height: 1.35; }
 .tab-stop-row .sp-tab-del { opacity: 0.5; }
+
+/* ── 🆕 v1.7.485 : retour visible (bloc ciblé, statut) et étape de validation ── */
+.tab-cible {
+    font-size: 9px;
+    letter-spacing: .3px;
+    opacity: .6;
+    padding: 0 6px 4px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tab-status {
+    margin: 4px 6px 0 6px;
+    padding: 4px 6px;
+    font-size: 9.5px;
+    line-height: 1.35;
+    border-left: 3px solid #1a1a1a;
+    background: rgba(26, 26, 26, .05);
+    color: inherit;
+}
+.tab-status-vide { display: none; }
+.tab-status-ok { border-left-color: #1a7f37; }
+.tab-status-warn { border-left-color: #d81b60; }
+.tab-status-info { border-left-color: #4d6bfe; }
+.tab-valider {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+    font-weight: 600;
+}
+.tab-valider:hover { background: #000; border-color: #000; color: #fff; }
+.theme-dark .tab-status { background: rgba(255, 255, 255, .07); }
+.theme-dark .tab-valider { background: #f2f2f2; color: #111; border-color: #f2f2f2; }
+.theme-dark .tab-valider:hover { background: #fff; border-color: #fff; color: #111; }
 
 /* ── 🆕 v1.7.482 : PANNEAU « POLICE VARIABLE » (sous les styles B / I / U) ─────
    Demande utilisateur : « un panneau complet, avec un trait de séparation complet

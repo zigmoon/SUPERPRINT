@@ -9,6 +9,40 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.485] — 2026-09-19
+
+_A local AI that can no longer lock the editor, a Tabulation tool that is actually usable, and three interface details_
+
+### Fixed — AI assistant (measured with a real DeepSeek key)
+- **The “generating” flag could stay stuck.** The spinner ran forever and **every following click was refused without the slightest message**. A reset is now exposed (`_spAiResetUI()`), a **3-minute watchdog** frees the interface, and a second click **forces the restart** past 45 seconds.
+- **Element types were dropped although the model had answered.** `rect`, `square`, `textbox`, `paragraph`, `oval`, `divider`… came back as “unauthorised type”. Aliases are now **translated** to a valid type, with a console warning, instead of being thrown away.
+- **Attached images never reached the page.** The prompt had asked for `type:"userImage"` since 1.7.174 and the generator had its branch, but the validator refused that type — the branch was dead code. `userImage` is now accepted, with the same size clamps as the other images.
+- **The AI Studio accepts image synonyms** (`img`, `photo`, `picture`) and converts them to `image` before the document is built.
+
+### Fixed — Tabulation tool
+- **Tab in a block being edited did nothing at all.** Fabric stops the event on its hidden field before the document’s bubble phase, and the browser moved the focus out of the block (“it moves the block and does not make a tab”). The key listener now works in the **capture** phase, guarded so it never steals the key from the interface fields.
+- **Two tabs for one key press.** `boot()` is called twice, so the listener was installed twice and each press inserted two tabs (traced: `insertChars` called twice). Guarded by a single flag.
+- **The caret is placed after the inserted tab** — Fabric does not move it, so the next character used to land *before* the tab.
+- **Tab stops are now independent, grabbable markers on the ruler** (the ruler is not an evented object and its markers lived inside it): ↔ cursor on hover, drag with a ½ mm magnet, live text reflow, Escape cancels.
+- **Validation step in the panel**: target block, status line, next free position, and a “✓ Validate” button that saves (undoable) and confirms.
+
+### Changed — interface
+- **The Select tool no longer shows a grey “active” background at start-up**; it comes back as soon as Select is really chosen (Pen/Pencil menu, or the V key).
+- **The paper & CMYK simulation tool is hidden while the left sidebar is collapsed**, and available as soon as the bar is open.
+- **The Tab shortcut wording** (FR / EN / JA preferences, FR / EN in both documentation pages) now says that Tab **inserts** a tab.
+
+### Verified
+| Check | Result |
+|---|---|
+| AI fix | exercised with a real DeepSeek key: watchdog message, forced restart, tolerant types (3 console warnings), attached image placed (scaleX 1.4173) |
+| Tabulation | 9 browser cases: one single tab inserted, caret after it, editing and focus kept, entry without insertion, drag with live reflow, Escape restores, status, Validate |
+| Marker geometry | placement error **0.00 px** against an independent block-based computation, exact also on a block rotated 20° |
+| PDF of a tabbed block | 4 lines × 4 columns, vector typography: **92 characters compared one by one, max deviation 0.01 pt**, no marker colour in the page operators |
+| Interface | Select tool background transparent / white (collapsed and open), simulation tool absent when collapsed (7 tools) and present when open (8), Tab wording updated in FR/EN/JA |
+| Parity web ↔ mirror | **22 / 22 identical**, 0 different, 0 missing |
+| `node --check` · markers | clean · version markers consistent (1.7.485) |
+| Package | `sp213-local.zip` rebuilt and verified file by file |
+
 ## [1.7.484] — 2026-09-18
 
 _The local package launcher no longer offers to install itself_
