@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.497",
+      "softwareVersion": "1.7.498",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -606,10 +606,14 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 #hero .lead strong { color: var(--ink); }
 .hero-install { margin-top: clamp(20px,2.6vw,36px); max-width: 780px; width: 100%; }
 .hero-lead { margin-top: clamp(16px,2.2vw,28px) !important; }
+/* 🆕 v1.7.498 — DES FILETS, PAS DE FOND (demande : « un fond transparent, pas de fond en fait,
+   juste les filets autour »). Le panneau blanc et son ombre portée faisaient une tache claire au
+   milieu de la couverture ; il ne reste que le filet. Seul le champ de la ligne npx — la seule
+   chose qu'on vient y chercher — garde un fond, et il est blanc (voir .cmd-block). */
 #hero .install-shell {
-  background: var(--white); text-align: left;
-  border-color: var(--line); border-radius: 24px;
-  box-shadow: 0 24px 54px -30px rgba(23,19,13,.5);
+  background: transparent; text-align: left;
+  border-color: var(--line-strong); border-radius: 24px;
+  box-shadow: none;
 }
 .btn {
   display: inline-flex; align-items: center; gap: 12px;
@@ -652,7 +656,7 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 .install-shell .inst-desc { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 16px; line-height: 1.65; }
 .cmd-block {
   display: flex; align-items: center; gap: 10px;
-  background: var(--paper-3); color: var(--ink);
+  background: var(--white); color: var(--ink);
   border: 1px solid var(--line-strong);
   border-radius: 12px;
   padding: 6px 8px 6px 16px;
@@ -1060,6 +1064,19 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 }
 .auteur:hover { border-color: var(--line-strong); }
 .auteur-tete { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+/* 🆕 v1.7.498 — LA PLAQUE DE LA MARQUE D'AUTEUR.
+   Mêmes filets que le reste de la page, fond au papier, la marque centrée dedans. La colonne de
+   droite (les pastilles quadri au-dessus du numéro) s'aligne sur le bord opposé. */
+.auteur-marque {
+  flex: 0 0 auto; width: clamp(84px,9vw,108px); height: clamp(84px,9vw,108px);
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(12px,1.4vw,16px);
+  background: var(--paper); border: 1px solid var(--line-strong);
+}
+.auteur-marque img { width: 100%; height: 100%; display: block; }
+.auteur-signes { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; }
+.auteur-tete { align-items: flex-start; }
+
 .auteur-tete .cmyk { margin: 0; }
 .auteur-num {
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em;
@@ -1477,6 +1494,24 @@ details.spf-fold > summary.spf-bar { padding: 19px 0 15px; }
    le bandeau final, elle mérite un vrai souffle. */
 #templates, #features, #auteurs, #faq { padding: clamp(34px,4vw,56px) 24px; }
 #faq { padding-bottom: clamp(56px,7vw,96px); }
+
+/* ——— v1.7.498 — LES FILETS VERICAUX DES FICHES, ET UNE SEULE TYPOGRAPHIE.
+   (1) LES FILETS GRIS. La remise à plat des fonds (v1.7.488) avait rendu transparent le fond de
+   la grille des fiches — c'était pourtant LUI qui dessinait les filets : les fiches n'étaient plus
+   séparées que par le cadre extérieur, et la grille de « L'inventaire » perdait ses lignes
+   verticales dès l'ouverture. Le fond de la grille redevient le filet (--line) et les fiches
+   reprennent le papier de la page : les 1 px d'écart entre les fiches se voient, et rien d'autre
+   ne change (les fiches restent au papier de la page, pas de tache claire).
+   (2) UNE SEULE TYPOGRAPHIE À L'INTÉRIEUR DES SOUFFLETS. Le soufflet « La chambre noire » a la
+   bonne mesure : titre de fiche 17-21 px, texte gris 13 px. Mais l'inventaire avait reçu 15-18 px,
+   les presses 16-20 px et 12,5 px, les listes de l'analyse 14 px — quatre intérieurs, quatre
+   tailles. On supprime les exceptions : toutes les fiches prennent la mesure du prépresse. */
+details.spf-fold .spf-in .pp-grid { background: var(--line); }
+details.spf-fold .spf-in .pp-card { background: var(--paper); }
+#inventaire .pp-card h3, #use-cases .pp-card h3 { font-size: clamp(17px,1.8vw,21px); }
+#use-cases .pp-card p { font-size: 13px; line-height: 1.72; }
+#inventaire .pp-card { padding-bottom: clamp(24px,2.4vw,34px); }
+#vs-indesign .pp-card li { font-size: 13px; line-height: 1.72; }
 
 /* ── RESPONSIVE ── */
 @media(max-width: 1000px){
@@ -2086,7 +2121,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.497</span>
+    <span>SuperPrint v1.7.498</span>
   </div>
 </div>
 
@@ -3473,8 +3508,16 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
       <article class="auteur">
         <div class="auteur-tete">
-          <span class="cmyk" aria-hidden="true"><i class="c"></i><i class="m"></i><i class="y"></i><i class="k"></i></span>
-          <span class="auteur-num">01</span>
+          <!-- 🆕 v1.7.498 — LA MARQUE DE L'AUTEUR. Les deux SVG déposés dans img/ (une couronne
+               pour Simon, un C pour Clémence) sont posés ici, dans une plaque à filets, à l'échelle
+               du papier. Marqués décoratifs : le nom juste en dessous dit déjà qui c'est. -->
+          <span class="auteur-marque" aria-hidden="true">
+            <img src="img/simon.svg" alt="" width="1200" height="1200" loading="lazy" decoding="async">
+          </span>
+          <span class="auteur-signes">
+            <span class="cmyk" aria-hidden="true"><i class="c"></i><i class="m"></i><i class="y"></i><i class="k"></i></span>
+            <span class="auteur-num">01</span>
+          </span>
         </div>
         <h3 class="auteur-nom">Simon Dupont-Gellert</h3>
         <span class="auteur-role" data-lang="fr">Fondateur · Direction artistique · Développement</span>
@@ -3494,8 +3537,16 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
       <article class="auteur">
         <div class="auteur-tete">
-          <span class="cmyk" aria-hidden="true"><i class="c"></i><i class="m"></i><i class="y"></i><i class="k"></i></span>
-          <span class="auteur-num">02</span>
+          <!-- 🆕 v1.7.498 — LA MARQUE DE L'AUTEUR. Les deux SVG déposés dans img/ (une couronne
+               pour Simon, un C pour Clémence) sont posés ici, dans une plaque à filets, à l'échelle
+               du papier. Marqués décoratifs : le nom juste en dessous dit déjà qui c'est. -->
+          <span class="auteur-marque" aria-hidden="true">
+            <img src="img/clemence.svg" alt="" width="1200" height="1200" loading="lazy" decoding="async">
+          </span>
+          <span class="auteur-signes">
+            <span class="cmyk" aria-hidden="true"><i class="c"></i><i class="m"></i><i class="y"></i><i class="k"></i></span>
+            <span class="auteur-num">02</span>
+          </span>
         </div>
         <h3 class="auteur-nom">Clémence Brunet</h3>
         <span class="auteur-role" data-lang="fr">Fondatrice · Design graphique</span>
@@ -3743,7 +3794,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.497</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.498</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>

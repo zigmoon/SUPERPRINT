@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,32 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.498] — 2026-09-20
+
+_Rules instead of a panel, the grid rules return, one single interior typography, and the author marks_
+
+### Changed
+- **The hero install box keeps only its rules.** `#hero .install-shell` was a white panel with a large drop shadow — a pale patch in the middle of the cover. It is transparent now, with `--line-strong` around it and no shadow. **Only the npx field (`.cmd-block`) keeps a background, and it is `--white`** (measured `rgb(255, 255, 255)`).
+
+### Fixed
+- **The grey vertical rules are back in the block grids.** They were drawn by the grid’s own background (`gap: 1px` over `background: var(--line)`), and the 1.7.488 background flattening had set that same element to `transparent` — so the cards were only separated by the outer frame, and “L’inventaire” lost its vertical lines as soon as the block was opened. The grid background is the rule again and the cards take `--paper` (the page paper, so no pale patch): measured `rgb(220, 211, 195)` for the grid, `rgb(247, 243, 236)` for the cards.
+- **One single interior typography**, the prepress one: card title `21px`, grey text `13px`. The inventory had `18px`, the presses `20px` with `12.5px` text, the analysis lists `14px` — four interiors, four measures. The per-block exceptions are removed; all five grids now measure exactly the same.
+
+### Added
+- **The two author marks**, dropped into `img/` by the user (a crown for Simon Dupont-Gellert, a C for Clémence Brunet): each sits in its own card, in a ruled plaque on the page paper, the mark centred inside, with the CMYK dots and the card number moved to the right of the same line. Both are decorative (`alt=""` + `aria-hidden`) and lazily loaded (`loading="lazy"`, 435 KB each).
+
+### Verified
+| Check | Result |
+|---|---|
+| Install box | background `rgba(0, 0, 0, 0)`, no shadow, `1px` `--line-strong` |
+| npx field | `rgb(255, 255, 255)` |
+| Five grids | background `rgb(220, 211, 195)`, cards `rgb(247, 243, 236)` |
+| Interior typography | title `21px`, grey text `13px` — identical in all five |
+| Author marks | both `200`, painted in a 108 px plaque |
+| JavaScript errors | none |
+| Markers | `data-sp-js="v498"`, cache tag `20260920-v498-filets-et-marques`, `CACHE_NAME` bumped |
+
 
 ## [1.7.497] — 2026-09-20
 
