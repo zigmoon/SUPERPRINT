@@ -982,7 +982,14 @@ html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight
    japonais, pas pour le français : la voici, au même poids (0,2,1). Pas de !important — les
    boutons EN/FR/JA du menu mobile portent déjà le leur (« html .mm-lang-toggle
    button[data-lang] ») et continuent de s’afficher. */
-html[lang="fr"] [data-lang="en"], html[lang="fr"] [data-lang="ja"] { display: none; }
+/* v1.7.487 — les six combinaisons, en !important (une règle de classe posant un « display »
+   sur un élément de langue réaffichait les variantes des autres langues, sur l’accueil) : */
+html[lang="fr"] [data-lang="en"], html[lang="fr"] [data-lang="ja"],
+html[lang="en"] [data-lang="fr"], html[lang="en"] [data-lang="ja"],
+html[lang="ja"] [data-lang="fr"], html[lang="ja"] [data-lang="en"] { display: none !important; }
+html[lang="fr"] .inline-en, html[lang="fr"] .inline-ja,
+html[lang="en"] .inline-fr, html[lang="en"] .inline-ja,
+html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !important; }
 
 /* 🆕 v1.7.486 — ATTENTION AU NOM « data-fold ». La home a déjà son repli générique
    (v1.7.473) : il balaie « [data-fold] », cherche l’id égal à la valeur, et s’il ne trouve
@@ -1673,7 +1680,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.486</span>
+    <span>SuperPrint v1.7.487</span>
   </div>
 </div>
 
@@ -1923,7 +1930,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.486</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.487</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>

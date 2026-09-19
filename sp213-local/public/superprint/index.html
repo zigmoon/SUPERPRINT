@@ -68,7 +68,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.486",
+      "softwareVersion": "1.7.487",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1147,40 +1147,131 @@ html[lang="ja"] .inline-ja { display: inline; }
 html[lang="ja"] body, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 { letter-spacing: .01em; }
 html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight: 700; }
 
-/* 🆕 v1.7.486 — LE PIÈGE DU FRANÇAIS, RÉGLÉ POUR DE BON.
-   La langue par défaut n’avait aucune règle forte : tout reposait sur
-   « [data-lang="en"], [data-lang="ja"] { display: none } » (0,1,0), qu’une simple règle de
-   classe (0,1,1) bat. Résultat : dans les dix questions de la FAQ, les summaries des trois
-   langues s’affichaient d’un coup, et la grille des maquettes mêlait deux kickers et quatre
-   titres anglais au texte français. Les règles fortes existaient pour l’anglais et le
-   japonais, pas pour le français : la voici, au même poids (0,2,1). Pas de !important — les
-   boutons EN/FR/JA du menu mobile portent déjà le leur (« html .mm-lang-toggle
-   button[data-lang] ») et continuent de s’afficher. */
-html[lang="fr"] [data-lang="en"], html[lang="fr"] [data-lang="ja"] { display: none; }
+/* ════════════════════════════════════════════════════════════════
+   v1.7.487 — LA PARTIE « FONCTIONS » : UN SEUL CHAPITRE, HUIT BLOCS.
 
-/* 🆕 v1.7.486 — ATTENTION AU NOM « data-fold ». La home a déjà son repli générique
-   (v1.7.473) : il balaie « [data-fold] », cherche l’id égal à la valeur, et s’il ne trouve
-   aucun « .is-folded » dans la cible il masque le parent du bouton. Un repli de chapitre
-   porte donc « data-chapitre », pas « data-fold » — sinon le chapitre entier disparaît. */
-/* ——— « VOIR PLUS » : un chapitre annoncé, son corps à la demande (data-chapitre) ——— */
-.fold { margin: clamp(18px,2.4vw,28px) 0 clamp(6px,1vw,10px); border: 1px solid var(--line-strong); background: var(--paper); }
-.fold > summary.fold-sum {
-  display: flex; justify-content: space-between; align-items: center; gap: 16px;
-  font-family: var(--f-mono); font-size: 11px; font-weight: 700; letter-spacing: .18em;
-  text-transform: uppercase; color: var(--ink); padding: 16px 18px; cursor: pointer;
-  list-style: none; transition: background .25s var(--ease);
+   Avant : six chapitres empilés (comparatif, prépresse, inventaire, presses, analyse,
+   formats), chacun avec son label, son grand titre et son chapeau — indigeste, et l'ordre
+   ne suivait rien. Maintenant : une partie, huit blocs, une barre identique pour tous
+   (surtitre · titre · repère · signe +), mais un traitement DIFFÉRENT à l'intérieur de
+   chacun pour que l'œil sache où il est :
+     1 applications · 2 les quinze outils (ouverts tous les deux)
+     3 prépresse à l'encre · 4 pastilles de presses · 5 tableau encadré
+     6 deux colonnes face à face · 7 pastilles de formats · 8 planches d'écran
+   Les chapeaux d'origine ne sont pas perdus : ils s'affichent DANS le bloc ouvert. */
+
+/* ——— LE PIÈGE DU FRANÇAIS, RÉGLÉ POUR DE BON (v1.7.486), ET SA RÉCIDIVE (v1.7.487).
+   La langue par défaut n'avait aucune règle forte : tout reposait sur
+   « [data-lang="en"], [data-lang="ja"] { display: none } » (0,1,0), qu'une simple règle de
+   classe (0,1,1) bat — d'où les summaries de FAQ affichés dans les trois langues.
+   Et la leçon a été repassée en 1.7.487 : un « display: -webkit-box » posé sur les cartes
+   pour tenir le texte à trois lignes (règle 1,1,1) réaffichait de la même façon les quinze
+   descriptions dans les trois langues. Les six combinaisons sont donc couvertes ici, en
+   !important : une variante de langue ne doit JAMAIS s'afficher dans une autre langue, quel
+   que soit le style qu'une règle de classe lui donne. Les boutons EN/FR/JA du menu mobile
+   portent le leur plus loin dans la feuille (« html .mm-lang-toggle button[data-lang]
+   { display: inline-flex !important } ») : à poids égal, la dernière règle l'emporte, et ils
+   continuent de s'afficher. */
+/* ——— VERSION LISIBLE DE LA RÈGLE, POUR MÉMOIRE :
+   html[lang="fr"] [data-lang="en"], html[lang="fr"] [data-lang="ja"],
+   html[lang="en"] [data-lang="fr"], html[lang="en"] [data-lang="ja"],
+   html[lang="ja"] [data-lang="fr"], html[lang="ja"] [data-lang="en"] { display: none; } */
+html[lang="fr"] [data-lang="en"], html[lang="fr"] [data-lang="ja"],
+html[lang="en"] [data-lang="fr"], html[lang="en"] [data-lang="ja"],
+html[lang="ja"] [data-lang="fr"], html[lang="ja"] [data-lang="en"] { display: none !important; }
+html[lang="fr"] .inline-en, html[lang="fr"] .inline-ja,
+html[lang="en"] .inline-fr, html[lang="en"] .inline-ja,
+html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !important; }
+
+#features { background: var(--paper); position: relative; overflow: hidden; }
+#features .ghost { top: 2%; right: -4vw; left: auto; font-size: clamp(64px,11vw,180px); }
+.spf-head { max-width: 900px; }
+.spf-note {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; color: var(--muted);
+  margin-top: 14px; text-transform: uppercase;
 }
-.fold > summary.fold-sum::-webkit-details-marker { display: none; }
-.fold > summary.fold-sum:hover { background: var(--paper-2); }
-.fold > summary.fold-sum::after {
-  content: '+'; font-family: var(--f-mono); font-size: 18px; line-height: 1; color: var(--magenta);
-  transition: transform .35s var(--ease); flex-shrink: 0;
+
+/* ——— la barre : le geste unique ——— */
+details.spf-fold { border-top: 2px solid var(--ink); margin-top: clamp(26px,3.4vw,44px); }
+details.spf-fold > summary.spf-bar {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px;
+  padding: 20px 0 16px; cursor: pointer; list-style: none; transition: color .25s var(--ease);
 }
-.fold[open] > summary.fold-sum { border-bottom: 1px solid var(--line-strong); background: var(--paper-2); }
-.fold[open] > summary.fold-sum::after { transform: rotate(45deg); }
-.fold > .fold-inner { padding: 4px 0 2px; }
-[data-chapitre] > .fold-inner > .pp-band:last-child,
-[data-chapitre] > .fold-inner > .cmp-wrapper:last-child { margin-bottom: 0; }
+details.spf-fold > summary.spf-bar::-webkit-details-marker { display: none; }
+details.spf-fold > summary.spf-bar:hover { color: var(--magenta); }
+.spf-k {
+  flex: 0 0 100%; font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--magenta); margin-bottom: 2px;
+}
+.spf-t h3 {
+  font-family: var(--f-display); font-size: clamp(23px,3vw,40px); font-weight: 700;
+  line-height: 1.06; letter-spacing: -.01em; margin: 0;
+}
+.spf-m, .spf-m2 {
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .12em; color: var(--muted);
+  margin-left: auto; text-align: right;
+}
+.spf-m2 { margin-left: auto; transform: translateY(2px); }
+.spf-plus {
+  flex: 0 0 auto; font-family: var(--f-mono); font-size: 22px; line-height: 1; color: var(--magenta);
+  transition: transform .35s var(--ease);
+}
+details.spf-fold[open] > summary.spf-bar .spf-plus { transform: rotate(45deg); }
+details.spf-fold[open] > summary.spf-bar { color: var(--ink); }
+.spf-in { padding: 2px 0 6px; }
+.spf-lead { max-width: 820px; margin-bottom: 26px; }
+.spf-lead p { font-size: 15px; line-height: 1.8; color: var(--ink-soft); }
+
+/* ——— 1 · les applications : on garde les grandes cartes, texte tenu à quatre lignes ——— */
+#showcase .apps { margin-top: 4px; }
+#showcase .app p.inline-fr, #showcase .app p.inline-en, #showcase .app p.inline-ja {
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* ——— 2 · les quinze outils : grille serrée, trois colonnes, texte tenu à trois lignes ——— */
+#inventaire .feat-grid { grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 4px; }
+#inventaire .feat-card { padding: clamp(18px,1.9vw,26px); }
+#inventaire .feat-card p {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+#inventaire .feat-card h3 { font-size: 12.5px; letter-spacing: .06em; }
+
+/* ——— 3 · le prépresse : le seul bloc à l'encre, texte clair ——— */
+#prepress.spf-fold { border-top-color: var(--ink); }
+#prepress .spf-in {
+  background: var(--ink); color: var(--paper); padding: clamp(24px,3vw,42px) clamp(20px,2.6vw,38px);
+  margin-bottom: 4px;
+}
+#prepress .pp-card { background: transparent; border-color: rgba(247,243,236,.16); }
+#prepress .pp-grid, #prepress .pp-band, #prepress .spf-in > * { background: transparent; }
+#prepress .pp-card:hover { background: rgba(247,243,236,.07); }
+#prepress .pp-card h3 { color: var(--paper); }
+#prepress .pp-card p, #prepress .pp-card p strong { color: rgba(247,243,236,.78); }
+#prepress .pp-card code { background: rgba(247,243,236,.1); color: var(--paper); border-color: rgba(247,243,236,.2); }
+#prepress .pp-num { color: var(--yellow); }
+#prepress .spf-lead p { color: rgba(247,243,236,.8); }
+#prepress .pp-band { border-color: rgba(247,243,236,.2); }
+#prepress .pp-band-txt { color: rgba(247,243,236,.8); }
+#prepress .pp-band .btn-paper { background: var(--paper); border-color: var(--paper); color: var(--ink); }
+#prepress .pp-band .btn-paper:hover { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+
+/* ——— 4 · les presses : pastilles serrées ——— */
+#use-cases .uc-grid { grid-template-columns: repeat(4, minmax(0,1fr)); margin-top: 4px; }
+
+/* ——— 5 · le banc d'essai : le tableau dans un cadre ——— */
+#comparison .cmp-wrapper { border: 1px solid var(--line-strong); background: var(--paper-3); padding: 4px 14px 8px; margin-top: 4px; }
+#comparison .tools-more-wrap { margin-top: 18px; }
+
+/* ——— 6 · face à face : deux colonnes, l'une à l'encre douce, l'autre au papier ——— */
+#vs-indesign .vp-grid { margin-top: 4px; }
+#vs-indesign .vp-card:first-child { background: var(--paper-3); }
+#vs-indesign .vp-card:nth-child(2) { background: var(--white); }
+
+/* ——— 7 · les formats : deux rangées étiquetées ——— */
+#formats .fmt-label { margin-top: 18px; }
+
+/* ——— 8 · les planches : la grille de captures ——— */
+#planches .tgrid { margin-top: 4px; }
 
 /* ── RESPONSIVE ── */
 @media(max-width: 1000px){
@@ -1680,7 +1771,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.486</span>
+    <span>SuperPrint v1.7.487</span>
   </div>
 </div>
 
@@ -2165,22 +2256,33 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 </section>
 
 <!-- ══════════════ L'ATELIER EN IMAGES — CAPTURES RÉELLES DE L'APPLICATION ══════════════ -->
-<section id="showcase">
-  <div class="ghost" aria-hidden="true">APPS</div>
+<section id="features" class="spf">
+  <div class="ghost" aria-hidden="true">FONCTIONS</div>
   <div class="container">
-    <div class="section-head">
-      <div class="section-label" data-lang="fr">Trois applications · un seul atelier</div>
-      <div class="section-label" data-lang="en">Three applications · one atelier</div>
-      <div class="section-label" data-lang="ja">3つのアプリ、ひとつの工房</div>
-      <h2 data-lang="fr">La PAO, entièrement réinventée dans votre navigateur.</h2>
+    <div class="section-head spf-head">
+      <div class="section-label" data-lang="fr">Chapitre 01 · L'inventaire de l'atelier</div>
+      <div class="section-label" data-lang="en">Chapter 01 · The atelier inventory</div>
+      <div class="section-label" data-lang="ja">第01章 · 工房の目録</div>
+<h2 data-lang="fr">La PAO, entièrement réinventée dans votre navigateur.</h2>
       <h2 data-lang="en">DTP, entirely reinvented in your browser.</h2>
       <h2 data-lang="ja">DTPを、ブラウザでまるごと作り直す。</h2>
-      <p class="lead" data-lang="fr">L'atelier de PAO, le studio d'IA et l'atelier typographique : trois applications, un seul projet, rien à installer. Chacune s'ouvre d'un clic, chacune travaille dans votre navigateur — et les maquettes passent de l'une à l'autre.</p>
+<p class="lead" data-lang="fr">L'atelier de PAO, le studio d'IA et l'atelier typographique : trois applications, un seul projet, rien à installer. Chacune s'ouvre d'un clic, chacune travaille dans votre navigateur — et les maquettes passent de l'une à l'autre.</p>
       <p class="lead" data-lang="en">The DTP atelier, the AI studio and the type workshop: three applications, one project, nothing to install. Each opens in one click, each works in your browser — and layouts travel from one to the next.</p>
       <p class="lead" data-lang="ja">DTP工房、AIスタジオ、書体工房。3つのアプリ、ひとつのプロジェクト、インストール不要。どれもワンクリックで開き、ブラウザで動きます。レイアウトは行き来します。</p>
+      <p class="spf-note" data-lang="fr">Tout est là, rangé dans l'ordre où l'on s'en sert : ouvrez le bloc qui vous intéresse, refermez-le ensuite.</p>
+      <p class="spf-note" data-lang="en">Everything is here, in the order you use it: open the block you need, close it again afterwards.</p>
+      <p class="spf-note" data-lang="ja">使う順に並んでいます。必要なブロックだけを開いて、また閉じてください。</p>
     </div>
 
-    <div class="apps">
+    <!-- 1 · LES TROIS APPLICATIONS — ouvertes : ce sont les portes d'entrée -->
+    <details class="spf-fold" id="showcase" open data-chapitre="showcase">
+        <summary class="spf-bar">
+          <div class="spf-t"><h3 data-lang="fr">Trois applications · un seul atelier</h3><h3 data-lang="en">Three applications · one atelier</h3><h3 data-lang="ja">3つのアプリ、ひとつの工房</h3></div>
+          <span class="spf-m">SuperPrint · Studio IA · SuperTyPo</span>
+          <span class="spf-plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="spf-in">
+<div class="apps">
 
       <article class="app">
         <span class="entry-logo"><img src="icons/icon-192x192.png" alt="SuperPrint" width="50" height="50"></span>
@@ -2210,23 +2312,601 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </article>
 
     </div>
+        </div>
+    </details>
 
-    <!-- ===== GALERIE DES OUTILS — une capture par outil, une maquette par capture ===== -->
-    <div class="tools">
-      <div class="tools-head">
-        <h3 data-lang="fr">Les outils, un par un.</h3>
-        <h3 data-lang="en">The tools, one by one.</h3>
-        <h3 data-lang="ja">道具をひとつずつ。</h3>
-        <p data-lang="fr">Chaque capture est prise dans l'application, sur une maquette différente : le clic droit, l'habillage, l'écriture dans une forme, la typographie, les couleurs, les calques, les règles et les grilles.</p>
-        <p data-lang="en">Every screenshot is taken inside the application, on a different layout each time: right-click, text wrap, writing inside a shape, typography, colours, layers, rulers and grids.</p>
-        <p data-lang="ja">すべて実際のアプリ画面で、毎回違うレイアウトを使っています。右クリック、回り込み、図形内の文字、タイポグラフィ、カラー、レイヤー、定規とグリッド。</p>
+
+    <!-- 2 · LES QUINZE OUTILS — ouverts : c'est la liste des fonctions, elle se balaye -->
+    <details class="spf-fold" id="inventaire" open data-chapitre="inventaire">
+        <summary class="spf-bar">
+          <div class="spf-k"><span data-lang="fr">L'inventaire</span><span data-lang="en">The inventory</span><span data-lang="ja">目録</span></div>
+          <div class="spf-t"><h3 data-lang="fr">L'inventaire de l'atelier</h3><h3 data-lang="en">The atelier inventory</h3><h3 data-lang="ja">工房の目録</h3></div>
+          <span class="spf-m"><span class="spf-m2" data-lang="fr">15 outils — toujours à portée</span><span class="spf-m2" data-lang="en">15 tools — always within reach</span><span class="spf-m2" data-lang="ja">15の道具 — いつでも手の届く場所に</span></span>
+          <span class="spf-plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="spf-in">
+<div class="feat-grid">
+
+      <div class="feat-card">
+        <div class="feat-num">01</div>
+        <h3 data-lang="fr">DOCUMENTS MULTI-PAGES</h3>
+        <h3 data-lang="en">MULTI-PAGE DOCUMENTS</h3>
+        <h3 data-lang="ja">複数ページドキュメント</h3>
+        <p data-lang="fr">Créez des brochures, magazines, catalogues et livres multi-pages avec pagination automatique et gabarits réutilisables.</p>
+        <p data-lang="en">Create brochures, magazines, catalogs and multi-page books with automatic pagination and reusable master pages.</p>
+        <p data-lang="ja">パンフレット、雑誌、カタログ、複数ページの書籍を、自動ページ番号と再利用可能なマスターページで作成。</p>
       </div>
 
-      <details class="fold" data-chapitre="galerie">
-        <summary class="fold-sum"><span class="inline-fr">Voir la galerie des outils</span><span class="inline-en">See the tool gallery</span><span class="inline-ja">道具のギャラリーを見る</span></summary>
-        <div class="fold-inner">
+      <div class="feat-card">
+        <div class="feat-num">02</div>
+        <h3 data-lang="fr">EXPORT PDF CMYK IMPRIMABLE</h3>
+        <h3 data-lang="en">PRINT-READY PDF CMYK</h3>
+        <h3 data-lang="ja">印刷対応CMYK PDF書き出し</h3>
+        <p data-lang="fr">Exportez des PDF adaptés à l'impression professionnelle offset avec conversion RGB→CMYK intégrée, gestion des tons directs Pantone et simulation d'épreuve écran.</p>
+        <p data-lang="en">Export print-ready PDFs with integrated RGB→CMYK conversion, Pantone spot color management and screen proof simulation.</p>
+        <p data-lang="ja">RGB→CMYK変換を内蔵したオフセット印刷対応のPDFを書き出し。Pantone特色管理と画面プルーフシミュレーション付き。</p>
+        <span class="feat-tag new">CMYK</span>
+      </div>
 
-      <div class="tgrid" id="tgridOutils">
+      <div class="feat-card">
+        <div class="feat-num">03</div>
+        <h3 data-lang="fr">IMPORT DE DOCUMENTS</h3>
+        <h3 data-lang="en">DOCUMENT IMPORT</h3>
+        <h3 data-lang="ja">ドキュメント読み込み</h3>
+        <p data-lang="fr">Importez vos textes et documents existants (Word, OpenDocument, PDF) et laissez SuperPrint les mettre en page, avec une pagination automatique.</p>
+        <p data-lang="en">Import your existing texts and documents (Word, OpenDocument, PDF) and let SuperPrint lay them out, with automatic pagination.</p>
+        <p data-lang="ja">既存のテキストやドキュメント（Word、OpenDocument、PDF）を読み込んで、自動ページ番号とともにSuperPrintがレイアウト。</p>
+        <span class="feat-tag new">DOCX · ODT · PDF</span>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">04</div>
+        <h3 data-lang="fr">TYPOGRAPHIE PROFESSIONNELLE</h3>
+        <h3 data-lang="en">PROFESSIONAL TYPOGRAPHY</h3>
+        <h3 data-lang="ja">プロ仕様のタイポグラフィ</h3>
+        <p data-lang="fr">Moteur Hypher pour césure automatique en FR, EN, DE, ES, IT, JA. Espacement de paragraphe, crénage, interlignage, styles de texte avancés.</p>
+        <p data-lang="en">Hypher engine for automatic hyphenation in FR, EN, DE, ES, IT, JA. Paragraph spacing, kerning, leading, advanced text styles.</p>
+        <p data-lang="ja">HypherエンジンによるFR / EN / DE / ES / IT / JAの自動ハイフネーション。段落間隔、カーニング、行送り、高度なテキストスタイル。</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">05</div>
+        <h3 data-lang="fr">ACCÉLÉRATION GPU</h3>
+        <h3 data-lang="en">GPU ACCELERATION</h3>
+        <h3 data-lang="ja">GPUアクセラレーション</h3>
+        <p data-lang="fr">Détection WebGL automatique via WEBGL_debug_renderer_info. Promotion de couche CSS (will-change, translateZ). Cache objet Fabric.js par type. Rendu fluide même sur les grands documents.</p>
+        <p data-lang="en">Automatic WebGL detection via WEBGL_debug_renderer_info. CSS layer promotion (will-change, translateZ). Per-type Fabric.js object caching. Smooth rendering even on large documents.</p>
+        <p data-lang="ja">WEBGL_debug_renderer_infoによるWebGL自動検出。CSSレイヤー昇格（will-change、translateZ）。Fabric.jsのタイプ別オブジェクトキャッシュ。大きなドキュメントでも滑らかな描画。</p>
+        <span class="feat-tag new">v1.7.421</span>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">06</div>
+        <h3 data-lang="fr">SAUVEGARDE AUTOMATIQUE</h3>
+        <h3 data-lang="en">AUTO-SAVE</h3>
+        <h3 data-lang="ja">自動保存</h3>
+        <p data-lang="fr">Sauvegarde automatique toutes les 12 secondes dans IndexedDB (stockage local du navigateur). Exportez en .sp, JSON, PDF, PNG, JPG à tout moment.</p>
+        <p data-lang="en">Auto-save every 12 seconds to IndexedDB (browser local storage). Export to .sp, JSON, PDF, PNG, JPG at any time.</p>
+        <p data-lang="ja">12秒ごとにIndexedDB（ブラウザのローカルストレージ）へ自動保存。いつでも .sp / JSON / PDF / PNG / JPG に書き出せます。</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">07</div>
+        <h3 data-lang="fr">OPÉRATIONS BOOLÉENNES</h3>
+        <h3 data-lang="en">BOOLEAN OPERATIONS</h3>
+        <h3 data-lang="ja">ブーリアン演算</h3>
+        <p data-lang="fr">Union, soustraction, intersection de formes via le moteur Paper.js intégré — comme dans un logiciel vectoriel professionnel.</p>
+        <p data-lang="en">Shape union, subtract, and intersection via integrated Paper.js engine — like a professional vector software.</p>
+        <p data-lang="ja">Paper.jsエンジンによる図形の合体・減算・交差 — プロのベクターソフトと同じ操作感です。</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">08</div>
+        <h3 data-lang="fr">CALQUES &amp; GESTIONNAIRE</h3>
+        <h3 data-lang="en">LAYERS &amp; MANAGER</h3>
+        <h3 data-lang="ja">レイヤー管理</h3>
+        <p data-lang="fr">Gestionnaire de calques complet : verrouillage, visibilité, réorganisation. Isolation de calque pour l'édition précise.</p>
+        <p data-lang="en">Full layer manager: lock, visibility, reorder. Layer isolation for precise editing.</p>
+        <p data-lang="ja">ロック、表示切替、並べ替えを備えたレイヤーマネージャー。レイヤー分離で正確な編集が可能です。</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">09</div>
+        <h3 data-lang="fr">IMAGES &amp; PHOTOS</h3>
+        <h3 data-lang="en">IMAGES &amp; PHOTOS</h3>
+        <h3 data-lang="ja">画像＆写真</h3>
+        <p data-lang="fr">Importez vos images PNG, JPG, SVG ou WebP, masquez-les dans une forme, recadrez-les — tout reste net pour l'impression.</p>
+        <p data-lang="en">Import your PNG, JPG, SVG or WebP images, mask them into a shape, crop them — everything stays sharp for print.</p>
+        <p data-lang="ja">PNG / JPG / SVG / WebP画像を読み込み、形にマスク、トリミング — 印刷に必要なシャープさを維持します。</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">10</div>
+        <h3 data-lang="fr">GRILLES &amp; REPÈRES</h3>
+        <h3 data-lang="en">GRIDS &amp; GUIDES</h3>
+        <h3 data-lang="ja">グリッド＆ガイド</h3>
+        <p data-lang="fr">Grilles personnalisables, repères magnétiques, règles, magnétisme intelligent (snap-to-guides, snap-to-objects) pour un alignement parfait.</p>
+        <p data-lang="en">Customizable grids, magnetic guides, rulers, smart snapping (snap-to-guides, snap-to-objects) for perfect alignment.</p>
+        <p data-lang="ja">カスタマイズ可能なグリッド、磁気ガイド、ルーラー、スマートスナップ（ガイド / オブジェクト）で完璧な整列を実現。</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">11</div>
+        <h3 data-lang="fr">PWA — APPLICATION INSTALLABLE</h3>
+        <h3 data-lang="en">PWA — INSTALLABLE APP</h3>
+        <h3 data-lang="ja">PWA — インストール可能なアプリ</h3>
+        <p data-lang="fr">Installez SuperPrint comme application de bureau depuis votre navigateur (Chrome, Edge). Fonctionne hors-ligne via Service Worker.</p>
+        <p data-lang="en">Install SuperPrint as a desktop app from your browser (Chrome, Edge). Works offline via Service Worker.</p>
+        <p data-lang="ja">ブラウザ（Chrome、Edge）からデスクトップアプリとしてSuperPrintをインストール。Service Workerでオフライン動作。</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">12</div>
+        <h3 data-lang="fr">CONFIDENTIALITÉ TOTALE</h3>
+        <h3 data-lang="en">TOTAL PRIVACY</h3>
+        <h3 data-lang="ja">完全なプライバシー</h3>
+        <p data-lang="fr">Toutes vos données restent 100% locales sur votre appareil. Aucun fichier n'est jamais envoyé sur un serveur. Aucun compte requis.</p>
+        <p data-lang="en">All your data stays 100% local on your device. No files are ever sent to any server. No account required.</p>
+        <p data-lang="ja">すべてのデータは端末内に100%ローカル保存。ファイルがサーバーに送信されることはありません。アカウントも不要です。</p>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">13</div>
+        <h3 data-lang="fr">TONS DIRECTS PANTONE &amp; SÉPARATION</h3>
+        <h3 data-lang="en">PANTONE SPOT INKS &amp; SEPARATION</h3>
+        <h3 data-lang="ja">Pantone特色と分版</h3>
+        <p data-lang="fr">Nuancier Pantone intégré, pose d'une encre directe sur forme, texte ou fond. Chaque encre sort dans sa propre couche nommée, dans un espace de couleur /Separation conforme à l'ISO 32000-2 — la quadrichromie reste séparée des Pantone. Profils ICC acceptés pour cadrer la conversion.</p>
+        <p data-lang="en">Built-in Pantone panel, spot ink on a shape, text or background. Every ink leaves in its own named channel, inside an ISO 32000-2 compliant /Separation colour space — process stays apart from Pantone. ICC profiles accepted to frame the conversion.</p>
+        <p data-lang="ja">Pantoneパネル内蔵。図形・テキスト・背景にスポットインキを配置。各インキはISO 32000-2準拠の /Separation 色空間内で固有の名前付きチャンネルとして出力され、プロセス版とは分離されます。ICCプロファイルにも対応。</p>
+        <span class="feat-tag new">/Separation</span>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">14</div>
+        <h3 data-lang="fr">IMPORT IDML (INDESIGN)</h3>
+        <h3 data-lang="en">IDML IMPORT (INDESIGN)</h3>
+        <h3 data-lang="ja">IDML読み込み（InDesign）</h3>
+        <p data-lang="fr">Reprenez un fichier InDesign exporté en IDML : les blocs texte, les stories et la mise en page sont lus et reconstruits dans SuperPrint. Un pont direct depuis vos archives existantes, sans repartir de zéro.</p>
+        <p data-lang="en">Pick up an InDesign file exported as IDML: text frames, stories and layout are read and rebuilt in SuperPrint. A direct bridge from your existing archive, without starting over.</p>
+        <p data-lang="ja">InDesignからIDMLで書き出したファイルを引き継げます。テキストフレーム、ストーリー、レイアウトを読み取り、SuperPrint内で再構築。既存の資産からそのまま続けられます。</p>
+        <span class="feat-tag new">IDML</span>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-num">15</div>
+        <h3 data-lang="fr">HABILLAGE DU TEXTE</h3>
+        <h3 data-lang="en">TEXT WRAP</h3>
+        <h3 data-lang="ja">テキストの回り込み</h3>
+        <p data-lang="fr">Le texte coule autour d'une boîte ou d'un contour, avec un décalage réglable et un choix de côtés. L'habillage se recompose à chaque déplacement de l'objet et s'applique aussi aux blocs posés à l'intérieur d'une forme.</p>
+        <p data-lang="en">Text flows around a bounding box or a contour, with adjustable offset and per-side control. The wrap recomposes on every move and also applies to frames placed inside a shape.</p>
+        <p data-lang="ja">バウンディングボックスまたは輪郭に沿ってテキストが回り込みます。オフセットと側面を調整可能。オブジェクトの移動ごとに再構成され、図形内に置いたフレームにも適用されます。</p>
+        <span class="feat-tag new">Wrap</span>
+      </div>
+
+    </div>
+        </div>
+    </details>
+
+
+    <!-- 3 · LE PRÉPRESSE — replié, et traité à l'encre pour trancher avec le reste -->
+    <details class="spf-fold" id="prepress" data-chapitre="prepress">
+        <summary class="spf-bar">
+          <div class="spf-k"><span data-lang="fr">La chambre noire</span><span data-lang="en">The darkroom</span><span data-lang="ja">暗室</span></div>
+          <div class="spf-t"><h3 data-lang="fr">Le prépresse, là où le fichier devient une plaque.</h3><h3 data-lang="en">Prepress — where the file becomes a plate.</h3><h3 data-lang="ja">プリプレス — ファイルが版になる場所。</h3></div>
+          <span class="spf-m">Pantone · /Separation · ICC</span>
+          <span class="spf-plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="spf-in">
+          <div class="spf-lead"><p data-lang="fr">Un imprimeur ne reçoit pas une image : il reçoit des encres, chacune sur sa plaque. SuperPrint écrit ce découpage dans le PDF lui-même, avec les espaces de couleur normalisés que les RIP savent lire.</p><p data-lang="en">A printer does not receive a picture — they receive inks, each on its own plate. SuperPrint writes that division into the PDF itself, using the standard colour spaces that RIPs understand.</p><p data-lang="ja">印刷所が受け取るのは絵ではなく、版ごとに分かれたインキです。SuperPrintはその分割をPDF自体に書き込み、RIPが解釈できる標準的な色空間を使用します。</p></div>
+<div class="pp-grid">
+
+      <article class="pp-card">
+        <div class="pp-num">01</div>
+        <h3 data-lang="fr">Tons directs Pantone</h3>
+        <h3 data-lang="en">Pantone spot inks</h3>
+        <h3 data-lang="ja">Pantone スポットインキ</h3>
+        <p data-lang="fr">Le nuancier Pantone est intégré : posez une encre directe sur une forme, un texte ou un fond, exactement comme en quadrichromie. Le nom court s'affiche dans la liste (<code>Yellow C</code> plutôt que <code>Pantone Yellow C</code>) pour garder la palette lisible, tandis que le nom complet est conservé pour les filtres et les plaques.</p>
+        <p data-lang="en">The Pantone swatch book is built in: place a spot ink on a shape, a text or a background, exactly as you would a process colour. Short names keep the list readable (<code>Yellow C</code> rather than <code>Pantone Yellow C</code>) while the full name is retained for filters and plates.</p>
+        <p data-lang="ja">Pantoneスウォッチを内蔵。図形・テキスト・背景にスポットインキを、プロセスカラーと同じ感覚で配置できます。一覧では短縮名（<code>Pantone Yellow C</code> ではなく <code>Yellow C</code>）で見やすくし、フィルタと版には完全な名称を保持します。</p>
+        <span class="pp-tag">Spot</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">02</div>
+        <h3 data-lang="fr">Séparation des couches</h3>
+        <h3 data-lang="en">Channel separation</h3>
+        <h3 data-lang="ja">チャンネル分版</h3>
+        <p data-lang="fr">Chaque encre directe part dans sa <strong>propre couche nommée</strong>, déclarée dans un espace de couleur <code>/Separation</code> conforme à l'ISO 32000-2 : la technique que les RIP attendent pour produire une plaque dédiée. La quadrichromie reste d'un côté, le Pantone de l'autre — jamais aplatis ensemble.</p>
+        <p data-lang="en">Every spot ink leaves in its <strong>own named channel</strong>, declared in a <code>/Separation</code> colour space compliant with ISO 32000-2 — the technique RIPs expect in order to output a dedicated plate. Process stays on one side, Pantone on the other, never flattened together.</p>
+        <p data-lang="ja">各スポットインキは<strong>固有の名前付きチャンネル</strong>として出力され、ISO 32000-2 準拠の <code>/Separation</code> 色空間で宣言されます。専用の版を出力するためにRIPが求める方式です。プロセスとPantoneは決して統合されません。</p>
+        <span class="pp-tag">/Separation</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">03</div>
+        <h3 data-lang="fr">Deux modes, une même exigence</h3>
+        <h3 data-lang="en">Two modes, one standard</h3>
+        <h3 data-lang="ja">2つのモード、1つの基準</h3>
+        <p data-lang="fr">Travaillez en <strong>RVB</strong> pour l'écran ou en <strong>CMJN</strong> pour l'offset : le nuancier Pantone reste accessible dans les deux cas, et le récapitulatif d'export annonce le compte réel de couches (<code>RVB (3) + 1 Pantone</code>, <code>CMJN (4) + 2 Pantone</code>). Plus de chiffre codé en dur.</p>
+        <p data-lang="en">Work in <strong>RGB</strong> for screen or <strong>CMYK</strong> for offset: the Pantone panel stays available in both, and the export summary states the real channel count (<code>RGB (3) + 1 Pantone</code>, <code>CMYK (4) + 2 Pantone</code>). No more hard-coded figure.</p>
+        <p data-lang="ja"><strong>RGB</strong>（画面）でも<strong>CMYK</strong>（オフセット）でも、Pantoneパネルは常に利用可能。書き出し概要は実際のチャンネル数（<code>RGB (3) + Pantone 1</code>、<code>CMYK (4) + Pantone 2</code>）を表示します。固定値はもうありません。</p>
+        <span class="pp-tag">RVB · CMJN</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">04</div>
+        <h3 data-lang="fr">Épreuve écran</h3>
+        <h3 data-lang="en">Soft proof</h3>
+        <h3 data-lang="ja">画面プルーフ</h3>
+        <p data-lang="fr">La simulation CMJN projette à l'écran ce que la presse rendra, encres ternes comprises. Ce que vous validez ici n'est plus une surprise sur papier.</p>
+        <p data-lang="en">The CMYK simulation shows on screen what the press will actually render, dull inks included. What you approve here is no longer a surprise on paper.</p>
+        <p data-lang="ja">CMYKシミュレーションは、濁ったインキも含め、印刷機が再現する色を画面上に表示します。ここで承認した内容は、紙の上で驚きにはなりません。</p>
+        <span class="pp-tag">Proof</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">05</div>
+        <h3 data-lang="fr">Fond perdu &amp; traits de coupe</h3>
+        <h3 data-lang="en">Bleed &amp; crop marks</h3>
+        <h3 data-lang="ja">塗り足し＆トンボ</h3>
+        <p data-lang="fr">Fond perdu réglable, traits de coupe, imposition multi-pages : le fichier sort prêt pour le façonnage, sans reprise dans un autre outil.</p>
+        <p data-lang="en">Adjustable bleed, crop marks, multi-page imposition: the file leaves ready for finishing, with no rework in another tool.</p>
+        <p data-lang="ja">塗り足し調整、トンボ、複数ページの面付け。仕上げ工程にそのまま渡せる状態で出力されます。</p>
+        <span class="pp-tag">Print</span>
+      </article>
+
+      <article class="pp-card">
+        <div class="pp-num">06</div>
+        <h3 data-lang="fr">Profils ICC</h3>
+        <h3 data-lang="en">ICC profiles</h3>
+        <h3 data-lang="ja">ICCプロファイル</h3>
+        <p data-lang="fr">Chargez un profil ICC (<code>.icc</code> / <code>.icm</code>) pour cadrer la conversion selon le support et la presse visés, plutôt que de subir une conversion générique.</p>
+        <p data-lang="en">Load an ICC profile (<code>.icc</code> / <code>.icm</code>) to frame the conversion for the intended paper and press, instead of enduring a generic one.</p>
+        <p data-lang="ja">ICCプロファイル（<code>.icc</code> / <code>.icm</code>）を読み込み、想定する用紙と印刷機に合わせて変換を制御できます。</p>
+        <span class="pp-tag">ICC</span>
+      </article>
+
+    </div>
+<div class="pp-band">
+      <p class="pp-band-txt" data-lang="fr">Un <span class="pp-mono">Pantone</span> posé dans l'application ressort dans le PDF comme une couche à son nom — vérifié en décodant le fichier flux par flux.</p>
+      <p class="pp-band-txt" data-lang="en">A <span class="pp-mono">Pantone</span> placed in the app comes out of the PDF as a channel under its own name — verified by decoding the file stream by stream.</p>
+      <p class="pp-band-txt" data-lang="ja">アプリで配置した <span class="pp-mono">Pantone</span> は、PDF内で固有の名前を持つチャンネルとして出力されます。ファイルをストリーム単位で解析して検証済み。</p>
+      <a href="index.html" class="btn-paper" data-lang="fr">Essayer l'export CMJN</a>
+      <a href="index.html" class="btn-paper" data-lang="en">Try the CMYK export</a>
+      <a href="index.html" class="btn-paper" data-lang="ja">CMYK書き出しを試す</a>
+    </div>
+        </div>
+    </details>
+
+
+    <!-- 4 · LES PRESSES — replié, en pastilles serrées -->
+    <details class="spf-fold" id="use-cases" data-chapitre="use-cases">
+        <summary class="spf-bar">
+          <div class="spf-k"><span data-lang="fr">Ce qu'on compose ici</span><span data-lang="en">What is composed here</span><span data-lang="ja">ここで組むもの</span></div>
+          <div class="spf-t"><h3 data-lang="fr">Une presse pour chaque projet</h3><h3 data-lang="en">A press for every project</h3><h3 data-lang="ja">あらゆるプロジェクトに一台のプレスを</h3></div>
+          <span class="spf-m">08</span>
+          <span class="spf-plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="spf-in">
+
+<div class="uc-grid">
+      <div class="uc-card"><span class="uc-idx">01</span><h3 data-lang="fr">Flyers</h3><h3 data-lang="en">Flyers</h3><h3 data-lang="ja">フライヤー</h3><p data-lang="fr">Événements, promotions — A5, A4, carré.</p><p data-lang="en">Events, promotions — A5, A4, square.</p><p data-lang="ja">イベント・販促 — A5、A4、正方形。</p></div>
+      <div class="uc-card"><span class="uc-idx">02</span><h3 data-lang="fr">Affiches</h3><h3 data-lang="en">Posters</h3><h3 data-lang="ja">ポスター</h3><p data-lang="fr">A3, A2, A1, jusqu'au grand format 40×60.</p><p data-lang="en">A3, A2, A1, up to large 40×60 cm.</p><p data-lang="ja">A3、A2、A1、40×60cmの大判まで。</p></div>
+      <div class="uc-card"><span class="uc-idx">03</span><h3 data-lang="fr">Brochures</h3><h3 data-lang="en">Brochures</h3><h3 data-lang="ja">パンフレット</h3><p data-lang="fr">Triptyques, dépliants, plaquettes d'entreprise.</p><p data-lang="en">Trifolds, leaflets, company brochures.</p><p data-lang="ja">三つ折り、リーフレット、企業パンフレット。</p></div>
+      <div class="uc-card"><span class="uc-idx">04</span><h3 data-lang="fr">Magazines</h3><h3 data-lang="en">Magazines</h3><h3 data-lang="ja">雑誌</h3><p data-lang="fr">Bulletins, journaux d'entreprise, presse interne.</p><p data-lang="en">Bulletins, company newspapers, internal press.</p><p data-lang="ja">社内報、企業新聞、社内メディア。</p></div>
+      <div class="uc-card"><span class="uc-idx">05</span><h3 data-lang="fr">Catalogues</h3><h3 data-lang="en">Catalogs</h3><h3 data-lang="ja">カタログ</h3><p data-lang="fr">Produits multi-pages, tarifs, fiches techniques.</p><p data-lang="en">Multi-page products, price lists, technical sheets.</p><p data-lang="ja">複数ページの商品、価格表、技術資料。</p></div>
+      <div class="uc-card"><span class="uc-idx">06</span><h3 data-lang="fr">Supports de cours</h3><h3 data-lang="en">Course material</h3><h3 data-lang="ja">教材</h3><p data-lang="fr">Cours, fiches, manuels, supports de formation.</p><p data-lang="en">Courses, handouts, textbooks, training kits.</p><p data-lang="ja">講座、プリント、教科書、研修資料。</p></div>
+      <div class="uc-card"><span class="uc-idx">07</span><h3 data-lang="fr">Documents pro</h3><h3 data-lang="en">Business documents</h3><h3 data-lang="ja">ビジネス文書</h3><p data-lang="fr">Rapports annuels, propositions, présentations.</p><p data-lang="en">Annual reports, proposals, presentations.</p><p data-lang="ja">年次報告、提案書、プレゼン資料。</p></div>
+      <div class="uc-card"><span class="uc-idx">08</span><h3 data-lang="fr">Créations culturelles</h3><h3 data-lang="en">Cultural work</h3><h3 data-lang="ja">文化作品</h3><p data-lang="fr">Pochettes, programmes de concert, livrets.</p><p data-lang="en">Album covers, concert programs, booklets.</p><p data-lang="ja">ジャケット、コンサートプログラム、小冊子。</p></div>
+    </div>
+        </div>
+    </details>
+
+
+    <!-- 5 · LE BANC D'ESSAI — replié : le tableau du comparatif -->
+    <details class="spf-fold" id="comparison" data-chapitre="comparison">
+        <summary class="spf-bar">
+          <div class="spf-k"><span data-lang="fr">Sur la table d'atelier</span><span data-lang="en">On the worktable</span><span data-lang="ja">作業台の上で</span></div>
+          <div class="spf-t"><h3 data-lang="fr">SuperPrint face aux autres familles de PAO</h3><h3 data-lang="en">SuperPrint against the other DTP families</h3><h3 data-lang="ja">SuperPrint vs 他のDTP各系譜</h3></div>
+          <span class="spf-m">07</span>
+          <span class="spf-plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="spf-in">
+          <div class="spf-lead"><p data-lang="fr">Une comparaison objective des fonctions qui comptent pour la mise en page professionnelle. Case noire : acquis. Case vide : absent.</p><p data-lang="en">An objective comparison of the features that matter for professional layout. Filled cell: included. Empty cell: absent.</p><p data-lang="ja">プロのレイアウトに必要な機能を客観比較。黒い欄＝あり。空欄＝なし。</p></div>
+<div class="cmp-wrapper">
+      <table class="cmp" id="cmpTable" aria-label="Comparison SuperPrint vs DTP categories">
+        <thead>
+          <tr>
+            <th data-lang="fr">Fonctionnalité</th>
+            <th data-lang="en">Feature</th>
+            <th data-lang="ja">機能</th>
+            <th class="hl">SuperPrint</th>
+            <th><span data-lang="fr">Suites PAO desktop payantes</span><span data-lang="en">Paid desktop DTP suites</span><span data-lang="ja">有料デスクトップDTP</span></th>
+            <th><span data-lang="fr">Outils de design web généralistes</span><span data-lang="en">Generalist web design tools</span><span data-lang="ja">一般的なWebデザインツール</span></th>
+            <th><span data-lang="fr">PAO desktop open source</span><span data-lang="en">Open-source desktop DTP</span><span data-lang="ja">オープンソースDTP</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="price-row">
+            <td class="feat" data-lang="fr">Prix</td>
+            <td class="feat" data-lang="en">Price</td>
+            <td class="feat" data-lang="ja">価格</td>
+            <td class="chk"><span data-lang="fr">Sans abonnement</span><span data-lang="en">No subscription</span><span data-lang="ja">サブスク不要</span></td>
+            <td class="cross"><span data-lang="fr">Payant (abonnement ou licence)</span><span data-lang="en">Paid (subscription or license)</span><span data-lang="ja">有料（サブスクまたはライセンス）</span></td>
+            <td class="partial">Freemium</td>
+            <td class="chk">Open source</td>
+          </tr>
+          <tr>
+            <td class="feat" data-lang="fr">Sans installation</td>
+            <td class="feat" data-lang="en">No installation</td>
+            <td class="feat" data-lang="ja">インストール不要</td>
+            <td class="chk">●</td>
+            <td class="cross">○</td>
+            <td class="chk">●</td>
+            <td class="cross">○</td>
+          </tr>
+          <tr>
+            <td class="feat" data-lang="fr">Documents multi-pages</td>
+            <td class="feat" data-lang="en">Multi-page documents</td>
+            <td class="feat" data-lang="ja">複数ページドキュメント</td>
+            <td class="chk">●</td>
+            <td class="chk">●</td>
+            <td class="partial">Limité</td>
+            <td class="chk">●</td>
+          </tr>
+          <tr>
+            <td class="feat" data-lang="fr">Export PDF CMYK</td>
+            <td class="feat" data-lang="en">PDF CMYK export</td>
+            <td class="feat" data-lang="ja">CMYK PDF書き出し</td>
+            <td class="chk">●</td>
+            <td class="chk">●</td>
+            <td class="cross">○</td>
+            <td class="chk">●</td>
+          </tr>
+          <tr>
+            <td class="feat" data-lang="fr">Import Word / ODT</td>
+            <td class="feat" data-lang="en">Word / ODT import</td>
+            <td class="feat" data-lang="ja">Word / ODT読み込み</td>
+            <td class="chk">●</td>
+            <td class="chk">●</td>
+            <td class="partial">Limité</td>
+            <td class="partial">Partiel</td>
+          </tr>
+          <tr>
+            <td class="feat" data-lang="fr">Typographie professionnelle</td>
+            <td class="feat" data-lang="en">Professional typography</td>
+            <td class="feat" data-lang="ja">プロ仕様のタイポグラフィ</td>
+            <td class="chk">● Avancée</td>
+            <td class="chk">● Avancée</td>
+            <td class="partial">Basique</td>
+            <td class="partial">Partielle</td>
+          </tr>
+          <tr>
+            <td class="feat" data-lang="fr">Césure automatique multilingue</td>
+            <td class="feat" data-lang="en">Multilingual hyphenation</td>
+            <td class="feat" data-lang="ja">多言語ハイフネーション</td>
+            <td class="chk">● 6 langues</td>
+            <td class="chk">●</td>
+            <td class="cross">○</td>
+            <td class="partial">Limitée</td>
+          </tr>
+          <tr class="is-folded">
+            <td class="feat" data-lang="fr">Gabarits (Master pages)</td>
+            <td class="feat" data-lang="en">Master pages</td>
+            <td class="feat" data-lang="ja">マスターページ</td>
+            <td class="chk">●</td>
+            <td class="chk">●</td>
+            <td class="cross">○</td>
+            <td class="chk">●</td>
+          </tr>
+          <tr class="is-folded">
+            <td class="feat" data-lang="fr">Calques</td>
+            <td class="feat" data-lang="en">Layers</td>
+            <td class="feat" data-lang="ja">レイヤー</td>
+            <td class="chk">●</td>
+            <td class="chk">●</td>
+            <td class="partial">Limité</td>
+            <td class="chk">●</td>
+          </tr>
+          <tr class="is-folded">
+            <td class="feat" data-lang="fr">Opérations booléennes</td>
+            <td class="feat" data-lang="en">Boolean operations</td>
+            <td class="feat" data-lang="ja">ブーリアン演算</td>
+            <td class="chk">●</td>
+            <td class="chk">●</td>
+            <td class="cross">○</td>
+            <td class="partial">Partiel</td>
+          </tr>
+          <tr class="is-folded">
+            <td class="feat" data-lang="fr">Import PDF</td>
+            <td class="feat" data-lang="en">PDF import</td>
+            <td class="feat" data-lang="ja">PDF読み込み</td>
+            <td class="chk">●</td>
+            <td class="chk">●</td>
+            <td class="partial">Images only</td>
+            <td class="partial">Partiel</td>
+          </tr>
+          <tr class="is-folded">
+            <td class="feat" data-lang="fr">Sauvegarde automatique</td>
+            <td class="feat" data-lang="en">Auto-save</td>
+            <td class="feat" data-lang="ja">自動保存</td>
+            <td class="chk">● 12 sec</td>
+            <td class="chk">●</td>
+            <td class="chk">● Cloud</td>
+            <td class="cross">○</td>
+          </tr>
+          <tr class="is-folded">
+            <td class="feat" data-lang="fr">Mode hors-ligne (PWA)</td>
+            <td class="feat" data-lang="en">Offline mode (PWA)</td>
+            <td class="feat" data-lang="ja">オフライン（PWA）</td>
+            <td class="chk">●</td>
+            <td class="chk">●</td>
+            <td class="cross">○</td>
+            <td class="chk">●</td>
+          </tr>
+          <tr class="is-folded">
+            <td class="feat" data-lang="fr">Accélération GPU</td>
+            <td class="feat" data-lang="en">GPU Acceleration</td>
+            <td class="feat" data-lang="ja">GPUアクセラレーション</td>
+            <td class="chk">● WebGL</td>
+            <td class="chk">●</td>
+            <td class="cross">○</td>
+            <td class="cross">○</td>
+          </tr>
+          <tr class="is-folded">
+            <td class="feat" data-lang="fr">Confidentialité (données locales)</td>
+            <td class="feat" data-lang="en">Privacy (local data)</td>
+            <td class="feat" data-lang="ja">プライバシー（ローカル保存）</td>
+            <td class="chk">● 100% local</td>
+            <td class="partial"><span data-lang="fr">Cloud propriétaire</span><span data-lang="en">Proprietary cloud</span><span data-lang="ja">独自クラウド</span></td>
+            <td class="cross">○ Cloud</td>
+            <td class="chk">●</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="tools-more-wrap">
+        <button class="tools-more" type="button" data-fold="cmpTable" aria-expanded="false" aria-controls="cmpTable">
+          <span class="tm-more"><span class="inline-fr">Voir la suite du tableau</span><span class="inline-en">Show the rest of the table</span><span class="inline-ja">表の続きを見る</span></span>
+          <span class="tm-less"><span class="inline-fr">Réduire</span><span class="inline-en">Collapse</span><span class="inline-ja">たたむ</span></span>
+          <span class="tm-count" aria-hidden="true">+8</span>
+          <svg class="tm-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+<div class="tools-more-wrap">
+        <button class="tools-more" type="button" data-fold="cmpTable" aria-expanded="false" aria-controls="cmpTable">
+          <span class="tm-more"><span class="inline-fr">Voir la suite du tableau</span><span class="inline-en">Show the rest of the table</span><span class="inline-ja">表の続きを見る</span></span>
+          <span class="tm-less"><span class="inline-fr">Réduire</span><span class="inline-en">Collapse</span><span class="inline-ja">たたむ</span></span>
+          <span class="tm-count" aria-hidden="true">+8</span>
+          <svg class="tm-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+        </div>
+    </details>
+
+
+    <!-- 6 · FACE AUX GRANDES MAISONS — replié : deux colonnes face à face -->
+    <details class="spf-fold" id="vs-indesign" data-chapitre="vs-indesign">
+        <summary class="spf-bar">
+          <div class="spf-k"><span data-lang="fr">L'analyse</span><span data-lang="en">The analysis</span><span data-lang="ja">分析</span></div>
+          <div class="spf-t"><h3 data-lang="fr">L'atelier du navigateur face aux grandes maisons</h3><h3 data-lang="en">The browser atelier facing the great houses</h3><h3 data-lang="ja">ブラウザの工房と大手メゾンの対比</h3></div>
+          <span class="spf-m">12</span>
+          <span class="spf-plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="spf-in">
+          <div class="spf-lead"><p data-lang="fr">Les suites de PAO desktop restent la référence historique de la mise en page. SuperPrint reprend leurs gestes essentiels et les ouvre, dans le navigateur.</p><p data-lang="en">Desktop DTP suites remain the historical reference of layout. SuperPrint takes their essential gestures and opens them, in the browser.</p><p data-lang="ja">デスクトップDTPスイートは今も組版の歴史的な基準です。SuperPrintはその本質的な所作を受け継ぎ、ブラウザで開きます。</p></div>
+<div class="vs-cols">
+      <div class="vs-col vs-win">
+        <h3 data-lang="fr">Ce que SuperPrint apporte</h3>
+        <h3 data-lang="en">What SuperPrint brings</h3>
+        <h3 data-lang="ja">SuperPrintがもたらすもの</h3>
+        <ul>
+          <li data-lang="fr">Sans abonnement</li>
+          <li data-lang="en">No subscription</li>
+          <li data-lang="ja">サブスク不要</li>
+          <li data-lang="fr">Fonctionne dans tout navigateur, sur tout OS (Windows, Mac, Linux, Chromebook)</li>
+          <li data-lang="en">Works in any browser, on any OS (Windows, Mac, Linux, Chromebook)</li>
+          <li data-lang="ja">どのブラウザ・OSでも動作（Windows、Mac、Linux、Chromebook）</li>
+          <li data-lang="fr">Aucune installation ni mise à jour à gérer</li>
+          <li data-lang="en">No installation or updates to manage</li>
+          <li data-lang="ja">インストールやアップデートの管理が不要</li>
+          <li data-lang="fr">Données 100% locales — aucun envoi vers un cloud propriétaire</li>
+          <li data-lang="en">100% local data — nothing sent to any proprietary cloud</li>
+          <li data-lang="ja">データは100%ローカル — 独自クラウドへの送信なし</li>
+          <li data-lang="fr">Import de vos documents (Word, OpenDocument, PDF)</li>
+          <li data-lang="en">Import your documents (Word, OpenDocument, PDF)</li>
+          <li data-lang="ja">既存ドキュメントの読み込み（Word、OpenDocument、PDF）</li>
+          <li data-lang="fr">Studio IA SP213 pour générer des maquettes en langage naturel</li>
+          <li data-lang="en">SP213 AI studio to generate layouts in natural language</li>
+          <li data-lang="ja">自然言語でレイアウトを生成するSP213 AIスタジオ</li>
+          <li data-lang="fr">Accélération GPU disponible dès v0.0.4</li>
+          <li data-lang="en">GPU acceleration available from v0.0.4</li>
+          <li data-lang="ja">v0.0.4からGPUアクセラレーション対応</li>
+          <li data-lang="fr">Projet indépendant, évolutif, communauté Zigmoon</li>
+          <li data-lang="en">Independent project, scalable, Zigmoon community</li>
+          <li data-lang="ja">独立した発展型プロジェクト、Zigmoonコミュニティ</li>
+        </ul>
+      </div>
+      <div class="vs-col vs-defer">
+        <h3 data-lang="fr">Quand garder une suite desktop</h3>
+        <h3 data-lang="en">When to keep a desktop suite</h3>
+        <h3 data-lang="ja">デスクトップ版を選ぶ場面</h3>
+        <ul>
+          <li data-lang="fr">Projets d'impression complexes avec flux de production agence</li>
+          <li data-lang="en">Complex print projects with agency production workflows</li>
+          <li data-lang="ja">制作会社のワークフローを伴う複雑な印刷プロジェクト</li>
+          <li data-lang="fr">Livres de plus de 500 pages avec indexation avancée</li>
+          <li data-lang="en">Books over 500 pages with advanced indexing</li>
+          <li data-lang="ja">高度な索引を伴う500ページ超の書籍</li>
+          <li data-lang="fr">Workflows PAO existants imposés par le client</li>
+          <li data-lang="en">Existing DTP workflows imposed by the client</li>
+          <li data-lang="ja">クライアント指定の既存DTPワークフロー</li>
+          <li data-lang="fr">Intégration poussée avec un écosystème créatif propriétaire</li>
+          <li data-lang="en">Deep integration with a proprietary creative ecosystem</li>
+          <li data-lang="ja">独自のクリエイティブエコシステムとの深い統合</li>
+        </ul>
+      </div>
+    </div>
+        </div>
+    </details>
+
+
+    <!-- 7 · LES FORMATS — replié : deux rangées de pastilles -->
+    <details class="spf-fold" id="formats" data-chapitre="formats">
+        <summary class="spf-bar">
+          <div class="spf-k"><span data-lang="fr">Langues de la page</span><span data-lang="en">Languages of the page</span><span data-lang="ja">ページの言語</span></div>
+          <div class="spf-t"><h3 data-lang="fr">Les formats que la page comprend</h3><h3 data-lang="en">The formats the page understands</h3><h3 data-lang="ja">ページが理解するフォーマット</h3></div>
+          <span class="spf-m">PDF · DOCX · IDML · ODT · RTF · XLSX · ICC · SLA · PNG · JPG · SVG · WebP</span>
+          <span class="spf-plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="spf-in">
+          <div class="spf-lead"><p data-lang="fr">Le langage du document — du PDF d'impression au fichier d'échange — fait partie du métier. SuperPrint parle couramment les deux sens.</p><p data-lang="en">The language of the document — from print PDF to interchange file — is part of the craft. SuperPrint speaks both directions fluently.</p><p data-lang="ja">ドキュメントの言語 — 印刷用PDFから交換ファイルまで — もまた職人の技。SuperPrintは双方向を流暢に話します。</p></div>
+<p class="fmt-label" data-lang="fr">Sortie d'atelier</p>
+    <p class="fmt-label" data-lang="en">Leaving the atelier</p>
+    <p class="fmt-label" data-lang="ja">工房を出る</p>
+    <div class="fmt-grid">
+      <span class="fmt-chip out">PDF CMYK</span>
+      <span class="fmt-chip out">PDF écran</span>
+      <span class="fmt-chip out">PNG</span>
+      <span class="fmt-chip out">JPG</span>
+      <span class="fmt-chip out">.sp natif</span>
+      <span class="fmt-chip out">JSON</span>
+    </div>
+
+    <p class="fmt-label" data-lang="fr">Entrée d'atelier</p>
+    <p class="fmt-label" data-lang="en">Entering the atelier</p>
+    <p class="fmt-label" data-lang="ja">工房に入る</p>
+    <div class="fmt-grid">
+      <span class="fmt-chip in">PDF</span>
+      <span class="fmt-chip in">DOCX</span>
+      <span class="fmt-chip in">DOC</span>
+      <span class="fmt-chip in">IDML</span>
+      <span class="fmt-chip in">ODT</span>
+      <span class="fmt-chip in">RTF</span>
+      <span class="fmt-chip in">XLSX</span>
+      <span class="fmt-chip in">ICC</span>
+      <span class="fmt-chip in">SLA</span>
+      <span class="fmt-chip in">.sp</span>
+      <span class="fmt-chip in">JSON</span>
+      <span class="fmt-chip in">PNG</span>
+      <span class="fmt-chip in">JPG</span>
+      <span class="fmt-chip in">SVG</span>
+      <span class="fmt-chip in">WebP</span>
+    </div>
+        </div>
+    </details>
+
+
+    <!-- 8 · LES OUTILS, UN PAR UN — replié : les captures d'écran -->
+    <details class="spf-fold" id="planches" data-chapitre="planches">
+        <summary class="spf-bar">
+          <div class="spf-t"><h3 data-lang="fr">Les outils, un par un.</h3><h3 data-lang="en">The tools, one by one.</h3><h3 data-lang="ja">道具をひとつずつ。</h3></div>
+          <span class="spf-m">12</span>
+          <span class="spf-plus" aria-hidden="true">+</span>
+        </summary>
+        <div class="spf-in">
+<div class="spf-lead"><p data-lang="fr">Chaque capture est prise dans l'application, sur une maquette différente : le clic droit, l'habillage, l'écriture dans une forme, la typographie, les couleurs, les calques, les règles et les grilles.</p><p data-lang="en">Every screenshot is taken inside the application, on a different layout each time: right-click, text wrap, writing inside a shape, typography, colours, layers, rulers and grids.</p><p data-lang="ja">すべて実際のアプリ画面で、毎回違うレイアウトを使っています。右クリック、回り込み、図形内の文字、タイポグラフィ、カラー、レイヤー、定規とグリッド。</p></div>
+<div class="tgrid" id="tgridOutils">
 
         <figure class="tcard">
           <div class="tcard-img"><img src="img/landing/clic-droit-forme.jpg" width="1600" height="1000" loading="lazy" alt="Clic droit sur une forme"></div>
@@ -2398,11 +3078,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         </figure>
 
       </div>
-
-      <!-- 🆕 v1.7.472 — L’ARRÊT DE LA GALERIE : quatre captures, puis « voir tous les outils ».
-           Le « soufflet » est un bouton : la suite s’ouvre DANS la page, sans quitter la
-           landing. Le compteur « +9 » est calculé par script, jamais écrit à la main. -->
-      <div class="tools-more-wrap">
+<div class="tools-more-wrap">
         <button class="tools-more" id="toolsMore" type="button" aria-expanded="false" aria-controls="tgridOutils">
           <span class="tm-more"><span class="inline-fr">Voir tous les outils</span><span class="inline-en">See all the tools</span><span class="inline-ja">すべての道具を見る</span></span>
           <span class="tm-less"><span class="inline-fr">Replier la galerie</span><span class="inline-en">Collapse the gallery</span><span class="inline-ja">ギャラリーを閉じる</span></span>
@@ -2410,652 +3086,10 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
           <svg class="tm-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         </button>
       </div>
-            </div>
-      </details>
-    </div>
-
-    <div class="news">
-      <div>
-        <h3 data-lang="fr">Nouveau en 1.7.457</h3>
-        <h3 data-lang="en">New in 1.7.457</h3>
-        <h3 data-lang="ja">1.7.457 の新機能</h3>
-      </div>
-      <div>
-        <p data-lang="fr">Taquets de tabulation dans le bloc texte · retraits internes et centrage vertical du cadre · imposition noir &amp; blanc allégée · annuler/refaire du format, des marges et du fond perdu · tons directs séparés dans le PDF.</p>
-        <p data-lang="en">Tab stops inside the text frame · inner insets and vertical centring · lighter black &amp; white imposition · undo/redo for page format, margins and bleed · spot inks separated in the PDF.</p>
-        <p data-lang="ja">テキストフレーム内のタブ位置 · 内側余白と垂直センタリング · 軽量になった白黒面付け · 用紙サイズ・マージン・塗り足しの取り消し／やり直し · PDFでの特色分版。</p>
-        <a class="news-link" href="release.html"><span class="inline-fr">Lire le billet de version</span><span class="inline-en">Read the release note</span><span class="inline-ja">リリースノートを読む</span> <span aria-hidden="true">→</span></a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════ VALUE PROPS — 6 ARGUMENTS ══════════════ -->
-<!-- ══════════════ SP213 STUDIO ══════════════ -->
-<!-- ══════════════ STUDIO SP213 — L'ASSISTANT ══════════════ -->
-<!-- ══════════════ COMPARISON TABLE ══════════════ -->
-<section id="comparison">
-  <div class="container">
-    <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 01 · Sur la table d'atelier</div>
-      <div class="section-label" data-lang="en">Chapter 01 · On the worktable</div>
-      <div class="section-label" data-lang="ja">第01章 · 作業台の上で</div>
-      <h2 data-lang="fr">SuperPrint face aux autres familles de PAO</h2>
-      <h2 data-lang="en">SuperPrint against the other DTP families</h2>
-      <h2 data-lang="ja">SuperPrint vs 他のDTP各系譜</h2>
-      <p class="lead" data-lang="fr">Une comparaison objective des fonctions qui comptent pour la mise en page professionnelle. Case noire : acquis. Case vide : absent.</p>
-      <p class="lead" data-lang="en">An objective comparison of the features that matter for professional layout. Filled cell: included. Empty cell: absent.</p>
-      <p class="lead" data-lang="ja">プロのレイアウトに必要な機能を客観比較。黒い欄＝あり。空欄＝なし。</p>
-    </div>
-
-    <details class="fold" data-chapitre="comparison">
-      <summary class="fold-sum"><span class="inline-fr">Voir la suite</span><span class="inline-en">Read on</span><span class="inline-ja">続きを読む</span></summary>
-      <div class="fold-inner">
-    <div class="cmp-wrapper">
-      <table class="cmp" id="cmpTable" aria-label="Comparison SuperPrint vs DTP categories">
-        <thead>
-          <tr>
-            <th data-lang="fr">Fonctionnalité</th>
-            <th data-lang="en">Feature</th>
-            <th data-lang="ja">機能</th>
-            <th class="hl">SuperPrint</th>
-            <th><span data-lang="fr">Suites PAO desktop payantes</span><span data-lang="en">Paid desktop DTP suites</span><span data-lang="ja">有料デスクトップDTP</span></th>
-            <th><span data-lang="fr">Outils de design web généralistes</span><span data-lang="en">Generalist web design tools</span><span data-lang="ja">一般的なWebデザインツール</span></th>
-            <th><span data-lang="fr">PAO desktop open source</span><span data-lang="en">Open-source desktop DTP</span><span data-lang="ja">オープンソースDTP</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="price-row">
-            <td class="feat" data-lang="fr">Prix</td>
-            <td class="feat" data-lang="en">Price</td>
-            <td class="feat" data-lang="ja">価格</td>
-            <td class="chk"><span data-lang="fr">Sans abonnement</span><span data-lang="en">No subscription</span><span data-lang="ja">サブスク不要</span></td>
-            <td class="cross"><span data-lang="fr">Payant (abonnement ou licence)</span><span data-lang="en">Paid (subscription or license)</span><span data-lang="ja">有料（サブスクまたはライセンス）</span></td>
-            <td class="partial">Freemium</td>
-            <td class="chk">Open source</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Sans installation</td>
-            <td class="feat" data-lang="en">No installation</td>
-            <td class="feat" data-lang="ja">インストール不要</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Documents multi-pages</td>
-            <td class="feat" data-lang="en">Multi-page documents</td>
-            <td class="feat" data-lang="ja">複数ページドキュメント</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="partial">Limité</td>
-            <td class="chk">●</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Export PDF CMYK</td>
-            <td class="feat" data-lang="en">PDF CMYK export</td>
-            <td class="feat" data-lang="ja">CMYK PDF書き出し</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="chk">●</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Import Word / ODT</td>
-            <td class="feat" data-lang="en">Word / ODT import</td>
-            <td class="feat" data-lang="ja">Word / ODT読み込み</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="partial">Limité</td>
-            <td class="partial">Partiel</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Typographie professionnelle</td>
-            <td class="feat" data-lang="en">Professional typography</td>
-            <td class="feat" data-lang="ja">プロ仕様のタイポグラフィ</td>
-            <td class="chk">● Avancée</td>
-            <td class="chk">● Avancée</td>
-            <td class="partial">Basique</td>
-            <td class="partial">Partielle</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Césure automatique multilingue</td>
-            <td class="feat" data-lang="en">Multilingual hyphenation</td>
-            <td class="feat" data-lang="ja">多言語ハイフネーション</td>
-            <td class="chk">● 6 langues</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="partial">Limitée</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Gabarits (Master pages)</td>
-            <td class="feat" data-lang="en">Master pages</td>
-            <td class="feat" data-lang="ja">マスターページ</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="chk">●</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Calques</td>
-            <td class="feat" data-lang="en">Layers</td>
-            <td class="feat" data-lang="ja">レイヤー</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="partial">Limité</td>
-            <td class="chk">●</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Opérations booléennes</td>
-            <td class="feat" data-lang="en">Boolean operations</td>
-            <td class="feat" data-lang="ja">ブーリアン演算</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="partial">Partiel</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Import PDF</td>
-            <td class="feat" data-lang="en">PDF import</td>
-            <td class="feat" data-lang="ja">PDF読み込み</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="partial">Images only</td>
-            <td class="partial">Partiel</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Sauvegarde automatique</td>
-            <td class="feat" data-lang="en">Auto-save</td>
-            <td class="feat" data-lang="ja">自動保存</td>
-            <td class="chk">● 12 sec</td>
-            <td class="chk">●</td>
-            <td class="chk">● Cloud</td>
-            <td class="cross">○</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Mode hors-ligne (PWA)</td>
-            <td class="feat" data-lang="en">Offline mode (PWA)</td>
-            <td class="feat" data-lang="ja">オフライン（PWA）</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="chk">●</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Accélération GPU</td>
-            <td class="feat" data-lang="en">GPU Acceleration</td>
-            <td class="feat" data-lang="ja">GPUアクセラレーション</td>
-            <td class="chk">● WebGL</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="cross">○</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Confidentialité (données locales)</td>
-            <td class="feat" data-lang="en">Privacy (local data)</td>
-            <td class="feat" data-lang="ja">プライバシー（ローカル保存）</td>
-            <td class="chk">● 100% local</td>
-            <td class="partial"><span data-lang="fr">Cloud propriétaire</span><span data-lang="en">Proprietary cloud</span><span data-lang="ja">独自クラウド</span></td>
-            <td class="cross">○ Cloud</td>
-            <td class="chk">●</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="tools-more-wrap">
-        <button class="tools-more" type="button" data-fold="cmpTable" aria-expanded="false" aria-controls="cmpTable">
-          <span class="tm-more"><span class="inline-fr">Voir la suite du tableau</span><span class="inline-en">Show the rest of the table</span><span class="inline-ja">表の続きを見る</span></span>
-          <span class="tm-less"><span class="inline-fr">Réduire</span><span class="inline-en">Collapse</span><span class="inline-ja">たたむ</span></span>
-          <span class="tm-count" aria-hidden="true">+8</span>
-          <svg class="tm-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-      </div>
-    </div>
         </div>
     </details>
-  </div>
-</section>
 
-<!-- ══════════════ PRÉPRESSE — Pantone & séparation de couches ══════════════ -->
-<section id="prepress">
-  <div class="ghost" aria-hidden="true">CMJN</div>
-  <div class="container">
-    <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 02 · La chambre noire</div>
-      <div class="section-label" data-lang="en">Chapter 02 · The darkroom</div>
-      <div class="section-label" data-lang="ja">第02章 · 暗室</div>
-      <h2 data-lang="fr">Le prépresse, là où le fichier devient une plaque.</h2>
-      <h2 data-lang="en">Prepress — where the file becomes a plate.</h2>
-      <h2 data-lang="ja">プリプレス — ファイルが版になる場所。</h2>
-      <p class="lead" data-lang="fr">Un imprimeur ne reçoit pas une image : il reçoit des encres, chacune sur sa plaque. SuperPrint écrit ce découpage dans le PDF lui-même, avec les espaces de couleur normalisés que les RIP savent lire.</p>
-      <p class="lead" data-lang="en">A printer does not receive a picture — they receive inks, each on its own plate. SuperPrint writes that division into the PDF itself, using the standard colour spaces that RIPs understand.</p>
-      <p class="lead" data-lang="ja">印刷所が受け取るのは絵ではなく、版ごとに分かれたインキです。SuperPrintはその分割をPDF自体に書き込み、RIPが解釈できる標準的な色空間を使用します。</p>
-    </div>
 
-    <details class="fold" data-chapitre="prepress">
-      <summary class="fold-sum"><span class="inline-fr">Voir la suite</span><span class="inline-en">Read on</span><span class="inline-ja">続きを読む</span></summary>
-      <div class="fold-inner">
-
-    <div class="pp-grid">
-
-      <article class="pp-card">
-        <div class="pp-num">01</div>
-        <h3 data-lang="fr">Tons directs Pantone</h3>
-        <h3 data-lang="en">Pantone spot inks</h3>
-        <h3 data-lang="ja">Pantone スポットインキ</h3>
-        <p data-lang="fr">Le nuancier Pantone est intégré : posez une encre directe sur une forme, un texte ou un fond, exactement comme en quadrichromie. Le nom court s'affiche dans la liste (<code>Yellow C</code> plutôt que <code>Pantone Yellow C</code>) pour garder la palette lisible, tandis que le nom complet est conservé pour les filtres et les plaques.</p>
-        <p data-lang="en">The Pantone swatch book is built in: place a spot ink on a shape, a text or a background, exactly as you would a process colour. Short names keep the list readable (<code>Yellow C</code> rather than <code>Pantone Yellow C</code>) while the full name is retained for filters and plates.</p>
-        <p data-lang="ja">Pantoneスウォッチを内蔵。図形・テキスト・背景にスポットインキを、プロセスカラーと同じ感覚で配置できます。一覧では短縮名（<code>Pantone Yellow C</code> ではなく <code>Yellow C</code>）で見やすくし、フィルタと版には完全な名称を保持します。</p>
-        <span class="pp-tag">Spot</span>
-      </article>
-
-      <article class="pp-card">
-        <div class="pp-num">02</div>
-        <h3 data-lang="fr">Séparation des couches</h3>
-        <h3 data-lang="en">Channel separation</h3>
-        <h3 data-lang="ja">チャンネル分版</h3>
-        <p data-lang="fr">Chaque encre directe part dans sa <strong>propre couche nommée</strong>, déclarée dans un espace de couleur <code>/Separation</code> conforme à l'ISO 32000-2 : la technique que les RIP attendent pour produire une plaque dédiée. La quadrichromie reste d'un côté, le Pantone de l'autre — jamais aplatis ensemble.</p>
-        <p data-lang="en">Every spot ink leaves in its <strong>own named channel</strong>, declared in a <code>/Separation</code> colour space compliant with ISO 32000-2 — the technique RIPs expect in order to output a dedicated plate. Process stays on one side, Pantone on the other, never flattened together.</p>
-        <p data-lang="ja">各スポットインキは<strong>固有の名前付きチャンネル</strong>として出力され、ISO 32000-2 準拠の <code>/Separation</code> 色空間で宣言されます。専用の版を出力するためにRIPが求める方式です。プロセスとPantoneは決して統合されません。</p>
-        <span class="pp-tag">/Separation</span>
-      </article>
-
-      <article class="pp-card">
-        <div class="pp-num">03</div>
-        <h3 data-lang="fr">Deux modes, une même exigence</h3>
-        <h3 data-lang="en">Two modes, one standard</h3>
-        <h3 data-lang="ja">2つのモード、1つの基準</h3>
-        <p data-lang="fr">Travaillez en <strong>RVB</strong> pour l'écran ou en <strong>CMJN</strong> pour l'offset : le nuancier Pantone reste accessible dans les deux cas, et le récapitulatif d'export annonce le compte réel de couches (<code>RVB (3) + 1 Pantone</code>, <code>CMJN (4) + 2 Pantone</code>). Plus de chiffre codé en dur.</p>
-        <p data-lang="en">Work in <strong>RGB</strong> for screen or <strong>CMYK</strong> for offset: the Pantone panel stays available in both, and the export summary states the real channel count (<code>RGB (3) + 1 Pantone</code>, <code>CMYK (4) + 2 Pantone</code>). No more hard-coded figure.</p>
-        <p data-lang="ja"><strong>RGB</strong>（画面）でも<strong>CMYK</strong>（オフセット）でも、Pantoneパネルは常に利用可能。書き出し概要は実際のチャンネル数（<code>RGB (3) + Pantone 1</code>、<code>CMYK (4) + Pantone 2</code>）を表示します。固定値はもうありません。</p>
-        <span class="pp-tag">RVB · CMJN</span>
-      </article>
-
-      <article class="pp-card">
-        <div class="pp-num">04</div>
-        <h3 data-lang="fr">Épreuve écran</h3>
-        <h3 data-lang="en">Soft proof</h3>
-        <h3 data-lang="ja">画面プルーフ</h3>
-        <p data-lang="fr">La simulation CMJN projette à l'écran ce que la presse rendra, encres ternes comprises. Ce que vous validez ici n'est plus une surprise sur papier.</p>
-        <p data-lang="en">The CMYK simulation shows on screen what the press will actually render, dull inks included. What you approve here is no longer a surprise on paper.</p>
-        <p data-lang="ja">CMYKシミュレーションは、濁ったインキも含め、印刷機が再現する色を画面上に表示します。ここで承認した内容は、紙の上で驚きにはなりません。</p>
-        <span class="pp-tag">Proof</span>
-      </article>
-
-      <article class="pp-card">
-        <div class="pp-num">05</div>
-        <h3 data-lang="fr">Fond perdu &amp; traits de coupe</h3>
-        <h3 data-lang="en">Bleed &amp; crop marks</h3>
-        <h3 data-lang="ja">塗り足し＆トンボ</h3>
-        <p data-lang="fr">Fond perdu réglable, traits de coupe, imposition multi-pages : le fichier sort prêt pour le façonnage, sans reprise dans un autre outil.</p>
-        <p data-lang="en">Adjustable bleed, crop marks, multi-page imposition: the file leaves ready for finishing, with no rework in another tool.</p>
-        <p data-lang="ja">塗り足し調整、トンボ、複数ページの面付け。仕上げ工程にそのまま渡せる状態で出力されます。</p>
-        <span class="pp-tag">Print</span>
-      </article>
-
-      <article class="pp-card">
-        <div class="pp-num">06</div>
-        <h3 data-lang="fr">Profils ICC</h3>
-        <h3 data-lang="en">ICC profiles</h3>
-        <h3 data-lang="ja">ICCプロファイル</h3>
-        <p data-lang="fr">Chargez un profil ICC (<code>.icc</code> / <code>.icm</code>) pour cadrer la conversion selon le support et la presse visés, plutôt que de subir une conversion générique.</p>
-        <p data-lang="en">Load an ICC profile (<code>.icc</code> / <code>.icm</code>) to frame the conversion for the intended paper and press, instead of enduring a generic one.</p>
-        <p data-lang="ja">ICCプロファイル（<code>.icc</code> / <code>.icm</code>）を読み込み、想定する用紙と印刷機に合わせて変換を制御できます。</p>
-        <span class="pp-tag">ICC</span>
-      </article>
-
-    </div>
-
-    <div class="pp-band">
-      <p class="pp-band-txt" data-lang="fr">Un <span class="pp-mono">Pantone</span> posé dans l'application ressort dans le PDF comme une couche à son nom — vérifié en décodant le fichier flux par flux.</p>
-      <p class="pp-band-txt" data-lang="en">A <span class="pp-mono">Pantone</span> placed in the app comes out of the PDF as a channel under its own name — verified by decoding the file stream by stream.</p>
-      <p class="pp-band-txt" data-lang="ja">アプリで配置した <span class="pp-mono">Pantone</span> は、PDF内で固有の名前を持つチャンネルとして出力されます。ファイルをストリーム単位で解析して検証済み。</p>
-      <a href="index.html" class="btn-paper" data-lang="fr">Essayer l'export CMJN</a>
-      <a href="index.html" class="btn-paper" data-lang="en">Try the CMYK export</a>
-      <a href="index.html" class="btn-paper" data-lang="ja">CMYK書き出しを試す</a>
-    </div>
-        </div>
-    </details>
-  </div>
-</section>
-
-<!-- ══════════════ FEATURES DETAIL ══════════════ -->
-<section id="features">
-  <div class="container">
-    <div class="feat-head">
-      <div>
-        <div class="section-label" data-lang="fr">Chapitre 03 · L'inventaire</div>
-        <div class="section-label" data-lang="en">Chapter 03 · The inventory</div>
-        <div class="section-label" data-lang="ja">第03章 · 目録</div>
-        <h2 data-lang="fr">L'inventaire de l'atelier</h2>
-        <h2 data-lang="en">The atelier inventory</h2>
-        <h2 data-lang="ja">工房の目録</h2>
-      </div>
-      <span class="feat-meta" data-lang="fr">15 outils — toujours à portée</span>
-      <span class="feat-meta" data-lang="en">15 tools — always within reach</span>
-      <span class="feat-meta" data-lang="ja">15の道具 — いつでも手の届く場所に</span>
-    </div>
-    <div class="feat-grid">
-
-      <div class="feat-card">
-        <div class="feat-num">01</div>
-        <h3 data-lang="fr">DOCUMENTS MULTI-PAGES</h3>
-        <h3 data-lang="en">MULTI-PAGE DOCUMENTS</h3>
-        <h3 data-lang="ja">複数ページドキュメント</h3>
-        <p data-lang="fr">Créez des brochures, magazines, catalogues et livres multi-pages avec pagination automatique et gabarits réutilisables.</p>
-        <p data-lang="en">Create brochures, magazines, catalogs and multi-page books with automatic pagination and reusable master pages.</p>
-        <p data-lang="ja">パンフレット、雑誌、カタログ、複数ページの書籍を、自動ページ番号と再利用可能なマスターページで作成。</p>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">02</div>
-        <h3 data-lang="fr">EXPORT PDF CMYK IMPRIMABLE</h3>
-        <h3 data-lang="en">PRINT-READY PDF CMYK</h3>
-        <h3 data-lang="ja">印刷対応CMYK PDF書き出し</h3>
-        <p data-lang="fr">Exportez des PDF adaptés à l'impression professionnelle offset avec conversion RGB→CMYK intégrée, gestion des tons directs Pantone et simulation d'épreuve écran.</p>
-        <p data-lang="en">Export print-ready PDFs with integrated RGB→CMYK conversion, Pantone spot color management and screen proof simulation.</p>
-        <p data-lang="ja">RGB→CMYK変換を内蔵したオフセット印刷対応のPDFを書き出し。Pantone特色管理と画面プルーフシミュレーション付き。</p>
-        <span class="feat-tag new">CMYK</span>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">03</div>
-        <h3 data-lang="fr">IMPORT DE DOCUMENTS</h3>
-        <h3 data-lang="en">DOCUMENT IMPORT</h3>
-        <h3 data-lang="ja">ドキュメント読み込み</h3>
-        <p data-lang="fr">Importez vos textes et documents existants (Word, OpenDocument, PDF) et laissez SuperPrint les mettre en page, avec une pagination automatique.</p>
-        <p data-lang="en">Import your existing texts and documents (Word, OpenDocument, PDF) and let SuperPrint lay them out, with automatic pagination.</p>
-        <p data-lang="ja">既存のテキストやドキュメント（Word、OpenDocument、PDF）を読み込んで、自動ページ番号とともにSuperPrintがレイアウト。</p>
-        <span class="feat-tag new">DOCX · ODT · PDF</span>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">04</div>
-        <h3 data-lang="fr">TYPOGRAPHIE PROFESSIONNELLE</h3>
-        <h3 data-lang="en">PROFESSIONAL TYPOGRAPHY</h3>
-        <h3 data-lang="ja">プロ仕様のタイポグラフィ</h3>
-        <p data-lang="fr">Moteur Hypher pour césure automatique en FR, EN, DE, ES, IT, JA. Espacement de paragraphe, crénage, interlignage, styles de texte avancés.</p>
-        <p data-lang="en">Hypher engine for automatic hyphenation in FR, EN, DE, ES, IT, JA. Paragraph spacing, kerning, leading, advanced text styles.</p>
-        <p data-lang="ja">HypherエンジンによるFR / EN / DE / ES / IT / JAの自動ハイフネーション。段落間隔、カーニング、行送り、高度なテキストスタイル。</p>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">05</div>
-        <h3 data-lang="fr">ACCÉLÉRATION GPU</h3>
-        <h3 data-lang="en">GPU ACCELERATION</h3>
-        <h3 data-lang="ja">GPUアクセラレーション</h3>
-        <p data-lang="fr">Détection WebGL automatique via WEBGL_debug_renderer_info. Promotion de couche CSS (will-change, translateZ). Cache objet Fabric.js par type. Rendu fluide même sur les grands documents.</p>
-        <p data-lang="en">Automatic WebGL detection via WEBGL_debug_renderer_info. CSS layer promotion (will-change, translateZ). Per-type Fabric.js object caching. Smooth rendering even on large documents.</p>
-        <p data-lang="ja">WEBGL_debug_renderer_infoによるWebGL自動検出。CSSレイヤー昇格（will-change、translateZ）。Fabric.jsのタイプ別オブジェクトキャッシュ。大きなドキュメントでも滑らかな描画。</p>
-        <span class="feat-tag new">v1.7.421</span>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">06</div>
-        <h3 data-lang="fr">SAUVEGARDE AUTOMATIQUE</h3>
-        <h3 data-lang="en">AUTO-SAVE</h3>
-        <h3 data-lang="ja">自動保存</h3>
-        <p data-lang="fr">Sauvegarde automatique toutes les 12 secondes dans IndexedDB (stockage local du navigateur). Exportez en .sp, JSON, PDF, PNG, JPG à tout moment.</p>
-        <p data-lang="en">Auto-save every 12 seconds to IndexedDB (browser local storage). Export to .sp, JSON, PDF, PNG, JPG at any time.</p>
-        <p data-lang="ja">12秒ごとにIndexedDB（ブラウザのローカルストレージ）へ自動保存。いつでも .sp / JSON / PDF / PNG / JPG に書き出せます。</p>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">07</div>
-        <h3 data-lang="fr">OPÉRATIONS BOOLÉENNES</h3>
-        <h3 data-lang="en">BOOLEAN OPERATIONS</h3>
-        <h3 data-lang="ja">ブーリアン演算</h3>
-        <p data-lang="fr">Union, soustraction, intersection de formes via le moteur Paper.js intégré — comme dans un logiciel vectoriel professionnel.</p>
-        <p data-lang="en">Shape union, subtract, and intersection via integrated Paper.js engine — like a professional vector software.</p>
-        <p data-lang="ja">Paper.jsエンジンによる図形の合体・減算・交差 — プロのベクターソフトと同じ操作感です。</p>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">08</div>
-        <h3 data-lang="fr">CALQUES &amp; GESTIONNAIRE</h3>
-        <h3 data-lang="en">LAYERS &amp; MANAGER</h3>
-        <h3 data-lang="ja">レイヤー管理</h3>
-        <p data-lang="fr">Gestionnaire de calques complet : verrouillage, visibilité, réorganisation. Isolation de calque pour l'édition précise.</p>
-        <p data-lang="en">Full layer manager: lock, visibility, reorder. Layer isolation for precise editing.</p>
-        <p data-lang="ja">ロック、表示切替、並べ替えを備えたレイヤーマネージャー。レイヤー分離で正確な編集が可能です。</p>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">09</div>
-        <h3 data-lang="fr">IMAGES &amp; PHOTOS</h3>
-        <h3 data-lang="en">IMAGES &amp; PHOTOS</h3>
-        <h3 data-lang="ja">画像＆写真</h3>
-        <p data-lang="fr">Importez vos images PNG, JPG, SVG ou WebP, masquez-les dans une forme, recadrez-les — tout reste net pour l'impression.</p>
-        <p data-lang="en">Import your PNG, JPG, SVG or WebP images, mask them into a shape, crop them — everything stays sharp for print.</p>
-        <p data-lang="ja">PNG / JPG / SVG / WebP画像を読み込み、形にマスク、トリミング — 印刷に必要なシャープさを維持します。</p>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">10</div>
-        <h3 data-lang="fr">GRILLES &amp; REPÈRES</h3>
-        <h3 data-lang="en">GRIDS &amp; GUIDES</h3>
-        <h3 data-lang="ja">グリッド＆ガイド</h3>
-        <p data-lang="fr">Grilles personnalisables, repères magnétiques, règles, magnétisme intelligent (snap-to-guides, snap-to-objects) pour un alignement parfait.</p>
-        <p data-lang="en">Customizable grids, magnetic guides, rulers, smart snapping (snap-to-guides, snap-to-objects) for perfect alignment.</p>
-        <p data-lang="ja">カスタマイズ可能なグリッド、磁気ガイド、ルーラー、スマートスナップ（ガイド / オブジェクト）で完璧な整列を実現。</p>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">11</div>
-        <h3 data-lang="fr">PWA — APPLICATION INSTALLABLE</h3>
-        <h3 data-lang="en">PWA — INSTALLABLE APP</h3>
-        <h3 data-lang="ja">PWA — インストール可能なアプリ</h3>
-        <p data-lang="fr">Installez SuperPrint comme application de bureau depuis votre navigateur (Chrome, Edge). Fonctionne hors-ligne via Service Worker.</p>
-        <p data-lang="en">Install SuperPrint as a desktop app from your browser (Chrome, Edge). Works offline via Service Worker.</p>
-        <p data-lang="ja">ブラウザ（Chrome、Edge）からデスクトップアプリとしてSuperPrintをインストール。Service Workerでオフライン動作。</p>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">12</div>
-        <h3 data-lang="fr">CONFIDENTIALITÉ TOTALE</h3>
-        <h3 data-lang="en">TOTAL PRIVACY</h3>
-        <h3 data-lang="ja">完全なプライバシー</h3>
-        <p data-lang="fr">Toutes vos données restent 100% locales sur votre appareil. Aucun fichier n'est jamais envoyé sur un serveur. Aucun compte requis.</p>
-        <p data-lang="en">All your data stays 100% local on your device. No files are ever sent to any server. No account required.</p>
-        <p data-lang="ja">すべてのデータは端末内に100%ローカル保存。ファイルがサーバーに送信されることはありません。アカウントも不要です。</p>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">13</div>
-        <h3 data-lang="fr">TONS DIRECTS PANTONE &amp; SÉPARATION</h3>
-        <h3 data-lang="en">PANTONE SPOT INKS &amp; SEPARATION</h3>
-        <h3 data-lang="ja">Pantone特色と分版</h3>
-        <p data-lang="fr">Nuancier Pantone intégré, pose d'une encre directe sur forme, texte ou fond. Chaque encre sort dans sa propre couche nommée, dans un espace de couleur /Separation conforme à l'ISO 32000-2 — la quadrichromie reste séparée des Pantone. Profils ICC acceptés pour cadrer la conversion.</p>
-        <p data-lang="en">Built-in Pantone panel, spot ink on a shape, text or background. Every ink leaves in its own named channel, inside an ISO 32000-2 compliant /Separation colour space — process stays apart from Pantone. ICC profiles accepted to frame the conversion.</p>
-        <p data-lang="ja">Pantoneパネル内蔵。図形・テキスト・背景にスポットインキを配置。各インキはISO 32000-2準拠の /Separation 色空間内で固有の名前付きチャンネルとして出力され、プロセス版とは分離されます。ICCプロファイルにも対応。</p>
-        <span class="feat-tag new">/Separation</span>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">14</div>
-        <h3 data-lang="fr">IMPORT IDML (INDESIGN)</h3>
-        <h3 data-lang="en">IDML IMPORT (INDESIGN)</h3>
-        <h3 data-lang="ja">IDML読み込み（InDesign）</h3>
-        <p data-lang="fr">Reprenez un fichier InDesign exporté en IDML : les blocs texte, les stories et la mise en page sont lus et reconstruits dans SuperPrint. Un pont direct depuis vos archives existantes, sans repartir de zéro.</p>
-        <p data-lang="en">Pick up an InDesign file exported as IDML: text frames, stories and layout are read and rebuilt in SuperPrint. A direct bridge from your existing archive, without starting over.</p>
-        <p data-lang="ja">InDesignからIDMLで書き出したファイルを引き継げます。テキストフレーム、ストーリー、レイアウトを読み取り、SuperPrint内で再構築。既存の資産からそのまま続けられます。</p>
-        <span class="feat-tag new">IDML</span>
-      </div>
-
-      <div class="feat-card">
-        <div class="feat-num">15</div>
-        <h3 data-lang="fr">HABILLAGE DU TEXTE</h3>
-        <h3 data-lang="en">TEXT WRAP</h3>
-        <h3 data-lang="ja">テキストの回り込み</h3>
-        <p data-lang="fr">Le texte coule autour d'une boîte ou d'un contour, avec un décalage réglable et un choix de côtés. L'habillage se recompose à chaque déplacement de l'objet et s'applique aussi aux blocs posés à l'intérieur d'une forme.</p>
-        <p data-lang="en">Text flows around a bounding box or a contour, with adjustable offset and per-side control. The wrap recomposes on every move and also applies to frames placed inside a shape.</p>
-        <p data-lang="ja">バウンディングボックスまたは輪郭に沿ってテキストが回り込みます。オフセットと側面を調整可能。オブジェクトの移動ごとに再構成され、図形内に置いたフレームにも適用されます。</p>
-        <span class="feat-tag new">Wrap</span>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════ USE CASES ══════════════ -->
-<section id="use-cases">
-  <div class="ghost" aria-hidden="true">MAGAZINE · AFFICHE · LIVRE</div>
-  <div class="container">
-    <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 04 · Ce qu'on compose ici</div>
-      <div class="section-label" data-lang="en">Chapter 04 · What is composed here</div>
-      <div class="section-label" data-lang="ja">第04章 · ここで組むもの</div>
-      <h2 data-lang="fr">Une presse pour chaque projet</h2>
-      <h2 data-lang="en">A press for every project</h2>
-      <h2 data-lang="ja">あらゆるプロジェクトに一台のプレスを</h2>
-    </div>
-
-    <details class="fold" data-chapitre="use-cases">
-      <summary class="fold-sum"><span class="inline-fr">Voir la suite</span><span class="inline-en">Read on</span><span class="inline-ja">続きを読む</span></summary>
-      <div class="fold-inner">
-    <div class="uc-grid">
-      <div class="uc-card"><span class="uc-idx">01</span><h3 data-lang="fr">Flyers</h3><h3 data-lang="en">Flyers</h3><h3 data-lang="ja">フライヤー</h3><p data-lang="fr">Événements, promotions — A5, A4, carré.</p><p data-lang="en">Events, promotions — A5, A4, square.</p><p data-lang="ja">イベント・販促 — A5、A4、正方形。</p></div>
-      <div class="uc-card"><span class="uc-idx">02</span><h3 data-lang="fr">Affiches</h3><h3 data-lang="en">Posters</h3><h3 data-lang="ja">ポスター</h3><p data-lang="fr">A3, A2, A1, jusqu'au grand format 40×60.</p><p data-lang="en">A3, A2, A1, up to large 40×60 cm.</p><p data-lang="ja">A3、A2、A1、40×60cmの大判まで。</p></div>
-      <div class="uc-card"><span class="uc-idx">03</span><h3 data-lang="fr">Brochures</h3><h3 data-lang="en">Brochures</h3><h3 data-lang="ja">パンフレット</h3><p data-lang="fr">Triptyques, dépliants, plaquettes d'entreprise.</p><p data-lang="en">Trifolds, leaflets, company brochures.</p><p data-lang="ja">三つ折り、リーフレット、企業パンフレット。</p></div>
-      <div class="uc-card"><span class="uc-idx">04</span><h3 data-lang="fr">Magazines</h3><h3 data-lang="en">Magazines</h3><h3 data-lang="ja">雑誌</h3><p data-lang="fr">Bulletins, journaux d'entreprise, presse interne.</p><p data-lang="en">Bulletins, company newspapers, internal press.</p><p data-lang="ja">社内報、企業新聞、社内メディア。</p></div>
-      <div class="uc-card"><span class="uc-idx">05</span><h3 data-lang="fr">Catalogues</h3><h3 data-lang="en">Catalogs</h3><h3 data-lang="ja">カタログ</h3><p data-lang="fr">Produits multi-pages, tarifs, fiches techniques.</p><p data-lang="en">Multi-page products, price lists, technical sheets.</p><p data-lang="ja">複数ページの商品、価格表、技術資料。</p></div>
-      <div class="uc-card"><span class="uc-idx">06</span><h3 data-lang="fr">Supports de cours</h3><h3 data-lang="en">Course material</h3><h3 data-lang="ja">教材</h3><p data-lang="fr">Cours, fiches, manuels, supports de formation.</p><p data-lang="en">Courses, handouts, textbooks, training kits.</p><p data-lang="ja">講座、プリント、教科書、研修資料。</p></div>
-      <div class="uc-card"><span class="uc-idx">07</span><h3 data-lang="fr">Documents pro</h3><h3 data-lang="en">Business documents</h3><h3 data-lang="ja">ビジネス文書</h3><p data-lang="fr">Rapports annuels, propositions, présentations.</p><p data-lang="en">Annual reports, proposals, presentations.</p><p data-lang="ja">年次報告、提案書、プレゼン資料。</p></div>
-      <div class="uc-card"><span class="uc-idx">08</span><h3 data-lang="fr">Créations culturelles</h3><h3 data-lang="en">Cultural work</h3><h3 data-lang="ja">文化作品</h3><p data-lang="fr">Pochettes, programmes de concert, livrets.</p><p data-lang="en">Album covers, concert programs, booklets.</p><p data-lang="ja">ジャケット、コンサートプログラム、小冊子。</p></div>
-    </div>
-        </div>
-    </details>
-  </div>
-</section>
-
-<!-- ══════════════ VS DTP DESKTOP NARRATIVE ══════════════ -->
-<section id="vs-indesign">
-  <div class="container">
-    <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 05 · L'analyse</div>
-      <div class="section-label" data-lang="en">Chapter 05 · The analysis</div>
-      <div class="section-label" data-lang="ja">第05章 · 分析</div>
-      <h2 data-lang="fr">L'atelier du navigateur face aux grandes maisons</h2>
-      <h2 data-lang="en">The browser atelier facing the great houses</h2>
-      <h2 data-lang="ja">ブラウザの工房と大手メゾンの対比</h2>
-      <p class="lead" data-lang="fr">Les suites de PAO desktop restent la référence historique de la mise en page. SuperPrint reprend leurs gestes essentiels et les ouvre, dans le navigateur.</p>
-      <p class="lead" data-lang="en">Desktop DTP suites remain the historical reference of layout. SuperPrint takes their essential gestures and opens them, in the browser.</p>
-      <p class="lead" data-lang="ja">デスクトップDTPスイートは今も組版の歴史的な基準です。SuperPrintはその本質的な所作を受け継ぎ、ブラウザで開きます。</p>
-    </div>
-
-    <details class="fold" data-chapitre="vs-indesign">
-      <summary class="fold-sum"><span class="inline-fr">Voir la suite</span><span class="inline-en">Read on</span><span class="inline-ja">続きを読む</span></summary>
-      <div class="fold-inner">
-    <div class="vs-cols">
-      <div class="vs-col vs-win">
-        <h3 data-lang="fr">Ce que SuperPrint apporte</h3>
-        <h3 data-lang="en">What SuperPrint brings</h3>
-        <h3 data-lang="ja">SuperPrintがもたらすもの</h3>
-        <ul>
-          <li data-lang="fr">Sans abonnement</li>
-          <li data-lang="en">No subscription</li>
-          <li data-lang="ja">サブスク不要</li>
-          <li data-lang="fr">Fonctionne dans tout navigateur, sur tout OS (Windows, Mac, Linux, Chromebook)</li>
-          <li data-lang="en">Works in any browser, on any OS (Windows, Mac, Linux, Chromebook)</li>
-          <li data-lang="ja">どのブラウザ・OSでも動作（Windows、Mac、Linux、Chromebook）</li>
-          <li data-lang="fr">Aucune installation ni mise à jour à gérer</li>
-          <li data-lang="en">No installation or updates to manage</li>
-          <li data-lang="ja">インストールやアップデートの管理が不要</li>
-          <li data-lang="fr">Données 100% locales — aucun envoi vers un cloud propriétaire</li>
-          <li data-lang="en">100% local data — nothing sent to any proprietary cloud</li>
-          <li data-lang="ja">データは100%ローカル — 独自クラウドへの送信なし</li>
-          <li data-lang="fr">Import de vos documents (Word, OpenDocument, PDF)</li>
-          <li data-lang="en">Import your documents (Word, OpenDocument, PDF)</li>
-          <li data-lang="ja">既存ドキュメントの読み込み（Word、OpenDocument、PDF）</li>
-          <li data-lang="fr">Studio IA SP213 pour générer des maquettes en langage naturel</li>
-          <li data-lang="en">SP213 AI studio to generate layouts in natural language</li>
-          <li data-lang="ja">自然言語でレイアウトを生成するSP213 AIスタジオ</li>
-          <li data-lang="fr">Accélération GPU disponible dès v0.0.4</li>
-          <li data-lang="en">GPU acceleration available from v0.0.4</li>
-          <li data-lang="ja">v0.0.4からGPUアクセラレーション対応</li>
-          <li data-lang="fr">Projet indépendant, évolutif, communauté Zigmoon</li>
-          <li data-lang="en">Independent project, scalable, Zigmoon community</li>
-          <li data-lang="ja">独立した発展型プロジェクト、Zigmoonコミュニティ</li>
-        </ul>
-      </div>
-      <div class="vs-col vs-defer">
-        <h3 data-lang="fr">Quand garder une suite desktop</h3>
-        <h3 data-lang="en">When to keep a desktop suite</h3>
-        <h3 data-lang="ja">デスクトップ版を選ぶ場面</h3>
-        <ul>
-          <li data-lang="fr">Projets d'impression complexes avec flux de production agence</li>
-          <li data-lang="en">Complex print projects with agency production workflows</li>
-          <li data-lang="ja">制作会社のワークフローを伴う複雑な印刷プロジェクト</li>
-          <li data-lang="fr">Livres de plus de 500 pages avec indexation avancée</li>
-          <li data-lang="en">Books over 500 pages with advanced indexing</li>
-          <li data-lang="ja">高度な索引を伴う500ページ超の書籍</li>
-          <li data-lang="fr">Workflows PAO existants imposés par le client</li>
-          <li data-lang="en">Existing DTP workflows imposed by the client</li>
-          <li data-lang="ja">クライアント指定の既存DTPワークフロー</li>
-          <li data-lang="fr">Intégration poussée avec un écosystème créatif propriétaire</li>
-          <li data-lang="en">Deep integration with a proprietary creative ecosystem</li>
-          <li data-lang="ja">独自のクリエイティブエコシステムとの深い統合</li>
-        </ul>
-      </div>
-    </div>
-        </div>
-    </details>
-  </div>
-</section>
-
-<!-- ══════════════ FORMATS ══════════════ -->
-<section id="formats">
-  <div class="container">
-    <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 06 · Langues de la page</div>
-      <div class="section-label" data-lang="en">Chapter 06 · Languages of the page</div>
-      <div class="section-label" data-lang="ja">第06章 · ページの言語</div>
-      <h2 data-lang="fr">Les formats que la page comprend</h2>
-      <h2 data-lang="en">The formats the page understands</h2>
-      <h2 data-lang="ja">ページが理解するフォーマット</h2>
-      <p class="lead" data-lang="fr">Le langage du document — du PDF d'impression au fichier d'échange — fait partie du métier. SuperPrint parle couramment les deux sens.</p>
-      <p class="lead" data-lang="en">The language of the document — from print PDF to interchange file — is part of the craft. SuperPrint speaks both directions fluently.</p>
-      <p class="lead" data-lang="ja">ドキュメントの言語 — 印刷用PDFから交換ファイルまで — もまた職人の技。SuperPrintは双方向を流暢に話します。</p>
-    </div>
-
-    <details class="fold" data-chapitre="formats">
-      <summary class="fold-sum"><span class="inline-fr">Voir la suite</span><span class="inline-en">Read on</span><span class="inline-ja">続きを読む</span></summary>
-      <div class="fold-inner">
-
-    <p class="fmt-label" data-lang="fr">Sortie d'atelier</p>
-    <p class="fmt-label" data-lang="en">Leaving the atelier</p>
-    <p class="fmt-label" data-lang="ja">工房を出る</p>
-    <div class="fmt-grid">
-      <span class="fmt-chip out">PDF CMYK</span>
-      <span class="fmt-chip out">PDF écran</span>
-      <span class="fmt-chip out">PNG</span>
-      <span class="fmt-chip out">JPG</span>
-      <span class="fmt-chip out">.sp natif</span>
-      <span class="fmt-chip out">JSON</span>
-    </div>
-
-    <p class="fmt-label" data-lang="fr">Entrée d'atelier</p>
-    <p class="fmt-label" data-lang="en">Entering the atelier</p>
-    <p class="fmt-label" data-lang="ja">工房に入る</p>
-    <div class="fmt-grid">
-      <span class="fmt-chip in">PDF</span>
-      <span class="fmt-chip in">DOCX</span>
-      <span class="fmt-chip in">DOC</span>
-      <span class="fmt-chip in">IDML</span>
-      <span class="fmt-chip in">ODT</span>
-      <span class="fmt-chip in">RTF</span>
-      <span class="fmt-chip in">XLSX</span>
-      <span class="fmt-chip in">ICC</span>
-      <span class="fmt-chip in">SLA</span>
-      <span class="fmt-chip in">.sp</span>
-      <span class="fmt-chip in">JSON</span>
-      <span class="fmt-chip in">PNG</span>
-      <span class="fmt-chip in">JPG</span>
-      <span class="fmt-chip in">SVG</span>
-      <span class="fmt-chip in">WebP</span>
-    </div>
-        </div>
-    </details>
   </div>
 </section>
 
@@ -3063,9 +3097,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <section id="faq">
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 07 · Questions fréquentes</div>
-      <div class="section-label" data-lang="en">Chapter 07 · Frequently asked</div>
-      <div class="section-label" data-lang="ja">第07章 · よくある質問</div>
+      <div class="section-label" data-lang="fr">Chapitre 02 · Questions fréquentes</div>
+      <div class="section-label" data-lang="en">Chapter 02 · Frequently asked</div>
+      <div class="section-label" data-lang="ja">第02章 · よくある質問</div>
       <h2 data-lang="fr">Les questions que l'on pose souvent à l'atelier</h2>
       <h2 data-lang="en">Questions often asked at the atelier</h2>
       <h2 data-lang="ja">工房でよく聞かれる質問</h2>
@@ -3173,9 +3207,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <section id="manuel">
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 08 · Le manuel</div>
-      <div class="section-label" data-lang="en">Chapter 08 · The manual</div>
-      <div class="section-label" data-lang="ja">第08章 · マニュアル</div>
+      <div class="section-label" data-lang="fr">Chapitre 03 · Le manuel</div>
+      <div class="section-label" data-lang="en">Chapter 03 · The manual</div>
+      <div class="section-label" data-lang="ja">第03章 · マニュアル</div>
       <h2 data-lang="fr">Tout est écrit, noir sur blanc.</h2>
       <h2 data-lang="en">Everything is written down.</h2>
       <h2 data-lang="ja">すべて、文字で書いてあります。</h2>
@@ -3242,9 +3276,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="ghost" aria-hidden="true">AUTEURS</div>
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Chapitre 09 · Les auteurs</div>
-      <div class="section-label" data-lang="en">Chapter 09 · The authors</div>
-      <div class="section-label" data-lang="ja">第09章 · 著者</div>
+      <div class="section-label" data-lang="fr">Chapitre 04 · Les auteurs</div>
+      <div class="section-label" data-lang="en">Chapter 04 · The authors</div>
+      <div class="section-label" data-lang="ja">第04章 · 著者</div>
       <h2 data-lang="fr">Deux auteurs, un atelier.</h2>
       <h2 data-lang="en">Two authors, one atelier.</h2>
       <h2 data-lang="ja">ふたりの著者、ひとつの工房。</h2>
@@ -3388,7 +3422,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.486</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.487</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
@@ -4007,14 +4041,14 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     var c;
     try { c = document.querySelector(location.hash); } catch (e) { return; }
     if (!c || !c.closest) return;
-    var d = c.closest("details.fold");
+    var d = c.closest("details[data-chapitre]");
     if (d) d.open = true;
   }
   document.addEventListener("click", function (e) {
     var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
     if (!a) return;
     var c = document.querySelector(a.getAttribute("href"));
-    var d = c && c.closest ? c.closest("details.fold") : null;
+    var d = c && c.closest ? c.closest("details[data-chapitre]") : null;
     if (d) d.open = true;
   }, true);
   window.addEventListener("hashchange", ouvrir);

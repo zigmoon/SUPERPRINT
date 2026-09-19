@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.486 — one language at a time on the home page (the French rule was missing, so the FAQ showed three languages at once) and a home that follows the navigation bar, with the extra chapters folded behind a “Read on”.">
-<meta name="keywords" content="SUPER PRINT 1.7.486, SuperPrint, browser DTP editor, home page, navigation, FAQ, trilingual, language rule, local package, SP213 Studio">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.487 — the whole technical zone of the home page becomes one readable part: eight blocks, one shared bar, a different treatment inside each, and the old chapter intros moved inside the blocks.">
+<meta name="keywords" content="SUPER PRINT 1.7.487, SuperPrint, browser DTP editor, features, home page, prepress, Pantone, comparison, formats, local package, SP213 Studio">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.486 — one language at a time on the home page (the French rule was missing, so the FAQ showed three languages at once) and a home that follows the navigation bar, with the extra chapters folded behind a “Read on”.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.487 — the whole technical zone of the home page becomes one readable part: eight blocks, one shared bar, a different treatment inside each, and the old chapter intros moved inside the blocks.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SUPER PRINT v1.7.486 — one language at a time, and a home page that follows the navigation bar.">
+<meta name="twitter:description" content="SUPER PRINT v1.7.487 — one readable part for all the features, eight blocks in the order of the tools.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -706,6 +706,35 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.487 — la partie « Fonctions » : huit blocs, une seule présentation ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-487">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.487</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 19 septembre 2026" data-i18n-en="Released September 19, 2026" data-i18n-jp="2026年9月19日公開">Released September 19, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Toute la zone technique de l'accueil devient <strong>une seule partie, lisible d'un coup d'œil</strong> : huit blocs, une barre identique pour chacun, et un traitement différent à l'intérieur — au lieu de six chapitres empilés." data-i18n-en-html="The whole technical zone of the home page is now <strong>a single part you can scan at a glance</strong>: eight blocks, one identical bar for each, and a different treatment inside — instead of six stacked chapters." data-i18n-jp-html="ホームページの技術的な領域が<strong>ひと目で読めるひとつの部分</strong>になりました。8つのブロック、共通のバー、そして中身はそれぞれ異なる見せ方です。">The technical zone of the home page is now one part you can scan: eight blocks, one shared bar, a different treatment inside each.</p>
+
+ <h3 data-i18n-fr-html="📖 L'ordre des outils, pas l'ordre des chapitres <span class=&quot;badge badge-new&quot;>nouveau</span>" data-i18n-en-html="📖 In the order of the tools, not the order of the chapters <span class=&quot;badge badge-new&quot;>new</span>" data-i18n-jp-html="📖 章の順ではなく、道具の順 <span class=&quot;badge badge-new&quot;>新規</span>">📖 In the order of the tools, not the order of the chapters <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Deux blocs ouverts</strong> — les trois applications et les quinze outils (grille serrée en trois colonnes, descriptions tenues à trois lignes) — puis <strong>six blocs qui s'annoncent par leur titre</strong> et s'ouvrent d'un clic : prépresse, presses, banc d'essai, face aux grandes maisons, formats, planches d'écran." data-i18n-en-html="<strong>Two blocks open</strong> — the three applications and the fifteen tools (a tight three-column grid, descriptions held to three lines) — then <strong>six blocks that announce themselves by their title</strong> and open in one click: prepress, presses, test bench, against the big houses, formats, screenshots." data-i18n-jp-html="<strong>最初から開いている2つ</strong>（3つのアプリ、15の道具は3列のグリッドで説明は3行まで）と、<strong>見出しで中身を告げる6つのブロック</strong>（プリプレス、印刷機、比較ベンチ、大手との比較、フォーマット、画面ショット）。クリックで開きます。">Two blocks open (the applications, the fifteen tools), then six blocks that announce themselves by their title and open in one click.</li>
+  <li data-i18n-fr-html="<strong>Chaque bloc a son style</strong> et l'ancien contenu reste entier : <strong>le prépresse est le seul traité à l'encre</strong> (texte clair sur fond noir), les presses tiennent en quatre colonnes, le comparatif est un tableau encadré, l'analyse oppose deux colonnes, les formats sont des pastilles, les planches sont des captures. Les chapeaux des anciens chapitres ne sont pas perdus : <strong>ils s'affichent dans le bloc quand on l'ouvre</strong>." data-i18n-en-html="<strong>Each block has its own style</strong> and the old content is intact: <strong>prepress is the only one set in ink</strong> (light text on black), presses fit in four columns, the comparison is a framed table, the analysis faces two columns, formats are chips, the gallery is screenshots. The old chapter intros are not lost: <strong>they appear inside the block when you open it</strong>." data-i18n-jp-html="<strong>ブロックごとに見せ方を変えました</strong>。内容はそのままです：<strong>プリプレスだけがインク仕上げ</strong>（黒地に白文字）、印刷機は4列、比較は枠付きの表、分析は2列の対比、フォーマットはタグ、ギャラリーは画面ショット。旧章の導入文も<strong>ブロックを開くと中に現れます</strong>。">Each block has its own style (ink for prepress, four columns for presses, a framed table, two facing columns, chips, screenshots) and the old chapter intros now appear inside the block.</li>
+  <li data-i18n-fr-html="Rien n'a bougé pour les liens : <strong>les anciennes ancres mènent toujours au bon endroit</strong> (#showcase, #comparison, #prepress, #use-cases, #vs-indesign, #formats), et un bloc replié <strong>s'ouvre tout seul</strong> si l'on arrive par une ancre. Les chapitres suivants ont été renumérotés (FAQ 02, manuel 03, auteurs 04) pour que la numérotation reste continue." data-i18n-en-html="Nothing moved for the links: <strong>the old anchors still land on the right block</strong> (#showcase, #comparison, #prepress, #use-cases, #vs-indesign, #formats), and a folded block <strong>opens by itself</strong> when reached through an anchor. The following chapters were renumbered (FAQ 02, manual 03, authors 04) so the numbering stays continuous." data-i18n-jp-html="リンクはそのままです。<strong>以前のアンカーは正しいブロックに着きます</strong>（#showcase、#comparison、#prepress、#use-cases、#vs-indesign、#formats）。アンカーで到達した折りたたみブロックは<strong>自動で開きます</strong>。続く章は番号を振り直しました（FAQ 02、マニュアル 03、著者 04）。">The old anchors still land on the right block and a folded block opens by itself through an anchor; the following chapters were renumbered.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🐛 Deux défauts corrigés en chemin <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🐛 Two defects fixed on the way <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🐛 途中で直した2つの不具合 <span class=&quot;badge badge-fix&quot;>修正</span>">🐛 Two defects fixed on the way <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Le piège des langues est revenu par la petite porte.</strong> Pour tenir les descriptions à trois lignes, une règle de classe posait un <code>display</code> sur des éléments de langue : elle battait la règle qui cache les autres langues, et <strong>les quinze descriptions s'affichaient en français, en anglais et en japonais</strong> dans la même carte. Mesuré, corrigé : les <strong>six combinaisons de langue</strong> sont désormais couvertes, en <code>!important</code> — contrôle après coup : <strong>zéro fuite</strong> dans les trois langues." data-i18n-en-html="<strong>The language trap came back through the back door.</strong> To hold the descriptions to three lines, a class rule set a <code>display</code> on language-tagged elements: it beat the rule hiding the other languages, and <strong>the fifteen descriptions showed in French, English and Japanese</strong> inside the same card. Measured and fixed: all <strong>six language combinations</strong> are covered now, with <code>!important</code> — checked afterwards: <strong>zero leak</strong> in the three languages." data-i18n-jp-html="<strong>言語の罠が裏口から戻ってきました。</strong>説明を3行に収めるためクラスのルールで <code>display</code> を指定したところ、他言語を隠すルールに勝ってしまい、<strong>15の説明が同じカード内に仏・英・日の3言語で表示</strong>されていました。計測して修正：<strong>6通りの言語の組み合わせ</strong>すべてを <code>!important</code> で覆い、修正後は<strong>漏れゼロ</strong>を確認。">A class rule used to clamp the card text beat the rule hiding the other languages, so the fifteen descriptions showed in three languages at once; all six combinations are now covered with !important and the leak is measured at zero.</li>
+  <li data-i18n-fr-html="Le bloc du prépresse gardait une grille claire sous son texte clair : fonds neutralisés, contraste rétabli. Et le bouton du bandeau était blanc sur blanc — il est maintenant lisible, avec inversion au survol." data-i18n-en-html="The prepress block kept a light grid behind its light text: backgrounds neutralised, contrast restored. And the band button was white on white — it is readable now, with an inversion on hover." data-i18n-jp-html="プリプレスブロックでは明るいグリッドが白文字の後ろに残っていました（背景を無効化しコントラストを回復）。バナーのボタンは白地に白でしたが、現在は読める状態になり、ホバーで反転します。">The prepress block kept a light grid behind its light text (backgrounds neutralised) and the band button was white on white (readable now, inverting on hover).</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.487 — contrôles : huit blocs, deux ouverts au départ, barres trilingues (une seule langue affichée), zéro fuite en FR / EN / JA, chaque bloc ouvert montrant bien son contenu d'origine, ancres conservées, repli du comparatif et bouton des outils toujours fonctionnels, aucune erreur JavaScript, parité site ↔ copie locale 22/22, paquet local reconstruit et vérifié." data-i18n-en="SuperPrint 1.7.487 — checks: eight blocks, two open on arrival, trilingual bars (one language shown at a time), zero leak in FR / EN / JA, every block opened showing its original content, anchors preserved, comparison fold and tool button still working, no JavaScript error, web ↔ local copy parity 22/22, local package rebuilt and verified." data-i18n-jp="SuperPrint 1.7.487 — 検証：8つのブロック、初期状態で2つ開く、バーは3言語対応（表示は1言語のみ）、FR / EN / JA で漏れゼロ、開いたブロックに元の内容、アンカー保持、比較表とツールボタンも動作、JavaScript エラーなし、Web ↔ ローカルコピーの一致 22/22、パッケージ再生成・検証済み。">SuperPrint 1.7.487 — checks: eight blocks, two open, trilingual bars, zero leak in FR/EN/JA, original content in each block, anchors preserved, no JS error, parity 22/22, package verified.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Ouvrir SuperPrint" data-i18n-en="→ Open SuperPrint" data-i18n-jp="→ SuperPrint を開く">→ Open SuperPrint</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.486 — une seule langue à la fois, et une home qui suit la barre de navigation ===== -->
 

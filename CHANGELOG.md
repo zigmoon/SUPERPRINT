@@ -9,6 +9,32 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.487] — 2026-09-19
+
+_One readable part for every feature: eight blocks, one shared bar, a different treatment inside each_
+
+### Changed — the home page technical zone
+- **Six stacked chapters became one part.** The comparison table, prepress, the tool inventory, the presses, the analysis and the formats now live in a single `<section id="features">` that follows the navigation bar, in the order the tools are used.
+- **One shared bar per block** (kicker · title · marker · plus sign) with a different treatment inside each: large cards for the applications, a tight three-column grid for the fifteen tools (descriptions held to three lines), **ink** for prepress (light text on black), four columns for the presses, a framed table for the comparison, two facing columns for the analysis, chip rows for the formats, screenshots for the gallery.
+- **Nothing deleted, nothing lost**: the old chapter intros moved **inside** their block and appear when it opens; the trilingual titles are the ones that were already there; the old anchors (`#showcase`, `#comparison`, `#prepress`, `#use-cases`, `#vs-indesign`, `#formats`) still land on their block; a folded block opens by itself when reached through an anchor. The following chapters were renumbered (FAQ 02, manual 03, authors 04) so the numbering stays continuous.
+
+### Fixed
+- **The language trap came back through the back door.** A class rule used to clamp the card text set a `display` on language-tagged elements and therefore beat the rule hiding the other languages: the fifteen descriptions were displayed **in French, English and Japanese at once** inside the same card. All **six language combinations** are now covered with `!important` — measured at **zero leak** in the three languages afterwards.
+- **The ink block** kept a light grid behind its light text (backgrounds neutralised, contrast restored) and its band button was white on white (readable now, inverting on hover).
+
+### Verified
+| Check | Result |
+|---|---|
+| Structure | 8 blocks, 2 open on arrival (`showcase`, `inventaire`), 6 announced by their bar |
+| Bars | one single title displayed per bar and per language — checked in `fr` / `en` / `ja` |
+| Language leaks | **0** in the three languages, on the home page and on the help page |
+| Contents | every block opened shows its original content (prepress grid + band, presses, comparison table + its own fold button, two columns, chips, gallery grid + “+9 tools”) |
+| Anchors | `#features`, `#showcase`, `#comparison`, `#prepress`, `#use-cases`, `#vs-indesign`, `#formats` all resolve; `#cmpTable` opens the comparison block |
+| JavaScript | no page error on the home page or on the help page |
+| Parity web ↔ mirror | **22 / 22 identical**, 0 different, 0 missing |
+| Markers | `version.txt`, footer colophon, `data-sp-js="v487"`, `data-sp-sw="v1.7.487"`, cache tag `20260919-v487-partie-fonctions`, `CACHE_NAME` bumped |
+| Package | `sp213-local.zip` rebuilt and verified file by file |
+
 ## [1.7.486] — 2026-09-19
 
 _One language at a time on the home page, and a home page that follows the navigation bar_
