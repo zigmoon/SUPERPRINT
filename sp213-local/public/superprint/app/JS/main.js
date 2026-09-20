@@ -7803,6 +7803,266 @@ window.spTestDiag = function () {
    Les valeurs sont resynchronisées en continu dans l'autre sens, la position est
    mémorisée par section (comme les widgets Pathfinder / Nuancier / Filtres), et le
    bouton repassé en « − » referme le widget. */
+/* ═══════ _SP_RANDOMBACK_510_DEBUT — FOND ANIMÉ (Random Back) : DOT · FLUIDE · PASTEL ═══════
+   Outil de la section FORMES (sous « Forme libre ») : il n'ajoute pas de forme, il OUVRE
+   un widget où l'utilisateur fabrique un fond animé, le fige au clic, et l'insère comme
+   image (déplaçable) ou comme fond de page.
+   Aucune bibliothèque externe : canvas 2D natif — l'application reste utilisable hors ligne.
+   L'aperçu tourne en 560×792 ; les boutons d'insertion recalculent la MÊME scène en
+   1754×2480 (A4 à 212 ppp) avec un facteur d'échelle, donc l'image insérée est imprimable.
+   Le panneau est cloné par le système de widgets : un <canvas> cloné est VIDE (cloneNode ne
+   copie pas les pixels), la boucle dessine donc dans l'original ET dans le canvas du widget. */
+(function spRandomBack() {
+    'use strict';
+    /* _SP_RANDOMBACK_510B_DEBUT — main.js est injecté et s'exécute AVANT l'analyse de la
+       barre latérale : sans cette attente, le panneau n'existe pas encore et rien n'était
+       câblé (mesuré : bouton sans écouteur). On démarre donc au plus tôt, mais DOM prêt. */
+    function init() {
+    var panneau = document.getElementById('randomBackMenu');
+    if (!panneau) return;
+    var AP_W = 560, AP_H = 792;              /* aperçu (léger) */
+    var SO_W = 1754, SO_H = 2480;            /* sortie A4 212 ppp */
+    var fx = 'dot';
+    var vit = 1, dens = 1, intens = 1, teinte = 0.5;
+    var graine = 20260920, gele = false, raf = null, tps = 0, dernier = 0, image = null;
+    var PAL = {
+        dot: ['#1f6feb', '#00b8a9', '#f6c453', '#ef476f'],
+        fluide: ['#2b6cff', '#00d1b2', '#ff7ac6', '#7b2ff7'],
+        pastel: ['#f7c8d8', '#c9e4f5', '#f9e6b3', '#d6f0d3']
+    };
+    function alea() { graine = (graine * 1103515245 + 12345) & 0x7fffffff; return graine / 0x7fffffff; }
+    /* teinte : décale toutes les couleurs de la palette (0 → -30°, 1 → +30°) */
+    function nuance(c) {
+        if (teinte === 0.5 || c.charAt(0) !== '#') return c;
+        var r = parseInt(c.substr(1, 2), 16) / 255, v = parseInt(c.substr(3, 2), 16) / 255, b = parseInt(c.substr(5, 2), 16) / 255;
+        var mx = Math.max(r, v, b), mn = Math.min(r, v, b), l = (mx + mn) / 2, h = 0, s = 0;
+        if (mx !== mn) { var d = mx - mn; s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (v - b) / d + (v < b ? 6 : 0) : (mx === v ? (b - r) / d + 2 : (r - v) / d + 4); h /= 6; }
+        h = (h + (teinte - 0.5) * 0.17 + 1) % 1;
+        function t(p, q, x) { if (x < 0) x += 1; if (x > 1) x -= 1; if (x < 1 / 6) return p + (q - p) * 6 * x; if (x < 1 / 2) return q; if (x < 2 / 3) return p + (q - p) * (2 / 3 - x) * 6; return p; }
+        var q2 = l < 0.5 ? l * (1 + s) : l + s - l * s, p2 = 2 * l - q2;
+        function hx(x) { return ("0" + Math.round(x * 255).toString(16)).slice(-2); }
+        return "#" + hx(t(p2, q2, h + 1 / 3)) + hx(t(p2, q2, h)) + hx(t(p2, q2, h - 1 / 3));
+    }
+    /* ── DOT : grille de points qui respirent ── */
+    function fxDot(g, w, h, t, ech) {
+        var p = PAL.dot;
+        var f = g.createLinearGradient(0, 0, w, h);
+        f.addColorStop(0, nuance('#fbfdff')); f.addColorStop(1, nuance('#e8f1fb'));
+        g.fillStyle = f; g.fillRect(0, 0, w, h);
+        var pas = Math.max(10, 34 / dens) * ech;
+        var rMin = 1.4 * dens * ech, rMax = 7 * dens * ech;
+        for (var y = pas * 0.5; y < h; y += pas) {
+            for (var x = pas * 0.5; x < w; x += pas) {
+                var v = Math.sin(x * 0.006 / ech + t * 0.9) * Math.cos(y * 0.005 / ech - t * 0.7);
+                var r = rMin + (rMax - rMin) * (0.5 + 0.5 * v);
+                var ox = Math.sin(t * 0.8 + y * 0.01 / ech) * 3 * ech;
+                var oy = Math.cos(t * 0.7 + x * 0.01 / ech) * 3 * ech;
+                var k = Math.floor(Math.abs(Math.sin(x * 0.003 / ech + y * 0.004 / ech + t * 0.25)) * p.length) % p.length;
+                g.fillStyle = nuance(p[k]);
+                g.globalAlpha = Math.max(0.1, Math.min(1, 0.30 + 0.70 * intens));
+                g.beginPath(); g.arc(x + ox, y + oy, r, 0, 6.2832); g.fill();
+            }
+        }
+        g.globalAlpha = 1;
+    }
+    /* ── FLUIDE : nappes de couleurs qui coulent (dégradés radiaux additifs) ── */
+    function fxFluide(g, w, h, t, ech) {
+        var p = PAL.fluide;
+        var f = g.createLinearGradient(0, 0, w, h);
+        f.addColorStop(0, nuance('#07131f')); f.addColorStop(1, nuance('#101d33'));
+        g.fillStyle = f; g.fillRect(0, 0, w, h);
+        g.globalCompositeOperation = 'lighter';
+        var n = Math.round(5 + 4 * dens);
+        var base = Math.min(w, h);
+        for (var i = 0; i < n; i++) {
+            var s = i + 1;
+            var cx = w * (0.5 + 0.40 * Math.sin(t * 0.28 * (0.6 + 0.08 * s) + s * 1.7 + alea() * 0.4));
+            var cy = h * (0.5 + 0.40 * Math.cos(t * 0.23 * (0.5 + 0.07 * s) + s * 2.3 + alea() * 0.4));
+            var rr = (0.22 + 0.14 * ((s % 3) / 3)) * base * (0.65 + 0.45 * dens);
+            var gr = g.createRadialGradient(cx, cy, 0, cx, cy, rr);
+            gr.addColorStop(0, nuance(p[i % p.length])); gr.addColorStop(1, 'rgba(0,0,0,0)');
+            g.globalAlpha = Math.max(0.08, Math.min(1, 0.30 + 0.45 * intens));
+            g.fillStyle = gr;
+            g.beginPath(); g.arc(cx, cy, rr, 0, 6.2832); g.fill();
+        }
+        g.globalCompositeOperation = 'source-over';
+        g.globalAlpha = 1;
+        /* voile très léger : évite les aplats trop durs sur les bords */
+        var vg = g.createRadialGradient(w / 2, h / 2, base * 0.15, w / 2, h / 2, base * 0.85);
+        vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,' + (0.22 * intens).toFixed(3) + ')');
+        g.fillStyle = vg; g.fillRect(0, 0, w, h);
+    }
+    /* ── PASTEL : bandes douces qui glissent ── */
+    function fxPastel(g, w, h, t, ech) {
+        var p = PAL.pastel;
+        var f = g.createLinearGradient(0, 0, 0, h);
+        f.addColorStop(0, nuance(p[0])); f.addColorStop(1, nuance(p[1]));
+        g.fillStyle = f; g.fillRect(0, 0, w, h);
+        var nb = Math.round(4 + 3 * dens);
+        for (var i = 0; i < nb; i++) {
+            var yb = h * (i + 1) / (nb + 1) + Math.sin(t * 0.30 + i * 1.3) * h * 0.07;
+            var hb = h * (0.16 + 0.05 * (i % 3)) * (0.8 + 0.3 * dens);
+            var gr = g.createLinearGradient(0, yb - hb, 0, yb + hb);
+            var c = nuance(p[i % p.length]);
+            gr.addColorStop(0, 'rgba(255,255,255,0)');
+            gr.addColorStop(0.5, c);
+            gr.addColorStop(1, 'rgba(255,255,255,0)');
+            g.globalAlpha = Math.max(0.05, Math.min(1, 0.22 + 0.55 * intens));
+            g.fillStyle = gr; g.fillRect(0, yb - hb, w, hb * 2);
+        }
+        /* nappes diagonales + grain : la matière du pastel */
+        g.globalAlpha = Math.max(0.03, 0.12 * intens);
+        for (var j = 0; j < 3; j++) {
+            var dx = w * (0.5 + 0.45 * Math.sin(t * 0.18 + j * 2.1));
+            var gr2 = g.createRadialGradient(dx, h * (0.2 + 0.3 * j), 0, dx, h * (0.2 + 0.3 * j), Math.min(w, h) * 0.55);
+            gr2.addColorStop(0, nuance(p[(j + 2) % p.length])); gr2.addColorStop(1, 'rgba(255,255,255,0)');
+            g.fillStyle = gr2; g.fillRect(0, 0, w, h);
+        }
+        g.globalAlpha = 1;
+    }
+    function dessine(g, w, h, t, ech) {
+        g.save();
+        try { if (fx === 'fluide') fxFluide(g, w, h, t, ech); else if (fx === 'pastel') fxPastel(g, w, h, t, ech); else fxDot(g, w, h, t, ech); } catch (e) {}
+        g.restore();
+    }
+    /* Tous les canvas visibles : celui du panneau d'origine et ceux des widgets détachés. */
+    function cibles() {
+        var out = [], o = document.getElementById("rbCanvas");
+        if (o) out.push(o);
+        var cl = document.querySelectorAll('#spWidgetLayer .sp-dock-host[data-dock="randomBackMenu"] canvas');
+        for (var i = 0; i < cl.length; i++) out.push(cl[i]);
+        return out;
+    }
+    function imageFinale() {
+        var c = document.createElement("canvas");
+        c.width = SO_W; c.height = SO_H;
+        dessine(c.getContext("2d"), SO_W, SO_H, tps, SO_W / AP_W);
+        return c.toDataURL("image/png");
+    }
+    function boucle(ts) {
+        raf = null;
+        if (gele) return;
+        if (!dernier) dernier = ts;
+        tps += Math.min(60, ts - dernier) * 0.001 * vit;
+        dernier = ts;
+        var cs = cibles();
+        for (var i = 0; i < cs.length; i++) {
+            var c = cs[i];
+            if (!c.__spRbCtx) { c.width = AP_W; c.height = AP_H; c.__spRbCtx = c.getContext("2d"); }
+            dessine(c.__spRbCtx, c.width, c.height, tps, 1);
+        }
+        raf = requestAnimationFrame(boucle);
+    }
+    function tourne(v) {
+        if (v && !raf && !gele) { dernier = 0; raf = requestAnimationFrame(boucle); }
+        if (!v && raf) { cancelAnimationFrame(raf); raf = null; }
+    }
+    function majBoutons() {
+        var fz = document.getElementById("rbFreeze");
+        if (fz) fz.textContent = gele ? "▶ Reprendre" : "⏸ Geler";
+        var ids = { dot: "rbFxDot", fluide: "rbFxFluide", pastel: "rbFxPastel" };
+        for (var k in ids) {
+            var el = document.getElementById(ids[k]);
+            if (el) el.style.background = (fx === k) ? "rgba(43,183,255,0.28)" : "";
+        }
+    }
+    function inserer(fond) {
+        var data = imageFinale();
+        var cv = (typeof window.getActiveCanvas === "function") ? window.getActiveCanvas() : null;
+        if (!cv || !window.fabric || !window.fabric.Image) return;
+        window.fabric.Image.fromURL(data, function (img) {
+            try {
+                var pw = cv.getWidth(), ph = cv.getHeight();
+                if (fond) {
+                    img.set({ left: 0, top: 0, originX: "left", originY: "top" });
+                    img.scaleX = pw / img.width; img.scaleY = ph / img.height;
+                    cv.add(img); try { cv.sendToBack(img); } catch (_) {}
+                } else {
+                    var sc = Math.min(pw / img.width, ph / img.height) * 0.8;
+                    img.scale(sc);
+                    img.set({ left: (pw - img.width * sc) / 2, top: (ph - img.height * sc) / 2 });
+                    cv.add(img);
+                }
+                cv.setActiveObject(img); cv.renderAll();
+                if (typeof saveState === "function") saveState(fond ? "Fond animé (fond de page)" : "Fond animé (image)");
+            } catch (e) {}
+        });
+    }
+    /* ── câblage : les commandes du widget agissent sur les contrôles d'origine ── */
+    function lieCurseur(id, set) {
+        var el = document.getElementById(id);
+        if (!el || el.__spRbLie) return;
+        el.__spRbLie = true;
+        el.addEventListener("input", function () { var v = parseFloat(el.value); if (isFinite(v)) { set(v); } });
+    }
+    lieCurseur("rbVit", function (v) { vit = v; });
+    lieCurseur("rbDens", function (v) { dens = v; });
+    lieCurseur("rbIntens", function (v) { intens = v; });
+    lieCurseur("rbTeinte", function (v) { teinte = v; });
+    [["rbFxDot", "dot"], ["rbFxFluide", "fluide"], ["rbFxPastel", "pastel"]].forEach(function (paire) {
+        var el = document.getElementById(paire[0]);
+        if (!el || el.__spRbFx) return;
+        el.__spRbFx = true;
+        el.addEventListener("click", function (e) { e.preventDefault(); fx = paire[1]; majBoutons(); tourne(true); });
+    });
+    var bVar = document.getElementById("rbVariant");
+    if (bVar && !bVar.__spRbVar) { bVar.__spRbVar = true; bVar.addEventListener("click", function (e) { e.preventDefault(); graine = Math.floor(Math.random() * 2000000000) + 1; tourne(true); }); }
+    var bFz = document.getElementById("rbFreeze");
+    if (bFz && !bFz.__spRbFz) { bFz.__spRbFz = true; bFz.addEventListener("click", function (e) { e.preventDefault(); gele = !gele; majBoutons(); if (gele) tourne(false); else tourne(true); }); }
+    var bIn = document.getElementById("rbInsertImg");
+    if (bIn && !bIn.__spRbIn) { bIn.__spRbIn = true; bIn.addEventListener("click", function (e) { e.preventDefault(); inserer(false); }); }
+    var bBg = document.getElementById("rbInsertBg");
+    if (bBg && !bBg.__spRbBg) { bBg.__spRbBg = true; bBg.addEventListener("click", function (e) { e.preventDefault(); inserer(true); }); }
+    /* clic sur l'aperçu = figer / reprendre (demande utilisateur) */
+    /* _SP_RANDOMBACK_510D_DEBUT — GEL AU CLIC (aperçu du panneau ET du widget).
+       Mesure : le pont du système de widgets ne reprojette PAS les clics du canvas cloné
+       (bouton resté sur « Geler »). On reconnaît donc nous-mêmes les deux canvas — celui du
+       panneau d'origine (#rbCanvas) et celui du widget détaché (data-sp-ref="rbCanvas") — au
+       niveau du document, en phase de CAPTURE. Le garde de 250 ms absorbe une éventuelle
+       reprojection du même clic (sinon deux bascules s'annuleraient). */
+    var dernierBascule = 0;
+    function basculerGel() {
+        var n = new Date().getTime();
+        if (n - dernierBascule < 250) return;
+        dernierBascule = n;
+        gele = !gele;
+        majBoutons();
+        if (gele) tourne(false); else tourne(true);
+    }
+    if (!window.__spRbGelDoc) {
+        window.__spRbGelDoc = true;
+        document.addEventListener("click", function (e) {
+            var t = e.target;
+            if (!t || !t.tagName) return;
+            if (String(t.tagName).toLowerCase() !== "canvas") return;
+            var ref = t.id || t.getAttribute("data-sp-ref");
+            if (ref !== "rbCanvas") return;
+            try { e.preventDefault(); } catch (_) {}
+            basculerGel();
+        }, true);
+    }
+    /* le bouton « Fond animé » ouvre / referme le WIDGET (même logique que les autres) */
+    var bouton = document.getElementById("randomBackToggle");
+    if (bouton && !bouton.__spRbBtn) {
+        bouton.__spRbBtn = true;
+        bouton.addEventListener("click", function (e) {
+            e.preventDefault(); e.stopPropagation();
+            var ouvert = window.spDockWidgets && window.spDockWidgets.estOuvert && window.spDockWidgets.estOuvert("randomBackMenu");
+            if (ouvert) { try { window.spDockWidgets.fermer("randomBackMenu"); } catch (_) {} tourne(false); return; }
+            try { window.spDockWidgets.ouvrir(panneau, bouton); } catch (_) {}
+            gele = false; majBoutons(); tourne(true);
+        });
+    }
+    majBoutons();
+    /* premier rendu immédiat (le temps que la première frame arrive) */
+    try {
+        var cs0 = cibles();
+        for (var i0 = 0; i0 < cs0.length; i0++) { var c0 = cs0[i0]; c0.width = AP_W; c0.height = AP_H; dessine(c0.getContext("2d"), AP_W, AP_H, 0.6, 1); c0.__spRbCtx = c0.getContext("2d"); }
+    } catch (e) {}
+    }   /* fin de init() */
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
+})();
+
 (function spSetupDockWidgets() {
     'use strict';
     var LAYER_ID = 'spWidgetLayer';
@@ -8010,6 +8270,9 @@ window.spTestDiag = function () {
         /* _SP_TAB_508_DEBUT — « Grille & repères » respire : à 200 px, 57 px de contenu
            étaient coupés à droite (mesuré : corps clientWidth 199 / scrollWidth 256). */
         if (nom === 'gridMenu') host.classList.add('sp-dock-wide');
+        /* _SP_RANDOMBACK_510_DEBUT — le widget « Fond animé » porte un APERÇU : il lui faut
+           franchement plus de place (aperçu A4 en portrait + quatre tirettes + six boutons). */
+        if (nom === 'randomBackMenu') host.classList.add('sp-dock-xl');
         var clone = copier(sec);
         /* En-tête identique aux widgets existants : point, titre en capitales,
            petit triangle à droite pour le soufflet. Le titre du clone est masqué :
@@ -45738,6 +46001,41 @@ https://superprint.app
                                 var _availC = _spJustifyTarget - _natW;
                                 if (_availC > 0) _extraSp = _availC / _nbEspaces;
                             }
+                            /* 🆕 v1.7.510 — TAQUETS, TEXTE SÉLECTIONNABLE PROPRE.
+                               Mesure : la boucle caractère ci-dessous émettait un
+                               drawText PAR LETTRE (« A », « r », « t »…) → le texte du
+                               PDF était réel mais fragmenté : extraction « A r t i c l e »
+                               et recherche de « Article » impossible. La boucle reste
+                               nécessaire pour la POSITION, pas pour le découpage : on
+                               dessine donc un morceau entier par segment de tabulation.
+                               Positions identiques (mêmes mesures, aucun crénage sur un
+                               drawText groupé) ; style du 1er caractère du morceau →
+                               police/corps conservés et faux-gras toujours simulé.
+                               Cas exclu (justification, styles par caractère) : boucle
+                               caractère conservée, aucun changement. */
+                            var _tabsRuns = _tabsActifs && !_lineHasCharStyles
+                                && _spacingStep === 0 && !_justifyCharLine && _extraSp === 0;
+                            if (_tabsRuns) {
+                                var _morc = String(tx).split('\t');
+                                var _idxTabs = [];
+                                for (var _pi2 = 0; _pi2 < tx.length; _pi2++) {
+                                    if (tx.charAt(_pi2) === '\t') _idxTabs.push(_pi2);
+                                }
+                                var _cursorR = xStart, _startIdx = 0;
+                                for (var _gi = 0; _gi < _morc.length; _gi++) {
+                                    if (_gi > 0) {
+                                        _cursorR += Math.max(1, window.spTabAvance(obj, _cursorR - xStart, li, _idxTabs[_gi - 1], _tabsModele));
+                                        _startIdx = _idxTabs[_gi - 1] + 1;
+                                    }
+                                    var _piece = _morc[_gi];
+                                    if (!_piece) continue;
+                                    var _pieceW = _measW(_piece, ef, fontSizePt) / Math.abs(sx);
+                                    _drawTextRun(_piece, _cursorR, _resolveCharStyle(_startIdx));
+                                    _textDecorationRuns.push({ from: _cursorR, to: _cursorR + _pieceW, kind: 'base' });
+                                    _cursorR += _pieceW;
+                                }
+                                _spCharLoopEnd = _cursorR;
+                            } else {
                             var _cursorC = xStart;
                             for (var _ci = 0; _ci < tx.length; _ci++) {
                                 var _ch = tx.charAt(_ci);
@@ -45769,6 +46067,7 @@ https://superprint.app
                             }
                             // 🎯 v1.7.380 — même ancrage côté boucle caractère.
                             _spCharLoopEnd = (_spacingStep !== 0) ? (_cursorC - _spacingStep) : _cursorC;
+                            }   /* fin du else : boucle caractère (v1.7.510) */
                         } else {
                             var ptPos = localToPagePt(xStart, baselineY_local);
                             var drawX = ptPos.x;

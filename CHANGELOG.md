@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,39 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.510] — 2026-09-20
+
+_Animated backgrounds you build live in the app, and tab-stop text that stays readable in the PDF_
+
+### Added
+- **“Animated background” tool (Random Back)**, in the left Shapes menu right after “Free form”. It does not add a shape: it opens a **wide widget (520 px)** where a background is generated live, frozen with a click on the preview, then inserted into the layout.
+  - Three effects to start with: **DOT** (a grid of dots that breathe), **Fluide colors** (additive radial-gradient sheets flowing on a dark base) and **Pastel** (very soft bands plus a light grain).
+  - Four sliders — speed, density, intensity, hue — and a **Variante** button that redistributes the scene at random.
+  - Clicking the preview **freezes** the animation (a second click resumes it), or use the **Geler / Reprendre** button.
+  - **Insérer l’image** adds a movable, centred image; **Fond de page** adds it at the exact page size and sends it to the back. Insertion is **not** a screen grab: the same scene is recomputed at **1754 × 2480 px** (A4 at 212 dpi) with a scale factor, so it stays printable.
+  - Implementation note: **no external library**. The backgrounds use native canvas 2D, so the application remains fully usable offline (the project explicitly forbids adding CDNs). The animation runs only while the widget is open.
+  - The panel is cloned by the dock-widget system; since `cloneNode` does not copy canvas pixels, the loop paints the original panel **and** the detached widget canvas (found through `data-dock`). Clicks are recognised by document-level delegation, because the widget bridge does not forward clicks from a cloned canvas (measured: the button stayed on “Geler”).
+
+### Fixed
+- **A tab-stop text block was exported as one text run per letter.** Measured with a spy on `PDFLib.PDFPage.prototype.drawText` for an “Article ⇥ Prix” block in vector-typography mode: **eleven single-character calls** (“A”, “r”, “t”, “i”, “c”, “l”, “e”, “P”, “r”, “i”, “x”). The text was real and the font embedded, but copying from a PDF reader produced “A r t i c l e” and searching for “Article” failed. Cause: the character loop forced by the tab support (v1.7.480) is needed for the **position**, not for the **splitting**. Fix: when a tabbed line has no character styling, no letter spacing and no justification, it is drawn **one text run per tab-separated piece**; positions are unchanged (same measurements, and pdf-lib applies no kerning to a whole run) and the block font is kept. The other cases keep the character loop.
+- **Broken Shapes icon (404).** `setupShapesDropdown()` copies the clicked menu item’s icon into the Shapes button (`mainIcon.src = icon.src`); the new tool used an inline `<svg>`, so `src` was `undefined` and the button showed a broken image. The tool now ships a real icon file (`app/icons/randback.svg`).
+
+### Verified
+| Check | Result |
+|---|---|
+| Tool present in the Shapes menu, after “Free form” | button opens the widget, second click closes it |
+| Widget width class `sp-dock-xl` | measured 520 px |
+| Live preview inside the widget | canvas inked (454 sampled pixels), the three effects give different pixels (DOT bright, Fluid dark `10,21,37`, Pastel `232,237,215`) |
+| Click on the preview | freezes (two captures 500 ms apart are identical), second click resumes (captures differ) |
+| Insert as image / as page background | 486 × 687 px on screen / 612 × 859 px = the whole A4 page, source recomputed at 1754 × 2480 px |
+| Tab-stop block, vector typography export | 2 calls — `Article`, `Prix` — font `OpenSans-Regular`, **Δx = 140 pt = the stop** |
+| Same block, CMYK export | 2 calls, same font, same Δx = 140 pt |
+| Icon of the Shapes button after clicking the new tool | `icons/randback.svg`, loads (no 404) |
+| Application / studio syntax | `node --check` OK / `SYNTAXE OK` |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v510"`, cache tag `20260920-v510-fond-anime-et-pdf-vectoriel`, `CACHE_NAME` bumped |
+
 
 ## [1.7.509] — 2026-09-20
 

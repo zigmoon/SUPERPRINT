@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.509-grille-et-taquets-transportes';
+const CACHE_NAME = 'superprint-shell-v1.7.510-fond-anime-et-pdf-vectoriel';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

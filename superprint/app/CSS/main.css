@@ -2707,6 +2707,18 @@ textarea[data-fabric-hiddentextarea] {
 }
 .sp-dock-host.sp-dock-wide .sp-dock-head { font-size: 12px; padding: 8px 12px; }
 .sp-dock-host.sp-dock-wide .sp-dock-body { padding: 0 12px 12px; }
+/* _SP_RANDOMBACK_510_DEBUT — WIDGET « FOND ANIMÉ » : le plus large des widgets.
+   Il contient un APERÇU de page A4 en portrait : à 400 px l'aperçu serait étroit et les
+   quatre tirettes seraient tassées. 520 px laissent un aperçu de ~470 px de large (A4
+   entier visible) et des curseurs longs, tout en restant sous la largeur d'une page A4
+   (612 px) pour ne pas masquer la planche. */
+.sp-dock-host.rightbar.sp-dock-xl {
+    width: 520px;
+    min-width: 420px;
+    max-width: 640px;
+}
+.sp-dock-host.sp-dock-xl .sp-dock-head { font-size: 12px; padding: 8px 12px; }
+.sp-dock-host.sp-dock-xl .sp-dock-body { padding: 0 12px 12px; }
 .sp-dock-host.sp-dock-large .sp-dock-head { font-size: 12px; padding: 8px 12px; }
 .sp-dock-host.sp-dock-large .sp-dock-body { padding: 0 12px 12px; }
 .sp-dock-host.sp-dock-large .sp-var-famille { font-size: 11px; }
