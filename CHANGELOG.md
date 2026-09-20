@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,35 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.513] — 2026-09-20
+
+_Animated background: a third-shorter preview, live sliders, a LIVE page background — and every transport verified_
+
+### Changed
+- **Preview a third shorter.** Measured **449 × 168 px** instead of 449 × 252 (−33 %), still full widget width: the widget gives back 84 px of useful height and everything fits without scrolling. The **scene stays 16:9** (960 × 540 preview bitmap, 2560 × 1440 insertion output); the box being shorter than the image, the preview is **cropped** top and bottom (`object-fit: cover`) — no distortion — and the inserted image stays complete, which the help line now states.
+
+### Fixed
+- **“We lose the slider ball.”** Measured: dragging inside the widget did reach the engine, but the widget's black fill stayed behind (34.8 % instead of 95.7 % for Speed = 2.4) — the thumb moved on its own. Cause: a race with the dock's resynchronisation (450 ms) plus a copy of the `--rb-p` gauge in the wrong direction. The widget sliders are now listened to **directly** (`input`), the value is written into the original control, the gauge is mirrored onto **both** elements, and a frame is **redrawn immediately** — even when the animation is frozen, so adjustments are visible at once.
+- **No live preview in the page.** “Page background” used to place a frozen snapshot. It now places a **live** background: a Fabric image whose source is the engine canvas (measured: `_element` = CANVAS 960 × 540). The page therefore really animates and every effect/setting applies instantly. Just before serialisation the image's `getSrc`/`toObject` are hooked to return a **fresh snapshot** (measured: two successive calls give 1,078,398 then 1,064,702 characters), so `.sp`, `.json` and the PDF always contain the current frame.
+- **Replacing the background stacked images.** Previous widget backgrounds (tagged `_spRandBackBg`) are now **purged** before every insertion: one background at a time (measured: 1 object before, 1 object after).
+
+### Verified — animated backgrounds through every transport
+| Transport | Measurement |
+|---|---|
+| `.sp` written | one `image` object, `src` = PNG data URL of **380,714 characters**, `scaleX` 0.596 |
+| `.sp` read back | 1 page, 1 object, source **2560 × 1440**, on-page cover **1526 × 858** on a 612 × 859 page |
+| `.json` | 383,838 characters, PNG data URL present, `colGrid` present |
+| PDF export (native vector typography) | **3.9 MB**, **two image objects** embedded → the background is printed |
+| Studio SP213 import | one `image` element, `imageUrl` = the same 380,714-character PNG data URL, visible in the preview |
+| Widget background replacement | 1 object before, 1 after (previous purged) |
+| Live background source | Fabric image backed by the engine CANVAS 960 × 540 |
+| Slider dragged to 2.4 in the widget | engine 2.4, displayed 2.40, fill 95.7 % on both original and widget |
+
+Known points: a background weighs ~400 KB in the file and in the PDF (a 2560 × 1440 PNG) — normal for a bitmap. And the **Studio re-fits images to its own page**, so a 16:9 background does not overflow there the way it does in the application (data correct, scaling differs; to handle on a next Studio pass).
+
+### Markers
+`data-sp-js="v513"`, cache tag `20260920-v513-apercu-compact-et-transports-verifies`, `CACHE_NAME` bumped, local package (`sp213-local.zip`) rebuilt with `tools/make-release-zip.mjs`.
 
 ## [1.7.512] — 2026-09-20
 

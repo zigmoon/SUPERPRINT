@@ -2766,11 +2766,16 @@ textarea[data-fabric-hiddentextarea] {
 .sp-dock-host[data-dock="randomBackMenu"] .rb-apercu { padding: 0 0 5px 0; }
 /* L'aperçu fait la LARGEUR du widget et garde son 16/9 (aspect-ratio) : la bitmap, elle,
    reste en 960 × 540 pour la netteté de la sortie haute définition. */
+/* _SP_RANDOMBACK_513_DEBUT — APERÇU UN TIERS PLUS BAS (449 × 252 → 449 × 168 mesuré) :
+   la boîte est plus basse que la scène (16/9) donc object-fit: cover recadre le haut et le
+   bas SANS déformer — et l'image insérée dans le document reste complète (rappelé sous
+   l'aperçu). Le widget gagne 84 px de hauteur utile. */
 .sp-dock-host[data-dock="randomBackMenu"] .rb-canvas {
     display: block;
     width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
+    height: 168px;
+    object-fit: cover;
+    object-position: center center;
     border-radius: 4px;
     border: 1px solid rgba(128, 128, 128, 0.35);
     background: #0b1220;

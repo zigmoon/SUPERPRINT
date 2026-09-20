@@ -8121,6 +8121,19 @@ window.spTestDiag = function () {
             if (!c.__spRbCtx || c.width !== AP_W || c.height !== AP_H) { c.width = AP_W; c.height = AP_H; c.__spRbCtx = c.getContext("2d"); }
             dessine(c.__spRbCtx, c.width, c.height, tps, 1);
         }
+        /* _SP_RANDOMBACK_513B_DEBUT — FOND VIVANT : la page redemande un rendu pour montrer
+           l'image suivante (le fond est une image dont la source est ce canvas). Une image
+           sur deux suffit largement (animation lente, on garde le CPU libre). */
+        var cA = (typeof window.getActiveCanvas === "function") ? window.getActiveCanvas() : null;
+        if (cA) {
+            var vit_ = false;
+            try { vit_ = cA.getObjects().some(function (o) { return o && o._spRandBackLive; }); } catch (_) {}
+            if (vit_) {
+                if (!window.__spRbCompteur) window.__spRbCompteur = 0;
+                window.__spRbCompteur++;
+                if ((window.__spRbCompteur % 2) === 0) { try { cA.requestRenderAll(); } catch (_) {} }
+            }
+        }
         raf = requestAnimationFrame(boucle);
     }
     function tourne(v) {
@@ -8150,13 +8163,81 @@ window.spTestDiag = function () {
             if (isFinite(mn) && isFinite(mx) && mx > mn && e.style && e.style.setProperty) {
                 var pc = Math.max(0, Math.min(100, (val - mn) / (mx - mn) * 100));
                 e.style.setProperty("--rb-p", pc.toFixed(1) + "%");
+                /* _SP_RANDOMBACK_513C_DEBUT — la MÊME jauge sur les curseurs du widget :
+                   sans cela le pouce avançait et le remplissage noir restait en arrière
+                   (« on perd la boule de la tirette »). */
+                var clones = document.querySelectorAll('#spWidgetLayer .sp-dock-host[data-dock="randomBackMenu"] [data-sp-ref="' + paire[i][0] + '"]');
+                for (var k = 0; k < clones.length; k++) {
+                    var cl = clones[k];
+                    if (cl.style && cl.style.setProperty) { cl.style.setProperty("--rb-p", pc.toFixed(1) + "%"); }
+                    if (cl !== e && cl.value !== e.value) { try { cl.value = e.value; } catch (_) {} }
+                }
             }
         }
     }
+    /* ═══ _SP_RANDOMBACK_513B_DEBUT — PURGE, INSTANTANÉ À JOUR ET FOND VIVANT ═══
+       - purger() retire les fonds précédents du widget : un seul à la fois, remplacé net ;
+       - rafraichirInstantane() refait l'image de sortie (2560 × 1440) : appelée juste avant
+         toute sérialisation (.sp / .json / sauvegarde automatique) et pour l'export PDF ;
+       - le fond de page est VIVANT : image Fabric dont la source est le canvas du moteur, la
+         page affiche donc l'animation en vrai, et chaque réglage s'applique aussitôt. */
+    var _snap = null, _snapTemps = 0;
+    function rafraichirInstantane(forcer) {
+        var n = new Date().getTime();
+        if (!forcer && _snap && (n - _snapTemps) < 3000) return _snap;
+        try {
+            var c = document.createElement("canvas");
+            c.width = SO_W; c.height = SO_H;
+            dessine(c.getContext("2d"), SO_W, SO_H, tps, SO_W / AP_W);
+            _snap = c.toDataURL("image/png");
+            _snapTemps = n;
+        } catch (e) {}
+        return _snap;
+    }
+    function purger(cv) {
+        var n = 0;
+        try {
+            cv.getObjects().forEach(function (o) {
+                if (o && o._spRandBackBg) { try { cv.remove(o); n++; } catch (_) {} }
+            });
+        } catch (_) {}
+        return n;
+    }
+    function appliquerCouverture(img, cv) {
+        var pw = cv.getWidth(), ph = cv.getHeight();
+        var sc = Math.max(pw / img.width, ph / img.height);
+        img.scale(sc);
+        img.set({ left: (pw - img.width * sc) / 2, top: (ph - img.height * sc) / 2, originX: "left", originY: "top" });
+    }
+    /* Le fond VIVANT : source = canvas du moteur, donc la page affiche l'animation ; pour
+       l'enregistrement et l'export, getSrc() renvoie un instantané frais. */
+    function insererFondVivant(cv) {
+        var src = cibles()[0];
+        if (!src || !window.fabric || !window.fabric.Image) return false;
+        var img = null;
+        try { img = new window.fabric.Image(src, { left: 0, top: 0 }); } catch (e) { img = null; }
+        if (!img || !(img.width > 20) || !(img.height > 20)) return false;
+        img._spRandBackBg = true;
+        img._spRandBackLive = true;
+        img.src = rafraichirInstantane(true);
+        img.getSrc = function () { return rafraichirInstantane(true); };
+        appliquerCouverture(img, cv);
+        cv.add(img);
+        try { cv.sendToBack(img); } catch (_) {}
+        try { cv.requestRenderAll(); } catch (_) {}
+        return true;
+    }
     function inserer(fond) {
-        var data = imageFinale();
         var cv = (typeof window.getActiveCanvas === "function") ? window.getActiveCanvas() : null;
-        if (!cv || !window.fabric || !window.fabric.Image) return;
+        if (!cv || !window.fabric || !window.fabric.Image) return 0;
+        var retires = purger(cv);
+        if (fond && insererFondVivant(cv)) {
+            try { cv.setActiveObject(cv.getObjects()[0]); } catch (_) {}
+            try { cv.renderAll(); } catch (_) {}
+            if (typeof saveState === "function") saveState("Fond animé (fond de page vivant)");
+            return retires;
+        }
+        var data = rafraichirInstantane(true) || imageFinale();
         window.fabric.Image.fromURL(data, function (img) {
             try {
                 var pw = cv.getWidth(), ph = cv.getHeight();
@@ -8166,6 +8247,7 @@ window.spTestDiag = function () {
                     var sc = Math.max(pw / img.width, ph / img.height);
                     img.scale(sc);
                     img.set({ left: (pw - img.width * sc) / 2, top: (ph - img.height * sc) / 2, originX: "left", originY: "top" });
+                    img._spRandBackBg = true;      /* pour la purge au prochain clic */
                     cv.add(img); try { cv.sendToBack(img); } catch (_) {}
                 } else {
                     var sc2 = Math.min(pw / img.width, ph / img.height) * 0.8;
@@ -8188,6 +8270,42 @@ window.spTestDiag = function () {
     lieCurseur("rbDens", function (v) { dens = v; });
     lieCurseur("rbIntens", function (v) { intens = v; });
     lieCurseur("rbTeinte", function (v) { teinte = v; });
+    /* _SP_RANDOMBACK_513B_DEBUT — ÉCOUTE DIRECTE DES CURSEURS DU WIDGET.
+       Le pont du widget et la resynchronisation du dock (450 ms) se marchaient sur les pieds :
+       pendant un glisser, la valeur du clone pouvait revenir en arrière et la jauge noire ne
+       suivait plus le pouce (« on perd la boule »). On écoute donc les curseurs DU WIDGET, on
+       écrit la valeur dans le contrôle d'origine, on remet à jour les deux jauges, et on
+       REDESSINE tout de suite — même animation gelée, pour voir le réglage en direct. */
+    function brancher(jauge, id, mini, maxi, set) {
+        if (!jauge) return;
+        jauge.addEventListener("input", function () {
+            var v = parseFloat(jauge.value);
+            if (isFinite(v)) { set(v); }
+            majValeurs();
+            var o = document.getElementById(jauge.getAttribute("data-sp-ref") || id);
+            if (o && o !== jauge) {
+                if (o.value !== jauge.value) { o.value = jauge.value; }
+                if (jauge.style && jauge.style.setProperty) { jauge.style.setProperty("--rb-p", o.style.getPropertyValue("--rb-p") || ""); }
+            }
+            var cs = cibles();
+            for (var i = 0; i < cs.length; i++) {
+                var c = cs[i];
+                if (!c.__spRbCtx || c.width !== AP_W) { c.width = AP_W; c.height = AP_H; c.__spRbCtx = c.getContext("2d"); }
+                dessine(c.__spRbCtx, c.width, c.height, tps, 1);
+            }
+            var cA = (typeof window.getActiveCanvas === "function") ? window.getActiveCanvas() : null;
+            if (cA) { try { cA.requestRenderAll(); } catch (_) {} }
+        });
+    }
+    Array.prototype.forEach.call(panneau.querySelectorAll("input.rb-range"), function (el) {
+        var ref = el.getAttribute("data-sp-ref") || el.id;
+        brancher(el, ref, 0, 0, function (v) {
+            if (ref === "rbVit") { vit = v; }
+            else if (ref === "rbDens") { dens = v; }
+            else if (ref === "rbIntens") { intens = v; }
+            else if (ref === "rbTeinte") { teinte = v; }
+        });
+    });
     var IDS = { dot: 'rbFxDot', fluide: 'rbFxFluide', pastel: 'rbFxPastel', masque: 'rbFxMasque', aurore: 'rbFxAurore', ondes: 'rbFxOndes', organic: 'rbFxOrganic', cubes: 'rbFxCubes', holo: 'rbFxHolo' };
     for (var fi = 0; fi < FX.length; fi++) {
         (function (cle) {
@@ -8239,6 +8357,22 @@ window.spTestDiag = function () {
     }
     majBoutons();
     majValeurs();
+    /* _SP_RANDOMBACK_513B_DEBUT — AVANT TOUT ENREGISTREMENT (.sp, .json, sauvegarde
+       automatique), le fond vivant reprend un instantané frais : appelé par Fabric au moment
+       de la sérialisation, donc le fichier contient toujours l'image courante. */
+    (function _spRbSnapAvantSauvegarde() {
+        try {
+            var proto = window.fabric && window.fabric.Image && window.fabric.Image.prototype;
+            if (proto && !proto.__spRbSnapPatch) {
+                proto.__spRbSnapPatch = true;
+                var avant = proto.toObject;
+                proto.toObject = function () {
+                    if (this._spRandBackLive) { try { rafraichirInstantane(true); } catch (_) {} }
+                    return avant.apply(this, arguments);
+                };
+            }
+        } catch (_) {}
+    })();
     try {
         var cs0 = cibles();
         for (var i0 = 0; i0 < cs0.length; i0++) { var c0 = cs0[i0]; c0.width = AP_W; c0.height = AP_H; var g0 = c0.getContext("2d"); dessine(g0, AP_W, AP_H, 0.6, 1); c0.__spRbCtx = g0; }
