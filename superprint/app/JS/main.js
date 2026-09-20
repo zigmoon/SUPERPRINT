@@ -6269,6 +6269,22 @@ window.spTestDiag = function () {
     }
     window.spTabModele = modele;
 
+    /* _SP_TAB_504_DEBUT — ON MÉMORISE LE DERNIER CLIC REÇU PAR LE CANEVAS.
+       Il indique l'endroit que l'utilisateur vient de viser, MÊME quand ce clic n'a fait
+       que SÉLECTIONNER le bloc : Fabric n'entre en édition qu'au second clic, et le curseur
+       n'existe donc pas encore. La touche Tab s'en sert pour poser le curseur là où on a
+       cliqué — puis la tabulation. Écoute en capture : on la reçoit avant Fabric, donc
+       avant tout preventDefault. */
+    if (!window._spTabClicMemo) {
+        window._spTabClicMemo = true;
+        window.addEventListener('mousedown', function (e) {
+            try {
+                var cible = e && e.target;
+                if (cible && cible.tagName === 'CANVAS') window.__spDernierClicCanvas = e;
+            } catch (_) {}
+        }, true);
+    }
+
     /* Largeur du morceau de texte qui suit le taquet, jusqu'au taquet suivant. */
     function largeurMorceau(obj, lineIndex, charIndex) {
         var ligne = (obj._textLines && obj._textLines[lineIndex]) || '';
@@ -6848,10 +6864,33 @@ window.spTestDiag = function () {
            — « le curseur se décale au taquet suivant sans les caractères ». On lit donc la
            sélection LÀ OÙ ELLE EST VRAIMENT. */
         var ta0 = obj.hiddenTextarea;
-        var p0 = (ta0 && document.activeElement === ta0 && typeof ta0.selectionStart === 'number')
-            ? ta0.selectionStart
-            : ((typeof obj.selectionStart === 'number') ? obj.selectionStart : (obj.text || '').length);
-        try { if (typeof obj.insertChars === 'function') obj.insertChars('\t'); } catch (_) {}
+        var p0, p1;
+        if (ta0 && document.activeElement === ta0 && typeof ta0.selectionStart === 'number') {
+            p0 = ta0.selectionStart;
+            p1 = (typeof ta0.selectionEnd === 'number') ? ta0.selectionEnd : p0;
+        } else {
+            p0 = (typeof obj.selectionStart === 'number') ? obj.selectionStart : (obj.text || '').length;
+            p1 = (typeof obj.selectionEnd === 'number') ? obj.selectionEnd : p0;
+        }
+        /* On borne la sélection : elle peut être restée plus longue que le texte. */
+        var long0 = (obj.text || '').length;
+        if (!(p0 >= 0)) p0 = 0;
+        if (p0 > long0) p0 = long0;
+        if (!(p1 >= p0)) p1 = p0;
+        if (p1 > long0) p1 = long0;
+        /* 🆕 v1.7.504 — LA TABULATION EST POSÉE À LA POSITION DU CURSEUR, POINT FINAL.
+           Sans les deux derniers arguments, insertChars insère à obj.selectionStart/End
+           (voir le patch d'insertChars en haut de ce fichier) : quand cette sélection
+           restait en arrière, la tabulation partait ailleurs — le plus souvent en fin de
+           texte, où elle ne décale plus rien, et à l'écran SEUL LE CURSEUR partait au
+           taquet suivant. Retour utilisateur : « il faut vraiment que les lettres suivent
+           le curseur ». On passe donc la position mesurée. */
+        try { if (typeof obj.insertChars === 'function') obj.insertChars('\t', undefined, p0, p1); } catch (_) {}
+        if ((obj.text || '').length === long0) {
+            /* Repli : rien n'a été inséré (chemin natif absent ou sélection incohérente).
+               On cale la sélection du bloc sur le curseur, puis on réessaie. */
+            try { obj.selectionStart = obj.selectionEnd = p0; obj.insertChars('\t'); } catch (_) {}
+        }
         /* 🩹 Fabric ne déplace PAS le curseur dans insertChars (mesuré : 2 → 2 après
            insertion) : sans ce repositionnement, le caractère suivant partait AVANT
            la tabulation. poserCurseur resynchronise aussi le champ caché. */
@@ -7267,13 +7306,43 @@ window.spTestDiag = function () {
                 if (estTexteT && !objT.isEditing && !dansUnChamp && optionTabsT && typeof objT.enterEditing === 'function') {
                     e.preventDefault();
                     e.stopPropagation();
+                    /* _SP_TAB_504_DEBUT — LE CURSEUR VA LÀ OÙ L'UTILISATEUR A CLIQUÉ, PUIS LA
+                       TABULATION EST POSÉE DU MÊME GESTE.
+                       Un clic dans un bloc NON ACTIF ne fait que le SÉLECTIONNER : Fabric
+                       n'entre en édition qu'au second clic, donc aucun curseur n'existe
+                       encore et l'ancien code le posait à la FIN du texte. L'utilisateur,
+                       lui, venait de viser une lettre : il appuyait sur Tab et voyait le
+                       curseur filer au taquet suivant SANS QUE LES LETTRES SUIVENT (la
+                       tabulation partait en fin de texte, invisible).
+                       On rejoue le dernier clic reçu par le canevas pour retrouver l'endroit
+                       visé, on y place le curseur (setCursorByClick = le calcul de Fabric,
+                       pas une approximation) et on pose la tabulation dans la foulée.
+                       Si le clic n'était PAS dans le bloc (sélection au lasso, au clavier),
+                       on garde l'ancien comportement : entrée en édition, curseur à la fin,
+                       aucune insertion surprise. */
+                    var clicT = window.__spDernierClicCanvas || null;
+                    var ptT = null, viseT = false;
+                    if (clicT) {
+                        try {
+                            ptT = cT.getPointer(clicT);
+                            viseT = !!(ptT && typeof objT.containsPoint === 'function' && objT.containsPoint(ptT));
+                        } catch (_) { viseT = false; }
+                    }
                     try {
                         objT.enterEditing();
-                        poserCurseur(objT, (objT.text || '').length);
+                        if (viseT && typeof objT.setCursorByClick === 'function') {
+                            objT.setCursorByClick(clicT);
+                        } else {
+                            poserCurseur(objT, (objT.text || '').length);
+                        }
                         objT.dirty = true;
                         cT.requestRenderAll();
-                        majStatut('Bloc en édition : appuyez à nouveau sur Tab pour poser la tabulation.', 'info');
                     } catch (_) {}
+                    if (viseT) {
+                        insererTabulation(objT, cT);
+                    } else {
+                        majStatut('Bloc en édition : appuyez à nouveau sur Tab pour poser la tabulation.', 'info');
+                    }
                     return;
                 }
             }

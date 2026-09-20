@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.502 — the home page FAQ opens on click again in all three languages.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.504 — the tabulation is placed at the cursor in text blocks, so the letters really follow it.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.502 — the home page FAQ opens on click again in all three languages.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.504 — the tabulation is placed at the cursor in text blocks, so the letters really follow it.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,29 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.504 — les lettres suivent enfin le curseur (tabulations) ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-504">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.504</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 20 septembre 2026" data-i18n-en="Released September 20, 2026" data-i18n-jp="2026年9月20日公開">Released September 20, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="En mode <strong>tabulation</strong>, placez le curseur devant une lettre et appuyez sur <strong>Tab</strong> : la tabulation est posée <strong>à la position du curseur</strong> et toutes les lettres qui suivent se décalent au taquet suivant. Fini le curseur qui partait tout seul sans déplacer les caractères." data-i18n-en-html="In <strong>tabulation</strong> mode, put the cursor in front of a letter and press <strong>Tab</strong>: the tabulation is now placed <strong>at the cursor</strong> and every letter after it moves to the next tab stop. No more cursor running away on its own without moving the characters." data-i18n-jp-html="<strong>タブ</strong>モードで、文字の前にカーソルを置いて <strong>Tab</strong> を押すと、タブは<strong>カーソルの位置</strong>に挿入され、後ろの文字がすべて次のタブ位置へ移動します。カーソルだけが動いて文字が動かない問題は解消しました。">In tabulation mode, put the cursor in front of a letter and press Tab: the tabulation is placed at the cursor and the letters after it move to the next tab stop.</p>
+
+ <h3 data-i18n-fr-html="🎯 Les lettres suivent le curseur <span class=&quot;badge badge-new&quot;>corrigé</span>" data-i18n-en-html="🎯 The letters follow the cursor <span class=&quot;badge badge-new&quot;>fixed</span>" data-i18n-jp-html="🎯 文字がカーソルに追従します <span class=&quot;badge badge-new&quot;>修正</span>">🎯 The letters follow the cursor <span class="badge badge-new">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Le problème :</strong> un clic dans un bloc texte <em>non actif</em> ne fait que le sélectionner — le logiciel n'entre en édition qu'au second clic. Le curseur n'existait donc pas encore, et l'appui sur Tab le plaçait à la <strong>fin du texte</strong> sans rien insérer : à l'écran, seul le curseur semblait filer au taquet suivant." data-i18n-en-html="<strong>The problem:</strong> a click inside an <em>inactive</em> text block only selects it — the software enters editing on the second click. So no cursor existed yet, and pressing Tab parked it at the <strong>end of the text</strong> without inserting anything: on screen only the cursor seemed to run to the next tab stop." data-i18n-jp-html="<strong>問題：</strong><em>非アクティブ</em>なテキストブロック内のクリックは、まず選択だけを行います（編集開始は2回目のクリック）。つまりカーソルがまだ無く、Tab を押すとカーソルは<strong>テキストの最後</strong>に置かれ、何も挿入されませんでした。画面上はカーソルだけが次のタブ位置へ飛んだように見えていました。"><strong>The problem:</strong> a click inside an inactive text block only selects it, so no cursor existed yet and pressing Tab parked it at the end of the text without inserting anything.</li>
+  <li data-i18n-fr-html="<strong>La règle :</strong> le dernier clic reçu par la planche de travail est mémorisé. Quand Tab arrive sur un bloc simplement sélectionné <em>et</em> que ce clic visait l'intérieur du bloc, le curseur est placé à l'endroit visé (avec le calcul du logiciel, pas une approximation) et la tabulation y est posée <strong>du même geste</strong>. Si le clic était ailleurs (sélection au lasso, au clavier), rien ne change : le curseur va à la fin et aucune insertion surprise n'a lieu." data-i18n-en-html="<strong>The rule:</strong> the last click received by the pasteboard is remembered. When Tab lands on a merely selected block <em>and</em> that click was inside the block, the cursor is placed exactly where you clicked (using the software own computation, not an approximation) and the tabulation is placed there <strong>in the same gesture</strong>. If the click was elsewhere (rubber-band or keyboard selection) nothing changes: the cursor goes to the end and no surprise insertion happens." data-i18n-jp-html="<strong>仕組み：</strong>作業台が最後に受け取ったクリックを記憶します。Tab が「選択だけされているブロック」に来て、しかもそのクリックがブロック内だった場合、カーソルをクリックした位置に置き（ソフト自身の計算を使用）、タブを<strong>同じ操作で</strong>挿入します。クリックがブロック外だった場合（範囲選択やキーボード選択）は従来どおり、カーソルは最後に移動し、予期しない挿入は行いません。"><strong>The rule:</strong> the last click on the pasteboard is remembered; if Tab lands on a merely selected block and that click was inside it, the cursor is placed where you clicked and the tabulation is inserted in the same gesture.</li>
+  <li data-i18n-fr-html="<strong>Et pour être sûr :</strong> la tabulation est désormais insérée en indiquant explicitement la position du curseur. Elle ne peut plus partir ailleurs, même si la sélection interne du bloc était restée en arrière." data-i18n-en-html="<strong>And to be sure:</strong> the tabulation is now inserted with the cursor position given explicitly. It can no longer land somewhere else, even if the internal selection of the block had lagged behind." data-i18n-jp-html="<strong>念のため：</strong>タブの挿入時にカーソル位置を明示的に指定するようにしました。ブロック内部の選択が遅れていても、別の場所に入ることはありません。"><strong>And to be sure:</strong> the tabulation is now inserted with the cursor position given explicitly, so it can no longer land elsewhere.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.504 — contrôles : bloc en édition, curseur au milieu du texte, Tab insère la tabulation au curseur et les lettres se décalent (lettrage vérifié : « Bonjo ur t arif 12,50… ») ; bloc seulement sélectionné après un clic dans le texte, Tab place le curseur là où on a cliqué puis insère la tabulation ; sélection au lasso (aucun clic dans le bloc), Tab garde l'ancien comportement — entrée en édition, curseur à la fin, aucune insertion ; parité site ↔ copie locale 22/22 ; paquet local reconstruit." data-i18n-en="SuperPrint 1.7.504 — checks: block being edited with the cursor mid-text, Tab inserts the tabulation at the cursor and the letters shift (lettering verified: “Bonjo ur t arif 12,50…”); block merely selected after a click inside the text, Tab places the cursor where you clicked then inserts the tabulation; rubber-band selection (no click inside the block), Tab keeps the old behaviour — editing entered, cursor at the end, no insertion; web ↔ local copy parity 22/22; local package rebuilt." data-i18n-jp="SuperPrint 1.7.504 — 検証：編集中のブロックでカーソルを文中に置いて Tab を押すと、カーソル位置にタブが入り後続の文字が移動（表示確認：「Bonjo ur t arif 12,50…」）。テキスト内をクリックした直後に選択だけの状態で Tab を押すと、クリックした位置にカーソルが置かれタブが挿入されます。範囲選択（ブロック内クリックなし）では従来どおり、編集開始・カーソルは最後・挿入なし。サイトとローカルコピーの一致 22/22、パッケージ再生成済み。">SuperPrint 1.7.504 — checks: with the cursor mid-text, Tab inserts the tabulation at the cursor and the letters shift; with the block merely selected after a click inside it, Tab places the cursor where you clicked then inserts the tabulation; rubber-band selection keeps the old behaviour. Parity 22/22, package rebuilt.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Voir la page" data-i18n-en="→ See the page" data-i18n-jp="→ ページを見る">→ See the page</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.503 — la langue choisie sur la page de présentation suit le visiteur ===== -->
 

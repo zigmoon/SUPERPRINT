@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,29 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.504] — 2026-09-20
+
+_Tabulations: in a text block the letters now really follow the cursor_
+
+### Fixed
+- **Tabulation in the middle of a text block did nothing.** Putting the cursor in front of a letter and pressing Tab moved the cursor to the next tab stop without shifting any character. Measured on a fresh build: the gesture is a click inside a block that is **not active** — Fabric only enters editing on the *second* click, so no caret existed yet, and the old code parked the caret at the **end of the text** without inserting anything. That is the reported "only the cursor moves, not the letters".
+- **The tabulation could be inserted away from the caret.** The call `obj.insertChars(tab)` inserts at the block own `selectionStart/selectionEnd`, which can lag behind the real caret held by the hidden textarea of Fabric. `insererTabulation` now passes the measured caret position explicitly (3rd and 4th arguments) and falls back to aligning the block selection when nothing was inserted.
+- **A click that only selected a block is no longer lost.** The tabulation module remembers the last click received by the pasteboard; when Tab lands on a merely selected text block **and** that click was inside the block, the software enters editing, places the cursor with the Fabric function `setCursorByClick` and inserts the tabulation in the same gesture. Selections made with the rubber band or the keyboard keep the previous behaviour (editing entered, caret at the end, status message, no insertion).
+
+### Added
+- `_dev/scripts/_tab_504.cjs` patches both trees idempotently (3 anchors each in `app/JS/main.js`, all marked `_SP_TAB_504_DEBUT`).
+
+### Verified
+| Check | Result |
+|---|---|
+| Block being edited, cursor mid-text, Tab | tabulation inserted at the cursor, letters shift (`Bonjour tarif…` → `Bonjo / ur t / arif…`) |
+| Block merely selected after a click in the text, Tab | caret placed where clicked (`sel` 9), tabulation inserted at index 9 |
+| Same gesture before the fix | caret jumped to the end of the text (`sel` 25), nothing inserted |
+| Selection without a click inside the block, Tab | unchanged: editing entered, caret at the end, status message, no insertion |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v504"`, cache tag `20260920-v504-tabulation-curseur`, `CACHE_NAME` bumped |
+
 
 ## [1.7.503] — 2026-09-20
 
