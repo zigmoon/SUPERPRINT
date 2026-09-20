@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.518 — thin rules are no longer shifted in the PDF export with crop marks.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.519 — vector typography is honoured again in the PDF export with crop marks.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.518 — thin rules are no longer shifted in the PDF export with crop marks.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.519 — vector typography is honoured again in the PDF export with crop marks.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,23 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.519 — Export PDF : la typographie reste vectorielle avec les traits de coupe ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-519">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.519</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 20 septembre 2026" data-i18n-en="Released September 20, 2026" data-i18n-jp="2026年9月20日公開">Released September 20, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Cochée mais ignorée : en <strong>traits de coupe</strong>, la typographie vectorielle ne s'appliquait pas à tous les blocs. Elle le fait maintenant, sans exception." data-i18n-en-html="Ticked but ignored: with <strong>crop marks</strong>, vector typography did not apply to every block. It now does, without exception." data-i18n-jp-html="チェックしても効かない：<strong>トンボ付き</strong>ではベクトルタイポグラフィーが一部のブロックに適用されませんでした。現在は例外なく適用されます。">With crop marks, vector typography did not apply to every block. It now does.</p>
+
+ <h3 data-i18n-fr-html="🔤 Typographie vectorielle honorée avec les traits de coupe <span class=&quot;badge badge-new&quot;>corrigé</span>" data-i18n-en-html="🔤 Vector typography honoured with crop marks <span class=&quot;badge badge-new&quot;>fixed</span>" data-i18n-jp-html="🔤 トンボ付きでもベクトルタイポグラフィーを適用 <span class=&quot;badge badge-new&quot;>修正</span>">🔤 Vector typography honoured with crop marks <span class="badge badge-new">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Deux familles de blocs étaient <strong>rastérisées</strong> dans l'export avec traits de coupe, alors que le même document sortait vectoriel en « Format fini » : les blocs dont <strong>quelques caractères seulement</strong> ont un style différent (un mot en gras, d'une autre taille ou d'une autre couleur) et les blocs d'une <strong>police variable</strong> dont un axe est réglé. Mesure sur le document de recette : 8 opérateurs de texte avant (le bloc en image), <strong>59</strong> après pour le bloc à styles mêlés et <strong>17</strong> pour la police variable, et une seule image restante au lieu de deux." data-i18n-en-html="Two families of blocks were <strong>rasterised</strong> in the crop-marks export, while the same document stayed vector in “Finished format”: blocks where <strong>only a few characters</strong> carry a different style (one word in bold, another size or colour) and blocks set in a <strong>variable font</strong> with a tweaked axis. Measured on the recipe document: 8 text operators before (the block as an image), <strong>59</strong> after for the mixed-style block and <strong>17</strong> for the variable font, with one single image left instead of two." data-i18n-jp-html="トンボ付き書き出しで <strong>ラスター化</strong> していた 2 種類のブロックを修正しました：<strong>一部の文字だけ</strong> 書式が異なるブロック（一部が太字・別サイズ・別色）と、軸を調整した <strong>可変フォント</strong> のブロックです。検証文書での計測：テキスト演算子は修正前 8（ブロックは画像）、修正後は混在スタイルで <strong>59</strong>、可変フォントで <strong>17</strong>、画像も 2 枚から 1 枚に減りました。">Two families of blocks were rasterised in the crop-marks export: mixed per-character styles and variable fonts with a tweaked axis. Measured: 8 text operators before, 59 and 17 after.</li>
+  <li data-i18n-fr-html="Ces blocs sont désormais dessinés par le <strong>moteur vectoriel du « Format fini »</strong> (police embarquée, styles par caractère, instance réellement réglée de la police variable) puis posés sur la page : le texte redevient <strong>sélectionnable et net à toute échelle</strong>, exactement comme en Format fini. Rien d'autre ne bouge : sur un document témoin, l'écart au pixel avec la version précédente est de <strong>0,000</strong>, et un texte à contour, ombre ou fond de bloc garde sa sortie exacte." data-i18n-en-html="Those blocks are now drawn by the <strong>vector engine of “Finished format”</strong> (embedded font, per-character styles, the truly adjusted instance of the variable font) and laid onto the page: the text is <strong>selectable and sharp at any scale</strong> again, exactly as in Finished format. Nothing else moves: on a control document the pixel difference with the previous version is <strong>0.000</strong>, and text with a stroke, shadow or block background keeps its exact output." data-i18n-jp-html="これらのブロックは「<strong>仕上がりサイズ</strong>」のベクトルエンジン（フォント埋め込み、文字ごとの書式、可変フォントの実際のインスタンス）で描画され、ページ上に配置されます。テキストは再び <strong>選択可能でどの倍率でもシャープ</strong> です。それ以外は変化しません：比較用文書では前バージョンとのピクセル差は <strong>0.000</strong>、輪郭・影・ブロック背景付きのテキストは出力が完全に同一です。">Those blocks are now drawn by the vector engine of “Finished format”, with the truly adjusted font instance, and laid onto the page.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.518 — Export PDF : les filets ne sont plus décalés (géométrie exacte des lignes) ===== -->
 

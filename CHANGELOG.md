@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,15 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.519] — 2026-09-20
+
+_Vector typography is honoured again in the PDF export with crop marks_
+
+### Fixed
+- **Text blocks are no longer rasterised in the crop-marks export when “vector typography” is ticked.** The hybrid PDF engine (used as soon as crop marks or colour bars are requested) drives text through OpenType.js and refused two families of blocks, rasterising them on the spot: blocks where **only some characters** carry a distinct style (one word in bold / another size / another colour — the app writes those as per-character styles) and blocks set in a **variable font** whose axis was adjusted (`spVarFont`; the real instance cannot be reproduced by OpenType.js). The same document exported through “Finished format” (native pdf-lib engine) kept its text vector, hence the inconsistency reported. Measured on the recipe document (HD 300 dpi + CMYK + crop marks + 3 mm bleed): 8 text-showing operators before — the block was an image on top of the photo — **59 after** for the mixed-style block (per-character styles preserved) and **17 after** for the variable-font block, with a single raster image left instead of two.
+- **How it is fixed.** When the hybrid engine cannot vectorise a text block, the block is no longer rasterised: it is rendered by the **native pdf-lib engine** (the one behind “Finished format”: embedded font, per-character styles, variable-font instance applied through `_spVarPdfPose`) into a transparent overlay page of exactly the same size as the jsPDF page, then merged on top with `drawPage()` and the crop-mark margin offset. Raster fallback is kept whenever the native engine would itself rasterise or substitute a font: text with a stroke, shadow, block background, skew/mirror, complex clip or gradient/pattern fill, and unresolvable fonts — measured byte-for-byte identical output for those (stroked-text recipe: 848 966 bytes before and after).
+- **No other change.** Control document (no mixed styles, no variable font): pixel difference with 1.7.518 is **0.000**; blocks now vectorised keep the very same ink position (bounding boxes identical to the pixel, mean pixel difference 0.06 / 255 for the variable-font block, 1.27 / 255 for the mixed-style block whose synthetic bold differs slightly from the browser preview).
 
 ## [1.7.518] — 2026-09-20
 

@@ -40462,6 +40462,10 @@ window.spTestDiag = function () {
                 if (window._spPdfVectorImports && window._spPdfVectorImports.length) {
                     rgbBytes = await _spEmbedPdfImportsWithPdfLib(rgbBytes);
                 }
+                /* 🆕 v1.7.519 — _SP_OVERLAY_519 : overlays texte vectoriels. */
+                if (window._spTextOverlays && window._spTextOverlays.length) {
+                    rgbBytes = await _spMergeTextOverlays(rgbBytes, {});
+                }
                 if (_spAnyTextsNeedPostProcess()) {
                     console.log('[SP-vector-text] 📝 Appel _spEmbedTextsWithPdfLib...');
                     rgbBytes = await _spEmbedTextsWithPdfLib(rgbBytes);
@@ -40540,6 +40544,11 @@ window.spTestDiag = function () {
             // AVANT le texte pour que le texte reste au-dessus.
             if (window._spPdfVectorImports && window._spPdfVectorImports.length) {
                 cmykBytes = await _spEmbedPdfImportsWithPdfLib(cmykBytes, { preferCmyk: true });
+            }
+            /* 🆕 v1.7.519 — _SP_OVERLAY_519 : overlays texte vectoriels (convertis en
+               CMJN comme les imports, pour ne pas réintroduire de RVB). */
+            if (window._spTextOverlays && window._spTextOverlays.length) {
+                cmykBytes = await _spMergeTextOverlays(cmykBytes, { preferCmyk: true, iccProfile: iccProfile });
             }
             // ✏️ v1.7.175 : Ajouter le texte vectoriel APRÈS la conversion CMJN
             // pour éviter que convertPdfToCmyk (pdf-lib load/save) n'écrase le texte.
@@ -42076,6 +42085,10 @@ https://superprint.app
     window._spPdfTexts = [];
     window._spPdfFonts = {};
     window._spPdfVectorImports = [];
+    /* 🆕 v1.7.519 — OVERLAY VECTORIEL : blocs texte que le moteur hybride
+       (traits de coupe) ne sait pas vectoriser → confiés au moteur natif
+       pdf-lib en fin d'export (cf. _spMergeTextOverlays). */
+    window._spTextOverlays = [];
     // ✏️ v1.7.176 : S'assurer que les métadonnées d'imposition sont vides
     // pour l'export standard (non-imposé).
     window._spImpositionMeta = null;
@@ -42831,6 +42844,15 @@ https://superprint.app
                                     colorMode: options.colorMode,
                                     convertToGrayscale,
                                     vectorTypography: options.vectorTypography,
+                                    // 🆕 v1.7.519 — _SP_OVERLAY_519 : de quoi reconstruire en
+                                    // pdf-lib (moteur natif) un bloc texte que le moteur
+                                    // hybride refuse : taille de la page jsPDF (pour la
+                                    // page de l'overlay) et décalage de la marge des repères.
+                                    overlayPage: i,
+                                    overlayPageW: pdfWidth,
+                                    overlayPageH: pdfHeight,
+                                    overlayDxMm: imgOffsetX,
+                                    overlayDyMm: imgOffsetY,
                                     // 🛡️ v1.7.292 — FIX P1 : index de la page courante
                                     // pour la collecte du texte sélectionnable (D3).
                                     pageIndex: i
@@ -50542,6 +50564,151 @@ https://superprint.app
         // 🛡️ v1.7.285 — FIX D2 : retourne true si TOUS les objets ont été rendus
         // en vectoriel (aucun run raster, aucun fallback). L'appelant peut alors
         // sauter l'image raster pleine page (gain de poids + netteté).
+        /* ════════════════════════════════════════════════════════════════════
+           🆕 v1.7.519 — _SP_OVERLAY_519 : OVERLAY VECTORIEL DU TEXTE
+           DÉFAUT MESURÉ : en « typographie vectorielle » AVEC traits de coupe
+           (ou repères colorimétriques), l'export emprunte le moteur hybride
+           jsPDF. Ce moteur REFUSE deux familles de blocs et les RASTRÉISait :
+             • blocs à STYLES PAR CARACTÈRE mêlés (un mot en gras / d'une autre
+               taille / d'une autre couleur au milieu du bloc) ;
+             • blocs d'une POLICE VARIABLE RÉGLÉE (spVarFont : l'instance
+               réellement dessinée n'est pas reproductible par opentype.js).
+           Sans traits de coupe, le MÊME document sortait VECTORIEL (chemin
+           natif pdf-lib, « Format fini ») → incohérence signalée par
+           l'utilisateur.
+           CORRECTIF : ces blocs ne sont plus rasterisés. Ils sont rendus par le
+           moteur NATIF pdf-lib (_renderObjToPdfLib — gestion des styles par
+           caractère, de l'instance variable via _spVarPdfPose, justification,
+           taquets, césure) dans une page transparente de MÊME taille que la
+           page jsPDF, puis fusionnés par-dessus avec drawPage() et le
+           décalage de la marge des repères. Le repli raster reste utilisé si
+           le rendu natif échoue (aucune perte de texte possible). */
+        async function _spBuildTextOverlay(obj, opts, mmToPt) {
+            var PDFLib = window.PDFLib;
+            if (!PDFLib || typeof _renderObjToPdfLib !== 'function') return null;
+            /* _SP_OVERLAY_519B — GARDE-FOUS : l'overlay ne sert que si le moteur natif
+               écrit du VRAI texte vectoriel. Sinon (il rasteriserait : ombre,
+               contour, fond de bloc, inclinaison/miroir, clip complexe, dégradé)
+               on garde le repli raster du moteur hybride, à l'identique. */
+            if (!obj) return null;
+            if (obj.shadow || obj.textBackgroundColor || obj.backgroundColor
+                || obj.skewX || obj.skewY || obj.flipX || obj.flipY
+                || (obj.fill && typeof obj.fill === 'object')
+                || (obj.stroke && (obj.strokeWidth || 0) > 0)) return null;
+            if (obj.clipPath) {
+                var _cpOl = obj.clipPath;
+                var _cpSimple = !!(_cpOl.type === 'rect' && !_cpOl.angle && !_cpOl.skewX && !_cpOl.skewY
+                    && !_cpOl.flipX && !_cpOl.flipY && !_cpOl.path);
+                if (!_cpSimple) return null;
+            }
+            var _w = Number(opts && opts.overlayPageW) || 0;
+            var _h = Number(opts && opts.overlayPageH) || 0;
+            if (!(_w > 0) || !(_h > 0)) return null;
+            try {
+                var doc = await PDFLib.PDFDocument.create();
+                var page = doc.addPage([_w * mmToPt, _h * mmToPt]);
+                var fonts = {};
+                var _ttfDe = function (fk) {
+                    try {
+                        var f = _SP_FONT_RESOLVED && _SP_FONT_RESOLVED[fk];
+                        return (f && f._spTtfBuffer) ? f._spTtfBuffer : null;
+                    } catch (_) { return null; }
+                };
+                var _poserPolice = async function (fk) {
+                    if (!fk || fonts[fk]) return;
+                    var ttf = _ttfDe(fk);
+                    if (!ttf) return;
+                    try { window._spVarPdfPose(doc, fk); } catch (_) {}
+                    try {
+                        fonts[fk] = await doc.embedFont(new Uint8Array(ttf), { subset: true });
+                    } catch (e) {
+                        console.warn('[SP-vector-overlay] embedFont impossible pour ' + fk, e);
+                    }
+                };
+                // Police du bloc + polices des styles par caractère (clé 3 args,
+                // même convention que _resolveCharStyle du moteur natif).
+                var _fkBlocOl = _spFontKey(obj.fontFamily, obj.fontWeight, obj.fontStyle, obj);
+                /* Police non résolue : le moteur natif retomberait sur Helvetica
+                   (glyphes faux) → on garde le rendu raster exact de la preview. */
+                if (!_ttfDe(_fkBlocOl)) return null;
+                await _poserPolice(_fkBlocOl);
+                if (obj.styles && typeof obj.styles === 'object') {
+                    for (var lk in obj.styles) {
+                        var ligne = obj.styles[lk];
+                        if (!ligne) continue;
+                        for (var ck in ligne) {
+                            var st = ligne[ck];
+                            if (!st) continue;
+                            await _poserPolice(_spFontKey(
+                                st.fontFamily || obj.fontFamily,
+                                st.fontWeight || obj.fontWeight,
+                                st.fontStyle || obj.fontStyle
+                            ));
+                        }
+                    }
+                }
+                var helvetica = null;
+                try { helvetica = await doc.embedStandardFont(PDFLib.StandardFonts.Helvetica); } catch (_) {}
+                if (!helvetica && !Object.keys(fonts).length) return null;
+                var mult = (typeof getQualityMultiplier === 'function') ? getQualityMultiplier(opts.quality) : 1;
+                await _renderObjToPdfLib(doc, page, obj, mmToPt, fonts, helvetica, {}, mult);
+                var octets = await doc.save();
+                return (octets && octets.byteLength) ? octets : null;
+            } catch (e) {
+                console.warn('[SP-vector-overlay] rendu pdf-lib impossible, repli raster :', e);
+                return null;
+            }
+        }
+
+        /* Fusion des overlays texte sur le PDF final (RVB comme CMJN). La page
+           de l'overlay a EXACTEMENT la taille de la page jsPDF : il suffit de la
+           décaler de la marge des repères ((dx, -dy) en PDF, y inversé). */
+        async function _spMergeTextOverlays(pdfBytes, opts) {
+            opts = opts || {};
+            var list = window._spTextOverlays;
+            if (!window.PDFLib || !list || !list.length) return pdfBytes;
+            try {
+                var doc = await window.PDFLib.PDFDocument.load(pdfBytes);
+                var outPages = doc.getPages();
+                var mmToPt = 72 / 25.4;
+                for (var i = 0; i < list.length; i++) {
+                    var it = list[i];
+                    if (!it || !it.bytes) continue;
+                    try {
+                        var octets = it.bytes;
+                        if (opts.preferCmyk && typeof convertPdfToCmyk === 'function') {
+                            try {
+                                octets = await convertPdfToCmyk(octets, { iccProfile: opts.iccProfile || 'CoatedFOGRA39' });
+                            } catch (_) {
+                                console.warn('[SP-vector-overlay] conversion CMJN de l\'overlay impossible');
+                            }
+                        }
+                        var emb = await doc.embedPdf(octets, [0]);
+                        var ep = emb && emb[0];
+                        if (!ep) continue;
+                        var idx = (typeof it.pageIndex === 'number' && it.pageIndex >= 0) ? it.pageIndex : 0;
+                        var outPage = outPages[Math.min(idx, outPages.length - 1)];
+                        if (!outPage) continue;
+                        outPage.drawPage(ep, {
+                            x: (Number(it.dx) || 0) * mmToPt,
+                            y: -(Number(it.dy) || 0) * mmToPt,
+                            width: ep.width,
+                            height: ep.height
+                        });
+                    } catch (e) {
+                        console.warn('[SP-vector-overlay] fusion d\'un bloc impossible :', e);
+                    }
+                }
+                var res = await doc.save();
+                window._spTextOverlays = [];
+                return res;
+            } catch (e) {
+                console.warn('[SP-vector-overlay] fusion impossible, sortie inchangée :', e);
+                window._spTextOverlays = [];
+                return pdfBytes;
+            }
+        }
+
         async function addCanvasHybridToPdf(pdf, srcCanvas, pdfOffsetX, pdfOffsetY, opts) {
             // Un objet invisible dans la preview ne doit jamais réapparaître dans
             // le PDF. En particulier, les copies d'overflow des spreads et les
@@ -50725,6 +50892,33 @@ https://superprint.app
                             ok = _drawVectorObjectToPdf(pdf, obj, pdfOffsetX, pdfOffsetY);
                         }
                         if (!ok) {
+                            /* 🆕 v1.7.519 — _SP_OVERLAY_519 : ce bloc texte n'a pas pu être
+                               vectorisé par le moteur hybride (styles par caractère
+                               mêlés, police variable réglée, police non résolue). On
+                               le confie au moteur NATIF pdf-lib (rendu identique au
+                               « Format fini ») qui est fusionné ensuite par-dessus la
+                               page : le texte reste VECTORIEL au lieu d'être rasterisé.
+                               Repli raster seulement si le rendu natif échoue. */
+                            let _overlayFait = false;
+                            if (_isTextObj(obj) && !!(opts && opts.vectorTypography)
+                                && Number(opts.overlayPageW) > 0) {
+                                try {
+                                    const _octetsOverlay = await _spBuildTextOverlay(obj, opts, 72 / 25.4);
+                                    if (_octetsOverlay) {
+                                        if (!window._spTextOverlays) window._spTextOverlays = [];
+                                        window._spTextOverlays.push({
+                                            pageIndex: (typeof opts.overlayPage === 'number') ? opts.overlayPage : 0,
+                                            bytes: _octetsOverlay,
+                                            dx: Number(opts.overlayDxMm) || 0,
+                                            dy: Number(opts.overlayDyMm) || 0
+                                        });
+                                        _overlayFait = true;
+                                    }
+                                } catch (e) {
+                                    console.warn('[SP-vector-overlay] bloc ignoré :', e);
+                                }
+                            }
+                            if (!_overlayFait) {
                             // Fallback : rasteriser cet objet seul
                             _allVectorOk = false;
                             // 🛡️ FIX 2026-09-05 : cropper à la bbox de l'objet pour
@@ -50749,6 +50943,7 @@ https://superprint.app
                             if (url) {
                                 pdf.addImage(url, pdfImageFormat, _rx, _ry, _rw, _rh, undefined, compression);
                             } else _hybridRenderComplete = false;
+                            }   /* fin v1.7.519 — repli raster (overlay non dispo) */
                         }
                     }
                 } else {

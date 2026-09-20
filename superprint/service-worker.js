@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.518-filet-geometrie';
+const CACHE_NAME = 'superprint-shell-v1.7.519-typo-vectorielle-reperes';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
