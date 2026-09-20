@@ -7803,45 +7803,48 @@ window.spTestDiag = function () {
    Les valeurs sont resynchronisées en continu dans l'autre sens, la position est
    mémorisée par section (comme les widgets Pathfinder / Nuancier / Filtres), et le
    bouton repassé en « − » referme le widget. */
-/* ═══════ _SP_RANDOMBACK_510_DEBUT — FOND ANIMÉ (Random Back) : DOT · FLUIDE · PASTEL ═══════
-   Outil de la section FORMES (sous « Forme libre ») : il n'ajoute pas de forme, il OUVRE
-   un widget où l'utilisateur fabrique un fond animé, le fige au clic, et l'insère comme
-   image (déplaçable) ou comme fond de page.
-   Aucune bibliothèque externe : canvas 2D natif — l'application reste utilisable hors ligne.
-   L'aperçu tourne en 560×792 ; les boutons d'insertion recalculent la MÊME scène en
-   1754×2480 (A4 à 212 ppp) avec un facteur d'échelle, donc l'image insérée est imprimable.
-   Le panneau est cloné par le système de widgets : un <canvas> cloné est VIDE (cloneNode ne
-   copie pas les pixels), la boucle dessine donc dans l'original ET dans le canvas du widget. */
+/* ═══════ _SP_RANDOMBACK_511_DEBUT — FOND ANIMÉ v2 : 6 EFFETS, APERÇU 16/9, INSERTION COUVERTE ═══════
+   Outil de la section FORMES (sous « Forme libre ») : il ouvre un WIDGET où le fond se fabrique
+   en direct, se fige au clic et s'insère en image ou en fond de page. Aucune bibliothèque
+   externe (canvas 2D natif) : l'application reste utilisable hors ligne.
+   APERÇU 16/9 (960×540) et SORTIE 16/9 2K (2560×1440) : la même scène est recalculée avec un
+   facteur d'échelle, donc l'image insérée reste imprimable. Le fond de page est inséré en
+   COUVERTURE UNIFORME (même facteur X et Y, centrée) : un fond 16/9 n'est jamais écrasé dans
+   une page A4. Le panneau est cloné par le système de widgets : cloneNode ne copie pas les
+   pixels d'un canvas, la boucle dessine donc l'original ET le canvas du widget détaché. */
 (function spRandomBack() {
     'use strict';
-    /* _SP_RANDOMBACK_510B_DEBUT — main.js est injecté et s'exécute AVANT l'analyse de la
-       barre latérale : sans cette attente, le panneau n'existe pas encore et rien n'était
-       câblé (mesuré : bouton sans écouteur). On démarre donc au plus tôt, mais DOM prêt. */
     function init() {
     var panneau = document.getElementById('randomBackMenu');
     if (!panneau) return;
-    var AP_W = 560, AP_H = 792;              /* aperçu (léger) */
-    var SO_W = 1754, SO_H = 2480;            /* sortie A4 212 ppp */
+    var AP_W = 960, AP_H = 540;              /* aperçu 16/9 */
+    var SO_W = 2560, SO_H = 1440;            /* sortie 16/9 2K */
     var fx = 'dot';
     var vit = 1, dens = 1, intens = 1, teinte = 0.5;
-    var graine = 20260920, gele = false, raf = null, tps = 0, dernier = 0, image = null;
+    var graine = 20260920, gele = false, raf = null, tps = 0, dernier = 0;
+    var FX = ['dot', 'fluide', 'pastel', 'masque', 'aurore', 'ondes', 'organic', 'cubes', 'holo'];
     var PAL = {
         dot: ['#1f6feb', '#00b8a9', '#f6c453', '#ef476f'],
         fluide: ['#2b6cff', '#00d1b2', '#ff7ac6', '#7b2ff7'],
-        pastel: ['#f7c8d8', '#c9e4f5', '#f9e6b3', '#d6f0d3']
+        pastel: ['#f7c8d8', '#c9e4f5', '#f9e6b3', '#d6f0d3'],
+        masque: ['#ffd166', '#ef476f', '#118ab2'],
+        aurore: ['#00c2a8', '#3b82f6', '#a855f7', '#f472b6'],
+        ondes: ['#0f172a', '#1e6fd9', '#e07b39'],
+        organic: ['#ffb703', '#fb8500', '#219ebc'],
+        cubes: ['#2b2d42', '#ef476f', '#06d6a0', '#118ab2'],
+        holo: ['#00e5ff', '#ff2fb9', '#ffe300']
     };
     function alea() { graine = (graine * 1103515245 + 12345) & 0x7fffffff; return graine / 0x7fffffff; }
-    /* teinte : décale toutes les couleurs de la palette (0 → -30°, 1 → +30°) */
     function nuance(c) {
-        if (teinte === 0.5 || c.charAt(0) !== '#') return c;
+        if (teinte === 0.5 || String(c).charAt(0) !== '#') return c;
         var r = parseInt(c.substr(1, 2), 16) / 255, v = parseInt(c.substr(3, 2), 16) / 255, b = parseInt(c.substr(5, 2), 16) / 255;
         var mx = Math.max(r, v, b), mn = Math.min(r, v, b), l = (mx + mn) / 2, h = 0, s = 0;
         if (mx !== mn) { var d = mx - mn; s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (v - b) / d + (v < b ? 6 : 0) : (mx === v ? (b - r) / d + 2 : (r - v) / d + 4); h /= 6; }
         h = (h + (teinte - 0.5) * 0.17 + 1) % 1;
-        function t(p, q, x) { if (x < 0) x += 1; if (x > 1) x -= 1; if (x < 1 / 6) return p + (q - p) * 6 * x; if (x < 1 / 2) return q; if (x < 2 / 3) return p + (q - p) * (2 / 3 - x) * 6; return p; }
+        function t2(p, q, x) { if (x < 0) x += 1; if (x > 1) x -= 1; if (x < 1 / 6) return p + (q - p) * 6 * x; if (x < 1 / 2) return q; if (x < 2 / 3) return p + (q - p) * (2 / 3 - x) * 6; return p; }
         var q2 = l < 0.5 ? l * (1 + s) : l + s - l * s, p2 = 2 * l - q2;
         function hx(x) { return ("0" + Math.round(x * 255).toString(16)).slice(-2); }
-        return "#" + hx(t(p2, q2, h + 1 / 3)) + hx(t(p2, q2, h)) + hx(t(p2, q2, h - 1 / 3));
+        return "#" + hx(t2(p2, q2, h + 1 / 3)) + hx(t2(p2, q2, h)) + hx(t2(p2, q2, h - 1 / 3));
     }
     /* ── DOT : grille de points qui respirent ── */
     function fxDot(g, w, h, t, ech) {
@@ -7865,19 +7868,18 @@ window.spTestDiag = function () {
         }
         g.globalAlpha = 1;
     }
-    /* ── FLUIDE : nappes de couleurs qui coulent (dégradés radiaux additifs) ── */
+    /* ── FLUIDE : nappes de couleurs qui coulent ── */
     function fxFluide(g, w, h, t, ech) {
         var p = PAL.fluide;
         var f = g.createLinearGradient(0, 0, w, h);
         f.addColorStop(0, nuance('#07131f')); f.addColorStop(1, nuance('#101d33'));
         g.fillStyle = f; g.fillRect(0, 0, w, h);
         g.globalCompositeOperation = 'lighter';
-        var n = Math.round(5 + 4 * dens);
-        var base = Math.min(w, h);
+        var n = Math.round(5 + 4 * dens), base = Math.min(w, h);
         for (var i = 0; i < n; i++) {
             var s = i + 1;
-            var cx = w * (0.5 + 0.40 * Math.sin(t * 0.28 * (0.6 + 0.08 * s) + s * 1.7 + alea() * 0.4));
-            var cy = h * (0.5 + 0.40 * Math.cos(t * 0.23 * (0.5 + 0.07 * s) + s * 2.3 + alea() * 0.4));
+            var cx = w * (0.5 + 0.40 * Math.sin(t * 0.28 * (0.6 + 0.08 * s) + s * 1.7));
+            var cy = h * (0.5 + 0.40 * Math.cos(t * 0.23 * (0.5 + 0.07 * s) + s * 2.3));
             var rr = (0.22 + 0.14 * ((s % 3) / 3)) * base * (0.65 + 0.45 * dens);
             var gr = g.createRadialGradient(cx, cy, 0, cx, cy, rr);
             gr.addColorStop(0, nuance(p[i % p.length])); gr.addColorStop(1, 'rgba(0,0,0,0)');
@@ -7887,10 +7889,6 @@ window.spTestDiag = function () {
         }
         g.globalCompositeOperation = 'source-over';
         g.globalAlpha = 1;
-        /* voile très léger : évite les aplats trop durs sur les bords */
-        var vg = g.createRadialGradient(w / 2, h / 2, base * 0.15, w / 2, h / 2, base * 0.85);
-        vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,' + (0.22 * intens).toFixed(3) + ')');
-        g.fillStyle = vg; g.fillRect(0, 0, w, h);
     }
     /* ── PASTEL : bandes douces qui glissent ── */
     function fxPastel(g, w, h, t, ech) {
@@ -7910,7 +7908,6 @@ window.spTestDiag = function () {
             g.globalAlpha = Math.max(0.05, Math.min(1, 0.22 + 0.55 * intens));
             g.fillStyle = gr; g.fillRect(0, yb - hb, w, hb * 2);
         }
-        /* nappes diagonales + grain : la matière du pastel */
         g.globalAlpha = Math.max(0.03, 0.12 * intens);
         for (var j = 0; j < 3; j++) {
             var dx = w * (0.5 + 0.45 * Math.sin(t * 0.18 + j * 2.1));
@@ -7920,12 +7917,185 @@ window.spTestDiag = function () {
         }
         g.globalAlpha = 1;
     }
-    function dessine(g, w, h, t, ech) {
+    /* ── MASQUE : des FORMES découpent une nappe de couleur ── */
+    function fxMasque(g, w, h, t, ech) {
+        g.fillStyle = nuance('#f2f5f9'); g.fillRect(0, 0, w, h);
+        var base = Math.min(w, h);
+        var n = Math.round(5 + 5 * dens);
         g.save();
-        try { if (fx === 'fluide') fxFluide(g, w, h, t, ech); else if (fx === 'pastel') fxPastel(g, w, h, t, ech); else fxDot(g, w, h, t, ech); } catch (e) {}
+        g.beginPath();
+        for (var i = 0; i < n; i++) {
+            var r = (0.10 + 0.11 * ((i % 4) / 4)) * base * (0.85 + 0.45 * dens);
+            var cx = w * (0.5 + 0.40 * Math.sin(t * 0.26 * (1 + i * 0.12) + i * 1.9));
+            var cy = h * (0.5 + 0.36 * Math.cos(t * 0.22 * (1 + i * 0.10) + i * 2.4));
+            if ((i % 3) === 0) {
+                g.moveTo(cx - r, cy + r);
+                g.arc(cx, cy + r, r, Math.PI, 0);
+                g.lineTo(cx + r, h); g.lineTo(cx - r, h);
+            } else if ((i % 3) === 1) {
+                g.moveTo(cx + r, cy); g.arc(cx, cy, r, 0, 6.2832);
+            } else {
+                var s2 = r * 1.05, q = r * 0.32;
+                g.moveTo(cx - s2 + q, cy - s2); g.lineTo(cx + s2 - q, cy - s2);
+                g.quadraticCurveTo(cx + s2, cy - s2, cx + s2, cy - s2 + q);
+                g.lineTo(cx + s2, cy + s2 - q); g.quadraticCurveTo(cx + s2, cy + s2, cx + s2 - q, cy + s2);
+                g.lineTo(cx - s2 + q, cy + s2); g.quadraticCurveTo(cx - s2, cy + s2, cx - s2, cy + s2 - q);
+                g.lineTo(cx - s2, cy - s2 + q); g.quadraticCurveTo(cx - s2, cy - s2, cx - s2 + q, cy - s2);
+            }
+        }
+        g.clip();
+        var p = PAL.masque;
+        var f = g.createLinearGradient(0, 0, w, h);
+        f.addColorStop(0, nuance(p[0])); f.addColorStop(0.5, nuance(p[1])); f.addColorStop(1, nuance(p[2]));
+        g.globalAlpha = Math.max(0.15, Math.min(1, 0.45 + 0.55 * intens));
+        g.fillStyle = f; g.fillRect(0, 0, w, h);
+        g.globalAlpha = 1;
         g.restore();
     }
-    /* Tous les canvas visibles : celui du panneau d'origine et ceux des widgets détachés. */
+    /* ── AURORE : rubans de couleur qui ondulent (mélange additif) ── */
+    function fxAurore(g, w, h, t, ech) {
+        var p = PAL.aurore;
+        g.fillStyle = nuance('#070b18'); g.fillRect(0, 0, w, h);
+        g.globalCompositeOperation = 'lighter';
+        var n = Math.round(4 + 4 * dens);
+        for (var i = 0; i < n; i++) {
+            var amp = h * (0.10 + 0.06 * (i % 3));
+            var y0 = h * (0.16 + 0.68 * ((i + 1) / (n + 1)));
+            var rr = Math.min(w, h) * (0.10 + 0.10 * dens) * (1 + 0.18 * Math.sin(t * 0.4 + i));
+            g.globalAlpha = Math.max(0.05, Math.min(1, 0.09 + 0.20 * intens));
+            g.fillStyle = nuance(p[i % p.length]);
+            for (var k = 0; k <= 36; k++) {
+                var x = w * k / 36;
+                var y = y0 + amp * Math.sin(t * 0.5 + k * 0.30 + i * 1.3);
+                g.beginPath(); g.arc(x, y, rr, 0, 6.2832); g.fill();
+            }
+        }
+        g.globalCompositeOperation = 'source-over';
+        g.globalAlpha = 1;
+    }
+    /* ── ONDES : lignes topographiques fines (très bon à l'impression) ── */
+    function fxOndes(g, w, h, t, ech) {
+        var p = PAL.ondes;
+        var f = g.createLinearGradient(0, 0, 0, h);
+        f.addColorStop(0, nuance('#f8fafc')); f.addColorStop(1, nuance('#e7eef9'));
+        g.fillStyle = f; g.fillRect(0, 0, w, h);
+        var pas = Math.max(6, (20 / dens)) * (w / 960) * ech;
+        var nb = Math.ceil((h * 1.7) / pas) + 10;
+        g.lineWidth = Math.max(0.7, 1.25 * (w / 960) * ech);
+        for (var i = 0; i < nb; i++) {
+            var base = -h * 0.35 + i * pas;
+            g.strokeStyle = nuance(p[i % p.length]);
+            g.globalAlpha = Math.max(0.05, Math.min(0.85, 0.16 + 0.34 * intens * (0.5 + 0.5 * Math.sin(i * 0.4 + t * 0.3))));
+            g.beginPath();
+            for (var x = 0; x <= w; x += w / 48) {
+                var y = base + Math.sin(x * 0.006 * (960 / w) + t * 0.8 + i * 0.25) * h * 0.06 * (1 + 0.4 * Math.sin(t * 0.3 + i * 0.2)) + Math.sin(x * 0.013 * (960 / w) - t * 0.5) * h * 0.02;
+                if (x === 0) { g.moveTo(x, y); } else { g.lineTo(x, y); }
+            }
+            g.stroke();
+        }
+        g.globalAlpha = 1;
+    }
+    /* ── ORGANIC : masques ORGANIQUES (blobs) sur une nappe de couleur ── */
+    function fxOrganic(g, w, h, t, ech) {
+        g.fillStyle = nuance('#f7f5f0'); g.fillRect(0, 0, w, h);
+        var base = Math.min(w, h);
+        var n = Math.round(3 + 3 * dens);
+        g.save();
+        g.beginPath();
+        for (var i = 0; i < n; i++) {
+            var cx = w * (0.5 + 0.36 * Math.sin(t * 0.22 * (1 + i * 0.15) + i * 2.1));
+            var cy = h * (0.5 + 0.32 * Math.cos(t * 0.19 * (1 + i * 0.12) + i * 1.7));
+            var r = base * (0.17 + 0.10 * ((i % 3) / 3)) * (0.9 + 0.4 * dens);
+            for (var k = 0; k <= 24; k++) {
+                var a = k / 24 * 6.2832;
+                var rr = r * (1 + 0.22 * Math.sin(a * 3 + t * 0.6 + i) + 0.12 * Math.sin(a * 5 - t * 0.4 + i * 2));
+                var px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr * 0.86;
+                if (k === 0) { g.moveTo(px, py); } else { g.lineTo(px, py); }
+            }
+            g.closePath();
+        }
+        g.clip();
+        var p = PAL.organic;
+        var f = g.createLinearGradient(0, 0, w, h);
+        f.addColorStop(0, nuance(p[0])); f.addColorStop(0.55, nuance(p[1])); f.addColorStop(1, nuance(p[2]));
+        g.globalAlpha = Math.max(0.15, Math.min(1, 0.50 + 0.50 * intens));
+        g.fillStyle = f; g.fillRect(0, 0, w, h);
+        g.globalAlpha = 1;
+        g.restore();
+    }
+    /* ── CUBES : grille isométrique de cubes qui montent et descendent ── */
+    function fxCubes(g, w, h, t, ech) {
+        g.fillStyle = nuance("#eef2f7"); g.fillRect(0, 0, w, h);
+        var p = PAL.cubes;
+        var a = 30 * (w / 960) * ech / Math.max(0.75, dens);
+        var dx = a * 1.732, dy = a;
+        var nb = Math.ceil(w / dx) + 2, nl = Math.ceil(h / (dy * 0.5)) + 2;
+        for (var j = 0; j < nl; j++) {
+            for (var i = -1; i < nb; i++) {
+                var x = i * dx + (j % 2 ? dx / 2 : 0) + a * 0.866;
+                var y = j * dy * 0.5 + dy * 0.6;
+                var e = a * (0.5 + 0.9 * (0.5 + 0.5 * Math.sin(t * 0.9 + i * 0.6 + j * 0.5))) * (0.6 + 0.5 * dens);
+                var base2 = p[(i + j) % p.length];
+                g.globalAlpha = Math.max(0.25, Math.min(0.95, 0.55 + 0.35 * intens));
+                g.fillStyle = nuance(base2);
+                g.beginPath();
+                g.moveTo(x, y - e - a * 0.5); g.lineTo(x + a * 0.866, y - e);
+                g.lineTo(x, y - e + a * 0.5); g.lineTo(x - a * 0.866, y - e);
+                g.closePath(); g.fill();
+                g.globalAlpha = Math.max(0.2, Math.min(0.8, 0.40 + 0.30 * intens));
+                g.fillStyle = nuance(p[(i + j + 1) % p.length]);
+                g.beginPath();
+                g.moveTo(x - a * 0.866, y - e); g.lineTo(x, y - e + a * 0.5);
+                g.lineTo(x, y + a * 0.5); g.lineTo(x - a * 0.866, y);
+                g.closePath(); g.fill();
+                g.globalAlpha = Math.max(0.15, Math.min(0.7, 0.30 + 0.25 * intens));
+                g.fillStyle = nuance(p[(i + j + 2) % p.length]);
+                g.beginPath();
+                g.moveTo(x + a * 0.866, y - e); g.lineTo(x, y - e + a * 0.5);
+                g.lineTo(x, y + a * 0.5); g.lineTo(x + a * 0.866, y);
+                g.closePath(); g.fill();
+            }
+        }
+        g.globalAlpha = 1;
+    }
+    /* ── HOLO : impression holographique, trois trames néon décalées ── */
+    function fxHolo(g, w, h, t, ech) {
+        var p = PAL.holo;
+        g.fillStyle = nuance("#ffffff"); g.fillRect(0, 0, w, h);
+        var pas = Math.max(8, (26 / dens)) * (w / 960) * ech;
+        var r0 = pas * 0.44;
+        for (var L = 0; L < p.length; L++) {
+            var offx = (L === 1 ? 0.34 : (L === 2 ? 0.68 : 0)) * pas;
+            var offy = (L === 1 ? 0.34 : (L === 2 ? 0.16 : 0)) * pas;
+            g.fillStyle = nuance(p[L]);
+            g.globalAlpha = 0.9;
+            for (var y = -pas; y <= h + pas; y += pas) {
+                for (var x = -pas; x <= w + pas; x += pas) {
+                    var gx = x + offx, gy = y + offy;
+                    var v = Math.sin(gx * 0.008 + t * 0.5 + L * 1.7) * Math.cos(gy * 0.007 - t * 0.4 + L);
+                    var r = r0 * (0.22 + 0.78 * Math.abs(v)) * (0.55 + 0.75 * intens);
+                    if (r < 0.3) continue;
+                    g.beginPath(); g.arc(gx, gy, r, 0, 6.2832); g.fill();
+                }
+            }
+        }
+        g.globalAlpha = 1;
+    }
+    function dessine(g, w, h, t, ech) {
+        g.save();
+        try {
+            if (fx === 'fluide') { fxFluide(g, w, h, t, ech); }
+            else if (fx === 'pastel') { fxPastel(g, w, h, t, ech); }
+            else if (fx === 'masque') { fxMasque(g, w, h, t, ech); }
+            else if (fx === 'aurore') { fxAurore(g, w, h, t, ech); }
+            else if (fx === 'ondes') { fxOndes(g, w, h, t, ech); }
+            else if (fx === 'organic') { fxOrganic(g, w, h, t, ech); }
+            else if (fx === 'cubes') { fxCubes(g, w, h, t, ech); }
+            else if (fx === 'holo') { fxHolo(g, w, h, t, ech); }
+            else { fxDot(g, w, h, t, ech); }
+        } catch (e) {}
+        g.restore();
+    }
     function cibles() {
         var out = [], o = document.getElementById("rbCanvas");
         if (o) out.push(o);
@@ -7948,7 +8118,7 @@ window.spTestDiag = function () {
         var cs = cibles();
         for (var i = 0; i < cs.length; i++) {
             var c = cs[i];
-            if (!c.__spRbCtx) { c.width = AP_W; c.height = AP_H; c.__spRbCtx = c.getContext("2d"); }
+            if (!c.__spRbCtx || c.width !== AP_W || c.height !== AP_H) { c.width = AP_W; c.height = AP_H; c.__spRbCtx = c.getContext("2d"); }
             dessine(c.__spRbCtx, c.width, c.height, tps, 1);
         }
         raf = requestAnimationFrame(boucle);
@@ -7960,10 +8130,18 @@ window.spTestDiag = function () {
     function majBoutons() {
         var fz = document.getElementById("rbFreeze");
         if (fz) fz.textContent = gele ? "▶ Reprendre" : "⏸ Geler";
-        var ids = { dot: "rbFxDot", fluide: "rbFxFluide", pastel: "rbFxPastel" };
+        var ids = { dot: 'rbFxDot', fluide: 'rbFxFluide', pastel: 'rbFxPastel', masque: 'rbFxMasque', aurore: 'rbFxAurore', ondes: 'rbFxOndes', organic: 'rbFxOrganic', cubes: 'rbFxCubes', holo: 'rbFxHolo' };
         for (var k in ids) {
             var el = document.getElementById(ids[k]);
-            if (el) el.style.background = (fx === k) ? "rgba(43,183,255,0.28)" : "";
+            if (!el) continue;
+            if (fx === k && el.classList) { el.classList.add("active"); } else if (el.classList) { el.classList.remove("active"); }
+        }
+    }
+    function majValeurs() {
+        var paire = [["rbVit", "rbVitVal", 2], ["rbDens", "rbDensVal", 2], ["rbIntens", "rbIntensVal", 2], ["rbTeinte", "rbTeinteVal", 2]];
+        for (var i = 0; i < paire.length; i++) {
+            var e = document.getElementById(paire[i][0]), v = document.getElementById(paire[i][1]);
+            if (e && v) { v.textContent = parseFloat(e.value).toFixed(paire[i][2]); }
         }
     }
     function inserer(fond) {
@@ -7974,13 +8152,16 @@ window.spTestDiag = function () {
             try {
                 var pw = cv.getWidth(), ph = cv.getHeight();
                 if (fond) {
-                    img.set({ left: 0, top: 0, originX: "left", originY: "top" });
-                    img.scaleX = pw / img.width; img.scaleY = ph / img.height;
+                    /* COUVERTURE UNIFORME : même facteur X et Y, centrée — un fond 16/9 ne peut
+                       pas être écrasé dans une page A4. */
+                    var sc = Math.max(pw / img.width, ph / img.height);
+                    img.scale(sc);
+                    img.set({ left: (pw - img.width * sc) / 2, top: (ph - img.height * sc) / 2, originX: "left", originY: "top" });
                     cv.add(img); try { cv.sendToBack(img); } catch (_) {}
                 } else {
-                    var sc = Math.min(pw / img.width, ph / img.height) * 0.8;
-                    img.scale(sc);
-                    img.set({ left: (pw - img.width * sc) / 2, top: (ph - img.height * sc) / 2 });
+                    var sc2 = Math.min(pw / img.width, ph / img.height) * 0.8;
+                    img.scale(sc2);
+                    img.set({ left: (pw - img.width * sc2) / 2, top: (ph - img.height * sc2) / 2 });
                     cv.add(img);
                 }
                 cv.setActiveObject(img); cv.renderAll();
@@ -7988,23 +8169,25 @@ window.spTestDiag = function () {
             } catch (e) {}
         });
     }
-    /* ── câblage : les commandes du widget agissent sur les contrôles d'origine ── */
     function lieCurseur(id, set) {
         var el = document.getElementById(id);
         if (!el || el.__spRbLie) return;
         el.__spRbLie = true;
-        el.addEventListener("input", function () { var v = parseFloat(el.value); if (isFinite(v)) { set(v); } });
+        el.addEventListener("input", function () { var v = parseFloat(el.value); if (isFinite(v)) { set(v); } majValeurs(); });
     }
     lieCurseur("rbVit", function (v) { vit = v; });
     lieCurseur("rbDens", function (v) { dens = v; });
     lieCurseur("rbIntens", function (v) { intens = v; });
     lieCurseur("rbTeinte", function (v) { teinte = v; });
-    [["rbFxDot", "dot"], ["rbFxFluide", "fluide"], ["rbFxPastel", "pastel"]].forEach(function (paire) {
-        var el = document.getElementById(paire[0]);
-        if (!el || el.__spRbFx) return;
-        el.__spRbFx = true;
-        el.addEventListener("click", function (e) { e.preventDefault(); fx = paire[1]; majBoutons(); tourne(true); });
-    });
+    var IDS = { dot: 'rbFxDot', fluide: 'rbFxFluide', pastel: 'rbFxPastel', masque: 'rbFxMasque', aurore: 'rbFxAurore', ondes: 'rbFxOndes', organic: 'rbFxOrganic', cubes: 'rbFxCubes', holo: 'rbFxHolo' };
+    for (var fi = 0; fi < FX.length; fi++) {
+        (function (cle) {
+            var el = document.getElementById(IDS[cle]);
+            if (!el || el.__spRbFx) return;
+            el.__spRbFx = true;
+            el.addEventListener("click", function (e) { e.preventDefault(); fx = cle; majBoutons(); tourne(true); });
+        })(FX[fi]);
+    }
     var bVar = document.getElementById("rbVariant");
     if (bVar && !bVar.__spRbVar) { bVar.__spRbVar = true; bVar.addEventListener("click", function (e) { e.preventDefault(); graine = Math.floor(Math.random() * 2000000000) + 1; tourne(true); }); }
     var bFz = document.getElementById("rbFreeze");
@@ -8013,13 +8196,6 @@ window.spTestDiag = function () {
     if (bIn && !bIn.__spRbIn) { bIn.__spRbIn = true; bIn.addEventListener("click", function (e) { e.preventDefault(); inserer(false); }); }
     var bBg = document.getElementById("rbInsertBg");
     if (bBg && !bBg.__spRbBg) { bBg.__spRbBg = true; bBg.addEventListener("click", function (e) { e.preventDefault(); inserer(true); }); }
-    /* clic sur l'aperçu = figer / reprendre (demande utilisateur) */
-    /* _SP_RANDOMBACK_510D_DEBUT — GEL AU CLIC (aperçu du panneau ET du widget).
-       Mesure : le pont du système de widgets ne reprojette PAS les clics du canvas cloné
-       (bouton resté sur « Geler »). On reconnaît donc nous-mêmes les deux canvas — celui du
-       panneau d'origine (#rbCanvas) et celui du widget détaché (data-sp-ref="rbCanvas") — au
-       niveau du document, en phase de CAPTURE. Le garde de 250 ms absorbe une éventuelle
-       reprojection du même clic (sinon deux bascules s'annuleraient). */
     var dernierBascule = 0;
     function basculerGel() {
         var n = new Date().getTime();
@@ -8041,7 +8217,6 @@ window.spTestDiag = function () {
             basculerGel();
         }, true);
     }
-    /* le bouton « Fond animé » ouvre / referme le WIDGET (même logique que les autres) */
     var bouton = document.getElementById("randomBackToggle");
     if (bouton && !bouton.__spRbBtn) {
         bouton.__spRbBtn = true;
@@ -8050,14 +8225,14 @@ window.spTestDiag = function () {
             var ouvert = window.spDockWidgets && window.spDockWidgets.estOuvert && window.spDockWidgets.estOuvert("randomBackMenu");
             if (ouvert) { try { window.spDockWidgets.fermer("randomBackMenu"); } catch (_) {} tourne(false); return; }
             try { window.spDockWidgets.ouvrir(panneau, bouton); } catch (_) {}
-            gele = false; majBoutons(); tourne(true);
+            gele = false; majBoutons(); majValeurs(); tourne(true);
         });
     }
     majBoutons();
-    /* premier rendu immédiat (le temps que la première frame arrive) */
+    majValeurs();
     try {
         var cs0 = cibles();
-        for (var i0 = 0; i0 < cs0.length; i0++) { var c0 = cs0[i0]; c0.width = AP_W; c0.height = AP_H; dessine(c0.getContext("2d"), AP_W, AP_H, 0.6, 1); c0.__spRbCtx = c0.getContext("2d"); }
+        for (var i0 = 0; i0 < cs0.length; i0++) { var c0 = cs0[i0]; c0.width = AP_W; c0.height = AP_H; var g0 = c0.getContext("2d"); dessine(g0, AP_W, AP_H, 0.6, 1); c0.__spRbCtx = g0; }
     } catch (e) {}
     }   /* fin de init() */
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }

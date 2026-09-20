@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,38 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.511] — 2026-09-20
+
+_Animated background: nine effects, a 16:9 preview, house-style sliders — and no more scrolling_
+
+### Added
+- **Three new effects** (nine in total) in the Animated background widget:
+  - **Organic** — soft blobs (radius modulated by two sine waves) mask an orange/blue colour sheet: a living, organic background.
+  - **Isometric cubes** — an isometric grid of cubes rising and falling, three faces with three values: ideal as a cover background or behind a title.
+  - **Holo print** — holographic/printed look: three offset screens of neon dots (cyan, magenta, fluo yellow), like a boosted fluo CMYK.
+- The nine effects fit in a **3 × 3 grid** of buttons; the effect in use is highlighted.
+
+### Changed
+- **16:9 preview.** The portrait preview (560 × 792) is replaced by a 16:9 view capped at 150 px high — measured **267 × 150** on screen (ratio 1.78, 960 × 540 bitmap). The animation itself is 16:9 too.
+- **High-resolution insertion is now 2560 × 1440 px** (16:9), and the page background is placed in **uniform cover** (same factor on X and Y, centred): a 16:9 background can no longer be squashed into an A4 page (measured scaleX = scaleY = 0.596).
+- **Sliders redesigned in the house style.** The native sliders (grey, thick) looked wrong in this panel: thin gradient track, round white thumb with a coloured ring, small-caps label and the **value displayed on the right**, like the type sheet (`.rb-range`).
+- **The widget no longer needs scrolling.** Nine effects in three rows of three, four sliders in two columns, four actions on one row, note shortened, preview capped: measured — **no control falls outside the visible widget area, even in a small 627 px-high window** (previously the panel scrolled ~110 px to reach the last buttons).
+
+### Verified
+| Check | Result |
+|---|---|
+| Widget | 560 px wide (`sp-dock-xl`), 397 px high in the test window |
+| Preview | 267 × 150 on screen, ratio 1.78 (16:9), bitmap 960 × 540 |
+| Nine effects, nine sample points | **9 different pixel fingerprints** |
+| Insertion as image / page background | source 2560 × 1440 px, cover with scaleX = scaleY = 0.596 (no distortion) |
+| Sliders | class `rb-range`, values displayed (1.00 / 0.50), house colours |
+| Controls cut off in a 627 px-high window | none |
+| Freeze on preview click | freezes, second click resumes |
+| Application / studio syntax | `node --check` OK / `SYNTAXE OK` |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v511"`, cache tag `20260920-v511-fond-anime-neuf-effets`, `CACHE_NAME` bumped |
+
 
 ## [1.7.510] — 2026-09-20
 

@@ -2713,12 +2713,133 @@ textarea[data-fabric-hiddentextarea] {
    entier visible) et des curseurs longs, tout en restant sous la largeur d'une page A4
    (612 px) pour ne pas masquer la planche. */
 .sp-dock-host.rightbar.sp-dock-xl {
-    width: 520px;
-    min-width: 420px;
-    max-width: 640px;
+    width: 560px;
+    min-width: 440px;
+    max-width: 700px;
 }
 .sp-dock-host.sp-dock-xl .sp-dock-head { font-size: 12px; padding: 8px 12px; }
-.sp-dock-host.sp-dock-xl .sp-dock-body { padding: 0 12px 12px; }
+.sp-dock-host.sp-dock-xl .sp-dock-body { padding: 0 10px 10px; }
+/* _SP_RANDOMBACK_511_DEBUT — WIDGET « FOND ANIMÉ » : tirettes et mise en page aux couleurs
+   de la charte. Les curseurs natifs (gris, gros) ne ressemblaient à rien dans ce panneau :
+   piste fine dégradée, pouce rond blanc cerclé, libellé en petites capitales avec la VALEUR
+   affichée à droite (comme la fiche typo). Les six effets tiennent en deux rangées de trois,
+   les quatre tirettes en deux colonnes et les quatre actions sur une seule ligne : avec
+   l'aperçu 16/9, plus rien à faire défiler dans le widget. */
+.sp-dock-host[data-dock="randomBackMenu"] .rb-fx-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 0 0 4px 0;
+}
+.sp-dock-host[data-dock="randomBackMenu"] .rb-fx {
+    font-size: 10px;
+    letter-spacing: 0.3px;
+    padding: 7px 4px;
+    border-radius: 5px;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.sp-dock-host[data-dock="randomBackMenu"] .rb-fx.active {
+    background: var(--sp-accent, #2bb7ff);
+    border-color: transparent;
+    color: #04141f;
+    font-weight: 600;
+}
+.sp-dock-host[data-dock="randomBackMenu"] .rb-apercu { padding: 0 0 4px 0; }
+/* _SP_RANDOMBACK_511B_DEBUT — APERÇU PLAFONNÉ : mesuré, l'aperçu 16/9 en pleine largeur
+   (540 × 304) faisait défiler tout le panneau (corps 482 / contenu 590). À 200 px de haut il
+   garde son 16/9 (356 × 200), reste centré, et object-fit empêche toute déformation si la
+   largeur se réduit. */
+.sp-dock-host[data-dock="randomBackMenu"] .rb-canvas {
+    display: block;
+    margin: 0 auto;
+    height: 150px;
+    width: auto;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
+    border-radius: 6px;
+    border: 1px solid rgba(128, 128, 128, 0.35);
+    background: #0b1220;
+    cursor: pointer;
+}
+.sp-dock-host[data-dock="randomBackMenu"] .rb-petit { font-size: 8.5px; opacity: 0.7; margin-top: 3px; line-height: 1.3; }
+.sp-dock-host[data-dock="randomBackMenu"] .rb-note { padding: 4px 0 0 0; font-size: 8.5px; border-top: 1px dashed rgba(128, 128, 128, 0.3); margin-top: 6px; }
+.sp-dock-host[data-dock="randomBackMenu"] .rb-sliders {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 14px;
+    padding: 0 0 4px 0;
+}
+.sp-dock-host[data-dock="randomBackMenu"] .rb-slider label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    opacity: 0.7;
+}
+.sp-dock-host[data-dock="randomBackMenu"] .rb-slider label b {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.95;
+    font-variant-numeric: tabular-nums;
+    text-transform: none;
+}
+.sp-dock-host[data-dock="randomBackMenu"] input[type="range"].rb-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 16px;
+    background: transparent;
+    cursor: pointer;
+    margin: 0;
+}
+.sp-dock-host[data-dock="randomBackMenu"] input[type="range"].rb-range::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--sp-accent, #2bb7ff), rgba(128, 128, 128, 0.3));
+}
+.sp-dock-host[data-dock="randomBackMenu"] input[type="range"].rb-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -5px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid var(--sp-accent, #2bb7ff);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+.sp-dock-host[data-dock="randomBackMenu"] input[type="range"].rb-range::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(128, 128, 128, 0.35);
+}
+.sp-dock-host[data-dock="randomBackMenu"] input[type="range"].rb-range::-moz-range-progress {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--sp-accent, #2bb7ff);
+}
+.sp-dock-host[data-dock="randomBackMenu"] input[type="range"].rb-range::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid var(--sp-accent, #2bb7ff);
+}
+.sp-dock-host[data-dock="randomBackMenu"] .rb-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    padding: 0 0 4px 0;
+}
+.sp-dock-host[data-dock="randomBackMenu"] .rb-actions .btn {
+    font-size: 10px;
+    padding: 7px 2px;
+    border-radius: 5px;
+    white-space: nowrap;
+}
 .sp-dock-host.sp-dock-large .sp-dock-head { font-size: 12px; padding: 8px 12px; }
 .sp-dock-host.sp-dock-large .sp-dock-body { padding: 0 12px 12px; }
 .sp-dock-host.sp-dock-large .sp-var-famille { font-size: 11px; }
