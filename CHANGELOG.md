@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,38 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.512] — 2026-09-20
+
+_Animated background: house-style black and grey, five effects per row, full-width preview_
+
+### Changed
+- **No blue anywhere.** My previous version leaned on `var(--sp-accent, #2bb7ff)`, a blue accent colour that does not exist in the house style: sliders had a blue track and thumb, and the effect button active on opening (DOT) showed up blue.
+  - Sliders: **grey track with a black fill**, white thumb ringed in black; the fill now follows the **exact slider value** through a `--rb-p` variable set by the engine (measured: 34.8 % for Speed = 1, i.e. (1 − 0.2) / (2.5 − 0.2)). The dark theme simply inverts black and white. Verified: **zero blue rule** in the whole widget.
+  - Effect buttons: **22 px high with a 9 px label** (they were 32 px, too big) and the active state is the house **black** `#1a1a1a` on white — inverted in the dark theme. It now reads as a real selected SuperPrint button.
+  - **Five effects per row** (5 then 4) instead of three: the nine effects fit in two rows and take half the height.
+- **Preview at the widget width** — measured **449 × 252 px**, 16:9 kept through `aspect-ratio` (the bitmap stays 960 × 540 for sharpness).
+- **Widget a little narrower**: **470 px** instead of 560 (the previous width was excessive).
+- **Height made to fit.** Since this widget contains a preview, its body gets `max-height: min(80vh, 580px)` instead of the common `58vh`: measured, the content fits **exactly** in the window (body 471 / 471 px) and **nothing scrolls any more**, even in a small 627 px-high window. The last slider (Teinte) and the “Page background” button used to fall 70 px below the widget.
+- Help texts shortened to one line each.
+
+### Verified
+| Check | Result |
+|---|---|
+| Widget | 470 × 504 px, body 471 / 471 px → **no scrolling** |
+| Preview | 449 × 252 px, ratio 1.78 (16:9), full widget width |
+| Effect grid | five columns of 85.3 px, nine effects, 5 + 4 |
+| Active effect button | background `rgb(26,26,26)` = #1a1a1a, white text, height 22 px |
+| Inactive effect button | transparent background, grey label (85,85,85) |
+| Slider fill | `--rb-p: 34.8%` for Speed = 1 (exact value) |
+| Blue rules in the widget | **0** |
+| Controls cut off | none |
+| Nine effects | still nine distinct pixel fingerprints |
+| Freeze on click / insertion | unchanged (freeze + resume, image, uniform-cover page background) |
+| Application / studio syntax | `node --check` OK / `SYNTAXE OK` |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v512"`, cache tag `20260920-v512-fond-anime-au-noir`, `CACHE_NAME` bumped |
+
 
 ## [1.7.511] — 2026-09-20
 

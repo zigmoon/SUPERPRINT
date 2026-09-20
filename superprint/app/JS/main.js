@@ -8141,7 +8141,16 @@ window.spTestDiag = function () {
         var paire = [["rbVit", "rbVitVal", 2], ["rbDens", "rbDensVal", 2], ["rbIntens", "rbIntensVal", 2], ["rbTeinte", "rbTeinteVal", 2]];
         for (var i = 0; i < paire.length; i++) {
             var e = document.getElementById(paire[i][0]), v = document.getElementById(paire[i][1]);
-            if (e && v) { v.textContent = parseFloat(e.value).toFixed(paire[i][2]); }
+            if (!e || !v) continue;
+            var val = parseFloat(e.value);
+            v.textContent = val.toFixed(paire[i][2]);
+            /* _SP_RANDOMBACK_512_DEBUT — la piste se remplit au noir jusqu'à la valeur exacte :
+               la CSS lit --rb-p (aucune couleur d'accent n'est utilisée dans ce widget). */
+            var mn = parseFloat(e.min), mx = parseFloat(e.max);
+            if (isFinite(mn) && isFinite(mx) && mx > mn && e.style && e.style.setProperty) {
+                var pc = Math.max(0, Math.min(100, (val - mn) / (mx - mn) * 100));
+                e.style.setProperty("--rb-p", pc.toFixed(1) + "%");
+            }
         }
     }
     function inserer(fond) {

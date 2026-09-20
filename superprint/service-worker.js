@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.511-fond-anime-neuf-effets';
+const CACHE_NAME = 'superprint-shell-v1.7.512-fond-anime-au-noir';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
