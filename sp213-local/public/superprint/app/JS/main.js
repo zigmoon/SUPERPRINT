@@ -58122,7 +58122,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         dtReadonly: "lecture seule",
         dtWrites: "modifie la page",
         dtSandbox: "Bac à sable",
-        dtDocs: "Documentation Fabric.js",
+        dtDocs: "Documentation · dev tool",
         dtKeyHint: "Ctrl + Entrée pour exécuter · Échap pour fermer",
         dtNothingToRun: "Rien à exécuter.",
         dtNoDocument: "Aucun document ouvert.",
@@ -58990,7 +58990,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         dtReadonly: "read-only",
         dtWrites: "changes the page",
         dtSandbox: "Sandbox",
-        dtDocs: "Fabric.js documentation",
+        dtDocs: "Documentation · dev tool",
         dtKeyHint: "Ctrl + Enter to run · Esc to close",
         dtNothingToRun: "Nothing to run.",
         dtNoDocument: "No document is open.",
@@ -59861,7 +59861,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         dtReadonly: "読み取り専用",
         dtWrites: "ページを変更",
         dtSandbox: "サンドボックス",
-        dtDocs: "Fabric.js ドキュメント",
+        dtDocs: "ドキュメント · dev tool",
         dtKeyHint: "Ctrl + Enter で実行 · Esc で閉じる",
         dtNothingToRun: "実行するものがありません。",
         dtNoDocument: "ドキュメントが開かれていません。",
@@ -65004,7 +65004,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     }
         };
         
-                /* _SP_DEVTOOL_500_DEBUT */
+                        /* _SP_DEVTOOL_500_DEBUT */
         /* ══════════════════════════════════════════════════════════════════════════════════════
            v1.7.500 — « dev tool » : console de script + API SuperPrint
            Remplace l'ancien panneau « Outils Développeur » (emoji partout, 5 scripts figés).

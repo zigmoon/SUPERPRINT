@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.500 — edit any vector path, a rebuilt “dev tool” with three tabs and six new snippets, and path identity carried through .sp and .json.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.501 — the dev tool documented in our own documentation, a lighter home page and author cards without numbers.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.500 — edit any vector path, a rebuilt “dev tool” with three tabs and six new snippets, and path identity carried through .sp and .json.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.501 — the dev tool documented in our own documentation, a lighter home page and author cards without numbers.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,38 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.501 — le dev tool documenté, un soufflet en moins, les auteurs sans numéro ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-501">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.501</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 20 septembre 2026" data-i18n-en="Released September 20, 2026" data-i18n-jp="2026年9月20日公開">Released September 20, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le <strong>dev tool</strong> renvoie désormais vers <strong>notre documentation</strong> — un chapitre entier y détaille la console, le bac à sable et les six exemples —, la page d'accueil allège sa liste de chapitres, et les deux fiches d'auteurs perdent leur numéro." data-i18n-en-html="The <strong>dev tool</strong> now points to <strong>our own documentation</strong> — a full chapter details the console, the sandbox and the six snippets —, the home page lightens its chapter list, and the two author cards lose their number." data-i18n-jp-html="<strong>dev tool</strong> は<strong>当社のドキュメント</strong>へリンクするようになり、コンソール・サンドボックス・6つのサンプルを解説する章を追加。ホームページのチャプター一覧を整理し、著者カードの番号も削除しました。">The dev tool now points to our own documentation — a full chapter details the console, the sandbox and the six snippets —, the home page lightens its chapter list, and the author cards lose their number.</p>
+
+ <h3 data-i18n-fr-html="📖 Le dev tool a son chapitre dans la documentation <span class=&quot;badge badge-new&quot;>nouveau</span>" data-i18n-en-html="📖 The dev tool gets its own documentation chapter <span class=&quot;badge badge-new&quot;>new</span>" data-i18n-jp-html="📖 dev tool の解説章を追加 <span class=&quot;badge badge-new&quot;>新規</span>">📖 The dev tool gets its own documentation chapter <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Le lien en bas du panneau n'ouvre plus le site d'une bibliothèque tierce : il mène à <strong>notre documentation</strong>, droit au chapitre <b>dev tool</b>. Le libellé suit la langue de l'interface (français, anglais, japonais)." data-i18n-en-html="The link at the bottom of the panel no longer opens a third-party library site: it leads to <strong>our documentation</strong>, straight to the <b>dev tool</b> chapter. The label follows the interface language (French, English, Japanese)." data-i18n-jp-html="パネル下部のリンクは外部ライブラリのサイトではなく、<strong>当社のドキュメント</strong>の<b>dev tool</b>章へ直接移動します。ラベルは界面言語（フランス語・英語・日本語）に従います。">The link at the bottom of the panel leads to our documentation, straight to the dev tool chapter, in the interface language.</li>
+  <li data-i18n-fr-html="Le chapitre, bilingue français/anglais, dit tout : à quoi sert le panneau, comment l'ouvrir (bouton de la barre latérale, <b>F12</b>), les trois onglets, le <strong>bac à sable</strong> (<code>SuperPrint</code>, <code>canvas</code>, <code>log()</code>, <code>mm()</code>, <code>px()</code>, <code>save()</code>, <code>fabric</code>), les <strong>six exemples</strong> avec ce qu'ils modifient, un <strong>script commenté</strong> et les précautions d'usage. Il est aussi posé dans la copie embarquée par l'application." data-i18n-en-html="The chapter, bilingual French/English, covers everything: what the panel is for, how to open it (sidebar button, <b>F12</b>), the three tabs, the <strong>sandbox</strong> (<code>SuperPrint</code>, <code>canvas</code>, <code>log()</code>, <code>mm()</code>, <code>px()</code>, <code>save()</code>, <code>fabric</code>), the <strong>six snippets</strong> and what they change, an <strong>annotated script</strong> and the caveats. It also ships in the copy embedded by the application." data-i18n-jp-html="章は仏英の二言語で、パネルの用途、開き方（サイドバーのボタン、<b>F12</b>）、3つのタブ、<strong>サンドボックス</strong>（<code>SuperPrint</code>・<code>canvas</code>・<code>log()</code>・<code>mm()</code>・<code>px()</code>・<code>save()</code>・<code>fabric</code>）、<strong>6つのサンプル</strong>と変更内容、<strong>コメント付きスクリプト</strong>、注意事項をまとめています。アプリ内のコピーにも反映されます。">The bilingual chapter covers the panel, how to open it, the three tabs, the sandbox, the six snippets, an annotated script and the caveats — in the site copy and the app copy.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧹 La page d'accueil retire son soufflet « Trois portes d'entrée » <span class=&quot;badge badge-fix&quot;>allégé</span>" data-i18n-en-html="🧹 The home page drops its “Three front doors” fold <span class=&quot;badge badge-fix&quot;>lighter</span>" data-i18n-jp-html="🧹 ホームページの「3つの入口」を削除 <span class=&quot;badge badge-fix&quot;>整理</span>">🧹 The home page drops its “Three front doors” fold <span class="badge badge-fix">lighter</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Le bloc repliable qui répétait les trois applications disparaît : elles restent présentées par les <strong>trois grandes entrées</strong> en haut de la page, avec leur logo, leur description et leur bouton. La liste des chapitres s'ouvre maintenant directement sur <b>L'inventaire</b>." data-i18n-en-html="The collapsible block that repeated the three applications is gone: they are still presented by the <strong>three large entries</strong> at the top of the page, with their logo, description and button. The chapter list now opens straight on <b>The inventory</b>." data-i18n-jp-html="3つのアプリを繰り返していた折りたたみブロックを削除しました。アプリ紹介はページ上部の<strong>3つの大きな入口</strong>（ロゴ・説明・ボタン付き）にそのまま残ります。チャプター一覧は<b>目録</b>から直接始まります。">The collapsible block repeating the three applications is gone; the three large entries at the top of the page still present them. The chapter list now opens on the inventory.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="👤 Les auteurs sans numéro <span class=&quot;badge badge-fix&quot;>allégé</span>" data-i18n-en-html="👤 The authors without a number <span class=&quot;badge badge-fix&quot;>lighter</span>" data-i18n-jp-html="👤 著者カードの番号を削除 <span class=&quot;badge badge-fix&quot;>整理</span>">👤 The authors without a number <span class="badge badge-fix">lighter</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Les mentions <b>01</b> et <b>02</b> sont retirées des deux fiches : il ne reste que la marque dessinée de chaque auteur et la pastille quadri, de part et d'autre de la ligne. Rien d'autre ne change — noms, rôles, textes et liens sont intacts." data-i18n-en-html="The <b>01</b> and <b>02</b> marks are removed from both cards: only the drawn mark of each author and the CMYK dots remain, on either side of the line. Nothing else changes — names, roles, texts and links are untouched." data-i18n-jp-html="両カードから <b>01</b>・<b>02</b> の表記を削除しました。残るのは各著者の描かれたマークと、罫線を挟んだ反対側のCMYKドットのみです。名前・役割・本文・リンクは変更ありません。">The 01 and 02 marks are removed from both cards: only the drawn author mark and the CMYK dots remain. Names, roles, texts and links are untouched.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.501 — contrôles : chapitre « dev tool » atteint par son ancre dans le navigateur, lien du panneau résolu vers la copie embarquée par l'application, libellés vérifiés dans les trois langues, soufflet absent et trois entrées toujours présentes, aucun numéro d'auteur dans la page, documentations et pages identiques entre le site et la copie locale (parité), paquet local reconstruit." data-i18n-en="SuperPrint 1.7.501 — checks: the dev tool chapter reached by its anchor in the browser, the panel link resolving to the copy embedded by the application, labels checked in all three languages, the fold gone while the three entries remain, no author number left on the page, documentation and pages identical between the site and the local copy (parity), local package rebuilt." data-i18n-jp="SuperPrint 1.7.501 — 検証：ブラウザで dev tool 章のアンカーに到達、パネルのリンクはアプリ内のコピーに解決、3言語のラベルを確認、折りたたみは削除され3つの入口は維持、著者番号はページに残らず、サイトとロコピーのドキュメント・ページが一致（パリティ）、パッケージ再生成済み。">SuperPrint 1.7.501 — checks: dev tool chapter reached by its anchor, panel link resolving to the app's own copy, labels in three languages, fold gone with the three entries kept, no author number left, site and local copy identical, package rebuilt.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Voir la page" data-i18n-en="→ See the page" data-i18n-jp="→ ページを見る">→ See the page</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.500 — le tracé éditable, le dev tool refondu, le transport .sp/.json ===== -->
 

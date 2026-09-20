@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,30 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.501] — 2026-09-20
+
+_The dev tool documented in our own documentation, a lighter home page, author cards without numbers_
+
+### Added
+- **A “dev tool” chapter in the documentation.** `documentation.html` (and the copy embedded by the application, `app/documentation.html`) now carries a full bilingual chapter: what the panel is for, how to open it (sidebar button, F12, Escape), the three tabs, the sandbox (`SuperPrint`, `canvas`, `log()`, `mm()`, `px()`, `save()`, `getActiveCanvas()`, `spToast()`, `fabric`), the six built-in snippets with what they change, an annotated script and the caveats. Its entry sits in the Reference group of the sidebar, under the GPU chapter.
+- **Two helper scripts**, both idempotent: `_dev/scripts/_devtool_500.{html,js,cjs}` (panel shell, panel module, injector) and `_dev/scripts/_pagedoc_500.cjs` (home page and documentation edits).
+
+### Changed
+- **The dev tool footer now opens our documentation** instead of the Fabric.js site: the `dtDocs` label was updated in the three dictionaries and the link points to `documentation.html#m-devtool`.
+- **The “Trois portes d'entrée” fold is gone** from the home page. The three applications stay presented by the three large entry cards at the top of the page (logo, description, button); the chapter list now opens straight on “L'inventaire”.
+- **The authors lose their numbers**: the `01` and `02` marks were removed from the two author cards. The drawn monogram and the CMYK dots remain, and nothing else changed (names, roles, texts, links).
+
+### Verified
+| Check | Result |
+|---|---|
+| Documentation chapter | reached by `#m-devtool`, 6 tables, sidebar entry in place (FR/EN) |
+| Panel link | resolves to `app/documentation.html#m-devtool`, label “Documentation · dev tool” (FR/EN/JA) |
+| Home page | fold absent, three entries still present, 0 author number |
+| Panel | 3 tabs, 6 snippets, 0 emoji |
+| JavaScript errors | none |
+| Markers | `data-sp-js="v501"`, cache tag `20260920-v501-devtool-doc-et-page`, `CACHE_NAME` bumped |
+
 
 ## [1.7.500] — 2026-09-20
 

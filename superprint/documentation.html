@@ -384,7 +384,7 @@
     <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
   </button>
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.500</span>
+  <span class="version">v1.7.501</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -557,6 +557,8 @@
   <a href="#m-settings" class="sub" data-lang="en">Settings</a>
   <a href="#m-gpu" class="sub" data-lang="fr">⚡ Accélération GPU</a>
   <a href="#m-gpu" class="sub" data-lang="en">⚡ GPU Acceleration</a>
+  <a href="#m-devtool" class="sub" data-lang="fr">dev tool — console de script</a>
+  <a href="#m-devtool" class="sub" data-lang="en">dev tool — script console</a>
 
   <h3 data-lang="fr">IA / Studio</h3>
   <h3 data-lang="en">AI / Studio</h3>
@@ -2282,6 +2284,116 @@ SUPERPRINT12master/
   <div class="tip" data-lang="fr">Pour revoir l'onboarding en développement : tapez <code>localStorage.removeItem('sp_onboarding_done')</code> dans la console, puis rechargez la page.</div>
   <div class="tip" data-lang="en">To re-show the onboarding during development: type <code>localStorage.removeItem('sp_onboarding_done')</code> in the console, then reload the page.</div>
 </div>
+
+<!-- _SP_DEVTOOL_DOC_500_DEBUT -->
+<!-- ─── DEV TOOL ─── -->
+<h2 id="m-devtool">
+  <span data-lang="fr">dev tool — console de script &amp; API</span>
+  <span data-lang="en">dev tool — script console &amp; API</span>
+</h2>
+
+<div class="step-block">
+  <h4 data-lang="fr">C'est quoi ?</h4>
+  <h4 data-lang="en">What is it?</h4>
+  <p data-lang="fr">Le <strong>dev tool</strong> est la console de script de SuperPrint : on y écrit du JavaScript qui pilote le document ouvert — ajouter des objets, poser une grille, numéroter les pages, inspecter un montage. C'est aussi la référence de l'API publique, avec les signatures et les options de chaque fonction.</p>
+  <p data-lang="en">The <strong>dev tool</strong> is SuperPrint's script console: you write JavaScript that drives the open document — add objects, lay out a grid, number pages, inspect a layout. It is also the reference for the public API, with each function's signature and options.</p>
+  <div class="tip" data-lang="fr">Rien à installer, rien à compiler : le script s'exécute dans la page, sur le document en cours.</div>
+  <div class="tip" data-lang="en">Nothing to install, nothing to compile: the script runs in the page, against the current document.</div>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">Ouvrir le panneau</h4>
+  <h4 data-lang="en">Opening the panel</h4>
+  <ul>
+    <li data-lang="fr"><strong>Bouton « dev tool »</strong> — tout en bas de la barre latérale de droite.</li>
+    <li data-lang="en"><strong>“dev tool” button</strong> — at the very bottom of the right sidebar.</li>
+    <li data-lang="fr"><strong>Touche F12</strong> — ouvre le panneau depuis n'importe où dans l'application.</li>
+    <li data-lang="en"><strong>F12 key</strong> — opens the panel from anywhere in the application.</li>
+    <li data-lang="fr"><strong>Échap</strong> — ferme le panneau.</li>
+    <li data-lang="en"><strong>Escape</strong> — closes the panel.</li>
+  </ul>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">Trois onglets</h4>
+  <h4 data-lang="en">Three tabs</h4>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th data-lang="fr">Onglet</th><th data-lang="en">Tab</th><th data-lang="fr">Ce qu'on y trouve</th><th data-lang="en">What it holds</th></tr></thead>
+    <tbody>
+      <tr><td>Exemples</td><td data-lang="fr">Six scripts prêts à l'emploi, avec un champ de filtre. Chacun s'exécute directement ou s'ouvre dans l'éditeur pour être adapté.</td><td data-lang="en">Six ready-made scripts, with a filter field. Each one runs directly or opens in the editor to be adapted.</td></tr>
+      <tr><td data-lang="fr">Éditeur</td><td data-lang="en">Editor</td><td data-lang="fr">Votre script, la console de sortie et l'aide-mémoire du bac à sable. <kbd>Ctrl</kbd> + <kbd>Entrée</kbd> exécute ; le script est mémorisé d'une session à l'autre.</td><td data-lang="en">Your script, the output console and the sandbox cheat-sheet. <kbd>Ctrl</kbd> + <kbd>Enter</kbd> runs it; the script is remembered between sessions.</td></tr>
+      <tr><td data-lang="fr">Référence</td><td data-lang="en">Reference</td><td data-lang="fr">Toutes les fonctions de l'API, groupées (Document, Objets, IA, Bac à sable) et filtrables.</td><td data-lang="en">Every API function, grouped (Document, Objects, AI, Sandbox) and filterable.</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">Le bac à sable : ce qui est disponible dans un script</h4>
+  <h4 data-lang="en">The sandbox: what a script can use</h4>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th data-lang="fr">Nom</th><th data-lang="en">Name</th><th data-lang="fr">À quoi ça sert</th><th data-lang="en">What it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>SuperPrint</code></td><td data-lang="fr">L'API publique : <code>addText</code>, <code>addRect</code>, <code>addCircle</code>, <code>addEllipse</code>, <code>addImage</code>, <code>getPages</code>, <code>setPage</code>, <code>exportPDF</code>, <code>saveProject</code>, <code>loadProject</code>, <code>aiGenerate</code>.</td><td data-lang="en">The public API: <code>addText</code>, <code>addRect</code>, <code>addCircle</code>, <code>addEllipse</code>, <code>addImage</code>, <code>getPages</code>, <code>setPage</code>, <code>exportPDF</code>, <code>saveProject</code>, <code>loadProject</code>, <code>aiGenerate</code>.</td></tr>
+      <tr><td><code>canvas</code></td><td data-lang="fr">Le canvas Fabric.js de la page active : <code>getObjects()</code>, <code>add()</code>, <code>remove()</code>, <code>requestRenderAll()</code>…</td><td data-lang="en">The Fabric.js canvas of the active page: <code>getObjects()</code>, <code>add()</code>, <code>remove()</code>, <code>requestRenderAll()</code>…</td></tr>
+      <tr><td><code>log()</code></td><td data-lang="fr">Écrit une ligne horodatée dans la console du panneau. <code>console.log</code> est également capturé.</td><td data-lang="en">Writes a timestamped line to the panel console. <code>console.log</code> is captured too.</td></tr>
+      <tr><td><code>mm()</code> / <code>px()</code></td><td data-lang="fr">Conversion millimètres ↔ pixels. Le document travaille à 72 dpi : <code>pixels = millimètres × 72 ÷ 25,4</code>.</td><td data-lang="en">Millimetre ↔ pixel conversion. The document works at 72 dpi: <code>pixels = millimetres × 72 ÷ 25.4</code>.</td></tr>
+      <tr><td><code>save()</code></td><td data-lang="fr">Force une entrée d'historique nommée (l'annulation redevient possible en un geste).</td><td data-lang="en">Forces a named history entry (so undo stays one keystroke away).</td></tr>
+      <tr><td><code>getActiveCanvas()</code><br><code>spToast()</code><br><code>fabric</code></td><td data-lang="fr">Les fonctions globales de l'application, la notification discrète et la bibliothèque, pour fabriquer ce que l'API ne couvre pas.</td><td data-lang="en">The application's global helpers, the small notification, and the library itself, for anything the API does not cover.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tip" data-lang="fr">Le script est enveloppé dans une fonction <code>async</code> : <code>await</code> est disponible, et la valeur retournée par un <code>return</code> s'affiche dans la console, suivie de la durée d'exécution.</div>
+  <div class="tip" data-lang="en">The script is wrapped in an <code>async</code> function: <code>await</code> is available, and a <code>return</code> value is printed in the console, followed by the execution time.</div>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">Les six exemples fournis</h4>
+  <h4 data-lang="en">The six built-in examples</h4>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th data-lang="fr">Exemple</th><th data-lang="en">Example</th><th data-lang="fr">Ce qu'il fait</th><th data-lang="en">What it does</th><th data-lang="fr">Effet</th><th data-lang="en">Effect</th></tr></thead>
+    <tbody>
+      <tr><td data-lang="fr">Inventaire du document</td><td data-lang="en">Document inventory</td><td data-lang="fr">Liste les objets de la page active : type, position et taille en millimètres, fond et trait.</td><td data-lang="en">Lists the objects of the active page: type, position and size in millimetres, fill and stroke.</td><td data-lang="fr">Lecture seule</td><td data-lang="en">Read-only</td></tr>
+      <tr><td data-lang="fr">Grille de 12 colonnes</td><td data-lang="en">12-column grid</td><td data-lang="fr">Pose une grille typographique (marges, gouttières) calculée sur la taille réelle de la page.</td><td data-lang="en">Lays out a typographic grid (margins, gutters) computed from the real page size.</td><td data-lang="fr">Modifie la page</td><td data-lang="en">Changes the page</td></tr>
+      <tr><td data-lang="fr">Nuancier imprimé</td><td data-lang="en">Printed swatch strip</td><td data-lang="fr">Six pastilles alignées en bas de page, chacune suivie de son code hexadécimal.</td><td data-lang="en">Six swatches aligned at the bottom of the page, each one followed by its hex code.</td><td data-lang="fr">Modifie la page</td><td data-lang="en">Changes the page</td></tr>
+      <tr><td data-lang="fr">Bloc éditorial</td><td data-lang="en">Editorial block</td><td data-lang="fr">Surtitre, titre sur deux lignes, filet de séparation et chapô : un gabarit de début de page.</td><td data-lang="en">Kicker, two-line headline, rule and standfirst: a page-opening template.</td><td data-lang="fr">Modifie la page</td><td data-lang="en">Changes the page</td></tr>
+      <tr><td data-lang="fr">Pied de page sur toutes les pages</td><td data-lang="en">Footer on every page</td><td data-lang="fr">Parcourt le document, pose un bandeau noir et la mention « Page n / total », puis revient en page 1.</td><td data-lang="en">Walks the document, adds a black band and “Page n / total”, then returns to page 1.</td><td data-lang="fr">Modifie la page</td><td data-lang="en">Changes the page</td></tr>
+      <tr><td data-lang="fr">Contrôle des débords</td><td data-lang="en">Overflow check</td><td data-lang="fr">Signale les objets qui sortent de la page finie, avec la mesure du dépassement (tolérance 0,5 mm).</td><td data-lang="en">Reports objects running off the trimmed page, with the overflow measurement (0.5 mm tolerance).</td><td data-lang="fr">Lecture seule</td><td data-lang="en">Read-only</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tip" data-lang="fr">Les repères de marge, de fond perdu et de fond de page ne sont jamais comptés par les exemples : ni dans l'inventaire, ni dans le contrôle des débords.</div>
+  <div class="tip" data-lang="en">Margin, bleed and page-background guides are never counted by the examples: neither in the inventory nor in the overflow check.</div>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">Exemple de script commenté</h4>
+  <h4 data-lang="en">An annotated script</h4>
+  <p data-lang="fr">Un filet de 0,6 mm sous un titre, avec la largeur utile calculée sur la page — la façon la plus courte de voir comment tout s'enchaîne :</p>
+  <p data-lang="en">A 0.6 mm rule under a headline, with the usable width computed from the page — the shortest way to see how everything connects:</p>
+  <pre>// Tout est en millimètres, la page fait 210 × 297 (A4).
+const c = getActiveCanvas();
+const marge = 20;
+const largeur = px(c.width) - 2 * marge;   // px() renvoie des mm
+
+SuperPrint.addText(marge, marge, 'TITRE', { fontSize: 28, fontWeight: 'bold', width: largeur });
+SuperPrint.addRect(marge, marge + 14, largeur, 0.6, { fill: '#111111', strokeWidth: 0 });
+
+log('Filet posé sur ' + Math.round(largeur) + ' mm de large');</pre>
+</div>
+
+<div class="step-block">
+  <h4 data-lang="fr">Précautions</h4>
+  <h4 data-lang="en">Caveats</h4>
+  <ul>
+    <li data-lang="fr">Un script agit sur le document : faites-le tourner sur un document de test la première fois, et gardez <kbd>Ctrl</kbd> + <kbd>Z</kbd> à portée de main.</li>
+    <li data-lang="en">A script acts on the document: run it on a test document the first time, and keep <kbd>Ctrl</kbd> + <kbd>Z</kbd> within reach.</li>
+    <li data-lang="fr">Un script extérieur a les mêmes droits que l'application : n'exécutez que des scripts dont vous connaissez la provenance.</li>
+    <li data-lang="en">An outside script has the same rights as the application: only run scripts whose origin you trust.</li>
+    <li data-lang="fr">Les erreurs s'affichent en rouge dans la console du panneau — le message suffit neuf fois sur dix pour corriger la ligne fautive.</li>
+    <li data-lang="en">Errors appear in red in the panel console — nine times out of ten the message is enough to fix the offending line.</li>
+    <li data-lang="fr">Le script et le dernier onglet ouvert sont conservés (clés <code>sp_devtool_code</code> et <code>sp_devtool_tab</code>) ; la console, elle, repart vide à chaque ouverture de l'application.</li>
+    <li data-lang="en">The script and the last open tab are kept (keys <code>sp_devtool_code</code> and <code>sp_devtool_tab</code>); the console itself starts empty on each application launch.</li>
+  </ul>
+</div>
+<!-- _SP_DEVTOOL_DOC_500_FIN -->
 
 <!-- ─── SP213 STUDIO ─── -->
 <h2 id="m-sp213">
