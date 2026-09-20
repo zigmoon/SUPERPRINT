@@ -49297,24 +49297,61 @@ https://superprint.app
                     });
                     _drawClosedPolygonMm(pdf, pts, styleInfo.style);
                 } else if (t === 'line') {
-                    // fabric.Line stocke (x1, y1, x2, y2) dans le repère local
-                    const x1l = obj.x1 || 0, y1l = obj.y1 || 0;
-                    const x2l = obj.x2 || 0, y2l = obj.y2 || 0;
-                    const angle = ((obj.angle || 0) * Math.PI) / 180;
-                    const cosA = Math.cos(angle), sinA = Math.sin(angle);
-                    const sx = obj.scaleX || 1, sy = obj.scaleY || 1;
-                    const cx_px = obj.left || 0, cy_px = obj.top || 0;
-                    // fabric.Line : pivote autour du centre. Le centre local = ((x1+x2)/2, (y1+y2)/2)
-                    const cmx = (x1l + x2l) / 2, cmy = (y1l + y2l) / 2;
-                    const localToWorld = (lx, ly) => {
-                        const dx = (lx - cmx) * sx, dy = (ly - cmy) * sy;
-                        const rx = dx * cosA - dy * sinA + cx_px;
-                        const ry = dx * sinA + dy * cosA + cy_px;
-                        return [pdfOffsetX + pxToMm(rx), pdfOffsetY + pxToMm(ry)];
-                    };
-                    const p1 = localToWorld(x1l, y1l);
-                    const p2 = localToWorld(x2l, y2l);
+                    /* _SP_FILET_518_DEBUT — GEOMETRIE EXACTE DES FILETS (type 'line').
+                       MESURE DU DEFAUT (audit 1.7.518 — PDF HD 300 dpi + CMJN + traits de
+                       coupe + fonds perdus, document de recette 8 objets) :
+                         · filet horizontal : fabric.Line([100,700,480,700]) → bbox
+                           (left 100, top 699.5, 380 x 1 px). Position attendue dans le PDF :
+                           x = 45,278 mm (10 mm de marge des traits + 100 px). MESURE avant
+                           correctif : x = -21,750 mm → DECALE de 67,028 mm = 190 px =
+                           LA MOITIE de sa longueur.
+                         · filet vertical : fabric.Line([520,100,520,700]) → attendu
+                           y = 45,278 mm. MESURE avant correctif : y = -60,556 mm → DECALE de
+                           105,83 mm = 300 px = la moitie de sa hauteur.
+                       CAUSE RACINE : ce chemin traitait obj.left / obj.top comme le CENTRE de
+                       la ligne et (x1,y1)-(x2,y2) comme des coordonnees absolues. Or fabric
+                       stocke pour une Line, avec l'origin par defaut 'left'/'top' :
+                         · left/top = coin HAUT-GAUCHE de la bbox (left = min(x1,x2)) ;
+                         · calcLinePoints() = extremites RELATIVES au centre — mesure
+                           navigateur : { x1: -190, x2: +190, y1: 0, y2: 0 } ;
+                         · calcTransformMatrix() projette (0,0) sur le CENTRE de l'objet
+                           (getCenterPoint), pas sur (left, top).
+                       Le chemin natif pdf-lib (_renderObjToPdfLib) fait deja juste : il
+                       soustrait le milieu du segment (pathOffset) puis applique
+                       calcTransformMatrix(). C'est pourquoi « CMJN Format fini + fonds
+                       perdus sans traits de coupe » sort correct : on applique ici
+                       STRICTEMENT la meme transformation, pour que les deux chemins
+                       donnent la meme geometrie. */
+                    let p1 = null, p2 = null;
+                    try {
+                        const _x1 = obj.x1 || 0, _y1 = obj.y1 || 0, _x2 = obj.x2 || 0, _y2 = obj.y2 || 0;
+                        const _off = obj.pathOffset || { x: (_x1 + _x2) / 2, y: (_y1 + _y2) / 2 };
+                        const _m = (typeof obj.calcTransformMatrix === 'function') ? obj.calcTransformMatrix() : null;
+                        if (_m && window.fabric && fabric.util && typeof fabric.util.transformPoint === 'function') {
+                            const _a = fabric.util.transformPoint({ x: _x1 - _off.x, y: _y1 - _off.y }, _m);
+                            const _b = fabric.util.transformPoint({ x: _x2 - _off.x, y: _y2 - _off.y }, _m);
+                            p1 = [pdfOffsetX + pxToMm(_a.x), pdfOffsetY + pxToMm(_a.y)];
+                            p2 = [pdfOffsetX + pxToMm(_b.x), pdfOffsetY + pxToMm(_b.y)];
+                        }
+                    } catch (_) { p1 = null; p2 = null; }
+                    if (!p1 || !p2) {
+                        // Repli sans Fabric : (left, top) = coin haut-gauche de la bbox,
+                        // extremites locales = (x1 - min(x1,x2), y1 - min(y1,y2)).
+                        const _mnx = Math.min(obj.x1 || 0, obj.x2 || 0);
+                        const _mny = Math.min(obj.y1 || 0, obj.y2 || 0);
+                        const sx = obj.scaleX || 1, sy = obj.scaleY || 1;
+                        const angle = ((obj.angle || 0) * Math.PI) / 180;
+                        const cosA = Math.cos(angle), sinA = Math.sin(angle);
+                        const localToWorld = (lx, ly) => {
+                            const dx = (lx - _mnx) * sx, dy = (ly - _mny) * sy;
+                            return [pdfOffsetX + pxToMm((obj.left || 0) + dx * cosA - dy * sinA),
+                                    pdfOffsetY + pxToMm((obj.top || 0) + dx * sinA + dy * cosA)];
+                        };
+                        p1 = localToWorld(obj.x1 || 0, obj.y1 || 0);
+                        p2 = localToWorld(obj.x2 || 0, obj.y2 || 0);
+                    }
                     _drawPolylineMm(pdf, [p1, p2], styleInfo.style === 'F' ? 'S' : styleInfo.style);
+                    /* _SP_FILET_518_FIN */
                 } else if (t === 'polygon' || t === 'polyline') {
                     const points = obj.points || [];
                     if (!points.length) return true;

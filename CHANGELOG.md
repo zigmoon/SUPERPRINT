@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,13 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.518] — 2026-09-20
+
+_Thin rules (lines) were shifted in the PDF export with crop marks_
+
+### Fixed
+- **Lines are no longer shifted in the PDF export.** In the HD 300 dpi + CMYK + crop marks + bleed path, the line branch of the vector renderer treated `left`/`top` as the **centre** of the line, while Fabric.js stores there the **top-left corner of its bounding box** (`calcLinePoints()` returns the end points *relative to the centre*, and `calcTransformMatrix()` maps `(0,0)` to `getCenterPoint()`, not to `left`/`top`). Every rule drawn with the line tool was therefore displaced by exactly **half its length**. Measured on the recipe document (A4 + 3 mm bleed, crop-mark margin 10 mm): a 380 px horizontal rule (100 → 480 px) was written at **−21.75 mm** instead of **45.278 mm** (67.03 mm off) and a 600 px vertical rule at **−60.556 mm** instead of **45.278 mm** (105.83 mm off); on the rendered PDF the white rule could be found at x = 20–110 mm and was absent from its true span, 45–179 mm. Fixed by applying **exactly the same transformation the native pdf-lib path already used** (middle-of-segment subtraction + `calcTransformMatrix()`), which is why the “Finished format” export was already correct. After: both rules are written at **45.278 mm**; on the rendered PDF the white rule runs from **45 to 179 mm** and the yellow one from **45 to 257 mm**. Nothing else changes: the same recipe in CMYK without vector typography (single full-page raster) and the bleed/background/photo/text placements are byte-identical in position.
 
 ## [1.7.517] — 2026-09-20
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.517 — widget buttons show their state and the PDF export no longer adds white blocks with crop marks.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.518 — thin rules are no longer shifted in the PDF export with crop marks.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.517 — widget buttons show their state and the PDF export no longer adds white blocks with crop marks.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.518 — thin rules are no longer shifted in the PDF export with crop marks.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,24 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.518 — Export PDF : les filets ne sont plus décalés (géométrie exacte des lignes) ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-518">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.518</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 20 septembre 2026" data-i18n-en="Released September 20, 2026" data-i18n-jp="2026年9月20日公開">Released September 20, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Un seul correctif, mais il se voyait au premier regard : les <strong>filets</strong> étaient décalés à l'export PDF avec traits de coupe." data-i18n-en-html="A single fix, but an obvious one: <strong>thin rules</strong> were shifted in the PDF export with crop marks." data-i18n-jp-html="修正は 1 件ですが、すぐ目に付くものでした：トンボ付き PDF 書き出しで<strong>罫線</strong>がずれていました。">Thin rules were shifted in the PDF export with crop marks.</p>
+
+ <h3 data-i18n-fr-html="📐 Filets décalés à l'export PDF <span class=&quot;badge badge-new&quot;>corrigé</span>" data-i18n-en-html="📐 Thin rules shifted in the PDF export <span class=&quot;badge badge-new&quot;>fixed</span>" data-i18n-jp-html="📐 PDF 書き出しで罫線がずれる問題 <span class=&quot;badge badge-new&quot;>修正</span>">📐 Thin rules shifted in the PDF export <span class="badge badge-new">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Dans l'export <strong>HD 300 dpi + CMJN + traits de coupe + fonds perdus</strong>, un filet tracé avec l'outil ligne partait à côté : le programme prenait son coin haut-gauche pour son centre et se trompait donc de la moitié de sa longueur. Mesure sur un filet horizontal de 380 px (100 à 480 px sur la planche) : écrit à <strong>-21,75 mm</strong> au lieu de <strong>45,278 mm</strong>, soit 67 mm d'écart. Même chose sur un filet vertical de 600 px : <strong>-60,556 mm</strong> au lieu de <strong>45,278 mm</strong>, 105,8 mm d'écart." data-i18n-en-html="In the <strong>HD 300 dpi + CMYK + crop marks + bleed</strong> export, a rule drawn with the line tool landed in the wrong place: the code took its top-left corner for its centre and was therefore off by half its length. Measured on a 380 px horizontal rule (100 to 480 px on the page): written at <strong>-21.75 mm</strong> instead of <strong>45.278 mm</strong>, a 67 mm error. Same for a 600 px vertical rule: <strong>-60.556 mm</strong> instead of <strong>45.278 mm</strong>, a 105.8 mm error." data-i18n-jp-html="<strong>HD 300 dpi + CMYK + トンボ + 塗り足し</strong>の書き出しで、線ツールで引いた罫線がずれていました。左上の角を中心として扱っていたため、長さの半分ずれていました。380 px の水平罫線の実測：<strong>-21.75 mm</strong>（本来 <strong>45.278 mm</strong>）で 67 mm の誤差。600 px の垂直罫線も <strong>-60.556 mm</strong>（本来 <strong>45.278 mm</strong>）で 105.8 mm の誤差でした。">Measured: −21.75 mm instead of 45.278 mm, and −60.556 mm instead of 45.278 mm.</li>
+  <li data-i18n-fr-html="La position est désormais calculée <strong>exactement comme Fabric.js dessine la ligne</strong> (extrémités réelles + matrice de transformation) : c'est la même formule que l'export <strong>« Format fini »</strong>, qui était déjà juste. Les quatre chemins d'export donnent maintenant la même géométrie, aux mêmes coordonnées." data-i18n-en-html="The position is now computed <strong>exactly the way Fabric.js draws the line</strong> (real end points + transform matrix): the same formula the <strong>“Finished format”</strong> export already used, which was correct. All export paths now produce the same geometry, at the same coordinates." data-i18n-jp-html="位置は<strong>Fabric.js が線を描く方法とまったく同じ</strong>（実際の端点＋変換行列）で計算されます。すでに正しかった<strong>「仕上がりサイズ」</strong>書き出しと同じ式です。各書き出し経路が同じ座標で同じ形状を出力するようになりました。">Same formula as the already-correct “Finished format” export.</li>
+  <li data-i18n-fr-html="Contrôle sur le PDF rendu au pixel : le filet blanc court bien de <strong>45 à 179 mm</strong> et le filet jaune de <strong>45 à 257 mm</strong>, là où ils sont dans la maquette. Aucun autre élément n'est touché (fond, photo, voile, textes, traits de coupe)." data-i18n-en-html="Checked on the pixel-rendered PDF: the white rule now runs from <strong>45 to 179 mm</strong> and the yellow one from <strong>45 to 257 mm</strong>, exactly where they sit in the layout. Nothing else is touched (background, photo, veil, texts, crop marks)." data-i18n-jp-html="描画した PDF のピクセルで確認：白い罫線は <strong>45〜179 mm</strong>、黄色い罫線は <strong>45〜257 mm</strong> と、レイアウト上の位置に一致します。他の要素（背景・写真・ベール・テキスト・トンボ）は変更していません。">Verified on the rendered PDF: 45→179 mm and 45→257 mm.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.517 — Widget « Fonds » : état des boutons · Export PDF : plus de blocs blancs avec les traits de coupe ===== -->
 
