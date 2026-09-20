@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -46,7 +46,7 @@ _Tabulations: in a text block the letters now really follow the cursor_
 - **A click that only selected a block is no longer lost.** The tabulation module remembers the last click received by the pasteboard; when Tab lands on a merely selected text block **and** that click was inside the block, the software enters editing, places the cursor with the Fabric function `setCursorByClick` and inserts the tabulation in the same gesture. Selections made with the rubber band or the keyboard keep the previous behaviour (editing entered, caret at the end, status message, no insertion).
 
 ### Added
-- `_dev/scripts/_tab_504.cjs` patches both trees idempotently (3 anchors each in `app/JS/main.js`, all marked `_SP_TAB_504_DEBUT`).
+- `_dev/scripts/_tab_504.cjs` patches both trees idempotently: three anchors in `app/JS/main.js` (the click memory and the selected-block path carry the marker `_SP_TAB_504_DEBUT`, the insertion position carries the `v1.7.504` comment).
 
 ### Verified
 | Check | Result |
