@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.521 — titles keep their font and their line breaks in the PDF export with crop marks.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.522 — justified text stays justified when a block overflows its frame.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.521 — titles keep their font and their line breaks in the PDF export with crop marks.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.522 — justified text stays justified when a block overflows its frame.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,24 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.522 — Export PDF : un texte justifié reste justifié quand le bloc déborde de son cadre ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-522">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.522</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 21 septembre 2026" data-i18n-en="Released September 21, 2026" data-i18n-jp="2026年9月21日公開">Released September 21, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Un texte justifié pouvait se terminer en « fer à gauche » sur le PDF quand son bloc débordait de son cadre. La dernière ligne visible est maintenant justifiée comme dans l'aperçu, dans les trois modes d'export." data-i18n-en-html="A justified text could end up ragged on the PDF when its block overflowed its frame. The last visible line is now justified exactly as in the preview, in all three export modes." data-i18n-jp-html="枠からあふれるブロックでは、両端揃えのテキストが PDF で最後だけ左揃えになっていました。現在は 3 つの書き出しモードすべてで、最後に見える行もプレビューと同じく両端揃えになります。">A justified text could end up ragged on the PDF when its block overflowed its frame. Fixed.</p>
+
+ <h3 data-i18n-fr-html="📐 Justification : la dernière ligne visible d'un bloc qui déborde <span class=&quot;badge badge-new&quot;>corrigé</span>" data-i18n-en-html="📐 Justification: the last visible line of an overflowing block <span class=&quot;badge badge-new&quot;>fixed</span>" data-i18n-jp-html="📐 両端揃え：枠からあふれるブロックの最後に見える行 <span class=&quot;badge badge-new&quot;>修正</span>">📐 Justification: the last visible line of an overflowing block <span class="badge badge-new">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Quand un bloc de texte contient plus de lignes que son cadre n'en montre, la dernière ligne VISIBLE est une ligne d'enroulement au milieu du paragraphe : l'aperçu l'étire jusqu'au bord du bloc, l'export la laissait « fer à gauche ». Mesure sur un bloc de 260 px (11 pt) dont 3 lignes sur 8 sont visibles : les deux premières lignes sortaient au bord (260 px), la troisième à <strong>250 px</strong> en traits de coupe, <strong>251 px</strong> en fonds perdus sans traits de coupe et en Format fini — soit 9 à 10 pt (environ 3,2 mm) de moins, nettement visible. Les deux moteurs d'export jugeaient la dernière ligne « rendue » comme une fin de paragraphe, alors que le texte continue : seule la dernière ligne du TEXTE (ou celle fermée par un Enter) doit rester libre. Corrigé : les trois lignes sont désormais au bord, dans les trois modes." data-i18n-en-html="When a text block holds more lines than its frame shows, the last VISIBLE line is a wrap line in the middle of the paragraph: the preview stretches it to the edge of the block, the export left it ragged. Measured on a 260 px block (11 pt) with 3 of 8 lines visible: the first two lines reached the edge (260 px), the third one <strong>250 px</strong> with crop marks and <strong>251 px</strong> as bleed-without-crop-marks and in Finished format — 9–10 pt (about 3.2 mm) short, clearly visible. Both export engines treated the last <em>rendered</em> line as a paragraph end, whereas the text goes on: only the last line of the TEXT (or the one closed by an Enter) must stay ragged. Fixed: all three lines now reach the edge, in all three modes." data-i18n-jp-html="枠より行数が多いブロックでは、最後に<strong>見える</strong>行は段落の途中の行です。プレビューは枠の端まで伸ばしますが、書き出しでは左揃えのままでした。260 px（11 pt）で 8 行中 3 行が見えるブロックでの検証：1〜2 行目は端（260 px）に達していましたが、3 行目はトンボ付きで<strong>250 px</strong>、トンボなしの塗り足しと仕上がりサイズで<strong>251 px</strong>（9〜10 pt ≒ 3.2 mm 不足）でした。両エンジンが「描画された最終行」を段落末と見なしていたのが原因です。テキスト自体の最終行（または Enter で閉じた行）だけを左揃えにするのが正しい挙動です。現在は 3 つのモードすべてで 3 行とも端に達します。">Measured: the third visible line stopped 9–10 pt (≈ 3.2 mm) short of the block edge in all three modes. Fixed.</li>
+  <li data-i18n-fr-html="Concernés : <strong>HD 300 dpi avec traits de coupe</strong>, <strong>CMJN Format fini</strong> et <strong>fonds perdus sans traits de coupe</strong> — les deux moteurs d'export (vectoriel pdf-lib et hybride jsPDF) partageaient la même règle erronée. Le correctif est le même des deux côtés : fin de paragraphe = dernière ligne du texte, jamais la dernière ligne montrée. Les blocs qui tiennent entièrement dans leur cadre, les paragraphes séparés par Enter et les lignes avec césure gardent exactement leur comportement précédent (vérifié : 260 px au bord, 256 px + tiret, 173/214/142 px pour les fins de paragraphe)." data-i18n-en-html="Affected: <strong>HD 300 dpi with crop marks</strong>, <strong>CMYK Finished format</strong> and <strong>bleed without crop marks</strong> — both export engines (pdf-lib vector and jsPDF hybrid) shared the same wrong rule. The fix is identical on both sides: end of paragraph = last line of the text, never the last displayed line. Blocks that fully fit in their frame, paragraphs separated by an Enter and hyphenated lines keep exactly their previous behaviour (verified: 260 px at the edge, 256 px + hyphen, 173/214/142 px for paragraph ends)." data-i18n-jp-html="対象：<strong>トンボ付き HD 300 dpi</strong>、<strong>CMJN 仕上がりサイズ</strong>、<strong>トンボなしの塗り足し</strong>。pdf-lib（ベクター）と jsPDF（ハイブリッド）の両エンジンが同じ誤った規則を持っていました。修正は両方で同一です：段落末＝テキストの最終行であり、表示上の最終行ではありません。枠に収まるブロック、Enter で区切った段落、ハイフネーション行の挙動は従来どおりです（検証済み：端 260 px、256 px＋ハイフン、段落末 173/214/142 px）。">Affected: the three export modes, both engines. Blocks that fit in their frame keep their exact previous behaviour (verified).</li>
+  <li data-i18n-fr-html="Ce paquet contient aussi les corrections des 1.7.519 (typographie vectorielle honorée avec traits de coupe), 1.7.520 (fonds de bloc de texte exportés, dernière ligne préservée) et 1.7.521 (police réelle des titres embarquée, césure respectée) : un seul zip suffit, il remplace les précédents s'ils n'ont pas encore été mis en ligne." data-i18n-en-html="This package also contains the 1.7.519 fixes (vector typography honoured with crop marks), the 1.7.520 ones (text block backgrounds exported, last line preserved) and the 1.7.521 ones (the title's real font embedded, hyphenation honoured): one single zip is enough and replaces the previous ones if they have not been uploaded yet." data-i18n-jp-html="このパッケージには 1.7.519（トンボ付きでのベクトルタイポグラフィー）、1.7.520（テキストブロック背景の出力、最終行の保持）、1.7.521（タイトルの実フォント埋め込み、ハイフネーションの尊重）の修正も含まれます。1 つの zip で完了です。">This package also contains the 1.7.519, 1.7.520 and 1.7.521 fixes — one single zip is enough.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.521 — Export PDF : les titres gardent leur police (et leur coupure) avec les traits de coupe ===== -->
 

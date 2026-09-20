@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -36,6 +36,16 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
+## [1.7.522] — 2026-09-21
+
+_Justified text stays justified when a block overflows its frame_
+
+### Fixed
+- **The last visible line of a justified text block that overflows its frame was exported ragged.** Both export engines decided “end of paragraph” from the last **rendered** line (`if (_li >= maxLines - 1) return true;`), where `maxLines` is the number of lines the frame can show. When the text holds more lines than the frame displays, that last rendered line is a *wrap* line in the middle of the paragraph: the preview stretches it to the edge of the block (`enlargeSpaces` iterates over all `_textLines`) while the export left it “fer à gauche”. Measured on a recipe document (260 px block, Open Sans 11 pt, 8 lines of text in a 3-line frame, `_fixedHeight`), all three modes: the first two visible lines reached the edge (260 px) but the third one stopped at **250 px** (HD 300 dpi with crop marks), **251 px** (bleed without crop marks) and **251 px** (CMYK Finished format) — i.e. 9–10 pt ≈ **3.2 mm short**, plainly visible in the PDF. Fixed in `_spIsParaLastLine` (native pdf-lib path) and `_spJIsParaLastLine` (hybrid jsPDF path): the test is now `_li >= lines.length - 1`, i.e. the last line of the *text* (plus, unchanged, the lines closed by a hard `\n`), exactly like the preview. Blocks that fully fit in their frame keep the previous behaviour bit for bit (verified: 260 px at the edge, 256 px + hyphen on hyphenated lines, 173/214/142 px on paragraph ends).
+- This release also carries the 1.7.521 (the title's real font embedded in the crop-marks overlay, hyphenation no longer forced), 1.7.520 (text block backgrounds exported, last line preserved) and 1.7.519 (vector typography honoured with crop marks) fixes.
+
+### Verified
+- Recipe bench, three exports of the same document (`522_crop`, `522_natbleed`, `522_natif`): every non-final line of the overflowing blocks now reaches the column edge, in both engines; paragraph ends and hyphen-reserved lines are unchanged.
 ## [1.7.521] — 2026-09-21
 
 _Titles keep their font and their line breaks in the PDF export with crop marks_

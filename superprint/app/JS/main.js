@@ -46094,8 +46094,16 @@ https://superprint.app
                 //   à l'inverse une vraie dernière ligne courte d'un paragraphe
                 //   final était mal traitée.
                 var _spIsParaLastLine = function(_li) {
-                    // Toujours la dernière ligne RENDU (clipé) = jamais étirée.
-                    if (_li >= maxLines - 1) return true;
+                    /* 🛡️ v1.7.522 — _SP_JUSTIF_522 : « fin de paragraphe » se juge sur la
+                       dernière ligne du TEXTE, jamais sur la dernière ligne RENDUE.
+                       Quand le texte déborde du cadre, la dernière ligne visible est
+                       une ligne d'enroulement AU MILIEU du paragraphe : l'aperçu la
+                       justifie (enlargeSpaces parcourt toutes les lignes du texte) et
+                       l'export la laissait « fer à gauche » — mesuré dans les TROIS
+                       modes (bloc 260 px / 11 pt / cadre 3 lignes : 250 px au lieu de
+                       260, soit 10 pt ≈ 3,2 mm). Un bloc qui tient dans son cadre garde
+                       exactement le comportement précédent. */
+                    if (_li >= lines.length - 1) return true;
                     try {
                         // isEndOfWrapping(i) === true quand la ligne i est suivie d'un
                         // \n (dure OU douce) dans le texte source — i.e. fin d'un
@@ -49922,7 +49930,16 @@ https://superprint.app
                 const _spJIsJustify = (align === 'justify' || align === 'justify-left' || align === 'justify-right');
                 const _spJJustifyLastRight = (align === 'justify-right');
                 const _spJIsParaLastLine = function(_li) {
-                    if (_li >= maxLines - 1) return true;
+                    /* 🛡️ v1.7.522 — _SP_JUSTIF_522 : « fin de paragraphe » se juge sur la
+                       dernière ligne du TEXTE, jamais sur la dernière ligne RENDUE.
+                       Quand le texte déborde du cadre, la dernière ligne visible est
+                       une ligne d'enroulement AU MILIEU du paragraphe : l'aperçu la
+                       justifie (enlargeSpaces parcourt toutes les lignes du texte) et
+                       l'export la laissait « fer à gauche » — mesuré dans les TROIS
+                       modes (bloc 260 px / 11 pt / cadre 3 lignes : 250 px au lieu de
+                       260, soit 10 pt ≈ 3,2 mm). Un bloc qui tient dans son cadre garde
+                       exactement le comportement précédent. */
+                    if (_li >= lines.length - 1) return true;
                     try {
                         const _eow = (typeof obj.isEndOfWrapping === 'function') ? !!obj.isEndOfWrapping(_li) : false;
                         if (_eow) {
