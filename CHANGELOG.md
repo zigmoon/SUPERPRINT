@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,31 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.500] — 2026-09-20
+
+_Edit any vector path, a rebuilt “dev tool”, and path identity carried through .sp and .json_
+
+### Added
+- **“Edit path” on every vector object.** Right click a rectangle, circle, ellipse, polygon, triangle, line, imported path or vectorised glyph and the traced editor opens in place: square anchors, round curve handles, add a point on a segment, delete a point, convert to curves, apply, cancel. The handles are DOM elements, never Fabric objects — they never enter the selection, the history, the export or the page saves.
+- **The `dev tool` panel** (sidebar and window) replaces “Developer Tools”. Three tabs — Snippets, Editor, API reference —, no emoji at all (every icon is an inline SVG), and six new snippets: document inventory (read-only), 12-column grid, swatch strip, editorial block, footer on every page, overflow check. The panel console timestamps lines, captures `console.log`, shows return value and duration, and the sandbox exposes `SuperPrint`, `canvas`, `log()`, `mm()`, `px()`, `save()`.
+
+### Fixed
+- **A converted path keeps its origin.** `_spPathFrom` is carried both ways by the application and the studio, in `.sp` as well as `.json`: after a full round trip the path comes back with its origin intact, so the original shape stays identifiable.
+- **The conversion is pixel-exact.** Building the path used to keep the default 1 px stroke width of `new fabric.Path()` when positioning `left`/`top` (a rectangle with no stroke landed at 89.5/59.5 instead of 90/60). The position is now recomputed with the final stroke width and the flattened scale, and the stroke itself is rescaled when `strokeUniform` is off. Measured: 0.00 mm difference on rectangle (plain, rounded, 4 px stroke), ellipse, circle, polygon, triangle and a ×2 scaled rectangle; “Cancel” restores the original shape with its properties.
+
+### Verified
+| Check | Result |
+|---|---|
+| Conversion (8 shapes) | bounding box difference 0.00 mm |
+| Cancel | original shape restored (rounded rectangle back with `rx 12`) |
+| Real mouse drag on an anchor | path command and bounding box follow the gesture |
+| Right-click menu | “Edit path” first entry, editor opens with 4 handles |
+| `dev tool` | 3 tabs, 6 snippets run without error, 0 emoji, FR/EN/JA labels |
+| `.sp` / `.json` round trip | `_spPathFrom` preserved both ways |
+| JavaScript errors | none |
+| Markers | `data-sp-js="v500"`, cache tag `20260920-v500-pathedit-et-dev-tool`, `CACHE_NAME` bumped |
+
 
 ## [1.7.499] — 2026-09-20
 

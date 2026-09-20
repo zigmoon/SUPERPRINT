@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" translate="no">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.499 — Zigmoon
+         SuperPrint 1.7.500 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.499 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.500 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.499",
+          "softwareVersion": "1.7.500",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -630,7 +630,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20260920-v499-auteurs-et-aide">
+    <link rel="stylesheet" href="CSS/main.css?v=20260920-v500-pathedit-et-dev-tool">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -1059,7 +1059,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.499</div>
+                <div class="splash-version">1.7.500</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1161,7 +1161,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.499</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.500</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1257,7 +1257,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.499 | 09 2026<br>
+                V 1.7.500 | 09 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1904,12 +1904,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.499). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.500). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.499 — internal cache tag: JS v499 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.500 — internal cache tag: JS v500 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v499"
-                      data-sp-sw="v1.7.499">v1.7.499</span>
+                      data-sp-js="v500"
+                      data-sp-sw="v1.7.500">v1.7.500</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -3644,7 +3644,12 @@
             </div>
 
             <div class="section" data-section="developer">
-                <button class="btn btn-secondary" id="openDeveloperTools" style="width: 100%;" data-translate="devTools">Outils Développeur</button>
+                <button class="btn btn-secondary" id="openDeveloperTools" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span aria-hidden="true" style="display:flex">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;display:block"><rect x="2.5" y="4" width="19" height="16"/><path d="M6.5 9.5l2.5 2.5-2.5 2.5M12 15h5.5"/></svg>
+                    </span>
+                    <span data-translate="devTools">dev tool</span>
+                </button>
             </div>
             
             <!-- Expand button (shown only when collapsed) -->
@@ -5032,110 +5037,107 @@
         </div>
     </div>
 
-    <!-- Developer Tools Modal -->
-    <div class="modal-overlay" id="developerModal" onclick="if(event.target === this) closeDeveloperModal()">
-        <div class="modal sp-modal-card" style="max-width: 900px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
-            <div class="modal-header" style="flex-shrink: 0; position: relative;">
-                <div class="modal-title"><span data-translate="devToolsTitle">Outils Développeur - SuperPrint API & Scripts</span></div>
-                <button class="modal-close sp-modal-close" onclick="closeDeveloperModal()" aria-label="Fermer" style="position: absolute; right: 12px; top: 8px;">×</button>
+<!-- _SP_DEVTOOL_500_DEBUT -->
+<!-- ────────────────────────────────────────────────────────────────────────────────
+     dev tool (v1.7.500) — console de script + API SuperPrint
+     Remplace l'ancien « Outils Développeur » : plus AUCUN emoji, icônes SVG en ligne,
+     trois onglets (Exemples · Éditeur · Référence). Le contenu est construit par
+     window.spDevTool (bloc _SP_DEVTOOL_500 dans main.js) pour que la langue soit
+     appliquée à chaque ouverture, sans être écrasée par updateInterface().
+     ──────────────────────────────────────────────────────────────────────────────── -->
+<style>
+    /* DA maison : angles vifs, IBM Plex Mono, monochrome + rose SP en accent. */
+    #developerModal .dt-card { max-width: 1000px; width: 94vw; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 0; padding: 0; }
+    #dtTabs { display: flex; flex-shrink: 0; border-bottom: 1px solid #d8d8d8; background: #fff; }
+    #dtTabs button { appearance: none; border: 0; border-right: 1px solid #d8d8d8; background: #fff; color: #555; cursor: pointer; display: flex; align-items: center; gap: 7px; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; text-transform: uppercase; padding: 12px 16px; }
+    #dtTabs button:hover { color: #111; background: #f4f4f4; }
+    #dtTabs button[aria-selected="true"] { color: #111; background: #fafafa; box-shadow: inset 0 -2px 0 #E1237B; }
+    #dtTabs svg { width: 14px; height: 14px; display: block; }
+    .dt-ti svg { width: 18px; height: 18px; display: block; }
+    #dtBody { flex: 1; overflow-y: auto; padding: 14px 16px 18px; }
+    .dt-pane { display: none; }
+    .dt-pane.actif { display: block; }
+    .dt-search { width: 100%; box-sizing: border-box; font: 12px 'IBM Plex Mono', monospace; padding: 8px 10px; border: 1px solid #d8d8d8; border-radius: 0; background: #fff; margin-bottom: 12px; color: #111; }
+    .dt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 12px; }
+    .dt-snip { border: 1px solid #d8d8d8; background: #fff; padding: 12px; display: flex; flex-direction: column; gap: 9px; }
+    .dt-snip-h { display: flex; align-items: center; gap: 8px; }
+    .dt-snip-h svg { width: 16px; height: 16px; flex-shrink: 0; color: #111; }
+    .dt-snip-t { font: 700 12px/1.3 'IBM Plex Mono', monospace; color: #111; }
+    .dt-snip-d { font-size: 11px; line-height: 1.5; color: #555; flex: 1; }
+    .dt-snip-b { align-self: flex-start; font: 600 9px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; padding: 4px 6px; border: 1px solid #111; }
+    .dt-snip-b.ro { color: #555; border-color: #bbb; }
+    .dt-snip-b.rw { color: #fff; background: #111; }
+    .dt-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 12px; }
+    .dt-bar .btn { display: inline-flex; align-items: center; gap: 7px; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; }
+    .dt-bar svg { width: 13px; height: 13px; }
+    .dt-hint { font: 10px/1 'IBM Plex Mono', monospace; color: #888; letter-spacing: .06em; }
+    #dtCode { width: 100%; box-sizing: border-box; height: 240px; resize: vertical; border: 1px solid #d8d8d8; border-radius: 0; background: #0f1115; color: #e6e6e6; font: 12px/1.6 'IBM Plex Mono', monospace; padding: 12px; tab-size: 4; }
+    .dt-chead { display: flex; align-items: center; justify-content: space-between; border: 1px solid #d8d8d8; border-bottom: 0; background: #f7f7f7; padding: 7px 10px; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .12em; text-transform: uppercase; color: #111; }
+    .dt-chead button { appearance: none; border: 0; background: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: #555; }
+    .dt-chead button:hover { color: #E1237B; }
+    .dt-chead svg { width: 12px; height: 12px; }
+    #dtConsole { height: 180px; overflow: auto; background: #0f1115; color: #e6e6e6; font: 11px/1.55 'IBM Plex Mono', monospace; padding: 9px 11px; }
+    #dtConsole .dt-l { white-space: pre-wrap; word-break: break-word; }
+    #dtConsole .dt-l.cmd { color: #8a8a8a; }
+    #dtConsole .dt-l.ok { color: #7fe3a1; }
+    #dtConsole .dt-l.err { color: #ff7b8a; }
+    #dtConsole .dt-l.warn { color: #ffcf73; }
+    .dt-mem { margin-top: 12px; border: 1px solid #d8d8d8; background: #f7f7f7; padding: 10px 12px; font: 11px/1.75 'IBM Plex Mono', monospace; color: #333; }
+    .dt-mem code { background: #fff; border: 1px solid #e2e2e2; padding: 1px 4px; }
+    .dt-grp { margin: 16px 0 6px; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: #888; border-bottom: 1px solid #e2e2e2; padding-bottom: 5px; }
+    .dt-row { display: grid; grid-template-columns: minmax(210px, 38%) 1fr; gap: 12px; padding: 7px 0; border-bottom: 1px dashed #ececec; align-items: baseline; }
+    .dt-row code { font: 11px/1.5 'IBM Plex Mono', monospace; color: #111; word-break: break-word; }
+    .dt-row span { font-size: 11px; color: #555; }
+    .dt-foot { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-top: 1px solid #d8d8d8; background: #fff; }
+    .dt-foot a { display: inline-flex; align-items: center; gap: 6px; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: #555; text-decoration: none; }
+    .dt-foot a:hover { color: #E1237B; }
+    .dt-foot svg { width: 13px; height: 13px; }
+    .dt-foot button { border-radius: 0; font: 600 10px/1 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; }
+</style>
+
+<div class="modal-overlay" id="developerModal" onclick="if(event.target === this) closeDeveloperModal()">
+    <div class="modal sp-modal-card dt-card">
+        <div class="modal-header" style="flex-shrink: 0; position: relative;">
+            <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                <span class="dt-ti" id="dtTitleIcon" aria-hidden="true"></span>
+                <span id="dtTitle">dev tool</span>
             </div>
-            <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 16px;">
-                <div class="modal-section">
-                    <div class="modal-section-title">API SuperPrint - Accès Programmatique</div>
-                    <div style="background: #f8f8f8; padding: 16px; font-size: 10px; line-height: 1.6; margin-bottom: 16px;">
-                        <strong>API JavaScript disponible :</strong><br>
-                        <code>SuperPrint.addText(x, y, text, options)</code> - Ajouter un bloc texte (unités en mm, option <b>width</b>)<br>
-                        <code>SuperPrint.addImage(x, y, imageUrl, options)</code> - Ajouter une image (retourne une Promise)<br>
-                        <code>SuperPrint.addRect(x, y, width, height, options)</code> - Ajouter un rectangle (mm)<br>
-                        <code>SuperPrint.addCircle(x, y, radius, options)</code> - Ajouter un cercle (mm)<br>
-                        <code>SuperPrint.addEllipse(x, y, rx, ry, options)</code> - Ajouter une ellipse (mm)<br>
-                        <code>SuperPrint.getPages()</code> - Liste des pages + objet actif<br>
-                        <code>SuperPrint.setPage(pageIndex)</code> - Changer la page active (0 = page 1)<br>
-                        <code>SuperPrint.exportPDF(options)</code> - Export PDF (quality: standard|medium|hd, colorMode: rgb|cmyk|bw)<br>
-                        <code>SuperPrint.saveProject()</code> - Sauvegarde JSON (string)<br>
-                        <code>SuperPrint.loadProject(jsonData)</code> - Charger un JSON (string ou objet)<br>
-                        <code>SuperPrint.aiGenerate(prompt)</code> - 🆕 Génération IA multi-pages (retourne une Promise)<br>
-                        <div style="margin-top: 8px; opacity: 0.75;">Conseil : utilisez <b>setPage()</b> avant d'ajouter des objets pour cibler une page précise. L'API utilise les <b>millimètres</b> comme unité.</div>
-                    </div>
-                    
-                                        <div class="input-group">
-                                                <label>Exemple d'utilisation API :</label>
-                                                <textarea id="apiExample" readonly style="height: 160px; width: 100%; max-width: 100%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #2d3748; color: #e2e8f0; padding: 16px; border: 1px solid #4a5568; border-radius: 6px; resize: vertical; box-sizing: border-box;">// Exemple d'utilisation de l'API SuperPrint (unités en mm)
-(async () => {
-    SuperPrint.setPage(0);
-    SuperPrint.addText(20, 25, "Titre automatique", {
-        fontSize: 24,
-        fontWeight: 'bold',
-        fill: '#ff6b35',
-        width: 120
-    });
+            <div id="dtSub" style="font: 10px/1.4 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; opacity: .6; margin-top: 4px;">console de script &amp; API SuperPrint</div>
+            <button class="modal-close sp-modal-close" onclick="closeDeveloperModal()" aria-label="Fermer" style="position: absolute; right: 12px; top: 8px;">&times;</button>
+        </div>
 
-    SuperPrint.addRect(20, 45, 80, 40, {
-        fill: '#4299e1',
-        stroke: '#2b6cb0'
-    });
+        <div id="dtTabs" role="tablist"></div>
 
-    await SuperPrint.addImage(110, 45, "https://picsum.photos/200", { scaleX: 0.6, scaleY: 0.6 });
+        <div id="dtBody">
+            <section class="dt-pane" id="dtPaneSnippets" role="tabpanel">
+                <input type="text" id="dtFilter" class="dt-search" spellcheck="false" autocomplete="off">
+                <div class="dt-grid" id="dtSnippets"></div>
+            </section>
 
-    // Exporter automatiquement
-    SuperPrint.exportPDF({ quality: 'hd', colorMode: 'rgb' });
-})();</textarea>
-                                        </div>
-                    
-                    <div style="margin-top: 12px;">
-                        <button class="btn btn-secondary" onclick="copyApiExample()" style="margin-right: 8px;">📋 Copier exemple</button>
-                        <button class="btn btn-secondary" onclick="runApiExample()">▶️ Exécuter exemple</button>
-                    </div>
+            <section class="dt-pane" id="dtPaneEditor" role="tabpanel">
+                <textarea id="dtCode" spellcheck="false" wrap="off"></textarea>
+                <div class="dt-bar" id="dtBar"></div>
+                <div class="dt-chead">
+                    <span id="dtConsoleLabel">Sortie</span>
+                    <button type="button" id="dtConsoleClear"></button>
                 </div>
+                <div id="dtConsole"></div>
+                <div class="dt-mem" id="dtSandbox"></div>
+            </section>
 
-                <div class="modal-section">
-                    <div class="modal-section-title">🔧 Console de Scripts - Automatisation Avancée</div>
-                    <div style="background: #fff3cd; padding: 12px; font-size: 10px; margin-bottom: 16px; border-left: 4px solid #ffc107;">
-                        <strong>⚠️ Attention :</strong> Les scripts s'exécutent dans l'application et peuvent modifier vos pages. Utilisez uniquement des scripts de confiance.
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Scripts prédéfinis :</label>
-                        <select id="predefinedScripts" style="margin-bottom: 8px;">
-                            <option value="">-- Sélectionner un script --</option>
-                            <option value="generateGrid">📐 Générer une grille de guides</option>
-                            <option value="bulkText">📝 Création de textes en lot</option>
-                            <option value="autoLayout">📏 Layout automatique</option>
-                            <option value="batchExport">📦 Export en lot</option>
-                            <option value="colorTheme">🎨 Appliquer thème couleur</option>
-                        </select>
-                        <button class="btn btn-secondary" onclick="loadPredefinedScript()" style="width: 100%; margin-bottom: 12px;">📥 Charger script sélectionné</button>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>Éditeur de script personnalisé :</label>
-                        <textarea id="customScript" placeholder="// Écrivez votre script JavaScript ici...
-// Vous avez accès à toutes les fonctions SuperPrint
-// Exemple :
-// for(let i = 0; i < 5; i++) {
-//     SuperPrint.addText(50, 50 + (i * 40), `Ligne ${i+1}`);
-// }" style="height: 160px; width: 100%; max-width: 100%; font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #1a202c; color: #e2e8f0; padding: 16px; border: 1px solid #4a5568; border-radius: 6px; resize: vertical; box-sizing: border-box;"></textarea>
-                    </div>
-                    
-                    <div style="margin-top: 12px;">
-                        <button class="btn btn-secondary" onclick="executeScript()" style="margin-right: 8px;">▶️ Exécuter Script</button>
-                        <button class="btn btn-secondary" onclick="clearScript()" style="margin-right: 8px;">🧹 Effacer</button>
-                        <button class="btn btn-secondary" onclick="saveScript()">💾 Sauvegarder</button>
-                    </div>
-                    
-                    <div id="scriptOutput" style="margin-top: 12px; padding: 8px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; min-height: 60px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; display: none;">
-                        <strong>Résultat :</strong><br>
-                        <span id="scriptResult"></span>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer" style="flex-shrink: 0;">
-                <button class="modal-btn modal-btn-secondary" onclick="closeDeveloperModal()">Fermer</button>
-                <button class="modal-btn modal-btn-primary" onclick="window.open('https://fabricjs.com/docs/', '_blank')">📖 Documentation Fabric.js</button>
-            </div>
+            <section class="dt-pane" id="dtPaneApi" role="tabpanel">
+                <input type="text" id="dtApiFilter" class="dt-search" spellcheck="false" autocomplete="off">
+                <div id="dtApi"></div>
+            </section>
+        </div>
+
+        <div class="dt-foot">
+            <a id="dtDocs" href="https://fabricjs.com/docs/" target="_blank" rel="noopener"></a>
+            <button type="button" class="modal-btn modal-btn-primary" id="dtClose"></button>
         </div>
     </div>
-
+</div>
+<!-- _SP_DEVTOOL_500_FIN -->
     <!-- Manuel Utilisateur Modal -->
     <div class="modal-overlay" id="manualModal" onclick="if(event.target === this) closeManualModal()">
         <div class="modal" style="max-width: 1000px; margin: 60px auto; padding: 48px 48px 32px 48px; box-sizing: border-box; background: #f7f7f7; border-radius: 12px;">
@@ -6122,7 +6124,7 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260920-v499-auteurs-et-aide" defer></script>
+    <script src="JS/main.js?v=20260920-v500-pathedit-et-dev-tool" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
     <script src="JS/virtual-printer.js?v=20260912-v417-clavier-studio" defer></script>
     <script src="JS/collab.js?v=20260907-v016-ux" defer></script>

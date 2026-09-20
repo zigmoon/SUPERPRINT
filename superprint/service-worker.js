@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.499-auteurs-et-aide';
+const CACHE_NAME = 'superprint-shell-v1.7.500-pathedit-et-dev-tool';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

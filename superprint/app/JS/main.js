@@ -1742,7 +1742,14 @@ const SP_CUSTOM_PROPS = [
     '_spEpsImport',
     '_spEpsKind',
     '_spEpsPaths',
-    '_spEpsBBoxPS'
+    '_spEpsBBoxPS',
+    // ✒️ v1.7.500 — TRACÉ ÉDITÉ. Posé par l'éditeur de tracé quand un objet NON
+    //   vectoriel (rectangle, cercle, ellipse, triangle, polygone, ligne) a été
+    //   converti en `fabric.Path` pour être retouché : on garde le TYPE d'origine
+    //   (repère d'interface — « rectangle → tracé » — et de diagnostic).
+    //   La GÉOMÉTRIE, elle, vit dans `path`, que Fabric sérialise nativement :
+    //   rien d'autre n'a besoin d'être ajouté pour qu'un tracé édité se rouvre.
+    '_spPathFrom'
 ];
 
 // ═══════════════════════════════════════════════════════
@@ -58095,8 +58102,33 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         cheminTitle: "Chemin de fer - Réorganiser les pages",
         cheminHint: "Glissez-déposez les pages pour les réorganiser",
         close: "Fermer",
-        devTools: "Outils Développeur",
-        devToolsTitle: "Outils Développeur - SuperPrint API & Scripts",
+        devTools: "dev tool",
+        devToolsTitle: "dev tool",
+        dtSub: "console de script & API SuperPrint",
+        dtTabSnippets: "Exemples",
+        dtTabEditor: "Éditeur",
+        dtTabApi: "Référence",
+        dtRun: "Exécuter",
+        dtToEditor: "Ouvrir dans l'éditeur",
+        dtCopy: "Copier",
+        dtCopied: "Copié",
+        dtDownload: "Télécharger .js",
+        dtClear: "Effacer",
+        dtClose: "Fermer",
+        dtConsole: "Sortie",
+        dtConsoleEmpty: "La sortie des scripts s'affiche ici.",
+        dtFilter: "Filtrer les exemples…",
+        dtFilterApi: "Filtrer l'API…",
+        dtReadonly: "lecture seule",
+        dtWrites: "modifie la page",
+        dtSandbox: "Bac à sable",
+        dtDocs: "Documentation Fabric.js",
+        dtKeyHint: "Ctrl + Entrée pour exécuter · Échap pour fermer",
+        dtNothingToRun: "Rien à exécuter.",
+        dtNoDocument: "Aucun document ouvert.",
+        dtDone: "Terminé",
+        dtNoMatch: "Aucun résultat.",
+        dtEditorScript: "script de l'éditeur",
         pathfinderTitle: "Pathfinder",
         swatchesTitle: "Nuancier",
         filtersTitle: "Filtres",
@@ -58938,8 +58970,33 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         cheminTitle: "Flatplan - Reorder pages",
         cheminHint: "Drag and drop pages to reorder",
         close: "Close",
-        devTools: "Developer Tools",
-        devToolsTitle: "Developer Tools - SuperPrint API & Scripts",
+        devTools: "dev tool",
+        devToolsTitle: "dev tool",
+        dtSub: "script & API console",
+        dtTabSnippets: "Snippets",
+        dtTabEditor: "Editor",
+        dtTabApi: "API reference",
+        dtRun: "Run",
+        dtToEditor: "Open in editor",
+        dtCopy: "Copy",
+        dtCopied: "Copied",
+        dtDownload: "Download .js",
+        dtClear: "Clear",
+        dtClose: "Close",
+        dtConsole: "Output",
+        dtConsoleEmpty: "Script output appears here.",
+        dtFilter: "Filter snippets…",
+        dtFilterApi: "Filter the API…",
+        dtReadonly: "read-only",
+        dtWrites: "changes the page",
+        dtSandbox: "Sandbox",
+        dtDocs: "Fabric.js documentation",
+        dtKeyHint: "Ctrl + Enter to run · Esc to close",
+        dtNothingToRun: "Nothing to run.",
+        dtNoDocument: "No document is open.",
+        dtDone: "Done",
+        dtNoMatch: "No match.",
+        dtEditorScript: "editor script",
         pathfinderTitle: "Pathfinder",
         swatchesTitle: "Swatches",
         filtersTitle: "Filters",
@@ -59784,8 +59841,33 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         cheminTitle: "ページ一覧 - 並び替え",
         cheminHint: "ドラッグ＆ドロップで並べ替え",
         close: "閉じる",
-        devTools: "開発ツール",
-        devToolsTitle: "開発ツール - SuperPrint API & スクリプト",
+        devTools: "dev tool",
+        devToolsTitle: "dev tool",
+        dtSub: "スクリプト＆APIコンソール",
+        dtTabSnippets: "サンプル",
+        dtTabEditor: "エディタ",
+        dtTabApi: "APIリファレンス",
+        dtRun: "実行",
+        dtToEditor: "エディタで開く",
+        dtCopy: "コピー",
+        dtCopied: "コピーしました",
+        dtDownload: ".js を保存",
+        dtClear: "クリア",
+        dtClose: "閉じる",
+        dtConsole: "出力",
+        dtConsoleEmpty: "スクリプトの出力はここに表示されます。",
+        dtFilter: "サンプルを絞り込む…",
+        dtFilterApi: "APIを絞り込む…",
+        dtReadonly: "読み取り専用",
+        dtWrites: "ページを変更",
+        dtSandbox: "サンドボックス",
+        dtDocs: "Fabric.js ドキュメント",
+        dtKeyHint: "Ctrl + Enter で実行 · Esc で閉じる",
+        dtNothingToRun: "実行するものがありません。",
+        dtNoDocument: "ドキュメントが開かれていません。",
+        dtDone: "完了",
+        dtNoMatch: "該当なし。",
+        dtEditorScript: "エディタのスクリプト",
         pathfinderTitle: "パスファインダー",
         swatchesTitle: "スウォッチ",
         filtersTitle: "フィルター",
@@ -64922,185 +65004,551 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     }
         };
         
-        // Gestion de la modal outils développeur
-        function openDeveloperModal() {
-    document.getElementById('developerModal').classList.add('active');
-        }
-        
-        function closeDeveloperModal() {
-    document.getElementById('developerModal').classList.remove('active');
-        }
-        
-        // Copier l'exemple d'API
-        function copyApiExample() {
-    const example = document.getElementById('apiExample');
-    navigator.clipboard.writeText(example.value).then(() => {
-        alert(translate('alertExampleCopied'));
-    });
-        }
-        
-        // Exécuter l'exemple d'API
-        function runApiExample() {
-    try {
-        // Exemple basique
-        SuperPrint.addText(50, 50, "Titre automatique", {
-            fontSize: 24,
-            fontWeight: 'bold',
-            fill: '#ff6b35'
-        });
-        
-        SuperPrint.addRect(50, 100, 200, 150, {
-            fill: '#4299e1',
-            stroke: '#2b6cb0'
-        });
-        
-        document.getElementById('scriptResult').innerHTML = '✓ Exemple exécuté avec succès !';
-        document.getElementById('scriptOutput').style.display = 'block';
-    } catch (error) {
-        document.getElementById('scriptResult').innerHTML = `❌ Erreur: ${error.message}`;
-        document.getElementById('scriptOutput').style.display = 'block';
-    }
-        }
-        
-        // Scripts prédéfinis
-        const predefinedScripts = {
-    generateGrid: `// Générer une grille de guides
-for(let x = 0; x <= 210; x += 30) {
-    for(let y = 0; y <= 297; y += 30) {
-        if(x > 0) SuperPrint.addRect(x-0.5, 0, 1, 297, {fill: '#2a2a2a', strokeWidth: 0});
-        if(y > 0) SuperPrint.addRect(0, y-0.5, 210, 1, {fill: '#2a2a2a', strokeWidth: 0});
-    }
-}
-`,
-    
-    bulkText: `// Création de textes en lot
-const titles = ['Titre 1', 'Titre 2', 'Titre 3', 'Titre 4'];
-titles.forEach((title, i) => {
-    SuperPrint.addText(20, 50 + (i * 40), title, {
-        fontSize: 18,
-        fontWeight: 'bold',
-        fill: '#2c3e50'
-    });
-});
+                /* _SP_DEVTOOL_500_DEBUT */
+        /* ══════════════════════════════════════════════════════════════════════════════════════
+           v1.7.500 — « dev tool » : console de script + API SuperPrint
+           Remplace l'ancien panneau « Outils Développeur » (emoji partout, 5 scripts figés).
 
-// Sécurité: fermer la pop-in grille via la croix (global)
-document.addEventListener('click', (e) => {
-    const closeX = e.target.closest('#closeGridMenuX');
-    if (closeX) {
-        if (window._closeGridPopin) {
-            window._closeGridPopin();
-        } else {
-            const gridMenu = document.getElementById('gridMenu');
-            const rulersMenu = document.getElementById('rulersMenu');
-            if (gridMenu) gridMenu.classList.remove('open', 'popin-mode');
-            if (rulersMenu) rulersMenu.classList.remove('open');
-            const ov = document.getElementById('gridPopinOverlay');
-            if (ov) ov.classList.remove('active');
-        }
-        e.preventDefault();
-        e.stopPropagation();
-    }
-}, true);
+           · AUCUN emoji : toutes les icônes sont des SVG en ligne (trait = currentColor).
+           · Trois onglets : Exemples · Éditeur · Référence.
+           · 6 exemples neufs, exécutables directement ET ouvrables dans l'éditeur.
+           · La console du panneau horodate chaque ligne et capture `console.log`.
+           · Bac à sable : SuperPrint · canvas · log() · mm() · px() · save() (+ getActiveCanvas,
+             spToast, fabric, translate, document).
+           · Le script écrit et le dernier onglet sont mémorisés (localStorage).
+           · i18n : les libellés passent par `translate()` (clés `dt*` ajoutées aux dictionnaires
+             fr/en/ja). Les phrases longues (descriptions d'exemples, référence API) vivent ici
+             dans DICO : fr + en, et repli sur l'anglais pour les autres langues (dont le japonais)
+             pour ne pas gonfler main.js de 60 clés.
+           ══════════════════════════════════════════════════════════════════════════════════════ */
+        (function initDevTool() {
 
-// Helper global pour fermer la pop-in grille
-window.closeGridMenu = function() {
-    const gridMenu = document.getElementById('gridMenu');
-    const rulersMenu = document.getElementById('rulersMenu');
-    if (gridMenu) gridMenu.classList.remove('open');
-    if (rulersMenu) rulersMenu.classList.remove('open');
-};
-`,
-    
-    autoLayout: `// Layout automatique en colonnes
-const texts = ['Colonne 1', 'Colonne 2', 'Colonne 3'];
-const colWidth = 60;
-texts.forEach((text, i) => {
-    SuperPrint.addRect(20 + (i * colWidth), 50, colWidth - 5, 100, {
-        fill: '#ecf0f1',
-        stroke: '#bdc3c7'
-    });
-    SuperPrint.addText(25 + (i * colWidth), 60, text, {
-        fontSize: 12,
-        fontWeight: 'bold'
-    });
-});
-`,
-    
-    batchExport: `// Export en lot (différentes qualités)
-const qualities = ['standard', 'medium', 'hd'];
-qualities.forEach(quality => {
-    SuperPrint.exportPDF({quality: quality, colorMode: 'rgb'});
-});
-`,
-    
-    colorTheme: `// Appliquer thème couleur
-const canvas = getActiveCanvas();
-const objects = canvas.getObjects();
-const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
-objects.forEach((obj, i) => {
-    if(obj.fill) {
-        obj.set('fill', colors[i % colors.length]);
-    }
-});
-canvas.requestRenderAll();
-`
-        };
-        
-        // Charger un script prédéfini
-        function loadPredefinedScript() {
-    const select = document.getElementById('predefinedScripts');
-    const scriptKey = select.value;
-    if (scriptKey && predefinedScripts[scriptKey]) {
-        document.getElementById('customScript').value = predefinedScripts[scriptKey];
-    }
-        }
-        
-        // Exécuter le script personnalisé
-        function executeScript() {
-    const script = document.getElementById('customScript').value;
-    if (!script.trim()) {
-        alert(translate('alertEnterScript'));
-        return;
-    }
-    
-    try {
-        // Créer un contexte sécurisé
-        const result = new Function(script)();
-        document.getElementById('scriptResult').innerHTML = `✓ Script exécuté avec succès !<br>Résultat: ${result || 'undefined'}`;
-        document.getElementById('scriptOutput').style.display = 'block';
-    } catch (error) {
-        document.getElementById('scriptResult').innerHTML = `❌ Erreur d'exécution: ${error.message}`;
-        document.getElementById('scriptOutput').style.display = 'block';
-    }
-        }
-        
-        // Effacer le script
-        function clearScript() {
-    document.getElementById('customScript').value = '';
-    document.getElementById('scriptOutput').style.display = 'none';
-        }
-        
-        // Sauvegarder le script
-        function saveScript() {
-    const script = document.getElementById('customScript').value;
-    if (script.trim()) {
-        const blob = new Blob([script], { type: 'text/javascript' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `superprint-script-${Date.now()}.js`;
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-        }
-        
-        // Event listener pour le bouton outils développeur
-        document.addEventListener('DOMContentLoaded', function() {
-    const devButton = document.getElementById('openDeveloperTools');
-    if (devButton) {
-        devButton.addEventListener('click', openDeveloperModal);
-    }
-        });
+            var VERSION = '500.1';
+            var CLE_CODE = 'sp_devtool_code';
+            var CLE_ONGLET = 'sp_devtool_tab';
+            var MAX_LIGNES = 400;
+
+            /* ── 1. ICÔNES (SVG 24×24, trait courant) ───────────────────────────────────────── */
+            function svg(corps) {
+                return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+                    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + corps + '</svg>';
+            }
+            var ICON = {
+                terminal: svg('<rect x="2.5" y="4" width="19" height="16" rx="0"/><path d="M6.5 9.5l2.5 2.5-2.5 2.5M12 15h5.5"/>'),
+                layers: svg('<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>'),
+                code: svg('<path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/>'),
+                book: svg('<path d="M4 4.5h7a3 3 0 013 3V20a3 3 0 00-3-3H4z"/><path d="M20 4.5h-7a3 3 0 00-3 3V20a3 3 0 013-3h7z"/>'),
+                search: svg('<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>'),
+                grid: svg('<rect x="3.5" y="3.5" width="17" height="17" rx="0"/><path d="M9.5 3.5v17M15 3.5v17M3.5 9.5h17M3.5 15h17"/>'),
+                palette: svg('<circle cx="12" cy="12" r="8.5"/><circle cx="9" cy="9.5" r="1.4"/><circle cx="15" cy="9.5" r="1.4"/><circle cx="15" cy="15" r="1.4"/><circle cx="9" cy="15" r="1.4"/>'),
+                text: svg('<path d="M4 6h16M4 6V4.5h16V6M12 6v13M9 19h6"/>'),
+                pages: svg('<rect x="3" y="5.5" width="12" height="15" rx="0"/><path d="M8 2.5h12v15M6.5 9h6M6.5 12.5h6M6.5 16h4"/>'),
+                shield: svg('<path d="M12 3l7.5 3v6c0 4.4-3 8-7.5 9.5C7.5 20 4.5 16.4 4.5 12V6z"/><path d="M8.8 12.2l2.3 2.3 4.1-4.6"/>'),
+                play: svg('<path d="M7 4.5l12 7.5-12 7.5z"/>'),
+                download: svg('<path d="M12 3.5v11M7.5 10L12 14.5 16.5 10M4.5 20.5h15"/>'),
+                copy: svg('<rect x="8.5" y="8.5" width="11" height="11" rx="0"/><path d="M15.5 5.5H5v10"/>'),
+                trash: svg('<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 10.5v6.5M14 10.5v6.5"/>'),
+                pen: svg('<path d="M4 20l1-4 10.5-10.5 3 3L8 19z"/><path d="M14.5 6.5l3 3"/>'),
+                ext: svg('<path d="M14 4.5h5.5V10"/><path d="M19.5 4.5L11 13"/><path d="M18 14v5.5H4.5V6H10"/>')
+            };
+
+            /* ── 2. LANGUE ──────────────────────────────────────────────────────────────────── */
+            function lg() {
+                var l = (document.documentElement.lang || 'en').slice(0, 2).toLowerCase();
+                return (l === 'fr' || l === 'ja' || l === 'en') ? l : 'en';
+            }
+            function T(cle, secours) {
+                var v = (typeof translate === 'function') ? translate(cle) : null;
+                if (!v || v === cle) return secours || cle;
+                return v;
+            }
+            /* DICO local : fr = index 0, en = index 1 (repli pour toute autre langue). */
+            function L(p) { return lg() === 'fr' ? p[0] : p[1]; }
+
+            /* ── 3. EXEMPLES ────────────────────────────────────────────────────────────────── */
+            var SNIPPETS = [
+                {
+                    id: 'inventaire', icone: 'search', lieu: 'ro',
+                    titre: ['Inventaire du document', 'Document inventory'],
+                    desc: ['Liste page par page les objets, leur position et leur taille en millimètres. N\'écrit rien : utile avant de retoucher un montage.', 'Lists objects by page with their position and size in millimetres. Writes nothing: handy before reworking a layout.'],
+                    code:
+                        '// Inventaire du document — LECTURE SEULE : rien n\'est modifié.\n' +
+                        'const c = getActiveCanvas();\n' +
+                        'const estRepere = function (o) { return !o || o.isMargin || o.isBleed || o.isGuide || o.isManualGuide || o.isTrimBox || o.isPageBorder || o._isSpreadMirror; };\n' +
+                        'const objets = c.getObjects().filter(function (o) { return !estRepere(o); });\n' +
+                        'const arrondi = function (v) { return Math.round(px(v) * 10) / 10; };\n' +
+                        '\n' +
+                        'log(\'Document : \' + SuperPrint.getPages().length + ' + '\' page(s), \' + objets.length + \' objet(s) de contenu sur la page active\');\n' +
+                        'objets.forEach(function (o, i) {\n' +
+                        '    const b = o.getBoundingRect(true, true);\n' +
+                        '    const boite = arrondi(b.left) + \',\' + arrondi(b.top) + \' mm   \' + arrondi(b.width) + \' x \' + arrondi(b.height) + \' mm\';\n' +
+                        '    const style = (typeof o.fill === \'string\' ? \'   fond \' + o.fill : \'\')\n' +
+                        '        + (typeof o.stroke === \'string\' && o.stroke ? \'   trait \' + o.stroke : \'\');\n' +
+                        '    log(String(i + 1) + \'.  \' + (o.type || \'?\') + \'   \' + boite + style);\n' +
+                        '});\n' +
+                        'if (!objets.length) log(\'Aucun objet de contenu sur cette page (repères de marge et de fond perdu ignorés).\');\n'
+                },
+                {
+                    id: 'colonnes', icone: 'grid', lieu: 'rw',
+                    titre: ['Grille de 12 colonnes', '12-column grid'],
+                    desc: ['Pose une grille typographique (marges, gouttières) calculée sur la taille réelle de la page. Les repères sont très clairs : à supprimer avant l\'export.', 'Lays out a typographic grid (margins, gutters) computed from the real page size. The guides are very light: delete them before exporting.'],
+                    code:
+                        '// Grille typographique 12 colonnes — mesures en millimètres.\n' +
+                        'const c = getActiveCanvas();\n' +
+                        'const marge = 15, gouttiere = 5;\n' +
+                        'const H = px(c.height);\n' +
+                        'const largeur = px(c.width) - 2 * marge;\n' +
+                        'const col = (largeur - 11 * gouttiere) / 12;\n' +
+                        '\n' +
+                        'for (let i = 0; i < 12; i++) {\n' +
+                        '    SuperPrint.addRect(marge + i * (col + gouttiere), marge, col, H - 2 * marge, {\n' +
+                        '        fill: \'rgba(225,35,123,0.08)\', stroke: \'rgba(225,35,123,0.55)\', strokeWidth: 0.4\n' +
+                        '    });\n' +
+                        '}\n' +
+                        'log(\'12 colonnes de \' + (Math.round(col * 10) / 10) + \' mm, gouttières \' + gouttiere + \' mm, marges \' + marge + \' mm\');\n' +
+                        'spToast(\'Grille posée — pensez à supprimer les repères avant export\', \'info\');\n'
+                },
+                {
+                    id: 'nuancier', icone: 'palette', lieu: 'rw',
+                    titre: ['Nuancier imprimé', 'Printed swatch strip'],
+                    desc: ['Six pastilles alignées en bas de page avec leur code hexadécimal : pratique pour valider une palette sur épreuve papier.', 'Six swatches aligned at the bottom of the page with their hex code: handy to validate a palette on a paper proof.'],
+                    code:
+                        '// Nuancier : pastilles + code hexadécimal, alignées à droite en bas de page.\n' +
+                        'const c = getActiveCanvas();\n' +
+                        'const teintes = [\'#0F172A\', \'#E1237B\', \'#F2C14E\', \'#2E7D6F\', \'#C2452D\', \'#7A5CFF\'];\n' +
+                        'const cote = 22, ecart = 4;\n' +
+                        'const y = px(c.height) - 45;\n' +
+                        'const depart = px(c.width) - 20 - (teintes.length * (cote + ecart) - ecart);\n' +
+                        '\n' +
+                        'teintes.forEach(function (t, i) {\n' +
+                        '    const x = depart + i * (cote + ecart);\n' +
+                        '    SuperPrint.addRect(x, y, cote, cote, { fill: t, stroke: t, strokeWidth: 0 });\n' +
+                        '    SuperPrint.addText(x, y + cote + 2, t.toUpperCase(), { fontSize: 7, fill: \'#111111\', width: cote + 6 });\n' +
+                        '});\n' +
+                        'log(teintes.length + \' pastilles posées, de \' + depart + \' à \' + (depart + teintes.length * (cote + ecart) - ecart) + \' mm\');\n'
+                },
+                {
+                    id: 'edito', icone: 'text', lieu: 'rw',
+                    titre: ['Bloc éditorial', 'Editorial block'],
+                    desc: ['Surtitre, titre sur deux lignes, filet de séparation et chapô : un gabarit de début de page composé uniquement avec l\'API.', 'Kicker, two-line headline, rule and standfirst: a page-opening template built only with the API.'],
+                    code:
+                        '// Bloc éditorial : surtitre, titre, filet, chapô — tout à la marge haute gauche.\n' +
+                        'const c = getActiveCanvas();\n' +
+                        'const m = 20;\n' +
+                        'const larg = px(c.width) - 2 * m;\n' +
+                        '\n' +
+                        'SuperPrint.addText(m, m, \'SURTITRE · RUBRIQUE\', { fontSize: 8, fill: \'#E1237B\', width: larg });\n' +
+                        'SuperPrint.addText(m, m + 6, \'Un titre qui tient sur deux lignes\', { fontSize: 30, fontWeight: \'bold\', fill: \'#111111\', width: larg });\n' +
+                        'SuperPrint.addRect(m, m + 34, larg, 0.6, { fill: \'#111111\', strokeWidth: 0 });\n' +
+                        'SuperPrint.addText(m, m + 40, \'Chapô de démonstration : ce paragraphe montre comment composer un début de page avec l\\\'API, en millimètres, sans quitter le navigateur.\', { fontSize: 11, fill: \'#333333\', width: larg * 0.62 });\n' +
+                        'log(\'Bloc éditorial posé — largeur utile \' + Math.round(larg) + \' mm\');\n'
+                },
+                {
+                    id: 'pieds', icone: 'pages', lieu: 'rw',
+                    titre: ['Pied de page sur toutes les pages', 'Footer on every page'],
+                    desc: ['Parcourt le document, pose un bandeau noir et la mention « Page n / total » sur chaque page, puis revient en page 1.', 'Walks the document, adds a black band and “Page n / total” on each page, then returns to page 1.'],
+                    code:
+                        '// Pied de page sur TOUTES les pages — le script est asynchrone (await possible).\n' +
+                        'const total = SuperPrint.getPages().length;\n' +
+                        '\n' +
+                        'for (let i = 0; i < total; i++) {\n' +
+                        '    SuperPrint.setPage(i);\n' +
+                        '    await new Promise(function (r) { setTimeout(r, 90); });   // laisse la page devenir active\n' +
+                        '    const c = getActiveCanvas();\n' +
+                        '    const W = px(c.width), H = px(c.height);\n' +
+                        '    SuperPrint.addRect(0, H - 14, W, 14, { fill: \'#111111\', strokeWidth: 0 });\n' +
+                        '    SuperPrint.addText(10, H - 9.5, \'Page \' + (i + 1) + \' / \' + total, { fontSize: 8, fill: \'#FFFFFF\', width: W - 20 });\n' +
+                        '}\n' +
+                        'SuperPrint.setPage(0);\n' +
+                        'log(\'Pied de page posé sur \' + total + \' page(s) — retour en page 1\');\n'
+                },
+                {
+                    id: 'debords', icone: 'shield', lieu: 'ro',
+                    titre: ['Contrôle des débords', 'Overflow check'],
+                    desc: ['Signale les objets qui sortent de la page finie (tolérance 0,5 mm). Lecture seule : parfait comme garde-fou avant un export.', 'Reports objects that run off the trimmed page (0.5 mm tolerance). Read-only: a good safety net before exporting.'],
+                    code:
+                        '// Contrôle avant export : qui dépasse de la page ? (tolérance 0,5 mm)\n' +
+                        'const c = getActiveCanvas();\n' +
+                        'const tol = 0.5 * 72 / 25.4;   // le document est à 72 dpi\n' +
+                        'const W = c.width, H = c.height;\n' +
+                        'const arrondi = function (v) { return Math.round(px(v) * 10) / 10; };\n' +
+                        'const estRepere = function (o) { return !o || o.isMargin || o.isBleed || o.isGuide || o.isManualGuide || o.isTrimBox || o.isPageBorder || o._isSpreadMirror; };\n' +
+                        'const objets = c.getObjects().filter(function (o) { return !estRepere(o); });\n' +
+                        'const deborde = [];\n' +
+                        '\n' +
+                        'objets.forEach(function (o, i) {\n' +
+                        '    const b = o.getBoundingRect(true, true);\n' +
+                        '    const pire = Math.max(-b.left, -b.top, b.left + b.width - W, b.top + b.height - H);\n' +
+                        '    if (pire > tol) deborde.push({ n: i + 1, type: o.type, mm: arrondi(pire), b: b });\n' +
+                        '});\n' +
+                        '\n' +
+                        'const pages = SuperPrint.getPages();\n' +
+                        'log(\'Page \' + (pages.findIndex(function (p) { return p.active; }) + 1) + \' / \' + pages.length\n' +
+                        '    + \'  —  \' + objets.length + \' objet(s) analysé(s) hors repères\');\n' +
+                        '\n' +
+                        'if (!deborde.length) {\n' +
+                        '    log(\'Aucun objet ne sort de la page (tolérance 0,5 mm).\');\n' +
+                        '} else {\n' +
+                        '    deborde.forEach(function (d) {\n' +
+                        '        log(\'   objet \' + d.n + \' (\' + d.type + \') dépasse de \' + d.mm + \' mm\');\n' +
+                        '    });\n' +
+                        '    log(deborde.length + \' objet(s) à vérifier. Le fond perdu n\\\'est pas compté.\');\n' +
+                        '}\n'
+                }
+            ];
+
+            /* ── 4. RÉFÉRENCE API ───────────────────────────────────────────────────────────── */
+            var API = [
+                {
+                    groupe: ['Document', 'Document'],
+                    lignes: [
+                        ['SuperPrint.getPages()', ['Liste des pages : index, objets, page active.', 'Page list: index, objects, active flag.']],
+                        ['SuperPrint.setPage(i)', ['Bascule sur la page i (0 = première).', 'Switches to page i (0-based).']],
+                        ['SuperPrint.saveProject()', ['Renvoie le projet courant en JSON (chaîne).', 'Returns the current project as a JSON string.']],
+                        ['SuperPrint.loadProject(json)', ['Charge un projet (chaîne JSON ou objet).', 'Loads a project (JSON string or object).']],
+                        ['SuperPrint.exportPDF({…})', ['Export PDF. quality : standard | medium | hd — colorMode : rgb | cmyk | bw.', 'PDF export. quality: standard | medium | hd — colorMode: rgb | cmyk | bw.']]
+                    ]
+                },
+                {
+                    groupe: ['Objets', 'Objects'],
+                    lignes: [
+                        ['SuperPrint.addText(x, y, texte, {…})', ['Bloc texte (mm). width, fontSize, fontFamily, fontWeight, fill, textAlign.', 'Text box (mm). width, fontSize, fontFamily, fontWeight, fill, textAlign.']],
+                        ['SuperPrint.addRect(x, y, l, h, {…})', ['Rectangle (mm). fill, stroke, strokeWidth.', 'Rectangle (mm). fill, stroke, strokeWidth.']],
+                        ['SuperPrint.addCircle(x, y, r, {…})', ['Cercle (mm), mêmes options que le rectangle.', 'Circle (mm), same options as rectangle.']],
+                        ['SuperPrint.addEllipse(x, y, rx, ry, {…})', ['Ellipse (mm), mêmes options que le rectangle.', 'Ellipse (mm), same options as rectangle.']],
+                        ['SuperPrint.addImage(x, y, url, {…})', ['Image depuis une URL (mm). Renvoie une Promise. scaleX, scaleY.', 'Image from a URL (mm). Returns a Promise. scaleX, scaleY.']]
+                    ]
+                },
+                {
+                    groupe: ['Intelligence artificielle', 'Artificial intelligence'],
+                    lignes: [
+                        ['SuperPrint.aiGenerate(prompt)', ['Propose une mise en page complète (Promise). Nécessite la clé API de l\'assistant.', 'Proposes a full layout (Promise). Requires the assistant API key.']]
+                    ]
+                },
+                {
+                    groupe: ['Bac à sable du dev tool', 'dev tool sandbox'],
+                    lignes: [
+                        ['canvas', ['Le canvas de la page active (objets Fabric.js).', 'The active page canvas (Fabric.js objects).']],
+                        ['log(…)', ['Écrit une ligne dans la console du panneau. console.log est aussi capturé.', 'Writes a line to the panel console. console.log is captured too.']],
+                        ['mm(v) / px(v)', ['Convertit millimètres ↔ pixels (document à 72 dpi).', 'Converts millimetres ↔ pixels (72 dpi document).']],
+                        ['save(label)', ['Force une entrée d\'historique nommée.', 'Forces a named history entry.']],
+                        ['getActiveCanvas()', ['Même canvas que `canvas` (fonction globale de l\'application).', 'Same canvas as `canvas` (global app function).']],
+                        ['spToast(msg, type)', ['Notification discrète : info | warn | error.', 'Small notification: info | warn | error.']],
+                        ['fabric', ['La bibliothèque, pour fabriquer des objets hors API.', 'The library itself, to build objects the API does not cover.']]
+                    ]
+                }
+            ];
+
+            /* ── 5. CONSOLE DU PANNEAU ─────────────────────────────────────────────────────── */
+            var lignes = 0;
+            function horodate() {
+                var d = new Date();
+                function p(n) { return (n < 10 ? '0' : '') + n; }
+                return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+            }
+            function ecrire(niveau, texte) {
+                var zone = document.getElementById('dtConsole');
+                if (!zone) return;
+                var l = document.createElement('div');
+                l.className = 'dt-l ' + niveau;
+                l.textContent = horodate() + '  ' + texte;
+                zone.appendChild(l);
+                if (++lignes > MAX_LIGNES) { zone.removeChild(zone.firstChild); lignes--; }
+                zone.scrollTop = zone.scrollHeight;
+            }
+            function viderConsole(vide) {
+                var zone = document.getElementById('dtConsole');
+                if (!zone) return;
+                if (vide) { zone.innerHTML = ''; lignes = 0; return; }
+                if (!zone.children.length) ecrire('cmd', T('dtConsoleEmpty', 'La sortie des scripts s\'affiche ici.'));
+            }
+            function fmt(v) {
+                if (v === undefined) return 'undefined';
+                if (v === null) return 'null';
+                if (typeof v === 'string') return v;
+                if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+                if (v instanceof Error) return v.message;
+                try { return JSON.stringify(v); } catch (e) { return String(v); }
+            }
+
+            /* ── 6. MOTEUR D'EXÉCUTION ─────────────────────────────────────────────────────── */
+            var mm = function (v) { return v * 72 / 25.4; };
+            var px = function (v) { return v * 25.4 / 72; };
+            function save(label) {
+                if (typeof saveState === 'function') { saveState(label || 'dev tool'); return true; }
+                return false;
+            }
+
+            async function executer(code, etiquette) {
+                code = String(code == null ? '' : code);
+                if (!code.trim()) { ecrire('warn', T('dtNothingToRun', 'Rien à exécuter.')); return; }
+                var canvas = (typeof getActiveCanvas === 'function') ? getActiveCanvas() : null;
+                if (!canvas) { ecrire('err', T('dtNoDocument', 'Aucun document ouvert.')); return; }
+
+                ecrire('cmd', '> ' + (etiquette || 'script'));
+                var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+                var vraiLog = console.log;
+                console.log = function () {
+                    var args = Array.prototype.slice.call(arguments);
+                    ecrire('log', args.map(fmt).join(' '));
+                    try { vraiLog.apply(console, arguments); } catch (e) { }
+                };
+                try {
+                    // Wrapper async : le script peut utiliser `await` et `return`.
+                    var f = new Function('SuperPrint', 'canvas', 'log', 'mm', 'px', 'save',
+                        'return (async () => {\n' + code + '\n})();');
+                    var res = await f(window.SuperPrint, canvas, function () {
+                        ecrire('log', Array.prototype.slice.call(arguments).map(fmt).join(' '));
+                    }, mm, px, save);
+                    var ms = Math.round(((window.performance && performance.now) ? performance.now() : Date.now()) - t0);
+                    ecrire('ok', T('dtDone', 'Terminé') + ' — ' + ms + ' ms' + (res !== undefined ? '   retour : ' + fmt(res) : ''));
+                } catch (e) {
+                    ecrire('err', (e && e.message) ? e.message : String(e));
+                    if (e && e.stack) console.warn('[dev tool] ' + e.stack);
+                } finally {
+                    console.log = vraiLog;
+                }
+            }
+
+            /* ── 7. RENDU ──────────────────────────────────────────────────────────────────── */
+            var filtreExemples = '', filtreApi = '';
+            function bouton(icone, libelle, id, secondaire) {
+                return '<button type="button" class="btn' + (secondaire ? ' btn-secondary' : '') + '" id="' + id + '">' +
+                    ICON[icone] + '<span>' + libelle + '</span></button>';
+            }
+
+            function rendreOnglets() {
+                var defs = [
+                    ['snippets', ICON.layers, T('dtTabSnippets', 'Exemples')],
+                    ['editor', ICON.code, T('dtTabEditor', 'Éditeur')],
+                    ['api', ICON.book, T('dtTabApi', 'Référence')]
+                ];
+                var zone = document.getElementById('dtTabs');
+                zone.innerHTML = defs.map(function (d) {
+                    return '<button type="button" role="tab" data-onglet="' + d[0] + '">' + d[1] + '<span>' + d[2] + '</span></button>';
+                }).join('');
+                zone.querySelectorAll('button').forEach(function (b) {
+                    b.addEventListener('click', function () { setOnglet(b.getAttribute('data-onglet')); });
+                });
+            }
+
+            function setOnglet(nom) {
+                var connu = { snippets: 1, editor: 1, api: 1 };
+                if (!connu[nom]) nom = 'snippets';
+                document.querySelectorAll('#dtTabs button').forEach(function (b) {
+                    b.setAttribute('aria-selected', b.getAttribute('data-onglet') === nom ? 'true' : 'false');
+                });
+                var panes = { snippets: 'dtPaneSnippets', editor: 'dtPaneEditor', api: 'dtPaneApi' };
+                Object.keys(panes).forEach(function (k) {
+                    var el = document.getElementById(panes[k]);
+                    if (el) el.className = 'dt-pane' + (k === nom ? ' actif' : '');
+                });
+                try { localStorage.setItem(CLE_ONGLET, nom); } catch (e) { }
+                if (nom === 'editor') viderConsole(false);
+            }
+
+            function rendreExemples() {
+                var zone = document.getElementById('dtSnippets');
+                if (!zone) return;
+                var f = filtreExemples.toLowerCase();
+                var liste = SNIPPETS.filter(function (s) {
+                    if (!f) return true;
+                    return (s.titre[0] + ' ' + s.titre[1] + ' ' + s.desc[0] + ' ' + s.desc[1] + ' ' + s.code).toLowerCase().indexOf(f) >= 0;
+                });
+                if (!liste.length) {
+                    zone.innerHTML = '<div class="dt-snip-d">' + T('dtNoMatch', 'Aucun exemple ne correspond.') + '</div>';
+                    return;
+                }
+                zone.innerHTML = liste.map(function (s) {
+                    var badge = s.lieu === 'ro'
+                        ? '<span class="dt-snip-b ro">' + T('dtReadonly', 'lecture seule') + '</span>'
+                        : '<span class="dt-snip-b rw">' + T('dtWrites', 'modifie la page') + '</span>';
+                    return '<div class="dt-snip" data-id="' + s.id + '">' +
+                        '<div class="dt-snip-h">' + ICON[s.icone] + '<span class="dt-snip-t">' + L(s.titre) + '</span></div>' +
+                        '<div class="dt-snip-d">' + L(s.desc) + '</div>' + badge +
+                        '<div class="dt-bar">' + bouton('play', T('dtRun', 'Exécuter'), 'run-' + s.id, false) +
+                        bouton('pen', T('dtToEditor', 'Ouvrir dans l\'éditeur'), 'edit-' + s.id, true) + '</div>' +
+                        '</div>';
+                }).join('');
+                liste.forEach(function (s) {
+                    var b1 = document.getElementById('run-' + s.id);
+                    var b2 = document.getElementById('edit-' + s.id);
+                    if (b1) b1.addEventListener('click', function () { setOnglet('editor'); executer(s.code, L(s.titre)); });
+                    if (b2) b2.addEventListener('click', function () { setOnglet('editor'); chargerDansEditeur(s.code); });
+                });
+            }
+
+            function rendreApi() {
+                var zone = document.getElementById('dtApi');
+                if (!zone) return;
+                var f = filtreApi.toLowerCase();
+                var html = '';
+                API.forEach(function (g) {
+                    var lignes2 = g.lignes.filter(function (l) {
+                        if (!f) return true;
+                        return (l[0] + ' ' + l[1][0] + ' ' + l[1][1]).toLowerCase().indexOf(f) >= 0;
+                    });
+                    if (!lignes2.length) return;
+                    html += '<div class="dt-grp">' + L(g.groupe) + '</div>';
+                    lignes2.forEach(function (l) {
+                        html += '<div class="dt-row"><code>' + l[0].replace(/</g, '&lt;') + '</code><span>' + L(l[1]) + '</span></div>';
+                    });
+                });
+                zone.innerHTML = html || '<div class="dt-snip-d">' + T('dtNoMatch', 'Aucune ligne ne correspond.') + '</div>';
+            }
+
+            function rendreBac() {
+                var zone = document.getElementById('dtSandbox');
+                if (!zone) return;
+                var phrase = lg() === 'fr'
+                    ? 'Le script tourne dans une fonction <code>async</code> : <code>await</code> est disponible. Tout ce qui est ajouté passe par l\'API, en millimètres (document à 72 dpi).'
+                    : 'The script runs inside an <code>async</code> function: <code>await</code> is available. Everything added goes through the API, in millimetres (72 dpi document).';
+                zone.innerHTML = '<b>' + T('dtSandbox', 'Bac à sable') + ' :</b> ' +
+                    '<code>SuperPrint</code> <code>canvas</code> <code>log()</code> <code>mm()</code> <code>px()</code> <code>save()</code><br>' +
+                    phrase;
+            }
+
+            function rendreBarre() {
+                var barre = document.getElementById('dtBar');
+                if (barre) {
+                    barre.innerHTML = bouton('play', T('dtRun', 'Exécuter'), 'dtRunBtn', false) +
+                        bouton('copy', T('dtCopy', 'Copier'), 'dtCopyBtn', true) +
+                        bouton('download', T('dtDownload', 'Télécharger .js'), 'dtDownloadBtn', true) +
+                        bouton('trash', T('dtClear', 'Effacer'), 'dtClearBtn', true) +
+                        '<span class="dt-hint">' + T('dtKeyHint', 'Ctrl + Entrée pour exécuter · Échap pour fermer') + '</span>';
+                    document.getElementById('dtRunBtn').addEventListener('click', function () {
+                        executer(document.getElementById('dtCode').value, T('dtEditorScript', 'script de l\'éditeur'));
+                    });
+                    document.getElementById('dtCopyBtn').addEventListener('click', function () {
+                        var ta = document.getElementById('dtCode');
+                        ta.select();
+                        try { navigator.clipboard.writeText(ta.value); spToast(T('dtCopied', 'Copié'), 'info'); } catch (e) { document.execCommand('copy'); }
+                        ta.setSelectionRange(0, 0);
+                    });
+                    document.getElementById('dtDownloadBtn').addEventListener('click', function () {
+                        var blob = new Blob([document.getElementById('dtCode').value], { type: 'text/javascript' });
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'superprint-' + Date.now() + '.js';
+                        a.click();
+                        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+                    });
+                    document.getElementById('dtClearBtn').addEventListener('click', function () {
+                        var ta = document.getElementById('dtCode');
+                        ta.value = '';
+                        memoriser('');
+                        ta.focus();
+                    });
+                }
+                var lab = document.getElementById('dtConsoleLabel');
+                if (lab) lab.textContent = T('dtConsole', 'Sortie');
+                var vide = document.getElementById('dtConsoleClear');
+                if (vide) {
+                    vide.innerHTML = ICON.trash + '<span>' + T('dtClear', 'Effacer') + '</span>';
+                    vide.addEventListener('click', function () { viderConsole(true); });
+                }
+                var pied = document.getElementById('dtClose');
+                if (pied) {
+                    pied.textContent = T('dtClose', 'Fermer');
+                    pied.addEventListener('click', function () { closeDeveloperModal(); });
+                }
+                var docs = document.getElementById('dtDocs');
+                if (docs) docs.innerHTML = ICON.ext + '<span>' + T('dtDocs', 'Documentation Fabric.js') + '</span>';
+                var titreIcone = document.getElementById('dtTitleIcon');
+                if (titreIcone) titreIcone.innerHTML = ICON.terminal;
+                var sous = document.getElementById('dtSub');
+                if (sous) sous.textContent = T('dtSub', 'console de script & API SuperPrint');
+                var t = document.getElementById('dtTitle');
+                if (t) t.textContent = T('devToolsTitle', 'dev tool');
+                var fx = document.getElementById('dtFilter');
+                if (fx) { fx.placeholder = T('dtFilter', 'Filtrer les exemples…'); }
+                var fa = document.getElementById('dtApiFilter');
+                if (fa) { fa.placeholder = T('dtFilterApi', 'Filtrer l\'API…'); }
+            }
+
+            /* ── 8. ÉDITEUR ────────────────────────────────────────────────────────────────── */
+            function memoriser(code) { try { localStorage.setItem(CLE_CODE, code); } catch (e) { } }
+            function memorise() { try { return localStorage.getItem(CLE_CODE) || ''; } catch (e) { return ''; } }
+            function exempleDepart() {
+                return '// dev tool — API SuperPrint. Unités : millimètres (mm) / pixels (px).\n' +
+                    '// Ctrl + Entrée exécute. Le script tourne en async : await est disponible.\n' +
+                    '\n' +
+                    'const c = getActiveCanvas();\n' +
+                    'log(\'Page : \' + px(c.width).toFixed(1) + \' x \' + px(c.height).toFixed(1) + \' mm, \' + c.getObjects().length + \' objet(s)\');\n' +
+                    '\n' +
+                    'SuperPrint.addRect(20, 20, 60, 60, { fill: \'#E1237B\', strokeWidth: 0 });\n' +
+                    'SuperPrint.addText(20, 90, \'Bonjour depuis le dev tool\', { fontSize: 16, width: 120 });\n';
+            }
+            function chargerDansEditeur(code) {
+                var ta = document.getElementById('dtCode');
+                if (!ta) return;
+                ta.value = code;
+                memoriser(code);
+                ta.scrollTop = 0;
+                ta.focus();
+            }
+
+            /* ── 9. OUVERTURE / FERMETURE ──────────────────────────────────────────────────── */
+            function ouvrir(onglet) {
+                var modale = document.getElementById('developerModal');
+                if (!modale) return;
+                rendreBarre();
+                rendreOnglets();
+                rendreExemples();
+                rendreApi();
+                rendreBac();
+                var ta = document.getElementById('dtCode');
+                if (ta && !ta.value) ta.value = memorise() || exempleDepart();
+                var fx = document.getElementById('dtFilter');
+                if (fx && !fx._lie) {
+                    fx._lie = true;
+                    fx.addEventListener('input', function () { filtreExemples = fx.value || ''; rendreExemples(); });
+                }
+                var fa = document.getElementById('dtApiFilter');
+                if (fa && !fa._lie) {
+                    fa._lie = true;
+                    fa.addEventListener('input', function () { filtreApi = fa.value || ''; rendreApi(); });
+                }
+                if (ta && !ta._lie) {
+                    ta._lie = true;
+                    ta.addEventListener('input', function () { memoriser(ta.value); });
+                    ta.addEventListener('keydown', function (e) {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); executer(ta.value, T('dtEditorScript', 'script de l\'éditeur')); }
+                    });
+                }
+                var dernier = 'snippets';
+                try { dernier = localStorage.getItem(CLE_ONGLET) || 'snippets'; } catch (e) { }
+                setOnglet(onglet || dernier);
+                modale.classList.add('active');
+            }
+            function fermer() {
+                var modale = document.getElementById('developerModal');
+                if (modale) modale.classList.remove('active');
+            }
+
+            /* Raccourci local : Échap ferme même si le focus est dans un champ du panneau. */
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    var modale = document.getElementById('developerModal');
+                    if (modale && modale.classList.contains('active')) fermer();
+                }
+            }, true);
+
+            /* ── 10. CONTRAT GLOBAL (compatibilité F12 / Échap / bouton de la barre) ───────── */
+            window.spDevTool = {
+                ouvrir: ouvrir, fermer: fermer, executer: executer, version: VERSION,
+                exemples: SNIPPETS, api: API, icones: ICON
+            };
+            window.openDeveloperModal = function (onglet) { ouvrir(onglet); };
+            window.closeDeveloperModal = function () { fermer(); };
+
+            document.addEventListener('DOMContentLoaded', function () {
+                var b = document.getElementById('openDeveloperTools');
+                if (b) b.addEventListener('click', function () { ouvrir(); });
+            });
+        })();
+        /* _SP_DEVTOOL_500_FIN */
 
         // Ergonomie: swipe/drag pour la barre d'assets (#designScroll)
         document.addEventListener('DOMContentLoaded', function() {
@@ -83233,6 +83681,47 @@ function initMobileTouchContextMenu() {
 // ==================== MENU CONTEXTUEL DESKTOP (CLIC DROIT) ====================
 // Right-click on an object → menu with Z-order (Premier plan / Avancer / Reculer / Arrière-plan)
 // + Dupliquer + Supprimer. Hooks into all fabric canvases via document-level contextmenu listener.
+/* ══════════════════════════════════════════════════════════════════════════════════════
+   ✒️ v1.7.500 — ÉDITEUR DE TRACÉ (« Modifier le tracé »)
+
+   Demande utilisateur : « lorsqu'une typo est vectorisée, ajouter la fonction "edit
+   path" au clic droit pour pouvoir la modifier. Cette fonction doit s'appliquer sur
+   tous les objets vectoriels (formes svg, objets…) ».
+
+   PRINCIPE
+   ────────
+   · `fabric.Path`              → édité SUR PLACE (aucun remplacement d'objet : les
+                                  marqueurs — Pantone, import EPS/PDF… — sont conservés).
+   · rect / circle / ellipse /
+     triangle / polygon / line  → convertis en tracé ÉQUIVALENT puis remplacés
+                                  (conversion géométrique vérifiée au pixel).
+   · groupe                     → décomposé (mêmes règles que Ctrl+Shift+U), puis
+                                  chaque tracé est éditable un par un (boutons ‹ ›).
+
+   LES POIGNÉES SONT DES ÉLÉMENTS DOM, PAS DES OBJETS FABRIC.
+     Poser les poignées sur le canvas Fabric les ferait entrer dans la sélection, dans
+     l'historique, dans l'export et dans `saveAllPages`. En DOM au-dessus du canvas,
+     l'édition ne touche à RIEN du modèle : seul le `path` de l'objet change. Les
+     événements souris du drag ne sont donc jamais reçus par Fabric → aucune
+     interférence avec ses gestionnaires (aimantation, sélection, panneaux).
+
+   GÉOMÉTRIE — règles MESURÉES dans le navigateur (v1.7.500)
+     · mapping d'un tracé : scène(p) = M · (p − pathOffset), M = calcTransformMatrix().
+       Vérifié exact (aller et retour) sur tracé déplacé, pivoté, mis à l'échelle.
+     · polygon / polyline : même règle que `path` (leur `_render` retranche pathOffset).
+     · rect / circle / ellipse / triangle : coordonnées locales CENTRÉES sur 0
+       (pathOffset = 0) — conversion mesurée IDENTIQUE au pixel (y compris pivoté,
+       arrondi, mis à l'échelle).
+     · line : `calcLinePoints()` (centré), appliqué par M.
+     · MISE À JOUR : `obj._setPath(cmds)`. ⚠️ MESURE DÉCISIVE : `_setPath` REPOSE
+       left/top au minimum de la géométrie (test : tracé déplacé à left 150 → après
+       `_setPath`, left 80). Il n'est donc juste QUE si le tracé est en coordonnées
+       ABSOLUES. D'où la règle : **tout objet édité est d'abord « aplati »** en un
+       tracé absolu sans rotation ni échelle — et l'édition ne bouge alors jamais.
+       Sur un tracé pivoté, `_setPath` faisait exploser la boîte (mesuré) : l'aplatir
+       est la seule voie sûre.
+   ══════════════════════════════════════════════════════════════════════════════════════ */
+
 function initObjectRightClickMenu() {
     if (window.__spObjectRightClickMenuInited) return;
     window.__spObjectRightClickMenuInited = true;
@@ -85242,6 +85731,8 @@ function initObjectRightClickMenu() {
         dup:      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
         del:      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
         pen:      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>',
+        // ✒️ v1.7.500 — MODIFIER LE TRACÉ : une courbe et ses poignées.
+        pathEdit: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17c4-9 12-9 16 0" opacity="0.5"/><rect x="2" y="14.5" width="4.5" height="4.5"/><rect x="17.5" y="14.5" width="4.5" height="4.5"/><circle cx="12" cy="9.6" r="2.3"/></svg>',
         // 🆕 Texte dedans : rectangle avec un "T" centré dedans
         textIn:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M9 9h6M12 9v7" stroke-width="2"/></svg>',
         // 🆕 Texte autour : rectangle vide + "T" en dessous à gauche
@@ -85308,7 +85799,21 @@ function initObjectRightClickMenu() {
         menu.innerHTML = '';
         // 🛡️ FIX 2026-05-11 : item "Modifier le tracé" en tête pour les chemins plume
         if (obj && obj._simplePenData) {
-            menu.appendChild(mkItem(ICON.pen, t('Modifier le tracé', 'Edit path'), '', () => actEditPenPath(canvas, obj)));
+            menu.appendChild(mkItem(ICON.pen, t('Modifier le tracé (plume)', 'Edit path (pen)'), '', () => actEditPenPath(canvas, obj)));
+            menu.appendChild(mkSep());
+        }
+        // ✒️ v1.7.500 — MODIFIER LE TRACÉ : TOUS LES OBJETS VECTORIELS.
+        //   Demande utilisateur : « lorsqu'une typo est vectorisée, ajouter la
+        //   fonction edit path au clic droit pour pouvoir la modifier. Cette fonction
+        //   doit s'appliquer sur tous les objets vectoriels (formes svg, objets…) ».
+        //   Un glyphe vectorisé est un fabric.Path : l'entrée apparaît donc aussi sur
+        //   lui. Les tracés plume/crayon gardent leur éditeur dédié (test ci-dessus),
+        //   et un groupe est décomposé à l'ouverture (cf. _spPathEditor.ouvrir).
+        if (obj && !obj._simplePenData && window._spPathEditor &&
+            typeof window._spPathEditor.estVecteur === 'function' && window._spPathEditor.estVecteur(obj)) {
+            menu.appendChild(mkItem(ICON.pathEdit, t('Modifier le tracé', 'Edit path'), '', function () {
+                window._spPathEditor.ouvrir(canvas, obj);
+            }));
             menu.appendChild(mkSep());
         }
         // 🆕 2026-05-12 : Items "ajouter du texte" selon le type d'objet :
@@ -85496,4 +86001,829 @@ function initObjectRightClickMenu() {
     var badge = document.getElementById('spLocalBadge');
     if (isLocal && badge) badge.style.display = 'inline-flex';
   } catch (_) {}
+})();/* _SP_PATH_EDITOR_500_DEBUT */
+/* ══════════════════════════════════════════════════════════════════════════════════════
+   ✒️ v1.7.500 — ÉDITEUR DE TRACÉ (« Modifier le tracé »)
+
+   Demande utilisateur : « lorsqu'une typo est vectorisée, ajouter la fonction "edit
+   path" au clic droit pour pouvoir la modifier. Cette fonction doit s'appliquer sur
+   tous les objets vectoriels (formes svg, objets…) ».
+
+   PRINCIPE
+   ────────
+   · `fabric.Path`              → édité SUR PLACE (aucun remplacement d'objet : les
+                                  marqueurs — Pantone, import EPS/PDF… — sont conservés).
+   · rect / circle / ellipse /
+     triangle / polygon / line  → convertis en tracé ÉQUIVALENT puis remplacés
+                                  (conversion géométrique vérifiée au pixel).
+   · groupe                     → décomposé (mêmes règles que Ctrl+Shift+U), puis
+                                  chaque tracé est éditable un par un (boutons ‹ ›).
+
+   LES POIGNÉES SONT DES ÉLÉMENTS DOM, PAS DES OBJETS FABRIC.
+     Poser les poignées sur le canvas Fabric les ferait entrer dans la sélection, dans
+     l'historique, dans l'export et dans `saveAllPages`. En DOM au-dessus du canvas,
+     l'édition ne touche à RIEN du modèle : seul le `path` de l'objet change. Les
+     événements souris du drag ne sont donc jamais reçus par Fabric → aucune
+     interférence avec ses gestionnaires (aimantation, sélection, panneaux).
+
+   GÉOMÉTRIE — règles MESURÉES dans le navigateur (v1.7.500)
+     · mapping d'un tracé : scène(p) = M · (p − pathOffset), M = calcTransformMatrix().
+       Vérifié exact (aller et retour) sur tracé déplacé, pivoté, mis à l'échelle.
+     · polygon / polyline : même règle que `path` (leur `_render` retranche pathOffset).
+     · rect / circle / ellipse / triangle : coordonnées locales CENTRÉES sur 0
+       (pathOffset = 0) — conversion mesurée IDENTIQUE au pixel (y compris pivoté,
+       arrondi, mis à l'échelle).
+     · line : `calcLinePoints()` (centré), appliqué par M.
+     · MISE À JOUR : `obj._setPath(cmds)`. ⚠️ MESURE DÉCISIVE : `_setPath` REPOSE
+       left/top au minimum de la géométrie (test : tracé déplacé à left 150 → après
+       `_setPath`, left 80). Il n'est donc juste QUE si le tracé est en coordonnées
+       ABSOLUES. D'où la règle : **tout objet édité est d'abord « aplati »** en un
+       tracé absolu sans rotation ni échelle — et l'édition ne bouge alors jamais.
+       Sur un tracé pivoté, `_setPath` faisait exploser la boîte (mesuré) : l'aplatir
+       est la seule voie sûre.
+   ══════════════════════════════════════════════════════════════════════════════════════ */
+(function initEditeurTrace() {
+    if (window._spPathEditor) return;
+
+    var K89 = 0.5522847498307936;   // 4/3 · tan(45°/2) : un cercle en 4 cubiques
+    var MAX_COMMANDES = 800;        // au-delà : trop complexe pour une édition à la main
+
+    /* ══ 1. COMMANDES ═══════════════════════════════════════════════════════════════ */
+
+    function copieCommandes(cmds) {
+        var out = [];
+        for (var i = 0; i < cmds.length; i++) out.push(cmds[i].slice());
+        return out;
+    }
+
+    function ancreDe(cmds, i) {
+        for (var k = Math.min(i, cmds.length - 1); k >= 0; k--) {
+            var c = cmds[k];
+            if (!c || c.length < 3) continue;
+            var t = String(c[0]);
+            if (t === 'Z' || t === 'z') continue;
+            return { x: c[c.length - 2], y: c[c.length - 1] };
+        }
+        return { x: 0, y: 0 };
+    }
+
+    function premiereAncre(cmds) { return ancreDe(cmds, cmds.length - 1); }
+
+    function noeudsDe(cmds) {
+        var out = [];
+        for (var i = 0; i < cmds.length; i++) {
+            var t = String((cmds[i] || [])[0] || '');
+            if (t === 'M' || t === 'L') out.push({ ci: i, kind: 'pt', index: 0 });
+            else if (t === 'Q') { out.push({ ci: i, kind: 'pt', index: 0 }); out.push({ ci: i, kind: 'c', index: 0 }); }
+            else if (t === 'C') {
+                out.push({ ci: i, kind: 'pt', index: 0 });
+                out.push({ ci: i, kind: 'c', index: 0 });
+                out.push({ ci: i, kind: 'c', index: 1 });
+            }
+        }
+        return out;
+    }
+
+    function coupleDe(cmd, kind, index) {
+        if (kind === 'pt') return { x: cmd.length - 2, y: cmd.length - 1 };
+        return { x: 1 + 2 * index, y: 2 + 2 * index };
+    }
+
+    function minMax(cmds) {
+        var mn = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+        for (var i = 0; i < cmds.length; i++) {
+            var c = cmds[i] || [];
+            for (var k = 1; k + 1 < c.length; k += 2) {
+                mn.minX = Math.min(mn.minX, c[k]); mn.maxX = Math.max(mn.maxX, c[k]);
+                mn.minY = Math.min(mn.minY, c[k + 1]); mn.maxY = Math.max(mn.maxY, c[k + 1]);
+            }
+        }
+        if (!isFinite(mn.minX)) { mn.minX = 0; mn.minY = 0; mn.maxX = 0; mn.maxY = 0; }
+        return mn;
+    }
+
+    /* ══ 2. CONVERSION D'UN OBJET EN COMMANDES ABSOLUES (scène) ═════════════════════ */
+
+    function matriceDe(obj) {
+        try {
+            if (obj._spParentMatrix && fabric.util.multiplyTransformMatrices) {
+                return fabric.util.multiplyTransformMatrices(obj._spParentMatrix, obj.calcTransformMatrix(true));
+            }
+            return obj.calcTransformMatrix();
+        } catch (e) { return [1, 0, 0, 1, 0, 0]; }
+    }
+
+    function estDecentre(obj) {
+        var t = String(obj.type || '');
+        return (t === 'path' || t === 'polygon' || t === 'polyline');
+    }
+
+    function commandesAbsolues(obj) {
+        var m = matriceDe(obj);
+        var po = obj.pathOffset || { x: 0, y: 0 };
+        var dec = estDecentre(obj) ? po : { x: 0, y: 0 };
+        var TP = function (x, y) {
+            var p = fabric.util.transformPoint({ x: x - dec.x, y: y - dec.y }, m);
+            return [p.x, p.y];
+        };
+        var out = [], i, k;
+        var type = String(obj.type || '');
+        if (type === 'path' && Array.isArray(obj.path)) {
+            for (i = 0; i < obj.path.length; i++) {
+                var c = obj.path[i];
+                if (!c || !c.length) continue;
+                var t = String(c[0]);
+                if (t === 'Z' || t === 'z') { out.push(['Z']); continue; }
+                var row = [t];
+                for (k = 1; k + 1 < c.length; k += 2) { var q = TP(c[k], c[k + 1]); row.push(q[0], q[1]); }
+                out.push(row);
+            }
+            return out;
+        }
+        var hw = (Number(obj.width) || 0) / 2, hh = (Number(obj.height) || 0) / 2;
+        var segs = null;
+        if (type === 'rect') {
+            var rx = Math.min(Number(obj.rx) || 0, hw), ry = Math.min(Number(obj.ry) || 0, hh);
+            if (rx > 0.01 || ry > 0.01) {
+                var kx = rx * K89, ky = ry * K89;
+                segs = [
+                    ['M', -hw + rx, -hh], ['L', hw - rx, -hh],
+                    ['C', hw - rx + kx, -hh, hw, -hh + ry - ky, hw, -hh + ry],
+                    ['L', hw, hh - ry],
+                    ['C', hw, hh - ry + ky, hw - rx + kx, hh, hw - rx, hh],
+                    ['L', -hw + rx, hh],
+                    ['C', -hw + rx - kx, hh, -hw, hh - ry + ky, -hw, hh - ry],
+                    ['L', -hw, -hh + ry],
+                    ['C', -hw, -hh + ry - ky, -hw + rx - kx, -hh, -hw + rx, -hh],
+                    ['Z']
+                ];
+            } else {
+                segs = [['M', -hw, -hh], ['L', hw, -hh], ['L', hw, hh], ['L', -hw, hh], ['Z']];
+            }
+        } else if (type === 'circle' || type === 'ellipse') {
+            segs = [
+                ['M', -hw, 0],
+                ['C', -hw, -hh * K89, -hw * K89, -hh, 0, -hh],
+                ['C', hw * K89, -hh, hw, -hh * K89, hw, 0],
+                ['C', hw, hh * K89, hw * K89, hh, 0, hh],
+                ['C', -hw * K89, hh, -hw, hh * K89, -hw, 0],
+                ['Z']
+            ];
+        } else if (type === 'triangle') {
+            segs = [['M', -hw, hh], ['L', hw, hh], ['L', 0, -hh], ['Z']];
+        } else if ((type === 'polygon' || type === 'polyline') && Array.isArray(obj.points)) {
+            segs = [];
+            for (var j = 0; j < obj.points.length; j++) {
+                var pt = obj.points[j]; if (!pt) continue;
+                segs.push([j === 0 ? 'M' : 'L', pt.x, pt.y]);
+            }
+            if (type === 'polygon') segs.push(['Z']);
+        } else if (type === 'line') {
+            var lp = (typeof obj.calcLinePoints === 'function') ? obj.calcLinePoints() : { x1: -hw, y1: -hh, x2: hw, y2: hh };
+            segs = [['M', lp.x1, lp.y1], ['L', lp.x2, lp.y2]];
+        }
+        if (!segs) return [];
+        for (i = 0; i < segs.length; i++) {
+            var sg = segs[i], rr = [sg[0]];
+            for (k = 1; k + 1 < sg.length; k += 2) { var z = TP(sg[k], sg[k + 1]); rr.push(z[0], z[1]); }
+            out.push(rr);
+        }
+        return out;
+    }
+
+    /* ══ 3. STYLE (copie intégrale du style de la source) ══════════════════════════ */
+
+    var STYLE = ['fill', 'fillRule', 'stroke', 'strokeWidth', 'strokeDashArray', 'strokeDashOffset',
+        'strokeLineCap', 'strokeLineJoin', 'strokeMiterLimit', 'strokeUniform', 'paintFirst',
+        'opacity', 'shadow', 'visible', 'globalCompositeOperation', 'excludeFromExport', 'padding',
+        'selectable', 'evented', 'hoverCursor', 'lockRotation', 'lockScalingX', 'lockScalingY',
+        '_spSpotInk', '_spSpotStrokeInk', '_spSpotInkName', '_spSpotStrokeInkName',
+        '_spWrapMode', '_spWrapScope', '_spWrapTop', '_spWrapLeft', '_spWrapBottom', '_spWrapRight',
+        '_spWrapOrigH', '_spEpsImport', '_spEpsKind', '_spEpsPaths', '_spEpsBBoxPS',
+        '_spTextShapePairId', '_spTextShapeMode', '_spTextShapeCfg', '_spGenShapeW',
+        '_spDupId', '_sp3DSource', '_isImageMask', '_spPathFrom', '_spCropRect'];
+
+    function copierStyle(src, dst) {
+        for (var i = 0; i < STYLE.length; i++) {
+            var k = STYLE[i];
+            try {
+                if (src[k] === undefined) continue;
+                dst[k] = (src[k] !== null && typeof src[k] === 'object') ? JSON.parse(JSON.stringify(src[k])) : src[k];
+            } catch (e) { }
+        }
+        return dst;
+    }
+
+    /* ══ 4. SESSION ═════════════════════════════════════════════════════════════════ */
+
+    var S = null;
+
+    function nettoie() {
+        if (!S) return;
+        try { S.canvas.off('after:render', placer); } catch (e) { }
+        try { window.removeEventListener('scroll', placer, true); } catch (e) { }
+        try { window.removeEventListener('resize', placer); } catch (e) { }
+        try { document.removeEventListener('keydown', touche, true); } catch (e) { }
+        if (S.raf) { try { cancelAnimationFrame(S.raf); } catch (e) { } S.raf = null; }
+        if (S.hote && S.hote.parentNode) S.hote.parentNode.removeChild(S.hote);
+        if (S.panneau && S.panneau.parentNode) S.panneau.parentNode.removeChild(S.panneau);
+        S.hote = S.panneau = null;
+    }
+
+    /* ══ 5. COORDONNÉES ═════════════════════════════════════════════════════════════ */
+
+    function localVersScene(obj, x, y) {
+        var m = matriceDe(obj);
+        var po = obj.pathOffset || { x: 0, y: 0 };
+        var dec = estDecentre(obj) ? po : { x: 0, y: 0 };
+        var p = fabric.util.transformPoint({ x: x - dec.x, y: y - dec.y }, m);
+        return { x: p.x, y: p.y };
+    }
+
+    function sceneVersEcran(pta) {
+        var vt = S.canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+        var p = fabric.util.transformPoint({ x: pta.x, y: pta.y }, vt);
+        var el = S.canvas.upperCanvasEl || S.canvas.lowerCanvasEl;
+        var r = el.getBoundingClientRect();
+        return { x: p.x + r.left, y: p.y + r.top };
+    }
+
+    function ecranVersScene(ev) {
+        try { return S.canvas.getPointer(ev); } catch (e) { return { x: 0, y: 0 }; }
+    }
+
+    function ecranVersLocal(ev) {
+        var sc = ecranVersScene(ev);
+        var obj = S.obj;
+        var inv = fabric.util.invertTransform(matriceDe(obj));
+        var po = obj.pathOffset || { x: 0, y: 0 };
+        var dec = estDecentre(obj) ? po : { x: 0, y: 0 };
+        var loc = fabric.util.transformPoint({ x: sc.x, y: sc.y }, inv);
+        return { x: loc.x + dec.x, y: loc.y + dec.y };
+    }
+
+    /* ══ 6. INTERFACE (DOM) ═════════════════════════════════════════════════════════ */
+
+    var IC = {
+        path: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18c4-9 12-9 16 0"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><circle cx="12" cy="10.5" r="2"/></svg>',
+        plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+        moins: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+        courbe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 19c6 0 12-14 18-14"/><circle cx="3" cy="19" r="1.6"/><circle cx="21" cy="5" r="1.6"/></svg>',
+        gauche: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+        droite: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+        ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>',
+        annul: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg>'
+    };
+
+    var CSS = [
+        '#spPeUi{position:fixed;left:0;top:0;right:0;bottom:0;pointer-events:none;z-index:10062}',
+        '#spPeUi .sp-pe-h{position:absolute;width:11px;height:11px;margin:-6px 0 0 -6px;background:#fff;',
+        'border:1.5px solid #E1237B;border-radius:1px;pointer-events:auto;cursor:move;box-sizing:border-box}',
+        '#spPeUi .sp-pe-h.sp-pe-c{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#E1237B;border-color:#fff}',
+        '#spPeUi .sp-pe-h.sp-pe-sel{background:#E1237B;border-color:#fff;box-shadow:0 0 0 2px rgba(225,35,123,.32)}',
+        '#spPeUi .sp-pe-h:hover{background:#E1237B}',
+        '#spPeUi svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}',
+        '#spPeUi .sp-pe-out{fill:none;stroke:#E1237B;stroke-width:1;stroke-dasharray:4 3;opacity:.9}',
+        '#spPeUi .sp-pe-gui{stroke:#E1237B;stroke-width:1;opacity:.5}',
+        '#spPePanel{position:fixed;z-index:10063;background:#1f1f1f;color:#fff;border:1px solid rgba(255,255,255,.12);',
+        'border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.45);padding:10px 11px;width:236px;user-select:none;',
+        'font:12px/1.45 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif}',
+        '#spPePanel .sp-pe-t{font-weight:600;font-size:12.5px;letter-spacing:.2px;margin-bottom:2px;display:flex;align-items:center;gap:7px}',
+        '#spPePanel .sp-pe-t svg{width:14px;height:14px;flex:0 0 14px}',
+        '#spPePanel .sp-pe-sub{font-size:10.5px;opacity:.62;margin-bottom:9px}',
+        '#spPePanel button{width:100%;display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.06);color:#fff;',
+        'border:1px solid rgba(255,255,255,.10);border-radius:6px;padding:6px 8px;font:11.5px/1.2 inherit;cursor:pointer;margin-bottom:5px;text-align:left}',
+        '#spPePanel button:hover{background:rgba(255,255,255,.14)}',
+        '#spPePanel button svg{width:13px;height:13px;flex:0 0 13px}',
+        '#spPePanel button:disabled{opacity:.38;cursor:default}',
+        '#spPePanel .sp-pe-nav{display:flex;align-items:center;gap:5px;margin-bottom:5px}',
+        '#spPePanel .sp-pe-nav button{width:auto;margin:0;flex:0 0 auto;padding:4px 8px}',
+        '#spPePanel .sp-pe-nav span{flex:1;text-align:center;font-size:11px;opacity:.8}',
+        '#spPePanel .sp-pe-sep{height:1px;background:rgba(255,255,255,.10);margin:7px 0 9px}',
+        '#spPePanel .sp-pe-ok{background:#E1237B;border-color:#E1237B}',
+        '#spPePanel .sp-pe-ok:hover{background:#c91b6b}',
+        '#spPePanel .sp-pe-info{font-size:10.5px;opacity:.62;margin-top:3px}'
+    ].join('');
+
+    function injecterStyle() {
+        if (document.getElementById('spPathEditorStyle')) return;
+        var st = document.createElement('style');
+        st.id = 'spPathEditorStyle';
+        st.textContent = CSS;
+        document.head.appendChild(st);
+    }
+
+    function t(fr, en) {
+        var l = 'fr';
+        try { l = window.currentLanguage || localStorage.getItem('sp_lang') || (document.documentElement.lang || 'fr'); } catch (e) { }
+        return (String(l).indexOf('en') === 0) ? en : fr;
+    }
+
+    function construireUI() {
+        injecterStyle();
+        var hote = document.createElement('div');
+        hote.id = 'spPeUi';
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '1');
+        svg.setAttribute('height', '1');
+        hote.appendChild(svg);
+        var out = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        out.setAttribute('class', 'sp-pe-out');
+        svg.appendChild(out);
+        var guides = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        svg.appendChild(guides);
+        document.body.appendChild(hote);
+        S.hote = hote; S.svg = svg; S.out = out; S.guides = guides;
+        S.els = {}; S.lignes = {};
+
+        var p = document.createElement('div');
+        p.id = 'spPePanel';
+        p.innerHTML = [
+            '<div class="sp-pe-t">', IC.path, '<span>', t('Modifier le tracé', 'Edit path'), '</span></div>',
+            '<div class="sp-pe-sub" id="spPeSub"></div>',
+            '<button id="spPeCourbes">', IC.courbe, '<span>', t('Convertir en courbes', 'Convert to curves'), '</span></button>',
+            '<button id="spPeAdd">', IC.plus, '<span>', t('Ajouter un point', 'Add point'), '</span></button>',
+            '<button id="spPeDel">', IC.moins, '<span>', t('Supprimer le point', 'Delete point'), '</span></button>',
+            '<div class="sp-pe-nav"><button id="spPePrev" title="', t('Tracé précédent', 'Previous path'), '">', IC.gauche,
+            '</button><span id="spPePos"></span><button id="spPeNext" title="', t('Tracé suivant', 'Next path'), '">', IC.droite, '</button></div>',
+            '<div class="sp-pe-sep"></div>',
+            '<button id="spPeOk" class="sp-pe-ok">', IC.ok, '<span>', t('Valider', 'Apply'), '</span></button>',
+            '<button id="spPeNo">', IC.annul, '<span>', t('Annuler', 'Cancel'), '</span></button>',
+            '<div class="sp-pe-info">', t('Glissez les carrés (sommets) et les ronds (poignées). Échap valide.', 'Drag the squares (anchors) and the circles (handles). Esc applies.'), '</div>'
+        ].join('');
+        document.body.appendChild(p);
+        S.panneau = p;
+        var r = (S.canvas.upperCanvasEl || S.canvas.lowerCanvasEl).getBoundingClientRect();
+        p.style.left = Math.max(8, Math.min(window.innerWidth - 252, r.right - 252)) + 'px';
+        p.style.top = Math.max(60, r.top + 14) + 'px';
+
+        document.getElementById('spPeCourbes').onclick = function () { courbes(); };
+        document.getElementById('spPeAdd').onclick = function () { ajouterPoint(); };
+        document.getElementById('spPeDel').onclick = function () { supprimerPoint(); };
+        document.getElementById('spPePrev').onclick = function () { aller(-1); };
+        document.getElementById('spPeNext').onclick = function () { aller(1); };
+        document.getElementById('spPeOk').onclick = function () { fermer(true); };
+        document.getElementById('spPeNo').onclick = function () { fermer(false); };
+    }
+
+    var NOMS = {
+        path: 'tracé', rect: 'rectangle', circle: 'cercle', ellipse: 'ellipse',
+        triangle: 'triangle', polygon: 'polygone', line: 'ligne', polyline: 'polyligne'
+    };
+
+    function majPanneau() {
+        if (!S || !S.panneau) return;
+        var o = S.obj || {};
+        var type = String(o.type || '');
+        var pts = 0;
+        (o.path || []).forEach(function (c) { var k = String(c[0]); if (k === 'M' || k === 'L' || k === 'C' || k === 'Q') pts += 1; });
+        var elSub = document.getElementById('spPeSub');
+        if (elSub) {
+            var origine = o._spPathFrom ? ((NOMS[o._spPathFrom] || o._spPathFrom) + ' → ') : '';
+            elSub.textContent = origine + t(NOMS[type] || type, type) + ' · ' + pts + t(' points', ' points');
+        }
+        var multi = !!(S.liste && S.liste.length > 1);
+        var pos = document.getElementById('spPePos');
+        if (pos) pos.textContent = multi ? (S.idx + 1) + ' / ' + S.liste.length : '';
+        var pv = document.getElementById('spPePrev'), nx = document.getElementById('spPeNext');
+        if (pv) pv.style.display = multi ? '' : 'none';
+        if (nx) nx.style.display = multi ? '' : 'none';
+        var dl = document.getElementById('spPeDel');
+        if (dl) dl.disabled = (S.selection == null);
+    }
+
+    /* ══ 7. PLACEMENT DES POIGNÉES ══════════════════════════════════════════════════ */
+
+    function cle(nd) { return nd.ci + ':' + nd.kind + ':' + nd.index; }
+
+    function signature() {
+        var o = S.obj;
+        var vt = S.canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+        var el = (S.canvas.upperCanvasEl || S.canvas.lowerCanvasEl);
+        var r = el.getBoundingClientRect();
+        return [vt[0], vt[1], vt[2], vt[3], vt[4], vt[5], Math.round(r.left), Math.round(r.top),
+            Math.round((o.left || 0) * 100), Math.round((o.top || 0) * 100),
+        (o.path ? o.path.length : 0), (o.pathOffset ? o.pathOffset.x.toFixed(1) + ',' + o.pathOffset.y.toFixed(1) : '')].join('|');
+    }
+
+    function placer() {
+        if (!S || !S.obj || !S.svg) return;
+        var sig = signature();
+        if (sig === S.sig && !S.forcer) return;
+        S.sig = sig; S.forcer = false;
+        S.svg.setAttribute('width', Math.max(1, window.innerWidth));
+        S.svg.setAttribute('height', Math.max(1, window.innerHeight));
+        var o = S.obj, cmds = o.path || [], i, k;
+        var d = '';
+        for (i = 0; i < cmds.length; i++) {
+            var c = cmds[i], tt = String(c[0]);
+            if (tt === 'Z' || tt === 'z') { d += 'Z '; continue; }
+            d += tt + ' ';
+            for (k = 1; k + 1 < c.length; k += 2) {
+                var e = sceneVersEcran(localVersScene(o, c[k], c[k + 1]));
+                d += (Math.round(e.x * 100) / 100) + ' ' + (Math.round(e.y * 100) / 100) + ' ';
+            }
+        }
+        S.out.setAttribute('d', d.trim());
+        for (var n = 0; n < S.noeuds.length; n++) {
+            var nd = S.noeuds[n], cmd = cmds[nd.ci];
+            if (!cmd) continue;
+            var cp = coupleDe(cmd, nd.kind, nd.index);
+            var e2 = sceneVersEcran(localVersScene(o, cmd[cp.x], cmd[cp.y]));
+            var dom = S.els[cle(nd)];
+            if (!dom) continue;
+            dom.style.left = (Math.round(e2.x * 10) / 10) + 'px';
+            dom.style.top = (Math.round(e2.y * 10) / 10) + 'px';
+        }
+        for (var cj in S.lignes) {
+            var cmd2 = cmds[cj], l = S.lignes[cj];
+            if (!cmd2 || (cmd2[0] !== 'C' && cmd2[0] !== 'Q')) { l.setAttribute('opacity', '0'); continue; }
+            var an = coupleDe(cmd2, 'pt', 0);
+            var a1 = sceneVersEcran(localVersScene(o, cmd2[an.x], cmd2[an.y]));
+            var nb = (cmd2[0] === 'C') ? 2 : 1, best = null, bd = -1;
+            for (var q = 0; q < nb; q++) {
+                var cc = coupleDe(cmd2, 'c', q);
+                var pc = sceneVersEcran(localVersScene(o, cmd2[cc.x], cmd2[cc.y]));
+                var dd = (pc.x - a1.x) * (pc.x - a1.x) + (pc.y - a1.y) * (pc.y - a1.y);
+                if (dd > bd) { bd = dd; best = pc; }
+            }
+            l.setAttribute('opacity', '1');
+            l.setAttribute('x1', a1.x); l.setAttribute('y1', a1.y);
+            if (best) { l.setAttribute('x2', best.x); l.setAttribute('y2', best.y); }
+        }
+    }
+
+    /* ══ 8. DRAG D'UNE POIGNÉE ══════════════════════════════════════════════════════ */
+
+    function brancherPoignee(dom, nd) {
+        dom.addEventListener('pointerdown', function (ev) {
+            if (!S || !S.obj) return;
+            ev.preventDefault(); ev.stopPropagation();
+            try { dom.setPointerCapture(ev.pointerId); } catch (e) { }
+            S.actif = nd; S.selection = nd.ci;
+            S.avantDrag = copieCommandes(S.obj.path);
+            marquerSelection(); majPanneau();
+            var bouger = function (e2) {
+                if (!S || !S.actif) return;
+                e2.preventDefault();
+                var loc = ecranVersLocal(e2);
+                deplacerNoeud(nd, loc.x, loc.y);
+                appliquer(); placer();
+            };
+            var finir = function () {
+                try { dom.releasePointerCapture(ev.pointerId); } catch (e3) { }
+                dom.removeEventListener('pointermove', bouger);
+                dom.removeEventListener('pointerup', finir);
+                dom.removeEventListener('pointercancel', finir);
+                S.actif = null;
+                if (typeof debouncedSaveState === 'function') debouncedSaveState('Tracé modifié');
+                majPanneau();
+            };
+            dom.addEventListener('pointermove', bouger);
+            dom.addEventListener('pointerup', finir);
+            dom.addEventListener('pointercancel', finir);
+        }, true);
+    }
+
+    function deplacerNoeud(nd, x, y) {
+        var cmds = S.obj.path, c = cmds[nd.ci];
+        if (!c) return;
+        if (nd.kind === 'pt') {
+            var cp = coupleDe(c, 'pt', 0);
+            var dx = x - c[cp.x], dy = y - c[cp.y];
+            if (c[0] === 'C') { c[1] += dx; c[2] += dy; c[3] += dx; c[4] += dy; }
+            else if (c[0] === 'Q') { c[1] += dx; c[2] += dy; }
+            c[cp.x] = x; c[cp.y] = y;
+            // Le sommet emmène la poignée ENTRANTE de la commande précédente
+            //   (comportement InDesign / Illustrator).
+            var p = cmds[nd.ci - 1];
+            if (p && (p[0] === 'C' || p[0] === 'Q')) { p[p.length - 4] += dx; p[p.length - 3] += dy; }
+        } else {
+            var cc = coupleDe(c, nd.kind, nd.index);
+            c[cc.x] = x; c[cc.y] = y;
+        }
+    }
+
+    function appliquer() {
+        var o = S.obj;
+        try { o._setPath(o.path); } catch (e) { try { o.dirty = true; } catch (e2) { } }
+        try { o.setCoords(); } catch (e3) { }
+        try { S.canvas.requestRenderAll(); } catch (e4) { }
+        S.sig = null;
+    }
+
+    function marquerSelection() {
+        for (var k in S.els) {
+            var nd = S.els[k]._spNoeud;
+            S.els[k].classList[(S.selection != null && nd.ci === S.selection) ? 'add' : 'remove']('sp-pe-sel');
+        }
+    }
+
+    /* ══ 9. OUTILS DE TRACÉ ═════════════════════════════════════════════════════════ */
+
+    function courbes() {
+        if (!S || !S.obj) return;
+        var cmds = S.obj.path, n = 0;
+        for (var i = 0; i < cmds.length; i++) {
+            var c = cmds[i];
+            if (c[0] !== 'L') continue;
+            var a = ancreDe(cmds, i - 1), b = { x: c[1], y: c[2] };
+            cmds[i] = ['C', a.x + (b.x - a.x) / 3, a.y + (b.y - a.y) / 3,
+                a.x + 2 * (b.x - a.x) / 3, a.y + 2 * (b.y - a.y) / 3, b.x, b.y];
+            n++;
+        }
+        if (!n) return;
+        reconstruire(); appliquer(); placer();
+        if (typeof debouncedSaveState === 'function') debouncedSaveState('Tracé : courbes');
+    }
+
+    function segmentLePlusLong(cmds) {
+        var best = -1, bl = -1;
+        for (var i = 1; i < cmds.length; i++) {
+            var tt = String(cmds[i][0]);
+            if (tt !== 'L' && tt !== 'C' && tt !== 'Q') continue;
+            var a = ancreDe(cmds, i - 1), b = ancreDe(cmds, i);
+            var l = (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
+            if (l > bl) { bl = l; best = i; }
+        }
+        return best;
+    }
+
+    function milieu(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+
+    function ajouterPoint() {
+        if (!S || !S.obj) return;
+        var cmds = S.obj.path;
+        var j = (S.selection != null) ? S.selection + 1 : -1;
+        if (j < 1 || j >= cmds.length || ['L', 'C', 'Q'].indexOf(String(cmds[j][0])) === -1) j = segmentLePlusLong(cmds);
+        if (j < 1) return;
+        var cj = cmds[j], tt = String(cj[0]), A = ancreDe(cmds, j - 1);
+        if (tt === 'C') {
+            // Découpe de De Casteljau : la FORME est rigoureusement conservée.
+            var P1 = { x: cj[1], y: cj[2] }, P2 = { x: cj[3], y: cj[4] }, P3 = { x: cj[5], y: cj[6] };
+            var Q0 = milieu(A, P1), Q1 = milieu(P1, P2), Q2 = milieu(P2, P3);
+            var R0 = milieu(Q0, Q1), R1 = milieu(Q1, Q2), Sm = milieu(R0, R1);
+            cmds[j] = ['C', Q0.x, Q0.y, R0.x, R0.y, Sm.x, Sm.y];
+            cmds.splice(j + 1, 0, ['C', R1.x, R1.y, Q2.x, Q2.y, P3.x, P3.y]);
+        } else if (tt === 'Q') {
+            var q1 = { x: cj[1], y: cj[2] }, q3 = { x: cj[3], y: cj[4] };
+            var m0 = milieu(A, q1), m1 = milieu(q1, q3), ms = milieu(m0, m1);
+            cmds[j] = ['Q', m0.x, m0.y, ms.x, ms.y];
+            cmds.splice(j + 1, 0, ['Q', m1.x, m1.y, q3.x, q3.y]);
+        } else {
+            var B = { x: cj[1], y: cj[2] }, mm = milieu(A, B);
+            cmds.splice(j, 0, ['L', mm.x, mm.y]);
+        }
+        reconstruire(); appliquer(); placer();
+        if (typeof debouncedSaveState === 'function') debouncedSaveState('Tracé : point ajouté');
+    }
+
+    function supprimerPoint() {
+        if (!S || !S.obj || S.selection == null) return;
+        var cmds = S.obj.path, ci = S.selection, c = cmds[ci];
+        if (!c || c[0] === 'M') return;     // le point de départ ne se supprime pas
+        cmds.splice(ci, 1);
+        S.selection = null;
+        reconstruire(); appliquer(); placer();
+        if (typeof debouncedSaveState === 'function') debouncedSaveState('Tracé : point supprimé');
+    }
+
+    /* ══ 10. CONSTRUCTION DES POIGNÉES ══════════════════════════════════════════════ */
+
+    function reconstruire() {
+        for (var k in S.els) if (S.els[k].parentNode) S.els[k].parentNode.removeChild(S.els[k]);
+        S.els = {};
+        for (var g in S.lignes) if (S.lignes[g].parentNode) S.lignes[g].parentNode.removeChild(S.lignes[g]);
+        S.lignes = {};
+        S.noeuds = noeudsDe(S.obj.path);
+        for (var i = 0; i < S.noeuds.length; i++) {
+            var nd = S.noeuds[i];
+            var dom = document.createElement('div');
+            dom.className = 'sp-pe-h' + (nd.kind === 'c' ? ' sp-pe-c' : '');
+            dom._spNoeud = nd;
+            S.els[cle(nd)] = dom;
+            S.hote.appendChild(dom);
+            brancherPoignee(dom, nd);
+        }
+        var faits = {};
+        for (var j = 0; j < S.noeuds.length; j++) {
+            var ci = S.noeuds[j].ci;
+            if (faits[ci]) continue;
+            faits[ci] = 1;
+            var cmd = S.obj.path[ci];
+            if (!cmd || (cmd[0] !== 'C' && cmd[0] !== 'Q')) continue;
+            var l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            l.setAttribute('class', 'sp-pe-gui');
+            S.lignes[ci] = l;
+            S.guides.appendChild(l);
+        }
+        S.sig = null; S.forcer = true;
+        majPanneau();
+    }
+
+    /* ══ 11. OUVERTURE / FERMETURE ══════════════════════════════════════════════════ */
+
+    function estVecteur(obj) {
+        if (!obj) return false;
+        if (obj.isMargin || obj.isBleed || obj.isTrimBox || obj.isGuide || obj.isManualGuide ||
+            obj.isGridGuide || obj.isBaselineGuide || obj.isPageBorder || obj._isSpreadMirror ||
+            obj._isTabMark || obj._isTabRuler || obj._isOverflowIndicator || obj._isPathHandle) return false;
+        if (obj._simplePenData) return false;   // tracés plume/crayon : éditeur dédié
+        var tt = String(obj.type || '');
+        if (tt === 'group' || tt === 'Group') return enfantsEditables(obj).length > 0;
+        if (tt === 'path') return !!(Array.isArray(obj.path) && obj.path.length);
+        if (['rect', 'circle', 'ellipse', 'triangle', 'polygon', 'polyline', 'line'].indexOf(tt) !== -1) return true;
+        return false;
+    }
+
+    function enfantsEditables(grp) {
+        var out = [];
+        try {
+            (grp._objects || []).forEach(function (o) { if (estVecteur(o)) out.push(o); });
+        } catch (e) { }
+        return out;
+    }
+
+    // Rend l'objet ÉDITABLE : un tracé en coordonnées ABSOLUES sans rotation ni échelle.
+    //   On mesure l'identité du mapping (scène(p0) == p0) plutôt que de la supposer.
+    function normaliser(canvas, obj) {
+        var cmds = commandesAbsolues(obj);
+        if (!cmds.length) return null;
+        var p0 = premiereAncre(cmds);
+        var sc = localVersScene(obj, p0.x, p0.y);
+        var identite = (Math.abs(sc.x - p0.x) < 0.6 && Math.abs(sc.y - p0.y) < 0.6);
+        var plat = !obj.angle && (obj.scaleX == null || Math.abs(obj.scaleX - 1) < 0.001)
+            && (obj.scaleY == null || Math.abs(obj.scaleY - 1) < 0.001) && !obj._spParentMatrix;
+        if (String(obj.type) === 'path' && identite && plat) return obj;
+        var np = new fabric.Path(cmds);
+        copierStyle(obj, np);
+        // ⚠️ MESURE (fabric 5.1.0) : `new fabric.Path(cmds)` positionne left/top avec le
+        //    strokeWidth du MOMENT DE LA CONSTRUCTION (défaut 1) et `_setPath()` ne
+        //    repositionne PAS : un rectangle sans trait posé à 90,60 ressortait à 89,5/59,5.
+        //    La formule du constructeur (vérifiée en direct pour strokeWidth 0, 1 et 4,
+        //    avec et sans strokeUniform) est : left = minX − strokeWidth/2.
+        //    On aplatit aussi l'échelle (scaleX/scaleY = 1 plus bas) : l'épaisseur de trait
+        //    doit donc être mise à l'échelle, SAUF si strokeUniform (le trait ne suivait
+        //    déjà pas l'échelle dans ce cas).
+        np.angle = 0; np.scaleX = 1; np.scaleY = 1;
+        var ech = (Math.abs(obj.scaleX == null ? 1 : obj.scaleX) + Math.abs(obj.scaleY == null ? 1 : obj.scaleY)) / 2;
+        var sw = (np.strokeWidth == null ? 1 : np.strokeWidth);
+        if (!np.strokeUniform) sw = sw * ech;
+        np.strokeWidth = sw;
+        np._calcDimensions();
+        np.left = np.pathOffset.x - np.width / 2 - sw / 2;
+        np.top = np.pathOffset.y - np.height / 2 - sw / 2;
+        np.setCoords();
+        if (String(obj.type) === 'path') {
+            np._spPathFrom = obj._spPathFrom || null;
+        } else {
+            np._spPathFrom = String(obj.type);
+        }
+        np.objectCaching = false;
+        remplacer(canvas, obj, np);
+        return np;
+    }
+
+    function remplacer(canvas, ancien, nouveau) {
+        var idx = -1;
+        try { idx = canvas.getObjects().indexOf(ancien); } catch (e) { }
+        try { canvas.remove(ancien); } catch (e2) { }
+        try {
+            if (idx >= 0 && typeof canvas.insertAt === 'function') canvas.insertAt(nouveau, idx, false);
+            else canvas.add(nouveau);
+        } catch (e3) { canvas.add(nouveau); }
+        try { nouveau.setCoords(); } catch (e4) { }
+        return idx;
+    }
+
+    function decomposer(canvas, grp) {
+        var items = (grp._objects || []).slice();
+        var sx = grp.scaleX || 1, sy = grp.scaleY || 1, ang = grp.angle || 0;
+        var centre = grp.getCenterPoint();
+        try { grp._restoreObjectsState(); } catch (e) { }
+        canvas.remove(grp);
+        var sortis = [];
+        items.forEach(function (o) {
+            if (ang !== 0) {
+                var c = { x: centre.x + (o.left || 0) * sx, y: centre.y + (o.top || 0) * sy };
+                o.set({
+                    left: c.x - (o.width || 0) * (o.scaleX || 1) / 2,
+                    top: c.y - (o.height || 0) * (o.scaleY || 1) / 2,
+                    angle: (o.angle || 0) + ang
+                });
+            }
+            o.setCoords();
+            canvas.add(o);
+            if (estVecteur(o)) sortis.push(o);
+        });
+        return sortis;
+    }
+
+    function ouvrir(canvas, obj) {
+        if (!canvas || !obj) return false;
+        if (S) fermer(true);
+        if (!estVecteur(obj)) {
+            if (typeof spToast === 'function') spToast(t('Cet objet n\'est pas un tracé vectoriel.', 'This object is not a vector path.'), 'warn');
+            return false;
+        }
+        var liste = null, cible = obj;
+        if (String(obj.type) === 'group' || String(obj.type) === 'Group') {
+            liste = decomposer(canvas, obj);
+            if (!liste.length) return false;
+            cible = liste[0];
+            if (typeof debouncedSaveState === 'function') debouncedSaveState('Groupe décomposé');
+        }
+        var nb = 0;
+        try { nb = commandesAbsolues(cible).length; } catch (e) { nb = 0; }
+        if (nb > MAX_COMMANDES) {
+            if (typeof spToast === 'function') {
+                spToast(t('Tracé trop complexe (' + nb + ' commandes) pour une édition manuelle.', 'Path too complex (' + nb + ' commands) for manual editing.'), 'warn');
+            }
+            return false;
+        }
+        var original = cible, idxOrigine = -1;
+        try { idxOrigine = canvas.getObjects().indexOf(cible); } catch (e2) { }
+        var ed = normaliser(canvas, cible);
+        if (!ed) return false;
+        S = {
+            canvas: canvas, obj: ed, idx: 0,
+            liste: liste || [ed],
+            cmdsOrigine: copieCommandes(ed.path),
+            remplace: (ed !== original),
+            original: (ed !== original) ? original : null,
+            idxOrigine: idxOrigine,
+            selection: null, actif: null, sig: null, forcer: true
+        };
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+        construireUI();
+        reconstruire();
+        placer();
+        canvas.on('after:render', placer);
+        window.addEventListener('scroll', placer, true);
+        window.addEventListener('resize', placer);
+        document.addEventListener('keydown', touche, true);
+        boucle();
+        return true;
+    }
+
+    function touche(e) {
+        if (!S) return;
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermer(true); }
+        else if ((e.key === 'Delete' || e.key === 'Backspace') && S.selection != null) {
+            e.preventDefault(); e.stopPropagation(); supprimerPoint();
+        }
+    }
+
+    function boucle() {
+        if (!S) return;
+        placer();
+        S.raf = requestAnimationFrame(boucle);
+    }
+
+    function aller(dir) {
+        if (!S || !S.liste || S.liste.length < 2) return;
+        S.idx = (S.idx + dir + S.liste.length) % S.liste.length;
+        S.obj = S.liste[S.idx];
+        S.selection = null;
+        S.cmdsOrigine = copieCommandes(S.obj.path);
+        S.remplace = false; S.original = null;
+        reconstruire(); placer();
+        if (typeof debouncedSaveState === 'function') debouncedSaveState('Tracé : autre tracé');
+    }
+
+    function fermer(commit) {
+        if (!S) return;
+        var S0 = S;
+        nettoie();
+        S = null;
+        try {
+            if (!commit) {
+                if (S0.remplace && S0.original) {
+                    // L'objet d'origine avait été remplacé (primitive aplatie) :
+                    //   on le remet À SA PLACE, tel quel.
+                    S0.canvas.remove(S0.obj);
+                    if (S0.idxOrigine >= 0 && typeof S0.canvas.insertAt === 'function') S0.canvas.insertAt(S0.original, S0.idxOrigine, false);
+                    else S0.canvas.add(S0.original);
+                    try { S0.original.setCoords(); } catch (e0) { }
+                } else {
+                    S0.obj._setPath(copieCommandes(S0.cmdsOrigine));
+                    S0.obj.setCoords();
+                }
+            }
+            S0.canvas.requestRenderAll();
+            if (typeof debouncedSaveState === 'function') debouncedSaveState(commit ? 'Tracé modifié' : 'Tracé : annulation');
+        } catch (e) { }
+    }
+
+    window._spPathEditor = {
+        ouvrir: ouvrir,
+        fermer: fermer,
+        estVecteur: estVecteur,
+        actif: function () { return !!S; },
+        _debug: { ver: '500.2', commandesAbsolues: commandesAbsolues, noeudsDe: noeudsDe, session: function () { return S; } }
+    };
 })();
+/* _SP_PATH_EDITOR_500_FIN */
+
+

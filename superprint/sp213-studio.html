@@ -5603,6 +5603,11 @@ function spRtfLayoutInfo(src) {
         if (o._spSpotStrokeInk && /^#[0-9a-fA-F]{6}$/.test(o._spSpotStrokeInk)) base._spSpotStrokeInk = String(o._spSpotStrokeInk).toUpperCase();
         if (o._spSpotInkName) base._spSpotInkName = String(o._spSpotInkName).slice(0, 60);
         if (o._spSpotStrokeInkName) base._spSpotStrokeInkName = String(o._spSpotStrokeInkName).slice(0, 60);
+        // ✒️ v1.7.500 — TRACÉ ÉDITÉ (cf. SP_CUSTOM_PROPS de l'app) : le TYPE
+        //   d'origine d'un objet converti en tracé par l'éditeur de tracé.
+        //   Information d'interface et de diagnostic : on la transporte TELLE QUELLE
+        //   pour qu'un document qui passe par le studio la conserve au retour.
+        if (o._spPathFrom) base._spPathFrom = String(o._spPathFrom).slice(0, 24);
         if (t === 'rect' || t === 'rectangle') {
           return Object.assign(base, { type: 'rectangle',
             width: Math.round(((o.width || 0) / MM_TO_PX) * 10) / 10,
@@ -9784,6 +9789,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     if (el._spSpotStrokeInk && /^#[0-9a-fA-F]{6}$/.test(el._spSpotStrokeInk)) obj._spSpotStrokeInk = String(el._spSpotStrokeInk).toUpperCase();
     if (el._spSpotInkName) obj._spSpotInkName = String(el._spSpotInkName).slice(0, 60);
     if (el._spSpotStrokeInkName) obj._spSpotStrokeInkName = String(el._spSpotStrokeInkName).slice(0, 60);
+    if (el._spPathFrom) obj._spPathFrom = String(el._spPathFrom).slice(0, 24);
     if (el.enableHyphenation !== undefined) obj.enableHyphenation = !!el.enableHyphenation;
     if (el.hyphenLanguage) obj.hyphenLanguage = el.hyphenLanguage;
     if (el._spWrapMode) obj._spWrapMode = el._spWrapMode;
