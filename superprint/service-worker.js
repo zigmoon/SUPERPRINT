@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.506-widget-grille-colonnes';
+const CACHE_NAME = 'superprint-shell-v1.7.507-tabulation-en-widget';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

@@ -6438,8 +6438,8 @@ window.spTestDiag = function () {
     var _regle = null;         /* le groupe Fabric en place */
 
     function regleEstVisible() {
-        var popin = document.getElementById('tabsMenu');
-        if (popin && popin.classList.contains('open')) return true;
+        /* _SP_TAB_507_DEBUT — le panneau EST un widget : on interroge le widget, pas une classe. */
+        if (panneauOuvert()) return true;
         var b = blocsTexte()[0];
         if (!b) return false;
         /* _SP_TAB_505_DEBUT — LA RÈGLE APPARAÎT DÈS QUE LE CURSEUR EST DANS LE TEXTE.
@@ -6725,32 +6725,91 @@ window.spTestDiag = function () {
     window.spTabMmDe = spTabMmDe;
     window.spTabMmVers = spTabMmVers;
 
+    /* ═══════════ _SP_TAB_507_DEBUT — LE PANNEAU EST UN WIDGET DOCKÉ ═══════════
+       Demande utilisateur : « j'aimerais tellement le même principe de widget pour l'outil
+       (pour la fenêtre TAB) > TAQUET DE TABULATION ». Le panneau « Taquets de tabulation »
+       se comporte donc exactement comme « Grille & repères » (1.7.506) : un clic sur
+       « Tabulation » l'amène DANS la zone de travail (#canvasScrollArea), un second clic le
+       referme, sa croix et Échap aussi. Plus de menu déroulant collé au rail, plus de
+       pop-in centrée PAR-DESSUS la planche, plus de surcouche, et plus de fermeture
+       « clic extérieur » (c'est justement le clic qui place le curseur). QuarkXPress range
+       ses affiches À CÔTÉ du document.
+
+       ⚠️ UN PANNEAU CLONÉ EST UN PANNEAU À DEUX VISAGES : le widget est une COPIE
+       (#tabsMenu → hôte data-dock). document.getElementById() ne voit donc QUE
+       l'original : toute commande qui écrit dans le panneau doit écrire dans TOUTES les
+       copies, sinon la liste des taquets ne se dessine que dans l'original — c'est-à-dire
+       nulle part (défaut mesuré en 1.7.506 sur les pastilles de colonnes). racines() et
+       dans() sont la seule porte d'entrée vers le DOM du panneau. */
+    var DOCK_NOM = 'tabsMenu';
+    function racines() {
+        var l = [];
+        var o = document.getElementById('tabsMenu');
+        if (o) l.push(o);
+        var couche = document.getElementById('spWidgetLayer');
+        if (couche) {
+            Array.prototype.forEach.call(couche.querySelectorAll('.sp-dock-host[data-dock="' + DOCK_NOM + '"]'), function (h) {
+                if (l.indexOf(h) === -1) l.push(h);
+            });
+        }
+        return l;
+    }
+    function dans(id) {
+        var out = [];
+        racines().forEach(function (r) {
+            var e = null;
+            try { e = r.querySelector('#' + id) || r.querySelector('[data-sp-ref="' + id + '"]'); } catch (_) {}
+            if (e && out.indexOf(e) === -1) out.push(e);
+        });
+        return out;
+    }
+    function dansTous(id, fn) { dans(id).forEach(fn); }
+    window.spTabRacines = racines;
+
+    /* Le panneau est-il ouvert ? Le WIDGET est la source de vérité ; l'ancien menu
+       déroulant n'est plus qu'un repli si le système de widgets manque. */
+    function panneauOuvert() {
+        try {
+            var spD = window.spDockWidgets;
+            if (spD && spD.estOuvert && spD.estOuvert(DOCK_NOM)) return true;
+        } catch (_) {}
+        var p = document.getElementById('tabsMenu');
+        return !!(p && p.classList.contains('open'));
+    }
+    window.spTabPanneauOuvert = panneauOuvert;
+
     /* 🩹 v1.7.481 — retour visible : sans bloc sélectionné, les réglages ne
        peuvent rien faire. On le montre (boutons grisés) au lieu de laisser croire
        que le panneau est cassé. */
     function actionsActives(ok) {
         /* 🆕 v1.7.485 — le bouton de validation se grise comme les autres quand
            aucun bloc texte n'est sélectionné. */
+        /* _SP_TAB_507_DEBUT — DANS TOUTES LES COPIES : le widget a ses propres boutons. */
         ['tabAddBtn', 'tabClearBtn', 'tabApplyBtn'].forEach(function (id) {
-            var b = document.getElementById(id);
-            if (!b) return;
-            b.disabled = !ok;
-            b.style.opacity = ok ? '' : '0.45';
-            b.style.cursor = ok ? '' : 'not-allowed';
+            dansTous(id, function (b) {
+                b.disabled = !ok;
+                b.style.opacity = ok ? '' : '0.45';
+                b.style.cursor = ok ? '' : 'not-allowed';
+            });
         });
-        var p = document.getElementById('tabsMenu');
-        if (p) p.classList[ok ? 'remove' : 'add']('tabs-sans-bloc');
+        racines().forEach(function (p) { p.classList[ok ? 'remove' : 'add']('tabs-sans-bloc'); });
     }
 
-    function rendreListe() {
-        var liste = document.getElementById('tabStopsList');
+    /* _SP_TAB_507_DEBUT — ON DESSINE DANS TOUTES LES COPIES DU PANNEAU.
+       peindre() construit la liste ET les libellés d'UNE copie (l'original ou le widget) ;
+       rendreListe() l'appelle pour chacune. Le sélecteur interroge l'id (original) puis
+       data-sp-ref (copie du widget, qui a perdu ses ids en étant clonée). */
+    function peindre(root, t, blocs) {
+        if (!root) return;
+        var q = function (id) {
+            try { return root.querySelector('#' + id) || root.querySelector('[data-sp-ref="' + id + '"]'); }
+            catch (_) { return null; }
+        };
+        var liste = q('tabStopsList');
         if (!liste) return;
-        var blocs = blocsTexte();
-        var t = blocs.length ? modele(blocs[0]) : null;
-        actionsActives(!!t);
         /* 🆕 v1.7.485 — ON DIT SUR QUOI ON TRAVAILLE. Sans cela, impossible de
            valider en confiance quand deux blocs se ressemblent. */
-        var cible = document.getElementById('tabCible');
+        var cible = q('tabCible');
         if (cible) {
             if (t) {
                 var apercu = String(blocs[0].text || '').replace(/\s+/g, ' ').trim();
@@ -6761,8 +6820,8 @@ window.spTestDiag = function () {
                 cible.textContent = 'Aucun bloc texte sélectionné';
             }
         }
-        var chk = document.getElementById('tabsVisibleToggle');
-        var pas = document.getElementById('tabStep');
+        var chk = q('tabsVisibleToggle');
+        var pas = q('tabStep');
         if (t) {
             if (chk) chk.checked = !!t.active;
             if (pas && document.activeElement !== pas) pas.value = spTabMmDe(t.step);
@@ -6786,6 +6845,11 @@ window.spTestDiag = function () {
             row.className = 'tab-stop-row';
 
             var pos = document.createElement('input');
+            /* _SP_TAB_507_DEBUT — data-sp-ref SANS CIBLE RÉELLE (aucun élément de ce nom n'existe) :
+               le pont du widget renonce donc à renvoyer l'événement vers l'original et la
+               délégation de CETTE copie fait le travail. Sans cela, la croix d'une ligne
+               du widget cliquait la LISTE d'origine au lieu de retirer le taquet. */
+            pos.setAttribute('data-sp-ref', 'spTabGen' + i + 'Pos');
             pos.type = 'number';
             pos.min = '0'; pos.max = '500'; pos.step = '0.5';
             pos.value = spTabMmDe(s.pos);
@@ -6798,6 +6862,7 @@ window.spTestDiag = function () {
             pos.setAttribute('data-sp-tab-pos', '1');
 
             var sel = document.createElement('select');
+            sel.setAttribute('data-sp-ref', 'spTabGen' + i + 'Type');
             sel.title = 'Type de taquet';
             TYPES.forEach(function (ty) {
                 var o = document.createElement('option');
@@ -6807,6 +6872,7 @@ window.spTestDiag = function () {
                 sel.appendChild(o);
             });
             var sup = document.createElement('button');
+            sup.setAttribute('data-sp-ref', 'spTabGen' + i + 'Exit');
             sup.type = 'button';
             sup.textContent = '×';
             sup.title = 'Retirer ce taquet';
@@ -6816,6 +6882,13 @@ window.spTestDiag = function () {
             row.appendChild(sup);
             liste.appendChild(row);
         });
+    }
+
+    function rendreListe() {
+        var blocs = blocsTexte();
+        var t = blocs.length ? modele(blocs[0]) : null;
+        actionsActives(!!t);
+        racines().forEach(function (r) { try { peindre(r, t, blocs); } catch (_) {} });
     }
     window.spTabRendreListe = rendreListe;
 
@@ -6828,16 +6901,21 @@ window.spTestDiag = function () {
 
     var _statutTimer = null;
     function majStatut(texte, genre) {
-        var el = document.getElementById('tabStatus');
-        if (!el) return;
-        el.textContent = texte || '';
-        el.className = 'tab-status' + (texte ? '' : ' tab-status-vide') + (genre ? ' tab-status-' + genre : '');
+        /* _SP_TAB_507_DEBUT — la ligne de statut existe dans CHAQUE copie : on les écrit toutes. */
+        var els = dans('tabStatus');
+        if (!els.length) return;
+        els.forEach(function (el) {
+            el.textContent = texte || '';
+            el.className = 'tab-status' + (texte ? '' : ' tab-status-vide') + (genre ? ' tab-status-' + genre : '');
+        });
         if (_statutTimer) { clearTimeout(_statutTimer); _statutTimer = null; }
         if (texte && genre !== 'info') {
             /* Le message s'efface tout seul : le panneau reste sobre. */
             _statutTimer = setTimeout(function () {
-                el.textContent = '';
-                el.className = 'tab-status tab-status-vide';
+                els.forEach(function (el) {
+                    el.textContent = '';
+                    el.className = 'tab-status tab-status-vide';
+                });
             }, 6000);
         }
     }
@@ -7211,6 +7289,21 @@ window.spTestDiag = function () {
         } catch (_) {}
     }
 
+    /* _SP_TAB_507_DEBUT — le champ « Position » propose la place LIBRE suivante : on n'ajoute plus un
+       taquet au même endroit par inadvertance (v1.7.485). */
+    function majChampNouveauTaquet() {
+        try {
+            var b0 = blocsTexte()[0];
+            var champP = document.getElementById('tabNewPos');
+            if (b0 && champP) {
+                var t0 = modele(b0), dernier = 0;
+                t0.stops.forEach(function (s) { if (s.pos > dernier) dernier = s.pos; });
+                var libre = (dernier > 0) ? (spTabMmDe(dernier) + SP_PAS_DEFAUT_MM) : SP_PAS_DEFAUT_MM;
+                champP.value = String(Math.round(libre * 2) / 2);
+            }
+        } catch (_) {}
+    }
+
     function ouvrirPopin() {
         var popin = document.getElementById('tabsMenu');
         if (!popin) return;
@@ -7218,6 +7311,31 @@ window.spTestDiag = function () {
         if (menu) menu.classList.remove('open');
         var sidebar = document.getElementById('leftSidebar');
         var ouverte = sidebar && !sidebar.classList.contains('collapsed');
+        /* _SP_TAB_507_DEBUT — LE PANNEAU EST UN WIDGET : un clic l'ouvre, un second le referme.
+           On efface d'abord tout ce que les versions précédentes posaient en ligne
+           (position fixed, largeur de colonne, zIndex) : le widget s'en occupe. */
+        var spD507 = window.spDockWidgets;
+        if (spD507 && spD507.ouvrir) {
+            popin.classList.remove('popin-mode');
+            var ov507 = document.getElementById('tabsPopinOverlay');
+            if (ov507) { try { ov507.classList.remove('active'); ov507.style.display = 'none'; } catch (_) {} }
+            ['position', 'left', 'right', 'bottom', 'top', 'width', 'maxHeight', 'overflowY', 'transform', 'zIndex']
+                .forEach(function (k) { try { popin.style[k] = ''; } catch (_) {} });
+            try { spD507.ouvrir(popin, document.getElementById('toggleTabs')); } catch (_) {}
+            /* _SP_TAB_507C_DEBUT — LE MODE D'EMPLOI RESTE VISIBLE DANS LE WIDGET (voir l'en-tête du patch). */
+            try {
+                racines().forEach(function (r) {
+                    Array.prototype.forEach.call(r.querySelectorAll('.hint'), function (h) { h.style.display = 'block'; });
+                });
+            } catch (_) {}
+            filSelection();
+            cabler();
+            majChampNouveauTaquet();
+            rendreListe();
+            majRegleTab();
+            majStatut('', '');
+            return;
+        }
         /* _SP_TAB_505B_DEBUT — LE PANNEAU RESTE DANS LA BARRE LATÉRALE, JAMAIS PAR-DESSUS.
            MESURE (barre latérale ouverte) : en « popin-mode », la palette (400 × 384 px
            mesurés) se posait au CENTRE de la fenêtre — donc par-dessus la planche (canevas
@@ -7273,18 +7391,8 @@ window.spTestDiag = function () {
         } catch (_) {}
         filSelection();
         cabler();
-        /* 🆕 v1.7.485 — le champ « Position » propose la place LIBRE suivante :
-           on n'ajoute plus un taquet au même endroit par inadvertance. */
-        try {
-            var b0 = blocsTexte()[0];
-            var champP = document.getElementById('tabNewPos');
-            if (b0 && champP) {
-                var t0 = modele(b0), dernier = 0;
-                t0.stops.forEach(function (s) { if (s.pos > dernier) dernier = s.pos; });
-                var libre = (dernier > 0) ? (spTabMmDe(dernier) + SP_PAS_DEFAUT_MM) : SP_PAS_DEFAUT_MM;
-                champP.value = String(Math.round(libre * 2) / 2);
-            }
-        } catch (_) {}
+        /* repli : voir majChampNouveauTaquet() — _SP_TAB_507_DEBUT */
+        majChampNouveauTaquet();
         rendreListe();
         majRegleTab();
         majStatut('', '');
@@ -7294,6 +7402,12 @@ window.spTestDiag = function () {
         if (popin) popin.classList.remove('open', 'popin-mode');
         var ov = document.getElementById('tabsPopinOverlay');
         if (ov) ov.classList.remove('active');
+        /* _SP_TAB_507_DEBUT — la croix du panneau, le second clic sur « Tabulation » et Échap
+           referment le WIDGET (c'est le même panneau). */
+        try {
+            var spD507 = window.spDockWidgets;
+            if (spD507 && spD507.estOuvert && spD507.estOuvert(DOCK_NOM)) spD507.fermer(DOCK_NOM);
+        } catch (_) {}
         majRegleTab();
     }
     window._closeTabsPopin = fermerPopin;
@@ -7301,7 +7415,12 @@ window.spTestDiag = function () {
     /* Câblage par délégation : n'importe quel clic / changement À L'INTÉRIEUR du
        panneau est traité ici, même si le panneau a été reconstruit entre-temps. */
     function cabler() {
-        var popin = document.getElementById('tabsMenu');
+        /* _SP_TAB_507_DEBUT — on câble CHAQUE copie (l'original ET le widget) : la délégation de la copie
+           reçoit les clics et les changements, l'index des lignes étant retrouvé par leur
+           POSITION dans la liste, jamais par un écouteur mémorisé (v1.7.481). */
+        racines().forEach(function (r) { cablerUne(r); });
+    }
+    function cablerUne(popin) {
         if (!popin || popin._spTabsDeleg) return;
         popin._spTabsDeleg = true;
         popin.addEventListener('click', function (e) {
@@ -7392,7 +7511,8 @@ window.spTestDiag = function () {
             btn._spTabsWire = true;
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                if (popin && popin.classList.contains('open')) fermerPopin(); else ouvrirPopin();
+                /* _SP_TAB_507_DEBUT — bascule sur l'état RÉEL du widget (un seul gestionnaire). */
+                if (panneauOuvert()) fermerPopin(); else ouvrirPopin();
                 var icone = document.getElementById('rulersIcon');
                 if (icone) { icone.src = 'icons/rulers.svg'; icone.alt = 'Règles'; }
             });
@@ -7407,19 +7527,15 @@ window.spTestDiag = function () {
         cabler();
         if (!window._spTabsClicExterieur) {
             window._spTabsClicExterieur = true;
-            document.addEventListener('click', function (e) {
-                if (!popin || !popin.classList.contains('open')) return;
-                var dd = document.getElementById('rulersDropdown');
-                if (dd && dd.contains(e.target)) return;
-                if (e.target && e.target.id === 'tabsPopinOverlay') return;
-                /* _SP_TAB_505_DEBUT — ON GARDE LA PALETTE POUR LE TRAVAIL EN COURS.
-                   Mesure avant : le premier clic dans le texte refermait le panneau
-                   (donc la règle, faute de taquets actifs) au moment précis où l'on
-                   voulait placer le curseur et régler les taquets. Un clic DANS le bloc
-                   texte en cours, ou SUR la règle, laisse donc le panneau ouvert. */
-                if (clicPourLaTabulation(e)) return;
-                fermerPopin();
-            });
+            /* _SP_TAB_507_DEBUT — PLUS DE FERMETURE « CLIC EXTÉRIEUR ».
+               Le panneau est un WIDGET posé dans le plan de travail : un clic dans le texte,
+               sur la règle, ou ailleurs ne doit PAS le faire disparaître — c'est justement le
+               geste par lequel on place le curseur avant de régler les taquets (défaut signalé
+               en 1.7.505 : « tout clic sur la planche fermait le panneau »). Il se ferme par
+               son bouton « Tabulation » (second clic), par sa croix, ou par Échap —
+               exactement comme « Grille & repères ». L'écouteur est donc retiré : le menu
+               déroulant des règles, lui, continue d'être refermé par le gestionnaire de la
+               barre d'outils (setupRulersDropdown). */
         }
         /* ⚠️ v1.7.485 — ÉCOUTE EN CAPTURE, SUR window (correctif mesuré).
            Pendant l'édition, Fabric pose son propre écouteur keydown sur le
@@ -7504,7 +7620,8 @@ window.spTestDiag = function () {
                       le message de statut annonce que Tab insère la tabulation, ce qui
                       évite l'insertion surprise en tête de bloc de la version 1.7.460.
                       Un second appui insère donc la tabulation. */
-                var optionTabsT = estTexteT && (!!(objT._spTabs && objT._spTabs.active) || !!(popin && popin.classList.contains('open')));
+                /* _SP_TAB_507_DEBUT — « panneau ouvert » = widget ouvert (voir panneauOuvert). */
+                var optionTabsT = estTexteT && (!!(objT._spTabs && objT._spTabs.active) || panneauOuvert());
                 if (estTexteT && !objT.isEditing && !dansUnChamp && optionTabsT && typeof objT.enterEditing === 'function') {
                     e.preventDefault();
                     e.stopPropagation();
@@ -7768,6 +7885,9 @@ window.spTestDiag = function () {
            TOUS les widgets (Pathfinder / Styles / Nuancier / Filtres sont calibrés
            pour 200 px). */
         if (nom === 'spVarSection') host.classList.add('sp-dock-large');
+        /* _SP_TAB_507_DEBUT — le panneau des taquets a besoin de la même largeur : à 200 px, ses lignes
+           (position + type + croix) étaient écrasées une fois détachées. */
+        if (nom === 'tabsMenu') host.classList.add('sp-dock-large');
         var clone = copier(sec);
         /* En-tête identique aux widgets existants : point, titre en capitales,
            petit triangle à droite pour le soufflet. Le titre du clone est masqué :
@@ -64689,6 +64809,22 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         if (boxWidth <= 0) boxWidth = Math.max.apply(null, lineWidths);
 
         var boldStroke = (isFakeBold && !isOutline) ? Math.max(0.5, realFontSize * 0.04) : 0;
+        /* _SP_TAB_507_DEBUT — TAQUETS DANS LA VECTORISATION.
+           MESURE AVANT : la boucle de glyphes ne connaissait pas la tabulation ; un \t
+           partait dans font.charToGlyph('\t') et son avance valait ~0 (aucun décalage).
+           Un bloc À TAQUETS vectorisé (« Vectoriser » puis export PDF vectoriel) tassait
+           donc ses colonnes alors que l'aperçu, le chemin pdf-lib et le chemin jsPDF les
+           alignaient sur les taquets. On interroge le MÊME moteur que l'aperçu
+           (window.spTabAvance) : une seule source de vérité.
+           UNITÉS : xCursor est dans l'unité « realFontSize » (= taille × |scaleX|), alors
+           que les positions de taquets vivent dans l'unité du TEXTE (celle de __charBounds,
+           que lit spTabAvance). On divise donc par |scaleX| pour interroger le moteur, et
+           on remultiplie pour avancer dans l'unité de la boucle. */
+        var _spEchT = Math.abs(scaleX || 1) || 1;
+        var _spTabsVecModele = (obj._spTabs && obj._spTabs.active
+            && typeof window.spTabAvance === 'function' && typeof window.spTabModele === 'function')
+            ? window.spTabModele(obj) : null;
+        var _spTabsVecActifs = !!(_spTabsVecModele && _spTabsVecModele.active);
 
         for (var li = 0; li < lines.length; li++) {
             var lineText = lines[li];
@@ -64718,6 +64854,13 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
 
             for (var ci = 0; ci < lineText.length; ci++) {
                 var ch = lineText[ci];
+                if (ch === '\t' && _spTabsVecActifs) {
+                    /* _SP_TAB_507_DEBUT — avance au taquet suivant, comme l'aperçu (voir les aides). */
+                    xCursor += Math.max(1, window.spTabAvance(obj, xCursor / _spEchT, li, ci, _spTabsVecModele)) * _spEchT;
+                    if (ci < lineText.length - 1 && charSpacing) xCursor += charSpacing * realFontSize / 1000;
+                    prevGlyphIdx = null;
+                    continue;
+                }
                 if (ch === ' ') {
                     xCursor += font.getAdvanceWidth(' ', realFontSize, { letterSpacing: letterSpacing }) + extraSpace;
                     prevGlyphIdx = null; continue;
@@ -64845,6 +64988,19 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             angle: angle, width: maxWidth,
             textAlign: textAlign || 'left', lineHeight: lineHeightFactor || 1.16
         });
+        /* _SP_TAB_507B_DEBUT — LE REPLI DOIT PORTER LES RÉGLAGES DU BLOC (voir l'en-tête du patch).
+           Le moteur d'avance et le calcul d'interligne lisent ces propriétés SUR L'OBJET :
+           sans cette recopie, un bloc vectorisé par ce chemin perdait ses taquets (mesuré :
+           « A ⇥ B » avec un taquet de 100 px sortait avec B collé à A). Données pures :
+           copiées TELLES QUELLES, sans conversion ni interpretation. */
+        try {
+            if (obj._spTabs) fb._spTabs = JSON.parse(JSON.stringify(obj._spTabs));
+            if (typeof obj._fontSizeMult === 'number') fb._fontSizeMult = obj._fontSizeMult;
+            if (typeof obj._fontSizeFraction === 'number') fb._fontSizeFraction = obj._fontSizeFraction;
+            if (typeof obj.charSpacing === 'number') fb.charSpacing = obj.charSpacing;
+            if (obj.breakWords !== undefined) fb.breakWords = obj.breakWords;
+            if (obj.splitByGrapheme !== undefined) fb.splitByGrapheme = obj.splitByGrapheme;
+        } catch (_) {}
         if (canvas.getObjects().indexOf(obj) !== -1) canvas.remove(obj);
         canvas.add(fb);
         canvas.setActiveObject(fb);

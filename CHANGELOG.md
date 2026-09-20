@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,39 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.507] — 2026-09-20
+
+_Tab stops panel becomes a widget, and tab stops reach the PDF exports_
+
+### Fixed
+- **Vectorised text ignored the tab stops.** Measured: a block “A ⇥ B” with a 100 px stop exported with B glued to A (x = 150 and 176.6 px) while the preview, the pdf-lib path and the jsPDF path all placed it at the stop. The glyph loop of `_spDoVectorize` knew nothing about tabulation and measured `\t` with the font metrics; it now asks `window.spTabAvance` — the same advance engine as the preview — converting the cursor through the block scale so the stop (expressed in text pixels) is honoured.
+- **The font-fallback block lost every block setting.** When the font was not resolved yet, vectorisation worked on the substitute block built by `_spFallbackVector`, which copied none of the original settings: the tab stops fell back to a default 10 mm step (or to none at all), and the vertical metrics and line-breaking rules were lost too. The substitute now carries `_spTabs`, `_fontSizeMult`, `_fontSizeFraction`, `charSpacing`, `breakWords` and `splitByGrapheme` from the original block.
+
+### Added
+- **The tab-stop panel is now a docked widget** (`window.spDockWidgets`, one click on “Tabulation” opens it, a second closes it, its cross and Escape close it too), living in `#canvasScrollArea` like Styles / Pathfinder / Swatches / Filters. The old dropdown stuck to the rail and the pop-in over the pasteboard are gone, along with the “click elsewhere closes it” rule — clicking in the text or on the ruler is precisely how one places the caret.
+- **A cloned panel is a two-faced panel.** The dock widget is a copy of `#tabsMenu`, so every command that writes into the panel (stop list, status line, disabled buttons, target label) now writes into ALL copies (`racines()` / `dans()`), and the delegation is wired on each copy. Without this the list would only be drawn in the original — that is, nowhere. Generated row controls carry a `data-sp-ref` with no real target so the widget bridge leaves the event to their own copy instead of routing it to the original.
+- The widget gets the `sp-dock-large` width (320 px) and the panel help line stays visible inside it (the stylesheet hides `.hint` in every docked widget; here it is the operating manual for the Tab key and the ruler gestures).
+
+### Verified
+| Check | Result |
+|---|---|
+| Widget geometry, sidebar collapsed / open | inside `#canvasScrollArea` (80 → 400 px collapsed; 304 px with the sidebar open, 0 px overlap) |
+| Point under the pointer on each widget field | the field itself (`tabStep`, `tabNewPos`, `tabAddBtn`, `tabApplyBtn`, `tabsVisibleToggle`) |
+| “+ Stop” clicked in the widget | exactly one stop added (1 → 2) |
+| Row cross clicked in the widget | the correct stop removed (2 → 1) |
+| Step 25 mm / position 77 mm set in the widget | 70.866 px / 218.268 px — exact |
+| Second click on “Tabulation”, then Escape | widget closed both times |
+| Tab in an editing block with a 90 px stop | “ABC” → “A ⇥ BC”, caret after the tab, next letter at 90 px |
+| Native PDF export, stop at 100 px | draws at x = 141.5 pt and 241.5 pt → Δ 100 pt |
+| jsPDF PDF export, same document | draws at x = 62.92 mm and 98.19 mm → Δ 35.28 mm (= 100 px) |
+| Vectorisation with tabs, font cached | glyphs at 150 px and 252 px (stop honoured) |
+| Vectorisation via the font fallback | glyphs at 150 px and 252 px (was 150 / 176.6) |
+| .sp round trip | `_spTabs` in the saved page JSON; after reload the stops are identical and the tab box measures 87.35 px with the letter at 100 px |
+| Studio transport | `_spTabs` copied both ways by `spAppliquerReglagesTypo` (only when the text is unchanged) |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v507"`, cache tag `20260920-v507-tabulation-en-widget`, `CACHE_NAME` bumped |
+
 
 ## [1.7.506] — 2026-09-20
 
