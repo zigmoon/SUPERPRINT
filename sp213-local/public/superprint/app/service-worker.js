@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.515-widget-fond-allege';
+const CACHE_NAME = 'superprint-shell-v1.7.516-titre-fonds-et-ligne-options';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,19 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.516] — 2026-09-20
+
+_Fond widget: the title stays FONDS in black, the grey line below shows OPTIONS_
+
+### Fixed
+- **The two labels are now separate.** The widget system reads the widget title from `[data-dock-title]` — the very element that also carried the grey line. My previous change (“Fond” → “OPTIONS”) therefore altered both. There are now:
+  - a **hidden** `[data-dock-title]` label reading **`FONDS`**, which the widget header displays in black capitals (the tool name);
+  - the **visible grey line** reading **`OPTIONS`** just below it, without `data-dock-title`.
+- Measured: header `FONDS`, grey line `OPTIONS` visible at 0.70 opacity, 408 px widget without scrolling, nine effects and four resolutions untouched, sidebar tool still named “Fond”.
+
+### Markers
+`data-sp-js="v516"`, cache tag `20260920-v516-titre-fonds-et-ligne-options`, `CACHE_NAME` bumped, local package rebuilt with `tools/make-release-zip.mjs`.
 
 ## [1.7.515] — 2026-09-20
 
