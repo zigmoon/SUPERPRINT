@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.501 — the dev tool documented in our own documentation, a lighter home page and author cards without numbers.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.502 — the home page FAQ opens on click again in all three languages.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.501 — the dev tool documented in our own documentation, a lighter home page and author cards without numbers.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.502 — the home page FAQ opens on click again in all three languages.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,28 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.502 — la FAQ de la page d'accueil remarche ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-502">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.502</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 20 septembre 2026" data-i18n-en="Released September 20, 2026" data-i18n-jp="2026年9月20日公開">Released September 20, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Les questions de la <strong>FAQ</strong> s'ouvrent au clic dans les trois langues. C'était le seul endroit du site où le pli ne répondait pas : en anglais et en japonais, la question affichée n'était pas la commande du bloc." data-i18n-en-html="The <strong>FAQ</strong> questions open on click in all three languages. It was the only place on the site where the fold did not respond: in English and Japanese, the question shown was not the block's control." data-i18n-jp-html="<strong>FAQ</strong>の質問が3言語すべてでクリックで開くようになりました。英語と日本語では、表示されている質問がブロックの操作部分ではありませんでした。">The FAQ questions open on click in all three languages. It was the only place on the site where the fold did not respond: in English and Japanese, the question shown was not the block's control.</p>
+
+ <h3 data-i18n-fr-html="🖱️ La FAQ répond de nouveau au clic <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🖱️ The FAQ answers the click again <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🖱️ FAQ が再びクリックに反応 <span class=&quot;badge badge-fix&quot;>修正</span>">🖱️ The FAQ answers the click again <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>La cause :</strong> chaque question portait <strong>trois balises</strong> <code>&lt;summary&gt;</code> — une par langue. Or un bloc repliable n'a qu'<strong>une seule commande</strong>, sa <em>première</em> balise. Comme la première était celle du français et que la page s'ouvre en anglais, la question <em>visible</em> n'était pas la commande : cliquer dessus ne faisait rien. En français, tout marchait — d'où le symptôme « la FAQ ne marche pas » sur le site en ligne." data-i18n-en-html="<strong>The cause:</strong> every question carried <strong>three</strong> <code>&lt;summary&gt;</code> tags — one per language. But a collapsible block has only <strong>one control</strong>, its <em>first</em> tag. Since the first one was French and the page opens in English, the <em>visible</em> question was not the control: clicking it did nothing. In French everything worked — hence the “the FAQ does not work” symptom on the live site." data-i18n-jp-html="<strong>原因：</strong>各質問に<strong>3つの</strong><code>&lt;summary&gt;</code>（言語ごと）が付いていました。しかし折りたたみブロックの操作部分は<em>最初の</em>1つだけです。最初がフランス語だったため、英語表示では<em>見えている</em>質問が操作部分ではなく、クリックしても開きませんでした。フランス語では動作していたため、公開サイトで「FAQが動かない」という症状になっていました。"><strong>The cause:</strong> every question carried three summary tags (one per language) while a collapsible block has only one control, its first tag. The first being French, the visible English question was not the control, so clicking did nothing. In French it worked — hence the live-site symptom.</li>
+  <li data-i18n-fr-html="<strong>Le correctif :</strong> une seule balise <code>&lt;summary&gt;</code> par question, les trois langues deviennent des <code>&lt;span data-lang&gt;</code> à l'intérieur. La commande du bloc est désormais la bonne dans les trois langues, et le numéro, l'icône <b>+</b> et la mise en deux colonnes ne bougent pas. Le filtre de recherche, lui, marchait déjà : il continue de trouver une question par un mot de n'importe laquelle des trois langues." data-i18n-en-html="<strong>The fix:</strong> a single <code>&lt;summary&gt;</code> tag per question, the three languages become <code>&lt;span data-lang&gt;</code> inside it. The block's control is now the right one in all three languages, and the number, the <b>+</b> icon and the two-column layout stay put. The search filter already worked: it still finds a question from a word in any of the three languages." data-i18n-jp-html="<strong>修正：</strong>質問ごとに <code>&lt;summary&gt;</code> を1つにし、3言語は内部の <code>&lt;span data-lang&gt;</code> に。これで3言語すべてで正しい操作部分になり、番号・<b>＋</b>アイコン・2カラム配置は変わりません。検索フィルターは元から動作しており、3言語いずれの語でも質問を探せます。"><strong>The fix:</strong> one summary tag per question, the three languages inside as spans. Number, plus icon and two-column layout unchanged; the search filter keeps working in all three languages.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.502 — contrôles : clic réel sur la question visible dans les trois langues (la réponse s'ouvre, hauteur mesurée), une seule langue affichée à la fois, icône + et numéro conservés, filtre de recherche intact (« pantone » → 1 question sur 10, puis retour à 10), page d'accueil identique entre le site et la copie locale, paquet local reconstruit." data-i18n-en="SuperPrint 1.7.502 — checks: real click on the visible question in all three languages (the answer opens, height measured), a single language shown at a time, plus icon and number kept, search filter intact (“pantone” → 1 of 10 questions, then back to 10), home page identical between the site and the local copy, local package rebuilt." data-i18n-jp="SuperPrint 1.7.502 — 検証：3言語で可視の質問を実際にクリック（回答が開き、高さを計測）、表示は常に1言語のみ、＋アイコンと番号は維持、検索フィルターも正常（“pantone” → 10件中1件、解除で10件に戻る）、サイトとローカルコピーのホームページ一致、パッケージ再生成済み。">SuperPrint 1.7.502 — checks: real click on the visible question in three languages, a single language shown at a time, icons kept, search filter intact, home page identical on both sides, package rebuilt.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Voir la page" data-i18n-en="→ See the page" data-i18n-jp="→ ページを見る">→ See the page</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.501 — le dev tool documenté, un soufflet en moins, les auteurs sans numéro ===== -->
 

@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.501-devtool-doc-et-page';
+const CACHE_NAME = 'superprint-shell-v1.7.502-faq-cliquable';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

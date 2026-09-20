@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,27 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.502] — 2026-09-20
+
+_The home page FAQ opens on click again in all three languages_
+
+### Fixed
+- **The FAQ of the home page did not answer the click.** Every question carried three `<summary>` tags — one per language — while a collapsible block has only one control: its **first** tag. The first one being French, and the page opening in English (and in Japanese), the *visible* question was not the control, so clicking it did nothing. French worked, which is why the fault only showed on the live site, whose default language is English.
+- **Fix**: a single `<summary class="faq-q">` per question, the three languages moved inside as `<span data-lang="fr|en|ja">`. The control is now the right one in the three languages; the question number, the `+` icon and the two-column layout are untouched, and the 1.7.493 search filter keeps working (it searches the text of all three languages).
+- `_dev/scripts/_faq_502.cjs` performs the change idempotently on both trees (10 questions each) and checks that there is exactly one `<summary>` per `<details>`.
+
+### Verified
+| Check | Result |
+|---|---|
+| Real click on the visible question (FR, EN, JA) | answer opens, 128 px measured |
+| Visible language spans | 1 of 3 at a time (FR 0 px, EN 477 px, JA 0 px) |
+| Number and `+` icons | kept (`::before` / `::after` on the single summary) |
+| Search filter | “pantone” → 1 of 10 questions, clearing → 10 |
+| `<details>` / `<summary>` | 17 / 17 — the 20 extra summaries are gone |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v502"`, cache tag `20260920-v502-faq-cliquable`, `CACHE_NAME` bumped |
+
 
 ## [1.7.501] — 2026-09-20
 
