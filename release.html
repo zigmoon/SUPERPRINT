@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.516 — Fond widget: the title stays FONDS in black and the grey line below shows OPTIONS.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.517 — widget buttons show their state and the PDF export no longer adds white blocks with crop marks.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.516 — Fond widget: the title stays FONDS in black and the grey line below shows OPTIONS.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.517 — widget buttons show their state and the PDF export no longer adds white blocks with crop marks.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,34 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.517 — Widget « Fonds » : état des boutons · Export PDF : plus de blocs blancs avec les traits de coupe ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-517">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.517</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 20 septembre 2026" data-i18n-en="Released September 20, 2026" data-i18n-jp="2026年9月20日公開">Released September 20, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Deux correctifs : les <strong>boutons du widget « Fonds »</strong> montrent enfin leur état, et l'<strong>export PDF CMJN avec traits de coupe</strong> ne pose plus de blocs blancs." data-i18n-en-html="Two fixes: the <strong>“Fonds” widget buttons</strong> finally show their state, and the <strong>CMYK PDF export with crop marks</strong> no longer lays white blocks." data-i18n-jp-html="2 つの修正：<strong>「Fonds」ウィジェットのボタン</strong>が状態を表示するようになり、<strong>トンボ付き CMYK PDF 書き出し</strong>に白いブロックが出なくなりました。">Widget state + white blocks: two fixes.</p>
+
+ <h3 data-i18n-fr-html="🎛️ État visible des boutons du widget <span class=&quot;badge badge-new&quot;>corrigé</span>" data-i18n-en-html="🎛️ Visible button state in the widget <span class=&quot;badge badge-new&quot;>fixed</span>" data-i18n-jp-html="🎛️ ウィジェットのボタン状態を表示 <span class=&quot;badge badge-new&quot;>修正</span>">🎛️ Visible button state in the widget <span class="badge badge-new">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Un widget détaché est une <strong>copie</strong> des réglages de la barre latérale : l'application posait ses états (bouton de l'effet choisi, libellé <strong>Geler/Reprendre</strong>, valeurs chiffrées des curseurs) uniquement sur l'original. Mesure avant correction : en cliquant <strong>Fluide</strong>, l'effet changeait bien, mais le widget gardait <strong>DOT</strong> allumé — et la valeur d'un curseur restait figée. Les boutons d'effet, les quatre définitions, le gel et les valeurs suivent maintenant le clic et le glisser." data-i18n-en-html="A detached widget is a <strong>copy</strong> of the sidebar controls: the application set its states (chosen effect button, <strong>Geler/Reprendre</strong> label, slider read-outs) on the original only. Measured before the fix: clicking <strong>Fluide</strong> did change the effect, but the widget kept <strong>DOT</strong> lit — and a slider read-out stayed frozen. Effect buttons, the four resolutions, freeze and the read-outs now follow clicks and drags." data-i18n-jp-html="分離ウィジェットはサイドバー操作の<strong>コピー</strong>です。アプリは状態（選択中のエフェクトのボタン、<strong>Geler/Reprendre</strong> のラベル、スライダーの数値）をオリジナルにのみ反映していました。修正前の実測：<strong>Fluide</strong> をクリックするとエフェクトは変わりますが、ウィジェットでは <strong>DOT</strong> が点灯したままで、スライダーの数値も固定されていました。現在はエフェクト、4 つの解像度、フリーズ、数値がクリックとドラッグに追従します。">Effect buttons, resolutions, freeze and read-outs now follow the widget.</li>
+  <li data-i18n-fr-html="Mesures après correction : DOT → Fluide → Organic basculent bien d'un bouton à l'autre, 72/150/300/600 aussi, le bouton passe de « ⏸ Geler » à « ▶ Reprendre » et la valeur affichée de <strong>1.00</strong> à <strong>0.40</strong> — tout cela depuis le widget." data-i18n-en-html="Measured after the fix: DOT → Fluide → Organic switch from one button to the other, 72/150/300/600 as well, the button goes from “⏸ Geler” to “▶ Reprendre” and the read-out from <strong>1.00</strong> to <strong>0.40</strong> — all of it from inside the widget." data-i18n-jp-html="修正後の実測：DOT → Fluide → Organic、72/150/300/600 もボタンが切り替わり、「⏸ Geler」は「▶ Reprendre」に、数値は <strong>1.00</strong> から <strong>0.40</strong> に変わります（すべてウィジェット内で）。">Measured: DOT → Fluide → Organic, 72→600, Geler → Reprendre, 1.00 → 0.40.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🖨️ Export PDF : plus de blocs blancs avec les traits de coupe <span class=&quot;badge badge-new&quot;>corrigé</span>" data-i18n-en-html="🖨️ PDF export: no more white blocks with crop marks <span class=&quot;badge badge-new&quot;>fixed</span>" data-i18n-jp-html="🖨️ PDF 書き出し：トンボ付きでも白いブロックなし <span class=&quot;badge badge-new&quot;>修正</span>">🖨️ PDF export: no more white blocks with crop marks <span class="badge badge-new">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Avec la <strong>typographie vectorielle</strong>, l'export regroupe les objets en séries (vecteurs / images). Chaque série d'images était rendue <strong>seule</strong> puis découpée à sa zone : dans ce rectangle, tout ce qui n'était pas couvert par les images restait <strong>transparent</strong>, et la conversion CMJN aplatissait cette transparence sur du <strong>blanc</strong> — d'où un aplat blanc opaque posé <strong>par-dessus</strong> le fond et les textes. C'est pourquoi l'export sans traits de coupe (chemin vectoriel direct) était correct." data-i18n-en-html="With <strong>vector typography</strong>, the export groups objects into runs (vectors / images). Each image run was rendered <strong>alone</strong> then cropped to its area: inside that rectangle everything not covered by the images stayed <strong>transparent</strong>, and the CMYK conversion flattened that transparency onto <strong>white</strong> — hence an opaque white patch painted <strong>over</strong> the background and the text. That is why the export without crop marks (direct vector path) was correct." data-i18n-jp-html="<strong>ベクター組版</strong>では、書き出し時にオブジェクトがベクター／画像のまとまりに分かれます。画像のまとまりは<strong>単独で</strong>描画され、その領域に切り取られていました。この矩形のうち画像で覆われていない部分は<strong>透明</strong>のままで、CMYK 変換がその透明を<strong>白</strong>に合成するため、背景とテキストの<strong>上に</strong>不透明な白い矩形が乗っていました。トンボなしの書き出し（直接ベクター経路）が正常だった理由です。">Root cause: the raster run was cropped to its area and its transparent pixels were flattened to white.</li>
+  <li data-i18n-fr-html="Mesure (fond bleu + texte blanc + 2 photos, CMJN HD + typo vectorielle + traits de coupe) : <strong>8 850 cellules blanches sur 14 768</strong> rendues avant, <strong>466</strong> après — soit la marge des repères de coupe seule, exactement comme dans les trois autres chemins d'export ; l'écart moyen au rendu de référence passe de <strong>100,6 à 1,0</strong>. Les images situées sous une série sont maintenant cuites dans son image : le fond et les textes sont préservés." data-i18n-en-html="Measured (blue background + white text + 2 photos, CMYK HD + vector typography + crop marks): <strong>8 850 white cells out of 14 768</strong> rendered before, <strong>466</strong> after — the crop-mark margin alone, exactly like the three other export paths; the mean difference to the reference render drops from <strong>100.6 to 1.0</strong>. Objects below a run are now baked into its image: backgrounds and text are preserved." data-i18n-jp-html="実測（青い背景＋白いテキスト＋写真 2 枚、CMYK HD＋ベクター組版＋トンボ）：修正前は <strong>14 768 中 8 850</strong> セルが白、修正後は <strong>466</strong>（トンボ余白のみ）で、他の 3 つの書き出し経路と一致します。基準レンダリングとの平均差は <strong>100.6 → 1.0</strong>。まとまりの下にあるオブジェクトがその画像に焼き込まれるため、背景とテキストが保持されます。">8 850 white cells → 466; mean difference to the reference 100.6 → 1.0.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.517 — contrôles : widget Fond (DOT/Fluide/Organic, 72/150/300/600, Geler/Reprendre, valeur des curseurs) synchronisé dans les deux sens, export PDF mesuré sur quatre chemins (CMJN et RVB, avec et sans traits de coupe), syntaxe application + Studio OK, parité site ↔ copie locale 22/22, paquet local reconstruit." data-i18n-en="SuperPrint 1.7.517 — checks: Fond widget (DOT/Fluide/Organic, 72/150/300/600, Geler/Reprendre, slider read-outs) synchronised both ways, PDF export measured on four paths (CMYK and RGB, with and without crop marks), application + studio syntax OK, web ↔ local copy parity 22/22, local package rebuilt." data-i18n-jp="SuperPrint 1.7.517 — 検証：Fond ウィジェット（DOT/Fluide/Organic、72/150/300/600、Geler/Reprendre、スライダー数値）の双方向同期、PDF 書き出しを 4 経路で計測（CMYK と RGB、トンボあり・なし）、アプリとスタジオの構文 OK、サイト ↔ ローカルコピーの一致 22/22、ローカルパッケージ再構築。">SuperPrint 1.7.517 — widget state and PDF export both measured.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Voir la page" data-i18n-en="→ See the page" data-i18n-jp="→ ページを見る">→ See the page</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.516 — Widget Fond : titre « FONDS » en noir, ligne « OPTIONS » en gris ===== -->
 

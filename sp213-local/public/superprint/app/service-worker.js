@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.516-titre-fonds-et-ligne-options';
+const CACHE_NAME = 'superprint-shell-v1.7.517-etat-widget-et-blocs-blancs';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

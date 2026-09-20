@@ -8191,6 +8191,10 @@ window.spTestDiag = function () {
                 }
             }
         }
+        /* _SP_ETAT_517_DEBUT — la valeur chiffrée affichée DANS le widget (ex. « 0.40 ») et
+           les boutons suivent le réglage fait dans le widget : on demande le report de
+           l'état aux widgets détachés (cf. spSetupDockWidgets → refletEtat). */
+        try { window.spDockWidgets && window.spDockWidgets.reflet && window.spDockWidgets.reflet(); } catch (_) {}
     }
     /* ═══ _SP_RANDOMBACK_513B_DEBUT — PURGE, INSTANTANÉ À JOUR ET FOND VIVANT ═══
        - purger() retire les fonds précédents du widget : un seul à la fois, remplacé net ;
@@ -8484,6 +8488,32 @@ window.spTestDiag = function () {
         return document.getElementById(porteur.getAttribute('data-sp-ref'));
     }
 
+    /* _SP_ETAT_517_DEBUT — REPORT DE L'ÉTAT VISIBLE VERS LE WIDGET.
+       Un widget détaché est une COPIE des contrôles : l'application pose ses états
+       (« active » sur le bouton de l'effet choisi, libellé Geler/Reprendre, valeurs
+       chiffrées des curseurs) sur les contrôles d'ORIGINE. Sans ce report, le widget
+       gardait l'état figé de la copie — mesuré : on clique « Fluide », l'effet change
+       bien (l'origine est à jour) mais « DOT » reste le seul bouton actif du widget.
+       On ne modifie QUE le clone (l'application reste seule maîtresse de l'origine). */
+    function refletEtat(racine) {
+        if (!racine || !racine.querySelectorAll) return;
+        Array.prototype.forEach.call(racine.querySelectorAll('[data-sp-ref]'), function (c) {
+            var id = c.getAttribute('data-sp-ref');
+            var orig = document.getElementById(id);
+            if (!orig) return;
+            if (c.classList && orig.classList) {
+                var on = orig.classList.contains('active');
+                if (c.classList.contains('active') !== on) c.classList.toggle('active', on);
+            }
+            if ('disabled' in c && 'disabled' in orig && c.disabled !== orig.disabled) c.disabled = orig.disabled;
+            /* Libellé d'état (ex. « ⏸ Geler » / « ▶ Reprendre », valeur chiffrée d'un
+               curseur) : reporté uniquement si le contrôle d'origine le demande. */
+            if (orig.hasAttribute && orig.hasAttribute('data-sp-miroir-texte') && c.textContent !== orig.textContent) {
+                c.textContent = orig.textContent;
+            }
+        });
+    }
+
     /* Pont d'événements : le widget agit TOUJOURS sur les contrôles d'origine. */
     function ponter(clone) {
         clone.addEventListener('click', function (e) {
@@ -8511,6 +8541,9 @@ window.spTestDiag = function () {
             e.preventDefault();
             e.stopPropagation();
             try { orig.click(); } catch (_) {}
+            /* _SP_ETAT_517_DEBUT — retour VISIBLE immédiat (sans attendre la veille de
+               450 ms) : le bouton cliqué dans le widget s'allume tout de suite. */
+            refletEtat(clone);
         }, true);
 
         function reporter(e) {
@@ -8533,6 +8566,8 @@ window.spTestDiag = function () {
         recadrer();   /* un widget ne peut pas rester hors du plan de travail */
         Object.keys(docks).forEach(function (nom) {
             var d = docks[nom];
+            /* _SP_ETAT_517_DEBUT — filet de sécurité : classes « active » + libellés d'état. */
+            refletEtat(d.clone);
             Array.prototype.forEach.call(d.clone.querySelectorAll('input,select,textarea'), function (c) {
                 var orig = origineDe(c);
                 if (!orig || c === document.activeElement) return;
@@ -8778,6 +8813,9 @@ window.spTestDiag = function () {
     window.spDockWidgets = {
         init: init, ouvrir: ouvrir, fermer: fermer, synchroniser: synchroniser,
         recadrer: recadrer, zonePlan: zonePlan,
+        /* _SP_ETAT_517_DEBUT — l'application demande le report de l'état visible après
+           un changement (effet, définition, gel, curseur) : le widget suit aussitôt. */
+        reflet: function () { Object.keys(docks).forEach(function (n) { refletEtat(docks[n].clone); }); },
         estOuvert: function (nom) { return !!docks[nom]; }
     };
     window.addEventListener('load', function () { init(); surveiller(); });
@@ -49440,10 +49478,29 @@ https://superprint.app
 
                 const runSet = new Set(valid);
                 const visibility = srcCanvas.getObjects().map(obj => [obj, obj.visible]);
+                /* _SP_BLANCS_517_DEBUT — LE FOND EST CUIT DANS L'IMAGE DU RUN (blocs blancs
+                   à l'export PDF CMJN + traits de coupe). Un run raster était rendu SEUL puis
+                   croppé à la bbox de ses objets : dans ce rectangle, tout ce qui n'était pas
+                   couvert par les objets restait TRANSPARENT, et la conversion CMJN
+                   pré-composite l'alpha sur BLANC puis retire le SMask (FIX BUG 19/20) → le
+                   rectangle devenait un APLAT BLANC OPAQUE posé PAR-DESSUS le fond et les
+                   textes vectoriels déjà écrits. Mesure (fond bleu + texte blanc + 2 photos,
+                   CMJN HD + typo vectorielle + traits de coupe) : 8 850 cellules blanches sur
+                   14 768 rendues (60 % de la page) ; 0 sans traits de coupe (chemin natif).
+                   CORRECTIF : on garde VISIBLES les objets situés SOUS le run (le fond) et on
+                   ne masque que ceux situés AU-DESSUS (dessinés juste après). L'image du run
+                   contient donc exactement ce que la preview montre à cet endroit : la
+                   pré-composition alpha-sur-blanc n'a plus rien à recouvrir. */
+                let _spIdxMin = Infinity;
+                visibility.forEach(([obj], _i) => { if (runSet.has(obj) && _i < _spIdxMin) _spIdxMin = _i; });
+                if (!isFinite(_spIdxMin)) _spIdxMin = 0;
                 let url = null;
                 try {
-                    visibility.forEach(([obj, wasVisible]) => {
-                        if (!runSet.has(obj) && wasVisible !== false) obj.visible = false;
+                    visibility.forEach(([obj, wasVisible], _i) => {
+                        if (runSet.has(obj)) return;
+                        if (wasVisible === false) return;
+                        if (_i < _spIdxMin) return;   /* fond : cuit dans l'image du run */
+                        obj.visible = false;           /* au-dessus du run : dessiné juste après */
                     });
                     srcCanvas.renderAll();
                     url = srcCanvas.toDataURL({

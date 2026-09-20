@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,17 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.517] — 2026-09-20
+
+_Widget “Fonds”: buttons show their state · PDF export: no more white blocks with crop marks_
+
+### Fixed
+- **The detached widget mirrors the state of its controls.** A widget is a clone of the sidebar controls; the application set its states (`active` on the chosen effect button, the `Geler/Reprendre` label, the slider read-outs) on the **originals only**, while the widget bridge relayed clicks and values but never the state. Measured before the fix: clicking “Fluide” changed the effect (origin fine) yet the widget kept **DOT** lit. Added `refletEtat()`: the widget now follows the `active` class, the disabled state and any label flagged `data-sp-miroir-texte` (`#rbFreeze` and the four slider read-outs); it runs from the 450 ms watchdog, right after a relayed click and after every slider change. After: DOT → Fluide → Organic, 72 → 150 → 300 → 600, “⏸ Geler” → “▶ Reprendre” and `1.00` → `0.40` all follow the widget.
+- **No more opaque white blocks in CMYK PDF exports with crop marks.** With vector typography the export groups objects into runs (vector / raster). Each raster run was rendered **alone** and cropped to its objects’ bounding box; everything not covered by those objects inside that rectangle stayed **transparent**, and the CMYK conversion pre-composites the alpha on **white** and drops the SMask (the BUG 19/20 fix, needed so transparent pixels — raw RGB 0,0,0 — do not turn into solid black). The rectangle therefore became an **opaque white block painted over** the background and the vector text already written into the PDF. This is why an export without crop marks (native pdf-lib vector path) looked correct. Measured on “blue background + white text + 2 photos”, A4, 3 mm bleed, CMYK HD + vector typography + crop marks: **8 850 white cells out of 14 768** rendered (60 % of the page); 0 without crop marks. Fix: objects **below** the run (the background) stay visible and only those **above** it are hidden, so the run image contains exactly what the preview shows and the alpha-on-white pre-composite has nothing left to cover. After: **466 white cells** (the crop-mark margin alone) and a mean difference to the reference render of **1.0** instead of **100.6**.
+
+### Markers
+`data-sp-js="v517"`, cache tag `20260920-v517-etat-widget-et-blocs-blancs`, `CACHE_NAME` bumped, local package rebuilt with `tools/make-release-zip.mjs`.
 
 ## [1.7.516] — 2026-09-20
 
