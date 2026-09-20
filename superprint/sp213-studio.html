@@ -2413,6 +2413,21 @@
     try {
       savedLang = localStorage.getItem(LS.lang) || 'en';
     } catch(e) {}
+    // 🆕 v1.7.503 — ARRIVÉE DEPUIS LA PAGE DE PRÉSENTATION : « ?lang=xx » l'emporte sur la
+    //   préférence du Studio, pour que la langue choisie sur la home s'applique vraiment.
+    //   Sans le paramètre, rien ne change. Le paramètre est ensuite ôté de l'adresse.
+    try {
+      const _lg = (new URLSearchParams(window.location.search).get('lang') || '').toLowerCase();
+      if (_lg === 'en' || _lg === 'fr' || _lg === 'ja' || _lg === 'jp') {
+        savedLang = (_lg === 'jp') ? 'ja' : _lg;
+        localStorage.setItem(LS.lang, savedLang);
+        try {
+          const _u = new URL(window.location.href);
+          _u.searchParams.delete('lang');
+          window.history.replaceState(null, '', _u.pathname + (_u.search || '') + _u.hash);
+        } catch(e2) {}
+      }
+    } catch(e) {}
     // 'ja' (partagé) → 'jp' (option du select + dictionnaire studio)
     const selectVal = (savedLang === 'fr' || savedLang === 'ja') ? (savedLang === 'ja' ? 'jp' : 'fr') : 'en';
     const sel = document.getElementById('langSelect');

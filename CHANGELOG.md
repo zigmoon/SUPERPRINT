@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,31 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.503] — 2026-09-20
+
+_The language chosen on the presentation page follows the visitor into the tools_
+
+### Added
+- **The chosen language now travels to the applications.** Picking French or Japanese on the home page (or the help page — same script) writes the **shared key** `sp_lang` and appends `?lang=xx` to the links of the three tools (`app/index.html`, `sp213-studio.html`, `supertypo/index.html`), including the template links that already carry `?tpl=…`. The application, the studio and SuperTyPo read that parameter at start-up, apply it and remove it from their address. Without the parameter nothing changes: the application falls back to `sp_lang`, the studio to its own preference, and SuperTyPo still starts in English (its 1.7.425 rule).
+- `_dev/scripts/_lang_503.cjs` patches both trees idempotently (5 files each): `index.html`, `help-us.html`, `app/JS/main.js`, `sp213-studio.html`, `supertypo/JS/supertypo.js`.
+
+### Fixed
+- **`history` was shadowed in the application.** `main.js` declares `let history = []` for its undo stack, so `history.replaceState()` inside that scope called a method on an array and threw — silently swallowed by the surrounding `try`. The URL clean-up now goes through `window.history.replaceState` (the same trap the `tpl` clean-up already guarded against).
+
+### Verified
+| Check | Result |
+|---|---|
+| Home in Japanese | 69 tool links carry `?lang=ja`, shared key written |
+| App with `?lang=fr` (fresh storage) | starts in French, address cleaned, `sp_lang` = fr |
+| App with `?lang=ja` while `sp_lang` = fr | the parameter wins: Japanese, address cleaned |
+| Studio with `?lang=ja` | select on `日本語`, storage `ja`, UI Japanese, address cleaned |
+| SuperTyPo with `?lang=ja` | Japanese interface, select `ja` |
+| SuperTyPo without parameter | starts in English (1.7.425 rule kept) |
+| Home without parameter | touches no preference (`sp_lang` stays null) |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v503"`, cache tag `20260920-v503-langue-partagee`, `CACHE_NAME` bumped |
+
 
 ## [1.7.502] — 2026-09-20
 

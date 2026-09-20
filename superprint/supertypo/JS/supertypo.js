@@ -2668,7 +2668,12 @@
     //   ouverture repart en anglais ; la langue choisie dans ⚙ Préférences s'applique
     //   à la session en cours (et reste mémorisée comme dernier choix).
     try { /* on ne RELIT plus 'st_lang_v2' au démarrage */ } catch (e) {}
-    ST.lang = 'en';
+    // 🆕 v1.7.503 — ARRIVÉE DEPUIS LA PAGE DE PRÉSENTATION : « ?lang=xx » l'emporte sur le
+    //   démarrage en anglais. Sans le paramètre, rien ne change : chaque ouverture repart
+    //   en anglais, comme demandé en 1.7.425.
+    var _lgUrl = '';
+    try { _lgUrl = (new URLSearchParams(location.search).get('lang') || '').toLowerCase(); } catch (e) {}
+    ST.lang = (_lgUrl in I18N) ? _lgUrl : 'en';
     try { localStorage.setItem('st_lang_v2', ST.lang); } catch (e) {}
     bindUI();
     bindSidePanel();

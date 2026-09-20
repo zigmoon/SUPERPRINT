@@ -63351,8 +63351,24 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         // Init theme, unit, language and auto-login
         document.addEventListener('DOMContentLoaded', function() {
     try {
-        // Charger la langue — clé SHARED sp_lang (home/app/studio)
+        // Charger la langue — ?lang=xx (choix fait sur la page de présentation) d'abord,
+        //   puis la clé SHARED sp_lang (home/app/studio), puis l'anglais.
+        //   🆕 v1.7.503 : le paramètre l'emporte sur la préférence enregistrée, pour que
+        //   la langue choisie sur la home s'applique vraiment à l'ouverture.
         let savedLang = localStorage.getItem('sp_lang') || 'en';
+        try {
+            const _lg = (new URLSearchParams(location.search).get('lang') || '').toLowerCase();
+            if (_lg === 'en' || _lg === 'fr' || _lg === 'ja' || _lg === 'jp') {
+                savedLang = (_lg === 'jp') ? 'ja' : _lg;
+                localStorage.setItem('sp_lang', savedLang);
+                // le paramètre a fait son office : on l'ôte de l'adresse
+                try {
+                    const _u = new URL(location.href);
+                    _u.searchParams.delete('lang');
+                    window.history.replaceState(null, '', _u.pathname + (_u.search || '') + _u.hash);
+                } catch (e2) { }
+            }
+        } catch (e) { }
         // Migration depuis l'ancienne clé du studio (sp213_lang_v1, valeur 'jp')
         if (savedLang !== 'fr' && savedLang !== 'ja' && savedLang !== 'en') {
             const studioLegacy = localStorage.getItem('sp213_lang_v1');

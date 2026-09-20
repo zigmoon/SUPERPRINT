@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.502",
+      "softwareVersion": "1.7.503",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -2122,7 +2122,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.502</span>
+    <span>SuperPrint v1.7.503</span>
   </div>
 </div>
 
@@ -3730,7 +3730,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.502</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.503</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
@@ -3749,7 +3749,23 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
 <script>
 // ── Language switcher ──
-function setLang(lang) {
+/* Ajoute (ou retire) « ?lang=xx » sur les liens vers les trois outils. Les paramètres
+   déjà présents (?tpl=…, ?from=…) sont conservés. Fonction déclarée : elle est hissée,
+   donc utilisable par setLang() juste en dessous. */
+function appliquerLangueAuxLiens(lang) {
+  var outils = ["app/index.html", "sp213-studio.html", "supertypo/index.html"];
+  document.querySelectorAll("a[href]").forEach(function (a) {
+    var href = a.getAttribute("href") || "";
+    var q = href.indexOf("?");
+    var chemin = (q < 0 ? href : href.slice(0, q));
+    if (outils.indexOf(chemin.replace(/^\.\//, "")) < 0) return;
+    var params = new URLSearchParams(q < 0 ? "" : href.slice(q + 1));
+    if (lang === "en") params["delete"]("lang"); else params.set("lang", lang);
+    var s = params.toString();
+    a.setAttribute("href", chemin + (s ? "?" + s : ""));
+  });
+}
+function setLang(lang, explicite) {
   document.documentElement.lang = lang;
   document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
   document.getElementById('btn-en').classList.toggle('active', lang === 'en');
@@ -3775,6 +3791,16 @@ function setLang(lang) {
     history.replaceState(null, '', location.pathname + (lang === 'en' ? '' : '?lang=' + lang) + location.hash);
   } catch (e) {}
   try { localStorage.setItem('sp_landing_lang', lang); } catch(e) {}
+  /* 🆕 v1.7.503 — LA LANGUE CHOISIE ICI SUIT LE VISITEUR DANS NOS LOGICIELS.
+     On écrit la clé PARTAGÉE `sp_lang` (celle que relisent l'application et le studio)
+     et on pose « ?lang=xx » sur les liens des trois outils : le choix s'applique donc
+     à l'ouverture, même si le stockage local est bloqué ou vidé.
+     `explicite === false` = langue de référence par défaut (anglais) : on n'écrit RIEN,
+     sinon une simple visite sur cette page remettrait à zéro un choix fait dans l'app. */
+  if (explicite !== false) {
+    try { localStorage.setItem('sp_lang', lang); } catch (e) {}
+  }
+  appliquerLangueAuxLiens(lang);
 }
 
 // ── Langue initiale : ANGLAIS PAR DÉFAUT ──
@@ -3795,9 +3821,11 @@ function setLang(lang) {
   var params = new URLSearchParams(location.search);
   var urlLang = params.get('lang');
   var lang = urlLang || saved || 'en';
+  /* `false` sur la branche par défaut : l'anglais de référence n'est pas un choix,
+     on n'écrase donc pas la préférence enregistrée par l'application. */
   if (lang === 'fr') setLang('fr');
   else if (lang === 'ja') setLang('ja');
-  else setLang('en');
+  else setLang('en', false);
 })();
 
 // ── Smooth anchor scrolling for nav ──
