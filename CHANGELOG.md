@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,39 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.505] — 2026-09-20
+
+_Tabulation mode: the ruler, the palette and the cursor now behave like QuarkXPress_
+
+### Fixed
+- **The tab palette used to cover the page.** With the sidebar open the panel switched to a centred pop-in (measured 400 × 384 px, left 425) right on top of the pasteboard (canvas at left 429) and an overlay with z-index 9998 swallowed every click: no caret could be placed and no tab stop could be grabbed. The palette now opens inside the left column (measured 8 → 248 px, fully on screen) and no overlay is created.
+- **The tab ruler only appeared in tab mode.** Standalone `regleEstVisible` required an open panel or already-active tab stops, so nothing was shown while typing. The ruler is now displayed as soon as a text block is being edited (canvas events `text:editing:entered` / `text:editing:exited`), default interval drawn as small ticks.
+- **Clicking the ruler did nothing.** Only the button “+ Taquet” with a typed-in position added a stop. A click on the band now places a stop at that exact spot (half-millimetre snap, tabs activated) and starts dragging it in the same gesture; a click inside the text block is never captured by the ruler (guarded by `containsPoint`), so the caret always wins.
+- **No way to remove a stop with the mouse.** Dragging a handle below the ruler now marks it for removal (it fades, status “Release to REMOVE this tab stop”) and deletes the stop on release; Escape on a stop created by a ruler click removes it entirely.
+- **Any canvas click closed the panel**, so the palette (and the ruler, when the block had no active stops) disappeared just when the caret was being placed. Clicks inside the current text block or on the ruler now keep it open; a click elsewhere still closes it.
+- **Tab did nothing at all after a panel setting.** Measured: `document.activeElement` was BODY while the block stayed `isEditing`, and the handler required the Fabric hidden textarea to hold the focus — no insertion, no caret move, and the next keystroke did not go back into the text. The condition now accepts any block being edited while still refusing real UI fields; `poserCurseur` gives the focus back to the hidden textarea.
+- **Tabs were invisible.** The “invisible characters” markers covered spaces only; a tabulation is now drawn as a pink arrow at its start (`_spDrawInvisibleMarkers`).
+
+### Added
+- `_dev/scripts/_tab_505.cjs`, `_tab_505b.cjs`, `_tab_505c.cjs`, `_tab_505d.cjs` patch both trees idempotently (markers `_SP_TAB_505_DEBUT` to `_SP_TAB_505D_DEBUT`); the panel hint now describes the three gestures.
+
+### Verified
+| Check | Result |
+|---|---|
+| Panel geometry, sidebar open | left 8, right 248 (column 280), fully on screen |
+| Point under the pointer inside the text | `elementFromPoint` returns the upper canvas |
+| Ruler while editing, no stop yet | 1 ruler object, 0 mark |
+| Click on the ruler 100 px from the left edge | tab stop at 35 mm, tabs activated, panel row created |
+| Tab with the cursor in front of a letter | `Bonjour t⟶arif…`, letter restarts at 99 px = the 35 mm stop |
+| Drag the handle to 60 mm | stop at 59.5 mm (half-millimetre snap) |
+| Drag the handle below the ruler | stop removed, status “Taquet retiré.” |
+| Tab with `activeElement` = BODY, block editing | insertion + focus back in the hidden textarea |
+| Click in the block / far from it | panel kept / panel closed |
+| Block selected without a click (rubber band) + Tab | unchanged: editing entered, caret at the end, no insertion |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v505"`, cache tag `20260920-v505-tabulation-ergonomie`, `CACHE_NAME` bumped |
+
 
 ## [1.7.504] — 2026-09-20
 

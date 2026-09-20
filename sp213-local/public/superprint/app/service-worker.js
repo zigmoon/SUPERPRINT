@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.504-tabulation-curseur';
+const CACHE_NAME = 'superprint-shell-v1.7.505-tabulation-ergonomie';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

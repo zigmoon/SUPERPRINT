@@ -2178,12 +2178,18 @@ function goToPage(pageIndex) {
                 if (ch === '\u00A0') marker = '\u2423';       // ␣  non-breaking space
                 else if (ch === '\u2009') marker = '\u00B7';  // ·  thin space
                 else if (ch === ' ') marker = '\u00B7';       // ·  regular space
+                else if (ch === '\t') marker = '\u2192';      // →  tabulation (_SP_TAB_505_DEBUT)
                 if (marker && this.__charBounds[li] && this.__charBounds[li][ci]) {
                     const b = this.__charBounds[li][ci];
-                    const cx = leftOffset + lineLeftOffset + b.left + b.kernedWidth / 2;
+                    const estTab = (ch === '\t');
+                    /* La tabulation se marque À SON DÉBUT (on voit où elle commence),
+                       les autres marqueurs au milieu de leur case. */
+                    const cx = estTab
+                        ? leftOffset + lineLeftOffset + b.left + Math.min(5, b.kernedWidth / 2)
+                        : leftOffset + lineLeftOffset + b.left + b.kernedWidth / 2;
                     const sz = (this.fontSize || 14) * 0.82;
                     ctx.font = 'bold ' + sz + 'px "Open Sans", sans-serif';
-                    ctx.fillStyle = '#0080FF';
+                    ctx.fillStyle = estTab ? '#d81b60' : '#0080FF';
                     ctx.globalAlpha = 0.85;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'alphabetic';
@@ -6435,7 +6441,14 @@ window.spTestDiag = function () {
         var popin = document.getElementById('tabsMenu');
         if (popin && popin.classList.contains('open')) return true;
         var b = blocsTexte()[0];
-        return !!(b && b._spTabs && b._spTabs.active);
+        if (!b) return false;
+        /* _SP_TAB_505_DEBUT — LA RÈGLE APPARAÎT DÈS QUE LE CURSEUR EST DANS LE TEXTE.
+           Comme dans QuarkXPress (et InDesign) : on écrit dans un bloc, la règle des
+           taquets se montre au-dessus de lui. Avant, il fallait ouvrir le panneau ou
+           avoir déjà activé les taquets du bloc : pendant la frappe on ne voyait donc
+           RIEN, et poser une tabulation au clavier se faisait à l'aveugle. */
+        if (b.isEditing) return true;
+        return !!(b._spTabs && b._spTabs.active);
     }
 
     /* Symbole du taquet, dessiné dans le repère LOCAL de la règle. */
@@ -6919,6 +6932,12 @@ window.spTestDiag = function () {
         var pt = c.getPointer(e);
         var loc = sceneVersBande(pt.x, pt.y);
         if (!loc) return null;
+        /* _SP_TAB_505_DEBUT — UN CLIC DANS LE BLOC APPARTIENT AU TEXTE.
+           Sans cette garde, cliquer dans la PREMIÈRE ligne au voisinage d'un taquet
+           (la zone de saisie descend à REGLE_FLECHE + marge sous la bande) démarrait le
+           glisser du taquet au lieu de placer le curseur. Les poignées sont toutes
+           AU-DESSUS du bord haut du bloc (REGLE_GAP), donc rien n'est perdu. */
+        if (typeof obj.containsPoint === 'function' && obj.containsPoint(pt)) return null;
         var w = _regle.width || 0, h = _regle.height || 0;
         if (loc.x < -marge || loc.x > w + marge) return null;
         if (loc.y < -marge || loc.y > h + REGLE_FLECHE + marge) return null;
@@ -6947,7 +6966,39 @@ window.spTestDiag = function () {
         if (e.button !== undefined && e.button !== 0) return;
         var hit = null;
         try { hit = taquetSousLeCurseur(e); } catch (_) {}
-        if (!hit) return;
+        /* ═══ _SP_TAB_505_DEBUT — CLIC SUR LA RÈGLE = POSER UN TAQUET (geste QuarkXPress) ═══
+           MESURE AVANT : cliquer la bande ne faisait RIEN (seuls le bouton « + Taquet »
+           et un champ de position au clavier ajoutaient un taquet). Ici, le clic pose le
+           taquet à l'endroit exact (aimant au 1/2 mm) et le glisser l'ajuste dans la
+           foulée — le tout dans un seul geste, comme dans QuarkXPress / InDesign. */
+        if (!hit) {
+            var bande = null;
+            try { bande = bandeSousLeCurseur(e); } catch (_) {}
+            if (!bande) return;
+            e.preventDefault();
+            e.stopPropagation();
+            var tB = modele(bande.obj);
+            tB.active = true;                        /* un taquet posé = taquets utiles */
+            var stopB = { pos: bande.pos, type: 'left' };
+            tB.stops.push(stopB);
+            tB.stops.sort(function (a, b) { return a.pos - b.pos; });
+            rafraichir(bande.obj);
+            majRegleTab(bande.canvas);
+            rendreListe();
+            var marqueB = null;
+            _marques.forEach(function (m) { if (m.stop === stopB) marqueB = m.marque; });
+            _glisser = {
+                obj: bande.obj, canvas: bande.canvas, stop: stopB,
+                depart: stopB.pos, sc: bande.sc, marque: marqueB,
+                bouge: false, nouveau: true, jeter: false
+            };
+            try { bande.canvas.upperCanvasEl.style.cursor = 'ew-resize'; } catch (_) {}
+            majStatut('Taquet posé à ' + String(spTabMmDe(stopB.pos)).replace('.', ',')
+                + ' mm — glissez pour ajuster, ou sous la règle pour le retirer.', 'ok');
+            window.addEventListener('mousemove', pendantGlisser, true);
+            window.addEventListener('mouseup', finGlisser, true);
+            return;
+        }
         /* On empêche Fabric de démarrer une sélection : le bloc doit RESTER sélectionné. */
         e.preventDefault();
         e.stopPropagation();
@@ -6956,7 +7007,8 @@ window.spTestDiag = function () {
         _marques.forEach(function (m) { if (m.stop === hit.stop) marque = m.marque; });
         _glisser = {
             obj: hit.obj, canvas: hit.canvas, stop: hit.stop,
-            depart: hit.stop.pos, sc: sc, marque: marque, bouge: false
+            depart: hit.stop.pos, sc: sc, marque: marque,
+            bouge: false, nouveau: false, jeter: false
         };
         try { hit.canvas.upperCanvasEl.style.cursor = 'ew-resize'; } catch (_) {}
         majStatut('Taquet saisi à ' + spTabMmDe(hit.stop.pos) + ' mm — glissez (Échap annule).', 'info');
@@ -6972,6 +7024,19 @@ window.spTestDiag = function () {
         var pt = c.getPointer(e);
         var loc = sceneVersBande(pt.x, pt.y);
         if (!loc) return;
+        /* ═══ _SP_TAB_505_DEBUT — GLISSER SOUS LA RÈGLE = RETIRER LE TAQUET ═══
+           Geste QuarkXPress : on emmène la poignée vers le bas, elle s'efface, et on
+           relâche pour la supprimer. Avant, aucun moyen de retirer un taquet autrement
+           qu'en le cochant dans la liste du panneau (ou « Effacer », qui vide tout). */
+        var jeter = (loc.y > REGLE_H + REGLE_FLECHE + 6);
+        if (jeter !== !!_glisser.jeter) {
+            _glisser.jeter = jeter;
+            try { if (_glisser.marque) _glisser.marque.set('opacity', jeter ? 0.3 : 1); } catch (_) {}
+            if (jeter) majStatut('Relâchez pour RETIRER ce taquet.', 'warn');
+            else majStatut('Taquet saisi — glissez (Échap annule).', 'info');
+            try { c.requestRenderAll(); } catch (_) {}
+        }
+        if (jeter) return;                    /* on ne déplace plus : on va le retirer */
         var px = Math.max(0, loc.x) / (_glisser.sc || 1);
         var mm = Math.round((px / SP_MM_PAR_PX) * 2) / 2;      /* aimant au 1/2 mm */
         if (!(mm >= 0.5)) mm = 0.5;
@@ -6995,12 +7060,30 @@ window.spTestDiag = function () {
         window.removeEventListener('mousemove', pendantGlisser, true);
         window.removeEventListener('mouseup', finGlisser, true);
         try { g.canvas.upperCanvasEl.style.cursor = ''; } catch (_) {}
+        try { if (g.marque) g.marque.set('opacity', 1); } catch (_) {}
+        /* _SP_TAB_505_DEBUT — retrait par glisser sous la règle (geste QuarkXPress). */
+        if (g.jeter) {
+            var tJ = modele(g.obj);
+            var iJ = tJ.stops.indexOf(g.stop);
+            if (iJ >= 0) tJ.stops.splice(iJ, 1);
+            try { saveState('Retrait d\'un taquet'); } catch (_) {}
+            majRegleTab(g.canvas);
+            rendreListe();
+            rafraichir(g.obj);
+            majStatut('Taquet retiré.', 'warn');
+            return;
+        }
         if (g.bouge) {
             try { saveState('Déplacement d\'un taquet'); } catch (_) {}
             majRegleTab(g.canvas);
             rendreListe();
             majStatut('Taquet à ' + String(spTabMmDe(g.stop.pos)).replace('.', ',') + ' mm — appliqué.', 'ok');
         } else {
+            if (g.nouveau) {
+                try { saveState('Ajout d\'un taquet'); } catch (_) {}
+                rendreListe();
+                rafraichir(g.obj);
+            }
             majRegleTab(g.canvas);
         }
     }
@@ -7012,13 +7095,71 @@ window.spTestDiag = function () {
         window.removeEventListener('mousemove', pendantGlisser, true);
         window.removeEventListener('mouseup', finGlisser, true);
         try { g.canvas.upperCanvasEl.style.cursor = ''; } catch (_) {}
-        g.stop.pos = g.depart;
+        /* _SP_TAB_505_DEBUT — un taquet posé par clic sur la règle n'existait pas avant : Échap
+           le retire complètement au lieu de le remettre à sa position de départ. */
+        if (g.nouveau) {
+            var tA = modele(g.obj);
+            var iA = tA.stops.indexOf(g.stop);
+            if (iA >= 0) tA.stops.splice(iA, 1);
+        } else {
+            g.stop.pos = g.depart;
+        }
+        try { if (g.marque) g.marque.set('opacity', 1); } catch (_) {}
         majRegleTab(g.canvas);
         rendreListe();
         rafraichir(g.obj);
-        majStatut('Déplacement annulé.', 'warn');
+        majStatut(g.nouveau ? 'Taquet annulé.' : 'Déplacement annulé.', 'warn');
     }
     window.spTabAnnulerGlisser = annulerGlisser;
+
+    /* _SP_TAB_505_DEBUT — LE CLIC VISE-T-IL LE TRAVAIL EN COURS ?
+       Sert à la fermeture « clic extérieur » : tant qu'on clique DANS le bloc texte
+       tabulé ou SUR la règle, le panneau reste ouvert (palette d'outil). */
+    function clicPourLaTabulation(e) {
+        try {
+            var c = leCanvas();
+            if (!c || !e || !e.target || e.target.tagName !== 'CANVAS') return false;
+            var pt = c.getPointer(e);
+            if (!pt) return false;
+            var b = blocsTexte()[0];
+            if (b && typeof b.containsPoint === 'function' && b.containsPoint(pt)) return true;
+            if (_regle && _regle.canvas) {
+                var loc = sceneVersBande(pt.x, pt.y);
+                if (loc) {
+                    var z = Math.max(0.05, (c.getZoom && c.getZoom()) || 1);
+                    var marge = 10 / z;
+                    var w = _regle.width || 0;
+                    if (loc.x > -marge && loc.x < w + marge &&
+                        loc.y > -marge && loc.y < REGLE_H + REGLE_FLECHE + marge) return true;
+                }
+            }
+        } catch (_) {}
+        return false;
+    }
+
+    /* _SP_TAB_505_DEBUT — LE POINT EST-IL SUR LA BANDE (donc pas dans le texte) ?
+       Renvoie la position en millimètres, aimantée au 1/2 mm comme le glisser. */
+    function bandeSousLeCurseur(e) {
+        var c = leCanvas();
+        if (!c || !_regle || !_regle.canvas) return null;
+        var obj = blocsTexte()[0];
+        if (!obj) return null;
+        var pt = c.getPointer(e);
+        if (!pt) return null;
+        /* Un clic DANS le bloc appartient au TEXTE (placement du curseur). */
+        if (typeof obj.containsPoint === 'function' && obj.containsPoint(pt)) return null;
+        var loc = sceneVersBande(pt.x, pt.y);
+        if (!loc) return null;
+        var z = Math.max(0.05, (c.getZoom && c.getZoom()) || 1);
+        var marge = 8 / z;
+        var w = _regle.width || 0;
+        if (loc.x < 0 || loc.x > w) return null;
+        if (loc.y < -marge || loc.y > REGLE_H + 2) return null;
+        var sc = (typeof obj.scaleX === 'number' && obj.scaleX > 0) ? obj.scaleX : 1;
+        var mm = Math.round(((loc.x / sc) / SP_MM_PAR_PX) * 2) / 2;
+        if (!(mm >= 0.5)) mm = 0.5;
+        return { obj: obj, canvas: c, sc: sc, mm: mm, pos: spTabMmVers(mm) };
+    }
 
 
     /* Les écouteurs de sélection ne peuvent être posés qu'une fois le canvas
@@ -7035,6 +7176,12 @@ window.spTestDiag = function () {
            le pivote, ou pendant la frappe. */
         ['object:moving', 'object:scaling', 'object:rotating', 'object:modified', 'text:changed'].forEach(function (ev) {
             c.on(ev, function () { majRegleTab(c); });
+        });
+        /* _SP_TAB_505_DEBUT — la règle apparaît / disparaît avec l'édition du bloc (voir
+           regleEstVisible). Fabric émet ces deux événements à l'entrée et à la sortie
+           du texte : sans eux, la règle ne se montrait qu'au premier caractère tapé. */
+        ['text:editing:entered', 'text:editing:exited'].forEach(function (ev) {
+            c.on(ev, function () { setTimeout(function () { rendreListe(); majRegleTab(c); }, 30); });
         });
         cablerSaisieTaquets(c);
     }
@@ -7071,21 +7218,59 @@ window.spTestDiag = function () {
         if (menu) menu.classList.remove('open');
         var sidebar = document.getElementById('leftSidebar');
         var ouverte = sidebar && !sidebar.classList.contains('collapsed');
-        if (ouverte) {
-            popin.classList.add('open', 'popin-mode');
-            var ov = document.getElementById('tabsPopinOverlay');
-            if (!ov) {
-                ov = document.createElement('div');
-                ov.id = 'tabsPopinOverlay';
-                ov.className = 'grid-popin-overlay';
-                document.body.appendChild(ov);
-                ov.addEventListener('click', fermerPopin);
-            }
-            ov.classList.add('active');
-        } else {
-            popin.classList.add('open');
-            popin.classList.remove('popin-mode');
+        /* _SP_TAB_505B_DEBUT — LE PANNEAU RESTE DANS LA BARRE LATÉRALE, JAMAIS PAR-DESSUS.
+           MESURE (barre latérale ouverte) : en « popin-mode », la palette (400 × 384 px
+           mesurés) se posait au CENTRE de la fenêtre — donc par-dessus la planche (canevas
+           à left 429, panneau à left 425). Plus aucun clic n'atteignait le document : ni
+           placement du curseur, ni clic sur la règle des taquets. QuarkXPress range ses
+           affiches À CÔTÉ du document, jamais par-dessus : ici le panneau s'ouvre sous son
+           bouton, dans la barre latérale, exactement comme lorsque la barre est repliée.
+           Aucune surcouche non plus (voir la fermeture « clic extérieur » plus bas). */
+        popin.classList.add('open');
+        popin.classList.remove('popin-mode');
+        var ov505 = document.getElementById('tabsPopinOverlay');
+        if (ov505) {
+            try { ov505.classList.remove('active'); ov505.style.display = 'none'; } catch (_) {}
         }
+        /* _SP_TAB_505C_DEBUT — LA PALETTE SE RANGE DANS LA COLONNE, PAS PAR-DESSUS LA PLANCHE.
+           MESURE : sans pop-in, la règle CSS « left: 0 » du conteneur posait la palette à
+           left = −43 px (43 px hors de l'écran : libellés et champs rognés). Ici, barre
+           latérale ouverte, on l'ancre EN BAS À GAUCHE à l'intérieur de la colonne :
+           largeur de la colonne − 16 px, hauteur bornée à l'écran. Le document reste
+           donc entièrement cliquable pendant qu'on règle les taquets (QuarkXPress range
+           ses affiches à côté du document). Barre repliée : rien ne change (le panneau
+           s'ouvre sous son bouton, comme avant). */
+        try {
+            if (!ouverte) {
+                popin.style.position = '';
+                popin.style.left = '';
+                popin.style.right = '';
+                popin.style.bottom = '';
+                popin.style.top = '';
+                popin.style.width = '';
+                popin.style.maxHeight = '';
+                popin.style.overflowY = '';
+                popin.style.transform = '';
+            } else {
+                var col = document.getElementById('leftSidebar');
+                var larg = 240;
+                try {
+                    if (col && col.getBoundingClientRect) {
+                        larg = Math.max(210, Math.round(col.getBoundingClientRect().width) - 16);
+                    }
+                } catch (_) {}
+                popin.style.position = 'fixed';
+                popin.style.left = '8px';
+                popin.style.right = 'auto';
+                popin.style.bottom = '16px';
+                popin.style.top = 'auto';
+                popin.style.width = larg + 'px';
+                popin.style.maxHeight = 'calc(100vh - 96px)';
+                popin.style.overflowY = 'auto';
+                popin.style.transform = 'none';
+                popin.style.zIndex = '1200';
+            }
+        } catch (_) {}
         filSelection();
         cabler();
         /* 🆕 v1.7.485 — le champ « Position » propose la place LIBRE suivante :
@@ -7227,6 +7412,12 @@ window.spTestDiag = function () {
                 var dd = document.getElementById('rulersDropdown');
                 if (dd && dd.contains(e.target)) return;
                 if (e.target && e.target.id === 'tabsPopinOverlay') return;
+                /* _SP_TAB_505_DEBUT — ON GARDE LA PALETTE POUR LE TRAVAIL EN COURS.
+                   Mesure avant : le premier clic dans le texte refermait le panneau
+                   (donc la règle, faute de taquets actifs) au moment précis où l'on
+                   voulait placer le curseur et régler les taquets. Un clic DANS le bloc
+                   texte en cours, ou SUR la règle, laisse donc le panneau ouvert. */
+                if (clicPourLaTabulation(e)) return;
                 fermerPopin();
             });
         }
@@ -7291,7 +7482,18 @@ window.spTestDiag = function () {
                     champActif.tagName === 'TEXTAREA' || champActif.tagName === 'SELECT' || champActif.isContentEditable));
                 /* 1) LE CAS QUI COMPTE : le bloc est en édition ET le clavier écrit
                       bien dedans (c'est le champ caché de Fabric qui a le focus). */
-                if (estTexteT && objT.isEditing && champActif === objT.hiddenTextarea && typeof objT.insertChars === 'function') {
+                /* _SP_TAB_505D_DEBUT — LE BLOC EST EN ÉDITION : Tab INSÈRE, MÊME SI LE CHAMP CACHÉ
+                   A PERDU LE FOCUS.
+                   MESURE : après un réglage dans le panneau des taquets (ou un clic sur la
+                   règle), activeElement devient BODY alors que le bloc reste isEditing. La
+                   condition précédente exigeait champActif === hiddenTextarea : Tab ne
+                   faisait donc PLUS RIEN — ni insertion, ni déplacement du curseur — et la
+                   frappe suivante ne repartait pas dans le texte. On accepte maintenant
+                   tout bloc en édition, en refusant uniquement les vrais champs de
+                   l'interface (dansUnChamp) : on peut toujours tabuler entre deux champs du
+                   panneau. insererTabulation relit la position du curseur, et poserCurseur
+                   redonne le focus au champ caché de Fabric. */
+                if (estTexteT && objT.isEditing && !dansUnChamp && typeof objT.insertChars === 'function') {
                     e.preventDefault();
                     e.stopPropagation();
                     insererTabulation(objT, cT);
