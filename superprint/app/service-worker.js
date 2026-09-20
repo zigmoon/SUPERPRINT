@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.513-apercu-compact-et-transports-verifies';
+const CACHE_NAME = 'superprint-shell-v1.7.514-fond-et-quatre-definitions';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

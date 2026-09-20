@@ -7820,6 +7820,13 @@ window.spTestDiag = function () {
     var AP_W = 960, AP_H = 540;              /* aperçu 16/9 */
     var SO_W = 2560, SO_H = 1440;            /* sortie 16/9 2K */
     var fx = 'dot';
+    /* _SP_FOND_514_DEBUT — DÉFINITION DE L'IMAGE INSÉRÉE (largeur d'une page A4 = 210 mm).
+       72 = web · 150 = basse · 300 = moyenne (défaut) · 600 = HD. */
+    var DPI = 300, DPI_VALIDES = [72, 150, 300, 600];
+    function tailleSortie() {
+        var w = Math.round(210 / 25.4 * DPI);
+        return { w: w, h: Math.round(w * 9 / 16) };
+    }
     var vit = 1, dens = 1, intens = 1, teinte = 0.5;
     var graine = 20260920, gele = false, raf = null, tps = 0, dernier = 0;
     var FX = ['dot', 'fluide', 'pastel', 'masque', 'aurore', 'ondes', 'organic', 'cubes', 'holo'];
@@ -8150,6 +8157,16 @@ window.spTestDiag = function () {
             if (fx === k && el.classList) { el.classList.add("active"); } else if (el.classList) { el.classList.remove("active"); }
         }
     }
+    function majDpi() {
+        var ids = { 72: "rbDpi72", 150: "rbDpi150", 300: "rbDpi300", 600: "rbDpi600" };
+        for (var d in ids) {
+            var el = document.getElementById(ids[d]);
+            if (!el || !el.classList) continue;
+            if (parseInt(d, 10) === DPI) { el.classList.add("active"); } else { el.classList.remove("active"); }
+        }
+        var t0 = tailleSortie(), st = document.getElementById("rbDpiEtat");
+        if (st) { st.textContent = DPI + " ppp — " + t0.w + " × " + t0.h + " px"; }
+    }
     function majValeurs() {
         var paire = [["rbVit", "rbVitVal", 2], ["rbDens", "rbDensVal", 2], ["rbIntens", "rbIntensVal", 2], ["rbTeinte", "rbTeinteVal", 2]];
         for (var i = 0; i < paire.length; i++) {
@@ -8182,14 +8199,31 @@ window.spTestDiag = function () {
        - le fond de page est VIVANT : image Fabric dont la source est le canvas du moteur, la
          page affiche donc l'animation en vrai, et chaque réglage s'applique aussitôt. */
     var _snap = null, _snapTemps = 0;
+    /* ═══ _SP_FOND_514_DEBUT — INSTANTANÉ À LA DÉFINITION CHOISIE ═══
+       Suréchantillonnage ×2 pour 72 et 150 ppp : la scène est dessinée deux fois plus grande
+       puis réduite avec un lissage de qualité — indispensable pour que la basse définition
+       reste PROPRE (points ronds, lignes fines et trames non crénelés). En 300 et 600 ppp on
+       dessine directement à la taille finale : déjà dense, et 2× serait inutilement lourd. */
     function rafraichirInstantane(forcer) {
         var n = new Date().getTime();
         if (!forcer && _snap && (n - _snapTemps) < 3000) return _snap;
         try {
+            var t0 = tailleSortie();
+            var ss = (DPI <= 150) ? 2 : 1;
             var c = document.createElement("canvas");
-            c.width = SO_W; c.height = SO_H;
-            dessine(c.getContext("2d"), SO_W, SO_H, tps, SO_W / AP_W);
-            _snap = c.toDataURL("image/png");
+            c.width = t0.w * ss; c.height = t0.h * ss;
+            dessine(c.getContext("2d"), c.width, c.height, tps, c.width / AP_W);
+            if (ss > 1) {
+                var c2 = document.createElement("canvas");
+                c2.width = t0.w; c2.height = t0.h;
+                var g2 = c2.getContext("2d");
+                if ("imageSmoothingEnabled" in g2) { g2.imageSmoothingEnabled = true; }
+                try { g2.imageSmoothingQuality = "high"; } catch (_) {}
+                g2.drawImage(c, 0, 0, t0.w, t0.h);
+                _snap = c2.toDataURL("image/png");
+            } else {
+                _snap = c.toDataURL("image/png");
+            }
             _snapTemps = n;
         } catch (e) {}
         return _snap;
@@ -8234,7 +8268,7 @@ window.spTestDiag = function () {
         if (fond && insererFondVivant(cv)) {
             try { cv.setActiveObject(cv.getObjects()[0]); } catch (_) {}
             try { cv.renderAll(); } catch (_) {}
-            if (typeof saveState === "function") saveState("Fond animé (fond de page vivant)");
+            if (typeof saveState === "function") saveState("Fond (fond de page vivant)");
             return retires;
         }
         var data = rafraichirInstantane(true) || imageFinale();
@@ -8256,7 +8290,7 @@ window.spTestDiag = function () {
                     cv.add(img);
                 }
                 cv.setActiveObject(img); cv.renderAll();
-                if (typeof saveState === "function") saveState(fond ? "Fond animé (fond de page)" : "Fond animé (image)");
+                if (typeof saveState === "function") saveState(fond ? "Fond (fond de page)" : "Fond (image)");
             } catch (e) {}
         });
     }
@@ -8278,7 +8312,7 @@ window.spTestDiag = function () {
        REDESSINE tout de suite — même animation gelée, pour voir le réglage en direct. */
     function brancher(jauge, id, mini, maxi, set) {
         if (!jauge) return;
-        jauge.addEventListener("input", function () {
+        function reagir() {
             var v = parseFloat(jauge.value);
             if (isFinite(v)) { set(v); }
             majValeurs();
@@ -8295,7 +8329,9 @@ window.spTestDiag = function () {
             }
             var cA = (typeof window.getActiveCanvas === "function") ? window.getActiveCanvas() : null;
             if (cA) { try { cA.requestRenderAll(); } catch (_) {} }
-        });
+        }
+        jauge.addEventListener("input", reagir);
+        jauge.addEventListener("change", reagir);
     }
     Array.prototype.forEach.call(panneau.querySelectorAll("input.rb-range"), function (el) {
         var ref = el.getAttribute("data-sp-ref") || el.id;
@@ -8315,6 +8351,23 @@ window.spTestDiag = function () {
             el.addEventListener("click", function (e) { e.preventDefault(); fx = cle; majBoutons(); tourne(true); });
         })(FX[fi]);
     }
+    /* _SP_FOND_514_DEBUT — quatre définitions : on réécrit l'instantané aussitôt (purge du
+       cache), pour que « Fond de page », « Image » et l'export utilisent la nouvelle taille. */
+    var DPIS = { rbDpi72: 72, rbDpi150: 150, rbDpi300: 300, rbDpi600: 600 };
+    Object.keys(DPIS).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el || el.__spRbDpi) return;
+        el.__spRbDpi = true;
+        el.addEventListener("click", function (e) {
+            e.preventDefault();
+            DPI = DPIS[id];
+            _snap = null;
+            majDpi();
+            rafraichirInstantane(true);
+            var cs = cibles();
+            for (var i = 0; i < cs.length; i++) { var c = cs[i]; if (c.__spRbCtx) { dessine(c.__spRbCtx, c.width, c.height, tps, 1); } }
+        });
+    });
     var bVar = document.getElementById("rbVariant");
     if (bVar && !bVar.__spRbVar) { bVar.__spRbVar = true; bVar.addEventListener("click", function (e) { e.preventDefault(); graine = Math.floor(Math.random() * 2000000000) + 1; tourne(true); }); }
     var bFz = document.getElementById("rbFreeze");
@@ -8357,6 +8410,7 @@ window.spTestDiag = function () {
     }
     majBoutons();
     majValeurs();
+    majDpi();
     /* _SP_RANDOMBACK_513B_DEBUT — AVANT TOUT ENREGISTREMENT (.sp, .json, sauvegarde
        automatique), le fond vivant reprend un instantané frais : appelé par Fabric au moment
        de la sérialisation, donc le fichier contient toujours l'image courante. */

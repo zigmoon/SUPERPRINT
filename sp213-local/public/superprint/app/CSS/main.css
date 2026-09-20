@@ -2763,6 +2763,21 @@ textarea[data-fabric-hiddentextarea] {
     border-color: #f0f0f0;
     color: #111111;
 }
+/* _SP_FOND_514_DEBUT — rangée des quatre définitions (même grille que les effets). */
+.sp-dock-host[data-dock="randomBackMenu"] .rb-dpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    padding: 0 0 4px 0;
+}
+.sp-dock-host[data-dock="randomBackMenu"] .rb-dpi {
+    height: 22px;
+    min-height: 0;
+    padding: 0 2px;
+    font-size: 9px;
+    line-height: 1;
+    border-radius: 3px;
+}
 .sp-dock-host[data-dock="randomBackMenu"] .rb-apercu { padding: 0 0 5px 0; }
 /* L'aperçu fait la LARGEUR du widget et garde son 16/9 (aspect-ratio) : la bitmap, elle,
    reste en 960 × 540 pour la netteté de la sortie haute définition. */

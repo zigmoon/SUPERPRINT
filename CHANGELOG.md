@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,36 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.514] — 2026-09-20
+
+_Animated background becomes “Fond”, with four output resolutions — and the Speed slider fixed_
+
+### Changed
+- **The widget is simply called “Fond”.** Renamed everywhere the user reads it: sidebar tool label, widget title, tooltip, icon `alt` text, undo labels, bottom note. Internal ids (`randomBackMenu`, `rb…`) are untouched, so nothing else in the application is affected.
+- **Four output resolutions**, computed on the width of an A4 page (210 mm) and measured on the inserted image:
+  | Choice | Output | PNG data URL |
+  |---|---|---|
+  | 72 dpi (web) | 595 × 335 px | 177 KB |
+  | 150 dpi (low) | 1240 × 698 px | 500 KB |
+  | 300 dpi (medium, default) | 2480 × 1395 px | 2.5 MB |
+  | 600 dpi (HD) | 4961 × 2791 px | 7 MB |
+  The image stays 16:9, and the current resolution is displayed under the buttons.
+
+### Fixed
+- **Low resolution stays clean.** At 72 and 150 dpi the scene is now drawn **twice as large** and then scaled down with high-quality smoothing (`imageSmoothingQuality = high`): dots, fine lines and halftone screens stay sharp instead of being jagged. At 300 and 600 dpi the scene is drawn directly at the final size (already dense; ×2 would be needlessly heavy).
+- **Speed slider.** The widget slider now listens to **both** `input` and `change` (dragging *and* release/keyboard arrows), writes the value back into the original control and copies the `--rb-p` fill onto both elements. Measured: pushed from 1 to 0.4 → 0.4 on the widget, the original and the engine, displayed 0.40, fill 8.7 % on both elements (exact value); then 2.5 through the release event → 2.5 and 2.50.
+
+### Verified
+| Check | Result |
+|---|---|
+| Renaming | tool label “Fond”, widget title “Fond”, icon alt “Fond”, tooltip and note updated |
+| Four resolutions | 595 × 335 / 1240 × 698 / 2480 × 1395 / 4961 × 2791 px, state label updated each time |
+| Speed slider to 0.4 then 2.5 | value 0.4 / 2.5 everywhere, displayed 0.40 / 2.50, fill 8.7 % on both elements |
+| `.sp`, `.json`, Studio with a 600 dpi background | saved, read back and imported without loss (data URL intact) |
+| Application / studio syntax | `node --check` OK / `SYNTAXE OK` |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v514"`, cache tag `20260920-v514-fond-et-quatre-definitions`, `CACHE_NAME` bumped, local package rebuilt with `tools/make-release-zip.mjs` |
 
 ## [1.7.513] — 2026-09-20
 
