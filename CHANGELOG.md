@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,34 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.509] — 2026-09-20
+
+_The column grid travels with the document, and the studio preview applies the tab stops_
+
+### Fixed
+- **The column grid was not part of the document.** Audited on request: `.sp`, `.json`, autosave, Web3, the API and the studio already carried the tab stops and the manual guides — but the column grid (`6/12/24/32` columns, opacity, margins) lived **only** in `localStorage['sp_col_grid']`, so it was lost on another machine or after clearing the cache while everything else came back.
+- **The studio preview did not apply the tab stops.** Measured on an “Article ⇥ Prix” block with a 140 px stop: the studio preview drew “Prix” glued to “Article” (82 backing px apart instead of 280) while the tab data itself travelled correctly. Two causes, both found by measurement:
+  - the studio embeds **Fabric 5.1.0** (the application runs 5.3.0) and 5.1's `_measureLine` never calls `_getGraphemeBox`, so the tab box kept the font metric of a letter;
+  - worse, `fabric.Textbox._splitTextIntoLines` → `_wrapText` reassembles words with a **space**, so a tabulation was converted to a space **before any measurement** — measured: `new fabric.Textbox('A\tB').textLines` returned `["A B"]`. No tab-aware code could ever see it.
+
+### Added
+- `document.colGrid` in **all five writers** (`saveProjectSP_toObject`, `.json`, `autoSaveProject`, Web3, API) and its counterpart in **all four readers** plus the autosave restore and the `.sp` reader (`spColGridAppliquer`). The studio stores it at import (`state.doc.colGrid`) and re-emits it in both of its exporters.
+- `_SP_STUDIO_509` engine in the studio + `_SP_TRANS_509C` post-measurement correction in the application: the tab box is corrected **after** `_measureLine`, a hook that is stable across Fabric versions. Idempotent by construction — if the measurement already applied the advance (5.3 + `_getGraphemeBox`), the delta is zero. Verified in the application: the model is unchanged and the ink is unchanged (no double shift).
+- `_SP_STUDIO_509D` in the studio: tabulations survive the textbox — during wrapping the tab is swapped for a private-use character (not a word separator) and restored in `lines`, `graphemeLines`, `_unwrappedLines` and `graphemeText`. Text without tabulation goes straight to the original function.
+
+### Verified
+| Check | Result |
+|---|---|
+| `.sp` written by the application, read back | `document.colGrid` = `{"cols":12,"opacity":25,"margins":false}`, text `Article\tPrix` with both stops (140 / 300) |
+| Studio preview, tab stop 140 px (document) | “Article” [181..254], “Prix” [462..504] → 281 px apart (was 82) |
+| Application preview after the post-measurement patch | model `[…,"53+87","140+11",…]` unchanged, ink [1..52] / [143..171] → no double shift |
+| PDF export advance engine | 70.63 + 69.37 = **140.00** → the text lands on the 140 pt stop (engine shared with the screen, unchanged by this version) |
+| Studio round trip | import from `.sp` keeps `_spTabs` + `colGrid`; “Open in SuperPrint” sends them back unchanged |
+| Studio syntax / application syntax | `SYNTAXE OK` / `node --check` OK |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v509"`, cache tag `20260920-v509-grille-et-taquets-transportes`, `CACHE_NAME` bumped, `CSS/main.css` tag bumped |
+
 
 ## [1.7.508] — 2026-09-20
 

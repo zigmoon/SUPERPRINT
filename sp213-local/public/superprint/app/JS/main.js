@@ -6377,6 +6377,16 @@ window.spTestDiag = function () {
                 if (line && line.length > 1 && this._spTabs && this._spTabs.active &&
                     typeof line.indexOf === 'function' && line.indexOf('\t') !== -1) {
                     var cb = this.__charBounds && this.__charBounds[lineIndex];
+                    /* _SP_TRANS_509_DEBUT — DÉFENSE EN PROFONDEUR : si les boîtes de caractères ne sont pas
+                       encore mesurées, on les mesure ICI (Fabric le fait d'ordinaire avant le
+                       rendu — mesuré sur le canvas temporaire des exports raster : 0 boîte
+                       avant, 1 après — mais un objet dessiné juste après sa création n'aurait
+                       aucune boîte et retomberait sur le rendu d'un seul tenant, donc sur le
+                       défaut corrigé en 1.7.508). */
+                    if (!cb || cb.length < line.length) {
+                        try { this._measureLine(lineIndex); } catch (_) {}
+                        cb = this.__charBounds && this.__charBounds[lineIndex];
+                    }
                     if (cb && cb.length >= line.length) {
                         var hL = (typeof this.getHeightOfLine === 'function') ? this.getHeightOfLine(lineIndex) : 0;
                         var lh = this.lineHeight || 1;
@@ -6396,6 +6406,48 @@ window.spTestDiag = function () {
             return precedent.apply(this, arguments);
         };
         proto.__spTabRenduPatch = true;
+    })();
+
+    /* ═══════ _SP_TRANS_509C_DEBUT — CORRECTION APRÈS MESURE (INDÉPENDANTE DE FABRIC) ═══════
+       Le patch _getGraphemeBox ci-dessus fonctionne avec Fabric 5.3 (version de l'app) : la case
+       d'une tabulation y reçoit déjà sa bonne avance. Mais ce point d'accroche n'existe pas dans
+       toutes les versions (mesuré : Fabric 5.1.0, celle du studio, n'y passe jamais — la case
+       gardait la métrique de la police). On corrige donc AUSSI les boîtes de caractères après la
+       mesure, au point d'accroche stable _measureLine : si la mesure a déjà appliqué l'avance,
+       l'écart vaut zéro et cette correction ne fait rien (idempotente). */
+    (function _spPatchMesureTab() {
+        var proto = fabric.Text.prototype;
+        if (proto.__spTabMesurePatch) return;
+        var precedent = proto._measureLine;
+        if (typeof precedent !== 'function') return;
+        proto._measureLine = function (lineIndex) {
+            var ret = precedent.apply(this, arguments);
+            try {
+                if (!(this._spTabs && this._spTabs.active)) return ret;
+                var ligne = this._textLines && this._textLines[lineIndex];
+                var cb = this.__charBounds && this.__charBounds[lineIndex];
+                if (!ligne || !cb || !ligne.length) return ret;
+                var t = modele(this), decal = 0;
+                for (var i = 0; i < ligne.length; i++) {
+                    var b = cb[i];
+                    if (!b) continue;
+                    if (decal) { b.left += decal; }
+                    if (ligne[i] === '\t') {
+                        var av = avance(this, b.left - decal, lineIndex, i, t);
+                        var ecart = av - b.width;
+                        if (Math.abs(ecart) > 0.01) {
+                            var suppl = b.kernedWidth - b.width;
+                            b.width = av;
+                            b.kernedWidth = av + suppl;
+                            decal += ecart;
+                        }
+                    }
+                }
+                if (decal) { try { if (this.__lineWidths) this.__lineWidths[lineIndex] = undefined; } catch (_) {} }
+            } catch (_) {}
+            return ret;
+        };
+        proto.__spTabMesurePatch = true;
     })();
 
     window._spTabBoxPatched = true;
@@ -10277,6 +10329,8 @@ window.spTestDiag = function () {
                     // 🛡️ v1.7.284 : restaurer colorMode + guides depuis l'autosave
                     if (savedProject.colorMode) { try { _spApplyColorMode(savedProject.colorMode); } catch (_) {} }
                     if (savedProject.guides) { try { _spRestoreGuides(savedProject.guides); } catch (_) {} }
+                    /* _SP_TRANS_509_DEBUT — grille de colonnes de la session précédente */
+                    if (savedProject.colGrid) { try { window.spColGridAppliquer(savedProject.colGrid); } catch (_) {} }
                     // 🎨 v1.7.347b — Restaurer les TONS DIRECTS (Pantone) de l'autosave.
                     //   Sans cela, un simple rechargement d'onglet faisait perdre les
                     //   couches Pantone du document (retour silencieux en mode normal).
@@ -33398,6 +33452,8 @@ window.spTestDiag = function () {
                     } catch (_) {}
                     renderAllPages();
                     _spApplyColorMode(project.colorMode || 'rgb');
+        /* _SP_TRANS_509_DEBUT — grille de colonnes du document */
+        if (project.colGrid) { try { window.spColGridAppliquer(project.colGrid); } catch (_) {} }
                     _spRestoreGuides(project.guides);
                     setTimeout(() => {
                         disableHighPerformance();
@@ -33588,6 +33644,8 @@ window.spTestDiag = function () {
 
                     // Restaurer le mode couleur (RVB / CMJN)
                     _spApplyColorMode(project.colorMode || 'rgb');
+        /* _SP_TRANS_509_DEBUT — grille de colonnes du document */
+        if (project.colGrid) { try { window.spColGridAppliquer(project.colGrid); } catch (_) {} }
 
                     // 🎨 v1.7.347b — Restaurer les TONS DIRECTS (Pantone) du JSON.
                     //   Le .json (comme le .sp) porte spotInks : à l'import, le
@@ -37648,6 +37706,41 @@ window.spTestDiag = function () {
     enregistrerColonnes();
     /* Une grille de colonnes mémorisée se redessine dès que les planches existent. */
     setTimeout(function () { try { if (colGridCols > 0 || gridVisible) rebuildGridAll(); } catch (_) {} }, 1800);
+
+    /* ═══════════ _SP_TRANS_509_DEBUT — LA GRILLE DE COLONNES ROUGES FAIT PARTIE DU DOCUMENT ═══════════
+       MESURE DU DÉFAUT (audit 1.7.509) : les repères de colonnes ne vivaient QUE dans
+       localStorage['sp_col_grid']. Un document transmis à un confrère, envoyé au studio ou
+       rouvert sur une autre machine perdait donc ses repères — alors que les repères
+       MANUELS, eux, voyagent dans le .sp (clé « guides »). On les traite pareil : état compact
+       {cols, opacity, margins} écrit dans document.colGrid, relu à l'ouverture.
+       Lecture/écriture passent par ces deux fonctions : une seule source de vérité. */
+    function etatColonnes() {
+        return { cols: (colGridCols > 0) ? colGridCols : 0, opacity: colGridOpacity, margins: !!colGridInMargins };
+    }
+    function appliquerColonnes(etat) {
+        if (!etat || typeof etat !== 'object') return false;
+        const c = parseInt(etat.cols, 10);
+        colGridCols = (isFinite(c) && c > 0 && c <= 64) ? c : 0;
+        const o = parseInt(etat.opacity, 10);
+        colGridOpacity = isFinite(o) ? Math.max(4, Math.min(40, o)) : 12;
+        colGridInMargins = (etat.margins === undefined) ? true : !!etat.margins;
+        enregistrerColonnes();
+        majBoutonsColonnes();
+        try {
+            const inp = document.getElementById('colGridOpacity');
+            if (inp) inp.value = String(colGridOpacity);
+            const chk = document.getElementById('colGridMargins');
+            if (chk) chk.checked = !!colGridInMargins;
+        } catch (_) {}
+        try {
+            if (typeof window.spPlanifierGrille === 'function') window.spPlanifierGrille();
+            else rebuildGridAll();
+        } catch (_) {}
+        return true;
+    }
+    window.spColGridEtat = etatColonnes;
+    window.spColGridAppliquer = appliquerColonnes;
+
 
     // ── Créer des repères ── reprend les options de la grille (cols/rows/gouttières/pleine page/couleur)
     // mais SANS la ligne de base. Génère des repères persistants (isManualGuide:true) qui survivent
@@ -65546,6 +65639,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             textLinks: textLinks,
             viewMode: viewMode,
             colorMode: _spGetColorMode(),
+        /* _SP_TRANS_509_DEBUT — la grille de colonnes rouges suit le document (cf. en-tête). */
+        colGrid: (typeof window.spColGridEtat === 'function') ? window.spColGridEtat() : null,
             guides: _spCollectGuides(),
             masterPages: masterPages,
             pageMasterAssignments: pageMasterAssignments,
@@ -65596,6 +65691,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             if (project.viewMode) viewMode = project.viewMode;
             if (project.projectName) window._spProjectName = project.projectName;
             _spApplyColorMode(project.colorMode || 'rgb');
+        /* _SP_TRANS_509_DEBUT — grille de colonnes du document */
+        if (project.colGrid) { try { window.spColGridAppliquer(project.colGrid); } catch (_) {} }
             if (project.guides) { try { _spRestoreGuides(project.guides); } catch (_) {} }
             // 🛡️ v1.7.284 : restaurer les styles nommés (typo + nuancier) depuis le JSON
             try {
@@ -76003,6 +76100,8 @@ async function loadWeb3Save(hash) {
             currentPageIndex = 0;
             renderAllPages();
             _spApplyColorMode(project.colorMode || 'rgb');
+        /* _SP_TRANS_509_DEBUT — grille de colonnes du document */
+        if (project.colGrid) { try { window.spColGridAppliquer(project.colGrid); } catch (_) {} }
 
             // 🆕 v1.7.427 — L'import IPFS/Web3 applique désormais TOUT ce que le .json
             //   transporte (aligné sur le chargeur local et sur le .sp) :
@@ -76294,6 +76393,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 textLinks: textLinks,
                 viewMode: viewMode,
                 colorMode: _spGetColorMode(),
+        /* _SP_TRANS_509_DEBUT — la grille de colonnes rouges suit le document (cf. en-tête). */
+        colGrid: (typeof window.spColGridEtat === 'function') ? window.spColGridEtat() : null,
                 guides: _spCollectGuides(),
                 masterPages: typeof masterPages !== 'undefined' ? masterPages : {},
                 pageMasterAssignments: typeof pageMasterAssignments !== 'undefined' ? pageMasterAssignments : {},
@@ -82010,6 +82111,8 @@ window.saveProjectLocal = function() {
         textLinks: textLinks,
         viewMode: viewMode,
         colorMode: _spGetColorMode(),
+        /* _SP_TRANS_509_DEBUT — la grille de colonnes rouges suit le document (cf. en-tête). */
+        colGrid: (typeof window.spColGridEtat === 'function') ? window.spColGridEtat() : null,
         guides: _spCollectGuides(),
         // 🎨 v1.7.347 — tons directs (Pantone) du document (une entrée par
         //   couche chromatique supplémentaire à produire à l'export).
@@ -82082,6 +82185,8 @@ window.saveProjectWeb3 = async function() {
             textLinks: textLinks,
             viewMode: viewMode,
             colorMode: _spGetColorMode(),
+        /* _SP_TRANS_509_DEBUT — la grille de colonnes rouges suit le document (cf. en-tête). */
+        colGrid: (typeof window.spColGridEtat === 'function') ? window.spColGridEtat() : null,
             guides: _spCollectGuides(),
             masterPages: masterPages,
             pageMasterAssignments: pageMasterAssignments,
@@ -82399,6 +82504,8 @@ window.saveProjectSP_toObject = function() {
             bleed: bleed,
             viewMode: viewMode,
             colorMode: _spGetColorMode(),
+        /* _SP_TRANS_509_DEBUT — la grille de colonnes rouges suit le document (cf. en-tête). */
+        colGrid: (typeof window.spColGridEtat === 'function') ? window.spColGridEtat() : null,
             // 🛡️ v1.7.284 : styles nommés globaux (typo + nuancier) inclus dans le .sp
             styles: {
                 typography: (function () { try { return JSON.parse(localStorage.getItem('sp_typo_styles') || '[]'); } catch (_) { return []; } })(),
@@ -82753,6 +82860,8 @@ window.loadProjectSP = function(fileContent) {
 
         // ── Restaurer le mode couleur (RVB / CMJN) ──
         _spApplyColorMode(doc.colorMode || 'rgb');
+        /* _SP_TRANS_509_DEBUT — grille de colonnes du document (.sp) */
+        if (doc.colGrid) { try { window.spColGridAppliquer(doc.colGrid); } catch (_) {} }
 
         // 🛡️ v1.7.284 : restaurer les styles nommés (typo + nuancier) depuis le .sp
         try {

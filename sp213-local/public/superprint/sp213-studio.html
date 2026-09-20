@@ -5853,7 +5853,12 @@ function spRtfLayoutInfo(src) {
     } catch (_) {}
 
     state.pageW = w; state.pageH = h; state.bleed = bl; state.viewMode = vMode;
-    state.doc = { w, h, effW: vMode === 'spread' ? w * 2 : w, viewMode: vMode, bleed: bl, pages, margin: _mgDoc, margins: _mgDoc4, numbering: _nbDoc,
+    state.doc = { w, h, effW: vMode === 'spread' ? w * 2 : w, viewMode: vMode, bleed: bl, pages, margin: _mgDoc, margins: _mgDoc4,
+      /* _SP_STUDIO_509_DEBUT — GRILLE DE COLONNES ROUGES (v1.7.506 de l'app) : sans cette ligne, un
+         document passant par le studio revenait SANS ses repères de colonnes (mesure :
+         app → studio → app perdait cols/opacité/marges). Transmise telle quelle. */
+      colGrid: (spFile.document && spFile.document.colGrid) ? spFile.document.colGrid : null,
+      numbering: _nbDoc,
       // 🎯 v1.7.455i — MODE COULEUR D'ORIGINE (RVB / CMJN) : les deux écrivains
       //   de .sp l'écrivaient en dur à 'rgb', donc un document CMJN revenait en
       //   RVB (et la boîte d'export ne repassait plus en CMJN + Pantone).
@@ -9438,6 +9443,22 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
             tb._fixedWidth = tb.width;
           }
         } catch (_) {}
+        /* _SP_STUDIO_509B_DEBUT — TAQUETS SUR L'OBJET D'APERÇU (voir l'en-tête du patch).
+           Le moteur posé plus haut dans ce fichier lit obj._spTabs : sans cette recopie, il
+           reste inerte et l'aperçu affiche un simple espace à la place de la tabulation.
+           ⚠️ UNITÉS : l'aperçu dessine en px 96 dpi (fontSize x PT_TO_PX), soit 4/3 des px du
+           document de l'app : les positions de taquets sont donc multipliées par PT_TO_PX. */
+        try {
+          if (el._spTabs && el._spTabs.active && Array.isArray(el._spTabs.stops)) {
+            tb._spTabs = {
+              active: true,
+              step: (+el._spTabs.step || 0) * PT_TO_PX,
+              stops: el._spTabs.stops.map(function (s) {
+                return { pos: (+s.pos || 0) * PT_TO_PX, type: (s && s.type) ? s.type : 'left' };
+              })
+            };
+          }
+        } catch (_) {}
         return tb;
       }
       if (t === 'image' && el.imageUrl) {
@@ -9769,6 +9790,175 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   //   ⚠️ On n'écrit PAS _spHyphenFlags : les marqueurs de césure dépendent du
   //   re-wrap, et l'app les recalcule au chargement. Figer des positions de
   //   ligne serait plus fragile qu'utile.
+  /* ════════════════════════════════════════════════════════════════════════════════════
+     _SP_STUDIO_509_DEBUT — MOTEUR DE TAQUETS DANS L'APERÇU DU STUDIO (miroir de l'app, v1.7.508).
+     MESURE DU DÉFAUT : le studio ne connaissait pas la tabulation. Une maquette reçue de
+     SuperPrint avec des taquets (el._spTabs, cf. importFromSuperPrint) s'affichait donc
+     avec un simple espace à la place de la tabulation, alors que le .sp réexporté, lui,
+     portait bien les taquets (aller-retour réel app → studio → app vérifié en 1.7.507).
+     L'aperçu MENTAIT : on pouvait croire la tabulation perdue.
+     ⚠️ TOUT est conditionné à this._spTabs.active (et à la présence de ce bloc) : un texte
+     sans taquets n'est pas touché — aucun effet sur le reste du studio (aucune autre
+     modification de Fabric n'est faite ici).
+     ════════════════════════════════════════════════════════════════════════════════════ */
+  (function spStudioTabs() {
+    if (!window.fabric || !fabric.Text || !fabric.Text.prototype) return;
+    var proto = fabric.Text.prototype;
+    if (proto.__spStudioTabs) return;
+    var MM = 72 / 25.4;   /* même facteur que l'app : mm → px du document (72 dpi) */
+    function modele(obj) {
+      if (!obj._spTabs) obj._spTabs = { active: false, step: 10 * MM, stops: [] };
+      var t = obj._spTabs;
+      if (!Array.isArray(t.stops)) t.stops = [];
+      if (!(t.step > 0)) t.step = 10 * MM;
+      t.stops.sort(function (a, b) { return a.pos - b.pos; });
+      return t;
+    }
+    function morceau(obj, li, ci) {
+      var ligne = (obj._textLines && obj._textLines[li]) || '';
+      var lg = 0, prec = '';
+      for (var k = ci + 1; k < ligne.length && ligne[k] !== '\t'; k++) {
+        var st = obj.getCompleteStyleDeclaration(li, k);
+        var stp = prec ? obj.getCompleteStyleDeclaration(li, k - 1) : {};
+        var m = obj._measureChar(ligne[k], st, prec, stp);
+        lg += (m && typeof m.kernedWidth === 'number') ? m.kernedWidth : 0;
+        prec = ligne[k];
+      }
+      return lg;
+    }
+    function avance(obj, pen, li, ci, t) {
+      var stop = null;
+      for (var i = 0; i < t.stops.length; i++) { if (t.stops[i].pos > pen + 0.5) { stop = t.stops[i]; break; } }
+      if (!stop) { var pas = t.step || 10 * MM; return Math.max(1, (Math.floor(pen / pas) + 1) * pas - pen); }
+      var type = stop.type || 'left';
+      if (type === 'left') return Math.max(1, stop.pos - pen);
+      if (type === 'center') return Math.max(1, stop.pos - pen - morceau(obj, li, ci) / 2);
+      if (type === 'right') return Math.max(1, stop.pos - pen - morceau(obj, li, ci));
+      var ligne = (obj._textLines && obj._textLines[li]) || '';
+      var lg = 0, prec = '';
+      for (var k = ci + 1; k < ligne.length && ligne[k] !== '\t'; k++) {
+        if (ligne[k] === '.' || ligne[k] === ',') break;
+        var st2 = obj.getCompleteStyleDeclaration(li, k);
+        var stp2 = prec ? obj.getCompleteStyleDeclaration(li, k - 1) : {};
+        var m2 = obj._measureChar(ligne[k], st2, prec, stp2);
+        lg += (m2 && typeof m2.kernedWidth === 'number') ? m2.kernedWidth : 0;
+        prec = ligne[k];
+      }
+      return Math.max(1, stop.pos - pen - lg);
+    }
+    var origBox = proto._getGraphemeBox;
+    if (typeof origBox === 'function') {
+      proto._getGraphemeBox = function (g, li, ci, prev, skipLeft) {
+        if (g === '\t' && this._spTabs && this._spTabs.active) {
+          var t = modele(this), pen = 0;
+          var b = this.__charBounds && this.__charBounds[li];
+          if (ci > 0 && b && b[ci - 1]) pen = b[ci - 1].left + b[ci - 1].width;
+          var av = avance(this, pen, li, ci, t);
+          var st = this.getCompleteStyleDeclaration(li, ci);
+          return { width: av, left: pen, height: st.fontSize, kernedWidth: av, deltaY: st.deltaY || 0 };
+        }
+        return origBox.call(this, g, li, ci, prev, skipLeft);
+      };
+    }
+    var origChars = proto._renderChars;
+    if (typeof origChars === 'function') {
+      proto._renderChars = function (method, ctx, line, left, top, lineIndex) {
+        try {
+          if (line && line.length > 1 && this._spTabs && this._spTabs.active && line.indexOf('\t') !== -1) {
+            var cb = this.__charBounds && this.__charBounds[lineIndex];
+            if (!cb || cb.length < line.length) { try { this._measureLine(lineIndex); } catch (_) {} cb = this.__charBounds && this.__charBounds[lineIndex]; }
+            if (cb && cb.length >= line.length) {
+              var hL = (typeof this.getHeightOfLine === 'function') ? this.getHeightOfLine(lineIndex) : 0;
+              var frac = (typeof this._fontSizeFraction === 'number') ? this._fontSizeFraction : 0.222;
+              var y = top - (hL * frac) / (this.lineHeight || 1);
+              for (var i = 0; i < line.length; i++) {
+                if (line[i] === '\t' || !cb[i]) continue;
+                this._renderChar(method, ctx, lineIndex, i, line[i], left + cb[i].left, y);
+              }
+              return;
+            }
+          }
+        } catch (_) {}
+        return origChars.apply(this, arguments);
+      };
+    }
+    /* ═══════ _SP_STUDIO_509C_DEBUT — CORRECTION APRÈS MESURE (INDÉPENDANTE DE FABRIC) ═══════
+       MESURE : le studio embarque Fabric 5.1.0 (l'app : 5.3.0) et en 5.1 la mesure des lignes
+       n'utilise PAS _getGraphemeBox. Le patch ci-dessus y était donc inerte : la case d'une
+       tabulation gardait la métrique de la police (5 px au lieu de 120, mesuré).
+       On corrige donc APRÈS COUP, au point d'accroche stable _measureLine : la case du \t
+       reçoit son avance et tout ce qui suit est décalé d'autant. Si la mesure a déjà appliqué
+       l'avance (Fabric 5.3 + _getGraphemeBox), l'écart vaut zéro → aucun double décalage.
+       __lineWidths[lineIndex] est invalidé : sans cela la largeur de ligne resterait celle
+       d'avant correction (alignement et hauteur de bloc faux). */
+    var origMeasure = proto._measureLine;
+    if (typeof origMeasure === 'function') {
+      proto._measureLine = function (lineIndex) {
+        var ret = origMeasure.apply(this, arguments);
+        try {
+          if (!(this._spTabs && this._spTabs.active)) return ret;
+          var line = this._textLines && this._textLines[lineIndex];
+          var cb = this.__charBounds && this.__charBounds[lineIndex];
+          if (!line || !cb || !line.length) return ret;
+          var t = modele(this), shift = 0;
+          for (var i = 0; i < line.length; i++) {
+            var b = cb[i];
+            if (!b) continue;
+            if (shift) { b.left += shift; }
+            if (line[i] === '\t') {
+              var av = avance(this, b.left - shift, lineIndex, i, t);
+              var ecart = av - b.width;
+              if (Math.abs(ecart) > 0.01) {
+                var suppl = b.kernedWidth - b.width;
+                b.width = av;
+                b.kernedWidth = av + suppl;
+                shift += ecart;
+              }
+            }
+          }
+          if (shift) { try { if (this.__lineWidths) this.__lineWidths[lineIndex] = undefined; } catch (_) {} }
+        } catch (_) {}
+        return ret;
+      };
+    }
+    /* ═══════ _SP_STUDIO_509D_DEBUT — LES TABULATIONS SURVIVENT AU TEXTBOX (FABRIC 5.1) ═══════
+       MESURE : moteur de taquets posé et correction après mesure posée, mais l aperçu du studio
+       restait collé (« Prix » à 82 px de « Article » au lieu de 280). Le journal du patch
+       montrait _spTabs présent et actif, et pourtant aucune tabulation trouvée dans la ligne.
+       CAUSE : fabric.Textbox._splitTextIntoLines passe par _wrapText, qui réassemble les mots
+       avec une ESPACE. La tabulation était donc convertie en espace AVANT toute mesure :
+           new fabric.Textbox('A\tB')._textLines  →  ["A B"]      (mesuré)
+       L app (Fabric 5.3.0) conserve la tabulation (case de 87 px mesurée dans __charBounds).
+       CORRECTIF : on remplace la tabulation par un caractère privé U+E000 — un graphème
+       ordinaire, qui n est PAS un séparateur de mots — on laisse Fabric découper, puis on
+       remet les tabulations dans lines / graphemeLines / _unwrappedLines / graphemeText.
+       Sans tabulation, la fonction d origine est appelée telle quelle : rien d autre ne bouge.
+       RÉSULTAT MESURÉ : _textLines = ["A\tB"], __charBounds = ["0+14","14+119","133+13"],
+       encre [21..32] puis [155..165] → le texte suit bien jusqu au taquet. */
+    if (fabric.Textbox && fabric.Textbox.prototype && !fabric.Textbox.prototype.__spStudioTabsTab) {
+      var origSplitBox = fabric.Textbox.prototype._splitTextIntoLines;
+      fabric.Textbox.prototype._splitTextIntoLines = function (text) {
+        if (typeof text !== 'string' || text.indexOf('\t') < 0) return origSplitBox.call(this, text);
+        var SUB = '\uE000';
+        var r = origSplitBox.call(this, text.split('\t').join(SUB));
+        ['lines', 'graphemeLines', '_unwrappedLines', 'graphemeText'].forEach(function (k) {
+          var v = r && r[k];
+          if (!v) return;
+          if (typeof v === 'string') { r[k] = v.split(SUB).join('\t'); return; }
+          if (Array.isArray(v)) {
+            r[k] = v.map(function (l) {
+              if (Array.isArray(l)) return l.map(function (g) { return g === SUB ? '\t' : g; });
+              return String(l).split(SUB).join('\t');
+            });
+          }
+        });
+        return r;
+      };
+      fabric.Textbox.prototype.__spStudioTabsTab = true;
+    }
+    proto.__spStudioTabs = true;
+  })();
+
   function spAppliquerReglagesTypo(obj, el) {
     if (!obj || !el) return obj;
     // ══════════════════════════════════════════════════════════════════════
@@ -9989,7 +10179,10 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: spPages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20,
       /* 🆕 v1.7.459 — 4 marges du document d'origine, telles quelles (null = clé absente). */
-      margins: (state.doc && state.doc.margins) ? state.doc.margins : undefined, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb', styles: spCollectStylesBlock() },
+      /* _SP_STUDIO_509_DEBUT — 4 marges du document d'origine, telles quelles (null = clé absente). */
+      margins: (state.doc && state.doc.margins) ? state.doc.margins : undefined, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb',
+      /* _SP_STUDIO_509_DEBUT — GRILLE DE COLONNES ROUGES : réécrite TELLE QUELLE (app → studio → app). */
+      colGrid: (state.doc && state.doc.colGrid) ? state.doc.colGrid : undefined, styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
       // 🛡️ v1.7.369 — filtrés par usage réel : pas de canal fantôme.
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(spPages) },
@@ -10109,7 +10302,10 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: pages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20,
       /* 🆕 v1.7.459 — 4 marges du document d'origine, telles quelles (null = clé absente). */
-      margins: (state.doc && state.doc.margins) ? state.doc.margins : undefined, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb', styles: spCollectStylesBlock() },
+      /* _SP_STUDIO_509_DEBUT — 4 marges du document d'origine, telles quelles (null = clé absente). */
+      margins: (state.doc && state.doc.margins) ? state.doc.margins : undefined, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb',
+      /* _SP_STUDIO_509_DEBUT — GRILLE DE COLONNES ROUGES : réécrite TELLE QUELLE (app → studio → app). */
+      colGrid: (state.doc && state.doc.colGrid) ? state.doc.colGrid : undefined, styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) : 1 entrée = 1 couche
       //   chromatique supplémentaire à produire à l'export (CMJN ou RVB + Pantone).
       // 🛡️ v1.7.368 — styles nommés (typo + nuancier) DÉJÀ présents via

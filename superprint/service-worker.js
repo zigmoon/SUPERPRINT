@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.508-lettres-suivent-le-taquet';
+const CACHE_NAME = 'superprint-shell-v1.7.509-grille-et-taquets-transportes';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
