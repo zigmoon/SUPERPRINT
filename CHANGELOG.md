@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,15 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.521] — 2026-09-21
+
+_Titles keep their font and their line breaks in the PDF export with crop marks_
+
+### Fixed
+- **A text block rendered by the “Finished format” vector engine was written in Helvetica instead of its own font.** The overlay document built for blocks the hybrid engine cannot vectorise (per-character styles, variable font, …) created a `PDFDocument` **without registering fontkit**, so `embedFont()` failed for every TTF (“no fontkit instance was found”, 14 times on the reported document); the native renderer then fell back to its `helvetica` default. Measured on `Maquette SP213.sp` (281 × 215 mm, 3 mm bleed, HD 300 dpi + CMYK + crop marks): the 45.33 pt Bebas Neue title came out with **26–43 pt advances instead of 16–18** (“L” x=498, “’” x=524, “U” x=534, “S” x=566 …) → the title overflowed its block and the page and was cut off. Fixed by registering fontkit on the overlay document (as `_spEmbedTextsWithPdfLib` already did) and by **refusing the overlay** — i.e. keeping the faithful raster rendering — when fontkit is unavailable or when the block's font could not be embedded: a substitute font is never used. After: advances 16–19 pt, i.e. **identical to the bleed-without-crop-marks export** (constant 28.3 pt offset = the 10 mm crop-mark margin, verified).
+- **Hyphenation was forced on every text block in the crop-marks export.** The “hyphenate on export” option (ticked by default) set `enableHyphenation = true` on all textboxes, which **recomputed the line breaks** and overwrote the preview's ones. The native path only forces it when the block was never configured (`enableHyphenation === undefined`, the v1.7.380 fix); the hybrid path now applies the same guard. Measured: the title came out as “L'USAGE DES MON- / DES RETROUVÉS” instead of “L'USAGE DES / MONDES RETROUVÉS”. After: both exports contain the **same 933 characters** at the same positions.
+- This release also carries the 1.7.519 (vector typography honoured with crop marks: mixed per-character styles and variable fonts) and 1.7.520 (text block and line backgrounds exported; last line preserved) fixes — a single package.
 
 ## [1.7.520] — 2026-09-20
 

@@ -42632,8 +42632,20 @@ https://superprint.app
                         if (options.forceHyphenation) {
                             tempFabric.getObjects().forEach(obj => {
                                 if (obj.type === 'textbox') {
-                                    obj.enableHyphenation = true;
-                                    obj.hyphenLanguage = obj.hyphenLanguage || (typeof currentHyphenLanguage !== 'undefined' ? currentHyphenLanguage : 'fr');
+                                    /* 🛡️ v1.7.521 — _SP_CESURE_521 : MÊME GARDE que le chemin
+                                       natif (correctif v1.7.380). Forcer la césure sur TOUS les
+                                       blocs RECALCULAIT leur retour à la ligne et écrasait les
+                                       coupures de l'aperçu : mesuré sur le document de
+                                       l'utilisateur, le titre sortait « L'USAGE DES MON- / DES
+                                       RETROUVÉS » avec traits de coupe, contre « L'USAGE DES /
+                                       MONDES RETROUVÉS » en aperçu et en fonds perdus sans
+                                       traits de coupe. Un bloc volontairement réglé sans
+                                       césure (enableHyphenation === false dans le document)
+                                       doit ressortir SANS césure. */
+                                    if (obj.enableHyphenation === undefined) {
+                                        obj.enableHyphenation = true;
+                                        obj.hyphenLanguage = obj.hyphenLanguage || (typeof currentHyphenLanguage !== 'undefined' ? currentHyphenLanguage : 'fr');
+                                    }
                                     if (typeof obj._clearCache === 'function') obj._clearCache();
                                     if (typeof obj.initDimensions === 'function') obj.initDimensions();
                                     if (typeof obj.setCoords === 'function') obj.setCoords();
@@ -50676,6 +50688,13 @@ https://superprint.app
         async function _spBuildTextOverlay(obj, opts, mmToPt) {
             var PDFLib = window.PDFLib;
             if (!PDFLib || typeof _renderObjToPdfLib !== 'function') return null;
+            /* 🛡️ v1.7.521 — _SP_OVERLAY_521 : SANS fontkit, pdf-lib REFUSE d'embarquer une
+               police TTF (« no fontkit instance was found »). Le moteur natif
+               retomberait alors sur HELVETICA : glyphes faux et avances beaucoup plus
+               larges (mesure sur le document de l'utilisateur : titre Bebas Neue 45,33 pt
+               dont les lettres passaient de 16-18 pt d'avance à 26-43 pt → titre
+               débordant, tronqué). On n'utilise donc l'overlay que si fontkit est là. */
+            if (!window.fontkit) return null;
             /* _SP_OVERLAY_519B — GARDE-FOUS : l'overlay ne sert que si le moteur natif
                écrit du VRAI texte vectoriel. Sinon (il rasteriserait : ombre,
                contour, fond de bloc, inclinaison/miroir, clip complexe, dégradé)
@@ -50696,6 +50715,9 @@ https://superprint.app
             if (!(_w > 0) || !(_h > 0)) return null;
             try {
                 var doc = await PDFLib.PDFDocument.create();
+                /* 🛡️ v1.7.521 — _SP_OVERLAY_521 : fontkit OBLIGATOIRE pour embarquer un TTF
+                   custom (même enregistrement que dans _spEmbedTextsWithPdfLib). */
+                try { doc.registerFontkit(window.fontkit); } catch (_) {}
                 var page = doc.addPage([_w * mmToPt, _h * mmToPt]);
                 var fonts = {};
                 var _ttfDe = function (fk) {
@@ -50722,6 +50744,10 @@ https://superprint.app
                    (glyphes faux) → on garde le rendu raster exact de la preview. */
                 if (!_ttfDe(_fkBlocOl)) return null;
                 await _poserPolice(_fkBlocOl);
+                /* 🛡️ v1.7.521 — _SP_OVERLAY_521 : police réellement embarquée ? Sans cela le
+                   moteur natif écrirait ce bloc en Helvetica (avances fausses) → repli
+                   raster, fidèle à l'aperçu. */
+                if (!fonts[_fkBlocOl]) return null;
                 if (obj.styles && typeof obj.styles === 'object') {
                     for (var lk in obj.styles) {
                         var ligne = obj.styles[lk];

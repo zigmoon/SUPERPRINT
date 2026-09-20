@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.520 — text block backgrounds are exported again (a white title on a dark band is no longer invisible with crop marks).">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.521 — titles keep their font and their line breaks in the PDF export with crop marks.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.520 — text block backgrounds are exported again (a white title on a dark band is no longer invisible with crop marks).">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.521 — titles keep their font and their line breaks in the PDF export with crop marks.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -76,7 +76,7 @@
 	"name": "Releases — Zigmoon Apps",
 	"description": "Release notes for CUT THE FLOW, SuperPrint, PDF-YZ, Bird and the complete Zigmoon application collection.",
 	"url": "https://app.zigmoon.com/release.html",
-	"dateModified": "2026-09-20",
+	"dateModified": "2026-09-21",
 	"inLanguage": "en-US",
 	"isPartOf": {"@type": "WebSite", "url": "https://app.zigmoon.com/", "name": "Zigmoon Apps"},
 	"publisher": {"@type": "Organization", "name": "Zigmoon", "url": "https://zigmoon.com"}
@@ -706,6 +706,24 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.521 — Export PDF : les titres gardent leur police (et leur coupure) avec les traits de coupe ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-521">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.521</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 21 septembre 2026" data-i18n-en="Released September 21, 2026" data-i18n-jp="2026年9月21日公開">Released September 21, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Un titre pouvait sortir <strong>tronqué</strong> ou coupé au mauvais endroit dans le PDF avec traits de coupe. Police, corps et coupures sont maintenant exactement ceux de l'aperçu." data-i18n-en-html="A title could come out <strong>truncated</strong> or broken at the wrong place in the PDF with crop marks. Font, size and line breaks are now exactly those of the preview." data-i18n-jp-html="トンボ付き PDF でタイトルが<strong>欠けて</strong>出力されたり、違う位置で改行されたりしていました。現在はフォント・サイズ・改行位置がプレビューと完全に一致します。">A title could come out truncated or broken at the wrong place in the crop-marks PDF.</p>
+
+ <h3 data-i18n-fr-html="🔤 Police des titres et coupures respectées <span class=&quot;badge badge-new&quot;>corrigé</span>" data-i18n-en-html="🔤 Title fonts and line breaks honoured <span class=&quot;badge badge-new&quot;>fixed</span>" data-i18n-jp-html="🔤 タイトルのフォントと改行を正確に出力 <span class=&quot;badge badge-new&quot;>修正</span>">🔤 Title fonts and line breaks honoured <span class="badge badge-new">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Quand un bloc de texte devait être dessiné par le moteur vectoriel du « Format fini » (styles par caractère, police variable, ou toute autre raison), sa <strong>police n'était pas embarquée</strong> : le moteur écrivait alors le bloc en Helvetica. Mesure sur un document de couverture : le titre Bebas Neue de 45,33 pt sortait avec des avances de 26 à 43 pt au lieu de 16 à 18 (les lettres s'écartaient de 60 %) → titre débordant du bloc et de la page, donc illisible. Les polices sont maintenant embarquées ; si l'une d'elles ne peut pas l'être, le bloc revient au rendu image fidèle de l'aperçu au lieu d'être écrit avec une police de remplacement." data-i18n-en-html="When a text block had to be drawn by the vector engine of “Finished format” (per-character styles, variable font, or any other reason), its <strong>font was not embedded</strong>: the engine then wrote the block in Helvetica. Measured on a book-cover document: a 45.33 pt Bebas Neue title came out with 26–43 pt advances instead of 16–18 (letters 60 % wider) → the title overflowed its block and the page, unreadable. Fonts are embedded again; and if one cannot be embedded, the block falls back to the faithful image rendering instead of being written with a substitute font." data-i18n-jp-html="「仕上がりサイズ」のベクトルエンジンがブロックを描画する場合（文字ごとの書式、可変フォントなど）、その<strong>フォントが埋め込まれず</strong>、Helvetica で出力されていました。表紙の検証：45.33 pt の Bebas Neue タイトルの字送りが 16〜18 pt ではなく 26〜43 pt となり、タイトルが枠とページからはみ出して読めませんでした。現在はフォントを埋め込み、埋め込めない場合は代替フォントで書かず、プレビュー通りの画像描画に戻します。">When a block was drawn by the “Finished format” vector engine, its font was not embedded and Helvetica was used instead (45.33 pt title with 26–43 pt advances instead of 16–18). Fixed.</li>
+  <li data-i18n-fr-html="Deuxième correction du même chemin : la <strong>césure</strong> était forcée sur tous les blocs avec traits de coupe (l'option « césure à l'export » est cochée par défaut), ce qui <strong>recalculait le retour à la ligne</strong> et écrasait les coupures de l'aperçu. Mesure : le titre sortait « L'USAGE DES MON- / DES RETROUVÉS » au lieu de « L'USAGE DES / MONDES RETROUVÉS ». Le réglage de chaque bloc est maintenant respecté, exactement comme en « Format fini » : sur le document de recette, les deux exports contiennent désormais les mêmes 933 caractères, aux mêmes positions." data-i18n-en-html="Second fix in the same path: <strong>hyphenation</strong> was forced on every block in the crop-marks export (the “hyphenate on export” option is ticked by default), which <strong>recomputed the line breaks</strong> and overwrote the preview's ones. Measured: the title came out as “L'USAGE DES MON- / DES RETROUVÉS” instead of “L'USAGE DES / MONDES RETROUVÉS”. Each block's own setting is now honoured, exactly as in “Finished format”: on the recipe document both exports now contain the same 933 characters at the same positions." data-i18n-jp-html="同じ経路の 2 つ目の修正：トンボ付き書き出しでは<strong>ハイフネーション</strong>が全ブロックに強制され、<strong>改行が再計算</strong>されてプレビューの改行が上書きされていました。検証ではタイトルが「L'USAGE DES / MONDES RETROUVÉS」ではなく「L'USAGE DES MON- / DES RETROUVÉS」になっていました。現在は各ブロックの設定が「仕上がりサイズ」と同様に尊重されます。">Second fix: hyphenation was forced on every block, recomputing the line breaks (the title broke as “MON- / DES”). Each block's setting is now honoured.</li>
+  <li data-i18n-fr-html="Ce lot inclut aussi les corrections de la 1.7.519 (typographie vectorielle honorée avec les traits de coupe) et de la 1.7.520 (fonds de bloc de texte exportés — un titre blanc sur bandeau n'est plus invisible — et dernière ligne préservée). Un seul paquet suffit : il remplace les deux précédents s'ils n'ont pas encore été mis en ligne." data-i18n-en-html="This bundle also includes the 1.7.519 fixes (vector typography honoured with crop marks) and the 1.7.520 ones (text block backgrounds exported — a white title on a band is no longer invisible — and the last line preserved). One package is enough: it replaces both previous ones if they have not been uploaded yet." data-i18n-jp-html="このパッケージには 1.7.519（トンボ付きでのベクトルタイポグラフィー）と 1.7.520（テキストブロック背景の出力＝帯上の白いタイトルが消えない、最終行の保持）の修正も含まれます。1 つのパッケージで完了です。">This bundle also includes the 1.7.519 and 1.7.520 fixes — one package is enough.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.520 — Export PDF : les fonds de bloc de texte sont écrits (le titre n'est plus invisible) ===== -->
 
