@@ -1,4 +1,4 @@
-﻿SUPERPRINT 1.7.514 - CONTENU DU PAQUET
+﻿SUPERPRINT 1.7.515 - CONTENU DU PAQUET
 ======================================
 
 Ce paquet n'est PAS un site web : c'est le paquet de l'APPLICATION LOCALE,
@@ -26,7 +26,7 @@ src/ .............................. ancien moteur du studio local, debranche
   public/superprint/documentation.html ... documentation
   public/superprint/api.html ............. API
   public/superprint/install.html ......... page du site (source du lanceur)
-  public/superprint/version.txt .......... version du paquet : 1.7.514
+  public/superprint/version.txt .......... version du paquet : 1.7.515
   public/js/fabric.min.js ................ moteur canvas (fabric)
   public/js/mammoth.min.js ............... import de documents Word
 
@@ -51,4 +51,4 @@ INSTALLATION
 
 Telecharge le paquet, installe les dependances et lance le serveur local.
 
-SuperPrint 1.7.514 - 19 septembre 2026 - https://superprint.cc
+SuperPrint 1.7.515 - 19 septembre 2026 - https://superprint.cc

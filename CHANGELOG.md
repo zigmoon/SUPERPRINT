@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,30 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.515] — 2026-09-20
+
+_Fond widget: only the essentials — the grey text lines are gone_
+
+### Changed
+- **The panel's grey title becomes `OPTIONS`** (the sidebar tool keeps the name “Fond”), so “Fond” is no longer displayed twice on screen.
+- **Removed the resolution status line** that repeated the chosen definition under the 72 / 150 / 300 / 600 buttons (“300 dpi — 2480 × 1395 px — resolution computed on the width of an A4 page…”). The active button stays black and every button keeps its **hover tooltip** (web / low / medium / HD).
+- **Removed the hint under the preview** (“Click the preview: freeze / resume. (Preview cropped — the inserted image is complete.)”).
+- **Removed the widget's bottom note** (“Insertion recomputed at the chosen resolution. Second click on « Fond »: close.”).
+- Result: the widget goes from 504 to **408 px high**, still without any scrolling, and shows only: the title, the nine effects, the four resolutions, the preview, the four sliders and the four actions.
+
+### Verified
+| Check | Result |
+|---|---|
+| Panel title | `OPTIONS` (measured in the DOM and inside the widget) |
+| Grey text lines in the panel | none left (every `.rb-petit` / `.rb-note` removed) |
+| Resolution status element | removed (`majDpi` already guards its absence) |
+| Four resolution buttons | present, “300” active by default |
+| Widget height / scrolling | 408 px, no scrolling |
+| Page background insertion | still working (1 background object) |
+| Application / studio syntax | `node --check` OK / `SYNTAXE OK` |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v515"`, cache tag `20260920-v515-widget-fond-allège`, `CACHE_NAME` bumped, local package rebuilt |
 
 ## [1.7.514] — 2026-09-20
 

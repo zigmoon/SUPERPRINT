@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.514 — Zigmoon
+         SuperPrint 1.7.515 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.514 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.515 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.514",
+          "softwareVersion": "1.7.515",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -630,7 +630,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20260920-v514-fond-et-quatre-definitions">
+    <link rel="stylesheet" href="CSS/main.css?v=20260920-v515-widget-fond-allege">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -1059,7 +1059,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.514</div>
+                <div class="splash-version">1.7.515</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1161,7 +1161,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.514</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.515</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1257,7 +1257,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.514 | 09 2026<br>
+                V 1.7.515 | 09 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1382,7 +1382,7 @@
                             </button>
                             <div class="tool-dropdown-menu grid-menu" id="randomBackMenu" style="display:none;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 2px 6px 2px;">
-                                    <div data-dock-title="" style="font-size: 10px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; opacity: 0.7;">Fond</div>
+                                    <div data-dock-title="" style="font-size: 10px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; opacity: 0.7;">OPTIONS</div>
                                 </div>
                                 <div class="rb-fx-grid">
                                     <button class="btn btn-secondary rb-fx" id="rbFxDot" title="Grille de points qui respirent">DOT</button>
@@ -1401,10 +1401,8 @@
                                     <button class="btn btn-secondary rb-dpi" id="rbDpi300" title="Moyenne : 300 ppp (impression standard)">300</button>
                                     <button class="btn btn-secondary rb-dpi" id="rbDpi600" title="HD : 600 ppp (grand format)">600</button>
                                 </div>
-                                <div class="rb-petit"><span id="rbDpiEtat">300 ppp — 2480 × 1395 px</span> — définition calculée sur la largeur d'une page A4. Basse définition : la scène est dessinée 2× plus grande puis réduite avec lissage, donc nette malgré tout.</div>
                                 <div class="rb-apercu">
                                     <canvas id="rbCanvas" class="rb-canvas" width="960" height="540"></canvas>
-                                    <div class="rb-petit">Clic sur l'aperçu : figer / reprendre. (Aperçu recadré — l'image insérée est complète.)</div>
                                 </div>
                                 <div class="rb-sliders">
                                     <div class="rb-slider"><label for="rbVit"><span>Vitesse</span><b id="rbVitVal">1.00</b></label><input type="range" class="rb-range" id="rbVit" min="0.2" max="2.5" step="0.05" value="1"></div>
@@ -1418,7 +1416,6 @@
                                     <button class="btn btn-secondary" id="rbInsertImg" title="Insérer l'image figée dans la page (déplaçable)">Image</button>
                                     <button class="btn btn-secondary" id="rbInsertBg" title="Insérer l'image en fond de page (couverture, sans déformation)">Fond de page</button>
                                 </div>
-                                <div class="rb-petit rb-note">Insertion recalculée à la définition choisie. Second clic sur « Fond » : fermer.</div>
                             </div>
                         </div>
                     </div>
@@ -1973,12 +1970,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.514). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.515). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.514 — internal cache tag: JS v514 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.515 — internal cache tag: JS v515 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v514"
-                      data-sp-sw="v1.7.514">v1.7.514</span>
+                      data-sp-js="v515"
+                      data-sp-sw="v1.7.515">v1.7.515</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -6193,7 +6190,7 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260920-v514-fond-et-quatre-definitions" defer></script>
+    <script src="JS/main.js?v=20260920-v515-widget-fond-allege" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
     <script src="JS/virtual-printer.js?v=20260912-v417-clavier-studio" defer></script>
     <script src="JS/collab.js?v=20260907-v016-ux" defer></script>
