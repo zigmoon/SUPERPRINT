@@ -7772,13 +7772,17 @@ window.spTestDiag = function () {
         /* En-tête identique aux widgets existants : point, titre en capitales,
            petit triangle à droite pour le soufflet. Le titre du clone est masqué :
            le widget porte le sien. */
-        var source = sec.querySelector(':scope > .section-title') || sec.querySelector(':scope > label');
+        /* _SP_GRID_506_DEBUT — un panneau qui n'est pas une « section » de la barre de droite (le panneau
+           Grille & repères) peut fournir son titre avec data-dock-title. */
+        var source = sec.querySelector(':scope > .section-title') || sec.querySelector(':scope > label') || sec.querySelector('[data-dock-title]');
         var texte = nom;
         if (source) {
             /* le titre est lu sur une copie sans le bouton + / − (sinon il apparaît
                dans l'en-tête du widget : mesuré « Text frame options+ ») */
             var copieTitre = source.cloneNode(true);
-            Array.prototype.forEach.call(copieTitre.querySelectorAll('.sp-detach-btn'), function (b) {
+            /* _SP_GRID_506_DEBUT — on retire aussi les éléments marqués data-dock-ignore (la croix « × » du
+               panneau, qui ne doit pas apparaître dans l'en-tête du widget). */
+            Array.prototype.forEach.call(copieTitre.querySelectorAll('.sp-detach-btn,[data-dock-ignore]'), function (b) {
                 if (b.parentNode) b.parentNode.removeChild(b);
             });
             texte = (copieTitre.textContent || '').trim() || nom;
@@ -7892,7 +7896,13 @@ window.spTestDiag = function () {
         obs.observe(cible, { childList: true, subtree: true });
     }
 
-    window.spDockWidgets = { init: init, ouvrir: ouvrir, fermer: fermer, synchroniser: synchroniser, recadrer: recadrer, zonePlan: zonePlan };
+    /* _SP_GRID_506_DEBUT — estOuvert(nom) : l'app doit savoir si un widget est déjà posé (le bouton
+       « Grille & repères » ouvre au premier clic, referme au second). */
+    window.spDockWidgets = {
+        init: init, ouvrir: ouvrir, fermer: fermer, synchroniser: synchroniser,
+        recadrer: recadrer, zonePlan: zonePlan,
+        estOuvert: function (nom) { return !!docks[nom]; }
+    };
     window.addEventListener('load', function () { init(); surveiller(); });
     window.addEventListener('resize', recadrer);
     setTimeout(function () { init(); surveiller(); }, 1500);
@@ -10573,7 +10583,9 @@ window.spTestDiag = function () {
 
     updatePageIndicator();
 
-    if (window._spGridVisible && typeof window.rebuildGridAll === 'function') {
+    /* _SP_GRID_506_DEBUT — les colonnes rouges vivent même quand la grille bleue est éteinte : le
+       redessin ne doit donc plus dépendre de window._spGridVisible seul. */
+    if ((window._spGridVisible || window._spColonnesActives) && typeof window.rebuildGridAll === 'function') {
         window.rebuildGridAll();
     }
     
@@ -10865,6 +10877,13 @@ window.spTestDiag = function () {
         }
         window.pageToCanvasMap[index] = canvases.length - 1;
 
+        /* _SP_GRID_506D_DEBUT — LA GRILLE SUIT LES NOUVELLES PAGES (page ajoutée, double page, restauration).
+           MESURE : après « Page + », la nouvelle page restait SANS bandes rouges. */
+        try {
+            if (window.spPlanifierGrille) window.spPlanifierGrille();
+            else if ((window._spGridVisible || window._spColonnesActives) && typeof window.rebuildGridAll === 'function') window.rebuildGridAll();
+        } catch (_) {}
+
         if (pages[index] && pages[index].objects) {
             // FIX BLEED OFFSET: Si mode spread + position right/left, ajuster les coordonnées
             // Les données sont sauvegardées en référentiel "single" (bleedLeft=bleedPx)
@@ -10980,6 +10999,8 @@ window.spTestDiag = function () {
                     if (window._renderEpoch !== _epoch) return;
                     try { restoreChainVisualsForCanvas(fabricCanvas); } catch (_) {}
                     fabricCanvas._spRenderReady = true;
+                    /* _SP_GRID_506E_DEBUT — canvas prêt : on replanifie la grille (voir _grid_506e). */
+                    try { if (window.spPlanifierGrille) window.spPlanifierGrille(); } catch (_) {}
                 }, 200);
                 
                 // Pages extrémités en mode double: utiliser les repères par page
@@ -11010,6 +11031,8 @@ window.spTestDiag = function () {
                 if (window._renderEpoch !== _epoch) return;
                 try { addSpecialTextObjectsToCanvas(fabricCanvas, index, position); } finally {
                     fabricCanvas._spRenderReady = true;
+                    /* _SP_GRID_506E_DEBUT — canvas prêt : on replanifie la grille (voir _grid_506e). */
+                    try { if (window.spPlanifierGrille) window.spPlanifierGrille(); } catch (_) {}
                 }
             }, 50);
         }
@@ -14690,6 +14713,13 @@ window.spTestDiag = function () {
         window.pageToCanvasMap[leftIndex] = canvases.length - 1;  // Index du canvas qu'on vient d'ajouter
         window.pageToCanvasMap[rightIndex] = canvases.length - 1; // Même canvas pour les deux pages
 
+        /* _SP_GRID_506D_DEBUT — LA GRILLE SUIT LES NOUVELLES PAGES (page ajoutée, double page, restauration).
+           MESURE : après « Page + », la nouvelle page restait SANS bandes rouges. */
+        try {
+            if (window.spPlanifierGrille) window.spPlanifierGrille();
+            else if ((window._spGridVisible || window._spColonnesActives) && typeof window.rebuildGridAll === 'function') window.rebuildGridAll();
+        } catch (_) {}
+
         // Charger le contenu existant des pages
         // ⚡ FIX ORDER: addSpreadGuides dans le callback — loadFromJSON efface le canvas
         // en asynchrone via canvas.clear(), les guides ajoutés avant seraient supprimés
@@ -14697,6 +14727,9 @@ window.spTestDiag = function () {
             if (window._renderEpoch !== _epoch) return;
             try { addSpreadGuides(fabricCanvas, width, height, bleedPx, true); } finally {
                 fabricCanvas._spRenderReady = true;
+                /* _SP_GRID_506E_DEBUT — double page prête : c'est ICI que bleedInfo.isSpread est connu,
+                   donc la seule occasion de dessiner les DEUX pages d'un coup. */
+                try { if (window.spPlanifierGrille) window.spPlanifierGrille(); } catch (_) {}
             }
         });
 
@@ -17142,7 +17175,8 @@ window.spTestDiag = function () {
             if (_restoreStateSafetyTimer) { clearTimeout(_restoreStateSafetyTimer); _restoreStateSafetyTimer = null; }
             // Mettre à jour l'indicateur de page et les visuels
             updatePageIndicator();
-            if (window._spGridVisible && typeof window.rebuildGridAll === 'function') {
+            /* _SP_GRID_506_DEBUT — idem : colonnes rouges actives même sans la grille bleue. */
+            if ((window._spGridVisible || window._spColonnesActives) && typeof window.rebuildGridAll === 'function') {
                 window.rebuildGridAll();
             }
         }
@@ -18490,8 +18524,13 @@ window.spTestDiag = function () {
         gridBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             menu.classList.remove('open');
-            const isOpen = gridMenu.classList.contains('open');
-            if (isOpen) {
+            /* _SP_GRID_506B_DEBUT — C'EST ICI QUE LE WIDGET SE BASCULE (un seul gestionnaire).
+               L'ancien test « gridMenu.classList.contains('open') » est faux désormais : le
+               panneau n'est plus un menu déroulant, il vit dans la zone de prévisualisation.
+               On interroge donc l'état réel du widget. */
+            const spD = window.spDockWidgets;
+            const dejaOuvert = !!(spD && spD.estOuvert && spD.estOuvert('gridMenu'));
+            if (dejaOuvert) {
                 closeGridPopin();
             } else {
                 openGridMenu();
@@ -18513,36 +18552,36 @@ window.spTestDiag = function () {
         });
     }
 
-    // ✨ Helper: ouvrir le gridMenu en mode pop-in centrée si sidebar ouverte
+    /* _SP_GRID_506_DEBUT — LE PANNEAU GRILLE & REPÈRES EST UN WIDGET, PLUS UN MENU DÉROULANT.
+       MESURE AVANT (barre latérale repliée) : le panneau s'ouvrait en menu déroulant collé
+       au rail et les champs ne prenaient pas les valeurs ; barre ouverte, il passait en
+       « pop-in » centrée PAR-DESSUS la planche, doublée d'une surcouche plein écran
+       (.grid-popin-overlay) qui avalait tous les clics — même famille de défaut que le
+       panneau des taquets corrigé en 1.7.505. Il vit désormais dans l'espace de
+       prévisualisation (#canvasScrollArea), comme Styles / Pathfinder / Nuancier / Filtres :
+       déplaçable par son en-tête, repliable d'un clic sur l'en-tête, refermé par sa croix. */
     function openGridMenu() {
-        const sidebar = document.getElementById('leftSidebar');
-        const sidebarOpen = sidebar && !sidebar.classList.contains('collapsed');
-        if (sidebarOpen) {
-            // Mode pop-in centrée
-            gridMenu.classList.add('open', 'popin-mode');
-            // Créer l'overlay si nécessaire
-            let overlay = document.getElementById('gridPopinOverlay');
-            if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.id = 'gridPopinOverlay';
-                overlay.className = 'grid-popin-overlay';
-                document.body.appendChild(overlay);
-                overlay.addEventListener('click', () => closeGridPopin());
-            }
-            overlay.classList.add('active');
-        } else {
-            // Mode dropdown classique
-            gridMenu.classList.add('open');
-            gridMenu.classList.remove('popin-mode');
+        var spD = window.spDockWidgets;
+        var ov = document.getElementById('gridPopinOverlay');
+        if (ov) ov.classList.remove('active');
+        gridMenu.classList.remove('popin-mode');
+        if (spD && spD.ouvrir) {
+            try { spD.ouvrir(gridMenu, gridBtn); return; } catch (_) {}
         }
+        gridMenu.classList.add('open');   /* repli : ancien comportement */
     }
 
-    // ✨ Helper: fermer le gridMenu et l'overlay
     function closeGridPopin() {
         gridMenu.classList.remove('open', 'popin-mode');
         menu.classList.remove('open');
         const overlay = document.getElementById('gridPopinOverlay');
         if (overlay) overlay.classList.remove('active');
+        /* _SP_GRID_506_DEBUT — la croix du panneau referme le widget (c'est le même panneau). */
+        try {
+            if (window.spDockWidgets && window.spDockWidgets.estOuvert && window.spDockWidgets.estOuvert('gridMenu')) {
+                window.spDockWidgets.fermer('gridMenu');
+            }
+        } catch (_) {}
     }
     // Exposer pour le bouton × du gridMenu
     window._closeGridPopin = closeGridPopin;
@@ -36969,6 +37008,24 @@ window.spTestDiag = function () {
     const gridColorInput = document.getElementById('gridColor');
     let snapToGuidesEnabled = false;
 
+    /* ═══ _SP_GRID_506_DEBUT — GRILLE DE COLONNES (repères rouges translucides, façon maquette web) ═══
+       Demande utilisateur : « venant du web, j'ai besoin de grille en rouge transparente sur
+       les pages (grille par 6, 12, 24 et 32), en plus des réglages disponibles ».
+       Elle est INDÉPENDANTE de la grille bleue : on peut l'afficher sans activer celle-ci.
+       Mémorisée dans localStorage « sp_col_grid ». */
+    let colGridCols = 0;           /* 0 = aucune ; sinon 6, 12, 24 ou 32 */
+    let colGridOpacity = 12;       /* pourcentage d'opacité des bandes */
+    let colGridInMargins = true;   /* true = dans les marges de page, false = pleine page */
+    try {
+        const _cg = JSON.parse(localStorage.getItem('sp_col_grid') || 'null');
+        if (_cg && typeof _cg === 'object') {
+            if (typeof _cg.cols === 'number') colGridCols = _cg.cols;
+            if (typeof _cg.opacity === 'number') colGridOpacity = _cg.opacity;
+            if (typeof _cg.margins === 'boolean') colGridInMargins = _cg.margins;
+        }
+    } catch (_) {}
+    window._spColonnesActives = (colGridCols > 0);
+
     function setSnapToGuidesEnabled(next) {
         snapToGuidesEnabled = !!next;
         if (gridMagnetToggle) gridMagnetToggle.checked = snapToGuidesEnabled;
@@ -36992,7 +37049,10 @@ window.spTestDiag = function () {
         const baselineEnabled = !!baselineToggle?.checked;
         const fullPage = !!gridFullPageToggle?.checked;
         const color = (gridColorInput && gridColorInput.value) ? gridColorInput.value : '#2bb7ff';
-        return { cols, rows, gutter, rowGutter, baselineStep, baselineOffset, baselineEnabled, fullPage, color };
+        /* _SP_GRID_506_DEBUT — les colonnes rouges voyagent avec les réglages de la grille
+           (mêmes gouttières ; marges ou pleine page au choix). */
+        return { cols, rows, gutter, rowGutter, baselineStep, baselineOffset, baselineEnabled, fullPage, color,
+                 colonnes: colGridCols, colonnesOpacite: colGridOpacity, colonnesMarges: colGridInMargins };
     }
 
     function clearGridGuides(canvas) {
@@ -37094,13 +37154,47 @@ window.spTestDiag = function () {
         }
     }
 
+    /* ═══ _SP_GRID_506_DEBUT — BANDES DE COLONNES ROUGES ═══
+       Une bande translucide par colonne, à l'intérieur de la zone de composition.
+       Décoratives : ni sélectionnables, ni événementielles, et excludeFromExport → elles
+       n'apparaissent JAMAIS dans le PDF ni dans une image exportée (même mécanisme que les
+       repères de grille existants). isGridGuide → elles sont nettoyées avec la grille. */
+    function buildColumnGridForArea(canvas, area, settings) {
+        const nb = parseInt(settings.colonnes || 0, 10);
+        if (!(nb > 0) || !area || !(area.width > 1) || !(area.height > 1)) return;
+        const gout = mmToPx(Math.max(0, parseFloat(settings.gutter || 0)));
+        const op = Math.max(0.03, Math.min(0.5, (parseFloat(settings.colonnesOpacite) || 12) / 100));
+        const largeur = (area.width - (nb - 1) * gout) / nb;
+        if (!(largeur > 0.5)) return;
+        for (let i = 0; i < nb; i++) {
+            const x = area.x + i * (largeur + gout);
+            const bande = new fabric.Rect({
+                left: x,
+                top: area.y,
+                width: largeur,
+                height: area.height,
+                fill: 'rgba(255,0,0,' + op.toFixed(3) + ')',
+                stroke: 'rgba(224,47,47,0.45)',
+                strokeWidth: 0.5,
+                strokeUniform: true,
+                selectable: false,
+                evented: false,
+                hasControls: false,
+                hasBorders: false,
+                hoverCursor: 'default',
+                objectCaching: false,
+                excludeFromExport: true,
+                isGridGuide: true,
+                isColumnGrid: true
+            });
+            canvas.add(bande);
+            try { canvas.bringToFront(bande); } catch (_) {}
+        }
+    }
+
     function applyGridToCanvas(canvas, settings) {
         if (!canvas) return;
         clearGridGuides(canvas);
-        if (!gridVisible) {
-            canvas.requestRenderAll();
-            return;
-        }
 
         const bleedPx = mmToPx(bleed);
         const marginPx = mmToPx(margin);
@@ -37109,6 +37203,36 @@ window.spTestDiag = function () {
         const isSpread = canvas.bleedInfo && canvas.bleedInfo.isSpread;
         // 🎯 Pleine page : la grille couvre tout le format (sans tenir compte des marges)
         const insetPx = settings.fullPage ? 0 : marginPx;
+
+        /* _SP_GRID_506_DEBUT — LES COLONNES ROUGES SONT DESSINÉES AVANT LE GARDE-FOU « grille bleue
+           éteinte » : c'est un repère indépendant, utile même sans la grille de mise en
+           page. Le repli « pleine page » réutilise le fond perdu RÉEL du canvas (comme la
+           grille bleue) pour éviter tout décalage d'une largeur de fond perdu. */
+        (function dessinerColonnes() {
+            const insetCol = settings.colonnesMarges ? marginPx : 0;
+            if (isSpread) {
+                buildColumnGridForArea(canvas, {
+                    x: bleedPx + insetCol, y: bleedPx + insetCol,
+                    width: pageWidthPx - 2 * insetCol, height: pageHeightPx - 2 * insetCol
+                }, settings);
+                buildColumnGridForArea(canvas, {
+                    x: bleedPx + pageWidthPx + insetCol, y: bleedPx + insetCol,
+                    width: pageWidthPx - 2 * insetCol, height: pageHeightPx - 2 * insetCol
+                }, settings);
+            } else {
+                const bL = (canvas.bleedInfo && typeof canvas.bleedInfo.left === 'number') ? canvas.bleedInfo.left : bleedPx;
+                const bT = (canvas.bleedInfo && typeof canvas.bleedInfo.top  === 'number') ? canvas.bleedInfo.top  : bleedPx;
+                buildColumnGridForArea(canvas, {
+                    x: bL + insetCol, y: bT + insetCol,
+                    width: pageWidthPx - 2 * insetCol, height: pageHeightPx - 2 * insetCol
+                }, settings);
+            }
+        })();
+
+        if (!gridVisible) {
+            canvas.requestRenderAll();
+            return;
+        }
 
         if (isSpread) {
             const leftArea = {
@@ -37182,6 +37306,23 @@ window.spTestDiag = function () {
     }
 
     window.rebuildGridAll = rebuildGridAll;
+
+    /* ═══ _SP_GRID_506D_DEBUT — REDESSIN GROUPÉ DE LA GRILLE ═══
+       Appelé à chaque canvas de page créé : plusieurs créations d'affilée (double page,
+       restauration de session) ne déclenchent qu'UN SEUL redessin. */
+    let _spGrilleTimer = null;
+    function spPlanifierGrille() {
+        if (_spGrilleTimer) clearTimeout(_spGrilleTimer);
+        _spGrilleTimer = setTimeout(function () {
+            _spGrilleTimer = null;
+            try {
+                if ((window._spGridVisible || window._spColonnesActives) && typeof window.rebuildGridAll === 'function') {
+                    window.rebuildGridAll();
+                }
+            } catch (_) {}
+        }, 140);
+    }
+    window.spPlanifierGrille = spPlanifierGrille;
     window._spGridVisible = gridVisible;
 
     document.getElementById('toggleRulers').addEventListener('click', function() {
@@ -37194,33 +37335,15 @@ window.spTestDiag = function () {
         });
     });
 
+    /* ═══ _SP_GRID_506B_DEBUT — « GRILLE & REPÈRES » OUVRE UN WIDGET (bascule dans setupRulersDropdown) ═══
+       ⚠️ NE PAS basculer l'ouverture ici : deux écouteurs sur le MÊME bouton s'annulaient
+       (mesuré : le widget s'ouvrait puis se refermait dans le même clic). Ce gestionnaire ne
+       fait plus que resynchroniser la case « Afficher la grille » avant l'ouverture. */
     if (toggleGridBtn) {
         toggleGridBtn.addEventListener('click', function() {
-            if (gridVisibleToggle) {
-                gridVisibleToggle.checked = gridVisible;
-            }
-            const gridMenu = document.getElementById('gridMenu');
-            if (gridMenu) {
-                // Utiliser le mode pop-in si sidebar ouverte
-                const sidebar = document.getElementById('leftSidebar');
-                const sidebarOpen = sidebar && !sidebar.classList.contains('collapsed');
-                if (sidebarOpen) {
-                    gridMenu.classList.add('open', 'popin-mode');
-                    let overlay = document.getElementById('gridPopinOverlay');
-                    if (!overlay) {
-                        overlay = document.createElement('div');
-                        overlay.id = 'gridPopinOverlay';
-                        overlay.className = 'grid-popin-overlay';
-                        document.body.appendChild(overlay);
-                        overlay.addEventListener('click', () => {
-                            if (window._closeGridPopin) window._closeGridPopin();
-                        });
-                    }
-                    overlay.classList.add('active');
-                } else {
-                    gridMenu.classList.add('open');
-                }
-            }
+            if (gridVisibleToggle) gridVisibleToggle.checked = gridVisible;
+            const ov = document.getElementById('gridPopinOverlay');
+            if (ov) ov.classList.remove('active');
         });
     }
 
@@ -37263,6 +37386,78 @@ window.spTestDiag = function () {
             saveState('Grille générée');
         });
     }
+
+    /* ═══ _SP_GRID_506_DEBUT — COMMANDES DE LA GRILLE DE COLONNES ROUGES ═══
+       Un clic sur 6 / 12 / 24 / 32 pose le repère tout de suite (pas d'étape « Appliquer ») ;
+       « Aucune » le masque. L'opacité et le choix marges / pleine page sont appliqués en
+       direct. Les boutons portent un id : dans le WIDGET (copie du panneau), le pont
+       d'événements du système de widgets renvoie le clic sur le bouton d'origine — les
+       commandes fonctionnent donc aussi depuis le widget posé sur la planche. */
+    function majBoutonsColonnes() {
+        Array.prototype.forEach.call(document.querySelectorAll('.col-grid-btn'), function (b) {
+            const v = parseInt(b.getAttribute('data-cols') || '0', 10);
+            const actif = (v === colGridCols);
+            b.classList.toggle('active', actif);
+            b.style.background = actif ? '#e02f2f' : '';
+            b.style.color = actif ? '#ffffff' : '';
+            b.style.borderColor = actif ? '#c02121' : '';
+        });
+    }
+
+    function enregistrerColonnes() {
+        try {
+            localStorage.setItem('sp_col_grid', JSON.stringify({
+                cols: colGridCols, opacity: colGridOpacity, margins: colGridInMargins
+            }));
+        } catch (_) {}
+        window._spColonnesActives = (colGridCols > 0);
+    }
+
+    function poserColonnes(nb) {
+        colGridCols = (nb > 0) ? nb : 0;
+        enregistrerColonnes();
+        majBoutonsColonnes();
+        rebuildGridAll();
+        saveState(colGridCols > 0
+            ? ('Grille de ' + colGridCols + ' colonnes (repères rouges)')
+            : 'Repères de colonnes masqués');
+    }
+    window.spPoserColonnes = poserColonnes;
+
+    Array.prototype.forEach.call(document.querySelectorAll('.col-grid-btn'), function (b) {
+        b.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            poserColonnes(parseInt(b.getAttribute('data-cols') || '0', 10));
+        });
+    });
+
+    const colGridOpacityInput = document.getElementById('colGridOpacity');
+    const colGridMarginsInput = document.getElementById('colGridMargins');
+    if (colGridOpacityInput) {
+        /* _SP_GRID_506C_DEBUT — L'ÉTAT VA VERS LE CHAMP, JAMAIS L'INVERSE.
+           MESURE : opacité réglée à 30 %, rechargement → champ à 12 et stockage réécrit à 12.
+           Lire la valeur du champ ici (12, celle du HTML) écrasait l'opacité mémorisée. */
+        colGridOpacityInput.value = String(colGridOpacity);
+        colGridOpacityInput.addEventListener('input', function () {
+            const v = parseInt(colGridOpacityInput.value || '12', 10);
+            colGridOpacity = Math.max(4, Math.min(40, isFinite(v) ? v : 12));
+            enregistrerColonnes();
+            if (colGridCols > 0) rebuildGridAll();
+        });
+    }
+    if (colGridMarginsInput) {
+        colGridMarginsInput.checked = !!colGridInMargins;
+        colGridMarginsInput.addEventListener('change', function () {
+            colGridInMargins = !!colGridMarginsInput.checked;
+            enregistrerColonnes();
+            if (colGridCols > 0) rebuildGridAll();
+        });
+    }
+    majBoutonsColonnes();
+    enregistrerColonnes();
+    /* Une grille de colonnes mémorisée se redessine dès que les planches existent. */
+    setTimeout(function () { try { if (colGridCols > 0 || gridVisible) rebuildGridAll(); } catch (_) {} }, 1800);
 
     // ── Créer des repères ── reprend les options de la grille (cols/rows/gouttières/pleine page/couleur)
     // mais SANS la ligne de base. Génère des repères persistants (isManualGuide:true) qui survivent
@@ -58584,6 +58779,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         baselineStep: "Pas (mm)",
         baselineOffset: "Décalage (mm)",
         gridApply: "Appliquer",
+    colGridTitle: "Colonnes (repères rouges)",
+    colGridNone: "Aucune",
+    colGridOpacity: "Opacité (%)",
+    colGridMargins: "Dans les marges",
         displaySection: "Affichage",
         hideGuides: "Masquer les repères",
         hideBleed: "Masquer les fonds perdus",
@@ -59452,6 +59651,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         baselineStep: "Step (in)",
         baselineOffset: "Offset (in)",
         gridApply: "Apply",
+    colGridTitle: "Columns (red guides)",
+    colGridNone: "None",
+    colGridOpacity: "Opacity (%)",
+    colGridMargins: "Inside margins",
         displaySection: "Display",
         hideGuides: "Hide guides",
         hideBleed: "Hide bleed area",
@@ -60322,6 +60525,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         baselineStep: "ステップ (mm)",
         baselineOffset: "オフセット (mm)",
         gridApply: "適用",
+    colGridTitle: "段組み（赤いガイド）",
+    colGridNone: "なし",
+    colGridOpacity: "不透明度 (%)",
+    colGridMargins: "マージン内",
         displaySection: "表示",
         hideGuides: "ガイドを非表示",
         hideBleed: "裁ち落としを非表示",

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.505 — tabulation mode follows QuarkXPress: ruler on while typing, click to place a stop, drag below to remove it.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.506 — Grid & guides becomes a widget, plus translucent red column grids (6, 12, 24, 32) on every page.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.505 — tabulation mode follows QuarkXPress: ruler on while typing, click to place a stop, drag below to remove it.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.506 — Grid & guides becomes a widget, plus translucent red column grids (6, 12, 24, 32) on every page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,36 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.506 — Grille & repères en widget, et grille de colonnes rouges ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-506">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.506</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 20 septembre 2026" data-i18n-en="Released September 20, 2026" data-i18n-jp="2026年9月20日公開">Released September 20, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="<strong>Grille & repères</strong> se comporte comme nos autres widgets : un clic l'amène dans la zone de travail, un second le referme. Et il apporte la <strong>grille de colonnes rouges translucides</strong> des maquettes web : 6, 12, 24 ou 32 colonnes." data-i18n-en-html="<strong>Grid &amp; guides</strong> now behaves like our other widgets: one click brings it into the work area, a second one closes it. And it brings the <strong>translucent red column grid</strong> of web mock-ups: 6, 12, 24 or 32 columns." data-i18n-jp-html="<strong>グリッド &amp; ガイド</strong>が他のウィジェットと同じ動作になりました。クリックで作業領域に表示され、もう一度クリックで閉じます。さらに<strong>半透明の赤い段組みガイド</strong>（6・12・24・32）を搭載しました。">Grid &amp; guides now behaves like our other widgets, and brings the translucent red column grid: 6, 12, 24 or 32 columns.</p>
+
+ <h3 data-i18n-fr-html="🧰 Un widget, plus un menu <span class=&quot;badge badge-new&quot;>ergonomie</span>" data-i18n-en-html="🧰 A widget, not a menu <span class=&quot;badge badge-new&quot;>ergonomics</span>" data-i18n-jp-html="🧰 メニューからウィジェットへ <span class=&quot;badge badge-new&quot;>操作性</span>">🧰 A widget, not a menu <span class="badge badge-new">ergonomics</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Le panneau vit dans la zone de travail.</strong> Mesuré : barre latérale repliée, ses champs ne recevaient aucune valeur ; barre ouverte, la palette se centrait PAR-DESSUS la planche et une surcouche plein écran avalait les clics. Il s'ouvre maintenant comme Styles, Pathfinder, Nuancier ou Filtres — déplaçable par son en-tête, repliable d'un clic, refermé par sa croix — et le document reste cliquable." data-i18n-en-html="<strong>The panel now lives in the work area.</strong> Measured: with the sidebar collapsed its fields took no value at all; with the sidebar open the palette centred itself ON TOP of the pasteboard and a full-screen overlay swallowed every click. It now opens like Styles, Pathfinder, Swatches or Filters — draggable by its header, collapsible with one click, closed by its cross — and the document stays clickable." data-i18n-jp-html="<strong>パネルは作業領域に表示されます。</strong>計測：サイドバーを閉じた状態では入力できず、開いた状態ではパレットが作業台の上に重なり、全画面オーバーレイがクリックを遮っていました。現在は Styles / Pathfinder / スウォッチ / フィルタと同じウィジェットとして動作し、ヘッダーで移動、クリックで折りたたみ、×で閉じられます。"><strong>The panel now lives in the work area:</strong> draggable by its header, collapsible with one click, closed by its cross, with the document staying clickable.</li>
+  <li data-i18n-fr-html="<strong>Un clic ouvre, un clic referme.</strong> Le bouton « Grille & repères » de la barre de gauche bascule le widget : plus besoin de laisser traîner un panneau ouvert." data-i18n-en-html="<strong>One click opens, one click closes.</strong> The “Grid &amp; guides” button in the left bar toggles the widget: no need to leave a panel open." data-i18n-jp-html="<strong>クリックで開き、クリックで閉じます。</strong>左バーの「グリッド &amp; ガイド」ボタンがウィジェットを切り替えます。"><strong>One click opens, one click closes</strong> from the left bar button.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🔴 Grille de colonnes rouges <span class=&quot;badge badge-new&quot;>nouveau</span>" data-i18n-en-html="🔴 Red column grid <span class=&quot;badge badge-new&quot;>new</span>" data-i18n-jp-html="🔴 赤い段組みガイド <span class=&quot;badge badge-new&quot;>新規</span>">🔴 Red column grid <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Quatre grilles en un clic :</strong> 6, 12, 24 ou 32 colonnes (bouton « Aucune » pour masquer). Les bandes rouges translucides se posent sur chaque page, avec la gouttière réglée au-dessus, dans les marges de page ou sur toute la page au choix." data-i18n-en-html="<strong>Four grids in one click:</strong> 6, 12, 24 or 32 columns (the “None” button hides them). The translucent red bands are laid on every page, using the gutter set above, inside the page margins or across the whole page as you prefer." data-i18n-jp-html="<strong>ワンクリックで4種類：</strong>6・12・24・32 段（「なし」で非表示）。半透明の赤い帯が各ページに描かれ、上の「溝」設定を使い、余白内かページ全体かを選べます。"><strong>Four grids in one click:</strong> 6, 12, 24 or 32 columns, using the gutter above, inside the margins or across the whole page.</li>
+  <li data-i18n-fr-html="<strong>Opacité réglable</strong> (4 à 40 %, 12 % par défaut) : assez visible pour caler une mise en page, assez discrète pour lire le texte en dessous." data-i18n-en-html="<strong>Adjustable opacity</strong> (4 to 40%, 12% by default): visible enough to align a layout, light enough to read the text underneath." data-i18n-jp-html="<strong>不透明度を調整可能</strong>（4～40％、既定 12％）。レイアウトを合わせるのに十分見え、下の文字も読めます。"><strong>Adjustable opacity</strong> (4–40%, 12% by default).</li>
+  <li data-i18n-fr-html="<strong>Jamais imprimées ni exportées :</strong> les bandes sont des repères d'écran (exclues de l'export, comme les repères de la grille bleue). Elles suivent les pages — ajout, suppression, changement de page, rechargement — et le choix est mémorisé." data-i18n-en-html="<strong>Never printed nor exported:</strong> the bands are screen guides (excluded from export, like the existing blue grid guides). They follow the pages — added, deleted, switched, reloaded — and your choice is remembered." data-i18n-jp-html="<strong>印刷・書き出しには入りません：</strong>画面上のガイドです（既存の青いグリッド同様、書き出しから除外）。ページの追加・削除・切り替え・再読み込みに追従し、設定は記憶されます。"><strong>Never printed nor exported</strong> (screen guides only), they follow the pages and the choice is remembered.</li>
+  <li data-i18n-fr-html="<strong>Et la grille bleue reste entière :</strong> lignes, gouttières, ligne de base, couleur, « Créer des repères » — rien n'a bougé, et les deux grilles cohabitent." data-i18n-en-html="<strong>And the blue grid is untouched:</strong> rows, gutters, baseline grid, colour, “Create guides” — nothing moved, and the two grids coexist." data-i18n-jp-html="<strong>青いグリッドはそのまま：</strong>行・溝・ベースライン・色・「ガイドを作成」は変更なし。2つのグリッドは同時に使えます。"><strong>And the blue grid is untouched:</strong> both grids coexist.</li>
+ </ul>
+
+ <p data-i18n-fr="SuperPrint 1.7.506 — contrôles (origines neuves, mesures) : widget ouvert dans #canvasScrollArea (80 → 280 px avec barre repliée, 304 → 504 px avec barre ouverte, empiètement sur les barres 0 px) ; le point sous la souris sur un champ du widget est bien ce champ ; clic sur « 12 » → 12 bandes rgba(255,0,0,0.120), largeur 27,2 px, hauteur 728,5 px, dans les marges ; opacité 30 % → rgba(255,0,0,0.300) ; « pleine page » → départ à 8,5 px et hauteur 841,9 px ; coexistence avec la grille bleue (10 lignes) ; page ajoutée → 6 bandes ; rechargement → 12 bandes, champ 25 %, marges décochées, choix mémorisé ; glisser hors zone → borné à 288 px ; croix du widget → fermé ; parité site ↔ copie locale 22/22 ; paquet local reconstruit." data-i18n-en="SuperPrint 1.7.506 — checks (fresh origins, measurements): widget opened inside #canvasScrollArea (80 → 280 px with the sidebar collapsed, 304 → 504 px with it open, zero overlap with the bars); the point under the pointer on a widget field is that field; clicking “12” gives 12 bands rgba(255,0,0,0.120), 27.2 px wide, 728.5 px tall, inside the margins; opacity 30% gives rgba(255,0,0,0.300); “full page” starts at 8.5 px with a 841.9 px height; coexistence with the blue grid (10 lines); a new page gets 6 bands; reload restores 12 bands, the field at 25%, margins unchecked and the saved choice; dragging outside the area is clamped to 288 px; the widget cross closes it; web ↔ local copy parity 22/22; local package rebuilt." data-i18n-jp="SuperPrint 1.7.506 — 検証（新しいオリジン、計測）：ウィジェットは #canvasScrollArea 内に表示（サイドバー閉時 80→280px、開時 304→504px、バーとの重なり 0px）。ウィジェット内のフィールド上のポイントはそのフィールド自身。「12」クリックで 12本の帯 rgba(255,0,0,0.120)、幅 27.2px、高さ 728.5px、余白内。不透明度 30％→ rgba(255,0,0,0.300)。「ページ全体」→ 開始 8.5px、高さ 841.9px。青いグリッド（10本）と共存。ページ追加で 6本。再読み込みで 12本・フィールド 25％・余白チェック解除・設定保持。範囲外ドラッグは 288px に制限。×で閉じる。サイトとローカルコピーの一致 22/22、パッケージ再生成済み。">SuperPrint 1.7.506 — checks: widget inside the work area with no bar overlap, 12 red bands of 27.2 px inside the margins, opacity and full-page options applied, coexistence with the blue grid, a new page gets the bands, reload restores everything, dragging is clamped, the cross closes it, parity 22/22, package rebuilt.</p>
+ <a class="release-cta" href="https://superprint.cc/" data-i18n-fr="→ Voir la page" data-i18n-en="→ See the page" data-i18n-jp="→ ページを見る">→ See the page</a>
+</article>
+
+<hr class="release-separator" data-app="superprint">
 
 <!-- ===== SUPER PRINT v1.7.505 — le mode tabulation devient naturel (règle à la QuarkXPress) ===== -->
 

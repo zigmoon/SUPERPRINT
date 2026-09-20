@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.505 — Zigmoon
+         SuperPrint 1.7.506 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.505 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.506 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.505",
+          "softwareVersion": "1.7.506",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -630,7 +630,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20260920-v505-tabulation-ergonomie">
+    <link rel="stylesheet" href="CSS/main.css?v=20260920-v506-widget-grille-colonnes">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -1059,7 +1059,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.505</div>
+                <div class="splash-version">1.7.506</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1161,7 +1161,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.505</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.506</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1257,7 +1257,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.505 | 09 2026<br>
+                V 1.7.506 | 09 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1437,8 +1437,8 @@
                         </div>
                         <div class="tool-dropdown-menu grid-menu" id="gridMenu">
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 6px;">
-                                <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; opacity: 0.7;">Grille & repères</div>
-                                <span id="closeGridMenuX" onclick="if(window._closeGridPopin) window._closeGridPopin(); else { document.getElementById('gridMenu').classList.remove('open'); } event.stopPropagation();" style="cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; padding: 4px 8px; opacity: 0.6; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">×</span>
+                                <div data-dock-title="" style="font-size: 10px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; opacity: 0.7;">Grille & repères</div>
+                                <span id="closeGridMenuX" data-dock-ignore="" onclick="if(window._closeGridPopin) window._closeGridPopin(); else { document.getElementById('gridMenu').classList.remove('open'); } event.stopPropagation();" style="cursor: pointer; font-size: 18px; font-weight: bold; line-height: 1; padding: 4px 8px; opacity: 0.6; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">×</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 6px; padding: 0 6px 4px 6px;">
                                 <input type="checkbox" id="gridVisibleToggle" style="width: 12px; height: 12px;">
@@ -1489,6 +1489,28 @@
                                         <input type="number" id="baselineOffset" value="0" step="0.5" style="height: 22px; font-size: 10px;">
                                     </div>
                                 </div>
+                            </div>
+<!-- _SP_GRID_506_DEBUT — GRILLE DE COLONNES ROUGES TRANSLUCIDES (6 · 12 · 24 · 32) -->
+                            <div style="padding: 4px 6px; border-top: 1px dashed #e5e5e5;">
+                                <div style="font-size: 9px; font-weight: 600; letter-spacing: 0.5px; opacity: 0.65; margin: 4px 0 6px 0;" data-translate="colGridTitle">Colonnes (repères rouges)</div>
+                                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;">
+                                    <button class="btn btn-secondary col-grid-btn" id="colGridNone" data-cols="0" title="Masquer les repères de colonnes" style="font-size: 10px; padding: 3px 2px;" data-translate="colGridNone">Aucune</button>
+                                    <button class="btn btn-secondary col-grid-btn" id="colGrid6" data-cols="6" title="6 colonnes" style="font-size: 10px; padding: 3px 2px;">6</button>
+                                    <button class="btn btn-secondary col-grid-btn" id="colGrid12" data-cols="12" title="12 colonnes" style="font-size: 10px; padding: 3px 2px;">12</button>
+                                    <button class="btn btn-secondary col-grid-btn" id="colGrid24" data-cols="24" title="24 colonnes" style="font-size: 10px; padding: 3px 2px;">24</button>
+                                    <button class="btn btn-secondary col-grid-btn" id="colGrid32" data-cols="32" title="32 colonnes" style="font-size: 10px; padding: 3px 2px;">32</button>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; align-items: end;">
+                                    <div class="input-group" style="margin: 0;">
+                                        <label style="font-size: 8px;" data-translate="colGridOpacity">Opacité (%)</label>
+                                        <input type="number" id="colGridOpacity" value="12" min="4" max="40" step="1" style="height: 22px; font-size: 10px;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px; padding-bottom: 3px;">
+                                        <input type="checkbox" id="colGridMargins" checked style="width: 12px; height: 12px;">
+                                        <label for="colGridMargins" style="font-size: 10px;" data-translate="colGridMargins">Dans les marges</label>
+                                    </div>
+                                </div>
+                                <div class="hint" style="padding: 4px 0 0 0; font-size: 9px;">Repères rouges transparents : 6, 12, 24 ou 32 colonnes (gouttière = « Gouttière » ci-dessus). Jamais imprimés ni exportés.</div>
                             </div>
                             <div style="display: flex; gap: 6px; padding: 6px;">
                                 <button class="btn btn-secondary" id="generateGrid" style="flex: 1; font-size: 10px;">Appliquer</button>
@@ -1904,12 +1926,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.505). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.506). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.505 — internal cache tag: JS v505 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.506 — internal cache tag: JS v506 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v505"
-                      data-sp-sw="v1.7.505">v1.7.505</span>
+                      data-sp-js="v506"
+                      data-sp-sw="v1.7.506">v1.7.506</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -6124,7 +6146,7 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260920-v505-tabulation-ergonomie" defer></script>
+    <script src="JS/main.js?v=20260920-v506-widget-grille-colonnes" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
     <script src="JS/virtual-printer.js?v=20260912-v417-clavier-studio" defer></script>
     <script src="JS/collab.js?v=20260907-v016-ux" defer></script>

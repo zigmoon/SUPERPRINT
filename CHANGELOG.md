@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,34 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.506] — 2026-09-20
+
+_Grid & guides becomes a widget, and the red column grid arrives (6 · 12 · 24 · 32)_
+
+### Fixed
+- **The Grid & guides panel was unusable in one of the two sidebar states.** Measured with the sidebar collapsed: the panel opened as a dropdown stuck to the rail and its fields took no value at all; with the sidebar open it switched to a centred pop-in (behind an overlay with z-index 9998) right on top of the pasteboard, so every click was swallowed — the same family of defect as the tabulation palette fixed in 1.7.505.
+- **Two click listeners cancelled each other** on the “Grid & guides” button: the first opened the widget, the second closed it in the same click (measured: nothing appeared). The toggle now lives in a single handler and asks the widget system whether it is already open.
+- **The remembered opacity was overwritten at start-up.** Measured: 30% stored, reload gave 12% and rewrote 12% to storage — the initialisation read the input value instead of pushing the saved state into it.
+
+### Added
+- **Grid & guides is now a docked widget** (`window.spDockWidgets`, one click opens, a second closes, cross closes too), living in `#canvasScrollArea` like Styles / Pathfinder / Swatches / Filters. The dock system accepts a `[data-dock-title]` title and ignores `[data-dock-ignore]` elements (the panel cross), and exposes `estOuvert()`.
+- **Translucent red column grids (6 · 12 · 24 · 32).** Five buttons (None · 6 · 12 · 24 · 32) place the guide immediately, with an opacity field (4–40%, default 12%) and an “inside margins / whole page” choice. The bands reuse the gutter field, are never selectable and carry `excludeFromExport` (never printed nor exported, like the blue grid guides). State is stored in `localStorage` (`sp_col_grid`) and restored on load.
+- The column grid is independent from the blue grid (`window._spColonnesActives`): it can be shown without enabling the layout grid, and both coexist. Page creation hooks (`createPageCanvas`, `createSpreadCanvas`, `_spRenderReady`) re-plan a grouped redraw (`window.spPlanifierGrille`) so the bands follow added pages and double-page spreads.
+
+### Verified
+| Check | Result |
+|---|---|
+| Widget geometry, sidebar collapsed / open | inside `#canvasScrollArea`, 0 px overlap with the bars (80→280 / 304→504) |
+| Point under the pointer on a widget field | the field itself (bridge routes to the original) |
+| 12 columns inside margins | 12 bands `rgba(255,0,0,0.120)`, 27.2 px wide, 728.5 px tall, starting at 65.2 px |
+| Opacity 30% / full page | `rgba(255,0,0,0.300)` / start 8.5 px, height 841.9 px |
+| With the blue grid on | 24 red bands + 10 blue lines, no interference |
+| New page / reload | bands present on the new page; 12 bands restored with the saved opacity |
+| Drag outside the work area | clamped to 288 px, position remembered |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v506"`, cache tag `20260920-v506-widget-grille-colonnes`, `CACHE_NAME` bumped |
+
 
 ## [1.7.505] — 2026-09-20
 
