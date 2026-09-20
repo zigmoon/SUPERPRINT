@@ -6349,6 +6349,55 @@ window.spTestDiag = function () {
         }
         return origBox.call(this, grapheme, lineIndex, charIndex, prevChar, skipLeft);
     };
+
+    /* ═══════════ _SP_TAB_508_DEBUT — LA TABULATION DÉCALÉ LE TEXTE À L'ÉCRAN ═══════════
+       DÉFAUT MESURÉ (pixels comptés, bloc « A ⇥ B » avec un taquet à 150 px) : le modèle est
+       juste (__charBounds : case du \t de 15,2 à 150, B à 150) donc le curseur, la règle, les
+       exports PDF et la vectorisation placent bien le B à 150 — mais l'ENCRE à l'écran était à
+       [24..35] : le B restait collé à A. Retour utilisateur mot pour mot : « seulement le
+       curseur se décale au taquet suivant sans les caractères ».
+       CAUSE : Fabric dessine une ligne SANS style par caractère et SANS charSpacing en UN SEUL
+       fillText (raccourci « isFullLine » de _renderChars, qui passe la ligne entière à _renderChar). Le \t
+       y est rendu par le navigateur comme un espace : l'avance du taquet n'est JAMAIS utilisée
+       à l'écran. C'était le seul chemin de dessin hors du moteur d'avance.
+       CORRECTIF : ligne à tabulation sur un bloc à taquets actifs ⇒ on dessine CARACTÈRE PAR
+       CARACTÈRE à la position de __charBounds, source unique partagée avec le curseur, la
+       sélection, la règle et les exports. Le \t n'a pas de glyphe : sa seule action est de
+       décaler ce qui suit, ce que font les positions mesurées.
+       REPÈRE : « left » reçu par _renderChars contient déjà leftOffset + lineLeftOffset, et
+       __charBounds[i].left est mesuré depuis l'origine de la LIGNE (même convention que
+       _spDrawInvisibleMarkers) — les deux s'additionnent donc correctement. */
+    (function _spPatchRenduTab() {
+        var proto = fabric.Text.prototype;
+        if (proto.__spTabRenduPatch) return;
+        var precedent = proto._renderChars;
+        if (typeof precedent !== 'function') return;
+        proto._renderChars = function (method, ctx, line, left, top, lineIndex) {
+            try {
+                if (line && line.length > 1 && this._spTabs && this._spTabs.active &&
+                    typeof line.indexOf === 'function' && line.indexOf('\t') !== -1) {
+                    var cb = this.__charBounds && this.__charBounds[lineIndex];
+                    if (cb && cb.length >= line.length) {
+                        var hL = (typeof this.getHeightOfLine === 'function') ? this.getHeightOfLine(lineIndex) : 0;
+                        var lh = this.lineHeight || 1;
+                        var frac = (typeof this._fontSizeFraction === 'number') ? this._fontSizeFraction : 0.222;
+                        var y = top - (hL * frac) / lh;
+                        for (var i = 0; i < line.length; i++) {
+                            var ch = line[i];
+                            if (ch === '\t') continue;          /* aucun glyphe : il ne fait que décaler */
+                            var b = cb[i];
+                            if (!b) continue;
+                            this._renderChar(method, ctx, lineIndex, i, ch, left + b.left, y);
+                        }
+                        return;
+                    }
+                }
+            } catch (_) {}
+            return precedent.apply(this, arguments);
+        };
+        proto.__spTabRenduPatch = true;
+    })();
+
     window._spTabBoxPatched = true;
 
     function blocsTexte() {
@@ -7328,6 +7377,24 @@ window.spTestDiag = function () {
                     Array.prototype.forEach.call(r.querySelectorAll('.hint'), function (h) { h.style.display = 'block'; });
                 });
             } catch (_) {}
+            /* _SP_TAB_508_DEBUT — PAS DE CROIX DANS LE WIDGET DES TAQUETS.
+               Demande utilisateur : « dans le widget taquet de tabulation pas de croix de
+               fermeture, l'utilisateur devra re-cliquer sur le bouton d'origine pour fermer ».
+               On retire donc, DANS LA COPIE SEULEMENT, la barre de titre interne du panneau —
+               celle qui portait la croix (et dont le titre faisait doublon avec l'en-tête du
+               widget). L'ORIGINAL, source des prochaines copies, reste intact : la croix
+               revient si le panneau est de nouveau ouvert hors widget. Fermeture : second clic
+               sur « Tabulation » (bouton d'origine) ou Échap. */
+            try {
+                var _couche508 = document.getElementById('spWidgetLayer');
+                if (_couche508) {
+                    Array.prototype.forEach.call(_couche508.querySelectorAll('.sp-dock-host[data-dock="' + DOCK_NOM + '"]'), function (h) {
+                        var _croix508 = h.querySelector('[data-sp-ref="closeTabsMenuX"]');
+                        var _ligne508 = _croix508 && _croix508.parentNode;
+                        if (_ligne508 && _ligne508.parentNode) _ligne508.parentNode.removeChild(_ligne508);
+                    });
+                }
+            } catch (_) {}
             filSelection();
             cabler();
             majChampNouveauTaquet();
@@ -7888,6 +7955,9 @@ window.spTestDiag = function () {
         /* _SP_TAB_507_DEBUT — le panneau des taquets a besoin de la même largeur : à 200 px, ses lignes
            (position + type + croix) étaient écrasées une fois détachées. */
         if (nom === 'tabsMenu') host.classList.add('sp-dock-large');
+        /* _SP_TAB_508_DEBUT — « Grille & repères » respire : à 200 px, 57 px de contenu
+           étaient coupés à droite (mesuré : corps clientWidth 199 / scrollWidth 256). */
+        if (nom === 'gridMenu') host.classList.add('sp-dock-wide');
         var clone = copier(sec);
         /* En-tête identique aux widgets existants : point, titre en capitales,
            petit triangle à droite pour le soufflet. Le titre du clone est masqué :

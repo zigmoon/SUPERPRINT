@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,36 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.508] — 2026-09-20
+
+_The letters follow the caret to the tab stop, and two widget adjustments_
+
+### Fixed
+- **The text did not follow the caret to the tab stop on screen.** Measured, pixel by pixel, on a block “A ⇥ B” with a 150 px stop: the MODEL was right (`__charBounds` put the tab box from 15.2 to 150 and B at 150) — so the caret moved to the stop, the ruler marked the stop in the right place, and the PDF exports and the vectoriser put B at 150. Only the SCREEN differed: B was drawn at [24..35], glued to A. Cause: for a line with no character-level styling and no letter spacing, Fabric draws the whole line in one `fillText` (the `isFullLine` shortcut of `_renderChars`), and a tab inside a string is rendered by the browser as a plain space — the advance computed for the stop was never used. It was the only drawing path left outside the advance engine.
+- **Fix:** `fabric.Text.prototype._renderChars` is now bypassed for a line containing a tabulation on a block with active tab stops: the line is drawn character by character at `__charBounds` positions — the same source of truth as the caret, the selection, the ruler and the exports. After the fix the ink of B measures [153..164].
+- **“Grid &amp; guides” was cramped: 57 px of content were cut off.** Measured at the historical widget width (200 px): the widget body had `clientWidth` 199 for a `scrollWidth` of 256, so the right-hand labels and fields were simply not visible (the panel is wide by nature: five column buttons on one row and two pairs of side-by-side fields). It now gets the `sp-dock-wide` class — 400 px, bounds 320/480 — and `scrollWidth` equals `clientWidth`.
+
+### Changed
+- **No close cross in the tab-stops widget.** As requested, the widget is closed with the original “Tabulation” button (second click) or with Escape. The panel inner title bar — which carried the cross and repeated the title — is removed from the WIDGET ONLY (the original panel, source of the next copies, is untouched).
+- The panel help line is updated accordingly (it no longer mentions the cross).
+
+### Verified
+| Check | Result |
+|---|---|
+| Block “A ⇥ B”, 150 px stop, ink of B on screen | [153..164] — was [24..35] before the fix |
+| Real mouse click in a word + real Tab key | “Bonjour le monde” → “Bonjo ⇥ ur le monde”, caret after the tab, ink of the rest from 203 px |
+| Caret at index 0 + Tab | whole text moves to the 200 px stop (model 0+200 / 200+16) |
+| Two successive tabulations, stops at 120 and 260 | second tab reaches 260 (model 65+55 / 120+140) |
+| Bold + letter spacing 120, stop 200 | ink after the tab starts at 202 px |
+| Two-line block, caret on line 2, stop 200 | tab honoured on line 2, line 1 untouched |
+| Centred block with a tight stop | the line offset is applied as Fabric does (known limit: the stop is measured from the line box, not from the frame) |
+| Native PDF export after the change | draws at 141.5 pt and 241.5 pt → Δ 100 pt, unchanged |
+| Grid &amp; guides widget body | clientWidth 399 / scrollWidth 399 (was 199 / 256), 10 controls hit-tested |
+| Tab-stops widget | no cross in the widget, cross kept in the original, list and buttons still driven, closed by the original button |
+| Parity web ↔ local copy | 22 identical |
+| Markers | `data-sp-js="v508"`, cache tag `20260920-v508-lettres-suivent-le-taquet`, `CACHE_NAME` bumped, `CSS/main.css` tag bumped |
+
 
 ## [1.7.507] — 2026-09-20
 

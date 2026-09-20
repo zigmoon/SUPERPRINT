@@ -2693,6 +2693,20 @@ textarea[data-fabric-hiddentextarea] {
     min-width: 260px;
     max-width: 360px;
 }
+/* _SP_TAB_508_DEBUT — LE WIDGET « GRILLE & REPÈRES » DOIT ÊTRE PLUS LARGE.
+   MESURE à la largeur historique des widgets (200 px) : le corps du widget affichait
+   clientWidth 199 pour un scrollWidth 256 — 57 px de contenu étaient donc COUPÉS à droite
+   (retour utilisateur : « il manque des infos à droite quand il est ouvert, on se sent trop à
+   l'étroit »). Le panneau est large par nature : cinq boutons de colonnes sur une ligne et deux
+   paires de champs côte à côte. À 400 px, scrollWidth = clientWidth = 399 : plus rien n'est
+   coupé et les cinq boutons disposent de ~74 px chacun. */
+.sp-dock-host.rightbar.sp-dock-wide {
+    width: 400px;
+    min-width: 320px;
+    max-width: 480px;
+}
+.sp-dock-host.sp-dock-wide .sp-dock-head { font-size: 12px; padding: 8px 12px; }
+.sp-dock-host.sp-dock-wide .sp-dock-body { padding: 0 12px 12px; }
 .sp-dock-host.sp-dock-large .sp-dock-head { font-size: 12px; padding: 8px 12px; }
 .sp-dock-host.sp-dock-large .sp-dock-body { padding: 0 12px 12px; }
 .sp-dock-host.sp-dock-large .sp-var-famille { font-size: 11px; }
