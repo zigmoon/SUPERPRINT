@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,15 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.520] — 2026-09-20
+
+_Text block backgrounds are exported — a title is no longer invisible in the crop-marks PDF_
+
+### Fixed
+- **A text block background was never written in the crop-marks PDF export, making white titles invisible.** The hybrid jsPDF engine (used as soon as crop marks or colour bars are requested) drew the glyphs only: `textBackgroundColor` (the band behind the lines) and `backgroundColor` (the block frame) were skipped, while the preview shows them and the native pdf-lib engine (“Finished format”, bleed without crop marks) keeps them because it rasterises those blocks. A **white** title on a dark band therefore came out **white on white** — nothing visible on the page. The engine now draws both surfaces where the preview draws them, with the same geometry as Fabric (`Text._renderTextLinesBackground`: one band per line, from the first to the last drawn character, height `fontSize × _fontSizeMult` at the top of the line box; frame background = `width × height`), as a filled quad so rotation, scale and origin follow the block.
+- **The last line of a text block could be dropped in the crop-marks export.** Line clipping used its own strict test (sum of full line heights versus frame + 0.5 px); Fabric's constant bottom-leading deficit means the last line never “fitted”, so it was lost. Measured: 3-line block, 48.77 px frame, 17.04 px line height → 2 lines written instead of 3. The path now calls the same shared helper as the native renderer (`window.spCountVisibleLines(obj, frameHeight, true)`). Measured on the editorial CV template: **910 → 968 characters** exported (native: 969 — the remaining character is the soft hyphen, deliberately kept out of the selectable text and still visible in the ink).
+- **No other change.** Control document (no block background, no clipped line): vector-operator counts identical (9 `Tj` / 1 image), byte-identical positions, sizes within 2 bytes; the two previously fixed cases (mixed per-character styles, variable fonts) still emit 59 and 17 text operators with a single raster image.
 
 ## [1.7.519] — 2026-09-20
 

@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.519-typo-vectorielle-reperes';
+const CACHE_NAME = 'superprint-shell-v1.7.520-fonds-de-bloc';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

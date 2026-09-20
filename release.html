@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.519 — vector typography is honoured again in the PDF export with crop marks.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.520 — text block backgrounds are exported again (a white title on a dark band is no longer invisible with crop marks).">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.519 — vector typography is honoured again in the PDF export with crop marks.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.520 — text block backgrounds are exported again (a white title on a dark band is no longer invisible with crop marks).">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,23 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.520 — Export PDF : les fonds de bloc de texte sont écrits (le titre n'est plus invisible) ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-520">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.520</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 20 septembre 2026" data-i18n-en="Released September 20, 2026" data-i18n-jp="2026年9月20日公開">Released September 20, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le titre d'une page pouvait être <strong>invisible</strong> dans le PDF avec traits de coupe : son bandeau de fond n'était pas écrit. C'est corrigé." data-i18n-en-html="A page title could be <strong>invisible</strong> in the PDF with crop marks: its background band was not written. Fixed." data-i18n-jp-html="トンボ付き PDF でタイトルが<strong>見えない</strong>ことがありました（背景帯が出力されていませんでした）。修正しました。">A page title could be invisible in the PDF with crop marks: its background band was not written. Fixed.</p>
+
+ <h3 data-i18n-fr-html="🖍️ Fonds de bloc de texte exportés <span class=&quot;badge badge-new&quot;>corrigé</span>" data-i18n-en-html="🖍️ Text block backgrounds are exported <span class=&quot;badge badge-new&quot;>fixed</span>" data-i18n-jp-html="🖍️ テキストブロックの背景を出力 <span class=&quot;badge badge-new&quot;>修正</span>">🖍️ Text block backgrounds are exported <span class="badge badge-new">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Mesure du défaut : un titre <strong>blanc</strong> posé sur un bandeau sombre ressortait <strong>blanc sur blanc</strong> — donc invisible — alors que le même fichier était correct en « Format fini » et en fonds perdus sans traits de coupe. Cause : dans le chemin « traits de coupe », le moteur n'écrivait que les lettres, jamais le fond du bloc. Il trace maintenant le bandeau des lignes (fond de ligne) et le fond du cadre, exactement là où l'aperçu les montre." data-i18n-en-html="Measurement of the defect: a <strong>white</strong> title sitting on a dark band came out <strong>white on white</strong> — invisible — while the same file was fine in “Finished format” and in bleed without crop marks. Cause: in the crop-marks path the engine wrote the letters only, never the block background. It now draws the line band and the frame background, exactly where the preview shows them." data-i18n-jp-html="不具合の計測：暗い帯の上の<strong>白い</strong>タイトルが<strong>白地に白</strong>となり見えませんでした（「仕上がりサイズ」やトンボなしの塗り足しでは正常）。原因はトンボ付き経路が文字だけを出力し、ブロックの背景を出力していなかったことです。現在はプレビューと同じ位置に行の帯と枠の背景を描画します。">A white title on a dark band came out white on white. The engine wrote the letters only; it now also draws the line band and the frame background.</li>
+  <li data-i18n-fr-html="Deuxième défaut corrigé au passage : la <strong>dernière ligne</strong> d'un bloctexte pouvait disparaître (bloc de 3 lignes : 2 écrites). La découpe des lignes utilise désormais la même règle que le « Format fini ». Mesure sur un modèle de CV : <strong>910 → 968 caractères</strong> exportés (le Format fini en écrit 969 ; la seule différence restante est le tiret de césure, volontairement absent du texte sélectionnable et bien présent à l'image)." data-i18n-en-html="Second defect fixed on the way: the <strong>last line</strong> of a text block could vanish (a 3-line block came out with 2). Line clipping now uses the same rule as “Finished format”. Measured on a CV template: <strong>910 → 968 characters</strong> exported (Finished format writes 969; the only remaining difference is the soft hyphen, deliberately kept out of the selectable text and still visible in the ink)." data-i18n-jp-html="もう 1 件：テキストブロックの<strong>最終行</strong>が消えることがありました（3 行のブロックで 2 行）。行の切り出しは「仕上がりサイズ」と同じ規則になりました。履歴書テンプレートでの計測：出力文字数は <strong>910 → 968</strong>（仕上がりサイズは 969。残る差は自動ハイフンのみで、これは選択テキストから意図的に除外し、描画は保持しています）。">Second fix: the last line of a text block could vanish. Line clipping now matches “Finished format” (910 → 968 characters on a CV template).</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.519 — Export PDF : la typographie reste vectorielle avec les traits de coupe ===== -->
 

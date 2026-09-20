@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.519`** — 19 septembre 2026
+> **Dernière version : `1.7.520`** — 19 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,18 +10,18 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.519` |
-| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.519-typo-vectorielle-reperes` |
-| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20260920-v519-typo-vectorielle-reperes` |
-| Badge preview (`spVersionBadge`) | `v1.7.519` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
-| Splash screen | `1.7.519` |
-| Onboarding | `LAYOUT EDITOR — V 1.7.519` + `V 1.7.519 \| 09 2026` |
-| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.519` |
-| Documentation (racine **et** `app/`) | `v1.7.519` (pastille + pieds de page datés + 214 numéros de ligne) |
-| `api.html` (pastille `.version`) | `v1.7.519` |
-| `version.txt` | `1.7.519` |
-| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.519 (September 2026)` |
-| `package.json` + `package-lock.json` (sp213-local) | `1.7.519` |
+| Version app (affichée) | `1.7.520` |
+| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.520-fonds-de-bloc` |
+| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20260920-v520-fonds-de-bloc` |
+| Badge preview (`spVersionBadge`) | `v1.7.520` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
+| Splash screen | `1.7.520` |
+| Onboarding | `LAYOUT EDITOR — V 1.7.520` + `V 1.7.520 \| 09 2026` |
+| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.520` |
+| Documentation (racine **et** `app/`) | `v1.7.520` (pastille + pieds de page datés + 214 numéros de ligne) |
+| `api.html` (pastille `.version`) | `v1.7.520` |
+| `version.txt` | `1.7.520` |
+| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.520 (September 2026)` |
+| `package.json` + `package-lock.json` (sp213-local) | `1.7.520` |
 | Lanceur npm (`superprint-npm/package.json`) | `1.0.97` (version **indépendante**, voir plus bas) |
 
 > ⚠️ Trois fichiers sont restés en arrière pendant des releases sans que rien ne le signale :
@@ -70,7 +70,7 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
   ⚠️ **NE PAS l'éditer à la main** : le régénérer avec
   `node _dev/scripts/_mk_index_paquet_480.cjs --apply` (dry-run par défaut), qui repart
   d'`install.html` — sinon la page reprend du retard sur le site.
-- ⚠️ **PLUS de `sp213-local/studio.html`** (retiré en 1.7.519) : il faisait doublon avec le
+- ⚠️ **PLUS de `sp213-local/studio.html`** (retiré en 1.7.520) : il faisait doublon avec le
   studio de l'application, `superprint/sp213-studio.html`, qui tourne déjà en local
   (modèles WebLLM hors ligne) ou avec une clé Groq. Idem côté build :
   `vite.config.js` ne déclare plus que `index.html`.

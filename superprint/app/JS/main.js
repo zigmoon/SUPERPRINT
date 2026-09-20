@@ -49809,6 +49809,54 @@ https://superprint.app
                     return [pdfOffsetX + pxToMm(lxx * cosA - lyy * sinA + cx_px), pdfOffsetY + pxToMm(lxx * sinA + lyy * cosA + cy_px)];
                 };
 
+                /* 🆕 v1.7.520 — _SP_FOND_520 : FONDS DE BLOC ET DE LIGNE.
+                   _drawTextViaOpentype n'écrivait QUE les glyphes : ni le fond des
+                   lignes (`textBackgroundColor`) ni le fond du cadre
+                   (`backgroundColor`) n'étaient exportés. Un titre BLANC sur bandeau
+                   sombre devenait donc blanc sur blanc — INVISIBLE — alors que le
+                   « Format fini » (qui rasterise ces blocs) le montrait. On trace ici
+                   les mêmes surfaces que Fabric :
+                     • fond de ligne : du 1er au dernier caractère ÉCRIT de la ligne,
+                       hauteur fontSize × _fontSizeMult (1,13 par défaut), au sommet de
+                       la ligne — cf. Fabric.Text._renderTextLinesBackground ;
+                     • fond de bloc : le cadre entier (width × height).
+                   Quadrilatère quelconque → pdf.lines() avec retour au 1er point, donc
+                   rotation, échelle et origine du bloc sont respectées. */
+                const _spJFontSizeMult = (typeof obj._fontSizeMult === 'number' && obj._fontSizeMult > 0) ? obj._fontSizeMult : 1.13;
+                const _spJQuadFill = function (points, couleur) {
+                    const _c = _parsePdfColor(couleur);
+                    if (!_c || (_c[3] !== undefined && _c[3] <= 0)) return;
+                    try {
+                        const _mm = points.map(function (p) { return localToMm(p[0], p[1]); });
+                        const _deltas = [];
+                        for (let _k = 1; _k < _mm.length; _k++) {
+                            _deltas.push([_mm[_k][0] - _mm[_k - 1][0], _mm[_k][1] - _mm[_k - 1][1]]);
+                        }
+                        _deltas.push([_mm[0][0] - _mm[_mm.length - 1][0], _mm[0][1] - _mm[_mm.length - 1][1]]);
+                        pdf.setFillColor(_c[0], _c[1], _c[2]);
+                        pdf.lines(_deltas, _mm[0][0], _mm[0][1], [1, 1], 'F', true);
+                    } catch (_) {}
+                };
+                /* Couleur de fond de ligne EFFECTIVE : celle du bloc, ou celle des
+                   styles par caractère quand ils la portent tous à l'identique. */
+                const _spJCouleurFondLigne = (function () {
+                    let _v = (typeof obj.textBackgroundColor === 'string') ? obj.textBackgroundColor : '';
+                    if (_v) return _v;
+                    try {
+                        const _styles = obj.styles || {};
+                        for (const _lk in _styles) {
+                            const _ligne = _styles[_lk] || {};
+                            for (const _ck in _ligne) {
+                                const _st = _ligne[_ck] || {};
+                                if (typeof _st.textBackgroundColor === 'string' && _st.textBackgroundColor) {
+                                    _v = _st.textBackgroundColor;
+                                }
+                            }
+                        }
+                    } catch (_) {}
+                    return _v;
+                })();
+
                 let ascenderUnits = 0;
                 if (_useFont) {
                     try { ascenderUnits = (typeof _useFont.ascender === 'number') ? _useFont.ascender : (_useFont.tables && _useFont.tables.os2 && _useFont.tables.os2.sTypoAscender) || 0; } catch (_) {}
@@ -49820,11 +49868,32 @@ https://superprint.app
                 try {
                     const frameH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : (obj.height || 0);
                     if (frameH > 0 && _spJLineH.length) {
-                        let _jAcc = 0;
-                        for (let _jci = 0; _jci < _spJLineH.length; _jci++) {
-                            if (_jAcc + _spJLineH[_jci] <= frameH + 0.5) { _jAcc += _spJLineH[_jci]; }
-                            else { maxLines = Math.max(1, _jci); break; }
+                        /* 🛡️ v1.7.520 — _SP_FOND_520 : MÊME découpe de lignes que le
+                           chemin natif pdf-lib, qui passe par le helper partagé
+                           window.spCountVisibleLines(obj, cadre, true). L'ancienne
+                           boucle ci-dessous comparait la somme des hauteurs de ligne
+                           PLEINES au cadre (+0,5 px) : la dernière ligne ne « tenait »
+                           jamais (déficit de leading bas constant de Fabric) et était
+                           PERDUE du PDF. Mesure : bloc 3 lignes / cadre 48,77 px /
+                           lignes 17,04 px → 2 lignes écrites au lieu de 3 ; le « Format
+                           fini » en écrivait bien 3. */
+                        let _spJMaxLignes = maxLines;
+                        let _dejaFait = false;
+                        if (typeof window.spCountVisibleLines === 'function') {
+                            try {
+                                const _visJ = window.spCountVisibleLines(obj, frameH, true);
+                                if (_visJ >= 1 && _visJ < _spJMaxLignes) _spJMaxLignes = _visJ;
+                                _dejaFait = true;
+                            } catch (_) { _dejaFait = false; }
                         }
+                        if (!_dejaFait) {
+                            let _jAcc = 0;
+                            for (let _jci = 0; _jci < _spJLineH.length; _jci++) {
+                                if (_jAcc + _spJLineH[_jci] <= frameH + 0.5) { _jAcc += _spJLineH[_jci]; }
+                                else { _spJMaxLignes = Math.max(1, _jci); break; }
+                            }
+                        }
+                        maxLines = _spJMaxLignes;
                     } else if (frameH > 0 && lineH > 0) {
                         const fc = Math.floor((frameH + 0.5) / lineH); if (fc >= 1 && fc < maxLines) maxLines = fc;
                     }
@@ -49923,6 +49992,13 @@ https://superprint.app
                         const _ix = [];
                         for (let _k = 0; _k < _lt.length; _k++) if (_lt.charAt(_k) === '\t') _ix.push(_k);
                         _tabsIdx[_ti] = _ix;
+                    }
+                }
+                /* 🆕 v1.7.520 — _SP_FOND_520 : fond du cadre du bloc (sous les glyphes). */
+                if (!_collectOnly && obj.backgroundColor) {
+                    const _hCadre = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : (obj.height || 0);
+                    if (boxWidth > 0 && _hCadre > 0) {
+                        _spJQuadFill([[0, 0], [boxWidth, 0], [boxWidth, _hCadre], [0, _hCadre]], obj.backgroundColor);
                     }
                 }
                 for (let i = 0; i < maxLines; i++) {
@@ -50079,6 +50155,20 @@ https://superprint.app
                         _spHyphenToDraw = { x: xStart + _hyphenAnchor };
                     }
 
+                    /* 🆕 v1.7.520 — _SP_FOND_520 : bandeau de fond de la ligne, tracé
+                       AVANT ses glyphes, du 1er au dernier caractère écrit. */
+                    if (!_collectOnly && _spJCouleurFondLigne && _segments.length) {
+                        try {
+                            const _dernierSeg = _segments[_segments.length - 1];
+                            const _xG = _segments[0].localX;
+                            const _xD = _dernierSeg.localX + _spJWordW(_dernierSeg.t);
+                            const _yH = _spJLineTop[i] + _colOYJ;
+                            const _hBande = fontSize * _spJFontSizeMult;
+                            if (_xD > _xG && _hBande > 0) {
+                                _spJQuadFill([[_xG, _yH], [_xD, _yH], [_xD, _yH + _hBande], [_xG, _yH + _hBande]], _spJCouleurFondLigne);
+                            }
+                        } catch (_) {}
+                    }
                     // Dessiner chaque segment (mot ou ligne) à sa position locale.
                     for (let _si = 0; _si < _segments.length; _si++) {
                         const _seg = _segments[_si];
