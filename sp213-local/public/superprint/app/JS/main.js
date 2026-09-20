@@ -6834,7 +6834,16 @@ window.spTestDiag = function () {
             if (!(t.step > 0)) t.step = spTabMmVers(SP_PAS_DEFAUT_MM);
             activeMaintenant = true;
         }
-        var p0 = (typeof obj.selectionStart === 'number') ? obj.selectionStart : (obj.text || '').length;
+        /* 🆕 v1.7.499 — LA POSITION DU CURSEUR VIENT DU CHAMP CACHÉ QUAND IL A LE FOCUS.
+           C'est lui qui reçoit les flèches et les clics ; `obj.selectionStart` peut être resté
+           en arrière. Une tabulation posée à l'ancienne position tombe alors parfois EN FIN DE
+           TEXTE, où elle ne décale plus rien : à l'écran, seul le curseur part au taquet suivant
+           — « le curseur se décale au taquet suivant sans les caractères ». On lit donc la
+           sélection LÀ OÙ ELLE EST VRAIMENT. */
+        var ta0 = obj.hiddenTextarea;
+        var p0 = (ta0 && document.activeElement === ta0 && typeof ta0.selectionStart === 'number')
+            ? ta0.selectionStart
+            : ((typeof obj.selectionStart === 'number') ? obj.selectionStart : (obj.text || '').length);
         try { if (typeof obj.insertChars === 'function') obj.insertChars('\t'); } catch (_) {}
         /* 🩹 Fabric ne déplace PAS le curseur dans insertChars (mesuré : 2 → 2 après
            insertion) : sans ce repositionnement, le caractère suivant partait AVANT

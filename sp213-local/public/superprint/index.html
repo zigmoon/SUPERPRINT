@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.498",
+      "softwareVersion": "1.7.499",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -122,8 +122,8 @@
           "name": "Simon Dupont-Gellert",
           "jobTitle": "Founder · Art direction · Development",
           "description": "Designer and creative director. He designs and writes SuperPrint: the typographic engine, text wrap around shapes, boolean operations and print-ready PDF export.",
-          "url": "https://zigmoon.com",
-          "sameAs": ["https://zigmoon.com", "https://x.com/zigmoon"]
+          "url": "https://app.zigmoon.com",
+          "sameAs": ["https://app.zigmoon.com", "https://x.com/zigmoon"]
         },
         {
           "@type": "Person",
@@ -131,8 +131,8 @@
           "name": "Clémence Brunet",
           "jobTitle": "Founder · Graphic design",
           "description": "Graphic designer specialising in typography, visual identity and art direction. She gives SuperPrint its graphic identity and its editorial precision.",
-          "url": "https://clemencebrunet.fr",
-          "sameAs": ["https://clemencebrunet.fr"]
+          "url": "https://2points13.fr",
+          "sameAs": ["https://2points13.fr"]
         }
       ],
       "publisher": {
@@ -1064,14 +1064,15 @@ details[open] summary.faq-q::after { transform: rotate(45deg); }
 }
 .auteur:hover { border-color: var(--line-strong); }
 .auteur-tete { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-/* 🆕 v1.7.498 — LA PLAQUE DE LA MARQUE D'AUTEUR.
-   Mêmes filets que le reste de la page, fond au papier, la marque centrée dedans. La colonne de
-   droite (les pastilles quadri au-dessus du numéro) s'aligne sur le bord opposé. */
+/* 🆕 v1.7.498 — LA MARQUE DE L'AUTEUR.
+   🆕 v1.7.499 — SANS PLAQUE : « il ne faut pas de boîte de fond, juste les deux icônes, un peu
+   plus grandes, sans habillage ». Plus de filet, plus de fond, plus de rembourrage : le dessin
+   seul, à la taille du nom qu'il accompagne, et la colonne de droite (pastilles quadri au-dessus
+   du numéro) reste alignée sur le bord opposé. */
 .auteur-marque {
-  flex: 0 0 auto; width: clamp(84px,9vw,108px); height: clamp(84px,9vw,108px);
+  flex: 0 0 auto; width: clamp(104px,12vw,148px); height: clamp(104px,12vw,148px);
   display: flex; align-items: center; justify-content: center;
-  padding: clamp(12px,1.4vw,16px);
-  background: var(--paper); border: 1px solid var(--line-strong);
+  padding: 0; background: none; border: 0;
 }
 .auteur-marque img { width: 100%; height: 100%; display: block; }
 .auteur-signes { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; }
@@ -2121,7 +2122,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.498</span>
+    <span>SuperPrint v1.7.499</span>
   </div>
 </div>
 
@@ -3530,7 +3531,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         <p data-lang="en">His practice links art direction, UX/UI and creative technology. He has worked for Samsung, Microsoft, ARTE, the Cinémathèque française, Sony, the Palace of Versailles, Radio Classique and LVMH.</p>
         <p data-lang="ja">アートディレクション、UX/UI、クリエイティブテクノロジーを横断して仕事をしています。Samsung、Microsoft、ARTE、シネマテーク・フランセーズ、Sony、ヴェルサイユ宮殿、Radio Classique、LVMH のプロジェクトを手がけてきました。</p>
         <div class="auteur-liens">
-          <a href="https://zigmoon.com" target="_blank" rel="noopener">zigmoon.com</a>
+          <a href="https://app.zigmoon.com" target="_blank" rel="noopener">app.zigmoon.com</a>
           <a href="https://x.com/zigmoon" target="_blank" rel="noopener">@zigmoon</a>
         </div>
       </article>
@@ -3559,7 +3560,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         <p data-lang="en">Her practice links printed culture, composition and digital interfaces: clear, expressive systems built to last.</p>
         <p data-lang="ja">印刷文化、組版、デジタルインターフェースをつなぐ仕事。明快で、表現力があり、長く使える仕組みをつくります。</p>
         <div class="auteur-liens">
-          <a href="https://clemencebrunet.fr" target="_blank" rel="noopener">clemencebrunet.fr</a>
+          <a href="https://2points13.fr" target="_blank" rel="noopener">2points13.fr</a>
           <a href="https://x.com/2points13" target="_blank" rel="noopener">@2points13</a>
         </div>
       </article>
@@ -3794,7 +3795,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.498</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.499</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>

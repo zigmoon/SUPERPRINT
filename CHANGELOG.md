@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -35,6 +35,30 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.499] — 2026-09-20
+
+_The author marks without their plaque, the right links, a leaner help page, and tabulation that follows the caret_
+
+### Changed
+- **The two author marks lose their plaque.** `.auteur-marque` keeps no rule, no background and no padding; the drawing alone, at `clamp(104px,12vw,148px)` (it was a ruled plaque of `clamp(84px,9vw,108px)`). The CMYK dots and the card number stay on the same line, on the right.
+- **The help page sheds two sections**: “Three tools, two people, no shop” (with its three application cards) and “What a donation means, concretely” (its four explanations and closing line). The two headings that remain — “Make a donation” and “Found a bug?” — take the **exact typography of the main title** (Playfair Display, `clamp(28px,3.4vw,44px)`, weight 700); they were `--f-caps` narrow capitals at 20-26 px.
+
+### Fixed
+- **The author links.** Clémence Brunet’s site is `2points13.fr` (not `clemencebrunet.fr`) and Simon Dupont-Gellert’s card opens `app.zigmoon.com` (not `zigmoon.com`) — corrected in the JSON-LD too, for each **Person** entity (the Zigmoon publisher and the breadcrumb keep `zigmoon.com`).
+- **Tabulation: the caret position is read from the input field itself** (`hiddenTextarea`) when it has the focus, instead of the block’s own copy. A tabulation placed at a stale position landed **at the end of the text**, where it moves nothing: on screen, only the caret went to the next stop while the letters stayed. Measured with real gestures (four `ArrowLeft`, then a real `Tab`): the tabulation lands in front of the letter the caret sits at, the following letters move to the next stop (21 px at a 10 mm step), and the caret lands right after the tabulation.
+
+### Verified
+| Check | Result |
+|---|---|
+| Author marks | 148 × 148 px, `background: rgba(0,0,0,0)`, `border: 0`, `padding: 0`, both loaded |
+| Author links | `2points13.fr` and `app.zigmoon.com`, in the cards and in the Person data |
+| Help page sections | `help-apps` and `help-more` gone (0 cards) |
+| Help page headings | `Playfair Display 44px / 700` — the main title’s own values |
+| Tabulation (real gestures) | tab at index 2 = in front of “C”, “C” from x = 36 to x = 57 |
+| JavaScript errors | none |
+| Markers | `data-sp-js="v499"`, cache tag `20260920-v499-auteurs-et-aide`, `CACHE_NAME` bumped |
+
 
 ## [1.7.498] — 2026-09-20
 

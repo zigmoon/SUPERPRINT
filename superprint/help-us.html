@@ -1622,6 +1622,15 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw,56px) 24px; }
 .help-apps, .help-more, .help-bug { margin-top: 0; }
 .help-rule { margin: clamp(17px,2vw,28px) 0; }
+/* ——— v1.7.499 — LES DEUX TITRES QUI RESTENT, À LA TYPOGRAPHIE DU TITRE PRINCIPAL.
+   Après la suppression des trois outils et de « ce qu'un don représente », la page n'a plus que
+   deux titres de rubrique — « Faire un don » (dans le bloc de don) et « Trouvé un bug ? ».
+   Ils étaient en capitales étroites, à 20-26 px, sous un titre principal de 28-44 px : ils
+   passent à la typographie exacte de ce titre principal (Playfair, 28-44 px), comme demandé. */
+.help-don-txt h2, .help-bug .help-h2 {
+  font-family: var(--f-display); font-weight: 700; line-height: 1.1;
+  letter-spacing: -.012em; font-size: clamp(28px,3.4vw,44px); color: var(--ink);
+}
 </style>
 <!-- 🆕 v1.7.477 — DONNÉES STRUCTURÉES DE CETTE PAGE. Elle n'en avait aucune (mesuré :
      0 bloc JSON-LD), alors qu'elle est publique et indexable. Trois objets autonomes, sans
@@ -1733,7 +1742,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.498</span>
+    <span>SuperPrint v1.7.499</span>
   </div>
 </div>
 
@@ -1789,91 +1798,10 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 
 
 
-  <!-- ═══ v1.7.472 — CE QUE VOTRE AIDE FAIT VIVRE : les trois outils et leurs icônes ═══
-       Mêmes plaques que le hero de la landing (.entry-logo, .entry-clair) : SuperPrint garde
-       la sienne, noire (son icône est blanche) ; les deux autres passent en blanc bordé de
-       gris, parce que leurs logotypes sont bicolores et lisibles sur les deux fonds. -->
-  <section class="help-apps">
-    <h2 class="help-h2" data-lang="fr">Trois outils, deux personnes, aucune boutique.</h2>
-    <h2 class="help-h2" data-lang="en">Three tools, two people, no shop.</h2>
-    <h2 class="help-h2" data-lang="ja">三つの道具、二人、店はありません。</h2>
-    <p class="help-apps-intro" data-lang="fr">Votre aide ne finance pas un catalogue : elle finance ces trois-là, et rien d'autre. Ils partagent le même bureau, le même code, et la même absence de compte à créer.</p>
-    <p class="help-apps-intro" data-lang="en">Your help does not fund a catalogue: it funds these three, and nothing else. They share the same desk, the same code, and the same absence of an account to create.</p>
-    <p class="help-apps-intro" data-lang="ja">ご支援はカタログを支えるものではありません。この三つだけを支えます。同じデスク、同じコード、アカウントを作らなくていいことも同じです。</p>
-    <div class="help-apps-grid">
-      <article class="help-app">
-        <span class="entry-logo"><img src="icons/icon-192x192.png" alt="" width="50" height="50"></span>
-        <h3>SuperPrint</h3>
-        <p data-lang="fr">Le bureau de PAO complet, dans le navigateur : mise en page multipage, typographie, calques, gabarits, export PDF prêt pour l'impression.</p>
-        <p data-lang="en">The complete DTP desk, in the browser: multi-page layout, typography, layers, master pages, print-ready PDF export.</p>
-        <p data-lang="ja">ブラウザの中のDTPデスク。マルチページ組版、タイポグラフィ、レイヤー、マスターページ、印刷対応のPDF書き出し。</p>
-        <a class="help-app-go" href="app/index.html"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open the app</span><span class="inline-ja">アプリを開く</span> →</a>
-      </article>
-      <article class="help-app entry-clair">
-        <span class="entry-logo"><img src="icons/studio_print_logo_blanc.png" alt="" width="50" height="50"></span>
-        <h3>Studio IA</h3>
-        <p data-lang="fr">Décrivez la maquette en une phrase, au clavier ou à la voix : le studio compose le document entier, et vous le reprenez ensuite à la main.</p>
-        <p data-lang="en">Describe the layout in one sentence, typed or spoken: the studio composes the whole document, then you take it over by hand.</p>
-        <p data-lang="ja">レイアウトを一言、キーボードでも音声でも。スタジオが文書全体を組み、あとは手で仕上げます。</p>
-        <a class="help-app-go" href="sp213-studio.html"><span class="inline-fr">Ouvrir le Studio IA</span><span class="inline-en">Open Studio IA</span><span class="inline-ja">Studio IA を開く</span> →</a>
-      </article>
-      <article class="help-app entry-clair">
-        <span class="entry-logo"><img src="icons/sper_typo.png" alt="" width="50" height="50"></span>
-        <h3>SuperTyPo</h3>
-        <p data-lang="fr">Les caractères décomposés et redessinés en courbes, pour un lettrage exploitable à l'échelle d'une affiche.</p>
-        <p data-lang="en">Letterforms taken apart and redrawn as curves, for lettering you can use at poster scale.</p>
-        <p data-lang="ja">書体を分解し、曲線として描き直す。ポスターサイズでも使えるレタリングに。</p>
-        <a class="help-app-go" href="supertypo/index.html"><span class="inline-fr">Ouvrir SuperTyPo</span><span class="inline-en">Open SuperTyPo</span><span class="inline-ja">SuperTyPo を開く</span> →</a>
-      </article>
-    </div>
-  </section>
 
 
-  <!-- ═══ v1.7.472 — CE QU'UN DON REPRÉSENTE, DÉTAIL DEMANDÉ ═══
-       Aucun montant inventé : on dit à quoi sert l'argent, en temps et en factures réelles.
-       Une échelle de prix serait un mensonge tant que le bouton PayPal porte un montant fixe. -->
-  <section class="help-more">
-    <h2 class="help-h2" data-lang="fr">Ce qu'un don représente, concrètement.</h2>
-    <h2 class="help-h2" data-lang="en">What a donation means, concretely.</h2>
-    <h2 class="help-h2" data-lang="ja">寄付が具体的に何になるのか。</h2>
-    <div class="help-more-grid">
-      <article>
-        <h3 data-lang="fr">Corriger un bug d'export</h3>
-        <h3 data-lang="en">Fixing an export bug</h3>
-        <h3 data-lang="ja">書き出しの不具合を直す</h3>
-        <p data-lang="fr">Reproduire le fichier qui pose problème, comprendre la cause, corriger, réexporter, puis faire tirer une épreuve pour vérifier que la presse confirme. Une correction d'export PDF, c'est typiquement une journée de travail.</p>
-        <p data-lang="en">Reproduce the file that misbehaves, find the cause, fix it, export again, then have a proof printed to make sure the press agrees. An export fix is typically a day's work.</p>
-        <p data-lang="ja">問題のファイルを再現し、原因を突き止め、修正し、書き出し直し、印刷所で検証用の校正を刷る。書き出しの修正には、ふつう丸一日かかります。</p>
-      </article>
-      <article>
-        <h3 data-lang="fr">Faire tourner le studio</h3>
-        <h3 data-lang="en">Keeping the studio running</h3>
-        <h3 data-lang="ja">スタジオを動かし続ける</h3>
-        <p data-lang="fr">Les serveurs, le nom de domaine et la surveillance se paient tous les mois, que quelqu'un s'en serve ou non. C'est le seul coût du projet qui ne dépend pas de notre temps, et il tombe même quand nous dormons.</p>
-        <p data-lang="en">Servers, domain name and monitoring are billed every month, whether anyone uses them or not. It is the project's only cost that does not depend on our time — and it lands while we sleep.</p>
-        <p data-lang="ja">サーバー、ドメイン、監視は、誰が使っていてもいなくても毎月請求されます。私たちの時間に依存しない唯一の費用で、眠っている間にも発生します。</p>
-      </article>
-      <article>
-        <h3 data-lang="fr">Payer les licences</h3>
-        <h3 data-lang="en">Paying the licences</h3>
-        <h3 data-lang="ja">ライセンスを支払う</h3>
-        <p data-lang="fr">Profils ICC pour cadrer les conversions, fontes pour les gabarits, correcteur orthographique : ce sont des licences et des redevances, pas des dons à une fondation. Elles se paient une par une, et elles restent à payer même si personne ne donne.</p>
-        <p data-lang="en">ICC profiles to frame the conversions, fonts for the templates, a spell checker: these are licences and royalties, not donations to a foundation. They are paid one by one, and they stay due even when nobody gives.</p>
-        <p data-lang="ja">変換を正しく行うためのICCプロファイル、テンプレート用のフォント、スペルチェッカー。これらは財団への寄付ではなく、ライセンス料と使用料です。一つずつ支払い、誰も寄付しなくても請求は来ます。</p>
-      </article>
-      <article>
-        <h3 data-lang="fr">Personne d'autre que nous</h3>
-        <h3 data-lang="en">Nobody but the two of us</h3>
-        <h3 data-lang="ja">間に入る人はいません</h3>
-        <p data-lang="fr">Aucun intermédiaire, aucune commission, aucune équipe à financer : deux personnes, un serveur, des licences. Tout le reste du don, c'est du temps de développement et de correction — c'est-à-dire la seule chose que nous ne pouvons pas acheter autrement.</p>
-        <p data-lang="en">No middleman, no commission, no team to fund: two people, one server, some licences. Every remaining euro is development and bug-fixing time — the one thing we cannot buy any other way.</p>
-        <p data-lang="ja">仲介も手数料も、養うべきチームもありません。二人と、一つのサーバーと、ライセンスだけです。残りはすべて開発と修正の時間 — ほかの方法では買えない唯一のものです。</p>
-      </article>
-    </div>
-    <p class="help-more-sig" data-lang="fr">Pas de palier, pas de contrepartie, pas de badge : donnez ce que l'outil vaut pour vous, une fois ou chaque mois.</p>
-    <p class="help-more-sig" data-lang="en">No tiers, no reward, no badge: give what the tool is worth to you, once or every month.</p>
-    <p class="help-more-sig" data-lang="ja">段階も、見返りも、バッジもありません。この道具があなたにとって価値ある分を、一度でも毎月でも。</p>
-  </section>
+
+
 
   <!-- ═══ v1.7.472 — SIGNALER UN BUG (formulaire sans serveur) ═══ -->
   <section class="help-bug">
@@ -1977,7 +1905,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.498</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.499</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>
