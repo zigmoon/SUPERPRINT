@@ -10075,7 +10075,10 @@ window.spTestDiag = function () {
             }
 
             // ── 2) FOLIO (numérotation) ──
-            if (pageNumberingSettings.enabled) {
+            /* 🛡️ v1.7.523 — _SP_NUM_GABARIT_523 : le folio peut venir du GABARIT de la page
+               (case « Numérotation » de l'éditeur de gabarit) même si la numérotation globale
+               est éteinte. spPageNumberingActive(pageIndex) centralise cette règle. */
+            if (spPageNumberingActive(pageIndex)) {
                 try {
                     const s = pageNumberingSettings;
                     const pos = getPageNumberPosition(pageIndex);
@@ -10292,7 +10295,9 @@ window.spTestDiag = function () {
                 }
 
                 // ── 2) Folio (numerotation) ──
-                if (typeof pageNumberingSettings !== 'undefined' && pageNumberingSettings && pageNumberingSettings.enabled) {
+                /* 🛡️ v1.7.523 — _SP_NUM_GABARIT_523 : même règle qu'à l'écran (folio porté par le
+                   gabarit de la page OU numérotation globale active). */
+                if (spPageNumberingActive(pageIndex)) {
                     try {
                         const s = pageNumberingSettings;
                         const pos = getPageNumberPosition(pageIndex);
@@ -15807,6 +15812,22 @@ window.spTestDiag = function () {
         // ✅ Pages vides: forcer le fond blanc + render
         fabricCanvas.setBackgroundColor('#ffffff', () => {});
         fabricCanvas.requestRenderAll();
+        /* 🛡️ v1.7.523 — _SP_NUM_GABARIT_523 : SUR UN DOUBLE PAGE VIDE, rien n'était injecté.
+           MESURE (document 6 pages, double page) : folios présents sur les pages SEULES (1 et 6)
+           et ABSENTS des doubles 2/3 et 4/5 — exactement le retour utilisateur « la numérotation
+           ne s'affiche pas sur les doubles ». Cause : cette branche (aucun objet sur le double)
+           ne rappelait jamais addSpecialTextObjectsToCanvas(), alors que createPageCanvas() le
+           fait depuis 2026-05-06 (« Créer textbox master + folios même sur canvas vide »).
+           Conséquence identique pour les ITEMS DE GABARIT : un double vide restait nu. */
+        setTimeout(() => {
+            if (fabricCanvas._spRenderEpoch !== window._renderEpoch) return;
+            try { addSpecialTextObjectsToCanvas(fabricCanvas, leftIndex, 'left'); } catch (_) {}
+            try {
+                if (rightIndex !== leftIndex) {
+                    addSpecialTextObjectsToCanvas(fabricCanvas, rightIndex, 'right');
+                }
+            } catch (_) {}
+        }, 50);
         if (typeof onLoaded === 'function') onLoaded();
     }
         }
@@ -52483,10 +52504,14 @@ https://superprint.app
                     // Remettre le zoom APRÈS loadFromJSON (qui réinitialise viewportTransform)
                     _applyMasterEditorZoom();
                     _addMasterEditorMargins();
+                    // 🆕 v1.7.523 — case « Numérotation » du gabarit (voir _SP_NUM_GABARIT_523)
+                    spMasterEditorSyncNumberingCheck(masterId);
                 });
             } else {
                 _applyMasterEditorZoom();
                 _addMasterEditorMargins();
+                // 🆕 v1.7.523 — case « Numérotation » du gabarit (voir _SP_NUM_GABARIT_523)
+                spMasterEditorSyncNumberingCheck(masterId);
             }
 
             modal.classList.add('active');
@@ -52511,6 +52536,10 @@ https://superprint.app
             const customProps = SP_CUSTOM_PROPS;
             const objs = masterCanvas.getObjects().filter(o => !o.isMargin && (!o.excludeFromExport || o._isMasterGuide));
             
+            // 🆕 v1.7.523 — _SP_NUM_GABARIT_523 : la case « Numérotation » fait partie du
+            //   gabarit (enregistrée ici, donc annulée si l'utilisateur clique « Annuler »).
+            const _numCb = document.getElementById('masterNumberingCheck');
+            masterPages[masterId].numbering = !!(_numCb && _numCb.checked);
             masterPages[masterId].objects = JSON.stringify({
                 objects: objs.map(o => o.toObject(customProps))
             });
@@ -52888,6 +52917,76 @@ https://superprint.app
             if (p.endsWith('left')) return 'left';
             if (p.endsWith('right')) return 'right';
             return 'center';
+        }
+
+        /* ══════════════════════════════════════════════════════════════════════════════
+           🆕 v1.7.523 — _SP_NUM_GABARIT_523 : LA NUMÉROTATION PEUT ÊTRE PORTÉE PAR UN GABARIT
+           Demande utilisateur : « ajouter la possibilité d'enclencher la numérotation sur un
+           gabarit comme une option à cocher ».
+           Case « Numérotation » dans l'éditeur de gabarit → masterPages[id].numbering = true.
+           Les pages qui utilisent ce gabarit reçoivent alors le folio, SANS que la case globale
+           « Activer la numérotation » soit nécessaire. Le STYLE du folio (position, police,
+           corps, couleur, préfixe/suffixe, marges) reste celui du panneau « Numérotation des
+           pages » : le gabarit ne décide que de SA PRÉSENCE. Le gabarit voyage dans le .sp
+           (masters.templates) → la case est conservée à l'enregistrement et à la relecture.
+           ══════════════════════════════════════════════════════════════════════════════ */
+        function spMasterNumberingForPage(pageIndex) {
+            try {
+                const _mid = pageMasterAssignments && pageMasterAssignments[pageIndex];
+                return !!(_mid && masterPages[_mid] && masterPages[_mid].numbering === true);
+            } catch (_) { return false; }
+        }
+
+        function spPageNumberingActive(pageIndex) {
+            try { if (pageNumberingSettings && pageNumberingSettings.enabled) return true; } catch (_) {}
+            return spMasterNumberingForPage(pageIndex);
+        }
+
+        /* Aperçu du folio dans l'éditeur de gabarit : le numéro n'est PAS enregistré dans le
+           gabarit (excludeFromExport + _spMasterFolioPreview), il montre seulement où et comment
+           le folio tombera sur les pages. Coordonnées du gabarit : origine = coin de page
+           (l'injection sur une page ajoute le fond perdu). */
+        function spMasterEditorPreviewFolio() {
+            const mc = window._activeMasterCanvas;
+            if (!mc) return;
+            try {
+                mc.getObjects().filter(o => o && o._spMasterFolioPreview).forEach(o => mc.remove(o));
+                const cb = document.getElementById('masterNumberingCheck');
+                if (!cb || !cb.checked) { mc.requestRenderAll(); return; }
+                const s = pageNumberingSettings || {};
+                const pos = getPageNumberPosition(0);
+                const align = getPageNumberAlign(0);
+                const fontSize = s.fontSize || 10;
+                const w = 80;
+                let left = pos.x;
+                if (align === 'center') left -= w / 2;
+                else if (align === 'right') left -= w;
+                const folio = new fabric.Textbox(formatPageNumber(0), {
+                    left: left,
+                    top: pos.y - fontSize * 0.6,
+                    width: w,
+                    fontSize: fontSize,
+                    fontFamily: s.fontFamily || 'Open Sans',
+                    fill: s.fontColor || '#333333',
+                    textAlign: align,
+                    lineHeight: 1.16,
+                    charSpacing: 0,
+                    opacity: 0.85,
+                    selectable: false,
+                    evented: false,
+                    excludeFromExport: true
+                });
+                folio._spMasterFolioPreview = true;
+                folio.setCoords();
+                mc.add(folio);
+                mc.requestRenderAll();
+            } catch (_) {}
+        }
+
+        function spMasterEditorSyncNumberingCheck(masterId) {
+            const cb = document.getElementById('masterNumberingCheck');
+            if (cb) cb.checked = !!(masterPages[masterId] && masterPages[masterId].numbering === true);
+            spMasterEditorPreviewFolio();
         }
 
         // Appliquer la numérotation sur toutes les pages

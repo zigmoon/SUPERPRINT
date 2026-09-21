@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.522 — justified text stays justified when a block overflows its frame.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.523 — page numbers now show on double pages, and a master page can carry the numbering.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.522 — justified text stays justified when a block overflows its frame.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.523 — page numbers now show on double pages, and a master page can carry the numbering.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,29 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.523 — Numérotation : elle s'affiche sur les doubles pages, et un gabarit peut la porter ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-523">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.523</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 21 septembre 2026" data-i18n-en="Released September 21, 2026" data-i18n-jp="2026年9月21日公開">Released September 21, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="En double page, les numéros n'apparaissaient que sur les pages seules. Ils s'affichent maintenant sur les doubles, et vous pouvez cocher la numérotation sur un gabarit pour qu'elle s'applique aux pages qui l'utilisent." data-i18n-en-html="In double-page mode the folios only appeared on single pages. They now show on spreads too, and you can tick numbering on a master page so that it applies to the pages using it." data-i18n-jp-html="見開きモードではノンブルが単独ページにしか表示されませんでした。現在は見開きにも表示され、マスターページでノンブルを有効にできるようになりました。">In double-page mode the folios only appeared on single pages. Both are now fixed.</p>
+
+ <h3 data-i18n-fr-html="🔢 Numérotation absente sur les doubles pages <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🔢 Numbering missing on double pages <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🔢 見開きページにノンブルが出ない <span class=&quot;badge badge-fix&quot;>修正</span>">🔢 Numbering missing on double pages <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Un document en double page perdait ses numéros sur toutes les pages doubles : ils ne s'affichaient que sur la première page (seule) et sur la dernière page simple. Mesure sur un document de 6 pages : « 1 » sur la page seule, <strong>rien</strong> sur les doubles 2/3 et 4/5, « 6 » sur la dernière. Cause : quand un double ne contenait encore aucun objet, l'assemblage de la page oubliait d'ajouter les éléments de gabarit ET le folio — les pages seules recevaient bien ce traitement, les doubles jamais. Corrigé : les doubles sont traités exactement comme les pages seules (mesure après correction : « 1 » · « 2 + 3 » · « 4 + 5 » · « 6 », et folios 1 à 6 dans le PDF exporté)." data-i18n-en-html="A double-page document lost its numbers on every double page: they only appeared on the first page (a lone page) and on the last single page. Measured on a 6-page document: “1” on the lone page, <strong>nothing</strong> on spreads 2/3 and 4/5, “6” on the last page. Cause: when a spread held no object yet, the page assembly forgot to add the master items AND the folio — single pages got that treatment, spreads never did. Fixed: spreads are now handled exactly like single pages (after: “1” · “2 + 3” · “4 + 5” · “6” on screen, and folios 1 to 6 in the exported PDF)." data-i18n-jp-html="見開きの文書では、すべての見開きページでノンブルが消えていました（最初の単独ページと最後の単独ページにのみ表示）。6 ページの文書で検証：「1」は単独ページ、見開き 2/3 と 4/5 は<strong>何も出ず</strong>、最後は「6」。原因は、見開きにまだオブジェクトがない場合に、マスター要素とノンブルの追加が行われていなかったことです（単独ページでは行われていました）。修正後：「1」·「2 + 3」·「4 + 5」·「6」が画面に表示され、書き出した PDF にも 1〜6 のノンブルが入ります。">A double-page document lost its numbers on every spread. Fixed.</li>
+  <li data-i18n-fr-html="Le même oubli touchait les <strong>gabarits</strong> : un double page vide n'affichait ni ses éléments de gabarit ni son numéro. Corrigé également — un double vide affiche maintenant ses éléments de gabarit (mesuré : 2 textes de gabarit, un par page)." data-i18n-en-html="The same omission affected <strong>master pages</strong>: an empty spread showed neither its master items nor its number. Also fixed — an empty spread now shows its master items (measured: 2 master texts, one per page)." data-i18n-jp-html="同じ抜けは<strong>マスターページ</strong>にも影響していました（空の見開きではマスター要素もノンブルも出ませんでした）。こちらも修正済みです。">The same omission affected master items on empty spreads — also fixed.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🆕 La numérotation peut être portée par un gabarit <span class=&quot;badge badge-new&quot;>nouveau</span>" data-i18n-en-html="🆕 A master page can carry the numbering <span class=&quot;badge badge-new&quot;>new</span>" data-i18n-jp-html="🆕 マスターページでノンブルを管理 <span class=&quot;badge badge-new&quot;>新機能</span>">🆕 A master page can carry the numbering <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Une case <strong>« 🔢 Numérotation »</strong> est ajoutée dans l'éditeur de gabarit (ouvrez un gabarit depuis le chemin de fer). Cochée, elle fait apparaître le numéro de page sur <strong>toutes les pages qui utilisent ce gabarit</strong>, sans avoir à activer la numérotation générale. Décochez-la : seules les pages des autres gabarits restent sans numéro. Le <strong>style</strong> du numéro (position, police, corps, couleur, préfixe/suffixe, marges) reste celui du panneau « Numérotation des pages » : le gabarit décide seulement de sa présence, et un aperçu du numéro s'affiche dans l'éditeur." data-i18n-en-html="A <strong>“🔢 Numbering”</strong> checkbox is added to the master page editor (open a master from the flatplan). When ticked, the page number appears on <strong>every page using that master</strong>, without switching the global numbering on. Untick it and only the pages of the other masters stay unnumbered. The <strong>style</strong> of the number (position, font, size, colour, prefix/suffix, margins) still comes from the “Page numbering” panel: the master only decides whether it is there, and a preview of the number shows in the editor." data-i18n-jp-html="マスターページのエディターに<strong>「🔢 ノンブル」</strong>のチェックボックスを追加しました（フラットプランからマスターを開きます）。オンにすると、<strong>そのマスターを使うすべてのページ</strong>にノンブルが表示されます（全体のノンブル設定をオンにする必要はありません）。オフにすれば他のマスターのページだけが番号なしのままです。ノンブルの<strong>スタイル</strong>（位置・フォント・サイズ・色・前後の文字・マージン）は「ページ番号」パネルのままです。マスターは表示の有無だけを決め、エディターにはプレビューが表示されます。">A “🔢 Numbering” checkbox is added to the master page editor: tick it and the folio appears on every page using that master, even with the global numbering off. The style still comes from the “Page numbering” panel.</li>
+  <li data-i18n-fr-html="Le réglage est enregistré <strong>avec le gabarit</strong> : il voyage dans le fichier .sp et revient à la réouverture (vérifié). Il n'est pris en compte qu'au clic sur « 💾 Enregistrer le gabarit » — « Annuler » ne le modifie pas." data-i18n-en-html="The setting is saved <strong>with the master</strong>: it travels in the .sp file and comes back when the file is reopened (verified). It only applies when you click “💾 Save master” — “Cancel” leaves it untouched." data-i18n-jp-html="この設定は<strong>マスターと一緒に</strong>保存され、.sp ファイルに含まれて再度開いたときにも復元されます（検証済み）。反映されるのは「💾 マスターを保存」を押したときだけで、「キャンセル」では変更されません。">The setting is saved with the master and travels in the .sp file (verified).</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.522 — Export PDF : un texte justifié reste justifié quand le bloc déborde de son cadre ===== -->
 

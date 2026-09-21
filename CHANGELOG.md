@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -36,6 +36,15 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
+## [1.7.523] — 2026-09-21
+
+_Page numbering on double pages, and a master page can carry the numbering_
+
+### Fixed
+- **In double-page mode, page numbers were missing on every spread.** They only appeared on the single pages (the first one and, when the page count is even, the last one). Measured on a 6-page document in spread mode: folio “1” on the lone page, **nothing** on spreads 2/3 and 4/5, folio “6” on the last page. Cause: `loadSpreadContent()` has two branches — when the spread holds **no object at all**, the “empty pages” branch never called `addSpecialTextObjectsToCanvas()`, so neither the master items nor the folio were injected. `createPageCanvas()` had received that fix back in 2026-05-06 (“create master textboxes + folios even on an empty canvas”); the double-page version never did. Fixed: an empty spread is now handled exactly like an empty single page (guarded by `_spRenderEpoch`, 50 ms — same as `createPageCanvas`). After: folios “1” · “2 + 3” · “4 + 5” · “6” on screen, and folios 1 to 6 in the exported PDF (verified page by page with pdf.js). The same omission also made **master items** invisible on an empty spread — also fixed (measured: 2 master texts, one per page).
+
+### Added
+- **A master page can now carry the page numbering.** A “🔢 Numbering” checkbox was added to the master page editor (open a master from the flatplan). Ticked, the folio is drawn on **every page using that master** even when the global “Enable numbering” switch is off — and it is not drawn on pages using other masters. The folio **style** (position, font, size, colour, prefix/suffix, side/bottom margins) still comes from the “Page numbering” panel: the master only decides whether the number appears. A live preview of the folio is drawn inside the master editor (it is flagged `_spMasterFolioPreview` + `excludeFromExport`, so it is never saved into the master). The setting is stored as `masterPages[id].numbering`, saved with the master and carried by the `.sp` file (`masters.templates`) — verified by a save/load round-trip. It is only committed by “💾 Save master”, so “Cancel” leaves the master untouched. Both rules (display and PDF export) go through one helper, `spPageNumberingActive(pageIndex)`, so screen and print can no longer diverge.
 ## [1.7.522] — 2026-09-21
 
 _Justified text stays justified when a block overflows its frame_
