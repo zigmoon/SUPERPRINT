@@ -85154,6 +85154,23 @@ function initMobileBurgerMenu() {
     const mobileMenu = document.getElementById('mobileMenu');
     
     if (!burgerMenu || !mobileMenu) return;
+
+    // 🆕 v1.7.524 — _SP_NAV_MOBILE_524 : état réel du menu mobile reflété sur <body>.
+    //   1) « sp-mobile-menu-open » masque les raccourcis Annuler / Rétablir de la top-nav
+    //      mobile : menu ouvert, il ne doit rester que la croix.
+    //   2) Le burger suit l'état RÉEL du menu : mobile-widgets.js ferme le menu tout seul
+    //      (closeMobileBurgerMenu) et laissait la croix affichée.
+    const syncMobileMenuState = () => {
+        const ouvert = mobileMenu.classList.contains('active');
+        document.body.classList.toggle('sp-mobile-menu-open', ouvert);
+        if (ouvert) burgerMenu.classList.add('active');
+        else burgerMenu.classList.remove('active');
+    };
+    syncMobileMenuState();
+    try {
+        new MutationObserver(syncMobileMenuState)
+            .observe(mobileMenu, { attributes: true, attributeFilter: ['class'] });
+    } catch (_) {}
     
     // Toggle du menu burger
     burgerMenu.addEventListener('click', () => {
@@ -85260,6 +85277,31 @@ function initMobileBurgerMenu() {
     _proxyClick('mobileUngroup',    'groupToggle');
     _proxyClick('mobilePasteboard', 'togglePasteboardBtn');
     _proxyClick('mobileCollab',     'openCollabBtn');
+
+    // 🆕 v1.7.524 — _SP_NAV_MOBILE_524 : Annuler / Rétablir EN FACE du burger, à gauche de
+    //   la top-nav mobile. On relaie le clic aux boutons de bureau ↩ ↪ : mêmes fonctions
+    //   undo()/redo() et même pile d'historique, rien n'est dupliqué.
+    _proxyClick('mobileUndoTop', 'undo');
+    _proxyClick('mobileRedoTop', 'redo');
+
+    // Miroir d'état : pile vide → les raccourcis mobiles s'allument en gris comme ceux du
+    // bureau (le panneau d'historique pose .disabled sur #undo / #redo).
+    const syncUndoRedoMobile = () => {
+        [['undo', 'mobileUndoTop'], ['redo', 'mobileRedoTop']].forEach((paire) => {
+            const src = document.getElementById(paire[0]);
+            const dst = document.getElementById(paire[1]);
+            if (!src || !dst) return;
+            dst.disabled = !!src.disabled;
+        });
+    };
+    syncUndoRedoMobile();
+    try {
+        const _moUD = new MutationObserver(syncUndoRedoMobile);
+        ['undo', 'redo'].forEach((id) => {
+            const b = document.getElementById(id);
+            if (b) _moUD.observe(b, { attributes: true, attributeFilter: ['disabled'] });
+        });
+    } catch (_) {}
 
     // ✅ Mobile-only: long-press context menu (Select all / Copy / Paste / Delete)
     try { initMobileTouchContextMenu(); } catch (_) {}

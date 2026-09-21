@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -36,6 +36,15 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
+## [1.7.524] — 2026-09-21
+
+_Mobile top bar: the burger menu closes with a cross, and Undo / Redo sit facing it_
+
+### Fixed
+- **On a phone the burger menu could be opened but never closed.** Measured at 390 × 844 with the 1.7.523 build: `#burgerMenu` sits in the top bar (rect `284,14,28,28`, `z-index: 6`) while the open menu has been a **full-screen layer** since 1.7.472 — `top:0;bottom:0;left:0;right:0; z-index:9999`, introduced so the tool list could scroll. The layer therefore covered the top bar: the second tap landed on the layer and never reached the burger, and the only way out was to trigger one of the menu items. The layer now stops **under the bar** (`top:56px`, measured rect `0,56,390,788`): the bar stays visible, the burger stays exactly where it is and turns into a ×, and the point under the finger at the burger’s place is the button again (tap 1 = open ≡, tap 2 = close ×). The cross is also drawn explicitly (22 × 2 px bars rotated ±45°) and the active burger is raised above the layer (`z-index:10000`) so it stays clickable even if the menu were to go full screen again. The full-height scrolling list and its bottom safety margin from 1.7.472 are kept.
+
+### Added
+- **Undo / Redo shortcuts in the mobile top bar, facing the burger.** Two ↩ ↪ buttons (`.mobile-quick-actions`, left of the burger, same height — measured `70,14,62,28`) relay the click to the desktop `#undo` / `#redo`: same `undo()` / `redo()` functions and the same history stack, nothing duplicated (verified: exactly one click received by the desktop button). They grey out like their desktop counterparts when the stack is empty (mirrored through a `MutationObserver` on the `disabled` attribute). They are hidden on desktop (measured `display: none` at 1280 × 800 — the centred bar keeps its own ↩ ↪) and they disappear as soon as the menu is open, so only the cross remains: that state is carried by the `sp-mobile-menu-open` class on `<body>`, kept in sync by a `MutationObserver` on `#mobileMenu`, which also covers the closure triggered by the mobile widget sheets (`mobile-widgets.js`). Bonus: the burger now follows the real menu state instead of remaining as a cross after such a programmatic closure.
 ## [1.7.523] — 2026-09-21
 
 _Page numbering on double pages, and a master page can carry the numbering_

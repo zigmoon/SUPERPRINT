@@ -4012,6 +4012,32 @@ input.corner-slider[type="range"]::-moz-range-progress {
     transform: translateY(-3.25px) rotate(-45deg);
 }
 
+/* 🆕 v1.7.524 — _SP_NAV_MOBILE_524 : raccourcis Annuler / Rétablir de la top-nav mobile.
+   Affichés uniquement en mobile, à gauche, en face du burger (voir @media 768px). */
+.mobile-quick-actions {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.mobile-quick-actions .btn {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    line-height: 1;
+}
+
+.mobile-quick-actions .btn:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
 /* Menu Mobile Déroulant */
 .mobile-menu {
     display: none;
@@ -4093,6 +4119,32 @@ input.corner-slider[type="range"]::-moz-range-progress {
     
     .mobile-menu {
         display: block;
+    }
+
+    /* 🆕 v1.7.524 — _SP_NAV_MOBILE_524 : Annuler / Rétablir dans la top-nav mobile.
+       Ils font face au burger (à gauche, même hauteur) et disparaissent dès que le
+       menu est ouvert : il ne doit rester que la croix de fermeture. */
+    .mobile-quick-actions {
+        display: flex;
+    }
+    body.sp-mobile-menu-open .mobile-quick-actions {
+        display: none !important;
+    }
+
+    /* 🆕 v1.7.524 — la croix : le burger reste EN PLACE, passe au-dessus du menu
+       (z-index) pour rester cliquable, et dessine un × franc. */
+    .burger-menu.active {
+        z-index: 10000;
+    }
+    .burger-menu.active span {
+        width: 22px;
+        height: 2px;
+    }
+    .burger-menu.active span:nth-child(1) {
+        transform: translateY(3.5px) rotate(45deg);
+    }
+    .burger-menu.active span:nth-child(2) {
+        transform: translateY(-3.5px) rotate(-45deg);
     }
     
     /* Masquer les boutons de la toolbar sur mobile */
@@ -4294,6 +4346,13 @@ input.corner-slider[type="range"]::-moz-range-progress {
         width: 28px;
         height: 28px;
         margin-right: 8px;
+    }
+
+    /* 🆕 v1.7.524 — _SP_NAV_MOBILE_524 : les raccourcis s'alignent sur le burger 28px. */
+    .mobile-quick-actions .btn {
+        width: 28px;
+        min-width: 28px;
+        height: 28px;
     }
 }
 
