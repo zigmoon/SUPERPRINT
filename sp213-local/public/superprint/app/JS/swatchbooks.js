@@ -787,10 +787,14 @@
 
     /* ─────────────────────────────── RENDU DE L'UI ─────────────────────────────── */
 
-    function creerItemCouleur(nom, hex) {
+    /* _SP_DOCK_COLORS_528c : `id` stable (spSwItem_<nuancier>_<index>). Le widget détaché
+       est une COPIE dont les ids sont remplacés par data-sp-ref : sans id, un clic sur une
+       pastille dans le widget n'était relayé à rien (mesuré : 457 pastilles sans référence). */
+    function creerItemCouleur(nom, hex, id) {
         var b = document.createElement('button');
         b.type = 'button';
         b.className = 'swatch-item';
+        if (id) b.id = id;
         b.setAttribute('data-hex', hex);
         b.title = nom + ' — ' + hex;
         var dot = document.createElement('span');
@@ -808,6 +812,10 @@
     function creerNuancier(livre) {
         var wrap = document.createElement('div');
         wrap.className = 'swatch-book';
+        /* _SP_DOCK_COLORS_528d : id de la LIGNE du nuancier. C'est elle qui porte la classe
+           `is-open` (nuancier déplié) ; sans id, le widget détaché ne recevait pas cet état
+           et restait fermé alors que la barre de droite s'ouvrait bien (mesuré). */
+        wrap.id = 'spSwBook_' + livre.id;
         wrap.setAttribute('data-book', livre.id);
 
         var head = document.createElement('button');
@@ -817,6 +825,8 @@
         head.innerHTML = '<span class="swatch-book-chevron">▸</span>' +
                          '<span class="swatch-book-name"></span>' +
                          '<span class="swatch-book-count"></span>';
+        /* _SP_DOCK_COLORS_528c : id de l'en-tête → le widget peut ouvrir/fermer le nuancier. */
+        head.id = 'spSwHead_' + livre.id;
         head.querySelector('.swatch-book-name').textContent = livre.name;
         var cols = couleursDe(livre);
         head.querySelector('.swatch-book-count').textContent = cols.length;
@@ -824,6 +834,7 @@
 
         var corps = document.createElement('div');
         corps.className = 'swatch-book-body';
+        var indexTeinte = 0;      /* _SP_DOCK_COLORS_528c : numéro de la pastille dans le nuancier */
         (livre.groups || []).forEach(function (g) {
             if ((livre.groups || []).length > 1 && g.label) {
                 var cap = document.createElement('div');
@@ -831,7 +842,9 @@
                 cap.textContent = g.label;
                 corps.appendChild(cap);
             }
-            (g.colors || []).forEach(function (c) { corps.appendChild(creerItemCouleur(c[0], c[1])); });
+            (g.colors || []).forEach(function (c) {
+                corps.appendChild(creerItemCouleur(c[0], c[1], 'spSwItem_' + livre.id + '_' + (indexTeinte++)));
+            });
         });
 
         head.addEventListener('click', function () {
@@ -850,6 +863,7 @@
             var rm = document.createElement('button');
             rm.type = 'button';
             rm.className = 'swatch-book-remove';
+            rm.id = 'spSwRm_' + livre.id;   /* _SP_DOCK_COLORS_528c : la croix marche aussi dans le widget */
             rm.innerHTML = '✕';
             rm.title = (window.__spSwatchTxt && window.__spSwatchTxt.retirer) || 'Retirer ce nuancier';
             rm.addEventListener('click', function (e) {
@@ -886,6 +900,7 @@
         ajouterAuSelect(livre);
         rendreListe();
         if (!silencieux) sauverImportes();
+        rafraichirWidgets();
         return livre;
     }
 
@@ -896,6 +911,17 @@
         retirerDuSelect(id);
         rendreListe();
         sauverImportes();
+        rafraichirWidgets();
+    }
+
+    /* _SP_DOCK_COLORS_528c : si le panneau Couleurs est détaché en widget, sa copie doit
+       voir le nuancier qui vient d'être ajouté ou retiré (c'est le dock qui sait la refaire). */
+    function rafraichirWidgets() {
+        try {
+            if (window.spDockWidgets && typeof window.spDockWidgets.rafraichir === 'function') {
+                window.spDockWidgets.rafraichir('colors');
+            }
+        } catch (_) {}
     }
 
     function importerFichier(file) {

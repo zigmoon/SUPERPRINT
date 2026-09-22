@@ -2719,6 +2719,17 @@ textarea[data-fabric-hiddentextarea] {
 }
 .sp-dock-host.sp-dock-xl .sp-dock-head { font-size: 12px; padding: 8px 12px; }
 .sp-dock-host.sp-dock-xl .sp-dock-body { padding: 0 10px 10px; }
+/* 🆕 v1.7.528 — _SP_DOCK_COLORS_528c : DANS UN WIDGET, LA LISTE DES NUANCIERS DÉFILE SUR PLACE.
+   Mesuré (widget Couleurs, 12 nuanciers dont les .ase importés) : le corps du widget portait
+   621 px de contenu pour 523 px visibles (58vh) — il fallait faire défiler tout le panneau pour
+   atteindre « Importer un nuancier ». La liste est donc plafonnée à 230 px dans un widget et
+   défile sur elle-même ; la barre de droite, elle, reste sans plafond (les nuanciers s'y
+   affichent en entier). */
+.sp-dock-body .swatch-book-list {
+    max-height: 230px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
 /* _SP_RANDOMBACK_512_DEBUT — WIDGET « FOND ANIMÉ » : DESIGN AU NOIR ET AU GRIS.
    La charte SuperPrint n'a pas de couleur d'accent : l'état actif, c'est le noir de
    .btn.active (#1a1a1a sur blanc) et les gris #ccc / #999 / rgba(0,0,0,.05). Les tirettes et

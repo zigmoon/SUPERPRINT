@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -36,6 +36,22 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
+## [1.7.528] — 2026-09-22
+
+_The detachable Colours widget is wider, and the swatch books work inside it_
+
+### Fixed
+- **The swatch books did nothing inside the detached Colours widget.** A widget is a **copy** of the panel and the dock only relays clicks on controls it can recognise (it swaps `id` for `data-sp-ref`). The generated swatch elements had no id at all — measured **457 shades with no reference**, plus 12 book headers — so a click on a shade, a header or the ✕ inside the widget was relayed to nothing, while the right-hand bar kept its own listeners (hence “OK in the sidebar”). Now every book row, header, shade and ✕ carries a stable id (`spSwBook_…`, `spSwHead_…`, `spSwItem_…_<n>`, `spSwRm_…`), so the widget relays the click to the original control and the full path runs: fill or stroke, CMYK slider sync, `_spSpotInk` tagging, undo history. Measured inside the widget: opening a book opens its accordion (126 px body), picking **HKS 45 K** sets `#4CA82F` on the object, tags the spot ink, lights the swatch up and updates the Fill field **on both sides**.
+- **The widget could not show a book as open, nor the chosen shade.** The dock mirrors state classes only on referenced elements; the `is-open` class lives on the book row (which had no id) and `is-active` on the shade. Both are now mirrored, along with `is-disabled` (the greyed Pantone row), so the widget follows: open book, chosen shade, greyed row.
+- **A colour chosen in the widget could be overwritten.** The widget resyncs with the right-hand bar every 450 ms; while a native colour picker is open the field is no longer `document.activeElement`, so the resync wrote the old value back and the choice was lost (“cannot validate the colour”). A field with a recent interaction (pointer down or typing) is now left alone for **4 seconds**.
+- **The CMYK switch did not change the widget.** `rgbPickersGroup` / `cmykSlidersGroup` swap their `display` in the panel; that visibility is now mirrored too — measured: RGB `flex → none`, CMYK `none → block`, both ways.
+
+### Changed
+- **The Colours widget is now the widest template** (`sp-dock-xl`, like the “Animated background” widget): **470 px**, minimum 380, maximum 540, instead of 400. Measured after the change: 469 px body, nothing cut on the right, and **nothing left to scroll** (content 521 px for 521 px visible). At the historical 200 px widget width the Fill colour field was only **11 px** wide.
+- **Inside a widget the swatch list is capped at 230 px and scrolls on its own**, so “Import a swatch book” stays reachable; the right-hand bar keeps showing every book at once (no cap there).
+
+### Added
+- **`spDockWidgets.rafraichir(nom)`**: an open widget can rebuild its copy. The Colours widget calls it when a swatch book is imported or removed, so the new book appears in the widget immediately (measured: 13 → 12 books after removing one).
 ## [1.7.527] — 2026-09-22
 
 _An ink imported as .ase (or taken from any swatch book) gets its own, correctly named plate in the PDF export_

@@ -8509,14 +8509,33 @@ window.spTestDiag = function () {
             var orig = document.getElementById(id);
             if (!orig) return;
             if (c.classList && orig.classList) {
-                var on = orig.classList.contains('active');
-                if (c.classList.contains('active') !== on) c.classList.toggle('active', on);
+                /* 🆕 v1.7.528 — _SP_DOCK_COLORS_528c : on reporte aussi les classes d'ÉTAT
+                   des nuanciers — `is-open` (nuancier déplié), `is-active` (teinte choisie),
+                   `is-disabled` (Pantone grisé). Sans elles le widget restait figé : le clic
+                   était bien relayé à la barre de droite, mais la copie ne s'ouvrait pas et ne
+                   montrait pas la teinte choisie. */
+                ['active', 'is-open', 'is-active', 'is-disabled'].forEach(function (cl) {
+                    var on = orig.classList.contains(cl);
+                    if (c.classList.contains(cl) !== on) c.classList.toggle(cl, on);
+                });
             }
             if ('disabled' in c && 'disabled' in orig && c.disabled !== orig.disabled) c.disabled = orig.disabled;
             /* Libellé d'état (ex. « ⏸ Geler » / « ▶ Reprendre », valeur chiffrée d'un
                curseur) : reporté uniquement si le contrôle d'origine le demande. */
             if (orig.hasAttribute && orig.hasAttribute('data-sp-miroir-texte') && c.textContent !== orig.textContent) {
                 c.textContent = orig.textContent;
+            }
+            /* 🆕 v1.7.528 — _SP_DOCK_COLORS_528b : VISIBILITÉ DES BLOCS.
+               Le panneau Couleurs échange #rgbPickersGroup et #cmykSlidersGroup en `display`
+               quand on bascule « Activer les couleurs CMYK ». Sans ce report, le widget
+               continuait d'afficher les champs RVB et n'affichait jamais les curseurs CMJN
+               (mesuré : origine `none` / copie `flex`). On reporte donc display dans les deux
+               sens ; on laisse une valeur vide (donc la feuille de style) quand le bloc est
+               visible, pour ne pas figer la mise en page du widget. */
+            if (c.style && orig.style && c.style.display !== undefined) {
+                var masqueOrigine = (getComputedStyle(orig).display === 'none');
+                var masqueCopie = (getComputedStyle(c).display === 'none');
+                if (masqueOrigine !== masqueCopie) c.style.display = masqueOrigine ? 'none' : '';
             }
         });
     }
@@ -8556,6 +8575,14 @@ window.spTestDiag = function () {
         function reporter(e) {
             var cible = e.target;
             if (!cible || !cible.tagName) return;
+            /* 🆕 v1.7.528 — _SP_DOCK_COLORS_528 : on DATE l'interaction sur le champ.
+               Pendant qu'un sélecteur de couleur natif est ouvert, le champ n'est plus
+               document.activeElement (c'est la boîte de dialogue qui a le focus) : la veille de
+               450 ms réécrivait alors la valeur du widget avec celle de la barre de droite, et
+               la couleur choisie était perdue (« impossible de valider la couleur dans le
+               widget », alors que la barre de droite marchait — elle n'a pas de copie).
+               synchroniser() ne touche plus un champ manipulé depuis moins de 4 s. */
+            try { cible._spUserAt = Date.now(); } catch (_) {}
             var orig = origineDe(cible);
             if (!orig) return;
             if (cible.type === 'checkbox' || cible.type === 'radio') orig.checked = cible.checked;
@@ -8566,6 +8593,14 @@ window.spTestDiag = function () {
         }
         clone.addEventListener('input', reporter, true);
         clone.addEventListener('change', reporter, true);
+        /* _SP_DOCK_COLORS_528 : on date AUSSI l'appui (ouverture du sélecteur de couleur) —
+           sans cela, un choix fait dans les 450 premières ms pouvait encore être écrasé. */
+        clone.addEventListener('pointerdown', function (e) {
+            var c = e.target;
+            if (c && c.tagName && (c.tagName === 'INPUT' || c.tagName === 'SELECT' || c.tagName === 'TEXTAREA')) {
+                try { c._spUserAt = Date.now(); } catch (_) {}
+            }
+        }, true);
     }
 
     /* Sens inverse : l'app met à jour la barre de droite, le widget suit. */
@@ -8578,6 +8613,9 @@ window.spTestDiag = function () {
             Array.prototype.forEach.call(d.clone.querySelectorAll('input,select,textarea'), function (c) {
                 var orig = origineDe(c);
                 if (!orig || c === document.activeElement) return;
+                /* _SP_DOCK_COLORS_528 : 4 s de grâce après une manipulation (voir reporter) —
+                   le sélecteur de couleur natif garde la main sur la valeur. */
+                if (c._spUserAt && (Date.now() - c._spUserAt) < 4000) return;
                 if (c.type === 'checkbox' || c.type === 'radio') { if (c.checked !== orig.checked) c.checked = orig.checked; }
                 else if (c.tagName === 'SELECT') { if (c.selectedIndex !== orig.selectedIndex) c.selectedIndex = orig.selectedIndex; }
                 else if (c.value !== orig.value) c.value = orig.value;
@@ -8687,6 +8725,18 @@ window.spTestDiag = function () {
         /* _SP_RANDOMBACK_510_DEBUT — le widget « Fond animé » porte un APERÇU : il lui faut
            franchement plus de place (aperçu A4 en portrait + quatre tirettes + six boutons). */
         if (nom === 'randomBackMenu') host.classList.add('sp-dock-xl');
+        /* 🆕 v1.7.528 — _SP_DOCK_COLORS_528 : LE WIDGET « COULEURS » A BESOIN DE LARGEUR.
+           MESURE à la largeur historique des widgets (200 px) : dans la ligne Fond / Contour,
+           le champ de couleur natif ne faisait plus que 11 px de large (les deux pipettes et le
+           bouton « sans fond » mangent la ligne) et les noms des nuanciers étaient tronqués —
+           la barre de droite, elle, fait 273 px. On lui donne 400 px (même gabarit que
+           « Grille & repères »), min 320, max 480. */
+        if (nom === 'colors') host.classList.add('sp-dock-xl');
+        /* _SP_DOCK_COLORS_528c : mesuré à 400 px, le champ de couleur natif faisait 90 px et
+           rien n'était coupé à droite, mais le panneau Couleurs est le plus dense de la barre
+           de droite (ligne Fond / Contour / Ép., quatre curseurs CMJN avec leurs champs,
+           liste des nuanciers) : il prend donc le gabarit le plus large (470 px, min 380,
+           max 540), comme le widget « Fond animé ». */
         var clone = copier(sec);
         /* En-tête identique aux widgets existants : point, titre en capitales,
            petit triangle à droite pour le soufflet. Le titre du clone est masqué :
@@ -8729,7 +8779,7 @@ window.spTestDiag = function () {
         var pos = null;
         try { pos = JSON.parse(localStorage.getItem(clef(nom)) || 'null'); } catch (_) {}
         var nb = Object.keys(docks).length;
-        docks[nom] = { host: host, origine: sec, clone: clone };
+        docks[nom] = { host: host, origine: sec, clone: clone, corps: corps };
         couche().appendChild(host);
 
         /* Position par défaut : DANS l'espace de prévisualisation, en cascade
@@ -8750,6 +8800,22 @@ window.spTestDiag = function () {
         majBouton(nom, true);
         if (!veille) veille = setInterval(synchroniser, 450);
         synchroniser();
+    }
+
+    /* 🆕 v1.7.528 — _SP_DOCK_COLORS_528c : RECONSTRUIRE LA COPIE D'UN WIDGET OUVERT.
+       Le panneau Couleurs peut changer de contenu APRÈS l'ouverture du widget (import ou
+       retrait d'un nuancier .ase) : la copie, elle, restait figée. Ce point d'entrée repose
+       une copie fraîche dans le corps déjà en place — même mise en page, même relais
+       d'événements (ponter) — puis reporte l'état visible. */
+    function rafraichir(nom) {
+        var d = docks[nom];
+        if (!d || !d.corps || !d.origine) return;
+        var nouveau = copier(d.origine);
+        ponter(nouveau);
+        d.corps.innerHTML = '';
+        d.corps.appendChild(nouveau);
+        d.clone = nouveau;
+        refletEtat(nouveau);
     }
 
     function fermer(nom, btn) {
@@ -8823,6 +8889,9 @@ window.spTestDiag = function () {
         /* _SP_ETAT_517_DEBUT — l'application demande le report de l'état visible après
            un changement (effet, définition, gel, curseur) : le widget suit aussitôt. */
         reflet: function () { Object.keys(docks).forEach(function (n) { refletEtat(docks[n].clone); }); },
+        /* _SP_DOCK_COLORS_528c : recopie le contenu d'un widget ouvert (nuancier importé
+           ou retiré pendant qu'il est affiché). */
+        rafraichir: rafraichir,
         estOuvert: function (nom) { return !!docks[nom]; }
     };
     window.addEventListener('load', function () { init(); surveiller(); });
