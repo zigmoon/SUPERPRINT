@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -36,6 +36,24 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
+## [1.7.525] — 2026-09-22
+
+_Swatch books in the right column: Toyo Color Finder, Focoltone, HKS, RAL, NCS and DIC in an accordion, plus your own .ase import_
+
+### Added
+- **The colour list is now a list of swatch books.** “Sélectionner un nuancier” / “Select a swatch book” replaces “Sélectionner un Pantone”. Each book — **Toyo Color Finder** (46 shades), **Focoltone** (48), **HKS** (54), **RAL** (191), **NCS** (55), **DIC** (49) — opens as an accordion: click the row to open it, click again to close, and several books can stay open at once. Every shade is a row with **its colour dot and its name** (“RAL 3020 — Rouge signalisation”), the families are captioned inside the book (Yellows, Oranges, Reds & pinks, Purples, Blues, Greens, Browns, Greys…), each shade list scrolls on its own past 126 px, and the row shows the shade count. Clicking a shade applies the ink exactly like the old list did: same **Fill / Stroke** target, same spot-ink badge under the pickers, same CMYK sliders, same spot layer in the PDF export. Measured: picking RAL 3020 sets `fill = #CC0605`, tags `_spSpotInk = #CC0605` with the channel name `RAL 3020`; with the Stroke target, `#D0021B` gives `_spSpotStrokeInk` and the channel name `HKS 14 K`.
+- **Import your own .ase swatch books.** A new “Importer un nuancier” / “Import a swatch book” row opens the file picker; the chosen **Adobe Swatch Exchange** (.ase) file is parsed locally — RGB, CMYK, Lab and Grey entries, groups and names kept — and joins the list **under the file name**, its shades inside. Imported books are remembered in the browser and come back on the next visit, and each one has a ✕ on its row to remove it (list, catalogue and storage are cleaned together). Tested with a generated .ase holding one colour of each model: `RGB(1,0,0) → #FF0000`, `CMYK(1,0,0,0) → #00FFFF`, `Lab(87.74,−86.18,83.18) → #00FF00`, `Gray 0.5 → #808080`. Nothing is uploaded: the file never leaves the browser.
+
+### Changed
+- **Pantone is parked for now**, as requested: its row stays at the bottom of the list, **greyed out with a “soon” badge and not openable**. The palette itself is untouched.
+- **The catalogue keeps a single source of truth.** `#spotColorSelect` is still there (hidden) and `JS/swatchbooks.js` only *appends* one `<optgroup>` per book to it: `_spSpotBuildCatalog()`, `_spSpotScanDocument()` and the spot-layer export read the same options as before. Measured: the select goes from 246 to 689 `<option>`s, with the 21 original Pantone groups **unchanged and in the same order**, so existing documents keep recognising, naming and exporting their spot colours identically.
+- **No application logic was duplicated.** Picking a shade writes the value into that select and dispatches a real `change` event: the original handler in `main.js` still does the work (fill or stroke, CMYK slider sync, `_spSpotInk` tagging, undo history) and still resets the select afterwards.
+- **The swatch area stays compact**, so FILL / STROKE and the ink name stay within reach: the list of books is capped at **120 px** and scrolls in place (it grows to **150 px** while a book is open, the exact height of a 24 px header plus its 126 px shade list), book headers are 24 px tall, the import row is 24 px and the sRGB note fits on one line. Measured: FILL / STROKE moves up ~100 px (from y≈704 to y≈604 on a 1400×900 window, RGB mode, everything folded).
+- **Spot Colours wording**: the panel label drops “Pantone” (now “Tons directs” / “Spot colours” / “スポットカラー”) and all four new strings (title, import row, “soon” badge, note) exist in French, English and Japanese.
+
+### Notes
+- The books shipped with the app are **screen-preview sRGB references**, not the manufacturers’ official libraries — this is stated under the list (“Valeurs sRGB d’aperçu — pour les valeurs exactes, importez un fichier .ase.”). No commercial library was copied into the app; importing a manufacturer’s .ase is the way to work from its exact values.
+- `JS/swatchbooks.js` is precached by the service worker (`app/service-worker.js`), so the swatch books work offline too.
 ## [1.7.524] — 2026-09-21
 
 _Mobile top bar: the burger menu closes with a cross, and Undo / Redo sit facing it_

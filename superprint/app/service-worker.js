@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.524-topnav-mobile';
+const CACHE_NAME = 'superprint-shell-v1.7.525-nuanciers';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -15,6 +15,8 @@ const APP_SHELL = [
   './CSS/mobile-widgets.css',
   './SP/super_print_logo_blanc.svg',
   './JS/main.js',
+  // 🎨 v1.7.525 — _SP_NUANCIERS_525 : nuanciers (accordéons) + import .ase.
+  './JS/swatchbooks.js',
   './JS/patches-core.js',
   './JS/pwa.js',
   './JS/simple-pen-tool.js',
