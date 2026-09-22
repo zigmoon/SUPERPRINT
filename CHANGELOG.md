@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -36,6 +36,16 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
+## [1.7.526] — 2026-09-22
+
+_Colours panel: Fill / Stroke and the colour line move above the swatch books_
+
+### Changed
+- **In the right-hand Colours panel, the Fill / Stroke module now comes first**, right under the CMYK switch, as asked (“mets le FILL et STROKE + la phrase qui dit la couleur par-dessus les nouveaux outils pour les teintes… FILL et STROKE module trop bas”). The swatch books — and their Fill / Stroke target buttons — come after it. Measured with the panel open (1400 × 900, 273 px column): `#rgbPickersGroup` y **616 → 355**, and the colour line (hex or CMYK value plus the spot-ink name) y **672 → 411**, i.e. **261 px higher**. It is a pure DOM reorder — the block was extracted by anchors and re-inserted as-is, so **no id changed and no code line was touched**: Fill / Stroke, the pipettes, the “no fill / no stroke” buttons, the CMYK sliders, the value line and the spot-ink badge behave exactly as before.
+- **The swatch-book list is no longer cramped.** The 120 px cap (150 px with a book open) and the `has-open` class behind it were introduced in 1.7.525 *only* to keep Fill / Stroke visible below the list; with the module now above, that workaround is gone. The seven rows — the six books plus the greyed Pantone row — show in one go (measured list height **162 px**, no scrollbar of its own), followed by “Import a swatch book”; only the shade list of an opened book scrolls, inside its own row (126 px).
+
+### Notes
+- Untouched: the ink application path (shade → hidden `#spotColorSelect` → the original `main.js` handler), the spot catalogue, the export layers, the .ase import, the French / English / Japanese strings and the service-worker precache. `JS/swatchbooks.js` gets its own cache tag bumped (`JS/swatchbooks.js?v=…`) alongside `main.js` and `main.css`.
 ## [1.7.525] — 2026-09-22
 
 _Swatch books in the right column: Toyo Color Finder, Focoltone, HKS, RAL, NCS and DIC in an accordion, plus your own .ase import_

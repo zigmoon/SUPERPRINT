@@ -26,7 +26,7 @@ npm login
 npm publish
 ```
 
-C'est tout. Le package `superprint` est en ligne (version actuelle : **1.0.104**).
+C'est tout. Le package `superprint` est en ligne (version actuelle : **1.0.105**).
 
 ## 4. Mettre à jour plus tard (après modification)
 
@@ -52,13 +52,13 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 | Fichier | Rôle |
 |---|---|
 | `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~58 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
-| `version.txt` | Version en ligne (`1.7.517`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
+| `version.txt` | Version en ligne (`1.7.526`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
 
 > `version.txt` : si absent, le CLI affiche "Version en ligne : superprint.cc" sans version — pas bloquant, mais mieux vaut le déployer.
 
 > 📦 Le zip est régénéré par **`node _dev/scripts/_make_zip_492.cjs`** (à la racine du repo : il crée `superprint/sp213-local.zip` puis le contrôle). Il n'est **pas commité** dans git (~58 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
 
-> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.517** (zip vérifié octet à octet sur app.zigmoon.com — 61 592 268 octets, `version.txt` en ligne sur superprint.cc au 20/09/2026 : les deux fichiers servis sont à jour).
+> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.517** — inchangé pour l'instant, car le zip **1.7.526** (61 618 050 octets, vérifié le 22/09/2026) est prêt dans `superprint/sp213-local.zip` mais **pas encore téléversé**. Dès qu'il est en ligne sur app.zigmoon.com et que `version.txt` affiche 1.7.526 sur superprint.cc, passer `MIN_APP_VERSION` à `'1.7.526'` (une ligne dans `cli.mjs`).
 
 ## 📋 La commande à copier-coller (nouvelle)
 

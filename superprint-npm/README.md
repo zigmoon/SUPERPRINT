@@ -15,12 +15,12 @@
 </p>
 
 <p align="center">
-  <img alt="App" src="https://img.shields.io/badge/app-1.7.416-000000?style=flat-square">
-  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.95-CB3837?style=flat-square">
+  <img alt="App" src="https://img.shields.io/badge/app-1.7.526-000000?style=flat-square">
+  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.105-CB3837?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-Proprietary-red?style=flat-square">
 </p>
 
-**SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free, no subscription, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, master pages, linked text frames, fine typography) with an **AI layout studio** that turns a written brief into a print-ready, fully editable document.
+**SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free, no subscription, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, **spot inks**, master pages, linked text frames, fine typography) with an **AI layout studio** that turns a written brief into a print-ready, fully editable document.
 
 This package is the **launcher**. It downloads the application once, installs its local dependencies and serves it on **`http://127.0.0.1:5173`**. Your projects use SuperPrint's native editable `.sp` format and stay **on your computer** unless you deliberately export them or enable a cloud AI provider.
 
@@ -75,7 +75,7 @@ This package launches SuperPrint, but the project is a small **family of browser
 ## ✦ Why SuperPrint?
 
 - **A real DTP tool, not a toy** — real millimetre formats, bleed, trim marks, master pages, layers, guides & grids, linked text frames, editorial typography with **automatic hyphenation**.
-- **Offset-ready output** — CMYK + ICC profiles, **Pantone** spot inks, PDF/X-3, imposition, and a soft-proof preview.
+- **Offset-ready output** — CMYK + ICC profiles, spot inks from **six built-in swatch books** (**Toyo Color Finder, Focoltone, HKS, RAL, NCS, DIC**) plus **your own `.ase` libraries**, PDF/X-3, imposition, and a soft-proof preview.
 - **Typography that survives export** — vector PDF keeps text selectable and searchable. Hyphenation dictionaries for **French, English, German, Spanish and Italian**.
 - **100 % browser-based** — Chrome, Firefox, Safari, Edge.
 - **No subscription, no account, no tracking.**
@@ -86,11 +86,32 @@ This package launches SuperPrint, but the project is a small **family of browser
 
 ## ✦ Formats
 
-**Import** — Word `.docx` / `.doc` (with image extraction; `.doc` through a real Compound File Binary parser), OpenDocument `.odt` / `.ods` / `.odp`, **RTF** (page setup decoded: format, margins, gutter, columns, headers/footers, page breaks), PDF, InDesign `.idml`, Excel `.xlsx` / `.xls` *(SheetJS is loaded from a CDN — Excel import needs a network connection)*, images (PNG, JPG, WebP, GIF, SVG, TIFF, EPS, AI, PSD), Scribus `.sla` *(BETA)*, and the native `.sp` / `.json` project formats.
+**Import** — Word `.docx` / `.doc` (with image extraction; `.doc` through a real Compound File Binary parser), OpenDocument `.odt` / `.ods` / `.odp`, **RTF** (page setup decoded: format, margins, gutter, columns, headers/footers, page breaks), PDF, InDesign `.idml`, Excel `.xlsx` / `.xls` *(SheetJS is loaded from a CDN — Excel import needs a network connection)*, images (PNG, JPG, WebP, GIF, SVG, TIFF, EPS, AI, PSD), Scribus `.sla` *(BETA)*, the native `.sp` / `.json` project formats, and **Adobe Swatch Exchange `.ase`** colour libraries (see below).
 
 **Export** — **PDF** in four qualities (**72 / 200 / 300 / 600 DPI**) with bleed, trim marks, colour bar and **imposition**; `PDF/X-3:2003` with `OutputIntent` and `DestOutputProfile`; **CMYK** through ICC profiles (three bundled: **Coated FOGRA39**, **US Web Coated SWOP**, **Japan Color 2001 Coated** — custom profiles can be loaded); **Pantone** spot channels as real `/Separation` colour spaces, on a CMYK **or** RGB quadri layer; **vector typography** (selectable text, embedded fonts); **PNG** (white or transparent) and **JPG**; native `.sp` and `.json`.
 
 > ℹ️ **IDML is import-only.** There is no IDML export — the native exchange format is `.sp`.
+
+---
+
+## ✦ Spot colours & swatch books
+
+The Colour panel is a **list of colour libraries**, each one an accordion: open a book, pick a shade — every row shows its **colour dot and its name**, and the ink is applied to the **fill or the stroke** of your selection.
+
+| Swatch book | Shades | |
+|---|---|---|
+| **Toyo Color Finder** | 46 | Japanese ink system, grouped by family |
+| **Focoltone** | 48 | Process-oriented reference set |
+| **HKS** | 54 | HKS K (coated) reference |
+| **RAL** | 191 | RAL Classic, with French colour names |
+| **NCS** | 55 | Natural Colour System notation |
+| **DIC** | 49 | Japanese DIC reference |
+| **Pantone** | 246 | Kept in the catalogue — its accordion arrives in a coming release |
+| **Your own** | any | Import an Adobe Swatch Exchange **`.ase`** file → a new book named after the file |
+
+- **`.ase` import is local**: RGB, CMYK, Lab and Grey entries are parsed in the browser, nothing is uploaded, the imported book comes back on the next visit and can be removed with a ✕.
+- The built-in shade values are **screen-preview sRGB conversions**, not the manufacturers' official libraries (this is stated in the interface). For exact values, import the library the manufacturer provides as `.ase`.
+- On export, every ink still becomes its **own named `/Separation` colour channel** — adding libraries does not change the way plates are produced.
 
 ---
 

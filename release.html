@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.525 — swatch books (Toyo, Focoltone, HKS, RAL, NCS, DIC) in an accordion list, plus your own .ase import.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.526 — in the Colours panel, Fill / Stroke and the colour line move above the swatch books.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.525 — swatch books (Toyo, Focoltone, HKS, RAL, NCS, DIC) in an accordion list, plus your own .ase import.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.526 — in the Colours panel, Fill / Stroke and the colour line move above the swatch books.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,33 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.526 — Panneau Couleurs : FILL / STROKE et le nom de la couleur remontent au-dessus des nuanciers ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-526">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.526</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 22 septembre 2026" data-i18n-en="Released September 22, 2026" data-i18n-jp="2026年9月22日公開">Released September 22, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Dans le panneau Couleurs, le module FILL / STROKE et la ligne qui dit la couleur passent tout en haut, juste sous la bascule CMJN : les nuanciers viennent après. Le module de la couleur était trop bas, il descendait sous la liste des nuanciers." data-i18n-en-html="In the Colours panel, the Fill / Stroke module and the colour line now sit at the very top, right under the CMYK switch, with the swatch books after them. The colour module used to sit below the swatch list — too low." data-i18n-jp-html="カラーパネルでは、FILL / STROKE モジュールとカラー名の行が最上部（CMYK スイッチの直下）に移動し、スウォッチブックはその下に来ます。これまでカラーモジュールはスウォッチ一覧の下にあり、低すぎました。">In the Colours panel, Fill / Stroke and the colour line move to the top, above the swatch books.</p>
+
+ <h3 data-i18n-fr-html="🎨 Le module de la couleur passe en haut <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🎨 The colour module moves to the top <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🎨 カラーモジュールを最上部へ <span class=&quot;badge badge-fix&quot;>修正</span>">🎨 The colour module moves to the top <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Ordre mesuré, panneau Couleurs ouvert (colonne de 273 px) : <strong>FILL / STROKE</strong> passe de la position y = 616 à <strong>y = 355</strong>, et la ligne qui dit la couleur (valeur hexa ou CMJN + nom du ton direct) de y = 672 à <strong>y = 411</strong> — soit <strong>261 px plus haut</strong>. Les nuanciers, avec leur cible Fond / Contour, viennent maintenant en dessous." data-i18n-en-html="Measured with the Colours panel open (273 px column): <strong>Fill / Stroke</strong> moves from y = 616 to <strong>y = 355</strong>, and the colour line (hex or CMYK value plus the spot-ink name) from y = 672 to <strong>y = 411</strong> — <strong>261 px higher</strong>. The swatch books, with their Fill / Stroke target, now come after them." data-i18n-jp-html="カラーパネルを開いた状態（273 px 幅）での実測：<strong>FILL / STROKE</strong> は y = 616 から <strong>y = 355</strong> へ、カラー名の行（16 進または CMYK 値 + スポットインク名）は y = 672 から <strong>y = 411</strong> へ移動し、<strong>261 px 上</strong>になりました。スウォッチブック（塗り／線の対象ボタン付き）はその下です。">Measured: Fill / Stroke goes from y = 616 to y = 355, and the colour line from y = 672 to y = 411 (261 px higher).</li>
+  <li data-i18n-fr-html="C'est un simple <strong>déplacement</strong> : le bloc a été retiré d'un endroit et reposé tel quel plus haut. Aucun identifiant ne change, aucune ligne de code n'a été touchée — FILL / STROKE, les pipettes, les boutons « sans fond / sans contour », les curseurs CMJN, la ligne des valeurs et la pastille du ton direct se comportent exactement comme avant." data-i18n-en-html="It is a plain <strong>move</strong>: the block was taken out and put back as it was, higher up. No id changes, no code line was touched — Fill / Stroke, the pipettes, the “no fill / no stroke” buttons, the CMYK sliders, the value line and the spot-ink badge behave exactly as before." data-i18n-jp-html="純粋な<strong>移動</strong>です。ブロックをそのまま取り出して上に置き直しただけで、ID もコードも変更していません。FILL / STROKE、スポイト、「塗りなし／線なし」ボタン、CMYK スライダー、値の行、スポットインクの丸印はすべてこれまでどおりです。">It is a plain move: nothing was rewritten, no id changed, no code touched.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="📄 La liste des nuanciers respire <span class=&quot;badge badge-new&quot;>ajusté</span>" data-i18n-en-html="📄 The swatch-book list can breathe <span class=&quot;badge badge-new&quot;>tuned</span>" data-i18n-jp-html="📄 スウォッチブック一覧がゆったりと <span class=&quot;badge badge-new&quot;>調整</span>">📄 The swatch-book list can breathe <span class="badge badge-new">tuned</span></h3>
+ <ul>
+  <li data-i18n-fr-html="En 1.7.525 la liste avait été <strong>plafonnée</strong> (120 px, 150 px quand un nuancier était ouvert) uniquement pour laisser FILL / STROKE visible sous elle. Ce plafond n'a plus de raison d'être : il est retiré. Les <strong>sept lignes</strong> — les six nuanciers et la ligne Pantone grisée — s'affichent maintenant d'un seul bloc (hauteur mesurée : 162 px, <strong>sans barre de défilement propre</strong>), suivies de « Importer un nuancier ». Seule la liste des teintes d'un nuancier ouvert défile, à l'intérieur de sa ligne (126 px)." data-i18n-en-html="In 1.7.525 the list had been <strong>capped</strong> (120 px, 150 px with a book open) only to keep Fill / Stroke visible under it. That cap is no longer needed and is gone. The <strong>seven rows</strong> — the six books and the greyed Pantone row — now show in one go (measured height: 162 px, <strong>no scrollbar of its own</strong>), followed by “Import a swatch book”. Only the shade list of an opened book scrolls, inside its own row (126 px)." data-i18n-jp-html="1.7.525 では一覧に<strong>高さ制限</strong>（120 px、開いたときは 150 px）をかけていましたが、それは FILL / STROKE を下に残すためだけのものでした。もう不要なので撤去しました。<strong>7 行</strong>（6 つのスウォッチブックとグレーの Pantone 行）が一度に表示され（実測 162 px、<strong>独自のスクロールバーなし</strong>）、その下に「スウォッチブックを読み込む」が続きます。スクロールするのは開いたスウォッチブックの色一覧だけ（行内 126 px）です。">The 120/150 px cap added in 1.7.525 is gone: the seven rows show in one go (162 px, no inner scrollbar).</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="ℹ️ Rien d'autre ne change" data-i18n-en-html="ℹ️ Nothing else changes" data-i18n-jp-html="ℹ️ その他の変更はありません">ℹ️ Nothing else changes</h3>
+ <ul>
+  <li data-i18n-fr-html="Le chemin d'application de l'encre est intact : choisir une teinte écrit la valeur dans le nuancier caché et déclenche le traitement d'origine (Fond ou Contour, curseurs CMJN, marquage du ton direct, historique). Le catalogue des tons directs, les couches d'export, l'import .ase, les libellés français / anglais / japonais et le fonctionnement hors ligne sont inchangés." data-i18n-en-html="The ink path is untouched: picking a shade writes the value into the hidden palette and triggers the original handler (fill or stroke, CMYK sliders, spot-ink tagging, undo history). The spot catalogue, the export layers, the .ase import, the French / English / Japanese strings and the offline behaviour are unchanged." data-i18n-jp-html="インクの適用経路はそのままです。色を選ぶと非表示のパレットに値が書き込まれ、元の処理（塗り／線、CMYK スライダー、スポットインクの記録、履歴）が動きます。スポットカタログ、書き出しの版、.ase の読み込み、フランス語／英語／日本語の文言、オフライン動作は変更ありません。">The ink path, the catalogue, the export layers, the .ase import and the translations are unchanged.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.525 — Nuanciers : Toyo, Focoltone, HKS, RAL, NCS, DIC en accordéon, plus l'import de vos propres fichiers .ase ===== -->
 

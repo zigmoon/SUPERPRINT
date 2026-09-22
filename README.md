@@ -27,10 +27,10 @@
 </p>
 
 <p align="center">
-  <img alt="App" src="https://img.shields.io/badge/app-1.7.417-000000?style=flat-square">
-  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.92-CB3837?style=flat-square">
+  <img alt="App" src="https://img.shields.io/badge/app-1.7.526-000000?style=flat-square">
+  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.105-CB3837?style=flat-square">
   <img alt="DTP" src="https://img.shields.io/badge/type-DTP%20%2B%20prepress-00A7C7?style=flat-square">
-  <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20%2B%20Pantone-E1237B?style=flat-square">
+  <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20%2B%20spot%20inks-E1237B?style=flat-square">
   <img alt="AI" src="https://img.shields.io/badge/AI-cloud%20or%20local-F2B90B?style=flat-square">
   <img alt="UI" src="https://img.shields.io/badge/UI-FR%20%7C%20EN%20%7C%20JP-17130D?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-Proprietary-red?style=flat-square">
@@ -40,7 +40,7 @@
 
 ## ✦ SuperPrint in one sentence
 
-**SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free, no subscription, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, master pages, linked text frames, fine typography) with an **AI layout studio** that turns a written brief into a print-ready, fully editable document.
+**SuperPrint** is a **professional page-layout and prepress (DTP) application that runs entirely in the browser** — free, no subscription, no account, no ads. It combines a **real multi-page layout editor** (bleed, CMYK, **spot inks**, master pages, linked text frames, fine typography) with an **AI layout studio** that turns a written brief into a print-ready, fully editable document.
 
 > Online or local, your documents stay **on your machine**. Nothing is sent anywhere unless you deliberately enable a cloud AI provider.
 
@@ -77,7 +77,7 @@ SuperPrint is not a single tool: it is a small **family of browser-based creativ
 | **Images** | `.png` `.jpg` `.webp` `.gif` `.svg` `.bmp` `.tif` `.eps` `.ai` `.psd` | Drag & drop supported everywhere. |
 | **Other** | `.sla` (Scribus, **BETA**) · `.csv` · `.html` · `.txt` · `.md` | |
 | **Projects** | `.sp` (native) · `.json` | Native project format; `resources` carry fonts, colours and **Pantone spot inks**. |
-| **Fonts & colour** | `.ttf` `.otf` `.woff2` · `.icc` `.icm` | Custom fonts, and custom ICC profiles for both standard and imposed export. |
+| **Fonts & colour** | `.ttf` `.otf` `.woff2` · `.icc` `.icm` · `.ase` | Custom fonts, custom ICC profiles for standard and imposed export, and **your own swatch books**: an Adobe Swatch Exchange (`.ase`) file is parsed in the browser and joins the palette as a new colour library. |
 
 ### Export
 
@@ -86,7 +86,7 @@ SuperPrint is not a single tool: it is a small **family of browser-based creativ
 | **PDF** | Four qualities — **Standard 72 DPI · Medium 200 DPI · HD 300 DPI · ULTRA HD 600 DPI**. Bleed, trim marks, colour bar, **imposition** for offset, spread (facing pages), and **vector typography** (real selectable text with embedded fonts — not rasterised). |
 | **PDF/X** | `PDF/X-3:2003` with `OutputIntent` + `DestOutputProfile` and the `GTS_PDFX` watermark. |
 | **CMYK** | Conversion through **ICC profiles** — three ship with the app: **Coated FOGRA39**, **US Web Coated SWOP**, **Japan Color 2001 Coated**. Custom profiles can be loaded. Adjustable GCR and ink limit, plus an on-screen soft-proof simulation. |
-| **Spot colours** | **Pantone** spot channels written as real `/Separation` colour spaces, from a swatch of **246 inks**. The quadri layer under them is selectable: **CMYK + Pantone** or **RGB + Pantone** — the tint function follows the chosen space, so RGB spots stay bright instead of being squeezed through the CMYK gamut. |
+| **Spot colours** | Spot inks written as real `/Separation` colour spaces, from **six built-in swatch books** — **Toyo Color Finder** (46 shades), **Focoltone** (48), **HKS** (54), **RAL** (191), **NCS** (55), **DIC** (49) — plus **your own `.ase` libraries**; the 246-ink **Pantone** palette stays in the catalogue. The quadri layer under them is selectable: **CMYK + spot inks** or **RGB + spot inks** — the tint function follows the chosen space, so RGB spots stay bright instead of being squeezed through the CMYK gamut. |
 | **Image** | **PNG** (white or transparent background) · **JPG**. |
 | **Project** | `.sp` (native) · `.json`. |
 
@@ -97,13 +97,35 @@ SuperPrint is not a single tool: it is a small **family of browser-based creativ
 ## ✦ Why SuperPrint?
 
 - **A real DTP tool, not a toy** — real millimetre formats, bleed, trim marks, master pages, layers, guides & grids, linked text frames, editorial typography with **automatic hyphenation**.
-- **Offset-ready output** — CMYK + ICC, Pantone spot inks, PDF/X-3, imposition, and a soft-proof preview.
+- **Offset-ready output** — CMYK + ICC, spot inks from six built-in swatch books (**Toyo Color Finder, Focoltone, HKS, RAL, NCS, DIC**) plus your own **`.ase`** libraries, PDF/X-3, imposition, and a soft-proof preview.
 - **Typography that survives export** — vector PDF keeps text selectable and searchable. Hyphenation dictionaries ship for **French, English, German, Spanish and Italian**.
 - **100 % browser-based** — nothing to install for online use: Chrome, Firefox, Safari, Edge.
 - **No subscription, no account, no tracking** — open it and start composing.
 - **Offline PWA** — installable as a desktop app, with an auto-save net in **IndexedDB**.
 - **AI that can stay local** — run Studio IA on cloud models, or entirely offline with WebLLM over WebGPU.
 - **Interoperability** — import the documents you already have; export print-ready files.
+
+---
+
+## ✦ Spot colours & swatch books
+
+The Colour panel is a **list of colour libraries**, each one an accordion you open to pick a shade:
+
+| Swatch book | Shades | Notes |
+|---|---|---|
+| **Toyo Color Finder** | 46 | Japanese ink system, grouped by family (yellows, reds, greens, blues…) |
+| **Focoltone** | 48 | Process-oriented reference set |
+| **HKS** | 54 | HKS K (coated) reference, codes 1 K → 80 K |
+| **RAL** | 191 | RAL Classic, with **French colour names** (RAL 3020 Rouge signalisation, RAL 7016 Gris anthracite…) |
+| **NCS** | 55 | Natural Colour System notation (S 0500-N, S 2060-B, S 4050-G…) |
+| **DIC** | 49 | Japanese DIC reference |
+| **Pantone** | 246 | Kept in the catalogue — its own accordion arrives in a coming release |
+| **Your own** | any | Import an Adobe Swatch Exchange **`.ase`** file → it joins the list under the file name |
+
+- Every shade is a row with its **colour dot and its name**; a click applies the ink to the **fill or the stroke** of the selection, with the same CMYK slider sync, undo history and spot-ink badge as before.
+- **`.ase` import** (RGB, CMYK, Lab and Grey entries) is parsed **in the browser** — nothing is uploaded — and the imported library comes back on the next visit (it can be removed with a ✕).
+- The built-in shade values are **screen-preview sRGB conversions**, not the manufacturers' official libraries — this is stated in the interface. For exact values, import the library the manufacturer provides as `.ase`.
+- On export, every ink still becomes its **own named `/Separation` channel**: adding libraries does not change how plates are produced.
 
 ---
 
@@ -163,7 +185,7 @@ python -m http.server 8000 --directory superprint
 - Multi-page documents, facing-page **spreads**, and offset **imposition**
 - **CMYK / RGB / grayscale** PDF export up to **600 DPI**, with bleed, trim marks and colour bars
 - **Vector typography** export — selectable text, embedded fonts, no rasterisation
-- **Pantone** spot channels from a 246-ink swatch, on a CMYK **or** RGB quadri layer
+- **Spot inks** from six swatch books (**Toyo, Focoltone, HKS, RAL, NCS, DIC**) plus **`.ase`** import, on a CMYK **or** RGB quadri layer
 - 3 bundled **ICC profiles** (FOGRA39, SWOP, Japan Color) plus custom profile loading
 - Master pages, layers, guides, grids, linked text frames, multilingual hyphenation
 - Pathfinder boolean operations, image masking, Bézier pen tool, image filters
@@ -253,5 +275,8 @@ Commercial licensing, custom builds, white-labelling, self-hosting and partnersh
 **contact@superprint.cc** · **all@2points13.fr**
 
 Third-party components bundled with the application (Fabric.js, pdf-lib, pdf.js, JSZip, Mammoth,
-SheetJS, WebLLM, Little CMS `lcms-wasm`), the bundled fonts and the Pantone ink names keep their own
-licenses and trademarks, which prevail over this one for the parts they cover.
+SheetJS, WebLLM, Little CMS `lcms-wasm`), the bundled fonts and the colour-library names (Pantone,
+Toyo, Focoltone, HKS, RAL, NCS, DIC) keep their own licenses and trademarks, which prevail over this
+one for the parts they cover. The shade values shipped with the application are indicative sRGB
+conversions, not the manufacturers' official libraries — a manufacturer's own `.ase` file can be
+imported for exact values.

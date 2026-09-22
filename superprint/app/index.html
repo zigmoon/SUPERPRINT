@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.525 — Zigmoon
+         SuperPrint 1.7.526 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.525 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.526 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.525",
+          "softwareVersion": "1.7.526",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -630,7 +630,7 @@
     </script>
 
     <!-- Main stylesheet -->
-    <link rel="stylesheet" href="CSS/main.css?v=20260925-v525-nuanciers">
+    <link rel="stylesheet" href="CSS/main.css?v=20260926-v526-couleur-en-haut">
     <link rel="stylesheet" href="CSS/mobile-widgets.css?v=20260428-v007">
 
     <!-- Onboarding Wizard Styles -->
@@ -905,16 +905,14 @@
         font-size: 9px; letter-spacing: .5px; text-transform: uppercase;
         color: #777; margin-bottom: 4px;
     }
-    /* _SP_COMPACT_525 : la liste des nuanciers est PLAFONNÉE et défile sur place, pour que
-       FILL / STROKE et le nom de la couleur restent juste en dessous, à l'écran.
-       120 px repliée (≈ 4 nuanciers et demi : la barre de défilement se voit) ;
-       150 px dès qu'un nuancier est ouvert, pour que l'en-tête (24 px) + son corps
-       (126 px) tiennent exactement sans scrollbar supplémentaire. */
+    /* 🆕 v1.7.526 — _SP_ORDRE_526 : la liste des nuanciers n'est PLUS plafonnée.
+       Le plafond de la 1.7.525 (120 px, 150 px ouvert) n'existait que pour laisser
+       FILL / STROKE visible sous la liste : ce module est maintenant AU-DESSUS, donc les
+       sept nuanciers s'affichent en entier (≈ 196 px) sans barre de défilement propre.
+       Seule la liste des teintes d'un nuancier ouvert défile, dans sa ligne (126 px). */
     .swatch-book-list {
-        display: block; max-height: 120px; overflow-y: auto; -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
+        display: block;
     }
-    .swatch-book-list.has-open { max-height: 150px; }
 
     .swatch-book { border: 1px solid #e0e0e0; background: #fff; margin-bottom: 2px; }
     .swatch-book-head {
@@ -1165,7 +1163,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.525</div>
+                <div class="splash-version">1.7.526</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1267,7 +1265,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.525</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.526</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1363,7 +1361,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.525 | 09 2026<br>
+                V 1.7.526 | 09 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -2086,12 +2084,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.525). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.526). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.525 — internal cache tag: JS v525 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.526 — internal cache tag: JS v526 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v525"
-                      data-sp-sw="v1.7.525">v1.7.525</span>
+                      data-sp-js="v526"
+                      data-sp-sw="v1.7.526">v1.7.526</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -3305,6 +3303,124 @@
                 <div id="cmykColorControls" style="display: none;">
                 </div><!-- /cmykColorControls -->
                 
+                <!-- 🆕 v1.7.526 — _SP_ORDRE_526 : LE MODULE DE LA COULEUR PASSE EN PREMIER.
+                     FOND / CONTOUR, pipettes, valeur hexa ou CMJN et nom du ton direct
+                     étaient sous la liste des nuanciers : « le module FILL/STROKE est trop
+                     bas ». Ils sont désormais au-dessus, juste sous la bascule CMJN ; les
+                     nuanciers (et leur cible Fond / Contour) viennent après. -->
+                <!-- Sélecteurs de couleurs (RGB) — masqués en mode CMYK -->
+                <div id="rgbPickersGroup" class="inline-row" style="align-items: flex-start; margin-bottom: 10px;">
+                    <div class="flex-field">
+                        <span class="sub-label" data-translate="fillLabel">Fond</span>
+                        <div class="inline-row">
+                            <input type="color" id="blockFill" value="#cccccc" style="flex: 1; height: 28px; border: 1px solid #e0e0e0; cursor: pointer; padding: 2px;">
+                            <!-- 🎯 v1.7.372 — PIPETTE EN MODE RVB.
+                                 Elle n'existait que dans #cmykSlidersGroup (masqué en
+                                 RVB) : en RVB l'utilisateur n'avait plus aucune pipette.
+                                 Ici elle alimente #blockFill (le picker natif RVB). -->
+                            <button type="button" id="rgbFillPickBtn" title="Pipette couleur (Fond)" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
+                            </button>
+                            <button type="button" id="blockFillNone" title="Sans fond (transparent)" data-translate-title="noFill" class="transform-lock-btn">
+                                <svg width="18" height="18" viewBox="0 0 18 18" style="pointer-events:none;"><rect x="1" y="1" width="16" height="16" rx="2" fill="#fff" stroke="#ccc" stroke-width="1"/><line x1="2" y1="16" x2="16" y2="2" stroke="#e74c3c" stroke-width="2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex-field">
+                        <span class="sub-label" data-translate="strokeLabel">Contour</span>
+                        <div class="inline-row">
+                            <input type="color" id="blockStroke" value="#000000" style="flex: 1; height: 28px; border: 1px solid #e0e0e0; cursor: pointer; padding: 2px;">
+                            <!-- 🎯 v1.7.372 — pipette Contour en mode RVB (cf. Fond). -->
+                            <button type="button" id="rgbStrokePickBtn" title="Pipette couleur (Contour)" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
+                            </button>
+                            <button type="button" id="blockStrokeNone" title="Sans contour" data-translate-title="noStroke" class="transform-lock-btn">
+                                <svg width="18" height="18" viewBox="0 0 18 18" style="pointer-events:none;"><rect x="1" y="1" width="16" height="16" rx="2" fill="#fff" stroke="#ccc" stroke-width="1"/><line x1="2" y1="16" x2="16" y2="2" stroke="#e74c3c" stroke-width="2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div style="width: 52px; flex-shrink: 0;">
+                        <span class="sub-label" data-translate="strokeWidth">Ép.</span>
+                        <input type="number" id="strokeWidth" min="0" max="20" value="1" step="0.5" class="compact-input" style="width: 100%;">
+                    </div>
+                </div>
+
+                <!-- Sélecteurs CMYK exclusifs (sliders) — visibles uniquement en mode CMYK -->
+                <div id="cmykSlidersGroup" style="display: none; margin-bottom: 10px; font-family: 'IBM Plex Mono', monospace;">
+                    <!-- Fond CMYK -->
+                    <div style="margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
+                            <span class="sub-label" style="margin: 0;" data-translate="fillLabel">Fond</span>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span id="cmykFillPreview" style="display: inline-block; width: 18px; height: 18px; border: 1px solid #ccc; border-radius: 2px; background: #cccccc;"></span>
+                                <button type="button" id="cmykFillPickBtn" title="Pipette couleur" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
+                                </button>
+                                <button type="button" id="cmykFillNoneBtn" title="Sans fond (transparent)" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
+                                    <svg width="16" height="16" viewBox="0 0 18 18" style="pointer-events:none;"><rect x="1" y="1" width="16" height="16" rx="2" fill="#fff" stroke="#ccc" stroke-width="1"/><line x1="2" y1="16" x2="16" y2="2" stroke="#e74c3c" stroke-width="2"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #00ACC1;">C</span><input type="range" id="cmykFillC" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #00ACC1;"><input type="number" id="cmykFillCVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
+                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #E91E63;">M</span><input type="range" id="cmykFillM" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #E91E63;"><input type="number" id="cmykFillMVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
+                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #FDD835;">Y</span><input type="range" id="cmykFillY" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #FDD835;"><input type="number" id="cmykFillYVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
+                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #212121;">K</span><input type="range" id="cmykFillK" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #424242;"><input type="number" id="cmykFillKVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
+                        </div>
+                    </div>
+                    <!-- Contour CMYK -->
+                    <div style="margin-bottom: 6px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
+                            <span class="sub-label" style="margin: 0;" data-translate="strokeLabel">Contour</span>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span id="cmykStrokePreview" style="display: inline-block; width: 18px; height: 18px; border: 1px solid #ccc; border-radius: 2px; background: #000000;"></span>
+                                <button type="button" id="cmykStrokePickBtn" title="Pipette couleur" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
+                                </button>
+                                <button type="button" id="cmykStrokeNoneBtn" title="Sans contour" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
+                                    <svg width="16" height="16" viewBox="0 0 18 18" style="pointer-events:none;"><rect x="1" y="1" width="16" height="16" rx="2" fill="#fff" stroke="#ccc" stroke-width="1"/><line x1="2" y1="16" x2="16" y2="2" stroke="#e74c3c" stroke-width="2"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #00ACC1;">C</span><input type="range" id="cmykStrokeC" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #00ACC1;"><input type="number" id="cmykStrokeCVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
+                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #E91E63;">M</span><input type="range" id="cmykStrokeM" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #E91E63;"><input type="number" id="cmykStrokeMVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
+                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #FDD835;">Y</span><input type="range" id="cmykStrokeY" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #FDD835;"><input type="number" id="cmykStrokeYVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
+                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #212121;">K</span><input type="range" id="cmykStrokeK" min="0" max="100" value="100" style="flex: 1; height: 4px; accent-color: #424242;"><input type="number" id="cmykStrokeKVal" min="0" max="100" value="100" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
+                        </div>
+                    </div>
+                    <!-- Stroke width in CMYK mode -->
+                    <div class="inline-row" style="margin-top: 4px;">
+                        <div style="width: 52px; flex-shrink: 0;">
+                            <span class="sub-label" data-translate="strokeWidth">Ép.</span>
+                            <input type="number" id="cmykStrokeWidth" min="0" max="20" value="1" step="0.5" class="compact-input" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Info couleurs (hex ou CMYK selon le mode) -->
+                <div class="inline-row" style="margin-bottom: 10px; font-size: 8px; font-family: 'IBM Plex Mono', monospace;">
+                    <div class="flex-field" style="text-align: center;">
+                        <span id="blockFillInfo" style="opacity: 0.6;">#CCCCCC</span>
+                        <div id="cmykFillText" style="display: none; font-size: 8px; line-height: 1.4; color: #555; margin-top: 2px;">C:0 M:0 Y:0 K:20</div>
+                        <!-- 🎨 Ton direct (Pantone) applique au FOND -->
+                        <div id="spotFillInfo" class="spot-ink-info" style="display: none;">
+                            <span class="spot-ink-dot"></span>
+                            <span class="spot-ink-name"></span>
+                        </div>
+                    </div>
+                    <div class="flex-field" style="text-align: center;">
+                        <span id="blockStrokeInfo" style="opacity: 0.6;">#000000</span>
+                        <div id="cmykStrokeText" style="display: none; font-size: 8px; line-height: 1.4; color: #555; margin-top: 2px;">C:0 M:0 Y:0 K:100</div>
+                        <!-- 🎨 Ton direct (Pantone) applique au CONTOUR -->
+                        <div id="spotStrokeInfo" class="spot-ink-info" style="display: none;">
+                            <span class="spot-ink-dot"></span>
+                            <span class="spot-ink-name"></span>
+                        </div>
+                    </div>
+                    <div style="width: 52px; flex-shrink: 0;"></div>
+                </div>
+
                 <!-- 🎨 v1.7.350c — Tons directs Pantone.
                      TOUJOURS visibles : le nuancier Pantone doit rester
                      accessible en RVB COMME en CMJN, puisque la boîte
@@ -3654,118 +3770,6 @@
                     </select>
                 </div>
                 
-                <!-- Sélecteurs de couleurs (RGB) — masqués en mode CMYK -->
-                <div id="rgbPickersGroup" class="inline-row" style="align-items: flex-start; margin-bottom: 10px;">
-                    <div class="flex-field">
-                        <span class="sub-label" data-translate="fillLabel">Fond</span>
-                        <div class="inline-row">
-                            <input type="color" id="blockFill" value="#cccccc" style="flex: 1; height: 28px; border: 1px solid #e0e0e0; cursor: pointer; padding: 2px;">
-                            <!-- 🎯 v1.7.372 — PIPETTE EN MODE RVB.
-                                 Elle n'existait que dans #cmykSlidersGroup (masqué en
-                                 RVB) : en RVB l'utilisateur n'avait plus aucune pipette.
-                                 Ici elle alimente #blockFill (le picker natif RVB). -->
-                            <button type="button" id="rgbFillPickBtn" title="Pipette couleur (Fond)" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
-                            </button>
-                            <button type="button" id="blockFillNone" title="Sans fond (transparent)" data-translate-title="noFill" class="transform-lock-btn">
-                                <svg width="18" height="18" viewBox="0 0 18 18" style="pointer-events:none;"><rect x="1" y="1" width="16" height="16" rx="2" fill="#fff" stroke="#ccc" stroke-width="1"/><line x1="2" y1="16" x2="16" y2="2" stroke="#e74c3c" stroke-width="2"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex-field">
-                        <span class="sub-label" data-translate="strokeLabel">Contour</span>
-                        <div class="inline-row">
-                            <input type="color" id="blockStroke" value="#000000" style="flex: 1; height: 28px; border: 1px solid #e0e0e0; cursor: pointer; padding: 2px;">
-                            <!-- 🎯 v1.7.372 — pipette Contour en mode RVB (cf. Fond). -->
-                            <button type="button" id="rgbStrokePickBtn" title="Pipette couleur (Contour)" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
-                            </button>
-                            <button type="button" id="blockStrokeNone" title="Sans contour" data-translate-title="noStroke" class="transform-lock-btn">
-                                <svg width="18" height="18" viewBox="0 0 18 18" style="pointer-events:none;"><rect x="1" y="1" width="16" height="16" rx="2" fill="#fff" stroke="#ccc" stroke-width="1"/><line x1="2" y1="16" x2="16" y2="2" stroke="#e74c3c" stroke-width="2"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div style="width: 52px; flex-shrink: 0;">
-                        <span class="sub-label" data-translate="strokeWidth">Ép.</span>
-                        <input type="number" id="strokeWidth" min="0" max="20" value="1" step="0.5" class="compact-input" style="width: 100%;">
-                    </div>
-                </div>
-
-                <!-- Sélecteurs CMYK exclusifs (sliders) — visibles uniquement en mode CMYK -->
-                <div id="cmykSlidersGroup" style="display: none; margin-bottom: 10px; font-family: 'IBM Plex Mono', monospace;">
-                    <!-- Fond CMYK -->
-                    <div style="margin-bottom: 8px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
-                            <span class="sub-label" style="margin: 0;" data-translate="fillLabel">Fond</span>
-                            <div style="display: flex; align-items: center; gap: 4px;">
-                                <span id="cmykFillPreview" style="display: inline-block; width: 18px; height: 18px; border: 1px solid #ccc; border-radius: 2px; background: #cccccc;"></span>
-                                <button type="button" id="cmykFillPickBtn" title="Pipette couleur" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
-                                </button>
-                                <button type="button" id="cmykFillNoneBtn" title="Sans fond (transparent)" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
-                                    <svg width="16" height="16" viewBox="0 0 18 18" style="pointer-events:none;"><rect x="1" y="1" width="16" height="16" rx="2" fill="#fff" stroke="#ccc" stroke-width="1"/><line x1="2" y1="16" x2="16" y2="2" stroke="#e74c3c" stroke-width="2"/></svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 2px;">
-                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #00ACC1;">C</span><input type="range" id="cmykFillC" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #00ACC1;"><input type="number" id="cmykFillCVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
-                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #E91E63;">M</span><input type="range" id="cmykFillM" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #E91E63;"><input type="number" id="cmykFillMVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
-                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #FDD835;">Y</span><input type="range" id="cmykFillY" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #FDD835;"><input type="number" id="cmykFillYVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
-                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #212121;">K</span><input type="range" id="cmykFillK" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #424242;"><input type="number" id="cmykFillKVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
-                        </div>
-                    </div>
-                    <!-- Contour CMYK -->
-                    <div style="margin-bottom: 6px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
-                            <span class="sub-label" style="margin: 0;" data-translate="strokeLabel">Contour</span>
-                            <div style="display: flex; align-items: center; gap: 4px;">
-                                <span id="cmykStrokePreview" style="display: inline-block; width: 18px; height: 18px; border: 1px solid #ccc; border-radius: 2px; background: #000000;"></span>
-                                <button type="button" id="cmykStrokePickBtn" title="Pipette couleur" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
-                                </button>
-                                <button type="button" id="cmykStrokeNoneBtn" title="Sans contour" class="transform-lock-btn" style="width: 22px; height: 22px; padding: 0;">
-                                    <svg width="16" height="16" viewBox="0 0 18 18" style="pointer-events:none;"><rect x="1" y="1" width="16" height="16" rx="2" fill="#fff" stroke="#ccc" stroke-width="1"/><line x1="2" y1="16" x2="16" y2="2" stroke="#e74c3c" stroke-width="2"/></svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 2px;">
-                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #00ACC1;">C</span><input type="range" id="cmykStrokeC" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #00ACC1;"><input type="number" id="cmykStrokeCVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
-                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #E91E63;">M</span><input type="range" id="cmykStrokeM" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #E91E63;"><input type="number" id="cmykStrokeMVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
-                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #FDD835;">Y</span><input type="range" id="cmykStrokeY" min="0" max="100" value="0" style="flex: 1; height: 4px; accent-color: #FDD835;"><input type="number" id="cmykStrokeYVal" min="0" max="100" value="0" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
-                            <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; font-size: 9px; font-weight: 700; color: #212121;">K</span><input type="range" id="cmykStrokeK" min="0" max="100" value="100" style="flex: 1; height: 4px; accent-color: #424242;"><input type="number" id="cmykStrokeKVal" min="0" max="100" value="100" style="width: 34px; font-size: 9px; text-align: center; border: 1px solid #ddd; border-radius: 2px; padding: 1px;"></div>
-                        </div>
-                    </div>
-                    <!-- Stroke width in CMYK mode -->
-                    <div class="inline-row" style="margin-top: 4px;">
-                        <div style="width: 52px; flex-shrink: 0;">
-                            <span class="sub-label" data-translate="strokeWidth">Ép.</span>
-                            <input type="number" id="cmykStrokeWidth" min="0" max="20" value="1" step="0.5" class="compact-input" style="width: 100%;">
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Info couleurs (hex ou CMYK selon le mode) -->
-                <div class="inline-row" style="margin-bottom: 10px; font-size: 8px; font-family: 'IBM Plex Mono', monospace;">
-                    <div class="flex-field" style="text-align: center;">
-                        <span id="blockFillInfo" style="opacity: 0.6;">#CCCCCC</span>
-                        <div id="cmykFillText" style="display: none; font-size: 8px; line-height: 1.4; color: #555; margin-top: 2px;">C:0 M:0 Y:0 K:20</div>
-                        <!-- 🎨 Ton direct (Pantone) applique au FOND -->
-                        <div id="spotFillInfo" class="spot-ink-info" style="display: none;">
-                            <span class="spot-ink-dot"></span>
-                            <span class="spot-ink-name"></span>
-                        </div>
-                    </div>
-                    <div class="flex-field" style="text-align: center;">
-                        <span id="blockStrokeInfo" style="opacity: 0.6;">#000000</span>
-                        <div id="cmykStrokeText" style="display: none; font-size: 8px; line-height: 1.4; color: #555; margin-top: 2px;">C:0 M:0 Y:0 K:100</div>
-                        <!-- 🎨 Ton direct (Pantone) applique au CONTOUR -->
-                        <div id="spotStrokeInfo" class="spot-ink-info" style="display: none;">
-                            <span class="spot-ink-dot"></span>
-                            <span class="spot-ink-name"></span>
-                        </div>
-                    </div>
-                    <div style="width: 52px; flex-shrink: 0;"></div>
-                </div>
             </div>
 
             <!-- Panneau Transparence — en dessous du panneau Couleurs -->
@@ -6342,11 +6346,11 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20260925-v525-nuanciers" defer></script>
+    <script src="JS/main.js?v=20260926-v526-couleur-en-haut" defer></script>
     <!-- 🎨 v1.7.525 — _SP_NUANCIERS_525 : nuanciers (accordéons) + import .ase.
          Chargé APRÈS main.js : il réutilise le gestionnaire `change` de
          #spotColorSelect au lieu de le réécrire. -->
-    <script src="JS/swatchbooks.js?v=20260925-v525-nuanciers" defer></script>
+    <script src="JS/swatchbooks.js?v=20260926-v526-couleur-en-haut" defer></script>
     <!-- mask-handle-guard.js removed: file does not exist -->
     <script src="JS/virtual-printer.js?v=20260912-v417-clavier-studio" defer></script>
     <script src="JS/collab.js?v=20260907-v016-ux" defer></script>

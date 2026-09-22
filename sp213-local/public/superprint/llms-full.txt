@@ -8,7 +8,7 @@
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
-- **Version**: 1.7.525 (September 2026)
+- **Version**: 1.7.526 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.97, requires application 1.7.456 or later); the launcher downloads the application once and serves it locally.
@@ -102,18 +102,20 @@ Yes. All document processing happens client-side in the browser. No uploads to a
 ### Colors
 - RGB and CMYK color modes.
 - CMYK values editable per object.
-- Pantone spot color library, available in **both RGB and CMYK** working modes.
+- **Spot ink libraries**, available in **both RGB and CMYK** working modes. The Colour panel lists them as accordions: **Toyo Color Finder** (46 shades), **Focoltone** (48), **HKS** (54), **RAL** (191, French colour names), **NCS** (55), **DIC** (49), plus **any `.ase` (Adobe Swatch Exchange) file** the user imports — it joins the list under its file name as a new book, and is remembered locally (removable with a ✕). The 246-ink **Pantone** palette remains in the catalogue; its own accordion is announced as a coming release. Each shade is a row with its colour dot and its name; one click applies it to the fill or the stroke.
+- The shades shipped with the app are **indicative sRGB conversions for screen preview**, not the manufacturers' official libraries (stated in the interface under the list). Importing a manufacturer's `.ase` supplies its exact values. Parsing is local: RGB, CMYK, Lab and grey entries are read in the browser, nothing is uploaded.
 - Spot ink display names are shortened in the palette (`Yellow C` rather than `Pantone Yellow C`) so the list stays readable; the full name is retained for filters and output plates.
 - Soft-proof preview simulating coated/uncoated paper and paper types (white, cream, recycled, newsprint).
 - ICC profile loading (`.icc` / `.icm`) to frame the conversion for the target paper and press.
 - Color swatches (reusable).
 
-### Prepress — Pantone spot inks and channel separation
-- Each Pantone spot ink is emitted into its **own named colour channel** in the exported PDF.
+### Prepress — spot inks and channel separation
+- Each spot ink is emitted into its **own named colour channel** in the exported PDF.
 - That channel is declared in a `/Separation` colour space compliant with **ISO 32000-2** (`SpotsColorName` / alternate space), which is what a RIP expects in order to output a dedicated plate.
 - Process colours (RGB or CMYK) remain separate from the spot channels: the two are never flattened together.
-- The export summary reports the real channel count for the mode actually selected — e.g. `RGB (3) + 1 Pantone`, `CMYK (4) + 2 Pantone`. The process part is derived from the mode, never hard-coded.
+- The export summary reports the real channel count for the mode actually selected — e.g. `RGB (3) + 1 spot ink`, `CMYK (4) + 2 spot inks`. The process part is derived from the mode, never hard-coded.
 - Verified by decoding the exported PDF stream by stream: a spot ink placed in the application comes out as a channel under its own name, in RGB mode and in CMYK mode alike.
+- Adding swatch books (built-in libraries or an imported `.ase`) does not change this pipeline: the ink still travels through the single catalogue that feeds both the screen preview and the exported `/Separation` channel.
 
 ### Text wrap (habillage)
 - Wrap modes: **none**, **bounding box**, **contour** (the text follows the sampled outline of the shape, so a circle narrows the line near the top and bottom).

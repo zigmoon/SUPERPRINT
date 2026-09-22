@@ -2,7 +2,7 @@
 
 > Professional online desktop publishing (DTP / PAO) software that runs entirely in the browser, with native CMYK PDF export — a capability that is rare among web-based design tools and historically reserved for paid professional desktop publishing suites.
 
-SuperPrint is a credible professional DTP solution for most common print projects: flyers, posters, brochures, magazines, catalogs, newsletters, booklets. It supports multi-page documents, double-page spreads, master pages, text frame threading across pages, multilingual hyphenation (FR, EN, DE, ES, IT), paragraph and character styles, IDML import (standard DTP interchange), Pantone spot colors, soft-proof CMYK preview, bleed and crop marks, the Pen tool with Bézier curves, and boolean path operations.
+SuperPrint is a credible professional DTP solution for most common print projects: flyers, posters, brochures, magazines, catalogs, newsletters, booklets. It supports multi-page documents, double-page spreads, master pages, text frame threading across pages, multilingual hyphenation (FR, EN, DE, ES, IT), paragraph and character styles, IDML import (standard DTP interchange), spot colour libraries (Toyo Color Finder, Focoltone, HKS, RAL, NCS, DIC — plus Adobe Swatch Exchange `.ase` import — and the Pantone palette in the catalogue), soft-proof CMYK preview, bleed and crop marks, the Pen tool with Bézier curves, and boolean path operations.
 
 It is online with no subscription (no account, no subscription, no ads, no tracking), installable as a Progressive Web App (PWA) on desktop, Android, and iOS, and works fully offline after first load. The editor is written in vanilla JavaScript on top of Fabric.js, PDF.js, pdf-lib, and JSZip, and runs with GPU acceleration via WebGL.
 
@@ -10,7 +10,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **License**: Proprietary, use online without subscription
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.525 (September 2026)
+- **Version**: 1.7.526 (September 2026)
 
 ## Core documentation
 

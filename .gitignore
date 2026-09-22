@@ -44,3 +44,6 @@ _dev/
 .vscode/
 superprint/.vscode/
 
+
+# Archive fabriquee par `npm pack` dans superprint-npm/ (a publier, pas a committer).
+superprint-npm/*.tgz

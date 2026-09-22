@@ -826,14 +826,9 @@
         head.addEventListener('click', function () {
             var ouvert = wrap.classList.toggle('is-open');
             head.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
-            /* _SP_COMPACT_525 : la liste des nuanciers est plafonnée (120 px, 150 px quand un
-               nuancier est ouvert) → on signale l'ouverture au conteneur et on s'assure que
-               l'en-tête cliqué reste visible. */
-            var liste = document.getElementById('swatchBookList');
-            if (liste) {
-                var nb = liste.querySelectorAll('.swatch-book.is-open').length;
-                liste.classList.toggle('has-open', nb > 0);
-            }
+            /* _SP_ORDRE_526 : la liste n'est plus plafonnée (FILL / STROKE est passé
+               au-dessus) → plus de classe « has-open ». On garde seulement le rappel de
+               l'en-tête cliqué dans le champ de vision, utile si la colonne défile. */
             if (ouvert) { try { head.scrollIntoView({ block: 'nearest' }); } catch (_) {} }
         });
 
