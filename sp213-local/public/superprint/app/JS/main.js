@@ -1644,6 +1644,13 @@ const SP_CUSTOM_PROPS = [
     // et le document n'était plus reconnu comme « à tons directs ».
     '_spSpotInk',
     '_spSpotStrokeInk',
+    // 🆕 v1.7.527 — _SP_PLAQUE_527 : NOM de l'encre posée (nom de plaque, ex.
+    //   « TOYO 019 », « RAL 3020 », ou le nom d'un nuancier .ase importé). Sans
+    //   lui, un .sp rouvert perdait le nuancier d'origine et la plaque reprenait
+    //   le nom de la PREMIÈRE entrée du catalogue portant le même code — le
+    //   magenta #D6006E existe dans quatre nuanciers différents.
+    '_spSpotInkName',
+    '_spSpotStrokeInkName',
     // 🛡️ FIX 2026-05-01 : flags d'overflow spread + ID stable.
     // Sans ca, sauvegarder en mode single un projet spread strippe les
     // marqueurs et casse le dedoublonnage au retour en spread (objet
@@ -42020,7 +42027,7 @@ https://superprint.app
         const _spotLoader = _spCreatePdfLoader({
             title: (currentLanguage === 'en'
                 ? 'Generating CMYK + spot PDF'
-                : (currentLanguage === 'ja' ? 'CMYK＋スポットPDFを生成中' : 'Génération du PDF CMJN + Pantone')),
+                : (currentLanguage === 'ja' ? 'CMYK＋スポットPDFを生成中' : 'Génération du PDF CMJN + tons directs')),
             sub: (currentLanguage === 'en'
                 ? 'Preparing pages…'
                 : (currentLanguage === 'ja' ? 'ページを準備中…' : 'Préparation des pages…'))
@@ -42053,14 +42060,18 @@ https://superprint.app
                 const _proc = (typeof l.processChannels === 'number')
                     ? l.processChannels
                     : (l.quadriMode === 'rgb' ? 3 : 4);
-                const msg = _done + l.channels + _units + _quadri + _plus + (l.channels - _proc) + ' Pantone';
+                // _SP_PLAQUE_527 : libellé d'encre directe, plus « Pantone » en dur
+                //   (l'encre peut venir d'un autre nuancier ou d'un .ase importé).
+                const _spotLabel = (currentLanguage === 'en' ? ' spot ink(s)'
+                    : (currentLanguage === 'ja' ? 'スポット' : ' ton(s) direct(s)'));
+                const msg = _done + l.channels + _units + _quadri + _plus + (l.channels - _proc) + _spotLabel;
                     window.spToast(msg, 'success', 6000);
                 }
             } catch (_) {}
         } catch (spotErr) {
             _spotLoader.remove();
-            console.error('[confirmExport] Erreur export CMJN+Pantone :', spotErr);
-            alert('Erreur export CMJN + Pantone : ' + (spotErr.message || spotErr));
+            console.error('[confirmExport] Erreur export CMJN+tons directs :', spotErr);
+            alert('Erreur export CMJN + tons directs : ' + (spotErr.message || spotErr));
         }
         return;
     }
@@ -43993,13 +44004,29 @@ https://superprint.app
             } catch (_) { return { c: 0, m: 0, y: 0, k: 0 }; }
         }
 
-        // Nom lisible du canal d'encre (façon InDesign : « PANTONE 214 C »).
+        // Nom lisible du canal d'encre, façon InDesign : « PANTONE 214 C », « RAL 3020 »,
+        // « TOYO 001 », ou le nom d'un nuancier client importé en .ase.
         // Sert d'identifiant de plaque pour le RIP / l'imprimeur.
+        // 🆕 v1.7.527 — _SP_PLAQUE_527 : les encres ne viennent plus d'un seul nuancier
+        //   (Toyo, Focoltone, HKS, RAL, NCS, DIC, plus les .ase importés) et sont souvent
+        //   accentuées. Avant, tout caractère hors A-Z0-9 était SUPPRIMÉ après passage en
+        //   majuscules : « Écarlate maison » sortait en plaque « CARLATE MAISON » (le É
+        //   disparaissait, la lettre n'était pas repliée). On replie donc d'abord les
+        //   diacritiques et les ligatures, et on nettoie ensuite.
         function _spSpotChannelName(label, fallbackHex) {
-            let n = String(label || '')
-                .split('—')[0].split(' – ')[0].split(' - ')[0].split('(')[0]
+            let brut = String(label || '')
+                .split('—')[0].split(' – ')[0].split(' - ')[0].split('(')[0];
+            try { brut = brut.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (_) {}
+            brut = brut
+                .replace(/[Ææ]/g, 'AE').replace(/[Œœ]/g, 'OE').replace(/ß/g, 'SS')
+                .replace(/[Øø]/g, 'O').replace(/[ĐđÐ]/g, 'D').replace(/[Łł]/g, 'L')
+                .replace(/[Þþ]/g, 'TH').replace(/[Ħħ]/g, 'H').replace(/[ıİ]/g, 'I');
+            let n = brut
                 .toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
-            if (!n) n = 'PANTONE ' + String(fallbackHex || '').replace('#', '').toUpperCase();
+            // ⚠️ Le repli n'annonce plus « PANTONE » : un ton direct peut venir de n'importe
+            //    quel nuancier (ou d'un .ase client). « SPOT <HEX> » reste lisible sur une
+            //    plaque et n'affirme rien de faux.
+            if (!n) n = 'SPOT ' + String(fallbackHex || '').replace('#', '').toUpperCase();
             return n.slice(0, 60);
         }
 
@@ -44065,7 +44092,7 @@ https://superprint.app
             const byHex = Object.create(null);
             const inks = [];
 
-            const consider = function (color, tag) {
+            const consider = function (color, tag, tagName) {
                 // 🎨 v1.7.347 — DÉTECTION EXPLICITE, comme InDesign : une couleur
                 // n'est une ENCRE DIRECTE que si l'objet porte le marqueur posé
                 // par le nuancier (_spSpotInk / _spSpotStrokeInk).
@@ -44089,11 +44116,18 @@ https://superprint.app
                 if (!cat) return null;
                 if (stale) return null;
                 const key = tHex;
+                // 🆕 v1.7.527 — _SP_PLAQUE_527 : le catalogue est indexé par code hex et
+                //   compte des doublons (33 codes en double, dont 20 entre nos propres
+                //   nuanciers : le magenta #D6006E existe en Toyo, Focoltone, HKS et DIC).
+                //   Le catalogue ne peut en nommer qu'UNE — la première. Le nom porté par
+                //   l'objet (nuancier réellement cliqué, sérialisé depuis la 1.7.527) est
+                //   alors plus juste : c'est LUI qui nomme la plaque du RIP.
+                const nomObjet = (cat.ambiguous && tagName) ? String(tagName).trim() : '';
                 if (!byHex[key]) {
                     byHex[key] = {
                         key: key,
                         hex: key.toUpperCase(),
-                        name: cat.name || ('Ton direct ' + key.toUpperCase()),
+                        name: nomObjet || cat.name || ('Ton direct ' + key.toUpperCase()),
                         group: cat.group || '',
                         cmyk: _spSpotHexToCmyk(key),
                         used: 0
@@ -44106,8 +44140,9 @@ https://superprint.app
 
             const visit = function (obj) {
                 if (!obj) return;
-                consider(obj.fill, obj._spSpotInk);
-                consider(obj.stroke, obj._spSpotStrokeInk);
+                // _SP_PLAQUE_527 : on transmet aussi le NOM de l'encre (nom de plaque).
+                consider(obj.fill, obj._spSpotInk, obj._spSpotInkName);
+                consider(obj.stroke, obj._spSpotStrokeInk, obj._spSpotStrokeInkName);
                 // Texte avec styles par plage (couleur Pantone sur une sélection)
                 if (obj.styles && typeof obj.styles === 'object') {
                     try {
@@ -44116,7 +44151,7 @@ https://superprint.app
                             if (!line || typeof line !== 'object') return;
                             Object.keys(line).forEach(function (ck) {
                                 const st = line[ck];
-                                if (st && st.fill) consider(st.fill, st._spSpotInk);
+                                if (st && st.fill) consider(st.fill, st._spSpotInk, st._spSpotInkName);
                             });
                         });
                     } catch (_) {}
@@ -44970,7 +45005,7 @@ https://superprint.app
                 //    message de fin d'export, qui annonçait « CMJN » en dur.
                 quadriMode: isRgbQuadri ? 'rgb' : 'cmyk'
             };
-            console.log('[Spot] DONE — ' + spotCtx.inks.length + ' couche(s) Pantone + ' + (isRgbQuadri ? 'RVB' : 'CMJN'));
+            console.log('[Spot] DONE — ' + spotCtx.inks.length + ' couche(s) de ton direct + ' + (isRgbQuadri ? 'RVB' : 'CMJN'));
         }
 
 
@@ -60104,20 +60139,22 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         // 🎨 v1.7.347 — Export CMJN + tons directs (Pantone)
         exportColorSpotLabel: "CMJN + Pantone",
         exportColorSpotRgbLabel: "RVB + Pantone",
-        exportSpotModeCmyk: "CMJN + Pantone",
-        exportSpotModeRgb: "RVB + Pantone",
+        /* _SP_PLAQUE_527 : l'encre directe peut venir de Toyo, Focoltone, HKS, RAL,
+           NCS, DIC ou d'un nuancier .ase importé — plus seulement de Pantone. */
+        exportSpotModeCmyk: "CMJN + tons directs",
+        exportSpotModeRgb: "RVB + tons directs",
         exportSpotInksHeader: "Encres",
         exportSpotQuadriCmyk: "CMJN",
         exportSpotQuadriRgb: "RVB",
-        exportSpotModeHint: "Seule la couche quadri change : les couches Pantone restent identiques.",
+        exportSpotModeHint: "Seule la couche quadri change : les couches de tons directs restent identiques.",
         exportSpotDpiDesc: "Résolution fixe — export prêt à imprimer, tons directs inclus",
-        exportSpotBannerTitle: "Document avec tons directs (Pantone)",
+        exportSpotBannerTitle: "Document avec tons directs",
         exportSpotBannerHint: "Le PDF contient la couche quadri choisie, plus une couche chromatique supplémentaire par Pantone.",
         exportSpotChannelsHeader: "Sortie",
         exportSpotColorBars: "Repères colorimétriques (quadri + Pantone)",
         exportSpotCropMarks: "Traits de coupe",
         exportSpotBleedAlways: "Fonds perdus inclus (obligatoire en export imprimeur)",
-        exportSpotChannelCountTemplate: "{n} couches chromatiques — {q} ({c}) + {p} Pantone",
+        exportSpotChannelCountTemplate: "{n} couches chromatiques — {q} ({c}) + {p} ton(s) direct(s)",
         npModalTitle: "Nouveau projet",
         npLabelName: "Nom du projet",
         npLabelFormat: "Format de page",
@@ -60981,20 +61018,22 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         // 🎨 v1.7.347 — CMYK + spot (Pantone) export
         exportColorSpotLabel: "CMYK + Pantone",
         exportColorSpotRgbLabel: "RGB + Pantone",
-        exportSpotModeCmyk: "CMYK + Pantone",
-        exportSpotModeRgb: "RGB + Pantone",
+        /* _SP_PLAQUE_527 : a spot ink can come from Toyo, Focoltone, HKS, RAL, NCS,
+           DIC or an imported .ase book — not from Pantone only. */
+        exportSpotModeCmyk: "CMYK + spot inks",
+        exportSpotModeRgb: "RGB + spot inks",
         exportSpotInksHeader: "Inks",
         exportSpotQuadriCmyk: "CMYK",
         exportSpotQuadriRgb: "RGB",
-        exportSpotModeHint: "Only the process layer changes: Pantone layers stay identical.",
+        exportSpotModeHint: "Only the process layer changes: spot layers stay identical.",
         exportSpotDpiDesc: "Fixed resolution — printer-ready export, spot colors included",
-        exportSpotBannerTitle: "Document contains spot colors (Pantone)",
+        exportSpotBannerTitle: "Document contains spot colours",
         exportSpotBannerHint: "The PDF contains the chosen process layer, plus one extra color channel per Pantone.",
         exportSpotChannelsHeader: "Output",
         exportSpotColorBars: "Color bars (process + Pantone)",
         exportSpotCropMarks: "Crop marks",
         exportSpotBleedAlways: "Bleed included (required for printer-ready export)",
-        exportSpotChannelCountTemplate: "{n} color channels — {q} ({c}) + {p} Pantone",
+        exportSpotChannelCountTemplate: "{n} color channels — {q} ({c}) + {p} spot ink(s)",
         npModalTitle: "New project",
         npLabelName: "Project name",
         npLabelFormat: "Page format",
@@ -61861,20 +61900,22 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         // 🎨 v1.7.347 — CMYK＋スポットカラー（Pantone）書き出し
         exportColorSpotLabel: "CMYK＋Pantone",
         exportColorSpotRgbLabel: "RGB＋Pantone",
-        exportSpotModeCmyk: "CMYK＋Pantone",
-        exportSpotModeRgb: "RGB＋Pantone",
+        /* _SP_PLAQUE_527 : スポットインクは Pantone だけでなく、Toyo / Focoltone /
+           HKS / RAL / NCS / DIC や読み込んだ .ase からも来ます。 */
+        exportSpotModeCmyk: "CMYK＋スポットカラー",
+        exportSpotModeRgb: "RGB＋スポットカラー",
         exportSpotInksHeader: "インキ",
         exportSpotQuadriCmyk: "CMYK",
         exportSpotQuadriRgb: "RGB",
         exportSpotModeHint: "プロセス版のみが変わります。スポット版は同じです。",
         exportSpotDpiDesc: "解像度固定 — 印刷入稿用、スポットカラー付き",
-        exportSpotBannerTitle: "スポットカラー（Pantone）を含むドキュメント",
+        exportSpotBannerTitle: "スポットカラーを含むドキュメント",
         exportSpotBannerHint: "PDF には選択したプロセス版と、Pantone ごとの追加チャンネルが含まれます。",
         exportSpotChannelsHeader: "出力",
         exportSpotColorBars: "カラーバー（プロセス＋Pantone）",
         exportSpotCropMarks: "トンボ",
         exportSpotBleedAlways: "裁ち落としを含める（入稿時に必須）",
-        exportSpotChannelCountTemplate: "{n} チャンネル — {q}（{c}）＋Pantone {p}",
+        exportSpotChannelCountTemplate: "{n} チャンネル — {q}（{c}）＋スポット {p}",
         npModalTitle: "新しいプロジェクト",
         npLabelName: "プロジェクト名",
         npLabelFormat: "ページ形式",

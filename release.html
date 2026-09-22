@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.526 — in the Colours panel, Fill / Stroke and the colour line move above the swatch books.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.527 — an ink imported as .ase (or taken from any swatch book) gets its own, correctly named plate in the PDF export.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.526 — in the Colours panel, Fill / Stroke and the colour line move above the swatch books.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.527 — an ink imported as .ase (or taken from any swatch book) gets its own, correctly named plate in the PDF export.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,34 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.527 — Une encre importée en .ase (ou prise dans un nuancier) sort sa propre plaque, avec le bon nom ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-527">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.527</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 22 septembre 2026" data-i18n-en="Released September 22, 2026" data-i18n-jp="2026年9月22日公開">Released September 22, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Un nuancier importé en .ase se comporte <strong>exactement comme un Pantone</strong> à l'export : la couleur devient une <strong>plaque supplémentaire</strong> dans le PDF, à côté de la couche RVB ou CMJN. C'était déjà vrai pour le nombre de plaques, mais trois défauts rendaient les noms inutilisables pour un imprimeur." data-i18n-en-html="A swatch book imported as .ase behaves <strong>exactly like a Pantone</strong> on export: the colour becomes an <strong>extra plate</strong> in the PDF, next to the RGB or CMYK layer. The plate count was already right — three naming defects made the plates unusable for a printer." data-i18n-jp-html="読み込んだ .ase のスウォッチは、書き出し時に<strong>Pantone とまったく同じ</strong>に扱われます。色は PDF 内の<strong>追加の版</strong>になり、RGB または CMYK の版と並びます。版の数はすでに正しく、名前の付け方に 3 つの問題がありました。">An .ase swatch book behaves exactly like a Pantone on export: an extra, correctly named plate.</p>
+
+ <h3 data-i18n-fr-html="🖨️ Votre .ase sort bien sa propre plaque <span class=&quot;badge badge-fix&quot;>vérifié</span>" data-i18n-en-html="🖨️ Your .ase does get its own plate <span class=&quot;badge badge-fix&quot;>verified</span>" data-i18n-jp-html="🖨️ .ase は独自の版になります <span class=&quot;badge badge-fix&quot;>検証済み</span>">🖨️ Your .ase does get its own plate <span class="badge badge-fix">verified</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Mesure (document d'une page, quatre aplats peints par les pastilles, export tons directs) : le PDF contient <strong>quatre espaces de couleur /Separation</strong> — un par encre — et le bandeau annonce « 8 couches chromatiques — CMJN (4) + 4 tons directs ». Deux de ces plaques venaient d'un <strong>.ase importé</strong> : elles sortent donc exactement comme des Pantones. Le nom est celui du nuancier : <strong>« TOYO 001 »</strong>, <strong>« FOCOLTONE 1018 »</strong>, « ECARLATE MAISON »…" data-i18n-en-html="Measured (one-page document, four blocks painted from the swatches, spot-colour export): the PDF holds <strong>four /Separation colour spaces</strong> — one per ink — and the summary reads “8 color channels — CMYK (4) + 4 spot ink(s)”. Two of those plates came from an <strong>imported .ase</strong>: they come out exactly like Pantones. The name is the swatch name: <strong>“TOYO 001”</strong>, <strong>“FOCOLTONE 1018”</strong>, “ECARLATE MAISON”…" data-i18n-jp-html="検証（1 ページの文書、スウォッチから塗った 4 つの矩形、スポットカラーの書き出し）：PDF には<strong>4 つの /Separation カラースペース</strong>（インクごとに 1 つ）が含まれ、サマリーは「8 色の版 — CMYK (4) ＋スポット 4」と表示します。うち 2 つは<strong>読み込んだ .ase</strong> 由来で、Pantone とまったく同じように出力されます。名前はスウォッチ名（<strong>「TOYO 001」「FOCOLTONE 1018」</strong>など）です。">Measured: four blocks gave four /Separation spaces, two of them from an imported .ase — same behaviour as Pantone.</li>
+  <li data-i18n-fr-html="Les <strong>accents des noms</strong> étaient perdus dans le nom de plaque : « Écarlate maison » devenait « CARLATE MAISON » et « Küsten Grün » « K STEN GR N » (la lettre accentuée était supprimée, pas repliée). Corrigé : les accents sont maintenant repliés (É→E, ü→u, ß→SS, Ø→O, Œ→OE…), donc les plaques sortent en <strong>« ECARLATE MAISON »</strong> et <strong>« KUSTEN GRUN »</strong>." data-i18n-en-html="Accents were <strong>lost in the plate name</strong>: “Écarlate maison” became “CARLATE MAISON” and “Küsten Grün” “K STEN GR N” (the accented letter was dropped, not folded). Fixed: accents are now folded (É→E, ü→u, ß→SS, Ø→O, Œ→OE…), so the plates read <strong>“ECARLATE MAISON”</strong> and <strong>“KUSTEN GRUN”</strong>." data-i18n-jp-html="版の名前で<strong>アクセント付き文字が失われて</strong>いました（「Écarlate」→「CARLATE」）。修正後はアクセントを畳み込み（É→E、ü→u、ß→SS、Ø→O、Œ→OE…）、版は<strong>「ECARLATE MAISON」「KUSTEN GRUN」</strong>と出力されます。">Accents were dropped from plate names (CARLATE MAISON); they are now folded into plain letters (ECARLATE MAISON).</li>
+  <li data-i18n-fr-html="Une plaque pouvait porter le nom d'un <strong>autre nuancier</strong> : le catalogue compte 33 codes en double, dont 20 entre nos propres nuanciers (le magenta #D6006E existe en Toyo, Focoltone, HKS et DIC). Cliquer « Focoltone 1018 — Magenta » sortait une plaque « TOYO 019 », parce que le code partagé faisait retomber le choix sur la première couleur de ce code. Corrigé : la pastille sélectionne <strong>le nuancier exact que vous avez cliqué</strong> — mesure après correction : la plaque s'appelle bien <strong>« FOCOLTONE 1018 »</strong>." data-i18n-en-html="A plate could carry <strong>another book's name</strong>: the catalogue holds 33 duplicate codes, 20 of them between our own books (magenta #D6006E exists in Toyo, Focoltone, HKS and DIC). Clicking “Focoltone 1018 — Magenta” produced a “TOYO 019” plate, because the shared code made the selection fall back to that code's first colour. Fixed: a swatch now selects <strong>the exact book you clicked</strong> — after the fix the plate reads <strong>“FOCOLTONE 1018”</strong>." data-i18n-jp-html="版が<strong>別のスウォッチブックの名前</strong>になることがありました（同じコードが 33 件重複、うち 20 件は自社スウォッチ間 — マゼンタ #D6006E は Toyo・Focoltone・HKS・DIC に存在）。「Focoltone 1018 — Magenta」をクリックしても版は「TOYO 019」でした。修正後は<strong>クリックしたスウォッチブック</strong>が選ばれ、版は<strong>「FOCOLTONE 1018」</strong>になります。">A plate could take another book's name when two books share a code; the clicked book now wins (FOCOLTONE 1018 instead of TOYO 019).</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🏷️ Le nom de la plaque suit votre choix — et il survit au .sp" data-i18n-en-html="🏷️ The plate name follows your choice — and survives the .sp" data-i18n-jp-html="🏷️ 版の名前は選択どおり、.sp でも保持されます">🏷️ The plate name follows your choice — and survives the .sp</h3>
+ <ul>
+  <li data-i18n-fr-html="Le nom de l'encre posée est désormais <strong>enregistré avec l'objet</strong> : un document rouvert (fichier .sp, sauvegarde navigateur) redonne la même plaque, même si un autre nuancier partage le même code. Sans nom exploitable, le repli était « PANTONE 123456 » — il devient <strong>« SPOT 123456 »</strong>, plus honnête quand l'encre vient d'un nuancier client." data-i18n-en-html="The name of the applied ink is now <strong>saved with the object</strong>: a reopened document (.sp file, browser save) yields the same plate, even when another book shares the code. When no usable name is left, the fallback used to be “PANTONE 123456” — it becomes <strong>“SPOT 123456”</strong>, which is more honest for a client swatch book." data-i18n-jp-html="適用したインクの名前は<strong>オブジェクトと一緒に保存</strong>されるようになり、.sp を開き直しても同じ版名が得られます。使える名前がない場合の代替は「PANTONE 123456」から<strong>「SPOT 123456」</strong>になりました。">The ink name is saved with the object and survives the .sp; the fallback is now “SPOT 123456”.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="✍️ Boîte d'export : on parle de « tons directs », plus de Pantone" data-i18n-en-html="✍️ Export box: “spot inks”, no longer Pantone only" data-i18n-jp-html="✍️ 書き出し画面の表記を「スポットカラー」に">✍️ Export box: “spot inks”, no longer Pantone only</h3>
+ <ul>
+  <li data-i18n-fr-html="L'encre peut venir de Toyo, Focoltone, HKS, RAL, NCS, DIC ou d'un .ase client : les libellés suivent — « CMJN + tons directs » et « RVB + tons directs » au lieu de « CMJN + Pantone », « Document avec tons directs », « … + 3 tons directs » au lieu de « 3 Pantone », et le message de fin d'export aussi, dans les trois langues. Le mode de couche quadri, le nombre de plaques et la technique (espaces /Separation conformes ISO 32000-2) ne changent pas." data-i18n-en-html="An ink can come from Toyo, Focoltone, HKS, RAL, NCS, DIC or a client .ase, so the wording follows: “CMYK + spot inks” and “RGB + spot inks” instead of “CMYK + Pantone”, “Document contains spot colours”, “… + 3 spot ink(s)” instead of “3 Pantone”, and the end-of-export message too, in all three languages. The quadri layer mode, the plate count and the technique (/Separation spaces compliant with ISO 32000-2) are unchanged." data-i18n-jp-html="インクは Toyo・Focoltone・HKS・RAL・NCS・DIC や読み込んだ .ase からも来るため、表記もそれに合わせます（「CMYK＋スポットカラー」「RGB＋スポットカラー」など）。プロセス版のモード、版の数、方式（ISO 32000-2 準拠の /Separation）は変わりません。">Labels now say “spot inks” instead of “Pantone” everywhere in the export box, in FR / EN / JP.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.526 — Panneau Couleurs : FILL / STROKE et le nom de la couleur remontent au-dessus des nuanciers ===== -->
 

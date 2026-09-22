@@ -713,10 +713,20 @@
         if (!hex) return false;
         var sel = document.getElementById('spotColorSelect');
         if (!sel) return false;
-        var opt = null;
+        var opt = null, secours = null;
         for (var i = 0; i < sel.options.length; i++) {
-            if (String(sel.options[i].value).toUpperCase() === hex) { opt = sel.options[i]; break; }
+            var o = sel.options[i];
+            if (String(o.value).toUpperCase() !== hex) continue;
+            if (!secours) secours = o;
+            /* 🆕 v1.7.527 — _SP_PLAQUE_527b : plusieurs nuanciers peuvent partager le même
+               code (le magenta #D6006E existe en Toyo, Focoltone, HKS et DIC). Écrire
+               `sel.value = hex` laissait le navigateur retomber sur la PREMIÈRE option de ce
+               code : main.js lisait alors le libellé d'un AUTRE nuancier et la plaque du PDF
+               sortait au nom de cet autre nuancier. On cible donc l'option exacte — même code
+               ET même libellé — et on la sélectionne par son index. */
+            if (nom && String(o.textContent).trim() === String(nom).trim()) { opt = o; break; }
         }
+        if (!opt) opt = secours;
         if (!opt) {
             var og2 = document.getElementById('spSwatchOrphelins');
             if (!og2) {
@@ -730,7 +740,8 @@
             opt.textContent = nom || hex;
             og2.appendChild(opt);
         }
-        sel.value = opt.value;
+        /* _SP_PLAQUE_527b : sélection par INDEX (et non par valeur) — voir plus haut. */
+        sel.selectedIndex = opt.index;
         try { sel.dispatchEvent(new Event('change', { bubbles: true })); } catch (_) {
             try { sel.dispatchEvent(new Event('change')); } catch (__) {}
         }

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -36,6 +36,23 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
+## [1.7.527] — 2026-09-22
+
+_An ink imported as .ase (or taken from any swatch book) gets its own, correctly named plate in the PDF export_
+
+### Verified
+- **It already worked like Pantone for the plate count.** One-page document, four blocks painted from the swatch panels, spot-colour export, analysed with pdf-lib (the dictionaries live in compressed object streams, so searching the raw bytes finds nothing): the PDF holds **four `/Separation` colour spaces** — one per ink — and the export banner reads “8 color channels — CMYK (4) + 4 spot ink(s)”. Two of those plates came from an **imported `.ase`** file, so an imported colour does produce its own plate alongside the RGB or CMYK layer.
+
+### Fixed
+- **Accents were dropped from plate names.** `_spSpotChannelName()` strips everything outside `A-Z0-9` after upper-casing, so “Écarlate maison” came out as **“CARLATE MAISON”** and “Küsten Grün” as “K STEN GR N” — the accented letter was **lost**, not folded. Diacritics (NFD) and common ligatures are now folded first: `É→E`, `ü→u`, `ß→SS`, `Ø→O`, `Œ→OE`, `Đ→D`, `Ł→L`… Measured after the fix: `/ECARLATE MAISON`, `/KUSTEN GRUN`.
+- **A plate could carry another book’s name.** The spot catalogue is keyed by hex code and holds **33 duplicate codes**, 20 of them between our own books (magenta `#D6006E` exists in Toyo, Focoltone, HKS and DIC). Two causes, both fixed: (1) the swatch panel wrote `sel.value = hex`, so the browser fell back to the *first* option carrying that code and the object was tagged with the wrong book’s label — a swatch now selects **the exact option you clicked** (same code **and** same name) by index; (2) the export scan could only name the catalogue’s first entry for an ambiguous code — it now prefers the **object’s own ink name** whenever the code is ambiguous. Measured: clicking “Focoltone 1018 — Magenta” used to produce a `/TOYO 019` plate, it now produces `/FOCOLTONE 1018`.
+- **The ink name is now serialized with the object** (`_spSpotInkName` / `_spSpotStrokeInkName` added to `SP_CUSTOM_PROPS`), so a reopened `.sp`, a `.json` or a browser autosave keeps the plate name instead of falling back to another book sharing the code. When no usable name is left, the fallback was “PANTONE 123456” — it is now **“SPOT 123456”**, which does not claim a Pantone for a client swatch book.
+
+### Changed
+- **The export box now says “spot inks” instead of “Pantone”**, in French, English and Japanese, because an ink can come from Toyo, Focoltone, HKS, RAL, NCS, DIC or an imported `.ase`: `CMJN + tons directs` / `CMYK + spot inks`, `Document avec tons directs` / `Document contains spot colours`, and the channel summary `… + 3 tons directs` / `… + 3 spot ink(s)`, plus the loader title, the end-of-export message and the console log. The quadri-layer mode, the plate count and the technique (`/Separation` spaces compliant with ISO 32000-2) are unchanged.
+
+### Notes
+- Test method worth reusing: export through `window.confirmExport()` with `URL.createObjectURL` intercepted, POST the bytes to the test server, then read the `/Separation` spaces back with **pdf-lib** (`page.node.Resources()` → `ColorSpace` → resolve the value **twice**, a `PDFRef` may hide a `PDFRef`). A plain text search for “Separation” in the bytes returns 0 and proves nothing.
 ## [1.7.526] — 2026-09-22
 
 _Colours panel: Fill / Stroke and the colour line move above the swatch books_
