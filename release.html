@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.528 — the detachable Colours widget is wider, and the swatch books work inside it.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.529 — the remove cross of an imported swatch book now sits just left of its shade count.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.528 — the detachable Colours widget is wider, and the swatch books work inside it.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.529 — the remove cross of an imported swatch book now sits just left of its shade count.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,28 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.529 — La croix de retrait d'un nuancier importé se place à gauche du nombre de teintes ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-529">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.529</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 22 septembre 2026" data-i18n-en="Released September 22, 2026" data-i18n-jp="2026年9月22日公開">Released September 22, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Quand vous importez un nuancier <code>.ase</code>, sa ligne porte une croix pour le retirer. Elle était mal placée : trop à droite et par-dessous le nombre de teintes. Elle est maintenant <strong>juste à gauche de ce nombre</strong>." data-i18n-en-html="When you import an <code>.ase</code> swatch book, its row carries a cross to remove it. It was badly placed: too far right and under the shade count. It now sits <strong>just to the left of that number</strong>." data-i18n-jp-html="<code>.ase</code> を読み込むと、その行に削除用の ✕ が付きます。位置が悪く（右寄りすぎ、しかも色数の下）、現在は<strong>数字のすぐ左</strong>に来ます。">The remove cross of an imported swatch book now sits just left of its shade count.</p>
+
+ <h3 data-i18n-fr-html="✕ La croix passe à gauche du nombre <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="✕ The cross moves left of the number <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="✕ ✕ を数字の左へ <span class=&quot;badge badge-fix&quot;>修正</span>">✕ The cross moves left of the number <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="La croix était posée en <strong>position absolue</strong> (5 px du bord droit, 4 px du haut) alors que le nombre de teintes est un élément de la ligne, aligné à droite : les deux se disputaient le même coin, et la croix passait <strong>sous le nombre</strong>. Elle est redevenue un élément de la ligne, placé <strong>avant</strong> le compteur ; c'est elle qui part à droite et le nombre la suit : <em>[flèche] Nom … [✕] [3]</em>." data-i18n-en-html="The cross was <strong>absolutely positioned</strong> (5 px from the right edge, 4 px from the top) while the shade count is a row item aligned to the right: both fought over the same corner, and the cross ended up <strong>under the number</strong>. It is a row item again, placed <strong>before</strong> the counter; the cross goes right and the number follows it: <em>[chevron] Name … [✕] [3]</em>." data-i18n-jp-html="✕ は<strong>絶対配置</strong>（右から 5 px、上から 4 px）で、色数は行内で右寄せの要素でした。同じ角を取り合い、✕ は<strong>数字の下</strong>に来ていました。現在は行内の要素に戻り、カウンターの<strong>前</strong>に置かれます：<em>[三角] 名前 … [✕] [3]</em>。" data-i18n-jp-html-2="">The cross was absolutely positioned and slipped under the count; it is now a row item placed before the counter.</li>
+  <li data-i18n-fr-html="Mesure sur un nuancier importé (« Client ») : dans le widget détaché, la croix est à <strong>x = 1004</strong> (18 × 18 px) et le nombre à <strong>x = 1028</strong> — donc bien à gauche, sur la <strong>même ligne</strong> (centres alignés à moins de 3 px) avec 6 px d'écart ; dans la barre de droite, croix à x = 1341 et nombre à x = 1365, même alignement. La mise en place ne concerne que les lignes qui ont une croix (les nuanciers livrés gardent leur nombre seul à droite)." data-i18n-en-html="Measured on an imported book (“Client”): in the detached widget the cross is at <strong>x = 1004</strong> (18 × 18 px) and the number at <strong>x = 1028</strong> — so on the left, on the <strong>same line</strong> (centres within 3 px) with a 6 px gap; in the right-hand bar, cross at x = 1341 and number at x = 1365, same alignment. The rule only applies to rows that have a cross (the built-in books keep their number alone on the right)." data-i18n-jp-html="読み込んだブック（「Client」）での実測：ウィジェット内で ✕ は <strong>x = 1004</strong>（18 × 18 px）、数字は <strong>x = 1028</strong> — 同じ行の左側（中心のずれ 3 px 以内、間隔 6 px）。右側バーでは ✕ が x = 1341、数字が x = 1365 で同じ配置です。この配置は ✕ がある行だけに適用されます。">Measured: cross at x = 1004 and number at x = 1028 in the widget (same line, 6 px apart); x = 1341 / 1365 in the right-hand bar.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧩 Elle fonctionne aussi dans le widget détaché" data-i18n-en-html="🧩 It also works in the detached widget" data-i18n-jp-html="🧩 切り離したウィジェットでも動作します">🧩 It also works in the detached widget</h3>
+ <ul>
+  <li data-i18n-fr-html="La croix du widget est relayée au panneau d'origine (comme les pastilles depuis la 1.7.528) : mesuré, retirer un nuancier importé depuis le widget le retire bien de la liste, et la copie se reconstruit aussitôt (11 → 10 lignes). Le clic sur la croix n'ouvre pas l'accordéon au passage." data-i18n-en-html="The widget’s cross relays to the original panel (like the shades since 1.7.528): measured, removing an imported book from the widget does remove it from the list and the copy rebuilds at once (11 → 10 rows). Clicking the cross does not open the accordion on the way." data-i18n-jp-html="ウィジェットの ✕ は元のパネルに中継されます（1.7.528 以降の色見本と同じ）。実測：ウィジェットから読み込み済みブックを削除すると一覧から消え、コピーがすぐ再構築されます（11 → 10 行）。✕ のクリックでアコーディオンは開きません。">The cross relays to the original panel: removing a book from the widget works and the copy rebuilds (11 → 10 rows).</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.528 — Le widget « Couleurs » (le petit + du panneau) est plus large, et tout y fonctionne : nuanciers compris ===== -->
 

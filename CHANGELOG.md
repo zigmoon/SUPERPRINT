@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -36,6 +36,13 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
+## [1.7.529] — 2026-09-22
+
+_The remove cross of an imported swatch book now sits just left of its shade count_
+
+### Fixed
+- **The ✕ that removes an imported `.ase` swatch book was badly placed** — too far right, and it slipped **under** the shade count. Cause: the cross was **absolutely positioned** in the row header (`position: absolute; right: 5px; top: 4px`) while the shade count is a row item aligned to the right by `margin-left: auto` — both occupied the same corner. The cross is a row item again, inserted **before** the counter, with the cross taking the `margin-left: auto` (a `has-remove` class on the header keeps the rule away from rows that have no cross): result **`[chevron] Name … [✕] [3]`**. Measured on an imported book (“Client”): in the detached widget the cross is at **x = 1004** (18 × 18 px) and the number at **x = 1028** — left of it, on the same line (centres within 3 px, 6 px gap); in the right-hand bar, cross x = 1341 / number x = 1365, same alignment. Built-in books keep their number alone on the right.
+- Verified in the **detached widget** too: its cross relays to the original panel (like the shades since 1.7.528), removing a book there really removes it and the copy rebuilds at once (11 → 10 rows); clicking the cross does not open the accordion.
 ## [1.7.528] — 2026-09-22
 
 _The detachable Colours widget is wider, and the swatch books work inside it_

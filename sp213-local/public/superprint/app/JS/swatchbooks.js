@@ -870,7 +870,13 @@
                 e.stopPropagation();
                 retirerLivre(livre.id);
             });
-            head.appendChild(rm);
+            /* 🆕 v1.7.529 — _SP_CROIX_529 : la croix se glisse JUSTE À GAUCHE du nombre de
+               teintes. Avant, elle était posée en ABSOLU (right: 5px, top: 4px) : elle
+               passait SOUS le nombre et collait au bord droit de la ligne. La classe
+               « has-remove » porte les deux règles de mise en place (CSS). */
+            head.classList.add('has-remove');
+            var compteur = head.querySelector('.swatch-book-count');
+            if (compteur) head.insertBefore(rm, compteur); else head.appendChild(rm);
         }
         return wrap;
     }
