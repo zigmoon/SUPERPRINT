@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -36,7 +36,16 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
-## [1.7.530] — 2026-09-23
+## [1.7.531] — 2026-09-23
+
+_The tab-stop ruler stays draggable at any zoom; clicking it can no longer deselect the text block_
+
+### Fixed
+- **The tab-stop ruler became ungrabbable above 100 % and every click on it deselected the text block** (user report: “on ne peux plus bouger les taquets de tabulations dans la règle au dessus du bloc avec la souris. Le bloc texte se dé-sélectionne à chaque clic”). Measured cause: `taquetSousLeCurseur()` and `bandeSousLeCurseur()` returned immediately whenever the ruler state was incomplete (`_regle` / `_regleGeom` missing), so `debutGlisser()` let the event through without `preventDefault()`; Fabric then received a press on empty space and cleared the block selection — and the disabled ruler disappeared. Reproduced in the lab (ruler reference invalidated: hover cursor « default », press deselects). The band geometry is now recalculated from the **block** (`geomBandeDepuisBloc`), the ruler remembers its block (`_spOwner`), the ruler is **repaired** before a press, and any press inside the **ruler band zone** is consumed (`preventDefault` + `stopPropagation`) even when no stop is hit: a click on the ruler can no longer deselect the block.
+- **The grab tolerance did not follow the zoom**: the zoom of SuperPrint is a CSS `transform: scale()`, so `canvas.getZoom()` (`viewportTransform[0]`) always returns 1 (measured at 100 %, 110 % and 120 %), while `REGLE_TOL` is documented “in screen pixels”. `applyZoom()` now publishes the real zoom (`window.spZoomActuel`) and the ruler reads it, so the grab zone keeps a constant screen size at any zoom. Measured: 120 % → a 40 px screen drag moves the stop 32.9 document px (expected 33.3); 200 % → grabbing 6 screen px away still works; 100 % → 40 px screen = 40 px document (unchanged).
+- **A stop drag could stay stuck**, making every stop ungrabbable (`taquetSousLeCurseur()` exits while `_glisser` is set): the drag used to end only on a window `mouseup`. It is now also settled when the window loses focus, when the pointer leaves it, or when the zoom changes (`window.spTabEnGlisser` / `spTabAnnulerGlisser`). The ruler is refreshed right after a zoom change (`_updateCanvasDPRForZoom`).
+- **Diagnostics**: `window.spTabDiag()` returns the ruler state on one line (ruler, geometry, marks, blocks, owner, selection, real zoom, `getZoom()`, current drag); a band press that grabs nothing logs it to the console and the status bar.
+- Non-regressions measured: clicking the band still creates a stop (2 stops / 2 marks, block still selected), 100 % dragging unchanged, and the whole flow with the « Taquets de tabulation » widget open at 120 % (stop placed then dragged to 26 mm — panel reports “appliqué”).## [1.7.530] — 2026-09-23
 
 _Fond and Contour paint the text block frame; the text is only coloured when characters are selected with the mouse_
 

@@ -6777,15 +6777,21 @@ window.spTestDiag = function () {
             var gx = tl.x + REGLE_GAP * Math.sin(ang);
             var gy = tl.y - REGLE_GAP * Math.cos(ang);
             var posSig = [Math.round(gx * 10) / 10, Math.round(gy * 10) / 10, Math.round((obj.angle || 0) * 10) / 10].join('|');
-            var geom = { gx: gx, gy: gy, ang: obj.angle || 0, sc: sc };
+            /* _SP_TAQUET_531_DEBUT : la largeur fait partie de la géométrie — le test de
+               bornes de la saisie la lit (g.largeur), sans quoi tout taquet est rejeté. */
+            var geom = { gx: gx, gy: gy, ang: obj.angle || 0, sc: sc, largeur: largeur };
             if (_regle && _regle.canvas === c && _regle._spTabSig === sig) {
+                /* _SP_TAQUET_531_DEBUT : la règle sait quel bloc elle décrit — la saisie et la
+                   garde « clic sur la règle » fonctionnent ainsi même si la sélection est levée
+                   pendant que la règle est affichée. */
+                _regle._spOwner = obj;
                 if (_regle._spTabPos !== posSig) {
                     _regle.set({ left: gx, top: gy, angle: obj.angle || 0 });
                     _regle._spTabPos = posSig;
                     if (typeof _regle.setCoords === 'function') _regle.setCoords();
                     /* on REMESURE l'ancre sur la bande réellement placée */
                     var oMoved = origineBande(_regle);
-                    geom = { gx: oMoved.x, gy: oMoved.y, ang: obj.angle || 0, sc: sc };
+                    geom = { gx: oMoved.x, gy: oMoved.y, ang: obj.angle || 0, sc: sc, largeur: largeur };
                     _regleGeom = geom;
                     /* les marques suivent la bande (déplacement du BLOC, pas d'un taquet) */
                     _marques.forEach(function (m) {
@@ -6842,12 +6848,13 @@ window.spTestDiag = function () {
             });
             grp._spTabSig = sig;
             grp._spTabPos = posSig;
+            grp._spOwner = obj;      /* _SP_TAQUET_531_DEBUT */
             c.add(grp);
             try { c.bringToFront(grp); } catch (_) {}
             _regle = grp;
             /* ancre RE-MESURÉE sur la bande qui vient d'être créée (voir origineBande) */
             var oNew = origineBande(grp);
-            geom = { gx: oNew.x, gy: oNew.y, ang: obj.angle || 0, sc: sc };
+            geom = { gx: oNew.x, gy: oNew.y, ang: obj.angle || 0, sc: sc, largeur: largeur };
             _regleGeom = geom;
             /* 🆕 v1.7.485 — une MARQUE INDÉPENDANTE par taquet (déplaçable). */
             t.stops.forEach(function (s) {
@@ -7152,17 +7159,132 @@ window.spTestDiag = function () {
        géométrie de la bande, et on intercepte l'appui sur le canvas EN CAPTURE —
        sans cela, un appui sur la règle démarrait une sélection de zone et
        désélectionnait le bloc (donc la règle disparaissait). */
+    /* ═══ _SP_TAQUET_531_DEBUT — LA RÈGLE RESTE SAISISSABLE À TOUT ZOOM ═══════════════
+       Retour utilisateur (1.7.530) : « lorsque je mets la page au-dessus de 100% (110%,
+       120%…), on ne peut plus bouger les taquets de tabulation dans la règle au-dessus du
+       bloc avec la souris ; le bloc texte se désélectionne à chaque clic. »
+
+       MESURÉ AVANT : le zoom de l'appli est un transform: scale() CSS, donc
+       canvas.getZoom() (viewportTransform[0]) vaut TOUJOURS 1 — REGLE_TOL, documenté « en
+       px ÉCRAN », ne suivait pas le zoom. Pire : taquetSousLeCurseur() et
+       bandeSousLeCurseur() sortaient immédiatement quand _regle (ou _regleGeom) manquait ;
+       l'appui n'était alors plus intercepté, Fabric le recevait (appui sur une zone vide =
+       le bloc perd sa sélection) et la règle devenue « morte » disparaissait.
+
+       CORRECTIF : le zoom RÉEL est lu ; la géométrie de la bande est recalculée depuis le
+       BLOC quand celle de la règle manque ; un appui dans la ZONE DE LA BANDE est toujours
+       consommé (le bloc ne peut plus être désélectionné par un clic sur la règle) ; la
+       règle est réparée avant la saisie ; window.spTabDiag() rend son état lisible. */
+    function zoomReel(c) {
+        var z = 0;
+        try { if (typeof window.spZoomActuel === 'function') z = Number(window.spZoomActuel()); } catch (_) {}
+        if (!(z > 0)) { try { z = (c && c.getZoom && c.getZoom()) || 1; } catch (_) { z = 1; } }
+        return (z > 0) ? z : 1;
+    }
+
+    /* Géométrie de la bande DÉDUITE DU BLOC : bord haut + REGLE_GAP, perpendiculairement au
+       bord haut (même construction que majRegleTab). Ne dépend d'aucun objet Fabric. */
+    function geomBandeDepuisBloc(obj) {
+        if (!obj || typeof obj.getPointByOrigin !== 'function') return null;
+        try {
+            var sc = (typeof obj.scaleX === 'number' && obj.scaleX > 0) ? obj.scaleX : 1;
+            var tl = obj.getPointByOrigin('left', 'top');
+            var ang = (obj.angle || 0) * Math.PI / 180;
+            var t = modele(obj);
+            var largeur = Math.max(60, (obj.width || 0) * sc);
+            var maxStop = 0;
+            t.stops.forEach(function (s) { if (s.pos > maxStop) maxStop = s.pos; });
+            if (maxStop * sc + 10 > largeur) largeur = maxStop * sc + 10;
+            return {
+                gx: tl.x + REGLE_GAP * Math.sin(ang),
+                gy: tl.y - REGLE_GAP * Math.cos(ang),
+                ang: obj.angle || 0, sc: sc, largeur: largeur
+            };
+        } catch (_) { return null; }
+    }
+
+    /* Géométrie de saisie : celle de la règle AFFICHÉE quand elle est valide, sinon celle
+       recalculée depuis le bloc (règle détruite, marques perdues, zoom en cours). */
+    function geomBande(obj) {
+        var g = (_regleGeom && _regle && _regle.canvas)
+            ? _regleGeom
+            : (geomBandeDepuisBloc(obj) || _regleGeom || null);
+        /* _SP_TAQUET_531_DEBUT — DÉFENSE EN PROFONDEUR : une géométrie sans largeur
+           utilisable ferait échouer TOUS les tests de saisie (mesuré : curseur inchangé,
+           taquet insaisissable, et le bloc désélectionné par l'appui). On complète donc la
+           largeur manquante depuis le bloc, sinon depuis la bande réellement posée. */
+        if (g && !(g.largeur > 0)) {
+            var g2 = geomBandeDepuisBloc(obj);
+            var lw = (g2 && g2.largeur > 0) ? g2.largeur : ((_regle && _regle.width) || 0);
+            if (lw > 0) g = { gx: g.gx, gy: g.gy, ang: g.ang, sc: g.sc, largeur: lw };
+        }
+        return g;
+    }
+
+    /* Le point (repère document) dans le repère de la bande. */
+    function versBande(g, sceneX, sceneY) {
+        if (!g) return null;
+        var a = (g.ang || 0) * Math.PI / 180, co = Math.cos(a), si = Math.sin(a);
+        var dx = sceneX - g.gx, dy = sceneY - g.gy;
+        return { x: dx * co + dy * si, y: -dx * si + dy * co + REGLE_H };
+    }
+
+    /* Le point tombe-t-il dans la ZONE DE LA BANDE (bande + flèche) ? Indépendant de _regle :
+       c'est la garde « un clic sur la règle ne désélectionne JAMAIS le bloc ». */
+    function pointDansLaBande(pt, obj, c) {
+        if (!pt || !obj) return false;
+        var g = geomBande(obj);
+        if (!g) return false;
+        var loc = versBande(g, pt.x, pt.y);
+        if (!loc) return false;
+        var marge = 10 / zoomReel(c);
+        var w = g.largeur || 0;
+        if (loc.x < -marge || loc.x > w + marge) return false;
+        if (loc.y < -marge || loc.y > REGLE_H + REGLE_FLECHE + marge) return false;
+        return true;
+    }
+
+    /* État de la règle, en une ligne : diagnostic (console + barre d'état). */
+    function diagRegle() {
+        try {
+            var c = leCanvas();
+            var sel = blocsTexte()[0] || null;
+            var prop = (_regle && _regle._spOwner) || null;
+            return 'regle=' + (!!_regle) + ' geom=' + (!!_regleGeom) +
+                ' marques=' + _marques.length + ' blocs=' + blocsTexte().length +
+                (sel ? ' bloc=selection' : (prop ? ' bloc=proprietaire' : ' bloc=aucun')) +
+                ' zoom=' + zoomReel(c) + ' getZoom=' + ((c && c.getZoom) ? c.getZoom() : '-') +
+                ' glisser=' + (!!_glisser);
+        } catch (e) { return 'diagnostic indisponible (' + ((e && e.message) || e) + ')'; }
+    }
+    window.spTabDiag = diagRegle;
+    window.spTabEnGlisser = function () { return !!_glisser; };
+
+    /* La règle a-t-elle perdu son état interne (zoom, autre planche, marques disparues) ? */
+    function reparerRegle(c) {
+        try {
+            if (!_regle || !_regleGeom || !_regle.canvas) return false;
+            var b0 = blocsTexte()[0];
+            if (!b0) return false;
+            var t0 = modele(b0);
+            if (t0.stops.length && !_marques.length) { majRegleTab(c || leCanvas()); return true; }
+            return false;
+        } catch (_) { return false; }
+    }
+
     function taquetSousLeCurseur(e) {
         if (_glisser) return null;
         var c = leCanvas();
-        if (!c || !_regle || !_regle.canvas) return null;
-        var obj = blocsTexte()[0];
+        if (!c) return null;
+        /* _SP_TAQUET_531_DEBUT — le bloc vient de la sélection, sinon de la règle affichée. */
+        var obj = blocsTexte()[0] || (_regle && _regle._spOwner) || null;
         if (!obj) return null;
-        var z = Math.max(0.05, (c.getZoom && c.getZoom()) || 1);
-        var tol = REGLE_TOL / z;
-        var marge = 8 / z;
+        var g = geomBande(obj);
+        if (!g) return null;
+        var tol = REGLE_TOL / zoomReel(c);
+        var marge = 8 / zoomReel(c);
         var pt = c.getPointer(e);
-        var loc = sceneVersBande(pt.x, pt.y);
+        var loc = versBande(g, pt.x, pt.y);
         if (!loc) return null;
         /* _SP_TAB_505_DEBUT — UN CLIC DANS LE BLOC APPARTIENT AU TEXTE.
            Sans cette garde, cliquer dans la PREMIÈRE ligne au voisinage d'un taquet
@@ -7170,9 +7292,9 @@ window.spTestDiag = function () {
            glisser du taquet au lieu de placer le curseur. Les poignées sont toutes
            AU-DESSUS du bord haut du bloc (REGLE_GAP), donc rien n'est perdu. */
         if (typeof obj.containsPoint === 'function' && obj.containsPoint(pt)) return null;
-        var w = _regle.width || 0, h = _regle.height || 0;
+        var w = g.largeur || 0;
         if (loc.x < -marge || loc.x > w + marge) return null;
-        if (loc.y < -marge || loc.y > h + REGLE_FLECHE + marge) return null;
+        if (loc.y < -marge || loc.y > REGLE_H + REGLE_FLECHE + marge) return null;
         var t = modele(obj);
         var sc = (typeof obj.scaleX === 'number' && obj.scaleX > 0) ? obj.scaleX : 1;
         var idx = -1, dMin = 1e9;
@@ -7197,6 +7319,17 @@ window.spTestDiag = function () {
     function debutGlisser(e) {
         if (e.button !== undefined && e.button !== 0) return;
         var hit = null;
+        /* _SP_TAQUET_531_DEBUT — ON PRÉPARE LE TERRAIN AVANT DE TESTER LA SAISIE : la règle
+           peut être en retard (zoom, sélection reconstruite, marques perdues) ; on repère
+           aussi l'appui dans la ZONE DE LA BANDE, garde du point 6. */
+        var c0 = null, b0 = null, pt0 = null, dansBande0 = false;
+        try {
+            c0 = leCanvas();
+            b0 = blocsTexte()[0] || (_regle && _regle._spOwner) || null;
+            pt0 = (c0 && c0.getPointer) ? c0.getPointer(e) : null;
+            dansBande0 = !!(b0 && pt0 && pointDansLaBande(pt0, b0, c0));
+            if (dansBande0) reparerRegle(c0);
+        } catch (_) {}
         try { hit = taquetSousLeCurseur(e); } catch (_) {}
         /* ═══ _SP_TAB_505_DEBUT — CLIC SUR LA RÈGLE = POSER UN TAQUET (geste QuarkXPress) ═══
            MESURE AVANT : cliquer la bande ne faisait RIEN (seuls le bouton « + Taquet »
@@ -7206,7 +7339,29 @@ window.spTestDiag = function () {
         if (!hit) {
             var bande = null;
             try { bande = bandeSousLeCurseur(e); } catch (_) {}
-            if (!bande) return;
+            if (!bande) {
+                /* _SP_TAQUET_531_DEBUT — UN APPUI SUR LA RÈGLE N'EST JAMAIS UN APPUI DANS LE VIDE.
+                   Même quand aucun taquet n'a pu être saisi (géométrie à recalculer, zoom en
+                   cours de réconciliation), l'événement est CONSOMMÉ : Fabric ne doit pas en
+                   profiter pour lever la sélection du bloc — c'est ce qui faisait disparaître
+                   la règle au premier clic dès 110 %. */
+                if (dansBande0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try { if (c0 && c0.upperCanvasEl) c0.upperCanvasEl.style.cursor = 'ew-resize'; } catch (_) {}
+                    /* Un appui pile DANS la bande qui n'a rien saisi est anormal : on le dit. */
+                    try {
+                        var g0 = geomBande(b0), l0 = g0 ? versBande(g0, pt0.x, pt0.y) : null;
+                        var strict = !!(l0 && g0 && l0.x >= 0 && l0.x <= (g0.largeur || 0) &&
+                            l0.y >= 0 && l0.y <= REGLE_H + REGLE_FLECHE);
+                        if (strict) {
+                            console.info('[taquets] appui dans la bande sans taquet saisi — ' + diagRegle());
+                            majStatut('Règle : appui sans taquet saisi (' + diagRegle() + ')', 'warn');
+                        }
+                    } catch (_) {}
+                }
+                return;
+            }
             e.preventDefault();
             e.stopPropagation();
             var tB = modele(bande.obj);
@@ -7276,7 +7431,7 @@ window.spTestDiag = function () {
         if (Math.abs(px - _glisser.stop.pos) < 0.2) return;
         _glisser.stop.pos = px;
         _glisser.bouge = true;
-        if (_glisser.marque) placerMarque(_glisser.marque, _regleGeom, px);
+        if (_glisser.marque) placerMarque(_glisser.marque, geomBande(_glisser.obj) || _regleGeom, px);
         if (_glisser.marque && _glisser.marque.canvas) {
             try { _glisser.marque.canvas.bringToFront(_glisser.marque); } catch (_) {}
         }
@@ -7353,18 +7508,9 @@ window.spTestDiag = function () {
             if (!c || !e || !e.target || e.target.tagName !== 'CANVAS') return false;
             var pt = c.getPointer(e);
             if (!pt) return false;
-            var b = blocsTexte()[0];
+            var b = blocsTexte()[0] || (_regle && _regle._spOwner) || null;
             if (b && typeof b.containsPoint === 'function' && b.containsPoint(pt)) return true;
-            if (_regle && _regle.canvas) {
-                var loc = sceneVersBande(pt.x, pt.y);
-                if (loc) {
-                    var z = Math.max(0.05, (c.getZoom && c.getZoom()) || 1);
-                    var marge = 10 / z;
-                    var w = _regle.width || 0;
-                    if (loc.x > -marge && loc.x < w + marge &&
-                        loc.y > -marge && loc.y < REGLE_H + REGLE_FLECHE + marge) return true;
-                }
-            }
+            if (b && pointDansLaBande(pt, b, c)) return true;
         } catch (_) {}
         return false;
     }
@@ -7373,18 +7519,19 @@ window.spTestDiag = function () {
        Renvoie la position en millimètres, aimantée au 1/2 mm comme le glisser. */
     function bandeSousLeCurseur(e) {
         var c = leCanvas();
-        if (!c || !_regle || !_regle.canvas) return null;
-        var obj = blocsTexte()[0];
+        if (!c) return null;
+        var obj = blocsTexte()[0] || (_regle && _regle._spOwner) || null;
         if (!obj) return null;
+        var g = geomBande(obj);
+        if (!g) return null;
         var pt = c.getPointer(e);
         if (!pt) return null;
         /* Un clic DANS le bloc appartient au TEXTE (placement du curseur). */
         if (typeof obj.containsPoint === 'function' && obj.containsPoint(pt)) return null;
-        var loc = sceneVersBande(pt.x, pt.y);
+        var loc = versBande(g, pt.x, pt.y);
         if (!loc) return null;
-        var z = Math.max(0.05, (c.getZoom && c.getZoom()) || 1);
-        var marge = 8 / z;
-        var w = _regle.width || 0;
+        var marge = 8 / zoomReel(c);
+        var w = g.largeur || 0;
         if (loc.x < 0 || loc.x > w) return null;
         if (loc.y < -marge || loc.y > REGLE_H + 2) return null;
         var sc = (typeof obj.scaleX === 'number' && obj.scaleX > 0) ? obj.scaleX : 1;
@@ -7440,6 +7587,18 @@ window.spTestDiag = function () {
                 if (_glisser) return;
                 try { haut.style.cursor = ''; } catch (_) {}
             });
+            /* _SP_TAQUET_531_DEBUT — UNE SAISIE DE TAQUET QU'ON NE PERD PAS : elle ne se
+               terminait que sur un « mouseup » reçu par la fenêtre. Si la souris la quittait,
+               si l'onglet perdait le focus ou si un zoom survenait pendant le glisser,
+               _glisser restait posé et PLUS AUCUN taquet n'était saisissable. On solde donc
+               la saisie quand la fenêtre perd le focus ou quand le pointeur la quitte. */
+            if (!window._spTabsSecours) {
+                window._spTabsSecours = true;
+                window.addEventListener('blur', function () { try { finGlisser(); } catch (_) {} }, true);
+                window.addEventListener('mouseout', function (ev) {
+                    try { if (ev && !ev.relatedTarget && _glisser) finGlisser(); } catch (_) {}
+                }, true);
+            }
         } catch (_) {}
     }
 
@@ -30620,6 +30779,17 @@ window.spTestDiag = function () {
                 canvases.forEach(cc => { if (cc) window._spReassertPasteboardLayout(cc); });
             } catch(_) {}
         }
+        /* ═══ _SP_TAQUET_531_DEBUT — LA RÈGLE DES TAQUETS SUIT LE ZOOM ═══
+           Le zoom ne déplace aucun objet (c'est un transform CSS), mais il change la
+           résolution des canvas et peut survenir PENDANT une saisie de taquet. On solde
+           alors la saisie (sinon la marque saisie ne suivrait plus la souris et
+           taquetSousLeCurseur sortirait pour toujours) et on redemande la règle — appel
+           idempotent, donc gratuit quand rien n'a changé. */
+        try {
+            if (typeof window.spTabEnGlisser === 'function' && window.spTabEnGlisser() &&
+                typeof window.spTabAnnulerGlisser === 'function') window.spTabAnnulerGlisser();
+        } catch (_) {}
+        try { if (typeof window.spTabRegleMaj === 'function') window.spTabRegleMaj(); } catch (_) {}
     }
 
     function normalizeZoomLevel() {
@@ -30631,6 +30801,13 @@ window.spTestDiag = function () {
     function applyZoom() {
         // ✅ Garde-fous: éviter %NaN% au démarrage
         normalizeZoomLevel();
+        /* ═══ _SP_TAQUET_531_DEBUT — LE ZOOM RÉEL EST PUBLIÉ ═══
+           Le zoom de l'appli est un transform: scale() CSS : canvas.getZoom()
+           (viewportTransform[0]) reste TOUJOURS à 1. Les zones de saisie de la règle des
+           taquets (tolérance autour d'un taquet, marge de la bande) sont exprimées en
+           pixels ÉCRAN : elles ont besoin de la valeur réellement affichée. On la publie
+           ici, au seul endroit qui la connaît. */
+        try { window.spZoomActuel = function () { return zoomLevel; }; } catch (_) {}
         if (pagesContainer) {
             pagesContainer.style.transform = `scale(${zoomLevel})`;
             const inv = (zoomLevel > 0 ? (1 / zoomLevel) : 1);
