@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.536-nuanciers-ascenseurs';
+const CACHE_NAME = 'superprint-shell-v1.7.537-marges-json-studio';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

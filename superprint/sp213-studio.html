@@ -5623,6 +5623,11 @@ function spRtfLayoutInfo(src) {
         //   Information d'interface et de diagnostic : on la transporte TELLE QUELLE
         //   pour qu'un document qui passe par le studio la conserve au retour.
         if (o._spPathFrom) base._spPathFrom = String(o._spPathFrom).slice(0, 24);
+        /* 🆕 v1.7.537 — ÉLÉMENT DE GABARIT LIBÉRÉ (app v1.7.533). La marque vit
+           DANS l'objet sérialisé (aucun nouvel état de projet à maintenir) : il
+           suffit donc de la copier TELLE QUELLE pour qu'elle survive au trajet
+           app -> studio -> app. Mesuré : 0 occurrence avant ce correctif. */
+        if (o._spGabaritLibere) base._spGabaritLibere = true;
         if (t === 'rect' || t === 'rectangle') {
           return Object.assign(base, { type: 'rectangle',
             width: Math.round(((o.width || 0) / MM_TO_PX) * 10) / 10,
@@ -5791,6 +5796,13 @@ function spRtfLayoutInfo(src) {
           if (typeof o._spCols === 'number' && isFinite(o._spCols) && o._spCols > 1) el._spCols = Math.round(o._spCols);
           if (typeof o._spColW === 'number' && isFinite(o._spColW)) el._spColW = o._spColW;
           if (typeof o._spColGutter === 'number' && isFinite(o._spColGutter)) el._spColGutter = o._spColGutter;
+          /* 🆕 v1.7.537 — CONTOUR DE CADRE DU BLOC TEXTE (app v1.7.530) :
+             _spFrameStroke / _spFrameStrokeWidth, en PIXELS, copiés tels quels.
+             ⚠️ C'est la SEULE source de vérité du cadre côté app (obj.stroke reste
+             « sans contour ») : sans ce transport, le cadre disparaissait du
+             document ET du PDF exporté ensuite (cf. main.js, export PDF). */
+          if (typeof o._spFrameStroke === 'string' && o._spFrameStroke.length <= 32) el._spFrameStroke = o._spFrameStroke;
+          if (typeof o._spFrameStrokeWidth === 'number' && isFinite(o._spFrameStrokeWidth) && o._spFrameStrokeWidth > 0) el._spFrameStrokeWidth = o._spFrameStrokeWidth;
           // Onglets : { active, step, stops:[{ pos, type }] } — données pures.
           if (o._spTabs && typeof o._spTabs === 'object' && Array.isArray(o._spTabs.stops)) {
             try { el._spTabs = JSON.parse(JSON.stringify(o._spTabs)); } catch (_) {}
@@ -5836,6 +5848,12 @@ function spRtfLayoutInfo(src) {
     //   sans les encres, alors qu'il sait les ecrire quand il les connait).
     //   Meme magasin partage que le reste : localStorage « sp_spot_inks ».
     try { spRememberSpotInks(spFile.resources && spFile.resources.spotInks); } catch (_) {}
+    /* 🆕 v1.7.537 — POLICES EXTERNES EMBARQUÉES (app v1.7.415) : on les garde en
+       MÉMOIRE pour les réécrire à l'export (0 occurrence dans le studio avant ce
+       correctif : un document à police embarquée revenait sans elle et l'app le
+       recomposait dans une police de repli). Pas de localStorage : le base64 d'une
+       police ferait sauter le quota, et l'aperçu du studio ne sait pas la rendre. */
+    try { spRememberCustomFonts(spFile.resources && spFile.resources.customFonts); } catch (_) {}
 
     // 🛡️ v1.7.368 — STYLES NOMMES (typo + nuancier) : l'app les restaure a
     //   l'ouverture d'un .sp, le studio NON. Un document arrive avec des styles
@@ -9770,6 +9788,14 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
 
   // Mémorise les encres d'un .sp/.json importé (pour ne pas les perdre si
   // l'utilisateur re-télécharge ensuite la maquette).
+  /* 🆕 v1.7.537 — POLICES EMBARQUÉES DU DOCUMENT REÇU (cf. importFromSuperPrint).
+     Conservées en mémoire, réécrites dans resources.customFonts à l'export. */
+  let spCustomFontsMemo = [];
+  function spRememberCustomFonts(liste) {
+    try { spCustomFontsMemo = Array.isArray(liste) ? liste : []; } catch (_) { spCustomFontsMemo = []; }
+  }
+  function spCustomFontsPourExport() { return (spCustomFontsMemo && spCustomFontsMemo.length) ? spCustomFontsMemo : undefined; }
+
   function spRememberSpotInks(reg) {
     try {
       if (!reg || typeof reg !== 'object') return;
@@ -10044,6 +10070,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         }
       } catch (_) {}
     }
+    /* 🆕 v1.7.537 — MARQUE D'OBJET LIBÉRÉ DU GABARIT (app v1.7.533) : réécrite
+       TELLE QUELLE (cf. le transport à l'import). */
+    if (el._spGabaritLibere) obj._spGabaritLibere = true;
     if (obj.type === 'textbox' && el._spCharStyles && String(el.text || '') === String(el._spCharStylesText || '')) {
       try { obj.styles = JSON.parse(JSON.stringify(el._spCharStyles)); } catch (_) {}
     }
@@ -10069,6 +10098,10 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       if (typeof el._spCols === 'number' && isFinite(el._spCols) && el._spCols > 1) obj._spCols = Math.round(el._spCols);
       if (typeof el._spColW === 'number' && isFinite(el._spColW)) obj._spColW = el._spColW;
       if (typeof el._spColGutter === 'number' && isFinite(el._spColGutter)) obj._spColGutter = el._spColGutter;
+      /* 🆕 v1.7.537 — CONTOUR DE CADRE DU BLOC (app v1.7.530) : réglage du BLOC,
+         indépendant du contenu -> réécrit TOUJOURS (comme spVarFont et les colonnes). */
+      if (typeof el._spFrameStroke === 'string') obj._spFrameStroke = el._spFrameStroke;
+      if (typeof el._spFrameStrokeWidth === 'number' && isFinite(el._spFrameStrokeWidth) && el._spFrameStrokeWidth > 0) obj._spFrameStrokeWidth = el._spFrameStrokeWidth;
       const _texteInchange = String(el.text || '') === String(el._spOptsText || '');
       if (_texteInchange && el._spTabs && typeof el._spTabs === 'object' && Array.isArray(el._spTabs.stops)) {
         try { obj._spTabs = JSON.parse(JSON.stringify(el._spTabs)); } catch (_) {}
@@ -10185,7 +10218,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       colGrid: (state.doc && state.doc.colGrid) ? state.doc.colGrid : undefined, styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
       // 🛡️ v1.7.369 — filtrés par usage réel : pas de canal fantôme.
-      resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(spPages) },
+      resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(spPages), customFonts: spCustomFontsPourExport() },
       textLinks: {},
       guides: {},
       masters: { templates: {}, assignments: {} },
@@ -10312,7 +10345,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       //   spCollectStylesBlock() : ne pas les retirer, l'app les restaure à
       //   l'ouverture (.sp comme .json).
       // 🛡️ v1.7.369 — tons directs filtrés par usage réel (pas de canal fantôme).
-      resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(pages) },
+      resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(pages), customFonts: spCustomFontsPourExport() },
       textLinks: {}, guides: {}, masters: { templates: {}, assignments: {} },
       numbering: { enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 },
       pages

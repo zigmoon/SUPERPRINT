@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.536 — the COLORS swatch books use the house scrollbars and the selected colour is highlighted in light grey instead of black, so dark swatches stay visible.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.537 — the .json keeps its four per-side margins, and the studio now returns the text-block frame, the freed-template marker and embedded fonts.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.536 — the COLORS swatch books use the house scrollbars and the selected colour is highlighted in light grey instead of black, so dark swatches stay visible.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.537 — the .json keeps its four per-side margins, and the studio now returns the text-block frame, the freed-template marker and embedded fonts.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,24 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.537 — Fidélité des fichiers : les 4 marges du .json, le cadre de bloc et les polices du studio ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-537">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.537</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 24 septembre 2026" data-i18n-en="Released September 24, 2026" data-i18n-jp="2026年9月24日公開">Released September 24, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Contrôle complet de la sauvegarde et de l'ouverture des fichiers (<strong>.sp</strong>, <strong>.json</strong>) et du passage par le <strong>studio</strong>. Le <strong>.sp</strong> était déjà fidèle ; trois défauts réels ont été trouvés et corrigés : les marges par côté du <strong>.json</strong>, le <strong>cadre de bloc texte</strong> et les <strong>polices embarquées</strong> au retour du studio." data-i18n-en-html="Full check of saving and opening files (<strong>.sp</strong>, <strong>.json</strong>) and of the trip through the <strong>studio</strong>. The <strong>.sp</strong> was already faithful; three real defects were found and fixed: the per-side margins of the <strong>.json</strong>, the <strong>text-block frame</strong> and <strong>embedded fonts</strong> on the way back from the studio." data-i18n-jp-html="ファイルの保存・読み込み（<strong>.sp</strong>、<strong>.json</strong>）と<strong>スタジオ</strong>経由の往復を全面的に点検しました。<strong>.sp</strong> はすでに正確でしたが、実害のある 3 件を修正しました：<strong>.json</strong> の辺ごとの余白、<strong>テキストブロックの枠線</strong>、スタジオから戻る際の<strong>埋め込みフォント</strong>です。">The .sp was already faithful. Three fixes: the .json per-side margins, the text-block frame and embedded fonts through the studio.</p>
+
+ <h3 data-i18n-fr-html="📄 Marges, cadre de bloc, polices <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="📄 Margins, block frame, fonts <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="📄 余白・ブロック枠・フォント <span class=&quot;badge badge-fix&quot;>修正</span>">📄 Margins, block frame, fonts <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Les quatre marges du .json</strong> : mesuré, un document réglé en 12 / 18 / 15 / 25 mm, enregistré en .json puis réouvert, revenait avec <strong>25 mm partout</strong> (le lecteur n'appliquait que la marge unique, qui vaut le maximum des quatre). Les <strong>deux</strong> lecteurs de .json (le bouton « Ouvrir depuis l'ordinateur » et le bouton Importer) transmettent maintenant les marges par côté, comme le faisait déjà le lecteur .sp. Les anciens fichiers sans marges par côté gardent leur marge unique (vérifié : 14 mm sur les quatre côtés)." data-i18n-en-html="<strong>The four .json margins</strong>: measured, a document set to 12 / 18 / 15 / 25 mm, saved as .json and reopened, came back with <strong>25 mm everywhere</strong> (the reader only applied the single margin, which equals the maximum of the four). <strong>Both</strong> .json readers — the “Open from computer” button and the Import button — now pass the per-side margins, exactly as the .sp reader already did. Older files without per-side margins keep their single margin (checked: 14 mm on all four sides)." data-i18n-jp-html="<strong>.json の 4 つの余白</strong>：実測では、12 / 18 / 15 / 25 mm に設定した文書を .json で保存して開き直すと<strong>すべて 25 mm</strong> になっていました（読み込み側が単一の余白＝4 辺の最大値しか適用していなかったため）。<strong>2 つ</strong>の .json 読み込み経路（「コンピューターから開く」とインポート）が、.sp 読み込みと同じく辺ごとの余白を渡すようになりました。辺ごとの値を持たない古いファイルは従来どおり単一の余白を保ちます（確認済み：14 mm が 4 辺）。">The per-side margins were lost on .json import (12/18/15/25 came back as 25 everywhere); both readers now pass them, and old files keep their single-margin fallback.</li>
+  <li data-i18n-fr-html="<strong>Le cadre du bloc texte</strong> : mesuré, un bloc à cadre rouge de 2 px revenait du studio <strong>sans son cadre</strong> — et le PDF exporté ensuite n'avait plus le trait, car l'app lit le cadre uniquement dans ce réglage (le contour de l'objet reste « sans contour »). Le cadre voyage maintenant dans les deux sens, et la marque « élément libéré du gabarit » avec lui." data-i18n-en-html="<strong>The text-block frame</strong>: measured, a block with a 2 px red frame came back from the studio <strong>without its frame</strong> — and the PDF exported afterwards had lost the stroke, because the app reads the frame only from that setting (the object stroke stays “no stroke”). The frame now travels both ways, together with the “element freed from the template” marker." data-i18n-jp-html="<strong>テキストブロックの枠線</strong>：実測では、2 px の赤い枠線を付けたブロックがスタジオから<strong>枠線なし</strong>で戻り、その後書き出した PDF からも線が消えていました（アプリは枠線をこの設定からのみ読み取り、オブジェクトの線は「線なし」のままのため）。枠線は双方向で運ばれるようになり、「テンプレートから解放された要素」の印も同様です。">A 2 px red block frame came back from the studio without it (and the next PDF lost the stroke); the frame and the “freed from template” marker now travel both ways.</li>
+  <li data-i18n-fr-html="<strong>Les polices embarquées</strong> : mesuré, une police embarquée dans le document n'était pas réécrite par le studio, si bien que l'app recomposait la maquette dans une <strong>police de repli</strong> (autre aspect, autres largeurs de lignes). Elle est désormais transportée (gardée en mémoire, jamais en localStorage pour ne pas saturer le quota). <strong>Vérifié aussi</strong> comme déjà fidèle : mode couleur, 4 marges, grille de colonnes, tons directs et noms de plaques, colonnes et césure du texte, habillage, fond de texte, retraits." data-i18n-en-html="<strong>Embedded fonts</strong>: measured, a font embedded in the document was not rewritten by the studio, so the app recomposed the layout in a <strong>fallback font</strong> (different look, different line widths). It is now carried along (kept in memory, never in localStorage, to avoid hitting the quota). <strong>Also checked</strong> as already faithful: colour mode, four margins, column grid, spot inks and plate names, text columns and hyphenation, wrap, text background, insets." data-i18n-jp-html="<strong>埋め込みフォント</strong>：実測では、文書に埋め込まれたフォントがスタジオで再出力されず、アプリは<strong>代替フォント</strong>で組み直していました（見た目も行幅も変化）。今後は引き継がれます（メモリ上に保持し、クォータを圧迫しないよう localStorage には保存しません）。<strong>すでに正確であることも確認済み</strong>：カラーモード、4 つの余白、段組ガイド、特色インキと版名、テキストの段組とハイフネーション、回り込み、テキスト背景、インデント。">An embedded font was not re-emitted by the studio (the app then used a fallback font); it is now carried along — kept in memory, never in localStorage.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.536 — Nuanciers : les ascenseurs maison et la couleur choisie en gris clair (lisible quelle que soit la teinte) ===== -->
 

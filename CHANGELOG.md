@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,13 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.537] — 2026-09-24
+
+_The .json keeps its four per-side margins; the studio returns the text-block frame, the freed-template marker and embedded fonts_
+
+### Fixed
+- **The four `.json` margins were lost on import**. Audit of the file round trips (user request: « contrôle le .sp et le .json en import/export et le .sp dans le studio »). Measured: a document set to 12 / 18 / 15 / 25 mm, saved as `.json` and reopened, came back **25 mm on all four sides** — the reader called `spSetMargesMm(null, <scalar>)`, and the scalar `margin` is the MAXIMUM of the four. Both `.json` readers now pass the `margins` object (`_SP_MARGES_JSON_537`): the `#loadProject` handler (Open from computer) and the `#importJsonInput` handler, exactly like `loadProjectSP` already did. Older files without `margins` keep their single-margin fallback (checked: `margin: 14` → 14 mm on all four sides). - **The text-block frame was lost through the studio**. Measured: `_spFrameStroke` / `_spFrameStrokeWidth` had **0 occurrence** in `sp213-studio.html`, so a block with a 2 px red frame came back without it. The app reads the frame only from `_spFrameStroke` (`obj.stroke` stays « no stroke ») and the PDF export does the same (main.js ~L46983): the stroke disappeared from the document **and** from the exported PDF. It is now transported both ways (import → element, return → object), in the same place as the other block settings, together with `_spGabaritLibere` (marker of an element freed from the page template, v1.7.533). - **Embedded fonts were lost through the studio**. `resources.customFonts` was not re-emitted by either studio writer, so a document with an embedded font (base64, v1.7.415) came back without it and the app recomposed the layout in a **fallback font**. The list is now remembered on import and rewritten on export (kept in memory only — a base64 font in `localStorage` would blow the quota). - **Checked as already faithful, no change needed**: `.sp` app → app round trip (colour mode, four margins, column grid, spot inks + plate names, text columns and hyphenation, wrap, text background, insets — only the content height and the hyphen markers are recomputed at load, by design, and the painted result is pixel-identical); studio transport of colour mode, four margins, column grid, spot inks, text columns, hyphenation and language, wrap, text background, insets, tabs and variable font. Measured after the fixes: `.json` 12/18/15/25 → 12/18/15/25; studio round trip → frame `#ff0000` 2 px, template marker, inks, margins, grid and columns all present, embedded font `Audit Police 537` present in the re-exported `.sp`.
 
 ## [1.7.536] — 2026-09-23
 

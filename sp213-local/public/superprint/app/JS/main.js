@@ -34925,7 +34925,14 @@ window.spTestDiag = function () {
                     // L'operateur ?? laisse passer NaN car NaN n'est pas nullish.
                     const _mRaw = project.margin ?? project.settings?.margin;
                     const _mNum = Number(_mRaw);
-                    spSetMargesMm(null, (isFinite(_mNum) && _mNum >= 0) ? _mNum : 20);
+                    /* 🆕 v1.7.537 — MARGES PAR CÔTÉ À L'IMPORT .json (_SP_MARGES_JSON_537).
+                       Le .json écrit par l'app porte « margins » (top/bottom/inner/outer,
+                       alias left/right) ET le scalaire « margin ». Ce lecteur ne lisait que
+                       le scalaire : un document à pliure asymétrique s'ouvrait avec quatre
+                       marges égales au MAXIMUM des quatre. Mesuré avant correctif :
+                       12/18/15/25 enregistrées → 25/25/25/25 à l'ouverture. */
+                    const _mObj = project.margins || (project.settings && project.settings.margins) || null;
+                    spSetMargesMm(_mObj, (isFinite(_mNum) && _mNum >= 0) ? _mNum : 20);
                     const _bRaw = project.bleed ?? project.settings?.bleed;
                     const _bNum = Number(_bRaw);
                     bleed = (isFinite(_bNum) && _bNum >= 0) ? _bNum : 3;
@@ -35165,7 +35172,14 @@ window.spTestDiag = function () {
                     // 🛡️ FIX 2026-05-01 : valider margin/bleed (?? laisse passer NaN)
                     const _mRaw = project.margin ?? project.settings?.margin;
                     const _mNum = Number(_mRaw);
-                    spSetMargesMm(null, (isFinite(_mNum) && _mNum >= 0) ? _mNum : 20);
+                    /* 🆕 v1.7.537 — MARGES PAR CÔTÉ À L'IMPORT .json (_SP_MARGES_JSON_537).
+                       Le .json écrit par l'app porte « margins » (top/bottom/inner/outer,
+                       alias left/right) ET le scalaire « margin ». Ce lecteur ne lisait que
+                       le scalaire : un document à pliure asymétrique s'ouvrait avec quatre
+                       marges égales au MAXIMUM des quatre. Mesuré avant correctif :
+                       12/18/15/25 enregistrées → 25/25/25/25 à l'ouverture. */
+                    const _mObj = project.margins || (project.settings && project.settings.margins) || null;
+                    spSetMargesMm(_mObj, (isFinite(_mNum) && _mNum >= 0) ? _mNum : 20);
                     const _bRaw = project.bleed ?? project.settings?.bleed;
                     const _bNum = Number(_bRaw);
                     bleed = (isFinite(_bNum) && _bNum >= 0) ? _bNum : 3;
