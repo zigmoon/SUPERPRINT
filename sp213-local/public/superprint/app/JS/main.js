@@ -33107,6 +33107,17 @@ window.spTestDiag = function () {
             if (hexFillEl)    hexFillEl.style.display    = 'none';
             if (hexStrokeEl)  hexStrokeEl.style.display  = 'none';
 
+            /* 🆕 v1.7.535 — _SP_CMJN_SEL_535 : les CURSEURS et l'APERÇU doivent refléter
+               l'objet SÉLECTIONNÉ, exactement comme le groupe RVB (qui reçoit #blockFill
+               depuis updateTransformPanel). Avant, ils n'étaient synchronisés QUE si le fond
+               ET le contour étaient tous deux définis : un bloc coloré SANS contour (cas
+               courant) gardait donc les valeurs du bloc précédent, et la couleur du bloc
+               sélectionné n'apparaissait pas dans la partie Couleurs du panneau.
+               Mesuré avant : bloc #cc0000 sélectionné → curseurs 0/59/100/0 et aperçu
+               rgb(255,105,0) au lieu de 0/100/100/20. */
+            _syncCmykSlidersFromRgb('fill');
+            _syncCmykSlidersFromRgb('stroke');
+
             // Gérer les cas spéciaux : sans fond / dégradé
             if (window._blockFillNone) {
                 if (cmykFillEl) { cmykFillEl.style.display = 'block'; cmykFillEl.textContent = 'Aucun'; }

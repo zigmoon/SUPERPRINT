@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.534 — the Pantone swatch book is active: an accordion of 50 shades covering all 21 Pantone families, ready to apply as a spot ink.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.535 — in CMYK mode the Fill/Stroke selector now shows the colour of the selected block: sliders, numeric fields and swatch follow the selection.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.534 — the Pantone swatch book is active: an accordion of 50 shades covering all 21 Pantone families, ready to apply as a spot ink.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.535 — in CMYK mode the Fill/Stroke selector now shows the colour of the selected block: sliders, numeric fields and swatch follow the selection.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -76,7 +76,7 @@
 	"name": "Releases — Zigmoon Apps",
 	"description": "Release notes for CUT THE FLOW, SuperPrint, PDF-YZ, Bird and the complete Zigmoon application collection.",
 	"url": "https://app.zigmoon.com/release.html",
-	"dateModified": "2026-09-21",
+	"dateModified": "2026-09-23",
 	"inLanguage": "en-US",
 	"isPartOf": {"@type": "WebSite", "url": "https://app.zigmoon.com/", "name": "Zigmoon Apps"},
 	"publisher": {"@type": "Organization", "name": "Zigmoon", "url": "https://zigmoon.com"}
@@ -706,6 +706,25 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.535 — Mode CMJN : le sélecteur Fond/Contour montre enfin la couleur du bloc sélectionné ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-535">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.535</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 23 septembre 2026" data-i18n-en="Released September 23, 2026" data-i18n-jp="2026年9月23日公開">Released September 23, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Avec « Activer les couleurs CMYK », le sélecteur <strong>Fond / Contour</strong> de la colonne de droite gardait la couleur du bloc précédent : la couleur du bloc sélectionné n'apparaissait pas. C'est corrigé — curseurs, champs et pastille suivent la sélection." data-i18n-en-html="With “Enable CMYK colours”, the <strong>Fill / Stroke</strong> selector in the right sidebar kept the previous block colour: the selected block's colour did not show up. Fixed — sliders, fields and swatch now follow the selection." data-i18n-jp-html="「CMYK カラーを有効にする」をオンにすると、右サイドバーの <strong>塗り／線</strong> セレクターが前のブロックの色を保持したままで、選択中のブロックの色が表示されませんでした。修正済み：スライダー・数値・見本が選択に追従します。">In CMYK mode, the Fill/Stroke selector now shows the selected block's colour.</p>
+
+ <h3 data-i18n-fr-html="🖍️ Couleur du bloc en mode CMJN <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🖍️ Block colour in CMYK mode <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🖍️ CMYK モードでのブロックの色 <span class=&quot;badge badge-fix&quot;>修正</span>">🖍️ Block colour in CMYK mode <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Ce qui se passait, mesuré</strong> : avec deux rectangles #CC0000 et #0000CC, la partie RVB recevait bien la couleur de chaque bloc, mais en mode CMJN les curseurs restaient figés sur 0/59/100/0 et la pastille d'aperçu restait orange — pour les deux blocs. D'où l'impression que la couleur était perdue : seule la ligne de texte sous les curseurs était juste." data-i18n-en-html="<strong>What happened, measured</strong>: with two rectangles #CC0000 and #0000CC, the RGB part did receive each block's colour, but in CMYK mode the sliders stayed frozen at 0/59/100/0 and the preview swatch stayed orange — for both blocks. Only the small text line under the sliders was correct." data-i18n-jp-html="<strong>実測した症状</strong>：#CC0000 と #0000CC の 2 つの長方形で、RGB 側は各ブロックの色を受け取っていましたが、CMYK モードではスライダーが 0/59/100/0 のまま固まり、プレビューの見本もオレンジのままでした（両ブロックとも）。スライダー下の数値テキストだけが正しい状態でした。">Measured: RGB part was fine, CMYK sliders and swatch stayed frozen (0/59/100/0 and orange) for both blocks.</li>
+  <li data-i18n-fr-html="<strong>La cause</strong> : les curseurs CMJN n'étaient synchronisés que si le bloc avait à la fois un fond ET un contour. Or un bloc coloré sans contour — le cas le plus courant — passait donc à côté : il gardait la couleur du bloc précédent." data-i18n-en-html="<strong>The cause</strong>: CMYK sliders were only synced when the block had BOTH a fill and a stroke. A coloured block without a stroke — the common case — fell through and kept the previous block's colour." data-i18n-jp-html="<strong>原因</strong>：CMYK スライダーは、ブロックに塗りと線の両方が設定されている場合のみ同期されていました。線のない塗りブロック（もっとも一般的なケース）は対象外となり、前のブロックの色を保持していました。">Cause: CMYK sliders were only synced when both fill and stroke existed; a coloured block without a stroke kept the previous colour.</li>
+  <li data-i18n-fr-html="<strong>Corrigé</strong> : les curseurs, les champs chiffrés et la pastille d'aperçu sont désormais synchronisés à chaque sélection, comme dans la partie RVB. Un bloc sans fond affiche « Aucun » avec la pastille hachurée (le même signe que le bouton « Sans fond » encadré de rouge côté RVB)." data-i18n-en-html="<strong>Fixed</strong>: sliders, numeric fields and the preview swatch are now synced on every selection, exactly like the RGB side. A block with no fill shows “None” with the hatched swatch (the same signal as the red-outlined “No fill” button on the RGB side)." data-i18n-jp-html="<strong>修正内容</strong>：スライダー・数値フィールド・プレビュー見本が、RGB 側と同様に選択のたびに同期されます。塗りのないブロックは「なし」と表示され、見本は斜線パターンになります（RGB 側の「塗りなし」ボタンが赤枠になるのと同じ合図です）。">Fixed: sliders, numeric fields and swatch now follow every selection; a block with no fill shows “None” and the hatched swatch.</li>
+  <li data-i18n-fr-html="<strong>Vérifié, chiffre par chiffre</strong> : #CC0000 → 0/100/100/20 · #0000CC → 100/100/0/20 · bloc fond #00AA00 + contour #333333 → 100/0/100/33 et 0/0/0/80 pour le contour · bloc sans fond → « Aucun » · <strong>ton direct</strong> Pantone Yellow C (#FCEE21) → 0/6/87/1 avec le nom de plaque « Yellow C ». Contrôlé aussi avec de vrais clics de souris (clic dans le vide, puis clic sur le bloc) : 0/100/100/20 et la pastille rouge du bloc." data-i18n-en-html="<strong>Verified, figure by figure</strong>: #CC0000 → 0/100/100/20 · #0000CC → 100/100/0/20 · fill #00AA00 with stroke #333333 → 100/0/100/33 and 0/0/0/80 for the stroke · block with no fill → “None” · <strong>spot ink</strong> Pantone Yellow C (#FCEE21) → 0/6/87/1 with the plate name “Yellow C”. Also checked with real mouse clicks (click on empty space, then click the block): 0/100/100/20 and the block's red swatch." data-i18n-jp-html="<strong>数値まで検証済み</strong>：#CC0000 → 0/100/100/20 ・#0000CC → 100/100/0/20 ・塗り #00AA00 ＋線 #333333 → 100/0/100/33（線は 0/0/0/80）・塗りのないブロック → 「なし」・<strong>特色</strong> Pantone Yellow C（#FCEE21）→ 0/6/87/1、版名「Yellow C」付き。実際のマウスクリック（何もない場所をクリック → ブロックをクリック）でも確認：0/100/100/20 と赤い見本。">Verified numerically (incl. a spot ink and a stroke), and with real mouse clicks (deselect then reselect).</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.534 — Le nuancier Pantone est actif : 50 teintes, les 21 familles du catalogue, applicables en ton direct ===== -->
 

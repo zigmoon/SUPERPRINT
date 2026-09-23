@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,13 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.535] — 2026-09-23
+
+_In CMYK mode, the Fill/Stroke selector now shows the colour of the selected block_
+
+### Fixed
+- **In CMYK mode the Fill/Stroke selector kept the previous block colour** (user report: « je mets dans un bloc une couleur ou un ton direct et lorsque je dé-sélectionne mon bloc et que je le re-sélectionne après, la couleur du bloc sélectionné n’apparaît pas dans la partie couleurs de la sidebar de droite. Elle apparaît bien lorsque « activer les couleurs CMYK » n’est pas activé. »). Measured on the test bench with two rectangles (#cc0000 and #0000cc): `#blockFill` correctly received each block colour (which is why the RGB side looked right), but the CMYK **sliders stayed frozen at 0/59/100/0** and the preview swatch stayed `rgb(255,105,0)` for both blocks — only the small inline text under the sliders was correct. Cause: in `window.updateColorInfo()` (CMYK branch) the sliders were only synced when the fill AND the stroke were both defined (`if (!window._blockFillNone && !fillIsGradient && !window._blockStrokeNone) { updateCMYKDisplay(); } else { …text only… }`), so a coloured block **without a stroke** — the common case — fell into the text-only branch and kept the previous block’s colour. Fix (`_SP_CMJN_SEL_535`): `_syncCmykSlidersFromRgb('fill')` and `('stroke')` are now always called in the CMYK branch, so sliders, numeric fields and preview swatch follow the selection exactly like the RGB group; a block with no fill keeps the « Aucun » label and the hatched swatch (same signal as the red-outlined « Sans fond » button on the RGB side). Measured after: #cc0000 → 0/100/100/20 with swatch `rgb(204,0,0)` · #0000cc → 100/100/0/20 · fill #00aa00 + stroke #333333 → 100/0/100/33 and 0/0/0/80 for the stroke · block with no fill → « Aucun » + hatched swatch · spot ink Pantone Yellow C (#FCEE21) → 0/6/87/1 with the plate name « Yellow C ». Also verified with real mouse clicks (click on empty space, then click the block): 0/100/100/20 and `rgb(204,0,0)`. Non-regression checked in RGB mode (`#blockFill` = #0000cc, hex label « #0000CC », CMYK text hidden). The swatch-book module `JS/swatchbooks.js` is unchanged in this version, so its cache tag stays at the 1.7.534 value.
 
 ## [1.7.534] — 2026-09-23
 
