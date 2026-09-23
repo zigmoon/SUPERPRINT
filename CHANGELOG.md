@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,16 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.533] — 2026-09-23
+
+_A right-click on a page releases its master page; the items become normal, editable objects of that page_
+
+### Added
+- **Release the master page of a page (right-click)** (user report: « il faudrait pouvoir libérer les éléments du gabarit ... permettre au clic droit sur la page de preview de libérer le gabarit »). Master items were created on the page by `addSpecialTextObjectsToCanvas()` with `selectable/evented = false` and the `_isMasterItem` / `_isMasterRuntime` / `_masterPageId` flags (measured: text, line and rect of the master all locked), and there was no context menu on a page at all (only crop and mask had one). The right-click menu now shows the page, the master name and the number of items, then **releases** them: `selectable/evented = true`, `excludeFromExport = false`, master flags removed, `_spGabaritLibere` mark set (added to `SP_CUSTOM_PROPS`, so it is serialized). Measured: text and rectangle become selectable, the released rectangle moves with the mouse (59,59 → 98,88), and the toast reports « Gabarit libéré : 2 élément(s) modifiable(s) sur cette page ».
+- **Master guides stay guides** (`_isMasterGuide` items are never released, and keep their own behaviour) and a released page is no longer fed by the master: the same guard was added to the display path (`addSpecialTextObjectsToCanvas`) and to the export path (`injectMasterItemsForExport`, used by every PDF route) — measured after a full re-render: 6 objects (released text, guide, released rectangle, 3 page guides), **no duplicates**; without the export guard the PDF would have painted the master background and texts twice.
+- **Persistence and undo**: the release is saved with the document (the page carries the mark of its released items, so a `.sp` round-trip, a reload and the export all keep it). `spLibererGabaritPage()` records a state just before and just after the change, so Ctrl+Z always comes back to the master-fed page. Non-regression measured on a fresh document for a page that is NOT released: master text, rectangle and guide are still created.
+- Public hook: `window.spLibererGabaritPage(canvas, pointer)` and `window.spPageGabaritLibere(pageIndex)` (used by the two injection guards).
 
 ## [1.7.532] — 2026-09-23
 

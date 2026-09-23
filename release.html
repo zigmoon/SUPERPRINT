@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.532 — the columns of a text block stay on screen while you edit it: caret, selection and clicks follow the column flow.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.533 — a right-click on a page releases its master page (gabarit) items: they become normal, editable objects of that page.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.532 — the columns of a text block stay on screen while you edit it: caret, selection and clicks follow the column flow.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.533 — a right-click on a page releases its master page (gabarit) items: they become normal, editable objects of that page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,26 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.533 — Clic droit sur une page : libérer le gabarit (les éléments du gabarit deviennent des objets modifiables de la page) ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-533">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.533</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 23 septembre 2026" data-i18n-en="Released September 23, 2026" data-i18n-jp="2026年9月23日公開">Released September 23, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Les éléments d'un gabarit de page ne pouvaient pas être touchés sur les pages : ni sélectionnés, ni déplacés, ni corrigés. Un <strong>clic droit sur la page</strong> propose désormais de <strong>libérer le gabarit</strong> : ses éléments deviennent des objets de la page, modifiables et enregistrés avec elle." data-i18n-en-html="Master page items could not be touched on the pages: neither selected, nor moved, nor edited. A <strong>right-click on the page</strong> now offers to <strong>release the master page</strong>: its items become objects of that page, editable and saved with it." data-i18n-jp-html="マスターページ（ガバリ）の要素はページ上で触れませんでした（選択も移動も修正も不可）。<strong>ページを右クリック</strong>すると<strong>ガバリを解除</strong>できるようになり、要素はそのページのオブジェクトとして編集・保存されます。">A right-click on a page can now release the master page: its items become normal, editable objects of that page.</p>
+
+ <h3 data-i18n-fr-html="🖱️ Clic droit sur la page → Libérer le gabarit <span class=&quot;badge badge-new&quot;>nouveau</span>" data-i18n-en-html="🖱️ Right-click a page → Release the master page <span class=&quot;badge badge-new&quot;>new</span>" data-i18n-jp-html="🖱️ ページを右クリック → ガバリを解除 <span class=&quot;badge badge-new&quot;>新機能</span>">🖱️ Right-click a page → Release the master page <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Le menu indique la page et le gabarit (<em>Page 1 · A-Gabarit</em>) et le nombre d'éléments à libérer. Mesuré : « Libérer le gabarit de cette page (2 éléments) » sur un gabarit composé d'un texte et d'un rectangle." data-i18n-en-html="The menu shows the page and the master (<em>Page 1 · A-Gabarit</em>) plus the number of items to release. Measured: “Release the master page (2 items)” on a master made of one text and one rectangle." data-i18n-jp-html="メニューにはページとガバリ名（<em>Page 1 · A-Gabarit</em>）と解除する要素数が表示されます。実測：「このページのガバリを解除（2 要素）」（テキスト 1 つと長方形 1 つのガバリ）。">The menu names the page, the master and the number of items to release.</li>
+  <li data-i18n-fr-html="Après libération, les éléments du gabarit deviennent <strong>sélectionnables et déplaçables</strong> : mesuré, un rectangle libéré se déplace à la souris (59,59 → 98,88) et reste modifiable après un rendu complet des pages." data-i18n-en-html="After release, the master items become <strong>selectable and movable</strong>: measured, a released rectangle moves with the mouse (59,59 → 98,88) and stays editable after a full re-render of the pages." data-i18n-jp-html="解除後、ガバリの要素は<strong>選択・移動可能</strong>になります。実測：解除した長方形はマウスで移動でき（59,59 → 98,88）、全ページ再描画後も編集可能です。">Released items become selectable and movable (measured: 59,59 → 98,88) and stay editable after a full re-render.</li>
+  <li data-i18n-fr-html="<strong>Les repères du gabarit restent des repères</strong> (ils ne sont jamais libérés) et la page n'est plus réalimentée : mesuré, après un rendu complet on compte 6 objets (texte libéré, repère, rectangle libéré, 3 repères de page) — aucun doublon." data-i18n-en-html="<strong>The master guides stay guides</strong> (never released) and the page is no longer fed by the master: measured, after a full re-render 6 objects are present (released text, guide, released rectangle, 3 page guides) — no duplicates." data-i18n-jp-html="<strong>ガバリのガイドはガイドのまま</strong>（解除されません）で、ページはガバリから再供給されません。実測：再描画後は 6 個のオブジェクト（解除したテキスト、ガイド、解除した長方形、ページのガイド 3 個）で重複なし。">Master guides stay guides, and the page is no longer re-fed by the master (no duplicates: 6 objects measured).</li>
+  <li data-i18n-fr-html="La libération est <strong>enregistrée avec le document</strong> (.sp, rechargement, export) : la page porte la trace de ses éléments libérés. L'export ne réinjecte pas le gabarit d'une page libérée — sans cette garde, le PDF aurait peint deux fois le fond et les textes du gabarit." data-i18n-en-html="The release is <strong>saved with the document</strong> (.sp, reload, export): the page carries the trace of its released items. The export no longer injects the master on a released page — without that guard the PDF would have painted the master background and texts twice." data-i18n-jp-html="解除は<strong>ドキュメントと一緒に保存</strong>されます（.sp、再読み込み、書き出し）。解除されたページにはガバリが再注入されません（この防止がないと PDF でガバリの背景と文字が二重に印刷されます）。">The release is saved with the document, and the export skips the master on a released page (no double painting in the PDF).</li>
+  <li data-i18n-fr-html="Rien ne change pour les pages non libérées : texte, rectangle et repères du gabarit sont toujours créés (vérifié sur un document neuf). Et Ctrl+Z annule la libération : un état est enregistré juste avant, puis après." data-i18n-en-html="Nothing changes for pages that are not released: the master texts, rectangles and guides are still created (verified on a fresh document). And Ctrl+Z undoes the release: a state is recorded just before and just after." data-i18n-jp-html="解除していないページは従来どおりです（ガバリのテキスト・長方形・ガイドは作り続けられます／新規ドキュメントで確認）。Ctrl+Z で解除を取り消せます（直前と直後の状態を保存）。">Pages that are not released behave exactly as before, and Ctrl+Z undoes the release.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.532 — Les colonnes d'un bloc texte restent affichées pendant la correction ; le curseur, la sélection et le clic suivent le coulage ===== -->
 

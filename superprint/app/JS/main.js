@@ -1813,6 +1813,10 @@ const SP_CUSTOM_PROPS = [
     '_isMasterItem',
     '_masterPageId',
     '_isMasterGuide',
+    /* 🆕 v1.7.533 — _SP_LIBERER_533 : élément RÉCUPÉRÉ d'un gabarit de page (clic droit →
+       « Libérer le gabarit »). Devenu objet de la page, il porte cette marque qui empêche un
+       nouveau coulage du gabarit d'en recréer un second par-dessus. */
+    '_spGabaritLibere',
     '_isPageNumber',
     '_spDupId',
     '_spIndentLeft',
@@ -10395,12 +10399,252 @@ window.spTestDiag = function () {
         //
         // Cette fonction est appelée APRÈS loadFromJSON dans createPageCanvas/loadSpreadContent.
         // Elle crée les textbox master et folios comme des objets Fabric natifs (new fabric.Textbox).
+        /* ═══════════════════════════════════════════════════════════════════════════════════
+           _SP_LIBERER_533_DEBUT — LIBÉRER LE GABARIT DE PAGE (menu du clic droit)
+
+           Demande utilisateur : « il faudrait pouvoir libérer les éléments du gabarit ...
+           permettre au clic droit sur la page de preview de libérer le gabarit. »
+
+           Un élément de gabarit est créé sur la page avec selectable/evented = false et les
+           drapeaux _isMasterItem / _isMasterRuntime / _masterPageId : ni cliquable, ni
+           déplaçable, ni corrigeable. « Libérer » le transforme en objet de la PAGE :
+             · selectable / evented = true, excludeFromExport = false ;
+             · drapeaux de gabarit retirés, marque _spGabaritLibere (sérialisée) posée ;
+             · les repères (_isMasterGuide) ne sont jamais libérés : ils restent des repères ;
+             · la page n'est plus réalimentée (affichage ET export) — voir les gardes de
+               addSpecialTextObjectsToCanvas() et injectMasterItemsForExport() ;
+             · saveState() après modification : Ctrl+Z revient au gabarit.
+           Le menu propose aussi la libération du SEUL élément sous le curseur.
+           ═══════════════════════════════════════════════════════════════════════════════════ */
+
+        /* Une page a-t-elle déjà été libérée ? L'information vit DANS ses objets sérialisés :
+           aucun nouvel état de projet à maintenir. */
+        function spPageGabaritLibere(pageIndex) {
+            try {
+                if (typeof pages === 'undefined' || !pages || !pages[pageIndex]) return false;
+                const brut = pages[pageIndex].objects;
+                if (!brut) return false;
+                const parsed = typeof brut === 'string' ? JSON.parse(brut) : brut;
+                const liste = (parsed && parsed.objects) || [];
+                for (let i = 0; i < liste.length; i++) {
+                    if (liste[i] && liste[i]._spGabaritLibere) return true;
+                }
+            } catch (_) {}
+            return false;
+        }
+        window.spPageGabaritLibere = spPageGabaritLibere;
+
+        /* Le canevas Fabric auquel appartient un élément du DOM (page ou double page).
+           Le canevas de l'éditeur de gabarit n'est PAS dans canvases : il est ignoré. */
+        function spCanevasDeElement(el) {
+            if (!el || typeof canvases === 'undefined' || !canvases) return null;
+            for (let i = 0; i < canvases.length; i++) {
+                const c = canvases[i];
+                if (c && (c.upperCanvasEl === el || c.lowerCanvasEl === el)) return c;
+            }
+            return null;
+        }
+
+        /* Page visée par un point du canevas (en double page, un canevas porte 2 pages). */
+        function spPageDuPoint(canvas, pt) {
+            const info = (canvas && canvas.bleedInfo) || {};
+            if (info.isSpread) {
+                const centre = (typeof info.centerX === 'number') ? info.centerX : (canvas.width / 2);
+                return (pt.x < centre) ? info.leftPageIndex : info.rightPageIndex;
+            }
+            return (typeof info.pageIndex === 'number') ? info.pageIndex : null;
+        }
+
+        /* Éléments de gabarit libérables présents sur ce canevas (les repères exclus).
+           En double page, on ne garde que ceux de la page visée. */
+        function spItemsGabarit(canvas, pt) {
+            const out = [];
+            if (!canvas || !canvas.getObjects) return out;
+            const info = canvas.bleedInfo || {};
+            canvas.getObjects().forEach(function (o) {
+                if (!o || o._isMasterGuide) return;
+                if (!(o._isMasterItem || o._isMasterRuntime)) return;
+                if (info.isSpread && pt) {
+                    const centre = (typeof info.centerX === 'number') ? info.centerX : (canvas.width / 2);
+                    const objAGauche = (typeof o.left === 'number') && o.left < centre;
+                    if ((pt.x < centre) !== objAGauche) return;   /* appartient à l'autre page */
+                }
+                out.push(o);
+            });
+            return out;
+        }
+
+        /* Cœur : rendre ces éléments à la page. Renvoie le nombre libéré. */
+        function spLibererElements(canvas, items, action) {
+            if (!canvas || !items || !items.length) return 0;
+            /* 🩹 v1.7.533d — ÉTAT D'AVANT ENREGISTRÉ : sans lui, Ctrl+Z revenait à l'entrée
+               d'historique précédente, qui pouvait être ANTÉRIEURE à l'assignation du
+               gabarit (mesuré : on retombait sur une page sans gabarit). */
+            try { if (typeof saveState === 'function') saveState('Avant libération du gabarit'); } catch (_) {}
+            let n = 0;
+            items.forEach(function (o) {
+                try {
+                    o.set({
+                        selectable: true,
+                        evented: true,
+                        excludeFromExport: false,
+                        hoverCursor: 'move',
+                        _isMasterItem: undefined,
+                        _isMasterRuntime: undefined,
+                        _masterPageId: undefined,
+                        _spGabaritLibere: true
+                    });
+                    try { delete o._isMasterItem; } catch (_) {}
+                    try { delete o._isMasterRuntime; } catch (_) {}
+                    try { delete o._masterPageId; } catch (_) {}
+                    if (typeof o.setCoords === 'function') o.setCoords();
+                    n++;
+                } catch (_) {}
+            });
+            if (!n) return 0;
+            try { if (canvas.upperCanvasEl) canvas.upperCanvasEl.style.cursor = ''; } catch (_) {}
+            try { if (typeof canvas.requestRenderAll === 'function') canvas.requestRenderAll(); } catch (_) {}
+            /* saveState() écrit les pages[] PUIS empile l'état : la libération est persistée
+               (.sp, rechargement, export) et Ctrl+Z revient à la page alimentée par le gabarit. */
+            try { if (typeof saveState === 'function') saveState(action || 'Libération du gabarit'); } catch (_) {}
+            return n;
+        }
+
+        /* Libérer TOUS les éléments du gabarit de la page visée. */
+        window.spLibererGabaritPage = function (canvas, pt) {
+            try {
+                if (!canvas) return 0;
+                const items = spItemsGabarit(canvas, pt);
+                const n = spLibererElements(canvas, items, 'Libération du gabarit de page');
+                if (n && typeof showChainToast === 'function') {
+                    showChainToast('Gabarit libéré : ' + n + ' élément(s) modifiable(s) sur cette page', 2800);
+                }
+                return n;
+            } catch (e) { console.warn('[liberer] page:', e); return 0; }
+        };
+
+        /* ── Menu du clic droit ─────────────────────────────────────────────────────────── */
+        const SP_MENU_GABARIT_ID = 'spGabaritContextMenu';
+
+        /* 🩹 v1.7.533b — FERMETURE PROPRE : les écouteurs posés à l'ouverture sont RETIRÉS, et
+           un clic DANS le menu ne le ferme pas (sinon l'entrée disparaissait avant son clic :
+           mesuré — le menu s'affichait mais « Libérer le gabarit... » ne faisait rien). */
+        function spClicHorsMenu(ev) {
+            const m = document.getElementById(SP_MENU_GABARIT_ID);
+            if (m && ev && ev.target && m.contains(ev.target)) return;
+            spFermerMenuGabarit();
+        }
+        function spToucheMenu(ev) {
+            if (ev && ev.key === 'Escape') spFermerMenuGabarit();
+        }
+        function spFermerMenuGabarit() {
+            const m = document.getElementById(SP_MENU_GABARIT_ID);
+            if (m && m.parentNode) m.parentNode.removeChild(m);
+            document.removeEventListener('mousedown', spClicHorsMenu, true);
+            document.removeEventListener('wheel', spFermerMenuGabarit, true);
+            document.removeEventListener('keydown', spToucheMenu, true);
+            window.removeEventListener('blur', spFermerMenuGabarit, true);
+        }
+
+        function spMenuGabarit(canvas, pt, clientX, clientY) {
+            spFermerMenuGabarit();
+            const pageIdx = spPageDuPoint(canvas, pt);
+            const items = spItemsGabarit(canvas, pt);
+            const libere = (pageIdx !== null && typeof spPageGabaritLibere === 'function')
+                ? spPageGabaritLibere(pageIdx) : false;
+            const info = canvas.bleedInfo || {};
+            const nPage = (typeof pageIdx === 'number') ? (pageIdx + 1) : '?';
+            const nomGabarit = (pageIdx !== null && pageMasterAssignments && pageMasterAssignments[pageIdx]
+                && masterPages && masterPages[pageMasterAssignments[pageIdx]])
+                ? masterPages[pageMasterAssignments[pageIdx]].name : null;
+
+            const menu = document.createElement('div');
+            menu.id = SP_MENU_GABARIT_ID;
+            menu.style.cssText = 'position:fixed;z-index:100000;background:#ffffff;border:1px solid #d5d5d5;' +
+                'border-radius:7px;box-shadow:0 10px 30px rgba(0,0,0,.20);padding:5px;min-width:250px;' +
+                'font:12px/1.45 "Open Sans",system-ui,-apple-system,sans-serif;color:#222;user-select:none;';
+
+            const titre = document.createElement('div');
+            titre.textContent = 'Page ' + nPage + (info.isSpread ? (pt.x < ((typeof info.centerX === 'number') ? info.centerX : canvas.width / 2) ? ' (gauche)' : ' (droite)') : '')
+                + (nomGabarit ? ' · ' + nomGabarit : '');
+            titre.style.cssText = 'padding:5px 9px 6px;font-weight:700;font-size:11px;text-transform:uppercase;' +
+                'letter-spacing:.4px;color:#6b6b6b;border-bottom:1px solid #eee;margin-bottom:4px;';
+            menu.appendChild(titre);
+
+            const entree = (texte, actif, titreInfo, action) => {
+                const d = document.createElement('div');
+                d.textContent = texte;
+                d.title = titreInfo || '';
+                d.style.cssText = 'padding:7px 9px;border-radius:4px;white-space:nowrap;cursor:' +
+                    (actif ? 'pointer' : 'default') + ';color:' + (actif ? '#185abc' : '#9aa0a6') + ';font-weight:' + (actif ? '600' : '400') + ';';
+                if (actif) {
+                    d.addEventListener('mouseenter', function () { d.style.background = '#eef3ff'; });
+                    d.addEventListener('mouseleave', function () { d.style.background = ''; });
+                    d.addEventListener('click', function (ev) {
+                        ev.stopPropagation();
+                        spFermerMenuGabarit();
+                        try { action(); } catch (e) { console.warn('[liberer] action:', e); }
+                    });
+                }
+                menu.appendChild(d);
+                return d;
+            };
+
+            entree('Libérer le gabarit de cette page' + (items.length ? '  (' + items.length + ' élément' + (items.length > 1 ? 's' : '') + ')' : ''),
+                items.length > 0,
+                items.length ? 'Les éléments du gabarit deviennent des objets de cette page' :
+                    (libere ? 'Gabarit déjà libéré sur cette page' : 'Aucun élément de gabarit sur cette page'),
+                function () { window.spLibererGabaritPage(canvas, pt); });
+
+            entree('Fermer', true, '', function () {});
+
+            document.body.appendChild(menu);
+            const r = menu.getBoundingClientRect();
+            menu.style.left = Math.max(4, Math.min(clientX, window.innerWidth - r.width - 6)) + 'px';
+            menu.style.top = Math.max(4, Math.min(clientY, window.innerHeight - r.height - 6)) + 'px';
+
+            setTimeout(function () {
+                document.removeEventListener('mousedown', spClicHorsMenu, true);
+                document.removeEventListener('wheel', spFermerMenuGabarit, true);
+                document.removeEventListener('keydown', spToucheMenu, true);
+                document.addEventListener('mousedown', spClicHorsMenu, true);
+                document.addEventListener('wheel', spFermerMenuGabarit, true);
+                document.addEventListener('keydown', spToucheMenu, true);
+                window.addEventListener('blur', spFermerMenuGabarit, true);
+            }, 0);
+            return true;
+        }
+        window.spMenuGabarit = spMenuGabarit;
+        window.spFermerMenuGabarit = spFermerMenuGabarit;
+
+        /* Un seul écouteur délégué : les canevas de page sont recréés à chaque rendu. */
+        if (!window._spMenuGabaritCable) {
+            window._spMenuGabaritCable = true;
+            document.addEventListener('contextmenu', function (e) {
+                try {
+                    if (!e || !e.target) return;
+                    const canvas = spCanevasDeElement(e.target);
+                    if (!canvas) return;            /* hors page (panneaux, éditeur de gabarit…) */
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const pt = (typeof canvas.getPointer === 'function') ? canvas.getPointer(e) : null;
+                    if (!pt) { spFermerMenuGabarit(); return; }
+                    spMenuGabarit(canvas, pt, e.clientX, e.clientY);
+                } catch (err) { console.warn('[liberer] menu:', err); }
+            }, true);
+        }
+
         function addSpecialTextObjectsToCanvas(fabricCanvas, pageIndex, position) {
             if (!fabricCanvas) return;
             const bleedPx = mmToPx(bleed);
             let added = false;
 
             // ── 1) TEXTBOX DES GABARITS ──
+            /* _SP_LIBERER_533 — PAGE LIBÉRÉE : ses éléments de gabarit vivent maintenant DANS
+               la page (objets normaux). On ne recrée donc QUE les repères du gabarit — sinon
+               la libération produirait des doublons (l'élément libéré + sa copie de gabarit). */
+            const _spPageLiberee = (typeof window.spPageGabaritLibere === 'function')
+                && window.spPageGabaritLibere(pageIndex);
             const masterId = pageMasterAssignments[pageIndex];
             if (masterId && masterPages[masterId] && masterPages[masterId].objects) {
                 try {
@@ -10417,6 +10661,7 @@ window.spTestDiag = function () {
                         //   réelles, mais marqués excludeFromExport=true pour ne JAMAIS sortir au PDF.
                         const nonTextData = parsed.objects.filter(o =>
                             o && o.type !== 'textbox' && o.type !== 'text' && o.type !== 'i-text'
+                            && (!_spPageLiberee || o._isMasterGuide)
                         );
                         if (nonTextData.length > 0) {
                             try {
@@ -10460,6 +10705,7 @@ window.spTestDiag = function () {
 
                         // Textboxes (créés en natif pour contourner le bug Textbox.fromObject)
                         parsed.objects.forEach(objData => {
+                            if (_spPageLiberee) return;   /* _SP_LIBERER_533 : texte déjà libéré */
                             if (objData.type !== 'textbox' && objData.type !== 'text' && objData.type !== 'i-text') return;
                             // Calculer la position dans le référentiel du canvas
                             let left = (objData.left || 0) + bleedPx;
@@ -10658,7 +10904,13 @@ window.spTestDiag = function () {
                             ? JSON.parse(masterPages[masterId].objects) : masterPages[masterId].objects;
                         if (parsed && parsed.objects) {
                             // Filtrer les guides master (jamais exportes)
-                            const exportable = parsed.objects.filter(o => o && !o._isMasterGuide);
+                            /* _SP_LIBERER_533 — page libérée : ne pas réinjecter les éléments
+                               du gabarit (ils sont déjà dans la page). Sans cette garde, le PDF
+                               porterait DEUX fois le fond et les textes du gabarit. */
+                            const _spLibereeExport = (typeof window.spPageGabaritLibere === 'function')
+                                && window.spPageGabaritLibere(pageIndex);
+                            const exportable = parsed.objects.filter(o => o && !o._isMasterGuide
+                                && !_spLibereeExport);
 
                             // Non-textes : enliven (asynchrone si images)
                             const nonTextData = exportable.filter(o =>
