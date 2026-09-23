@@ -1651,6 +1651,11 @@ const SP_CUSTOM_PROPS = [
     //   magenta #D6006E existe dans quatre nuanciers différents.
     '_spSpotInkName',
     '_spSpotStrokeInkName',
+    // 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : contour du CADRE d'un bloc texte.
+    //   (Le fond de cadre est « backgroundColor », propriété Fabric native, donc
+    //   déjà sérialisée par toObject ; vérifié sur un aller-retour .sp.)
+    '_spFrameStroke',
+    '_spFrameStrokeWidth',
     // 🛡️ FIX 2026-05-01 : flags d'overflow spread + ID stable.
     // Sans ca, sauvegarder en mode single un projet spread strippe les
     // marqueurs et casse le dedoublonnage au retour en spread (objet
@@ -2022,6 +2027,47 @@ function goToPage(pageIndex) {
         };
         fabric.Text.prototype.__spFrameOptionsPatched = true;
     }
+
+    /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : CONTOUR DU CADRE D'UN BLOC TEXTE.
+       Le contour Fabric d'un texte (« stroke ») souligne les GLYPHES, pas la boîte.
+       Le contour de cadre vit donc dans _spFrameStroke / _spFrameStrokeWidth et se
+       trace ici, dans le repère LOCAL du bloc (0,0 = coin haut-gauche, ce que ce même
+       fichier utilise déjà pour le repère d'habillage __spWrapMark).
+       Tracé APRÈS le rendu natif : il passe par-dessus le fond de cadre (sinon un
+       fond opaque le masquerait). L'épaisseur est divisée par l'échelle courante :
+       un contour de cadre ne suit pas le redimensionnement du bloc. */
+    (function () {
+        var _classes = ['Text', 'IText', 'Textbox'];
+        for (var _ci = 0; _ci < _classes.length; _ci++) {
+            var _proto = (fabric[_classes[_ci]] && fabric[_classes[_ci]].prototype) || null;
+            if (!_proto || _proto.__spFrameStrokePatched || typeof _proto._render !== 'function') continue;
+            (function (P) {
+                var _origRender530 = P._render;
+                P._render = function (ctx) {
+                    _origRender530.apply(this, arguments);
+                    var _c = this._spFrameStroke;
+                    if (!_c || _c === 'transparent' || _c === '') return;
+                    var _w = (typeof this._spFrameStrokeWidth === 'number' && this._spFrameStrokeWidth > 0)
+                        ? this._spFrameStrokeWidth : 1;
+                    var _bw = (typeof this._fixedWidth === 'number' && this._fixedWidth > 0) ? this._fixedWidth : this.width;
+                    var _bh = (typeof this._fixedHeight === 'number' && this._fixedHeight > 0) ? this._fixedHeight : this.height;
+                    if (!(_bw > 0) || !(_bh > 0)) return;
+                    var _sc = (Math.abs(this.scaleX || 1) + Math.abs(this.scaleY || 1)) / 2;
+                    if (!(_sc > 0)) _sc = 1;
+                    try {
+                        ctx.save();
+                        ctx.lineWidth = _w / _sc;
+                        ctx.lineJoin = 'miter';
+                        ctx.strokeStyle = _c;
+                        ctx.strokeRect(0, 0, _bw, _bh);
+                        ctx.restore();
+                    } catch (_) {}
+                };
+            })(_proto);
+            _proto.__spFrameStrokePatched = true;
+        }
+    })();
+
     fabric.Text.prototype.objectCaching = false; // Pas de cache pour texte net
     fabric.Textbox.prototype.objectCaching = false;
     fabric.Text.prototype.noScaleCache = true;
@@ -18520,20 +18566,38 @@ window.spTestDiag = function () {
     if (scalePctEl) scalePctEl.value = '100';
     
     // Mise à jour du fill : gérer transparent / null / gradient
+    /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : pour un bloc texte, la ligne Fond/Contour du
+       panneau affiche et pilote les couleurs du CADRE (backgroundColor /
+       _spFrameStroke) — c'est exactement ce qu'un clic applique désormais.
+       Avant, le panneau montrait la couleur du TEXTE alors que le clic la posait
+       sur le bloc : les deux ne pouvaient pas concorder. La couleur du texte reste
+       réglable par le sélecteur de texte (typographie) et, pendant l'édition, par
+       une sélection de caractères à la souris. */
+    const _spEstBlocTexte530 = window._spEstBlocTexte || function (o) {
+        return !!o && (o.type === 'textbox' || o.type === 'text' || o.type === 'i-text');
+    };
+    const _spSelCarTexte530 = window._spSelCarTexte || function (o) {
+        return _spEstBlocTexte530(o) && o.isEditing === true
+            && typeof o.selectionStart === 'number' && typeof o.selectionEnd === 'number'
+            && o.selectionEnd > o.selectionStart;
+    };
+    const _spBlocTexte530 = _spEstBlocTexte530(obj) && !_spSelCarTexte530(obj);
+    const _spRefFill530 = _spBlocTexte530 ? (obj.backgroundColor || '') : obj.fill;
+    const _spRefStroke530 = _spBlocTexte530 ? (obj._spFrameStroke || '') : obj.stroke;
     const blockFillInput = document.getElementById('blockFill');
     const blockFillNoneBtn = document.getElementById('blockFillNone');
-    const fillIsGradient = obj.fill && typeof obj.fill === 'object' && obj.fill.type;
+    const fillIsGradient = _spRefFill530 && typeof _spRefFill530 === 'object' && _spRefFill530.type;
     if (fillIsGradient) {
         // Objet avec un dégradé : afficher la première couleur du gradient dans le picker
-        const stops = obj.fill.colorStops;
+        const stops = _spRefFill530.colorStops;
         if (stops && stops.length > 0) {
             try { blockFillInput.value = stops[0].color; } catch(_) {}
         }
         if (blockFillNoneBtn) blockFillNoneBtn.style.borderColor = '#e0e0e0';
         blockFillInput.style.opacity = '1';
         window._blockFillNone = false;
-    } else if (obj.fill && obj.fill !== 'transparent' && obj.fill !== '' && obj.fill !== null) {
-        try { blockFillInput.value = obj.fill; } catch(_) {}
+    } else if (_spRefFill530 && _spRefFill530 !== 'transparent' && _spRefFill530 !== '' && _spRefFill530 !== null) {
+        try { blockFillInput.value = _spRefFill530; } catch(_) {}
         if (blockFillNoneBtn) blockFillNoneBtn.style.borderColor = '#e0e0e0';
         blockFillInput.style.opacity = '1';
         window._blockFillNone = false;
@@ -18546,8 +18610,8 @@ window.spTestDiag = function () {
     // Mise à jour du stroke : gérer transparent / null
     const blockStrokeInput = document.getElementById('blockStroke');
     const blockStrokeNoneBtn = document.getElementById('blockStrokeNone');
-    if (obj.stroke && obj.stroke !== 'transparent' && obj.stroke !== '' && obj.stroke !== null) {
-        try { blockStrokeInput.value = obj.stroke; } catch(_) {}
+    if (_spRefStroke530 && _spRefStroke530 !== 'transparent' && _spRefStroke530 !== '' && _spRefStroke530 !== null) {
+        try { blockStrokeInput.value = _spRefStroke530; } catch(_) {}
         if (blockStrokeNoneBtn) blockStrokeNoneBtn.style.borderColor = '#e0e0e0';
         blockStrokeInput.style.opacity = '1';
         window._blockStrokeNone = false;
@@ -18556,11 +18620,16 @@ window.spTestDiag = function () {
         blockStrokeInput.style.opacity = '0.3';
         window._blockStrokeNone = true;
     }
-    if (obj.strokeWidth !== undefined) {
-        document.getElementById('strokeWidth').value = obj.strokeWidth;
+    /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : pour un bloc texte, l'épaisseur affichée est
+       celle du CONTOUR DU CADRE (celle qu'un clic appliquera). */
+    const _spRefStrokeW530 = _spBlocTexte530
+        ? ((typeof obj._spFrameStrokeWidth === 'number') ? obj._spFrameStrokeWidth : 0)
+        : obj.strokeWidth;
+    if (_spRefStrokeW530 !== undefined && _spRefStrokeW530 !== null) {
+        document.getElementById('strokeWidth').value = _spRefStrokeW530;
         // Sync CMYK stroke width
         const csw = document.getElementById('cmykStrokeWidth');
-        if (csw) csw.value = obj.strokeWidth;
+        if (csw) csw.value = _spRefStrokeW530;
     }
 
     // ✅ Sync CMYK "none" button states
@@ -19024,6 +19093,25 @@ window.spTestDiag = function () {
         if (window._blockFillNone === undefined) window._blockFillNone = false;
         if (window._blockStrokeNone === undefined) window._blockStrokeNone = false;
 
+        /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 ───────────────────────────────────────
+           Un BLOC TEXTE se peint comme dans une PAO : le Fond et le Contour
+           s'appliquent au CADRE (la boîte), pas aux glyphes. Le TEXTE ne change de
+           couleur que si des CARACTÈRES sont sélectionnés à la souris (sélection
+           partielle pendant l'édition).
+           Retour utilisateur : « lorsque je sélectionne un bloc texte et que je
+           choisis une couleur, la couleur s'applique sur le texte ; c'est le bloc
+           en lui-même qui doit se colorer ». */
+        const _spEstBlocTexte = function (o) {
+            return !!o && (o.type === 'textbox' || o.type === 'text' || o.type === 'i-text');
+        };
+        const _spSelCarTexte = function (o) {
+            return _spEstBlocTexte(o) && o.isEditing === true
+                && typeof o.selectionStart === 'number' && typeof o.selectionEnd === 'number'
+                && o.selectionEnd > o.selectionStart;
+        };
+        window._spEstBlocTexte = _spEstBlocTexte;
+        window._spSelCarTexte = _spSelCarTexte;
+
         function applyColors(skipSave) {
     const activeCanvas = getActiveCanvas();
     if (!activeCanvas) return;
@@ -19056,11 +19144,33 @@ window.spTestDiag = function () {
         if (obj._spSpotStrokeInk && String(obj._spSpotStrokeInk).toLowerCase() !== String(strokeValue).toLowerCase()) delete obj._spSpotStrokeInk;
     } catch (_) {}
 
-    obj.set({
-        fill: fillValue,
-        stroke: strokeValue,
-        strokeWidth: window._blockStrokeNone ? 0 : parseFloat(document.getElementById('strokeWidth').value)
-    });
+    /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 :
+       • caractères sélectionnés à la souris  -> la couleur va AUX CARACTÈRES ;
+       • bloc texte sans sélection de caractères -> la couleur va AU CADRE
+         (fond = backgroundColor, contour = _spFrameStroke / _spFrameStrokeWidth) ;
+       • tout autre objet -> comportement historique (fill / stroke = la forme). */
+    const _spW530 = parseFloat(document.getElementById('strokeWidth').value) || 1;
+    const _spSansContour530 = (window._blockStrokeNone || strokeValue === 'transparent');
+    if (_spSelCarTexte(obj) && typeof obj.setSelectionStyles === 'function') {
+        const _spS530 = obj.selectionStart, _spE530 = obj.selectionEnd;
+        obj.setSelectionStyles({ fill: window._blockFillNone ? 'transparent' : fillValue }, _spS530, _spE530);
+        obj.setSelectionStyles({
+            stroke: _spSansContour530 ? '' : strokeValue,
+            strokeWidth: _spSansContour530 ? 0 : _spW530
+        }, _spS530, _spE530);
+    } else if (_spEstBlocTexte(obj)) {
+        obj.set({
+            backgroundColor: window._blockFillNone ? '' : fillValue,
+            _spFrameStroke: _spSansContour530 ? '' : strokeValue,
+            _spFrameStrokeWidth: _spSansContour530 ? 0 : _spW530
+        });
+    } else {
+        obj.set({
+            fill: fillValue,
+            stroke: strokeValue,
+            strokeWidth: window._blockStrokeNone ? 0 : _spW530
+        });
+    }
     
     // Rendre à la fois le canvas source et le canvas actuel
     if (obj.canvas) {
@@ -32300,7 +32410,24 @@ window.spTestDiag = function () {
             if (activeCanvas) {
                 const obj = activeCanvas.getActiveObject();
                 if (obj) {
-                    obj.set(_spTarget, selectedColor);
+                    /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : un nuancier (Pantone, RAL, .ase)
+                       suit la MÊME règle que les couleurs RVB/CMJN : sur un bloc texte il
+                       peint le CADRE (tant que des caractères ne sont pas sélectionnés à
+                       la souris). Sans cela le nuancier restait le seul chemin qui
+                       colorait les glyphes d'un bloc sélectionné. */
+                    const _bloc530 = (typeof window._spEstBlocTexte === 'function') && window._spEstBlocTexte(obj);
+                    const _selCar530 = (typeof window._spSelCarTexte === 'function') && window._spSelCarTexte(obj);
+                    const _wl530 = parseFloat(document.getElementById('strokeWidth').value) || 1;
+                    if (_bloc530 && !_selCar530) {
+                        if (_spIsStroke) obj.set({ _spFrameStroke: selectedColor, _spFrameStrokeWidth: _wl530 });
+                        else obj.set({ backgroundColor: selectedColor });
+                    } else if (_selCar530 && typeof obj.setSelectionStyles === 'function') {
+                        const _s530 = obj.selectionStart, _e530 = obj.selectionEnd;
+                        if (_spIsStroke) obj.setSelectionStyles({ stroke: selectedColor, strokeWidth: _wl530 }, _s530, _e530);
+                        else obj.setSelectionStyles({ fill: selectedColor }, _s530, _e530);
+                    } else {
+                        obj.set(_spTarget, selectedColor);
+                    }
                     // 🎨 v1.7.347 — marquer l'objet comme peint d'une ENCRE
                     //   DIRECTE : c'est ce marqueur qui créera la couche
                     //   chromatique supplémentaire « Pantone » à l'export.
@@ -44212,6 +44339,11 @@ https://superprint.app
                 // _SP_PLAQUE_527 : on transmet aussi le NOM de l'encre (nom de plaque).
                 consider(obj.fill, obj._spSpotInk, obj._spSpotInkName);
                 consider(obj.stroke, obj._spSpotStrokeInk, obj._spSpotStrokeInkName);
+                /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : le FOND DU CADRE d'un bloc texte
+                   (backgroundColor) est une surface peinte comme une autre : sans cette
+                   ligne, une encre directe posée sur le cadre du bloc n'était plus vue
+                   par le document (aucune plaque, boîte d'export laissée en CMJN). */
+                consider(obj.backgroundColor, obj._spSpotInk, obj._spSpotInkName);
                 // Texte avec styles par plage (couleur Pantone sur une sélection)
                 if (obj.styles && typeof obj.styles === 'object') {
                     try {
@@ -44932,6 +45064,10 @@ https://superprint.app
                 // Interception des couleurs AVANT tout rendu : elle doit couvrir
                 // l'intégralité des opérateurs de la page.
                 const hook = _spSpotInstallColorHook(doc, page, spotCtx);
+                /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : le tracé du CADRE d'un bloc texte ouvre
+                   son propre bloc marqué /SPOT<n> (voir plus bas). Le hook est par page :
+                   on le publie le temps du rendu objet. */
+                try { window.__spSpotHook530 = hook; } catch (_) {}
 
                 // Les objets sont stockés dans le repère du canvas éditeur (qui
                 // inclut DÉJÀ le fond perdu) : seule la marge des repères est
@@ -44954,7 +45090,19 @@ https://superprint.app
                     const obj = objects[i];
                     if (!obj) continue;
                     const ink = _spSpotResolveObjectInk(obj, spotCtx);
-                    if (ink) {
+                    /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : encre portée par le FOND DU CADRE
+                       d'un bloc texte (les glyphes gardent leur couleur) : on n'ouvre PAS de
+                       marqueur autour de l'objet entier. L'interception remplacerait sinon
+                       TOUS les remplissages du bloc — les glyphes noirs sortiraient du PDF
+                       dans la couleur d'encre. Le cadre ouvre son propre marqueur dans le
+                       rendu objet, les glyphes restent en quadri. */
+                    const _spInkCadre530 = (ink && obj
+                        && (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text')
+                        && obj._spSpotInk && obj.backgroundColor
+                        && String(obj.backgroundColor).toLowerCase() === String(obj._spSpotInk).toLowerCase()
+                        && String(obj.fill || '').toLowerCase() !== String(obj._spSpotInk).toLowerCase())
+                        ? ink : null;
+                    if (ink && !_spInkCadre530) {
                         // Le texte doit rester VECTORIEL (typo vectorielle forcée) :
                         // un texte rasterisé ne peut pas être peint lettre par
                         // lettre dans la couche d'encre. On ouvre donc un bloc
@@ -44963,14 +45111,14 @@ https://superprint.app
                         // opérateurs d'encre directe (cs/scn).
                         hook.begin(ink.entry, { fill: !!ink.fillHex, stroke: !!ink.strokeHex });
                         try {
-                            await _renderObjToPdfLib(doc, page, obj, mmToPt, fonts, helvetica, images, multiplier);
+                            await _renderObjToPdfLib(doc, page, obj, mmToPt, fonts, helvetica, images, multiplier, null);
                         } catch (e) {
                             console.warn('[Spot] render (spot) failed', obj.type, e);
                         }
                         hook.end();
                     } else {
                         try {
-                            await _renderObjToPdfLib(doc, page, obj, mmToPt, fonts, helvetica, images, multiplier);
+                            await _renderObjToPdfLib(doc, page, obj, mmToPt, fonts, helvetica, images, multiplier, _spInkCadre530);
                         } catch (e) {
                             console.warn('[Spot] render failed', obj.type, e);
                         }
@@ -45787,7 +45935,7 @@ https://superprint.app
         }
 
         // ✏️ v1.7.207 — Rend un objet Fabric en opérations pdf-lib natives
-        async function _renderObjToPdfLib(doc, page, obj, mmToPt, fonts, helvetica, images, multiplier) {
+        async function _renderObjToPdfLib(doc, page, obj, mmToPt, fonts, helvetica, images, multiplier, inkCadre530) {
             var PDFLib = window.PDFLib;
             var br = obj.getBoundingRect(true, true);
             var xPt = pxToMm(br.left) * mmToPt;
@@ -46157,6 +46305,65 @@ https://superprint.app
                 //   masque le débordement. Dans le PDF, on doit couper manuellement.
                 var frameHeight = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0)
                     ? obj._fixedHeight : (obj.height || 0);
+
+                /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : le CADRE d'un bloc texte est peint
+                   ICI, avant les glyphes (fond puis contour).
+                   Le chemin NATIF pdf-lib — celui du réglage par défaut — ne dessinait
+                   NI l'un NI l'autre : mesuré, un titre blanc sur bandeau sortait blanc
+                   sur blanc, alors que la preview et le chemin jsPDF (_SP_FOND_520) le
+                   montraient. Les 4 coins passent par localToPagePt : rotation, échelle
+                   et origine du bloc sont respectées ; drawSvgPath reçoit un chemin en
+                   repère écran (y vers le bas) par l'offset y = hauteur de page, la
+                   convention déjà utilisée par ce moteur. */
+                try {
+                    var _spBW530 = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : boxWidth;
+                    var _spBH530 = frameHeight;
+                    if (_spBW530 > 0 && _spBH530 > 0) {
+                        var _spFond530 = _parsePdfColor(obj.backgroundColor);
+                        if (_spFond530 && _spFond530[3] !== undefined && _spFond530[3] <= 0) _spFond530 = null;
+                        var _spBord530 = _parsePdfColor(obj._spFrameStroke);
+                        if (_spBord530 && _spBord530[3] !== undefined && _spBord530[3] <= 0) _spBord530 = null;
+                        if (_spFond530 || _spBord530) {
+                            var _spBHPage530 = page.getHeight();
+                            var _spQ530 = [
+                                localToPagePt(0, 0),
+                                localToPagePt(_spBW530, 0),
+                                localToPagePt(_spBW530, _spBH530),
+                                localToPagePt(0, _spBH530)
+                            ];
+                            var _spD530 = 'M ' + _spQ530[0].x + ' ' + (_spBHPage530 - _spQ530[0].y) +
+                                ' L ' + _spQ530[1].x + ' ' + (_spBHPage530 - _spQ530[1].y) +
+                                ' L ' + _spQ530[2].x + ' ' + (_spBHPage530 - _spQ530[2].y) +
+                                ' L ' + _spQ530[3].x + ' ' + (_spBHPage530 - _spQ530[3].y) + ' Z';
+                            var _spO530 = { x: 0, y: _spBHPage530, scale: 1, opacity: _finalTextOp };
+                            if (_spFond530) {
+                                _spO530.color = PDFLib.rgb(_spFond530[0] / 255, _spFond530[1] / 255, _spFond530[2] / 255);
+                            }
+                            if (_spBord530) {
+                                var _spBw530 = (typeof obj._spFrameStrokeWidth === 'number' && obj._spFrameStrokeWidth > 0)
+                                    ? obj._spFrameStrokeWidth : 1;
+                                _spO530.borderColor = PDFLib.rgb(_spBord530[0] / 255, _spBord530[1] / 255, _spBord530[2] / 255);
+                                _spO530.borderWidth = pxToMm(_spBw530) * mmToPt;
+                            }
+                            /* _SP_BLOC_TEXTE_530 : encre directe posée sur le CADRE — le tracé
+                               ouvre SON bloc marqué (les glyphes du bloc restent en quadri).
+                               Le canal n'est remplacé que pour la surface réellement encrée :
+                               un contour quadri dans un cadre encré reste quadri. */
+                            var _spHook530 = window.__spSpotHook530;
+                            var _spMarque530 = false;
+                            if (inkCadre530 && inkCadre530.entry && _spHook530
+                                && typeof _spHook530.begin === 'function') {
+                                try {
+                                    _spHook530.begin(inkCadre530.entry, { fill: !!_spFond530, stroke: !!_spBord530 });
+                                    _spMarque530 = true;
+                                } catch (_) { _spMarque530 = false; }
+                            }
+                            page.drawSvgPath(_spD530, _spO530);
+                            if (_spMarque530) { try { _spHook530.end(); } catch (_) {} }
+                        }
+                    }
+                } catch (_) {}
+
                 var maxLines = lines.length;
                 if (_spLineH.length && _spMaxLinesByFrame >= 1 && _spMaxLinesByFrame < maxLines) {
                     maxLines = _spMaxLinesByFrame;
@@ -49982,6 +50189,23 @@ https://superprint.app
                         pdf.lines(_deltas, _mm[0][0], _mm[0][1], [1, 1], 'F', true);
                     } catch (_) {}
                 };
+                /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : même quadrilatère, mais TRACÉ (contour
+                   du cadre d'un bloc texte). Épaisseur en unités canvas -> mm. */
+                const _spJQuadStroke = function (points, couleur, largeurPx) {
+                    const _c = _parsePdfColor(couleur);
+                    if (!_c || (_c[3] !== undefined && _c[3] <= 0)) return;
+                    try {
+                        const _mm = points.map(function (p) { return localToMm(p[0], p[1]); });
+                        const _deltas = [];
+                        for (let _k = 1; _k < _mm.length; _k++) {
+                            _deltas.push([_mm[_k][0] - _mm[_k - 1][0], _mm[_k][1] - _mm[_k - 1][1]]);
+                        }
+                        _deltas.push([_mm[0][0] - _mm[_mm.length - 1][0], _mm[0][1] - _mm[_mm.length - 1][1]]);
+                        pdf.setDrawColor(_c[0], _c[1], _c[2]);
+                        pdf.setLineWidth(Math.max(0.05, pxToMm(Number(largeurPx) || 1)));
+                        pdf.lines(_deltas, _mm[0][0], _mm[0][1], [1, 1], 'S', true);
+                    } catch (_) {}
+                };
                 /* Couleur de fond de ligne EFFECTIVE : celle du bloc, ou celle des
                    styles par caractère quand ils la portent tous à l'identique. */
                 const _spJCouleurFondLigne = (function () {
@@ -50153,6 +50377,19 @@ https://superprint.app
                     const _hCadre = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : (obj.height || 0);
                     if (boxWidth > 0 && _hCadre > 0) {
                         _spJQuadFill([[0, 0], [boxWidth, 0], [boxWidth, _hCadre], [0, _hCadre]], obj.backgroundColor);
+                    }
+                }
+                /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : CONTOUR DU CADRE (chemin jsPDF).
+                   _SP_FOND_520 peignait déjà le fond ; le contour, lui, n'existait pas :
+                   un cadre sans fond mais avec contour sortait vide au format « traits de
+                   coupe / tons directs ». */
+                if (!_collectOnly && obj._spFrameStroke && obj._spFrameStroke !== 'transparent') {
+                    const _hCadreC = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : (obj.height || 0);
+                    const _wCadreC = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : boxWidth;
+                    if (_wCadreC > 0 && _hCadreC > 0) {
+                        _spJQuadStroke([[0, 0], [_wCadreC, 0], [_wCadreC, _hCadreC], [0, _hCadreC]],
+                            obj._spFrameStroke,
+                            (typeof obj._spFrameStrokeWidth === 'number' ? obj._spFrameStrokeWidth : 1));
                     }
                 }
                 for (let i = 0; i < maxLines; i++) {

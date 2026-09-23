@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -36,6 +36,20 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
+## [1.7.530] — 2026-09-23
+
+_Fond and Contour paint the text block frame; the text is only coloured when characters are selected with the mouse_
+
+### Fixed
+- **A colour applied to a selected text block coloured the text instead of the block** — `applyColors()` did `obj.set({ fill })`, i.e. it set the object fill = the glyph colour, and `backgroundColor` (the frame background) stayed empty. For a text block, Fond now paints the **frame background** (`backgroundColor`) and Contour its **frame outline** (`_spFrameStroke` / `_spFrameStrokeWidth`, new properties added to `SP_CUSTOM_PROPS`), so the glyphs are untouched. Measured: fill `#00cc00` → 19 247 green pixels on screen, stroke `#0000ff` 8 px → 2 084 blue pixels, text still black (4 236 px).
+- **The text is now coloured only for a character selection**: with `obj.isEditing` and `selectionStart < selectionEnd`, Fond/Contour go through `setSelectionStyles()` on that range only. Measured on the first 3 characters: styles 0/1/2 set to `#ff00ff`, character 3 and the whole block unchanged (background, stroke and text colour identical before/after).
+- **The right-hand panel follows the new rule**: for a text block the Fond/Contour row shows (and drives) the **frame** colours, and the stroke-width field shows the frame stroke width. The text colour keeps its own control (typography panel + character selection).
+- **Swatch books** (Pantone, RAL, HKS, imported `.ase`) follow the same rule through the swatch `change` handler: applied to a text block the ink paints the frame, and the ink scan now also looks at `backgroundColor` so the plate is still declared (export modal stays in CMYK/RGB + spot mode).
+### Fixed (export)
+- **The frame background was not exported at all by the default engine**: with “Format fini” checked the export uses the **native pdf-lib path** (`[confirmExport] ➜ Chemin NATIF pdf-lib`), which drew neither the frame background nor any frame outline — 0 background pixels measured in the exported PDF, while the preview showed it and the crop-marks path (jsPDF, `_SP_FOND_520`) painted it. The frame (background via `drawSvgPath` on the 4 corners through `localToPagePt`, so rotation/scale/origin are honoured, then the outline via `borderColor`) is now drawn before the glyphs. Measured: default export 69 724 background px / 29 463 outline px / 2 189 px for the 3 coloured characters; crop-marks export 77 363 / 7 678.
+- **Spot inks on a frame no longer contaminate the text**: the spot path used to open a `/SPOT<n>` marked block around the **whole object**, and the colour interception replaces every fill operator inside it — a black title on a Pantone band would have been printed entirely in the ink colour. When the ink sits on the frame background (and the glyph colour differs), the object is no longer marked: the frame path opens **its own** marker instead. Verified on the PDF operator list: the `/SPOT0` block wraps the frame fill (1 fill inside), the text is drawn **outside** the marker, and the glyphs stay black (5 789 px measured).
+- On-screen outline: `_spFrameStroke` is stroked around the frame in the object’s local space (patch of `_render` for `Text`/`IText`/`Textbox`), with the width divided by the current scale so an outline does not grow when the block is resized.
+- Other objects (rectangles, images) keep their historical behaviour, and a `.sp` round-trip keeps `backgroundColor`, `_spFrameStroke` and `_spFrameStrokeWidth`.
 ## [1.7.529] — 2026-09-22
 
 _The remove cross of an imported swatch book now sits just left of its shade count_
