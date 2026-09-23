@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.535 — in CMYK mode the Fill/Stroke selector now shows the colour of the selected block: sliders, numeric fields and swatch follow the selection.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.536 — the COLORS swatch books use the house scrollbars and the selected colour is highlighted in light grey instead of black, so dark swatches stay visible.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.535 — in CMYK mode the Fill/Stroke selector now shows the colour of the selected block: sliders, numeric fields and swatch follow the selection.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.536 — the COLORS swatch books use the house scrollbars and the selected colour is highlighted in light grey instead of black, so dark swatches stay visible.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,24 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.536 — Nuanciers : les ascenseurs maison et la couleur choisie en gris clair (lisible quelle que soit la teinte) ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-536">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.536</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 23 septembre 2026" data-i18n-en="Released September 23, 2026" data-i18n-jp="2026年9月23日公開">Released September 23, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Dans la partie <strong>Couleurs</strong> de la colonne de droite, les nuanciers gardaient l'ascenseur du navigateur et la teinte choisie s'affichait sur un fond noir, où elle devenait invisible. Les deux sont corrigés." data-i18n-en-html="In the <strong>Colors</strong> part of the right sidebar, the swatch books still used the browser scrollbar, and the chosen shade was highlighted on a black background where it became invisible. Both are fixed." data-i18n-jp-html="右サイドバーの <strong>カラー</strong> 部分では、色見本がブラウザ標準のスクロールバーを使い、選択した色は黒い背景に表示されて見えなくなっていました。両方を修正しました。">The swatch books now use the house scrollbars, and the chosen shade is highlighted in light grey instead of black.</p>
+
+ <h3 data-i18n-fr-html="🖱️ Ascenseurs maison + teinte choisie lisible <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🖱️ House scrollbars + readable selected shade <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🖱️ ハウス製スクロールバー＋選択色の視認性 <span class=&quot;badge badge-fix&quot;>修正</span>">🖱️ House scrollbars + readable selected shade <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Les ascenseurs</strong> : mesuré, la liste des teintes d'un nuancier ouvert gardait l'ascenseur <strong>natif du navigateur (15 px, gris système)</strong>. Elle utilise maintenant l'ascenseur SuperPrint : <strong>6 px</strong>, piste transparente, pouce gris (survol plus foncé) — exactement celui de la colonne de droite et des widgets. Appliqué aussi à la liste « select a swatch book » (visible dès qu'on ouvre plusieurs nuanciers ou dans le widget détaché)." data-i18n-en-html="<strong>The scrollbars</strong>: measured, the shade list of an opened swatch book kept the <strong>native browser scrollbar (15 px, system grey)</strong>. It now uses the SuperPrint scrollbar: <strong>6 px</strong>, transparent track, grey thumb (darker on hover) — exactly the one used by the right sidebar and the widgets. Also applied to the “select a swatch book” list (visible as soon as several books are opened, or in the detached widget)." data-i18n-jp-html="<strong>スクロールバー</strong>：実測では、開いた色見本の色リストは<strong>ブラウザ標準のスクロールバー（15 px、システムグレー）</strong>のままでした。今後は SuperPrint のスクロールバー（<strong>6 px</strong>、透明なトラック、グレーのつまみ、ホバーで濃く）を使用します。右サイドバーやウィジェットとまったく同じものです。「色見本を選択」のリストにも適用されます（複数の色見本を開いたときや、切り離しウィジェットで確認できます）。">The shade list kept the native 15 px scrollbar; it now uses the house 6 px scrollbar (transparent track, grey thumb), like the sidebar and the widgets.</li>
+  <li data-i18n-fr-html="<strong>La couleur choisie</strong> : mesuré, la teinte sélectionnée s'affichait sur un <strong>fond noir</strong> avec du texte blanc (rgb(26,26,26)) — une pastille sombre disparaissait donc complètement. Elle passe en <strong>gris clair (#E6E6E6)</strong> avec le texte en encre, et la pastille reçoit un <strong>cerne encre</strong> : la couleur reste visible, qu'elle soit claire ou sombre." data-i18n-en-html="<strong>The chosen colour</strong>: measured, the selected shade was shown on a <strong>black background</strong> with white text (rgb(26,26,26)) — a dark swatch therefore disappeared completely. It is now <strong>light grey (#E6E6E6)</strong> with ink text, and the swatch gets an <strong>ink ring</strong>: the colour stays visible, whether it is light or dark." data-i18n-jp-html="<strong>選択した色</strong>：実測では、選択した色は<strong>黒い背景</strong>に白文字（rgb(26,26,26)）で表示され、暗い色の見本は完全に見えなくなっていました。今後は<strong>ライトグレー（#E6E6E6）</strong>にインク色の文字、見本には<strong>インク色のリング</strong>が付き、明るい色でも暗い色でも見えるようになります。">The selected shade was on black (invisible for dark colours); it is now light grey with ink text and an ink ring around the swatch.</li>
+  <li data-i18n-fr-html="<strong>Vérifié dans les deux emplacements</strong> : colonne de droite (ascenseur 15 → <strong>6 px</strong>, ligne active rgb(230,230,230)) et <strong>widget détaché Couleurs</strong> (ascenseur de la liste 6 px, corps 6 px, même gris clair). Le clic applique toujours la teinte au bloc (mesuré : #FCEE21). Thème sombre : la ligne active reste claire, comme avant." data-i18n-en-html="<strong>Checked in both places</strong>: right sidebar (scrollbar 15 → <strong>6 px</strong>, active row rgb(230,230,230)) and the <strong>detached Colors widget</strong> (list scrollbar 6 px, body 6 px, same light grey). Clicking still applies the shade to the block (measured: #FCEE21). Dark theme: the active row stays light, as before." data-i18n-jp-html="<strong>両方の場所で確認済み</strong>：右サイドバー（スクロールバー 15 → <strong>6 px</strong>、選択行は rgb(230,230,230)）と<strong>切り離しカラーウィジェット</strong>（リストと本体のスクロールバーが 6 px、同じライトグレー）。クリックで従来どおりブロックに色が適用されます（実測：#FCEE21）。ダークテーマでは選択行は従来どおり明るいままです。">Verified in the sidebar (15 → 6 px, active row rgb(230,230,230)) and in the detached Colors widget (6 px, same light grey); clicking still applies the shade.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.535 — Mode CMJN : le sélecteur Fond/Contour montre enfin la couleur du bloc sélectionné ===== -->
 

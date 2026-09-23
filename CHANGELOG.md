@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,13 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.536] — 2026-09-23
+
+_The COLORS swatch books use the house scrollbars, and the selected shade is highlighted in light grey instead of black_
+
+### Fixed
+- **The swatch books had the browser scrollbar** (user report: « Les ascenseurs (scroll barre) interne au box et de select a swatch book sont vieux, mets nos ascenseurs design de SuperPrint. »). Measured: `.swatch-book-body` had a **15 px native scrollbar** (`scrollbar-width: auto`) while the rest of SuperPrint uses the house scrollbar (6 px). It now uses `::-webkit-scrollbar { width: 6px }` with a transparent track and a `#ccc` thumb (radius 3 px, hover `#aaa`; dark theme `#444` → `#555`), applied to `.swatch-books`, `.swatch-book-list`, `.swatch-book-body` and `#spotColorGroup` — the exact values of `.rightbar` and `.sp-dock-body`. ⚠️ No `scrollbar-width` / `scrollbar-color` is declared: measured, a non-auto value on either property switches Chromium to standard scrollbars and **disables `::-webkit-scrollbar`** (10 px with « thin » instead of 6 px). - **The selected shade was highlighted on a black row** (user report: « à la selection d’une couleur on ne voit plus rien avec le fond noir, met un fond gris light pas noir »). Measured: `.swatch-item.is-active` was `background: #1a1a1a; color: #fff` — a dark swatch circle (12 px) was invisible on it. It is now `background: #e6e6e6; color: #1a1a1a`, and `.swatch-item.is-active .swatch-dot` gets an ink ring (`border-color: #1a1a1a`) so the colour stays readable whatever the shade. Dark theme unchanged (light row `#f2f2f2`, `#121212` text). Measured after: sidebar scrollbar 15 → **6 px**, active row `rgb(230,230,230)` with `rgb(26,26,26)` text and an ink dot ring; detached **Colors widget**: list scrollbar 6 px, book body 6 px, same light grey; clicking a shade still applies it to the block (`#FCEE21` on the test rectangle); dark theme: 6 px and a light active row. `JS/swatchbooks.js` is unchanged in this version (its cache tag stays at the 1.7.534 value).
 
 ## [1.7.535] — 2026-09-23
 
