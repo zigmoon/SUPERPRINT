@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -9,32 +9,15 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
-## [1.7.490] — 2026-09-19
+## [1.7.532] — 2026-09-23
 
-_No chapters, one background everywhere, a held rhythm, and the FAQ back on the home page in two columns_
+_The columns of a text block stay on screen while you edit it; caret, selection and clicks follow the column flow_
 
-### Changed
-- **The chapter idea is gone**: no more “Chapter 01 · …” labels nor numbers, and **“atelier” gives way to SuperPrint** in the headings of the technical part (“L’inventaire de SuperPrint”, “SuperPrint face aux grandes maisons”, “Les trois applications de SuperPrint”, “Sur la table de SuperPrint”).
-- **One single background inside the blocks**: prepress was the only one set in ink (light text on black) — it is like the others now. The variety stays in the layout and the cards.
-- **The rhythm is held**: the general section padding (72 to 140 px) also applied to that zone. The sections are aligned on 34–56 px, the part has no bottom padding, its heading sits 22 px above the first bar, the blocks stay 18 px apart, and the FAQ’s bottom follows the same breath.
-
-### Added — the FAQ comes home
-- The ten questions are back on the home page, **numbered and on two columns** on desktop (one on mobile), with the number hanging on the left and the `+` pinned right, so a question no longer breaks before its “?”.
-- **`faq.html` is deleted** (both trees, sitemap cleaned). The navigation bar and the help page point back to `#faq`, and the home page gains the **`FAQPage`** structured data.
-
-### Verified
-| Check | Result |
-|---|---|
-| Kickers | no chapter numbers, no “atelier” left in the part’s headings |
-| Block backgrounds | the eight `.spf-in` measured `rgba(0, 0, 0, 0)` (page paper) |
-| Rhythm | heading → first bar 22 px · between blocks 18/18/18/18/18/18/18 px |
-| FAQ | 10 questions, `columns: 2` on desktop (2 horizontal positions), 1 column on mobile |
-| `faq.html` | HTTP 404 — the page no longer exists |
-| Mobile 390 px | 1 column, no horizontal overflow, block bar 105 px, no JavaScript error |
-| Language leaks | **0** in `fr` / `en` / `ja` |
-| Parity web ↔ mirror | **22 / 22 identical** |
-| Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
-| Package | `sp213-local.zip` rebuilt and verified file by file |
+### Fixed
+- **Editing a multi-column text block made the columns disappear and the text fall back to its initial shape** (user report: « lorsque je souhaite corriger le texte d un bloc texte qui a été mis en forme avec texte frame options en 2 columns, les colonnes disparaissent et le texte reprend sa forme initiale ... les colonnes ne sont plus visibles »). Measured before (320 × 200 px block, two 148 px columns, 12 px gutter): outside editing the line wrap was 148 px / 61 lines laid out in columns; entering edit mode the wrap went back to **320 px** (the block width) and to 28 lines, and `spColGeom()` returned null — three `!isEditing` guards (`spColsActives`, `_renderChar`, `_getLineLeftOffset`) switched the whole column engine off during typing. Those guards are removed: wrap, line placement, capacity and mask now follow the columns while editing. Measured after: same values as at rest (148 px, 61 lines, 2 columns) with ink in **both** columns (6 229 px / 6 133 px on the canvas); a real double-click inside the text keeps the columns and puts the caret on the right line of the right column.
+- **The caret, the selection highlight and every mouse gesture were computed on a single-column flow**: `_getCursorBoundariesOffsets()` (caret + highlight) accumulated single-column line heights, and `getSelectionStartFromPointer()` — the only entry point for click, drag, double-click and triple-click in fabric 5.1.0 — looked the line up the same way. Both are now hooked (only while editing a block with columns): the first adds the vertical offset of the caret line column, the second inverts the column layout (column from x, line from y **inside** that column, then the character index with the line own column offset). Measured: a real click in column 2 (3rd line, 4th character) gives index **172**, the exact expected value (0 characters off); a drag from the 3rd to the 6th line of column 2 gives [170, 218] against an expected [170, 219]; typing one character keeps 61 lines and the 148 px wrap.
+- **The selection highlight overflowed the column**: `renderSelection()` drew each line at `t.top + t.topOffset` (cumulative single-column heights) and stretched justified wrapped lines to `this.width` — the **block** width. For columns it is replaced by a line-by-line version (fabric 5.1.0 algorithm reproduced: composition mode, justification, hyphenation, RTL) using the column own ordinate and the column width. Measured: highlight x 166 → 300 inside a column spanning 166 → 314, y 27 → 189 over the selected lines.
+- **Fallbacks**: the two new hooks only run while editing a block with `_spCols > 1`; RTL text, a point outside the frame, an empty column or any exception falls back to Fabric — so a block without columns, and everything outside edit mode, is untouched (measured: single-column block click, drag and highlight unchanged).
 
 ## [1.7.531] — 2026-09-23
 
@@ -45,7 +28,9 @@ _The tab-stop ruler stays draggable at any zoom; clicking it can no longer desel
 - **The grab tolerance did not follow the zoom**: the zoom of SuperPrint is a CSS `transform: scale()`, so `canvas.getZoom()` (`viewportTransform[0]`) always returns 1 (measured at 100 %, 110 % and 120 %), while `REGLE_TOL` is documented “in screen pixels”. `applyZoom()` now publishes the real zoom (`window.spZoomActuel`) and the ruler reads it, so the grab zone keeps a constant screen size at any zoom. Measured: 120 % → a 40 px screen drag moves the stop 32.9 document px (expected 33.3); 200 % → grabbing 6 screen px away still works; 100 % → 40 px screen = 40 px document (unchanged).
 - **A stop drag could stay stuck**, making every stop ungrabbable (`taquetSousLeCurseur()` exits while `_glisser` is set): the drag used to end only on a window `mouseup`. It is now also settled when the window loses focus, when the pointer leaves it, or when the zoom changes (`window.spTabEnGlisser` / `spTabAnnulerGlisser`). The ruler is refreshed right after a zoom change (`_updateCanvasDPRForZoom`).
 - **Diagnostics**: `window.spTabDiag()` returns the ruler state on one line (ruler, geometry, marks, blocks, owner, selection, real zoom, `getZoom()`, current drag); a band press that grabs nothing logs it to the console and the status bar.
-- Non-regressions measured: clicking the band still creates a stop (2 stops / 2 marks, block still selected), 100 % dragging unchanged, and the whole flow with the « Taquets de tabulation » widget open at 120 % (stop placed then dragged to 26 mm — panel reports “appliqué”).## [1.7.530] — 2026-09-23
+- Non-regressions measured: clicking the band still creates a stop (2 stops / 2 marks, block still selected), 100 % dragging unchanged, and the whole flow with the « Taquets de tabulation » widget open at 120 % (stop placed then dragged to 26 mm — panel reports “appliqué”).
+
+## [1.7.530] — 2026-09-23
 
 _Fond and Contour paint the text block frame; the text is only coloured when characters are selected with the mouse_
 
@@ -887,6 +872,33 @@ _No chapters, one background everywhere, a held rhythm, and the FAQ back on the 
 | Language leaks | **0** in `fr` / `en` / `ja` |
 | Parity web ↔ mirror | **22 / 22 identical** |
 | Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.491"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
+| Package | `sp213-local.zip` rebuilt and verified file by file |
+
+## [1.7.490] — 2026-09-19
+
+_No chapters, one background everywhere, a held rhythm, and the FAQ back on the home page in two columns_
+
+### Changed
+- **The chapter idea is gone**: no more “Chapter 01 · …” labels nor numbers, and **“atelier” gives way to SuperPrint** in the headings of the technical part (“L’inventaire de SuperPrint”, “SuperPrint face aux grandes maisons”, “Les trois applications de SuperPrint”, “Sur la table de SuperPrint”).
+- **One single background inside the blocks**: prepress was the only one set in ink (light text on black) — it is like the others now. The variety stays in the layout and the cards.
+- **The rhythm is held**: the general section padding (72 to 140 px) also applied to that zone. The sections are aligned on 34–56 px, the part has no bottom padding, its heading sits 22 px above the first bar, the blocks stay 18 px apart, and the FAQ’s bottom follows the same breath.
+
+### Added — the FAQ comes home
+- The ten questions are back on the home page, **numbered and on two columns** on desktop (one on mobile), with the number hanging on the left and the `+` pinned right, so a question no longer breaks before its “?”.
+- **`faq.html` is deleted** (both trees, sitemap cleaned). The navigation bar and the help page point back to `#faq`, and the home page gains the **`FAQPage`** structured data.
+
+### Verified
+| Check | Result |
+|---|---|
+| Kickers | no chapter numbers, no “atelier” left in the part’s headings |
+| Block backgrounds | the eight `.spf-in` measured `rgba(0, 0, 0, 0)` (page paper) |
+| Rhythm | heading → first bar 22 px · between blocks 18/18/18/18/18/18/18 px |
+| FAQ | 10 questions, `columns: 2` on desktop (2 horizontal positions), 1 column on mobile |
+| `faq.html` | HTTP 404 — the page no longer exists |
+| Mobile 390 px | 1 column, no horizontal overflow, block bar 105 px, no JavaScript error |
+| Language leaks | **0** in `fr` / `en` / `ja` |
+| Parity web ↔ mirror | **22 / 22 identical** |
+| Markers | `data-sp-js="v490"`, `data-sp-sw="v1.7.490"`, cache tag `20260919-v490-rythme-et-faq-2colonnes`, `CACHE_NAME` bumped |
 | Package | `sp213-local.zip` rebuilt and verified file by file |
 
 ## [1.7.489] — 2026-09-19

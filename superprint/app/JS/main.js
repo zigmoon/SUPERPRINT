@@ -1149,7 +1149,15 @@ window.spSignatureMarges = spSignatureMarges;
    ═══════════════════════════════════════════════════════════════════════════ */
 function spColsActives(obj) {
     if (!obj) return false;
-    if (obj.isEditing) return false;                 // saisie : une seule colonne
+    /* ═══ _SP_COLS_532_DEBUT — LES COLONNES RESTENT ACTIVES EN SAISIE ═══
+       Retour utilisateur : « lorsque je souhaite corriger le texte d'un bloc texte mis en
+       forme en 2 colonnes, les colonnes disparaissent et le texte reprend sa forme
+       initiale ... les colonnes ne sont plus visibles ».
+       MESURÉ AVANT (bloc 320 × 200, 2 colonnes de 148, gouttière 12) : hors édition le repli
+       valait 148 px (61 lignes en colonnes) ; en édition il repassait à 320 px (28 lignes),
+       la géométrie devenait nulle et rien n'était plus posé en colonnes.
+       La saisie garde désormais le MÊME coulage que l'aperçu : le curseur, la sélection et
+       le clic sont ré-alignés sur la géométrie des colonnes (voir _SP_COLS_532). */
     var n = Number(obj._spCols);
     return (isFinite(n) && n >= 2);
 }
@@ -1256,7 +1264,7 @@ function spInstallerColonnesRender() {
     var precedent = proto._renderChar;
     if (typeof precedent !== 'function') return;
     proto._renderChar = function (method, ctx, lineIndex, charIndex, ch, left, top) {
-        if (this._spCols > 1 && !this.isEditing) {
+        if (this._spCols > 1) {          /* _SP_COLS_532 : aussi pendant la saisie */
             try {
                 var cg = spColGeomFor(this, lineIndex);
                 if (cg) {
@@ -1271,6 +1279,202 @@ function spInstallerColonnesRender() {
 }
 window.spInstallerColonnesRender = spInstallerColonnesRender;
 try { spInstallerColonnesRender(); } catch (_) {}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════
+   _SP_COLS_532 — CORRIGER LE TEXTE DANS SES COLONNES
+
+   Les colonnes restent affichées pendant la saisie (correctifs 1 à 3). Restent les trois
+   points qui, dans Fabric, se calculent sur la mise en page MONO-COLONNE — et qui
+   placeraient donc le curseur ailleurs que sous les yeux de l'utilisateur :
+
+     · _getCursorBoundariesOffsets() : x = _getLineLeftOffset() (déjà la colonne ✓) mais
+       y = somme des hauteurs de lignes (flux mono-colonne) → curseur et surlignage
+       « flottants » pour les colonnes 2 et suivantes. On ajoute le décalage VERTICAL de la
+       colonne de la ligne concernée.
+     · getSelectionStartFromPointer() : SEUL point d'entrée de la souris dans le texte
+       (clic, glisser de sélection, double-clic, triple-clic — vérifié dans fabric 5.1.0).
+       Il cherche la ligne par une somme de hauteurs : il faut l'inverse du coulage
+       (colonne d'après x, ligne d'après y DANS la colonne).
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Pointeur exploitable dans un bloc à colonnes en cours d'édition ? (sinon : Fabric) */
+function spColPointeur(obj, e) {
+    if (!obj || !e || !(obj._spCols > 1) || !obj.isEditing) return null;
+    if (obj.direction === 'rtl') return null;
+    if (typeof obj.getLocalPointer !== 'function') return null;
+    var p = obj.getLocalPointer(e);
+    if (!p || !isFinite(p.x) || !isFinite(p.y)) return null;
+    return p;
+}
+
+/* Numéro de colonne visé par un x du contenu (repère local, NON mis à l'échelle). */
+function spColSousX(geo, x) {
+    var inL = geo.inLeft || 0;
+    var pas = geo.w + geo.gutter;
+    if (!(pas > 0)) return 0;
+    var i = Math.floor((x - inL) / pas);
+    if (!isFinite(i) || i < 0) i = 0;
+    if (i > geo.n - 1) i = geo.n - 1;
+    return i;
+}
+
+/* Index de caractère sous le pointeur, COULAGE COMPRIS (inverse de spColMap). */
+function spColIndexSousPointeur(obj, e) {
+    var p = spColPointeur(obj, e);
+    if (!p) return null;
+    var m = spColMap(obj);
+    if (!m || !m.geo || !m.idx || !(m.total > 0)) return null;
+    var geo = m.geo;
+    var sx = (typeof obj.scaleX === 'number' && obj.scaleX) ? obj.scaleX : 1;
+    var sy = (typeof obj.scaleY === 'number' && obj.scaleY) ? obj.scaleY : 1;
+    var x = p.x / sx, y = p.y / sy;
+    if (!(y >= -2) || y > geo.frameH + 6) return null;      /* hors du cadre : Fabric décide */
+    var col = spColSousX(geo, x);
+    /* Ligne visée : dans CETTE colonne, celle dont la bande verticale contient y.
+       La hauteur d'une ligne est DÉDUITE du coulage (yIn de la suivante) : une seule
+       source de vérité, jamais recalculée. */
+    var i = -1, dernier = -1;
+    for (var k = 0; k < m.total; k++) {
+        if (m.idx[k] !== col) continue;
+        dernier = k;
+        var haut = m.yIn[k];
+        var bas = (k + 1 < m.total && m.idx[k + 1] === col) ? m.yIn[k + 1] : geo.colH;
+        if (!(bas > haut)) bas = haut + 1;
+        if (y >= haut - 0.5 && y <= bas + 0.5) { i = k; break; }
+    }
+    if (i < 0) i = dernier;                                  /* repli : dernière de la colonne */
+    if (i < 0) return null;
+    /* Index du caractère DANS la ligne : même boucle que Fabric, avec l'offset de la ligne
+       dans SA colonne (_getLineLeftOffset, patché par _SP_COLS_532 / 1.7.458). */
+    var ligne = (obj._textLines && obj._textLines[i]) ? obj._textLines[i] : '';
+    var cb = obj.__charBounds && obj.__charBounds[i];
+    var n = ((typeof obj._getLineLeftOffset === 'function') ? (obj._getLineLeftOffset(i) || 0) : 0) * sx;
+    var avant = n, apres = n, dansLigne = 0;
+    for (var l = 0; l < ligne.length; l++) {
+        var lg = (cb && cb[l] && isFinite(cb[l].kernedWidth)) ? cb[l].kernedWidth * sx : 0;
+        avant = n;
+        n += lg;
+        apres = n;
+        if (!(n <= p.x)) break;
+        dansLigne = l + 1;
+    }
+    /* Index ABSOLU : longueurs des lignes précédentes + séparateurs consommés. */
+    var abs = 0;
+    for (var j = 0; j < i; j++) {
+        abs += (obj._textLines[j] ? obj._textLines[j].length : 0);
+        if (typeof obj.missingNewlineOffset === 'function') abs += obj.missingNewlineOffset(j);
+    }
+    abs += dansLigne;
+    if (typeof obj._getNewSelectionStartFromOffset === 'function') {
+        return obj._getNewSelectionStartFromOffset(p, avant, apres, abs, ligne.length);
+    }
+    return abs;
+}
+window.spColIndexSousPointeur = spColIndexSousPointeur;
+
+/* Surlignage de la sélection, ligne par ligne, en respectant le coulage des colonnes.
+   Reprend renderSelection() de fabric 5.1.0 (mode composition, justification, césure, RTL)
+   en remplaçant le cumul mono-colonne par l'ordonnée réelle de la ligne et la largeur du
+   bloc par celle de la colonne. Renvoie false si la géométrie manque (Fabric reprend). */
+function spSurlignageColonnes(obj, bounds, ctx) {
+    if (!obj || !ctx || !bounds) return false;
+    var m = spColMap(obj);
+    if (!m || !m.geo || !m.total) return false;
+    var debut = obj.inCompositionMode ? obj.hiddenTextarea.selectionStart : obj.selectionStart;
+    var fin = obj.inCompositionMode ? obj.hiddenTextarea.selectionEnd : obj.selectionEnd;
+    var locD = obj.get2DCursorLocation(debut), locF = obj.get2DCursorLocation(fin);
+    if (!locD || !locF) return false;
+    var lD = locD.lineIndex, lF = locF.lineIndex;
+    if (!(lD >= 0) || !(lF >= lD)) return false;
+    var cD = locD.charIndex < 0 ? 0 : locD.charIndex;
+    var cF = locF.charIndex < 0 ? 0 : locF.charIndex;
+    /* Cumul des hauteurs, calculé UNE fois (le rendu est appelé à chaque clignotement). */
+    var cum = [], acc = 0;
+    for (var k = 0; k <= lF && k < m.total; k++) { cum[k] = acc; acc += obj.getHeightOfLine(k); }
+    var justifie = String(obj.textAlign || '').indexOf('justify') !== -1;
+    var esp = (typeof obj._getWidthOfCharSpacing === 'function') ? obj._getWidthOfCharSpacing() : 0;
+    for (var u = lD; u <= lF; u++) {
+        var cg = (typeof window.spColGeomFor === 'function') ? window.spColGeomFor(obj, u) : null;
+        var gauche = obj._getLineLeftOffset(u) || 0;
+        var hLigne = obj.getHeightOfLine(u), p = 0, v = 0;
+        if (u === lD && obj.__charBounds[lD] && obj.__charBounds[lD][cD]) p = obj.__charBounds[lD][cD].left;
+        if (u >= lD && u < lF) {
+            v = (justifie && !obj.isEndOfWrapping(u)) ? ((cg && cg.w) ? cg.w : obj.width) : (obj.getLineWidth(u) || 5);
+        } else if (u === lF) {
+            var cbF = obj.__charBounds[lF];
+            if (0 === cF) v = (cbF && cbF[0]) ? cbF[0].left : 0;
+            else if (cbF && cbF[cF - 1]) v = cbF[cF - 1].left + cbF[cF - 1].width - esp;
+        }
+        var haut = hLigne;
+        if (obj.lineHeight < 1 || (u === lF && obj.lineHeight > 1)) haut = hLigne / obj.lineHeight;
+        var bx = bounds.left + gauche + p, bw = v - p, bh = haut, dec = 0;
+        if (obj.inCompositionMode) { ctx.fillStyle = obj.compositionColor || 'black'; bh = 1; dec = haut; }
+        else ctx.fillStyle = obj.selectionColor;
+        var by = bounds.top + (cum[u] || 0) + ((cg && cg.shift) ? cg.shift : 0);
+        if (obj.direction === 'rtl') bx = obj.width - bx - bw;
+        ctx.fillRect(bx, by + dec, bw, bh);
+    }
+    return true;
+}
+window.spSurlignageColonnes = spSurlignageColonnes;
+
+function spInstallerColonnesSaisie() {
+    if (typeof fabric === 'undefined' || !fabric.IText || !fabric.IText.prototype) {
+        setTimeout(spInstallerColonnesSaisie, 60);
+        return;
+    }
+    var proto = fabric.IText.prototype;
+    /* 1) CURSEUR ET SURLIGNAGE DE SÉLECTION. */
+    if (!proto.__spColCurseurPatch && typeof proto._getCursorBoundariesOffsets === 'function') {
+        var _origBounds = proto._getCursorBoundariesOffsets;
+        proto._getCursorBoundariesOffsets = function (t) {
+            var out = _origBounds.call(this, t);
+            try {
+                if (this._spCols > 1 && this.isEditing && out) {
+                    var loc = this.get2DCursorLocation(t);
+                    var cg = (typeof window.spColGeomFor === 'function')
+                        ? window.spColGeomFor(this, loc && loc.lineIndex) : null;
+                    /* On renvoie une COPIE : l'original met son résultat en cache
+                       (cursorOffsetCache) et le décalage ne doit pas s'y cumuler. */
+                    if (cg && cg.shift) return { left: out.left, top: out.top + cg.shift };
+                }
+            } catch (_) {}
+            return out;
+        };
+        proto.__spColCurseurPatch = true;
+    }
+    /* 2) SURLIGNAGE DE SÉLECTION : une ligne à la fois, dans SA colonne (le cumul de
+          Fabric est un flux mono-colonne, et les lignes justifiées s'élargissaient à la
+          largeur du BLOC au lieu de celle de la colonne). Algorithme de fabric 5.1.0,
+          recopié, avec ces deux écarts seulement. */
+    if (!proto.__spColSelPatch && typeof proto.renderSelection === 'function') {
+        var _origRenderSel = proto.renderSelection;
+        proto.renderSelection = function (bounds, ctx) {
+            try {
+                if (this._spCols > 1 && this.isEditing) {
+                    var ok = spSurlignageColonnes(this, bounds, ctx);
+                    if (ok) return;
+                }
+            } catch (_) {}
+            return _origRenderSel.call(this, bounds, ctx);
+        };
+        proto.__spColSelPatch = true;
+    }
+    /* 3) CLIC, GLISSER, DOUBLE-CLIC, TRIPLE-CLIC : une seule porte d'entrée. */
+    if (!proto.__spColClicPatch && typeof proto.getSelectionStartFromPointer === 'function') {
+        var _origSel = proto.getSelectionStartFromPointer;
+        proto.getSelectionStartFromPointer = function (e) {
+            try {
+                var idx = spColIndexSousPointeur(this, e);
+                if (idx !== null && idx !== undefined) return idx;
+            } catch (_) {}
+            return _origSel.call(this, e);
+        };
+        proto.__spColClicPatch = true;
+    }
+}
+window.spInstallerColonnesSaisie = spInstallerColonnesSaisie;
+try { spInstallerColonnesSaisie(); } catch (_) {}
 let bleed = 3;
 let history = [];
 let historyStep = -1;
@@ -9708,7 +9912,8 @@ window.spTestDiag = function () {
                 let baseOffset = _origGetLineLeftOffset.call(this, lineIndex);
                 /* 🆕 v1.7.458 — COLONNES : la ligne est alignée DANS SA
                    COLONNE (gauche / centre / droite / justifié), pas dans le bloc. */
-                if (this._spCols > 1 && !this.isEditing && typeof window.spColGeomFor === 'function') {
+                /* _SP_COLS_532 : la ligne se place dans SA colonne, saisie comprise. */
+                if (this._spCols > 1 && typeof window.spColGeomFor === 'function') {
                     try {
                         const _cg = window.spColGeomFor(this, lineIndex);
                         if (_cg) {
