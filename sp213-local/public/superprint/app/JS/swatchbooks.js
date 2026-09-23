@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
-   swatchbooks.js — SuperPrint 1.7.525
+   swatchbooks.js — SuperPrint 1.7.534
    NUANCIERS DE LA COLONNE DE DROITE (tons directs)
 
    Ce fichier remplace la longue liste déroulante « -- Sélectionner un Pantone -- » par une
@@ -25,7 +25,7 @@
 (function () {
     'use strict';
 
-    var NUMERO = '1.7.525';
+    var NUMERO = '1.7.534';
     var LS_KEY = 'sp_swatch_imported_v1';
     var LS_MAX = 400000;                 // garde-fou : on n'écrase pas le quota localStorage
 
@@ -582,7 +582,18 @@
                     ['DIC 49 — Blanc', '#FFFFFF']
                 ]}
             ]
-        }
+        },
+        /* 🆕 v1.7.534 — _SP_PANTONE_534 : NUANCIER PANTONE ACTIF.
+           Demande utilisateur : « partie Pantone > mettre comme les autres couleurs un
+           échantillon d'une cinquantaine de couleurs et le rendre actif ».
+           La ligne Pantone était figée dans index.html (is-disabled, badge « bientôt ») :
+           elle ne s'ouvrait pas et ne proposait aucune teinte.
+           ⚠️ Les teintes ne sont PAS recopiées ici : elles vivent déjà dans le catalogue
+           (les <optgroup> Pantone du #spotColorSelect masqué — 21 familles, 246 teintes).
+           « depuisSelect: true » demande au module d'en prélever un ÉCHANTILLON (voir
+           echantillonDuSelect) et de n'ajouter AUCUNE option au <select> : les libellés et
+           les codes restent ceux du catalogue, et le nom de plaque des tons directs aussi. */
+        { id: 'pantone', name: 'Pantone', depuisSelect: true, maxEchantillon: 50 }
     ];
 
     /* ─────────────────────────────── OUTILS ─────────────────────────────── */
@@ -665,8 +676,57 @@
     /* ─────────────────────────── ÉTAT / REGISTRE ─────────────────────────── */
 
     var livres = BOOKS.map(function (b) {
-        return { id: b.id, name: b.name, groups: b.groups, importe: false };
+        return {
+            id: b.id, name: b.name, groups: b.groups, importe: false,
+            /* 🆕 v1.7.534 — _SP_PANTONE_534 : nuancier servi DANS le catalogue existant. */
+            depuisSelect: !!b.depuisSelect, maxEchantillon: b.maxEchantillon || 0
+        };
     });
+
+    /* ═══ _SP_PANTONE_534 — ÉCHANTILLON D'UN NUANCIER DÉJÀ AU CATALOGUE ═══
+       Un nuancier « depuisSelect » ne porte pas ses teintes dans BOOKS : on les lit dans les
+       <optgroup> DÉJÀ présents dans #spotColorSelect (ceux du module portent data-sp-book :
+       on les ignore). L'échantillon est prélevé en ROUND-ROBIN d'une famille à l'autre, pour
+       que l'aperçu montre TOUTES les familles comme les autres nuanciers, puis les teintes
+       sont regroupées par famille, dans l'ordre du catalogue. */
+    function echantillonDuSelect(livre) {
+        var sel = document.getElementById('spotColorSelect');
+        if (!sel) return [];
+        var familles = [];
+        Array.prototype.forEach.call(sel.querySelectorAll('optgroup'), function (og) {
+            if (og.getAttribute('data-sp-book')) return;          /* nuanciers du module */
+            var cols = [];
+            Array.prototype.forEach.call(og.querySelectorAll('option'), function (o) {
+                var hex = hexValide(o.value);
+                if (!hex) return;
+                var nom = String(o.textContent || '').replace(/\s+/g, ' ').trim() || hex;
+                cols.push([nom, hex]);
+            });
+            if (cols.length) familles.push({ label: og.label || livre.name, colors: cols });
+        });
+        if (!familles.length) return [];
+        var max = livre.maxEchantillon > 0 ? livre.maxEchantillon : 50;
+        var pris = [], vus = {};
+        for (var rang = 0; pris.length < max; rang++) {
+            var ajout = false;
+            for (var f = 0; f < familles.length && pris.length < max; f++) {
+                var c = familles[f].colors[rang];
+                if (!c) continue;
+                var cle = familles[f].label + '|' + c[1] + '|' + c[0];
+                if (vus[cle]) continue;
+                vus[cle] = 1;
+                pris.push([c[0], c[1], familles[f].label]);
+                ajout = true;
+            }
+            if (!ajout) break;
+        }
+        var ordre = [], parFamille = {};
+        pris.forEach(function (c) {
+            if (!parFamille[c[2]]) { parFamille[c[2]] = { label: c[2], colors: [] }; ordre.push(c[2]); }
+            parFamille[c[2]].colors.push([c[0], c[1]]);
+        });
+        return ordre.map(function (l) { return parFamille[l]; });
+    }
 
     function couleursDe(livre) {
         var out = [];
@@ -955,7 +1015,15 @@
         if (!liste || !sel) return;
         window.__spSwatchInit = true;
 
-        livres.forEach(ajouterAuSelect);
+        /* 🆕 v1.7.534 — _SP_PANTONE_534 : le nuancier Pantone est servi DANS le catalogue
+           existant (ses 246 options y sont déjà) : on remplit seulement son échantillon, et
+           on n'ajoute aucun <optgroup> pour lui (sinon le catalogue doublerait). */
+        livres.forEach(function (l) {
+            if (!l.depuisSelect) return;
+            var ech = echantillonDuSelect(l);
+            if (ech.length) { l.groups = ech; l.echantillon = couleursDe(l).length; }
+        });
+        livres.forEach(function (l) { if (!l.depuisSelect) ajouterAuSelect(l); });
         rendreListe();
         restaurerImportes();
 

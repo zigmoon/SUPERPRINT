@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,13 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.534] — 2026-09-23
+
+_The Pantone swatch book is active: a 50-shade sample covering all 21 Pantone families_
+
+### Added
+- **The Pantone swatch book is no longer greyed out** (user report: « partie Pantone > mettre comme les autres couleurs un échantillon d une cinquantaine de couleurs et le rendre actif »). The Pantone row of “Select a swatch book” was hard-coded in `app/index.html` as `div.swatch-book.is-disabled` with a `disabled` header and a “soon” badge — it could not be opened, while the real books (Toyo 46, Focoltone 48, HKS 54, RAL 191, NCS 55, DIC 49) were built by `JS/swatchbooks.js` from its `BOOKS` table. The Pantone book is now a normal `BOOKS` entry flagged `depuisSelect: true`: the module reads the Pantone `<optgroup>`s already present in the hidden `#spotColorSelect` (21 families, 246 shades — the source of truth for spot inks, detection and export) and samples **50 shades in round-robin across the families**, so the preview covers every family. Nothing is copied and nothing is added to the selector for this book: **the catalogue stays at 246 Pantone shades** (689 options in total, measured — no duplicate), so plate names, spot detection, CMYK + Pantone export and the .sp round-trip are unchanged. Measured: the row shows 50 swatches over 21 family headings, opens like the others (`is-open`, no `is-disabled`, no `disabled`), and clicking « Pantone Yellow C » (#FCEE21) turns a selected rectangle from #CCCCCC to #FCEE21 with `_spSpotInk = #FCEE21` and `_spSpotInkName = PANTONE YELLOW C` (the catalogue plate name). The row keeps stable ids (`spSwBook_pantone`, `spSwHead_pantone`, `spSwItem_pantone_n`) so it also works inside the detached widget. The hard-coded disabled block was removed from `app/index.html`, and the module version string in `JS/swatchbooks.js` goes from 1.7.525 to 1.7.534.
 
 ## [1.7.533] — 2026-09-23
 

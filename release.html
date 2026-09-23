@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.533 — a right-click on a page releases its master page (gabarit) items: they become normal, editable objects of that page.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.534 — the Pantone swatch book is active: an accordion of 50 shades covering all 21 Pantone families, ready to apply as a spot ink.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.533 — a right-click on a page releases its master page (gabarit) items: they become normal, editable objects of that page.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.534 — the Pantone swatch book is active: an accordion of 50 shades covering all 21 Pantone families, ready to apply as a spot ink.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,25 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.534 — Le nuancier Pantone est actif : 50 teintes, les 21 familles du catalogue, applicables en ton direct ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-534">
+ <h2>SUPER PRINT <span class="badge badge-new">v1.7.534</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 23 septembre 2026" data-i18n-en="Released September 23, 2026" data-i18n-jp="2026年9月23日公開">Released September 23, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Dans la colonne de droite, la ligne <strong>Pantone</strong> de « Sélectionner un nuancier » était grisée (« bientôt ») : elle ne s'ouvrait pas. Elle est désormais un nuancier comme les autres, avec un <strong>échantillon de 50 teintes</strong> couvrant les 21 familles du catalogue Pantone." data-i18n-en-html="In the right sidebar, the <strong>Pantone</strong> row of “Select a swatch book” was greyed out (“soon”): it could not be opened. It is now a swatch book like the others, with a <strong>50-shade sample</strong> covering all 21 families of the Pantone catalogue." data-i18n-jp-html="右サイドバーの「色見本を選択」にある <strong>Pantone</strong> の行はグレー表示（近日公開）で開けませんでした。今後は他の色見本と同じように、Pantone カタログの 21 ファミリーを網羅する<strong>50 色のサンプル</strong>を備えた色見本になります。">The Pantone swatch book is no longer greyed out: it opens with a 50-shade sample covering all 21 Pantone families.</p>
+
+ <h3 data-i18n-fr-html="🎨 Nuancier Pantone actif <span class=&quot;badge badge-new&quot;>nouveau</span>" data-i18n-en-html="🎨 Pantone swatch book active <span class=&quot;badge badge-new&quot;>new</span>" data-i18n-jp-html="🎨 Pantone 色見本が有効 <span class=&quot;badge badge-new&quot;>新機能</span>">🎨 Pantone swatch book active <span class="badge badge-new">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="La ligne s'ouvre comme les autres : mesuré, elle affiche <strong>50 pastilles</strong> réparties sur les <strong>21 familles</strong> du catalogue (Pantone Basics, Color of the Year, Reds &amp; Pinks, Neons, Métalliques, Gris chauds et froids, Process Tints…). Les teintes ne sont pas recopiées : elles sont prélevées dans le catalogue déjà présent dans l'application, en alternant les familles — l'aperçu montre donc toutes les familles, et chaque libellé et chaque code sont exactement ceux du catalogue." data-i18n-en-html="The row opens like the others: measured, it shows <strong>50 swatches</strong> spread over the <strong>21 families</strong> of the catalogue (Pantone Basics, Color of the Year, Reds &amp; Pinks, Neons, Metallics, Warm and Cool Grays, Process Tints…). The shades are not duplicated: they are sampled from the catalogue already inside the application, rotating between families — so the preview shows every family, and each label and code is exactly the catalogue one." data-i18n-jp-html="行は他の色見本と同様に開きます。実測：カタログの <strong>21 ファミリー</strong>（Pantone Basics、Color of the Year、Reds &amp; Pinks、蛍光、メタリック、ウォーム／クールグレー、Process Tints など）にまたがる <strong>50 色</strong>を表示します。色は複製ではなく、アプリ内のカタログからファミリーを巡回して抽出しているため、表示は全ファミリーを網羅し、名称とコードはカタログと完全に一致します。">50 swatches across the 21 families of the catalogue, sampled (not duplicated) from the catalogue already present in the app.</li>
+  <li data-i18n-fr-html="Un clic sur une teinte applique l'encre directe, exactement comme avant : mesuré, « Pantone Yellow C » (#FCEE21) sur un rectangle le fait passer de #CCCCCC à #FCEE21, l'objet reçoit le marqueur d'encre (_spSpotInk) et le <strong>nom de plaque</strong> « PANTONE YELLOW C » — celui du catalogue, donc la couche du PDF garde son vrai nom." data-i18n-en-html="Clicking a shade applies the spot ink exactly as before: measured, “Pantone Yellow C” (#FCEE21) on a rectangle turns it from #CCCCCC to #FCEE21, the object gets the ink marker (_spSpotInk) and the <strong>plate name</strong> “PANTONE YELLOW C” — the catalogue one, so the PDF layer keeps its real name." data-i18n-jp-html="色をクリックすると従来どおりインクが適用されます。実測：「Pantone Yellow C」（#FCEE21）を長方形に適用すると #CCCCCC から #FCEE21 になり、オブジェクトにインクのマーク（_spSpotInk）と<strong>版名</strong>「PANTONE YELLOW C」が設定されます（カタログの名称なので PDF のレイヤー名も正しいままです）。">Clicking a shade applies the spot ink (measured: #CCCCCC → #FCEE21) and keeps the catalogue plate name (PANTONE YELLOW C).</li>
+  <li data-i18n-fr-html="<strong>Le catalogue reste intact</strong> : mesuré, le sélecteur interne conserve ses 21 familles Pantone et ses 246 teintes, et le nuancier n'y ajoute rien (total 689 options, aucune teinte dupliquée). C'est ce qui garantit que la détection des tons directs, l'export CMJN + Pantone et l'aller-retour .sp restent identiques." data-i18n-en-html="<strong>The catalogue is untouched</strong>: measured, the internal selector keeps its 21 Pantone families and its 246 shades, and the swatch book adds nothing to it (689 options in total, no duplicated shade). That is what keeps spot-ink detection, CMYK + Pantone export and the .sp round-trip identical." data-i18n-jp-html="<strong>カタログはそのまま</strong>：実測では内部セレクターは 21 ファミリー／246 色を保持し、色見本は何も追加していません（合計 689 オプション、重複なし）。これにより、特色の検出・CMYK＋Pantone 書き出し・.sp の往復が従来どおり保たれます。">The internal catalogue keeps its 21 families and 246 shades (689 options, no duplicates), so spot detection, export and .sp round-trip are unchanged.</li>
+  <li data-i18n-fr-html="Comme les autres nuanciers, la ligne fonctionne aussi dans le <strong>widget détaché</strong> : les pastilles Pantone y sont relayées (identifiants stables spSwItem_pantone_…), un clic dans le widget applique l'encre de la même façon." data-i18n-en-html="Like the other swatch books, the row also works in the <strong>detached widget</strong>: the Pantone swatches are relayed there (stable ids spSwItem_pantone_…), and a click in the widget applies the ink the same way." data-i18n-jp-html="他の色見本と同様、<strong>切り離しウィジェット</strong>でも動作します（安定した ID spSwItem_pantone_…）。ウィジェット内のクリックでも同じようにインクが適用されます。">The row also works in the detached widget (stable ids, same ink application).</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.533 — Clic droit sur une page : libérer le gabarit (les éléments du gabarit deviennent des objets modifiables de la page) ===== -->
 
