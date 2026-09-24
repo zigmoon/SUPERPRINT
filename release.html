@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.537 — the .json keeps its four per-side margins, and the studio now returns the text-block frame, the freed-template marker and embedded fonts.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.538 — the page-template entry is now part of the right-click menu, with a release/lock toggle, and only appears on pages that have a template.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.537 — the .json keeps its four per-side margins, and the studio now returns the text-block frame, the freed-template marker and embedded fonts.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.538 — the page-template entry is now part of the right-click menu, with a release/lock toggle, and only appears on pages that have a template.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,24 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.538 — Clic droit : l'entrée « gabarit de la page » rejoint le menu (libérer / verrouiller) ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-538">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.538</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 24 septembre 2026" data-i18n-en="Released September 24, 2026" data-i18n-jp="2026年9月24日公開">Released September 24, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le clic droit sur une page affichait <strong>deux menus</strong> : le menu habituel et, par-dessus, un encart blanc réservé au gabarit. Cet encart est supprimé : l'entrée <strong>« Libérer le gabarit de cette page »</strong> est maintenant <strong>dans le menu du clic droit</strong>, avec les autres fonctions, et elle bascule en <strong>« Verrouiller le gabarit de cette page »</strong> une fois la page libérée. Ces deux actions n'apparaissent que sur les pages où un gabarit est appliqué." data-i18n-en-html="Right-clicking a page showed <strong>two menus</strong>: the usual one and, on top of it, a white box dedicated to the template. That box is gone: the <strong>“Release this page template”</strong> entry now lives <strong>in the right-click menu</strong> with the other functions, and toggles to <strong>“Lock this page template”</strong> once the page has been released. Both actions only appear on pages that have a template applied." data-i18n-jp-html="ページを右クリックすると<strong>2 つのメニュー</strong>が表示されていました（通常のメニューと、その上に重なるテンプレート専用の白いボックス）。このボックスを廃止し、<strong>「このページのテンプレートを解放」</strong>の項目を<strong>右クリックメニュー</strong>に統合しました。解放後は<strong>「このページのテンプレートをロック」</strong>に切り替わります。どちらもテンプレートが適用されているページにのみ表示されます。">The separate white box is gone; the template entry now lives in the right-click menu and toggles Release/Lock. Both actions only appear on pages that have a template.</p>
+
+ <h3 data-i18n-fr-html="🖱️ Une seule entrée, dans le menu, avec bascule <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🖱️ A single entry, in the menu, with a toggle <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🖱️ メニュー内の 1 項目、切り替え式 <span class=&quot;badge badge-fix&quot;>修正</span>">🖱️ A single entry, in the menu, with a toggle <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Plus d'encart blanc</strong> : mesuré, le clic droit ouvrait le menu des objets <em>et</em> un encart blanc par-dessus (il passait au premier plan). L'encart est retiré ; l'entrée est posée en bas du menu du clic droit, après <strong>Supprimer</strong>, avec une icône de cadenas." data-i18n-en-html="<strong>No more white box</strong>: measured, right-clicking opened the object menu <em>and</em> a white box on top of it (the box was painted above). The box is removed; the entry now sits at the bottom of the right-click menu, after <strong>Delete</strong>, with a padlock icon." data-i18n-jp-html="<strong>白いボックスを廃止</strong>：実測では、右クリックでオブジェクトメニュー<em>と</em>その上に白いボックスが開いていました（ボックスが手前に描画）。ボックスを削除し、項目は右クリックメニューの<strong>「削除」</strong>の下に南京錠アイコン付きで配置しました。">Right-clicking opened the object menu <em>and</em> a white box above it; the box is removed and the entry now sits at the bottom of the menu, after Delete.</li>
+  <li data-i18n-fr-html="<strong>Libérer ↔ Verrouiller</strong> : le libellé suit l'état de la page. « Verrouiller » est nouveau : les éléments libérés sont retirés et la page est de nouveau alimentée par le gabarit (Ctrl+Z fonctionne dans les deux sens)." data-i18n-en-html="<strong>Release ↔ Lock</strong>: the label follows the page state. “Lock” is new: the released elements are removed and the page is fed by the template again (Ctrl+Z works both ways)." data-i18n-jp-html="<strong>解放 ↔ ロック</strong>：ラベルはページの状態に追従します。「ロック」は新機能で、解放された要素を削除し、ページは再びテンプレートから供給されます（Ctrl+Z も双方向で機能）。">The label follows the page state; “Lock” is new and removes the released elements so the template feeds the page again (Ctrl+Z both ways).</li>
+  <li data-i18n-fr-html="<strong>Uniquement sur les pages à gabarit</strong> : l'entrée n'existe que si un gabarit est appliqué à la page cliquée. Une page sans gabarit n'affiche aucun menu dans le vide (le menu du navigateur reste disponible) et son menu d'objet garde ses entrées habituelles, sans l'entrée gabarit. En mode planche, seule la page cliquée est concernée." data-i18n-en-html="<strong>Only on pages with a template</strong>: the entry exists only if a template is applied to the clicked page. A page without a template shows no menu on an empty area (the browser menu stays available), and its object menu keeps its usual entries, without the template entry. In spread mode, only the clicked page is affected." data-i18n-jp-html="<strong>テンプレートがあるページのみ</strong>：項目はクリックしたページにテンプレートが適用されている場合にのみ存在します。テンプレートのないページでは空白部分にメニューは出ず（ブラウザのメニューは利用可能）、オブジェクトメニューはテンプレート項目なしの通常の内容のままです。見開きでは、クリックしたページのみが対象です。">The entry only exists when a template is applied to the clicked page; without one, an empty-area right-click shows no menu and the object menu keeps its usual entries. In spread mode only the clicked page is affected.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.537 — Fidélité des fichiers : les 4 marges du .json, le cadre de bloc et les polices du studio ===== -->
 

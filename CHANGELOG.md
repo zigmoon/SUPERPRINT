@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,13 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.538] — 2026-09-24
+
+_The page-template entry is now part of the right-click menu, with a release/lock toggle, and only appears on pages that have a template_
+
+### Changed
+- **The page-template action left its own white pop-in and joined the right-click menu** (user report: « lorsque je fais un clic droit sur une page de préview, il apparait automatiquement une popin blanche sur la popin du clic droit « page 1 - libérer le gabarit de cette page - fermer » … cette popin blanche doit être mise avec les autres fonctions du clic droit »). Measured: a right-click on a page opened **two** menus — `#spGabaritContextMenu` (white box, `z-index: 100000`, added by the v1.7.533 capture listener) and `#spObjectCtxMenu` (the dark object menu) — with the white one painted above the other. The white box and its listener are removed (6.5 kB); the entry is appended to `#spObjectCtxMenu`, at the bottom after « Delete », with a padlock icon. - **The label toggles: « Libérer le gabarit de cette page » ↔ « Verrouiller le gabarit de cette page »** (user report: « lorsque l’on actionne cette fonction, le texte change et dit « verrouiller la gabarit de cette page » »). **Locking is new**: `window.spVerrouillerGabaritPage()` removes the objects tagged `_spGabaritLibere` — the only ones that came from the released template, and only those of the clicked page in spread mode — then `renderAllPages()` feeds the page from the template again. `saveState()` is called, so the removal is persisted (.sp, export, reload) and Ctrl+Z returns to the released page. - **Both actions now appear only on pages that have a template** (user report: « Ces 2 actions ne sont possibles que sur les pages où un gabarit est appliqué »). `window.spEtatGabaritPage(pageIdx)` returns `null` when no template is assigned to the page; the menu entry is then absent. The object menu now also opens on an **empty** page area, but only when a template is applied there (otherwise the browser menu stays available, as before v1.7.533 — the white pop-in was what intercepted it everywhere). - **Measured after** (French labels): page with a template → right-click on an empty area = a single entry « Libérer le gabarit de cette page », no white pop-in; after the action = « Verrouiller le gabarit de cette page »; locking restores the template elements (template items 0 → 2, tagged objects 0 → 2 → 0), and `spEtatGabaritPage(0).libere` goes false → true → false. Page without a template → no menu on an empty area, and the usual object menu (9 entries) **without** the template entry. In spread mode, only the clicked page is affected.
 
 ## [1.7.537] — 2026-09-24
 

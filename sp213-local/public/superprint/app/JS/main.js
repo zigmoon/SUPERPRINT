@@ -10510,11 +10510,27 @@ window.spTestDiag = function () {
             return n;
         }
 
-        /* Libérer TOUS les éléments du gabarit de la page visée. */
-        window.spLibererGabaritPage = function (canvas, pt) {
+        /* Point d'ancrage pour spItemsGabarit() : il lui faut un POINT (en mode planche,
+           le point désigne la page visée). 🆕 v1.7.538 — on accepte aussi un INDEX de page :
+           le menu contextuel connaît la page du clic et n'a pas à fabriquer un point.
+           Sans cela, un appel avec un index retomberait sur pt = null et spItemsGabarit
+           libérerait les éléments des DEUX pages du double. */
+        function spPointDepuisPage(canvas, ptOuPage) {
+            try {
+                if (ptOuPage && typeof ptOuPage.x === 'number') return ptOuPage;
+                const info = (canvas && canvas.bleedInfo) || {};
+                if (typeof ptOuPage === 'number' && info.isSpread && typeof canvas.width === 'number') {
+                    return { x: (ptOuPage === info.leftPageIndex) ? 0 : canvas.width, y: 0 };
+                }
+                return null;
+            } catch (_) { return null; }
+        }
+
+        /* Libérer TOUS les éléments du gabarit de la page visée (POINT de clic ou INDEX). */
+        window.spLibererGabaritPage = function (canvas, ptOuPage) {
             try {
                 if (!canvas) return 0;
-                const items = spItemsGabarit(canvas, pt);
+                const items = spItemsGabarit(canvas, spPointDepuisPage(canvas, ptOuPage));
                 const n = spLibererElements(canvas, items, 'Libération du gabarit de page');
                 if (n && typeof showChainToast === 'function') {
                     showChainToast('Gabarit libéré : ' + n + ' élément(s) modifiable(s) sur cette page', 2800);
@@ -10523,116 +10539,79 @@ window.spTestDiag = function () {
             } catch (e) { console.warn('[liberer] page:', e); return 0; }
         };
 
-        /* ── Menu du clic droit ─────────────────────────────────────────────────────────── */
-        const SP_MENU_GABARIT_ID = 'spGabaritContextMenu';
+        /* ══════════════════════════════════════════════════════════════════════════════════
+           🆕 v1.7.538 — PLUS DE POP-IN BLANC : L'ENTRÉE VIT DANS LE MENU DU CLIC DROIT.
+           Demande utilisateur : « il apparait automatiquement une popin blanche sur la popin
+           du clic droit … cette popin blanche doit être mise avec les autres fonctions du
+           clic droit avec le texte "libérer le gabarit de cette page". Lorsque l'on actionne
+           cette fonction, le texte change et dit "verrouiller le gabarit de cette page".
+           Ces 2 actions ne sont possibles que sur les pages où un gabarit est appliqué. »
+           → L'entrée est posée par initObjectRightClickMenu() dans #spObjectCtxMenu, et
+             SEULEMENT si spEtatGabaritPage() renvoie un état (gabarit APPLIQUÉ à la page
+             cliquée). Le libellé bascule : « Libérer… », puis « Verrouiller… ».
+           ══════════════════════════════════════════════════════════════════════════════════ */
 
-        /* 🩹 v1.7.533b — FERMETURE PROPRE : les écouteurs posés à l'ouverture sont RETIRÉS, et
-           un clic DANS le menu ne le ferme pas (sinon l'entrée disparaissait avant son clic :
-           mesuré — le menu s'affichait mais « Libérer le gabarit... » ne faisait rien). */
-        function spClicHorsMenu(ev) {
-            const m = document.getElementById(SP_MENU_GABARIT_ID);
-            if (m && ev && ev.target && m.contains(ev.target)) return;
-            spFermerMenuGabarit();
-        }
-        function spToucheMenu(ev) {
-            if (ev && ev.key === 'Escape') spFermerMenuGabarit();
-        }
-        function spFermerMenuGabarit() {
-            const m = document.getElementById(SP_MENU_GABARIT_ID);
-            if (m && m.parentNode) m.parentNode.removeChild(m);
-            document.removeEventListener('mousedown', spClicHorsMenu, true);
-            document.removeEventListener('wheel', spFermerMenuGabarit, true);
-            document.removeEventListener('keydown', spToucheMenu, true);
-            window.removeEventListener('blur', spFermerMenuGabarit, true);
-        }
+        /* État du gabarit d'une page, ou NULL si AUCUN gabarit n'y est appliqué
+           (règle utilisateur : les deux actions n'existent que sur ces pages). */
+        window.spEtatGabaritPage = function (pageIdx) {
+            try {
+                if (typeof pageIdx !== 'number' || !isFinite(pageIdx) || pageIdx < 0) return null;
+                const masterId = (pageMasterAssignments && pageMasterAssignments[pageIdx]) || null;
+                const gabarit = (masterId && masterPages && masterPages[masterId]) ? masterPages[masterId] : null;
+                if (!gabarit) return null;
+                const libere = (typeof window.spPageGabaritLibere === 'function')
+                    ? !!window.spPageGabaritLibere(pageIdx) : false;
+                return { pageIdx: pageIdx, masterId: masterId, nom: gabarit.name || '', libere: libere };
+            } catch (_) { return null; }
+        };
 
-        function spMenuGabarit(canvas, pt, clientX, clientY) {
-            spFermerMenuGabarit();
-            const pageIdx = spPageDuPoint(canvas, pt);
-            const items = spItemsGabarit(canvas, pt);
-            const libere = (pageIdx !== null && typeof spPageGabaritLibere === 'function')
-                ? spPageGabaritLibere(pageIdx) : false;
-            const info = canvas.bleedInfo || {};
-            const nPage = (typeof pageIdx === 'number') ? (pageIdx + 1) : '?';
-            const nomGabarit = (pageIdx !== null && pageMasterAssignments && pageMasterAssignments[pageIdx]
-                && masterPages && masterPages[pageMasterAssignments[pageIdx]])
-                ? masterPages[pageMasterAssignments[pageIdx]].name : null;
+        /* Nombre d'éléments de gabarit encore posés sur la page (0 si la page est libérée). */
+        window.spNombreElementsGabaritPage = function (canvas, pageIdx) {
+            try { if (!canvas) return 0; return spItemsGabarit(canvas, spPointDepuisPage(canvas, pageIdx)).length; }
+            catch (_) { return 0; }
+        };
 
-            const menu = document.createElement('div');
-            menu.id = SP_MENU_GABARIT_ID;
-            menu.style.cssText = 'position:fixed;z-index:100000;background:#ffffff;border:1px solid #d5d5d5;' +
-                'border-radius:7px;box-shadow:0 10px 30px rgba(0,0,0,.20);padding:5px;min-width:250px;' +
-                'font:12px/1.45 "Open Sans",system-ui,-apple-system,sans-serif;color:#222;user-select:none;';
-
-            const titre = document.createElement('div');
-            titre.textContent = 'Page ' + nPage + (info.isSpread ? (pt.x < ((typeof info.centerX === 'number') ? info.centerX : canvas.width / 2) ? ' (gauche)' : ' (droite)') : '')
-                + (nomGabarit ? ' · ' + nomGabarit : '');
-            titre.style.cssText = 'padding:5px 9px 6px;font-weight:700;font-size:11px;text-transform:uppercase;' +
-                'letter-spacing:.4px;color:#6b6b6b;border-bottom:1px solid #eee;margin-bottom:4px;';
-            menu.appendChild(titre);
-
-            const entree = (texte, actif, titreInfo, action) => {
-                const d = document.createElement('div');
-                d.textContent = texte;
-                d.title = titreInfo || '';
-                d.style.cssText = 'padding:7px 9px;border-radius:4px;white-space:nowrap;cursor:' +
-                    (actif ? 'pointer' : 'default') + ';color:' + (actif ? '#185abc' : '#9aa0a6') + ';font-weight:' + (actif ? '600' : '400') + ';';
-                if (actif) {
-                    d.addEventListener('mouseenter', function () { d.style.background = '#eef3ff'; });
-                    d.addEventListener('mouseleave', function () { d.style.background = ''; });
-                    d.addEventListener('click', function (ev) {
-                        ev.stopPropagation();
-                        spFermerMenuGabarit();
-                        try { action(); } catch (e) { console.warn('[liberer] action:', e); }
-                    });
+        /* ══════════════════════════════════════════════════════════════════════════════════
+           VERROUILLER LE GABARIT D'UNE PAGE — opération INVERSE de la libération.
+           La libération ÉTIQUETTE les éléments du gabarit (_spGabaritLibere, v1.7.533) ;
+           verrouiller retire ces éléments de la page. La marque disparaissant de
+           pages[].objects, addSpecialTextObjectsToCanvas() réalimente la page avec le
+           gabarit : elle est de nouveau « verrouillée ».
+           ⚠️ En mode planche le canvas porte DEUX pages : on ne retire que les objets de la
+           page visée (ils doivent être du bon côté du pli), sinon verrouiller une page
+           supprimerait les objets libérés de l'autre.
+           ⚠️ On ne rappelle PAS addSpecialTextObjectsToCanvas() directement : il ne purge ni
+           les folios ni les items de gabarit déjà posés (doublons). renderAllPages() relit
+           pages[] et réinjecte proprement.
+           ══════════════════════════════════════════════════════════════════════════════════ */
+        window.spVerrouillerGabaritPage = function (canvas, pageIdx) {
+            try {
+                if (!canvas) return 0;
+                const info = canvas.bleedInfo || {};
+                const centre = (typeof info.centerX === 'number') ? info.centerX : (canvas.width / 2);
+                const estDeCettePage = function (o) {
+                    if (!o) return false;
+                    if (!info.isSpread || typeof pageIdx !== 'number') return true;
+                    const aGauche = (typeof o.left === 'number') && o.left < centre;
+                    return (pageIdx === info.leftPageIndex) ? aGauche : !aGauche;
+                };
+                const aRetirer = canvas.getObjects().filter(function (o) {
+                    return o && o._spGabaritLibere === true && estDeCettePage(o);
+                });
+                if (!aRetirer.length) return 0;
+                aRetirer.forEach(function (o) { try { canvas.remove(o); } catch (_) {} });
+                try { canvas.discardActiveObject(); } catch (_) {}
+                try { canvas.requestRenderAll(); } catch (_) {}
+                /* saveState() sérialise pages[] : le retrait est persisté (.sp, export,
+                   rechargement) et Ctrl+Z revient à la page libérée. */
+                try { if (typeof saveState === 'function') saveState('Verrouillage du gabarit de page'); } catch (_) {}
+                try { if (typeof renderAllPages === 'function') renderAllPages(); } catch (_) {}
+                if (typeof showChainToast === 'function') {
+                    showChainToast('Gabarit verrouillé de nouveau sur cette page (' + aRetirer.length + ' élément(s) retiré(s))', 2800);
                 }
-                menu.appendChild(d);
-                return d;
-            };
-
-            entree('Libérer le gabarit de cette page' + (items.length ? '  (' + items.length + ' élément' + (items.length > 1 ? 's' : '') + ')' : ''),
-                items.length > 0,
-                items.length ? 'Les éléments du gabarit deviennent des objets de cette page' :
-                    (libere ? 'Gabarit déjà libéré sur cette page' : 'Aucun élément de gabarit sur cette page'),
-                function () { window.spLibererGabaritPage(canvas, pt); });
-
-            entree('Fermer', true, '', function () {});
-
-            document.body.appendChild(menu);
-            const r = menu.getBoundingClientRect();
-            menu.style.left = Math.max(4, Math.min(clientX, window.innerWidth - r.width - 6)) + 'px';
-            menu.style.top = Math.max(4, Math.min(clientY, window.innerHeight - r.height - 6)) + 'px';
-
-            setTimeout(function () {
-                document.removeEventListener('mousedown', spClicHorsMenu, true);
-                document.removeEventListener('wheel', spFermerMenuGabarit, true);
-                document.removeEventListener('keydown', spToucheMenu, true);
-                document.addEventListener('mousedown', spClicHorsMenu, true);
-                document.addEventListener('wheel', spFermerMenuGabarit, true);
-                document.addEventListener('keydown', spToucheMenu, true);
-                window.addEventListener('blur', spFermerMenuGabarit, true);
-            }, 0);
-            return true;
-        }
-        window.spMenuGabarit = spMenuGabarit;
-        window.spFermerMenuGabarit = spFermerMenuGabarit;
-
-        /* Un seul écouteur délégué : les canevas de page sont recréés à chaque rendu. */
-        if (!window._spMenuGabaritCable) {
-            window._spMenuGabaritCable = true;
-            document.addEventListener('contextmenu', function (e) {
-                try {
-                    if (!e || !e.target) return;
-                    const canvas = spCanevasDeElement(e.target);
-                    if (!canvas) return;            /* hors page (panneaux, éditeur de gabarit…) */
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const pt = (typeof canvas.getPointer === 'function') ? canvas.getPointer(e) : null;
-                    if (!pt) { spFermerMenuGabarit(); return; }
-                    spMenuGabarit(canvas, pt, e.clientX, e.clientY);
-                } catch (err) { console.warn('[liberer] menu:', err); }
-            }, true);
-        }
+                return aRetirer.length;
+            } catch (e) { console.warn('[verrouiller] page:', e); return 0; }
+        };
 
         function addSpecialTextObjectsToCanvas(fabricCanvas, pageIndex, position) {
             if (!fabricCanvas) return;
@@ -88824,7 +88803,10 @@ function initObjectRightClickMenu() {
         // 🆕 Texte dessus : ligne courbe avec un "T" centré dessus
         textOn:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c4-8 14-8 18 0"/><path d="M9 8h6M12 8v6" stroke-width="2"/></svg>',
         // 🆕 v1.7.132 Éditer le texte : "T" + crayon
-        textEdit:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h10M10 5v10" stroke-width="2"/><path d="M14 19l5-5 2 2-5 5-2-0z"/><path d="M14 19l-2 0 0-2"/></svg>'
+        textEdit:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h10M10 5v10" stroke-width="2"/><path d="M14 19l5-5 2 2-5 5-2-0z"/><path d="M14 19l-2 0 0-2"/></svg>',
+        // 🆕 v1.7.538 — GABARIT DE PAGE : cadenas fermé (verrouiller) et ouvert (libérer).
+        tplLock:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="1.5"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/><circle cx="12" cy="15.7" r="1.2"/></svg>',
+        tplUnlock: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="1.5"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 8.6-1.85"/><circle cx="12" cy="15.7" r="1.2"/></svg>'
     };
 
     // 🆕 v1.7.133 : i18n minimaliste pour les libellés du menu contextuel.
@@ -88878,9 +88860,36 @@ function initObjectRightClickMenu() {
     };
 
     // ----- Build & show -----
-    const showMenu = (x, y, canvas, obj) => {
+    /* 🆕 v1.7.538 — GABARIT DE PAGE VU DEPUIS LE MENU CONTEXTUEL.
+       Le menu sait sur QUELLE page le clic a eu lieu (en planche : moitié gauche ou droite) :
+       spPageDuPoint() n'est pas accessible ici (autre portée), on relit donc bleedInfo, qui
+       porte pageIndex (page seule) ou leftPageIndex/rightPageIndex + centerX (planche).
+       spEtatGabaritPourPoint() renvoie null si AUCUN gabarit n'est appliqué à cette page —
+       c'est la condition demandée pour que les deux actions existent. */
+    const spPageIdxPourPoint = (canvas, pt) => {
+        try {
+            const info = (canvas && canvas.bleedInfo) || {};
+            if (info.isSpread) {
+                const cx = (typeof info.centerX === 'number') ? info.centerX : (canvas.width / 2);
+                const x = (pt && typeof pt.x === 'number') ? pt.x : cx;
+                return (x < cx) ? info.leftPageIndex : info.rightPageIndex;
+            }
+            return (typeof info.pageIndex === 'number') ? info.pageIndex : null;
+        } catch (_) { return null; }
+    };
+    const spEtatGabaritPourPoint = (canvas, pt) => {
+        try {
+            if (typeof window.spEtatGabaritPage !== 'function') return null;
+            return window.spEtatGabaritPage(spPageIdxPourPoint(canvas, pt));
+        } catch (_) { return null; }
+    };
+
+    const showMenu = (x, y, canvas, obj, pt) => {
         ensureUI();
         menu.innerHTML = '';
+        /* 🆕 v1.7.538 — les entrées d'OBJET n'existent que s'il y a un objet : le menu
+           s'ouvre aussi sur une page SANS objet, pour y proposer le gabarit de page. */
+        if (obj) {
         // 🛡️ FIX 2026-05-11 : item "Modifier le tracé" en tête pour les chemins plume
         if (obj && obj._simplePenData) {
             menu.appendChild(mkItem(ICON.pen, t('Modifier le tracé (plume)', 'Edit path (pen)'), '', () => actEditPenPath(canvas, obj)));
@@ -88998,6 +89007,29 @@ function initObjectRightClickMenu() {
         menu.appendChild(mkItem(ICON.dup,      t('Dupliquer',     'Duplicate'),       'Ctrl+D', () => actDuplicate(canvas, obj)));
         menu.appendChild(mkSep());
         menu.appendChild(mkItem(ICON.del,      t('Supprimer',     'Delete'),          t('Suppr', 'Del'), () => actDelete(canvas, obj), { danger: true }));
+        }   /* fin des entrées d'OBJET */
+
+        /* ══════════════════════════════════════════════════════════════════════════════
+           🆕 v1.7.538 — GABARIT DE PAGE (remplace le pop-in blanc de la v1.7.533).
+           Entrée présente UNIQUEMENT si un gabarit est appliqué à la page cliquée.
+           Libellé = état COURANT : « Libérer… » tant que le gabarit alimente la page,
+           « Verrouiller… » dès que la page a été libérée (clic droit suivant).
+           ══════════════════════════════════════════════════════════════════════════════ */
+        {
+            const _etatGab = spEtatGabaritPourPoint(canvas, pt);
+            if (_etatGab) {
+                menu.appendChild(mkSep());
+                if (_etatGab.libere) {
+                    menu.appendChild(mkItem(ICON.tplLock,
+                        t('Verrouiller le gabarit de cette page', 'Lock this page template'), '',
+                        () => window.spVerrouillerGabaritPage(canvas, _etatGab.pageIdx)));
+                } else {
+                    menu.appendChild(mkItem(ICON.tplUnlock,
+                        t('Libérer le gabarit de cette page', 'Release this page template'), '',
+                        () => window.spLibererGabaritPage(canvas, _etatGab.pageIdx)));
+                }
+            }
+        }
 
         backdrop.style.display = 'block';
         menu.style.display = 'block';
@@ -89049,13 +89081,28 @@ function initObjectRightClickMenu() {
 
         // Fallback to active object if findTarget yields nothing useful
         if (!target) target = canvas.getActiveObject();
-        if (!target || isSystemObject(target)) return;
+        if (target && isSystemObject(target)) target = null;
+
+        /* 🆕 v1.7.538 — la POSITION DU CLIC désigne la page (mode planche). */
+        let pt = null;
+        try { pt = (typeof canvas.getPointer === 'function') ? canvas.getPointer(e) : null; } catch (_) { pt = null; }
+
+        if (!target) {
+            /* Aucun objet sous le curseur : le menu ne s'ouvre QUE si un gabarit est
+               appliqué à cette page (entrée « Libérer / Verrouiller le gabarit de cette
+               page »). Sinon on laisse le menu natif du navigateur, comme avant le pop-in
+               blanc de la v1.7.533 — c'est ce pop-in qui l'interceptait partout. */
+            if (!spEtatGabaritPourPoint(canvas, pt)) { hide(); return; }
+            e.preventDefault();
+            showMenu(e.clientX, e.clientY, canvas, null, pt);
+            return;
+        }
 
         // Activate the object so subsequent shortcuts apply to it
         try { canvas.setActiveObject(target); canvas.requestRenderAll(); } catch (_) {}
 
         e.preventDefault();
-        showMenu(e.clientX, e.clientY, canvas, target);
+        showMenu(e.clientX, e.clientY, canvas, target, pt);
     }, true);
 
     // Fermeture : Escape / redimensionnement / clic a l'exterieur (backdrop).
