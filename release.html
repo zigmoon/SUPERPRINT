@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.539 — the tab-stop ruler only shows when the Tabulation function is switched on, instead of appearing on every text block you edit.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.540 — the Contour text-wrap option really follows the shape now (pixel contour detection) instead of copying the bounding box.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.539 — the tab-stop ruler only shows when the Tabulation function is switched on, instead of appearing on every text block you edit.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.540 — the Contour text-wrap option really follows the shape now (pixel contour detection) instead of copying the bounding box.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,25 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.540 — Habillage : l'option « Contour » épouse vraiment la forme ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-540">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.540</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 24 septembre 2026" data-i18n-en="Released September 24, 2026" data-i18n-jp="2026年9月24日公開">Released September 24, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Dans l'habillage du texte, les options <strong>Boîte</strong> et <strong>Contour</strong> donnaient exactement le même résultat : le contour était calculé à partir des quatre coins de l'objet, donc de sa boîte englobante. L'audit a confirmé le défaut, puis le contour a été réécrit : <strong>il détecte maintenant la forme réelle</strong> (cercle, étoile, tracé, image détourée)." data-i18n-en-html="In text wrap, the <strong>Bounding box</strong> and <strong>Contour</strong> options gave exactly the same result: the contour was computed from the object's four corners, i.e. its bounding box. The audit confirmed the defect, then the contour was rewritten: <strong>it now detects the real shape</strong> (circle, star, path, cut-out image)." data-i18n-jp-html="テキスト回り込みの<strong>バウンディングボックス</strong>と<strong>輪郭</strong>はまったく同じ結果でした。輪郭はオブジェクトの四隅（つまり外接矩形）から計算されていたためです。監査で不具合を確認し、輪郭を再実装しました。<strong>実際の形状を検出します</strong>（円・星・パス・切り抜き画像）。">Bounding box and Contour gave the same result because the contour was derived from the object's four corners. It now detects the real shape.</p>
+
+ <h3 data-i18n-fr-html="🔎 Audit de l'habillage : « Contour » fait enfin quelque chose <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🔎 Text-wrap audit: “Contour” finally does something <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🔎 回り込みの監査：「輪郭」がようやく機能 <span class=&quot;badge badge-fix&quot;>修正</span>">🔎 Text-wrap audit: “Contour” finally does something <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Le défaut, mesuré</strong> : sur un cercle de 141 px posé sur un bloc texte, les 26 bandes du « Contour » faisaient toutes <strong>153 px</strong> — soit exactement la boîte englobante augmentée du décalage — et le texte sortait à l'identique en Boîte et en Contour (9 lignes, mêmes largeurs au dixième de pixel près)." data-i18n-en-html="<strong>The defect, measured</strong>: on a 141 px circle over a text frame, all 26 “Contour” bands were <strong>153 px</strong> wide — exactly the bounding box plus the offset — and the text came out identical in Bounding box and Contour (9 lines, same widths to a tenth of a pixel)." data-i18n-jp-html="<strong>実測された不具合</strong>：141 px の円では、「輪郭」の 26 バンドがすべて<strong>153 px</strong>（外接矩形＋余白）で、バウンディングボックスと輪郭でテキストが完全に同じでした（9 行、行幅もほぼ同一）。">All 26 Contour bands were 153 px wide (= the bounding box) and the text was identical in both modes.</li>
+  <li data-i18n-fr-html="<strong>La cause</strong> : le contour était déduit de la fonction « coins de l'objet » de Fabric, qui ne renvoie jamais que les quatre coins de la boîte — quelle que soit la forme dessinée." data-i18n-en-html="<strong>The cause</strong>: the contour was derived from Fabric's object-corners function, which only ever returns the four corners of the box — whatever shape is drawn." data-i18n-jp-html="<strong>原因</strong>：輪郭は Fabric の「オブジェクトの四隅」から取得されており、描かれた形状に関係なく常に外接矩形の四隅しか返しません。">The cause: the contour was derived from Fabric's object corners, which only return the bounding box.</li>
+  <li data-i18n-fr-html="<strong>Le nouveau contour</strong> : l'objet est analysé une fois, bande par bande, sur ses pixels réellement opaques — la méthode des logiciels de PAO. Mesuré : le cercle donne un profil de <strong>63 → 153 → 67 px</strong> et le triangle de <strong>17 → 133 px</strong> ; le texte passe alors <strong>dans les creux</strong> de la forme (80 pixels de texte mesurés dans un coin de la boîte du cercle, contre 0 en mode Boîte) et le bloc compte 7 lignes au lieu de 9. Le mode Boîte, lui, est inchangé (non-régression vérifiée), et l'analyse est mise en cache : 3 recalculs complets = 4,2 ms." data-i18n-en-html="<strong>The new contour</strong>: the object is analysed once, band by band, on its actually opaque pixels — the method used by layout applications. Measured: the circle gives a profile of <strong>63 → 153 → 67 px</strong> and the triangle <strong>17 → 133 px</strong>; the text then flows <strong>into the shape's hollows</strong> (80 text pixels measured inside a corner of the circle's box, against 0 in Bounding box mode) and the frame holds 7 lines instead of 9. Bounding box mode is unchanged (non-regression checked), and the analysis is cached: 3 full reflows = 4.2 ms." data-i18n-jp-html="<strong>新しい輪郭</strong>：オブジェクトを一度だけ、実際に不透明なピクセルでバンドごとに解析します（DTP ソフトの手法）。実測：円は<strong>63 → 153 → 67 px</strong>、三角形は<strong>17 → 133 px</strong>のプロファイルになり、テキストは形状の<strong>くぼみ</strong>に入り込みます（円の外接矩形の角に 80 ピクセルのテキストを計測、バウンディングボックスでは 0）。行数は 9 から 7 に減りました。バウンディングボックスは従来どおり（非回帰を確認済み）、解析はキャッシュされ、3 回の再計算で 4.2 ms です。">The object is scanned band by band on its opaque pixels: the circle profile is 63 → 153 → 67 px, the triangle 17 → 133 px, the text now flows into the hollows (80 pixels measured where the box is empty) and the frame holds 7 lines instead of 9. Bounding box mode is unchanged; the analysis is cached (3 reflows = 4.2 ms).</li>
+  <li data-i18n-fr-html="<strong>L'aide a été complétée</strong> : la fenêtre d'habillage dit maintenant ce que fait chaque mode (Boîte = le texte s'arrête au rectangle, Contour = il épouse la forme réelle, image détourée comprise)." data-i18n-en-html="<strong>The help text was completed</strong>: the wrap dialog now states what each mode does (Bounding box = the text stops at the rectangle, Contour = it follows the real shape, cut-out images included)." data-i18n-jp-html="<strong>ヘルプを追記</strong>：回り込みダイアログに各モードの説明を追加しました（バウンディングボックス＝矩形で停止、輪郭＝実際の形状に沿う、切り抜き画像も対応）。">The wrap dialog now explains what each mode does.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.539 — La règle des taquets ne s'affiche plus toute seule : elle suit la fonction Tabulation ===== -->
 

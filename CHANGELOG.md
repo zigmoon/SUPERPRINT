@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,13 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.540] — 2026-09-24
+
+_The Contour text-wrap option really follows the shape now, instead of copying the bounding box_
+
+### Fixed
+- **The Contour wrap option did exactly the same thing as Bounding box** (user report: « dans superprint, dans text wrap, je ne vois pas de différence entre l’option « Bounding box » et « Contour ». Peux-tu auditer cela ? »). Measured on the bench (141 px circle and 121 px triangle over a text frame): `shapeBands()` returned 26 bands **all equal to the bounding box** (153 px for the circle, 133 px for the triangle), and the text was identical in both modes — 9 lines, widths 283.8 / 286.1 / 288.4 / 38.1 / 49.5 / 33.9 / 41.1 / 43.9 / 34.1 px. **Cause**: the contour was derived from `obj.getCoords()`. Fabric only overrides `getCoords()` for the bounding box: an object always returns its four corners, whatever shape it draws. Contour could not differ from Bounding box. - **The contour is now detected from the pixels** (`bandsEncre()`, `_SP_HABILLAGE_540`): the object is rasterised once into an offscreen canvas (capped at 480 px) and, over 28 horizontal bands, the min/max x of the **non-transparent pixels** is recorded — the « detect edges » method of layout applications. A circle, a star, a pen path, a vectorised glyph and the silhouette of a cut-out image are all covered by the same code. The result is cached by a geometry signature (the reflow calls the function at every line), and the fallback stays the bounding box when rasterisation is impossible (tainted canvas from a cross-origin image, object with no ink, render failure). - `shapeBands()` applies the standoff to the ink bands (so the cache does not depend on the offset) and returns `xmin = xmax = null` for a band with **no ink**; `lineWidthFor()` then **ignores the obstacle on that height** (corners of a circle, tip of a triangle, hollow of a star) instead of falling back to the bounding box. - **The wrap dialog help now states what each mode does**: Bounding box = the text stops at the object rectangle, Contour = it follows the real shape (circle, star, cut-out image, path). - **Measured after**: circle profile 63 → 153 → 67 px (was 153 px everywhere), triangle 17 → 133 px; the text in Contour mode is **7 lines** instead of 9; **80 text pixels** were measured inside a corner of the circle’s box (an area the box covers but the disc does not) in Contour mode, against **0** in Bounding box mode — the text really flows into the hollows of the shape. Non-regression: the Bounding box line widths are unchanged. Performance: 3 full reflows = **4.2 ms** (warm cache).
 
 ## [1.7.539] — 2026-09-24
 

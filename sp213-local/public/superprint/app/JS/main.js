@@ -5039,91 +5039,115 @@ if (window._spGpuEnabled) {
     return { t: n(obj._spWrapTop), l: n(obj._spWrapLeft), b: n(obj._spWrapBottom), r: n(obj._spWrapRight) };
   }
 
-  // ── Bandes horizontales pour un habillage qui épouse la forme ─────────────
-  //   On échantillonne le contour de l'objet sur sa hauteur et on retient,
-  //   bande par bande, le min/max horizontal. Un cercle donne donc une largeur
-  //   qui rétrécit vers le haut et le bas.
+  // ── Bandes horizontales d'un habillage qui épouse la forme ───────────────
+  //   🆕 v1.7.540 — AUDIT : « je ne vois pas de différence entre Bounding box et Contour. »
+  //   MESURE DU DÉFAUT : cette fonction construisait le contour avec obj.getCoords(),
+  //   c'est-à-dire les QUATRE COINS DE LA BOÎTE (Fabric ne surcharge getCoords() que pour
+  //   la boîte, jamais pour la forme réelle). Mesuré sur un cercle de 141 px : 26 bandes
+  //   toutes larges de 153 px (= boîte + décalage) et un texte rigoureusement identique en
+  //   'box' et en 'shape' — l'option « Contour » ne faisait donc RIEN.
+  //
+  //   NOUVELLE MÉTHODE : on RASTÉRISE l'objet une fois (canvas hors écran borné à 480 px)
+  //   et on relève, bande par bande, le min/max x des pixels NON TRANSPARENTS. C'est la
+  //   « détection des contours » d'un logiciel de PAO : elle épouse un cercle, un triangle,
+  //   une étoile, un tracé plume, un glyphe vectorisé ET la silhouette d'une image détourée.
+  //   ⚠️ Le résultat est mis en cache (le reflow appelle la fonction à CHAQUE ligne) et on
+  //   retombe proprement sur la boîte englobante si la rastérisation est impossible : canvas
+  //   « tainté » par une image d'un autre domaine, objet sans render, objet sans aucun pixel
+  //   d'encre (opacité 0, fill transparent sans contour…).
   var BAND_COUNT = 28;
-  function shapeBands(obj, so) {
+
+  /* Cache des bandes d'encre : signature de géométrie -> bandes (ou null = on renonce).
+     ⚠️ La signature NE contient PAS le décalage : celui-ci est appliqué après coup, donc
+     changer le décalage ne relance aucune rastérisation. */
+  var _contourCache = {};
+  var _contourOrdre = [];
+  var CONTOUR_CACHE_MAX = 40;
+
+  function contourSignature(obj, bb) {
+    return [obj.type,
+      Math.round(bb.left * 10), Math.round(bb.top * 10),
+      Math.round(bb.width * 10), Math.round(bb.height * 10),
+      Math.round((obj.angle || 0) * 10), obj.flipX ? 1 : 0, obj.flipY ? 1 : 0,
+      String(obj.fill || ''), String(obj.stroke || ''), Math.round((obj.strokeWidth || 0) * 100),
+      Math.round(obj.rx || 0), Math.round(obj.ry || 0), Math.round(obj.radius || 0),
+      obj.path ? obj.path.length : 0, obj.points ? obj.points.length : 0,
+      (typeof obj.opacity === 'number') ? Math.round(obj.opacity * 100) : 100,
+      obj.visible === false ? 0 : 1].join('|');
+  }
+
+  /* Bandes d'encre, en coordonnées scène, SANS décalage. Une bande sans encre porte
+     xmin = xmax = null : l'appelant doit alors ignorer l'objet sur cette hauteur. */
+  function bandsEncre(obj) {
     var bb;
     try { bb = obj.getBoundingRect(true, true); } catch (_) { return null; }
-    if (!bb || !(bb.height > 0) || !(bb.width > 0)) return null;
-
-    var pts = null;
+    if (!bb || !(bb.width > 0) || !(bb.height > 0)) return null;
+    var cle = contourSignature(obj, bb);
+    if (Object.prototype.hasOwnProperty.call(_contourCache, cle)) return _contourCache[cle];
+    var res = null;
     try {
-      if (typeof obj.getCoords === 'function') {
-        var c = obj.getCoords();
-        if (c && c.length >= 3) pts = [];
-        if (pts) for (var i = 0; i < c.length; i++) pts.push({ x: c[i].x, y: c[i].y });
-      }
-    } catch (_) { pts = null; }
-    if (!pts || pts.length < 3) return null;
-
-    var top = bb.top - so.t, bottom = bb.top + bb.height + so.b;
-    var h = bottom - top;
-    if (!(h > 0)) return null;
-
-    var bands = [];
-    var step = h / BAND_COUNT;
-    for (var b = 0; b < BAND_COUNT; b++) {
-      var y0 = top + b * step;
-      var yc = y0 + step / 2;
-      var xs = [];
-      for (var k = 0; k < pts.length; k++) {
-        var p1 = pts[k], p2 = pts[(k + 1) % pts.length];
-        if ((p1.y <= yc && p2.y > yc) || (p2.y <= yc && p1.y > yc)) {
-          var t = (yc - p1.y) / (p2.y - p1.y);
-          xs.push(p1.x + t * (p2.x - p1.x));
+      var ech = Math.min(1, 480 / Math.max(bb.width, bb.height));
+      var w = Math.max(4, Math.ceil(bb.width * ech));
+      var h = Math.max(8, Math.ceil(bb.height * ech));
+      var cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      var ctx = cv.getContext('2d');
+      if (ctx) {
+        ctx.save();
+        ctx.setTransform(ech, 0, 0, ech, -ech * bb.left, -ech * bb.top);
+        obj.render(ctx);
+        ctx.restore();
+        /* Peut lever sur un canvas « tainté » (image d'un autre domaine) : on renonce. */
+        var data = ctx.getImageData(0, 0, w, h).data;
+        var bands = [], pas = h / BAND_COUNT, bandesEncre = 0;
+        for (var b = 0; b < BAND_COUNT; b++) {
+          var y0 = Math.floor(b * pas);
+          var y1 = Math.min(h, Math.max(y0 + 1, Math.floor((b + 1) * pas)));
+          var minX = -1, maxX = -1;
+          for (var y = y0; y < y1; y++) {
+            var base = y * w * 4;
+            for (var x = 0; x < w; x++) {
+              if (data[base + x * 4 + 3] > 8) {
+                if (minX < 0 || x < minX) minX = x;
+                if (x > maxX) maxX = x;
+              }
+            }
+          }
+          var yA = bb.top + y0 / ech, yB = bb.top + y1 / ech;
+          if (maxX < 0) bands.push([yA, yB, null, null]);
+          else {
+            bandesEncre++;
+            bands.push([yA, yB, bb.left + minX / ech, bb.left + (maxX + 1) / ech]);
+          }
         }
+        if (bandesEncre >= 1) res = bands;
       }
-      if (xs.length < 2) continue;
-      xs.sort(function (a, c2) { return a - c2; });
-      bands.push([y0, y0 + step, xs[0] - so.l, xs[xs.length - 1] + so.r]);
+    } catch (_) { res = null; }
+    _contourCache[cle] = res;   /* null mémorisé : on ne réessaie pas à chaque ligne */
+    _contourOrdre.push(cle);
+    while (_contourOrdre.length > CONTOUR_CACHE_MAX) {
+      try { delete _contourCache[_contourOrdre.shift()]; } catch (_) { break; }
     }
-    return bands.length >= 2 ? bands : null;
-  }
-
-  // ── Largeur libre pour une ligne visuelle donnée ──────────────────────────
-  //   Renvoie la largeur maximale que la ligne peut occuper, en partant de la
-  //   gauche du bloc (le texte est poussé à la ligne suivante quand l'objet
-  //   bloque — comme le fait tout logiciel de PAO).
-  /* ── v1.7.460 — DÉCALAGE VERTICAL RÉEL DU TEXTE DANS SON CADRE ─────────
-     Le texte n'est pas toujours dessiné depuis le haut du cadre : le
-     retrait haut (_spInsetTop) et la justification verticale (Centre /
-     Pied) le descendent. MESURÉ (bloc 400 × 280) : encre à 2,7 px sous le
-     coin haut-gauche sans réglage, 42,8 px avec _spInsetTop = 40 et
-     77,4 px en Pied — le bloc, lui, ne bouge pas. Le masque appliquait déjà
-     cette quantité ; l'habillage doit lire LA MÊME valeur, sinon le bandeau
-     testé et le bandeau dessiné divergent (défaut mesuré : lignes
-     contraintes identiques avec ET sans retrait haut).
-     Une seule formule, deux appelants : masque + habillage. */
-  function masqueDecalage(textbox, frameHeightOption) {
-    var res = 0;
-    try {
-      if (!textbox) return 0;
-      var inTop = (typeof textbox._spInsetTop === 'number' && textbox._spInsetTop > 0) ? textbox._spInsetTop : 0;
-      var inBot = (typeof textbox._spInsetBottom === 'number' && textbox._spInsetBottom > 0) ? textbox._spInsetBottom : 0;
-      var val = textbox._spVAlign || 'top';
-      res += inTop;
-      if (val !== 'top') {
-        var frameH = (typeof frameHeightOption === 'number' && frameHeightOption > 0)
-          ? frameHeightOption
-          : ((typeof textbox._fixedHeight === 'number' && textbox._fixedHeight > 0) ? textbox._fixedHeight : (textbox.height || 0));
-        var utile = Math.max(0, frameH - inTop - inBot);
-        var total = 0;
-        var Hm = (typeof window.spTextMetrics === 'function') ? window.spTextMetrics(textbox) : null;
-        if (Hm && Hm.length && typeof window.spLineBoxHeight === 'function') {
-          total = Number(window.spLineBoxHeight(textbox, Hm.length - 1, Hm)) || 0;
-        } else if (Hm) { for (var im = 0; im < Hm.length; im++) total += Hm[im]; }
-        var reste = Math.max(0, utile - total);
-        if (val === 'center') res += reste / 2;
-        else if (val === 'bottom') res += reste;
-      }
-    } catch (_) { res = 0; }
     return res;
   }
-  window.spMasqueDecalage = masqueDecalage;
 
+  /* Bandes prêtes pour lineWidthFor : décalage appliqué, mêmes bornes verticales que
+     l'ancienne version (boîte + décalage) pour que le choix de bande reste déterministe. */
+  function shapeBands(obj, so) {
+    var brut = bandsEncre(obj);
+    if (!brut) return null;
+    var out = [], dernier = brut.length - 1;
+    for (var i = 0; i < brut.length; i++) {
+      var bd = brut[i];
+      out.push([
+        (i === 0) ? bd[0] - so.t : bd[0],
+        (i === dernier) ? bd[1] + so.b : bd[1],
+        (bd[2] === null) ? null : bd[2] - so.l,
+        (bd[3] === null) ? null : bd[3] + so.r
+      ]);
+    }
+    return out;
+  }
   function lineWidthFor(textbox, visualLineIndex, ctx) {
     // ctx = { free: largeur NON contrainte de cette ligne, paraOff: index global
     //         de la 1re sous-ligne du paragraphe en cours }
@@ -5262,13 +5286,20 @@ if (window._spGpuEnabled) {
         var bands = shapeBands(o, so);
         if (bands) {
           var yMidScene = (yTop + yBot) / 2 + origin.y;
+          var _bd = null;
           for (var b = 0; b < bands.length; b++) {
             var bd = bands[b];
-            if (yMidScene >= bd[0] && yMidScene < bd[1]) {
-              oLeft = bd[2] - origin.x;
-              oRight = bd[3] - origin.x;
-              break;
-            }
+            if (yMidScene >= bd[0] && yMidScene < bd[1]) { _bd = bd; break; }
+          }
+          /* 🆕 v1.7.540 — BANDE SANS ENCRE (_bd[2] === null) : la forme n'occupe pas
+             cette hauteur (coins d'un cercle, pointe d'un triangle, creux d'une étoile…).
+             Rien à contourner ici : la ligne traverse librement. Sans ce test, on gardait
+             les bornes de la BOÎTE ENGLOBANTE et « Contour » restait identique à « Boîte »
+             — c'est exactement le défaut mesuré (bandes toutes égales à la boîte). */
+          if (_bd && _bd[2] === null) continue;
+          if (_bd) {
+            oLeft = _bd[2] - origin.x;
+            oRight = _bd[3] - origin.x;
           }
         }
       }
@@ -88345,7 +88376,7 @@ function initObjectRightClickMenu() {
   var LABELS = {
     fr: { title: 'Habillage du texte', mode: 'Habillage', none: 'Aucun', box: 'Boîte', shape: 'Contour',
           scope: 'Côtés', both: 'Tous', left: 'Gauche', right: 'Droite', offset: 'Décalage (px)',
-          hint: 'Les blocs texte qui croisent cet objet se replieront autour de lui.',
+          hint: 'Les blocs texte qui croisent cet objet se replieront autour de lui. Boîte : le texte s\'arrête au rectangle de l\'objet. Contour : il épouse la forme réelle (cercle, étoile, image détourée, tracé).',
           none1: 'Aucun autre bloc texte ne croise cet objet.', ok: 'Habillage appliqué.', close: 'Fermer',
           valider: 'Valider', retirer: "Retirer l'habillage",
           // 🎨 v1.7.376 — messages de RESULTAT (points 1 et 2).
@@ -88358,7 +88389,7 @@ function initObjectRightClickMenu() {
           aucunEffet: '⚠ Aucun bloc texte ne croise cet objet : élargissez le bloc texte ou avancez-le sur l\'objet.' },
     en: { title: 'Text wrap', mode: 'Wrap', none: 'None', box: 'Bounding box', shape: 'Contour',
           scope: 'Sides', both: 'Both', left: 'Left', right: 'Right', offset: 'Offset (px)',
-          hint: 'Text frames crossing this object will reflow around it.',
+          hint: 'Text frames crossing this object will reflow around it. Bounding box: the text stops at the object rectangle. Contour: it follows the real shape (circle, star, cut-out image, path).',
           none1: 'No other text frame crosses this object.', ok: 'Wrap applied.', close: 'Close',
           valider: 'Apply', retirer: 'Remove wrap',
           applique: function (nb, lignes) {
