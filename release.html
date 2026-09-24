@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.540 — the Contour text-wrap option really follows the shape now (pixel contour detection) instead of copying the bounding box.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.541 — the studio keeps page templates: a document with master pages no longer loses them on the way back through Studio IA.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.540 — the Contour text-wrap option really follows the shape now (pixel contour detection) instead of copying the bounding box.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.541 — the studio keeps page templates: a document with master pages no longer loses them on the way back through Studio IA.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,25 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.541 — Le studio conserve les gabarits de page (.sp) ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-541">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.541</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 24 septembre 2026" data-i18n-en="Released September 24, 2026" data-i18n-jp="2026年9月24日公開">Released September 24, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Contrôle de sauvegarde demandé après nos trois derniers correctifs. L'application est fidèle : le <strong>.sp</strong> revient identique et le <strong>.json</strong> contient tout. Dans le <strong>studio</strong>, en revanche, les <strong>gabarits de page</strong> étaient perdus : un document dont les pages sont alimentées par un gabarit revenait sans lui. C'est corrigé." data-i18n-en-html="Persistence check requested after our last three fixes. The application is faithful: the <strong>.sp</strong> comes back identical and the <strong>.json</strong> holds everything. In the <strong>studio</strong>, however, <strong>page templates</strong> were lost: a document whose pages are fed by a template came back without it. Fixed." data-i18n-jp-html="直近 3 件の修正後の保存確認です。アプリ側は正確で、<strong>.sp</strong> は同一のまま戻り、<strong>.json</strong> にもすべて含まれます。一方<strong>スタジオ</strong>では<strong>ページテンプレート</strong>が失われ、テンプレートで組まれた文書がテンプレートなしで戻っていました。修正しました。">The application round trip is faithful; the studio was dropping page templates. Fixed.</p>
+
+ <h3 data-i18n-fr-html="📄 Sauvegarde : contrôle complet + gabarits du studio <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="📄 Saving: full check + studio templates <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="📄 保存：全体点検＋スタジオのテンプレート <span class=&quot;badge badge-fix&quot;>修正</span>">📄 Saving: full check + studio templates <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>L'application est fidèle</strong> : mesuré sur un document portant un gabarit, une page libérée, des taquets, un habillage Contour, un cadre rouge, des marges 12/18/15/25, une grille de 3 colonnes et un ton direct — l'aller-retour <strong>.sp</strong> ressort <strong>identique</strong>, et le <strong>.json</strong> exporté contient les gabarits (masterPages, pageMasterAssignments) comme les marques de libération." data-i18n-en-html="<strong>The application is faithful</strong>: measured on a document with a template, a released page, tab stops, a Contour wrap, a red frame, 12/18/15/25 mm margins, a 3-column grid and a spot ink — the <strong>.sp</strong> round trip comes back <strong>identical</strong>, and the exported <strong>.json</strong> holds both the templates (masterPages, pageMasterAssignments) and the release markers." data-i18n-jp-html="<strong>アプリ側は正確</strong>：テンプレート、解放されたページ、タブストップ、輪郭の回り込み、赤い枠線、余白 12/18/15/25、3 段組ガイド、特色インキを含む文書で実測し、<strong>.sp</strong> の往復は<strong>同一</strong>、書き出した <strong>.json</strong> にはテンプレート（masterPages、pageMasterAssignments）と解放マークが含まれます。">The .sp round trip is identical and the .json holds templates and release markers.</li>
+  <li data-i18n-fr-html="<strong>Le studio perdait les gabarits</strong> : il n'en lisait aucun à l'entrée, et ses deux écrivains reposaient « masters » et « masterId » <strong>vides, en dur</strong>. Résultat : app → studio → app renvoyait un document sans gabarit — les pages n'étaient plus réalimentées et l'entrée « Libérer / Verrouiller le gabarit de cette page » disparaissait du clic droit." data-i18n-en-html="<strong>The studio lost the templates</strong>: it read none on the way in, and both of its writers put “masters” and “masterId” back <strong>empty, hard-coded</strong>. Result: app → studio → app returned a document without templates — pages were no longer fed and the “Release / Lock this page template” entry vanished from the right-click menu." data-i18n-jp-html="<strong>スタジオはテンプレートを失っていました</strong>：入力時に一切読み取らず、2 つの書き出し側は「masters」と「masterId」を<strong>空のままハードコード</strong>していました。結果、アプリ → スタジオ → アプリでテンプレートのない文書が戻り、ページが再供給されず、右クリックメニューの「このページのテンプレートを解放／ロック」も消えていました。">The studio read no templates and wrote them back empty, so the round trip returned a document without them.</li>
+  <li data-i18n-fr-html="<strong>Corrigé et vérifié</strong> : le studio mémorise désormais les gabarits du document (et le masterId de chaque page, lu dans les affectations — la source que relit l'application). Mesuré après : le <strong>.sp</strong> du studio repart avec templates ['m1'], affectation page 1, les 2 marques de libération, le bloc à taquets actifs, l'habillage Contour, le cadre, les marges et la grille ; au retour, l'application retrouve son gabarit « Gabarit 538 » et propose de nouveau « Verrouiller le gabarit de cette page »." data-i18n-en-html="<strong>Fixed and checked</strong>: the studio now remembers the document templates (and each page's masterId, read from the assignments — the source the application reads back). Measured after: the studio <strong>.sp</strong> leaves with templates ['m1'], the page 1 assignment, the 2 release markers, the block with active tab stops, the Contour wrap, the frame, the margins and the grid; on the way back the application finds its “Gabarit 538” again and offers “Lock this page template” once more." data-i18n-jp-html="<strong>修正と確認</strong>：スタジオは文書のテンプレート（および各ページの masterId を割り当てから取得 — アプリが読み戻す情報源）を記憶します。実測：スタジオの <strong>.sp</strong> は templates ['m1']、ページ 1 の割り当て、2 つの解放マーク、タブストップ有効のブロック、輪郭の回り込み、枠線、余白、ガイドを保って書き出され、戻るとアプリは「Gabarit 538」を再認識し、「このページのテンプレートをロック」を再び提示します。">The studio now remembers the templates and each page's masterId; measured after, the exported .sp carries them and the app finds its template again.</li>
+  <li data-i18n-fr-html="<strong>Versions local et web alignées</strong> : les deux arborescences portaient déjà la même version (vérifié fichier par fichier : version.txt des deux côtés, package.json, package-lock.json, CONTENU.txt, index.html), et ce bump les fait passer ensemble en v1.7.541." data-i18n-en-html="<strong>Local and web versions aligned</strong>: both trees already carried the same version (checked file by file: version.txt on both sides, package.json, package-lock.json, CONTENU.txt, index.html), and this bump moves them together to v1.7.541." data-i18n-jp-html="<strong>ローカルと Web のバージョンを統一</strong>：両ツリーはすでに同じバージョンでした（version.txt 両方、package.json、package-lock.json、CONTENU.txt、index.html をファイルごとに確認）。今回のバンプで両方が v1.7.541 になります。">Both trees already carried the same version; this bump moves them together to v1.7.541.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.540 — Habillage : l'option « Contour » épouse vraiment la forme ===== -->
 

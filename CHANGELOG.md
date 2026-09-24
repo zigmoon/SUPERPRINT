@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,13 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.541] — 2026-09-24
+
+_The studio keeps page templates: a document with master pages no longer loses them on the way through Studio IA_
+
+### Fixed
+- **The studio dropped the page templates** (user request: « suite à nos 3 derniers retours, mets bien à jour le .sp et le .json dans l’application et dans le Studio pour le .sp, puis aligne la version local et web, puis bump une nouvelle version, git, zip »). `sp213-studio.html` never read `spFile.masters` (0 occurrence), and both writers rebuilt `masters: { templates: {}, assignments: {} }` with `masterId: null` **hard-coded**. Measured consequence: app → studio → app returned a document **without any template** — pages were no longer fed by their master, and the « Libérer / Verrouiller le gabarit de cette page » entry disappeared from the right-click menu, since `spEtatGabaritPage()` requires an assignment. - The import now remembers `spFile.masters` in `state.doc.masters` (so it travels with the studio session) and the page `masterId`; both writers re-emit `masters` **as they are** (falling back to empty dictionaries when the document had none, so the key is still always present). The page `masterId` is read from `masters.assignments` — the authoritative source, the one the application reads back; `state.pages` does not carry it (it is built by `createPageCanvas` as `{ pageIndex, canvas, label }`). - **Application side: nothing to fix.** Measured on a document carrying a template, a released page, tab stops, a Contour wrap, a red frame, 12/18/15/25 mm margins, a 3-column grid and a spot ink: the in-memory `.sp` round trip is **identical** (masters.templates [m1], masters.assignments {0:m1}, pages[0].masterId m1, 2 `_spGabaritLibere` markers, `_spTabs.active` with 1 stop, `_spWrapMode` shape, `_spFrameStroke` #ff0000, margins, grid, CMYK, ink #FCEE21) and the exported `.json` carries `masterPages`, `pageMasterAssignments` and both release markers. - **Measured after** (app → studio → app): the studio `.sp` leaves with `templates [m1]`, `assignments {0: m1}`, `masterId m1`, both release markers, the block with active tab stops, wrap shape, frame #ff0000, margins {top:12, right:25, bottom:18, left:15} and grid {cols:3, opacity:12, margins:true}; back in the application, `spEtatGabaritPage(0)` returns `{ masterId: m1, nom: Gabarit 538, libere: true }` — the right-click menu offers « Verrouiller le gabarit de cette page » again — with 0 template elements injected, which is correct on a released page. - Local and web versions were checked file by file (version.txt on both sides, package.json, package-lock.json, CONTENU.txt, index.html): already aligned, and this bump moves them together to 1.7.541.
 
 ## [1.7.540] — 2026-09-24
 

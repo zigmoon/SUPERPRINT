@@ -5573,6 +5573,14 @@ function spRtfLayoutInfo(src) {
       }
     }
     const _nbDoc = (spFile.numbering && typeof spFile.numbering === 'object') ? spFile.numbering : null;
+    /* 🆕 v1.7.541 — GABARITS DE PAGE (masters) : transportés TELS QUELS.
+       MESURE DU DÉFAUT : les deux écrivains renvoyaient 'masters: { templates: {},
+       assignments: {} }' et 'masterId: null' EN DUR, et cet import ne lisait jamais
+       spFile.masters : un document dont les pages sont alimentées par un gabarit revenait
+       donc de l'aller-retour SANS ses gabarits (les pages n'étaient plus réalimentées et
+       l'entrée « Libérer / Verrouiller le gabarit de cette page » du clic droit
+       disparaissait, puisqu'elle exige une affectation). */
+    const _mastersDoc = (spFile.masters && typeof spFile.masters === 'object') ? spFile.masters : null;
     const bleedPx = bl * MM_TO_PX;
     const toMm = (px) => Math.round((px - bleedPx) / MM_TO_PX * 10) / 10;
 
@@ -5837,7 +5845,7 @@ function spRtfLayoutInfo(src) {
         //   plutot que d'etre silencieusement supprimes par filter(Boolean).
         return spVecteurVersElementImage(o, base);
       }).filter(Boolean);
-      return { pageIndex: idx, elements };
+      return { pageIndex: idx, elements, masterId: (spPage && spPage.masterId) ? spPage.masterId : null };
     }).filter(p => p.elements.length > 0);
 
     if (!pages.length) return false;
@@ -5877,6 +5885,8 @@ function spRtfLayoutInfo(src) {
          app → studio → app perdait cols/opacité/marges). Transmise telle quelle. */
       colGrid: (spFile.document && spFile.document.colGrid) ? spFile.document.colGrid : null,
       numbering: _nbDoc,
+      /* 🆕 v1.7.541 — GABARITS DU DOCUMENT D'ORIGINE (cf. _mastersDoc ci-dessus). */
+      masters: _mastersDoc,
       // 🎯 v1.7.455i — MODE COULEUR D'ORIGINE (RVB / CMJN) : les deux écrivains
       //   de .sp l'écrivaient en dur à 'rgb', donc un document CMJN revenait en
       //   RVB (et la boîte d'export ne repassait plus en CMJN + Pantone).
@@ -10197,7 +10207,13 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
           }
         });
       } catch(e) { objects = []; }
-      return { index: p.pageIndex, label: p.label || ('Page ' + (p.pageIndex + 1)), masterId: null, objects };
+      /* 🆕 v1.7.541 — masterId : lu dans les AFFECTATIONS du document (source autoritaire,
+         celle que relit l'application via masters.assignments). state.pages ne le porte
+         pas : il est construit par createPageCanvas sous la forme { pageIndex, canvas,
+         label } — mesuré : sans cette lecture, le .sp réexporté gardait masterId: null. */
+      const _midPage = (state.doc && state.doc.masters && state.doc.masters.assignments
+        && state.doc.masters.assignments[p.pageIndex]) ? state.doc.masters.assignments[p.pageIndex] : null;
+      return { index: p.pageIndex, label: p.label || ('Page ' + (p.pageIndex + 1)), masterId: _midPage, objects };
     });
 
     const usedFonts = [...new Set(spPages.flatMap(p => p.objects.filter(o => o && o.fontFamily).map(o => o.fontFamily)))];
@@ -10221,7 +10237,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(spPages), customFonts: spCustomFontsPourExport() },
       textLinks: {},
       guides: {},
-      masters: { templates: {}, assignments: {} },
+      /* 🆕 v1.7.541 — GABARITS DE PAGE : réécrits TELS QUELS (repli vide si le document
+         n'en avait pas : la clé reste présente, comme avant). */
+      masters: (state.doc && state.doc.masters) ? state.doc.masters : { templates: {}, assignments: {} },
       // 🆕 v1.7.417 — numerotation du document d'origine, transportee TELLE QUELLE
       //   (documents importes uniquement : cf. importFromSuperPrint). La voie IA
       //   ci-dessous garde enabled:false car l'IA ecrit ses folios en TEXTE :
@@ -10346,7 +10364,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       //   l'ouverture (.sp comme .json).
       // 🛡️ v1.7.369 — tons directs filtrés par usage réel (pas de canal fantôme).
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(pages), customFonts: spCustomFontsPourExport() },
-      textLinks: {}, guides: {}, masters: { templates: {}, assignments: {} },
+      textLinks: {}, guides: {}, masters: (state.doc && state.doc.masters) ? state.doc.masters : { templates: {}, assignments: {} },
       numbering: { enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 },
       pages
     };
