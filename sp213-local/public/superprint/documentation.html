@@ -208,9 +208,15 @@
   }
 
   /* ═══ CODE ═══ */
+  /* 1.7.544 — UN CODE LONG DÉCALAIT TOUTE LA PAGE EN MOBILE.
+     Mesuré à 320 px : un <code> de 336 px impossible à couper dans un bloc .tip portait la
+     largeur du document à 381 px, soit 69 px de débordement horizontal ; l'en-tête étant en
+     position fixed, il restait à la largeur de la fenêtre et sa rangée d'onglets était donc
+     écourtée (deuxième onglet coupé). On autorise la coupure. */
   code {
     background: var(--bg3); padding: 2px 6px; border-radius: 4px;
     font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent2);
+    overflow-wrap: anywhere; word-break: break-word;
   }
   pre {
     background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
@@ -263,7 +269,9 @@
 
   /* ═══ RESPONSIVE ═══ */
   @media (max-width: 900px) {
-    body { overflow-x: hidden; }
+    /* 1.7.544 — filet de sécurité : plus aucun débordement horizontal résiduel ne peut
+       « décaler toute la page » (c'était le symptôme signalé en mobile). */
+    html, body { overflow-x: hidden; }
     .topbar {
       height: auto; min-height: 92px; padding: max(7px, env(safe-area-inset-top)) 10px 8px;
       gap: 6px; display: grid; grid-template-columns: 44px minmax(0,1fr) auto;
@@ -284,7 +292,13 @@
       background: var(--bg3);
     }
     .tab-toggle::-webkit-scrollbar { display: none; }
-    .tab-toggle button { flex: 1 0 auto; min-height: 34px; padding: 6px 12px; white-space: nowrap; }
+    /* 1.7.544 — LES DEUX ONGLETS RESTENT VISIBLES. « flex: 1 0 auto » interdisait de
+       rétrécir : sous 390 px la seconde pastille sortait de la barre (mesuré à 320 px, elle
+       était coupée). Ils partagent désormais la largeur disponible. */
+    .tab-toggle button {
+      flex: 1 1 0; min-width: 0; min-height: 34px; padding: 6px 10px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .sidebar {
       display: block; top: 0; width: min(86vw, 340px); z-index: 130; padding: 0 0 max(24px, env(safe-area-inset-bottom));
       transform: translateX(-105%); visibility: hidden; transition: transform .22s ease, visibility .22s;
@@ -384,7 +398,7 @@
     <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
   </button>
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.543</span>
+  <span class="version">v1.7.544</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -2520,6 +2534,28 @@ document.addEventListener('keydown', event => {
   }
 });
 document.getElementById('docSearchHint').classList.add('has-shortcut');
+
+/* 1.7.544 — LA MARGE HAUTE DU CONTENU SUIT LA HAUTEUR RÉELLE DE L'EN-TÊTE.
+   Mesuré : en-tête de 108 px pour une marge figée à 100 px (et davantage d'en-tête avec une
+   encoche) → le premier titre passait sous la barre. En mobile on mesure l'en-tête ; sur
+   ordinateur on REND LA MAIN À LA FEUILLE DE STYLES (marge de 52 px d'origine). */
+function spAjusterMargeEntete() {
+  var tb = document.querySelector('.topbar');
+  if (!tb) return;
+  var mobile = window.matchMedia('(max-width: 900px)').matches;
+  var h = tb.offsetHeight || 0;
+  document.querySelectorAll('.main').forEach(function (el) {
+    el.style.marginTop = mobile ? (h + 8) + 'px' : '';
+  });
+  document.querySelectorAll('h1[id], h2[id], h3[id]').forEach(function (el) {
+    el.style.scrollMarginTop = mobile ? (h + 20) + 'px' : '';
+  });
+}
+window.addEventListener('load', spAjusterMargeEntete);
+window.addEventListener('resize', spAjusterMargeEntete);
+window.addEventListener('orientationchange', spAjusterMargeEntete);
+document.addEventListener('DOMContentLoaded', spAjusterMargeEntete);
+if (document.readyState !== 'loading') spAjusterMargeEntete();
 
 // Tab switching
 function setTab(tab) {

@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.543-grille-rapide-ia';
+const CACHE_NAME = 'superprint-shell-v1.7.544-wrap-claude-doc';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

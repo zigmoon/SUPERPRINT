@@ -1038,6 +1038,8 @@
           <!-- 🆕 DeepSeek en PREMIER (demande utilisateur, 2026-09-12) -->
           <option value="deepseek" selected>DeepSeek (cloud — raisonnement)</option>
           <option value="openai">OpenAI GPT (cloud)</option>
+          <!-- 1.7.544 — Anthropic Claude : même traitement que les autres moteurs cloud. -->
+          <option value="anthropic">Anthropic Claude (cloud)</option>
           <option value="openrouter">OpenRouter (cloud — 100% free)</option>
           <option value="groq">Groq (cloud — rapide)</option>
           <option value="webllm">SP213 WLLM (local)</option>
@@ -1065,6 +1067,29 @@
           </span>
         </div>
         <select id="openaiModel"></select>
+      </div>
+      <!-- 1.7.544 — Anthropic Claude : clé + choix du modèle -->
+      <div class="field field-sep" id="anthropicFields" style="display:none;">
+        <div class="label-row">
+          <label id="antKeyLabel">Clé API Anthropic</label>
+          <span class="info-icon" tabindex="0" aria-label="Info clé Anthropic">?
+            <span class="info-pop" id="antPop">Votre clé <b>sk-ant-...</b> est stockée uniquement dans votre navigateur (localStorage) et envoyée à Anthropic via le proxy SuperPrint. Elle n'est jamais écrite en dur ni partagée.</span>
+          </span>
+        </div>
+        <input id="anthropicKey" type="password" placeholder="sk-ant-..." autocomplete="off">
+        <div class="ext-links">
+          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" id="antGetLink">Obtenir une clé Anthropic</a>
+          <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener" id="antModelsLink">Voir les modèles</a>
+        </div>
+      </div>
+      <div class="field field-sep" id="anthropicModelField" style="display:none;">
+        <div class="label-row">
+          <label id="antModelLabel">Modèle Claude</label>
+          <span class="info-icon" tabindex="0" aria-label="Info modèle Claude">?
+            <span class="info-pop" id="antModelPop"><b>Claude Opus 5.5</b> est recommandé (1 M de contexte, 128 K en sortie). Sonnet 5 offre le meilleur rapport vitesse / intelligence, Fable 5.1 vise le raisonnement long et Haiku 4.5 est le plus rapide.</span>
+          </span>
+        </div>
+        <select id="anthropicModel"></select>
       </div>
       <!-- DeepSeek : modèles OpenAI-compatibles -->
       <div class="field field-sep" id="deepseekFields" style="display:none;">
@@ -1562,6 +1587,19 @@
     ['gpt-5.1', 'GPT-5.1 — génération précédente']
   ];
 
+  // 🆕 1.7.544 — ANTHROPIC CLAUDE 5 (doc platform.claude.com/docs/en/about-claude/models/overview,
+  //   vérifiée le 25/09/2026) : Claude Opus 5.5 (le plus capable au quotidien, recommandé),
+  //   Claude Sonnet 5 (meilleur rapport vitesse / intelligence), Claude Fable 5.1 (raisonnement
+  //   long / agentique, 1 M de contexte), Claude Haiku 4.5 (le plus rapide) ; Claude Opus 4.5
+  //   reste servi et sert de repli.
+  const ANTHROPIC_MODELS = [
+    ['claude-opus-5-5',            'Claude Opus 5.5 — recommandé (le plus capable)'],
+    ['claude-sonnet-5',            'Claude Sonnet 5 — vitesse / intelligence'],
+    ['claude-fable-5-1',           'Claude Fable 5.1 — raisonnement long (1 M de contexte)'],
+    ['claude-haiku-4-5-20251001',  'Claude Haiku 4.5 — le plus rapide'],
+    ['claude-opus-4-5-20251101',   'Claude Opus 4.5 — génération précédente']
+  ];
+
   // OpenRouter : modèles 100% GRATUITS (suffixe :free) — vérifiés par tests réels le 2026-08-29.
   // Nemotron 3 Super 120B et MiniMax M2.7 ont produit un JSON valide 8/8 pages.
   // ❌ Retirés (non fiables en test) : Gemma 4 31B, Inkling Small, MiniMax M3, GLM 5.2.
@@ -1648,6 +1686,8 @@
     oaiModel: 'sp213_openai_model',
     dsKey: 'sp213_deepseek_key',    // 🆕 clé API DeepSeek
     dsModel: 'sp213_deepseek_model', // 🆕 modèle DeepSeek
+    antKey: 'sp213_anthropic_key',   // 🆕 1.7.544 clé API Anthropic
+    antModel: 'sp213_anthropic_model', // 🆕 1.7.544 modèle Anthropic
     chat: 'sp213_chat_v1',
     doc: 'sp213_doc_v1',
     dims: 'sp213_dims_v1',
@@ -1668,6 +1708,8 @@
     oaiModel: OPENAI_MODELS[0][0],
     dsApiKey: '',              // 🆕 clé DeepSeek
     dsModel: DEEPSEEK_MODELS[0][0], // 🆕 modèle DeepSeek
+    antApiKey: '',             // 🆕 1.7.544 clé Anthropic
+    antModel: ANTHROPIC_MODELS[0][0], // 🆕 1.7.544 modèle Anthropic
     wllmModel: WLLM_MODELS[0][0],
     engine: 'deepseek', // 🆕 défaut = DeepSeek ; 'openai' | 'deepseek' | 'openrouter' | 'groq' | 'webllm'
     pageW: 210, pageH: 297, bleed: 3, // v1.7.392 : pilote par le champ #pageBleed
@@ -2529,6 +2571,20 @@
       try { localStorage.setItem(LS.oaiModel, this.value); } catch(_) {}
     });
 
+    // Peupler le sélecteur de modèle Anthropic Claude (1.7.544)
+    const antSel = $('anthropicModel');
+    if (antSel) {
+      ANTHROPIC_MODELS.forEach(([v, l]) => {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = l;
+        antSel.appendChild(o);
+      });
+      antSel.addEventListener('change', function() {
+        state.antModel = this.value;
+        try { localStorage.setItem(LS.antModel, this.value); } catch(_) {}
+      });
+    }
+
     // Peupler le sélecteur de modèle OpenRouter (100% free)
     const orSel = $('openrouterModel');
     if (orSel) {
@@ -2582,6 +2638,9 @@
       const oaik = localStorage.getItem(LS.oaiKey) || localStorage.getItem('sp_ai_key_openai'); if (oaik) $('openaiKey').value = oaik;
       const oaim = localStorage.getItem(LS.oaiModel); if (oaim && OPENAI_MODELS.some(x => x[0] === oaim)) { $('openaiModel').value = oaim; state.oaiModel = oaim; }
       const dsk = localStorage.getItem(LS.dsKey); if (dsk) $('deepseekKey').value = dsk;
+      // 1.7.544 — Anthropic : clé partagée avec SuperPrint (sp_ai_key_anthropic) en repli.
+      const antk = localStorage.getItem(LS.antKey) || localStorage.getItem('sp_ai_key_anthropic'); if (antk && $('anthropicKey')) $('anthropicKey').value = antk;
+      const antm = localStorage.getItem(LS.antModel); if (antm && ANTHROPIC_MODELS.some(x => x[0] === antm) && $('anthropicModel')) { $('anthropicModel').value = antm; state.antModel = antm; }
       const dsm = localStorage.getItem(LS.dsModel); if (dsm && DEEPSEEK_MODELS.some(x => x[0] === dsm)) { $('deepseekModel').value = dsm; state.dsModel = dsm; }
       const wm = localStorage.getItem('sp213_wllm_model'); if (wm && WLLM_MODELS.some(x => x[0] === wm)) { $('wllmModel').value = wm; state.wllmModel = wm; }
       const d = JSON.parse(localStorage.getItem(LS.dims) || 'null');
@@ -2589,7 +2648,7 @@
       const th = localStorage.getItem(LS.theme);
       if (th !== null) setTheme(th === '1');
       const eng = localStorage.getItem('sp213_engine');
-      if (eng === 'openai' || eng === 'deepseek' || eng === 'webllm' || eng === 'groq' || eng === 'openrouter') { $('engineSelect').value = eng; state.engine = eng; }
+      if (eng === 'openai' || eng === 'deepseek' || eng === 'webllm' || eng === 'groq' || eng === 'openrouter' || eng === 'anthropic') { $('engineSelect').value = eng; state.engine = eng; }
     } catch(e) {}
 
     $('startBtn').addEventListener('click', startStudio);
@@ -2621,6 +2680,7 @@
       const isOR = eng === 'openrouter';
       const isDS = eng === 'deepseek';
       const isOpenAI = eng === 'openai';
+      const isAnthropic = eng === 'anthropic';
       ['groqFields', 'groqModelField'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = isGroq ? '' : 'none';
@@ -2637,19 +2697,25 @@
         const el = document.getElementById(id);
         if (el) el.style.display = isOpenAI ? '' : 'none';
       });
+      ['anthropicFields', 'anthropicModelField'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isAnthropic ? '' : 'none';
+      });
       const wllmF = document.getElementById('wllmModelField');
-      if (wllmF) wllmF.style.display = (isGroq || isOR || isDS || isOpenAI) ? 'none' : '';
+      if (wllmF) wllmF.style.display = (isGroq || isOR || isDS || isOpenAI || isAnthropic) ? 'none' : '';
       const hint = document.getElementById('engineHint');
       if (hint) {
         hint.textContent = isOpenAI
           ? 'OpenAI GPT : ajoutez votre clé sk-… pour utiliser le contexte expert SuperPrint et générer la maquette.'
+          : (isAnthropic
+          ? 'Anthropic Claude : ajoutez votre clé sk-ant-… (console.anthropic.com) — Opus 5.5, Sonnet 5 ou Fable 5.1.'
           : (isDS
           ? 'DeepSeek : ajoutez votre clé sk-… (platform.deepseek.com) pour lancer la maquette.'
           : (isGroq
               ? 'Groq : ajoutez votre clé ci-dessous pour lancer la maquette.'
               : (isOR
                   ? 'OpenRouter : ajoutez votre clé sk-or-… (gratuite sur openrouter.ai). Modèles :free 100% gratuits.'
-                  : 'SP213 WLLM (local) : aucune clé requise — choisissez un modèle et ouvrez le studio.')));
+                  : 'SP213 WLLM (local) : aucune clé requise — choisissez un modèle et ouvrez le studio.'))));
       }
     }
     $('engineSelect').addEventListener('change', (e) => {
@@ -3100,17 +3166,19 @@
       const ork = (state.orApiKey || '').trim() || (localStorage.getItem(LS.orKey) || '').trim();
       const dsk = (state.dsApiKey || '').trim() || (localStorage.getItem(LS.dsKey) || '').trim();
       const oaik = (state.oaiApiKey || '').trim() || (localStorage.getItem(LS.oaiKey) || localStorage.getItem('sp_ai_key_openai') || '').trim();
+      const antk = (state.antApiKey || '').trim() || (localStorage.getItem(LS.antKey) || localStorage.getItem('sp_ai_key_anthropic') || '').trim();   // 🆕 1.7.544
       // 🆕 Défaut = DeepSeek (demande utilisateur, 2026-09-12). Le choix
       //   ENREGISTRÉ de l'utilisateur reste prioritaire : on ne change que le
       //   repli (avant : 'openai' codé en dur, ce qui écrasait l'attribut
       //   `selected` du HTML et faisait afficher « × OpenAI GPT » alors que le
       //   sélecteur montrait DeepSeek).
       const eng = localStorage.getItem('sp213_engine') || 'deepseek';
-      state.engine = (eng === 'openai' || eng === 'deepseek' || eng === 'webllm' || eng === 'groq' || eng === 'openrouter') ? eng : 'deepseek';
+      state.engine = (eng === 'openai' || eng === 'deepseek' || eng === 'webllm' || eng === 'groq' || eng === 'openrouter' || eng === 'anthropic') ? eng : 'deepseek';
       state.apiKey = key;
       state.orApiKey = ork;
       state.dsApiKey = dsk;
       state.oaiApiKey = oaik;
+      state.antApiKey = antk;   // 🆕 1.7.544
       const m = localStorage.getItem(LS.model);
       if (m) state.model = m;
       const orm = localStorage.getItem(LS.orModel);
@@ -3118,6 +3186,9 @@
       const dsm = localStorage.getItem(LS.dsModel);
       if (dsm && DEEPSEEK_MODELS.some(x => x[0] === dsm)) state.dsModel = dsm;
       else state.dsModel = DEEPSEEK_MODELS[0][0];
+      // 🆕 1.7.544 — modèle Claude enregistré
+      const antm2 = localStorage.getItem(LS.antModel);
+      if (antm2 && ANTHROPIC_MODELS.some(x => x[0] === antm2)) state.antModel = antm2;
       const oaim = localStorage.getItem(LS.oaiModel);
       state.oaiModel = oaim && OPENAI_MODELS.some(x => x[0] === oaim) ? oaim : OPENAI_MODELS[0][0];
       const wm = localStorage.getItem('sp213_wllm_model');
@@ -3190,7 +3261,7 @@
     // Message de bienvenue orienté action — UNIQUEMENT si c'est une nouvelle
     // session (chat vide), pour éviter le doublon avec le fil restauré.
     if (!state.chat.some(m => m.role === 'user')) {
-      const hasCloudKey = state.engine === 'groq' ? !!(state.apiKey) : (state.engine === 'openrouter' ? !!(state.orApiKey) : (state.engine === 'deepseek' ? !!(state.dsApiKey) : (state.engine === 'openai' ? !!(state.oaiApiKey) : true)));
+      const hasCloudKey = state.engine === 'groq' ? !!(state.apiKey) : (state.engine === 'openrouter' ? !!(state.orApiKey) : (state.engine === 'deepseek' ? !!(state.dsApiKey) : (state.engine === 'openai' ? !!(state.oaiApiKey) : (state.engine === 'anthropic' ? !!(state.antApiKey) : true))));
       if (hasCloudKey || state.engine === 'webllm') {
         appendChat('assistant', t('chat.welcomeReady'));
       } else {
@@ -5924,14 +5995,17 @@ function spRtfLayoutInfo(src) {
     const ork = $('openrouterKey') ? $('openrouterKey').value.trim() : '';
     const dsk = $('deepseekKey') ? $('deepseekKey').value.trim() : '';
     const oaik = $('openaiKey') ? $('openaiKey').value.trim() : '';
+    const antk2 = $('anthropicKey') ? $('anthropicKey').value.trim() : '';   // 🆕 1.7.544
     if (state.engine === 'groq' && !key) { $('groqKey').focus(); $('groqKey').style.borderColor = '#e05656'; return; }
     if (state.engine === 'openrouter' && !ork) { if ($('openrouterKey')) $('openrouterKey').focus(); if ($('openrouterKey')) $('openrouterKey').style.borderColor = '#e05656'; return; }
     if (state.engine === 'deepseek' && !dsk) { if ($('deepseekKey')) $('deepseekKey').focus(); if ($('deepseekKey')) $('deepseekKey').style.borderColor = '#e05656'; return; }
     if (state.engine === 'openai' && !oaik) { $('openaiKey').focus(); $('openaiKey').style.borderColor = '#e05656'; return; }
+    if (state.engine === 'anthropic' && !antk2) { if ($('anthropicKey')) $('anthropicKey').focus(); if ($('anthropicKey')) $('anthropicKey').style.borderColor = '#e05656'; return; }
     state.apiKey = key;
     state.orApiKey = ork;
     state.dsApiKey = dsk;
     state.oaiApiKey = oaik;
+    state.antApiKey = antk2;   // 🆕 1.7.544
     state.model = $('groqModel').value;
     if (state.engine === 'openrouter') {
       state.orModel = ($('openrouterModel') && $('openrouterModel').value) || OPENROUTER_MODELS[0][0];
@@ -5940,6 +6014,8 @@ function spRtfLayoutInfo(src) {
       state.dsModel = ($('deepseekModel') && $('deepseekModel').value) || DEEPSEEK_MODELS[0][0];
     }
     if (state.engine === 'openai') state.oaiModel = $('openaiModel').value || OPENAI_MODELS[0][0];
+    // 🆕 1.7.544 — modèle Claude choisi
+    if (state.engine === 'anthropic') state.antModel = ($('anthropicModel') && $('anthropicModel').value) || ANTHROPIC_MODELS[0][0];
     // 🆕 Lire le modèle local sélectionné
     if (state.engine === 'webllm') {
       state.wllmModel = ($('wllmModel') && $('wllmModel').value) || WLLM_MODELS[0][0];
@@ -5956,6 +6032,9 @@ function spRtfLayoutInfo(src) {
       localStorage.setItem(LS.dsModel, state.dsModel);
       if (oaik) { localStorage.setItem(LS.oaiKey, oaik); localStorage.setItem('sp_ai_key_openai', oaik); }
       localStorage.setItem(LS.oaiModel, state.oaiModel);
+      // 1.7.544 — clé partagée avec l'application SuperPrint, comme pour OpenAI.
+      if (antk2) { localStorage.setItem(LS.antKey, antk2); localStorage.setItem('sp_ai_key_anthropic', antk2); }
+      localStorage.setItem(LS.antModel, state.antModel);
       localStorage.setItem('sp213_wllm_model', state.wllmModel);
       localStorage.setItem(LS.dims, JSON.stringify({ w: state.pageW, h: state.pageH }));
       localStorage.setItem('sp213_engine', state.engine);
@@ -5973,6 +6052,9 @@ function spRtfLayoutInfo(src) {
     } else if (state.engine === 'openai') {
       const oaiName = (OPENAI_MODELS.find(x => x[0] === state.oaiModel) || [])[1] || state.oaiModel;
       $('modelLabel').textContent = shortModelName(oaiName);
+    } else if (state.engine === 'anthropic') {
+      const antName = (ANTHROPIC_MODELS.find(x => x[0] === state.antModel) || [])[1] || state.antModel;
+      $('modelLabel').textContent = shortModelName(antName);
     } else if (state.engine === 'deepseek') {
       const dsName = (DEEPSEEK_MODELS.find(x => x[0] === state.dsModel) || [])[1] || state.dsModel;
       $('modelLabel').textContent = shortModelName(dsName);
@@ -6887,7 +6969,7 @@ function spRtfLayoutInfo(src) {
     //   modele de « formuler une recherche » -> l'IA s'arretait au lieu de
     //   traiter le document. Les moteurs cloud ont 128k+ de contexte : 60 000
     //   caracteres (~20k tokens) laissent largement la place a la reponse.
-    return (state.engine === 'openai' || state.engine === 'groq' || state.engine === 'openrouter' || state.engine === 'deepseek') ? 60000 : 12000;
+    return (state.engine === 'openai' || state.engine === 'groq' || state.engine === 'openrouter' || state.engine === 'deepseek' || state.engine === 'anthropic') ? 60000 : 12000;
   }
 
   function buildAttachmentContext() {
@@ -7006,6 +7088,7 @@ function spRtfLayoutInfo(src) {
   //  - Groq : il faut une clé API.
   //  - OpenRouter : il faut une clé API sk-or-….
   //  - DeepSeek : il faut une clé API sk-….
+  //  - Anthropic : il faut une clé API sk-ant-… (1.7.544).
   //  - WebLLM : pas de clé requise, le modèle local peut être chargé à la demande.
   function hasUsableModel() {
     try {
@@ -7025,6 +7108,10 @@ function spRtfLayoutInfo(src) {
         const key = (state.oaiApiKey || '').trim() || (localStorage.getItem(LS.oaiKey) || localStorage.getItem('sp_ai_key_openai') || '').trim();
         return !!key;
       }
+      if (state.engine === 'anthropic') {
+        const key = (state.antApiKey || '').trim() || (localStorage.getItem(LS.antKey) || localStorage.getItem('sp_ai_key_anthropic') || '').trim();
+        return !!key;
+      }
       // webllm : utilisable par défaut (chargé au premier appel)
       return true;
     } catch (_) { return false; }
@@ -7032,12 +7119,12 @@ function spRtfLayoutInfo(src) {
 
   // Propose d'aller dans les réglages pour choisir son modèle au premier prompt.
   function offerModelChoice() {
-    appendChat('assistant', 'Aucun modèle n’est configuré pour générer votre maquette. Ouvrez les réglages et choisissez votre back-end :\n\n• OpenAI GPT (recommandé) — collez votre clé API sk-…\n• DeepSeek (cloud, raisonnement) — collez votre clé API sk-…\n• OpenRouter (100% gratuit) — créez une clé sur openrouter.ai puis collez-la (sk-or-…)\n• Groq (cloud, rapide) — collez votre clé API gsk_…\n• SP213 WLLM (local, hors-ligne) — aucun modèle gratuit ne vous convient ? utilisez le mode local\n\nPuis retapez votre description.');
+    appendChat('assistant', 'Aucun modèle n’est configuré pour générer votre maquette. Ouvrez les réglages et choisissez votre back-end :\n\n• OpenAI GPT (recommandé) — collez votre clé API sk-…\n• Anthropic Claude (Opus 5.5 / Sonnet 5) — collez votre clé API sk-ant-…\n• DeepSeek (cloud, raisonnement) — collez votre clé API sk-…\n• OpenRouter (100% gratuit) — créez une clé sur openrouter.ai puis collez-la (sk-or-…)\n• Groq (cloud, rapide) — collez votre clé API gsk_…\n• SP213 WLLM (local, hors-ligne) — aucun modèle gratuit ne vous convient ? utilisez le mode local\n\nPuis retapez votre description.');
     // Ramener l'utilisateur vers les réglages (pré-home) après un court délai
     setTimeout(function () {
       $('studio').classList.remove('active');
       $('welcome').classList.remove('hidden');
-      const kf = state.engine === 'openrouter' ? $('openrouterKey') : (state.engine === 'deepseek' ? $('deepseekKey') : $('groqKey'));
+      const kf = state.engine === 'anthropic' ? $('anthropicKey') : (state.engine === 'openrouter' ? $('openrouterKey') : (state.engine === 'deepseek' ? $('deepseekKey') : $('groqKey')));
       if (kf) kf.focus();
     }, 900);
   }
@@ -7479,7 +7566,7 @@ Génère le JSON pour cette demande : `;
     }
     return `Tu es SP213, le module LAYOUT & CANEVAS de SUPERPRINT (logiciel de PAO web, moteur Fabric.js 5.3).
 Tu génères des maquettes PRINT destinées à l'IMPRESSION PAPIER — pas du web, pas de scroll.
-${(state.engine === 'openai' || state.engine === 'openrouter' || state.engine === 'deepseek') ? '\nTu es exécuté via une API OpenAI-compatible. Applique strictement toute la connaissance SUPERPRINT/SP213 ci-dessous et réponds UNIQUEMENT en JSON valide (format json_object), sans texte autour, sans markdown.' : ''}
+${(state.engine === 'openai' || state.engine === 'openrouter' || state.engine === 'deepseek') ? '\nTu es exécuté via une API OpenAI-compatible. Applique strictement toute la connaissance SUPERPRINT/SP213 ci-dessous et réponds UNIQUEMENT en JSON valide (format json_object), sans texte autour, sans markdown.' : ''}${(state.engine === 'anthropic') ? '\nTu es exécuté via l\'API Anthropic Claude. Applique strictement toute la connaissance SUPERPRINT/SP213 ci-dessous et réponds UNIQUEMENT en JSON valide, sans texte autour, sans bloc markdown.' : ''}
 ${SP213_LAYOUT_SYSTEM}
 
 DOCUMENT COURANT
@@ -7897,6 +7984,7 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
   function spCallAIProvider(messages) {
     if (state.engine === 'webllm') return callWebLLM(messages);
     if (state.engine === 'openai') return callOpenAI(messages);
+    if (state.engine === 'anthropic') return callAnthropic(messages);
     if (state.engine === 'deepseek') return callDeepSeek(messages);
     if (state.engine === 'openrouter') return callOpenRouter(messages);
     return callGroq(messages);
@@ -7954,6 +8042,83 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     if (/^gpt-5|^gpt-6|^o[0-9]/.test(model)) body.max_completion_tokens = maxTokens;
     else body.max_tokens = maxTokens;
     return spProxyOrDirect('OpenAI', 'ai-proxy.php?provider=openai', 'https://api.openai.com/v1/chat/completions', body);
+  }
+
+  // ── 🆕 1.7.544 — Appel Anthropic Claude (API Messages) ─────────────
+  //   Différences avec les API « OpenAI-compatible » :
+  //     · l'en-tête x-api-key (et non Authorization: Bearer) + anthropic-version ;
+  //     · le prompt système est un champ À PART (« system »), pas un message ;
+  //     · la réponse est dans data.content[] (blocs de type « text »).
+  //   Le proxy PHP sait déjà relayer cette API (ai-proxy.php?provider=anthropic) ; en
+  //   développement local sans PHP, on retombe sur l'API directe — autorisée depuis un
+  //   navigateur avec l'en-tête « anthropic-dangerous-direct-browser-access ».
+  function callAnthropic(messages) {
+    const model = state.antModel || ANTHROPIC_MODELS[0][0];
+    const system = (messages || []).filter(m => m.role === 'system').map(m => m.content).join('\n\n');
+    let conv = (messages || []).filter(m => m.role !== 'system').map(m => ({
+      role: (m.role === 'assistant') ? 'assistant' : 'user',
+      content: String(m.content == null ? '' : m.content)
+    }));
+    // L'API exige des messages non vides et alternés : on fusionne les tours identiques.
+    const propre = [];
+    conv.forEach(m => {
+      if (!m.content.trim()) return;
+      const dernier = propre[propre.length - 1];
+      if (dernier && dernier.role === m.role) dernier.content += '\n\n' + m.content;
+      else propre.push(m);
+    });
+    if (!propre.length || propre[propre.length - 1].role !== 'user') propre.push({ role: 'user', content: 'Génère la maquette demandée.' });
+    // La génération 5.x sort jusqu'à 128 K tokens ; 32 000 suffit largement ici.
+    const maxTok = /claude-(fable-5|opus-5|sonnet-5|opus-4-[5-8]|sonnet-4-[5-6]|haiku-4-5)/.test(model) ? 32000 : 16000;
+    const body = {
+      apiKey: state.antApiKey,
+      anthropicVersion: '2023-06-01',
+      model: model,
+      max_tokens: maxTok,
+      messages: propre
+    };
+    if (system) body.system = system;
+
+    const lireReponse = async (res) => {
+      const raw = await res.text().catch(() => '');
+      let data = null;
+      try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = null; }
+      if (!data) throw new Error('Réponse invalide (HTTP ' + res.status + ') : ' + raw.slice(0, 160));
+      if (!res.ok || data.error) throw new Error((data.error && data.error.message) || ('HTTP ' + res.status));
+      let texte = '';
+      if (Array.isArray(data.content)) {
+        data.content.forEach(b => { if (b && b.type === 'text' && b.text) texte += b.text; });
+      }
+      if (!texte && typeof data.completion === 'string') texte = data.completion;
+      if (!texte) throw new Error('Réponse Anthropic vide');
+      return data.stop_reason === 'max_tokens' ? texte + '\n\n__SP213_TRUNCATED__' : texte;
+    };
+
+    const directAnthropic = () => {
+      const corps = Object.assign({}, body);
+      delete corps.apiKey; delete corps.anthropicVersion;
+      return fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': state.antApiKey || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify(corps)
+      }).then(lireReponse);
+    };
+
+    return fetch('ai-proxy.php?provider=anthropic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(lireReponse).catch(err => {
+      const msg = String(err && err.message || '');
+      const infra = /HTTP (501|404|500|502|503|405)/.test(msg) || /Réponse invalide/.test(msg) || /Failed to fetch/.test(msg) || /NetworkError|Load failed|Network request failed/.test(msg);
+      if (!infra) throw err;
+      return directAnthropic();
+    });
   }
 
   // ── Appel DeepSeek via proxy local (API OpenAI-compatible) ──

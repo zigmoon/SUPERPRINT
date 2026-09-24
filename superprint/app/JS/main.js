@@ -5078,7 +5078,27 @@ if (window._spGpuEnabled) {
 
   /* Bandes d'encre, en coordonnées scène, SANS décalage. Une bande sans encre porte
      xmin = xmax = null : l'appelant doit alors ignorer l'objet sur cette hauteur. */
-  function bandsEncre(obj) {
+  /* _SP_WRAP_544 — L'OBJET EST-IL PRÊT À ÊTRE MESURÉ ?
+     Une image dont l'élément n'est pas chargé ne dessine RIEN dans le canvas hors écran : le
+     relevé conclut « aucune encre » alors que l'objet est plein. Mémoïser ce constat rendait
+     « Contour » définitivement inopérant (mesuré : contour identique à la boîte, même après
+     le chargement de l'image et même en reposant l'option). On teste donc l'élément à tous
+     les niveaux : image simple, groupe, décalque, clipPath. */
+  function spObjetPasPret(o) {
+    try {
+      if (!o) return false;
+      if (o.type === 'image' && o._element) {
+        var el = o._element;
+        var charge = !!(el.complete && (el.naturalWidth || el.width));
+        if (!charge) return true;
+      }
+      if (o._objects) { for (var i = 0; i < o._objects.length; i++) { if (spObjetPasPret(o._objects[i])) return true; } }
+      if (o.clipPath && spObjetPasPret(o.clipPath)) return true;
+    } catch (_) {}
+    return false;
+  }
+
+  function bandsEncre(obj, _reessai) {
     var bb;
     try { bb = obj.getBoundingRect(true, true); } catch (_) { return null; }
     if (!bb || !(bb.width > 0) || !(bb.height > 0)) return null;
@@ -5123,6 +5143,21 @@ if (window._spGpuEnabled) {
         if (bandesEncre >= 1) res = bands;
       }
     } catch (_) { res = null; }
+    /* _SP_WRAP_544 — ON NE MÉMOÏSE PAS L'ÉCHEC D'UN OBJET PAS ENCORE PRÊT : la mesure sera
+       simplement refaite au prochain reflow (coût négligeable, une fois l'image chargée).
+       Sinon : « Contour » retombait sur la boîte POUR TOUJOURS (bug reproduit au banc). */
+    if (!res && spObjetPasPret(obj)) return null;
+    /* _SP_WRAP_544b — AUCUNE ENCRE TROUVÉE ALORS QUE L'OBJET EST PRÊT : le bitmap de cache de
+       Fabric a le plus souvent été construit AVANT le chargement de l'image et reste vide.
+       On force sa reconstruction puis on remesure UNE fois (le second passage mémorise
+       lui-même son résultat : encre trouvée → bandes, sinon absence réelle → null). */
+    if (!res && !_reessai) {
+      try {
+        obj.dirty = true;
+        if (typeof obj.set === 'function') obj.set('dirty', true);
+      } catch (_) {}
+      return bandsEncre(obj, true);
+    }
     _contourCache[cle] = res;   /* null mémorisé : on ne réessaie pas à chaque ligne */
     _contourOrdre.push(cle);
     while (_contourOrdre.length > CONTOUR_CACHE_MAX) {
@@ -5133,6 +5168,25 @@ if (window._spGpuEnabled) {
 
   /* Bandes prêtes pour lineWidthFor : décalage appliqué, mêmes bornes verticales que
      l'ancienne version (boîte + décalage) pour que le choix de bande reste déterministe. */
+  /* _SP_WRAP_544 — oublier la mesure d'UN objet (utilisé quand l'application pose son
+     mode d'habillage : la mesure doit être fraîche au moment où l'utilisateur agit). */
+  function spOublierContour(obj) {
+    try {
+      if (!obj) return false;
+      var bb = obj.getBoundingRect(true, true);
+      if (!bb || !(bb.width > 0) || !(bb.height > 0)) return false;
+      var cle = contourSignature(obj, bb);
+      if (Object.prototype.hasOwnProperty.call(_contourCache, cle)) {
+        delete _contourCache[cle];
+        var i = _contourOrdre.indexOf(cle);
+        if (i >= 0) _contourOrdre.splice(i, 1);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+  window._spWrapOublierContour = spOublierContour;
+
   function shapeBands(obj, so) {
     var brut = bandsEncre(obj);
     if (!brut) return null;
@@ -9394,6 +9448,9 @@ window.spTestDiag = function () {
     standoffDefault: DEFAULT_STANDOFF,
     setMode: function (obj, mode) {
       if (!obj) return false;
+      /* _SP_WRAP_544 — toute pose de mode refait la mesure de contour de CET objet : une
+         première mesure ratée (image pas encore chargée) ne peut plus être servie. */
+      try { if (window._spWrapOublierContour) window._spWrapOublierContour(obj); } catch (_) {}
       if (!mode || mode === 'none') delete obj._spWrapMode;
       else {
         obj._spWrapMode = mode;
@@ -88720,6 +88777,20 @@ function initObjectRightClickMenu() {
     try { if (typeof saveState === 'function') saveState('Habillage du texte'); } catch (_) {}
   }
 
+  /* _SP_WRAP_544c — LA RELECTURE DE L'ÉTAT DE L'OBJET NE SE FAIT PAS ICI.
+     RefreshSeg est appelé EN PLEIN CLIC, entre le choix de l'utilisateur (setter) et son
+     application (apply) : relire l'objet à cet instant écrasait le choix par l'ancien mode
+     (mesuré : clic sur « Contour » → c'est « Aucun » qui restait allumé, et rien ne
+     s'appliquait). La relecture vit dans resyncDepuisObjet(), appelée au relâchement. */
+  function resyncDepuisObjet() {
+    try {
+      if (!state.obj || !window._spWrap) return false;
+      var mo = window._spWrap.getMode(state.obj);   /* 'none' si l'objet n'a pas d'habillage */
+      if (mo !== state.mode) { state.mode = mo; return true; }
+    } catch (_) {}
+    return false;
+  }
+
   function refreshSeg() {
     var P = state.pal;
     var set = function (btn, on) {
@@ -88965,6 +89036,15 @@ function initObjectRightClickMenu() {
     if (!popin || popin.style.display !== 'block') return;
     if (popin.contains(e.target)) return;
     hide(true);
+  }, true);
+
+  /* _SP_WRAP_544 — LA POP-IN SUIT SON OBJET PENDANT QUE L'UTILISATEUR AGIT DESSUS.
+     À chaque relâchement de souris (déplacement, redimensionnement de l'objet ou du texte),
+     on relit le mode réellement porté par l'objet : l'affichage ne peut plus se figer sur
+     un état périmé pendant que l'habillage, lui, est bien appliqué. */
+  document.addEventListener('mouseup', function () {
+    if (!popin || popin.style.display !== 'block' || !state.obj) return;
+    try { if (resyncDepuisObjet()) refreshSeg(); } catch (_) {}
   }, true);
 })();
 

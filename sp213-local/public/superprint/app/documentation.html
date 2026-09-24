@@ -207,9 +207,15 @@
   }
 
   /* ═══ CODE ═══ */
+  /* 1.7.544 — UN CODE LONG DÉCALAIT TOUTE LA PAGE EN MOBILE.
+     Mesuré à 320 px : un <code> de 336 px impossible à couper dans un bloc .tip portait la
+     largeur du document à 381 px, soit 69 px de débordement horizontal ; l'en-tête étant en
+     position fixed, il restait à la largeur de la fenêtre et sa rangée d'onglets était donc
+     écourtée (deuxième onglet coupé). On autorise la coupure. */
   code {
     background: var(--bg3); padding: 2px 6px; border-radius: 4px;
     font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent2);
+    overflow-wrap: anywhere; word-break: break-word;
   }
   pre {
     background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
@@ -259,9 +265,38 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--text2); }
 
   /* ═══ RESPONSIVE ═══ */
+  /* 1.7.544 — L'EN-TÊTE MOBILE SE RANGE SUR DEUX RANGÉES.
+     MESURÉ AVANT, à 390 px : « Documentation technique » s'arrêtait à 549 px, donc HORS ÉCRAN
+     (deuxième onglet invisible), et la page mesurait 385 px pour 382 px de fenêtre → elle se
+     décalait horizontalement ; à 320 px, 385 px pour 312 px. Désormais : logo + réglages sur
+     la première rangée, onglets sur toute la largeur en dessous, les deux se partageant la
+     place — visibles à toutes les largeurs de téléphone. */
   @media (max-width: 900px) {
+    /* 1.7.544 — filet de sécurité : aucun débordement horizontal résiduel. */
+    html, body { overflow-x: hidden; }
     .sidebar { display: none; }
-    .main { margin-left: 0; padding: 24px 16px 60px; }
+    .topbar {
+      height: auto; min-height: 92px; padding: max(7px, env(safe-area-inset-top)) 10px 8px;
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px;
+      grid-template-areas: "logo controls" "tabs tabs";
+    }
+    .topbar .logo {
+      grid-area: logo; min-width: 0; font-size: 15px; letter-spacing: 2px;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .topbar .version { display: none; }
+    .topbar-controls { grid-area: controls; margin-left: 0; gap: 5px; }
+    .theme-toggle button { min-width: 38px; min-height: 38px; padding: 6px 8px; }
+    .lang-toggle button { min-height: 38px; padding: 6px 12px; }
+    .tab-toggle {
+      grid-area: tabs; margin-left: 0; width: 100%; box-sizing: border-box;
+      padding: 3px; gap: 2px;
+    }
+    .tab-toggle button {
+      flex: 1 1 0; min-width: 0; min-height: 34px; padding: 6px 8px; font-size: 10px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .main { margin-left: 0; margin-top: 112px; padding: 24px 16px 60px; }
   }
 
   .count-badge {
@@ -314,7 +349,7 @@
 <!-- ═══════════════════  TOP BAR  ═══════════════════ -->
 <div class="topbar">
   <div class="logo">SUPER<span>PRINT</span></div>
-  <span class="version">v1.7.543</span>
+  <span class="version">v1.7.544</span>
   <div class="tab-toggle">
     <button class="active" data-tab="manual" onclick="setTab('manual')">
       <span data-lang="fr">Manuel d'utilisation</span>
@@ -2486,6 +2521,27 @@ document.addEventListener('keydown', function (e) {
   }
 });
 document.getElementById('docSearchHint').classList.add('has-shortcut');
+
+/* 1.7.544 — LA MARGE HAUTE DU CONTENU SUIT LA HAUTEUR RÉELLE DE L'EN-TÊTE.
+   Mesuré : en-tête passé à 108 px (davantage avec une encoche) alors que la marge valait
+   52 px → le titre de la page passait sous la barre. On mesure l'en-tête ; sur ordinateur on
+   rend la main à la feuille de styles. */
+function spAjusterMargeEntete() {
+  var tb = document.querySelector('.topbar');
+  if (!tb) return;
+  var mobile = window.matchMedia('(max-width: 900px)').matches;
+  var h = tb.offsetHeight || 0;
+  document.querySelectorAll('.main').forEach(function (el) {
+    el.style.marginTop = mobile ? (h + 8) + 'px' : '';
+  });
+  document.querySelectorAll('h1[id], h2[id], h3[id]').forEach(function (el) {
+    el.style.scrollMarginTop = mobile ? (h + 20) + 'px' : '';
+  });
+}
+window.addEventListener('load', spAjusterMargeEntete);
+window.addEventListener('resize', spAjusterMargeEntete);
+window.addEventListener('orientationchange', spAjusterMargeEntete);
+if (document.readyState !== 'loading') spAjusterMargeEntete();
 
 
 // ═══ GLOBAL SEARCH ═══
