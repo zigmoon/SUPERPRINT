@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,13 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.539] — 2026-09-24
+
+_The tab-stop ruler only shows when the Tabulation function is switched on, instead of appearing on every text block you edit_
+
+### Fixed
+- **The tab-stop ruler appeared above every text block** (user report: « à chaque fois que je mets un bloc texte dans la page de préview, une règle apparait au-dessus du bloc texte. Attention, cette règle ne doit apparaitre que lorsque la fonction « tabulation » de la side barre de gauche est enclenchée »). Measured: `regleEstVisible()` (app/JS/main.js, tab-stop module) returned `true` as soon as the first text block was **in edit mode** — `if (b.isEditing) return true;`, a clause added by v1.7.505 — and creating a block or clicking inside one goes through edit mode. That clause is **removed**: the ruler now has only the two legitimate entry points, (1) the **Tabulation function is switched on** (the « Taquets de tabulation » panel, opened from the left sidebar — `panneauOuvert()`), or (2) the block’s tab stops were enabled **on purpose** (the « Taquets actifs sur le bloc » box of the same panel, carried by `_spTabs.active` and saved with the document). The panel’s help text (`app/index.html`) was rewritten accordingly: it used to state that the ruler shows as soon as the cursor is in a text block. - **Measured after** (bench 8144, real text blocks): block in edit mode with the panel closed → **0 ruler** (was 1); Tabulation function opened → **1 ruler**; panel closed again → **0 ruler**; block merely selected, panel closed → **0 ruler**; block tab stops enabled with the panel closed → **1 ruler** (intended state, kept).
 
 ## [1.7.538] — 2026-09-24
 

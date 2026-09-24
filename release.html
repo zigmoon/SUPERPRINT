@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.538 — the page-template entry is now part of the right-click menu, with a release/lock toggle, and only appears on pages that have a template.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.539 — the tab-stop ruler only shows when the Tabulation function is switched on, instead of appearing on every text block you edit.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.538 — the page-template entry is now part of the right-click menu, with a release/lock toggle, and only appears on pages that have a template.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.539 — the tab-stop ruler only shows when the Tabulation function is switched on, instead of appearing on every text block you edit.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,24 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.539 — La règle des taquets ne s'affiche plus toute seule : elle suit la fonction Tabulation ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-539">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.539</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 24 septembre 2026" data-i18n-en="Released September 24, 2026" data-i18n-jp="2026年9月24日公開">Released September 24, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="La <strong>règle des taquets</strong> se montrait au-dessus de <strong>tout bloc texte</strong> dès qu'on le créait ou qu'on cliquait dedans. Elle ne s'affiche plus que lorsque la <strong>fonction « Tabulation »</strong> de la barre latérale est enclenchée — ou que les taquets du bloc ont été activés exprès." data-i18n-en-html="The <strong>tab-stop ruler</strong> used to appear above <strong>every text block</strong> as soon as you created it or clicked inside it. It now only shows when the <strong>“Tabulation” function</strong> in the left sidebar is switched on — or when the block's tab stops have been enabled on purpose." data-i18n-jp-html="<strong>タブストップ定規</strong>は、テキストブロックを作成したときやクリックしたときに<strong>常に</strong>表示されていました。今後は、左サイドバーの<strong>「タブ」機能</strong>を有効にしたとき、またはブロックのタブストップを明示的に有効にしたときにのみ表示されます。">The tab-stop ruler no longer appears on every text block you create or click into; it follows the “Tabulation” function of the left sidebar.</p>
+
+ <h3 data-i18n-fr-html="📏 La règle suit la fonction Tabulation <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="📏 The ruler follows the Tabulation function <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="📏 定規はタブ機能に従います <span class=&quot;badge badge-fix&quot;>修正</span>">📏 The ruler follows the Tabulation function <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Plus de règle intempestive</strong> : mesuré, la règle se montrait dès qu'un bloc texte était <strong>en édition</strong> — donc à la création du moindre bloc et à chaque clic dedans. Cette condition est supprimée : créer un bloc ou cliquer dedans n'affiche plus rien (règle présente : 0)." data-i18n-en-html="<strong>No more unwanted ruler</strong>: measured, the ruler appeared as soon as a text block was <strong>in edit mode</strong> — so on the creation of any block and on every click inside it. That condition is removed: creating a block or clicking inside it shows nothing (ruler count: 0)." data-i18n-jp-html="<strong>不要な定規を廃止</strong>：実測では、テキストブロックが<strong>編集状態</strong>になるとすぐに定規が表示されていました（ブロック作成時やクリックのたび）。この条件を削除し、ブロックを作成したり中をクリックしても何も表示されません（定規の数：0）。">The ruler appeared as soon as a block was in edit mode; that condition is removed (ruler count: 0 when you create a block or click inside it).</li>
+  <li data-i18n-fr-html="<strong>Elle s'affiche avec la fonction Tabulation</strong> : un clic sur <strong>Tabulation</strong> dans la barre latérale ouvre le panneau des taquets et fait apparaître la règle au-dessus du bloc (mesuré : 0 → 1) ; le second clic referme le panneau et retire la règle (1 → 0)." data-i18n-en-html="<strong>It shows with the Tabulation function</strong>: one click on <strong>Tabulation</strong> in the left sidebar opens the tab-stop panel and brings the ruler above the block (measured: 0 → 1); a second click closes the panel and removes the ruler (1 → 0)." data-i18n-jp-html="<strong>「タブ」機能とともに表示</strong>：左サイドバーの<strong>「タブ」</strong>をクリックするとタブストップパネルが開き、ブロックの上に定規が表示されます（実測：0 → 1）。もう一度クリックするとパネルが閉じ、定規も消えます（1 → 0）。">One click on Tabulation opens the panel and shows the ruler (0 → 1); a second click closes both (1 → 0).</li>
+  <li data-i18n-fr-html="<strong>Taquets activés = règle visible</strong> : si la case <strong>« Taquets actifs sur le bloc »</strong> a été cochée, la règle reste affichée même panneau fermé (mesuré : 1) — c'est un choix explicite, conservé avec le document. Le texte d'aide du panneau a été réécrit dans ce sens." data-i18n-en-html="<strong>Tab stops enabled = ruler visible</strong>: if the <strong>“Tab stops active on the block”</strong> box has been ticked, the ruler stays visible even with the panel closed (measured: 1) — that is an explicit choice, kept with the document. The panel's help text has been rewritten accordingly." data-i18n-jp-html="<strong>タブストップ有効＝定規表示</strong>：<strong>「ブロックのタブストップを有効にする」</strong>にチェックが入っている場合、パネルを閉じても定規は表示されたままです（実測：1）。これは明示的な設定であり、文書とともに保存されます。パネルのヘルプ文もそれに合わせて更新しました。">If “Tab stops active on the block” is ticked, the ruler stays visible even with the panel closed (measured: 1) — an explicit choice saved with the document.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.538 — Clic droit : l'entrée « gabarit de la page » rejoint le menu (libérer / verrouiller) ===== -->
 

@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.538-gabarit-menu-clic-droit';
+const CACHE_NAME = 'superprint-shell-v1.7.539-regle-taquets';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

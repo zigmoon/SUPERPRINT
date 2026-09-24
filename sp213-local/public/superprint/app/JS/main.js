@@ -6804,12 +6804,22 @@ window.spTestDiag = function () {
         if (panneauOuvert()) return true;
         var b = blocsTexte()[0];
         if (!b) return false;
-        /* _SP_TAB_505_DEBUT — LA RÈGLE APPARAÎT DÈS QUE LE CURSEUR EST DANS LE TEXTE.
-           Comme dans QuarkXPress (et InDesign) : on écrit dans un bloc, la règle des
-           taquets se montre au-dessus de lui. Avant, il fallait ouvrir le panneau ou
-           avoir déjà activé les taquets du bloc : pendant la frappe on ne voyait donc
-           RIEN, et poser une tabulation au clavier se faisait à l'aveugle. */
-        if (b.isEditing) return true;
+        /* ══════════════════════════════════════════════════════════════════════════
+           🆕 v1.7.539 — LA RÈGLE N'APPARAÎT PLUS TOUTE SEULE PENDANT LA SAISIE.
+           Demande utilisateur : « à chaque fois que je mets un bloc texte dans la page
+           de préview, une règle apparait au-dessus du bloc texte. Attention, cette règle
+           ne doit apparaitre que lorsque la fonction "tabulation" de la side barre de
+           gauche est enclenchée. »
+           MESURE DU DÉFAUT : la clause retirée ici (v1.7.505) montrait la règle pour TOUT
+           bloc EN ÉDITION — donc dès la création du moindre bloc texte, et à chaque clic
+           dans un bloc. Elle est supprimée : la seule porte d'entrée est la fonction
+           Tabulation elle-même.
+           La règle s'affiche donc si :
+             · la fonction Tabulation est ENCLENCHÉE — panneau « Taquets de tabulation »
+               ouvert depuis la barre latérale (panneauOuvert, testé ci-dessus) ;
+             · ou les taquets du bloc ont été activés explicitement (case « Taquets actifs
+               sur le bloc » du même panneau).
+           ══════════════════════════════════════════════════════════════════════════ */
         return !!(b._spTabs && b._spTabs.active);
     }
 
