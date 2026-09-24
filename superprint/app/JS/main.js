@@ -10711,6 +10711,64 @@ window.spTestDiag = function () {
             } catch (e) { console.warn('[verrouiller] page:', e); return 0; }
         };
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   🆕 v1.7.545 — _SP_GAB_ORDRE_545 : ORDRE DES CALQUES DU GABARIT
+   Les éléments d'un gabarit se posent sur la page EN DEUX VAGUES : les textes
+   tout de suite (créés en natif), les autres objets plus tard (fabric.util
+   .enlivenObjects est ASYNCHRONE dès qu'il contient une image). Comme chaque pose
+   se fait avec insertAt(obj, 0) — tout en bas de la pile, pour rester SOUS les
+   objets de la page — l'ordre du gabarit se retrouvait INVERSÉ entre les deux
+   vagues, et les textes passaient au-dessus de tout.
+   MESURÉ (gabarit = fond, image, titre) : la page recevait image > fond > titre
+   au lieu de fond > image > titre — le fond recouvrait donc l'image.
+   On marque chaque élément de son index dans le gabarit (_spMasterIdx, marque
+   RUNTIME jamais sérialisée) puis on remet la pile dans l'ordre du gabarit avec
+   canvas.moveTo(), qui ne déclenche NI object:added NI object:removed (sinon
+   chaque déplacement relançait un saveAllPages — leçon de la 1.7.543).
+   ═══════════════════════════════════════════════════════════════════════════════ */
+function spRangerGabarit(canvas, masterId) {
+    try {
+        if (!canvas || typeof canvas.getObjects !== 'function') return 0;
+        const items = canvas.getObjects().filter(function (o) {
+            if (!o || typeof o._spMasterIdx !== 'number') return false;
+            if (masterId === undefined || masterId === null) return true;
+            return o._masterPageId === undefined || o._masterPageId === masterId;
+        });
+        if (items.length < 2) return 0;
+        items.sort(function (a, b) { return a._spMasterIdx - b._spMasterIdx; });
+        if (typeof canvas.moveTo === 'function') {
+            items.forEach(function (o, i) { try { canvas.moveTo(o, i); } catch (_) {} });
+        } else if (Array.isArray(canvas._objects)) {
+            const reste = canvas._objects.filter(function (o) { return items.indexOf(o) === -1; });
+            canvas._objects.length = 0;
+            items.forEach(function (o) { canvas._objects.push(o); });
+            reste.forEach(function (o) { canvas._objects.push(o); });
+        }
+        try { canvas.requestRenderAll(); } catch (_) {}
+        return items.length;
+    } catch (e) { try { console.warn('[spRangerGabarit]', e); } catch (_) {} return 0; }
+}
+window.spRangerGabarit = spRangerGabarit;
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   🆕 v1.7.545 — _SP_GAB_REFLOW_545 : recomposition de l'habillage APRÈS l'arrivée
+   (asynchrone) des éléments du gabarit. Un texte n'épouse une image de gabarit que
+   si celle-ci est DÉJÀ posée : la relance de fin de rendu (finalizeRender) passe
+   avant, d'où une page parfois laissée sans habillage — qu'un rechargement
+   corrigeait. C'est exactement le « parfois » du retour utilisateur.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+function spReflowApresGabarit(canvas) {
+    try {
+        if (!canvas || typeof canvas.getObjects !== 'function') return;
+        const aUnObstacle = canvas.getObjects().some(function (o) {
+            return o && typeof o._spWrapMode === 'string' && o._spWrapMode !== 'none';
+        });
+        if (!aUnObstacle) return;
+        if (typeof window._spWrapReflowAll === 'function') window._spWrapReflowAll(canvas);
+    } catch (_) {}
+}
+window.spReflowApresGabarit = spReflowApresGabarit;
+
         function addSpecialTextObjectsToCanvas(fabricCanvas, pageIndex, position) {
             if (!fabricCanvas) return;
             const bleedPx = mmToPx(bleed);
@@ -10736,13 +10794,23 @@ window.spTestDiag = function () {
                         // Items non-textes du gabarit (rect, line, ellipse, polygon, path, image…)
                         // ⚠️ Les repères (_isMasterGuide) sont inclus pour être VISIBLES sur les pages
                         //   réelles, mais marqués excludeFromExport=true pour ne JAMAIS sortir au PDF.
+                        /* 🆕 v1.7.545 — _SP_GAB_ORDRE_545 : on garde l'INDEX de chaque élément
+                           dans le gabarit (voir spRangerGabarit). */
                         const nonTextData = parsed.objects.filter(o =>
                             o && o.type !== 'textbox' && o.type !== 'text' && o.type !== 'i-text'
                             && (!_spPageLiberee || o._isMasterGuide)
                         );
+                        const _idxGabarit = new Map();
+                        parsed.objects.forEach(function (_o, _i) { if (_o) _idxGabarit.set(_o, _i); });
                         if (nonTextData.length > 0) {
                             try {
                                 fabric.util.enlivenObjects(nonTextData, function(enlivened) {
+                                    /* 🆕 v1.7.545 — canevas remplacé pendant le chargement
+                                       asynchrone (renderAllPages a vidé le conteneur) : ne pas
+                                       poser les éléments dans un canevas mort. */
+                                    try {
+                                        if (!fabricCanvas.lowerCanvasEl || !fabricCanvas.lowerCanvasEl.isConnected) return;
+                                    } catch (_) { return; }
                                     enlivened.forEach((eo, idx) => {
                                         if (!eo) return;
                                         const src = nonTextData[idx];
@@ -10767,13 +10835,18 @@ window.spTestDiag = function () {
                                             _isMasterItem: true,
                                             _isMasterRuntime: true,
                                             _isMasterGuide: isGuide || undefined,
-                                            _masterPageId: masterId
+                                            _masterPageId: masterId,
+                                            /* 🆕 v1.7.545 — place de l'élément DANS le gabarit. */
+                                            _spMasterIdx: (typeof _idxGabarit.get(src) === 'number') ? _idxGabarit.get(src) : idx
                                         });
                                         eo.hoverCursor = 'default';
                                         eo.setCoords();
                                         fabricCanvas.insertAt(eo, 0);
                                         added = true;
                                     });
+                                    /* 🆕 v1.7.545 — ordre du gabarit + habillage, une fois TOUT posé. */
+                                    spRangerGabarit(fabricCanvas, masterId);
+                                    spReflowApresGabarit(fabricCanvas);
                                 });
                             } catch(eEnliven) {
                                 console.warn('[addSpecialTextObjectsToCanvas] enlivenObjects master non-texte:', eEnliven);
@@ -10781,7 +10854,7 @@ window.spTestDiag = function () {
                         }
 
                         // Textboxes (créés en natif pour contourner le bug Textbox.fromObject)
-                        parsed.objects.forEach(objData => {
+                        parsed.objects.forEach((objData, _iData) => {
                             if (_spPageLiberee) return;   /* _SP_LIBERER_533 : texte déjà libéré */
                             if (objData.type !== 'textbox' && objData.type !== 'text' && objData.type !== 'i-text') return;
                             // Calculer la position dans le référentiel du canvas
@@ -10844,7 +10917,9 @@ window.spTestDiag = function () {
                                 evented: false,
                                 _isMasterItem: true,
                                 _isMasterRuntime: true,
-                                _masterPageId: masterId
+                                _masterPageId: masterId,
+                                /* 🆕 v1.7.545 — place de l'élément DANS le gabarit. */
+                                _spMasterIdx: _iData
                             });
                             if (objData.styles) {
                                 try {
@@ -10877,6 +10952,11 @@ window.spTestDiag = function () {
                             fabricCanvas.insertAt(txt, 0);
                             added = true;
                         });
+                        /* 🆕 v1.7.545 — _SP_GAB_ORDRE_545 : les textes viennent d'être posés
+                           APRÈS les non-textes (vague asynchrone) : on remet la pile dans
+                           l'ordre du gabarit, puis on relance l'habillage. */
+                        spRangerGabarit(fabricCanvas, masterId);
+                        spReflowApresGabarit(fabricCanvas);
                     }
                 } catch(e) {
                     console.warn('[addSpecialTextObjectsToCanvas] Erreur gabarit:', e);
@@ -10968,11 +11048,16 @@ window.spTestDiag = function () {
                 let asyncDone = false;
                 const tryResolve = () => {
                     if (asyncDone && pendingAsync === 0) {
+                        /* 🆕 v1.7.545 — _SP_GAB_ORDRE_545 : même remise en ordre que sur
+                           l'écran (sinon le PDF empilait les éléments du gabarit à
+                           l'envers : le fond par-dessus l'image). */
+                        spRangerGabarit(tempFabric, null);
                         try { tempFabric.requestRenderAll && tempFabric.requestRenderAll(); } catch(_) {}
                         // (diagnostic supprimé en v1.7.169)
                         resolve();
                     }
                 };
+                const _idxGabaritExport = new Map();
 
                 // ── 1) Items du gabarit assigne ──
                 if (masterId && masterPages[masterId] && masterPages[masterId].objects) {
@@ -10990,6 +11075,7 @@ window.spTestDiag = function () {
                                 && !_spLibereeExport);
 
                             // Non-textes : enliven (asynchrone si images)
+                            exportable.forEach(function (_o, _i) { if (_o) _idxGabaritExport.set(_o, _i); });
                             const nonTextData = exportable.filter(o =>
                                 o.type !== 'textbox' && o.type !== 'text' && o.type !== 'i-text'
                             );
@@ -11009,6 +11095,8 @@ window.spTestDiag = function () {
                                                 _isMasterItem: true
                                             });
                                             try { eo.setCoords && eo.setCoords(); } catch(_) {}
+                                            /* 🆕 v1.7.545 — place de l'élément dans le gabarit. */
+                                            eo._spMasterIdx = (typeof _idxGabaritExport.get(src) === 'number') ? _idxGabaritExport.get(src) : idx;
                                             try { tempFabric.insertAt(eo, 0); } catch(_) { tempFabric.add(eo); }
                                         });
                                         pendingAsync--;
@@ -11021,7 +11109,7 @@ window.spTestDiag = function () {
                             }
 
                             // Textes : creation native (Fabric.Textbox.fromObject = bug)
-                            exportable.forEach(objData => {
+                            exportable.forEach((objData, _iDataExp) => {
                                 if (objData.type !== 'textbox' && objData.type !== 'text' && objData.type !== 'i-text') return;
                                 try {
                                     // 🛡️ BUG 21 fix (2026-05-07 v086) : copier TOUTES les proprietes
@@ -11070,7 +11158,9 @@ window.spTestDiag = function () {
                                         selectable: false,
                                         evented: false,
                                         excludeFromExport: false,
-                                        _isMasterItem: true
+                                        _isMasterItem: true,
+                                        /* 🆕 v1.7.545 — place de l'élément dans le gabarit. */
+                                        _spMasterIdx: _iDataExp
                                     });
                                     if (objData.styles) {
                                         try {
@@ -12169,6 +12259,17 @@ window.spTestDiag = function () {
     // FIX ACCUMULATION: Incrémenter l'époque de rendu pour invalider les setTimeout en vol
     if (!window._renderEpoch) window._renderEpoch = 0;
     window._renderEpoch++;
+
+    /* 🆕 v1.7.545 — _SP_MASTER_PREVIEW_545 : en édition de gabarit, un changement de
+       FORMAT (ou tout rendu déclenché par un réglage de page) doit aussi ré-adapter la
+       table de montage du gabarit : elle ne fait pas partie de renderAllPages. */
+    try {
+        if (window._spMasterEdit && window._spMasterEdit.canvas
+            && typeof window.spMasterEditReperes === 'function') {
+            window.spMasterEditReperes(window._spMasterEdit.canvas,
+                mmToPx(pageFormat.width), mmToPx(pageFormat.height));
+        }
+    } catch (_) {}
     const renderEpoch = window._renderEpoch;
     
     // 🛡️ FIX 2026-05-08 (v1.7.108) : poser _isRenderingAllPages AVANT la destruction
@@ -18291,6 +18392,13 @@ window.spTestDiag = function () {
         }
 
         function getActiveCanvas() {
+    /* 🆕 v1.7.545 — _SP_MASTER_PREVIEW_545 : en ÉDITION DE GABARIT, le canevas actif
+       EST celui du gabarit, posé dans la préview. Tous les panneaux et outils de
+       l'application (marges, repères, grille de colonnes, habillage, typo, calques…)
+       travaillent alors sur le gabarit exactement comme sur une page. */
+    try {
+        if (window._spMasterEdit && window._spMasterEdit.canvas) return window._spMasterEdit.canvas;
+    } catch (_) {}
     // FIX MODE SPREAD : Trouver le bon canvas selon currentPageIndex
     if (viewMode === 'spread') {
         // En mode spread, un canvas peut contenir 2 pages
@@ -18347,6 +18455,16 @@ window.spTestDiag = function () {
                         drawMargins(c, w, h);
                     }
                 });
+                /* 🆕 v1.7.545 — _SP_MASTER_PREVIEW_545 : la table de montage du GABARIT
+                   n'est pas dans canvases : sans cette ligne, son cadre de marges restait
+                   figé quand on changeait les marges pendant l'édition (mesuré : 57 px
+                   au lieu de 23 px après passage à 8 mm). */
+                try {
+                    if (window._spMasterEdit && window._spMasterEdit.canvas
+                        && typeof window.spMasterEditReperes === 'function') {
+                        window.spMasterEditReperes(window._spMasterEdit.canvas, w, h);
+                    }
+                } catch (_) {}
             } catch (e) { console.warn('[marges] redessin des reperes :', e); }
         }
         window.spRedessinerReperesMarges = spRedessinerReperesMarges;
@@ -53342,6 +53460,27 @@ https://superprint.app
                         // Conserver les repères master + objets normaux (textes, images, formes, guides utilisateur)
                         return true;
                     });
+                    /* 🆕 v1.7.545 — _SP_GAB_COORD_545 : les objets d'une PAGE vivent dans
+                       le repère du CANEVAS (origine = coin du FOND PERDU), alors qu'un
+                       GABARIT vit dans celui de la PAGE (origine = coin du format fini) :
+                       c'est le repère de l'éditeur de gabarit, et l'injection sur une page
+                       refait le chemin inverse (+ fond perdu). Copiées telles quelles, les
+                       coordonnées de la page décalaient donc CHAQUE élément du gabarit
+                       d'UN fond perdu vers la droite et le bas (mesuré : 3 mm = 9 px).
+                       On ne décale QUE les objets de premier niveau : les enfants d'un
+                       groupe sont exprimés dans le repère du groupe. */
+                    try {
+                        const _bleedPx545 = mmToPx(bleed);
+                        if (_bleedPx545) {
+                            objs.forEach(function (o) {
+                                if (!o) return;
+                                if (typeof o.left === 'number') o.left = o.left - _bleedPx545;
+                                if (typeof o.top === 'number') o.top = o.top - _bleedPx545;
+                            });
+                        }
+                    } catch (eCoord) {
+                        console.warn('[addPageAsMasterFromChemin] conversion fond perdu:', eCoord);
+                    }
                     // 🛡️ v1.7.93 : Régénérer les IDs uniques (cf. duplicatePageFromChemin)
                     // Le gabarit est appliqué à plusieurs pages → il NE doit PAS partager
                     // d'IDs avec sa page source (sinon collisions dans le moteur spread
@@ -53630,8 +53769,342 @@ https://superprint.app
             renderAllPages();
         }
 
-        // Ouvrir l'éditeur de gabarit (dans un modal dédié)
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           🆕 v1.7.545 — _SP_MASTER_PREVIEW_545 : ÉDITION DE GABARIT DANS LA PRÉVIEW
+           Demande utilisateur : « lorsque l'on ouvre "édition de gabarit", il faudrait que
+           la page s'ouvre dans la préview afin d'avoir accès à tous les réglages de page.
+           Le background de la preview sera plus foncé au moment de l'édition du gabarit.
+           Ce mode édition de gabarit aura 2 boutons (annuler et enregistrer le gabarit). »
+           → Le gabarit s'édite SUR LA TABLE DE MONTAGE, à la place des pages : plein
+             format disponible (au lieu du canevas de 450 px du modal), fond de préview
+             assombri, et seulement deux boutons flottants : « Annuler » et
+             « Enregistrer le gabarit ».
+           → getActiveCanvas() renvoie le canevas du gabarit : TOUS les panneaux et
+             outils de l'application (marges, colonnes, repères, grille, habillage,
+             typo, calques, clic droit…) pilotent alors le gabarit.
+           → Le canevas du gabarit n'entre JAMAIS dans `canvases` : il ne doit être ni
+             sérialisé comme une page ni reconstruit par renderAllPages.
+           ═══════════════════════════════════════════════════════════════════════════════ */
+
+        const _SP_ME_CSS = [
+            '#canvasScrollArea.sp-master-edit { background: #b6b6b6 !important; }',
+            '#canvasScrollArea.sp-master-edit #pagesContainer { display: none !important; }',
+            '#spMasterEditHost { display: none; }',
+            '#canvasScrollArea.sp-master-edit #spMasterEditHost {',
+            '  display: flex; align-items: flex-start; justify-content: center;',
+            '  padding: 30px 0 110px 0; width: 100%; box-sizing: border-box; overflow: auto;',
+            '}',
+            '#spMasterEditHost .sp-me-cadre { display: flex; flex-direction: column; align-items: center; gap: 10px; }',
+            '#spMasterEditHost .sp-me-cartouche {',
+            '  font: 600 11px/1 ui-monospace, Consolas, monospace; letter-spacing: .6px;',
+            '  text-transform: uppercase; color: #3c3c3c; background: rgba(255,255,255,.82);',
+            '  border: 1px solid rgba(0,0,0,.12); border-radius: 3px; padding: 5px 9px; white-space: nowrap;',
+            '}',
+            '#spMasterEditHost .sp-me-page {',
+            '  background: #fff; box-shadow: 0 8px 28px rgba(0,0,0,.28); line-height: 0;',
+            '}',
+            '#spMasterEditBar {',
+            '  position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 1200;',
+            '  display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px;',
+            '  background: rgba(26,26,28,.96); color: #f2f2f2; font: 12px/1.2 system-ui, sans-serif;',
+            '  box-shadow: 0 12px 34px rgba(0,0,0,.34); max-width: min(720px, 94vw);',
+            '}',
+            '#spMasterEditBar .sp-me-titre { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }',
+            '#spMasterEditBar label { display: flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer; }',
+            '#spMasterEditBar button {',
+            '  font: 600 12px/1 system-ui, sans-serif; padding: 9px 16px; border-radius: 6px; cursor: pointer;',
+            '  border: 1px solid rgba(255,255,255,.26); background: transparent; color: #f2f2f2;',
+            '}',
+            '#spMasterEditBar button#spMasterEditEnregistrer { background: #2bb7ff; border-color: #2bb7ff; color: #04222f; }',
+            '#spMasterEditBar button:hover { filter: brightness(1.08); }',
+            'body.sp-master-edit #aiFooterBar { display: none !important; }'
+        ].join('\n');
+
+        function spMasterEditCss() {
+            try {
+                if (document.getElementById('spMasterEditCss')) return;
+                const st = document.createElement('style');
+                st.id = 'spMasterEditCss';
+                st.textContent = _SP_ME_CSS;
+                document.head.appendChild(st);
+            } catch (_) {}
+        }
+
+        function spMasterEditActif() {
+            return !!(window._spMasterEdit && window._spMasterEdit.canvas);
+        }
+        window.spMasterEditActif = spMasterEditActif;
+
+        /* Repères de travail du gabarit : cadre des marges (marges par côté si elles
+           sont définies) + filet du format fini. Aucun n'est enregistré : le cadre
+           porte isMargin (filtre du save) et le filet excludeFromExport. */
+        function spMasterEditReperes(canvas, w, h) {
+            try {
+                if (!canvas) return;
+                /* 🆕 v1.7.545 — le format ou les marges ont pu changer (réglages de page
+                   accessibles pendant l'édition) : on ré-adapte la taille et le zoom. */
+                try {
+                    if (window._spMasterEdit && window._spMasterEdit.canvas === canvas
+                        && typeof window._spMasterEdit.ajuster === 'function') {
+                        window._spMasterEdit.ajuster(w, h);
+                    }
+                } catch (_) {}
+                canvas.getObjects().filter(function (o) {
+                    return o && (o.isMargin || o._spMeFilet);
+                }).forEach(function (o) { try { canvas.remove(o); } catch (_) {} });
+                /* 🆕 v1.7.545 — spMargesPx() renvoie { top, bottom, inner, outer, left, right }
+                   (pas « gauche »/« haut ») : on peint les QUATRE côtés réellement réglés. */
+                let mL = 0, mR = 0, mT = 0, mB = 0;
+                try {
+                    const mp = (typeof spMargesPx === 'function') ? spMargesPx() : null;
+                    if (mp) {
+                        mL = mp.left || 0; mR = mp.right || 0;
+                        mT = mp.top || 0; mB = mp.bottom || 0;
+                    }
+                } catch (_) {}
+                if ((mL + mR) < w && (mT + mB) < h) {
+                    canvas.add(new fabric.Rect({
+                        left: mL, top: mT,
+                        width: Math.max(1, w - mL - mR), height: Math.max(1, h - mT - mB),
+                        fill: 'transparent', stroke: '#ff00ff', strokeWidth: 0.5, strokeDashArray: [4, 4],
+                        selectable: false, evented: false, excludeFromExport: true, isMargin: true
+                    }));
+                }
+                canvas.add(new fabric.Rect({
+                    left: 0.5, top: 0.5, width: Math.max(1, w - 1), height: Math.max(1, h - 1),
+                    fill: 'transparent', stroke: '#8a8a8a', strokeWidth: 1,
+                    selectable: false, evented: false, excludeFromExport: true, _spMeFilet: true
+                }));
+                canvas.requestRenderAll();
+            } catch (e) { console.warn('[spMasterEdit] reperes:', e); }
+        }
+
+        window.spMasterEditReperes = spMasterEditReperes;
+
+        /* Entrer dans le mode : la préview devient la table du gabarit. */
+        function spMasterEditEntrer(masterId) {
+            if (!masterPages[masterId]) return false;
+            try { if (spMasterEditActif()) spMasterEditSortir(); } catch (_) {}
+            try { if (typeof saveAllPages === 'function') saveAllPages(true); } catch (_) {}
+
+            const zone = document.getElementById('canvasScrollArea');
+            const pagesC = document.getElementById('pagesContainer');
+            if (!zone || !pagesC) return false;
+
+            spMasterEditCss();
+            try { document.body.classList.add('sp-master-edit'); } catch (_) {}
+            /* C'est CETTE classe qui assombrit la table de montage et masque les pages. */
+            try { zone.classList.add('sp-master-edit'); } catch (_) {}
+
+            let host = document.getElementById('spMasterEditHost');
+            if (!host) {
+                host = document.createElement('div');
+                host.id = 'spMasterEditHost';
+                pagesC.parentNode.insertBefore(host, pagesC.nextSibling);
+            }
+            host.innerHTML = '';
+            const cadre = document.createElement('div');
+            cadre.className = 'sp-me-cadre';
+            const cartouche = document.createElement('div');
+            cartouche.className = 'sp-me-cartouche';
+            cartouche.textContent = 'Édition du gabarit ' + masterId + ' — ' + (masterPages[masterId].name || '');
+            const page = document.createElement('div');
+            page.className = 'sp-me-page';
+            const el = document.createElement('canvas');
+            el.id = 'spMasterEditCanvas';
+            page.appendChild(el);
+            cadre.appendChild(cartouche);
+            cadre.appendChild(page);
+            host.appendChild(cadre);
+
+            const w = mmToPx(pageFormat.width);
+            const h = mmToPx(pageFormat.height);
+            const c = new fabric.Canvas('spMasterEditCanvas', {
+                width: w, height: h, backgroundColor: '#ffffff',
+                preserveObjectStacking: true, selection: true
+            });
+            /* Même zoom d'adaptation que les pages du document.
+               🆕 v1.7.545 — paramétrable : un changement de FORMAT pendant l'édition
+               ré-adapte la taille et le zoom (les réglages de page restent accessibles). */
+            const dispoW = Math.max(240, (zone.clientWidth || 900) - 140);
+            const dispoH = Math.max(240, (zone.clientHeight || 700) - 200);
+            const _ajuster = function (nw, nh) {
+                const W = (typeof nw === 'number' && nw > 0) ? nw : w;
+                const H = (typeof nh === 'number' && nh > 0) ? nh : h;
+                const sc2 = Math.max(0.05, Math.min(dispoW / W, dispoH / H, 2));
+                try {
+                    c.setZoom(sc2);
+                    c.setDimensions({ width: Math.round(W * sc2), height: Math.round(H * sc2) });
+                    if (window._spMasterEdit) window._spMasterEdit.echelle = sc2;
+                } catch (_) {}
+            };
+            _ajuster();
+            c._spRenderReady = true;
+            c._isLoading = false;
+            c.bleedInfo = {
+                left: 0, right: 0, top: 0, bottom: 0,
+                position: 'master', pageIndex: -1, isMasterEdit: true,
+                centerX: w / 2, centerY: h / 2, pageCanvasWidth: w, pageCanvasHeight: h,
+                pasteboardPx: 0, pasteboardVPx: 0
+            };
+            window._activeMasterCanvas = c;
+            window._spMasterEdit = { masterId: masterId, canvas: c, echelle: c.getZoom(), ajuster: _ajuster };
+
+            const _finaliser = function () {
+                try {
+                    c.getObjects().forEach(function (o) {
+                        if (!o || o.isMargin || o._spMeFilet) return;
+                        o.selectable = true; o.evented = true;
+                        if (o.excludeFromExport === true && !o._isMasterGuide) o.excludeFromExport = false;
+                    });
+                    _ajuster();
+                    spMasterEditReperes(c, w, h);
+                    try { spMasterEditorSyncNumberingCheck(masterId); } catch (_) {}
+                    c.requestRenderAll();
+                } catch (e) { console.warn('[spMasterEdit] finalisation:', e); }
+            };
+
+            if (masterPages[masterId].objects) {
+                try {
+                    c.loadFromJSON(masterPages[masterId].objects, _finaliser);
+                } catch (e) {
+                    console.warn('[spMasterEdit] chargement:', e);
+                    _finaliser();
+                }
+            } else {
+                _finaliser();
+            }
+
+            spMasterEditBarre(masterId);
+            /* Les panneaux de droite (page, marges, colonnes…) suivent le canevas actif. */
+            try { if (typeof updatePageIndicator === 'function') updatePageIndicator(); } catch (_) {}
+            return true;
+        }
+        window.spMasterEditEntrer = spMasterEditEntrer;
+
+        /* Barre flottante du mode : titre + case Numérotation + LES DEUX boutons. */
+        function spMasterEditBarre(masterId) {
+            try {
+                const vieille = document.getElementById('spMasterEditBar');
+                if (vieille) vieille.remove();
+                const bar = document.createElement('div');
+                bar.id = 'spMasterEditBar';
+                const titre = document.createElement('span');
+                titre.className = 'sp-me-titre';
+                titre.textContent = 'Édition du gabarit ' + masterId;
+                const lab = document.createElement('label');
+                lab.title = 'Afficher le numéro de page sur toutes les pages qui utilisent ce gabarit (le style vient du panneau « Numérotation des pages »).';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.id = 'masterNumberingCheck';
+                cb.style.cssText = 'width:15px;height:15px;cursor:pointer;';
+                cb.checked = !!(masterPages[masterId] && masterPages[masterId].numbering === true);
+                /* 🆕 le gestionnaire est posé en écouteur : l'attribut onchange de l'ancien
+                   modal appelait spMasterEditorPreviewFolio() qui n'est PAS global
+                   (ReferenceError silencieuse) — la case ne faisait rien. */
+                cb.addEventListener('change', function () {
+                    try { spMasterEditorPreviewFolio(); } catch (_) {}
+                });
+                const lblTxt = document.createElement('span');
+                lblTxt.textContent = '🔢 Numérotation';
+                lab.appendChild(cb);
+                lab.appendChild(lblTxt);
+                const bAnnuler = document.createElement('button');
+                bAnnuler.type = 'button';
+                bAnnuler.id = 'spMasterEditAnnuler';
+                bAnnuler.textContent = 'Annuler';
+                bAnnuler.addEventListener('click', function () { spMasterEditSortir(); });
+                const bEnreg = document.createElement('button');
+                bEnreg.type = 'button';
+                bEnreg.id = 'spMasterEditEnregistrer';
+                bEnreg.textContent = '💾 Enregistrer le gabarit';
+                bEnreg.addEventListener('click', function () { spMasterEditEnregistrer(); });
+                bar.appendChild(titre);
+                bar.appendChild(lab);
+                bar.appendChild(bAnnuler);
+                bar.appendChild(bEnreg);
+                document.body.appendChild(bar);
+            } catch (e) { console.warn('[spMasterEdit] barre:', e); }
+        }
+        window.spMasterEditBarre = spMasterEditBarre;
+
+        /* Sortie du mode : ANNULE (le gabarit n'a jamais été touché en mémoire).
+           La classe retirée du #canvasScrollArea réaffiche les pages : aucun
+           renderAllPages n'est nécessaire pour annuler. */
+        function spMasterEditSortir() {
+            const m = window._spMasterEdit;
+            window._spMasterEdit = null;
+            window._activeMasterCanvas = null;
+            try { if (m && m.canvas) m.canvas.dispose(); } catch (_) {}
+            try { document.body.classList.remove('sp-master-edit'); } catch (_) {}
+            try {
+                const zone = document.getElementById('canvasScrollArea');
+                if (zone) zone.classList.remove('sp-master-edit');
+                const host = document.getElementById('spMasterEditHost');
+                if (host) { host.innerHTML = ''; host.remove(); }
+                const bar = document.getElementById('spMasterEditBar');
+                if (bar) bar.remove();
+            } catch (_) {}
+            return true;
+        }
+        window.spMasterEditSortir = spMasterEditSortir;
+
+        /* Enregistrement : reprend exactement les filtres de l'ancien modal
+           (cadre de marges exclu, repères de gabarit conservés) puis rejoue les
+           pages — c'est ce rendu qui réalimente les pages assignées. */
+        function spMasterEditEnregistrer() {
+            const m = window._spMasterEdit;
+            if (!m || !m.canvas) return false;
+            const c = m.canvas;
+            let data = null, numero = false;
+            try {
+                if (c.getActiveObject() && c.getActiveObject().isEditing) c.getActiveObject().exitEditing();
+                c.discardActiveObject();
+                const objs = c.getObjects().filter(function (o) {
+                    return o && !o.isMargin && !o._spMeFilet && !o._spMasterFolioPreview
+                        && (!o.excludeFromExport || o._isMasterGuide);
+                });
+                data = objs.map(function (o) { return o.toObject(SP_CUSTOM_PROPS); });
+                const cb = document.getElementById('masterNumberingCheck');
+                numero = !!(cb && cb.checked);
+            } catch (e) {
+                console.warn('[spMasterEdit] enregistrement:', e);
+                return false;
+            }
+            const masterId = m.masterId;
+            spMasterEditSortir();
+            try {
+                masterPages[masterId].numbering = numero;
+                masterPages[masterId].objects = JSON.stringify({ objects: data });
+            } catch (e) {
+                console.warn('[spMasterEdit] écriture du gabarit:', e);
+                return false;
+            }
+            _isRenderingAllPages = false;
+            try { renderAllPages(); } catch (_) {}
+            try { saveStateFromPages('Gabarit ' + masterId + ' mis à jour'); } catch (_) {}
+            try { showCheminDeFer(); } catch (_) {}
+            try {
+                if (typeof showChainToast === 'function') showChainToast('Gabarit ' + masterId + ' enregistré', 2500);
+            } catch (_) {}
+            return true;
+        }
+        window.spMasterEditEnregistrer = spMasterEditEnregistrer;
+
+        // Ouvrir l'éditeur de gabarit — DANS LA PRÉVIEW (voir _SP_MASTER_PREVIEW_545)
         function openMasterEditor(masterId) {
+            /* 🆕 v1.7.545 — _SP_MASTER_PREVIEW_545 : le gabarit s'édite désormais dans la
+               PRÉVIEW (plein format, fond assombri, 2 boutons). On FERME d'abord le chemin
+               de fer (c'est de là qu'on clique le gabarit) en appliquant les changements,
+               puis on installe la table d'édition après son rendu. Les lignes ci-dessous
+               (petit canevas de 450 px dans un modal) ne servent plus que de filet. */
+            if (masterPages[masterId]) {
+                try { closeCheminDeFerModal(true); } catch (_) {}
+                setTimeout(function () {
+                    try { spMasterEditEntrer(masterId); } catch (e) { console.warn('[spMasterEdit] entrée:', e); }
+                }, 750);
+                return;
+            }
             if (!masterPages[masterId]) return;
             const modal = document.getElementById('masterEditorModal');
             if (!modal) return;
@@ -54144,6 +54617,8 @@ https://superprint.app
         function spMasterEditorPreviewFolio() {
             const mc = window._activeMasterCanvas;
             if (!mc) return;
+            /* 🆕 v1.7.545 — rendu immédiat dans la préview (au lieu du modal). */
+            try { mc.requestRenderAll(); } catch (_) {}
             try {
                 mc.getObjects().filter(o => o && o._spMasterFolioPreview).forEach(o => mc.remove(o));
                 const cb = document.getElementById('masterNumberingCheck');
@@ -54183,6 +54658,8 @@ https://superprint.app
             if (cb) cb.checked = !!(masterPages[masterId] && masterPages[masterId].numbering === true);
             spMasterEditorPreviewFolio();
         }
+        /* 🆕 v1.7.545 — appelable depuis la barre d'édition de gabarit. */
+        window.spMasterEditorSyncNumberingCheck = spMasterEditorSyncNumberingCheck;
 
         // Appliquer la numérotation sur toutes les pages
         function applyPageNumbering() {
@@ -87037,6 +87514,17 @@ function initObjectRightClickMenu() {
         obj.excludeFromExport === true && obj._isUiHelper;
 
     const findCanvasFromTarget = (el) => {
+        /* 🆕 v1.7.545 — le canevas d'ÉDITION DE GABARIT n'est PAS dans canvases (il ne
+           doit jamais être sérialisé comme une page) : on le reconnaît ici pour que le
+           clic droit, les calques, l'habillage et les outils fonctionnent dessus. */
+        try {
+            const _me = window._spMasterEdit;
+            if (_me && _me.canvas && el) {
+                const _c = _me.canvas;
+                if (el === _c.upperCanvasEl || el === _c.lowerCanvasEl
+                    || (el.closest && el.closest('#spMasterEditHost'))) return _c;
+            }
+        } catch (_) {}
         if (typeof canvases === 'undefined' || !Array.isArray(canvases)) return null;
         // Walk up to the .canvas-container, then match upperCanvasEl/lowerCanvasEl
         let node = el;
@@ -89145,7 +89633,13 @@ function initObjectRightClickMenu() {
     const spEtatGabaritPourPoint = (canvas, pt) => {
         try {
             if (typeof window.spEtatGabaritPage !== 'function') return null;
-            return window.spEtatGabaritPage(spPageIdxPourPoint(canvas, pt));
+            const _etat = window.spEtatGabaritPage(spPageIdxPourPoint(canvas, pt));
+            /* 🆕 v1.7.545 — _SP_LIBERER_ONLY_545 : l'action inverse « Verrouiller » est
+               RETIRÉE (demande utilisateur) : sur une page DÉJÀ libérée il n'y a plus
+               aucune entrée de gabarit, donc l'état est « nul » pour le menu — sans cela
+               le clic droit ouvrirait un menu sombre VIDE dans le vide de la page. */
+            if (_etat && _etat.libere) return null;
+            return _etat;
         } catch (_) { return null; }
     };
 
@@ -89281,18 +89775,17 @@ function initObjectRightClickMenu() {
            « Verrouiller… » dès que la page a été libérée (clic droit suivant).
            ══════════════════════════════════════════════════════════════════════════════ */
         {
+            /* 🆕 v1.7.545 — _SP_LIBERER_ONLY_545 : l'entrée n'existe plus que pour
+               LIBÉRER. « Verrouiller » (action inverse) supprimait les éléments libérés —
+               donc le travail fait sur la page — et est retirée à la demande de
+               l'utilisateur. La fonction window.spVerrouillerGabaritPage reste disponible
+               comme API (tests, réparation manuelle) mais n'est plus proposée. */
             const _etatGab = spEtatGabaritPourPoint(canvas, pt);
             if (_etatGab) {
                 menu.appendChild(mkSep());
-                if (_etatGab.libere) {
-                    menu.appendChild(mkItem(ICON.tplLock,
-                        t('Verrouiller le gabarit de cette page', 'Lock this page template'), '',
-                        () => window.spVerrouillerGabaritPage(canvas, _etatGab.pageIdx)));
-                } else {
-                    menu.appendChild(mkItem(ICON.tplUnlock,
-                        t('Libérer le gabarit de cette page', 'Release this page template'), '',
-                        () => window.spLibererGabaritPage(canvas, _etatGab.pageIdx)));
-                }
+                menu.appendChild(mkItem(ICON.tplUnlock,
+                    t('Libérer le gabarit de cette page', 'Release this page template'), '',
+                    () => window.spLibererGabaritPage(canvas, _etatGab.pageIdx)));
             }
         }
 
