@@ -13730,9 +13730,13 @@ window.spTestDiag = function () {
         //   éviter la surcharge d'appels répétés qui, en production, pouvait
         //   contribuer à faire « disparaître » les repères (course entre le
         //   retrait des guides et leur recréation).
+        /* _SP_GRILLE_543c : isGridGuide / isBaselineGuide / isColumnGrid ajoutés — les
+           bandes de colonnes rouges ne portaient pas isGuide et déclenchaient un
+           saveAllPages() COMPLET à chaque retrait (mesuré : 1 s de blocage par geste). */
         const _spIsGuideObject = e.target && (
             e.target.isMargin || e.target.isBleed || e.target.isTrimBox ||
-            e.target.isGuide || e.target.isManualGuide || e.target.isPage || e.target.isPageBorder || e.target.isBleedMask
+            e.target.isGuide || e.target.isManualGuide || e.target.isPage || e.target.isPageBorder || e.target.isBleedMask ||
+            e.target.isGridGuide || e.target.isBaselineGuide || e.target.isColumnGrid
         );
         
         // Nettoyer les objets miroirs si l'objet supprimé en avait
@@ -13760,13 +13764,18 @@ window.spTestDiag = function () {
             }
         }
         
-        // Nettoyage général des indicateurs orphelins
-        if (typeof cleanOrphanedOverflowIndicators === 'function') {
-            cleanOrphanedOverflowIndicators(canvas);
-        }
-        // 🛡️ BUG03 FIX 2026-05-01 : nettoyer aussi les badges/flèches de chaînage orphelins
-        if (typeof cleanOrphanedChainVisuals === 'function') {
-            cleanOrphanedChainVisuals(canvas);
+        /* _SP_GRILLE_543c : un repère de maquette ne peut pas laisser d'indicateur
+           d'overflow ni de badge de chaînage orphelin — on ne balaie plus tout le canvas
+           à chaque retrait de ligne de grille. */
+        if (!_spIsGuideObject) {
+            // Nettoyage général des indicateurs orphelins
+            if (typeof cleanOrphanedOverflowIndicators === 'function') {
+                cleanOrphanedOverflowIndicators(canvas);
+            }
+            // 🛡️ BUG03 FIX 2026-05-01 : nettoyer aussi les badges/flèches de chaînage orphelins
+            if (typeof cleanOrphanedChainVisuals === 'function') {
+                cleanOrphanedChainVisuals(canvas);
+            }
         }
         
         // 💾 Sauvegarder l'état des pages (persistance) — les guards de saveAllPages
@@ -39009,7 +39018,11 @@ window.spTestDiag = function () {
                 objectCaching: false,
                 excludeFromExport: true,
                 isGridGuide: true,
-                isColumnGrid: true
+                isColumnGrid: true,
+                /* _SP_GRILLE_543c : SANS ce drapeau, chaque retrait de bande tombait dans le
+                   saveAllPages() du gestionnaire object:removed (mesuré : 4,4 ms × 192
+                   retraits = ~1 s de blocage par geste sur un document avec images). */
+                isGuide: true
             });
             canvas.add(bande);
             try { canvas.bringToFront(bande); } catch (_) {}
@@ -39104,9 +39117,103 @@ window.spTestDiag = function () {
         canvas.requestRenderAll();
     }
 
+    /* ═══ _SP_GRILLE_543_DEBUT — LA POP-IN « GRILLE & REPÈRES » NE FIGE PLUS L'APPLICATION ═══
+       AUDIT MESURÉ (6 planches avec photo, grille bleue + 32 colonnes + ligne de base) :
+         · une case cochée = 702 objets de repère recréés + 94 ms de rendu = 136 ms de blocage ;
+         · un glisser du sélecteur de couleur = 10 événements × 44 ms = 441 ms de blocage,
+           7 020 objets recréés alors que seuls la teinte et le remplissage changeaient ;
+         · un cycle complet de reconstruction par chiffre tapé dans un champ.
+       Cause : rebuildGridAll() détruisait et recréait tous les repères de toutes les planches,
+       immédiatement, à chaque événement « input ». Correctifs : la couleur et l'opacité
+       modifient les objets EXISTANTS ; une rafale de gestes ne déclenche qu'un seul redessin ;
+       le redessin est immédiat sur les planches visibles, différé sur les autres. */
+    function spPlancheVisible(c) {
+        try {
+            const el = c && (c.upperCanvasEl || c.wrapperEl);
+            if (!el || !el.getBoundingClientRect) return true;
+            const r = el.getBoundingClientRect();
+            const zone = document.getElementById('canvasScrollArea');
+            const zr = (zone && zone.getBoundingClientRect) ? zone.getBoundingClientRect() : null;
+            const haut = zr ? zr.top : 0;
+            const bas = zr ? zr.bottom : (window.innerHeight || 900);
+            return (r.bottom > haut - 150) && (r.top < bas + 150);
+        } catch (_) { return true; }
+    }
+
+    /* La couleur de la grille ne concerne QUE les traits bleus : un set() suffit. */
+    function spMajCouleurGrille() {
+        const col = (gridColorInput && gridColorInput.value) ? gridColorInput.value : '#2bb7ff';
+        canvases.forEach(c => {
+            if (!c) return;
+            let touche = false;
+            c.getObjects().forEach(o => {
+                if (o.isGridGuide && !o.isColumnGrid && !o.isBaselineGuide) { o.set({ stroke: col }); touche = true; }
+            });
+            if (touche) c.requestRenderAll();
+        });
+    }
+
+    /* L'opacité ne concerne QUE le remplissage des bandes rouges. */
+    function spMajOpaciteColonnes() {
+        const op = Math.max(0.03, Math.min(0.5, (parseFloat(colGridOpacity) || 12) / 100));
+        canvases.forEach(c => {
+            if (!c) return;
+            let touche = false;
+            c.getObjects().forEach(o => {
+                if (o.isColumnGrid) { o.set({ fill: 'rgba(255,0,0,' + op.toFixed(3) + ')' }); touche = true; }
+            });
+            if (touche) c.requestRenderAll();
+        });
+    }
+
+    /* Regroupement : une rafale de gestes = UN redessin (90 ms après le dernier). */
+    let _spGrilleDiffere = null;
+    function spGrillePlanifier(mode) {
+        if (_spGrilleDiffere) clearTimeout(_spGrilleDiffere);
+        _spGrilleDiffere = setTimeout(function () {
+            _spGrilleDiffere = null;
+            try {
+                if (mode === 'couleur') spMajCouleurGrille();
+                else if (mode === 'opacite') spMajOpaciteColonnes();
+                else rebuildGridAll();
+            } catch (_) {}
+        }, 90);
+    }
+    window.spGrille543 = { couleur: spMajCouleurGrille, opacite: spMajOpaciteColonnes,
+                           planifier: spGrillePlanifier, plancheVisible: spPlancheVisible };
+
+    /* _SP_GRILLE_543d : UNE SEULE demande différée à la fois, datée par une génération.
+       Sans cela, plusieurs rappels d'inactivité s'empilaient et réappliquaient un état
+       décidé avant que l'utilisateur n'ait éteint la grille (mesuré : bandes rouges
+       présentes sur certaines planches et pas d'autres). */
+    let _spGrilleGen = 0, _spGrilleAttente = null;
+    function spGrilleDiffere(liste) {
+        const gen = ++_spGrilleGen;
+        _spGrilleAttente = liste.slice();
+        const exec = function () {
+            if (gen !== _spGrilleGen) return;              /* une demande plus récente a pris la main */
+            const aFaire = _spGrilleAttente || [];
+            _spGrilleAttente = null;
+            const frais = getGridSettings();              /* réglages AU MOMENT du travail */
+            aFaire.forEach(c => { try { applyGridToCanvas(c, frais); } catch (_) {} });
+        };
+        if (typeof requestIdleCallback === 'function') requestIdleCallback(exec, { timeout: 1200 });
+        else setTimeout(exec, 90);
+    }
+    function spGrilleDiffereAnnuler() { _spGrilleGen++; _spGrilleAttente = null; }
+    window.spGrille543.attente = function () { return { gen: _spGrilleGen, restantes: _spGrilleAttente ? _spGrilleAttente.length : 0 }; };
+
     function rebuildGridAll() {
         const settings = getGridSettings();
-        canvases.forEach(c => applyGridToCanvas(c, settings));
+        /* _SP_GRILLE_543 : les planches VISIBLES tout de suite, les autres à l'inactivité —
+           le clic ne paie plus le coût du document entier. */
+        const immediates = [], differees = [];
+        canvases.forEach(c => {
+            if (!c) return;
+            (spPlancheVisible(c) ? immediates : differees).push(c);
+        });
+        immediates.forEach(c => applyGridToCanvas(c, settings));
+        if (differees.length) spGrilleDiffere(differees);
         // 🍏 v066 (2026-05-04) Safari grid corruption fix : sur Safari, les
         //   mutations Fabric en masse (add+bringToFront de N lignes par canvas
         //   sur tous les canvases) peuvent re-corrompre la CSS du
@@ -39117,7 +39224,9 @@ window.spTestDiag = function () {
         try {
             const _spReassertAllPasteboards = function() {
                 if (typeof window._spReassertPasteboardLayout !== 'function') return;
-                canvases.forEach(c => {
+                /* _SP_GRILLE_543 : seulement les planches réellement modifiées (avant :
+                   toutes, deux fois de plus, à chaque geste). */
+                immediates.forEach(c => {
                     try { window._spReassertPasteboardLayout(c); } catch(_) {}
                 });
             };
@@ -39180,6 +39289,9 @@ window.spTestDiag = function () {
             if (gridVisible) {
                 rebuildGridAll();
             } else {
+                /* _SP_GRILLE_543d : on annule d'abord toute reconstruction différée —
+                   sinon une planche non visible recevait sa grille APRÈS l'extinction. */
+                spGrilleDiffereAnnuler();
                 canvases.forEach(c => {
                     clearGridGuides(c);
                     c.requestRenderAll();
@@ -39267,7 +39379,9 @@ window.spTestDiag = function () {
             const v = parseInt(colGridOpacityInput.value || '12', 10);
             colGridOpacity = Math.max(4, Math.min(40, isFinite(v) ? v : 12));
             enregistrerColonnes();
-            if (colGridCols > 0) rebuildGridAll();
+            /* _SP_GRILLE_543 : les bandes existantes changent de remplissage — aucune
+               reconstruction (mesuré avant : 10 frappes = 440 ms de blocage). */
+            if (colGridCols > 0) spGrillePlanifier('opacite');
         });
     }
     if (colGridMarginsInput) {
@@ -39409,7 +39523,9 @@ window.spTestDiag = function () {
     gridInputs.forEach(input => {
         if (!input) return;
         input.addEventListener('input', () => {
-            if (gridVisible) rebuildGridAll();
+            /* _SP_GRILLE_543 : une frappe ne déclenche plus un cycle complet de
+               reconstruction (regroupement à 140 ms, cf. spPlanifierGrille). */
+            if (gridVisible) spPlanifierGrille();
         });
     });
     if (baselineToggle) {
@@ -39424,7 +39540,9 @@ window.spTestDiag = function () {
     }
     if (gridColorInput) {
         gridColorInput.addEventListener('input', () => {
-            if (gridVisible) rebuildGridAll();
+            /* _SP_GRILLE_543 : le glisser du sélecteur ne reconstruit plus la grille —
+               mesuré AVANT : 10 mouvements = 441 ms de blocage ; APRÈS : ~2 ms. */
+            if (gridVisible) spGrillePlanifier('couleur');
         });
     }
 
@@ -55737,12 +55855,22 @@ function alignSelectedObjects(direction) {
     // Groq — inférence cloud ultra-rapide. ⚠️ Plafond réel 8 192 tokens en sortie.
     // ⚠️ Synchronisé avec le studio SP213 (GROQ_MODELS).
     groq: ['qwen/qwen3.8-27b', 'qwen/qwen3.6-27b', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'groq/compound'],
-    // OpenAI — GPT-5.1 (nov. 2025, dernier flagship) + GPT-5 + variantes rapides
-    // + o-series raisonnement. GPT-5.1 = meilleur pour la mise en page riche.
-    openai: ['gpt-5.1', 'gpt-5', 'gpt-5-mini', 'gpt-4.1', 'gpt-4.1-mini', 'o3', 'o4-mini', 'gpt-4o'],
-    // Anthropic — Opus 4.5 (nov. 2025, qualité max), Sonnet 4.5 (sept. 2025,
-    // recommandé), Haiku 4.5 (rapide). Opus 4.1 conservé en repli.
-    anthropic: ['claude-opus-4-5-20251101', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001', 'claude-opus-4-1-20250805']
+    // OpenAI — 🆕 2026-09-25 : GAMME GPT-6 (doc developers.openai.com/api/docs/models).
+    //   gpt-6-astra = flagship (1,05 M de contexte, 128 K en sortie, reasoning effort
+    //     low→max) — le plus capable pour la mise en page riche ;
+    //   gpt-6-sol   = équilibre intelligence / coût ; gpt-6-luna = volume, petit prix.
+    //   ✅ Chat Completions (v1/chat/completions) est SUPPORTÉ pour les trois.
+    //   Repli : gamme GPT-5.6 (sol / terra / luna) puis GPT-5.1, encore servis.
+    openai: ['gpt-6-astra', 'gpt-6-sol', 'gpt-6-luna', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.1'],
+    // Anthropic — 🆕 2026-09-25 (platform.claude.com/docs/en/about-claude/models/overview)
+    //   claude-fable-5-1 = Claude Fable 5.1 : raisonnement long / agentique, 1 M de contexte,
+    //     128 K en sortie, thinking adaptatif toujours actif ;
+    //   claude-opus-5-5  = Claude Opus 5.5 : le plus capable au quotidien (recommandé) ;
+    //   claude-sonnet-5  = Claude Sonnet 5 : meilleur rapport vitesse / intelligence ;
+    //   claude-haiku-4-5 = Claude Haiku 4.5 : le plus rapide (200 K de contexte, 64 K en sortie).
+    //   ⚠️ Depuis la génération 4.6, les identifiants SANS DATE sont des instantanés figés.
+    //   Claude Opus 4.5 est conservé en repli (toujours servi par l'API).
+    anthropic: ['claude-opus-5-5', 'claude-sonnet-5', 'claude-fable-5-1', 'claude-haiku-4-5-20251001', 'claude-opus-4-5-20251101']
         };
 
         // Libellés lisibles pour le menu déroulant (id technique → nom clair).
@@ -55757,7 +55885,13 @@ function alignSelectedObjects(direction) {
             'openai/gpt-oss-120b': 'OpenAI GPT-OSS 120B — puissant',
             'openai/gpt-oss-20b': 'OpenAI GPT-OSS 20B — léger',
             'groq/compound': 'Groq Compound — raisonnement',
-            'gpt-5.1': 'GPT-5.1 — recommandé (maquettes riches)',
+            'gpt-6-astra': 'GPT-6 Astra — recommandé (le plus capable : 1,05 M de contexte, 128 K en sortie)',
+            'gpt-6-sol': 'GPT-6 Sol — équilibre intelligence / coût',
+            'gpt-6-luna': 'GPT-6 Luna — rapide / économique',
+            'gpt-5.6-sol': 'GPT-5.6 Sol — repli équilibré',
+            'gpt-5.6-terra': 'GPT-5.6 Terra — repli rapide',
+            'gpt-5.6-luna': 'GPT-5.6 Luna — repli économique',
+            'gpt-5.1': 'GPT-5.1 — génération précédente',
             'gpt-5': 'GPT-5',
             'gpt-5-mini': 'GPT-5 mini — rapide / économique',
             'gpt-4.1': 'GPT-4.1',
@@ -55765,8 +55899,11 @@ function alignSelectedObjects(direction) {
             'o3': 'o3 — raisonnement approfondi',
             'o4-mini': 'o4-mini — raisonnement rapide',
             'gpt-4o': 'GPT-4o',
-            'claude-opus-4-5-20251101': 'Claude Opus 4.5 — qualité maximale',
-            'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5 — recommandé (qualité / vitesse)',
+            'claude-fable-5-1': 'Claude Fable 5.1 — raisonnement long / agentique (1 M de contexte)',
+            'claude-opus-5-5': 'Claude Opus 5.5 — recommandé (le plus capable au quotidien)',
+            'claude-sonnet-5': 'Claude Sonnet 5 — meilleur rapport vitesse / intelligence',
+            'claude-opus-4-5-20251101': 'Claude Opus 4.5 — génération précédente',
+            'claude-sonnet-4-5-20250929': 'Claude Sonnet 4.5 — génération précédente',
             'claude-haiku-4-5-20251001': 'Claude Haiku 4.5 — rapide / économique',
             'claude-opus-4-1-20250805': 'Claude Opus 4.1',
             'deepseek-flash': 'DeepSeek V4.1 Flash — recommandé (1M contexte, vision, JSON)',
@@ -55781,8 +55918,10 @@ function alignSelectedObjects(direction) {
             openrouter: 'nvidia/nemotron-3-super-120b-a12b:free',
             // Groq : Qwen 3.8 27B (rapide, fiable)
             groq: 'qwen/qwen3.8-27b',
-            openai: 'gpt-5.1',
-            anthropic: 'claude-sonnet-4-5-20250929'
+            // OpenAI : GPT-6 Astra (30 % plus capable que Sol, contexte 1,05 M)
+            openai: 'gpt-6-astra',
+            // Anthropic : Opus 5.5 — « start with Claude Opus 5.5 for most workloads »
+            anthropic: 'claude-opus-5-5'
         };
 
         // 🆕 Synchro clés API app ↔ studio SP213 : chaque provider a sa clé dédiée
@@ -56245,13 +56384,13 @@ remplace pas la richesse de contenu : les deux vont ensemble.
               note: 'Modèles gratuits (suffixe :free) : idéal pour essayer sans payer. Clé sur openrouter.ai/keys.' },
             { id: 'openai', nom: 'OpenAI', initiale: 'O', couleur: '#10A37F',
               cle: 'https://platform.openai.com/api-keys',
-              note: 'GPT-5.1 : maquettes les plus riches (payant). Clé sur platform.openai.com.' },
+              note: 'GPT-6 Astra : maquettes les plus riches (1,05 M de contexte). Clé sur platform.openai.com.' },
             { id: 'groq', nom: 'Groq', initiale: 'G', couleur: '#F55036',
               cle: 'https://console.groq.com/keys',
               note: 'Très rapide, mais plafond de 8 192 tokens en sortie. Clé sur console.groq.com.' },
             { id: 'anthropic', nom: 'Anthropic', initiale: 'A', couleur: '#D97757',
               cle: 'https://console.anthropic.com/settings/keys',
-              note: 'Claude Sonnet 4.5 : excellent en textes longs. Clé sur console.anthropic.com.' }
+              note: 'Claude Opus 5.5 / Sonnet 5 : excellents en textes longs. Clé sur console.anthropic.com.' }
         ];
 
         // 🆕 v1.7.447 — BIBLIOTHÈQUE D'EXEMPLES (réécrite) : organisée en ONGLETS, comme la pop-in
@@ -57713,7 +57852,10 @@ remplace pas la richesse de contenu : les deux vont ensemble.
     
     if (provider === 'anthropic') {
         // Claude 4.x supporte jusqu'à 32-64k tokens en sortie — indispensable pour la génération multi-pages
-        const maxTok = /claude-(opus-4-5|opus-4-1|sonnet-4-5|haiku-4-5)/.test(model) ? 32000
+        // 🆕 2026-09-25 : la génération 5.x (Fable 5.1 / Opus 5.5 / Sonnet 5) sort jusqu'à
+        //   128 K tokens ; 32 000 reste large pour une maquette multi-pages.
+        const maxTok = /claude-(fable-5|opus-5|sonnet-5)/.test(model) ? 32000
+                     : /claude-(opus-4-[5-8]|opus-4-1|sonnet-4-[5-6]|haiku-4-5)/.test(model) ? 32000
                      : /claude-(opus|sonnet|haiku)-4-/.test(model) ? 16000
                      : 8192;
         body = {
@@ -57733,12 +57875,14 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         }
         messages.push({ role: 'user', content: prompt });
         // GPT-5 / GPT-4.1 supportent jusqu'à 16k+ tokens de sortie
-        const maxTokOA = /^gpt-5/.test(model) ? 16000
+        // 🆕 2026-09-25 : GPT-6 (astra / sol / luna) sort jusqu'à 128 K tokens.
+        const maxTokOA = /^gpt-6/.test(model) ? 32000
+                       : /^gpt-5/.test(model) ? 16000
                        : /^gpt-4\.1/.test(model) ? 16000
                        : 8192;
-        // 🆕 v1.7.246 — les modèles GPT-5.x et la série « o » (raisonnement) exigent
+        // 🆕 v1.7.246 — les modèles GPT-5.x / GPT-6 et la série « o » (raisonnement) exigent
         //   `max_completion_tokens` sur /chat/completions ; `max_tokens` y est refusé.
-        const usesCompletionTokens = /^gpt-5|^o[0-9]/.test(model);
+        const usesCompletionTokens = /^gpt-5|^gpt-6|^o[0-9]/.test(model);
         body = {
             apiKey: apiKey,
             model: model,
@@ -57749,7 +57893,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         // 🛡️ FIX 2026-04 : forcer le mode JSON natif si le prompt parle de JSON
         //    (élimine les ```json ... ``` parasites et améliore la fiabilité du parse).
         //    Ne s'applique qu'aux modèles compatibles (gpt-4o, gpt-4.1, gpt-5, o3, o4-mini).
-        const supportsJsonMode = /^gpt-4o|^gpt-4\.1|^gpt-5|^o3|^o4-mini/.test(model);
+        const supportsJsonMode = /^gpt-4o|^gpt-4\.1|^gpt-5|^gpt-6|^o3|^o4-mini/.test(model);
         if (supportsJsonMode && /\bjson\b/i.test(prompt + ' ' + (systemPrompt || ''))) {
             body.response_format = { type: 'json_object' };
         }
@@ -58936,8 +59080,8 @@ Tu peux être exécuté par plusieurs moteurs, selon ce que l'utilisateur choisi
 • DeepSeek (moteur par défaut) — modèle "deepseek-flash" = DeepSeek V4.1 Flash (recommandé : 1M de contexte, 384K en sortie, JSON, appels d'outils, VISION) et "deepseek-v4-pro" = V4 Pro (précision maximale). API OpenAI-compatible, JSON structuré. ⚠️ Les anciens noms "deepseek-v4-flash" et "deepseek-v4-flash-vision-exp" sont RETIRÉS : ne les cite jamais.
 • OpenRouter (100% gratuit) — modèles :free : Nemotron 3 Super 120B (recommandé, JSON 8/8 pages vérifié), MiniMax M2.7, Gemma 4, Nemotron 3 Ultra 550B, Inkling 975B. API OpenAI-compatible.
 • Groq (rapide) — Qwen 3.8 27B (recommandé), Qwen 3.6 27B, GPT-OSS 120B/20B, Groq Compound. API OpenAI-compatible, plafond 8 192 tokens en sortie.
-• OpenAI — GPT-5.1, GPT-5, GPT-5 mini, GPT-4.1…
-• Anthropic — Claude Opus 4.5, Sonnet 4.5, Haiku 4.5.
+• OpenAI — GPT-6 Astra (recommandé : 1,05 M de contexte, 128 K en sortie), GPT-6 Sol, GPT-6 Luna, puis GPT-5.6 sol/terra/luna et GPT-5.1. ⚠️ Chat Completions ; les anciens gpt-4o / o3 / o4-mini sont retirés ou en fin de vie.
+• Anthropic — Claude Opus 5.5 (recommandé), Claude Sonnet 5, Claude Fable 5.1 (raisonnement long), Claude Haiku 4.5, puis Claude Opus 4.5 en repli.
 QUEL QUE SOIT LE MOTEUR, ta mission est identique : produire un JSON maquette parfaitement structuré.
 
 🖨️ NATURE DU MÉDIUM — IMPRESSION PHYSIQUE

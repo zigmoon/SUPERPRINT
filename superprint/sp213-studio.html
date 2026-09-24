@@ -1061,7 +1061,7 @@
         <div class="label-row">
           <label>Modèle OpenAI</label>
           <span class="info-icon" tabindex="0" aria-label="Info modèle OpenAI">?
-            <span class="info-pop"><b>GPT-5.1</b> est recommandé pour comprendre les contraintes SuperPrint, produire du JSON structuré et composer des maquettes riches.</span>
+            <span class="info-pop"><b>GPT-6 Astra</b> est recommandé pour comprendre les contraintes SuperPrint, produire du JSON structuré et composer des maquettes riches.</span>
           </span>
         </div>
         <select id="openaiModel"></select>
@@ -1548,15 +1548,18 @@
     ['groq/compound',                 'Groq Compound — raisonnement']
   ];
 
+  // 🆕 2026-09-25 — gamme GPT-6 (doc developers.openai.com/api/docs/models) :
+  //   gpt-6-astra = flagship (1,05 M de contexte, 128 K en sortie), gpt-6-sol = équilibre
+  //   intelligence / coût, gpt-6-luna = volume / petit prix. Chat Completions SUPPORTÉ.
+  //   Repli : gamme GPT-5.6 puis GPT-5.1 (servis au 2026-09-25).
   const OPENAI_MODELS = [
-    ['gpt-5.1', 'GPT-5.1 — recommandé (maquettes riches / JSON)'],
-    ['gpt-5', 'GPT-5 — haute qualité'],
-    ['gpt-5-mini', 'GPT-5 mini — rapide / économique'],
-    ['gpt-4.1', 'GPT-4.1 — fiable / long contexte'],
-    ['gpt-4.1-mini', 'GPT-4.1 mini — économique'],
-    ['o3', 'o3 — raisonnement approfondi'],
-    ['o4-mini', 'o4-mini — raisonnement rapide'],
-    ['gpt-4o', 'GPT-4o — multimodal']
+    ['gpt-6-astra', 'GPT-6 Astra — recommandé (le plus capable)'],
+    ['gpt-6-sol', 'GPT-6 Sol — équilibre intelligence / coût'],
+    ['gpt-6-luna', 'GPT-6 Luna — rapide / économique'],
+    ['gpt-5.6-sol', 'GPT-5.6 Sol — repli équilibré'],
+    ['gpt-5.6-terra', 'GPT-5.6 Terra — repli rapide'],
+    ['gpt-5.6-luna', 'GPT-5.6 Luna — repli économique'],
+    ['gpt-5.1', 'GPT-5.1 — génération précédente']
   ];
 
   // OpenRouter : modèles 100% GRATUITS (suffixe :free) — vérifiés par tests réels le 2026-08-29.
@@ -7946,8 +7949,9 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
       messages,
       response_format: { type: 'json_object' }
     };
-    const maxTokens = /^gpt-5/.test(model) || /^gpt-4\.1/.test(model) ? 16000 : 8192;
-    if (/^gpt-5|^o[0-9]/.test(model)) body.max_completion_tokens = maxTokens;
+    const maxTokens = /^gpt-6/.test(model) ? 32000
+                    : (/^gpt-5/.test(model) || /^gpt-4\.1/.test(model)) ? 16000 : 8192;
+    if (/^gpt-5|^gpt-6|^o[0-9]/.test(model)) body.max_completion_tokens = maxTokens;
     else body.max_tokens = maxTokens;
     return spProxyOrDirect('OpenAI', 'ai-proxy.php?provider=openai', 'https://api.openai.com/v1/chat/completions', body);
   }

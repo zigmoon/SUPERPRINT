@@ -5305,7 +5305,9 @@ input[type=number] {
 .ai-note { background: #f5f9ff; border: 1px solid #d6e4f5; border-left: 3px solid #3b82c4; border-radius: 6px;
     padding: 8px 10px; font-size: 11px; line-height: 1.55; color: #4a6a85; margin: 4px 0 12px; }
 .ai-note strong { display: block; margin-bottom: 2px; color: #2c5570; }
-.ai-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+/* 1.7.543 — LES DEUX BOUTONS DE LA CONNEXION SONT ALIGNÉS À DROITE (demande utilisateur) :
+   « Tester la connexion » et « Enregistrer » ne collent plus au bord gauche du bloc. */
+.ai-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 .ai-spacer { flex: 1 1 auto; }
 .ai-create { font-weight: 600; padding: 10px 22px; }
 
@@ -5363,7 +5365,11 @@ input[type=number] {
 .ai-acc-badge { margin-left: auto; font-size: 10.5px; font-weight: 700; letter-spacing: .4px; color: #999; text-transform: uppercase; }
 .ai-acc-badge.is-ok { color: #2e7d32; }
 .ai-acc-badge.is-ko { color: #c62828; }
-.ai-log { min-height: 110px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+/* 1.7.543 — LE JOURNAL OCCUPE TOUTE LA LARGEUR DU SOUFFLET (demande utilisateur).
+   La classe .ai-input porte « flex: 1 1 auto » : dans un conteneur qui n'est PAS flex
+   (.ai-acc-body), la largeur retombait sur celle du textarea par défaut (~20 colonnes). */
+.ai-log { width: 100%; box-sizing: border-box; display: block; resize: vertical;
+    min-height: 110px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
 
 .theme-dark .ai-block, .theme-dark .ai-acc, .theme-dark .ai-ex { background: #1b1b1b; border-color: #333; }
 .theme-dark .ai-block-head h3, .theme-dark .ai-label, .theme-dark .ai-ex-head strong { color: #eee; }

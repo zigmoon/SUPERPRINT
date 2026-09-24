@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // 🛡️ FIX 2026-04 : autoriser jusqu'à 200 s d'exécution PHP pour laisser le temps
-//    aux longues générations IA (magazine multi-pages avec Claude Sonnet 4.5,
+//    aux longues générations IA (magazine multi-pages avec Claude Sonnet 5,
 //    GPT-5, etc. qui peuvent dépasser 60 s avec 16-32k tokens en sortie).
 @set_time_limit(200);
 @ini_set('max_execution_time', '200');
