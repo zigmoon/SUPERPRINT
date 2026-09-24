@@ -73,8 +73,8 @@
             pdfError: 'PDF generation error',
             sectionPrint: 'Print settings', sectionReport: 'Pre-flight report', sectionActions: 'Tools',
             netPrinters: 'Network printers', netPrintersHint: 'Detected on the local network via the local print bridge (sp213-local). Select one to print directly over IPP — no PDF dialog needed.',
-            netBridgeOff: 'Local print bridge not detected', netBridgeOffHint: 'Start it with "npm run print:bridge" in sp213-local to enable direct network printing.',
-            netScan: 'Scan network', netScanning: 'Scanning…', netNone: 'No network printer found',
+            netBridgeOff: 'Local print bridge not detected', netBridgeOffHint: 'It starts with the local studio (npm run dev in sp213-local) — keep that window open to print on a network printer.',
+            netScan: 'Scan network', netScanning: 'Scanning…', netNone: 'No network printer found', netScanHint: 'The bridge starts with the local studio (npm run dev in sp213-local). Check that this computer is on the same network as the printer (Wi-Fi isolation or firewall can hide it).', netIppNo: 'no IPP — direct printing unavailable', netFound: 'printer(s) found',
             netPrintOn: 'Print to', netColor: 'Color', netBW: 'B&W', netDuplex: 'Duplex', netOneSided: 'One-sided', netPrinting: 'Sending to printer…', netSent: 'Sent to printer', netErr: 'Network print failed', netModel: 'Model', netStatus: 'Status', netReady: 'Ready', netIdle: 'Idle', netBusy: 'Busy', netOffline: 'Offline', netUnknown: 'Unknown',
             colorMode: 'Color mode', colorModeColor: 'Color', colorModeBW: 'B&W',
             pagesToPrint: 'Pages to print', pagesAll: 'All', pagesActive: 'Active', pagesCustom: 'Pages', pagesCustomPh: 'e.g. 1,3-5,7',
@@ -115,8 +115,8 @@
             pdfError: 'Erreur de génération du PDF',
             sectionPrint: 'Réglages d\'impression', sectionReport: 'Rapport pré-vol', sectionActions: 'Outils',
             netPrinters: 'Imprimantes réseau', netPrintersHint: 'Détectées sur le réseau local via le pont local (sp213-local). Sélectionnez-en une pour imprimer directement via IPP — sans dialogue PDF.',
-            netBridgeOff: 'Pont local non détecté', netBridgeOffHint: 'Lancez-le avec « npm run print:bridge » dans sp213-local pour activer l\'impression réseau directe.',
-            netScan: 'Scanner le réseau', netScanning: 'Scan en cours…', netNone: 'Aucune imprimante réseau trouvée',
+            netBridgeOff: 'Pont local non détecté', netBridgeOffHint: 'Il démarre avec le Studio local (« npm run dev » dans sp213-local) : gardez cette fenêtre ouverte pour imprimer sur une imprimante réseau.',
+            netScan: 'Scanner le réseau', netScanning: 'Scan en cours…', netNone: 'Aucune imprimante réseau trouvée', netScanHint: 'Le pont démarre avec le Studio local (« npm run dev » dans sp213-local). Vérifiez que cet ordinateur est sur le même réseau que l\'imprimante (le Wi-Fi isolé ou le pare-feu peuvent la masquer).', netIppNo: 'sans IPP — impression directe indisponible', netFound: 'imprimante(s) détectée(s)',
             netPrintOn: 'Imprimer sur', netColor: 'Couleur', netBW: 'N&B', netDuplex: 'Recto-verso', netOneSided: 'Recto', netPrinting: 'Envoi à l\'imprimante…', netSent: 'Envoyé à l\'imprimante', netErr: 'Échec de l\'impression réseau', netModel: 'Modèle', netStatus: 'État', netReady: 'Prêt', netIdle: 'Inactive', netBusy: 'Occupée', netOffline: 'Hors ligne', netUnknown: 'Inconnu',
             colorMode: 'Mode couleur', colorModeColor: 'Couleur', colorModeBW: 'N&B',
             pagesToPrint: 'Pages à imprimer', pagesAll: 'Tout', pagesActive: 'Active', pagesCustom: 'Pages', pagesCustomPh: 'ex. 1,3-5,7',
@@ -157,8 +157,8 @@
             pdfError: 'PDF生成エラー',
             sectionPrint: '印刷設定', sectionReport: 'プリフライトレポート', sectionActions: 'ツール',
             netPrinters: 'ネットワークプリンター', netPrintersHint: 'ローカルプリントブリッジ（sp213-local）でローカルネットワーク上から検出されます。選択してIPPで直接印刷 — PDFダイアログ不要。',
-            netBridgeOff: 'ローカルプリントブリッジが見つかりません', netBridgeOffHint: 'sp213-local で「npm run print:bridge」を実行すると直接ネットワーク印刷が可能になります。',
-            netScan: 'ネットワークをスキャン', netScanning: 'スキャン中…', netNone: 'ネットワークプリンターが見つかりません',
+            netBridgeOff: 'ローカルプリントブリッジが見つかりません', netBridgeOffHint: 'ローカルスタジオ（sp213-local の npm run dev）と同時に起動します。そのウィンドウを開いたままにするとネットワーク印刷ができます。',
+            netScan: 'ネットワークをスキャン', netScanning: 'スキャン中…', netNone: 'ネットワークプリンターが見つかりません', netScanHint: 'ブリッジはローカルスタジオ（sp213-local の npm run dev）と同時に起動します。このコンピューターがプリンターと同じネットワークにあるか確認してください（Wi-Fi の隔離やファイアウォールで見えないことがあります）。', netIppNo: 'IPP 非対応 — 直接印刷はできません', netFound: '台のプリンターを検出',
             netPrintOn: '印刷先', netColor: 'カラー', netBW: 'モノクロ', netDuplex: '両面', netOneSided: '片面', netPrinting: 'プリンターに送信中…', netSent: 'プリンターに送信しました', netErr: 'ネットワーク印刷に失敗', netModel: 'モデル', netStatus: 'ステータス', netReady: '準備完了', netIdle: '待機中', netBusy: 'ビジー', netOffline: 'オフライン', netUnknown: '不明',
             colorMode: 'カラーモード', colorModeColor: 'カラー', colorModeBW: 'モノクロ',
             pagesToPrint: '印刷するページ', pagesAll: 'すべて', pagesActive: 'アクティブ', pagesCustom: 'カスタム', pagesCustomPh: '例: 1,3-5,7',
@@ -766,9 +766,24 @@
                     '</div>' +
                     // ─── Onglet 1 : Réglages d'impression (DÉFAUT) ───
                     '<div class="vps-panel vps-panel-active" data-panel="settings" style="flex:1;min-height:0;overflow-y:auto;padding:16px 20px;">' +
-                        '<div class="modal-options" style="gap:10px;">' +
-                            '<div class="modal-option" style="align-items:flex-start;">' +
-                                '<span style="flex:0 0 80px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:6px;">' + t('paper') + '</span>' +
+                        /* 🆕 v1.7.542 — IMPRIMANTES RÉSEAU DANS L'ONGLET 1 (demande utilisateur :
+                           « je le veux sur le premier onglet avec les autres éléments »). Le bloc
+                           vivait dans le Pré-vol ; il est ici avec un bouton de scan, car c'est
+                           la première chose qu'on cherche dans une pop-in d'impression. */
+                        '<div class="modal-section-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
+                            '<span>' + t('netPrinters') + '</span>' +
+                            '<button id="vpsNetScanBtn" class="modal-btn modal-btn-secondary" style="height:24px;padding:0 10px;font-size:9px;" title="' + t('netScan') + '">' + t('netScan') + '</button>' +
+                        '</div>' +
+                        '<div id="vpsNetPrinters" style="margin-bottom:14px;">' +
+                            '<div id="vpsNetState" style="padding:10px 12px;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:4px;font-size:10px;line-height:1.5;color:#555;">' + t('netScanning') + '</div>' +
+                        '</div>' +
+                        '<div class="modal-section-title">' + t('tabSettings') + '</div>' +
+                        /* 🆕 v1.7.542 — GRILLE 2 COLONNES : mesuré, la pile de lignes pleine largeur
+                           laissait des contrôles étirés sur toute la pop-in (« étalé en largeur »).
+                           Papier, Pages et Échelle restent en pleine largeur (grid-column:1/-1). */
+                        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;">' +
+                            '<div class="modal-option" style="align-items:flex-start;grid-column:1/-1;">' +
+                                '<span style="flex:0 0 64px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:6px;">' + t('paper') + '</span>' +
                                 '<div style="display:flex;gap:6px;flex:1;flex-wrap:wrap;">' +
                                     '<select id="vpsPaper" style="flex:1 1 100%;height:30px;font-size:11px;padding:0 6px;border:1px solid #ddd;border-radius:4px;background:#fff;"></select>' +
                                     '<div id="vpsPaperCustom" style="display:none;flex:1 1 100%;gap:6px;align-items:center;">' +
@@ -780,31 +795,31 @@
                                 '</div>' +
                             '</div>' +
                             '<div class="modal-option" style="align-items:flex-start;">' +
-                                '<span style="flex:0 0 80px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:4px;">' + t('orientation') + '</span>' +
+                                '<span style="flex:0 0 64px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:4px;">' + t('orientation') + '</span>' +
                                 '<div style="display:flex;gap:6px;flex:1;">' +
                                     '<button class="vps-orient vps-active" data-v="p" style="flex:1;height:30px;font-size:10px;border:1px solid #1a1a1a;background:#1a1a1a;color:#fff;border-radius:4px;cursor:pointer;">' + t('orientationP') + '</button>' +
                                     '<button class="vps-orient" data-v="l" style="flex:1;height:30px;font-size:10px;border:1px solid #ccc;background:#fff;color:#1a1a1a;border-radius:4px;cursor:pointer;">' + t('orientationL') + '</button>' +
                                 '</div>' +
                             '</div>' +
-                            '<div class="modal-option" style="align-items:flex-start;gap:8px;">' +
-                                '<span style="flex:0 0 80px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:6px;">' + t('quality') + '</span>' +
-                                '<div style="display:flex;gap:8px;flex:1;">' +
-                                    '<select id="vpsQuality" style="flex:1;height:30px;font-size:11px;padding:0 6px;border:1px solid #ddd;border-radius:4px;background:#fff;">' +
-                                        '<option value="standard">' + t('qualityStandard') + '</option><option value="medium">' + t('qualityMedium') + '</option><option value="hd" selected>' + t('qualityHD') + '</option><option value="ultrahd">' + t('qualityUltra') + '</option>' +
-                                    '</select>' +
-                                    '<span style="flex:0 0 60px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:6px;text-align:right;">' + t('copies') + '</span>' +
-                                    '<input id="vpsCopies" type="number" min="1" max="99" value="1" style="flex:0 0 52px;height:30px;font-size:11px;padding:0 6px;border:1px solid #ddd;border-radius:4px;background:#fff;">' +
-                                '</div>' +
+                            '<div class="modal-option" style="align-items:flex-start;">' +
+                                '<span style="flex:0 0 64px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:6px;">' + t('quality') + '</span>' +
+                                '<select id="vpsQuality" style="flex:1;height:30px;font-size:11px;padding:0 6px;border:1px solid #ddd;border-radius:4px;background:#fff;">' +
+                                    '<option value="standard">' + t('qualityStandard') + '</option><option value="medium">' + t('qualityMedium') + '</option><option value="hd" selected>' + t('qualityHD') + '</option><option value="ultrahd">' + t('qualityUltra') + '</option>' +
+                                '</select>' +
                             '</div>' +
                             '<div class="modal-option" style="align-items:flex-start;">' +
-                                '<span style="flex:0 0 80px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:4px;">' + t('colorMode') + '</span>' +
+                                '<span style="flex:0 0 64px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:4px;">' + t('colorMode') + '</span>' +
                                 '<div style="display:flex;gap:6px;flex:1;">' +
                                     '<button class="vps-cmode vps-active" data-v="color" style="flex:1;height:30px;font-size:10px;border:1px solid #1a1a1a;background:#1a1a1a;color:#fff;border-radius:4px;cursor:pointer;">' + t('colorModeColor') + '</button>' +
                                     '<button class="vps-cmode" data-v="bw" style="flex:1;height:30px;font-size:10px;border:1px solid #ccc;background:#fff;color:#1a1a1a;border-radius:4px;cursor:pointer;">' + t('colorModeBW') + '</button>' +
                                 '</div>' +
                             '</div>' +
                             '<div class="modal-option" style="align-items:flex-start;">' +
-                                '<span style="flex:0 0 80px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:4px;">' + t('pagesToPrint') + '</span>' +
+                                '<span style="flex:0 0 64px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:6px;">' + t('copies') + '</span>' +
+                                '<input id="vpsCopies" type="number" min="1" max="99" value="1" style="flex:0 0 70px;height:30px;font-size:11px;padding:0 6px;border:1px solid #ddd;border-radius:4px;background:#fff;">' +
+                            '</div>' +
+                            '<div class="modal-option" style="align-items:flex-start;grid-column:1/-1;">' +
+                                '<span style="flex:0 0 64px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:4px;">' + t('pagesToPrint') + '</span>' +
                                 '<div style="display:flex;gap:6px;flex:1;flex-wrap:wrap;">' +
                                     '<button class="vps-prange vps-active" data-v="all" style="flex:1;height:30px;font-size:10px;border:1px solid #1a1a1a;background:#1a1a1a;color:#fff;border-radius:4px;cursor:pointer;min-width:64px;">' + t('pagesAll') + '</button>' +
                                     '<button class="vps-prange" data-v="active" style="flex:1;height:30px;font-size:10px;border:1px solid #ccc;background:#fff;color:#1a1a1a;border-radius:4px;cursor:pointer;min-width:64px;">' + t('pagesActive') + '</button>' +
@@ -812,25 +827,23 @@
                                     '<input id="vpsPagesCustom" type="text" placeholder="' + t('pagesCustomPh') + '" style="flex:1 1 100%;height:30px;font-size:11px;padding:0 6px;border:1px solid #ddd;border-radius:4px;background:#fff;display:none;">' +
                                 '</div>' +
                             '</div>' +
-                            '<div style="display:flex;gap:8px;">' +
-                                '<div class="modal-option" style="align-items:flex-start;flex:1;">' +
-                                    '<span style="flex:0 0 56px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:4px;">' + t('pagesParity') + '</span>' +
-                                    '<select id="vpsParity" style="flex:1;height:30px;font-size:11px;padding:0 6px;border:1px solid #ddd;border-radius:4px;background:#fff;">' +
-                                        '<option value="all">' + t('pagesParityAll') + '</option>' +
-                                        '<option value="even">' + t('pagesParityEven') + '</option>' +
-                                        '<option value="odd">' + t('pagesParityOdd') + '</option>' +
-                                    '</select>' +
-                                '</div>' +
-                                '<div class="modal-option" style="align-items:flex-start;flex:1;">' +
-                                    '<span style="flex:0 0 56px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:4px;">' + t('duplex') + '</span>' +
-                                    '<label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;flex:1;">' +
-                                        '<input id="vpsDuplex" type="checkbox" style="width:15px;height:15px;accent-color:#1a1a1a;">' +
-                                        '<span style="white-space:nowrap;">' + t('duplex') + '</span>' +
-                                    '</label>' +
-                                '</div>' +
-                            '</div>' +
                             '<div class="modal-option" style="align-items:flex-start;">' +
-                                '<span style="flex:0 0 80px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:4px;">' + t('scaling') + '</span>' +
+                                '<span style="flex:0 0 64px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:4px;">' + t('pagesParity') + '</span>' +
+                                '<select id="vpsParity" style="flex:1;height:30px;font-size:11px;padding:0 6px;border:1px solid #ddd;border-radius:4px;background:#fff;">' +
+                                    '<option value="all">' + t('pagesParityAll') + '</option>' +
+                                    '<option value="even">' + t('pagesParityEven') + '</option>' +
+                                    '<option value="odd">' + t('pagesParityOdd') + '</option>' +
+                                '</select>' +
+                            '</div>' +
+                            '<div class="modal-option" style="align-items:center;">' +
+                                '<span style="flex:0 0 64px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;">' + t('duplex') + '</span>' +
+                                '<label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;flex:1;">' +
+                                    '<input id="vpsDuplex" type="checkbox" style="width:15px;height:15px;accent-color:#1a1a1a;">' +
+                                    '<span style="white-space:nowrap;">' + t('duplex') + '</span>' +
+                                '</label>' +
+                            '</div>' +
+                            '<div class="modal-option" style="align-items:flex-start;grid-column:1/-1;">' +
+                                '<span style="flex:0 0 64px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;padding-top:4px;">' + t('scaling') + '</span>' +
                                 '<div style="display:flex;gap:6px;flex:1;flex-wrap:wrap;">' +
                                     '<button class="vps-scale vps-active" data-v="fit" style="flex:1;height:30px;font-size:10px;border:1px solid #1a1a1a;background:#1a1a1a;color:#fff;border-radius:4px;cursor:pointer;min-width:64px;">' + t('scaleFit') + '</button>' +
                                     '<button class="vps-scale" data-v="actual" style="flex:1;height:30px;font-size:10px;border:1px solid #ccc;background:#fff;color:#1a1a1a;border-radius:4px;cursor:pointer;min-width:64px;">' + t('scaleActual') + '</button>' +
@@ -868,10 +881,9 @@
                             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>' +
                             t('openImposition') +
                         '</button>' +
-                        '<div class="modal-section-title" style="margin-top:16px;">' + t('netPrinters') + '</div>' +
-                        '<div id="vpsNetPrinters" style="margin-bottom:8px;">' +
-                            '<div id="vpsNetState" style="padding:10px 12px;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:4px;font-size:10px;line-height:1.5;color:#555;">' + t('netBridgeOff') + '</div>' +
-                        '</div>' +
+                        /* 🆕 v1.7.542 — le bloc « Imprimantes réseau » est DÉPLACÉ dans l'onglet 1
+                           (Réglages) : c'est là qu'on choisit la destination d'impression. Le
+                           Pré-vol ne garde que l'analyse, les actions et l'imposition. */
                     '</div>' +
                 '</div>' +
                 // Footer
@@ -886,6 +898,18 @@
 
         // events
         ov.querySelector('#vpsClose').addEventListener('click', close);
+        /* 🆕 v1.7.542 — bouton « Scanner le réseau » (l'onglet 1 est le seul endroit où le
+           bloc réseau vit maintenant ; sans ce bouton, impossible de rescaner après avoir
+           démarré le pont alors que la pop-in était déjà ouverte). */
+        (function () {
+            const _sb = ov.querySelector('#vpsNetScanBtn');
+            if (_sb) _sb.addEventListener('click', function () {
+                detectPrintBridge().then(function (up) {
+                    _bridgeUp = up;
+                    scanNetworkPrinters();
+                });
+            });
+        })();
         ov.querySelector('#vpsPrint').addEventListener('click', doPrint);
         // 🛡️ v1.7.283 : navigation par onglets (Réglages / Pré-vol / Aperçu)
         ov.querySelectorAll('.vps-tab').forEach(function (tab) {
@@ -1079,49 +1103,66 @@
             .then(function (d) { _bridgeUp = !!(d && d.ok); return _bridgeUp; })
             .catch(function () { _bridgeUp = false; return false; });
     }
+    /* 🆕 v1.7.542 — SCAN LISIBLE ET HONNÊTE.
+       · bouton « Scanner le réseau » (#vpsNetScanBtn) désactivé pendant le scan ;
+       · état en une ligne (pont absent / scan / aucune imprimante / N imprimantes) ;
+       · capacités affichées SEULEMENT quand elles sont connues : l'ancien code écrivait
+         « N&B · Recto » par défaut (a.color absent → false), donc une imprimante couleur
+         sans réponse IPP était présentée comme monochrome ;
+       · « Imprimer sur » désactivé pour une imprimante sans IPP (service port brut 9100).
+       ⚠️ ?force=1 : le pont garde sinon une découverte de 30 s en cache. */
     function scanNetworkPrinters() {
         const state = document.getElementById('vpsNetState');
         if (!state) return;
+        const btn = document.getElementById('vpsNetScanBtn');
+        if (btn) btn.disabled = true;
+        const fin = function () { if (btn) btn.disabled = false; };
         if (!_bridgeUp) {
             state.innerHTML = '<b>' + t('netBridgeOff') + '</b><br>' + t('netBridgeOffHint');
+            fin();
             return;
         }
         state.innerHTML = '<b>' + t('netScanning') + '</b>';
-        fetch(BRIDGE_URL + '/api/printers', { method: 'GET', mode: 'cors', cache: 'no-store' })
+        fetch(BRIDGE_URL + '/api/printers?force=1', { method: 'GET', mode: 'cors', cache: 'no-store' })
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 _netPrinters = (data && Array.isArray(data.printers)) ? data.printers : [];
                 if (!_netPrinters.length) {
-                    state.innerHTML = '<b>' + t('netNone') + '</b>';
+                    state.innerHTML = '<b>' + t('netNone') + '</b><br>' + t('netScanHint');
+                    fin();
                     return;
                 }
                 const items = _netPrinters.map(function (p) {
                     const a = p.attributes || {};
                     const model = a.model || p.name || t('netUnknown');
-                    const status = a.state === 3 ? t('netIdle') : (a.state === 4 ? t('netBusy') : t('netReady'));
-                    const color = a.color ? t('netColor') : t('netBW');
-                    const duplex = (a.sides && a.sides.length > 1) ? t('netDuplex') : t('netOneSided');
-                    return '<div class="modal-option" style="gap:10px;margin-bottom:6px;">' +
-                        '<input type="radio" name="vpsNetPrinter" id="vpsNetP_' + p.id + '" value="' + p.id + '">' +
+                    const status = (a.state === 3) ? t('netIdle') : (a.state === 4 ? t('netBusy') : (typeof a.state === 'number' ? t('netReady') : ''));
+                    const color = (typeof a.color === 'boolean') ? (a.color ? t('netColor') : t('netBW')) : '';
+                    const duplex = (a.sides && a.sides.length > 1) ? t('netDuplex') : ((a.sides && a.sides.length === 1) ? t('netOneSided') : '');
+                    const infos = [p.host || '', color, duplex, status].filter(function (x) { return !!x; }).join(' · ');
+                    const dispo = (p.ipp !== false);
+                    return '<div class="modal-option" style="gap:10px;margin-bottom:6px;align-items:center;">' +
+                        '<input type="radio" name="vpsNetPrinter" id="vpsNetP_' + p.id + '" value="' + p.id + '"' + (dispo ? ' checked' : ' disabled') + '>' +
                         '<label for="vpsNetP_' + p.id + '" style="flex:1;">' +
                             '<span style="font-weight:600;">' + model + '</span>' +
-                            '<div class="modal-option-desc">' + (p.host || '') + ' · ' + color + ' · ' + duplex + ' · ' + status + '</div>' +
+                            '<div class="modal-option-desc">' + infos + (dispo ? '' : (infos ? ' · ' : '') + t('netIppNo')) + '</div>' +
                         '</label>' +
-                        '<button class="modal-btn modal-btn-secondary" style="height:28px;padding:0 12px;font-size:9px;" data-netprint="' + p.id + '">' + t('netPrintOn') + '</button>' +
+                        '<button class="modal-btn modal-btn-secondary" style="height:28px;padding:0 12px;font-size:9px;" ' + (dispo ? '' : 'disabled title="' + t('netIppNo') + '" ') + 'data-netprint="' + p.id + '">' + t('netPrintOn') + '</button>' +
                     '</div>';
                 }).join('');
-                state.innerHTML = items;
-                // boutons imprimer
-                state.querySelectorAll('[data-netprint]').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        const pid = btn.getAttribute('data-netprint');
+                const _nIpp = _netPrinters.filter(function (p) { return p.ipp !== false; }).length;
+                state.innerHTML = '<div style="font-size:10px;color:#555;margin-bottom:6px;">' + _netPrinters.length + ' ' + t('netFound') + (_nIpp !== _netPrinters.length ? ' · ' + _nIpp + ' IPP' : '') + '</div>' + items;
+                state.querySelectorAll('[data-netprint]').forEach(function (b) {
+                    b.addEventListener('click', function () {
+                        const pid = b.getAttribute('data-netprint');
                         const pr = _netPrinters.find(function (x) { return x.id === pid; });
                         if (pr) printToNetwork(pr);
                     });
                 });
+                fin();
             })
             .catch(function () {
                 state.innerHTML = '<b>' + t('netErr') + '</b>';
+                fin();
             });
     }
     function printToNetwork(printer) {
@@ -1236,11 +1277,16 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             printerId: printer.id,
+                            /* 🆕 v1.7.542 — l'URL IPP sert de repli au pont (id stable). */
+                            printerUrl: printer.url || '',
                             pdfBase64: base64,
                             copies: copies,
                             color: isBW ? 'monochrome' : 'color',
                             duplex: duplexOpt ? 'two-sided-long-edge' : 'one-sided',
-                            media: ov.querySelector('#vpsPaper').value === 'A4' ? 'iso_a4_210x297mm' : 'iso_a4_210x297mm',
+                            /* 🆕 v1.7.542 — FORMAT RÉEL : l'ancien code envoyait TOUJOURS
+                               « iso_a4_210x297mm » (les deux branches du ternaire étaient
+                               identiques) : imprimer en A3 sortait en A4. */
+                            media: _vpsIppMedia(ov.querySelector('#vpsPaper').value),
                             orientation: orient
                         })
                     }).then(function (r) { return r.json(); })
@@ -1252,6 +1298,19 @@
             });
         }).catch(function () { toast(t('pdfError'), 'err'); });
     }
+    /* 🆕 v1.7.542 — format papier → nom de média IPP (PWG 5101.1). */
+    function _vpsIppMedia(v) {
+        const m = {
+            'A4': 'iso_a4_210x297mm',
+            'A3': 'iso_a3_297x420mm',
+            'A5': 'iso_a5_148x210mm',
+            'Letter': 'na_letter_8.5x11in',
+            'Legal': 'na_legal_8.5x14in',
+            'Tabloid': 'na_ledger_11x17in'
+        };
+        return m[v] || 'iso_a4_210x297mm';
+    }
+
     function arrayBufferToBase64(buffer) {
         let binary = '';
         const bytes = new Uint8Array(buffer);

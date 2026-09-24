@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,15 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.542] — 2026-09-24
+
+_The print pop-in: the network printers move to the first tab and actually work_
+
+### Added
+- **Network printers in the first tab** (user request: « revois la pop-in print VPS, tu penses qu’on pourrait voir le réseau des imprimantes disponible dans le premier onglet […] je souhaiterais qu’il marche »). The « Imprimantes réseau » block (scan button, printer list, state line) leaves the Pre-flight tab and opens the Settings tab, above the print settings. - The scan button (`#vpsNetScanBtn`) is wired to `detectPrintBridge()` then `scanNetworkPrinters()` with `?force=1`: it disables itself while scanning, and the state line reports honestly (`n imprimante(s) détectée(s)`, `Aucune imprimante réseau trouvée` + hint, or `Pont local non détecté`). A printer without IPP is listed but disabled, with « sans IPP — impression directe indisponible ». 
+### Fixed
+- **Print bridge (`sp213-local/scripts/print-bridge.mjs`) — three blocking bugs.** (1) the printer id was a **fresh random UUID on every scan**, so `POST /api/print` always answered « Printer not found », even for a printer listed a second earlier: the id is now the **sha1 of the service url** (16 hex, stable across scans). (2) the preflight answer carried **no `Access-Control-Allow-Private-Network`**, which Chrome requires for a public (https) page to reach `127.0.0.1` — added (with `X-Requested-With` in the allowed headers). (3) `sides` was compared to `'duplex'` while the pop-in sends `'two-sided-long-edge'`, so duplex was **always ignored** — the bridge now understands both spellings. - **The print settings really travel**: the pop-in sent `media: 'A4'` in **both** branches of a ternary (the custom size was ignored) and never sent the printer url; the job now carries the real media (`_vpsIppMedia()` → A4/A3/A5/Letter/Legal/B5 or `custom_<w>x<h>mm`), the real colour mode (`monochrome` for black and white), the real duplex value and the printer url as a fallback lookup. - **Tab 1 layout**: the print settings became a **two-column grid** (Orientation | Quality, Colour | Copies, Parity | Duplex) of 260 px columns instead of full-width rows — measured in the browser: panel 540 px high, grid `260px 260px`, 9 children, no console error. - **`start.mjs` starts the bridge with the local studio** (`npm run dev`) and stops it on exit; the three help texts in the pop-in said `npm run print:bridge` as a manual step and now say the bridge comes with the studio. _Measured live: `/api/health` → 200 ok, version 2; OPTIONS preflight → `Access-Control-Allow-Private-Network: true`; `/api/printers?force=1` → an empty list (this development machine exposes no IPP printer); `POST /api/print` with an unknown id → 404 « Imprimante introuvable — relancez un scan du réseau »._ 
 
 ## [1.7.541] — 2026-09-24
 

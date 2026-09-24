@@ -21,7 +21,7 @@ import http from 'node:http';
 import os from 'node:os';
 import { Bonjour } from 'bonjour-service';
 import ipp from 'ipp';
-import { randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 
 const PORT = Number(process.env.SP_PRINT_PORT || 8766);
 const HOST = process.env.SP_PRINT_HOST || '127.0.0.1';
@@ -32,7 +32,13 @@ function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Requested-With',
+    // 🆕 v1.7.542 — PRIVATE NETWORK ACCESS (Chromium). Une page PUBLIQUE
+    //   (https://app.zigmoon.com) qui appelle http://127.0.0.1:8766 déclenche un
+    //   pré-vol « private network » : sans cet en-tête le navigateur BLOQUE la requête.
+    //   Invisible depuis http://127.0.0.1 (le PNA ne s'y applique pas) — c'est pourquoi
+    //   le pont semblait fonctionner en local et pas depuis le site.
+    'Access-Control-Allow-Private-Network': 'true',
     'Cache-Control': 'no-store'
   };
 }
@@ -45,8 +51,18 @@ function json(res, status, obj) {
 const bonjour = new Bonjour();
 let discovered = [];
 let discovering = false;
+/* 🆕 v1.7.542 — cache de découverte : un scan mDNS dure 4 s ; sans cache, chaque
+   POST /api/print relançait un scan complet avant d'imprimer. */
+let _cacheAt = 0;
+const CACHE_MS = 30 * 1000;
 
-async function discoverPrinters() {
+/* 🆕 v1.7.542 — identifiant STABLE d'une imprimante (voir collect()). */
+function stableId(s) {
+  return createHash('sha1').update(String(s)).digest('hex').slice(0, 16);
+}
+
+async function discoverPrinters(force) {
+  if (!force && discovered.length && (Date.now() - _cacheAt) < CACHE_MS) return discovered;
   if (discovering) return discovered;
   discovering = true;
   discovered = [];
@@ -57,11 +73,23 @@ async function discoverPrinters() {
     if (found.has(key)) return;
     const txt = service.txt || {};
     // L'URL IPP est le point d'entrée pour envoyer un job
-    const url = service.txt && (service.txt.ipp || service.txt.rp)
-      ? `ipp://${service.host || service.referer?.host || 'localhost'}:${service.port}/${service.txt.rp || 'ipp/print'}`
-      : `ipp://${service.host || 'localhost'}:${service.port}/ipp/print`;
+    /* 🆕 v1.7.542 — UNE URL IPP N'EXISTE QUE POUR UN SERVICE IPP. Un service
+       pdl-datastream (port 9100) n'accepte PAS de job IPP : fabriquer
+       « ipp://hôte:9100/ipp/print » produisait une imprimante qui échouait toujours.
+       On marque donc ipp: false et on laisse url à null (le front refuse d'imprimer). */
+    const _estIpp = /ipp/i.test(String(service.type || '')) || !!(service.txt && (service.txt.ipp || service.txt.rp));
+    const url = _estIpp
+      ? (service.txt && service.txt.rp
+          ? `ipp://${service.host || service.referer?.host || 'localhost'}:${service.port}/${service.txt.rp}`
+          : `ipp://${service.host || service.referer?.host || 'localhost'}:${service.port}/ipp/print`)
+      : null;
     found.set(key, {
-      id: randomUUID(),
+      /* 🆕 v1.7.542 — IDENTIFIANT STABLE : dérivé de l'URL IPP, donc IDENTIQUE d'un scan à
+         l'autre. MESURE DU DÉFAUT : un randomUUID() régénéré à chaque découverte ne
+         correspondait jamais à celui envoyé par la page → POST /api/print répondait
+         « Printer not found » et l'impression réseau échouait TOUJOURS. */
+      id: stableId(url || key),
+      ipp: _estIpp,
       name: service.name || service.fqdn || 'Imprimante réseau',
       fqdn: service.fqdn || '',
       host: service.host || '',
@@ -83,6 +111,7 @@ async function discoverPrinters() {
   await new Promise((r) => setTimeout(r, DISCOVERY_SECONDS * 1000));
   try { browser.stop(); } catch (_) {}
   discovered = Array.from(found.values());
+  _cacheAt = Date.now();
   discovering = false;
   return discovered;
 }
@@ -119,6 +148,13 @@ function getPrinterAttributes(printer) {
   });
 }
 
+// 🆕 v1.7.542 — valeur IPP « sides » : la page peut envoyer un booléen, 'duplex' ou
+//   directement la valeur IPP ('two-sided-long-edge').
+function _sidesValue(v) {
+  if (v === true || v === 1 || v === '1' || v === 'duplex' || v === 'two-sided' || v === 'two-sided-long-edge') return 'two-sided-long-edge';
+  return 'one-sided';
+}
+
 // ─── Envoi d'un job IPP (Print-Job) ───
 function sendPrintJob(printer, opts) {
   return new Promise((resolve) => {
@@ -133,8 +169,12 @@ function sendPrintJob(printer, opts) {
         },
         'job-attributes-tag': {
           copies: Math.max(1, parseInt(opts.copies, 10) || 1),
-          'print-color-mode': opts.color === 'bw' ? 'monochrome' : 'color',
-          sides: opts.duplex === 'duplex' ? 'two-sided-long-edge' : 'one-sided',
+          /* 🆕 v1.7.542 — la page envoie 'monochrome' ; l'ancien test ne reconnaissait
+             que 'bw' → un tirage N&B partait en couleur. */
+          'print-color-mode': (opts.color === 'bw' || opts.color === 'monochrome') ? 'monochrome' : 'color',
+          /* 🆕 v1.7.542 — la page envoie 'two-sided-long-edge' ; l'ancien test ne
+             reconnaissait que 'duplex' → le recto-verso était IGNORÉ. */
+          sides: _sidesValue(opts.duplex),
           media: opts.media || 'iso_a4_210x297mm',
           orientation: opts.orientation === 'l' ? 'landscape' : 'portrait'
         },
@@ -157,14 +197,15 @@ function sendPrintJob(printer, opts) {
 const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(204, corsHeaders()); res.end(); return; }
   const url = (req.url || '/').split('?')[0];
+  const query = (() => { try { return new URL(req.url || '/', 'http://127.0.0.1').searchParams; } catch (_) { return new URLSearchParams(); } })();
 
   try {
     if (req.method === 'GET' && url === '/api/health') {
-      json(res, 200, { ok: true, name: 'superprint-print-bridge', version: 1, port: PORT });
+      json(res, 200, { ok: true, name: 'superprint-print-bridge', version: 2, port: PORT, printers: discovered.length });
       return;
     }
     if (req.method === 'GET' && url === '/api/printers') {
-      const list = await discoverPrinters();
+      const list = await discoverPrinters(query.get('force') === '1');
       const withAttrs = await Promise.all(list.map(getPrinterAttributes));
       json(res, 200, { printers: withAttrs });
       return;
@@ -175,9 +216,15 @@ const server = http.createServer(async (req, res) => {
       req.on('end', async () => {
         let data = {};
         try { data = JSON.parse(body || '{}'); } catch (_) { json(res, 400, { ok: false, error: 'Invalid JSON' }); return; }
-        const list = await discoverPrinters();
-        const printer = list.find((p) => p.id === data.printerId);
-        if (!printer) { json(res, 404, { ok: false, error: 'Printer not found — re-scan the network' }); return; }
+        /* 🆕 v1.7.542 — id stable, ET repli sur l'URL : une imprimante retrouvée après un
+           nouveau scan porte le même id, mais si l'utilisateur a scanné depuis une page
+           qui envoie encore une URL, on la retrouve par elle. */
+        const list = await discoverPrinters(true);
+        const printer = list.find((p) => p.id === data.printerId)
+          || (data.printerUrl ? list.find((p) => p.url && p.url === data.printerUrl) : null)
+          || null;
+        if (!printer) { json(res, 404, { ok: false, error: 'Imprimante introuvable — relancez un scan du réseau' }); return; }
+        if (printer.ipp === false || !printer.url) { json(res, 400, { ok: false, error: 'Cette imprimante ne parle pas IPP (port brut 9100) : impression directe indisponible' }); return; }
         if (!data.pdfBase64) { json(res, 400, { ok: false, error: 'Missing pdfBase64' }); return; }
         const result = await sendPrintJob(printer, data);
         json(res, result.ok ? 200 : 502, result);

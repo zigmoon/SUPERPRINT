@@ -49,12 +49,36 @@ const args = hasExplicitHost ? userArgs : ['--host', '127.0.0.1', ...userArgs];
 
 printBanner();
 
+/* ── Pont d'impression réseau (mDNS + IPP) ────────────────────────
+   🆕 v1.7.542 — IL N'ÉTAIT JAMAIS DÉMARRÉ. L'utilisateur devait lancer
+   « npm run print:bridge » à la main ; sans lui, le bloc « Imprimantes réseau »
+   de la pop-in d'impression affichait « Pont local non détecté » — d'où le
+   « je souhaiterais qu'il marche ». Ici, il démarre EN MÊME TEMPS que le serveur :
+   l'application reconnaît alors les imprimantes IPP du réseau local.
+   Il s'arrête avec le serveur (Ctrl+C). */
+let bridge = null;
+try {
+  bridge = spawn(process.execPath, [path.join(__dirname, 'print-bridge.mjs')], {
+    stdio: ['ignore', 'inherit', 'inherit'],
+    cwd: path.join(__dirname, '..')
+  });
+  bridge.on('error', () => {
+    console.log(C.yellow + '  Pont d\'impression indisponible (npm install dans sp213-local, ou npm run print:bridge).' + C.reset);
+  });
+  bridge.on('close', (code) => {
+    if (code !== 0 && code !== null) {
+      console.log(C.yellow + '  Pont d\'impression arrêté (code ' + code + '). Relancez-le avec : npm run print:bridge' + C.reset);
+    }
+  });
+} catch (_) {}
+
 const child = spawn(process.execPath, [viteBin, ...args], {
   stdio: 'inherit',
   cwd: path.join(__dirname, '..')
 });
 
 child.on('close', (code) => {
+  try { if (bridge) bridge.kill(); } catch (_) {}
   if (code !== 0 && code !== null) {
     console.log(C.yellow + '\n  Le serveur s\'est arrêté (code ' + code + ').' + C.reset);
   }
