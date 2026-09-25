@@ -10787,6 +10787,81 @@ function spReflowApresGabarit(canvas) {
 }
 window.spReflowApresGabarit = spReflowApresGabarit;
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   🆕 v1.7.548 — _SP_GAB_CADRE_548 : LES OPTIONS DE CADRE DE TEXTE SURVIVENT AU
+   GABARIT (retour utilisateur : « le bloc est bien dans l'éditeur de gabarit, mais
+   lorsque le gabarit est enregistré et que je retourne sur la préview, on perd les
+   colonnes du bloc texte »).
+
+   CAUSE MESURÉE : les DEUX injections du gabarit — addSpecialTextObjectsToCanvas
+   (l'écran) et injectMasterItemsForExport (le PDF) — RECRÉENT le bloc texte à la
+   main (Textbox.fromObject étant buggé) et recopient les réglages typographiques
+   mais PAS les options de cadre de texte.
+   MESURE : page d'origine _spCols 2, 24 lignes, capacité 14, hauteur 120 →
+   le MÊME bloc injecté depuis le gabarit arrivait SANS _spCols (12 lignes, spColMap
+   null) : une seule colonne. Retraits, justification verticale, taquets, contour de
+   cadre, police variable et tons directs étaient perdus de la même façon.
+
+   Le coulage des colonnes n'est PAS un calcul de Fabric : la largeur de ligne rendue
+   au moteur d'habillage vaut celle d'UNE colonne (lineWidthFor, v1.7.458) et elle
+   n'existe que si _spCols ET _fixedHeight sont posés. Il faut donc refaire, sur le
+   bloc injecté, exactement ce que fait spRelayout : poser les réglages, jeter le
+   cache des lignes, relancer initDimensions() (nouveau coulage), rappeler la
+   hauteur/largeur de cadre, puis reposer le masque.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const SP_GAB_REGLAGES_BLOC = [
+    /* options de bloc texte (v1.7.457) */
+    '_spInsetTop', '_spInsetBottom', '_spVAlign', '_spCols', '_spColW', '_spColGutter', '_spTabs',
+    /* retraits de paragraphe */
+    '_spIndentLeft', '_spIndentRight', '_spFirstLineIndent',
+    /* contour du cadre (v1.7.530) et fond de cadre */
+    '_spFrameStroke', '_spFrameStrokeWidth',
+    /* police variable (v1.7.481) */
+    'spVarFont',
+    /* tons directs (v1.7.347 / v1.7.527) */
+    '_spSpotInk', '_spSpotStrokeInk', '_spSpotInkName', '_spSpotStrokeInkName',
+    '_originalFill', '_originalStroke', '_originalStrokeWidth',
+    /* justification (interlettre / intermots) */
+    '_justSettings'
+];
+/* Recopie les réglages de bloc du gabarit sur le bloc recréé. Renvoie le nombre copié. */
+function spCopierReglagesBlocGabarit(src, dst) {
+    if (!src || !dst) return 0;
+    let n = 0;
+    for (let i = 0; i < SP_GAB_REGLAGES_BLOC.length; i++) {
+        const k = SP_GAB_REGLAGES_BLOC[i];
+        try {
+            const v = src[k];
+            if (typeof v === 'undefined' || v === null) continue;
+            dst[k] = (typeof v === 'object') ? JSON.parse(JSON.stringify(v)) : v;
+            n++;
+        } catch (_) {}
+    }
+    return n;
+}
+/* Recompose le bloc injecté (colonnes + cadre + masque), comme le chargement d'une page.
+   À appeler APRÈS insertAt : le moteur d'habillage lit obj.canvas. */
+function spComposerBlocGabarit(txt) {
+    if (!txt || (txt.type !== 'textbox' && txt.type !== 'text' && txt.type !== 'i-text')) return false;
+    const aCadre = (typeof txt._fixedHeight === 'number' && txt._fixedHeight > 0);
+    const aColonnes = Number(txt._spCols) >= 2;
+    if (!aCadre && !aColonnes) return false;   /* bloc ordinaire : on n'y touche pas */
+    try {
+        txt.__spColMap = null;
+        txt._textLines = null;
+        if (typeof txt._clearCache === 'function') txt._clearCache();
+        if (typeof txt.initDimensions === 'function') txt.initDimensions();
+    } catch (_) {}
+    if (aCadre) txt.height = txt._fixedHeight;
+    if (typeof txt._fixedWidth === 'number' && txt._fixedWidth > 0) txt.width = txt._fixedWidth;
+    try { if (typeof window.applyTextboxClipPath === 'function') window.applyTextboxClipPath(txt); } catch (_) {}
+    try { txt.setCoords(); } catch (_) {}
+    txt.dirty = true;
+    return true;
+}
+try { window.spCopierReglagesBlocGabarit = spCopierReglagesBlocGabarit; } catch (_) {}
+try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
+
         function addSpecialTextObjectsToCanvas(fabricCanvas, pageIndex, position) {
             if (!fabricCanvas) return;
             const bleedPx = mmToPx(bleed);
@@ -10972,6 +11047,20 @@ window.spReflowApresGabarit = spReflowApresGabarit;
                             txt.setCoords();
                             // Insérer DERRIÈRE les objets utilisateur (au début de la pile)
                             fabricCanvas.insertAt(txt, 0);
+                            /* 🆕 v1.7.548 — _SP_GAB_CADRE_548 : les OPTIONS DE CADRE DE TEXTE
+                               du gabarit (colonnes, retraits, justification verticale, contour,
+                               police variable, tons directs) puis RECOMPOSITION du bloc.
+                               Sans ces deux appels, un bloc à 2 colonnes du gabarit revenait à
+                               UNE colonne sur la page (MESURÉ : _spCols perdu, 12 lignes au lieu
+                               de 24, spColMap null). */
+                            try {
+                                if (typeof window.spCopierReglagesBlocGabarit === 'function') {
+                                    window.spCopierReglagesBlocGabarit(objData, txt);
+                                }
+                                if (typeof window.spComposerBlocGabarit === 'function') {
+                                    window.spComposerBlocGabarit(txt);
+                                }
+                            } catch (_) {}
                             added = true;
                         });
                         /* 🆕 v1.7.545 — _SP_GAB_ORDRE_545 : les textes viennent d'être posés
@@ -11215,6 +11304,19 @@ window.spReflowApresGabarit = spReflowApresGabarit;
                                     if (objData.isLinkedTextBlock) txt.isLinkedTextBlock = true;
                                     txt.setCoords();
                                     tempFabric.insertAt(txt, 0);
+                                    /* 🆕 v1.7.548 — _SP_GAB_CADRE_548 : MÊME correctif que sur
+                                       l'écran. Sans lui, le PDF/PNG sortait le bloc du gabarit à
+                                       UNE colonne alors que la préview l'affichait à deux : les
+                                       deux chemins recréent le bloc texte de la même façon, ils
+                                       doivent donc recopier les mêmes réglages. */
+                                    try {
+                                        if (typeof window.spCopierReglagesBlocGabarit === 'function') {
+                                            window.spCopierReglagesBlocGabarit(objData, txt);
+                                        }
+                                        if (typeof window.spComposerBlocGabarit === 'function') {
+                                            window.spComposerBlocGabarit(txt);
+                                        }
+                                    } catch (_) {}
                                 } catch (eT) {
                                     console.warn('[injectMasterItemsForExport] creation textbox master:', eT);
                                 }
@@ -19326,6 +19428,20 @@ window.spReflowApresGabarit = spReflowApresGabarit;
         //   alimentent _spIndentLeft/_spIndentRight, déjà honorés par la mise en
         //   page et déjà sérialisés : rien de nouveau dans le moteur pour eux.
         function spBlocsSelectionnes() {
+    /* 🆕 v1.7.548 — _SP_GAB_CADRE_548 : DANS L'ÉDITEUR DE GABARIT, le bloc sélectionné
+       vit sur le canevas du GABARIT (window._activeMasterCanvas), pas sur une page.
+       L'ancien code ne regardait que `activeCanvas` (variable de portée qui n'existe pas
+       ici) puis les canevas de PAGES : le panneau « Options de bloc texte » ne faisait
+       donc RIEN dans l'éditeur de gabarit.
+       MESURÉ (bloc 320 px, 12 lignes) : clic sur le bloc dans l'éditeur → objet bien
+       sélectionné, puis spApplyFrameOptions() laissait _spCols indéfini et la hauteur de
+       cadre non posée (spColMap null, aucune colonne, aucun retrait). */
+    const _mc = (typeof window !== 'undefined' && window._activeMasterCanvas)
+        ? window._activeMasterCanvas : null;
+    if (_mc && typeof _mc.getActiveObject === 'function') {
+        const _mo = _mc.getActiveObject();
+        if (_mo && (_mo.type === 'textbox' || _mo.type === 'text')) return [_mo];
+    }
     const act = (typeof activeCanvas !== 'undefined' && activeCanvas && activeCanvas.getActiveObject)
         ? activeCanvas.getActiveObject() : null;
     if (act && (act.type === 'textbox' || act.type === 'text')) return [act];

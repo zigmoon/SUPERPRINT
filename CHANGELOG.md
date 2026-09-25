@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,15 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.548] — 2026-09-25
+
+_Text frame options survive a template round trip, on screen and in the PDF_
+
+### Fixed
+- **A template lost the text frame options of its text blocks** (user request: « lorsque je fais un gabarit avec un bloc texte utilisant « text frame option » dans la modification du gabarit, le bloc est bien mais lorsque le gabarit est enregistré et que je retourne sur la préview, on perd les colonnes du bloc texte. On perd aussi les colonnes directement après avoir fait le gabarit »). The 1.7.547 release fixed the EDITOR and the SAVE; this one fixes the INJECTION, i.e. the moment the template is placed back on a page. Measured on a 320 px block, 120 px frame, 2 columns, 8 px top inset, long text. - **(a) The two injections rebuild the text block by hand.** `Textbox.fromObject` being buggy, the screen (`addSpecialTextObjectsToCanvas`) and the PDF export (`injectMasterItemsForExport`) each build a `new fabric.Textbox` and copy the typographic settings (font, size, styles, shadow, `_fixedHeight`, `_fixedWidth`) but NOT the text frame options. Measured on the page: `_spCols` 2, 24 lines, capacity 14, height 120, mask 120 — the same block injected from the template: `_spCols` ABSENT, `spColMap` null (a single column), 12 lines. Images and shapes go through `enlivenObjects`, which restores everything: only text blocks were affected. Fixed: both injections call `spCopierReglagesBlocGabarit()` (`_spInsetTop`, `_spInsetBottom`, `_spVAlign`, `_spCols`, `_spColW`, `_spColGutter`, `_spTabs`, paragraph indents, frame outline, variable font, spot inks, justification). - **(b) The column flow is not a Fabric computation.** The width handed to the wrap engine is the width of ONE column (`lineWidthFor`, v1.7.458) and it only exists if `_spCols` AND `_fixedHeight` are set WHEN `initDimensions()` runs. `spComposerBlocGabarit()` therefore replays the `spRelayout()` pass on the injected block: drop the line cache, `initDimensions()` (new flow), recall the frame height/width, re-apply the mask. A block with neither frame nor columns returns immediately and is never recomposed. - **The options panel did nothing inside the template editor.** `spBlocsSelectionnes()` only looked at the scope variable `activeCanvas` (undefined there) and then at the PAGE canvases — never at the template canvas (`window._activeMasterCanvas`, set by `_SP_MASTER_PREVIEW_545`). Measured: clicking the block in the editor selected it, but after `spApplyFrameOptions()` `_spCols` was still undefined (12 lines, no columns, no insets). Fixed: the panel now asks the template canvas first when it holds a text selection. 
+### Verified
+- **The three routes give the same block**: screen injection, PDF injection (`injectMasterItemsForExport` called directly on a temporary canvas) and the saved template — 2 columns, 24 lines, capacity 14, height 120 px, mask 120 px, top inset 8. The saved template carries `_spCols: 2`, `_spInsetTop: 8`, `_spColGutter: 12`, `_fixedHeight: 120`. - **Inside the editor**: 2 columns, top inset 8, 24 lines, mask applied immediately, and the 2 columns are still there on the page after saving. - **No regression**: plain block (139 px, 9 lines, no columns — unchanged), block with insets only (20 px top inset kept, height unchanged at 155 px), short text set to 2 columns (a single column used, capacity 1). 
 
 ## [1.7.547] — 2026-09-25
 
