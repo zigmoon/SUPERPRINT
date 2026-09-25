@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.548",
+      "softwareVersion": "1.7.549",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -265,7 +265,9 @@
   --ease: cubic-bezier(.22,.61,.36,1);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 16px; -webkit-text-size-adjust: 100%; }
+/* scrollbar-gutter réserve la place de la scrollbar : pas de saut de mise en page quand elle
+   disparaît (menu mobile ouvert, voir script du burger). */
+html { scroll-behavior: smooth; font-size: 16px; -webkit-text-size-adjust: 100%; scrollbar-gutter: stable; }
 body {
   font-family: var(--f-sans);
   color: var(--ink);
@@ -528,8 +530,20 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   /* 🆕 v1.7.472 — il défile si la liste dépasse (grande police, petits écrans, japonais) :
      le colophon et la ligne du bas restent atteignables. */
   overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  /* 🆕 v1.7.549 — SCROLLBAR INTERNE MASQUÉE : dès que les 3 entrées d'apps ont fait dépasser
+     le contenu de l'écran, une scrollbar par défaut (non stylée, épaisse) apparaissait pile sur
+     la ligne SUPERPRINT + bouton fermer — et sa largeur qui apparaît/disparaît décalait un peu
+     le logo du menu (.mm-colo, centré). Le menu reste scrollable (tactile/molette), juste sans
+     piste visible — comme une scrollbar mobile native. */
+  scrollbar-width: none;
 }
+.mobile-menu::-webkit-scrollbar { display: none; }
 .mobile-menu.open { display: flex; }
+/* 🆕 v1.7.549 — LES TROIS APPS EN TÊTE DE MENU (demande : « afficher les trois app en premier »).
+   Icône + nom, même ligne/filet que les autres entrées mais un peu plus haut (icône 26px) ; le
+   bouton « Ouvrir l'app » en fin de menu devient inutile et est retiré. */
+.mm-app { display: flex; align-items: center; gap: 12px; }
+.mm-app img { width: 26px; height: 26px; border-radius: 6px; flex: 0 0 auto; }
 .mobile-menu a {
   /* 🆕 v1.7.472 — MÊME TYPO QUE LA NAV, MAIS PLUS GRANDE ET PLUS HAUTE.
      Le retour du 18/09 (« on dirait que ce n’est pas la même typo ») avait ramené les entrées
@@ -1945,9 +1959,13 @@ input, select, textarea, label { cursor: pointer; }
   .mm-colo img { height: clamp(44px, 12vw, 56px); }
 }
 
-/* 🆕 v1.7.472 — le bas du menu : qui signe, et la version. Petit, espacé, arrêté par un filet. */
+/* 🆕 v1.7.472 — le bas du menu : qui signe, et la version. Petit, espacé, arrêté par un filet.
+   🆕 v1.7.549 — PLUS de margin-top:auto : plaquée tout en bas de l'écran plein (position:fixed
+   inset:0), elle laissait un grand vide entre le sélecteur de langue et la signature sur les
+   menus courts (« la fin de menu est étrange »). Marge fixe : elle suit le contenu, comme le
+   reste du menu. */
 .mm-bas {
-  margin-top: auto; padding: 20px 4px 6px; border-top: 1px solid var(--line);
+  margin-top: 32px; padding: 20px 4px 6px; border-top: 1px solid var(--line);
   display: flex; flex-direction: column; gap: 5px;
   font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .1em;
   text-transform: uppercase; color: var(--muted);
@@ -2102,12 +2120,14 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="mm-colo" aria-hidden="true">
     <img src="favicon.png" alt="" width="56" height="56">
   </div>
+  <a href="app/index.html" class="mm-app"><img src="icons/icon-192x192.png" alt="" width="26" height="26"><span>SuperPrint</span></a>
+  <a href="sp213-studio.html" class="mm-app"><img src="icons/studio_print_logo_blanc.png" alt="" width="26" height="26"><span>Studio IA</span></a>
+  <a href="supertypo/index.html" class="mm-app"><img src="icons/sper_typo.png" alt="" width="26" height="26"><span>SuperTyPo</span></a>
   <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
   <a href="#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
   <a href="#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
-  <a href="app/index.html" class="mm-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
        Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
        que setLang() continue de marquer la langue choisie. -->
@@ -2122,7 +2142,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.548</span>
+    <span>SuperPrint v1.7.549</span>
   </div>
 </div>
 
@@ -2130,9 +2150,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <section id="hero">
   <div class="ghost" aria-hidden="true">PRINT</div>
   <div class="container">
-    <div class="hero-kicker" data-lang="fr">Bureau de PAO · n° 01 — SuperPrint</div>
-    <div class="hero-kicker" data-lang="en">The layout desk · n° 01 — SuperPrint</div>
-    <div class="hero-kicker" data-lang="ja">レイアウトデスク · n° 01 — SuperPrint</div>
+    <div class="hero-kicker" data-lang="fr">Le n°1 de la PAO 100% online</div>
+    <div class="hero-kicker" data-lang="en">The first DTP software, 100% online</div>
+    <div class="hero-kicker" data-lang="ja">100%オンラインのNo.1レイアウトデスク</div>
 
     <h1 data-lang="fr"><span class="line">La mise en page</span> <span class="line">professionnelle,</span> <span class="line"><em class="italic">dans votre navigateur.</em></span></h1>
     <h1 data-lang="en"><span class="line">The professional</span> <span class="line">page layout,</span> <span class="line"><em class="italic">in your browser.</em></span></h1>
@@ -2798,9 +2818,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <p class="pp-band-txt" data-lang="fr">Les <span class="pp-mono">quinze outils</span> tiennent dans une seule page ouverte — rien à installer, rien à mettre à jour.</p>
       <p class="pp-band-txt" data-lang="en">All <span class="pp-mono">fifteen tools</span> live in a single open page — nothing to install, nothing to update.</p>
       <p class="pp-band-txt" data-lang="ja">15の道具は開いた<span class="pp-mono">ひとつのページ</span>の中に。インストールも更新も不要です。</p>
-      <a href="app/index.html" class="btn-paper" data-lang="fr">Ouvrir le Bureau SuperPrint</a>
-      <a href="app/index.html" class="btn-paper" data-lang="en">Open the SuperPrint desk</a>
-      <a href="app/index.html" class="btn-paper" data-lang="ja">SuperPrint デスクを開く</a>
+      <a href="app/index.html" class="btn btn-paper" data-lang="fr">Ouvrir le Bureau SuperPrint</a>
+      <a href="app/index.html" class="btn btn-paper" data-lang="en">Open the SuperPrint desk</a>
+      <a href="app/index.html" class="btn btn-paper" data-lang="ja">SuperPrint デスクを開く</a>
     </div>
         </div>
     </details>
@@ -2889,9 +2909,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <p class="pp-band-txt" data-lang="fr">Un <span class="pp-mono">Pantone</span> posé dans l'application ressort dans le PDF comme une couche à son nom — vérifié en décodant le fichier flux par flux.</p>
       <p class="pp-band-txt" data-lang="en">A <span class="pp-mono">Pantone</span> placed in the app comes out of the PDF as a channel under its own name — verified by decoding the file stream by stream.</p>
       <p class="pp-band-txt" data-lang="ja">アプリで配置した <span class="pp-mono">Pantone</span> は、PDF内で固有の名前を持つチャンネルとして出力されます。ファイルをストリーム単位で解析して検証済み。</p>
-      <a href="index.html" class="btn-paper" data-lang="fr">Essayer l'export CMJN</a>
-      <a href="index.html" class="btn-paper" data-lang="en">Try the CMYK export</a>
-      <a href="index.html" class="btn-paper" data-lang="ja">CMYK書き出しを試す</a>
+      <a href="index.html" class="btn btn-paper" data-lang="fr">Essayer l'export CMJN</a>
+      <a href="index.html" class="btn btn-paper" data-lang="en">Try the CMYK export</a>
+      <a href="index.html" class="btn btn-paper" data-lang="ja">CMYK書き出しを試す</a>
     </div>
         </div>
     </details>
@@ -2922,9 +2942,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <p class="pp-band-txt" data-lang="fr">Chaque projet part d’un <span class="pp-mono">format</span>, jamais d’une page blanche.</p>
       <p class="pp-band-txt" data-lang="en">Every project starts from a <span class="pp-mono">format</span>, never from a blank page.</p>
       <p class="pp-band-txt" data-lang="ja">どの仕事も白紙からではなく、<span class="pp-mono">形式</span>から始まります。</p>
-      <a href="#templates" class="btn-paper" data-lang="fr">Voir les maquettes</a>
-      <a href="#templates" class="btn-paper" data-lang="en">See the templates</a>
-      <a href="#templates" class="btn-paper" data-lang="ja">テンプレートを見る</a>
+      <a href="#templates" class="btn btn-paper" data-lang="fr">Voir les maquettes</a>
+      <a href="#templates" class="btn btn-paper" data-lang="en">See the templates</a>
+      <a href="#templates" class="btn btn-paper" data-lang="ja">テンプレートを見る</a>
     </div>
         </div>
     </details>
@@ -3167,9 +3187,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <p class="pp-band-txt" data-lang="fr">Le meilleur juge reste l’essai : ouvrez un document, composez une page, <span class="pp-mono">comparez</span>.</p>
       <p class="pp-band-txt" data-lang="en">The real test is the work itself: open a document, set a page, <span class="pp-mono">compare</span>.</p>
       <p class="pp-band-txt" data-lang="ja">本当の判定は実際に組むこと。ドキュメントを開いて1ページ組み、<span class="pp-mono">比べて</span>ください。</p>
-      <a href="app/index.html" class="btn-paper" data-lang="fr">Essayer maintenant</a>
-      <a href="app/index.html" class="btn-paper" data-lang="en">Try it now</a>
-      <a href="app/index.html" class="btn-paper" data-lang="ja">今すぐ試す</a>
+      <a href="app/index.html" class="btn btn-paper" data-lang="fr">Essayer maintenant</a>
+      <a href="app/index.html" class="btn btn-paper" data-lang="en">Try it now</a>
+      <a href="app/index.html" class="btn btn-paper" data-lang="ja">今すぐ試す</a>
     </div>
         </div>
     </details>
@@ -3226,9 +3246,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       <p class="pp-band-txt" data-lang="fr">Un document arrive, une autre version repart — sans <span class="pp-mono">conversion</span>, sans perte.</p>
       <p class="pp-band-txt" data-lang="en">A document arrives, another version leaves — no <span class="pp-mono">conversion</span>, no loss.</p>
       <p class="pp-band-txt" data-lang="ja">ドキュメントが入り、別の版が出ていく。<span class="pp-mono">変換</span>も欠落もありません。</p>
-      <a href="app/index.html" class="btn-paper" data-lang="fr">Importer un document</a>
-      <a href="app/index.html" class="btn-paper" data-lang="en">Import a document</a>
-      <a href="app/index.html" class="btn-paper" data-lang="ja">ドキュメントを読み込む</a>
+      <a href="app/index.html" class="btn btn-paper" data-lang="fr">Importer un document</a>
+      <a href="app/index.html" class="btn btn-paper" data-lang="en">Import a document</a>
+      <a href="app/index.html" class="btn btn-paper" data-lang="ja">ドキュメントを読み込む</a>
     </div>
         </div>
     </details>
@@ -3690,9 +3710,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     </div>
     <div class="foot-cols">
       <div>
-        <h4 data-lang="fr">Bureau SuperPrint</h4>
-        <h4 data-lang="en">The SuperPrint desk</h4>
-        <h4 data-lang="ja">SuperPrint デスク</h4>
+        <h4 data-lang="fr">Navigation</h4>
+        <h4 data-lang="en">Navigation</h4>
+        <h4 data-lang="ja">ナビゲーション</h4>
         <div class="foot-links">
           <a href="app/index.html">SuperPrint Editor</a>
           <a href="sp213-studio.html" data-lang="fr">Studio SP213</a>
@@ -3730,7 +3750,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.548</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.549</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
@@ -3852,6 +3872,8 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     burger.classList.remove('open');
     menu.classList.remove('open');
     burger.setAttribute('aria-expanded', 'false');
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
   }
   /* 🆕 v1.7.472 — LE MENU SE POSE SOUS LA BARRE COLLANTE, ET PAS SOUS UNE HAUTEUR FIXE.
      Le header mobile n’est pas une bande unique : bandeau quadri + colophon (logo) + nav
@@ -3905,6 +3927,10 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     var open = menu.classList.toggle('open');
     burger.classList.toggle('open', open);
     burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    /* 🆕 v1.7.549 — verrouille le scroll de fond : sinon la scrollbar de la page reste active
+       et passe par-dessus la ligne du burger/logo pendant que le menu plein écran est ouvert. */
+    document.documentElement.style.overflow = open ? 'hidden' : '';
+    document.body.style.overflow = open ? 'hidden' : '';
     if (open) spPlacerMenu();          /* mesure au moment où l’on ouvre */
   });
   /* Un ancrage du menu referme et remet la barre en haut, prête pour la prochaine ouverture. */

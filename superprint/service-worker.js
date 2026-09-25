@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.548-gabarit-cadre-texte';
+const CACHE_NAME = 'superprint-shell-v1.7.549-habillage-colonnes';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

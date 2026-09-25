@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,15 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.549] — 2026-09-25
+
+_Text wrap applies to blocks that use the text frame options; .sp and .json round trips stay identical_
+
+### Fixed
+- **Text wrap ignored on blocks using the text frame options** (user request: « Dans superprint l app, le texte wrap ne s applique pas sur les blocs créés avec « text frame options » »). Measured on a 300 px block with a wrapped image on the right (box wrap, standoff 6): the plain block narrowed its lines to **134 px**; the SAME block set to 2 columns stayed at **144 px** on every line — the width of one column — so the obstacle had no effect at all. Cause: `lineWidthFor()` had a columns branch (v1.7.458) that returned one column width and **returned before looking at the obstacles**, deliberately, to keep the column flow deterministic. Fixed (`_SP_GAB_WRAP_549`): the shortcut is kept when there is nothing to flow around (unchanged, still deterministic — measured 144 px); as soon as an obstacle exists, the line is bounded INSIDE ITS OWN COLUMN (width from the column edge to the obstacle, capped by the column width). - **The line’s column and its y inside that column were taken from the previous pass.** Relying on the previous flow (`spColMap`) gave a different result at the first pass: measured, a 2-column block was **24 lines live and 21 lines after a .sp round trip**. The column and y are now computed on the spot, with the same packing rule as the flow (move to the next column when the next line would not fit in the column height): both states now give **23 lines** and the same line widths. 
+### Verified
+- **No regression**: plain block 134 px (wrapped), block with a frame and no columns 134 px, multi-column block with NO obstacle 144 px / 17 lines — all identical to before. - **.sp round trip identical**: control document = 2-column block (200 px frame, 6 px top inset) + wrapped rectangle + a template created from the page + that template assigned to a second page and RELEASED on it (`_spGabaritLibere`). export → import (`loadProjectSP`) → export is byte-identical apart from the `created`/`modified` timestamps. - **.json round trip identical**: `saveProjectLocal()` → import through the real file input (`#importJsonInput`) → export = identical (4 973 characters, timestamps aside). - **No runtime marker** in either file (`_isMasterItem`, `_isMasterRuntime`, `_spMasterIdx`, `_spMasterPage`, `__spColMap`, `__spWrapWidths`, `__spWrapOffsets`): template flags and the column/wrap caches stay in memory. After import the block keeps its columns, frame height and wrap (23 lines, 134 px), and goes back to 144 px / 17 lines when the wrap is removed. 
 
 ## [1.7.548] — 2026-09-25
 

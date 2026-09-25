@@ -5303,6 +5303,51 @@ if (window._spGpuEnabled) {
 
     var boxW = textbox.width || fallback;
 
+    /* ══ _SP_GAB_WRAP_549 — HABILLAGE D'UN BLOC À COLONNES ══
+       Retour utilisateur : « le texte wrap ne s'applique pas sur les blocs créés avec
+       "text frame options" ». MESURÉ (bloc de 300 px, cadre de 300 px, obstacle habillé
+       « boîte » à x 200 → 280) : les largeurs de ligne publiées restaient à 144 px — la
+       largeur d'une colonne — même sur les lignes couvertes par l'obstacle, alors que le
+       MÊME bloc SANS colonnes tombait à 134 px. Le bloc à colonnes ignorait donc
+       complètement l'habillage.
+       CAUSE : la branche « colonnes » de cette fonction renvoyait la largeur de colonne
+       AVANT de regarder les obstacles (choix de la 1.7.458, pour un coulage déterministe).
+       CORRECTIF : le raccourci est CONSERVÉ quand il n'y a rien à contourner (aucun
+       changement dans ce cas, et le coulage reste déterministe) ; dès qu'un obstacle
+       existe, il borne la ligne DANS SA COLONNE : largeur disponible comptée du bord de
+       la colonne jusqu'à l'obstacle, bornée par la largeur de la colonne.
+       La colonne D'UNE LIGNE vient du coulage (spColMap) de la passe précédente ; à
+       défaut (première passe) la ligne est mesurée dans la première colonne. */
+    var _cgCol = (typeof spColGeom === 'function') ? spColGeom(textbox) : null;
+    var _colW = 0, _colIdx = 0, _colX = 0;
+    if (_cgCol) {
+        _colW = Math.min(_cgCol.w, fallback > 0 ? fallback : _cgCol.w);
+        /* COLONNE ET y DANS LA COLONNE de CETTE ligne, par le MÊME empilement que le
+           coulage (spColMap : on passe à la colonne suivante quand la ligne suivante ne
+           tiendrait plus dans la hauteur de colonne). Le calcul est fait ici, sur les
+           hauteurs réelles des lignes précédentes, et ne dépend donc PAS d'une passe
+           précédente : MESURÉ, s'appuyer sur le coulage précédent faisait passer un bloc à
+           2 colonnes de 24 lignes (état vivant) à 21 lignes après un aller-retour .sp. */
+        var _col = 0, _colY = 0;
+        for (var _ic = 0; _ic < lineIndex; _ic++) {
+            var _hc = 0;
+            try { _hc = Number(textbox.getHeightOfLine(_ic)) || 0; } catch (_) { _hc = 0; }
+            if (!(_hc > 0) && _hCache && _hCache.length > _ic) _hc = Number(_hCache[_ic]) || 0;
+            if (!(_hc > 0)) _hc = (textbox.fontSize || 14) * (textbox.lineHeight || 1.2);
+            if (_colY > 0 && (_colY + _hc) > _cgCol.colH + 0.5) { _col++; _colY = 0; }
+            _colY += _hc;
+        }
+        var _nCol = Math.max(1, Math.round(_cgCol.n) || 1);
+        if (_col > _nCol - 1) _col = _nCol - 1;          /* au-delà de la dernière colonne (lignes non dessinées) */
+        _colIdx = _col;
+        _colX = (_cgCol.inLeft || 0) + _colIdx * (_cgCol.w + _cgCol.gutter);
+        /* Bande VERTICALE de la ligne = celle de SA colonne (le y cumulé du flux simple
+           placerait la ligne de la colonne 2 beaucoup plus bas, donc en face du mauvais
+           obstacle). */
+        yTop = _dec + _colY;
+        yBot = yTop + lineH;
+    }
+
     // Intervalles interdits, exprimés en x LOCAL (0 = bord gauche du bloc)
     var forbidden = [];
     var jumpBeyond = null;
@@ -5393,25 +5438,22 @@ if (window._spGpuEnabled) {
     // (mode « saut » : voir la note dans _spWrap.modes — non supporté)
     void jumpBeyond;
 
-    /* 🆕 v1.7.458 — COLONNES : toutes les colonnes ont la même largeur, le
-       moteur de repli n'a donc besoin que de cette largeur (le placement x/y de
-       chaque ligne se déduit ensuite de la mise en page finale, cf. spColMap).
-       Les obstacles (habillage) sont ignorés dans un bloc à colonnes : le
-       coulage prime, et la largeur reste DÉTERMINISTE. */
-    if (typeof spColGeom === 'function') {
-        var _cg = spColGeom(textbox);
-        if (_cg) {
-            var _cw = Math.min(_cg.w, fallback > 0 ? fallback : _cg.w);
-            try {
-                if (!textbox.__spWrapWidths) textbox.__spWrapWidths = [];
-                textbox.__spWrapWidths[lineIndex] = _cw;
-                if (!textbox.__spWrapOffsets) textbox.__spWrapOffsets = [];
-                textbox.__spWrapOffsets[lineIndex] = 0;
-            } catch (_) {}
-            return _cw;
-        }
+    /* 🆕 v1.7.458, corrigé en v1.7.549 (_SP_GAB_WRAP_549) — COLONNES.
+       Rien à contourner : toutes les colonnes ont la même largeur, le moteur de repli
+       n'a besoin que de cette largeur (le placement x/y de chaque ligne se déduit de
+       la mise en page finale, cf. spColMap) → comportement DÉTERMINISTE inchangé.
+       Un obstacle existe : la suite de la fonction le prend en compte, dans la
+       colonne de la ligne (voir _colX / _colW plus haut). */
+    if (!forbidden.length && limitMax === null) {
+        if (!_cgCol) return fallback;
+        try {
+            if (!textbox.__spWrapWidths) textbox.__spWrapWidths = [];
+            textbox.__spWrapWidths[lineIndex] = _colW;
+            if (!textbox.__spWrapOffsets) textbox.__spWrapOffsets = [];
+            textbox.__spWrapOffsets[lineIndex] = 0;
+        } catch (_) {}
+        return _colW;
     }
-    if (!forbidden.length && limitMax === null) return fallback;
 
     // Fusion des intervalles qui se chevauchent
     forbidden.sort(function (a, b) { return a[0] - b[0]; });
@@ -5430,6 +5472,12 @@ if (window._spGpuEnabled) {
     var cursor = 0;
     var limit = boxW;
     if (limitMax !== null && limitMax < limit) limit = limitMax;   // v1.7.460 : portée « gauche »
+    /* _SP_GAB_WRAP_549 : dans un bloc à COLONNES, la ligne ne dispose que de SA colonne
+       (les intervalles interdits sont exprimés dans le repère du bloc, donc comparables). */
+    if (_cgCol) {
+        cursor = Math.max(cursor, _colX);
+        limit = Math.min(limit, _colX + _colW);
+    }
 
     for (var n = 0; n < merged.length; n++) {
       var seg = merged[n];
@@ -5491,7 +5539,8 @@ if (window._spGpuEnabled) {
           manque: _manque > 0 ? _manque : 0,
           motLarge: _motLePlusLong === null ? null : Math.round(_motLePlusLong * 10) / 10
         };
-        return fallback;
+        /* _SP_GAB_WRAP_549 : on renonce à contraindre, mais jamais au-delà de la COLONNE. */
+        return _cgCol ? _colW : fallback;
       }
       // Un mot court tient : on accepte la contrainte fine (gain reel).
       if (!lastDiag) lastDiag = { raison: 'contrainte_fine', disponible: Math.round(avail * 10) / 10 };
@@ -5508,9 +5557,10 @@ if (window._spGpuEnabled) {
       if (!textbox.__spWrapOffsets) textbox.__spWrapOffsets = [];
       if (!textbox.__spWrapWidths) textbox.__spWrapWidths = [];
       textbox.__spWrapOffsets[lineIndex] = cursor;
-      textbox.__spWrapWidths[lineIndex] = Math.min(avail, fallback);
+      /* _SP_GAB_WRAP_549 : jamais plus large que la COLONNE de la ligne. */
+      textbox.__spWrapWidths[lineIndex] = _cgCol ? Math.min(avail, _colW) : Math.min(avail, fallback);
     } catch (_) {}
-    return Math.min(avail, fallback);
+    return _cgCol ? Math.min(avail, _colW) : Math.min(avail, fallback);
   }
 
   // ── Hauteur du bloc : suivi de l'habillage ────────────────────────────────
