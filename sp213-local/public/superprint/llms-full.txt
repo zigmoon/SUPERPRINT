@@ -8,7 +8,7 @@
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
-- **Version**: 1.7.546 (September 2026)
+- **Version**: 1.7.547 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.97, requires application 1.7.456 or later); the launcher downloads the application once and serves it locally.

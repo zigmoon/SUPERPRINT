@@ -19342,6 +19342,20 @@ window.spReflowApresGabarit = spReflowApresGabarit;
         bloc.__spColMap = null;                       // 🆕 v1.7.458 : coulage des colonnes
         bloc._textLines = null;                       // le cache des lignes doit repartir
         if (typeof bloc.initDimensions === 'function') bloc.initDimensions();
+        /* 🆕 v1.7.547 — _SP_CADRE_547 : LE CADRE DOIT ÊTRE RAPPELÉ TOUT DE SUITE.
+           initDimensions() ÉTEND la hauteur pour contenir tout le texte : mesuré, un bloc
+           à cadre de 120 px montait à 548 px juste après validation du panneau, et son
+           masque de cadre suivait (268 px de texte visible au lieu de 120). La hauteur
+           n'était rappelée que par la passe de CHARGEMENT des pages : le même bloc
+           n'avait donc pas la même allure avant et après un aller-retour par un gabarit.
+           On refait ici les trois opérations du chargement : hauteur/largeur fixes,
+           masque de cadre, puis composition (colonnes + habillage). */
+        if (typeof bloc._fixedHeight === 'number' && bloc._fixedHeight > 0) bloc.height = bloc._fixedHeight;
+        if (typeof bloc._fixedWidth === 'number' && bloc._fixedWidth > 0) bloc.width = bloc._fixedWidth;
+        try { if (typeof applyTextboxClipPath === 'function') applyTextboxClipPath(bloc); } catch (_) {}
+        try {
+            if (typeof window._spWrapReflowAll === 'function' && bloc.canvas) window._spWrapReflowAll(bloc.canvas);
+        } catch (_) {}
         bloc.dirty = true;
         if (bloc.canvas && typeof bloc.canvas.requestRenderAll === 'function') bloc.canvas.requestRenderAll();
     } catch (e) {}
@@ -54004,10 +54018,31 @@ https://superprint.app
                         if (!o || o.isMargin || o._spMeFilet) return;
                         o.selectable = true; o.evented = true;
                         if (o.excludeFromExport === true && !o._isMasterGuide) o.excludeFromExport = false;
+                        /* 🆕 v1.7.547 — _SP_MASTER_EDIT_COMPO : MÊME PASSE DE CHARGEMENT QUE
+                           LES PAGES (createPageCanvas). Sans elle :
+                             · un bloc à COLONNES restait coulé sur UNE colonne — les colonnes
+                               sont composées par le moteur d'habillage, pas par Fabric
+                               (MESURÉ : lignes 17 dans l'éditeur, 35 sur la page) ;
+                             · la hauteur de cadre n'était pas rappelée (MESURÉ : 265 px dans
+                               l'éditeur, 120 px sur la page) et ce height faussé partait dans
+                               le gabarit enregistré ;
+                             · le masque de cadre (clipPath) n'était pas posé, donc le texte
+                               débordant restait visible.
+                           Elle rappelle _fixedHeight/_fixedWidth, repatche initDimensions et
+                           applique le masque (applyTextboxClipPath). */
+                        try {
+                            if ((o.type === 'textbox' || o.type === 'text' || o.type === 'i-text')
+                                && typeof restoreTextboxAfterLoad === 'function') {
+                                restoreTextboxAfterLoad(o);
+                            }
+                        } catch (_) {}
                     });
                     _ajuster();
                     spMasterEditReperes(c, w, h);
                     try { spMasterEditorSyncNumberingCheck(masterId); } catch (_) {}
+                    /* 🆕 v1.7.547 — COMPOSITION : c'est cette passe (celle de finalizeRender
+                       pour les pages) qui coule les colonnes et relance l'habillage. */
+                    try { if (typeof window._spWrapReflowAll === 'function') window._spWrapReflowAll(c); } catch (_) {}
                     c.requestRenderAll();
                 } catch (e) { console.warn('[spMasterEdit] finalisation:', e); }
             };
@@ -54109,8 +54144,18 @@ https://superprint.app
                 if (c.getActiveObject() && c.getActiveObject().isEditing) c.getActiveObject().exitEditing();
                 c.discardActiveObject();
                 const objs = c.getObjects().filter(function (o) {
-                    return o && !o.isMargin && !o._spMeFilet && !o._spMasterFolioPreview
-                        && (!o.excludeFromExport || o._isMasterGuide);
+                    if (!o || o.isMargin || o._spMeFilet || o._spMasterFolioPreview) return false;
+                    /* 🆕 v1.7.547 — MÊME FILTRE QUE saveAllPages : les objets d'INTERFACE
+                       (indicateur de DÉBORDEMENT, badge de chaînage, flèche de lien, repères,
+                       miroirs de planche) n'entrent JAMAIS dans un gabarit. Sans ce filtre,
+                       l'indicateur de débordement (un triangle) restait dans le gabarit et
+                       réapparaissait sur les pages alimentées comme un « bloc en trop ».
+                       Les repères UTILISATEUR du gabarit (_isMasterGuide) restent conservés. */
+                    if (o.isGuide || o.isManualGuide || o.isTrimBox || o.isBleed || o.isBleedMask || o._isSpreadMirror) return false;
+                    if (o._isOverflowIndicator || o._isChainBadge || o._isLinkArrow || o._isTabRuler || o._isTabMark) return false;
+                    if (o._isPageNumber) return false;
+                    if (o.excludeFromExport === true && !o._isMasterGuide) return false;
+                    return true;
                 });
                 data = objs.map(function (o) { return o.toObject(SP_CUSTOM_PROPS); });
                 const cb = document.getElementById('masterNumberingCheck');

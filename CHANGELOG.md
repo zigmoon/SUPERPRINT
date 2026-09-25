@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,15 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.547] — 2026-09-25
+
+_Text frame options survive a template retouch, and they apply straight away_
+
+### Fixed
+- **Text frame options lost while retouching a template** (user request: « lorsque je retouche un gabarit, je perds quelques réglages comme les réglages du text frame options. Un bloc se remet en une colonne alors qu’il était en 2 colonnes. Et un deuxième bloc s’insère. Au clic, le deuxième bloc disparaît. Aussi, au moment de l’enregistrement et sur le gabarit enregistré qui se trouve sur la page de preview, le réglage du text frame options est perdu »). Three causes, all measured on a 320 px block with a 120 px frame, 2 columns and a long text. - **(a) Columns are not a Fabric geometry.** They are FLOWED by the text-wrap engine: `__spLineAvailWidth()` returns the width of ONE column (main.js ~L5402) and the call is made by the page render exit (`finalizeRender` → `_spWrapReflowAll()`, v1.7.372). The template editor only did a `loadFromJSON`, so the block stayed flowed on a single column. Measured in the editor: **17 lines / 1 column** against **35 lines / 2 columns** on the page. Fixed: the editor now replays exactly the page pass — `restoreTextboxAfterLoad()` on every text block, then `window._spWrapReflowAll()`. - **(b) The frame height was only restored on load.** `restoreTextboxAfterLoad()` (called by the pages) sets `height = _fixedHeight`, re-patches `initDimensions` and applies the frame mask (`applyTextboxClipPath`). Neither the template editor nor the options panel went through it: measured right after validating the options, the block grew from 120 px to **548 px** with a **268 px** mask, and in the editor to **265 px** — and that wrong height was then written INTO THE SAVED TEMPLATE (`height: 265` instead of the 120 px frame). Fixed: `spRelayout()` (the text frame options panel) now recalls the frame, re-applies the mask and re-runs the composition, so a setting applies immediately instead of waiting for a reload. - **(c) Display markers could be saved into a template** (« un deuxième bloc s’insère. Au clic, le deuxième bloc disparaît »). The OVERFLOW indicator (the triangle shown when the text exceeds the frame), the chaining badge, the link arrow, tab stops and page numbers are application display objects: they were written into the template and then reappeared on every page fed by it, vanishing again as soon as a click recomposed the page. Fixed: saving a template now uses exactly the same filter as saving a page (`saveAllPages`). User guides placed in the template (`_isMasterGuide`) are still saved, as before. 
+### Verified
+- **The four states are now identical** (2 columns, 35 lines, capacity 14, height 120 px, mask 120 px): the page right after setting the options, the template editor, the saved template, and the page fed by that template. Before the fix: 548 px / mask 268 px on the page, 265 px in the editor, and `height: 265` inside the saved template. - **No regression**: plain text block (natural height 29 px, mask floor 32 px), block with insets only (height unchanged at 29 px), short text set to 2 columns (a single column is used, capacity 2). - The template keeps its own guides (`_isMasterGuide`, `excludeFromExport`) while the overflow indicator stays out of it (measured: the saved template contains only the text block). 
 
 ## [1.7.546] — 2026-09-25
 
