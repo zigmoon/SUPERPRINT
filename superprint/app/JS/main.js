@@ -10732,16 +10732,34 @@ function spRangerGabarit(canvas, masterId) {
         const items = canvas.getObjects().filter(function (o) {
             if (!o || typeof o._spMasterIdx !== 'number') return false;
             if (masterId === undefined || masterId === null) return true;
+            /* ⚠️ On ne filtre PAS par page : les éléments de TOUTES les pages du canevas
+               doivent être traités ensemble, sinon une page garde un ordre périmé. */
             return o._masterPageId === undefined || o._masterPageId === masterId;
         });
         if (items.length < 2) return 0;
-        items.sort(function (a, b) { return a._spMasterIdx - b._spMasterIdx; });
+        /* 🆕 v1.7.545 — _SP_GAB_ORDRE_545 : UNE PLANCHE PORTE DEUX PAGES. Il faut donc
+           regrouper par PAGE avant de trier : deux pages servies par le même gabarit
+           partagent les mêmes rangs, et un tri global entrelaçait leurs éléments
+           (mesuré : textbox, textbox, rect, rect, circle, circle… au lieu de
+           rect, textbox, group, circle pour chaque page). */
+        const parPage = new Map();
+        items.forEach(function (o) {
+            const k = (typeof o._spMasterPage === 'number') ? o._spMasterPage : 0;
+            if (!parPage.has(k)) parPage.set(k, []);
+            parPage.get(k).push(o);
+        });
+        const lots = [];
+        Array.from(parPage.keys()).sort(function (a, b) { return a - b; }).forEach(function (k) {
+            lots.push(parPage.get(k).slice().sort(function (a, b) { return a._spMasterIdx - b._spMasterIdx; }));
+        });
+        const ordonne = [];
+        lots.forEach(function (lot) { lot.forEach(function (o) { ordonne.push(o); }); });
         if (typeof canvas.moveTo === 'function') {
-            items.forEach(function (o, i) { try { canvas.moveTo(o, i); } catch (_) {} });
+            ordonne.forEach(function (o, i) { try { canvas.moveTo(o, i); } catch (_) {} });
         } else if (Array.isArray(canvas._objects)) {
-            const reste = canvas._objects.filter(function (o) { return items.indexOf(o) === -1; });
+            const reste = canvas._objects.filter(function (o) { return ordonne.indexOf(o) === -1; });
             canvas._objects.length = 0;
-            items.forEach(function (o) { canvas._objects.push(o); });
+            ordonne.forEach(function (o) { canvas._objects.push(o); });
             reste.forEach(function (o) { canvas._objects.push(o); });
         }
         try { canvas.requestRenderAll(); } catch (_) {}
@@ -10836,8 +10854,10 @@ window.spReflowApresGabarit = spReflowApresGabarit;
                                             _isMasterRuntime: true,
                                             _isMasterGuide: isGuide || undefined,
                                             _masterPageId: masterId,
-                                            /* 🆕 v1.7.545 — place de l'élément DANS le gabarit. */
-                                            _spMasterIdx: (typeof _idxGabarit.get(src) === 'number') ? _idxGabarit.get(src) : idx
+                                            /* 🆕 v1.7.545 — place de l'élément DANS le gabarit,
+                                               et PAGE à laquelle il appartient (une planche en porte deux). */
+                                            _spMasterIdx: (typeof _idxGabarit.get(src) === 'number') ? _idxGabarit.get(src) : idx,
+                                            _spMasterPage: pageIndex
                                         });
                                         eo.hoverCursor = 'default';
                                         eo.setCoords();
@@ -10918,8 +10938,10 @@ window.spReflowApresGabarit = spReflowApresGabarit;
                                 _isMasterItem: true,
                                 _isMasterRuntime: true,
                                 _masterPageId: masterId,
-                                /* 🆕 v1.7.545 — place de l'élément DANS le gabarit. */
-                                _spMasterIdx: _iData
+                                /* 🆕 v1.7.545 — place de l'élément DANS le gabarit,
+                                   et PAGE à laquelle il appartient (une planche en porte deux). */
+                                _spMasterIdx: _iData,
+                                _spMasterPage: pageIndex
                             });
                             if (objData.styles) {
                                 try {
@@ -11095,8 +11117,10 @@ window.spReflowApresGabarit = spReflowApresGabarit;
                                                 _isMasterItem: true
                                             });
                                             try { eo.setCoords && eo.setCoords(); } catch(_) {}
-                                            /* 🆕 v1.7.545 — place de l'élément dans le gabarit. */
+                                            /* 🆕 v1.7.545 — place de l'élément dans le gabarit,
+                                               et page concernée (une planche porte deux pages). */
                                             eo._spMasterIdx = (typeof _idxGabaritExport.get(src) === 'number') ? _idxGabaritExport.get(src) : idx;
+                                            eo._spMasterPage = pageIndex;
                                             try { tempFabric.insertAt(eo, 0); } catch(_) { tempFabric.add(eo); }
                                         });
                                         pendingAsync--;
@@ -11159,8 +11183,10 @@ window.spReflowApresGabarit = spReflowApresGabarit;
                                         evented: false,
                                         excludeFromExport: false,
                                         _isMasterItem: true,
-                                        /* 🆕 v1.7.545 — place de l'élément dans le gabarit. */
-                                        _spMasterIdx: _iDataExp
+                                        /* 🆕 v1.7.545 — place de l'élément dans le gabarit,
+                                           et page concernée (une planche porte deux pages). */
+                                        _spMasterIdx: _iDataExp,
+                                        _spMasterPage: pageIndex
                                     });
                                     if (objData.styles) {
                                         try {
@@ -18060,30 +18086,50 @@ window.spReflowApresGabarit = spReflowApresGabarit;
     window._spreadZIdxTimer = setTimeout(() => {
         window._spreadZIdxTimer = null;
         if (viewMode !== 'spread') return;
-        // Parcourir toutes les pages par paires (doubles pages)
-        for (let i = 0; i < canvases.length; i += 2) {
-            const leftCanvas = canvases[i];
-            const rightCanvas = canvases[i + 1];
-            if (leftCanvas && rightCanvas) {
-                optimizePairZIndex(leftCanvas, rightCanvas, i);
-            }
+        /* 🆕 v1.7.545 — _SP_GAB_ORDRE_545 : APPARIEMENT RÉEL.
+           Ne traiter QUE les canevas qui forment vraiment une planche. MESURÉ : sur un
+           document de 4 pages en double page, canvases = [page 1, planche 2|3, page 4] ;
+           la boucle appariait donc la PAGE 1 avec la PLANCHE 2|3 et RE-CLASSAIT les objets
+           de la page 1 par position verticale (rect, image, textbox devenait rect,
+           textbox, image) — le « la page se modifie légèrement » signalé. Une page seule
+           n'a ni miroir ni débordement à harmoniser : on la saute, son ordre est préservé. */
+        for (let i = 0; i < canvases.length; i++) {
+            const cSpread = canvases[i];
+            if (!cSpread || !cSpread.bleedInfo || !cSpread.bleedInfo.isSpread) continue;
+            optimizePairZIndex(cSpread, cSpread, i);
         }
     }, 120);
         }
         
         function optimizePairZIndex(leftCanvas, rightCanvas, pageIndex) {
+    /* 🆕 v1.7.545 — _SP_GAB_ORDRE_545 : LES ÉLÉMENTS DE GABARIT ET LE FOLIO SONT EXCLUS
+       de cette optimisation. Elle reclasse tous les objets par « priorité » — qui vaut
+       1000 - top (voir calculateSpreadPriority) — et détruisait donc l'ordre du gabarit en
+       double page. MESURÉ sur une planche 2|3 : rect, textbox, image, group au lieu de
+       rect, image, textbox, group (l'ordre du gabarit), et les objets de la page étaient
+       réordonnés de la même façon. Exclus, ils gardent la place que spRangerGabarit()
+       vient de leur donner : au fond de la pile, SOUS le contenu de la page. */
+    const _spExcluDuTri = (obj) => !!obj && (obj._isMasterRuntime === true
+        || typeof obj._spMasterIdx === 'number' || obj._isPageNumber === true);
     const leftObjects = leftCanvas.getObjects().filter(obj => 
+        !_spExcluDuTri(obj) &&
         !obj.isMargin && !obj.isBleed && !obj.isGuide && !obj.isManualGuide && !obj.isTrimBox
     );
     const rightObjects = rightCanvas.getObjects().filter(obj => 
+        !_spExcluDuTri(obj) &&
         !obj.isMargin && !obj.isBleed && !obj.isGuide && !obj.isManualGuide && !obj.isTrimBox
     );
     
     // Créer une liste unifiée avec priorité selon la position
     const allObjects = [];
+    /* 🆕 v1.7.545 — une planche porte ses DEUX pages sur un seul canevas : le même objet
+       ne doit pas être ajouté deux fois (sinon il serait déplacé deux fois). */
+    const _spVus = new Set();
     
     // Ajouter objets de gauche
     leftObjects.forEach(obj => {
+        if (_spVus.has(obj)) return;
+        _spVus.add(obj);
         allObjects.push({
             obj: obj,
             canvas: leftCanvas,
@@ -18094,6 +18140,8 @@ window.spReflowApresGabarit = spReflowApresGabarit;
     
     // Ajouter objets de droite
     rightObjects.forEach(obj => {
+        if (_spVus.has(obj)) return;
+        _spVus.add(obj);
         allObjects.push({
             obj: obj,
             canvas: rightCanvas,

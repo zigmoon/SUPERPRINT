@@ -5570,6 +5570,80 @@ function spRtfLayoutInfo(src) {
   //   centre) : le viewBox centre sur (-w/2, -h/2) est donc exactement le
   //   bon repere, sans aucun recalcul de geometrie.
   // ══════════════════════════════════════════════════════════════════════
+  /* ══════════════════════════════════════════════════════════════════════
+     🆕 v1.7.546 — PRIMITIVES SVG : REPLI POUR LES GROUPES DE FORMES.
+     Un groupe de rect/cercle/ligne n'a aucun \`path\` : \`spVecteurVersElementImage\`
+     ne savait donc rien en faire et l'objet ÉTAIT PERDU (mesuré : page à 4
+     objets → 3 après le studio). On écrit ici les primitives équivalentes.
+     Repère : les enfants d'un groupe sont exprimés PAR RAPPORT AU CENTRE du
+     groupe ; \`left\`/\`top\` désignent le coin haut-gauche de leur boîte
+     englobante quand originX/originY valent 'left'/'top' (mesuré dans l'app :
+     un rect à 100,200 dans un groupe posé à 100,200 sort à left:-70.5
+     top:-50.5, soit exactement le centre du groupe).
+     ══════════════════════════════════════════════════════════════════════ */
+  function spSvgPrimitives(enfants) {
+    var out = [];
+    var n2 = function (v) { return (typeof v === 'number' && isFinite(v)) ? Math.round(v * 100) / 100 : null; };
+    (enfants || []).forEach(function (c) {
+      if (!c || c.visible === false) return;
+      var t = String(c.type || '').toLowerCase();
+      var sx = (typeof c.scaleX === 'number' && isFinite(c.scaleX)) ? c.scaleX : 1;
+      var sy = (typeof c.scaleY === 'number' && isFinite(c.scaleY)) ? c.scaleY : 1;
+      var w = (Number(c.width) || 0) * sx, h = (Number(c.height) || 0) * sy;
+      var oxg = String(c.originX || 'left').toLowerCase();
+      var oyg = String(c.originY || 'top').toLowerCase();
+      var dx = (oxg === 'center') ? -w / 2 : (oxg === 'right') ? -w : 0;
+      var dy = (oyg === 'center') ? -h / 2 : (oyg === 'bottom') ? -h : 0;
+      var L = (Number(c.left) || 0) + dx, T = (Number(c.top) || 0) + dy;
+      var fill = (c.fill && c.fill !== 'transparent' && c.fill !== 'none' && String(c.fill).indexOf('url(') !== 0)
+        ? ' fill="' + String(c.fill) + '"' : ' fill="none"';
+      var stroke = (c.stroke && c.stroke !== 'transparent') ? ' stroke="' + String(c.stroke) + '"' : '';
+      var sw = (Number(c.strokeWidth) > 0) ? (Number(c.strokeWidth) * ((sx + sy) / 2)) : 0;
+      if (stroke && sw > 0) stroke += ' stroke-width="' + n2(sw) + '"';
+      var op = (typeof c.opacity === 'number' && c.opacity < 1) ? ' opacity="' + n2(c.opacity) + '"' : '';
+      var un = '';
+      if (t === 'rect' || t === 'rectangle') {
+        if (!(w > 0) || !(h > 0)) return;
+        var rx = (Number(c.rx) || 0) * sx;
+        un = '<rect x="' + n2(L) + '" y="' + n2(T) + '" width="' + n2(w) + '" height="' + n2(h) + '"'
+           + (rx > 0 ? ' rx="' + n2(rx) + '" ry="' + n2(rx) + '"' : '') + fill + stroke + op + '/>';
+      } else if (t === 'circle') {
+        var r = (Number(c.radius) || Math.max(w, h) / 2) * ((sx + sy) / 2);
+        if (!(r > 0)) return;
+        un = '<circle cx="' + n2(L + w / 2) + '" cy="' + n2(T + h / 2) + '" r="' + n2(r) + '"' + fill + stroke + op + '/>';
+      } else if (t === 'ellipse') {
+        var erx = (Number(c.rx) || w / 2), ery = (Number(c.ry) || h / 2);
+        if (!(erx > 0) || !(ery > 0)) return;
+        un = '<ellipse cx="' + n2(L + w / 2) + '" cy="' + n2(T + h / 2) + '" rx="' + n2(erx) + '" ry="' + n2(ery) + '"' + fill + stroke + op + '/>';
+      } else if (t === 'line') {
+        un = '<line x1="' + n2(L + (Number(c.x1) || 0)) + '" y1="' + n2(T + (Number(c.y1) || 0))
+           + '" x2="' + n2(L + (Number(c.x2) || 0)) + '" y2="' + n2(T + (Number(c.y2) || 0)) + '"'
+           + (stroke || ' stroke="#000000"') + (sw > 0 ? '' : ' stroke-width="1"') + ' stroke-linecap="round"' + op + '/>';
+      } else if (t === 'triangle') {
+        if (!(w > 0) || !(h > 0)) return;
+        un = '<polygon points="' + n2(L + w / 2) + ',' + n2(T) + ' ' + n2(L + w) + ',' + n2(T + h) + ' ' + n2(L) + ',' + n2(T + h) + '"' + fill + stroke + op + '/>';
+      } else if (t === 'polygon' && Array.isArray(c.points) && c.points.length) {
+        var pts = c.points.map(function (p) {
+          return n2(L + w / 2 + (Number(p.x) || 0)) + ',' + n2(T + h / 2 + (Number(p.y) || 0));
+        }).join(' ');
+        un = '<polygon points="' + pts + '"' + fill + stroke + op + '/>';
+      } else if (t === 'path' && c.path) {
+        var d = '';
+        try { d = (window.fabric && fabric.util && fabric.util.joinPath) ? fabric.util.joinPath(c.path) : ''; } catch (_) { d = ''; }
+        if (!d) return;
+        un = '<path transform="translate(' + n2(L) + ',' + n2(T) + ')" d="' + d + '"' + fill + stroke + op + '/>';
+      }
+      if (!un) return;
+      /* Rotation éventuelle : autour du centre de la boîte englobante. */
+      var ang = Number(c.angle) || 0;
+      if (ang % 360 !== 0) {
+        un = '<g transform="rotate(' + n2(ang) + ' ' + n2(L + w / 2) + ' ' + n2(T + h / 2) + ')">' + un + '</g>';
+      }
+      out.push(un);
+    });
+    return out;
+  }
+
   function spVecteurVersElementImage(o, base) {
     try {
       var _w = Number(o && o.width) || 0;
@@ -5595,6 +5669,9 @@ function spRtfLayoutInfo(src) {
         }
         parts.push('<path ' + attrs + '/>');
       }
+      /* 🆕 v1.7.546 — aucun \`path\` exploitable : on retente avec les PRIMITIVES
+         (groupe de formes). Sans ce repli, l'objet était purement perdu. */
+      if (!parts.length) parts = spSvgPrimitives(enfants);
       if (!parts.length) return null;
       var vb = (-_w / 2) + ' ' + (-_h / 2) + ' ' + _w + ' ' + _h;
       var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb + '" width="' +
@@ -5920,7 +5997,11 @@ function spRtfLayoutInfo(src) {
         return spVecteurVersElementImage(o, base);
       }).filter(Boolean);
       return { pageIndex: idx, elements, masterId: (spPage && spPage.masterId) ? spPage.masterId : null };
-    }).filter(p => p.elements.length > 0);
+    /* 🆕 v1.7.546 — ON NE SUPPRIME PLUS UNE PAGE SANS ÉLÉMENTS QUAND ELLE EST ALIMENTÉE
+       PAR UN GABARIT. Une page de l'app qui reçoit tout son contenu d'un gabarit n'a
+       aucun objet propre : elle était donc retirée du document (MESURÉ : document à
+       3 pages → 2 pages au retour). Le filtre garde son rôle pour la voie IA. */
+    }).filter(p => p.elements.length > 0 || !!p.masterId);
 
     if (!pages.length) return false;
 
@@ -10299,6 +10380,23 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return obj;
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     🆕 v1.7.546 — LA POSITION DANS LE TABLEAU N'EST PAS LE NUMÉRO DE PAGE.
+     L'import depuis SuperPrint ne garde que les pages qui ont des éléments et
+     RE-INDEXE le tableau : chaque entrée conserve son `pageIndex` d'origine.
+     Lire `state.doc.pages[p.pageIndex]` sautait donc toutes les pages qui
+     suivent la première page sautée — MESURÉ : page 3 d'un document à gabarit,
+     4 objets en entrée, 0 objet à l'export. On cherche par le CHAMP.
+     ══════════════════════════════════════════════════════════════════════════ */
+  function spDocPagePour(doc, pageIndex) {
+    if (!doc || !Array.isArray(doc.pages)) return null;
+    for (let i = 0; i < doc.pages.length; i++) {
+      const d = doc.pages[i];
+      if (d && d.pageIndex === pageIndex) return d;
+    }
+    return doc.pages[pageIndex] || null;
+  }
+
   function buildSPFile() {
     if (!state.pages.length) return null;
     const now = new Date();
@@ -10310,7 +10408,8 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       let objects = [];
       try {
         // Partir du doc mm (éléments propres, sans les guides) plutôt que du canvas
-        const docPage = (state.doc && state.doc.pages && state.doc.pages[p.pageIndex]) || null;
+        /* 🆕 v1.7.546 — recherche par CHAMP pageIndex (cf. spDocPagePour). */
+        const docPage = spDocPagePour(state.doc, p.pageIndex);
         const elements = (docPage && Array.isArray(docPage.elements)) ? docPage.elements : [];
         elements.forEach(el => {
           const t = String(el.type || '').toLowerCase();
