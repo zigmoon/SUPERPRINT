@@ -15,8 +15,8 @@
 </p>
 
 <p align="center">
-  <img alt="App" src="https://img.shields.io/badge/app-1.7.526-000000?style=flat-square">
-  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.105-CB3837?style=flat-square">
+  <img alt="App" src="https://img.shields.io/badge/app-1.7.547-000000?style=flat-square">
+  <img alt="Launcher" src="https://img.shields.io/badge/npm-1.0.106-CB3837?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-Proprietary-red?style=flat-square">
 </p>
 
