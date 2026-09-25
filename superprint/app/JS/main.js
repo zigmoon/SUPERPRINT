@@ -2967,6 +2967,31 @@ if (window._spGpuEnabled) {
             if (!textObj || (textObj.type !== 'textbox' && textObj.type !== 'text')) return;
             if (textObj.isEditing) return;
 
+            /* ══ 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON NE FABRIQUE PAS UN CADRE ══
+               Cette fonction FIGE les dimensions du bloc : sur un bloc ordinaire (hauteur
+               automatique), elle lui posait donc une hauteur de cadre + un masque
+               (applyTextboxClipPath) — le texte se retrouvait rogné ou décalé, puis
+               « revenait » au clic suivant (l'entrée en édition retire le masque).
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px : la pile
+               remonte ici (spLockTextboxDimensions → ligne 3020) et l'objet ressort avec
+               _fixedWidth 260 / _fixedHeight 125,93 / masque 129, alors qu'il n'avait
+               NI l'un NI l'autre avant le clic.
+               Le verrouillage n'a de sens que pour un bloc qui a DÉJÀ un cadre (bloc à
+               options de cadre : colonnes, hauteur fixe) ou un chaînage de texte. On le
+               refuse donc aux blocs en hauteur automatique — SAUF l'état transitoire de
+               1 px posé par Fabric, qu'il faut au contraire réparer (voir plus bas). */
+            const _fhBlo = (typeof textObj._fixedHeight === 'number') ? textObj._fixedHeight : 0;
+            const _fwBlo = (typeof textObj._fixedWidth === 'number') ? textObj._fixedWidth : 0;
+            const _transitoire = (_fhBlo === 1 || _fwBlo === 1);
+            /* ⚠️ Une LARGEUR fixe seule N'AUTORISE PAS le verrouillage : dans la trace mesurée,
+               _fixedWidth valait déjà 260 (posé par la synchro du panneau) et la fonction
+               fabriquait alors _fixedHeight = 125,93 + un masque de 129 sur un bloc qui n'avait
+               AUCUN cadre. Seule une HAUTEUR de cadre (ou un chaînage, ou des colonnes) compte. */
+            if (!_transitoire && !(_fhBlo > 0)
+                && textObj.isLinkedTextBlock !== true && !(Number(textObj._spCols) >= 2)) {
+                return;
+            }
+
             // 🛡️ ÉTAPE 2 (correctifs texte) : "_fixedWidth == null" est FAUX pour
             //   la valeur 0 — or Fabric pose _fixedHeight = 0 sur tout Textbox à la
             //   création. L'ancien code faisait donc Math.max(1, 0) = 1 -> le bloc
@@ -19715,8 +19740,18 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         const skipAutoRecalc = obj._spSkipAutoRecalc && !obj.isEditing;
         if (obj._clearCache && !skipAutoRecalc) {
             // 🛡️ ÉTAPE 4 : idem — 0 n'est pas une dimension exploitable.
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
             obj._clearCache();
             obj.initDimensions();
             // Restaurer les dimensions si le bloc est dimensionné (évite le retrait au clic)
@@ -33695,8 +33730,18 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             }
             
             // ✨ PRÉSERVER les dimensions fixes AVANT toute modification
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
 
             const hasSelection = (obj.type === 'textbox' && obj.isEditing && obj.selectionStart != null && obj.selectionEnd != null && obj.selectionEnd > obj.selectionStart);
 
@@ -33960,8 +34005,18 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             }
 
             // ✨ PRÉSERVER les dimensions fixes AVANT toute modification
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
             // ✨ v1.7.455 — Ce cadre est-il un CADRE VOULU ou un bloc AUTO ?
             //   Un cadre dessiné à la main (outil Texte) ou redimensionné par l'utilisateur a une
             //   hauteur SANS RAPPORT avec son contenu : il doit rester exactement tel quel.
@@ -34172,8 +34227,18 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             const weight = this.value;
             
             // ✨ PRÉSERVER les dimensions fixes AVANT toute modification
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
             
             // Optimisation graisse police
             optimizeForTypography();
@@ -34608,8 +34673,18 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             const charSpacing = Number.isFinite(__rawCs) ? __rawCs : 0;
             
             // ✨ PRÉSERVER les dimensions fixes
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
             
             // ✨ Utiliser la sélection capturée AVANT le focus du sidebar si dispo,
             // sinon retomber sur l'état courant de l'objet.
@@ -34701,8 +34776,18 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             const firstLine = parseFloat(document.getElementById('indentFirstLine').value) || 0;
 
             // Préserver les dimensions fixes
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
 
             obj._spIndentLeft = indentLeft;
             obj._spIndentRight = indentRight;
@@ -34760,8 +34845,18 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             const scaleValue = scalePercent / 100;
             
             // ✨ PRÉSERVER les dimensions fixes
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
             
             // En mode édition, ne pas appliquer un scale au bloc entier
             if (obj.isEditing && obj.type === 'textbox') {
@@ -34908,8 +35003,18 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             }
             
             // ✨ PRÉSERVER les dimensions fixes AVANT toute modification
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
             
             // 🚀 OPTIMISATION : Recalcul immédiat sans délai
             // 🛡️ v1.7.126 : on réinitialise AUSSI __charBounds et __lineOffsets. Sans ca,
@@ -34992,8 +35097,18 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         const obj = activeCanvas.getActiveObject();
         if (obj && obj.enableHyphenation) {
             // ✨ PRÉSERVER les dimensions fixes
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
             
             obj.hyphenLanguage = currentHyphenLanguage;
             obj._styleMap = null;
@@ -35108,8 +35223,18 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             obj.set({ charSpacing: charSpacingValue });
             
             // ✨ PRÉSERVER les dimensions fixes
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
             
             // Forcer le recalcul
             obj._styleMap = null;
@@ -65512,8 +65637,18 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 return; // ne pas écraser le bloc entier
             }
 
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
 
             obj.set({
                 fontFamily: style.fontFamily || obj.fontFamily,
@@ -65706,8 +65841,18 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         if (!c) return;
         let changed = false;
         c.getObjects().filter(o => o.type === 'textbox' && o._appliedStyleId === styleId).forEach(obj => {
-            const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(obj) : (obj._fixedWidth || obj.width);
-            const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(obj) : (obj._fixedHeight || obj.height);
+            /* 🆕 v1.7.550 — _SP_CADRE_CLIC_550 : ON LIT LE BLOC, ON NE LE MODIFIE PAS.
+               spFixedWidth()/spFixedHeight() retombent sur obj.width/obj.height quand le bloc n'a
+               pas de dimensions fixes : la condition ci-dessous était donc TOUJOURS vraie et ce
+               simple affichage du panneau écrivait _fixedWidth/_fixedHeight + posait un masque
+               (applyTextboxClipPath) sur un bloc en hauteur automatique.
+               TRACE MESURÉE au premier clic sur un bloc ordinaire de 260 px :
+                 updateTransformPanel (main.js:19750) → _fixedHeight = 89,22
+                 updateTransformPanel (main.js:19753) → applyTextboxClipPath → masque 92
+               → texte rogné/décalé au 1er clic, « revenu » au 2e (l'édition retire le masque).
+               On ne restaure donc QUE ce qui ÉTAIT fixe (bloc à cadre, bloc chaîné, colonnes). */
+            const fixedW = (typeof obj._fixedWidth === 'number' && obj._fixedWidth > 0) ? obj._fixedWidth : null;
+            const fixedH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : null;
             obj.set({
                 fontFamily: style.fontFamily || obj.fontFamily,
                 fontSize: style.fontSize || obj.fontSize,

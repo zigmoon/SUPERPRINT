@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,15 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.550] — 2026-09-26
+
+_Clicking a text block no longer builds a frame and a mask on it_
+
+### Fixed
+- **A single click on a text block changed the block** (user request: « J ai un doute sur le bloc « text frame options » ? est-ce ce bloc qui ferait tout bugger ? Peux-tu auditer cela ? », with three identical situations: releasing a template, duplicating a page in the montage plan, and a plain page — in all three, the first click on a text block shifted the type, and the second click brought it back). - **Audit result: the frame-options block is not the culprit.** A call stack captured on the bench (tracer on `_fixedHeight` and on `applyTextboxClipPath`, ONE click on a plain block) shows `updateTransformPanel` at main.js:19750 writing `obj._fixedHeight = obj.height` and, at :19753, calling `applyTextboxClipPath(obj)`. The guard was ALWAYS true because it tested `spFixedWidth()`/`spFixedHeight()`, which fall back on `obj.width`/`obj.height` when the block has no fixed size: the Transform panel sync — a plain READ — was writing into the document. Measured on a 260 px plain block: before the click no `_fixedHeight` and no mask; after the click `_fixedWidth` 260, `_fixedHeight` 125.93 and a 129 px mask. The type was then clipped or shifted, and the SECOND click (edit mode) removes the mask, so it “came back”. The multi-column block only amplifies the symptom: given a frame height it did not ask for, it re-flows its columns. - **Fixed (a)** `updateTransformPanel()` now restores only what was ALREADY fixed: it reads `_fixedWidth`/`_fixedHeight` directly, with no fallback on `width`/`height`, so a block with automatic height is neither converted nor masked; framed, chained and multi-column blocks keep exactly their previous behaviour. - **Fixed (b)** `spLockTextboxDimensions()` (called on selection, 12 copied call sites in the file) no longer FABRICATES a frame: it only acts when the block already has a frame height, a chain or columns — except Fabric’s transient 1 px state, which must still be repaired. 
+### Verified
+- Plain block: first click and second click leave it untouched (`_fixedHeight` still absent, no mask, 126 px). Multi-column block: frame 120 px, 11 lines, columns intact. .sp / .json round trip identical (export → import → export). - Local web copy and package mirror realigned before packaging: parity 23 identical / 0 different / 0 missing, recursive sync 711 identical / 0 different. 
 
 ## [1.7.549] — 2026-09-25
 
