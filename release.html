@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.566 — replacing a layout photo from the asset library now keeps the image inside its frame, centred on the previous block and scaled without distortion.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.567 — an image's replace and crop buttons are now drawn inside the block, so they stay visible and clickable even when the photo touches the edge of the page.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.566 — replacing a layout photo from the asset library now keeps the image inside its frame, centred on the previous block and scaled without distortion.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.567 — an image's replace and crop buttons are now drawn inside the block, so they stay visible and clickable even when the photo touches the edge of the page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -76,7 +76,7 @@
 	"name": "Releases — Zigmoon Apps",
 	"description": "Release notes for CUT THE FLOW, SuperPrint, PDF-YZ, Bird and the complete Zigmoon application collection.",
 	"url": "https://app.zigmoon.com/release.html",
-	"dateModified": "2026-09-26",
+	"dateModified": "2026-09-27",
 	"inLanguage": "en-US",
 	"isPartOf": {"@type": "WebSite", "url": "https://app.zigmoon.com/", "name": "Zigmoon Apps"},
 	"publisher": {"@type": "Organization", "name": "Zigmoon", "url": "https://zigmoon.com"}
@@ -706,6 +706,37 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.567 — Les boutons « remplacer » et « recadrer » dans le bloc ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-567">
+ <h2>SUPER PRINT <span>v1.7.567</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 27 septembre 2026" data-i18n-en="Released September 27, 2026" data-i18n-jp="2026年9月27日公開">Released September 27, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Les deux boutons d'une image — <strong>remplacer</strong> et <strong>recadrer</strong> — sont désormais dessinés <strong>dans le bloc</strong>, en haut à droite. Quand la photo touche le bord de la page, ils restent donc visibles et cliquables." data-i18n-en-html="An image's two buttons — <strong>replace</strong> and <strong>crop</strong> — are now drawn <strong>inside the block</strong>, in the top right corner. When the photo touches the edge of the page they stay visible and clickable." data-i18n-jp-html="画像の 2 つのボタン（<strong>差し替え</strong>と<strong>切り抜き</strong>）は<strong>ブロックの内側</strong>、右上に表示されるようになりました。写真がページの端に接しているときも、表示されクリックできます。">The image's <strong>replace</strong> and <strong>crop</strong> buttons are now drawn <strong>inside the block</strong>, top right, so they stay visible and clickable even when the photo touches the page edge.</p>
+
+ <h3 data-i18n-fr-html="📐 Mesuré : les boutons tombaient jusqu'à 33 px hors de la page" data-i18n-en-html="📐 Measured: the buttons landed up to 33 px outside the page" data-i18n-jp-html="📐 実測：ボタンはページ外に最大 33 px はみ出していました">📐 Measured: the buttons landed up to 33 px outside the page</h3>
+ <ul>
+  <li data-i18n-fr-html="Les boutons étaient posés <strong>à l'extérieur du bloc</strong> : 18 unités locales à droite du bord droit, multipliées par l'échelle de l'image. Sur une photo pleine largeur (gabarit <em>Food Magazine (8p)</em>, page large de 428,5 px), le bord droit du bloc coïncide exactement avec le bord de la page : les boutons tombaient à <strong>x ≈ 441-452 px</strong>, soit <strong>24,7 px hors page</strong> (page 1) et <strong>33,2 px</strong> (page 8)." data-i18n-en-html="The buttons were placed <strong>outside the block</strong>: 18 local units to the right of its right edge, multiplied by the image scale. On a full-width photo (<em>Food Magazine (8p)</em> template, 428.5 px wide page) the block's right edge coincides exactly with the page edge: the buttons landed at <strong>x ≈ 441-452 px</strong>, i.e. <strong>24.7 px outside the page</strong> (page 1) and <strong>33.2 px</strong> (page 8)." data-i18n-jp-html="ボタンは<strong>ブロックの外側</strong>に置かれていました。右端からローカル座標で 18 単位、画像の倍率が掛かります。全面幅の写真（<em>Food Magazine (8p)</em>、ページ幅 428.5 px）ではブロックの右端がページの右端と一致するため、ボタンは <strong>x ≈ 441〜452 px</strong>、つまり<strong>ページ外に 24.7 px</strong>（1 ページ目）、<strong>33.2 px</strong>（8 ページ目）はみ出していました。">The buttons were placed outside the block (18 local units right of the edge, multiplied by the image scale): on a full-width photo they landed 24.7 px outside the page (page 1) and 33.2 px (page 8).</li>
+  <li data-i18n-fr-html="Résultat : sur les photos qui touchent un bord, les boutons se retrouvaient dans la zone grise, sous la page voisine ou hors du plan de travail — donc invisibles ou impossibles à cliquer." data-i18n-en-html="Result: on photos touching an edge, the buttons ended up in the grey area, under the neighbouring page or outside the workspace — therefore invisible or impossible to click." data-i18n-jp-html="結果：端に接する写真では、ボタンはグレーの領域や隣のページの下、ワークスペースの外に出てしまい、見えないかクリックできない状態でした。">Result: on edge-touching photos the buttons ended up in the grey area or outside the workspace — invisible or unclickable.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🎯 Ancrés dans le coin supérieur droit du bloc" data-i18n-en-html="🎯 Anchored in the block's top right corner" data-i18n-jp-html="🎯 ブロックの右上に固定">🎯 Anchored in the block's top right corner</h3>
+ <ul>
+  <li data-i18n-fr-html="Chaque bouton est maintenant placé <strong>dans la fenêtre visible du bloc</strong> (le masque de recadrage s'il existe, sinon la boîte de l'objet), avec une marge <strong>constante en pixels écran</strong> recalculée à chaque affichage : l'ancrage suit l'échelle de l'image, le zoom de la page et une éventuelle rotation, et reste à l'intérieur du bloc même sur un très petit bloc (les deux boutons passent alors côte à côte)." data-i18n-en-html="Each button is now placed <strong>inside the block's visible window</strong> (the crop mask when there is one, otherwise the object's box), with a <strong>constant margin in screen pixels</strong> recomputed at every render: the anchor follows the image scale, the page zoom and any rotation, and stays inside the block even on a very small block (the two buttons then sit side by side)." data-i18n-jp-html="各ボタンは<strong>ブロックの表示ウィンドウ内</strong>（切り抜きマスクがあればそれ、なければオブジェクトの枠）に、<strong>画面上のピクセルで一定の余白</strong>を保って配置されます。表示のたびに再計算されるため、画像の倍率・ページのズーム・回転にも追随し、非常に小さなブロックでも内側に収まります（その場合は 2 つのボタンが横並びになります）。">Each button is now placed inside the block's visible window (crop mask, or the object's box), with a constant margin in screen pixels: it follows scale, zoom and rotation, and stays inside even on tiny blocks.</li>
+  <li data-i18n-fr-html="Même règle pour les <strong>formes du catalogue</strong> contenant une image (« Images » de la bibliothèque d'assets) : leurs deux boutons sont ancrés dans la forme." data-i18n-en-html="Same rule for <strong>catalogue shapes</strong> containing an image (the asset library's “Images” tab): both buttons are anchored inside the shape." data-i18n-jp-html="画像を含む<strong>カタログの図形</strong>（アセットライブラリの「Images」タブ）にも同じ規則を適用し、2 つのボタンは図形の内側に固定されます。">Same rule for catalogue shapes holding an image: both buttons are anchored inside the shape.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="✅ Contrôles de non-régression" data-i18n-en-html="✅ Non-regression checks" data-i18n-jp-html="✅ 非回帰チェック">✅ Non-regression checks</h3>
+ <ul>
+  <li data-i18n-fr-html="Boutons mesurés <strong>dans le bloc</strong> à zoom 100 %, 200 % et 50 %, avec le <strong>plan de travail</strong> activé, sur une image pivotée de 20 à 30° et sur une petite image (échelle 0,18) ; à zoom 200 %, le moteur reçoit le pointeur à <strong>411,1 px</strong> pour un bouton positionné à <strong>411,5 px</strong>." data-i18n-en-html="Buttons measured <strong>inside the block</strong> at 100 %, 200 % and 50 % zoom, with the <strong>workspace (pasteboard)</strong> enabled, on an image rotated 20-30° and on a small image (scale 0.18); at 200 % zoom the engine receives the pointer at <strong>411.1 px</strong> for a button positioned at <strong>411.5 px</strong>." data-i18n-jp-html="ボタンはズーム 100 %・200 %・50 %、<strong>ワークスペース（ペーストボード）</strong>有効時、20〜30 度回転した画像、小さな画像（倍率 0.18）で<strong>ブロック内</strong>にあることを実測。ズーム 200 % では、ボタン位置 <strong>411.5 px</strong> に対しエンジンが受け取るポインターは <strong>411.1 px</strong> でした。">Buttons measured inside the block at 100/200/50 % zoom, with the pasteboard on, on a 20-30° rotated image and on a small image; at 200 % the engine receives the pointer at 411.1 px for a button at 411.5 px.</li>
+  <li data-i18n-fr-html="Clics réels : le bouton <strong>remplacer</strong> ouvre le sélecteur de fichier et le remplacement conserve la fenêtre du bloc <strong>au pixel près</strong> ; le bouton <strong>recadrer</strong> ouvre la fenêtre de recadrage." data-i18n-en-html="Real clicks: the <strong>replace</strong> button opens the file picker and the replacement keeps the block's window <strong>to the pixel</strong>; the <strong>crop</strong> button opens the crop window." data-i18n-jp-html="実際のクリック：<strong>差し替え</strong>ボタンはファイル選択を開き、差し替え後もブロックのウィンドウは<strong>ピクセル単位で同じ</strong>です。<strong>切り抜き</strong>ボタンは切り抜き画面を開きます。">Real clicks: replace opens the file picker and keeps the block window to the pixel; crop opens the crop window.</li>
+  <li data-i18n-fr-html="<strong>Plan de travail (pasteboard)</strong> : bascule mesurée dans les deux sens, avec entre les deux une modification de texte, un remplacement d'image et un déplacement d'objet → <strong>0 écart</strong> sur l'ensemble du document (positions, échelles, angles, textes) ; la bascule est réversible et l'aller-retour rend exactement la même vue." data-i18n-en-html="<strong>Workspace (pasteboard)</strong>: the toggle measured in both directions, with a text edit, an image replacement and an object move in between → <strong>0 difference</strong> across the whole document (positions, scales, angles, texts); the toggle is reversible and returns exactly the same view." data-i18n-jp-html="<strong>ワークスペース（ペーストボード）</strong>：両方向の切り替えを実測し、その間にテキスト編集・画像差し替え・オブジェクト移動を実施 → 文書全体で<strong>差分 0</strong>（位置・倍率・角度・テキスト）。切り替えは可逆で、元に戻すと同じ表示に戻ります。">Pasteboard measured in both directions with a text edit, an image replacement and an object move in between: 0 difference across the document; the toggle is reversible.</li>
+  <li data-i18n-fr-html="<strong>Machine lente simulée</strong> (processeur ×12 plus lent, 2 cœurs, 300 à 600 Mo de mémoire occupée) : 6 remplacements sur 6 conformes, fenêtres conservées au pixel, aucun bloc déplacé — le bug d'affichage corrigé en 1.7.566 était bien indépendant de la charge." data-i18n-en-html="<strong>Simulated slow machine</strong> (12× slower CPU, 2 cores, 300-600 MB of memory in use): 6 replacements out of 6 conform, windows preserved to the pixel, no block moved — the display defect fixed in 1.7.566 was indeed unrelated to machine load." data-i18n-jp-html="<strong>低速マシンのシミュレーション</strong>（CPU 12 倍遅延、2 コア、メモリ 300〜600 MB 使用）：差し替え 6 件すべて適合、ウィンドウはピクセル単位で保持、ブロックの移動なし。1.7.566 で修正した表示の不具合はマシン負荷とは無関係でした。">Simulated slow machine (12× slower CPU, 2 cores, 300-600 MB in use): 6/6 replacements conform, windows preserved, no block moved.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.566 — La photo remplacée reste dans son cadre ===== -->
 

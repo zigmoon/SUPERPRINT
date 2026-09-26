@@ -9,6 +9,27 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.567] — 2026-09-27
+
+_An image's **replace** and **crop** buttons are now drawn inside the block_
+
+### Added
+- **The two image buttons sit inside the block** (top right corner). Each button is placed inside the block's **visible window** — the crop mask when there is one, otherwise the object's box — with a **constant margin in screen pixels** recomputed at every render, so the anchor follows the image scale, the page zoom (which uses a CSS transform on `#pages-container`) and any rotation, and stays inside the block even on a very small block (two buttons then sit side by side).
+- Same anchoring for **catalogue shapes holding an image** (asset library “Images” tab): `maskReplaceImage` and `maskCrop` are anchored inside the shape.
+
+### Fixed
+- **Buttons unreachable when the photo touches the page edge** — MEASURED on the full-width cover photo of `fr_magazine_food_8p` (page 428.5 px wide): the block's right edge coincides exactly with the page edge (x = 428.5) while the buttons were placed **outside** the block (18 local units right of the edge, × scale 1.0925) at x ≈ 441-452 → **24.7 px outside the page** (page 1) and **33.2 px** (page 8). They ended up in the grey area, under the neighbouring page or outside the workspace: invisible or impossible to click.
+- Implementation: `_spBlocWindowBox()` (visible window in the object's local frame) + `_spInsideCornerPositionHandler(rank)` used as `positionHandler` for the four controls (`crop`, `replaceImage`, `maskCrop`, `maskReplaceImage`), replacing the former external `x/y + offsetX/offsetY` placement.
+
+### Verified
+- Buttons measured **inside the block** at 100 %, 200 % and 50 % zoom, with the **pasteboard** enabled, on an image rotated 20-30° and on a small image (scale 0.18). At 200 % zoom the engine receives the pointer at **411.1 px** for a button positioned at **411.5 px** (hit test confirmed).
+- Real clicks: **replace** opens the file picker and the replacement keeps the block window **to the pixel**; **crop** opens the crop dialog.
+- **Pasteboard re-checked**: toggled off → on and on → off with a text edit, an image replacement and an object move in between → **0 difference** across the whole document (positions, scales, angles, texts, per canvas, sorted multiset). The toggle is reversible: the page returns to the exact same screen position (479.7 ; 96.7) → (479.7 ; 296.7) → (479.7 ; 96.7). Enabling it only adds the workspace band (canvas 428.5×577 → 702.5×977, class `pasteboard-active`) — no object moves.
+- **Simulated slow machine** (CPU throttled ×12, 2 cores, 300-600 MB of heap held; the app's own watchdog logged `[SP][Memory] Pression haute … release aggressive`): 6 replacements out of 6 conform, windows preserved to the pixel, no block moved — confirming the 1.7.566 defect was deterministic and unrelated to machine load.
+
+### Note
+- 1.7.566 (image replacement keeps the photo inside its frame) is unchanged by this release. The npm launcher is not republished (`MIN_APP_VERSION` untouched).
+
 ## [1.7.566] — 2026-09-26
 
 _Replacing an image inside an asset-library layout no longer breaks the layout_

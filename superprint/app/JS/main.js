@@ -24421,16 +24421,84 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     ctx.restore();
         }
 
+        // 🆕 v1.7.567 — BOUTONS « REMPLACER » / « RECADRER » À L'INTÉRIEUR DU BLOC.
+        //   Retour utilisateur : « lorsque les photos se trouvent au bord de la page,
+        //   on ne peut pas les remplacer directement ».
+        //   Cause MESURÉE (photo pleine largeur, gabarit food_8p, page large de 428,5 px) :
+        //   les boutons étaient posés À L'EXTÉRIEUR du bloc (x du bloc + 18 unités
+        //   locales × échelle de l'image 1,0925 ≈ +19,7 px) alors que le bord droit du
+        //   bloc coïncidait avec le bord de page (x = 428,5) → boutons à x ≈ 448, soit
+        //   HORS page : invisibles ou incliquables.
+        //   Correctif : les deux boutons sont ancrés DANS le coin SUPÉRIEUR DROIT de la
+        //   fenêtre VISIBLE du bloc (le masque de recadrage s'il existe, sinon la boîte
+        //   de l'objet), avec une marge constante en PIXELS ÉCRAN — donc toujours dans
+        //   le bloc, visibles et cliquables, même collés à un bord de page. L'ancrage
+        //   suit l'échelle, le zoom et une éventuelle rotation du bloc.
+        function _spBlocWindowBox(obj) {
+            // Boîte de la fenêtre visible, en unités LOCALES de l'objet (0,0 = centre).
+            const box = { w: 0, h: 0, cx: 0, cy: 0 };
+            if (!obj) return box;
+            try {
+                const clip = obj.clipPath;
+                const cw = Math.abs((clip && clip.width) || 0) * Math.abs((clip && clip.scaleX) || 1);
+                const ch = Math.abs((clip && clip.height) || 0) * Math.abs((clip && clip.scaleY) || 1);
+                if (clip && !clip.absolutePositioned && cw > 0.01 && ch > 0.01) {
+                    box.w = cw; box.h = ch;
+                    box.cx = (clip.left || 0) + ((clip.scaleX || 1) < 0 ? -1 : 1) * cw / 2;
+                    box.cy = (clip.top || 0) + ((clip.scaleY || 1) < 0 ? -1 : 1) * ch / 2;
+                    return box;
+                }
+            } catch (_) {}
+            box.w = Math.abs(obj.width || 0);
+            box.h = Math.abs(obj.height || 0);
+            return box;
+        }
+
+        function _spInsideCornerPositionHandler(rank) {
+            // rank 0 = bouton « remplacer », rank 1 = bouton « recadrer » (placé sous l'autre).
+            return function (dim, finalMatrix, obj) {
+                const repli = function () {
+                    try { return fabric.util.transformPoint(new fabric.Point(0, 0), finalMatrix || [1, 0, 0, 1, 0, 0]); }
+                    catch (_) { return new fabric.Point(0, 0); }
+                };
+                try {
+                    if (!obj || !obj.canvas) return repli();
+                    const box = _spBlocWindowBox(obj);
+                    const sx = Math.abs(obj.scaleX || 1) || 1;
+                    const sy = Math.abs(obj.scaleY || 1) || 1;
+                    const zoom = (typeof zoomLevel === 'number' && zoomLevel > 0) ? zoomLevel : 1;
+                    const invZoom = Math.min(1, 1 / zoom);
+                    const size = Math.round(24 * invZoom);          // taille écran du bouton (cf. spRenderCrop/ReplaceControl)
+                    const margin = size / 2 + Math.round(5 * invZoom);
+                    const step = size + Math.round(5 * invZoom);
+                    // Marges exprimées dans le repère LOCAL (÷ échelle → constantes à l'écran).
+                    const mlx = margin / sx, mly = margin / sy, sl = step / sy;
+                    const left = box.cx - box.w / 2, right = box.cx + box.w / 2;
+                    const top = box.cy - box.h / 2, bottom = box.cy + box.h / 2;
+                    let lx = right - mlx;
+                    let ly = top + mly + rank * sl;
+                    // Bloc trop court : les deux boutons côte à côte plutôt que l'un sous l'autre.
+                    if (rank > 0 && (box.h < mly * 2 + sl) && (box.w >= mlx * 2 + sl)) {
+                        lx = right - mlx - sl; ly = top + mly;
+                    }
+                    if ((right - left) < mlx * 2) lx = box.cx; else lx = Math.min(Math.max(lx, left + mlx), right - mlx);
+                    if ((bottom - top) < mly * 2) ly = box.cy; else ly = Math.min(Math.max(ly, top + mly), bottom - mly);
+                    const vpt = obj.canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+                    const m = fabric.util.multiplyTransformMatrices(vpt, obj.calcTransformMatrix());
+                    return fabric.util.transformPoint(new fabric.Point(lx, ly), m);
+                } catch (_e) {
+                    return repli();
+                }
+            };
+        }
+
         function attachCropControlToImage(imageObj) {
     if (!imageObj || imageObj.type !== 'image') return;
     if (imageObj._hasCropControl) return;
 
     const cropControl = new fabric.Control({
-        x: 0.5,
-        y: 0,
-        // 🆕 v1.7.174 — À l'intérieur, en haut à droite
-        offsetX: 18,
-        offsetY: 6,
+        // 🆕 v1.7.567 — ancrage DANS le bloc (coin supérieur droit) : _spInsideCornerPositionHandler
+        positionHandler: _spInsideCornerPositionHandler(1),
         cursorStyle: 'pointer',
         hoverCursor: 'pointer',
         mouseUpHandler: function(e, transform) {
@@ -24513,10 +24581,8 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     const canvas = shapeObj.canvas || getActiveCanvas();
 
     const maskCropControl = new fabric.Control({
-        x: 0.5,
-        y: -0.5,
-        offsetX: 18,
-        offsetY: 30,
+        // 🆕 v1.7.567 — ancrage DANS la forme (coin supérieur droit)
+        positionHandler: _spInsideCornerPositionHandler(1),
         cursorStyle: 'pointer',
         hoverCursor: 'pointer',
         mouseUpHandler: function(e, transform) {
@@ -24531,10 +24597,8 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     });
 
     const maskReplaceControl = new fabric.Control({
-        x: 0.5,
-        y: -0.5,
-        offsetX: 18,
-        offsetY: 2,
+        // 🆕 v1.7.567 — ancrage DANS la forme (coin supérieur droit)
+        positionHandler: _spInsideCornerPositionHandler(0),
         cursorStyle: 'pointer',
         hoverCursor: 'pointer',
         mouseUpHandler: function(e, transform) {
@@ -24761,11 +24825,8 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     if (imageObj._hasReplaceControl) return;
 
     const replaceControl = new fabric.Control({
-        x: 0.5,
-        y: 0,
-        // 🆕 v1.7.174 — À l'intérieur, en haut à droite (au-dessus du crop)
-        offsetX: 18,
-        offsetY: -20,
+        // 🆕 v1.7.567 — ancrage DANS le bloc (coin supérieur droit) : _spInsideCornerPositionHandler
+        positionHandler: _spInsideCornerPositionHandler(0),
         cursorStyle: 'pointer',
         hoverCursor: 'pointer',
         mouseUpHandler: function(e, transform) {
