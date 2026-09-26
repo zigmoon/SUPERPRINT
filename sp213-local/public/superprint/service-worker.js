@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.560-copier-coller-coordonnees-monde';
+const CACHE_NAME = 'superprint-shell-v1.7.561-import-idml-tableaux-notes-liens-styles';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

@@ -38407,12 +38407,12 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
                 setProgress(100, 'Import termin\u00e9 !');
                 logMsg('\u2705 Import IDML termin\u00e9');
-                logMsg('\u26A0\uFE0F Import IDML — rotation, polygones, opacité, contours pointillés, colonnes, retraits de bloc, justification verticale, habillage texte, gabarits de page, dégradés, ombres portées et taquets de tabulation conservés. Tableaux, notes de bas de page, liens hypertexte et styles imbriqués non pris en charge.');
+                logMsg('\u26A0\uFE0F Import IDML — rotation, polygones, opacité, contours pointillés, colonnes, retraits de bloc, justification verticale, habillage texte, gabarits de page, dégradés, ombres portées et taquets de tabulation conservés. Tableaux (grille alignée par taquets), notes de bas de page, liens hypertexte et styles imbriqués repris.');
 
                 setTimeout(function() {
                     idmlModal.style.display = 'none';
                     resetModal();
-                    window.spShowToast('Import IDML — texte, images, formes, rotations, polygones, opacité, contours pointillés, colonnes, retraits de bloc, justification verticale, habillage du texte, gabarits de page, dégradés, ombres portées et taquets de tabulation sont conservés. Tableaux, notes de bas de page, liens hypertexte et styles imbriqués restent à venir.', { kind: 'info', duration: 7000 });
+                    window.spShowToast('Import IDML — texte, images, formes, rotations, polygones, opacité, contours pointillés, colonnes, retraits de bloc, justification verticale, habillage du texte, gabarits de page, dégradés, ombres portées et taquets de tabulation sont conservés. Tableaux (grille alignée par taquets), notes de bas de page, liens hypertexte et styles imbriqués repris.', { kind: 'info', duration: 7000 });
                 }, 1200);
 
             } catch (err) {
@@ -38535,6 +38535,73 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             if (Object.keys(sp559Gradients).length > 0) {
                 logMsg('\uD83C\uDFA8 ' + Object.keys(sp559Gradients).length + ' d\u00E9grad\u00E9(s) d\u00E9fini(s)');
             }
+            /* 🆕 v1.7.561 — _SP_IDML_REGLAGES_561 : RÉGLAGES DES NOTES ET STYLES IMBRIQUÉS.
+               • <FootnoteOption> (Resources/Preferences.xml) : StartAt, Prefix, Suffix,
+                 SeparatorText, RuleOn… — les réglages du document qui commandent la
+                 numérotation et le séparateur des notes. Le vrai fichier InDesign en
+                 contient la définition complète : elle est lue telle quelle, pas devinée.
+               • <AllNestedStyles> (Resources/Styles.xml) : les styles imbriqués vivent sur
+                 le ParagraphStyle, sous Properties/AllNestedStyles, chaque instruction étant
+                 un <ListItem> avec AppliedCharacterStyle + Delimiter + Repetition +
+                 Inclusive. Le drapeau EmptyNestedStyles="true" dit « aucun » : on ne
+                 descend donc PAS dans ces styles-là (c'est exactement le test du
+                 convertisseur IDML de production). */
+            try {
+                window.__sp561Foot = null;
+                var sp561Pref = await readXmlFile(zip, 'Resources/Preferences.xml');
+                if (sp561Pref) {
+                    var sp561Fo = sp561Pref.getElementsByTagName('FootnoteOption')[0];
+                    if (sp561Fo) {
+                        window.__sp561Foot = {
+                            StartAt: sp561Fo.getAttribute('StartAt') || '1',
+                            Prefix: sp561Fo.getAttribute('Prefix') || '',
+                            Suffix: sp561Fo.getAttribute('Suffix') || '',
+                            SeparatorText: sp561Fo.getAttribute('SeparatorText'),
+                            RuleOn: sp561Fo.getAttribute('RuleOn') === 'true',
+                            RuleLineWeight: parseFloat(sp561Fo.getAttribute('RuleLineWeight') || '0') || 0
+                        };
+                        logMsg('Notes de bas de page : r\u00E9glages du document lus (d\u00E9part ' + window.__sp561Foot.StartAt + ')');
+                    }
+                }
+            } catch (sp561E1) { window.__sp561Foot = null; }
+            try {
+                var sp561NbImb = 0;
+                var sp561StyXml = await readXmlFile(zip, 'Resources/Styles.xml');
+                if (sp561StyXml) {
+                    var sp561PsList = sp561StyXml.getElementsByTagName('ParagraphStyle');
+                    for (var sp561Pi2 = 0; sp561Pi2 < sp561PsList.length; sp561Pi2++) {
+                        var sp561PsEl = sp561PsList[sp561Pi2];
+                        if (sp561PsEl.getAttribute('EmptyNestedStyles') === 'true') continue;
+                        var sp561All = sp561PsEl.getElementsByTagName('AllNestedStyles')[0];
+                        if (!sp561All) continue;
+                        var sp561Lis = sp561All.getElementsByTagName('ListItem');
+                        if (!sp561Lis.length) sp561Lis = sp561All.getElementsByTagName('NestedStyle');
+                        if (!sp561Lis.length) continue;
+                        var sp561Ref2 = sp561PsEl.getAttribute('Self');
+                        if (!sp561Ref2) continue;
+                        var sp561Ins = [];
+                        for (var sp561Li2 = 0; sp561Li2 < sp561Lis.length; sp561Li2++) {
+                            var sp561DEl = sp561Lis[sp561Li2].getElementsByTagName('Delimiter')[0];
+                            var sp561REl = sp561Lis[sp561Li2].getElementsByTagName('Repetition')[0];
+                            var sp561IEl = sp561Lis[sp561Li2].getElementsByTagName('Inclusive')[0];
+                            sp561Ins.push({
+                                style: sp561Lis[sp561Li2].getAttribute('AppliedCharacterStyle') || '',
+                                delimiter: sp561DEl ? sp561DEl.textContent : (sp561Lis[sp561Li2].getAttribute('Delimiter') || ''),
+                                repetition: sp561REl ? sp561REl.textContent : (sp561Lis[sp561Li2].getAttribute('Repetition') || '1'),
+                                inclusive: sp561IEl ? sp561IEl.textContent : (sp561Lis[sp561Li2].getAttribute('Inclusive') || 'false')
+                            });
+                        }
+                        if (!sp561Ins.length) continue;
+                        if (!stylesMap[sp561Ref2]) stylesMap[sp561Ref2] = {};
+                        stylesMap[sp561Ref2].nested = sp561Ins;
+                        sp561NbImb++;
+                    }
+                }
+                /* Compteur observable : il dit, sans qu'on ait à deviner, combien de styles
+                   imbriqués le fichier portait réellement. */
+                window.__sp561NestedStyles = sp561NbImb;
+                if (sp561NbImb > 0) logMsg(sp561NbImb + ' style(s) \u00E0 style imbriqu\u00E9');
+            } catch (sp561E2) {}
             // --- Read Spreads ---
             setProgress(45, 'Lecture des pages\u2026');
             var spreadPaths = [];
@@ -38561,6 +38628,38 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 spreadPaths.sort();
             }
             logMsg('\uD83D\uDCD1 ' + spreadPaths.length + ' spread(s) trouv\u00e9(s)');
+
+            /* 🆕 v1.7.561 — _SP_IDML_LIENS_561 : CARTE DES LIENS HYPERTEXTE.
+               Un lien d'IDML ne vit PAS dans la story : les destinations sont dans la
+               PLANCHE (<HyperlinkURLDestination Self=… DestinationURL=…>) et le lien les
+               relie à une source par <Hyperlink Source="HyperlinkTextSource/x"> +
+               <Properties><Destination>…</Destination></Properties>. La source marque la
+               plage dans le texte (deux repères de même Self, ou un élément englobant).
+               On lit donc les planches UNE fois pour bâtir la carte Self -> URL. */
+            try {
+                window.__sp561Links = {};
+                var sp561Dest = {};
+                for (var sp561Sp = 0; sp561Sp < spreadPaths.length; sp561Sp++) {
+                    var sp561Sx = await readXmlFile(zip, spreadPaths[sp561Sp]);
+                    if (!sp561Sx) continue;
+                    var sp561Dl = sp561Sx.getElementsByTagName('HyperlinkURLDestination');
+                    for (var sp561Dj = 0; sp561Dj < sp561Dl.length; sp561Dj++) {
+                        var sp561DSelf = sp561Dl[sp561Dj].getAttribute('Self');
+                        if (sp561DSelf) sp561Dest[sp561DSelf] = sp561Dl[sp561Dj].getAttribute('DestinationURL') || '';
+                    }
+                    var sp561Hl = sp561Sx.getElementsByTagName('Hyperlink');
+                    for (var sp561Hj = 0; sp561Hj < sp561Hl.length; sp561Hj++) {
+                        var sp561Src = sp561Hl[sp561Hj].getAttribute('Source') || '';
+                        var sp561DesEl = sp561Hl[sp561Hj].getElementsByTagName('Destination')[0];
+                        var sp561RefL = sp561DesEl ? String(sp561DesEl.textContent).trim() : '';
+                        if (sp561Src && sp561RefL && sp561Dest[sp561RefL]) {
+                            window.__sp561Links[sp561Src] = sp561Dest[sp561RefL];
+                        }
+                    }
+                }
+                var sp561NbL = Object.keys(window.__sp561Links).length;
+                if (sp561NbL > 0) logMsg(sp561NbL + ' lien(s) hypertexte trouv\u00E9(s)');
+            } catch (sp561E3) { window.__sp561Links = {}; }
 
             // --- Collect all Stories (text content) ---
             setProgress(50, 'Lecture des textes\u2026');
@@ -39378,18 +39477,535 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             return idmlTransformBounds(lb, mtx);
         }
 
+        /* ══════════════════════════════════════════════════════════════════════
+           🆕 v1.7.561 — _SP_IDML_TFN_561 : TABLEAUX, NOTES DE BAS DE PAGE, LIENS
+           HYPERTEXTE ET STYLES IMBRIQUÉS.
+
+           Les quatre schémas ci-dessous ont été relevés SUR DU RÉEL, jamais devinés :
+
+           • TABLEAU — balisage réellement produit (format IDML/ICML) :
+               <Table AppliedTableStyle="TableStyle/Table" HeaderRowCount="1"
+                      BodyRowCount="3" ColumnCount="4">
+                 <Column Name="0"/> …                        (un élément par colonne)
+                 <Cell Name="0:0" AppliedCellStyle="CellStyle/Cell">   Name = "COLONNE:LIGNE"
+                   <ParagraphStyleRange …><CharacterStyleRange …>
+                     <Content>…</Content>
+                   </CharacterStyleRange></ParagraphStyleRange>
+                 </Cell> …
+               </Table>
+             MESURÉ : le Name d'une cellule est « COLONNE:LIGNE » (0:0, 1:0, 2:0, 3:0, 0:1…).
+
+           • NOTE DE BAS DE PAGE — un <Footnote> est un ENFANT de <CharacterStyleRange> et il
+             CONTIENT ses propres <ParagraphStyleRange>. Chemin réel observé :
+               Story/ParagraphStyleRange[85]/CharacterStyleRange[6]/Footnote[1]/ParagraphStyleRange[1]
+             Les réglages viennent de <FootnoteOption> (Resources/Preferences.xml) :
+             StartAt, Prefix, Suffix, SeparatorText, RuleOn, RuleLineWeight…
+
+           • LIEN HYPERTEXTE — les destinations vivent dans les PLANCHES
+             (<HyperlinkURLDestination Self=… DestinationURL=…>) et sont reliées aux sources par
+             <Hyperlink Source="HyperlinkTextSource/x"><Properties><Destination>…</Destination>.
+             La source marque la PLAGE dans le texte : soit elle englobe le texte, soit elle
+             apparaît DEUX FOIS (repère d'ouverture puis de fermeture). Les deux formes sont
+             prises en charge.
+
+           • STYLE IMBRIQUÉ — <ParagraphStyle><Properties><AllNestedStyles><ListItem
+             AppliedCharacterStyle="…"><Delimiter>…</Delimiter><Repetition>1</Repetition>
+             <Inclusive>true</Inclusive></ListItem>. Le drapeau EmptyNestedStyles="true" porté
+             par le ParagraphStyle (présent dans le vrai fichier InDesign) dit « aucun ».
+             Delimiters réels : Sentence, AnyWord, AnyCharacter, Digits, InlineGraphic,
+             EndNestedStyle, AutoPageNumber, SectionMarker, Repeat, Dropcap — ou un CARACTÈRE
+             littéral (espace, deux-points, tabulation…). */
+
+        /* Un élément est-il DANS un tableau, une note ou une fin de note ? (le texte d'une note
+           et celui d'une cellule ne font PAS partie du corps du texte : sans ce filtre, le texte
+           des notes et des cellules était recollé dans le corps du bloc.) */
+        function sp561HorsCorps(el, racine) {
+            var p = el && el.parentNode;
+            while (p && p !== racine) {
+                if (p.nodeType === 1) {
+                    var tg = p.tagName;
+                    if (tg === 'Footnote' || tg === 'Endnote' || tg === 'Table') return true;
+                }
+                p = p.parentNode;
+            }
+            return false;
+        }
+
+        /* Tableaux IMBRIQUÉS : un tableau dans une cellule est traité avec sa cellule. */
+        function sp561TableImbriquee(te, racine) {
+            var p = te && te.parentNode;
+            while (p && p !== racine) {
+                if (p.nodeType === 1 && p.tagName === 'Table') return true;
+                p = p.parentNode;
+            }
+            return false;
+        }
+
+        /* Texte d'un CharacterStyleRange : les <Content> du corps, plus les <Br>.
+           ⚠️ Les <Content> situés dans une NOTE sont écartés : sans ce filtre, le texte de la
+           note était collé dans le corps du texte à l'endroit de l'appel. */
+        function sp561TexteRun(csr) {
+            var t = '';
+            var cs = csr.getElementsByTagName('Content');
+            for (var i = 0; i < cs.length; i++) {
+                if (sp561HorsCorps(cs[i], csr)) continue;
+                t += cs[i].textContent;
+            }
+            var bs = csr.getElementsByTagName('Br');
+            for (var j = 0; j < bs.length; j++) {
+                if (sp561HorsCorps(bs[j], csr)) continue;
+                t += '\n';
+            }
+            return t;
+        }
+
+        /* Enfants ÉLÉMENTS d'un nœud (children existe sur un document XML moderne, mais on ne
+           s'appuie pas dessus : on filtre nodeType 1). */
+        function sp561Elements(el, nom) {
+            var out = [];
+            if (!el) return out;
+            var ns = el.childNodes;
+            for (var i = 0; i < ns.length; i++) {
+                if (ns[i].nodeType === 1 && (!nom || ns[i].tagName === nom)) out.push(ns[i]);
+            }
+            return out;
+        }
+
+        /* Texte simple d'un sous-arbre (une cellule, une note) : un paragraphe par ligne. */
+        function sp561TexteSimple(el, sMap, cMap) {
+            try {
+                var st = extractStoryText(el, sMap, cMap);
+                var parts = [];
+                (st.paragraphs || []).forEach(function (p) {
+                    var t = '';
+                    (p.runs || []).forEach(function (r) { t += r.text; });
+                    parts.push(t);
+                });
+                return parts.join('\n');
+            } catch (_) { return ''; }
+        }
+
+        /* Réglages de style d'un CharacterStyle, mis à la forme des « runs » de l'importeur. */
+        function sp561PropsRun(ref, sMap, cMap) {
+            var st = (sMap && sMap[ref]) || {};
+            var p = {};
+            if (st.fontFamily) p.fontFamily = st.fontFamily;
+            if (st.fontSize) p.fontSize = st.fontSize;
+            if (st.fontStyle) {
+                var f = String(st.fontStyle).toLowerCase();
+                p.fontWeight = f.indexOf('bold') !== -1 ? 'bold' : 'normal';
+                p.fontStyleCSS = (f.indexOf('italic') !== -1 || f.indexOf('oblique') !== -1) ? 'italic' : 'normal';
+            }
+            if (st.fillColor) {
+                var hx = resolveColorRef(st.fillColor, cMap);
+                if (hx) p.fill = hx;
+            }
+            if (st.tracking) p.tracking = st.tracking;
+            return p;
+        }
+
+        /* Découpe les runs pour marquer une ou plusieurs PLAGES de caractères (repérées dans le
+           texte concaténé des runs). Les morceaux couverts reçoivent les propriétés de style
+           demandées, plus une clé libre (par exemple « lien » = URL). */
+        function sp561PosePlages(runs, plages, props, cle, val) {
+            if (!runs || !runs.length || !plages || !plages.length) return runs;
+            var out = [];
+            var pos = 0;
+            for (var i = 0; i < runs.length; i++) {
+                var r = runs[i];
+                var t = r.text || '';
+                var debut = pos, fin = pos + t.length;
+                pos = fin;
+                var bornes = [0, t.length];
+                for (var q = 0; q < plages.length; q++) {
+                    var a = plages[q][0] - debut, b = plages[q][1] - debut;
+                    if (a > 0 && a < t.length) bornes.push(a);
+                    if (b > 0 && b < t.length) bornes.push(b);
+                }
+                bornes.sort(function (x, y) { return x - y; });
+                for (var k = 0; k < bornes.length - 1; k++) {
+                    var s = bornes[k], e = bornes[k + 1];
+                    if (s === e) continue;
+                    var m = {};
+                    for (var prop in r) m[prop] = r[prop];
+                    m.text = t.slice(s, e);
+                    var absS = debut + s, absE = debut + e;
+                    var couvert = false;
+                    for (var z = 0; z < plages.length; z++) {
+                        if (absS >= plages[z][0] && absE <= plages[z][1]) { couvert = true; break; }
+                    }
+                    if (couvert && props) {
+                        for (var p2 in props) { if (props[p2] !== undefined && props[p2] !== null) m[p2] = props[p2]; }
+                    }
+                    if (couvert && cle) m[cle] = val;
+                    out.push(m);
+                }
+            }
+            return out;
+        }
+
+        /* ── STYLES IMBRIQUÉS ──────────────────────────────────────────────────────────── */
+
+        function sp561LitItem(li) {
+            function txt(tag, attr) {
+                var e = li.getElementsByTagName(tag)[0];
+                if (e && e.textContent !== '') return e.textContent;
+                return li.getAttribute(attr) || '';
+            }
+            return {
+                style: li.getAttribute('AppliedCharacterStyle') || '',
+                delimiter: txt('Delimiter', 'Delimiter'),
+                repetition: txt('Repetition', 'Repetition') || '1',
+                inclusive: txt('Inclusive', 'Inclusive') || 'false'
+            };
+        }
+
+        /* Instructions de style imbriqué d'un nœud : d'abord celles posées EN LIGNE sur le
+           ParagraphStyleRange (AllNestedStyles), sinon celles du style appliqué (lues dans
+           Resources/Styles.xml et rangées dans sMap[ref].nested). */
+        function sp561Instructions(psr, pStyle) {
+            try {
+                var all = psr.getElementsByTagName('AllNestedStyles');
+                if (all.length) {
+                    var lis = all[0].getElementsByTagName('ListItem');
+                    if (!lis.length) lis = all[0].getElementsByTagName('NestedStyle');
+                    if (lis.length) {
+                        var out = [];
+                        for (var i = 0; i < lis.length; i++) out.push(sp561LitItem(lis[i]));
+                        return out;
+                    }
+                }
+            } catch (_) {}
+            if (pStyle && pStyle.nested && pStyle.nested.length) return pStyle.nested;
+            return [];
+        }
+
+        /* Longueurs des plages de style imbriqué, instruction par instruction. */
+        function sp561PlagesImbriquees(texte, instr) {
+            var s = String(texte || '');
+            var pos = 0, out = [];
+            for (var i = 0; i < instr.length && pos < s.length; i++) {
+                var it = instr[i];
+                var rep = parseInt(it.repetition, 10);
+                if (!isFinite(rep) || rep < 1 || rep > 50) rep = 1;
+                var d = String(it.delimiter || '');
+                var progression = 0;
+                for (var n = 0; n < rep; n++) {
+                    var reste = s.slice(pos);
+                    if (!reste.length) break;
+                    var av = 0, m;
+                    if (d === 'Sentence') { m = reste.match(/^[^.!?]*[.!?]+\s*/); av = m ? m[0].length : 0; }
+                    else if (d === 'AnyWord') { m = reste.match(/^\S+\s*/); av = m ? m[0].length : 0; }
+                    else if (d === 'AnyCharacter' || d === 'Dropcap') { av = 1; }
+                    else if (d === 'Digits') { m = reste.match(/^\D*\d*/); av = m ? Math.max(1, m[0].length) : 1; }
+                    else if (d === 'Repeat' || d === 'EndNestedStyle' || d === 'InlineGraphic'
+                        || d === 'AutoPageNumber' || d === 'SectionMarker' || d === '') { av = reste.length; }
+                    else {
+                        var ix = reste.indexOf(d);
+                        av = (ix === -1) ? reste.length : (ix + d.length);
+                    }
+                    if (!(av > 0)) av = reste.length;
+                    pos += av; progression += av;
+                }
+                if (progression > 0) out.push([pos - progression, pos, it.style]);
+            }
+            return out;
+        }
+
+        /* ── LIENS HYPERTEXTE ──────────────────────────────────────────────────────────── */
+
+        /* Plages de lien d'un paragraphe, repérées dans le texte du paragraphe.
+           La carte Self -> URL vient des PLANCHES (window.__sp561Links). */
+        function sp561PlagesLien(psr) {
+            var carte = window.__sp561Links || {};
+            if (!Object.keys(carte).length) return [];
+            var pos = 0, ouverts = {}, plages = [];
+            function marche(el) {
+                var ns = el.childNodes;
+                for (var i = 0; i < ns.length; i++) {
+                    var n = ns[i];
+                    /* 🆕 v1.7.561 — MESURÉ : compter les nœuds de texte revenait à compter
+                       l'INDENTATION du XML (retours à la ligne et tabulations entre les
+                       éléments), ce qui gonflait la position réelle : la plage du lien
+                       tombait alors hors du texte et RIEN n'était souligné. L'extraction ne
+                       lit que les <Content> et les <Br> : le parcours fait exactement
+                       pareil, en ignorant les nœuds de texte. */
+                    if (n.nodeType !== 1) continue;
+                    var tg = n.tagName;
+                    if (tg === 'Content') { pos += (n.textContent || '').length; continue; }
+                    if (tg === 'Br') { pos += 1; continue; }
+                    if (tg === 'Footnote' || tg === 'Endnote' || tg === 'Table') continue;
+                    if (tg === 'HyperlinkTextSource' || tg === 'HyperlinkTextRange'
+                        || tg === 'HyperlinkPageItemSource' || tg === 'HyperlinkTextDestination') {
+                        var sf = n.getAttribute('Self') || '';
+                        var url = carte[sf];
+                        var contient = n.getElementsByTagName('Content').length > 0;
+                        if (!url) { if (contient) marche(n); continue; }
+                        if (contient) {
+                            var d0 = pos;
+                            marche(n);
+                            if (pos > d0) plages.push([d0, pos, url]);
+                        } else if (ouverts[sf] === undefined) {
+                            ouverts[sf] = pos;            /* première occurrence : ouvre la plage */
+                        } else {
+                            plages.push([ouverts[sf], pos, url]);   /* deuxième : la ferme */
+                            ouverts[sf] = undefined;
+                        }
+                        continue;
+                    }
+                    marche(n);
+                }
+            }
+            marche(psr);
+            return plages;
+        }
+
+        /* Applique au paragraphe ses styles imbriqués puis ses liens. */
+        function sp561StylerRuns(runs, psr, pStyle, sMap, cMap) {
+            if (!runs || !runs.length) return runs;
+            var _st = window.__sp561Stats || (window.__sp561Stats = { paragraphes: 0, instructions: 0, plagesImbriquees: 0, plagesLien: 0 });
+            _st.paragraphes++;
+            var sortie = runs;
+            /* Copie du PREMIER run d'origine : c'est lui qui donne au bloc sa police, sa
+               taille, sa couleur et son alignement de référence. Si le style imbriqué
+               marque ce premier run, la référence du bloc changerait (mesuré : 30 au lieu
+               de 18) ; on garde donc cette copie pour la remettre devant. */
+            var _repere = null;
+            if (runs.length) {
+                _repere = {};
+                for (var _r in runs[0]) _repere[_r] = runs[0][_r];
+            }
+            var _marque = false;
+            var txt = '';
+            for (var i = 0; i < sortie.length; i++) txt += sortie[i].text;
+            try {
+                var instr = sp561Instructions(psr, pStyle);
+                if (instr.length) _st.instructions += instr.length;
+                if (instr.length) {
+                    var plages = sp561PlagesImbriquees(txt, instr);
+                    for (var j = 0; j < plages.length; j++) {
+                        var props = sp561PropsRun(plages[j][2], sMap, cMap);
+                        var pose = false;
+                        for (var k in props) { pose = true; break; }
+                        if (pose) {
+                            sortie = sp561PosePlages(sortie, [[plages[j][0], plages[j][1]]], props, 'imbrique', plages[j][2]);
+                            _marque = true;
+                        }
+                    }
+                }
+            } catch (_) {}
+            try {
+                var liens = sp561PlagesLien(psr);
+                if (liens.length) _st.plagesLien += liens.length;
+                for (var z = 0; z < liens.length; z++) {
+                    sortie = sp561PosePlages(sortie, [[liens[z][0], liens[z][1]]],
+                        { underline: true, fill: '#0000EE' }, 'lien', liens[z][2]);
+                }
+                if (liens.length && psr.getAttribute('__sp561x') === null) {
+                    window.__sp561LiensVus = (window.__sp561LiensVus || 0) + liens.length;
+                }
+            } catch (_) {}
+            /* Le premier run a été découpé par le style imbriqué : on remet devant un run de
+               longueur nulle portant les propriétés d'origine. Zéro caractère : il ne
+               dessine rien et ne décale rien, il rend seulement au bloc sa référence. */
+            if (_marque && _repere && sortie.length && sortie[0] !== runs[0]) {
+                _repere.text = '';
+                sortie.unshift(_repere);
+            }
+            return sortie;
+        }
+
+        /* ── TABLEAUX ──────────────────────────────────────────────────────────────────── */
+
+        /* Un tableau devient un bloc de texte : une ligne par rangée, une TABULATION entre les
+           colonnes, et des taquets calculés sur la largeur réelle des colonnes — donc des
+           colonnes alignées, et tout le texte des cellules conservé et modifiable.
+           (L'application n'a pas d'objet « tableau » : c'est la représentation la plus proche de
+           son modèle, et elle utilise son moteur de taquets, déjà en place.) */
+        function sp561Tableau(te, sMap, cMap, largeurMax) {
+            var colCount = parseInt(te.getAttribute('ColumnCount') || '', 10);
+            var bodyRows = parseInt(te.getAttribute('BodyRowCount') || '', 10);
+            var headRows = parseInt(te.getAttribute('HeaderRowCount') || '', 10) || 0;
+            var footRows = parseInt(te.getAttribute('FooterRowCount') || '', 10) || 0;
+            if (!isFinite(bodyRows) || bodyRows < 0) bodyRows = 0;
+            var rowCount = bodyRows + headRows + footRows;
+
+            var colEls = sp561Elements(te, 'Column');
+            if (!isFinite(colCount) || colCount <= 0) colCount = colEls.length;
+            if (!colCount) return null;
+
+            var largeurs = [], somme = 0, i;
+            for (i = 0; i < colEls.length; i++) {
+                var w = parseFloat(colEls[i].getAttribute('SingleColumnWidth')
+                    || colEls[i].getAttribute('MinimumWidth')
+                    || colEls[i].getAttribute('Width') || '');
+                if (!isFinite(w) || w <= 0) w = 0;
+                largeurs.push(w);
+                somme += w;
+            }
+            while (largeurs.length < colCount) largeurs.push(0);
+            if (somme <= 0) {
+                var eq = ((largeurMax && largeurMax > 0) ? largeurMax : 72 * colCount) / colCount;
+                for (i = 0; i < colCount; i++) largeurs[i] = eq;
+            } else {
+                for (i = 0; i < colCount; i++) { if (!(largeurs[i] > 0)) largeurs[i] = somme / colCount; }
+            }
+
+            var cells = [];
+            var cellEls = te.getElementsByTagName('Cell');
+            for (i = 0; i < cellEls.length; i++) {
+                var cel = cellEls[i];
+                if (sp561TableImbriquee(cel, te)) continue;
+                var nom = String(cel.getAttribute('Name') || '');
+                var mc = nom.match(/^(\d+):(\d+)$/);
+                var cc = mc ? parseInt(mc[1], 10) : (i % colCount);
+                var rr = mc ? parseInt(mc[2], 10) : Math.floor(i / colCount);
+                cells.push({
+                    c: cc, r: rr,
+                    texte: sp561TexteSimple(cel, sMap, cMap),
+                    fusionC: parseInt(cel.getAttribute('ColumnSpan') || '1', 10) || 1,
+                    fusionR: parseInt(cel.getAttribute('RowSpan') || '1', 10) || 1
+                });
+            }
+            if (!rowCount) {
+                for (i = 0; i < cells.length; i++) {
+                    if (cells[i].r + 1 > rowCount) rowCount = cells[i].r + 1;
+                }
+            }
+            if (!rowCount) return null;
+
+            var lignes = [];
+            for (var r = 0; r < rowCount; r++) {
+                var parts = [];
+                for (var c = 0; c < colCount; c++) {
+                    var trouve = null;
+                    for (var q = 0; q < cells.length; q++) {
+                        if (cells[q].c === c && cells[q].r === r) { trouve = cells[q]; break; }
+                    }
+                    var mot = trouve ? String(trouve.texte || '').replace(/\s*\n+\s*/g, ' ').replace(/\t/g, ' ').trim() : '';
+                    parts.push(mot);
+                }
+                lignes.push(parts.join('\t').replace(/\t+$/, ''));
+            }
+
+            var onglets = [], acc = 0;
+            for (i = 0; i < colCount - 1; i++) {
+                acc += largeurs[i];
+                onglets.push({ pos: Math.round(acc * 1000) / 1000, type: 'left' });
+            }
+            return {
+                texte: lignes.join('\n'), tabs: onglets,
+                colonnes: colCount, rangees: rowCount, cellules: cells.length
+            };
+        }
+
+        /* Ajoute au résultat du texte les tableaux du corps (hors tableaux imbriqués). */
+        function sp561AjouteTableaux(storyEl, result, sMap, cMap) {
+            var allT = storyEl.getElementsByTagName('Table');
+            if (!allT.length) return;
+            var infos = [];
+            for (var i = 0; i < allT.length; i++) {
+                if (sp561TableImbriquee(allT[i], storyEl)) continue;
+                var inf = sp561Tableau(allT[i], sMap, cMap, 0);
+                if (inf && inf.texte) infos.push(inf);
+            }
+            if (!infos.length) return;
+            var nbCellules = 0, nbRangees = 0;
+            infos.forEach(function (inf) {
+                var lig = inf.texte.split('\n');
+                for (var j = 0; j < lig.length; j++) {
+                    result.paragraphs.push({
+                        runs: [{
+                            text: lig[j], fontFamily: 'Open Sans', fontSize: 12,
+                            fontWeight: 'normal', fontStyleCSS: 'normal',
+                            underline: false, linethrough: false, fill: '#000000', tracking: 0
+                        }],
+                        justification: 'LeftAlign', leading: 0, spaceAfter: 0
+                    });
+                }
+                if (!result.tabs && inf.tabs && inf.tabs.length) result.tabs = inf.tabs;
+                nbCellules += inf.cellules;
+                nbRangees += inf.rangees;
+            });
+            result.tables = infos.length;
+            result.tableCells = nbCellules;
+            result.tableRows = nbRangees;
+        }
+
+        /* ── NOTES DE BAS DE PAGE ──────────────────────────────────────────────────────── */
+
+        /* Les notes du corps du texte : leur texte est sorti du flux et rassemblé à la fin du
+           bloc, précédé de son numéro et du séparateur du document (FootnoteOption). */
+        function sp561AjouteNotes(storyEl, result, sMap, cMap) {
+            var fns = storyEl.getElementsByTagName('Footnote');
+            if (!fns.length) return;
+            var opt = window.__sp561Foot || {};
+            var debut = parseFloat(opt.StartAt);
+            if (!isFinite(debut)) debut = 1;
+            var sep = opt.SeparatorText;
+            if (sep === undefined || sep === null) sep = '\t';
+            var prefixe = opt.Prefix || '', suffixe = opt.Suffix || '';
+            var notes = [], i;
+            for (i = 0; i < fns.length; i++) {
+                var fn = fns[i];
+                var txt = sp561TexteSimple(fn, sMap, cMap).replace(/\s*\n+\s*/g, ' ').trim();
+                if (!txt) continue;
+                var label = fn.getAttribute('Label');
+                if (!label) label = String(debut + notes.length);
+                notes.push({ label: label, texte: txt });
+            }
+            if (!notes.length) return;
+            if (result.paragraphs.length) {
+                result.paragraphs.push({
+                    runs: [{ text: '', fontFamily: 'Open Sans', fontSize: 12, fontWeight: 'normal',
+                        fontStyleCSS: 'normal', underline: false, linethrough: false,
+                        fill: '#000000', tracking: 0 }],
+                    justification: 'LeftAlign', leading: 0, spaceAfter: 0
+                });
+            }
+            for (i = 0; i < notes.length; i++) {
+                var ligne = prefixe + notes[i].label + suffixe + sep + notes[i].texte;
+                result.paragraphs.push({
+                    runs: [{
+                        text: ligne, fontFamily: 'Open Sans', fontSize: 9,
+                        fontWeight: 'normal', fontStyleCSS: 'normal', underline: false,
+                        linethrough: false, fill: '#000000', tracking: 0
+                    }],
+                    justification: 'LeftAlign', leading: 0, spaceAfter: 0
+                });
+            }
+            result.notes = notes;
+        }
+
+        /* Texte simple d'une note pour l'aperçu du journal d'import. */
+        function sp561Apercu(s, n) {
+            var t = String(s || '').replace(/\s+/g, ' ').trim();
+            return t.length > n ? t.slice(0, n) + '…' : t;
+        }
+
         function extractStoryText(storyEl, sMap, cMap) {
             var result = { paragraphs: [] };
             storyEl.querySelectorAll('ParagraphStyleRange').forEach(function(psr) {
                 var pStyleRef = psr.getAttribute('AppliedParagraphStyle') || '';
                 var pStyle = sMap[pStyleRef] || {};
                 var runs = [];
+                /* 🆕 v1.7.561 — le texte d'une NOTE et celui d'une CELLULE ne font pas
+                   partie du corps du texte : sans ce filtre, le texte des notes et des
+                   cellules était recollé dans le corps du bloc, à l'endroit de l'appel. */
+                if (sp561HorsCorps(psr, storyEl)) return;
                 psr.querySelectorAll('CharacterStyleRange').forEach(function(csr) {
+                    /* 🆕 v1.7.561 — MESURÉ : une note contient ses PROPRES
+                       CharacterStyleRange. `psr.querySelectorAll` descend donc DANS la
+                       note, et le texte de la note était ajouté comme un SECOND run du
+                       corps du bloc (mesuré : « Chapitre 1 : les tableauxNote de bas de
+                       page… »). Le filtre posé sur le paragraphe ne suffisait pas : il
+                       faut écarter aussi le run lui-même. */
+                    if (sp561HorsCorps(csr, psr)) return;
                     var cStyleRef = csr.getAttribute('AppliedCharacterStyle') || '';
                     var cStyle = sMap[cStyleRef] || {};
-                    var text = '';
-                    csr.querySelectorAll('Content').forEach(function(c) { text += c.textContent; });
-                    csr.querySelectorAll('Br').forEach(function() { text += '\n'; });
+                    /* 🆕 v1.7.561 — sp561TexteRun écarte le <Content> des NOTES : il n'est
+                       pas dans le corps du texte (il est réuni à la fin du bloc). */
+                    var text = sp561TexteRun(csr);
                     if (!text) return;
                     var run = { text: text };
                     var fEl = csr.querySelector('Properties > AppliedFont');
@@ -39412,6 +40028,11 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     run.lang = csr.getAttribute('AppliedLanguage') || cStyle.lang || pStyle.lang || '';
                     runs.push(run);
                 });
+                /* 🆕 v1.7.561 — STYLES IMBRIQUÉS PUIS LIENS HYPERTEXTE DU PARAGRAPHE.
+                   Les deux s'appliquent sur le TEXTE du paragraphe et découpent les runs :
+                   le style imbriqué donne au préfixe le style de caractère d'InDesign,
+                   le lien souligne sa plage en bleu et garde son URL. */
+                try { runs = sp561StylerRuns(runs, psr, pStyle, sMap, cMap); } catch (_) {}
                 /* 🆕 v1.7.559 — _SP_IDML_TAQUETS_559 : TAQUETS DE TABULATION DU PARAGRAPHE.
 
                    MESURÉ (audit de la zone d'import) : 0 occurrence de « TabList » / « TabStop ».
@@ -39468,6 +40089,12 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     spaceAfter: parseFloat(psr.getAttribute('SpaceAfter')) || 0,
                 });
             });
+            /* 🆕 v1.7.561 — TABLEAUX : une rangée par ligne, une tabulation entre les
+               colonnes, des taquets sur la largeur réelle des colonnes. */
+            try { sp561AjouteTableaux(storyEl, result, sMap, cMap); } catch (_) {}
+            /* 🆕 v1.7.561 — NOTES DE BAS DE PAGE : leur texte sort du flux et vient à la
+               fin du bloc, numéroté, avec le séparateur du document. */
+            try { sp561AjouteNotes(storyEl, result, sMap, cMap); } catch (_) {}
             return result;
         }
 

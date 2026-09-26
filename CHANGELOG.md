@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,21 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.561] — 2026-09-26
+
+_IDML import: tables, footnotes, hyperlinks and nested styles — the last four missing features_
+
+### Added
+- **IDML: tables are imported.** Audit finding: **zero** occurrence of `Table`, `Cell` or `Column` in the whole importer, so a table arrived **empty** and its content was silently lost. The real markup was read from material actually produced in that format (`<Table AppliedTableStyle HeaderRowCount BodyRowCount ColumnCount>`, one `<Column Name>` per column, `<Cell Name="COLUMN:ROW">` holding its own `ParagraphStyleRange` content — the `COLUMN:ROW` labelling was confirmed on real output). A table now becomes a text block: **one line per row**, a **tab between columns**, and **stops computed from each column's real width**, so the columns line up and every cell keeps its text, editable. Measured on a real-schema fixture (2 columns × 3 rows): three lines with their text and a tab stop at **120 px**, exactly the declared width of the first column. Nested tables are handled through their parent cell, and `RowSpan`/`ColumnSpan` are read.
+- **IDML: footnotes are imported.** Audit finding: **zero** occurrence of `Footnote`. Measured defect: the note's text was **glued into the body text** at the call position (`"Chapitre 1 : les tableauxNote de bas de page…"`), because a note is an element placed *inside* a character run that contains its own paragraphs — the real path observed in a production IDML converter is `Story/ParagraphStyleRange/CharacterStyleRange/Footnote/ParagraphStyleRange`. The note text now leaves the flow and gathers **at the end of the block**, preceded by its number and the document separator. The settings are read from the file itself (`<FootnoteOption StartAt Prefix Suffix SeparatorText RuleOn RuleLineWeight…>`, the complete definition present in the user's own InDesign file). Fixing the glue also required filtering the `CharacterStyleRange` of the note, which `psr.querySelectorAll` also iterates, and filtering note/cell `ParagraphStyleRange`s out of the main paragraph loop.
+- **IDML: hyperlinks are imported.** Audit finding: **zero** occurrence of `Hyperlink`. In IDML a link does not live in the text: `<HyperlinkURLDestination DestinationURL>` sits in the **spread** and is linked to a source by `<Hyperlink Source="HyperlinkTextSource/x"><Properties><Destination>…`. The importer therefore read link text as ordinary text. Both real marking shapes are handled: a source that **wraps** the text, and a source appearing **twice** (opening then closing). Measured: of 28 paragraph characters, the **21 characters of the link** come out `underline: true, fill: #0000EE` and the other 7 stay normal, while the spread map is read once per import. A defect was found and fixed on the way: positions were computed while also counting the XML **indentation text nodes**, which inflated the offsets and pushed the range outside the text so nothing was underlined.
+- **IDML: nested styles are imported.** A nested style means “apply this character style up to this sign”; it was lost, so the paragraph arrived in one piece. The instructions are read from `<ParagraphStyle><Properties><AllNestedStyles><ListItem AppliedCharacterStyle><Delimiter><Repetition><Inclusive>` (or from an inline `AllNestedStyles` on the paragraph itself) and applied for the format's real delimiters: `Sentence`, `AnyWord`, `AnyCharacter`, `Digits`, `Repeat`, `Dropcap`, or a **literal character**. The `EmptyNestedStyles="true"` flag on the paragraph style means “none” and is honoured — exactly the guard used by the production converter, and the flag is present in the user's own `Resources/Styles.xml`. Measured: the prefix up to the `:` delimiter comes out **30 pt, red, bold over 12 characters**, with the rest of the paragraph unchanged. A second defect was fixed too: the block was adopting the nested style's size as its own reference size (measured `fontSize` 30 instead of 18) because that reference is read from the first run; a zero-length guard run now carries the original properties, so the block keeps its own size while the prefix keeps its style.
+
+### Changed
+- The IDML import window, its progress log and its closing message no longer say that tables, footnotes, hyperlinks and nested styles are unsupported — they now state that they are imported, alongside frames with columns, insets, vertical justification, text wrap, master spreads, gradients, shadows and tab stops.
+
+_All four schemas were taken from real material: markup actually produced in that format, a production IDML converter, and the user's own InDesign file — none was guessed._
 
 ## [1.7.560] — 2026-09-26
 
