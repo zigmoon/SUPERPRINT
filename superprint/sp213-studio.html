@@ -10395,6 +10395,20 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return doc.pages[pageIndex] || null;
   }
 
+  /* 🆕 v1.7.563 — _SP_STUDIO_563 : VALEUR D'UN BLOC REÇU DE L'APPLICATION, TELLE QUELLE.
+     Le Studio écrit le même .sp que l'application (mêmes clés, cf. audit de _patch563)
+     mais il écrivait `textLinks` et `guides` EN DUR À VIDE : un document reçu de l'app,
+     réexporté d'ici, perdait donc ses chaînes de texte et ses repères. On lit la source
+     autoritaire (state.doc — déjà utilisée pour masters/numbering/colGrid/margins) et on
+     retombe sur un objet vide si le document n'en avait pas : la clé reste présente. */
+  function sp563ObjetRecu(cle) {
+    try {
+      const d = state.doc;
+      if (d && d[cle] && typeof d[cle] === 'object' && !Array.isArray(d[cle])) return d[cle];
+    } catch (_) {}
+    return {};
+  }
+
   function buildSPFile() {
     if (!state.pages.length) return null;
     const now = new Date();
@@ -10501,8 +10515,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       // 🎨 v1.7.350b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
       // 🛡️ v1.7.369 — filtrés par usage réel : pas de canal fantôme.
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(spPages), customFonts: spCustomFontsPourExport() },
-      textLinks: {},
-      guides: {},
+      /* 🆕 v1.7.563 — CHAÎNES DE TEXTE ET REPÈRES RÉÉCRITS TELS QUELS (cf. _patch563). */
+      textLinks: sp563ObjetRecu('textLinks'),
+      guides: sp563ObjetRecu('guides'),
       /* 🆕 v1.7.541 — GABARITS DE PAGE : réécrits TELS QUELS (repli vide si le document
          n'en avait pas : la clé reste présente, comme avant). */
       masters: (state.doc && state.doc.masters) ? state.doc.masters : { templates: {}, assignments: {} },

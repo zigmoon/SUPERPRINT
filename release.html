@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.562 — pasted text frames show their text immediately, and each paste is offset from the previous one.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.563 — the .sp exported by Studio IA now matches the app's own export, keeping text chains and guides.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.562 — pasted text frames show their text immediately, and each paste is offset from the previous one.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.563 — the .sp exported by Studio IA now matches the app's own export, keeping text chains and guides.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,23 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.563 — Studio : l'export .sp est au même niveau que celui de l'application ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-563">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.563</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le fichier <strong>.sp</strong> exporté par le <strong>Studio IA</strong> est maintenant <strong>au même niveau</strong> que celui exporté par l'application. Les deux exporteurs ont été relus clé par clé : ils écrivaient déjà les mêmes blocs, sauf deux — les <strong>chaînes de texte</strong> et les <strong>repères</strong>, qui partaient toujours vides." data-i18n-en-html="The <strong>.sp</strong> file exported by <strong>Studio IA</strong> is now <strong>at the same level</strong> as the one exported by the app. Both exporters were re-read key by key: they already wrote the same blocks, except two — <strong>text chains</strong> and <strong>guides</strong>, which always left empty." data-i18n-jp-html="<strong>Studio IA</strong> が書き出す <strong>.sp</strong> は、アプリの書き出すものと<strong>同じ水準</strong>になりました。両方の書き出し処理をキー単位で読み直しました：すでに同じブロックを書いていましたが、2 つだけ例外がありました — <strong>テキストの連鎖</strong>と<strong>ガイド</strong>が常に空でした。">The .sp exported by Studio IA is now at the same level as the app's: both exporters were re-read key by key, and only text chains and guides were left empty.</p>
+
+ <h3 data-i18n-fr-html="🔗 Chaînes de texte et repères conservés <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🔗 Text chains and guides kept <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🔗 テキストの連鎖とガイドを保持 <span class=&quot;badge badge-fix&quot;>修正済み</span>">🔗 Text chains and guides kept <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Le défaut.</strong> Les deux blocs <em>textLinks</em> et <em>guides</em> étaient écrits <strong>en dur à vide</strong> dans l'export du Studio : un document reçu de l'application, réexporté depuis le Studio, <strong>perdait ses chaînes de texte et ses repères</strong> — alors que le Studio lisait déjà le document reçu pour les gabarits, les marges, la grille et la numérotation." data-i18n-en-html="<strong>The defect.</strong> Both <em>textLinks</em> and <em>guides</em> were written <strong>hard-coded empty</strong> in the Studio's export: a document received from the app, re-exported from the Studio, <strong>lost its text chains and its guides</strong> — even though the Studio already read the received document for masters, margins, grid and numbering." data-i18n-jp-html="<strong>不具合。</strong>Studio の書き出しでは <em>textLinks</em> と <em>guides</em> が<strong>常に空でハードコード</strong>されていました。アプリから受け取った文書を Studio から再書き出しすると、<strong>テキストの連鎖とガイドが失われて</strong>いました（Studio はマスター・マージン・グリッド・ノンブル用に受け取った文書をすでに読んでいたのに）。">The defect: textLinks and guides were hard-coded empty, so a document received from the app lost its text chains and guides when re-exported from the Studio.</li>
+  <li data-i18n-fr-html="<strong>Le correctif.</strong> Ces deux blocs sont maintenant réécrits <strong>tels quels</strong> depuis le document reçu (la même source que celle déjà utilisée pour les gabarits), avec repli sur un bloc vide si le document n'en avait pas : la clé reste présente dans le fichier, exactement comme dans l'application. Audit des deux exporteurs : les <strong>neuf blocs</strong> de premier niveau, les <strong>huit</strong> du document, les <strong>quatre</strong> des ressources et les <strong>deux</strong> des gabarits sont identiques." data-i18n-en-html="<strong>The fix.</strong> Those two blocks are now rewritten <strong>as they are</strong> from the received document (the same source already used for masters), falling back to an empty block when the document had none: the key stays present in the file, exactly as in the app. Audit of both exporters: the <strong>nine</strong> top-level blocks, the <strong>eight</strong> of the document, the <strong>four</strong> of the resources and the <strong>two</strong> of the masters are identical." data-i18n-jp-html="<strong>修正。</strong>この 2 つのブロックは、受け取った文書から<strong>そのまま</strong>書き戻すようになりました（マスターで既に使っていたのと同じ情報源）。文書に無ければ空のブロックになりますが、キーはファイルに残ります（アプリと同じ）。両方の書き出しの照合：最上位の <strong>9</strong> ブロック、document の <strong>8</strong>、resources の <strong>4</strong>、masters の <strong>2</strong> が一致しています。">The fix: both blocks are rewritten as they are from the received document; the audit shows the 9 top-level, 8 document, 4 resources and 2 masters blocks are identical between the two exporters.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.562 — Copier-coller : le bloc texte s'affiche tout de suite ===== -->
 

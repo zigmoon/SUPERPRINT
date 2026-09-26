@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,18 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.563] — 2026-09-26
+
+_Studio IA: the exported .sp is now at the same level as the app's own export_
+
+### Fixed
+- **The Studio's `.sp` export wrote `textLinks` and `guides` hard-coded empty** (user request: "relis bien l'export .sp dans le studio il doit être au même niveau que le .sp de l'app"). Audit finding, by reading **both exporters key by key**: `saveProjectSP_toObject()` (app) and `buildSPFile()` (studio) already wrote **the same nine top-level blocks** — `_sp`, `meta`, `document{format, margin, margins, bleed, viewMode, colorMode, colGrid, styles}`, `resources{fonts, colors, spotInks, customFonts}`, `textLinks`, `guides`, `masters{templates, assignments}`, `numbering`, `pages[]` — with identical key sets in `document` (8), `resources` (4) and `masters` (2). The only two divergences were `textLinks: {}` and `guides: {}`, **written as empty literals**: a document received from the app (import) and re-exported from the Studio therefore **lost its text chains and its guides**, even though the Studio already reads the received document (`state.doc`) for masters, margins, `colGrid` and numbering. Fix: both blocks are now rewritten as-is through a new `sp563ObjetRecu(cle)` helper that reads `state.doc` and falls back to an empty object, so the keys stay present in the file exactly as in the app. Measured on the app's own export (the reference): 9 top-level keys, `document` = bleed, colGrid, colorMode, format, margin, margins, styles, viewMode; `resources` = colors, customFonts, fonts, spotInks; `masters` = assignments, templates; `textLinks` = 1 on a document holding one chain.
+
+### Changed
+- `sp213-studio.html` changes, so its own cache tag is bumped along with the app's: a stale Studio would otherwise keep exporting the empty blocks from the browser cache.
+
+_Known and documented, not fixed here: a copied chained pair keeps new link ids without its internal link being rebuilt, and the target frame of a chain has no mask until the next selection or reload (both measured during the chain audit). They are the next fix._
 
 ## [1.7.562] — 2026-09-26
 
