@@ -57233,7 +57233,107 @@ function alignSelectedObjects(direction) {
 
         // Prompt d'éducation avancée du modèle SP213. Il est ajouté AU-DESSUS
         // des directives créatives standard quand le toggle est actif.
-        const SP213_LAYOUT_SYSTEM = `
+        /* 🆕 v1.7.557 — _SP_IA_OUTILS_557 : INVENTAIRE DES OUTILS PARTAGÉ AVEC LE STUDIO.
+
+   Constat d'audit : l'IA de l'app et celle du studio ne partageaient PAS la même connaissance du
+   logiciel. Deux blocs portant le même nom (SP213_LAYOUT_SYSTEM) avaient divergé — 3 907 caractères
+   côté app, 20 289 côté studio — et ni l'un ni l'autre ne connaissait les options de cadre de texte,
+   les gabarits de page, le chaînage, les polices variables, les taquets, la grille de colonnes, les
+   styles nommés, l'imprimante virtuelle, la collaboration P2P, le format .json ni le lanceur.
+   Deux erreurs de fait étaient répétées à l'utilisateur : le .sp décrit comme un « ZIP+JSON » (c'est
+   un fichier JSON) et des raccourcis inexistants (Ctrl+D, Ctrl+Maj+F).
+   CORRECTIF : ce bloc est le SEUL inventaire des outils, identique au caractère près des deux côtés
+   (mêmes marques), envoyé à l'app (concaténé au message système) ET au studio (dans son
+   SP213_LAYOUT_SYSTEM). Le script _dev/scripts/_verif_ia.cjs vérifie l'égalité octet à octet, la
+   présence des mots-clés, l'absence des erreurs corrigées et l'alignement des listes de modèles. */
+const SP213_OUTILS_BLOC = `
+/* >>> _SP_IA_OUTILS_557 — INVENTAIRE PARTAGE (app + studio) — DEBUT <<< */
+=============================================
+INVENTAIRE DES OUTILS SUPERPRINT — SOURCE DE VÉRITÉ
+=============================================
+Tout ce qui suit EXISTE dans SuperPrint. Si l'utilisateur demande une de ces fonctions, elle est
+là : guide-le vers elle, ne dis jamais qu'elle n'existe pas.
+
+📐 OPTIONS DE CADRE DE TEXTE (réglages d'un bloc texte)
+  • Colonnes : nombre, largeur, gouttière — le texte coule dans les colonnes.
+  • Retraits haut / bas, justification verticale (haut, centre, pied).
+  • Taquets de tabulation, retraits de paragraphe, retrait de première ligne.
+  • Contour de cadre (couleur, épaisseur) et fond de cadre.
+  • Le texte qui dépasse est rogné par un masque et un repère de débordement s'affiche ; le cadre
+    garde sa taille quand on change la taille de police ou l'interlignage.
+  • Ces réglages survivent au copier-coller, aux gabarits et aux fichiers .sp / .json.
+
+🧩 GABARITS DE PAGE (pages maîtresses)
+  • Créer un gabarit à partir d'une page, l'assigner à une ou plusieurs pages, l'éditer, le
+    libérer page par page pour modifier localement ses éléments.
+  • Les éléments de gabarit passent SOUS le contenu de la page.
+  • Numérotation / folio automatique : position, police, taille, couleur, style, marges.
+
+🔗 CHAÎNAGE DE TEXTE
+  • Chaîner des blocs : le texte qui ne tient pas coule dans le bloc suivant (comme InDesign).
+  • Badges et flèches entre blocs, et « couler » un texte long sur plusieurs pages.
+
+🎨 HABILLAGE DU TEXTE (text wrap)
+  • Modes : boîte, épouser la forme, à droite, à gauche, derrière, aucun.
+  • Contour d'approche (décalages) réglable par objet habillé.
+
+🖼 IMAGES
+  • Recadrage par fenêtre, conservée dans les fichiers ; remplacement dans le cadre : la nouvelle
+    photo remplit la même fenêtre, à la même place et au même niveau dans la pile.
+  • Image dans une forme (masque), ajustement centrer / ajuster largeur / hauteur / zoom.
+  • Import SVG vectoriel, PDF multi-pages, glisser-déposer.
+
+🔤 TYPOGRAPHIE AVANCÉE
+  • Césure multilingue par bloc (fr, en, de, es, it) ; justifié avec césure.
+  • Interlettre, intermots, interlignage, souligné, barré, ligne au-dessus, styles par caractère.
+  • Polices variables (axes) et polices personnelles TTF chargées par l'utilisateur.
+  • Styles nommés (typographie et nuancier) réutilisables, enregistrés dans le document.
+
+🎨 COULEUR
+  • RVB et CMJN, pipette, nuanciers (bibliothèques .ase importables).
+  • Tons directs (Pantone) par objet, avec registre du document : l'export produit une plaque
+    supplémentaire, comme en PAO professionnelle.
+
+📏 REPÈRES, MARGES, GRILLE
+  • Marges par côté, fonds perdus, traits de coupe, repères de pliage.
+  • Guides manuels, grille de colonnes (repères rouges), règle, alignement magnétique.
+
+📚 PAGES ET PLANCHES
+  • Plan de montage (flatplan), pages simples ou double page, ajout / suppression / duplication.
+  • Imposition en cahiers, numérotation automatique, glisser-déposer entre pages.
+
+💾 FICHIERS ET ÉCHANGES
+  • .sp = document natif SuperPrint : un fichier JSON (ce n'est PAS une archive ZIP).
+  • .json = projet complet au même format de données ; sauvegarde automatique locale en plus.
+  • Import : images, SVG, PDF, .sp, .json, documents bureautiques (docx, odt, xlsx, rtf).
+  • Export : PDF 300 dpi (page à page ou planches), PDF imposé, PNG, JPEG, SVG, avec repères et
+    fonds perdus ; impression directe via une imprimante virtuelle locale.
+
+🧰 ÉCOSYSTÈME (trois modules du même éditeur)
+  • SuperPrint : l'éditeur de mise en page (ce logiciel).
+  • Studio IA : génère une maquette depuis une description puis l'envoie à SuperPrint (bouton
+    « Ouvrir dans SuperPrint ») ou l'exporte en .sp à importer.
+  • SuperTyPo : polices et compositions typographiques.
+  • Utilisable dans le navigateur ou installé en local (Windows, macOS, Linux) ; un lanceur en
+    ligne de commande permet d'ouvrir l'application installée.
+
+🧰 AUTRES FONCTIONS
+  • Rechercher et remplacer dans le document, collaboration P2P entre postes.
+  • Historique illimité (annuler / rétablir) avec panneau visuel.
+  • Calques, groupes, verrouillage, ordre Z, alignement et distribution des objets.
+
+⌨️ RACCOURCIS RÉELS (ceux qui existent vraiment)
+  Ctrl+Z Annuler | Ctrl+Y ou Ctrl+Maj+Z Rétablir | Ctrl+C Copier | Ctrl+V Coller | Ctrl+X Couper
+  Ctrl+A Tout sélectionner | Ctrl+S Enregistrer | Suppr Supprimer
+  Ctrl+P ou Ctrl+E Export et impression | Ctrl+F Rechercher et remplacer | Ctrl+H Remplacer
+  Ctrl+T Panneau typographie | Ctrl+Maj+G Grouper | Ctrl+Maj+U Dégrouper
+  Flèches Déplacer (Maj = pas de 10) | Alt+Glisser Dupliquer | F1 Aide | Molette Zoom
+  ⚠️ Ctrl+D et Ctrl+Maj+F ne sont PAS des raccourcis de SuperPrint : ne les cite jamais.
+/* <<< _SP_IA_OUTILS_557 — INVENTAIRE PARTAGE — FIN >>> */
+`;
+window.SP213_OUTILS_BLOC = SP213_OUTILS_BLOC;
+
+const SP213_LAYOUT_SYSTEM = `
 =============================================
 🟦 MODE SP213 — EXPERT LAYOUT & CANEVAS (PRIORITAIRE)
 =============================================
@@ -60695,7 +60795,7 @@ FONCTIONNALITÉS COMPLÈTES DU LOGICIEL
   • Panneau calques avec ordre Z visuel
   • Grouper / Dégrouper (Ctrl+Shift+G / Ctrl+Shift+U)
   • Verrouiller / Déverrouiller un objet
-  • Dupliquer (Ctrl+D ou Alt+Glisser = duplication par drag)
+  • Dupliquer (Alt+Glisser = duplication par drag)
   • Copier / Coller (Ctrl+C / Ctrl+V) — fonctionne aussi entre pages
   • Monter / Descendre dans la pile Z
 
@@ -60721,10 +60821,13 @@ FONCTIONNALITÉS COMPLÈTES DU LOGICIEL
   • Templates rapides : couvertures, sommaires, pages contenu, catalogues, lookbooks, rapports, affiches
 
 ⌨️ RACCOURCIS CLAVIER PRINCIPAUX
-  Ctrl+Z Undo | Ctrl+Y Redo | Ctrl+C Copier | Ctrl+V Coller | Ctrl+D Dupliquer
-  Ctrl+S Sauvegarder | Ctrl+E Export PDF | Suppr/Backspace Supprimer
-  Ctrl+Shift+G Grouper | Ctrl+Shift+U Dégrouper | Ctrl+Shift+F Repères
-  Ctrl+A Tout sélectionner | Ctrl+T Panneau typo | P Outil plume
+  Ctrl+Z Undo | Ctrl+Y Redo | Ctrl+C Copier | Ctrl+V Coller | Ctrl+X Couper
+  Ctrl+S Sauvegarder | Ctrl+P ou Ctrl+E Export / impression | Suppr/Backspace Supprimer
+  Ctrl+F Rechercher et remplacer | Ctrl+H Remplacer | Ctrl+T Panneau typo
+  Ctrl+Shift+G Grouper | Ctrl+Shift+U Dégrouper | Ctrl+A Tout sélectionner
+  Alt+Glisser Dupliquer | F1 Aide | Flèches Déplacer (Shift = x10)
+  ⚠️ Ctrl+D et Ctrl+Shift+F ne sont PAS des raccourcis de SuperPrint (l'inventaire complet et à
+  jour se trouve dans la section INVENTAIRE DES OUTILS SUPERPRINT ci-dessus).
   Flèches Déplacer | Shift+Flèches Déplacer ×10
   Alt+Glisser Dupliquer et déplacer la copie
 
@@ -61105,7 +61208,7 @@ SORTIE : Réponds UNIQUEMENT avec un JSON valide, sans texte autour, sans bloc m
     const _aiProviderNote = (['openai', 'deepseek', 'openrouter', 'groq'].indexOf(provider) >= 0)
         ? '\nTu es exécuté via une API OpenAI-compatible (' + provider + '). Réponds UNIQUEMENT en JSON valide (format json_object), sans texte autour, sans markdown.\n'
         : '';
-    const systemMessage = _sp213Prefix + SUPERPRINT_CONTEXT + userImagesContext + _spAiDocSourceBlock + _aiProviderNote + `
+    const systemMessage = _sp213Prefix + SUPERPRINT_CONTEXT + SP213_OUTILS_BLOC + userImagesContext + _spAiDocSourceBlock + _aiProviderNote + `
 
 =============================================
 RÔLE & DIRECTIVES

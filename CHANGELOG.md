@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,17 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.557] — 2026-09-26
+
+_The editor AI and the Studio IA now share the same knowledge of the software_
+
+### Changed
+- **One shared tool inventory for both AI assistants** (user request: « les modèles d IA (disponibles dans la partie IA de l app ou dans les préférences du studio) ont-ils une parfaite connaissance de nos outils ? Ne dois-tu pas mettre à jour des fichiers pour que la compréhension soit parfaite »). Audit finding: the two prompts carried a block with the same name (`SP213_LAYOUT_SYSTEM`) that had drifted apart — 3 907 characters in the app against 20 289 in the studio — so the studio assistant knew the software better than the app one, and the app received an incomplete list. A single 4 707-character inventory is now embedded **character for character identical** in both (`main.js` and `sp213-studio.html`) and actually sent to the models: concatenated to the app system message and inserted in the studio knowledge base. - **What the models were missing**: text frame options (columns, insets, vertical justification, tab stops, frame outline), master pages, text threading, text wrap, image crop that survives files, variable fonts, named styles, column grid, virtual printer, peer-to-peer collaboration, find and replace, local autosave, the `.json` format, the Studio IA and SuperTyPo modules and the command-line launcher. - **Two factual errors corrected**: Studio IA described `.sp` as « a ZIP+JSON » (it is a plain JSON file), and the app shortcut list advertised `Ctrl+D` (duplicate) and `Ctrl+Shift+F` (guides), which are not SuperPrint shortcuts. - **Public knowledge files**: `llms.txt` and `llms-full.txt` (root and `app/`, both trees) received a « Complete feature inventory » section in English, and the launcher version they cited was corrected (1.0.97 → 1.0.107). 
+### Added
+- **Permanent parity check** `_dev/scripts/_verif_ia.cjs`: the four copies of the block must be byte-identical, the 28 features described in each, the corrected errors absent, the block actually concatenated to both prompts, and the 14 models offered aligned between the app and the studio. To be run with `_parite_382.cjs` and `_verif_coherence.cjs` on every release. 
+### Verified
+- `_verif_ia.cjs` : block identical in 4 files (4 707 chars), 28/28 features present in each copy, no « ZIP+JSON » left in the studio, shortcuts corrected, block sent by both prompts, models 14 app / 14 studio. - `main.js` syntax x2, studio inline blocks x2, parity 23 identical, recursive sync 711 identical, coherence: no living residue. 
 
 ## [1.7.556] — 2026-09-26
 

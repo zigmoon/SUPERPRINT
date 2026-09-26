@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.556 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.557 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.556 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.557 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,31 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.557 — L'IA connaît tous nos outils ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-557">
+ <h2>SUPER PRINT <span class="badge badge-feat">v1.7.557</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="L'assistant IA de l'éditeur et celui du <strong>Studio IA</strong> partagent désormais <strong>exactement la même connaissance du logiciel</strong> : un inventaire unique de tous les outils, envoyé aux modèles, vérifié automatiquement à chaque version." data-i18n-en-html="The editor's AI assistant and the one in <strong>Studio IA</strong> now share <strong>exactly the same knowledge of the software</strong>: a single inventory of every tool, sent to the models and checked automatically on every release." data-i18n-jp-html="エディタの AI アシスタントと <strong>Studio IA</strong> のアシスタントが<strong>まったく同じソフトウェア知識</strong>を共有するようになりました。全ツールの単一インベントリをモデルに送り、リリースごとに自動検証します。">The editor AI and the Studio IA now share exactly the same knowledge of the software.</p>
+
+ <h3 data-i18n-fr-html="🧠 Ce que l'IA ignorait encore <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🧠 What the AI still ignored <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🧠 AI が知らなかったこと <span class=&quot;badge badge-fix&quot;>修正</span>">🧠 What the AI still ignored <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Ce qui se passait.</strong> Les deux assistants recevaient deux textes qui portaient le même nom mais avaient divergé : 3 907 caractères côté éditeur contre 20 289 côté studio — l'assistant du Studio IA connaissait donc mieux le logiciel que celui de l'app. Et l'app recevait sa propre liste, <em>incomplète</em>." data-i18n-en-html="<strong>What happened.</strong> Both assistants were given two texts with the same name, but they had drifted apart: 3 907 characters in the editor against 20 289 in the studio — so the Studio IA assistant knew the software better than the app's own. And the app received its own, <em>incomplete</em> list." data-i18n-jp-html="<strong>起きていたこと。</strong>同じ名前の 2 つのテキストが別々に育っていました：エディタ側 3,907 文字、スタジオ側 20,289 文字。スタジオのアシスタントの方がアプリ本体より詳しい状態でした。アプリが受け取っていた一覧も<em>不完全</em>でした。">Two texts with the same name had drifted apart, and the app's own list was incomplete.</li>
+  <li data-i18n-fr-html="<strong>Ce qui manquait aux modèles.</strong> Les options de cadre de texte (colonnes, retraits, justification verticale, taquets, contour), les gabarits de page, le chaînage de texte, l'habillage, les polices variables, les styles nommés, la grille de colonnes, l'imprimante virtuelle, la collaboration entre postes, le format <code>.json</code> et le lanceur. Résultat : l'assistant pouvait affirmer qu'une fonction n'existe pas alors qu'elle est là." data-i18n-en-html="<strong>What the models were missing.</strong> Text frame options (columns, insets, vertical justification, tab stops, outline), master pages, text threading, text wrap, variable fonts, named styles, column grid, virtual printer, peer-to-peer collaboration, the <code>.json</code> format and the launcher. As a result, the assistant could claim a feature does not exist when it does." data-i18n-jp-html="<strong>モデルが知らなかったこと。</strong>テキストフレーム設定（段数・余白・垂直位置合わせ・タブ・罫線）、マスターページ、テキストの連結、回り込み、可変フォント、名前付きスタイル、段組グリッド、仮想プリンタ、P2P 連携、<code>.json</code> 形式、ランチャー。そのため、実在する機能を「ありません」と答えてしまうことがありました。">Missing: frame options, masters, threading, wrap, variable fonts, named styles, grid, virtual printer, collaboration, .json, launcher.</li>
+  <li data-i18n-fr-html="<strong>Deux erreurs corrigées.</strong> Le Studio IA décrivait le <code>.sp</code> comme « un ZIP+JSON » : c'est un <strong>fichier JSON</strong>. Et la liste de raccourcis annonçait Ctrl+D et Ctrl+Maj+F, qui ne sont pas des raccourcis de SuperPrint." data-i18n-en-html="<strong>Two errors fixed.</strong> Studio IA described <code>.sp</code> as “a ZIP+JSON”: it is a <strong>plain JSON file</strong>. And the shortcut list advertised Ctrl+D and Ctrl+Shift+F, which are not SuperPrint shortcuts." data-i18n-jp-html="<strong>2 つの誤りを修正。</strong>Studio IA は <code>.sp</code> を「ZIP+JSON」と説明していましたが、実際は<strong>JSON ファイル</strong>です。またショートカット一覧に存在しない Ctrl+D と Ctrl+Shift+F が記載されていました。"> Studio IA called .sp a ZIP+JSON (it is JSON), and the shortcut list advertised keys that do not exist.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧩 Un seul inventaire, contrôlé automatiquement <span class=&quot;badge badge-feat&quot;>audité</span>" data-i18n-en-html="🧩 A single inventory, automatically checked <span class=&quot;badge badge-feat&quot;>audited</span>" data-i18n-jp-html="🧩 単一のインベントリを自動検証 <span class=&quot;badge badge-feat&quot;>調査済み</span>">🧩 A single inventory, automatically checked <span class="badge badge-feat">audited</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Un inventaire unique de tous les outils est maintenant envoyé aux deux assistants, dans les deux sens : l'éditeur le reçoit dans son message système, le Studio IA l'intègre à sa propre base de connaissances. Il décrit aussi l'écosystème (SuperPrint, Studio IA, SuperTyPo), les formats de fichiers et les raccourcis réels." data-i18n-en-html="A single inventory of every tool is now sent to both assistants: the editor receives it in its system message, and Studio IA embeds it in its own knowledge base. It also describes the ecosystem (SuperPrint, Studio IA, SuperTyPo), the file formats and the real shortcuts." data-i18n-jp-html="全ツールの単一インベントリを両方のアシスタントに送信します。エディタはシステムメッセージで受け取り、Studio IA は自らの知識ベースに組み込みます。エコシステム（SuperPrint・Studio IA・SuperTyPo）、ファイル形式、実際のショートカットも記載しています。">One inventory, delivered to both assistants, covering the ecosystem, the file formats and the real shortcuts.</li>
+  <li data-i18n-fr-html="Un <strong>contrôle automatique</strong> vérifie à chaque version que les copies sont identiques au caractère près, que les 28 fonctionnalités sont bien décrites, que les erreurs corrigées ne reviennent pas et que les <strong>14 modèles</strong> proposés restent alignés entre l'app et le studio. La connaissance ne peut donc plus se désynchroniser en silence." data-i18n-en-html="An <strong>automatic check</strong> verifies on every release that the copies match character for character, that all 28 features are described, that the corrected errors do not come back, and that the <strong>14 models</strong> offered stay aligned between the app and the studio. The knowledge can no longer drift apart silently." data-i18n-jp-html="<strong>自動チェック</strong>が、各リリースでコピーが文字単位で一致すること、28 の機能がすべて記載されていること、修正した誤りが戻っていないこと、提供する<strong>14 モデル</strong>がアプリとスタジオで揃っていることを検証します。知識が無言でずれることはもうありません。">An automatic check keeps the copies identical, the 28 features described and the 14 models aligned.</li>
+  <li data-i18n-fr-html="Les fichiers de référence publiés pour les assistants externes (<code>llms.txt</code> et <code>llms-full.txt</code>) ont reçu la même section « Complete feature inventory », et la version du lanceur qui y était citée a été corrigée." data-i18n-en-html="The reference files published for external assistants (<code>llms.txt</code> and <code>llms-full.txt</code>) received the same “Complete feature inventory” section, and the launcher version cited there was corrected." data-i18n-jp-html="外部アシスタント向けの公開リファレンス（<code>llms.txt</code>／<code>llms-full.txt</code>）にも同じ「Complete feature inventory」セクションを追加し、記載されていたランチャーのバージョンを修正しました。">The public llms.txt / llms-full.txt files received the same inventory, and the launcher version was corrected.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.556 — Le recadrage survit aux fichiers ===== -->
 

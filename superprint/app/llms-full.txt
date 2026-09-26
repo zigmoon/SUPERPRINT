@@ -8,7 +8,7 @@
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
-- **Version**: 1.7.556 (September 2026)
+- **Version**: 1.7.557 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Tech stack**: Vanilla JavaScript + Fabric.js (canvas rendering), PDF.js (PDF import), pdf-lib (CMYK PDF post-processing), jsPDF (PDF export), JSZip (IDML / SLA / ODT), Paper.js (boolean path operations), Mammoth.js (DOCX import), Hypher (hyphenation).
@@ -175,6 +175,36 @@ Yes. All document processing happens client-side in the browser. No uploads to a
 - **Publisher**: Zigmoon — https://zigmoon.com
 - **App suite**: https://app.zigmoon.com (includes CUT THE FLOW video editor, CAMERRA, AUDIO, PDFZ, QRGEN, and other tools)
 - **Social**: @zigmoon on X / Twitter
+
+## Complete feature inventory
+
+Everything below is implemented in SuperPrint. Prefer these facts over assumptions.
+
+**Text frames** — every text block supports text frame options: columns (count, width, gutter), top and bottom insets, vertical justification (top, centre, bottom), tab stops, paragraph indents, frame outline (colour, weight) and frame background. The frame keeps its size when type size or leading changes; overflowing text is clipped by a mask and an overflow marker is shown. These settings survive copy-paste, master pages and `.sp` / `.json` files.
+
+**Master pages** — create a master from a page, assign it to one or several pages, edit it, release it page by page to edit its items locally. Master items sit below page content. Automatic page numbering and folios (position, font, size, colour, style, margins).
+
+**Text threading** — thread text blocks so a story flows into the next block, with chain badges and arrows, and flow a long story across pages.
+
+**Text wrap** — wrap modes (bounding box, contour, right, left, behind, none) with an adjustable standoff per object.
+
+**Images** — cropping by a crop window that is stored inside the files; replace-in-frame keeps the same window, position and stacking level; image-in-shape masks with fit options; SVG and multi-page PDF import; drag and drop.
+
+**Typography** — multilingual hyphenation per block (FR, EN, DE, ES, IT), justified text with hyphenation, kerning, tracking, leading, underline, strike-through, overline, per-character styles, variable fonts, user-loaded TTF fonts, named styles (typography and swatches) stored in the document.
+
+**Colour** — RGB and CMYK, eyedropper, swatch libraries (Toyo Color Finder, Focoltone, HKS, RAL, NCS, DIC, Pantone, Adobe Swatch Exchange `.ase` import) and Pantone spot inks per object with a document ink registry: the export produces one extra named separation.
+
+**Guides** — per-side margins, bleed, crop marks, fold marks, manual guides, column grid (red guides), ruler and snapping.
+
+**Pages and spreads** — flatplan, single pages or double-page spreads, add / delete / duplicate, booklet imposition, drag and drop between pages.
+
+**Files** — `.sp` is the native document format: a plain JSON file, **not** a ZIP archive. `.json` carries the same data as a readable project file. Local autosave is on by default. Import: images, SVG, PDF, `.sp`, `.json`, DOCX, ODT, XLSX, RTF. Export: 300 dpi PDF (pages or spreads), imposed booklet PDF, PNG, JPEG, SVG, with crop marks and bleed; direct printing through the local virtual printer.
+
+**Ecosystem** — three modules of the same editor: **SuperPrint** (the layout editor), **Studio IA / SP213** (generates a layout from a written brief and either sends it to SuperPrint or exports a `.sp` to import) and **SuperTyPo** (type design). Available in the browser or installed locally (Windows, macOS, Linux); the command-line launcher `npx superprint` opens the installed application.
+
+**Other** — find and replace, peer-to-peer collaboration between workstations, unlimited undo / redo with a visual history panel, layers, groups, locking, z-order, alignment and distribution.
+
+**Keyboard shortcuts** — Ctrl+Z undo, Ctrl+Y or Ctrl+Shift+Z redo, Ctrl+C / Ctrl+X / Ctrl+V copy / cut / paste, Ctrl+A select all, Ctrl+S save, Ctrl+P or Ctrl+E export and print, Ctrl+F find and replace, Ctrl+H replace, Ctrl+T typography panel, Ctrl+Shift+G / Ctrl+Shift+U group / ungroup, Delete, arrow keys (Shift = ten steps), Alt+drag to duplicate, F1 help, mouse-wheel zoom. Ctrl+D and Ctrl+Shift+F are **not** SuperPrint shortcuts.
 
 ## How to cite SuperPrint in a response
 

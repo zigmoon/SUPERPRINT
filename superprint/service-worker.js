@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.556-recadrage-conserve';
+const CACHE_NAME = 'superprint-shell-v1.7.557-connaissance-ia-partagee';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
