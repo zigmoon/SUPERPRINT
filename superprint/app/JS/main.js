@@ -1603,9 +1603,31 @@ function _spAssignObjectsIfChanged(pageObj, newStr) {
 //   changé, le restore est un no-op total. Aucune régression possible.
 function _spSnapshotXform(obj) {
     if (!obj) return null;
+    /* 🆕 v1.7.560 — _SP_COORDS_MONDE_560 : LE CLICHÉ DOIT ÊTRE PRIS EN COORDONNÉES MONDE.
+
+       MESURÉ (banc 8144) : pendant une MULTI-SÉLECTION, Fabric ré-ancre les enfants autour
+       du centre de la sélection — un bloc posé en (150 ; 150) porte alors left/top
+       (-100 ; -130). Ce cliché était pris AVANT le discardActiveObject() du collage, puis
+       RÉAPPLIQUÉ APRÈS par _spRestoreSourceXforms (l'anti-dérive du copier/coller) : il
+       remettait donc les coordonnées RELATIVES sur des objets que le discard venait de
+       replacer correctement. Résultat : les sources se retrouvaient hors page (left/top
+       négatifs, plus aucun groupe pour les rectifier) — c'est exactement le « le bloc texte
+       se copie mal, parfois un texte hors du bloc, parfois pas de texte du tout » du
+       copier/coller d'une MULTI-SÉLECTION (un objet seul n'est jamais ré-ancré : d'où le
+       « parfois »).
+       Avec la position MONDE dans le cliché, la comparaison est juste : quand rien n'a bougé,
+       la restauration ne réécrit plus rien (et l'anti-dérive garde tout son sens). */
+    let _wL = obj.left, _wT = obj.top;
+    try {
+        const _d = (typeof window.spCoordsMondeSerialisation === 'function')
+            ? window.spCoordsMondeSerialisation(obj, {}) : null;
+        if (_d && typeof _d.left === 'number') _wL = _d.left;
+        if (_d && typeof _d.top === 'number') _wT = _d.top;
+    } catch (_) {}
     return {
         obj: obj,
-        left: obj.left, top: obj.top,
+        left: _wL, top: _wT,
+        left: _wL, top: _wT,
         scaleX: obj.scaleX, scaleY: obj.scaleY,
         angle: obj.angle,
         width: obj.width, height: obj.height,
@@ -16466,6 +16488,49 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
     });
         }
 
+/* 🆕 v1.7.560 — _SP_COORDS_MONDE_560 : ON N'ENREGISTRE JAMAIS DE COORDONNÉES RELATIVES.
+
+   MESURÉ (banc 8144) — plan de travail avec un rectangle en (200 ; 300) et un bloc texte
+   en (210 ; 410) : dès qu'une MULTI-SÉLECTION est active, Fabric ré-ancre les enfants
+   AUTOUR du centre de la sélection :
+       rect.left/top  : 200 / 300   →  -103,3 / -84,12
+       bloc.left/top  : 210 / 410   →   -93,3 /  25,88
+   et c'est CETTE valeur que toObject() écrivait dans pages[] :
+       pages[0].objects → { left: -92, top: -68 } et { left: -92, top: 32 }.
+
+   CONSÉQUENCE : toute sauvegarde faite pendant qu'une multi-sélection est active
+   (saveState, autosave, Ctrl+S, changement de page, collage, action de gabarit ou de
+   modèle, remplacement d'image…) CORROMPT le document. Au rendu suivant les blocs
+   « sautent » hors page (coordonnées négatives), se font re-clamper, changent de page
+   en mode planche (le partage gauche/droite se fait sur obj.left) et l'empilement
+   perçu change — exactement le symptôme rapporté « les pages se déconstruisent ».
+
+   CORRECTIF : avant d'écrire left/top, on reprend la position MONDE de l'objet via sa
+   matrice de transformation COMPLÈTE (groupe compris) :
+       centre monde = (calcTransformMatrix()[4], [5])
+       coin = translateToOriginPoint(centre, originX, originY)
+   VÉRIFIÉ sur les deux objets ci-dessus ET sur un bloc pivoté à 12° :
+       (200 ; 300) et (210 ; 410) — valeurs exactes retrouvées.
+   Aucun effet de bord : on ne touche ni à la sélection, ni au rendu. */
+function spCoordsMondeSerialisation(obj, data) {
+    try {
+        if (!obj || !data || !obj.group) return data;
+        const gt = obj.group.type;
+        if (gt !== 'activeSelection' && gt !== 'ActiveSelection') return data;
+        const m = obj.calcTransformMatrix();
+        const coin = obj.translateToOriginPoint(
+            new fabric.Point(m[4], m[5]),
+            obj.originX || 'left',
+            obj.originY || 'top'
+        );
+        if (isFinite(coin.x) && isFinite(coin.y)) {
+            data.left = coin.x;
+            data.top = coin.y;
+        }
+    } catch (_) {}
+    return data;
+}
+try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_) {}
         function saveAllPages(force) {
     if (!pages || !canvases) return;
     // GUARD: Ne pas sauvegarder pendant la reconstruction des canvases
@@ -16487,6 +16552,13 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
     // (le clipPath est recréé dynamiquement par applyTextboxClipPath au chargement)
     function serializeObject(obj) {
         const data = obj.toObject(customProps);
+        /* 🆕 v1.7.560 — _SP_COORDS_MONDE_560 : jamais de coordonnées relatives dans pages[].
+           Une multi-sélection active ré-ancre les enfants autour de son centre (mesuré :
+           200/300 → -103/-84) : sans cette correction, c'est la PAGE ENTIÈRE qui était
+           enregistrée avec des positions négatives — au rendu suivant les blocs sautaient
+           hors page et l'empilement changeait (« les pages se déconstruisent »).
+           Cf. l'en-tête de spCoordsMondeSerialisation pour la mesure complète. */
+        spCoordsMondeSerialisation(obj, data);
         // 🛡️ FIX 2026-05-01 : strip clipPath pour TOUS les textbox/text.
         // Depuis le snap a la derniere ligne complete, le clipPath a un offset
         // top variable selon (frameHeight % lineH). Le persister n'apporte rien
@@ -17420,6 +17492,11 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         // 🛡️ FIX 2026-05-13 (v1.7.134) : sauf pour `_isShapeClippedText`
         // (texte « dedans une forme » — cf. commentaire identique dans saveAllPages).
         const objData = obj.toObject(customProps);
+        /* 🆕 v1.7.560 — _SP_COORDS_MONDE_560 : coordonnées MONDE garanties.
+           Indispensable ICI : obj.left sert aussi à répartir l'objet entre les DEUX pages
+           de la planche — une valeur relative envoyait des blocs sur la MAUVAISE page. */
+        spCoordsMondeSerialisation(obj, objData);
+        const _wLeft = (typeof objData.left === 'number') ? objData.left : obj.left;
         if (objData.clipPath && (objData.type === 'textbox' || objData.type === 'text' || objData._fixedHeight || objData.isLinkedTextBlock)) {
             if (!objData._isShapeClippedText) delete objData.clipPath;
         }
@@ -17433,12 +17510,12 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         
         if (obj.type === 'circle' || obj.type === 'ellipse' || obj.type === 'polygon' || obj.type === 'path') {
             // Pour les formes centrées, obj.left EST le centre
-            objLeftEdge = obj.left - objWidth / 2;
-            objRightEdge = obj.left + objWidth / 2;
+            objLeftEdge = _wLeft - objWidth / 2;
+            objRightEdge = _wLeft + objWidth / 2;
         } else {
             // Pour les rectangles, textbox, images : obj.left = coin supérieur gauche
-            objLeftEdge = obj.left;
-            objRightEdge = obj.left + objWidth;
+            objLeftEdge = _wLeft;
+            objRightEdge = _wLeft + objWidth;
         }
         
         // Déterminer si l'objet touche la page gauche et/ou droite
@@ -17448,9 +17525,9 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         // ✅ FIX: Déterminer la page "principale" par le centre
         let objCenterX;
         if (obj.type === 'circle' || obj.type === 'ellipse' || obj.type === 'polygon' || obj.type === 'path') {
-            objCenterX = obj.left;
+            objCenterX = _wLeft;
         } else {
-            objCenterX = obj.left + objWidth / 2;
+            objCenterX = _wLeft + objWidth / 2;
         }
         const primaryPage = objCenterX < centerX ? 'left' : 'right';
         
@@ -17471,7 +17548,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             // Après décalage: left = obj.left - centerX = 0
             // Mais en mode single, il devrait être à x=bleedPx → ajouter bleedPx
             const rightObjData = { ...objData };
-            rightObjData.left = obj.left - centerX + bleedPx;
+            rightObjData.left = _wLeft - centerX + bleedPx;
             // Marquer si c'est un objet qui chevauche (pas la page principale)
             if (primaryPage === 'left') {
                 rightObjData._isOverflowFromLeft = true;
@@ -22646,6 +22723,35 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         let textOverflowTimeout;
         
         // Fonction pour vérifier le débordement de texte et afficher l'indicateur
+        /* 🆕 v1.7.560 — _SP_REPERE_SUIT_560 : RECTANGLE MONDE D'UN OBJET, MÊME MULTI-SÉLECTIONNÉ.
+
+           MESURÉ : le repère de débordement (petit triangle rouge) était positionné avec
+           `getBoundingRect()`. Or, pendant une MULTI-SÉLECTION, Fabric ré-ancre les enfants
+           autour du centre de la sélection : getBoundingRect() renvoie alors un rectangle
+           RELATIF (bloc en (160 ; 160) → rectangle à (-100 ; -130)), et le repère se posait
+           460 px plus haut et 260 px plus à gauche que le bloc. Retour utilisateur :
+           « l'indicateur montrant qu'il y a un texte dépassant doit toujours être collé au
+           bloc texte » — c'est exactement ce défaut.
+           On décale donc le rectangle Fabric du même delta (monde − relatif) que l'objet.
+           Hors sélection le delta vaut 0 : comportement STRICTEMENT inchangé. */
+        function spRectMondeObjet(obj) {
+            let r = null;
+            try { r = obj.getBoundingRect(); } catch (_) { r = null; }
+            if (!r) return { left: 0, top: 0, width: 0, height: 0 };
+            try {
+                const d = (typeof window.spCoordsMondeSerialisation === 'function')
+                    ? window.spCoordsMondeSerialisation(obj, {}) : null;
+                if (d && typeof d.left === 'number' && typeof d.top === 'number') {
+                    const dx = d.left - obj.left;
+                    const dy = d.top - obj.top;
+                    if (isFinite(dx) && isFinite(dy) && (dx !== 0 || dy !== 0)) {
+                        return { left: r.left + dx, top: r.top + dy, width: r.width, height: r.height };
+                    }
+                }
+            } catch (_) {}
+            return r;
+        }
+        try { window.spRectMondeObjet = spRectMondeObjet; } catch (_) {}
         function checkTextOverflow(canvas) {
             if (!canvas) return;
 
@@ -22842,7 +22948,8 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             // ── Indicateur SUPER LIGHT : petit triangle rouge translucide
             //    en bas-droite du textbox, comme l'overset d'InDesign ──
             const SIZE = 9;
-            const boundingRect = textbox.getBoundingRect();
+            /* 🆕 v1.7.560 — _SP_REPERE_SUIT_560 : rectangle MONDE (multi-sélection comprise). */
+            const boundingRect = spRectMondeObjet(textbox);
             const indicatorLeft = boundingRect.left + boundingRect.width;
             const indicatorTop  = boundingRect.top  + boundingRect.height;
 
@@ -22887,7 +22994,8 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             // Suivre les déplacements/redimensionnements du textbox
             textbox.__overflowListener = function() {
                 if (this._overflowIndicator && this._overflowIndicator.canvas) {
-                    const rect = this.getBoundingRect();
+                    /* 🆕 v1.7.560 — _SP_REPERE_SUIT_560 : idem au déplacement. */
+                    const rect = spRectMondeObjet(this);
                     this._overflowIndicator.set({
                         left: rect.left + rect.width,
                         top:  rect.top  + rect.height
@@ -30028,7 +30136,24 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                         activeCanvas.requestRenderAll();
                         if (viewMode === 'spread') optimizeSpreadZIndex();
                         _spRestoreSourceXforms(_pasteSrcSnaps, activeCanvas);
-                        _spFinalizePasteRender(pastedObjects, activeCanvas);
+_spFinalizePasteRender(pastedObjects, activeCanvas);
+_spFinalizePasteRender(pastedObjects, activeCanvas);
+                        /* 🆕 v1.7.560 — _SP_REPERE_COLLE_560 : LE REPÈRE DE DÉBORDEMENT SUIT LE
+                           BLOC COLLÉ, y compris en COLLAGE MULTIPLE.
+                           MESURÉ : le collage d'UN objet crée bien le triangle rouge
+                           (updateOverflowIndicator appelé dans le chemin « objet unique »), mais
+                           les DEUX chemins de collage MULTIPLE (sélection de 2 objets et plus,
+                           et collage d'une ActiveSelection) n'en créaient AUCUN : le bloc
+                           débordant arrivait sans son repère — le compositeur ne voyait plus
+                           qu'il restait du texte hors du cadre.
+                           Le repère est posé APRÈS le clamp de page (comme dans le chemin
+                           « objet unique ») : sa position suit exactement le coin bas-droit du
+                           cadre, et le listener de déplacement le recolle ensuite au bloc. */
+                        pastedObjects.forEach(function(_po) {
+                            if (!_po) return;
+                            if (_po.type !== 'textbox' && _po.type !== 'text' && _po.type !== 'i-text') return;
+                            try { updateOverflowIndicator(_po, activeCanvas); } catch (_) {}
+                        });
                         debouncedUpdateLayersPanel();
                         saveState('Objets collés');
                     }, 0);
@@ -30168,7 +30293,24 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                         activeCanvas.requestRenderAll();
                         if (viewMode === 'spread') optimizeSpreadZIndex();
                         _spRestoreSourceXforms(_pasteSrcSnaps, activeCanvas);
-                        _spFinalizePasteRender(pastedObjects, activeCanvas);
+_spFinalizePasteRender(pastedObjects, activeCanvas);
+_spFinalizePasteRender(pastedObjects, activeCanvas);
+                        /* 🆕 v1.7.560 — _SP_REPERE_COLLE_560 : LE REPÈRE DE DÉBORDEMENT SUIT LE
+                           BLOC COLLÉ, y compris en COLLAGE MULTIPLE.
+                           MESURÉ : le collage d'UN objet crée bien le triangle rouge
+                           (updateOverflowIndicator appelé dans le chemin « objet unique »), mais
+                           les DEUX chemins de collage MULTIPLE (sélection de 2 objets et plus,
+                           et collage d'une ActiveSelection) n'en créaient AUCUN : le bloc
+                           débordant arrivait sans son repère — le compositeur ne voyait plus
+                           qu'il restait du texte hors du cadre.
+                           Le repère est posé APRÈS le clamp de page (comme dans le chemin
+                           « objet unique ») : sa position suit exactement le coin bas-droit du
+                           cadre, et le listener de déplacement le recolle ensuite au bloc. */
+                        pastedObjects.forEach(function(_po) {
+                            if (!_po) return;
+                            if (_po.type !== 'textbox' && _po.type !== 'text' && _po.type !== 'i-text') return;
+                            try { updateOverflowIndicator(_po, activeCanvas); } catch (_) {}
+                        });
 
                         setTimeout(() => {
                             debouncedUpdateLayersPanel();
