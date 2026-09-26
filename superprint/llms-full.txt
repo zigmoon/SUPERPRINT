@@ -8,7 +8,7 @@
 - **URL**: https://superprint.cc/
 - **Publisher**: Zigmoon (https://zigmoon.com)
 - **License**: Proprietary, use online without subscription
-- **Version**: 1.7.558 (September 2026)
+- **Version**: 1.7.559 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Local install**: `npx superprint` — npm package `superprint` (launcher 1.0.97, requires application 1.7.456 or later); the launcher downloads the application once and serves it locally.
@@ -142,7 +142,8 @@ Yes. All document processing happens client-side in the browser. No uploads to a
 - **DOCX / DOC** (Word): text and basic formatting.
 - **ODT** (OpenDocument): text and basic formatting.
 - **RTF**: text.
-- **IDML** (InDesign interchange format): text frames, stories and layout are read and rebuilt in SuperPrint, enabling a workflow that starts from an existing InDesign archive.
+- **IDML** (InDesign interchange format): text frames and stories, geometric rotation, text-on-shape paths, polygons, fill and stroke opacity, dashed strokes, text frames with multiple columns, inset spacing, vertical justification, text wrap, **page master spreads (MasterSpread) with their items and page assignment**, **linear, radial and multi-stop gradient fills**, **drop shadows**, **tab stops (left / centre / right / decimal)**, embedded and linked images, CMYK swatches and hyphenation language are read and rebuilt in SuperPrint, enabling a workflow that starts from an existing InDesign archive.
+- **IDML** — not yet imported: tables, footnotes, hyperlinks and nested/GREP character styles (they are reported as such after each import).
 - **XLSX / XLS** (spreadsheets).
 - **SLA** (open-source layout format): basic layout.
 - **SVG**: vector paths.

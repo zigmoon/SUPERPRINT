@@ -38265,12 +38265,12 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
 
                 setProgress(100, 'Import termin\u00e9 !');
                 logMsg('\u2705 Import IDML termin\u00e9');
-                logMsg('\u26A0\uFE0F Import IDML — rotation, polygones, opacit\u00e9, contours pointill\u00e9s, colonnes, retraits de bloc, justification verticale et habillage texte conserv\u00e9s. Ombres, d\u00e9grad\u00e9s de forme, tableaux et notes non pris en charge.');
+                logMsg('\u26A0\uFE0F Import IDML — rotation, polygones, opacité, contours pointillés, colonnes, retraits de bloc, justification verticale, habillage texte, gabarits de page, dégradés, ombres portées et taquets de tabulation conservés. Tableaux, notes de bas de page, liens hypertexte et styles imbriqués non pris en charge.');
 
                 setTimeout(function() {
                     idmlModal.style.display = 'none';
                     resetModal();
-                    window.spShowToast('Import IDML — texte, images, formes, rotations, polygones, opacité, contours pointillés, colonnes, retraits de bloc, justification verticale et habillage du texte sont conservés. Seuls les effets (ombres, dégradés de forme, tableaux, notes de bas de page) sont ignorés.', { kind: 'info', duration: 6000 });
+                    window.spShowToast('Import IDML — texte, images, formes, rotations, polygones, opacité, contours pointillés, colonnes, retraits de bloc, justification verticale, habillage du texte, gabarits de page, dégradés, ombres portées et taquets de tabulation sont conservés. Tableaux, notes de bas de page, liens hypertexte et styles imbriqués restent à venir.', { kind: 'info', duration: 7000 });
                 }, 1200);
 
             } catch (err) {
@@ -38364,6 +38364,35 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 });
             }
 
+            /* 🆕 v1.7.559 — _SP_IDML_DEGRADE_559 : DÉFINITIONS DE DÉGRADÉS (Resources/Graphic.xml).
+               La carte est posée sur la fonction elle-même : elle doit être lisible depuis
+               convertToFabricObj, qui vit dans la même fermeture mais pas dans cette fonction. */
+            var sp559Gradients = {};
+            if (graphicXml) {
+                try {
+                    graphicXml.querySelectorAll('Gradient').forEach(function(gEl) {
+                        var gSelf = gEl.getAttribute('Self');
+                        if (!gSelf) return;
+                        var gStops = [];
+                        gEl.querySelectorAll('GradientStop').forEach(function(st) {
+                            var gLoc = parseFloat(st.getAttribute('Location'));
+                            var gCol = resolveColorRef(st.getAttribute('StopColor'), colorsMap);
+                            if (!isFinite(gLoc) || !gCol) return;
+                            gStops.push({ loc: gLoc, color: gCol });
+                        });
+                        if (gStops.length < 2) return;
+                        gStops.sort(function(a, b) { return a.loc - b.loc; });
+                        sp559Gradients[gSelf] = { type: gEl.getAttribute('Type') || 'Linear', stops: gStops };
+                    });
+                } catch (_) {}
+            }
+            /* 🆕 v1.7.559 — la carte de couleurs doit être lisible depuis idmlExtraProps
+               (ombre portée) : elle vit dans une AUTRE fonction de la même fermeture. */
+            idmlExtraProps.colors = colorsMap;
+            idmlGradientFill.map = sp559Gradients;
+            if (Object.keys(sp559Gradients).length > 0) {
+                logMsg('\uD83C\uDFA8 ' + Object.keys(sp559Gradients).length + ' d\u00E9grad\u00E9(s) d\u00E9fini(s)');
+            }
             // --- Read Spreads ---
             setProgress(45, 'Lecture des pages\u2026');
             var spreadPaths = [];
@@ -38446,6 +38475,178 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             }
             logMsg('\uD83D\uDCDD ' + Object.keys(storiesMap).length + ' bloc(s) de texte');
 
+            /* ═══════════════════════════════════════════════════════════════════════════════
+               🆕 v1.7.559 — _SP_IDML_GABARIT_559 : LES GABARITS DE PAGE (MasterSpread) ENTRENT
+               ENFIN DANS L'APPLICATION.
+
+               MESURÉ (audit de la zone d'import, 4 487 lignes) : 0 occurrence de
+               « MasterSpread » et « AppliedMaster ». Un document InDesign bâti sur un gabarit
+               (logo, filet, folio, marges, fond perdu) arrivait donc SANS son gabarit : la
+               structure du document était perdue, alors que l'application gère les gabarits
+               depuis la v1.7.x (masterPages / pageMasterAssignments, éditeur de gabarit,
+               chemin de fer, export PDF, .sp et .json).
+
+               IDML → SuperPrint :
+                 MasterSpreads/MasterSpread_*.xml → masterPages[LETTRE] = { name, objects }
+                 NamePrefix ("A") ou 1re lettre du nom → LETTRE du gabarit (A à Z, max 26)
+                 <Page AppliedMaster="uba">      → pageMasterAssignments[indexPage] = LETTRE
+                 éléments du gabarit             → objets du gabarit (textes, images, formes)
+
+               ⚠️ REPÈRES (cf. _SP_GAB_COORD_545) : les objets d'une PAGE vivent dans le
+               repère du CANEVAS (origine = coin du fond perdu), ceux d'un GABARIT dans celui
+               de la PAGE FINIE. convertToFabricObj ajoute toujours le fond perdu : on le
+               RETIRE ici, sinon chaque élément du gabarit arriverait décalé d'un fond perdu
+               vers la droite et le bas (3 mm par défaut = 9 px).
+
+               ⚠️ L'import IDML REMPLACE toutes les pages du document (pages.length = 0) : les
+               gabarits de l'ancien document et leurs assignations ne correspondent plus à
+               rien. On repart donc d'une table propre — sans cela un ancien gabarit se
+               ré-appliquait silencieusement aux pages fraîchement importées.
+               ═══════════════════════════════════════════════════════════════════════════════ */
+            var sp559MasterPaths = [];
+            try {
+                designmapXml.querySelectorAll('idPkg\\:MasterSpread, MasterSpread').forEach(function(ms) {
+                    var sp559Src = ms.getAttribute('src');
+                    if (sp559Src) sp559MasterPaths.push(sp559Src);
+                });
+            } catch (_) {}
+            if (sp559MasterPaths.length === 0) {
+                try {
+                    var sp559AllMsEls = designmapXml.getElementsByTagName('*');
+                    for (var sp559Mi = 0; sp559Mi < sp559AllMsEls.length; sp559Mi++) {
+                        if (sp559AllMsEls[sp559Mi].localName === 'MasterSpread' && sp559AllMsEls[sp559Mi].getAttribute('src')) {
+                            sp559MasterPaths.push(sp559AllMsEls[sp559Mi].getAttribute('src'));
+                        }
+                    }
+                } catch (_) {}
+            }
+            if (sp559MasterPaths.length === 0) {
+                for (var sp559PathZ in zip.files) {
+                    if (/^MasterSpreads\/MasterSpread_.*\.xml$/i.test(sp559PathZ)) sp559MasterPaths.push(sp559PathZ);
+                }
+                sp559MasterPaths.sort();
+            }
+            /* Self IDML → lettre SuperPrint : lu par la boucle des pages (plus bas). */
+            var sp559MasterMap = {};
+            /* L’import IDML REMPLACE les pages (pages.length = 0) : les gabarits ET les
+               assignations de l’ancien document ne correspondent plus à aucune page. On
+               repart d’une table propre MÊME quand le fichier n’apporte aucun gabarit.
+               Sans cela, un ancien gabarit se ré-appliquait silencieusement aux pages
+               fraîchement importées. */
+            masterPages = {};
+            pageMasterAssignments = {};
+            if (sp559MasterPaths.length > 0) {
+                var sp559BleedPx = mmToPx(bleed);
+                for (var sp559Mi2 = 0; sp559Mi2 < sp559MasterPaths.length; sp559Mi2++) {
+                    var sp559Xml = await readXmlFile(zip, sp559MasterPaths[sp559Mi2]);
+                    if (!sp559Xml) continue;
+                    /* ⚠️ MESURÉ (vrai IDML, import réel) : querySelector('MasterSpread')
+                       tombait sur la RACINE <idPkg:MasterSpread> (localName 'MasterSpread', SANS
+                       attribut Self ni Name) : le gabarit arrivait nommé « Gabarit », lettré « G »
+                       (1re lettre de GABARIT) et AUCUN <Page AppliedMaster> ne pouvait être relié.
+                       Même piège que <Story> (v1.7.342) : on écarte la racine et on exige Self. */
+                    var sp559El = null;
+                    try {
+                        var sp559Els = sp559Xml.getElementsByTagName('*');
+                        for (var sp559Ei = 0; sp559Ei < sp559Els.length; sp559Ei++) {
+                            var sp559Cand = sp559Els[sp559Ei];
+                            if (sp559Cand === sp559Xml.documentElement) continue;
+                            if (sp559Cand.localName === 'MasterSpread' && sp559Cand.getAttribute('Self')) {
+                                sp559El = sp559Cand;
+                                break;
+                            }
+                        }
+                    } catch (_) {}
+                    /* TOLÉRANCE RACINE NUE (même piège que <Story> aux v1.7.342 et 1.7.558) :
+                       quand la racine du fichier EST <MasterSpread Self="…">. */
+                    if (!sp559El && sp559Xml.documentElement
+                        && sp559Xml.documentElement.localName === 'MasterSpread'
+                        && sp559Xml.documentElement.getAttribute('Self')) {
+                        sp559El = sp559Xml.documentElement;
+                    }
+                    if (!sp559El) {
+                        logMsg('\u26A0\uFE0F Gabarit ignor\u00E9 (aucun \u00E9l\u00E9ment <MasterSpread Self>) : ' + sp559MasterPaths[sp559Mi2]);
+                        continue;
+                    }
+                    var sp559Self = sp559El.getAttribute('Self');
+                    var sp559Name = sp559El.getAttribute('Name') || sp559El.getAttribute('BaseName') || 'Gabarit';
+                    /* Lettre : InDesign donne NamePrefix ("A", "B"…), sinon la 1re lettre A-Z du nom. */
+                    var sp559Letter = '';
+                    var sp559Prefix = String(sp559El.getAttribute('NamePrefix') || '').toUpperCase().replace(/[^A-Z]/g, '');
+                    if (sp559Prefix) sp559Letter = sp559Prefix.charAt(0);
+                    if (!sp559Letter) {
+                        var sp559NameUp = String(sp559Name).toUpperCase().replace(/[^A-Z]/g, '');
+                        if (sp559NameUp) sp559Letter = sp559NameUp.charAt(0);
+                    }
+                    if (!sp559Letter || masterPages[sp559Letter]) sp559Letter = getNextMasterLetter();
+                    if (!sp559Letter) {
+                        logMsg('\u26A0\uFE0F Gabarit ignor\u00E9 (plus de lettre libre de A \u00E0 Z) : ' + sp559Name);
+                        continue;
+                    }
+                    /* Origine de chaque page du gabarit : même convention que les spreads
+                       (GeometricBounds + ItemTransform → origine réelle dans le spread). */
+                    var sp559Metas = [];
+                    try {
+                        sp559El.querySelectorAll('Page').forEach(function(pgEl) {
+                            var sp559Gb = (pgEl.getAttribute('GeometricBounds') || '').split(' ').map(Number);
+                            if (sp559Gb.length !== 4 || !isFinite(sp559Gb[0])) return;
+                            var sp559PgMtx = idmlParseMtx(pgEl.getAttribute('ItemTransform'));
+                            sp559Metas.push({
+                                gb: { top: sp559Gb[0], left: sp559Gb[1], bottom: sp559Gb[2], right: sp559Gb[3] },
+                                originX: sp559Gb[1] + sp559PgMtx[4],
+                                originY: sp559Gb[0] + sp559PgMtx[5]
+                            });
+                        });
+                    } catch (_) {}
+                    if (sp559Metas.length === 0) {
+                        var sp559DefW = docPageW * 72 / 25.4;
+                        var sp559DefH = docPageH * 72 / 25.4;
+                        sp559Metas.push({ gb: { top: 0, left: 0, bottom: sp559DefH, right: sp559DefW }, originX: 0, originY: 0 });
+                    }
+                    var sp559Items = [];
+                    try {
+                        sp559El.querySelectorAll('TextFrame, Rectangle, Oval, Polygon, GraphicLine, Group').forEach(function(itm) {
+                            sp559Items.push(itm);
+                        });
+                    } catch (_) {}
+                    var sp559Objs = [];
+                    for (var sp559Ii = 0; sp559Ii < sp559Items.length; sp559Ii++) {
+                        var sp559Item = sp559Items[sp559Ii];
+                        var sp559Bounds = idmlItemSpreadBounds(sp559Item, null);
+                        if (!sp559Bounds) continue;
+                        var sp559Cx = (sp559Bounds.left + sp559Bounds.right) / 2;
+                        var sp559Cy = (sp559Bounds.top + sp559Bounds.bottom) / 2;
+                        var sp559Host = null;
+                        for (var sp559Pi = 0; sp559Pi < sp559Metas.length; sp559Pi++) {
+                            var sp559Meta = sp559Metas[sp559Pi];
+                            var sp559Mw = sp559Meta.gb.right - sp559Meta.gb.left;
+                            var sp559Mh = sp559Meta.gb.bottom - sp559Meta.gb.top;
+                            if (sp559Cx >= sp559Meta.originX && sp559Cx <= sp559Meta.originX + sp559Mw &&
+                                sp559Cy >= sp559Meta.originY && sp559Cy <= sp559Meta.originY + sp559Mh) { sp559Host = sp559Meta; break; }
+                        }
+                        if (!sp559Host) sp559Host = sp559Metas[0];
+                        var sp559Obj = await convertToFabricObj(sp559Item, sp559Bounds, sp559Host.originX, sp559Host.originY,
+                            storiesMap, stylesMap, colorsMap, imagesMap, idmlIdentity());
+                        if (!sp559Obj) continue;
+                        /* Repère du GABARIT = page finie : on retire le fond perdu ajouté par
+                           convertToFabricObj (cf. _SP_GAB_COORD_545). */
+                        if (sp559BleedPx) {
+                            if (typeof sp559Obj.left === 'number') sp559Obj.left = sp559Obj.left - sp559BleedPx;
+                            if (typeof sp559Obj.top === 'number') sp559Obj.top = sp559Obj.top - sp559BleedPx;
+                        }
+                        /* Un gabarit ne porte pas de chaîne de texte inter-pages : elle
+                           entrerait en conflit avec celle de la page qui le reçoit. */
+                        try { delete sp559Obj.textLinkId; delete sp559Obj.isLinkedTextBlock; } catch (_) {}
+                        sp559Objs.push(sp559Obj);
+                    }
+                    masterPages[sp559Letter] = { name: sp559Name, objects: JSON.stringify({ objects: sp559Objs }) };
+                    if (sp559Self) sp559MasterMap[sp559Self] = sp559Letter;
+                    logMsg('\uD83D\uDCD0 Gabarit ' + sp559Letter + ' \u00AB\u00A0' + sp559Name + '\u00A0\u00BB : ' + sp559Objs.length + ' \u00E9l\u00E9ment(s)');
+                }
+                if (Object.keys(masterPages).length > 0) {
+                    logMsg('\uD83D\uDCD0 ' + Object.keys(masterPages).length + ' gabarit(s) de page import\u00E9(s)');
+                }
+            }
             // --- Process each spread into pages ---
             setProgress(60, 'Construction des pages\u2026');
             pages.length = 0;
@@ -38530,6 +38731,15 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                     var pgOriginY = pgMeta.originY;
                     var pageIdx = pages.length;
                     createNewPage();
+                    /* 🆕 v1.7.559 — _SP_IDML_GABARIT_559 : gabarit appliqué à cette page
+                       (Page/@AppliedMaster → lettre SuperPrint du gabarit importé plus haut). */
+                    if (pgMeta.el) {
+                        var sp559Applied = pgMeta.el.getAttribute('AppliedMaster') || '';
+                        if (sp559Applied && sp559Applied !== 'n' && sp559MasterMap[sp559Applied]) {
+                            pageMasterAssignments[pageIdx] = sp559MasterMap[sp559Applied];
+                        }
+                    }
+
 
                     var pctVal = 60 + Math.round(35 * (pageIdx / Math.max(1, pageMetaArr.length)));
                     setProgress(pctVal, 'Page ' + (pageIdx + 1) + '\u2026');
@@ -38676,6 +38886,112 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             return '#' + [r, g, b].map(function(v) { return Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0'); }).join('');
         }
 
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           🆕 v1.7.559 — _SP_IDML_DEGRADE_559 : LES DÉGRADÉS ARRIVENT AVEC LEUR FORME.
+
+           MESURÉ (audit de la zone d'import) : 0 occurrence de « Gradient » dans tout
+           l'importeur. Une forme remplie d'un dégradé (FillColor="Gradient/u85") arrivait
+           donc SANS remplissage — resolveColorRef ne connaît que les Color/… — alors que
+           l'application sait parfaitement peindre un dégradé : sa palette « Dégradé »
+           produit un vrai fabric.Gradient via _parseCSSGradientToFabric.
+
+           IDML → SuperPrint :
+             Resources/Graphic.xml → <Gradient Self="Gradient/u85" Type="Linear">
+                                       <GradientStop StopColor="Color/u84" Location="0"/>
+             FillColor="Gradient/u85" + GradientFillAngle → remplissage dégradé de la forme.
+
+           ⚠️ GÉOMÉTRIE REPRISE À L'IDENTIQUE DE LA PALETTE (mêmes extrémités, même
+           convention d'angle, gradientUnits 'pixels') : un dégradé importé est donc
+           identique, au pixel près, à un dégradé appliqué à la main dans SuperPrint.
+
+           ⚠️ L'OBJET RENVOYÉ EST LA FORME SIMPLE PRODUITE PAR toObject() (type, coords,
+           colorStops, gradientUnits) : les descripteurs d'import sont rangés en JSON puis
+           « enlivenés » au chargement — exactement le chemin des dégradés de l'application.
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           🆕 v1.7.559 — _SP_IDML_OMBRE_559 : L'OMBRE PORTÉE ARRIVE AVEC L'OBJET.
+
+           MESURÉ (audit de la zone d'import) : 0 occurrence de « DropShadow ». Un objet
+           ombré dans InDesign — le petit relief derrière un encadré, si courant en
+           imprimerie — arrivait donc parfaitement PLAT.
+
+           SCHÉMA RÉEL (relevé dans les définitions par défaut d'InDesign lui-même,
+           Resources/Preferences.xml) :
+             <TransparencySetting>
+               <BlendingSetting BlendMode="Normal" Opacity="100" …/>
+               <DropShadowSetting Mode="Drop" BlendMode="Multiply" Opacity="75"
+                                  XOffset="7" YOffset="7" Size="5" EffectColor="Color/…" …/>
+             </TransparencySetting>
+
+           IDML → SuperPrint : XOffset/YOffset → offsetX/offsetY, Size → blur (unités
+           identiques : 1 pt IDML = 1 px du canevas), EffectColor + Opacity → couleur rgba.
+           Mode="None" (le défaut d'InDesign) ne pose AUCUNE ombre.
+           Les autres effets (contour progressif, lueur, ombre intérieure, opacité de
+           groupe, mode de fusion Multiply) n'existent pas dans le modèle de l'application :
+           ils sont volontairement ignorés — on n'invente rien.
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        function sp559Rgba(hex, alpha) {
+            try {
+                var h = String(hex || '').replace('#', '');
+                if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
+                var r = parseInt(h.substring(0, 2), 16);
+                var g = parseInt(h.substring(2, 4), 16);
+                var b = parseInt(h.substring(4, 6), 16);
+                if (!isFinite(r) || !isFinite(g) || !isFinite(b)) return '#000000';
+                var a = Math.max(0, Math.min(1, isFinite(alpha) ? alpha : 1));
+                return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + (Math.round(a * 1000) / 1000) + ')';
+            } catch (_) { return '#000000'; }
+        }
+        function idmlGradientFill(ref, angleDeg, w, h) {
+            try {
+                var g = (idmlGradientFill.map && ref) ? idmlGradientFill.map[ref] : null;
+                if (!g || !g.stops || g.stops.length < 2) return null;
+                if (!(w > 0) || !(h > 0)) return null;
+                var gStops = [];
+                for (var i = 0; i < g.stops.length; i++) {
+                    gStops.push({
+                        offset: Math.max(0, Math.min(1, g.stops[i].loc / 100)),
+                        color: g.stops[i].color
+                    });
+                }
+                if (/Radial/i.test(String(g.type))) {
+                    return {
+                        type: 'radial',
+                        gradientUnits: 'pixels',
+                        coords: { x1: w / 2, y1: h / 2, r1: 0, x2: w / 2, y2: h / 2, r2: Math.max(w, h) / 2 },
+                        colorStops: gStops
+                    };
+                }
+                /* IDML : angle ANTIHORAIRE depuis l'horizontale (0° = gauche→droite).
+                   L’application raisonne en CSS (0° = bas→haut, 90° = gauche→droite) et
+                   applique rad = (angleCSS − 90) ; comme angleCSS = 90 − angleIDML, la
+                   rotation vaut donc −angleIDML. VÉRIFIÉ : IDML 0 → gauche→droite,
+                   IDML 90 → bas→haut, IDML 45 → diagonale montante (bas-gauche → haut-droite). */
+                var a = (0 - (isFinite(angleDeg) ? angleDeg : 0)) * Math.PI / 180;
+                var c = Math.cos(a);
+                var s = Math.sin(a);
+                return {
+                    type: 'linear',
+                    gradientUnits: 'pixels',
+                    coords: {
+                        x1: w / 2 - c * w / 2, y1: h / 2 - s * h / 2,
+                        x2: w / 2 + c * w / 2, y2: h / 2 + s * h / 2
+                    },
+                    colorStops: gStops
+                };
+            } catch (_) { return null; }
+        }
+        idmlGradientFill.map = {};
+
+        /* Repli d'un dégradé illisible (moins de 2 arrêts, géométrie nulle) : sa PREMIÈRE
+           couleur, pour ne pas laisser la forme totalement vide à l'écran. */
+        function idmlGradientSolid(ref) {
+            try {
+                var g = (idmlGradientFill.map && ref) ? idmlGradientFill.map[ref] : null;
+                if (!g || !g.stops || !g.stops.length) return null;
+                return g.stops[0].color;
+            } catch (_) { return null; }
+        }
         function resolveColorRef(ref, cMap) {
             if (!ref) return null;
             if (ref === 'Color/Paper') return '#FFFFFF';
@@ -38790,6 +39106,36 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                         out._spWrapLeft = _val('Left');
                         out._spWrapBottom = _val('Bottom');
                         out._spWrapRight = _val('Right');
+                    }
+                }
+            } catch (_) {}
+            /* 🆕 v1.7.559 — _SP_IDML_OMBRE_559 : l'ombre portée de l'objet (cf. l'en-tête de
+               sp559Rgba, plus bas, pour le schéma réel relevé dans InDesign).
+               XOffset/YOffset → offsetX/offsetY, Size → blur, EffectColor + Opacity → rgba.
+               Mode="None" (défaut d'InDesign) ne pose aucune ombre. */
+            try {
+                var sp559Ts = item.getElementsByTagName('TransparencySetting')[0];
+                var sp559Ds = sp559Ts ? sp559Ts.getElementsByTagName('DropShadowSetting')[0] : null;
+                if (sp559Ds) {
+                    var sp559Mode = (sp559Ds.getAttribute('Mode') || '').replace(/\s+/g, '');
+                    if (sp559Mode && sp559Mode !== 'None') {
+                        var sp559Ox = parseFloat(sp559Ds.getAttribute('XOffset') || '');
+                        var sp559Oy = parseFloat(sp559Ds.getAttribute('YOffset') || '');
+                        var sp559Sz = parseFloat(sp559Ds.getAttribute('Size') || '');
+                        var sp559Op = parseFloat(sp559Ds.getAttribute('Opacity') || '');
+                        var sp559Base = resolveColorRef(sp559Ds.getAttribute('EffectColor'), idmlExtraProps.colors || {}) || '#000000';
+                        if (!isFinite(sp559Ox)) sp559Ox = 0;
+                        if (!isFinite(sp559Oy)) sp559Oy = 0;
+                        if (!isFinite(sp559Sz)) sp559Sz = 0;
+                        if (!isFinite(sp559Op)) sp559Op = 75;
+                        out.shadow = {
+                            color: sp559Rgba(sp559Base, sp559Op / 100),
+                            blur: sp559Sz,
+                            offsetX: sp559Ox,
+                            offsetY: sp559Oy,
+                            affectStroke: false,
+                            nonScaling: false
+                        };
                     }
                 }
             } catch (_) {}
@@ -38924,6 +39270,54 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                     run.lang = csr.getAttribute('AppliedLanguage') || cStyle.lang || pStyle.lang || '';
                     runs.push(run);
                 });
+                /* 🆕 v1.7.559 — _SP_IDML_TAQUETS_559 : TAQUETS DE TABULATION DU PARAGRAPHE.
+
+                   MESURÉ (audit de la zone d'import) : 0 occurrence de « TabList » / « TabStop ».
+                   Un document InDesign tabulé arrivait donc avec des tabulations qui ne
+                   tombaient nulle part (le caractère de tabulation était conservé dans le
+                   texte, mais le bloc n'avait AUCUN taquet).
+
+                   SCHEMA IDML :
+                     <ParagraphStyleRange><Properties>
+                       <TabList type="list">
+                         <ListItem type="record">
+                           <Alignment type="enumeration">LeftAlign</Alignment>
+                           <AlignmentCharacter type="string">.</AlignmentCharacter>
+                           <Position type="unit">36</Position>
+                           <Leader type="string"></Leader>
+                         </ListItem>
+                       </TabList>
+                     </Properties>…
+
+                   UNITÉS : InDesign écrit Position en POINTS, et le canevas de l'application
+                   est à 72 dpi (1 pt IDML = 1 px, cf. ptPx) — exactement l'unité de
+                   _spTabs.stops[].pos (voir spTabMmVers : 1 mm = 72/25,4 px). Aucune
+                   conversion n'est donc nécessaire ici. */
+                try {
+                    var sp559TabList = psr.getElementsByTagName('TabList')[0];
+                    if (sp559TabList) {
+                        var sp559Stops = [];
+                        var sp559LiList = sp559TabList.getElementsByTagName('ListItem');
+                        for (var sp559Li = 0; sp559Li < sp559LiList.length; sp559Li++) {
+                            var sp559Item2 = sp559LiList[sp559Li];
+                            var sp559PosEl = sp559Item2.getElementsByTagName('Position')[0];
+                            var sp559Pos = sp559PosEl
+                                ? parseFloat(sp559PosEl.textContent)
+                                : parseFloat(sp559Item2.getAttribute('Position') || '');
+                            if (!isFinite(sp559Pos) || sp559Pos <= 0) continue;
+                            var sp559AlEl = sp559Item2.getElementsByTagName('Alignment')[0];
+                            var sp559Al = String(sp559AlEl ? sp559AlEl.textContent : (sp559Item2.getAttribute('Alignment') || '')).replace(/\s+/g, '');
+                            var sp559Type = 'left';
+                            if (sp559Al === 'CenterAlign') sp559Type = 'center';
+                            else if (sp559Al === 'RightAlign') sp559Type = 'right';
+                            else if (sp559Al === 'DecimalAlign') sp559Type = 'decimal';
+                            sp559Stops.push({ pos: Math.round(sp559Pos * 1000) / 1000, type: sp559Type });
+                        }
+                        /* Le PREMIER paragraphe tabulé fait foi : l'application ne gère qu'UNE
+                           règle de tabulation par bloc (ce n'est pas un manque, c'est son modèle). */
+                        if (sp559Stops.length && !result.tabs) result.tabs = sp559Stops;
+                    }
+                } catch (_) {}
                 if (runs.length === 0) return;
                 result.paragraphs.push({
                     runs: runs,
@@ -39038,6 +39432,17 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 } catch (_) {}
                 var storyRef = item.getAttribute('ParentStory');
                 var story = storyRef ? storiesMap[storyRef] : null;
+                /* 🆕 v1.7.559 — _SP_IDML_TAQUETS_559 : les taquets d'InDesign deviennent la règle
+                   de tabulation du bloc. Position en points IDML = pixels du canevas (ptPx).
+                   Le pas (utile entre deux taquets explicites) reste celui de l'application :
+                   10 mm, soit spTabMmVers(10) — la même valeur que spSetupTabStops(). */
+                if (story && story.tabs && story.tabs.length) {
+                    frameOpts._spTabs = {
+                        active: true,
+                        step: (typeof window.spTabMmVers === 'function') ? window.spTabMmVers(10) : 28.346456692913385,
+                        stops: story.tabs.map(function(tb) { return { pos: tb.pos, type: tb.type }; })
+                    };
+                }
                 if (!story || story.paragraphs.length === 0) {
                     var _vide = { type:'textbox', left:x, top:y, width:w, text:'', fontSize:12, fontFamily:'Open Sans', fill:'#000000', _fixedWidth:w, _fixedHeight:h };
                     for (var _kv in frameOpts) { if (Object.prototype.hasOwnProperty.call(frameOpts, _kv)) _vide[_kv] = frameOpts[_kv]; }
@@ -39121,6 +39526,18 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 var strokeW = parseFloat(item.getAttribute('StrokeWeight')) || 0;
                 var fillC = resolveColorRef(fillRef, cMap) || 'transparent';
                 var strokeC = resolveColorRef(strokeRef, cMap) || 'transparent';
+                /* 🆕 v1.7.559 — _SP_IDML_DEGRADE_559 : remplissage DÉGRADÉ (FillColor="Gradient/…").
+                   Une forme dégradée arrivait SANS remplissage (resolveColorRef ne connaît que
+                   les Color/…). On lit l'angle InDesign (GradientFillAngle) et on construit le
+                   même dégradé que la palette de l'application. */
+                if (fillRef && fillRef.indexOf('Gradient/') === 0) {
+                    var sp559Deg = idmlGradientFill(fillRef, parseFloat(item.getAttribute('GradientFillAngle')), w, h);
+                    if (sp559Deg) fillC = sp559Deg;
+                    else {
+                        var sp559Solid = idmlGradientSolid(fillRef);
+                        if (sp559Solid) fillC = sp559Solid;
+                    }
+                }
                 var isGraphic = item.getAttribute('ContentType') === 'GraphicType';
 
                 // --- Image (externe liée OU embarquée base64 dans <Contents>) ---

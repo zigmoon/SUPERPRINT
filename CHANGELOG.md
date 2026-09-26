@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,23 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.559] — 2026-09-26
+
+_IDML import: page master spreads, gradients, drop shadows and tab stops_
+
+### Added
+- **IDML: page master spreads (MasterSpread) are imported** (user request: "IDML : tableaux, dégradés, gabarits de page (MasterSpread), notes de bas de page, taquets, ombres, liens hypertexte, styles imbriqués"). Audit finding: **zero** occurrence of `MasterSpread` and `AppliedMaster` anywhere in the 4 487-line importer, so an InDesign document built on a master (logo, rule, folio, margins) arrived **without its master** even though the app has handled masters for many versions (master editor, page overview, PDF export, `.sp` and `.json`). `MasterSpreads/MasterSpread_*.xml` now feeds `masterPages[letter]` (the letter comes from `NamePrefix` "A" or the first A-Z letter of the name), each page's `AppliedMaster` feeds `pageMasterAssignments`, and the master items (text frames, images, shapes) are converted with the same pipeline as the pages but in the **master frame** (page corner, no bleed) — otherwise every item would have been shifted by one bleed. Measured on a real InDesign file: master "A-Gabarit" imported and assigned to its two pages `{0:"A",1:"A"}`, 16 objects on page 1 with the French text intact. Measured on a two-master fixture: master A = a 339.53 × 4 px rule at 40/520 plus master text at 40/560, master B = a 419.53 × 36 banner at 0/0; injected on the page at 48.5/528.5 px, i.e. the master coordinate plus the bleed **once**. A file with no master now also **clears the stale assignments** of the replaced document (the import replaces `pages`), which used to silently re-apply an old master to the freshly imported pages.
+- **IDML: gradient fills are imported.** A shape filled with an InDesign gradient arrived with **no fill at all** (`resolveColorRef` only knew `Color/…`), while the app can paint a gradient perfectly well (its "Dégradé" palette builds a real `fabric.Gradient`). `Resources/Graphic.xml` `<Gradient>` / `<GradientStop>` plus `FillColor="Gradient/…"` and `GradientFillAngle` now produce the same gradient the palette produces — same endpoints, same angle convention, `gradientUnits: pixels`. Measured: 0° linear on a 180 × 80 rectangle → axis (0, 40) → (180, 40) (left to right), stops `#ff3319` → `#00ff80`; radial → radius 70; three-stop 45° → rising diagonal (23.43, 51.21) → (136.57, 8.79). After saving and reopening the document, all three gradients are still live `fabric.Gradient` objects on the canvas. A gradient with fewer than two stops falls back to its first colour instead of leaving the shape empty.
+- **IDML: drop shadows are imported.** `TransparencySetting > DropShadowSetting` (schema read from InDesign's own default definitions in `Resources/Preferences.xml`) now maps to a Fabric shadow: `XOffset`/`YOffset` → `offsetX`/`offsetY`, `Size` → `blur` (same unit: 1 IDML point = 1 canvas pixel), `EffectColor` + `Opacity` → an `rgba()` colour. Measured: offset 5/5, blur 4, opacity 60% → `rgba(0, 0, 0, 0.6)` in the stored descriptor **and** on a live canvas object. `Mode="None"` (InDesign's default) adds no shadow; the effects the app cannot represent (feather, glows, inner shadow, Multiply blend) are deliberately ignored rather than approximated.
+- **IDML: tab stops are imported.** A tabbed document arrived with its tabs going nowhere: the tab character survived but the block had **no tab stop**. `<ParagraphStyleRange><Properties><TabList>` now feeds `_spTabs` (left / centre / right / decimal), with no unit conversion needed since the canvas is 72 dpi and `ptPx` is the identity. Measured: two stops (60 px left, 240 px right) → the block ruler holds exactly those stops, the text really contains its tab characters and `spTabModele()` is active. The first tabbed paragraph wins, because one tab ruler per block is the app's own model.
+
+### Fixed
+- **IDML: `querySelector("MasterSpread")` matched the packaging root.** Measured on the real file: the root element `<idPkg:MasterSpread>` has no `Self` and no `Name`, so the master arrived named "Gabarit", lettered "G" (first letter of GABARIT) and **no** `AppliedMaster` could be resolved. Exactly the same trap as `<Story>` (v1.7.342) and the bare story root (v1.7.558): the root is now skipped, the element carrying `Self` is required, and a bare `<MasterSpread Self="…">` root is tolerated.
+- **IDML: the gradient angle was off by 90°.** The app's palette applies `rad = (angleCSS − 90)`, and since `angleCSS = 90 − angleIDML`, the rotation is `−angleIDML`. The first implementation used `(90 − angleIDML)`, which would have sent a 0° InDesign gradient bottom-to-top instead of left-to-right; the corrected value is verified above on three angles.
+- The IDML import window, its progress log and its closing toast no longer claim that shadows, shape gradients and tab stops are ignored — they list what is really kept (frames with columns, insets, vertical justification, text wrap, master spreads, gradients, shadows, tab stops) and what is still missing (tables, footnotes, hyperlinks, nested styles).
+
+_Not imported yet and stated as such: tables, footnotes, hyperlinks, nested/GREP styles._
 
 ## [1.7.558] — 2026-09-26
 
