@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.554-ordre-planche-conserve';
+const CACHE_NAME = 'superprint-shell-v1.7.555-reperes-stables';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,13 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.555] — 2026-09-26
+
+_Guides no longer churn the object stack_
+
+### Fixed
+- **The guides were pushed back to the front on EVERY object addition.** `object:added` called `bringToFront` on each guide (bleed, margin, trim marks, grid) after every addition, even when they were already on top: 3 stack writes per action, and the index of every object changed (measured earlier: 0,1,2 → 10,11,12). That repeated churn is what made the page look like it was moving after a few clicks. Fixed (`_SP_REPERES_STABLES_555`): the state is checked first — if the guides are already on top, nothing is touched; otherwise they move up in a SINGLE pass instead of one move per guide. Verified: **0 guide moves** during an addition, guides still on top (bleed, margin, crop marks), the new block sits just below them, and the existing objects keep the exact same sequence. - **A storm of guide restores.** On a spread canvas, `object:removed` warned and re-scheduled a restore PER removed guide (7 guides = 7 warnings and 7 `setTimeout` of 100 ms) although `ensureSpreadGuidesExist()` already handles the whole repair (and checks that guides are really missing before rebuilding). Fixed: only ONE pending restore per canvas, ONE warning per repair, and internal states are ignored (`_spRecreatingGuides`, `_isLoading`, `_spDisposing`, `_isRenderingAllPages`, `_isRestoringState`). Verified: **0 warnings** during additions and pastes, instead of dozens. 
 
 ## [1.7.554] — 2026-09-26
 

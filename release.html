@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.554 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.555 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.554 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.555 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,30 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.555 — Des repères stables ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-555">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.555</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Les repères (marges, fond perdu, traits de coupe, grille) <strong>ne bousculent plus la pile d'objets</strong> à chaque action, et l'application ne relance plus des dizaines de restaurations inutiles : l'édition des pages de modèle est plus calme." data-i18n-en-html="Guides (margins, bleed, crop marks, grid) <strong>no longer shuffle the object stack</strong> on every action, and the app no longer fires dozens of pointless guide restores: editing template pages is calmer." data-i18n-jp-html="ガイド（マージン・塗り足し・トンボ・グリッド）が操作のたびに<strong>オブジェクトの重なり順を揺さぶる</strong>ことがなくなり、無駄なガイド復元も連発しません。">Guides no longer shuffle the object stack, and no more restore storms.</p>
+
+ <h3 data-i18n-fr-html="🧭 Les repères ne brassent plus toute la pile <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🧭 Guides no longer churn the whole stack <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🧭 ガイドが重なり順全体を揺さぶらなくなりました <span class=&quot;badge badge-fix&quot;>修正</span>">🧭 Guides no longer churn the whole stack <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Ce qui se passait.</strong> À chaque ajout d'objet (collage, remplacement de photo, nouveau bloc…), l'application renvoyait <strong>chaque repère au premier plan</strong>, même quand il y était déjà : trois déplacements dans la pile à chaque action, et les indices de tous les objets changeaient. C'est ce brassage répété qui donnait l'impression que « tout bouge » après quelques clics." data-i18n-en-html="<strong>What happened.</strong> On every object addition (paste, photo replacement, new block…), the app pushed <strong>every guide back to the front</strong>, even when it already was there: three stack moves per action, and every object's index changed. That repeated churn is what made everything look like it was moving after a few clicks." data-i18n-jp-html="<strong>起きていたこと。</strong>オブジェクトを追加するたび（貼り付け・写真差し替え・新規ブロック…）、すでに最前面にある場合でも<strong>すべてのガイドを前面に送り直して</strong>いました。1 操作につき 3 回の入れ替えが起こり、全オブジェクトのインデックスが変化していました。">Every addition moved all guides again, even when they were already on top.</li>
+  <li data-i18n-fr-html="<strong>Corrigé</strong> : l'état est vérifié d'abord. Si les repères sont déjà au-dessus, rien n'est touché ; sinon ils sont remontés en <strong>une seule passe</strong> (au lieu d'un déplacement par repère). Vérifié : <strong>0 déplacement de repère</strong> pendant un ajout, repères toujours en tête (fond, marge, coupe), nouveau bloc bien placé juste en dessous, et la séquence des objets existants est identique avant/après." data-i18n-en-html="<strong>Fixed</strong>: the state is checked first. If the guides are already on top, nothing is touched; otherwise they move up in <strong>a single pass</strong> (instead of one move per guide). Verified: <strong>0 guide moves</strong> during an addition, guides still on top (bleed, margin, crop marks), the new block placed just below them, and the existing objects keep the exact same sequence." data-i18n-jp-html="<strong>修正済み。</strong>まず状態を確認します。ガイドがすでに最前面なら何も触らず、そうでなければ<strong>1 回の処理</strong>で前面に送ります（ガイドごとではなく）。確認：追加中のガイド移動は<strong>0 回</strong>、ガイドは最前面のまま、新しいブロックはその直下、既存オブジェクトの並びは前後で同一。">Checked first, then a single pass if needed: 0 guide moves during an addition, same object sequence.</li>
+  <li data-i18n-fr-html="La fonction de sauvegarde des repères vérifiait déjà qu'il en manque vraiment avant de reconstruire : elle ne fait donc plus de travail inutile." data-i18n-en-html="The guide-rebuild function already checked that guides were really missing before rebuilding, so no needless work is done any more." data-i18n-jp-html="ガイド再構築の関数は、本当に不足しているかを確認してから実行していました。無駄な処理はもう発生しません。">The rebuild function already verified missing guides, so no needless work is done.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🛠️ Plus de rafale de restaurations de repères <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🛠️ No more guide-restore storms <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🛠️ ガイド復元の連発がなくなりました <span class=&quot;badge badge-fix&quot;>修正</span>">🛠️ No more guide-restore storms <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Ce qui se passait.</strong> Sur une double page, un seul événement de reconstruction faisait défiler <strong>des dizaines</strong> de messages « Guide supprimé accidentellement, restauration… » : le contrôle réagissait au retrait de chaque repère séparément (7 repères = 7 avertissements et 7 relances différées de 100 ms), alors que la remise en place est globale. Ce va-et-vient provoquait des clignotements." data-i18n-en-html="<strong>What happened.</strong> On a spread, a single rebuild event scrolled <strong>dozens</strong> of “guide removed, restoring…” messages: the check reacted to each guide removal separately (7 guides = 7 warnings and 7 delayed restarts of 100 ms) while the repair itself is global. That back-and-forth caused flicker." data-i18n-jp-html="<strong>起きていたこと。</strong>見開きでは、1 回の再構築で「ガイドが削除されました。復元中…」が<strong>数十回</strong>流れていました。ガイド 1 本ごとに反応していたためです（7 本 = 7 回の警告と 7 回の 100 ms 遅延処理）。この往復がちらつきを生んでいました。">A single rebuild event triggered dozens of restore messages: the check reacted per guide instead of once.</li>
+  <li data-i18n-fr-html="<strong>Corrigé</strong> : une seule restauration peut être en attente à la fois, un seul message est affiché par réparation, et les états internes (chargement, rendu global, restauration d'historique, redessin volontaire des repères, fermeture) sont ignorés. Vérifié : <strong>0 avertissement</strong> pendant les ajouts et les collages, au lieu de plusieurs dizaines." data-i18n-en-html="<strong>Fixed</strong>: only one restore can be pending at a time, a single message is shown per repair, and internal states (loading, full re-render, history restore, deliberate guide redraw, shutdown) are ignored. Verified: <strong>0 warnings</strong> during additions and pastes, instead of dozens." data-i18n-jp-html="<strong>修正済み。</strong>復元は同時に 1 件のみ、メッセージも 1 回だけ表示し、内部状態（読み込み中・全体再描画・履歴復元・意図的なガイド再描画・終了処理）は無視します。確認：追加や貼り付け中の警告は<strong>0 件</strong>（以前は数十件）。">Only one pending restore, one message per repair, internal states ignored: 0 warnings instead of dozens.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.554 — La planche garde l'ordre du modèle ===== -->
 

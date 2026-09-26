@@ -14136,11 +14136,33 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         if (!canvas._isLoading && !_isRenderingAllPages) {
             // Forcer les repères/marges/grille AU-DESSUS après chaque ajout
             // (les images et textes ne doivent jamais cacher la maquette).
+            /* 🆕 v1.7.555 — _SP_REPERES_STABLES_555 : NE PLUS FAIRE BOUGER LA PILE À CHAQUE AJOUT.
+
+               Besoin réel : les repères (marges, fond perdu, traits de coupe, grille) doivent rester
+               AU-DESSUS du contenu. Mais ce code les renvoyait au premier plan À CHAQUE ajout
+               d'objet, même quand ils y étaient déjà : les indices de TOUS les autres objets
+               changeaient alors (mesuré : 0,1,2 → 10,11,12) à chaque collage, chaque remplacement de
+               photo, chaque ajout de texte. C'est ce brassage qui donne l'impression que « tout
+               bouge » après quelques clics.
+               NOUVEAU COMPORTEMENT : on vérifie d'abord que le HAUT de la pile est bien composé des
+               repères ; s'ils y sont déjà, on ne touche à RIEN. Sinon seulement, on les remonte — en
+               UN SEUL passage (un réordonnancement, au lieu d'un bringToFront par repère).
+               L'ordre relatif des repères entre eux et celui du contenu sont conservés. */
             if (e.target && !e.target.isMargin && !e.target.isBleed && !e.target.isGuide && !e.target.isManualGuide && !e.target.isTrimBox && !e.target.isPage) {
-                const guides = canvas.getObjects().filter(obj => 
-                    obj.isMargin || obj.isBleed || obj.isGuide || obj.isManualGuide || obj.isTrimBox || obj.isPage
-                );
-                guides.forEach(guide => canvas.bringToFront(guide));
+                const _estRepere = (o) => !!o && (o.isMargin || o.isBleed || o.isGuide || o.isManualGuide || o.isTrimBox || o.isPage);
+                const _objets = canvas._objects;
+                if (Array.isArray(_objets) && _objets.length > 1) {
+                    let _surLeDessus = 0;
+                    for (let _i = _objets.length - 1; _i >= 0 && _estRepere(_objets[_i]); _i--) _surLeDessus++;
+                    let _nbReperes = 0;
+                    for (let _i = 0; _i < _objets.length; _i++) if (_estRepere(_objets[_i])) _nbReperes++;
+                    if (_nbReperes > 0 && _surLeDessus !== _nbReperes) {
+                        const _contenu = [], _reperes = [];
+                        _objets.forEach(o => { (_estRepere(o) ? _reperes : _contenu).push(o); });
+                        canvas._objects = _contenu.concat(_reperes);
+                        try { canvas.requestRenderAll(); } catch (_) {}
+                    }
+                }
             }
             // ✨ FIX UNDO ASSETS: Ne pas appeler saveState ici si dropPatternOnCanvas
             // est en cours (il appellera saveState lui-même à la fin, sinon on obtient
@@ -17243,19 +17265,36 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
     });
     
     fabricCanvas.on('object:removed', (e) => {
-        /* 🆕 v1.7.479c — un redessin VOLONTAIRE des guides ne doit pas
-           déclencher la restauration (c'était une boucle infinie à 100 ms). */
-        if (fabricCanvas._spRecreatingGuides) return;
-        // Vérifier si on supprime accidentellement un guide
+        /* 🆕 v1.7.555 — _SP_REPERES_STABLES_555 : UNE SEULE RESTAURATION EN ATTENTE, UN SEUL AVERTISSEMENT.
+
+           Constat mesuré : sur une planche, un seul événement de reconstruction faisait défiler des
+           DIZAINES de « Guide supprimé accidentellement, restauration... ». La cause : le handler
+           réagissait au retrait de CHAQUE repère (7 repères = 7 avertissements et 7 setTimeout de
+           100 ms), alors que la restauration est GLOBALE. Or ensureSpreadGuidesExist() vérifie déjà
+           qu'il manque vraiment des repères (moins de 7) avant de reconstruire : les 6 autres
+           programmations ne servaient à rien.
+           Ici : (1) on ignore les états internes (chargement, rendu global des pages, restauration
+           d'historique, redessin volontaire des repères, destruction du canevas) ; (2) UN SEUL timer
+           en attente par canevas ; (3) UN SEUL avertissement par réparation, et non un par repère. */
+        const _spEtatInterne = () => !!(fabricCanvas._spRecreatingGuides
+            || fabricCanvas._isLoading
+            || fabricCanvas._spDisposing
+            || (typeof _isRenderingAllPages !== 'undefined' && _isRenderingAllPages)
+            || (typeof _isRestoringState !== 'undefined' && _isRestoringState));
+        if (_spEtatInterne()) return;
+        // Vérifier si on supprime accidentellement un repère
         if (e.target && (e.target.isMargin || e.target.isBleed || e.target.isTrimBox || e.target.isPage || e.target.isGuide)) {
-            console.warn('Guide supprimé accidentellement, restauration...');
-            // Petite pause puis restauration
-            setTimeout(() => {
-                const width = mmToPx(pageFormat.width);
-                const height = mmToPx(pageFormat.height);
-                const bleedPx = mmToPx(bleed);
-                ensureSpreadGuidesExist(fabricCanvas, width, height, bleedPx);
-            }, 100);
+            if (!fabricCanvas._spRepareTimer) {
+                fabricCanvas._spRepareTimer = setTimeout(() => {
+                    fabricCanvas._spRepareTimer = null;
+                    if (_spEtatInterne()) return;
+                    console.warn('Repères de planche manquants, restauration...');
+                    const width = mmToPx(pageFormat.width);
+                    const height = mmToPx(pageFormat.height);
+                    const bleedPx = mmToPx(bleed);
+                    ensureSpreadGuidesExist(fabricCanvas, width, height, bleedPx);
+                }, 150);
+            }
         } else if (e.target) {
             saveSpreadContent(fabricCanvas, leftIndex, rightIndex);
             // 🔥 BUG03 FIX : nettoyer badges/flèches orphelins en mode spread aussi
