@@ -5730,6 +5730,13 @@ function spRtfLayoutInfo(src) {
        l'entrée « Libérer / Verrouiller le gabarit de cette page » du clic droit
        disparaissait, puisqu'elle exige une affectation). */
     const _mastersDoc = (spFile.masters && typeof spFile.masters === 'object') ? spFile.masters : null;
+    /* 🆕 v1.7.565 — CHAÎNES DE TEXTE ET REPÈRES DU DOCUMENT REÇU.
+       MESURÉ : test de bout en bout app → studio → app ; le fichier du studio s'ouvrait bien
+       dans l'app mais `textLinks` ressortait VIDE, car cet import reconstruit `state.doc` et
+       ne gardait pas le registre. On le capture ici, comme les gabarits, pour le réémettre
+       tel quel à l'export (buildSPFile lit state.doc.textLinks / state.doc.guides). */
+    const _linksDoc = (spFile.textLinks && typeof spFile.textLinks === 'object' && !Array.isArray(spFile.textLinks)) ? spFile.textLinks : null;
+    const _guidesDoc = (spFile.guides && typeof spFile.guides === 'object' && !Array.isArray(spFile.guides)) ? spFile.guides : null;
     const bleedPx = bl * MM_TO_PX;
     const toMm = (px) => Math.round((px - bleedPx) / MM_TO_PX * 10) / 10;
 
@@ -5772,6 +5779,10 @@ function spRtfLayoutInfo(src) {
         //   l'encre est ignoree — c'est la regle de securite de l'app.
         // ══════════════════════════════════════════════════════════════════════
         if (o._spSpotInk && /^#[0-9a-fA-F]{6}$/.test(o._spSpotInk)) base._spSpotInk = String(o._spSpotInk).toUpperCase();
+        /* 🆕 v1.7.565 — IDENTIFIANT DE CHAÎNE DU BLOC (import). MESURÉ : sans cette ligne,
+           TOUS les blocs ressortaient avec textLinkId: null et même un registre textLinks
+           rempli n'aurait pas pu se raccrocher aux objets — la chaîne était perdue. */
+        if (o.textLinkId) base.textLinkId = o.textLinkId;
         if (o._spSpotStrokeInk && /^#[0-9a-fA-F]{6}$/.test(o._spSpotStrokeInk)) base._spSpotStrokeInk = String(o._spSpotStrokeInk).toUpperCase();
         if (o._spSpotInkName) base._spSpotInkName = String(o._spSpotInkName).slice(0, 60);
         if (o._spSpotStrokeInkName) base._spSpotStrokeInkName = String(o._spSpotStrokeInkName).slice(0, 60);
@@ -6040,6 +6051,10 @@ function spRtfLayoutInfo(src) {
       numbering: _nbDoc,
       /* 🆕 v1.7.541 — GABARITS DU DOCUMENT D'ORIGINE (cf. _mastersDoc ci-dessus). */
       masters: _mastersDoc,
+      /* 🆕 v1.7.565 — CHAÎNES ET REPÈRES DU DOCUMENT D'ORIGINE (cf. _linksDoc / _guidesDoc) :
+         sans eux, un document chaîné revenait de l'aller-retour SANS ses chaînes. */
+      textLinks: _linksDoc,
+      guides: _guidesDoc,
       // 🎯 v1.7.455i — MODE COULEUR D'ORIGINE (RVB / CMJN) : les deux écrivains
       //   de .sp l'écrivaient en dur à 'rgb', donc un document CMJN revenait en
       //   RVB (et la boîte d'export ne repassait plus en CMJN + Pantone).
@@ -10481,7 +10496,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
             const _fsPx = (+el.fontSize || 14) * PT_TO_PX;
             const _lh = el.lineHeight || 1.4;
             const _hPx = spTextBlockHeightPx(el);
-            objects.push(spAppliquerReglagesTypo({ type: 'textbox', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 200) * MM_TO_PX, height: _hPx, text: el.text || '', fontSize: _fsPx, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh, opacity: op, scaleX: 1, scaleY: 1 }, el));
+            objects.push(spAppliquerReglagesTypo({ type: 'textbox', textLinkId: el.textLinkId || undefined, left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 200) * MM_TO_PX, height: _hPx, text: el.text || '', fontSize: _fsPx, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh, opacity: op, scaleX: 1, scaleY: 1 }, el));
           } else if (t === 'image' && el.imageUrl) {
             objects.push(spAppliquerReglagesTypo({ type: 'image', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 100) * MM_TO_PX, height: (+el.height || 100) * MM_TO_PX, opacity: op, scaleX: 1, scaleY: 1, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2 }, el));
           }

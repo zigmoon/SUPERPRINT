@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,18 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.564] — 2026-09-26
+
+_Text chaining: target frame mask (measured), Studio chain transport (bench confirmation pending), pasted chain origin id (measured cause)_
+
+### Fixed
+- **The target frame of a chain had no mask until the next selection or reload** — MEASURED: after chaining, the target drew **2 812 ink pixels** (all 41 lines, uncut, spilling out of its frame) against 1 655 after reloading the document. `reflowTextChain()` now reapplies the mask of the WHOLE chain after redistributing, using the safe sequence already proven for pastes: one draw **without** the mask first (with a mask and a never-built cache the object draws an empty bitmap and stays invisible — the 1.7.562 lesson), then the mask back and a second draw. MEASURED AFTER: **1 585 ink pixels, mask present immediately**.
+- **The Studio dropped the chain data of any document passing through it** — MEASURED end to end (app → Studio → app, using the real handoff: `localStorage['sp213_from_sp']` + `/sp213-studio.html?from=sp`, then the Studio's own export button, then back into the app): the Studio's file opened correctly in the app ("✓ Projet chargé — 1 pages, 5 objets", text and split intact) but `textLinks` came back **empty** and **every text frame came back with `textLinkId: null`**. The Studio carried neither the link registry nor each frame's identifier, so a chained document lost its chains. Both are now carried in each direction: `importFromSuperPrint` captures `textLinks` and `guides` and stores them in `state.doc` (as it already did for masters/margins/colGrid/numbering), the element model keeps each frame's `textLinkId`, and `buildSPFile()` re-emits it. **The correction rests on that measurement but has not itself been re-measured on the bench yet** — stated here rather than claimed.
+- **A pasted chained pair was not re-linked to itself** — the copy path clones with a **callback** (`child.clone(function (cloned) {…})`, main.js ~30006) and Fabric then returns an empty value, so the origin note placed on the return value was useless: `_spLinkOrigine` measured **null** on the copies. The clone wrapper now wraps the callback as well (the callback is what receives the clone), and `_spFinalizePasteRender` — the point every paste path goes through — rebuilds the links between the copies via the app's own `linkTextBoxes()` and reflows the pasted chain. The source chain is never touched. **The cause is measured; the corrected behaviour has not been re-measured on the bench yet** — stated here rather than claimed.
+
+### Note
+- The 1.7.563 work (Studio `.sp` at the app's level) is unchanged; only the chain data it was missing is now carried too.
 
 ## [1.7.563] — 2026-09-26
 

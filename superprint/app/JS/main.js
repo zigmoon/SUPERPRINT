@@ -1323,7 +1323,29 @@ try { spInstallerColonnesRender(); } catch (_) {}
                     }
                 }
             } catch (_) {}
-            return origClone.call(this, callback, base);
+            /* 🆕 v1.7.564/565 — _SP_CHAINE_COPIE_564 : MÉMORISER LA CHAÎNE D'ORIGINE DU CLONE.
+               ⚠️ MESURÉ (26/09) : le chemin de COPIE clône AVEC UN CALLBACK —
+               `child.clone(function (cloned) { … })` — et la valeur de retour de clone()
+               est alors VIDE (Fabric passe par enlivenObjects asynchrone). La note posée
+               sur la valeur de retour ne servait donc à RIEN : `_spLinkOrigine` était
+               mesuré null sur les copies, et la paire chaînée recollée n'était plus une
+               chaîne (le drapeau isLinkedTextBlock, recopié par SP_CUSTOM_PROPS, laissait
+               croire le contraire). On enveloppe donc AUSSI le callback : c'est LUI qui
+               reçoit le clone. Propriété de TRAVAIL (absente de SP_CUSTOM_PROPS) : elle
+               n'est pas écrite dans le .sp. */
+            var _spOrigine = (this && this.textLinkId) ? this.textLinkId : null;
+            if (_spOrigine && typeof callback === 'function') {
+                var _spCallback = callback;
+                callback = function (cloned) {
+                    try { if (cloned) cloned._spLinkOrigine = _spOrigine; } catch (_) {}
+                    return _spCallback.apply(this, arguments);
+                };
+            }
+            var _spClone = origClone.call(this, callback, base);
+            try {
+                if (_spClone && _spOrigine) _spClone._spLinkOrigine = _spOrigine;
+            } catch (_) {}
+            return _spClone;
         };
         proto.__spClonePropsPatched = true;
     } catch (_) {}
@@ -1943,6 +1965,49 @@ function _spRestaureMasqueColle(obj) {
         }
     } catch (_) {}
 }
+/* 🆕 v1.7.564 — _SP_CHAINE_COPIE_564 : RECRÉER LES MAILLONS ENTRE LES COPIES D'UNE CHAÎNE.
+
+   MESURÉ avant correctif : copier une paire chaînée (A→B) puis coller donnait deux blocs
+   avec deux identifiants neufs et AUCUN maillon entre eux — la copie n'était plus une
+   chaîne, alors que le drapeau isLinkedTextBlock (recopié) laissait croire le contraire.
+
+   ICI : l'enveloppe `clone` a noté l'identifiant d'origine de chaque copie
+   (`_spLinkOrigine`). Si le modèle d'une copie avait un suivant (`textLinks[origine]`) ET
+   que ce suivant fait partie des objets collés, on relie les DEUX COPIES entre elles (avec
+   l'API de l'application, `linkTextBoxes`) puis on relance le recoulement de la chaîne
+   recollée. La chaîne d'origine n'est pas touchée : ses identifiants sont inchangés. */
+function _spRelieChaineCollee(list) {
+    if (!list || !list.length) return;
+    try {
+        if (typeof textLinks === 'undefined' || !textLinks) return;
+        var parOrigine = {};
+        list.forEach(function (o) {
+            if (o && o._spLinkOrigine) parOrigine[o._spLinkOrigine] = o;
+        });
+        var premier = null, maillons = 0;
+        list.forEach(function (o) {
+            if (!o || !o._spLinkOrigine) return;
+            var lien = textLinks[o._spLinkOrigine];
+            if (!lien || !lien.targetId) return;
+            var cible = parOrigine[lien.targetId];
+            if (!cible || cible === o) return;
+            try {
+                if (typeof window.linkTextBoxes === 'function') {
+                    window.linkTextBoxes(o, cible, lien.targetPageIndex || 0);
+                }
+                maillons++;
+                if (!premier) premier = o;
+            } catch (_) {}
+        });
+        if (premier && maillons > 0) {
+            try {
+                if (typeof window.buildLinkedChain === 'function') window.buildLinkedChain(premier);
+                if (typeof window.reflowTextChain === 'function') window.reflowTextChain(premier);
+            } catch (_) {}
+        }
+    } catch (_) {}
+}
+
 function _spFinalizePasteRender(objs, canvas) {
     if (!canvas) return;
     const list = (Array.isArray(objs) ? objs : [objs]).filter(Boolean);
@@ -1954,6 +2019,8 @@ function _spFinalizePasteRender(objs, canvas) {
        (442 px, cache 374 × 282 valide). Comme ce point de passage est commun à TOUS les
        chemins de collage (objet unique, multiple, paire forme+texte, mobile, miroirs), le
        correctif vaut pour tous. */
+    /* 🆕 v1.7.564 — la chaîne copiée reste chaînée ENTRE SES COPIES (cf. _spRelieChaineCollee). */
+    try { _spRelieChaineCollee(list); } catch (_) {}
     const _spPasseCollage = function () {
         list.forEach(_spInvalidatePastedCache);
         try { canvas.renderAll(); } catch(_) {}
@@ -23501,7 +23568,38 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         function updateTextFrameIndicators(frame, canvas) {}
         function cancelTextChaining() { cancelTextLinking(); }
         function findFrameById(frameId) { return findBlockById(frameId); }
-        function reflowTextChain(startFrame) { if (startFrame) redistributeLinkedTextChain(startFrame); }
+        function reflowTextChain(startFrame) {
+    if (startFrame) redistributeLinkedTextChain(startFrame);
+    /* 🆕 v1.7.564 — _SP_MASQUE_CHAINE_564 : LE MASQUE DE LA CHAÎNE EST REPOSÉ APRÈS LE
+       RECOULEMENT. MESURÉ : après un chaînage, le bloc CIBLE dessinait 2 812 px d'encre
+       (ses 54 lignes, rien de coupé) contre 1 655 px après relecture du .sp : son texte
+       débordait de son cadre jusqu'au prochain rechargement ou à la prochaine sélection.
+       On repose le masque de TOUTE la chaîne avec la séquence sûre du collage (rendu SANS
+       masque d'abord, puis masque remis et second rendu) : c'est la leçon de la 1.7.562 —
+       un objet qui a un masque et un cache jamais construit dessine un cache VIDE. */
+    try {
+        var sp564Chain = (typeof buildLinkedChain === 'function') ? buildLinkedChain(startFrame) : [];
+        var sp564Cv = null;
+        sp564Chain.forEach(function (b) {
+            var o = (b && b.obj) ? b.obj : b;
+            if (!o || !o.canvas) return;
+            sp564Cv = o.canvas;
+            try { if (typeof window.applyTextboxClipPath === 'function') window.applyTextboxClipPath(o); } catch (_) {}
+            o.dirty = true;
+            if (o._cacheCanvas) { o._cacheCanvas = null; o._cacheContext = null; }
+            try { _spInvalidatePastedCache(o); } catch (_) {}
+        });
+        if (sp564Cv) {
+            try { sp564Cv.renderAll(); } catch (_) {}
+            sp564Chain.forEach(function (b) {
+                var o = (b && b.obj) ? b.obj : b;
+                if (!o) return;
+                try { _spRestaureMasqueColle(o); } catch (_) {}
+            });
+            try { sp564Cv.requestRenderAll(); } catch (_) {}
+        }
+    } catch (_) {}
+        }
         function completeTextChaining(e) {}
         function createChainConnectionLine_LEGACY(sourceFrame, targetFrame, canvas) {}
 

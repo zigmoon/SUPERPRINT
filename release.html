@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.563 — the .sp exported by Studio IA now matches the app's own export, keeping text chains and guides.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.564 — text chaining: the target frame gets its mask straight away, and the Studio no longer drops the chain data.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.563 — the .sp exported by Studio IA now matches the app's own export, keeping text chains and guides.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.564 — text chaining: the target frame gets its mask straight away, and the Studio no longer drops the chain data.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,27 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.564 — Le chaînage de texte : masque de la cible et Studio ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-564">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.564</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Trois corrections autour du <strong>chaînage de texte</strong> — le mécanisme qui fait couler le trop-plein d'un bloc dans le suivant. Deux sont mesurées ; la troisième est posée sur une cause elle-même mesurée, mais sa mesure reste à confirmer : c'est écrit noir sur blanc dans le journal des versions." data-i18n-en-html="Three fixes around <strong>text chaining</strong> — the mechanism that flows a frame's overflow into the next. Two are measured; the third rests on a measured cause, but its own measurement is still to be confirmed: this is stated plainly in the changelog." data-i18n-jp-html="<strong>テキストの連鎖</strong>（枠からあふれたテキストを次の枠へ流す仕組み）に関する 3 つの修正です。2 つは実測済み、3 つ目は原因自体は実測済みですが修正後の測定は未確認 — 変更履歴に明記しています。">Three fixes around text chaining: two measured, one resting on a measured cause with its own measurement still to be confirmed — stated plainly in the changelog.</p>
+
+ <h3 data-i18n-fr-html="🩹 Le masque de la cible après un chaînage <span class=&quot;badge badge-fix&quot;>corrigé et mesuré</span>" data-i18n-en-html="🩹 The target's mask after chaining <span class=&quot;badge badge-fix&quot;>fixed and measured</span>" data-i18n-jp-html="🩹 連鎖後のターゲットのマスク <span class=&quot;badge badge-fix&quot;>修正・実測済み</span>">🩹 The target's mask after chaining <span class="badge badge-fix">fixed and measured</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Mesuré avant :</strong> après un chaînage, le bloc cible dessinait <strong>2 812 pixels</strong> d'encre — ses 41 lignes entières, sans aucune coupe — soit un texte qui débordait de son cadre jusqu'au prochain rechargement. <strong>Mesuré après : 1 585 pixels et le masque posé immédiatement.</strong> Le masque de toute la chaîne est maintenant reposé après chaque recoulement, avec la séquence sûre déjà éprouvée au collage : un dessin sans masque d'abord (sans quoi l'image mémoire n'est jamais construite et le bloc reste vide), puis le masque remis et un second dessin." data-i18n-en-html="<strong>Measured before:</strong> after chaining, the target frame drew <strong>2 812 ink pixels</strong> — all 41 of its lines, uncut — so the text spilled out of its frame until the next reload. <strong>Measured after: 1 585 pixels with the mask applied straight away.</strong> The whole chain's mask is now reapplied after every reflow, with the safe sequence already proven at paste time: a draw without the mask first (otherwise the in-memory image is never built and the frame stays blank), then the mask back and a second draw." data-i18n-jp-html="<strong>修正前の実測：</strong>連鎖後、ターゲットの枠は<strong>2812 ピクセル</strong>を描画（41 行すべて、切られていない）ため、次に再読み込みするまでテキストが枠からあふれていました。<strong>修正後：1585 ピクセル、マスクも即座に適用。</strong>連鎖全体のマスクを、貼り付けで実証済みの安全な手順（まずマスクなしで 1 回描画、その後マスクを戻して再描画）で再適用します。">Measured: the target frame drew 2 812 uncut ink pixels after chaining, now 1 585 with the mask applied immediately.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🔗 Le Studio ne perd plus les chaînes (à confirmer au banc) <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🔗 The Studio no longer drops chains (bench confirmation pending) <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🔗 Studio が連鎖を失わなくなりました（検証待ち） <span class=&quot;badge badge-fix&quot;>修正済み</span>">🔗 The Studio no longer drops chains (bench confirmation pending) <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Mesure du défaut, de bout en bout :</strong> un document chaîné envoyé au Studio revenait avec <em>textLinks</em> <strong>vide</strong> et, surtout, <strong>tous les blocs avec textLinkId à null</strong> — le Studio ne transportait ni le registre des liens, ni l'identifiant de chaque bloc. Son fichier s'ouvrait bien dans l'application (5 objets, texte et répartition intactes), mais la chaîne était perdue. Les deux sont maintenant transportés dans les deux sens (import et export)." data-i18n-en-html="<strong>The defect, measured end to end:</strong> a chained document sent to the Studio came back with <em>textLinks</em> <strong>empty</strong> and, above all, <strong>every frame with textLinkId null</strong> — the Studio carried neither the link registry nor each frame's identifier. Its file did open in the app (5 objects, text and split intact), but the chain was lost. Both are now carried in each direction (import and export)." data-i18n-jp-html="<strong>不具合の実測（端から端まで）：</strong>連鎖した文書を Studio に送って戻すと、<em>textLinks</em> が<strong>空</strong>で、さらに<strong>すべての枠の textLinkId が null</strong> でした。レジストリも各枠の識別子も運ばれていませんでした。ファイル自体はアプリで開けます（5 オブジェクト、テキストと割り振りは無事）が、連鎖は失われていました。両方を双方向（読み込み・書き出し）で運ぶようにしました。">Measured end to end: a chained document returned from the Studio with textLinks empty and every frame's textLinkId null; both are now carried in each direction.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.563 — Studio : l'export .sp est au même niveau que celui de l'application ===== -->
 
