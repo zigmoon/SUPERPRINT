@@ -1281,6 +1281,55 @@ window.spInstallerColonnesRender = spInstallerColonnesRender;
 try { spInstallerColonnesRender(); } catch (_) {}
 
 /* ═══════════════════════════════════════════════════════════════════════════════════════
+   🆕 v1.7.551 — _SP_CLONE_PROPS_551 : AUCUN CLONE NE PERD LES RÉGLAGES DE L'APPLICATION
+
+   Retour utilisateur : « lorsque je copie colle un bloc texte d'une page vers une autre page
+   avec du texte dépassant, le bloc texte ne se copie pas en place et laisse le texte débordé
+   alors qu'il devrait rester dans son bloc texte. »
+
+   MESURÉ (bloc 300 px, 2 COLONNES, cadre 120 px, retrait haut 4, 40 lignes, copié par Ctrl+C
+   de la page 1 puis Ctrl+V sur la page 2) :
+       source : _spCols 2, _spInsetTop 4, masque 120, 40 lignes ;
+       collé  : _spCols ABSENT, _spInsetTop ABSENT, 19 lignes, masque 111.
+   Sans ses options de cadre, le bloc recollé se remet à couler sur UNE colonne : son texte
+   dépasse la hauteur du cadre et semble « sortir du bloc ».
+
+   CAUSE : cloth.clone() de Fabric ne sérialise que les propriétés STANDARD de Fabric plus une
+   éventuelle liste passée en 2e argument. Les réglages de l'application (options de cadre de
+   texte, retraits, taquets, contour, police variable, tons directs, justification) ne sont
+   donc pas repris par le presse-papiers — contrairement à ce que fait l'enregistrement des
+   fichiers .sp/.json, qui passe partout SP_CUSTOM_PROPS. (Élargir la liste locale du
+   presse-papiers n'a rien changé : ce clonage-là ne la reçoit pas.)
+   CORRECTIF : on enveloppe fabric.Object.prototype.clone pour AJOUTER SP_CUSTOM_PROPS à la
+   liste demandée. C'est ADDITIF — aucune propriété n'est retirée — donc la géométrie ne peut
+   pas régresser (la leçon de l'ancien filtrage spClipboardProps, qui rendait les formes
+   « toutes petites », reste respectée). Tous les clonages en profitent : copier-coller,
+   Alt+clic, duplication de page, miroirs de planche.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
+(function spPatchCloneProps() {
+    try {
+        if (typeof fabric === 'undefined' || !fabric.Object || !fabric.Object.prototype) return;
+        var proto = fabric.Object.prototype;
+        if (proto.__spClonePropsPatched) return;
+        var origClone = proto.clone;
+        if (typeof origClone !== 'function') return;
+        proto.clone = function (callback, propertiesToInclude) {
+            var base = Array.isArray(propertiesToInclude) ? propertiesToInclude.slice() : [];
+            try {
+                /* typeof sur une const : sûre ici, tous les appels ont lieu après l'init du module. */
+                if (typeof SP_CUSTOM_PROPS !== 'undefined' && Array.isArray(SP_CUSTOM_PROPS)) {
+                    for (var i = 0; i < SP_CUSTOM_PROPS.length; i++) {
+                        if (base.indexOf(SP_CUSTOM_PROPS[i]) < 0) base.push(SP_CUSTOM_PROPS[i]);
+                    }
+                }
+            } catch (_) {}
+            return origClone.call(this, callback, base);
+        };
+        proto.__spClonePropsPatched = true;
+    } catch (_) {}
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════
    _SP_COLS_532 — CORRIGER LE TEXTE DANS SES COLONNES
 
    Les colonnes restent affichées pendant la saisie (correctifs 1 à 3). Restent les trois
@@ -87588,7 +87637,22 @@ function initMobileTouchContextMenu() {
         'fontSize', 'lineHeight', 'charSpacing', 'fontFamily', 'fontWeight',
         'fontStyle', 'textAlign', 'underline', 'fill', 'stroke', 'strokeWidth',
         'textBackgroundColor', 'enableHyphenation', 'hyphenLanguage',
-        '_fixedHeight', '_fixedWidth', 'textLinkId', 'splitByGrapheme', 'breakWords', 'styles'
+        '_fixedHeight', '_fixedWidth', 'textLinkId', 'splitByGrapheme', 'breakWords', 'styles',
+        /* 🆕 v1.7.551 — _SP_COLLER_551 : OPTIONS DE CADRE DE TEXTE ET AUTRES RÉGLAGES DE BLOC.
+           MESURÉ (bloc 2 colonnes, cadre 120 px, retrait haut 4, 40 lignes copié de la page 1
+           vers la page 2) : le bloc collé arrivait SANS _spCols ni _spInsetTop — 19 lignes et
+           une SEULE colonne — sans hauteur de cadre : le texte débordait du bloc. La liste ne
+           portait que la typographie et _fixedHeight/_fixedWidth.
+           Elle est ADDITIVE : ajouter ces propriétés ne peut pas faire perdre la géométrie
+           (l'objet est toujours cloné en entier, seules ces valeurs étaient oubliées). */
+        '_spCols', '_spColW', '_spColGutter',
+        '_spInsetTop', '_spInsetBottom', '_spVAlign', '_spTabs',
+        '_spIndentLeft', '_spIndentRight', '_spFirstLineIndent',
+        '_spFrameStroke', '_spFrameStrokeWidth',
+        'spVarFont',
+        '_spSpotInk', '_spSpotStrokeInk', '_spSpotInkName', '_spSpotStrokeInkName',
+        '_originalFill', '_originalStroke', '_originalStrokeWidth',
+        '_justSettings', 'isLinkedTextBlock'
     ];
 
     const getCtxCanvas = () => {

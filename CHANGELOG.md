@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,15 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.551] — 2026-09-26
+
+_A copied text block keeps its text frame options_
+
+### Fixed
+- **A text block using the text frame options lost its columns when copied** (user request: « lorsque je copie colle un bloc texte fait avec « texte frame option », le bloc copié perd ses 2 colonnes. Le bloc copié perd les 2 colonnes alors qu il devrait les conserver » — first report: « il ne se copie pas en place et laisse le texte débordé alors qu il devrait rester dans son bloc texte »). Measured on a 300 px block, 2 columns, 120 px frame, 4 px top inset, long text: source = `_spCols` 2, gutter 12, inset 4, mask 120, 32 lines; pasted = `_spCols` ABSENT, gutter ABSENT, inset ABSENT, mask 111, **19 lines in a single column**. Without its columns the block flows at full width again, so the text exceeds the frame height and spills out of the block. - **Cause: the copy used `fabric.Object.clone()`**, which only serialises Fabric’s STANDARD properties (plus an optional list given as second argument). The application’s settings — text frame options (`_spCols`, `_spColW`, `_spColGutter`, `_spInsetTop/Bottom`, `_spVAlign`, `_spTabs`), paragraph indents, frame outline, variable font, spot inks, justification — were therefore not carried by the clipboard, while saving a `.sp`/`.json` carries them all through `SP_CUSTOM_PROPS`. Extending the local clipboard list (`spClipboardProps`) had **no effect**: that particular clone never receives it. - **Fixed (`_SP_CLONE_PROPS_551`)**: `fabric.Object.prototype.clone` is wrapped so it ALWAYS adds `SP_CUSTOM_PROPS` to the requested list. The change is ADDITIVE — no property is removed — so geometry cannot regress (the lesson from the old over-strict filter, which produced “tiny” pasted shapes, is preserved). Because the fix is central, EVERY clone benefits: copy-paste, Alt+click, page duplication, spread mirrors, previews. 
+### Verified
+- Clone of a test block keeps `_fixedHeight` 120, `_fixedWidth` 300, `_spCols` 2, `_spColGutter` 12, `_spInsetTop` 4 and `_spIndentLeft` 6 (all were lost before). - End-to-end Ctrl+C on page 1 → Ctrl+V on page 2: the pasted block gives 2 columns, gutter 12, inset 4, frame 120, **mask 120 and 32 lines** — identical to the source, offset by the normal 10 px paste shift. 
 
 ## [1.7.550] — 2026-09-26
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.550 — clicking a text block no longer builds a frame and a mask on it, so the type no longer shifts on the first click.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.551 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.550 — clicking a text block no longer builds a frame and a mask on it, so the type no longer shifts on the first click.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.551 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,31 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.551 — Le collage garde les cadres de texte ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-551">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.551</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Un bloc texte copié d'une page à une autre <strong>garde désormais ses options de cadre de texte</strong> : nombre de colonnes, largeur, gouttière, retraits, justification verticale, contour de cadre. Plus de bloc qui repasse à une colonne et laisse son texte déborder." data-i18n-en-html="A text block copied from one page to another now <strong>keeps its text frame options</strong>: column count, width, gutter, insets, vertical justification, frame outline. No more block falling back to a single column and letting its text spill out." data-i18n-jp-html="ページ間でコピーしたテキストブロックが<strong>テキストフレーム設定を保つ</strong>ようになりました。段数・段幅・ガター・余白・垂直位置合わせ・フレーム罫線。1 段に戻って文字があふれることはありません。">A copied text block keeps all of its text frame options.</p>
+
+ <h3 data-i18n-fr-html="📋 Un bloc « options de cadre de texte » perdait ses colonnes au collage <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="📋 A “text frame options” block lost its columns when pasted <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="📋 「テキストフレーム設定」のブロックは貼り付けで段組を失っていました <span class=&quot;badge badge-fix&quot;>修正</span>">📋 A “text frame options” block lost its columns when pasted <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Ce qui se passait.</strong> Mesuré sur un bloc de 300 px en 2 colonnes, cadre de 120 px, retrait haut de 4 px, texte long : la source donnait 2 colonnes, gouttière 12, masque 120 et 32 lignes ; le bloc collé arrivait <strong>sans son réglage de colonnes ni son retrait</strong>, masque 111, <strong>19 lignes</strong> sur une seule colonne. Sans ses colonnes, le bloc se remet à couler en pleine largeur : le texte dépasse la hauteur du cadre et « sort du bloc »." data-i18n-en-html="<strong>What happened.</strong> Measured on a 300 px block in 2 columns, 120 px frame, 4 px top inset, long text: the source gave 2 columns, gutter 12, mask 120 and 32 lines; the pasted block arrived <strong>without its column setting and without its inset</strong>, mask 111, <strong>19 lines</strong> in a single column. Without its columns the block flows at full width again: the text exceeds the frame height and “spills out of the block”." data-i18n-jp-html="<strong>起きていたこと。</strong>300 px・2 段・フレーム 120 px・上余白 4 px・長文で計測：元のブロックは 2 段・ガター 12・マスク 120・32 行。貼り付けたブロックは<strong>段組設定と余白を失い</strong>、マスク 111・<strong>19 行</strong>の 1 段になっていました。段組がないと全幅で流し込むため、文字がフレーム高さを超え「ブロックからあふれ」ます。">The pasted block lost its column setting and inset, so it re-flowed in one column and the text spilled out.</li>
+  <li data-i18n-fr-html="<strong>Pourquoi.</strong> La copie clone l'objet avec la fonction de Fabric, qui ne reprend que les propriétés <em>standard</em> de Fabric. Les réglages de l'application (colonnes, retraits, taquets, contour de cadre, police variable, tons directs) n'étaient donc pas transportés par le presse-papiers — alors que l'enregistrement d'un fichier <code>.sp</code> ou <code>.json</code> les transporte tous." data-i18n-en-html="<strong>Why.</strong> Copying clones the object with Fabric's own function, which only carries Fabric's <em>standard</em> properties. The application's settings (columns, insets, tab stops, frame outline, variable font, spot inks) were therefore not carried by the clipboard — while saving a <code>.sp</code> or <code>.json</code> file carries them all." data-i18n-jp-html="<strong>理由。</strong>コピーは Fabric の標準プロパティしか持たない複製関数を使っていました。そのためアプリ側の設定（段組・余白・タブ位置・フレーム罫線・可変フォント・スポットインク）がクリップボードで運ばれていませんでした（<code>.sp</code>／<code>.json</code> の保存ではすべて運ばれます）。">The copy used Fabric's own clone, which only carries Fabric's standard properties.</li>
+  <li data-i18n-fr-html="<strong>Corrigé</strong> : le clonage ajoute maintenant systématiquement la liste complète des réglages de l'application. Vérifié après correctif : le bloc recollé sur une autre page donne <strong>2 colonnes, gouttière 12, retrait 4, cadre 120, masque 120 et 32 lignes</strong> — identique à la source (au décalage de collage de 10 px près, qui est la règle normale)." data-i18n-en-html="<strong>Fixed</strong>: cloning now always adds the application's full settings list. Verified after the fix: the block pasted on another page gives <strong>2 columns, gutter 12, inset 4, frame 120, mask 120 and 32 lines</strong> — identical to the source (apart from the normal 10 px paste offset)." data-i18n-jp-html="<strong>修正済み。</strong>複製時にアプリの設定リストを必ず追加するようにしました。修正後の確認：別ページに貼り付けたブロックは<strong>2 段・ガター 12・余白 4・フレーム 120・マスク 120・32 行</strong>で、元と同一です（通常の 10 px の貼り付けオフセットを除く）。">Cloning now adds the application's full settings list: the pasted block is identical to the source.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧩 Corrigé au bon endroit : tous les clonages en profitent <span class=&quot;badge badge-feat&quot;>audité</span>" data-i18n-en-html="🧩 Fixed in the right place: every clone benefits <span class=&quot;badge badge-feat&quot;>audited</span>" data-i18n-jp-html="🧩 正しい場所で修正：すべての複製に効果 <span class=&quot;badge badge-feat&quot;>調査済み</span>">🧩 Fixed in the right place: every clone benefits <span class="badge badge-feat">audited</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Un premier essai a consisté à <strong>allonger la liste du presse-papiers</strong> : aucun effet, car ce clonage-là ne la reçoit pas. Le bon endroit est le clonage lui-même, que l'application appelle partout — c'est donc là que le correctif a été posé." data-i18n-en-html="A first attempt was to <strong>extend the clipboard list</strong>: no effect, because that particular clone never receives it. The right place is the clone itself, which the application calls everywhere — so that is where the fix was made." data-i18n-jp-html="最初に<strong>クリップボードのプロパティ一覧を拡張</strong>してみましたが、その複製は一覧を受け取らないため効果はありませんでした。正しい場所は、アプリのあらゆる箇所が使う複製処理そのものです。そこで修正しました。">Extending the clipboard list had no effect; the fix belongs in the clone itself.</li>
+  <li data-i18n-fr-html="Le correctif est <strong>additif</strong> : il ajoute des propriétés à ce qui était déjà cloné, il n'en retire aucune. La géométrie ne peut donc pas régresser — un filtrage trop strict avait par le passé produit des formes collées « toutes petites », ce piège est évité." data-i18n-en-html="The fix is <strong>additive</strong>: it adds properties to what was already cloned and removes none. Geometry therefore cannot regress — an over-strict filter had once produced pasted shapes that were “tiny”, and that trap is avoided." data-i18n-jp-html="修正は<strong>追加型</strong>です。すでに複製されていたものにプロパティを足すだけで、削除はしません。したがって形状が劣化することはありません（以前、厳しすぎるフィルタで貼り付けた図形が「とても小さく」なった問題を回避しています）。">The fix is additive: no property is removed, so geometry cannot regress.</li>
+  <li data-i18n-fr-html="Ce sont donc <strong>tous les clonages</strong> qui sont réparés : copier-coller, Alt+clic, duplication de page, miroirs de planche et aperçus. Un bloc dupliqué ou copié emporte désormais tout son réglage typographique et de cadre." data-i18n-en-html="So <strong>every clone</strong> is fixed: copy-paste, Alt+click, page duplication, spread mirrors and previews. A duplicated or copied block now carries its full typographic and frame settings." data-i18n-jp-html="これで<strong>すべての複製</strong>が修正されます：コピー＆ペースト、Alt+クリック、ページ複製、見開きのミラー、プレビュー。複製・コピーしたブロックは、文字設定とフレーム設定をすべて保持します。">Every clone is fixed: copy-paste, Alt+click, page duplication, spread mirrors.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.550 — Le premier clic ne fabrique plus un cadre ===== -->
 
