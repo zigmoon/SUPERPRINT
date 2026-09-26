@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.555 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.556 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.555 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.556 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,30 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.556 — Le recadrage survit aux fichiers ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-556">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.556</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le <strong>recadrage des images</strong> et le <strong>contour des textes placés dans une forme</strong> étaient perdus à l'enregistrement : ils sont désormais enregistrés dans vos fichiers <code>.sp</code> et <code>.json</code>, et le fichier re-exporté est identique à l'original." data-i18n-en-html="<strong>Image crops</strong> and the <strong>outline of text placed inside a shape</strong> were lost on save: they are now stored in your <code>.sp</code> and <code>.json</code> files, and a re-exported file is identical to the original." data-i18n-jp-html="<strong>画像のトリミング</strong>と<strong>図形内テキストの輪郭</strong>は保存時に失われていました。今後は <code>.sp</code>／<code>.json</code> に保存され、再書き出ししたファイルは元のファイルと同一になります。">Image crops and shape-clipped text outlines are now saved in .sp and .json files.</p>
+
+ <h3 data-i18n-fr-html="✂️ Une photo recadrée revenait sans son recadrage <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="✂️ A cropped photo came back uncropped <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="✂️ トリミングした写真がトリミングなしで戻っていました <span class=&quot;badge badge-fix&quot;>修正</span>">✂️ A cropped photo came back uncropped <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Ce qui se passait.</strong> Mesuré sur une image recadrée (fenêtre 120 × 60 px, décalage -20, échelle 2) : le fichier <code>.sp</code> exporté ne contenait <strong>aucune</strong> fenêtre de recadrage, et l'image revenait entière après réouverture. Même chose pour un texte placé dans une forme, qui perdait son contour. Les modèles fournis (photos recadrées) étaient donc concernés au premier chef." data-i18n-en-html="<strong>What happened.</strong> Measured on a cropped image (120 × 60 px window, -20 offset, scale 2): the exported <code>.sp</code> file contained <strong>no</strong> crop window at all, and the image came back uncropped after reopening. Same for text placed inside a shape, which lost its outline. The built-in templates (cropped photos) were therefore directly affected." data-i18n-jp-html="<strong>起きていたこと。</strong>トリミングした画像（枠 120 × 60 px、オフセット -20、倍率 2）で計測：書き出した <code>.sp</code> にはトリミング枠が<strong>まったく</strong>含まれず、開き直すと元の全体像に戻っていました。図形内テキストも輪郭を失っていました。付属テンプレート（トリミング済み写真）はまさにこの影響を受けていました。">The exported .sp contained no crop window at all, so cropped photos came back uncropped.</li>
+  <li data-i18n-fr-html="<strong>Pourquoi.</strong> Fabric n'écrit pas une fenêtre de recadrage dans ses données quand celle-ci est marquée « ne pas exporter » — et l'application pose ce marqueur sur <em>toutes</em> ses fenêtres. Pour un bloc texte, c'est sans conséquence : son masque est recréé à l'ouverture. Mais rien ne recréait le recadrage d'une image ni le contour d'un texte dans une forme : ces réglages étaient donc perdus à chaque enregistrement." data-i18n-en-html="<strong>Why.</strong> Fabric does not write a crop window into its data when that window is flagged “do not export” — and the app sets that flag on <em>every</em> window it creates. For a text block this has no consequence: its mask is rebuilt when the file opens. But nothing rebuilt an image's crop or a shape-clipped text's outline, so those settings were lost on every save." data-i18n-jp-html="<strong>理由。</strong>枠に「書き出さない」フラグが付いていると、Fabric はトリミング枠をデータに書き出しません。アプリは<em>すべて</em>の枠にこのフラグを付けています。テキストブロックでは問題ありません（開くときにマスクが再生成されます）が、画像のトリミングや図形内テキストの輪郭は再生成されず、保存のたびに失われていました。">Fabric skips flagged crop windows, and nothing rebuilt an image's crop on load.</li>
+  <li data-i18n-fr-html="<strong>Corrigé</strong> : à l'enregistrement, la fenêtre de recadrage est réécrite explicitement pour tous les objets qui en ont besoin (images, textes dans une forme). Vérifié : le recadrage 120 × 60 revient à l'identique après réouverture, le contour du texte dans une forme aussi, et le fichier <code>.json</code> fait désormais un aller-retour <strong>identique au bit près</strong>." data-i18n-en-html="<strong>Fixed</strong>: when saving, the crop window is now written explicitly for every object that needs it (images, text inside a shape). Verified: the 120 × 60 crop comes back identically after reopening, so does the shape-clipped text outline, and a <code>.json</code> file now round-trips <strong>byte for byte</strong>." data-i18n-jp-html="<strong>修正済み。</strong>保存時に必要なオブジェクト（画像・図形内テキスト）のトリミング枠を明示的に書き出すようにしました。確認：開き直しても 120 × 60 のトリミングがそのまま復元され、図形内テキストの輪郭も同様です。また <code>.json</code> は<strong>バイト単位で</strong>同一の往復になりました。">The crop window is written explicitly on save: crops and shape outlines come back identical, and .json round-trips byte for byte.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🤖 Studio IA et gabarits : chaîne vérifiée <span class=&quot;badge badge-feat&quot;>audité</span>" data-i18n-en-html="🤖 Studio IA and templates: chain audited <span class=&quot;badge badge-feat&quot;>audited</span>" data-i18n-jp-html="🤖 Studio IA とテンプレート：連携を検証 <span class=&quot;badge badge-feat&quot;>調査済み</span>">🤖 Studio IA and templates: chain audited <span class="badge badge-feat">audited</span></h3>
+ <ul>
+  <li data-i18n-fr-html="L'export <code>.sp</code> du Studio IA produit exactement les mêmes clés que l'application (<code>_sp.format = « SuperPrint Document »</code>, format de page, pages et objets). Testé de bout en bout : un document au format du studio s'ouvre dans l'application avec son recadrage (120 × 60) et son bloc à 2 colonnes, puis se ré-exporte sans perte." data-i18n-en-html="The Studio IA <code>.sp</code> export produces exactly the same keys as the app (<code>_sp.format = “SuperPrint Document”</code>, page format, pages and objects). Tested end to end: a studio-format document opens in the app with its crop (120 × 60) and its 2-column block, then re-exports with no loss." data-i18n-jp-html="Studio IA の <code>.sp</code> 書き出しはアプリとまったく同じキーを生成します（<code>_sp.format = 「SuperPrint Document」</code>、用紙設定、ページとオブジェクト）。端から端まで検証：スタジオ形式の文書はアプリでトリミング（120 × 60）と 2 段組ブロックを保ったまま開き、損失なく再書き出しできます。">The studio .sp export uses the same keys as the app; a studio document opens and re-exports without loss.</li>
+  <li data-i18n-fr-html="Le studio complète simplement les clés qu'il ne produit pas (marges par côté, grille de colonnes, gabarits) au moment de l'ouverture dans l'application : c'est la normalisation attendue, pas une perte." data-i18n-en-html="The studio simply leaves the keys it does not produce (per-side margins, column grid, master pages) to be filled in when the file opens in the app: that is the expected normalisation, not a loss." data-i18n-jp-html="スタジオが生成しないキー（四辺のマージン、段組グリッド、マスターページ）は、アプリで開くときに補完されます。これは想定された正規化であり、損失ではありません。">Keys the studio does not produce are filled in by the app on open: expected normalisation, not loss.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.555 — Des repères stables ===== -->
 

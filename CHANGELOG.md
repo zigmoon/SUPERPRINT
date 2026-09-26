@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,15 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.556] — 2026-09-26
+
+_Image crops survive .sp and .json files_
+
+### Fixed
+- **A cropped image (and the outline of a text placed inside a shape) was lost on save** (user request: « suite à nos modifications, relis le .sp et .json (import/export) dans l app et le .sp (export) du studio IA, cela doit être parfait »). Measured on an image with a 120 x 60 px crop window (offset -20, scale 2): the exported `.sp` contained **no** `clipPath` at all (0 occurrences) while the live object had one, and the image came back uncropped after reopening. The built-in templates (which use cropped photos) were directly affected. - **Cause: Fabric does not serialise `clipPath` when the clip object is flagged `excludeFromExport: true`** — a flag the app sets on EVERY clip it creates (text block masks, image crop windows, shape clones for text-inside-a-shape). Harmless for a text block (applyTextboxClipPath rebuilds its mask on load), but nothing rebuilt an image crop or a shape-clipped text outline, so those settings were lost on every save. - **Fixed (`_SP_CLIP_556`)**: at serialisation time (`saveAllPages` and `saveSpreadContent`), the clip is written back explicitly (`obj.clipPath.toObject()`) whenever it is not regenerated on load, and always LAST in the object so key order stays stable between sessions. Text block masks are still not persisted (their offset depends on font metrics). 
+### Verified
+- `.sp`: 2 clips written, crop reloaded as 120 x 60 (offset -20, scale 2), shape-clipped text reloaded with its circle; the re-exported file is identical from the second save onwards (3rd export = 2nd export). - `.json`: round trip **identical byte for byte** (6 349 bytes before and after a real import through `#importJsonInput`), crop preserved. - Studio IA: its `.sp` export uses exactly the app keys (`_sp.format`, `document.format`, `pages[].objects`); a studio-format document opens in the app with its crop and its 2-column block and re-exports without loss. Keys the studio does not produce (per-side margins, column grid) are filled in by the app on open — expected normalisation. 
 
 ## [1.7.555] — 2026-09-26
 

@@ -1823,6 +1823,44 @@ function _spFixVectorizedGroupFlip(grp) {
     // Intentionnellement vide — le clone Fabric est fidèle.
 }
 
+/* 🆕 v1.7.556 — _SP_CLIP_556 : LE RECADRAGE DES IMAGES SURVIT AU FICHIER (.sp / .json).
+
+   Retour utilisateur : « relis le .sp et .json (import/export) dans l'app ... cela doit être parfait. »
+
+   MESURÉ : une image recadrée (clipPath) revenait SANS son recadrage après un aller-retour
+   complet, et le .sp exporté ne contenait AUCUN clipPath (0 occurrence mesurée) alors que
+   l'image du plan de travail en avait un.
+   CAUSE : Fabric n'écrit PAS `clipPath` dans toObject() quand le clip est marqué
+   `excludeFromExport: true` — drapeau que l'application pose sur TOUS ses clips (masques de
+   bloc texte, cadres de recadrage des images, clones de forme des textes « dedans une forme »).
+   Sans conséquence pour un bloc texte (applyTextboxClipPath recrée son masque au chargement),
+   mais PAS pour les autres objets : rien ne recrée le recadrage d'une image ni le contour d'un
+   texte mis dans une forme — ces données étaient donc PERDUES à chaque enregistrement.
+   CORRECTIF : à la sérialisation, si le clip n'est pas régénéré au chargement et que Fabric l'a
+   omis, on le réécrit explicitement (obj.clipPath.toObject()). L'aller-retour devient stable :
+   le fichier re-exporté est identique à l'original. */
+function spClipAPersister(obj, data) {
+    try {
+        if (!obj || !data) return data;
+        const clip = obj.clipPath;
+        if (!clip || typeof clip.toObject !== 'function') return data;
+        // Un masque de bloc texte est recréé au chargement (son décalage dépend de la
+        // métrique de police) : on ne le persiste pas. Tout le reste, oui.
+        const regenere = ((data.type === 'textbox' || data.type === 'text') && !data._isShapeClippedText)
+            || data.isLinkedTextBlock === true;
+        if (regenere) return data;
+        // 🆕 v1.7.556 : écrit TOUJOURS en dernier. Fabric peut avoir écrit le clip à sa place
+        // « standard » (un clip relu n'est plus marqué excludeFromExport) : sans ça, l'ORDRE
+        // des clés changeait et le fichier re-exporté différait au bit près de l'original.
+        if (data.clipPath) delete data.clipPath;
+        data.clipPath = clip.toObject();
+        if (clip.inverted) data.clipPath.inverted = true;
+        if (clip.absolutePositioned) data.clipPath.absolutePositioned = true;
+    } catch (_) {}
+    return data;
+}
+window.spClipAPersister = spClipAPersister;
+
 function _spInvalidatePastedCache(obj) {
     if (!obj) return;
     try {
@@ -16463,6 +16501,9 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         if (data.clipPath && (data.type === 'textbox' || data.type === 'text' || data._fixedHeight || data.isLinkedTextBlock)) {
             if (!data._isShapeClippedText) delete data.clipPath;
         }
+        /* 🆕 v1.7.556 — _SP_CLIP_556 : le recadrage (clipPath) des images et des textes
+           « dedans une forme » est réécrit quand Fabric l'a omis (cf. spClipAPersister). */
+        spClipAPersister(obj, data);
         return data;
     }
     
@@ -17382,6 +17423,9 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         if (objData.clipPath && (objData.type === 'textbox' || objData.type === 'text' || objData._fixedHeight || objData.isLinkedTextBlock)) {
             if (!objData._isShapeClippedText) delete objData.clipPath;
         }
+        /* 🆕 v1.7.556 — _SP_CLIP_556 : même traitement que dans saveAllPages (recadrage
+           des images conservé dans le fichier). */
+        spClipAPersister(obj, objData);
         
         // Calculer les bords gauche et droit de l'objet
         const objWidth = (obj.width || 0) * (obj.scaleX || 1);
