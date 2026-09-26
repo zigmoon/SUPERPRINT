@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.553 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.554 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.553 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.554 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,24 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.554 — La planche garde l'ordre du modèle ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-554">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.554</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Les pages en double page (planches) <strong>ne réordonnent plus vos objets</strong> : la pile reste celle du modèle, du gabarit et de vos propres déplacements — plus d'éléments qui sautent après une action." data-i18n-en-html="Double-page spreads <strong>no longer reorder your objects</strong>: the stack stays the one from the template, the master page and your own edits — no more elements jumping after an action." data-i18n-jp-html="見開きページが<strong>オブジェクトの順序を並べ替えなくなりました</strong>。重なり順はテンプレート・マスターページ・あなたの操作のままです。">Spread pages no longer reorder your objects.</p>
+
+ <h3 data-i18n-fr-html="🔀 Après une action, toute la pile de la planche était réécrite <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🔀 After any action the whole spread stack was rewritten <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🔀 操作のたびに見開きの重なり順が書き換わっていました <span class=&quot;badge badge-fix&quot;>修正</span>">🔀 After any action the whole spread stack was rewritten <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Ce qui se passait.</strong> Mesuré sur la planche 2|3 d'un modèle : un simple copier-coller déclenchait <strong>103 déplacements d'objets</strong> vers les indices 100, 101, 102… — c'est-à-dire toute la pile réécrite par la position verticale des objets (et non par l'ordre du modèle). Le calcul avantageait en plus l'objet sélectionné, les gros blocs et les textes : après chaque clic, la mise en page pouvait donc changer." data-i18n-en-html="<strong>What happened.</strong> Measured on the 2|3 spread of a template: a simple copy-paste triggered <strong>103 object moves</strong> to indices 100, 101, 102… — the whole stack rewritten by the vertical position of the objects instead of the template order. The calculation also boosted the selected object, large blocks and text, so the layout could change after every click." data-i18n-jp-html="<strong>起きていたこと。</strong>テンプレートの見開き 2|3 で計測：単純なコピー＆ペーストで<strong>103 回のオブジェクト移動</strong>（インデックス 100, 101, 102…）が発生し、重なり順がテンプレート順ではなく縦位置で書き換わっていました。さらに選択中のオブジェクト・大きなブロック・テキストが優先されるため、クリックのたびにレイアウトが変わり得ました。">A simple copy-paste moved 103 objects, rewriting the whole stack by vertical position.</li>
+  <li data-i18n-fr-html="<strong>Pourquoi cela touchait d'autres pages.</strong> Ce classement parcourt <em>tous</em> les canevas du document : une action faite sur la page 1 réordonnait aussi les planches 2|3, 4|5 et 6|7 — exactement le « et quand je suis allé sur d'autres pages, il s'est produit la même chose »." data-i18n-en-html="<strong>Why it hit other pages.</strong> That ranking walks <em>every</em> canvas of the document: an action on page 1 also reordered the 2|3, 4|5 and 6|7 spreads — exactly the “and when I went to other pages, the same thing happened”." data-i18n-jp-html="<strong>他のページに影響した理由。</strong>この並べ替えは文書の<em>すべて</em>のキャンバスを走査するため、1 ページ目での操作が 2|3・4|5・6|7 の見開きも並べ替えていました。">The ranking walks every canvas, so page 1 actions reordered all spreads.</li>
+  <li data-i18n-fr-html="<strong>Corrigé</strong> : on ne trie plus. Les objets gardent leur ordre, celui du modèle et de vos déplacements. Seules les copies de débordement (les doublons d'arrière-plan d'un objet qui dépasse d'une page sur l'autre) repassent sous le contenu, comme elles le font déjà à leur création. Vérifié : même geste, <strong>103 déplacements → 0</strong>, et les 43 objets de la planche sont dans le même ordre, objet par objet." data-i18n-en-html="<strong>Fixed</strong>: no more sorting. Objects keep their order — the template's and yours. Only overflow copies (the background duplicates of an object crossing from one page to the other) go back under the content, as they already do when created. Verified: same gesture, <strong>103 moves → 0</strong>, and the 43 objects of the spread are in the same order, object by object." data-i18n-jp-html="<strong>修正済み。</strong>並べ替えをやめました。順序はテンプレートとあなたの操作のままです。ページをまたぐオブジェクトの背景コピーのみ、作成時と同様に内容の下へ回ります。確認：同じ操作で<strong>103 回 → 0 回</strong>、見開きの 43 オブジェクトは一つも順序が変わっていません。">No more sorting: verified 103 moves → 0, with the 43 spread objects in the exact same order.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.553 — Remplacer une photo d'un modèle ===== -->
 

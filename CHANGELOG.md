@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,15 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.554] — 2026-09-26
+
+_Spread pages keep the document order_
+
+### Fixed
+- **Elements jumped and moved on template pages** (user report: « lorsque j ai remplacé une photo, après quelques clics, les éléments de la page se sont mis à sauter, à se déplacer et quand je suis allé sur d autres pages, il s est produit la même chose. L édition des pages template manque de stabilité »). Measured on the 2|3 spread of the `fr_magazine_fashion_8p` template, with a simple Ctrl+C / Ctrl+V: `optimizePairZIndex()` fired **103** `moveTo(object, 100|101|102|…)` calls, rewriting the whole spread stack in the order of `calculateSpreadPriority()` (1000 - top, + 500 if selected, + 100 if large, + 50 if text). Because `optimizeSpreadZIndex()` walks EVERY canvas, an action on page 1 also reordered the 2|3, 4|5 and 6|7 spreads. - **Fixed (`_SP_ORDRE_PLANCHE_554`)**: nothing is sorted any more. Objects keep their order — the template’s, the master page’s and the user’s. The only exception is overflow copies (`_isSpreadMirror`), which go under the content while keeping their relative order (which `sendToBack()` already did at creation). Objects outside the content (guides, margins, bleed, folio, master items) do not move a single rank: only the slots occupied by content are rewritten. The 1.7.545 had already had to EXCLUDE master items from that sort for this exact reason. 
+### Verified
+- Same gesture on the same spread: **103 moves before, 0 after**, and the 43 content objects are in the same order object by object (`seqAvant === seqApres` on stable per-object ids). - Guides, margins, bleed and folio keep their exact index in the stack. 
 
 ## [1.7.553] — 2026-09-26
 

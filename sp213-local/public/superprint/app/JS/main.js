@@ -18404,13 +18404,54 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         });
     });
     
-    // Trier par priorité (objets qui dépassent au-dessus)
-    allObjects.sort((a, b) => b.priority - a.priority);
-    
-    // Appliquer les z-index optimisés
-    allObjects.forEach((item, index) => {
-        const newZIndex = index + 100; // Base élevée pour éviter les conflits
-        item.canvas.moveTo(item.obj, newZIndex);
+    /* 🆕 v1.7.554 — _SP_ORDRE_PLANCHE_554 : L'ORDRE DU DOCUMENT FAIT FOI, ON NE TRIE PLUS.
+
+       Retour utilisateur : « lorsque j'ai remplacé une photo, après quelques clics, les éléments de
+       la page se sont mis à sauter, à se déplacer, et quand je suis allé sur d'autres pages, il
+       s'est produit la même chose. »
+
+       MESURÉ (journal des appels de moveTo, planche 2|3 du modèle fr_magazine_fashion_8p, un simple
+       Ctrl+V) : **103** déplacements d'un coup vers les indices 100, 101, 102… dans l'ordre de
+       calculateSpreadPriority() — c'est-à-dire 1000 - top, + 500 si l'objet est sélectionné, + 100
+       s'il est grand, + 50 si c'est un texte. Autrement dit : après chaque modification, la pile de
+       la planche était réécrite d'après la position verticale des objets, et non d'après l'ordre du
+       modèle. Comme optimizeSpreadZIndex() parcourt TOUS les canevas, une action sur la page 1
+       réordonnait aussi les planches 2|3, 4|5, 6|7 — d'où les éléments qui « sautent » même sur les
+       pages que l'on n'a pas touchées.
+       (La 1.7.545 avait déjà dû EXCLURE les éléments de gabarit de ce tri, pour cette raison exacte :
+       « détruisait donc l'ordre du gabarit en double page ». Le même raisonnement vaut pour tout le
+       contenu.)
+
+       NOUVELLE RÈGLE : on ne trie plus rien. Les objets gardent leur ordre — celui du modèle, du
+       gabarit et de l'utilisateur. Seule exception, les copies de débordement (_isSpreadMirror), qui
+       sont des doublons d'arrière-plan : elles passent SOUS le contenu en conservant leur ordre
+       relatif (c'est déjà ce que fait sendToBack() à leur création).
+       Les objets hors contenu (repères, marges, fond perdu, folio, gabarits) ne bougent pas d'un
+       seul rang : on ne réécrit QUE les places occupées par le contenu dans la pile. */
+    const _spContenu = [];
+    const _spVus2 = new Set();
+    const _spAjouter = (obj) => { if (!obj || _spVus2.has(obj)) return; _spVus2.add(obj); _spContenu.push(obj); };
+    leftObjects.forEach(_spAjouter);
+    rightObjects.forEach(_spAjouter);
+    const _spOrdre = _spContenu.filter(o => o._isSpreadMirror === true)
+        .concat(_spContenu.filter(o => o._isSpreadMirror !== true));
+    const _spCanevas = [];
+    [leftCanvas, rightCanvas].forEach(c => { if (c && _spCanevas.indexOf(c) < 0) _spCanevas.push(c); });
+    const _spLots = new Map();
+    _spOrdre.forEach(o => {
+        const c = (o.canvas && _spCanevas.indexOf(o.canvas) >= 0) ? o.canvas : leftCanvas;
+        if (!_spLots.has(c)) _spLots.set(c, []);
+        _spLots.get(c).push(o);
+    });
+    _spLots.forEach((liste, _cv) => {
+        try {
+            if (!_cv || !Array.isArray(_cv._objects) || !liste.length) return;
+            const _arr = _cv._objects.slice();
+            const _places = [];
+            _arr.forEach((o, i) => { if (_spOrdre.indexOf(o) >= 0) _places.push(i); });
+            _places.forEach((pos, k) => { if (k < liste.length) _arr[pos] = liste[k]; });
+            _cv._objects = _arr;
+        } catch (_) {}
     });
     
     // Forcer le rendu
