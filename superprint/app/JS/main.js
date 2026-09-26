@@ -1775,6 +1775,34 @@ function _spPasteTextboxFix(textObj, canvas) {
         if (textObj._cacheCanvas) { textObj._cacheCanvas = null; textObj._cacheContext = null; }
         // Retirer le clipPath cloné (Alt+clic fait pareil : cloned.clipPath = null)
         textObj.clipPath = null;
+        /* 🆕 v1.7.552 — _SP_MASQUE_COLLE_552 : LE BLOC COLLÉ GARDE SON MASQUE.
+
+           Retour utilisateur : « lorsque je place un texte qui déborde dans un bloc texte
+           et que je le copie-colle, le texte qui déborde sort du bloc alors qu'il devrait
+           rester dans la limite du bloc texte. »
+
+           MESURÉ (bloc 200 x 60 px, texte de 11 lignes, cadre 60 px → 3,8 lignes visibles) :
+               source : _fixedHeight 60, masque 55,45 px, 11 lignes → 3,8 lignes à l'écran ;
+               collé  : _fixedHeight 60, masque NULL,     11 lignes → TOUTES les lignes
+                        dessinées, encre mesurée SOUS le cadre (331 px) : le débordement
+                        sort du bloc. Le masque manquait aussi après désélection.
+           CAUSE : le masque du clone est retiré ici (il peut être périmé), mais RIEN ne le
+           recréait ensuite. Le gestionnaire de sélection (updateTransformPanel →
+           applyTextboxClipPath) le pose bien… AVANT que setActiveObject() ne déclenche ce
+           correctif : dans TOUS les chemins (collage simple, collage multiple, Alt+clic,
+           duplication, collage mobile, miroirs) le masque était effacé juste après avoir
+           été posé et ne revenait qu'au clic suivant.
+           CORRECTIF : on recrée le masque ici, une fois pour toutes, avec la MÊME source de
+           vérité que partout ailleurs (applyTextboxClipPath). La 1.7.551 avait rendu au
+           clone ses options de cadre (_fixedHeight/_fixedWidth/_spCols…) ; il manquait ce
+           masque pour que le débordement soit réellement coupé à l'écran.
+           Sans risque : applyTextboxClipPath ne pose rien (et laisse clipPath à null) pour
+           un texte dans une forme, un texte sur un tracé, ou un bloc en cours d'édition. */
+        try {
+            if (typeof window.applyTextboxClipPath === 'function') {
+                window.applyTextboxClipPath(textObj);
+            }
+        } catch (_) {}
         textObj.setCoords();
         try { canvas.renderAll(); } catch(_) {}
     } catch(_) {}

@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,15 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.552] — 2026-09-26
+
+_A pasted text block keeps its mask_
+
+### Fixed
+- **Overflowing text left its text block after copy-paste** (user request: « lorsque je place un texte qui déborde dans un bloc texte et que je le copie-colle alors le texte qui déborde sort du bloc texte alors qu il devrait rester dans la limite du bloc texte » — second report of the same symptom; 1.7.551 had already given the clone its frame options back, the mask was the missing piece). Measured on a 200 x 60 px block holding 11 lines (3.8 visible in the frame): the source carried a 55.45 px mask and showed only its visible lines; the pasted copy came in with **clipPath null**, drew all 11 lines and left **331 px of ink below the frame** — the overflow came out of the block. The mask was still missing after deselecting, and only returned on the next click. - **Cause: `_spPasteTextboxFix()` removed the cloned mask but nothing recreated it.** `setActiveObject()` runs BEFORE that cleanup in every paste path (simple paste, multi paste, Alt+click, duplication, mobile paste), so the mask applied by the selection handler (`updateTransformPanel` → `applyTextboxClipPath`) was wiped right after being set. - **Fixed (`_SP_MASQUE_COLLE_552`)**: the mask is now recreated exactly where it is removed, with the same single source of truth used everywhere else (`window.applyTextboxClipPath`), so the copy gets a mask identical to the source — preview and PDF export stay in agreement. Nothing is applied for a text clipped inside a shape, a text on a path, or a block being edited : same behaviour as before. 
+### Verified
+- Ctrl+C → Ctrl+V of a 200 x 60 px block holding 11 lines: source mask 55.45 px, pasted copy mask 55.45 px, unchanged after deselecting; ink measured below the frame **331 px before the fix, 0 after**. - Auto-height block (no fixed frame): the copy keeps its mask (55.45 px). Text clipped inside a shape: still no mask (no clipping added). 
 
 ## [1.7.551] — 2026-09-26
 

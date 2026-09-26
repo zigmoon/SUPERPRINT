@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.551 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.552 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.551 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.552 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,31 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.552 — Le bloc collé garde son masque ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-552">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.552</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Un bloc texte dont le texte <strong>déborde</strong> garde désormais son masque quand on le copie-colle : le débordement reste coupé à la limite du bloc, exactement comme dans le bloc d'origine." data-i18n-en-html="A text block whose text <strong>overflows</strong> now keeps its mask when copied and pasted: the overflow stays clipped at the edge of the block, exactly like the original block." data-i18n-jp-html="文字が<strong>あふれる</strong>テキストブロックをコピー＆ペーストしてもマスクが保たれ、あふれた文字は元のブロックと同じくブロックの境界で切れます。">A copied text block keeps its mask, so the overflow stays clipped.</p>
+
+ <h3 data-i18n-fr-html="📋 Le texte débordé sortait du bloc après un copier-coller <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="📋 Overflowing text came out of the block after copy-paste <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="📋 あふれた文字がコピー＆ペースト後にブロックの外へ出ていました <span class=&quot;badge badge-fix&quot;>修正</span>">📋 Overflowing text came out of the block after copy-paste <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Ce qui se passait.</strong> Mesuré sur un bloc de 200 × 60 px contenant 11 lignes (3,8 visibles dans le cadre) : le bloc d'origine portait un masque de 55,45 px et n'affichait que ses lignes visibles ; le bloc collé arrivait <strong>sans aucun masque</strong>, dessinait ses 11 lignes et laissait <strong>331 px d'encre sous le cadre</strong>. Le masque manquait encore après désélection : il ne revenait qu'au clic suivant." data-i18n-en-html="<strong>What happened.</strong> Measured on a 200 × 60 px block holding 11 lines (3.8 visible in the frame): the original carried a 55.45 px mask and showed only its visible lines; the pasted block arrived <strong>with no mask at all</strong>, drew all 11 lines and left <strong>331 px of ink below the frame</strong>. The mask was still missing after deselecting: it only came back on the next click." data-i18n-jp-html="<strong>起きていたこと。</strong>200 × 60 px・11 行（表示は 3.8 行）のブロックで計測：元のブロックは 55.45 px のマスクを持ち、見える行だけを表示。貼り付けたブロックは<strong>マスクなし</strong>で 11 行すべてを描画し、<strong>フレームの下に 331 px のインク</strong>が残りました。選択解除後もマスクは戻らず、次にクリックするまで欠けたままでした。">The pasted block had no mask, so all 11 lines were drawn below the frame.</li>
+  <li data-i18n-fr-html="<strong>Pourquoi.</strong> Au collage, le masque du clone est volontairement retiré (il peut être périmé) — mais rien ne le recréait ensuite. Le masque était bien reposé par le gestionnaire de sélection, sauf que <em>l'objet est sélectionné avant</em> ce nettoyage : le masque était donc effacé juste après avoir été posé, dans tous les chemins de collage (collage simple, collage multiple, Alt+clic, duplication, collage mobile)." data-i18n-en-html="<strong>Why.</strong> On paste the clone's mask is deliberately removed (it may be stale) — but nothing recreated it afterwards. The mask was in fact re-applied by the selection handler, except that <em>the object is selected before</em> that cleanup: the mask was therefore wiped right after being set, in every paste path (simple paste, multi paste, Alt+click, duplication, mobile paste)." data-i18n-jp-html="<strong>理由。</strong>貼り付け時、複製オブジェクトのマスクは（古い可能性があるため）意図的に外されますが、その後だれも作り直していませんでした。選択ハンドラはマスクを再設定していましたが、<em>その前にオブジェクトが選択される</em>ため、設定直後に消されていました。これはすべての貼り付け経路（単一・複数・Alt+クリック・複製・モバイル）で起きていました。">The cloned mask was removed on paste and nothing recreated it, because the object is selected before that cleanup step.</li>
+  <li data-i18n-fr-html="<strong>Corrigé</strong> : le masque est maintenant recréé à l'endroit même où il est retiré, avec la même fabrique de masque que le reste de l'application (aperçu et export PDF restent d'accord). Vérifié : le bloc recollé porte un masque de <strong>55,45 px</strong>, identique à la source, et l'encre sous le cadre passe de <strong>331 px à 0</strong>." data-i18n-en-html="<strong>Fixed</strong>: the mask is now recreated exactly where it is removed, using the same mask builder as the rest of the application (preview and PDF export stay in agreement). Verified: the pasted block carries a <strong>55.45 px</strong> mask, identical to the source, and the ink below the frame goes from <strong>331 px to 0</strong>." data-i18n-jp-html="<strong>修正済み。</strong>マスクを外すその場所で作り直すようにし、アプリ全体と同じマスク生成処理を使っています（プレビューと PDF 書き出しは一致したまま）。確認：貼り付けたブロックは元と同一の<strong>55.45 px</strong> のマスクを持ち、フレーム下のインクは<strong>331 px から 0</strong> になりました。">The mask is recreated where it is removed: the copy now matches the source and no ink is left below the frame.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧩 Tous les collages et duplications concernés <span class=&quot;badge badge-feat&quot;>audité</span>" data-i18n-en-html="🧩 Every paste and duplication path covered <span class=&quot;badge badge-feat&quot;>audited</span>" data-i18n-jp-html="🧩 すべての貼り付け・複製経路に対応 <span class=&quot;badge badge-feat&quot;>調査済み</span>">🧩 Every paste and duplication path covered <span class="badge badge-feat">audited</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Le correctif est posé dans la fonction de collage partagée : collage simple, collage multiple, Alt+clic, duplication et collage mobile en bénéficient d'un seul coup." data-i18n-en-html="The fix lives in the shared paste helper: simple paste, multi paste, Alt+click, duplication and mobile paste all benefit at once." data-i18n-jp-html="修正は共通の貼り付け処理に入れてあります：単一・複数・Alt+クリック・複製・モバイルの貼り付けが同時に改善されます。">The fix sits in the shared paste helper, so every paste path benefits at once.</li>
+  <li data-i18n-fr-html="Contrôlé qu'aucun rognage n'est ajouté là où il ne faut pas : un texte placé dans une forme reste sans masque, et un bloc en cours d'édition reste sans masque (la sélection reste visible pendant la saisie)." data-i18n-en-html="Checked that no clipping is added where it should not be: a text placed inside a shape still has no mask, and a block being edited still has no mask (the selection stays visible while typing)." data-i18n-jp-html="不要な箇所にクリッピングを加えていないことも確認：図形内のテキストにはマスクなし、編集中のブロックにもマスクなし（入力中は選択が見えます）。">No clipping is added where it should not be: text in a shape and blocks being edited stay mask-free.</li>
+  <li data-i18n-fr-html="Un bloc en hauteur automatique (sans cadre fixe) conserve lui aussi son masque après collage : le comportement est identique à celui du bloc d'origine." data-i18n-en-html="An auto-height block (no fixed frame) also keeps its mask after paste: behaviour is identical to the original block." data-i18n-jp-html="自動高さのブロック（固定フレームなし）も貼り付け後にマスクを保ちます：元のブロックと同じ挙動です。">Auto-height blocks also keep their mask after paste.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.551 — Le collage garde les cadres de texte ===== -->
 
