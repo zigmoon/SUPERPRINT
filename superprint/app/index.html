@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.557 — Zigmoon
+         SuperPrint 1.7.558 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.557 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.558 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.557",
+          "softwareVersion": "1.7.558",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -1215,7 +1215,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.557</div>
+                <div class="splash-version">1.7.558</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1317,7 +1317,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.557</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.558</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1413,7 +1413,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.557 | 09 2026<br>
+                V 1.7.558 | 09 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -2136,12 +2136,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.557). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.558). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.557 — internal cache tag: JS v557 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.558 — internal cache tag: JS v558 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v557"
-                      data-sp-sw="v1.7.557">v1.7.557</span>
+                      data-sp-js="v558"
+                      data-sp-sw="v1.7.558">v1.7.558</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -2266,7 +2266,7 @@
                         </p>
                         <div style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 10px 14px; margin: 0 0 14px; display: flex; align-items: flex-start; gap: 8px;">
                             <span style="font-size: 16px; flex-shrink: 0; margin-top: 1px;">⚠️</span>
-                            <span style="font-size: 11px; color: #6d5b00; line-height: 1.5;"><b>Import IDML</b> — texte, images, formes, <b>rotations</b>, polygones, opacité et contours pointillés sont conservés. Les effets (ombres, dégradés de forme, habillage de texte) ne sont pas encore repris.</span>
+                            <span style="font-size: 11px; color: #6d5b00; line-height: 1.5;"><b>Import IDML</b> — texte, images, formes, <b>rotations</b>, polygones, opacité, contours pointillés, <b>colonnes</b>, retraits de bloc, justification verticale et <b>habillage du texte</b> sont conservés. Les effets (ombres, dégradés de forme, tableaux, notes de bas de page) ne sont pas encore repris.</span>
                         </div>
                         <div id="idmlDropZone" style="border: 2px dashed #ccc; border-radius: 10px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa;">
                             <div style="font-size: 32px; margin-bottom: 8px; opacity: 0.4;">📦</div>
@@ -6395,7 +6395,7 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20261027-v557-connaissance-ia-partagee" defer></script>
+    <script src="JS/main.js?v=20261028-v558-import-idml-cadres" defer></script>
     <!-- 🎨 v1.7.525 — _SP_NUANCIERS_525 : nuanciers (accordéons) + import .ase.
          Chargé APRÈS main.js : il réutilise le gestionnaire `change` de
          #spotColorSelect au lieu de le réécrire. -->

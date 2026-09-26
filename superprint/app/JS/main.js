@@ -36687,9 +36687,17 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         while (walker.nextNode()) {
             const el = walker.currentNode;
             const tag = el.tagName ? el.tagName.toLowerCase() : '';
-            if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'p') {
+            if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6' || tag === 'p') {
                 const text = el.textContent.trim().replace(/\s+/g, ' ');
-                if (text) blocks.push({ kind: 'text', tag, text, isBold: !!el.querySelector('b,strong'), isItalic: !!el.querySelector('i,em') });
+                /* 🆕 v1.7.558 — _SP_DOCX_TITRES_558 : LES TITRES 4/5/6 NE SONT PLUS PERDUS.
+                   MESURÉ (docx de test, style Word « Titre 4 ») : mammoth rend les styles
+                   Word Titre 4/5/6 en <h4>/<h5>/<h6>, balises absentes de la collecte —
+                   le texte du titre DISPARAISSAIT du document importé (seuls « TITRE UN »
+                   puis le corps fusionné arrivaient). On les ramène au niveau h3 : la
+                   hiérarchie est conservée (gras, 1,32 × le corps, coupe le texte coulé),
+                   aucune nouvelle taille n'est inventée. */
+                const tagN = /^h[4-6]$/.test(tag) ? 'h3' : tag;
+                if (text) blocks.push({ kind: 'text', tag: tagN, text, isBold: !!el.querySelector('b,strong'), isItalic: !!el.querySelector('i,em') });
             } else if (tag === 'ul' || tag === 'ol') {
                 const items = Array.from(el.querySelectorAll(':scope > li'));
                 items.forEach((li, idx) => {
@@ -36707,6 +36715,16 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 );
                 const text = rows.join('\n');
                 if (text) blocks.push({ kind: 'table', text });
+            } else if (!el.querySelector('h1,h2,h3,h4,h5,h6,p,li,table,img')) {
+                /* 🆕 v1.7.558 — _SP_DOCX_FILET_558 : PLUS AUCUN TEXTE PERDU.
+                   Le parcours ne poussait QUE les balises testées ci-dessus : tout autre
+                   conteneur de texte (pre, figcaption, dd/dt, blockquote d'un style Word
+                   exotique, div nu produit par un autre convertisseur…) était ignoré EN
+                   SILENCE et son texte disparaissait du document importé.
+                   On ne prend ici QUE les conteneurs SANS descendant déjà traité : un
+                   <blockquote> qui contient un <p> reste ignoré (sinon doublon). */
+                const textFallback = el.textContent.trim().replace(/\s+/g, ' ');
+                if (textFallback) blocks.push({ kind: 'text', tag: 'p', text: textFallback, isBold: !!el.querySelector('b,strong'), isItalic: !!el.querySelector('i,em') });
             }
         }
         if (blocks.length === 0) { alert(translate('alertNoContentDetected')); return; }
@@ -38247,12 +38265,12 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
 
                 setProgress(100, 'Import termin\u00e9 !');
                 logMsg('\u2705 Import IDML termin\u00e9');
-                logMsg('\u26A0\uFE0F Import IDML — rotation, polygones, opacit\u00e9 et contours pointill\u00e9s conserv\u00e9s. Effets d\u00e9grad\u00e9s et habillage texte non pris en charge.');
+                logMsg('\u26A0\uFE0F Import IDML — rotation, polygones, opacit\u00e9, contours pointill\u00e9s, colonnes, retraits de bloc, justification verticale et habillage texte conserv\u00e9s. Ombres, d\u00e9grad\u00e9s de forme, tableaux et notes non pris en charge.');
 
                 setTimeout(function() {
                     idmlModal.style.display = 'none';
                     resetModal();
-                    window.spShowToast('Import IDML — texte, images, formes, rotations, polygones, opacité et contours sont conservés. Seuls les effets (ombres, dégradés complexes, habillage) sont ignorés.', { kind: 'info', duration: 6000 });
+                    window.spShowToast('Import IDML — texte, images, formes, rotations, polygones, opacité, contours pointillés, colonnes, retraits de bloc, justification verticale et habillage du texte sont conservés. Seuls les effets (ombres, dégradés de forme, tableaux, notes de bas de page) sont ignorés.', { kind: 'info', duration: 6000 });
                 }, 1200);
 
             } catch (err) {
@@ -38405,7 +38423,22 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                         var storyEl0 = storyXml.querySelector('Story');
                         if (storyEl0 && storyEl0 !== storyXml.documentElement && storyEl0.getAttribute('Self')) storyEl = storyEl0;
                     }
-                    if (!storyEl) continue;
+                    /* 🆕 v1.7.558 — _SP_IDML_STORY_RACINE_558 : TOLÉRANCE RACINE NUE.
+                       MESURÉ (fixture de test) : quand l'élément RACINE du fichier Story est
+                       <Story Self="story-colonnes"> (et non le <idPkg:Story> d'Adobe), les DEUX
+                       recherches ci-dessus l'écartent (=== documentElement) : la story était donc
+                       ignorée en SILENCE et le cadre arrivait VIDE (0 caractère, aucun message).
+                       On accepte maintenant la racine elle-même si elle porte un attribut Self. */
+                    if (!storyEl && storyXml.documentElement
+                        && storyXml.documentElement.localName === 'Story'
+                        && storyXml.documentElement.getAttribute('Self')) {
+                        storyEl = storyXml.documentElement;
+                    }
+                    /* B. Une story illisible ne doit JAMAIS être silencieuse. */
+                    if (!storyEl) {
+                        logMsg('\u26A0\uFE0F Story ignor\u00e9e (aucun \u00e9l\u00e9ment <Story Self>) : ' + stPath);
+                        continue;
+                    }
                     var storyId = storyEl.getAttribute('Self');
                     if (!storyId) continue;
                     storiesMap[storyId] = extractStoryText(storyEl, stylesMap, colorsMap);
@@ -38729,6 +38762,37 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 if (/Round/i.test(item.getAttribute('EndJoin') || '')) out.strokeLineJoin = 'round';
                 else if (/Bevel/i.test(item.getAttribute('EndJoin') || '')) out.strokeLineJoin = 'bevel';
             } catch (_) {}
+            /* 🆕 v1.7.558 — _SP_IDML_HABILLAGE_558 : L'HABILLAGE ARRIVE AVEC L'OBJET.
+               MESURÉ (audit) : 0 occurrence de TextWrapPreference dans la zone d'import — un objet
+               porteur d'un habillage (image entourée de texte, forme avec contour d'approche)
+               arrivait SANS habillage : le texte passait dessous.
+               IDML → SuperPrint : WrapAroundBoundingBox → 'box', WrapAroundObjectShape → 'shape',
+               TextWrapOffset Top/Left/Bottom/Right → _spWrapTop/Left/Bottom/Right (px).
+               JumpObject / JumpToNextColumn : l'application ne propose PAS le saut d'objet
+               (cf. _spWrap.modes, une tentative naïve détruisait du texte) → on n'invente rien. */
+            try {
+                var twp = item.getElementsByTagName('TextWrapPreference')[0];
+                if (twp) {
+                    var twMode = (twp.getAttribute('TextWrapMode') || '').replace(/\s+/g, '');
+                    var modeSP = null;
+                    if (twMode === 'WrapAroundBoundingBox') modeSP = 'box';
+                    else if (twMode === 'WrapAroundObjectShape') modeSP = 'shape';
+                    if (modeSP) {
+                        out._spWrapMode = modeSP;
+                        var _def = (window._spWrap && window._spWrap.standoffDefault) ? window._spWrap.standoffDefault : 6;
+                        var offs = twp.getElementsByTagName('TextWrapOffset')[0];
+                        var _val = function (attr) {
+                            if (!offs) return _def;
+                            var v = parseFloat(offs.getAttribute(attr) || '');
+                            return (isFinite(v) && v >= 0) ? v : _def;
+                        };
+                        out._spWrapTop = _val('Top');
+                        out._spWrapLeft = _val('Left');
+                        out._spWrapBottom = _val('Bottom');
+                        out._spWrapRight = _val('Right');
+                    }
+                }
+            } catch (_) {}
             return out;
         }
 
@@ -38929,10 +38993,55 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
 
             // --- TextFrame ---
             if (tag === 'TextFrame') {
+                /* 🆕 v1.7.558 — _SP_IDML_CADRE_558 : OPTIONS DE CADRE DE TEXTE À L'IMPORT.
+                   MESURÉ (audit) : l'import IDML ne lisait AUCUNE de ces propriétés — 0 occurrence de
+                   TextFramePreference / TextColumnCount / VerticalJustification / InsetSpacing dans la
+                   zone d'import — alors que l'application les gère. Un cadre à 2 colonnes d'InDesign
+                   arrivait donc en UNE colonne (et coulait tout son texte dans la largeur du cadre),
+                   les retraits de bloc et la justification verticale étaient perdus.
+                   IDML → SuperPrint : TextColumnCount/TextColumnGutter → _spCols/_spColGutter/_spColW ;
+                   VerticalJustification → _spVAlign (CenterAlign/BottomAlign/TopAlign) ;
+                   InsetSpacing Top/Bottom → _spInsetTop/_spInsetBottom. Les nombres IDML sont déjà
+                   dans l'unité du canevas (ptPx = identité), comme pour les autres mesures. */
+                var frameOpts = {};
+                try {
+                    var tfp = item.getElementsByTagName('TextFramePreference')[0];
+                    if (tfp) {
+                        var vj = (tfp.getAttribute('VerticalJustification') || '').replace(/\s+/g, '');
+                        if (vj === 'CenterAlign') frameOpts._spVAlign = 'center';
+                        else if (vj === 'BottomAlign') frameOpts._spVAlign = 'bottom';
+                        else if (vj === 'TopAlign') frameOpts._spVAlign = 'top';
+                        /* JustifyAlign (paragraphes répartis) n'a pas d'équivalent : on laisse 'top'. */
+                        var ins = tfp.getElementsByTagName('InsetSpacing')[0];
+                        if (ins) {
+                            var iTop = parseFloat(ins.getAttribute('Top') || '');
+                            var iBot = parseFloat(ins.getAttribute('Bottom') || '');
+                            if (isFinite(iTop) && iTop > 0) frameOpts._spInsetTop = iTop;
+                            if (isFinite(iBot) && iBot > 0) frameOpts._spInsetBottom = iBot;
+                        }
+                        var nbCol = parseInt(tfp.getAttribute('TextColumnCount') || '', 10);
+                        var gut = parseFloat(tfp.getAttribute('TextColumnGutter') || '');
+                        /* Colonnes : seulement si le cadre peut les contenir (garde-fou mesuré). */
+                        if (isFinite(nbCol) && nbCol > 1 && nbCol <= 20 && w > 40) {
+                            var gCol = (isFinite(gut) && gut >= 0) ? gut : 12;
+                            var cw = (w - (nbCol - 1) * gCol) / nbCol;
+                            if (cw > 20) {
+                                frameOpts._spCols = nbCol;
+                                frameOpts._spColGutter = gCol;
+                                frameOpts._spColW = Math.round(cw * 100) / 100;
+                                /* Les colonnes remplissent le cadre : la justification verticale
+                                   n'a aucun effet (l'application désactive même ses boutons). */
+                                delete frameOpts._spVAlign;
+                            }
+                        }
+                    }
+                } catch (_) {}
                 var storyRef = item.getAttribute('ParentStory');
                 var story = storyRef ? storiesMap[storyRef] : null;
                 if (!story || story.paragraphs.length === 0) {
-                    return { type:'textbox', left:x, top:y, width:w, text:'', fontSize:12, fontFamily:'Open Sans', fill:'#000000', _fixedWidth:w, _fixedHeight:h };
+                    var _vide = { type:'textbox', left:x, top:y, width:w, text:'', fontSize:12, fontFamily:'Open Sans', fill:'#000000', _fixedWidth:w, _fixedHeight:h };
+                    for (var _kv in frameOpts) { if (Object.prototype.hasOwnProperty.call(frameOpts, _kv)) _vide[_kv] = frameOpts[_kv]; }
+                    return _vide;
                 }
                 var fullText = '';
                 var fabricStyles = {};
@@ -38985,7 +39094,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 }
 
                 var lhVal = domLeading > 0 ? domLeading / domFontSize : 1.35;
-                return idmlWithExtras({
+                var _desc = {
                     type:'textbox', left:x, top:y, width:w,
                     text: fullText.replace(/\r/g, ''),
                     fontSize: domFontSize, fontFamily: domFontFamily, fill: domFill,
@@ -38999,7 +39108,10 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                     hyphenLanguage: idmlHyphenLang(domLang) || undefined,
                     _fixedWidth: w, _fixedHeight: h,
                     splitByGrapheme: false, breakWords: true,
-                }, item, parentMtx);
+                };
+                /* 🆕 v1.7.558 — options de cadre de texte lues dans l'IDML (cf. ci-dessus). */
+                for (var _kf in frameOpts) { if (Object.prototype.hasOwnProperty.call(frameOpts, _kf)) _desc[_kf] = frameOpts[_kf]; }
+                return idmlWithExtras(_desc, item, parentMtx);
             }
 
             // --- Rectangle / Oval / Polygon ---

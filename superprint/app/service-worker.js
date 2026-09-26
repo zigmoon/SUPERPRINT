@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.557-connaissance-ia-partagee';
+const CACHE_NAME = 'superprint-shell-v1.7.558-import-idml-cadres';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

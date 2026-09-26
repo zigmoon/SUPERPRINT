@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.557 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.558 — IDML import reads InDesign text frame options (columns, gutter, insets, vertical justification) and text wrap; Word import no longer loses Heading 4/5/6 titles.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.557 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.558 — IDML import reads InDesign text frame options (columns, gutter, insets, vertical justification) and text wrap; Word import no longer loses Heading 4/5/6 titles.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -76,7 +76,7 @@
 	"name": "Releases — Zigmoon Apps",
 	"description": "Release notes for CUT THE FLOW, SuperPrint, PDF-YZ, Bird and the complete Zigmoon application collection.",
 	"url": "https://app.zigmoon.com/release.html",
-	"dateModified": "2026-09-25",
+	"dateModified": "2026-09-26",
 	"inLanguage": "en-US",
 	"isPartOf": {"@type": "WebSite", "url": "https://app.zigmoon.com/", "name": "Zigmoon Apps"},
 	"publisher": {"@type": "Organization", "name": "Zigmoon", "url": "https://zigmoon.com"}
@@ -706,6 +706,37 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.558 — Import IDML et Word : cadres texte, colonnes, habillage ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-558">
+ <h2>SUPER PRINT <span class="badge badge-feat">v1.7.558</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="L'import <strong>IDML</strong> lit maintenant les <strong>options de cadre de texte</strong> d'InDesign (colonnes, gouttière, retraits, justification verticale) et l'<strong>habillage</strong> du texte. L'import <strong>Word</strong> ne perd plus aucun texte : les titres « Titre 4/5/6 » arrivent enfin." data-i18n-en-html="<strong>IDML</strong> import now reads InDesign's <strong>text frame options</strong> (columns, gutter, insets, vertical justification) and <strong>text wrap</strong>. <strong>Word</strong> import no longer loses any text: “Heading 4/5/6” titles finally come through." data-i18n-jp-html="<strong>IDML</strong> の読み込みが InDesign の<strong>テキストフレーム設定</strong>（段数・ガター・余白・垂直位置合わせ）と<strong>回り込み</strong>に対応しました。<strong>Word</strong> の読み込みではテキストを失わなくなり、「見出し 4/5/6」も取り込めます。">IDML import reads text frame options (columns, gutter, insets, vertical justification) and text wrap; Word import loses no text any more.</p>
+
+ <h3 data-i18n-fr-html="📥 Import IDML — les cadres arrivent tels quels <span class=&quot;badge badge-feat&quot;>nouveau</span>" data-i18n-en-html="📥 IDML import — frames arrive as designed <span class=&quot;badge badge-feat&quot;>new</span>" data-i18n-jp-html="📥 IDML 読み込み — フレームが設計どおりに <span class=&quot;badge badge-feat&quot;>新機能</span>">📥 IDML import — frames arrive as designed <span class="badge badge-feat">new</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Colonnes.</strong> Un cadre à deux colonnes d'InDesign arrivait en <em>une seule</em> colonne, tout le texte coulant sur la largeur du bloc. Le nombre de colonnes, la gouttière et la largeur de colonne sont désormais lus : sur un cadre de 451 × 328 avec une gouttière de 12, la mesure donne 2 colonnes de 219,5 px et le texte passe bien de la première à la deuxième." data-i18n-en-html="<strong>Columns.</strong> A two-column InDesign frame used to arrive as a <em>single</em> column, with all the text running across the whole block width. Column count, gutter and column width are now read: on a 451 × 328 frame with a 12 px gutter, the measurement gives 2 columns of 219.5 px and the text really flows from the first to the second." data-i18n-jp-html="<strong>段組。</strong>InDesign の 2 段フレームが<em>1 段</em>で読み込まれ、テキストがブロック幅いっぱいに流れていました。段数・ガター・段幅を読み取るようになり、451 × 328・ガター 12 のフレームでは 219.5 px の 2 段になり、テキストは実際に第 1 段から第 2 段へ流れます。">A two-column frame used to arrive as one column; column count, gutter and width are now read.</li>
+  <li data-i18n-fr-html="<strong>Retraits et justification verticale.</strong> Les retraits haut et bas du bloc et la justification verticale (haut, centré, bas) sont repris, comme les taquets et la grille de colonnes déjà présents dans l'app." data-i18n-en-html="<strong>Insets and vertical justification.</strong> Top and bottom frame insets and vertical justification (top, centre, bottom) are honoured, like the tab stops and column grid the app already had." data-i18n-jp-html="<strong>余白と垂直位置合わせ。</strong>フレームの上下余白と垂直位置合わせ（上・中央・下）に対応しました。">Top and bottom insets and vertical justification (top, centre, bottom) are honoured.</li>
+  <li data-i18n-fr-html="<strong>Habillage du texte.</strong> Une image ou une forme entourée de texte arrivait sans son habillage : le texte passait dessous. Les modes « boîte » et « épouse la forme » sont maintenant importés avec leur contour d'approche. Mesure : dans un cadre à deux colonnes, les lignes se raccourcissent à 70 px puis à 40,5 px au contact des deux carrés — et dans les deux colonnes." data-i18n-en-html="<strong>Text wrap.</strong> An image or shape with text around it arrived without its wrap: the text ran over it. The “box” and “wrap around object shape” modes are now imported with their standoff. Measured: in a two-column frame, lines shorten to 70 px then 40.5 px against the two squares — in both columns." data-i18n-jp-html="<strong>回り込み。</strong>回り込み付きの画像や図形が、回り込みなしで読み込まれ、テキストが上に重なっていました。「ボックス」と「図形に沿う」モードを間隔付きで取り込みます。実測：2 段フレームで、2 つの四角に接する行が 70 px、次に 40.5 px に短くなり、両方の段で機能します。">Wrap modes “box” and “shape” are imported with their standoff, in every column.</li>
+  <li data-i18n-fr-html="<strong>Un cadre texte n'arrive plus vide.</strong> Un fichier de texte dont la racine n'est pas celle d'Adobe était écarté en silence : le cadre arrivait vide et rien ne le signalait. Il est désormais lu (mesure : 166 caractères au lieu de 0) et toute histoire illisible est inscrite dans le journal de l'import." data-i18n-en-html="<strong>A text frame no longer arrives empty.</strong> A story file whose root element is not Adobe's was silently skipped: the frame arrived empty and nothing said so. It is now read (measured: 166 characters instead of 0) and any unreadable story is written to the import log." data-i18n-jp-html="<strong>空のテキストフレームを解消。</strong>ルート要素が Adobe 形式でないストーリーファイルは無言で除外され、フレームが空で読み込まれていました。読み込めるようになり（実測：0 文字 → 166 文字）、読めないストーリーは読み込みログに記録されます。">A story file with a non-Adobe root used to be skipped silently; it is now read and any unreadable story is logged.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="📄 Import Word — aucun texte perdu <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="📄 Word import — no text lost <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="📄 Word 読み込み — テキストを失わない <span class=&quot;badge badge-fix&quot;>修正</span>">📄 Word import — no text lost <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Ce qui se passait.</strong> Les styles Word « Titre 4 », « Titre 5 » et « Titre 6 » étaient purement et simplement <strong>perdus</strong> : sur un document de test, la page importée contenait « TITRE UN » et le corps du texte… mais pas le titre de niveau 4, disparu sans le moindre message." data-i18n-en-html="<strong>What happened.</strong> The Word styles “Heading 4”, “Heading 5” and “Heading 6” were simply <strong>lost</strong>: on a test document, the imported page held “TITRE UN” and the body text… but not the level-4 heading, which vanished without a single message." data-i18n-jp-html="<strong>起きていたこと。</strong>Word の「見出し 4/5/6」は<strong>失われて</strong>いました。テスト文書では「TITRE UN」と本文は取り込まれましたが、レベル 4 の見出しはメッセージもなく消えていました。">Word “Heading 4/5/6” titles were simply lost, without any message.</li>
+  <li data-i18n-fr-html="Ils sont maintenant repris comme des titres (gras, 1,32 × le corps, et ils coupent le texte coulé comme les autres niveaux) : la mesure passe de 2 blocs à 4, avec « TITRE QUATRE À NE PAS PERDRE » en gras à 15 pt. Un filet de sécurité reprend en plus tout autre bloc de texte que l'import ne reconnaissait pas — un document Word ne peut donc plus perdre de texte en silence." data-i18n-en-html="They now come through as headings (bold, 1.32 × body, and they break the flowed text like the other levels): the measurement goes from 2 blocks to 4, with “TITRE QUATRE À NE PAS PERDRE” in bold at 15 pt. A safety net also picks up any other text block the import did not recognise — so a Word document can no longer lose text silently." data-i18n-jp-html="見出しとして取り込まれ（太字・本文の 1.32 倍、他のレベルと同じく流し込みを区切ります）、実測は 2 ブロックから 4 ブロックになり、「TITRE QUATRE À NE PAS PERDRE」が 15 pt 太字で入ります。さらに、認識されなかったテキストブロックを拾う安全網も追加し、Word 文書が無言でテキストを失うことはなくなりました。">They are now imported as headings (bold, 1.32 × body) — 2 blocks become 4 — plus a safety net for any unrecognised text block.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🧹 Studio IA et messages <span class=&quot;badge badge-feat&quot;>ajusté</span>" data-i18n-en-html="🧹 Studio IA and messages <span class=&quot;badge badge-feat&quot;>adjusted</span>" data-i18n-jp-html="🧹 Studio IA とメッセージ <span class=&quot;badge badge-feat&quot;>調整</span>">🧹 Studio IA and messages <span class="badge badge-feat">adjusted</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Dans le <strong>Studio IA</strong>, la mention « Layout &amp; Canvas » a été retirée de la section typographique du header (elle reste dans le titre de la fenêtre du navigateur)." data-i18n-en-html="In <strong>Studio IA</strong>, the “Layout &amp; Canvas” mention was removed from the typography section of the header (it stays in the browser window title)." data-i18n-jp-html="<strong>Studio IA</strong> では、ヘッダーのタイポグラフィ欄から「Layout &amp; Canvas」の表記を外しました（ブラウザのウィンドウタイトルには残ります）。">In Studio IA, “Layout &amp; Canvas” was removed from the header typography.</li>
+  <li data-i18n-fr-html="La fenêtre d'import IDML et le message de fin ne disent plus que l'habillage n'est pas repris : ils annoncent ce qui est réellement conservé et ce qui reste ignoré (ombres, dégradés de forme, tableaux, notes de bas de page)." data-i18n-en-html="The IDML import window and its closing message no longer claim that text wrap is unsupported: they list what is really kept and what is still ignored (shadows, shape gradients, tables, footnotes)." data-i18n-jp-html="IDML 読み込み画面と完了メッセージは、回り込みが未対応だとは書かなくなりました。実際に保持されるものと、まだ無視されるもの（影・図形のグラデーション・表・脚注）を記載します。">The IDML import window no longer says wrap is unsupported; it lists what is kept and what is still ignored.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.557 — L'IA connaît tous nos outils ===== -->
 

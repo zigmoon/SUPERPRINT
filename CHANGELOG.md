@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,17 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.558] — 2026-09-26
+
+_IDML and Word import pushed to the end of what the engine allows_
+
+### Added
+- **IDML: text frame options are read** (user request: « suite à nos modifications, relis l import IDML, essaie de pousser le plus loin possible la qualité de l import IDML … car l import doit être parfait »). Audit finding: **zero** occurrence of `TextFramePreference`, `TextColumnCount`, `VerticalJustification`, `InsetSpacing` or `TextWrapPreference` anywhere in the 4 487-line importer. `TextColumnCount` and `TextColumnGutter` now feed `_spCols` / `_spColGutter` / `_spColW` (with the same width guard rail the app already uses), `VerticalJustification` feeds `_spVAlign`, `InsetSpacing` Top/Bottom feed `_spInsetTop` / `_spInsetBottom`, and `TextWrapPreference` feeds `_spWrapMode` (`box` / `shape`) plus the standoffs. Measured on a 451 × 328 frame, gutter 12, insets 4/6: `spColGeom` returns 2 columns of 219.5 px and a 318 px column height, the flow holds 48 lines with a capacity of 34 per column and `maxCol` 2 (the text really moves to column 2), and the wrap shortens lines to 70 px and 40.5 px against the two squares in **both** columns. - **IDML: a story file with a bare `<Story>` root is no longer dropped silently**. Measured before: 2 frames imported, 0 characters, no message at all. Now read (166 characters) and any unreadable story is written to the import log. - **Word: « Heading 4/5/6 » titles are no longer lost**. Mammoth renders those Word styles as `<h4>` / `<h5>` / `<h6>`, which matched **no** branch of the block collector: the heading text simply disappeared. Measured on a test `.docx`: the imported page held « TITRE UN » and the body text, but not the level-4 heading. They are now mapped to level h3 (bold, 1.32 × body, flow-breaking — no new size invented) and a safety net picks up any other text container the importer did not recognise (pre, figcaption, dd/dt, bare div…) as long as it holds no already-handled descendant, so no duplicate can appear. Measured after: 4 blocks, « TITRE QUATRE À NE PAS PERDRE » present in bold at 15 pt. - **IDML import window and completion message corrected**: they no longer claim that text wrap is not imported; they now list what is really kept and what is still ignored (shadows, shape gradients, tables, footnotes). 
+### Changed
+- **Studio IA**: the « Layout &amp; Canvas » mention was removed from the typographic section of the header (user request); it remains the browser window title. 
+### Verified
+- Real IDML file imported through the UI on the test bench: columns 2 / gutter 12 / column width 219.5 / insets 4 and 6 / vertical justification bottom / wrap `box` and `shape` with standoffs 8 and 6, `maxCol` 2, wrap widths 70 and 40.5 px, plus a colour screenshot of the rendering. Round trip through save then « Resume document » keeps every setting. - Real `.docx` imported through the UI: 4 blocks before/after comparison, heading 4 present after the fix (absent before). - `main.js` syntax × 2, parity 23 identical, recursive sync identical, coherence: no living residue, `_verif_ia.cjs`: everything compliant. 
 
 ## [1.7.557] — 2026-09-26
 
