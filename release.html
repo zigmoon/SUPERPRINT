@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.564 — text chaining: the target frame gets its mask straight away, and the Studio no longer drops the chain data.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.565 — double-page preview: a 2-page document now shows both its pages, and adding a page can no longer make page 1 vanish.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.564 — text chaining: the target frame gets its mask straight away, and the Studio no longer drops the chain data.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.565 — double-page preview: a 2-page document now shows both its pages, and adding a page can no longer make page 1 vanish.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,32 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.565 — Aperçu double page : plus aucune page perdue ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-565">
+ <h2>SUPER PRINT <span>v1.7.565</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Deux défauts enchaînés faisaient disparaître une page de l'aperçu en mode <strong>double page</strong>. Le premier est corrigé à la racine, le second ne peut plus se produire : les deux sont mesurés au banc, avant et après." data-i18n-en-html="Two chained defects made a page vanish from the preview in <strong>double page</strong> mode. The first is fixed at the root, the second can no longer happen: both are measured on the bench, before and after." data-i18n-jp-html="<strong>見開き表示</strong>でページが 1 枚消える不具合が 2 つ連鎖していました。1 つ目は根本から修正し、2 つ目は再発しないようにしました。どちらも修正前・修正後を実測しています。">Two chained defects made a page vanish from the preview in double page mode — both measured on the bench, before and after.</p>
+
+ <h3 data-i18n-fr-html="📄 Un document de 2 pages n'affichait qu'une seule page" data-i18n-en-html="📄 A 2-page document showed only one page" data-i18n-jp-html="📄 2 ページの文書が 1 ページしか表示されない">📄 A 2-page document showed only one page</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Mesuré avant :</strong> un document de 2 pages passait de 2 blocs en pages simples à <strong>1 seul bloc</strong> en double page — la page 2 n'était plus dessinée du tout, alors que le compteur en annonçait toujours 2. <strong>Mesuré après : 2 blocs, les deux pages visibles.</strong> La dernière page seule (celle de gauche, quand le nombre de pages est pair) était créée à partir de <em>trois</em> pages : un document de 2 pages n'y avait pas droit. Elle est maintenant créée dès 2 pages, comme le prévoyaient déjà le compteur d'aperçu et la logique du chemin de fer." data-i18n-en-html="<strong>Measured before:</strong> a 2-page document went from 2 blocks in single-page mode to <strong>a single block</strong> in double-page mode — page 2 was no longer drawn at all, while the counter still announced 2. <strong>Measured after: 2 blocks, both pages visible.</strong> The last lone page (the left-hand one when the page count is even) was only created from <em>three</em> pages upwards: a 2-page document never got it. It is now created from 2 pages, as the preview counter and the flatplan logic already assumed." data-i18n-jp-html="<strong>修正前の実測：</strong>2 ページの文書は、単ページ表示では 2 ブロックだったのが、見開き表示では<strong>1 ブロックだけ</strong>になり、ページ 2 はまったく描画されませんでした（カウンターは 2 のまま）。<strong>修正後：2 ブロック、両ページとも表示。</strong>ページ数が偶数のときに左側へ置かれる「最後の単独ページ」は <em>3 ページ以上</em>でしか作られていませんでした。2 ページから作られるようにし、プレビューのカウンターやフラットプランの論理と一致させました。">Measured: 2 blocks in single-page mode became a single block in double-page mode (page 2 not drawn at all); now 2 blocks, both pages visible.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🛡️ Ajouter une page ne peut plus effacer la page 1" data-i18n-en-html="🛡️ Adding a page can no longer erase page 1" data-i18n-jp-html="🛡️ ページ追加でページ 1 が消えることはもうありません">🛡️ Adding a page can no longer erase page 1</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Mesuré avant :</strong> avec le défaut ci-dessus, <em>Ajouter une page</em> retirait le dernier bloc de l'aperçu en le croyant celui de la dernière page seule — c'était celui de la <strong>page 1</strong>, qui disparaissait alors pour de bon. Mesure exacte du symptôme signalé : 4 pages annoncées par le chemin de fer, <strong>3 pages</strong> affichées. <strong>Mesuré après :</strong> le retrait n'a lieu que si le bloc contient bien la page attendue ; sinon l'aperçu est reconstruit en entier. Reproduit volontairement sur l'ancien état cassé : <em>Ajouter une page</em> redonne immédiatement page 1 + les pages 2 et 3, sans rien perdre." data-i18n-en-html="<strong>Measured before:</strong> with the defect above, <em>add a page</em> removed the preview's last block believing it was the last lone page — it was <strong>page 1</strong>'s, which then disappeared for good. Exact measurement of the reported symptom: 4 pages announced by the flatplan, <strong>3 pages</strong> displayed. <strong>Measured after:</strong> the block is only removed if it really holds the expected page; otherwise the whole preview is rebuilt. Deliberately reproduced on the old broken state: <em>add a page</em> immediately restores page 1 plus pages 2 and 3, losing nothing." data-i18n-jp-html="<strong>修正前の実測：</strong>上記の不具合により、「ページ追加」は最後のブロックを「最後の単独ページ」と誤認して削除し、実際には<strong>ページ 1</strong> が完全に消えていました。報告された症状の実測値：フラットプランは 4 ページ、表示は<strong>3 ページ</strong>。<strong>修正後：</strong>期待するページを含むブロックだけを削除し、それ以外はプレビュー全体を再構築します。旧状態を意図的に再現して確認：ページ追加でページ 1・2・3 が即座に戻り、損失はありません。">Measured: adding a page removed page 1's block (4 pages announced, 3 displayed); now the block is only removed if it holds the expected page, otherwise the preview is rebuilt.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="✅ Contrôles de non-régression" data-i18n-en-html="✅ Non-regression checks" data-i18n-jp-html="✅ 非回帰チェック">✅ Non-regression checks</h3>
+ <ul>
+  <li data-i18n-fr-html="Documents de <strong>2, 3, 4, 5 et 6 pages</strong> ouverts en double page : page 1 seule à droite, double pages 2-3 puis 4-5, dernière page seule à gauche — <strong>aucune page manquante</strong> dans les cinq cas, et la mise en page des documents de 3 pages et plus est identique à avant. Aller-retour pages simples ↔ double page : contenu et coordonnées des objets conservés à l'identique (rectangle mesuré à 50,60 → 41,60 interne → retour à 50,60). Bascule <em>depuis la page 2</em> : la page 2 reste la page courante." data-i18n-en-html="<strong>2, 3, 4, 5 and 6-page</strong> documents opened in double-page mode: page 1 alone on the right, spreads 2-3 then 4-5, last page alone on the left — <strong>no missing page</strong> in any of the five cases, and the layout of 3-page-and-up documents is unchanged. Single-page to double-page round trip: object content and coordinates preserved exactly (a rectangle measured at 50,60 → 41,60 internally → back to 50,60). Switching <em>from page 2</em>: page 2 stays the current page." data-i18n-jp-html="<strong>2・3・4・5・6 ページ</strong>の文書を見開き表示で開いた結果：ページ 1 は右に単独、2-3、4-5 の見開き、最後のページは左に単独 — 5 ケースすべてで<strong>欠落ページなし</strong>。3 ページ以上のレイアウトは修正前と同じです。単ページ ↔ 見開きの往復：オブジェクトの内容と座標は完全に保持（矩形は 50,60 → 内部 41,60 → 50,60 に復帰）。<em>ページ 2 から</em>の切り替えでもページ 2 が現在ページのままです。">Measured on 2, 3, 4, 5 and 6-page documents: no missing page in any case, 3-page-and-up layouts unchanged, and object content and coordinates survive the single ↔ double page round trip.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.564 — Le chaînage de texte : masque de la cible et Studio ===== -->
 

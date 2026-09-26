@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,22 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.565] — 2026-09-26
+
+_Double-page preview: no more lost pages (both defects reproduced and measured on the bench)_
+
+### Fixed
+- **A 2-page document showed only one page in double-page mode** — MEASURED: switching a 2-page document from single-page to double-page took the preview from **2 blocks to 1** (page 2 was no longer drawn at all, while `pageIndicator` still read `1/2`). Cause: in `renderAllPages()` the last lone page (left-hand page for an even page count) was only created when `pages.length > 2`, so a 2-page document never received it — contradicting `isSpreadPage()` (which already treats page 2 of a 2-page document as a lone page) and the expected-block counter, which disagreed with the layout. The lone left page is now created from 2 pages upwards, and the counter formula was aligned. MEASURED AFTER: **2 blocks, page 1 and page 2 both visible**; the `> 2` guard is gone.
+- **Adding a page could erase page 1 from the preview** — MEASURED: with the defect above, the incremental `#addPage` path (and `addPageFromChemin`) removed `container.lastElementChild` without checking what it contained, believing it to be the last lone page. It was **page 1's** block: on a 2-page document, adding 2 pages produced a flatplan announcing 4 pages while the preview showed only **3** (pages 2, 3 and 4) — the exact symptom reported. Both paths now call a shared guard, `spRetirePageSeuleGauche(container, leftIndex)`, which only removes the block if it really holds that lone page, and otherwise rebuilds the whole preview from the already-saved `pages[]`. MEASURED AFTER: on the old broken state reproduced deliberately, one "add page" immediately restores page 1 plus pages 2 and 3, losing nothing (console: `[addPage] Bloc de page seule introuvable : reconstruction complete de l'apercu.`).
+- **Spread page labels showed a double space** — MEASURED: labels read `"Page  2"` / `"Page  3"` for spreads against `"Page 1"` / `"Page 4"` for lone pages. Both now use a single space.
+
+### Verified (bench measurements)
+- 2, 3, 4, 5 and 6-page documents opened in double-page mode: **no missing page** in any case (2 → page 1 + page 2; 3 → page 1 + pages 2-3; 4 → page 1 + pages 2-3 + page 4; 5 → page 1 + pages 2-3 + pages 4-5; 6 → page 1 + pages 2-3 + pages 4-5 + page 6). The layout of 3-page-and-up documents is **identical to before** the fix.
+- Single-page ↔ double-page round trip on a 2-page document with an object per page: content and coordinates preserved exactly (rectangle stored at `50,60` → `41,60` in the internal spread referential → back to `50,60`), and page 2 stays the current page when switching from it.
+
+### Note
+- 1.7.564 (text chaining) is unchanged by this release. The two chain items whose own re-measurement was still pending at 1.7.564 (Studio chain transport, pasted chained pair) remain as stated there: measured cause, corrected behaviour not yet re-measured.
 
 ## [1.7.564] — 2026-09-26
 

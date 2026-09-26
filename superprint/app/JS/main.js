@@ -12848,7 +12848,11 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         }
 
         // 3) Dernière page seule à gauche si nombre de pages pair (page finale paire)
-        if (pages.length > 2 && pages.length % 2 === 0) {
+        // 🛡️ v1.7.565 — BUG MESURÉ : le garde « > 2 » privait la PAGE 2 de tout rendu
+        //   dans un document de 2 pages (aperçu : 1 seul bloc, page 2 invisible, alors
+        //   que isSpreadPage(1) la déclarait déjà « page seule »). On crée donc la page
+        //   seule de gauche dès 2 pages ; le cas 0 page reste exclu (index -1).
+        if (pages.length >= 2 && pages.length % 2 === 0) {
             const lastWrapper = document.createElement('div');
             lastWrapper.className = 'spread-wrapper';
             lastWrapper.style.justifyContent = 'flex-start';
@@ -12892,7 +12896,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
     // la machine. Un délai fixe rendait les pages cliquables trop tôt sur Chrome.
     const spreadCanvasCount = pages.length === 0
         ? 0
-        : 1 + Math.floor((pages.length - 1) / 2) + (pages.length > 2 && pages.length % 2 === 0 ? 1 : 0);
+        : 1 + Math.floor((pages.length - 1) / 2) + (pages.length >= 2 && pages.length % 2 === 0 ? 1 : 0);
     const expectedCanvasCount = viewMode === 'spread' ? spreadCanvasCount : pages.length;
     const finalizeRender = () => {
         if (window._renderEpoch !== renderEpoch) return;
@@ -16903,6 +16907,29 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
 
         // ========== CRÉATION CANVAS SPREAD UNIFIÉ ==========
         
+        /* 🛡️ v1.7.565 — RETRAIT SÛR DU BLOC « PAGE SEULE DE GAUCHE » (mode double page).
+           MESURE DU BUG : document de 2 pages → en double page, SEULE la page 1 était
+           rendue ; « Page + » retirait alors le dernier bloc DOM (celui de la PAGE 1)
+           en le croyant « page seule de gauche » → la page 1 disparaissait de l'aperçu
+           (4 pages annoncées, 3 affichées).
+           Ici on ne retire le bloc QUE s'il contient réellement la page leftIndex en
+           page seule (un .page-wrapper sans .spread-wrapper). Sinon on renvoie false
+           et l'appelant reconstruit tout l'aperçu — jamais on n'efface une page au
+           hasard. */
+        function spRetirePageSeuleGauche(container, leftIndex) {
+            try {
+                if (!container) return false;
+                const dernier = container.lastElementChild;
+                if (!dernier) return false;
+                if (dernier.querySelector('.spread-wrapper')) return false;
+                const seul = dernier.querySelector('.page-wrapper');
+                if (!seul) return false;
+                if (String(seul.dataset.pageIndex) !== String(leftIndex)) return false;
+                dernier.remove();
+                return true;
+            } catch (_) { return false; }
+        }
+
         function createSpreadCanvas(container, leftIndex, rightIndex, width, height) {
     const spreadWrapper = document.createElement('div');
     spreadWrapper.className = 'spread-wrapper sp-pair-page';
@@ -16933,7 +16960,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     // Ajout des numéros de page
     const pageNumberLeft = document.createElement('div');
     pageNumberLeft.className = 'page-number';
-    pageNumberLeft.textContent = `Page  ${leftIndex + 1}`;
+    pageNumberLeft.textContent = `Page ${leftIndex + 1}`;
     pageNumberLeft.style.position = 'absolute';
     pageNumberLeft.style.left = '0';
     pageNumberLeft.style.bottom = '-24px';
@@ -16943,7 +16970,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
 
     const pageNumberRight = document.createElement('div');
     pageNumberRight.className = 'page-number';
-    pageNumberRight.textContent = rightIndex !== leftIndex ? `Page  ${rightIndex + 1}` : '';
+    pageNumberRight.textContent = rightIndex !== leftIndex ? `Page ${rightIndex + 1}` : '';
     pageNumberRight.style.position = 'absolute';
     pageNumberRight.style.right = '0';
     pageNumberRight.style.bottom = '-24px';
@@ -32082,28 +32109,40 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 // L'ancienne "single left" (newPageIndex-1) s'associe avec la nouvelle page
                 const leftIndex = newPageIndex - 1;
 
-                // 1. Retirer l'ancien wrapper DOM de la "single left"
-                const lastDomWrapper = container.lastElementChild;
-                if (lastDomWrapper) lastDomWrapper.remove();
+                // 1. 🛡️ v1.7.565 — Retirer l'ancien wrapper DOM de la "single left"
+                //    UNIQUEMENT s'il s'agit bien de cette page. L'ancien code retirait
+                //    container.lastElementChild sans contrôle : quand l'aperçu était
+                //    décalé (2 pages en double page), c'est le bloc de la PAGE 1 qui
+                //    partait → page 1 perdue dans l'aperçu (mesuré 3 pages sur 4).
+                const _retireOk = spRetirePageSeuleGauche(container, leftIndex);
 
                 // 2. Nettoyer l'ancien canvas et l'extraire du tableau
-                const oldCanvasIdx = window.pageToCanvasMap ? window.pageToCanvasMap[leftIndex] : undefined;
-                if (oldCanvasIdx !== undefined && canvases[oldCanvasIdx]) {
-                    deepCleanupCanvas(canvases[oldCanvasIdx]);
-                    canvases.splice(oldCanvasIdx, 1);
-                    delete window.pageToCanvasMap[leftIndex];
-                    // Décaler les références qui pointaient au-delà de l'index supprimé
-                    if (window.pageToCanvasMap) {
-                        Object.keys(window.pageToCanvasMap).forEach(k => {
-                            if (window.pageToCanvasMap[k] > oldCanvasIdx) {
-                                window.pageToCanvasMap[k]--;
-                            }
-                        });
+                if (_retireOk) {
+                    const oldCanvasIdx = window.pageToCanvasMap ? window.pageToCanvasMap[leftIndex] : undefined;
+                    if (oldCanvasIdx !== undefined && canvases[oldCanvasIdx]) {
+                        deepCleanupCanvas(canvases[oldCanvasIdx]);
+                        canvases.splice(oldCanvasIdx, 1);
+                        delete window.pageToCanvasMap[leftIndex];
+                        // Décaler les références qui pointaient au-delà de l'index supprimé
+                        if (window.pageToCanvasMap) {
+                            Object.keys(window.pageToCanvasMap).forEach(k => {
+                                if (window.pageToCanvasMap[k] > oldCanvasIdx) {
+                                    window.pageToCanvasMap[k]--;
+                                }
+                            });
+                        }
                     }
                 }
 
                 // 3. Créer le nouveau spread (ancienne dernière page + nouvelle page vide)
-                createSpreadCanvas(container, leftIndex, newPageIndex, width, height);
+                if (_retireOk) {
+                    createSpreadCanvas(container, leftIndex, newPageIndex, width, height);
+                } else {
+                    /* Aperçu désynchronisé : plutôt que d'effacer une page au hasard, on
+                       reconstruit tout l'aperçu depuis pages[] (déjà sauvegardé ci-dessus). */
+                    console.warn("[addPage] Bloc de page seule introuvable : reconstruction complete de l'apercu.");
+                    renderAllPages();
+                }
             }
 
             // 🎬 Animation d'entrée sur le nouveau dernier wrapper
@@ -55644,21 +55683,27 @@ https://superprint.app
         } else {
             // Index pair → ancienne "single left" + nouvelle page = spread
             const leftIndex       = newPageIndex - 1;
-            const lastDomWrapper  = container.lastElementChild;
-            if (lastDomWrapper) lastDomWrapper.remove();
+            // 🛡️ v1.7.565 — même garde que #addPage : on ne retire le dernier bloc que
+            //    s'il contient réellement la page leftIndex en page seule.
+            const _retireOk = spRetirePageSeuleGauche(container, leftIndex);
 
-            const oldCanvasIdx = window.pageToCanvasMap ? window.pageToCanvasMap[leftIndex] : undefined;
-            if (oldCanvasIdx !== undefined && canvases[oldCanvasIdx]) {
-                deepCleanupCanvas(canvases[oldCanvasIdx]);
-                canvases.splice(oldCanvasIdx, 1);
-                delete window.pageToCanvasMap[leftIndex];
-                if (window.pageToCanvasMap) {
-                    Object.keys(window.pageToCanvasMap).forEach(k => {
-                        if (window.pageToCanvasMap[k] > oldCanvasIdx) window.pageToCanvasMap[k]--;
-                    });
+            if (_retireOk) {
+                const oldCanvasIdx = window.pageToCanvasMap ? window.pageToCanvasMap[leftIndex] : undefined;
+                if (oldCanvasIdx !== undefined && canvases[oldCanvasIdx]) {
+                    deepCleanupCanvas(canvases[oldCanvasIdx]);
+                    canvases.splice(oldCanvasIdx, 1);
+                    delete window.pageToCanvasMap[leftIndex];
+                    if (window.pageToCanvasMap) {
+                        Object.keys(window.pageToCanvasMap).forEach(k => {
+                            if (window.pageToCanvasMap[k] > oldCanvasIdx) window.pageToCanvasMap[k]--;
+                        });
+                    }
                 }
+                createSpreadCanvas(container, leftIndex, newPageIndex, width, height);
+            } else {
+                console.warn("[addPageFromChemin] Bloc de page seule introuvable : reconstruction complete de l'apercu.");
+                renderAllPages();
             }
-            createSpreadCanvas(container, leftIndex, newPageIndex, width, height);
         }
     } else {
         renderAllPages();
