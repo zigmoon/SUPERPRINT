@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.565-apercu-double-page';
+const CACHE_NAME = 'superprint-shell-v1.7.566-image-cadre-gabarit';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

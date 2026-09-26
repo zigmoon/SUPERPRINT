@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,23 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.566] — 2026-09-26
+
+_Replacing an image inside an asset-library layout no longer breaks the layout_
+
+### Fixed
+- **A replaced photo left its frame and disturbed the whole layout** — MEASURED (template `fr_journal_hair_4p`): the photo fills a **495.21 × 370.48 px** window at (58.4 ; 139). Replacing its 560 × 780 image with a 400 × 1400 one moved the visible window to **(306 ; 846)** — **522 px too low** — and grew it to **693 × 519 px**: the photo covered the caption and the footer block and the frame kept only its flat colour.
+- **Cause** — `replaceImageForObject()` only read the reference window when `clipPath.type === 'rect'`. Asset-library templates use **path** masks (arch, slope, `masque()` → `fabric.Path`): the window then fell back to the bitmap's own box, the mask was never resized, and **the image was never re-centred** (1.7.553 only rewrote a rectangular mask's width/height).
+- **Fix** — the reference window is now the mask **whatever its type** (a relative clip is drawn in the object's cache, whose origin is the object's centre — measured for rect, path and circle: `left + width/2 = 0`). The window is read before any mutation, the photo is set to *fill proportionally* (uniform cover scale, no distortion), the mask is rescaled **around the same centre**, and the image is re-centred on the previous window's centre with `setPositionByOrigin(…, 'center', 'center')` so rotation and origin are respected. Images without a mask use their own box as the reference (1.7.553 behaviour, now correctly centred).
+
+### Verified (bench measurements)
+- Six cases measured before/after — path mask, three rectangular masks, a magazine full-page photo, a **2|3 spread**, an image **without a mask**, an image **rotated 25**: the visible window is **identical to the pixel** (centre preserved to 0.01 px), the scale stays uniform in all six cases, the object keeps its rank in the stack (index 5 → 5), frames and neighbouring blocks do not move.
+- The window survives a page change and a `.sp` round trip (8 pages, 130 objects, "✓ Projet chargé — 8 pages, 130 objets").
+- The crop window's own **Replace image** button uses the same function: window preserved, crop window reopened with the new image.
+
+### Note
+- 1.7.565 (double-page preview) is unchanged by this release. The npm launcher is not republished (`MIN_APP_VERSION` untouched).
 
 ## [1.7.565] — 2026-09-26
 

@@ -24669,14 +24669,33 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 const _natW = Math.max(1, (newImg.width || 1));
                 const _natH = Math.max(1, (newImg.height || 1));
                 const _clip = imageObj.clipPath;
-                const _clipRect = (!!_clip && (_clip.type === 'rect' || _clip.type === 'Rect') && !_clip.absolutePositioned) ? _clip : null;
+                // 🆕 v1.7.566 — la fenêtre de référence est le MASQUE s'il existe, QUEL QUE
+                //   SOIT SON TYPE (rect, path, cercle, polygone…) : les gabarits de la
+                //   bibliothèque d'assets posent des masques en TRACÉ (arche, pente) que
+                //   l'ancien test « type === rect » ignorait — la fenêtre n'était alors
+                //   ni redimensionnée ni recentrée (mesuré : décalage de 522 px).
+                const _clipUsable = (!!_clip && !_clip.absolutePositioned &&
+                    Math.abs((_clip.width || 0) * (_clip.scaleX || 1)) > 0.01 &&
+                    Math.abs((_clip.height || 0) * (_clip.scaleY || 1)) > 0.01) ? _clip : null;
+                const _sc0x = Math.abs(imageObj.scaleX || 1) || 1;
+                const _sc0y = Math.abs(imageObj.scaleY || 1) || 1;
                 let _winW = targetDisplayedW, _winH = targetDisplayedH;
-                if (_clipRect) {
-                    _winW = Math.abs(_clipRect.width || 0) * Math.abs(imageObj.scaleX || 1);
-                    _winH = Math.abs(_clipRect.height || 0) * Math.abs(imageObj.scaleY || 1);
+                let _masqueLocW = 0, _masqueLocH = 0, _masqueOffX = 0, _masqueOffY = 0;
+                if (_clipUsable) {
+                    _masqueLocW = Math.abs(_clipUsable.width || 0) * Math.abs(_clipUsable.scaleX || 1);
+                    _masqueLocH = Math.abs(_clipUsable.height || 0) * Math.abs(_clipUsable.scaleY || 1);
+                    _winW = _masqueLocW * _sc0x;
+                    _winH = _masqueLocH * _sc0y;
+                    // centre du masque dans le repère LOCAL de l'image (0 = centre de l'objet)
+                    _masqueOffX = (_clipUsable.left || 0) + ((_clipUsable.scaleX || 1) < 0 ? -1 : 1) * _masqueLocW / 2;
+                    _masqueOffY = (_clipUsable.top || 0) + ((_clipUsable.scaleY || 1) < 0 ? -1 : 1) * _masqueLocH / 2;
                 }
                 if (!(_winW > 0)) _winW = _natW;
                 if (!(_winH > 0)) _winH = _natH;
+                // Centre de la fenêtre visible, relevé AVANT de toucher à l'image.
+                const _centre0 = (typeof imageObj.getCenterPoint === "function") ? imageObj.getCenterPoint() : { x: imageObj.left, y: imageObj.top };
+                const _winCX = _centre0.x + _masqueOffX * _sc0x;
+                const _winCY = _centre0.y + _masqueOffY * _sc0y;
                 // « Remplir le cadre proportionnellement » : la photo couvre la fenêtre sans déformation.
                 let _cover = Math.max(_winW / _natW, _winH / _natH);
                 if (!isFinite(_cover) || _cover <= 0) _cover = fallbackScale || 1;
@@ -24685,9 +24704,29 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 imageObj.height = _natH;
                 imageObj.scaleX = (imageObj.scaleX < 0 ? -1 : 1) * _cover;
                 imageObj.scaleY = (imageObj.scaleY < 0 ? -1 : 1) * _cover;
-                if (_clipRect) {
-                    _clipRect.set({ width: _winW / _cover, height: _winH / _cover });
-                    _clipRect.dirty = true;
+                // Le masque garde son CENTRE local : on le remet seulement à l'échelle de
+                //   la fenêtre (la photo n'est jamais déformée : échelle uniforme).
+                if (_clipUsable) {
+                    const _kx = _masqueLocW > 0.01 ? (_winW / _cover) / _masqueLocW : 1;
+                    const _ky = _masqueLocH > 0.01 ? (_winH / _cover) / _masqueLocH : 1;
+                    _clipUsable.set({
+                        scaleX: ((_clipUsable.scaleX || 1) < 0 ? -1 : 1) * Math.abs(_clipUsable.scaleX || 1) * _kx,
+                        scaleY: ((_clipUsable.scaleY || 1) < 0 ? -1 : 1) * Math.abs(_clipUsable.scaleY || 1) * _ky
+                    });
+                    const _nBoxW = Math.abs(_clipUsable.width || 0) * Math.abs(_clipUsable.scaleX || 1);
+                    const _nBoxH = Math.abs(_clipUsable.height || 0) * Math.abs(_clipUsable.scaleY || 1);
+                    _clipUsable.set({ left: _masqueOffX - _nBoxW / 2, top: _masqueOffY - _nBoxH / 2 });
+                    _clipUsable.dirty = true;
+                }
+                // 🔁 RECENTRAGE — la nouvelle photo occupe la MÊME fenêtre, au même endroit.
+                try {
+                    imageObj.setPositionByOrigin(
+                        new fabric.Point(_winCX - _masqueOffX * _cover, _winCY - _masqueOffY * _cover),
+                        "center", "center"
+                    );
+                } catch (_eCentrage) {
+                    imageObj.left = _winCX - (_natW * _cover) / 2;
+                    imageObj.top = _winCY - (_natH * _cover) / 2;
                 }
                 imageObj.objectCaching = false;
                 imageObj.statefullCache = false;
