@@ -3966,34 +3966,34 @@ if (window._spGpuEnabled) {
             return !!spHyphenatorFor(lang);
         }
         
-        // Initialiser les hyphenators quand les bibliothèques sont chargées
-        window.addEventListener('load', function() {
-    try {
-        if (typeof Hypher !== 'undefined') {
-            // Français
-            if (typeof Hyphenation !== 'undefined' && Hyphenation.fr) {
-                hyphenators.fr = new Hypher(Hyphenation.fr);
-            }
-            // Anglais
-            if (typeof Hyphenation !== 'undefined' && Hyphenation['en-us']) {
-                hyphenators.en = new Hypher(Hyphenation['en-us']);
-            }
-            // Allemand
-            if (typeof Hyphenation !== 'undefined' && Hyphenation.de) {
-                hyphenators.de = new Hypher(Hyphenation.de);
-            }
-            // Espagnol
-            if (typeof Hyphenation !== 'undefined' && Hyphenation.es) {
-                hyphenators.es = new Hypher(Hyphenation.es);
-            }
-            // Italien
-            if (typeof Hyphenation !== 'undefined' && Hyphenation.it) {
-                hyphenators.it = new Hypher(Hyphenation.it);
-            }
+        // 🆕 v1.7.568 — CÉSURE PARESSEUSE, PAR LANGUE.
+        //   MESURÉ (profil du démarrage) : les cinq dictionnaires (FR, EN, DE, ES, IT)
+        //   construisaient leurs arbres de césure au démarrage (au `load`), soit ~25 ms de fil
+        //   principal — un poste de plus qui tombait pile à l'affichage des pop-ins. Ils sont
+        //   maintenant construits À LA PREMIÈRE UTILISATION : un document français ne paie plus
+        //   l'allemand, l'espagnol ni l'italien, et un document sans césure ne paie rien.
+        const _spHyphenSource = { fr: 'fr', en: 'en-us', de: 'de', es: 'es', it: 'it' };
+        const _spHyphenCache = {};
+        function _spHyphenator(cle) {
+            if (_spHyphenCache[cle]) return _spHyphenCache[cle];
+            try {
+                if (typeof Hypher === 'undefined' || typeof Hyphenation === 'undefined') return null;
+                const src = Hyphenation[_spHyphenSource[cle]];
+                if (!src) return null;
+                _spHyphenCache[cle] = new Hypher(src);
+            } catch (_) { return null; }
+            return _spHyphenCache[cle] || null;
         }
-    } catch(e) {
-        console.warn('Erreur chargement hyphenation:', e);
-    }
+        window._spHyphenator = _spHyphenator;
+        Object.keys(_spHyphenSource).forEach(function (cle) {
+            try {
+                Object.defineProperty(hyphenators, cle, {
+                    configurable: true,
+                    enumerable: true,
+                    get: function () { return _spHyphenator(cle); },
+                    set: function (v) { _spHyphenCache[cle] = v; }
+                });
+            } catch (_) {}
         });
 
         // Sérialiser les flags de césure dans les objets Textbox
@@ -12277,43 +12277,37 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
     
     const startTime = performance.now();
     
-    const testElement = document.createElement('div');
-    testElement.style.cssText = 'position:fixed;top:-9999px;left:-9999px;visibility:hidden;font-size:72px;width:100px;height:100px;overflow:hidden;pointer-events:none;';
-    document.body.appendChild(testElement);
-    
-    const fonts = ['Open Sans', 'Poppins', 'Playfair Display', 'Bebas Neue', 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Space Mono'];
-    
-    fonts.forEach(font => {
-        // Précharger la version normale
-        testElement.style.fontFamily = font;
-        testElement.style.fontWeight = '400';
-        testElement.style.fontStyle = 'normal';
-        testElement.textContent = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        testElement.offsetHeight; // Force layout
-
-        // Précharger la version grasse (bold/700) si disponible
-        const hasBold = fontWeights[font] && fontWeights[font].includes('700');
-        if (hasBold) {
-            testElement.style.fontWeight = '700';
-            testElement.offsetHeight; // Force layout
+    // 🆕 v1.7.568 — PRÉCHARGEMENT DES POLICES SANS MISE EN PAGE FORCÉE.
+    //   MESURÉ (profil du démarrage, cache froid, 1 600 premières ms) : l'ancienne boucle
+    //   écrivait 62 caractères en 72 px dans un div caché puis lisait `offsetHeight` pour
+    //   chaque graisse et chaque italique — jusqu'à 32 mises en page synchrones forcées,
+    //   46 à 52 ms de fil principal sur un processeur rapide (bien davantage sur un vieux
+    //   processeur) : c'était LA tâche de 76 ms du démarrage, juste avant les pop-ins.
+    //   On demande maintenant au navigateur de charger les polices avec son API
+    //   (document.fonts.load) : les téléchargements partent au même moment, sans forcer
+    //   le moindre rendu. L'application rafraîchit déjà les blocs de texte après
+    //   `document.fonts.ready`, donc rien ne change à l'écran.
+    const famillesPolices = [
+        ['Open Sans', [400, 600, 700], true],
+        ['Poppins', [400, 700], true],
+        ['Playfair Display', [400, 700], true],
+        ['Bebas Neue', [400], false],
+        ['IBM Plex Mono', [400, 700], true],
+        ['JetBrains Mono', [400, 700], true],
+        ['Fira Code', [400], false],
+        ['Space Mono', [400, 700], true]
+    ];
+    try {
+        if (document.fonts && typeof document.fonts.load === 'function') {
+            famillesPolices.forEach(function (entree) {
+                const nomPolice = entree[0], lesPoids = entree[1], avecItalique = entree[2];
+                lesPoids.forEach(function (poids) {
+                    try { document.fonts.load(poids + ' 72px "' + nomPolice + '"'); } catch (_) {}
+                    if (avecItalique) { try { document.fonts.load('italic ' + poids + ' 72px "' + nomPolice + '"'); } catch (_) {} }
+                });
+            });
         }
-
-        // Précharger l'italique (sauf pour les polices sans variante italique chargée)
-        // Note: Fira Code et Bebas Neue n'ont pas d'italique chargé explicitement dans index.html
-        if (font !== 'Bebas Neue' && font !== 'Fira Code') {
-            testElement.style.fontWeight = '400';
-            testElement.style.fontStyle = 'italic';
-            testElement.offsetHeight;
-
-            if (hasBold) {
-                testElement.style.fontWeight = '700';
-                testElement.offsetHeight;
-            }
-            testElement.style.fontStyle = 'normal';
-        }
-    });
-    
-    document.body.removeChild(testElement);
+    } catch (_) {}
     fontsPreloaded = true;
     
     const loadTime = performance.now() - startTime;
@@ -73702,6 +73696,19 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         } catch (e) { return ''; }
     };
 
+    // 🆕 v1.7.568 — LA BIBLIOTHÈQUE D'ASSETS N'EST PLUS CONSTRUITE PENDANT LE DÉMARRAGE.
+    //   MESURÉ (cache froid, profil des 1 600 premières ms) : 153 cartes d'assets étaient
+    //   créées au démarrage — 43 maquettes, 22 typographies, 85 formes (85 aperçus SVG en
+    //   ligne) et 3 images — soit la plus grosse tâche de fil principal du boot (76 ms sur un
+    //   processeur rapide, donc plusieurs centaines de ms sur un vieux processeur), juste avant
+    //   l'affichage des pop-ins (bienvenue / nouveautés / didacticiel) : c'est ce que l'on
+    //   ressentait comme « ça lague à l'ouverture ».
+    //   La construction est désormais DIFFÉRÉE (voir _spPlanifierAssets ci-dessous) : elle se
+    //   fait à la première ouverture du panneau Assets, ou en tâche de fond une fois
+    //   l'application démarrée. Le démarrage n'attend plus la bibliothèque.
+    function _spBuildAssetGrids() {
+        if (window._spAssetGridsBuilt) return;
+        window._spAssetGridsBuilt = true;
     // Générer les assets Typographie
     const typoGrid = document.querySelector('.assets-grid[data-content="typo"]');
     if (typoGrid && typeof typographyPatterns !== 'undefined') {
@@ -74284,6 +74291,58 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             });
         }
     }
+        // ---- fin de la construction différée : remise en cohérence ----------------
+        // Le bandeau de tags et le filtre de langue avaient été calculés au démarrage sur
+        //   des grilles vides : on les recalcule maintenant que les cartes existent.
+        try { if (typeof window.spBuildAssetsTags === 'function') window.spBuildAssetsTags((typeof window.spTagsLangue === 'function') ? window.spTagsLangue() : 'en'); } catch (_) {}
+        try {
+            if (!window._spLangChoisiManuellement) {
+                const bEn = document.querySelector('.assets-lang-btn[data-asset-lang="en"]');
+                if (bEn) { document.querySelectorAll('.assets-lang-btn').forEach(function (x) { x.classList.remove('active'); }); bEn.classList.add('active'); }
+            }
+        } catch (_) {}
+        try { if (typeof applyAssetsFilter === 'function') applyAssetsFilter(); } catch (_) {}
+        document.querySelectorAll('.assets-grid').forEach(function (grid) {
+            const vide = grid.querySelector('.assets-empty');
+            if (grid.querySelector('.asset-card')) { if (vide) vide.remove(); return; }
+            if (!vide) {
+                const d = document.createElement('div');
+                d.className = 'assets-empty';
+                d.textContent = translate('assetEmptyGrid');
+                grid.appendChild(d);
+            }
+        });
+    }
+    window._spBuildAssetGrids = _spBuildAssetGrids;
+
+    // 🆕 v1.7.568 — QUAND construire la bibliothèque d'assets : (1) dès que le panneau Assets
+    //   s'ouvre (clic sur le bouton de la barre latérale ou survol du panneau), (2) sinon en
+    //   tâche de fond, une fois le démarrage terminé (pop-ins compris).
+    function _spPlanifierAssets() {
+        const lancer = function () { try { _spBuildAssetGrids(); } catch (e) { console.warn('[SP] bibliothèque d\'assets :', e); } };
+        try {
+            const btnAssets = document.querySelector('img[alt="Assets"]');
+            const bouton = btnAssets ? btnAssets.closest('button') : null;
+            if (bouton) bouton.addEventListener('click', lancer);
+        } catch (_) {}
+        try {
+            const panneau = document.getElementById('trappeContent');
+            if (panneau) panneau.addEventListener('mouseenter', function () { lancer(); }, { once: true });
+        } catch (_) {}
+        // 🛡️ v1.7.568 — ne pas partir « dès que la machine respire » : le fil principal devient
+        //   idle entre deux tâches de démarrage et requestIdleCallback se déclencherait aussitôt
+        //   (MESURÉ : construction des 153 cartes à ~300 ms, exactement ce que l'on veut éviter).
+        //   On impose donc un délai plancher de 3,5 s (démarrage + pop-ins passés), puis on
+        //   profite d'un temps mort — avec un timeout court (2 s) pour ne jamais rester en plan.
+        const differer = function () {
+            try {
+                if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(lancer, { timeout: 2000 });
+                else lancer();
+            } catch (_) { lancer(); }
+        };
+        setTimeout(differer, 3500);
+    }
+    _spPlanifierAssets();
 
     // 🆕 v1.7.442 / v1.7.448 — BANDEAU DE TAGS (familles + format) RECONSTRUIT à chaque
     //   changement de langue : libellés ET compteurs dans la langue affichée (EN par défaut).
@@ -74381,12 +74440,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     };
     window.spBuildAssetsTags();
 
-    // Message si grilles vides
-    document.querySelectorAll('.assets-grid').forEach(grid => {
-        if (grid.children.length === 0) {
-            grid.innerHTML = `<div class="assets-empty">${translate('assetEmptyGrid')}</div>`;
-        }
-    });
+    // 🆕 v1.7.568 — le « message si grille vide » est déplacé dans _spBuildAssetGrids() :
+    //   les grilles étant désormais construites plus tard, ce test afficherait un faux
+    //   « aucun modèle » au démarrage et le laisserait en place après la construction.
 
     // --- FILTRE LANGUE ASSETS ---
     // 🆕 v1.7.448 — le bouton « ALL » est retiré : la bibliothèque DÉMARRE EN ANGLAIS.

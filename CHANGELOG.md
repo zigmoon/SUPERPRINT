@@ -9,6 +9,32 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.568] — 2026-09-27
+
+_Lighter startup: nothing blocks the opening any more (measured)_
+
+### Changed — performance
+- **Main-thread block before the pop-ins: 76 ms → 0 ms** (bench, cold cache, Chrome DevTools profile at 100 µs). The boot used to end with a single 76 ms task landing exactly when the welcome / news / tutorial dialogs appear — several hundred ms on an older CPU.
+- `preloadFonts()` **no longer forces layout**: it wrote 62 characters at 72 px into a hidden element and read `offsetHeight` for every weight and italic — up to **32 synchronous forced layouts, 46-52 ms of main thread**. Fonts are now requested with `document.fonts.load()`: the same downloads start, with **no forced render**. (The app already refreshes text blocks on `document.fonts.ready`, so nothing changes on screen.)
+- **The asset library is no longer built during startup.** Its **153 cards** — 43 layouts, 22 typography sets, 85 shapes (85 inline SVG previews), 3 images — were created before the dialogs (measured: 153 cards present 318 ms after navigation). They are now built **on first opening of the Assets panel** (click on the sidebar button or hover of the panel) or, if the panel is never opened, in the background from **3.5 s** on (idle callback, 2 s timeout). Search, language filters, tags strip and template drop are re-synchronised right after the build and behave as before.
+- **Hyphenation is now lazy, per language.** The five dictionaries (FR, EN, DE, ES, IT) built their Hypher trees at startup (~25 ms). Each language is built on first real use (4.4 ms measured for French, `document.fonts`-free pure JS) — verified: *anticonstitutionnellement* → *an-ti-cons-ti-tu-tion-nel-le-ment*.
+- **The 6 hyphenation scripts** (`hypher.js` + 5 dictionaries) are now `defer`: they no longer block HTML parsing (main.js is deferred too, so the order is unchanged).
+
+### Measured (bench, cold cache, before / after)
+| Metric | Before | After |
+|---|---|---|
+| Long tasks > 50 ms at startup | 1 × 76 ms | **0** |
+| Asset cards built at startup | 153 (at 318 ms) | **0** (at 3 515 ms, or on panel open) |
+| First contentful paint | 296 ms | **228-256 ms** |
+| DOMContentLoaded | 377-519 ms | **244-285 ms** |
+| Parser-blocking scripts | 6 (hyphenation) | **0** |
+| Fonts loaded | 30 files | 30 files (unchanged) |
+| Hyphenation | 5 trees at boot | 1 tree on demand (4.4 ms) |
+| Asset panel | 153 cards, search, FR/EN | 153 cards, search, FR/EN (verified) |
+
+### Note
+- The remaining startup cost is the editor's own size (5.4 MB of JS, **1.23 MB gzipped online**) and its parse time — code-splitting the monolith is a separate project. The 654 KB CMYK ICC profile is still preloaded on purpose 0.8 s after startup (keeps CMYK export instant, does not block the UI).
+
 ## [1.7.567] — 2026-09-27
 
 _An image's **replace** and **crop** buttons are now drawn inside the block_

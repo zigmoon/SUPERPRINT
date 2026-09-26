@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.567-boutons-dans-bloc';
+const CACHE_NAME = 'superprint-shell-v1.7.568-demarrage-rapide';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
