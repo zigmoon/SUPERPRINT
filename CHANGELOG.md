@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,15 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.553] — 2026-09-26
+
+_Replacing a template photo happens in place_
+
+### Fixed
+- **Replacing a photo of a template moved it and lost its crop** (user request: « dans les templates, lorsque j utilise un template et que je remplace une photo, la nouvelle photo ne se place pas au même niveau que la photo précédente. Il faut vraiment que lorsque l on utilise un template et que l on change les textes ou les images, ces éléments restent au même niveau (front - back) »). Measured on the `fr_magazine_fashion_8p` template, page 1 photo: before = index 6, clipPath rect 560 x 384 (crop window), bitmap 560 x 840 at 0.78 — displayed 437 x 655, visible band 437 x 300; after = index **3**, clipPath **null**, bitmap 80 x 60 at 5.46 — displayed 437 x 328 with no crop at all. The replaced photo no longer held the same frame (visible band 300 → 328 px, no crop window) and its rank in the stack changed because the object was rebuilt. - **Cause: the replacement rebuilt the object.** The old image was removed from the canvas and a brand-new `fabric.Image` was inserted, receiving only position, angle, opacity, stroke and shadow — `clipPath` (the crop window), the image masks and every other application setting were dropped. - **Fixed (`_SP_PHOTO_553`)**: the object is no longer rebuilt. The bitmap is swapped inside the existing object (`setElement`) and the new photo is fitted « fill frame proportionally » on the VISIBLE window (the crop `clipPath` when there is one, otherwise the displayed box). The `clipPath` keeps its centring offsets; only its width/height are rewritten in local units to compensate for the new scale factor, so the visible window stays pixel-identical. Preserved: place, crop, angle, mirror, opacity, stroke, shadow, image masks, crop control and the replace control. 
+### Verified
+- Same object kept (`memeObjet === true`), index 6 → 6 (it used to move 6 → 3), visible window 437 x 300 → 437 x 300, `left`/`top` unchanged (0 / -178), clipPath offsets unchanged (-280 / -192). - No removal/insertion any more, so no render spike and no stack recomputation on the template pages. 
 
 ## [1.7.552] — 2026-09-26
 

@@ -24227,16 +24227,68 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                     _imageSourceURL: dataURL
                 });
 
-                try { canvas.remove(imageObj); } catch (_) {}
-                if (oldIndex >= 0) {
-                    canvas.insertAt(newImg, oldIndex);
-                } else {
-                    canvas.add(newImg);
+                /* 🆕 v1.7.553 — _SP_PHOTO_553 : LE REMPLACEMENT SE FAIT SUR PLACE.
+
+                   Retour utilisateur : « lorsque j'utilise un template et que je remplace une
+                   photo, la nouvelle photo ne se place pas au même niveau que la photo
+                   précédente. Il faut que les éléments restent au même niveau (front - back). »
+
+                   MESURÉ (modèle fr_magazine_fashion_8p, photo de la page 1) :
+                       avant : index 6, clipPath rect 560 x 384 (FENÊTRE DE RECADRAGE),
+                               bitmap 560 x 840 à 0,78 → affichée 437 x 655, bande visible 437 x 300 ;
+                       après : index 3, clipPath NULL, bitmap 80 x 60 à 5,46 → affichée 437 x 328,
+                               AUCUN recadrage.
+                   Deux défauts d'un coup :
+                     1. la photo remplacée perdait son recadrage et sa place : sa boîte changeait
+                        de hauteur (655 → 328) et elle débordait de son cadre, ce qui la fait
+                        paraître « au premier plan » par rapport au reste de la mise en page ;
+                     2. l'objet était RECONSTRUIT (canvas.remove + insertAt), donc son rang dans
+                        la pile bougeait à chaque remplacement.
+
+                   CORRECTIF : on ne reconstruit plus l'objet. On ÉCHANGE LE BITMAP dans l'objet
+                   existant (setElement) et on refait le cadrage « remplir le cadre
+                   proportionnellement » sur la FENÊTRE VISIBLE (le clipPath de recadrage s'il
+                   existe, sinon la boîte affichée) : la nouvelle photo couvre exactement la même
+                   fenêtre, à la même place, avec le même recadrage, le même angle, la même
+                   opacité, le même contour, les mêmes masques et le même rang dans la pile.
+                   Le clipPath garde ses décalages (il est centré sur l'objet) : on ne réécrit que
+                   sa largeur/hauteur, dans les unités locales, pour compenser le nouveau facteur
+                   d'échelle — la fenêtre visible reste identique au pixel près. */
+                const _el = (typeof newImg.getElement === 'function' ? newImg.getElement() : newImg._element) || newImg._originalElement;
+                const _natW = Math.max(1, (newImg.width || 1));
+                const _natH = Math.max(1, (newImg.height || 1));
+                const _clip = imageObj.clipPath;
+                const _clipRect = (!!_clip && (_clip.type === 'rect' || _clip.type === 'Rect') && !_clip.absolutePositioned) ? _clip : null;
+                let _winW = targetDisplayedW, _winH = targetDisplayedH;
+                if (_clipRect) {
+                    _winW = Math.abs(_clipRect.width || 0) * Math.abs(imageObj.scaleX || 1);
+                    _winH = Math.abs(_clipRect.height || 0) * Math.abs(imageObj.scaleY || 1);
                 }
-
-                try { newImg._hasCropControl = false; attachCropControlToImage(newImg); } catch (_) {}
-
-                canvas.setActiveObject(newImg);
+                if (!(_winW > 0)) _winW = _natW;
+                if (!(_winH > 0)) _winH = _natH;
+                // « Remplir le cadre proportionnellement » : la photo couvre la fenêtre sans déformation.
+                let _cover = Math.max(_winW / _natW, _winH / _natH);
+                if (!isFinite(_cover) || _cover <= 0) _cover = fallbackScale || 1;
+                try { imageObj.setElement(_el); } catch (_) {}
+                imageObj.width = _natW;
+                imageObj.height = _natH;
+                imageObj.scaleX = (imageObj.scaleX < 0 ? -1 : 1) * _cover;
+                imageObj.scaleY = (imageObj.scaleY < 0 ? -1 : 1) * _cover;
+                if (_clipRect) {
+                    _clipRect.set({ width: _winW / _cover, height: _winH / _cover });
+                    _clipRect.dirty = true;
+                }
+                imageObj.objectCaching = false;
+                imageObj.statefullCache = false;
+                imageObj.needsItsOwnCache = () => false;
+                imageObj.imageSmoothing = true;
+                imageObj.imageSmoothingQuality = 'high';
+                imageObj._imageSourceURL = dataURL;
+                try { imageObj._hasCropControl = false; attachCropControlToImage(imageObj); } catch (_) {}
+                imageObj.dirty = true;
+                if (imageObj._cacheCanvas) { imageObj._cacheCanvas = null; imageObj._cacheContext = null; }
+                imageObj.setCoords();
+                canvas.setActiveObject(imageObj);
                 canvas.requestRenderAll();
 
                 try { debouncedUpdateLayersPanel(); } catch (_) {}
@@ -24244,8 +24296,8 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 try { saveState('Image remplacée'); } catch (_) {}
 
                 if (reopenCropAfter) {
-                    // Refresh crop modal with the new image
-                    try { openCropModal(newImg); } catch (_) {}
+                    // Refresh crop modal with the new image (le même objet : recadrage conservé)
+                    try { openCropModal(imageObj); } catch (_) {}
                 }
             }, { crossOrigin: 'anonymous' });
         };

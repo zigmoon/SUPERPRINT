@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.552 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.553 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.552 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.553 — a copied text block keeps its text frame options (columns, insets, frame height, mask) when pasted on another page.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,30 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.553 — Remplacer une photo d'un modèle ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-553">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.553</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Remplacer une photo dans un modèle <strong>se fait maintenant sur place</strong> : la nouvelle photo reprend exactement le même cadre, le même recadrage et le même niveau dans la pile (front - back)." data-i18n-en-html="Replacing a photo in a template now <strong>happens in place</strong>: the new photo takes exactly the same frame, the same crop and the same level in the stack (front - back)." data-i18n-jp-html="テンプレートの写真の差し替えが<strong>その場で</strong>行われるようになりました。新しい写真は同じフレーム・同じトリミング・同じ重なり順（前面／背面）を引き継ぎます。">Replacing a template photo now happens in place: same frame, same crop, same stacking level.</p>
+
+ <h3 data-i18n-fr-html="🖼️ Une photo remplacée changeait de cadre, de recadrage et de rang <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🖼️ A replaced photo changed frame, crop and rank <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🖼️ 差し替えた写真はフレーム・トリミング・重なり順が変わっていました <span class=&quot;badge badge-fix&quot;>修正</span>">🖼️ A replaced photo changed frame, crop and rank <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Ce qui se passait.</strong> Mesuré sur le modèle « magazine mode » (photo de la page 1) : la photo d'origine était à l'indice 6, avec sa fenêtre de recadrage (560 × 384) et une bande visible de 437 × 300 px ; après remplacement, la nouvelle photo arrivait à l'indice <strong>3</strong>, <strong>sans aucune fenêtre de recadrage</strong>, pour une hauteur visible passée de 655 à 328 px. Elle ne tenait donc plus le même cadre — elle débordait de sa zone et semblait passer au premier plan." data-i18n-en-html="<strong>What happened.</strong> Measured on the “fashion magazine” template (page 1 photo): the original sat at index 6, with its crop window (560 × 384) and a 437 × 300 px visible band; after replacing, the new photo arrived at index <strong>3</strong>, <strong>with no crop window at all</strong>, and its visible height went from 655 to 328 px. It no longer held the same frame — it spilled out of its area and looked like it had jumped to the front." data-i18n-jp-html="<strong>起きていたこと。</strong>「ファッション誌」テンプレート（1 ページ目の写真）で計測：元の写真はインデックス 6、トリミング枠（560 × 384）、可視領域 437 × 300 px。差し替え後はインデックス<strong>3</strong>、<strong>トリミング枠なし</strong>、可視高さは 655 → 328 px。同じフレームを保てず、領域からはみ出して前面に出たように見えていました。">The replaced photo arrived at another index, with no crop window and a shorter visible area.</li>
+  <li data-i18n-fr-html="<strong>Pourquoi.</strong> Le remplacement reconstruisait l'objet : il retirait l'ancienne photo du plan de travail puis insérait une image toute neuve. Cette nouvelle image ne recevait que quelques réglages de position — <em>ni le recadrage, ni les masques, ni les autres réglages de l'application</em>. Et comme l'objet était recréé, son rang dans la pile dépendait d'autres réglages du document." data-i18n-en-html="<strong>Why.</strong> Replacing rebuilt the object: it removed the old photo from the canvas and inserted a brand-new image. That new image only received a few position settings — <em>not the crop, not the masks, not the other application settings</em>. And because the object was recreated, its rank in the stack depended on other document settings." data-i18n-jp-html="<strong>理由。</strong>差し替えはオブジェクトを作り直していました。古い写真をキャンバスから外し、まったく新しい画像を挿入していたのです。新しい画像は位置の一部しか引き継がず、<em>トリミング・マスク・その他のアプリ設定は引き継がれませんでした</em>。また作り直すため、重なり順が他の設定に左右されていました。">Replacing rebuilt the object, so the new image kept only a few position settings — never the crop or the masks.</li>
+  <li data-i18n-fr-html="<strong>Corrigé</strong> : l'objet n'est plus reconstruit du tout. On échange l'image à l'intérieur de l'objet existant et on recadre la nouvelle photo « remplir le cadre proportionnellement » sur la fenêtre visible : elle couvre exactement la même zone, au même endroit, avec le même recadrage. Vérifié : même objet, indice 6 → 6, fenêtre visible 437 × 300 → 437 × 300, position et décalages de recadrage inchangés." data-i18n-en-html="<strong>Fixed</strong>: the object is not rebuilt at all. The bitmap is swapped inside the existing object and the new photo is fitted to the visible window with “fill frame proportionally”: it covers exactly the same area, in the same place, with the same crop. Verified: same object, index 6 → 6, visible window 437 × 300 → 437 × 300, position and crop offsets unchanged." data-i18n-jp-html="<strong>修正済み。</strong>オブジェクトは作り直しません。既存オブジェクト内で画像を差し替え、可視領域に「フレームに合わせて拡大縮小」で合わせます。同じ場所・同じ領域・同じトリミングになります。確認：同一オブジェクト、インデックス 6 → 6、可視領域 437 × 300 → 437 × 300、位置とトリミングのオフセットは不変。">The object is no longer rebuilt: the bitmap is swapped inside it and the new photo fills the same visible window.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="📐 Ce qui est conservé au remplacement <span class=&quot;badge badge-feat&quot;>audité</span>" data-i18n-en-html="📐 What is preserved when replacing <span class=&quot;badge badge-feat&quot;>audited</span>" data-i18n-jp-html="📐 差し替え時に保持されるもの <span class=&quot;badge badge-feat&quot;>調査済み</span>">📐 What is preserved when replacing <span class="badge badge-feat">audited</span></h3>
+ <ul>
+  <li data-i18n-fr-html="Liste vérifiée sur un remplacement réel : place (position et niveau dans la pile), fenêtre de recadrage, angle, miroir, opacité, contour, ombre, masques d'image, contrôles de recadrage et effet de remplacement." data-i18n-en-html="List checked on a real replacement: place (position and level in the stack), crop window, angle, mirror, opacity, stroke, shadow, image masks, crop controls and replace control." data-i18n-jp-html="実際の差し替えで確認した保持項目：位置（および重なり順）、トリミング枠、角度、反転、不透明度、線、影、画像マスク、トリミング操作、差し替え操作。">Checked on a real replacement: place, stacking level, crop window, angle, mirror, opacity, stroke, shadow and masks.</li>
+  <li data-i18n-fr-html="Le remplacement ne passe plus par une suppression/insertion : plus aucun pic de rendu ni de recalcul de la pile, ce qui supprime aussi les « sauts » observés après un remplacement sur les pages de modèle." data-i18n-en-html="Replacing no longer goes through a removal/insertion: no more render spike and no stack recomputation, which also removes the “jumping” seen after a replacement on template pages." data-i18n-jp-html="差し替えは削除＋挿入ではなくなりました。描画の急増や重なり順の再計算がなくなり、テンプレートページで見られた「飛び」も減ります。">No removal/insertion any more: no render spike and no stack recalculation.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.552 — Le bloc collé garde son masque ===== -->
 
