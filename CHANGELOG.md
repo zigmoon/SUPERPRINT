@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿# Changelog
 
 All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the **SP213 Studio** AI layout assistant, and the npm launcher (`1.0.x`, versioned independently).
 
@@ -8,6 +8,16 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 - **SP213 Studio** is the AI layout page (`sp213-studio.html`). It talks to DeepSeek / OpenAI / OpenRouter / Groq / a local WebLLM model and produces native `.sp` documents that the editor opens directly.
 
 ---
+
+## [1.7.562] — 2026-09-26
+
+_Copy-paste: a pasted text frame shows its text immediately, and each paste is offset_
+
+### Fixed
+- **A pasted text frame rendered NOTHING until you clicked inside it** (user report: "Quand je copie colle juste un bloc texte ça marche mal… on perd le texte dans le bloc en le collant il faut cliquer dedans pour qu'il apparaisse"). Audit finding, **measured** by rendering each object into an offscreen 2D context (reliable, unlike reading pixels back from the app's WebGL canvas): the source frame draws **442 ink pixels**, the pasted one **0**. The pasted object carried `dirty: false` together with a `_cacheCanvas` of **300 × 150** — the default size of a brand-new canvas, i.e. an image that had **never been drawn**. Every other property was identical between the two objects (text, dimensions, `_textLines`, mask, opacity, colour, `objectCaching`, `shouldCache`), so the stale empty image was the whole difference: the engine drew an empty bitmap while the text was really there. That is exactly why the text appeared once you clicked inside the frame — the click restarts the layout and the drawing. Forcing `dirty = true` and clearing the cache was **not** enough: with the mask in place the draw fails silently. Measured: mask removed → **415** ink pixels; mask put back afterwards → **442** ink pixels and a valid **374 × 282** image. Fix: `_spInvalidatePastedCache()` now takes the mask off for the duration of one draw and `_spRestaureMasqueColle()` puts the very same mask object back, after which a second draw is made. Because this lives in `_spFinalizePasteRender()`, which every paste path goes through (single object, multiple objects, shape + text pair, mobile paste, mirrors), all of them are fixed at once — and the mask is kept (the 1.7.552 behaviour is preserved).
+- **Each pasted frame landed exactly on top of the previous one** (user report: "au bout du troisième copier-coller ça marche pas du tout"). Audit finding, **measured**: the diagonal offset was always recomputed from the **source** frame (`clonedObj.left + 10`), so three pastes in a row stacked three frames at the very same spot — measured three times at (98, 98) for a source at (88, 88). The third paste therefore hid underneath the second, which looked like copy-paste had stopped working altogether. Fix: the offset now follows the **last paste of the same copy** (`window.__spDernierCollage`, +10 each time, capped at 120 px so a frame cannot run away off the page). Measured after the fix: source at (88, 88) with 442 ink pixels, then (98, 98), (108, 108) and (118, 118) — **442 ink pixels each, with their mask preserved**.
+
+_Both defects came from the same copy-paste path; the paste itself was always copying the right text._
 
 ## [1.7.561] — 2026-09-26
 

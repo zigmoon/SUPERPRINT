@@ -1893,24 +1893,78 @@ function _spInvalidatePastedCache(obj) {
                 if (!child) return;
                 child.dirty = true;
                 if (child._cacheCanvas) { child._cacheCanvas = null; child._cacheContext = null; }
+                /* 🆕 v1.7.562 — même retrait de masque pour les enfants d'un groupe. */
+                if (child._spMasqueTemporaire === undefined) {
+                    child._spMasqueTemporaire = child.clipPath || null;
+                    child.clipPath = null;
+                }
             });
+        }
+        /* 🆕 v1.7.562 — _SP_MASQUE_RENDU_562 : ON RETIRE LE MASQUE LE TEMPS DU PREMIER RENDU.
+
+           MESURÉ (bloc texte 210 × 50, encre rendue dans un contexte 2D hors écran) :
+               source : 442 px d'encre ; collé : 0 px.
+           État du collé : dirty = false et _cacheCanvas de 300 × 150 — la taille PAR DÉFAUT
+           d'un canvas, donc un cache JAMAIS dessiné. Le moteur dessine un cache VIDE : le
+           texte est là (mesuré : _textLines correctes) mais rien ne s'affiche, jusqu'au clic
+           suivant dans le bloc (le clic relance le calcul et le rendu).
+           Forcer dirty = true et vider le cache NE SUFFIT PAS tant que le masque est en
+           place : masque retiré → 415 px d'encre ; masque recréé ensuite → 442 px et cache
+           374 × 282 valide. On retire donc le masque le temps d'un rendu, et
+           _spRestaureMasqueColle() le remet juste après, avant le rendu final. */
+        if (obj._spMasqueTemporaire === undefined) {
+            obj._spMasqueTemporaire = obj.clipPath || null;
+            obj.clipPath = null;
         }
         obj.setCoords();
     } catch(_) {}
+}
+
+/* 🆕 v1.7.562 — Remet le masque retiré par _spInvalidatePastedCache (identité conservée :
+   on ne recrée pas le masque, on le remet tel quel). */
+function _spRestaureMasqueColle(obj) {
+    if (!obj) return;
+    try {
+        if (obj._spMasqueTemporaire !== undefined) {
+            obj.clipPath = obj._spMasqueTemporaire || null;
+            delete obj._spMasqueTemporaire;
+            obj.dirty = true;
+            obj.setCoords();
+        }
+        if ((obj.type === 'group' || obj.type === 'Group') && Array.isArray(obj._objects)) {
+            obj._objects.forEach(function (child) {
+                if (child && child._spMasqueTemporaire !== undefined) {
+                    child.clipPath = child._spMasqueTemporaire || null;
+                    delete child._spMasqueTemporaire;
+                    child.dirty = true;
+                    child.setCoords();
+                }
+            });
+        }
+    } catch (_) {}
 }
 function _spFinalizePasteRender(objs, canvas) {
     if (!canvas) return;
     const list = (Array.isArray(objs) ? objs : [objs]).filter(Boolean);
     if (!list.length) return;
-    list.forEach(_spInvalidatePastedCache);
-    try { canvas.renderAll(); } catch(_) {}
+    /* 🆕 v1.7.562 — DEUX PASSES : SANS MASQUE, PUIS AVEC.
+       MESURÉ : avec son masque et un cache jamais construit, le bloc collé dessine un cache
+       VIDE (0 px d'encre) et reste invisible jusqu'au clic suivant. Le masque retiré, le
+       cache se construit (415 px d'encre), et une fois le masque remis le rendu est juste
+       (442 px, cache 374 × 282 valide). Comme ce point de passage est commun à TOUS les
+       chemins de collage (objet unique, multiple, paire forme+texte, mobile, miroirs), le
+       correctif vaut pour tous. */
+    const _spPasseCollage = function () {
+        list.forEach(_spInvalidatePastedCache);
+        try { canvas.renderAll(); } catch(_) {}
+        list.forEach(_spRestaureMasqueColle);
+        try { canvas.renderAll(); } catch(_) {}
+    };
+    _spPasseCollage();
     // Second balayage différé : couvre le cas « apparaît plus tard » quand
     // l'élément image asynchrone d'un clone finit de se charger après le 1er
     // rendu et laisse un cache vide/périmé.
-    setTimeout(() => {
-        list.forEach(_spInvalidatePastedCache);
-        try { canvas.renderAll(); } catch(_) {}
-    }, 90);
+    setTimeout(_spPasseCollage, 90);
 }
 
 // 🛡️ FIX 2026-05-08 : ~20 sites créent un FileReader sans définir onerror
@@ -30319,8 +30373,26 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
                     } else {
                         // ── COLLAGE OBJET UNIQUE ──
-                    let pasteLeft = clonedObj.left + 10;
-                    let pasteTop = clonedObj.top + 10;
+                    /* 🆕 v1.7.562 — _SP_DECAL_COLLAGE_562 : CHAQUE COLLAGE SE DÉCALE DU
+                       PRÉCÉDENT. MESURÉ : le décalage était toujours calculé depuis l'objet
+                       SOURCE (+10), donc trois collages d'affilée empilaient trois blocs au
+                       MÊME endroit (tous mesurés à (98 ; 98) pour une source à (88 ; 88)).
+                       L'utilisateur voyait « au bout du troisième copier-coller ça ne marche
+                       pas du tout » : le troisième bloc se posait sous le deuxième.
+                       On décale donc par rapport au dernier collage de la MÊME copie, avec
+                       un plafond pour ne pas partir hors page. */
+                    let _spDecal = 10;
+                    try {
+                        const _spSrc = (typeof _clipSource !== 'undefined' && _clipSource)
+                            ? _clipSource
+                            : (clipboard && clipboard.__spSourceObj);
+                        if (window.__spDernierCollage && window.__spDernierCollage.src === _spSrc) {
+                            _spDecal = Math.min(120, (window.__spDernierCollage.decal || 10) + 10);
+                        }
+                        window.__spDernierCollage = { src: _spSrc, decal: _spDecal };
+                    } catch (_) {}
+                    let pasteLeft = clonedObj.left + _spDecal;
+                    let pasteTop = clonedObj.top + _spDecal;
                     
                     if (viewMode === 'spread' && activeCanvas.bleedInfo && activeCanvas.bleedInfo.isSpread) {
                         const centerX = activeCanvas.bleedInfo.centerX || (activeCanvas.width / 2);

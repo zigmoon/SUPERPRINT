@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.561 — the last four missing IDML features arrive: tables, footnotes, hyperlinks and nested styles, with schemas read from real material.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.562 — pasted text frames show their text immediately, and each paste is offset from the previous one.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.561 — the last four missing IDML features arrive: tables, footnotes, hyperlinks and nested styles, with schemas read from real material.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.562 — pasted text frames show their text immediately, and each paste is offset from the previous one.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,28 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.562 — Copier-coller : le bloc texte s'affiche tout de suite ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-562">
+ <h2>SUPER PRINT <span class="badge badge-fix">v1.7.562</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 26 septembre 2026" data-i18n-en="Released September 26, 2026" data-i18n-jp="2026年9月26日公開">Released September 26, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Le <strong>copier-coller d'un bloc texte</strong> est réparé : le texte s'affiche <strong>immédiatement</strong> après le collage, et <strong>chaque collage se décale</strong> du précédent. C'était le défaut le plus grave qui restait : le texte était bien collé, mais invisible." data-i18n-en-html="<strong>Copy-pasting a text frame</strong> is fixed: the text shows <strong>immediately</strong> after pasting, and <strong>each paste is offset</strong> from the previous one. This was the most serious remaining defect: the text was pasted, but invisible." data-i18n-jp-html="<strong>テキストブロックのコピー＆ペースト</strong>を修正しました。貼り付けた<strong>直後</strong>にテキストが表示され、<strong>貼り付けるたびに位置がずれます</strong>。残っていた最も重大な不具合でした：テキストは貼り付けられていましたが、見えませんでした。">Copy-pasting a text frame is fixed: the text shows immediately, and each paste is offset from the previous one.</p>
+
+ <h3 data-i18n-fr-html="🩹 Le texte collé restait invisible <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="🩹 Pasted text stayed invisible <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="🩹 貼り付けたテキストが見えない <span class=&quot;badge badge-fix&quot;>修正済み</span>">🩹 Pasted text stayed invisible <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Mesure.</strong> Le bloc d'origine dessine 442 pixels d'encre, le bloc collé : <strong>zéro</strong>. Son image en mémoire n'avait <strong>jamais été dessinée</strong> — le moteur affichait donc une image vide, alors que le texte était bien présent. C'est pourquoi il fallait <strong>cliquer dans le bloc</strong> pour le faire apparaître : le clic relance le calcul et le dessin." data-i18n-en-html="<strong>Measured.</strong> The original frame draws 442 ink pixels, the pasted one: <strong>zero</strong>. Its in-memory image had <strong>never been drawn</strong>, so the engine displayed an empty image while the text was really there. That is why you had to <strong>click inside the frame</strong> to make it appear: the click restarts the layout and the drawing." data-i18n-jp-html="<strong>実測。</strong>元のブロックは 442 ピクセル描画し、貼り付けたブロックは<strong>ゼロ</strong>でした。メモリ上の画像が<strong>一度も描画されていなかった</strong>ため、テキストは存在するのに空の画像が表示されていました。そのため<strong>ブロック内をクリック</strong>しないと表示されませんでした（クリックで計算と描画がやり直されます）。">Measured: the source frame draws 442 ink pixels, the pasted one zero — its in-memory image had never been drawn, hence the need to click inside.</li>
+  <li data-i18n-fr-html="<strong>La cause.</strong> Le masque du bloc (celui qui coupe le texte qui déborde) était remis <em>avant</em> le premier dessin. Tant que ce dessin n'a pas eu lieu une fois sans le masque, il échoue en silence. Le masque est maintenant retiré le temps d'un dessin, puis remis : mesuré 415 pixels sans masque, 442 pixels avec, et une image valide. Le correctif est posé au point de passage <strong>commun à tous les collages</strong> (bloc seul, plusieurs blocs, forme + texte, collage sur mobile, miroirs)." data-i18n-en-html="<strong>The cause.</strong> The frame's mask (the one that cuts overflowing text) was put back <em>before</em> the first draw. Until that draw happens once without the mask, it fails silently. The mask is now removed for one draw, then put back: measured 415 pixels without it, 442 with it, and a valid image. The fix sits at the point <strong>shared by all paste paths</strong> (single frame, several frames, shape + text, mobile paste, mirrors)." data-i18n-jp-html="<strong>原因。</strong>はみ出したテキストを切るマスクが、最初の描画の<em>前</em>に戻されていました。マスクなしで一度描画しない限り、描画は無言で失敗します。現在はマスクを外して 1 回描画し、その後戻します：実測でマスクなし 415 ピクセル、あり 442 ピクセル、画像も正常です。修正は<strong>すべての貼り付け経路が通る</strong>共通処理に置いています（単体・複数・図形＋テキスト・モバイル・ミラー）。">The mask was restored before the first draw, which fails silently until one draw happens without it; the mask is now removed for one draw and put back.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="📚 Chaque collage se décale <span class=&quot;badge badge-fix&quot;>corrigé</span>" data-i18n-en-html="📚 Each paste is offset <span class=&quot;badge badge-fix&quot;>fixed</span>" data-i18n-jp-html="📚 貼り付けごとに位置がずれる <span class=&quot;badge badge-fix&quot;>修正済み</span>">📚 Each paste is offset <span class="badge badge-fix">fixed</span></h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Mesure.</strong> Le décalage était toujours recalculé depuis le bloc d'origine : trois collages d'affilée empilaient trois blocs <strong>au même endroit</strong> (mesuré trois fois à (98 ; 98) pour une source à (88 ; 88)). Le troisième collage se posait donc sous le deuxième, ce qui donnait l'impression que « ça ne marche plus ». Chaque collage se décale maintenant du <strong>précédent</strong> : mesuré (98 ; 98), (108 ; 108), (118 ; 118), avec 442 pixels d'encre chacun et leur masque conservé." data-i18n-en-html="<strong>Measured.</strong> The offset was always recomputed from the original frame, so three pastes in a row stacked three frames <strong>at the same spot</strong> (measured three times at (98, 98) for a source at (88, 88)). The third paste therefore landed under the second, giving the impression that “it no longer works”. Each paste is now offset from the <strong>previous one</strong>: measured (98, 98), (108, 108), (118, 118), each with 442 ink pixels and its mask kept." data-i18n-jp-html="<strong>実測。</strong>オフセットは常に元のブロックから計算されていたため、続けて 3 回貼り付けると 3 つが<strong>同じ位置</strong>に重なりました（元が (88, 88) のとき 3 回とも (98, 98)）。そのため 3 回目は 2 回目の下に隠れ、「もう動かない」ように見えました。現在は<strong>直前の貼り付け</strong>からずれます：実測 (98, 98)、(108, 108)、(118, 118)、いずれも 442 ピクセルでマスクも保持。">The offset was always recomputed from the original frame, stacking three pastes at the same spot; each paste now offsets from the previous one (measured 98, 108, 118).</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.561 — Import IDML : tableaux, notes de bas de page, liens hypertexte, styles imbriqués ===== -->
 

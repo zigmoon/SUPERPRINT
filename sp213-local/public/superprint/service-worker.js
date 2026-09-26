@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.561-import-idml-tableaux-notes-liens-styles';
+const CACHE_NAME = 'superprint-shell-v1.7.562-collage-texte-visible';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
