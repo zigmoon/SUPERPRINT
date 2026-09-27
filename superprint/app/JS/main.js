@@ -65908,7 +65908,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         deletePageTitle: "Supprimer la page",
         groupTitle: "Grouper la sélection",
         ungroupTitle: "Dégrouper la sélection",
-        aiAssistantTitle: "Assistant IA pour maquette & design",
+        aiAssistantTitle: "Studio IA — composer une maquette avec l'IA",
+        settingsOldAiTitle: "Assistant IA (ancien panneau)",
+        settingsOldAiDesc: "Le bouton IA de la barre du haut ouvre désormais le Studio SP213, l'atelier de composition par IA. Cet ancien panneau (choix du moteur, clés API, exemples de prompts) reste disponible ici.",
+        settingsOldAiBtn: "Ouvrir l'ancien panneau IA",
         // === AI modal ===
         aiModalTitle: "Assistant IA",
         aiBannerTitle: "Mode Création IA",
@@ -66817,7 +66820,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         deletePageTitle: "Delete page",
         groupTitle: "Group selection",
         ungroupTitle: "Ungroup selection",
-        aiAssistantTitle: "AI assistant for layout & design",
+        aiAssistantTitle: "AI Studio — compose a layout with AI",
+        settingsOldAiTitle: "AI assistant (legacy panel)",
+        settingsOldAiDesc: "The IA button in the top bar now opens the SP213 Studio, the AI layout workshop. This legacy panel (engine choice, API keys, prompt examples) remains available here.",
+        settingsOldAiBtn: "Open the legacy AI panel",
         // === AI modal ===
         aiModalTitle: "AI Assistant",
         aiBannerTitle: "AI Creation Mode",
@@ -67728,7 +67734,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         deletePageTitle: "ページを削除",
         groupTitle: "選択をグループ化",
         ungroupTitle: "グループ解除",
-        aiAssistantTitle: "レイアウト＆デザイン用AIアシスタント",
+        aiAssistantTitle: "AIスタジオ — AIでレイアウトを作成",
+        settingsOldAiTitle: "AIアシスタント（旧パネル）",
+        settingsOldAiDesc: "上部バーの「IA」ボタンはSP213スタジオ（AIによるレイアウト作成）を開くようになりました。この旧パネル（エンジン選択、APIキー、プロンプト例）はここから利用できます。",
+        settingsOldAiBtn: "旧AIパネルを開く",
         // === AI modal ===
         aiModalTitle: "AIアシスタント",
         aiBannerTitle: "AI作成モード",
@@ -89578,6 +89587,40 @@ window.saveProjectSP_toObject = function() {
             };
         })
     };
+};
+
+/**
+ * 🆕 _SP_IA_VERS_STUDIO_575 — LE BOUTON « IA » DE LA BARRE DU HAUT OUVRE LE STUDIO SP213.
+ *
+ * Décision produit : composer une maquette par IA se fait dans le STUDIO SP213
+ * (sp213-studio.html, au même niveau que le dossier /app/), pas dans le panneau IA
+ * historique — celui-ci est désormais rangé dans les Réglages (premier onglet, en bas)
+ * où il reste accessible via openAIModal().
+ * ⚠️ Le bouton porte toujours l'id #openAIBtn : on ne change QUE son action et son
+ *    libellé (le titre suit la langue, cf. aiAssistantTitle dans les trois dictionnaires).
+ */
+window.spOuvrirStudioIA = function () {
+    try {
+        window._aiSp213Enabled = true;
+        localStorage.setItem('sp_ai_sp213', '1');   // le studio retrouve ses réglages SP213
+    } catch (e) {}
+    // Le studio est à la racine de la distribution, l'app dans /app/ : on remonte d'un cran.
+    var url = new URL('../sp213-studio.html', window.location.href).href;
+    var w = null;
+    try { w = window.open(url, '_blank', 'noopener'); } catch (e) {}
+    if (!w) {
+        // Popup bloqué : lien cliquable de secours (même mécanisme que le chat SP213).
+        try {
+            var a = document.createElement('a');
+            a.href = url; a.target = '_blank'; a.rel = 'noopener';
+            a.textContent = 'Ouvrir le Studio IA';
+            a.style.cssText = 'display:block;margin:8px 0;font-size:12px;font-weight:600;color:#1a1a1a;';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function () { try { a.remove(); } catch (e) {} }, 4000);
+        } catch (e) {}
+    }
+    return false;
 };
 
 /**

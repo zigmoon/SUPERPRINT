@@ -9,6 +9,47 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.575] — 2026-09-28
+
+_Studio SP213 en mode « cahier » : couverture et 4e de couverture seules, fonds perdus arrêtés au pli, marges miroir, export en ordre de lecture — et moteur IA fiabilisé_
+
+### Added — Studio SP213 : cadrage « cahier » (double page)
+- En double page, une planche qui ne porte qu'UNE page (couverture, 4e de couverture) est affichée SEULE, cadrée sur cette page. Avant, la couverture apparaissait sur une feuille de 420 mm dont la moitié gauche restait blanche : la maquette semblait inachevée.
+- Les repères sont posés sur la page montrée (trait de coupe, fonds perdus, marges), plus sur la planche entière.
+- Table d'imposition unique (spCahierPlanches) partagée par le prompt, le rattrapage des pages manquantes et la vérification : les trois annoncent exactement la même imposition.
+- Vérification du cahier après génération : si le modèle remplit une moitié qui doit rester vide (couverture, dernière page d'un total pair) ou l'inverse, la planche fautive est REDEMANDÉE au modèle (une entrée = une planche, folios et moitié vide rappelés), remplacée seulement si la réponse respecte la consigne, et l'utilisateur est prévenu dans la conversation (🩹 corrigée / ⚠️ à corriger).
+
+### Fixed — Studio SP213 : fonds perdus et marges des pages seules (comme l'app)
+- Sur une page seule, le fond perdu s'arrête au PLI : aucun fond perdu du côté de la reliure, exactement comme createPageCanvas de l'app (position « right » = fond perdu à droite seulement, position « left » = à gauche seulement). Le studio dessinait un fond perdu des deux côtés.
+- Le trait de coupe est ouvert du côté de la pliure (3 traits au lieu d'un cadre), comme drawMargins de l'app.
+- Marges MIROIR : le petit fond (12 mm) est toujours du côté de la pliure, le grand fond (18 mm) du côté des chants. Une page de gauche est un verso (grand fond à gauche), une page de droite un recto (petit fond à gauche). Le prompt donne désormais ces deux valeurs chiffrées.
+- La ligne de pliure n'est plus tracée sur une page seule.
+
+### Fixed — Studio SP213 : export vers SuperPrint
+- Le fichier transmis suit l'ORDRE DE LECTURE (planche 1 → page 1, puis les doubles, puis la dernière page seule). Le renvoi de la moitié gauche de la première planche à la fin du document (règle d'imprimeur) est supprimé : il faisait de la page 2 du studio la dernière page de l'app.
+- Une moitié sans contenu réel ne produit plus de page FANTÔME (mesuré : une 8e page ne contenant que le morceau gauche du fond, 3 mm).
+- En double page, un fond pleine page est normalisé à la largeur de la PLANCHE (2 × pageW + fonds perdus) et non à celle d'une page (216 mm). Mesure du défaut : la moitié droite de chaque planche recevait un morceau de fond de 3 mm et sortait blanche dans l'app ; l'ajout d'une page (qui re-scinde les planches) propageait cette géométrie fausse.
+- Dézoom automatique calé sur la planche la plus large (la 1re carte peut être une couverture de largeur d'une page).
+- Éléments repris par la vérification du cahier : identifiants stables réattribués (sans quoi le prompt suivant échouait sur une lecture d'identifiant) et descripteur de maquette blindé.
+
+### Fixed — Studio SP213 : moteur IA
+- Liste des modèles gratuits OpenRouter mise à jour (Nemotron 3 Super 120B, Qwen3.8 27B, Nemotron 3.5 Lightning, Nemotron 3 Ultra 550B, Inkling, Gemma 4 26B). minimax-m2.7:free, devenu payant, était en 2e position : le choisir faisait échouer chaque génération.
+- Délai d'attente adaptatif (2 min pour une page, +1 min par page, plafond 10 min) au lieu d'un délai fixe de 120 s qui coupait une génération de document complet.
+- Une page annoncée mais absente de la réponse est réclamée au modèle (une page à la fois, 4 maximum) puis fusionnée ; la pagination est normalisée (index 0-based ou 1-based, trous assumés conservés, doublons renumérotés). Avant, un blanc se glissait silencieusement dans la maquette ou le contenu se décalait d'une page.
+- En double page, le rattrapage redemande une PLANCHE (folios et moitié vide rappelés) et non une page isolée de 210 mm au milieu de planches de 420 mm. `targetPages` = nombre de planches.
+- La maquette est restaurée au rechargement du studio (avant : toujours une page A4 vierge, seul le fil de discussion revenait).
+- Mode double page mémorisé entre deux ouvertures du studio.
+
+### Changed — Studio SP213 : design et confort
+- Les textes de l'interface ne sont plus sélectionnables (glissement de souris) ; la zone de prompt et la conversation restent sélectionnables.
+- Zone de prompt : coins bas légèrement arrondis (5 px) ; bouton trombone sans filet.
+
+### Changed — Éditeur
+- Le bouton IA de la barre d'outils ouvre directement le studio SP213 (maquette + canevas) ; l'ancien panneau IA est rangé dans Préférences → premier onglet (libellés FR/EN/JA).
+
+### Scope
+- Studio SP213 et éditeur. Aucun changement sur le rendu PDF, sur l'import/export de documents ni sur les autres applications du paquet.
+
 ## [1.7.574] — 2026-09-27
 
 _Numérotation de pages fidèle jusqu'au PDF, grille & repères fluides, dialogues SuperPrint, bibliothèque d'assets fiabilisée, typographie du studio corrigée_

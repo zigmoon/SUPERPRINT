@@ -95,8 +95,21 @@
     /* 🔒 Interdire la sélection de texte dans l'interface (sauf zones autorisées) */
     -webkit-user-select: none; user-select: none;
   }
-  /* La sélection reste possible dans la preview, le chat et la saisie */
-  #previewScroll, #chatLog, #promptInput { -webkit-user-select: text; user-select: text; }
+  /* La sélection reste possible dans la préview, le chat et la saisie */
+  /* 🛡️ _SP_STUDIO_DESIGN_575 — LA SÉLECTION EST RÉSERVÉE AU CONTENU, JAMAIS À L'INTERFACE.
+     Demande utilisateur : « ne rends pas sélectionnable le texte qui compose
+     l'interface du studio ». Le réglage global était bien en place, MAIS l'exception
+     désignait TOUTE la zone d'aperçu (#previewScroll) : un glissement de souris y
+     sélectionnait « Planche 1 », « Page 2 », les numéros de folio affichés sous chaque
+     carte… c'est-à-dire l'interface elle-même.
+     Désormais la sélection est autorisée UNIQUEMENT là où il y a du TEXTE À COPIER :
+       · #promptInput  (la demande que l'on tape)
+       · #chatLog      (les messages de l'IA que l'on veut recopier)
+       · input/textarea/select (les champs de réglages)
+     Tout le reste (onglets, libellés, boutons, badges, aperçu) est non sélectionnable. */
+  #promptInput, #chatLog, input, textarea, select {
+    -webkit-user-select: text; user-select: text;
+  }
   button { font-family: inherit; }
   :where(button, [role="button"], input, textarea, select, a):focus-visible {
     outline: 2px solid #ffffff; outline-offset: 2px;
@@ -419,6 +432,10 @@
     background: #fff; box-shadow: 0 4px 20px var(--shadow); line-height: 0; position: relative;
   }
   .page-canvas-wrap canvas { display: block; }
+  /* 🆕 _SP_STUDIO_CAHIER_576 — CADRAGE « CAHIER » : une planche qui ne porte
+     qu'UNE page (couverture, 4e de couverture) est montrée SEULE, à la largeur
+     d'une page. La fenêtre est plus étroite que le canvas et le rogne. */
+  .page-canvas-wrap.cadre-page-seule { overflow: hidden; }
 
   /* 🗑️ 2026-09-07 : pop-in de chargement du modèle local (#modelLoader) retirée —
      la bulle « SP213 is building your layout » dans le chat est l'unique loader. */
@@ -631,11 +648,14 @@
     width: 100%; min-width: 0; position: relative; min-height: 90px; max-height: 194px;
     display: flex;
   }
-  /* Boîte de prompt : CARRÉE, assez haute (2 lignes par défaut), transparente pour
-     laisser voir le placeholder overlay quand le champ est vide. */
+  /* Boîte de prompt : coins BAS très légèrement arrondis (5 px max, demande
+     utilisateur), assez haute (2 lignes par défaut), transparente pour
+     laisser voir le placeholder overlay quand le champ est vide.
+     _SP_STUDIO_DESIGN_575 : le rayon ne dépasse JAMAIS 5 px — l'identité
+     SuperPrint reste anguleuse, seuls les deux coins bas s'adoucissent. */
   #promptInput {
     flex: 1; resize: none; min-height: 90px; max-height: 194px; width: 100%;
-    background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 0;
+    background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 0 0 5px 5px;
     color: var(--text); padding: 12px 14px; font-size: 14px; line-height: 1.5; overflow-y: auto;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
@@ -687,19 +707,22 @@
   /* Boutons pièce jointe + micro : compacts (20px, icône 12px), CARRÉS (pas de
      bord arrondi) à droite de la zone de saisie */
   /* 🆕 v1.7.386 — 30 px (au lieu de 20) : vraie cible de clic, icone 14 px. */
-  /* 🆕 v1.7.606 — seule la pièce jointe (#attachBtn) garde un filet visible ;
-     les autres actions (image web, micro, clavier) restent sans bordure, comme
-     de simples icônes cliquables. */
+  /* 🆕 v1.7.606 — les actions (image web, micro, clavier) sont de simples icônes
+     sans bordure.
+     🆕 _SP_STUDIO_DESIGN_575 — la PIÈCE JOINTE perd son filet à son tour :
+     retour utilisateur « ne met pas de filet qui entoure l'icône (trombone) en
+     bas à droite sous la prompt box ». Le contour était le DERNIER cadre de la
+     barre d'actions et il attirait l'œil sur une action secondaire. La bordure
+     reste DÉCLARÉE transparente (1px) pour que la taille du bouton et
+     l'alignement des quatre icônes ne bougent pas d'un pixel. */
   #attachBtn, #micBtn, #webImgBtn, #kbBtn {
     flex-shrink: 0; width: 30px; height: 30px; padding: 0; border-radius: 0;
     border: 1px solid transparent; background: transparent; color: var(--text); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: all 0.15s;
   }
-  #attachBtn { border-color: var(--border); }
   #attachBtn .ic, #micBtn .ic, #webImgBtn .ic, #kbBtn .ic { width: 14px; height: 14px; }
   #attachBtn:hover, #micBtn:hover, #webImgBtn:hover, #kbBtn:hover { background: var(--btn-hover); }
-  #attachBtn:hover { border-color: #999; }
   #micBtn:disabled { opacity: .4; cursor: not-allowed; }
   #micBtn.listening { background: #ef4444; color: #fff; }
   #micBtn.listening .ic { animation: micPulse 1s infinite; }
@@ -1584,15 +1607,21 @@
     ['claude-opus-4-5-20251101',   'Claude Opus 4.5 — génération précédente']
   ];
 
-  // OpenRouter : modèles 100% GRATUITS (suffixe :free) — vérifiés par tests réels le 2026-08-29.
-  // Nemotron 3 Super 120B et MiniMax M2.7 ont produit un JSON valide 8/8 pages.
+  // OpenRouter : modèles 100% GRATUITS (suffixe :free) — liste VÉRIFIÉE le 2026-09-27
+  // sur l'API publique (openrouter.ai/api/v1/models, champ pricing.prompt = 0).
+  // Le studio n'embarque que du GRATUIT : un modèle devenu payant sort de la liste.
+  // ❌ Retiré le 2026-09-27 : MiniMax M2.7 (:free) n'existe PLUS sur OpenRouter —
+  //    le choisir faisait échouer CHAQUE génération (le modèle est devenu payant).
   // ❌ Retirés (non fiables en test) : Gemma 4 31B, Inkling Small, MiniMax M3, GLM 5.2.
+  // ⚠️ SORTIE : un document multi-pages a besoin de 3 à 15 k tokens de sortie.
+  //    Tous ces modèles passent, sauf Gemma 4 26B (plafond 32 k) sur les très gros livres.
   const OPENROUTER_MODELS = [
-    ['nvidia/nemotron-3-super-120b-a12b:free','Nemotron 3 Super 120B ⭐ — recommandé (vérifié : JSON 8/8 pages)'],
-    ['minimax/minimax-m2.7:free',             'MiniMax M2.7 — polyvalent (vérifié : JSON 8/8 pages)'],
-    ['google/gemma-4-26b-a4b-it:free',        'Gemma 4 26B A4B — rapide'],
+    ['nvidia/nemotron-3-super-120b-a12b:free','Nemotron 3 Super 120B ⭐ — recommandé (vérifié : JSON 8/8 pages, sortie 235k)'],
+    ['qwen/qwen3.8-27b:free',                 'Qwen3.8 27B — nouveau (262k contexte, sortie 235k)'],
+    ['nvidia/nemotron-3.5-lightning:free',    'Nemotron 3.5 Lightning — rapide (1M contexte, sortie 65k)'],
     ['nvidia/nemotron-3-ultra-550b-a55b:free','Nemotron 3 Ultra 550B — très puissant, lent'],
-    ['thinkingmachines/inkling:free',         'Inkling 975B — généraliste, long contexte']
+    ['thinkingmachines/inkling:free',         'Inkling 975B — généraliste, long contexte (1M)'],
+    ['google/gemma-4-26b-a4b-it:free',        'Gemma 4 26B A4B — rapide (sortie plafonnée à 32k)']
   ];
 
   // 🆕 DeepSeek (cloud) — modèles OpenAI-compatibles. API : api.deepseek.com.
@@ -2651,6 +2680,25 @@
       const wm = localStorage.getItem('sp213_wllm_model'); if (wm && WLLM_MODELS.some(x => x[0] === wm)) { $('wllmModel').value = wm; state.wllmModel = wm; }
       const d = JSON.parse(localStorage.getItem(LS.dims) || 'null');
       if (d) { $('pageW').value = d.w; $('pageH').value = d.h; }
+      /* 🛡️ _SP_STUDIO_FIAB_575 — LE MODE D'AFFICHAGE ÉTAIT OUBLIÉ À CHAQUE OUVERTURE.
+         Retour utilisateur : « je ne vois jamais de composition en spread dans le
+         studio ». Mesure : la clé sp213_viewmode_v1 N'EXISTAIT PAS — le clic sur
+         « Double page » ne vivait que dans state.viewMode, et autoStartStudio()
+         (qui court-circuite les préférences dès qu'une conversation est enregistrée)
+         repartait toujours en page simple. Le mode est maintenant enregistré au
+         clic ET restauré ici (bouton actif + libellé d'explication). */
+      const vm = localStorage.getItem('sp213_viewmode_v1');
+      if (vm === 'spread' || vm === 'single') {
+        state.viewMode = vm;
+        document.querySelectorAll('.viewmode-btn').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-viewmode') === vm);
+        });
+        if ($('viewmodeHint')) {
+          $('viewmodeHint').textContent = vm === 'spread'
+            ? 'Deux pages côte à côte (gouttière au centre) — format double : ' + (parseFloat($('pageW').value) || 210) * 2 + ' × ' + (parseFloat($('pageH').value) || 297) + ' mm.'
+            : 'Une page unique fermée (format largeur × hauteur).';
+        }
+      }
       const th = localStorage.getItem(LS.theme);
       if (th !== null) setTheme(th === '1');
       const eng = localStorage.getItem('sp213_engine');
@@ -2673,8 +2721,11 @@
         document.querySelectorAll('.viewmode-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         state.viewMode = btn.getAttribute('data-viewmode');
+        // 🛡️ _SP_STUDIO_FIAB_575 — le choix est MÉMORISÉ (il ne l'était pas :
+        //   fermer/rouvrir le studio ramenait en page simple sans le dire).
+        try { localStorage.setItem('sp213_viewmode_v1', state.viewMode); } catch (_) {}
         $('viewmodeHint').textContent = state.viewMode === 'spread'
-          ? 'Deux pages côte à côte (gouttière au centre) — format double : ' + (parseFloat($('pageW').value) || 210) * 2 + ' × ' + (parseFloat($('pageH').value) || 297) + ' mm.'
+          ? 'Deux pages côte à côte (gouttière au centre) — format double : ' + (parseFloat($('pageW').value) || 210) * 2 + ' × ' + (parseFloat($('pageH').value) || 297) + ' mm. Cahier : la couverture et la 4e de couverture restent SEULES.'
           : 'Une page unique fermée (format largeur × hauteur).';
       });
     });
@@ -3208,6 +3259,11 @@
       state.oaiModel = oaim && OPENAI_MODELS.some(x => x[0] === oaim) ? oaim : OPENAI_MODELS[0][0];
       const wm = localStorage.getItem('sp213_wllm_model');
       if (wm) state.wllmModel = wm;
+      // 🛡️ _SP_STUDIO_FIAB_575 — L'AUTO-DÉMARRAGE SAUTE LES PRÉFÉRENCES : le mode
+      //   d'affichage choisi par l'utilisateur doit donc être relu ICI, sinon la
+      //   composition repart en page simple alors qu'il a coché « Double page ».
+      const _vmAuto = localStorage.getItem('sp213_viewmode_v1');
+      if (_vmAuto === 'spread' || _vmAuto === 'single') state.viewMode = _vmAuto;
       $('welcome').classList.add('hidden');
       $('studio').classList.add('active');
       refreshChatHeader();
@@ -3271,7 +3327,34 @@
 
     // Toujours une page A4 vierge au démarrage (jamais l'ancienne maquette) —
     // SAUF si une maquette vient d'être importée depuis SuperPrint.
-    if (!skipNewDocument) newDocument();
+    /* 🛡️ _SP_STUDIO_RESTAURE_575 — LA COMPOSITION REVIENT AVEC LA CONVERSATION.
+
+       DÉFAUT MESURÉ (celui que l'utilisateur a signalé) : la règle ci-dessus
+       (« toujours une page vierge au démarrage ») ne restaurait QUE le fil de
+       discussion. Conséquence vécue : on compose une double page, on recharge
+       l'onglet ou on rouvre le studio, et l'aperçu affiche une planche BLANCHE —
+       alors que la maquette est bel et bien enregistrée. Mesure avant correction :
+       3 documents de 4 planches présents dans localStorage, 0 affiché. C'est ce qui
+       donnait l'impression que « le studio ne compose jamais en spread ».
+
+       On applique donc la règle DÉJÀ éprouvée de switchConversation() :
+         · la maquette de la conversation ACTIVE est réaffichée si son format
+           correspond au format courant (mêmes clés, même test) ;
+         · sinon — et seulement sinon — on repart d'une page vierge.
+       `skipNewDocument` conserve son sens : une maquette importée depuis SuperPrint
+       (ou une restauration en cours) reste prioritaire, on n'écrase rien. */
+    let restaure = false;
+    if (!skipNewDocument) {
+      try {
+        const doc = JSON.parse(localStorage.getItem(LS.doc + '_' + (state.convActive || '')) || 'null');
+        if (doc && Array.isArray(doc.pages) && doc.pages.length && doc.w === state.pageW && doc.h === state.pageH) {
+          state.doc = doc;
+          restaure = true;
+        }
+      } catch (_) { restaure = false; }
+      if (restaure) renderDocument(state.doc);
+      else newDocument();
+    }
     // Restaurer l'historique du chat dans la colonne conversation (sans
     // recharger la maquette) pour que l'utilisateur voie son fil.
     state.chat.forEach(m => appendChat(m.role, m.text, m.meta));
@@ -6098,7 +6181,7 @@ function spRtfLayoutInfo(src) {
     }
     if ($('viewmodeHint')) {
       $('viewmodeHint').textContent = vMode === 'spread'
-        ? 'Deux pages côte à côte (gouttière au centre) — format double : ' + w * 2 + ' × ' + h + ' mm.'
+        ? 'Deux pages côte à côte (gouttière au centre) — format double : ' + w * 2 + ' × ' + h + ' mm. Cahier : la couverture et la 4e de couverture restent SEULES.'
         : 'Une page unique fermée (format largeur × hauteur).';
     }
     return true;
@@ -6592,85 +6675,142 @@ function spRtfLayoutInfo(src) {
     addGuides(c, effWpx, pageHpx, bleedPx, state.viewMode === 'spread');
     c.requestRenderAll();
     state.pages.push({ pageIndex: 0, canvas: c, label: 'Page 1', blank: true });
+    // 🆕 _SP_STUDIO_DESIGN_575 — même dézoom automatique sur la planche VIERGE :
+    //   c'est l'état qu'on voit à l'ouverture du studio, en double page. Sans cet
+    //   appel, la planche de 420 mm s'affichait à 100 % et débordait de l'aperçu
+    //   (mesure : 1 208 px de planche pour 865 px de zone) — on croyait la
+    //   composition coupée avant même d'avoir demandé quoi que ce soit.
+    try { spZoomAjusterAuxPlanches(); } catch (_) {}
 
     $('pageInfo').textContent = '1 page · ' + state.pageW + '×' + state.pageH + ' mm' + (state.viewMode === 'spread' ? ' (spread)' : '') + ' · bleed ' + (state.bleed || 3) + ' mm';
     $('formatInfo') && ($('formatInfo').textContent = '');
   }
 
   // Repères DA SuperPrint : trait de coupe noir 2px, fond perdu gris pointillé,
-  // marges de sécurité rouges pointillées (comme drawMargins de SuperPrint).
-  function addGuides(c, pageWpx, pageHpx, bleedPx, isSpread) {
-    // Trait de coupe (format final) — noir
-    const trimBox = new fabric.Rect({
-      left: bleedPx, top: bleedPx, width: pageWpx, height: pageHpx,
-      fill: 'transparent', stroke: '#2a2a2a', strokeWidth: 2,
+  // marges de sécurité rouges pointillées — mêmes règles que l'app (drawMargins).
+  /* ══════════════════════════════════════════════════════════════════════════
+     ⚠️ _SP_STUDIO_FOND_576 — GÉOMÉTRIE DES FONDS PERDUS, COPIÉE DE L'APP.
+
+     Dans l'app, une PAGE SEULE d'un document en double page n'a PAS de fond perdu
+     côté reliure (createPageCanvas, position « left » / « right ») :
+       • position 'right' — COUVERTURE (page 1, recto, posée à droite) :
+           bleedLeft = 0, bleedRight = bled  → le canvas mesure largeur + bled,
+           et l'app ne dessine PAS le trait de coupe côté gauche (pliure) ;
+       • position 'left'  — DERNIÈRE page d'un document pair (verso, à gauche) :
+           bleedLeft = bled, bleedRight = 0 → symétrique.
+     Le studio dessinait un fond perdu des DEUX côtés. Retour utilisateur :
+     « je ne peux pas avoir de fond perdu à gauche, par exemple sur la première
+     page » (en mode double page). On reproduit donc la géométrie de l'app — et,
+     comme elle, les marges MIROITÉES : le PETIT fond (marge intérieure, 12 mm)
+     est TOUJOURS du côté de la PLIURE, le GRAND fond (marge extérieure, 18 mm)
+     du côté des CHANTS. Une page de GAUCHE est un VERSO (grand fond à gauche),
+     une page de DROITE est un RECTO (petit fond à gauche) — cf. spMargesPagePx
+     de l'app.
+
+     `offX`      : décalage de la fenêtre (une carte de page seule montre UNE moitié).
+     `coteSeule` : 'droite' | 'gauche' pour une page seule, null pour une planche
+                   entière (double page : les deux pages + la pliure).
+     ══════════════════════════════════════════════════════════════════════════ */
+  function addGuides(c, pageWpx, pageHpx, bleedPx, isSpread, offX, coteSeule) {
+    const dec = offX || 0;
+    const seule = (coteSeule === 'droite' || coteSeule === 'gauche') ? coteSeule : null;
+    // Une page seule À DROITE est un RECTO (page impaire : la couverture) ;
+    // une page seule À GAUCHE est un VERSO (dernière page d'un document pair).
+    const recto = (seule !== 'gauche');
+    // Marges de la DA SP213 — les MÊMES valeurs que les passes de composition
+    // (_spEnforceMargins) : petit fond 12 mm, tête 15, grand fond 18, queue 20.
+    const k = Math.min(1, Math.max(0.55, (state.pageW || 210) / 210));
+    const MP = {
+      petit: Math.round(12 * k * 10) / 10,
+      grand: Math.round(18 * k * 10) / 10,
+      tete: Math.round(15 * k * 10) / 10,
+      queue: Math.round(20 * k * 10) / 10
+    };
+    // Fond perdu de chaque côté DE LA FENÊTRE : zéro du côté de la pliure.
+    const bG = seule ? ((seule === 'droite') ? 0 : bleedPx) : bleedPx;
+    const bD = seule ? ((seule === 'gauche') ? 0 : bleedPx) : bleedPx;
+
+    const commun = {
       selectable: false, evented: false, hoverCursor: 'default',
       hasControls: false, hasBorders: false, lockMovementX: true, lockMovementY: true,
       lockRotation: true, lockScalingX: true, lockScalingY: true, lockScaling: true,
-      excludeFromExport: true, isTrimBox: true
-    });
-    // Fonds perdus — gris pointillé
-    const bleedIndicator = new fabric.Rect({
-      left: 0, top: 0, width: pageWpx + bleedPx * 2, height: pageHpx + bleedPx * 2,
-      fill: 'transparent', stroke: '#cccccc', strokeWidth: 1, strokeDashArray: [5, 5],
-      selectable: false, evented: false, hoverCursor: 'default',
-      hasControls: false, hasBorders: false, lockMovementX: true, lockMovementY: true,
-      lockRotation: true, lockScalingX: true, lockScalingY: true, lockScaling: true,
-      excludeFromExport: true, isBleed: true
-    });
-    // Marges de sécurité — rouges pointillées (15 mm par défaut comme SP)
-    const marginPx = mmToPx(15);
-    const marginRect = new fabric.Rect({
-      left: bleedPx + marginPx, top: bleedPx + marginPx,
-      width: Math.max(0, pageWpx - marginPx * 2), height: Math.max(0, pageHpx - marginPx * 2),
-      fill: 'transparent', stroke: '#ff0000', strokeWidth: 0.5, strokeDashArray: [5, 5],
-      selectable: false, evented: false, hoverCursor: 'default',
-      hasControls: false, hasBorders: false, lockMovementX: true, lockMovementY: true,
-      lockRotation: true, lockScalingX: true, lockScalingY: true, lockScaling: true,
-      excludeFromExport: true, isMargin: true
-    });
-    // 🆕 v1.7.384 — LIGNE DE PLIURE (mode planche uniquement).
+      excludeFromExport: true
+    };
+    const guides = [];
+
+    // ── TRAIT DE COUPE (format final) — noir. Sur une page seule il est OUVERT
+    //    du côté de la pliure, exactement comme dans l'app.
+    if (seule) {
+      const x0 = bG, y0 = bleedPx, x1 = bG + pageWpx, y1 = bleedPx + pageHpx;
+      const segs = [[x0, y0, x1, y0], [x0, y1, x1, y1]];              // tête + queue
+      if (seule === 'droite') segs.push([x1, y0, x1, y1]);            // chant DROIT (extérieur)
+      else segs.push([x0, y0, x0, y1]);                              // chant GAUCHE (extérieur)
+      guides.push(new fabric.Group(segs.map(s => new fabric.Line(s, { stroke: '#2a2a2a', strokeWidth: 2 })),
+        Object.assign({ isTrimBox: true }, commun)));
+    } else {
+      guides.push(new fabric.Rect(Object.assign({
+        left: bleedPx, top: bleedPx, width: pageWpx, height: pageHpx,
+        fill: 'transparent', stroke: '#2a2a2a', strokeWidth: 2, isTrimBox: true
+      }, commun)));
+    }
+
+    // ── FONDS PERDUS (gris pointillé) : la fenêtre = page + fonds perdus EXTÉRIEURS.
+    guides.push(new fabric.Rect(Object.assign({
+      left: 0, top: 0, width: pageWpx + bG + bD, height: pageHpx + bleedPx * 2,
+      fill: 'transparent', stroke: '#cccccc', strokeWidth: 1, strokeDashArray: [5, 5], isBleed: true
+    }, commun)));
+
+    // ── MARGES (rouge pointillé) : une par PAGE, miroir recto / verso ────────
+    const margePage = (xPage, wPage, mGauche, mDroite) => new fabric.Rect(Object.assign({
+      left: xPage + mmToPx(mGauche),
+      top: bleedPx + mmToPx(MP.tete),
+      width: Math.max(0, wPage - mmToPx(mGauche + mDroite)),
+      height: Math.max(0, pageHpx - mmToPx(MP.tete + MP.queue)),
+      fill: 'transparent', stroke: '#ff0000', strokeWidth: 0.5, strokeDashArray: [5, 5], isMargin: true
+    }, commun));
+    if (seule) {
+      // RECTO (page de droite) : petit fond côté pliure (à gauche), grand fond aux chants.
+      // VERSO (page de gauche) : grand fond côté chants (à gauche), petit fond à la pliure.
+      const mG = recto ? MP.petit : MP.grand;
+      const mD = recto ? MP.grand : MP.petit;
+      guides.push(margePage(bG, pageWpx, mG, mD));
+    } else {
+      // Planche : page de GAUCHE = VERSO, page de DROITE = RECTO. Le petit fond
+      // des deux pages tombe donc de part et d'autre de la pliure.
+      const demi = pageWpx / 2;
+      guides.push(margePage(bleedPx, demi, MP.grand, MP.petit));
+      guides.push(margePage(bleedPx + demi, demi, MP.petit, MP.grand));
+    }
+
+    // ── LIGNE DE PLIURE (planche entière uniquement) ──────────────────────────
     //   Mesure : le studio traçait le trait de coupe, les fonds perdus et les
     //   marges, mais AUCUNE séparation entre les deux pages d'une planche, alors
-    //   que l'app la montre. On trace donc la pliure au MILIEU EXACT de la
-    //   planche (x = bleed + largeur d'une page), par-dessus les repères.
+    //   que l'app la montre. On trace la pliure au MILIEU EXACT de la planche
+    //   (x = bleed + largeur d'une page). Référence app : centerX = canvasWidth / 2.
     let foldLine = null;
-    if (isSpread && pageWpx > 0) {
-      // ⚠️ CORRIGE v1.7.387 — le parametre est la largeur de la PLANCHE
-      //   (2 pages), donc la pliure est a la MOITIE : bleedPx + pageWpx / 2.
-      //   Mesure avant : pliure a x=1199 (bord droit, 845 px d'encre) au lieu
-      //   de x=604 (milieu). Elle etait superposee au trait de coupe : invisible,
-      //   d'ou « je ne vois jamais le milieu des deux pages ».
-      //   Reference de l'app : centerX = canvasWidth / 2 (main.js ~L11244).
+    if (isSpread && !seule && pageWpx > 0) {
       const foldX = bleedPx + pageWpx / 2;
-      foldLine = new fabric.Line([foldX, bleedPx, foldX, bleedPx + pageHpx], {
-        stroke: '#2a2a2a',
-        strokeWidth: 1,
-        strokeDashArray: [6, 4],
-        selectable: false,
-        evented: false,
-        hoverCursor: 'default',
-        hasControls: false,
-        hasBorders: false,
-        lockMovementX: true,
-        lockMovementY: true,
-        lockRotation: true,
-        lockScalingX: true,
-        lockScalingY: true,
-        lockScaling: true,
-        excludeFromExport: true,
-        isFold: true
-      });
+      foldLine = new fabric.Line([foldX, bleedPx, foldX, bleedPx + pageHpx],
+        Object.assign({ stroke: '#2a2a2a', strokeWidth: 1, strokeDashArray: [6, 4], isFold: true }, commun));
+      guides.push(foldLine);
     }
-    [trimBox, bleedIndicator, marginRect].concat(foldLine ? [foldLine] : []).forEach(g => {
+
+    guides.forEach(g => {
+      // 🆕 _SP_STUDIO_CAHIER_576 — repères posés SUR LA PAGE montrée (voir `dec`).
+      if (dec) {
+        if (typeof g.x1 === 'number' && typeof g.x2 === 'number') {
+          g.x1 += dec; g.x2 += dec;
+          if (typeof g._setWidthHeight === 'function') g._setWidthHeight();
+        } else {
+          g.left += dec;
+        }
+        g.setCoords();
+      }
       if (!state.guidesVisible) g.visible = false;
       c.add(g);
     });
     try {
-      c.bringToFront(bleedIndicator);
-      c.bringToFront(marginRect);
-      c.bringToFront(trimBox);
-      if (foldLine) c.bringToFront(foldLine);
+      guides.slice().forEach(g => c.bringToFront(g));
     } catch(_) {}
   }
 
@@ -7356,7 +7496,9 @@ function spRtfLayoutInfo(src) {
           'Le studio réinjecte la data URI. Ne copie JAMAIS la data URI toi-même.'
         : '';
       const msgs = [systemMsg, { role: 'user', content: userPart + consigneImg + pjContext }];
-      return callAI(msgs).then(function (resp) {
+      // ⚠️ _SP_STUDIO_FIAB_575 : CET appel compose UNE page → délai « 1 page » (2 min),
+      //   pas le délai « document entier » calculé par spTimeoutAppel().
+      return callAI(msgs, SP_CALL_TIMEOUT_MS).then(function (resp) {
         const p = parseAIResponse(resp);
         let els = [];
         if (p.pages && p.pages.length) {
@@ -7379,20 +7521,161 @@ function spRtfLayoutInfo(src) {
   }
 
   // Dispatcher : generation pilotee si un document long est joint, sinon appel unique.
-  function spCallAI(messages, userText) {
+  async function spCallAI(messages, userText) {
+    /* 🆕 _SP_STUDIO_CAHIER_576 — on garde les messages de la demande courante :
+       la vérification du cahier (spVerifierCahierPlanches) les réutilise pour
+       redemander UNE planche fautive, avec la même charte et le même contexte. */
+    state.lastBaseMessages = messages;
     if (spShouldDrivePageByPage(userText)) {
       // 🆕 v1.7.405 — spGenerating permet au bouton de se transformer en
       //   "Arreter" pendant une generation longue (un appel IA par page).
       state.spGenerating = true;
-      return spGenerateByPages(messages, userText).then(function (r) {
+      try {
+        const r = await spGenerateByPages(messages, userText);
         state.spGenerating = false;
-        return r;
-      }, function (e) {
+        return await spCompleterPagesManquantes(r, messages, userText);
+      } catch (e) {
         state.spGenerating = false;
         throw e;
-      });
+      }
     }
-    return callAI(messages);
+    // 🆕 _SP_STUDIO_FIAB_575 — le rattrapage vaut aussi pour l'appel unique.
+    return spCompleterPagesManquantes(await callAI(messages), messages, userText);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🛡️ _SP_STUDIO_FIAB_575 — RATTRAPAGE DES PAGES MANQUANTES
+
+     DÉFAUT MESURÉ ET REPRODUIT (réponse simulée, moteur réel) :
+       réponse = { targetPages: 4, pages: [page 0 (3 éléments), page 2 (3 éléments)] }
+       → le studio annonçait « 4 page(s) » et fabriquait DEUX PAGES BLANCHES
+         (index 1 et 3) SANS LE DIRE. C'est exactement ce que voit l'utilisateur :
+         « il y a des oublis de pages, ça semble buggué et incomplet ».
+
+     Pourquoi : `targetPages` sert de plan de montage ; toute page absente de la
+     réponse était remplacée par un tableau vide. Utile pour garder la pagination
+     (le folio doit rester le bon), mais un blanc ne se voit qu'à l'impression.
+
+     RÈGLE : une page annoncée et non composée est REDEMANDÉE au modèle
+     (un appel ciblé, une page à la fois, 4 maximum), puis le résultat est
+     fusionné dans la maquette. Si le modèle ne rend toujours rien, on le DIT
+     dans la conversation au lieu de laisser un blanc muet. Le mode
+     « page par page » (document long joint) profite du même rattrapage : une
+     page en échec y était elle aussi poussée vide et silencieusement.
+
+     La fonction renvoie TOUJOURS une chaîne JSON de même forme que l'entrée :
+     le reste de la chaîne (parseAIResponse, buildDocFromParsed) ne voit aucune
+     différence. En cas de problème, la réponse d'origine est rendue telle quelle.
+     ══════════════════════════════════════════════════════════════════════════ */
+  async function spCompleterPagesManquantes(reponse, baseMessages, userText) {
+    const MAX_RATTRAPAGE = 4;
+    const libelle = $('modelLabel') ? $('modelLabel').textContent : '';
+    try {
+      const parsed = parseAIResponse(reponse);
+      const cibleAnnoncee = Math.round(Number(parsed.targetPages) || 0);
+      if (!Array.isArray(parsed.pages) || !parsed.pages.length || cibleAnnoncee < 2) return reponse;
+      // Même normalisation que buildDocFromParsed (fonction partagée).
+      const pages = spNormaliserPagination(parsed.pages.slice());
+      const cible = Math.max(cibleAnnoncee, pages.length);
+      /* ⚠️ ON INDEXE PAR PAGE (pageIndex), PAS PAR POSITION DANS LE TABLEAU.
+         Avec un trou assumé — pages 1 et 3 livrées, pages 2 et 4 à composer —
+         la position `pages[1]` porte la page 3 : compter par position faisait
+         croire qu'aucune page ne manquait, puis le tableau incohérent (deux fois
+         l'index 2) était renuméroté par ordre par buildDocFromParsed et DÉCALait
+         la page « 3 » en page « 2 ». Mesuré sur le scénario [0, 2] + targetPages 4. */
+      const parPage = new Map();
+      pages.forEach(function (p) { if (!parPage.has(Number(p.pageIndex))) parPage.set(Number(p.pageIndex), p); });
+      const manquantes = [];
+      for (let i = 0; i < cible; i++) {
+        const p = parPage.get(i);
+        if (!p || !Array.isArray(p.elements) || !p.elements.length) manquantes.push(i);
+      }
+      if (!manquantes.length) return reponse;
+
+      const aFaire = manquantes.slice(0, MAX_RATTRAPAGE);
+      const reussies = [];
+      for (let k = 0; k < aFaire.length; k++) {
+        if (state.spStopRequested) break;
+        const idx = aFaire[k];
+        if ($('modelLabel')) $('modelLabel').textContent = 'SP213 rattrapage ' + (k + 1) + '/' + aFaire.length;
+        const role = idx === 0
+          ? 'COUVERTURE (titre + accroche, éventuellement un fond pleine page)'
+          : (idx === cible - 1 ? 'DERNIÈRE PAGE (conclusion, contact, 4e de couverture)' : 'PAGE DE CONTENU');
+        let consigne;
+        if (state.viewMode === 'spread') {
+          /* 🆕 _SP_STUDIO_CAHIER_576 — EN DOUBLE PAGE, l'entrée manquante est une
+             PLANCHE. La redemander comme « une page » faisait entrer une page de
+             210 mm (moitié vide) au milieu d'un document de planches de 420 mm.
+             On reprend la table du cahier : folios attendus + moitié à laisser
+             VIDE (couverture, 4e de couverture). */
+          const _cah = spCahierPlanches(cible);
+          const _c = _cah[idx] || { planche: idx + 1, folios: [idx + 1], cote: 'droite' };
+          consigne = spConsigneCahierPlanche(_c, cible);
+        } else {
+          consigne =
+            'RATTRAPAGE : ta réponse précédente ne contenait PAS la page ' + (idx + 1) + ' sur ' + cible + '.\n' +
+            'Compose UNIQUEMENT CETTE PAGE (aucune autre), rôle : ' + role + '.\n' +
+            'Même charte, mêmes polices et mêmes couleurs que le reste du document. Format ' +
+            state.pageW + '×' + state.pageH + ' mm, fond perdu ' + bled() + ' mm pour un fond pleine page.\n' +
+            'Utilise 8 à 20 éléments utiles, du VRAI contenu (jamais de Lorem ipsum), et un folio en bas de page.\n' +
+            'Réponds UNIQUEMENT en JSON, sans texte autour :\n' +
+            '{"reply":"","pages":[{"pageIndex":' + idx + ',"elements":[…]}]}';
+        }
+        try {
+          // ⚠️ _SP_STUDIO_FIAB_575 : le rattrapage compose UNE page → délai « 1 page ».
+          const r = await callAI(baseMessages.concat([{ role: 'user', content: consigne }]), SP_CALL_TIMEOUT_MS);
+          const p = parseAIResponse(r);
+          let els = [];
+          if (p.pages && p.pages.length) {
+            p.pages.forEach(function (pg) { if (pg.elements && pg.elements.length) els = els.concat(pg.elements); });
+          } else if (p.elements && p.elements.length) {
+            els = p.elements;
+          }
+          if (els.length) {
+            parPage.set(idx, { pageIndex: idx, elements: els });
+            reussies.push(idx + 1);
+          }
+        } catch (e) {
+          try { console.warn('[SP213] rattrapage page ' + (idx + 1) + ' :', e && e.message); } catch (_) {}
+        }
+      }
+      if ($('modelLabel')) $('modelLabel').textContent = libelle;
+
+      // Ce qui reste vide APRÈS rattrapage : on le dit, noir sur blanc.
+      const restantes = [];
+      for (let i = 0; i < cible; i++) {
+        const p = parPage.get(i);
+        if (!p || !Array.isArray(p.elements) || !p.elements.length) restantes.push(i + 1);
+      }
+      // Liste finale, dans l'ordre des pages. Les pages en surnombre (index au-delà de
+      // la cible) sont CONSERVÉES : on ne jette jamais du contenu composé.
+      const finale = [];
+      for (let i = 0; i < cible; i++) finale.push(parPage.get(i) || { pageIndex: i, elements: [] });
+      pages.forEach(function (p) {
+        const n = Number(p.pageIndex);
+        if (n >= cible && finale.indexOf(p) === -1) finale.push(p);
+      });
+      finale.forEach(function (p, i) { p.pageIndex = i; });
+      let note = '';
+      if (reussies.length) {
+        note += '\n\n🩹 ' + reussies.length + ' page(s) annoncée(s) mais absente(s) de la réponse du modèle ont été composées automatiquement (page ' + reussies.join(', ') + ').';
+      }
+      if (restantes.length) {
+        note += '\n\n⚠️ Page(s) ' + restantes.join(', ') + ' restée(s) VIDE(S) : le modèle n’a rien renvoyé pour elle(s), même après relance. Demandez moins de pages à la fois, ou choisissez un modèle plus solide (DeepSeek V4.1 Flash, ou dans OpenRouter : Nemotron 3 Super 120B / Qwen3.8 27B).';
+      }
+      if (parsed.truncated) {
+        note += '\n\n⚠️ La réponse du modèle a été TRONQUÉE (limite de sortie atteinte) : une partie de la maquette manquait. Réduisez le nombre de pages demandées, ou choisissez un modèle avec une sortie plus large.';
+      }
+      return JSON.stringify({
+        reply: String(parsed.reply || '').trim() + note,
+        targetPages: cible,
+        pages: finale
+      });
+    } catch (e) {
+      if ($('modelLabel')) $('modelLabel').textContent = libelle;
+      try { console.warn('[SP213] rattrapage des pages :', e && e.message); } catch (_) {}
+      return reponse;
+    }
   }
 
   async function sendMessage() {
@@ -7540,6 +7823,18 @@ function spRtfLayoutInfo(src) {
         }
         state.doc = doc;
         renderDocument(doc);
+        /* 🆕 _SP_STUDIO_CAHIER_576 — VÉRIFICATION DU CAHIER (couverture seule,
+           dernière page seule quand le total est pair) APRÈS l'affichage : la
+           maquette est visible tout de suite, la reprise ciblée d'une planche
+           fautive se fait derrière et corrige la maquette si besoin. */
+        try {
+          spVerifierCahierPlanches().then(function (noteCahier) {
+            if (!noteCahier) return;
+            appendChat('assistant', noteCahier);
+            state.chat.push({ role: 'assistant', text: noteCahier });
+            persistChat();
+          }).catch(function () {});
+        } catch (_) {}
         // 🆕 Charger les polices utilisées par la maquette (avec feedback typo)
         ensureMaquetteFonts(doc);
         // 🆕 Grille / repères à la demande : si l'utilisateur a demandé une grille,
@@ -7667,19 +7962,23 @@ function spRtfLayoutInfo(src) {
       const spreadNote = isSpread ? `Double page (spread) : largeur totale ${state.pageW * 2} mm, deux pages côte à côte, gouttière au centre à ${state.pageW} mm. Ne fais jamais traverser un texte sur la gouttière.` : `Page simple : format ${state.pageW} × ${state.pageH} mm.`;
       if (isMulti) {
         const _nbPages = (mp ? parseInt(mp[1], 10) : 0) || _attHint.pages || 4;
+        /* 🆕 _SP_STUDIO_CAHIER_576 — EN DOUBLE PAGE, « targetPages » = le nombre de
+           PLANCHE(S) : les entrées de "pages" sont des planches, pas des pages de
+           livre (spCahierPlanches = source unique). */
+        const _planches = isSpread ? Math.max(1, spCahierPlanches(_nbPages).length) : _nbPages;
       return `Tu es SP213, un générateur de maquettes print MULTI-PAGES pour SuperPrint.
-Tu dois produire EXACTEMENT ${_nbPages} pages (targetPages: ${_nbPages}).
+Tu dois produire ${isSpread ? ('EXACTEMENT ' + _planches + ' PLANCHE(S) contenant ' + _nbPages + ' pages au total (targetPages: ' + _planches + ')') : ('EXACTEMENT ' + _nbPages + ' pages (targetPages: ' + _nbPages + ')')}.
 Réponds UNIQUEMENT par un JSON valide, sans texte autour, sans markdown, sans balises XML.
 ${spreadNote}
 Coordonnées en mm, fontSize en pt, couleurs #RRGGBB. Chaque page : 8 à 15 éléments, pas de débord bas de page (top + hauteur ≤ ${state.pageH} mm).
 Types d'objets : rectangle (left,top,width,height,fill), text (left,top,width,text,fontSize,fill,fontFamily), circle (left,top,radius,fill), line (x1,y1,x2,y2,stroke).
 ${nativeDigest}
 EXEMPLE MULTI-PAGES À IMITER (structure exacte) :
-{"targetPages":${mp ? parseInt(mp[1],10) : 4},"pages":[
+{"targetPages":${isSpread ? Math.max(1, spCahierPlanches(_nbPages).length) : (mp ? parseInt(mp[1],10) : 4)},"pages":[
  {"pageIndex":0,"elements":[{"type":"rectangle","left":0,"top":0,"width":${state.pageW},"height":${state.pageH},"fill":"#0F172A"},{"type":"text","left":15,"top":20,"width":180,"text":"TITRE","fontSize":44,"fill":"#FFFFFF","fontFamily":"Bebas Neue"}]},
  {"pageIndex":1,"elements":[{"type":"text","left":15,"top":20,"width":180,"text":"ÉDITO","fontSize":28,"fill":"#0F172A","fontFamily":"Bebas Neue"},{"type":"text","left":15,"top":60,"width":180,"text":"Texte éditorial complet...","fontSize":10,"fill":"#475569","fontFamily":"Open Sans"}]}
 ]}
-Génère le JSON pour ${mp ? parseInt(mp[1],10) : 'le nombre de pages demandé'} pages, une entrée "pages" par page : `;
+Génère le JSON pour ${mp ? parseInt(mp[1],10) : 'le nombre de pages demandé'} pages, une entrée "pages" par ${isSpread ? 'PLANCHE (2 pages côte à côte : la page de GAUCHE de 0 à ' + state.pageW + ' mm, la page de DROITE de ' + state.pageW + ' à ' + (state.pageW * 2) + ' mm ; la couverture et la 4e de couverture n\'occupent qu\'UNE moitié, l\'autre RESTE VIDE)' : 'page'} : `;
       }
       return `Tu es SP213, un générateur de maquettes print pour le logiciel SuperPrint.
 Réponds UNIQUEMENT par un JSON valide, sans texte autour, sans markdown, sans balises XML.
@@ -7714,7 +8013,11 @@ DOCUMENT COURANT
   ⚠️ EN DOUBLE PAGE, « pleine page » = la PLANCHE ENTIÈRE : la largeur à couvrir est
   ${state.pageW * 2} mm, donc left:-${bled()}, top:-${bled()}, width:${state.pageW * 2 + bled() * 2}, height:${state.pageH + bled() * 2}.
   Un fond de ${state.pageW + bled() * 2} mm ne couvrirait qu'UNE des deux pages.
-  JAMAIS left:0/top:0 (laisserait ${bled()} mm de blanc au bord après coupe).
+${state.viewMode === 'spread' ? '  🔴 SUR UNE PLANCHE « SEULE » (COUVERTURE ou 4e DE COUVERTURE), LE FOND PERDU S\'ARRÊTE AU PLI :\n' +
+    '  aucun fond perdu du côté de la reliure (comme dans l\'app : une page seule n\'a de fond perdu que sur ses CHANTS).\n' +
+    '    • Couverture (page 1, moitié DROITE) : left:' + state.pageW + ', top:-' + bled() + ', width:' + (state.pageW + bled()) + ', height:' + (state.pageH + bled() * 2) + '.\n' +
+    '    • Dernière page seule (moitié GAUCHE) : left:-' + bled() + ', top:-' + bled() + ', width:' + (state.pageW + bled()) + ', height:' + (state.pageH + bled() * 2) + '.\n' +
+    '  La moitié vide d\'une planche seule ne reçoit NI page, NI fond perdu.\n' : ''}  JAMAIS left:0/top:0 (laisserait ${bled()} mm de blanc au bord après coupe).
 • Toutes les coordonnées en MILLIMÈTRES (mm). fontSize en POINTS (pt). Couleurs #RRGGBB.
 ${(function(){
   const H = state.pageH || 297;
@@ -7745,12 +8048,20 @@ ${(function(){
   const areaNote = small && !narrow ? 'Ce format est PLUS PETIT qu\'un A4 : réduis les corps (titres 24-48 pt, sous-titres 13-18 pt, corps 8-10 pt) et évite les grandes marges blanches. ' : '';
   const modeSpread = (state.viewMode === 'spread');
   const PW = state.pageW || 210;
+  /* ⚠️ _SP_STUDIO_FOND_576 — MARGES DE FOND NOMMÉES, comme l'app (v1.7.469) :
+     le PETIT fond est la marge INTÉRIEURE (toujours côté pliure), le GRAND fond la
+     marge EXTÉRIEURE (côté chants). Valeurs identiques aux passes de composition
+     (_spEnforceMargins : 12 et 18 mm, réduites sur les petits formats). */
+  const _kFond = Math.min(1, Math.max(0.55, PW / 210));
+  const _petitFond = Math.round(12 * _kFond * 10) / 10;
+  const _grandFond = Math.round(18 * _kFond * 10) / 10;
   const exLines = modeSpread
     ? '  ⚠️ MODE DOUBLE PAGE : l\'unité que tu produis EST LA PLANCHE (' + W + ' mm de large).\n' +
       '    La GOUTTIÈRE (reliure) est au CENTRE, À ' + PW + ' mm exactement. Une pliure n\'est pas un bord :\n' +
       '    aucun texte ne doit la traverser (coupe le paragraphe en 2 blocs indépendants).\n' +
-      '    • Bloc sur la page de GAUCHE  : left entre 18 et ~' + Math.round(PW - 15) + ' mm, left + width ≤ ' + (PW - 15) + ' mm.\n' +
-      '    • Bloc sur la page de DROITE  : left entre ' + (PW + 15) + ' et ~' + Math.round(W - 18) + ' mm, left + width ≤ ' + (W - 18) + ' mm.\n' +
+      '    • PETIT FOND = ' + _petitFond + ' mm, TOUJOURS du côté de la PLIURE. GRAND FOND = ' + _grandFond + ' mm, côté CHANTS (bord extérieur).\n' +
+      '    • Bloc sur la page de GAUCHE (VERSO : grand fond à gauche, petit fond à la pliure) : left entre ' + _grandFond + ' et ~' + Math.round((PW - _petitFond) * 10) / 10 + ' mm, left + width ≤ ' + Math.round((PW - _petitFond) * 10) / 10 + ' mm.\n' +
+      '    • Bloc sur la page de DROITE (RECTO : petit fond à la pliure, grand fond à droite) : left entre ' + (PW + _petitFond) + ' et ~' + Math.round((W - _grandFond) * 10) / 10 + ' mm, left + width ≤ ' + Math.round((W - _grandFond) * 10) / 10 + ' mm.\n' +
       '    • INTERDIT : une forme ou un texte qui recouvre toute la plancher d\'un seul tenant,\n' +
       '      et surtout : NE METS JAMAIS DEUX PAGES côte à côte DANS une plancher.\n' +
       '      Une plancher contient DÉJÀ les deux pages.\n' +
@@ -7989,39 +8300,38 @@ ${(function(){
     //   (3 planches : p1 seule | p2+p3 | p4 seule). Mesure avant correctif :
     //   « livre de 4 pages » → 4 planches.
     if (state.viewMode === 'spread') {
-      const planches = n ? (1 + Math.ceil((n - 1) / 2)) : 0;
+      /* 🆕 _SP_STUDIO_CAHIER_576 — LA TABLE VIENT DE spCahierPlanches (source
+         unique) : le prompt, le rattrapage et la vérification du cahier annoncent
+         donc EXACTEMENT la même imposition. */
+      const _cahier = spCahierPlanches(n);
+      const planches = _cahier.length;
       // 🆕 v1.7.387 — TABLEAU D'IMPOSITION CONCRET (chiffré, ligne par ligne).
       //   Mesure : pour un livre de 8 pages l'IA produisait bien 5 planches MAIS
       //   la dernière portait « folio 8 à gauche ET folio 9 à droite » — une page
       //   9 qui n'existe pas. La règle en prose ne suffisait pas : un modèle suit
       //   beaucoup mieux une liste explicite avec les folios à imprimer.
+      //   ⚠️ Mesure complémentaire (2026-09-27) : pour un magazine de 6 pages le
+      //   modèle a rempli la dernière planche (folio 6 ET folio 7) au lieu de
+      //   laisser la moitié droite VIDE. D'où la ligne « MOITIÉ VIDE » explicite.
       const _impoTable = (function () {
-        if (!n || n < 2) return '';
-        const lignes = [];
-        lignes.push('    planche 1 : page 1 SEULE à DROITE (left ~' + (state.pageW + 18) + ' à ' + (state.pageW * 2 - 18) + ' mm) — folio 1 — moitié GAUCHE VIDE');
-        let pg = 2, pl = 2;
-        while (pg <= n) {
-          const reste = n - pg + 1;
-          if (reste === 1) {
-            lignes.push('    planche ' + pl + ' : page ' + pg + ' SEULE à GAUCHE (left 18 à ' + (state.pageW - 18) + ' mm) — folio ' + pg + ' — moitié DROITE VIDE');
-            pg += 1;
-          } else {
-            lignes.push('    planche ' + pl + ' : page ' + pg + ' (GAUCHE, left 18 à ' + (state.pageW - 18) + ' mm) + page ' + (pg + 1) + ' (DROITE, left ' + (state.pageW + 18) + ' à ' + (state.pageW * 2 - 18) + ' mm) — folios ' + pg + ' et ' + (pg + 1));
-            pg += 2;
-          }
-          pl += 1;
-        }
+        if (!n || n < 2 || !_cahier.length) return '';
+        const lignes = _cahier.map(function (c) {
+          if (c.cote === 'droite') return '    planche ' + c.planche + ' : page ' + c.folios[0] + ' SEULE à DROITE (left ~' + (state.pageW + 18) + ' à ' + (state.pageW * 2 - 18) + ' mm) — folio ' + c.folios[0] + ' — moitié GAUCHE VIDE';
+          if (c.cote === 'gauche') return '    planche ' + c.planche + ' : page ' + c.folios[0] + ' SEULE à GAUCHE (left 18 à ' + (state.pageW - 18) + ' mm) — folio ' + c.folios[0] + ' — moitié DROITE VIDE';
+          return '    planche ' + c.planche + ' : page ' + c.folios[0] + ' (GAUCHE, left 18 à ' + (state.pageW - 18) + ' mm) + page ' + c.folios[1] + ' (DROITE, left ' + (state.pageW + 18) + ' à ' + (state.pageW * 2 - 18) + ' mm) — folios ' + c.folios[0] + ' et ' + c.folios[1];
+        });
         return '\n📐 TABLEAU D\'IMPOSITION À SUIVRE À LA LETTRE (' + n + ' pages → ' + planches + ' planches) :\n' + lignes.join('\n') +
           '\n  ⚠️ Le DERNIER folio est ' + n + ' : n\'imprime JAMAIS de folio supérieur à ' + n + '.\n' +
-          '  ⚠️ Chaque folio apparaît UNE SEULE FOIS, sur SA page, en bas.\n';
+          '  ⚠️ Chaque folio apparaît UNE SEULE FOIS, sur SA page, en bas.\n' +
+          '  ⚠️ UNE PLANCHE « SEULE » GARDE SA MOITIÉ VIDE : n\'y mets AUCUN texte ni forme (juste un fond pleine planche si besoin). Le studio montre alors cette page SEULE, comme dans un cahier.\n';
       })();
       return '🚨 MULTI-PAGES EN DOUBLE PAGE : utilise le FORMAT B. ' +
         (n ? 'Le livre fait ' + n + ' pages, ce qui donne ' + planches + ' PLANCHE(S) : ' +
-             'produis EXACTEMENT ' + planches + ' entrées "pages", car EN DOUBLE PAGE **UNE ENTRÉE = UNE PLANCHE** (2 pages côte à côte), PAS une page de livre. ' +
+             'produis EXACTEMENT ' + planches + ' entrées "pages" (targetPages: ' + planches + '), car EN DOUBLE PAGE **UNE ENTRÉE = UNE PLANCHE** (2 pages côte à côte), PAS une page de livre. ' +
              'Imposition attendue : planche 1 = page 1 SEULE à DROITE ; puis les paires p2+p3, p4+p5… ; la dernière page seule à GAUCHE si le total est pair. ' + _impoTable
            : 'produis autant d\'entrées "pages" que de PLANCHEs, car EN DOUBLE PAGE **UNE ENTRÉE = UNE PLANCHE** (2 pages côte à côte), PAS une page de livre. ') +
         'Dans une planche, la page de GAUCHE va de 0 à ' + state.pageW + ' mm et la page de DROITE de ' + state.pageW + ' à ' + (state.pageW * 2) + ' mm ; ' +
-        'une planche qui ne contient qu\'UNE page laisse l\'autre moitié VIDE. ' +
+        'une planche qui ne contient qu\'UNE page laisse l\'autre moitié VIDE (jamais de page inventée pour la combler). ' +
         'Le fond perdu couvre la PLANCHE (width ' + (state.pageW * 2 + bled() * 2) + ' mm). Contenu COMPLET sur chaque page, cohérence graphique stricte (mêmes marges, folios, grille).';
     }
     // 🆕 v1.7.388 — le nombre de pages doit etre CHIFFRE. Mesure : « produis le
@@ -8039,7 +8349,7 @@ ${(function(){
 FORMAT DE SORTIE — Réponds UNIQUEMENT en JSON valide (pas de markdown) :
 ⚠️ En mode DOUBLE PAGE, "elements" décrit la PLANCHE ENTIÈRE (les deux pages,
    coordonnées PLANCHE de 0 à ${state.pageW * 2}) — JAMAIS une demi-page.
-Pour UNE page (ou UNE planche) :
+${state.viewMode === 'spread' ? '⚠️ En DOUBLE PAGE, "targetPages" ET le nombre d\'entrées "pages" = le nombre de PLANCHE(S), PAS le nombre de pages de livre (une planche = 2 pages, ou 1 seule pour la couverture et la 4e de couverture).\n⚠️ Une planche « SEULE » (couverture, 4e de couverture, dernière page d\'un total pair) porte UNE page : sa MOITIÉ VIDE RESTE VIDE — n\'y invente JAMAIS une page ni un folio supplémentaire.\n' : ''}Pour UNE page (ou UNE planche) :
 { "reply": "phrase courte à l'utilisateur", "elements": [ ... ] }
 Pour PLUSIEURS pages :
 { "reply": "phrase courte", "targetPages": N, "pages": [ { "pageIndex": 0, "elements": [...] }, ... ] }
@@ -8115,7 +8425,11 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
         const pos = 'x' + (e.left || 0) + ' y' + (e.top || 0) + ' w' + (e.width || 0) + ' h' + (e.height || 0);
         if (t === 'text' || t === 'textbox') {
           const lines = e._lines && e._lines.length ? e._lines : String(e.text || '').split('\n');
-          const lineDescs = lines.map((ln, li) => '      l' + (li + 1) + ' (id ' + e.id.replace(/-l\d+$/, '') + '-l' + (li + 1) + ') : ' + String(ln).slice(0, 60));
+          // 🛡️ _SP_STUDIO_CAHIER_576 — un élément SANS id (planche recomposée par la
+          //   vérification du cahier) faisait planter cette ligne sur e.id.replace
+          //   et BLOQUAIT l'envoi du prompt suivant. Repli sur l'id de position.
+          const idBase = String(e.id || ('p' + (p.pageIndex + 1) + '-b' + (bi + 1))).replace(/-l\d+$/, '');
+          const lineDescs = lines.map((ln, li) => '      l' + (li + 1) + ' (id ' + idBase + '-l' + (li + 1) + ') : ' + String(ln).slice(0, 60));
           return '  • bloc p' + (p.pageIndex + 1) + '-b' + (bi + 1) + ' (TEXTE, ' + pos + ', font ' + (e.fontFamily || 'Open Sans') + ' ' + (e.fontSize || 14) + 'pt) :\n' + lineDescs.join('\n');
         }
         return '  • bloc p' + (p.pageIndex + 1) + '-b' + (bi + 1) + ' (' + t.toUpperCase() + ', ' + pos + ', fill ' + (e.fill || '#000') + ')';
@@ -8136,6 +8450,30 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
   //   On borne donc chaque appel ; au-dela, on REJETTE pour que l'appelant puisse
   //   passer a la page suivante (spGenerateByPages attrape deja l'erreur).
   const SP_CALL_TIMEOUT_MS = 120000; // 2 minutes par page
+  /* 🛡️ _SP_STUDIO_FIAB_575 — LE PLAFOND DE 120 s ÉTAIT PAR APPEL, PAS PAR DOCUMENT.
+     MESURE (OpenRouter, modèle gratuit Nemotron 3 Super 120B, prompt « livret A4 de
+     4 pages ») : « Erreur : Delai depasse (120 s) sur le moteur IA ». Un appel
+     UNIQUE qui doit composer TOUT le document demandait donc 4 pages de JSON en
+     2 minutes à un modèle gratuit qui fait la queue côté fournisseur : impossible.
+     Et dans la génération page par page (document long joint), un appel coupé
+     poussait une PAGE VIDE dans le document (le catch de spGenerateByPages) —
+     c'est une des causes mesurées des « oublis de pages ».
+     Règle : le délai suit le VOLUME demandé. 2 min pour une page, +1 min par page
+     supplémentaire, plafonné à 10 min. Les appels qui composent UNE page
+     (page-par-page et rattrapage) gardent explicitement 2 min. */
+  function spTimeoutAppel() {
+    let n = 0;
+    try {
+      const mp = String(state.lastPrompt || '').match(/(\d{1,3})\s*[- ]?\s*pages?/i);
+      if (mp) n = parseInt(mp[1], 10) || 0;
+    } catch (_) { n = 0; }
+    try {
+      const h = spAttachmentPageHint();
+      if (h && h.pages > n) n = h.pages;
+    } catch (_) {}
+    if (!(n > 1)) return SP_CALL_TIMEOUT_MS;
+    return Math.min(600000, SP_CALL_TIMEOUT_MS + 60000 * (n - 1));
+  }
   function spWithTimeout(promise, ms, libelle) {
     return new Promise(function (resolve, reject) {
       let fini = false;
@@ -8152,8 +8490,10 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     });
   }
 
-  function callAI(messages) {
-    return spWithTimeout(spCallAIProvider(messages), SP_CALL_TIMEOUT_MS, 'le moteur IA');
+  // `msForce` : les appels qui composent UNE seule page (génération page par page,
+  // rattrapage) passent SP_CALL_TIMEOUT_MS au lieu du délai « document entier ».
+  function callAI(messages, msForce) {
+    return spWithTimeout(spCallAIProvider(messages), msForce || spTimeoutAppel(), 'le moteur IA');
   }
 
   function spCallAIProvider(messages) {
@@ -8330,9 +8670,23 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     };
     // 🆕 2026-09-07 : fallback direct OpenRouter si le proxy PHP est absent (dev local).
     //   OpenRouter exige les headers HTTP-Referer / X-Title pour l'usage.
-    return spProxyOrDirect('OpenRouter', 'ai-proxy.php?provider=openrouter', 'https://openrouter.ai/api/v1/chat/completions', body, {
+    const entetesOR = {
       'HTTP-Referer': window.location.origin || 'http://localhost',
       'X-Title': 'SuperPrint SP213'
+    };
+    return spProxyOrDirect('OpenRouter', 'ai-proxy.php?provider=openrouter', 'https://openrouter.ai/api/v1/chat/completions', body, entetesOR).catch(function (err) {
+      /* 🛡️ _SP_STUDIO_FIAB_575 — MODE JSON REFUSÉ PAR CERTAINS FOURNISSEURS GRATUITS.
+         OpenRouter route chaque modèle vers plusieurs fournisseurs ; certains
+         rejettent `response_format: json_object` (400 « response_format is not
+         supported ») alors que le modèle sait très bien produire du JSON — le
+         prompt le demande déjà noir sur blanc. On retente SANS le paramètre au
+         lieu de faire échouer la génération. Déclencheur volontairement étroit :
+         seule une erreur qui parle du mode JSON est concernée. */
+      const msg = String((err && err.message) || '');
+      if (!/response_format|json_object|json mode|structured output/i.test(msg)) throw err;
+      const bodySansJson = Object.assign({}, body);
+      delete bodySansJson.response_format;
+      return spProxyOrDirect('OpenRouter', 'ai-proxy.php?provider=openrouter', 'https://openrouter.ai/api/v1/chat/completions', bodySansJson, entetesOR);
     });
   }
 
@@ -9669,25 +10023,80 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return clone;
   }
 
+  /* 🛡️ _SP_STUDIO_FIAB_575 — NORMALISATION DE LA PAGINATION RENVOYÉE PAR LE MODÈLE.
+
+     Trois écritures arrivent réellement, et une seule était comprise :
+       • pageIndex 0,1,2…        → le format demandé            ✅ déjà géré
+       • pageIndex 1,2,3…        → numérotation « humaine »     ❌ décalait TOUT
+       • pageIndex 0,2,5…        → trou assumé (page non composée) ⚠️ à conserver
+       • doublons (0,0,1) / absurdes (NaN, -1) → à renuméroter   ❌ contenu perdu
+
+     Mesure du défaut (réponse simulée, moteur réel) : { targetPages: 4, pages 1,2,3,4 }
+     → la couverture s'affichait sur la PAGE 2, la page 1 restait blanche et la
+     « 4e de couverture » (index 4, hors cible) était JETÉE. L'utilisateur voit
+     « des sauts de page » et une maquette incomplète.
+
+     Règle retenue, la plus prudente possible :
+       - suite exactement 0,1,2…            → rien à faire ;
+       - suite exactement 1,2,3…            → décalage de 1 (1-based) ;
+       - index croissants, uniques, en plage → TROU ASSUMÉ : on garde, les pages
+         absentes seront réclamées au modèle (rattrapage) ;
+       - tout le reste                      → renumérotation dans l'ordre de lecture.
+     `buildDocFromParsed` (fabrication du document) et le rattrapage appellent CETTE
+     même fonction : ils comptent ainsi les mêmes pages manquantes.
+     ⚠️ La fonction MODIFIE `pageIndex` sur les objets reçus et trie le tableau. */
+  function spNormaliserPagination(pages) {
+    if (!Array.isArray(pages) || !pages.length) return pages || [];
+    const seq = pages.map(function (p) { return Number(p && p.pageIndex); });
+    const zeroBase = seq.every(function (v, i) { return v === i; });
+    if (!zeroBase) {
+      const unBase = seq.every(function (v, i) { return v === i + 1; });
+      if (unBase) {
+        pages.forEach(function (p) { p.pageIndex = Number(p.pageIndex) - 1; });
+      } else {
+        const croissant = seq.every(function (v, i) { return i === 0 || v > seq[i - 1]; });
+        const plageOk = seq.every(function (v) { return isFinite(v) && v >= 0 && v < 12; });
+        if (!(croissant && plageOk)) pages.forEach(function (p, i) { p.pageIndex = i; });
+      }
+    }
+    pages.sort(function (a, b) { return Number(a.pageIndex) - Number(b.pageIndex); });
+    return pages;
+  }
+
   function buildDocFromParsed(parsed) {
     const pages = [];
     if (parsed.pages && parsed.pages.length) {
       parsed.pages.forEach((p, i) => {
-        const idx = (typeof p.pageIndex === 'number') ? p.pageIndex : (typeof p.page === 'number' ? p.page - 1 : i);
+        // 🛡️ _SP_STUDIO_FIAB_575 — TROIS ÉCRITURES D'INDEX ACCEPTÉES.
+        //   pageIndex (0-based, le format demandé) · page (1-based, très fréquent) · index.
+        let idx = i;
+        if (typeof p.pageIndex === 'number' && isFinite(p.pageIndex)) idx = p.pageIndex;
+        else if (typeof p.page === 'number' && isFinite(p.page)) idx = p.page - 1;
+        else if (typeof p.index === 'number' && isFinite(p.index)) idx = p.index;
         const elements = Array.isArray(p.elements) ? p.elements.map(sanitizeAIElement).filter(Boolean) : [];
         pages.push({ pageIndex: idx, elements });
       });
-      pages.sort((a, b) => a.pageIndex - b.pageIndex);
+      // 🛡️ _SP_STUDIO_FIAB_575 — pagination 1-based / trouée / dupliquée : voir
+      //   spNormaliserPagination (contenu décalé d'une page, dernière page jetée).
+      spNormaliserPagination(pages);
     } else if (parsed.elements && parsed.elements.length) {
       pages.push({ pageIndex: 0, elements: parsed.elements.map(sanitizeAIElement).filter(Boolean) });
     }
     const targetPages = Math.round(Math.max(0, Math.min(12, Number(parsed.targetPages) || 0)));
     if (targetPages) {
-      const pagesByIndex = new Map(pages.map(page => [page.pageIndex, page]));
+      // 🛡️ _SP_STUDIO_FIAB_575 — la cible ne peut pas ÊTRE INFÉRIEURE à ce qui a été
+      //   livré (une réponse de 6 pages annoncée « targetPages:4 » perdait les
+      //   pages 5 et 6 sans un mot). Et le mappage par Map écrasait les doublons.
+      const cible = Math.max(targetPages, pages.length);
+      const parIndex = new Map();
+      pages.forEach((pg) => { if (!parIndex.has(pg.pageIndex)) parIndex.set(pg.pageIndex, pg); });
+      const complete = [];
+      for (let i = 0; i < cible; i++) complete.push(parIndex.get(i) || { pageIndex: i, elements: [] });
+      // Les pages en surnombre (index non consécutifs) sont CONSERVÉES à la suite :
+      // on ne jette jamais du contenu que le modèle a composé.
+      pages.forEach((pg) => { if (pg.pageIndex >= cible) complete.push(pg); });
       pages.length = 0;
-      for (let pageIndex = 0; pageIndex < targetPages; pageIndex++) {
-        pages.push(pagesByIndex.get(pageIndex) || { pageIndex, elements: [] });
-      }
+      complete.forEach((pg, i) => { pg.pageIndex = i; pages.push(pg); });
     }
     // 🆕 Attribuer des IDs stables à chaque élément (p{page}-b{bloc}[-l{ligne}]).
     pages.forEach(p => {
@@ -10149,6 +10558,237 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     });
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     🆕 _SP_STUDIO_CAHIER_576 — LE STUDIO PENSE « CAHIER ».
+
+     Retour utilisateur : « en spread la page 1 est seule et la dernière est seule
+     aussi, pense cahier dans le studio — ça arrive bien dans l'app par contre ».
+
+     En mode double, `doc.pages[i]` = une PLANCHE de 2 × pageW. Or une planche de
+     cahier ne porte qu'UNE page dans deux cas :
+       • la planche 1 = la COUVERTURE, composée sur la moitié DROITE (gauche vide) ;
+       • la dernière = la 4e DE COUVERTURE quand le total de pages est PAIR,
+                       composée sur la moitié GAUCHE (droite vide).
+     Le studio affichait ces planches comme des feuilles de 420 mm : la couverture
+     apparaissait sur une grande feuille dont la moitié gauche restait blanche,
+     et la dernière page collée à une moitié vide.
+
+     On mesure donc l'OCCUPATION RÉELLE de chaque moitié :
+       • un FOND PLEINE PLANCHE (aplat à la largeur de la planche) NE COMPTE PAS :
+         il est présent des deux côtés et ne prouve l'existence d'aucune page ;
+       • un objet qui TRAVERSE la gouttière compte pour les DEUX moitiés ;
+       • le reste compte pour la moitié où tombe son centre.
+     Quand UNE SEULE moitié porte du contenu, la carte est CADRÉE sur cette moitié
+     (fenêtre large d'une page, canvas décalé sous overflow:hidden).
+
+     La même mesure sert à l'export (`spImposerPlanchesEnPages`) : une moitié sans
+     contenu réel ne produit plus de page — c'était la page fantôme en fin de
+     document (mesuré : une 8e page ne contenant que le morceau gauche du fond).
+     ══════════════════════════════════════════════════════════════════════════ */
+  function spMoitiesOccupeesPlanches(objs, pageW, effW) {
+    const gout = pageW;
+    const res = { gauche: false, droite: false };
+    const tolFond = Math.max(2, effW * 0.01);   // marge pour reconnaître un aplat pleine planche
+    const tolPli = Math.max(2, effW * 0.008);   // « traversant la gouttière »
+    (objs || []).forEach(function (o) {
+      if (!o) return;
+      // Repères du studio : jamais du contenu.
+      if (o.isGuide || o.isManualGuide || o.isMargin || o.isBleed || o.isTrimBox || o.isFold || o.excludeFromExport) return;
+      const t = String(o.type || '').toLowerCase();
+      let l, w;
+      if (t === 'line') {
+        const x1 = +o.x1 || 0, x2 = +o.x2 || 0;
+        l = Math.min(x1, x2); w = Math.abs(x2 - x1);
+      } else {
+        l = +o.left || 0;
+        w = (+o.width || 0) * Math.abs(+o.scaleX || 1);
+        if (!(w > 0) && (t === 'circle' || t === 'ellipse' || t === 'star')) w = (+o.radius || +o.rx || 5) * 2;
+        if (!(w > 0)) w = 5;
+      }
+      // Aplat / bande à la largeur de la planche : décor, pas une page.
+      if ((t === 'rect' || t === 'rectangle') && w >= effW - tolFond) return;
+      if (l < gout - tolPli && (l + w) > gout + tolPli) { res.gauche = true; res.droite = true; return; }
+      if (l + w / 2 < gout) res.gauche = true; else res.droite = true;
+    });
+    return res;
+  }
+
+  /* Côté de la SEULE page portée par une planche ('gauche' | 'droite'), sinon null.
+     `null` = vraie double page, ou planche vide (on ne cadre alors rien). */
+  function spCoteSeulePlanche(p, pageW) {
+    if (!p || !pageW) return null;
+    const occ = spMoitiesOccupeesPlanches(p.elements, pageW, pageW * 2);
+    if (occ.gauche && !occ.droite) return 'gauche';
+    if (occ.droite && !occ.gauche) return 'droite';
+    return null;
+  }
+
+  /* Numéros de page RÉELS de chaque planche : une planche « seule » = 1 page. */
+  function spNumerosPlanches(pages, cotes) {
+    const nums = []; let n = 1;
+    (pages || []).forEach(function (p, i) {
+      if (cotes && cotes[i]) { nums.push([n]); n += 1; }
+      else { nums.push([n, n + 1]); n += 2; }
+    });
+    return nums;
+  }
+
+  /* ── TABLE D'IMPOSITION « CAHIER » — UNE SEULE SOURCE DE VÉRITÉ ─────────────
+     n pages → [{ planche, folios:[n] | [n,n+1], cote: 'droite'|'gauche'|null }].
+     Règle : planche 1 = page 1 SEULE (moitié droite) ; puis les paires (2,3),
+     (4,5)… ; la DERNIÈRE page reste SEULE (moitié gauche) quand le total est pair.
+     Utilisée par le prompt IA, par le rattrapage et par la vérification : les
+     trois annoncent ainsi exactement la même imposition. */
+  function spCahierPlanches(n) {
+    const out = [];
+    const total = Math.round(Number(n) || 0);
+    if (!(total > 0)) return out;
+    out.push({ planche: 1, folios: [1], cote: 'droite' });
+    let pg = 2, pl = 2;
+    while (pg <= total) {
+      const reste = total - pg + 1;
+      if (reste === 1) { out.push({ planche: pl, folios: [pg], cote: 'gauche' }); pg += 1; }
+      else { out.push({ planche: pl, folios: [pg, pg + 1], cote: null }); pg += 2; }
+      pl += 1;
+    }
+    return out;
+  }
+
+  /* Nombre de pages demandé + caractère « multi-pages » de la DERNIÈRE demande :
+     MÊME règle que le prompt (buildSystemPrompt), pour que la vérification du
+     cahier juge la maquette sur la demande réelle. */
+  function spDemandePagesMulti() {
+    const p = state.lastPrompt || '';
+    const mp = p.match(/(\d{1,3})\s*[- ]?\s*pages?/i);
+    let att = { pages: 0, chars: 0 };
+    try { att = spAttachmentPageHint() || att; } catch (_) {}
+    const multi = (mp && parseInt(mp[1], 10) > 1) || (att.pages > 1) ||
+      /\b(magazine|catalogue|catalog|livre|brochure|booklet|livret|book|journal)\b/i.test(p);
+    const pages = (mp ? parseInt(mp[1], 10) : 0) || att.pages || 4;
+    return { multi: !!multi, pages: pages };
+  }
+
+  /* Consigne d'UNE planche du cahier (rellance ciblée) : folios et moitié vide. */
+  function spConsigneCahierPlanche(c, total) {
+    const PW = state.pageW || 210;
+    const H = state.pageH || 297;
+    const larg = PW * 2;
+    let corps;
+    if (c.cote === 'droite') {
+      corps = '⚠️ Cette planche porte UNE SEULE PAGE : le folio ' + c.folios[0] + ' à DROITE (left ~' + (PW + 18) + ' à ~' + (larg - 18) + ' mm). ' +
+        'La moitié GAUCHE doit rester VIDE : AUCUN texte, AUCUNE forme — sauf un fond pleine planche (left:-' + bled() + ', top:-' + bled() + ', width:' + (larg + bled() * 2) + ', height:' + (H + bled() * 2) + ').\n';
+    } else if (c.cote === 'gauche') {
+      corps = '⚠️ Cette planche porte UNE SEULE PAGE : le folio ' + c.folios[0] + ' à GAUCHE (left 18 à ' + (PW - 18) + ' mm). ' +
+        'La moitié DROITE doit rester VIDE : AUCUN texte, AUCUNE forme — sauf un fond pleine planche (left:-' + bled() + ', top:-' + bled() + ', width:' + (larg + bled() * 2) + ', height:' + (H + bled() * 2) + ').\n';
+    } else {
+      corps = 'Cette planche porte DEUX pages : folio ' + c.folios[0] + ' à GAUCHE (left 18 à ' + (PW - 18) + ' mm) et folio ' + c.folios[1] +
+        ' à DROITE (left ~' + (PW + 18) + ' à ~' + (larg - 18) + ' mm).\n';
+    }
+    return 'RATTRAPAGE « CAHIER » : ta réponse précédente ne respectait pas l\'imposition pour la PLANCHE ' + c.planche +
+      ' (' + total + ' pages au total).\n' +
+      'Compose UNIQUEMENT CETTE PLANCHE — une seule entrée "pages" — en coordonnées de PLANCHE (0 à ' + larg + ' mm) : ' +
+      'page de GAUCHE de 0 à ' + PW + ' mm, gouttière à ' + PW + ' mm, page de DROITE de ' + PW + ' à ' + larg + ' mm.\n' +
+      corps +
+      'N\'imprime AUCUN folio supérieur à ' + total + ' : le dernier folio du document est ' + total + '.\n' +
+      'Aucun texte ne traverse la gouttière. Même charte, mêmes polices et mêmes couleurs que le reste du document. Format ' +
+      PW + '×' + H + ' mm, fond perdu ' + bled() + ' mm.\n' +
+      'Réponds UNIQUEMENT en JSON, sans texte autour :\n' +
+      '{"reply":"","pages":[{"pageIndex":' + (c.planche - 1) + ',"elements":[…]}]}';
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🩹 _SP_STUDIO_CAHIER_576 — VÉRIFICATION DU CAHIER APRÈS GÉNÉRATION.
+
+     Défaut mesuré : « Magazine A4 de 6 pages en double page » → le modèle produit
+     bien 4 planches, MAIS il remplit la dernière (folio 6 à GAUCHE et folio 7 à
+     DROITE, un folio 7 qui n'existe pas) au lieu de laisser la moitié droite
+     VIDE. L'utilisateur voit donc une dernière planche qui n'est pas « la
+     dernière page seule », et le studio exportait une 7e page inventée.
+
+     On compare la maquette à l'imposition demandée (spCahierPlanches) et on
+     REDEMANDE les planches fautives, une par une (2 maximum), avec la consigne
+     exacte de la planche (folios + moitié vide). Une réponse qui ne respecte pas
+     la consigne est IGNORÉE (on ne remplace jamais une planche par pire) et
+     l'utilisateur est prévenu dans la conversation.
+     ══════════════════════════════════════════════════════════════════════════ */
+  async function spVerifierCahierPlanches() {
+    const dem = spDemandePagesMulti();
+    if (!dem.multi || state.viewMode !== 'spread') return '';
+    const doc = state.doc;
+    if (!doc || !Array.isArray(doc.pages) || !doc.pages.length) return '';
+    const cah = spCahierPlanches(dem.pages);
+    if (!cah.length) return '';
+    if (doc.pages.length !== cah.length) {
+      return '⚠️ Cahier : ' + dem.pages + ' page(s) demandée(s) = ' + cah.length + ' planche(s), la maquette en compte ' + doc.pages.length + '.';
+    }
+    const fautives = [];
+    doc.pages.forEach(function (p, i) {
+      const c = cah[i];
+      if (!c) return;
+      const occ = spMoitiesOccupeesPlanches(p.elements, doc.w, doc.w * 2);
+      if (c.cote === 'droite' && occ.gauche) fautives.push(i);
+      else if (c.cote === 'gauche' && occ.droite) fautives.push(i);
+      else if (c.cote === null && !(occ.gauche && occ.droite)) fautives.push(i);
+    });
+    if (!fautives.length) return '';
+    const base = Array.isArray(state.lastBaseMessages) ? state.lastBaseMessages : null;
+    const libelle = $('modelLabel') ? $('modelLabel').textContent : '';
+    const reussies = [];
+    const aFaire = fautives.slice(0, 2);
+    for (let k = 0; k < aFaire.length; k++) {
+      if (!base || state.spStopRequested) break;
+      const i = aFaire[k];
+      const c = cah[i];
+      try {
+        if ($('modelLabel')) $('modelLabel').textContent = 'SP213 cahier ' + (k + 1) + '/' + aFaire.length;
+        const r = await callAI(base.concat([{ role: 'user', content: spConsigneCahierPlanche(c, dem.pages) }]), SP_CALL_TIMEOUT_MS);
+        const p = parseAIResponse(r);
+        let els = [];
+        if (p.pages && p.pages.length) {
+          p.pages.forEach(function (pg) { if (pg.elements && pg.elements.length) els = els.concat(pg.elements); });
+        } else if (p.elements && p.elements.length) {
+          els = p.elements;
+        }
+        if (!els.length) continue;
+        // La réponse doit RESPECTER la consigne, sinon on garde la maquette d'origine.
+        const occ2 = spMoitiesOccupeesPlanches(els, doc.w, doc.w * 2);
+        const ok = (c.cote === 'droite') ? (!occ2.gauche && occ2.droite)
+          : (c.cote === 'gauche') ? (occ2.gauche && !occ2.droite)
+          : (occ2.gauche && occ2.droite);
+        if (!ok) continue;
+        doc.pages[i].elements = els.map(sanitizeAIElement).filter(Boolean);
+        /* ⚠️ MESURE (2026-09-27) : les éléments repris n'avaient AUCUN id, et le
+           prompt suivant plantait sur `e.id.replace(...)` (buildCurrentDocContext,
+           « Cannot read properties of undefined ») — le studio refusait alors
+           d'envoyer la demande. On leur redonne les identifiants stables de
+           buildDocFromParsed (p{page}-b{bloc}[-l{ligne}]). */
+        doc.pages[i].elements.forEach(function (el, bi) {
+          const estTexte = String(el.type || '').toLowerCase() === 'text' || String(el.type || '').toLowerCase() === 'textbox';
+          const baseId = 'p' + (i + 1) + '-b' + (bi + 1);
+          if (estTexte && typeof el.text === 'string') {
+            const lignes = el.text.split('\n');
+            el._lines = lignes;
+            el.id = baseId + '-l1';
+            lignes.forEach(function (ln, li) { el['_lineId_' + (li + 1)] = baseId + '-l' + (li + 1); });
+          } else {
+            el.id = baseId;
+          }
+        });
+        reussies.push(c.planche);
+      } catch (e) {
+        try { console.warn('[SP213] cahier, planche ' + c.planche + ' :', e && e.message); } catch (_) {}
+      }
+    }
+    if ($('modelLabel')) $('modelLabel').textContent = libelle;
+    if (reussies.length) {
+      try { renderDocument(doc); persistDoc(); } catch (_) {}
+      return '🩹 Cahier : la planche ' + reussies.join(' et la planche ') + ' ne portait pas le bon nombre de pages (couverture / dernière page seule) — recomposée selon la règle du cahier.';
+    }
+    return '⚠️ Cahier : la planche ' + aFaire.map(function (i) { return cah[i].planche; }).join(', ') +
+      ' devrait porter UNE SEULE page (folio ' + aFaire.map(function (i) { return cah[i].folios.join('-'); }).join(', ') +
+      ', moitié vide) mais le modèle y a composé une page de plus. Supprimez cette demi-page ou demandez « corrige la planche ' + cah[aFaire[0]].planche + ' ».';
+  }
+
   function renderDocument(doc) {
     const stack = $('pagesStack');
     stack.innerHTML = '';
@@ -10160,8 +10800,18 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const pageHpx = mmToPx(doc.h);
     // En spread, chaque carte représente une double page (largeur 2×)
     const effWpx = (doc.viewMode === 'spread') ? mmToPx(doc.effW || doc.w * 2) : pageWpx;
+    /* 🆕 _SP_STUDIO_CAHIER_576 — CADRAGE « CAHIER » (voir spCoteSeulePlanche) :
+       `cotes[i]` = 'gauche' / 'droite' quand la planche ne porte qu'UNE page
+       (couverture, 4e de couverture), sinon null (vraie double page).
+       `numeros[i]` = numéros de page RÉELS de la planche. */
+    const enDouble = (doc.viewMode === 'spread');
+    const cotes = doc.pages.map(p => enDouble ? spCoteSeulePlanche(p, doc.w) : null);
+    const numeros = spNumerosPlanches(doc.pages, cotes);
+    const nbPagesReelles = numeros.reduce((n, a) => n + a.length, 0);
 
-    doc.pages.forEach((p) => {
+    doc.pages.forEach((p, iPage) => {
+      const cote = cotes[iPage];
+      const nums = numeros[iPage];
       const card = document.createElement('div');
       card.className = 'page-card';
       card.style.position = 'relative';
@@ -10169,7 +10819,15 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       //    après le canvas : même marge qu'en haut, mais sous la page.
       const label = document.createElement('div');
       label.className = 'page-label';
-      label.textContent = (doc.viewMode === 'spread') ? 'Planche ' + (p.pageIndex + 1) : 'Page ' + (p.pageIndex + 1);
+      /* 🆕 _SP_STUDIO_CAHIER_576 — LE LIBELLÉ SUIT LE CAHIER, pas la feuille :
+         une planche qui ne porte qu'une page est libellée « Page N » (seule),
+         une vraie double « Pages N–N+1 ». */
+      label.textContent = !enDouble
+        ? ('Page ' + nums[0])
+        : (cote
+            ? ('Page ' + nums[0] + (iPage === 0 ? ' · couverture seule'
+                : (iPage === doc.pages.length - 1 ? ' · 4e de couverture' : ' · page seule')))
+            : ('Pages ' + nums[0] + '–' + nums[1]));
 
       // 🗑️ Corbeille : supprime cette page (visible au survol de la carte)
       const delBtn = document.createElement('button');
@@ -10186,7 +10844,20 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       canvasEl.width = Math.round(effWpx + bleedPx * 2);
       canvasEl.height = Math.round(pageHpx + bleedPx * 2);
       wrap.appendChild(canvasEl);
-      wrap.style.width = (canvasEl.width) + 'px';
+      /* 🆕 _SP_STUDIO_CAHIER_576 — FENÊTRE DE PAGE : pour une planche « seule »,
+         on ne montre QUE la moitié qui porte la page (l'autre restait blanche :
+         la couverture semblait collée à une page vide). Le canvas reste à la
+         largeur de la planche — coordonnées, sélection et imposition inchangées.
+         ⚠️ _SP_STUDIO_FOND_576 — LA FENÊTRE N'INCLUT PAS DE FOND PERDU DU CÔTÉ
+         DE LA PLIURE (la couverture est un RECTO : fond perdu à DROITE seulement,
+         la dernière page un VERSO : à GAUCHE seulement), comme createPageCanvas
+         de l'app : « je ne peux pas avoir de fond perdu à gauche sur la première
+         page ». */
+      const cadreW = cote ? Math.round(pageWpx + bleedPx) : canvasEl.width;
+      const cadreOff = (cote === 'droite') ? Math.round(pageWpx + bleedPx) : 0;
+      if (cote) wrap.classList.add('cadre-page-seule');
+      wrap.style.width = cadreW + 'px';
+      wrap.style.height = canvasEl.height + 'px';
       card.appendChild(wrap);
       card.appendChild(label);
       stack.appendChild(card);
@@ -10194,6 +10865,12 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       // Sélection ACTIVE : l'utilisateur peut cliquer/glisser sur les éléments pour
       // les « verrouiller » et demander à l'IA de retravailler UNIQUEMENT ceux-là.
       const c = new fabric.Canvas(canvasEl, { backgroundColor: '#ffffff', selection: true, preserveObjectStacking: true, renderOnAddRemove: false, selectionColor: 'rgba(26,127,55,.10)', selectionBorderColor: '#1a7f37', selectionLineWidth: 1 });
+      // 🆕 _SP_STUDIO_CAHIER_576 — on décale le canvas SOUS la fenêtre de page
+      //   (couverture = moitié droite) : le conteneur Fabric est absolu dans le wrap.
+      if (cote && cadreOff) {
+        const cont = wrap.querySelector('.canvas-container');
+        if (cont) { cont.style.position = 'absolute'; cont.style.left = (-cadreOff) + 'px'; cont.style.top = '0'; }
+      }
       p.elements.forEach(el => {
         const fo = elementToFabric(el, bleedPx);
         if (fo) {
@@ -10208,7 +10885,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         }
       });
       // Repères DA SuperPrint par-dessus (coupe, fonds perdus, marges)
-      addGuides(c, effWpx, pageHpx, bleedPx, doc.viewMode === 'spread');
+      // 🆕 _SP_STUDIO_CAHIER_576 — pour une page SEULE, les repères sont posés sur
+      //   ELLE (décalage `cadreOff`), sans ligne de pliure, et suivent les fonds
+      //   perdus/petit/grand fond de l'app (voir addGuides).
+      if (cote) addGuides(c, pageWpx, pageHpx, bleedPx, false, cadreOff, cote);
+      else addGuides(c, effWpx, pageHpx, bleedPx, enDouble);
       // Éviter de sélectionner les repères (guides) — filet de sécurité (ils sont
       // déjà selectable:false à la création, mais on couvre aussi tout objet repère)
       c.getObjects().forEach(o => { if (o.isBleed || o.isMargin || o.isTrimBox) { o.set({ selectable: false, evented: false }); } });
@@ -10247,9 +10928,14 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     // polices soient prêtes reste en fallback sinon).
     rerenderAfterFontsReady();
 
-    $('pageInfo').textContent = doc.pages.length + ' page(s) · ' + doc.w + '×' + doc.h + ' mm' + (doc.viewMode === 'spread' ? ' (spread)' : '') + ' · bleed ' + (doc.bleed || 3) + ' mm';
+    $('pageInfo').textContent = enDouble
+      ? (nbPagesReelles + ' pages · ' + doc.pages.length + ' planche(s) · ' + doc.w + '×' + doc.h + ' mm (cahier) · bleed ' + (doc.bleed || 3) + ' mm')
+      : (doc.pages.length + ' page(s) · ' + doc.w + '×' + doc.h + ' mm · bleed ' + (doc.bleed || 3) + ' mm');
     $('formatInfo') && ($('formatInfo').textContent = '');
     if (window.matchMedia('(max-width: 900px)').matches) setMobileStudioView('preview');
+    // 🆕 _SP_STUDIO_DESIGN_575 — en double page, on dézoome pour montrer la planche ENTIÈRE
+    //   (sans jamais remonter un zoom choisi à la main : voir spZoomAjusterAuxPlanches).
+    try { spZoomAjusterAuxPlanches(); } catch (_) {}
   }
 
   // 🆕 UI de sélection : affiche un bandeau « N élément(s) sélectionné(s) » et
@@ -10303,6 +10989,47 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     }
     sel.value = String(nz);
     applyZoom();
+  }
+
+  /* 🛡️ _SP_STUDIO_DESIGN_575 — EN DOUBLE PAGE, LE STUDIO SE DÉZOOME TOUT SEUL.
+
+     Demande utilisateur : « en double, il faudrait un dézoom automatique : qu'on voie
+     automatiquement les DOUBLES pages complètes quand il compose en mode spread ».
+     Mesure : une planche A4 double = 420 mm, soit ~1 207 px dans l'aperçu, pour une
+     zone d'aperçu de ~900 px — à 100 %, la moitié droite de la planche était HORS
+     ÉCRAN sans que rien ne l'indique : on croyait la composition coupée.
+
+     RÈGLE (volontairement non intrusive) :
+       · uniquement en mode double page ;
+       · on ne dézoome QUE si la planche ne rentre pas (jamais de zoom arrière sur une
+         planche déjà entière) ;
+       · on ne remonte JAMAIS le zoom : le réglage manuel de l'utilisateur (molette
+         Ctrl, liste des zooms) reste maître tant que la planche tient à l'écran.
+     Appelée à chaque rendu d'une composition (nouvelle maquette, retour de
+     conversation, annuler/rétablir) : c'est le moment où l'échelle doit s'adapter. */
+  function spZoomAjusterAuxPlanches() {
+    const scroll = $('previewScroll');
+    const stack = $('pagesStack');
+    if (!scroll || !stack) return;
+    if (state.viewMode !== 'spread') return;
+    requestAnimationFrame(function () {
+      try {
+        const cartes = stack.querySelectorAll('.page-card');
+        if (!cartes.length) return;
+        const dispo = scroll.clientWidth - 56;          // respiration + barre de défilement
+        /* 🆕 _SP_STUDIO_CAHIER_576 — ON CALE LE ZOOM SUR LA PLANCHE LA PLUS LARGE.
+           Depuis le cadrage « cahier », la 1re carte peut être la COUVERTURE SEULE
+           (largeur d'une page) : lire la 1re carte surestimait le zoom (une double
+           page débordait alors de l'aperçu). */
+        let naturel = 0;
+        cartes.forEach(function (cr) { if (cr.offsetWidth > naturel) naturel = cr.offsetWidth; });
+        if (!(dispo > 40) || !(naturel > 0)) return;
+        const actuel = parseFloat($('zoomSelect').value) || 1;
+        if (naturel * actuel <= dispo) return;          // ça rentre déjà : on ne touche à rien
+        const z = Math.max(0.1, Math.min(1, Math.floor((dispo / naturel) * 100) / 100));
+        setZoomValue(z);
+      } catch (_) {}
+    });
   }
   function initPreviewWheelZoom() {
     const scroll = $('previewScroll');
@@ -10843,8 +11570,14 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
           let width  = (+el.width || 50) * MM_TO_PX;
           let height = (+el.height || 50) * MM_TO_PX;
           if (isFullBleed) {
+            /* ⚠️ _SP_STUDIO_FOND_576 — EN DOUBLE PAGE, UN FOND PLEINE PLANCHE COUVRE
+               LA PLANCHE (2 × pageW), pas une page. La normalisation le ramenait à
+               « page + 2 fonds perdus » (216 mm) : il ne couvrait plus qu'UNE page
+               et, traversant la gouttière, il ajoutait à l'export une 7e page ne
+               contenant qu'un morceau de 3 mm de ce fond (mesuré). */
+            const _surfW = (state.viewMode === 'spread') ? (state.pageW * 2) : state.pageW;
             left = 0; top = 0;
-            width = pageWpx + bleedPx * 2;
+            width = _surfW * MM_TO_PX + bleedPx * 2;
             height = pageHpx + bleedPx * 2;
           }
 
@@ -10906,10 +11639,14 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const textBlocks = spPages.reduce((n, p) => n + p.objects.filter(o => o.type === 'textbox' || o.type === 'text' || o.type === 'i-text').length, 0);
     const images = spPages.reduce((n, p) => n + p.objects.filter(o => o.type === 'image').length, 0);
     const shapes = Math.max(0, totalObjects - textBlocks - images);
+    // 🛡️ _SP_STUDIO_FIAB_575 — en double page, les PLANCHES deviennent des PAGES
+    //   (sinon l'app reçoit 420 mm de contenu sur une page de 210 mm : la moitié
+    //   de la maquette est hors page et disparaît). Mesure : 4 planches → 7 pages.
+    const spPagesFinal = spImposerPlanchesEnPages(spPages);
 
     return {
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
-      meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: spPages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
+      meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: spPagesFinal.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
       document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20,
       /* 🆕 v1.7.459 — 4 marges du document d'origine, telles quelles (null = clé absente). */
       /* _SP_STUDIO_509_DEBUT — 4 marges du document d'origine, telles quelles (null = clé absente). */
@@ -10932,7 +11669,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       numbering: (state.doc && state.doc.numbering && typeof state.doc.numbering === 'object')
         ? Object.assign({ enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 }, state.doc.numbering)
         : { enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 },
-      pages: spPages
+      pages: spPagesFinal
     };
   }
 
@@ -11197,6 +11934,118 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     }
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     🛡️ _SP_STUDIO_FIAB_575 — IMPOSITION DES PLANCHES EN PAGES POUR SUPERPRINT.
+
+     DÉFAUT MESURÉ (audit « spread studio → Open in SuperPrint », DeepSeek, 4 planches) :
+       le studio écrivait `document.format.width = 210` (UNE page) et `viewMode: spread`
+       alors que ses objets sont posés sur une PLANCHE de 420 mm. L'app créait donc
+       des pages de 210 mm et recevait la planche telle quelle :
+         · planche 1 (couverture sur la moitié DROITE) → page 1 de 213 mm :
+           9 objets sur 14 HORS PAGE, la couverture s'affichait VIDE ;
+         · pages 2-3 : contenu de DEUX planches empilé sur le même canevas
+           (maxRight mesuré 615 mm pour un canevas de 426 mm) ;
+         · dernière page : 6 objets hors page.
+       Autrement dit : moitié de la maquette invisible à l'ouverture dans l'app.
+
+     RÈGLE (imposition, comme une brochure) :
+       · dans le studio, la PLANCHE est l'unité de composition (page de gauche + page
+         de droite séparées par la gouttière à 210 mm) ;
+       · dans SuperPrint, l'unité est la PAGE : un document « double page » = N pages
+         de 210 mm affichées 2 par 2 (1 seule, puis 2-3, 4-5…).
+       À l'export, chaque planche est donc COUPÉE en deux pages :
+         · planche 1 : la moitié DROITE devient la PAGE 1 (une couverture est
+           toujours une belle page) ; sa moitié GAUCHE, si elle porte du contenu
+           (4e de couverture), part EN FIN de document — c'est sa place en reliure ;
+         · planches suivantes : moitié gauche puis moitié droite.
+       Résultat mesuré sur le cas ci-dessus : 4 planches → 7 pages (1 | 2-3 | 4-5 | 6-7),
+       c'est-à-dire exactement la pagination que l'app sait afficher en double page.
+     Un objet ne se coupe pas : il est rangé du côté de son CENTRE (le studio garantit
+     qu'aucun texte ne traverse la gouttière). Seuls les FONDS qui couvrent la planche
+     entière sont dupliqués en deux morceaux — sinon la page qui ne les porte pas
+     resterait blanche.
+     ══════════════════════════════════════════════════════════════════════════ */
+  function spImposerPlanchesEnPages(spPages) {
+    if (state.viewMode !== 'spread' || !Array.isArray(spPages) || !spPages.length) return spPages;
+    const pageWpx = state.pageW * MM_TO_PX;
+    const bleedPx = (state.bleed || 0) * MM_TO_PX;
+    const gouttiere = pageWpx + bleedPx;        // x du pli, dans les px du .sp
+    const pages = [];
+    spPages.forEach((planche) => {
+      /* 🆕 _SP_STUDIO_CAHIER_576 — ON MESURE L'OCCUPATION AVANT DE DÉCOUPER : un
+         fond pleine planche (présent des deux côtés) ne doit pas faire croire que
+         les deux pages existent. Même mesure que le cadrage du studio.
+         ⚠️ ICI LES OBJETS SONT EN PIXELS (format .sp) : on passe pageWpx, pas
+         state.pageW (mm). Mesure du défaut : avec des mm, un texte de la page de
+         GAUCHE (left 85 px, largeur 425 px) était vu « traversant la gouttière »
+         et faisait sortir une 7e page pour un magazine de 6 pages. */
+      const occ = spMoitiesOccupeesPlanches(planche.objects, pageWpx, pageWpx * 2);
+      const G = [], D = [];
+      (planche.objects || []).forEach((o) => {
+        /* ⚠️ _SP_STUDIO_FIAB_575 — UNE RÈGLE (type « line ») NE PORTE PAS left/width.
+           Mesure (audit studio → app, page 8) : une règle restait à 263-373 mm sur une
+           page de 213 mm — soit 160 mm hors page, invisible. Sa position est dans
+           x1/y1/x2/y2 : `left`/`width` valent 0, donc elle était classée « moitié
+           gauche » sans jamais être décalée. On traite donc les lignes à part :
+           traversante → coupée en deux règles (une par page) ; sinon → côté de son
+           milieu, avec x1/x2 décalés de la largeur de page. */
+        if ((o.type === 'line') && (o.x1 != null || o.x2 != null)) {
+          const x1 = +o.x1 || 0, x2 = +o.x2 || 0;
+          const lx = Math.min(x1, x2), rx = Math.max(x1, x2);
+          if (lx < gouttiere - 1 && rx > gouttiere + 1) {
+            G.push(Object.assign({}, o, { x1: Math.round(lx * 100) / 100, x2: Math.round(gouttiere * 100) / 100 }));
+            D.push(Object.assign({}, o, { x1: Math.round((gouttiere - pageWpx) * 100) / 100, x2: Math.round((rx - pageWpx) * 100) / 100 }));
+            return;
+          }
+          const cxl = (lx + rx) / 2;
+          if (cxl < gouttiere - 2) G.push(o);
+          else D.push(Object.assign({}, o, { x1: Math.round((x1 - pageWpx) * 100) / 100, x2: Math.round((x2 - pageWpx) * 100) / 100 }));
+          return;
+        }
+        const w = (+o.width || 0) * Math.abs(+o.scaleX || 1);
+        const l = +o.left || 0;
+        const estRect = (o.type === 'rect' || o.type === 'rectangle');
+        /* FOND qui TRAVERSE la gouttière (critère de recouvrement, pas de largeur :
+           un fond de 213 mm commençant à −3 mm est aussi large qu'une page et
+           traversait déjà le pli). Il est coupé en deux morceaux — sinon la page
+           qui ne le porte pas resterait blanche. */
+        if (estRect && l < gouttiere - 1 && (l + w) > gouttiere + 1) {
+          const largeurG = gouttiere - l;                 // du bord gauche au pli
+          const largeurD = l + w - gouttiere;             // du pli au bord droit
+          if (largeurG > 1) { const A = Object.assign({}, o, { width: Math.round(largeurG * 100) / 100 }); A.scaleX = 1; G.push(A); }
+          /* ⚠️ Le morceau DROIT commence au PLI : sur sa propre page, son left est
+             donc `(l + largeurG) − largeur de page` — mesuré : écrire `l − largeur`
+             plaçait une bande de fond à −210 mm (hors page, invisible). */
+          if (largeurD > 1) { const B = Object.assign({}, o, { left: Math.round((l + largeurG - pageWpx) * 100) / 100, width: Math.round(largeurD * 100) / 100 }); B.scaleX = 1; D.push(B); }
+          return;
+        }
+        const centre = l + w / 2;
+        if (centre < gouttiere - 2) G.push(o);
+        else D.push(Object.assign({}, o, { left: Math.round((l - pageWpx) * 100) / 100 }));
+      });
+      /* 🆕 _SP_STUDIO_CAHIER_576 — ORDRE DE LECTURE DU CAHIER (= ordre affiché par
+         le studio). Deux changements mesurés :
+           • une moitié SANS CONTENU RÉEL ne produit plus de page — un fond pleine
+             planche coupé en deux ajoutait une 8e page qui ne contenait que son
+             morceau gauche (une page fantôme en fin de document) ;
+           • le « verso de couverture » qui renvoyait la moitié GAUCHE de la
+             planche 1 à la FIN du document (imposition de feuille d'imprimeur)
+             est supprimé : le studio affiche et exporte dans l'ordre de lecture,
+             comme l'app. Sinon la page 2 du studio devenait la dernière page de
+             l'app. */
+      const cibles = [];
+      if (occ.gauche) cibles.push(G);
+      if (occ.droite) cibles.push(D);
+      // Planche SANS contenu réel (uniquement un aplat) : on garde ses deux pages.
+      if (!cibles.length) { cibles.push(G); cibles.push(D); }
+      cibles.forEach((objets, k) => {
+        pages.push({ index: pages.length, label: '', masterId: (k === 0) ? (planche.masterId || null) : null, objects: objets });
+      });
+    });
+    pages.forEach((p, i) => { p.index = i; p.label = 'Page ' + (i + 1); });
+    return pages;
+  }
+
   // Construit un fichier .sp complet depuis une maquette brute IA { pages | elements }
   function buildSPFileFromParsed(parsed) {
     const now = new Date();
@@ -11235,7 +12084,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(pages), customFonts: spCustomFontsPourExport() },
       textLinks: {}, guides: {}, masters: (state.doc && state.doc.masters) ? state.doc.masters : { templates: {}, assignments: {} },
       numbering: { enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 },
-      pages
+      pages: pagesFinal
     };
   }
 
@@ -11256,7 +12105,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       let top = (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx;
       let width = (+el.width || 50) * MM_TO_PX;
       let height = (+el.height || 50) * MM_TO_PX;
-      if (isFullBleed) { left = 0; top = 0; width = pageWpx + bleedPx * 2; height = pageHpx + bleedPx * 2; }
+      /* ⚠️ _SP_STUDIO_FOND_576 — en double page, le fond pleine planche couvre la
+         PLANCHE (2 × pageW) : voir buildSPFile (page fantôme de 3 mm à l'export). */
+      if (isFullBleed) { const _surfW2 = (state.viewMode === 'spread') ? (state.pageW * 2) : state.pageW; left = 0; top = 0; width = _surfW2 * MM_TO_PX + bleedPx * 2; height = pageHpx + bleedPx * 2; }
       if (t === 'rectangle' || t === 'rect') {
         objects.push(spAppliquerReglagesTypo({ type: 'rect', left, top, width, height, fill, opacity: op, stroke: stroke || '', strokeWidth: strokeW, rx: (el.rx || 0) * MM_TO_PX, ry: (el.ry || 0) * MM_TO_PX, ...spElementTransform(el) }, el));
       } else if (t === 'circle') {
