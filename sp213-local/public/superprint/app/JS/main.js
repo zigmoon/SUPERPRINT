@@ -37094,6 +37094,18 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                                     _tailleDoc = wo._imgSizesMM[_imgOrdre] || null;
                                     _imgOrdre++;
                                 }
+                                /* 🆕 v1.7.570 — GARDE-FOU D'APPARIEMENT. La liste des tailles
+                                   est lue dans word/document.xml (ordre du document) ; une image
+                                   ANCRÉE (wp:anchor) peut ne pas ressortir dans le même ordre
+                                   que les images reconnues. On ne l'applique donc que si le
+                                   rapport d'aspect correspond à celui de l'image chargée
+                                   (tolérance 2 %) : sinon on garde le plafond de la pop-in,
+                                   c'est-à-dire le comportement d'avant. AUCUN effet hors import Word. */
+                                if (_tailleDoc && _tailleDoc.h && img.width && img.height) {
+                                    var _rDoc = _tailleDoc.w / _tailleDoc.h;
+                                    var _rImg = img.width / img.height;
+                                    if (Math.abs(_rDoc - _rImg) / _rImg > 0.02) _tailleDoc = null;
+                                }
                                 // Taille du document Word si connue, sinon plafond de la pop-in.
                                 var maxW = (_tailleDoc && imgReelle)
                                     ? Math.min(colWidth * columns, mmToPx(_tailleDoc.w))
@@ -37729,6 +37741,13 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             if (wo._imgSizesMM && wo._imgSizesMM.length) {
                                 _tailleDocB = wo._imgSizesMM[_imgOrdreB] || null;
                                 _imgOrdreB++;
+                            }
+                            /* 🆕 v1.7.570 — même garde-fou qu'en texte coulé : on n'applique la
+                               taille du document que si le rapport d'aspect concorde (2 %). */
+                            if (_tailleDocB && _tailleDocB.h && img.width && img.height) {
+                                const _rDoc2 = _tailleDocB.w / _tailleDocB.h;
+                                const _rImg2 = img.width / img.height;
+                                if (Math.abs(_rDoc2 - _rImg2) / _rImg2 > 0.02) _tailleDocB = null;
                             }
                             // Taille du document Word si connue, sinon plafond de la pop-in.
                             const maxW = (_tailleDocB && imgReelle)
