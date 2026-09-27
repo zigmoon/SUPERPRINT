@@ -9,6 +9,27 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.572] — 2026-09-28
+
+_Phone burger menu: the logo band no longer scrolls, the list is tightened, “Take part” catches up_
+
+### Fixed — the logo band scrolled with the menu (home + “Take part”)
+- **Measured defect**: `.mm-colo` (the logo band reproduced inside the menu) was `position: absolute` **inside** `#mobileMenu`, which scrolls (`overflow-y: auto`) — so it left with the entries: **5 px from the top at rest → −204 px after 209 px of scrolling** on 360 × 640.
+- **First attempt, instructive failure**: `position: fixed`. Not enough — the menu carries `backdrop-filter: blur(16px)`, which **creates the containing block for fixed descendants**, so the band stayed bound to the scrolling (**−104 px** after 109 px measured).
+- **Real fix**: the band is now **outside the menu**, placed right after `#mobileMenu` in the DOM and shown only when the menu is open (`.mobile-menu.open + .mm-colo { display: flex; z-index: 118 }`); `spPlacerMenu()` looks it up with `document.querySelector('.mm-colo')`. Verified: scrolling the menu leaves its top at **5 px (0 px movement)** while the entries move 109 px; it overlays the page's brand band with **0 px** difference (top, left, width, height); it is `display: none` when the menu is closed.
+
+### Changed — tightened entries (measured)
+- On 390 × 844: 3 app entries of 65 px + 5 entries of 61 px = **850 px of content for 843 px visible** — the menu already scrolled. Entry padding **19 → 14 px** (−80 px), `.mm-lang` 18/16 → 14/12, `.mm-bas` 32/20 → 22/14 (−24 px): **the menu no longer scrolls** (843 = 843) and keeps 90 px under the last line. Entries measure **55 / 51 px**.
+- **More air under the bar**: the reserved gap goes from 8 to **14 px**; the first entry starts at 156 px instead of 150.
+
+### Fixed — “Take part” was three fixes behind
+- `help-us.html` is **composed** from `index.html`, and had kept: `.mm-bas { margin-top: auto }` (a **large void in the middle** of the full-screen menu, fixed on the home page in 1.7.549), the **internal scrollbar** visible over the logo/close line, and **no background scroll lock** when the menu opens. All three are now aligned with the home page.
+
+### Note
+- Only the burger menu changes, and only on phones. The **FAQ is not a separate page** (it is section `#faq` of the home page), so it is already covered.
+- Known gap, still to be decided: the “Take part” menu does **not** have the home page's three app entries (SuperPrint / Studio IA / SuperTyPo).
+- Verified: both trees byte-identical (SHA256), 0 JS errors, no horizontal overflow inside the menu, CRLF (home) and LF (“Take part”) preserved.
+
 ## [1.7.571] — 2026-09-28
 
 _WhatsApp contact bubble on the home page and the “Take part” page (no other change)_

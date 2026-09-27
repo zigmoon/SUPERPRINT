@@ -345,24 +345,34 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   /* 🆕 v1.7.472 — il défile si la liste dépasse (grande police, petits écrans, japonais) :
      le colophon et la ligne du bas restent atteignables. */
   overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  /* 🆕 v1.7.572 — SCROLLBAR INTERNE MASQUÉE (aligné sur l'accueil, v1.7.549) : dès que le
+     contenu dépasse l'écran, une scrollbar par défaut (non stylée, épaisse) apparaissait pile
+     sur la ligne SUPERPRINT + bouton fermer, et sa largeur qui apparaît/disparaît décalait le
+     logo du menu. Le menu reste défilable, juste sans piste visible. */
+  scrollbar-width: none;
 }
+.mobile-menu::-webkit-scrollbar { display: none; }
 .mobile-menu.open { display: flex; }
 .mobile-menu a {
   /* 🆕 v1.7.472 — MÊME TYPO QUE LA NAV, MAIS PLUS GRANDE ET PLUS HAUTE.
      Le retour du 18/09 (« on dirait que ce n’est pas la même typo ») avait ramené les entrées
      aux 11 px de la barre : c’était juste, mais sec sur un écran de téléphone. On garde la
      famille et l’approche de la nav (IBM Plex Mono, .16em, capitales) et on monte à 13 px,
-     avec des lignes de 57 px : le doigt tombe juste, l’œil suit. */
+     avec des lignes de 57 px : le doigt tombe juste, l’œil suit.
+     🆕 v1.7.572 — RESSERRÉ D'UN CRAN (« resserrer un peu l'ensemble des entrées »). Mesuré :
+     3 entrées d'apps de 65 px + 5 entrées de 61 px, contenu total 850 px pour 843 px visibles
+     sur 390×844. Le rembourrage passe de 19 à 14 px par entrée (−80 px), .mm-lang −8 px et
+     .mm-bas −16 px : la liste tient sans défiler sur un écran de 844 px de haut. */
   font-family: var(--f-mono); font-size: 13px; font-weight: 600;
   letter-spacing: .16em; text-transform: uppercase;
   color: var(--ink); text-decoration: none;
-  padding: 19px 4px; border-bottom: 1px solid var(--line);
+  padding: 14px 4px; border-bottom: 1px solid var(--line);
 }
 .mobile-menu a.mm-cta { border-bottom: none; background: var(--ink); color: var(--paper); text-align: center; margin-top: 10px; border-radius: 10px; }
 
 /* ——— Sélecteur de langue dans le menu mobile ——— */
 .mm-lang {
-  margin-top: 18px; padding-top: 16px;
+  margin-top: 14px; padding-top: 12px;
   border-top: 1px solid var(--line);
   display: flex; flex-direction: column; gap: 12px;
 }
@@ -1441,14 +1451,29 @@ input, select, textarea, label { cursor: pointer; }
    après le décalage mesuré de la nav, si bien que le logo descendait de 146 px à l'ouverture.
    La bande est maintenant HORS FLUX et le script la pose exactement sur celle de la page (même
    haut, même hauteur, même filet) : le logo icon ne bouge pas d'un pixel. Si la bande est sortie
-   de l'écran (page défilée), elle se range sous la barre, comme avant. */
+   de l'écran (page défilée), elle se range sous la barre, comme avant.
+   🆕 v1.7.572 — ET ELLE NE DÉFILE PLUS (« le header qui supporte l'icône scroll avec tout le
+   reste du menu »). Le menu défile (overflow-y: auto) : un élément en position:absolute
+   défilait donc AVEC les entrées, le logo quittait l'écran — mesuré : top 5 au repos puis
+   −204 après 209 px de défilement sur 360×640 (et sur 390×844, 850 px de contenu pour 843
+   visibles : le menu défilait déjà de 7 px, le bandeau bougeait). La bande passe en
+   position:fixed : elle est clouée à la fenêtre, les entrées glissent SOUS elle (elle est
+   positionnée, elles ne le sont pas), et rien ne passe jamais par-dessus. */
 .mm-colo {
-  position: absolute; left: 0; right: 0; top: 5px;      /* 5 px = la hauteur de la barre quadri */
-  display: flex; align-items: flex-start; justify-content: center;
+  position: fixed; left: 0; right: 0; top: 5px;         /* 5 px = la hauteur de la barre quadri — voir v1.7.572 ci-dessus */
+  display: none; align-items: flex-start; justify-content: center;   /* affiché menu ouvert */
   padding: 6px 24px;                 /* LES MÊMES RESPIRATIONS QUE .brand-header, à la lettre */
   background: var(--paper); border-bottom: 1px solid var(--line);
   pointer-events: none;
 }
+/* 🆕 v1.7.572 — LE BANDEAU EST SORTI DU MENU (il vit juste APRÈS lui, dans la page).
+   Un élément fixe placé DANS un conteneur qui défile reste solidaire de ce défilement : le
+   menu porte un backdrop-filter, qui crée le bloc conteneur pour ses descendants fixés.
+   Dehors, il est vraiment cloué à la fenêtre — mesuré, il ne bouge plus d'un pixel quand on
+   fait défiler le menu (avant : −104 px après 109 px de défilement). La règle ci-dessous ne
+   l'affiche que lorsque le menu est ouvert, avec le même empilement que lui (118), le menu
+   étant juste avant lui dans la page. */
+.mobile-menu.open + .mm-colo { display: flex; z-index: 118; }
 .mm-colo img { height: 40px; width: auto; display: block; }
 @media(max-width: 700px){
   .mm-colo { padding-top: 18px; }                          /* idem .brand-header en mobile */
@@ -1457,7 +1482,10 @@ input, select, textarea, label { cursor: pointer; }
 
 /* 🆕 v1.7.472 — le bas du menu : qui signe, et la version. Petit, espacé, arrêté par un filet. */
 .mm-bas {
-  margin-top: auto; padding: 20px 4px 6px; border-top: 1px solid var(--line);
+  /* 🆕 v1.7.572 — margin-top:auto → 22 px. Aligné sur l'accueil (v1.7.549) : plaquée au bas
+     d'un menu plein écran, la signature laissait un grand vide AU MILIEU du menu (« fin de
+     menu étrange »). Une marge fixe la fait suivre le contenu. */
+  margin-top: 22px; padding: 14px 4px 4px; border-top: 1px solid var(--line);
   display: flex; flex-direction: column; gap: 5px;
   font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .1em;
   text-transform: uppercase; color: var(--muted);
@@ -1746,9 +1774,6 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
        🆕 v1.7.496 — ET ELLE RESTE À SA PLACE : la bande est hors flux, et le script la pose
        exactement sur celle de la page (même haut, même hauteur). Avant, elle suivait le
        décalage de la barre collante et le logo descendait de 146 px à l'ouverture. -->
-  <div class="mm-colo" aria-hidden="true">
-    <img src="favicon.png" alt="" width="56" height="56">
-  </div>
   <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
   <a href="index.html#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
@@ -1769,8 +1794,18 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.571</span>
+    <span>SuperPrint v1.7.572</span>
   </div>
+</div>
+
+<!-- 🆕 v1.7.572 — LE BANDEAU DU LOGO, HORS DU MENU (voir la règle CSS).
+     Dans le menu qui défile, un bandeau « fixe » restait solidaire du défilement : il portait
+     un backdrop-filter, qui crée le bloc conteneur (mesuré : top 5 au repos, −104 après
+     109 px de défilement sur 360×640). Posé ici, il est cloué à la fenêtre et ne bouge plus.
+     Il ne s'affiche que menu ouvert : « .mobile-menu.open + .mm-colo » (le menu est juste
+     au-dessus). -->
+<div class="mm-colo" aria-hidden="true">
+  <img src="favicon.png" alt="" width="56" height="56">
 </div>
 
 <!-- ══════════════ HERO
@@ -1932,7 +1967,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.571</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.572</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>
@@ -2064,6 +2099,9 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     burger.classList.remove('open');
     menu.classList.remove('open');
     burger.setAttribute('aria-expanded', 'false');
+    /* 🆕 v1.7.572 — on relâche le verrou de défilement posé à l'ouverture. */
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
   }
   /* 🆕 v1.7.472 — LE MENU SE POSE SOUS LA BARRE COLLANTE, ET PAS SOUS UNE HAUTEUR FIXE.
      Le header mobile n’est pas une bande unique : bandeau quadri + colophon (logo) + nav
@@ -2073,7 +2111,7 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   function spPlacerMenu() {
     var barre = document.querySelector('nav');
     var bande = document.querySelector('.brand-header');
-    var colo = menu.querySelector('.mm-colo');
+    var colo = document.querySelector('.mm-colo');   /* 🆕 v1.7.572 — il est HORS du menu (voir la règle CSS) */
     var bas = barre ? Math.round(barre.getBoundingClientRect().bottom) : 0;
     if (!(bas > 0) || bas > window.innerHeight - 90) bas = 66;
     /* 🆕 v1.7.496 — LE LOGO NE DESCEND PLUS. Le colophon du menu n'est plus empilé sous la barre
@@ -2090,7 +2128,10 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     /* 🆕 v1.7.472 — menu PLEIN ÉCRAN : il occupe tout le viewport et c'est son contenu qui
        démarre sous la barre (padding), la barre restant au-dessus pour fermer — et sous le
        colophon s'il a été rangé là. */
-    menu.style.paddingTop = (Math.max(bas, haut + hB) + 8) + 'px';
+    /* 🆕 v1.7.572 — l'air sous la barre passe de 8 à 14 px (les entrées « étaient un peu
+       hautes ») : le bandeau du logo étant en position:fixed, il est hors flux, et c'est ce
+       rembourrage qui réserve sa place au-dessus de la première entrée. */
+    menu.style.paddingTop = (Math.max(bas, haut + hB) + 14) + 'px';
     menu.style.maxHeight = '';
     menu.style.top = '';
   }
@@ -2117,6 +2158,11 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     var open = menu.classList.toggle('open');
     burger.classList.toggle('open', open);
     burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    /* 🆕 v1.7.572 — verrouille le défilement de fond quand le menu est ouvert (aligné sur
+       l'accueil, v1.7.549) : sinon la scrollbar de la page reste active et passe par-dessus la
+       ligne du logo / bouton fermer pendant que le menu plein écran est ouvert. */
+    document.documentElement.style.overflow = open ? 'hidden' : '';
+    document.body.style.overflow = open ? 'hidden' : '';
     if (open) spPlacerMenu();          /* mesure au moment où l’on ouvre */
   });
   /* Un ancrage du menu referme et remet la barre en haut, prête pour la prochaine ouverture. */
