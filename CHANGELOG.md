@@ -9,6 +9,29 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.570] — 2026-09-28
+
+_Word and Excel import destinations, file page setup, Excel displayed values (imports only)_
+
+### Added — import destinations
+- The import options dialog now asks **where** to place the file: **New document** (created from the same skeleton as File ▸ New — `saveProjectSP_toObject()` → `loadProjectSP()` — so it saves, paginates and exports like any other) or **Current document** (previous behaviour). Applies to **Word and Excel**.
+- `_spImportNouveauDocument(format, marges)` creates the destination document; `_pageImposee` carries the file's page setup through the import into it.
+
+### Added — Word page setup
+- Paper format, orientation and margins are read from `word/document.xml` (`w:pgSz`, `w:pgMar`; twips, 1 mm = 1440/25.4) and applied to the new document. Measured on the A5-landscape control file: **210 × 148 mm**, margins top 12 / bottom 14 / inner 8 / outer 10 — exactly the file.
+
+### Fixed — Word page setup was silently ignored
+- The format read was correct but the decision to apply it relied on the type returned by `window.SPDocImport`, which is **loaded on demand** (`_spDocEnsureModule()`) and therefore `undefined` at decision time: `type === 'docx'` was false and the document stayed A4. Detection now uses the file's **bytes** (ZIP signature `PK` = `0x50 0x4B`) and its extension. Measured after the fix: **210 × 148** instead of 210 × 297, 0 JS errors.
+
+### Added — Excel
+- **Displayed values**: cells are read with the file's own display text (`raw: false`), so `1,450.50 EUR` and `15.0 %` arrive formatted instead of as raw numbers.
+- **Sheet choice**: `_spXlsxSheets()` lists the workbook's sheets by name (first selected by default) and the dialog offers one sheet or the whole workbook. Measured: 2 sheets detected, both imported when the whole workbook is chosen.
+
+### Note
+- **Scope strictly limited to the imports** — sidebar, layout engine, export and image handling are byte-identical to 1.7.569.
+- A date that looked mis-formatted in an Excel test came from the **test file** itself (empty mask `z=""`, display text already ISO): the app reproduced the file faithfully.
+- Still outstanding: **run colour** is not exposed by the mammoth converter; the legacy **.doc** fallback is unit-tested but was not tried on a real Word 97-2003 file.
+
 ## [1.7.569] — 2026-09-27
 
 _Faithful Word import, every office format, design-compliant import dialogs, fluid sidebar (measured)_

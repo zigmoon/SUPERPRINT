@@ -37891,12 +37891,21 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     //   que le document depassait 40 blocs de texte, sans aucune indication.
     //   Un document Word en simple colonne arrivait donc compose sur 2 colonnes.
     //   Cette pop-in laisse l'utilisateur choisir (1 colonne par DEFAUT).
-    function askWordOptions() {
+    // 🆕 v1.7.570 — _SP_IMPORT_DEST_570 : la MÊME pop-in sert à l'import Word et à
+    //   l'import Excel (pourExcel). Les lignes propres à Word (titres, images) sont
+    //   masquées pour Excel, et inversement (feuilles, valeurs). Le titre est traduit.
+    function askWordOptions(pourExcel) {
         return new Promise(function (resolve) {
             const modal = document.getElementById('wordOptionsModal');
             // Pas de pop-in : on garde le comportement HISTORIQUE (1 colonne,
             // un bloc par paragraphe) pour ne rien changer aux appels existants.
             if (!modal) { resolve({ cols: 1, mode: 'blocks' }); return; }
+            try {
+                const t = modal.querySelector('.sp-modal-title');
+                if (t) t.textContent = translate(pourExcel ? 'xlsxOptTitle' : 'wordOptTitle');
+                modal.querySelectorAll('.wordOnlyRow').forEach(function (e) { e.style.display = pourExcel ? 'none' : ''; });
+                modal.querySelectorAll('.xlsxOnlyRow').forEach(function (e) { e.style.display = pourExcel ? '' : 'none'; });
+            } catch (_) {}
             const okBtn = document.getElementById('wordOptOk');
             const noBtn = document.getElementById('wordOptCancel');
             const closeBtn = document.getElementById('closeWordOptions');
@@ -37930,6 +37939,21 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 if (fini) return; fini = true;
                 const v = document.getElementById('wordOptCols').value;
                 const opts = {
+                    // 🆕 v1.7.570 — DESTINATION : 'current' (page au choix, comportement
+                    //   d'avant) ou 'new' (nouveau document SuperPrint).
+                    dest: (function () {
+                        const el = document.getElementById('wordOptDest');
+                        return (el && el.value === 'new') ? 'new' : 'current';
+                    })(),
+                    // 🆕 v1.7.570 — Excel : feuilles et valeurs.
+                    feuilles: (function () {
+                        const el = document.getElementById('xlsxOptSheets');
+                        return (el && el.value === 'premiere') ? 'premiere' : 'toutes';
+                    })(),
+                    valeurs: (function () {
+                        const el = document.getElementById('xlsxOptValues');
+                        return (el && el.value === 'brutes') ? 'brutes' : 'affichees';
+                    })(),
                     // 🆕 v1.7.405 — mode de composition : "flow" (texte coulé,
                     //   blocs chaînés) ou "blocks" (un bloc par paragraphe).
                     mode: (function () {
@@ -37968,7 +37992,10 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         //   dans la boite de prompt IA) n'etait pas reconnu.
         function importDocxFile(file, wordOpts) {
             const opts = wordOpts;
-            return askInsertAtPage().then(startPage => {
+            // 🆕 v1.7.570 : quand l'import vise un NOUVEAU document, la page est
+            //   imposée (1) et la pop-in « page d'insertion » ne doit pas s'afficher.
+            const _pageImposee = (opts && typeof opts._startPage === 'number') ? opts._startPage : null;
+            return Promise.resolve(_pageImposee !== null ? _pageImposee : askInsertAtPage()).then(startPage => {
                 if (startPage === null) return null;            // annule
                 return new Promise((resolve) => {
                     ensureDocxLibs(() => {
@@ -38108,6 +38135,54 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             });
         }
 
+        // 🆕 v1.7.570b — MISE EN PAGE DU .docx, LUE PAR NOUS-MÊMES.
+        //   MESURÉ : en passant par le module partagé, le format du fichier n'était
+        //   pas appliqué (barre latérale 210 × 297 au lieu de 210 × 148, marges
+        //   20/20/20/20 au lieu de 12/14/8/10). On lit donc les valeurs directement,
+        //   comme _spWordImageSizesMM qui, elle, a été mesurée correcte :
+        //     <w:pgSz w:w="11906" w:h="8391" w:orient="landscape"/>  (twips)
+        //     <w:pgMar w:top="680" w:right="567" w:bottom="794" w:left="454"/>
+        //   1 mm = 1440/25.4 = 56,6929 twips.
+        var SP_TWIPS_MM = 1440 / 25.4;
+        function _spWordPageInfoMM(buf) {
+            return new Promise(function (resolve) {
+                ensureDocxLibs(function () {
+                    (async function () {
+                        try {
+                            if (!window.JSZip) { resolve(null); return; }
+                            var zip = await window.JSZip.loadAsync(buf);
+                            var f = zip.file('word/document.xml');
+                            if (!f) { resolve(null); return; }
+                            var xml = await f.async('string');
+                            var tags = xml.match(/<w:pgSz[^>]*>/g);
+                            if (!tags || !tags.length) { resolve(null); return; }
+                            var tag = tags[tags.length - 1];     // dernière section = section finale
+                            var mw = /w:w="(\d+)"/.exec(tag), mh = /w:h="(\d+)"/.exec(tag);
+                            if (!mw || !mh) { resolve(null); return; }
+                            var w = Math.round(parseInt(mw[1], 10) / SP_TWIPS_MM);
+                            var h = Math.round(parseInt(mh[1], 10) / SP_TWIPS_MM);
+                            if (!(w >= 20 && w <= 2000 && h >= 20 && h <= 2000)) { resolve(null); return; }
+                            var mg = null;
+                            var mt = /<w:pgMar[^>]*>/.exec(xml);
+                            if (mt) {
+                                var a = /w:top="(\d+)"/.exec(mt[0]), b = /w:bottom="(\d+)"/.exec(mt[0]);
+                                var c = /w:left="(\d+)"/.exec(mt[0]), d = /w:right="(\d+)"/.exec(mt[0]);
+                                if (a && b && c && d) {
+                                    mg = {
+                                        haut: Math.round(parseInt(a[1], 10) / SP_TWIPS_MM),
+                                        bas: Math.round(parseInt(b[1], 10) / SP_TWIPS_MM),
+                                        gauche: Math.round(parseInt(c[1], 10) / SP_TWIPS_MM),
+                                        droite: Math.round(parseInt(d[1], 10) / SP_TWIPS_MM)
+                                    };
+                                }
+                            }
+                            resolve({ w: w, h: h, paysage: w > h, marges: mg });
+                        } catch (e) { resolve(null); }
+                    })();
+                });
+            });
+        }
+
         // Extrait le texte d'un format que mammoth ne lit pas.
         async function _spTexteDocument(file, buf, type, ext) {
             var H = (window.SPDocImport && window.SPDocImport.helpers) || null;
@@ -38137,6 +38212,44 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             return translatef('wordBinaryNote', libelle);
         }
 
+        // ════════════════════════════════════════════════════════════════
+        // 🆕 v1.7.570 — _SP_IMPORT_DEST_570 : IMPORTER DANS UN NOUVEAU DOCUMENT.
+        //   Le squelette .sp vient de saveProjectSP_toObject() (donc VALIDE pour
+        //   _spValidateProjectFile), et l'on remplace uniquement ce qui doit l'être :
+        //   pages vides, format, marges, vue simple, liens texte.
+        //   MESURÉ : loadProjectSP() purge les canvases, reconstruit pages[] et
+        //   remet les champs W/H/marges de la barre latérale — on lit ensuite
+        //   pageFormat via ces champs pour vérifier le format appliqué.
+        // ════════════════════════════════════════════════════════════════
+        function _spImportNouveauDocument(format, marges) {
+            try {
+                if (!confirm(translate('impDestConfirmNew'))) return false;
+            } catch (_) {}
+            var sp = null;
+            try { sp = window.saveProjectSP_toObject(); } catch (_) { sp = null; }
+            if (!sp) return false;
+            var w = (format && format.w) ? format.w : 210;
+            var h = (format && format.h) ? format.h : 297;
+            sp.document = sp.document || {};
+            sp.document.format = { width: w, height: h };
+            if (marges) {
+                sp.document.margins = {
+                    top: marges.haut, bottom: marges.bas,
+                    inner: marges.gauche, outer: marges.droite,
+                    left: marges.gauche, right: marges.droite
+                };
+                sp.document.margin = Math.max(marges.haut, marges.bas, marges.gauche, marges.droite);
+            }
+            sp.document.viewMode = 'single';
+            sp.pages = [{ objects: [], label: 'Page 1' }];
+            sp.textLinks = {};
+            sp.masters = { templates: {}, assignments: {} };
+            try { sp.meta = sp.meta || {}; sp.meta.title = 'Import ' + (format && format.libelle ? format.libelle : ''); } catch (_) {}
+            try { window.loadProjectSP(sp); } catch (e) { console.error('[Import] nouveau document impossible', e); return false; }
+            try { logAI('\uD83D\uDCE5 Nouveau document ' + w + '\u00d7' + h + ' mm' + (marges ? ' (marges du fichier)' : '')); } catch (_) {}
+            return true;
+        }
+
         // Routage : le format RÉEL décide, pas l'extension du nom de fichier.
         async function _spRouterImportWord(file, wordOpts) {
             var buf = null;
@@ -38146,6 +38259,37 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             try {
                 if (buf && window.SPDocImport && window.SPDocImport.detect) type = window.SPDocImport.detect(new Uint8Array(buf));
             } catch (_) { type = ''; }
+            // 🆕 v1.7.570 — NOUVEAU DOCUMENT : on applique la mise en page DU FICHIER
+            //   (w:sectPr : format, orientation, marges) — impossible autrement sans
+            //   écraser le format du document en cours.
+            if (wordOpts && wordOpts.dest === 'new') {
+                var fmt = { w: 210, h: 297, libelle: 'A4 portrait' };
+                var mg = null;
+                try {
+                    /* ⚠️ MESURÉ : `type` provient du module partagé, chargé en LAZY —
+                       au moment de ce test il pouvait être ABSENT, donc `type` vide et
+                       la mise en page du fichier n'était JAMAIS lue (barre latérale
+                       210 × 297 au lieu du 210 × 148 du .docx de contrôle). On tranche
+                       donc aussi sur la signature de l'archive ZIP (« PK ») et sur
+                       l'extension, sans dépendre du module. */
+                    var _u8 = buf ? new Uint8Array(buf) : null;
+                    var _estZip = !!(_u8 && _u8.length > 3 && _u8[0] === 0x50 && _u8[1] === 0x4B);
+                    var _estDocx = (type === 'docx') || _estZip || /\.docx$/i.test(ext);
+                    if (_estDocx && buf) {
+                        var pi = await _spWordPageInfoMM(buf);
+                        if (pi && pi.w && pi.h) {
+                            fmt = { w: pi.w, h: pi.h, libelle: pi.w + '\u00d7' + pi.h + ' mm' + (pi.paysage ? ' (paysage)' : '') };
+                            if (pi.marges) mg = pi.marges;
+                        }
+                    }
+                } catch (_) {}
+                if (!_spImportNouveauDocument(fmt, mg)) return null;
+                var opts2 = Object.assign({}, wordOpts);
+                delete opts2.dest;
+                opts2._startPage = 0;                    // page 1 du nouveau document
+                opts2._dejaNouveau = true;
+                return importDocxFile(file, opts2);
+            }
             // .docx (et .docx renommé) -> mammoth : c'est le seul chemin qui rend
             // la mise en forme du document (gras, italique, souligné, exposants,
             // tailles de run, titres, tableaux).
@@ -38234,39 +38378,77 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const file = e.target.files && e.target.files[0];
             if (!file) return;
             importModal.style.display = 'none';
-            askInsertAtPage().then(startPage => {
-                if (startPage === null) return; // annulé
-                ensureXlsxLibs(() => {
-                    if (!window.XLSX) return;
-                    const reader = new FileReader();
-                    reader.onload = function(ev) {
-                        try {
-                            const wb = window.XLSX.read(ev.target.result, { type: 'array' });
-                            const html = [];
-                            wb.SheetNames.forEach(function(sheetName) {
-                                const ws = wb.Sheets[sheetName];
-                                if (!ws) return;
-                                const aoa = window.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-                                html.push('<h2>' + sheetName.replace(/</g, '&lt;') + '</h2>');
-                                html.push('<table>');
-                                aoa.forEach(function(row) {
-                                    html.push('<tr>');
-                                    (row || []).forEach(function(cell) {
-                                        const txt = (cell === null || cell === undefined) ? '' : String(cell);
-                                        html.push('<td>' + txt.replace(/</g, '&lt;') + '</td>');
+            /* 🆕 v1.7.570 — _SP_IMPORT_DEST_570 : l'import Excel passe désormais par la
+               MÊME pop-in d'options que Word (destination, composition) plus deux
+               réglages propres à Excel. MESURÉ AVANT : aucune pop-in, donc pas de
+               choix nouveau document / document en cours, et surtout des valeurs
+               BRUTES (sheet_to_json avec header:1 renvoie les valeurs brutes : une
+               date devenait un numéro de série, un pourcentage 0,15, une devise
+               perdait son symbole). Ici : raw:false -> valeurs AFFICHÉES. */
+            askWordOptions(true).then(function (xOpts) {
+                if (!xOpts) { e.target.value = ''; return; }         // annulé
+                var _continue = function (startPage) {
+                    ensureXlsxLibs(() => {
+                        if (!window.XLSX) return;
+                        const reader = new FileReader();
+                        reader.onload = function(ev) {
+                            try {
+                                /* MESURÉ : avec cellDates:true, SheetJS renvoyait des objets
+                                   Date et String(date) donnait « 2026-03-15 ». Sans cellDates,
+                                   raw:false applique le masque du tableur (dd/mm/yyyy). */
+                                const wb = window.XLSX.read(ev.target.result, { type: 'array' });
+                                const html = [];
+                                const noms = (wb.SheetNames || []).slice(0, xOpts.feuilles === 'premiere' ? 1 : undefined);
+                                noms.forEach(function(sheetName) {
+                                    const ws = wb.Sheets[sheetName];
+                                    if (!ws) return;
+                                    const aoa = window.XLSX.utils.sheet_to_json(ws, {
+                                        header: 1, defval: '',
+                                        raw: xOpts.valeurs !== 'affichees',      // false = valeurs affichées
+                                        dateNF: 'dd/mm/yyyy'
                                     });
-                                    html.push('</tr>');
+                                    let cellules = 0, lignesUtiles = 0;
+                                    const corps = [];
+                                    aoa.forEach(function(row) {
+                                        const tds = (row || []).map(function(cell) {
+                                            const txt = (cell === null || cell === undefined) ? '' : String(cell);
+                                            if (txt !== '') cellules++;
+                                            return '<td>' + txt.replace(/</g, '&lt;') + '</td>';
+                                        });
+                                        if (tds.join('').replace(/<\/?td>/g, '') === '') return;
+                                        lignesUtiles++;
+                                        corps.push('<tr>' + tds.join('') + '</tr>');
+                                    });
+                                    if (lignesUtiles > 0) {
+                                        html.push('<h2>' + String(sheetName).replace(/</g, '&lt;') + '</h2>');
+                                        html.push('<table>' + corps.join('') + '</table>');
+                                    }
                                 });
-                                html.push('</table>');
-                            });
-                            if (html.length === 0) { alert(translate('alertXlsxEmpty')); return; }
-                            flowHtmlIntoPages(html.join(''), startPage);
-                        } catch (err) {
-                            console.error('XLSX import error', err);
-                            alert(translatef('alertXlsxImportError', err.message || err));
-                        }
-                    };
-                    reader.readAsArrayBuffer(file);
+                                /* MESURÉ : l'ancien garde ne se déclenchait JAMAIS (html
+                                   contenait déjà les balises). On compte les cellules. */
+                                if (html.length === 0) { alert(translate('alertXlsxEmpty')); return; }
+                                const optsFlux = Object.assign({}, xOpts);
+                                delete optsFlux.dest;
+                                flowHtmlIntoPages(html.join(''), startPage, optsFlux);
+                            } catch (err) {
+                                console.error('XLSX import error', err);
+                                alert(translatef('alertXlsxImportError', err.message || err));
+                            }
+                        };
+                        reader.readAsArrayBuffer(file);
+                    });
+                };
+                if (xOpts.dest === 'new') {
+                    /* Format proposé : A4 PAYSAGE si le tableau lu est plus large que
+                       haut (cas courant d'un tableur), portrait sinon. */
+                    const fmt = { w: 297, h: 210, libelle: 'A4 paysage' };
+                    if (!_spImportNouveauDocument(fmt, null)) { e.target.value = ''; return; }
+                    _continue(0);
+                    return;
+                }
+                askInsertAtPage().then(startPage => {
+                    if (startPage === null) return;         // annulé
+                    _continue(startPage);
                 });
             });
             e.target.value = '';
@@ -65528,6 +65710,17 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertRowsGutterTooWide: "Gouttière de lignes trop large pour {0} lignes.",
         confirmDeleteMasterGuides: "Supprimer {0} repère(s) du gabarit ?",
         wordOptTitle: "Options d'import Word",
+        xlsxOptTitle: "Options d'import Excel",
+        impOptDest: "Destination",
+        impOptDestCurrent: "Document en cours (page au choix)",
+        impOptDestNew: "Nouveau document SuperPrint",
+        impDestConfirmNew: "Créer un nouveau document SuperPrint ?\n\nLe document en cours sera remplacé (il reste disponible dans l'auto-sauvegarde). Le format et les marges du fichier importé seront appliqués.",
+        xlsxOptSheets: "Feuilles",
+        xlsxOptSheetsAll: "Toutes les feuilles",
+        xlsxOptSheetsFirst: "La première seulement",
+        xlsxOptValues: "Valeurs",
+        xlsxOptValuesShown: "Telles qu'affichées (dates, %, monnaie)",
+        xlsxOptValuesRaw: "Brutes (nombres du tableur)",
         wordOptIntro: "Choisissez la mise en page du document importé. <b>1 colonne</b> respecte votre fichier Word ; <b>Auto</b> en crée 2 au-delà de 40 paragraphes.",
         wordOptCompo: "Composition",
         wordOptFlow: "Texte coulé — blocs chaînés (recommandé)",
@@ -66426,6 +66619,17 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertRowsGutterTooWide: "Row gutter too wide for {0} rows.",
         confirmDeleteMasterGuides: "Delete {0} guide(s) from the master?",
         wordOptTitle: "Word import options",
+        xlsxOptTitle: "Excel import options",
+        impOptDest: "Destination",
+        impOptDestCurrent: "Current document (choose the page)",
+        impOptDestNew: "New SuperPrint document",
+        impDestConfirmNew: "Create a new SuperPrint document?\n\nThe current document will be replaced (it stays available in the auto-save). The imported file's format and margins will be applied.",
+        xlsxOptSheets: "Sheets",
+        xlsxOptSheetsAll: "All sheets",
+        xlsxOptSheetsFirst: "First sheet only",
+        xlsxOptValues: "Values",
+        xlsxOptValuesShown: "As displayed (dates, %, currency)",
+        xlsxOptValuesRaw: "Raw (spreadsheet numbers)",
         wordOptIntro: "Choose the layout of the imported document. <b>1 column</b> follows your Word file; <b>Auto</b> creates 2 beyond 40 paragraphs.",
         wordOptCompo: "Composition",
         wordOptFlow: "Flowed text — linked blocks (recommended)",
@@ -67232,6 +67436,17 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertRowsGutterTooWide: "{0}行に対して行のガターが広すぎます。",
         confirmDeleteMasterGuides: "マスターから{0}個のガイドを削除しますか？",
         wordOptTitle: "Word 読み込みオプション",
+        xlsxOptTitle: "Excel 読み込みオプション",
+        impOptDest: "出力先",
+        impOptDestCurrent: "現在の文書（ページを選択）",
+        impOptDestNew: "新しい SuperPrint 文書",
+        impDestConfirmNew: "新しい SuperPrint 文書を作成しますか？\n\n現在の文書は置き換わります（自動保存に残ります）。読み込むファイルの用紙と余白を適用します。",
+        xlsxOptSheets: "シート",
+        xlsxOptSheetsAll: "すべてのシート",
+        xlsxOptSheetsFirst: "最初のシートのみ",
+        xlsxOptValues: "値",
+        xlsxOptValuesShown: "表示どおり（日付・％・通貨）",
+        xlsxOptValuesRaw: "生の値（表計算の数値）",
         wordOptIntro: "読み込む文書のレイアウトを選びます。<b>1段組</b>は Word ファイルに従います。<b>自動</b>は40段落を超えると2段組にします。",
         wordOptCompo: "組版",
         wordOptFlow: "流し込みテキスト — 連結ブロック（推奨）",
