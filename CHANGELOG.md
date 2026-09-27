@@ -9,6 +9,23 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.571] — 2026-09-28
+
+_WhatsApp contact bubble on the home page and the “Take part” page (no other change)_
+
+### Added — contact bubble
+- A floating **WhatsApp bubble** in the **bottom-right corner** of `index.html` (home) and `help-us.html` (“Take part”), linking to `https://wa.me/33671614110` — the workshop's number +33 6 71 61 41 10 in the international format, opened in a new tab with `rel="noopener noreferrer"`.
+- **Ink of the “Open app” button**: `background: var(--ink)` (`#17130D`), hover `var(--ink-2)`, glyph in `var(--paper)`. Deliberately **no new colour** in the interface (the first version was WhatsApp green; it was too loud on the paper background).
+- Geometry measured: **58 px** circle, **22 px** from both edges, glyph **26 px**; on phones (≤ 560 px) **52 px**, **14 px**, glyph **23 px**.
+- `z-index: 100` — **below** the full-screen mobile menu (118), the sticky bar (119) and the top bar (300): measured with the menu open, the element hit at the bubble's centre is the menu, not the bubble.
+- `@media print` hides it; `prefers-reduced-motion: reduce` removes the transition; no fade anywhere (hover only changes scale, shadow and — instantly — the shade, like the bar's button).
+- No `data-lang` on it: a number and a messenger name are not translated, so the label lives in `title` and `aria-label` and cannot leak between the three languages (the composed-pages trap).
+
+### Note
+- The FAQ is **no longer a separate page** (it lives inside `index.html` as section `#faq`), so it carries the bubble as well.
+- **Scope**: only these two pages change — editor, imports, layout engine and export are identical to 1.7.570.
+- Verified: both trees byte-identical (SHA256), 0 JS errors, no horizontal overflow, position stable at the top and at the bottom of the page.
+
 ## [1.7.570] — 2026-09-28
 
 _Word and Excel import destinations, file page setup, Excel displayed values (imports only)_

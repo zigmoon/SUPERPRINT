@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.570 — Word and Excel imports now ask where to place the file (new document taking the file format and margins, or current document); Word page setup applied; Excel displayed values and sheet choice. Imports only.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.571 — a WhatsApp contact bubble in the bottom-right corner of the home page and of the Take part page, using the same ink as the Open app button.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.570 — Word and Excel imports now ask where to place the file (new document taking the file format and margins, or current document); Word page setup applied; Excel displayed values and sheet choice. Imports only.">
+<meta property="og:description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.571 — a WhatsApp contact bubble in the bottom-right corner of the home page and of the Take part page, using the same ink as the Open app button.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -706,6 +706,29 @@ footer, footer a { color: var(--after-text-color); }
 <section class="releases" aria-label="Release notes">
 
 
+
+<!-- ===== SUPER PRINT v1.7.571 — Bulle WhatsApp (page d'accueil et « Participer ») ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-571">
+ <h2>SUPER PRINT <span>v1.7.571</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 28 septembre 2026" data-i18n-en="Released September 28, 2026" data-i18n-jp="2026年9月28日公開">Released September 28, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Une <strong>bulle de contact WhatsApp</strong> est posée en bas à droite de la page d'accueil et de la page « Participer » : un clic ouvre la conversation avec l'atelier. Elle reprend exactement l'encre du bouton « Ouvrir l'app » — <strong>aucune couleur nouvelle</strong> dans l'interface." data-i18n-en-html="A <strong>WhatsApp contact bubble</strong> now sits in the bottom-right corner of the home page and of the “Take part” page: one click opens the conversation with the workshop. It reuses exactly the ink of the “Open app” button — <strong>no new colour</strong> anywhere in the interface." data-i18n-jp-html="ホームページと「参加する」ページの右下に<strong>WhatsApp の連絡バブル</strong>を設置しました。クリックすると工房との会話が開きます。「アプリを開く」ボタンとまったく同じインクを使い、インターフェースに<strong>新しい色は一切ありません</strong>。">A WhatsApp contact bubble now sits in the bottom-right corner of the home page and of the “Take part” page — same ink as the “Open app” button, no new colour.
+
+ <h3 data-i18n-fr-html="📱 La bulle, ce qu'elle fait — et ce qu'elle ne fait pas" data-i18n-en-html="📱 What the bubble does — and does not do" data-i18n-jp-html="📱 バブルの動作と、しないこと">📱 What the bubble does — and does not do</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Conversation directe.</strong> Le lien est <code>wa.me/33671614110</code> — le numéro de l'atelier (+33 6 71 61 41 10) au format international, comme l'exige WhatsApp. Il s'ouvre dans un nouvel onglet (<code>rel=&quot;noopener noreferrer&quot;</code>) : la page en cours n'est jamais quittée." data-i18n-en-html="<strong>Direct conversation.</strong> The link is <code>wa.me/33671614110</code> — the workshop's number (+33 6 71 61 41 10) in the international format WhatsApp requires. It opens in a new tab (<code>rel=&quot;noopener noreferrer&quot;</code>): the current page is never left." data-i18n-jp-html="<strong>直接の会話。</strong>リンクは <code>wa.me/33671614110</code>（工房の番号 +33 6 71 61 41 10、WhatsApp が要求する国際形式）です。新しいタブで開き（<code>rel=&quot;noopener noreferrer&quot;</code>）、現在のページから離れません。">Direct conversation: the link is wa.me/33671614110 and opens in a new tab, never leaving the page.</li>
+  <li data-i18n-fr-html="<strong>La discrétion d'abord.</strong> La bulle se place <strong>sous</strong> le menu plein écran (mobile), sous la barre collante et sous la barre du haut : elle ne passe jamais par-dessus la navigation. Elle est <strong>masquée à l'impression</strong>, ne bouge pas d'un pixel au défilement (mesuré en haut et en bas de page) et ne provoque <strong>aucun débordement horizontal</strong>. Aucun fondu : au survol, seules l'échelle et l'ombre bougent, et la teinte change d'un coup, comme le bouton de la barre." data-i18n-en-html="<strong>Discretion first.</strong> The bubble sits <strong>below</strong> the full-screen menu (mobile), below the sticky bar and below the top bar: it never floats over the navigation. It is <strong>hidden when printing</strong>, does not move a pixel while scrolling (measured at the top and at the bottom of the page) and causes <strong>no horizontal overflow</strong>. No fade: on hover only the scale and the shadow move, and the shade changes instantly, like the bar's button." data-i18n-jp-html="<strong>控えめさを優先。</strong>バブルは全画面メニュー（モバイル）、固定バー、上部バーの<strong>下</strong>に位置し、ナビゲーションの上に決して出ません。印刷時は<strong>非表示</strong>、スクロールしても 1 ピクセルも動かず（ページ上部・下部で計測）、<strong>横方向のはみ出しはありません</strong>。フェードはなし：ホバーでは拡大率と影だけが動き、色はバーのボタンと同じく即座に変わります。">Discretion: the bubble sits below the full-screen menu and the bars, is hidden when printing, never moves while scrolling and causes no horizontal overflow. No fade — only scale and shadow move on hover.</li>
+  <li data-i18n-fr-html="<strong>Sur les deux pages, et seulement elles.</strong> La page d'accueil et la page « Participer » la portent, avec la même mise en page et les mêmes mesures (58 px, 22 px des bords ; 52 px et 14 px sur téléphone). La FAQ n'est plus une page à part — elle vit dans la page d'accueil —, elle en bénéficie donc aussi. Un numéro ne se traduisant pas, son libellé vit dans <code>title</code> et <code>aria-label</code> : il ne peut pas « fuiter » d'une langue à l'autre." data-i18n-en-html="<strong>On both pages, and only them.</strong> The home page and the “Take part” page carry it, with the same layout and the same measurements (58 px, 22 px from the edges; 52 px and 14 px on phones). The FAQ is no longer a separate page — it lives in the home page — so it benefits from it too. Since a number is not translated, its label lives in <code>title</code> and <code>aria-label</code>: it cannot leak from one language to another." data-i18n-jp-html="<strong>2 ページのみ。</strong>ホームページと「参加する」ページが同じ寸法で備えます（58 px、端から 22 px、スマートフォンでは 52 px と 14 px）。FAQ は独立ページではなくなり、ホームページ内にあるため同様に適用されます。番号は翻訳されないため、ラベルは <code>title</code> と <code>aria-label</code> に置き、言語間で漏れません。">On both pages only, with identical measurements (58 px / 22 px; 52 px / 14 px on phones). The FAQ is part of the home page now, so it benefits too.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="ℹ️ Périmètre" data-i18n-en-html="ℹ️ Scope" data-i18n-jp-html="ℹ️ 対象範囲">ℹ️ Scope</h3>
+ <ul>
+  <li data-i18n-fr-html="Rien d'autre ne change : l'éditeur, les imports, le montage et l'export sont identiques à la version précédente." data-i18n-en-html="Nothing else changes: the editor, the imports, the layout engine and the export are identical to the previous version." data-i18n-jp-html="その他は変更していません。エディター、読み込み、レイアウト、書き出しは前版と同じです。">Nothing else changes: editor, imports, layout engine and export are identical to the previous version.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.570 — Import Word et Excel : destination, format et marges du fichier ===== -->
 
