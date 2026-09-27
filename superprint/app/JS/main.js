@@ -333,18 +333,58 @@ function syncMobileSidebarBackdrop() {
     right.style.zIndex = anyOpen ? '1002' : '';
 }
 
+// 🆕 v1.7.569 — SÉQUENCE D'OUVERTURE DE LA BARRE GAUCHE (détail dans
+//   _dev/scripts/_fix_sidebar_569b.cjs). MESURÉ AVANT : le contenu était éteint
+//   par display:none à l'instant du clic, pendant que la largeur glissait 300 ms,
+//   et le logo était remplacé. On enchaîne désormais :
+//     fermeture : fondu du contenu (140 ms) puis repli de la largeur (260 ms)
+//     ouverture : déploiement (260 ms), contenu encore invisible, puis fondu (140 ms)
+//   La bascule de grille des icônes (4 col. -> 1 col.) tombe donc pendant que le
+//   bloc est invisible. prefers-reduced-motion: reduce -> durées nulles.
+function _spSidebarSequence(sidebar, versReplie) {
+    /* 🆕 v1.7.569b — BAScule IMMÉDIATE, PLUS AUCUN FONDU (demande utilisateur).
+       MESURÉ AVANT : la classe 'collapsed' n'était posée que 140 ms après le clic
+       (temps du fondu du contenu) — pendant ce temps RIEN ne bougeait, puis le
+       repli partait ; le mouvement paraissait donc haché. Ici la classe est posée
+       tout de suite : largeur, repli des blocs (max-height), padding et glissement
+       du logo partent ensemble, avec la même durée et la même courbe. */
+    if (!sidebar) return;
+    var t = 260;
+    try {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            t = 0;
+        }
+    } catch (_) {}
+    clearTimeout(sidebar._spSbTimer1);
+    clearTimeout(sidebar._spSbTimer2);
+    sidebar.classList.add('sb-anim');
+    sidebar.classList.toggle('collapsed', !!versReplie);
+    sidebar._spSbTimer2 = setTimeout(function () { sidebar.classList.remove('sb-anim'); }, t + 20);
+}
+
 // Toggle sidebar collapse/expand
 function toggleSidebar(side) {
     if (side === 'left') {
         const sidebar = document.getElementById('leftSidebar');
         if (sidebar) {
-            sidebar.classList.toggle('collapsed');
+            // 🆕 v1.7.569 : repli/déploiement ANIMÉ (plus de bascule à sec ; l'état
+            //   final, la flèche et la logique mobile restent identiques).
+            const _versReplie = !sidebar.classList.contains('collapsed');
+            _spSidebarSequence(sidebar, _versReplie);
             const btn = document.getElementById('toggleLeftSidebar');
             if (btn) {
-                btn.innerHTML = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+                // La classe collapsed n'est posée que 140 ms après le clic : on
+                //   affiche tout de suite l'état VISÉ, puis on re-confirme.
+                btn.innerHTML = _versReplie ? '▶' : '◀';
+                setTimeout(function () {
+                    if (btn) btn.innerHTML = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+                }, 300);
             }
 
-            if (isMobileSidebarMode() && !sidebar.classList.contains('collapsed')) {
+            /* ⚠️ On teste l'état VISÉ : sinon cette branche se déclenchait à
+               contresens (la classe n'étant pas encore posée) et fermait la barre
+               de droite alors qu'on repliait la gauche. */
+            if (isMobileSidebarMode() && !_versReplie) {
                 const rightSidebar = document.getElementById('rightSidebar');
                 if (rightSidebar) rightSidebar.classList.add('collapsed');
             }
@@ -36884,12 +36924,29 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
         // Regroupe les blocs en SEGMENTS : paragraphes consecutifs fusionnes,
         // titres et images coupant le flux.
-        function _spFlowSegments(blocks) {
+        function _spFlowSegments(blocks, wordOpts) {
             var segs = [];
             var corps = [];
+            var alignDefaut = (wordOpts && wordOpts.align) ? wordOpts.align : "justify";
+            // Les runs suivent le texte : le séparateur de paragraphes est un run
+            // comme un autre, sinon les décalages de caractères se décaleraient.
             function viderCorps() {
                 if (!corps.length) return;
-                segs.push({ kind: "body", text: corps.join("\n\n") });
+                var texte = "", runs = [];
+                for (var c = 0; c < corps.length; c++) {
+                    if (c) { texte += "\n\n"; runs.push({ t: "\n\n", style: {} }); }
+                    var it = corps[c] || "";
+                    texte += it;
+                    var rr = (corps[c] && corps[c].__runs) || [];
+                    /* MESURE : sans ce decalage, le gras de « T10 : ... GRAS ... »
+                       retombait sur les caracteres du paragraphe PRECEDENT (le bloc
+                       fusionne ressortait sans aucun style, et la taille de run
+                       20 pt tombait sur 13 caracteres au hasard). */
+                    var _decal = texte.length - String(it).length;
+                    for (var q = 0; q < rr.length; q++) runs.push({ t: rr[q].t, style: rr[q].style, start: (rr[q].start || 0) + _decal, end: (rr[q].end || 0) + _decal });
+                    if (!rr.length && it) runs.push({ t: it, style: {}, start: _decal, end: _decal + String(it).length });
+                }
+                segs.push({ kind: "body", text: texte, runs: runs });
                 corps = [];
             }
             for (var i = 0; i < blocks.length; i++) {
@@ -36897,10 +36954,25 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 if (b.kind === "image") { viderCorps(); segs.push({ kind: "image", src: b.src }); continue; }
                 if (b.kind === "text" && (b.tag === "h1" || b.tag === "h2" || b.tag === "h3")) {
                     viderCorps();
-                    segs.push({ kind: "heading", tag: b.tag, text: b.text });
+                    segs.push({ kind: "heading", tag: b.tag, text: b.text, runs: b.runs || null });
                     continue;
                 }
-                corps.push(b.text || "");
+                // 🆕 v1.7.569 — un paragraphe CENTRÉ ou À DROITE coupe le flux :
+                //   MESURÉ avant, « T16CENTRE: … » et « T17DROITE: … » arrivaient
+                //   noyés dans le texte justifié et leur alignement était perdu.
+                //   « left » ne coupe PAS : c'est le défaut de Word, alors que le
+                //   texte coulé compose en justifié — mesuré, couper sur « left »
+                //   cassait la fusion à chaque paragraphe.
+                var _alB = (b.align === "both") ? "justify" : (b.align || "left");
+                if (b.kind === "text" && (_alB === "center" || _alB === "right") && _alB !== alignDefaut) {
+                    viderCorps();
+                    segs.push({ kind: "para", text: b.text, runs: b.runs || null, align: _alB });
+                    continue;
+                }
+                var txt = b.text || "";
+                var entree = new String(txt);
+                entree.__runs = b.runs || null;
+                corps.push(entree);
             }
             viderCorps();
             return segs;
@@ -36977,6 +37049,9 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 var dispo = safe.bottom - cursorY;
                 var box = _spFlowMakeBox(text, colWidth,
                     o.fontSize || bodyPt, !!o.isBold, !!o.isItalic, o.align || align, o.lh);
+                // 🆕 v1.7.569 : la mise en forme du paragraphe (gras/italique/
+                //   souligné d'un run, exposant, taille) est réappliquée ici.
+                if (o.runs && o.runs.length) _spAppliquerRuns(box, o.runs, o.fontSize || bodyPt);
                 var hNaturelle = (typeof box.calcTextHeight === "function") ? box.calcTextHeight() : 0;
                 var hFrame = Math.max(1, Math.min(dispo, hNaturelle));
 
@@ -37000,8 +37075,11 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 return data;
             }
 
-            var segs = _spFlowSegments(blocks);
+            var segs = _spFlowSegments(blocks, wordOpts);
             var blocsCrees = 0;
+            // 🆕 v1.7.569 : rang de l'image, pour retrouver sa taille RÉELLE dans le
+            //   document Word (liste posée par l'import .docx seulement).
+            var _imgOrdre = 0;
 
             for (var s = 0; s < segs.length; s++) {
                 var seg = segs[s];
@@ -37011,7 +37089,15 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     await new Promise(function (resolve) {
                         fabric.Image.fromURL(seg.src, function (img) {
                             try {
-                                var maxW = Math.min(colWidth * columns, mmToPx(imgWidthMm));
+                                var _tailleDoc = null;
+                                if (wo._imgSizesMM && wo._imgSizesMM.length) {
+                                    _tailleDoc = wo._imgSizesMM[_imgOrdre] || null;
+                                    _imgOrdre++;
+                                }
+                                // Taille du document Word si connue, sinon plafond de la pop-in.
+                                var maxW = (_tailleDoc && imgReelle)
+                                    ? Math.min(colWidth * columns, mmToPx(_tailleDoc.w))
+                                    : Math.min(colWidth * columns, mmToPx(imgWidthMm));
                                 var plafond = imgReelle ? 1 : Math.min(1, maxW / img.width);
                                 var scale = Math.min(plafond, maxW / img.width);
                                 var w = img.width * scale, h = img.height * scale;
@@ -37057,9 +37143,21 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         cursorY = safe.top;
                         colonneSuivante();
                     }
-                    poserBloc(seg.text, { fontSize: taille, isBold: true, align: "left", lh: lhTitre });
+                    poserBloc(seg.text, { fontSize: taille, isBold: true, align: "left", lh: lhTitre, runs: seg.runs });
                     blocsCrees++;
                     cursorY += margeApres;
+                    nouvelleChaine();
+                    continue;
+                }
+
+                // --- PARAGRAPHE A ALIGNEMENT PROPRE (centré / droite / justifié
+                //     différent du flux) : bloc distinct, comme un titre. ---
+                if (seg.kind === "para") {
+                    if (cursorY > safe.top + 1) cursorY += mmToPx(2);
+                    nouvelleChaine();
+                    poserBloc(seg.text, { fontSize: bodyPt, align: seg.align || align, runs: seg.runs });
+                    blocsCrees++;
+                    cursorY += mmToPx(2);
                     nouvelleChaine();
                     continue;
                 }
@@ -37070,6 +37168,8 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
                 var garde = 0;
                 var changementsSansBloc = 0;
+                var _runsSeg = seg.runs || null;
+                var _offset = 0;
                 while (reste.length && garde++ < 20000) {
                     var dispo2 = safe.bottom - cursorY;
                     if (dispo2 < bodyPt * 1.35 * 2) {
@@ -37090,9 +37190,15 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     var morceau = reste.slice(0, n);
                     if (!morceau.trim()) { colonneSuivante(); continue; }
 
-                    poserBloc(morceau, { fontSize: bodyPt, align: align });
+                    poserBloc(morceau, {
+                        fontSize: bodyPt, align: align,
+                        runs: _runsSeg ? _spRunsDecouper(_runsSeg, _offset, _offset + n) : null
+                    });
                     blocsCrees++;
-                    reste = reste.slice(n).replace(/^\s+/, "");
+                    var _suivant = reste.slice(n);
+                    var _blancs = _suivant.length - _suivant.replace(/^\s+/, '').length;
+                    _offset += n + _blancs;
+                    reste = _suivant.replace(/^\s+/, "");
                     if (reste.length) colonneSuivante();
                 }
                 if (garde >= 20000) console.warn("[SP Flow] garde atteinte sur un segment de " + seg.text.length + " car.");
@@ -37121,6 +37227,283 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             alert(translatef("alertImportComplete", blocsCrees, cles.length));
         }
 
+    // ================================================================
+    // 🆕 v1.7.569 — _SP_WORD_FIDELITE_569 : FIDÉLITÉ DE L'IMPORT WORD.
+    //
+    //   MESURÉ AVANT (docx de test, 14 repères, import « Texte coulé ») :
+    //     • DOUBLONS — un paragraphe contenant du gras ressortait 4 fois (le
+    //       paragraphe, puis « GRAS », puis « ITALIQUE », puis « SOULIGNE ») ;
+    //       un tableau 3×3 ressortait 12 fois (3 lignes + 9 cellules, mammoth
+    //       met un <p> DANS chaque <td>) ; 3 puces ressortaient 6 fois.
+    //       Cause : le parcours poussait tout élément « sans descendant déjà
+    //       traité », donc aussi <strong>, <em>, <u>, <sup>, <sub>, <td>, <li>.
+    //     • PERTES — gras/italique/souligné frappés DANS un paragraphe,
+    //       exposant/indice, taille de run (20 pt), tabulations (mesure
+    //       « T14GAUCHE T14CENTRE T14DROITE » : un seul espace), saut de ligne
+    //       (mesure « T20LIGNE AT20LIGNE B »), alignements centré et droite.
+    //
+    //   MESURÉ SUR L'AST MAMMOTH (transformDocument) : il porte isBold,
+    //   isItalic, verticalAlignment (« superscript »/« subscript »), fontSize,
+    //   paragraph.alignment (« center », « right », « both »), numbering, tab,
+    //   break, table/row/cell et image.readAsBase64String() — son HTML, non.
+    //   On compose donc le HTML à partir de l'AST au lieu de le subir.
+    // ================================================================
+    var SP_INLINE_TAGS = { b: 1, strong: 1, i: 1, em: 1, u: 1, s: 1, strike: 1, del: 1,
+        ins: 1, span: 1, a: 1, sup: 1, sub: 1, br: 1, code: 1, small: 1, mark: 1,
+        font: 1, abbr: 1, cite: 1, q: 1, time: 1, var: 1, kbd: 1, samp: 1, tt: 1,
+        label: 1, wbr: 1, big: 1, img: 1 };
+
+    // Une tabulation Word n'a pas de taquet dans un Textbox Fabric : on la rend
+    // par une échancrure constante (4 espaces insécables), ce qui restitue
+    // l'alignement en colonnes des énumérations et des tableaux Word.
+    var SP_TABULATION = '\u00A0\u00A0\u00A0\u00A0';
+
+    function _spRunsTexte(runs) {
+        var t = '';
+        for (var i = 0; i < (runs || []).length; i++) t += runs[i].t;
+        return t;
+    }
+
+    // Découpe une liste de runs sur le morceau [debut, fin) du texte complet
+    // (utilisé quand un paragraphe se répartit sur plusieurs colonnes/pages).
+    function _spRunsDecouper(runs, debut, fin) {
+        var out = [], pos = 0;
+        for (var i = 0; i < (runs || []).length; i++) {
+            var r = runs[i], a = pos, b = pos + r.t.length;
+            pos = b;
+            if (b <= debut || a >= fin) continue;
+            var s = Math.max(a, debut) - debut, e = Math.min(b, fin) - debut;
+            /* ⚠️ v1.7.569 — MESURÉ : « s » et « e » sont des positions dans le TEXTE
+               COMPLET, or on les appliquait à la chaîne DU RUN. Tous les runs stylés
+               ressortaient donc avec un texte VIDE : le gras, l'italique, le
+               souligné, l'exposant et l'indice disparaissaient à la fusion des
+               paragraphes (mesure : 7 runs, 0 style, alors que la lecture des runs
+               donnait bien fontWeight=bold / fontStyle=italic / underline).
+               On découpe donc RELATIVEMENT au début du run. */
+            if (e > s) out.push({ t: r.t.slice(s - a, e - a), style: r.style || {}, start: s, end: e });
+        }
+        return out;
+    }
+
+    // Rognage des blancs de tête et de queue SANS casser les décalages de run.
+    function _spRunsFinal(runs) {
+        var txt = _spRunsTexte(runs);
+        var deb = txt.length - txt.replace(/^[\s\u00A0]+/, '').length;
+        var fin = txt.replace(/[\s\u00A0]+$/, '').length;
+        if (fin < deb) fin = deb;
+        return { text: txt.slice(deb, fin), runs: _spRunsDecouper(runs, deb, fin) };
+    }
+
+    function _spRunsDecaler(runs, delta) {
+        for (var i = 0; i < (runs || []).length; i++) {
+            runs[i].start += delta;
+            runs[i].end += delta;
+        }
+        return runs;
+    }
+
+    // Applique les runs sur un Textbox — setSelectionStyles(), la méthode
+    // qu'utilise déjà la barre d'outils (voir textSuperscript/textSubscript :
+    // 70 % de la taille, décalé de 30 % — on reprend la MÊME convention).
+    function _spAppliquerRuns(box, runs, basePt) {
+        if (!box || !runs || !runs.length) return;
+        for (var i = 0; i < runs.length; i++) {
+            var r = runs[i];
+            if (!r || r.start >= r.end) continue;
+            var s = r.style || {}, st = {};
+            if (s.fontSize) st.fontSize = s.fontSize;
+            if (s.fontWeight) st.fontWeight = s.fontWeight;
+            if (s.fontStyle) st.fontStyle = s.fontStyle;
+            if (s.underline) st.underline = true;
+            if (s.linethrough) st.linethrough = true;
+            if (s.fill) st.fill = s.fill;
+            if (s.sup || s.sub) {
+                var base = s.fontSize || basePt || 11;
+                st.fontSize = Math.round(base * 0.7);
+                st.deltaY = (s.sup ? -1 : 1) * Math.round(base * 0.3);
+            }
+            var vide = true;
+            for (var k in st) { vide = false; break; }
+            if (vide) continue;
+            try { box.setSelectionStyles(st, r.start, r.end); } catch (_) {}
+        }
+    }
+
+    // Relève les runs (texte + style) d'un élément de bloc.
+    //   <br> -> retour ligne ; tabulation -> échancrure ; sup/sub, gras, italique,
+    //   souligné, barré, taille et couleur de run sont conservés.
+    function _spHtmlRuns(el, cat) {
+        var runs = [];
+        function pousser(t, s) { if (t) runs.push({ t: t, style: s }); }
+        function copier(s) { var c = {}; for (var k in s) c[k] = s[k]; return c; }
+        function morceauTexte(brut, s) {
+            if (brut.indexOf('\t') < 0) { var p0 = brut.replace(/\s+/g, ' '); if (p0) pousser(p0, s); return; }
+            var parts = brut.split('\t');
+            for (var m = 0; m < parts.length; m++) {
+                if (m) pousser(SP_TABULATION, s);
+                var pm = parts[m].replace(/\s+/g, ' ');
+                if (pm) pousser(pm, s);
+            }
+        }
+        // 🆕 v1.7.569b — MESURÉ : l'alignement vit sur le <p> lui-même (c'est
+        //   là que notre convertisseur AST→HTML l'écrit, comme Word dans w:jc).
+        //   Ne regarder que les enfants le perdait ; et comme le corps retombait
+        //   sur « left » (défaut de Word), la règle « alignement ≠ flux » coupait
+        //   le texte coulé À CHAQUE paragraphe (mesuré : plus aucune fusion).
+        if (cat) {
+            var _st0 = (el.getAttribute && el.getAttribute('style')) || '';
+            var _al0 = /text-align\s*:\s*(left|right|center|justify)/i.exec(_st0);
+            if (_al0) cat.align = _al0[1];
+        }
+        function marcher(node, s) {
+            var kids = node.childNodes || [];
+            for (var i = 0; i < kids.length; i++) {
+                var n = kids[i];
+                if (n.nodeType === 3) { morceauTexte(String(n.nodeValue || ''), s); continue; }
+                if (n.nodeType !== 1) continue;
+                var tag = (n.tagName || '').toLowerCase();
+                if (tag === 'br') { pousser('\n', s); continue; }
+                if (tag === 'img') continue;                       // traité comme bloc
+                var ns = s;
+                if (tag === 'b' || tag === 'strong') { ns = copier(s); ns.fontWeight = 'bold'; }
+                else if (tag === 'i' || tag === 'em') { ns = copier(s); ns.fontStyle = 'italic'; }
+                else if (tag === 'u') { ns = copier(s); ns.underline = true; }
+                else if (tag === 's' || tag === 'strike' || tag === 'del') { ns = copier(s); ns.linethrough = true; }
+                else if (tag === 'sup') { ns = copier(s); ns.sup = true; }
+                else if (tag === 'sub') { ns = copier(s); ns.sub = true; }
+                var sInl = (n.getAttribute && n.getAttribute('style')) || '';
+                if (sInl) {
+                    var mPt = /font-size\s*:\s*([0-9.]+)\s*pt/i.exec(sInl);
+                    var mPx = mPt ? null : /font-size\s*:\s*([0-9.]+)\s*px/i.exec(sInl);
+                    if (mPt || mPx) {
+                        if (ns === s) ns = copier(s);
+                        ns.fontSize = Math.max(4, Math.round(mPt ? parseFloat(mPt[1]) : parseFloat(mPx[1]) * 0.75));
+                    }
+                    var mCo = /color\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]*\))/i.exec(sInl);
+                    if (mCo) { if (ns === s) ns = copier(s); ns.fill = mCo[1]; }
+                    if (cat) {
+                        var mAl = /text-align\s*:\s*(left|right|center|justify)/i.exec(sInl);
+                        if (mAl) cat.align = mAl[1];
+                    }
+                }
+                marcher(n, ns);
+            }
+        }
+        marcher(el, {});
+        return runs;
+    }
+
+    // Marque tout le sous-arbre comme consommé (fin des doublons : un <li>, un
+    // <td> ou un <strong> visité ensuite ne sera plus poussé une seconde fois).
+    function _spMarquerPris(el) {
+        try {
+            var d = el.querySelectorAll('*');
+            for (var i = 0; i < d.length; i++) d[i].__spPris = 1;
+        } catch (_) {}
+    }
+
+    // ─── AST mammoth -> HTML (l'AST porte ce que le HTML perd) ───
+    async function _spAstVersHtml(doc) {
+        function ech(t) {
+            return String(t == null ? '' : t)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        async function inlines(children) {
+            var h = '';
+            for (var i = 0; i < (children || []).length; i++) {
+                var n = children[i];
+                if (!n) continue;
+                if (n.type === 'text') { h += ech(n.value); continue; }
+                if (n.type === 'tab') { h += '\t'; continue; }
+                if (n.type === 'break') { h += '<br>'; continue; }
+                if (n.type === 'image') {
+                    var b64 = null;
+                    try { b64 = await n.readAsBase64String(); } catch (_) {}
+                    if (b64) h += '<img src="data:' + (n.contentType || 'image/png') + ';base64,' + b64 + '">';
+                    continue;
+                }
+                if (n.type === 'run') {
+                    var inner = await inlines(n.children);
+                    if (!inner) continue;
+                    if (n.isBold) inner = '<strong>' + inner + '</strong>';
+                    if (n.isItalic) inner = '<em>' + inner + '</em>';
+                    if (n.isUnderline) inner = '<u>' + inner + '</u>';
+                    if (n.isStrikethrough) inner = '<s>' + inner + '</s>';
+                    if (n.verticalAlignment === 'superscript') inner = '<sup>' + inner + '</sup>';
+                    if (n.verticalAlignment === 'subscript') inner = '<sub>' + inner + '</sub>';
+                    if (n.fontSize) inner = '<span style="font-size:' + n.fontSize + 'pt">' + inner + '</span>';
+                    h += inner;
+                    continue;
+                }
+                if (n.children) h += await inlines(n.children);
+            }
+            return h;
+        }
+        async function paraHtml(p) {
+            var sn = String(p.styleName || '');
+            var m = /^heading\s*([1-9])$/i.exec(sn) || /^titre\s*([1-9])$/i.exec(sn);
+            var inner = await inlines(p.children);
+            if (m) {
+                var lvl = Math.min(6, parseInt(m[1], 10));
+                return { t: '<h' + lvl + '>' + inner + '</h' + lvl + '>', texte: inner, vide: !inner };
+            }
+            var st = '';
+            if (p.alignment && p.alignment !== 'left') {
+                st = ' style="text-align:' + (p.alignment === 'both' ? 'justify' : p.alignment) + '"';
+            }
+            return { t: '<p' + st + '>' + inner + '</p>', texte: inner, vide: !inner };
+        }
+        async function tableHtml(t) {
+            var h = '<table>';
+            for (var i = 0; i < (t.children || []).length; i++) {
+                var tr = t.children[i];
+                h += '<tr>';
+                for (var j = 0; j < (tr.children || []).length; j++) {
+                    var td = tr.children[j];
+                    var c = '';
+                    for (var k = 0; k < (td.children || []).length; k++) {
+                        if (td.children[k].type !== 'paragraph') continue;
+                        var ph = await paraHtml(td.children[k]);
+                        c += ph.vide ? '' : ph.t;
+                    }
+                    h += '<td>' + c + '</td>';
+                }
+                h += '</tr>';
+            }
+            return h + '</table>';
+        }
+        var out = '', liste = null;
+        var enfants = doc.children || [];
+        for (var i = 0; i < enfants.length; i++) {
+            var n = enfants[i];
+            if (n.type === 'table') {
+                if (liste) { out += '</' + liste + '>'; liste = null; }
+                out += await tableHtml(n);
+                continue;
+            }
+            if (n.type !== 'paragraph') continue;
+            var num = n.numbering || null;
+            if (num) {
+                var bal = num.isOrdered ? 'ol' : 'ul';
+                if (liste !== bal) {
+                    if (liste) out += '</' + liste + '>';
+                    out += '<' + bal + '>';
+                    liste = bal;
+                }
+                var phL = await paraHtml(n);
+                out += '<li>' + phL.texte + '</li>';
+                continue;
+            }
+            if (liste) { out += '</' + liste + '>'; liste = null; }
+            var ph2 = await paraHtml(n);
+            if (ph2.vide) continue;
+            out += ph2.t;
+        }
+        if (liste) out += '</' + liste + '>';
+        return out;
+    }
+    window._spAstVersHtml = _spAstVersHtml;
+
     async function flowHtmlIntoPages(html, startPageIndex, wordOpts) {
         // Parse HTML (avec images, listes, titres, tableaux basiques)
         const tmp = document.createElement('div');
@@ -37132,8 +37515,25 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         while (walker.nextNode()) {
             const el = walker.currentNode;
             const tag = el.tagName ? el.tagName.toLowerCase() : '';
+            /* 🆕 v1.7.569 — _SP_WORD_FIDELITE_569 : PLUS DE DOUBLONS.
+               MESURÉ : le parcours poussait AUSSI les éléments inline et ceux
+               déjà consommés par un parent -> « T10: … » sortait 4 fois (avec
+               « GRAS », « ITALIQUE », « SOULIGNE »), un tableau 3×3 12 fois
+               (3 lignes + 9 cellules) et 3 puces 6 fois. */
+            if (SP_INLINE_TAGS[tag]) continue;
+            if (el.__spPris) continue;
             if (tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6' || tag === 'p') {
-                const text = el.textContent.trim().replace(/\s+/g, ' ');
+                // 🆕 v1.7.569 : runs relevés (gras/italique/souligné/sup/sub,
+                //   taille de run, couleur, tabulation, <br>) + alignement.
+                const _cat = { align: 'left' };
+                const _rf = _spRunsFinal(_spHtmlRuns(el, _cat));
+                const text = _rf.text;
+                var _imgDs = el.querySelectorAll('img');
+                for (var _gi = 0; _gi < _imgDs.length; _gi++) {
+                    const _srcP = _imgDs[_gi].getAttribute('src');
+                    if (_srcP) blocks.push({ kind: 'image', src: _srcP });
+                }
+                _spMarquerPris(el);
                 /* 🆕 v1.7.558 — _SP_DOCX_TITRES_558 : LES TITRES 4/5/6 NE SONT PLUS PERDUS.
                    MESURÉ (docx de test, style Word « Titre 4 ») : mammoth rend les styles
                    Word Titre 4/5/6 en <h4>/<h5>/<h6>, balises absentes de la collecte —
@@ -37142,24 +37542,34 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                    hiérarchie est conservée (gras, 1,32 × le corps, coupe le texte coulé),
                    aucune nouvelle taille n'est inventée. */
                 const tagN = /^h[4-6]$/.test(tag) ? 'h3' : tag;
-                if (text) blocks.push({ kind: 'text', tag: tagN, text, isBold: !!el.querySelector('b,strong'), isItalic: !!el.querySelector('i,em') });
+                if (text) blocks.push({ kind: 'text', tag: tagN, text, runs: _rf.runs, align: _cat.align, isBold: !!el.querySelector('b,strong'), isItalic: !!el.querySelector('i,em') });
             } else if (tag === 'ul' || tag === 'ol') {
                 const items = Array.from(el.querySelectorAll(':scope > li'));
+                _spMarquerPris(el);
                 items.forEach((li, idx) => {
-                    const text = li.textContent.trim().replace(/\s+/g, ' ');
+                    const _catL = { align: 'left' };
+                    const _rfL = _spRunsFinal(_spHtmlRuns(li, _catL));
+                    const text = _rfL.text;
                     if (!text) return;
-                    const bullet = (tag === 'ol') ? (String(idx + 1) + '. ') : '• ';
-                    blocks.push({ kind: 'list-item', text: bullet + text, isBold: !!li.querySelector('b,strong'), isItalic: !!li.querySelector('i,em') });
+                    const bullet = (tag === 'ol') ? (String(idx + 1) + '. ') : '\u2022 ';
+                    // La puce fait partie du texte : les runs sont décalés d'autant.
+                    const runsL = [{ t: bullet, style: {}, start: 0, end: bullet.length }]
+                        .concat(_spRunsDecaler(_rfL.runs, bullet.length));
+                    blocks.push({ kind: 'list-item', text: bullet + text, runs: runsL, align: 'left', isBold: !!li.querySelector('b,strong'), isItalic: !!li.querySelector('i,em') });
                 });
             } else if (tag === 'img') {
                 const src = el.getAttribute('src');
                 if (src) blocks.push({ kind: 'image', src });
             } else if (tag === 'table') {
+                // MESURÉ : mammoth met un <p> DANS chaque <td> ; le parcours
+                // poussait donc la ligne ET chaque cellule (12 blocs pour 3×3).
+                // Ici on consomme tout le tableau d'un coup.
+                _spMarquerPris(el);
                 const rows = Array.from(el.querySelectorAll('tr')).map(tr =>
-                    Array.from(tr.querySelectorAll('th,td')).map(td => td.textContent.trim()).join(' | ')
+                    Array.from(tr.querySelectorAll('th,td')).map(td => td.textContent.trim()).join('  |  ')
                 );
                 const text = rows.join('\n');
-                if (text) blocks.push({ kind: 'table', text });
+                if (text) blocks.push({ kind: 'table', text, runs: null, align: 'left' });
             } else if (!el.querySelector('h1,h2,h3,h4,h5,h6,p,li,table,img')) {
                 /* 🆕 v1.7.558 — _SP_DOCX_FILET_558 : PLUS AUCUN TEXTE PERDU.
                    Le parcours ne poussait QUE les balises testées ci-dessus : tout autre
@@ -37168,8 +37578,11 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                    SILENCE et son texte disparaissait du document importé.
                    On ne prend ici QUE les conteneurs SANS descendant déjà traité : un
                    <blockquote> qui contient un <p> reste ignoré (sinon doublon). */
-                const textFallback = el.textContent.trim().replace(/\s+/g, ' ');
-                if (textFallback) blocks.push({ kind: 'text', tag: 'p', text: textFallback, isBold: !!el.querySelector('b,strong'), isItalic: !!el.querySelector('i,em') });
+                const _catF = { align: 'left' };
+                const _rfF = _spRunsFinal(_spHtmlRuns(el, _catF));
+                const textFallback = _rfF.text;
+                _spMarquerPris(el);
+                if (textFallback) blocks.push({ kind: 'text', tag: 'p', text: textFallback, runs: _rfF.runs, align: _catF.align, isBold: !!el.querySelector('b,strong'), isItalic: !!el.querySelector('i,em') });
             }
         }
         if (blocks.length === 0) { alert(translate('alertNoContentDetected')); return; }
@@ -37303,6 +37716,8 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             return { first, rest };
         }
 
+        // 🆕 v1.7.569 : rang de l'image (tailles réelles du .docx).
+        let _imgOrdreB = 0;
         for (const block of blocks) {
             if (block.kind === 'image') {
                 // Image: charger pour connaître les dimensions, puis sérialiser
@@ -37310,7 +37725,15 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     fabric.Image.fromURL(block.src, (img) => {
                         try {
                             // v1.7.390 — « Largeur image max » (mm) et « taille reelle » pilotees.
-                            const maxW = Math.min(colWidth * columns, mmToPx(imgWidthMm));
+                            let _tailleDocB = null;
+                            if (wo._imgSizesMM && wo._imgSizesMM.length) {
+                                _tailleDocB = wo._imgSizesMM[_imgOrdreB] || null;
+                                _imgOrdreB++;
+                            }
+                            // Taille du document Word si connue, sinon plafond de la pop-in.
+                            const maxW = (_tailleDocB && imgReelle)
+                                ? Math.min(colWidth * columns, mmToPx(_tailleDocB.w))
+                                : Math.min(colWidth * columns, mmToPx(imgWidthMm));
                             // « Images a leur taille reelle » : on n'agrandit jamais au-dela
                             // de la source, mais on peut reduire pour tenir dans la colonne.
                             const scalePlafond = imgReelle ? 1 : Math.min(1, maxW / img.width);
@@ -37344,7 +37767,9 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 if (block.tag === 'h1') { fontSize = titres ? Math.round(bodyPt * 2.1) : bodyPt; isBold = true; }
                 else if (block.tag === 'h2') { fontSize = titres ? Math.round(bodyPt * 1.65) : bodyPt; isBold = true; }
                 else if (block.tag === 'h3') { fontSize = titres ? Math.round(bodyPt * 1.32) : bodyPt; isBold = true; }
-                else { fontSize = bodyPt; isBold = !!block.isBold; isItalic = !!block.isItalic; textAlign = 'justify'; }
+                // 🆕 v1.7.569 — l'alignement du paragraphe Word (centré, droite,
+                //   justifié) est conservé ; MESURÉ avant : tout en justifié.
+                else { fontSize = bodyPt; isBold = !!block.isBold; isItalic = !!block.isItalic; textAlign = block.align || 'justify'; }
             } else if (block.kind === 'list-item') {
                 fontSize = bodyPt; isItalic = !!block.isItalic; textAlign = 'left';
             } else if (block.kind === 'table') {
@@ -37400,6 +37825,11 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             }
             if (text) {
                 const _isTitre = (block.kind === 'text' && (block.tag === 'h1' || block.tag === 'h2' || block.tag === 'h3'));
+                // 🆕 v1.7.569 : mise en forme des runs (le texte n'est pas coupé ici,
+                //   les décalages de caractères sont donc exacts).
+                const _tbAvant = new fabric.Textbox(applySoftHyphenation(text), { left: 0, top: 0, width: colWidth });
+                if (block.runs && block.runs.length) _spAppliquerRuns(_tbAvant, block.runs, fontSize);
+                const _stylesRuns = _tbAvant.styles;
                 const tb = new fabric.Textbox(applySoftHyphenation(text), {
                     left: currentX(), top: cursorY, width: colWidth,
                     fontSize, fontFamily: 'IBM Plex Sans', fontWeight: isBold ? 'bold' : 'normal',
@@ -37408,6 +37838,8 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     lineHeight: _isTitre ? 1.05 : 1.35,
                     fill: '#000', splitByGrapheme: false, breakWords: true, textAlign
                 });
+                // Les runs, calculés sur un Textbox jumeau, sont recopiés tels quels.
+                if (_stylesRuns) { try { tb.styles = _stylesRuns; tb.dirty = true; } catch (_) {} }
                 serializeAndStore(tb);
                 cursorY += tb.height + (_isTitre ? mmToPx(3) : (isBold ? Math.round(fontSize * 0.5) : 10));
             }
@@ -37458,9 +37890,12 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 const selMode = document.getElementById('wordOptMode');
                 const aide = document.getElementById('wordOptModeHint');
                 if (!selMode || !aide) return;
+                // 🆕 v1.7.569 — les deux aides étaient écrites EN DUR en français :
+                //   cette pop-in n'était donc pas multilingue (mesuré). Elles
+                //   viennent maintenant du dictionnaire (fr/en/ja).
                 const TXT = {
-                    flow: '<b>Texte coulé</b> : le corps du document devient une trame continue qui se répartit sur les colonnes puis les pages, les blocs restant liés entre eux. Recommandé au-delà de quelques pages. Mesure sur un document de 120 pages : 462 blocs chaînés au lieu de 1 319 blocs séparés.',
-                    blocks: '<b>Un bloc par paragraphe</b> : chaque paragraphe devient un bloc indépendant, non lié aux autres. Pratique pour retoucher un texte court paragraphe par paragraphe. Sur un document long, cela produit des milliers de blocs séparés — la mesure ci-dessus en compte 1 319 pour 120 pages.'
+                    flow: translate('wordOptFlowHint'),
+                    blocks: translate('wordOptBlocksHint')
                 };
                 const majAide = function () { aide.innerHTML = TXT[selMode.value] || TXT.flow; };
                 selMode.addEventListener('change', majAide);
@@ -37522,15 +37957,36 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         const reader = new FileReader();
                         reader.onload = function(ev) {
                             const arrayBuffer = ev.target.result;
+                            /* 🆕 v1.7.569 — _SP_WORD_FIDELITE_569 : on ne subit plus
+                               le HTML de mammoth, on le COMPOSE depuis son AST.
+                               MESURÉ (docx de test) — ce que l'AST avait et que le
+                               HTML perdait : paragraph.alignment (« center »,
+                               « right », « both »), run.isBold / isItalic /
+                               isUnderline, run.verticalAlignment (exposant/indice),
+                               run.fontSize (20 pt), numbering (listes), et surtout
+                               l'absence de <p> imbriqué dans chaque <td> — cause des
+                               doublons (un tableau 3×3 ressortait 12 fois). */
+                            let _ast569 = null;
+                            // 🆕 v1.7.569 — tailles réelles des images (wordOpts CLONÉ :
+                            //   on ne touche pas à l'objet du même nom appelé ailleurs).
+                            const _opts569 = Object.assign({}, opts);
                             const options = {
-                                convertImage: window.mammoth.images.inline(function(element) {
-                                    return element.read("base64").then(function(imageBuffer) {
-                                        return { src: "data:" + element.contentType + ";base64," + imageBuffer };
-                                    });
-                                })
+                                styleMap: ['u => u'],
+                                transformDocument: function (d) { _ast569 = d; return d; }
                             };
-                            mammoth.convertToHtml({ arrayBuffer }, options)
-                                .then(result => { flowHtmlIntoPages(result.value, startPage, opts); resolve(true); })
+                            /* 🆕 v1.7.569 — tailles réelles des images lues AVANT la
+                               composition (EMU de word/document.xml). En cas d'échec on
+                               garde le plafond de la pop-in : comportement d'avant. */
+                            Promise.resolve()
+                                .then(function () { return _spWordImageSizesMM(arrayBuffer); })
+                                .then(function (sz) { if (sz && sz.length) _opts569._imgSizesMM = sz; })
+                                .catch(function () {})
+                                .then(function () { return mammoth.convertToHtml({ arrayBuffer }, options); })
+                                .then(function () {
+                                    if (!_ast569) throw new Error('AST Word indisponible');
+                                    return _spAstVersHtml(_ast569);
+                                })
+                                .then(function (html) { flowHtmlIntoPages(html, startPage, _opts569); resolve(true); })
                                 .catch(err => { console.error('DOCX import error', err); alert(translatef('alertDocxImportError', err.message || err)); resolve(null); });
                         };
                         reader.readAsArrayBuffer(file);
@@ -37538,11 +37994,183 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 });
             });
         }
+        // ════════════════════════════════════════════════════════════════
+        // 🆕 v1.7.569 — _SP_WORD_TOUS_FORMATS_569 : TOUS LES WORD, PAS QUE .DOCX.
+        //
+        //   MESURÉ AVANT : le bouton Importer annonçait .doc/.docx mais envoyait
+        //   TOUT à mammoth, qui ne lit QUE les .docx (ZIP). Le module partagé le
+        //   dit lui-même : « .doc -> 0 caractere avant », « .odt -> 0 caractere
+        //   avant (unsupported type) ». Un utilisateur qui reprenait un Word
+        //   97-2003 ou un OpenDocument tombait donc sur une ERREUR — alors que
+        //   sp-doc-import.js sait lire ces formats, mais n'était branché que sur
+        //   les pièces jointes de l'IA.
+        //
+        //   ICI : on lit le format RÉEL dans les octets (jamais l'extension) et
+        //   on route. Pour les formats binaires, le texte est récupéré et composé
+        //   dans les pages, avec un message HONNÊTE sur ce qui n'est pas lisible.
+        // ════════════════════════════════════════════════════════════════
+        function _spDecodeTexte(buf) {
+            var u8 = new Uint8Array(buf);
+            try { return new TextDecoder('utf-8', { fatal: false }).decode(u8); } catch (_) {}
+            var s = '';
+            for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+            return s;
+        }
+
+        // Texte brut -> HTML de paragraphes (le texte coulé s'en sert tel quel).
+        function _spHtmlDepuisTexte(txt) {
+            function esc(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+            var paras = String(txt || '').split(/\n\s*\n/);
+            var out = [];
+            for (var i = 0; i < paras.length; i++) {
+                var t = paras[i].replace(/^\s+|\s+$/g, '');
+                if (!t) continue;
+                out.push('<p>' + esc(t).replace(/\n/g, '<br>') + '</p>');
+            }
+            return out.join('');
+        }
+
+        // OpenDocument : la prose vit dans content.xml (archive ZIP).
+        function _spTexteOdf(buf) {
+            return new Promise(function (resolve) {
+                ensureDocxLibs(function () {
+                    (async function () {
+                        try {
+                            if (!window.JSZip) { resolve(''); return; }
+                            var zip = await window.JSZip.loadAsync(buf);
+                            var f = zip.file('content.xml');
+                            if (!f) { resolve(''); return; }
+                            var xml = await f.async('string');
+                            var morceaux = xml.split(/<\/text:p>|<\/text:h>/);
+                            var lignes = [];
+                            for (var i = 0; i < morceaux.length; i++) {
+                                var t = morceaux[i].replace(/<[^>]+>/g, ' ')
+                                    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                                    .replace(/[ \t]+/g, ' ').replace(/^\s+|\s+$/g, '');
+                                if (t) lignes.push(t);
+                            }
+                            resolve(lignes.join('\n'));
+                        } catch (e) { resolve(''); }
+                    })();
+                });
+            });
+        }
+
+        // 🆕 v1.7.569 — TAILLE RÉELLE DES IMAGES DU .docx.
+        //   MESURÉ : une image insérée à 40 mm dans Word arrivait à 340 px (120 mm),
+        //   soit le plafond « Largeur image max » de la pop-in. Le .docx porte la
+        //   taille RÉELLE : <wp:extent cx="…" cy="…"/> dans word/document.xml, en
+        //   EMU (1 mm = 36 000 EMU ; 914 400 EMU = 1 pouce).
+        //   ⚠️ Cette mesure n'est demandée QUE par l'import Word : la liste est
+        //   passée par wordOpts._imgSizesMM et n'existe nulle part ailleurs.
+        function _spWordImageSizesMM(buf) {
+            return new Promise(function (resolve) {
+                ensureDocxLibs(function () {
+                    (async function () {
+                        try {
+                            if (!window.JSZip) { resolve(null); return; }
+                            var zip = await window.JSZip.loadAsync(buf);
+                            var f = zip.file('word/document.xml');
+                            if (!f) { resolve(null); return; }
+                            var xml = await f.async('string');
+                            var re = /<wp:extent[^>]*cx="(\d+)"[^>]*cy="(\d+)"/g, m, out = [];
+                            while ((m = re.exec(xml))) {
+                                out.push({
+                                    w: Math.round(parseInt(m[1], 10) / 36000),
+                                    h: Math.round(parseInt(m[2], 10) / 36000)
+                                });
+                            }
+                            resolve(out.length ? out : null);
+                        } catch (e) { resolve(null); }
+                    })();
+                });
+            });
+        }
+
+        // Extrait le texte d'un format que mammoth ne lit pas.
+        async function _spTexteDocument(file, buf, type, ext) {
+            var H = (window.SPDocImport && window.SPDocImport.helpers) || null;
+            if (type === 'rtf' || ext === 'rtf') {
+                if (!H) return { texte: '', libelle: 'RTF' };
+                var lat = '';
+                try { lat = H.spBytesToLatin1(new Uint8Array(buf)); } catch (_) { lat = _spDecodeTexte(buf); }
+                return { texte: H.spRtfToText(lat), libelle: 'RTF' };
+            }
+            if (type === 'doc' || ext === 'doc') {
+                var t = '';
+                try { t = H ? H.spLegacyDocToText(new Uint8Array(buf)) : ''; } catch (_) { t = ''; }
+                return { texte: t, libelle: 'Word 97-2003 (.doc)' };
+            }
+            if (type === 'odf' || ext === 'odt' || ext === 'ods' || ext === 'odp') {
+                return { texte: await _spTexteOdf(buf), libelle: 'OpenDocument (.' + (ext || 'odt') + ')' };
+            }
+            if (type === 'html' || ext === 'html' || ext === 'htm') {
+                return { texte: _spDecodeTexte(buf), libelle: 'HTML', estHtml: true };
+            }
+            return { texte: _spDecodeTexte(buf), libelle: 'texte brut' };
+        }
+
+        // Message HONNÊTE sur ce qui n'est pas lisible dans un format binaire.
+        function _spNoteFormatBinaire(libelle) {
+            // 🆕 v1.7.569 : clé de traduction (fr/en/ja) au lieu d'un texte en dur.
+            return translatef('wordBinaryNote', libelle);
+        }
+
+        // Routage : le format RÉEL décide, pas l'extension du nom de fichier.
+        async function _spRouterImportWord(file, wordOpts) {
+            var buf = null;
+            try { buf = await file.arrayBuffer(); } catch (_) { buf = null; }
+            var ext = String(file.name || '').split('.').pop().toLowerCase();
+            var type = '';
+            try {
+                if (buf && window.SPDocImport && window.SPDocImport.detect) type = window.SPDocImport.detect(new Uint8Array(buf));
+            } catch (_) { type = ''; }
+            // .docx (et .docx renommé) -> mammoth : c'est le seul chemin qui rend
+            // la mise en forme du document (gras, italique, souligné, exposants,
+            // tailles de run, titres, tableaux).
+            if (type === 'docx' || (!type || type === 'unknown') && ext === 'docx') {
+                return importDocxFile(file, wordOpts);
+            }
+            // ⚠️ MESURÉ : sp-doc-import.js est chargé en LAZY (il sert d'abord aux
+            //   pièces jointes de l'IA). Sans ce chargement, window.SPDocImport était
+            //   absent au moment de l'import et AUCUN format binaire n'était lisible
+            //   (test RTF : « aucun texte exploitable » alors que le fichier en
+            //   contient). On réutilise le chargeur de l'app, qui installe aussi le
+            //   pont hôte — aucune duplication de code.
+            try {
+                if (typeof window._spDocEnsureModule === 'function') await window._spDocEnsureModule();
+                else if (!window.SPDocImport) await new Promise(function (res) {
+                    var sc = document.createElement('script');
+                    sc.src = 'JS/sp-doc-import.js?v=20260915-v421b-roles-pj-app';
+                    sc.onload = function () { res(true); };
+                    sc.onerror = function () { res(false); };
+                    document.head.appendChild(sc);
+                });
+            } catch (_) {}
+            var info = await _spTexteDocument(file, buf, type, ext);
+            var texte = String(info.texte || '').replace(/\r\n?/g, '\n').trim();
+            if (!texte || texte.length < 2) {
+                alert(translatef('alertDocxImportError',
+                    info.libelle + ' : aucun texte exploitable n\'a pu être extrait. ' +
+                    'Réenregistrez le document en .docx (Word) ou .odt puis réimportez-le.'));
+                return null;
+            }
+            // Message AVANT composition : l'utilisateur sait ce qu'il récupère.
+            if (!info.estHtml) alert(_spNoteFormatBinaire(info.libelle));
+            var startPage = await askInsertAtPage();
+            if (startPage === null) return null;
+            try { logAI('\uD83D\uDCE5 Import ' + info.libelle + ' : ' + texte.length + ' caractères (mise en forme non lisible dans ce format)'); } catch (_) {}
+            flowHtmlIntoPages(info.estHtml ? texte : _spHtmlDepuisTexte(texte), startPage, wordOpts);
+            return true;
+        }
+
         // Point d'entree complet : pop-in d'options PUIS import.
         function lancerImportWord(file) {
             return askWordOptions().then(function (wordOpts) {
                 if (!wordOpts) return null;                     // annule par l'utilisateur
-                return importDocxFile(file, wordOpts);
+                return _spRouterImportWord(file, wordOpts);
             });
         }
         window._spImportDocxFile = importDocxFile;
@@ -64880,6 +65508,25 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertColumnsGutterTooWide: "Gouttière de colonnes trop large pour {0} colonnes.",
         alertRowsGutterTooWide: "Gouttière de lignes trop large pour {0} lignes.",
         confirmDeleteMasterGuides: "Supprimer {0} repère(s) du gabarit ?",
+        wordOptTitle: "Options d'import Word",
+        wordOptIntro: "Choisissez la mise en page du document importé. <b>1 colonne</b> respecte votre fichier Word ; <b>Auto</b> en crée 2 au-delà de 40 paragraphes.",
+        wordOptCompo: "Composition",
+        wordOptFlow: "Texte coulé — blocs chaînés (recommandé)",
+        wordOptBlocks: "Un bloc par paragraphe",
+        wordOptFlowHint: "<b>Texte coulé</b> : le corps du document devient une trame continue qui se répartit sur les colonnes puis les pages, les blocs restant liés entre eux. Recommandé au-delà de quelques pages (mesure sur 120 pages : 462 blocs chaînés au lieu de 1 319 blocs séparés).",
+        wordOptBlocksHint: "<b>Un bloc par paragraphe</b> : chaque paragraphe devient un bloc indépendant. Pratique pour retoucher un texte court, mais un document long produit des milliers de blocs séparés (1 319 pour 120 pages).",
+        wordOptCols: "Colonnes",
+        wordOptColsAuto: "Auto",
+        wordOptCols1: "1 colonne (fidèle au document)",
+        wordOptCols2: "2 colonnes",
+        wordOptCols3: "3 colonnes",
+        wordOptMargin: "Marges (mm)",
+        wordOptBody: "Corps du texte (pt)",
+        wordOptImgW: "Largeur image max (mm)",
+        wordOptTitles: "Conserver les titres en grand (hiérarchie Word)",
+        wordOptImgReal: "Images à leur taille réelle",
+        wordOptOk: "Importer",
+        wordBinaryNote: "Format : {0}.\n\nSeul le TEXTE est récupéré : la mise en forme (gras, italique, titres, tableaux, colonnes) n'est pas lisible dans ce format.\nPour une fidélité complète, réenregistrez le document en .docx (Word) ou .odt, puis importez-le à nouveau.",
         docxInsertPageTitle: "Page d'insertion",
         docxInsertPageOkBtn: "INSÉRER",
         docxInsertPageQuestion: "À partir de quelle page voulez-vous insérer le document ?",
@@ -65759,6 +66406,25 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertColumnsGutterTooWide: "Column gutter too wide for {0} columns.",
         alertRowsGutterTooWide: "Row gutter too wide for {0} rows.",
         confirmDeleteMasterGuides: "Delete {0} guide(s) from the master?",
+        wordOptTitle: "Word import options",
+        wordOptIntro: "Choose the layout of the imported document. <b>1 column</b> follows your Word file; <b>Auto</b> creates 2 beyond 40 paragraphs.",
+        wordOptCompo: "Composition",
+        wordOptFlow: "Flowed text — linked blocks (recommended)",
+        wordOptBlocks: "One block per paragraph",
+        wordOptFlowHint: "<b>Flowed text</b>: the body becomes a continuous frame that spreads across columns then pages, with blocks kept linked. Recommended beyond a few pages (measured on 120 pages: 462 linked blocks instead of 1,319 separate ones).",
+        wordOptBlocksHint: "<b>One block per paragraph</b>: each paragraph becomes an independent block. Handy for a short text, but a long document yields thousands of separate blocks (1,319 for 120 pages).",
+        wordOptCols: "Columns",
+        wordOptColsAuto: "Auto",
+        wordOptCols1: "1 column (true to the document)",
+        wordOptCols2: "2 columns",
+        wordOptCols3: "3 columns",
+        wordOptMargin: "Margins (mm)",
+        wordOptBody: "Body text (pt)",
+        wordOptImgW: "Max image width (mm)",
+        wordOptTitles: "Keep headings large (Word hierarchy)",
+        wordOptImgReal: "Images at their real size",
+        wordOptOk: "Import",
+        wordBinaryNote: "Format: {0}.\n\nOnly the TEXT is recovered: formatting (bold, italic, headings, tables, columns) is not readable in this format.\nFor full fidelity, re-save the document as .docx (Word) or .odt, then import it again.",
         docxInsertPageTitle: "Insertion page",
         docxInsertPageOkBtn: "INSÉRER",
         docxInsertPageQuestion: "À partir de quelle page insérer le document ?",
@@ -66546,6 +67212,25 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alertColumnsGutterTooWide: "{0}列に対して列のガターが広すぎます。",
         alertRowsGutterTooWide: "{0}行に対して行のガターが広すぎます。",
         confirmDeleteMasterGuides: "マスターから{0}個のガイドを削除しますか？",
+        wordOptTitle: "Word 読み込みオプション",
+        wordOptIntro: "読み込む文書のレイアウトを選びます。<b>1段組</b>は Word ファイルに従います。<b>自動</b>は40段落を超えると2段組にします。",
+        wordOptCompo: "組版",
+        wordOptFlow: "流し込みテキスト — 連結ブロック（推奨）",
+        wordOptBlocks: "段落ごとに1ブロック",
+        wordOptFlowHint: "<b>流し込みテキスト</b>：本文が連続した枠になり、段からページへと流れ、ブロックは連結されたままです。数ページ以上の文書に推奨（120ページで計測：分離した1,319ブロックに対し462の連結ブロック）。",
+        wordOptBlocksHint: "<b>段落ごとに1ブロック</b>：各段落が独立したブロックになります。短いテキストの修正に向きますが、長い文書では数千の分離ブロックになります（120ページで1,319）。",
+        wordOptCols: "段組",
+        wordOptColsAuto: "自動",
+        wordOptCols1: "1段組（文書どおり）",
+        wordOptCols2: "2段組",
+        wordOptCols3: "3段組",
+        wordOptMargin: "余白 (mm)",
+        wordOptBody: "本文 (pt)",
+        wordOptImgW: "画像の最大幅 (mm)",
+        wordOptTitles: "見出しを大きく保つ（Word の階層）",
+        wordOptImgReal: "画像を実寸で配置",
+        wordOptOk: "読み込む",
+        wordBinaryNote: "形式：{0}。\n\n取り出せるのはテキストのみです：書式（太字・斜体・見出し・表・段組）はこの形式では読み取れません。\n完全な再現には .docx（Word）または .odt で保存し直してから読み込んでください。",
         docxInsertPageTitle: "挿入ページ",
         docxInsertPageOkBtn: "挿入する",
         docxInsertPageQuestion: "何ページ目からドキュメントを挿入しますか？",

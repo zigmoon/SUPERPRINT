@@ -9,6 +9,32 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.569] — 2026-09-27
+
+_Faithful Word import, every office format, design-compliant import dialogs, fluid sidebar (measured)_
+
+### Added — import
+- **Every Word and office format is now routed by the file's real bytes** (`SPDocImport.detect`), not by the file name: `.docx` goes through the full converter (mammoth AST); `.doc`, `.odt`, `.rtf`, `.html` and `.txt` go through the shared document module and are composed into the pages with an **honest message** ("only the TEXT is recovered — re-save as .docx for full fidelity"). `accept` and the button label list the supported formats. Verified: the five formats import without error.
+- **Word document images are placed at their real size.** Measured: an image inserted at 40 mm in Word arrived at **340 px (120 mm)** because it was capped by the import dialog's "max image width". The real size is read from `word/document.xml` (`<wp:extent>`, EMU; 1 mm = 36 000) and passed through a **cloned** `wordOpts` — nothing else in the application reads it (measured after: **113 px = 40 mm**).
+
+### Fixed — import fidelity (measured on a 14-marker control .docx)
+- **Rich text kept.** Bold, italic, underline, superscript, subscript and per-run font size were lost as soon as paragraphs were merged: `_spRunsDecouper()` computed `s`/`e` as positions in the whole text and then sliced **inside the run's own string**, so every formatted run came out with an **empty** text. Fixed (`r.t.slice(s - a, e - a)`); the runs of a merged paragraph are also shifted by the accumulated offset.
+- **No more duplicates.** A paragraph containing bold came back **4 times**, a 3×3 table **12 times** (mammoth puts a `<p>` inside every `<td>`), three bullets **6 times**: the walker also pushed inline elements (`strong/em/u/sup/sub`) and already-consumed ones (`td/li`). Guarded + subtree marking: the control document goes from 21 blocks to **13**.
+- **Tabs, line breaks, alignments.** A tab was flattened to a single space (measured "T14GAUCHE T14CENTRE T14DROITE") and is now a constant gap; a `<br>` used to glue two lines together ("T20LIGNE AT20LIGNE B") and now separates them; a centred/right paragraph arrived justified and now keeps its alignment.
+- The import composes the HTML **from mammoth's AST** (`_spAstVersHtml`) instead of suffering its HTML: the AST carries `alignment`, `isBold/isItalic/isUnderline`, `verticalAlignment`, `fontSize`, `numbering`, `tab`, `break`, tables and images. Measured on the merged body block: "7 runs, 0 styles" → **"21 runs, 27 styled characters"**.
+
+### Changed — import dialogs (design system + 3 languages)
+- The Word import options dialog was the **only** one in the app with colours (light blue background/border/label) and 8 px rounded corners. It is now white, **square-cornered**, colour-free, with 30 px unclipped fields and `modal-btn` buttons.
+- **22 translation keys added in French, English and Japanese**; all its texts go through the translation system (they were hard-coded in French). The binary-format message and the composition hint too.
+
+### Changed — left sidebar opening
+- **No fade, one single movement (260 ms).** Content used to switch off instantly (`display: none` is not animatable, 14 selectors) while the width slid, and the logo was **replaced** by an `'S'` pseudo-element with `padding: 0`.
+- Content now **collapses by height** (`max-height: 340px → 0`, `overflow: hidden`, margin/padding/border animated); the **logo slides** — brand `translateX(-200px)`, the `S` entering via `transform: translate(calc(-50% - 200px), -50%) → translate(-50%, -50%)` — both at **fixed opacity**, clipped by `.logo { overflow: hidden }`. The `collapsed` class is applied **immediately** (it used to wait 140 ms for a fade).
+- Frame-by-frame measurement (~16 ms): width interpolated 56→108→157→195→221→238→250→259→265→270→273→276→278→279→280; `max-height` 0→78→153→211→250→276→295→308→317→324→329→333→336→338→340; **opacity "1" at every frame**; `display` never `none`. `prefers-reduced-motion: reduce` → zero duration.
+
+### Note
+- Still outstanding: the **Word page setup** (`w:sectPr`: format, orientation, margins, columns) is not applied at import; **run colour** is not exposed by the converter; the legacy **.doc** fallback is unit-tested but was not tried on a real Word 97-2003 file; the sidebar icon layout (4 columns → 1) remains an instant switch (not animatable in CSS).
+
 ## [1.7.568] — 2026-09-27
 
 _Lighter startup: nothing blocks the opening any more (measured)_

@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.568-demarrage-rapide';
+const CACHE_NAME = 'superprint-shell-v1.7.569-import-word-fidelite';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

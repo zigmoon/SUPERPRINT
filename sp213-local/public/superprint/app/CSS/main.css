@@ -355,6 +355,17 @@ body {
     height: 100dvh; /* iOS Safari */
 }
 
+/* 🆕 v1.7.569 — JETONS D'OUVERTURE DE LA BARRE LATÉRALE.
+   MESURÉ AVANT : une seule propriété animée (la largeur, 0.3s) tandis que le
+   contenu était éteint par display:none, le logo remplacé et la grille des
+   icônes redécoupée d'un coup : « les éléments bougent mal et sautent ».
+   Un seul rythme désormais, sobre, sans rebond. */
+:root {
+    --sp-sb-dur: 260ms;
+    --sp-sb-ease: cubic-bezier(.2, .7, .2, 1);
+    --sp-sb-fondu: 140ms;
+}
+
 .sidebar {
     width: 280px;
     background: #fff;
@@ -362,7 +373,7 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    transition: width 0.3s ease;
+    transition: width var(--sp-sb-dur) var(--sp-sb-ease);
     user-select: none;
     -webkit-user-select: none;
 }
@@ -373,17 +384,71 @@ body {
     overflow: visible;
 }
 
-.sidebar.collapsed .sidebar-title,
+/* ♿ Mouvement réduit : tout devient instantané (aucune animation). */
+@media (prefers-reduced-motion: reduce) {
+    .sidebar, .sidebar *, .logo, .logo::before { transition-duration: 0s !important; }
+}
+
+/* 🆕 v1.7.569b — SANS AUCUN FONDU (demande utilisateur).
+   Le contenu ne s'éteint plus par opacité : il SE REPLIE. Chaque bloc voit sa
+   hauteur animée jusqu'à 0 (contenu coupé par overflow:hidden) dans le MÊME
+   rythme que la largeur — le mouvement est donc géométrique et tout arrive
+   ensemble. MESURÉ AVANT, deux états successifs du correctif : (1) display:none
+   posé à l'instant du clic pendant que la largeur glissait → contenu éteint d'un
+   coup ; (2) fondu de 140 ms PUIS repli → mouvement discontinue, refusé.
+   L'état final est identique (barre repliée = icônes seules). */
+.sidebar .section-title,
+.sidebar .input-group label,
+.sidebar .input-group input,
+.sidebar .input-group select,
+.sidebar .input-row,
+.sidebar .btn-group:not(.tools-icons),
+.sidebar .btn-group-tight,
+.sidebar .layers-panel,
+.sidebar .preset-formats,
+.sidebar #openSettingsBtn,
+.sidebar #toggleLeftSidebar,
+.sidebar #softProofDropdown,
+.sidebar .sidebar-divider {
+    overflow: hidden;
+    max-height: 340px;
+    transition: max-height var(--sp-sb-dur) var(--sp-sb-ease),
+                margin var(--sp-sb-dur) var(--sp-sb-ease),
+                padding var(--sp-sb-dur) var(--sp-sb-ease);
+}
 .sidebar.collapsed .section-title,
 .sidebar.collapsed .input-group label,
 .sidebar.collapsed .input-group input,
 .sidebar.collapsed .input-group select,
 .sidebar.collapsed .input-row,
-.sidebar.collapsed .preset-formats .format-btn:not(:first-child),
 .sidebar.collapsed .btn-group:not(.tools-icons),
 .sidebar.collapsed .btn-group-tight,
-.sidebar.collapsed .layers-panel {
-    display: none !important;
+.sidebar.collapsed .layers-panel,
+.sidebar.collapsed .preset-formats,
+.sidebar.collapsed #openSettingsBtn,
+.sidebar.collapsed #toggleLeftSidebar,
+.sidebar.collapsed #softProofDropdown,
+.sidebar.collapsed .sidebar-divider {
+    max-height: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-top-width: 0 !important;
+    border-bottom-width: 0 !important;
+}
+.sidebar.sb-anim { will-change: width; }
+
+/* 🆕 v1.7.569b : plus aucun display:none ici — la disparition est une HAUTEUR
+   nulle animée (bloc « SANS AUCUN FONDU » ci-dessus). display:none ne peut pas
+   être animé : c'était la cause du contenu qui s'éteint d'un coup. */
+.sidebar.collapsed .preset-formats .format-btn:not(:first-child) {
+    max-height: 0 !important;
+    overflow: hidden;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-top-width: 0 !important;
+    border-bottom-width: 0 !important;
 }
 
 .sidebar.collapsed .tool-dropdown-menu .input-group label,
@@ -401,33 +466,50 @@ body {
     min-height: 56px;
 }
 
-.sidebar.collapsed .logo::before {
+/* 🆕 v1.7.569b — LE LOGO GLISSE, IL NE SE FOND PLUS ET NE SE REMPLACE PLUS.
+   MESURÉ AVANT : en replié la marque partait et un pseudo-« S » apparaissait d'un
+   coup (padding remis à 0) — le saut le plus visible ; puis un fondu croisé a été
+   essayé, refusé (« je veux pas de fade »).
+   ICI : les deux éléments existent dans LES DEUX états, à opacité FIXE. La marque
+   sort du cadre vers la gauche, le « S » y entre depuis la gauche, et le cadre
+   les coupe (overflow:hidden sur .logo). Aucune variation d'opacité. */
+.logo { overflow: hidden; }
+.logo .sidebar-title {
+    transition: transform var(--sp-sb-dur) var(--sp-sb-ease);
+    will-change: transform;
+}
+.logo::before {
     content: 'S';
     font-size: 24px;
     font-weight: 900;
     position: absolute;
     left: 50%;
     top: calc(50% + 1px);
-    transform: translate(-50%, -50%);
-    opacity: 0.8;
+    /* État ouvert : hors du cadre par la gauche (donc invisible, sans opacité). */
+    transform: translate(calc(-50% - 200px), -50%);
+    transition: transform var(--sp-sb-dur) var(--sp-sb-ease);
+    opacity: 0.8;                     /* FIXE : aucune variation */
+    pointer-events: none;
     cursor: pointer;
     z-index: 10;
 }
-html[lang="ja"] .sidebar.collapsed .logo::before {
+html[lang="ja"] .logo::before {
     content: 'ス';
 }
-
-.sidebar.collapsed #openSettingsBtn {
-    display: none;
+.sidebar.collapsed .logo .sidebar-title {
+    transform: translateX(-200px);    /* la marque sort par la gauche */
+}
+.sidebar.collapsed .logo::before {
+    transform: translate(-50%, -50%); /* le « S » entre depuis la gauche */
+    pointer-events: auto;
 }
 
-.sidebar.collapsed #toggleLeftSidebar {
-    display: none;
-}
+/* 🆕 v1.7.569b : repliés par max-height animée, pas par display:none. */
 
 .sidebar.collapsed .section {
     padding: 8px 4px;
-    border-bottom: none;
+    /* 🆕 v1.7.569 : border-bottom:none sautait ; on anime la COULEUR. */
+    border-bottom-color: transparent;
 }
 
 .sidebar.collapsed .tools-icons {
@@ -435,12 +517,17 @@ html[lang="ja"] .sidebar.collapsed .logo::before {
     gap: 1px !important;
 }
 
+.sidebar .tools-icons .btn-tool {
+    opacity: 1;
+    transition: opacity var(--sp-sb-dur) var(--sp-sb-ease);
+}
 .sidebar.collapsed .tools-icons .btn-tool {
     padding: 6px 0;
     background: transparent !important;
     border: none !important;
     opacity: 0.6;
-    transition: all 0.2s;
+    transition: padding var(--sp-sb-dur) var(--sp-sb-ease),
+                opacity var(--sp-sb-dur) var(--sp-sb-ease);
 }
 
 .sidebar.collapsed .tools-icons .btn-tool:hover {
@@ -490,9 +577,7 @@ html[lang="ja"] .sidebar.collapsed .logo::before {
    OUVERTE seulement : en barre repliée, on ne garde que les outils de création
    et les règles. Demande utilisateur : « en replié, on ne met pas PAPER 1 /
    SIMULATION CMYK ; on le verra quand la barre sera ouverte ». */
-.sidebar.collapsed #softProofDropdown {
-    display: none !important;
-}
+/* 🆕 v1.7.569b : idem — replié par max-height animée. */
 
 /* Icon-only presentation for the left tools group */
 .tools-icons { 
@@ -931,6 +1016,21 @@ html[lang="ja"] .sidebar.collapsed .logo::before {
     border-radius: 50%;
 }
 
+/* 🆕 v1.7.569 — respect de la préférence système : plus aucun mouvement. */
+@media (prefers-reduced-motion: reduce) {
+    .sidebar, .sidebar .section, .sidebar .sidebar-title, .sidebar .logo::before,
+    .sidebar.sb-anim .sidebar-title, .sidebar.sb-anim .section-title,
+    .sidebar.sb-anim .input-group label, .sidebar.sb-anim .input-group input,
+    .sidebar.sb-anim .input-group select, .sidebar.sb-anim .input-row,
+    .sidebar.sb-anim .btn-group:not(.tools-icons), .sidebar.sb-anim .btn-group-tight,
+    .sidebar.sb-anim .layers-panel, .sidebar.sb-anim .preset-formats,
+    .sidebar.sb-anim #openSettingsBtn, .sidebar.sb-anim #toggleLeftSidebar,
+    .sidebar.sb-anim #softProofDropdown, .sidebar.sb-anim .tools-icons,
+    .sidebar.sb-anim .sidebar-divider {
+        transition: none !important;
+    }
+}
+
 .sidebar::-webkit-scrollbar,
 .rightbar::-webkit-scrollbar,
 #historyPanel::-webkit-scrollbar,
@@ -959,6 +1059,8 @@ html[lang="ja"] .sidebar.collapsed .logo::before {
 
 .logo {
     padding: 17px 20px;
+    /* 🆕 v1.7.569b : le padding passait à 0 d'un coup en replié (saut du logo). */
+    transition: padding var(--sp-sb-dur) var(--sp-sb-ease);
     font-size: 14px;
     font-weight: 500;
     letter-spacing: 2px;
@@ -975,6 +1077,9 @@ html[lang="ja"] .sidebar.collapsed .logo::before {
 .section {
     padding: 16px;
     border-bottom: 1px solid #e0e0e0;
+    /* 🆕 v1.7.569 : les sections se resserrent au même rythme que la barre. */
+    transition: padding var(--sp-sb-dur) var(--sp-sb-ease),
+                border-bottom-color var(--sp-sb-dur) var(--sp-sb-ease);
 }
 
 /* Stabiliser le panneau typographie (évite le saut visuel) */
