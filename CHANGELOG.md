@@ -9,6 +9,43 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.574] — 2026-09-27
+
+_Numérotation de pages fidèle jusqu'au PDF, grille & repères fluides, dialogues SuperPrint, bibliothèque d'assets fiabilisée, typographie du studio corrigée_
+
+### Fixed — Numérotation de pages (folios)
+- Les retouches faites dans la page de préview (retirer un numéro, le déplacer, changer sa police/corps/couleur) sont désormais enregistrées **page par page** et appliquées à l'identique par l'export PDF. Avant, l'export repartait des réglages globaux : les numéros retirés réapparaissaient dans le PDF et les positions modifiées étaient perdues.
+- La persistance suit le document : enregistrement, réouverture, annuler/rétablissement, changement de place des pages et export .sp.
+- Le bouton de la fenêtre .sp a été aligné sur ce comportement.
+
+### Fixed — Bibliothèque d'assets (perte de contenu)
+- Un changement d'image pendant le chargement d'une planche faisait sortir l'enregistrement **sans message** : après quelques clics, le fond de page et les images du dessous disparaissaient à l'écran. L'enregistrement est maintenant mis en attente puis rejoué dès que la planche est prête. Cause mesurée, reproduite et documentée dans AUDIT-ASSET-LIBRARY-2026-09-27.md.
+- Le champ « fond » ne restait plus désynchronisé quand la couleur était écrite en **rgb()** ; les écritures de couleur sont normalisées avant affichage.
+- Les dépôts de fichiers (STL, motifs, images, SVG) visent la bonne planche en affichage double page (correspondance page ↔ canevas par l'élément, plus par son nom).
+
+### Changed — Grille & repères (performance)
+- Cocher une case redessinait toutes les planches l'une après l'autre : jusqu'à 24 repeints et ~2 s de blocage mesurés. Désormais une seule passe pour les repères, et les planches non visibles attendent l'inactivité du navigateur (mesure : 24 → 2 repeints, 1,8 s → 0,17 s).
+- Même traitement pour la ligne de base, « masquer les repères » et « masquer les fonds perdus » ; l'état coché est reflété jusque dans le widget docké.
+- Les cases à cocher du panneau passent au noir de la charte (plus de bleu système).
+
+### Added — Boîtes de dialogue SuperPrint
+- Les douze boîtes de dialogue natives (suppressions, nom de police, ajustement du format PDF, ajout d'un guide, nettoyage des calques, import…) sont remplacées par un dialogue SuperPrint : Entrée confirme, Échap annule, focus piégé dans la fenêtre.
+- Aucune couleur dans ces dialogues : l'information passe par le libellé et le titre, en noir (y compris pour une suppression définitive).
+
+### Fixed — Studio SP213 (typographie)
+- L'aperçu affichait les textes **33 % trop gros** : le document est en 72 dpi (1 px = 1 pt) mais les tailles de police étaient converties comme à 96 dpi. Mesure A4 : un titre de 36 pt avait un interligne réel de 19,1 mm au lieu de 14,35 mm. Le studio et le fichier exporté vers l'app utilisent maintenant la bonne échelle.
+- La hauteur d'un bloc texte était sous-estimée d'**une ligne entière** : le bloc suivant se posait 19 mm trop haut et passait sous le titre. La mesure renvoie la hauteur complète (celle de l'app), et non plus une ligne de moins.
+- Les **filets de séparation** ne traversent plus le texte : un filet horizontal tombé dans un bloc est ramené dans l'espace libre.
+- Le justifié **n'est plus jamais un défaut** : il ne s'applique que si la demande le mentionne explicitement (garde-fou sur la génération et sur le retravail ciblé).
+- Prompt : échelle typographique plus sobre (titres −10 %, deux lignes maximum), règles de respiration entre blocs, placement des filets.
+- Les **pages orphelines** (un numéro seul sur une page) ne sont plus créées ; le contenu reporté reste sur la page précédente quand la place existe.
+
+### Fixed — divers
+- Barre latérale : le logo conserve exactement la même hauteur (56 px) barre ouverte ou repliée.
+
+### Scope
+- Éditeur (numérotation, grille & repères, dialogues, bibliothèque d'assets, logo), studio SP213 (typographie) et paquet local. Aucun changement sur le rendu PDF hors numérotation, sur l'import/export de documents ni sur les moteurs d'IA.
+
 ## [1.7.573] — 2026-09-27
 
 _SP213 WLLM Native (modèle local dédié), refonte de la barre du studio, correctifs Grille & repères_

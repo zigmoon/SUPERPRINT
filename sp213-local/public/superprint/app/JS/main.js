@@ -10,6 +10,256 @@
 try { fabric.Object.NUM_FRACTION_DIGITS = 6; } catch (_) {}
 
 // ============================================================================
+// 🆕 v1.7.574 — _SP_DLG_574 : BOÎTES DE DIALOGUE « SUPERPRINT »
+// ----------------------------------------------------------------------------
+// POURQUOI : les boîtes natives du navigateur (alert / confirm / prompt) sont
+// dessinées HORS du document — aucune feuille de style ne peut les atteindre, elles
+// affichent l'URL du fichier, le libellé du bouton est imposé par la langue du
+// système et elles jurent avec l'interface. Un échec du Pathfinder, par exemple,
+// sortait une boîte grise du navigateur au milieu du studio.
+//
+// ICI : un composant unique (mêmes angles droits, mêmes filets 1 px, même mono que
+// le reste de l'app) et un REMPLACEMENT GLOBAL de window.alert. Les ~99 appels
+// alert() existants deviennent donc tous des pop-ins SuperPrint, sans avoir à les
+// réécrire un par un — et sans risque : alert() ne renvoie rien et personne ne
+// dépend de son blocage (vérifié : aucun « alert() puis location.reload() »).
+//
+// API : spAlert(message, {title, type, button})      -> Promise<void>
+//       spConfirm(message, {title, type, ok, cancel})-> Promise<boolean>
+//       spPrompt(message, {value, placeholder})      -> Promise<string|null>
+//       spDialog({...})                              -> Promise<any> (générique)
+// ============================================================================
+(function spInstalleDialogues() {
+    if (typeof window === 'undefined') return;
+    if (window.__spDialoguesInstalled) return;
+    window.__spDialoguesInstalled = true;
+
+    var ICONES = { info: 'i', succès: '✓', success: '✓', avertissement: '!', warning: '!', erreur: '×', error: '×' };
+    var TITRES = {
+        info: 'Information', success: 'Terminé', succès: 'Terminé',
+        warning: 'Attention', avertissement: 'Attention', error: 'Erreur', erreur: 'Erreur'
+    };
+
+    /* Le texte des alertes existantes utilise des sauts de ligne et des paragraphes
+       vides (\n\n). On les rend en vrais paragraphes : c'est ce qui donne l'air
+       « rédigé » plutôt que le pavé compact de la boîte native. Toujours en
+       textContent — jamais innerHTML — donc aucun risque d'injection. */
+    function remplirCorps(hote, texte) {
+        hote.textContent = '';
+        var brut = (texte === null || texte === undefined) ? '' : String(texte);
+        var blocs = brut.split(/\n\s*\n/);
+        for (var i = 0; i < blocs.length; i++) {
+            var p = document.createElement('p');
+            if (i === 0) p.className = 'sp-dlg-lead';
+            p.textContent = blocs[i].replace(/\s+$/, '');
+            if (p.textContent.length) hote.appendChild(p);
+        }
+        if (!hote.childNodes.length) {
+            var v = document.createElement('p');
+            v.className = 'sp-dlg-lead';
+            v.textContent = '';
+            hote.appendChild(v);
+        }
+    }
+
+    var coucheActive = null;
+
+    function spDialog(options) {
+        var o = options || {};
+        return new Promise(function (resolve) {
+            var type = String(o.type || 'info').toLowerCase();
+            var icone = ICONES[type] || ICONES.info;
+
+            var overlay = document.createElement('div');
+            overlay.className = 'sp-dlg-overlay';
+
+            var boite = document.createElement('div');
+            boite.className = 'sp-dlg sp-dlg-' + (ICONES[type] ? type : 'info');
+            boite.setAttribute('role', o.kind === 'alert' ? 'alertdialog' : 'dialog');
+            boite.setAttribute('aria-modal', 'true');
+
+            // ── En-tête ──
+            var tete = document.createElement('div');
+            tete.className = 'sp-dlg-head';
+            var badge = document.createElement('span');
+            badge.className = 'sp-dlg-badge';
+            badge.textContent = icone;
+            var titre = document.createElement('span');
+            titre.className = 'sp-dlg-title';
+            titre.textContent = o.title || TITRES[type] || TITRES.info;
+            tete.appendChild(badge);
+            tete.appendChild(titre);
+
+            var fermable = (o.dismissible !== false);
+            var boutonX = null;
+            if (fermable) {
+                tete.appendChild(Object.assign(document.createElement('span'), { className: 'sp-dlg-spacer' }));
+                boutonX = document.createElement('button');
+                boutonX.type = 'button';
+                boutonX.className = 'sp-dlg-x';
+                boutonX.textContent = '×';
+                boutonX.setAttribute('aria-label', 'Fermer');
+                tete.appendChild(boutonX);
+            }
+
+            // ── Corps ──
+            var corps = document.createElement('div');
+            corps.className = 'sp-dlg-body';
+            remplirCorps(corps, o.message);
+
+            var champ = null;
+            if (o.kind === 'prompt') {
+                champ = document.createElement('input');
+                champ.type = 'text';
+                champ.className = 'sp-dlg-input';
+                champ.value = (o.value === undefined || o.value === null) ? '' : String(o.value);
+                if (o.placeholder) champ.placeholder = o.placeholder;
+                champ.style.marginTop = '4px';
+                corps.appendChild(champ);
+            }
+
+            // ── Pied ──
+            var pied = document.createElement('div');
+            pied.className = 'sp-dlg-foot';
+            var listeBoutons = [];
+
+            function ajouterBouton(libelle, variante, valeur) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'sp-dlg-btn sp-dlg-btn-' + variante;
+                b.textContent = libelle;
+                b.addEventListener('click', function () { fermer(valeur); });
+                pied.appendChild(b);
+                listeBoutons.push(b);
+                return b;
+            }
+
+            var libelleOk = o.ok || (o.kind === 'prompt' ? 'Valider' : 'OK');
+            var libelleAnnuler = o.cancel || 'Annuler';
+            if (o.kind === 'confirm' || o.kind === 'prompt') {
+                ajouterBouton(libelleAnnuler, 'secondary', null);
+                ajouterBouton(libelleOk, o.danger ? 'danger' : 'primary', 'ok');
+            } else {
+                ajouterBouton(o.button || libelleOk, o.danger ? 'danger' : 'primary', 'ok');
+            }
+
+            boite.appendChild(tete);
+            boite.appendChild(corps);
+            boite.appendChild(pied);
+            overlay.appendChild(boite);
+            (document.body || document.documentElement).appendChild(overlay);
+            coucheActive = overlay;
+
+            var termine = false;
+            function fermer(valeur) {
+                if (termine) return;
+                termine = true;
+                document.removeEventListener('keydown', surTouche, true);
+                overlay.classList.remove('sp-on');
+                var resultat = valeur;
+                if (o.kind === 'prompt') {
+                    resultat = (valeur === 'ok') ? champ.value : null;
+                } else if (o.kind === 'confirm') {
+                    resultat = (valeur === 'ok');
+                } else {
+                    resultat = undefined;
+                }
+                setTimeout(function () {
+                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                    if (coucheActive === overlay) coucheActive = null;
+                    resolve(resultat);
+                }, 150);
+            }
+
+            function surTouche(e) {
+                if (e.key === 'Escape' && fermable) {
+                    e.preventDefault(); e.stopPropagation();
+                    fermer(null);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault(); e.stopPropagation();
+                    fermer('ok');
+                } else if (e.key === 'Tab') {
+                    // Piège à focus : on reste dans la boîte (comme une vraie modale).
+                    var cibles = listeBoutons.concat(champ ? [champ] : []);
+                    if (!cibles.length) return;
+                    var idx = cibles.indexOf(document.activeElement);
+                    e.preventDefault();
+                    var suivant = e.shiftKey ? (idx <= 0 ? cibles.length - 1 : idx - 1) : (idx === -1 || idx === cibles.length - 1 ? 0 : idx + 1);
+                    try { cibles[suivant].focus(); } catch (_) {}
+                }
+            }
+
+            if (boutonX) boutonX.addEventListener('click', function () { fermer(null); });
+            overlay.addEventListener('mousedown', function (e) {
+                if (e.target === overlay && fermable) fermer(null);
+            });
+            document.addEventListener('keydown', surTouche, true);
+
+            // Apparition (une image après l'insertion, sinon aucune transition ne joue)
+            requestAnimationFrame(function () { overlay.classList.add('sp-on'); });
+            setTimeout(function () {
+                try {
+                    if (champ) { champ.focus(); champ.select(); }
+                    else if (listeBoutons.length) listeBoutons[listeBoutons.length - 1].focus();
+                } catch (_) {}
+            }, 60);
+        });
+    }
+
+    // ── API courte ──────────────────────────────────────────────────────────
+    window.spDialog = spDialog;
+    window.spAlert = function (message, o) {
+        return spDialog(Object.assign({ kind: 'alert', message: message }, o || {}));
+    };
+    window.spConfirm = function (message, o) {
+        return spDialog(Object.assign({ kind: 'confirm', message: message }, o || {}));
+    };
+    window.spPrompt = function (message, valeur, o) {
+        return spDialog(Object.assign({ kind: 'prompt', message: message, value: valeur }, o || {}));
+    };
+
+    // ── Remplacement GLOBAL de window.alert ────────────────────────────────
+    // File d'attente : plusieurs alertes à la suite s'affichent l'une APRÈS l'autre
+    // (la boîte native bloquait, il faut au moins conserver l'ordre de lecture).
+    var file = [];
+    var occupe = false;
+    function viderFile() {
+        if (occupe || !file.length) return;
+        occupe = true;
+        var item = file.shift();
+        window.spAlert(item.texte, item.options).then(function () {
+            occupe = false;
+            viderFile();
+        }, function () {
+            occupe = false;
+            viderFile();
+        });
+    }
+
+    var alertNatif = window.alert;
+    window.alert = function (message) {
+        try {
+            // Le premier mot peut déjà dire la nature du message (« ⚠️ », « Erreur … »).
+            var t = String(message === null || message === undefined ? '' : message);
+            var type = 'info';
+            if (/^\s*(⚠|⚠️)/.test(t) || /\battention\b/i.test(t)) type = 'warning';
+            else if (/^\s*(❌|⛔|×)/.test(t) || /^(erreur|error|impossible)\b/i.test(t)) type = 'error';
+            else if (/^\s*(✅|✓)/.test(t) || /^(terminé|terminée|succès|success|import terminé)\b/i.test(t)) type = 'success';
+            file.push({ texte: message, options: { type: type } });
+            viderFile();
+        } catch (_) {
+            // En dernier recours seulement, on laisse le navigateur parler.
+            try { alertNatif.call(window, message); } catch (__) {}
+        }
+    };
+    window.__spAlertNatif = alertNatif;
+    /* À utiliser quand le blocage est réellement nécessaire (rien dans l'app ne
+       l'exige aujourd'hui, mais l'échappatoire reste disponible). */
+    window.spAlertBloquant = function (message) { return alertNatif.call(window, message); };
+})();
+
+
+// ============================================================================
 // 📐 GÉOMÉTRIE DE TEXTE — HELPERS GLOBAUX (étape 1 correctifs texte)
 // ============================================================================
 // ⚠️ POURQUOI CES HELPERS EXISTENT (mesuré, ne pas « simplifier ») :
@@ -2294,6 +2544,41 @@ let pageNumberingSettings = {
     marginSide: 20         // mm depuis le côté
 };
 
+// 🛡️ Personnalisations PAR PAGE du folio : { [pageIndex]: { hidden:true } | { left, top, fontFamily, fontSize, fontColor } }.
+// Alimenté par _spCaptureFolioOverrides() (lu juste avant la destruction des canvases) ; consulté par
+// addSpecialTextObjectsToCanvas() (écran) et injectMasterItemsForExport() (PDF) pour que la suppression
+// ou le déplacement d'un folio sur UNE page survive au ré-rendu ET à l'export.
+let pageNumberingOverrides = {};
+
+// Ne mémorise QUE ce qui diverge du réglage global (folio._folioDefault, posé à la création) : un folio
+// jamais touché ne crée donc aucun override, et un changement global de police/position continue de
+// s'appliquer normalement à toutes les pages non personnalisées.
+function _spCaptureFolioOverrides() {
+    try {
+        for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+            if (typeof spPageNumberingActive !== 'function' || !spPageNumberingActive(pageIndex)) continue;
+            const cIdx = window.pageToCanvasMap ? window.pageToCanvasMap[pageIndex] : undefined;
+            const c = (typeof cIdx === 'number') ? canvases[cIdx] : null;
+            if (!c) continue; // canvas pas (encore) créé pour cette page : ne rien décider
+            // Page pas encore alimentée en folio (injection différée) : ne rien décider non plus.
+            if (!c._spFolioInjectionDone || !c._spFolioInjectionDone[pageIndex]) continue;
+            const folio = c.getObjects().find(o => o && o._isPageNumber && o._folioPageIndex === pageIndex);
+            if (!folio) { pageNumberingOverrides[pageIndex] = { hidden: true }; continue; }
+            const d = folio._folioDefault || {};
+            const ov = {};
+            if (typeof d.left === 'number' && (Math.round(folio.left) !== Math.round(d.left) || Math.round(folio.top) !== Math.round(d.top))) {
+                ov.left = folio.left; ov.top = folio.top;
+            }
+            if (d.fontFamily && folio.fontFamily && folio.fontFamily !== d.fontFamily) ov.fontFamily = folio.fontFamily;
+            if (d.fontSize && folio.fontSize && folio.fontSize !== d.fontSize) ov.fontSize = folio.fontSize;
+            if (d.fontColor && folio.fill && folio.fill !== d.fontColor) ov.fontColor = folio.fill;
+            if (Object.keys(ov).length) pageNumberingOverrides[pageIndex] = ov;
+            else delete pageNumberingOverrides[pageIndex];
+        }
+    } catch (_) {}
+}
+
+
 let pendingCrossPageTransfer = null; // 🆕 v1.7.174 — Devient un tableau pour gérer la multi-sélection
 let pendingCrossPageTransfers = [];   // Liste des transferts en attente (multi-objets)
 let isDragging = false;
@@ -2337,6 +2622,56 @@ function flushPendingSaveState() {
     if (typeof saveState === 'function') saveState(action);
 }
 window.flushPendingSaveState = flushPendingSaveState;
+
+/* ═══ _SP_SAVE_DIFFERE_574_DEBUT — UNE MODIFICATION NE DOIT JAMAIS ÊTRE PERDUE ═══
+   MESURE DU DÉFAUT (bibliothèque d'assets, document de 2 planches) :
+     · une autre planche est en cours de loadFromJSON (_isLoading = true) — ce qui arrive
+       à CHAQUE rendu complet, donc juste après un changement de page ;
+     · on ajoute une image depuis la bibliothèque : elle est bien posée sur la planche
+       (mesuré : 4 objets sur le canvas) ;
+     · mais saveState() sortait silencieusement sur le garde-fou « canvas en chargement »,
+       donc saveAllPages() n'était JAMAIS appelé → pages[i].objects restait vide (mesuré : 0) ;
+     · au rendu suivant (changement de page, fermeture du panneau, annuler…), les planches
+       sont reconstruites DEPUIS pages[] → l'image ajoutée avait disparu (mesuré : 0 objet).
+   Le garde-fou est justifié — on ne sérialise pas une planche à moitié chargée — mais il ne
+   doit pas faire PERDRE la modification. On la met donc en attente et on la rejoue dès que
+   les planches ont fini de charger. C'est ce qui rendait le défaut intermittent : il ne se
+   produisait que si l'on agissait pendant la fenêtre de chargement. */
+let _spSaveDiffereTimer = null;
+let _spSaveDiffereAction = '';
+let _spSaveDiffereEssais = 0;
+function _spSaveDiffere(action) {
+    _spSaveDiffereAction = action || _spSaveDiffereAction || 'Modification';
+    if (_spSaveDiffereTimer) return;          /* une seule attente en vol : la plus récente gagne */
+    _spSaveDiffereEssais = 0;
+    const tenter = function () {
+        _spSaveDiffereTimer = null;
+        const enChargement = (typeof canvases !== 'undefined') && canvases && canvases.some(c => c && c._isLoading);
+        if (enChargement) {
+            if (_spSaveDiffereEssais++ < 200) {          /* ~20 s de patience */
+                _spSaveDiffereTimer = setTimeout(tenter, 100);
+                return;
+            }
+            console.warn('[SP] Sauvegarde différée abandonnée : une planche n\'a jamais fini de charger.');
+            _spSaveDiffereAction = '';
+            return;
+        }
+        const a = _spSaveDiffereAction;
+        _spSaveDiffereAction = '';
+        try { if (typeof saveState === 'function') saveState(a); }
+        catch (e) { console.warn('[SP] Sauvegarde différée :', e); }
+    };
+    _spSaveDiffereTimer = setTimeout(tenter, 100);
+}
+window._spSaveDiffere = _spSaveDiffere;
+
+function _spSaveDiffereAnnuler() {
+    if (_spSaveDiffereTimer) clearTimeout(_spSaveDiffereTimer);
+    _spSaveDiffereTimer = null;
+    _spSaveDiffereAction = '';
+    _spSaveDiffereEssais = 0;
+}
+window._spSaveDiffereAnnuler = _spSaveDiffereAnnuler;
 
 // ⚡ PERFORMANCE: Debounced updateLayersPanel — évite de reconstruire le DOM trop souvent
 let _updateLayersTimer = null;
@@ -2407,6 +2742,29 @@ let _pasteboardEnabled = localStorage.getItem('sp_pasteboard') === '1'; // Activ
 // fonds perdus). En mode spread, retourner le centre de la PAGE ACTIVE (gauche
 // OU droite), pas le centre du spread (sinon l'objet se positionnait sur la
 // reliure au lieu du milieu de la page).
+/* ═══ _SP_CANVAS_574_DEBUT — RETROUVER UNE PLANCHE À PARTIR DE SON ÉLÉMENT DOM ═══
+   MESURE DU DÉFAUT (document de 4 pages en mode double page) :
+     · les identifiants réels sont « canvas-0 », « spread-canvas-1 », « canvas-3 » ;
+     · or les quatre gestionnaires de dépôt faisaient canvasEl.id.match(/^canvas-(\d+)$/)
+       puis canvases[pageIndex].
+   Deux erreurs en une : la planche double page ne correspond PAS à la regex (pageIndex = NaN,
+   donc la planche sous le curseur était ignorée), et canvases[pageIndex] confondait index de
+   PAGE et index de TABLEAU — pour la page 4, canvases[3] n'existe pas (il n'y a que 3 canvas).
+   C'est exactement ce que pageToCanvasMap sert à éviter ailleurs dans l'app.
+   Ici on ne passe plus par aucune des deux : on identifie la planche par SON ÉLÉMENT. */
+function spCanvasDepuisElement(el) {
+    if (!el) return null;
+    if (typeof canvases === 'undefined' || !canvases) return null;
+    for (let i = 0; i < canvases.length; i++) {
+        const c = canvases[i];
+        if (!c) continue;
+        if (c.lowerCanvasEl === el || c.upperCanvasEl === el) return c;
+        if (c.wrapperEl && c.wrapperEl.contains && c.wrapperEl.contains(el)) return c;
+    }
+    return null;
+}
+try { window.spCanvasDepuisElement = spCanvasDepuisElement; } catch (_) {}
+
 function getPageCenter(canvas) {
     const bi = canvas.bleedInfo;
     if (!bi || !bi.pageCanvasWidth) {
@@ -9401,6 +9759,17 @@ window.spTestDiag = function () {
                 });
             }
             if ('disabled' in c && 'disabled' in orig && c.disabled !== orig.disabled) c.disabled = orig.disabled;
+            /* 🆕 v1.7.574 — _SP_DOCK_CHECK_574 : on reporte AUSSI l'état COCHÉ.
+               MESURE : dans le widget « Grille & repères », cliquer une case laissait la copie
+               DÉCOCHÉE alors que le réglage était bien appliqué. Cause : le pont d'événements
+               annule le clic (preventDefault) — le navigateur remet alors la copie à son état
+               initial — puis rejoue le clic sur l'ORIGINE. Seules les CLASSES étaient reportées
+               (« active », « is-open »…), jamais `checked` : la case paraissait inerte, on la
+               recliquait, et le réglage repartait dans l'autre sens. */
+            if ((c.type === 'checkbox' || c.type === 'radio')
+                && ('checked' in c) && ('checked' in orig) && c.checked !== orig.checked) {
+                c.checked = orig.checked;
+            }
             /* Libellé d'état (ex. « ⏸ Geler » / « ▶ Reprendre », valeur chiffrée d'un
                curseur) : reporté uniquement si le contrôle d'origine le demande. */
             if (orig.hasAttribute && orig.hasAttribute('data-sp-miroir-texte') && c.textContent !== orig.textContent) {
@@ -11451,7 +11820,13 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             /* 🛡️ v1.7.523 — _SP_NUM_GABARIT_523 : le folio peut venir du GABARIT de la page
                (case « Numérotation » de l'éditeur de gabarit) même si la numérotation globale
                est éteinte. spPageNumberingActive(pageIndex) centralise cette règle. */
+            /* 🛡️ v1.7.574 — _SP_FOLIO_OVERRIDE_574 : si l'utilisateur a supprimé ce folio sur
+               CETTE page (pageNumberingOverrides[pageIndex].hidden), on ne le recrée pas — sinon
+               il « ressuscitait » à chaque rendu et à l'export PDF. S'il l'a seulement déplacé ou
+               restylé, on applique cette personnalisation par-dessus le réglage global. */
             if (spPageNumberingActive(pageIndex)) {
+                const ov = pageNumberingOverrides[pageIndex] || null;
+                if (!(ov && ov.hidden)) {
                 try {
                     const s = pageNumberingSettings;
                     const pos = getPageNumberPosition(pageIndex);
@@ -11473,15 +11848,23 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                             else if (align === 'right') left -= w;
                         }
                     }
+                    // Empreinte du placement PAR DÉFAUT (avant override) : sert de référence à
+                    // _spCaptureFolioOverrides() pour détecter un futur écart (déplacement/restyle).
+                    const folioDefault = { left, top, fontFamily: s.fontFamily, fontSize, fontColor: s.fontColor };
+                    const finalFontFamily = (ov && ov.fontFamily) ? ov.fontFamily : s.fontFamily;
+                    const finalFontSize = (ov && ov.fontSize) ? ov.fontSize : fontSize;
+                    const finalFontColor = (ov && ov.fontColor) ? ov.fontColor : s.fontColor;
+                    const finalLeft = (ov && typeof ov.left === 'number') ? ov.left : left;
+                    const finalTop = (ov && typeof ov.top === 'number') ? ov.top : top;
                     const folio = new fabric.Textbox(text, {
-                        left: left,
-                        top: top,
+                        left: finalLeft,
+                        top: finalTop,
                         width: w,
-                        fontSize: fontSize,
-                        fontFamily: s.fontFamily,
+                        fontSize: finalFontSize,
+                        fontFamily: finalFontFamily,
                         fontWeight: 'normal',
                         fontStyle: 'normal',
-                        fill: s.fontColor,
+                        fill: finalFontColor,
                         stroke: null,
                         strokeWidth: 0,
                         textAlign: align,
@@ -11492,7 +11875,9 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                         opacity: 1,
                         selectable: true,
                         evented: true,
-                        _isPageNumber: true
+                        _isPageNumber: true,
+                        _folioPageIndex: pageIndex,
+                        _folioDefault: folioDefault
                     });
                     folio.setCoords();
                     fabricCanvas.add(folio);
@@ -11500,6 +11885,13 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 } catch(e) {
                     console.warn('[addSpecialTextObjectsToCanvas] Erreur folio:', e);
                 }
+                } // fin « !hidden »
+                /* 🛡️ v1.7.574 — marqueur « folio traité pour cette page », posé dès que la
+                   numérotation est ACTIVE pour cette page (même si le folio est masqué) :
+                   _spCaptureFolioOverrides() ne conclut « folio supprimé » que sur une page
+                   effectivement alimentée. Posé hors du test « !hidden » pour qu'une page masquée
+                   reste marquée « traitée » d'un rendu à l'autre. */
+                try { (fabricCanvas._spFolioInjectionDone = fabricCanvas._spFolioInjectionDone || {})[pageIndex] = true; } catch(_) {}
             }
 
             if (added) {
@@ -11523,6 +11915,10 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         function injectMasterItemsForExport(tempFabric, pageIndex, options) {
             return new Promise((resolve) => {
                 if (!tempFabric) { resolve(); return; }
+                /* 🛡️ v1.7.574 — rafraîchir pageNumberingOverrides depuis les canvases actuellement
+                   affichés : l'export peut être déclenché sans passer par un renderAllPages()
+                   récent, il ne faut donc jamais exporter un état de folio périmé. */
+                try { if (typeof _spCaptureFolioOverrides === 'function') _spCaptureFolioOverrides(); } catch(_) {}
                 const opts = options || {};
                 const includeBleed = opts.includeBleed !== false; // default true
                 const extraOffsetX = opts.extraOffsetX || 0;
@@ -11703,25 +12099,29 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 // ── 2) Folio (numerotation) ──
                 /* 🛡️ v1.7.523 — _SP_NUM_GABARIT_523 : même règle qu'à l'écran (folio porté par le
                    gabarit de la page OU numérotation globale active). */
-                if (spPageNumberingActive(pageIndex)) {
+                /* 🛡️ v1.7.574 — mêmes overrides que l'écran : un folio supprimé sur cette page
+                   ne doit PAS être réinjecté dans le PDF, et un folio déplacé/restylé doit être
+                   exporté à l'endroit/avec la police choisis dans la page de préview. */
+                const _folioOv = pageNumberingOverrides[pageIndex] || null;
+                if (spPageNumberingActive(pageIndex) && !(_folioOv && _folioOv.hidden)) {
                     try {
                         const s = pageNumberingSettings;
                         const pos = getPageNumberPosition(pageIndex);
                         const align = getPageNumberAlign(pageIndex);
                         const text = formatPageNumber(pageIndex);
-                        const fontSize = s.fontSize;
+                        const fontSize = (_folioOv && _folioOv.fontSize) ? _folioOv.fontSize : s.fontSize;
                         const w = 80;
                         let leftFolio = pos.x + bleedPxLocal + extraOffsetX;
                         if (align === 'center') leftFolio -= w / 2;
                         else if (align === 'right') leftFolio -= w;
                         const topFolio = pos.y + bleedPxLocal - fontSize * 0.6;
                         const folio = new fabric.Textbox(text, {
-                            left: leftFolio,
-                            top: topFolio,
+                            left: (_folioOv && typeof _folioOv.left === 'number') ? (_folioOv.left + extraOffsetX) : leftFolio,
+                            top: (_folioOv && typeof _folioOv.top === 'number') ? _folioOv.top : topFolio,
                             width: w,
                             fontSize: fontSize,
-                            fontFamily: s.fontFamily,
-                            fill: s.fontColor,
+                            fontFamily: (_folioOv && _folioOv.fontFamily) ? _folioOv.fontFamily : s.fontFamily,
+                            fill: (_folioOv && _folioOv.fontColor) ? _folioOv.fontColor : s.fontColor,
                             textAlign: align,
                             lineHeight: 1.16,
                             visible: true,
@@ -11730,6 +12130,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                             evented: false,
                             excludeFromExport: false,
                             _isPageNumber: true,
+                            _folioPageIndex: pageIndex,
                             _isMasterItem: true /* 🛡️ 2026-05-06 : force raster path */
                         });
                         folio.setCoords();
@@ -12429,6 +12830,9 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                     if (savedProject.pageNumberingSettings && typeof pageNumberingSettings !== 'undefined') {
                         Object.assign(pageNumberingSettings, savedProject.pageNumberingSettings);
                     }
+                    if (savedProject.pageNumberingOverrides && typeof pageNumberingOverrides !== 'undefined') {
+                        Object.assign(pageNumberingOverrides, savedProject.pageNumberingOverrides);
+                    }
                     // 🆕 v1.7.415 — Restaurer les POLICES EXTERNES de l'autosave.
                     try {
                         const _cfa = savedProject.customFonts || [];
@@ -12611,6 +13015,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 masterPages: cloneMethod(entry.masterPages || {}),
                 pageMasterAssignments: cloneMethod(entry.pageMasterAssignments || {}),
                 pageNumberingSettings: cloneMethod(entry.pageNumberingSettings || {}),
+                pageNumberingOverrides: cloneMethod(entry.pageNumberingOverrides || {}),
                 action: typeLabel,
                 timestamp: entry.timeLabel || new Date(entry.timestamp).toLocaleTimeString('fr-FR'),
                 _viewMode: entry.viewMode || 'single',
@@ -12775,6 +13180,12 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
     container.style.pointerEvents = 'none';
     container.setAttribute('aria-busy', 'true');
     
+    try {
+        // 🛡️ Mémoriser les folios supprimés/déplacés/restylés AVANT de détruire les
+        // canvases : sans cela, une suppression ou un déplacement de numéro de page
+        // sur UNE page revenait dès le rendu suivant (et n'était jamais exporté).
+        _spCaptureFolioOverrides();
+    } catch(_) {}
     try {
         // ⚡ PERF: Nettoyage PROFOND des anciens canvases (images, patterns, caches, listeners)
         canvases.forEach(c => { deepCleanupCanvas(c); });
@@ -19387,8 +19798,16 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     if (_isRestoringState) return;
     // GUARD: Ne pas sauvegarder pendant la reconstruction des canvases
     if (_isRenderingAllPages) return;
-    // GUARD: Ne pas sauvegarder si un canvas est encore en chargement JSON (positions partielles = état corrompu)
-    if (canvases && canvases.some(c => c && c._isLoading)) return;
+    /* 🛡️ v1.7.574 — _SP_SAVE_DIFFERE_574 : AVANT, on sortait ici en silence.
+       Conséquence mesurée : un objet ajouté depuis la bibliothèque d'assets pendant qu'une
+       AUTRE planche finissait de charger n'était jamais écrit dans pages[] — le rendu suivant
+       le faisait disparaître (voir l'en-tête de _spSaveDiffere). Le garde-fou reste (on ne
+       sérialise pas une planche à moitié chargée) mais la modification est MISE EN ATTENTE. */
+    if (canvases && canvases.some(c => c && c._isLoading)) { _spSaveDiffere(action); return; }
+    
+    // 🛡️ v1.7.574 — relire les folios AVANT de figer l'état : c'est ce qui rend un numéro
+    // supprimé/déplacé/personnalisé persistant (projet, autosave, annuler/rétablir).
+    try { _spCaptureFolioOverrides(); } catch(_) {}
     
     saveAllPages();
     // ⚡ Tracker le timestamp pour éviter la re-sérialisation dans autoSave
@@ -19406,6 +19825,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         masterPages: cloneMethod(masterPages),
         pageMasterAssignments: cloneMethod(pageMasterAssignments),
         pageNumberingSettings: cloneMethod(pageNumberingSettings),
+        pageNumberingOverrides: cloneMethod(pageNumberingOverrides),
         action: action,
         timestamp: new Date().toLocaleTimeString('fr-FR'),
         _viewMode: viewMode,
@@ -19471,6 +19891,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         masterPages: cloneMethod(masterPages),
         pageMasterAssignments: cloneMethod(pageMasterAssignments),
         pageNumberingSettings: cloneMethod(pageNumberingSettings),
+        pageNumberingOverrides: cloneMethod(pageNumberingOverrides),
         action: action,
         timestamp: new Date().toLocaleTimeString('fr-FR'),
         _viewMode: viewMode,
@@ -19623,6 +20044,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     if (state.masterPages) masterPages = cloneMethod(state.masterPages);
     if (state.pageMasterAssignments) pageMasterAssignments = cloneMethod(state.pageMasterAssignments);
     if (state.pageNumberingSettings) pageNumberingSettings = cloneMethod(state.pageNumberingSettings);
+    if (state.pageNumberingOverrides) pageNumberingOverrides = cloneMethod(state.pageNumberingOverrides);
     /* 🆕 v1.7.458 — RESTAURER LA CONFIGURATION DE PAGE (format / marges / fond
        perdu). Valeurs bornées comme à l'import d'un .sp : on refuse NaN, <= 0 et
        les négatifs plutôt que de corrompre le document. */
@@ -20115,6 +20537,28 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             && o.selectionEnd > o.selectionStart;
     };
     const _spBlocTexte530 = _spEstBlocTexte530(obj) && !_spSelCarTexte530(obj);
+    /* _SP_RGB_HEX_574 : un <input type="color"> n'accepte QUE « #rrggbb ». Fabric pose
+       « rgb(0,0,0) » par défaut sur tout objet sans fond explicite — une IMAGE, notamment.
+       Assigner cette valeur était REFUSÉ par le navigateur (« The specified value
+       "rgb(0,0,0)" does not conform to the required format », mesuré 2 fois à chaque ajout
+       d'image) : le champ gardait l'ANCIENNE couleur, et le réglage suivant appliquait donc
+       une couleur que l'utilisateur n'avait jamais choisie. On normalise toujours avant
+       d'écrire ; un nom CSS, un dégradé ou « transparent » n'étant pas représentables dans
+       un sélecteur natif, ils sont traités comme « pas de fond ». */
+    function _spCouleurVersHex(c) {
+        if (typeof c !== 'string') return null;
+        const v = c.trim();
+        if (/^#[0-9a-f]{6}$/i.test(v)) return v.toLowerCase();
+        if (/^#[0-9a-f]{3}$/i.test(v)) return ('#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3]).toLowerCase();
+        const m = v.match(/^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i);
+        if (m) {
+            const h = (n) => Math.max(0, Math.min(255, Math.round(parseFloat(n)))).toString(16).padStart(2, '0');
+            return '#' + h(m[1]) + h(m[2]) + h(m[3]);
+        }
+        return null;
+    }
+    window._spCouleurVersHex = _spCouleurVersHex;
+
     const _spRefFill530 = _spBlocTexte530 ? (obj.backgroundColor || '') : obj.fill;
     const _spRefStroke530 = _spBlocTexte530 ? (obj._spFrameStroke || '') : obj.stroke;
     const blockFillInput = document.getElementById('blockFill');
@@ -20123,17 +20567,25 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     if (fillIsGradient) {
         // Objet avec un dégradé : afficher la première couleur du gradient dans le picker
         const stops = _spRefFill530.colorStops;
-        if (stops && stops.length > 0) {
-            try { blockFillInput.value = stops[0].color; } catch(_) {}
-        }
+        const _hexGrad = (stops && stops.length > 0) ? _spCouleurVersHex(stops[0].color) : null;
+        if (_hexGrad) { try { blockFillInput.value = _hexGrad; } catch(_) {} }
         if (blockFillNoneBtn) blockFillNoneBtn.style.borderColor = '#e0e0e0';
         blockFillInput.style.opacity = '1';
         window._blockFillNone = false;
     } else if (_spRefFill530 && _spRefFill530 !== 'transparent' && _spRefFill530 !== '' && _spRefFill530 !== null) {
-        try { blockFillInput.value = _spRefFill530; } catch(_) {}
-        if (blockFillNoneBtn) blockFillNoneBtn.style.borderColor = '#e0e0e0';
-        blockFillInput.style.opacity = '1';
-        window._blockFillNone = false;
+        /* _SP_RGB_HEX_574 : on n'écrit que si la conversion a réussi. */
+        const _hexFill = _spCouleurVersHex(_spRefFill530);
+        if (_hexFill) {
+            try { blockFillInput.value = _hexFill; } catch(_) {}
+            if (blockFillNoneBtn) blockFillNoneBtn.style.borderColor = '#e0e0e0';
+            blockFillInput.style.opacity = '1';
+            window._blockFillNone = false;
+        } else {
+            // Couleur non représentable (nom CSS, motif…) : on l'affiche comme « sans fond »
+            if (blockFillNoneBtn) blockFillNoneBtn.style.borderColor = '#e74c3c';
+            blockFillInput.style.opacity = '0.3';
+            window._blockFillNone = true;
+        }
     } else {
         // Objet sans fond
         if (blockFillNoneBtn) blockFillNoneBtn.style.borderColor = '#e74c3c';
@@ -20143,8 +20595,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     // Mise à jour du stroke : gérer transparent / null
     const blockStrokeInput = document.getElementById('blockStroke');
     const blockStrokeNoneBtn = document.getElementById('blockStrokeNone');
-    if (_spRefStroke530 && _spRefStroke530 !== 'transparent' && _spRefStroke530 !== '' && _spRefStroke530 !== null) {
-        try { blockStrokeInput.value = _spRefStroke530; } catch(_) {}
+    const _hexStroke = _spCouleurVersHex(_spRefStroke530);
+    if (_hexStroke) {
+        try { blockStrokeInput.value = _hexStroke; } catch(_) {}
         if (blockStrokeNoneBtn) blockStrokeNoneBtn.style.borderColor = '#e0e0e0';
         blockStrokeInput.style.opacity = '1';
         window._blockStrokeNone = false;
@@ -22050,7 +22503,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         }
 
         // Gestion des raccourcis clavier
-        function penKeyDown(e) {
+        async function penKeyDown(e) {
     if (!penToolActive) return;
     
     const activeCanvas = getActiveCanvas();
@@ -22110,7 +22563,8 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             
         case 'Delete':
             // Suppr : Annuler complètement le tracé en cours
-            if (confirm(translate('confirmCancelTrace'))) {
+            /* _SP_DLG_574 : pop-in SuperPrint (l'ancien confirm() natif affichait l'URL du fichier). */
+            if (await window.spConfirm(translate('confirmCancelTrace'), { type: 'warning', ok: 'Annuler le tracé', cancel: 'Continuer' })) {
                 cleanAllPenTemporaryElements(activeCanvas);
                 resetPenTool();
                 activeCanvas.requestRenderAll();
@@ -32119,7 +32573,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     });
 
     // CLEAR ALL - Supprimer tous les calques sauf éléments protégés
-    document.getElementById('clearAllLayers').addEventListener('click', () => {
+    document.getElementById('clearAllLayers').addEventListener('click', async () => {
         const activeCanvas = getActiveCanvas();
         if (!activeCanvas) return;
         
@@ -32138,7 +32592,8 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             return;
         }
         
-        if (confirm(translatef('confirmDeleteAllLayers', objectsToRemove.length))) {
+        /* _SP_DLG_574 : confirmation SuperPrint en rouge (action destructrice). */
+        if (await window.spConfirm(translatef('confirmDeleteAllLayers', objectsToRemove.length), { type: 'error', danger: true, ok: 'Supprimer' })) {
             // 🔗 Nettoyage des chaînes AVANT suppression
             objectsToRemove.forEach(obj => {
                 try { cleanupChainOnBlockDelete(obj); obj._chainCleaned = true; } catch (_) {}
@@ -36241,6 +36696,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         prefix: '', suffix: '', style: 'decimal',
                         marginBottom: 15, marginSide: 20
                     };
+                    pageNumberingOverrides = project.pageNumberingOverrides || {};
                     // FIX: Restaurer le viewMode sauvegardé ou forcer 'single'
                     viewMode = project.viewMode || 'single';
                     document.getElementById('singlePageMode').classList.toggle('active', viewMode === 'single');
@@ -36488,6 +36944,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         prefix: '', suffix: '', style: 'decimal',
                         marginBottom: 15, marginSide: 20
                     };
+                    pageNumberingOverrides = project.pageNumberingOverrides || {};
                     // FIX: Restaurer le viewMode sauvegardé ou forcer 'single'
                     viewMode = project.viewMode || 'single';
                     document.getElementById('singlePageMode').classList.toggle('active', viewMode === 'single');
@@ -38221,9 +38678,10 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         //   remet les champs W/H/marges de la barre latérale — on lit ensuite
         //   pageFormat via ces champs pour vérifier le format appliqué.
         // ════════════════════════════════════════════════════════════════
-        function _spImportNouveauDocument(format, marges) {
+        async function _spImportNouveauDocument(format, marges) {
             try {
-                if (!confirm(translate('impDestConfirmNew'))) return false;
+                /* _SP_DLG_574 : question SuperPrint (avant : boîte native du navigateur). */
+                if (!await window.spConfirm(translate('impDestConfirmNew'), { type: 'info', ok: 'Nouveau document' })) return false;
             } catch (_) {}
             var sp = null;
             try { sp = window.saveProjectSP_toObject(); } catch (_) { sp = null; }
@@ -38283,7 +38741,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         }
                     }
                 } catch (_) {}
-                if (!_spImportNouveauDocument(fmt, mg)) return null;
+                if (!await _spImportNouveauDocument(fmt, mg)) return null;
                 var opts2 = Object.assign({}, wordOpts);
                 delete opts2.dest;
                 opts2._startPage = 0;                    // page 1 du nouveau document
@@ -38385,7 +38843,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                BRUTES (sheet_to_json avec header:1 renvoie les valeurs brutes : une
                date devenait un numéro de série, un pourcentage 0,15, une devise
                perdait son symbole). Ici : raw:false -> valeurs AFFICHÉES. */
-            askWordOptions(true).then(function (xOpts) {
+            askWordOptions(true).then(async function (xOpts) {
                 if (!xOpts) { e.target.value = ''; return; }         // annulé
                 var _continue = function (startPage) {
                     ensureXlsxLibs(() => {
@@ -38442,7 +38900,10 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     /* Format proposé : A4 PAYSAGE si le tableau lu est plus large que
                        haut (cas courant d'un tableur), portrait sinon. */
                     const fmt = { w: 297, h: 210, libelle: 'A4 paysage' };
-                    if (!_spImportNouveauDocument(fmt, null)) { e.target.value = ''; return; }
+                    /* _SP_DLG_574 : _spImportNouveauDocument est devenue async (pop-in de
+                       confirmation) — sans await, la Promise était TOUJOURS vraie et
+                       l'import continuait même après un « Annuler ». */
+                    if (!await _spImportNouveauDocument(fmt, null)) { e.target.value = ''; return; }
                     _continue(0);
                     return;
                 }
@@ -41909,13 +42370,18 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
             // Si un seul fichier → conserve la boîte de dialogue « Nom de la police » (UX historique).
             // Sinon (>=2) → dérive automatiquement le nom depuis le nom de fichier (sans extension).
-            const fontNames = files.map(f => {
-                const base = f.name.replace(/\.[^/.]+$/, '');
-                if (files.length === 1) {
-                    return prompt(translate('promptCustomFontName'), base) || null;
-                }
-                return base;
-            });
+            /* _SP_DLG_574 : la saisie du nom passe par la pop-in SuperPrint (le prompt() natif
+               n'est pas attendable — la boîte attendait ici une réponse BLOQUANTE, d'où la
+               transformation en séquence asynchrone équivalente : un seul fichier = une
+               demande, plusieurs fichiers = noms dérivés du nom de fichier comme avant). */
+            let fontNames;
+            if (files.length === 1) {
+                const base = files[0].name.replace(/\.[^/.]+$/, '');
+                const saisi = await window.spPrompt(translate('promptCustomFontName'), base, { ok: 'Charger' });
+                fontNames = [saisi];              // null = annulé → loadOne ignorera (nom vide)
+            } else {
+                fontNames = files.map(f => f.name.replace(/\.[^/.]+$/, ''));
+            }
 
             const loadOne = (file, fontName) => new Promise((resolve) => {
                 if (!fontName) { resolve(false); return; }
@@ -42102,7 +42568,52 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     function clearGridGuides(canvas) {
         if (!canvas) return;
         const toRemove = canvas.getObjects().filter(obj => obj.isGridGuide || obj.isBaselineGuide);
-        toRemove.forEach(obj => canvas.remove(obj));
+        if (!toRemove.length) return false;
+        /* ⚡ _SP_GRILLE_574 : un seul remove(...) au lieu de N appels — chaque remove()
+           recalculait l'index de l'objet dans _objects ET parcourait les sélections actives.
+           Mesuré sur 24 planches × 107 repères : ~2 600 appels par clic de case. */
+        try { canvas.remove(...toRemove); }
+        catch (_) { toRemove.forEach(obj => canvas.remove(obj)); }
+        return true;
+    }
+
+    /* ═══ _SP_GRILLE_574_DEBUT — AJOUT DES REPÈRES EN UN SEUL LOT ═══
+       MESURE (24 planches × 107 repères, grille + ligne de base + 32 colonnes) :
+       un clic de case à cocher bloquait le fil principal 60 à 380 ms et faisait tomber
+       une image de 1 201 ms. Cause : chaque repère était posé par canvas.add() PUIS
+       remonté par canvas.bringToFront() — deux parcours de la pile par objet, soit
+       ~5 000 opérations de tableau par case cochée, alors que les repères sont TOUS
+       ajoutés à la suite (donc déjà au-dessus : bringToFront était sans effet).
+       Correctif : on constitue un tableau pendant la construction, puis un seul add(...). */
+    let _spGrilleLot = null;
+    function spGrilleLotDebut() { _spGrilleLot = []; }
+    function spGrilleLotAjouter(canvas, obj) {
+        if (_spGrilleLot) { _spGrilleLot.push(obj); return; }
+        canvas.add(obj);
+    }
+    function spGrilleLotFin(canvas) {
+        const lot = _spGrilleLot;
+        _spGrilleLot = null;
+        if (!lot || !lot.length) return;
+        /* add(...) pose les objets à la FIN de _objects, exactement comme la boucle
+           add() + bringToFront() d'origine : l'empilement rendu est identique. */
+        try { canvas.add(...lot); }
+        catch (_) { lot.forEach(o => canvas.add(o)); }
+    }
+
+    /* ═══ _SP_GRILLE_574 — PLUS DE PEINTURE AUTOMATIQUE PENDANT LES MUTATIONS DE GRILLE ═══
+       MESURE DÉCISIVE : après avoir rendu les repères « à la demande », les compteurs
+       montraient encore 24 rendus par clic. Cause : dans Fabric, chaque add() et chaque
+       remove() appelle lui-même requestRenderAll() (renderOnAddRemove vaut true par
+       défaut) — donc poser ou retirer les repères REPEIGNAIT les 24 planches, même celles
+       qu'on venait d'écarter. On coupe cette peinture automatique le temps de la mutation :
+       c'est ensuite spRepeindrePlanche() qui décide, planche par planche. */
+    function spSansRenduAuto(canvas, fn) {
+        if (!canvas) return;
+        const avant = canvas.renderOnAddRemove;
+        canvas.renderOnAddRemove = false;
+        try { fn(); }
+        finally { try { canvas.renderOnAddRemove = avant; } catch (_) {} }
     }
 
     function addGuideLine(canvas, points, opts) {
@@ -42133,9 +42644,12 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             excludeFromExport: true,
             ...opts.flags
         });
+        /* ⚡ _SP_GRILLE_574 : plus de bringToFront() par repère. Les repères sont ajoutés
+           à la suite des objets existants (donc au-dessus) ET chaque bringToFront()
+           refaisait un parcours complet de la pile — mesuré comme le premier poste de
+           coût du panneau. Hors lot (appel isolé) on garde la garantie d'empilement. */
+        if (_spGrilleLot) { _spGrilleLot.push(line); return; }
         canvas.add(line);
-        // Repousser au-dessus des autres objets (images, textes…) pour que
-        // la grille reste visible.
         try { canvas.bringToFront(line); } catch(_) {}
     }
 
@@ -42235,13 +42749,68 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                    retraits = ~1 s de blocage par geste sur un document avec images). */
                 isGuide: true
             });
-            canvas.add(bande);
-            try { canvas.bringToFront(bande); } catch (_) {}
+            spGrilleLotAjouter(canvas, bande);
         }
+    }
+
+    /* ═══ _SP_GRILLE_574_DEBUT — GÉOMÉTRIE DE COMPOSITION PARTAGÉE ═══
+       Extraite d'applyGridToCanvas pour que la mise à jour « ligne de base seule »
+       (case à cocher) utilise EXACTEMENT les mêmes zones que la grille complète —
+       un seul endroit à corriger si le calcul du fond perdu change. */
+    function spAreasComposition(canvas, settings) {
+        const bleedPx = mmToPx(bleed);
+        const marginPx = mmToPx(margin);
+        const pageWidthPx = mmToPx(pageFormat.width);
+        const pageHeightPx = mmToPx(pageFormat.height);
+        const isSpread = canvas.bleedInfo && canvas.bleedInfo.isSpread;
+        const insetPx = settings.fullPage ? 0 : marginPx;
+        if (isSpread) {
+            return [
+                { x: bleedPx + insetPx, y: bleedPx + insetPx, width: pageWidthPx - 2 * insetPx, height: pageHeightPx - 2 * insetPx },
+                { x: bleedPx + pageWidthPx + insetPx, y: bleedPx + insetPx, width: pageWidthPx - 2 * insetPx, height: pageHeightPx - 2 * insetPx }
+            ];
+        }
+        // En mode spread, la 1re page (et la dernière si nombre de pages pair) est rendue
+        // seule avec un fond perdu nul du côté reliure : on lit le fond perdu RÉEL du canvas.
+        const bLeft = (canvas.bleedInfo && typeof canvas.bleedInfo.left === 'number') ? canvas.bleedInfo.left : bleedPx;
+        const bTop  = (canvas.bleedInfo && typeof canvas.bleedInfo.top  === 'number') ? canvas.bleedInfo.top  : bleedPx;
+        return [{ x: bLeft + insetPx, y: bTop + insetPx, width: pageWidthPx - 2 * insetPx, height: pageHeightPx - 2 * insetPx }];
+    }
+
+    /* Bascule « Ligne de base » : on ne touche QUE les lignes violettes. Avant, chaque
+       clic repassait par rebuildGridAll() et recréait aussi les bandes de colonnes et
+       toute la grille bleue (mesuré : ~2 600 objets par clic sur 24 planches). */
+    function spMajBaselineGrille() {
+        const settings = getGridSettings();
+        spSurPlanches(function (canvas) {
+            if (!canvas) return;
+            const anciennes = canvas.getObjects().filter(o => o.isBaselineGuide);
+            let touche = anciennes.length > 0;
+            spSansRenduAuto(canvas, function () {
+                if (anciennes.length) {
+                    try { canvas.remove(...anciennes); } catch (_) { anciennes.forEach(o => canvas.remove(o)); }
+                }
+                if (settings.baselineEnabled && gridVisible) {
+                    spGrilleLotDebut();
+                    spAreasComposition(canvas, settings).forEach(a => { try { buildBaselineGridForArea(canvas, a, settings); } catch (_) {} });
+                    spGrilleLotFin(canvas);
+                    touche = true;
+                }
+            });
+            if (touche) spRepeindrePlanche(canvas);
+        });
     }
 
     function applyGridToCanvas(canvas, settings) {
         if (!canvas) return;
+        /* _SP_GRILLE_574 : toutes les mutations de cette planche se font sans peinture
+           automatique (sinon chaque add()/remove() de Fabric repeignait la planche) —
+           la décision de peindre est prise à la fin par spRepeindrePlanche(). */
+        spSansRenduAuto(canvas, function () { spAppliquerGrilleSurPlanche(canvas, settings); });
+        spRepeindrePlanche(canvas);
+    }
+
+    function spAppliquerGrilleSurPlanche(canvas, settings) {
         clearGridGuides(canvas);
 
         const bleedPx = mmToPx(bleed);
@@ -42251,6 +42820,10 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         const isSpread = canvas.bleedInfo && canvas.bleedInfo.isSpread;
         // 🎯 Pleine page : la grille couvre tout le format (sans tenir compte des marges)
         const insetPx = settings.fullPage ? 0 : marginPx;
+
+        /* ⚡ _SP_GRILLE_574 : tous les repères de cette planche sont constitués puis posés
+           en UN SEUL add(...) (cf. spGrilleLotDebut/Fin). */
+        spGrilleLotDebut();
 
         /* _SP_GRID_506_DEBUT — LES COLONNES ROUGES SONT DESSINÉES AVANT LE GARDE-FOU « grille bleue
            éteinte » : c'est un repère indépendant, utile même sans la grille de mise en
@@ -42278,54 +42851,25 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         })();
 
         if (!gridVisible) {
-            canvas.requestRenderAll();
+            spGrilleLotFin(canvas);
+            spRepeindrePlanche(canvas);
             return;
         }
 
-        if (isSpread) {
-            const leftArea = {
-                x: bleedPx + insetPx,
-                y: bleedPx + insetPx,
-                width: pageWidthPx - 2 * insetPx,
-                height: pageHeightPx - 2 * insetPx
-            };
-            const rightArea = {
-                x: bleedPx + pageWidthPx + insetPx,
-                y: bleedPx + insetPx,
-                width: pageWidthPx - 2 * insetPx,
-                height: pageHeightPx - 2 * insetPx
-            };
-            buildLayoutGridForArea(canvas, leftArea, settings);
-            buildLayoutGridForArea(canvas, rightArea, settings);
-            buildBaselineGridForArea(canvas, leftArea, settings);
-            buildBaselineGridForArea(canvas, rightArea, settings);
-        } else {
-            // 🛠️ FIX 2026-05-10 : en mode spread, la 1re page (et la dernière si
-            //   nombre de pages pair) est rendue seule avec un fond perdu nul du
-            //   côté reliure (bleedInfo.left=0 pour position 'right',
-            //   bleedInfo.top inchangé). Utiliser bleedPx fixe décalait la grille
-            //   d'une largeur de fond perdu vers la droite. On lit donc le fond
-            //   perdu réel du canvas (cohérent avec marginRect qui utilise déjà
-            //   bleedInfo.left/top + marginPx).
-            const bLeft = (canvas.bleedInfo && typeof canvas.bleedInfo.left === 'number') ? canvas.bleedInfo.left : bleedPx;
-            const bTop  = (canvas.bleedInfo && typeof canvas.bleedInfo.top  === 'number') ? canvas.bleedInfo.top  : bleedPx;
-            const area = {
-                x: bLeft + insetPx,
-                y: bTop  + insetPx,
-                width: pageWidthPx - 2 * insetPx,
-                height: pageHeightPx - 2 * insetPx
-            };
+        /* _SP_GRILLE_574 : une seule source de vérité pour les zones (cf. spAreasComposition),
+           partagée avec la mise à jour « ligne de base seule ». */
+        spAreasComposition(canvas, settings).forEach(function (area) {
             buildLayoutGridForArea(canvas, area, settings);
             buildBaselineGridForArea(canvas, area, settings);
-        }
+        });
+
+        spGrilleLotFin(canvas);
 
         // 🛡️ FIX 2026-05-01 (Bug 13) : re-affirmer la mise en page pasteboard
         //   apres avoir manipule les guides (la sequence add+bringToFront en
         //   masse semble pouvoir corrompre la CSS du canvas-container dans
         //   certains scenarios).
         try { if (typeof window._spReassertPasteboardLayout === 'function') window._spReassertPasteboardLayout(canvas); } catch(_) {}
-
-        canvas.requestRenderAll();
     }
 
     /* ═══ _SP_GRILLE_543_DEBUT — LA POP-IN « GRILLE & REPÈRES » NE FIGE PLUS L'APPLICATION ═══
@@ -42401,18 +42945,126 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     function spGrilleDiffere(liste) {
         const gen = ++_spGrilleGen;
         _spGrilleAttente = liste.slice();
+        /* _SP_GRILLE_574 : UNE planche par tranche d'inactivité. MESURE : reconstruire les
+           repères des 22 planches hors écran d'un coup produisait encore une tâche longue de
+           ~55 ms ; planche par planche, le fil principal reste réactif. */
         const exec = function () {
             if (gen !== _spGrilleGen) return;              /* une demande plus récente a pris la main */
             const aFaire = _spGrilleAttente || [];
-            _spGrilleAttente = null;
+            if (!aFaire.length) { _spGrilleAttente = null; return; }
+            const prochaine = aFaire.shift();
             const frais = getGridSettings();              /* réglages AU MOMENT du travail */
-            aFaire.forEach(c => { try { applyGridToCanvas(c, frais); } catch (_) {} });
+            try { if (prochaine) applyGridToCanvas(prochaine, frais); } catch (_) {}
+            if (aFaire.length) {
+                if (typeof requestIdleCallback === 'function') requestIdleCallback(exec, { timeout: 1200 });
+                else setTimeout(exec, 90);
+            } else {
+                _spGrilleAttente = null;
+            }
         };
         if (typeof requestIdleCallback === 'function') requestIdleCallback(exec, { timeout: 1200 });
         else setTimeout(exec, 90);
     }
     function spGrilleDiffereAnnuler() { _spGrilleGen++; _spGrilleAttente = null; }
     window.spGrille543.attente = function () { return { gen: _spGrilleGen, restantes: _spGrilleAttente ? _spGrilleAttente.length : 0 }; };
+
+    /* ═══ _SP_GRILLE_574_DEBUT — TRAITEMENT PAR PLANCHE : VISIBLES TOUT DE SUITE, AUTRES À L'INACTIVITÉ ═══
+       Le clic ne doit payer QUE ce que l'utilisateur voit. Avant, « Masquer les repères »,
+       « Afficher la grille » (extinction) et « Masquer les fonds perdus » reparcouraient
+       TOUTES les planches et demandaient leur repeint dans la même image — mesuré sur
+       24 pages : 9 tâches longues totalisant 1 823 ms, dont une image de 1 201 ms.
+       fn(canvas) est rejouée à l'idéal sur les planches hors écran ; comme elle relit
+       l'état courant (case à cocher), c'est toujours le DERNIER choix qui est appliqué. */
+    let _spPlanchesGen = 0, _spPlanchesAttente = null;
+    function spSurPlanches(fn) {
+        const gen = ++_spPlanchesGen;
+        const immediates = [], differees = [];
+        canvases.forEach(c => { if (!c) return; (spPlancheVisible(c) ? immediates : differees).push(c); });
+        immediates.forEach(c => { try { fn(c); } catch (_) {} });
+        if (!differees.length) { _spPlanchesAttente = null; return; }
+        _spPlanchesAttente = { gen: gen, liste: differees, fn: fn };
+        const exec = function () {
+            const d = _spPlanchesAttente;
+            if (!d || d.gen !== _spPlanchesGen) return;   /* une demande plus récente a pris la main */
+            _spPlanchesAttente = null;
+            d.liste.forEach(c => { try { d.fn(c); } catch (_) {} });
+        };
+        if (typeof requestIdleCallback === 'function') requestIdleCallback(exec, { timeout: 1200 });
+        else setTimeout(exec, 90);
+    }
+    function spSurPlanchesAnnuler() { _spPlanchesGen++; _spPlanchesAttente = null; }
+    window.spSurPlanches = spSurPlanches;
+
+    /* ═══ _SP_GRILLE_574 — PEINTURE À LA DEMANDE : ON NE REPEINT PLUS LES PLANCHES HORS ÉCRAN ═══
+       MESURE (24 planches × 103 objets + 107 repères, grille + ligne de base + 32 colonnes) :
+         · le travail objets de rebuildGridAll() ne coûte que 4,8 ms ;
+         · mais CHAQUE case cochée repeignait les 24 canvas (350 à 430 ms de peinture au total,
+           jusqu'à 91 ms pour une seule planche) alors que 2 planches seulement sont visibles ;
+         · d'où des tâches longues de 226 à 359 ms et une image figée de 1 782 ms.
+       Une planche hors écran est donc marquée « à repeindre » au lieu d'être peinte : elle
+       sera peinte à son entrée dans la vue (défilement) ou, à défaut, une par une au repos. */
+    const _spPlanchesDirty = new Set();
+
+    function spRepeindrePlanche(canvas) {
+        if (!canvas || typeof canvas.requestRenderAll !== 'function') return;
+        if (spPlancheVisible(canvas)) {
+            _spPlanchesDirty.delete(canvas);
+            canvas.requestRenderAll();
+            return;
+        }
+        _spPlanchesDirty.add(canvas);
+        spPlanifierFiletPlanches();
+    }
+    window.spRepeindrePlanche = spRepeindrePlanche;
+
+    /* Repeint les planches devenues visibles. Appelé au défilement (une fois par image). */
+    function spPurgerPlanchesVisibles() {
+        if (!_spPlanchesDirty.size) return;
+        _spPlanchesDirty.forEach(function (c) {
+            if (!spPlancheVisible(c)) return;
+            _spPlanchesDirty.delete(c);
+            try { c.requestRenderAll(); } catch (_) {}
+        });
+    }
+    window.spPurgerPlanchesVisibles = spPurgerPlanchesVisibles;
+
+    /* Filet de sécurité : après un court délai, on ne repeint QUE les planches réellement
+       visibles — jamais les 24 (c'est précisément ce qui coûtait 350 à 430 ms par clic). */
+    let _spDirtyFilet = null;
+    function spPlanifierFiletPlanches() {
+        if (_spDirtyFilet) clearTimeout(_spDirtyFilet);
+        _spDirtyFilet = setTimeout(function () {
+            _spDirtyFilet = null;
+            try { spPurgerPlanchesVisibles(); } catch (_) {}
+        }, 700);
+    }
+
+    /* Le défilement (et le redimensionnement) ramènent les planches dans la vue :
+       c'est À CE MOMENT qu'elles sont repeintes. */
+    (function spEcouterDefilementPlanches() {
+        const zone = document.getElementById('canvasScrollArea');
+        if (zone) {
+            let prevu = false;
+            zone.addEventListener('scroll', function () {
+                if (prevu) return;
+                prevu = true;
+                requestAnimationFrame(function () { prevu = false; try { spPurgerPlanchesVisibles(); } catch (_) {} });
+            }, { passive: true });
+        }
+        window.addEventListener('resize', function () { try { spPurgerPlanchesVisibles(); } catch (_) {} });
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) { try { spPurgerPlanchesVisibles(); } catch (_) {} }
+        });
+    })();
+
+    /* Retire la grille d'UNE planche (repères bleus + ligne de base + bandes rouges) et ne
+       repeint QUE si quelque chose a été retiré. */
+    function spRetirerGrilleDePlanche(canvas) {
+        if (!canvas) return;
+        let retire = false;
+        spSansRenduAuto(canvas, function () { retire = !!clearGridGuides(canvas); });
+        if (retire) spRepeindrePlanche(canvas);
+    }
 
     function rebuildGridAll() {
         const settings = getGridSettings();
@@ -42503,10 +43155,11 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 /* _SP_GRILLE_543d : on annule d'abord toute reconstruction différée —
                    sinon une planche non visible recevait sa grille APRÈS l'extinction. */
                 spGrilleDiffereAnnuler();
-                canvases.forEach(c => {
-                    clearGridGuides(c);
-                    c.requestRenderAll();
-                });
+                /* _SP_GRILLE_574 : extinction sur les planches VISIBLES seulement, le reste
+                   à l'inactivité (avant : les 24 planches étaient vidées ET repeintes dans
+                   la même image → image de 1 201 ms mesurée). Les demandes différées de
+                   grille étant annulées juste au-dessus, personne ne reproposera la grille. */
+                spSurPlanches(spRetirerGrilleDePlanche);
             }
         });
     }
@@ -42741,11 +43394,15 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     });
     if (baselineToggle) {
         baselineToggle.addEventListener('change', () => {
-            if (gridVisible) rebuildGridAll();
+            /* _SP_GRILLE_574 : on ne recrée QUE les lignes de base (avant : rebuildGridAll()
+               relançait la grille bleue ET les bandes de colonnes — ~2 600 objets par clic). */
+            if (gridVisible) spMajBaselineGrille();
         });
     }
     if (gridFullPageToggle) {
         gridFullPageToggle.addEventListener('change', () => {
+            /* La géométrie change entièrement (marges ↔ pleine page) : reconstruction
+               complète, mais toujours visibles d'abord / autres à l'inactivité. */
             if (gridVisible) rebuildGridAll();
         });
     }
@@ -42769,8 +43426,10 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     */
 
     // Repères manuels
-    document.getElementById('addVerticalGuide').addEventListener('click', () => {
-        const position = prompt(translate('promptGuideVerticalPos'), '105');
+    document.getElementById('addVerticalGuide').addEventListener('click', async () => {
+        /* _SP_DLG_574 : pop-in de saisie SuperPrint (l'ancien prompt() natif affichait
+           « file:///… dit » dans son titre et un bouton dans la langue du système). */
+        const position = await window.spPrompt(translate('promptGuideVerticalPos'), '105');
         if (position !== null && position !== '') {
             const positionMm = parseFloat(position);
             if (!isNaN(positionMm)) {
@@ -42785,8 +43444,8 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         }
     });
 
-    document.getElementById('addHorizontalGuide').addEventListener('click', () => {
-        const position = prompt(translate('promptGuideHorizontalPos'), '148.5');
+    document.getElementById('addHorizontalGuide').addEventListener('click', async () => {
+        const position = await window.spPrompt(translate('promptGuideHorizontalPos'), '148.5');
         if (position !== null && position !== '') {
             const positionMm = parseFloat(position);
             if (!isNaN(positionMm)) {
@@ -42871,26 +43530,32 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     const hideGuidesToggle = document.getElementById('hideGuidesToggle');
     if (hideGuidesToggle) {
         hideGuidesToggle.addEventListener('change', () => {
-            const hide = hideGuidesToggle.checked;
+            const hide = !!hideGuidesToggle.checked;
+            // Étiquettes lues par createPageCanvas() et l'export : posées une seule fois ici.
             window._spHideMargins = hide;
             window._spHideGuidesAll = hide;
             // ⚡ PERF: basculer la visibilité des marges + guides + grilles +
             //   baseline + UI chainage sans recréer les guides
-            canvases.forEach(canvas => {
+            /* _SP_GRILLE_574 : la fonction relit la case à chaque exécution, donc une
+               planche traitée à l'inactivité reçoit toujours le DERNIER choix. */
+            spSurPlanches(function (canvas) {
                 if (!canvas) return;
+                let touche = false;
                 canvas.getObjects().forEach(obj => {
                     if (obj.isMargin
                         || obj.isGuide || obj.isManualGuide
                         || obj.isGridGuide || obj.isBaselineGuide
                         || obj._isChainBadge || obj._isLinkArrow || obj._isOverflowIndicator
                         || obj._endMarker === true) {
-                        obj.visible = !hide;
+                        if (obj.visible === hide) { obj.visible = !hide; touche = true; }
                     }
                 });
-                // 🛡️ Bug 13 : re-affirmer la mise en page pasteboard pour eviter
-                //   tout decalage du fond blanc apres toggle.
+                /* 🛡️ Bug 13 : re-affirmer la mise en page pasteboard pour eviter
+                   tout decalage du fond blanc apres toggle — et NE PAS repeindre une
+                   planche où rien n'a changé (24 planches repeintes pour rien avant). */
+                if (!touche) return;
                 _spReassertPasteboardLayout(canvas);
-                canvas.requestRenderAll();
+                spRepeindrePlanche(canvas);
             });
         });
     }
@@ -42947,7 +43612,9 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     masks.forEach(m => canvas.add(m));
                 }
 
-                canvas.requestRenderAll();
+                /* _SP_GRILLE_574 : peinture à la demande — une planche hors écran est marquée
+                   « à repeindre » puis peinte à son entrée dans la vue. */
+                spRepeindrePlanche(canvas);
             };
             // ⚡ PERF (même principe que rebuildGridAll) : les planches VISIBLES tout de
             //   suite, les autres à l'inactivité — un document de nombreuses pages ne
@@ -55611,9 +56278,10 @@ https://superprint.app
         delBtn.style.cssText = 'margin-left:4px;cursor:pointer;opacity:.7;font-size:14px;line-height:1;';
         delBtn.innerHTML = '×';
         delBtn.title = 'Supprimer le gabarit ' + letter;
-        delBtn.onclick = (e) => {
+        delBtn.onclick = async (e) => {
             e.stopPropagation();
-            if (confirm(translatef('confirmDeleteMasterPage', letter))) {
+            /* _SP_DLG_574 : confirmation SuperPrint en rouge. */
+            if (await window.spConfirm(translatef('confirmDeleteMasterPage', letter), { type: 'error', danger: true, ok: 'Supprimer' })) {
                 deleteMasterPage(letter);
                 showCheminDeFer();
             }
@@ -55726,10 +56394,11 @@ https://superprint.app
         deleteBtn.className = 'chemin-delete-btn';
         deleteBtn.innerHTML = '×';
         deleteBtn.title = `Supprimer la page ${i + 1}`;
-        deleteBtn.onclick = (e) => {
+        deleteBtn.onclick = async (e) => {
             e.stopPropagation();
             const pageIdx = parseInt(thumb.dataset.pageIndex);
-            if (confirm(translatef('confirmDeletePage', pageIdx + 1))) {
+            /* _SP_DLG_574 : confirmation SuperPrint en rouge. */
+            if (await window.spConfirm(translatef('confirmDeletePage', pageIdx + 1), { type: 'error', danger: true, ok: 'Supprimer' })) {
                 deletePageFromChemin(pageIdx);
             }
         };
@@ -56243,6 +56912,24 @@ https://superprint.app
                 pageMasterAssignments = newAssign;
             }
 
+            /* 🛡️ v1.7.574 — mêmes décalages pour les personnalisations de folio : sans cela,
+               l'override de la page 5 resterait attaché à l'index 5 après un déplacement. */
+            {
+                const newFolioOv = {};
+                for (const [k, v] of Object.entries(pageNumberingOverrides)) {
+                    let idx = parseInt(k);
+                    if (!isFinite(idx)) continue;
+                    if (idx === draggedPageIndex) {
+                        newFolioOv[insertIndex] = v;
+                    } else {
+                        if (idx > draggedPageIndex) idx--;
+                        if (idx >= insertIndex) idx++;
+                        newFolioOv[idx] = v;
+                    }
+                }
+                pageNumberingOverrides = newFolioOv;
+            }
+
             // Mettre à jour l'index de la page courante
             if (currentPageIndex === draggedPageIndex) {
                 currentPageIndex = insertIndex;
@@ -56334,6 +57021,19 @@ https://superprint.app
                 // idx === pageIndex → supprimé
             });
             pageMasterAssignments = newAssign;
+            
+            // 🛡️ v1.7.574 — décaler les personnalisations de folio (idx > pageIndex → −1).
+            {
+                const newFolioOv = {};
+                Object.keys(pageNumberingOverrides).forEach(k => {
+                    const idx = parseInt(k);
+                    if (!isFinite(idx)) return;
+                    if (idx < pageIndex) newFolioOv[idx] = pageNumberingOverrides[k];
+                    else if (idx > pageIndex) newFolioOv[idx - 1] = pageNumberingOverrides[k];
+                    // idx === pageIndex → supprimé
+                });
+                pageNumberingOverrides = newFolioOv;
+            }
             
             // Ajuster currentPageIndex si nécessaire
             if (currentPageIndex >= pages.length) {
@@ -56466,6 +57166,23 @@ https://superprint.app
                 newAssign[pageIndex + 1] = pageMasterAssignments[pageIndex];
             }
             pageMasterAssignments = newAssign;
+
+            // 🛡️ v1.7.574 — décaler les personnalisations de folio (idx > pageIndex → +1) et
+            // recopier celles de la page source vers la copie (une page dupliquée doit avoir
+            // le même folio personnalisé que l'original).
+            {
+                const newFolioOv = {};
+                Object.keys(pageNumberingOverrides).forEach(k => {
+                    const idx = parseInt(k);
+                    if (!isFinite(idx)) return;
+                    if (idx <= pageIndex) newFolioOv[idx] = pageNumberingOverrides[k];
+                    else newFolioOv[idx + 1] = pageNumberingOverrides[k];
+                });
+                if (pageNumberingOverrides[pageIndex]) {
+                    newFolioOv[pageIndex + 1] = _spClone ? _spClone(pageNumberingOverrides[pageIndex]) : JSON.parse(JSON.stringify(pageNumberingOverrides[pageIndex]));
+                }
+                pageNumberingOverrides = newFolioOv;
+            }
 
             // Ajuster currentPageIndex si nécessaire (les pages après ont décalé de +1)
             if (currentPageIndex > pageIndex) currentPageIndex++;
@@ -57419,12 +58136,13 @@ https://superprint.app
             mc.requestRenderAll();
         }
 
-        function masterEditorAddVGuide() {
+        async function masterEditorAddVGuide() {
             const mc = window._activeMasterCanvas;
             if (!mc) return;
             const w = mmToPx(pageFormat.width);
             const h = mmToPx(pageFormat.height);
-            const v = prompt(translate('promptGuideVerticalPos'), String((pageFormat.width / 2).toFixed(1)));
+            /* _SP_DLG_574 : saisie SuperPrint au lieu du prompt() natif. */
+            const v = await window.spPrompt(translate('promptGuideVerticalPos'), String((pageFormat.width / 2).toFixed(1)));
             if (v === null || v === '') return;
             const mm = parseFloat(v);
             if (isNaN(mm)) { alert(translate('alertInvalidPosition')); return; }
@@ -57432,12 +58150,12 @@ https://superprint.app
             _masterEditorAddGuideLine([x, 0, x, h], true);
         }
 
-        function masterEditorAddHGuide() {
+        async function masterEditorAddHGuide() {
             const mc = window._activeMasterCanvas;
             if (!mc) return;
             const w = mmToPx(pageFormat.width);
             const h = mmToPx(pageFormat.height);
-            const v = prompt(translate('promptGuideHorizontalPos'), String((pageFormat.height / 2).toFixed(1)));
+            const v = await window.spPrompt(translate('promptGuideHorizontalPos'), String((pageFormat.height / 2).toFixed(1)));
             if (v === null || v === '') return;
             const mm = parseFloat(v);
             if (isNaN(mm)) { alert(translate('alertInvalidPosition')); return; }
@@ -57445,12 +58163,13 @@ https://superprint.app
             _masterEditorAddGuideLine([0, y, w, y], false);
         }
 
-        function masterEditorClearGuides() {
+        async function masterEditorClearGuides() {
             const mc = window._activeMasterCanvas;
             if (!mc) return;
             const removed = mc.getObjects().filter(o => o._isMasterGuide);
             if (removed.length === 0) return;
-            if (!confirm(translatef('confirmDeleteMasterGuides', removed.length))) return;
+            /* _SP_DLG_574 : confirmation SuperPrint en rouge. */
+            if (!await window.spConfirm(translatef('confirmDeleteMasterGuides', removed.length), { type: 'error', danger: true, ok: 'Supprimer' })) return;
             removed.forEach(o => mc.remove(o));
             mc.requestRenderAll();
         }
@@ -57852,6 +58571,15 @@ https://superprint.app
                 pages[i].objects = JSON.stringify(parsed);
             }
         }
+
+        /* 🛡️ v1.7.574 — « Retirer les numéros » : action GLOBALE et explicite, on repart d'un état
+           propre (sinon une page précédemment masquée resterait masquée après réactivation).
+           Volontairement SÉPARÉ de removeAllPageNumbers(), appelée aussi par applyCheminDeFer
+           où effacer les personnalisations serait destructeur. */
+        function spClearPageNumberingOverrides() {
+            pageNumberingOverrides = {};
+        }
+        try { window.spClearPageNumberingOverrides = spClearPageNumberingOverrides; } catch(_) {}
 
         // Ouvrir le panneau de numérotation
         function showPageNumberingPanel() {
@@ -59608,9 +60336,10 @@ function alignSelectedObjects(direction) {
         }
         
         // Nouvelle fonction pour réinitialiser le document depuis la modale IA
-        function resetDocumentForAI() {
+        async function resetDocumentForAI() {
             // Demander confirmation
-            if (!confirm(translate('confirmResetDocument'))) {
+            /* _SP_DLG_574 : confirmation SuperPrint en rouge (action destructrice). */
+            if (!await window.spConfirm(translate('confirmResetDocument'), { type: 'error', danger: true, ok: 'Réinitialiser' })) {
                 return;
             }
             
@@ -68715,11 +69444,12 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     }
         }
 
-        function deleteTypographyStyle(index) {
+        async function deleteTypographyStyle(index) {
     const st = typographyStyles[index];
     if (!st) return;
     const msg = translate('confirmDeleteStyle') || 'Delete this style?';
-    if (!confirm(msg + `\n\n${st.name}`)) return;
+    /* _SP_DLG_574 : le nom du style est le MESSAGE (avant : collé à la fin du texte natif). */
+    if (!await window.spConfirm(msg, { type: 'error', danger: true, title: st.name, ok: 'Supprimer' })) return;
     typographyStyles.splice(index,1);
     saveTypographyStyles();
     renderTypographyStylesList();
@@ -69630,9 +70360,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         });
 
         // Clic droit: supprimer
-        item.addEventListener('contextmenu', (e) => {
+        item.addEventListener('contextmenu', async (e) => {
             e.preventDefault();
-            if (confirm(translatef('confirmDeleteSwatch', swatch.name))) {
+            /* _SP_DLG_574 : confirmation SuperPrint en rouge. */
+            if (await window.spConfirm(translatef('confirmDeleteSwatch', swatch.name), { type: 'error', danger: true, ok: 'Supprimer' })) {
                 colorSwatches.splice(index, 1);
                 saveSwatches();
                 renderSwatches();
@@ -71895,6 +72626,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             masterPages = project.masterPages || {};
             pageMasterAssignments = project.pageMasterAssignments || {};
             if (project.pageNumberingSettings) pageNumberingSettings = project.pageNumberingSettings;
+            if (project.pageNumberingOverrides) pageNumberingOverrides = project.pageNumberingOverrides;
             // 🛡️ v1.7.284 : restaurer viewMode / colorMode / guides / projectName (API alignée sur le JSON UI)
             if (project.viewMode) viewMode = project.viewMode;
             if (project.projectName) window._spProjectName = project.projectName;
@@ -75613,9 +76345,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                         for (const el of canvasEls) {
                             const r = el.getBoundingClientRect();
                             if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
-                                const m = el.id && el.id.match(/^canvas-(\d+)$/);
-                                const idx = m ? parseInt(m[1], 10) : NaN;
-                                if (!isNaN(idx) && canvases[idx]) { targetCanvas = canvases[idx]; break; }
+                                /* _SP_CANVAS_574 : identification par l'ÉLÉMENT (cf. spCanvasDepuisElement) —
+                                   l'ancien canvases[pageIndex] visait la mauvaise planche en double page. */
+                                targetCanvas = (typeof spCanvasDepuisElement === 'function') ? spCanvasDepuisElement(el) : null;
+                                if (targetCanvas) break;
                             }
                         }
                         if (!targetCanvas) targetCanvas = (typeof getActiveCanvas === 'function' ? getActiveCanvas() : null);
@@ -76285,18 +77018,18 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                     const rect = canvasEl.getBoundingClientRect();
                     if (e.clientX >= rect.left && e.clientX <= rect.right &&
                         e.clientY >= rect.top && e.clientY <= rect.bottom) {
-                        const idMatch = canvasEl.id && canvasEl.id.match(/^canvas-(\d+)$/);
-                        const pageIndex = idMatch ? parseInt(idMatch[1], 10) : NaN;
-                        if (!isNaN(pageIndex) && canvases[pageIndex]) {
-                            targetCanvas = canvases[pageIndex];
-                            // Calculer la position relative au canvas en tenant compte de l'Échelle
-                            const scaleX = targetCanvas.getWidth() / rect.width;
-                            const scaleY = targetCanvas.getHeight() / rect.height;
+                        /* _SP_CANVAS_574 : la planche est retrouvée par son élément — l'ancien
+                           code lisait « canvas-N » et prenait canvases[N], ce qui visait la
+                           mauvaise planche en double page (spread-canvas-1 ne matche pas la
+                           regex, et canvases[3] n'existe pas avec 3 canvas). */
+                        const cible = (typeof spCanvasDepuisElement === 'function') ? spCanvasDepuisElement(canvasEl) : null;
+                        if (cible) {
+                            const scaleX = cible.getWidth() / rect.width;
+                            const scaleY = cible.getHeight() / rect.height;
                             const x = (e.clientX - rect.left) * scaleX;
                             const y = (e.clientY - rect.top) * scaleY;
-                            // Déposer l'objet sur ce canvas
-                            dropPatternOnCanvas(pattern, targetCanvas, x, y);
-                            break;
+                            dropPatternOnCanvas(pattern, cible, x, y);
+                            return;
                         }
                     }
                 }
@@ -76502,15 +77235,14 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 for (const canvasEl of canvasEls) {
                     const rect = canvasEl.getBoundingClientRect();
                     if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
-                        const idMatch = canvasEl.id && canvasEl.id.match(/^canvas-(\d+)$/);
-                        const pageIndex = idMatch ? parseInt(idMatch[1], 10) : NaN;
-                        if (!isNaN(pageIndex) && canvases[pageIndex]) {
-                            const targetCanvas2 = canvases[pageIndex];
-                            const scaleX = targetCanvas2.getWidth() / rect.width;
-                            const scaleY = targetCanvas2.getHeight() / rect.height;
+                        /* _SP_CANVAS_574 : identification par l'ÉLÉMENT (cf. spCanvasDepuisElement). */
+                        const cible2 = (typeof spCanvasDepuisElement === 'function') ? spCanvasDepuisElement(canvasEl) : null;
+                        if (cible2) {
+                            const scaleX = cible2.getWidth() / rect.width;
+                            const scaleY = cible2.getHeight() / rect.height;
                             const x = (e.clientX - rect.left) * scaleX;
                             const y = (e.clientY - rect.top) * scaleY;
-                            dropPatternOnCanvas(pattern, targetCanvas2, x, y);
+                            dropPatternOnCanvas(pattern, cible2, x, y);
                             return;
                         }
                     }
@@ -76540,13 +77272,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         for (const canvasEl of canvasEls) {
             const r = canvasEl.getBoundingClientRect();
             if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
-                const idMatch = canvasEl.id && canvasEl.id.match(/^canvas-(\d+)$/);
-                const pageIndex = idMatch ? parseInt(idMatch[1], 10) : NaN;
-                if (!isNaN(pageIndex) && canvases[pageIndex]) {
-                    targetCanvas = canvases[pageIndex];
-                    rect = r;
-                    break;
-                }
+                /* _SP_CANVAS_574 : identification par l'ÉLÉMENT (cf. spCanvasDepuisElement). */
+                targetCanvas = (typeof spCanvasDepuisElement === 'function') ? spCanvasDepuisElement(canvasEl) : null;
+                if (targetCanvas) { rect = r; break; }
             }
         }
         if (!targetCanvas) targetCanvas = getActiveCanvas();
@@ -76617,12 +77345,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         for (const canvasEl of canvasEls) {
             const r = canvasEl.getBoundingClientRect();
             if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
-                const idMatch = canvasEl.id && canvasEl.id.match(/^canvas-(\d+)$/);
-                const pageIndex = idMatch ? parseInt(idMatch[1], 10) : NaN;
-                if (!isNaN(pageIndex) && canvases[pageIndex]) {
-                    targetCanvas = canvases[pageIndex];
-                    break;
-                }
+                /* _SP_CANVAS_574 : identification par l'ÉLÉMENT (cf. spCanvasDepuisElement). */
+                targetCanvas = (typeof spCanvasDepuisElement === 'function') ? spCanvasDepuisElement(canvasEl) : null;
+                if (targetCanvas) break;
             }
         }
         if (!targetCanvas) targetCanvas = getActiveCanvas();
@@ -81600,7 +82325,8 @@ window._spEnsureGuidesAfterTemplateLoad = _spEnsureGuidesAfterTemplateLoad;
                 
                 if (detectedFormat) {
                     // Appliquer le format détecté
-                    if (confirm(translatef('confirmAdjustFormat', detectedFormat.name, Math.round(pdfWidthMM), Math.round(pdfHeightMM), pageFormat.name))) {
+                    /* _SP_DLG_574 : question SuperPrint (deux issues claires). */
+                    if (await window.spConfirm(translatef('confirmAdjustFormat', detectedFormat.name, Math.round(pdfWidthMM), Math.round(pdfHeightMM), pageFormat.name), { type: 'info', ok: 'Adapter le format' })) {
                         
                         // Mettre à jour le format de page
                         pageFormat = {
@@ -81843,6 +82569,8 @@ async function applyPathfinderOperation(operation) {
     
     const selection = canvas.getActiveObject();
     if (!selection || selection.type !== 'activeSelection' || selection._objects.length < 2) {
+        /* _SP_DLG_574 : pop-in SuperPrint au lieu de la boîte grise du navigateur. */
+        if (window.spAlert) { window.spAlert(translate('alertPathfinderNeedsTwoShapes'), { type: 'warning', title: translate('pathfinderTitle') }); return; }
         alert(translate('alertPathfinderNeedsTwoShapes'));
         return;
     }
@@ -81852,6 +82580,7 @@ async function applyPathfinderOperation(operation) {
     );
     
     if (objects.length < 2) {
+        if (window.spAlert) { window.spAlert(translate('alertPathfinderUnsupportedFormat'), { type: 'warning', title: translate('pathfinderTitle') }); return; }
         alert(translate('alertPathfinderUnsupportedFormat'));
         return;
     }
@@ -81906,7 +82635,8 @@ async function applyPathfinderOperation(operation) {
     } catch (error) {
         document.body.style.cursor = 'default';
         console.error('Erreur Pathfinder:', error);
-        alert(translatef('alertPathfinderError', error.message));
+        if (window.spAlert) window.spAlert(translatef('alertPathfinderError', error.message), { type: 'error', title: translate('pathfinderTitle') });
+        else alert(translatef('alertPathfinderError', error.message));
     }
 }
 
@@ -82278,8 +83008,9 @@ function refreshWeb3SavesList() {
         deleteBtn.style.cssText = 'font-size: 10px; padding: 4px 8px; background: #f44336; color: white;';
         deleteBtn.textContent = '×';
         deleteBtn.title = 'Supprimer';
-        deleteBtn.onclick = () => {
-            if (confirm(translate('confirmDeleteLocalSave'))) {
+        deleteBtn.onclick = async () => {
+            /* _SP_DLG_574 : confirmation SuperPrint en rouge. */
+            if (await window.spConfirm(translate('confirmDeleteLocalSave'), { type: 'error', danger: true, ok: 'Supprimer' })) {
                 const updated = loadWeb3Saves().filter(x => x.hash !== s.hash);
                 saveWeb3Saves(updated);
                 refreshWeb3SavesList();
@@ -82358,6 +83089,7 @@ async function loadWeb3Save(hash) {
                 prefix: '', suffix: '', style: 'decimal',
                 marginBottom: 15, marginSide: 20
             };
+            pageNumberingOverrides = project.pageNumberingOverrides || {};
             // FIX: Restaurer le viewMode sauvegardé ou forcer 'single'
             viewMode = project.viewMode || 'single';
             document.getElementById('singlePageMode').classList.toggle('active', viewMode === 'single');
@@ -82645,6 +83377,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // ⚡ PERF: Ne pas re-sérialiser si rien n'a changé depuis le dernier save
             if (!window._spDirtyFlag) return;
             
+            // 🛡️ v1.7.574 — l'autosave peut partir sans renderAllPages() : relire les folios ici
+            // évite qu'un numéro supprimé/déplacé revienne après un rechargement de l'onglet.
+            try { _spCaptureFolioOverrides(); } catch(_) {}
+            
             // ⚡ PERF: Éviter saveAllPages() si déjà fait récemment (< 10s)
             // saveState() appelle saveAllPages() — pas besoin de re-sérialiser si c'est frais
             const now = Date.now();
@@ -82669,6 +83405,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 masterPages: typeof masterPages !== 'undefined' ? masterPages : {},
                 pageMasterAssignments: typeof pageMasterAssignments !== 'undefined' ? pageMasterAssignments : {},
                 pageNumberingSettings: typeof pageNumberingSettings !== 'undefined' ? pageNumberingSettings : {},
+                pageNumberingOverrides: typeof pageNumberingOverrides !== 'undefined' ? pageNumberingOverrides : {},
                 // 🆕 v1.7.415 — polices externes (cf. saveProjectLocal) : sans elles,
                 //   un simple rechargement d'onglet perdait la police embarquee.
                 customFonts: (function () {
@@ -82808,6 +83545,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 masterPages: _spClone(typeof masterPages !== 'undefined' ? masterPages : {}),
                 pageMasterAssignments: _spClone(typeof pageMasterAssignments !== 'undefined' ? pageMasterAssignments : {}),
                 pageNumberingSettings: _spClone(typeof pageNumberingSettings !== 'undefined' ? pageNumberingSettings : {}),
+                pageNumberingOverrides: _spClone(typeof pageNumberingOverrides !== 'undefined' ? pageNumberingOverrides : {}),
                 pageCount: (pages || []).length
             };
 
@@ -87987,6 +88725,10 @@ window.createNewProjectFromModal = function() {
     if (typeof pageMasterAssignments !== 'undefined') {
         for (const k in pageMasterAssignments) delete pageMasterAssignments[k];
     }
+    // 🛡️ v1.7.574 — nouveau projet : aucune personnalisation de folio héritée du précédent.
+    if (typeof pageNumberingOverrides !== 'undefined') {
+        for (const k in pageNumberingOverrides) delete pageNumberingOverrides[k];
+    }
     
     // Apply new format
     pageFormat = { width: w, height: h };
@@ -88736,6 +89478,9 @@ window.saveProjectSP_toObject = function() {
     // l'utilisateur clique SAVE pendant la fenetre async d'un applyCheminDeFer
     // ou d'un loadFromJSON, l'etat live n'est pas capture et le .sp est
     // sauvegarde avec l'etat pre-modification.
+    /* 🛡️ v1.7.574 — même raison pour les folios : un numéro supprimé/déplacé juste avant
+       la sauvegarde doit être relu ici, sinon le .sp réexporte la version par défaut. */
+    try { _spCaptureFolioOverrides(); } catch(_) {}
     saveAllPages(true);
     const now = new Date();
     const stats = _spCollectStats();
@@ -88816,6 +89561,7 @@ window.saveProjectSP_toObject = function() {
             assignments: pageMasterAssignments || {}
         },
         numbering: pageNumberingSettings || {},
+        numberingOverrides: pageNumberingOverrides || {},
         pages: (pages || []).map((page, index) => {
             let objects = [];
             try {
@@ -89174,6 +89920,7 @@ window.loadProjectSP = function(fileContent) {
             prefix: '', suffix: '', style: 'decimal',
             marginBottom: 15, marginSide: 20
         };
+        pageNumberingOverrides = spFile.numberingOverrides || {};
 
         // ── Reconstruire les pages dans le format interne ──
         pages = (spFile.pages || []).map(spPage => {

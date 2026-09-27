@@ -1528,8 +1528,26 @@
   'use strict';
 
   // ── Constantes ──────────────────────────────────────────────
+  /* 🛡️ _SP_STUDIO_TYPO_574 — L'APERÇU MENTAIT DE 33 % SUR LA TAILLE DES TEXTES.
+
+     Le document (studio ET app) est en 72 dpi : 1 mm = 72/25,4 px, donc
+     1 px = 1 pt. Dans SuperPrint, la taille des glyphes est `fontSize` en px
+     SANS conversion (cf. app/JS/main.js, `_spDoVectorize` :
+     `realFontSize = fontSize * |scaleX|`, et `mmToPx = mm × 72/25,4`) :
+     un texte de 36 pt = 36 px = 12,7 mm.
+
+     Le studio appliquait `fontSize × 4/3` (convention 96 dpi) dans un
+     document en 72 dpi. Mesure avant correction, sur une A4 (210 mm) :
+       · titre 36 pt → pas de ligne rendu 19,1 mm (attendu 14,35 mm) = ×1,33 ;
+       · hauteur d'un corps 11 pt/1,4 → 8,2 mm de pas (attendu 6,1 mm) ;
+     soit TOUT l'aperçu 33 % trop gros (et l'échelle des titres, la plus
+     visible). Le même ×4/3 partait dans le .sp exporté (`fontSize` écrit en
+     px) : l'app recevait 48 px pour un titre de 36 pt — le défaut suivait le
+     document jusqu'à l'impression.
+     ⚠️ PT_TO_PX reste utilisée comme nom de constante (une dizaine d'appels),
+     mais sa valeur correcte en document 72 dpi est 1. */
   const MM_TO_PX = 72 / 25.4;
-  const PT_TO_PX = 4 / 3;
+  const PT_TO_PX = 1;
 
   const GROQ_MODELS = [
     ['qwen/qwen3.8-27b',              'Qwen 3.8 27B — recommandé (Groq, rapide)'],
@@ -7658,8 +7676,8 @@ Types d'objets : rectangle (left,top,width,height,fill), text (left,top,width,te
 ${nativeDigest}
 EXEMPLE MULTI-PAGES À IMITER (structure exacte) :
 {"targetPages":${mp ? parseInt(mp[1],10) : 4},"pages":[
- {"pageIndex":0,"elements":[{"type":"rectangle","left":0,"top":0,"width":${state.pageW},"height":${state.pageH},"fill":"#0F172A"},{"type":"text","left":15,"top":20,"width":180,"text":"TITRE","fontSize":60,"fill":"#FFFFFF","fontFamily":"Bebas Neue"}]},
- {"pageIndex":1,"elements":[{"type":"text","left":15,"top":20,"width":180,"text":"ÉDITO","fontSize":36,"fill":"#0F172A","fontFamily":"Bebas Neue"},{"type":"text","left":15,"top":60,"width":180,"text":"Texte éditorial complet...","fontSize":11,"fill":"#475569","fontFamily":"Open Sans"}]}
+ {"pageIndex":0,"elements":[{"type":"rectangle","left":0,"top":0,"width":${state.pageW},"height":${state.pageH},"fill":"#0F172A"},{"type":"text","left":15,"top":20,"width":180,"text":"TITRE","fontSize":44,"fill":"#FFFFFF","fontFamily":"Bebas Neue"}]},
+ {"pageIndex":1,"elements":[{"type":"text","left":15,"top":20,"width":180,"text":"ÉDITO","fontSize":28,"fill":"#0F172A","fontFamily":"Bebas Neue"},{"type":"text","left":15,"top":60,"width":180,"text":"Texte éditorial complet...","fontSize":10,"fill":"#475569","fontFamily":"Open Sans"}]}
 ]}
 Génère le JSON pour ${mp ? parseInt(mp[1],10) : 'le nombre de pages demandé'} pages, une entrée "pages" par page : `;
       }
@@ -7675,8 +7693,8 @@ ${nativeDigest}
 EXEMPLE À IMITER (structure exacte) :
 {"elements":[
  {"type":"rectangle","left":0,"top":0,"width":${state.pageW},"height":${state.pageH},"fill":"#0F172A"},
- {"type":"text","left":15,"top":20,"width":180,"text":"TITRE","fontSize":60,"fill":"#FFFFFF","fontFamily":"Bebas Neue"},
- {"type":"text","left":15,"top":120,"width":120,"text":"Sous-titre descriptif","fontSize":18,"fill":"#E2E8F0","fontFamily":"Open Sans"},
+ {"type":"text","left":15,"top":20,"width":180,"text":"TITRE","fontSize":44,"fill":"#FFFFFF","fontFamily":"Bebas Neue"},
+ {"type":"text","left":15,"top":120,"width":120,"text":"Sous-titre descriptif","fontSize":14,"fill":"#E2E8F0","fontFamily":"Open Sans"},
  {"type":"circle","left":170,"top":250,"radius":8,"fill":"#E11D48"}
 ]}
 Génère le JSON pour cette demande : `;
@@ -7724,7 +7742,7 @@ ${(function(){
   } else {
     geomNote = 'Format confortable (largeur ≥ ' + W + ' mm) : tu peux utiliser plusieurs colonnes, mais chaque bloc doit rester ≤ ' + maxTextW + ' mm de large et tenir dans la largeur ' + W + ' mm.';
   }
-  const areaNote = small && !narrow ? 'Ce format est PLUS PETIT qu\'un A4 : réduis les corps (titres 28-60 pt, sous-titres 14-20 pt, corps 8-11 pt) et évite les grandes marges blanches. ' : '';
+  const areaNote = small && !narrow ? 'Ce format est PLUS PETIT qu\'un A4 : réduis les corps (titres 24-48 pt, sous-titres 13-18 pt, corps 8-10 pt) et évite les grandes marges blanches. ' : '';
   const modeSpread = (state.viewMode === 'spread');
   const PW = state.pageW || 210;
   const exLines = modeSpread
@@ -7813,28 +7831,35 @@ FORMULE (à appliquer à CHAQUE bloc texte) :
    largeur d'un caractère (mm) = fontSize(pt) × 0.52 × 0.353
    caractères par ligne        = largeur de colonne (mm) ÷ largeur d'un caractère
    ⇔ fontSize MAX pour N caractères/ligne = largeur_colonne_mm × 2.8346 ÷ (N × 0.52) ÷ 1.3333
-   (0.52 = police LARGE en gras ; 1.3333 = conversion pt→px ; 2.8346 = px→mm)
+   (0.52 = largeur moyenne d'un caractère, police LARGE en gras ; le résultat est
+   volontairement SOBRE : il vaut mieux un titre 10 % plus petit qu'un titre qui
+   déborde ou qui écrase le bloc du dessous.)
 
 TABLE DE RÉFÉRENCE (à lire directement, colonne = largeur du bloc texte) :
-   colonne   | TITRE LONG (16-20 car/ligne) | DISPLAY COURT (6-9 car/ligne) | CORPS (40-50 car/ligne)
+   colonne   | TITRE LONG (16-20 car/ligne) | DISPLAY COURT (6-9 car/ligne) | CORPS (40-55 car/ligne)
    ----------|------------------------------|-------------------------------|----------------------
-     60 mm   |           12 pt              |            31 pt              |        5 pt
-     80 mm   |           16 pt              |            41 pt              |        7 pt
-    100 mm   |           20 pt              |            51 pt              |        9 pt
-    120 mm   |           25 pt              |            61 pt              |       11 pt
-    130 mm   |           27 pt              |            66 pt              |       12 pt
-    150 mm   |           31 pt              |            77 pt              |       14 pt
-    174 mm   |           36 pt              |            89 pt              |       16 pt
+     60 mm   |           11 pt              |            28 pt              |        8 pt
+     80 mm   |           14 pt              |            37 pt              |        9 pt
+    100 mm   |           18 pt              |            46 pt              |       10 pt
+    120 mm   |           22 pt              |            55 pt              |       11 pt
+    130 mm   |           24 pt              |            60 pt              |       11 pt
+    150 mm   |           28 pt              |            69 pt              |       12 pt
+    174 mm   |           32 pt              |            80 pt              |       13 pt
+   ⚠️ Cette table est plus SOBRE que la formule théorique : un titre trop gros est
+      le défaut n°1 signalé. Descends d'un cran (≈ -10 %) plutôt que de monter.
+      Un TITRE ne dépasse JAMAIS 2 lignes ; un mot-clé fort ne se répète pas.
 
 DEUX RÉGIMES — c'est ce qui permet les GRANDS titres SANS casser la lisibilité :
  ① DISPLAY COURT (le cas des pages de citation / couverture / page-manifeste) :
     le texte fait 1 à 3 MOTS (max ~14 caractères). Un TRÈS grand corps est
     AUTORISÉ et MÊME SOUHAITÉ : jusqu'à la valeur « DISPLAY » du tableau.
-    Ex. « Un livre ne se défend pas » sur 150 mm de colonne → jusqu'à 77 pt. ✅
- ② TITRE LONG (4 mots et plus) : il DOIT se replier sur 2-3 lignes lisibles.
-    Prends la valeur « TITRE LONG » du tableau. Ex. « Le papier comme matière
-    première » (31 car.) sur 130 mm → 27 pt MAXIMUM (pas 78 pt !).
+    Ex. « Un livre ne se défend pas » sur 150 mm de colonne → jusqu'à 69 pt. ✅
+ ② TITRE LONG (4 mots et plus) : il DOIT se replier sur 2 lignes lisibles (3 au
+    maximum). Prends la valeur « TITRE LONG » du tableau. Ex. « Le papier comme
+    matière première » (31 car.) sur 130 mm → 24 pt MAXIMUM (pas 60 pt !).
     RÈGLE SIMPLE : plus le titre est LONG, plus la police est PETITE.
+    Un titre qui occupe 3 lignes pleine page a mangé la place du contenu :
+    réduis-le plutôt que de repousser les blocs du dessous.
 
 🔴 ANTI-DÉBORDEMENT (aucun mot ne doit sortir de la colonne ni de la page) :
    la largeur du MOT LE PLUS LONG doit tenir dans la colonne :
@@ -7881,6 +7906,39 @@ HAUTEUR OCCUPÉE PAR UN BLOC (pour ne pas dépasser le bas de page) :
    • Une taille de titre ne se répète pas sur plus de 2 pages consécutives :
      varie le rythme (page dense / page aérée) plutôt que d'agrandir.
    • Le corps ne descend JAMAIS sous 8 pt, et 9-11 pt est la norme confortable.
+   • ALIGNEMENT (textAlign) : 'left' PAR DÉFAUT — dans 95 % des cas c'est le bon
+     choix, et c'est le seul qui ne crée jamais de lézarde. N'émets 'justify',
+     'justify-left' ou 'justify-right' QUE si l'utilisateur demande EXPLICITEMENT
+     un texte justifié (« justifié », « aligné des deux côtés »…). JAMAIS de texte
+     justifié sur un titre, un sous-titre, une légende, un folio ou une liste de
+     prix — et jamais dans une colonne de moins de 60 mm (lézardes garanties).
+     Le studio force de toute façon 'left' si la demande ne parle pas de justifiage.
+
+═══ RESPIRATION ENTRE LES BLOCS (anti-chevauchement) ═══
+🔴 Le studio MESURE la hauteur réelle de chaque bloc (police, graisse, interligne
+   et repli compris) puis décale vers le bas tout bloc qui chevauche un autre.
+   Tu n'as donc PAS à calculer les hauteurs au millimètre — mais tu dois lui
+   laisser la place de respirer :
+   • Laisse 8 à 12 mm entre le BAS d'un bloc et le HAUT du suivant, dans la même
+     colonne. Un bloc posé « juste sous » un autre finit toujours par le percuter.
+   • Un bloc texte qui commence à côté d'un autre (2 colonnes) peut partager la
+     MÊME bande verticale : c'est voulu. Mais deux blocs dans la MÊME colonne ne
+     partagent jamais une bande.
+   • Quand tu hésites : descends le bloc suivant de 10 mm. Le studio le remontera
+     s'il y a vraiment trop de vide — il ne le fera jamais remonter dans un autre.
+
+═══ FILETS (type "line") — NE TRAVERSENT JAMAIS UN TEXTE ═══
+🔴 Un filet horizontal se pose dans un espace LIBRE, jamais « entre deux blocs »
+   que tu crois courts : les hauteurs que tu estimes sont presque toujours trop
+   optimistes. Mesure du défaut : deux filets posés à y=70 et y=160 mm barraient
+   une colonne de texte qui descendait jusqu'à 218 mm.
+   • Filet de séparation  : place-le SOUS le dernier paragraphe de la section, à
+     y = (top du paragraphe + hauteur réelle) + 5 mm, sa largeur limitée à la
+     colonne concernée.
+   • Filet de sous-titre  : 5 à 8 mm SOUS la ligne de titre, avant le chapô.
+   • Longueur : 30 à 60 % de la largeur de colonne pour un filet de rythme ;
+     100 % de la colonne pour un vrai séparateur de section.
+   • Le studio déplace automatiquement un filet qui tombe dans un bloc texte.
 POLICES DISPONIBLES :
 • Display/titres : Bebas Neue, Playfair Display, Montserrat, Poppins
 • Corps : Open Sans, IBM Plex Sans, Roboto, Lato, Noto Sans JP
@@ -8803,7 +8861,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     doc.pages.forEach(function (page) {
       if (!page || !Array.isArray(page.elements)) return;
       const textes = page.elements.filter(function (e) { return isText(e) && e.top != null; });
-      if (textes.length < 2) return;
+      // ⚠️ _SP_STUDIO_TYPO_574 : plus de sortie anticipée quand il n'y a qu'UN bloc
+      //   texte : les positions mesurées (`poses`) servent aussi à écarter les
+      //   FILETS du texte (voir la passe en fin de boucle).
       // Ordre de lecture : haut -> bas, puis gauche -> droite.
       textes.sort(function (a, b) { return (+a.top - +b.top) || (+a.left - +b.left); });
       const poses = [];
@@ -8859,10 +8919,76 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         el.top = Math.round(top * 10) / 10;
         poses.push({ left: left, right: right, top: el.top, bas: el.top + h });
       });
+
+      /* ══════════════════════════════════════════════════════════════════════
+         🛡️ _SP_STUDIO_TYPO_574 — LES FILETS NE TRAVERSENT PLUS LES TEXTES.
+
+         MESURE DU DÉFAUT (A4 210×297, 2 colonnes, prompt réel DeepSeek) :
+           · l'IA posait ses filets à y = 70 et y = 160 mm (les hauteurs qu'elle
+             CROYAIT pour ses blocs) ;
+           · une fois les textes mesurés, la colonne de gauche courait de 84,9 à
+             218 mm : les deux filets BARRAIENT le texte, exactement le défaut
+             signalé (« les blocs sont parfois l'un sur l'autre, les lignes de
+             séparation aussi »).
+         Pourquoi : les `line` n'étaient ni mesurés ni déplacés par les passes
+         d'empilement (elles ne connaissaient que les textes).
+
+         RÈGLE : un filet HORIZONTAL dont la portée croise un bloc texte ET qui
+         tombe à l'intérieur de ce bloc est ramené dans une respiration libre :
+         de préférence SOUS le bloc fautif (un filet de séparation ferme la
+         section qu'il suit — c'est l'intention de maquette), sinon AU-DESSUS,
+         et seulement si la place est réellement libre (aucun autre bloc texte
+         à cet endroit). Un filet posé au bord haut d'un bloc (sous un titre)
+         n'est jamais « à l'intérieur » : il est laissé tel quel.
+         ══════════════════════════════════════════════════════════════════════ */
+      const filets = page.elements.filter(function (e) {
+        if (String((e && e.type) || '').toLowerCase() !== 'line') return false;
+        const y1 = +e.y1, y2 = +e.y2;
+        return isFinite(y1) && isFinite(y2) && Math.abs(y2 - y1) <= 1;
+      });
+      if (filets.length && poses.length) {
+        const AIR = 2.5;   // respiration autour du filet (mm)
+        filets.forEach(function (ln) {
+          const xA = Math.min(+ln.x1 || 0, +ln.x2 || 0);
+          const xB = Math.max(+ln.x1 || 0, +ln.x2 || 0);
+          if (!(xB - xA > 0)) return;
+          const yOrigine = (+ln.y1 + +ln.y2) / 2;
+          let y = yOrigine;
+          for (let garde = 0; garde < 8; garde++) {
+            const fautifs = poses.filter(function (p) {
+              const recouvreH = Math.min(xB, p.right) - Math.max(xA, p.left);
+              if (recouvreH <= 0) return false;          // portée disjointe : aucune gêne
+              return y > p.top + 1 && y < p.bas - 1;     // le filet est DANS le bloc
+            });
+            if (!fautifs.length) break;
+            const libre = function (cible) {
+              return !poses.some(function (p) {
+                const recouvreH = Math.min(xB, p.right) - Math.max(xA, p.left);
+                if (recouvreH <= 0) return false;
+                return cible > p.top + 0.5 && cible < p.bas - 0.5;
+              });
+            };
+            const sous = Math.round((Math.max.apply(null, fautifs.map(function (p) { return p.bas + AIR; }))) * 10) / 10;
+            const dessus = Math.round((Math.min.apply(null, fautifs.map(function (p) { return p.top - AIR; }))) * 10) / 10;
+            let cible = null;
+            if (libre(sous)) cible = sous;
+            else if (libre(dessus) && dessus >= 5) cible = dessus;
+            if (cible == null || Math.abs(cible - y) < 0.3) break;
+            y = cible;
+          }
+          if (Math.abs(y - yOrigine) > 0.05) {
+            ln.y1 = y;
+            ln.y2 = y;
+            _spFiletsDeplaces++;
+          }
+        });
+      }
     });
     return doc;
   }
+  let _spFiletsDeplaces = 0;
   window.sp213ResolveCollisions = _spResolveCollisions;
+  window.sp213CompteurFilets = function () { return _spFiletsDeplaces; };
 
   function _spConstrainDocToPages(doc) {
     if (!doc || !Array.isArray(doc.pages) || !doc.pages.length) return doc;
@@ -9001,6 +9127,61 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       });
       finalPages.push(nextPage);
     }
+
+    /* ══════════════════════════════════════════════════════════════════════
+       🛡️ _SP_STUDIO_TYPO_574 — PLUS DE PAGE ORPHELINE.
+
+       MESURE DU DÉFAUT (générations réelles DeepSeek) :
+         · demande « livret A4 de 4 pages »  → 5 pages, la 5e ne portant QU'UN
+           folio (« 4 ») de 4 mm ;
+         · demande « une page éditoriale »   → 2 pages pour une réponse IA d'UNE
+           page.
+       Ce n'est pas la place qui manquait : le report (carry) traite tout
+       dépassement, même de 4 mm, en ouvrant une page neuve. Une page quasiment
+       vide en fin de document est un défaut de maquette (elle coûte une feuille
+       à l'impression et fait douter du document).
+
+       RÈGLE : une page dont le contenu est EXCLUSIVEMENT du texte, SANS titre
+       (aucun corps ≥ 14 pt) et dont la hauteur cumulée ne dépasse pas
+       ORPHELIN_MAX est replacée en bas de la page précédente s'il y a la place.
+       Rien n'est supprimé : on remonte, sinon on laisse la page.
+       Un vrai contenu reporté (paragraphe entier, titre, forme) n'est JAMAIS
+       fusionné — c'est la règle anti-chevauchement qui décide, pas cette passe.
+       ══════════════════════════════════════════════════════════════════════ */
+    try {
+      const ORPHELIN_MAX = 20;   // mm de contenu cumulé (folio, légende, adresse)
+      const AIR_ORPH = 4;
+      const hauteurTexte = function (el) {
+        return isText(el) ? estimateTextHeightMm(el, el.fontSize) : 0;
+      };
+      for (let i = finalPages.length - 1; i >= 1; i--) {
+        const pg = finalPages[i];
+        const prev = finalPages[i - 1];
+        if (!pg || !prev || !Array.isArray(pg.elements) || !pg.elements.length) continue;
+        if (!Array.isArray(prev.elements)) continue;
+        // Uniquement du texte, et aucun titre (un titre seul = une vraie page).
+        if (pg.elements.some(function (e) { return !isText(e); })) continue;
+        if (pg.elements.some(function (e) { return (Number(e.fontSize) || 0) >= 14; })) continue;
+        const hTot = pg.elements.reduce(function (n, e) { return n + hauteurTexte(e); }, 0);
+        if (!(hTot > 0) || hTot > ORPHELIN_MAX) continue;
+        // Bas du dernier bloc TEXTE de la page précédente (les fonds sont ignorés).
+        let bas = 15;
+        prev.elements.forEach(function (e) {
+          if (!isText(e)) return;
+          const t = (typeof e.top === 'number') ? e.top : 15;
+          bas = Math.max(bas, t + hauteurTexte(e));
+        });
+        if (bas + AIR_ORPH + hTot > SAFE_BOTTOM) continue;
+        let top = bas + AIR_ORPH;
+        pg.elements.forEach(function (e) {
+          const h = hauteurTexte(e);
+          e.top = Math.round(top * 10) / 10;
+          top += h + 2;
+          prev.elements.push(e);
+        });
+        finalPages.splice(i, 1);
+      }
+    } catch (_) {}
 
     doc.pages = finalPages;
     doc.pages.forEach((p, i) => { p.pageIndex = i; });
@@ -9286,6 +9467,26 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return doc;
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     🛡️ _SP_STUDIO_TYPO_574 — « ne justifie jamais les textes par défaut »
+
+     Demande utilisateur : « par défaut ne justifie jamais les textes sauf si
+     l'utilisateur le demande ». Un texte justifié se lit mal dans une colonne
+     étroite (lézardes) et le moteur doit alors gérer la dernière ligne — c'est
+     un parti pris typographique, pas un réglage par défaut.
+
+     La décision se prend sur LA DEMANDE RÉELLE de l'utilisateur (state.lastPrompt),
+     pas sur le JSON du modèle : un modèle qui « décide » de justifier est corrigé.
+     Formulations reconnues : justifié / justifier / justification / justify /
+     « aligné des deux côtés » / « both sides ».
+     ══════════════════════════════════════════════════════════════════════════ */
+  function sp213JustificationDemandee() {
+    try {
+      const p = String((state && state.lastPrompt) || '');
+      return /justif|align[ée]s?\s+(?:sur\s+)?(?:les\s+)?deux\s+c[oô]t[ée]s|both\s+sides|full[\s-]?justif/i.test(p);
+    } catch (_) { return false; }
+  }
+
   function sanitizeAIElement(element) {
     if (!element || typeof element !== 'object' || Array.isArray(element)) return null;
     // 🆕 v1.7.485 — MÊMES SYNONYMES QUE L'APP : un modèle qui écrit « rect » ou
@@ -9401,6 +9602,15 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       clone.fontFamily = normalizeFontFamily(clone.fontFamily) || 'Open Sans';
       clone.lineHeight = clamp(finite(clone.lineHeight, 1.4), 0.8, 3);
       if (!['left', 'center', 'right', 'justify', 'justify-left', 'justify-right'].includes(clone.textAlign)) clone.textAlign = 'left';
+      // 🛡️ _SP_STUDIO_TYPO_574 — « PAR DÉFAUT NE JUSTIFIE JAMAIS LES TEXTES ».
+      //   Mesure du défaut : sur un prompt qui ne parle PAS de justification, les
+      //   4 paragraphes de corps revenaient en "textAlign":"justify" (le modèle
+      //   justifie dès qu'il compose un bloc de 2 colonnes), avec des lézardes
+      //   dans une colonne de 82 mm à 11 pt. Le justifiage est un CHOIX
+      //   typographique : il ne s'applique que si l'utilisateur le demande.
+      if (clone.textAlign && String(clone.textAlign).indexOf('justify') !== -1 && !sp213JustificationDemandee()) {
+        clone.textAlign = 'left';
+      }
 
       // 🛡️ v1.7.368 — GARDE-FOU TYPOGRAPHIQUE (mesuré sur la chaîne réelle).
       //   Le prompt explique l'échelle largeur→taille, mais on ne peut pas
@@ -9582,6 +9792,13 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         const clone = JSON.parse(JSON.stringify(r));
         clone.id = c.el.id;              // on CONSERVE l'identite de l'element
         clone._sp213Id = c.el.id;
+        // 🛡️ _SP_STUDIO_TYPO_574 — même règle que sanitizeAIElement : un retravail
+        //   ciblé repasse par ici SANS sanitizeAIElement, donc on réapplique le
+        //   « jamais justifié par défaut » sinon le modèle pouvait réintroduire du
+        //   justify sur le seul bloc retouché.
+        if (clone.textAlign && String(clone.textAlign).indexOf('justify') !== -1 && !sp213JustificationDemandee()) {
+          clone.textAlign = 'left';
+        }
         // Ne jamais perdre la position si le modele ne l'a pas fournie
         // (sinon l'element sauterait en 0,0).
         if (clone.left === undefined || clone.left === null) clone.left = c.el.left;
@@ -9659,7 +9876,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const fam = String(el.fontFamily || 'Open Sans');
     const poids = String(el.fontWeight || 'normal');
     const style = String(el.fontStyle || 'normal');
-    const cle = [txt, fsPt, wMm, lh, fam, poids, style].join('|');
+    // 🆕 _SP_STUDIO_TYPO_574 — l'interlettrage change le repli des lignes : il fait
+    //   partie de la clé de mesure (sinon deux blocs identiques à charSpacing près
+    //   se renvoyaient la même mesure).
+    const cs = (+el.charSpacing || 0);
+    const cle = [txt, fsPt, wMm, lh, fam, poids, style, cs].join('|');
     if (_spMeasureCache[cle]) return _spMeasureCache[cle];
     let lignes = 0, hauteurPx = 0;
     try {
@@ -9670,18 +9891,24 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         fontWeight: poids,
         fontStyle: style,
         lineHeight: lh,
+        charSpacing: cs,
         splitByGrapheme: false,
         breakWords: true
       });
       tb.initDimensions();
       lignes = (tb._textLines && tb._textLines.length) || 1;
-      // Hauteur REELLE : somme des lignes du moteur (getHeightOfLine inclut
-      // _fontSizeMult = 1.13), sans le leading bas de la derniere ligne
-      // (comportement de calcTextHeight de Fabric).
+      // 🛡️ _SP_STUDIO_TYPO_574 — HAUTEUR DU BLOC = LA SOMME DES LIGNES, ENTIÈRE.
+      //   MESURE DU DÉFAUT (aperçu réel, A4 210 mm) : l'ancienne formule
+      //   `somme − derniere/lh` retirait UNE LIGNE ENTIÈRE du total (54 px sur un
+      //   titre 36 pt, soit 19 mm) au lieu du seul leading bas de la dernière
+      //   ligne. Conséquence visible : le bloc SUIVANT était posé 19 mm trop haut
+      //   et passait sous la 3e ligne du titre (les « blocs l'un sur l'autre »).
+      //   La référence est la hauteur de cadre de l'app :
+      //       hauteur = lignes × fontSize × lineHeight × 1.13
+      //   et pour un texte uniforme, somme(getHeightOfLine) vaut EXACTEMENT ça.
       let somme = 0;
       for (let i = 0; i < lignes; i++) somme += tb.getHeightOfLine(i);
-      const derniere = lignes > 0 ? tb.getHeightOfLine(lignes - 1) : 0;
-      hauteurPx = Math.max(1, somme - derniere / Math.max(0.2, lh));
+      hauteurPx = Math.max(1, somme);
     } catch (e) {
       // Repli deterministe si Fabric ne peut pas mesurer (police non chargee).
       const fsPx = fsPt * PT_TO_PX;
@@ -9726,7 +9953,15 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   function spTextBlockHeightPx(el) {
     const fsPx = (+el.fontSize || 14) * PT_TO_PX;
     const lh = (typeof el.lineHeight === 'number' && el.lineHeight > 0) ? el.lineHeight : 1.4;
-    const lines = spEstimateTextLines(el);
+    // 🛡️ _SP_STUDIO_TYPO_574 — LE NOMBRE DE LIGNES EST MESURÉ, PLUS ESTIMÉ.
+    //   L'ancienne estimation (`largeur / (fontSize × 0,62)`) se trompait d'une
+    //   ligne entière sur les titres (majuscules, tirets, espaces insécables) —
+    //   or cette hauteur est celle du CADRE écrit dans le .sp : sous-estimée,
+    //   l'app rogne le texte ; surestimée, elle creuse un vide sous le bloc.
+    //   Fabric sait replier exactement le même texte : on lui demande.
+    let lines = 0;
+    try { lines = (spMeasureTextBlock(el) || {}).lignes || 0; } catch (_) { lines = 0; }
+    if (!(lines > 0)) lines = spEstimateTextLines(el);
     const h = Math.max(fsPx, Math.round(lines * fsPx * lh * SP_TEXT_LINE_MULT));
     // 🛡️ v1.7.368 — le bloc doit pouvoir contenir ses lignes EXPLICITES.
     //   Un texte de N lignes separees par \n ne peut pas descendre sous
@@ -9821,15 +10056,18 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         /* _SP_STUDIO_509B_DEBUT — TAQUETS SUR L'OBJET D'APERÇU (voir l'en-tête du patch).
            Le moteur posé plus haut dans ce fichier lit obj._spTabs : sans cette recopie, il
            reste inerte et l'aperçu affiche un simple espace à la place de la tabulation.
-           ⚠️ UNITÉS : l'aperçu dessine en px 96 dpi (fontSize x PT_TO_PX), soit 4/3 des px du
-           document de l'app : les positions de taquets sont donc multipliées par PT_TO_PX. */
+           ⚠️ UNITÉS (corrigé _SP_STUDIO_TYPO_574) : les taquets sont des POSITIONS en px du
+           document (72 dpi, comme les marges — cf. `var MM = 72 / 25.4` du moteur de taquets).
+           L'aperçu dessine aussi en px de document : aucune conversion. L'ancien ×4/3
+           n'existait que pour compenser la taille de police fausse (voir PT_TO_PX) et
+           décalait chaque taquet d'un tiers vers la droite. */
         try {
           if (el._spTabs && el._spTabs.active && Array.isArray(el._spTabs.stops)) {
             tb._spTabs = {
               active: true,
-              step: (+el._spTabs.step || 0) * PT_TO_PX,
+              step: +el._spTabs.step || 0,
               stops: el._spTabs.stops.map(function (s) {
-                return { pos: (+s.pos || 0) * PT_TO_PX, type: (s && s.type) ? s.type : 'left' };
+                return { pos: +s.pos || 0, type: (s && s.type) ? s.type : 'left' };
               })
             };
           }
