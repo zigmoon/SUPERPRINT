@@ -17210,7 +17210,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                             existingHasData = existingUserCount > 0;
                         }
                     } catch(_) {}
-                    if (_hasPendingAsync && existingUserCount >= 2 && newObjects.length < existingUserCount - 1) {
+                    if (_spPerteMajeure(newObjects.length, existingUserCount)) {
+                        console.warn('[saveAllPages] page=' + pageIndex + ' : refus d\'ecraser ' + existingUserCount + ' objets par ' + newObjects.length + ' (apercu incomplet, plus de la moitie perdue)');
+                    } else if (_hasPendingAsync && existingUserCount >= 2 && newObjects.length < existingUserCount - 1) {
                         console.warn('[saveAllPages] page=' + pageIndex + ' : refus d\'ecraser ' + existingUserCount + ' objets par ' + newObjects.length + ' (image asynchrone en cours, BUG 20 guard)');
                     } else if (newObjects.length > 0 || !pages[pageIndex].objects) {
                         _spAssignObjectsIfChanged(pages[pageIndex], JSON.stringify({ objects: newObjects }));
@@ -17247,7 +17249,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                     existingHasData = existingUserCount > 0;
                 }
             } catch(_) {}
-            if (_hasPendingAsync && existingUserCount >= 2 && newObjects.length < existingUserCount - 1) {
+            if (_spPerteMajeure(newObjects.length, existingUserCount)) {
+                console.warn('[saveAllPages] page=' + index + ' : refus d\'ecraser ' + existingUserCount + ' objets par ' + newObjects.length + ' (apercu incomplet, plus de la moitie perdue)');
+            } else if (_hasPendingAsync && existingUserCount >= 2 && newObjects.length < existingUserCount - 1) {
                 console.warn('[saveAllPages] page=' + index + ' : refus d\'ecraser ' + existingUserCount + ' objets par ' + newObjects.length + ' (image asynchrone en cours, BUG 20 guard)');
             } else if (newObjects.length > 0 || !pages[index].objects) {
                 _spAssignObjectsIfChanged(pages[index], JSON.stringify({ objects: newObjects }));
@@ -17373,6 +17377,99 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 dernier.remove();
                 return true;
             } catch (_) { return false; }
+        }
+
+        /* 🆕 v1.7.576 — GARDE-FOU « MOITIÉ PRESQUE VIDE » (défaut mesuré).
+           Un canevas de planche fraîchement reconstruit peut ne porter qu'UN objet
+           alors que la donnée en compte huit : ce cliché quasi vide écrasait la
+           moitié réelle. MESURE : 4e de couverture d'une maquette du studio SP213 —
+           8 objets en donnée, 1 seul dessiné après un « Page + », puis la donnée
+           réduite à 1 objet par la sauvegarde suivante.
+           Règle : on refuse tout cliché qui PERD PLUS DE LA MOITIÉ des objets de la
+           moitié concernée (un canevas vraiment vide était déjà protégé, un canevas
+           à 1 objet ne l'était pas). */
+        function _spPerteMajeure(nbNouveaux, nbExistants) {
+            const exist = Number(nbExistants) || 0;
+            const nouv = Number(nbNouveaux) || 0;
+            return exist >= 4 && nouv < Math.ceil(exist / 2);
+        }
+
+        /* Nombre d'objets utilisateur stockés pour une page (0 si aucun). */
+        function spCompterObjetsPage(pageIndex) {
+            try {
+                const p = pages[pageIndex];
+                if (!p || !p.objects) return 0;
+                const parsed = (typeof p.objects === 'string') ? JSON.parse(p.objects) : p.objects;
+                if (!parsed || !Array.isArray(parsed.objects)) return 0;
+                return parsed.objects.filter(o => o && !o._isMasterItem && !o._isMasterRuntime && !o._isPageNumber).length;
+            } catch (_) { return 0; }
+        }
+
+        /* Nombre d'objets réellement DESSINÉS sur un canevas (hors repères). */
+        function spCompterObjetsDessines(canvas) {
+            if (!canvas) return 0;
+            return canvas.getObjects().filter(o => o && !o.isMargin && !o.isBleed && !o.isGuide
+                && !o.isManualGuide && !o.isTrimBox && !o.isPage && !o.isPageBorder && !o.isFold
+                && !o._isSpreadMirror && !o.excludeFromExport && !o._isPageNumber
+                && !o._isChainBadge && !o._isLinkArrow && !o._isOverflowIndicator
+                && !o._isMasterItem && !o._isMasterRuntime).length;
+        }
+
+        /* 🆕 v1.7.576 — CONTRÔLE D'UNE PLANCHE FRAÎCHEMENT CRÉÉE + RESTAURATION.
+           Appelé par le bouton « Page + » quand une page seule devient la moitié
+           d'une planche. Le cliché (`cliche`) est l'état de pages[] AVANT l'ajout :
+           c'est la seule référence fiable, car la sauvegarde déclenchée par l'ajout
+           peut déjà avoir écrasé pages[] avec un aperçu incomplet (mesuré : 8 objets
+           → 1 sur la 4e de couverture d'un document de 6 pages venu du studio SP213).
+           Le délai laisse à Fabric le temps de finir son chargement asynchrone. */
+        function spVerifierPlancheNouvelle(leftIndex, rightIndex, cliche) {
+            setTimeout(function () {
+                try {
+                    const compteCl = (idx) => {
+                        try {
+                            if (cliche && cliche[idx] !== undefined && cliche[idx] !== null) {
+                                const o = (typeof cliche[idx] === 'string') ? JSON.parse(cliche[idx]) : cliche[idx];
+                                if (o && Array.isArray(o.objects)) {
+                                    return o.objects.filter(x => x && !x._isMasterItem && !x._isMasterRuntime && !x._isPageNumber).length;
+                                }
+                            }
+                        } catch (_) {}
+                        return spCompterObjetsPage(idx);
+                    };
+                    const attendusG = compteCl(leftIndex);
+                    const attendusD = compteCl(rightIndex);
+                    const actuelsG = spCompterObjetsPage(leftIndex);
+                    const actuelsD = spCompterObjetsPage(rightIndex);
+                    const perteG = attendusG >= 4 && actuelsG < Math.ceil(attendusG / 2);
+                    const perteD = attendusD >= 4 && actuelsD < Math.ceil(attendusD / 2);
+                    const c = (typeof getCanvasForPageIndex === 'function') ? getCanvasForPageIndex(leftIndex) : null;
+                    const dessines = spCompterObjetsDessines(c);
+                    const manquants = (attendusG + attendusD) - dessines;
+                    if (!perteG && !perteD && manquants <= 0) return;   // tout est là : rien à faire
+                    console.warn('[addPage] Planche ' + (leftIndex + 1) + '-' + (rightIndex + 1)
+                        + ' incomplete : ' + dessines + ' objet(s) dessine(s) pour ' + (attendusG + attendusD) + ' attendu(s)'
+                        + (perteG ? ' / page ' + (leftIndex + 1) + ' reduite a ' + actuelsG : '')
+                        + (perteD ? ' / page ' + (rightIndex + 1) + ' reduite a ' + actuelsD : '')
+                        + ' -> restauration depuis le cliche et reconstruction de l apercu.');
+                    if (cliche) {
+                        try {
+                            if (perteG && cliche[leftIndex]) pages[leftIndex].objects = cliche[leftIndex];
+                            if (perteD && cliche[rightIndex]) pages[rightIndex].objects = cliche[rightIndex];
+                        } catch (e) { console.warn('[addPage] restauration :', e); }
+                    }
+                    if (typeof renderAllPages === 'function') renderAllPages();
+                    /* 🆕 v1.7.576 — L'aperçu est réparé, la DONNÉE doit l'être aussi :
+                       la sauvegarde déclenchée par « Page + » avait déjà écrit le cliché
+                       incomplet (mesure : IndexedDB [7,8,9,9,8,1,1]). On resauvegarde
+                       après reconstruction, depuis les canvases corrigés. */
+                    setTimeout(function () {
+                        try { if (typeof saveStateFromPages === 'function') saveStateFromPages('Restauration planche'); else if (typeof saveAllPages === 'function') saveAllPages(false); } catch (e) { console.warn('[addPage] resauvegarde :', e); }
+                    }, 1200);
+                    setTimeout(function () {
+                        try { currentPageIndex = rightIndex; if (typeof updatePageIndicator === 'function') updatePageIndicator(); if (typeof scrollToCurrentPage === 'function') scrollToCurrentPage(); } catch (_) {}
+                    }, 900);
+                } catch (e) { console.warn('[addPage] controle de planche :', e); }
+            }, 700);
         }
 
         function createSpreadCanvas(container, leftIndex, rightIndex, width, height) {
@@ -18163,7 +18260,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             if (exL && exL.objects) leftExistingUserCount = exL.objects.filter(o => o && !o._isMasterItem && !o._isMasterRuntime && !o._isPageNumber).length;
         } catch(_) {}
         const leftJson = JSON.stringify({ objects: leftObjects });
-        if (_hasPendingAsync && leftExistingUserCount >= 2 && leftObjects.length < leftExistingUserCount - 1) {
+        if (_spPerteMajeure(leftObjects.length, leftExistingUserCount)) {
+            console.warn(`[saveSpreadContent] Page ${leftIndex} : refus d'ecraser ${leftExistingUserCount} objets par ${leftObjects.length} (apercu incomplet, plus de la moitie perdue)`);
+        } else if (_hasPendingAsync && leftExistingUserCount >= 2 && leftObjects.length < leftExistingUserCount - 1) {
             console.warn(`[saveSpreadContent] Page ${leftIndex} : refus d'ecraser ${leftExistingUserCount} objets par ${leftObjects.length} (image asynchrone en cours)`);
         } else if (leftObjects.length > 0 || !pages[leftIndex].objects) {
             pages[leftIndex].objects = leftJson;
@@ -18187,7 +18286,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 if (exR && exR.objects) rightExistingUserCount = exR.objects.filter(o => o && !o._isMasterItem && !o._isMasterRuntime && !o._isPageNumber).length;
             } catch(_) {}
             const rightJson = JSON.stringify({ objects: rightObjects });
-            if (_hasPendingAsync && rightExistingUserCount >= 2 && rightObjects.length < rightExistingUserCount - 1) {
+            if (_spPerteMajeure(rightObjects.length, rightExistingUserCount)) {
+                console.warn(`[saveSpreadContent] Page ${rightIndex} : refus d'ecraser ${rightExistingUserCount} objets par ${rightObjects.length} (apercu incomplet, plus de la moitie perdue)`);
+            } else if (_hasPendingAsync && rightExistingUserCount >= 2 && rightObjects.length < rightExistingUserCount - 1) {
                 console.warn(`[saveSpreadContent] Page ${rightIndex} : refus d'ecraser ${rightExistingUserCount} objets par ${rightObjects.length} (image asynchrone en cours)`);
             } else if (rightObjects.length > 0 || !pages[rightIndex].objects) {
                 pages[rightIndex].objects = rightJson;
@@ -32646,6 +32747,23 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     document.getElementById('addPage').addEventListener('click', () => {
         // FIX CRITIQUE: Forcer la sauvegarde même si _isRenderingAllPages est true
         saveAllPages(true);
+        /* 🆕 v1.7.576 — CLICHÉ DE SÉCURITÉ avant toute mutation.
+           saveAllPages(true) vient de synchroniser pages[] : c'est le dernier état
+           fiable. « Page + » peut ensuite associer la dernière page seule à une
+           nouvelle page ; si l'aperçu de la planche omet la moitié GAUCHE, la
+           sauvegarde qui suit écrase la donnée. Le cliché permet de la restaurer
+           (mesure : 4e de couverture 8 objets → 1). */
+        const _clicheAjout = (function () {
+            try {
+                const out = [];
+                for (let i = 0; i < pages.length; i++) {
+                    const p = pages[i];
+                    if (!p || p.objects === undefined || p.objects === null) { out.push(null); continue; }
+                    out.push(typeof p.objects === 'string' ? p.objects : JSON.stringify(p.objects));
+                }
+                return out;
+            } catch (_) { return null; }
+        })();
         createNewPage();
         currentPageIndex = pages.length - 1;
         
@@ -32726,6 +32844,11 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 // 3. Créer le nouveau spread (ancienne dernière page + nouvelle page vide)
                 if (_retireOk) {
                     createSpreadCanvas(container, leftIndex, newPageIndex, width, height);
+                    /* 🆕 v1.7.576 — CONTRÔLE APRÈS CRÉATION : la nouvelle planche doit avoir
+                       reçu le contenu de sa moitié GAUCHE (l'ancienne page seule). Mesure du
+                       défaut : 8 objets en donnée, 1 seul dessiné (page d'un document venu du
+                       studio SP213), et le cliché suivant écrasait la donnée. */
+                    spVerifierPlancheNouvelle(leftIndex, newPageIndex, _clicheAjout);
                 } else {
                     /* Aperçu désynchronisé : plutôt que d'effacer une page au hasard, on
                        reconstruit tout l'aperçu depuis pages[] (déjà sauvegardé ci-dessus). */
@@ -69104,6 +69227,86 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     }
         }
 
+        /* 🆕 v1.7.576 — ÉCRITURE JAPONAISE (demande utilisateur).
+           « Dans les templates JA, ne doit pas écrire dans l'autre sens (en hauteur) »
+           + « fais l'option que si je charge un template JA, ou si j'active le JA dans
+           SuperPrint ou le studio dans les préférences, il puisse écrire de façon
+           japonaise ».
+           Mesure du défaut : Fabric coupe ses lignes sur les ESPACES — qui n'existent
+           pas en japonais. Un paragraphe japonais ne se coupait donc pas (il débordait
+           du bloc) ou s'empilait caractère par caractère (« en hauteur »).
+           L'astuce japonaise est `splitByGrapheme` : couper par CARACTÈRE.
+           Déclencheurs : langue de l'interface = japonais (préférences de l'app, du
+           studio ou de la page d'accueil — clé partagée `sp_lang`) OU modèle japonais
+           chargé. Réglé sur le PROTOTYPE de fabric.Textbox : tout bloc de texte créé
+           ensuite en hérite (utilisateur comme IA), sans toucher au reste. */
+        function spEcritureJaActive() {
+            try {
+                const lg = (typeof currentLanguage !== 'undefined' && currentLanguage) || 'fr';
+                if (lg === 'ja' || lg === 'jp') return true;
+            } catch (_) {}
+            return window._spDocJa === true;
+        }
+        /* Contient-il du japonais (kana ou kanji) ? La coupure par caractère ne
+           s'applique QU'à ces textes : un mot latin reste coupé par mot. */
+        function spTexteJaponais(s) {
+            return /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uff66-\uff9f]/.test(String(s == null ? '' : s));
+        }
+        /* Réglage PONCTUEL de la coupure japonaise. L'astuce : Fabric écrase le défaut
+           du prototype avec les options du bloc, donc on l'injecte à la CRÉATION
+           (constructeur) — un texte tapé par l'utilisateur, écrit par l'IA, venu d'un
+           modèle ou d'un fichier .sp en hérite. */
+        try {
+            if (typeof fabric !== 'undefined' && fabric.Textbox && !fabric.Textbox.__spJaPatch) {
+                const _initTb = fabric.Textbox.prototype.initialize;
+                fabric.Textbox.prototype.initialize = function (text, options) {
+                    options = options || {};
+                    try {
+                        if (spEcritureJaActive() && options.splitByGrapheme === undefined && spTexteJaponais(text)) {
+                            options.splitByGrapheme = true;
+                        }
+                    } catch (_) {}
+                    return _initTb.call(this, text, options);
+                };
+                fabric.Textbox.__spJaPatch = true;
+            }
+        } catch (_) {}
+        function spMajEcritureJa(force) {
+            const ja = (force === undefined) ? spEcritureJaActive() : !!force;
+            try {
+                if (typeof fabric !== 'undefined' && fabric.Textbox) {
+                    fabric.Textbox.prototype.splitByGrapheme = ja;
+                }
+            } catch (_) {}
+            try {
+                const liste = (typeof canvases !== 'undefined' && canvases) ? canvases : [];
+                liste.forEach(function (c) {
+                    if (!c || typeof c.getObjects !== 'function') return;
+                    let touche = false;
+                    c.getObjects().forEach(function (o) {
+                        if (!o || !/textbox|i-text|text/.test(o.type || '')) return;
+                        const doit = ja && spTexteJaponais(o.text);
+                        if (!!o.splitByGrapheme !== doit) { o.splitByGrapheme = doit; touche = true; }
+                        /* Garde-fou : un bloc plus étroit que deux caractères se composerait
+                           verticalement (un caractère par ligne) — c'est le défaut signalé. */
+                        if (doit && o.fontSize && o.width && o.width < o.fontSize * 2.5) {
+                            o.width = o.fontSize * 2.5; touche = true;
+                        }
+                        if (touche && typeof o.initDimensions === 'function') o.initDimensions();
+                    });
+                    if (touche) c.requestRenderAll();
+                });
+            } catch (_) {}
+            return ja;
+        }
+        window.spMajEcritureJa = spMajEcritureJa;
+        window.spEcritureJaActive = spEcritureJaActive;
+        try {
+            window.addEventListener('sp:initReady', function () {
+                try { spMajEcritureJa(); } catch (_) {}
+            });
+        } catch (_) {}
+
         function setLanguage(lang) {
     currentLanguage = lang;
     localStorage.setItem('sp_lang', lang);
@@ -75806,7 +76009,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             //   anglais réécrits (les anciens modèles FR des premières versions de
             //   SuperPrint ne sont plus listés ; ils seront re-créés en FR puis JA
             //   par duplication de ces 8 modèles).
-            .filter(({ comp }) => (comp.spEn || comp.spFr))
+            // 🆕 v1.7.576 — classement « JA » : les modèles japonais sont désormais
+            //   listés eux aussi (drapeau `spJa`), après les anglais et les français.
+            .filter(({ comp }) => (comp.spEn || comp.spFr || comp.spJa))
             .sort((a, b) => {
                 const aName = a.comp?.name || '';
                 const bName = b.comp?.name || '';
@@ -75832,9 +76037,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 ];
 
                 // 🆕 v1.7.446 — classement : les maquettes ANGLAISES d'abord, puis les françaises
+                // 🆕 v1.7.576 — puis les japonaises (JA classées en dernier groupe)
+                const _rangLangue = (l) => (l === 'en' ? 0 : (l === 'fr' ? 1 : (l === 'ja' ? 2 : 3)));
                 const aLg = (a.comp && a.comp.lang) || 'en';
                 const bLg = (b.comp && b.comp.lang) || 'en';
-                if (aLg !== bLg) return (aLg === 'en') ? -1 : 1;
+                if (aLg !== bLg) return _rangLangue(aLg) - _rangLangue(bLg);
 
                 const lastName = 'Carte Minimaliste';
                 if (aName === lastName && bName !== lastName) return 1;
@@ -81468,6 +81675,9 @@ window._spEnsureGuidesAfterTemplateLoad = _spEnsureGuidesAfterTemplateLoad;
     }
     
     if (typeof onReady === 'function') {
+        // 🆕 v1.7.576 — ÉCRITURE JAPONAISE : la maquette vient d'être composée, on
+        //   applique la coupure japonaise (par caractère) si elle est active.
+        try { if (typeof window.spMajEcritureJa === 'function') window.spMajEcritureJa(); } catch (_) {}
         // Calculer un délai adapté au nombre de pages et au mode
         const totalPages = comp.format.pages || 1;
         let readyDelay;
@@ -85862,6 +86072,89 @@ function _npBuildLayout(params, keywords, lang) {
                 jalons: 'Janvier::Le second studio ouvre à Lyon avec quatre personnes\nFévrier::Démarrage de la certification d’impression\nMars::Refonte Signet livrée avec trois mois d’avance\nMai::Premier catalogue imprimé en risographie\nJuillet::L’équipe atteint quarante personnes\nSeptembre::Deux expositions conçues et installées\nNovembre::Certification ISO 12647 obtenue\nDécembre::Le carnet de commandes atteint 6,4 mois de travail',
                 objectifs: 'Grandir sans faire de bruit::Deux personnes de plus, pas de nouveau studio\nÉditer en interne::Quatre titres sous notre propre marque\nTransmettre le métier::Un cours ouvert sur la production imprimée\nRéduire les déplacements::Revues clients en visio d’abord'
             }
+        },
+        /* 🆕 v1.7.576 — TROIS MODÈLES DEMANDÉS : deux japonais (classés « JA »
+           dans la bibliothèque d'assets) et un français. */
+        {
+            key: 'ja_journal_news_12p', style: 'journal-ja', family: 'journal', spreadDoc: false,
+            name: '新聞レイアウト (12p)', desc: '新聞レイアウト — 12ページ A4、図形と罫線のみ（写真なし）',
+            format: { width: 595, height: 842, pages: 12 },
+            lang: 'ja', spJa: true,
+            theme: { paper: '#f8f7f3', ink: '#141414', accent: '#b3261e', soft: '#e6e3da', night: '#191919' },
+            fonts: { display: 'Noto Sans JP', text: 'Noto Sans JP', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'ひかり新聞', tag: '社会 ・ 経済 ・ 文化 ・ スポーツ', issue: '2026年9月28日（月） 第12号', price: '一部 200円',
+                head: '駅前の再開発、来春着工へ',
+                stand: '市は来年度の当初予算に設計費を計上する方針を固めた。住民への説明会は十月から始まる。',
+                coverlines: '〈2面〉総合\n〈3面〉経済\n〈12面〉天気',
+                sections: ['総合', '経済', '社会', '国際', '文化', '科学', 'スポーツ', 'オピニオン', '地域', '連載', '天気'],
+                legs: ['駅前の再開発、来春着工へ', '物価の伸び、三か月連続で鈍化', '商店街の空き店舗が五年で半減', '海の向こうの選挙、静かな変化', '秋の展覧会が開幕', '小さな観測所の一年', '決勝は延長の末に', '静かな街をつくる', '図書館の日曜開館', '連載　町の職人', '週間の天気と海'],
+                quote: '急がずに、一つずつ。それが町の作り方だ。',
+                body: '市は来年度の当初予算に、駅前地区の再開発へ向けた設計費を計上する方針を固めた。事業の規模は約九十億円で、着工は来春を予定している。担当者は住民の合意を最優先に進めると話し、十月からの説明会で意見を集める。\n\n商店街では空き店舗がこの五年でほぼ半分に減った。家賃の補助と、休日も開く店を増やしたことが効いたという。一方で駐車場の不足を訴える声は根強く、市は周辺に二か所の駐車場を整える案を検討している。\n\n再開発に合わせて、図書館の分館と子育て支援の窓口を同じ建物に置く案も出ている。買い物の帰りに立ち寄れる場所にすることが狙いだ。詳細は来年の予算案とともに公表され、議会の審議は十二月になる見通しである。',
+                caption: '取材：編集部　・　構成はすべて図形と罫線',
+                credits: 'ひかり新聞社　編集部　・　写真を使わないレイアウト'
+            }
+        },
+        {
+            key: 'ja_restaurant_menu_4p', style: 'menu-ja', family: 'menu', spreadDoc: false,
+            name: 'お品書き (4p)', desc: '和食のお品書き — 4ページ A4、献立・お飲み物・ご案内',
+            format: { width: 595, height: 842, pages: 4 },
+            lang: 'ja', spJa: true,
+            theme: { paper: '#fbf9f4', ink: '#1b1b1b', accent: '#8c1c13', soft: '#ece4d6', night: '#15120f' },
+            fonts: { display: 'Noto Sans JP', text: 'Noto Sans JP', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: '季節料理　みなと', tag: 'お 品 書 き', issue: '二〇二六年　秋', price: '',
+                head: '旬を、そのまま', stand: '市場に届いたものだけで、その日の献立を組みます。',
+                coverlines: '', sections: ['先付', '主菜', '甘味', 'お飲み物'],
+                legs: ['先付', '主菜', 'おすすめの献立', '甘味'],
+                quote: '今日いちばん良いものを、いちばん簡単な形で。',
+                body: '当店は、その日に市場へ届いたものだけで献立を組みます。仕入れによって内容が変わりますので、お品書きは毎日書き換えます。苦手なもの、召し上がれないものがありましたら、ご予約の際にお知らせください。できる範囲でお応えします。\n\n日本酒は十四種類、季節ごとに入れ替えます。お料理に合わせてお選びいただくことも、お任せいただくこともできます。',
+                caption: '東京都中央区 港一丁目 2-12 ・ 03-1234-5678 ・ 昼 11:30–14:00 ／ 夜 17:30–22:00 ・ 月曜定休',
+                credits: '季節料理　みなと　・　お品書きは仕入れにより変わります',
+                plats: [
+                    '先付::胡麻豆腐　山葵を添えて::900',
+                    '先付::焼き茄子の含め煮::850',
+                    '先付::戻り鰹　薬味三種::1400',
+                    '先付::銀杏と栗の素揚げ::800',
+                    '主菜::銀鱈の西京焼き::2600',
+                    '主菜::黒毛和牛の朴葉焼き::4200',
+                    '主菜::秋野菜の天ぷら::1900',
+                    '主菜::鴨の治部煮::2900',
+                    '主菜::鯛の土鍋ご飯::2400',
+                    '甘味::抹茶の羊羹::800',
+                    '甘味::栗の渋皮煮　アイス添え::900',
+                    '甘味::季節の果物::700',
+                    'お飲み物::日本酒　純米　冷や::900',
+                    'お飲み物::日本酒　純米　燗::900',
+                    'お飲み物::焼酎　麦::700',
+                    'お飲み物::抹茶::600'
+                ],
+                infos: 'お席::カウンター八席、お座敷十二席\nご予約::お電話にて承ります（前日まで）\nお支払い::現金・カード・電子マネー\n定休日::月曜日（祝日の場合は翌日）'
+            }
+        },
+        {
+            key: 'fr_maisons_mobiles_2p', style: 'mobilhome', family: 'habitat', spreadDoc: false,
+            name: 'Maisons mobiles (2p)', desc: 'Dépliant maisons mobiles — 2 pages A4 : modèles, surfaces, prix, livraison',
+            format: { width: 595, height: 842, pages: 2 },
+            lang: 'fr', spFr: true,
+            theme: { paper: '#f7f5f0', ink: '#17231c', accent: '#2f6b4f', soft: '#e4e1d7', night: '#14211a' },
+            fonts: { display: 'Montserrat', text: 'Open Sans', mono: 'IBM Plex Mono' },
+            img: '', nimg: 0,
+            c: {
+                mast: 'MAISONS MOBILES', tag: 'HABITAT LÉGER · PRÊT À VIVRE', issue: 'CATALOGUE 2027', price: '',
+                head: 'Vivre léger, sans rien sacrifier',
+                stand: 'Trois modèles de 24 à 46 m², construits à l’atelier, livrés posés et raccordés sur votre terrain.',
+                coverlines: '', sections: ['Les modèles', 'Surfaces', 'Prix', 'Livraison', 'Finitions', 'Garanties'],
+                legs: ['Nord — 24 m²', 'Vallée — 34 m²', 'Horizon — 46 m²', 'Livraison, pose et raccordement', 'Finitions et options', 'Garantie dix ans'],
+                quote: 'Une maison n’a pas besoin d’être lourde pour être solide.',
+                body: 'Une maison mobile est construite à l’atelier, à l’abri, puis posée sur votre terrain en une seule journée. La structure en ossature bois est assemblée à sec : elle ne demande ni dalle lourde ni fondations profondes, seulement six plots béton.\n\nToutes les maisons sont livrées avec l’isolation, les menuiseries, le chauffage et les raccordements. Vous choisissez le bardage, la couleur et la terrasse ; nous nous occupons du reste, du permis à la mise en service.',
+                caption: 'Atelier Sud · ZA des Coteaux, 3 400 route de la Plaine · contact@ateliersud.fr · 04 78 00 00 00',
+                credits: 'Catalogue 2027 · prix indicatifs hors terrain et hors options · documents non contractuels',
+                modeles: 'Nord::24 m² · 1 chambre::42 900 €::Ossature bois, toit terrasse, 2,50 m sous plafond.\nVallée::34 m² · 2 chambres::58 400 €::Deux façades vitrées, terrasse couverte de 9 m².\nHorizon::46 m² · 3 chambres::76 500 €::Séjour traversant, dressing, terrasse de 14 m².',
+                infos: 'Livraison et pose::France entière en 8 à 10 semaines\nRaccordements::eau, électricité, assainissement inclus\nGarantie::décennale sur la structure et l’enveloppe\nFinitions::bardage bois ou composite, cinq teintes'
+            }
         }
     ];
 
@@ -86340,6 +86633,10 @@ function _npBuildLayout(params, keywords, lang) {
             else if (model.style === 'habitat') habitatPages(S);
             else if (model.style === 'recettes') recettesPages(S);
             else if (model.style === 'rapport') rapportPages(S);
+            // 🆕 v1.7.576 — 新聞レイアウト (JA), お品書き (JA), maisons mobiles (FR)
+            else if (model.style === 'journal-ja') journalJaPages(S);
+            else if (model.style === 'menu-ja') menuJaPages(S);
+            else if (model.style === 'mobilhome') mobilhomePages(S);
         } catch (e3) { console.warn('[SP-EN] mise en page p.' + (pi + 1) + ' :', e3); }
 
         if (typeof addAssetObjects === 'function') addAssetObjects(cv, objs, model.name + ' · p.' + (pi + 1));
@@ -86775,6 +87072,305 @@ function _npBuildLayout(params, keywords, lang) {
             S.T({ text: 'RESERVATIONS', x: M, y: H * 0.755, w: W - M * 2, size: px(2.4), font: F.mono, fill: t.accent, align: 'center', cs: 300 });
             S.T({ text: c.caption, x: M, y: H * 0.925, w: W - M * 2, size: px(2.3), font: F.mono, fill: t.paper, align: 'center', lh: 1.6 });
             S.folio(p + 1);
+        }
+    }
+
+    /* ═════════ 24. JA — 新聞レイアウト (formes simples, 12 pages) ═════════
+       🆕 v1.7.576 — Maquette type journal, composée UNIQUEMENT de formes simples
+       et de filets (aucune photographie), 12 pages A4.
+       Fabric ne coupe pas les mots japonais (pas d'espace) : les textes sont donc
+       fournis en lignes déjà coupées (jaLignes / jaParas). */
+    function journalJaPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+
+        function jaLignes(txt, n) {
+            var s = String(txt == null ? '' : txt).replace(/\s+/g, ''), out = [];
+            for (var i = 0; i < s.length; i += n) out.push(s.substr(i, n));
+            return out.join('\n');
+        }
+        function jaParas(txt, n) {
+            // 🆕 v1.7.576 — coupure de sécurité large (24 signes) : la coupure réelle
+            //   est faite par Fabric en mode japonais (`splitByGrapheme`).
+            var m = Math.max(n || 0, 24);
+            return String(txt == null ? '' : txt).split('\n\n').map(function (x) { return jaLignes(x, m); }).join('\n\n');
+        }
+        function teteCourante(i) {
+            var rub = c.sections[Math.min(i, c.sections.length - 1)] || '';
+            S.T({ text: c.mast, x: M, y: M - px(4.6), w: (W - M * 2) * 0.4, size: px(2.8), font: F.display, weight: '700', fill: t.ink });
+            S.T({ text: rub + '　' + (c.issue || ''), x: M, y: M - px(4.2), w: W - M * 2, size: px(1.9), font: F.mono, fill: t.ink, align: 'right', op: 0.65 });
+            S.filet(M + px(1.4), t.ink, px(0.25), M, W - M * 2);
+        }
+        function rubrique(i, y0) {
+            S.T({ text: (c.sections[Math.min(i, c.sections.length - 1)] || ''), x: M, y: y0, w: W - M * 2, size: px(2.7), font: F.mono, fill: t.accent, cs: 140 });
+            S.filet(y0 + px(5.6), t.ink, px(0.55), M, W - M * 2);
+            S.filet(y0 + px(6.5), t.ink, px(0.16), M, W - M * 2);
+        }
+        function bas(y0, n) {
+            S.filet(y0, t.ink, px(0.16), M, W - M * 2);
+            S.T({ text: (c.mast || '') + '　' + (c.issue || ''), x: M, y: y0 + px(1.8), w: (W - M * 2) * 0.75, size: px(1.8), font: F.mono, fill: t.ink, op: 0.6 });
+            S.T({ text: String(n), x: W - M - px(12), y: y0 + px(1.5), w: px(12), size: px(2.4), font: F.mono, fill: t.ink, align: 'right', op: 0.75 });
+        }
+        // Bandeau graphique — une variante de formes simples par page
+        function graphique(i) {
+            var i2 = i % 4, rub = (c.sections[Math.min(i, c.sections.length - 1)] || '');
+            // 🆕 v1.7.576 — bande de trois « photos » (formes simples) : sans elle, le
+            //   milieu des pages intérieures restait vide entre le texte et le bandeau.
+            var phW = (W - M * 2 - S.COL * 2) / 3;
+            for (var q = 0; q < 3; q++) {
+                S.bloc(M + q * (phW + S.COL), H * 0.415, phW, H * 0.088, (q % 2) ? t.soft : t.night, (q % 2) ? 1 : 0.12);
+                S.T({ text: '写真 ' + (q + 1) + '　' + (c.sections[(i + q) % c.sections.length] || ''), x: M + q * (phW + S.COL), y: H * 0.508, w: phW, size: px(1.9), font: F.mono, fill: t.ink, op: 0.7 });
+            }
+            if (i2 === 0) {
+                var n = 7, bw = (W - M * 2 - px(2) * 6) / n;
+                for (var b = 0; b < n; b++) {
+                    var hb = px(7) + px(2.4) * (b % 5);
+                    S.bloc(M + b * (bw + px(2)), H * 0.70 - hb, bw, hb, (b % 3 === 1) ? t.accent : t.ink, (b % 3 === 2) ? 0.3 : 1);
+                }
+                S.filet(H * 0.70, t.ink, px(0.35), M, W - M * 2);
+                S.T({ text: rub + '　数字で見る一週間', x: M, y: H * 0.715, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.ink, op: 0.75 });
+            } else if (i2 === 1) {
+                for (var d = 0; d < 6; d++) S.rond(M + d * px(15), H * 0.575, px(10), (d % 2) ? t.accent : t.soft);
+                S.filet(H * 0.665, t.ink, px(0.25), M, W - M * 2);
+                S.T({ text: rub + '　三つの視点', x: M, y: H * 0.685, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.ink, op: 0.75 });
+            } else if (i2 === 2) {
+                for (var gx = 0; gx < 6; gx++) for (var gy = 0; gy < 3; gy++)
+                    S.bloc(M + gx * px(16), H * 0.565 + gy * px(11), px(13), px(8), ((gx + gy * 2) % 5 === 0) ? t.accent : t.soft);
+                S.T({ text: rub + '　地域の記録', x: M, y: H * 0.70, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.ink, op: 0.75 });
+            } else {
+                S.rond(W * 0.59, H * 0.555, px(42), t.soft);
+                S.rond(W * 0.59 + px(6), H * 0.555 + px(6), px(42), t.accent, 0.18);
+                S.filetv(M + px(4), H * 0.545, px(36), t.accent, px(0.9));
+                S.T({ text: c.quote, x: M + px(10), y: H * 0.605, w: (W - M * 2) * 0.52, size: px(3.1), fill: t.ink, lh: 1.8 });
+            }
+        }
+
+        if (p === 0) {
+            S.fond(t.paper);
+            S.bloc(-bp, -bp, W + 2 * bp, px(3.4), t.accent);
+            S.T({ text: c.mast, x: M, y: H * 0.045, w: W - M * 2, size: px(20), font: F.display, weight: '700', fill: t.ink, align: 'center' });
+            S.filet(H * 0.105, t.ink, px(0.9), M, W - M * 2);
+            S.filet(H * 0.113, t.ink, px(0.25), M, W - M * 2);
+            S.T({ text: c.tag, x: M, y: H * 0.124, w: W - M * 2, size: px(2.2), fill: t.ink, align: 'center', op: 0.8 });
+            S.T({ text: (c.issue || '') + '　' + (c.price || ''), x: M, y: H * 0.145, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.ink, align: 'center', op: 0.7 });
+            S.filet(H * 0.163, t.ink, px(0.25), M, W - M * 2);
+            S.T({ text: c.head, x: M, y: H * 0.21, w: W - M * 2, size: px(13.5), font: F.display, weight: '700', fill: t.ink, lh: 1.2 });
+            S.filet(H * 0.30, t.ink, px(0.55), M, W - M * 2);
+            S.T({ text: c.stand, x: M, y: H * 0.315, w: (W - M * 2) * 0.6, size: px(3.4), fill: t.ink, lh: 1.65 });
+            S.bloc(W * 0.665, H * 0.31, (W - M * 2) * 0.34, px(30), t.accent);
+            S.T({ text: c.coverlines, x: W * 0.665 + px(4), y: H * 0.31 + px(5), w: (W - M * 2) * 0.34 - px(8), size: px(2.6), fill: '#ffffff', lh: 2.1 });
+            S.colonnes(H * 0.43, 0, jaParas(c.body, 18), 3, { size: px(2.9), lh: 1.8 });
+            S.filet(H * 0.80, t.ink, px(0.35), M, W - M * 2);
+            S.T({ text: c.caption, x: M, y: H * 0.815, w: (W - M * 2) * 0.7, size: px(2.1), font: F.mono, fill: t.ink, op: 0.7 });
+            S.T({ text: c.price, x: W - M - px(30), y: H * 0.815, w: px(30), size: px(2.4), font: F.mono, fill: t.accent, align: 'right' });
+            bas(H - M - px(7), 1);
+        } else if (p <= 9) {
+            S.fond(t.paper);
+            teteCourante(p);
+            rubrique(p, H * 0.055);
+            S.T({ text: c.legs[p % c.legs.length], x: M, y: H * 0.10, w: W - M * 2, size: px(9.5), font: F.display, weight: '700', fill: t.ink, lh: 1.25 });
+            S.filet(H * 0.175, t.ink, px(0.25), M, W - M * 2);
+            S.T({ text: c.caption, x: M, y: H * 0.19, w: (W - M * 2) * 0.62, size: px(2.1), font: F.mono, fill: t.ink, op: 0.7 });
+            S.colonnes(H * 0.235, 0, jaParas(c.body, 18), 3, { size: px(2.75), lh: 1.75 });
+            graphique(p);
+            bas(H - M - px(7), p + 1);
+        } else if (p === 10) {
+            S.fond(t.paper);
+            teteCourante(p);
+            S.bloc(M, H * 0.10, px(30), px(30), t.accent);
+            S.T({ text: c.sections[9], x: M + px(3), y: H * 0.10 + px(11), w: px(24), size: px(9), font: F.display, weight: '700', fill: '#ffffff', align: 'center' });
+            S.T({ text: c.legs[9], x: M + px(36), y: H * 0.105, w: W - M * 2 - px(36), size: px(9), font: F.display, weight: '700', fill: t.ink, lh: 1.3 });
+            S.filet(H * 0.20, t.ink, px(0.4), M, W - M * 2);
+            S.colonnes(H * 0.225, 0, jaParas(c.body, 18), 2, { size: px(2.95), lh: 1.8 });
+            S.filet(H * 0.63, t.ink, px(0.25), M, W - M * 2);
+            S.T({ text: c.quote, x: M, y: H * 0.65, w: W - M * 2, size: px(4.6), font: F.display, fill: t.accent, lh: 1.7 });
+            S.T({ text: c.credits, x: M, y: H * 0.75, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.ink, op: 0.7 });
+            bas(H - M - px(7), p + 1);
+        } else {
+            S.fond(t.paper);
+            teteCourante(p);
+            S.bloc(-bp, H * 0.09, W + 2 * bp, px(26), t.night);
+            S.T({ text: c.sections[10] + '　週間の天気', x: M, y: H * 0.105, w: W - M * 2, size: px(6), font: F.display, weight: '700', fill: '#ffffff' });
+            var jours = ['月', '火', '水', '木', '金', '土', '日'];
+            var cw2 = (W - M * 2 - px(2) * 6) / 7;
+            for (var j = 0; j < 7; j++) {
+                S.bloc(M + j * (cw2 + px(2)), H * 0.215, cw2, px(28), (j % 2) ? t.soft : t.paper);
+                S.T({ text: jours[j], x: M + j * (cw2 + px(2)), y: H * 0.225, w: cw2, size: px(2.4), font: F.mono, fill: t.ink, align: 'center' });
+                S.rond(M + j * (cw2 + px(2)) + cw2 / 2, H * 0.27, px(9), (j % 3 === 0) ? t.accent : t.ink, 0.85);
+                S.T({ text: (18 + j) + '°', x: M + j * (cw2 + px(2)), y: H * 0.30, w: cw2, size: px(3), font: F.mono, fill: t.ink, align: 'center' });
+            }
+            S.T({ text: c.head, x: M, y: H * 0.40, w: W - M * 2, size: px(8.5), font: F.display, weight: '700', fill: t.ink, lh: 1.25 });
+            S.filet(H * 0.46, t.ink, px(0.3), M, W - M * 2);
+            S.colonnes(H * 0.48, 0, jaParas(c.body, 18), 2, { size: px(2.9), lh: 1.8 });
+            S.bloc(M, H * 0.72, (W - M * 2) / 2 - px(3), px(38), t.accent);
+            S.T({ text: c.quote, x: M + px(5), y: H * 0.735, w: (W - M * 2) / 2 - px(13), size: px(3.2), fill: '#ffffff', lh: 1.8 });
+            S.cadre(M + (W - M * 2) / 2 + px(3), H * 0.72, (W - M * 2) / 2 - px(3), px(38), t.ink, px(0.4));
+            S.T({ text: c.credits, x: M + (W - M * 2) / 2 + px(8), y: H * 0.735, w: (W - M * 2) / 2 - px(16), size: px(2.1), font: F.mono, fill: t.ink, lh: 1.9 });
+            bas(H - M - px(7), p + 1);
+        }
+    }
+
+    /* ═════════ 25. JA — 和食のお品書き (4 pages, formes simples) ═════════ */
+    function menuJaPages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+
+        function platsDe(rub) {
+            return (c.plats || []).filter(function (l) { return l.split('::')[0] === rub; })
+                .map(function (l) { var a = l.split('::'); return { nom: a[1], prix: a[2] }; });
+        }
+        function liste(y0, rub, taille) {
+            var items = platsDe(rub), y = y0;
+            items.forEach(function (it) {
+                S.T({ text: it.nom, x: M, y: y, w: (W - M * 2) * 0.76, size: px(taille || 3.2), fill: t.ink, lh: 1.5 });
+                S.T({ text: it.prix ? ('¥' + it.prix) : '', x: W - M - px(18), y: y, w: px(18), size: px(2.9), font: F.mono, fill: t.accent, align: 'right' });
+                S.filet(y + px(4.8), t.ink, px(0.12), M, W - M * 2);
+                y += px(9);
+            });
+            return y;
+        }
+        function titre(y0, txt) {
+            S.T({ text: txt, x: M, y: y0, w: W - M * 2, size: px(5.2), font: F.display, weight: '700', fill: t.accent, align: 'center' });
+            S.filet(y0 + px(7.4), t.accent, px(0.3), W / 2 - px(16), px(32));
+        }
+        function infos(y0) {
+            var y = y0;
+            String(c.infos || '').split('\n').filter(Boolean).forEach(function (l) {
+                var a = l.split('::');
+                S.T({ text: a[0], x: M, y: y, w: px(30), size: px(2.5), font: F.mono, fill: t.ink, op: 0.7 });
+                S.T({ text: a[1] || '', x: M + px(34), y: y, w: W - M * 2 - px(34), size: px(2.9), fill: t.ink, lh: 1.6 });
+                S.filet(y + px(6.4), t.ink, px(0.12), M, W - M * 2);
+                y += px(11);
+            });
+            return y;
+        }
+
+        if (p === 0) {
+            S.fond(t.night);
+            S.cadre(M * 0.6, M * 0.6, W - M * 1.2, H - M * 1.2, t.accent, px(0.5));
+            S.rond(W / 2 - px(34), H * 0.16, px(68), t.accent, 0.9);
+            S.rond(W / 2 - px(27), H * 0.16 + px(7), px(54), t.night);
+            S.T({ text: c.tag, x: M, y: H * 0.47, w: W - M * 2, size: px(3), font: F.mono, fill: t.accent, align: 'center', cs: 400 });
+            S.T({ text: c.mast, x: M, y: H * 0.51, w: W - M * 2, size: px(14), font: F.display, weight: '700', fill: '#ffffff', align: 'center', lh: 1.2 });
+            S.filet(H * 0.60, t.accent, px(0.7), W / 2 - px(22), px(44));
+            S.T({ text: c.head, x: M, y: H * 0.63, w: W - M * 2, size: px(4.2), font: F.display, fill: t.accent, align: 'center', lh: 1.7 });
+            S.T({ text: c.stand, x: M * 1.4, y: H * 0.69, w: W - M * 2.8, size: px(3), fill: t.soft, align: 'center', lh: 1.8 });
+            S.T({ text: c.issue, x: M, y: H * 0.78, w: W - M * 2, size: px(2.6), font: F.mono, fill: t.soft, align: 'center', cs: 200 });
+            S.T({ text: c.caption, x: M, y: H * 0.85, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.soft, align: 'center', lh: 1.9, op: 0.9 });
+        } else if (p === 1) {
+            S.fond(t.paper);
+            S.filet(M, t.accent, px(0.4), M, W - M * 2);
+            titre(H * 0.075, c.legs[0] || c.sections[0]);
+            var y1 = liste(H * 0.155, '先付');
+            titre(y1 + px(6), c.legs[1] || c.sections[1]);
+            liste(y1 + px(22), '主菜');
+            S.T({ text: c.credits, x: M, y: H * 0.90, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.ink, align: 'center', op: 0.65 });
+            S.T({ text: '2', x: W - M - px(12), y: H - M - px(5), w: px(12), size: px(2.4), font: F.mono, fill: t.ink, align: 'right', op: 0.6 });
+        } else if (p === 2) {
+            S.fond(t.paper);
+            S.filet(M, t.accent, px(0.4), M, W - M * 2);
+            titre(H * 0.075, c.legs[2] || 'おすすめの献立');
+            S.cadre(M, H * 0.155, W - M * 2, H * 0.40, t.accent, px(0.5));
+            var corps = platsDe('先付').slice(0, 1).concat(platsDe('主菜').slice(0, 2), platsDe('甘味').slice(0, 1))
+                .map(function (x) { return '—　' + x.nom; }).join('\n');
+            S.T({ text: '先付・主菜・甘味　五品\n\n' + corps, x: M + px(7), y: H * 0.175, w: W - M * 2 - px(14), size: px(3.1), fill: t.ink, lh: 2.0 });
+            S.T({ text: '¥6 500', x: M + px(7), y: H * 0.485, w: W - M * 2 - px(14), size: px(4.4), font: F.mono, fill: t.accent, align: 'right' });
+            S.bloc(M, H * 0.60, W - M * 2, px(30), t.soft);
+            S.T({ text: c.quote, x: M + px(6), y: H * 0.615, w: W - M * 2 - px(12), size: px(3.6), font: F.display, fill: t.ink, lh: 1.8 });
+            S.colonnes(H * 0.685, 0, String(c.body || '').split('\n\n').map(function (x) {
+                var s = x.replace(/\s+/g, ''), o = [];
+                for (var i = 0; i < s.length; i += 22) o.push(s.substr(i, 22));
+                return o.join('\n');
+            }).join('\n\n'), 2, { size: px(2.7), lh: 1.75 });
+            S.T({ text: '3', x: W - M - px(12), y: H - M - px(5), w: px(12), size: px(2.4), font: F.mono, fill: t.ink, align: 'right', op: 0.6 });
+        } else {
+            S.fond(t.paper);
+            S.filet(M, t.accent, px(0.4), M, W - M * 2);
+            titre(H * 0.075, c.legs[3] || c.sections[2]);
+            var y3 = liste(H * 0.155, '甘味');
+            titre(y3 + px(6), c.sections[3]);
+            var y4 = liste(y3 + px(22), 'お飲み物');
+            S.filet(y4 + px(4), t.accent, px(0.3), M, W - M * 2);
+            S.T({ text: 'ご案内', x: M, y: y4 + px(9), w: W - M * 2, size: px(4.2), font: F.display, weight: '700', fill: t.accent });
+            infos(y4 + px(18));
+            S.T({ text: c.caption, x: M, y: H * 0.905, w: W - M * 2, size: px(2.1), font: F.mono, fill: t.ink, align: 'center', lh: 1.7, op: 0.8 });
+            S.T({ text: '4', x: W - M - px(12), y: H - M - px(5), w: px(12), size: px(2.4), font: F.mono, fill: t.ink, align: 'right', op: 0.6 });
+        }
+    }
+
+    /* ═════════ 26. FR — MAISONS MOBILES (2 pages, formes simples) ═══════ */
+    function mobilhomePages(S) {
+        var t = S.t, c = S.c, F = S.F, W = S.W, H = S.H, M = S.M, p = S.pi, bp = S.bp;
+
+        // Pictogramme de maison : volume + toit plat dépassant + ouverture (formes simples)
+        function maison(x, base, w, col) {
+            S.bloc(x + w * 0.06, base - w * 0.62, w * 0.88, w * 0.62, col);
+            S.bloc(x - w * 0.06, base - w * 0.76, w * 1.12, w * 0.14, col);
+            S.bloc(x + w * 0.26, base - w * 0.42, w * 0.24, w * 0.24, t.paper);
+        }
+        function modeles() {
+            return String(c.modeles || '').split('\n').filter(Boolean).map(function (l) { return l.split('::'); });
+        }
+
+        if (p === 0) {
+            S.fond(t.paper);
+            S.bloc(-bp, -bp, W + 2 * bp, px(4), t.accent);
+            S.T({ text: c.mast, x: M, y: H * 0.048, w: W - M * 2, size: px(15), font: F.display, weight: '700', fill: t.ink, align: 'center' });
+            S.T({ text: c.tag, x: M, y: H * 0.108, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.accent, align: 'center', cs: 180 });
+            S.filet(H * 0.128, t.ink, px(0.3), M, W - M * 2);
+            // trois maisons, trois tailles (le propos du catalogue)
+            maison(M + px(8), H * 0.355, px(28), t.soft);
+            maison(M + px(48), H * 0.355, px(36), t.accent);
+            maison(M + px(94), H * 0.355, px(46), t.night);
+            S.filet(H * 0.365, t.ink, px(0.4), M, W - M * 2);
+            S.T({ text: c.head, x: M, y: H * 0.415, w: W - M * 2, size: px(8.2), font: F.display, weight: '700', fill: t.ink, align: 'center', lh: 1.25 });
+            S.T({ text: c.stand, x: M * 1.6, y: H * 0.505, w: W - M * 3.2, size: px(3.2), fill: t.ink, align: 'center', lh: 1.7 });
+            S.bloc(M, H * 0.585, W - M * 2, px(34), t.accent);
+            var ms = modeles();
+            var cw = (W - M * 2 - px(4) * 2) / 3;
+            for (var i = 0; i < 3; i++) {
+                var mm = ms[i] || [];
+                S.T({ text: mm[0] || '', x: M + px(4) + i * (cw + px(4)), y: H * 0.598, w: cw - px(8), size: px(4.6), font: F.display, weight: '700', fill: '#ffffff', align: 'center' });
+                S.T({ text: mm[1] || '', x: M + px(4) + i * (cw + px(4)), y: H * 0.638, w: cw - px(8), size: px(2.4), font: F.mono, fill: '#ffffff', align: 'center', op: 0.85 });
+                S.T({ text: mm[2] || '', x: M + px(4) + i * (cw + px(4)), y: H * 0.667, w: cw - px(8), size: px(3.2), font: F.mono, fill: '#ffffff', align: 'center' });
+            }
+            S.T({ text: c.quote, x: M, y: H * 0.735, w: W - M * 2, size: px(3.4), font: F.display, italic: true, fill: t.accent, align: 'center', lh: 1.7 });
+            S.filet(H * 0.80, t.ink, px(0.25), M, W - M * 2);
+            S.T({ text: c.caption, x: M, y: H * 0.82, w: W - M * 2, size: px(2.2), font: F.mono, fill: t.ink, align: 'center', lh: 1.8, op: 0.8 });
+        } else {
+            S.fond(t.paper);
+            S.T({ text: c.mast, x: M, y: M - px(4.6), w: (W - M * 2) * 0.5, size: px(2.8), font: F.display, weight: '700', fill: t.ink });
+            S.T({ text: c.issue, x: M, y: M - px(4.2), w: W - M * 2, size: px(1.9), font: F.mono, fill: t.ink, align: 'right', op: 0.65 });
+            S.filet(M + px(1.4), t.ink, px(0.25), M, W - M * 2);
+            S.T({ text: 'Trois modèles, trois surfaces', x: M, y: H * 0.055, w: W - M * 2, size: px(9), font: F.display, weight: '700', fill: t.ink, lh: 1.2 });
+            S.filet(H * 0.115, t.accent, px(0.6), M, W - M * 2);
+            // Fiche par modèle : plan schématique + caractéristiques
+            var ms = modeles(), y = H * 0.135;
+            var hb = H * 0.098;
+            for (var i = 0; i < ms.length; i++) {
+                var mm = ms[i];
+                var plw = px(44), plh = hb - px(6);
+                S.bloc(M, y, plw, plh, t.soft);
+                S.bloc(M + px(3), y + px(3), (plw - px(9)) * 0.55, plh - px(6), (i === 0) ? t.soft : t.accent, i === 0 ? 1 : 0.85);
+                S.cadre(M, y, plw, plh, t.ink, px(0.25));
+                S.T({ text: mm[0] || '', x: M + plw + px(6), y: y, w: (W - M * 2) * 0.42, size: px(5), font: F.display, weight: '700', fill: t.ink });
+                S.T({ text: mm[1] || '', x: M + plw + px(6), y: y + px(8), w: (W - M * 2) * 0.42, size: px(2.3), font: F.mono, fill: t.accent });
+                S.T({ text: mm[3] || '', x: M + plw + px(6), y: y + px(13), w: W - M - (M + plw + px(6)), size: px(2.8), fill: t.ink, lh: 1.55 });
+                S.T({ text: mm[2] || '', x: W - M - px(38), y: y + px(6), w: px(38), size: px(3.4), font: F.mono, fill: t.ink, align: 'right' });
+                y += hb;
+            }
+            S.filet(y + px(2), t.ink, px(0.4), M, W - M * 2);
+            // Deux colonnes : le texte, puis les informations pratiques
+            S.colonnes(y + px(10), 0, c.body, 2, { size: px(2.9), lh: 1.6 });
+            S.T({ text: c.legs[3], x: M, y: y + px(58), w: W - M * 2, size: px(4.4), font: F.display, weight: '700', fill: t.accent });
+            var yi = y + px(70);
+            String(c.infos || '').split('\n').filter(Boolean).forEach(function (l) {
+                var a = l.split('::');
+                S.T({ text: a[0], x: M, y: yi, w: px(38), size: px(2.5), font: F.mono, fill: t.ink, op: 0.7 });
+                S.T({ text: a[1] || '', x: M + px(42), y: yi, w: W - M * 2 - px(42), size: px(2.9), fill: t.ink, lh: 1.6 });
+                S.filet(yi + px(6.4), t.ink, px(0.12), M, W - M * 2);
+                yi += px(11);
+            });
+            S.T({ text: c.credits, x: M, y: H - M - px(9), w: W - M * 2, size: px(2.1), font: F.mono, fill: t.ink, lh: 1.7, op: 0.7 });
+            S.T({ text: c.caption, x: M, y: H - M - px(4), w: W - M * 2, size: px(2.1), font: F.mono, fill: t.accent, lh: 1.7 });
         }
     }
 
@@ -88514,7 +89110,9 @@ function _npBuildLayout(params, keywords, lang) {
 })();
 
 // Template cards on the new-project modal (single source of truth: compositionExamples)
-window._npTemplateKeys = ['en_magazine_fashion_8p', 'en_journal_hair_4p', 'en_magazine_music_8p', 'en_magazine_food_8p',
+// 🆕 v1.7.576 — les trois nouveaux modèles (2 JA + 1 FR) sont proposés EN PREMIER.
+window._npTemplateKeys = ['ja_journal_news_12p', 'ja_restaurant_menu_4p', 'fr_maisons_mobiles_2p',
+    'en_magazine_fashion_8p', 'en_journal_hair_4p', 'en_magazine_music_8p', 'en_magazine_food_8p',
     'en_restaurant_menu_4p', 'en_business_card_1p', 'en_cv_pro_1p', 'en_book_text_12p',
     'en_magazine_ocean_8p', 'en_cv_editorial_1p', 'en_cv_minimal_1p', 'en_book_shapes_12p',
     'en_book_theatre_12p', 'en_calendar_a3_12p',
@@ -88573,6 +89171,11 @@ window.npApplyTemplateByKey = function(key) {
     if (typeof compositionExamples === 'undefined') return;
     const comp = compositionExamples.find(c => c && c.key === key);
     if (!comp) return;
+    /* 🆕 v1.7.576 — un modèle JAPONAIS active l'écriture japonaise pour tout le
+       document (coupure par caractère), même si l'interface est en français ou en
+       anglais ; un autre modèle la désactive. */
+    window._spDocJa = (comp.lang === 'ja');
+    try { if (typeof window.spMajEcritureJa === 'function') window.spMajEcritureJa(); } catch (_) {}
     closeNewProjectModal();
     if (typeof window._spClearAutoSave === 'function') { try { window._spClearAutoSave(); } catch (_) {} }
     if (typeof applyCompFormat !== 'function') return;
@@ -88583,6 +89186,9 @@ window.npApplyTemplateByKey = function(key) {
                 window._buildingMultiPage = false;
                 // 🛡️ FIX 2026-08-26 : garantir la présence des repères après construction
                 try { if (typeof _spEnsureGuidesAfterTemplateLoad === 'function') _spEnsureGuidesAfterTemplateLoad(); } catch (_) {}
+                /* 🆕 v1.7.576 — la maquette est composée : on applique la coupure de ligne
+                   japonaise (par caractère) aux blocs qui contiennent du japonais. */
+                try { if (typeof window.spMajEcritureJa === 'function') window.spMajEcritureJa(); } catch (_) {}
                 try { saveState(comp.name || 'Modèle'); } catch (_) {}
             });
         } else if (comp.format && comp.format.pages && comp.format.pages > 1 && typeof buildBrochureMulti === 'function') {

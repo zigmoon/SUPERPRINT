@@ -2304,6 +2304,21 @@
     lang = (lang === 'fr' || lang === 'jp') ? lang : 'en';
     curLang = lang;
     document.documentElement.setAttribute('lang', lang === 'fr' ? 'fr' : lang === 'jp' ? 'ja' : 'en');
+    /* 🆕 _SP_STUDIO_JA_576 — ÉCRITURE JAPONAISE.
+       Retour utilisateur : « dans les templates JA ne doit pas écrire dans l'autre
+       sens (en hauteur) ». Mesure : Fabric coupe ses lignes sur les ESPACES, qui
+       n'existent pas en japonais → un paragraphe japonais ne se coupait pas (il
+       débordait du bloc) ou s'empilait caractère par caractère.
+       L'astuce : passer la coupure « par graphème » (caractère) — c'est la façon
+       japonaise de composer. On l'active quand la LANGUE est le japonais :
+       préférences du studio, de l'app ou de la page d'accueil (clé partagée
+       `sp_lang`). Réglé sur le prototype : tout bloc de texte créé ensuite, par
+       l'utilisateur comme par l'IA, en hérite — rien d'autre n'est touché. */
+    try {
+      if (typeof fabric !== 'undefined' && fabric.Textbox) {
+        fabric.Textbox.prototype.splitByGrapheme = (lang === 'jp');
+      }
+    } catch (_) {}
     const dict = I18N[lang] || I18N.en;
     // 1) Éléments marqués [data-i18n]
     document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -6760,27 +6775,15 @@ function spRtfLayoutInfo(src) {
       fill: 'transparent', stroke: '#cccccc', strokeWidth: 1, strokeDashArray: [5, 5], isBleed: true
     }, commun)));
 
-    // ── MARGES (rouge pointillé) : une par PAGE, miroir recto / verso ────────
-    const margePage = (xPage, wPage, mGauche, mDroite) => new fabric.Rect(Object.assign({
-      left: xPage + mmToPx(mGauche),
-      top: bleedPx + mmToPx(MP.tete),
-      width: Math.max(0, wPage - mmToPx(mGauche + mDroite)),
-      height: Math.max(0, pageHpx - mmToPx(MP.tete + MP.queue)),
-      fill: 'transparent', stroke: '#ff0000', strokeWidth: 0.5, strokeDashArray: [5, 5], isMargin: true
-    }, commun));
-    if (seule) {
-      // RECTO (page de droite) : petit fond côté pliure (à gauche), grand fond aux chants.
-      // VERSO (page de gauche) : grand fond côté chants (à gauche), petit fond à la pliure.
-      const mG = recto ? MP.petit : MP.grand;
-      const mD = recto ? MP.grand : MP.petit;
-      guides.push(margePage(bG, pageWpx, mG, mD));
-    } else {
-      // Planche : page de GAUCHE = VERSO, page de DROITE = RECTO. Le petit fond
-      // des deux pages tombe donc de part et d'autre de la pliure.
-      const demi = pageWpx / 2;
-      guides.push(margePage(bleedPx, demi, MP.grand, MP.petit));
-      guides.push(margePage(bleedPx + demi, demi, MP.petit, MP.grand));
-    }
+    /* ⚠️ _SP_STUDIO_MARGES_576 — MARGES DE SÉCURITÉ : RETIRÉES DU STUDIO.
+       Retour utilisateur : « dans le studio je ne veux pas les repères rouges
+       pointillés ». Mesure du défaut signalé : le cadre rouge n'était pas centré
+       dans le canvas (marges miroir 12 mm côté pliure / 18 mm côté chants, copiées
+       de l'app) → rectangle visiblement décalé, surtout en page simple.
+       Vérifié : ces objets ne portaient AUCUN calcul. `isMargin` n'est utilisé que
+       par le masquage des repères, l'exclusion d'export et l'interdiction de
+       sélection ; le trait de coupe, les fonds perdus et la pliure restent tracés
+       et sont, eux, parfaitement centrés dans la fenêtre de page. */
 
     // ── LIGNE DE PLIURE (planche entière uniquement) ──────────────────────────
     //   Mesure : le studio traçait le trait de coupe, les fonds perdus et les

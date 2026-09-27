@@ -9,6 +9,37 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.576] — 2026-09-28
+
+_Trois nouvelles maquettes (2 japonaises + 1 française) en tête de la page d'accueil, écriture japonaise par caractère, studio sans repères rouges, garde-fou « Page + » dans l'app_
+
+### Added — Trois nouveaux modèles (2 JA + 1 FR)
+- `ja_journal_news_12p` — **新聞レイアウト**, A4, 12 pages, composé UNIQUEMENT de formes simples et de filets (aucune photo) : manchette encadrée, grand titre, trois colonnes, encadré rouge, bandeau graphique différent à chaque page (barres, pastilles, grille, grand cercle), page 連載 et dernière page météo sur sept colonnes.
+- `ja_restaurant_menu_4p` — **お品書き**, A4, 4 pages : couverture sombre au cercle rouge, 先付 / 主菜 / 甘味 / お飲み物 avec prix en yens, encadré おすすめの献立 (¥6 500) et page ご案内.
+- `fr_maisons_mobiles_2p` — **Maisons mobiles**, A4, 2 pages : couverture (pictogrammes de maisons à toit plat, bandeau des trois modèles et prix), puis une fiche par modèle (plan schématique, surface, prix, description), livraison, raccordements et garanties.
+- Page d'accueil : les trois cartes sont **en tête** du carrousel des modèles, compteurs 43 → **46** dans les trois langues, vignettes (918 × 1289) générées depuis le rendu réel de l'app.
+- Bibliothèque d'assets : nouveau drapeau `spJa`, filtre élargi (`spEn || spFr || spJa`) et tri par langue **EN → FR → JA**. Modale « nouveau projet » : les trois clés en premier.
+- Modèle JA 12 pages repris après retour utilisateur : bande de trois « photos » en formes simples avec légendes sur chaque page intérieure (le milieu était vide), en-tête de rubrique borné (la page 12 annonçait 総合 au lieu de 天気), coupure de sécurité élargie.
+
+### Added — Écriture japonaise (app et studio)
+- Fabric coupait les lignes sur les **espaces**, absents du japonais : un paragraphe japonais débordait de son bloc ou s'empilait **un caractère par ligne** (« en hauteur »).
+- Option d'écriture japonaise : coupure **par caractère** (`splitByGrapheme`), injectée **à la création** du bloc car Fabric écrase le défaut du prototype avec les options de l'objet.
+- Déclencheurs : langue **日本語** (préférences de l'app, du studio ou de la page d'accueil — clé partagée `sp_lang`) **ou** chargement d'un modèle japonais (`_spDocJa`). Le studio applique le même réglage quand sa langue est le japonais.
+- Réglage **précis** : seuls les blocs contenant réellement du japonais (kana ou kanji) sont convertis — un mot latin reste coupé par mot — et un bloc plus étroit que deux caractères est élargi (cause exacte du texte empilé). Contrôlé : 13/13 blocs convertis dans le modèle JA, **0** dans les modèles FR et EN.
+
+### Fixed — Studio : repères rouges retirés (et centrage vérifié)
+- Les cadres **rouges pointillés** (marges de sécurité) ne sont plus tracés : ils n'étaient pas centrés dans le canevas (marges miroir 12 mm côté pliure / 18 mm côté chants), ce qui donnait un rectangle visiblement décalé.
+- Contrôle : ces objets ne portaient **aucun calcul** (`isMargin` n'était utilisé que par le masquage des repères, l'exclusion d'export et l'interdiction de sélection). En page simple, la fenêtre fait exactement page + fond perdu des deux côtés (mesuré 215,9 mm pour 210 + 2 × 3 mm) : trait de coupe et fonds perdus parfaitement centrés.
+
+### Fixed — App : « Page + » ne perd plus une moitié de planche
+- Mesure : document de 6 pages venu du studio, une planche 6-7 ne dessinait plus qu'**1 objet au lieu de 8** (la 4e de couverture) et la sauvegarde suivante écrasait la donnée (`[7,8,9,9,8,1,1]`).
+- `spVerifierPlancheNouvelle(leftIndex, rightIndex, cliche)` : un **cliché de pages[]** est pris avant `createNewPage()` ; 700 ms après la création, le cliché, la donnée courante et les objets réellement **dessinés** sont comparés. Perte de plus de la moitié ou objets manquants → **restauration depuis le cliché**, `renderAllPages()`, puis resauvegarde (1200 ms).
+- Garde-fous `_spPerteMajeure` en tête de `saveSpreadContent` (moitié gauche et droite) et de `saveAllPages` (page seule et mode simple) : un cliché qui perd plus de la moitié des objets est **refusé** avec un message explicite.
+- Vérifié : après « Page + » sur le document du studio, la planche 6-7 redessine **8 objets** (« LA PAPETERIE DE DEMAIN », folio 6), le pager passe à 7/7 et la donnée revient à 8.
+
+### Scope
+- Modèles (app + page d'accueil), studio SP213 (repères, écriture japonaise) et garde-fou d'ajout de page. Aucun changement sur le rendu PDF, sur l'import/export de documents ni sur les autres applications du paquet.
+
 ## [1.7.575] — 2026-09-28
 
 _Studio SP213 en mode « cahier » : couverture et 4e de couverture seules, fonds perdus arrêtés au pli, marges miroir, export en ordre de lecture — et moteur IA fiabilisé_
