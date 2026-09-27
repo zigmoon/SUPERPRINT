@@ -26,7 +26,9 @@ npm login
 npm publish
 ```
 
-C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.107**).
+C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.108**).
+
+> ⚠️ **npm 12 et preuve de présence (2FA)** : si `npm publish` affiche « Authenticate your account at … Press ENTER to open in the browser… », la publication est **staged** (préparée mais non publiée) et attend une approbation dans le navigateur — ou un code : `npm publish --otp=XXXXXX`. Ne pas relancer `npm publish` tel quel : npm répond **E409 « Cannot publish over previously staged version »**. Dans ce cas, bumper (`npm version patch --no-git-tag-version`) puis republier, ou approuver le stage (`npm stage list`, `npm stage approve <stage-id>`). Vérifier ensuite que la version est bien sur le registre et non seulement en cache local : `Invoke-RestMethod https://registry.npmjs.org/superprint/1.0.NNN` (404 = pas publiée) et `npm view superprint dist-tags`.
 
 ## 4. Mettre à jour plus tard (après modification)
 
