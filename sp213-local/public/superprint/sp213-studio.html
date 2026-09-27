@@ -671,12 +671,14 @@
   /* 🆕 v1.7.386 — pousse a droite par margin-left:auto (au lieu d'un flex:1
      qui l'etirait sous les icones). Largeur minimale pour rester lisible. */
   #sendBtn {
-    flex: 0 0 auto; min-width: 104px; min-height: 30px; margin-left: auto; padding: 0 18px; border-radius: 0; border: none;
+    flex: 0 0 auto; width: 34px; height: 34px; min-width: 0; min-height: 0; margin-left: auto; padding: 0; border-radius: 50%; border: none;
     background: var(--accent); color: var(--btn-active-text); cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.15s, transform 0.1s;
   }
-  #sendBtn:disabled { opacity: .45; cursor: not-allowed; }
+  #sendBtn:hover:not(:disabled) { background: var(--accent-hover); }
+  #sendBtn:active:not(:disabled) { transform: scale(0.92); }
+  #sendBtn:disabled { opacity: .35; cursor: not-allowed; }
 
   /* v1.7.394 — Retour utilisateur : « je trouve pas assez fort visuellement quand
      c'est un retravail par zone ». Le cadre du bloc passe en ambre et la barre
@@ -685,53 +687,23 @@
   /* Boutons pièce jointe + micro : compacts (20px, icône 12px), CARRÉS (pas de
      bord arrondi) à droite de la zone de saisie */
   /* 🆕 v1.7.386 — 30 px (au lieu de 20) : vraie cible de clic, icone 14 px. */
+  /* 🆕 v1.7.606 — seule la pièce jointe (#attachBtn) garde un filet visible ;
+     les autres actions (image web, micro, clavier) restent sans bordure, comme
+     de simples icônes cliquables. */
   #attachBtn, #micBtn, #webImgBtn, #kbBtn {
     flex-shrink: 0; width: 30px; height: 30px; padding: 0; border-radius: 0;
-    border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer;
+    border: 1px solid transparent; background: transparent; color: var(--text); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: all 0.15s;
   }
+  #attachBtn { border-color: var(--border); }
   #attachBtn .ic, #micBtn .ic, #webImgBtn .ic, #kbBtn .ic { width: 14px; height: 14px; }
-  #attachBtn:hover, #micBtn:hover, #webImgBtn:hover, #kbBtn:hover { background: var(--btn-hover); border-color: #999; }
-  /* v1.7.391 — Case « Images » : habillage photo des maquettes.
-     Coché -> l'IA compose AVEC des photos (zones photo + légendes) et le studio
-     joint 1 à 3 photos. Décoché (DÉFAUT) -> maquette sans photo. */
-  #imgToggleWrap {
-    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
-    height: 30px; padding: 0 9px; cursor: pointer; user-select: none;
-    border: 1px solid var(--border); color: var(--text); white-space: nowrap;
-    transition: all 0.15s;
-  }
-  #imgToggleWrap:hover { background: var(--btn-hover); border-color: #999; }
-  #imgToggleWrap input[type="checkbox"] {
-    /* 🎨 Unifie la DA : la case cochee se peignait en BLEU (#3b82f6), hors charte.
-       C'est `accent-color` qui peint le remplissage ET la coche : le passer au noir
-       aligne la case sur les autres controles du studio, meme cochee. */
-    width: 13px; height: 13px; margin: 0; cursor: pointer; accent-color: #111111;
-  }
-  body.theme-dark #imgToggleWrap input[type="checkbox"] { accent-color: #f4f4f5; }
-  #imgToggleWrap .img-toggle-label { font-size: 11px; letter-spacing: .2px; }
-  /* v1.7.394 — RETOUR UTILISATEUR : « le bleu Images a droite du micro ca va pas
-     dans la DA, reste comme les autres en couleur meme si coche ».
-     Plus AUCUNE teinte bleue : cochee, la case garde exactement l'apparence des
-     icones voisines ; seul le libelle passe en gras pour signaler l'etat. */
-  #imgToggleWrap.on { border-color: var(--border); background: transparent; }
-  #imgToggleWrap.on .img-toggle-label { font-weight: 700; }
-  #imgToggleWrap.busy { opacity: .5; pointer-events: none; }
-  @media (max-width: 560px) {
-    #imgToggleWrap { padding: 0 6px; }
-    #imgToggleWrap .img-toggle-label { display: none; }
-  }
-  /* Taille alignee sur les icones sur mobile (la regle @media ne cite pas la case) */
-  @media (max-width: 720px) {
-    #imgToggleWrap { height: 42px; }
-  }
+  #attachBtn:hover, #micBtn:hover, #webImgBtn:hover, #kbBtn:hover { background: var(--btn-hover); }
+  #attachBtn:hover { border-color: #999; }
   #micBtn:disabled { opacity: .4; cursor: not-allowed; }
-  #micBtn.listening { background: #ef4444; color: #fff; border-color: #ef4444; }
+  #micBtn.listening { background: #ef4444; color: #fff; }
   #micBtn.listening .ic { animation: micPulse 1s infinite; }
   @keyframes micPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
-  /* Bouton « Image web » : légère teinte pour le distinguer (offline → caché) */
-  #webImgBtn { border-color: var(--border); }
   #webImgBtn.offline { opacity: .35; pointer-events: none; }
 
   /* ════════════════════════════════════════════════════════════════
@@ -1031,7 +1003,7 @@
         <div class="label-row">
           <label id="engineLabel">Back-end d'exécution</label>
           <span class="info-icon" tabindex="0" aria-label="Info exécution" data-i18n-aria="info.execution">?
-            <span class="info-pop" id="enginePop">SP213 reste le moteur de mise en page. Ce réglage choisit simplement où il s'exécute : OpenAI GPT (recommandé), DeepSeek, OpenRouter, Groq ou SP213 WLLM local.</span>
+            <span class="info-pop" id="enginePop">SP213 reste le moteur de mise en page. Ce réglage choisit simplement où il s'exécute : OpenAI GPT (recommandé), DeepSeek, OpenRouter, Groq, SP213 WLLM (local avec GPU, choix du modèle) ou SP213 WLLM Native (local avec GPU, intégré, sans réglage technique).</span>
           </span>
         </div>
         <select id="engineSelect">
@@ -1042,7 +1014,8 @@
           <option value="anthropic">Anthropic Claude (cloud)</option>
           <option value="openrouter">OpenRouter (cloud — 100% free)</option>
           <option value="groq">Groq (cloud — rapide)</option>
-          <option value="webllm">SP213 WLLM (local)</option>
+          <option value="webllm">SP213 WLLM (local avec GPU)</option>
+          <option value="webllm-native">SP213 WLLM Native (local avec GPU, intégré)</option>
         </select>
         <div class="hint" id="engineHint"></div>
       </div>
@@ -1164,7 +1137,7 @@
         <div class="label-row">
           <label id="wllmLabel">Modèle local (WLLM)</label>
           <span class="info-icon" tabindex="0" aria-label="Info modèle local" data-i18n-aria="info.localModel">?
-            <span class="info-pop" id="wllmPop">Modèle exécuté en local dans votre navigateur (WebGPU). Plus le modèle est grand, meilleure est la compréhension de SP213 et la qualité des maquettes, mais le téléchargement et l'inférence sont plus lents.<br><br>• <b>Qwen3-4B</b> (recommandé) : excellent rapport qualité/vitesse, très bon en JSON et conversation.<br>• <b>Qwen2.5-3B</b> : rapide et économique.<br>• <b>Llama-3.2-3B</b> : basique.<br>• <b>Qwen3-8B</b> : le plus puissant, demande ~5.7 Go de VRAM.</span>
+            <span class="info-pop" id="wllmPop">Modèle exécuté localement dans votre navigateur (WebGPU). La VRAM indiquée est une estimation de mémoire graphique nécessaire, pas la taille du téléchargement; la mémoire disponible varie selon l'appareil.<br><br>• <b>Qwen2.5 1.5B</b> (recommandé) : choix équilibré pour suivre des consignes et produire du JSON, environ 1,63 Go de VRAM.<br>• <b>SmolLM2 1.7B</b> : alternative compacte, environ 1,77 Go.<br>• <b>Llama 3.2 1B</b> : environ 0,88 Go.<br>• <b>Qwen2.5 0.5B</b> : environ 0,95 Go, qualité plus limitée.<br>• <b>SmolLM2 360M</b> : environ 0,38 Go, réservé aux essais simples.</span>
           </span>
         </div>
         <select id="wllmModel"></select>
@@ -1312,17 +1285,18 @@
     </span>
     <span class="tip-wrap" tabindex="0">
       <button class="btn" id="newDocBtn">
-        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M4 4h16v16H4z" stroke="currentColor"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>
-        Nouveau
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M12 3v12" stroke="currentColor"/><polyline points="7 10 12 15 17 10" stroke="currentColor"/><path d="M4 21h16" stroke="currentColor"/></svg>
+        Importer
       </button>
-      <span class="tip" id="newTip"><b>Nouvelle conversation</b>Crée une nouvelle conversation vide (la conversation actuelle est conservée dans l'historique).</span>
+      <span class="tip" id="newTip"><b>Importer</b>Importe une sauvegarde .zip (conversations + maquettes) ou un fichier .sp / .json.</span>
+      <input type="file" id="convImportInput" accept=".zip,.sp,.json" hidden>
     </span>
     <span class="tip-wrap tip-anchor-right" tabindex="0">
       <button class="btn btn-primary" id="exportSpBtn">
-        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Exporter .sp
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Sauvegarder
       </button>
-      <span class="tip" id="exportTip"><b>Exporter .sp</b>Télécharge la maquette au format natif SuperPrint (.sp). Vous pourrez l'importer plus tard via Importer.</span>
+      <span class="tip" id="exportTip"><b>Sauvegarder</b>Téléchargez la maquette de cette fenêtre (.sp) ou toutes vos conversations avec leurs maquettes (.zip).</span>
     </span>
     <span class="tip-wrap tip-anchor-right" tabindex="0">
       <button class="icon-btn" id="settingsBtn">
@@ -1423,7 +1397,7 @@
               <input type="file" id="attachInput" accept=".jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.eps,.ai,.ps,.txt,.md,.csv,.html,.doc,.docx,.odt,.ods,.odp,.odg,.rtf,.xls,.xlsx,.pdf" multiple hidden>
               <span class="tip-wrap tip-up tip-anchor-right" tabindex="0" id="webImgTipWrap">
                 <button class="icon-btn" id="webImgBtn" title="Chercher une image sur le web (picsum.photos)">
-                  <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                 </button>
                 <span class="tip" id="webImgTip"><b>Image web</b>Recherche une photo libre (picsum.photos) et l'ajoute comme pièce jointe pour que l'IA l'intègre dans la maquette.</span>
               </span>
@@ -1442,19 +1416,12 @@
                 </button>
                 <span class="tip" id="kbTip"><b>Clavier</b>Ouvre un grand clavier à l'écran : ce que vous tapez s'affiche en très grand au-dessus, l'interface reste visible derrière. Basculez entre lettres et glyphes sur le clavier. Échap le referme.</span>
               </span>
-              <!-- v1.7.391 — Case « Images » : à droite du micro, comme demandé.
-                   DÉCOCHÉE par défaut = maquette sans photo. -->
-              <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
-                <label id="imgToggleWrap" for="imgToggle">
-                  <input type="checkbox" id="imgToggle">
-                  <span class="img-toggle-label" id="imgToggleLabel">Images</span>
-                </label>
-                <span class="tip" id="imgToggleTip"><b>Images</b>Décoché (défaut) : maquette sans photo. Coché : l'IA réserve des zones photo et le studio joint 1 à 3 photos d'illustration.</span>
-              </span>
+              <!-- v1.7.391 — Case « Images » retirée (redondante avec le réglage
+                   des préférences du studio). -->
             </div>
             <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
               <button id="sendBtn">
-                <svg class="ic ic-sm" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
               </button>
               <span class="tip" id="sendTip"><b>Envoyer</b>Génère (ou met à jour) la maquette à partir de votre description et des pièces jointes. Le résultat s'affiche à gauche.</span>
             </span>
@@ -1470,11 +1437,11 @@
     <button class="mobile-dock-btn active" id="mobileChatBtn" type="button" aria-label="Show chat">
       <svg class="ic" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg><span>Chat</span>
     </button>
-    <button class="mobile-dock-btn" id="mobileNewBtn" type="button" aria-label="New conversation">
-      <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"/><line x1="12" y1="7" x2="12" y2="17"/><line x1="7" y1="12" x2="17" y2="12"/></svg><span>New</span>
+    <button class="mobile-dock-btn" id="mobileNewBtn" type="button" aria-label="Import">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 21h16"/></svg><span>Import</span>
     </button>
-    <button class="mobile-dock-btn" id="mobileExportBtn" type="button" aria-label="Export .sp">
-      <svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg><span>Export</span>
+    <button class="mobile-dock-btn" id="mobileExportBtn" type="button" aria-label="Save">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Save</span>
     </button>
     <button class="mobile-dock-btn" id="mobileSettingsBtn" type="button" aria-label="Studio preferences">
       <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2.9 2.9-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21h-4v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1-2.9-2.9.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1 2.9-2.9.1.1a1.7 1.7 0 0 0 1.8.3 1.7 1.7 0 0 0 1-1.5V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1 2.9 2.9-.1.1a1.7 1.7 0 0 0-.3 1.8 1.7 1.7 0 0 0 1.5 1h.1v4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span>
@@ -1623,19 +1590,30 @@
 
   // 🆕 Modèles locaux (WebLLM / WebGPU) — multi-choix. 100% gratuits & open source
   // (licences permissives, exécutés localement, aucune donnée ne sort de la machine).
-  // Les 2 premiers sont recommandés pour la maquette (JSON structuré SP213) :
+  // Modèles sous 2 Go de VRAM estimée; Qwen2.5 1.5B est le défaut équilibré.
   const WLLM_MODELS = [
-    ['Qwen3-4B-q4f16_1-MLC',           'Qwen3 4B — recommandé (3.4 Go VRAM, meilleur équilibre)'],
-    ['Qwen3-8B-q4f16_1-MLC',           'Qwen3 8B — qualité maximale (5.7 Go VRAM)'],
-    ['Qwen2.5-3B-Instruct-q4f16_1-MLC','Qwen2.5 3B — rapide (2.5 Go VRAM)'],
-    ['Llama-3.2-3B-Instruct-q4f16_1-MLC','Llama 3.2 3B — basique (2.3 Go VRAM)'],
-    ['Qwen3-1.7B-q4f16_1-MLC',         'Qwen3 1.7B — très léger (2.0 Go VRAM)'],
-    ['SmolLM2-1.7B-Instruct-q4f16_1-MLC','SmolLM2 1.7B — alternative compacte (1.8 Go VRAM)'],
-    ['Qwen2.5-1.5B-Instruct-q4f16_1-MLC','Qwen2.5 1.5B — léger (1.6 Go VRAM)'],
-    ['Llama-3.2-1B-Instruct-q4f16_1-MLC','Llama 3.2 1B — léger recommandé (0.9 Go VRAM)'],
-    ['Qwen2.5-0.5B-Instruct-q4f16_1-MLC','Qwen2.5 0.5B — ultra-léger expérimental (0.95 Go VRAM)'],
-    ['SmolLM2-360M-Instruct-q4f16_1-MLC','SmolLM2 360M — minimal, maquettes basiques (0.4 Go VRAM)']
+    ['Qwen2.5-1.5B-Instruct-q4f16_1-MLC','Qwen2.5 1.5B — recommandé (env. 1,63 Go VRAM)'],
+    ['SmolLM2-1.7B-Instruct-q4f16_1-MLC','SmolLM2 1.7B — alternative (env. 1,77 Go VRAM)'],
+    ['Llama-3.2-1B-Instruct-q4f16_1-MLC','Llama 3.2 1B — compact (env. 0,88 Go VRAM)'],
+    ['Qwen2.5-0.5B-Instruct-q4f16_1-MLC','Qwen2.5 0.5B — compact, qualité limitée (env. 0,95 Go VRAM)'],
+    ['SmolLM2-360M-Instruct-q4f16_1-MLC','SmolLM2 360M — essais simples (env. 0,38 Go VRAM)']
   ];
+
+  // 🆕 SP213 WLLM Native — moteur local « prêt à l'emploi », sans liste de modèles
+  // technique : l'utilisateur voit juste « ça charge », rien d'autre. Le modèle
+  // sous-jacent est aujourd'hui un WebLLM standard (miroir Hugging Face mlc-ai),
+  // mais CETTE CONSTANTE est le SEUL endroit à modifier pour basculer un jour vers
+  // des poids déposés sur app.zigmoon.com : WebLLM accepte un AppConfig.model_list
+  // avec des champs `model` / `model_lib` pointant vers une URL self-hosted, sans
+  // toucher au reste du studio (buildSystemPrompt, ensureWebLLM, callWebLLM…).
+  const WLLM_NATIVE_MODEL_ID = WLLM_MODELS[0][0];
+
+  // Modèle réellement ciblé par le moteur local courant (dropdown pour « SP213 WLLM »,
+  // fixe et non technique pour « SP213 WLLM Native »).
+  function currentWllmModelId() {
+    return (state.engine === 'webllm-native') ? WLLM_NATIVE_MODEL_ID : (state.wllmModel || WLLM_MODELS[0][0]);
+  }
+
 
   const FONTS = {
     display: ['Bebas Neue', 'Playfair Display', 'Montserrat', 'Poppins'],
@@ -1798,7 +1776,7 @@
       'welcome.sub': 'Preferences',
       'welcome.engines': 'Engines',
       'welcome.engineLabel': 'Execution backend',
-      'welcome.enginePop': 'SP213 stays the layout engine. This setting chooses where it runs: DeepSeek (cloud, reasoning), OpenAI GPT (cloud), OpenRouter (cloud, 100% free models), Groq (cloud, fast) or SP213 WLLM (local, built-in WebLLM).',
+      'welcome.enginePop': 'SP213 stays the layout engine. This setting chooses where it runs: DeepSeek (cloud, reasoning), OpenAI GPT (cloud), OpenRouter (cloud, 100% free models), Groq (cloud, fast), SP213 WLLM (local with GPU, pick the model) or SP213 WLLM Native (local with GPU, built-in, no technical setting).',
       'welcome.groqLabel': 'Groq API key',
       'welcome.groqPop': 'Your <b>gsk_...</b> key is stored only in your browser (localStorage) and sent to Groq via the local proxy. It is never hardcoded or shared.',
       'welcome.groqGet': 'Get a Groq key',
@@ -1812,7 +1790,7 @@
       'welcome.orModelLabel': 'OpenRouter model (100% free)',
       'welcome.orModelPop': '100% free models (<b>:free</b> status on OpenRouter). Recommended for SP213 layouts (structured JSON).',
       'welcome.wllmLabel': 'Local model (WLLM)',
-      'welcome.wllmPop': 'Model running locally in your browser (WebGPU). Bigger model = better SP213 understanding and layout quality, but slower download and inference.<br><br>• <b>Qwen3-4B</b> (recommended): excellent quality/speed, very good at JSON and conversation.<br>• <b>Qwen2.5-3B</b>: fast and economical.<br>• <b>Llama-3.2-3B</b>: basic.<br>• <b>Qwen3-8B</b>: most powerful, needs ~5.7 GB VRAM.',
+      'welcome.wllmPop': 'Model runs locally in your browser (WebGPU). The VRAM figure is estimated graphics memory, not download size; available memory varies by device.<br><br>• <b>Qwen2.5 1.5B</b> (recommended): balanced for following instructions and structured JSON, about 1.63 GB VRAM.<br>• <b>SmolLM2 1.7B</b>: compact alternative, about 1.77 GB.<br>• <b>Llama 3.2 1B</b>: about 0.88 GB.<br>• <b>Qwen2.5 0.5B</b>: about 0.95 GB, more limited quality.<br>• <b>SmolLM2 360M</b>: about 0.38 GB, for simple tests.',
       'welcome.wllmModels': 'WebLLM models (Hugging Face)',
       'welcome.wllmCheck': 'Check WebGPU',
       'welcome.format': 'Document format',
@@ -1837,11 +1815,11 @@
       'qc.corporate': ['Corporate report', 'A4 corporate report page: 4 KPI cards, sober palette, thin rules.'],
       'qc.menu': ['Restaurant menu', 'Elegant A4 restaurant menu: starters, mains, desserts with prices, refined typography.'],
       'qc.brochure': ['4-page brochure', 'A4 4-page booklet: cover, editorial, 2 content pages — strict graphic consistency.'],
-      'topbar.new': 'New',
-      'topbar.export': 'Export .sp',
+      'topbar.new': 'Import',
+      'topbar.export': 'Save',
       'topbar.themeTip': '<b>Theme</b>Toggles between the studio light and dark theme.',
-      'topbar.newTip': '<b>New conversation</b>Creates an empty conversation (the current one is kept in history).',
-      'topbar.exportTip': '<b>Export .sp</b>Downloads the layout in native SuperPrint format (.sp). You can import it later via Import.',
+      'topbar.newTip': '<b>Import</b>Import a .zip backup (conversations + layouts) or a .sp / .json file.',
+      'topbar.exportTip': '<b>Save</b>Download the layout in this window (.sp) or all your conversations with their layouts (.zip).',
       'topbar.settingsTip': '<b>Settings</b>Back to the home screen to change engine, model, format or view mode.',
       'topbar.title': 'Layout & Canvas',
       'preview.title': 'Preview',
@@ -1917,7 +1895,11 @@
       'chat.engineDS': 'Conversation SP213 × DeepSeek',
       'chat.engineWllm': 'Conversation SP213 × WLLM',
       'chat.loadingFonts': 'Loading fonts',
-      'chat.fontsLoaded': 'Fonts loaded'
+      'chat.fontsLoaded': 'Fonts loaded',
+      'chat.loadingModel': 'Loading local model',
+      'chat.loadingModelNative': 'Loading SP213 local assistant',
+      'chat.modelLoaded': 'Local model loaded.',
+      'chat.modelLoadedNative': 'SP213 local assistant loaded.'
     },
     fr: {
       'prefs.langSection': 'Langue',
@@ -1935,7 +1917,7 @@
       'welcome.sub': 'Préférences',
       'welcome.engines': 'Moteurs',
       'welcome.engineLabel': 'Back-end d\'exécution',
-      'welcome.enginePop': 'SP213 reste le moteur de mise en page. Ce réglage choisit simplement où il s\'exécute : DeepSeek (cloud, raisonnement), OpenRouter (cloud, modèles 100% gratuits), Groq (cloud, rapide) ou SP213 WLLM (local, WebLLM intégré).',
+      'welcome.enginePop': 'SP213 reste le moteur de mise en page. Ce réglage choisit simplement où il s\'exécute : DeepSeek (cloud, raisonnement), OpenRouter (cloud, modèles 100% gratuits), Groq (cloud, rapide), SP213 WLLM (local avec GPU, choix du modèle) ou SP213 WLLM Native (local avec GPU, intégré, sans réglage technique).',
       'welcome.groqLabel': 'Clé API Groq',
       'welcome.groqPop': 'Votre clé <b>gsk_...</b> est stockée uniquement dans votre navigateur (localStorage) et envoyée à Groq via le proxy local. Elle n\'est jamais écrite en dur ni partagée.',
       'welcome.groqGet': 'Obtenir une clé Groq',
@@ -1949,7 +1931,7 @@
       'welcome.orModelLabel': 'Modèle OpenRouter (100% free)',
       'welcome.orModelPop': 'Modèles 100% gratuits (statut <b>:free</b> sur OpenRouter). Recommandés pour la maquette SP213 (JSON structuré).',
       'welcome.wllmLabel': 'Modèle local (WLLM)',
-      'welcome.wllmPop': 'Modèle exécuté en local dans votre navigateur (WebGPU). Plus le modèle est grand, meilleure est la compréhension de SP213 et la qualité des maquettes, mais le téléchargement et l\'inférence sont plus lents.<br><br>• <b>Qwen3-4B</b> (recommandé) : excellent rapport qualité/vitesse, très bon en JSON et conversation.<br>• <b>Qwen2.5-3B</b> : rapide et économique.<br>• <b>Llama-3.2-3B</b> : basique.<br>• <b>Qwen3-8B</b> : le plus puissant, demande ~5.7 Go de VRAM.',
+      'welcome.wllmPop': 'Modèle exécuté localement dans votre navigateur (WebGPU). La VRAM indiquée est une estimation de mémoire graphique, pas la taille du téléchargement; la mémoire disponible varie selon l\'appareil.<br><br>• <b>Qwen2.5 1.5B</b> (recommandé) : équilibré pour suivre des consignes et produire du JSON, environ 1,63 Go de VRAM.<br>• <b>SmolLM2 1.7B</b> : alternative compacte, environ 1,77 Go.<br>• <b>Llama 3.2 1B</b> : environ 0,88 Go.<br>• <b>Qwen2.5 0.5B</b> : environ 0,95 Go, qualité plus limitée.<br>• <b>SmolLM2 360M</b> : environ 0,38 Go, pour les essais simples.',
       'welcome.wllmModels': 'Modèles WebLLM (Hugging Face)',
       'welcome.wllmCheck': 'Vérifier WebGPU',
       'welcome.format': 'Format du document',
@@ -1974,11 +1956,11 @@
       'qc.corporate': ['Rapport corporate', "Page de rapport corporate A4 : 4 indicateurs chiffrés en cartes, palette sobre, filets fins."],
       'qc.menu': ['Menu restaurant', "Menu de restaurant A4 élégant : entrées, plats, desserts avec prix, typographie raffinée."],
       'qc.brochure': ['Brochure 4 pages', "Livret 4 pages A4 : couverture, édito, 2 pages de contenu — cohérence graphique stricte."],
-      'topbar.new': 'Nouveau',
-      'topbar.export': 'Exporter .sp',
+      'topbar.new': 'Importer',
+      'topbar.export': 'Sauvegarder',
       'topbar.themeTip': '<b>Thème</b>Bascule entre le thème clair et le thème sombre du studio.',
-      'topbar.newTip': '<b>Nouvelle conversation</b>Crée une nouvelle conversation vide (la conversation actuelle est conservée dans l\'historique).',
-      'topbar.exportTip': '<b>Exporter .sp</b>Télécharge la maquette au format natif SuperPrint (.sp). Vous pourrez l\'importer plus tard via Importer.',
+      'topbar.newTip': '<b>Importer</b>Importe une sauvegarde .zip (conversations + maquettes) ou un fichier .sp / .json.',
+      'topbar.exportTip': '<b>Sauvegarder</b>Téléchargez la maquette de cette fenêtre (.sp) ou toutes vos conversations avec leurs maquettes (.zip).',
       'topbar.settingsTip': '<b>Réglages</b>Retour à l\'écran d\'accueil pour changer le moteur, le modèle, le format ou le mode d\'affichage.',
       'topbar.title': 'Layout & Canevas',
       'preview.title': 'Aperçu',
@@ -2054,7 +2036,11 @@
       'chat.engineDS': 'Conversation SP213 × DeepSeek',
       'chat.engineWllm': 'Conversation SP213 × WLLM',
       'chat.loadingFonts': 'Chargement des polices',
-      'chat.fontsLoaded': 'Typographies chargées'
+      'chat.fontsLoaded': 'Typographies chargées',
+      'chat.loadingModel': 'Chargement du modèle local',
+      'chat.loadingModelNative': 'Chargement de l\'assistant SP213 local',
+      'chat.modelLoaded': 'Modèle local chargé.',
+      'chat.modelLoadedNative': 'Assistant SP213 local chargé.'
     },
     jp: {
       'prefs.langSection': '言語',
@@ -2072,7 +2058,7 @@
       'welcome.sub': '設定',
       'welcome.engines': 'エンジン',
       'welcome.engineLabel': '実行バックエンド',
-      'welcome.enginePop': 'SP213はレイアウトエンジンのままです。実行場所を選びます：DeepSeek（クラウド、推論）、OpenAI GPT（クラウド）、OpenRouter（クラウド、100%無料モデル）、Groq（クラウド、高速）、またはSP213 WLLM（ローカル、WebLLM内蔵）。',
+      'welcome.enginePop': 'SP213はレイアウトエンジンのままです。実行場所を選びます：DeepSeek（クラウド、推論）、OpenAI GPT（クラウド）、OpenRouter（クラウド、100%無料モデル）、Groq（クラウド、高速）、SP213 WLLM（ローカル、GPU使用、モデル選択可）、またはSP213 WLLM Native（ローカル、GPU使用、内蔵、技術設定不要）。',
       'welcome.groqLabel': 'Groq APIキー',
       'welcome.groqPop': 'あなたの <b>gsk_...</b> キーはブラウザ（localStorage）にのみ保存され、ローカルプロキシ経由でGroqに送信されます。ハードコードや共有はされません。',
       'welcome.groqGet': 'Groqキーを取得',
@@ -2086,7 +2072,7 @@
       'welcome.orModelLabel': 'OpenRouterモデル（100%無料）',
       'welcome.orModelPop': '100%無料モデル（OpenRouterの<b>:free</b>ステータス）。SP213レイアウト（構造化JSON）に推奨。',
       'welcome.wllmLabel': 'ローカルモデル（WLLM）',
-      'welcome.wllmPop': 'ブラウザ（WebGPU）でローカル実行するモデル。モデルが大きいほどSP213の理解とレイアウト品質が向上しますが、ダウンロードと推論は遅くなります。<br><br>• <b>Qwen3-4B</b>（推奨）: 品質/速度に優れ、JSONと会話に非常に強い。<br>• <b>Qwen2.5-3B</b>: 高速で経済的。<br>• <b>Llama-3.2-3B</b>: 基本。<br>• <b>Qwen3-8B</b>: 最強、約5.7GBのVRAMが必要。',
+      'welcome.wllmPop': 'ブラウザ（WebGPU）でローカル実行するモデルです。VRAMの数値はグラフィックメモリの推定値で、ダウンロード容量ではありません。利用可能なメモリは端末によって異なります。<br><br>• <b>Qwen2.5 1.5B</b>（推奨）: 指示への追従と構造化JSONのバランス型、約1.63GB。<br>• <b>SmolLM2 1.7B</b>: コンパクトな代替、約1.77GB。<br>• <b>Llama 3.2 1B</b>: 約0.88GB。<br>• <b>Qwen2.5 0.5B</b>: 約0.95GB、品質は限定的。<br>• <b>SmolLM2 360M</b>: 約0.38GB、簡単なテスト向け。',
       'welcome.wllmModels': 'WebLLMモデル（Hugging Face）',
       'welcome.wllmCheck': 'WebGPUを確認',
       'welcome.format': 'ドキュメント形式',
@@ -2111,11 +2097,11 @@
       'qc.corporate': ['コーポレートレポート', 'A4コーポレートレポートページ：KPIカード4枚、落ち着いた配色、細い罫線。'],
       'qc.menu': ['レストランメニュー', '上品なA4レストランメニュー：前菜・メイン・デザートと価格、洗練されたタイポグラフィ。'],
       'qc.brochure': ['4ページパンフレット', 'A4 4ページ小冊子：表紙・エディトリアル・コンテンツ2ページ — 一貫したグラフィック。'],
-      'topbar.new': '新規',
-      'topbar.export': '.spをエクスポート',
+      'topbar.new': 'インポート',
+      'topbar.export': '保存',
       'topbar.themeTip': '<b>テーマ</b>スタジオのライト／ダークテーマを切り替えます。',
-      'topbar.newTip': '<b>新しい会話</b>空の会話を作成します（現在の会話は履歴に保存されます）。',
-      'topbar.exportTip': '<b>.spをエクスポート</b>レイアウトをSuperPrintネイティブ形式（.sp）でダウンロードします。後でインポートできます。',
+      'topbar.newTip': '<b>インポート</b>.zipバックアップ（会話＋レイアウト）や .sp / .json ファイルをインポートします。',
+      'topbar.exportTip': '<b>保存</b>このウィンドウのレイアウト（.sp）、またはすべての会話とそのレイアウト（.zip）をダウンロードします。',
       'topbar.settingsTip': '<b>設定</b>ホーム画面に戻り、エンジン、モデル、形式、表示モードを変更します。',
       'topbar.title': 'レイアウト＆キャンバス',
       'preview.title': 'プレビュー',
@@ -2193,7 +2179,11 @@
       'chat.loadingFonts': 'フォントを読み込み中',
       'chat.fontsLoaded': 'フォントを読み込みました',
       'chat.loadingFonts': 'フォントを読み込み中',
-      'chat.fontsLoaded': 'フォントを読み込みました'
+      'chat.fontsLoaded': 'フォントを読み込みました',
+      'chat.loadingModel': 'ローカルモデルを読み込み中',
+      'chat.loadingModelNative': 'SP213ローカルアシスタントを読み込み中',
+      'chat.modelLoaded': 'ローカルモデルを読み込みました。',
+      'chat.modelLoadedNative': 'SP213ローカルアシスタントを読み込みました。'
     }
   };
 
@@ -2646,7 +2636,7 @@
       const th = localStorage.getItem(LS.theme);
       if (th !== null) setTheme(th === '1');
       const eng = localStorage.getItem('sp213_engine');
-      if (eng === 'openai' || eng === 'deepseek' || eng === 'webllm' || eng === 'groq' || eng === 'openrouter' || eng === 'anthropic') { $('engineSelect').value = eng; state.engine = eng; }
+      if (eng === 'openai' || eng === 'deepseek' || eng === 'webllm' || eng === 'webllm-native' || eng === 'groq' || eng === 'openrouter' || eng === 'anthropic') { $('engineSelect').value = eng; state.engine = eng; }
     } catch(e) {}
 
     $('startBtn').addEventListener('click', startStudio);
@@ -2679,6 +2669,7 @@
       const isDS = eng === 'deepseek';
       const isOpenAI = eng === 'openai';
       const isAnthropic = eng === 'anthropic';
+      const isNative = eng === 'webllm-native';
       ['groqFields', 'groqModelField'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = isGroq ? '' : 'none';
@@ -2700,7 +2691,7 @@
         if (el) el.style.display = isAnthropic ? '' : 'none';
       });
       const wllmF = document.getElementById('wllmModelField');
-      if (wllmF) wllmF.style.display = (isGroq || isOR || isDS || isOpenAI || isAnthropic) ? 'none' : '';
+      if (wllmF) wllmF.style.display = (isGroq || isOR || isDS || isOpenAI || isAnthropic || isNative) ? 'none' : '';
       const hint = document.getElementById('engineHint');
       if (hint) {
         hint.textContent = isOpenAI
@@ -2713,13 +2704,16 @@
               ? 'Groq : ajoutez votre clé ci-dessous pour lancer la maquette.'
               : (isOR
                   ? 'OpenRouter : ajoutez votre clé sk-or-… (gratuite sur openrouter.ai). Modèles :free 100% gratuits.'
-                  : 'SP213 WLLM (local) : aucune clé requise — choisissez un modèle et ouvrez le studio.'))));
+                  : (isNative
+                      ? 'SP213 WLLM Native (local avec GPU) : assistant intégré, aucune clé ni réglage — il se charge automatiquement à votre premier message.'
+                      : 'SP213 WLLM (local avec GPU) : aucune clé requise — choisissez un modèle et ouvrez le studio.')))));
       }
     }
     $('engineSelect').addEventListener('change', (e) => {
       const previousEngine = state.engine;
       state.engine = e.target.value;
-      if (previousEngine === 'webllm' && state.engine !== 'webllm') releaseWebLLM();
+      const wasLocal = previousEngine === 'webllm' || previousEngine === 'webllm-native';
+      if (wasLocal && previousEngine !== state.engine) releaseWebLLM();
       try { localStorage.setItem('sp213_engine', state.engine); } catch(_) {}
       updateEngineUI();
     });
@@ -2979,14 +2973,19 @@
     $('promptInput').addEventListener('focus', syncPromptPh);
     $('promptInput').addEventListener('blur', syncPromptPh);
     syncPromptPh();
-    $('exportSpBtn').addEventListener('click', exportSP);
+    $('exportSpBtn').addEventListener('click', openSaveMenu);
     $('viewInSpBtn').addEventListener('click', viewInSuperPrint);
-    $('newDocBtn').addEventListener('click', newConversation);
+    $('newDocBtn').addEventListener('click', () => $('convImportInput').click());
+    $('convImportInput').addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (file) importConversationsFromFile(file);
+    });
     $('settingsBtn').addEventListener('click', () => { $('studio').classList.remove('active'); $('welcome').classList.remove('hidden'); });
     $('mobilePreviewBtn').addEventListener('click', () => setMobileStudioView('preview'));
     $('mobileChatBtn').addEventListener('click', () => setMobileStudioView('chat'));
-    $('mobileNewBtn').addEventListener('click', () => { newConversation(); setMobileStudioView('chat'); });
-    $('mobileExportBtn').addEventListener('click', exportSP);
+    $('mobileNewBtn').addEventListener('click', () => { $('convImportInput').click(); });
+    $('mobileExportBtn').addEventListener('click', openSaveMenu);
     $('mobileSettingsBtn').addEventListener('click', () => $('settingsBtn').click());
     // ✕ Croix en haut à droite des réglages → revient sur l'interface studio
     const welcomeClose = $('welcomeCloseBtn');
@@ -3171,7 +3170,7 @@
       //   `selected` du HTML et faisait afficher « × OpenAI GPT » alors que le
       //   sélecteur montrait DeepSeek).
       const eng = localStorage.getItem('sp213_engine') || 'deepseek';
-      state.engine = (eng === 'openai' || eng === 'deepseek' || eng === 'webllm' || eng === 'groq' || eng === 'openrouter' || eng === 'anthropic') ? eng : 'deepseek';
+      state.engine = (eng === 'openai' || eng === 'deepseek' || eng === 'webllm' || eng === 'webllm-native' || eng === 'groq' || eng === 'openrouter' || eng === 'anthropic') ? eng : 'deepseek';
       state.apiKey = key;
       state.orApiKey = ork;
       state.dsApiKey = dsk;
@@ -3199,6 +3198,8 @@
       if (state.engine === 'webllm') {
         const wmName = (WLLM_MODELS.find(x => x[0] === state.wllmModel) || [])[1] || state.wllmModel;
         $('modelLabel').textContent = _short(wmName);
+      } else if (state.engine === 'webllm-native') {
+        $('modelLabel').textContent = 'SP213 Natif';
       } else if (state.engine === 'openai') {
         const oaiName = (OPENAI_MODELS.find(x => x[0] === state.oaiModel) || [])[1] || state.oaiModel;
         $('modelLabel').textContent = _short(oaiName);
@@ -3260,7 +3261,7 @@
     // session (chat vide), pour éviter le doublon avec le fil restauré.
     if (!state.chat.some(m => m.role === 'user')) {
       const hasCloudKey = state.engine === 'groq' ? !!(state.apiKey) : (state.engine === 'openrouter' ? !!(state.orApiKey) : (state.engine === 'deepseek' ? !!(state.dsApiKey) : (state.engine === 'openai' ? !!(state.oaiApiKey) : (state.engine === 'anthropic' ? !!(state.antApiKey) : true))));
-      if (hasCloudKey || state.engine === 'webllm') {
+      if (hasCloudKey || state.engine === 'webllm' || state.engine === 'webllm-native') {
         appendChat('assistant', t('chat.welcomeReady'));
       } else {
         appendChat('assistant', t('chat.welcomeNoKey'));
@@ -5747,7 +5748,12 @@ function spRtfLayoutInfo(src) {
         const t = String(o.type).toLowerCase();
         const base = {
           left: toMm(o.left || 0),
-          top: toMm(o.top || 0)
+          top: toMm(o.top || 0),
+          angle: Number(o.angle) || 0,
+          scaleX: (typeof o.scaleX === 'number' && isFinite(o.scaleX) && o.scaleX > 0) ? o.scaleX : 1,
+          scaleY: (typeof o.scaleY === 'number' && isFinite(o.scaleY) && o.scaleY > 0) ? o.scaleY : 1,
+          flipX: !!o.flipX,
+          flipY: !!o.flipY
         };
         if (o.opacity != null) base.opacity = o.opacity;
         if (o.fill && /^#/.test(o.fill)) base.fill = o.fill;
@@ -5849,21 +5855,19 @@ function spRtfLayoutInfo(src) {
           // Un objet redimensionne porte son echelle dans scaleX/scaleY : les
           // sommets sont en coordonnees LOCALES, il faut donc les remettre a
           // l'echelle pour obtenir la taille REELLE en px canvas.
-          const _sx = Number(o.scaleX), _sy = Number(o.scaleY);
-          const _sc = (isFinite(_sx) && _sx > 0 && isFinite(_sy) && _sy > 0) ? (_sx + _sy) / 2 : 1;
           const _starOut = Object.assign(base, { type: 'star',
-            radius: Math.round(((_outPx * _sc || 25) / MM_TO_PX) * 10) / 10,
+            radius: Math.round(((_outPx || 25) / MM_TO_PX) * 10) / 10,
             points: Math.max(3, Math.min(24, Math.round(_branches || 5))) });
-          if (_inPx > 0) _starOut.innerRadius = Math.round(((_inPx * _sc) / MM_TO_PX) * 10) / 10;
+          if (_inPx > 0) _starOut.innerRadius = Math.round((_inPx / MM_TO_PX) * 10) / 10;
           return _starOut;
         }
         if (t === 'line') {
-          return { type: 'line',
+          return Object.assign(base, { type: 'line',
             x1: toMm(o.x1 || 0), y1: toMm(o.y1 || 0),
             x2: toMm(o.x2 || 0), y2: toMm(o.y2 || 0),
             stroke: (o.stroke && /^#/.test(o.stroke)) ? o.stroke : '#000000',
             strokeWidth: Math.max(0.5, Math.round(((o.strokeWidth || 1) / MM_TO_PX) * 10) / 10),
-            opacity: o.opacity != null ? o.opacity : 1 };
+            opacity: o.opacity != null ? o.opacity : 1 });
         }
         if (t === 'textbox' || t === 'text' || t === 'i-text') {
           const el = Object.assign({}, base, { type: 'text',
@@ -6143,6 +6147,9 @@ function spRtfLayoutInfo(src) {
       $('modelLabel').textContent = shortModelName(wmName);
       // Si le modèle a changé depuis le dernier chargement, forcer un rechargement
       if (state.webllm && state.webllm._sp213ModelId && state.webllm._sp213ModelId !== state.wllmModel) releaseWebLLM();
+    } else if (state.engine === 'webllm-native') {
+      $('modelLabel').textContent = 'SP213 Natif';
+      if (state.webllm && state.webllm._sp213ModelId && state.webllm._sp213ModelId !== WLLM_NATIVE_MODEL_ID) releaseWebLLM();
     } else if (state.engine === 'openai') {
       const oaiName = (OPENAI_MODELS.find(x => x[0] === state.oaiModel) || [])[1] || state.oaiModel;
       $('modelLabel').textContent = shortModelName(oaiName);
@@ -6200,8 +6207,10 @@ function spRtfLayoutInfo(src) {
       state.chat.forEach(m => appendChat(m.role, m.text, m.meta));
       // Message d'accueil UNIQUEMENT si nouvelle session (chat vide) — pas de
       // doublon avec le fil restauré.
-      if (state.engine === 'webllm' && !state.chat.some(m => m.role === 'user')) {
-        appendChat('assistant', 'SP213 WLLM (local) prêt. Le modèle sera chargé au premier envoi (une seule fois, puis en cache).');
+      if ((state.engine === 'webllm' || state.engine === 'webllm-native') && !state.chat.some(m => m.role === 'user')) {
+        appendChat('assistant', state.engine === 'webllm-native'
+          ? 'SP213 Natif (local) prêt. Il se charge automatiquement à votre premier message, puis reste en mémoire.'
+          : 'SP213 WLLM (local) prêt. Le modèle sera chargé au premier envoi (une seule fois, puis en cache).');
       }
     } else {
       // Import depuis SuperPrint : la maquette est déjà chargée par importFromSuperPrint.
@@ -7611,10 +7620,23 @@ function spRtfLayoutInfo(src) {
       .split('@BLED@').join(String(b));
   }
 
+  // 🆕 SP213 WLLM Native : même moteur local que WLLM, mais avec un résumé condensé
+  // du « livre » SP213 (règles maquette + mapping .sp) injecté dans le prompt court,
+  // pour un modèle qui « connaît » le format sans dépasser le budget de contexte local.
+  // 🛡️ v1 : version courte et télégraphique — un modèle 1.5B quantifié suit mal
+  // un long bloc de règles ; ce résumé reste sous ~600 caractères et se place
+  // juste avant l'exemple JSON (voir buildSystemPrompt), pas avant la consigne
+  // « réponds UNIQUEMENT en JSON », pour ne jamais diluer cette contrainte.
+  const SP213_NATIVE_DIGEST = `Rappel SP213 : zone sûre 15 mm ; fond perdu = fonds/photos pleine page uniquement, jamais de texte dedans. Double page : planche gauche 0–L / gouttière à L / droite L–2L, aucun texte sur la gouttière. Multi-page : même palette/typo/grille sur toutes les pages. Marges : petit fond < tête < grand fond < queue. Couleurs : 3 à 5 teintes #RRGGBB, un seul accent fort. Typo : titres en police display, corps 9-12 pt, interligne 1.3-1.6. Grille alignée, aucun chevauchement.`;
+
   function buildSystemPrompt() {
-    // Mode LOCAL (WLLM) : le modèle 3B suit mal les longs prompts → on fournit un
-    // prompt court, ultra-contraint, avec un exemple JSON complet à imiter.
-    if (state.engine === 'webllm') {
+    // Mode LOCAL (WLLM / WLLM Native) : le modèle 3B suit mal les longs prompts →
+    // on fournit un prompt court, ultra-contraint, avec un exemple JSON complet à
+    // imiter. Le mode Native ajoute un résumé condensé du « livre » SP213, placé
+    // juste avant l'exemple (jamais avant la consigne de format JSON).
+    if (state.engine === 'webllm' || state.engine === 'webllm-native') {
+      const isNative = state.engine === 'webllm-native';
+      const nativeDigest = isNative ? SP213_NATIVE_DIGEST + '\n\n' : '';
       const p = state.lastPrompt || '';
       // Détection d'une demande multipage (livre, magazine, catalogue, N pages…)
       const mp = p.match(/(\d{1,3})\s*[- ]?\s*pages?/i);
@@ -7627,12 +7649,13 @@ function spRtfLayoutInfo(src) {
       const spreadNote = isSpread ? `Double page (spread) : largeur totale ${state.pageW * 2} mm, deux pages côte à côte, gouttière au centre à ${state.pageW} mm. Ne fais jamais traverser un texte sur la gouttière.` : `Page simple : format ${state.pageW} × ${state.pageH} mm.`;
       if (isMulti) {
         const _nbPages = (mp ? parseInt(mp[1], 10) : 0) || _attHint.pages || 4;
-      return `Tu es SP213, un générateur de maquettes print MULTI-PAGES pour SuperPrint.\nTu dois produire EXACTEMENT ${_nbPages} pages (targetPages: ${_nbPages}).
+      return `Tu es SP213, un générateur de maquettes print MULTI-PAGES pour SuperPrint.
+Tu dois produire EXACTEMENT ${_nbPages} pages (targetPages: ${_nbPages}).
 Réponds UNIQUEMENT par un JSON valide, sans texte autour, sans markdown, sans balises XML.
 ${spreadNote}
 Coordonnées en mm, fontSize en pt, couleurs #RRGGBB. Chaque page : 8 à 15 éléments, pas de débord bas de page (top + hauteur ≤ ${state.pageH} mm).
 Types d'objets : rectangle (left,top,width,height,fill), text (left,top,width,text,fontSize,fill,fontFamily), circle (left,top,radius,fill), line (x1,y1,x2,y2,stroke).
-
+${nativeDigest}
 EXEMPLE MULTI-PAGES À IMITER (structure exacte) :
 {"targetPages":${mp ? parseInt(mp[1],10) : 4},"pages":[
  {"pageIndex":0,"elements":[{"type":"rectangle","left":0,"top":0,"width":${state.pageW},"height":${state.pageH},"fill":"#0F172A"},{"type":"text","left":15,"top":20,"width":180,"text":"TITRE","fontSize":60,"fill":"#FFFFFF","fontFamily":"Bebas Neue"}]},
@@ -7648,7 +7671,7 @@ Coordonnées en mm, fontSize en pt, couleurs #RRGGBB.
 Une page doit contenir 8 à 15 éléments. Ne dépasse jamais le bas de page (top + hauteur ≤ ${state.pageH} mm).
 
 Types d'objets autorisés : rectangle (left,top,width,height,fill), text (left,top,width,text,fontSize,fill,fontFamily), circle (left,top,radius,fill), line (x1,y1,x2,y2,stroke).
-
+${nativeDigest}
 EXEMPLE À IMITER (structure exacte) :
 {"elements":[
  {"type":"rectangle","left":0,"top":0,"width":${state.pageW},"height":${state.pageH},"fill":"#0F172A"},
@@ -7717,7 +7740,7 @@ ${(function(){
     : '';
   return '\nCONTRAINTES NUMÉRIQUES DU FORMAT COURANT (' + W + '×' + H + ' mm) :\n' +
     (modeSpread ? '  ⚠️ Tu composes UNE PLANCHE de ' + W + ' mm de large (= 2 pages de ' + PW + ' mm séparées par la gouttière à ' + PW + ' mm).\n' : '') +
-    exLines + (exLines ? '\n' : '')
+    exLines + (exLines ? '\n' : '') +
     '  • Largeur utile de page = ' + W + ' mm. Aucun objet (hors fond pleine page) ne doit dépasser left + width > ' + W + '.\n' +
     '  • Hauteur utile = ' + H + ' mm. Un bloc non-fond ne doit pas dépasser top + height > ' + maxH + ' mm.\n' +
     '  • Largeur MAXIMALE d\'un bloc de TEXTE = ' + maxTextW + ' mm (marges 15 mm de chaque côté). Si un texte est trop long pour cette largeur, augmente sa hauteur, pas sa largeur.\n' +
@@ -8076,7 +8099,7 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
   }
 
   function spCallAIProvider(messages) {
-    if (state.engine === 'webllm') return callWebLLM(messages);
+    if (state.engine === 'webllm' || state.engine === 'webllm-native') return callWebLLM(messages);
     if (state.engine === 'openai') return callOpenAI(messages);
     if (state.engine === 'anthropic') return callAnthropic(messages);
     if (state.engine === 'deepseek') return callDeepSeek(messages);
@@ -8300,6 +8323,24 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     }
   }
 
+  // 🆕 Loader visible dans la conversation pendant le téléchargement/chargement
+  // du modèle local (avant, seul un console.debug existait — invisible pour
+  // l'utilisateur, qui ne voyait jamais qu'un modèle se téléchargeait).
+  function appendModelLoader(label) {
+    const el = document.createElement('div');
+    el.className = 'msg assistant model-loader-msg';
+    const b = document.createElement('div');
+    b.className = 'bubble typo-loader';
+    b.innerHTML = '<span class="typing"><span></span><span></span><span></span></span> <span class="typo-loader-label"></span>';
+    const labelEl = b.querySelector('.typo-loader-label');
+    labelEl.textContent = label;
+    el.appendChild(b);
+    const log = $('chatLog');
+    log.appendChild(el);
+    log.scrollTop = log.scrollHeight;
+    return { el, bubble: b, labelEl, baseLabel: label };
+  }
+
   function ensureWebLLM() {
     if (state.webllm) return Promise.resolve(state.webllm);
     if (state.webllmPromise) return state.webllmPromise;
@@ -8337,23 +8378,32 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     return new Promise(function(resolve, reject) {
       if (state.webllm) { resolve(state.webllm); return; }
       if (!window.CreateMLCEngine) { reject(new Error('WebLLM non chargé')); return; }
-      // 🆕 Modèle local sélectionné par l'utilisateur (multi-choix).
-      const modelId = state.wllmModel || WLLM_MODELS[0][0];
-      // 🗑️ 2026-09-07 : plus de pop-in plein écran (#modelLoader). Le chargement
-      //   du modèle se déroule en arrière-plan ; la bulle « SP213 is building your
-      //   layout » (appendTyping) dans le chat est l'unique indicateur visible.
+      // 🆕 Modèle ciblé : liste déroulante pour « SP213 WLLM », fixe pour « Native ».
+      const modelId = currentWllmModelId();
+      const isNative = state.engine === 'webllm-native';
+      // 🆕 Loader visible dans le chat : l'utilisateur DOIT voir qu'un
+      // téléchargement/chargement est en cours (jamais silencieux).
+      const baseLabel = isNative ? t('chat.loadingModelNative') : t('chat.loadingModel');
+      const loader = appendModelLoader(baseLabel + '…');
       window.CreateMLCEngine(modelId, {
         initProgressCallback: function(p) {
-          // Progression conservée en console uniquement (aucune UI bloquante).
-          try { if (window.console && console.debug) console.debug('[SP213] WebLLM model load: ' + Math.round((p.progress || 0) * 100) + '%'); } catch (_) {}
+          const pct = Math.round(((p && p.progress) || 0) * 100);
+          try { if (window.console && console.debug) console.debug('[SP213] WebLLM model load: ' + pct + '%'); } catch (_) {}
+          if (loader && loader.labelEl) loader.labelEl.textContent = baseLabel + '… ' + pct + '%';
         }
       }).then(function(engine) {
         state.webllm = engine;
         state.webllmLoading = false;
         if (engine) engine._sp213ModelId = modelId; // mémoriser le modèle chargé
+        if (loader && loader.bubble) {
+          loader.bubble.classList.remove('typo-loader');
+          loader.bubble.innerHTML = '✅ ' + (isNative ? t('chat.modelLoadedNative') : t('chat.modelLoaded'));
+          setTimeout(function() { try { loader.el.remove(); } catch(_) {} }, 1800);
+        }
         resolve(engine);
       }).catch(function(err) {
         state.webllmLoading = false;
+        if (loader && loader.el) { try { loader.el.remove(); } catch(_) {} }
         reject(err);
       });
     });
@@ -8377,7 +8427,7 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
         schema: JSON.stringify({ type: 'object', additionalProperties: true })
       }
     };
-    const mid = state.wllmModel || '';
+    const mid = currentWllmModelId();
     if (/^Qwen3/.test(mid)) {
       opts.enable_thinking = false;
       opts.thinking = { type: 'disabled' };
@@ -8419,26 +8469,47 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
 
   function callWebLLM(messages) {
     return ensureWebLLM().then(function(engine) {
+      const isNative = state.engine === 'webllm-native';
       const lastUser = messages.slice().reverse().find(function(message) { return message.role === 'user'; });
-      const brief = clipWebLLMText(lastUser ? lastUser.content : state.lastPrompt, 6200);
+      // 🆕 Mode Native : budget de contexte plus généreux (modèle « à nous »),
+      // réparti entre système (digest + règles), brief et réponse sans dépasser
+      // la fenêtre 4096 tokens du modèle local.
+      const brief = clipWebLLMText(lastUser ? lastUser.content : state.lastPrompt, isNative ? 5200 : 6200);
       const pageCount = getWebLLMPageCount(state.lastPrompt || brief);
       const isTargetedEdit = !!(state.selectedIds && state.selectedIds.length);
+      const spreadNote = (state.viewMode === 'spread')
+        ? `Double page (spread) : planche de ${state.pageW * 2} mm de large, gouttière au centre à ${state.pageW} mm, aucun texte ne traverse la gouttière.`
+        : '';
 
       // Une page ou une retouche ciblée reste un appel direct. Le contexte est
-      // borné pour réserver environ 1800 tokens à la réponse dans la fenêtre 4096.
+      // borné pour réserver de la place à la réponse dans la fenêtre 4096.
       if (pageCount === 1 || isTargetedEdit) {
-        const system = clipWebLLMText(messages[0] && messages[0].content, 1800);
+        const system = clipWebLLMText(messages[0] && messages[0].content, isNative ? 2600 : 1800);
+        const maxTok = isNative ? 1800 : 1800;
         return webLLMCompletion(engine, [
           { role: 'system', content: system },
           { role: 'user', content: brief }
-        ], 1800, 0.2);
+        ], maxTok, 0.2).then(function(text) {
+          const parsed = extractJSONObject(text);
+          const ok = !!(parsed && ((Array.isArray(parsed.elements) && parsed.elements.length) || (Array.isArray(parsed.pages) && parsed.pages.length)));
+          if (ok || !isNative) return text;
+          // 🛡️ Le résumé SP213 (digest) a pu diluer la consigne « JSON only » —
+          // un seul modèle 1.5B peut décrocher. On retente avec le prompt minimal
+          // (sans digest), plus contraint, avant d'abandonner.
+          const minimalSystem = system.split(SP213_NATIVE_DIGEST).join('').replace(/\n{3,}/g, '\n\n');
+          return webLLMCompletion(engine, [
+            { role: 'system', content: minimalSystem },
+            { role: 'user', content: brief }
+          ], maxTok, 0.1);
+        });
       }
 
       const domainPack = getWebLLMDomainPack(state.lastPrompt || brief);
+      const nativeDigest = isNative ? '\n' + SP213_NATIVE_DIGEST : '';
       const plannerSystem = `Tu es SP213, directeur éditorial print de SuperPrint. Planifie un document avant sa mise en page.
 Réponds uniquement en JSON: {"title":"...","direction":"...","palette":["#RRGGBB"],"typography":{"display":"...","body":"..."},"grid":"...","pages":[{"pageIndex":0,"role":"...","objective":"...","content":"..."}]}.
-Produis exactement ${pageCount} pages indexées de 0 à ${pageCount - 1}. ${domainPack}`;
-      const plannerUser = 'BRIEF:\n' + clipWebLLMText(state.lastPrompt || brief, 3000) +
+Produis exactement ${pageCount} pages indexées de 0 à ${pageCount - 1}. ${spreadNote} ${domainPack}${nativeDigest}`;
+      const plannerUser = 'BRIEF:\n' + clipWebLLMText(state.lastPrompt || brief, isNative ? 3600 : 3000) +
         `\nFORMAT: ${state.pageW}x${state.pageH} mm; mode ${state.viewMode}; fond perdu ${state.bleed || 3} mm.`;
 
       return webLLMCompletion(engine, [
@@ -8462,18 +8533,22 @@ Produis exactement ${pageCount} pages indexées de 0 à ${pageCount - 1}. ${doma
 
         function generatePage(index, retry) {
           if ($('modelLabel')) $('modelLabel').textContent = 'SP213 ' + (index + 1) + '/' + pageCount;
+          // 🛡️ Le résumé SP213 (digest) n'est inclus qu'au 1er essai : s'il a diluer
+          //   la consigne de format pour un modèle 1.5B, la relance minimale (sans
+          //   digest) reste la meilleure chance de produire un JSON exploitable.
+          const pageDigest = (nativeDigest && !retry) ? nativeDigest : '';
           const pageSystem = `Tu es SP213, maquettiste print de SuperPrint. Génère UNE page en JSON valide.
 Format: {"pageIndex":${index},"elements":[...]}. Coordonnées en mm, fontSize en pt, couleurs #RRGGBB.
 Types: rectangle, text, circle, ellipse, triangle, line, star, image. Chaque texte exige left,top,width,text,fontSize,fill,fontFamily.
 Ordre des calques: fonds, images, formes, titres, corps, légendes, folio. Utilise 6 à 14 éléments utiles.
-Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() * 2}, height:${state.pageH + bled() * 2}. Texte dans les marges et jamais sous ${state.pageH - 10}mm. ${domainPack}`;
-          const pageUser = 'BRIEF: ' + clipWebLLMText(state.lastPrompt || brief, 1700) +
+Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() * 2}, height:${state.pageH + bled() * 2}. Texte dans les marges et jamais sous ${state.pageH - 10}mm. ${spreadNote} ${domainPack}${pageDigest}`;
+          const pageUser = 'BRIEF: ' + clipWebLLMText(state.lastPrompt || brief, isNative ? 2000 : 1700) +
             '\nDIRECTION COMMUNE: ' + JSON.stringify(sharedPlan) +
             '\nPAGE À PRODUIRE: ' + JSON.stringify(pageSpecs[index]);
           return webLLMCompletion(engine, [
             { role: 'system', content: pageSystem },
             { role: 'user', content: pageUser }
-          ], 1500, retry ? 0.05 : 0.18).then(function(pageText) {
+          ], isNative ? 1700 : 1500, retry ? 0.05 : 0.18).then(function(pageText) {
             const page = extractJSONObject(pageText);
             if (!page || !Array.isArray(page.elements) || !page.elements.length) {
               if (!retry) return generatePage(index, true);
@@ -9375,7 +9450,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         } catch (_) {}
       } catch (_) {}
     } else if (clone.type === 'image') {
-      const availableW = Math.max(1, state.pageW + bleed - clone.left);
+      const availableW = Math.max(1, surfW + bleed - clone.left);
       const availableH = Math.max(1, state.pageH + bleed - clone.top);
       const scale = Math.min(1, availableW / clone.width, availableH / clone.height);
       clone.width = Math.round(clone.width * scale * 10) / 10;
@@ -9443,6 +9518,8 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     //    C'est la dernière passe, donc plus rien ne peut réintroduire un
     //    chevauchement (un titre multi-ligne degage enfin le bloc du dessous).
     try { _spResolveCollisions(doc); } catch (_) {}
+    // Les passes précédentes peuvent modifier la hauteur effective des textes.
+    try { _spConstrainDocToPages(doc); } catch (_) {}
     return doc;
   }
 
@@ -9674,22 +9751,29 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const top  = (el.top != null ? +el.top : 0) * MM_TO_PX + oy;
     const t = String(el.type || 'rectangle').toLowerCase();
     const opacity = (typeof el.opacity === 'number') ? el.opacity : 1;
+    const transform = {
+      scaleX: (typeof el.scaleX === 'number' && el.scaleX > 0) ? el.scaleX : 1,
+      scaleY: (typeof el.scaleY === 'number' && el.scaleY > 0) ? el.scaleY : 1,
+      angle: (typeof el.angle === 'number') ? el.angle : 0,
+      flipX: !!el.flipX,
+      flipY: !!el.flipY
+    };
 
     try {
       if (t === 'rectangle' || t === 'rect') {
-        return new fabric.Rect({ left, top, width: (+el.width || 50) * MM_TO_PX, height: (+el.height || 50) * MM_TO_PX, fill: el.fill || '#000000', stroke: el.stroke || null, strokeWidth: (+el.strokeWidth || 0) * MM_TO_PX, rx: (+el.rx || 0) * MM_TO_PX, ry: (+el.ry || 0) * MM_TO_PX, opacity });
+        return new fabric.Rect({ left, top, width: (+el.width || 50) * MM_TO_PX, height: (+el.height || 50) * MM_TO_PX, fill: el.fill || '#000000', stroke: el.stroke || null, strokeWidth: (+el.strokeWidth || 0) * MM_TO_PX, rx: (+el.rx || 0) * MM_TO_PX, ry: (+el.ry || 0) * MM_TO_PX, opacity, ...transform });
       }
       if (t === 'circle') {
-        return new fabric.Circle({ left, top, radius: (+el.radius || 25) * MM_TO_PX, fill: el.fill || '#000000', stroke: el.stroke || null, strokeWidth: (+el.strokeWidth || 0) * MM_TO_PX, opacity });
+        return new fabric.Circle({ left, top, radius: (+el.radius || 25) * MM_TO_PX, fill: el.fill || '#000000', stroke: el.stroke || null, strokeWidth: (+el.strokeWidth || 0) * MM_TO_PX, opacity, ...transform });
       }
       if (t === 'ellipse') {
-        return new fabric.Ellipse({ left, top, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill: el.fill || '#000000', stroke: el.stroke || null, strokeWidth: (+el.strokeWidth || 0) * MM_TO_PX, opacity });
+        return new fabric.Ellipse({ left, top, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill: el.fill || '#000000', stroke: el.stroke || null, strokeWidth: (+el.strokeWidth || 0) * MM_TO_PX, opacity, ...transform });
       }
       if (t === 'triangle') {
-        return new fabric.Triangle({ left, top, width: (+el.width || 50) * MM_TO_PX, height: (+el.height || 50) * MM_TO_PX, fill: el.fill || '#000000', stroke: el.stroke || null, strokeWidth: (+el.strokeWidth || 0) * MM_TO_PX, opacity });
+        return new fabric.Triangle({ left, top, width: (+el.width || 50) * MM_TO_PX, height: (+el.height || 50) * MM_TO_PX, fill: el.fill || '#000000', stroke: el.stroke || null, strokeWidth: (+el.strokeWidth || 0) * MM_TO_PX, opacity, ...transform });
       }
       if (t === 'line') {
-        return new fabric.Line([(+el.x1 || 0) * MM_TO_PX + ox, (+el.y1 || 0) * MM_TO_PX + oy, (+el.x2 || 100) * MM_TO_PX + ox, (+el.y2 || 0) * MM_TO_PX + oy], { stroke: el.stroke || '#000000', strokeWidth: (+el.strokeWidth || 1) * MM_TO_PX, opacity });
+        return new fabric.Line([(+el.x1 || 0) * MM_TO_PX + ox, (+el.y1 || 0) * MM_TO_PX + oy, (+el.x2 || 100) * MM_TO_PX + ox, (+el.y2 || 0) * MM_TO_PX + oy], { stroke: el.stroke || '#000000', strokeWidth: (+el.strokeWidth || 1) * MM_TO_PX, opacity, ...transform });
       }
       if (t === 'star') {
         const numPoints = +el.points || 5;
@@ -9701,14 +9785,14 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
           const a = (Math.PI * si) / numPoints - Math.PI / 2;
           pts.push({ x: r * Math.cos(a), y: r * Math.sin(a) });
         }
-        return new fabric.Polygon(pts, { left, top, fill: el.fill || '#000000', stroke: el.stroke || null, strokeWidth: (+el.strokeWidth || 0) * MM_TO_PX, opacity });
+        return new fabric.Polygon(pts, { left, top, fill: el.fill || '#000000', stroke: el.stroke || null, strokeWidth: (+el.strokeWidth || 0) * MM_TO_PX, opacity, ...transform });
       }
       if (t === 'text' || t === 'textbox') {
         // 🆕 Normalisation des polices : les synonymes / variantes (ex. "Inter",
         // "OpenSans") sont mappés vers une police self-hosted disponible. Si la
         // police demandée est totalement inconnue, fallback sur Open Sans.
         const fam = normalizeFontFamily(el.fontFamily) || 'Open Sans';
-        const opts = { left, top, width: (+el.width || 200) * MM_TO_PX, fontSize: (+el.fontSize || 14) * PT_TO_PX, fill: el.fill || '#000000', fontFamily: fam, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', opacity, splitByGrapheme: false, breakWords: true };
+        const opts = { left, top, width: (+el.width || 200) * MM_TO_PX, fontSize: (+el.fontSize || 14) * PT_TO_PX, fill: el.fill || '#000000', fontFamily: fam, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', opacity, splitByGrapheme: false, breakWords: true, ...transform };
         if (el.lineHeight != null) opts.lineHeight = +el.lineHeight;
         if (el.charSpacing != null) opts.charSpacing = +el.charSpacing;
         if (el.underline) opts.underline = true;
@@ -9753,7 +9837,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         return tb;
       }
       if (t === 'image' && el.imageUrl) {
-        const placeholder = new fabric.Rect({ left, top, width: (+el.width || 100) * MM_TO_PX, height: (+el.height || 100) * MM_TO_PX, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, opacity });
+        const placeholder = new fabric.Rect({ left, top, width: (+el.width || 100) * MM_TO_PX, height: (+el.height || 100) * MM_TO_PX, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, opacity, ...transform });
         placeholder._sp213ImageUrl = el.imageUrl;
         return placeholder;
       }
@@ -9763,6 +9847,43 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return null;
   }
 
+  function syncCanvasObjectToDoc(obj, pageIndex) {
+    if (!obj || !obj._sp213Id || !state.doc) return false;
+    const page = spDocPagePour(state.doc, pageIndex);
+    const el = page && Array.isArray(page.elements) && page.elements.find(item => item.id === obj._sp213Id);
+    if (!el) return false;
+    const bleedPx = mmToPx(state.doc.bleed || 3);
+    const toMm = px => Math.round(((px - bleedPx) / MM_TO_PX) * 10) / 10;
+
+    if (String(el.type).toLowerCase() === 'line' && typeof obj.calcLinePoints === 'function') {
+      const points = obj.calcLinePoints();
+      const matrix = obj.calcTransformMatrix();
+      const start = fabric.util.transformPoint(new fabric.Point(points.x1, points.y1), matrix);
+      const end = fabric.util.transformPoint(new fabric.Point(points.x2, points.y2), matrix);
+      el.x1 = toMm(start.x); el.y1 = toMm(start.y);
+      el.x2 = toMm(end.x); el.y2 = toMm(end.y);
+      el.angle = 0; el.scaleX = 1; el.scaleY = 1;
+    } else {
+      const matrix = obj.calcTransformMatrix();
+      const center = new fabric.Point(matrix[4], matrix[5]);
+      const transform = fabric.util.qrDecompose(matrix);
+      const scaleX = Math.abs(transform.scaleX) || 1;
+      const scaleY = Math.abs(transform.scaleY) || 1;
+      const origin = obj.translateToOriginPoint(center, 'left', 'top');
+      el.left = toMm(origin.x);
+      el.top = toMm(origin.y);
+      el.scaleX = Math.round(scaleX * 10000) / 10000;
+      el.scaleY = Math.round(scaleY * 10000) / 10000;
+      el.angle = Math.round(transform.angle * 100) / 100;
+      el.flipX = false;
+      el.flipY = transform.scaleY < 0;
+      if (obj.isType && obj.isType('textbox')) el.width = Math.round((obj.width / MM_TO_PX) * 10) / 10;
+    }
+    el.opacity = (typeof obj.opacity === 'number') ? obj.opacity : el.opacity;
+    if (obj.isType && obj.isType('textbox')) el.text = String(obj.text || '');
+    return true;
+  }
+
   function loadImages(c) {
     c.getObjects().forEach(obj => {
       if (obj._sp213ImageUrl) {
@@ -9770,9 +9891,15 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         imgEl.onload = function() {
           try {
             const img = new fabric.Image(imgEl);
-            img.set({ left: obj.left, top: obj.top, scaleX: 1, scaleY: 1, opacity: obj.opacity != null ? obj.opacity : 1 });
+            img.set({ left: obj.left, top: obj.top, angle: obj.angle || 0, scaleX: 1, scaleY: 1, opacity: obj.opacity != null ? obj.opacity : 1 });
             img.scaleToWidth(obj.width || 100);
             img.scaleToHeight(obj.height || 100);
+            img.scaleX *= obj.scaleX || 1;
+            img.scaleY *= obj.scaleY || 1;
+            img.flipX = !!obj.flipX;
+            img.flipY = !!obj.flipY;
+            img.id = obj.id;
+            img._sp213Id = obj._sp213Id;
             c.remove(obj);
             c.add(img);
             c.requestRenderAll();
@@ -9856,6 +9983,19 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       c.on('selection:created', syncSelection);
       c.on('selection:updated', syncSelection);
       c.on('selection:cleared', syncSelection);
+      let textSyncTimer = null;
+      const syncModified = e => {
+        const target = e && e.target;
+        const objects = target && target._sp213Id ? [target]
+          : target && typeof target.getObjects === 'function' ? target.getObjects() : [];
+        if (!objects.some(obj => syncCanvasObjectToDoc(obj, p.pageIndex))) return;
+        if (e && e.type === 'text:changed') {
+          clearTimeout(textSyncTimer);
+          textSyncTimer = setTimeout(persistDoc, 250);
+        } else persistDoc();
+      };
+      c.on('object:modified', syncModified);
+      c.on('text:changed', syncModified);
       c.requestRenderAll();
       loadImages(c);
       state.pages.push({ pageIndex: p.pageIndex, canvas: c, label: 'Page ' + (p.pageIndex + 1) });
@@ -10424,6 +10564,17 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return {};
   }
 
+  function spElementTransform(el) {
+    const scaleX = Number(el && el.scaleX), scaleY = Number(el && el.scaleY), angle = Number(el && el.angle);
+    return {
+      scaleX: Number.isFinite(scaleX) && scaleX > 0 ? scaleX : 1,
+      scaleY: Number.isFinite(scaleY) && scaleY > 0 ? scaleY : 1,
+      angle: Number.isFinite(angle) ? angle : 0,
+      flipX: !!(el && el.flipX),
+      flipY: !!(el && el.flipY)
+    };
+  }
+
   function buildSPFile() {
     if (!state.pages.length) return null;
     const now = new Date();
@@ -10461,13 +10612,13 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
 
           if (t === 'rectangle' || t === 'rect') {
             objects.push(spAppliquerReglagesTypo({ type: 'rect', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1,
-              stroke: stroke || '', strokeWidth: strokeW, rx: (el.rx || 0) * MM_TO_PX, ry: (el.ry || 0) * MM_TO_PX }, el));
+              stroke: stroke || '', strokeWidth: strokeW, rx: (el.rx || 0) * MM_TO_PX, ry: (el.ry || 0) * MM_TO_PX, ...spElementTransform(el) }, el));
           } else if (t === 'circle') {
-            objects.push(spAppliquerReglagesTypo({ type: 'circle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, radius: (+el.radius || 25) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
+            objects.push(spAppliquerReglagesTypo({ type: 'circle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, radius: (+el.radius || 25) * MM_TO_PX, fill, opacity: op, stroke: stroke || '', strokeWidth: strokeW, ...spElementTransform(el) }, el));
           } else if (t === 'ellipse') {
-            objects.push(spAppliquerReglagesTypo({ type: 'ellipse', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
+            objects.push(spAppliquerReglagesTypo({ type: 'ellipse', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill, opacity: op, stroke: stroke || '', strokeWidth: strokeW, ...spElementTransform(el) }, el));
           } else if (t === 'triangle') {
-            objects.push(spAppliquerReglagesTypo({ type: 'triangle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 50) * MM_TO_PX, height: (+el.height || 50) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
+            objects.push(spAppliquerReglagesTypo({ type: 'triangle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 50) * MM_TO_PX, height: (+el.height || 50) * MM_TO_PX, fill, opacity: op, stroke: stroke || '', strokeWidth: strokeW, ...spElementTransform(el) }, el));
           } else if (t === 'star') {
             // 🛡️ v1.7.368 — ETOILES : cette branche MANQUAIT. Une etoile de la
             //   preview disparaissait a l'export direct .sp alors que les autres
@@ -10481,9 +10632,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
             const _o1 = (+el.radius || 30) * MM_TO_PX;
             const _i1 = (+el.innerRadius || 0) > 0 ? (+el.innerRadius) * MM_TO_PX : _o1 * 0.5;
             const _starPts = []; for (let _i = 0; _i < _b1 * 2; _i++) { const _r = _i % 2 === 0 ? _o1 : _i1; const _a = (Math.PI * _i) / _b1 - Math.PI / 2; _starPts.push({ x: _r * Math.cos(_a), y: _r * Math.sin(_a) }); }
-            objects.push(spAppliquerReglagesTypo({ type: 'polygon', left, top, points: _starPts, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
+            objects.push(spAppliquerReglagesTypo({ type: 'polygon', left, top, points: _starPts, fill, opacity: op, stroke: stroke || '', strokeWidth: strokeW, ...spElementTransform(el) }, el));
           } else if (t === 'line') {
-            objects.push(spAppliquerReglagesTypo({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, scaleX: 1, scaleY: 1 }, el));
+            objects.push(spAppliquerReglagesTypo({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, ...spElementTransform(el) }, el));
           } else if (t === 'text' || t === 'textbox') {
             // 🛡️ FIX 2026-08-30 : normaliser la police AVANT d'écrire dans le .sp,
             //   sinon l'app reçoit le nom brut de l'IA (ex. BebasNeue / Playfair) et
@@ -10496,9 +10647,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
             const _fsPx = (+el.fontSize || 14) * PT_TO_PX;
             const _lh = el.lineHeight || 1.4;
             const _hPx = spTextBlockHeightPx(el);
-            objects.push(spAppliquerReglagesTypo({ type: 'textbox', textLinkId: el.textLinkId || undefined, left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 200) * MM_TO_PX, height: _hPx, text: el.text || '', fontSize: _fsPx, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh, opacity: op, scaleX: 1, scaleY: 1 }, el));
+            objects.push(spAppliquerReglagesTypo({ type: 'textbox', textLinkId: el.textLinkId || undefined, left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 200) * MM_TO_PX, height: _hPx, text: el.text || '', fontSize: _fsPx, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh, opacity: op, ...spElementTransform(el) }, el));
           } else if (t === 'image' && el.imageUrl) {
-            objects.push(spAppliquerReglagesTypo({ type: 'image', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 100) * MM_TO_PX, height: (+el.height || 100) * MM_TO_PX, opacity: op, scaleX: 1, scaleY: 1, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2 }, el));
+            objects.push(spAppliquerReglagesTypo({ type: 'image', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 100) * MM_TO_PX, height: (+el.height || 100) * MM_TO_PX, opacity: op, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2, ...spElementTransform(el) }, el));
           }
         });
       } catch(e) { objects = []; }
@@ -10567,6 +10718,190 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     URL.revokeObjectURL(url);
 
     appendChat('assistant', 'Fichier .sp téléchargé (' + state.pages.length + ' page(s), ' + totalObjects + ' objets). Importez-le dans SuperPrint : Importer → Charger JSON / .sp.');
+  }
+
+  // 🆕 v1.7.606 — Pop-in « Sauvegarder » : .sp de la fenêtre en cours, ou toutes
+  // les conversations + leurs maquettes dans une archive .zip.
+  function openSaveMenu() {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;';
+    modal.innerHTML = `
+      <div style="width:min(460px,92vw);background:var(--panel);border:1px solid var(--border);border-radius:0;padding:26px;box-shadow:0 30px 80px var(--shadow);">
+        <div style="font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:16px;">Sauvegarder</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button class="btn" id="saveMenuCurrent" type="button" style="justify-content:flex-start;text-align:left;height:auto;padding:12px 14px;flex-direction:column;align-items:flex-start;gap:2px;">
+            <span style="font-weight:600;font-size:12px;">Télécharger le .sp de cette fenêtre</span>
+            <span style="font-size:11px;color:var(--muted);">La maquette actuellement affichée, au format natif SuperPrint.</span>
+          </button>
+          <button class="btn" id="saveMenuAll" type="button" style="justify-content:flex-start;text-align:left;height:auto;padding:12px 14px;flex-direction:column;align-items:flex-start;gap:2px;">
+            <span style="font-weight:600;font-size:12px;">Sauvegarder toutes les conversations (.zip)</span>
+            <span style="font-size:11px;color:var(--muted);">Chaque conversation avec son historique et sa maquette .sp, dans une archive.</span>
+          </button>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:18px;">
+          <button class="btn" id="saveMenuClose" type="button">Annuler</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = () => { modal.remove(); document.removeEventListener('keydown', onEsc, true); };
+    function onEsc(e) { if (e.key === 'Escape') close(); }
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    document.addEventListener('keydown', onEsc, true);
+    modal.querySelector('#saveMenuClose').addEventListener('click', close);
+    modal.querySelector('#saveMenuCurrent').addEventListener('click', () => { close(); exportSP(); });
+    modal.querySelector('#saveMenuAll').addEventListener('click', () => { close(); exportAllConversationsZip(); });
+  }
+
+  // Exécute fn() avec state.doc / state.pages / state.pageW / state.pageH /
+  // state.bleed / state.viewMode temporairement remplacés par ceux d'un document
+  // stocké (autre conversation) — synchrone, restauré avant tout autre code.
+  function withTemporaryDoc(doc, fn) {
+    const backup = { doc: state.doc, pages: state.pages, pageW: state.pageW, pageH: state.pageH, bleed: state.bleed, viewMode: state.viewMode };
+    try {
+      state.doc = doc;
+      state.pageW = doc.w || state.pageW;
+      state.pageH = doc.h || state.pageH;
+      state.bleed = (typeof doc.bleed === 'number') ? doc.bleed : state.bleed;
+      state.viewMode = doc.viewMode || state.viewMode;
+      state.pages = (doc.pages || []).map((p, i) => ({ pageIndex: (typeof p.pageIndex === 'number') ? p.pageIndex : i, label: p.label }));
+      return fn();
+    } finally {
+      state.doc = backup.doc;
+      state.pages = backup.pages;
+      state.pageW = backup.pageW;
+      state.pageH = backup.pageH;
+      state.bleed = backup.bleed;
+      state.viewMode = backup.viewMode;
+    }
+  }
+
+  // Construit le .sp d'un document STOCKÉ (conversation non active), sans toucher
+  // à la maquette affichée à l'écran.
+  function buildSPFileFromStoredDoc(doc) {
+    if (!doc || !Array.isArray(doc.pages) || !doc.pages.length) return null;
+    return withTemporaryDoc(doc, buildSPFile);
+  }
+
+  // 🆕 v1.7.606 — Sauvegarde COMPLÈTE : une archive .zip avec, pour chaque
+  // conversation, son historique (chat.json) et sa maquette (document.sp).
+  async function exportAllConversationsZip() {
+    try { saveCurrentConv(); } catch (_) {}
+    try {
+      await loadAttachmentLibrary('app/JS/jszip.min.js', () => !!window.JSZip);
+    } catch (e) {
+      appendChat('assistant', "Impossible de charger l'outil de compression (.zip). Vérifiez votre connexion, ou téléchargez le .sp de la fenêtre en cours.");
+      return;
+    }
+    const zip = new window.JSZip();
+    const convs = state.convs.slice();
+    let docCount = 0;
+    convs.forEach(c => {
+      let doc = null, chat = [];
+      try { doc = JSON.parse(localStorage.getItem(LS.doc + '_' + c.id) || 'null'); } catch (_) {}
+      try { chat = JSON.parse(localStorage.getItem(LS.chat + '_' + c.id) || '[]'); } catch (_) {}
+      const safeName = String(c.title || c.id).replace(/[\\/:*?"<>|]+/g, '_').slice(0, 60).trim() || c.id;
+      const folder = zip.folder('conversations/' + safeName + '__' + c.id);
+      folder.file('chat.json', JSON.stringify({ id: c.id, title: c.title, updated: c.updated, messages: chat }, null, 2));
+      if (doc && Array.isArray(doc.pages) && doc.pages.length) {
+        try {
+          const spFile = buildSPFileFromStoredDoc(doc);
+          if (spFile) { folder.file('document.sp', JSON.stringify(spFile, null, 2)); docCount++; }
+        } catch (_) {}
+      }
+    });
+    zip.file('manifest.json', JSON.stringify({ format: 'SP213 Studio Backup', version: '1.0.0', exported: new Date().toISOString(), conversations: convs.length, documents: docCount }, null, 2));
+    try {
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const d = new Date();
+      a.download = 'sp213-conversations-' + d.toISOString().slice(0, 10).replace(/-/g, '') + '.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      appendChat('assistant', 'Sauvegarde complète téléchargée : ' + convs.length + ' conversation(s), ' + docCount + ' maquette(s) .sp.');
+    } catch (e) {
+      appendChat('assistant', 'Erreur pendant la création de l\'archive : ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  // 🆕 v1.7.606 — Import d'une sauvegarde .zip : recrée une conversation par
+  // dossier trouvé (chat.json + document.sp), sans toucher à la conversation
+  // affichée avant la fin de l'opération.
+  async function importConversationsZip(file) {
+    await loadAttachmentLibrary('app/JS/jszip.min.js', () => !!window.JSZip);
+    const zip = await window.JSZip.loadAsync(file);
+    const folders = new Map();
+    zip.forEach((relPath, entry) => {
+      const m = relPath.match(/^conversations\/([^/]+)\/(chat\.json|document\.sp)$/);
+      if (!m || entry.dir) return;
+      if (!folders.has(m[1])) folders.set(m[1], {});
+      folders.get(m[1])[m[2]] = entry;
+    });
+    const previousActive = state.convActive;
+    const previousDoc = state.doc;
+    let firstImportedId = null;
+    let imported = 0;
+    for (const [key, files] of folders) {
+      let chatData = null, spData = null;
+      if (files['chat.json']) { try { chatData = JSON.parse(await files['chat.json'].async('string')); } catch (_) {} }
+      if (files['document.sp']) { try { spData = JSON.parse(await files['document.sp'].async('string')); } catch (_) {} }
+      if (!chatData && !spData) continue;
+      const id = 'conv_import_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      const title = (chatData && chatData.title) || key.split('__')[0].replace(/_/g, ' ').trim() || 'Conversation importée';
+      state.convs.unshift({ id, title, updated: Date.now() });
+      try { localStorage.setItem(LS.chat + '_' + id, JSON.stringify((chatData && chatData.messages) || [])); } catch (_) {}
+      if (spData) {
+        state.convActive = id;
+        state.doc = null;
+        try {
+          const ok = importFromSuperPrint(spData);
+          if (ok) persistDoc();
+        } catch (_) {}
+      }
+      if (!firstImportedId) firstImportedId = id;
+      imported++;
+    }
+    state.convActive = previousActive;
+    state.doc = previousDoc;
+    saveConvsIndex();
+    renderConvTabs();
+    if (imported && firstImportedId) switchConversation(firstImportedId);
+    appendChat('assistant', imported ? (imported + ' conversation(s) importée(s).') : "Aucune conversation exploitable trouvée dans cette archive.");
+  }
+
+  // 🆕 v1.7.606 — Point d'entrée du bouton « Importer » : .zip (sauvegarde
+  // complète) ou .sp/.json (une seule maquette → nouvelle conversation).
+  async function importConversationsFromFile(file) {
+    if (!file) return;
+    const name = (file.name || '').toLowerCase();
+    try {
+      if (name.endsWith('.zip')) {
+        await importConversationsZip(file);
+        return;
+      }
+      const text = await file.text();
+      const spData = normalizeSPFile(text);
+      const id = 'conv_import_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      state.convs.unshift({ id, title: 'Maquette importée', updated: Date.now() });
+      try { localStorage.setItem(LS.chat + '_' + id, JSON.stringify([])); } catch (_) {}
+      const previousActive = state.convActive;
+      const previousDoc = state.doc;
+      state.convActive = id;
+      state.doc = null;
+      const ok = importFromSuperPrint(spData);
+      if (ok) persistDoc();
+      state.convActive = previousActive;
+      state.doc = previousDoc;
+      saveConvsIndex();
+      renderConvTabs();
+      if (ok) switchConversation(id);
+      appendChat('assistant', ok ? 'Maquette importée comme nouvelle conversation.' : "Impossible d'importer ce fichier (structure non reconnue).");
+    } catch (e) {
+      appendChat('assistant', 'Import impossible : ' + (e && e.message ? e.message : e));
+    }
   }
 
   // 🛡️ Normalise + valide un document .sp (maquette brute IA ou .sp complet)
@@ -10685,13 +11020,13 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       let height = (+el.height || 50) * MM_TO_PX;
       if (isFullBleed) { left = 0; top = 0; width = pageWpx + bleedPx * 2; height = pageHpx + bleedPx * 2; }
       if (t === 'rectangle' || t === 'rect') {
-        objects.push(spAppliquerReglagesTypo({ type: 'rect', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW, rx: (el.rx || 0) * MM_TO_PX, ry: (el.ry || 0) * MM_TO_PX }, el));
+        objects.push(spAppliquerReglagesTypo({ type: 'rect', left, top, width, height, fill, opacity: op, stroke: stroke || '', strokeWidth: strokeW, rx: (el.rx || 0) * MM_TO_PX, ry: (el.ry || 0) * MM_TO_PX, ...spElementTransform(el) }, el));
       } else if (t === 'circle') {
-        objects.push(spAppliquerReglagesTypo({ type: 'circle', left, top, radius: (+el.radius || 25) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
+        objects.push(spAppliquerReglagesTypo({ type: 'circle', left, top, radius: (+el.radius || 25) * MM_TO_PX, fill, opacity: op, stroke: stroke || '', strokeWidth: strokeW, ...spElementTransform(el) }, el));
       } else if (t === 'ellipse') {
-        objects.push(spAppliquerReglagesTypo({ type: 'ellipse', left, top, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
+        objects.push(spAppliquerReglagesTypo({ type: 'ellipse', left, top, rx: (+el.rx || 30) * MM_TO_PX, ry: (+el.ry || 20) * MM_TO_PX, fill, opacity: op, stroke: stroke || '', strokeWidth: strokeW, ...spElementTransform(el) }, el));
       } else if (t === 'triangle') {
-        objects.push(spAppliquerReglagesTypo({ type: 'triangle', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
+        objects.push(spAppliquerReglagesTypo({ type: 'triangle', left, top, width, height, fill, opacity: op, stroke: stroke || '', strokeWidth: strokeW, ...spElementTransform(el) }, el));
       } else if (t === 'star') {
         // 🛡️ v1.7.368 — meme conversion que buildSPFile : on ecrit un `polygon`
         //   (le format natif de l'app), JAMAIS un `star` : `fabric.Star` n'existe
@@ -10700,9 +11035,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         const _outR2 = (+el.radius || 30) * MM_TO_PX;
         const _inR2 = (+el.innerRadius || 0) > 0 ? (+el.innerRadius) * MM_TO_PX : _outR2 * 0.5;
         const _starPts = []; for (let _i = 0; _i < _branches2 * 2; _i++) { const _r = _i % 2 === 0 ? _outR2 : _inR2; const _a = (Math.PI * _i) / _branches2 - Math.PI / 2; _starPts.push({ x: _r * Math.cos(_a), y: _r * Math.sin(_a) }); }
-        objects.push(spAppliquerReglagesTypo({ type: 'polygon', left, top, points: _starPts, fill, opacity: op, scaleX: 1, scaleY: 1, stroke: stroke || '', strokeWidth: strokeW }, el));
+        objects.push(spAppliquerReglagesTypo({ type: 'polygon', left, top, points: _starPts, fill, opacity: op, stroke: stroke || '', strokeWidth: strokeW, ...spElementTransform(el) }, el));
       } else if (t === 'line') {
-        objects.push(spAppliquerReglagesTypo({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, scaleX: 1, scaleY: 1 }, el));
+        objects.push(spAppliquerReglagesTypo({ type: 'line', x1: (+el.x1 || 0) * MM_TO_PX + bleedPx, y1: (+el.y1 || 0) * MM_TO_PX + bleedPx, x2: (+el.x2 || 100) * MM_TO_PX + bleedPx, y2: (+el.y2 || 0) * MM_TO_PX + bleedPx, stroke: el.stroke || '#000000', strokeWidth: Math.max(1, (+el.strokeWidth || 1) * MM_TO_PX), opacity: op, ...spElementTransform(el) }, el));
       } else if (t === 'text' || t === 'textbox') {
         // 🛡️ FIX 2026-08-30 : normaliser la police AVANT d'écrire dans le .sp.
         const famSP2 = normalizeFontFamily(el.fontFamily) || 'Open Sans';
@@ -10710,9 +11045,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         const _fsPx2 = (+el.fontSize || 14) * PT_TO_PX;
         const _lh2 = el.lineHeight || 1.4;
         const _hPx2 = spTextBlockHeightPx(el);
-        objects.push(spAppliquerReglagesTypo({ type: 'textbox', left, top, width: (+el.width || 200) * MM_TO_PX, height: _hPx2, text: el.text || '', fontSize: _fsPx2, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP2, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh2, opacity: op, scaleX: 1, scaleY: 1 }, el));
+        objects.push(spAppliquerReglagesTypo({ type: 'textbox', left, top, width: (+el.width || 200) * MM_TO_PX, height: _hPx2, text: el.text || '', fontSize: _fsPx2, fill: (el.fill && /^#/.test(el.fill)) ? el.fill : '#000000', fontFamily: famSP2, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', lineHeight: _lh2, opacity: op, ...spElementTransform(el) }, el));
       } else if (t === 'image' && el.imageUrl) {
-        objects.push(spAppliquerReglagesTypo({ type: 'image', left, top, width, height, opacity: op, scaleX: 1, scaleY: 1, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2 }, el));
+        objects.push(spAppliquerReglagesTypo({ type: 'image', left, top, width, height, opacity: op, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2, ...spElementTransform(el) }, el));
       }
     });
     return objects;

@@ -9,6 +9,30 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.573] — 2026-09-27
+
+_SP213 WLLM Native (modèle local dédié), refonte de la barre du studio, correctifs Grille & repères_
+
+### Added — SP213 WLLM Native
+- Nouveau moteur local, à côté de « SP213 WLLM (local avec GPU) » : aucune liste de modèles à choisir, un modèle léger (< 2 Go de VRAM estimée, Qwen2.5 1.5B) préconfiguré.
+- Résumé condensé des règles de mise en page (marges de sécurité, gouttière en double page, cohérence multi-page, couleurs, typographie) injecté juste avant l'exemple JSON — jamais avant la consigne de format, pour ne pas la diluer (régression mesurée et corrigée en cours de session).
+- Filet de sécurité : nouvelle tentative automatique avec un prompt minimal si la première réponse n'est pas un JSON de maquette exploitable.
+- Loader visible dans la conversation pendant le chargement/téléchargement du modèle local (progression en direct + confirmation explicite), à la place d'un chargement silencieux.
+- Liste des modèles WLLM classiques resserrée à 5 choix sous 2 Go de VRAM estimée (Qwen2.5 1.5B par défaut).
+
+### Changed — barre du studio et composer
+- « Exporter .sp » devient **Sauvegarder** : pop-in avec le choix entre le .sp de la fenêtre en cours et une sauvegarde .zip de toutes les conversations (historique + maquette de chacune).
+- « Nouveau » devient **Importer** : accepte un .zip (restaure les conversations) ou un .sp/.json (nouvelle conversation) ; la création d'une conversation vide reste possible via les onglets.
+- Composer : bordure visible uniquement sur la pièce jointe ; case « Images » retirée (redondante avec les préférences) ; bouton d'envoi rond moderne ; icône « image web » remplacée (loupe → image filaire).
+- Vérifié de bout en bout : export .zip réel écrit sur disque, réimport via le vrai sélecteur de fichier, conversation restaurée avec coordonnées identiques au bit près.
+
+### Fixed — panneau Grille & repères (app)
+- Cases à cocher (grille, magnétisme, ligne de base, colonnes, masquer les repères, masquer les fonds perdus) : couleur alignée sur la charte SuperPrint (noir, plus de bleu système).
+- « Masquer les repères » / « Masquer les fonds perdus » : appliquaient leur travail à toutes les planches (visibles ou non) à chaque clic. Même principe déjà mesuré et appliqué à la grille (jusqu'à 136 ms de blocage sur 6 planches) : planches visibles tout de suite, autres planches à l'inactivité du navigateur.
+
+### Scope
+- Studio SP213 (moteur local, barre, composer) et panneau Grille & repères de l'app. Aucun changement sur le rendu PDF, l'import/export de documents ou les moteurs cloud (DeepSeek, OpenAI, Anthropic, Groq, OpenRouter).
+
 ## [1.7.572] — 2026-09-28
 
 _Phone burger menu: the logo band no longer scrolls, the list is tightened, “Take part” catches up_

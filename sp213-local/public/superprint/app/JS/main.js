@@ -42903,7 +42903,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             window._spHideBleed = hide;
             document.documentElement.classList.toggle('sp-hide-bleed', hide);
             // ⚡ PERF: basculer visibilité + créer/supprimer les masques sans recréer tous les guides
-            canvases.forEach(canvas => {
+            const _spToggleBleedOn = (canvas) => {
                 if (!canvas) return;
                 const bleedInfo = canvas.bleedInfo || { left: mmToPx(bleed), right: mmToPx(bleed), top: mmToPx(bleed), bottom: mmToPx(bleed) };
                 const pageWidthPx = mmToPx(pageFormat.width);
@@ -42948,7 +42948,18 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 }
 
                 canvas.requestRenderAll();
-            });
+            };
+            // ⚡ PERF (même principe que rebuildGridAll) : les planches VISIBLES tout de
+            //   suite, les autres à l'inactivité — un document de nombreuses pages ne
+            //   paie plus le coût de TOUTES ses planches sur un simple clic de case.
+            const _immediatesB = [], _differeesB = [];
+            canvases.forEach(c => { if (!c) return; (spPlancheVisible(c) ? _immediatesB : _differeesB).push(c); });
+            _immediatesB.forEach(_spToggleBleedOn);
+            if (_differeesB.length) {
+                const _runB = () => _differeesB.forEach(_spToggleBleedOn);
+                if (typeof requestIdleCallback === 'function') requestIdleCallback(_runB, { timeout: 1200 });
+                else setTimeout(_runB, 90);
+            }
         });
     }
 
