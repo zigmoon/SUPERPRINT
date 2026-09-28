@@ -7844,9 +7844,27 @@ function spRtfLayoutInfo(src) {
       html += '<div class="st-pop-h">' + escapeHtml((spStFiche(eng) || {}).nom || '') + ' — ' + escapeHtml(t('st.pop.model')) + '</div>';
       vers.forEach(function (x) {
         const on = (x.v === cur);
+        /* v1.7.579 — MÊME ASPECT QUE LES LIGNES DE MOTEURS (demande utilisateur).
+           Les versions ne portaient QU'UNE ligne (le nom), là où un moteur en
+           affiche deux : nom + étiquette grise, puis description. Tout Claude
+           paraissait donc « autre », plus court et plus serré. On réutilise la
+           même structure : le qualificatif après le tiret passe en étiquette
+           grise (recommandé, le plus rapide…), la description est l'identifiant
+           du modèle — la ligne a exactement la même hauteur qu'un moteur. */
+        const _p = String(x.t || '').split(' — ');
+        const _nom = _p[0];
+        /* L'étiquette grise reste COURTE (première proposition, sans parenthèse) :
+           mesuré, « recommandé, le plus léger (env. 1,63 Go VRAM) » passait sur deux
+           lignes et la ligne faisait 70 px au lieu de 54. Le détail complet reste
+           dans l'infobulle de la ligne. */
+        const _tag = _p.slice(1).join(' — ').split(',')[0].split('(')[0].trim();
+        const _desc = x.d ? String(x.d) : String(x.v || '');
+        const _coupe = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         html += '<button class="st-row' + (on ? ' on' : '') + '" type="button" role="option" aria-selected="' + on + '"' +
-          ' data-eng="' + eng + '" data-ver="' + escapeHtml(x.v) + '">' +
-          '<span class="st-row-t"><span class="st-row-n">' + escapeHtml(String(x.t).split(' — ')[0]) + '</span></span></button>';
+          ' data-eng="' + eng + '" data-ver="' + escapeHtml(x.v) + '" title="' + escapeHtml(String(x.t || '')) + '">' +
+          '<span class="st-row-t"><span class="st-row-n">' + escapeHtml(_nom) + '</span>' +
+          (_tag ? '<span class="st-row-g" style="' + _coupe + 'min-width:0;flex:0 1 auto;max-width:62%">' + escapeHtml(_tag) + '</span>' : '') + '</span>' +
+          (_desc ? '<span class="st-row-d" style="' + _coupe + '">' + escapeHtml(_desc) + '</span>' : '') + '</button>';
       });
     }
     body.innerHTML = html;
