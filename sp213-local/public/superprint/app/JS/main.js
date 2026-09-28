@@ -9707,7 +9707,7 @@ window.spTestDiag = function () {
          toute sérialisation (.sp / .json / sauvegarde automatique) et pour l'export PDF ;
        - le fond de page est VIVANT : image Fabric dont la source est le canvas du moteur, la
          page affiche donc l'animation en vrai, et chaque réglage s'applique aussitôt. */
-    var _snap = null, _snapTemps = 0;
+    var _snap = null, _snapTemps = 0, _snapDim = { w: 0, h: 0 };
     /* ═══ _SP_FOND_514_DEBUT — INSTANTANÉ À LA DÉFINITION CHOISIE ═══
        Suréchantillonnage ×2 pour 72 et 150 ppp : la scène est dessinée deux fois plus grande
        puis réduite avec un lissage de qualité — indispensable pour que la basse définition
@@ -9718,6 +9718,7 @@ window.spTestDiag = function () {
         if (!forcer && _snap && (n - _snapTemps) < 3000) return _snap;
         try {
             var t0 = tailleSortie();
+            _snapDim = { w: t0.w, h: t0.h };
             var ss = (DPI <= 150) ? 2 : 1;
             var c = document.createElement("canvas");
             c.width = t0.w * ss; c.height = t0.h * ss;
@@ -9737,6 +9738,21 @@ window.spTestDiag = function () {
         } catch (e) {}
         return _snap;
     }
+    /* _SP_FOND_583_DEBUT — LA BOITE VISIBLE NE DOIT JAMAIS DEPENDRE DE LA DEFINITION.
+       boite = width x scaleX. La taille naturelle de l'instantane change avec la
+       definition (72/150/300/600) : a la recreation de l'image, fabric la reprend
+       et la boite serait multipliee d'autant. On recale donc width/height sur la
+       taille reelle et on recalcule l'echelle pour garder la MEME boite. */
+    function spRbRecaler(img, bw, bh) {
+        if (!img || !(bw > 20 && bh > 20)) return false;
+        var bw0 = img.width, bh0 = img.height;
+        if (!(bw0 > 20 && bh0 > 20)) return false;
+        var sc0 = Math.abs(img.scaleX || 1), sc1 = Math.abs(img.scaleY || 1);
+        var boxW = bw0 * sc0, boxH = bh0 * sc1;
+        if (!(Math.abs(bw0 - bw) > 0.5 || Math.abs(bh0 - bh) > 0.5)) return false;
+        img.set({ width: bw, height: bh, scaleX: boxW / bw, scaleY: boxH / bh });
+        return true;
+    }
     function purger(cv) {
         var n = 0;
         try {
@@ -9754,20 +9770,34 @@ window.spTestDiag = function () {
     }
     /* Le fond VIVANT : source = canvas du moteur, donc la page affiche l'animation ; pour
        l'enregistrement et l'export, getSrc() renvoie un instantané frais. */
+    /* _SP_FOND_583_DEBUT — L'IMAGE DE FOND VIENT DE L'INSTANTANE, PAS DE LA MINIATURE.
+       Avant : objet construit depuis le canvas d'apercu 960x540, puis source
+       remplacee par l'instantane — deux resolutions dans un meme objet. Ici la
+       couverture (meme facteur X et Y, centree) est calculee sur la taille
+       NATURELLE de l'instantane : la boite visible est identique a l'ecran et
+       l'objet reste coherent si l'image est recreee (export PDF, .sp). */
     function insererFondVivant(cv) {
-        var src = cibles()[0];
-        if (!src || !window.fabric || !window.fabric.Image) return false;
-        var img = null;
-        try { img = new window.fabric.Image(src, { left: 0, top: 0 }); } catch (e) { img = null; }
-        if (!img || !(img.width > 20) || !(img.height > 20)) return false;
-        img._spRandBackBg = true;
-        img._spRandBackLive = true;
-        img.src = rafraichirInstantane(true);
-        img.getSrc = function () { return rafraichirInstantane(true); };
-        appliquerCouverture(img, cv);
-        cv.add(img);
-        try { cv.sendToBack(img); } catch (_) {}
-        try { cv.requestRenderAll(); } catch (_) {}
+        var data = rafraichirInstantane(true) || imageFinale();
+        if (!data || !window.fabric || !window.fabric.Image) return false;
+        window.fabric.Image.fromURL(data, function (img) {
+            try {
+                var pw = cv.getWidth(), ph = cv.getHeight();
+                var bw = img.width, bh = img.height;
+                if (!(bw > 20 && bh > 20)) return;
+                var sc = Math.max(pw / bw, ph / bh);
+                img.scale(sc);
+                img.set({ left: (pw - bw * sc) / 2, top: (ph - bh * sc) / 2, originX: "left", originY: "top" });
+                img._spRandBackBg = true;
+                img._spRandBackLive = true;
+                img.getSrc = function () { return rafraichirInstantane(true); };
+                spRbRecaler(img, _snapDim.w, _snapDim.h);
+                cv.add(img);
+                try { cv.sendToBack(img); } catch (_) {}
+                try { cv.setActiveObject(img); } catch (_) {}
+                try { cv.renderAll(); } catch (_) {}
+                if (typeof saveState === "function") saveState("Fond (fond de page)");
+            } catch (e) {}
+        });
         return true;
     }
     function inserer(fond) {
@@ -9930,7 +9960,13 @@ window.spTestDiag = function () {
                 proto.__spRbSnapPatch = true;
                 var avant = proto.toObject;
                 proto.toObject = function () {
-                    if (this._spRandBackLive) { try { rafraichirInstantane(true); } catch (_) {} }
+                    /* _SP_FOND_583_DEBUT — l'instantane est regenere PUIS l'objet est recale :
+                       le JSON (donc l'export PDF et le .sp) porte une image dont la
+                       taille annoncee est celle de la source. */
+                    if (this._spRandBackLive) {
+                        try { rafraichirInstantane(true); } catch (_) {}
+                        try { if (this._spRandBackBg) { spRbRecaler(this, _snapDim.w, _snapDim.h); } } catch (_) {}
+                    }
                     return avant.apply(this, arguments);
                 };
             }
