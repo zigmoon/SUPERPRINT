@@ -29,6 +29,204 @@ try { fabric.Object.NUM_FRACTION_DIGITS = 6; } catch (_) {}
 //       spPrompt(message, {value, placeholder})      -> Promise<string|null>
 //       spDialog({...})                              -> Promise<any> (générique)
 // ============================================================================
+// 🆕 v1.7.579 — _SP_IMPORT_BUSY : LE BANDEAU D'IMPORT
+// ----------------------------------------------------------------------------
+// POURQUOI : convertir un Word prend plusieurs secondes, pendant lesquelles il
+// ne se passe RIEN de visible — et un clic à côté de la pop-in abandonnait
+// l'import sans le dire (voir le commentaire du bandeau plus bas).
+//
+// ICI : un fond qui couvre TOUTE l'application et avale les clics (sur la zone
+// du bandeau comme sur le reste : les événements sont arrêtés en phase de
+// capture), un carton qui NOMME le fichier, une liste de trois étapes dont
+// celle en cours clignote, un chronomètre qui avance — c'est LUI la preuve
+// visible que le travail continue — et une phrase qui dit qu'il n'y a rien à
+// valider. AUCUN bouton : ce bandeau ne s'annule pas.
+//
+// Sécurité : au-delà de 3 minutes, il se retire de lui-même en le signalant
+// (un écran bloqué serait pire que le défaut qu'on corrige).
+//
+// Les libellés sont passés DÉJÀ TRADUITS par l'appelant : translate() vit dans
+// une portée interne au fichier, pas ici.
+// ============================================================================
+var _spImpBusyEl = null, _spImpBusyChronoEl = null, _spImpBusyNoteEl = null;
+var _spImpBusyLiEls = [], _spImpBusyTimer = null, _spImpBusySecu = null;
+var _spImpBusyT0 = 0, _spImpBusyNoteLongue = '';
+
+function _spImpBusyCss() {
+    if (document.getElementById('spImpBusyCss')) return;
+    var st = document.createElement('style');
+    st.id = 'spImpBusyCss';
+    st.textContent = [
+        '.sp-imp-busy{position:fixed;inset:0;z-index:100005;display:none;align-items:center;justify-content:center;',
+        'background:rgba(0,0,0,.62);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);',
+        'font-family:-apple-system,Segoe UI,Roboto,sans-serif;cursor:default;}',
+        '.sp-imp-busy.on{display:flex;}',
+        '.sp-imp-busy-card{width:min(430px,90vw);background:#fff;border:1px solid #1a1a1a;',
+        'box-shadow:0 24px 70px rgba(0,0,0,.35);padding:20px 22px 18px;color:#1a1a1a;}',
+        '.sp-imp-busy-top{display:flex;align-items:center;gap:12px;}',
+        '.sp-imp-busy-spin{width:22px;height:22px;flex:0 0 22px;border:2px solid rgba(26,26,26,.18);',
+        'border-top-color:#1a1a1a;border-radius:50%;animation:spImpSpin .8s linear infinite;}',
+        '@keyframes spImpSpin{to{transform:rotate(360deg)}}',
+        '.sp-imp-busy-titre{font-family:IBM Plex Mono,monospace;font-size:10.5px;font-weight:600;',
+        'letter-spacing:1.2px;text-transform:uppercase;}',
+        '.sp-imp-busy-nom{margin:10px 0 14px;font-size:13px;font-weight:600;line-height:1.4;word-break:break-word;}',
+        '.sp-imp-busy-etapes{list-style:none;margin:0 0 14px;padding:0;border-top:1px solid #e6e6e6;}',
+        '.sp-imp-busy-etapes li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0;',
+        'font-size:12px;color:#8a8a8a;}',
+        '.sp-imp-busy-etapes li::before{content:"";width:9px;height:9px;flex:0 0 9px;border:1px solid #c9c9c9;background:#fff;}',
+        '.sp-imp-busy-etapes li.on{color:#1a1a1a;font-weight:600;}',
+        '.sp-imp-busy-etapes li.on::before{background:#1a1a1a;border-color:#1a1a1a;animation:spImpPulse 1.2s ease-in-out infinite;}',
+        '@keyframes spImpPulse{0%,100%{opacity:1}50%{opacity:.35}}',
+        '.sp-imp-busy-etapes li.done{color:#5a5a5a;}',
+        '.sp-imp-busy-etapes li.done::before{background:#1a1a1a;border-color:#1a1a1a;}',
+        '.sp-imp-busy-barre{height:3px;background:#ececec;overflow:hidden;margin:0 0 12px;}',
+        '.sp-imp-busy-barre i{display:block;height:100%;width:40%;background:#1a1a1a;animation:spImpGlisse 1.15s ease-in-out infinite;}',
+        '@keyframes spImpGlisse{0%{transform:translateX(-100%)}100%{transform:translateX(320%)}}',
+        '.sp-imp-busy-note{font-size:11px;line-height:1.55;color:#6b6b6b;}',
+        '.sp-imp-busy-chrono{float:right;margin-left:10px;font-family:IBM Plex Mono,monospace;font-size:10px;letter-spacing:.6px;color:#8a8a8a;}',
+        '.theme-dark .sp-imp-busy-card{background:#1e1e1e;border-color:#f4f4f5;color:#eaeaea;}',
+        '.theme-dark .sp-imp-busy-spin{border-color:rgba(244,244,245,.2);border-top-color:#f4f4f5;}',
+        '.theme-dark .sp-imp-busy-etapes{border-top-color:#333;}',
+        '.theme-dark .sp-imp-busy-etapes li{border-bottom-color:#2a2a2a;color:#9a9a9a;}',
+        '.theme-dark .sp-imp-busy-etapes li::before{border-color:#4a4a4a;background:#1e1e1e;}',
+        '.theme-dark .sp-imp-busy-etapes li.on{color:#f4f4f5;}',
+        '.theme-dark .sp-imp-busy-etapes li.on::before,.theme-dark .sp-imp-busy-etapes li.done::before{background:#f4f4f5;border-color:#f4f4f5;}',
+        '.theme-dark .sp-imp-busy-barre{background:#333;}',
+        '.theme-dark .sp-imp-busy-barre i{background:#f4f4f5;}',
+        '.theme-dark .sp-imp-busy-note{color:#a8a8a8;}',
+        '.theme-dark .sp-imp-busy-nom{color:#f4f4f5;}',
+        '.sp-nudge{animation:spNudge .45s ease;}',
+        '@keyframes spNudge{0%,100%{transform:translate(-50%,-50%)}30%{transform:translate(calc(-50% - 7px),-50%)}70%{transform:translate(calc(-50% + 7px),-50%)}}',
+        '@media (prefers-reduced-motion: reduce){.sp-imp-busy-spin,.sp-imp-busy-barre i{animation-duration:2.6s}}'
+    ].join('');
+    document.head.appendChild(st);
+}
+
+function _spImpBusy(o) {
+    var opt = o || {};
+    _spImpBusyCss();
+    _spImpBusyFin();                         /* un seul bandeau à la fois */
+    var el = document.createElement('div');
+    el.className = 'sp-imp-busy';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    var card = document.createElement('div');
+    card.className = 'sp-imp-busy-card';
+    var haut = document.createElement('div');
+    haut.className = 'sp-imp-busy-top';
+    var spin = document.createElement('span');
+    spin.className = 'sp-imp-busy-spin';
+    var titre = document.createElement('span');
+    titre.className = 'sp-imp-busy-titre';
+    titre.textContent = opt.titre || 'Import';
+    haut.appendChild(spin);
+    haut.appendChild(titre);
+    card.appendChild(haut);
+    if (opt.nom) {
+        var nom = document.createElement('div');
+        nom.className = 'sp-imp-busy-nom';
+        nom.textContent = String(opt.nom);
+        card.appendChild(nom);
+    }
+    _spImpBusyLiEls = [];
+    var etapes = opt.etapes || [];
+    if (etapes.length) {
+        var ul = document.createElement('ul');
+        ul.className = 'sp-imp-busy-etapes';
+        for (var i = 0; i < etapes.length; i++) {
+            var li = document.createElement('li');
+            li.textContent = String(etapes[i]);
+            ul.appendChild(li);
+            _spImpBusyLiEls.push(li);
+        }
+        card.appendChild(ul);
+    }
+    var barre = document.createElement('div');
+    barre.className = 'sp-imp-busy-barre';
+    barre.appendChild(document.createElement('i'));
+    card.appendChild(barre);
+    var note = document.createElement('div');
+    note.className = 'sp-imp-busy-note';
+    _spImpBusyNoteEl = document.createElement('span');
+    _spImpBusyNoteEl.textContent = opt.note || '';
+    _spImpBusyChronoEl = document.createElement('span');
+    _spImpBusyChronoEl.className = 'sp-imp-busy-chrono';
+    /* v1.7.579b — le chronomètre est DÉCORATIF pour les lecteurs d'écran : il
+       change quatre fois par seconde, il n'a rien à annoncer. La phrase et les
+       étapes, elles, restent lisibles. */
+    _spImpBusyChronoEl.setAttribute('aria-hidden', 'true');
+    _spImpBusyChronoEl.textContent = '0:00';
+    note.appendChild(_spImpBusyChronoEl);
+    note.appendChild(_spImpBusyNoteEl);
+    card.appendChild(note);
+    el.appendChild(card);
+    /* Le fond doit être INFINIMENT plus qu'un décor : on arrête tout ce qui
+       passe par lui, en capture, pour qu'aucun écouteur de l'application ne
+       se déclenche pendant la conversion (sélection, navigation, glisser). */
+    ['mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'pointerdown'].forEach(function (t) {
+        el.addEventListener(t, function (e) { e.stopPropagation(); e.preventDefault(); }, true);
+    });
+    el.addEventListener('wheel', function (e) { e.preventDefault(); }, { passive: false });
+    el.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
+    el.addEventListener('dragover', function (e) { e.preventDefault(); }, false);
+    el.addEventListener('drop', function (e) { e.preventDefault(); e.stopPropagation(); }, true);
+    (document.body || document.documentElement).appendChild(el);
+    /* ⚠️ v1.7.579b — LA CLASSE D'OUVERTURE. La règle de base du bandeau est
+       display:none, c'est `.on` qui l'affiche (display:flex) : sans elle, le
+       bandeau existait dans le DOM, ses étapes avançaient… et rien ne se voyait
+       (mesuré : rectangle de 0 × 0). Elle est posée ICI, sans attendre une image :
+       il n'y a aucune transition, et la pause de deux images posée avant chaque
+       composition synchrone garantit que le navigateur l'a bien peint. */
+    el.classList.add('on');
+    _spImpBusyEl = el;
+    _spImpBusyNoteLongue = opt.noteLongue || '';
+    _spImpBusyEtape(0);
+    _spImpBusyT0 = Date.now();
+    _spImpBusyTimer = setInterval(function () {
+        if (!_spImpBusyChronoEl) return;
+        var s = Math.round((Date.now() - _spImpBusyT0) / 1000);
+        _spImpBusyChronoEl.textContent = Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+        if (s >= 45 && _spImpBusyNoteEl && _spImpBusyNoteLongue) {
+            _spImpBusyNoteEl.textContent = _spImpBusyNoteLongue;
+        }
+    }, 250);
+    _spImpBusySecu = setTimeout(function () {
+        var n = opt.nom || '';
+        _spImpBusyFin();
+        try {
+            if (typeof window.spToast === 'function') {
+                window.spToast('Import interrompu après 3 minutes : ' + n, 'warn', 9000);
+            }
+        } catch (_) {}
+    }, 180000);
+}
+
+function _spImpBusyEtape(i) {
+    for (var k = 0; k < _spImpBusyLiEls.length; k++) {
+        var li = _spImpBusyLiEls[k];
+        li.className = (k < i) ? 'done' : (k === i ? 'on' : '');
+    }
+}
+
+function _spImpBusyFin() {
+    if (_spImpBusyTimer) { clearInterval(_spImpBusyTimer); _spImpBusyTimer = null; }
+    if (_spImpBusySecu) { clearTimeout(_spImpBusySecu); _spImpBusySecu = null; }
+    _spImpBusyLiEls = [];
+    _spImpBusyChronoEl = null;
+    _spImpBusyNoteEl = null;
+    var el = _spImpBusyEl;
+    _spImpBusyEl = null;
+    if (!el) return;
+    el.classList.remove('on');
+    setTimeout(function () { try { el.remove(); } catch (_) {} }, 120);
+}
+
+window._spImpBusy = _spImpBusy;
+window._spImpBusyEtape = _spImpBusyEtape;
+window._spImpBusyFin = _spImpBusyFin;
+window._spImpBusyCss = _spImpBusyCss;
+
+// ============================================================================
 (function spInstalleDialogues() {
     if (typeof window === 'undefined') return;
     if (window.__spDialoguesInstalled) return;
@@ -190,8 +388,14 @@ try { fabric.Object.NUM_FRACTION_DIGITS = 6; } catch (_) {}
             }
 
             if (boutonX) boutonX.addEventListener('click', function () { fermer(null); });
+            /* 🆕 v1.7.579 — `horsClique: true` : UN CLIC À CÔTÉ NE FERME PLUS.
+               MESURÉ (import Word) : la pop-in « Créer un nouveau document ? » était
+               annulée par un simple clic à côté du carton, et l'import était
+               abandonné sans que rien ne le dise. Le fond continue de couvrir
+               l'application (rien d'autre ne réagit) ; seuls ✕, Échap et les
+               boutons répondent — et l'appelant peut désormais demander ça. */
             overlay.addEventListener('mousedown', function (e) {
-                if (e.target === overlay && fermable) fermer(null);
+                if (e.target === overlay && fermable && o.horsClique !== true) fermer(null);
             });
             document.addEventListener('keydown', surTouche, true);
 
@@ -6582,6 +6786,61 @@ window.spTestDiag = function () {
     try { if (typeof activeCanvas !== 'undefined' && activeCanvas) brancher(activeCanvas); } catch (_) {}
 })();
 
+/* 🆕 v1.7.579 — _SP_CHAINE_FLUX_579 : LE RECOULEMENT SUIT TOUS LES CHEMINS.
+   MESURÉ (document importé de 124 pages) : le PREMIER bloc de la chaîne n'avait
+   AUCUN écouteur (le drapeau _hasAutoFlowListener était absent) alors que les 123
+   autres l'avaient. Raison : setupAutoFlowListeners est posé au chargement du
+   projet, quand les pages lointaines n'ont pas encore leurs objets — et la page
+   affichée, elle, est reconstruite ensuite (nouvelle instance d'objet, donc sans
+   écouteur). Conséquence vécue : éditer le premier bloc ne faisait RIEN, en éditer
+   un autre gelait l'application deux minutes. On branche donc au niveau du CANVAS,
+   comme le fait déjà le suivi des pastilles (spChainBadgeFollow) : tout bloc
+   chaîné, quelle que soit son histoire, déclenche le recoulement.
+   On ne double JAMAIS le travail : si le bloc porte déjà son propre écouteur
+   (changed / editing:exited), le filet le laisse faire. */
+(function spChaineFluxNet() {
+    'use strict';
+    if (window.__spChaineFluxNet) return;
+    window.__spChaineFluxNet = true;
+
+    function armer(canvas) {
+        if (!canvas || canvas._spFluxNet || typeof canvas.on !== 'function') return;
+        canvas._spFluxNet = true;
+        var retard = null;
+        function tirer(e) {
+            var o = e && e.target;
+            if (!o || !o.textLinkId) return;
+            if (o._hasAutoFlowListener) return;      // son propre écouteur s'en charge
+            clearTimeout(retard);
+            retard = setTimeout(function () {
+                try {
+                    if (typeof window.redistributeLinkedTextChain === 'function') {
+                        window.redistributeLinkedTextChain(o);
+                    }
+                } catch (_) {}
+            }, 220);
+        }
+        canvas.on('text:changed', tirer);
+        canvas.on('object:modified', tirer);
+    }
+    window.spChaineFluxArmer = armer;
+
+    var proto = fabric.Canvas.prototype;
+    ['setActiveObject', 'getActiveObject', 'getActiveObjects', 'setActiveObjects'].forEach(function (nom) {
+        var orig = proto[nom];
+        if (typeof orig !== 'function' || orig._spFluxNetWrap) return;
+        var f = function () { armer(this); return orig.apply(this, arguments); };
+        f._spFluxNetWrap = true;
+        proto[nom] = f;
+    });
+    try {
+        if (typeof canvases !== 'undefined' && canvases && canvases.length) {
+            for (var i = 0; i < canvases.length; i++) armer(canvases[i]);
+        }
+    } catch (_) {}
+    try { if (typeof activeCanvas !== 'undefined' && activeCanvas) armer(activeCanvas); } catch (_) {}
+})();
+
 
 /* ═══════════ v1.7.481 / v1.7.482 : POLICES VARIABLES ═══════════
    Demande utilisateur (1.7.481) : « si on importe une police variable et qu'on la
@@ -12682,6 +12941,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
     'Lato': ['400', '700'],
     'Poppins': ['400', '600', '700'],
     'Playfair Display': ['400', '700'],
+    'Times': ['400', '700'],
     'Bebas Neue': ['400'],
     'IBM Plex Mono': ['400'],
     'JetBrains Mono': ['400', '500', '700'],
@@ -20605,6 +20865,18 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         return;
     }
 
+    /* 🆕 v1.7.580c — TYPOGRAPHIE MULTI-SÉLECTION. Sur une sélection multiple,
+       getActiveObject() rend un activeSelection : le panneau Typographie était
+       donc masqué et aucun réglage n'était possible. On liste ici les blocs TEXTE
+       de la sélection, on installe le relais typographique, et on lit les valeurs
+       affichées sur le PREMIER bloc texte (comme InDesign). */
+    const _spBlocsTexte580c = (typeof window._spBlocsTexteSelection === 'function')
+        ? window._spBlocsTexteSelection(activeCanvas) : [];
+    const _spTypoObj580c = _spBlocsTexte580c.length ? _spBlocsTexte580c[0] : obj;
+    if (_spBlocsTexte580c.length > 1 && typeof window._spInstallerRelaisTypo === 'function') {
+        try { window._spInstallerRelaisTypo(obj); } catch (_) {}
+    }
+
     const factor = getPxToUnitFn();
     const bleedInfo = activeCanvas.bleedInfo || { left: mmToPx(bleed), top: mmToPx(bleed) };
     const pageW = Math.max(1, (bleedInfo.pageCanvasWidth || activeCanvas.width) - (bleedInfo.left * 2));
@@ -20744,8 +21016,12 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         if (imageMaskControls) imageMaskControls.style.display = obj._isImageMask ? 'block' : 'none';
     }
 
-    if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
+    if (_spBlocsTexte580c.length > 0 || obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
         document.getElementById('typographySection').style.display = 'block';
+        /* 🆕 v1.7.580c : en multi-sélection, les valeurs lues ci-dessous viennent du
+           premier bloc texte sélectionné — les réglages, eux, partent sur TOUS les
+           blocs via le relais typographique posé sur l'activeSelection. */
+        const obj = _spTypoObj580c;
         
         // Stabiliser les dimensions avant tout recalcul
         try { spLockTextboxDimensions(obj); } catch (_) {}
@@ -24001,6 +24277,54 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             }
         }
 
+        /* 🆕 v1.7.579 — _SP_ROGNE_CADRE_579 : LE DÉBORDEMENT SE REPOUSSE.
+           MESURÉ : la coupe de chaque bloc est calculée sur le texte NU
+           (splitTextToFit), PUIS les styles de run sont réappliqués (gras,
+           italique, taille, exposant). Le texte stylé occupe alors plus de place et
+           ne tient plus : 818 px mesurés pour un cadre de 751 px (masque à 756 px),
+           soit trois lignes invisibles par bloc. On rogne donc le dernier mot tant
+           que le bloc déborde, et le texte retiré est REPOUSSÉ dans le bloc suivant
+           (c'est le bloc appelant qui l'ajoute à son reste). Le cas est borné :
+           30 mots au plus, et l'on s'arrête dès que le bloc tient.
+           Le DERNIER bloc de la chaîne n'est pas rogné : son débordement est normal
+           (c'est la fin du texte chaîné, signalée par la pastille de débordement). */
+        function _spRognerTexteAuCadre(block) {
+            if (!block) return '';
+            const maxH = (typeof block._fixedHeight === 'number')
+                ? (block._fixedHeight * (block.scaleY || 1))
+                : ((typeof block._maxTextHeight === 'number') ? block._maxTextHeight : null);
+            if (!maxH || typeof block.calcTextHeight !== 'function') return '';
+            /* ⚠️ v1.7.579c — CE ROGNAGE DOIT ÊTRE BON MARCHÉ.
+               MESURÉ : une mesure de hauteur d'un bloc de ~3 000 caractères stylés
+               coûte 64 ms (initDimensions sur un texte portant des milliers de
+               styles de caractère). Un rognage mot à mot pouvait donc en faire
+               jusqu'à 30 par bloc, soit ~2 s — assez pour RALLONGER le recoulement
+               d'une chaîne entière. On estime donc la quantité à retirer avec le
+               rapport « caractères par pixel » mesuré sur CE bloc : 2 à 3 mesures
+               suffisent, et la coupure retombe sur le dernier espace. */
+            let retire = '', garde = 0;
+            try {
+                while (garde++ < 8 && block.text && block.calcTextHeight() > maxH + 0.5) {
+                    const t = block.text;
+                    const h = block.calcTextHeight();
+                    const parPixel = (h > 0) ? (t.length / h) : 0;
+                    let aRetirer = Math.max(1, Math.ceil((h - maxH) * parPixel * 1.05));
+                    let coupe = Math.max(0, t.length - aRetirer);
+                    // coupure propre : au dernier espace avant la position estimée
+                    const esp = t.lastIndexOf(' ', coupe);
+                    if (esp > 0) coupe = esp + 1;
+                    if (coupe <= 0 || coupe >= t.length) break;
+                    retire = t.slice(coupe) + retire;
+                    block.text = t.slice(0, coupe);
+                    block._clearCache();
+                    block.initDimensions();
+                }
+                block._clearCache();
+                block.initDimensions();
+            } catch (_) {}
+            return retire;
+        }
+
         /**
          * _redistributeWithStyles(chain, fullText, allStyles)
          * Redistribue le texte avec les styles fusionnés dans les blocs de la chaîne.
@@ -24041,8 +24365,14 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                         .filter(cs => cs.charIdx >= consumedChars && cs.charIdx < consumedChars + head.length)
                         .map(cs => ({ charIdx: cs.charIdx - consumedChars, style: cs.style }));
                     _applyMergedStyles(block, blockStyles);
-                    consumedChars += head.length;
-                    remaining = tail;
+                    /* 🆕 v1.7.579 — le débordement créé par les styles repart au bloc suivant. */
+                    const retire = _spRognerTexteAuCadre(block);
+                    if (retire) {
+                        // les styles des caractères partis n'ont plus de raison d'être
+                        _applyMergedStyles(block, blockStyles.filter(cs => cs.charIdx < block.text.length));
+                    }
+                    consumedChars += block.text.length;
+                    remaining = retire + tail;
                 } else {
                     block.text = remaining;
                     const blockStyles = allStyles
@@ -24150,19 +24480,61 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 }
 
                 // 2. Redistribuer bloc par bloc en préservant les styles
-                _redistributeWithStyles(chain, fullText, allStyles);
-
-                // 3. Mettre à jour badges et flèches
-                chain.forEach((b, i) => {
-                    b.obj._linkOrder = i + 1;
-                    b.obj._chainTotal = chain.length;
-                    addOrUpdateChainBadge(b.obj);
-                });
-                updateLinkArrowsForChain(chain[0].obj);
-                debouncedUpdateLayersPanel();
-            } finally {
+                _spRedistribuerAvecBandeau(chain, fullText, allStyles);
+            } catch (e) {
                 window._spRedistributingChain = false;
+                console.error('[Chaîne] recoulement impossible', e);
             }
+        }
+
+        /* 🆕 v1.7.579 — _SP_BANDEAU_CHAINE_579 : UNE CHAÎNE LONGUE SE DIT.
+           MESURÉ : 124 blocs chaînés → 128 s de gel TOTAL (aucune peinture, aucun
+           clic pris en compte). L'utilisateur, croyant l'application morte, clique :
+           ces clics sont livrés À LA FIN, à l'endroit où se trouve alors le pointeur
+           — c'est ainsi qu'un document importé se retrouve « dézoomé », blocs
+           dispersés, textes invisibles. Le bandeau d'import couvre l'application et
+           avale les clics ; on le pose, puis on rend la main DEUX images pour qu'il
+           soit peint AVANT le travail synchrone (sinon il n'apparaîtrait qu'à la
+           fin, c'est-à-dire jamais).
+           Le garde _spRedistributingChain n'est libéré qu'à la VRAIE fin (dans
+           fin()), sinon un second recoulement pourrait démarrer pendant le premier. */
+        function _spRedistribuerAvecBandeau(chain, fullText, allStyles) {
+            const longue = chain.length > 8;
+            const fin = function () {
+                try {
+                    // 3. Mettre à jour badges et flèches
+                    chain.forEach((b, i) => {
+                        b.obj._linkOrder = i + 1;
+                        b.obj._chainTotal = chain.length;
+                        addOrUpdateChainBadge(b.obj);
+                    });
+                    updateLinkArrowsForChain(chain[0].obj);
+                    debouncedUpdateLayersPanel();
+                } catch (_) {}
+                try { if (typeof _spImpBusyFin === 'function') _spImpBusyFin(); } catch (_) {}
+                window._spRedistributingChain = false;
+            };
+            if (!longue) {
+                try { _redistributeWithStyles(chain, fullText, allStyles); }
+                finally { fin(); }
+                return;
+            }
+            try {
+                _spImpBusy({
+                    nom: translatef('chainBusyName', chain.length),
+                    titre: translate('chainBusyTitle'),
+                    etapes: [translate('chainBusyStep')],
+                    note: translate('chainBusyNote'),
+                    noteLongue: translate('chainBusyLong')
+                });
+                _spImpBusyEtape(0);
+            } catch (_) {}
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    try { _redistributeWithStyles(chain, fullText, allStyles); }
+                    finally { fin(); }
+                });
+            });
         }
 
         /**
@@ -24342,11 +24714,49 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         }
     }
 
-    let best = 0;
+    /* 🆕 v1.7.579 — _SP_FENETRE_579 : POINT DE DÉPART = LA LONGUEUR DÉJÀ EN PLACE.
+       MESURÉ sur une chaîne de 124 blocs (403 123 car.) : 1,1 s PAR BLOC, soit
+       128 s pour la chaîne, l'application gelée tout du long. Le coût n'est PAS la
+       recherche binaire (13 essais bornés) mais la REMONTÉE LINÉAIRE qui la suit
+       (jusqu'à 64 mesures de initDimensions(), ~15 ms chacune).
+       Or on connaît un excellent point de départ : ce que le bloc contient DÉJÀ —
+       il tenait dans son cadre, c'est la composition posée à l'import ou à la
+       retouche précédente. Une seule mesure de cette longueur borne la fenêtre de
+       l'un ou l'autre côté, et une édition de quelques caractères ne déplace la
+       coupure que de quelques caractères : la recherche converge alors en 2 à 5
+       essais au lieu de 77. Le RÉSULTAT est identique (même critère d'arrêt,
+       recherche toujours exacte sur une hauteur monotone). */
+    let _spDepart = 0;
+    /* 🆕 v1.7.579d — _SP_PLANCHER_579d : LA LONGUEUR CONNUE BONNE NE SE PERD JAMAIS.
+       MESURÉ (banc, chaîne de 124 blocs) : certains blocs ressortaient VIDES — « le
+       bloc est en place mais le texte est invisible sur certaines pages », exactement
+       le symptôme signalé. Cause : la fenêtre de recherche était ouverte AU-DESSUS de
+       la longueur déjà en place (départ = longueur + 1) sans garantir qu'elle contient
+       un point valide. Or cette longueur-là vient d'être MESURÉE comme tenant dans le
+       cadre : c'est un PLANCHER certain. Si la fenêtre ne contenait rien qui tienne
+       (bloc déjà plus long que l'estimation, styles plus serrés que prévu), la
+       bissection repartait de zéro et le bloc recevait 0 caractère — texte invisible.
+       On garde donc ce plancher, on l'utilise comme valeur de départ, on élargit la
+       fenêtre si elle est vide, et on ne peut plus descendre en dessous. */
+    let _spPlancher = 0;
+    try {
+        const _lenBloc = String(original || '').length;
+        if (_lenBloc > 0 && _lenBloc < fullText.length) {
+            if (_spMesurerJusqua(_lenBloc) <= maxHeight + 0.5) {
+                _spDepart = _lenBloc + 1;          // la longueur actuelle tient : on part de là
+                _spPlancher = _lenBloc;            // …et on SAIT qu'elle tient
+                if (_spDepart > high) high = Math.min(fullText.length, _spDepart);
+            } else if (_lenBloc < high) {
+                high = _lenBloc;                   // elle ne tient plus : elle borne le haut
+            }
+        }
+    } catch (_) {}
+
+    let best = _spPlancher;
     for (let garde = 0; garde < 6; garde++) {
-        let low = 0;
+        let low = _spDepart;
         let limite = high;
-        let trouve = 0;
+        let trouve = _spPlancher;
         while (low <= limite) {
             const mid = Math.floor((low + limite) / 2);
             const h = _spMesurerJusqua(mid);
@@ -24371,10 +24781,26 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     //   donc 1 a 5 caracteres AVANT le vrai maximum (mesure : 983 au lieu de
     //   987, 19045 au lieu de 19046, 612 au lieu de 614). On remonte
     //   lineairement tant que cela tient : au plus une ligne de texte.
-    let _spMontee = 0;
-    while (best < fullText.length && _spMontee < 64) {
-        if (_spMesurerJusqua(best + 1) <= maxHeight + 0.5) { best++; _spMontee++; }
-        else break;
+    /* 🆕 v1.7.579 — REMONTÉE FINALE : BISSECTION BORNÉE AU LIEU DE 64 MESURES.
+       Cette remontée rattrape les 1 à 5 caractères que la bissection peut manquer
+       (la hauteur progresse par paliers d'une ligne) — mais elle coûtait jusqu'à
+       64 initDimensions(), soit plus de la moitié du gel mesuré. La hauteur étant
+       MONOTONE en fonction du nombre de caractères, une bissection dans
+       [best, best + 64] donne exactement le même résultat en 7 mesures au plus. */
+    if (best < fullText.length) {
+        const _hautMontee = Math.min(fullText.length, best + 64);
+        try {
+            if (_spMesurerJusqua(_hautMontee) <= maxHeight + 0.5) {
+                best = _hautMontee;
+            } else {
+                let _lo = best + 1, _hi = _hautMontee;
+                while (_lo <= _hi) {
+                    const _m = Math.floor((_lo + _hi) / 2);
+                    if (_spMesurerJusqua(_m) <= maxHeight + 0.5) { best = _m; _lo = _m + 1; }
+                    else { _hi = _m - 1; }
+                }
+            }
+        } catch (_) {}
     }
     // ✅ FIX InDesign-style: Snap to word boundary (never split mid-word)
     if (best > 0 && best < fullText.length) {
@@ -24393,6 +24819,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             }
         }
     }
+    /* 🆕 v1.7.579d — le repli sur la frontière de mot ne doit jamais faire
+       disparaître du texte qui tenait déjà : le plancher est réappliqué ici. */
+    if (best < _spPlancher) best = _spPlancher;
     textbox.text = original;
     textbox.width = originalWidth;
     textbox.height = originalHeight;
@@ -27998,7 +28427,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     const visited = new Set();
     let current = textObj;
     let iterations = 0;
-    const MAX_ITERATIONS = 100; // Protection contre boucles infinies
+    /* 🆕 v1.7.579 — 100 → 2000 (même raison : remonter une chaîne de 124 blocs
+       jusqu'à sa tête était impossible au-delà du 100e). */
+    const MAX_ITERATIONS = 2000; // Protection contre boucles infinies
     
     // Chercher si ce bloc est la cible d'un autre bloc
     while (iterations < MAX_ITERATIONS) {
@@ -28051,7 +28482,14 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     const chain = [firstBlock];
     let current = firstBlock;
     let iterations = 0;
-    const MAX_CHAIN_LENGTH = 100; // Protection contre chaînes infinies
+    /* 🆕 v1.7.579 — 100 → 2000. MESURÉ : sur un .docx de 124 pages importé en
+       « Texte coulé », la chaîne fait 124 blocs ; la marche s'arrêtait au 100e
+       (« ❌ Chaîne de texte trop longue »), et le recoulement versait alors TOUT le
+       texte restant (20 101 caractères mesurés) dans le 101e bloc — dont 4 828 px
+       de contenu pour un cadre de 751 px, donc masqué. La protection contre les
+       chaînes infinies ne vient pas de ce plafond mais du contrôle de cycle
+       ci-dessous (chain.some(...)). */
+    const MAX_CHAIN_LENGTH = 2000; // Protection contre chaînes infinies
     
     // Suivre la chaîne jusqu'au bout
     while (current && current.obj && current.obj.textLinkId && iterations < MAX_CHAIN_LENGTH) {
@@ -34979,13 +35417,150 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         updateColorInfo();
     });
 
+    /* ══════════════════════════════════════════════════════════════════════
+       🆕 v1.7.580c — TYPOGRAPHIE MULTI-SÉLECTION (demande utilisateur).
+       Sélectionner plusieurs blocs texte puis régler police / corps / graisse /
+       interligne / interlettrage / couleur dans la sidebar applique désormais le
+       réglage à TOUS les blocs. Le relais est posé sur l'activeSelection : les
+       gestionnaires du panneau continuent d'écrire sur un seul objet, et chaque
+       set() typographique est rejoué sur les autres blocs.
+       ⚠️ WHITELIST : seules les propriétés typographiques passent. left/top/angle/
+       scaleX/scaleY sont IGNORÉS (sinon tous les blocs se colleraient l'un sur
+       l'autre). L'état de la sélection est relu à CHAQUE appel : aucune liste
+       périmée, donc jamais de bloc fantôme.
+       ══════════════════════════════════════════════════════════════════════ */
+    (function () {
+        const C = {
+            fontFamily: 1, fontSize: 1, fontWeight: 1, fontStyle: 1, underline: 1,
+            linethrough: 1, overline: 1, charSpacing: 1, lineHeight: 1, textAlign: 1,
+            fill: 1, textBackgroundColor: 1, textDecoration: 1,
+            backgroundColor: 1, stroke: 1, strokeWidth: 1, _spFrameStroke: 1,
+            _spIndentLeft: 1, _spIndentRight: 1, _spFirstLineIndent: 1,
+            _spVAlign: 1, _spFramed: 1
+        };
+
+        window._spBlocsTexteSelection = function (cible) {
+            if (!cible) return [];
+            let sel = cible;
+            if (typeof cible.getActiveObject === 'function') sel = cible.getActiveObject();
+            if (!sel) return [];
+            const est = function (o) {
+                return !!o && (o.type === 'textbox' || o.type === 'text' || o.type === 'i-text');
+            };
+            if (sel.type === 'activeSelection' || sel.type === 'ActiveSelection') {
+                return (sel._objects || []).filter(est);
+            }
+            return est(sel) ? [sel] : [];
+        };
+
+        window._spEstBlocTexteAccepte = function (o) {
+            if (!o) return false;
+            if (o.type === 'textbox' || o.type === 'text' || o.type === 'i-text') return true;
+            if (o.type === 'activeSelection' || o.type === 'ActiveSelection') {
+                return window._spBlocsTexteSelection(o).length > 0;
+            }
+            return false;
+        };
+
+        /* Applique À UN BLOC, en préservant ses dimensions fixes (sinon, comme le
+           montre applyCrossBlockStyle, un bloc à cadre se remet à grandir). */
+        window._spAppliquerTypo580c = function (b, props) {
+            if (!b || !props) return false;
+            try {
+                const fw = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(b) : (b._fixedWidth || b.width);
+                const fh = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(b) : (b._fixedHeight || b.height);
+                b.set(props);
+                b.dirty = true;
+                try {
+                    const rw = (typeof spForceInlineStyleRewrap === 'function') ? spForceInlineStyleRewrap
+                        : (typeof window.spForceInlineStyleRewrap === 'function' ? window.spForceInlineStyleRewrap : null);
+                    if (rw) rw(b);
+                } catch (_) {}
+                try {
+                    const pg = (typeof propagateBaseStyleToChain === 'function') ? propagateBaseStyleToChain
+                        : (typeof window.propagateBaseStyleToChain === 'function' ? window.propagateBaseStyleToChain : null);
+                    if (pg) pg(b, props);
+                } catch (_) {}
+                if (typeof fw === 'number' && fw > 0) { b._fixedWidth = fw; b.width = fw; }
+                if (typeof fh === 'number' && fh > 0) { b._fixedHeight = fh; b.height = fh; }
+                try {
+                    const cp = (typeof applyTextboxClipPath === 'function') ? applyTextboxClipPath
+                        : (typeof window.applyTextboxClipPath === 'function' ? window.applyTextboxClipPath : null);
+                    if (cp) cp(b);
+                } catch (_) {}
+                try { b.setCoords(); } catch (_) {}
+                if (b.canvas) {
+                    const sr = (typeof scheduleRender === 'function') ? scheduleRender
+                        : (typeof window.scheduleRender === 'function' ? window.scheduleRender : null);
+                    if (sr) sr(b.canvas);
+                }
+                return true;
+            } catch (_) { return false; }
+        };
+
+        /* Relais typographique sur l'activeSelection. */
+        window._spInstallerRelaisTypo = function (sel) {
+            if (!sel || sel.__spRelaisTypo580c) return;
+            const _set0 = sel.set;
+            if (typeof _set0 !== 'function') return;
+            const _self = sel;
+            sel.set = function (cle, valeur) {
+                const r = _set0.apply(this, arguments);
+                try {
+                    const blocs = window._spBlocsTexteSelection(this);
+                    if (blocs.length > 1) {
+                        let props = null;
+                        if (cle && typeof cle === 'object') props = cle;
+                        else if (typeof cle === 'string') { props = {}; props[cle] = valeur; }
+                        if (props) {
+                            const f = {};
+                            Object.keys(props).forEach(function (k) { if (C[k]) f[k] = props[k]; });
+                            if (Object.keys(f).length) {
+                                blocs.forEach(function (b) {
+                                    if (b !== _self) window._spAppliquerTypo580c(b, f);
+                                });
+                                if (window._crossBlockSel && window._crossBlockSel.chain && window._crossBlockSel.chain.length >= 2) {
+                                    /* une sélection cross-block est active : elle a déjà reçu
+                                       le style via applyCrossBlockStyle, on ne double pas. */
+                                }
+                            }
+                        }
+                    }
+                } catch (_) {}
+                return r;
+            };
+            sel.__spRelaisTypo580c = true;
+        };
+
+        /* B / I / U / S / surligné sur plusieurs blocs : l'état est lu sur
+           l'ENSEMBLE (tout gras → on dégraisse tout, sinon on graisse tout). */
+        window._spStyleMultiSelection = function (cvs, blocs, style, value) {
+            if (!blocs || blocs.length < 2) return 0;
+            const estBold = function (b) { return /^(700|800|900|bold)$/i.test(String(b.fontWeight || '400')); };
+            const estItalic = function (b) { return String(b.fontStyle || 'normal') === 'italic'; };
+            const props = {};
+            switch (style) {
+                case 'bold': props.fontWeight = blocs.every(estBold) ? '400' : '700'; break;
+                case 'italic': props.fontStyle = blocs.every(estItalic) ? 'normal' : 'italic'; break;
+                case 'underline': props.underline = !blocs.every(function (b) { return !!b.underline; }); break;
+                case 'strikethrough': props.linethrough = !blocs.every(function (b) { return !!b.linethrough; }); break;
+                case 'overline': props.overline = !blocs.every(function (b) { return !!b.overline; }); break;
+                default: if (style) props[style] = value;
+            }
+            let n = 0;
+            blocs.forEach(function (b) { if (window._spAppliquerTypo580c(b, props)) n++; });
+            if (n) { try { cvs.requestRenderAll(); } catch (_) {} }
+            return n;
+        };
+    })();
+
     // Typography controls ULTRA-OPTIMISÉS
     document.getElementById('fontFamily').addEventListener('change', function() {
         const startTime = performance.now();
         const activeCanvas = getActiveCanvas();
         if (!activeCanvas) return;
         const obj = activeCanvas.getActiveObject();
-        if (obj && (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text')) {
+        if (obj && window._spEstBlocTexteAccepte(obj)) {
             const fontFamily = this.value;
 
             // 🆕 v1.7.176 — Pour les IText avec path (texte autour/sur tracé),
@@ -35238,10 +35813,10 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             return;
         }
         // 🆕 v1.7.174 — Accepter aussi les IText (texte autour/sur path)
-        if (!(obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text')) {
+        if (!window._spEstBlocTexteAccepte(obj)) {
             return;
         }
-        if (obj && (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text')) {
+        if (obj && window._spEstBlocTexteAccepte(obj)) {
             // 🆕 v1.7.176 — Pour les IText avec path, appliquer directement
             if (obj._isCtxPathText || obj.path) {
                 var pathNewSize = parseFloat(this.value);
@@ -35492,7 +36067,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         const activeCanvas = getActiveCanvas();
         if (!activeCanvas) return;
         const obj = activeCanvas.getActiveObject();
-        if (obj && (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text')) {
+        if (obj && window._spEstBlocTexteAccepte(obj)) {
             // 🆕 v1.7.176 — Pour les IText avec path, appliquer directement
             if (obj._isCtxPathText || obj.path) {
                 obj.set({ fontWeight: this.value, dirty: true });
@@ -35740,7 +36315,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const activeCanvas = getActiveCanvas();
             if (!activeCanvas) return;
             const obj = activeCanvas.getActiveObject();
-            if (obj && (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text')) {
+            if (obj && window._spEstBlocTexteAccepte(obj)) {
                 // 🆕 v1.7.176 — Pour les IText avec path, appliquer directement
                 if (obj._isCtxPathText || obj.path) {
                     var pathLineHeightPt = Math.max(1, parseFloat(this.value) || 16);
@@ -35984,7 +36559,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         // multi-blocs (activeSelection) ni de cross-block ici, sinon ça écraserait
         // le tracking de l'ensemble du bloc.
 
-        if (obj && (obj.type === 'textbox' || obj.type === 'text')) {
+        if (obj && window._spEstBlocTexteAccepte(obj)) {
             const __rawCs = parseInt(document.getElementById('charSpacing').value, 10);
             const charSpacing = Number.isFinite(__rawCs) ? __rawCs : 0;
             
@@ -36085,7 +36660,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const activeCanvas = getActiveCanvas();
             if (!activeCanvas) return;
             const obj = activeCanvas.getActiveObject();
-            if (!obj || (obj.type !== 'textbox' && obj.type !== 'text')) return;
+            if (!window._spEstBlocTexteAccepte(obj)) return;
 
             const indentLeft = parseFloat(document.getElementById('indentLeft').value) || 0;
             const indentRight = parseFloat(document.getElementById('indentRight').value) || 0;
@@ -36156,7 +36731,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         const activeCanvas = getActiveCanvas();
         if (!activeCanvas) return;
         const obj = activeCanvas.getActiveObject();
-        if (obj && (obj.type === 'textbox' || obj.type === 'text')) {
+        if (obj && window._spEstBlocTexteAccepte(obj)) {
             const scalePercent = parseInt(this.value);
             const scaleValue = scalePercent / 100;
             
@@ -36219,7 +36794,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         const activeCanvas = getActiveCanvas();
         if (!activeCanvas) return;
         let obj = activeCanvas.getActiveObject();
-        if (obj && (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text')) {
+        if (obj && window._spEstBlocTexteAccepte(obj)) {
             // 🔗 Cross-block: appliquer la couleur à tous les blocs sélectionnés
             if (_crossBlockSel && _crossBlockSel.chain && _crossBlockSel.chain.length >= 2) {
                 const color = this.value;
@@ -36284,11 +36859,27 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             return;
         }
         applyTextStyleToSelection('bold');
-        if (obj) {
-            // Force refresh
-            obj._clearCache(); obj._fontSizeMult = 1; obj.initDimensions(); obj.setCoords();
+        /* 🆕 v1.7.580d — MULTI-SÉLECTION : sur une sélection multiple obj est un
+           activeSelection et n'a pas _clearCache() → TypeError mesurée ici.
+           On rafraîchit donc chacun des blocs TEXTE de la sélection. */
+        const _spGras580d = (typeof window._spBlocsTexteSelection === 'function')
+            ? window._spBlocsTexteSelection(activeCanvas) : [];
+        const _spCibles580d = _spGras580d.length ? _spGras580d : (obj ? [obj] : []);
+        const _spRafraichir580d = function (b) {
+            try {
+                if (b && typeof b._clearCache === 'function') {
+                    b._clearCache(); b._fontSizeMult = 1; b.initDimensions(); b.setCoords();
+                }
+            } catch (_) {}
+        };
+        if (_spCibles580d.length) {
+            _spCibles580d.forEach(_spRafraichir580d);
             activeCanvas.requestRenderAll();
-            setTimeout(() => { obj._clearCache(); activeCanvas.requestRenderAll(); debouncedCheckTextOverflow(activeCanvas); }, 20);
+            setTimeout(() => {
+                _spCibles580d.forEach(_spRafraichir580d);
+                activeCanvas.requestRenderAll();
+                try { debouncedCheckTextOverflow(activeCanvas); } catch (_) {}
+            }, 20);
         }
         saveState('Style gras');
     });
@@ -36684,7 +37275,10 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const activeCanvas = getActiveCanvas();
             if (!activeCanvas) return;
             const obj = activeCanvas.getActiveObject();
-            if (obj && (obj.type === 'textbox' || obj.type === 'text')) {
+            /* 🆕 v1.7.580d — l'alignement marche aussi sur PLUSIEURS blocs sélectionnés :
+               window._spEstBlocTexteAccepte() accepte un activeSelection, le relais
+               typographique (v1.7.580c) pose textAlign sur tous les blocs. */
+            if (obj && window._spEstBlocTexteAccepte(obj)) {
                 let align = btn.dataset.textAlign;
                 
                 // Convertir justify-left en justify-left pour Fabric.js
@@ -36708,8 +37302,14 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 btn.classList.add('active');
                 
                 // Forcer le recalcul complet des dimensions SANS perdre textAlign
-                obj._clearCache();
-                obj.initDimensions();
+                /* 🆕 v1.7.580d — obj peut être un activeSelection (multi-sélection) :
+                   il n'a pas _clearCache(). Les autres blocs ont déjà reçu l'alignement
+                   via le relais typographique, on ne rafraîchit que les vrais blocs. */
+                const _spBlocsAlign580d = (typeof obj._clearCache === 'function') ? [obj]
+                    : ((typeof window._spBlocsTexteSelection === 'function') ? window._spBlocsTexteSelection(activeCanvas) : []);
+                _spBlocsAlign580d.forEach(function (b) {
+                    try { b._clearCache(); b.initDimensions(); } catch (_) {}
+                });
                 
                 // ✨ RESTAURER dimensions fixes après initDimensions
                 obj._fixedWidth = fixedW;
@@ -36718,10 +37318,15 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 obj.height = fixedH;
                 
                 obj.setCoords();
-                
+
                 // 🔒 Appliquer le wrap tout en préservant textAlign
-                try { spEnsureTextboxWrapWithinWidth(obj); } catch (_) {}
-                try { applyTextboxClipPath(obj); } catch (_) {}
+                /* 🆕 v1.7.580d — jamais sur l'activeSelection elle-même : poser un
+                   clipPath sur la sélection masquerait les blocs hors du cadre.
+                   Le relais typographique a déjà traité chaque bloc. */
+                if (typeof obj._clearCache === 'function') {
+                    try { spEnsureTextboxWrapWithinWidth(obj); } catch (_) {}
+                    try { applyTextboxClipPath(obj); } catch (_) {}
+                }
                 
                 activeCanvas.requestRenderAll();
                 
@@ -37374,6 +37979,27 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         });
     }
 
+    /* 🆕 v1.7.579 — DÉMARRAGE DU BANDEAU D'IMPORT (libellés traduits ici :
+       translate() vit dans cette portée, le bandeau tout en haut du fichier). */
+    function _spImpBusyDemarrer(nom, cles) {
+        try {
+            _spImpBusy({
+                nom: nom || '',
+                titre: translate('impBusyTitle'),
+                etapes: (cles || []).map(function (c) { return translate(c); }),
+                note: translate('impBusyNote'),
+                noteLongue: translate('impBusyLong')
+            });
+        } catch (e) { console.warn('[Import] bandeau indisponible', e); }
+    }
+    /* Deux images avant une composition SYNCHRONE : sans cette pause, le
+       navigateur ne peint pas l'étape et l'utilisateur croit que rien ne bouge. */
+    function _spImpPause() {
+        return new Promise(function (r) {
+            requestAnimationFrame(function () { requestAnimationFrame(function () { r(); }); });
+        });
+    }
+
     // ── Dialog réutilisable : choisir la page d'insertion ──
     function askInsertAtPage() {
         return new Promise((resolve) => {
@@ -37426,7 +38052,22 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             // Croix de la DA (meme comportement que les autres pop-in SuperPrint).
             const _closeBtn = document.getElementById('_askInsertClose');
             if (_closeBtn) _closeBtn.addEventListener('click', () => { cleanup(); resolve(null); });
-            overlay.addEventListener('click', (ev) => { if (ev.target === overlay) { cleanup(); resolve(null); } });
+            /* 🆕 v1.7.579 — CE CLIC N'ANNULE PLUS L'IMPORT.
+               MESURÉ : c'était LA cause du « je clique à côté de la pop-in et ça
+               coupe tout ». Le fond continue de couvrir l'application (on ne peut
+               rien y faire), mais il n'abandonne plus la conversion en cours :
+               seuls « Insérer », « Annuler » et ✕ décident. */
+            overlay.addEventListener('click', (ev) => {
+                if (ev.target === overlay) {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    try {
+                        card.classList.remove('sp-nudge');
+                        void card.offsetWidth;
+                        card.classList.add('sp-nudge');
+                    } catch (_) {}
+                }
+            });
             inp.addEventListener('keydown', (ev) => {
                 if (ev.key === 'Enter') { document.getElementById('_askInsertOk').click(); }
                 if (ev.key === 'Escape') { document.getElementById('_askInsertCancel').click(); }
@@ -37458,7 +38099,11 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             return new fabric.Textbox(text || "", {
                 left: 0, top: 0, width: width,
                 fontSize: fontSize,
-                fontFamily: "IBM Plex Sans",
+                /* ⏱ v1.7.580b — IMPORT WORD : Open Sans partout (demande utilisateur).
+                   MESURÉ : l'import composait en « IBM Plex Sans », police absente du
+                   menu Police de l'app, alors qu'Open Sans est le défaut des blocs
+                   créés à la main. */
+                fontFamily: "Open Sans",
                 fontWeight: isBold ? "bold" : "normal",
                 fontStyle: isItalic ? "italic" : "",
                 fill: "#000",
@@ -38271,7 +38916,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         function measureTextHeight(text, fontSize, isBold, width) {
             const tb = new fabric.Textbox(text, {
                 left: 0, top: 0, width: width, fontSize,
-                fontFamily: 'IBM Plex Sans', fontWeight: isBold ? 'bold' : 'normal',
+                fontFamily: 'Open Sans', fontWeight: isBold ? 'bold' : 'normal',
                 splitByGrapheme: false, breakWords: true
             });
             return tb.height || Math.ceil(fontSize * 1.35);
@@ -38393,7 +39038,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     // première partie
                     const tb1 = new fabric.Textbox(parts.first, {
                         left: currentX(), top: cursorY, width: colWidth,
-                        fontSize, fontFamily: 'IBM Plex Sans', fontWeight: isBold ? 'bold' : 'normal',
+                        fontSize, fontFamily: 'Open Sans', fontWeight: isBold ? 'bold' : 'normal',
                         fontStyle: fontStyleVal,
                         fill: '#000', splitByGrapheme: false, breakWords: true, textAlign
                     });
@@ -38407,7 +39052,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         const more = splitTextToFit(rest, fontSize, isBold, colWidth, remaining);
                         const tb = new fabric.Textbox(more.first, {
                             left: currentX(), top: cursorY, width: colWidth,
-                            fontSize, fontFamily: 'IBM Plex Sans', fontWeight: isBold ? 'bold' : 'normal',
+                            fontSize, fontFamily: 'Open Sans', fontWeight: isBold ? 'bold' : 'normal',
                             fontStyle: fontStyleVal,
                             fill: '#000', splitByGrapheme: false, breakWords: true, textAlign
                         });
@@ -38431,7 +39076,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 const _stylesRuns = _tbAvant.styles;
                 const tb = new fabric.Textbox(applySoftHyphenation(text), {
                     left: currentX(), top: cursorY, width: colWidth,
-                    fontSize, fontFamily: 'IBM Plex Sans', fontWeight: isBold ? 'bold' : 'normal',
+                    fontSize, fontFamily: 'Open Sans', fontWeight: isBold ? 'bold' : 'normal',
                     fontStyle: fontStyleVal,
                     // v1.7.406 — les titres se serrent (1,05), le corps reste a 1,35.
                     lineHeight: _isTitre ? 1.05 : 1.35,
@@ -38490,6 +39135,38 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const noBtn = document.getElementById('wordOptCancel');
             const closeBtn = document.getElementById('closeWordOptions');
             modal.style.display = '';
+            /* 🆕 v1.7.579 — FOND MODAL SOUS LA POP-IN D'OPTIONS.
+               MESURÉ : le carton flottait seul au-dessus de l'application ; un clic
+               à côté tombait sur la page et l'on ne savait plus si l'import
+               attendait une réponse. Le fond couvre l'application et avale les
+               clics : il ne ferme JAMAIS l'import (seuls « Importer », « Annuler »
+               et ✕ le font), il fait simplement clignoter le carton pour dire
+               « c'est ici que ça se passe ». Posé JUSTE AVANT la pop-in, dans le
+               même parent : il reste donc sous elle quel que soit l'empilement. */
+            try { _spImpBusyCss(); } catch (_) {}
+            const _voilePrec = document.getElementById('spImportVoile');
+            if (_voilePrec && _voilePrec.parentNode) _voilePrec.parentNode.removeChild(_voilePrec);
+            const _voile = document.createElement('div');
+            _voile.id = 'spImportVoile';
+            _voile.style.cssText = 'position:fixed;inset:0;z-index:10003;background:rgba(0,0,0,0.5);';
+            const _relance = function () {
+                /* Garde-fou : si la pop-in a disparu par un autre chemin, le fond se
+                   retire de lui-même — il ne doit jamais rester collé à l'écran. */
+                if (!document.body.contains(modal) || modal.style.display === 'none') {
+                    if (_voile.parentNode) _voile.parentNode.removeChild(_voile);
+                    return;
+                }
+                try {
+                    modal.classList.remove('sp-nudge');
+                    void modal.offsetWidth;
+                    modal.classList.add('sp-nudge');
+                    if (okBtn) okBtn.focus();
+                } catch (_) {}
+            };
+            _voile.addEventListener('mousedown', function (e) { e.stopPropagation(); e.preventDefault(); _relance(); });
+            _voile.addEventListener('click', function (e) { e.stopPropagation(); e.preventDefault(); });
+            if (modal.parentNode) modal.parentNode.insertBefore(_voile, modal);
+            else (document.body || document.documentElement).appendChild(_voile);
             let fini = false;
             // 🆕 v1.7.405 — aide contextuelle du mode de composition.
             //   "Texte coulé" n'a d'intérêt qu'à partir de quelques pages :
@@ -38511,6 +39188,9 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             })();
             function nettoyer() {
                 modal.style.display = 'none';
+                /* 🆕 v1.7.579 — le fond modal part avec la pop-in (jamais avant). */
+                const _v = document.getElementById('spImportVoile');
+                if (_v && _v.parentNode) _v.parentNode.removeChild(_v);
                 okBtn.removeEventListener('click', valider);
                 noBtn.removeEventListener('click', annuler);
                 if (closeBtn) closeBtn.removeEventListener('click', annuler);
@@ -38577,9 +39257,12 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             const _pageImposee = (opts && typeof opts._startPage === 'number') ? opts._startPage : null;
             return Promise.resolve(_pageImposee !== null ? _pageImposee : askInsertAtPage()).then(startPage => {
                 if (startPage === null) return null;            // annule
+                /* 🆕 v1.7.579 — le bandeau d'import : le fichier est nommé, les trois
+                   étapes défilent, le fond couvre l'app (impossible de couper ça). */
+                _spImpBusyDemarrer(file && file.name, ['impStepLire', 'impStepAnalyser', 'impStepComposer']);
                 return new Promise((resolve) => {
                     ensureDocxLibs(() => {
-                        if (!window.mammoth) { alert(translate('alertMammothNotAvailable')); resolve(null); return; }
+                        if (!window.mammoth) { _spImpBusyFin(); alert(translate('alertMammothNotAvailable')); resolve(null); return; }
                         const reader = new FileReader();
                         reader.onload = function(ev) {
                             const arrayBuffer = ev.target.result;
@@ -38607,13 +39290,27 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                                 .then(function () { return _spWordImageSizesMM(arrayBuffer); })
                                 .then(function (sz) { if (sz && sz.length) _opts569._imgSizesMM = sz; })
                                 .catch(function () {})
-                                .then(function () { return mammoth.convertToHtml({ arrayBuffer }, options); })
+                                /* v1.7.579 — étape 2 : l'analyse de la mise en forme. */
+                                .then(function () { _spImpBusyEtape(1); return mammoth.convertToHtml({ arrayBuffer }, options); })
                                 .then(function () {
                                     if (!_ast569) throw new Error('AST Word indisponible');
                                     return _spAstVersHtml(_ast569);
                                 })
-                                .then(function (html) { flowHtmlIntoPages(html, startPage, _opts569); resolve(true); })
-                                .catch(err => { console.error('DOCX import error', err); alert(translatef('alertDocxImportError', err.message || err)); resolve(null); });
+                                .then(function (html) {
+                                    _spImpBusyEtape(2);
+                                    /* v1.7.579 — pause d'une image : la composition qui
+                                       suit est SYNCHRONE. Sans elle, l'étape 2 ne
+                                       s'afficherait jamais (le navigateur ne peint pas
+                                       pendant un travail synchrone). */
+                                    return _spImpPause().then(function () {
+                                        flowHtmlIntoPages(html, startPage, _opts569);
+                                        resolve(true);
+                                    });
+                                })
+                                .catch(err => { console.error('DOCX import error', err); alert(translatef('alertDocxImportError', err.message || err)); resolve(null); })
+                                /* Le bandeau se retire dans TOUS les cas (succès, erreur,
+                                   annulation) : .then après .catch passe par les deux. */
+                                .then(function (r) { _spImpBusyFin(); return r; });
                         };
                         reader.readAsArrayBuffer(file);
                     });
@@ -38804,7 +39501,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         async function _spImportNouveauDocument(format, marges) {
             try {
                 /* _SP_DLG_574 : question SuperPrint (avant : boîte native du navigateur). */
-                if (!await window.spConfirm(translate('impDestConfirmNew'), { type: 'info', ok: 'Nouveau document' })) return false;
+                if (!await window.spConfirm(translate('impDestConfirmNew'), { type: 'info', ok: 'Nouveau document', horsClique: true })) return false;
             } catch (_) {}
             var sp = null;
             try { sp = window.saveProjectSP_toObject(); } catch (_) { sp = null; }
@@ -38969,14 +39666,18 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             askWordOptions(true).then(async function (xOpts) {
                 if (!xOpts) { e.target.value = ''; return; }         // annulé
                 var _continue = function (startPage) {
+                    /* 🆕 v1.7.579 — même bandeau que Word (le classeur est nommé, et
+                       l'on dit ce qui se passe : lecture, classeur, composition). */
+                    _spImpBusyDemarrer(file && file.name, ['impStepLire', 'impStepClasseur', 'impStepComposer']);
                     ensureXlsxLibs(() => {
-                        if (!window.XLSX) return;
+                        if (!window.XLSX) { _spImpBusyFin(); return; }
                         const reader = new FileReader();
                         reader.onload = function(ev) {
                             try {
                                 /* MESURÉ : avec cellDates:true, SheetJS renvoyait des objets
                                    Date et String(date) donnait « 2026-03-15 ». Sans cellDates,
                                    raw:false applique le masque du tableur (dd/mm/yyyy). */
+                                _spImpBusyEtape(1);
                                 const wb = window.XLSX.read(ev.target.result, { type: 'array' });
                                 const html = [];
                                 const noms = (wb.SheetNames || []).slice(0, xOpts.feuilles === 'premiere' ? 1 : undefined);
@@ -39007,12 +39708,19 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                                 });
                                 /* MESURÉ : l'ancien garde ne se déclenchait JAMAIS (html
                                    contenait déjà les balises). On compte les cellules. */
-                                if (html.length === 0) { alert(translate('alertXlsxEmpty')); return; }
+                                if (html.length === 0) { _spImpBusyFin(); alert(translate('alertXlsxEmpty')); return; }
                                 const optsFlux = Object.assign({}, xOpts);
                                 delete optsFlux.dest;
-                                flowHtmlIntoPages(html.join(''), startPage, optsFlux);
+                                _spImpBusyEtape(2);
+                                /* v1.7.579 — pause d'une image avant la composition
+                                   synchrone, puis retrait du bandeau dans tous les cas. */
+                                _spImpPause().then(function () {
+                                    try { flowHtmlIntoPages(html.join(''), startPage, optsFlux); }
+                                    finally { _spImpBusyFin(); }
+                                });
                             } catch (err) {
                                 console.error('XLSX import error', err);
+                                _spImpBusyFin();
                                 alert(translatef('alertXlsxImportError', err.message || err));
                             }
                         };
@@ -58972,6 +59680,16 @@ function applyTextStyleToSelection(style, value) {
     if (!obj) {
         return;
     }
+    /* 🆕 v1.7.580c — MULTI-SÉLECTION : B / I / U / S / surligné sur TOUS les blocs
+       texte sélectionnés (l'état est lu sur l'ensemble, pas sur un seul bloc). */
+    if (typeof window._spBlocsTexteSelection === 'function') {
+        const _spM580c = window._spBlocsTexteSelection(activeCanvas);
+        if (_spM580c.length > 1 && typeof window._spStyleMultiSelection === 'function') {
+            const n = window._spStyleMultiSelection(activeCanvas, _spM580c, style, value);
+            if (n > 0) { try { saveState('Style appliqué à ' + _spM580c.length + ' blocs'); } catch (_) {} }
+            return;
+        }
+    }
     if (obj.type !== 'textbox' && obj.type !== 'text' && obj.type !== 'i-text') {
         return;
     }
@@ -60319,8 +61037,11 @@ function alignSelectedObjects(direction) {
     // OpenRouter — modèles 100% GRATUITS (suffixe :free) vérifiés par tests réels.
     // Nemotron 3 Super 120B et MiniMax M2.7 ont produit un JSON valide 8/8 pages (2026-08-29).
     // ❌ Retirés (non fiables) : Gemma 4 31B, Inkling Small, MiniMax M3, GLM 5.2.
+    // ❌ Retirés le 2026-09-28 (échecs réels remontés par un utilisateur) :
+    //    Inkling 975B (réservé aux harnais agentiques), Gemma 4 26B A4B
+    //    (« Provider returned error »), MiniMax M2.7 (n'existe plus sur OpenRouter).
     // ⚠️ Synchronisé avec le studio SP213 (OPENROUTER_MODELS).
-    openrouter: ['nvidia/nemotron-3-super-120b-a12b:free', 'minimax/minimax-m2.7:free', 'google/gemma-4-26b-a4b-it:free', 'nvidia/nemotron-3-ultra-550b-a55b:free', 'thinkingmachines/inkling:free'],
+    openrouter: ['nvidia/nemotron-3-super-120b-a12b:free', 'qwen/qwen3.8-27b:free', 'nvidia/nemotron-3-ultra-550b-a55b:free'],
     // Groq — inférence cloud ultra-rapide. ⚠️ Plafond réel 8 192 tokens en sortie.
     // ⚠️ Synchronisé avec le studio SP213 (GROQ_MODELS).
     groq: ['qwen/qwen3.8-27b', 'qwen/qwen3.6-27b', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'groq/compound'],
@@ -60345,10 +61066,8 @@ function alignSelectedObjects(direction) {
         // Libellés lisibles pour le menu déroulant (id technique → nom clair).
         const AI_MODEL_LABELS = {
             'nvidia/nemotron-3-super-120b-a12b:free': 'Nemotron 3 Super 120B ⭐ — recommandé (JSON 8/8 pages)',
-            'minimax/minimax-m2.7:free': 'MiniMax M2.7 — polyvalent (JSON 8/8 pages)',
-            'google/gemma-4-26b-a4b-it:free': 'Gemma 4 26B A4B — rapide',
+            'qwen/qwen3.8-27b:free': 'Qwen3.8 27B — nouveau (262k contexte, sortie 235k)',
             'nvidia/nemotron-3-ultra-550b-a55b:free': 'Nemotron 3 Ultra 550B — très puissant, lent',
-            'thinkingmachines/inkling:free': 'Inkling 975B — généraliste, long contexte',
             'qwen/qwen3.8-27b': 'Qwen 3.8 27B — recommandé (Groq, rapide)',
             'qwen/qwen3.6-27b': 'Qwen 3.6 27B — qualité',
             'openai/gpt-oss-120b': 'OpenAI GPT-OSS 120B — puissant',
@@ -62513,7 +63232,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         }
     } else if (provider === 'openrouter') {
         // OpenRouter — API OpenAI-compatible. Modèles 100% GRATUITS (:free),
-        // vérifiés par tests réels (Nemotron 3 Super 120B, MiniMax M2.7 → JSON 8/8 pages).
+        // vérifiés par tests réels (Nemotron 3 Super 120B → JSON 8/8 pages).
         const messages = [];
         if (systemPrompt) {
             messages.push({ role: 'system', content: systemPrompt });
@@ -62735,7 +63454,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
         // Construit un fabric.Object depuis un élément IA (px)
         // 🆕 Normalisation des polices (alignée sur le studio SP213) : mappe les
         //   variantes/synonymes vers les polices self-hosted disponibles.
-        const APP_FONT_NAMES = ['Bebas Neue', 'Playfair Display', 'Montserrat', 'Poppins', 'Open Sans', 'IBM Plex Sans', 'Roboto', 'Lato', 'Noto Sans JP', 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Space Mono'];
+        const APP_FONT_NAMES = ['Bebas Neue', 'Playfair Display', 'Times', 'Montserrat', 'Poppins', 'Open Sans', 'IBM Plex Sans', 'Roboto', 'Lato', 'Noto Sans JP', 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Space Mono'];
         const APP_FONT_SYNONYMS = {
             'opensans': 'Open Sans', 'open-sans': 'Open Sans', 'open sans': 'Open Sans',
             'inter': 'Open Sans', 'arial': 'Open Sans', 'helvetica': 'Open Sans',
@@ -62745,6 +63464,7 @@ remplace pas la richesse de contenu : les deux vont ensemble.
             'bebas': 'Bebas Neue', 'bebasneue': 'Bebas Neue', 'bebas-neue': 'Bebas Neue',
             'roboto': 'Roboto',
             'lato': 'Lato',
+            'times': 'Times', 'times new roman': 'Times', 'timesnewroman': 'Times', 'times-new-roman': 'Times', 'tinos': 'Times',
             'ibm plex sans': 'IBM Plex Sans', 'ibmplexsans': 'IBM Plex Sans', 'ibm-plex-sans': 'IBM Plex Sans',
             'ibm plex mono': 'IBM Plex Mono', 'ibmplexmono': 'IBM Plex Mono', 'ibm-plex-mono': 'IBM Plex Mono',
             'jetbrains mono': 'JetBrains Mono', 'jetbrainsmono': 'JetBrains Mono', 'jetbrains-mono': 'JetBrains Mono',
@@ -63648,7 +64368,7 @@ Tu es l'assistant IA de SUPERPRINT, un logiciel de PAO (Publication Assistée pa
 =============================================
 Tu peux être exécuté par plusieurs moteurs, selon ce que l'utilisateur choisit :
 • DeepSeek (moteur par défaut) — modèle "deepseek-flash" = DeepSeek V4.1 Flash (recommandé : 1M de contexte, 384K en sortie, JSON, appels d'outils, VISION) et "deepseek-v4-pro" = V4 Pro (précision maximale). API OpenAI-compatible, JSON structuré. ⚠️ Les anciens noms "deepseek-v4-flash" et "deepseek-v4-flash-vision-exp" sont RETIRÉS : ne les cite jamais.
-• OpenRouter (100% gratuit) — modèles :free : Nemotron 3 Super 120B (recommandé, JSON 8/8 pages vérifié), MiniMax M2.7, Gemma 4, Nemotron 3 Ultra 550B, Inkling 975B. API OpenAI-compatible.
+• OpenRouter (100% gratuit) — modèles :free : Nemotron 3 Super 120B (recommandé, JSON 8/8 pages vérifié), Qwen3.8 27B, Nemotron 3 Ultra 550B. API OpenAI-compatible.
 • Groq (rapide) — Qwen 3.8 27B (recommandé), Qwen 3.6 27B, GPT-OSS 120B/20B, Groq Compound. API OpenAI-compatible, plafond 8 192 tokens en sortie.
 • OpenAI — GPT-6 Astra (recommandé : 1,05 M de contexte, 128 K en sortie), GPT-6 Sol, GPT-6 Luna, puis GPT-5.6 sol/terra/luna et GPT-5.1. ⚠️ Chat Completions ; les anciens gpt-4o / o3 / o4-mini sont retirés ou en fin de vie.
 • Anthropic — Claude Opus 5.5 (recommandé), Claude Sonnet 5, Claude Fable 5.1 (raisonnement long), Claude Haiku 4.5, puis Claude Opus 4.5 en repli.
@@ -64026,6 +64746,7 @@ CORPS / LECTURE :
   "Roboto" — sans-sérif polyvalente (corps, UI)
   "Open Sans" — sans-sérif humaniste (corps, web)
   "Lato" — sans-sérif chaleureuse (corps, édito)
+  "Times" — sérif classique (livres, documents officiels, rapports : métrique Times New Roman)
   "Noto Sans JP" — sans-sérif japonais + latin (textes bilingues JP/FR/EN, multi-script)
 
 MONOSPACE / CODE :
@@ -64553,7 +65274,7 @@ RÈGLES DE CONTENU
   - Vitaminé : #FF6B6B, #4ECDC4, #45B7D1, #FFEAA7, #2D3436
   - Corporate : #003566, #001D3D, #FFC300, #FFD60A, #000814
 • POLICES TITRES : "Bebas Neue" (impact), "Playfair Display" (élégant), "Montserrat" (moderne), "Poppins" (friendly)
-• POLICES CORPS : "Open Sans" (neutre), "Lato" (chaleureux), "Open Sans" (humaniste), "IBM Plex Sans" (technique)
+• POLICES CORPS : "Open Sans" (neutre), "Lato" (chaleureux), "Open Sans" (humaniste), "IBM Plex Sans" (technique), "Times" (sérif classique)
 • POLICES MONO : "IBM Plex Mono", "JetBrains Mono", "Space Mono" (pour données, numéros, code)
 • IMAGES : utilise des rectangles gris (#E2E8F0 ou #CBD5E1) comme placeholders, pas d'URL externes. Ajoute TOUJOURS une légende sous les placeholders.
   🆕 Si l'utilisateur a fourni des images (voir section IMAGES FOURNIES ci-dessous), tu DOIS les intégrer dans la maquette avec le type "userImage" et l'index correspondant (0, 1, 2...).
@@ -66581,6 +67302,21 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         impOptDestCurrent: "Document en cours (page au choix)",
         impOptDestNew: "Nouveau document SuperPrint",
         impDestConfirmNew: "Créer un nouveau document SuperPrint ?\n\nLe document en cours sera remplacé (il reste disponible dans l'auto-sauvegarde). Le format et les marges du fichier importé seront appliqués.",
+        /* 🆕 v1.7.579 — bandeau d'import (voir _spImpBusy, tout en haut du fichier). */
+        impBusyTitle: "Import en cours",
+        impBusyNote: "Rien à valider : l'import continue tout seul. Ne fermez pas l'onglet.",
+        impBusyLong: "Le fichier est volumineux — l'import continue, encore un peu de patience.",
+        impStepLire: "Lecture du fichier",
+        impStepAnalyser: "Analyse de la mise en forme",
+        impStepClasseur: "Lecture du classeur",
+        impStepComposer: "Composition des pages",
+        /* 🆕 v1.7.579 — bandeau de recoulement des blocs chaînés. */
+        chainBusyTitle: "Répartition du texte chaîné",
+        chainBusyName: "Chaîne de {0} blocs",
+        chainBusyStep: "Redistribution du texte dans les blocs",
+        chainBusyNote: "Rien à valider : la répartition se poursuit toute seule. Ne touchez à rien.",
+        chainBusyLong: "Le texte est long à répartir — encore un peu de patience.",
+        wordOptNext: "Après validation, l'import se lance tout seul : un bandeau en montre la progression. Vous n'aurez rien d'autre à valider.",
         xlsxOptSheets: "Feuilles",
         xlsxOptSheetsAll: "Toutes les feuilles",
         xlsxOptSheetsFirst: "La première seulement",
@@ -67493,6 +68229,21 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         impOptDestCurrent: "Current document (choose the page)",
         impOptDestNew: "New SuperPrint document",
         impDestConfirmNew: "Create a new SuperPrint document?\n\nThe current document will be replaced (it stays available in the auto-save). The imported file's format and margins will be applied.",
+        /* 🆕 v1.7.579 — import banner. */
+        impBusyTitle: "Import in progress",
+        impBusyNote: "Nothing to confirm: the import runs on its own. Do not close the tab.",
+        impBusyLong: "The file is large — the import is still running, thanks for your patience.",
+        impStepLire: "Reading the file",
+        impStepAnalyser: "Reading the formatting",
+        impStepClasseur: "Reading the workbook",
+        impStepComposer: "Composing the pages",
+        /* 🆕 v1.7.579 — chained-text banner. */
+        chainBusyTitle: "Distributing the chained text",
+        chainBusyName: "Chain of {0} blocks",
+        chainBusyStep: "Redistributing the text across the blocks",
+        chainBusyNote: "Nothing to confirm: the distribution runs on its own. Do not touch anything.",
+        chainBusyLong: "The text takes a while to distribute — thanks for your patience.",
+        wordOptNext: "Once you confirm, the import starts on its own: a banner shows its progress. You will have nothing else to confirm.",
         xlsxOptSheets: "Sheets",
         xlsxOptSheetsAll: "All sheets",
         xlsxOptSheetsFirst: "First sheet only",
@@ -68313,6 +69064,21 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         impOptDestCurrent: "現在の文書（ページを選択）",
         impOptDestNew: "新しい SuperPrint 文書",
         impDestConfirmNew: "新しい SuperPrint 文書を作成しますか？\n\n現在の文書は置き換わります（自動保存に残ります）。読み込むファイルの用紙と余白を適用します。",
+        /* 🆕 v1.7.579 — 読み込みバナー。 */
+        impBusyTitle: "読み込み中",
+        impBusyNote: "操作は不要です。読み込みは自動で続きます。タブを閉じないでください。",
+        impBusyLong: "ファイルが大きいため、読み込みを続けています。もうしばらくお待ちください。",
+        impStepLire: "ファイルを読み込んでいます",
+        impStepAnalyser: "書式を解析しています",
+        impStepClasseur: "ブックを読み込んでいます",
+        impStepComposer: "ページを組み立てています",
+        /* 🆕 v1.7.579 — 連結テキストのバナー。 */
+        chainBusyTitle: "連結テキストの再配置",
+        chainBusyName: "連結 {0} ブロック",
+        chainBusyStep: "各ブロックへテキストを再配置しています",
+        chainBusyNote: "操作は不要です。再配置は自動で続きます。何も触らないでください。",
+        chainBusyLong: "テキストが長いため、再配置に時間がかかっています。",
+        wordOptNext: "確定すると読み込みが自動で始まり、進捗がバナーに表示されます。ほかに操作はありません。",
         xlsxOptSheets: "シート",
         xlsxOptSheetsAll: "すべてのシート",
         xlsxOptSheetsFirst: "最初のシートのみ",
@@ -77189,7 +77955,18 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                     return;
                 }
 
-                const imgFile = files.find(f => (f.type || '').startsWith('image/'));
+                /* 🆕 v1.7.580ss — SÉRIE DE MÉDIAS : on propose la disposition.
+                   Avant, un dépôt de 6 photos n’en plaçait qu’UNE (au curseur) :
+                   les autres étaient silencieusement ignorées. Une seule image
+                   garde le comportement historique (posée sous le curseur). */
+                const imgFiles = files.filter(f => (f.type || '').startsWith('image/'));
+                if (imgFiles.length > 1) {
+                    if (window._spDragLoadingEnd) window._spDragLoadingEnd();
+                    try { window.spProposerDispositionMedias(imgFiles); }
+                    catch (err) { console.warn('[drag&drop] série de médias :', err); window.spToast && window.spToast('Impossible de préparer la série de médias : ' + (err && err.message), 'error', 5000); }
+                    return;
+                }
+                const imgFile = imgFiles[0];
                 if (imgFile) {
                     if (window._spDragLoadingStart) window._spDragLoadingStart('Image');
                     try { handleDroppedImageFile(imgFile, e.clientX, e.clientY); } finally { setTimeout(() => window._spDragLoadingEnd && window._spDragLoadingEnd(), 400); }
@@ -77408,7 +78185,22 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                     return;
                 }
 
-                const imgFile = files.find(f => (f.type || '').startsWith('image/'));
+                /* 🆕 v1.7.580ss-b — SÉRIE DE MÉDIAS. Ce gestionnaire est monté sur
+                   `document` en phase CAPTURE : il s'exécute AVANT celui de
+                   canvasScrollArea et il arrêtait l'événement. Résultat mesuré : la
+                   fenêtre de disposition ne s'ouvrait jamais et seule la PREMIÈRE
+                   image était posée. Même règle ici : ≥ 2 images = on propose. */
+                const imgFilesGlobal = files.filter(f => (f.type || '').startsWith('image/'));
+                if (imgFilesGlobal.length > 1) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    _hideSoon(0);
+                    try { window.spProposerDispositionMedias(imgFilesGlobal); }
+                    catch (err) { console.warn('[drag&drop global] série de médias :', err);
+                        window.spToast && window.spToast('Impossible de préparer la série de médias : ' + (err && err.message), 'error', 5000); }
+                    return;
+                }
+                const imgFile = imgFilesGlobal[0];
                 if (imgFile) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -77477,6 +78269,410 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         });
 
         // Handle dropped OS image file: insert into selected shape or as image at drop point
+        /* ══════════════════════════════════════════════════════════════════════
+           🆕 v1.7.580ss — DISPOSITION AUTOMATIQUE D’UNE SÉRIE DE MÉDIAS
+
+           Tout le calcul se fait EN MILLIMÈTRES à partir du format réel du document
+           (pageFormat.width/height, bleed, margins) : la composition s’adapte donc au
+           format (A4, A5, carré, carte…) et à l’orientation, avant de poser quoi que
+           ce soit. La conversion en pixels n’a lieu qu’au dernier moment.
+
+           Deux familles de placement :
+             · « cover »  : cellules UNIFORMES, l’image remplit le cadre et est
+                            recadrée au centre (grilles, colonnes, planche contact) ;
+             · « contain »: l’image entière dans le cadre, jamais rognée (1 par page,
+                            masonry, rosace) — aucune photo n’est jamais amputée.
+           ══════════════════════════════════════════════════════════════════════ */
+        var SP_MEDIA_G = 4;                 // gouttière par défaut entre images (mm)
+
+        function spMediasLang() {
+            try { return (typeof currentLanguage === 'string' && currentLanguage) ? currentLanguage : 'fr'; } catch (_) { return 'fr'; }
+        }
+        function spMediasT(cle) {
+            var L = spMediasLang();
+            var D = {
+                titre: { fr: 'Disposer la série de médias', en: 'Arrange the media set', ja: 'メディアを配置' },
+                sous: { fr: 'dispositions calculées pour ce format', en: 'layouts computed for this format', ja: 'この用紙サイズに合わせて計算' },
+                annuler: { fr: 'Annuler', en: 'Cancel', ja: 'キャンセル' },
+                un: { fr: '1 média par page', en: '1 media per page', ja: '1ページに1点' },
+                deux: { fr: '2 médias par page', en: '2 media per page', ja: '1ページに2点' },
+                quatre: { fr: '4 médias par page', en: '4 media per page', ja: '1ページに4点' },
+                c2: { fr: '2 colonnes', en: '2 columns', ja: '2段組' },
+                c3: { fr: '3 colonnes', en: '3 columns', ja: '3段組' },
+                c4: { fr: '4 colonnes', en: '4 columns', ja: '4段組' },
+                c5: { fr: '5 colonnes', en: '5 columns', ja: '5段組' },
+                masonry: { fr: 'Masonry (hauteurs libres)', en: 'Masonry (free heights)', ja: 'メイソンリー' },
+                contact: { fr: 'Planche contact', en: 'Contact sheet', ja: 'コンタクトシート' },
+                rosace: { fr: 'Rosace photo', en: 'Photo rosette', ja: 'ロゼット配置' },
+                aucun: { fr: 'Aucune image exploitable dans ce dépôt.', en: 'No usable image in this drop.', ja: '使える画像がありません。' }
+            };
+            var e = D[cle] || {};
+            return e[L] || e.fr || cle;
+        }
+
+        /* Format du document (mm) et zone utile d’une page (marges respectées). */
+        function spMediasFormat() {
+            return { w: Number(pageFormat && pageFormat.width) || 210, h: Number(pageFormat && pageFormat.height) || 297 };
+        }
+        function spMediasMarges() {
+            var m = (typeof margins === 'object' && margins) ? margins : null;
+            if (m) return { top: Number(m.top) || 0, right: Number(m.right) || 0, bottom: Number(m.bottom) || 0, left: Number(m.left) || 0 };
+            var v = Number(margin) || 0;
+            return { top: v, right: v, bottom: v, left: v };
+        }
+        /* Zone utile (mm) dans le repère LOCAL de la page (0,0 = coin de coupe). */
+        function spMediasZone() {
+            var f = spMediasFormat(), M = spMediasMarges();
+            return {
+                x: M.left, y: M.top,
+                w: Math.max(20, f.w - M.left - M.right),
+                h: Math.max(20, f.h - M.top - M.bottom)
+            };
+        }
+        /* Grille régulière de cellules (mm). */
+        function spMediasCellules(zone, cols, rows, g) {
+            cols = Math.max(1, Math.floor(cols)); rows = Math.max(1, Math.floor(rows));
+            var cw = (zone.w - g * (cols - 1)) / cols, ch = (zone.h - g * (rows - 1)) / rows;
+            var out = [];
+            for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) {
+                out.push({ x: zone.x + c * (cw + g), y: zone.y + r * (ch + g), w: cw, h: ch });
+            }
+            return out;
+        }
+        /* Nombre de cellules par page pour les colonnes dont la hauteur suit la largeur. */
+        function spMediasGrilleColonnes(cols, ratio, zone, g) {
+            var cw = (zone.w - g * (cols - 1)) / cols;
+            var ch = cw * ratio;
+            var rows = Math.max(1, Math.floor((zone.h + g) / (ch + g)));
+            return spMediasCellules(zone, cols, rows, g);
+        }
+
+        /* ── Plans de disposition ────────────────────────────────────────────────
+           Chaque plan renvoie : [{ page, zone:{x,y,w,h}, mode:'cover'|'contain', angle }]
+           Les images sont réparties dans l’ordre du dépôt ; les pages se créent
+           automatiquement au besoin. */
+        function spMediasPlan(mode, n, images, zone, f) {
+            var out = [], i, c, cellules, portrait = (f.h >= f.w);
+            var pose = function (idx, zi, z) {
+                if (idx >= n) return;
+                out.push({ i: idx, page: zi, x: z.x, y: z.y, w: z.w, h: z.h, mode: z.mode || 'cover', angle: z.angle || 0 });
+            };
+            if (mode === 'un') {
+                for (i = 0; i < n; i++) pose(i, i, { x: zone.x, y: zone.y, w: zone.w, h: zone.h, mode: 'contain' });
+                return out;
+            }
+            if (mode === 'deux') {
+                cellules = spMediasCellules(zone, portrait ? 1 : 2, portrait ? 2 : 1, SP_MEDIA_G);
+                for (i = 0; i < n; i++) pose(i, Math.floor(i / 2), cellules[i % 2]);
+                return out;
+            }
+            if (mode === 'quatre') {
+                cellules = spMediasCellules(zone, 2, 2, SP_MEDIA_G);
+                for (i = 0; i < n; i++) pose(i, Math.floor(i / 4), cellules[i % 4]);
+                return out;
+            }
+            if (mode === 'c2' || mode === 'c3' || mode === 'c4' || mode === 'c5') {
+                var cols = Number(mode.charAt(1));
+                /* Nombre de rangées : le maximum que la page accepte (case de ratio 1,4),
+                   MAIS si les photos tiennent en MOINS de rangées, on en utilise moins
+                   pour REMPLIR la page. MESURE : 6 photos en 3 colonnes laissaient un
+                   tiers de page vide (3 rangées prévues, 2 utilisées). */
+                var cwCols = (zone.w - SP_MEDIA_G * (cols - 1)) / cols;
+                var rowsMax = Math.max(1, Math.floor((zone.h + SP_MEDIA_G) / (cwCols * 1.4 + SP_MEDIA_G)));
+                var rows = Math.min(rowsMax, Math.max(1, Math.ceil(n / cols)));
+                cellules = spMediasCellules(zone, cols, rows, SP_MEDIA_G);
+                for (i = 0; i < n; i++) {
+                    var parPage = cellules.length;
+                    pose(i, Math.floor(i / parPage), cellules[i % parPage]);
+                }
+                return out;
+            }
+            if (mode === 'contact') {
+                /* Planche contact : cadre FIXE (≈ 34 mm de large, ratio 1,4) → le
+                   nombre par page se déduit du format. Une planche A4 en tient ~20. */
+                var cw = 34, chh = 34 * 1.4;
+                var nc = Math.max(1, Math.floor((zone.w + SP_MEDIA_G) / (cw + SP_MEDIA_G)));
+                var nr = Math.max(1, Math.floor((zone.h + SP_MEDIA_G) / (chh + SP_MEDIA_G)));
+                var g2 = spMediasCellules(zone, nc, nr, 2);
+                for (i = 0; i < n; i++) pose(i, Math.floor(i / g2.length), g2[i % g2.length]);
+                return out;
+            }
+            if (mode === 'masonry') {
+                /* Colonnes de largeur égale, hauteurs LIBRES (ratio de chaque photo),
+                   on remplit toujours la colonne la plus courte → équilibre visuel. */
+                var mcols = (zone.w > zone.h) ? 4 : 3;
+                var mcw = (zone.w - SP_MEDIA_G * (mcols - 1)) / mcols;
+                var hauts = [], page = 0;
+                for (i = 0; i < mcols; i++) hauts.push({ h: 0, page: 0 });
+                for (i = 0; i < n; i++) {
+                    var im = images[i] || { w: 1, h: 1 };
+                    var hh = mcw * (Number(im.h) || 1) / (Number(im.w) || 1);
+                    hh = Math.min(hh, zone.h);                       // jamais plus haut qu’une page
+                    var k = 0;
+                    for (var j = 1; j < mcols; j++) if (hauts[j].h < hauts[k].h) k = j;
+                    if (hauts[k].h + (hauts[k].h > 0 ? SP_MEDIA_G : 0) + hh > zone.h) {
+                        page = Math.max(page, hauts[k].page) + 1;
+                        hauts[k] = { h: 0, page: page };
+                        page = hauts[k].page;
+                    }
+                    var haut = hauts[k].h > 0 ? hauts[k].h + SP_MEDIA_G : 0;
+                    out.push({ i: i, page: hauts[k].page, x: zone.x + k * (mcw + SP_MEDIA_G), y: zone.y + haut, w: mcw, h: hh, mode: 'contain', angle: 0 });
+                    hauts[k].h = haut + hh;
+                }
+                return out;
+            }
+            if (mode === 'rosace') {
+                /* Rosace : 1 grande photo au centre, puis des couronnes de 6 photos
+                   orientées vers l’extérieur (2 couronnes maximum par page). */
+                var cote = Math.min(zone.w, zone.h);
+                var parPage = 1 + 12;
+                for (i = 0; i < n; i++) {
+                    var dansPage = i % parPage;
+                    var pg = Math.floor(i / parPage);
+                    var cx = zone.x + zone.w / 2, cy = zone.y + zone.h / 2;
+                    if (dansPage === 0) {
+                        var t = cote * 0.56;
+                        out.push({ i: i, page: pg, x: cx - t / 2, y: cy - t / 2, w: t, h: t, mode: 'contain', angle: 0 });
+                    } else {
+                        var couronne = (dansPage <= 6) ? 0 : 1;
+                        var pos = (dansPage - 1) % 6;
+                        var rayon = cote * (couronne === 0 ? 0.30 : 0.45);
+                        var taille = cote * (couronne === 0 ? 0.26 : 0.20);
+                        var ang = (pos / 6) * Math.PI * 2 - Math.PI / 2 + (couronne ? Math.PI / 6 : 0);
+                        var mx = cx + Math.cos(ang) * rayon, my = cy + Math.sin(ang) * rayon;
+                        out.push({
+                            i: i, page: pg,
+                            x: mx - taille / 2, y: my - taille / 2, w: taille, h: taille,
+                            mode: 'contain', angle: (ang * 180 / Math.PI) + 90
+                        });
+                    }
+                }
+                return out;
+            }
+            return out;
+        }
+
+        /* ── Fenêtre de choix ─────────────────────────────────────────────────── */
+        var SP_MEDIA_MODES = ['un', 'deux', 'quatre', 'c2', 'c3', 'c4', 'c5', 'masonry', 'contact', 'rosace'];
+
+        function spMediasVignette(mode) {
+            /* Petit aperçu du motif, dessiné en CSS (aucune image à charger). */
+            var b = 'background:currentColor;opacity:.55;border-radius:1px;';
+            var cellules = function (n, col) { return '<span style="display:flex;gap:2px;' + col + '"></span>'.replace('</span>', Array.apply(null, Array(n)).map(function () { return '<span style="flex:1;' + b + '"></span>'; }).join('') + '</span>'); };
+            var haut = '<span style="display:flex;flex:1;gap:2px">', bas = '</span>';
+            if (mode === 'un') return haut + '<span style="flex:1;' + b + '"></span>' + bas;
+            if (mode === 'deux') return '<span style="display:flex;flex-direction:column;gap:2px;flex:1">' + cellules(1, 'flex:1') + cellules(1, 'flex:1') + '</span>';
+            if (mode === 'quatre') return '<span style="display:flex;flex-direction:column;gap:2px;flex:1">' + cellules(2, 'flex:1') + cellules(2, 'flex:1') + '</span>';
+            if (mode === 'c2' || mode === 'c3' || mode === 'c4' || mode === 'c5') return cellules(Number(mode.charAt(1)), 'flex:1');
+            if (mode === 'masonry') return '<span style="display:flex;gap:2px;flex:1">' +
+                '<span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="flex:2;' + b + '"></span><span style="flex:1;' + b + '"></span></span>' +
+                '<span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="flex:1;' + b + '"></span><span style="flex:2;' + b + '"></span></span></span>';
+            if (mode === 'contact') return '<span style="display:flex;flex-direction:column;gap:2px;flex:1">' + cellules(4, 'flex:1') + cellules(4, 'flex:1') + cellules(4, 'flex:1') + '</span>';
+            if (mode === 'rosace') return '<span style="position:relative;flex:1"><span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38%;height:38%;' + b + '"></span>' +
+                '<span style="position:absolute;left:8%;top:38%;width:18%;height:18%;' + b + '"></span>' +
+                '<span style="position:absolute;right:8%;top:38%;width:18%;height:18%;' + b + '"></span>' +
+                '<span style="position:absolute;left:41%;top:6%;width:18%;height:18%;' + b + '"></span>' +
+                '<span style="position:absolute;left:41%;bottom:6%;width:18%;height:18%;' + b + '"></span></span>';
+            return '';
+        }
+
+        window.spProposerDispositionMedias = function (files) {
+            files = Array.prototype.slice.call(files || []);
+            if (!files.length) return;
+            var f = spMediasFormat();
+            var ov = document.createElement('div');
+            ov.setAttribute('data-sp-medias', '1');
+            ov.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;';
+            var bo = document.createElement('div');
+            bo.style.cssText = 'background:var(--panel,#fff);color:var(--text,#1a1a1a);border:1px solid var(--border,#d9d9d9);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.35);max-width:820px;width:100%;max-height:88vh;overflow:auto;padding:18px 20px 20px;font-family:inherit;';
+            bo.innerHTML =
+                '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">' +
+                  '<b style="font-size:14px;letter-spacing:.4px;text-transform:uppercase;">' + spMediasT('titre') + '</b>' +
+                  '<span style="font-size:11px;opacity:.7;">' + files.length + ' — ' + f.w + ' × ' + f.h + ' mm · ' + spMediasT('sous') + '</span>' +
+                '</div>' +
+                '<div data-sp-grid style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-top:14px;"></div>';
+            var grille = bo.querySelector('[data-sp-grid]');
+            SP_MEDIA_MODES.forEach(function (mode) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.setAttribute('data-mode', mode);
+                b.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-items:stretch;padding:10px;border:1px solid var(--border,#d9d9d9);border-radius:10px;background:var(--btn-bg,#fff);color:inherit;cursor:pointer;text-align:left;font:inherit;';
+                b.innerHTML = '<span style="display:flex;height:54px;color:var(--text,#1a1a1a);">' + spMediasVignette(mode) + '</span>' +
+                              '<span style="font-size:11.5px;line-height:1.25;">' + spMediasT(mode) + '</span>';
+                b.addEventListener('mouseenter', function () { b.style.borderColor = 'var(--accent,#1a1a1a)'; });
+                b.addEventListener('mouseleave', function () { b.style.borderColor = 'var(--border,#d9d9d9)'; });
+                b.addEventListener('click', function () {
+                    try { ov.remove(); } catch (_) {}
+                    try { window.spDisposerSerieMedias(files, mode); }
+                    catch (err) { console.warn('[medias] disposition :', err); window.spToast && window.spToast('Disposition impossible : ' + (err && err.message), 'error', 6000); }
+                });
+                grille.appendChild(b);
+            });
+            var pied = document.createElement('div');
+            pied.style.cssText = 'display:flex;justify-content:flex-end;gap:10px;margin-top:16px;';
+            var annuler = document.createElement('button');
+            annuler.type = 'button';
+            annuler.textContent = spMediasT('annuler');
+            annuler.style.cssText = 'padding:8px 14px;border:1px solid var(--border,#d9d9d9);border-radius:8px;background:transparent;color:inherit;cursor:pointer;font:inherit;';
+            annuler.addEventListener('click', function () { try { ov.remove(); } catch (_) {} });
+            pied.appendChild(annuler);
+            bo.appendChild(pied);
+            ov.appendChild(bo);
+            ov.addEventListener('mousedown', function (e) { if (e.target === ov) { try { ov.remove(); } catch (_) {} } });
+            document.addEventListener('keydown', function esc(e) {
+                if (e.key === 'Escape') { document.removeEventListener('keydown', esc, true); try { ov.remove(); } catch (_) {} }
+            }, true);
+            document.body.appendChild(ov);
+        };
+
+        /* ── Lecture des fichiers + pose ──────────────────────────────────────── */
+        function spMediasLireFichier(file) {
+            return new Promise(function (resolve) {
+                try {
+                    var r = new FileReader();
+                    r.onload = function (ev) {
+                        var url = ev.target.result;
+                        var im = new Image();
+                        im.onload = function () { resolve({ url: url, w: im.naturalWidth || 1, h: im.naturalHeight || 1, nom: file.name || '' }); };
+                        im.onerror = function () { resolve(null); };
+                        im.src = url;
+                    };
+                    r.onerror = function () { resolve(null); };
+                    r.readAsDataURL(file);
+                } catch (_) { resolve(null); }
+            });
+        }
+
+        /* Recadrage « cover » : l’image remplit le cadre (recadrée au centre). */
+        function spMediasPoser(img, place, bleedPx, origX) {
+            var cadre = {
+                x: bleedPx + mmToPx(place.x) + origX,
+                y: bleedPx + mmToPx(place.y),
+                w: mmToPx(place.w),
+                h: mmToPx(place.h)
+            };
+            var iw = img.width || 1, ih = img.height || 1;
+            if (place.mode === 'cover') {
+                var ratio = cadre.w / cadre.h, iratio = iw / ih, cw, ch;
+                if (iratio > ratio) { ch = ih; cw = ih * ratio; } else { cw = iw; ch = iw / ratio; }
+                img.set({
+                    cropX: (iw - cw) / 2, cropY: (ih - ch) / 2,
+                    width: cw, height: ch,
+                    left: cadre.x, top: cadre.y,
+                    scaleX: cadre.w / cw, scaleY: cadre.h / ch,
+                    originX: 'left', originY: 'top'
+                });
+            } else {
+                var s = Math.min(cadre.w / iw, cadre.h / ih);
+                img.set({
+                    left: cadre.x + (cadre.w - iw * s) / 2,
+                    top: cadre.y + (cadre.h - ih * s) / 2,
+                    scaleX: s, scaleY: s,
+                    originX: 'left', originY: 'top'
+                });
+            }
+            if (place.angle) { img.set({ angle: place.angle, originX: 'center', originY: 'center', left: cadre.x + cadre.w / 2, top: cadre.y + cadre.h / 2 }); }
+            img.set({ strokeWidth: 0, lockUniScaling: true, uniformScaling: true, lockScalingFlip: true, paintFirst: 'fill' });
+            return img;
+        }
+
+        window.spDisposerSerieMedias = function (files, mode) {
+            files = Array.prototype.slice.call(files || []);
+            var f = spMediasFormat(), zone = spMediasZone();
+            if (window._spDragLoadingStart) window._spDragLoadingStart('Médias');
+            return Promise.all(files.map(spMediasLireFichier)).then(function (lus) {
+                var images = lus.filter(Boolean);
+                if (!images.length) {
+                    if (window._spDragLoadingEnd) window._spDragLoadingEnd();
+                    window.spToast && window.spToast(spMediasT('aucun'), 'error', 5000);
+                    return;
+                }
+                var plan = spMediasPlan(mode, images.length, images, zone, f);
+                var maxPage = 0;
+                plan.forEach(function (p) { if (p.page > maxPage) maxPage = p.page; });
+                while (pages.length <= maxPage) createNewPage();
+                renderAllPages();
+                /* ⚠️ v1.7.580ss-b — ON ATTEND LA FIN DU RENDU AVANT DE POSER.
+                   MESURE : sans cette attente, les images ajoutées juste après
+                   renderAllPages() étaient détruites par la reconstruction des canvas
+                   (0 image retrouvée après la pose), et saveState() était ignoré par
+                   la garde _isRenderingAllPages. */
+                return spMediasAttendreRendu(maxPage + 1).then(function () {
+                    return spMediasPoserPlan(plan, images, f);
+                }).then(function (poses) {
+                    try { if (canvases[0]) { canvases[0].discardActiveObject(); canvases[0].requestRenderAll(); } } catch (_) {}
+                    try { currentPageIndex = 0; updatePageIndicator(); } catch (_) {}
+                    try { debouncedUpdateLayersPanel(); } catch (_) {}
+                    try { saveState('Disposition de ' + poses + ' média(s)'); } catch (_) {}
+                    if (window._spDragLoadingEnd) window._spDragLoadingEnd();
+                    window.spToast && window.spToast(poses + ' média(s) disposé(s) — ' + (maxPage + 1) + ' page(s).', 'success', 3500);
+                });
+            }).catch(function (err) {
+                if (window._spDragLoadingEnd) window._spDragLoadingEnd();
+                console.warn('[medias]', err);
+                window.spToast && window.spToast('Import des médias impossible : ' + (err && err.message), 'error', 6000);
+            });
+        };
+        /* Attend la FIN de renderAllPages() : la reconstruction des canvas se fait en
+           plusieurs passes (drapeau _isRenderingAllPages, époques de rendu). */
+        function spMediasAttendreRendu(nb, essais) {
+            essais = essais || 0;
+            return new Promise(function (res) {
+                var enCours = false;
+                try { enCours = !!_isRenderingAllPages; } catch (_) { enCours = false; }
+                var n = 0;
+                try { n = (canvases && canvases.length) ? canvases.length : 0; } catch (_) { n = 0; }
+                var dom = document.querySelectorAll('#pagesContainer canvas').length;
+                if ((!enCours && n >= nb && dom > 0) || essais > 60) { setTimeout(res, 150); return; }
+                setTimeout(function () { spMediasAttendreRendu(nb, essais + 1).then(res); }, 120);
+            });
+        }
+        /* Pose le plan calculé sur les canvas réels (une planche en porte deux). */
+        function spMediasPoserPlan(plan, images, f) {
+            var parPage = {};
+            plan.forEach(function (p) { (parPage[p.page] = parPage[p.page] || []).push(p); });
+            var chaine = Promise.resolve();
+            var poses = 0;
+            Object.keys(parPage).forEach(function (clePage) {
+                chaine = chaine.then(function () {
+                    var zi = Number(clePage);
+                    var canvas = (window.pageToCanvasMap && window.pageToCanvasMap[zi] !== undefined)
+                        ? canvases[window.pageToCanvasMap[zi]] : canvases[zi];
+                    if (!canvas) return null;
+                    var bi = canvas.bleedInfo || { left: mmToPx(bleed), top: mmToPx(bleed) };
+                    /* En planche, la page de droite a son coin de coupe à la gouttière. */
+                    var surDroite = !!(bi.isSpread && bi.rightPageIndex === zi);
+                    var bleedPx = Number(bi.left);
+                    if (!isFinite(bleedPx)) bleedPx = mmToPx(bleed);
+                    var origX = surDroite ? mmToPx(f.w) : 0;
+                    return spMediasChargerGroupe(parPage[clePage].map(function (p) { return images[p.i]; })).then(function (objs) {
+                        objs.forEach(function (img, k) {
+                            spMediasPoser(img, parPage[clePage][k], bleedPx, origX);
+                            canvas.add(img);
+                            poses++;
+                        });
+                        canvas.requestRenderAll();
+                        return null;
+                    });
+                });
+            });
+            return chaine.then(function () { return poses; });
+        }
+        /* Charge les images en objets Fabric (une seule fois chacune). */
+        function spMediasChargerGroupe(liste) {
+            return Promise.all(liste.map(function (im) {
+                return new Promise(function (res) {
+                    fabric.Image.fromURL(im.url, function (img) {
+                        img.objectCaching = false;
+                        img.imageSmoothing = true;
+                        img.imageSmoothingQuality = 'high';
+                        img._imageSourceURL = im.url;
+                        res(img);
+                    }, { crossOrigin: 'anonymous' });
+                });
+            }));
+        }
+
         function handleDroppedImageFile(file, clientX, clientY) {
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -82395,24 +83591,27 @@ window._spEnsureGuidesAfterTemplateLoad = _spEnsureGuidesAfterTemplateLoad;
         document.getElementById('wordFileInput')?.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            
-            if (!file.name.endsWith('.docx')) {
-                alert(translate('alertDocxOnlySupported'));
+            e.target.value = '';
+            /* 🆕 v1.7.579e — _SP_IMPORT_WORD_MORT_579e : CET ÉCOUTEUR APPELAIT UNE FONCTION INACCESSIBLE.
+               MESURÉ (banc, 2026-09-28) : déposer un .docx dans #wordFileInput levait
+               « ReferenceError: askInsertAtPage is not defined » (main.js:82969) — askInsertAtPage()
+               vit dans la portée du module d'import (≈ l. 37820), pas à la racine du fichier.
+               L'import Word par cette entrée ne faisait donc STRICTEMENT RIEN, sans aucun message.
+               On passe par l'entrée PUBLIQUE du pipeline moderne (pop-in d'options → routage par
+               format → composition en texte coulé), la seule entretenue et atteignable d'ici.
+               La vérification « .docx » disparaît : c'est le FORMAT RÉEL du fichier qui décide. */
+            if (typeof window._spLancerImportWord === 'function') {
+                try {
+                    await window._spLancerImportWord(file);
+                } catch (error) {
+                    console.error('Erreur import Word:', error);
+                    alert(translatef('alertWordImportError', error.message));
+                }
                 return;
             }
-            
-            const startPage = await askInsertAtPage();
-            if (startPage === null) { e.target.value = ''; return; } // annulé
-            
-            try {
-                await importWordDocument(file, startPage);
-            } catch (error) {
-                console.error('Erreur import Word:', error);
-                alert(translatef('alertWordImportError', error.message));
-            }
-            
-            e.target.value = '';
-        });
+            console.error('[Import] pipeline Word indisponible (window._spLancerImportWord absent)');
+            alert(translate('alertWordImportError'));
+});
         
         async function importWordDocument(file, startPageIndex) {
             if (!window.mammoth) {
@@ -90763,7 +91962,7 @@ function _spIsKnownFontFamily(family) {
         const integrated = [
             'Open Sans', 'Montserrat', 'Roboto', 'Lato', 'Poppins', 'Playfair Display',
             'Bebas Neue', 'IBM Plex Mono', 'IBM Plex Sans', 'JetBrains Mono', 'Fira Code',
-            'Space Mono', 'Noto Sans JP', 'Noto Sans', 'Arial', 'Helvetica', 'Times New Roman',
+            'Space Mono', 'Noto Sans JP', 'Noto Sans', 'Times', 'Arial', 'Helvetica', 'Times New Roman',
             'Georgia', 'Courier New', 'Verdana', 'Tahoma', 'Trebuchet MS', 'Impact',
             'Comic Sans MS', 'Palatino', 'Garamond', 'Bookman', 'Avant Garde', 'sans-serif',
             'serif', 'monospace'

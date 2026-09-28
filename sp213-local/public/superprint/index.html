@@ -3885,6 +3885,10 @@ function appliquerLangueAuxLiens(lang) {
     if (outils.indexOf(chemin.replace(/^\.\//, "")) < 0) return;
     var params = new URLSearchParams(q < 0 ? "" : href.slice(q + 1));
     if (lang === "en") params["delete"]("lang"); else params.set("lang", lang);
+    /* 🆕 v1.7.580tt — LE STUDIO PART SUR SA PRÉ-HOME (demande utilisateur) :
+       « home=1 » demande à sp213-studio.html d'afficher son écran de démarrage,
+       avec la langue choisie ici (les deux paramètres cohabitent). */
+    if (chemin.replace(/^\.\//, "") === "sp213-studio.html") params.set("home", "1");
     var s = params.toString();
     a.setAttribute("href", chemin + (s ? "?" + s : ""));
   });

@@ -2274,7 +2274,14 @@
                                 <input type="checkbox" id="wordOptImgReal" class="wordOnlyRow" checked> <span data-translate="wordOptImgReal" class="wordOnlyRow">Images à leur taille réelle</span>
                             </label>
                         </div>
-                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:18px;">
+                        <!-- 🆕 v1.7.579 — CE QUI VA SE PASSER, DIT AVANT.
+                             L'auteur ne savait pas si l'app attendait quelque chose ni
+                             si l'import avait commencé : on le dit, et l'on rappelle
+                             que la suite se fait toute seule (avec un bandeau de
+                             progression). Le fond assombri de cette pop-in empêche
+                             par ailleurs tout clic à côté de tomber sur la page. -->
+                        <div data-translate="wordOptNext" style="margin-top:12px; font-size:11px; color:#1a1a1a; line-height:1.5; background:#f7f7f7; border-left:3px solid #1a1a1a; padding:9px 12px;">Après validation, l'import se lance tout seul : un bandeau en montre la progression. Vous n'aurez rien d'autre à valider.</div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
                             <button class="modal-btn modal-btn-secondary" id="wordOptCancel" data-translate="cancel">Annuler</button>
                             <button class="modal-btn modal-btn-primary" id="wordOptOk" data-translate="wordOptOk">Importer</button>
                         </div>
@@ -3067,6 +3074,11 @@
                         <option value="Lato">Lato</option>
                         <option value="Poppins">Poppins</option>
                         <option value="Playfair Display">Playfair Display</option>
+                        <!-- ⏱ AJOUT (demande utilisateur) : sérif classique Times.
+                             Police EMBARQUÉE (Tinos, Apache 2.0) métriquement
+                             identique à Times New Roman : le PDF exporté et la
+                             vectorisation l'embarquent comme les autres. -->
+                        <option value="Times">Times</option>
                         <option value="Bebas Neue">Bebas Neue</option>
                         <option value="IBM Plex Mono">IBM Plex Mono</option>
                         <option value="JetBrains Mono">JetBrains Mono</option>
