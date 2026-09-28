@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.578`** — 28 septembre 2026
+> **Dernière version : `1.7.579`** — 28 septembre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,19 +10,19 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.578` |
+| Version app (affichée) | `1.7.579` |
 | Pastille du colophon (`index.html` **et** `help-us.html`, haut **gauche**) | `vX.Y.Z` dans `<span class="brand-ver">` — 1 occurrence par page (**4 fichiers** avec les 2 arbres) |
-| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.578-aide-sommaire-presse` |
-| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20260928-v578-aide-sommaire-presse` (JS) · `?v=20261013-v543-grille-rapide-ia` (CSS) |
-| Badge preview (`spVersionBadge`) | `v1.7.578` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
-| Splash screen | `1.7.578` |
-| Onboarding | `LAYOUT EDITOR — V 1.7.578` + `V 1.7.578 \| 09 2026` |
-| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.578` |
-| Documentation (racine **et** `app/`) | `v1.7.578` (pastille + pieds de page datés + 214 numéros de ligne) |
-| `api.html` (pastille `.version`) | `v1.7.578` |
-| `version.txt` | `1.7.578` |
-| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.578 (September 2026)` |
-| `package.json` + `package-lock.json` (sp213-local) | `1.7.578` |
+| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.579-fonds-export` |
+| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20260929-v579-fonds-export` (JS) · `?v=20261013-v543-grille-rapide-ia` (CSS) |
+| Badge preview (`spVersionBadge`) | `v1.7.579` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
+| Splash screen | `1.7.579` |
+| Onboarding | `LAYOUT EDITOR — V 1.7.579` + `V 1.7.579 \| 09 2026` |
+| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.579` |
+| Documentation (racine **et** `app/`) | `v1.7.579` (pastille + pieds de page datés + 214 numéros de ligne) |
+| `api.html` (pastille `.version`) | `v1.7.579` |
+| `version.txt` | `1.7.579` |
+| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.579 (September 2026)` |
+| `package.json` + `package-lock.json` (sp213-local) | `1.7.579` |
 | Lanceur npm (`superprint-npm/package.json`) | `1.0.97` (version **indépendante**, voir plus bas) |
 
 > ⚠️ Trois fichiers sont restés en arrière pendant des releases sans que rien ne le signale :
@@ -52,7 +52,7 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
   à jour. Il est en `noindex` (page de démarrage locale, pas une page publique).
 - `icons/` — logotypes du lanceur, à ajouter à l'`APP_SHELL` du SW racine quand on en ajoute un.
 - `index.html` — 🆕 v1.7.479 : c'est LA LANDING (page d'accueil). JSON-LD
-  `softwareVersion` + footer `© ... vX.Y.Z`, et depuis la 1.7.578 une **pastille
+  `softwareVersion` + footer `© ... vX.Y.Z`, et depuis la 1.7.579 une **pastille
   `vX.Y.Z`** (`<span class="brand-ver">`, bande du colophon — en haut à
   **gauche** : elle y a toujours été, l'inversion gauche/droite essayée le 28/09
   a été annulée le jour même, le « PAO & Studio IA » restant à droite) :
@@ -81,7 +81,7 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
   ⚠️ **NE PAS l'éditer à la main** : le régénérer avec
   `node _dev/scripts/_mk_index_paquet_480.cjs --apply` (dry-run par défaut), qui repart
   d'`install.html` — sinon la page reprend du retard sur le site.
-- ⚠️ **PLUS de `sp213-local/studio.html`** (retiré en 1.7.578) : il faisait doublon avec le
+- ⚠️ **PLUS de `sp213-local/studio.html`** (retiré en 1.7.579) : il faisait doublon avec le
   studio de l'application, `superprint/sp213-studio.html`, qui tourne déjà en local
   (modèles WebLLM hors ligne) ou avec une clé Groq. Idem côté build :
   `vite.config.js` ne déclare plus que `index.html`.
