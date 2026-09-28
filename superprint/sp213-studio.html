@@ -11705,6 +11705,66 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       }
     } catch (_) {}
 
+    /* ═══════════════════════════════════════════════════════════════════════
+       🛡️ v1.7.579 — DEUX PASSES SUR LE DOCUMENT FINAL (demandes utilisateur).
+
+       1) LES APLATS NOIRS PLEINE PAGE. Signalé sur le Chrome intégré (Gemini
+          Nano), gratuit : « il a tendance à me mettre des aplats noirs sur chaque
+          page ». Le modèle ouvre souvent sa page par un grand rectangle noir :
+          c'est un fond, pas une maquette, et il recouvre le texte. On retire donc
+          un rectangle pleine page (ou pleine page d'une planche) quasi noir quand
+          rien dans la demande ne parle de noir. Un fond noir DEMANDÉ est conservé.
+
+       2) LE CAHIER (double page). Un livre : la couverture est SEULE, l'intérieur
+          va par planches (2-3, 4-5, …), la 4e de couverture est SEULE. Cela n'est
+          possible que si le nombre de pages est PAIR : un cahier ne se termine
+          jamais par une page seule au milieu. En mode planche, si le document
+          sort impair, on ajoute une page blanche à la FIN (jamais au milieu).
+       ═══════════════════════════════════════════════════════════════════════ */
+    try {
+      const _demande = String(state.lastPrompt || doc.prompt || '').toLowerCase();
+      const _noirDemande = /noir|noire|black|nuit/.test(_demande);
+      const _pw = doc.w || 210, _ph = doc.h || 297;
+      const _pleine = function (el, w, h) {
+        const l = Number(el.left) || 0, t = Number(el.top) || 0;
+        const ww = Number(el.width) || 0, hh = Number(el.height) || 0;
+        return ww >= w * 0.92 && hh >= h * 0.92 && l <= w * 0.04 && t <= h * 0.04;
+      };
+      const _tresSombre = function (c) {
+        const s = String(c || '').trim().toLowerCase();
+        if (!s) return false;
+        let r = 0, g = 0, b = 0;
+        if (s.charAt(0) === '#') {
+          let hx = s.slice(1);
+          if (hx.length === 3) hx = hx.charAt(0) + hx.charAt(0) + hx.charAt(1) + hx.charAt(1) + hx.charAt(2) + hx.charAt(2);
+          if (hx.length < 6) return false;
+          r = parseInt(hx.slice(0, 2), 16); g = parseInt(hx.slice(2, 4), 16); b = parseInt(hx.slice(4, 6), 16);
+        } else if (/^rgb/.test(s)) {
+          const m = s.match(/\d+/g);
+          if (!m || m.length < 3) return false;
+          r = +m[0]; g = +m[1]; b = +m[2];
+        } else { return false; }
+        if (!isFinite(r) || !isFinite(g) || !isFinite(b)) return false;
+        return (r + g + b) / 3 <= 60;
+      };
+      const _planche = (doc.viewMode === 'spread') ? (doc.effW || _pw * 2) : _pw;
+      let _retires = 0;
+      doc.pages.forEach(function (page) {
+        if (!page || !Array.isArray(page.elements)) return;
+        page.elements = page.elements.filter(function (el) {
+          if (!el) return false;
+          const ty = String(el.type || '').toLowerCase();
+          if (ty !== 'rect' || _noirDemande) return true;
+          if (!_tresSombre(el.fill || el.backgroundColor)) return true;
+          if (_pleine(el, _planche, _ph) || _pleine(el, _pw, _ph)) { _retires++; return false; }
+          return true;
+        });
+      });
+      try { if (_retires && window.console && console.info) console.info('[SP213] aplats noirs pleine page retires : ' + _retires); } catch (_) {}
+      if (doc.viewMode === 'spread' && finalPages.length % 2 === 1) {
+        finalPages.push({ pageIndex: finalPages.length, elements: [], _spCahierBlanche: true });
+      }
+    } catch (_) {}
     doc.pages = finalPages;
     doc.pages.forEach((p, i) => { p.pageIndex = i; });
     return doc;
