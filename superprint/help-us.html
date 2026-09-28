@@ -213,12 +213,34 @@ strong { color: var(--ink); font-weight: 600; }
 }
 /* Sur desktop, on descend légèrement l'icône logo pour l'équilibre optique */
 @media(min-width: 701px){ .brand-header img { transform: translateY(0px); } }
+/* ——— v1.7.578 — RETOUR : LE « DTP & AI STUDIO » REPART À DROITE ———
+   Il avait été mis à gauche par symétrie (v1.7.578, première mouture), puis
+   l'auteur a demandé le retour à l'ordre d'origine : « finalement réinverse le
+   numéro de version, il était mieux à gauche dès le départ ». La pastille de
+   version occupe donc de nouveau la GAUCHE, ce tag la DROITE. Les deux sont en
+   position absolue dans une bande flex : le logo, lui, ne bouge pas d'un
+   pixel, il reste centré. */
 .brand-tag {
   position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
   font-family: var(--f-mono); font-size: 10px;
   letter-spacing: .3em; text-transform: uppercase; color: var(--muted);
 }
 @media(max-width:680px){ .brand-tag { display:none; } }
+/* ——— DERNIÈRE VERSION, EN HAUT À GAUCHE ———
+   Miroir exact de .brand-tag (qui occupe la droite) : même famille mono, même
+   bande du colophon. Le numéro affiché est celui de l'APPLICATION : c'est un
+   marqueur VIVANT, remplacé à chaque bump (rechercher « brand-ver » dans le
+   plan de bump des releases — ne pas oublier cette ligne). */
+.brand-ver {
+  position: absolute; left: 24px; top: 50%; transform: translateY(-50%);
+  font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .16em; color: var(--ink-soft); line-height: 1;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  padding: 3px 10px; white-space: nowrap;
+}
+/* En mobile la bande est étroite : la pastille reste visible (demande : « dès le
+   départ ») mais se resserre, comme .brand-tag qui s'efface, lui, sous 680 px. */
+@media(max-width:680px){ .brand-ver { left: 14px; font-size: 9px; padding: 2px 8px; letter-spacing: .1em; } }
 
 /* ——— NAVIGATION ——— */
 nav {
@@ -466,16 +488,6 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
   display: inline-flex; align-items: center; gap: 12px;
 }
 .install-head .inst-title svg { width: 21px; height: 21px; stroke: var(--magenta); stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.inst-online {
-  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
-  letter-spacing: .14em; text-transform: uppercase; color: var(--ink);
-  text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
-  border-bottom: 1px solid var(--ink); padding-bottom: 2px;
-  transition: color .25s var(--ease), border-color .25s var(--ease);
-}
-.inst-online:hover { color: var(--magenta); border-color: var(--magenta); }
-.inst-online .arr { transition: transform .25s var(--ease); }
-.inst-online:hover .arr { transform: translateX(3px); }
 .install-shell .inst-desc { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 16px; line-height: 1.65; }
 .cmd-block {
   display: flex; align-items: center; gap: 10px;
@@ -1500,6 +1512,63 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
 
 /* ═══ v1.7.470 — page « nous aider » : mêmes jetons que la landing, mise en page dédiée ═══ */
+/* ═══ v1.7.578 — SOMMAIRE DE LA PAGE : TROIS PASTILLES, COLLÉES SOUS LA NAV ═══
+   La page a trois zones (aider le projet / nous écrire / presse & ressources)
+   mais aucune entrée : il fallait dérouler toute la page pour tomber sur le
+   formulaire ou sur les téléchargements. Trois pastilles numérotées répondent
+   aux deux questions d'un sommaire : « où puis-je aller » et « où suis-je »
+   (celle de la zone affichée passe à l'encre pleine, son numéro au jaune).
+
+   --som-top : la hauteur de la barre collante. Elle vaut 66 px, MESURÉE sur
+   cette page en 1280 comme en 390 px, et le script la remesure au chargement,
+   au redimensionnement et au changement de langue (les libellés changent de
+   longueur). Le sommaire vient donc toujours se coller dessous, au pixel.
+   Le fond est celui de la nav (papier à 92 % + flou) : le contenu passe
+   derrière sans trouer la bande. z-index 90 : sous la nav (120) et sous le
+   menu plein écran (118), donc jamais par-dessus eux. */
+:root { --som-top: 66px; }
+.aide-som {
+  position: sticky; top: var(--som-top); z-index: 90;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.aide-som-in {
+  max-width: 1180px; margin: 0 auto;
+  padding: 9px clamp(18px,4vw,40px);
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+}
+.aide-som-titre {
+  margin-right: 6px;
+  font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--muted);
+}
+.aide-som a {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; text-decoration: none;
+  color: var(--ink); background: var(--paper-3);
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  padding: 7px 14px;
+  transition: background .25s var(--ease), color .25s var(--ease), border-color .25s var(--ease);
+}
+.aide-som a:hover { border-color: var(--ink); }
+.aide-som a .aide-som-n {
+  font-size: 9px; font-weight: 700; letter-spacing: .06em; color: var(--magenta);
+}
+.aide-som a.is-on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.aide-som a.is-on .aide-som-n { color: var(--yellow); }
+/* Les trois cibles ne doivent pas se ranger SOUS la nav et le sommaire quand on
+   clique une pastille (l'ancre pose le titre exactement en haut d'écran sinon). */
+#aide, #ecrire, #ressources { scroll-margin-top: calc(var(--som-top) + 58px); }
+/* En mobile la bande est étroite : le mot « sommaire » et les mots longs
+   (« nous », « & ressources ») s'effacent, les trois pastilles tiennent alors
+   sur une ligne à 360 px. */
+@media(max-width:700px){
+  .aide-som-in { padding: 7px clamp(12px,3vw,18px); gap: 6px; }
+  .aide-som-titre, .aide-som-long { display: none; }
+  .aide-som a { font-size: 9.5px; padding: 6px 10px; gap: 6px; letter-spacing: .06em; }
+}
 .help-wrap { max-width: 1180px; margin: 0 auto; padding: clamp(26px,3.4vw,56px) clamp(18px,4vw,40px) clamp(40px,6vw,80px); }
 /* ═══ v1.7.474 — LE RYTHME VERTICAL DE LA PAGE ═══
    Une seule échelle pour toute la page : le titre respire de 12 px avant son texte, un bloc est
@@ -1633,8 +1702,63 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 .help-bug textarea { min-height: 150px; resize: vertical; }
 .help-bug-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 6px; }
 .help-bug-note { font-size: 12px; line-height: 1.6; color: var(--muted); max-width: 46ch; }
+/* ═══ v1.7.578 — LE FORMULAIRE DE CONTACT, REPENSÉ ═══
+   (1) LE SUJET SE CHOISIT D'ABORD, en cinq pastilles, avant les champs — c'était
+       la demande : « il faudrait plusieurs choix au départ de celui-ci ».
+   (2) CHAQUE CHAMP PORTE UNE AIDE GRISÉE (placeholder) : on comprend quoi écrire
+       sans même lire l'étiquette.
+   (3) LE SUJET CHOISI DÉCIDE de l'objet du courrier ET de la question posée sous
+       chaque champ : les étiquettes et les aides sont réécrites en JS, dans les
+       trois langues de la page (les textes du HTML servent de repli).
+   Piège de langue connu depuis 1.7.472 : une règle de classe bat le
+   « [data-lang] { display: none } », d'où l'exception :not() ci-dessous. */
+.help-sujet { margin: 0; }
+.help-sujet-titre { margin: 0 0 10px; font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+html[lang="fr"] .help-sujet [data-lang]:not([data-lang="fr"]),
+html[lang="en"] .help-sujet [data-lang]:not([data-lang="en"]),
+html[lang="ja"] .help-sujet [data-lang]:not([data-lang="ja"]) { display: none; }
+.help-sujet-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.help-sujet-row button {
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-soft); background: var(--paper);
+  border: 1px solid var(--line-strong); border-radius: 999px; padding: 8px 15px;
+  cursor: pointer; transition: color .2s var(--ease), background .2s var(--ease), border-color .2s var(--ease);
+}
+.help-sujet-row button:hover { color: var(--ink); border-color: var(--ink); }
+.help-sujet-row button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.help-sujet-row button[aria-checked="true"] { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+.help-sujet-aide { margin: 10px 0 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+.help-form-err { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--magenta); }
+.help-bug-grid .help-sujet-row.is-err button { border-color: var(--magenta); color: var(--magenta); }
+.help-bug-grid .champ.is-err input, .help-bug-grid .champ.is-err textarea { border-color: var(--magenta); }
+.help-bug input::placeholder, .help-bug textarea::placeholder { color: var(--muted); opacity: 1; }
+
 
 .help-note { margin: 18px 0 0; font-size: 13px; line-height: 1.7; color: var(--muted); }.help-note a { color: var(--ink); }
+/* ═══ v1.7.578 — PRESSE & RESSOURCES : deux téléchargements, aucune demande ═══
+   Même famille visuelle que le formulaire (encadré, papier, kraft) pour que la
+   page se lise d'un seul tenant. Les deux cartes reprennent le filet coloré de
+   gauche des « aider autrement » de l'accueil : cyan, magenta. */
+.help-ress { margin-top: clamp(30px,4vw,50px); border: 1px solid var(--line); background: var(--paper-3); padding: clamp(20px,2.6vw,32px); }
+.help-ress-intro { max-width: 74ch; margin: 0 0 clamp(16px,2vw,24px); font-size: clamp(13.5px,1.25vw,15px); line-height: 1.75; color: var(--ink-soft); }
+.help-ress-intro a { color: var(--ink); }
+.help-ress-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(12px,1.6vw,18px); }
+@media (max-width: 700px) { .help-ress-grid { grid-template-columns: 1fr; } }
+.help-ress-card {
+  display: block; color: var(--ink); text-decoration: none;
+  background: var(--paper); border: 1px solid var(--line-strong); border-left: 3px solid var(--cyan);
+  padding: clamp(16px,2vw,24px);
+  transition: border-color .25s var(--ease), background .25s var(--ease);
+}
+.help-ress-card:nth-child(2) { border-left-color: var(--magenta); }
+.help-ress-card:hover { border-color: var(--ink); }
+.help-ress-card:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.help-ress-kick { display: block; margin-bottom: 8px; font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.help-ress-card h3 { font-family: var(--f-caps); font-size: clamp(18px,2vw,23px); font-weight: 400; line-height: 1.06; color: var(--ink); margin-bottom: 8px; }
+.help-ress-card p { font-size: 13.5px; line-height: 1.75; color: var(--ink-soft); }
+.help-ress-dl { display: inline-block; margin-top: 12px; font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+.help-ress-card:hover .help-ress-dl { text-decoration: underline; }
+
 /* la page courante garde le trait de la nav, comme au survol (la landing n'a que :hover) */
 .nav-links a[aria-current="page"] { color: var(--ink); }
 .nav-links a[aria-current="page"]::after { transform: scaleX(1); }
@@ -1737,6 +1861,10 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <a href="index.html" aria-label="SuperPrint — Open app">
     <img src="favicon.png" alt="SuperPrint — logo">
   </a>
+  <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
+       droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
+       du plan de bump de release. -->
+  <span class="brand-ver">v1.7.578</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
@@ -1794,7 +1922,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.577</span>
+    <span>SuperPrint v1.7.578</span>
   </div>
 </div>
 
@@ -1808,11 +1936,24 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <img src="favicon.png" alt="" width="56" height="56">
 </div>
 
+<!-- ═══ v1.7.578 — SOMMAIRE DE LA PAGE : LES TROIS ZONES, EN HAUT ═══
+     Aide (le projet et le don) / le formulaire / la presse à télécharger.
+     Enfant direct de <body>, avant .help-wrap : c'est ce qui lui permet de
+     coller sous la nav sur toute la hauteur de la page (voir le CSS). -->
+<div class="aide-som" role="navigation" aria-label="Sommaire de la page / Page index / 目次">
+  <div class="aide-som-in">
+    <span class="aide-som-titre"><span class="inline-fr">Sommaire</span><span class="inline-en">On this page</span><span class="inline-ja">目次</span></span>
+    <a href="#aide"><span class="aide-som-n">01</span><span class="inline-fr">Le projet</span><span class="inline-en">The project</span><span class="inline-ja">プロジェクト</span></a>
+    <a href="#ecrire"><span class="aide-som-n">02</span><span class="inline-fr"><span class="aide-som-long">Nous </span>écrire</span><span class="inline-en">Write<span class="aide-som-long"> to us</span></span><span class="inline-ja">ご連絡</span></a>
+    <a href="#ressources"><span class="aide-som-n">03</span><span class="inline-fr">Presse<span class="aide-som-long"> &amp; ressources</span></span><span class="inline-en">Press<span class="aide-som-long"> &amp; resources</span></span><span class="inline-ja">プレス<span class="aide-som-long">・資料</span></span></a>
+  </div>
+</div>
+
 <!-- ══════════════ HERO
 <!-- ══════════════ CONTENU ══════════════ -->
 <div class="help-wrap">
 
-  <div class="help-top">
+  <div class="help-top" id="aide">
     <div class="help-intro">
   <p class="help-kicker" data-lang="fr">Projet indépendant</p>
   <p class="help-kicker" data-lang="en">Independent project</p>
@@ -1865,45 +2006,63 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 
 
 
-  <!-- ═══ v1.7.472 — SIGNALER UN BUG (formulaire sans serveur) ═══ -->
-  <section class="help-bug">
-    <h2 class="help-h2" data-lang="fr">Trouvé un bug ? Dites-le-nous.</h2>
-    <h2 class="help-h2" data-lang="en">Found a bug? Tell us.</h2>
-    <h2 class="help-h2" data-lang="ja">不具合を見つけましたか？</h2>
-    <p class="help-bug-intro" data-lang="fr">Un rendu qui ne correspond pas à l'écran, un PDF qui sort de travers, une césure fautive, une traduction manquante, un raccourci qui ne fait rien : un rapport précis vaut un don. Il n'y a <strong>pas de serveur derrière ce formulaire</strong> — le site est statique : le bouton ouvre votre logiciel de courrier avec le message déjà rédigé, adressé à <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>. Vous pouvez aussi écrire directement à cette adresse.</p>
-    <p class="help-bug-intro" data-lang="en">A rendering that does not match the screen, a PDF that comes out crooked, a wrong hyphenation, a missing translation, a shortcut that does nothing: a precise report is worth a donation. There is <strong>no server behind this form</strong> — the site is static: the button opens your mail software with the message already written, addressed to <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>. You can also write to that address directly.</p>
-    <p class="help-bug-intro" data-lang="ja">画面と出力が違う、PDF がずれる、改行位置がおかしい、翻訳が抜けている、ショートカットが効かない。正確な報告は寄付と同じくらい力になります。このサイトは静的で、<strong>フォームの後ろにサーバーはありません</strong>。ボタンを押すと、<a href="mailto:contact@superprint.cc">contact@superprint.cc</a> 宛ての文面が作成された状態でメールソフトが開きます。直接メールしていただいても構いません。</p>
+  <!-- ═══ v1.7.578 — NOUS ÉCRIRE : CINQ SUJETS, UN SEUL FORMULAIRE (sans serveur) ═══ -->
+  <section class="help-bug" id="ecrire">
+    <h2 class="help-h2" data-lang="fr">Un bug, une formation, un conseil, le projet, la presse : écrivez-nous.</h2>
+    <h2 class="help-h2" data-lang="en">A bug, a training course, some advice, the project, the press: write to us.</h2>
+    <h2 class="help-h2" data-lang="ja">不具合、研修、相談、プロジェクト、プレス — ご用件をお書きください。</h2>
+    <p class="help-bug-intro" data-lang="fr">Choisissez d'abord votre sujet : il donne son objet au courrier et il adapte les questions posées sous les champs. Il n'y a <strong>pas de serveur derrière ce formulaire</strong> — le site est statique : le bouton ouvre votre logiciel de courrier avec le message déjà rédigé, adressé à <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>. Vous pouvez aussi écrire directement à cette adresse.</p>
+    <p class="help-bug-intro" data-lang="en">Pick your subject first: it sets the subject line of the e-mail and adapts the questions asked under each field. There is <strong>no server behind this form</strong> — the site is static: the button opens your mail software with the message already written, addressed to <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>. You can also write to that address directly.</p>
+    <p class="help-bug-intro" data-lang="ja">まずご用件をお選びください。それによりメールの件名が決まり、各欄の質問も変わります。このサイトは静的で、<strong>フォームの後ろにサーバーはありません</strong>。ボタンを押すと、<a href="mailto:contact@superprint.cc">contact@superprint.cc</a> 宛ての文面が作成された状態でメールソフトが開きます。直接メールしていただいても構いません。</p>
 
     <form id="bugForm" class="help-bug-grid" novalidate>
-      <div class="plein">
-        <label for="bugOu" data-lang="fr">Où ? (écran, outil, ou nom du fichier .sp)</label>
-        <label for="bugOu" data-lang="en">Where? (screen, tool, or .sp file name)</label>
-        <label for="bugOu" data-lang="ja">どこで？（画面、ツール、.sp ファイル名）</label>
-        <input id="bugOu" name="ou" type="text" autocomplete="off">
+      <div class="plein champ help-sujet">
+        <p class="help-sujet-titre" data-lang="fr">1 · Votre sujet</p>
+        <p class="help-sujet-titre" data-lang="en">1 · Your subject</p>
+        <p class="help-sujet-titre" data-lang="ja">1 · ご用件</p>
+        <div class="help-sujet-row" role="radiogroup" aria-label="Sujet du message / Message subject">
+          <button type="button" role="radio" aria-checked="false" data-sujet="projet"><span class="inline-fr">Participer au projet</span><span class="inline-en">Join the project</span><span class="inline-ja">プロジェクトに参加</span></button>
+          <button type="button" role="radio" aria-checked="false" data-sujet="formation"><span class="inline-fr">Demander une formation</span><span class="inline-en">Ask for training</span><span class="inline-ja">研修を依頼</span></button>
+          <button type="button" role="radio" aria-checked="false" data-sujet="conseil"><span class="inline-fr">Demander un conseil</span><span class="inline-en">Ask for advice</span><span class="inline-ja">相談したい</span></button>
+          <button type="button" role="radio" aria-checked="false" data-sujet="bug"><span class="inline-fr">Relever un bug</span><span class="inline-en">Report a bug</span><span class="inline-ja">不具合を報告</span></button>
+          <button type="button" role="radio" aria-checked="false" data-sujet="presse"><span class="inline-fr">Presse &amp; médias</span><span class="inline-en">Press &amp; media</span><span class="inline-ja">プレス・メディア</span></button>
+        </div>
+        <p class="help-sujet-aide" data-lang="fr">Le sujet choisi décide de l'objet du courrier et de la question posée sous chaque champ. Un rapport de bug précis vaut un don.</p>
+        <p class="help-sujet-aide" data-lang="en">The subject you pick sets the e-mail subject and the question asked under each field. A precise bug report is worth a donation.</p>
+        <p class="help-sujet-aide" data-lang="ja">選んだご用件が、メールの件名と各欄の質問を決めます。正確な不具合報告は寄付と同じくらい力になります。</p>
       </div>
-      <div>
-        <label for="bugQuoi" data-lang="fr">Ce que vous faisiez</label>
-        <label for="bugQuoi" data-lang="en">What you were doing</label>
-        <label for="bugQuoi" data-lang="ja">何をしていたか</label>
-        <input id="bugQuoi" name="quoi" type="text" autocomplete="off">
+
+      <p class="plein help-form-err" id="formErr" hidden></p>
+
+      <div class="plein champ">
+        <label for="bugOu" data-lang="fr">De quoi s'agit-il ?</label>
+        <label for="bugOu" data-lang="en">What is it about?</label>
+        <label for="bugOu" data-lang="ja">何についてですか？</label>
+        <input id="bugOu" name="ou" type="text" autocomplete="off" placeholder="ex. écran Mise en page, outil Césure, fichier brochure.sp">
       </div>
-      <div>
+      <div class="champ">
+        <label for="bugQuoi" data-lang="fr">Plus de détails</label>
+        <label for="bugQuoi" data-lang="en">More details</label>
+        <label for="bugQuoi" data-lang="ja">もう少し詳しく</label>
+        <input id="bugQuoi" name="quoi" type="text" autocomplete="off" placeholder="ex. j'ai exporté en PDF, j'ai changé la police">
+      </div>
+      <div class="champ">
         <label for="bugMail" data-lang="fr">Votre courriel (facultatif, pour la réponse)</label>
         <label for="bugMail" data-lang="en">Your e-mail (optional, for the reply)</label>
         <label for="bugMail" data-lang="ja">メールアドレス（任意、返信用）</label>
-        <input id="bugMail" name="mail" type="email" autocomplete="email">
+        <input id="bugMail" name="mail" type="email" autocomplete="email" placeholder="prenom@domaine.com">
       </div>
-      <div class="plein">
-        <label for="bugCorps" data-lang="fr">Ce qui se passe, et ce que vous attendiez</label>
-        <label for="bugCorps" data-lang="en">What happens, and what you expected</label>
-        <label for="bugCorps" data-lang="ja">起きていること、期待していたこと</label>
-        <textarea id="bugCorps" name="corps"></textarea>
+      <div class="plein champ">
+        <label for="bugCorps" data-lang="fr">Votre message</label>
+        <label for="bugCorps" data-lang="en">Your message</label>
+        <label for="bugCorps" data-lang="ja">本文</label>
+        <textarea id="bugCorps" name="corps" placeholder="Quelques lignes suffisent. Ce que vous faites, ce qui se passe, ce que vous attendiez."></textarea>
       </div>
       <div class="help-bug-actions plein">
         <button type="submit" class="btn btn-primary"><span class="inline-fr">Ouvrir mon courrier</span><span class="inline-en">Open my mail</span><span class="inline-ja">メールを開く</span> <span class="arr" aria-hidden="true">→</span></button>
-        <span class="help-bug-note" data-lang="fr">La version de SuperPrint, votre navigateur et l'adresse de la page sont ajoutés automatiquement au message.</span>
-        <span class="help-bug-note" data-lang="en">The SuperPrint version, your browser and the page address are added to the message automatically.</span>
-        <span class="help-bug-note" data-lang="ja">SuperPrint のバージョン、ブラウザ、ページのアドレスは自動的に文面に追加されます。</span>
+        <span class="help-bug-note" data-lang="fr">Le sujet choisi est inscrit dans l'objet du message. La version de SuperPrint, la langue de la page, votre navigateur et l'adresse de la page sont ajoutés automatiquement.</span>
+        <span class="help-bug-note" data-lang="en">Your subject is written into the message subject line. The SuperPrint version, the page language, your browser and the page address are added automatically.</span>
+        <span class="help-bug-note" data-lang="ja">選んだご用件がメールの件名になります。SuperPrint のバージョン、ページの言語、ブラウザ、ページのアドレスは自動的に文面に追加されます。</span>
       </div>
     </form>
   </section>
@@ -1912,6 +2071,29 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <p class="help-note" data-lang="en">Rather help in another way? Just as valuable: <a href="documentation.html">report a bug or a missing translation</a>, show SuperPrint around you, or send us a layout you composed with it — they often end up as templates in the carousel on the <a href="index.html">home page</a>.</p>
   <p class="help-note" data-lang="ja">別の形での支援も同じくらい力になります。<a href="documentation.html">不具合や未翻訳の報告</a>、SuperPrintの紹介、そして作ったレイアウトの共有 — 多くは<a href="index.html">ホームページ</a>のテンプレートになります。</p>
 
+  <!-- ═══ v1.7.578 — PRESSE & RESSOURCES : le dossier de presse et les logos HD ═══ -->
+  <section class="help-ress" id="ressources">
+    <h2 class="help-h2" data-lang="fr">Presse &amp; ressources</h2>
+    <h2 class="help-h2" data-lang="en">Press &amp; resources</h2>
+    <h2 class="help-h2" data-lang="ja">プレス・資料</h2>
+    <p class="help-ress-intro" data-lang="fr">Tout ce qui suit est libre d'usage : rien à demander, aucun formulaire à remplir, aucune mention obligatoire. Vous préférez que nous vous l'envoyions ? Le formulaire ci-dessus, sujet <a href="#ecrire">« Presse &amp; médias »</a>.</p>
+    <p class="help-ress-intro" data-lang="en">Everything below is free to use: nothing to ask for, no form to fill in, no mandatory credit. Would you rather we sent it to you? Use the form above, subject <a href="#ecrire">“Press &amp; media”</a>.</p>
+    <p class="help-ress-intro" data-lang="ja">以下はすべて自由にご利用いただけます。許可申請も書式も、クレジット表記も必要ありません。こちらからお送りする場合は、上のフォームで <a href="#ecrire">「プレス・メディア」</a> をお選びください。</p>
+    <div class="help-ress-grid">
+      <a class="help-ress-card" href="presse/superprint-dossier-presse.pdf" download>
+        <span class="help-ress-kick">PDF</span>
+        <h3><span class="inline-fr">Dossier de presse</span><span class="inline-en">Press kit</span><span class="inline-ja">プレスキット</span></h3>
+        <p><span class="inline-fr">Le projet, les deux auteurs, la fiche technique, les chiffres et des captures d'écran prêtes à publier.</span><span class="inline-en">The project, the two authors, the technical sheet, the figures and ready-to-publish screenshots.</span><span class="inline-ja">プロジェクト、著者二人、技術仕様、数字、そのまま掲載できる画面キャプチャ。</span></p>
+        <span class="help-ress-dl"><span class="inline-fr">Télécharger le PDF</span><span class="inline-en">Download the PDF</span><span class="inline-ja">PDFをダウンロード</span> <span class="arr" aria-hidden="true">→</span></span>
+      </a>
+      <a class="help-ress-card" href="presse/superprint-logos-hd.zip" download>
+        <span class="help-ress-kick">ZIP</span>
+        <h3><span class="inline-fr">Logos haute définition</span><span class="inline-en">High-definition logos</span><span class="inline-ja">高解像度ロゴ</span></h3>
+        <p><span class="inline-fr">Le logo SuperPrint en haute définition : fond clair et fond foncé, pour l'écran comme pour l'impression.</span><span class="inline-en">The SuperPrint logo in high definition: light and dark backgrounds, for screen and for print.</span><span class="inline-ja">SuperPrintのロゴ（高解像度）。明るい背景用と暗い背景用、画面用と印刷用。</span></p>
+        <span class="help-ress-dl"><span class="inline-fr">Télécharger le .zip</span><span class="inline-en">Download the .zip</span><span class="inline-ja">.zipをダウンロード</span> <span class="arr" aria-hidden="true">→</span></span>
+      </a>
+    </div>
+  </section>
 </div>
 
 <footer>
@@ -1967,7 +2149,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.577</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.578</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>
@@ -2240,37 +2422,225 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 </script>
 
-<!-- ═══ v1.7.472 — FORMULAIRE DE SIGNALEMENT : composition du courrier (aucun serveur) ═══ -->
+<!-- ═══ v1.7.578 — FORMULAIRE DE CONTACT : cinq sujets, composition du courrier (aucun serveur) ═══ -->
 <script>
 (function () {
   var form = document.getElementById('bugForm');
   if (!form) return;
+  var ou = document.getElementById('bugOu');
+  var quoi = document.getElementById('bugQuoi');
+  var mail = document.getElementById('bugMail');
+  var corps = document.getElementById('bugCorps');
+  var rangee = form.querySelector('.help-sujet-row');
+  var err = document.getElementById('formErr');
+  if (!ou || !quoi || !mail || !corps || !rangee) return;
+  var pastilles = Array.prototype.slice.call(rangee.querySelectorAll('button[data-sujet]'));
+
+  /* ── LES CINQ SUJETS ──────────────────────────────────────────────────────
+     « objet » reste en FRANÇAIS : c'est la langue du destinataire
+     (contact@superprint.cc), et l'objet doit être lisible d'un coup d'œil dans
+     une boîte de réception. Les étiquettes et les aides, elles, suivent la
+     langue de la page : l1 = premier champ, l2 = second, l4 = le message,
+     p1/p2/p4 = leur texte grisé. */
+  var D = {
+    projet: {
+      objet: 'Participer au projet',
+      fr: { l1: 'Votre profil, ou ce que vous faites', p1: 'ex. traducteur, illustrateur, étudiant, développeur, imprimeur',
+            l2: 'Comment vous voulez aider', p2: 'ex. traduire, tester, illustrer, relire la documentation, héberger',
+            l4: 'Ce que vous proposez', p4: 'Quelques lignes suffisent : ce que vous aimeriez apporter au projet, et le temps que vous pouvez y mettre.' },
+      en: { l1: 'Your background, or what you do', p1: 'e.g. translator, illustrator, student, developer, printer',
+            l2: 'How you would like to help', p2: 'e.g. translate, test, illustrate, proofread the manual, host',
+            l4: 'What you propose', p4: 'A few lines are enough: what you would like to bring to the project, and how much time you can give.' },
+      ja: { l1: 'あなたの立場・お仕事', p1: '例：翻訳者、イラストレーター、学生、開発者、印刷所',
+            l2: 'どのように協力できるか', p2: '例：翻訳、テスト、イラスト、マニュアルの校正、サーバー提供',
+            l4: 'ご提案の内容', p4: '数行で結構です。プロジェクトに何を加えたいか、どのくらい時間を割けるかをご記入ください。' }
+    },
+    formation: {
+      objet: 'Demande de formation',
+      fr: { l1: 'Le logiciel concerné', p1: 'ex. SuperPrint Editor, Studio IA, SuperTyPo, les trois',
+            l2: 'Votre niveau aujourd\'hui', p2: 'ex. je débute, je fais déjà des livres, je viens d\'un autre logiciel (InDesign, Scribus)',
+            l4: 'Ce que vous voulez apprendre', p4: 'ex. la mise en page, les gabarits, l\'export PDF pour l\'imprimeur, le Studio IA' },
+      en: { l1: 'Which software', p1: 'e.g. SuperPrint Editor, AI Studio, SuperTyPo, all three',
+            l2: 'Your level today', p2: 'e.g. beginner, I already make books, I come from another tool (InDesign, Scribus)',
+            l4: 'What you want to learn', p4: 'e.g. layout, templates, PDF export for the printer, the AI Studio' },
+      ja: { l1: '対象のソフト', p1: '例：SuperPrint Editor、AIスタジオ、SuperTyPo、すべて',
+            l2: '現在の習熟度', p2: '例：初心者、書籍を制作したことがある、他ソフト（InDesign、Scribus）から移行',
+            l4: '学びたいこと', p4: '例：レイアウト、テンプレート、印刷所向けPDF書き出し、AIスタジオ' }
+    },
+    conseil: {
+      objet: 'Demande de conseil',
+      fr: { l1: 'Votre projet', p1: 'ex. un roman 14 × 21, un flyer A5, un catalogue, un PDF pour l\'imprimeur',
+            l2: 'Où vous en êtes', p2: 'ex. rien n\'est commencé, j\'ai un fichier Word, j\'ai déjà un PDF',
+            l4: 'Votre question', p4: 'Décrivez la question en quelques lignes : format, délai, budget, contraintes de l\'imprimeur.' },
+      en: { l1: 'Your project', p1: 'e.g. a 14 × 21 novel, an A5 flyer, a catalogue, a print-ready PDF',
+            l2: 'Where you stand', p2: 'e.g. nothing started, I have a Word file, I already have a PDF',
+            l4: 'Your question', p4: 'Describe your question in a few lines: format, deadline, budget, printer constraints.' },
+      ja: { l1: '制作物', p1: '例：14×21の小説、A5チラシ、カタログ、印刷用PDF',
+            l2: '現在の状況', p2: '例：未着手、Wordファイルがある、PDFがある',
+            l4: 'ご質問', p4: '書式、締切、予算、印刷所の条件などを数行でご記入ください。' }
+    },
+    bug: {
+      objet: 'Rapport de bug',
+      fr: { l1: 'Où ? (écran, outil, ou nom du fichier .sp)', p1: 'ex. écran Mise en page, outil Césure, fichier brochure.sp',
+            l2: 'Ce que vous faisiez', p2: 'ex. j\'ai exporté en PDF, j\'ai changé la police, j\'ai relancé l\'aperçu',
+            l4: 'Ce qui se passe, et ce que vous attendiez', p4: 'ex. le titre reste en gras alors qu\'il est réglé en maigre ; le PDF sort avec une page blanche à la fin.' },
+      en: { l1: 'Where? (screen, tool, or .sp file name)', p1: 'e.g. Layout screen, Hyphenation tool, brochure.sp',
+            l2: 'What you were doing', p2: 'e.g. I exported to PDF, I changed the font, I reopened the preview',
+            l4: 'What happens, and what you expected', p4: 'e.g. the title stays bold although it is set to light; the PDF ends with a blank page.' },
+      ja: { l1: 'どこで？（画面、ツール、.sp ファイル名）', p1: '例：レイアウト画面、ハイフネーション、brochure.sp',
+            l2: '何をしていたか', p2: '例：PDF書き出し、フォント変更、プレビューの再表示',
+            l4: '起きていること、期待していたこと', p4: '例：細字なのにタイトルが太字のまま、PDFの最後に白紙が入る。' }
+    },
+    presse: {
+      objet: 'Presse',
+      fr: { l1: 'Votre support', p1: 'ex. magazine, blog, chaîne vidéo, podcast, université, association',
+            l2: 'Votre échéance', p2: 'ex. avant vendredi, pour le numéro de novembre, sans urgence',
+            l4: 'Votre demande', p4: 'ex. logos haute définition, dossier de presse, captures d\'écran, interview, visuels des auteurs.' },
+      en: { l1: 'Your outlet', p1: 'e.g. magazine, blog, video channel, podcast, university, non-profit',
+            l2: 'Your deadline', p2: 'e.g. before Friday, for the November issue, no rush',
+            l4: 'Your request', p4: 'e.g. high-definition logos, press kit, screenshots, interview, author photos.' },
+      ja: { l1: '媒体・チャンネル', p1: '例：雑誌、ブログ、動画、ポッドキャスト、大学、団体',
+            l2: '締切', p2: '例：金曜まで、11月号向け、急ぎではない',
+            l4: 'ご依頼内容', p4: '例：高解像度ロゴ、プレスキット、画面キャプチャ、インタビュー、著者写真。' }
+    }
+  };
+
+  var ERREURS = {
+    sujet: { fr: 'Choisissez d\'abord votre sujet, puis remplissez le message.',
+             en: 'Pick your subject first, then write your message.',
+             ja: 'まずご用件を選び、本文をご記入ください。' },
+    corps: { fr: 'Ajoutez au moins quelques mots — dans le message, ou dans le premier champ.',
+             en: 'Add at least a few words — in the message, or in the first field.',
+             ja: '本文（または最初の欄）に数行ご記入ください。' }
+  };
+
+  var SUJET = '';
+  function langue() { return (document.documentElement.lang || 'en').toLowerCase().slice(0, 2); }
+  function sujetCourant() { return SUJET ? D[SUJET] : null; }
+
+  /* Le texte du HTML est conservé comme repli : tant qu'aucun sujet n'est choisi,
+     on remet exactement ce que la page déclarait. */
+  function poserEtiquettes(idChamp, cle) {
+    var labs = form.querySelectorAll('label[for="' + idChamp + '"]');
+    Array.prototype.forEach.call(labs, function (lab) {
+      if (!lab.hasAttribute('data-defaut')) lab.setAttribute('data-defaut', lab.textContent);
+      var lg = (lab.getAttribute('data-lang') || 'en');
+      var s = sujetCourant();
+      lab.textContent = (s && s[lg] && s[lg][cle]) ? s[lg][cle] : lab.getAttribute('data-defaut');
+    });
+  }
+  function poserAide(el, cle) {
+    if (!el.hasAttribute('data-defaut')) el.setAttribute('data-defaut', el.getAttribute('placeholder') || '');
+    var s = sujetCourant();
+    var lg = langue();
+    el.setAttribute('placeholder', (s && s[lg] && s[lg][cle]) ? s[lg][cle] : el.getAttribute('data-defaut'));
+  }
+  function ecrireErreur(cle) {
+    if (!err) return;
+    err.setAttribute('data-err', cle);
+    err.textContent = (ERREURS[cle] || {})[langue()] || (ERREURS[cle] || {}).en || '';
+    err.hidden = !err.textContent;
+  }
+  function effacerErreur() {
+    if (err) { err.hidden = true; err.removeAttribute('data-err'); }
+    rangee.classList.remove('is-err');
+    Array.prototype.forEach.call(form.querySelectorAll('.champ.is-err'), function (c) { c.classList.remove('is-err'); });
+  }
+  /* Réécrit tout l'affichage du formulaire : au choix du sujet, au changement de
+     langue, et une fois au chargement. */
+  function maj() {
+    poserEtiquettes('bugOu', 'l1');
+    poserEtiquettes('bugQuoi', 'l2');
+    poserEtiquettes('bugCorps', 'l4');
+    poserAide(ou, 'p1');
+    poserAide(quoi, 'p2');
+    poserAide(corps, 'p4');
+    if (err && !err.hidden && err.getAttribute('data-err')) ecrireErreur(err.getAttribute('data-err'));
+  }
+
+  function choisir(b) {
+    SUJET = b.getAttribute('data-sujet') || '';
+    pastilles.forEach(function (x) { x.setAttribute('aria-checked', x === b ? 'true' : 'false'); });
+    effacerErreur();
+    maj();
+  }
+  pastilles.forEach(function (b) {
+    b.addEventListener('click', function () {
+      choisir(b);
+      if (!ou.value) ou.focus();
+    });
+  });
+  /* Flèches ← → pour passer d'un sujet à l'autre, comme un vrai groupe de boutons radio. */
+  rangee.addEventListener('keydown', function (e) {
+    var k = e.key, i = pastilles.indexOf(document.activeElement);
+    if (i < 0 || ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].indexOf(k) < 0) return;
+    e.preventDefault();
+    var n = (k === 'ArrowRight' || k === 'ArrowDown') ? (i + 1) % pastilles.length : (i - 1 + pastilles.length) % pastilles.length;
+    pastilles[n].focus();
+    choisir(pastilles[n]);
+  });
+
+  [ou, quoi, mail, corps].forEach(function (el) {
+    el.addEventListener('input', function () {
+      var c = el.closest ? el.closest('.champ') : null;
+      if (c) c.classList.remove('is-err');
+      if (err && err.getAttribute('data-err') === 'corps') effacerErreur();
+    });
+  });
+
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    var val = function (id) { var el = document.getElementById(id); return el ? (el.value || '').trim() : ''; };
-    var ou = val('bugOu'), quoi = val('bugQuoi'), mail = val('bugMail'), corps = val('bugCorps');
-    if (!corps && !ou) {
-      var el = document.getElementById('bugCorps');
-      if (el) el.focus();
+    var v = function (el) { return el && el.value ? el.value.trim() : ''; };
+    var vou = v(ou), vquoi = v(quoi), vmail = v(mail), vcorps = v(corps);
+    if (!SUJET) {
+      rangee.classList.add('is-err');
+      ecrireErreur('sujet');
+      if (pastilles[0]) pastilles[0].focus();
       return;
     }
-    var titre = '[SuperPrint] ' + (ou ? ou.slice(0, 60) : 'rapport de bug');
+    if (!vcorps && !vou) {
+      var champCorps = corps.closest ? corps.closest('.champ') : null;
+      if (champCorps) champCorps.classList.add('is-err');
+      ecrireErreur('corps');
+      corps.focus();
+      return;
+    }
+    var objet = D[SUJET].objet;
+    var version = (document.querySelector('.brand-ver') || document.querySelector('.splash-version'));
+    var titre = '[SuperPrint] ' + objet + (vou ? ' — ' + vou.slice(0, 60) : '');
     var lignes = [
-      'Où : ' + (ou || '(non précisé)'),
-      'Ce que je faisais : ' + (quoi || '(non précisé)'),
-      'Ce qui se passe :',
-      corps || '(à compléter)',
+      'Sujet : ' + objet,
+      'De quoi il s\'agit : ' + (vou || '(non précisé)'),
+      'Précisions : ' + (vquoi || '(non précisé)'),
       '',
-      'Courriel : ' + (mail || '(non fourni)'),
+      vcorps || '(à compléter)',
+      '',
+      'Courriel : ' + (vmail || '(non fourni)'),
       '',
       '—— informations techniques, ajoutées automatiquement ——',
-      'Version de SuperPrint : ' + (document.querySelector('.splash-version') ? document.querySelector('.splash-version').textContent : 'la page d’aide'),
+      'Version de SuperPrint : ' + (version ? version.textContent.trim() : 'inconnue'),
+      'Langue de la page : ' + langue().toUpperCase(),
       'Navigateur : ' + navigator.userAgent,
       'Page : ' + location.href
     ];
-    var lien = 'mailto:contact@superprint.cc?subject=' + encodeURIComponent(titre) + '&body=' + encodeURIComponent(lignes.join(String.fromCharCode(10)));
+    var lien = 'mailto:contact@superprint.cc'
+      + '?subject=' + encodeURIComponent(titre)
+      + '&body=' + encodeURIComponent(lignes.join(String.fromCharCode(10)));
+    /* Le site est statique : la navigation « mailto: » part vers le logiciel de
+       courrier du visiteur, aucun test ne peut l'observer. Cet événement publie
+       l'URL composée, sans rien changer au comportement. */
+    try { document.dispatchEvent(new CustomEvent('sp:mailto', { detail: { href: lien, sujet: objet } })); } catch (x) {}
     window.location.href = lien;
   });
+
+  maj();
+
+  /* Le changement de langue doit réécrire étiquettes, aides et message d'erreur :
+     setLang est déclarée plus haut dans la page, on l'enveloppe sans la modifier. */
+  var setLangOrigine = window.setLang;
+  if (typeof setLangOrigine === 'function') {
+    window.setLang = function (l, explicite) { setLangOrigine(l, explicite); maj(); };
+  }
 })();
 </script>
 
@@ -2280,6 +2650,72 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   if (window.paypal && paypal.HostedButtons) {
     paypal.HostedButtons({ hostedButtonId: "DHFGPJBRF88Q4" }).render("#paypal-container-DHFGPJBRF88Q4");
   }
+</script>
+
+<!-- ═══ v1.7.578 — SOMMAIRE : LA HAUTEUR DE LA NAV, ET LA ZONE COURANTE ═══ -->
+<script>
+(function () {
+  var som = document.querySelector('.aide-som');
+  if (!som) return;
+  var nav = document.querySelector('nav');
+
+  /* La hauteur de la barre collante n'est pas devinée : elle est mesurée. Une
+     langue plus longue ou un écran plus étroit peut la faire grandir, et le
+     sommaire doit rester collé dessous au pixel. */
+  function poserTop() {
+    if (!nav) return;
+    var h = Math.round(nav.getBoundingClientRect().height);
+    if (h > 0) document.documentElement.style.setProperty('--som-top', h + 'px');
+  }
+
+  var liens = Array.prototype.slice.call(som.querySelectorAll('a[href^="#"]'));
+  var cibles = liens.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+
+  function marquer(courante) {
+    liens.forEach(function (a, i) {
+      var on = cibles[i] === courante;
+      a.classList.toggle('is-on', on);
+      if (on) { a.setAttribute('aria-current', 'true'); } else { a.removeAttribute('aria-current'); }
+    });
+  }
+
+  /* La zone courante est la DERNIÈRE dont le haut est passé sous les deux
+     bandes collantes (nav + sommaire) : lecture directe, sans observateur, et
+     ça marche aussi pour la dernière zone, courte, quand on est en bas de page. */
+  function majZone() {
+    var haut = (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--som-top'), 10) || 66) + 62;
+    var courante = null;
+    for (var i = 0; i < cibles.length; i++) {
+      var c = cibles[i];
+      if (c && c.getBoundingClientRect().top - haut <= 0) courante = c;
+    }
+    if (!courante) courante = cibles[0];
+    if (window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 4) {
+      courante = cibles[cibles.length - 1];
+    }
+    if (courante) marquer(courante);
+  }
+
+  var attente = false;
+  function auDefilement() {
+    if (attente) return;
+    attente = true;
+    requestAnimationFrame(function () { attente = false; majZone(); });
+  }
+
+  poserTop();
+  majZone();
+  window.addEventListener('scroll', auDefilement, { passive: true });
+  window.addEventListener('resize', function () { poserTop(); majZone(); });
+  window.addEventListener('hashchange', function () { setTimeout(majZone, 60); });
+
+  /* setLang est enveloppée (jamais modifiée) : après un changement de langue,
+     les libellés du sommaire ne font plus la même largeur, on remesure. */
+  var setLangOrigine = window.setLang;
+  if (typeof setLangOrigine === 'function') {
+    window.setLang = function (l, explicite) { setLangOrigine(l, explicite); poserTop(); majZone(); };
+  }
+})();
 </script>
 
 </body>

@@ -9,6 +9,42 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.578] — 2026-09-28
+
+_Pages publiques : la version publiée s'affiche dans le colophon de l'accueil et de « Participer », la page Participer reçoit un sommaire de ses trois zones, un formulaire d'écriture à cinq sujets, et ses ressources presse en téléchargement libre_
+
+### Added — Pastille de version dans la bande du colophon (accueil + Participer)
+- Nouveau marqueur **vivant** : `<span class="brand-ver">vX.Y.Z</span>` en haut à **gauche** de la bande fine (`.brand-tag` restant à droite), en police mono 10 px, dans une pastille à filet. Il doit rester **synchrone avec la version de l'app** : il est donc ajouté au plan de bump (règle `<span class="brand-ver">v` + V_OLD + `</span>`).
+- Il vit dans **4 fichiers** : `superprint/index.html`, `sp213-local/public/superprint/index.html`, `superprint/help-us.html`, `sp213-local/public/superprint/help-us.html` (documenté dans les deux `VERSIONING.md`, §1 et §B).
+- Sous 680 px la pastille reste **visible** (14 px du bord, 9 px de police) alors que `.brand-tag` s'efface.
+- ⚠️ Une inversion gauche/droite des deux repères a été essayée puis **annulée le jour même** : l'état livré est l'état d'origine. Outils : `_dev/scripts/_fix_header_inverse_578.cjs` puis `_fix_header_retour_578.cjs`.
+
+### Removed — Lien « Ouvrir l'app en ligne » de la boîte d'installation locale
+- Le lien `.inst-online` a été retiré (HTML **et** les 4 règles CSS, dans les deux pages qui portent la même copie de `<style>`) : la boîte « Installer SuperPrint en local » ne garde que les instructions d'installation.
+
+### Added — Sommaire des trois zones de « Participer »
+- Trois pastilles collées sous la barre de navigation (`position: sticky`, `top: var(--som-top)` = hauteur **mesurée** de la nav, 66 px à 1280 comme à 390) : **01** le projet (`#aide`), **02** nous écrire (`#ecrire`), **03** presse & ressources (`#ressources`).
+- La pastille de la zone affichée passe à l'encre pleine ; un clic pose la zone **exactement sous le sommaire** (`scroll-margin-top`), jamais cachée derrière la barre.
+- Le repérage de zone lit les positions au défilement (un `IntersectionObserver` ne pouvait pas allumer la 3e pastille : la section presse est courte et en bas de page).
+- En mobile (≤ 700 px), le mot « sommaire » et les mots longs s'effacent : les trois pastilles tiennent sur une seule ligne en FR, EN et JA (0 débordement à 390 px).
+
+### Added — Formulaire d'écriture à cinq sujets (page Participer)
+- Le formulaire commence par le **sujet** : participer au projet, demander une formation, demander un conseil, relever un bug, presse & médias (`role="radiogroup"`, flèches ←/→).
+- Le sujet **décide de l'objet** du courrier (`[SuperPrint] <objet> — <premier champ>`) et **adapte les questions et les exemples grisés** de chaque champ (dictionnaire trilingue dans le script).
+- **Textes gris de repli** dans le HTML (tous les champs), mémorisés au premier passage dans `data-defaut`.
+- Validation : sans sujet, ou champ essentiel vide → erreur en rouge, focus, **rien n'est composé**. `setLang` est **enveloppée** pour re-rendre étiquettes, aides et message d'erreur au changement de langue.
+- ⚠️ Le site est **statique, sans serveur** : le bouton compose un `mailto:` vers contact@superprint.cc (aucun envoi côté site). L'URL composée est publiée par un événement `document` `sp:mailto` — c'est la seule façon de la tester. Un message de 2 000 caractères produit une URL de ~2 900 caractères.
+
+### Added — Section « Presse & ressources » (page Participer)
+- Deux cartes de téléchargement en libre accès : `presse/superprint-dossier-presse.pdf` (dossier de presse) et `presse/superprint-logos-hd.zip` (logos HD, fond clair et fond foncé).
+- ⚠️ **Les deux fichiers ne sont pas bumpés** et doivent être **déposés** dans les deux arbres (`superprint/presse/` et `sp213-local/public/superprint/presse/`) — sinon les deux liens répondent 404.
+
+### Docs
+- `VERSIONING.md` (les deux) : la pastille du colophon entre dans le §1 comme marqueur à bumper (4 fichiers), et le §B décrit le sommaire, le formulaire et les deux fichiers de presse « jamais bumpés ».
+
+### Scope
+- Pages publiques (`index.html`, `help-us.html`) uniquement, dans les deux arbres. Aucun changement sur l'application SuperPrint, sur le rendu PDF ni sur l'import/export de documents.
+
 ## [1.7.577] — 2026-09-28
 
 _Studio IA : la boîte de prompt reçoit ses quatre coins arrondis et garde désormais le prompt tapé (préférences et rechargement), le bouton + de nouvelle conversation repasse avant les bulles_
