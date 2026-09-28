@@ -10218,6 +10218,10 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
               m.addEventListener('downloadprogress', function (e) {
                 const pct = Math.round(((e && e.loaded) || 0) * 100);
                 if (loader && loader.labelEl) loader.labelEl.textContent = 'Chrome — téléchargement du modèle (une seule fois)… ' + pct + '%';
+                /* v1.7.579 — MÊME BARRE QUE LA GÉNÉRATION DE DOCUMENT (demande utilisateur).
+                   Le pourcentage s'affichait depuis longtemps, mais la barre restait à
+                   zéro : le téléchargement du modèle (parfois long) ne se voyait pas. */
+                if (loader && loader.barEl) loader.barEl.style.width = Math.max(2, Math.min(100, pct)) + '%';
               });
             }
           }).catch(function (e) {
@@ -10393,6 +10397,8 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
         progress_callback: function (p) {
           const pct = (p && typeof p.progress === 'number') ? Math.round(p.progress) : 0;
           if (loader && loader.labelEl) loader.labelEl.textContent = 'Transformers.js — chargement… ' + pct + '%';
+          /* v1.7.579 — MÊME BARRE QUE LA GÉNÉRATION DE DOCUMENT (demande utilisateur). */
+          if (loader && loader.barEl) loader.barEl.style.width = Math.max(2, Math.min(100, pct)) + '%';
         }
       });
     }).then(function (pipe) {
@@ -10714,6 +10720,11 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     const labelEl = b.querySelector('.model-loader-label');
     const barEl = b.querySelector('.model-loader-track i');
     labelEl.textContent = label;
+    /* v1.7.579 — LA BARRE EST VISIBLE DES L'APPARITION DU CHARGEMENT (2 %), comme
+       pour la génération de document : un moteur qui ne signale son avancement que
+       tard montre quand même tout de suite qu'il travaille (le modèle est long
+       à télécharger la première fois). */
+    if (barEl) barEl.style.width = '2%';
     el.appendChild(b);
     const log = $('chatLog');
     log.appendChild(el);
