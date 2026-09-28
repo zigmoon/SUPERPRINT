@@ -2,6 +2,28 @@
 <html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
+<!-- v1.7.579 - ANTI-FLASH : L'INTERFACE DU STUDIO RESTE INVISIBLE TANT QUE LA
+     PRE-HOME N'A PAS TRANCHE.
+     Arrivee depuis la page de presentation (?home=1), la pre-home ne s'ouvrait
+     qu'apres l'initialisation : pendant ce temps on voyait toute l'interface du
+     studio, et le pop-in des reglages pouvait s'ouvrir derriere. Le navigateur ne
+     peint donc plus rien du corps (visibility, et non display : la mise en page
+     reste en place) tant que html porte sp-avant-prehome ; seule la pre-home est
+     visible. Le script pose la classe AVANT le premier pixel, la pre-home la
+     retire en s'ouvrant, et un delai de secours (2,5 s) evite tout ecran vide. -->
+<style>
+  html.sp-avant-prehome body{visibility:hidden}
+  html.sp-avant-prehome #starter{visibility:visible}
+</style>
+<script>
+  (function () {
+    try {
+      var r = document.documentElement;
+      r.className += ' sp-avant-prehome';
+      setTimeout(function () { try { r.classList.remove('sp-avant-prehome'); } catch (e) {} }, 2500);
+    } catch (e) {}
+  })();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="google" content="notranslate">
 <title>Studio IA — Layout &amp; Canvas</title>
@@ -3880,7 +3902,14 @@
       if (_u.searchParams.get('home') === '1') {
         _u.searchParams.delete('home');
         try { window.history.replaceState(null, '', _u.pathname + (_u.search || '') + _u.hash); } catch (e2) {}
+        /* v1.7.579 - LE DELAI DE 120 ms EST CONSERVE : la pre-home en a besoin pour
+           s'ouvrir proprement (sans lui, elle restait fermee). Ce n'est plus un
+           flash : l'anti-flash pose en tete de page masque deja toute l'interface,
+           on ne voit donc RIEN avant elle. */
         setTimeout(function () { try { spStarterOuvrir(); } catch (_) {} }, 120);
+      } else {
+        /* studio ouvert directement : on leve l'anti-flash tout de suite. */
+        try { document.documentElement.classList.remove('sp-avant-prehome'); } catch (e3) {}
       }
     } catch (_) {}
   }
@@ -7908,6 +7937,8 @@ function spRtfLayoutInfo(src) {
     }
   }
   function spStarterOuvrir() {
+    /* v1.7.579 - la pre-home s'ouvre : on leve l'anti-flash pose en tete de page. */
+    try { document.documentElement.classList.remove('sp-avant-prehome'); } catch (_) {}
     const s = $('starter');
     if (!s) return;
     const ti = $('starterInput');
