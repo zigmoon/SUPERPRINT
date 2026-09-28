@@ -7841,7 +7841,12 @@ function spRtfLayoutInfo(src) {
     if (vers.length) {
       const cur = spStVerCourante(eng);
       html += '<div class="st-pop-sep"></div>';
-      html += '<div class="st-pop-h">' + escapeHtml((spStFiche(eng) || {}).nom || '') + ' — ' + escapeHtml(t('st.pop.model')) + '</div>';
+      /* v1.7.579 — L'EN-TÊTE DIT AUSSI AVEC OU SANS CLÉ : « SP213 local — Modèle ·
+         gratuit · sans clé ». Sans cela, la liste du bas ne se comprenait pas
+         (demande utilisateur). */
+      const _mH = (spStDispos() || []).filter(function (m) { return m.eng === eng; })[0] || {};
+      const _cleH = _mH.tk ? String(t(_mH.tk) || '') : '';
+      html += '<div class="st-pop-h" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml((spStFiche(eng) || {}).nom || '') + ' — ' + escapeHtml(t('st.pop.model')) + (_cleH ? ' · ' + escapeHtml(_cleH) : '') + '</div>';
       vers.forEach(function (x) {
         const on = (x.v === cur);
         /* v1.7.579 — MÊME ASPECT QUE LES LIGNES DE MOTEURS (demande utilisateur).
@@ -7857,12 +7862,28 @@ function spRtfLayoutInfo(src) {
            mesuré, « recommandé, le plus léger (env. 1,63 Go VRAM) » passait sur deux
            lignes et la ligne faisait 70 px au lieu de 54. Le détail complet reste
            dans l'infobulle de la ligne. */
-        const _tag = _p.slice(1).join(' — ').split(',')[0].split('(')[0].trim();
-        const _desc = x.d ? String(x.d) : String(x.v || '');
+        const _qual = _p.slice(1).join(' — ').split(',')[0].split('(')[0].trim();
+        /* v1.7.579 — AVEC OU SANS CLÉ, DIT SUR CHAQUE LIGNE DE VERSION (demande
+           utilisateur : « la liste de la fin du menu doit indiquer avec ou sans
+           clé »). On reprend EXACTEMENT le vocabulaire de la ligne du moteur
+           (gratuit · sans clé / clé API), pour que les deux se lisent pareil. */
+        const _moteur = (spStDispos() || []).filter(function (m) { return m.eng === eng; })[0] || {};
+        const _cle = _moteur.tk ? String(t(_moteur.tk) || '') : '';
+        /* L'étiquette reste COURTE, comme celle d'une ligne de moteur : « gratuit ·
+           sans clé ». Le qualificatif (recommandé, le plus rapide…) n'est ajouté que
+           s'il tient sur la ligne — mesuré : « gratuit · sans clé · fiable » sur un
+           nom long passait à la ligne et faisait 70 px au lieu de 54. Dans le doute,
+           l'intitulé complet reste dans l'infobulle de la ligne. */
+        const _tag = _cle ? ((_cle + (_qual ? ' · ' + _qual : '')).length <= 20 ? (_cle + ' · ' + _qual) : _cle) : _qual;
+        /* MÊME DESCRIPTION QUE LA LIGNE DU MOTEUR (demande utilisateur : « cela doit
+           avoir le même aspect »). L'identifiant technique du modèle (45 caractères
+           pour Ministral) passait sur deux lignes : la ligne faisait 70 px au lieu de
+           54. Il reste disponible dans l'infobulle de la ligne. */
+        const _desc = _moteur.nk ? String(t(_moteur.nk) || '') : (x.d ? String(x.d) : String(x.v || ''));
         const _coupe = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         html += '<button class="st-row' + (on ? ' on' : '') + '" type="button" role="option" aria-selected="' + on + '"' +
           ' data-eng="' + eng + '" data-ver="' + escapeHtml(x.v) + '" title="' + escapeHtml(String(x.t || '')) + '">' +
-          '<span class="st-row-t"><span class="st-row-n">' + escapeHtml(_nom) + '</span>' +
+          '<span class="st-row-t" style="flex-wrap:nowrap;overflow:hidden"><span class="st-row-n">' + escapeHtml(_nom) + '</span>' +
           (_tag ? '<span class="st-row-g" style="' + _coupe + 'min-width:0;flex:0 1 auto;max-width:62%">' + escapeHtml(_tag) + '</span>' : '') + '</span>' +
           (_desc ? '<span class="st-row-d" style="' + _coupe + '">' + escapeHtml(_desc) + '</span>' : '') + '</button>';
       });
