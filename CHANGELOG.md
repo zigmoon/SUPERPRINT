@@ -9,6 +9,29 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.577] — 2026-09-28
+
+_Studio IA : la boîte de prompt reçoit ses quatre coins arrondis et garde désormais le prompt tapé (préférences et rechargement), le bouton + de nouvelle conversation repasse avant les bulles_
+
+### Fixed — Studio IA : les QUATRE coins de la boîte de prompt
+- Mesure : `#promptInput` portait `border-radius: 0 0 5px 5px` — seuls les **deux coins du bas** étaient adoucis, le haut restait carré (d'où l'impression de boîte « à moitié arrondie »).
+- Le rayon s'applique maintenant aux **quatre coins** (`border-radius: 5px`), toujours plafonné à **5 px** pour rester dans l'identité anguleuse de SuperPrint.
+- Vérifié au navigateur (thèmes clair et sombre) par test de collision sur les quatre coins, avec contre-épreuve sur l'ancienne valeur.
+
+### Fixed — Studio IA : le prompt n'est plus perdu quand on va dans les préférences
+- **Cause mesurée** : sans modèle configuré, `sendMessage()` appelait `sp213ClearPrompt()` **avant** d'envoyer l'utilisateur dans les réglages (`offerModelChoice()`) → l'utilisateur réglait sa clé API, changeait de moteur, cliquait sur « Sauvegarder » et retrouvait la boîte **vide** (message « Puis retapez votre description. »).
+- Le texte **reste en place** ; un **brouillon** (`localStorage['sp213_prompt_draft']`) le mémorise et le rétablit au retour des préférences (bouton « Sauvegarder » **et** croix « Revenir au studio ») ainsi qu'après un **rechargement de l'onglet** (`init`).
+- Le brouillon n'est effacé qu'à l'**envoi réel** (`sp213ClearPrompt`) et ne recouvre **jamais** une saisie en cours. Nouveaux helpers exposés : `sp213SavePromptDraft`, `sp213RestorePromptDraft`.
+- ⚠️ `syncPromptPh()` est déclarée **dans `init()`** : l'appeler depuis `startStudio()` lève `ReferenceError: syncPromptPh is not defined` (le reste de la fonction est sauté). Le rétablissement passe donc par un vrai événement `input`, dont l'écouteur posé dans `init()` gère la hauteur et le placeholder.
+
+### Changed — Studio IA : le bouton + de nouvelle conversation passe en tête
+- `renderConvTabs()` ajoutait les bulles `.conv-tab` **puis** le bouton `.conv-add` : le « + » se retrouvait **après** toutes les conversations.
+- Le bouton est créé et inséré **avant** la première bulle (même classe, même infobulle, même action). Tri, renommage et suppression des conversations sont inchangés.
+- Vérifié au navigateur avec plusieurs conversations : la barre est bien `+ · bulles…`.
+
+### Scope
+- Studio IA (`sp213-studio.html`) uniquement, dans les deux arbres (web et miroir). Aucun changement sur l'application SuperPrint, sur le rendu PDF ni sur l'import/export de documents.
+
 ## [1.7.576] — 2026-09-28
 
 _Trois nouvelles maquettes (2 japonaises + 1 française) en tête de la page d'accueil, écriture japonaise par caractère, studio sans repères rouges, garde-fou « Page + » dans l'app_

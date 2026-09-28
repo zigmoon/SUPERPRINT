@@ -648,14 +648,17 @@
     width: 100%; min-width: 0; position: relative; min-height: 90px; max-height: 194px;
     display: flex;
   }
-  /* Boîte de prompt : coins BAS très légèrement arrondis (5 px max, demande
-     utilisateur), assez haute (2 lignes par défaut), transparente pour
-     laisser voir le placeholder overlay quand le champ est vide.
-     _SP_STUDIO_DESIGN_575 : le rayon ne dépasse JAMAIS 5 px — l'identité
-     SuperPrint reste anguleuse, seuls les deux coins bas s'adoucissent. */
+  /* Boîte de prompt : LES QUATRE COINS arrondis au MÊME rayon (5 px max),
+     assez haute (3 lignes par défaut), transparente pour laisser voir le
+     placeholder overlay quand le champ est vide.
+     🆕 _SP_STUDIO_PROMPT_577 — retour utilisateur : « la boîte de prompt doit
+     avoir les mêmes 4 angles ; actuellement seuls les coins du bas sont
+     visibles et pas ceux du haut ». Le rayon reste PLAFONNÉ à 5 px (identité
+     anguleuse de SuperPrint) mais s'applique aux QUATRE coins
+     (avant : border-radius: 0 0 5px 5px — deux coins bas seulement). */
   #promptInput {
     flex: 1; resize: none; min-height: 90px; max-height: 194px; width: 100%;
-    background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 0 0 5px 5px;
+    background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 5px;
     color: var(--text); padding: 12px 14px; font-size: 14px; line-height: 1.5; overflow-y: auto;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
@@ -3054,9 +3057,13 @@
     }
     window.addEventListener('resize', autoGrowPrompt);
     $('promptInput').addEventListener('input', syncPromptPh);
+    // 🆕 _SP_STUDIO_PROMPT_577 — chaque frappe met le brouillon à jour.
+    $('promptInput').addEventListener('input', sp213SavePromptDraft);
     $('promptInput').addEventListener('focus', syncPromptPh);
     $('promptInput').addEventListener('blur', syncPromptPh);
-    syncPromptPh();
+    // 🆕 _SP_STUDIO_PROMPT_577 — brouillon laissé par une session précédente.
+    sp213RestorePromptDraft();
+    syncPromptPh();   // ici on est DANS init() : l'appel est légitime
     $('exportSpBtn').addEventListener('click', openSaveMenu);
     $('viewInSpBtn').addEventListener('click', viewInSuperPrint);
     $('newDocBtn').addEventListener('click', () => $('convImportInput').click());
@@ -3076,6 +3083,9 @@
     if (welcomeClose) welcomeClose.addEventListener('click', () => {
       $('welcome').classList.add('hidden');
       $('studio').classList.add('active');
+      // 🆕 _SP_STUDIO_PROMPT_577 — retour au studio sans « Sauvegarder » : le
+      //   prompt tapé avant d'ouvrir les réglages revient dans la boîte.
+      sp213RestorePromptDraft();   // émet « input » -> syncPromptPh (portée d'init)
     });
 
     // 🆕 Conversations multiples : gérées via les onglets #convTabs (renderConvTabs).
@@ -6331,6 +6341,10 @@ function spRtfLayoutInfo(src) {
     } else {
       // Import depuis SuperPrint : la maquette est déjà chargée par importFromSuperPrint.
     }
+    // 🆕 _SP_STUDIO_PROMPT_577 — ON RETROUVE SON PROMPT APRÈS « SAUVEGARDER ».
+    //   L'utilisateur tape sa demande, part régler sa clé API / son moteur dans
+    //   les préférences, revient : son texte doit être TOUJOURS là.
+    sp213RestorePromptDraft();   // émet « input » -> syncPromptPh (portée d'init)
     $('promptInput').focus();
   }
 
@@ -6382,6 +6396,16 @@ function spRtfLayoutInfo(src) {
     if (!bar) return;
     bar.title = t('chat.convTabs');
     bar.innerHTML = '';
+    // 🆕 _SP_STUDIO_CONVADD_578 — le bouton + (nouvelle conversation) EN PREMIER,
+    //   avant les bulles : demande utilisateur (« plus logique au départ »),
+    //   avant : appendChild(add) après la boucle, donc APRÈS les bulles.
+    const add = document.createElement('button');
+    add.className = 'conv-add';
+    add.title = t('chat.new');
+    add.setAttribute('aria-label', t('chat.new'));
+    add.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    add.addEventListener('click', newConversation);
+    bar.appendChild(add);
     // Tri par date de mise à jour (plus récent en premier)
     const sorted = state.convs.slice().sort((a, b) => (b.updated || 0) - (a.updated || 0));
     sorted.forEach(c => {
@@ -6423,14 +6447,6 @@ function spRtfLayoutInfo(src) {
       });
       bar.appendChild(tab);
     });
-    // Bouton + (nouvelle conversation)
-    const add = document.createElement('button');
-    add.className = 'conv-add';
-    add.title = t('chat.new');
-    add.setAttribute('aria-label', t('chat.new'));
-    add.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-    add.addEventListener('click', newConversation);
-    bar.appendChild(add);
   }
 
   // ✏️ Renomme une conversation (prompt).
@@ -7383,7 +7399,7 @@ function spRtfLayoutInfo(src) {
 
   // Propose d'aller dans les réglages pour choisir son modèle au premier prompt.
   function offerModelChoice() {
-    appendChat('assistant', 'Aucun modèle n’est configuré pour générer votre maquette. Ouvrez les réglages et choisissez votre back-end :\n\n• OpenAI GPT (recommandé) — collez votre clé API sk-…\n• Anthropic Claude (Opus 5.5 / Sonnet 5) — collez votre clé API sk-ant-…\n• DeepSeek (cloud, raisonnement) — collez votre clé API sk-…\n• OpenRouter (100% gratuit) — créez une clé sur openrouter.ai puis collez-la (sk-or-…)\n• Groq (cloud, rapide) — collez votre clé API gsk_…\n• SP213 WLLM (local, hors-ligne) — aucun modèle gratuit ne vous convient ? utilisez le mode local\n\nPuis retapez votre description.');
+    appendChat('assistant', 'Aucun modèle n’est configuré pour générer votre maquette. Ouvrez les réglages et choisissez votre back-end :\n\n• OpenAI GPT (recommandé) — collez votre clé API sk-…\n• Anthropic Claude (Opus 5.5 / Sonnet 5) — collez votre clé API sk-ant-…\n• DeepSeek (cloud, raisonnement) — collez votre clé API sk-…\n• OpenRouter (100% gratuit) — créez une clé sur openrouter.ai puis collez-la (sk-or-…)\n• Groq (cloud, rapide) — collez votre clé API gsk_…\n• SP213 WLLM (local, hors-ligne) — aucun modèle gratuit ne vous convient ? utilisez le mode local\n\nVotre description est CONSERVÉE dans la boîte de prompt : enregistrez vos réglages, puis cliquez sur Envoyer.');
     // Ramener l'utilisateur vers les réglages (pré-home) après un court délai
     setTimeout(function () {
       $('studio').classList.remove('active');
@@ -7403,8 +7419,46 @@ function spRtfLayoutInfo(src) {
     pi.style.height = '';           // retour exact a la hauteur de repos CSS
     pi.style.overflowY = 'hidden';
     pi.dispatchEvent(new Event('input', { bubbles: true }));
+    // 🆕 _SP_STUDIO_PROMPT_577 — le prompt a été ENVOYÉ : le brouillon aussi part.
+    sp213OublierPromptDraft();
   }
   window.sp213ClearPrompt = sp213ClearPrompt;
+
+  /* 🆕 _SP_STUDIO_PROMPT_577 — BROUILLON DU PROMPT (demande utilisateur).
+     « la boîte de prompt doit garder en mémoire mon prompt même si je change
+      d'API et de moteur dans les préférences ». Le texte tapé est donc mémorisé
+     et RÉTABLI :
+       · au retour des préférences (bouton « Sauvegarder » ou croix « Revenir au studio »),
+       · après un rechargement de l'onglet.
+     Il n'est effacé QUE lorsque le prompt a réellement été envoyé (sp213ClearPrompt)
+     ou quand l'utilisateur vide la boîte lui-même. */
+  const SP_PROMPT_DRAFT_KEY = 'sp213_prompt_draft';
+  function sp213SavePromptDraft() {
+    try {
+      const pi = $('promptInput');
+      if (!pi) return;
+      const v = pi.value;
+      if (v && v.trim()) localStorage.setItem(SP_PROMPT_DRAFT_KEY, v);
+      else localStorage.removeItem(SP_PROMPT_DRAFT_KEY);
+    } catch (_) {}
+  }
+  function sp213OublierPromptDraft() {
+    try { localStorage.removeItem(SP_PROMPT_DRAFT_KEY); } catch (_) {}
+  }
+  function sp213RestorePromptDraft() {
+    try {
+      const pi = $('promptInput');
+      if (!pi) return false;
+      if (pi.value && pi.value.trim()) return false;   // JAMAIS par-dessus la saisie en cours
+      const v = localStorage.getItem(SP_PROMPT_DRAFT_KEY) || '';
+      if (!v.trim()) return false;
+      pi.value = v;
+      pi.dispatchEvent(new Event('input', { bubbles: true }));   // hauteur + placeholder
+      return true;
+    } catch (_) { return false; }
+  }
+  window.sp213SavePromptDraft = sp213SavePromptDraft;
+  window.sp213RestorePromptDraft = sp213RestorePromptDraft;
   // 🆕 v1.7.388 — GENERATION PILOTEE PAGE PAR PAGE.
   //   Mesure : avec un .docx de 21 000 caracteres joint, DeepSeek V4.1 Flash
   //   produisait UNE page malgre un prompt qui demandait « EXACTEMENT 9 entrees »
@@ -7698,7 +7752,14 @@ function spRtfLayoutInfo(src) {
     // 🎯 PREMIER PROMPT SANS MODÈLE : proposer d'aller dans les réglages.
     // On ne bloque pas : on affiche une aide + on revient sur les préférences.
     if (!hasUsableModel()) {
-      sp213ClearPrompt();
+      /* 🛡️ _SP_STUDIO_PROMPT_577 — LE PROMPT EST CONSERVÉ (demande utilisateur).
+         DÉFAUT MESURÉ : sp213ClearPrompt() vidait la boîte AVANT d'envoyer
+         l'utilisateur dans les réglages (aucun modèle configuré) → il réglait sa
+         clé, choisissait son moteur, appuyait sur « Sauvegarder » et retrouvait la
+         boîte VIDE (message « Puis retapez votre description ») : tout à retaper.
+         Le texte RESTE donc en place ; le brouillon est enregistré pour survivre
+         à un rechargement, et il n'est effacé qu'à l'envoi RÉEL (sp213ClearPrompt). */
+      sp213SavePromptDraft();
       offerModelChoice();
       return;
     }
