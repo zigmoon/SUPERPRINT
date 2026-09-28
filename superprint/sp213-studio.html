@@ -7802,6 +7802,16 @@ function spRtfLayoutInfo(src) {
     window._spStEng = eng;
     try { spStPeindreBouton(); } catch (_) {}
     try { spStPop(false); } catch (_) {}
+    /* v1.7.579 — PAS DE FLASH SUR L'INTERFACE COMPLETE (demande utilisateur).
+       Modèle à clé : on basculait sur l'interface COMPLÈTE du studio, puis 900 ms
+       plus tard offerModelChoice ramenait à l'écran des préférences — on voyait donc
+       le studio avant le pop-in. On passe maintenant à l'écran des préférences AVANT
+       de fermer la pré-home : le studio n'est jamais peint, on arrive directement sur
+       le réglage à remplir. Les deux gestes sont dans la même tâche, donc aucune
+       peinture intermédiaire possible. */
+    try { $('studio').classList.remove('active'); } catch (_) {}
+    try { $('welcome').classList.remove('hidden'); } catch (_) {}
+    try { document.documentElement.classList.remove('sp-avant-prehome'); } catch (_) {}
     try { spStarterFermer(); } catch (_) {}
     /* Le moteur choisi est appliqué AVANT l’ouverture des réglages : il y arrive
        donc déjà sélectionné, l’utilisateur n’a plus qu’à coller sa clé. */
