@@ -9,6 +9,41 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.586] — 2026-09-30
+
+_Studio IA / ROCK 1 : le vocabulaire de l'imprimerie (25 familles en 3 langues, 10 nouvelles), la typographie demandée appliquée, le SUJET au lieu de la consigne comme titre, l'annonce de la matière par famille, et le compte de pages demandé dit tel quel_
+
+### Fixed — « Carte de visite » sortait en « carte de restaurant » (mesuré)
+- Dans `SP_METIER.familles`, `menu` (« \bcarte\b ») était testé **avant** `cartevisite` : « Carte de visite 85 × 55 mm pour une graphiste » annonçait « famille « carte de restaurant » », posait des **plats et des prix** de restaurant sur une carte de visite et produisait **2 pages** (au lieu d'une).
+- Le lexique est désormais **ordonné par spécificité** (le type précis avant le générique) et couvre **25 familles** en **français, anglais et japonais**.
+
+### Added — 10 familles de l'imprimerie courante (gabarit + mise en page)
+- **calendrier** (12 pages), **carte postale**, **carte de vœux**, **étiquette**, **billet**, **facture**, **papier à en-tête**, **charte graphique** (8 p.), **dossier de presse** (4 p.), **présentation** (6 p.) — chacune avec ses cotes, ses marges, sa famille de titres, sa règle de choix et sa mise en page (celle de sa cousine la plus proche, pour ne rien casser).
+- Mesure : « Calendrier mural A3 12 pages, palette olive » → famille « calendrier », A3, **12 pages**, palette olive (avant : aucune famille, titre = la demande entière).
+
+### Fixed — le titre était la CONSIGNE (le prompt s'imprimait dans la maquette)
+- Sans pièce jointe, le texte de la demande devenait le titre : « Rapport d'activité 24 pages pour une association, sommaire et chiffres clés, ton institutionnel » s'imprimait en 54 pt.
+- Nouveau `spGabSujet()` : tout ce qui est instruction (format, pages, colonnes, teintes françaises et anglaises, typographie, ton, éléments demandés, interdictions) est écarté, les propositions réduites à des connecteurs sont jetées, et la phrase-consigne n'est plus composée en chapô. Un texte long tapé dans la boîte n'est jamais amputé.
+- Mesure : titre « Rapport d'activité pour une association », « Calendrier mural », « Carte de visite pour une graphiste », « flyer for a yoga studio », « チラシ ».
+
+### Added — la typographie demandée est lue (elle ne l'était nulle part)
+- `SP_METIER.fontes` : display/affiche, à empattements, linéale, monospace, fine, condensée, manuscrite — et `typoMots` (gras, majuscules…). Une famille citée **prime sur celle du thème**.
+- Repli annoncé : « condensée » → Bebas Neue, « fine » → Montserrat, « manuscrite » → Playfair Display (le studio n'a pas de scripte).
+
+### Fixed — l'annonce de la matière et le compte de pages
+- « 🍽️ plan de sections repris des modèles SuperPrint » parlait de « **plats, tarifs** » pour TOUTES les familles (mesuré sur un rapport et un dépliant immobilier) : l'annonce dit maintenant la langue de la famille et **cite ses sections**.
+- Le compte de pages est comparé après composition : s'il diffère de la demande, le studio le dit (« 24 page(s) demandée(s) → 25 composée(s) : la fin a été reportée plutôt que coupée »). Sur la demande mesurée, l'écart a disparu avec le titre nettoyé : **24 pour 24**.
+
+### Added — trois langues et formats
+- Vocabulaire japonais : 写真なし (sans photos), モノクロ / 白黒 / グレースケール (noir et blanc / niveaux de gris), 名刺, カレンダー, チラシ, ポスター… et anglais (business card, postcard, greeting card, calendar, label, ticket, invoice, letterhead, brand book, press kit, slides…).
+- Formats ajoutés à la détection : **A2, A6, B5, US Letter, DL** (99 × 210 mm), 21 × 21, calendrier mural, étiquette, billet.
+- ⚠️ **Leçon** : une entrée mal formée du lexique (virgule oubliée → élément `undefined`) faisait échouer **toute** la compréhension en silence ; la lecture des listes est désormais **défensive** et un contrôle de syntaxe la vérifie.
+
+### Changed — Version
+- Application **1.7.586** (marqueurs de cache `v586`, étiquette `vocable-consigne`), notes de version **trilingues** dans `release.html`.
+
+---
+
 ## [1.7.585] — 2026-09-30
 
 _Studio IA : le moteur prend du style (24 palettes nommées, 7 familles de fonds, 48 mises en page, 3 ouvertures de page), lit le plan du document (titres, ton, public, résumé, entités) et pose de vraies photos libres avec attribution automatique ; passerelle .sp/.json alignée (exceptions de folio par page désormais transportées)_
