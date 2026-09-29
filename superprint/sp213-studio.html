@@ -4444,7 +4444,7 @@
       sub: 'Choisissez le rôle de ce fichier. Il sera rappelé au moteur à chaque demande.',
       content: 'Importer dans la maquette', contentD: 'Son texte et ses images doivent être COMPOSÉS dans le document (obligatoire).',
       template: 'Servir de modèle', templateD: 'Sa structure, son ordre et ses styles doivent être SUIVIS : le contenu vient de votre demande.',
-      context: 'Contexte seulement', contextD: 'Sert à COMPRENDRE (sujet, ton, vocabulaire). Aucun de ses éléments ne doit apparaître dans la maquette.',
+      context: 'Contexte seulement', contextD: 'Sert à COMPRENDRE (sujet, ton, vocabulaire). Aucun de ses éléments ne doit apparaître dans la maquette. Avec SP213 (notre moteur, sans IA), le thème, la palette, les mots-clés, les chiffres et une accroche en sont tirés automatiquement — par sélection, jamais par réécriture.',
       ok: 'Valider', cancel: 'Annuler', change: 'Cliquer pour changer le rôle de cette pièce jointe',
       short: { content: 'maquette', template: 'modèle', context: 'contexte' }
     },
@@ -4453,7 +4453,7 @@
       sub: 'Pick the role of this file. It is restated to the engine on every request.',
       content: 'Import into the layout', contentD: 'Its text and images must be TYPESET into the document (mandatory).',
       template: 'Use as a template', templateD: 'Its structure, order and styles must be FOLLOWED: content comes from your request.',
-      context: 'Context only', contextD: 'Used to UNDERSTAND (topic, tone, wording). None of its elements may appear in the layout.',
+      context: 'Context only', contextD: 'Used to UNDERSTAND (topic, tone, wording). None of its elements may appear in the layout. With SP213 (our own engine, no AI): theme, palette, keywords, figures and one extractive hook are taken from it automatically.',
       ok: 'Confirm', cancel: 'Cancel', change: 'Click to change this attachment\'s role',
       short: { content: 'layout', template: 'template', context: 'context' }
     },
@@ -4462,7 +4462,7 @@
       sub: 'このファイルの役割を選択してください。毎回の送信時にエンジンへ伝えます。',
       content: 'レイアウトに取り込む', contentD: 'テキストと画像をドキュメントに組む必要があります（必須）。',
       template: 'テンプレートとして使う', templateD: '構造・順序・スタイルに従います（内容はご指示から）。',
-      context: 'コンテキストのみ', contextD: '理解のためだけに使用し、要素はレイアウトに表示しません。',
+      context: 'コンテキストのみ', contextD: '理解のためだけに使用し、要素はレイアウトに表示しません。SP213（自社エンジン・AIなし）では、テーマ・配色・キーワード・数値・引用文を自動で抽出します。',
       ok: '確定', cancel: 'キャンセル', change: 'クリックして役割を変更',
       short: { content: 'レイアウト', template: 'テンプレート', context: 'コンテキスト' }
     }
@@ -5030,9 +5030,18 @@
     /* FORMAT DU DOCUMENT : retenu pour la prochaine composition, s'il est plausible.
        Il sera employé SI la demande ne donne aucun format (voir applyDetectedPageFormat). */
     if (pageWord) {
-      state._formatDocx = pageWord;
-      appendChat('assistant', '📐 Format lu dans le document : ' + pageWord.w + ' × ' + pageWord.h +
-        ' mm. Je composerai à ce format si votre demande n\'en impose pas un autre.');
+      /* ⚠️ _SP_STUDIO_CONTEXTE_588 — un document de CONTEXTE n'impose pas son format
+         (il sert à comprendre, pas à mettre en pages). Le rôle est lu dans pjModePendant
+         au moment de l'import : att.mode peut ne pas être encore posé (extraction async). */
+      const _roleF = (typeof pjModePendant !== 'undefined' && pjModePendant) ? pjModePendant : 'content';
+      if (_roleF === 'context') {
+        appendChat('assistant', '📐 Format du document lu : ' + pageWord.w + ' × ' + pageWord.h +
+          ' mm — pièce jointe de CONTEXTE : elle ne l\'impose pas à la maquette.');
+      } else {
+        state._formatDocx = pageWord;
+        appendChat('assistant', '📐 Format lu dans le document : ' + pageWord.w + ' × ' + pageWord.h +
+          ' mm. Je composerai à ce format si votre demande n\'en impose pas un autre.');
+      }
     }
     const mo = Math.round(file.size / 1048576);
     if (String(texte).length < 20) {
@@ -6200,8 +6209,15 @@ function spRtfLayoutInfo(src) {
       spDocxCouleurs(buf).then(function (cs) {
         if (cs && cs.length) att.couleurs = cs;
       }).catch(function () {});
-      /* FORMAT DU DOCUMENT (même en PIÈCE JOINTE DE CONTEXTE) : retenu pour la prochaine
-         composition, employé seulement si la demande n'impose pas de format. */
+      /* FORMAT DU DOCUMENT : retenu pour la prochaine composition, employé seulement si la
+         demande n'impose pas de format.
+         ⚠️ _SP_STUDIO_CONTEXTE_588 — UN CONTEXTE N'IMPOSE PAS SON FORMAT. Mesuré : un
+         petit .docx joint en « contexte » faisait composer tout le studio au format de CE
+         fichier (210 × 148 mm) alors que l'utilisateur voulait du A4. Un document de
+         contexte sert à comprendre (thème, ton, vocabulaire) : il n'a aucune autorité sur
+         la mise en pages. Le format n'est donc lu que pour un contenu ou un modèle. */
+      const _roleFormat = (att && att.mode) || (typeof pjModePendant !== 'undefined' && pjModePendant) || 'content';
+      if (_roleFormat === 'context') return;
       spDocxFormat(file).then(function (pg) {
         if (!pg) return;
         state._formatDocx = pg;
@@ -8446,11 +8462,15 @@ function spRtfLayoutInfo(src) {
     return spGabLignes(txt, taille, largeur) * Number(taille) * (Number(interligne) || 1) * 1.33;
   }
   /* ══ _SP_STUDIO_PAGES_584 — HAUTEUR DE LIGNE RÉELLE, PARTAGÉE ══
-     Le studio mesure la hauteur d'une ligne de texte à fontSize × lineHeight × 1,13 (même
-     formule que son détecteur de collisions). Le chaînage du livre et la pose des
-     paragraphes DOIVENT utiliser la même, sinon on réserve trop de place (pages à moitié
-     vides : 616 caractères composés par page au lieu de ~1 500) ou pas assez (texte qui
-     sort de la page). Une seule constante, deux usages. */
+     ⚠️ LE FACTEUR 1,13 EST LA VÉRITÉ D'IMPRESSION, pas une marge de sécurité : dans
+     SuperPrint le moteur multiplie la hauteur de ligne par `_fontSizeMult` = 1,13
+     (voir SP_TEXT_LINE_MULT plus bas). La pagination DOIT donc être calculée avec
+     1,13, sinon on compose plus de lignes par page que le PDF n'en accepte : les
+     dernières lignes tomberaient sous la marge à l'impression alors que l'aperçu du
+     studio (fabric 5, sans ce facteur) les montrerait bien placées. Mesure du 29/09 :
+     essayer 1,06 faisait passer le livre de 400 à 348 pages — gain séduisant mais
+     FAUX à l'impression. On garde 1,13, et on remplit plutôt la colonne (voir
+     couperPour) : même qualité d'impression, pages plus pleines. */
   const SP_GAB_LIGNE_K = 1.13;
   function spGabHPage(txt, taille, largeur, interligne) {
     return spGabLignes(txt, taille, largeur) * Number(taille) * (Number(interligne) || 1) * SP_GAB_LIGNE_K;
@@ -8697,6 +8717,63 @@ function spRtfLayoutInfo(src) {
     return { nom: p[0].trim(), prix: '', description: p.slice(1).join(' — ').trim() };
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════════
+     _SP_STUDIO_CONTEXTE_588 — CE QUE NOTRE MOTEUR TIRE VRAIMENT D'UN CONTEXTE
+     Constat honnête : sans IA, SP213 ne RÉÉCRIT pas un document. Mais il peut faire ce
+     qu'un moteur de sélection fait très bien — de l'EXTRACTIF, vérifiable, instantané :
+       • mots-clés saillants (fréquence, mots vides retirés, mots courts écartés) ;
+       • chiffres et dates remarquables ;
+       • ACCROCHE : la phrase la mieux notée du document (longueur utile, présence de
+         chiffres et de mots-clés) — c'est une PHRASE DU DOCUMENT, jamais une invention ;
+       • noms propres (candidats « contacts ») ;
+       • langue dominante (fr / en) et ton (tu / vous / nous).
+     Ces signaux alimentent le surtitre, l'accroche, les chiffres clés et le bloc
+     contacts du gabarit. Le texte du contexte n'est JAMAIS composé en entier : c'est
+     son rôle et sa promesse. */
+  const SP_GAB_VIDES = ('le la les un une des du de au aux et ou mais donc or ni car que qui quoi dont où a à dans par pour sur sous avec sans chez vers entre est sont été être avoir ont il elle ils elles on nous vous je tu se sa son ses ce cet cette ces cela ça plus moins très tout tous toute toutes même aussi alors ainsi bien peu beaucoup fait faire dit comme si ne pas en y l d s n qu c j m t the of and to in is are for with that this it as at be by from or an on was were has have not its their our your you we they he she'.split(' '));
+  function spGabContexte(txt) {
+    const t = String(txt || '').replace(/\s+/g, ' ').trim();
+    if (t.length < 40) return null;
+    const mots = t.toLowerCase().replace(/[^a-zà-ÿ0-9\s'-]/g, ' ').split(/\s+/).filter(function (m) { return m.length >= 4 && SP_GAB_VIDES.indexOf(m) === -1; });
+    const freq = {};
+    mots.forEach(function (m) { freq[m] = (freq[m] || 0) + 1; });
+    const cles = Object.keys(freq).sort(function (a, b) { return freq[b] - freq[a] || b.length - a.length; }).filter(function (m) { return freq[m] > 1; }).slice(0, 6);
+    const phrases = t.split(/(?<=[.!?…])\s+/);
+    const chiffres = [];
+    phrases.forEach(function (ph) {
+      const nums = ph.match(/\b(?:\d+(?:[.,]\d+)?\s*(?:%|€|\$|millions?|milliers?|ans?|mois|jours?|habitants)|(?:19|20)\d{2})\b/g);
+      if (nums) nums.slice(0, 2).forEach(function (v) { if (chiffres.indexOf(v) === -1 && chiffres.length < 6) chiffres.push(v); });
+    });
+    /* ACCROCHE : on note chaque phrase, on garde la meilleure. Critères explicites :
+       longueur utile, mots-clés présents, chiffres (un fait), pas d'adresse au lecteur. */
+    let accroche = '', meilleur = 0;
+    phrases.forEach(function (ph) {
+      const p = ph.trim();
+      if (p.length < 70 || p.length > 240) return;
+      if (/[?!]$/.test(p)) return;
+      if (/\b(je|tu|mon|ma|mes|ton|ta|tes)\b/i.test(p)) return;
+      let s = 1;
+      if (p.length >= 120) s += 1;
+      cles.forEach(function (m) { if (p.toLowerCase().indexOf(m) !== -1) s += 2; });
+      if (/\d/.test(p)) s += 2;
+      if (/^[A-ZÀ-Þ]/.test(p)) s += 0.5;
+      if (s > meilleur) { meilleur = s; accroche = p; }
+    });
+    /* NOMS PROPRES : capitales en milieu de phrase (personnes, villes, marques). */
+    const noms = [];
+    const trouve = t.match(/(?:^|[.!?…]\s+|\s)([A-ZÀ-Þ][a-zà-ÿ-]{2,})/g) || [];
+    trouve.map(function (x) { return x.trim(); }).forEach(function (n) {
+      if (SP_GAB_VIDES.indexOf(n.toLowerCase()) !== -1) return;
+      if (noms.indexOf(n) === -1 && noms.length < 8) noms.push(n);
+    });
+    /* LANGUE et TON : deux comptages simples, assumés comme tels. */
+    let fr = 0, en = 0;
+    mots.forEach(function (m) { if (['les', 'des', 'une', 'pour', 'dans', 'avec', 'sont', 'cette', 'plus', 'nous'].indexOf(m) !== -1) fr++; if (['the', 'and', 'with', 'for', 'that', 'this', 'from', 'are', 'have'].indexOf(m) !== -1) en++; });
+    const langue = (en > fr * 1.4) ? 'en' : 'fr';
+    const ton = /(\bnous\b)/.test(t.toLowerCase()) ? 'nous' : (/(\bvous\b)/.test(t.toLowerCase()) ? 'vous' : 'neutre');
+    return { mots: cles, chiffres: chiffres, accroche: accroche, noms: noms, langue: langue, ton: ton, taille: t.length };
+  }
+
   /* FABRIQUE LE CONTENU exploitable par les gabarits : titre, accroche, chapô,
      sections, lignes de liste, articles avec prix, chiffres clés, informations. */
   function spGabMeta(brief) {
@@ -8768,6 +8845,18 @@ function spRtfLayoutInfo(src) {
     // Titres venant d'une pièce jointe « modèle » : ils complètent la structure.
     src.titres.forEach(function (t) { if (t.length <= 60 && !M.sections.some(function (s) { return s.t === t; })) M.sections.push({ t: t, ps: [] }); });
     if (h1 && titreNiv !== 1) { M.titre = h1; titreNiv = 1; }
+    /* ══ _SP_STUDIO_CONTEXTE_588 — LE CONTEXTE NOURRIT LE DOCUMENT ══
+       (thème et palette : déjà pris en compte plus haut ; ici, le contenu du gabarit).
+       Tout est EXTRACTIF : les phrases viennent du document, rien n'est inventé. */
+    let ctx = null;
+    try { ctx = spGabContexte(src.contexte); } catch (_) { ctx = null; }
+    if (ctx) {
+      if (!M.chapeau && ctx.accroche) M.chapeau = ctx.accroche;
+      if (ctx.chiffres.length) ctx.chiffres.forEach(function (v) { if (M.chiffres.length < 4) M.chiffres.push({ v: v, l: 'contexte' }); });
+      if (!M.surtitre && ctx.mots.length) M.surtitre = ctx.mots[0].toUpperCase();
+      if (!M.infos.length && ctx.noms.length) M.infos = ctx.noms.slice(0, 6);
+      M.contexteSignaux = ctx;
+    }
     if (M.sections.length && !M.chapeau) M.chapeau = (M.sections[0].ps[0] || '');
     /* LISTE ÉCRITE DANS UNE PHRASE : « Programme : 18h30 ouverture des portes, 19h
        concert, 21h tête d'affiche » n'a ni puce ni retour à la ligne. Quand aucune
@@ -9659,9 +9748,9 @@ function spRtfLayoutInfo(src) {
       if (nMax >= txt.length) return txt;
       const t = txt.slice(0, nMax);
       const fin = Math.max(t.lastIndexOf('. '), t.lastIndexOf('! '), t.lastIndexOf('? '), t.lastIndexOf('… '));
-      if (fin > nMax * 0.55) return txt.slice(0, fin + 1).trim();
+      if (fin > nMax * 0.85) return txt.slice(0, fin + 1).trim();
       const esp = t.lastIndexOf(' ');
-      return txt.slice(0, esp > nMax * 0.6 ? esp : nMax).trim();
+      return txt.slice(0, esp > nMax * 0.9 ? esp : nMax).trim();
     };
     secs.forEach(function (s) {
       ouvrir(s.t);
@@ -9953,7 +10042,11 @@ function spRtfLayoutInfo(src) {
       console.log('Contenu compris : titre « ' + texte.titre + ' » | surtitre « ' + texte.surtitre +
         ' » | chapô « ' + String(texte.chapeau).slice(0, 52) + ' » | ' + texte.sections.length +
         ' section(s) [' + texte.sections.slice(0, 4).map(function (s) { return (s.t || '(sans titre)').slice(0, 26); }).join(' / ') +
-        '] | ' + texte.lignes.length + ' ligne(s) | corps ' + texte.corpsLength + ' car.');
+        '] | ' + texte.lignes.length + ' ligne(s) | corps ' + texte.corpsLength + ' car.' +
+        (texte.contexteSignaux ? (' | CONTEXTE : ' + texte.contexteSignaux.mots.length + ' mot(s)-clé(s) [' +
+          texte.contexteSignaux.mots.slice(0, 3).join(', ') + '], ' + texte.contexteSignaux.chiffres.length +
+          ' chiffre(s), accroche ' + (texte.contexteSignaux.accroche ? 'retenue' : 'aucune') +
+          ', langue ' + texte.contexteSignaux.langue + ', ton « ' + texte.contexteSignaux.ton + ' »') : ''));
     } catch (_) {}
     /* PIÈCE JOINTE « MAQUETTE » VOLUMINEUSE : on ne jette pas un document client
        dans une page unique. Au-delà d'environ 600 caractères composés, le moteur
