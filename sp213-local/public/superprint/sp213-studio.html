@@ -1108,6 +1108,47 @@
     .kb-key { height: 46px; font-size: 18px; }
     .kb-foot { padding: 6px 10px 10px; }
   }
+  /* ══════════════════════════════════════════════════════════════════════
+     _SP_STUDIO_REGLAGES_586 — POP-IN « RÉGLAGES » (refactorisation EN DIRECT)
+     Demande utilisateur : « mets réglages à la place de l'image web, un pop-in de
+     refactorisation/random du document en cours, des tirettes pour le design, les
+     typographies, les styles, les tailles, les couleurs, la possibilité de changer
+     de format (mm, cm…), et que ça recouvre toute la conversation pour laisser la
+     place au réglage dynamique ; une fois validé, la colonne de droite revient ».
+     DA SuperPrint : angles droits, libellés en mono, accent de l'interface.
+     ══════════════════════════════════════════════════════════════════════ */
+  #spReg { position: fixed; z-index: 140; display: flex; flex-direction: column;
+    background: var(--panel); border-left: 1px solid var(--border);
+    box-shadow: -24px 0 60px var(--shadow); }
+  #spReg.hidden { display: none; }
+  .rg-head { flex-shrink: 0; padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .rg-head .rg-t { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+  .rg-head .rg-s { font-size: 10px; color: var(--muted); line-height: 1.45; margin-top: 3px; }
+  .rg-close { margin-left: auto; width: 28px; height: 28px; flex: 0 0 auto; border: 1px solid var(--border); background: transparent;
+    color: var(--text); cursor: pointer; font-size: 13px; line-height: 1; }
+  .rg-close:hover { background: var(--btn-hover); }
+  .rg-body { flex: 1 1 auto; overflow-y: auto; padding: 14px 14px 20px; display: flex; flex-direction: column; gap: 14px; }
+  .rg-sec { border: 1px solid var(--border); padding: 11px 12px 13px; }
+  .rg-sec > h4 { font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; font-weight: 700; }
+  .rg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .rg-row:last-child { margin-bottom: 0; }
+  .rg-row > label { flex: 0 0 92px; font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+  .rg-row input[type=range] { flex: 1 1 auto; min-width: 0; accent-color: var(--accent); }
+  .rg-row .rg-v { flex: 0 0 62px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; }
+  .rg-row input[type=number], .rg-row input[type=text], .rg-row select {
+    flex: 1 1 auto; min-width: 0; height: 28px; background: var(--input-bg); border: 1px solid var(--input-border);
+    color: var(--text); font-size: 11px; padding: 0 6px; font-family: inherit; }
+  .rg-row input[type=color] { flex: 0 0 42px; height: 28px; padding: 0; border: 1px solid var(--input-border); background: var(--input-bg); }
+  .rg-row input[type=checkbox] { accent-color: var(--accent); }
+  .rg-2 { display: flex; gap: 8px; align-items: center; }
+  .rg-note { font-size: 10px; color: var(--muted); line-height: 1.5; margin-top: 6px; }
+  .rg-foot { flex-shrink: 0; border-top: 1px solid var(--border); padding: 10px 12px; display: flex; gap: 8px; align-items: center; }
+  .rg-foot .btn { height: 32px; }
+  .rg-busy { font-size: 10px; color: var(--muted); margin-right: auto; font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  @media (max-width: 720px) {
+    #spReg { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; border-left: none; }
+  }
+
   /* ── Modale image web (picsum) ── */
   .webimg-modal {
     position: fixed; inset: 0; z-index: 90; display: flex;
@@ -1343,22 +1384,8 @@
         <div class="hint" data-i18n="prefs.langHint">English (default) — interface language.</div>
       </div>
     </div>
-    <!-- Section 0b : Image web (picsum) -->
-    <div class="form-section">
-      <div class="form-section-title" id="webImgSection">
-        Image web
-      </div>
-      <div class="field">
-        <div class="label-row">
-          <label id="webImgToggleLabel">Recherche d'images web (picsum.photos)</label>
-          <span class="info-icon" tabindex="0" aria-label="Info image web" data-i18n-aria="info.webimg">?
-            <span class="info-pop" id="webImgTogglePop">Ajoute un bouton 🌐 pour chercher une photo libre (picsum.photos) et l'ajouter comme pièce jointe. Nécessite Internet. En cas d'échec, une image de substitution locale est utilisée. Désactivable pour rester 100% hors-ligne.</span>
-          </span>
-        </div>
-        <button class="btn btn-secondary" id="webImgToggleBtn" style="justify-content:flex-start;">Activer</button>
-        <div class="hint" id="webImgToggleHint">Recherche d'image web activée — bouton 🌐 visible dans la barre de pièces jointes.</div>
-      </div>
-    </div>
+    <!-- _SP_STUDIO_REGLAGES_586 — Section « Image web (picsum) » SUPPRIMÉE du studio
+         (demande utilisateur : « partout dans le studio, supprime cette option »). -->
     </div><!-- /prefs-col 1 (Langue — Format ajouté plus bas) -->
 
     <!-- ══ Colonne 2 : Réglages IA (Moteurs) ══ -->
@@ -1623,52 +1650,8 @@
   </div>
 </div>
 
-<!-- 🖼️ Modale : recherche d'image web (picsum.photos) -->
-<div id="webImgModal" class="webimg-modal hidden">
-  <div class="webimg-card">
-    <div class="webimg-head">
-      <span id="webImgModalTitle">Image web — picsum.photos</span>
-      <button class="webimg-close" id="webImgCloseBtn" title="Fermer" aria-label="Fermer">
-        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="webimg-body">
-      <div class="webimg-field">
-        <label for="webImgKeyword" id="webImgKeywordLabel">Mot-clé / thème (optionnel)</label>
-        <input id="webImgKeyword" type="text" placeholder="ex : nature, produit, portrait…" autocomplete="off">
-      </div>
-      <div class="webimg-row">
-        <div class="webimg-field">
-          <label for="webImgW" id="webImgWLabel">Largeur (px)</label>
-          <select id="webImgW">
-            <option value="800">800</option>
-            <option value="1200" selected>1200</option>
-            <option value="1600">1600</option>
-            <option value="2000">2000</option>
-          </select>
-        </div>
-        <div class="webimg-field">
-          <label for="webImgH" id="webImgHLabel">Hauteur (px)</label>
-          <select id="webImgH">
-            <option value="600">600</option>
-            <option value="800" selected>800</option>
-            <option value="1000">1000</option>
-            <option value="1200">1200</option>
-          </select>
-        </div>
-      </div>
-      <div class="webimg-preview" id="webImgPreview">
-        <span id="webImgPreviewEmpty">Aperçu de la photo…</span>
-        <img id="webImgPreviewImg" alt="" style="display:none;">
-      </div>
-      <div class="webimg-actions">
-        <button class="btn btn-secondary" id="webImgDiceBtn" title="Changer de photo (autre seed)">🎲 Autre photo</button>
-        <button class="btn btn-primary" id="webImgAddBtn">Ajouter à la maquette</button>
-      </div>
-      <div class="hint" id="webImgHint">Photos libres de droits (picsum.photos, licence Picsum). Une fois ajoutée, elle devient une pièce jointe que l'IA pourra intégrer.</div>
-    </div>
-  </div>
-</div>
+<!-- _SP_STUDIO_REGLAGES_586 — La modale « recherche d'image web (picsum.photos) » est
+     SUPPRIMÉE du studio (demande utilisateur : cette option ne marche pas bien). -->
 
 <!-- ═══════════════ STUDIO ═══════════════ -->
 <div id="studio">
@@ -1756,11 +1739,12 @@
       <div id="previewScroll">
         <div id="pagesStack"></div>
       </div>
-      <!-- 🔘 ÉDITER avec SuperPrint — bas au centre de la preview -->
+      <!-- 🔘 ÉDITER — bas au centre de la preview (demande utilisateur : « mets juste
+           EDITER, supprime “avec SuperPrint” et mets un crayon comme icône, pas un œil ») -->
       <div id="previewFooter">
         <button id="viewInSpBtn" class="btn-open-sp ghost">
-          <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          ÉDITER avec SuperPrint
+          <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+          ÉDITER
         </button>
       </div>
     </div>
@@ -1799,11 +1783,16 @@
                 <span class="tip" id="attachTip"><b>Pièces jointes</b>Joignez des images, du texte, un document Word (<b>.doc</b> ou <b>.docx</b>), OpenDocument (<b>.odt</b>, <b>.ods</b>, <b>.odp</b>), RTF (<b>.rtf</b>), EPS/AI (vectoriel), Excel (.xls/.xlsx) ou PDF. SP213 lit la <b>structure complète</b> (titres, listes, tableaux, images) et l'intègre dans la maquette.</span>
               </span>
               <input type="file" id="attachInput" accept=".jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.eps,.ai,.ps,.txt,.md,.csv,.html,.doc,.docx,.odt,.ods,.odp,.odg,.rtf,.xls,.xlsx,.pdf" multiple hidden>
-              <span class="tip-wrap tip-up tip-anchor-right" tabindex="0" id="webImgTipWrap">
-                <button class="icon-btn" id="webImgBtn" title="Chercher une image sur le web (picsum.photos)">
-                  <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <!-- ══ _SP_STUDIO_REGLAGES_586 — ICÔNE RÉGLAGES (demande utilisateur :
+                   « à la place de l'image web picsum qui ne sert à rien, mets réglages »).
+                   Elle ouvre le pop-in de refactorisation en direct du document. Elle
+                   n'apparaît QUE pour notre moteur SP213 gabarit (aucun réglage possible
+                   avec un modèle cloud, qui recompose depuis zéro à chaque envoi). -->
+              <span class="tip-wrap tip-up tip-anchor-right" tabindex="0" id="reglagesTipWrap" style="display:none">
+                <button class="icon-btn" id="reglagesBtn" title="Réglages — refactoriser le document en direct" aria-haspopup="dialog" aria-expanded="false">
+                  <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3.05V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
                 </button>
-                <span class="tip" id="webImgTip"><b>Image web</b>Recherche une photo libre (picsum.photos) et l'ajoute comme pièce jointe pour que l'IA l'intègre dans la maquette.</span>
+                <span class="tip" id="reglagesTip"><b>Réglages</b>Refactorise le document affiché en <b>direct</b> : format (mm, cm, pouces), thème, typographies, taille du texte, interligne, marges, colonnes, couleurs, folios. Le pop-in recouvre la conversation ; validez pour revenir à l'échange. Réservé à notre moteur <b>SP213 gabarit</b> (aucune clé, aucun coût, recomposition instantanée).</span>
               </span>
               <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
                 <button class="icon-btn" id="micBtn" title="Dicter votre prompt (vocal)">
@@ -1868,7 +1857,8 @@
           <textarea id="starterInput" rows="3"></textarea>
           <div class="st-actions">
             <button class="icon-btn" id="stAttachBtn" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
-            <button class="icon-btn" id="stWebBtn" type="button"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+            <!-- _SP_STUDIO_REGLAGES_586 — l'icône « image web (picsum) » est SUPPRIMÉE du
+                 studio (demande utilisateur : « supprime Image web picsum partout »). -->
             <button class="icon-btn" id="stMicBtn" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></button>
             <button class="icon-btn" id="stKbBtn" type="button"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12"/><path d="M6 9.5h1.5M10 9.5h1.5M14 9.5h1.5M17.5 9.5H18M6 12.5h1.5M10 12.5h1.5M14 12.5h1.5M17.5 12.5H18M7.5 15.5h9"/></svg></button>
             <!-- Page simple / double page : même réglage que le bouton du studio -->
@@ -2444,7 +2434,7 @@
       'preview.zoomOut': 'Zoom -',
       'preview.zoomIn': 'Zoom +',
       'preview.gridBtnTitle': 'Grid (G)',
-      'preview.openSp': 'EDIT with SuperPrint',
+      'preview.openSp': 'EDIT',
       'preview.resize': 'Resize (drag)',
       'info.langue': 'Info - language',
       'info.execution': 'Info - execution',
@@ -2585,7 +2575,7 @@
       'preview.zoomOut': 'Zoom -',
       'preview.zoomIn': 'Zoom +',
       'preview.gridBtnTitle': 'Grille (G)',
-      'preview.openSp': 'ÉDITER avec SuperPrint',
+      'preview.openSp': 'ÉDITER',
       'preview.resize': 'Redimensionner (glisser)',
       'info.langue': 'Info langue',
       'info.execution': 'Info exécution',
@@ -2726,7 +2716,7 @@
       'preview.zoomOut': 'ズーム -',
       'preview.zoomIn': 'ズーム +',
       'preview.gridBtnTitle': 'グリッド（G）',
-      'preview.openSp': 'SuperPrint で編集',
+      'preview.openSp': '編集',
       'preview.resize': 'リサイズ（ドラッグ）',
       'info.langue': '情報 - 言語',
       'info.execution': '情報 - 実行',
@@ -8408,6 +8398,16 @@ function spRtfLayoutInfo(src) {
      exactement la même page (bande, accents, encadré), et une REGÉNÉRATION bouge. */
   let SP_GAB_N = 0;
   function spGabHasard(brief) {
+    /* _SP_STUDIO_REGLAGES_586 — VARIATION FIGÉE pendant les réglages : le pop-in
+       mémorise un numéro de variation pour que bouger une tirette ne change pas aussi
+       la bande, les accents et les encadrés (sinon la page saute dans tous les sens). */
+    const REG = window._spReglages;
+    if (REG && REG.variation) {
+      const s2 = String(brief || '');
+      let h2 = 0;
+      for (let i = 0; i < s2.length; i++) h2 = (h2 * 31 + s2.charCodeAt(i)) % 100000;
+      return { n: REG.variation, v: (((h2 + REG.variation * 37) % 97) / 97) };
+    }
     SP_GAB_N++;
     const s = String(brief || '');
     let h = 0;
@@ -9280,9 +9280,10 @@ function spRtfLayoutInfo(src) {
            le reste du texte poussé hors page et des pages aux trois quarts vides (mesure
            sur le livre : 616 caractères composés par page au lieu de ~1 500). On avance
            maintenant sur la hauteur RÉELLE des lignes, la même formule que le chaînage. */
-        const lh = deuxCol ? 1.5 : 1.55;
+        const lh = Number(L.inter) || (deuxCol ? 1.5 : 1.55);
+        const alignP = L.align || 'justify';
         const lignesPara = spGabLignes(para, g.corps, cw * 0.98);
-        e.push(spGabT(x, y, cw, para, g.corps, '#22262b', null, 'justify', lh));
+        e.push(spGabT(x, y, cw, para, g.corps, '#22262b', null, alignP, lh));
         y += lignesPara * g.corps * lh * SP_GAB_LIGNE_K + k * 12;
       });
       if (deuxCol && col === 1 && (L.y1 - k * 22 - Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26))) > y + k * 18) {
@@ -9581,9 +9582,10 @@ function spRtfLayoutInfo(src) {
     let courant = null, used = 0;
     const ouvrir = function (titre) { courant = { t: titre || '', ps: [] }; out.push(courant); used = 0; };
     const ecart = L.k * 12;                                        // respiration entre paragraphes
-    const hT = function (txt) { return spGabHPage(txt, g.corps, cw * 0.98, 1.5); };   // hauteur du texte seul
+    const interC = Number(L.inter) || 1.5;                         // interligne choisi (réglages)
+    const hT = function (txt) { return spGabHPage(txt, g.corps, cw * 0.98, interC); };   // hauteur du texte seul
     const hP = function (txt) { return hT(txt) + ecart; };
-    const hLigne = g.corps * 1.5 * SP_GAB_LIGNE_K;                 // une ligne composée
+    const hLigne = g.corps * interC * SP_GAB_LIGNE_K;              // une ligne composée
     const parLigne = Math.max(8, Math.round((cw * 0.98) / (g.corps * 0.52)));
     /* ══ _SP_STUDIO_PAGES_584 — REMPLIR LA COLONNE (défaut mesuré, cause du texte
        « manquant ») ══ Avant, un paragraphe qui ne tenait PAS à la fin d'une colonne
@@ -9938,6 +9940,15 @@ function spRtfLayoutInfo(src) {
     /* Le plafond est en MILLIMÈTRES (9 % du petit côté) : 22 mm restent justes sur
        A4, mais une carte 85 × 55 mm n'a droit qu'à ~5 mm de marge. */
     const M = g.mg.map(function (v) { return Math.min(v, petit * 0.09); });
+    /* ══ _SP_STUDIO_REGLAGES_586 — LES TIRETTES DU POP-IN AGISSENT ICI ══
+       window._spReglages est posé par le pop-in « Réglages ». On l'applique APRÈS le
+       choix du gabarit et du thème, exactement comme si l'utilisateur l'avait demandé :
+       la recomposition passe donc par les mêmes marges, les mêmes folios et les mêmes
+       contrôles de lisibilité qu'une génération normale. */
+    const REG = window._spReglages;
+    if (REG && REG.marge && REG.marge !== 1) {
+      M.forEach(function (v, i) { M[i] = Math.max(3, Math.min(petit * 0.16, v * REG.marge)); });
+    }
     const x0 = M[3] * SP_GAB_K, y0 = M[0] * SP_GAB_K, x1 = W - M[1] * SP_GAB_K, y1 = H - M[2] * SP_GAB_K;
     const cw = Math.max(20, x1 - x0), ch = Math.max(20, y1 - y0);
     /* TAILLES RELATIVES AU FORMAT : 72 pt est juste sur A4, absurde sur 85 × 55 mm.
@@ -9945,6 +9956,22 @@ function spRtfLayoutInfo(src) {
     g.titre = spGabTailleTitre(texte.titre, cw * 0.94, 3, Math.min(g.titre, H * 0.105));
     g.chapeau = Math.max(7, Math.min(g.chapeau, H * 0.055));
     g.corps = Math.max(6.5, Math.min(g.corps, H * 0.045));
+    /* Réglages en direct : colonnes, gouttière, folios, taille du texte, échelle des
+       titres, interligne du corps et alignement des paragraphes. */
+    if (REG) {
+      if (REG.colonnes) g.cols = Math.max(1, Math.min(3, Number(REG.colonnes) || 1));
+      if (REG.gouttiere) g.gutter = Math.max(2, Math.min(24, Number(REG.gouttiere) || 10));
+      if (typeof REG.folio === 'boolean') g.folio = REG.folio;
+      if (REG.corps) g.corps = Math.max(5.5, Math.min(18, Number(REG.corps)));
+      if (REG.echelleTitre && Number(REG.echelleTitre) !== 1) {
+        g.titre = Math.max(10, Math.min(H * 0.16, g.titre * Number(REG.echelleTitre)));
+        g.chapeau = Math.max(7, Math.min(H * 0.07, g.chapeau * Number(REG.echelleTitre)));
+      }
+    }
+    /* Interligne et alignement du corps : lus par la pose des pages ET par le chaînage
+       (le nombre de pages doit rester juste quand on change l'interligne). */
+    const interCorps = (REG && Number(REG.interligne)) ? Math.max(1.1, Math.min(2.1, Number(REG.interligne))) : null;
+    const alignCorps = (REG && REG.align) ? String(REG.align) : 'justify';
     const fmt = spGabFormat();
     /* ══ LES COULEURS DU FICHIER CLIENT ENTRENT DANS LA MAQUETTE ═════════════════
        Demande utilisateur : « l'object est de faire couleur des text Word ou autre
@@ -9964,10 +9991,24 @@ function spRtfLayoutInfo(src) {
       }
       if (texte.couleurs[1]) pal.b = texte.couleurs[1];
     }
+    /* Réglages en direct : ACCENT, PAPIER et ENCRE passent en dernier (ils gagnent sur le
+       thème et sur les couleurs du document — l'utilisateur les a choisis à la main). */
+    if (REG) {
+      const nuance = function (hex, f) {
+        const s3 = String(hex || '').replace('#', '');
+        if (s3.length !== 6) return hex;
+        const g2 = function (i3) { return ('0' + Math.max(0, Math.min(255, Math.round(parseInt(s3.substr(i3, 2), 16) * f))).toString(16)).slice(-2); };
+        return '#' + g2(0) + g2(2) + g2(4);
+      };
+      if (REG.accent) { pal.a = String(REG.accent); pal.b = nuance(REG.accent, 0.72); }
+      if (REG.papier) { pal.fond = String(REG.papier); pal.clair = (String(REG.papier).toLowerCase() === '#ffffff') ? '#f5f5f6' : '#f8f2e6'; }
+      if (REG.encre && REG.encre !== 'auto') pal.txt = String(REG.encre);
+    }
     const L = {
       W: W, H: H, g: g, t: texte, pal: pal, f: polices,
       k: Math.max(0.3, Math.min(1, H / 841.89)), v: hasard.v, n: hasard.n, theme: theme ? theme.cle : 'auto',
       x0: x0, y0: y0, x1: x1, y1: y1, cw: cw, ch: ch,
+      inter: interCorps, align: alignCorps,
       pays: fmt.pays, carre: fmt.carre, mini: fmt.mini, bandeau: fmt.bandeau,
       photos: texte.photos.slice()
     };
@@ -16566,6 +16607,413 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   }
   window.sp213ApercuLazy = spApercuLazy;
 
+  /* ══════════════════════════════════════════════════════════════════════════════
+     _SP_STUDIO_REGLAGES_586 — POP-IN « RÉGLAGES » : REFACTORISATION EN DIRECT
+     Demande utilisateur : « à la place de l'image web (picsum) mets réglages : un
+     pop-in de refactorisation/random du document en cours, des tirettes pour le
+     design, les typographies, les styles, les tailles, les couleurs, la possibilité
+     de changer de format en mm ou cm… ça recouvre toute la conversation pour laisser
+     la place au réglage dynamique, la refactorisation est en direct ; une fois validé
+     ça recharge la colonne de droite et le format + le style graphique et typo
+     s'enchaînent parfaitement. »
+     Réservé à NOTRE moteur (SP213 gabarit) : lui seul recompose à la demande, sans
+     clé, sans coût et sans attente — avec un modèle cloud, un réglage ne se verrait
+     qu'au prochain envoi.
+     ══════════════════════════════════════════════════════════════════════════════ */
+  const SP_REG_CLE = 'sp213_reglages_v1';
+  const SP_REG_POLICES = ['', 'IBM Plex Mono', 'Open Sans', 'Bebas Neue', 'Playfair Display', 'Montserrat', 'Poppins', 'Roboto Condensed', 'Georgia', 'Times New Roman', 'Helvetica'];
+  const SP_REG_FORMATS = [
+    [210, 297, 'A4 — 210 × 297 mm'], [148, 210, 'A5 — 148 × 210 mm'], [297, 210, 'A4 paysage — 297 × 210 mm'],
+    [152, 229, 'Livre 6 × 9 po — 152 × 229 mm'], [127, 203, 'Roman 5 × 8 po — 127 × 203 mm'],
+    [297, 420, 'A3 — 297 × 420 mm'], [85, 55, 'Carte de visite — 85 × 55 mm'], [200, 200, 'Carré — 200 × 200 mm']
+  ];
+  const SP_REG_THEMES = [
+    ['auto', 'Automatique (d\'après le texte)'], ['sobre', 'Sobre — noir et blanc'], ['mono', 'Tech — bleu / IBM Plex'],
+    ['chaud', 'Chaud — papier crème'], ['douce', 'Doux — nature'], ['event', 'Festif — violet / rose'],
+    ['finance', 'Corporate — bleu nuit'], ['noir', 'Noir chic — fond noir, doré']
+  ];
+  const SP_REG_UNITES = [['mm', 1, 'mm'], ['cm', 10, 'cm'], ['in', 25.4, 'po']];
+  let SP_REG = null, SP_REG_OUVERT = false, SP_REG_TIMER = null, SP_REG_PREV = null, SP_REG_ALOURDI = false;
+
+  function spRegDefaut() {
+    return {
+      actif: true,
+      w: Number(state.pageW) || 210, h: Number(state.pageH) || 297, unite: 'mm',
+      theme: window._spGabTheme || 'auto',
+      policeTitre: '', policeCorps: '',
+      corps: 10.5, echelleTitre: 1, interligne: 0, align: 'justify',
+      marge: 1, gouttiere: 10, colonnes: 1, folio: true,
+      accent: '', papier: '#ffffff', encre: 'auto', variation: 0
+    };
+  }
+  function spRegCharge() {
+    let r = spRegDefaut();
+    try {
+      const brut = localStorage.getItem(SP_REG_CLE);
+      if (brut) r = Object.assign(r, JSON.parse(brut) || {});
+    } catch (_) {}
+    /* Le format suit TOUJOURS l'état réel du studio (l'utilisateur a pu le changer
+       dans les préférences entre-temps). */
+    r.w = Number(state.pageW) || r.w;
+    r.h = Number(state.pageH) || r.h;
+    return r;
+  }
+  function spRegSauve() {
+    try { localStorage.setItem(SP_REG_CLE, JSON.stringify(SP_REG)); } catch (_) {}
+  }
+  function spRegMm() { return SP_REG_UNITES.filter(function (u) { return u[0] === SP_REG.unite; })[0] || SP_REG_UNITES[0]; }
+  function spRegAffiche(mm) { return Math.round((Number(mm) || 0) / spRegMm()[1] * 10) / 10; }
+  function spRegVersMm(v) { return Math.round((Number(v) || 0) * spRegMm()[1] * 100) / 100; }
+  function spRegValUnite(mm, arrondi) {
+    const v = (Number(mm) || 0) / spRegMm()[1];
+    return Math.round(v * (arrondi || 1) * 10) / 10;
+  }
+
+  function spRegRangeHTML(k, label, min, max, step, val, suffixe) {
+    return '<div class="rg-row"><label for="rg_' + k + '">' + label + '</label>' +
+      '<input type="range" id="rg_' + k + '" data-reg="' + k + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '">' +
+      '<span class="rg-v" id="rgv_' + k + '">' + val + (suffixe || '') + '</span></div>';
+  }
+  function spRegSelectHTML(k, label, options, val) {
+    return '<div class="rg-row"><label for="rg_' + k + '">' + label + '</label>' +
+      '<select id="rg_' + k + '" data-reg="' + k + '">' +
+      options.map(function (o) {
+        return '<option value="' + String(o[0]) + '"' + (String(o[0]) === String(val) ? ' selected' : '') + '>' + o[1] + '</option>';
+      }).join('') + '</select></div>';
+  }
+  function spRegCasesHTML(k, label, options, val) {
+    return '<div class="rg-row"><label>' + label + '</label><div class="rg-2">' +
+      options.map(function (o) {
+        const on = (String(o[0]) === String(val));
+        return '<label class="rg-2" style="flex:0 0 auto;text-transform:none;letter-spacing:0;font-size:11px;color:var(--text)">' +
+          '<input type="radio" name="rg_' + k + '" data-reg="' + k + '" value="' + String(o[0]) + '"' + (on ? ' checked' : '') + '> ' + o[1] + '</label>';
+      }).join('') + '</div></div>';
+  }
+
+  function spRegPeindre() {
+    const b = $('rgBody');
+    if (!b) return;
+    const u = spRegMm()[2];
+    const polices = SP_REG_POLICES.map(function (f) { return [f, f ? f : 'Celle du thème']; });
+    let h = '';
+    /* ── FORMAT ── */
+    h += '<section class="rg-sec"><h4>Format du document</h4>';
+    h += spRegSelectHTML('preset', 'Format', SP_REG_FORMATS.map(function (f) {
+      return [f[0] + 'x' + f[1], f[2]];
+    }).concat([['libre', 'Personnalisé']]), (SP_REG_FORMATS.some(function (f) { return f[0] === Number(SP_REG.w) && f[1] === Number(SP_REG.h); }) ? (Number(SP_REG.w) + 'x' + Number(SP_REG.h)) : 'libre'));
+    h += '<div class="rg-row"><label>Largeur</label><input type="number" id="rg_w" data-reg="w" min="20" max="1200" step="1" value="' + spRegValUnite(SP_REG.w) + '">' +
+      '<input type="number" id="rg_h" data-reg="h" min="20" max="1200" step="1" value="' + spRegValUnite(SP_REG.h) + '">' +
+      '<select id="rg_unite" data-reg="unite" style="flex:0 0 62px">' + SP_REG_UNITES.map(function (x) {
+        return '<option value="' + x[0] + '"' + (x[0] === SP_REG.unite ? ' selected' : '') + '>' + x[2] + '</option>';
+      }).join('') + '</select></div>';
+    h += '<div class="rg-note" id="rgFormatNote">Cotes en ' + u + '. La maquette se recompose au format choisi : la couverture, la mise en pages et l\'imposition suivent.</div>';
+    h += '</section>';
+    /* ── DESIGN ── */
+    h += '<section class="rg-sec"><h4>Design</h4>';
+    h += spRegSelectHTML('theme', 'Thème', SP_REG_THEMES, SP_REG.theme);
+    h += spRegRangeHTML('marge', 'Marges', 60, 160, 5, Math.round((Number(SP_REG.marge) || 1) * 100), ' %');
+    h += spRegRangeHTML('gouttiere', 'Gouttière', 2, 24, 1, SP_REG.gouttiere, ' mm');
+    h += spRegCasesHTML('colonnes', 'Colonnes', [[1, '1'], [2, '2'], [3, '3']], SP_REG.colonnes);
+    h += spRegCasesHTML('folio', 'Folios', [['true', 'Oui'], ['false', 'Non']], SP_REG.folio ? 'true' : 'false');
+    h += '</section>';
+    /* ── TYPOGRAPHIES ── */
+    h += '<section class="rg-sec"><h4>Typographies et tailles</h4>';
+    h += spRegSelectHTML('policeTitre', 'Police titres', polices, SP_REG.policeTitre);
+    h += spRegSelectHTML('policeCorps', 'Police corps', polices, SP_REG.policeCorps);
+    h += spRegRangeHTML('corps', 'Taille du texte', 7, 16, 0.5, SP_REG.corps, ' pt');
+    h += spRegRangeHTML('echelleTitre', 'Titres', 70, 150, 5, Math.round((Number(SP_REG.echelleTitre) || 1) * 100), ' %');
+    h += spRegRangeHTML('interligne', 'Interligne', 110, 200, 5, Math.round((Number(SP_REG.interligne) || 1.55) * 100), ' %');
+    h += spRegSelectHTML('align', 'Alignement', [['justify', 'Justifié'], ['left', 'À gauche']], SP_REG.align);
+    h += '</section>';
+    /* ── COULEURS ── */
+    h += '<section class="rg-sec"><h4>Couleurs</h4>';
+    h += '<div class="rg-row"><label for="rg_accent">Accent</label>' +
+      '<input type="color" id="rg_accent" data-reg="accent" value="' + (SP_REG.accent || '#1f6feb') + '">' +
+      '<button class="btn btn-secondary" type="button" id="rgAccentAuto" style="height:28px">Auto</button></div>';
+    h += spRegCasesHTML('papier', 'Papier', [['#ffffff', 'Blanc'], ['#fffdf8', 'Crème']], SP_REG.papier);
+    h += spRegSelectHTML('encre', 'Encre de lecture', [['auto', 'Automatique'], ['#101014', 'Noir'], ['#2b2b30', 'Gris foncé']], SP_REG.encre);
+    h += '<div class="rg-note">Le contraste minimum est vérifié à chaque recomposition (aucun texte clair sur fond clair).</div>';
+    h += '</section>';
+    /* ── VARIATION ── */
+    h += '<section class="rg-sec"><h4>Variation</h4>';
+    h += spRegRangeHTML('variation', 'Jeu n°', 1, 20, 1, SP_REG.variation || 1, '');
+    h += '<div class="rg-note">Change la bande de couverture, la place des accents et les encadrés, sans toucher au texte.</div>';
+    h += '</section>';
+    b.innerHTML = h;
+    spRegBrancher();
+  }
+
+  function spRegBrancher() {
+    const b = $('rgBody');
+    if (!b) return;
+    const majEtiquette = function (el) {
+      const k = el.getAttribute('data-reg');
+      const v = $('rgv_' + k);
+      if (!v) return;
+      if (k === 'marge' || k === 'echelleTitre') v.textContent = el.value + ' %';
+      else if (k === 'gouttiere') v.textContent = el.value + ' mm';
+      else if (k === 'corps') v.textContent = el.value + ' pt';
+      else if (k === 'interligne') v.textContent = el.value + ' %';
+      else v.textContent = el.value;
+    };
+    b.querySelectorAll('[data-reg]').forEach(function (el) {
+      const k = el.getAttribute('data-reg');
+      el.addEventListener('input', function () {
+        majEtiquette(el);
+        if (k === 'preset') return;             // traité au change
+        spRegLire();
+        if (el.type === 'range') spRegProgrammer();
+        else spRegAppliquer();
+      });
+      el.addEventListener('change', function () {
+        if (k === 'preset') {
+          if (el.value !== 'libre') {
+            const p = el.value.split('x');
+            SP_REG.w = Number(p[0]); SP_REG.h = Number(p[1]);
+            spRegPeindre();
+          }
+          spRegAppliquer();
+          return;
+        }
+        if (k === 'unite') {
+          /* On relit les cotes DANS L'ANCIENNE UNITÉ avant de changer d'unité. */
+          const lw = document.getElementById('rg_w'), lh = document.getElementById('rg_h');
+          const avant = SP_REG_UNITES.filter(function (x) { return x[0] !== el.value; })[0];
+          SP_REG.w = Number(lw.value) * (avant ? avant[1] : 1);
+          SP_REG.h = Number(lh.value) * (avant ? avant[1] : 1);
+          SP_REG.unite = el.value;
+          spRegPeindre(); spRegAppliquer(); return;
+        }
+        spRegLire(); spRegAppliquer();
+      });
+    });
+    const auto = $('rgAccentAuto');
+    if (auto) auto.addEventListener('click', function () {
+      SP_REG.accent = '';
+      spRegAppliquer();
+      const c = $('rg_accent'); if (c) c.value = '#1f6feb';
+    });
+  }
+
+  function spRegLire() {
+    const b = $('rgBody');
+    if (!b || !SP_REG) return;
+    const val = function (k) { const el = document.getElementById('rg_' + k); return el ? el.value : null; };
+    const preset = val('preset');
+    if (preset && preset !== 'libre') {
+      const p = preset.split('x');
+      SP_REG.w = Number(p[0]); SP_REG.h = Number(p[1]);
+    } else {
+      const lw = document.getElementById('rg_w'), lh = document.getElementById('rg_h');
+      if (lw && lh) { SP_REG.w = spRegVersMm(lw.value); SP_REG.h = spRegVersMm(lh.value); }
+    }
+    const radio = function (k) { const el = b.querySelector('input[name="rg_' + k + '"]:checked'); return el ? el.value : null; };
+    const texte = function (k) { const v = val(k); if (v !== null && v !== undefined) SP_REG[k] = v; };
+    texte('theme'); texte('policeTitre'); texte('policeCorps'); texte('align'); texte('encre'); texte('unite');
+    const marge = val('marge'); if (marge) SP_REG.marge = Number(marge) / 100;
+    const gout = val('gouttiere'); if (gout) SP_REG.gouttiere = Number(gout);
+    const corps = val('corps'); if (corps) SP_REG.corps = Number(corps);
+    const et = val('echelleTitre'); if (et) SP_REG.echelleTitre = Number(et) / 100;
+    const inter = val('interligne'); if (inter) SP_REG.interligne = (Number(inter) === 155) ? 0 : Number(inter) / 100;
+    const varN = val('variation'); if (varN) SP_REG.variation = Number(varN);
+    const cols = radio('colonnes'); if (cols) SP_REG.colonnes = Number(cols);
+    const fol = radio('folio'); if (fol) SP_REG.folio = (fol === 'true');
+    const pap = radio('papier'); if (pap) SP_REG.papier = pap;
+    // Les cotes restent en mm, quelle que soit l'unité affichée.
+    SP_REG.w = Math.max(20, Math.min(1200, Number(SP_REG.w) || 210));
+    SP_REG.h = Math.max(20, Math.min(1200, Number(SP_REG.h) || 297));
+  }
+
+  /* Recompose le document affiché avec les réglages courants, SANS IA : notre moteur
+     est déterministe et instantané (0 jeton), c'est ce qui rend la refactorisation
+     « en direct » possible. */
+  function spRegRecomposer() {
+    if (!SP_REG) return -1;
+    window._spReglages = SP_REG;
+    window._spGabTheme = (SP_REG.theme && SP_REG.theme !== 'auto') ? SP_REG.theme : null;
+    state.pageW = Number(SP_REG.w) || state.pageW;
+    state.pageH = Number(SP_REG.h) || state.pageH;
+    const brief = String(state.lastPrompt || '').trim() ||
+      (((state.chat || []).filter(function (m) { return m.role === 'user'; }).slice(-1)[0] || {}).text || '');
+    let out = null;
+    try { out = spGabDesign(brief); } catch (e) { return -1; }
+    let doc = null;
+    try { doc = buildDocFromParsed(parseAIResponse(JSON.stringify(out))); } catch (e) { return -1; }
+    if (!doc || !doc.pages || !doc.pages.length) return -1;
+    try {
+      if (state.doc && state.doc.pages && state.doc.pages.length) {
+        state.undoStack.push(JSON.parse(JSON.stringify(state.doc)));
+        if (state.undoStack.length > 30) state.undoStack.shift();
+      }
+      state.redoStack = [];
+    } catch (_) {}
+    state.doc = doc;
+    renderDocument(doc);
+    try { ensureMaquetteFonts(doc); } catch (_) {}
+    return doc.pages.length;
+  }
+
+  function spRegSyncFormat() {
+    /* Le format est aussi celui des PRÉFÉRENCES : on tient les deux à jour, sinon un
+       « Sauvegarder » dans les réglages remettrait l'ancien format (mesuré : la
+       préférence écrasait le choix fait au tirette). */
+    try { const w = $('pageW'), h = $('pageH'); if (w) w.value = Math.round(SP_REG.w); if (h) h.value = Math.round(SP_REG.h); } catch (_) {}
+    try { localStorage.setItem(LS.dims, JSON.stringify({ w: SP_REG.w, h: SP_REG.h })); } catch (_) {}
+  }
+
+  function spRegAppliquer() {
+    if (!SP_REG_OUVERT) return;
+    const n = spRegRecomposer();
+    spRegSyncFormat();
+    const busy = $('rgBusy');
+    if (busy) busy.textContent = (n > 0)
+      ? ('✓ ' + n + ' page' + (n > 1 ? 's' : '') + ' · ' + SP_REG.w + '×' + SP_REG.h + ' mm')
+      : '⚠ recomposition impossible';
+  }
+  function spRegProgrammer() {
+    if (SP_REG_TIMER) clearTimeout(SP_REG_TIMER);
+    const busy = $('rgBusy');
+    if (busy) busy.textContent = 'recomposition…';
+    /* Un LIVRE de plusieurs centaines de pages se recompose en quelques secondes :
+       on attend que la tirette soit RELÂCHÉE pour les gros documents, sinon la
+       recomposition enchaînée rendrait le glissement inutilisable. */
+    const attente = SP_REG_ALOURDI ? 0 : 260;
+    if (SP_REG_ALOURDI) return;                 // gros document : on attend le 'change'
+    SP_REG_TIMER = setTimeout(function () { SP_REG_TIMER = null; spRegAppliquer(); }, attente);
+  }
+
+  function spRegPlacer() {
+    const el = $('spReg');
+    if (!el || !SP_REG_OUVERT) return;
+    if (window.matchMedia('(max-width: 720px)').matches) return;
+    const pane = $('chatPane');
+    if (!pane) return;
+    const r = pane.getBoundingClientRect();
+    el.style.left = Math.round(r.left) + 'px';
+    el.style.top = Math.round(r.top) + 'px';
+    el.style.width = Math.round(r.width) + 'px';
+    el.style.height = Math.round(r.height) + 'px';
+  }
+  function spRegOuvrir() {
+    const el = $('spReg');
+    if (!el) return;
+    try { spRegBrancherBoutons(); } catch (_) {}
+    if (String(state.engine || '') !== 'gabarit') {
+      appendChat('assistant', 'Les réglages en direct sont réservés à notre moteur SP213 gabarit (aucune clé, recomposition instantanée). Choisissez-le dans la liste des moteurs pour régler le document au tirette.');
+      return;
+    }
+    SP_REG = spRegCharge();
+    SP_REG_ALOURDI = !!(state.doc && state.doc.pages && state.doc.pages.length > 60);
+    SP_REG_PREV = {
+      reg: JSON.parse(JSON.stringify(SP_REG)), doc: state.doc,
+      pageW: state.pageW, pageH: state.pageH, theme: window._spGabTheme
+    };
+    SP_REG_OUVERT = true;
+    el.classList.remove('hidden');
+    spRegPeindre();
+    spRegPlacer();
+    const busy = $('rgBusy');
+    if (busy) busy.textContent = state.doc && state.doc.pages ? (state.doc.pages.length + ' page(s) · ' + state.pageW + '×' + state.pageH + ' mm') : 'aucun document composé';
+    const b = $('reglagesBtn');
+    if (b) b.setAttribute('aria-expanded', 'true');
+    document.addEventListener('mousemove', spRegPlacer, true);
+    window.addEventListener('resize', spRegPlacer);
+    try { spJournalAjoute('info', 'Réglages ouverts : refactorisation en direct du document (SP213 gabarit).'); } catch (_) {}
+  }
+  function spRegFermer(valider) {
+    const el = $('spReg');
+    if (!el || !SP_REG_OUVERT) return;
+    SP_REG_OUVERT = false;
+    if (SP_REG_TIMER) { clearTimeout(SP_REG_TIMER); SP_REG_TIMER = null; }
+    document.removeEventListener('mousemove', spRegPlacer, true);
+    window.removeEventListener('resize', spRegPlacer);
+    el.classList.add('hidden');
+    const b = $('reglagesBtn');
+    if (b) b.setAttribute('aria-expanded', 'false');
+    if (valider) {
+      spRegLire();
+      spRegSauve();
+      spRegSyncFormat();
+      window._spReglages = SP_REG;
+      try { persistDoc(); } catch (_) {}
+      const resume = '⚙️ Réglages appliqués : ' + SP_REG.w + '×' + SP_REG.h + ' mm · thème ' +
+        (SP_REG.theme === 'auto' ? 'automatique' : SP_REG.theme) + ' · ' + SP_REG.colonnes + ' colonne(s) · corps ' +
+        SP_REG.corps + ' pt · interligne ' + Math.round((Number(SP_REG.interligne) || 1.55) * 100) + ' % · marges ' +
+        Math.round(SP_REG.marge * 100) + ' % · variation n°' + (SP_REG.variation || 1) +
+        ((state.doc && state.doc.pages) ? (' — ' + state.doc.pages.length + ' page(s) recomposée(s) sans modèle (0 jeton).') : '.');
+      appendChat('assistant', resume);
+      state.chat.push({ role: 'assistant', text: resume });
+      try { persistChat(); } catch (_) {}
+      try { spJournalAjoute('ok', resume); } catch (_) {}
+    } else if (SP_REG_PREV) {
+      /* ANNULER : on remet exactement le document et le format d'avant l'ouverture. */
+      SP_REG = SP_REG_PREV.reg;
+      window._spReglages = SP_REG.actif ? SP_REG : null;
+      window._spGabTheme = SP_REG_PREV.theme;
+      state.pageW = SP_REG_PREV.pageW;
+      state.pageH = SP_REG_PREV.pageH;
+      if (SP_REG_PREV.doc) { state.doc = SP_REG_PREV.doc; renderDocument(state.doc); }
+      appendChat('assistant', 'Réglages annulés : la maquette précédente est rétablie.');
+      state.chat.push({ role: 'assistant', text: 'Réglages annulés : la maquette précédente est rétablie.' });
+      try { persistChat(); } catch (_) {}
+    }
+  }
+  /* L'icône n'existe QUE pour notre moteur : avec un modèle cloud, aucun réglage en
+     direct n'est possible (il faudrait le recontacter à chaque tirette). */
+  function spRegMajBouton() {
+    const wrap = $('reglagesTipWrap');
+    if (!wrap) return;
+    const eng = String(state.engine || '');
+    const on = (eng === 'gabarit');
+    if (wrap.style.display !== (on ? '' : 'none')) wrap.style.display = on ? '' : 'none';
+    /* On ne referme le pop-in que si le moteur est CONNU et n'est plus le nôtre :
+       un moteur momentanément indéterminé ('' pendant l'initialisation) ne doit pas
+       faire disparaître les réglages en cours. */
+    if (eng && !on && SP_REG_OUVERT) spRegFermer(false);
+  }
+  window.sp213Reglages = { ouvrir: spRegOuvrir, fermer: spRegFermer, maj: spRegMajBouton, recomposer: spRegRecomposer };
+  /* ⚠️ ORDRE DU DOCUMENT : le pop-in #spReg est écrit APRÈS le script (comme le clavier
+     à l'écran). Les boutons n'existent donc pas encore quand ce code s'exécute : on
+     branche à DOMContentLoaded, et on réessaie à l'ouverture (ceinture et bretelles). */
+  let SP_REG_BRANCHE = false;
+  function spRegBrancherBoutons() {
+    if (SP_REG_BRANCHE) return;
+    const b = $('reglagesBtn'), ok = $('rgOk');
+    if (!b || !ok) return;
+    SP_REG_BRANCHE = true;
+    b.addEventListener('click', spRegOuvrir);
+    const c = $('rgClose');
+    if (c) c.addEventListener('click', function () { spRegFermer(false); });
+    ok.addEventListener('click', function () { spRegFermer(true); });
+    const no = $('rgCancel');
+    if (no) no.addEventListener('click', function () { spRegFermer(false); });
+    const d = $('rgDice');
+    if (d) d.addEventListener('click', function () {
+      SP_REG.variation = ((Number(SP_REG.variation) || 1) % 20) + 1;
+      const r = $('rg_variation'), v = $('rgv_variation');
+      if (r) r.value = SP_REG.variation;
+      if (v) v.textContent = SP_REG.variation;
+      spRegAppliquer();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && SP_REG_OUVERT) { e.stopPropagation(); spRegFermer(false); }
+    }, true);
+  }
+  (function spRegInit() {
+    spRegBrancherBoutons();
+    /* Visibilité de l'icône : au démarrage, quand le moteur change, et après chaque clic
+       (l'écran de démarrage applique au studio le moteur qui vient d'être choisi). */
+    spRegMajBouton();
+    const sel = $('engineSelect');
+    if (sel) sel.addEventListener('change', spRegMajBouton);
+    document.addEventListener('click', function () { setTimeout(spRegMajBouton, 80); }, true);
+    const fin = function () { spRegBrancherBoutons(); spRegMajBouton(); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fin);
+    else fin();
+    window.addEventListener('load', fin);
+  })();
+
+
   // 🆕 UI de sélection : affiche un bandeau « N élément(s) sélectionné(s) » et
   // permet de vider la sélection. Le prochain prompt ne retravaillera QUE ces éléments.
   function updateSelectionUI() {
@@ -18275,6 +18723,27 @@ là : guide-le vers elle, ne dis jamais qu'elle n'existe pas.
 
 <!-- 🆕 v1.7.417 — Clavier virtuel (icône à droite du micro). Voile léger :
      l'interface du studio reste visible derrière le clavier. -->
+<!-- ══ _SP_STUDIO_REGLAGES_586 — POP-IN RÉGLAGES (refactorisation en direct) ══
+     Il se pose SUR la colonne de conversation (la preview reste visible à gauche) :
+     les tirettes recomposent le document en direct, « Valider » referme et rend la
+     conversation avec le compte rendu des réglages appliqués. -->
+<div id="spReg" class="hidden" role="dialog" aria-modal="true" aria-label="Réglages de la maquette">
+  <div class="rg-head">
+    <div>
+      <div class="rg-t">Réglages de la maquette</div>
+      <div class="rg-s" id="rgSub">Refactorisation en direct : le document se recompose pendant que vous bougez les tirettes. Réservé à SP213 gabarit.</div>
+    </div>
+    <button class="rg-close" id="rgClose" title="Fermer" aria-label="Fermer">✕</button>
+  </div>
+  <div class="rg-body" id="rgBody"></div>
+  <div class="rg-foot">
+    <span class="rg-busy" id="rgBusy"></span>
+    <button class="btn btn-secondary" id="rgDice" type="button" title="Autre variation : bande, accents et encadrés bougent">🎲 Variation</button>
+    <button class="btn btn-secondary" id="rgCancel" type="button">Annuler</button>
+    <button class="btn btn-primary" id="rgOk" type="button">Valider</button>
+  </div>
+</div>
+
 <div id="spKbOverlay" class="hidden" role="dialog" aria-modal="true" aria-label="Clavier">
   <div id="spKbBackdrop"></div>
   <div id="spKbPanel">
