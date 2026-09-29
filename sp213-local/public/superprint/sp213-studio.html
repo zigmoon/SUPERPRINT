@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
@@ -3336,9 +3336,59 @@
   });
 
   /* Noms des styles et de l'unité en pouces : ajoutés aux trois dictionnaires. */
-  Object.assign(I18N.fr, { 'reg.pouces': 'po', 'reg.st.roman': 'Roman', 'reg.st.essai': 'Essai', 'reg.st.reportage': 'Reportage', 'reg.st.magazine': 'Magazine', 'reg.st.premium': 'Premium', 'reg.st.minimal': 'Minimal', 'reg.st.nature': 'Nature', 'reg.st.corporate': 'Corporate' });
-  Object.assign(I18N.en, { 'reg.pouces': 'in', 'reg.st.roman': 'Novel', 'reg.st.essai': 'Essay', 'reg.st.reportage': 'Reportage', 'reg.st.magazine': 'Magazine', 'reg.st.premium': 'Premium', 'reg.st.minimal': 'Minimal', 'reg.st.nature': 'Nature', 'reg.st.corporate': 'Corporate' });
-  Object.assign(I18N.jp, { 'reg.pouces': 'インチ', 'reg.st.roman': '小説', 'reg.st.essai': 'エッセイ', 'reg.st.reportage': 'ルポ', 'reg.st.magazine': 'マガジン', 'reg.st.premium': 'プレミアム', 'reg.st.minimal': 'ミニマル', 'reg.st.nature': 'ナチュラル', 'reg.st.corporate': 'コーポレート' });
+  Object.assign(I18N.fr, { 'reg.pouces': 'po', 'reg.images': 'Images du web', 'reg.im.jamais': 'Jamais', 'reg.im.auto': 'Auto (libres + crédits)', 'reg.im.demande': 'Sur demande', 'chat.imgCredit': '{n} photo(s) libre(s) ajoutée(s).', 'reg.th.sante': 'Santé — bleu cyan', 'reg.st.roman': 'Roman', 'reg.st.essai': 'Essai', 'reg.st.reportage': 'Reportage', 'reg.st.magazine': 'Magazine', 'reg.st.premium': 'Premium', 'reg.st.minimal': 'Minimal', 'reg.st.nature': 'Nature', 'reg.st.corporate': 'Corporate' });
+  Object.assign(I18N.fr, { 'reg.th.terracotta': 'Terracotta — terre cuite',
+    'reg.th.bordeaux': 'Bordeaux — grenat', 'reg.th.olive': 'Olive — kaki',
+    'reg.th.menthe': 'Menthe — eucalyptus', 'reg.th.lavande': 'Lavande — lilas',
+    'reg.th.rosepoudre': 'Rose poudré — blush', 'reg.th.ardoise': 'Ardoise — bleu-gris',
+    'reg.th.moka': 'Moka — taupe', 'reg.th.encre': 'Bleu encre — indigo',
+    'reg.th.cuivre': 'Cuivre — rouille', 'reg.th.sable': 'Sable — ivoire', 'reg.th.foret': 'Forêt — sapin',
+    'reg.th.ocean': 'Océan — azur', 'reg.th.prune': 'Prune — aubergine',
+    'reg.th.graphite': 'Graphite — anthracite', 'reg.th.minuit': 'Minuit — bleu nuit',
+    'reg.ag.classique': 'Classique', 'reg.ag.aeree': 'Aérée', 'reg.ag.dense': 'Dense',
+    'reg.ag.editorial': 'Éditorial', 'reg.ag.revue': 'Revue', 'reg.ag.magazine': 'Magazine',
+    'reg.ag.livre': 'Livre', 'reg.ag.catalogue': 'Catalogue', 'reg.ag.affiche': 'Affiche',
+    'reg.ag.carte': 'Carte', 'reg.ag.rapport': 'Rapport', 'reg.ag.portfolio': 'Portfolio',
+    'reg.de.auto': 'Auto', 'reg.de.compact': 'Compact', 'reg.de.normal': 'Normal', 'reg.de.large': 'Large',
+    'reg.fd.aucun': 'Aucun', 'reg.fd.ombres': 'Ombres douces', 'reg.fd.degrade': 'Dégradé',
+    'reg.fd.grain': 'Grain', 'reg.fd.trame': 'Trame', 'reg.fd.bichromie': 'Bichromie',
+    'reg.fd.auto': 'Auto — tous', 'reg.sec7': 'Aspect', 'reg.fonds': 'Fond des zones image',
+    'reg.agencement': 'Agencement', 'reg.densiteAg': 'Densité',
+    'reg.n7': '{n} mises en page (agencement × densité) et {f} familles de fonds. Aucun fond par défaut : les zones sans photo restent du papier.' });
+  Object.assign(I18N.en, { 'reg.pouces': 'in', 'reg.images': 'Web images', 'reg.im.jamais': 'Never', 'reg.im.auto': 'Auto (free + credits)', 'reg.im.demande': 'On request', 'chat.imgCredit': '{n} free photo(s) added.', 'reg.th.sante': 'Health — cyan blue', 'reg.st.roman': 'Novel', 'reg.st.essai': 'Essay', 'reg.st.reportage': 'Reportage', 'reg.st.magazine': 'Magazine', 'reg.st.premium': 'Premium', 'reg.st.minimal': 'Minimal', 'reg.st.nature': 'Nature', 'reg.st.corporate': 'Corporate' });
+  Object.assign(I18N.en, { 'reg.th.terracotta': 'Terracotta — clay',
+    'reg.th.bordeaux': 'Bordeaux — claret', 'reg.th.olive': 'Olive — khaki',
+    'reg.th.menthe': 'Mint — eucalyptus', 'reg.th.lavande': 'Lavender — lilac',
+    'reg.th.rosepoudre': 'Powder pink — blush', 'reg.th.ardoise': 'Slate — blue grey',
+    'reg.th.moka': 'Mocha — taupe', 'reg.th.encre': 'Ink blue — indigo', 'reg.th.cuivre': 'Copper — rust',
+    'reg.th.sable': 'Sand — ivory', 'reg.th.foret': 'Forest — fir', 'reg.th.ocean': 'Ocean — azure',
+    'reg.th.prune': 'Plum — aubergine', 'reg.th.graphite': 'Graphite — anthracite',
+    'reg.th.minuit': 'Midnight — night blue', 'reg.ag.classique': 'Classic', 'reg.ag.aeree': 'Airy',
+    'reg.ag.dense': 'Dense', 'reg.ag.editorial': 'Editorial', 'reg.ag.revue': 'Review',
+    'reg.ag.magazine': 'Magazine', 'reg.ag.livre': 'Book', 'reg.ag.catalogue': 'Catalogue',
+    'reg.ag.affiche': 'Poster', 'reg.ag.carte': 'Card', 'reg.ag.rapport': 'Report',
+    'reg.ag.portfolio': 'Portfolio', 'reg.de.auto': 'Auto', 'reg.de.compact': 'Compact',
+    'reg.de.normal': 'Normal', 'reg.de.large': 'Roomy', 'reg.fd.aucun': 'None',
+    'reg.fd.ombres': 'Soft shadows', 'reg.fd.degrade': 'Gradient', 'reg.fd.grain': 'Grain',
+    'reg.fd.trame': 'Halftone', 'reg.fd.bichromie': 'Duotone', 'reg.fd.auto': 'Auto — all',
+    'reg.sec7': 'Look', 'reg.fonds': 'Image-area background', 'reg.agencement': 'Layout',
+    'reg.densiteAg': 'Density',
+    'reg.n7': '{n} layouts (layout × density) and {f} background families. None by default: photo areas stay paper.' });
+  Object.assign(I18N.jp, { 'reg.pouces': 'インチ', 'reg.images': 'ウェブ画像', 'reg.im.jamais': 'なし', 'reg.im.auto': '自動（フリー＋クレジット）', 'reg.im.demande': '要求時のみ', 'chat.imgCredit': 'フリー写真を {n} 枚追加しました。', 'reg.th.sante': 'ヘルス — シアンブルー', 'reg.st.roman': '小説', 'reg.st.essai': 'エッセイ', 'reg.st.reportage': 'ルポ', 'reg.st.magazine': 'マガジン', 'reg.st.premium': 'プレミアム', 'reg.st.minimal': 'ミニマル', 'reg.st.nature': 'ナチュラル', 'reg.st.corporate': 'コーポレート' });
+  Object.assign(I18N.jp, { 'reg.th.terracotta': 'テラコッタ — 素焼き', 'reg.th.bordeaux': 'ボルドー — ガーネット',
+    'reg.th.olive': 'オリーブ — カーキ', 'reg.th.menthe': 'ミント — ユーカリ', 'reg.th.lavande': 'ラベンダー — ライラック',
+    'reg.th.rosepoudre': 'パウダーピンク', 'reg.th.ardoise': 'スレート — ブルーグレー', 'reg.th.moka': 'モカ — トープ',
+    'reg.th.encre': 'インクブルー — インディゴ', 'reg.th.cuivre': 'カッパー — ラスト', 'reg.th.sable': 'サンド — アイボリー',
+    'reg.th.foret': 'フォレスト — モミ', 'reg.th.ocean': 'オーシャン — アズール', 'reg.th.prune': 'プラム — オーバージン',
+    'reg.th.graphite': 'グラファイト — アンスラサイト', 'reg.th.minuit': 'ミッドナイト — ナイトブルー', 'reg.ag.classique': 'クラシック',
+    'reg.ag.aeree': 'ゆったり', 'reg.ag.dense': '高密度', 'reg.ag.editorial': 'エディトリアル', 'reg.ag.revue': 'レビュー',
+    'reg.ag.magazine': 'マガジン', 'reg.ag.livre': '書籍', 'reg.ag.catalogue': 'カタログ', 'reg.ag.affiche': 'ポスター',
+    'reg.ag.carte': 'カード', 'reg.ag.rapport': 'レポート', 'reg.ag.portfolio': 'ポートフォリオ', 'reg.de.auto': '自動',
+    'reg.de.compact': 'コンパクト', 'reg.de.normal': '標準', 'reg.de.large': 'ゆとり', 'reg.fd.aucun': 'なし',
+    'reg.fd.ombres': '柔らかな陰影', 'reg.fd.degrade': 'グラデーション', 'reg.fd.grain': 'グレイン',
+    'reg.fd.trame': 'ハーフトーン', 'reg.fd.bichromie': '2色刷り', 'reg.fd.auto': '自動 — すべて', 'reg.sec7': '見た目',
+    'reg.fonds': '画像領域の背景', 'reg.agencement': 'レイアウト', 'reg.densiteAg': '密度',
+    'reg.n7': '{n} のレイアウト（レイアウト×密度）と {f} 種類の背景。既定は背景なし（写真のない領域は紙のまま）。' });
 
   /* Mots du panneau qui dépendent du contexte (réservation au moteur, journal, compte
      rendu) : mêmes clés dans les trois langues. */
@@ -7690,7 +7740,15 @@ function spRtfLayoutInfo(src) {
   //    Une vraie recherche par mot-clé demanderait une API (clé requise) ;
   //    spImagesFetchOne() est le point d'entrée unique prévu pour l'accueillir.
   // ══════════════════════════════════════════════════════════════════════════
-  function spImagesEnabled() { return !!state.imagesEnabled; }
+  /* _SP_STUDIO_IMAGES_585 — LE RÉGLAGE VIT DANS LE POP-IN (l'icône 🌐 a été retirée du studio
+     à la demande de l'utilisateur) : 'jamais' (DÉFAUT, aucune requête réseau),
+     'auto' (on cherche des photos libres à chaque envoi) ou 'demande' (seulement
+     si la demande parle de photos). */
+  function spImagesReglage() {
+    try { return localStorage.getItem('sp213_images_mode') || 'jamais'; } catch (_) { return 'jamais'; }
+  }
+  window.sp213ImagesReglage = spImagesReglage;
+  function spImagesEnabled() { return !!state.imagesEnabled || spImagesReglage() !== 'jamais'; }
 
   function spImagesUpdateUI() {
     const wrap = $('imgToggleWrap');
@@ -7741,20 +7799,105 @@ function spRtfLayoutInfo(src) {
   }
   window.sp213ImagesTargetCount = spImagesTargetCount;
 
-  // Télécharge UNE photo d'illustration -> { dataUrl, width, height, url } | null
-  // Point d'entrée UNIQUE : c'est ici qu'une vraie recherche par mot-clé
-  // (Pexels / Unsplash API) viendra se brancher plus tard.
-  async function spImagesFetchOne(index, w, h) {
+  /* ══ _SP_STUDIO_IMAGES_585 — IMAGES LIBRES DU WEB : WIKIMEDIA COMMONS + OPENVERSE ═══════
+     Aucune clé, aucun compte, aucune revente : ce sont des banques LIBRES. La
+     recherche répond vraiment au mot-clé (ce que picsum ne faisait pas) et chaque
+     résultat porte AUTEUR + LICENCE, ce qui rend l'attribution possible. */
+  async function spImagesChercheLibres(requete, n) {
+    const q = String(requete || '').trim() || 'illustration';
+    const attendu = Math.max(1, Math.min(6, Number(n) || 1));
+    const out = [];
+    /* _SP_STUDIO_IMAGES_585b — Commons renvoie ses métadonnées en HTML : on retire les balises ET
+       on décode les entités (mesuré : « &amp; » s'imprimait tel quel dans les crédits). */
+    const propre = function (s) {
+      return String(s == null ? '' : s)
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
+        .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/&[a-zA-Z#0-9]{2,8};/g, ' ')
+        .replace(/\s+/g, ' ').trim().slice(0, 48);
+    };
+    /* 1) WIKIMEDIA COMMONS — héberge uniquement du contenu libre ; extmetadata donne
+          l'auteur et la licence sans requête supplémentaire. */
+    try {
+      const api = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*' +
+        '&generator=search&gsrnamespace=6&gsrlimit=' + (attendu + 3) +
+        '&gsrsearch=' + encodeURIComponent(q) +
+        '&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=1600';
+      const rep = await fetch(api, { cache: 'no-store' });
+      const js = await rep.json();
+      const pages = (js && js.query && js.query.pages) ? Object.keys(js.query.pages).map(function (k) { return js.query.pages[k]; }) : [];
+      pages.forEach(function (p) {
+        const ii = (p.imageinfo || [])[0];
+        if (!ii) return;
+        const url = ii.thumburl || ii.url || '';
+        if (!url || !/\.(jpe?g|png|webp)$/i.test(String(url).split('?')[0])) return;
+        const m = ii.extmetadata || {};
+        const val = function (k) { return m[k] && m[k].value != null ? propre(m[k].value) : ''; };
+        out.push({
+          url: url, page: ii.descriptionurl || '', source: 'Wikimedia Commons',
+          auteur: val('Artist') || 'Wikimedia Commons',
+          licence: val('LicenseShortName') || 'licence libre (voir la source)'
+        });
+      });
+    } catch (_) {}
+    /* 2) OPENVERSE — si Commons n'a pas donné assez de photos libres exploitables. */
+    if (out.length < attendu) {
+      try {
+        const api2 = 'https://api.openverse.org/v1/images/?q=' + encodeURIComponent(q) +
+          '&license_type=commercial&mature=false&page_size=' + (attendu + 2);
+        const rep2 = await fetch(api2, { cache: 'no-store' });
+        const js2 = await rep2.json();
+        const res = (js2 && js2.results) ? js2.results : [];
+        res.forEach(function (r) {
+          const url = r.url || r.thumbnail || '';
+          if (!url) return;
+          out.push({ url: url, page: r.foreign_landing_url || '', source: 'Openverse',
+            auteur: propre(r.creator) || 'Auteur inconnu',
+            licence: ('CC ' + propre(r.license) + ' ' + propre(r.license_version)).trim() });
+        });
+      } catch (_) {}
+    }
+    /* Attribution lisible, prête à poser : « © Auteur / Licence (Source) ». */
+    out.forEach(function (o) { o.texte = ('© ' + o.auteur + ' / ' + o.licence).slice(0, 90); });
+    return out.slice(0, attendu);
+  }
+  window.sp213ImagesChercheLibres = spImagesChercheLibres;
+
+  /* LA REQUÊTE, C'EST LE TF-IDF DU CONTEXTE : les mots qui pèsent vraiment dans la
+     demande (fréquence × longueur × position ÷ sections). Aucun dictionnaire : le
+     moteur ne cherche que ce que l'utilisateur a écrit. */
+  function spImagesRequete(txt) {
+    try {
+      const c = spGabContexte(String(txt || ''));
+      if (c && c.motsCles && c.motsCles.length) return c.motsCles.slice(0, 3).join(' ');
+      if (c && c.mots && c.mots.length) return c.mots.slice(0, 3).join(' ');
+      if (c && c.noms && c.noms.length) return c.noms.slice(0, 2).join(' ');
+    } catch (_) {}
+    return String(txt || '').replace(/[^\p{L}\p{N}\s'-]/gu, ' ').split(/\s+/).filter(function (m) { return m.length > 3; }).slice(0, 3).join(' ');
+  }
+  let SP_IMG_LIBRES = { q: '', items: [] };
+  /* Télécharge UNE photo libre -> { dataUrl, width, height, url, credit } | null
+     La liste est mémorisée par requête : trois photos coûtent UNE recherche. */
+  async function spImagesFetchOne(index, w, h, requete) {
     const W = w || 1600, H = h || 1000;
-    // Seed différent par photo pour éviter les doublons visuels.
-    const seed = 'sp213-auto-' + Date.now().toString(36) + '-' + index + '-' + Math.floor(Math.random() * 100000);
-    const picsumUrl = 'https://picsum.photos/seed/' + seed + '/' + W + '/' + H;
-    let img = await webImgToDataUrl(picsumUrl);
-    if (img) { img.url = picsumUrl; return img; }
-    // Repli : photos Unsplash libres déjà validées dans l'app.
+    const q = String(requete || state.lastPrompt || '').slice(0, 120);
+    const motsReq = spImagesRequete(q);
+    if (SP_IMG_LIBRES.q !== q || !SP_IMG_LIBRES.items.length) {
+      let items = [];
+      try { items = await spImagesChercheLibres(motsReq, 3); } catch (_) { items = []; }
+      SP_IMG_LIBRES = { q: q, items: items };
+    }
+    const it = SP_IMG_LIBRES.items[index % Math.max(1, SP_IMG_LIBRES.items.length)];
+    if (it) {
+      const img = await webImgToDataUrl(it.url);
+      if (img) { img.url = it.url; img.credit = it; return img; }
+    }
+    /* DERNIER RECOURS : photos libres déjà validées dans l'app (aucun crédit d'auteur
+       connu → aucune mention posée : on n'attribue jamais au hasard). */
     const fbUrl = _unsplashFallbackUrl(W, H);
-    img = await webImgToDataUrl(fbUrl);
-    if (img) { img.url = fbUrl; return img; }
+    const img2 = await webImgToDataUrl(fbUrl);
+    if (img2) { img2.url = fbUrl; return img2; }
     return null;
   }
   window.sp213ImagesFetchOne = spImagesFetchOne;
@@ -7766,25 +7909,36 @@ function spRtfLayoutInfo(src) {
     const go = $('imgToggleWrap');
     if (go) go.classList.add('busy');
     let added = 0, failed = 0;
+    const credits = [];
     try {
       for (let i = 0; i < n; i++) {
         let img = null;
-        try { img = await spImagesFetchOne(i, 1600, 1000); } catch(_) { img = null; }
+        try { img = await spImagesFetchOne(i, 1600, 1000, userText); } catch(_) { img = null; }
         if (!img) { failed++; continue; }
         state.attachments.push({
           id: Date.now() + '_autoimg' + i,
-          name: 'photo-' + (i + 1) + '.jpg',
+          /* _SP_STUDIO_IMAGES_585 — le nom porte la source, et le CRÉDIT (auteur + licence)
+             voyage avec la pièce jointe : c'est lui qui alimente la ligne de
+             crédits posée dans la marge de la dernière page. */
+          name: (img.credit ? 'libre-' : 'photo-') + (i + 1) + '.jpg',
           type: 'image',
           dataURL: img.dataUrl,
           width: img.width,
           height: img.height,
           ext: 'jpg',
           auto: true,
-          url: img.url || ''
+          url: img.url || '',
+          credit: img.credit || null
         });
+        if (img.credit && credits.indexOf(img.credit.texte) === -1) credits.push(img.credit.texte);
         added++;
       }
       if (added) { try { renderAttachBar(); } catch(_) {} }
+      /* _SP_STUDIO_IMAGES_585 — attribution annoncée : on dit d'où viennent les photos et sous
+         quelle licence, avant même de composer. */
+      if (credits.length) {
+        try { appendChat('assistant', '🖼️ ' + t('chat.imgCredit', { n: added }) + ' ' + credits.join(' · ')); } catch (_) {}
+      }
     } finally {
       if (go) go.classList.remove('busy');
     }
@@ -8109,6 +8263,14 @@ function spRtfLayoutInfo(src) {
       }
     }
     const _nbDoc = (spFile.numbering && typeof spFile.numbering === 'object') ? spFile.numbering : null;
+    /* 🆕 v1.7.585 — _SP_PARITE_FOLIO_585 — EXCEPTIONS DE FOLIO DU DOCUMENT REÇU.
+       MESURÉ : sur les 10 blocs de premier niveau du .sp, « numberingOverrides »
+       était le SEUL que cet import ne capturait pas — un document dont une page a
+       son numéro masqué (ou décalé) revenait donc de l'aller-retour app → studio →
+       app avec les folios par défaut, sans le moindre avertissement. On le capture
+       dans state.doc, comme les gabarits et les chaînes, pour le réémettre tel quel. */
+    const _nbOvDoc = (spFile.numberingOverrides && typeof spFile.numberingOverrides === 'object' && !Array.isArray(spFile.numberingOverrides))
+      ? JSON.parse(JSON.stringify(spFile.numberingOverrides)) : null;
     /* 🆕 v1.7.541 — GABARITS DE PAGE (masters) : transportés TELS QUELS.
        MESURE DU DÉFAUT : les deux écrivains renvoyaient 'masters: { templates: {},
        assignments: {} }' et 'masterId: null' EN DUR, et cet import ne lisait jamais
@@ -8439,6 +8601,8 @@ function spRtfLayoutInfo(src) {
          app → studio → app perdait cols/opacité/marges). Transmise telle quelle. */
       colGrid: (spFile.document && spFile.document.colGrid) ? spFile.document.colGrid : null,
       numbering: _nbDoc,
+      /* 🆕 v1.7.585 — _SP_PARITE_FOLIO_585 (cf. _nbOvDoc ci-dessus). */
+      numberingOverrides: _nbOvDoc,
       /* 🆕 v1.7.541 — GABARITS DU DOCUMENT D'ORIGINE (cf. _mastersDoc ci-dessus). */
       masters: _mastersDoc,
       /* 🆕 v1.7.565 — CHAÎNES ET REPÈRES DU DOCUMENT D'ORIGINE (cf. _linksDoc / _guidesDoc) :
@@ -9354,6 +9518,51 @@ function spRtfLayoutInfo(src) {
     event:   { a: '#6d28d9', b: '#ec4899', clair: '#f7f1ff', gris: '#ded1f7', txt: '#1b0f38' },
     neutre:  { a: '#111111', b: '#1f6feb', clair: '#f5f5f6', gris: '#d9d9dc', txt: '#18181b' }
   };
+  /* ══ _SP_STUDIO_STYLE_585 — 17 PALETTES NOMMÉES DE PLUS (24 au total) ═════════════════════
+     Demande utilisateur : « 24 palettes ». Les 8 palettes ci-dessus gardent leur
+     PRIORITÉ (elles sont testées en premier) et leurs valeurs exactes : un document
+     existant garde donc la même palette. Ces 16 entrées n'existent que si la
+     demande cite leur teinte — rien ne change sinon. Chaque palette porte aussi sa
+     famille typographique : la roue « Style » du pop-in Réglages les liste toutes. */
+  Object.assign(SP_GAB_PAL, {
+    terracotta: { a: '#b45309', b: '#92400e', clair: '#fdf3ec', gris: '#e8d5c4', txt: '#2a1a12', fond: '#fffaf6' },
+    bordeaux: { a: '#7f1d2e', b: '#9f1239', clair: '#fbf1f2', gris: '#e7cdd2', txt: '#241014', fond: '#fffafa' },
+    olive: { a: '#4d5d1f', b: '#3f4a12', clair: '#f6f8ee', gris: '#dbe0c8', txt: '#1d2110', fond: '#fdfef9' },
+    menthe: { a: '#0f766e', b: '#14b8a6', clair: '#eefbf8', gris: '#c8e6e1', txt: '#0c2b28', fond: '#ffffff' },
+    lavande: { a: '#5b21b6', b: '#7c3aed', clair: '#f6f2ff', gris: '#ded3f7', txt: '#1e1038', fond: '#fffdfe' },
+    rosepoudre: { a: '#be185d', b: '#db2777', clair: '#fff1f5', gris: '#f3d3de', txt: '#2b0f1c', fond: '#fffbfc' },
+    ardoise: { a: '#334155', b: '#475569', clair: '#f1f5f9', gris: '#cbd5e1', txt: '#0f172a', fond: '#ffffff' },
+    moka: { a: '#57534e', b: '#78716c', clair: '#f7f5f2', gris: '#ddd8d2', txt: '#1c1917', fond: '#fffdfb' },
+    encre: { a: '#1e3a8a', b: '#1d4ed8', clair: '#eff4ff', gris: '#cddaf3', txt: '#101a3a', fond: '#ffffff' },
+    cuivre: { a: '#9a3412', b: '#c2410c', clair: '#fdf1ea', gris: '#e9cdbc', txt: '#2b1508', fond: '#fffaf7' },
+    sable: { a: '#a16207', b: '#ca8a04', clair: '#fdf8ec', gris: '#eadfc0', txt: '#2a2109', fond: '#fffdf5' },
+    foret: { a: '#14532d', b: '#166534', clair: '#f0f8f2', gris: '#c9ddce', txt: '#0b2213', fond: '#fbfdfb' },
+    ocean: { a: '#0c4a6e', b: '#0369a1', clair: '#eef7fc', gris: '#c6e0ee', txt: '#06263a', fond: '#fafdff' },
+    prune: { a: '#581c87', b: '#7e22ce', clair: '#f7f0fd', gris: '#e0cff3', txt: '#240e3a', fond: '#fdfaff' },
+    graphite: { a: '#27272a', b: '#52525b', clair: '#f4f4f5', gris: '#d4d4d8', txt: '#111114', fond: '#ffffff' },
+    minuit: { a: '#7dd3fc', b: '#38bdf8', clair: '#eaf6ff', gris: '#223046', doux: '#9fb3c8', txt: '#eef4ff', sur: '#eef4ff', fond: '#0b1220', noir: true }
+  });
+  SP_GAB_THEMES.push(
+    /* _SP_STUDIO_STYLE_585c — « santé / soin » : couleur et typographie justes (c'était le repli
+       spGabPal(), donc des titres en IBM Plex Mono). */
+    ['sante', /sant[ée]|m[ée]dical|clinique|h[ôo]pital|soin|bien-?[êe]tre|pharma/i, SP_GAB_PAL.sante, 'sans'],
+    ['terracotta', /terracotta|terre\s*cuite|brique/i, SP_GAB_PAL.terracotta, 'serif'],
+    ['bordeaux', /bordeaux|burgundy|grenat|claret/i, SP_GAB_PAL.bordeaux, 'serif'],
+    ['olive', /olive|kaki|khaki/i, SP_GAB_PAL.olive, 'sans'],
+    ['menthe', /menthe|eucalyptus|mint|teal|turquoise/i, SP_GAB_PAL.menthe, 'sans'],
+    ['lavande', /lavande|lavender|lilas|lilac/i, SP_GAB_PAL.lavande, 'display'],
+    ['rosepoudre', /rose\s*poudr|rose\s*p[âa]le|blush|粉/i, SP_GAB_PAL.rosepoudre, 'serif'],
+    ['ardoise', /ardoise|slate|bleu\s*gris/i, SP_GAB_PAL.ardoise, 'sans'],
+    ['moka', /moka|mocha|taupe/i, SP_GAB_PAL.moka, 'serif'],
+    ['encre', /bleu\s*encre|indigo|navy|royal/i, SP_GAB_PAL.encre, 'sans'],
+    ['cuivre', /cuivre|copper|bronze|rouille/i, SP_GAB_PAL.cuivre, 'serif'],
+    ['sable', /sable|beige|ivoire|ivory|vanille/i, SP_GAB_PAL.sable, 'serif'],
+    ['foret', /for[êe]t|forest|sylve|sapin/i, SP_GAB_PAL.foret, 'sans'],
+    ['ocean', /oc[ée]an|azur|aqua|bleu\s*clair|marin/i, SP_GAB_PAL.ocean, 'sans'],
+    ['prune', /prune|aubergine|mauve\s*fonc/i, SP_GAB_PAL.prune, 'display'],
+    ['graphite', /graphite|anthracite|charbon/i, SP_GAB_PAL.graphite, 'sans'],
+    ['minuit', /minuit|midnight|nuit\s*bleue|bleu\s*nuit/i, SP_GAB_PAL.minuit, 'mono']
+  );
   const SP_GAB_FONTS = {
     display: { titre: 'Bebas Neue', corps: 'Open Sans' },
     serif:   { titre: 'Playfair Display', corps: 'Open Sans' },
@@ -9547,6 +9756,26 @@ function spRtfLayoutInfo(src) {
       ['bandeau',     /bandeau|banni[èe]re|banner|16\s*:\s*9|marque-?page/i]
     ],
     palettes: [
+      /* _SP_STUDIO_STYLE_585b — les 16 PALETTES NOMMÉES passent AVANT les familles génériques :
+         « palette terracotta » ne doit pas être avalée par « chaud » (dont la regex
+         cite terracotta, rouille, ocre et kraft). Mesuré : la relecture annonçait
+         « papier crème » alors que la page sortait bien en terracotta. */
+      ['terracotta', /terracotta|terre\s*cuite|brique/i],
+      ['bordeaux', /bordeaux|burgundy|grenat|claret/i],
+      ['olive', /olive|kaki|khaki/i],
+      ['menthe', /menthe|eucalyptus|mint|teal|turquoise/i],
+      ['lavande', /lavande|lavender|lilas|lilac/i],
+      ['rosepoudre', /rose\s*poudr|rose\s*p[âa]le|blush|粉/i],
+      ['ardoise', /ardoise|slate|bleu\s*gris/i],
+      ['moka', /moka|mocha|taupe/i],
+      ['encre', /bleu\s*encre|indigo|navy|royal/i],
+      ['cuivre', /cuivre|copper|bronze|rouille/i],
+      ['sable', /sable|beige|ivoire|ivory|vanille/i],
+      ['foret', /for[êe]t|forest|sylve|sapin/i],
+      ['ocean', /oc[ée]an|azur|aqua|bleu\s*clair|marin/i],
+      ['prune', /prune|aubergine|mauve\s*fonc/i],
+      ['graphite', /graphite|anthracite|charbon/i],
+      ['minuit', /minuit|midnight|nuit\s*bleue|bleu\s*nuit/i],
       ['sobre',   /noir\s+et\s+blanc|black\s+and\s+white|monochrome|sans\s+couleur|gris|grey|gray|épur[ée]|sobre|minimal/i],
       ['chaud',   /cr[èe]me|cream|chaud|warm|terracotta|rouille|ocre|kraft|papier\s+ancien/i],
       ['noir',    /noir\s+chic|dor[ée]|gold|luxe|luxueux|premium|chic|élégant\s+noir|black\s+tie/i],
@@ -9606,7 +9835,7 @@ function spRtfLayoutInfo(src) {
       format = { w: w, h: h };
     });
     const noms = { fam: { menu: 'carte de restaurant', cv: 'CV', cartevisite: 'carte de visite', programme: 'programme', mariage: 'faire-part de mariage', invitation: 'invitation', catalog: 'catalogue', brochure: 'brochure', magazine: 'magazine', portfolio: 'portfolio', rapport: 'rapport', cahier: 'cahier', affiche: 'affiche', story: 'story', bandeau: 'bandeau' },
-      theme: { sobre: 'noir et blanc', chaud: 'papier crème', noir: 'noir chic et doré', douce: 'teintes douces', event: 'couleurs vives', finance: 'bleu institutionnel', mono: 'technique, monospace' },
+      theme: { sobre: 'noir et blanc', chaud: 'papier crème', noir: 'noir chic et doré', douce: 'teintes douces', event: 'couleurs vives', finance: 'bleu institutionnel', mono: 'technique, monospace', terracotta: 'terracotta', bordeaux: 'bordeaux', olive: 'olive', menthe: 'vert d’eau', lavande: 'lavande', rosepoudre: 'rose poudré', ardoise: 'ardoise', moka: 'moka', encre: 'bleu encre', cuivre: 'cuivre', sable: 'sable', foret: 'vert forêt', ocean: 'bleu océan', prune: 'prune', graphite: 'graphite', minuit: 'bleu minuit' },
       sans: { photo: 'sans photos', encadres: 'sans encadrés', filets: 'sans filets', folios: 'sans folios' },
       veut: { sommaire: 'sommaire', prix: 'prix', legende: 'légendes', citation: 'citation', lettrine: 'lettrine', encadre: 'encadrés' } };
     const bouts = [];
@@ -9623,6 +9852,8 @@ function spRtfLayoutInfo(src) {
   /* La demande comprise n'est écrite dans la conversation qu'UNE fois par demande
      (une recomposition par tirette repasse par ici : pas de bavardage). */
   let SP_COMPRIS_VU = '';
+  let SP_GAB_PLAN_VU = '';
+  let SP_GAB_CTX_VU = '';
   function spGabDireCompris(brief, c) {
     if (!c || !c.phrase) return;
     const cle = String(brief) + '||' + c.phrase;
@@ -9777,7 +10008,7 @@ function spRtfLayoutInfo(src) {
 
   /* TEXTE ET PHOTOS VIENNANT DES PIÈCES JOINTES, SELON LEUR RÔLE (pop-in PJ). */
   function spGabSources() {
-    const src = { corps: '', titres: [], images: [], contexte: '', couleurs: [] };
+    const src = { corps: '', titres: [], plan: [], images: [], contexte: '', couleurs: [] };
     try {
       (state.attachments || []).forEach(function (a, i) {
         const mode = spPjModeDe(a);
@@ -9789,6 +10020,8 @@ function spRtfLayoutInfo(src) {
         const entetes = blocs.filter(function (b) { return b.t === 'h'; }).map(function (b) { return b.x; });
         if (mode === 'context') { src.contexte += ' ' + blocs.map(function (b) { return b.x; }).join(' '); return; }
         entetes.forEach(function (h) { src.titres.push(h); });
+        /* _SP_STUDIO_CTX_585 — on garde AUSSI le NIVEAU de chaque titre : le plan du document. */
+        blocs.forEach(function (b) { if (b.t === 'h' && spGabUtileTexte(b.x)) src.plan.push({ n: Math.max(1, Math.min(3, b.n || 2)), x: b.x }); });
         if (mode === 'template') return;   // modèle : structure seulement, pas le contenu
         /* ══ _SP_STUDIO_PAGES_584 — LE CORPS EST RECOMPOSÉ EN MARKDOWN ══
            Avant, on recollait les blocs SANS leurs marqueurs : un document Word converti
@@ -9881,7 +10114,63 @@ function spRtfLayoutInfo(src) {
     mots.forEach(function (m) { if (['les', 'des', 'une', 'pour', 'dans', 'avec', 'sont', 'cette', 'plus', 'nous'].indexOf(m) !== -1) fr++; if (['the', 'and', 'with', 'for', 'that', 'this', 'from', 'are', 'have'].indexOf(m) !== -1) en++; });
     const langue = (en > fr * 1.4) ? 'en' : 'fr';
     const ton = /(\bnous\b)/.test(t.toLowerCase()) ? 'nous' : (/(\bvous\b)/.test(t.toLowerCase()) ? 'vous' : 'neutre');
-    return { mots: cles, chiffres: chiffres, accroche: accroche, noms: noms, langue: langue, ton: ton, taille: t.length };
+    /* ══ _SP_STUDIO_CTX_585 — LECTURE RENFORCÉE DU CONTEXTE ══════════════════════════
+       Demande utilisateur : « contexte renforcé (plan du document Word, ton, résumé) ».
+       Tout reste EXTRACTIF : on COMPTE et on CLASSE ce qui est écrit, on n'écrit rien. */
+    /* MOTS-CLÉS PONDÉRÉS (TF-IDF léger) : fréquence × longueur × position (un mot du
+       début pèse 1,5) ÷ nombre de sections où il apparaît (un mot présent PARTOUT ne
+       caractérise rien). C'est ce classement qui sert de requête aux images libres. */
+    const sect = t.split(/\n\s*\n/);
+    const pond = {};
+    Object.keys(freq).forEach(function (m) {
+      if (freq[m] < 2) return;
+      let nbSect = 0;
+      for (let s = 0; s < sect.length; s++) if (sect[s].toLowerCase().indexOf(m) !== -1) nbSect++;
+      const pos = t.toLowerCase().indexOf(m);
+      const debut = (pos >= 0 && pos < 2200) ? 1.5 : 1;
+      pond[m] = (freq[m] * Math.min(14, m.length) * debut) / Math.max(1, nbSect);
+    });
+    const motsCles = Object.keys(pond).sort(function (a, b) { return pond[b] - pond[a]; }).slice(0, 12);
+    /* ENTITÉS : dates, montants, pourcentages, courriels, sites, sigles — tout ce qui
+       est RECONNAISSABLE et vérifiable, jamais deviné. */
+    const entites = { dates: [], montants: [], sigles: [], liens: [] };
+    (t.match(/\b\d{1,2}\s+(?:janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[ûu]t|septembre|octobre|novembre|d[ée]cembre)\s+\d{4}\b|\b(?:19|20)\d{2}\b|\b\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4}\b/g) || []).slice(0, 12).forEach(function (x) { if (entites.dates.indexOf(x) === -1) entites.dates.push(x); });
+    (t.match(/\b\d[\d\s.,]*\s*(?:€|EUR|CHF|\$|£|k€|M€|millions?|milliers?)\b|\b\d+(?:[.,]\d+)?\s*%/g) || []).slice(0, 12).forEach(function (x) { if (entites.montants.indexOf(x) === -1) entites.montants.push(x.trim()); });
+    (t.match(/\b[A-Z][A-Z0-9&\-]{2,7}\b/g) || []).forEach(function (x) { if (entites.sigles.length < 10 && SP_GAB_VIDES.indexOf(x.toLowerCase()) === -1 && entites.sigles.indexOf(x) === -1) entites.sigles.push(x); });
+    (t.match(/(?:https?:\/\/[^\s]+)|(?:[\w.\-]+@[\w.\-]+\.[a-z]{2,})|(?:\b[\w\-]+\.(?:fr|com|org|net|io|jp)\b)/gi) || []).slice(0, 8).forEach(function (x) { if (entites.liens.indexOf(x) === -1) entites.liens.push(x); });
+    /* RÉSUMÉ EXTRACTIF : les 3 meilleures phrases, MÊMES critères que l'accroche (on
+       réutilise la même notation, on garde les suivantes). Aucune phrase n'est
+       réécrite : ce sont celles du document, dans leur ordre d'apparition. */
+    const notees = [];
+    phrases.forEach(function (ph, idx) {
+      const p = ph.trim();
+      if (p.length < 60 || p.length > 260) return;
+      if (/[?!]$/.test(p)) return;
+      if (/\b(je|tu|mon|ma|mes|ton|ta|tes)\b/i.test(p)) return;
+      let s = 1;
+      if (p.length >= 120) s += 1;
+      cles.forEach(function (m) { if (p.toLowerCase().indexOf(m) !== -1) s += 2; });
+      if (/\d/.test(p)) s += 2;
+      if (idx < 3) s += 1;
+      notees.push({ s: s, p: p, i: idx });
+    });
+    const resume = notees.sort(function (a, b) { return b.s - a.s; }).slice(0, 3).sort(function (a, b) { return a.i - b.i; }).map(function (x) { return x.p; });
+    /* TON et PUBLIC : marqueurs lexicaux explicites (aucun jugement de valeur). */
+    const lo = t.toLowerCase();
+    const compte = function (re) { return (lo.match(re) || []).length; };
+    let tonEditorial = 'neutre';
+    const sc = { institutionnel: compte(/\b(conform[ée]ment|dispositions?|r[èe]glement|article\s+\d|pr[ée]fecture|arr[êe]t[ée]|circulaire|minist[èe]re)\b/g),
+      chaleureux: compte(/\b(bienvenue|merci|avec plaisir|ensemble|partage|convivial|f[êe]te|c[ée]l[ée]br)\b/g),
+      technique: compte(/\b(donn[ée]es|protocole|syst[èe]me|mesure|analyse|taux|performance|logiciel|technique|montage|processus)\b/g),
+      editorial: compte(/\b(selon|d'apr[èe]s|explique|t[ée]moigne|raconte|constate|estime|souligne|rappelle)\b/g) };
+    Object.keys(sc).forEach(function (k) { if (sc[k] >= 2 && sc[k] > (sc[tonEditorial] || 0)) tonEditorial = k; });
+    let public_ = 'grand public';
+    if (/\b(professionnels?|experts?|praticiens?|confr[èe]res?|sp[ée]cialistes?|b2b|entreprises?|collectivit[ée]s?)\b/i.test(lo)) public_ = 'professionnels';
+    else if (/\b(enfants?|jeunes?|ados?|scolaires?|[ée]l[èe]ves?|[ée]tudiants?|familles?|kids?)\b/i.test(lo)) public_ = 'jeunesse';
+    else if (sc.institutionnel >= 2) public_ = 'institutionnel';
+    return { mots: cles, motsCles: motsCles, chiffres: chiffres, accroche: accroche, resume: resume,
+      noms: noms, entites: entites, langue: langue, ton: ton, tonEditorial: tonEditorial,
+      public: public_, taille: t.length };
   }
 
   /* FABRIQUE LE CONTENU exploitable par les gabarits : titre, accroche, chapô,
@@ -9898,6 +10187,10 @@ function spRtfLayoutInfo(src) {
     const blocsBrief = (briefTexte && src.corps) ? spGabMarkdown(briefTexte).map(function (b) { return b.x; }) : [];
     const blocs = spGabMarkdown(briefTexte + '\n\n' + src.corps);
     const M = { brief: String(brief || ''), titre: '', surtitre: '', chapeau: '', sections: [], lignes: [], items: [], chiffres: [], infos: [], photos: src.images.slice(), contexte: src.contexte, couleurs: src.couleurs.slice(), corpsLength: src.corps.length, source: src.corps ? 'demande + pièces jointes' : 'demande seule' };
+    /* _SP_STUDIO_CTX_585 — LE PLAN DU DOCUMENT EST GARDÉ (niveau + intitulé), pour être
+       annoncé et servir de sommaire. Rien n'est inventé : ce sont les titres du
+       document, dans leur ordre. */
+    M.plan = (src.plan || []).slice(0, 200).map(function (x) { return { n: x.n, t: x.x }; });
     let courant = null;
     /* ⚠️ _SP_STUDIO_TITRE_584 — NIVEAU DES TITRES. Dans un document Word, le titre du
        livre est un titre de niveau 1 et les chapitres des niveaux 2-3. Le premier
@@ -9961,6 +10254,9 @@ function spRtfLayoutInfo(src) {
     let ctx = null;
     try { ctx = spGabContexteMemo(src.contexte); } catch (_) { ctx = null; }
     if (ctx) {
+      /* _SP_STUDIO_CTX_585 — le RÉSUMÉ extractif prend le relais si aucune accroche n'a été
+         retenue : c'est la première phrase du plan de lecture, telle quelle. */
+      if (!M.chapeau && ctx.resume && ctx.resume.length) M.chapeau = ctx.resume[0];
       if (!M.chapeau && ctx.accroche) M.chapeau = ctx.accroche;
       if (ctx.chiffres.length) ctx.chiffres.forEach(function (v) { if (M.chiffres.length < 4) M.chiffres.push({ v: v, l: 'contexte' }); });
       if (!M.surtitre && ctx.mots.length) M.surtitre = ctx.mots[0].toUpperCase();
@@ -10110,8 +10406,28 @@ function spRtfLayoutInfo(src) {
      où on le rallume, ce sera discret. En attendant, les emplacements sans photo restent
      du papier. */
   let SP_GAB_FONDS_AUTO = false;
-  const SP_GAB_MOTIFS = ['voile', 'lueur', 'bande', 'degrade'];
-  const SP_GAB_MOTIF_LUM = { voile: 0.92, lueur: 0.9, bande: 0.89, degrade: 0.88 };
+  /* ══ _SP_STUDIO_STYLE_585 — FONDS PROCÉDURAUX : OMBRES, DÉGRADÉ, GRAIN, TRAME, BICHROMIE ══
+     Demande utilisateur : « dégradés, grain, trame, bichromie ». Chaque motif est un
+     SVG VECTORIEL au format exact de l'emplacement (net à l'impression, quelques
+     centaines d'octets, aucun réseau, aucun coût, tirage déterministe). Le mode par
+     défaut reste « aucun » : l'emplacement sans photo reste du papier, exactement
+     comme avant (aucune régression sur les documents existants). */
+  const SP_GAB_MOTIFS = ['voile', 'lueur', 'bande', 'degrade', 'grain', 'trame', 'bichromie'];
+  const SP_GAB_MOTIF_LUM = { voile: 0.92, lueur: 0.9, bande: 0.89, degrade: 0.88, grain: 0.94, trame: 0.92, bichromie: 0.9 };
+  const SP_GAB_FONDS_MODES = ['aucun', 'ombres', 'degrade', 'grain', 'trame', 'bichromie', 'auto'];
+  let SP_GAB_FONDS_MODE = 'aucun';
+  let SP_GAB_MOTIFS_ACTIFS = ['voile', 'lueur', 'bande', 'degrade'];
+  /* UN SEUL POINT D'ENTRÉE (appelé par le pop-in Réglages) : il règle à la fois le
+     mode, la liste des motifs et l'interrupteur lu par spGabPhoto. */
+  function spGabFondsRegler(mode) {
+    const m = String(mode || 'aucun');
+    SP_GAB_FONDS_MODE = m;
+    if (m === 'aucun') { SP_GAB_FONDS_AUTO = false; return; }
+    SP_GAB_FONDS_AUTO = true;
+    if (m === 'ombres') { SP_GAB_MOTIFS_ACTIFS = ['voile', 'lueur', 'bande', 'degrade']; return; }
+    if (m === 'auto') { SP_GAB_MOTIFS_ACTIFS = SP_GAB_MOTIFS.slice(); return; }
+    SP_GAB_MOTIFS_ACTIFS = [m];
+  }
 
   function spGabMotifSvg(motif, L, graine) {
     const p = L.pal || {};
@@ -10139,11 +10455,34 @@ function spRtfLayoutInfo(src) {
         '<stop offset="0.5" stop-color="' + teinte + '" stop-opacity="0"/>' +
         '<stop offset="1" stop-color="' + teinte + '" stop-opacity="0.34"/></linearGradient></defs>' +
         '<rect x="0" y="0" width="100" height="100" fill="url(#spg)"/>';
-    } else {
+    } else if (motif === 'degrade') {
       s += '<defs><linearGradient id="spg" x1="0" y1="1" x2="1" y2="0">' +
         '<stop offset="0" stop-color="' + accent + '" stop-opacity="0.16"/>' +
         '<stop offset="1" stop-color="' + teinte + '" stop-opacity="0.30"/></linearGradient></defs>' +
         '<rect x="0" y="0" width="100" height="100" fill="url(#spg)"/>';
+    } else if (motif === 'grain') {
+      /* GRAIN : une trame de 6 × 6 points de 1 px, densités inégales — l'aspect
+         papier/texture, sans un seul octet d'image. */
+      s += '<defs><pattern id="spg" width="6" height="6" patternUnits="userSpaceOnUse">' +
+        '<rect x="1" y="1" width="1" height="1" fill="' + accent + '" opacity="0.10"/>' +
+        '<rect x="4" y="2" width="1" height="1" fill="' + teinte + '" opacity="0.16"/>' +
+        '<rect x="2" y="4" width="1" height="1" fill="' + accent + '" opacity="0.07"/>' +
+        '</pattern></defs><rect x="0" y="0" width="100" height="100" fill="url(#spg)"/>';
+    } else if (motif === 'trame') {
+      /* TRAME (halftone) : deux réseaux de points décalés, celui de l'accent en
+         premier — la trame classique du prépresse, teintée de la palette. */
+      s += '<defs><pattern id="spg" width="5" height="5" patternUnits="userSpaceOnUse">' +
+        '<circle cx="1.2" cy="1.2" r="0.9" fill="' + accent + '" opacity="0.12"/>' +
+        '<circle cx="3.7" cy="3.7" r="0.5" fill="' + teinte + '" opacity="0.10"/>' +
+        '</pattern></defs><rect x="0" y="0" width="100" height="100" fill="url(#spg)"/>';
+    } else {
+      /* BICHROMIE : deux passages de teinte (accent + seconde teinte de la palette)
+         sur le papier — le duotone, sans mélange de couleurs fondu. */
+      s += '<defs><linearGradient id="spg" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0" stop-color="' + accent + '" stop-opacity="0.22"/>' +
+        '<stop offset="1" stop-color="' + (p.b || teinte) + '" stop-opacity="0.26"/></linearGradient></defs>' +
+        '<rect x="0" y="0" width="100" height="100" fill="url(#spg)"/>' +
+        '<rect x="0" y="0" width="100" height="100" fill="' + teinte + '" opacity="0.10"/>';
     }
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none" width="400" height="400">' +
       '<rect x="0" y="0" width="100" height="100" fill="' + papier + '"/>' + s + '</svg>';
@@ -10153,8 +10492,11 @@ function spRtfLayoutInfo(src) {
     /* UN MOTIF PAR PAGE (graphiquement cohérent) : l'indice vient de la page courante,
        pas de l'emplacement — autrement trois motifs différents se disputaient la même
        page (mesuré). */
-    const i = Math.abs(Math.floor((L.pageCourante || 0) + (graine || 0) / 3 + (L.n || 0))) % SP_GAB_MOTIFS.length;
-    const motif = SP_GAB_MOTIFS[i];
+    /* _SP_STUDIO_STYLE_585 — on tire dans la liste ACTIVE (mode « ombres » = 4 motifs, mode
+       « grain » = ce seul motif) : une page garde un motif cohérent. */
+    const _liste = (SP_GAB_MOTIFS_ACTIFS && SP_GAB_MOTIFS_ACTIFS.length) ? SP_GAB_MOTIFS_ACTIFS : SP_GAB_MOTIFS;
+    const i = Math.abs(Math.floor((L.pageCourante || 0) + (graine || 0) / 3 + (L.n || 0))) % _liste.length;
+    const motif = _liste[i];
     let url = '';
     try {
       url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(spGabMotifSvg(motif, L, graine));
@@ -10677,6 +11019,109 @@ function spRtfLayoutInfo(src) {
     return e;
   }
   const SP_GAB_LAY = { affiche: spGabP_affiche, couverture: spGabP_couverture, catalogue: spGabP_catalogue, rapport: spGabP_rapport, menu: spGabP_menu, brochure: spGabP_brochure, portfolio: spGabP_portfolio, invitation: spGabP_invitation, cartevisite: spGabP_cartevisite, cahier: spGabP_cahier, cv: spGabP_cv, programme: spGabP_programme, mariage: spGabP_mariage, story: spGabP_story, bandeau: spGabP_bandeau };
+  /* ══════════════════════════════════════════════════════════════════════════
+     _SP_STUDIO_STYLE_585 — 48 MISES EN PAGE (12 agencements × 4 densités) + 3 OUVERTURES
+     Demande utilisateur : « 40-60 mises en page ». Un AGENCEMENT est un faisceau
+     cohérent de réglages (marges, colonnes, gouttière, filets, bande, encadrés,
+     chapitres, ouverture de la première page), une DENSITÉ règle le corps et
+     l'interligne : 12 × 4 = 48 mises en page réelles, toutes sélectionnables à la
+     roue. L'agencement est la BASE, les tirettes du pop-in DISPOSENT : ce qui est
+     réglé à la main gagne (voir spGabAgencementReglages). */
+  const SP_GAB_AGENCEMENTS = [
+    { cle: 'classique', reg: {  } },
+    { cle: 'aeree', reg: { marge: 1.28, densite: 0.86, bande: 0.85, filets: 0.7, encadres: false } },
+    { cle: 'dense', reg: { marge: 0.86, densite: 0.98, bande: 1.05, filets: 0.8, colonnes: 2 } },
+    { cle: 'editorial', reg: { colonnes: 1, marge: 1.12, densite: 0.93, filets: 1, chapitres: true, encadres: false } },
+    { cle: 'revue', reg: { colonnes: 2, gouttiere: 12, marge: 0.96, densite: 0.94, filets: 1.2, encadres: true } },
+    { cle: 'magazine', reg: { colonnes: 2, gouttiere: 9, marge: 0.9, densite: 0.95, bande: 1.4, filets: 1.5, interlettrage: 2, caps: true, ouverture: 2 } },
+    { cle: 'livre', reg: { colonnes: 1, marge: 1.18, densite: 0.93, gouttiere: 10, interligne: 1.62, chapitres: true, encadres: false, ouverture: 0 } },
+    { cle: 'catalogue', reg: { colonnes: 2, marge: 0.94, densite: 0.95, gouttiere: 8, encadres: true, filets: 1.1, ouverture: 1 } },
+    { cle: 'affiche', reg: { marge: 1.15, densite: 0.9, echelleTitre: 1.25, bande: 1.25, filets: 0.7, ouverture: 3 } },
+    { cle: 'carte', reg: { colonnes: 1, marge: 1.32, densite: 0.9, bande: 0.8, filets: 0.6 } },
+    { cle: 'rapport', reg: { colonnes: 2, marge: 1.06, densite: 0.95, gouttiere: 8, encadres: true, folio: true, ouverture: 1 } },
+    { cle: 'portfolio', reg: { colonnes: 3, marge: 1.1, densite: 0.9, gouttiere: 6, filets: 0.6, encadres: false, ouverture: 2 } }
+  ];
+  const SP_GAB_DENSITES = [
+    { cle: 'auto', reg: {  } },
+    { cle: 'compact', reg: { densite: 0.97, corps: 9.5, interligne: 1.4 } },
+    { cle: 'normal', reg: { densite: 0.94, corps: 10.5, interligne: 1.55 } },
+    { cle: 'large', reg: { densite: 0.88, corps: 12, interligne: 1.7, marge: 1.15 } }
+  ];
+  let SP_GAB_AG_ACTIF = '', SP_GAB_DEN_ACTIF = '';
+  /* Un seul point d'entrée, appelé à chaque recomposition : le pop-in Réglages
+     pose l'objet SP_REG, le moteur en tire l'agencement, la densité et les fonds. */
+  function spGabStyleRegler(reg) {
+    const r = reg || null;
+    SP_GAB_AG_ACTIF = (r && r.agencement) ? String(r.agencement) : '';
+    SP_GAB_DEN_ACTIF = (r && r.densAg) ? String(r.densAg) : '';
+    try { spGabFondsRegler((r && r.fonds) || 'aucun'); } catch (_) {}
+  }
+  /* Le faisceau d'agencement au format des réglages du pop-in (null si aucun) :
+     le moteur s'en sert comme BASE, puis les tirettes l'emportent. */
+  function spGabAgencementReglages() {
+    const ag = SP_GAB_AGENCEMENTS.filter(function (x) { return x.cle === SP_GAB_AG_ACTIF; })[0];
+    if (!ag) return null;
+    const de = SP_GAB_DENSITES.filter(function (x) { return x.cle === SP_GAB_DEN_ACTIF; })[0];
+    const o = Object.assign({}, ag.reg);
+    if (de) Object.assign(o, de.reg);
+    return o;
+  }
+  /* L'ouverture choisie par l'agencement (0 = mise en page du gabarit). */
+  function spGabOuvertureActive() {
+    const r = spGabAgencementReglages();
+    const v = (r && Number(r.ouverture)) ? Math.round(Number(r.ouverture)) : 0;
+    return (v >= 1 && v <= 3) ? v : 0;
+  }
+
+  /* ══ TROIS OUVERTURES DE PLUS (elles ne changent QUE la première page) ════════
+     La suite du document garde la mise en page du gabarit : c'est l'ouverture qui
+     donne son caractère au document. Toutes utilisent les mêmes fabriques que les
+     autres pages (spGabT/spGabR/spGabL/spGabPhoto) : aucune géométrie nouvelle,
+     aucun risque de dépasser la page. */
+  function spGabO_split(L, n, tot) {
+    const e = [], p = L.pal, M = L.t, gx = L.cw * 0.5;
+    const rx = L.x0 + gx + L.k * 22, rw = Math.max(L.k * 60, L.x1 - rx);
+    if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0, gx, spGabCourt(M.surtitre, 40)));
+    e.push(spGabT(L.x0, L.y0 + L.ch * 0.16, gx, M.titre, L.g.titre, p.txt, 'bold', 'left', 1.0));
+    const hT = spGabH(M.titre, L.g.titre, gx, 0.95);
+    e.push(spGabL(L.x0, L.y0 + L.ch * 0.16 + hT + 12, gx * 0.42, p.a, 4));
+    if (M.chapeau) e.push(spGabT(L.x0, L.y0 + L.ch * 0.16 + hT + 26, gx * 0.94, spGabCourt(M.chapeau, 240), L.g.chapeau, '#4b5563', null, 'left', 1.5));
+    if (!spGabPhoto(L, e, rx, L.y0, rw, L.ch, 'visuel d\u2019ouverture')) e.push(spGabR(rx, L.y0, rw, L.ch, p.clair, 0));
+    const infos = (M.infos.length ? M.infos : M.lignes).slice(0, 2).join('  \u00b7  ');
+    if (infos) e.push(spGabT(L.x0, L.y1 - 16, gx * 0.92, spGabCourt(infos, 110), 9, '#6b7280', null, 'left', 1.4));
+    return e;
+  }
+  function spGabO_bandeau(L, n, tot) {
+    const e = [], p = L.pal, M = L.t;
+    const hB = Math.max(L.k * 60, Math.min(L.ch * 0.3, L.k * 132));
+    e.push(spGabR(-L.k * 12, -L.k * 12, L.W + L.k * 24, hB + L.k * 12, p.a, 0));
+    if (M.surtitre) e.push(spGabT(L.x0, hB * 0.16, L.cw * 0.7, String(M.surtitre).toUpperCase(), 8.5, p.clair || '#ffffff', 'bold', 'left', 1.1, 220));
+    e.push(spGabT(L.x0, hB * 0.34, L.cw * 0.92, M.titre, Math.min(L.g.titre, hB * 0.44), '#ffffff', 'bold', 'left', 0.98));
+    const yP = hB + L.k * 26;
+    if (!spGabPhoto(L, e, L.x0, yP, L.cw, Math.max(L.k * 80, L.y1 - yP - L.k * 56), 'visuel')) e.push(spGabR(L.x0, yP, L.cw, Math.max(L.k * 80, L.y1 - yP - L.k * 56), p.clair, 0));
+    e.push(spGabL(L.x0, L.y1 - 34, L.cw, p.txt, 2));
+    const infos = (M.infos.length ? M.infos : M.lignes).slice(0, 2).join('  \u00b7  ');
+    if (infos) e.push(spGabT(L.x0, L.y1 - 26, L.cw * 0.66, spGabCourt(infos, 110), 9, '#6b7280', null, 'left', 1.4));
+    if (M.items[0] && M.items[0].prix) e.push(spGabT(L.x0 + L.cw * 0.66, L.y1 - 26, L.cw * 0.34, M.items[0].prix, 12, p.a, 'bold', 'right'));
+    return e;
+  }
+  function spGabO_pleine(L, n, tot) {
+    const e = [], p = L.pal, M = L.t;
+    const ok = spGabPhoto(L, e, L.x0, L.y0, L.cw, L.ch, 'visuel pleine page');
+    if (!ok) e.push(spGabR(L.x0, L.y0, L.cw, L.ch, p.clair, 0));
+    /* VOILE : 46 % de la hauteur en bas (jamais la page entière — la passe
+       anti-aplats du studio la retirerait, et elle cacherait le visuel). */
+    const hV = L.ch * 0.46;
+    e.push(spGabR(L.x0, L.y1 - hV, L.cw, hV, '#0e0e10', 0));
+    e.push(Object.assign(spGabT(L.x0 + L.k * 22, L.y1 - hV + L.k * 20, L.cw - L.k * 44, M.titre, Math.min(L.g.titre, hV * 0.42), '#f7f7f4', 'bold', 'left', 0.98), { opacity: 0.96 }));
+    if (M.chapeau) e.push(spGabT(L.x0 + L.k * 22, L.y1 - hV + L.k * 74, L.cw - L.k * 44, spGabCourt(M.chapeau, 220), L.g.chapeau, '#dcdcd6', null, 'left', 1.45));
+    if (M.surtitre) e.push(spGabT(L.x0 + L.k * 22, L.y0 + L.k * 16, L.cw - L.k * 44, String(M.surtitre).toUpperCase(), 8.5, '#ffffff', 'bold', 'left', 1.1, 220));
+    return e;
+  }
+  /* La mise en page d'ouverture est choisie par l'agencement ; les formats où une
+     ouverture pleine page n'a pas de sens (carte, story, bandeau, CV) la gardent. */
+  const SP_GAB_OUVERTURES = [spGabO_split, spGabO_bandeau, spGabO_pleine];
+  const SP_GAB_OUVERTURES_SAUF = { cartevisite: 1, story: 1, bandeau: 1, cv: 1 };
 
   /* ⚠️ UNITÉ (défaut mesuré, cause de tout le reste) : le studio travaille en
      MILLIMÈTRES (state.pageW = 210 sur A4), pas en pixels. Les gabarits sont
@@ -11181,6 +11626,38 @@ function spRtfLayoutInfo(src) {
        l'app — sections, plats, prix — et l'annonce dans la conversation. */
     let _kit = null;
     try { _kit = spGabKitAppliquer(texte, g); } catch (_) { _kit = null; }
+    /* _SP_STUDIO_CTX_585 — CE QUE LE MOTEUR A LU DANS LE DOCUMENT, dit une fois par demande :
+       le PLAN (titres réels, avec leur niveau), le TON et le PUBLIC, le résumé retenu.
+       Ça évite de deviner pourquoi une page sort comme elle sort. */
+    try {
+      if (texte.plan && texte.plan.length >= 3) {
+        const clePl = String(brief) + '||plan||' + texte.plan.length;
+        if (SP_GAB_PLAN_VU !== clePl) {
+          SP_GAB_PLAN_VU = clePl;
+          const l = texte.plan.slice(0, 8).map(function (x) { return (x.n === 1 ? '■ ' : (x.n === 2 ? '• ' : '· ')) + x.t; });
+          appendChat('assistant', '🧭 Plan lu dans le document : ' + texte.plan.length + ' titre(s) — ' +
+            l.join(' · ') + (texte.plan.length > 8 ? ' …' : '') +
+            (texte.contexteSignaux ? ('. Ton « ' + texte.contexteSignaux.tonEditorial + ' », public « ' + texte.contexteSignaux.public + ' », ' + texte.contexteSignaux.resume.length + ' phrase(s) de résumé.') : ''));
+        }
+      }
+    } catch (_) {}
+    /* _SP_STUDIO_CTX_585b — PIÈCE JOINTE EN « CONTEXTE » SANS AUCUN TITRE : le plan est vide,
+       mais le ton, le public et le résumé sont bien lus. On les dit aussi — sinon on
+       lit un document sans jamais montrer ce qu'on en a compris. Une fois par demande. */
+    try {
+      const _cs = texte.contexteSignaux;
+      if (_cs && (!texte.plan || texte.plan.length < 3)) {
+        const cleCtx = String(brief) + '||ctx||' + _cs.mots.length + '|' + _cs.tonEditorial + '|' + _cs.public;
+        if (SP_GAB_CTX_VU !== cleCtx) {
+          SP_GAB_CTX_VU = cleCtx;
+          appendChat('assistant', '🧭 Contexte lu : ' + _cs.mots.length + ' mot(s)-clé(s) [' +
+            (_cs.motsCles || _cs.mots).slice(0, 4).join(', ') + '] · ton « ' + _cs.tonEditorial +
+            ' » · public « ' + _cs.public + ' »' + (_cs.entites ? (' · ' + (_cs.entites.dates.length + _cs.entites.montants.length + _cs.entites.sigles.length + _cs.entites.liens.length) + ' entité(s) repérée(s)') : '') +
+            (_cs.resume && _cs.resume.length ? (' · résumé de ' + _cs.resume.length + ' phrase(s)') : '') + '.');
+        }
+      }
+    } catch (_) {}
+    /* MATIÈRE DE LA BIBLIOTHÈQUE : inchangée, juste APRÈS l'annonce du plan. */
     if (_kit) {
       try {
         appendChat('assistant', '🍽️ ' + _kit + ' : votre demande ne contenait pas encore le détail ' +
@@ -11248,7 +11725,11 @@ function spRtfLayoutInfo(src) {
        choix du gabarit et du thème, exactement comme si l'utilisateur l'avait demandé :
        la recomposition passe donc par les mêmes marges, les mêmes folios et les mêmes
        contrôles de lisibilité qu'une génération normale. */
-    const REG = window._spReglages;
+    /* _SP_STUDIO_STYLE_585 — L'AGENCEMENT EST LA BASE, LES TIRETTES DISPOSENT : le faisceau
+       choisi à la roue propose marges, colonnes, filets, bande, encadrés et ouverture ;
+       ce que l'utilisateur règle explicitement dans le pop-in le remplace. Sans
+       agencement, l'objet est VIDE : tous les défauts restent ceux d'aujourd'hui. */
+    const REG = Object.assign({}, spGabAgencementReglages() || {}, window._spReglages || {});
     if (REG && REG.marge && REG.marge !== 1) {
       M.forEach(function (v, i) { M[i] = Math.max(3, Math.min(petit * 0.16, v * REG.marge)); });
     }
@@ -11322,7 +11803,8 @@ function spRtfLayoutInfo(src) {
       encadres: !(REG && REG.encadres === false),
       photoCouverture: !(REG && REG.photoCouverture === false),
       pays: fmt.pays, carre: fmt.carre, mini: fmt.mini, bandeau: fmt.bandeau,
-      photos: texte.photos.slice()
+      photos: texte.photos.slice(),
+      variante: spGabOuvertureActive()
     };
     /* MODE SIMPLE / DOUBLE PAGE : lu dans la demande et appliqué à la conversation.
        On n'appelle PAS newDocument() : la composition qui suit remplace le document. */
@@ -11401,7 +11883,11 @@ function spRtfLayoutInfo(src) {
     for (let i = 1; i <= tot; i++) {
       let els = [];
       L.pageCourante = i;                    // pour le générateur de fonds (un motif par page)
-      try { els = lay(L, i, tot) || []; } catch (err) { els = []; }
+      /* _SP_STUDIO_STYLE_585 — L'OUVERTURE VARIÉE NE TOUCHE QUE LA PREMIÈRE PAGE : la suite du
+         document garde la mise en page du gabarit (aucun risque de déborder). */
+      const layPage = (i === 1 && L.variante && !SP_GAB_OUVERTURES_SAUF[g.fam])
+        ? (SP_GAB_OUVERTURES[L.variante - 1] || lay) : lay;
+      try { els = layPage(L, i, tot) || []; } catch (err) { els = []; }
       /* FOND DE PAGE : blanc, ou le noir chic du thème « premium ». Le fond sombre est
          posé en DEUX rectangles (chacun 46 % de la hauteur) et non en un seul aplat
          pleine page : la passe anti-aplats noirs du studio supprime tout rectangle
@@ -11441,6 +11927,24 @@ function spRtfLayoutInfo(src) {
       pages.splice(pages.length - 1, 0, { pageIndex: 0, elements: g2.map(spGabVersMm) });
     }
     pages.forEach(function (p, i) { p.pageIndex = i; });
+    /* ══ _SP_STUDIO_IMAGES_585 — ATTRIBUTION AUTOMATIQUE DES PHOTOS LIBRES ══════════════════
+       Chaque photo du web porte son AUTEUR et sa LICENCE (relevés à la source). La
+       ligne est posée dans la MARGE BASSE de la dernière page : cet endroit est vide
+       par construction, donc elle ne peut rien recouvrir. Aucun crédit n'est inventé :
+       une photo sans métadonnées n'ajoute pas de mention. */
+    try {
+      const _cr = [];
+      (state.attachments || []).forEach(function (a) {
+        if (!a.credit || !a.credit.texte) return;
+        if (_cr.indexOf(a.credit.texte) === -1) _cr.push(a.credit.texte);
+      });
+      if (_cr.length && pages.length) {
+        const _der = pages[pages.length - 1];
+        const _yCr = H - M[2] * SP_GAB_K * 0.55;
+        /* _SP_STUDIO_IMAGES_585b — ligne bornée : une marge basse ne tient pas trois crédits entiers. */
+        _der.elements.push(spGabVersMm(spGabT(L.x0, _yCr, L.cw, spGabCourt('Crédits photo : ' + _cr.join(' · '), 150), 6.5, '#8a8f98', null, 'left', 1.15)));
+      }
+    } catch (_) {}
     spGabFondNoir(pages, L, fmt, g);
     const posees = texte.photos.length - L.photos.length;
     /* ══ GOUTTIÈRE MINIMALE ENTRE COLONNES (demande utilisateur : « deux colonnes
@@ -13498,7 +14002,11 @@ function spRtfLayoutInfo(src) {
     //   photos d'illustration AVANT de construire le prompt, pour qu'elles soient
     //   présentes dans la section PIÈCES JOINTES. En cas d'échec réseau, on
     //   CONTINUE : la consigne texte fait réserver des zones photo grises.
-    if (spImagesEnabled()) {
+    /* _SP_STUDIO_IMAGES_585 — LE MODE « SUR DEMANDE » N'APPELLE LE RÉSEAU QUE SI LA DEMANDE
+       PARLE DE PHOTOS ; « jamais » (défaut) ne fait rien du tout. */
+    const _imgMode = spImagesReglage();
+    const _imgVeut = /photos?|images?|visuels?|illustrations?|pictures?|couverture\s+photo/i.test(userText);
+    if (spImagesEnabled() && (_imgMode !== 'demande' || _imgVeut)) {
       try {
         const _imgRes = await spImagesAttach(userText);
         if (_imgRes.added) {
@@ -18052,12 +18560,12 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     [152, 229, 'Livre 6 × 9 po — 152 × 229 mm', 'reg.f.livre69'], [127, 203, 'Roman 5 × 8 po — 127 × 203 mm', 'reg.f.roman58'],
     [297, 420, 'A3 — 297 × 420 mm', 'reg.f.a3'], [85, 55, 'Carte de visite — 85 × 55 mm', 'reg.f.carte'], [200, 200, 'Carré — 200 × 200 mm', 'reg.f.carre']
   ];
-  const SP_REG_THEMES = [
-    ['auto', 'Automatique (d\'après le texte)'], ['sobre', 'Sobre — noir et blanc'], ['mono', 'Tech — bleu / IBM Plex'],
-    ['chaud', 'Chaud — papier crème'], ['douce', 'Doux — nature'], ['event', 'Festif — violet / rose'],
-    ['finance', 'Corporate — bleu nuit'], ['noir', 'Noir chic — fond noir, doré']
-  ];
+  /* _SP_STUDIO_STYLE_585 — LA ROUE « STYLE » LISTE LES 24 PALETTES (+ Automatique). Les libellés
+     viennent du dictionnaire (reg.th.<cle>), l'ordre est celui des thèmes. */
+  const SP_REG_THEMES = [['auto', '']].concat(SP_GAB_THEMES.map(function (x) { return [x[0], '']; }));
   const SP_REG_UNITES = [['mm', 1, 'mm'], ['cm', 10, 'cm'], ['in', 25.4, 'po']];
+  /* _SP_STUDIO_IMAGES_585 — modes d'images libres (jamais par défaut). */
+  const SP_REG_IMAGES = ['jamais', 'auto', 'demande'];
   /* ══ _SP_STUDIO_REGLAGES_586 — STYLES PRÊTS À EMPLOYER (refactorisation globale) ══
      Demande utilisateur : « FAIS-MOI RÊVER SUR LA REFACTORISATION D'UNE MAQUETTE ».
      Un style, c'est un FAISCEAU COHÉRENT de réglages (thème + typographies + corps +
@@ -18086,7 +18594,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       caps: false, interlettrage: 0, filets: 1,
       marge: 1, gouttiere: 10, colonnes: 1, folio: true, densite: 0.94,
       bande: 1, chapitres: true, encadres: true, photoCouverture: true,
-      accent: '', fondPage: '', encre: 'auto', variation: 0
+      accent: '', fondPage: '', encre: 'auto', variation: 0,
+      /* _SP_STUDIO_STYLE_585 — fonds procéduraux, agencement et densité (roue du pop-in). */
+      fonds: 'aucun', agencement: '', densAg: '',
+      /* _SP_STUDIO_IMAGES_585 — images libres du web : jamais (défaut) | auto | demande. */
+      images: 'jamais'
     };
   }
   function spRegCharge() {
@@ -18225,6 +18737,26 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       '</div>';
     h += '<div class="rg-note">' + t('reg.n4') + '</div>';
     h += '</section>';
+    /* ── ASPECT (_SP_STUDIO_STYLE_585 : fonds procéduraux, agencements, densité) ── */
+    h += '<section class="rg-sec"><h4>' + t('reg.sec7') + '</h4>';
+    h += '<div class="rg-row"><label>' + t('reg.fonds') + '</label><div class="rg-chips">' +
+      SP_GAB_FONDS_MODES.map(function (f) {
+        return '<button type="button" class="rg-chip' + (String(SP_REG.fonds || 'aucun') === f ? ' on' : '') + '" data-fonds-mode="' + f + '">' + t('reg.fd.' + f) + '</button>';
+      }).join('') + '</div></div>';
+    h += '<div class="rg-row"><label>' + t('reg.agencement') + '</label><div class="rg-chips">' +
+      SP_GAB_AGENCEMENTS.map(function (a) {
+        return '<button type="button" class="rg-chip' + (String(SP_REG.agencement || '') === a.cle ? ' on' : '') + '" data-agg="' + a.cle + '">' + t('reg.ag.' + a.cle) + '</button>';
+      }).join('') + '</div></div>';
+    h += '<div class="rg-row"><label>' + t('reg.densiteAg') + '</label><div class="rg-chips">' +
+      SP_GAB_DENSITES.map(function (d) {
+        return '<button type="button" class="rg-chip' + (String(SP_REG.densAg || '') === d.cle ? ' on' : '') + '" data-denag="' + d.cle + '">' + t('reg.de.' + d.cle) + '</button>';
+      }).join('') + '</div></div>';
+    h += '<div class="rg-row"><label>' + t('reg.images') + '</label><div class="rg-chips">' +
+      SP_REG_IMAGES.map(function (m) {
+        return '<button type="button" class="rg-chip' + (String(SP_REG.images || 'jamais') === m ? ' on' : '') + '" data-imgmode="' + m + '">' + t('reg.im.' + m) + '</button>';
+      }).join('') + '</div></div>';
+        h += '<div class="rg-note">' + t('reg.n7', { n: (SP_GAB_AGENCEMENTS.length * SP_GAB_DENSITES.length), f: SP_GAB_FONDS_MODES.length }) + '</div>';
+    h += '</section>';
     b.innerHTML = h;
     spRegBrancher();
   }
@@ -18283,6 +18815,35 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     b.querySelectorAll('[data-fond]').forEach(function (el) {
       el.addEventListener('click', function () {
         SP_REG.fondPage = el.getAttribute('data-fond');
+        spRegPeindre(); spRegAppliquer();
+      });
+    });
+    /* _SP_STUDIO_STYLE_585 — la roue : fonds, agencement, densité. */
+    b.querySelectorAll('[data-fonds-mode]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        SP_REG.fonds = el.getAttribute('data-fonds-mode');
+        spRegPeindre(); spRegAppliquer();
+      });
+    });
+    b.querySelectorAll('[data-agg]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        SP_REG.agencement = el.getAttribute('data-agg');
+        SP_REG_STYLE = '';
+        spRegPeindre(); spRegAppliquer();
+      });
+    });
+    b.querySelectorAll('[data-denag]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        SP_REG.densAg = el.getAttribute('data-denag');
+        spRegPeindre(); spRegAppliquer();
+      });
+    });
+    /* _SP_STUDIO_IMAGES_585 — images libres du web : le mode est mémorisé hors du pop-in
+       (l'envoi se fait souvent panneau fermé). */
+    b.querySelectorAll('[data-imgmode]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        SP_REG.images = el.getAttribute('data-imgmode');
+        try { localStorage.setItem('sp213_images_mode', SP_REG.images); } catch (_) {}
         spRegPeindre(); spRegAppliquer();
       });
     });
@@ -18348,6 +18909,8 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   function spRegRecomposer() {
     if (!SP_REG) return -1;
     window._spReglages = SP_REG;
+    try { spGabStyleRegler(SP_REG); } catch (_) {}
+    try { localStorage.setItem('sp213_images_mode', SP_REG.images || 'jamais'); } catch (_) {}
     window._spGabTheme = (SP_REG.theme && SP_REG.theme !== 'auto') ? SP_REG.theme : null;
     state.pageW = Number(SP_REG.w) || state.pageW;
     state.pageH = Number(SP_REG.h) || state.pageH;
@@ -18499,6 +19062,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       /* ANNULER : on remet exactement le document et le format d'avant l'ouverture. */
       SP_REG = SP_REG_PREV.reg;
       window._spReglages = SP_REG.actif ? SP_REG : null;
+      try { spGabStyleRegler(SP_REG); } catch (_) {}
       window._spGabTheme = SP_REG_PREV.theme;
       state.pageW = SP_REG_PREV.pageW;
       state.pageH = SP_REG_PREV.pageH;
@@ -18882,7 +19446,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   function spRememberCustomFonts(liste) {
     try { spCustomFontsMemo = Array.isArray(liste) ? liste : []; } catch (_) { spCustomFontsMemo = []; }
   }
-  function spCustomFontsPourExport() { return (spCustomFontsMemo && spCustomFontsMemo.length) ? spCustomFontsMemo : undefined; }
+  function spCustomFontsPourExport() { return (spCustomFontsMemo && spCustomFontsMemo.length) ? spCustomFontsMemo : []; } /* _SP_PARITE_FOLIO_585 : tableau vide = les deux .sp superposables cle par cle */
 
   function spRememberSpotInks(reg) {
     try {
@@ -19372,6 +19936,12 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       /* 🆕 v1.7.541 — GABARITS DE PAGE : réécrits TELS QUELS (repli vide si le document
          n'en avait pas : la clé reste présente, comme avant). */
       masters: (state.doc && state.doc.masters) ? state.doc.masters : { templates: {}, assignments: {} },
+      /* 🆕 v1.7.585 — _SP_PARITE_FOLIO_585 — EXCEPTIONS DE FOLIO RÉÉCRITES TELLES QUELLES.
+         La voie IA garde {} (aucun folio n'est posé page par page) ; la voie
+         « document importé » les rend à l'identique, ce qui rend l'aller-retour
+         app → studio → app strictement neutre sur les numéros de page. */
+      numberingOverrides: (state.doc && state.doc.numberingOverrides && typeof state.doc.numberingOverrides === 'object' && !Array.isArray(state.doc.numberingOverrides))
+        ? JSON.parse(JSON.stringify(state.doc.numberingOverrides)) : {},
       // 🆕 v1.7.417 — numerotation du document d'origine, transportee TELLE QUELLE
       //   (documents importes uniquement : cf. importFromSuperPrint). La voie IA
       //   ci-dessous garde enabled:false car l'IA ecrit ses folios en TEXTE :

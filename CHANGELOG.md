@@ -9,6 +9,38 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.585] — 2026-09-30
+
+_Studio IA : le moteur prend du style (24 palettes nommées, 7 familles de fonds, 48 mises en page, 3 ouvertures de page), lit le plan du document (titres, ton, public, résumé, entités) et pose de vraies photos libres avec attribution automatique ; passerelle .sp/.json alignée (exceptions de folio par page désormais transportées)_
+
+### Added — Style du moteur (24 palettes, fonds, 48 mises en page)
+- **16 palettes nommées** ajoutées (terracotta, bordeaux, olive, menthe, lavande, rose poudré, ardoise, moka, encre, cuivre, sable, forêt, océan, prune, graphite, minuit) + la famille **santé** : **24 palettes nommées + Automatique = 25 entrées** dans la roue « Style ». Les palettes nommées sont relues **avant** les familles génériques dans le lexique du métier, sinon « terracotta » était absorbé par « chaud » (mesuré).
+- **7 familles de fonds** : ombres, dégradé, **grain** (motif SVG 6×6), **trame** (halftone 5×5), **bichromie** (deux passages), automatique, aucun.
+- **12 agencements × 4 densités = 48 mises en page** (classique, aéré, dense, éditorial, revue, magazine, livre, catalogue, affiche, carte, rapport, portfolio; auto, compact, normal, large) + **3 ouvertures de page** (chapitre, bandeau, pleine page) selon la famille.
+- Nouvelle section **« Aspect »** dans les Réglages (fond, agencement, densité, thème, images), en trois langues.
+
+### Added — Contexte renforcé (le plan du document est lu, et redit)
+- Lecture en **structure** d'un document joint : **plan** (niveaux 1 à 3), **ton** éditorial, **public**, **résumé** de trois phrases, **entités** (dates, montants, sigles, liens), langue et taille.
+- Le studio l'**annonce dans la conversation** (une fois par demande) : « 🧭 Plan lu dans le document : N titre(s)… » et, quand la pièce jointe est en **contexte** (aucun titre exploitable), une seconde ligne donne mots-clés, ton, public, entités et résumé.
+- Le premier phrase du résumé sert de **chapô** quand la demande n'en fournit pas.
+
+### Added — Images du web libres, avec attribution automatique
+- Deux banques libres interrogées : **Wikimedia Commons** (`generator=search`, `extmetadata`) puis **Openverse** (`license_type=commercial`) ; mots-clés tirés de la demande et du document (TF-IDF). Mesuré : « ceramique » → « © Rictor Norton / CC BY 2.0 », « © Jebulon / CC0 ».
+- **Attribution automatique** : auteur et licence conservés par image, annonce dans la conversation, et **ligne de crédits** (6,5 pt, bornée à 150 caractères) écrite en bas de la dernière page.
+- Réglage **Images** à trois états — **jamais** (défaut), **automatique**, **à la demande** — mémorisé entre les sessions.
+- Les entités HTML des crédits Commons sont décodées (`&amp;`, `&quot;`…) et les textes bornés.
+
+### Fixed — Passerelle `.sp` et `.json` entre l'app et le studio
+- **Audit par mesure des 10 blocs de premier niveau du .sp** : un seul ne traversait pas le studio, `numberingOverrides` (exceptions de folio **page par page**). Il est désormais lu à l'import puis **réécrit tel quel**.
+- Dans l'app, les **lecteurs** `.json` et IPFS relisaient `pageNumberingOverrides`… mais **aucun des trois écrivains** ne le produisait (`saveProjectLocal`, `SuperPrint.saveProject`, `saveProjectWeb3`) : un folio masqué sur une page revenait à la réouverture. Corrigé aux trois endroits, avec la même capture qu'au `.sp` (`_spCaptureFolioOverrides`).
+- `resources.customFonts` : le studio écrit désormais un **tableau vide** au lieu de `undefined` (la clé disparaissait du JSON) — les deux `.sp` sont superposables clé par clé.
+- **Vérification de bout en bout app → studio → app** : 10 blocs sur 10 transportés ; repères, chaînes de texte, gabarits, marges (12 / 18 / 15 / 25 mm), mode CMJN, grille de colonnes, format et `masterId` identiques.
+
+### Changed — Version
+- Application **1.7.585** (`superprint/version.txt`, miroir `sp213-local/`, `package.json` local, marqueurs de cache `v585`), notes de version **trilingues** dans `release.html`.
+
+---
+
 ## [1.7.578] — 2026-09-28
 
 _Pages publiques : la version publiée s'affiche dans le colophon de l'accueil et de « Participer », la page Participer reçoit un sommaire de ses trois zones, un formulaire d'écriture à cinq sujets, et ses ressources presse en téléchargement libre_

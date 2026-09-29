@@ -73598,6 +73598,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             masterPages: masterPages,
             pageMasterAssignments: pageMasterAssignments,
             pageNumberingSettings: pageNumberingSettings,
+            /* 🆕 v1.7.585 — _SP_PARITE_FOLIO_585 : même trou que dans le .json, corrigé ici aussi
+               (le lecteur IPFS relit project.pageNumberingOverrides depuis la v1.7.427). */
+            pageNumberingOverrides: (function () { try { _spCaptureFolioOverrides(); } catch (_) {} return pageNumberingOverrides || {}; })(),
             /* 🆕 v1.7.457y — FIX ASYMÉTRIE MESURÉE (écriture Web3/IPFS).
                Le LECTEUR IPFS (v1.7.427) restaure project.spotInks et
                project.customFonts ; cet ÉCRIVAIN ne les produisait pas : un
@@ -90985,6 +90988,13 @@ window.saveProjectLocal = function() {
         masterPages: masterPages,
         pageMasterAssignments: pageMasterAssignments,
         pageNumberingSettings: pageNumberingSettings,
+        /* 🆕 v1.7.585 — _SP_PARITE_FOLIO_585 — EXCEPTIONS DE FOLIO TRANSPORTÉES PAR LE .json.
+           MESURE DU DÉFAUT : le LECTEUR de .json relit « pageNumberingOverrides », mais
+           cet ÉCRIVAIN ne le produisait pas : un folio masqué ou déplacé sur UNE page
+           revenait à la version par défaut après un enregistrement/réouverture .json.
+           Même capture qu'au .sp (saveProjectSP_toObject) : on relit d'abord les folios
+           vivants, sinon on exporterait l'état d'avant la modification. */
+        pageNumberingOverrides: (function () { try { _spCaptureFolioOverrides(); } catch (_) {} return pageNumberingOverrides || {}; })(),
         // 🆕 v1.7.415 — POLICES EXTERNES UTILISEES (meme mecanisme que le .sp).
         //   MESURE DU DEFAUT : le .sp embarquait resources.customFonts depuis la
         //   v1.7.335, mais NI le .json NI l'autosave. Un document utilisant une
@@ -91053,6 +91063,9 @@ window.saveProjectWeb3 = async function() {
             masterPages: masterPages,
             pageMasterAssignments: pageMasterAssignments,
             pageNumberingSettings: pageNumberingSettings,
+            /* 🆕 v1.7.585 — _SP_PARITE_FOLIO_585 : même trou que dans le .json, corrigé ici aussi
+               (le lecteur IPFS relit project.pageNumberingOverrides depuis la v1.7.427). */
+            pageNumberingOverrides: (function () { try { _spCaptureFolioOverrides(); } catch (_) {} return pageNumberingOverrides || {}; })(),
             /* 🆕 v1.7.457y — FIX ASYMÉTRIE MESURÉE (écriture Web3/IPFS).
                Le LECTEUR IPFS (v1.7.427) restaure project.spotInks et
                project.customFonts ; cet ÉCRIVAIN ne les produisait pas : un
