@@ -11067,9 +11067,15 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
         }
       ;
       const _essaisMiroir = wllmBases();
-      const _ouvrirCfg = function (cfg, url) {
+      const _ouvrirCfg = function (cfg, url, discret) {
         return window.CreateMLCEngine(modelId, Object.assign({ initProgressCallback: _progress }, cfg ? { appConfig: cfg } : {})).catch(function (e) {
-          try { if (window.console && console.warn) console.warn('[SP213] WebLLM — poids indisponibles (' + (url || 'Hugging Face') + ') : ' + ((e && e.message) || e)); } catch (_) {}
+          const msg = (e && e.message) || e;
+          try {
+            if (window.console) {
+              if (discret) console.info('[SP213] WebLLM — pas de miroir à côté de l\'application (' + url + ') : on essaie app.zigmoon.com puis Hugging Face.');
+              else if (console.warn) console.warn('[SP213] WebLLM — poids indisponibles (' + (url || 'Hugging Face') + ') : ' + msg);
+            }
+          } catch (_) {}
           throw e;
         });
       };
@@ -11078,7 +11084,12 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
       const _suivant = function () {
         if (!_essaisMiroir.length) return _ouvrirCfg(null, null);
         const base = _essaisMiroir.shift();
-        return _ouvrirCfg(wllmAppConfig(modelId, base), base + modelId + '/mlc-chat-config.json').catch(_suivant);
+        /* Le premier essai est le miroir du MÊME domaine : s'il n'y a rien à côté de
+           l'application, ce n'est pas une panne mais le cas normal quand les poids
+           sont ailleurs (par exemple app.zigmoon.com). On le dit calmement. */
+        let memeDomaine = false;
+        try { memeDomaine = base.indexOf(window.location.origin) === 0; } catch (_) {}
+        return _ouvrirCfg(wllmAppConfig(modelId, base), base + modelId + '/mlc-chat-config.json', memeDomaine).catch(_suivant);
       };
       _suivant().then(function(engine) {
         state.webllm = engine;
