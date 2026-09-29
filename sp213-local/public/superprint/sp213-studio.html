@@ -1349,6 +1349,7 @@
           </span>
         </div>
         <select id="engineSelect">
+          <option value="gabarit">SP213 gabarit — mise en page déterministe (hors ligne, 0 €)</option>
           <!-- 🆕 DeepSeek en PREMIER (demande utilisateur, 2026-09-12) -->
           <option value="deepseek" selected>DeepSeek (cloud — raisonnement)</option>
           <!-- 🆕 v1.7.580e — LE MOTEUR LOCAL EN 2ᵉ POSITION (demande utilisateur).
@@ -7777,6 +7778,140 @@ function spRtfLayoutInfo(src) {
      Un seul panneau flottant (le <select> natif ne se style pas : c'est ce qui
      donnait un « sous-menu par défaut »). Les noms sont des marques : ils ne se
      traduisent pas ; la note et l'étiquette viennent du dictionnaire (nk / tk). */
+  /* ══════════════════════════════════════════════════════════════════════════
+     🆕 v1.7.580 — MOTEUR DE MISE EN PAGE SP213 (déterministe, hors ligne, 0 jeton)
+
+     DÉFAUT MESURÉ : les moteurs « démo » (Nano, WebLLM, 1,5 B) produisaient des
+     pages simples et aléatoires — jamais le même document deux fois, et pas de
+     vraie grille. Or le studio SAIT déjà poser une grille : marges, gouttières,
+     folios, cahiers — c'est ce qu'il corrige après coup à chaque génération.
+
+     Ce moteur-là ne demande rien à personne : il choisit un gabarit dans la
+     bibliothèque ci-dessous (les 6 mêmes clés que les pastilles qc.* de l'écran
+     d'accueil), puis POSE les pages selon des règles fixes. Même demande, même
+     document. Aucune clé, aucun téléchargement, aucune attente.
+
+     Le format produit est celui qu'attend le pipeline existant :
+     { reply, targetPages, pages:[{pageIndex, elements:[…]}] } — sérialisé et
+     donné à parseAIResponse(), donc les passes de marges, de cahiers, de
+     repérage et d'export s'appliquent exactement comme pour une IA.
+     ══════════════════════════════════════════════════════════════════════════ */
+  const SP_ST_GABARITS = [
+    { key: 'qc.minimal',   page: 1, cols: 1, gutter: 0,  margin: [26, 26, 34, 26], title: 96, lead: 22, body: 11, accent: '#111111', folio: false },
+    { key: 'qc.magazine',  page: 1, cols: 2, gutter: 8,  margin: [24, 24, 30, 24], title: 72, lead: 18, body: 10, accent: '#c2410c', folio: false },
+    { key: 'qc.catalog',   page: 1, cols: 2, gutter: 7,  margin: [22, 22, 28, 22], title: 40, lead: 14, body: 9,  accent: '#0f766e', folio: false },
+    { key: 'qc.corporate', page: 1, cols: 2, gutter: 6,  margin: [20, 20, 26, 20], title: 34, lead: 13, body: 9,  accent: '#1f6feb', folio: true  },
+    { key: 'qc.menu',      page: 1, cols: 1, gutter: 0,  margin: [30, 30, 34, 30], title: 52, lead: 16, body: 11, accent: '#7c2d12', folio: false },
+    { key: 'qc.brochure',  page: 4, cols: 2, gutter: 8,  margin: [24, 24, 30, 24], title: 60, lead: 17, body: 10, accent: '#111111', folio: true  }
+  ];
+
+  /* Choisit un gabarit par mots-clés. Ordre volontaire : le plus spécifique
+     d'abord. Aucune correspondance = affiche minimaliste, jamais rien. */
+  function spGabaritChoisi(brief) {
+    const s = String(brief || '').toLowerCase();
+    const regles = [
+      ['qc.menu',      /menus?\b|carte\b|restaurant|entr[eé]es|plats|desserts|brasserie|bistrot/],
+      ['qc.catalog',   /catalogue|catalog|produits?\b|boutique|tarifs?\b|grille\s+de\s+prix|shop/],
+      ['qc.corporate', /rapport|corporate|entreprise|soci[eé]t[eé]|kpi|indicateurs?|bilan|activit[eé]/],
+      ['qc.brochure',  /brochure|livret|plaquette|4\s*pages|quatre\s*pages|d[ée]pliant/],
+      ['qc.magazine',  /magazine|couverture|cover|journal|revue|une\b/],
+      ['qc.minimal',   /affiche|poster|flyer|minimal/]
+    ];
+    for (let i = 0; i < regles.length; i++) {
+      if (regles[i][1].test(s)) return SP_ST_GABARITS.find(function (g) { return g.key === regles[i][0]; }) || SP_ST_GABARITS[0];
+    }
+    return SP_ST_GABARITS[0];
+  }
+
+  // Découpe le brief en un titre court et des paragraphes exploitables.
+  function spGabaritTextes(brief) {
+    const brut = String(brief || '').replace(/\s+/g, ' ').trim();
+    if (!brut) return { titre: 'Sans titre', phrases: [] };
+    const parts = brut.split(/(?<=[.!?])\s+/).filter(function (p) { return p.trim().length > 1; });
+    let titre = parts[0] || brut;
+    if (titre.length > 58) {
+      const coupe = titre.slice(0, 58);
+      titre = coupe.slice(0, coupe.lastIndexOf(' ') > 24 ? coupe.lastIndexOf(' ') : 58) + '…';
+    }
+    return { titre: titre.replace(/[.!?]+$/, ''), phrases: parts.slice(1) };
+  }
+
+  /* Construit UNE page : fond, filet d'accent, titre, chapeau, colonnes de texte
+     (avec gouttière réelle), et le folio quand le gabarit le demande.
+     Coordonnées en pixels du document (72 dpi), comme le reste du studio. */
+  function spGabaritPage(g, textes, num, total) {
+    const W = state.pageW || 595.28;
+    const H = state.pageH || 841.89;
+    const m = g.margin;
+    const x0 = m[3], y0 = m[0];
+    const cw = W - m[1] - m[3];          // largeur utile
+    const ch = H - m[0] - m[2];          // hauteur utile
+    const els = [];
+    const couv = (num === 1);
+
+    els.push({ type: 'rectangle', left: 0, top: 0, width: W, height: H, fill: '#ffffff', selectable: false });
+
+    // Filet d'accent : haut de page (couverture) ou latéral (pages intérieures).
+    if (couv) els.push({ type: 'rectangle', left: x0, top: y0, width: Math.min(140, cw * 0.42), height: 6, fill: g.accent });
+    else els.push({ type: 'rectangle', left: x0, top: y0, width: 2.4, height: ch, fill: g.accent });
+
+    let y = y0 + (couv ? 34 : 12);
+    const xT = couv ? x0 : x0 + 12;
+    const cwT = couv ? cw : cw - 12;
+
+    els.push({ type: 'text', left: xT, top: y, width: cwT, text: couv ? textes.titre : (textes.titre + (total > 1 ? ' · ' + num : '')), fontSize: g.title, fontWeight: 'bold', fill: g.accent, lineHeight: 1.05 });
+    y += g.title * 1.25;
+
+    const chap = textes.phrases.length ? textes.phrases[0] : 'Gabarit SP213 — mise en page d\u00e9terministe, sans mod\u00e8le ni cl\u00e9.';
+    els.push({ type: 'text', left: xT, top: y, width: cwT, text: chap, fontSize: g.lead, fill: '#333333', lineHeight: 1.35 });
+    y += g.lead * 2.1 + 10;
+
+    els.push({ type: 'rectangle', left: xT, top: y, width: cwT, height: 1, fill: '#d8d8d8' });
+    y += 14;
+
+    // Colonnes de texte : grille réelle + gouttière du gabarit.
+    const nCol = Math.max(1, g.cols);
+    const colW = (cwT - g.gutter * (nCol - 1)) / nCol;
+    const corps = textes.phrases.length > 1 ? textes.phrases.slice(1) : [chap];
+    const parCol = Math.ceil(corps.length / nCol);
+    for (let c = 0; c < nCol; c++) {
+      const bloc = corps.slice(c * parCol, (c + 1) * parCol);
+      if (!bloc.length) continue;
+      els.push({ type: 'text', left: xT + c * (colW + g.gutter), top: y, width: colW, text: bloc.join('\n\n'), fontSize: g.body, fill: '#222222', lineHeight: 1.45 });
+    }
+
+    if (g.folio && !couv) {
+      els.push({ type: 'text', left: x0, top: H - m[2] + 8, width: cw, text: String(num) + ' / ' + String(total), fontSize: 8.5, fill: '#666666', textAlign: 'center' });
+    }
+    return els;
+  }
+
+  /* Fabrique le document complet. Règle de cahier (mesurée au correctif 19) :
+     en double page, le nombre de pages est TOUJOURS pair — on ne laisse jamais
+     une page seule au centre d'un cahier. */
+  function spGabaritReponse(brief) {
+    const g = spGabaritChoisi(brief);
+    const textes = spGabaritTextes(brief);
+    const total = Math.max(1, g.page);
+    const pages = [];
+    for (let i = 0; i < total; i++) {
+      pages.push({ pageIndex: i, elements: spGabaritPage(g, textes, i + 1, total) });
+    }
+    if (state.doc && state.doc.viewMode === 'spread' && (pages.length % 2) === 1) {
+      pages.push({ pageIndex: pages.length, elements: [
+        { type: 'rectangle', left: 0, top: 0, width: state.pageW || 595.28, height: state.pageH || 841.89, fill: '#ffffff', selectable: false }
+      ] });
+    }
+    try {
+      spJournalAjoute('info', 'Gabarit ' + g.key + ' — ' + pages.length + ' page(s), ' + g.cols + ' colonne(s), gouttière ' + g.gutter + ' mm, moteur local (0 jeton).');
+    } catch (_) {}
+    return {
+      reply: 'Maquette posée par le gabarit ' + g.key + ' (' + pages.length + ' page' + (pages.length > 1 ? 's' : '') + ') : mise en page déterministe, sans modèle.',
+      targetPages: pages.length,
+      pages: pages
+    };
+  }
+
   const SP_ST_MODELES = [
     { eng: 'chromeai',      nom: 'Gemini Nano (Chrome)', nk: 'st.n.chromeai',   tk: 'st.tag.free',    usage: 'demo' },
     /* 🆕 v1.7.580oo — DEEPSEEK EN 2ᵉ POSITION (demande utilisateur) : c'est le moteur
@@ -9492,7 +9627,9 @@ function spRtfLayoutInfo(src) {
 
     // 🎯 PREMIER PROMPT SANS MODÈLE : proposer d'aller dans les réglages.
     // On ne bloque pas : on affiche une aide + on revient sur les préférences.
-    if (!hasUsableModel()) {
+    /* 🆕 v1.7.580 — LE MOTEUR DE GABARIT NE DEMANDE AUCUN MODÈLE : il ne doit donc
+       pas être renvoyé vers les réglages par la garde ci-dessous. */
+    if (!hasUsableModel() && state.engine !== 'gabarit') {
       /* 🛡️ _SP_STUDIO_PROMPT_577 — LE PROMPT EST CONSERVÉ (demande utilisateur).
          DÉFAUT MESURÉ : sp213ClearPrompt() vidait la boîte AVANT d'envoyer
          l'utilisateur dans les réglages (aucun modèle configuré) → il réglait sa
@@ -9599,7 +9736,14 @@ function spRtfLayoutInfo(src) {
       last.content = last.content + context;
     }
 
-    spCallAI(messages, userText).then(response => {
+    /* 🆕 v1.7.580 — MOTEUR DE GABARIT : même chemin que les IA, autre source.
+       On sérialise le document du moteur déterministe et on le donne au MÊME
+       parseur : les passes de marges, de cahiers, de photos et d'export
+       s'appliquent donc à l'identique. Aucun appel réseau n'est effectué. */
+    const _promesse = (state.engine === 'gabarit')
+      ? Promise.resolve(JSON.stringify(spGabaritReponse(userText)))
+      : spCallAI(messages, userText);
+    _promesse.then(response => {
       typingEl.remove();
       const parsed = parseAIResponse(response);
       const hasLayout = !!(parsed.elements && parsed.elements.length) || !!(parsed.pages && parsed.pages.length);
