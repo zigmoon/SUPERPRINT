@@ -2084,6 +2084,23 @@
   // toucher au reste du studio (buildSystemPrompt, ensureWebLLM, callWebLLM…).
   const WLLM_NATIVE_MODEL_ID = WLLM_MODELS[0][0];
 
+  /* ═══ v1.7.579 — NOS PROPRES POIDS (demande utilisateur) ═══
+     Les poids viennent de huggingface.co : sur certains réseaux (bloqueur de
+     publicité, pare-feu d'entreprise, DNS filtré) le téléchargement échoue et
+     l'atelier local devient inutilisable — « Failed to fetch » alors que la
+     bibliothèque, elle, est bien chargée. Servis depuis app.zigmoon.com, les poids
+     sont en MÊME ORIGINE que le studio : ni CORS ni bloqueur ne s'interposent.
+     Le studio essaie donc NOS url d'abord et retombe TOUT SEUL sur Hugging Face si
+     le miroir n'est pas encore en ligne (404) : rien ne casse pour personne.
+     Le miroir se construit avec _dev/scripts/_miroir_webllm.ps1 : il lit la liste
+     des fichiers du dépôt MLC, télécharge les poids, réécrit `model_lib` vers notre
+     dossier et range tout sous models/<modele>/, prêt à déposer sur /models/. */
+  const WLLM_MIROIR_BASE = 'https://app.zigmoon.com/models/';
+  function wllmAppConfig(mid) {
+    if (!mid) return null;
+    return { model_list: [{ model: WLLM_MIROIR_BASE + mid + '/mlc-chat-config.json', model_id: mid }] };
+  }
+
   /* ═══ 🆕 v1.7.580g — AI HORDE (gratuit, sans clé) ═══
      Proxy compatible OpenAI de l'AI Horde : calcul bénévole mutualisé.
      Vérifié au banc : /v1/models et /v1/chat/completions répondent à la clé
@@ -10862,14 +10879,22 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
       // téléchargement/chargement est en cours (jamais silencieux).
       const baseLabel = isNative ? t('chat.loadingModelNative') : t('chat.loadingModel');
       const loader = appendModelLoader(baseLabel + '…');
-      window.CreateMLCEngine(modelId, {
-        initProgressCallback: function(p) {
+      /* v1.7.579 — nos poids d'abord (voir WLLM_MIROIR_BASE), Hugging Face ensuite. */
+      const _progress = function(p) {
           const pct = Math.round(((p && p.progress) || 0) * 100);
           try { if (window.console && console.debug) console.debug('[SP213] WebLLM model load: ' + pct + '%'); } catch (_) {}
           if (loader && loader.labelEl) loader.labelEl.textContent = baseLabel + '… ' + pct + '%';
           if (loader && loader.barEl) loader.barEl.style.width = Math.max(2, Math.min(100, pct)) + '%';
         }
-      }).then(function(engine) {
+      ;
+      const _cfgMiroir = wllmAppConfig(modelId);
+      const _ouvrir = function (cfg) {
+        return window.CreateMLCEngine(modelId, Object.assign({ initProgressCallback: _progress }, cfg ? { appConfig: cfg } : {}));
+      };
+      (_cfgMiroir ? _ouvrir(_cfgMiroir).catch(function (e) {
+        try { if (window.console && console.warn) console.warn('[SP213] WebLLM — poids locaux indisponibles, repli sur Hugging Face : ' + ((e && e.message) || e)); } catch (_) {}
+        return _ouvrir(null);
+      }) : _ouvrir(null)).then(function(engine) {
         state.webllm = engine;
         state.webllmLoading = false;
         if (engine) engine._sp213ModelId = modelId; // mémoriser le modèle chargé
