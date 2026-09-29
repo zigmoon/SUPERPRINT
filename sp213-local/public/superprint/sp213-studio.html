@@ -10833,7 +10833,14 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
       if (/WebGPU|GPU/.test(message)) throw e;
       /* 🆕 v1.7.580mm — ON DIT LA CAUSE et quoi faire : « Failed to fetch » venait
          d'une bibliothèque injoignable, pas d'un modèle en panne. */
-      throw new Error('impossible de charger le moteur local (' + message + '). Sources essayées — ' + (_essais.length ? _essais.join(' · ') : 'aucune') + '. Le studio livre pourtant sa propre copie de la bibliothèque (app/JS/web-llm.esm.js) : si elle échoue aussi, ce fichier manque ou n’est pas accessible. Sinon choisissez un moteur cloud : DeepSeek, OpenAI, Anthropic, OpenRouter ou Groq.');
+      /* v1.7.579 — DIRE OÙ ÇA BLOQUE. « Sources essayées — aucune » signifie que la
+         bibliothèque S'EST CHARGÉE (la copie locale du studio a répondu) : l'échec
+         vient donc du TÉLÉCHARGEMENT DU MODÈLE, dont les poids viennent de
+         huggingface.co. Le message précédent accusait la bibliothèque à tort. */
+      if (!_essais.length) {
+        throw new Error('le moteur local est bien chargé, mais le TÉLÉCHARGEMENT DU MODÈLE a échoué (' + message + '). Les poids du modèle viennent de huggingface.co et de cdn-lfs.huggingface.co : vérifiez qu’aucun bloqueur de publicité ni pare-feu ne les bloque, puis réessayez (le téléchargement reprend où il s’est arrêté). Un petit modèle passe plus sûrement qu’un gros (Qwen2.5 1,5 Go). Sinon : Gemini Nano est déjà dans Chrome, rien à télécharger, et les moteurs cloud restent disponibles : DeepSeek, OpenAI, Anthropic, OpenRouter ou Groq.');
+      }
+      throw new Error('impossible de charger le moteur local (' + message + ') — la bibliothèque elle-même a été refusée. Sources essayées : ' + _essais.join(' · ') + '. Le studio livre pourtant sa propre copie (app/JS/web-llm.esm.js) : si elle est en cause, ce fichier n’est pas accessible. Sinon choisissez un moteur cloud : DeepSeek, OpenAI, Anthropic, OpenRouter ou Groq.');
     }).finally(function() {
       state.webllmLoading = false;
       state.webllmPromise = null;
