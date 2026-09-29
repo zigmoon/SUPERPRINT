@@ -4954,17 +4954,32 @@
       .split('\n')
       .map(function (l) {
         const m2 = /^\s*###H([1-6])###([\s\S]*)$/.exec(l);
-        if (m2) return ('#'.repeat(Math.min(4, Number(m2[1]))) + ' ' + m2[2].trim()).trim();
+        if (m2) {
+          /* ⚠️ _SP_STUDIO_TITRE_584 — LE TEXTE DU TITRE EST SOUVENT SUR LA LIGNE SUIVANTE.
+             Dans le XML Word, le style précède le paragraphe : le marqueur se retrouvait
+             SEUL sur sa ligne et le titre devenait un paragraphe ordinaire (d'où le « # »
+             à la place du grand titre). On garde ici le marqueur, il est RECOLLÉ au texte
+             de la ligne suivante juste après (voir le replace suivant). */
+          const t2 = m2[2].trim();
+          return ('#'.repeat(Math.min(4, Number(m2[1]))) + (t2 ? ' ' + t2 : '')).trim();
+        }
         /* Puce Word → entrée de liste markdown. */
         if (l.indexOf('\u0001') >= 0) {
           const t2 = l.replace(/\u0001/g, ' ').replace(/\s+/g, ' ').trim();
-          return t2 ? '- ' + t2 : '';
+          return (/[0-9A-Za-zÀ-ÿ]/.test(t2)) ? '- ' + t2 : '';
         }
-        /* Résidus de balise isolés (« /> », « > », « / ») : jamais du texte. */
-        if (/^\s*[/>\s]+\s*$/.test(l)) return '';
-        return l;
+        /* Marqueur de titre SEUL (son texte suit) : on le préserve. */
+        const seul = /^\s*(#{1,4})\s*$/.exec(l);
+        if (seul) return seul[1];
+        /* Résidus de balisage isolés (« /> », « > », « / ») : jamais du texte. */
+        if (/^\s*[/>\s#*_>\-–—]+\s*$/.test(l)) return '';
+        return (/[0-9A-Za-zÀ-ÿ]/.test(l)) ? l : '';
       })
       .join('\n')
+      /* Le marqueur de titre rejoint son texte (« # \n\n Le long voyage » → « # Le long
+         voyage ») ; un marqueur resté VRAIMENT seul est écarté. */
+      .replace(/^(#{1,4})[ \t]*\n+(?=[^\s#\u0000-\u0008])/gm, '$1 ')
+      .replace(/^#{1,4}[ \t]*$/gm, '')
       .trim();
     /* ══ AUCUNE TRONCATURE SILENCIEUSE ══ Un livre entier doit entrer dans la maquette
        (demande utilisateur : « importer tout dans les pages, pas de perte »). On ne
@@ -8544,6 +8559,12 @@ function spRtfLayoutInfo(src) {
     return SP_GAB_DESIGN.filter(function (g) { return g.key === 'qc.minimal'; })[0] || SP_GAB_DESIGN[0];
   }
 
+  /* ══ UN TEXTE « UTILE » CONTIENT AU MOINS UNE LETTRE OU UN CHIFFRE ══
+     Un fragment de balisage seul (« # », « ## », « /> », « - ») n'est JAMAIS du contenu.
+     Le contrôle sert au titre, au sur-titre, au chapô et aux blocs markdown :
+     retour utilisateur : « à la place du grand titre j'ai un # ». */
+  function spGabUtileTexte(x) { return /[0-9A-Za-zÀ-ÿ]/.test(String(x || '')); }
+
   // Retire le balisage markdown d'une ligne (gras, italique, code, lien).
   function spGabSansMd(s) {
     return String(s || '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/\*\*(.+?)\*\*/g, '$1')
@@ -8555,6 +8576,8 @@ function spRtfLayoutInfo(src) {
       .replace(/\s*\/>/g, ' ')
       .replace(/<\/?[a-zA-Z][^<>]{0,120}>/g, ' ')
       .replace(/\bw:[a-zA-Z]+="[^"]*"/g, ' ')
+      /* Marqueurs markdown restés seuls (« # », « ## ») : jamais du texte. */
+      .replace(/^[#>{}\-*_·–—\s]+$/, '')
       .replace(/\s{2,}/g, ' ')
       .trim();
   }
@@ -8585,16 +8608,17 @@ function spRtfLayoutInfo(src) {
       const l = lignes[i].trim();
       if (!l) { vider(); continue; }
       const d = l.match(/^#{1,6}\s*(.+)$/);
-      if (d) { vider(); out.push({ t: 'h', n: Math.min(3, (l.match(/^#+/) || ['#'])[0].length), x: spGabSansMd(d[1]) }); continue; }
+      if (d) { vider(); const h = spGabSansMd(d[1]); if (spGabUtileTexte(h)) out.push({ t: 'h', n: Math.min(3, (l.match(/^#+/) || ['#'])[0].length), x: h }); continue; }
       const li = l.match(/^(?:\d+[.)]|[-*•·–—])\s+(.+)$/);
-      if (li) { vider(); out.push({ t: 'li', x: spGabSansMd(li[1]) }); continue; }
+      if (li) { vider(); const h = spGabSansMd(li[1]); if (spGabUtileTexte(h)) out.push({ t: 'li', x: h }); continue; }
       const q = l.match(/^>\s*(.+)$/);
-      if (q) { vider(); out.push({ t: 'q', x: spGabSansMd(q[1]) }); continue; }
+      if (q) { vider(); const h = spGabSansMd(q[1]); if (spGabUtileTexte(h)) out.push({ t: 'q', x: h }); continue; }
       const maj = (l.length <= 62 && l === l.toUpperCase() && /[A-ZÀ-ÖØ-Þ]{3}/.test(l));
       const deuxPts = (/:$/.test(l) && l.length <= 64);
       const isole = ((i === 0 || !lignes[i - 1].trim()) && (i === lignes.length - 1 || !lignes[i + 1].trim()));
       const courte = (l.length <= 64 && l.split(/\s+/).length <= 9 && !/[.;!?]$/.test(l) && /^[A-ZÀ-ÖØ-Þ0-9"«(]/.test(l));
-      if (!structure && (maj || deuxPts || (courte && isole))) { vider(); out.push({ t: 'h', n: 2, x: spGabSansMd(l.replace(/:$/, '')) }); continue; }
+      if (!structure && (maj || deuxPts || (courte && isole))) { vider(); const h = spGabSansMd(l.replace(/:$/, '')); if (spGabUtileTexte(h)) out.push({ t: 'h', n: 2, x: h }); continue; }
+      if (!spGabUtileTexte(l)) continue;   // ligne de balisage seul (« # », « /> ») : écartée
       para.push(l);
     }
     vider();
@@ -8657,12 +8681,32 @@ function spRtfLayoutInfo(src) {
      sections, lignes de liste, articles avec prix, chiffres clés, informations. */
   function spGabMeta(brief) {
     const src = spGabSources();
-    const blocs = spGabMarkdown(String(brief || '').trim() + '\n\n' + src.corps);
+    const briefTexte = String(brief || '').trim();
+    /* ══ _SP_STUDIO_TITRE_584 — LA DEMANDE N'EST PAS DU CORPS DE TEXTE ══
+       Quand un document fournit le contenu, la phrase de l'utilisateur est une CONSIGNE :
+       « Livre broché à partir du document Word joint : garde les chapitres et les titres »
+       se composait telle quelle en corps de texte dans le livre (vu page 2). On repère les
+       blocs qui viennent de la demande et on les écarte du contenu — sans document joint
+       (ou en mode « modèle »), la demande reste le contenu, comme avant. */
+    const blocsBrief = (briefTexte && src.corps) ? spGabMarkdown(briefTexte).map(function (b) { return b.x; }) : [];
+    const blocs = spGabMarkdown(briefTexte + '\n\n' + src.corps);
     const M = { brief: String(brief || ''), titre: '', surtitre: '', chapeau: '', sections: [], lignes: [], items: [], chiffres: [], infos: [], photos: src.images.slice(), contexte: src.contexte, couleurs: src.couleurs.slice(), corpsLength: src.corps.length, source: src.corps ? 'demande + pièces jointes' : 'demande seule' };
     let courant = null;
+    /* ⚠️ _SP_STUDIO_TITRE_584 — NIVEAU DES TITRES. Dans un document Word, le titre du
+       livre est un titre de niveau 1 et les chapitres des niveaux 2-3. Le premier
+       marqueur rencontré n'est pas forcément le titre : mesuré, la couverture affichait
+       « Introduction » — le premier sous-chapitre — au lieu de « Quand Orléans cultivait
+       les roses ». On mémorise donc le premier titre de niveau 1 et il PRIME. */
+    let h1 = '', titreNiv = 0;
     blocs.forEach(function (b) {
+      if (blocsBrief.indexOf(b.x) !== -1) return;   // consigne de l'utilisateur : écartée du corps
       if (b.t === 'h') {
-        if (!M.titre && !M.chapeau) { M.titre = b.x; return; }
+        /* Un titre sans une seule lettre (« # » seul) n'est pas un titre : on l'écarte
+           au lieu d'en faire le titre du document. */
+        if (!spGabUtileTexte(b.x)) return;
+        const niv = Number(b.n) || 2;
+        if (niv === 1 && !h1) h1 = b.x;
+        if (!M.titre && !M.chapeau) { M.titre = b.x; titreNiv = niv; return; }
         courant = { t: b.x, ps: [] };
         M.sections.push(courant);
         return;
@@ -8684,6 +8728,16 @@ function spRtfLayoutInfo(src) {
          SANS TITRE qui recueille la suite : elle se compose comme une SUITE de livre
          (le chapitre en cours continue), sans titre inventé. Les textes courts (entrées
          de menu, mentions) gardent l'ancien chemin — les gabarits à liste sont intacts. */
+      /* ══ _SP_STUDIO_TITRE_584 — LE TITRE DU DOCUMENT, C'EST SON PREMIER BLOC ══
+         Un livre Word n'a pas toujours de style « Titre » : le titre est posé sur une page
+         de titre, en paragraphe normal (vérifié sur le livre fourni : XML de 1,98 M de
+         caractères, AUCUN paragraphe de style Titre avant les chapitres). Le titre restait
+         donc vide et la couverture prenait le premier chapitre — « Introduction » au lieu
+         de « Quand Orléans cultivait les roses » (retour utilisateur). Le premier bloc de
+         texte substantiel du document devient donc le titre ; le suivant, le chapô. */
+      if (!courant && String(b.x).length >= 4 && String(b.x).length <= 90 && src.corps && !M.titre && !M.chapeau) {
+        M.titre = b.x; titreNiv = 1; return;
+      }
       if (!courant && String(b.x).length >= 60) { courant = { t: '', ps: [] }; M.sections.push(courant); }
       if (!M.chapeau) { M.chapeau = b.x; }
       else if (!courant) { M.lignes.push(b.x); }
@@ -8693,6 +8747,7 @@ function spRtfLayoutInfo(src) {
     });
     // Titres venant d'une pièce jointe « modèle » : ils complètent la structure.
     src.titres.forEach(function (t) { if (t.length <= 60 && !M.sections.some(function (s) { return s.t === t; })) M.sections.push({ t: t, ps: [] }); });
+    if (h1 && titreNiv !== 1) { M.titre = h1; titreNiv = 1; }
     if (M.sections.length && !M.chapeau) M.chapeau = (M.sections[0].ps[0] || '');
     /* LISTE ÉCRITE DANS UNE PHRASE : « Programme : 18h30 ouverture des portes, 19h
        concert, 21h tête d'affiche » n'a ni puce ni retour à la ligne. Quand aucune
@@ -8720,8 +8775,10 @@ function spRtfLayoutInfo(src) {
     }
     /* Une pièce jointe « maquette » porte souvent SON titre : quand la demande est
        courte, c'est lui qui fait le titre du document (le document du client prime). */
-    if (src.titres.length && String(brief || '').trim().length < 90 && String(src.titres[0]).length <= 62) M.titre = src.titres[0];
-    if (!M.titre) M.titre = M.chapeau || (M.lignes[0] || 'Sans titre');
+    if (!M.titre && src.titres.length && String(brief || '').trim().length < 90 && String(src.titres[0]).length <= 62 && spGabUtileTexte(src.titres[0])) M.titre = src.titres[0];
+    if (!spGabUtileTexte(M.titre)) M.titre = '';
+    if (!spGabUtileTexte(M.chapeau)) M.chapeau = '';
+    if (!M.titre) M.titre = (spGabUtileTexte(M.chapeau) ? M.chapeau : (M.lignes.filter(spGabUtileTexte)[0] || 'Sans titre'));
     M.titre = spGabCourt(M.titre, 64).replace(/[.!?]+$/, '');
     /* Le chapô ne doit JAMAIS être le titre ni son début : sur une demande courte
        d'une seule phrase, le titre est la TRONCATURE du chapô, donc les deux blocs
@@ -8735,6 +8792,7 @@ function spRtfLayoutInfo(src) {
        deux : mesuré, le même texte ressortait en sur-titre ET en titre, donc deux
        blocs superposés (chevauchement signalé par l'utilisateur). */
     const pasDoublon = function (x) {
+      if (!spGabUtileTexte(x)) return false;
       if (!x || x.length > 32) return false;
       if (x === M.titre || x === M.chapeau || x === M.surtitre) return false;
       if (M.titre && (M.titre.indexOf(x) === 0 || x.indexOf(M.titre) === 0)) return false;
@@ -9583,6 +9641,26 @@ function spRtfLayoutInfo(src) {
     const r = parseInt(h.slice(0, 2), 16) / 255, v = parseInt(h.slice(2, 4), 16) / 255, b = parseInt(h.slice(4, 6), 16) / 255;
     return 0.2126 * r + 0.7152 * v + 0.0722 * b;
   }
+  /* ══ _SP_STUDIO_TITRE_584 — CONTRASTE RÉEL (formule WCAG 2.1) ══
+     spGabLum() est une approximation : une moyenne pondérée SANS linéarisation sRGB.
+     Un bleu vif (#1f6feb) y obtient 0,40 et passe donc pour un fond SOMBRE, alors que
+     le blanc y est parfaitement lisible. Conséquence mesurée : le titre blanc de la
+     couverture du livre était repeint en noir. On mesure donc le contraste RÉEL entre
+     la typographie et ce qu'il y a derrière, et on ne « corrige » plus jamais un texte
+     déjà lisible. */
+  function spGabContrasteWCAG(fondHex, texteHex) {
+    const lin = function (hex) {
+      const h = String(hex || '').replace('#', '');
+      if (h.length < 6) return 1;
+      const c = function (i) {
+        const v = parseInt(h.substr(i, 2), 16) / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      };
+      return 0.2126 * c(0) + 0.7152 * c(2) + 0.0722 * c(4);
+    };
+    const a = lin(fondHex), b = lin(texteHex);
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  }
   /* ══ COULEURS DES TEINTES DE FOND DE PAGE ══ Chaque page a son PROPRE fond (blanc ou
      noir) : c'est lui qui décide de la couleur de la typographie, jamais le thème. */
   function spGabContraste(pages, L, auto) {
@@ -9673,6 +9751,10 @@ function spRtfLayoutInfo(src) {
           const s = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
           if (s > aire) { aire = s; fond = a.fill; }
         });
+        /* ══ _SP_STUDIO_TITRE_584 — ON NE REPEINT PAS UN TEXTE DÉJÀ LISIBLE ══
+           Contrôle WCAG réel AVANT toute correction : un titre blanc sur une bande bleue
+           vif était jugé « clair sur sombre » par l'approximation et repassé en noir. */
+        if (spGabContrasteWCAG(fond, e.fill) >= 4.5) return;
         const lumF = spGabLum(fond), lumT = spGabLum(e.fill);
         /* ══ RÈGLE DU FOND NOIR (demande utilisateur) ══ Sur une page NOIRE, toute
            typographie est CLAIRE, sans exception : le studio peut déplacer un bloc après
@@ -9805,6 +9887,14 @@ function spRtfLayoutInfo(src) {
     const veut = spGabPages(brief);
     let g = Object.assign({}, spGabChoisir(brief));
     const texte = spGabMeta(brief);
+    /* Journal : ce que le moteur A COMPRIS du document (titre, surtitre, chapô, sections).
+       Trace utile en cas de doute sur la couverture — et contrôle de non-perte. */
+    try {
+      console.log('Contenu compris : titre « ' + texte.titre + ' » | surtitre « ' + texte.surtitre +
+        ' » | chapô « ' + String(texte.chapeau).slice(0, 52) + ' » | ' + texte.sections.length +
+        ' section(s) [' + texte.sections.slice(0, 4).map(function (s) { return (s.t || '(sans titre)').slice(0, 26); }).join(' / ') +
+        '] | ' + texte.lignes.length + ' ligne(s) | corps ' + texte.corpsLength + ' car.');
+    } catch (_) {}
     /* PIÈCE JOINTE « MAQUETTE » VOLUMINEUSE : on ne jette pas un document client
        dans une page unique. Au-delà d'environ 600 caractères composés, le moteur
        passe au CAHIER MULTIPAGE et répartit tout (défaut mesuré : un rapport joint
