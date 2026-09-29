@@ -907,6 +907,22 @@
   .attach-chip .mode.mode-context { color: var(--muted); }
   /* 🆕 v1.7.420 — POP-IN de choix du rôle (à l'import d'une PJ) */
   .pj-overlay { position: fixed; inset: 0; z-index: 130; display: flex; align-items: center; justify-content: center; padding: 3vh 3vw; background: rgba(12,12,12,.42); }
+  /* 🆕 v1.7.582 — DÉPÔT DE FICHIERS (glisser-déposer depuis le bureau) : un cadre
+     visible sur TOUT l'écran, donc aussi sur la préhome et sur la boîte de prompt.
+     Au-dessus de l'écran de démarrage (z 120) et des pop-in (z 130). */
+  #spDepot {
+    position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--bg, #fff) 72%, transparent); backdrop-filter: blur(2px);
+    pointer-events: none;
+  }
+  #spDepot.on { display: flex; }
+  #spDepot .cadre {
+    border: 2px dashed var(--accent, #2f6fed); border-radius: 14px;
+    padding: 34px 48px; text-align: center; background: var(--panel, #fff);
+    box-shadow: 0 10px 34px var(--shadow, rgba(0,0,0,.18)); color: var(--text, #111);
+    font-size: 15px; font-weight: 600; max-width: 78vw;
+  }
+  #spDepot .cadre small { display: block; margin-top: 8px; font-weight: 400; opacity: .72; font-size: 12px; }
   body.theme-dark .pj-overlay { background: rgba(0,0,0,.6); }
   .pj-overlay.hidden { display: none; }
   .pj-card { width: min(680px, 96vw); max-height: 92vh; overflow: auto; background: var(--panel); border: 1px solid var(--border); box-shadow: 0 30px 90px var(--shadow); }
@@ -4826,6 +4842,140 @@
       });
     });
   }
+  /* ══ LECTURE D'UN .DOCX VOLUMINEUX (jusqu'à ~250 Mo) ══════════════════════════════
+     Un livre prêt à imprimer (KDP) pèse 92 Mo : on ne charge PAS tout le paquet en
+     mémoire. On lit le RÉPERTOIRE CENTRAL du ZIP (à la fin du fichier, 64 Ko au plus),
+     on repère word/document.xml, on décompresse SEULEMENT cette entrée en flux
+     (DecompressionStream) et on garde son texte — avec la structure des titres. */
+  async function spDocxTexteGeant(file, maxChars) {
+    const buf = await file.arrayBuffer();
+    const u8 = new Uint8Array(buf), vue = new DataView(buf);
+    /* 1) fin du répertoire central (PK\x05\x06), cherchée à rebours sur 64 Ko. */
+    let eocd = -1;
+    const debutRecherche = Math.max(0, u8.length - 66000);
+    for (let i = u8.length - 22; i >= debutRecherche; i--) {
+      if (u8[i] === 0x50 && u8[i + 1] === 0x4B && u8[i + 2] === 0x05 && u8[i + 3] === 0x06) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error('archive illisible');
+    const nb = vue.getUint16(eocd + 10, true);
+    let cd = vue.getUint32(eocd + 16, true);
+    if (cd === 0xFFFFFFFF) {
+      /* ZIP64 : localisateur juste avant l'EOCD. */
+      const loc = eocd - 20;
+      if (loc >= 0 && u8[loc] === 0x50 && u8[loc + 1] === 0x4B && u8[loc + 2] === 0x06 && u8[loc + 3] === 0x07) {
+        const z64 = vue.getUint32(eocd - 16, true);
+        cd = vue.getUint32(z64 + 48, true);
+      }
+    }
+    /* 2) on parcourt les entrées pour trouver word/document.xml. */
+    let cible = null;
+    for (let k = 0; k < nb && cd + 46 < u8.length; k++) {
+      if (!(u8[cd] === 0x50 && u8[cd + 1] === 0x4B && u8[cd + 2] === 0x01 && u8[cd + 3] === 0x02)) break;
+      const methode = vue.getUint16(cd + 10, true);
+      const tailleComp = vue.getUint32(cd + 20, true);
+      const tailleBrute = vue.getUint32(cd + 24, true);
+      const nl = vue.getUint16(cd + 28, true);
+      const el = vue.getUint16(cd + 30, true);
+      const cl = vue.getUint16(cd + 32, true);
+      const local = vue.getUint32(cd + 42, true);
+      const nom = new TextDecoder('utf-8').decode(u8.subarray(cd + 46, cd + 46 + nl));
+      if (nom === 'word/document.xml') {
+        /* en-tête LOCAL : seules ses longueurs de nom/champ additionnels comptent. */
+        const lnl = vue.getUint16(local + 26, true), lel = vue.getUint16(local + 28, true);
+        cible = { methode: methode, debut: local + 30 + lnl + lel, tailleComp: tailleComp, tailleBrute: tailleBrute };
+        break;
+      }
+      cd += 46 + nl + el + cl;
+    }
+    if (!cible || !cible.tailleComp) throw new Error('contenu Word introuvable');
+    /* 3) décompression de CETTE seule entrée. */
+    const donnees = u8.subarray(cible.debut, cible.debut + cible.tailleComp);
+    let xml = '';
+    if (cible.methode === 0) {
+      xml = new TextDecoder('utf-8').decode(donnees);
+    } else if (typeof DecompressionStream === 'function') {
+      const ds = new DecompressionStream('deflate-raw');
+      const flux = new Blob([donnees]).stream().pipeThrough(ds);
+      xml = await new Response(flux).text();
+    } else {
+      throw new Error('décompression non disponible dans ce navigateur');
+    }
+    /* 4) XML → texte structuré : un paragraphe = une ligne, un style « Heading N »
+       devient un titre markdown (c'est ce que notre moteur sait chaîner). */
+    const texte = String(xml)
+      .replace(/<w:tab[^>]*\/>/g, '\t')
+      .replace(/<w:br[^>]*\/>/g, '\n')
+      .replace(/<w:pStyle[^>]*w:val="([^"]+)"/g, function (m, st) {
+        const n2 = /^(?:Heading|Titre|Ttulo|Titel|Cop|Nadpis)([1-6])$/i.exec(st);
+        return n2 ? '###H' + n2[1] + '###' : '';
+      })
+      .replace(/<w:p[^>]*>/g, '\n\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .split('\n')
+      .map(function (l) {
+        const m2 = /^\s*###H([1-6])###([\s\S]*)$/.exec(l);
+        if (m2) return ('#'.repeat(Math.min(4, Number(m2[1]))) + ' ' + m2[2].trim()).trim();
+        return l;
+      })
+      .join('\n')
+      .trim();
+        /* Un livre entier ne sert à rien en entier : notre moteur plafonne ses pages.
+       On garde le début (titre, préface, premiers chapitres), largement suffisant. */
+    const coupe = (maxChars && texte.length > maxChars) ? texte.slice(0, maxChars) : texte;
+    /* 5) FORMAT DÉCLARÉ DANS LE DOCUMENT (w:pgSz en twips) : un livre KDP dit 6 × 9
+       pouces. On le rapporte pour que la maquette se compose au format du document. */
+    let page = null;
+    try {
+      const mp = /<w:pgSz[^>]*w:w="(\d+)"[^>]*w:h="(\d+)"/.exec(String(xml));
+      if (mp) {
+        const lw = Math.round(parseInt(mp[1], 10) * 25.4 / 1440);
+        const lh = Math.round(parseInt(mp[2], 10) * 25.4 / 1440);
+        if (lw >= 40 && lw <= 1200 && lh >= 40 && lh <= 1200) page = { w: lw, h: lh };
+      }
+    } catch (_) {}
+    const info = Math.round(cible.tailleBrute / 1048576) + ' Mo de texte Word, ' +
+      (texte.length > coupe.length ? 'coupé à ' + coupe.length + ' caractères' : 'en entier');
+    return { texte: coupe, info: info, page: page };
+  }
+
+  /* .docx VOLUMINEUX : pièce jointe posée par le lecteur en flux (pas de bibliothèque). */
+  async function spDocxGeant(file, id, ext) {
+    let texte = '', info = '';
+    /* ⚠️ DÉFAUT MESURÉ : avec un livre de 200 000 caractères, la composition ne rendait
+       jamais la main (chaînage + contrôles sur un texte de 200 Ko). Notre moteur plafonne
+       ses pages : on ne lui transmet donc que ce qu'il peut réellement composer
+       (~40 000 caractères, soit une quinzaine de pages) — et on le DIT à l'utilisateur. */
+    const MAXI = 15000;
+    let pageWord = null;
+    try {
+      const r = await spDocxTexteGeant(file, MAXI);
+      texte = r.texte; info = r.info; pageWord = r.page || null;
+    } catch (e) { info = ''; texte = ''; }
+    /* FORMAT DU DOCUMENT : retenu pour la prochaine composition, s'il est plausible.
+       Il sera employé SI la demande ne donne aucun format (voir applyDetectedPageFormat). */
+    if (pageWord) {
+      state._formatDocx = pageWord;
+      appendChat('assistant', '📐 Format lu dans le document : ' + pageWord.w + ' × ' + pageWord.h +
+        ' mm. Je composerai à ce format si votre demande n\'en impose pas un autre.');
+    }
+    const mo = Math.round(file.size / 1048576);
+    if (String(texte).length < 20) {
+      state.attachments.push({ id: id, name: file.name, type: 'text', ext: ext, text: '(texte non extrait)', geant: true });
+      renderAttachBar();
+      appendChat('assistant', '⚠️ « ' + file.name + ' » (« ' + mo + ' Mo) : texte non extrait. Enregistrez-le en .docx récent, ou réduisez le nombre d\'images.');
+      return;
+    }
+    state.attachments.push({ id: id, name: file.name, type: 'text', text: texte, ext: ext, geant: true, imageCount: 0 });
+    renderAttachBar();
+    appendChat('assistant', '📄 « ' + file.name + ' » (« ' + mo + ' Mo) : ' + texte.length.toLocaleString('fr-FR') +
+      ' caractères extraits sur ' + info + '. Un livre entier ne se compose pas d\'un coup : le modèle met en page le DÉBUT ' +
+      '(titre, préface, premiers chapitres) et tu peux le prolonger en relançant la demande. Les images du fichier ne sont pas récupérées.');
+  }
+
   async function spDocSecours(file, id, ext, cause) {
     let texte = '';
     try {
@@ -4867,11 +5017,22 @@
     //   etait lu brut, donc le balisage polluait le prompt.
     const docExts = ['doc','docx','odt','ods','odp','odg','rtf'];
 
-    // Limite de taille par fichier (20 Mo) : au-delà, la data URI / le texte
-    // satureraient la mémoire et la fenêtre de contexte du modèle.
-    if (file.size > 20 * 1024 * 1024) {
-      appendChat('assistant', 'Fichier "' + file.name + '" ignoré : trop volumineux (> 20 Mo).');
+    /* ⚠️ v1.7.582 — PLAFOND DES DOCUMENTS (retour utilisateur : « sur la pré-home j'ai
+       voulu mettre mon word via la PJ, il ne l'a pas gardée »). Son document en fait
+       92 Mo : le plafond de 20 Mo le refusait, et le message passait inaperçu sous
+       l'écran de démarrage. Les documents sont lus en TEXTE (aucune data URI) : la
+       limite passe donc à 250 Mo, et les .docx volumineux ont leur propre lecteur. */
+    const limiteOctets = (docExts.indexOf(ext) >= 0 ? 250 : 20) * 1024 * 1024;
+    if (file.size > limiteOctets) {
+      const mo = Math.round(file.size / 1048576);
+      appendChat('assistant', '⚠️ « ' + file.name + ' » (« ' + mo + ' Mo) ignoré : au-delà de ' +
+        (docExts.indexOf(ext) >= 0 ? '250 Mo pour un document' : '20 Mo pour ce format') + '.');
       renderAttachBar();
+      return;
+    }
+    /* .docx volumineux : lecteur en flux (ne charge jamais tout le paquet). */
+    if (ext === 'docx' && file.size > 20 * 1024 * 1024) {
+      spDocxGeant(file, id, ext);
       return;
     }
 
@@ -5968,6 +6129,14 @@ function spRtfLayoutInfo(src) {
       spDocxCouleurs(buf).then(function (cs) {
         if (cs && cs.length) att.couleurs = cs;
       }).catch(function () {});
+      /* FORMAT DU DOCUMENT (même en PIÈCE JOINTE DE CONTEXTE) : retenu pour la prochaine
+         composition, employé seulement si la demande n'impose pas de format. */
+      spDocxFormat(file).then(function (pg) {
+        if (!pg) return;
+        state._formatDocx = pg;
+        appendChat('assistant', '📐 Format lu dans le document : ' + pg.w + ' × ' + pg.h +
+          ' mm. Je composerai à ce format si votre demande n\'en impose pas un autre.');
+      }).catch(function () {});
       // 3) Ajouter chaque image du document comme piece jointe image
       imgs.forEach(function (im, k) {
         state.attachments.push({
@@ -6028,6 +6197,29 @@ function spRtfLayoutInfo(src) {
         })
         .catch(function () { resolve([]); });
     });
+  }
+
+  /* ══ FORMAT DÉCLARÉ DANS UN .DOCX (w:pgSz, en twips) ══════════════════════════════
+     Question utilisateur : « tu penses qu'on pourrait y arriver en CONTEXTE aussi avec
+     notre modèle perso ? » — OUI : le format du document est lu pour TOUS les .docx, quel
+     que soit leur rôle (maquette, modèle ou contexte). Un livre joint en contexte impose
+     donc aussi son format, alors que son TEXTE n'est jamais recopié (c'est la définition
+     du rôle « contexte »). */
+  async function spDocxFormat(file) {
+    try {
+      const buf = await file.arrayBuffer();
+      await loadAttachmentLibrary('app/JS/jszip.min.js', function () { return !!window.JSZip; });
+      const zip = await window.JSZip.loadAsync(buf);
+      const f = zip.file('word/document.xml');
+      if (!f) return null;
+      const xml = await f.async('string');
+      const mp = /<w:pgSz[^>]*w:w="(\d+)"[^>]*w:h="(\d+)"/.exec(xml);
+      if (!mp) return null;
+      const lw = Math.round(parseInt(mp[1], 10) * 25.4 / 1440);
+      const lh = Math.round(parseInt(mp[2], 10) * 25.4 / 1440);
+      if (lw < 40 || lw > 1200 || lh < 40 || lh > 1200) return null;
+      return { w: lw, h: lh };
+    } catch (_) { return null; }
   }
 
   // Convertit le HTML de mammoth en texte structure lisible par le modele :
@@ -6234,6 +6426,68 @@ function spRtfLayoutInfo(src) {
       img.src = att.dataURL;
     } catch (_) { att.lum = 0.5; }
   }
+
+  /* ══ 🆕 v1.7.582 — DÉPÔT DE FICHIERS PARTOUT (DEMANDE UTILISATEUR) ═════════════════
+     « le studio IA doit proposer le drag complet des éléments depuis la préhome, et dans
+     la boîte de prompt en bas à droite, car on fait souvent des drops de fichier depuis
+     son bureau ». Un SEUL gestionnaire pour les deux écrans : préhome ET conversation,
+     y compris le cadre de demande. Il passe par handleAttachFiles() — donc exactement le
+     même chemin que le bouton Pièces jointes, avec le choix du rôle. */
+  function spDepotInit() {
+    if (window.__spDepot) return true;
+    window.__spDepot = true;
+    let voile = $('spDepot');
+    if (!voile) {
+      voile = document.createElement('div');
+      voile.id = 'spDepot';
+      voile.innerHTML = '<div class="cadre">Déposez vos fichiers ici<small>Word, PDF, Excel, OpenDocument, RTF, images, texte — ils seront joints à votre demande.</small></div>';
+      document.body.appendChild(voile);
+    }
+    let niveau = 0;
+    const montrer = function (on) { voile.classList.toggle('on', !!on); };
+    const aDesFichiers = function (e) {
+      const dt = e.dataTransfer;
+      if (!dt) return false;
+      const ty = dt.types || [];
+      for (let i = 0; i < ty.length; i++) if (String(ty[i]).toLowerCase() === 'files') return true;
+      return !!(dt.files && dt.files.length);
+    };
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      document.addEventListener(ev, function (e) {
+        if (!aDesFichiers(e)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        try { e.dataTransfer.dropEffect = 'copy'; } catch (_) {}
+        if (ev === 'dragenter') niveau++;
+        montrer(true);
+      }, true);
+    });
+    document.addEventListener('dragleave', function (e) {
+      if (!aDesFichiers(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      niveau = Math.max(0, niveau - 1);
+      if (!niveau) montrer(false);
+    }, true);
+    document.addEventListener('drop', function (e) {
+      if (!e.dataTransfer) return;
+      const fichiers = e.dataTransfer.files;
+      if (!fichiers || !fichiers.length) return;
+      e.preventDefault();
+      e.stopPropagation();
+      niveau = 0;
+      montrer(false);
+      try { handleAttachFiles(fichiers); } catch (_) {}
+    }, true);
+    /* On empêche le navigateur d'ouvrir le fichier déposé à côté d'une zone. */
+    ['dragover', 'drop'].forEach(function (ev) {
+      window.addEventListener(ev, function (e) { if (aDesFichiers(e)) e.preventDefault(); }, false);
+    });
+    return true;
+  }
+  if (document.readyState !== 'loading') { try { spDepotInit(); } catch (_) {} }
+  else { document.addEventListener('DOMContentLoaded', function () { try { spDepotInit(); } catch (_) {} }); }
+  window.sp213DepotInit = spDepotInit;
 
   function renderAttachBar() {
     const bar = $('attachBar');
@@ -8382,6 +8636,18 @@ function spRtfLayoutInfo(src) {
       return true;
     };
     if (!M.surtitre) { for (let i2 = 0; i2 < prem.length; i2++) { if (pasDoublon(prem[i2].x)) { M.surtitre = prem[i2].x; break; } } }
+    /* ══ BORNAGE DU CONTENU COMPOSÉ (défaut mesuré) ══ Sur un livre de plusieurs milliers
+       de paragraphes, la composition ne rendait jamais la main (le studio repasse ensuite
+       sur chaque bloc pour les marges, les collisions et le cadrage). Un cahier de maquette
+       n'a pas besoin de 400 sections : on garde de quoi remplir 32 pages. */
+    const SEC_MAX = 40, PAR_MAX = 10;
+    if (M.sections.length > SEC_MAX) M.sections = M.sections.slice(0, SEC_MAX);
+    M.sections = M.sections.map(function (s) {
+      return { t: s.t, ps: (s.ps || []).slice(0, PAR_MAX) };
+    });
+    if (M.lignes.length > 80) M.lignes = M.lignes.slice(0, 80);
+    if (M.items.length > 40) M.items = M.items.slice(0, 40);
+    if (M.infos.length > 20) M.infos = M.infos.slice(0, 20);
     return M;
   }
 
@@ -9936,6 +10202,14 @@ function spRtfLayoutInfo(src) {
     try { spStarterPJ(); } catch (_) {}
   }
   function spStarterSync() {
+    /* ⚠️ v1.7.582 — LA PRÉHOME ET LE STUDIO DOIVENT PARLER DU MÊME MOTEUR (retour
+       utilisateur : « il doit bien garder les éléments entre la pré-home et
+       l'interface »). Défaut mesuré : la préhome avait son propre choix, gardé en
+       mémoire seulement ; après un rechargement elle affichait « Gemini Nano » alors
+       que le studio composait avec « SP213 gabarit » — la demande partie de la préhome
+       n'était donc PAS composée par notre modèle (90 s pour rien, puis « aucun élément
+       exploitable »). On aligne la préhome sur le moteur réel du studio. */
+    try { if (!window._spStEng && state.engine) window._spStEng = state.engine; } catch (_) {}
     /* La liste des modèles est reconstruite à chaque affichage (disponibilité du
        navigateur, moteur mémorisé, panneau ouvert). */
     try { spStConstruire(); } catch (_) {}
@@ -10464,7 +10738,12 @@ function spRtfLayoutInfo(src) {
 
   // Applique un format détecté : met à jour le canvas + le prompt (via state.pageW/H).
   function applyDetectedPageFormat(prompt) {
-    const fmt = detectPageFormat(prompt);
+    const fmt = detectPageFormat(prompt) || (function () {
+      /* Aucun format dans la demande : celui DÉCLARÉ DANS LE WORD joint fait foi
+         (retour utilisateur : « detect le format word »). */
+      const d = state._formatDocx;
+      return d ? { w: d.w, h: d.h, label: 'format du document Word (' + d.w + '×' + d.h + ' mm)' } : null;
+    })();
     if (!fmt) return false;
     const curW = state.pageW || 210, curH = state.pageH || 297;
     if (curW === fmt.w && curH === fmt.h) return false;
