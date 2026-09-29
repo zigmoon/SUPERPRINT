@@ -5880,10 +5880,19 @@ function spRtfLayoutInfo(src) {
       });
       // 2) HTML -> texte structure (titres, listes, paragraphes)
       const texte = spHtmlToStructuredText(html);
-      state.attachments.push({
+      const att = {
         id, name: file.name, type: 'text', text: texte, ext, docx: true,
         imageCount: imgs.length
-      });
+      };
+      state.attachments.push(att);
+      /* 🆕 v1.7.581 — LES COULEURS DU WORD DANS LA MAQUETTE. Demande utilisateur :
+         « l'object est de faire couleur des text Word ou autre directement dans nos
+         maquettes avec le modèle automatique ». On relève les teintes RÉELLES du
+         fichier (w:color) et le moteur les emploie comme couleur d'accent. Asynchrone :
+         la pièce jointe est déjà utilisable, la teinte arrive juste après. */
+      spDocxCouleurs(buf).then(function (cs) {
+        if (cs && cs.length) att.couleurs = cs;
+      }).catch(function () {});
       // 3) Ajouter chaque image du document comme piece jointe image
       imgs.forEach(function (im, k) {
         state.attachments.push({
@@ -5904,6 +5913,45 @@ function spRtfLayoutInfo(src) {
         state.attachments.push({ id, name: file.name, type: 'text', text: '(contenu Word non lisible)', ext });
         renderAttachBar();
       });
+    });
+  }
+
+  /* ══ LES COULEURS ÉCRITES DANS LE DOCUMENT CLIENT ══════════════════════════════
+     Un .docx porte ses teintes dans word/document.xml (w:color w:val="RRGGBB"). On les
+     compte, on jette le noir, le blanc et les gris (ce ne sont pas des couleurs de
+     marque), et on rend les teintes les plus employées — la première deviendra la
+     couleur d'accent de la maquette. */
+  function spDocxCouleurs(buf) {
+    return new Promise(function (resolve) {
+      loadAttachmentLibrary('app/JS/jszip.min.js', function () { return !!window.JSZip; })
+        .then(function () { return window.JSZip.loadAsync(buf); })
+        .then(function (zip) {
+          const f = zip.file('word/document.xml');
+          return f ? f.async('string') : '';
+        })
+        .then(function (xml) {
+          if (!xml) { resolve([]); return; }
+          const compte = {};
+          const re = /w:color[^>]*w:val="([0-9A-Fa-f]{6})"/g;
+          let m;
+          while ((m = re.exec(xml))) {
+            const c = '#' + m[1].toLowerCase();
+            compte[c] = (compte[c] || 0) + 1;
+          }
+          const inutile = function (c) {
+            /* On écarte le noir, le blanc et les GRIS (ce ne sont pas des couleurs de
+               marque) ; un rouge sombre de charte (#c00000) reste, lui. */
+            const s = c.replace('#', '');
+            const r2 = parseInt(s.substr(0, 2), 16), v2 = parseInt(s.substr(2, 2), 16), b2 = parseInt(s.substr(4, 2), 16);
+            const l = spGabLum(c);
+            if (l < 0.1 || l > 0.93) return true;
+            return (Math.max(r2, v2, b2) - Math.min(r2, v2, b2)) < 14;
+          };
+          const liste = Object.keys(compte).filter(function (c) { return !inutile(c); })
+            .sort(function (a, b) { return compte[b] - compte[a]; });
+          resolve(liste.slice(0, 3));
+        })
+        .catch(function () { resolve([]); });
     });
   }
 
@@ -7890,13 +7938,13 @@ function spRtfLayoutInfo(src) {
      fond, typographie et accents. « premium / luxe / chic » = FOND NOIR CHIC + SERIF
      (demande utilisateur). Le thème passe AVANT la palette du gabarit. */
   const SP_GAB_THEMES = [
-    ['noir',    /premium|luxe|haut de gamme|chic|[ée]l[ée]gant|prestige|joaillerie|parfum|mariage|raffin/, { a: '#c8a24a', b: '#8a6d1f', clair: '#f5f1e8', gris: '#4a4a52', txt: '#f5f5f2', fond: '#0e0e10', doux: '#c9c9c4', sur: '#f5f5f2', noir: true }, 'serif'],
-    ['mono',    /tech|start-?up|logiciel|digital|data|ia\b|api|code|dev|cyber|studio de d[ée]veloppement/, { a: '#1f6feb', b: '#0b2447', clair: '#eef4ff', gris: '#cfdcf5', txt: '#0b1220', doux: '#52607a', sur: '#ffffff' }, 'mono'],
-    ['douce',   /doux|douce|pastel|bien-[êe]tre|zen|nature|[ée]cologie|bio|jardin|sant[ée]/, { a: '#166534', b: '#4d7c0f', clair: '#f1f7f1', gris: '#cfe0d0', txt: '#122015', doux: '#5b6b5e', sur: '#ffffff' }, 'sans'],
-    ['event',   /festif|f[êe]te|festival|concert|soir[ée]e|color[ée]|audacieux|explosif|[ée]v[ée]nement/, { a: '#6d28d9', b: '#ec4899', clair: '#f7f1ff', gris: '#ded1f7', txt: '#1b0f38', doux: '#5f5a72', sur: '#ffffff' }, 'display'],
-    ['finance', /corporate|finance|banque|assurance|audit|conseil|juridique|rapport annuel|institution/, { a: '#0f2a4a', b: '#3b82f6', clair: '#f2f5f9', gris: '#ccd7e4', txt: '#0f172a', doux: '#5a6b80', sur: '#ffffff' }, 'sans'],
-    ['sobre',   /minimal|[ée]pur[ée]|sobre|institutionnel|discret|blanc/, { a: '#111111', b: '#1f6feb', clair: '#f5f5f6', gris: '#d9d9dc', txt: '#18181b', doux: '#5f6368', sur: '#ffffff' }, 'sans'],
-    ['chaud',   /restaurant|cuisine|menu|carte|[âa]tisserie|brasserie|bistrot|vin|caf[ée]|gourmand/, { a: '#7c2d12', b: '#c2410c', clair: '#fdf4e9', gris: '#e6d9c8', txt: '#1c1917', doux: '#6b5b4a', sur: '#ffffff' }, 'serif']
+    ['noir',    /\bpremium\b|\bluxe\b|haut de gamme|\bchic\b|\bprestige\b|joaillerie|\bparfum\b|fond noir|tout noir|\bblack\b|\bnuit\b/, { a: '#c8a24a', b: '#8a6d1f', clair: '#f5f1e8', gris: '#4a4a52', txt: '#f5f5f2', fond: '#0e0e10', doux: '#c9c9c4', sur: '#f5f5f2', noir: true }, 'serif'],
+    ['mono',    /tech|start-?up|logiciel|digital|data|ia\b|api|code|dev|cyber|studio de d[ée]veloppement/, { a: '#1f6feb', b: '#0b2447', clair: '#eef4ff', gris: '#cfdcf5', txt: '#0b1220', doux: '#52607a', sur: '#ffffff', fond: '#ffffff' }, 'mono'],
+    ['douce',   /doux|douce|pastel|bien-[êe]tre|zen|nature|[ée]cologie|bio|jardin|sant[ée]/, { a: '#166534', b: '#4d7c0f', clair: '#f1f7f1', gris: '#cfe0d0', txt: '#122015', doux: '#5b6b5e', sur: '#ffffff', fond: '#ffffff' }, 'sans'],
+    ['event',   /festif|f[êe]te|festival|concert|soir[ée]e|color[ée]|audacieux|explosif|[ée]v[ée]nement/, { a: '#6d28d9', b: '#ec4899', clair: '#f7f1ff', gris: '#ded1f7', txt: '#1b0f38', doux: '#5f5a72', sur: '#ffffff', fond: '#ffffff' }, 'display'],
+    ['finance', /corporate|finance|banque|assurance|audit|conseil|juridique|rapport annuel|institution/, { a: '#0f2a4a', b: '#3b82f6', clair: '#f2f5f9', gris: '#ccd7e4', txt: '#0f172a', doux: '#5a6b80', sur: '#ffffff', fond: '#ffffff' }, 'sans'],
+    ['sobre',   /minimal|[ée]pur[ée]|sobre|institutionnel|discret|blanc/, { a: '#111111', b: '#1f6feb', clair: '#f5f5f6', gris: '#d9d9dc', txt: '#18181b', doux: '#5f6368', sur: '#ffffff', fond: '#ffffff' }, 'sans'],
+    ['chaud',   /restaurant|cuisine|menu|carte|[âa]tisserie|brasserie|bistrot|vin|caf[ée]|gourmand/, { a: '#7c2d12', b: '#c2410c', clair: '#fdf4e9', gris: '#e6d9c8', txt: '#1c1917', doux: '#6b5b4a', sur: '#ffffff', fond: '#fffdf8' }, 'serif']
   ];
   function spGabTheme(brief, contexte) {
     const s = (String(brief || '') + ' ' + String(contexte || '')).toLowerCase();
@@ -8090,10 +8138,13 @@ function spRtfLayoutInfo(src) {
 
   /* TEXTE ET PHOTOS VIENNANT DES PIÈCES JOINTES, SELON LEUR RÔLE (pop-in PJ). */
   function spGabSources() {
-    const src = { corps: '', titres: [], images: [], contexte: '' };
+    const src = { corps: '', titres: [], images: [], contexte: '', couleurs: [] };
     try {
       (state.attachments || []).forEach(function (a, i) {
         const mode = a.mode || 'content';
+        if (mode !== 'context' && Array.isArray(a.couleurs)) {
+          a.couleurs.forEach(function (c) { if (src.couleurs.indexOf(c) === -1) src.couleurs.push(c); });
+        }
         if (a.type === 'image') { if (mode !== 'context') src.images.push(i); return; }
         const blocs = spGabMarkdown(a.text || '');
         const entetes = blocs.filter(function (b) { return b.t === 'h'; }).map(function (b) { return b.x; });
@@ -8129,7 +8180,7 @@ function spRtfLayoutInfo(src) {
   function spGabMeta(brief) {
     const src = spGabSources();
     const blocs = spGabMarkdown(String(brief || '').trim() + '\n\n' + src.corps);
-    const M = { brief: String(brief || ''), titre: '', surtitre: '', chapeau: '', sections: [], lignes: [], items: [], chiffres: [], infos: [], photos: src.images.slice(), contexte: src.contexte, corpsLength: src.corps.length, source: src.corps ? 'demande + pièces jointes' : 'demande seule' };
+    const M = { brief: String(brief || ''), titre: '', surtitre: '', chapeau: '', sections: [], lignes: [], items: [], chiffres: [], infos: [], photos: src.images.slice(), contexte: src.contexte, couleurs: src.couleurs.slice(), corpsLength: src.corps.length, source: src.corps ? 'demande + pièces jointes' : 'demande seule' };
     let courant = null;
     blocs.forEach(function (b) {
       if (b.t === 'h') {
@@ -8224,18 +8275,19 @@ function spRtfLayoutInfo(src) {
     if (esp) e.charSpacing = esp;
     return e;
   }
-  // Zone photo : la vraie image jointe si elle existe, sinon un aplat clair légendé.
+  // Zone photo : la vraie image jointe si elle existe — SINON RIEN.
   function spGabPhoto(L, e, x, y, w, h, legende) {
     /* L'image jointe est posée par son INDEX : le studio réinjecte la data URI,
-       exactement comme pour une réponse d'IA (hydrateUserImages). Sinon une zone
-       CLAIRE légendée réserve la place — jamais un aplat sombre. */
+       exactement comme pour une réponse d'IA (hydrateUserImages).
+       ⚠️ AVANT : sans photo jointe, on dessinait un cadre clair légendé pour
+       « réserver la place ». Retour utilisateur : « un rectangle avec un rond blanc
+       et un rectangle blanc dedans… cette boîte, supprime-la ». On ne dessine PLUS
+       rien : la page reste du papier. Renvoie true quand une photo a été posée. */
     if (L.photos.length) {
       e.push({ type: 'image', imageIndex: L.photos.shift(), left: x, top: y, width: w, height: h });
-      return;
+      return true;
     }
-    e.push(spGabR(x, y, w, h, L.pal.clair, 3));
-    e.push(spGabL(x + w * 0.18, y + h / 2, w * 0.64, L.pal.gris, 1));
-    e.push(spGabT(x, y + h / 2 + 8, w, legende || 'photo', 7.5, '#9aa0a6', 'bold', 'center', 1.2, 140));
+    return false;
   }
   function spGabFolio(L, n, tot) {
     return [spGabL(L.x0, L.y1 + 14, L.cw, L.pal.gris, 1), spGabT(L.x0, L.y1 + 20, L.cw, n + ' / ' + tot, 8, '#8a8f98', null, 'center')];
@@ -8247,7 +8299,6 @@ function spRtfLayoutInfo(src) {
   function spGabP_affiche(L, n, tot) {
     const e = [], p = L.pal, M = L.t;
     if (L.pays) return spGabP_affichePays(L, n, tot);
-    e.push(spGabC(L.x1 - 40, L.y0 + 40, 40, p.b, 0.16));
     if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0, L.cw * 0.6, spGabCourt(M.surtitre, 40)));
     e.push(spGabT(L.x0, L.y0 + L.ch * 0.24, L.cw * 0.94, M.titre, L.g.titre, p.txt, 'bold', 'left', 1.02));
     const hT = spGabH(M.titre, L.g.titre, L.cw * 0.94, 0.95);
@@ -8417,26 +8468,34 @@ function spRtfLayoutInfo(src) {
     const leg = (M.items.length ? M.items.map(function (i) { return i.nom; }) : M.lignes).slice(0, 6);
     for (let i = 0; i < 6; i++) {
       const x = L.x0 + (i % 3) * (cw + L.g.gutter), y = y0 + Math.floor(i / 3) * (hh + L.g.gutter * 1.4);
-      spGabPhoto(L, e, x, y, cw, hh, 'projet ' + (i + 1));
-      e.push(spGabT(x, y + hh + 6, cw * 0.9, spGabCourt(leg[i] || ('Projet ' + (i + 1)), 40), 8.5, p.txt, 'bold', 'left', 1.25));
+      const legende = spGabPhoto(L, e, x, y, cw, hh, 'projet ' + (i + 1));
+      /* Légende SEULEMENT si une photo occupe la case : sans photo, plus de boîte
+         ni de mot « Projet » orphelin (retour utilisateur). */
+      if (legende) e.push(spGabT(x, y + hh + 6, cw * 0.9, spGabCourt(leg[i] || ('Projet ' + (i + 1)), 40), 8.5, p.txt, 'bold', 'left', 1.25));
     }
     return e;
   }
-  // 8. Invitation : bandeau, titre centré, pastille de date, informations.
+  // 8. Invitation : filets fins, titre centré, date en couleur d'accent. Aucune boîte.
   function spGabP_invitation(L, n, tot) {
     const e = [], p = L.pal, M = L.t;
-    e.push(spGabR(0, 0, L.W, 26, p.a, 0));
-    if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0 + 34, L.cw, spGabCourt(M.surtitre, 36), 'center'));
-    e.push(spGabT(L.x0, L.y0 + L.ch * 0.16, L.cw, M.titre, L.g.titre, p.txt, 'bold', 'center', 1.02));
-    const yP = L.y0 + L.ch * 0.52;
-    e.push(spGabC(L.x0 + L.cw / 2, yP + 32, 46, p.a, 1));
     const date = (M.chiffres[0] && M.chiffres[0].v) || (M.items[0] && M.items[0].prix) || '';
-    if (date) e.push(spGabT(L.x0 + L.cw / 2 - 46, yP + 18, 92, date, 22, '#ffffff', 'bold', 'center', 1.05));
-    let y = yP + 96;
+    /* ⚠️ AVANT : une pastille pleine (rond de couleur) accueillait la date et deux
+       bandeaux pleine largeur ouvraient/fermaient la page. Retour utilisateur :
+       « un rectangle rose ou violet avec un rond blanc et un rectangle blanc dedans…
+       cette boîte, supprime-la ». Place au papier : filets fins + couleur d'accent. */
+    e.push(spGabL(L.x0 + L.cw * 0.3, L.y0 + L.k * 10, L.cw * 0.4, p.a, 2));
+    if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0 + L.k * 26, L.cw, spGabCourt(M.surtitre, 36), 'center'));
+    const yP = L.y0 + L.ch * 0.42;
+    e.push(spGabT(L.x0, yP - L.g.titre * 1.12, L.cw, M.titre, L.g.titre, p.txt, 'bold', 'center', 1.02));
+    if (date) {
+      e.push(spGabT(L.x0, yP + L.ch * 0.06, L.cw, date, Math.min(26, L.g.titre * 0.5), p.a, 'bold', 'center', 1.02));
+      e.push(spGabL(L.x0 + L.cw * 0.37, yP + L.ch * 0.06 + Math.min(26, L.g.titre * 0.5) * 1.4, L.cw * 0.26, p.a, 2));
+    }
+    let y = yP + L.ch * 0.22;
     if (M.chapeau) { e.push(spGabT(L.x0 + L.cw * 0.12, y, L.cw * 0.76, spGabCourt(M.chapeau, 160), 10, '#4b5563', null, 'center', 1.5)); y += 40; }
     const infos = M.infos.slice(0, 3);
     infos.forEach(function (i) { e.push(spGabT(L.x0, y, L.cw, spGabCourt(i, 90), 9.5, p.txt, 'bold', 'center', 1.4)); y += 18; });
-    e.push(spGabR(0, L.H - 26, L.W, 26, p.a, 0));
+    e.push(spGabL(L.x0 + L.cw * 0.3, L.y1 - L.k * 12, L.cw * 0.4, p.a, 1));
     return e;
   }
   /* 9. Carte de visite : mise en page de CARTE (85 × 55 mm), pas une A4 réduite.
@@ -8449,7 +8508,8 @@ function spRtfLayoutInfo(src) {
     e.push(spGabT(x0, y0, cw * 0.76, spGabCourt(nom, 34), Math.max(9, Math.min(13, L.H * 0.082)), p.txt, 'bold', 'left', 0.98));
     const fct = M.surtitre || (M.items[0] && M.items[0].nom) || '';
     if (fct) e.push(spGabT(x0, y0 + L.H * 0.2, cw * 0.76, spGabCourt(fct, 42), Math.max(6.5, L.H * 0.052), '#6b7280', null, 'left', 1.25, 55));
-    e.push(spGabC(x1 - L.H * 0.075, y0 + L.H * 0.075, L.H * 0.055, p.a, 1));
+    /* Repère discret au lieu d'une pastille pleine (retour utilisateur : boîte supprimée). */
+    e.push(spGabL(x1 - L.H * 0.16, y0 + L.H * 0.075, L.H * 0.16, p.a, 2));
     e.push(spGabL(x0, y1 - L.H * 0.34, cw, p.gris, 1));
     const infos = (M.infos.length ? M.infos : M.lignes).slice(0, 3);
     if (infos.length) infos.forEach(function (t, i) { e.push(spGabT(x0, y1 - L.H * 0.28 + i * L.H * 0.088, cw, spGabCourt(t, 48), Math.max(6, L.H * 0.046), '#4b5563', null, 'left', 1.3)); });
@@ -8540,8 +8600,8 @@ function spRtfLayoutInfo(src) {
       if (col === 1 && L.photos.length && (L.y1 - k * 22 - Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26))) > y + k * 18) {
         const hP = Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26));
         const yP = L.y1 - k * 22 - hP;
-        spGabPhoto(L, e, x, yP, cw, hP, 'photo');
-        e.push(spGabT(x, yP + hP + 4, cw, spGabCourt(secs[Math.min(base, secs.length - 1)].t || 'légende', 58), 7.5, '#6b7280', null, 'left', 1.3));
+        const legP = spGabPhoto(L, e, x, yP, cw, hP, 'photo');
+        if (legP) e.push(spGabT(x, yP + hP + 4, cw, spGabCourt(secs[Math.min(base, secs.length - 1)].t || 'légende', 58), 7.5, '#6b7280', null, 'left', 1.3));
       } else if (col === 1 && M.chiffres.length) {
         /* ENCADRÉ CHIFFRE CLÉ : seulement s'il reste la place SOUS le texte — sinon il
            passait par-dessus (chevauchement mesuré). */
@@ -8589,7 +8649,6 @@ function spRtfLayoutInfo(src) {
   function spGabP_affichePays(L, n, tot) {
     const e = [], p = L.pal, M = L.t;
     const gx = L.cw * 0.52, rx = L.x0 + gx + 18, rw = L.x1 - rx;
-    e.push(spGabC(L.x1 - 34, L.y0 + 34, 34, p.b, 0.16));
     if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0, gx, spGabCourt(M.surtitre, 40)));
     e.push(spGabT(L.x0, L.y0 + L.ch * 0.2, gx, M.titre, L.g.titre, p.txt, 'bold', 'left', 0.95));
     e.push(spGabL(L.x0, L.y0 + L.ch * 0.2 + L.g.titre * 1.15, gx * 0.4, p.a, 4));
@@ -8691,7 +8750,6 @@ function spRtfLayoutInfo(src) {
   // 15. Bandeau horizontal : titre à gauche, informations à droite, filet de pied.
   function spGabP_bandeau(L, n, tot) {
     const e = [], p = L.pal, M = L.t, g = L.g, k = L.k;
-    e.push(spGabC(L.x1 - 30, L.H / 2, 30, p.b, 0.18));
     e.push(spGabR(0, 0, k * 14, L.H, p.a, 0));
     if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0, L.cw * 0.5, spGabCourt(M.surtitre, 34)));
     e.push(spGabT(L.x0, L.y0 + k * 16, L.cw * 0.56, M.titre, g.titre, p.txt, 'bold', 'left', 0.95));
@@ -8882,10 +8940,22 @@ function spRtfLayoutInfo(src) {
          lettre : on pose un VOILE sombre translucide DERRIÈRE le texte et on passe la
          typographie en clair. Lisible quelle que soit la photo. */
       const images = els.filter(function (e) { return e.type === 'image'; });
+      /* Hauteur RÉELLE d'un texte en MILLIMÈTRES — formule du studio (taille en pt,
+         largeur en mm, 1 pt = 0,352778 mm).
+         ⚠️ DÉFAUT MESURÉ : le garde-fou appelait spGabH(), qui attend des px-unités
+         (A4 = 595 × 842) alors qu'il travaille en millimètres : toutes les hauteurs
+         étaient 2,83× trop grandes. Les voiles posés sur les photos atteignaient donc
+         594 mm de haut sur une page de 297 mm — des bandes sombres par-dessus tout. */
+      const hMm = function (txt, taille, largeurMm, interligne) {
+        const parLigne = Math.max(4, (Number(largeurMm) || 100) / ((Number(taille) || 10) * 0.52 * 0.352778));
+        const lignes = Math.max(1, Math.ceil(String(txt || '').length / parLigne));
+        return lignes * (Number(taille) || 10) * (Number(interligne) || 1.3) * 1.13 * 0.352778;
+      };
+      const Wmm = L.W / SP_GAB_K, Hmm = L.H / SP_GAB_K;
       const voiles = [];
       const surImage = function (e) {
         const l = Number(e.left) || 0, t = Number(e.top) || 0, w = Number(e.width) || 0;
-        const h = spGabH(String(e.text || ''), Number(e.fontSize) || 10, w, Number(e.lineHeight) || 1.3) * SP_GAB_K;
+        const h = hMm(String(e.text || ''), Number(e.fontSize) || 10, w, Number(e.lineHeight) || 1.3);
         for (let i4 = 0; i4 < images.length; i4++) {
           const im = images[i4];
           const il = Number(im.left) || 0, it = Number(im.top) || 0, iw = Number(im.width) || 0, ih = Number(im.height) || 0;
@@ -8902,7 +8972,7 @@ function spRtfLayoutInfo(src) {
            ignorant le fond de page (sinon il gagnerait toujours). */
         let fond = fondPage, aire = 0;
         const wT = Number(e.width) || 0;
-        const hT = spGabH(String(e.text || ''), Number(e.fontSize) || 10, wT, Number(e.lineHeight) || 1.3) * SP_GAB_K;
+        const hT = hMm(String(e.text || ''), Number(e.fontSize) || 10, wT, Number(e.lineHeight) || 1.3);
         aplats.forEach(function (a) {
           const al = Number(a.left) || 0, at = Number(a.top) || 0, aw = Number(a.width) || 0, ah = Number(a.height) || 0;
           const f = String(a.fill || '');
@@ -8939,8 +9009,8 @@ function spRtfLayoutInfo(src) {
           return r.type === 'rectangle' && Number(r.opacity) === 0.5 && String(r.fill) === '#0e0e10' && Math.abs((Number(r.left) || 0) - x0) < 0.6 && Math.abs((Number(r.top) || 0) - y0) < 0.6;
         });
         if (dejaVoile) return;
-        const h = spGabH(String(e.text || ''), Number(e.fontSize) || 10, w, Number(e.lineHeight) || 1.3) * SP_GAB_K;
-        els.splice(idx, 0, { type: 'rectangle', left: x0, top: y0, width: Math.min(w + 4, 208 - x0), height: h + 3, fill: '#0e0e10', opacity: 0.5, rx: 1, ry: 1 });
+        const h = hMm(String(e.text || ''), Number(e.fontSize) || 10, w, Number(e.lineHeight) || 1.3);
+        els.splice(idx, 0, { type: 'rectangle', left: x0, top: y0, width: Math.max(6, Math.min(w + 4, Wmm - x0)), height: Math.max(3, Math.min(h + 3, Hmm - y0)), fill: '#0e0e10', opacity: 0.5, rx: 1, ry: 1 });
         if (spGabLum(e.fill) < 0.62) { e.fill = clair; corriges++; }
       });
     });
@@ -8956,12 +9026,24 @@ function spRtfLayoutInfo(src) {
      intérieures disparaîtrait sur le noir. Un panneau clair devient un panneau
      sombre : le texte clair posé dessus reste lisible. L'accent doré n'est pas touché. */
   function spGabFondNoir(pages, L, fmt, g) {
+    /* ⚠️ DÉFAUT MESURÉ (retour utilisateur : « j'ai trop souvent des fonds sombres,
+       on travaille sur le papier ») : cette passe était appelée POUR TOUS LES THÈMES.
+       Sur un thème clair, la palette n'a pas de `fond` : le fond blanc devenait donc
+       deux demis de page NOIRS, sur tout le document. Elle ne s'applique plus qu'au
+       thème « noir » (premium / noir demandé) — et au thème seul. */
+    if (!(L && L.pal && L.pal.noir)) return;
     const bas = function (v) { return String(v || '').toLowerCase(); };
     const clairP = bas(L.pal.clair);
     const fondP = bas(L.pal.fond);
     const moyen = L.pal.gris || '#4a4a52';
     pages.forEach(function (pg) {
       const els = pg.elements || [];
+      /* ⚠️ DÉFAUT MESURÉ (retour utilisateur : « on travaille sur le papier ») : cette
+         passe convertissait le fond BLANC de TOUTES les pages en noir — un cahier
+         premium devenait un bloc noir de 10 pages. On ne touche plus qu'aux pages DÉJÀ
+         noires (couverture et 4e de couverture), posées par la boucle des pages. */
+      const pageNoire = els.length && bas(els[0].fill) === bas(L.pal.fond) && Number(els[0].width) > fmt.W * 0.9;
+      if (!pageNoire) return;
       if (els.length && bas(els[0].fill) === '#ffffff' && Number(els[0].width) > fmt.W * 0.9) {
         const demi = Math.round(fmt.H * 0.5 * 100) / 100;
         els[0] = { type: 'rectangle', left: 0, top: 0, width: fmt.W, height: demi, fill: L.pal.fond, rx: 0, ry: 0 };
@@ -9043,8 +9125,26 @@ function spRtfLayoutInfo(src) {
     g.chapeau = Math.max(7, Math.min(g.chapeau, H * 0.055));
     g.corps = Math.max(6.5, Math.min(g.corps, H * 0.045));
     const fmt = spGabFormat();
+    /* ══ LES COULEURS DU FICHIER CLIENT ENTRENT DANS LA MAQUETTE ═════════════════
+       Demande utilisateur : « l'object est de faire couleur des text Word ou autre
+       directement dans nos maquettes avec le modèle automatique ». La teinte dominante
+       du document devient l'ACCENT de la mise en page (surtitres, filets, titres de
+       section, prix, folios) — le reste de la palette ne bouge pas, et comme on
+       travaille sur du PAPIER la page reste claire (aucun fond sombre créé ici).
+       Sur un thème volontairement NOIR (premium), on garde l'or du thème : une teinte
+       de marque sombre serait illisible sur la page noire. */
+    const pal = Object.assign({}, (theme && theme.pal) || spGabPal(brief, g.pal, texte.contexte));
+    if (!pal.noir && texte.couleurs && texte.couleurs.length) {
+      pal.a = texte.couleurs[0];
+      const s2 = String(pal.a).replace('#', '');
+      if (s2.length === 6) {
+        const f = function (i2) { return ('0' + Math.max(0, Math.round(parseInt(s2.substr(i2, 2), 16) * 0.7)).toString(16)).slice(-2); };
+        pal.b = '#' + f(0) + f(2) + f(4);
+      }
+      if (texte.couleurs[1]) pal.b = texte.couleurs[1];
+    }
     const L = {
-      W: W, H: H, g: g, t: texte, pal: (theme && theme.pal) || spGabPal(brief, g.pal, texte.contexte), f: polices,
+      W: W, H: H, g: g, t: texte, pal: pal, f: polices,
       k: Math.max(0.3, Math.min(1, H / 841.89)), v: hasard.v, n: hasard.n, theme: theme ? theme.cle : 'auto',
       x0: x0, y0: y0, x1: x1, y1: y1, cw: cw, ch: ch,
       pays: fmt.pays, carre: fmt.carre, mini: fmt.mini, bandeau: fmt.bandeau,
