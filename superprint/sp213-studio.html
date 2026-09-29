@@ -4474,6 +4474,35 @@
   function pjL() { return PJ_LABELS[curLang] || PJ_LABELS.fr; }
   function pjShort(m) { const s = pjL().short || {}; return s[m] || m; }
   let pjModePendant = null;
+  /* ══ 🆕 v1.7.590 _SP_STUDIO_PJ_ROLE_590 — LE RÔLE SUIT LE FICHIER, PAS LE DERNIER DÉPÔT ══
+     Le pop-in choisit UN rôle par dépôt. Or la lecture d'un .docx / .xlsx est ASYNCHRONE :
+     entre le choix et l'arrivée du document, l'utilisateur peut déposer un autre fichier
+     avec un AUTRE rôle. Le rôle était alors relu dans pjModePendant AU MOMENT DU RENDU
+     (line « if (!att.mode) att.mode = pjModePendant ») : la pièce jointe prenait le rôle du
+     dernier dépôt. Mesuré en vrai : « _test_fidelite.docx » déposé en CONTEXTE devenait
+     CONTENU dès qu'un logo était déposé en contenu ensuite (et le texte du livre était
+     composé alors qu'il devait seulement nourrir le ton). On mémorise donc le rôle du dépôt
+     par NOM de fichier, et les sous-images extraites d'un .docx héritent de ce rôle. */
+  const SP_PJ_ROLE_DEPOT = Object.create(null);
+  function spPjRoleDuNom(nom) {
+    const n = String(nom || '');
+    if (!n) return null;
+    if (SP_PJ_ROLE_DEPOT[n]) return SP_PJ_ROLE_DEPOT[n];
+    const base = n.split(' — ')[0];                    // « doc.docx — image 1 » → « doc.docx »
+    return SP_PJ_ROLE_DEPOT[base] || null;
+  }
+  /* ══ 🆕 v1.7.590 — LECTURE FIABLE DU RÔLE D'UNE PIÈCE JOINTE ══
+     « a.mode » n'est posé qu'au moment du rendu de la barre : une pièce jointe lue en
+     asynchrone (Word, Excel, PDF) pouvait donc être lue AVANT d'avoir son rôle, et
+     retomber sur « content » — un document déposé en CONTEXTE était alors COMPOSÉ dans
+     la maquette. Ce lecteur fait autorité : rôle du fichier → rôle de son dépôt → rôle
+     en cours. */
+  function spPjModeDe(a) {
+    if (a && a.mode) return a.mode;
+    const r = a ? spPjRoleDuNom(a.name) : null;
+    if (r) return r;
+    return (typeof pjModePendant !== 'undefined' && pjModePendant) ? pjModePendant : 'content';
+  }
   // Affiche le pop-in et résout avec le mode choisi (Echap / Annuler = défaut).
   function pjAskMode(noms, modeInitial) {
     return new Promise(function (resolve) {
@@ -4523,7 +4552,7 @@
   }
   // Consigne envoyée au moteur pour une pièce jointe (FR : le prompt du studio est en FR).
   function pjModeNote(att) {
-    const m = (att && att.mode) || 'content';
+    const m = spPjModeDe(att);
     if (m === 'context') return 'RÔLE DE CETTE PIÈCE JOINTE : CONTEXTE UNIQUEMENT — n\'ajoute AUCUN de ses éléments dans la maquette (ni texte, ni image, ni couleur). Sers-t\'en seulement pour comprendre le sujet, le ton, le vocabulaire et les contraintes.';
     if (m === 'template') return 'RÔLE DE CETTE PIÈCE JOINTE : MODÈLE À SUIVRE — reproduis sa STRUCTURE et sa HIÉRARCHIE (ordre des blocs, styles, proportions, nombre de colonnes). Ne recopie pas son contenu textuel : le contenu vient de la demande de l\'utilisateur.';
     return 'RÔLE DE CETTE PIÈCE JOINTE : CONTENU À INTÉGRER (OBLIGATOIRE) — son contenu DOIT être composé dans la maquette (texte, images, tableaux). Ne l\'ignore pas, ne le résume pas, ne le remplace pas par du texte de substitution.';
@@ -4536,6 +4565,9 @@
     //   et le mode choisi s'applique à toutes les pièces jointes de ce dépôt.
     const _liste = Array.from(files);
     pjModePendant = await pjAskMode(_liste.map(f => f.name), 'content');
+    /* 🆕 v1.7.590 — le rôle de CE dépôt est mémorisé par nom de fichier : chaque pièce
+       jointe gardera le rôle choisi, même si un autre dépôt arrive avant sa lecture. */
+    _liste.forEach(function (f) { SP_PJ_ROLE_DEPOT[f.name] = pjModePendant || 'content'; });
     /* 🆕 v1.7.581 — LECTURE EN COURS VISIBLE : un document met 1 à 3 s à se lire (12 s
        au pire). Sans marqueur, on pouvait croire que le fichier n'avait pas été pris
        (retour utilisateur : « il ne l'a pas gardée »). On l'affiche TOUT DE SUITE. */
@@ -5037,7 +5069,7 @@
       /* ⚠️ _SP_STUDIO_CONTEXTE_588 — un document de CONTEXTE n'impose pas son format
          (il sert à comprendre, pas à mettre en pages). Le rôle est lu dans pjModePendant
          au moment de l'import : att.mode peut ne pas être encore posé (extraction async). */
-      const _roleF = (typeof pjModePendant !== 'undefined' && pjModePendant) ? pjModePendant : 'content';
+      const _roleF = spPjRoleDuNom(file.name) || ((typeof pjModePendant !== 'undefined' && pjModePendant) ? pjModePendant : 'content');
       if (_roleF === 'context') {
         appendChat('assistant', '📐 Format du document lu : ' + pageWord.w + ' × ' + pageWord.h +
           ' mm — pièce jointe de CONTEXTE : elle ne l\'impose pas à la maquette.');
@@ -6202,7 +6234,11 @@ function spRtfLayoutInfo(src) {
       const texte = spHtmlToStructuredText(html);
       const att = {
         id, name: file.name, type: 'text', text: texte, ext, docx: true,
-        imageCount: imgs.length
+        imageCount: imgs.length,
+        /* 🆕 v1.7.590 — le rôle du dépôt est posé TOUT DE SUITE : la lecture du document
+           est asynchrone, et sans rôle explicite la pièce jointe pouvait être composée
+           comme du contenu alors qu'elle était en CONTEXTE. */
+        mode: spPjModeDe({ name: file.name })
       };
       state.attachments.push(att);
       /* 🆕 v1.7.581 — LES COULEURS DU WORD DANS LA MAQUETTE. Demande utilisateur :
@@ -6220,20 +6256,26 @@ function spRtfLayoutInfo(src) {
          fichier (210 × 148 mm) alors que l'utilisateur voulait du A4. Un document de
          contexte sert à comprendre (thème, ton, vocabulaire) : il n'a aucune autorité sur
          la mise en pages. Le format n'est donc lu que pour un contenu ou un modèle. */
-      const _roleFormat = (att && att.mode) || (typeof pjModePendant !== 'undefined' && pjModePendant) || 'content';
-      if (_roleFormat === 'context') return;
-      spDocxFormat(file).then(function (pg) {
-        if (!pg) return;
-        state._formatDocx = pg;
-        appendChat('assistant', '📐 Format lu dans le document : ' + pg.w + ' × ' + pg.h +
-          ' mm. Je composerai à ce format si votre demande n\'en impose pas un autre.');
-      }).catch(function () {});
+      const _roleFormat = spPjModeDe(att);
+      if (_roleFormat !== 'context') {
+        spDocxFormat(file).then(function (pg) {
+          if (!pg) return;
+          state._formatDocx = pg;
+          appendChat('assistant', '📐 Format lu dans le document : ' + pg.w + ' × ' + pg.h +
+            ' mm. Je composerai à ce format si votre demande n\'en impose pas un autre.');
+        }).catch(function () {});
+      }
       // 3) Ajouter chaque image du document comme piece jointe image
-      imgs.forEach(function (im, k) {
+      /* 🆕 v1.7.590 — les images d'un .docx de CONTEXTE ne sont pas déclarées du tout :
+         elles ne doivent jamais pouvoir être posées, et la barre reste lisible. */
+      if (_roleFormat !== 'context') imgs.forEach(function (im, k) {
         state.attachments.push({
           id: id + '_img' + k, name: file.name + ' — image ' + (k + 1),
           type: 'image', dataURL: im.uri, width: 0, height: 0, ext: 'docx',
-          fromDocx: true
+          fromDocx: true,
+          /* 🆕 v1.7.590 — une image extraite d'un .docx de CONTEXTE reste du CONTEXTE :
+             elle ne doit jamais se retrouver posée dans la maquette. */
+          mode: spPjRoleDuNom(file.name) || pjModePendant || 'content'
         });
       });
       renderAttachBar();
@@ -6400,7 +6442,7 @@ function spRtfLayoutInfo(src) {
     const lignes = images.map(function (a, k) {
       /* 🆕 v1.7.580ee — une image jointe en « contexte uniquement » ne doit pas être
          placée : on le dit ici aussi (les numéros restent ceux du studio). */
-      const ctxSeul = ((a.mode || 'content') === 'context');
+      const ctxSeul = (spPjModeDe(a) === 'context');
       return 'IMAGE ' + k + ' = "' + a.name + '"' +
         (a.width ? ' (' + a.width + '×' + a.height + 'px, ratio ' + (a.width / a.height).toFixed(2) + ')' : '') +
         (ctxSeul ? ' — NE PAS PLACER (pièce jointe en contexte uniquement)' : '');
@@ -6449,7 +6491,7 @@ function spRtfLayoutInfo(src) {
        caractères joint en « contexte uniquement » était donc intégralement composé.
        Ces documents repartent par l'appel UNIQUE, qui porte le rôle. */
     if ((state.attachments || []).some(function (a) {
-      return a && a.type === 'text' && (a.mode === 'template' || a.mode === 'context');
+      return a && a.type === 'text' && (spPjModeDe(a) === 'template' || spPjModeDe(a) === 'context');
     })) return false;
     if (state.selectedIds && state.selectedIds.length) return false;
     if (/\b(une seule page|1 page|une page unique|affiche|flyer|carte de visite)\b/i.test(userText || '')) return false;
@@ -6605,7 +6647,8 @@ function spRtfLayoutInfo(src) {
       /* 🆕 v1.7.580ff — nom sur la première ligne, type (ou dimension) EN DESSOUS. */
       chip.innerHTML = icon + '<span class="txt"><span class="name">' + escapeHtml(att.name) + '</span><span class="type">' + info + '</span></span>';
       // 🆕 v1.7.420 — rôle de la pièce jointe (badge cliquable)
-      if (!att.mode) att.mode = pjModePendant || 'content';
+      // 🆕 v1.7.590 — le rôle vient d'abord du dépôt auquel appartient ce fichier.
+      if (!att.mode) att.mode = spPjRoleDuNom(att.name) || pjModePendant || 'content';
       const badge = document.createElement('button');
       badge.type = 'button';
       badge.className = 'mode mode-' + att.mode;
@@ -8148,7 +8191,7 @@ function spRtfLayoutInfo(src) {
       const typ = a.type === 'image' ? 'IMAGE' : String(a.ext || 'txt').toUpperCase();
       return '<span class="st-pj">' + (a.type === 'image' ? icImg : icDoc) +
         '<span>' + escapeHtml(String(a.name || '').slice(0, 34)) + '</span>' +
-        '<em>' + typ + ' · ' + pjShort(a.mode || 'content') + '</em></span>';
+        '<em>' + typ + ' · ' + pjShort(spPjModeDe(a)) + '</em></span>';
     }).join('');
     z.innerHTML = liste + enCours;
   }
@@ -8674,7 +8717,7 @@ function spRtfLayoutInfo(src) {
     const src = { corps: '', titres: [], images: [], contexte: '', couleurs: [] };
     try {
       (state.attachments || []).forEach(function (a, i) {
-        const mode = a.mode || 'content';
+        const mode = spPjModeDe(a);
         if (mode !== 'context' && Array.isArray(a.couleurs)) {
           a.couleurs.forEach(function (c) { if (src.couleurs.indexOf(c) === -1) src.couleurs.push(c); });
         }
@@ -10340,7 +10383,27 @@ function spRtfLayoutInfo(src) {
         'un multiple de 4, dont des pages blanches. On les remplit plut\u00f4t que de les laisser vides.');
     }
     j('info', 'Règles : marges ' + M.map(function (v) { return Math.round(v * 10) / 10; }).join('/') + ' mm, ' + g.cols + ' colonne(s), gouttière ' + g.gutter + ' mm, interligne des titres 0,95.');
-    j('info', 'Contenu : ' + texte.source + ' — ' + posees + ' photo(s) placée(s), texte ' + (texte.brief.length + srcLen(texte)) + ' caractères.' + (texte.contexte ? ' Pièce(s) jointe(s) en CONTEXTE prises en compte pour le ton et le thème.' : ''));
+    /* 🆕 v1.7.590 — ON MONTRE CE QUE LE CONTEXTE A APPORTÉ. Demande utilisateur : « si
+       l'utilisateur met en contexte un texte ET un logo en PJ, que se passe-t-il ? » La
+       trace console disait déjà les mots-clés, l'accroche et le ton, mais RIEN ne le
+       montrait dans l'interface : impossible de savoir si la pièce de contexte servait.
+       Tout ce qui est cité ici est EXTRACTIF (les mots viennent du document). */
+    let _ctxDit = '';
+    const _imgsCtx = (state.attachments || []).filter(function (a) { return a.type === 'image' && spPjModeDe(a) === 'context'; }).length;
+    if (texte.contexteSignaux) {
+      const _s = texte.contexteSignaux;
+      _ctxDit = ' CONTEXTE retenu — aucun élément posé dans la maquette : ' +
+        (_s.mots.length ? _s.mots.length + ' mot(s)-clé(s) [' + _s.mots.slice(0, 3).join(', ') + ']' : 'aucun mot-clé') +
+        (_s.chiffres.length ? ', ' + _s.chiffres.length + ' chiffre(s)' : '') +
+        (texte.chapeau && _s.accroche ? ', accroche reprise du document' : '') +
+        ', langue ' + _s.langue + ', ton « ' + _s.ton + ' ».' +
+        (_imgsCtx ? ' ' + _imgsCtx + ' image(s) de contexte NON placée(s).' : '');
+    } else if (texte.contexte) {
+      _ctxDit = ' Pièce(s) jointe(s) en CONTEXTE prises en compte pour le ton et le thème (aucun élément posé dans la maquette).';
+    } else if (_imgsCtx) {
+      _ctxDit = ' ' + _imgsCtx + ' image(s) de contexte NON placée(s).';
+    }
+    j('info', 'Contenu : ' + texte.source + ' — ' + posees + ' photo(s) placée(s), texte ' + (texte.brief.length + srcLen(texte)) + ' caractères.' + _ctxDit);
     return {
       reply: 'Maquette « ' + g.nom + ' » posée sans modèle : ' + pages.length + ' page' + (pages.length > 1 ? 's' : '') + ', ' + g.cols + ' colonne(s), gabarit déterministe (0 jeton).',
       targetPages: pages.length,
@@ -10354,7 +10417,7 @@ function spRtfLayoutInfo(src) {
   function srcLen(texte) {
     try {
       return (state.attachments || []).reduce(function (n, a) {
-        return n + (((a.mode || 'content') === 'context') ? 0 : String(a.text || '').length);
+        return n + ((spPjModeDe(a) === 'context') ? 0 : String(a.text || '').length);
       }, 0);
     } catch (_) { return 0; }
   }
@@ -11712,7 +11775,7 @@ function spRtfLayoutInfo(src) {
         const dataUri = (att.dataURL && att.dataURL.length <= 1500) ? att.dataURL : '';
         /* 🆕 v1.7.580ee — une image en « contexte uniquement » ne se place pas : on
            n'écrit plus l'invitation « renvoie imageIndex » (elle contredisait le rôle). */
-        const _contexteSeul = ((att.mode || 'content') === 'context');
+        const _contexteSeul = (spPjModeDe(att) === 'context');
         parts.push(pjModeNote(att) + '\nIMAGE ' + i + ' : "' + att.name + '"' + (att.width ? ' (' + att.width + '×' + att.height + 'px, ratio ' + (att.width / att.height).toFixed(2) + ')' : '') +
           (_contexteSeul
             ? "\nNE LA PLACE PAS dans la maquette : elle sert seulement à comprendre le sujet et le ton."
@@ -15465,7 +15528,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
      ══════════════════════════════════════════════════════════════════════════ */
   function spPhotosContenu(attachments) {
     return (attachments || []).map(function (a, i) { return { i: i, a: a }; }).filter(function (x) {
-      return x.a && x.a.type === 'image' && ((x.a.mode || 'content') === 'content');
+      return x.a && x.a.type === 'image' && (spPjModeDe(x.a) === 'content');
     });
   }
   /* Quelles photos « contenu » aucun élément image ne référence ? */
