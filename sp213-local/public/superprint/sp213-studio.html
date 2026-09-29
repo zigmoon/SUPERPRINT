@@ -974,16 +974,17 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
   #promptInput:focus { outline: none; border-color: var(--accent); }
-  /* Placeholder overlay : aligné en HAUT comme le texte tapé (même padding-top
-     que le textarea) — le curseur et le placeholder coïncident. Pas de centrage. */
-  .prompt-ph {
-    position: absolute; left: 14px; top: 0; right: 14px;
-    padding-top: 12px; pointer-events: none;
-    color: var(--muted); font-size: 14px; line-height: 1.5; white-space: pre-wrap;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  }
-  /* Quand le textarea a du texte, le overlay est masqué */
-  .prompt-wrap.has-text .prompt-ph { display: none; }
+  /* ══ _SP_STUDIO_PROMPT_584 — PLUS DE DOUBLE TEXTE DANS LA BOÎTE DE PROMPT ══
+     Retour utilisateur : « dans la boîte de prompt, parfois j'ai deux textes qui se
+     mélangent, du coup c'est illisible ». Cause mesurée : l'ANCIEN placeholder était
+     un calque HTML (#promptPh) SUPERPOSÉ au textarea ; il n'était masqué que par la
+     classe .has-text, posée uniquement par l'événement « input ». Or plusieurs
+     chemins posent le texte SANS émettre « input » (envoi depuis l'écran de démarrage,
+     restauration, dictée) : le calque restait alors visible PAR-DESSUS le texte tapé.
+     Correctif : on n'utilise PLUS le calque — le placeholder NATIF du textarea (aligné
+     par le navigateur, donc toujours juste) et il n'existe plus deux textes possibles. */
+  .prompt-ph { display: none !important; }
+  #promptInput::placeholder { color: var(--muted); opacity: 1; }
   #promptInput:focus { outline: none; border-color: var(--accent); }
   /* Scrollbar de la boîte de prompte : INVISIBLE (scroll à la molette) pour ne
      pas gêner la saisie. Elle n'apparaît que si le texte dépasse (survol). */
@@ -3034,10 +3035,11 @@
       }
     });
     // Placeholder du prompt + message vide du chat
-    // Le placeholder NATIF du textarea reste vide (espace) ; seul l'overlay
-    // #promptPh affiche le texte traduit et centré.
+    /* _SP_STUDIO_PROMPT_584 — le texte d'aide est porté par le placeholder NATIF
+       (l'overlay #promptPh est désactivé en CSS : il pouvait se superposer au texte
+       tapé et rendre la boîte illisible). */
     const pi = document.getElementById('promptInput');
-    if (pi) pi.placeholder = ' ';
+    if (pi) pi.placeholder = dict['chat.placeholder'] || ' ';
     const pp = document.getElementById('promptPh');
     if (pp && dict['chat.placeholder']) pp.textContent = dict['chat.placeholder'];
     const ce = document.getElementById('chatEmpty');
@@ -3880,9 +3882,12 @@
       autoGrowPrompt();
       const empty = pi.value.trim() === '';
       wrap.classList.toggle('has-text', !empty);
-      // Le placeholder NATIF du textarea reste VIDE (un espace) : seul l'overlay
-      // .prompt-ph affiche le texte centré. Évite le double placeholder.
-      pi.setAttribute('placeholder', ' ');
+      /* _SP_STUDIO_PROMPT_584 — PLACEHOLDER NATIF UNIQUE : le texte d'aide vit dans le
+         placeholder du textarea (masqué par le navigateur dès qu'il y a du texte) et
+         NON dans un calque superposé. Deux textes dans la même boîte = impossible. */
+      if (!pi.getAttribute('placeholder') || pi.getAttribute('placeholder') === ' ') {
+        pi.setAttribute('placeholder', (ph.textContent || '').trim() || ' ');
+      }
       // Champ vide -> on revient exactement a la hauteur de repos (3 lignes).
       if (empty) pi.style.height = '';
       autoGrowPrompt();
@@ -4912,11 +4917,19 @@
     } else {
       throw new Error('décompression non disponible dans ce navigateur');
     }
-    /* 4) XML → texte structuré : un paragraphe = une ligne, un style « Heading N »
-       devient un titre markdown (c'est ce que notre moteur sait chaîner). */
+    /* 4) XML → MARKDOWN STRUCTURÉ (demande utilisateur : « tu dois en faire du markdown
+       et ne perdre aucun élément avant l'import ») : un paragraphe = un bloc markdown,
+       un style « Heading N » = un titre `#`/`##`, une puce Word (w:numPr) = une entrée
+       de liste `- `. Rien n'est résumé, rien n'est coupé : notre moteur chaîne ensuite
+       ces blocs dans les pages du cahier. */
     const texte = String(xml)
       .replace(/<w:tab[^>]*\/>/g, '\t')
       .replace(/<w:br[^>]*\/>/g, '\n')
+      /* Puces et listes numérotées : Word ne les écrit PAS en texte, il pose une
+         définition de numérotation dans le paragraphe. On marque le paragraphe (\u0001),
+         le marqueur devient « - » après le découpage en lignes. */
+      .replace(/<w:numPr\s*\/>/g, '\u0001')
+      .replace(/<w:numPr[\s\S]{0,400}?<\/w:numPr>/g, '\u0001')
       .replace(/<w:pStyle[^>]*w:val="([^"]+)"/g, function (m, st) {
         const n2 = /^(?:Heading|Titre|Ttulo|Titel|Cop|Nadpis)([1-6])$/i.exec(st);
         /* ⚠️ DÉFAUT MESURÉ : le marqueur était posé AVANT le saut de ligne du paragraphe
@@ -4942,14 +4955,22 @@
       .map(function (l) {
         const m2 = /^\s*###H([1-6])###([\s\S]*)$/.exec(l);
         if (m2) return ('#'.repeat(Math.min(4, Number(m2[1]))) + ' ' + m2[2].trim()).trim();
+        /* Puce Word → entrée de liste markdown. */
+        if (l.indexOf('\u0001') >= 0) {
+          const t2 = l.replace(/\u0001/g, ' ').replace(/\s+/g, ' ').trim();
+          return t2 ? '- ' + t2 : '';
+        }
         /* Résidus de balise isolés (« /> », « > », « / ») : jamais du texte. */
         if (/^\s*[/>\s]+\s*$/.test(l)) return '';
         return l;
       })
       .join('\n')
       .trim();
-        /* Un livre entier ne sert à rien en entier : notre moteur plafonne ses pages.
-       On garde le début (titre, préface, premiers chapitres), largement suffisant. */
+    /* ══ AUCUNE TRONCATURE SILENCIEUSE ══ Un livre entier doit entrer dans la maquette
+       (demande utilisateur : « importer tout dans les pages, pas de perte »). On ne
+       coupe donc PLUS à 60 000 caractères : le texte est transmis EN ENTIER. Le plafond
+       qui reste (maxChars) n'est qu'un garde-fou mémoire ; s'il s'applique un jour, on
+       le DIT dans le journal, on ne le cache pas. */
     const coupe = (maxChars && texte.length > maxChars) ? texte.slice(0, maxChars) : texte;
     /* 5) FORMAT DÉCLARÉ DANS LE DOCUMENT (w:pgSz en twips) : un livre KDP dit 6 × 9
        pouces. On le rapporte pour que la maquette se compose au format du document. */
@@ -4963,21 +4984,19 @@
       }
     } catch (_) {}
     const info = Math.round(cible.tailleBrute / 1048576) + ' Mo de texte Word, ' +
-      (texte.length > coupe.length ? 'coupé à ' + coupe.length + ' caractères' : 'en entier');
+      (texte.length > coupe.length ? 'tronqué au plafond de sécurité à ' + coupe.length + ' caractères' : 'texte intégral');
     return { texte: coupe, info: info, page: page };
   }
 
   /* .docx VOLUMINEUX : pièce jointe posée par le lecteur en flux (pas de bibliothèque). */
   async function spDocxGeant(file, id, ext) {
     let texte = '', info = '';
-    /* ⚠️ DÉFAUT MESURÉ : avec un livre de 200 000 caractères, la composition ne rendait
-       jamais la main (chaînage + contrôles sur un texte de 200 Ko). Notre moteur plafonne
-       ses pages : on ne lui transmet donc que ce qu'il peut réellement composer
-       (~40 000 caractères, soit une quinzaine de pages) — et on le DIT à l'utilisateur. */
-    /* ⚠️ MESURE : à 15 000 caractères, un livre ne montrait que sa page de titre et son
-       sommaire. À 40 000, notre moteur met en page une vingtaine de chapitres en quelques
-       dizaines de secondes — c'est le bon compromis entre contenu et temps de composition. */
-    const MAXI = 60000;
+    /* ⚠️ PLAFOND DE SÉCURITÉ, PLUS UN BUDGET DE CONTENU. Il valait 60 000 caractères :
+       la fin du livre n'était jamais composée (retour utilisateur : « j'ai eu
+       l'impression qu'il manquait du texte »). Mesure du 29/09 : le livre fourni fait
+       508 405 caractères — il passe maintenant EN ENTIER (lecture en ~3 s). 1,2 million
+       de caractères ne sert qu'à empêcher un cas pathologique de figer l'onglet. */
+    const MAXI = 1200000;
     let pageWord = null;
     try {
       const r = await spDocxTexteGeant(file, MAXI);
@@ -5000,8 +5019,7 @@
     state.attachments.push({ id: id, name: file.name, type: 'text', text: texte, ext: ext, geant: true, imageCount: 0 });
     renderAttachBar();
     appendChat('assistant', '📄 « ' + file.name + ' » (« ' + mo + ' Mo) : ' + texte.length.toLocaleString('fr-FR') +
-      ' caractères extraits sur ' + info + '. Un livre entier ne se compose pas d\'un coup : le modèle met en page le DÉBUT ' +
-      '(titre, préface, premiers chapitres) et tu peux le prolonger en relançant la demande. Les images du fichier ne sont pas récupérées.');
+      ' caractères extraits, ' + info + '. Le document entier est converti en markdown (titres, listes, paragraphes) puis chaîné dans les pages du cahier — rien n\'est écarté. Les images du fichier ne sont pas récupérées.');
   }
 
   async function spDocSecours(file, id, ext, cause) {
@@ -8392,8 +8410,24 @@ function spRtfLayoutInfo(src) {
   function spGabH(txt, taille, largeur, interligne) {
     return spGabLignes(txt, taille, largeur) * Number(taille) * (Number(interligne) || 1) * 1.33;
   }
+  /* ══ _SP_STUDIO_PAGES_584 — HAUTEUR DE LIGNE RÉELLE, PARTAGÉE ══
+     Le studio mesure la hauteur d'une ligne de texte à fontSize × lineHeight × 1,13 (même
+     formule que son détecteur de collisions). Le chaînage du livre et la pose des
+     paragraphes DOIVENT utiliser la même, sinon on réserve trop de place (pages à moitié
+     vides : 616 caractères composés par page au lieu de ~1 500) ou pas assez (texte qui
+     sort de la page). Une seule constante, deux usages. */
+  const SP_GAB_LIGNE_K = 1.13;
+  function spGabHPage(txt, taille, largeur, interligne) {
+    return spGabLignes(txt, taille, largeur) * Number(taille) * (Number(interligne) || 1) * SP_GAB_LIGNE_K;
+  }
 
   const SP_GAB_K = 72 / 25.4;                      // mm → px (72 dpi), comme le studio
+  /* ══ _SP_STUDIO_PAGES_584 — PLAFOND DE PAGES DU CAHIER ══
+     Demande utilisateur : « importer tout dans les pages, pas de perte ». Un livre
+     relié peut faire plusieurs centaines de pages : ce plafond n'est PAS un budget de
+     contenu, c'est seulement un garde-fou (l'aperçu ne peint que les pages visibles,
+     voir renderDocument). Il était de 48 pages fixes, ce qui coupait le livre. */
+  const SP_GAB_PAGES_MAX = 800;
   const SP_GAB_PAL = {
     chaud:   { a: '#7c2d12', b: '#c2410c', clair: '#fdf4e9', gris: '#e6d9c8', txt: '#1c1917' },
     tech:    { a: '#1f6feb', b: '#0b2447', clair: '#eef4ff', gris: '#cfdcf5', txt: '#0b1220' },
@@ -8533,7 +8567,18 @@ function spRtfLayoutInfo(src) {
      70 colonnes donnait un paragraphe par ligne). */
   function spGabMarkdown(txt) {
     const out = [];
-    const lignes = String(txt || '').replace(/\r/g, '').split('\n');
+    const brut = String(txt || '').replace(/\r/g, '');
+    /* ══ _SP_STUDIO_PAGES_584 — NE PLUS INVENTER DE TITRES DANS UN DOCUMENT STRUCTURÉ ══
+       Les heuristiques ci-dessous (« ligne courte isolée », « ligne qui finit par : »,
+       « tout en majuscules ») sont faites pour un fichier .txt BRUT, sans aucun balisage.
+       Appliquées à un document déjà structuré — un Word converti en markdown, où CHAQUE
+       paragraphe est « isolé » entre deux lignes vides — elles transformaient tous les
+       paragraphes courts en titres : mesuré sur le livre fourni, 441 sections donc 441
+       « chapitres », une page par section et des pages à moitié vides. Un document qui
+       porte déjà sa hiérarchie (`#`, `##`, listes) la garde telle quelle : on n'y ajoute
+       aucun titre inventé. Le .txt brut, lui, garde ses heuristiques. */
+    const structure = /(^|\n)#{1,6}\s|(^|\n)\s*(?:\d+[.)]|[-*•·–—])\s/.test(brut);
+    const lignes = brut.split('\n');
     let para = [];
     const vider = function () { if (para.length) { out.push({ t: 'p', x: spGabSansMd(para.join(' ')) }); para = []; } };
     for (let i = 0; i < lignes.length; i++) {
@@ -8549,7 +8594,7 @@ function spRtfLayoutInfo(src) {
       const deuxPts = (/:$/.test(l) && l.length <= 64);
       const isole = ((i === 0 || !lignes[i - 1].trim()) && (i === lignes.length - 1 || !lignes[i + 1].trim()));
       const courte = (l.length <= 64 && l.split(/\s+/).length <= 9 && !/[.;!?]$/.test(l) && /^[A-ZÀ-ÖØ-Þ0-9"«(]/.test(l));
-      if (maj || deuxPts || (courte && isole)) { vider(); out.push({ t: 'h', n: 2, x: spGabSansMd(l.replace(/:$/, '')) }); continue; }
+      if (!structure && (maj || deuxPts || (courte && isole))) { vider(); out.push({ t: 'h', n: 2, x: spGabSansMd(l.replace(/:$/, '')) }); continue; }
       para.push(l);
     }
     vider();
@@ -8571,7 +8616,20 @@ function spRtfLayoutInfo(src) {
         if (mode === 'context') { src.contexte += ' ' + blocs.map(function (b) { return b.x; }).join(' '); return; }
         entetes.forEach(function (h) { src.titres.push(h); });
         if (mode === 'template') return;   // modèle : structure seulement, pas le contenu
-        src.corps += '\n\n' + blocs.map(function (b) { return b.x; }).join('\n\n');
+        /* ══ _SP_STUDIO_PAGES_584 — LE CORPS EST RECOMPOSÉ EN MARKDOWN ══
+           Avant, on recollait les blocs SANS leurs marqueurs : un document Word converti
+           en markdown perdait sa hiérarchie (les `#` disparaissaient), et notre moteur
+           ré-inventait des titres à partir de simples paragraphes courts — mesuré sur le
+           livre fourni : 441 « chapitres » fantômes pour 14 vrais titres, et 0 caractère
+           réellement composé (le corps n'atterrissait dans aucune section). On garde donc
+           les marqueurs : titres `#`, entrées `- `, citations `> `. Rien n'est perdu, et
+           le moteur n'invente plus rien. */
+        src.corps += '\n\n' + blocs.map(function (b) {
+          if (b.t === 'h') return '#'.repeat(Math.max(1, Math.min(3, b.n || 2))) + ' ' + b.x;
+          if (b.t === 'li') return '- ' + b.x;
+          if (b.t === 'q') return '> ' + b.x;
+          return b.x;
+        }).join('\n\n');
       });
     } catch (_) {}
     return src;
@@ -8616,6 +8674,17 @@ function spRtfLayoutInfo(src) {
         return;
       }
       if (b.t === 'q') { M.lignes.push(b.x); M.infos.push(spGabCourt(b.x, 90)); return; }
+      /* ══ _SP_STUDIO_PAGES_584 — LE CORPS DU DOCUMENT DOIT TOUJOURS AVOIR UNE SECTION ══
+         Défaut majeur mesuré le 29/09 : un paragraphe n'était versé dans une section QUE
+         si un TITRE l'avait ouverte. Un livre dont les titres sont dans les premières
+         pages (page de titre, sommaire) et dont le CORPS n'a aucun titre intermédiaire
+         perdait TOUT son texte : « 508 479 caractères extraits, 0 caractère mis en page »
+         (5 sections vides, 196 pages blanches). C'est exactement le « il manquait du
+         texte » constaté. On ouvre donc, à la première vraie phrase de corps, une section
+         SANS TITRE qui recueille la suite : elle se compose comme une SUITE de livre
+         (le chapitre en cours continue), sans titre inventé. Les textes courts (entrées
+         de menu, mentions) gardent l'ancien chemin — les gabarits à liste sont intacts. */
+      if (!courant && String(b.x).length >= 60) { courant = { t: '', ps: [] }; M.sections.push(courant); }
       if (!M.chapeau) { M.chapeau = b.x; }
       else if (!courant) { M.lignes.push(b.x); }
       if (courant) courant.ps.push(b.x);
@@ -8673,18 +8742,19 @@ function spRtfLayoutInfo(src) {
       return true;
     };
     if (!M.surtitre) { for (let i2 = 0; i2 < prem.length; i2++) { if (pasDoublon(prem[i2].x)) { M.surtitre = prem[i2].x; break; } } }
-    /* ══ BORNAGE DU CONTENU COMPOSÉ (défaut mesuré) ══ Sur un livre de plusieurs milliers
-       de paragraphes, la composition ne rendait jamais la main (le studio repasse ensuite
-       sur chaque bloc pour les marges, les collisions et le cadrage). Un cahier de maquette
-       n'a pas besoin de 400 sections : on garde de quoi remplir 32 pages. */
-    const SEC_MAX = 40, PAR_MAX = 10;
+    /* ══ AUCUNE PERTE DE CONTENU (demande utilisateur : « ne perdre aucun élément…
+       pas de perte ») ══ Ces plafonds servaient à garder la composition rapide : ils
+       COUPAIENT du texte réel (mesuré sur un livre : 2218 paragraphes réduits à 400).
+       Ils sont désormais très hauts : ils ne protègent plus que d'un document
+       pathologique, plus d'un livre normal. */
+    const SEC_MAX = 2000, PAR_MAX = 8000;
     if (M.sections.length > SEC_MAX) M.sections = M.sections.slice(0, SEC_MAX);
     M.sections = M.sections.map(function (s) {
       return { t: s.t, ps: (s.ps || []).slice(0, PAR_MAX) };
     });
-    if (M.lignes.length > 80) M.lignes = M.lignes.slice(0, 80);
-    if (M.items.length > 40) M.items = M.items.slice(0, 40);
-    if (M.infos.length > 20) M.infos = M.infos.slice(0, 20);
+    if (M.lignes.length > 20000) M.lignes = M.lignes.slice(0, 20000);
+    if (M.items.length > 4000) M.items = M.items.slice(0, 4000);
+    if (M.infos.length > 2000) M.infos = M.infos.slice(0, 2000);
     /* ⚠️ L'INSTRUCTION N'EST PAS UN CHAPÔ (défaut mesuré, vu à l'écran) : « Livre broché
        à partir du document Word joint : garde les chapitres et les titres, couverture avec
        le titre, contacts en fin » s'affichait en chapô sur la page du livre. Quand un
@@ -9096,27 +9166,40 @@ function spRtfLayoutInfo(src) {
     const base = L.chainees ? ((n - 3) * (deuxCol ? 2 : 1)) : (1 + (n - 3) * parPage);
     const colonnes = deuxCol ? [0, 1] : [0];
     colonnes.forEach(function (col) {
-      const s = secs[Math.min(base + col, secs.length - 1)];
+      /* ⚠️ « Math.min(base + col, secs.length - 1) » REDESSAINAIT le dernier bloc sur
+         toutes les pages en trop (pages fantômes « Chapitre 300 » sans texte). Le
+         chaînage peut produire moins de blocs que de pages (page blanche d'imposition) :
+         dans ce cas la page reste VIDE, on n'invente rien. */
+      const s = secs[base + col];
       if (!s) return;
+      /* ══ _SP_STUDIO_PAGES_584 — UNE SUITE N'EST PAS UN CHAPITRE ══
+         Le chaînage découpe un long chapitre en plusieurs blocs : le premier porte le
+         titre (`ouvrir(s.t)`), les suivants sont ouverts SANS titre. Avant, chacun
+         recevait « Chapitre N » (numéroté par page !) et un filet : un livre de 300
+         pages affichait « Chapitre 300 ». Un bloc sans titre est la SUITE du précédent :
+         il démarre simplement par son texte, à la même grille. */
+      const suite = !String(s.t || '').trim();
       const x = L.x0 + col * (cw + gw);
       let y = L.y0;
       const num = ((n - 3) * (deuxCol ? 2 : 1) + col + 1);
       /* GRAND FOND de page intérieure : réservé aux pages à DEUX colonnes. Sur un livre
          à une colonne, l'habillage est TYPOGRAPHIQUE (filet d'accent + chapitre numéroté)
          — retour utilisateur : « on doit faire des habillages graphiques simples, typo ». */
-      if (deuxCol) {
-        if (col === 0) { e.push(spGabR(0, 0, L.W, k * 18, p.a, 0)); y = L.y0 + k * 10; }
-      } else {
-        e.push(spGabL(L.x0, Math.max(k * 6, L.y0 - k * 14), L.cw * 0.16, p.a, 2.5));
+      if (!suite) {
+        if (deuxCol) {
+          if (col === 0) { e.push(spGabR(0, 0, L.W, k * 18, p.a, 0)); y = L.y0 + k * 10; }
+        } else {
+          e.push(spGabL(L.x0, Math.max(k * 6, L.y0 - k * 14), L.cw * 0.16, p.a, 2.5));
+        }
+        /* Titre : le titre général ne se répète pas six fois de suite (mesuré). Sans section
+           propre, on annonce un CHAPITRE numéroté — la façon dont on parle d'un livre. */
+        const propre = s.t && s.t !== M.titre;
+        e.push(spGabT(x, y, cw, spGabCourt(propre ? s.t : ('Chapitre ' + num), deuxCol ? 52 : 78),
+          deuxCol ? Math.min(17, g.corps * 1.8) : Math.min(26, g.corps * 2.1), p.txt, 'bold', 'left', 0.98));
+        y += deuxCol ? k * 26 : k * 42;
+        e.push(spGabL(x, y, deuxCol ? cw * 0.28 : L.cw * 0.1, p.a, 2));
+        y += deuxCol ? k * 14 : k * 22;
       }
-      /* Titre : le titre général ne se répète pas six fois de suite (mesuré). Sans section
-         propre, on annonce un CHAPITRE numéroté — la façon dont on parle d'un livre. */
-      const propre = s.t && s.t !== M.titre;
-      e.push(spGabT(x, y, cw, spGabCourt(propre ? s.t : ('Chapitre ' + num), deuxCol ? 52 : 78),
-        deuxCol ? Math.min(17, g.corps * 1.8) : Math.min(26, g.corps * 2.1), p.txt, 'bold', 'left', 0.98));
-      y += deuxCol ? k * 26 : k * 42;
-      e.push(spGabL(x, y, deuxCol ? cw * 0.28 : L.cw * 0.1, p.a, 2));
-      y += deuxCol ? k * 14 : k * 22;
       /* Colonne sans texte : on ne fabrique plus d'image (retour utilisateur : « ne mets
          pas de fond d'image pour le moment »). La page respire. */
       if (!s.ps.length && !M.chapeau) return;
@@ -9132,8 +9215,17 @@ function spRtfLayoutInfo(src) {
           return;
         }
         /* LIVRE : texte plein, justifié, interligne 1,5 — aucun encadré, aucun aplat. */
-        e.push(spGabT(x, y, cw, para, g.corps, '#22262b', null, 'justify', deuxCol ? 1.5 : 1.55));
-        y += Math.max(k * 48, (para.length / (deuxCol ? 3.1 : 1.55)) * g.corps * 0.34) + k * (deuxCol ? 14 : 16);
+        /* ══ _SP_STUDIO_PAGES_584 — AVANCE VERTICALE JUSTE (défaut mesuré, majeur) ══
+           L'ancienne avance valait `(longueur / 1,55) × corps × 0,34`, soit ~2,3 × la
+           longueur en points : pour un paragraphe de 170 caractères elle réservait
+           390 pt alors que le texte en occupe 63. Résultat : deux paragraphes par page,
+           le reste du texte poussé hors page et des pages aux trois quarts vides (mesure
+           sur le livre : 616 caractères composés par page au lieu de ~1 500). On avance
+           maintenant sur la hauteur RÉELLE des lignes, la même formule que le chaînage. */
+        const lh = deuxCol ? 1.5 : 1.55;
+        const lignesPara = spGabLignes(para, g.corps, cw * 0.98);
+        e.push(spGabT(x, y, cw, para, g.corps, '#22262b', null, 'justify', lh));
+        y += lignesPara * g.corps * lh * SP_GAB_LIGNE_K + k * 12;
       });
       if (deuxCol && col === 1 && (L.y1 - k * 22 - Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26))) > y + k * 18) {
         const hP = Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26));
@@ -9413,7 +9505,11 @@ function spRtfLayoutInfo(src) {
      chaînage : le texte du client est lu dans l'ordre, rien n'est perdu, rien ne
      déborde. */
   function spGabChainerSections(L, g) {
-    const secs = L.t.sections.length ? L.t.sections : [{ t: L.t.titre, ps: L.t.lignes.length ? L.t.lignes : [L.t.chapeau] }];
+    /* ⚠️ _SP_STUDIO_PAGES_584 — FILET DE SÉCURITÉ : des sections vides (titres sans
+       paragraphe) ne doivent pas faire perdre le corps du document, qui vit alors dans
+       M.lignes. On ne prend les sections que si elles portent VRAIMENT du texte. */
+    const psSections = L.t.sections.reduce(function (n2, s) { return n2 + ((s.ps || []).length); }, 0);
+    const secs = (L.t.sections.length && psSections) ? L.t.sections : [{ t: L.t.titre, ps: L.t.lignes.length ? L.t.lignes : [L.t.chapeau] }];
     const gw = g.gutter * SP_GAB_K;
     /* ⚠️ LARGEUR DE COLONNE RÉELLE (retour utilisateur : « quand on parle de livre on fait
        du mono colonne »). Ce chaînage supposait DEUX colonnes en dur : sur une page à une
@@ -9422,28 +9518,43 @@ function spRtfLayoutInfo(src) {
     /* On remplit une colonne jusqu'à ~74 % de sa hauteur seulement : mesuré, un
        remplissage maximal faisait ensuite déplacer 34 blocs par les passes du studio
        (le studio réajuste les textes aux marges et déplace ce qui déborde). */
-    const dispo = Math.max(60, (L.ch - L.k * 46) * 0.74);
+    const dispo = Math.max(60, (L.ch - L.k * 68) * 0.94);
     const out = [];
     let courant = null, used = 0;
     const ouvrir = function (titre) { courant = { t: titre || '', ps: [] }; out.push(courant); used = 0; };
-    const hP = function (txt) { return spGabH(txt, g.corps, cw * 0.98, 1.5) + L.k * 12; };
+    const ecart = L.k * 12;                                        // respiration entre paragraphes
+    const hT = function (txt) { return spGabHPage(txt, g.corps, cw * 0.98, 1.5); };   // hauteur du texte seul
+    const hP = function (txt) { return hT(txt) + ecart; };
+    const hLigne = g.corps * 1.5 * SP_GAB_LIGNE_K;                 // une ligne composée
+    const parLigne = Math.max(8, Math.round((cw * 0.98) / (g.corps * 0.52)));
+    /* ══ _SP_STUDIO_PAGES_584 — REMPLIR LA COLONNE (défaut mesuré, cause du texte
+       « manquant ») ══ Avant, un paragraphe qui ne tenait PAS à la fin d'une colonne
+       partait ENTIER sur la colonne suivante : la fin de chaque page restait vide.
+       Mesure sur le livre fourni : 528 caractères composés par page au lieu de ~1 200,
+       donc 872 morceaux pour 436 pages — la moitié du livre n'arrivait jamais dans les
+       pages. On coupe maintenant le paragraphe à une FIN DE PHRASE pour remplir la
+       place restante (au moins deux lignes, jamais une ligne orpheline). */
+    const couperPour = function (txt, place) {
+      const lignes = Math.floor(Math.max(0, place) / hLigne);
+      if (lignes < 2) return '';
+      const nMax = Math.min(txt.length, lignes * parLigne);
+      if (nMax >= txt.length) return txt;
+      const t = txt.slice(0, nMax);
+      const fin = Math.max(t.lastIndexOf('. '), t.lastIndexOf('! '), t.lastIndexOf('? '), t.lastIndexOf('… '));
+      if (fin > nMax * 0.55) return txt.slice(0, fin + 1).trim();
+      const esp = t.lastIndexOf(' ');
+      return txt.slice(0, esp > nMax * 0.6 ? esp : nMax).trim();
+    };
     secs.forEach(function (s) {
       ouvrir(s.t);
       (s.ps.length ? s.ps : [L.t.chapeau]).forEach(function (p) {
         let reste = String(p || '').trim();
         while (reste) {
-          const h = hP(reste);
-          if (used + h > dispo && used > 0) ouvrir('');
-          if (h <= dispo) { courant.ps.push(reste); used += h; reste = ''; break; }
-          /* paragraphe plus grand qu'une colonne : on le coupe à une PHRASE */
-          const ph = reste.split(/(?<=[.!?])\s+/);
-          let bloc = '';
-          for (let i = 0; i < ph.length; i++) {
-            const essai = bloc ? bloc + ' ' + ph[i] : ph[i];
-            if (bloc && hP(essai) > dispo) break;
-            bloc = essai;
-          }
-          if (!bloc) bloc = reste;
+          const place = dispo - used - ecart;
+          if (place < hLigne * 2) { ouvrir(''); continue; }
+          if (hT(reste) <= place) { courant.ps.push(reste); used += hP(reste); reste = ''; break; }
+          const bloc = couperPour(reste, place);
+          if (!bloc) { ouvrir(''); continue; }
           courant.ps.push(bloc);
           used += hP(bloc);
           reste = reste.slice(bloc.length).trim();
@@ -9787,19 +9898,37 @@ function spRtfLayoutInfo(src) {
        + pièces jointes en « maquette »), pour un cahier de la bonne épaisseur. */
     const volume = String(brief || '').length + srcLen(texte);
     let tot = Math.max(1, veut || g.pages);
-    if (!veut && g.pages >= 3) tot = Math.min(48, Math.max(tot, Math.ceil((volume / 2) / 1300)));
+    /* ══ PLAFOND DE PAGES RELEVÉ (demande utilisateur : « importer tout dans les pages ») ══
+       Il valait 48, ce qui COUPAIT le livre : un document de 500 000 caractères ne
+       tenait pas, la fin n'était jamais composée. Un cahier peut maintenant aller
+       jusqu'à SP_GAB_PAGES_MAX pages (l'aperçu ne peint que les pages visibles, donc
+       un livre épais reste fluide). */
+    if (!veut && g.pages >= 3) tot = Math.min(SP_GAB_PAGES_MAX, Math.max(tot, Math.ceil((volume / 2) / 1300)));
     /* GROSSE PIÈCE JOINTE : le cahier doit avoir ASSEZ de pages pour tout dire. Un
        document client de 30 000 caractères et 30 sections ne tient pas en 8 pages :
        deux sections par page de contenu, donc on dimensionne sur les SECTIONS.
        (Le volume seul était trompeur : beaucoup de texte court en beaucoup de
        sections — mesuré, les dernières sections étaient purement perdues.) */
-    if (!veut && (g.fam === 'cahier' || g.fam === 'brochure') && texte.sections.length > 2) tot = Math.min(48, Math.max(tot, 3 + Math.ceil(texte.sections.length / 2)));
+    if (!veut && (g.fam === 'cahier' || g.fam === 'brochure') && texte.sections.length > 2) tot = Math.min(SP_GAB_PAGES_MAX, Math.max(tot, 3 + Math.ceil(texte.sections.length / 2)));
     const spread = (state.viewMode === 'spread');
     /* CHAÎNAGE des blocs du cahier (documents Word, OpenDocument, texte) : on le
        calcule AVANT de fixer le nombre de pages, puisque c'est lui qui le détermine. */
     if (g.fam === 'cahier') {
       L.chainees = spGabChainerSections(L, g);
-      if (!veut) tot = Math.max(tot, 2 + Math.ceil(L.chainees.length / 2) + 1);
+      /* ⚠️ _SP_STUDIO_PAGES_584 — LE NOMBRE DE PAGES SUIVAIT « DEUX COLONNES » EN DUR.
+         En monocolonne (le livre), un morceau occupe UNE page : la formule comptait donc
+         deux morceaux par page, soit DEUX FOIS MOINS de pages que nécessaire — la moitié
+         du texte n'était jamais composée. On lit le vrai nombre de colonnes. */
+      const parPageChaine = (Number(g.cols) > 1) ? 2 : 1;
+      if (!veut) tot = Math.max(tot, 2 + Math.ceil(L.chainees.length / parPageChaine) + 1);
+      /* Journal : combien de texte entre réellement dans les pages (contrôle de
+         non-perte). Une ligne par composition, lisible dans le journal de fabrication. */
+      try {
+        const carChaine = L.chainees.reduce(function (n2, c) { return n2 + (c.ps || []).join(' ').length; }, 0);
+        console.log('Chaînage du livre : ' + L.chainees.length + ' morceau(x), ' +
+          carChaine.toLocaleString('fr-FR') + ' caractères mis en page (source ' +
+          Math.round(srcLen(texte)).toLocaleString('fr-FR') + ', ' + texte.sections.length + ' section(s)).');
+      } catch (e) { try { console.log('Chaînage : mesure indisponible (' + e.message + ')'); } catch (_) {} }
     }
     /* ══ IMPOSITION DU LIVRE : C'EST LE STUDIO QUI LA FAIT, PAS MOI ══
        spCahierPlanches(n) est la source unique de l'imposition (notes vérifiées) :
@@ -10403,7 +10532,10 @@ function spRtfLayoutInfo(src) {
     let utilisable = true;
     try { utilisable = hasUsableModel(); } catch (_) { utilisable = true; }
     spStarterFermer();
-    if ($('promptInput')) $('promptInput').value = txt;
+    /* ⚠️ Le texte part DANS la boîte ET notifie les gestionnaires (hauteur, autosave) :
+       l'ancien `$('promptInput').value = txt` laissait l'état précédent, d'où deux
+       textes superposés dans la boîte de prompt (retour utilisateur). */
+    try { sp213SetPrompt(txt); } catch (_) { if ($('promptInput')) $('promptInput').value = txt; }
     /* 🆕 v1.7.580ii — on applique le moteur choisi dans le starter AVANT de composer
        (et on recalcule la validité : le modèle vient peut-être d'être changé). */
     try { spStAppliquer(); utilisable = hasUsableModel(); } catch (_) {}
@@ -11455,6 +11587,22 @@ function spRtfLayoutInfo(src) {
   // 🆕 v1.7.386 — Vider le champ en NOTIFIANT les listeners : un simple
   //   `value = ''` laissait la classe `has-text` (placeholder masque) et la
   //   hauteur du prompt precedent (jusqu'a 194 px au lieu de 90).
+  /* _SP_STUDIO_PROMPT_584 — POSER UN TEXTE DANS LA BOÎTE EN NOTIFIANT LES GESTIONNAIRES.
+     `promptInput.value = texte` en direct laissait la hauteur et l'état du placeholder
+     sur la valeur PRÉCÉDENTE (défaut mesuré : deux textes l'un sur l'autre dans la boîte
+     quand on envoyait un prompt depuis l'écran de démarrage). */
+  function sp213SetPrompt(texte) {
+    const pi = $('promptInput');
+    if (!pi) return '';
+    pi.value = String(texte == null ? '' : texte);
+    pi.style.height = '';
+    pi.style.overflowY = 'hidden';
+    pi.dispatchEvent(new Event('input', { bubbles: true }));
+    try { sp213SavePromptDraft(); } catch (_) {}
+    return pi.value;
+  }
+  window.sp213SetPrompt = sp213SetPrompt;
+
   function sp213ClearPrompt() {
     const pi = $('promptInput');
     if (!pi) return;
@@ -16145,16 +16293,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       /* ⚠️ SUPPRIMÉ (retour utilisateur : « actuellement c'est quand je clique n'importe
          où qu'il se déverrouille, c'est étrange »). Seul le CADENAS change l'état : cliquer
          sur la page ne fait plus rien. Verrouillée = rien n'est touchable sur la page. */
-      /* VERROUILLÉ PAR DÉFAUT : appliqué dès que les objets de la page sont posés. */
+      /* VERROUILLÉ PAR DÉFAUT : appliqué à la PEINTURE de la page (voir peindre). */
       if (p.locked === undefined) p.locked = true;
-      setTimeout(function () { window.spVerrouillerPage(p, p.locked !== false); }, 90);
 
       const wrap = document.createElement('div');
       wrap.className = 'page-canvas-wrap';
-      const canvasEl = document.createElement('canvas');
-      canvasEl.width = Math.round(effWpx + bleedPx * 2);
-      canvasEl.height = Math.round(pageHpx + bleedPx * 2);
-      wrap.appendChild(canvasEl);
       /* 🆕 _SP_STUDIO_CAHIER_576 — FENÊTRE DE PAGE : pour une planche « seule »,
          on ne montre QUE la moitié qui porte la page (l'autre restait blanche :
          la couverture semblait collée à une page vide). Le canvas reste à la
@@ -16164,15 +16307,32 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
          la dernière page un VERSO : à GAUCHE seulement), comme createPageCanvas
          de l'app : « je ne peux pas avoir de fond perdu à gauche sur la première
          page ». */
-      const cadreW = cote ? Math.round(pageWpx + bleedPx) : canvasEl.width;
+      const cadreW = cote ? Math.round(pageWpx + bleedPx) : Math.round(effWpx + bleedPx * 2);
       const cadreOff = (cote === 'droite') ? Math.round(pageWpx + bleedPx) : 0;
       if (cote) wrap.classList.add('cadre-page-seule');
       wrap.style.width = cadreW + 'px';
-      wrap.style.height = canvasEl.height + 'px';
+      wrap.style.height = Math.round(pageHpx + bleedPx * 2) + 'px';
       card.appendChild(wrap);
       card.appendChild(label);
       stack.appendChild(card);
 
+      /* ══ _SP_STUDIO_PAGES_584 — PEINTURE À LA DEMANDE (LIVRE ENTIER, APERÇU FLUIDE) ══
+         Le document peut porter plusieurs centaines de pages (un livre entier n'est plus
+         coupé). On crée donc la CARTE de chaque page tout de suite — mise en page,
+         défilement et numéros justes — mais le canvas Fabric, la partie lourde, n'est
+         construit que lorsque la page arrive à l'écran (voir spApercuLazy). Le contenu de
+         toutes les pages reste dans state.doc : rien n'est perdu, rien n'est résumé. */
+      const rec = { pageIndex: p.pageIndex, canvas: null, label: 'Page ' + (p.pageIndex + 1), card: card, _wrap: wrap, _vis: 1 };
+      let peinte = false;
+      const peindre = function () {
+        if (peinte) return;
+        let canvasEl = wrap.querySelector('canvas');
+        if (!canvasEl) {
+          canvasEl = document.createElement('canvas');
+          canvasEl.width = Math.round(effWpx + bleedPx * 2);
+          canvasEl.height = Math.round(pageHpx + bleedPx * 2);
+          wrap.appendChild(canvasEl);
+        }
       // Sélection ACTIVE : l'utilisateur peut cliquer/glisser sur les éléments pour
       // les « verrouiller » et demander à l'IA de retravailler UNIQUEMENT ceux-là.
       const c = new fabric.Canvas(canvasEl, { backgroundColor: '#ffffff', selection: true, preserveObjectStacking: true, renderOnAddRemove: false, selectionColor: 'rgba(26,127,55,.10)', selectionBorderColor: '#1a7f37', selectionLineWidth: 1 });
@@ -16231,8 +16391,19 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       c.on('text:changed', syncModified);
       c.requestRenderAll();
       loadImages(c);
-      state.pages.push({ pageIndex: p.pageIndex, canvas: c, label: 'Page ' + (p.pageIndex + 1) });
+      rec.canvas = c;
+      peinte = true;
+      /* Une page composée arrive VERROUILLÉE : cet état est appliqué à la PEINTURE, donc
+         aussi aux pages peintes plus tard (aperçu allégé). */
+      try { window.spVerrouillerPage(p, p.locked !== false); } catch (_) {}
+      };
+      rec._peindre = peindre;
+      state.pages.push(rec);
+      /* Les premières pages sont peintes tout de suite (l'aperçu n'est jamais vide) ;
+         les autres attendent d'entrer à l'écran. */
+      if (iPage < 4) peindre();
     });
+    try { spApercuLazy(); } catch (_) {}
 
     // 🆕 Nettoyer la sélection quand on régénère le document (nouvelle maquette)
     state.selectedIds = [];
@@ -16251,6 +16422,59 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     //   (sans jamais remonter un zoom choisi à la main : voir spZoomAjusterAuxPlanches).
     try { spZoomAjusterAuxPlanches(); } catch (_) {}
   }
+
+  /* ══ _SP_STUDIO_PAGES_584 — APERÇU ALLÉGÉ POUR UN LIVRE ENTIER ═══════════════════
+     Demande utilisateur : « importer tout dans les pages, pas de perte ». Un livre
+     prêt à imprimer peut faire 300 ou 400 pages : peindre 400 canvas Fabric d'un seul
+     coup saturait la mémoire du navigateur — c'était la vraie raison pour laquelle on
+     coupait le texte à 48 pages. Ici tout le document est construit (chaque page a sa
+     carte, son folio, ses éléments), mais seules les pages VISIBLES sont peintes ; une
+     page qui sort de l'écran est libérée et se repeint au retour. Le document .sp, le
+     passage dans SuperPrint et l'imposition ne changent pas : ils lisent state.doc. */
+  let SP_APERCU_IO = null, SP_APERCU_VIVES = [];
+  const SP_APERCU_MAX_VIVES = 28;
+  function spApercuLazy() {
+    try { if (SP_APERCU_IO) { SP_APERCU_IO.disconnect(); SP_APERCU_IO = null; } } catch (_) {}
+    SP_APERCU_VIVES = [];
+    const cibles = (state.pages || []).filter(function (p) { return p && typeof p._peindre === 'function'; });
+    if (!cibles.length) return;
+    const poser = function (p) {
+      if (p.canvas) { p._vu = Date.now(); return; }
+      try { p._peindre(); } catch (_) {}
+      if (p.canvas) { p._vu = Date.now(); SP_APERCU_VIVES.push(p); }
+    };
+    const liberer = function (p) {
+      if (!p || !p.canvas || p._vis) return;
+      try { p.canvas.dispose(); } catch (_) {}
+      p.canvas = null;
+      try { if (p._wrap) p._wrap.innerHTML = ''; } catch (_) {}
+      SP_APERCU_VIVES = SP_APERCU_VIVES.filter(function (x) { return x !== p; });
+    };
+    const racine = $('previewScroll');
+    if (typeof IntersectionObserver !== 'function' || !racine) { cibles.forEach(poser); return; }
+    SP_APERCU_IO = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (e) {
+        const p = e.target && e.target._spPageRec;
+        if (!p) return;
+        p._vis = e.isIntersecting ? 1 : 0;
+        if (e.isIntersecting) poser(p);
+      });
+      /* Mémoire bornée : au-delà du budget, on libère les pages les moins récemment vues
+         (jamais celles à l'écran). Rien n'est perdu : elles se repeignent au défilement. */
+      if (SP_APERCU_VIVES.length > SP_APERCU_MAX_VIVES) {
+        SP_APERCU_VIVES.slice()
+          .sort(function (a, b) { return (a._vu || 0) - (b._vu || 0); })
+          .slice(0, SP_APERCU_VIVES.length - SP_APERCU_MAX_VIVES)
+          .forEach(liberer);
+      }
+    }, { root: racine, rootMargin: '1600px 0px' });
+    cibles.forEach(function (p) {
+      if (!p.card) return;
+      p.card._spPageRec = p;
+      SP_APERCU_IO.observe(p.card);
+    });
+  }
+  window.sp213ApercuLazy = spApercuLazy;
 
   // 🆕 UI de sélection : affiche un bandeau « N élément(s) sélectionné(s) » et
   // permet de vider la sélection. Le prochain prompt ne retravaillera QUE ces éléments.
