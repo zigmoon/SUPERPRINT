@@ -2,6 +2,27 @@
 <html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
+<!-- ══ v1.7.580 — LE ROLE D'UNE PIECE JOINTE SUIT LE FICHIER, ET LES PREFERENCES
+     PRENNENT LA QUALITE DE LA PRE-HOME ══
+     Trois choses dans cette version :
+       1. UN CONTEXTE N'EST PLUS COMPOSE. Defaut mesure : le role etait relu au moment
+          de l'affichage de la barre des pieces jointes, pas au depot. Un .docx depose
+          en CONTEXTE redevenait donc « contenu » des qu'un logo etait depose ensuite
+          (2 082 caracteres partis dans la maquette). Le role est desormais memorise
+          par depot ET par fichier (SP_PJ_ROLE_DEPOT + spPjModeDe) et relu a chaque
+          etape qui en depend : composition, format de page, photos, texte du moteur.
+          Une image extraite d'un .docx de contexte reste du contexte : jamais posee.
+       2. LE CONTEXTE TRAVAILLE VRAIMENT, ET LE STUDIO LE DIT. Mots-cles, accroche,
+          chiffres, noms propres, langue et ton sont extraits du document (rien n'est
+          invente) et nourrissent surtitre, chapo, chiffres cles et contacts. Le compte
+          rendu affiche ce qui a ete retenu et ce qui n'a PAS ete pose.
+       3. PRE-HOME ET PREFERENCES. La pastille d'usage des sous-menus quitte le bleu
+          pour l'encre noire (st-u-full / st-u-demo). L'ecran des preferences reprend
+          les valeurs de la pre-home (carte arrondie 16 px, ombre douce, champs arrondis
+          sur fond teinte, micro-libelles monospace) et une seule carte « moteur »
+          (eng-card + eng-head, peinte par spPrefsEngCard) ne montre que ce que le
+          moteur reclame : sa cle s'il en demande une, ses modeles s'il y en a plusieurs.
+          Aucun sous-menu force : un select a une seule version ne s'affiche plus. -->
 <!-- v1.7.579 - ANTI-FLASH : L'INTERFACE DU STUDIO RESTE INVISIBLE TANT QUE LA
      PRE-HOME N'A PAS TRANCHE.
      Arrivee depuis la page de presentation (?home=1), la pre-home ne s'ouvrait
@@ -1356,6 +1377,144 @@
   #previewScroll::-webkit-scrollbar-thumb:hover,
   #chatLog::-webkit-scrollbar-thumb:hover,
   #welcome::-webkit-scrollbar-thumb:hover { background: #999; }
+
+  /* ═══ 🆕 v1.7.580 · _SP_STUDIO_PREFS_580 ════════════════════════════════════════
+     ÉCRAN DES PRÉFÉRENCES : MÊME QUALITÉ QUE L'ÉCRAN DE DÉMARRAGE.
+     Demande utilisateur : « la pop-in des préférences n'est pas assez qualitative,
+     regarde la qualité de la pré-home pour les champs et les sous-menus ». On reprend
+     donc EXACTEMENT les valeurs de la pré-home : carte à coins arrondis (16 px), ombre
+     douce en deux couches, champs à 10 px de rayon sur un fond très légèrement teinté
+     de l'encre, micro-libellés en monospace espacé. AUCUNE logique ne change : mêmes
+     identifiants, mêmes champs, mêmes libellés — uniquement l'aspect.
+     ═══════════════════════════════════════════════════════════════════════════════ */
+  #welcome .welcome-inner { width: min(900px, 100%); }
+  #welcome .welcome-brand { margin-bottom: 20px; }
+  #welcome .welcome-brand .logo img { width: 56px; height: 56px; background: transparent; }
+  #welcome .welcome-brand h1 {
+    font-size: clamp(20px, 2.6vmin, 24px); font-weight: 500;
+    letter-spacing: .28em; text-indent: .28em;
+  }
+  #welcome .welcome-brand .sub {
+    margin-top: 10px; font: 500 10px/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
+  }
+  #welcome .welcome-card {
+    background: var(--panel);
+    border: 1px solid color-mix(in srgb, var(--text) 9%, transparent);
+    border-radius: 16px; padding: 20px 22px 18px;
+    box-shadow: 0 1px 2px var(--shadow), 0 14px 34px color-mix(in srgb, var(--shadow) 60%, transparent);
+  }
+  #welcome .welcome-card p.desc { font-size: 12.5px; line-height: 1.55; margin-bottom: 16px; }
+  #welcome .welcome-close {
+    border-radius: 10px; border-color: transparent;
+  }
+  #welcome .welcome-close:hover {
+    border-color: color-mix(in srgb, var(--text) 14%, transparent);
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+  }
+  #welcome .prefs-grid { gap: 0 26px; }
+  #welcome .form-section {
+    border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+    padding-top: 14px; margin-bottom: 14px;
+  }
+  #welcome .form-section:first-of-type { border-top: none; padding-top: 0; }
+  #welcome .form-section-title {
+    font: 700 9.5px/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: color-mix(in srgb, var(--text) 55%, transparent); margin-bottom: 10px;
+  }
+  #welcome .field { margin-bottom: 12px; }
+  #welcome .field.field-sep {
+    border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); padding-top: 12px;
+  }
+  #welcome .field label {
+    font: 500 9px/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px;
+  }
+  #welcome .label-row { margin-bottom: 7px; gap: 7px; }
+  #welcome .field input, #welcome .field select {
+    border-radius: 10px; padding: 9px 11px; font-size: 12.5px; line-height: 1.45;
+    border: 1px solid color-mix(in srgb, var(--text) 13%, transparent);
+    background: color-mix(in srgb, var(--text) 3%, transparent);
+  }
+  #welcome .field input::placeholder { color: color-mix(in srgb, var(--text) 32%, transparent); }
+  #welcome .field input:focus, #welcome .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  #welcome .hint { font-size: 10.5px; line-height: 1.5; margin-top: 6px; }
+  #welcome .ext-links { gap: 6px 14px; margin-top: 7px; }
+  #welcome .ext-links a { font-size: 10px; opacity: 1; }
+  #welcome .row2 { gap: 10px; }
+  #welcome .info-icon {
+    width: 16px; height: 16px; font-size: 10px;
+    border-color: color-mix(in srgb, var(--text) 26%, transparent);
+  }
+  #welcome .info-icon .info-pop {
+    border-radius: 12px; border-color: color-mix(in srgb, var(--text) 12%, transparent);
+    padding: 11px 13px; font-size: 11.5px;
+    box-shadow: 0 10px 30px color-mix(in srgb, var(--shadow) 80%, transparent);
+  }
+  #welcome .info-icon .info-pop::after { border-top-color: color-mix(in srgb, var(--text) 12%, transparent); }
+  #welcome .btn { border-radius: 10px; }
+  #welcome #startBtn { height: 34px; padding: 0 20px; font-size: 10.5px; letter-spacing: .16em; }
+  #welcome .prefs-foot {
+    display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+  }
+
+  /* ═══ 🆕 v1.7.580 — LA CARTE DU MOTEUR CHOISI ═══════════════════════════════════
+     Un seul bloc, juste sous le choix du moteur : il ne montre QUE ce que ce moteur
+     réclame — sa clé s'il en demande une, ses versions s'il y en a plusieurs. Aucun
+     sous-menu à ouvrir, aucun champ inutile qui traîne (demande utilisateur : « ne fais
+     pas forcer de sous-menu pour les modèles… la clé à placer doit être simple et
+     cohérente »). Tant que la clé manque, le bloc est souligné par la couleur d'accent :
+     on voit d'un coup d'œil ce qu'il reste à faire.
+     ═══════════════════════════════════════════════════════════════════════════════ */
+  #welcome .eng-card {
+    margin-top: 6px; padding: 13px 15px 2px; border-radius: 12px;
+    background: color-mix(in srgb, var(--text) 3%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+    transition: border-color .18s;
+  }
+  #welcome .eng-card.att { border-color: color-mix(in srgb, var(--accent) 65%, transparent); }
+  #welcome .eng-card .field.field-sep:first-of-type { border-top: 0; padding-top: 0; }
+  #welcome .eng-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+  #welcome .eng-nom { font-size: 13px; font-weight: 500; }
+  #welcome .eng-pill {
+    font: 600 8.5px/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .14em;
+    text-transform: uppercase; padding: 5px 9px; border-radius: 999px;
+    background: #14151a; color: #fff;
+  }
+  body.theme-dark #welcome .eng-pill { background: #ececf0; color: #14151a; }
+  #welcome .eng-pill.libre {
+    background: transparent; color: var(--muted);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 20%, transparent);
+  }
+  #welcome .eng-pill.att { background: var(--accent); color: var(--btn-active-text); }
+  #welcome .eng-quoi { flex: 1 1 100%; font-size: 11px; line-height: 1.5; color: var(--muted); }
+  #welcome .field input.cle-a-saisir {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+
+  /* ═══ 🆕 v1.7.580 — LA PASTILLE D'USAGE DE LA PRÉ-HOME PASSE AU NOIR ═════════════
+     Demande utilisateur : « dans les sous-menus, ne mets pas de pastille bleue, mets
+     une noire ». C'était un bleu (#1f6feb) posé en style en ligne ; c'est désormais une
+     classe : encre pleine pour « livre complet », contour discret pour « démo ». En
+     thème sombre on inverse (claire sur fond sombre) pour rester lisible.
+     ═══════════════════════════════════════════════════════════════════════════════ */
+  #starter .st-u {
+    display: inline-block; margin-right: 6px; padding: 0 7px; border-radius: 8px;
+    font: 600 8.5px/15px 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .12em; text-transform: uppercase; vertical-align: 1px;
+  }
+  #starter .st-u-full { background: #14151a; color: #fff; }
+  body.theme-dark #starter .st-u-full { background: #ececf0; color: #14151a; }
+  #starter .st-u-demo {
+    background: transparent; color: var(--muted);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 20%, transparent);
+  }
 </style>
 </head>
 <body>
@@ -1461,6 +1620,14 @@
         </select>
         <div class="hint" id="engineHint"></div>
       </div>
+      <!-- ══ 🆕 v1.7.580 — LA CARTE DU MOTEUR CHOISI (un seul bloc, aucun sous-menu) ══
+           Ce que le moteur réclame s'affiche ICI et nulle part ailleurs : sa clé s'il en
+           demande une, ses versions s'il y en a plusieurs. L'en-tête (#engHead) est peint
+           par spPrefsEngCard() : nom du moteur + pastille « sans clé » / « clé API ».
+           Les identifiants des champs ne changent pas : updateEngineUI() les montre et
+           les cache exactement comme avant (le studio ne voit aucune différence). -->
+      <div class="eng-card" id="engineFields">
+        <div class="eng-head" id="engHead"></div>
       <div class="field field-sep" id="openaiFields">
         <div class="label-row">
           <label>Clé API OpenAI</label>
@@ -1602,6 +1769,7 @@
           <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noopener">Transformers.js (documentation)</a>
         </div>
       </div>
+      </div><!-- /engineFields (carte du moteur choisi) -->
     </div>
     </div><!-- /prefs-col 2 (Réglages IA / Moteurs) -->
 
@@ -1660,7 +1828,7 @@
     </div><!-- /prefs-grid -->
 
     <!-- CTA discret : bouton compact aligné à droite pour sauvegarder et ouvrir le studio -->
-    <div style="display:flex;justify-content:flex-end;margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+    <div class="prefs-foot">
       <button class="btn btn-primary" id="startBtn">Sauvegarder</button>
     </div>
     </div>
@@ -3567,6 +3735,13 @@
         const el = document.getElementById(id);
         if (el) el.addEventListener('change', function () { setTimeout(majLibelleModele, 0); });
       });
+    /* 🆕 v1.7.580 — LA PASTILLE DE LA CARTE MOTEUR SUIT LA SAISIE DE LA CLÉ : elle passe
+       de « clé API à coller » à « clé enregistrée » sans qu'on ait à recharger l'écran. */
+    ['groqKey', 'openrouterKey', 'deepseekKey', 'openaiKey', 'anthropicKey'].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', function () { try { spPrefsEngCard(); } catch (_) {} });
+    });
+    try { spPrefsEngCard(); } catch (_) {}
 
     // Moteur SP213 : DeepSeek / OpenRouter / Groq / WLLM (WebLLM local)
     function updateEngineUI() {
@@ -3577,6 +3752,11 @@
       const isOpenAI = eng === 'openai';
       const isAnthropic = eng === 'anthropic';
       const isNative = eng === 'webllm-native';
+      /* 🆕 v1.7.580 — NOTRE MOTEUR DE GABARIT AUSSI est traité à part : il n'a ni clé ni
+         modèle à choisir. Avant, le champ « Modèle local (WLLM) » restait AFFICHÉ pour
+         lui (mesuré) et l'aide parlait de WebLLM : deux réglages qui ne le concernent pas,
+         exactement le « sous-menu forcé » que l'utilisateur ne veut plus voir. */
+      const isGabarit = eng === 'gabarit';
       const isAihorde = eng === 'aihorde';     // 🆕 v1.7.580g
       const isTJS = eng === 'tjslocal';        // 🆕 v1.7.580g
       const isChrome = eng === 'chromeai';     // 🆕 v1.7.580k
@@ -3601,12 +3781,25 @@
         if (el) el.style.display = isAnthropic ? '' : 'none';
       });
       const wllmF = document.getElementById('wllmModelField');
-      if (wllmF) wllmF.style.display = (isGroq || isOR || isDS || isOpenAI || isAnthropic || isNative || isAihorde || isTJS || isChrome) ? 'none' : '';
+      if (wllmF) wllmF.style.display = (isGroq || isOR || isDS || isOpenAI || isAnthropic || isNative || isAihorde || isTJS || isChrome || isGabarit) ? 'none' : '';
       // 🆕 v1.7.580g — les deux nouveaux moteurs gratuits
       const ahF = document.getElementById('aihordeModelField');
       if (ahF) ahF.style.display = isAihorde ? '' : 'none';
       const tjsF = document.getElementById('tjsModelField');
       if (tjsF) tjsF.style.display = isTJS ? '' : 'none';
+      /* 🆕 v1.7.580 — PAS DE SOUS-MENU INUTILE : un choix de modèle qui ne contient
+         qu'UNE version ne s'affiche pas (demande utilisateur : « ne fais pas forcer de
+         sous-menu pour les modèles »). Mesuré : « Modèle Groq » n'avait qu'une entrée
+         et prenait une ligne entière pour rien. On ne cache jamais un select VIDE (le
+         studio peut remplir ses options plus tard) : seulement celui à une seule entrée. */
+      ['groqModelField', 'openrouterModelField', 'deepseekModelField', 'openaiModelField', 'anthropicModelField', 'wllmModelField', 'tjsModelField'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (!el || el.style.display === 'none') return;
+        const s = el.querySelector('select');
+        if (s && s.options.length === 1) el.style.display = 'none';
+      });
+      /* 🆕 v1.7.580 — l'en-tête de la carte moteur (nom + pastille clé) suit le moteur. */
+      try { spPrefsEngCard(); } catch (_) {}
       const hint = document.getElementById('engineHint');
       if (hint) {
         hint.textContent = isOpenAI
@@ -3621,7 +3814,9 @@
                   ? 'OpenRouter : ajoutez votre clé sk-or-… (gratuite sur openrouter.ai). Modèles :free 100% gratuits.'
                   : (isNative
                       ? 'SP213 WLLM Native (local avec GPU) : assistant intégré, aucune clé ni réglage — il se charge automatiquement à votre premier message.'
-                      : 'SP213 WLLM (local avec GPU) : aucune clé requise — choisissez un modèle et ouvrez le studio.')))));
+                      : (isGabarit
+                          ? 'SP213 gabarit — notre moteur de mise en page : aucune clé, aucun jeton, il compose tout hors ligne (cahiers, livres, affiches) en respectant le fond perdu et les marges.'
+                          : 'SP213 WLLM (local avec GPU) : aucune clé requise — choisissez un modèle et ouvrez le studio.'))))));
       }
       /* 🆕 v1.7.580g — explications des deux moteurs gratuits ajoutés. */
       if (hint && isAihorde) {
@@ -10592,15 +10787,18 @@ function spRtfLayoutInfo(src) {
       const on = (m.eng === eng);
       /* v1.7.579 — badge d'USAGE : « livre complet » ou « démo ». La description
          reste sur une seule ligne (coupée si nécessaire) et l'intitulé complet
-         passe dans l'infobulle : la hauteur de ligne reste identique partout. */
+         passe dans l'infobulle : la hauteur de ligne reste identique partout.
+         ⚠️ v1.7.580 — LA PASTILLE N'EST PLUS BLEUE (demande utilisateur : « dans les
+         sous-menus, ne mets pas de pastille bleue, mets une noire »). Deux classes :
+         encre pleine pour « livre complet », simple contour pour « démo ». */
       const _usage = t(m.usage === 'livre' ? 'st.usage.livre' : 'st.usage.demo');
-      const _couleur = (m.usage === 'livre') ? '#1f6feb' : '#8a8f98';
+      const _classe = (m.usage === 'livre') ? 'st-u st-u-full' : 'st-u st-u-demo';
       html += '<button class="st-row' + (on ? ' on' : '') + '" type="button" role="option" aria-selected="' + on + '" data-eng="' + m.eng + '"' +
         ' title="' + escapeHtml(m.nom + ' — ' + _usage + ' — ' + t(m.nk)) + '">' +
         '<span class="st-row-t" style="flex-wrap:nowrap;overflow:hidden"><span class="st-row-n">' + escapeHtml(m.nom) + '</span>' +
         '<span class="st-row-g">' + escapeHtml(t(m.tk)) + '</span></span>' +
         '<span class="st-row-d" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
-        '<span style="display:inline-block;margin-right:6px;padding:0 6px;border-radius:8px;font-size:9px;line-height:15px;vertical-align:1px;background:' + _couleur + ';color:#fff">' +
+        '<span class="' + _classe + '">' +
         escapeHtml(_usage) + '</span>' + escapeHtml(t(m.nk)) + '</span></button>';
     });
     /* ══ THÈME CHOISI À LA MAIN (demande utilisateur : « le choix du thème dans le
@@ -11913,6 +12111,48 @@ function spRtfLayoutInfo(src) {
     } catch (_) { return false; }
   }
 
+  /* ══ 🆕 v1.7.580 — EN-TÊTE DE LA CARTE DU MOTEUR CHOISI ══════════════════════════
+     Nom du moteur + une pastille qui dit EN UN MOT s'il faut une clé, puis une phrase
+     qui dit exactement ce qu'il reste à faire. Aucun sous-menu à ouvrir : la clé se
+     colle dans le champ juste en dessous, et le choix de modèle n'apparaît que s'il y a
+     vraiment plusieurs modèles. Tout est lu dans l'écran lui-même (le <select> et les
+     champs de clé) : aucune dépendance à l'ordre de chargement du studio, et si un
+     élément manque on ne peint simplement rien plutôt que de casser l'écran. */
+  function spPrefsEngCard() {
+    const h = $('engHead');
+    if (!h) return;
+    try {
+      const sel = $('engineSelect');
+      const eng = String((sel && sel.value) || (state && state.engine) || '');
+      if (!eng) return;
+      const CHAMP_CLE = { deepseek: 'deepseekKey', openai: 'openaiKey', anthropic: 'anthropicKey', openrouter: 'openrouterKey', groq: 'groqKey' };
+      const aCle = !!CHAMP_CLE[eng];
+      const champ = aCle ? $(CHAMP_CLE[eng]) : null;
+      const cleOk = !!(champ && String(champ.value || '').trim());
+      const opt = (sel && sel.options && sel.selectedIndex >= 0) ? sel.options[sel.selectedIndex] : null;
+      /* Le libellé du <select> porte la précision entre parenthèses (« DeepSeek (cloud —
+         raisonnement) ») : l'en-tête ne garde que le NOM, sinon la carte affichait
+         « DeepSeek (cloud » coupé au milieu. */
+      const nom = opt ? String(opt.textContent).split(' — ')[0].replace(/\s*\(.*$/, '').trim() : eng;
+      let vers = 0;
+      try { vers = spStVersions(eng).length; } catch (_) { vers = 0; }
+      const pastille = !aCle
+        ? '<span class="eng-pill">SANS CLÉ</span>'
+        : '<span class="eng-pill ' + (cleOk ? '' : 'att') + '">' + (cleOk ? 'CLÉ ENREGISTRÉE' : 'CLÉ API À COLLER') + '</span>';
+      const quoi = !aCle
+        ? 'Aucune clé, aucun compte : ce moteur fonctionne tel quel.'
+        : (cleOk
+          ? 'Votre clé est déjà enregistrée dans ce navigateur ; vous pouvez la remplacer ci-dessous.'
+          : 'Collez votre clé ci-dessous : elle reste dans votre navigateur et n\'est jamais partagée.');
+      const quoiVers = vers > 1
+        ? ' <b>' + vers + ' modèles disponibles</b> ci-dessous : choisissez celui qui vous convient.'
+        : (vers === 1 ? ' Un seul modèle : rien à choisir.' : '');
+      h.innerHTML = '<span class="eng-nom">' + escapeHtml(nom) + '</span>' + pastille +
+        '<span class="eng-quoi">' + quoi + quoiVers + '</span>';
+      if (h.parentNode) h.parentNode.classList.toggle('att', aCle && !cleOk);
+    } catch (_) {}
+  }
+
   // Propose d'aller dans les réglages pour choisir son modèle au premier prompt.
   function offerModelChoice(moteurVoulu) {
     /* v1.7.580mm — le moteur choisi (starter) est gardé : on le réinstalle dans les
@@ -11934,6 +12174,8 @@ function spRtfLayoutInfo(src) {
          pour lui proposer de saisir sa clé »). OpenAI manquait à la liste : le
          curseur partait sur Groq, voire nulle part. */
       const champs = { anthropic: 'anthropicKey', openrouter: 'openrouterKey', deepseek: 'deepseekKey', openai: 'openaiKey', groq: 'groqKey' };
+      /* 🆕 v1.7.580 — l'en-tête de la carte moteur est peint AVANT de viser le champ. */
+      try { spPrefsEngCard(); } catch (_) {}
       const kf = champs[state.engine] ? $(champs[state.engine]) : null;
       if (kf) {
         try { kf.scrollIntoView({ block: 'center' }); } catch (_) {}
