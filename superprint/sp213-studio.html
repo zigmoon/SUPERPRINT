@@ -1139,6 +1139,19 @@
     flex: 1 1 auto; min-width: 0; height: 28px; background: var(--input-bg); border: 1px solid var(--input-border);
     color: var(--text); font-size: 11px; padding: 0 6px; font-family: inherit; }
   .rg-row input[type=color] { flex: 0 0 42px; height: 28px; padding: 0; border: 1px solid var(--input-border); background: var(--input-bg); }
+  /* _SP_STUDIO_REGLAGES_586 — MISE EN PAGE COMPACTE : deux mini-tirettes par ligne et
+     pastilles pour les choix courts (demande utilisateur : « condense un peu cette
+     partie, on prend trop en hauteur »). */
+  .rg-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+  .rg-mini { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .rg-mini > span { font-size: 9.5px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+  .rg-mini .rg-line { display: flex; align-items: center; gap: 6px; }
+  .rg-mini input[type=range] { flex: 1 1 auto; min-width: 0; accent-color: var(--accent); }
+  .rg-mini .rg-v { flex: 0 0 auto; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; min-width: 40px; text-align: right; font-weight: 400; }
+  .rg-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rg-chip { font-size: 10px; letter-spacing: .4px; padding: 5px 8px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); cursor: pointer; text-transform: uppercase; font-family: inherit; border-radius: 0; }
+  .rg-chip:hover { background: var(--btn-hover); }
+  .rg-chip.on { background: var(--accent); color: var(--btn-active-text); border-color: var(--accent); }
   .rg-row input[type=checkbox] { accent-color: var(--accent); }
   .rg-2 { display: flex; gap: 8px; align-items: center; }
   .rg-note { font-size: 10px; color: var(--muted); line-height: 1.5; margin-top: 6px; }
@@ -1790,7 +1803,10 @@
                    avec un modèle cloud, qui recompose depuis zéro à chaque envoi). -->
               <span class="tip-wrap tip-up tip-anchor-right" tabindex="0" id="reglagesTipWrap" style="display:none">
                 <button class="icon-btn" id="reglagesBtn" title="Réglages — refactoriser le document en direct" aria-haspopup="dialog" aria-expanded="false">
-                  <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3.05V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>
+                  <!-- _SP_STUDIO_REGLAGES_586 — ICÔNE À TIRETTES (demande utilisateur :
+                       « je veux une autre icône, on utilise déjà l'engrenage en haut à
+                       droite ; trouve une icône avec des tirettes »). -->
+                  <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><circle cx="9" cy="6" r="2.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="12" r="2.3" fill="currentColor" stroke="none"/><circle cx="7" cy="18" r="2.3" fill="currentColor" stroke="none"/></svg>
                 </button>
                 <span class="tip" id="reglagesTip"><b>Réglages</b>Refactorise le document affiché en <b>direct</b> : format (mm, cm, pouces), thème, typographies, taille du texte, interligne, marges, colonnes, couleurs, folios. Le pop-in recouvre la conversation ; validez pour revenir à l'échange. Réservé à notre moteur <b>SP213 gabarit</b> (aucune clé, aucun coût, recomposition instantanée).</span>
               </span>
@@ -1857,6 +1873,10 @@
           <textarea id="starterInput" rows="3"></textarea>
           <div class="st-actions">
             <button class="icon-btn" id="stAttachBtn" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
+            <!-- _SP_STUDIO_REGLAGES_586 — RÉGLAGES AUSSI SUR L'ÉCRAN DE DÉMARRAGE (demande
+                 utilisateur), avec l'icône à TIRETTES. Visible seulement pour notre
+                 moteur SP213 gabarit : lui seul sait recomposer en direct. -->
+            <button class="icon-btn" id="stReglagesBtn" type="button" style="display:none" title="Réglages du document (SP213 gabarit)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><circle cx="9" cy="6" r="2.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="12" r="2.3" fill="currentColor" stroke="none"/><circle cx="7" cy="18" r="2.3" fill="currentColor" stroke="none"/></svg></button>
             <!-- _SP_STUDIO_REGLAGES_586 — l'icône « image web (picsum) » est SUPPRIMÉE du
                  studio (demande utilisateur : « supprime Image web picsum partout »). -->
             <button class="icon-btn" id="stMicBtn" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></button>
@@ -9180,14 +9200,19 @@ function spRtfLayoutInfo(src) {
       /* BANDE CALCULÉE SUR LA VRAIE HAUTEUR DU TITRE (3 lignes possibles) : sinon le
          titre débordait sur la photo et le chapô se retrouvait coupé par elle
          (mesuré : 54 chevauchements texte/graphisme sur la seule couverture). */
+      /* BANDE CALCULÉE SUR LA VRAIE HAUTEUR DU TITRE (3 lignes possibles) : sinon le
+         titre débordait sur la photo et le chapô se retrouvait coupé par elle
+         (mesuré : 54 chevauchements texte/graphisme sur la seule couverture).
+         _SP_STUDIO_REGLAGES_586 — la tirette « Bande de couverture » multiplie la
+         proportion (34 %) tout en gardant le minimum imposé par le titre. */
       const hT = spGabH(M.titre, g.titre, L.cw * 0.92, 0.95);
       const hC = M.chapeau ? spGabH(spGabCourt(M.chapeau, 150), g.chapeau, L.cw * 0.8, 1.4) : 0;
-      const bande = Math.max(L.H * 0.34, L.y0 + k * 24 + hT + (hC ? k * 16 + hC : 0) + k * 26);
+      const bande = Math.max(L.H * 0.34 * (Number(L.bande) || 1), L.y0 + k * 24 + hT + (hC ? k * 16 + hC : 0) + k * 26);
       e.push(spGabR(0, 0, L.W, bande, p.a, 0));
       if (M.surtitre) e.push(spGabT(L.x0, L.y0, L.cw, spGabCourt(M.surtitre, 42).toUpperCase(), 8.5, p.sur, 'bold', 'left', 1.1, 200));
       e.push(spGabT(L.x0, L.y0 + k * 24, L.cw * 0.92, M.titre, g.titre, p.sur, 'bold', 'left', 0.95));
       if (M.chapeau) e.push(spGabT(L.x0, L.y0 + k * 24 + hT + k * 16, L.cw * 0.8, spGabCourt(M.chapeau, 150), g.chapeau, p.sur, null, 'left', 1.4));
-      spGabPhoto(L, e, 0, bande + k * 14, L.W, Math.max(k * 90, L.H - (bande + k * 14) - L.k * 8), 'grand visuel');
+      if (L.photoCouverture !== false) spGabPhoto(L, e, 0, bande + k * 14, L.W, Math.max(k * 90, L.H - (bande + k * 14) - L.k * 8), 'grand visuel');
       e.push(spGabL(L.x0, L.y1 - k * 24, L.cw, p.txt, 2));
       e.push(spGabT(L.x0, L.y1 - k * 16, L.cw, spGabCourt(M.surtitre || g.nom, 60), 8, '#6b7280', null, 'left', 1.3, 120));
       return e;
@@ -9243,7 +9268,7 @@ function spRtfLayoutInfo(src) {
       /* GRAND FOND de page intérieure : réservé aux pages à DEUX colonnes. Sur un livre
          à une colonne, l'habillage est TYPOGRAPHIQUE (filet d'accent + chapitre numéroté)
          — retour utilisateur : « on doit faire des habillages graphiques simples, typo ». */
-      if (!suite) {
+      if (!suite && L.chapitres !== false) {
         if (deuxCol) {
           if (col === 0) { e.push(spGabR(0, 0, L.W, k * 18, p.a, 0)); y = L.y0 + k * 10; }
         } else {
@@ -9263,7 +9288,7 @@ function spRtfLayoutInfo(src) {
       if (!s.ps.length && !M.chapeau) return;
       (s.ps.length ? s.ps : [M.chapeau]).forEach(function (para, j) {
         if (!para) return;
-        if (deuxCol && para.length <= 130 && j > 0) {
+        if (deuxCol && L.encadres !== false && para.length <= 130 && j > 0) {
           /* ENCADRÉ : fond clair + filet, le texte reste à l'intérieur (pages à 2 col.). */
           const h = Math.max(k * 42, (para.length / 2.4) * g.corps * 0.42 + k * 34);
           e.push(spGabR(x, y, cw, h, p.clair, 4));
@@ -9462,6 +9487,39 @@ function spRtfLayoutInfo(src) {
      deviennent illisibles. On les repasse en clair, selon la nature de l'élément. */
   const SP_GAB_GRIS = ['#4b5563', '#6b7280', '#374151', '#333333', '#222222', '#1f2937', '#8a8f98', '#9aa0a6'];
   const SP_GAB_NOIRC = ['#111111', '#18181b', '#1c1917', '#0e0e10', '#122015', '#0b1220', '#0f172a', '#0c2b34', '#1b0f38', '#1b1b22', '#000000'];
+  /* ══════════════════════════════════════════════════════════════════════════════
+     _SP_STUDIO_REGLAGES_586 — HABILLAGE GRAPHIQUE RÉGLÉ AUX TIRETTES
+     Appliqué JUSTE AVANT la conversion en millimètres, sur les éléments encore en
+     unités de gabarit. Ces trois réglages ne touchent PAS la géométrie (hauteurs,
+     largeurs, positions sont déjà calculées) : ils habillent, donc aucun risque de
+     débordement ou de texte coupé.
+       • épaisseur des filets (0,2× à 2×) ;
+       • titres en CAPITALES ;
+       • interlettrage des titres (charSpacing, l'unité du studio).
+     ══════════════════════════════════════════════════════════════════════════════ */
+  function spGabStyler(els, L, REG) {
+    if (!REG) return els;
+    const coef = (REG.filets === undefined || REG.filets === null || Number(REG.filets) === 1) ? 1 : Number(REG.filets);
+    const caps = !!REG.caps;
+    const inter = Number(REG.interlettrage) || 0;
+    if (coef === 1 && !caps && !inter) return els;
+    const corps = Number((L.g && L.g.corps) || 10);
+    els.forEach(function (e) {
+      if (!e) return;
+      if (e.type === 'line' && coef !== 1) {
+        /* Un filet sous 0,15 mm disparaît à l'impression : le studio a un plancher. */
+        e.strokeWidth = Math.max(0.3, Number(e.strokeWidth || 1) * coef);
+        return;
+      }
+      if (e.type === 'text') {
+        const gros = (Number(e.fontSize) || 10) >= corps * 1.7;   // titres, pas le corps
+        if (caps && gros && e.text) e.text = String(e.text).toUpperCase();
+        if (inter && gros) e.charSpacing = (Number(e.charSpacing) || 0) + inter;
+      }
+    });
+    return els;
+  }
+
   function spGabVersMm(el, ctx) {
     const o = {};
     for (const k in el) { if (Object.prototype.hasOwnProperty.call(el, k)) o[k] = el[k]; }
@@ -9577,7 +9635,7 @@ function spRtfLayoutInfo(src) {
     /* On remplit une colonne jusqu'à ~74 % de sa hauteur seulement : mesuré, un
        remplissage maximal faisait ensuite déplacer 34 blocs par les passes du studio
        (le studio réajuste les textes aux marges et déplace ce qui déborde). */
-    const dispo = Math.max(60, (L.ch - L.k * 68) * 0.94);
+    const dispo = Math.max(60, (L.ch - L.k * 68) * (Number(L.densite) || 0.94));
     const out = [];
     let courant = null, used = 0;
     const ouvrir = function (titre) { courant = { t: titre || '', ps: [] }; out.push(courant); used = 0; };
@@ -9972,6 +10030,9 @@ function spRtfLayoutInfo(src) {
        (le nombre de pages doit rester juste quand on change l'interligne). */
     const interCorps = (REG && Number(REG.interligne)) ? Math.max(1.1, Math.min(2.1, Number(REG.interligne))) : null;
     const alignCorps = (REG && REG.align) ? String(REG.align) : 'justify';
+    /* Réglages d'habillage et de structure, lus par la pose des pages et le chaînage. */
+    const densite = (REG && Number(REG.densite)) ? Math.max(0.5, Math.min(0.98, Number(REG.densite))) : 0.94;
+    const fondPageReg = (REG && REG.fondPage) ? String(REG.fondPage) : '';
     const fmt = spGabFormat();
     /* ══ LES COULEURS DU FICHIER CLIENT ENTRENT DANS LA MAQUETTE ═════════════════
        Demande utilisateur : « l'object est de faire couleur des text Word ou autre
@@ -10008,7 +10069,13 @@ function spRtfLayoutInfo(src) {
       W: W, H: H, g: g, t: texte, pal: pal, f: polices,
       k: Math.max(0.3, Math.min(1, H / 841.89)), v: hasard.v, n: hasard.n, theme: theme ? theme.cle : 'auto',
       x0: x0, y0: y0, x1: x1, y1: y1, cw: cw, ch: ch,
-      inter: interCorps, align: alignCorps,
+      inter: interCorps, align: alignCorps, densite: densite, fondPage: fondPageReg,
+      filetCoef: REG ? Number(REG.filets) || 1 : 1, caps: !!(REG && REG.caps),
+      interTitre: REG ? (Number(REG.interlettrage) || 0) : 0,
+      bande: REG ? Math.max(0.5, Math.min(1.8, Number(REG.bande) || 1)) : 1,
+      chapitres: !(REG && REG.chapitres === false),
+      encadres: !(REG && REG.encadres === false),
+      photoCouverture: !(REG && REG.photoCouverture === false),
       pays: fmt.pays, carre: fmt.carre, mini: fmt.mini, bandeau: fmt.bandeau,
       photos: texte.photos.slice()
     };
@@ -10101,10 +10168,14 @@ function spRtfLayoutInfo(src) {
         els.unshift(spGabR(0, 0, W, H * 0.5, L.pal.fond, 0));
         els.unshift(spGabR(0, H * 0.5, W, H * 0.5, L.pal.fond, 0));
       } else {
-        els.unshift(spGabR(0, 0, W, H, '#ffffff', 0));
+        /* FOND DE PAGE CHOISI AUX TIRETTES (demande utilisateur : « dans couleurs tu
+           peux proposer la couleur du fond des pages »). Le garde-fou de contraste lit
+           ce fond sur la page : si l'utilisateur choisit une page sombre, la
+           typographie passe automatiquement en clair. */
+        els.unshift(spGabR(0, 0, W, H, L.fondPage || '#ffffff', 0));
       }
       if (g.folio && i > 1 && i < tot) els = els.concat(spGabFolio(L, i, tot));
-      pages.push({ pageIndex: pages.length, elements: els.map(spGabVersMm) });
+      pages.push({ pageIndex: pages.length, elements: spGabStyler(els, L, window._spReglages).map(spGabVersMm) });
     }
     /* PIÈCES JOINTES IMAGE NON PLACÉES : on ne les jette pas. Un cahier ou une
        brochure reçoit une GALERIE juste avant la 4e de couverture (demande
@@ -16633,17 +16704,35 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     ['finance', 'Corporate — bleu nuit'], ['noir', 'Noir chic — fond noir, doré']
   ];
   const SP_REG_UNITES = [['mm', 1, 'mm'], ['cm', 10, 'cm'], ['in', 25.4, 'po']];
-  let SP_REG = null, SP_REG_OUVERT = false, SP_REG_TIMER = null, SP_REG_PREV = null, SP_REG_ALOURDI = false;
+  /* ══ _SP_STUDIO_REGLAGES_586 — STYLES PRÊTS À EMPLOYER (refactorisation globale) ══
+     Demande utilisateur : « FAIS-MOI RÊVER SUR LA REFACTORISATION D'UNE MAQUETTE ».
+     Un style, c'est un FAISCEAU COHÉRENT de réglages (thème + typographies + corps +
+     interligne + colonnes + marges + filets + bande + capitales…) : le document entier
+     se refactorise d'un seul clic, puis l'utilisateur ajuste aux tirettes. Aucun n'est
+     décoratif : chacun correspond à une famille de documents réelle. */
+  const SP_REG_STYLES = [
+    ['roman', 'Roman', { theme: 'chaud', policeTitre: 'Playfair Display', policeCorps: 'Georgia', corps: 11, echelleTitre: 1, interligne: 1.62, colonnes: 1, marge: 1.15, filets: 0.8, bande: 0.85, caps: false, interlettrage: 0, fondPage: '#fffdf8', encre: 'auto', encadres: false, chapitres: true }],
+    ['essai', 'Essai', { theme: 'sobre', policeTitre: 'Georgia', policeCorps: 'Georgia', corps: 10.5, interligne: 1.58, colonnes: 1, marge: 1.1, filets: 1, bande: 0.7, caps: false, interlettrage: 0, fondPage: '#ffffff', encadres: false }],
+    ['reportage', 'Reportage', { theme: 'auto', policeTitre: 'Montserrat', policeCorps: 'Open Sans', corps: 10, interligne: 1.5, colonnes: 2, marge: 0.9, filets: 1.2, bande: 1.2, caps: true, interlettrage: 1, encadres: true }],
+    ['magazine', 'Magazine', { theme: 'event', policeTitre: 'Bebas Neue', policeCorps: 'Open Sans', corps: 10, interligne: 1.45, colonnes: 2, marge: 0.85, filets: 1.5, bande: 1.5, caps: true, interlettrage: 2, echelleTitre: 1.1 }],
+    ['premium', 'Premium', { theme: 'noir', policeTitre: 'Playfair Display', policeCorps: 'Open Sans', corps: 10.5, interligne: 1.6, colonnes: 1, marge: 1.25, filets: 0.8, bande: 1.3, caps: false, interlettrage: 1, fondPage: '#ffffff' }],
+    ['minimal', 'Minimal', { theme: 'sobre', policeTitre: 'Helvetica', policeCorps: 'Helvetica', corps: 10, interligne: 1.7, colonnes: 1, marge: 1.3, filets: 0.6, bande: 0.6, caps: false, interlettrage: 0, photoCouverture: false, encadres: false }],
+    ['nature', 'Nature', { theme: 'douce', policeTitre: 'Poppins', policeCorps: 'Open Sans', corps: 10.5, interligne: 1.55, colonnes: 1, marge: 1.1, fondPage: '#f7faf5', filets: 1 }],
+    ['corporate', 'Corporate', { theme: 'finance', policeTitre: 'Montserrat', policeCorps: 'Open Sans', corps: 10, interligne: 1.5, colonnes: 2, marge: 1, filets: 1.3, bande: 1.1, caps: false, encadres: true }]
+  ];
+  let SP_REG = null, SP_REG_OUVERT = false, SP_REG_TIMER = null, SP_REG_PREV = null, SP_REG_ALOURDI = false, SP_REG_STYLE = '';
 
   function spRegDefaut() {
     return {
       actif: true,
-      w: Number(state.pageW) || 210, h: Number(state.pageH) || 297, unite: 'mm',
+      w: Number(state.pageW) || 210, h: Number(state.pageH) || 297, unite: 'mm', bleed: Number(state.bleed) || 3,
       theme: window._spGabTheme || 'auto',
       policeTitre: '', policeCorps: '',
       corps: 10.5, echelleTitre: 1, interligne: 0, align: 'justify',
-      marge: 1, gouttiere: 10, colonnes: 1, folio: true,
-      accent: '', papier: '#ffffff', encre: 'auto', variation: 0
+      caps: false, interlettrage: 0, filets: 1,
+      marge: 1, gouttiere: 10, colonnes: 1, folio: true, densite: 0.94,
+      bande: 1, chapitres: true, encadres: true, photoCouverture: true,
+      accent: '', fondPage: '', encre: 'auto', variation: 0
     };
   }
   function spRegCharge() {
@@ -16682,62 +16771,103 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       }).join('') + '</select></div>';
   }
   function spRegCasesHTML(k, label, options, val) {
-    return '<div class="rg-row"><label>' + label + '</label><div class="rg-2">' +
+    return '<div class="rg-row"><label>' + label + '</label><div class="rg-chips">' +
       options.map(function (o) {
         const on = (String(o[0]) === String(val));
-        return '<label class="rg-2" style="flex:0 0 auto;text-transform:none;letter-spacing:0;font-size:11px;color:var(--text)">' +
-          '<input type="radio" name="rg_' + k + '" data-reg="' + k + '" value="' + String(o[0]) + '"' + (on ? ' checked' : '') + '> ' + o[1] + '</label>';
+        return '<button type="button" class="rg-chip' + (on ? ' on' : '') + '" data-radio="' + k + '" data-val="' + String(o[0]) + '">' + o[1] + '</button>';
       }).join('') + '</div></div>';
+  }
+  /* Mini-tirette : le libellé AU-DESSUS, la tirette et sa valeur sur une seule ligne.
+     Deux par ligne dans une grille : c'est ce qui fait tenir tout le panneau. */
+  function spRegMiniHTML(k, label, min, max, step, val, sfx) {
+    return '<div class="rg-mini"><span>' + label + '</span><div class="rg-line">' +
+      '<input type="range" id="rg_' + k + '" data-reg="' + k + '" data-sfx="' + (sfx || '') + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '">' +
+      '<b class="rg-v" id="rgv_' + k + '">' + val + (sfx || '') + '</b></div></div>';
   }
 
   function spRegPeindre() {
     const b = $('rgBody');
     if (!b) return;
-    const u = spRegMm()[2];
+    const u = spRegMm()[1];
     const polices = SP_REG_POLICES.map(function (f) { return [f, f ? f : 'Celle du thème']; });
+    const wm = Math.round(20 / u), wM = Math.round(600 / u), wS = (u === 1) ? 1 : 0.1;
+    const presetActif = SP_REG_FORMATS.some(function (f) { return f[0] === Number(SP_REG.w) && f[1] === Number(SP_REG.h); });
     let h = '';
-    /* ── FORMAT ── */
-    h += '<section class="rg-sec"><h4>Format du document</h4>';
-    h += spRegSelectHTML('preset', 'Format', SP_REG_FORMATS.map(function (f) {
-      return [f[0] + 'x' + f[1], f[2]];
-    }).concat([['libre', 'Personnalisé']]), (SP_REG_FORMATS.some(function (f) { return f[0] === Number(SP_REG.w) && f[1] === Number(SP_REG.h); }) ? (Number(SP_REG.w) + 'x' + Number(SP_REG.h)) : 'libre'));
-    h += '<div class="rg-row"><label>Largeur</label><input type="number" id="rg_w" data-reg="w" min="20" max="1200" step="1" value="' + spRegValUnite(SP_REG.w) + '">' +
-      '<input type="number" id="rg_h" data-reg="h" min="20" max="1200" step="1" value="' + spRegValUnite(SP_REG.h) + '">' +
-      '<select id="rg_unite" data-reg="unite" style="flex:0 0 62px">' + SP_REG_UNITES.map(function (x) {
-        return '<option value="' + x[0] + '"' + (x[0] === SP_REG.unite ? ' selected' : '') + '>' + x[2] + '</option>';
-      }).join('') + '</select></div>';
-    h += '<div class="rg-note" id="rgFormatNote">Cotes en ' + u + '. La maquette se recompose au format choisi : la couverture, la mise en pages et l\'imposition suivent.</div>';
+    /* ── FORMAT (compacté : pastilles + cotes à tirette sur deux colonnes) ── */
+    h += '<section class="rg-sec"><h4>Format et cotes</h4>';
+    h += '<div class="rg-chips" style="margin-bottom:10px">' + SP_REG_FORMATS.map(function (f) {
+      const nom = f[2].split(' — ')[0];
+      const on = (f[0] === Number(SP_REG.w) && f[1] === Number(SP_REG.h));
+      return '<button type="button" class="rg-chip' + (on ? ' on' : '') + '" data-format="' + f[0] + 'x' + f[1] + '" title="' + f[2] + '">' + nom + '</button>';
+    }).join('') + '</div>';
+    h += '<div class="rg-cols">' +
+      spRegMiniHTML('w', 'Largeur (' + spRegMm()[2] + ')', wm, wM, wS, spRegValUnite(SP_REG.w), '') +
+      spRegMiniHTML('h', 'Hauteur (' + spRegMm()[2] + ')', wm, wM, wS, spRegValUnite(SP_REG.h), '') +
+      '</div>';
+    h += '<div class="rg-row" style="margin-top:8px"><label>Unité</label><select id="rg_unite" data-reg="unite" style="flex:0 0 70px">' +
+      SP_REG_UNITES.map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === SP_REG.unite ? ' selected' : '') + '>' + x[2] + '</option>'; }).join('') +
+      '</select><label style="flex:0 0 62px">Fond perdu</label>' +
+      spRegMiniHTML('bleed', '', 0, 10, 1, Number(SP_REG.bleed) || 3, ' mm').replace('<span></span>', '') +
+      '</div>';
+    h += '<div class="rg-note">La maquette se recompose au format choisi (' + (presetActif ? 'préréglage' : 'personnalisé') + ') : couverture, mise en pages et imposition suivent.</div>';
+    h += '</section>';
+    /* ── STYLE GLOBAL (faisceaux cohérents) ── */
+    h += '<section class="rg-sec"><h4>Style de document</h4>';
+    h += '<div class="rg-chips">' + SP_REG_STYLES.map(function (s) {
+      return '<button type="button" class="rg-chip' + (SP_REG_STYLE === s[0] ? ' on' : '') + '" data-style="' + s[0] + '">' + s[1] + '</button>';
+    }).join('') + '</div>';
+    h += '<div class="rg-note">Un style règle d\'un coup thème, typographies, corps, interligne, colonnes, marges, filets et bande. Les tirettes ci-dessous reprennent la main ensuite.</div>';
     h += '</section>';
     /* ── DESIGN ── */
-    h += '<section class="rg-sec"><h4>Design</h4>';
+    h += '<section class="rg-sec"><h4>Design et mise en pages</h4>';
     h += spRegSelectHTML('theme', 'Thème', SP_REG_THEMES, SP_REG.theme);
-    h += spRegRangeHTML('marge', 'Marges', 60, 160, 5, Math.round((Number(SP_REG.marge) || 1) * 100), ' %');
-    h += spRegRangeHTML('gouttiere', 'Gouttière', 2, 24, 1, SP_REG.gouttiere, ' mm');
+    h += '<div class="rg-cols">' +
+      spRegMiniHTML('marge', 'Marges', 60, 160, 5, Math.round((Number(SP_REG.marge) || 1) * 100), ' %') +
+      spRegMiniHTML('gouttiere', 'Gouttière', 2, 24, 1, Number(SP_REG.gouttiere) || 10, ' mm') +
+      spRegMiniHTML('densite', 'Densité du texte', 60, 98, 2, Math.round((Number(SP_REG.densite) || 0.94) * 100), ' %') +
+      spRegMiniHTML('bande', 'Bande de couverture', 50, 180, 5, Math.round((Number(SP_REG.bande) || 1) * 100), ' %') +
+      '</div>';
     h += spRegCasesHTML('colonnes', 'Colonnes', [[1, '1'], [2, '2'], [3, '3']], SP_REG.colonnes);
     h += spRegCasesHTML('folio', 'Folios', [['true', 'Oui'], ['false', 'Non']], SP_REG.folio ? 'true' : 'false');
+    h += spRegCasesHTML('chapitres', 'Titres de section', [['true', 'Oui'], ['false', 'Non']], SP_REG.chapitres ? 'true' : 'false');
+    h += spRegCasesHTML('encadres', 'Encadrés', [['true', 'Oui'], ['false', 'Non']], SP_REG.encadres ? 'true' : 'false');
+    h += spRegCasesHTML('photoCouverture', 'Photo de couverture', [['true', 'Oui'], ['false', 'Non']], SP_REG.photoCouverture ? 'true' : 'false');
     h += '</section>';
     /* ── TYPOGRAPHIES ── */
     h += '<section class="rg-sec"><h4>Typographies et tailles</h4>';
     h += spRegSelectHTML('policeTitre', 'Police titres', polices, SP_REG.policeTitre);
     h += spRegSelectHTML('policeCorps', 'Police corps', polices, SP_REG.policeCorps);
-    h += spRegRangeHTML('corps', 'Taille du texte', 7, 16, 0.5, SP_REG.corps, ' pt');
-    h += spRegRangeHTML('echelleTitre', 'Titres', 70, 150, 5, Math.round((Number(SP_REG.echelleTitre) || 1) * 100), ' %');
-    h += spRegRangeHTML('interligne', 'Interligne', 110, 200, 5, Math.round((Number(SP_REG.interligne) || 1.55) * 100), ' %');
+    h += '<div class="rg-cols">' +
+      spRegMiniHTML('corps', 'Taille du texte', 7, 16, 0.5, Number(SP_REG.corps) || 10.5, ' pt') +
+      spRegMiniHTML('echelleTitre', 'Échelle des titres', 70, 150, 5, Math.round((Number(SP_REG.echelleTitre) || 1) * 100), ' %') +
+      spRegMiniHTML('interligne', 'Interligne', 110, 200, 5, Math.round((Number(SP_REG.interligne) || 1.55) * 100), ' %') +
+      spRegMiniHTML('interlettrage', 'Interlettrage titres', 0, 8, 0.5, Number(SP_REG.interlettrage) || 0, '') +
+      spRegMiniHTML('filets', 'Filets', 20, 200, 5, Math.round((Number(SP_REG.filets) || 1) * 100), ' %') +
+      '</div>';
+    h += spRegCasesHTML('caps', 'Titres en capitales', [['true', 'Oui'], ['false', 'Non']], SP_REG.caps ? 'true' : 'false');
     h += spRegSelectHTML('align', 'Alignement', [['justify', 'Justifié'], ['left', 'À gauche']], SP_REG.align);
     h += '</section>';
     /* ── COULEURS ── */
     h += '<section class="rg-sec"><h4>Couleurs</h4>';
     h += '<div class="rg-row"><label for="rg_accent">Accent</label>' +
       '<input type="color" id="rg_accent" data-reg="accent" value="' + (SP_REG.accent || '#1f6feb') + '">' +
-      '<button class="btn btn-secondary" type="button" id="rgAccentAuto" style="height:28px">Auto</button></div>';
-    h += spRegCasesHTML('papier', 'Papier', [['#ffffff', 'Blanc'], ['#fffdf8', 'Crème']], SP_REG.papier);
-    h += spRegSelectHTML('encre', 'Encre de lecture', [['auto', 'Automatique'], ['#101014', 'Noir'], ['#2b2b30', 'Gris foncé']], SP_REG.encre);
-    h += '<div class="rg-note">Le contraste minimum est vérifié à chaque recomposition (aucun texte clair sur fond clair).</div>';
+      '<button class="rg-chip" type="button" id="rgAccentAuto">Auto</button></div>';
+    h += '<div class="rg-row"><label for="rg_fondPage">Fond des pages</label>' +
+      '<input type="color" id="rg_fondPage" data-reg="fondPage" value="' + (SP_REG.fondPage || '#ffffff') + '">' +
+      '<button class="rg-chip" type="button" id="rgFondAuto">Auto</button></div>';
+    h += '<div class="rg-chips" style="margin-bottom:8px">' +
+      [['', 'Thème'], ['#ffffff', 'Blanc'], ['#fffdf8', 'Crème'], ['#f4f4f5', 'Gris clair'], ['#f7faf5', 'Vert pâle'], ['#0e0e10', 'Encre (nuit)']].map(function (c) {
+        return '<button type="button" class="rg-chip' + (String(SP_REG.fondPage) === c[0] ? ' on' : '') + '" data-fond="' + c[0] + '">' + c[1] + '</button>';
+      }).join('') + '</div>';
+    h += spRegSelectHTML('encre', 'Encre de lecture', [['auto', 'Automatique'], ['#101014', 'Noir'], ['#2b2b30', 'Gris foncé'], ['#f5f5f2', 'Clair']], SP_REG.encre);
+    h += '<div class="rg-note">Un fond sombre fait passer la typographie en clair automatiquement (contraste minimum vérifié à chaque recomposition).</div>';
     h += '</section>';
     /* ── VARIATION ── */
     h += '<section class="rg-sec"><h4>Variation</h4>';
-    h += spRegRangeHTML('variation', 'Jeu n°', 1, 20, 1, SP_REG.variation || 1, '');
-    h += '<div class="rg-note">Change la bande de couverture, la place des accents et les encadrés, sans toucher au texte.</div>';
+    h += '<div class="rg-cols">' + spRegMiniHTML('variation', 'Jeu n°', 1, 20, 1, SP_REG.variation || 1, '') +
+      '<div class="rg-mini"><span>&nbsp;</span><div class="rg-line"><button class="rg-chip" type="button" id="rgReset">♻️ Réinitialiser</button></div></div>' +
+      '</div>';
+    h += '<div class="rg-note">Change bande de couverture, place des accents et encadrés sans toucher au texte. « Réinitialiser » remet tous les réglages du thème.</div>';
     h += '</section>';
     b.innerHTML = h;
     spRegBrancher();
@@ -16747,44 +16877,66 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const b = $('rgBody');
     if (!b) return;
     const majEtiquette = function (el) {
-      const k = el.getAttribute('data-reg');
-      const v = $('rgv_' + k);
-      if (!v) return;
-      if (k === 'marge' || k === 'echelleTitre') v.textContent = el.value + ' %';
-      else if (k === 'gouttiere') v.textContent = el.value + ' mm';
-      else if (k === 'corps') v.textContent = el.value + ' pt';
-      else if (k === 'interligne') v.textContent = el.value + ' %';
-      else v.textContent = el.value;
+      const v = $('rgv_' + el.getAttribute('data-reg'));
+      if (v) v.textContent = el.value + (el.getAttribute('data-sfx') || '');
     };
     b.querySelectorAll('[data-reg]').forEach(function (el) {
       const k = el.getAttribute('data-reg');
       el.addEventListener('input', function () {
         majEtiquette(el);
-        if (k === 'preset') return;             // traité au change
         spRegLire();
         if (el.type === 'range') spRegProgrammer();
         else spRegAppliquer();
       });
       el.addEventListener('change', function () {
-        if (k === 'preset') {
-          if (el.value !== 'libre') {
-            const p = el.value.split('x');
-            SP_REG.w = Number(p[0]); SP_REG.h = Number(p[1]);
-            spRegPeindre();
-          }
-          spRegAppliquer();
-          return;
-        }
         if (k === 'unite') {
-          /* On relit les cotes DANS L'ANCIENNE UNITÉ avant de changer d'unité. */
-          const lw = document.getElementById('rg_w'), lh = document.getElementById('rg_h');
-          const avant = SP_REG_UNITES.filter(function (x) { return x[0] !== el.value; })[0];
-          SP_REG.w = Number(lw.value) * (avant ? avant[1] : 1);
-          SP_REG.h = Number(lh.value) * (avant ? avant[1] : 1);
+          /* Les cotes sont relues DANS L'ANCIENNE UNITÉ avant le changement d'unité. */
+          const av = SP_REG_UNITES.filter(function (x) { return x[0] === SP_REG.unite; })[0] || SP_REG_UNITES[0];
+          SP_REG.w = Number(SP_REG.w) || 210;
+          SP_REG.h = Number(SP_REG.h) || 297;
           SP_REG.unite = el.value;
+          SP_REG.w = Math.round(SP_REG.w / (av[1] / spRegMm()[1]) * 100) / 100;
+          SP_REG.h = Math.round(SP_REG.h / (av[1] / spRegMm()[1]) * 100) / 100;
           spRegPeindre(); spRegAppliquer(); return;
         }
         spRegLire(); spRegAppliquer();
+      });
+    });
+    /* Pastilles : format, style, couleur de fond, remise à zéro des couleurs. */
+    b.querySelectorAll('[data-format]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        const p = el.getAttribute('data-format').split('x');
+        SP_REG.w = Number(p[0]); SP_REG.h = Number(p[1]);
+        spRegPeindre(); spRegAppliquer();
+      });
+    });
+    b.querySelectorAll('[data-style]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        const s = SP_REG_STYLES.filter(function (x) { return x[0] === el.getAttribute('data-style'); })[0];
+        if (!s) return;
+        SP_REG_STYLE = s[0];
+        /* Le faisceau s'applique sur les réglages PAR DÉFAUT (pas sur les précédents) :
+           un style doit donner le même document quel que soit l'état de départ. */
+        const base = spRegDefaut();
+        base.w = SP_REG.w; base.h = SP_REG.h; base.unite = SP_REG.unite; base.bleed = SP_REG.bleed;
+        base.variation = SP_REG.variation;
+        SP_REG = Object.assign(base, s[2]);
+        spRegPeindre(); spRegAppliquer();
+      });
+    });
+    b.querySelectorAll('[data-fond]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        SP_REG.fondPage = el.getAttribute('data-fond');
+        spRegPeindre(); spRegAppliquer();
+      });
+    });
+    b.querySelectorAll('[data-radio]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        const k = el.getAttribute('data-radio');
+        const v = el.getAttribute('data-val');
+        if (k === 'colonnes') SP_REG.colonnes = Number(v);
+        else SP_REG[k] = (v === 'true');
+        spRegPeindre(); spRegAppliquer();
       });
     });
     const auto = $('rgAccentAuto');
@@ -16793,33 +16945,43 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       spRegAppliquer();
       const c = $('rg_accent'); if (c) c.value = '#1f6feb';
     });
+    const autoF = $('rgFondAuto');
+    if (autoF) autoF.addEventListener('click', function () {
+      SP_REG.fondPage = '';
+      spRegPeindre(); spRegAppliquer();
+    });
+    const reset = $('rgReset');
+    if (reset) reset.addEventListener('click', function () {
+      const base = spRegDefaut();
+      base.w = SP_REG.w; base.h = SP_REG.h; base.unite = SP_REG.unite;
+      SP_REG = base;
+      SP_REG_STYLE = '';
+      spRegPeindre(); spRegAppliquer();
+    });
   }
 
   function spRegLire() {
     const b = $('rgBody');
     if (!b || !SP_REG) return;
     const val = function (k) { const el = document.getElementById('rg_' + k); return el ? el.value : null; };
-    const preset = val('preset');
-    if (preset && preset !== 'libre') {
-      const p = preset.split('x');
-      SP_REG.w = Number(p[0]); SP_REG.h = Number(p[1]);
-    } else {
-      const lw = document.getElementById('rg_w'), lh = document.getElementById('rg_h');
-      if (lw && lh) { SP_REG.w = spRegVersMm(lw.value); SP_REG.h = spRegVersMm(lh.value); }
-    }
-    const radio = function (k) { const el = b.querySelector('input[name="rg_' + k + '"]:checked'); return el ? el.value : null; };
+    const num = function (k) { const v = val(k); return (v === null || v === '') ? null : Number(v); };
+    /* Cotes : les tirettes ET les nombres sont dans l'unité affichée, l'INTERNE est en mm. */
+    const w = num('w'), h = num('h');
+    if (w) SP_REG.w = spRegVersMm(w);
+    if (h) SP_REG.h = spRegVersMm(h);
     const texte = function (k) { const v = val(k); if (v !== null && v !== undefined) SP_REG[k] = v; };
     texte('theme'); texte('policeTitre'); texte('policeCorps'); texte('align'); texte('encre'); texte('unite');
-    const marge = val('marge'); if (marge) SP_REG.marge = Number(marge) / 100;
-    const gout = val('gouttiere'); if (gout) SP_REG.gouttiere = Number(gout);
-    const corps = val('corps'); if (corps) SP_REG.corps = Number(corps);
-    const et = val('echelleTitre'); if (et) SP_REG.echelleTitre = Number(et) / 100;
-    const inter = val('interligne'); if (inter) SP_REG.interligne = (Number(inter) === 155) ? 0 : Number(inter) / 100;
-    const varN = val('variation'); if (varN) SP_REG.variation = Number(varN);
-    const cols = radio('colonnes'); if (cols) SP_REG.colonnes = Number(cols);
-    const fol = radio('folio'); if (fol) SP_REG.folio = (fol === 'true');
-    const pap = radio('papier'); if (pap) SP_REG.papier = pap;
-    // Les cotes restent en mm, quelle que soit l'unité affichée.
+    const marge = num('marge'); if (marge) SP_REG.marge = marge / 100;
+    const gout = num('gouttiere'); if (gout) SP_REG.gouttiere = gout;
+    const corps = num('corps'); if (corps) SP_REG.corps = corps;
+    const et = num('echelleTitre'); if (et) SP_REG.echelleTitre = et / 100;
+    const inter = num('interligne'); if (inter) SP_REG.interligne = (inter === 155) ? 0 : inter / 100;
+    const interl = num('interlettrage'); if (interl !== null) SP_REG.interlettrage = interl;
+    const fil = num('filets'); if (fil) SP_REG.filets = fil / 100;
+    const den = num('densite'); if (den) SP_REG.densite = den / 100;
+    const ban = num('bande'); if (ban) SP_REG.bande = ban / 100;
+    const ble = num('bleed'); if (ble !== null) SP_REG.bleed = ble;
+    const varN = num('variation'); if (varN) SP_REG.variation = varN;
     SP_REG.w = Math.max(20, Math.min(1200, Number(SP_REG.w) || 210));
     SP_REG.h = Math.max(20, Math.min(1200, Number(SP_REG.h) || 297));
   }
@@ -16833,6 +16995,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     window._spGabTheme = (SP_REG.theme && SP_REG.theme !== 'auto') ? SP_REG.theme : null;
     state.pageW = Number(SP_REG.w) || state.pageW;
     state.pageH = Number(SP_REG.h) || state.pageH;
+    if (SP_REG.bleed !== undefined && SP_REG.bleed !== null) state.bleed = Math.max(0, Math.min(10, Number(SP_REG.bleed) || 0));
     const brief = String(state.lastPrompt || '').trim() ||
       (((state.chat || []).filter(function (m) { return m.role === 'user'; }).slice(-1)[0] || {}).text || '');
     let out = null;
@@ -16936,10 +17099,13 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       spRegSyncFormat();
       window._spReglages = SP_REG;
       try { persistDoc(); } catch (_) {}
-      const resume = '⚙️ Réglages appliqués : ' + SP_REG.w + '×' + SP_REG.h + ' mm · thème ' +
-        (SP_REG.theme === 'auto' ? 'automatique' : SP_REG.theme) + ' · ' + SP_REG.colonnes + ' colonne(s) · corps ' +
-        SP_REG.corps + ' pt · interligne ' + Math.round((Number(SP_REG.interligne) || 1.55) * 100) + ' % · marges ' +
-        Math.round(SP_REG.marge * 100) + ' % · variation n°' + (SP_REG.variation || 1) +
+      const resume = '⚙️ Réglages appliqués : ' + SP_REG.w + '×' + SP_REG.h + ' mm · fond perdu ' + (SP_REG.bleed || 0) + ' mm · thème ' +
+        (SP_REG.theme === 'auto' ? 'automatique' : SP_REG.theme) + (SP_REG_STYLE ? (' (style ' + SP_REG_STYLE + ')') : '') +
+        ' · ' + SP_REG.colonnes + ' colonne(s) · corps ' + SP_REG.corps + ' pt · interligne ' + Math.round((Number(SP_REG.interligne) || 1.55) * 100) +
+        ' % · marges ' + Math.round(SP_REG.marge * 100) + ' % · densité ' + Math.round((Number(SP_REG.densite) || 0.94) * 100) +
+        ' % · filets ' + Math.round((Number(SP_REG.filets) || 1) * 100) + ' % · bande ' + Math.round((Number(SP_REG.bande) || 1) * 100) +
+        ' %' + (SP_REG.caps ? ' · titres en capitales' : '') + (SP_REG.fondPage ? (' · fond ' + SP_REG.fondPage) : '') +
+        ' · variation n°' + (SP_REG.variation || 1) +
         ((state.doc && state.doc.pages) ? (' — ' + state.doc.pages.length + ' page(s) recomposée(s) sans modèle (0 jeton).') : '.');
       appendChat('assistant', resume);
       state.chat.push({ role: 'assistant', text: resume });
@@ -16962,10 +17128,15 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
      direct n'est possible (il faudrait le recontacter à chaque tirette). */
   function spRegMajBouton() {
     const wrap = $('reglagesTipWrap');
-    if (!wrap) return;
+    const pre = $('stReglagesBtn');
     const eng = String(state.engine || '');
     const on = (eng === 'gabarit');
-    if (wrap.style.display !== (on ? '' : 'none')) wrap.style.display = on ? '' : 'none';
+    if (wrap && wrap.style.display !== (on ? '' : 'none')) wrap.style.display = on ? '' : 'none';
+    /* Même icône à TIRETTES sur l'écran de démarrage (demande utilisateur). */
+    if (pre) {
+      const moteurPre = (function () { try { return String(spStEngCourant ? spStEngCourant() : eng); } catch (_) { return eng; } })();
+      pre.style.display = (moteurPre === 'gabarit') ? '' : 'none';
+    }
     /* On ne referme le pop-in que si le moteur est CONNU et n'est plus le nôtre :
        un moteur momentanément indéterminé ('' pendant l'initialisation) ne doit pas
        faire disparaître les réglages en cours. */
@@ -16982,6 +17153,16 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     if (!b || !ok) return;
     SP_REG_BRANCHE = true;
     b.addEventListener('click', spRegOuvrir);
+    /* Écran de démarrage : l'icône à tirettes ferme la pré-home (en gardant le moteur
+       et le texte déjà saisis) puis ouvre les réglages dans le studio. */
+    const pre = $('stReglagesBtn');
+    if (pre) pre.addEventListener('click', function () {
+      try { window._spStEngChoisi = true; } catch (_) {}
+      try { var sel = $('engineSelect'); if (sel && spStEngCourant) { sel.value = spStEngCourant(); sel.dispatchEvent(new Event('change', { bubbles: true })); } } catch (_) {}
+      try { var ti = $('starterInput'), pi = $('promptInput'); if (ti && pi && String(ti.value || '').trim() && !String(pi.value || '').trim()) { pi.value = ti.value; pi.dispatchEvent(new Event('input', { bubbles: true })); } } catch (_) {}
+      try { spStarterFermer(); } catch (_) {}
+      setTimeout(function () { try { spRegMajBouton(); spRegOuvrir(); } catch (_) {} }, 260);
+    });
     const c = $('rgClose');
     if (c) c.addEventListener('click', function () { spRegFermer(false); });
     ok.addEventListener('click', function () { spRegFermer(true); });
