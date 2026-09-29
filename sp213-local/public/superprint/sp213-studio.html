@@ -8418,7 +8418,7 @@ function spRtfLayoutInfo(src) {
     for (let i = 0; i < 6; i++) {
       const x = L.x0 + (i % 3) * (cw + L.g.gutter), y = y0 + Math.floor(i / 3) * (hh + L.g.gutter * 1.4);
       spGabPhoto(L, e, x, y, cw, hh, 'projet ' + (i + 1));
-      e.push(spGabT(x, y + hh + 6, cw, spGabCourt(leg[i] || ('Projet ' + (i + 1)), 40), 8.5, p.txt, 'bold', 'left', 1.25));
+      e.push(spGabT(x, y + hh + 6, cw * 0.9, spGabCourt(leg[i] || ('Projet ' + (i + 1)), 40), 8.5, p.txt, 'bold', 'left', 1.25));
     }
     return e;
   }
@@ -8633,14 +8633,14 @@ function spRtfLayoutInfo(src) {
     e.push(spGabT(L.x0, L.y0 + k * 16, L.cw * 0.82, M.titre, g.titre, p.txt, 'bold', 'left', 0.95));
     e.push(spGabL(L.x0, L.y0 + k * 16 + g.titre * 1.15, L.cw, p.a, 4));
     let y = L.y0 + k * 16 + g.titre * 1.15 + k * 26;
-    const hx = L.x0 + k * 74;
+    const hx = L.x0 + k * 104;
     if (M.chapeau) { e.push(spGabT(L.x0, y, L.cw * 0.82, spGabCourt(M.chapeau, 170), g.chapeau, '#4b5563', null, 'left', 1.45)); y += k * 46; }
     const items = M.items.length ? M.items : M.lignes.map(spGabItem);
     items.slice(0, 12).forEach(function (it) {
       const trouve = String(it.nom || '').match(/^\s*(\d{1,2}\s*[h:.]\s*\d{0,2})/);
       const heure = trouve ? trouve[1].replace(/\s+/g, '') : (it.prix || '');
       const nom = trouve ? it.nom.replace(trouve[0], '').replace(/^[\s–—-]+/, '') : it.nom;
-      if (heure) e.push(spGabT(L.x0, y, k * 66, heure, Math.min(13, g.corps * 1.5), p.a, 'bold', 'left', 0.98));
+      if (heure) e.push(spGabT(L.x0, y, k * 76, heure, Math.min(13, g.corps * 1.5), p.a, 'bold', 'left', 0.98));
       e.push(spGabT(hx, y, L.x1 - hx, spGabCourt(nom, 54), Math.min(12, g.corps * 1.35), p.txt, 'bold', 'left', 1.05));
       if (it.description) e.push(spGabT(hx, y + k * 16, L.x1 - hx, spGabCourt(it.description, 92), g.corps, '#6b7280', null, 'left', 1.35));
       y += it.description ? k * 44 : k * 26;
@@ -8808,6 +8808,45 @@ function spRtfLayoutInfo(src) {
   }
   let SP_GAB_DERNIER_PAL = null;
 
+  /* ══ LUMINOSITÉ ET GARDE-FOU DE CONTRASTE (notre moteur, mode automatique) ══════
+     Règles données par l'utilisateur : INTERDIT un gris clair sous une typographie
+     sur fond blanc, et INTERDIT un fond sombre sous une typographie sombre. On mesure
+     donc, pour chaque texte, la couleur réellement DERRIÈRE lui — le dernier aplat qui
+     le contient, sinon le fond de page — puis on remet le texte en clair ou en foncé
+     selon ce fond. En automatique on n'écrit jamais un gris clair : soit le texte du
+     thème, soit un noir de lecture. */
+  function spGabLum(hex) {
+    const h = String(hex || '').replace('#', '');
+    if (h.length < 6) return 1;
+    const r = parseInt(h.slice(0, 2), 16) / 255, v = parseInt(h.slice(2, 4), 16) / 255, b = parseInt(h.slice(4, 6), 16) / 255;
+    return 0.2126 * r + 0.7152 * v + 0.0722 * b;
+  }
+  function spGabContraste(pages, L, auto) {
+    const fondPage = (L.pal && L.pal.fond) || '#ffffff';
+    const fonce = (auto ? '#101014' : ((L.pal && L.pal.txt && spGabLum(L.pal.txt) < 0.5) ? L.pal.txt : '#101014'));
+    const clair = (L.pal && L.pal.sur) || '#ffffff';
+    let corriges = 0;
+    pages.forEach(function (pg) {
+      const els = pg.elements || [];
+      const aplats = els.filter(function (e) { return e.type === 'rectangle' && e.fill && String(e.fill) !== 'transparent' && Number(e.height) > 2; });
+      els.forEach(function (e) {
+        if (e.type !== 'text' || !e.fill) return;
+        const l = Number(e.left) || 0, t = Number(e.top) || 0;
+        let fond = fondPage;
+        aplats.forEach(function (a) {
+          const al = Number(a.left) || 0, at = Number(a.top) || 0, aw = Number(a.width) || 0, ah = Number(a.height) || 0;
+          if (l >= al - 0.6 && l <= al + aw + 0.6 && t >= at - 0.6 && t <= at + ah + 0.6) fond = a.fill;
+        });
+        const lumF = spGabLum(fond), lumT = spGabLum(e.fill);
+        if (Math.abs(lumF - lumT) < 0.35) {
+          e.fill = (lumF > 0.5) ? fonce : clair;
+          corriges++;
+        }
+      });
+    });
+    return corriges;
+  }
+
   /* ══ FOND NOIR COMPLET ET LISIBILITÉ ══════════════════════════════════════════
      Demande utilisateur : « si l'utilisateur met premium il peut avoir des fonds
      complets noirs ». Appelée après la pose, en millimètres, sur tout le document :
@@ -8877,7 +8916,7 @@ function spRtfLayoutInfo(src) {
       if (force) theme = { cle: force[0], pal: force[2], fonts: force[3] };
     }
     const hasard = spGabHasard(brief);
-    const polices = SP_GAB_FONTS[(theme && theme.fonts) || g.fonts] || SP_GAB_FONTS.sans;
+    const polices = SP_GAB_FONTS[(theme && theme.fonts) || 'mono'] || SP_GAB_FONTS.mono;
     SP_GAB_FONTE.titre = polices.titre;
     SP_GAB_FONTE.corps = 'Open Sans';
     SP_GAB_FONTE.mono = 'IBM Plex Mono';
@@ -8988,10 +9027,22 @@ function spRtfLayoutInfo(src) {
     pages.forEach(function (p, i) { p.pageIndex = i; });
     spGabFondNoir(pages, L, fmt, g);
     const posees = texte.photos.length - L.photos.length;
+    /* ══ GOUTTIÈRE MINIMALE ENTRE COLONNES (demande utilisateur : « deux colonnes
+       actuellement c'est touche touche ») ══ Aucun gabarit multi-colonnes ne descend
+       sous 10 mm d'écart entre deux colonnes, quel que soit son réglage. */
+    if (g.cols > 1) g.gutter = Math.max(10, g.gutter);
+    /* ══ GARDE-FOU DE CONTRASTE (notre moteur) ══ Interdits posés par l'utilisateur :
+       typographie grise CLAIRE sur fond BLANC, et typographie sombre sur fond sombre,
+       en mode automatique. On regarde ce qu'il y a DERRIÈRE chaque texte (le dernier
+       aplat qui le contient, sinon le fond de page) et on corrige la couleur si
+       l'écart de luminosité est insuffisant. */
+    const auto = !theme;
+    const corriges = spGabContraste(pages, L, auto);
     const j = function (niv, msg) { try { spJournalAjoute(niv, msg); } catch (_) {} };
     j('ok', 'Gabarit « ' + g.nom + ' » (' + g.key + ') : ' + pages.length + ' page(s) posée(s).' + (theme ? ' Thème « ' + theme.cle + ' » appliqué.' : ''));
     j('info', 'Typographie : titres ' + SP_GAB_FONTE.titre + ', corps ' + SP_GAB_FONTE.corps + ', mentions ' + SP_GAB_FONTE.mono + '.');
     j('info', 'Variation n°' + hasard.n + ' (les regénérations d\'une même demande font bouger bande, accents et encadré).');
+    if (corriges) j('info', 'Contraste corrigé sur ' + corriges + ' texte(s) : aucune typographie claire sur fond blanc, ni sombre sur sombre.');
     /* ══ CONTRÔLE AUTOMATIQUE À CHAQUE GÉNÉRATION (surveillance des 15 gabarits) ══ */
     SP_GAB_DERNIER_PAL = L.pal;
     try {
