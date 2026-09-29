@@ -8387,24 +8387,24 @@ function spRtfLayoutInfo(src) {
       if (M.surtitre) e.push(spGabT(L.x0, L.y0, L.cw, spGabCourt(M.surtitre, 42).toUpperCase(), 8.5, '#ffffff', 'bold', 'left', 1.1, 200));
       e.push(spGabT(L.x0, L.y0 + k * 24, L.cw * 0.92, M.titre, g.titre, '#ffffff', 'bold', 'left', 0.95));
       if (M.chapeau) e.push(spGabT(L.x0, bande - k * 48, L.cw * 0.8, spGabCourt(M.chapeau, 150), g.chapeau, '#f1f5f9', null, 'left', 1.4));
-      spGabPhoto(L, e, L.x0, bande + k * 18, L.cw, L.y1 - bande - k * 58, 'grand visuel');
+      /* GRAND FOND : le visuel de couverture va jusqu'aux CHANTS — x = 0 et largeur
+         pleine page ; le studio étend ensuite au fond perdu. */
+      spGabPhoto(L, e, 0, bande + k * 18, L.W, L.H - (bande + k * 18) - k * 8, 'grand visuel');
       e.push(spGabL(L.x0, L.y1 - k * 24, L.cw, p.txt, 2));
       e.push(spGabT(L.x0, L.y1 - k * 16, L.cw, spGabCourt(M.surtitre || g.nom, 60), 8, '#6b7280', null, 'left', 1.3, 120));
       return e;
     }
-    // ── dernière page : les contacts
+    /* ── DERNIÈRE PAGE : 4e DE COUVERTURE (grand fond de couleur, pleine largeur) —
+       contacts en clair sur la bande, titre du document en pied de page. */
     if (n === tot) {
-      if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0, L.cw, spGabCourt(M.surtitre, 38)));
-      e.push(spGabL(L.x0, L.y0 + k * 14, L.cw, p.a, 4));
-      e.push(spGabT(L.x0, L.y0 + k * 28, L.cw, 'Contacts', Math.min(26, g.corps * 2.6), p.txt, 'bold', 'left', 0.98));
-      const infos = (M.infos.length ? M.infos : M.lignes).slice(0, 6);
-      const yB = L.y0 + k * 62;
-      const hB = Math.min(L.ch * 0.5, k * 30 + infos.length * k * 17);
-      e.push(spGabR(L.x0, yB, L.cw, hB, p.clair, 4));
-      e.push(spGabL(L.x0, yB, 3, p.a, 3));
-      infos.forEach(function (t, i) { e.push(spGabT(L.x0 + k * 14, yB + k * 14 + i * k * 17, L.cw - k * 28, spGabCourt(t, 92), g.corps + 1, p.txt, null, 'left', 1.35)); });
-      if (M.chapeau) e.push(spGabT(L.x0, L.y1 - k * 44, L.cw, spGabCourt(M.chapeau, 170), g.corps, '#6b7280', null, 'left', 1.45));
-      e.push(spGabR(0, L.H - 14, L.W, 14, p.a, 0));
+      e.push(spGabR(0, 0, L.W, L.H * 0.62, p.a, 0));
+      if (M.surtitre) e.push(spGabT(L.x0, L.y0, L.cw, spGabCourt(M.surtitre, 40).toUpperCase(), 8.5, '#ffffff', 'bold', 'left', 1.1, 200));
+      e.push(spGabT(L.x0, L.y0 + k * 30, L.cw * 0.9, 'Contacts', Math.min(26, g.corps * 2.6), '#ffffff', 'bold', 'left', 0.98));
+      const infos4 = (M.infos.length ? M.infos : M.lignes).slice(0, 6);
+      infos4.forEach(function (t, i) { e.push(spGabT(L.x0, L.y0 + k * 76 + i * k * 18, L.cw * 0.9, spGabCourt(t, 92), g.corps + 1, '#f1f5f9', null, 'left', 1.35)); });
+      e.push(spGabL(L.x0, L.H * 0.62 + k * 26, L.cw, p.a, 3));
+      e.push(spGabT(L.x0, L.H * 0.62 + k * 38, L.cw * 0.8, spGabCourt(M.titre, 70), Math.min(23, g.corps * 2.2), p.txt, 'bold', 'left', 0.95));
+      if (M.chapeau) e.push(spGabT(L.x0, L.y1 - k * 40, L.cw, spGabCourt(M.chapeau, 170), g.corps, '#6b7280', null, 'left', 1.45));
       return e;
     }
     // ── page 2 : l'édito
@@ -8426,6 +8426,9 @@ function spRtfLayoutInfo(src) {
       if (!s) return;
       const x = L.x0 + col * (cw + gw);
       let y = L.y0;
+      /* GRAND FOND de page intérieure : un bandeau de couleur pleine largeur ouvre la
+         page ; le « petit fond » est l'encadré clair de la colonne de droite. */
+      if (col === 0) { e.push(spGabR(0, 0, L.W, k * 18, p.a, 0)); y = L.y0 + k * 10; }
       /* Titre de la colonne : le titre général ne se répète pas six fois de suite
          (mesuré) — sans section propre, on annonce une partie numérotée. */
       const propre = s.t && s.t !== M.titre;
@@ -8672,6 +8675,10 @@ function spRtfLayoutInfo(src) {
       state.viewMode = modeVoulu;
       try { spEcrireModeConversation(modeVoulu); } catch (_) {}
       try { localStorage.setItem('sp213_viewmode_v1', modeVoulu); } catch (_) {}
+      /* Le regroupement en PLANCHES est lu dans doc.viewMode : on le met à jour
+         comme le fait spBasculerModeAffichage, sinon le rendu reste en pages seules
+         (mesuré : « Page 2 · page seule » au lieu de « Pages 2–3 »). */
+      try { if (state.doc) state.doc.viewMode = modeVoulu; } catch (_) {}
       try { spMajBoutonMode(); } catch (_) {}
     }
     /* VOLUME : sans nombre de pages demandé, on le déduit du texte fourni (demande
@@ -8680,29 +8687,50 @@ function spRtfLayoutInfo(src) {
     let tot = Math.max(1, veut || g.pages);
     if (!veut && g.pages >= 3) tot = Math.min(24, Math.max(tot, Math.ceil((volume / 2) / 1300)));
     const spread = (state.viewMode === 'spread');
-    /* EN PLANCHES, RECTO-VERSO RÉEL : la page 1 (couverture) tombe sur la page de
-       DROITE, les pages paires à gauche — c'est ce qu'attend une reliure. On ouvre
-       donc tout document de 3 pages et plus par une garde blanche. */
-    const garde = (spread && tot >= 3);
+    /* ══ IMPOSITION DU LIVRE : C'EST LE STUDIO QUI LA FAIT, PAS MOI ══
+       spCahierPlanches(n) est la source unique de l'imposition (notes vérifiées) :
+       LA PAGE 1 SEULE À DROITE, puis les paires gauche/droite, et LA DERNIÈRE PAGE
+       SEULE quand le total est PAIR. Ma garde blanche faisait donc DOUBLON : mesure
+       8 pages demandées → 10 pages produites, avec DEUX pages seules au début. On ne
+       touche plus à l'imposition ; on rend simplement le cahier PAIR, et la dernière
+       page est une vraie 4e de couverture. */
+    const livre = (g.fam === 'cahier' || g.fam === 'brochure');
+    const galerie = (livre && texte.photos.length > 0 && tot >= 4);
+    if (livre && ((tot + (galerie ? 1 : 0)) % 2) === 1) tot += 1;
     const pages = [];
-    if (garde) pages.push({ pageIndex: 0, elements: [spGabVersMm(spGabR(0, 0, W, H, '#ffffff', 0))] });
     const lay = SP_GAB_LAY[g.fam] || spGabP_affiche;
     for (let i = 1; i <= tot; i++) {
       let els = [];
       try { els = lay(L, i, tot) || []; } catch (err) { els = []; }
       els.unshift(spGabR(0, 0, W, H, '#ffffff', 0));
-      if (g.folio && i > 1) els = els.concat(spGabFolio(L, i, tot));
+      if (g.folio && i > 1 && i < tot) els = els.concat(spGabFolio(L, i, tot));
       pages.push({ pageIndex: pages.length, elements: els.map(spGabVersMm) });
     }
-    if (spread && tot >= 3 && (pages.length % 2) === 1) {
-      pages.push({ pageIndex: pages.length, elements: [spGabVersMm(spGabR(0, 0, W, H, '#ffffff', 0))] });
+    /* PIÈCES JOINTES IMAGE NON PLACÉES : on ne les jette pas. Un cahier ou une
+       brochure reçoit une GALERIE juste avant la 4e de couverture (demande
+       utilisateur : « notre modèle doit vraiment réinjecter les PJ »). */
+    if (galerie) {
+      const g2 = [spGabR(0, 0, W, H, '#ffffff', 0)];
+      const yT = L.y0 + L.k * 8;
+      g2.push(spGabR(0, 0, L.W, L.k * 18, L.pal.a, 0));
+      g2.push(spGabT(L.x0, L.k * 24, L.cw * 0.7, 'Galerie', Math.min(22, L.g.titre * 0.5), L.pal.txt, 'bold', 'left', 0.95));
+      g2.push(spGabL(L.x0, L.k * 66, L.cw, L.pal.a, 3));
+      const cw2 = (L.cw - L.g.gutter * SP_GAB_K) / 2;
+      const hh = Math.min(L.ch * 0.24, L.k * 140);
+      for (let i = 0; i < 6 && L.photos.length; i++) {
+        const x = L.x0 + (i % 2) * (cw2 + L.g.gutter * SP_GAB_K);
+        const y = L.k * 80 + Math.floor(i / 2) * (hh + L.k * 22);
+        spGabPhoto(L, g2, x, y, cw2, hh, 'photo');
+      }
+      pages.splice(pages.length - 1, 0, { pageIndex: 0, elements: g2.map(spGabVersMm) });
     }
+    pages.forEach(function (p, i) { p.pageIndex = i; });
     const posees = texte.photos.length - L.photos.length;
     const j = function (niv, msg) { try { spJournalAjoute(niv, msg); } catch (_) {} };
     j('ok', 'Gabarit « ' + g.nom + ' » (' + g.key + ') : ' + pages.length + ' page(s) posée(s).');
     j('info', 'Format lu : ' + fmt.W + '×' + fmt.H + ' mm, ' + (fmt.carre ? 'carré' : (fmt.pays ? 'paysage' : 'portrait'))
       + (fmt.mini ? ', petit format' : '') + (fmt.bandeau ? ', format bandeau' : '') + (fmt.grandFmt ? ', grand format' : '') + '.');
-    j('info', 'Imposition : ' + (spread ? 'DOUBLE PAGE (planches)' : 'page simple') + (garde ? ' — garde blanche au début, la couverture tombe sur la page de droite' : '') + (g.folio ? ', folios' : '') + '.');
+    j('info', 'Imposition : ' + (spread ? 'DOUBLE PAGE (planches) — page 1 seule à droite, puis les paires gauche/droite, dernière page seule (total pair)' : 'page simple') + (g.folio ? ', folios' : '') + '.');
     j('info', 'Règles : marges ' + M.map(function (v) { return Math.round(v * 10) / 10; }).join('/') + ' mm, ' + g.cols + ' colonne(s), gouttière ' + g.gutter + ' mm, interligne des titres 0,95.');
     j('info', 'Contenu : ' + texte.source + ' — ' + posees + ' photo(s) placée(s), texte ' + (texte.brief.length + srcLen(texte)) + ' caractères.' + (texte.contexte ? ' Pièce(s) jointe(s) en CONTEXTE prises en compte pour le ton et le thème.' : ''));
     return {
