@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
@@ -8711,7 +8711,11 @@ function spRtfLayoutInfo(src) {
      police des titres (11 à 15 pt au lieu de 40) et l'espace réservé restait,
      d'où l'impression de titres trop interlignés et de pages vides. */
   const SP_GAB_GEOM = ['left', 'top', 'width', 'height', 'radius', 'rx', 'ry', 'x1', 'x2', 'y1', 'y2'];
-  function spGabVersMm(el) {
+  /* Couleurs « écrites foncées » : sur une page NOIRE (thème premium, fond complet) elles
+     deviennent illisibles. On les repasse en clair, selon la nature de l'élément. */
+  const SP_GAB_GRIS = ['#4b5563', '#6b7280', '#374151', '#333333', '#222222', '#1f2937', '#8a8f98', '#9aa0a6'];
+  const SP_GAB_NOIRC = ['#111111', '#18181b', '#1c1917', '#0e0e10', '#122015', '#0b1220', '#0f172a', '#0c2b34', '#1b0f38', '#1b1b22', '#000000'];
+  function spGabVersMm(el, ctx) {
     const o = {};
     for (const k in el) { if (Object.prototype.hasOwnProperty.call(el, k)) o[k] = el[k]; }
     SP_GAB_GEOM.forEach(function (k) {
@@ -8719,6 +8723,24 @@ function spRtfLayoutInfo(src) {
     });
     /* Un filet sous 0,15 mm disparaît à l'impression (et le studio a un plancher). */
     if (o.type === 'line') o.strokeWidth = Math.max(0.3, Number(o.strokeWidth) || 0.3);
+    if (ctx && ctx.sombre) {
+      const bas = function (v) { return String(v || '').toLowerCase(); };
+      /* Le FOND DE PAGE n'est jamais touché : c'est la page noire elle-même. */
+      if (bas(o.fill) !== bas(ctx.fond)) {
+        if (o.type === 'text') {
+          if (SP_GAB_GRIS.indexOf(bas(o.fill)) !== -1) o.fill = ctx.doux;
+          else if (SP_GAB_NOIRC.indexOf(bas(o.fill)) !== -1) o.fill = ctx.sur;
+        } else {
+          ['fill', 'stroke'].forEach(function (k) {
+            if (o[k] && SP_GAB_GRIS.indexOf(bas(o[k])) !== -1) o[k] = ctx.moyen;
+            else if (o[k] && SP_GAB_NOIRC.indexOf(bas(o[k])) !== -1) o[k] = ctx.moyen;
+          });
+          /* Un panneau clair sur une page noire devient un panneau sombre : le texte
+             clair posé dessus reste lisible. */
+          if (bas(o.fill) === bas(ctx.clair)) o.fill = ctx.panneau;
+        }
+      }
+    }
     return o;
   }
 
@@ -8741,6 +8763,98 @@ function spRtfLayoutInfo(src) {
       });
   }
 
+  /* ══ CONTRÔLE DES CHEVAUCHEMENTS — UNITÉS JUSTES (demande utilisateur) ══════════
+     Hauteur d'une ligne = fontSize × lineHeight × 1,13 px, et 1 px = 0,3528 mm
+     (formule du studio). Mon premier détecteur comparait une largeur en MILLIMÈTRES
+     à une largeur de caractère en POINTS, sans la conversion : il annonçait 54
+     collisions qui n'existaient pas. Celui-ci se vérifie sur la géométrie réelle.
+     Il distingue surtout le défaut signalé — un texte qui COMMENCE dans un aplat et
+     FINIT dehors (la dernière ligne tombe sur le fond, donc paraît coupée). */
+  function spGabChevauchements(pages, pal) {
+    const K = 0.352778;
+    const fonds = ['#ffffff', String((pal && pal.fond) || '#ffffff').toLowerCase()];
+    const boite = function (e) {
+      const l = Number(e.left) || 0, t = Number(e.top) || 0, w = Number(e.width) || 0;
+      if (e.type === 'text') {
+        const fs = Number(e.fontSize) || 10, lh = Number(e.lineHeight) || 1.3;
+        const parLigne = Math.max(4, w / (fs * 0.52 * K));
+        const lignes = Math.max(1, Math.ceil(String(e.text || '').length / parLigne));
+        return { l: l, t: t, r: l + w, b: t + lignes * fs * lh * 1.13 * K, txt: String(e.text || '').slice(0, 22), fill: '', type: 'text' };
+      }
+      return { l: l, t: t, r: l + w, b: t + (Number(e.height) || 0), txt: '', fill: String(e.fill || '').toLowerCase(), type: e.type };
+    };
+    let collisionsTexte = 0, collisionsGraph = 0, coupes = 0;
+    const details = [];
+    (pages || []).forEach(function (p, idx) {
+      const b = (p.elements || []).map(boite);
+      const txts = b.filter(function (x) { return x.type === 'text'; });
+      const graphes = b.filter(function (x) { return x.type !== 'text' && fonds.indexOf(x.fill) === -1 && (x.b - x.t) > 2; });
+      for (let i2 = 0; i2 < txts.length; i2++) {
+        for (let j2 = i2 + 1; j2 < txts.length; j2++) {
+          const a = txts[i2], c = txts[j2];
+          if (a.l < c.r - 0.5 && c.l < a.r - 0.5 && a.t < c.b - 0.5 && c.t < a.b - 0.5) { collisionsTexte++; if (details.length < 6) details.push('page ' + (idx + 1) + ' : texte « ' + a.txt + ' » sur « ' + c.txt + ' »'); }
+        }
+        for (let g = 0; g < graphes.length; g++) {
+          const a = txts[i2], G = graphes[g];
+          if (a.l < G.r - 0.5 && G.l < a.r - 0.5 && a.t < G.b - 0.5 && G.t < a.b - 0.5) {
+            collisionsGraph++;
+            if (a.t >= G.t - 0.5 && a.t < G.b - 0.5 && a.b > G.b + 0.5) { coupes++; if (details.length < 6) details.push('page ' + (idx + 1) + ' COUPÉ : « ' + a.txt + ' » (aplat ' + G.fill + ' finit à ' + Math.round(G.b) + ' mm, texte jusqu\'à ' + Math.round(a.b) + ')'); }
+            else if (details.length < 6) details.push('page ' + (idx + 1) + ' : « ' + a.txt + ' » sur aplat ' + G.fill);
+          }
+        }
+      }
+    });
+    return { collisionsTexte: collisionsTexte, collisionsGraph: collisionsGraph, coupes: coupes, details: details, pages: (pages || []).length };
+  }
+  let SP_GAB_DERNIER_PAL = null;
+
+  /* ══ FOND NOIR COMPLET ET LISIBILITÉ ══════════════════════════════════════════
+     Demande utilisateur : « si l'utilisateur met premium il peut avoir des fonds
+     complets noirs ». Appelée après la pose, en millimètres, sur tout le document :
+     le fond blanc devient DEUX demis de page noire (la passe anti-aplats noirs du
+     studio supprime un aplat sombre quasi pleine page, pas deux demis), et toutes les
+     couleurs écrites FONCÉES deviennent claires — sinon le texte des pages
+     intérieures disparaîtrait sur le noir. Un panneau clair devient un panneau
+     sombre : le texte clair posé dessus reste lisible. L'accent doré n'est pas touché. */
+  function spGabFondNoir(pages, L, fmt, g) {
+    const bas = function (v) { return String(v || '').toLowerCase(); };
+    const clairP = bas(L.pal.clair);
+    const fondP = bas(L.pal.fond);
+    const moyen = L.pal.gris || '#4a4a52';
+    pages.forEach(function (pg) {
+      const els = pg.elements || [];
+      if (els.length && bas(els[0].fill) === '#ffffff' && Number(els[0].width) > fmt.W * 0.9) {
+        const demi = Math.round(fmt.H * 0.5 * 100) / 100;
+        els[0] = { type: 'rectangle', left: 0, top: 0, width: fmt.W, height: demi, fill: L.pal.fond, rx: 0, ry: 0 };
+        els.splice(1, 0, { type: 'rectangle', left: 0, top: demi, width: fmt.W, height: Math.round((fmt.H - demi) * 100) / 100, fill: L.pal.fond, rx: 0, ry: 0 });
+      }
+      els.forEach(function (o) {
+        if (bas(o.fill) === fondP) return;
+        if (o.type === 'text') {
+          if (SP_GAB_GRIS.indexOf(bas(o.fill)) !== -1) o.fill = L.pal.doux || '#c9c9c4';
+          else if (SP_GAB_NOIRC.indexOf(bas(o.fill)) !== -1) o.fill = L.pal.sur || '#f5f5f2';
+          return;
+        }
+        if (o.fill && SP_GAB_GRIS.indexOf(bas(o.fill)) !== -1) o.fill = moyen;
+        else if (o.fill && SP_GAB_NOIRC.indexOf(bas(o.fill)) !== -1) o.fill = moyen;
+        if (o.stroke && SP_GAB_GRIS.indexOf(bas(o.stroke)) !== -1) o.stroke = moyen;
+        else if (o.stroke && SP_GAB_NOIRC.indexOf(bas(o.stroke)) !== -1) o.stroke = moyen;
+        if (bas(o.fill) === clairP) o.fill = '#1f1f24';
+      });
+    });
+  }
+  window.spGabControle = function () {
+    try {
+      const d = state.doc;
+      if (!d || !d.pages) return 'aucun document';
+      const c = spGabChevauchements(d.pages, SP_GAB_DERNIER_PAL);
+      const j = function (niv, msg) { try { spJournalAjoute(niv, msg); } catch (_) {} };
+      j((c.coupes || c.collisionsTexte) ? 'warn' : 'ok', 'Contrôle de lisibilité : ' + c.collisionsTexte + ' collision(s) texte/texte, ' + c.collisionsGraph + ' texte/graphisme, dont ' + c.coupes + ' texte(s) COUPÉ(s) par un aplat. ' + c.pages + ' page(s) analysée(s).');
+      c.details.forEach(function (x) { j('info', x); });
+      return c;
+    } catch (e) { return 'erreur: ' + e.message; }
+  };
+
   /* FABRIQUE LE DOCUMENT COMPLET. Règle de cahier (correctif 19) : en double page
      le nombre de pages est TOUJOURS pair — jamais de page seule au centre. */
   function spGabDesign(brief) {
@@ -8757,7 +8871,11 @@ function spRtfLayoutInfo(src) {
     }
     const W = (state.pageW || 210) * SP_GAB_K, H = (state.pageH || 297) * SP_GAB_K;
     /* ══ THÈME, TYPOGRAPHIE, VARIATION ══ */
-    const theme = spGabTheme(brief, texte.contexte);
+    let theme = spGabTheme(brief, texte.contexte);
+    if (window._spGabTheme) {
+      const force = SP_GAB_THEMES.filter(function (x) { return x[0] === window._spGabTheme; })[0];
+      if (force) theme = { cle: force[0], pal: force[2], fonts: force[3] };
+    }
     const hasard = spGabHasard(brief);
     const polices = SP_GAB_FONTS[(theme && theme.fonts) || g.fonts] || SP_GAB_FONTS.sans;
     SP_GAB_FONTE.titre = polices.titre;
@@ -8868,11 +8986,23 @@ function spRtfLayoutInfo(src) {
       pages.splice(pages.length - 1, 0, { pageIndex: 0, elements: g2.map(spGabVersMm) });
     }
     pages.forEach(function (p, i) { p.pageIndex = i; });
+    spGabFondNoir(pages, L, fmt, g);
     const posees = texte.photos.length - L.photos.length;
     const j = function (niv, msg) { try { spJournalAjoute(niv, msg); } catch (_) {} };
     j('ok', 'Gabarit « ' + g.nom + ' » (' + g.key + ') : ' + pages.length + ' page(s) posée(s).' + (theme ? ' Thème « ' + theme.cle + ' » appliqué.' : ''));
     j('info', 'Typographie : titres ' + SP_GAB_FONTE.titre + ', corps ' + SP_GAB_FONTE.corps + ', mentions ' + SP_GAB_FONTE.mono + '.');
     j('info', 'Variation n°' + hasard.n + ' (les regénérations d\'une même demande font bouger bande, accents et encadré).');
+    /* ══ CONTRÔLE AUTOMATIQUE À CHAQUE GÉNÉRATION (surveillance des 15 gabarits) ══ */
+    SP_GAB_DERNIER_PAL = L.pal;
+    try {
+      const ctrl = spGabChevauchements(pages, L.pal);
+      if (ctrl.coupes || ctrl.collisionsTexte) {
+        j('warn', 'Lisibilité : ' + ctrl.coupes + ' texte(s) coupé(s) par un aplat et ' + ctrl.collisionsTexte + ' collision(s) texte/texte — détails ci-dessous (les éléments sont déplaçables).');
+        ctrl.details.forEach(function (x) { j('info', x); });
+      } else {
+        j('ok', 'Lisibilité vérifiée : aucun texte coupé par un graphisme sur ' + ctrl.pages + ' page(s).');
+      }
+    } catch (_) {}
     j('info', 'Format lu : ' + fmt.W + '×' + fmt.H + ' mm, ' + (fmt.carre ? 'carré' : (fmt.pays ? 'paysage' : 'portrait'))
       + (fmt.mini ? ', petit format' : '') + (fmt.bandeau ? ', format bandeau' : '') + (fmt.grandFmt ? ', grand format' : '') + '.');
     j('info', 'Imposition : ' + (spread ? 'DOUBLE PAGE (planches) — page 1 seule à droite, puis les paires gauche/droite, dernière page seule (total pair)' : 'page simple') + (g.folio ? ', folios' : '') + '.');
@@ -9063,6 +9193,21 @@ function spRtfLayoutInfo(src) {
         '<span style="display:inline-block;margin-right:6px;padding:0 6px;border-radius:8px;font-size:9px;line-height:15px;vertical-align:1px;background:' + _couleur + ';color:#fff">' +
         escapeHtml(_usage) + '</span>' + escapeHtml(t(m.nk)) + '</span></button>';
     });
+    /* ══ THÈME CHOISI À LA MAIN (demande utilisateur : « le choix du thème dans le
+       studio ») — on ne devine plus, on propose. Le choix est mémorisé pour la
+       session et s'applique au moteur de gabarit. ══ */
+    if (eng === 'gabarit') {
+      const THEMES = [
+        ['auto', 'Automatique (d\'après votre texte)'], ['noir', 'Noir chic — fond noir, serif, doré'],
+        ['mono', 'Tech — IBM Plex Mono'], ['douce', 'Doux — nature'], ['event', 'Festif'],
+        ['finance', 'Corporate'], ['sobre', 'Sobre'], ['chaud', 'Chaud — restaurant']
+      ];
+      const actif = window._spGabTheme || 'auto';
+      html += '<div class="st-pop-sep"></div><div class="st-pop-h">Thème du document</div>';
+      THEMES.forEach(function (th) {
+        html += '<button class="st-row' + (th[0] === actif ? ' on' : '') + '" type="button" data-theme="' + th[0] + '" title="' + escapeHtml(th[1]) + '"><span class="st-row-t"><span class="st-row-n">' + escapeHtml(th[1]) + '</span></span></button>';
+      });
+    }
     if (vers.length) {
       const cur = spStVerCourante(eng);
       html += '<div class="st-pop-sep"></div>';
@@ -9114,6 +9259,15 @@ function spRtfLayoutInfo(src) {
       });
     }
     body.innerHTML = html;
+    /* Les lignes de THÈME enregistrent le choix (re-rendu du panneau pour le cocher). */
+    Array.prototype.slice.call(body.querySelectorAll('[data-theme]')).forEach(function (bt) {
+      bt.addEventListener('click', function () {
+        const k = bt.getAttribute('data-theme');
+        window._spGabTheme = (k === 'auto') ? null : k;
+        try { spJournalAjoute('info', 'Thème « ' + (k === 'auto' ? 'automatique' : k) + ' » choisi pour le moteur de gabarit.'); } catch (_) {}
+        spStPop(true);
+      });
+    });
     /* ⚠️ MESURE APRÈS REMPLISSAGE : la carte étant centrée, un panneau haut ne
        tient pas toujours au-dessus (mesuré : top = −66 px, lignes coupées). On
        bascule DESSOUS quand c'est plus dégagé, et on plafonne la hauteur à la place
