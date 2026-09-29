@@ -4907,7 +4907,11 @@
       .replace(/<w:br[^>]*\/>/g, '\n')
       .replace(/<w:pStyle[^>]*w:val="([^"]+)"/g, function (m, st) {
         const n2 = /^(?:Heading|Titre|Ttulo|Titel|Cop|Nadpis)([1-6])$/i.exec(st);
-        return n2 ? '###H' + n2[1] + '###' : '';
+        /* ⚠️ DÉFAUT MESURÉ : le marqueur était posé AVANT le saut de ligne du paragraphe
+           (<w:pStyle> précède <w:p>, qui devient le saut) : le titre se retrouvait collé
+           à la fin du texte précédent — « Chapitre I — Le long voyage des roses Des
+           espèces sauvages aux jardins… ». On ouvre donc la ligne nous-mêmes. */
+        return n2 ? '\n###H' + n2[1] + '###' : '';
       })
       .replace(/<w:p[^>]*>/g, '\n\n')
       .replace(/<[^>]+>/g, '')
@@ -4919,6 +4923,8 @@
       .map(function (l) {
         const m2 = /^\s*###H([1-6])###([\s\S]*)$/.exec(l);
         if (m2) return ('#'.repeat(Math.min(4, Number(m2[1]))) + ' ' + m2[2].trim()).trim();
+        /* Résidus de balise isolés (« /> », « > », « / ») : jamais du texte. */
+        if (/^\s*[/>\s]+\s*$/.test(l)) return '';
         return l;
       })
       .join('\n')
@@ -4949,7 +4955,10 @@
        jamais la main (chaînage + contrôles sur un texte de 200 Ko). Notre moteur plafonne
        ses pages : on ne lui transmet donc que ce qu'il peut réellement composer
        (~40 000 caractères, soit une quinzaine de pages) — et on le DIT à l'utilisateur. */
-    const MAXI = 15000;
+    /* ⚠️ MESURE : à 15 000 caractères, un livre ne montrait que sa page de titre et son
+       sommaire. À 40 000, notre moteur met en page une vingtaine de chapitres en quelques
+       dizaines de secondes — c'est le bon compromis entre contenu et temps de composition. */
+    const MAXI = 40000;
     let pageWord = null;
     try {
       const r = await spDocxTexteGeant(file, MAXI);
@@ -8392,7 +8401,7 @@ function spRtfLayoutInfo(src) {
     { key: 'qc.cartevisite', nom: 'Carte de visite', fam: 'cartevisite', fonts: 'sans',    cols: 1, gutter: 0, mg: [8, 8, 8, 8],     titre: 13, chapeau: 8,  corps: 7,   folio: false, pages: 1, pal: 'neutre' },
     /* Cahier multipage : couverture, édito, pages de contenu à deux colonnes
        justifiées avec encadrés et photos légendées, dernière page contacts. */
-    { key: 'qc.cahier',      nom: 'Cahier multipage', fam: 'cahier',     fonts: 'sans',    cols: 2, gutter: 8, mg: [24, 22, 22, 22], titre: 54, chapeau: 14, corps: 9.5, folio: true,  pages: 8, pal: null },
+    { key: 'qc.cahier',      nom: 'Cahier multipage', fam: 'cahier',     fonts: 'sans',    cols: 1, gutter: 10, mg: [24, 24, 22, 24], titre: 54, chapeau: 14, corps: 10.5, folio: true,  pages: 8, pal: null },
     { key: 'qc.cv',         nom: 'CV une page',        fam: 'cv',         fonts: 'sans',    cols: 2, gutter: 7, mg: [20, 20, 20, 20], titre: 30, chapeau: 11, corps: 8.5, folio: false, pages: 1, pal: 'neutre' },
     { key: 'qc.programme',  nom: 'Programme',          fam: 'programme',  fonts: 'sans',    cols: 1, gutter: 0, mg: [22, 22, 20, 22], titre: 40, chapeau: 13, corps: 9.5, folio: true,  pages: 1, pal: 'event' },
     { key: 'qc.mariage',    nom: 'Menu de mariage',    fam: 'mariage',    fonts: 'serif',   cols: 1, gutter: 0, mg: [26, 30, 24, 30], titre: 42, chapeau: 12, corps: 10,  folio: false, pages: 1, pal: 'luxe' },
@@ -8648,6 +8657,17 @@ function spRtfLayoutInfo(src) {
     if (M.lignes.length > 80) M.lignes = M.lignes.slice(0, 80);
     if (M.items.length > 40) M.items = M.items.slice(0, 40);
     if (M.infos.length > 20) M.infos = M.infos.slice(0, 20);
+    /* ⚠️ L'INSTRUCTION N'EST PAS UN CHAPÔ (défaut mesuré, vu à l'écran) : « Livre broché
+       à partir du document Word joint : garde les chapitres et les titres, couverture avec
+       le titre, contacts en fin » s'affichait en chapô sur la page du livre. Quand un
+       document fournit le contenu, une phrase qui donne un ORDRE ne se compose pas : on la
+       retire. (Le titre, lui, vient alors du document — vérifié : « Quand Orléans cultivait
+       les roses ».) */
+    const _ordre = /\b(garde|garder|mets|met|mettre|place|placer|ajoute|ajouter|utilise|utiliser|fais|faire|compose|composer|respecte|respecter|reprends|reprendre|insere|insère|conserve|conserver|keep|with the|use the)\b/i;
+    if (M.corpsLength > 0) {
+      if (M.chapeau && _ordre.test(M.chapeau)) M.chapeau = '';
+      if (M.surtitre && _ordre.test(M.surtitre)) M.surtitre = '';
+    }
     return M;
   }
 
@@ -8684,8 +8704,16 @@ function spRtfLayoutInfo(src) {
       e.push({ type: 'image', imageIndex: L.photos.shift(), left: x, top: y, width: w, height: h });
       return true;
     }
-    e.push(spGabFondAuto(L, x, y, w, h, L.slot));
-    return true;
+    /* ══ AUCUN FOND D'IMAGE POUR LE MOMENT (retour utilisateur : « ne mets pas de fond
+       d'image pour le moment sur notre modèle, on doit faire des habillages graphiques
+       simples, typo »). L'emplacement reste donc du PAPIER : le générateur de fonds
+       existe encore (SP_GAB_FONDS_AUTO, désactivé) le temps de le régler en ombres
+       discrètes — jamais en géométrie. */
+    if (SP_GAB_FONDS_AUTO) {
+      e.push(spGabFondAuto(L, x, y, w, h, L.slot));
+      return true;
+    }
+    return false;
   }
 
   /* ══ GÉNÉRATEUR DE FONDS AUTOMATIQUE ══════════════════════════════════════════════
@@ -8697,55 +8725,46 @@ function spRtfLayoutInfo(src) {
      page. La luminance du fond est mémorisée pour que le garde-fou de contraste sache
      exactement ce qu'il y a sous la typographie. */
   let SP_GAB_LUM_IMG = {};
-  const SP_GAB_MOTIFS = ['lignes', 'grille', 'points', 'diagonales', 'vagues', 'blocs', 'terrazzo', 'degrade'];
-  const SP_GAB_MOTIF_LUM = { lignes: 0.93, grille: 0.94, points: 0.93, diagonales: 0.93, vagues: 0.9, blocs: 0.68, terrazzo: 0.88, degrade: 0.78 };
+  /* ⚠️ DÉSACTIVÉ POUR LE MOMENT (retour utilisateur : « je n'aime pas tes images pour les
+     fonds… je voyais juste des ombres de couleurs discrètes, pas de la géométrie »).
+     Le générateur ci-dessous ne trace plus que des OMBRES (dégradés très légers) : le jour
+     où on le rallume, ce sera discret. En attendant, les emplacements sans photo restent
+     du papier. */
+  let SP_GAB_FONDS_AUTO = false;
+  const SP_GAB_MOTIFS = ['voile', 'lueur', 'bande', 'degrade'];
+  const SP_GAB_MOTIF_LUM = { voile: 0.92, lueur: 0.9, bande: 0.89, degrade: 0.88 };
 
   function spGabMotifSvg(motif, L, graine) {
     const p = L.pal || {};
     const sombre = !!p.noir;
     const papier = sombre ? (p.fond || '#0e0e10') : '#ffffff';
-    const encre = sombre ? '#ffffff' : '#111111';
     const accent = p.a || '#1f6feb';
     const teinte = p.clair || '#f5f5f6';
-    let etat = Math.abs(Math.floor(graine || 1)) * 2654435761 % 4294967296;
-    const rnd = function () { etat = (etat * 1103515245 + 12345) % 2147483648; return etat / 2147483648; };
+    /* ══ DES OMBRES, PAS DE GÉOMÉTRIE ══ Retour utilisateur : « je n'aime pas tes images
+       pour les fonds : je voyais de la géométrie, je veux juste des ombres de couleurs
+       discrètes ». Il n'y a donc plus AUCUNE ligne, AUCUN rond, AUCUN bloc : seulement des
+       dégradés très légers (20 % au plus), qui donnent une teinte douce. */
     let s = '';
-    if (motif === 'lignes') {
-      for (let y = 6; y < 100; y += 7) s += '<line x1="0" y1="' + y + '" x2="100" y2="' + y + '" stroke="' + encre + '" stroke-width="0.35" opacity="0.22"/>';
-    } else if (motif === 'grille') {
-      for (let i = 0; i <= 100; i += 8) {
-        s += '<line x1="' + i + '" y1="0" x2="' + i + '" y2="100" stroke="' + encre + '" stroke-width="0.25" opacity="0.18"/>';
-        s += '<line x1="0" y1="' + i + '" x2="100" y2="' + i + '" stroke="' + encre + '" stroke-width="0.25" opacity="0.18"/>';
-      }
-    } else if (motif === 'points') {
-      for (let y = 5; y < 100; y += 9) for (let x = 5; x < 100; x += 9)
-        s += '<circle cx="' + x + '" cy="' + y + '" r="0.9" fill="' + encre + '" opacity="0.28"/>';
-    } else if (motif === 'diagonales') {
-      for (let i = -100; i < 100; i += 9)
-        s += '<line x1="' + i + '" y1="100" x2="' + (i + 100) + '" y2="0" stroke="' + encre + '" stroke-width="0.35" opacity="0.2"/>';
-    } else if (motif === 'vagues') {
-      for (let k2 = 0; k2 < 7; k2++) {
-        const y2 = 8 + k2 * 14;
-        s += '<path d="M0 ' + y2 + ' Q25 ' + (y2 - 7) + ' 50 ' + y2 + ' T100 ' + y2 + '" fill="none" stroke="' + accent + '" stroke-width="0.5" opacity="0.35"/>';
-      }
-    } else if (motif === 'blocs') {
-      s += '<rect x="0" y="0" width="46" height="34" fill="' + accent + '" opacity="0.22"/>';
-      s += '<rect x="54" y="0" width="46" height="58" fill="' + teinte + '" opacity="0.9"/>';
-      s += '<rect x="8" y="62" width="30" height="30" fill="' + encre + '" opacity="0.14"/>';
-      s += '<rect x="46" y="70" width="54" height="22" fill="' + accent + '" opacity="0.35"/>';
-      s += '<circle cx="24" cy="42" r="9" fill="none" stroke="' + accent + '" stroke-width="0.8" opacity="0.5"/>';
-    } else if (motif === 'terrazzo') {
-      for (let i = 0; i < 26; i++) {
-        const x2 = rnd() * 96, y3 = rnd() * 96, w2 = 3 + rnd() * 7, h2 = 3 + rnd() * 7;
-        const c = (i % 3 === 0) ? accent : ((i % 3 === 1) ? teinte : encre);
-        s += '<rect x="' + x2.toFixed(1) + '" y="' + y3.toFixed(1) + '" width="' + w2.toFixed(1) + '" height="' + h2.toFixed(1) + '" fill="' + c + '" opacity="' + (i % 3 === 2 ? 0.16 : 0.34) + '" transform="rotate(' + Math.round(rnd() * 90) + ' ' + x2.toFixed(1) + ' ' + y3.toFixed(1) + ')"/>';
-      }
-    } else {
+    if (motif === 'voile') {
       s += '<defs><linearGradient id="spg" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0" stop-color="' + accent + '" stop-opacity="0.35"/>' +
-        '<stop offset="1" stop-color="' + teinte + '" stop-opacity="0.75"/></linearGradient></defs>';
-      s += '<rect x="0" y="0" width="100" height="100" fill="url(#spg)"/>';
-      s += '<rect x="0" y="92" width="100" height="1.2" fill="' + accent + '" opacity="0.8"/>';
+        '<stop offset="0" stop-color="' + accent + '" stop-opacity="0.20"/>' +
+        '<stop offset="1" stop-color="' + accent + '" stop-opacity="0.02"/></linearGradient></defs>' +
+        '<rect x="0" y="0" width="100" height="100" fill="url(#spg)"/>';
+    } else if (motif === 'lueur') {
+      s += '<defs><radialGradient id="spg" cx="0.24" cy="0.2" r="0.95">' +
+        '<stop offset="0" stop-color="' + accent + '" stop-opacity="0.22"/>' +
+        '<stop offset="1" stop-color="' + accent + '" stop-opacity="0"/></radialGradient></defs>' +
+        '<rect x="0" y="0" width="100" height="100" fill="url(#spg)"/>';
+    } else if (motif === 'bande') {
+      s += '<defs><linearGradient id="spg" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0.5" stop-color="' + teinte + '" stop-opacity="0"/>' +
+        '<stop offset="1" stop-color="' + teinte + '" stop-opacity="0.34"/></linearGradient></defs>' +
+        '<rect x="0" y="0" width="100" height="100" fill="url(#spg)"/>';
+    } else {
+      s += '<defs><linearGradient id="spg" x1="0" y1="1" x2="1" y2="0">' +
+        '<stop offset="0" stop-color="' + accent + '" stop-opacity="0.16"/>' +
+        '<stop offset="1" stop-color="' + teinte + '" stop-opacity="0.30"/></linearGradient></defs>' +
+        '<rect x="0" y="0" width="100" height="100" fill="url(#spg)"/>';
     }
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none" width="400" height="400">' +
       '<rect x="0" y="0" width="100" height="100" fill="' + papier + '"/>' + s + '</svg>';
@@ -9041,38 +9060,42 @@ function spRtfLayoutInfo(src) {
       spGabPhoto(L, e, L.x1 - L.cw * 0.28, L.y0 + k * 130, L.cw * 0.28, Math.min(L.ch * 0.36, L.y1 - L.y0 - k * 130), 'photo');
       return e;
     }
-    // ── pages de contenu : deux colonnes, encadrés, photo légendée
+    // ── pages de contenu : UNE colonne (livre) ou DEUX (seulement si la demande le dit)
     const gw = g.gutter * SP_GAB_K;
-    const cw = (L.cw - gw) / 2;
-    const parPage = L.chainees ? 2 : Math.max(1, Math.ceil((secs.length - 1) / Math.max(1, tot - 3)));
-    const base = L.chainees ? ((n - 3) * 2) : (1 + (n - 3) * parPage);
-    [0, 1].forEach(function (col) {
+    const deuxCol = (Number(g.cols) > 1);
+    const cw = deuxCol ? (L.cw - gw) / 2 : L.cw;
+    const parPage = L.chainees ? (deuxCol ? 2 : 1) : Math.max(1, Math.ceil((secs.length - 1) / Math.max(1, tot - 3)));
+    const base = L.chainees ? ((n - 3) * (deuxCol ? 2 : 1)) : (1 + (n - 3) * parPage);
+    const colonnes = deuxCol ? [0, 1] : [0];
+    colonnes.forEach(function (col) {
       const s = secs[Math.min(base + col, secs.length - 1)];
       if (!s) return;
       const x = L.x0 + col * (cw + gw);
       let y = L.y0;
-      /* GRAND FOND de page intérieure : un bandeau de couleur pleine largeur ouvre la
-         page ; le « petit fond » est l'encadré clair de la colonne de droite. */
-      if (col === 0) { e.push(spGabR(0, 0, L.W, k * 18, p.a, 0)); y = L.y0 + k * 10; }
-      /* Titre de la colonne : le titre général ne se répète pas six fois de suite
-         (mesuré) — sans section propre, on annonce une partie numérotée. */
-      const propre = s.t && s.t !== M.titre;
-      e.push(spGabT(x, y, cw, spGabCourt(propre ? s.t : ('Partie ' + ((n - 3) * 2 + col + 1)), 52), Math.min(17, g.corps * 1.8), p.a, 'bold', 'left', 0.98));
-      y += k * 26;
-      e.push(spGabL(x, y, cw * 0.28, p.a, 2));
-      y += k * 14;
-      /* ══ COLONNE SANS TEXTE : GRAND VIDE INTERDIT ══ Quand la demande est courte (pas
-         de pièce jointe), une colonne n'avait rien à poser : la page sortait à moitié
-         vide. Le FOND GÉNÉRÉ remplit la colonne (demande utilisateur : « un générateur
-         de fond … qui s'incluera automatiquement dans les emplacements image prévus »). */
-      if (!s.ps.length && !M.chapeau) {
-        spGabPhoto(L, e, x, y, cw, Math.max(L.k * 140, L.y1 - y), 'illustration');
-        return;
+      const num = ((n - 3) * (deuxCol ? 2 : 1) + col + 1);
+      /* GRAND FOND de page intérieure : réservé aux pages à DEUX colonnes. Sur un livre
+         à une colonne, l'habillage est TYPOGRAPHIQUE (filet d'accent + chapitre numéroté)
+         — retour utilisateur : « on doit faire des habillages graphiques simples, typo ». */
+      if (deuxCol) {
+        if (col === 0) { e.push(spGabR(0, 0, L.W, k * 18, p.a, 0)); y = L.y0 + k * 10; }
+      } else {
+        e.push(spGabL(L.x0, Math.max(k * 6, L.y0 - k * 14), L.cw * 0.16, p.a, 2.5));
       }
+      /* Titre : le titre général ne se répète pas six fois de suite (mesuré). Sans section
+         propre, on annonce un CHAPITRE numéroté — la façon dont on parle d'un livre. */
+      const propre = s.t && s.t !== M.titre;
+      e.push(spGabT(x, y, cw, spGabCourt(propre ? s.t : ('Chapitre ' + num), deuxCol ? 52 : 78),
+        deuxCol ? Math.min(17, g.corps * 1.8) : Math.min(26, g.corps * 2.1), p.txt, 'bold', 'left', 0.98));
+      y += deuxCol ? k * 26 : k * 42;
+      e.push(spGabL(x, y, deuxCol ? cw * 0.28 : L.cw * 0.1, p.a, 2));
+      y += deuxCol ? k * 14 : k * 22;
+      /* Colonne sans texte : on ne fabrique plus d'image (retour utilisateur : « ne mets
+         pas de fond d'image pour le moment »). La page respire. */
+      if (!s.ps.length && !M.chapeau) return;
       (s.ps.length ? s.ps : [M.chapeau]).forEach(function (para, j) {
         if (!para) return;
-        if (para.length <= 130 && j > 0) {
-          /* ENCADRÉ : fond clair + filet, le texte reste à l'intérieur. */
+        if (deuxCol && para.length <= 130 && j > 0) {
+          /* ENCADRÉ : fond clair + filet, le texte reste à l'intérieur (pages à 2 col.). */
           const h = Math.max(k * 42, (para.length / 2.4) * g.corps * 0.42 + k * 34);
           e.push(spGabR(x, y, cw, h, p.clair, 4));
           e.push(spGabL(x, y, cw, p.a, 2));
@@ -9080,24 +9103,18 @@ function spRtfLayoutInfo(src) {
           y += h + k * 14;
           return;
         }
-        e.push(spGabT(x, y, cw, para, g.corps, '#374151', null, 'justify', 1.5));
-        y += Math.max(k * 48, (para.length / 3.1) * g.corps * 0.34) + k * 14;
+        /* LIVRE : texte plein, justifié, interligne 1,5 — aucun encadré, aucun aplat. */
+        e.push(spGabT(x, y, cw, para, g.corps, '#22262b', null, 'justify', deuxCol ? 1.5 : 1.55));
+        y += Math.max(k * 48, (para.length / (deuxCol ? 3.1 : 1.55)) * g.corps * 0.34) + k * (deuxCol ? 14 : 16);
       });
-      /* ══ BAS DE COLONNE COURT : FOND GÉNÉRÉ, JAMAIS UN GRAND VIDE ══ Un document
-         client court laissait la moitié de la page en blanc. Le générateur de fonds
-         remplit la place restante (demande utilisateur : « des fonds … qui s'incluront
-         automatiquement dans les emplacements image prévus dans nos maquettes »). */
-      if (y < L.y1 - k * 150) {
-        spGabPhoto(L, e, x, y + k * 20, cw, Math.max(k * 120, L.y1 - y - k * 20), 'illustration');
-      }
-      if (col === 1 && (L.y1 - k * 22 - Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26))) > y + k * 18) {
+      if (deuxCol && col === 1 && (L.y1 - k * 22 - Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26))) > y + k * 18) {
         const hP = Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26));
         const yP = L.y1 - k * 22 - hP;
         const legP = spGabPhoto(L, e, x, yP, cw, hP, 'photo');
         if (legP) e.push(spGabT(x, yP + hP + 4, cw, spGabCourt(secs[Math.min(base, secs.length - 1)].t || 'légende', 58), 7.5, '#6b7280', null, 'left', 1.3));
-      } else if (col === 1 && M.chiffres.length) {
-        /* ENCADRÉ CHIFFRE CLÉ : seulement s'il reste la place SOUS le texte — sinon il
-           passait par-dessus (chevauchement mesuré). */
+      } else if (deuxCol && col === 1 && M.chiffres.length) {
+        /* ENCADRÉ CHIFFRE CLÉ (pages à 2 colonnes uniquement) : seulement s'il reste la
+           place SOUS le texte — sinon il passait par-dessus (chevauchement mesuré). */
         const c = M.chiffres[(n - 3) % M.chiffres.length];
         const hB = k * 92;
         const yB = L.y1 - hB - k * 24;
@@ -9370,7 +9387,10 @@ function spRtfLayoutInfo(src) {
   function spGabChainerSections(L, g) {
     const secs = L.t.sections.length ? L.t.sections : [{ t: L.t.titre, ps: L.t.lignes.length ? L.t.lignes : [L.t.chapeau] }];
     const gw = g.gutter * SP_GAB_K;
-    const cw = (L.cw - gw) / 2;
+    /* ⚠️ LARGEUR DE COLONNE RÉELLE (retour utilisateur : « quand on parle de livre on fait
+       du mono colonne »). Ce chaînage supposait DEUX colonnes en dur : sur une page à une
+       seule colonne, il calculait des blocs deux fois trop courts (pages à moitié vides). */
+    const cw = (Number(g.cols) > 1) ? (L.cw - gw) / 2 : L.cw;
     /* On remplit une colonne jusqu'à ~74 % de sa hauteur seulement : mesuré, un
        remplissage maximal faisait ensuite déplacer 34 blocs par les passes du studio
        (le studio réajuste les textes aux marges et déplace ce qui déborde). */
@@ -9403,6 +9423,11 @@ function spRtfLayoutInfo(src) {
         }
       });
     });
+    /* ⚠️ AUCUN MORCEAU VIDE (défaut mesuré : un livre sortait avec des pages à 95 % vides,
+       le titre seul puis plus rien). Un morceau sans titre ET sans paragraphe ne doit pas
+       occuper une page : on l'écarte du chaînage. */
+    const utiles = out.filter(function (c) { return (c.t && String(c.t).trim().length) || (c.ps && c.ps.length); });
+    if (utiles.length) return utiles;
     return out.length ? out : [{ t: L.t.titre, ps: [L.t.chapeau || ''] }];
   }
 
@@ -9648,6 +9673,14 @@ function spRtfLayoutInfo(src) {
     if (texte.corpsLength > 600 && g.fam !== 'cahier' && g.fam !== 'cartevisite') {
       const c = SP_GAB_DESIGN.filter(function (x) { return x.key === 'qc.cahier'; })[0];
       if (c) g = Object.assign({}, c);
+    }
+    /* ══ DEUX COLONNES SUR DEMANDE (retour utilisateur : « pour notre modèle en livre on
+       fait rarement deux colonnes par page, mais pourquoi pas, garde-le ») ══ Le cahier se
+       compose en UNE colonne par défaut — c'est ainsi qu'on parle d'un livre. Deux colonnes
+       seulement si la demande les réclame explicitement. */
+    if ((g.fam === 'cahier' || g.fam === 'brochure') &&
+        /deux\s+colonnes|2\s+colonnes|double\s+colonne|two\s+columns|2\s+col\b/i.test(brief)) {
+      g.cols = 2;
     }
     const W = (state.pageW || 210) * SP_GAB_K, H = (state.pageH || 297) * SP_GAB_K;
     /* ══ THÈME, TYPOGRAPHIE, VARIATION ══ */
