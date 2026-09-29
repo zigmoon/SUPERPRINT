@@ -675,19 +675,16 @@
   }
   .page-card:hover .sp-page-del { opacity: 1; pointer-events: auto; }
   .sp-page-del:hover { color: #d32f2f; border-color: #d32f2f; }
-  /* 🔒 VERROU DE PAGE : SOUS la corbeille (demande utilisateur), TOUJOURS visible
-     (il indique l'état de la page) et cliquable en permanence. Fermé = couleur
-     d'accent ; ouvert = gris discret. */
-  .sp-page-lock {
-    position: absolute; top: 24px; right: -6px; width: 24px; height: 24px; padding: 0;
-    background: var(--panel); color: var(--muted); border: 1px solid var(--border);
-    border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center;
-    justify-content: center; z-index: 11; opacity: .55;
-    transition: opacity .15s, color .15s, border-color .15s;
-  }
-  .sp-page-lock:hover { opacity: 1; }
-  .sp-page-lock.sp-lock-ferme { opacity: .95; color: var(--accent, #2f6fed); border-color: var(--accent, #2f6fed); }
-  .sp-page-lock svg { pointer-events: none; }
+  /* 🔒 VERROU DE PAGE — MÊME PASTILLE QUE LA CORBEILLE (même taille 26 px, même rond,
+     même bordure) et MÊME APPARITION (au survol de la page). Demande utilisateur :
+     « exactement le même style que la corbeille et elle doit arriver au même moment ».
+     Il est simplement posé SOUS la corbeille, dans la même colonne. */
+  .sp-page-del.sp-lock { top: 24px; right: -6px; }
+  .sp-page-del.sp-lock.sp-lock-ferme { color: var(--accent, #2f6fed); border-color: var(--accent, #2f6fed); }
+  /* Même pastille, mais le survol d'un cadenas ne doit pas virer au rouge (couleur
+     de suppression de la corbeille) : couleur d'accent. */
+  .sp-page-del.sp-lock:hover { color: var(--accent, #2f6fed); border-color: var(--accent, #2f6fed); }
+  .sp-page-del.sp-lock svg { pointer-events: none; }
   .page-label {
     text-align: center; font-size: 10px; color: var(--muted); letter-spacing: 0.5px;
     /* 📄 Pied de page : le libelle « Page N » etait place AU-DESSUS du canvas.
@@ -10235,12 +10232,17 @@ function spRtfLayoutInfo(src) {
   }
 
   function addGuideLine(c, points, opts) {
+    /* 🆕 Une page VERROUILLÉE reste VERROUILLÉE même quand la grille est reposée après
+       la composition (défaut mesuré : les guides, sélectionnables, redevenaient
+       cliquables et on pouvait encore « toucher » une page verrouillée). */
+    const libre = !(c && c.__spLocked);
     const line = new fabric.Line(points, Object.assign({
       stroke: '#2bb7ff', strokeWidth: 0.5, strokeDashArray: [3, 3], opacity: 0.55,
-      selectable: true, evented: true, hasControls: false, hasBorders: false,
+      selectable: libre, evented: libre, hasControls: false, hasBorders: false,
       hoverCursor: 'move', lockRotation: true, lockScalingX: true, lockScalingY: true,
       excludeFromExport: true
     }, opts));
+    if (!libre) { line.selectable = false; line.evented = false; line.hoverCursor = 'default'; }
     c.add(line);
     return line;
   }
@@ -15482,6 +15484,9 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
           pg.locked = !!verrou;
           const c = pg.canvas;
           if (c) {
+            /* État mémorisé SUR LE CANEVAS : tout objet ajouté ensuite (guides de grille
+               notamment) naît déjà verrouillé. */
+            c.__spLocked = !!verrou;
             try {
               c.selection = !verrou;
               c.forEachObject(function (o) {
@@ -15492,6 +15497,27 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
               });
               if (verrou) c.discardActiveObject();
               c.requestRenderAll();
+              /* ⚠️ DÉFAUT MESURÉ : malgré les drapeaux ci-dessus, un clic sur une page
+                 VERROUILLÉE sélectionnait encore un objet (guides de grille reposés après
+                 la composition, objets recréés par un rendu). Garde-fou au niveau du
+                 CANEVAS : plus rien ne peut naître sélectionnable ni rester sélectionné
+                 tant que la page est verrouillée. */
+              if (!c.__spLockGuard) {
+                c.__spLockGuard = true;
+                const relock = function (o) {
+                  if (!c.__spLocked) return;
+                  const ob = o && o.target ? o.target : null;
+                  if (ob) {
+                    if (ob._spSel === undefined) { ob._spSel = ob.selectable !== false; ob._spEv = ob.evented !== false; }
+                    ob.selectable = false; ob.evented = false; ob.hoverCursor = 'default';
+                  }
+                  try { c.discardActiveObject(); c.requestRenderAll(); } catch (_) {}
+                };
+                c.on('object:added', relock);
+                c.on('selection:created', relock);
+                c.on('selection:updated', relock);
+                c.on('mouse:down', relock);
+              }
             } catch (_) {}
           }
           const b = document.querySelector('[data-lock="' + (pg.pageIndex) + '"]');
@@ -15504,22 +15530,20 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         };
       }
       const lockBtn = document.createElement('button');
-      /* ⚠️ CORRIGÉ : le bouton réutilisait la classe de la CORBEILLE (.sp-page-del,
-         invisible sans survol et placée à `right: 38px`, donc À GAUCHE). Il a sa
-         propre classe .sp-page-lock : sous la corbeille, toujours visible, toujours
-         cliquable (c'était la cause du « ne marche pas »). */
-      lockBtn.className = 'sp-page-lock';
+      /* ⚠️ CORRIGÉ (2 retours utilisateur) : le bouton doit être la MÊME pastille que la
+         corbeille — même taille, même style, même apparition au survol — simplement
+         posée SOUS elle. Il réutilise donc la classe .sp-page-del (+ .sp-lock pour la
+         position). Avant, il avait sa propre classe et restait visible en permanence. */
+      lockBtn.className = 'sp-page-del sp-lock';
       lockBtn.setAttribute('data-lock', p.pageIndex);
       lockBtn.title = 'Page verrouillée — cliquez pour déverrouiller';
       lockBtn.setAttribute('aria-label', 'Verrou de page');
       lockBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
       lockBtn.addEventListener('click', function (e) { e.stopPropagation(); window.spVerrouillerPage(p, !p.locked); });
       card.appendChild(lockBtn);
-      /* DÉVERROUILLAGE AU CLIC SUR LA PAGE (mais pas sur le cadenas ni la corbeille). */
-      card.addEventListener('click', function (e) {
-        if (e.target && e.target.closest && e.target.closest('[data-lock], .sp-page-del')) return;
-        if (p.locked) window.spVerrouillerPage(p, false);
-      }, true);
+      /* ⚠️ SUPPRIMÉ (retour utilisateur : « actuellement c'est quand je clique n'importe
+         où qu'il se déverrouille, c'est étrange »). Seul le CADENAS change l'état : cliquer
+         sur la page ne fait plus rien. Verrouillée = rien n'est touchable sur la page. */
       /* VERROUILLÉ PAR DÉFAUT : appliqué dès que les objets de la page sont posés. */
       if (p.locked === undefined) p.locked = true;
       setTimeout(function () { window.spVerrouillerPage(p, p.locked !== false); }, 90);
