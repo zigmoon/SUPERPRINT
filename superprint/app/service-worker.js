@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.583-pdf-markdown';
+const CACHE_NAME = 'superprint-shell-v1.7.584-prompt-compris';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
