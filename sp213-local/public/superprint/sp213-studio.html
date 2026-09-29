@@ -8058,22 +8058,33 @@ function spRtfLayoutInfo(src) {
   }
 
   /* COMPRÉHENSION DU MARKDOWN ET DES DOCUMENTS IMPORTÉS : un titre (# , ##), une
-     puce (- , * , • , 1.) , une citation (>) , une ligne EN MAJUSCULES (les
-     importeurs Word/ODT/RTF écrivent les titres ainsi) ou un paragraphe. */
+     puce (- , * , • , 1.) , une citation (>) , une ligne EN MAJUSCULES, OU — pour un
+     fichier .txt brut sans aucun balisage — une ligne courte isolée, en majuscule
+     initiale et sans point final, ou finissant par « : ». Les lignes ordinaires qui
+     se suivent sont REGROUPÉES en un seul paragraphe (sinon un texte enveloppé à
+     70 colonnes donnait un paragraphe par ligne). */
   function spGabMarkdown(txt) {
     const out = [];
-    String(txt || '').replace(/\r/g, '').split(/\n+/).forEach(function (l0) {
-      const l = l0.trim();
-      if (!l) return;
+    const lignes = String(txt || '').replace(/\r/g, '').split('\n');
+    let para = [];
+    const vider = function () { if (para.length) { out.push({ t: 'p', x: spGabSansMd(para.join(' ')) }); para = []; } };
+    for (let i = 0; i < lignes.length; i++) {
+      const l = lignes[i].trim();
+      if (!l) { vider(); continue; }
       const d = l.match(/^#{1,6}\s*(.+)$/);
-      if (d) { out.push({ t: 'h', n: Math.min(3, (l.match(/^#+/) || ['#'])[0].length), x: spGabSansMd(d[1]) }); return; }
+      if (d) { vider(); out.push({ t: 'h', n: Math.min(3, (l.match(/^#+/) || ['#'])[0].length), x: spGabSansMd(d[1]) }); continue; }
       const li = l.match(/^(?:\d+[.)]|[-*•·–—])\s+(.+)$/);
-      if (li) { out.push({ t: 'li', x: spGabSansMd(li[1]) }); return; }
+      if (li) { vider(); out.push({ t: 'li', x: spGabSansMd(li[1]) }); continue; }
       const q = l.match(/^>\s*(.+)$/);
-      if (q) { out.push({ t: 'q', x: spGabSansMd(q[1]) }); return; }
-      if (l.length <= 62 && l === l.toUpperCase() && /[A-ZÀ-ÖØ-Þ]{3}/.test(l)) { out.push({ t: 'h', n: 2, x: spGabSansMd(l) }); return; }
-      out.push({ t: 'p', x: spGabSansMd(l) });
-    });
+      if (q) { vider(); out.push({ t: 'q', x: spGabSansMd(q[1]) }); continue; }
+      const maj = (l.length <= 62 && l === l.toUpperCase() && /[A-ZÀ-ÖØ-Þ]{3}/.test(l));
+      const deuxPts = (/:$/.test(l) && l.length <= 64);
+      const isole = ((i === 0 || !lignes[i - 1].trim()) && (i === lignes.length - 1 || !lignes[i + 1].trim()));
+      const courte = (l.length <= 64 && l.split(/\s+/).length <= 9 && !/[.;!?]$/.test(l) && /^[A-ZÀ-ÖØ-Þ0-9"«(]/.test(l));
+      if (maj || deuxPts || (courte && isole)) { vider(); out.push({ t: 'h', n: 2, x: spGabSansMd(l.replace(/:$/, '')) }); continue; }
+      para.push(l);
+    }
+    vider();
     return out;
   }
 
@@ -8172,7 +8183,13 @@ function spRtfLayoutInfo(src) {
     if (src.titres.length && String(brief || '').trim().length < 90 && String(src.titres[0]).length <= 62) M.titre = src.titres[0];
     if (!M.titre) M.titre = M.chapeau || (M.lignes[0] || 'Sans titre');
     M.titre = spGabCourt(M.titre, 64).replace(/[.!?]+$/, '');
-    M.chapeau = (M.chapeau === M.titre) ? (M.lignes[0] || '') : M.chapeau;
+    /* Le chapô ne doit JAMAIS être le titre ni son début : sur une demande courte
+       d'une seule phrase, le titre est la TRONCATURE du chapô, donc les deux blocs
+       portaient le même texte superposé (défaut retrouvé en relevant la géométrie
+       réelle de la page 1 : deux textes « Cahier premium de 8 pa… »). */
+    const memeTexte = function (a, b) { return !!a && !!b && (a === b || a.indexOf(b) === 0 || b.indexOf(a) === 0); };
+    if (memeTexte(M.chapeau, M.titre)) M.chapeau = (M.lignes.length ? M.lignes[0] : '');
+    if (memeTexte(M.chapeau, M.titre)) M.chapeau = '';
     const prem = blocs.filter(function (b) { return b.t !== 'h' && b.x !== M.titre; });
     /* Le sur-titre ne doit JAMAIS être le titre, le chapô, ni un morceau de l'un des
        deux : mesuré, le même texte ressortait en sur-titre ET en titre, donc deux
@@ -8794,6 +8811,12 @@ function spRtfLayoutInfo(src) {
     const volume = String(brief || '').length + srcLen(texte);
     let tot = Math.max(1, veut || g.pages);
     if (!veut && g.pages >= 3) tot = Math.min(24, Math.max(tot, Math.ceil((volume / 2) / 1300)));
+    /* GROSSE PIÈCE JOINTE : le cahier doit avoir ASSEZ de pages pour tout dire. Un
+       document client de 30 000 caractères et 30 sections ne tient pas en 8 pages :
+       deux sections par page de contenu, donc on dimensionne sur les SECTIONS.
+       (Le volume seul était trompeur : beaucoup de texte court en beaucoup de
+       sections — mesuré, les dernières sections étaient purement perdues.) */
+    if (!veut && (g.fam === 'cahier' || g.fam === 'brochure') && texte.sections.length > 2) tot = Math.min(32, Math.max(tot, 3 + Math.ceil(texte.sections.length / 2)));
     const spread = (state.viewMode === 'spread');
     /* ══ IMPOSITION DU LIVRE : C'EST LE STUDIO QUI LA FAIT, PAS MOI ══
        spCahierPlanches(n) est la source unique de l'imposition (notes vérifiées) :
