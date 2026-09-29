@@ -333,6 +333,20 @@
     font: 500 9px/1 'IBM Plex Mono', ui-monospace, monospace;
     letter-spacing: .1em; text-transform: uppercase;
   }
+  /* 🆕 v1.7.584 — LA CROIX DE LA CAPSULE (demande utilisateur : « mets une petite croix à
+     la fin de la capsule PJ »). Discrète au repos, rouge au survol, elle retire la pièce
+     jointe de l'état : la capsule disparaît ici ET dans la barre du studio. */
+  #starter .st-pj { position: relative; padding-right: 26px; }
+  #starter .st-pj-x {
+    position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+    width: 20px; height: 20px; padding: 0; border: 0; border-radius: 6px;
+    background: transparent; cursor: pointer;
+    color: color-mix(in srgb, var(--text) 42%, transparent);
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: color .15s, background .15s;
+  }
+  #starter .st-pj-x .ic { width: 11px; height: 11px; stroke-width: 2.1; opacity: 1; }
+  #starter .st-pj-x:hover { color: #d32f2f; background: color-mix(in srgb, var(--text) 7%, transparent); }
   /* ══ 🆕 v1.7.580ll — UNE OMBRE TRÈS LÉGÈRE QUI SUIT UN PEU LA SOURIS ══
      Décision utilisateur : le logotype en filigrane est RETIRÉ — il ne reste qu'une
      ombre. C'est une nappe floue de la COULEUR D'OMBRE DU THÈME (var(--shadow)),
@@ -3921,6 +3935,15 @@
     if (_st.mode) _st.mode.addEventListener('click', function () { $('viewModeBtn').click(); setTimeout(spStarterSync, 60); });
     if (_st.send) _st.send.addEventListener('click', spStarterEnvoyer);
     if (_st.skip) _st.skip.addEventListener('click', function () { spStarterFermer(); });
+    /* ⚠️ v1.7.584 — LA CROIX DES PIÈCES JOINTES DE LA PRÉ-HOME (demande utilisateur).
+       Délégation : une seule écoute sur la liste, valable pour toutes les capsules. */
+    const _stPj = $('starterPj');
+    if (_stPj) _stPj.addEventListener('click', function (e) {
+      const b = (e.target && e.target.closest) ? e.target.closest('.st-pj-x') : null;
+      if (!b) return;
+      e.preventDefault(); e.stopPropagation();
+      spStarterPjRetirer(b.getAttribute('data-pj'));
+    });
     /* 🆕 v1.7.580jj — thème jour/nuit + SOUS-MENU FLOTTANT des modèles. */
     const _stTheme = $('stThemeBtn');
     if (_stTheme) _stTheme.addEventListener('click', function () { toggleTheme(); setTimeout(spStarterSync, 60); });
@@ -8946,13 +8969,39 @@ function spRtfLayoutInfo(src) {
     }).join('');
     if (!atts.length && !enCours) { z.innerHTML = ''; z.classList.add('hidden'); return; }
     z.classList.remove('hidden');
-    const liste = atts.map(function (a) {
+    /* ⚠️ v1.7.584 — UNE CROIX PAR PIÈCE JOINTE (demande utilisateur : « dans la pré-home
+       je n'ai pas de croix pour supprimer une PJ qui ne sert pas… mets une petite croix à
+       la fin de la capsule »). La croix retire la pièce jointe de l'état, referme la
+       barre du studio et retraduit l'écran de démarrage — les deux restent alignés. */
+    const icCroix = '<svg class="ic" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    const liste = atts.map(function (a, i) {
       const typ = a.type === 'image' ? 'IMAGE' : String(a.ext || 'txt').toUpperCase();
       return '<span class="st-pj">' + (a.type === 'image' ? icImg : icDoc) +
         '<span>' + escapeHtml(String(a.name || '').slice(0, 34)) + '</span>' +
-        '<em>' + typ + ' · ' + pjShort(spPjModeDe(a)) + '</em></span>';
+        '<em>' + typ + ' · ' + pjShort(spPjModeDe(a)) + '</em>' +
+        '<button type="button" class="st-pj-x" data-pj="' + i + '" title="' + escapeHtml(t('st.pjRetirer')) + '" aria-label="' + escapeHtml(t('st.pjRetirer')) + '">' + icCroix + '</button>' +
+        '</span>';
     }).join('');
     z.innerHTML = liste + enCours;
+  }
+
+  /* Clic sur la croix d'une capsule de pièce jointe de l'écran de démarrage. */
+  function spStarterPjRetirer(i) {
+    const n = Number(i);
+    if (!(n >= 0) || !state.attachments[n]) return false;
+    const nom = String(state.attachments[n].name || '');
+    /* Une pièce jointe « géante » (document) peut avoir posé des sous-images : on les
+       retire aussi, sinon elles resteraient seules dans la barre. */
+    const base = nom.split(' — ')[0];
+    state.attachments = state.attachments.filter(function (a, k) {
+      if (k === n) return false;
+      if (a && base && String(a.name || '').split(' — ')[0] === base && String(a.name || '').indexOf(' — ') > 0) return false;
+      return true;
+    });
+    try { renderAttachBar(); } catch (_) {}
+    try { spStarterPJ(); } catch (_) {}
+    try { appendChat('assistant', t('st.pjRetire') + ' « ' + nom + ' »'); } catch (_) {}
+    return true;
   }
 
   /* ══ 🆕 v1.7.580ll — TEXTES DE L'ÉCRAN DE DÉMARRAGE, EN FR / EN / JP ══
@@ -8994,6 +9043,10 @@ function spRtfLayoutInfo(src) {
     "st.n.openrouter": "Free models: create a key.",
     "st.n.groq": "Fast cloud: paste your API key.",
     "st.n.tjs": "",
+    "st.pjRetirer": "Retirer cette pièce jointe",
+    "st.pjRetire": "Pièce jointe retirée :",
+    "st.pjRetirer": "Remove this attachment",
+    "st.pjRetire": "Attachment removed:",
     "st.ex1": "A4 poster",
     "st.ex2": "Magazine cover",
     "st.ex3": "4-page catalogue",
@@ -9096,6 +9149,8 @@ function spRtfLayoutInfo(src) {
     "st.n.openrouter": "無料モデル：キーを作成。",
     "st.n.groq": "高速クラウド：APIキーを貼り付け。",
     "st.n.tjs": "",
+    "st.pjRetirer": "この添付を削除",
+    "st.pjRetire": "添付を削除しました：",
     "st.ex1": "A4ポスター",
     "st.ex2": "雑誌の表紙",
     "st.ex3": "4ページのカタログ",
@@ -9309,6 +9364,98 @@ function spRtfLayoutInfo(src) {
   /* mg = marges [haut, droite, bas, gauche] en mm · cols = colonnes · pages =
      pages du gabarit · folio = numéro de page · pal = palette imposée (null =
      déduite du thème de la demande). */
+  /* ══ 🆕 v1.7.584 — LA BIBLIOTHÈQUE DE MODÈLES DE L'APP, ABSORBÉE PAR NOTRE MOTEUR ══
+     Demande utilisateur : « absorbe plein de templates dispo dans superprint l'app (dans
+     assets library) ça doit t'aider : un menu est composé de tarifs aussi, de grille de
+     plats, de prix… avec la pastille « Menu restaurant » je n'ai eu qu'un titre ».
+     Les 46 modèles de l'app (app/img/template/preview) sont décrits EN DONNÉES dans
+     app/JS/main.js : sections, plats, prix, palette, polices. On en tire ici une
+     MATIÈRE DE DÉPART par famille : quand la demande n'apporte pas assez d'éléments, le
+     moteur compose avec cette carte type — et il le DIT dans la conversation, pour qu'on
+     ne croie pas que ces plats viennent de l'utilisateur. Dès qu'il donne ses vrais plats
+     (ou sa vraie structure), le kit ne s'applique plus.
+     Les PLANS (sections seules) servent aux familles sans tarifs : CV, rapport, magazine,
+     catalogue — ils donnent une ossature réelle au lieu d'une page vide. */
+  const SP_GAB_KITS = {
+    menu: {
+      fr: {
+        surtitre: 'Cuisine de saison', titre: 'Menu',
+        sections: [
+          ['Entrées', [['Burrata, raisins rôtis, huile de noisette', '12'], ['Velouté de courge, sauge, beurre noisette', '11'], ['Rillettes de maquereau, seigle, oignon mariné', '13']]],
+          ['Plats', [['Joue de bœuf braisée, légumes racines', '26'], ['Dorade, fenouil, agrumes', '24'], ['Risotto aux champignons, parmesan affiné', '21'], ['Épaule d’agneau, haricots blancs, romarin', '27']]],
+          ['Desserts', [['Tarte au chocolat noir, fleur de sel', '11'], ['Poire pochée au vin rouge', '10'], ['Plateau de fromages, trois affinages', '14']]],
+          ['Vins', [['Sancerre, Loire 2023', '9'], ['Côtes du Rhône, au verre', '8'], ['Champagne, au verre', '14']]]
+        ],
+        infos: ['12 rue du Marché · 02 38 00 00 00 · tous les jours 12–14 h et 19–22 h'],
+        note: 'carte type reprise du modèle « Restaurant Menu » de SuperPrint'
+      },
+      en: {
+        surtitre: 'Seasonal kitchen', titre: 'Menu',
+        sections: [
+          ['Starters', [['Burrata, roasted grapes, hazelnut oil', '12'], ['Pumpkin velouté, sage, brown butter', '11'], ['Mackerel rillettes, rye, pickled onion', '13']]],
+          ['Main courses', [['Braised beef cheek, root vegetables', '26'], ['Sea bream, fennel, citrus', '24'], ['Wild mushroom risotto, aged parmesan', '21'], ['Lamb shoulder, white beans, rosemary', '27']]],
+          ['Desserts', [['Dark chocolate tart, sea salt', '11'], ['Pear poached in red wine', '10'], ['Cheese board, three ages', '14']]],
+          ['Wines', [['Sancerre, Loire 2023', '9'], ['Côtes du Rhône, glass', '8'], ['Champagne, by the glass', '14']]]
+        ],
+        infos: ['12 Market Street · +33 1 23 45 67 89 · every day 12–14 and 19–22'],
+        note: 'type menu taken from the SuperPrint “Restaurant Menu” model'
+      },
+      jp: {
+        surtitre: '季節の料理', titre: 'お品書き',
+        sections: [
+          ['先付', [['胡麻豆腐　山葵を添えて', '900'], ['焼き茄子の含め煮', '850'], ['戻り鰹　薬味三種', '1400'], ['銀杏と栗の素揚げ', '800']]],
+          ['主菜', [['銀鱈の西京焼き', '2600'], ['黒毛和牛の朴葉焼き', '4200'], ['秋野菜の天ぷら', '1900'], ['鴨の治部煮', '2900']]],
+          ['甘味', [['抹茶の羊羹', '800'], ['栗の渋皮煮　アイス添え', '900'], ['季節の果物', '700']]],
+          ['お飲み物', [['日本酒　純米　冷や', '900'], ['日本酒　純米　燗', '900'], ['焼酎　麦', '700'], ['抹茶', '600']]]
+        ],
+        infos: ['12 rue du Marché · 02 38 00 00 00 · 12–14 h / 19–22 h'],
+        note: 'SuperPrint の「レストランメニュー」モデルから引用した見本です'
+      }
+    },
+    plans: {
+      cv: ['Profil', 'Expérience', 'Formation', 'Compétences', 'Langues', 'Références'],
+      rapport: ['Faits marquants', 'Chiffres clés', 'Métiers', 'Revenus', 'Coûts', 'Perspectives'],
+      magazine: ['Le dossier', 'Matières', 'Intérieurs', 'Portraits', 'Adresses', 'Carnet'],
+      catalogue: ['Les modèles', 'Surfaces', 'Prix', 'Livraison', 'Finitions', 'Garanties'],
+      programme: ['Ouverture', 'Concert', 'Entracte', 'Tête d’affiche', 'Réservations'],
+      brochure: ['Édito', 'Le projet', 'Les équipes', 'Contacts'],
+      portfolio: ['Sélection', 'Projets', 'Clients', 'Contact'],
+      cahier: ['Introduction', 'Développement', 'Annexes']
+    }
+  };
+
+  /* Matière de la bibliothèque quand la demande est trop maigre.
+     Retourne la description du kit utilisé (ou null si l'utilisateur a donné assez). */
+  function spGabKitAppliquer(M, g) {
+    if (!M || !g) return null;
+    const utiles = (M.items || []).length + (M.lignes || []).length;
+    const remplies = (M.sections || []).filter(function (s) { return s && s.ps && s.ps.length; }).length;
+    /* Assez de matière : on ne touche à rien (le kit ne doit JAMAIS écraser du vrai contenu). */
+    if (utiles >= 6 || remplies >= 2) return null;
+    if (g.fam === 'menu') {
+      const K = SP_GAB_KITS.menu;
+      const lot = K[curLang] || K.fr;
+      const unites = (curLang === 'jp') ? ' 円' : ' €';
+      if (!M.titre) M.titre = lot.titre;
+      if (!M.surtitre) M.surtitre = lot.surtitre;
+      M.sections = lot.sections.map(function (s) {
+        const lignes = s[1].map(function (p) { return p[0] + ' ' + p[1] + unites; });
+        lignes.forEach(function (l) { M.items.push(spGabItem(l)); M.lignes.push(l); });
+        return { t: s[0], ps: lignes };
+      });
+      if (!M.infos.length) M.infos = lot.infos.slice();
+      M.kit = lot.note;
+      return lot.note;
+    }
+    const plan = SP_GAB_KITS.plans[g.fam];
+    if (plan && !(M.sections || []).some(function (s) { return s.t; })) {
+      plan.slice(0, 6).forEach(function (t) { M.sections.push({ t: t, ps: [] }); });
+      M.kitPlan = g.fam;
+      return 'plan de sections repris des modèles SuperPrint';
+    }
+    return null;
+  }
+
   const SP_GAB_DESIGN = [
     /* Formats particuliers : la carte de visite a sa propre mise en page (marges
        et tailles calculées sur 85 × 55 mm, jamais une grille A4 réduite). */
@@ -9371,6 +9518,123 @@ function spRtfLayoutInfo(src) {
 
   /* Choisit le gabarit : le plus spécifique d'abord. Aucune correspondance =
      affiche manifeste (jamais de page vide). */
+  /* ══ 🆕 v1.7.584 — ROCK 1 COMPREND LA DEMANDE : LEXIQUE DU MÉTIER D'ÉDITEUR ════════
+     Retour utilisateur : « la compréhension du prompt est très importante dans ROCK 1 ;
+     j'ai l'impression qu'il ne comprend pas vraiment ce que je lui dis… il doit comprendre
+     notre métier d'éditeur ». On lit donc la demande avec un LEXIQUE DE MÉTIER (français,
+     anglais, japonais) au lieu de quelques mots-clés : famille de document, format, nombre
+     de pages, colonnes, palette, éléments attendus (sommaire, prix, légendes, citation…)
+     et INTERDICTIONS (« sans photos », « pas de filets », « sans folios »).
+     Ce qui est compris est APPLIQUÉ (famille, colonnes, thème, format, photos, folios) et
+     REDIT dans la conversation — on corrige donc d'un mot au lieu de deviner.
+     Rien n'est inventé : si la demande ne dit rien, rien n'est forcé. */
+  const SP_METIER = {
+    familles: [
+      ['menu',        /\bmenus?\b|\bcarte\b|restaurant|brasserie|bistrot|pizzeria|p[âa]tisserie|entr[ée]es|desserts|\bdish|starters?|mains?\b|お品書き|メニュー/i],
+      ['cv',          /\bcv\b|curriculum|r[ée]sum[ée]|vitae|parcours professionnel|lettre de motivation|resume\b/i],
+      ['cartevisite', /carte\s+de\s+visite|business\s*card|bristol|85\s*[×x*]\s*55|55\s*[×x*]\s*85|名刺/i],
+      ['programme',   /programme|planning|horaire|agenda|conducteur|d[ée]roul[ée]|setlist|playbill/i],
+      ['mariage',     /mariage|noces?\b|faire-?part|vin d'honneur|union civile|\bpacs\b|wedding/i],
+      ['invitation',  /invitation|anniversaire|vernissage|c[ée]r[ée]monie|save\s+the\s+date|opening/i],
+      ['catalog',     /catalogue|catalog|produits?\b|boutique|tarifs?\b|grille\s+de\s+prix|shop|collection|price\s*list/i],
+      ['brochure',    /brochure|plaquette|d[ée]pliant|leaflet|flyer\s+de\s+pr[ée]sentation/i],
+      ['magazine',    /magazine|couverture|cover|revue|presse|journal\b|editorial/i],
+      ['portfolio',   /portfolio|galerie|r[ée]alisations|lookbook|book\s+photo/i],
+      ['rapport',     /rapport|corporate|entreprise|soci[ée]t[ée]|kpi|indicateurs?|bilan|activit[ée]s?\b|financier|r[ée]sultats?|annual\s+report/i],
+      ['cahier',      /cahier|dossier|booklet|livret|plaquette\s+de|roman|nouvelle|essai|po[ée]sie|m[ée]moire|th[èe]se|livre|book\b/i],
+      ['affiche',     /affiche|poster|flyer|manifeste|annonce|festival|concert|expo/i],
+      ['story',       /story|stories|reel|tiktok|9\s*:\s*16|vertical/i],
+      ['bandeau',     /bandeau|banni[èe]re|banner|16\s*:\s*9|marque-?page/i]
+    ],
+    palettes: [
+      ['sobre',   /noir\s+et\s+blanc|black\s+and\s+white|monochrome|sans\s+couleur|gris|grey|gray|épur[ée]|sobre|minimal/i],
+      ['chaud',   /cr[èe]me|cream|chaud|warm|terracotta|rouille|ocre|kraft|papier\s+ancien/i],
+      ['noir',    /noir\s+chic|dor[ée]|gold|luxe|luxueux|premium|chic|élégant\s+noir|black\s+tie/i],
+      ['douce',   /pastel|doux|nature|naturel|v[ée]g[ée]tal|menthe|eucalyptus|soft/i],
+      ['event',   /festif|festival|n[ée]on|neon|violet|rose|pop|color[ée]|p[ée]tillant|disco/i],
+      ['finance', /corporate|institutionnel|bleu\s+nuit|navy|business|banque|assurance/i],
+      ['mono',    /tech|monospace|code|donn[ée]es|data|industriel|scientifique|mono\b/i]
+    ],
+    sans: [
+      ['photo',    /sans\s+photos?|sans\s+images?|pas\s+de\s+photos?|aucune?\s+photos?|no\s+photos?|without\s+photos?/i],
+      ['encadres', /sans\s+encadr[ée]s?|pas\s+d'encadr[ée]s?|sans\s+cadres?|no\s+boxes?/i],
+      ['filets',   /sans\s+filets?|pas\s+de\s+filets?|sans\s+traits?|no\s+rules?/i],
+      ['folios',   /sans\s+folios?|pas\s+de\s+folios?|sans\s+num[ée]ros\s+de\s+page|no\s+folio/i]
+    ],
+    veut: [
+      ['sommaire', /sommaire|table\s+des\s+mati[èe]res|contents?\b|目次/i],
+      ['prix',     /prix|tarifs?|price[s]?\b|€|\bEUR\b|円/i],
+      ['legende',  /l[ée]gendes?|captions?/i],
+      ['citation', /citation|quote|extrait/],
+      ['lettrine', /lettrine|drop\s*cap/i],
+      ['encadre',  /encadr[ée]s?|callouts?|boxes?/i]
+    ],
+    formats: [
+      [/\ba4\b/i, 210, 297], [/\ba5\b/i, 148, 210], [/\ba3\b/i, 297, 420],
+      [/6\s*[×x*]\s*9/, 152, 229], [/5\s*[×x*]\s*8/, 127, 203],
+      [/\b(?:16\s*:\s*9|paysage|landscape)\b/i, 297, 210], [/\bcarr[ée]|square/i, 200, 200]
+    ]
+  };
+
+  function spGabComprendre(brief) {
+    const s = String(brief || '');
+    if (!s.trim()) return null;
+    const veut = function (liste) { for (let i = 0; i < liste.length; i++) { if (liste[i][1].test(s)) return liste[i][0]; } return null; };
+    const fam = veut(SP_METIER.familles);
+    const theme = veut(SP_METIER.palettes);
+    const sans = {};
+    SP_METIER.sans.forEach(function (x) { if (x[1].test(s)) sans[x[0]] = true; });
+    const attentes = [];
+    SP_METIER.veut.forEach(function (x) { if (x[1].test(s)) attentes.push(x[0]); });
+    /* Colonnes, pages, format : dits explicitement. */
+    let cols = 0;
+    if (/\b(?:deux|2)\s+colonnes?|\btwo\s+columns?\b|2\s*col\b/i.test(s)) cols = 2;
+    else if (/\b(?:trois|3)\s+colonnes?|\bthree\s+columns?\b/i.test(s)) cols = 3;
+    else if (/\bune?\s+colonne|\bsingle\s+column\b/i.test(s)) cols = 1;
+    const mp = s.match(/\b(\d{1,3})\s*(?:pages?|p\b|pp\b)/i);
+    const pages = mp ? Math.max(1, Math.min(800, Number(mp[1]))) : 0;
+    let format = null;
+    SP_METIER.formats.forEach(function (f) {
+      if (format || !f[0].test(s)) return;
+      let w = f[1], h = f[2];
+      /* « paysage » / « landscape » FORCE l'orientation (même sur un A5 dont la cote
+         naturelle est portrait) : mesuré, « affiche A5 paysage » sortait en portrait. */
+      const veutPaysage = /\b(?:paysage|landscape|16\s*:\s*9)\b/i.test(s);
+      const veutPortrait = /\bportrait\b/i.test(s) && !veutPaysage;
+      const estPaysage = w > h;
+      if ((veutPaysage && !estPaysage) || (veutPortrait && estPaysage)) { const t = w; w = h; h = t; }
+      format = { w: w, h: h };
+    });
+    const noms = { fam: { menu: 'carte de restaurant', cv: 'CV', cartevisite: 'carte de visite', programme: 'programme', mariage: 'faire-part de mariage', invitation: 'invitation', catalog: 'catalogue', brochure: 'brochure', magazine: 'magazine', portfolio: 'portfolio', rapport: 'rapport', cahier: 'cahier', affiche: 'affiche', story: 'story', bandeau: 'bandeau' },
+      theme: { sobre: 'noir et blanc', chaud: 'papier crème', noir: 'noir chic et doré', douce: 'teintes douces', event: 'couleurs vives', finance: 'bleu institutionnel', mono: 'technique, monospace' },
+      sans: { photo: 'sans photos', encadres: 'sans encadrés', filets: 'sans filets', folios: 'sans folios' },
+      veut: { sommaire: 'sommaire', prix: 'prix', legende: 'légendes', citation: 'citation', lettrine: 'lettrine', encadre: 'encadrés' } };
+    const bouts = [];
+    if (fam) bouts.push('famille « ' + noms.fam[fam] + ' »');
+    if (format) bouts.push('format ' + format.w + '×' + format.h + ' mm');
+    if (pages) bouts.push(pages + ' page(s)');
+    if (cols) bouts.push(cols + ' colonne(s)');
+    if (theme) bouts.push('palette ' + noms.theme[theme]);
+    attentes.forEach(function (a) { bouts.push(noms.veut[a]); });
+    Object.keys(sans).forEach(function (k) { bouts.push(noms.sans[k]); });
+    return { fam: fam, theme: theme, cols: cols, pages: pages, format: format, sans: sans, attentes: attentes,
+      phrase: bouts.length ? bouts.join(', ') : '' };
+  }
+  /* La demande comprise n'est écrite dans la conversation qu'UNE fois par demande
+     (une recomposition par tirette repasse par ici : pas de bavardage). */
+  let SP_COMPRIS_VU = '';
+  function spGabDireCompris(brief, c) {
+    if (!c || !c.phrase) return;
+    const cle = String(brief) + '||' + c.phrase;
+    if (SP_COMPRIS_VU === cle) return;
+    SP_COMPRIS_VU = cle;
+    try {
+      appendChat('assistant', '🧠 Demande comprise : ' + c.phrase + '. ' +
+        (c.sans.photo ? 'Aucune photo ne sera posée. ' : '') +
+        'Dites-le autrement si ce n’est pas ça — je recompose.');
+    } catch (_) {}
+  }
+
   function spGabChoisir(brief) {
     const s = String(brief || '').toLowerCase();
     const nb = spGabPages(brief);
@@ -9471,6 +9735,46 @@ function spRtfLayoutInfo(src) {
     return out;
   }
 
+  /* ══ 🆕 v1.7.584 — MÉMOIRES DE LECTURE (VITESSE DES RÉGLAGES SUR GROS DOCUMENTS) ══
+     Demande utilisateur : « les réglages de refactorisation sont trop lourds sur des gros
+     documents : 150 pages, c'est très lent ». MESURÉ : chaque mouvement de tirette
+     rappelait spGabSources() → spGabMarkdown() sur TOUT le texte des pièces jointes
+     (67 000 caractères pour un PDF de 24 pages, 508 000 pour un livre), alors que les
+     tirettes ne changent QUE la mise en forme. Le texte des pièces jointes ne bouge pas
+     entre deux mouvements : on mémorise donc le découpage markdown par texte, et la
+     lecture des sources par signature des pièces jointes. Le chaînage en pages, lui,
+     reste recalculé à chaque fois : il dépend de la géométrie (format, colonnes, densité). */
+  const SP_GAB_MD_MEMO = new Map();
+  function spGabMarkdownMemo(txt) {
+    const cle = String(txt || '');
+    if (SP_GAB_MD_MEMO.has(cle)) return SP_GAB_MD_MEMO.get(cle);
+    const v = spGabMarkdown(cle);
+    if (SP_GAB_MD_MEMO.size > 8) SP_GAB_MD_MEMO.clear();   // mémoire bornée
+    SP_GAB_MD_MEMO.set(cle, v);
+    return v;
+  }
+  let SP_GAB_SRC_CLE = '', SP_GAB_SRC_VAL = null;
+  function spGabSourcesMemo() {
+    const sig = (state.attachments || []).map(function (a) {
+      return (a.id || a.name) + ':' + spPjModeDe(a) + ':' + String(a.text || a.dataURL || '').length;
+    }).join('|') + '||' + curLang;
+    if (SP_GAB_SRC_CLE === sig && SP_GAB_SRC_VAL) return SP_GAB_SRC_VAL;
+    const v = spGabSources();
+    SP_GAB_SRC_CLE = sig; SP_GAB_SRC_VAL = v;
+    return v;
+  }
+  /* Contexte extractif : mêmes entrées, même résultat — on le garde aussi. */
+  let SP_GAB_CTX_CLE = '', SP_GAB_CTX_VAL = null;
+  function spGabContexteMemo(txt) {
+    const cle = String(txt || '');
+    if (!cle) return null;
+    if (SP_GAB_CTX_CLE === cle) return SP_GAB_CTX_VAL;
+    let v = null;
+    try { v = spGabContexte(cle); } catch (_) { v = null; }
+    SP_GAB_CTX_CLE = cle; SP_GAB_CTX_VAL = v;
+    return v;
+  }
+
   /* TEXTE ET PHOTOS VIENNANT DES PIÈCES JOINTES, SELON LEUR RÔLE (pop-in PJ). */
   function spGabSources() {
     const src = { corps: '', titres: [], images: [], contexte: '', couleurs: [] };
@@ -9481,7 +9785,7 @@ function spRtfLayoutInfo(src) {
           a.couleurs.forEach(function (c) { if (src.couleurs.indexOf(c) === -1) src.couleurs.push(c); });
         }
         if (a.type === 'image') { if (mode !== 'context') src.images.push(i); return; }
-        const blocs = spGabMarkdown(a.text || '');
+        const blocs = spGabMarkdownMemo(a.text || '');
         const entetes = blocs.filter(function (b) { return b.t === 'h'; }).map(function (b) { return b.x; });
         if (mode === 'context') { src.contexte += ' ' + blocs.map(function (b) { return b.x; }).join(' '); return; }
         entetes.forEach(function (h) { src.titres.push(h); });
@@ -9583,7 +9887,7 @@ function spRtfLayoutInfo(src) {
   /* FABRIQUE LE CONTENU exploitable par les gabarits : titre, accroche, chapô,
      sections, lignes de liste, articles avec prix, chiffres clés, informations. */
   function spGabMeta(brief) {
-    const src = spGabSources();
+    const src = spGabSourcesMemo();
     const briefTexte = String(brief || '').trim();
     /* ══ _SP_STUDIO_TITRE_584 — LA DEMANDE N'EST PAS DU CORPS DE TEXTE ══
        Quand un document fournit le contenu, la phrase de l'utilisateur est une CONSIGNE :
@@ -9655,7 +9959,7 @@ function spRtfLayoutInfo(src) {
        (thème et palette : déjà pris en compte plus haut ; ici, le contenu du gabarit).
        Tout est EXTRACTIF : les phrases viennent du document, rien n'est inventé. */
     let ctx = null;
-    try { ctx = spGabContexte(src.contexte); } catch (_) { ctx = null; }
+    try { ctx = spGabContexteMemo(src.contexte); } catch (_) { ctx = null; }
     if (ctx) {
       if (!M.chapeau && ctx.accroche) M.chapeau = ctx.accroche;
       if (ctx.chiffres.length) ctx.chiffres.forEach(function (v) { if (M.chiffres.length < 4) M.chiffres.push({ v: v, l: 'contexte' }); });
@@ -9763,6 +10067,10 @@ function spRtfLayoutInfo(src) {
   }
   // Zone photo : la vraie image jointe si elle existe — SINON UN FOND GÉNÉRÉ.
   function spGabPhoto(L, e, x, y, w, h, legende) {
+    /* 🆕 v1.7.584 — « SANS PHOTOS » DANS LA DEMANDE : on ne pose AUCUNE image, et on ne
+       laisse pas non plus un emplacement muet (retour utilisateur : « supprime cette
+       boîte »). L'appelant reçoit false et compose la zone en texte/papier. */
+    if (state._spSansPhoto) return false;
     /* L'image jointe est posée par son INDEX : le studio réinjecte la data URI,
        exactement comme pour une réponse d'IA (hydrateUserImages).
        ⚠️ SANS PHOTO JOINTE : l'emplacement n'est plus laissé vide (et surtout pas un
@@ -10841,7 +11149,45 @@ function spRtfLayoutInfo(src) {
   function spGabDesign(brief) {
     const veut = spGabPages(brief);
     let g = Object.assign({}, spGabChoisir(brief));
+    /* ══ 🆕 v1.7.584 — CE QUE LA DEMANDE DIT VRAIMENT (LEXIQUE DU MÉTIER) ══
+       La famille, les colonnes, le thème, le format et les interdictions sont lus dans la
+       demande AVANT de composer, et appliqués ici. Sans cela, « menu de restaurant en deux
+       colonnes, fond crème, sans photos » ne gardait que le mot « menu ». */
+    let _compris = null;
+    try { _compris = spGabComprendre(brief); } catch (_) { _compris = null; }
+    if (_compris) {
+      if (_compris.fam && _compris.fam !== g.fam) {
+        const d = SP_GAB_DESIGN.filter(function (x) { return x.fam === _compris.fam; })[0];
+        if (d) g = Object.assign({}, d);
+      }
+      if (_compris.cols) g.cols = _compris.cols;
+      if (_compris.sans.folios) g.folio = false;
+      /* Format demandé (A5, carré, 6 × 9 po…) : il change la géométrie de TOUTE la
+         composition — on l'écrit donc dans l'état avant de calculer les cotes. */
+      if (_compris.format && !window._spReglages) {
+        state.pageW = _compris.format.w; state.pageH = _compris.format.h;
+      }
+      /* « sans photos » : le drapeau lu par spGabPhoto (aucune image posée, aucun
+         emplacement muet) — remis à zéro à chaque composition, donc déterministe. */
+      state._spSansPhoto = !!_compris.sans.photo;
+      try { spGabDireCompris(brief, _compris); } catch (_) {}
+    } else {
+      state._spSansPhoto = false;
+    }
     const texte = spGabMeta(brief);
+    /* 🆕 v1.7.584 — LA MATIÈRE DE LA BIBLIOTHÈQUE SUPERPRINT, QUAND LA DEMANDE EST MAIGRE.
+       Mesuré : la pastille « Menu restaurant » (une phrase de description, aucun plat) ne
+       produisait qu'un titre. Le moteur reprend donc la carte type du modèle éponyme de
+       l'app — sections, plats, prix — et l'annonce dans la conversation. */
+    let _kit = null;
+    try { _kit = spGabKitAppliquer(texte, g); } catch (_) { _kit = null; }
+    if (_kit) {
+      try {
+        appendChat('assistant', '🍽️ ' + _kit + ' : votre demande ne contenait pas encore le détail ' +
+          '(plats, tarifs, sections), je compose donc une carte complète pour que vous voyiez le rendu. ' +
+          'Donnez vos propres plats et prix, ils remplaceront ceux-ci au prochain envoi.');
+      } catch (_) {}
+    }
     /* Journal : ce que le moteur A COMPRIS du document (titre, surtitre, chapô, sections).
        Trace utile en cas de doute sur la couverture — et contrôle de non-perte. */
     try {
@@ -16786,7 +17132,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   //   omettait le facteur 1.13 du moteur. Un titre de 3 lignes etait vu sur 2,
   //   donc le bloc suivant etait place trop haut et passait SOUS le titre.
   //   Fabric sait mesurer exactement : on lui demande.
-  let _spMeasureCache = {};
+  let _spMeasureCache = new Map();
   function spMeasureTextBlock(el) {
     const txt = String(el.text || ' ');
     const fsPt = (+el.fontSize || 14);
@@ -16800,7 +17146,8 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     //   se renvoyaient la même mesure).
     const cs = (+el.charSpacing || 0);
     const cle = [txt, fsPt, wMm, lh, fam, poids, style, cs].join('|');
-    if (_spMeasureCache[cle]) return _spMeasureCache[cle];
+    const memo = _spMeasureCache.get(cle);
+    if (memo) return memo;
     let lignes = 0, hauteurPx = 0;
     try {
       const tb = new fabric.Textbox(txt, {
@@ -16839,13 +17186,20 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       hauteurPx = lignes * fsPx * lh * SP_TEXT_LINE_MULT;
     }
     const res = { lignes: lignes, hauteurPx: hauteurPx, hauteurMm: hauteurPx / MM_TO_PX };
-    // Cache borne (les maquettes ont peu de blocs texte distincts).
-    const cles = Object.keys(_spMeasureCache);
-    if (cles.length > 400) _spMeasureCache = {};
-    _spMeasureCache[cle] = res;
+    /* ══ ⚠️ v1.7.584 — LE CACHE DE MESURE SE VIDAIT AU MILIEU D'UN GROS DOCUMENT ══
+       Défaut mesuré (retour utilisateur : « les réglages sont trop lourds sur un document
+       de 150 pages, c'est très lent ») : le plafond était de 400 entrées et, au-delà, le
+       cache était REMIS À ZÉRO. Or 48 pages représentent environ 2 000 blocs de texte :
+       à chaque vidage, tous les blocs déjà mesurés repassaient par Fabric — cinq fois
+       pour un rapport de 48 pages. Chronométrage mesuré : « moteur 8 ms · document
+       4 635 ms · peinture 72 ms ». Le plafond passe à 30 000 entrées (une entrée = une
+       chaîne et trois nombres) : il ne se vide plus pendant une construction, et une
+       recomposition qui ne change pas la typographie ne mesure plus rien du tout. */
+    if (_spMeasureCache.size > 30000) _spMeasureCache.clear();
+    _spMeasureCache.set(cle, res);
     return res;
   }
-  function spClearMeasureCache() { _spMeasureCache = {}; }
+  function spClearMeasureCache() { _spMeasureCache = new Map(); }
   window.sp213MeasureTextBlock = spMeasureTextBlock;
 
   function spEstimateTextLines(el) {
@@ -18001,9 +18355,16 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const brief = String(state.lastPrompt || '').trim() ||
       (((state.chat || []).filter(function (m) { return m.role === 'user'; }).slice(-1)[0] || {}).text || '');
     let out = null;
+    const _t0 = performance.now();
     try { out = spGabDesign(brief); } catch (e) { return -1; }
+    const _t1 = performance.now();
     let doc = null;
-    try { doc = buildDocFromParsed(parseAIResponse(JSON.stringify(out))); } catch (e) { return -1; }
+    /* ⚠️ v1.7.584 — PAS DE SÉRIALISATION COMPLÈTE ICI. Le passage par
+       JSON.stringify + parseAIResponse sur tout le document (150 pages = des milliers
+       d'objets) coûtait cher à CHAQUE mouvement de tirette. parseAIResponse accepte déjà
+       un objet (v1.7.393) : on lui donne directement la sortie du moteur. */
+    try { doc = buildDocFromParsed(parseAIResponse(out)); } catch (e) { return -1; }
+    const _t2 = performance.now();
     if (!doc || !doc.pages || !doc.pages.length) return -1;
     try {
       if (state.doc && state.doc.pages && state.doc.pages.length) {
@@ -18015,6 +18376,16 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     state.doc = doc;
     renderDocument(doc);
     try { ensureMaquetteFonts(doc); } catch (_) {}
+    /* ⚠️ v1.7.584 — CHRONOMÉTRAGE DES RÉGLAGES (retour utilisateur : « c'est très lent
+       sur un gros document »). On dit OÙ passe le temps : moteur (comprendre + composer),
+       document (construction des pages) et peinture (aperçu). C'est ce qui permet de
+       savoir quoi optimiser — et de vérifier qu'une optimisation a servi. */
+    try {
+      const _t3 = performance.now();
+      console.log('[RÉGLAGES] ' + doc.pages.length + ' page(s) — moteur ' + Math.round(_t1 - _t0) +
+        ' ms · document ' + Math.round(_t2 - _t1) + ' ms · peinture ' + Math.round(_t3 - _t2) + ' ms · total ' +
+        Math.round(_t3 - _t0) + ' ms');
+    } catch (_) {}
     return doc.pages.length;
   }
 
