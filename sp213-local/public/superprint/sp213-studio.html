@@ -2105,7 +2105,24 @@
   const WLLM_MIROIR_BASES = ['/models/', 'https://app.zigmoon.com/models/'];
   function wllmAppConfig(mid, base) {
     if (!mid || !base) return null;
-    return { model_list: [{ model: base + mid + '/mlc-chat-config.json', model_id: mid }] };
+    /* ⚠️ v1.7.579 — LE model_lib EST OBLIGATOIRE ICI.
+       Le config MLC du dépôt ne contient AUCUN `model_lib` (vérifié en ligne : le
+       champ est vide). WebLLM le fabrique à partir de sa PROPRE table de modèles
+       précompilés — et comme nous fournissons une entrée personnalisée, il ne
+       trouve plus la bibliothèque compilée (.wasm) et l'ouverture échoue :
+       « Failed to fetch ». On récupère donc l'adresse exacte dans cette table
+       (exposée par la bibliothèque : prebuiltAppConfig) et on la recopie dans
+       notre entrée. Sans cela, les poids peuvent être parfaits et l'atelier
+       refusera quand même de démarrer. */
+    const entree = { model: base + mid + '/mlc-chat-config.json', model_id: mid };
+    try {
+      const pl = window.prebuiltAppConfig && window.prebuiltAppConfig.model_list;
+      if (Array.isArray(pl)) {
+        const p = pl.filter(function (m) { return m && m.model_id === mid; })[0];
+        if (p && p.model_lib) { entree.model_lib = p.model_lib; }
+      }
+    } catch (_) {}
+    return { model_list: [entree] };
   }
 
   /* ═══ 🆕 v1.7.580g — AI HORDE (gratuit, sans clé) ═══
@@ -10850,6 +10867,10 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
       }).then(function(mod) {
         if (!mod || !mod.CreateMLCEngine) throw new Error('module WebLLM incomplet');
         window.CreateMLCEngine = mod.CreateMLCEngine;
+        /* v1.7.579 — on garde aussi la table officielle des modèles précompilés :
+           elle porte l'adresse du .wasm (model_lib), indispensable à notre entrée
+           personnalisée (voir wllmAppConfig). */
+        try { window.prebuiltAppConfig = mod.prebuiltAppConfig || null; } catch (_) {}
         return initWebLLM();
       });
     }).catch(function(e) {
