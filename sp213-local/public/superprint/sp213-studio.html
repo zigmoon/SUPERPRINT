@@ -7885,6 +7885,55 @@ function spRtfLayoutInfo(src) {
     return true;
   }
 
+  /* ══ THÈMES : NOTRE MOTEUR DOIT FAIRE DES CHOIX ═══════════════════════════════
+     Un seul mot suffit — « premium », « chic », « tech », « doux »… — pour changer
+     fond, typographie et accents. « premium / luxe / chic » = FOND NOIR CHIC + SERIF
+     (demande utilisateur). Le thème passe AVANT la palette du gabarit. */
+  const SP_GAB_THEMES = [
+    ['noir',    /premium|luxe|haut de gamme|chic|[ée]l[ée]gant|prestige|joaillerie|parfum|mariage|raffin/, { a: '#c8a24a', b: '#8a6d1f', clair: '#f5f1e8', gris: '#4a4a52', txt: '#f5f5f2', fond: '#0e0e10', doux: '#c9c9c4', sur: '#f5f5f2', noir: true }, 'serif'],
+    ['mono',    /tech|start-?up|logiciel|digital|data|ia\b|api|code|dev|cyber|studio de d[ée]veloppement/, { a: '#1f6feb', b: '#0b2447', clair: '#eef4ff', gris: '#cfdcf5', txt: '#0b1220', doux: '#52607a', sur: '#ffffff' }, 'mono'],
+    ['douce',   /doux|douce|pastel|bien-[êe]tre|zen|nature|[ée]cologie|bio|jardin|sant[ée]/, { a: '#166534', b: '#4d7c0f', clair: '#f1f7f1', gris: '#cfe0d0', txt: '#122015', doux: '#5b6b5e', sur: '#ffffff' }, 'sans'],
+    ['event',   /festif|f[êe]te|festival|concert|soir[ée]e|color[ée]|audacieux|explosif|[ée]v[ée]nement/, { a: '#6d28d9', b: '#ec4899', clair: '#f7f1ff', gris: '#ded1f7', txt: '#1b0f38', doux: '#5f5a72', sur: '#ffffff' }, 'display'],
+    ['finance', /corporate|finance|banque|assurance|audit|conseil|juridique|rapport annuel|institution/, { a: '#0f2a4a', b: '#3b82f6', clair: '#f2f5f9', gris: '#ccd7e4', txt: '#0f172a', doux: '#5a6b80', sur: '#ffffff' }, 'sans'],
+    ['sobre',   /minimal|[ée]pur[ée]|sobre|institutionnel|discret|blanc/, { a: '#111111', b: '#1f6feb', clair: '#f5f5f6', gris: '#d9d9dc', txt: '#18181b', doux: '#5f6368', sur: '#ffffff' }, 'sans'],
+    ['chaud',   /restaurant|cuisine|menu|carte|[âa]tisserie|brasserie|bistrot|vin|caf[ée]|gourmand/, { a: '#7c2d12', b: '#c2410c', clair: '#fdf4e9', gris: '#e6d9c8', txt: '#1c1917', doux: '#6b5b4a', sur: '#ffffff' }, 'serif']
+  ];
+  function spGabTheme(brief, contexte) {
+    const s = (String(brief || '') + ' ' + String(contexte || '')).toLowerCase();
+    for (let i = 0; i < SP_GAB_THEMES.length; i++) {
+      if (SP_GAB_THEMES[i][1].test(s)) return { cle: SP_GAB_THEMES[i][0], pal: SP_GAB_THEMES[i][2], fonts: SP_GAB_THEMES[i][3] };
+    }
+    return null;
+  }
+
+  /* ══ TYPOGRAPHIE PAR DÉFAUT (demande utilisateur) ══════════════════════════════
+     « IBM Plex Mono », « Open Sans » — et une police DEMANDÉE par l'utilisateur est
+     chargée par le studio (détecteur + loader déjà en place) puis employée ici. */
+  const SP_GAB_FONTE = { titre: 'IBM Plex Mono', corps: 'IBM Plex Mono', mono: 'IBM Plex Mono' };
+
+  /* ══ UN PEU DE VARIATION (demande utilisateur : « un petit côté random ») ══════
+     Déterministe pour une même demande, mais deux demandes voisines ne donnent pas
+     exactement la même page (bande, accents, encadré), et une REGÉNÉRATION bouge. */
+  let SP_GAB_N = 0;
+  function spGabHasard(brief) {
+    SP_GAB_N++;
+    const s = String(brief || '');
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000;
+    return { n: SP_GAB_N, v: (((h + SP_GAB_N * 37) % 97) / 97) };
+  }
+
+  /* Hauteur RÉELLE estimée d'un texte (px-units) : c'est ce qui évite qu'un chapô
+     soit coupé par un graphisme posé à une hauteur fixe (défaut signalé). */
+  function spGabLignes(txt, taille, largeur) {
+    const n = Math.max(1, String(txt || '').length);
+    const parLigne = Math.max(6, (Number(largeur) || 100) / (Number(taille) * 0.52));
+    return Math.max(1, Math.ceil(n / parLigne));
+  }
+  function spGabH(txt, taille, largeur, interligne) {
+    return spGabLignes(txt, taille, largeur) * Number(taille) * (Number(interligne) || 1) * 1.33;
+  }
+
   const SP_GAB_K = 72 / 25.4;                      // mm → px (72 dpi), comme le studio
   const SP_GAB_PAL = {
     chaud:   { a: '#7c2d12', b: '#c2410c', clair: '#fdf4e9', gris: '#e6d9c8', txt: '#1c1917' },
@@ -7899,7 +7948,9 @@ function spRtfLayoutInfo(src) {
   const SP_GAB_FONTS = {
     display: { titre: 'Bebas Neue', corps: 'Open Sans' },
     serif:   { titre: 'Playfair Display', corps: 'Open Sans' },
-    sans:    { titre: 'Montserrat', corps: 'Open Sans' }
+    sans:    { titre: 'Montserrat', corps: 'Open Sans' },
+    /* Famille monospace : la signature « IBM Plex Mono » demandée par défaut. */
+    mono:    { titre: 'IBM Plex Mono', corps: 'Open Sans' }
   };
   /* mg = marges [haut, droite, bas, gauche] en mm · cols = colonnes · pages =
      pages du gabarit · folio = numéro de page · pal = palette imposée (null =
@@ -8123,7 +8174,17 @@ function spRtfLayoutInfo(src) {
     M.titre = spGabCourt(M.titre, 64).replace(/[.!?]+$/, '');
     M.chapeau = (M.chapeau === M.titre) ? (M.lignes[0] || '') : M.chapeau;
     const prem = blocs.filter(function (b) { return b.t !== 'h' && b.x !== M.titre; });
-    if (!M.surtitre && prem.length && prem[0].x.length <= 32 && prem[0].x !== M.chapeau) M.surtitre = prem[0].x;
+    /* Le sur-titre ne doit JAMAIS être le titre, le chapô, ni un morceau de l'un des
+       deux : mesuré, le même texte ressortait en sur-titre ET en titre, donc deux
+       blocs superposés (chevauchement signalé par l'utilisateur). */
+    const pasDoublon = function (x) {
+      if (!x || x.length > 32) return false;
+      if (x === M.titre || x === M.chapeau || x === M.surtitre) return false;
+      if (M.titre && (M.titre.indexOf(x) === 0 || x.indexOf(M.titre) === 0)) return false;
+      if (M.chapeau && (M.chapeau.indexOf(x) === 0 || x.indexOf(M.chapeau) === 0)) return false;
+      return true;
+    };
+    if (!M.surtitre) { for (let i2 = 0; i2 < prem.length; i2++) { if (pasDoublon(prem[i2].x)) { M.surtitre = prem[i2].x; break; } } }
     return M;
   }
 
@@ -8133,6 +8194,9 @@ function spRtfLayoutInfo(src) {
   function spGabC(x, y, r, fill, op) { return { type: 'circle', left: x - r, top: y - r, radius: r, fill: fill, opacity: (op == null ? 1 : op) }; }
   function spGabT(x, y, w, texte, taille, fill, poids, align, interligne, esp) {
     const e = { type: 'text', left: x, top: y, width: w, text: String(texte == null ? '' : texte), fontSize: taille, fill: fill || '#222222' };
+    /* Typographie : titres = famille de titre, textes espacés (sur-titres, légendes,
+       folios) = famille monospace, le reste = corps. Par défaut IBM Plex Mono. */
+    e.fontFamily = (Number(taille) >= 18) ? SP_GAB_FONTE.titre : (esp ? SP_GAB_FONTE.mono : SP_GAB_FONTE.corps);
     if (poids) e.fontWeight = poids;
     if (align) e.textAlign = align;
     /* TITRES SERRÉS : au-delà de 18 pt l'interligne ne dépasse JAMAIS 0,95.
@@ -8169,9 +8233,12 @@ function spRtfLayoutInfo(src) {
     e.push(spGabC(L.x1 - 40, L.y0 + 40, 40, p.b, 0.16));
     if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0, L.cw * 0.6, spGabCourt(M.surtitre, 40)));
     e.push(spGabT(L.x0, L.y0 + L.ch * 0.24, L.cw * 0.94, M.titre, L.g.titre, p.txt, 'bold', 'left', 1.02));
-    e.push(spGabL(L.x0, L.y0 + L.ch * 0.24 + L.g.titre * 1.15, 118, p.a, 4));
-    if (M.chapeau) e.push(spGabT(L.x0, L.y0 + L.ch * 0.24 + L.g.titre * 1.15 + 16, L.cw * 0.82, spGabCourt(M.chapeau, 260), L.g.chapeau, '#4b5563', null, 'left', 1.5));
-    const yPh = L.y0 + L.ch * 0.62;
+    const hT = spGabH(M.titre, L.g.titre, L.cw * 0.94, 0.95);
+    e.push(spGabL(L.x0, L.y0 + L.ch * 0.24 + hT + 14, 118, p.a, 4));
+    const yPhSousTitre = L.y0 + L.ch * 0.24 + hT + 30;
+    if (M.chapeau) e.push(spGabT(L.x0, yPhSousTitre, L.cw * 0.82, spGabCourt(M.chapeau, 260), L.g.chapeau, '#4b5563', null, 'left', 1.5));
+    /* Le visuel ne descend JAMAIS sur le titre ni sur le chapô : il démarre sous eux. */
+    const yPh = Math.max(L.y0 + L.ch * 0.62, yPhSousTitre + (M.chapeau ? spGabH(spGabCourt(M.chapeau, 260), L.g.chapeau, L.cw * 0.82, 1.5) + L.k * 44 : L.k * 30));
     spGabPhoto(L, e, L.x0, yPh, L.cw, Math.max(90, L.y1 - yPh - 86), 'photo de couverture');
     e.push(spGabL(L.x0, L.y1 - 62, L.cw, p.txt, 2));
     const infos = (M.infos.length ? M.infos : M.lignes).slice(0, 2).join('  ·  ');
@@ -8382,14 +8449,17 @@ function spRtfLayoutInfo(src) {
     const texte = function (i) { const s = secs[Math.min(i, secs.length - 1)]; return s ? (s.ps.length ? s.ps.join('\n\n') : M.chapeau) : (M.chapeau || ''); };
     // ── couverture : le titre et un grand visuel, rien d'autre
     if (n === 1) {
-      const bande = L.H * 0.34;
+      /* BANDE CALCULÉE SUR LA VRAIE HAUTEUR DU TITRE (3 lignes possibles) : sinon le
+         titre débordait sur la photo et le chapô se retrouvait coupé par elle
+         (mesuré : 54 chevauchements texte/graphisme sur la seule couverture). */
+      const hT = spGabH(M.titre, g.titre, L.cw * 0.92, 0.95);
+      const hC = M.chapeau ? spGabH(spGabCourt(M.chapeau, 150), g.chapeau, L.cw * 0.8, 1.4) : 0;
+      const bande = Math.max(L.H * 0.34, L.y0 + k * 24 + hT + (hC ? k * 16 + hC : 0) + k * 26);
       e.push(spGabR(0, 0, L.W, bande, p.a, 0));
-      if (M.surtitre) e.push(spGabT(L.x0, L.y0, L.cw, spGabCourt(M.surtitre, 42).toUpperCase(), 8.5, '#ffffff', 'bold', 'left', 1.1, 200));
-      e.push(spGabT(L.x0, L.y0 + k * 24, L.cw * 0.92, M.titre, g.titre, '#ffffff', 'bold', 'left', 0.95));
-      if (M.chapeau) e.push(spGabT(L.x0, bande - k * 48, L.cw * 0.8, spGabCourt(M.chapeau, 150), g.chapeau, '#f1f5f9', null, 'left', 1.4));
-      /* GRAND FOND : le visuel de couverture va jusqu'aux CHANTS — x = 0 et largeur
-         pleine page ; le studio étend ensuite au fond perdu. */
-      spGabPhoto(L, e, 0, bande + k * 18, L.W, L.H - (bande + k * 18) - k * 8, 'grand visuel');
+      if (M.surtitre) e.push(spGabT(L.x0, L.y0, L.cw, spGabCourt(M.surtitre, 42).toUpperCase(), 8.5, p.sur, 'bold', 'left', 1.1, 200));
+      e.push(spGabT(L.x0, L.y0 + k * 24, L.cw * 0.92, M.titre, g.titre, p.sur, 'bold', 'left', 0.95));
+      if (M.chapeau) e.push(spGabT(L.x0, L.y0 + k * 24 + hT + k * 16, L.cw * 0.8, spGabCourt(M.chapeau, 150), g.chapeau, p.sur, null, 'left', 1.4));
+      spGabPhoto(L, e, 0, bande + k * 14, L.W, Math.max(k * 90, L.H - (bande + k * 14) - L.k * 8), 'grand visuel');
       e.push(spGabL(L.x0, L.y1 - k * 24, L.cw, p.txt, 2));
       e.push(spGabT(L.x0, L.y1 - k * 16, L.cw, spGabCourt(M.surtitre || g.nom, 60), 8, '#6b7280', null, 'left', 1.3, 120));
       return e;
@@ -8450,20 +8520,23 @@ function spRtfLayoutInfo(src) {
         e.push(spGabT(x, y, cw, para, g.corps, '#374151', null, 'justify', 1.5));
         y += Math.max(k * 48, (para.length / 3.1) * g.corps * 0.34) + k * 14;
       });
-      if (col === 1 && L.photos.length) {
+      if (col === 1 && L.photos.length && (L.y1 - k * 22 - Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26))) > y + k * 18) {
         const hP = Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26));
         const yP = L.y1 - k * 22 - hP;
         spGabPhoto(L, e, x, yP, cw, hP, 'photo');
         e.push(spGabT(x, yP + hP + 4, cw, spGabCourt(secs[Math.min(base, secs.length - 1)].t || 'légende', 58), 7.5, '#6b7280', null, 'left', 1.3));
       } else if (col === 1 && M.chiffres.length) {
-        /* ENCADRÉ CHIFFRE CLÉ : repris des chiffres réels de la demande. */
+        /* ENCADRÉ CHIFFRE CLÉ : seulement s'il reste la place SOUS le texte — sinon il
+           passait par-dessus (chevauchement mesuré). */
         const c = M.chiffres[(n - 3) % M.chiffres.length];
         const hB = k * 92;
-        const yB = Math.max(y + k * 18, L.y1 - hB - k * 24);
-        e.push(spGabR(x, yB, cw, hB, p.clair, 4));
-        e.push(spGabL(x, yB, 3, p.a, 3));
-        e.push(spGabT(x + k * 14, yB + k * 16, cw - k * 28, c.v, Math.min(46, g.corps * 5), p.a, 'bold', 'left', 0.95));
-        e.push(spGabT(x + k * 14, yB + k * 62, cw - k * 28, spGabCourt(c.l, 70), g.corps, '#4b5563', null, 'left', 1.35));
+        const yB = L.y1 - hB - k * 24;
+        if (yB > y + k * 18) {
+          e.push(spGabR(x, yB, cw, hB, p.clair, 4));
+          e.push(spGabL(x, yB, 3, p.a, 3));
+          e.push(spGabT(x + k * 14, yB + k * 16, cw - k * 28, c.v, Math.min(46, g.corps * 5), p.a, 'bold', 'left', 0.95));
+          e.push(spGabT(x + k * 14, yB + k * 62, cw - k * 28, spGabCourt(c.l, 70), g.corps, '#4b5563', null, 'left', 1.35));
+        }
       }
     });
     return e;
@@ -8632,6 +8705,25 @@ function spRtfLayoutInfo(src) {
     return o;
   }
 
+  /* ══ ÉTAPES VISIBLES (demande utilisateur : « on n'a pas de loader avec l'œil et
+     les étapes ») ══ Le moteur est instantané, donc la boîte « SP213 construit votre
+     maquette » ne s'affichait qu'un clin d'œil. On enchaîne maintenant les VRAIES
+     étapes — lecture, gabarit, composition, pose — avec une petite pause à chacune :
+     le loader et l'œil se voient, et le journal garde la trace de chaque décision. */
+  function spGabAvecEtapes(brief) {
+    const j = function (niv, msg) { try { spJournalAjoute(niv, msg); } catch (_) {} };
+    const pause = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    j('info', 'Lecture de la demande…');
+    return pause(340)
+      .then(function () { const g = spGabChoisir(brief); j('info', 'Gabarit retenu : ' + g.nom + ' (' + g.key + ').'); return pause(300); })
+      .then(function () {
+        const out = spGabDesign(brief);
+        j('ok', 'Composition terminée : ' + out.pages.length + ' page(s).');
+        j('info', 'Pose des pages, marges et fonds vérifiés.');
+        return pause(240).then(function () { return JSON.stringify(out); });
+      });
+  }
+
   /* FABRIQUE LE DOCUMENT COMPLET. Règle de cahier (correctif 19) : en double page
      le nombre de pages est TOUJOURS pair — jamais de page seule au centre. */
   function spGabDesign(brief) {
@@ -8647,6 +8739,22 @@ function spRtfLayoutInfo(src) {
       if (c) g = Object.assign({}, c);
     }
     const W = (state.pageW || 210) * SP_GAB_K, H = (state.pageH || 297) * SP_GAB_K;
+    /* ══ THÈME, TYPOGRAPHIE, VARIATION ══ */
+    const theme = spGabTheme(brief, texte.contexte);
+    const hasard = spGabHasard(brief);
+    const polices = SP_GAB_FONTS[(theme && theme.fonts) || g.fonts] || SP_GAB_FONTS.sans;
+    SP_GAB_FONTE.titre = polices.titre;
+    SP_GAB_FONTE.corps = 'Open Sans';
+    SP_GAB_FONTE.mono = 'IBM Plex Mono';
+    try {
+      /* Police DEMANDÉE : le studio sait la détecter (detectRequestedFonts) et la
+         charger avec un loader ; on l'emploie pour les titres dès qu'elle existe. */
+      const demandees = detectRequestedFonts(brief) || [];
+      if (demandees.length) {
+        const normalisee = normalizeFontFamily(demandees[0]);
+        if (normalisee) { SP_GAB_FONTE.titre = normalisee; SP_GAB_FONTE.corps = normalisee; }
+      }
+    } catch (_) {}
     /* MARGES RELATIVES AU FORMAT : une marge A4 de 22 mm ne laisse rien sur une
        carte de visite. On plafonne à 5 % du petit côté de la page. */
     const petit = Math.min(state.pageW || 210, state.pageH || 297);
@@ -8662,8 +8770,8 @@ function spRtfLayoutInfo(src) {
     g.corps = Math.max(6.5, Math.min(g.corps, H * 0.045));
     const fmt = spGabFormat();
     const L = {
-      W: W, H: H, g: g, t: texte, pal: spGabPal(brief, g.pal, texte.contexte), f: SP_GAB_FONTS[g.fonts] || SP_GAB_FONTS.sans,
-      k: Math.max(0.3, Math.min(1, H / 841.89)),
+      W: W, H: H, g: g, t: texte, pal: (theme && theme.pal) || spGabPal(brief, g.pal, texte.contexte), f: polices,
+      k: Math.max(0.3, Math.min(1, H / 841.89)), v: hasard.v, n: hasard.n, theme: theme ? theme.cle : 'auto',
       x0: x0, y0: y0, x1: x1, y1: y1, cw: cw, ch: ch,
       pays: fmt.pays, carre: fmt.carre, mini: fmt.mini, bandeau: fmt.bandeau,
       photos: texte.photos.slice()
@@ -8702,7 +8810,11 @@ function spRtfLayoutInfo(src) {
     for (let i = 1; i <= tot; i++) {
       let els = [];
       try { els = lay(L, i, tot) || []; } catch (err) { els = []; }
-      els.unshift(spGabR(0, 0, W, H, '#ffffff', 0));
+      /* FOND DE PAGE : blanc, ou le noir chic du thème « premium » (fond foncé limité
+         à 88 % de la hauteur : un aplat quasi pleine page serait retiré par la passe
+         anti-aplats noirs du studio). */
+      const noirIci = (L.pal.noir && L.theme === 'noir' && (i === 1 || i === tot) && (g.fam === 'cahier' || g.fam === 'brochure' || g.fam === 'couverture' || g.fam === 'affiche'));
+      els.unshift(noirIci ? spGabR(0, 0, W, H, L.pal.fond, 0) : spGabR(0, 0, W, H, '#ffffff', 0));
       if (g.folio && i > 1 && i < tot) els = els.concat(spGabFolio(L, i, tot));
       pages.push({ pageIndex: pages.length, elements: els.map(spGabVersMm) });
     }
@@ -8727,7 +8839,9 @@ function spRtfLayoutInfo(src) {
     pages.forEach(function (p, i) { p.pageIndex = i; });
     const posees = texte.photos.length - L.photos.length;
     const j = function (niv, msg) { try { spJournalAjoute(niv, msg); } catch (_) {} };
-    j('ok', 'Gabarit « ' + g.nom + ' » (' + g.key + ') : ' + pages.length + ' page(s) posée(s).');
+    j('ok', 'Gabarit « ' + g.nom + ' » (' + g.key + ') : ' + pages.length + ' page(s) posée(s).' + (theme ? ' Thème « ' + theme.cle + ' » appliqué.' : ''));
+    j('info', 'Typographie : titres ' + SP_GAB_FONTE.titre + ', corps ' + SP_GAB_FONTE.corps + ', mentions ' + SP_GAB_FONTE.mono + '.');
+    j('info', 'Variation n°' + hasard.n + ' (les regénérations d\'une même demande font bouger bande, accents et encadré).');
     j('info', 'Format lu : ' + fmt.W + '×' + fmt.H + ' mm, ' + (fmt.carre ? 'carré' : (fmt.pays ? 'paysage' : 'portrait'))
       + (fmt.mini ? ', petit format' : '') + (fmt.bandeau ? ', format bandeau' : '') + (fmt.grandFmt ? ', grand format' : '') + '.');
     j('info', 'Imposition : ' + (spread ? 'DOUBLE PAGE (planches) — page 1 seule à droite, puis les paires gauche/droite, dernière page seule (total pair)' : 'page simple') + (g.folio ? ', folios' : '') + '.');
@@ -10631,7 +10745,7 @@ function spRtfLayoutInfo(src) {
        parseur : les passes de marges, de cahiers, de photos et d'export
        s'appliquent donc à l'identique. Aucun appel réseau n'est effectué. */
     const _promesse = (state.engine === 'gabarit')
-      ? Promise.resolve(JSON.stringify(spGabDesign(userText)))
+      ? spGabAvecEtapes(userText)
       : spCallAI(messages, userText);
     _promesse.then(response => {
       typingEl.remove();
