@@ -7673,6 +7673,8 @@ function spRtfLayoutInfo(src) {
     "st.ex4p": "8-page A4 booklet laid out as spreads: the cover alone carries the title and a large visual, then a short editorial and six pages of consistent content — text in two justified columns, boxed callouts, captioned photos — and a last page with the contact details. Same grid, same margins and same type family throughout, folios at the bottom.",
     "st.ex5p": "85 × 55 mm business card on a light background: name in bold at the top left, job title small just below, contact details aligned along the bottom, one thin horizontal rule as a separator, discreet logo at the top right. Sober typography, small body size, plenty of air, no solid fills.",
     "st.tag.keyReco": "API key · recommended",
+    "st.usage.livre": "full book",
+    "st.usage.demo": "demo",
   });
   Object.assign(I18N.fr, {
     "st.dialog": "Démarrage studio",
@@ -7719,6 +7721,8 @@ function spRtfLayoutInfo(src) {
     "st.ex4p": "Cahier A4 de 8 pages en double page : la couverture seule porte le titre et un grand visuel, puis un édito court et six pages de contenu cohérent — texte en deux colonnes justifiées, encadrés d'encadré, photos légendées — et une dernière page avec les contacts. Même grille, mêmes marges et même famille typographique sur toutes les pages, folios en bas.",
     "st.ex5p": "Carte de visite 85 × 55 mm sur fond clair : nom en gras en haut à gauche, fonction en petit juste dessous, coordonnées alignées en bas de la carte, un filet fin horizontal de séparation, logo discret en haut à droite. Typographie sobre, corps petit, beaucoup d'air, aucun aplat plein.",
     "st.tag.keyReco": "clé API · recommandé",
+    "st.usage.livre": "livre complet",
+    "st.usage.demo": "démo",
   });
   Object.assign(I18N.jp, {
     "st.dialog": "スタジオの開始",
@@ -7765,6 +7769,8 @@ function spRtfLayoutInfo(src) {
     "st.ex4p": "A4・8ページの冊子（見開き構成）：表紙だけにタイトルと大きなビジュアル、続いて短い巻頭言、内容6ページ（2段組みの両端揃えの本文、囲み記事、キャプション付きの写真）、最後は連絡先のページ。全ページで同じグリッド・余白・書体、ノンブルを下部に。",
     "st.ex5p": "明るい背景の名刺 85 × 55 mm：左上に太字の氏名、その下に小さく役職、下部に連絡先を揃え、細い水平の区切り線、右上に控えめなロゴ。落ち着いたタイポグラフィ、小さい本文、余白を多く、ベタ面は使わない。",
     "st.tag.keyReco": "APIキー・おすすめ",
+    "st.usage.livre": "本格・書籍",
+    "st.usage.demo": "デモ",
   });
 
   /* ══ v1.7.580jj — MODÈLES DU STARTER : NOS PRÉFÉRÉS, DANS UN SOUS-MENU ══
@@ -7772,17 +7778,22 @@ function spRtfLayoutInfo(src) {
      donnait un « sous-menu par défaut »). Les noms sont des marques : ils ne se
      traduisent pas ; la note et l'étiquette viennent du dictionnaire (nk / tk). */
   const SP_ST_MODELES = [
-    { eng: 'chromeai',      nom: 'Gemini Nano (Chrome)', nk: 'st.n.chromeai',   tk: 'st.tag.free' },
+    { eng: 'chromeai',      nom: 'Gemini Nano (Chrome)', nk: 'st.n.chromeai',   tk: 'st.tag.free',    usage: 'demo' },
     /* 🆕 v1.7.580oo — DEEPSEEK EN 2ᵉ POSITION (demande utilisateur) : c'est le moteur
        cloud de référence du studio (grand contexte, JSON fiable). Il passe donc juste
        après l'IA intégrée du navigateur, avant les autres services à clé. */
-    { eng: 'deepseek',      nom: 'DeepSeek',             nk: 'st.n.deepseek',   tk: 'st.tag.keyReco' },
-    { eng: 'webllm-native', nom: 'SP213 local',          nk: 'st.n.wllmNative', tk: 'st.tag.free' },
-    { eng: 'webllm',        nom: 'WebLLM',               nk: 'st.n.webllm',     tk: 'st.tag.free' },
-    { eng: 'openai',        nom: 'OpenAI GPT',           nk: 'st.n.openai',     tk: 'st.tag.key' },
-    { eng: 'anthropic',     nom: 'Anthropic Claude',     nk: 'st.n.anthropic',  tk: 'st.tag.key' },
-    { eng: 'openrouter',    nom: 'OpenRouter',           nk: 'st.n.openrouter', tk: 'st.tag.freeKey' },
-    { eng: 'groq',          nom: 'Groq',                 nk: 'st.n.groq',       tk: 'st.tag.key' }
+    /* 🆕 v1.7.579 — MARQUAGE PAR USAGE : « livre complet » ou « démo / essai ».
+       Constat de terrain : l'IA intégrée du navigateur et les petits modèles locaux
+       s'arrêtent aux pages simples ; un livre (cahier, doubles, folios) sort avec les
+       moteurs cloud. Le badge le dit dans la liste, pour ne plus promettre la même
+       chose de tous les moteurs. */
+    { eng: 'deepseek',      nom: 'DeepSeek',             nk: 'st.n.deepseek',   tk: 'st.tag.keyReco', usage: 'livre' },
+    { eng: 'webllm-native', nom: 'SP213 local',          nk: 'st.n.wllmNative', tk: 'st.tag.free',    usage: 'demo' },
+    { eng: 'webllm',        nom: 'WebLLM',               nk: 'st.n.webllm',     tk: 'st.tag.free',    usage: 'demo' },
+    { eng: 'openai',        nom: 'OpenAI GPT',           nk: 'st.n.openai',     tk: 'st.tag.key',     usage: 'livre' },
+    { eng: 'anthropic',     nom: 'Anthropic Claude',     nk: 'st.n.anthropic',  tk: 'st.tag.key',     usage: 'livre' },
+    { eng: 'openrouter',    nom: 'OpenRouter',           nk: 'st.n.openrouter', tk: 'st.tag.freeKey', usage: 'demo' },
+    { eng: 'groq',          nom: 'Groq',                 nk: 'st.n.groq',       tk: 'st.tag.key',     usage: 'livre' }
     /* 🗑️ v1.7.580mm — Transformers.js (tjslocal) retiré aussi ici : le moteur n'est
        plus proposé dans les réglages (il ne produit pas la maquette du studio). */
   ];
@@ -7799,6 +7810,16 @@ function spRtfLayoutInfo(src) {
   }
   function spStMoteurDefaut() {
     const dispo = spStDispos();
+    /* ⚠️ v1.7.579 — DEEPSEEK D'ABORD DÈS QU'UNE CLÉ EST ENREGISTRÉE (demande
+       utilisateur). C'était l'IA intégrée du navigateur qui prenait la main, et
+       elle ne compose pas un livre : l'utilisateur se retrouvait devant des pages
+       simples sans comprendre pourquoi. Ordre : DeepSeek si sa clé existe, sinon
+       un moteur à clé déjà configuré, sinon Chrome intégré (qui marche sans rien
+       configurer), sinon le premier disponible. */
+    const cleOk = function (eng) { try { return !!spStCleEnregistree(eng); } catch (_) { return false; } };
+    if (dispo.some(function (m) { return m.eng === 'deepseek'; }) && cleOk('deepseek')) return 'deepseek';
+    const avecCle = dispo.filter(function (m) { return m.tk !== 'st.tag.free' && cleOk(m.eng); })[0];
+    if (avecCle) return avecCle.eng;
     if (dispo.some(function (m) { return m.eng === 'chromeai'; })) return 'chromeai';
     if (state.engine && dispo.some(function (m) { return m.eng === state.engine; })) return state.engine;
     return dispo.length ? dispo[0].eng : 'deepseek';
@@ -7914,10 +7935,18 @@ function spRtfLayoutInfo(src) {
     let html = '';
     spStDispos().forEach(function (m) {
       const on = (m.eng === eng);
-      html += '<button class="st-row' + (on ? ' on' : '') + '" type="button" role="option" aria-selected="' + on + '" data-eng="' + m.eng + '">' +
-        '<span class="st-row-t"><span class="st-row-n">' + escapeHtml(m.nom) + '</span>' +
+      /* v1.7.579 — badge d'USAGE : « livre complet » ou « démo ». La description
+         reste sur une seule ligne (coupée si nécessaire) et l'intitulé complet
+         passe dans l'infobulle : la hauteur de ligne reste identique partout. */
+      const _usage = t(m.usage === 'livre' ? 'st.usage.livre' : 'st.usage.demo');
+      const _couleur = (m.usage === 'livre') ? '#1f6feb' : '#8a8f98';
+      html += '<button class="st-row' + (on ? ' on' : '') + '" type="button" role="option" aria-selected="' + on + '" data-eng="' + m.eng + '"' +
+        ' title="' + escapeHtml(m.nom + ' — ' + _usage + ' — ' + t(m.nk)) + '">' +
+        '<span class="st-row-t" style="flex-wrap:nowrap;overflow:hidden"><span class="st-row-n">' + escapeHtml(m.nom) + '</span>' +
         '<span class="st-row-g">' + escapeHtml(t(m.tk)) + '</span></span>' +
-        '<span class="st-row-d">' + escapeHtml(t(m.nk)) + '</span></button>';
+        '<span class="st-row-d" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
+        '<span style="display:inline-block;margin-right:6px;padding:0 6px;border-radius:8px;font-size:9px;line-height:15px;vertical-align:1px;background:' + _couleur + ';color:#fff">' +
+        escapeHtml(_usage) + '</span>' + escapeHtml(t(m.nk)) + '</span></button>';
     });
     if (vers.length) {
       const cur = spStVerCourante(eng);
