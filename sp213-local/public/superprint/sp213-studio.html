@@ -9621,6 +9621,60 @@ function spRtfLayoutInfo(src) {
         note: 'SuperPrint の「レストランメニュー」モデルから引用した見本です'
       }
     },
+    /* _SP_STUDIO_WORDING_587 — BASES REPRISES DE LA BIBLIOTHÈQUE DE MODÈLES DE L'APP.
+       Demande utilisateur : « si tu vois flyer ou menu dans le prompt, utilise des bases
+       de template disponible ». Le menu avait déjà sa carte type ; le FLYER (affiche
+       événement) et la CARTE DE VISITE reçoivent la leur, dans les trois langues. Elles ne
+       servent QUE si la demande n'apporte pas le texte : dès que l'utilisateur donne ses
+       mots (entre guillemets) ou ses sections, la base ne s'applique pas. Pour une carte
+       de visite, la base ne met JAMAIS un faux nom : elle écrit « Votre nom »,
+       « Votre fonction » — c'est une pièce d'identité, un patronyme inventé partirait
+       chez le client. */
+    bases: {
+      affiche: {
+        fr: {
+          surtitre: 'Vendredi 12 octobre · 20 h 30',
+          titre: 'Soirée jazz',
+          infos: ['Le Caveau · 12 rue du Marché, Orléans', 'Entrée 12 € · réservation conseillée', '02 38 00 00 00 · lecaveau.fr'],
+          chapeau: 'Trois sets, un quartet, une cave voûtée : la soirée jazz du Caveau, en version longue.',
+          note: 'base reprise du modèle « Affiche événement » de SuperPrint'
+        },
+        en: {
+          surtitre: 'Friday 12 October · 8:30 pm',
+          titre: 'Jazz night',
+          infos: ['The Caveau · 12 Market Street, Orléans', 'Entry €12 · booking advised', '+33 2 38 00 00 00 · lecaveau.fr'],
+          chapeau: 'Three sets, one quartet, a vaulted cellar: the Caveau jazz night, long version.',
+          note: 'base taken from the SuperPrint “Event poster” template'
+        },
+        jp: {
+          surtitre: '10月12日（金）20:30',
+          titre: 'ジャズナイト',
+          infos: ['Le Caveau · オルレアン市マルシェ通り12', '入場12€ · 予約推奨', '02 38 00 00 00 · lecaveau.fr'],
+          chapeau: '3ステージ、カルテット、ヴォールト天井のセラー。',
+          note: 'SuperPrint の「イベントポスター」モデルから引用した見本です'
+        }
+      },
+      cartevisite: {
+        fr: {
+          surtitre: 'Votre fonction',
+          titre: 'Votre nom',
+          infos: ['Téléphone', 'prenom@exemple.fr', 'exemple.fr', 'Ville'],
+          note: 'base reprise du modèle « Business card » de SuperPrint'
+        },
+        en: {
+          surtitre: 'Your job title',
+          titre: 'Your name',
+          infos: ['Phone', 'first@example.com', 'example.com', 'City'],
+          note: 'base taken from the SuperPrint “Business card” template'
+        },
+        jp: {
+          surtitre: '役職',
+          titre: 'お名前',
+          infos: ['電話', 'mail@example.jp', 'example.jp', '所在地'],
+          note: 'SuperPrint の「名刺」モデルから引用した見本です'
+        }
+      }
+    },
     plans: {
       cv: ['Profil', 'Expérience', 'Formation', 'Compétences', 'Langues', 'Références'],
       rapport: ['Faits marquants', 'Chiffres clés', 'Métiers', 'Revenus', 'Coûts', 'Perspectives'],
@@ -9635,15 +9689,33 @@ function spRtfLayoutInfo(src) {
 
   /* Matière de la bibliothèque quand la demande est trop maigre.
      Retourne la description du kit utilisé (ou null si l'utilisateur a donné assez). */
+  /* ══ _SP_STUDIO_BASES_587b — LANGUE DE LA DEMANDE ═══════════════════════════════════════════
+     Les bases de la bibliothèque existent en trois langues. Elles étaient choisies par la
+     langue de l'INTERFACE : un prompt français sur une interface anglaise recevait donc un
+     chapô et des coordonnées en anglais (mesuré). On lit la langue de la DEMANDE. */
+  function spGabLangueBrief(txt) {
+    const s = String(txt || '');
+    if (/[ぁ-んァ-ヶ一-龠]/.test(s)) return 'jp';
+    const fr = (s.match(/\b(?:pour|avec|une?|des|les?|du|de|sur|dans|et|au|aux|sans|noir|blanc|soir[ée]e|semaine|mois|rue|ville)\b/gi) || []).length;
+    const en = (s.match(/\b(?:for|with|the|and|of|in|on|to|no|night|street|city|poster|menu)\b/gi) || []).length;
+    if (fr > en) return 'fr';
+    if (en > fr) return 'en';
+    return curLang || 'fr';
+  }
   function spGabKitAppliquer(M, g) {
     if (!M || !g) return null;
+    /* _SP_STUDIO_BASES_587b — SI LA DEMANDE DONNE SON TEXTE ENTRE GUILLEMETS, LA BASE NE TOUCHE À RIEN.
+       Mesuré : le flyer jazz recevait « The Caveau · 12 Market Street, Orléans · Entry €12 ·
+       booking advised » et un chapô anglais alors que l'utilisateur avait écrit son lieu et sa
+       date. Inventer des coordonnées sur un document client est le pire des défauts possibles. */
+    try { if (spGabCitations(String(M.brief || '')).n) return null; } catch (_) {}
     const utiles = (M.items || []).length + (M.lignes || []).length;
     const remplies = (M.sections || []).filter(function (s) { return s && s.ps && s.ps.length; }).length;
     /* Assez de matière : on ne touche à rien (le kit ne doit JAMAIS écraser du vrai contenu). */
     if (utiles >= 6 || remplies >= 2) return null;
     if (g.fam === 'menu') {
       const K = SP_GAB_KITS.menu;
-      const lot = K[curLang] || K.fr;
+      const lot = K[spGabLangueBrief(M.brief)] || K[curLang] || K.fr;
       const unites = (curLang === 'jp') ? ' 円' : ' €';
       if (!M.titre) M.titre = lot.titre;
       if (!M.surtitre) M.surtitre = lot.surtitre;
@@ -9655,6 +9727,23 @@ function spRtfLayoutInfo(src) {
       if (!M.infos.length) M.infos = lot.infos.slice();
       M.kit = lot.note;
       return lot.note;
+    }
+    /* _SP_STUDIO_WORDING_587 — BASE DU FLYER ET DE LA CARTE DE VISITE (cf. SP_GAB_KITS.bases).
+       Même règle que le menu : la base ne remplit QUE ce qui manque, jamais ce que
+       l'utilisateur a donné. Un titre déjà posé (guillemets, sujet) est conservé. */
+    const _bases = SP_GAB_KITS.bases || {};
+    const _bK = _bases[g.fam];
+    if (_bK && g.fam !== 'menu') {
+      const _lot = _bK[spGabLangueBrief(M.brief)] || _bK[curLang] || _bK.fr;
+      if (!_lot) return null;
+      let _pris = 0;
+      if (!M.titre || /^Sans titre$/i.test(M.titre)) { M.titre = _lot.titre; _pris++; }
+      if (!M.surtitre && _lot.surtitre) { M.surtitre = _lot.surtitre; _pris++; }
+      if (!M.chapeau && _lot.chapeau) { M.chapeau = _lot.chapeau; _pris++; }
+      if (!M.infos.length && _lot.infos) { M.infos = _lot.infos.slice(); _pris += _lot.infos.length; }
+      if (!_pris) return null;
+      M.kit = _lot.note;
+      return _lot.note;
     }
     const plan = SP_GAB_KITS.plans[g.fam];
     if (plan && !(M.sections || []).some(function (s) { return s.t; })) {
@@ -9702,6 +9791,42 @@ function spRtfLayoutInfo(src) {
     { key: 'qc.presentation', nom: 'Présentation',    fam: 'presentation', fonts: 'sans', cols: 1, gutter: 0,  mg: [14, 18, 14, 18],  titre: 40, chapeau: 13, corps: 11,  folio: false, pages: 6, pal: null }
   ];
 
+  /* ══ ⚠️ _SP_STUDIO_WORDING_587 — LA ROTATION DES STYLES ═══════════════════════════════════════
+     Demande utilisateur : « utilise un genre de random pour les thèmes pour ne pas
+     retomber toujours sur le même rendu ». Quand la demande NE DIT PAS de couleur, le
+     style était figé (toujours le même). Il tourne maintenant parmi les styles COHÉRENTS
+     avec la famille du document — une liste par famille, jamais au hasard complet (pas de
+     néon sur un faire-part). Le tirage suit la variation du moteur : deux envois de la même
+     demande donnent deux rendus, et les TIRETTES des Réglages figent la variation (donc
+     bouger une tirette ne change plus le style). C'est annoncé dans la conversation. */
+  const SP_GAB_ROTATION = {
+    cartevisite: ['sobre', 'ardoise', 'graphite', 'encre', 'moka', 'minuit'],
+    cartepostale: ['ocean', 'sable', 'terracotta', 'douce', 'olive'],
+    carteveux: ['rosepoudre', 'sable', 'douce', 'lavande', 'minuit'],
+    etiquette: ['event', 'sobre', 'olive', 'terracotta', 'moka'],
+    billet: ['event', 'encre', 'graphite', 'minuit'],
+    facture: ['sobre', 'ardoise', 'graphite'],
+    lettre: ['sobre', 'moka', 'sable'],
+    calendrier: ['olive', 'terracotta', 'sable', 'ocean', 'graphite', 'encre'],
+    menu: ['chaud', 'sable', 'olive', 'bordeaux', 'foret', 'moka'],
+    mariage: ['sable', 'rosepoudre', 'lavande', 'douce', 'minuit'],
+    invitation: ['event', 'rosepoudre', 'lavande', 'sable', 'minuit'],
+    cv: ['sobre', 'ardoise', 'encre', 'graphite', 'moka'],
+    programme: ['event', 'sobre', 'chaud', 'encre', 'graphite'],
+    catalog: ['sobre', 'moka', 'sable', 'olive', 'encre'],
+    brochure: ['finance', 'sobre', 'encre', 'olive', 'graphite'],
+    magazine: ['sobre', 'encre', 'graphite', 'chaud', 'moka'],
+    portfolio: ['graphite', 'sobre', 'moka', 'encre', 'sable'],
+    rapport: ['finance', 'encre', 'ardoise', 'graphite', 'ocean'],
+    cahier: ['sobre', 'finance', 'encre', 'ardoise', 'moka'],
+    brandbook: ['sobre', 'graphite', 'encre', 'minuit'],
+    presse: ['finance', 'sobre', 'encre', 'ardoise'],
+    presentation: ['tech', 'finance', 'encre', 'graphite', 'ocean'],
+    affiche: ['event', 'chaud', 'encre', 'minuit', 'tech', 'terracotta', 'graphite'],
+    story: ['event', 'minuit', 'tech', 'rosepoudre'],
+    bandeau: ['tech', 'event', 'encre', 'minuit'],
+    _defaut: ['sobre', 'finance', 'encre', 'ardoise', 'olive', 'moka', 'terracotta', 'graphite', 'sable', 'douce']
+  };
   // Palette déduite du thème de la demande ET des pièces jointes en « contexte »
   // (une PJ de contexte sert à comprendre le sujet : elle doit donc peser sur le ton).
   function spGabPal(brief, impose, contexte) {
@@ -9914,6 +10039,8 @@ function spRtfLayoutInfo(src) {
   /* _SP_STUDIO_VOCABLE_586 — NOMBRE DE PAGES DEMANDÉ dans la dernière demande : sert à DIRE l'écart
      entre ce qui a été demandé et ce qui a été composé (mesuré : « 24 pages » → 25). */
   let SP_GAB_PAGES_VOULUES = 0;
+  /* _SP_STUDIO_WORDING_587 — style tiré au sort : annoncé UNE fois par demande. */
+  let SP_GAB_ROT_VU = '';
   function spGabDireCompris(brief, c) {
     if (!c || !c.phrase) return;
     const cle = String(brief) + '||' + c.phrase;
@@ -10276,6 +10403,87 @@ function spRtfLayoutInfo(src) {
     /\b(?:sommaire|table\s+des\s+mati[èe]res|chiffres?\s+cl[ée]s?|prix|tarifs?|l[ée]gendes?|captions?|citations?|lettrines?|encadr[ée]s?|callouts?|box(?:es)?)\b/gi,
     /(?:写真なし|モノクロ|目次)/g
   ];
+  /* ══ ⚠️ _SP_STUDIO_WORDING_587 — LE TEXTE ENTRE GUILLEMETS EST LE CONTENU DE LA MAQUETTE ═══════
+     Demande utilisateur : « ce qui est prompter avec des "" c'est les wordings à mettre
+     dans la maquette ». C'est la convention du métier : dans la boîte de prompt, on
+     écrit une CONSIGNE et, entre guillemets, le TEXTE À COMPOSER. Le moteur distingue
+     donc désormais les deux : ce qui est entre "…", « … », “…” ou 「…」 devient le
+     contenu (titre, sur-titre, informations) ; le reste n'est qu'une consigne et ne se
+     compose JAMAIS. Aucun rendu inventé : les mots posés sont ceux de l'utilisateur. */
+  const SP_GAB_GUILLEMETS = [
+    /"([^"\n]{1,180})"/g,
+    /“([^”\n]{1,180})”/g,
+    /«\s*([^»\n]{1,180})\s*»/g,
+    /「([^」\n]{1,180})」/g,
+    /『([^』\n]{1,180})』/g,
+    /(?:^|[\s,;:(])'([^'\n]{2,180})'(?=[\s,;.:!?)]|$)/g
+  ];
+  function spGabCitations(brief) {
+    const s = String(brief || '');
+    const mots = [];
+    SP_GAB_GUILLEMETS.forEach(function (re) {
+      const r = new RegExp(re.source, 'g');
+      let m;
+      while ((m = r.exec(s)) !== null) {
+        const v = String(m[1] || '').replace(/\s+/g, ' ').trim();
+        if (v && v.length >= 2 && mots.indexOf(v) === -1) mots.push(v);
+        if (mots.length > 12) break;
+      }
+    });
+    return { mots: mots, n: mots.length };
+  }
+  /* ══ RÉCTO / VERSO ═════════════════════════════════════════════════════════════════
+     Demande utilisateur : « une carte de visite et un flyer sont souvent recto verso donc
+     deux pages — actuellement que des recto ». Trois cas : la demande dit « recto verso »
+     (2 pages), « recto seul » (1 page), ou ne dit rien — et alors les pièces qui
+     s'impriment des DEUX côtés (carte de visite, carte postale, carte de vœux, étiquette,
+     billet, flyer) partent en 2 pages. ⚠️ MESURE DU DÉFAUT : « recto verso » faisait
+     basculer le studio en mode DOUBLE PAGE (planches) — 3 pages, imposition de cahier.
+     Ce n'est PAS la même chose : recto/verso = deux faces du même feuillet. */
+  function spGabFaces(brief) {
+    const s = String(brief || '').toLowerCase();
+    if (/recto\s*[-/]?\s*verso|recto-?verso|deux\s+faces|2\s+faces|both\s+sides|two[- ]sided|double[- ]sided|両面|裏表/.test(s)) return 2;
+    if (/recto\s+seul|verso\s+seul|une\s+seule\s+face|1\s+face|une\s+face|single[- ]sided|one[- ]sided|片面/.test(s)) return 1;
+    return 0;
+  }
+  /* Les familles qui s'impriment des deux côtés par usage (le flyer est une affiche). */
+  function spGabFamilleDeuxFaces(brief, fam) {
+    if (/cartevisite|cartepostale|carteveux|etiquette|billet/.test(String(fam))) return true;
+    if (fam === 'affiche' && /flyers?|tracts?|prospectus|チラシ/i.test(String(brief))) return true;
+    if (fam === 'menu' && /recto|verso|deux\s+faces/i.test(String(brief))) return true;
+    return false;
+  }
+  /* VERSo « RÉEL » : ce n'est pas une copie du recto — il porte les informations qui ne
+     tenaient pas devant (contacts, programme, adresse, tarifs, mentions). */
+  function spGabVersoPage(L) {
+    const e = [], p = L.pal, M = L.t, g = L.g, k = L.k;
+    const petit = /cartevisite|cartepostale|carteveux|etiquette|billet/.test(String(g.fam));
+    const infos = (M.infos.length ? M.infos : M.lignes).slice(0, petit ? 4 : 7);
+    if (petit) {
+      e.push(spGabR(0, 0, L.W, L.H, p.clair || '#ffffff', 0));
+      e.push(spGabR(0, 0, L.W, k * 5, p.a, 0));
+      e.push(spGabT(L.x0, L.y0 + k * 8, L.cw, spGabCourt(M.titre, 44), Math.max(9, Math.min(14, g.titre * 0.5)), p.txt, 'bold', 'left', 0.98));
+      if (M.surtitre) e.push(spGabT(L.x0, L.y0 + k * 20, L.cw, spGabCourt(M.surtitre, 44).toUpperCase(), Math.max(6.5, g.corps * 0.82), p.a, 'bold', 'left', 1.1, 120));
+      e.push(spGabL(L.x0, L.y0 + k * 27, L.cw * 0.5, p.a, 1.6));
+      infos.forEach(function (t, i) { e.push(spGabT(L.x0, L.y0 + k * 33 + i * k * 9, L.cw, spGabCourt(t, 54), Math.max(6.5, g.corps * 0.95), '#374151', null, 'left', 1.25)); });
+      /* _SP_STUDIO_BASES_587b — un texte VIDE était posé quand la demande n'avait pas de chapô (mesuré :
+         une chaîne vide dans les objets de la page 2). */
+      if (M.chapeau) e.push(spGabT(L.x0, L.y1 - k * 11, L.cw, spGabCourt(M.chapeau, 62), Math.max(6, g.corps * 0.8), '#8a8f98', null, 'left', 1.2));
+      return e;
+    }
+    const hB = Math.min(L.ch * 0.3, k * 90);
+    e.push(spGabR(0, 0, L.W, hB, p.a, 0));
+    e.push(spGabT(L.x0, hB * 0.32, L.cw, spGabCourt(M.titre, 70), Math.min(26, g.titre * 0.62), '#ffffff', 'bold', 'left', 0.98));
+    if (M.surtitre) e.push(spGabT(L.x0, hB * 0.72, L.cw, spGabCourt(M.surtitre, 70), Math.max(8, g.corps * 1.1), '#e5e7eb', null, 'left', 1.2, 60));
+    let y = hB + k * 30;
+    e.push(spGabT(L.x0, y, L.cw * 0.8, 'Informations', Math.min(15, g.corps * 1.7), p.a, 'bold', 'left', 0.98));
+    y += k * 20;
+    e.push(spGabL(L.x0, y, L.cw * 0.34, p.a, 2));
+    y += k * 18;
+    infos.forEach(function (t, i) { e.push(spGabT(L.x0, y + i * k * 22, L.cw, spGabCourt(t, 96), g.corps + 0.5, '#374151', null, 'left', 1.4)); });
+    if (M.chapeau) e.push(spGabT(L.x0, L.y1 - k * 32, L.cw, spGabCourt(M.chapeau, 200), g.corps, '#6b7280', null, 'left', 1.45));
+    return e;
+  }
   function spGabSujet(brief) {
     let s = String(brief || '').replace(/\s+/g, ' ').trim();
     if (!s || s.length > 300) return { sujet: '', n: 0 };
@@ -10287,6 +10495,11 @@ function spRtfLayoutInfo(src) {
     const bouts = s.split(/\s*[,;·•]\s*|\s+[–—]\s+/).map(function (x) { return x.trim(); })
       .map(function (x) { return x.replace(/^(?:et|avec|sans|puis|pour|en|au|aux|[àa]|dans|sur|de|du|des|the|for|with|on|no)\s+/i, '').trim(); })
       .map(function (x) { return x.replace(/^[のをは、,\s]+/, '').trim(); })
+      /* _SP_STUDIO_SUJET_587c — un sujet ne finit JAMAIS sur un connecteur (« … graphiste et ») ni ne
+         garde un « et » orphelin au milieu : les mots de consigne retirés laissent des
+         morceaux vides. */
+      .map(function (x) { return x.replace(/\s+(?:et|puis|avec|sans|pour|de|du|des|and|with)\s*$/i, '').trim(); })
+      .map(function (x) { return x.replace(/\s+(?:et|puis|and)\s+/gi, ' ').replace(/\s{2,}/g, ' ').trim(); })
       .filter(function (x) { return x.replace(/[^\wÀ-ÿぁ-んァ-ヶ一-龠]/g, '').length >= 3; })
       .filter(function (x) { return !/^(?:et|avec|sans|puis|pour|de|du|des|the|and|with|no)$/i.test(x); });
     s = bouts.join(', ').replace(/\s{2,}/g, ' ').replace(/^[,;·\s]+|[,;·\s]+$/g, '').trim();
@@ -10425,6 +10638,27 @@ function spRtfLayoutInfo(src) {
        juste sous le titre (mesuré). */
     if (!src.corps && _sujetBrut.n >= 2 && M.chapeau) M.chapeau = '';
     if (!src.corps && _sujetBrut.sujet && String(M.chapeau).length > 120) M.chapeau = '';
+    /* _SP_STUDIO_WORDING_587 — CE QUI EST ENTRE GUILLEMETS EST LE TEXTE À COMPOSER.
+       Il PRIME sur tout le reste : le premier guillemet est le TITRE, le deuxième un
+       sur-titre s'il est court, les suivants descendent dans les informations (lieu,
+       date, contacts) — c'est là que les layouts les posent. Le chapeau, lui, ne peut
+       plus être la consigne : si elle n'apporte pas de phrase entre guillemets, il est
+       vidé plutôt que composé (défaut mesuré : toute la demande imprimée en 54 pt). */
+    const _cit = spGabCitations(briefTexte);
+    if (_cit.mots.length) {
+      M.titre = _cit.mots[0];
+      const _reste = _cit.mots.slice(1);
+      if (_reste.length && _reste[0].length <= 58 && !M.surtitre) { M.surtitre = _reste.shift(); }
+      _reste.forEach(function (t) {
+        if (/\d|@|\.(?:fr|com|jp|org|net)\b|\+\d|€|h\d{2}|\b\d{1,2}\s*h/i.test(t)) { if (M.infos.length < 6) M.infos.push(spGabCourt(t, 90)); }
+        else { if (M.lignes.length < 40) M.lignes.push(t); }
+      });
+      M.chapeau = '';
+      /* Une phrase entière entre guillemets (plus de 60 caractères) EST un chapeau. */
+      const _phrase = _cit.mots.filter(function (t) { return t.length >= 60 && /[.!?]\s*$/.test(t); })[0];
+      if (_phrase) M.chapeau = spGabCourt(_phrase, 240);
+      else if (_cit.mots.length >= 3) M.chapeau = '';
+    }
     if (!M.titre) M.titre = (spGabUtileTexte(M.chapeau) ? M.chapeau : (M.lignes.filter(spGabUtileTexte)[0] || 'Sans titre'));
     M.titre = spGabCourt(M.titre, 64).replace(/[.!?]+$/, '');
     /* Le chapô ne doit JAMAIS être le titre ni son début : sur une demande courte
@@ -11031,7 +11265,11 @@ function spRtfLayoutInfo(src) {
      Renvoie null quand la demande ne dit rien (on ne touche pas au réglage). */
   function spGabModeVoulu(brief) {
     const s = String(brief || '').toLowerCase();
-    if (/double\s*-?\s*page|en\s+double|planches?|recto\s*-?\s*verso|vis-à-vis|vis-a-vis|spread/.test(s)) return 'spread';
+    /* _SP_STUDIO_WORDING_587 — « RECTO VERSO » N'EST PAS « DOUBLE PAGE » (défaut mesuré : un flyer
+       recto verso sortait en 3 pages avec imposition de cahier et message « 4e de
+       couverture »). Recto/verso = les deux faces d'un même feuillet, composées en pages
+       simples et rendues par spGabVersoPage. « Double page » reste réservé aux planches. */
+    if (/double\s*-?\s*page|en\s+double|planches?|vis-à-vis|vis-a-vis|\bspread\b|見開き/.test(s)) return 'spread';
     if (/page\s+simple|pages?\s+simples?|une\s+page\s+à\s+la\s+fois|recto\s+seul|single\s+page|\bsingle\b/.test(s)) return 'single';
     return null;
   }
@@ -11734,7 +11972,11 @@ function spRtfLayoutInfo(src) {
   /* FABRIQUE LE DOCUMENT COMPLET. Règle de cahier (correctif 19) : en double page
      le nombre de pages est TOUJOURS pair — jamais de page seule au centre. */
   function spGabDesign(brief) {
-    const veut = spGabPages(brief);
+    /* _SP_STUDIO_WORDING_587 — la lecture du lexique (spGabComprendre) va jusqu'à 800 pages, alors que
+       spGabPages plafonnait à 32 : « un catalogue de 48 pages » était ramené à 32, et sa
+       valeur est relevée juste après la lecture (le lexique est lu PLUS BAS dans cette
+       fonction : on ne peut pas le référencer ici — zone morte temporelle mesurée). */
+    let veut = spGabPages(brief);
     let g = Object.assign({}, spGabChoisir(brief));
     /* ══ 🆕 v1.7.584 — CE QUE LA DEMANDE DIT VRAIMENT (LEXIQUE DU MÉTIER) ══
        La famille, les colonnes, le thème, le format et les interdictions sont lus dans la
@@ -11758,6 +12000,7 @@ function spRtfLayoutInfo(src) {
          emplacement muet) — remis à zéro à chaque composition, donc déterministe. */
       state._spSansPhoto = !!_compris.sans.photo;
       SP_GAB_PAGES_VOULUES = _compris.pages || 0;
+      if (_compris.pages > veut) veut = _compris.pages;
       try { spGabDireCompris(brief, _compris); } catch (_) {}
     } else {
       state._spSansPhoto = false;
@@ -11807,13 +12050,22 @@ function spRtfLayoutInfo(src) {
            d'activité et un dépliant d'agence immobilière s'entendaient répondre « plats,
            tarifs » — la phrase était écrite pour le menu et servait à tout le monde. */
         const _secKit = (texte.sections || []).filter(function (s) { return s && s.t; }).slice(0, 5).map(function (s) { return s.t; });
-        const _msgKit = (_kit === 'plan de sections repris des modèles SuperPrint')
+        /* _SP_STUDIO_BASES_587b — TROIS MATIÈRES, TROIS PHRASES : un PLAN DE SECTIONS (rapport, catalogue…), une
+           BASE de modèle (flyer, carte de visite) et la CARTE D'UN MENU (plats + prix) ne se disent pas
+           de la même façon. Mesuré : un flyer recevait la phrase du menu (« plats, tarifs »). */
+        const _estPlan = (_kit === 'plan de sections repris des modèles SuperPrint');
+        const _estBase = /^base\s/i.test(String(_kit));
+        const _msgKit = _estPlan
           ? ('🧩 ' + _kit + ' : votre demande ne disait pas encore vos sections, je pose donc une ossature ' +
              (_secKit.length ? '(' + _secKit.join(', ') + ') ' : '') +
              'pour que vous voyiez le rendu. Donnez vos propres titres, ils remplaceront ceux-ci au prochain envoi.')
-          : ('🍽️ ' + _kit + ' : votre demande ne contenait pas encore le détail (plats, tarifs, sections), ' +
-             'je compose donc une carte complète pour que vous voyiez le rendu. Donnez vos propres plats et prix, ' +
-             'ils remplaceront ceux-ci au prochain envoi.');
+          : (_estBase
+            ? ('🧩 ' + _kit + ' : la demande ne donnait pas encore de texte, je pose donc la base du modèle ' +
+               'pour que vous voyiez le rendu. Écrivez vos mots entre guillemets — "Votre titre", ' +
+               '"Votre date" — ils remplaceront ceux-ci au prochain envoi.')
+            : ('🍽️ ' + _kit + ' : votre demande ne contenait pas encore le détail (plats, tarifs, sections), ' +
+               'je compose donc une carte complète pour que vous voyiez le rendu. Donnez vos propres plats et prix, ' +
+               'ils remplaceront ceux-ci au prochain envoi.'));
         appendChat('assistant', _msgKit);
       } catch (_) {}
     }
@@ -11853,6 +12105,32 @@ function spRtfLayoutInfo(src) {
       if (force) theme = { cle: force[0], pal: force[2], fonts: force[3] };
     }
     const hasard = spGabHasard(brief);
+    /* _SP_STUDIO_WORDING_587 — LE STYLE TOURNE QUAND LA DEMANDE NE DIT RIEN (cf. SP_GAB_ROTATION).
+       Il ne tourne NI si la demande cite une couleur, NI si la roue « Style » des Réglages
+       impose un thème, NI pendant une recomposition par tirettes (variation figée). */
+    let _rotTheme = '';
+    try {
+      const _ditCouleur = !!(_compris && _compris.theme);
+      const _impose = !!(window._spGabTheme || (window._spReglages && window._spReglages.theme));
+      if (!theme && !_ditCouleur && !_impose) {
+        const _liste = SP_GAB_ROTATION[g.fam] || SP_GAB_ROTATION._defaut;
+        const _cle = _liste[Math.floor(hasard.v * _liste.length) % _liste.length];
+        const _f = SP_GAB_THEMES.filter(function (x) { return x[0] === _cle; })[0];
+        if (_f) {
+          theme = { cle: _f[0], pal: _f[2], fonts: _f[3] };
+          _rotTheme = _f[0];
+          const _cleVu = String(brief) + '||rot||' + _f[0];
+          if (SP_GAB_ROT_VU !== _cleVu) {
+            SP_GAB_ROT_VU = _cleVu;
+            try {
+              appendChat('assistant', '🎨 Style « ' + _f[0] + ' » tiré au sort pour ce thème de document ' +
+                '(la demande ne donnait pas de couleur ; le tirage tourne à chaque envoi). ' +
+                'Citez une palette — « palette olive », « bleu encre »… — pour la forcer, ou ouvrez les Réglages → Aspect.');
+            } catch (_) {}
+          }
+        }
+      }
+    } catch (_) {}
     /* _SP_STUDIO_VOCABLE_586 — LA TYPOGRAPHIE DEMANDÉE PRIME SUR CELLE DU THÈME (elle était ignorée).
        Le studio a quatre familles : display (Bebas Neue), serif (Playfair Display),
        sans (Montserrat), monospace (IBM Plex Mono). « condensée » → display (Bebas EST
@@ -11967,7 +12245,8 @@ function spRtfLayoutInfo(src) {
       photoCouverture: !(REG && REG.photoCouverture === false),
       pays: fmt.pays, carre: fmt.carre, mini: fmt.mini, bandeau: fmt.bandeau,
       photos: texte.photos.slice(),
-      variante: spGabOuvertureActive()
+      variante: spGabOuvertureActive(),
+      verso: false
     };
     /* MODE SIMPLE / DOUBLE PAGE : lu dans la demande et appliqué à la conversation.
        On n'appelle PAS newDocument() : la composition qui suit remplace le document. */
@@ -11986,6 +12265,15 @@ function spRtfLayoutInfo(src) {
        + pièces jointes en « maquette »), pour un cahier de la bonne épaisseur. */
     const volume = String(brief || '').length + srcLen(texte);
     let tot = Math.max(1, veut || g.pages);
+    /* _SP_STUDIO_WORDING_587 — RECTO / VERSO : les pièces qui s'impriment des deux côtés partent en
+       2 pages (recto + verso) quand la demande ne dit rien ; « recto seul » en garde 1 ;
+       « recto verso » en impose 2 même sur une pièce qui n'y est pas obligée. */
+    const _facesVoulues = spGabFaces(brief);
+    const _deuxFaces = spGabFamilleDeuxFaces(brief, g.fam);
+    if (!veut && tot === 1) {
+      if (_facesVoulues === 2 || (_deuxFaces && _facesVoulues !== 1)) tot = 2;
+    }
+    L.verso = (tot === 2 && _deuxFaces);
     /* ══ PLAFOND DE PAGES RELEVÉ (demande utilisateur : « importer tout dans les pages ») ══
        Il valait 48, ce qui COUPAIT le livre : un document de 500 000 caractères ne
        tenait pas, la fin n'était jamais composée. Un cahier peut maintenant aller
@@ -12050,7 +12338,9 @@ function spRtfLayoutInfo(src) {
          document garde la mise en page du gabarit (aucun risque de déborder). */
       const layPage = (i === 1 && L.variante && !SP_GAB_OUVERTURES_SAUF[g.fam])
         ? (SP_GAB_OUVERTURES[L.variante - 1] || lay) : lay;
-      try { els = layPage(L, i, tot) || []; } catch (err) { els = []; }
+      /* _SP_STUDIO_WORDING_587 — LA PAGE 2 D'UN RECTO/VERSO EST UN VRAI VERSO (informations, contacts),
+         pas une copie du recto (cf. spGabVersoPage). */
+      try { els = (L.verso && i === 2) ? (spGabVersoPage(L) || []) : (layPage(L, i, tot) || []); } catch (err) { els = []; }
       /* FOND DE PAGE : blanc, ou le noir chic du thème « premium ». Le fond sombre est
          posé en DEUX rectangles (chacun 46 % de la hauteur) et non en un seul aplat
          pleine page : la passe anti-aplats noirs du studio supprime tout rectangle

@@ -9,6 +9,31 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.587] — 2026-09-30
+
+_Studio IA / ROCK 1 : le texte entre guillemets devient le contenu de la maquette, « recto verso » veut dire deux pages avec un vrai verso, le style se tire au sort quand la demande ne donne pas de couleur, et les bases de la bibliothèque SuperPrint remplacent le texte manquant — jamais celui de l'utilisateur_
+
+### Added — Le texte entre guillemets EST le contenu
+- Convention explicite : dans la boîte de prompt, **ce qui est entre `"…"`, `« … »`, `“…”` ou `「…」` est le texte à composer** ; le reste n'est qu'une consigne. Le premier guillemet devient le **titre**, le deuxième un **sur-titre** s'il est court, les suivants descendent dans les **informations** (date, lieu, contacts) — là où les mises en page les posent.
+- Mesure : « Flyer A5 recto verso pour « Soirée jazz » avec « Samedi 12 octobre · 20h30 » et « Le Caveau, Orléans » » compose un titre de **62,5 pt** « Soirée jazz », un sur-titre « SAMEDI 12 OCTOBRE · 20H30 » et le lieu en informations.
+- La consigne ne se compose plus jamais : le **sujet** remplace la phrase entière comme titre (le format, le nombre de pages, la palette, la typographie et le ton ne sont plus imprimés). Le sujet ne garde plus de connecteur orphelin (« … graphiste et »).
+
+### Added — Recto / verso : deux pages, et un verso qui sert
+- **Défaut mesuré** : le mot « verso » faisait basculer le studio en mode **double page** — un flyer recto verso sortait en **3 pages**, avec imposition de cahier et message « 4e de couverture ». « Recto verso » et « double page » sont désormais distincts.
+- Cartes de visite, cartes postales, cartes de vœux, étiquettes, billets et **flyers** : **2 pages** par défaut ; « recto seul » en garde 1 ; « recto verso » en impose 2. Mots-clés FR / EN / JP (`両面`, `片面`).
+- La page 2 est un **verso réel** (`spGabVersoPage`) : miniature du nom, filet, puis les informations — et non une copie du recto. Aucun texte vide n'y est posé.
+
+### Added — Style tiré au sort + bases de la bibliothèque
+- Quand la demande **ne donne pas de couleur**, le style est **tiré au sort** parmi ceux qui conviennent à la famille (`SP_GAB_ROTATION`, 27 listes) : jamais de néon sur un faire-part. Le tirage **tourne à chaque envoi** ; une palette citée ou **Réglages → Aspect** le fige, et les tirettes aussi (variation mémorisée).
+- **Bases de la bibliothèque SuperPrint** (`SP_GAB_KITS.bases`) pour le **flyer** (sur-titre daté, titre, lieu, tarif, réservation) et la **carte de visite** (patronyme générique, fonction, contacts), dans les **trois langues**, choisies par la **langue de la demande** et non par celle de l'interface (défaut mesuré).
+- ⚠️ Une base ne s'applique **jamais** quand la demande contient du texte entre guillemets : mesuré avant correction, un flyer jazz recevait « The Caveau · 12 Market Street · Entry €12 · booking advised » alors que l'utilisateur avait donné son lieu et sa date. Une carte de visite reçoit « Votre nom » / « Votre fonction », jamais un patronyme fictif.
+- L'annonce de la matière dit la vérité par famille : « plan de sections » (rapport, catalogue…), « base de modèle » (flyer, carte de visite), « carte complète » (menu) — le vocabulaire du menu (« plats, tarifs ») ne s'applique plus aux autres familles.
+
+### Changed — Version
+- Application **1.7.587** (les deux arbres, `version.txt`, `package.json` local, marqueurs de cache `v587`), notes de version **trilingues** dans `release.html`.
+
+---
+
 ## [1.7.586] — 2026-09-30
 
 _Studio IA / ROCK 1 : le vocabulaire de l'imprimerie (25 familles en 3 langues, 10 nouvelles), la typographie demandée appliquée, le SUJET au lieu de la consigne comme titre, l'annonce de la matière par famille, et le compte de pages demandé dit tel quel_
