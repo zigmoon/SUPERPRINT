@@ -3433,6 +3433,18 @@
       const ver = r.getAttribute('data-ver');
       if (!eng) return;
       window._spStEng = eng;
+      window._spStEngChoisi = true;
+      /* ⚠️ v1.7.583 — LE CHOIX FAIT DANS LA PRÉHOME VA DANS LES PRÉFÉRENCES (demande
+         utilisateur : « si j'ai sélectionné un modèle dans la pré-home il doit rester
+         dans les préférences »). On l'écrit TOUT DE SUITE dans le select du studio, qui
+         mémorise — au lieu d'attendre l'envoi de la demande. */
+      try {
+        const sel = $('engineSelect');
+        if (sel && sel.querySelector('option[value="' + eng + '"]')) {
+          sel.value = eng;
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      } catch (_) {}
       if (ver !== null && ver !== undefined && ver !== '') window._spStVer[eng] = ver;
       spStPeindreBouton();
       /* 🆕 v1.7.580tt — moteur À CLÉ choisi au PREMIER niveau : on ouvre tout de suite
@@ -4917,6 +4929,13 @@
       .replace(/<[^>]+>/g, '')
       .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
+      /* ⚠️ BALISES MAL REFERMÉES (retour utilisateur : « il y a souvent “/>” qui apparaît
+         dans les pages »). Un « > » dans une valeur d'attribut casse le découpage : il
+         reste alors des fragments (« /> », des attributs « w:val=… »). On les retire. */
+      .replace(/\s*\/>/g, ' ')
+      .replace(/\bw:[a-zA-Z]+="[^"]*"/g, ' ')
+      .replace(/\bxmlns(?:[a-zA-Z]+)?="[^"]*"/g, ' ')
+      .replace(/<\/?[a-zA-Z][^<>]{0,120}>/g, ' ')
       .replace(/[ \t]{2,}/g, ' ')
       .replace(/\n{3,}/g, '\n\n')
       .split('\n')
@@ -4958,7 +4977,7 @@
     /* ⚠️ MESURE : à 15 000 caractères, un livre ne montrait que sa page de titre et son
        sommaire. À 40 000, notre moteur met en page une vingtaine de chapitres en quelques
        dizaines de secondes — c'est le bon compromis entre contenu et temps de composition. */
-    const MAXI = 40000;
+    const MAXI = 60000;
     let pageWord = null;
     try {
       const r = await spDocxTexteGeant(file, MAXI);
@@ -8494,7 +8513,16 @@ function spRtfLayoutInfo(src) {
   // Retire le balisage markdown d'une ligne (gras, italique, code, lien).
   function spGabSansMd(s) {
     return String(s || '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/\*\*(.+?)\*\*/g, '$1')
-      .replace(/__(.+?)__/g, '$1').replace(/[*_`]/g, '').replace(/^\s*[•·\-–—]\s*/, '').trim();
+      .replace(/__(.+?)__/g, '$1').replace(/[*_`]/g, '').replace(/^\s*[•·\-–—]\s*/, '')
+      /* ⚠️ FILET DE SÉCURITÉ (retour utilisateur : « il y a souvent /> qui apparaît dans les
+         pages : une balise est mal refermée »). Une valeur d'attribut contenant un « > »
+         casse le découpage des balises : il reste des fragments. On les supprime ici, pour
+         TOUS les textes — document importé comme saisie simple. */
+      .replace(/\s*\/>/g, ' ')
+      .replace(/<\/?[a-zA-Z][^<>]{0,120}>/g, ' ')
+      .replace(/\bw:[a-zA-Z]+="[^"]*"/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
   }
 
   /* COMPRÉHENSION DU MARKDOWN ET DES DOCUMENTS IMPORTÉS : un titre (# , ##), une
@@ -9759,13 +9787,13 @@ function spRtfLayoutInfo(src) {
        + pièces jointes en « maquette »), pour un cahier de la bonne épaisseur. */
     const volume = String(brief || '').length + srcLen(texte);
     let tot = Math.max(1, veut || g.pages);
-    if (!veut && g.pages >= 3) tot = Math.min(24, Math.max(tot, Math.ceil((volume / 2) / 1300)));
+    if (!veut && g.pages >= 3) tot = Math.min(48, Math.max(tot, Math.ceil((volume / 2) / 1300)));
     /* GROSSE PIÈCE JOINTE : le cahier doit avoir ASSEZ de pages pour tout dire. Un
        document client de 30 000 caractères et 30 sections ne tient pas en 8 pages :
        deux sections par page de contenu, donc on dimensionne sur les SECTIONS.
        (Le volume seul était trompeur : beaucoup de texte court en beaucoup de
        sections — mesuré, les dernières sections étaient purement perdues.) */
-    if (!veut && (g.fam === 'cahier' || g.fam === 'brochure') && texte.sections.length > 2) tot = Math.min(32, Math.max(tot, 3 + Math.ceil(texte.sections.length / 2)));
+    if (!veut && (g.fam === 'cahier' || g.fam === 'brochure') && texte.sections.length > 2) tot = Math.min(48, Math.max(tot, 3 + Math.ceil(texte.sections.length / 2)));
     const spread = (state.viewMode === 'spread');
     /* CHAÎNAGE des blocs du cahier (documents Word, OpenDocument, texte) : on le
        calcule AVANT de fixer le nombre de pages, puisque c'est lui qui le détermine. */
@@ -9940,6 +9968,10 @@ function spRtfLayoutInfo(src) {
   }
   function spStMoteurDefaut() {
     const dispo = spStDispos();
+    /* ⚠️ v1.7.583 — NOTRE MOTEUR EN PREMIER (demande utilisateur : « SP213 GABARIT > mets
+       le nôtre en premier, sans clé, rien, pour que l'utilisateur le sente bien »). Il
+       compose hors ligne, sans clé, sans compte : c'est le choix évident par défaut. */
+    if (dispo.some(function (m) { return m.eng === 'gabarit'; })) return 'gabarit';
     /* ⚠️ v1.7.579 — DEEPSEEK D'ABORD DÈS QU'UNE CLÉ EST ENREGISTRÉE (demande
        utilisateur). C'était l'IA intégrée du navigateur qui prenait la main, et
        elle ne compose pas un livre : l'utilisateur se retrouvait devant des pages
@@ -10235,14 +10267,18 @@ function spRtfLayoutInfo(src) {
     try { spStarterPJ(); } catch (_) {}
   }
   function spStarterSync() {
-    /* ⚠️ v1.7.582 — LA PRÉHOME ET LE STUDIO DOIVENT PARLER DU MÊME MOTEUR (retour
-       utilisateur : « il doit bien garder les éléments entre la pré-home et
-       l'interface »). Défaut mesuré : la préhome avait son propre choix, gardé en
-       mémoire seulement ; après un rechargement elle affichait « Gemini Nano » alors
-       que le studio composait avec « SP213 gabarit » — la demande partie de la préhome
-       n'était donc PAS composée par notre modèle (90 s pour rien, puis « aucun élément
-       exploitable »). On aligne la préhome sur le moteur réel du studio. */
-    try { if (!window._spStEng && state.engine) window._spStEng = state.engine; } catch (_) {}
+    /* ⚠️ v1.7.583 — MÊME LISTE QUE LES PRÉFÉRENCES (demande utilisateur : « aligne le
+       sous-menu de la pré-home sur les modèles des préférences »). Le select des réglages
+       est la source unique : la préhome en reprend EXACTEMENT le contenu et l'ordre. On
+       reprend aussi son moteur — sauf si l'utilisateur a choisi dans la préhome, dont le
+       choix est alors conservé (il est écrit dans les préférences au moment du clic). */
+    try {
+      const sel = $('engineSelect');
+      if (!window._spStEngChoisi && sel && sel.value) {
+        window._spStEng = sel.value;
+        if (state.engine !== sel.value) state.engine = sel.value;
+      }
+    } catch (_) {}
     /* La liste des modèles est reconstruite à chaque affichage (disponibilité du
        navigateur, moteur mémorisé, panneau ouvert). */
     try { spStConstruire(); } catch (_) {}
