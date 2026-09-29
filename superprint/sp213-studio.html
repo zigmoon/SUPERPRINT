@@ -4489,9 +4489,23 @@
     //   et le mode choisi s'applique à toutes les pièces jointes de ce dépôt.
     const _liste = Array.from(files);
     pjModePendant = await pjAskMode(_liste.map(f => f.name), 'content');
+    /* 🆕 v1.7.581 — LECTURE EN COURS VISIBLE : un document met 1 à 3 s à se lire (12 s
+       au pire). Sans marqueur, on pouvait croire que le fichier n'avait pas été pris
+       (retour utilisateur : « il ne l'a pas gardée »). On l'affiche TOUT DE SUITE. */
+    const _docs = _liste.filter(function (f) { return /\.(doc|docx|odt|ods|odp|odg|rtf|pdf|xls|xlsx)$/i.test(f.name); });
+    _docs.forEach(function (f) { SP_PJ_EN_COURS.push(f.name); });
+    if (_docs.length) { try { renderAttachBar(); } catch (_) {} }
     _liste.forEach(f => addAttachment(f));
+    if (_docs.length) {
+      setTimeout(function () {
+        _docs.forEach(function (f) { const i2 = SP_PJ_EN_COURS.indexOf(f.name); if (i2 >= 0) SP_PJ_EN_COURS.splice(i2, 1); });
+        try { renderAttachBar(); } catch (_) {}
+      }, 13000);
+    }
     $('attachInput').value = '';
   }
+  /* Noms des pièces jointes EN COURS DE LECTURE (affichées « lecture… »). */
+  const SP_PJ_EN_COURS = [];
 
   function optimizeAttachmentImage(img, originalDataURL, file, ext) {
     const originalBytes = file.size || Math.round(String(originalDataURL || '').length * 0.75);
@@ -4812,6 +4826,37 @@
       });
     });
   }
+  async function spDocSecours(file, id, ext, cause) {
+    let texte = '';
+    try {
+      const buf = await file.arrayBuffer();
+      if (ext === 'docx') {
+        await loadAttachmentLibrary('app/JS/jszip.min.js', function () { return !!window.JSZip; });
+        const zip = await window.JSZip.loadAsync(buf);
+        const f = zip.file('word/document.xml');
+        if (f) {
+          const xml = await f.async('string');
+          texte = xml.replace(/<w:p[^>]*>/g, '\n')
+            .replace(/<w:tab[^>]*\/>/g, '\t')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/[ \t]{2,}/g, ' ')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+        }
+      } else {
+        const brut = new TextDecoder('utf-8', { fatal: false }).decode(buf);
+        texte = brut.replace(/[^\x09\x0A\x0D\x20-\x7E\u00A0-\u024F\u2010-\u203A]/g, ' ')
+          .replace(/\s{3,}/g, ' ').trim().slice(0, 20000);
+      }
+    } catch (_) {}
+    if (String(texte).length < 20) texte = '(texte non lisible automatiquement — ' + (cause || 'lecture impossible') + ')';
+    state.attachments.push({ id: id, name: file.name, type: 'text', text: texte, ext: ext, secours: true });
+    renderAttachBar();
+    appendChat('assistant', '⚠️ « ' + file.name + ' » : lecture directe impossible (' + (cause || 'bibliothèque indisponible') +
+      '). Le texte a été récupéré autrement (' + String(texte).length + ' caractères). Si le résultat semble incomplet, exportez le document en .docx.');
+    return true;
+  }
+
   function addAttachment(file) {
     const ext = (file.name.split('.').pop() || '').toLowerCase();
     const id = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
@@ -4860,11 +4905,13 @@
       reader.readAsText(file);
     } else if (ext === 'pdf') {
       extractPdfAttachment(file, id, ext).catch(function(error) {
-        appendChat('assistant', 'Unable to read PDF "' + file.name + '": ' + error.message);
+        appendChat('assistant', '⚠️ « ' + file.name + ' » : lecture du PDF impossible (' + error.message + ').');
+        renderAttachBar();
       });
     } else if (ext === 'xls' || ext === 'xlsx') {
       extractExcelAttachment(file, id, ext).catch(function(error) {
-        appendChat('assistant', 'Unable to read Excel file "' + file.name + '": ' + error.message);
+        appendChat('assistant', '⚠️ « ' + file.name + ' » : lecture du tableur impossible (' + error.message + ').');
+        renderAttachBar();
       });
     } else if (docExts.includes(ext)) {
       // 🆕 v1.7.396 — aiguillage documentaire universel.
@@ -4874,10 +4921,19 @@
       //   MAINTENANT : extractDocumentAttachment lit la SIGNATURE REELLE du
       //   fichier (un « .doc » exporte par Gmail/Outlook est presque toujours
       //   un .docx ou un .rtf renomme) puis route vers le decodeur adapte.
-      extractDocumentAttachment(file, id, ext).catch(function (error) {
-        state.attachments.push({ id, name: file.name, type: 'text', ext, text: '(document illisible : ' + error.message + ')' });
-        renderAttachBar();
-        appendChat('assistant', 'Unable to read "' + file.name + '": ' + error.message);
+      /* ⚠️ v1.7.581 — GARANTIE D'UNE ISSUE (retour utilisateur : « sur la pré-home j'ai
+         voulu mettre mon word grâce à la PJ, il ne l'a pas gardée »). Si la lecture ne
+         rend pas la main (bibliothèque absente, réseau coupé, fichier protégé), la pièce
+         jointe n'apparaissait PAS DU TOUT : l'utilisateur croyait l'avoir perdue. On
+         impose donc une issue au bout de 12 s et une lecture de secours. */
+      const _lecture = Promise.resolve()
+        .then(function () { return extractDocumentAttachment(file, id, ext); })
+        .then(function () { return 'ok'; })
+        .catch(function (error) { return 'erreur : ' + (error && error.message ? error.message : 'inconnue'); });
+      const _delai = new Promise(function (resolve) { setTimeout(function () { resolve('délai dépassé'); }, 12000); });
+      Promise.race([_lecture, _delai]).then(function (etat) {
+        if (etat === 'ok') return;
+        try { spDocSecours(file, id, ext, etat); } catch (_) {}
       });
     } else if (ext === 'eps' || ext === 'ai' || ext === 'ps') {
       // 🆕 v1.7.415 — EPS / ILLUSTRATOR / POSTSCRIPT.
@@ -4890,7 +4946,7 @@
         renderAttachBar();
       });
     } else {
-      appendChat('assistant', 'File "' + file.name + '" ignored: unsupported type. Accepted formats: images (JPG/PNG/WebP/GIF/SVG/BMP), EPS/AI (.eps/.ai/.ps), TXT/MD/CSV/HTML, Word (.doc/.docx), OpenDocument (.odt/.ods/.odp), RTF (.rtf), Excel (.xls/.xlsx) and PDF.');
+      appendChat('assistant', '⚠️ « ' + file.name + ' » ignoré : type non pris en charge. Formats acceptés : images (JPG/PNG/WebP/GIF/SVG/BMP), EPS/AI, TXT/MD/CSV/HTML, Word (.doc/.docx), OpenDocument (.odt/.ods/.odp), RTF (.rtf), Excel (.xls/.xlsx) et PDF.');
       renderAttachBar();
     }
   }
@@ -7729,16 +7785,27 @@ function spRtfLayoutInfo(src) {
     const z = $('starterPj');
     if (!z) return;
     const atts = state.attachments || [];
-    if (!atts.length) { z.innerHTML = ''; z.classList.add('hidden'); return; }
-    z.classList.remove('hidden');
     const icImg = '<svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
     const icDoc = '<svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>';
-    z.innerHTML = atts.map(function (a) {
+    /* PIÈCES JOINTES EN COURS DE LECTURE : affichées TOUT DE SUITE (un document met 1 à
+       3 s à se lire, 12 s au pire). Sans ce marqueur, on pouvait croire que le fichier
+       n'avait pas été pris (retour utilisateur : « il ne l'a pas gardée »). */
+    const enCours = SP_PJ_EN_COURS.filter(function (n) {
+      /* Dès que la pièce jointe existe vraiment, on retire le marqueur « lecture… ». */
+      return !atts.some(function (a) { return a.name === n || String(a.name || '').indexOf(n) === 0; });
+    }).map(function (n) {
+      return '<span class="st-pj">' + icDoc + '<span>' + escapeHtml(String(n).slice(0, 34)) +
+        '</span><em>lecture…</em></span>';
+    }).join('');
+    if (!atts.length && !enCours) { z.innerHTML = ''; z.classList.add('hidden'); return; }
+    z.classList.remove('hidden');
+    const liste = atts.map(function (a) {
       const typ = a.type === 'image' ? 'IMAGE' : String(a.ext || 'txt').toUpperCase();
       return '<span class="st-pj">' + (a.type === 'image' ? icImg : icDoc) +
         '<span>' + escapeHtml(String(a.name || '').slice(0, 34)) + '</span>' +
         '<em>' + typ + ' · ' + pjShort(a.mode || 'content') + '</em></span>';
     }).join('');
+    z.innerHTML = liste + enCours;
   }
 
   /* ══ 🆕 v1.7.580ll — TEXTES DE L'ÉCRAN DE DÉMARRAGE, EN FR / EN / JP ══
