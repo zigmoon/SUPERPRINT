@@ -47,3 +47,5 @@ superprint/.vscode/
 
 # Archive fabriquee par `npm pack` dans superprint-npm/ (a publier, pas a committer).
 superprint-npm/*.tgz
+# Poids des modeles locaux (miroir WebLLM) : trop gros pour le depot, et servis par le site.
+models/

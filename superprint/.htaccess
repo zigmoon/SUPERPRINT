@@ -1,64 +1,67 @@
-# Activer la compression GZIP
-<IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+# ═══════════════════════════════════════════════════════════════════════════
+# app.zigmoon.com — .htaccess (premier niveau du site)
+#
+# Rôle : rendre les POIDS DES MODÈLES LOCAUX lisibles par le studio IA, servi
+# depuis superprint.cc. Sans autorisation CORS, le navigateur refuse un fichier
+# d'un autre domaine : « Failed to fetch », alors que le fichier répond 200.
+# Mesure du 29/09 : Access-Control-Allow-Origin était VIDE. C'est le seul
+# en-tête qui manquait.
+#
+# ⚠️ Apache uniquement (AllowOverride doit être actif). Sur nginx ce fichier
+# n'est pas lu : l'équivalent nginx est en bas du fichier.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# 1. AUTORISER LA LECTURE DEPUIS UN AUTRE DOMAINE (superprint.cc)
+<IfModule mod_headers.c>
+  Header set Access-Control-Allow-Origin "*"
+  Header set Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+  Header set Access-Control-Allow-Headers "Range"
+  Header set Access-Control-Expose-Headers "Content-Length, Content-Range, Accept-Ranges"
 </IfModule>
 
-# Cache des ressources statiques
+# 2. TYPES MIME — le .wasm DOIT être servi en application/wasm, sinon WebLLM ne
+#    peut pas l'instancier (instantiateStreaming échoue) ; les morceaux de poids
+#    sont des binaires .bin.
+<IfModule mod_mime.c>
+  AddType application/wasm .wasm
+  AddType application/octet-stream .bin
+  AddType application/json .json
+</IfModule>
+
+# 3. CACHE LONG pour les modèles : ils ne changent jamais (le nom du dépôt porte
+#    la quantification, donc jamais réécrit en place).
 <IfModule mod_expires.c>
   ExpiresActive On
-  ExpiresByType image/png "access plus 1 year"
-  ExpiresByType image/jpg "access plus 1 year"
-  ExpiresByType image/jpeg "access plus 1 year"
-  ExpiresByType image/svg+xml "access plus 1 year"
-  ExpiresByType image/x-icon "access plus 1 year"
-  ExpiresByType text/css "access plus 1 month"
-  ExpiresByType application/javascript "access plus 1 month"
-  ExpiresByType application/x-javascript "access plus 1 month"
-  ExpiresByType text/javascript "access plus 1 month"
-  ExpiresByType application/json "access plus 0 seconds"
-  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType application/wasm "access plus 1 year"
+  ExpiresByType application/octet-stream "access plus 1 year"
 </IfModule>
-
-# Headers de sécurité
 <IfModule mod_headers.c>
-  Header set X-Content-Type-Options "nosniff"
-  Header set X-Frame-Options "SAMEORIGIN"
-  Header set X-XSS-Protection "1; mode=block"
-  Header set Referrer-Policy "no-referrer-when-downgrade"
-  Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
-  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' cdnjs.cloudflare.com cdn.jsdelivr.net esm.run https://www.paypal.com https://www.paypalobjects.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com https://www.paypalobjects.com; img-src * data: blob:; connect-src 'self' data: blob: https://api.anthropic.com https://api.openai.com https://api.deepseek.com https://api.groq.com https://images.unsplash.com https://picsum.photos https://api.pinata.cloud https://gateway.pinata.cloud https://huggingface.co https://raw.githubusercontent.com esm.run https://www.paypal.com https://www.paypalobjects.com; frame-src https://www.paypal.com; worker-src 'self' blob:"
+  <FilesMatch "\.(bin|wasm)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
 </IfModule>
 
-# Forcer HTTPS
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  # Keep this rule on the legacy app.zigmoon.com/SUPERPRINT deployment.
-  # It is inactive on superprint.cc and preserves the requested path/query.
-  RewriteCond %{HTTP_HOST} ^(www\.)?app\.zigmoon\.com$ [NC]
-  RewriteRule ^(.*)$ https://superprint.cc/$1 [R=301,L,NE]
-  RewriteCond %{HTTPS} off
-  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-  # 🆕 v1.7.468 — la landing est devenue la page d'accueil du site.
-  # L'ancienne URL est déjà indexée et servait de canonical : redirection 301 vers la
-  # racine, en conservant ?lang=fr / ?lang=ja (QSA) pour ne pas perdre la langue.
-  RewriteRule ^landing\.html$ / [R=301,L,NE,QSA]
+# 4. NE PAS COMPRESSER les poids : .bin et .wasm sont déjà compacts ; gzip ne
+#    ferait que brûler du processeur pendant un téléchargement de 1,6 Go.
+<IfModule mod_deflate.c>
+  SetEnvIfNoCase Request_URI \.(?:bin|wasm)$ no-gzip dont-vary
 </IfModule>
 
-# Type MIME pour manifest
-AddType application/manifest+json .webmanifest
-AddType application/json .json
-
-# llms.txt / llms-full.txt servis en UTF-8 (GEO 2026)
-<FilesMatch "^(llms|llms-full)\.txt$">
-    ForceType "text/plain; charset=UTF-8"
-    Header set Cache-Control "public, max-age=3600"
-    Header set X-Robots-Tag "index, follow"
-</FilesMatch>
-
-# Désactiver le listing des répertoires
-Options -Indexes
-
-# Bloquer les fichiers sensibles (backups, scripts internes, docs dev)
-<FilesMatch "\.(bak|py|md)$">
-    Require all denied
-</FilesMatch>
+# ───────────────────────────────────────────────────────────────────────────
+# ÉQUIVALENT NGINX (si le serveur n'est pas Apache) — dans le bloc server :
+#
+#   location /models/ {
+#     add_header Access-Control-Allow-Origin "*" always;
+#     add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
+#     types { application/wasm wasm; application/octet-stream bin; }
+#     expires 1y;
+#   }
+#
+# VÉRIFICATION après dépôt, dans un navigateur (ou en ligne de commande) :
+#   https://app.zigmoon.com/models/Qwen2.5-1.5B-Instruct-q4f16_1-MLC/mlc-chat-config.json
+# doit répondre 200, et l'en-tête Access-Control-Allow-Origin doit valoir *.
+#
+# NB : déposer plutôt les modèles SUR superprint.cc (dossier /models/) reste la
+# solution la plus sûre — même domaine que l'application, donc aucun CORS à
+# franchir, et rien à espérer du serveur.
+# ───────────────────────────────────────────────────────────────────────────
