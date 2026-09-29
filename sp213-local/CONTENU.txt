@@ -26,7 +26,7 @@ src/ .............................. ancien moteur du studio local, debranche
   public/superprint/documentation.html ... documentation
   public/superprint/api.html ............. API
   public/superprint/install.html ......... page du site (source du lanceur)
-  public/superprint/version.txt .......... version du paquet : 1.7.585
+  public/superprint/version.txt .......... version du paquet : 1.7.586
   public/js/fabric.min.js ................ moteur canvas (fabric)
   public/js/mammoth.min.js ............... import de documents Word
 

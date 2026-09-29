@@ -9684,7 +9684,22 @@ function spRtfLayoutInfo(src) {
     { key: 'qc.menu',      nom: 'Carte de restaurant',    fam: 'menu',       fonts: 'serif',   cols: 1, gutter: 0, mg: [26, 30, 24, 30], titre: 38, chapeau: 12, corps: 10,  folio: false, pages: 1, pal: 'chaud' },
     { key: 'qc.brochure',  nom: 'Brochure 4 pages',       fam: 'brochure',   fonts: 'sans',    cols: 2, gutter: 8, mg: [24, 22, 22, 22], titre: 52, chapeau: 14, corps: 9.5, folio: true,  pages: 4, pal: null },
     { key: 'qc.portfolio', nom: 'Portfolio visuel',       fam: 'portfolio',  fonts: 'sans',    cols: 3, gutter: 6, mg: [22, 22, 22, 22], titre: 32, chapeau: 11, corps: 8.5, folio: true,  pages: 1, pal: 'neutre' },
-    { key: 'qc.invitation', nom: 'Invitation événement',  fam: 'invitation', fonts: 'display', cols: 1, gutter: 0, mg: [26, 28, 24, 28], titre: 56, chapeau: 13, corps: 10,  folio: false, pages: 1, pal: 'event' }
+    { key: 'qc.invitation', nom: 'Invitation événement',  fam: 'invitation', fonts: 'display', cols: 1, gutter: 0, mg: [26, 28, 24, 28], titre: 56, chapeau: 13, corps: 10,  folio: false, pages: 1, pal: 'event' },
+    /* _SP_STUDIO_VOCABLE_586 — LES FAMILLES DE L'IMPRIMERIE COURANTE QUI MANQUAIENT : une demande
+       « calendrier mural », « carte postale », « étiquette », « billet », « facture »,
+       « papier à en-tête », « charte graphique », « dossier de presse », « présentation »
+       n'avait AUCUNE famille (elle tombait sur l'affiche manifeste ou, pire, sur la carte
+       de restaurant). Chaque ligne porte ses cotes, ses marges et sa famille de titres. */
+    { key: 'qc.calendrier', nom: 'Calendrier',        fam: 'calendrier', fonts: 'sans',    cols: 1, gutter: 0,  mg: [20, 20, 20, 20], titre: 44, chapeau: 12, corps: 9.5, folio: false, pages: 12, pal: null },
+    { key: 'qc.cartepostale', nom: 'Carte postale',   fam: 'cartepostale', fonts: 'sans',  cols: 1, gutter: 0,  mg: [10, 12, 10, 12], titre: 26, chapeau: 10, corps: 8,   folio: false, pages: 1, pal: null },
+    { key: 'qc.carteveux', nom: 'Carte de vœux',      fam: 'carteveux', fonts: 'serif',   cols: 1, gutter: 0,  mg: [16, 16, 16, 16], titre: 30, chapeau: 11, corps: 8.5, folio: false, pages: 1, pal: null },
+    { key: 'qc.etiquette', nom: 'Étiquette',          fam: 'etiquette', fonts: 'sans',    cols: 1, gutter: 0,  mg: [6, 6, 6, 6],      titre: 18, chapeau: 8,  corps: 7,   folio: false, pages: 1, pal: null },
+    { key: 'qc.billet', nom: 'Billet',                fam: 'billet', fonts: 'sans',       cols: 1, gutter: 0,  mg: [10, 10, 10, 10],  titre: 24, chapeau: 9,  corps: 7.5, folio: false, pages: 1, pal: null },
+    { key: 'qc.facture', nom: 'Facture',              fam: 'facture', fonts: 'sans',      cols: 1, gutter: 0,  mg: [20, 20, 20, 20],  titre: 26, chapeau: 10, corps: 9,   folio: true,  pages: 1, pal: 'neutre' },
+    { key: 'qc.lettre', nom: 'Papier à en-tête',      fam: 'lettre', fonts: 'serif',      cols: 1, gutter: 0,  mg: [25, 22, 22, 22],  titre: 24, chapeau: 10, corps: 10.5, folio: false, pages: 1, pal: 'neutre' },
+    { key: 'qc.brandbook', nom: 'Charte graphique',   fam: 'brandbook', fonts: 'sans',    cols: 2, gutter: 8,  mg: [22, 22, 22, 22],  titre: 48, chapeau: 13, corps: 9.5, folio: true,  pages: 8, pal: null },
+    { key: 'qc.presse', nom: 'Dossier de presse',     fam: 'presse', fonts: 'sans',       cols: 2, gutter: 8,  mg: [24, 22, 22, 22],  titre: 46, chapeau: 13, corps: 9.5, folio: true,  pages: 4, pal: null },
+    { key: 'qc.presentation', nom: 'Présentation',    fam: 'presentation', fonts: 'sans', cols: 1, gutter: 0,  mg: [14, 18, 14, 18],  titre: 40, chapeau: 13, corps: 11,  folio: false, pages: 6, pal: null }
   ];
 
   // Palette déduite du thème de la demande ET des pièces jointes en « contexte »
@@ -9739,21 +9754,36 @@ function spRtfLayoutInfo(src) {
      Rien n'est inventé : si la demande ne dit rien, rien n'est forcé. */
   const SP_METIER = {
     familles: [
-      ['menu',        /\bmenus?\b|\bcarte\b|restaurant|brasserie|bistrot|pizzeria|p[âa]tisserie|entr[ée]es|desserts|\bdish|starters?|mains?\b|お品書き|メニュー/i],
-      ['cv',          /\bcv\b|curriculum|r[ée]sum[ée]|vitae|parcours professionnel|lettre de motivation|resume\b/i],
-      ['cartevisite', /carte\s+de\s+visite|business\s*card|bristol|85\s*[×x*]\s*55|55\s*[×x*]\s*85|名刺/i],
-      ['programme',   /programme|planning|horaire|agenda|conducteur|d[ée]roul[ée]|setlist|playbill/i],
-      ['mariage',     /mariage|noces?\b|faire-?part|vin d'honneur|union civile|\bpacs\b|wedding/i],
-      ['invitation',  /invitation|anniversaire|vernissage|c[ée]r[ée]monie|save\s+the\s+date|opening/i],
-      ['catalog',     /catalogue|catalog|produits?\b|boutique|tarifs?\b|grille\s+de\s+prix|shop|collection|price\s*list/i],
-      ['brochure',    /brochure|plaquette|d[ée]pliant|leaflet|flyer\s+de\s+pr[ée]sentation/i],
-      ['magazine',    /magazine|couverture|cover|revue|presse|journal\b|editorial/i],
-      ['portfolio',   /portfolio|galerie|r[ée]alisations|lookbook|book\s+photo/i],
-      ['rapport',     /rapport|corporate|entreprise|soci[ée]t[ée]|kpi|indicateurs?|bilan|activit[ée]s?\b|financier|r[ée]sultats?|annual\s+report/i],
-      ['cahier',      /cahier|dossier|booklet|livret|plaquette\s+de|roman|nouvelle|essai|po[ée]sie|m[ée]moire|th[èe]se|livre|book\b/i],
-      ['affiche',     /affiche|poster|flyer|manifeste|annonce|festival|concert|expo/i],
-      ['story',       /story|stories|reel|tiktok|9\s*:\s*16|vertical/i],
-      ['bandeau',     /bandeau|banni[èe]re|banner|16\s*:\s*9|marque-?page/i]
+      /* _SP_STUDIO_VOCABLE_586 — ORDRE DE SPÉCIFICITÉ : le PREMIER motif reconnu gagne.
+         Mesuré : « Carte de visite 85 x 55 mm… » tombait sur « \bcarte\b » (famille
+         menu) et sortait en CARTE DE RESTAURANT, plats et prix compris. Les types
+         PRÉCIS passent donc avant les génériques, et le lexique est en français,
+         ANGLAIS et JAPONAIS (le studio est trilingue). */
+      ['cartevisite', /cartes?\s+de\s+visite|cartes?\s+visite|business\s*cards?|\bbristols?\b|85\s*[×x*]\s*55|55\s*[×x*]\s*85|名刺|ビジネスカード/i],
+      ['cartepostale', /cartes?\s+postales?|postcards?|ポストカード|はがき/i],
+      ['carteveux',   /cartes?\s+de\s+v[œoe]ux|cartes?\s+de\s+no[eë]l|greeting\s*cards?|グリーティングカード|年賀状/i],
+      ['calendrier',  /calendriers?|calendars?|agendas?\s+muraux?|カレンダー|暦/i],
+      ['etiquette',   /[eé]tiquettes?|\blabels?\b|stickers?| vignettes?|ラベル|シール/i],
+      ['billet',      /billets?\b|tickets?\b|invitations?\s+imprim|チケット|入場券/i],
+      ['facture',     /factures?|devis|invoices?|quotes?\b|bons?\s+de\s+commande|請求書|見積書/i],
+      ['lettre',      /letterheads?|papier\s+[àa]\s+en-?t[êe]te|lettres?\s+(?:administratives?|officielles?|motivation)|correspondance|レターヘッド|便箋/i],
+      ['brandbook',   /charte\s+graphique|brand\s*books?|guides?\s+de\s+marque|identit[ée]\s+visuelle|ブランドガイド/i],
+      ['presse',      /dossiers?\s+de\s+presse|press\s*kits?|communiqu[ée]s?|revue\s+de\s+presse|プレスキット|報道資料/i],
+      ['presentation',/pr[ée]sentations?|diaporamas?|slides?|pitch\s*decks?|\bdecks?\b|keynote|スライド|プレゼン/i],
+      ['menu',        /\bmenus?\b|\bcartes?\b|restaurant|brasserie|bistrot|pizzeria|p[âa]tisserie|entr[ée]es|desserts|\bdish|starters?|mains?\b|お品書き|メニュー/i],
+      ['mariage',     /mariages?|noces?\b|faire-?parts?|vin\s+d'honneur|union\s+civile|\bpacs\b|weddings?|結婚式|ウェディング/i],
+      ['invitation',  /invitations?|anniversaires?|vernissages?|c[ée]r[ée]monies?|save\s+the\s+date|opening|招待状|案内状/i],
+      ['cv',          /\bcv\b|curriculum|r[ée]sum[ée]|vitae|parcours\s+professionnel|lettres?\s+de\s+motivation|resume\b|履歴書|職務経歴書/i],
+      ['programme',   /programmes?|plannings?|horaires?|agendas?|conducteurs?|d[ée]roul[ée]s?|setlists?|playbill|プログラム|タイムテーブル/i],
+      ['catalog',     /catalogues?|catalogs?|produits?\b|boutiques?|tarifs?\b|grille\s+de\s+prix|shop|collections?|price\s*lists?|カタログ/i],
+      ['brochure',    /brochures?|plaquettes?|d[ée]pliants?|triptyques?|diptyques?|leaflets?|volets?|rabats?|パンフレット/i],
+      ['magazine',    /magazines?|couvertures?|\bcovers?\b|revues?|presse|journaux?|editorial|雑誌|表紙/i],
+      ['portfolio',   /portfolios?|galeries?|r[ée]alisations?|lookbooks?|book\s*photo|ポートフォリオ|作品集/i],
+      ['rapport',     /rapports?|corporate|entreprises?|soci[ée]t[ée]s?|kpi|indicateurs?|bilans?|activit[ée]s?\b|financiers?|r[ée]sultats?|annual\s*reports?|事業報告|年次報告/i],
+      ['cahier',      /cahiers?|dossiers?|booklets?|livrets?|plaquette\s+de|romans?|nouvelles?|essais?|po[ée]sies?|m[ée]moires?|th[èe]ses?|livres?|books?\b|冊子|書籍/i],
+      ['affiche',     /affiches?|posters?|flyers?|manifestes?|annonces?|prospectus|tracts?|affichettes?|festivals?|concerts?|expos?|ポスター|チラシ/i],
+      ['story',       /stories?|reels?|tiktok|9\s*:\s*16|vertical|ストーリー|縦長/i],
+      ['bandeau',     /bandeaux?|banni[èe]res?|banners?|16\s*:\s*9|marque-?pages?|バナー/i]
     ],
     palettes: [
       /* _SP_STUDIO_STYLE_585b — les 16 PALETTES NOMMÉES passent AVANT les familles génériques :
@@ -9776,19 +9806,23 @@ function spRtfLayoutInfo(src) {
       ['prune', /prune|aubergine|mauve\s*fonc/i],
       ['graphite', /graphite|anthracite|charbon/i],
       ['minuit', /minuit|midnight|nuit\s*bleue|bleu\s*nuit/i],
-      ['sobre',   /noir\s+et\s+blanc|black\s+and\s+white|monochrome|sans\s+couleur|gris|grey|gray|épur[ée]|sobre|minimal/i],
+      /* _SP_STUDIO_LANGUES_586b — « sobre » (mot d'AMBIANCE : minimal, épuré…) est désormais testé EN
+         DERNIER : mesuré, « minimal, cream palette » sortait en noir et blanc parce que
+         « minimal » gagnait avant la teinte crème demandée. Vocabulaire japonais ajouté
+         (モノクロ = monochrome, 白黒 = noir et blanc, グレースケール = niveaux de gris). */
       ['chaud',   /cr[èe]me|cream|chaud|warm|terracotta|rouille|ocre|kraft|papier\s+ancien/i],
       ['noir',    /noir\s+chic|dor[ée]|gold|luxe|luxueux|premium|chic|élégant\s+noir|black\s+tie/i],
       ['douce',   /pastel|doux|nature|naturel|v[ée]g[ée]tal|menthe|eucalyptus|soft/i],
       ['event',   /festif|festival|n[ée]on|neon|violet|rose|pop|color[ée]|p[ée]tillant|disco/i],
       ['finance', /corporate|institutionnel|bleu\s+nuit|navy|business|banque|assurance/i],
-      ['mono',    /tech|monospace|code|donn[ée]es|data|industriel|scientifique|mono\b/i]
+      ['mono',    /tech|monospace|code|donn[ée]es|data|industriel|scientifique|mono\b/i],
+      ['sobre',   /noir\s+et\s+blanc|black\s+and\s+white|monochrome|monochromatique|sans\s+couleur|gris|grey|gray|gr[ée]s|niveaux\s+de\s+gris|épur[ée]|sobre|minimal|モノクロ|白黒|グレースケール|シンプル/i]
     ],
     sans: [
-      ['photo',    /sans\s+photos?|sans\s+images?|pas\s+de\s+photos?|aucune?\s+photos?|no\s+photos?|without\s+photos?/i],
+      ['photo',    /sans\s+photos?|sans\s+images?|pas\s+de\s+photos?|aucune?\s+photos?|no\s+photos?|without\s+photos?|no\s+images?|写真なし|写真はなし|画像なし|写真不要/i],
       ['encadres', /sans\s+encadr[ée]s?|pas\s+d'encadr[ée]s?|sans\s+cadres?|no\s+boxes?/i],
-      ['filets',   /sans\s+filets?|pas\s+de\s+filets?|sans\s+traits?|no\s+rules?/i],
-      ['folios',   /sans\s+folios?|pas\s+de\s+folios?|sans\s+num[ée]ros\s+de\s+page|no\s+folio/i]
+      ['filets',   /sans\s+filets?|pas\s+de\s+filets?|sans\s+traits?|no\s+rules?|罫線なし/i],
+      ['folios',   /sans\s+folios?|pas\s+de\s+folios?|sans\s+num[ée]ros\s+de\s+page|no\s+folio|ノンブルなし|ページ番号なし/i]
     ],
     veut: [
       ['sommaire', /sommaire|table\s+des\s+mati[èe]res|contents?\b|目次/i],
@@ -9799,18 +9833,40 @@ function spRtfLayoutInfo(src) {
       ['encadre',  /encadr[ée]s?|callouts?|boxes?/i]
     ],
     formats: [
-      [/\ba4\b/i, 210, 297], [/\ba5\b/i, 148, 210], [/\ba3\b/i, 297, 420],
+      [/\ba2\b/i, 420, 594], [/\ba4\b/i, 210, 297], [/\ba5\b/i, 148, 210], [/\ba3\b/i, 297, 420],
+      [/\ba6\b/i, 105, 148], [/\bb5\b/i, 176, 250],
+      [/\b(?:us\s+)?letter\b/i, 216, 279], [/\bdl\b/i, 99, 210],
       [/6\s*[×x*]\s*9/, 152, 229], [/5\s*[×x*]\s*8/, 127, 203],
       [/\b(?:16\s*:\s*9|paysage|landscape)\b/i, 297, 210], [/\bcarr[ée]|square/i, 200, 200]
-    ]
+    ],
+    /* _SP_STUDIO_VOCABLE_586 — LA TYPOGRAPHIE DEMANDÉE EST LUE. Elle ne l'était NULLE PART :
+       « typographie fine » sortait en IBM Plex Mono. On lit la FAMILLE de caractères
+       (le studio en a quatre : display, serif, sans, monospace) et les mots de style
+       qui peuvent être honorés — une famille demandée prime sur celle du thème. */
+    fontes: [
+      ['mono',      /monospace|\bmono\b|machine\s+[àa]\s+[ée]crire|typewriter|donn[ée]es\s+brutes|等幅/i],
+      ['condense',  /condens[ée]es?|compress[ée]es?|[ée]troit(?:e)?s?|narrow|condensed|細長/i],
+      ['display',   /\bdisplay\b|titres?\s+impact|caract[èe]res?\s+d'affiche|bebas|anton|impact|インパクト/i],
+      ['manuscrite',/manuscrite?s?|scriptes?|calligraphi[ée]e?s?|[àa]\s+la\s+main|brush|hand[- ]?writ|筆記体|手書き/i],
+      ['serif',     /serif|empattements?|classiques?|garamond|times|didot|playfair|baskerville|明朝/i],
+      ['sans',      /sans[-\s]?serif|sans\s+empattements?|grotesques?|g[ée]om[ée]triques?|helvetica|montserrat|\binter\b|lin[ée]ale|ゴシック/i],
+      ['fine',      /\blight\b|fines?\s+(?:typo|police|caract)|typographi[ée]e?s?\s+fines?|[ée]lanc[ée]es?/i]
+    ],
+    /* Mots de STYLE qui ne changent pas la famille mais disent ce qu'on peut faire
+       (servent au sujet ET à la phrase comprise). */
+    typoMots: /\b(?:fine?s?|gras(?:se)?s?|light|bold|italiques?|regular|majuscules?|capitales?|minuscules?|uppercase|all\s*caps|大文字|小文字)\b/i
   };
 
   function spGabComprendre(brief) {
     const s = String(brief || '');
     if (!s.trim()) return null;
-    const veut = function (liste) { for (let i = 0; i < liste.length; i++) { if (liste[i][1].test(s)) return liste[i][0]; } return null; };
+    /* _SP_STUDIO_LANGUES_586c — lecture DÉFENSIVE : une entrée mal formée (virgule oubliée) faisait échouer TOUTE la compréhension en silence. */
+    const veut = function (liste) { for (let i = 0; i < liste.length; i++) { const e = liste[i]; if (!e || !e[1] || typeof e[1].test !== 'function') continue; if (e[1].test(s)) return e[0]; } return null; };
     const fam = veut(SP_METIER.familles);
     const theme = veut(SP_METIER.palettes);
+    /* _SP_STUDIO_VOCABLE_586 — LA TYPOGRAPHIE DEMANDÉE. Une famille citée dans la demande prime
+       sur la famille du thème (mesuré : « typographie serif » ignorée). */
+    const fonte = veut(SP_METIER.fontes || []);
     const sans = {};
     SP_METIER.sans.forEach(function (x) { if (x[1].test(s)) sans[x[0]] = true; });
     const attentes = [];
@@ -9834,7 +9890,7 @@ function spRtfLayoutInfo(src) {
       if ((veutPaysage && !estPaysage) || (veutPortrait && estPaysage)) { const t = w; w = h; h = t; }
       format = { w: w, h: h };
     });
-    const noms = { fam: { menu: 'carte de restaurant', cv: 'CV', cartevisite: 'carte de visite', programme: 'programme', mariage: 'faire-part de mariage', invitation: 'invitation', catalog: 'catalogue', brochure: 'brochure', magazine: 'magazine', portfolio: 'portfolio', rapport: 'rapport', cahier: 'cahier', affiche: 'affiche', story: 'story', bandeau: 'bandeau' },
+    const noms = { fam: { menu: 'carte de restaurant', cv: 'CV', cartevisite: 'carte de visite', cartepostale: 'carte postale', carteveux: 'carte de vœux', calendrier: 'calendrier', etiquette: 'étiquette', billet: 'billet', facture: 'facture', lettre: 'papier à en-tête', brandbook: 'charte graphique', presse: 'dossier de presse', presentation: 'présentation', programme: 'programme', mariage: 'faire-part de mariage', invitation: 'invitation', catalog: 'catalogue', brochure: 'brochure', magazine: 'magazine', portfolio: 'portfolio', rapport: 'rapport', cahier: 'cahier', affiche: 'affiche', story: 'story', bandeau: 'bandeau' }, fontes: { mono: 'technique, monospace', condense: 'condensée', display: 'affiche, condensée', manuscrite: 'manuscrite', serif: 'à empattements', sans: 'linéale', fine: 'fine' },
       theme: { sobre: 'noir et blanc', chaud: 'papier crème', noir: 'noir chic et doré', douce: 'teintes douces', event: 'couleurs vives', finance: 'bleu institutionnel', mono: 'technique, monospace', terracotta: 'terracotta', bordeaux: 'bordeaux', olive: 'olive', menthe: 'vert d’eau', lavande: 'lavande', rosepoudre: 'rose poudré', ardoise: 'ardoise', moka: 'moka', encre: 'bleu encre', cuivre: 'cuivre', sable: 'sable', foret: 'vert forêt', ocean: 'bleu océan', prune: 'prune', graphite: 'graphite', minuit: 'bleu minuit' },
       sans: { photo: 'sans photos', encadres: 'sans encadrés', filets: 'sans filets', folios: 'sans folios' },
       veut: { sommaire: 'sommaire', prix: 'prix', legende: 'légendes', citation: 'citation', lettrine: 'lettrine', encadre: 'encadrés' } };
@@ -9844,9 +9900,10 @@ function spRtfLayoutInfo(src) {
     if (pages) bouts.push(pages + ' page(s)');
     if (cols) bouts.push(cols + ' colonne(s)');
     if (theme) bouts.push('palette ' + noms.theme[theme]);
+    if (fonte) bouts.push('typographie ' + (noms.fontes[fonte] || fonte));
     attentes.forEach(function (a) { bouts.push(noms.veut[a]); });
     Object.keys(sans).forEach(function (k) { bouts.push(noms.sans[k]); });
-    return { fam: fam, theme: theme, cols: cols, pages: pages, format: format, sans: sans, attentes: attentes,
+    return { fam: fam, theme: theme, fonte: fonte, cols: cols, pages: pages, format: format, sans: sans, attentes: attentes,
       phrase: bouts.length ? bouts.join(', ') : '' };
   }
   /* La demande comprise n'est écrite dans la conversation qu'UNE fois par demande
@@ -9854,6 +9911,9 @@ function spRtfLayoutInfo(src) {
   let SP_COMPRIS_VU = '';
   let SP_GAB_PLAN_VU = '';
   let SP_GAB_CTX_VU = '';
+  /* _SP_STUDIO_VOCABLE_586 — NOMBRE DE PAGES DEMANDÉ dans la dernière demande : sert à DIRE l'écart
+     entre ce qui a été demandé et ce qui a été composé (mesuré : « 24 pages » → 25). */
+  let SP_GAB_PAGES_VOULUES = 0;
   function spGabDireCompris(brief, c) {
     if (!c || !c.phrase) return;
     const cle = String(brief) + '||' + c.phrase;
@@ -9873,7 +9933,19 @@ function spRtfLayoutInfo(src) {
        sur la carte de restaurant), et plus de « photos » dans le portfolio —
        le mot « photos légendées » envoyait un cahier de 8 pages sur Portfolio. */
     const regles = [
-      ['qc.cv',          /\bcv\b|curriculum|resume|vitae|parcours professionnel/],
+      /* _SP_STUDIO_VOCABLE_586 — LES TYPES PRÉCIS AVANT LES GÉNÉRIQUES (même ordre que le lexique). */
+      ['qc.cartevisite', /cartes?\s+de\s+visite|cartes?\s+visite|business\s*cards?|\bbristols?\b|85\s*[×x*]\s*55|名刺/],
+      ['qc.cartepostale', /cartes?\s+postales?|postcards?|ポストカード|はがき/],
+      ['qc.carteveux',   /cartes?\s+de\s+v[œoe]ux|greeting\s*cards?|年賀状/],
+      ['qc.calendrier',  /calendriers?|calendars?|agendas?\s+muraux?|カレンダー/],
+      ['qc.etiquette',   /[eé]tiquettes?|\blabels?\b|stickers?|vignettes?|ラベル/],
+      ['qc.billet',      /billets?\b|tickets?\b|invitations?\s+imprim|チケット/],
+      ['qc.facture',     /factures?|devis|invoices?|quotes?\b|bons?\s+de\s+commande|請求書/],
+      ['qc.lettre',      /letterheads?|papier\s+[àa]\s+en-?t[êe]te|lettres?\s+(?:administratives?|officielles?|motivation)|レターヘッド/],
+      ['qc.brandbook',   /charte\s+graphique|brand\s*books?|guides?\s+de\s+marque|identit[ée]\s+visuelle|ブランドガイド/],
+      ['qc.presse',      /dossiers?\s+de\s+presse|press\s*kits?|communiqu[ée]s?|プレスキット/],
+      ['qc.presentation',/pr[ée]sentations?|diaporamas?|slides?|pitch\s*decks?|\bdecks?\b|keynote|スライド/],
+      ['qc.cv',          /\bcv\b|curriculum|resume|vitae|parcours professionnel|履歴書/],
       ['qc.programme',   /programme|planning|horaire|agenda|conducteur|d[ée]roul[ée]/],
       ['qc.mariage',     /mariage|noces?\b|faire-?part|vin d'honneur|union civile|\bpacs\b/],
       ['qc.story',       /story|stories|reel|tiktok|9\s*:\s*16|vertical/],
@@ -10175,6 +10247,52 @@ function spRtfLayoutInfo(src) {
 
   /* FABRIQUE LE CONTENU exploitable par les gabarits : titre, accroche, chapô,
      sections, lignes de liste, articles avec prix, chiffres clés, informations. */
+  /* ══ ⚠️ _SP_STUDIO_VOCABLE_586 — LE SUJET DE LA DEMANDE, PAS LA CONSIGNE ══════════════════════
+     MESURÉ (demande utilisateur : « il faudrait qu'on ne livre pas quelque chose à côté
+     d'un prompt ») : sans pièce jointe, le TEXTE DE LA DEMANDE devenait le TITRE du
+     document. « Rapport d'activité 24 pages pour une association, sommaire et chiffres
+     clés, ton institutionnel » s'imprimait tel quel en 54 pt : la consigne — nombre de
+     pages, ton, format — partait chez le client. On retire donc de la demande tout ce
+     qui est une CONSIGNE (format, pages, colonnes, palette et teintes, typographie,
+     ton, éléments demandés, interdictions) pour ne garder que le SUJET, et on annonce
+     ce qu'on a retiré. Rien n'est inventé : les mots gardés sont ceux de l'utilisateur.
+     Le nettoyage ne s'applique QU'À une demande courte qui contient des consignes :
+     un texte long (un vrai contenu tapé dans la boîte) n'est jamais amputé. */
+  const SP_GAB_CONSIGNE = [
+    /\b\d{1,3}\s*(?:pages?|p\b|pp\b)\b/gi,
+    /\ba[0-8]\b/gi,
+    /\b\d{1,4}(?:[.,]\d{1,2})?\s*(?:mm|cm|centim\w*)\b/gi,
+    /\b\d{1,4}\s*[x×*]\s*\d{1,4}(?:\s*(?:mm|cm))?\b/gi,
+    /\b(?:portrait|paysage|landscape|horizontal|vertical|carr[ée]|square|grand\s+format|xxl)\b/gi,
+    /\b(?:une?|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|1|2|3)\s+colonnes?\b/gi,
+    /\bcolonn?es?\b/gi,
+    /\b(?:palettes?|teintes?|couleurs?|coloris|fonds?|papiers?)\b/gi,
+    /\b(?:terracotta|bordeaux|olive|kaki|mint|teal|lavender|slate|mocha|copper|cream|gold|golden|silver|navy|beige|ivory|forest|ocean|plum|midnight|greyscale|grayscale|black|white|grey|gray|brown|purple|pink|yellow|green|blue|red|terracotta|bordeaux|olive|kaki|menthe|eucalyptus|lavande|lilas|ardoise|moka|taupe|encre|indigo|cuivre|bronze|sable|ivoire|for[êe]t|oc[ée]an|azur|prune|anthracite|minuit|n[ée]on|noir(?:e)?s?|blanc(?:he)?s?|dor[ée]e?s?|argent[ée]e?s?|rouges?|bleu(?:e)?s?|verts?|vertes?|jaunes?|violet(?:te)?s?|roses?|beiges?|cr[èe]mes?|gris(?:e)?s?|vif|vive|clair(?:e)?s?|fonc[ée]e?s?)\b/gi,
+    /\b(?:typo(?:graphie)?s?|polices?|caract[èe]res?|lettrages?|interlettrages?|interlignages?|corps)\b/gi,
+    /\b(?:fine?s?|gras(?:se)?s?|light|bold|italiques?|regular|condens[ée]e?s?|majuscules?|capitales?|minuscules?|uppercase|all\s*caps|大文字|小文字)\b/gi,
+    /\b(?:tons?|styles?|ambiances?|esprits?|registres?)\b/gi,
+    /\b(?:institutionnels?|corporate|minimal(?:iste)?s?|[ée]pur[ée]e?s?|sobres?|[ée]l[ée]gants?|chics?|luxes?|luxueux|premium|modernes?|classiques?|cr[ée]atifs?|audacieux|discrets?|haut\s+de\s+gamme)\b/gi,
+    /\b(?:sans|avec|pas\s+de|aucun(?:e)?|no|without)\s+(?:photos?|images?|visuels?|illustrations?|filets?|encadr[ée]s?|folios?|num[ée]ros?\s+de\s+page|cadres?)\b/gi,
+    /\b(?:sommaire|table\s+des\s+mati[èe]res|chiffres?\s+cl[ée]s?|prix|tarifs?|l[ée]gendes?|captions?|citations?|lettrines?|encadr[ée]s?|callouts?|box(?:es)?)\b/gi,
+    /(?:写真なし|モノクロ|目次)/g
+  ];
+  function spGabSujet(brief) {
+    let s = String(brief || '').replace(/\s+/g, ' ').trim();
+    if (!s || s.length > 300) return { sujet: '', n: 0 };
+    let n = 0;
+    SP_GAB_CONSIGNE.forEach(function (re) { if (re.test(s)) { n++; s = s.replace(re, ' '); } });
+    s = s.replace(/\s{2,}/g, ' ').replace(/\s+([,;·])/g, '$1');
+    /* Découpage en PROPOSITIONS : on jette celles qui ne sont plus qu'un connecteur
+       (« et », « avec », « の ») une fois les consignes retirées. */
+    const bouts = s.split(/\s*[,;·•]\s*|\s+[–—]\s+/).map(function (x) { return x.trim(); })
+      .map(function (x) { return x.replace(/^(?:et|avec|sans|puis|pour|en|au|aux|[àa]|dans|sur|de|du|des|the|for|with|on|no)\s+/i, '').trim(); })
+      .map(function (x) { return x.replace(/^[のをは、,\s]+/, '').trim(); })
+      .filter(function (x) { return x.replace(/[^\wÀ-ÿぁ-んァ-ヶ一-龠]/g, '').length >= 3; })
+      .filter(function (x) { return !/^(?:et|avec|sans|puis|pour|de|du|des|the|and|with|no)$/i.test(x); });
+    s = bouts.join(', ').replace(/\s{2,}/g, ' ').replace(/^[,;·\s]+|[,;·\s]+$/g, '').trim();
+    if (s.replace(/[^\wÀ-ÿぁ-んァ-ヶ一-龠]/g, '').length < 3) return { sujet: '', n: n };
+    return { sujet: spGabCourt(s, 62).replace(/[.!?]+$/, ''), n: n };
+  }
   function spGabMeta(brief) {
     const src = spGabSourcesMemo();
     const briefTexte = String(brief || '').trim();
@@ -10186,6 +10304,12 @@ function spRtfLayoutInfo(src) {
        (ou en mode « modèle »), la demande reste le contenu, comme avant. */
     const blocsBrief = (briefTexte && src.corps) ? spGabMarkdown(briefTexte).map(function (b) { return b.x; }) : [];
     const blocs = spGabMarkdown(briefTexte + '\n\n' + src.corps);
+    /* _SP_STUDIO_VOCABLE_586 — LE SUJET REMPLACE LA CONSIGNE COMME TITRE (voir spGabSujet).
+       Sans pièce jointe, la demande EST le contenu : c'est donc ici, et seulement ici,
+       qu'on écarte les mots de consigne pour ne garder que le sujet. Le sujet est POSÉ
+       plus bas, après la déclaration de M (aucune référence avant sa déclaration). */
+    let _sujetBrut = { sujet: '', n: 0 };
+    try { if (!src.corps) _sujetBrut = spGabSujet(briefTexte); } catch (_) {}
     const M = { brief: String(brief || ''), titre: '', surtitre: '', chapeau: '', sections: [], lignes: [], items: [], chiffres: [], infos: [], photos: src.images.slice(), contexte: src.contexte, couleurs: src.couleurs.slice(), corpsLength: src.corps.length, source: src.corps ? 'demande + pièces jointes' : 'demande seule' };
     /* _SP_STUDIO_CTX_585 — LE PLAN DU DOCUMENT EST GARDÉ (niveau + intitulé), pour être
        annoncé et servir de sommaire. Rien n'est inventé : ce sont les titres du
@@ -10293,6 +10417,14 @@ function spRtfLayoutInfo(src) {
     if (!M.titre && src.titres.length && String(brief || '').trim().length < 90 && String(src.titres[0]).length <= 62 && spGabUtileTexte(src.titres[0])) M.titre = src.titres[0];
     if (!spGabUtileTexte(M.titre)) M.titre = '';
     if (!spGabUtileTexte(M.chapeau)) M.chapeau = '';
+    /* _SP_STUDIO_VOCABLE_586 — LE SUJET DE LA DEMANDE DEVIENT LE TITRE (au lieu de la consigne entière). */
+    if (!src.corps && _sujetBrut.sujet) M.titre = _sujetBrut.sujet;
+    /* _SP_STUDIO_VOCABLE_586 — LA DEMANDE N'EST PAS UN CHAPÔ QUAND ELLE N'EST QU'UNE CONSIGNE :
+       si au moins deux familles de consignes ont été reconnues (format + pages + ton…),
+       la phrase entière ne se compose pas — sinon la consigne s'imprime en corps de texte
+       juste sous le titre (mesuré). */
+    if (!src.corps && _sujetBrut.n >= 2 && M.chapeau) M.chapeau = '';
+    if (!src.corps && _sujetBrut.sujet && String(M.chapeau).length > 120) M.chapeau = '';
     if (!M.titre) M.titre = (spGabUtileTexte(M.chapeau) ? M.chapeau : (M.lignes.filter(spGabUtileTexte)[0] || 'Sans titre'));
     M.titre = spGabCourt(M.titre, 64).replace(/[.!?]+$/, '');
     /* Le chapô ne doit JAMAIS être le titre ni son début : sur une demande courte
@@ -11019,6 +11151,16 @@ function spRtfLayoutInfo(src) {
     return e;
   }
   const SP_GAB_LAY = { affiche: spGabP_affiche, couverture: spGabP_couverture, catalogue: spGabP_catalogue, rapport: spGabP_rapport, menu: spGabP_menu, brochure: spGabP_brochure, portfolio: spGabP_portfolio, invitation: spGabP_invitation, cartevisite: spGabP_cartevisite, cahier: spGabP_cahier, cv: spGabP_cv, programme: spGabP_programme, mariage: spGabP_mariage, story: spGabP_story, bandeau: spGabP_bandeau };
+  /* _SP_STUDIO_VOCABLE_586 — LES FAMILLES NEUVES RÉUTILISENT LA MISE EN PAGE DE LEUR COUSINE la plus
+     proche (aucune nouvelle géométrie à valider) : une étiquette, un billet, une facture
+     ou un papier à en-tête se composent comme une carte de visite ; un calendrier et une
+     présentation comme un catalogue ; une carte postale comme une invitation ; une charte
+     ou un dossier de presse comme un cahier. */
+  [['etiquette', 'cartevisite'], ['billet', 'cartevisite'], ['facture', 'cartevisite'], ['lettre', 'cartevisite'],
+   ['cartepostale', 'invitation'], ['carteveux', 'invitation'], ['calendrier', 'catalogue'],
+   ['presentation', 'catalogue'], ['brandbook', 'cahier'], ['presse', 'cahier']].forEach(function (x) {
+    if (!SP_GAB_LAY[x[0]]) SP_GAB_LAY[x[0]] = SP_GAB_LAY[x[1]];
+  });
   /* ══════════════════════════════════════════════════════════════════════════
      _SP_STUDIO_STYLE_585 — 48 MISES EN PAGE (12 agencements × 4 densités) + 3 OUVERTURES
      Demande utilisateur : « 40-60 mises en page ». Un AGENCEMENT est un faisceau
@@ -11615,6 +11757,7 @@ function spRtfLayoutInfo(src) {
       /* « sans photos » : le drapeau lu par spGabPhoto (aucune image posée, aucun
          emplacement muet) — remis à zéro à chaque composition, donc déterministe. */
       state._spSansPhoto = !!_compris.sans.photo;
+      SP_GAB_PAGES_VOULUES = _compris.pages || 0;
       try { spGabDireCompris(brief, _compris); } catch (_) {}
     } else {
       state._spSansPhoto = false;
@@ -11660,9 +11803,18 @@ function spRtfLayoutInfo(src) {
     /* MATIÈRE DE LA BIBLIOTHÈQUE : inchangée, juste APRÈS l'annonce du plan. */
     if (_kit) {
       try {
-        appendChat('assistant', '🍽️ ' + _kit + ' : votre demande ne contenait pas encore le détail ' +
-          '(plats, tarifs, sections), je compose donc une carte complète pour que vous voyiez le rendu. ' +
-          'Donnez vos propres plats et prix, ils remplaceront ceux-ci au prochain envoi.');
+        /* _SP_STUDIO_VOCABLE_586 — L'ANNONCE PARLE LA LANGUE DE LA FAMILLE. Mesuré : un rapport
+           d'activité et un dépliant d'agence immobilière s'entendaient répondre « plats,
+           tarifs » — la phrase était écrite pour le menu et servait à tout le monde. */
+        const _secKit = (texte.sections || []).filter(function (s) { return s && s.t; }).slice(0, 5).map(function (s) { return s.t; });
+        const _msgKit = (_kit === 'plan de sections repris des modèles SuperPrint')
+          ? ('🧩 ' + _kit + ' : votre demande ne disait pas encore vos sections, je pose donc une ossature ' +
+             (_secKit.length ? '(' + _secKit.join(', ') + ') ' : '') +
+             'pour que vous voyiez le rendu. Donnez vos propres titres, ils remplaceront ceux-ci au prochain envoi.')
+          : ('🍽️ ' + _kit + ' : votre demande ne contenait pas encore le détail (plats, tarifs, sections), ' +
+             'je compose donc une carte complète pour que vous voyiez le rendu. Donnez vos propres plats et prix, ' +
+             'ils remplaceront ceux-ci au prochain envoi.');
+        appendChat('assistant', _msgKit);
       } catch (_) {}
     }
     /* Journal : ce que le moteur A COMPRIS du document (titre, surtitre, chapô, sections).
@@ -11701,7 +11853,18 @@ function spRtfLayoutInfo(src) {
       if (force) theme = { cle: force[0], pal: force[2], fonts: force[3] };
     }
     const hasard = spGabHasard(brief);
-    const polices = SP_GAB_FONTS[(theme && theme.fonts) || 'mono'] || SP_GAB_FONTS.mono;
+    /* _SP_STUDIO_VOCABLE_586 — LA TYPOGRAPHIE DEMANDÉE PRIME SUR CELLE DU THÈME (elle était ignorée).
+       Le studio a quatre familles : display (Bebas Neue), serif (Playfair Display),
+       sans (Montserrat), monospace (IBM Plex Mono). « condensée » → display (Bebas EST
+       condensée) ; « manuscrite » n'existe pas ici → on se rabat sur serif et l'annonce
+       comprise le dit (« typographie manuscrite » demandée, empattements posés). */
+    const _famTypo0 = (_compris && _compris.fonte) || '';
+    /* _SP_STUDIO_LANGUES_586b — « fine » n'est pas une famille du studio : on la rabat sur la LINÉALE
+       (Montserrat) au lieu du monospace par défaut, qui n'a rien de fin. */
+    const _famTypo = (_famTypo0 === 'condense') ? 'display'
+      : (_famTypo0 === 'manuscrite') ? 'serif'
+      : (_famTypo0 === 'fine') ? 'sans' : _famTypo0;
+    const polices = SP_GAB_FONTS[_famTypo || (theme && theme.fonts) || 'mono'] || SP_GAB_FONTS.mono;
     SP_GAB_FONTE.titre = polices.titre;
     SP_GAB_FONTE.corps = 'Open Sans';
     SP_GAB_FONTE.mono = 'IBM Plex Mono';
@@ -12826,7 +12989,12 @@ function spRtfLayoutInfo(src) {
     'story': [135, 240], 'stories': [135, 240], 'reel': [135, 240], 'tiktok': [135, 240],
     'instagram': [150, 150], 'insta': [150, 150], 'post instagram': [150, 150],
     'bandeau': [600, 200], 'banniere': [600, 200], 'bannière': [600, 200], 'banner': [600, 200],
-    'cv': [210, 297], 'lettre': [210, 297], 'carte postale': [148, 105], 'postale': [148, 105]
+    'cv': [210, 297], 'lettre': [210, 297], 'carte postale': [148, 105], 'postale': [148, 105],
+    /* _SP_STUDIO_VOCABLE_586 — les formats cités dans les demandes courantes et qui manquaient :
+       B5, US Letter, carré 21 × 21, calendrier mural (A3 portrait) et étiquette. */
+    'b5': [176, 250], 'us letter': [216, 279], 'letter': [216, 279],
+    '21x21': [210, 210], 'carré 21': [210, 210], 'etiquette': [100, 60], 'étiquette': [100, 60],
+    'calendrier mural': [297, 420], 'ticket': [80, 190], 'billet': [80, 190]
   };
   /* Ratios courants (2:3, 9:16…) : on refuse les heures (« 20:30 ») en n'acceptant
      que cette liste. La base est de 240 mm sur le grand côté. */
@@ -14144,6 +14312,21 @@ function spRtfLayoutInfo(src) {
         }
         state.doc = doc;
         renderDocument(doc);
+        /* _SP_STUDIO_VOCABLE_586 — CE QUI A ÉTÉ DEMANDÉ EST-IL LIVRÉ ? Le compte de pages annoncé
+           était celui de la composition AVANT les passes de mise en page : la dernière
+           section pouvait être reportée sur une page de plus (mesuré : 24 demandées, 25
+           composées) sans que personne ne le dise. On le dit, en clair. */
+        if (state.engine === 'gabarit' && SP_GAB_PAGES_VOULUES) {
+          const _reel = (doc.pages || []).length;
+          if (_reel !== SP_GAB_PAGES_VOULUES) {
+            const _msgP = '📄 ' + SP_GAB_PAGES_VOULUES + ' page(s) demandée(s) → ' + _reel + ' page(s) composée(s) : '
+              + (_reel > SP_GAB_PAGES_VOULUES
+                ? 'la fin du document a été reportée sur une page de plus plutôt que d\'être coupée ou posée hors marge.'
+                : 'la matière fournie n\'en remplissait pas tant, j\'ai gardé la maquette plus courte.');
+            appendChat('assistant', _msgP);
+            try { state.chat.push({ role: 'assistant', text: _msgP }); persistChat(); } catch (_) {}
+          }
+        }
         /* 🆕 v1.7.580x — MAQUETTE VIDE (0 objet dessinable) : on le dit, au lieu
            d'annoncer « Layout generated » devant une page blanche. */
         const _spNbObj580x = (doc.pages || []).reduce(function (n, p) {
