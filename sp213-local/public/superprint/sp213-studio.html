@@ -7850,10 +7850,11 @@ function spRtfLayoutInfo(src) {
     { key: 'qc.invitation', nom: 'Invitation événement',  fam: 'invitation', fonts: 'display', cols: 1, gutter: 0, mg: [26, 28, 24, 28], titre: 56, chapeau: 13, corps: 10,  folio: false, pages: 1, pal: 'event' }
   ];
 
-  // Palette déduite du thème de la demande (restaurant → chaud, IA → tech…).
-  function spGabPal(brief, impose) {
+  // Palette déduite du thème de la demande ET des pièces jointes en « contexte »
+  // (une PJ de contexte sert à comprendre le sujet : elle doit donc peser sur le ton).
+  function spGabPal(brief, impose, contexte) {
     if (impose && SP_GAB_PAL[impose]) return SP_GAB_PAL[impose];
-    const s = String(brief || '').toLowerCase();
+    const s = (String(brief || '') + ' ' + String(contexte || '')).toLowerCase();
     if (/restaurant|menu|carte|cuisine|p[âa]tisserie|bistrot|brasserie|vin|caf[ée]|food/.test(s)) return SP_GAB_PAL.chaud;
     if (/nature|[ée]cologie|bio|jardin|for[êe]t|agri|climat|vert/.test(s)) return SP_GAB_PAL.nature;
     if (/luxe|mode|beaut[ée]|parfum|joaillerie|haut de gamme|premium/.test(s)) return SP_GAB_PAL.luxe;
@@ -7912,7 +7913,10 @@ function spRtfLayoutInfo(src) {
     for (let i = 0; i < regles.length; i++) {
       if (regles[i][1].test(s)) return SP_GAB_DESIGN.filter(function (g) { return g.key === regles[i][0]; })[0] || SP_GAB_DESIGN[0];
     }
-    return SP_GAB_DESIGN[0];
+    /* RIEN DE RECONNU → affiche manifeste. Défaut mesuré : le repli tombait sur la
+       PREMIÈRE ligne du tableau (la carte de visite), donc une demande d'agence
+       sortait en carte de visite. */
+    return SP_GAB_DESIGN.filter(function (g) { return g.key === 'qc.minimal'; })[0] || SP_GAB_DESIGN[0];
   }
 
   // Retire le balisage markdown d'une ligne (gras, italique, code, lien).
@@ -7982,7 +7986,7 @@ function spRtfLayoutInfo(src) {
   function spGabMeta(brief) {
     const src = spGabSources();
     const blocs = spGabMarkdown(String(brief || '').trim() + '\n\n' + src.corps);
-    const M = { brief: String(brief || ''), titre: '', surtitre: '', chapeau: '', sections: [], lignes: [], items: [], chiffres: [], infos: [], photos: src.images.slice(), source: src.corps ? 'demande + pièces jointes' : 'demande seule' };
+    const M = { brief: String(brief || ''), titre: '', surtitre: '', chapeau: '', sections: [], lignes: [], items: [], chiffres: [], infos: [], photos: src.images.slice(), contexte: src.contexte, corpsLength: src.corps.length, source: src.corps ? 'demande + pièces jointes' : 'demande seule' };
     let courant = null;
     blocs.forEach(function (b) {
       if (b.t === 'h') {
@@ -8007,6 +8011,9 @@ function spRtfLayoutInfo(src) {
     // Titres venant d'une pièce jointe « modèle » : ils complètent la structure.
     src.titres.forEach(function (t) { if (t.length <= 60 && !M.sections.some(function (s) { return s.t === t; })) M.sections.push({ t: t, ps: [] }); });
     if (M.sections.length && !M.chapeau) M.chapeau = (M.sections[0].ps[0] || '');
+    /* Une pièce jointe « maquette » porte souvent SON titre : quand la demande est
+       courte, c'est lui qui fait le titre du document (le document du client prime). */
+    if (src.titres.length && String(brief || '').trim().length < 90 && String(src.titres[0]).length <= 62) M.titre = src.titres[0];
     if (!M.titre) M.titre = M.chapeau || (M.lignes[0] || 'Sans titre');
     M.titre = spGabCourt(M.titre, 64).replace(/[.!?]+$/, '');
     M.chapeau = (M.chapeau === M.titre) ? (M.lignes[0] || '') : M.chapeau;
@@ -8053,6 +8060,7 @@ function spRtfLayoutInfo(src) {
   // 1. Affiche manifeste : très grande typo, respiration, bandeau d'informations.
   function spGabP_affiche(L, n, tot) {
     const e = [], p = L.pal, M = L.t;
+    if (L.pays) return spGabP_affichePays(L, n, tot);
     e.push(spGabC(L.x1 - 40, L.y0 + 40, 40, p.b, 0.16));
     if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0, L.cw * 0.6, spGabCourt(M.surtitre, 40)));
     e.push(spGabT(L.x0, L.y0 + L.ch * 0.24, L.cw * 0.94, M.titre, L.g.titre, p.txt, 'bold', 'left', 1.02));
@@ -8352,6 +8360,48 @@ function spRtfLayoutInfo(src) {
     });
     return e;
   }
+  /* ══ FORMAT ET ORIENTATION DE LA PAGE COURANTE ══
+     Le moteur s'adapte à la page RÉELLE (le studio l'a déjà réglée d'après la
+     demande) : portrait ou paysage, carré, petit ou grand format. */
+  function spGabFormat() {
+    const W = state.pageW || 210, H = state.pageH || 297;
+    const petit = Math.min(W, H), grand = Math.max(W, H);
+    return {
+      W: W, H: H, petit: petit, grand: grand,
+      pays: W > H * 1.05,
+      carre: Math.abs(W - H) <= Math.min(W, H) * 0.06,
+      mini: petit < 130,                 // carte, marque-page, A7…
+      bandeau: grand / petit > 2.2,      // flyer DL, marque-page
+      grandFmt: grand > 500              // affiche grand format
+    };
+  }
+
+  /* ══ SIMPLE OU DOUBLE PAGE, LU DANS LA DEMANDE ══
+     « en double page », « planches », « recto-verso », « deux pages en vis-à-vis »
+     → planches ; « page simple », « une page à la fois », « recto seul » → simple.
+     Renvoie null quand la demande ne dit rien (on ne touche pas au réglage). */
+  function spGabModeVoulu(brief) {
+    const s = String(brief || '').toLowerCase();
+    if (/double\s*-?\s*page|en\s+double|planches?|recto\s*-?\s*verso|vis-à-vis|vis-a-vis|spread/.test(s)) return 'spread';
+    if (/page\s+simple|pages?\s+simples?|une\s+page\s+à\s+la\s+fois|recto\s+seul|single\s+page|\bsingle\b/.test(s)) return 'single';
+    return null;
+  }
+
+  /* Affiche en PAYSAGE : le titre tient la moitié gauche, le visuel la droite. */
+  function spGabP_affichePays(L, n, tot) {
+    const e = [], p = L.pal, M = L.t;
+    const gx = L.cw * 0.52, rx = L.x0 + gx + 18, rw = L.x1 - rx;
+    e.push(spGabC(L.x1 - 34, L.y0 + 34, 34, p.b, 0.16));
+    if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0, gx, spGabCourt(M.surtitre, 40)));
+    e.push(spGabT(L.x0, L.y0 + L.ch * 0.2, gx, M.titre, L.g.titre, p.txt, 'bold', 'left', 0.95));
+    e.push(spGabL(L.x0, L.y0 + L.ch * 0.2 + L.g.titre * 1.15, gx * 0.4, p.a, 4));
+    if (M.chapeau) e.push(spGabT(L.x0, L.y0 + L.ch * 0.2 + L.g.titre * 1.15 + 16, gx, spGabCourt(M.chapeau, 240), L.g.chapeau, '#4b5563', null, 'left', 1.5));
+    spGabPhoto(L, e, rx, L.y0, rw, L.ch, 'grand visuel');
+    const infos = (M.infos.length ? M.infos : M.lignes).slice(0, 2).join('  ·  ');
+    e.push(spGabL(L.x0, L.y1 - 12, gx, p.txt, 2));
+    if (infos) e.push(spGabT(L.x0, L.y1 - 6, gx, spGabCourt(infos, 110), 8.5, '#6b7280', null, 'left', 1.4));
+    return e;
+  }
   const SP_GAB_LAY = { affiche: spGabP_affiche, couverture: spGabP_couverture, catalogue: spGabP_catalogue, rapport: spGabP_rapport, menu: spGabP_menu, brochure: spGabP_brochure, portfolio: spGabP_portfolio, invitation: spGabP_invitation, cartevisite: spGabP_cartevisite, cahier: spGabP_cahier };
 
   /* ⚠️ UNITÉ (défaut mesuré, cause de tout le reste) : le studio travaille en
@@ -8377,13 +8427,23 @@ function spRtfLayoutInfo(src) {
      le nombre de pages est TOUJOURS pair — jamais de page seule au centre. */
   function spGabDesign(brief) {
     const veut = spGabPages(brief);
-    const g = Object.assign({}, spGabChoisir(brief));
+    let g = Object.assign({}, spGabChoisir(brief));
     const texte = spGabMeta(brief);
+    /* PIÈCE JOINTE « MAQUETTE » VOLUMINEUSE : on ne jette pas un document client
+       dans une page unique. Au-delà d'environ 600 caractères composés, le moteur
+       passe au CAHIER MULTIPAGE et répartit tout (défaut mesuré : un rapport joint
+       sortait en affiche d'une page, deux sections sur trois étaient perdues). */
+    if (texte.corpsLength > 600 && g.fam !== 'cahier' && g.fam !== 'cartevisite') {
+      const c = SP_GAB_DESIGN.filter(function (x) { return x.key === 'qc.cahier'; })[0];
+      if (c) g = Object.assign({}, c);
+    }
     const W = (state.pageW || 210) * SP_GAB_K, H = (state.pageH || 297) * SP_GAB_K;
     /* MARGES RELATIVES AU FORMAT : une marge A4 de 22 mm ne laisse rien sur une
        carte de visite. On plafonne à 5 % du petit côté de la page. */
-    const petit = Math.min(W, H);
-    const M = g.mg.map(function (v) { return Math.min(v, petit * 0.05); });
+    const petit = Math.min(state.pageW || 210, state.pageH || 297);
+    /* Le plafond est en MILLIMÈTRES (9 % du petit côté) : 22 mm restent justes sur
+       A4, mais une carte 85 × 55 mm n'a droit qu'à ~5 mm de marge. */
+    const M = g.mg.map(function (v) { return Math.min(v, petit * 0.09); });
     const x0 = M[3] * SP_GAB_K, y0 = M[0] * SP_GAB_K, x1 = W - M[1] * SP_GAB_K, y1 = H - M[2] * SP_GAB_K;
     const cw = Math.max(20, x1 - x0), ch = Math.max(20, y1 - y0);
     /* TAILLES RELATIVES AU FORMAT : 72 pt est juste sur A4, absurde sur 85 × 55 mm.
@@ -8391,15 +8451,35 @@ function spRtfLayoutInfo(src) {
     g.titre = spGabTailleTitre(texte.titre, cw * 0.94, 3, Math.min(g.titre, H * 0.105));
     g.chapeau = Math.max(7, Math.min(g.chapeau, H * 0.055));
     g.corps = Math.max(6.5, Math.min(g.corps, H * 0.045));
+    const fmt = spGabFormat();
     const L = {
-      W: W, H: H, g: g, t: texte, pal: spGabPal(brief, g.pal), f: SP_GAB_FONTS[g.fonts] || SP_GAB_FONTS.sans,
+      W: W, H: H, g: g, t: texte, pal: spGabPal(brief, g.pal, texte.contexte), f: SP_GAB_FONTS[g.fonts] || SP_GAB_FONTS.sans,
       k: Math.max(0.3, Math.min(1, H / 841.89)),
       x0: x0, y0: y0, x1: x1, y1: y1, cw: cw, ch: ch,
+      pays: fmt.pays, carre: fmt.carre, mini: fmt.mini, bandeau: fmt.bandeau,
       photos: texte.photos.slice()
     };
-    const tot = Math.max(1, veut || g.pages);
-    const lay = SP_GAB_LAY[g.fam] || spGabP_affiche;
+    /* MODE SIMPLE / DOUBLE PAGE : lu dans la demande et appliqué à la conversation.
+       On n'appelle PAS newDocument() : la composition qui suit remplace le document. */
+    const modeVoulu = spGabModeVoulu(brief);
+    if (modeVoulu && modeVoulu !== state.viewMode) {
+      state.viewMode = modeVoulu;
+      try { spEcrireModeConversation(modeVoulu); } catch (_) {}
+      try { localStorage.setItem('sp213_viewmode_v1', modeVoulu); } catch (_) {}
+      try { spMajBoutonMode(); } catch (_) {}
+    }
+    /* VOLUME : sans nombre de pages demandé, on le déduit du texte fourni (demande
+       + pièces jointes en « maquette »), pour un cahier de la bonne épaisseur. */
+    const volume = String(brief || '').length + srcLen(texte);
+    let tot = Math.max(1, veut || g.pages);
+    if (!veut && g.pages >= 3) tot = Math.min(24, Math.max(tot, Math.ceil((volume / 2) / 1300)));
+    const spread = (state.viewMode === 'spread');
+    /* EN PLANCHES, LA COUVERTURE EST UNE PAGE DE DROITE : on ouvre le cahier par une
+       garde blanche, sinon le titre tombe sur la page de gauche, contre la pliure. */
+    const garde = (spread && tot >= 3 && (g.fam === 'cahier' || g.fam === 'brochure'));
     const pages = [];
+    if (garde) pages.push({ pageIndex: 0, elements: [spGabVersMm(spGabR(0, 0, W, H, '#ffffff', 0))] });
+    const lay = SP_GAB_LAY[g.fam] || spGabP_affiche;
     for (let i = 1; i <= tot; i++) {
       let els = [];
       try { els = lay(L, i, tot) || []; } catch (err) { els = []; }
@@ -8407,14 +8487,17 @@ function spRtfLayoutInfo(src) {
       if (g.folio && i > 1) els = els.concat(spGabFolio(L, i, tot));
       pages.push({ pageIndex: pages.length, elements: els.map(spGabVersMm) });
     }
-    if (state.doc && state.doc.viewMode === 'spread' && (pages.length % 2) === 1) {
+    if (spread && tot >= 3 && (pages.length % 2) === 1) {
       pages.push({ pageIndex: pages.length, elements: [spGabVersMm(spGabR(0, 0, W, H, '#ffffff', 0))] });
     }
     const posees = texte.photos.length - L.photos.length;
     const j = function (niv, msg) { try { spJournalAjoute(niv, msg); } catch (_) {} };
     j('ok', 'Gabarit « ' + g.nom + ' » (' + g.key + ') : ' + pages.length + ' page(s) posée(s).');
-    j('info', 'Règles : marges ' + g.mg.join('/') + ' mm, ' + g.cols + ' colonne(s), gouttière ' + g.gutter + ' mm' + (g.folio ? ', folios' : '') + ', cahier pair.');
-    j('info', 'Contenu : ' + texte.source + ' — ' + posees + ' photo(s) placée(s), texte ' + (texte.brief.length + srcLen(texte)) + ' caractères.');
+    j('info', 'Format lu : ' + fmt.W + '×' + fmt.H + ' mm, ' + (fmt.carre ? 'carré' : (fmt.pays ? 'paysage' : 'portrait'))
+      + (fmt.mini ? ', petit format' : '') + (fmt.bandeau ? ', format bandeau' : '') + (fmt.grandFmt ? ', grand format' : '') + '.');
+    j('info', 'Imposition : ' + (spread ? 'DOUBLE PAGE (planches)' : 'page simple') + (garde ? ' — garde blanche au début, la couverture tombe sur la page de droite' : '') + (g.folio ? ', folios' : '') + '.');
+    j('info', 'Règles : marges ' + M.map(function (v) { return Math.round(v * 10) / 10; }).join('/') + ' mm, ' + g.cols + ' colonne(s), gouttière ' + g.gutter + ' mm, interligne des titres 0,95.');
+    j('info', 'Contenu : ' + texte.source + ' — ' + posees + ' photo(s) placée(s), texte ' + (texte.brief.length + srcLen(texte)) + ' caractères.' + (texte.contexte ? ' Pièce(s) jointe(s) en CONTEXTE prises en compte pour le ton et le thème.' : ''));
     return {
       reply: 'Maquette « ' + g.nom + ' » posée sans modèle : ' + pages.length + ' page' + (pages.length > 1 ? 's' : '') + ', ' + g.cols + ' colonne(s), gabarit déterministe (0 jeton).',
       targetPages: pages.length,
@@ -9134,16 +9217,44 @@ function spRtfLayoutInfo(src) {
   function detectPageFormat(prompt) {
     if (!prompt) return null;
     const p = String(prompt).toLowerCase();
-    // 1) Format libre explicite "L×H mm" / "LxH mm" / "largeur X hauteur Y mm"
-    const mmMatch = p.match(/(\d{2,4})\s*[x×]\s*(\d{2,4})\s*(?:mm|cm|centim)/i) ||
-                    p.match(/(\d{2,4})\s*mm\s*[x×]\s*(\d{2,4})\s*mm/i);
-    if (mmMatch) {
-      let w = parseInt(mmMatch[1], 10), h = parseInt(mmMatch[2], 10);
-      // Si l'unité est cm, convertir en mm (×10)
-      if (/\bcm\b|centim/i.test(p)) { w *= 10; h *= 10; }
-      if (w >= 20 && w <= 2000 && h >= 20 && h <= 2000) return { w, h, label: w + '×' + h + ' mm' };
+    /* 1) FORMAT LIBRE — « 210 × 297 mm », « 21 × 29,7 cm », « 60x80 » (sans unité :
+       on devine : cm si les deux nombres sont petits, mm sinon), « largeur 100
+       hauteur 150 » et l'ordre inverse. Défauts mesurés avant : les DÉCIMALES et la
+       virgule française n'étaient pas lues (« 21 × 29,7 cm » ne donnait rien) et une
+       dimension sans unité non plus. Un « 2x2 » de grille ne doit PAS devenir un
+       format : sans unité, on exige des nombres de 10 au moins. */
+    const nombre = function (s) { return parseFloat(String(s).replace(',', '.')); };
+    const unite = function (s) {
+      const u = String(s || '').toLowerCase();
+      if (/cm|centim/.test(u)) return 10;
+      if (/\bmm\b|millim/.test(u)) return 1;
+      return 0;
+    };
+    const dim = '((?:\\d{1,4})(?:[.,]\\d{1,2})?)\\s*(mm|cm|centim\\w*)?';
+    const mot = p.match(new RegExp('(?:largeur|width|l)\\s*:?\\s*' + dim + '[^\\d]{1,14}(?:hauteur|height|h)\\s*:?\\s*' + dim, 'i'));
+    const motInv = mot ? null : p.match(new RegExp('(?:hauteur|height|h)\\s*:?\\s*' + dim + '[^\\d]{1,14}(?:largeur|width|l)\\s*:?\\s*' + dim, 'i'));
+    const croix = (mot || motInv) ? null : p.match(new RegExp(dim + '\\s*[x×*]\\s*' + dim, 'i'));
+    const src = mot || motInv || croix;
+    if (src) {
+      const a = nombre(src[1]), b = nombre(src[3]);
+      const u = unite(src[2]) || unite(src[4]);
+      if (!(!!u === false && (a < 10 || b < 10))) {
+        const kU = u || ((a <= 100 && b <= 100) ? 10 : 1);
+        const d1 = Math.round(a * kU), d2 = Math.round(b * kU);
+        const inverse = !mot && !!motInv;
+        const w2 = inverse ? d2 : d1, h2 = inverse ? d1 : d2;
+        if (w2 >= 20 && w2 <= 2000 && h2 >= 20 && h2 <= 2000) return { w: w2, h: h2, label: w2 + '×' + h2 + ' mm' };
+      }
     }
-    // 2) Formats ISO / courants (mots-clés) — ordre longueur décroissante
+    /* 2) UN SIGLE ISO EXPLICITE PRIME sur les mots-clés génériques. Défaut mesuré :
+       « Flyer A5 » donnait le format DL 99×210 mm, parce que le mot-clé « flyer »
+       gagnait avant que le A5 ne soit lu. « Cahier A4 », « Affiche A3 » idem. */
+    const sigle = p.match(/\ba([0-8])\b/);
+    if (sigle && PAGE_FORMATS['a' + sigle[1]]) {
+      const sig = PAGE_FORMATS['a' + sigle[1]];
+      return { w: sig[0], h: sig[1], label: 'A' + sigle[1] + ' (' + sig[0] + '×' + sig[1] + ' mm)' };
+    }
+    // 3) Formats ISO / courants (mots-clés) — ordre longueur décroissante
     const sortedKeys = Object.keys(PAGE_FORMATS).sort((a, b) => b.length - a.length);
     for (const k of sortedKeys) {
       if (new RegExp('\\b' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(p)) {
