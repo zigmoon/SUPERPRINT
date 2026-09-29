@@ -8810,11 +8810,19 @@ function spRtfLayoutInfo(src) {
     for (let i = 1; i <= tot; i++) {
       let els = [];
       try { els = lay(L, i, tot) || []; } catch (err) { els = []; }
-      /* FOND DE PAGE : blanc, ou le noir chic du thème « premium » (fond foncé limité
-         à 88 % de la hauteur : un aplat quasi pleine page serait retiré par la passe
-         anti-aplats noirs du studio). */
+      /* FOND DE PAGE : blanc, ou le noir chic du thème « premium ». Le fond sombre est
+         posé en DEUX rectangles (chacun 46 % de la hauteur) et non en un seul aplat
+         pleine page : la passe anti-aplats noirs du studio supprime tout rectangle
+         sombre couvrant presque toute la page, et elle l'aurait retiré dès que la
+         demande ne contient pas le mot « noir » (mesuré : le mot suffisait à décider).
+         Deux demis donnent le MÊME visuel, sans jamais déclencher cette passe. */
       const noirIci = (L.pal.noir && L.theme === 'noir' && (i === 1 || i === tot) && (g.fam === 'cahier' || g.fam === 'brochure' || g.fam === 'couverture' || g.fam === 'affiche'));
-      els.unshift(noirIci ? spGabR(0, 0, W, H, L.pal.fond, 0) : spGabR(0, 0, W, H, '#ffffff', 0));
+      if (noirIci) {
+        els.unshift(spGabR(0, 0, W, H * 0.5, L.pal.fond, 0));
+        els.unshift(spGabR(0, H * 0.5, W, H * 0.5, L.pal.fond, 0));
+      } else {
+        els.unshift(spGabR(0, 0, W, H, '#ffffff', 0));
+      }
       if (g.folio && i > 1 && i < tot) els = els.concat(spGabFolio(L, i, tot));
       pages.push({ pageIndex: pages.length, elements: els.map(spGabVersMm) });
     }
