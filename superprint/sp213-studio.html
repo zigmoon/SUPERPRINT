@@ -8893,11 +8893,15 @@ function spRtfLayoutInfo(src) {
           if (s > aire) { aire = s; fond = a.fill; }
         });
         const lumF = spGabLum(fond), lumT = spGabLum(e.fill);
-        /* ══ RÈGLE ABSOLUE DU FOND NOIR (demande utilisateur) ══ Sur un fond sombre ou
-           noir la typographie est CLAIRE, sans exception — et ce contrôle ne dépend
-           PAS du panneau trouvé derrière : le studio peut déplacer un bloc après la
-           composition (mesuré : 5 textes #101014 restés sur le fond #0e0e10). */
-        if (L.pal && L.pal.noir && lumT < 0.62) { e.fill = clair; corriges++; return; }
+        /* ══ RÈGLE ABSOLUE DU FOND NOIR (demande utilisateur) ══ Sur un document au thème
+           noir, TOUTE typographie est CLAIRE, sans exception : le fond de page est noir
+           et le studio peut déplacer un bloc après la composition.
+           ⚠️ DÉFAUT MESURÉ ET CORRIGÉ : cette règle testait d'abord la couleur ACTUELLE
+           du texte (lumT < 0,62). Un texte déjà passé en clair ne déclenchait donc rien,
+           et la logique des panneaux ci-dessous le REPASSAIT EN SOMBRE — d'où 5 textes
+           #101014 sur le fond #0e0e10. Elle est maintenant inconditionnelle et placée
+           AVANT tout le reste, avec sortie immédiate. */
+        if (L.pal && L.pal.noir) { if (lumT < 0.62) { e.fill = clair; corriges++; } return; }
         /* Sur un fond clair, la typographie est sombre. Plus strict qu'un simple écart
            de luminosité : aucun cas sombre sur sombre ne passe. */
         const veuxClair = lumF < 0.45;
@@ -9132,7 +9136,17 @@ function spRtfLayoutInfo(src) {
       pages: pages
     };
   }
-  function srcLen(texte) { try { return (state.attachments || []).reduce(function (n, a) { return n + String(a.text || '').length; }, 0); } catch (_) { return 0; } }
+  /* Longueur du texte RÉELLEMENT composable : une pièce jointe en « contexte » n'est
+     pas composée, elle ne doit donc pas gonfler le nombre de pages. Défaut trouvé par
+     le test : un fichier de 42 Ko joint en CONTEXTE faisait passer un cahier de 6 à
+     18 pages alors que rien de son texte n'apparaissait. */
+  function srcLen(texte) {
+    try {
+      return (state.attachments || []).reduce(function (n, a) {
+        return n + (((a.mode || 'content') === 'context') ? 0 : String(a.text || '').length);
+      }, 0);
+    } catch (_) { return 0; }
+  }
 
   const SP_ST_MODELES = [
     /* 🆕 v1.7.580 — NOTRE PROPRE MOTEUR : il ne demande aucune clé, aucun
