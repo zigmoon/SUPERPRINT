@@ -3963,6 +3963,29 @@
         try { document.documentElement.classList.remove('sp-avant-prehome'); } catch (e3) {}
       }
     } catch (_) {}
+    /* ═══ v1.7.579 — LA PRÉ-HOME EST L'ÉCRAN D'ARRIVÉE (demande utilisateur) ═══
+       Avant, ouvrir le studio allait directement dans l'interface dès qu'une
+       conversation était enregistrée : on ne passait jamais par la pré-home,
+       alors que c'est la porte d'entrée (moteur, clé, format, exemples). Elle
+       s'ouvre donc PAR DÉFAUT. Une seule exception, de confort : si vous l'avez
+       déjà fermée dans cet onglet, un rechargement ne la rouvre pas — vous
+       retrouvez votre travail. Nouvel onglet, nouvelle visite, ou lien de la page
+       de présentation (?home=1) : pré-home. */
+    try {
+      const _dejaVue = sessionStorage.getItem('sp213_prehome_vue') === '1';
+      if (!_dejaVue) {
+        /* 300 ms : après le ?home=1 qui ouvre la pré-home à 120 ms — sinon elle
+           s'ouvrirait deux fois (animations rejouées, ombre remise à zéro). */
+        setTimeout(function () {
+          try {
+            const s = $('starter');
+            if (!s || !s.classList.contains('on')) spStarterOuvrir();
+          } catch (_) {}
+        }, 300);
+      } else {
+        try { document.documentElement.classList.remove('sp-avant-prehome'); } catch (_) {}
+      }
+    } catch (_) { try { document.documentElement.classList.remove('sp-avant-prehome'); } catch (_) {} }
   }
 
   // ── Limitation des tooltips (3 apparitions max par session) ──
@@ -8052,7 +8075,7 @@ function spRtfLayoutInfo(src) {
     spStarterSync();
     setTimeout(function () { if (ti) { ti.focus(); spStarterAutoGrow(); } }, 60);
   }
-  function spStarterFermer() { try { spStPop(false); } catch (_) {} const s = $('starter'); if (s) s.classList.remove('on'); spOmbreReset(); }
+  function spStarterFermer() { try { spStPop(false); } catch (_) {} const s = $('starter'); if (s) s.classList.remove('on'); spOmbreReset(); try { sessionStorage.setItem('sp213_prehome_vue', '1'); } catch (_) {} }
   /* ══ 🆕 v1.7.580ll — L'OMBRE SUIT UN PEU LA SOURIS ═════════════════
      (Le logotype en filigrane a été RETIRÉ à la demande.) Il ne reste qu'une ombre :
      elle vise une position de ± 8 px et l'atteint image par image (7 %), donc aucun
