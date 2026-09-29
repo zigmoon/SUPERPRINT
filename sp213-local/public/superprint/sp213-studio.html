@@ -2095,10 +2095,17 @@
      Le miroir se construit avec _dev/scripts/_miroir_webllm.ps1 : il lit la liste
      des fichiers du dépôt MLC, télécharge les poids, réécrit `model_lib` vers notre
      dossier et range tout sous models/<modele>/, prêt à déposer sur /models/. */
-  const WLLM_MIROIR_BASE = 'https://app.zigmoon.com/models/';
-  function wllmAppConfig(mid) {
-    if (!mid) return null;
-    return { model_list: [{ model: WLLM_MIROIR_BASE + mid + '/mlc-chat-config.json', model_id: mid }] };
+  /* ⚠️ v1.7.579 — L'ORDRE COMPTE, ET LE PREMIER EST LE MÊME DOMAINE.
+     L'application est servie depuis superprint.cc : chercher les poids sur
+     app.zigmoon.com est une requête CROSS-ORIGIN, et ce serveur n'envoie AUCUN
+     en-tête CORS (mesuré : Access-Control-Allow-Origin vide) — le navigateur
+     refuse la lecture, d'où « Failed to fetch » alors que le fichier répond 200.
+     On cherche donc d'abord À CÔTÉ DE L'APPLICATION (/models/), puis seulement sur
+     app.zigmoon.com, puis sur Hugging Face. */
+  const WLLM_MIROIR_BASES = ['/models/', 'https://app.zigmoon.com/models/'];
+  function wllmAppConfig(mid, base) {
+    if (!mid || !base) return null;
+    return { model_list: [{ model: base + mid + '/mlc-chat-config.json', model_id: mid }] };
   }
 
   /* ═══ 🆕 v1.7.580g — AI HORDE (gratuit, sans clé) ═══
@@ -10887,14 +10894,21 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
           if (loader && loader.barEl) loader.barEl.style.width = Math.max(2, Math.min(100, pct)) + '%';
         }
       ;
-      const _cfgMiroir = wllmAppConfig(modelId);
-      const _ouvrir = function (cfg) {
-        return window.CreateMLCEngine(modelId, Object.assign({ initProgressCallback: _progress }, cfg ? { appConfig: cfg } : {}));
+      const _essaisMiroir = WLLM_MIROIR_BASES.slice();
+      const _ouvrirCfg = function (cfg, url) {
+        return window.CreateMLCEngine(modelId, Object.assign({ initProgressCallback: _progress }, cfg ? { appConfig: cfg } : {})).catch(function (e) {
+          try { if (window.console && console.warn) console.warn('[SP213] WebLLM — poids indisponibles (' + (url || 'Hugging Face') + ') : ' + ((e && e.message) || e)); } catch (_) {}
+          throw e;
+        });
       };
-      (_cfgMiroir ? _ouvrir(_cfgMiroir).catch(function (e) {
-        try { if (window.console && console.warn) console.warn('[SP213] WebLLM — poids locaux indisponibles, repli sur Hugging Face : ' + ((e && e.message) || e)); } catch (_) {}
-        return _ouvrir(null);
-      }) : _ouvrir(null)).then(function(engine) {
+      /* v1.7.579 — essais en cascade : /models/ (même domaine), puis
+         app.zigmoon.com, puis Hugging Face. Le dernier échec est celui qui remonte. */
+      const _suivant = function () {
+        if (!_essaisMiroir.length) return _ouvrirCfg(null, null);
+        const base = _essaisMiroir.shift();
+        return _ouvrirCfg(wllmAppConfig(modelId, base), base + modelId + '/mlc-chat-config.json').catch(_suivant);
+      };
+      _suivant().then(function(engine) {
         state.webllm = engine;
         state.webllmLoading = false;
         if (engine) engine._sp213ModelId = modelId; // mémoriser le modèle chargé
