@@ -10785,6 +10785,9 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     if (state.webllm) return Promise.resolve(state.webllm);
     if (state.webllmPromise) return state.webllmPromise;
     state.webllmLoading = true;
+    /* v1.7.579 — journal des sources essayées, pour le message d'erreur (plus bas).
+       Sans lui, « Failed to fetch » ne disait pas QUELLE source avait échoué. */
+    const _essais = [];
     state.webllmPromise = checkWebGPU().then(function() {
       if (window.CreateMLCEngine) return initWebLLM();
       /* 🆕 v1.7.483 — LOCAL D'ABORD. Le paquet installé par `npx superprint` contient
@@ -10798,12 +10801,28 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
          fetch) »). L'import « nu » échoue forcément hors bundler, et esm.run était
          injoignable : le moteur local était perdu. jsDelivr passe en premier relais,
          puis esm.run, puis unpkg. La première source qui répond gagne. */
-      return import('@mlc-ai/web-llm').catch(function () {
-        return import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/+esm');
+      /* v1.7.579 — LA COPIE LOCALE D'ABORD : le studio livre désormais la
+         bibliothèque avec lui (app/JS/web-llm.esm.js, l'entrée ESM officielle du
+         paquet @mlc-ai/web-llm, autonome — 6,3 Mo). L'atelier local ne dépend donc
+         plus d'un CDN : c'est ce qui échouait en « Failed to fetch » sur un réseau
+         qui bloque jsDelivr, esm.run et unpkg. Les CDN restent en secours, et
+         chaque échec est NOMMÉ (console + message final). */
+      const _tenter = function (etiquette, url) {
+        return import(url).catch(function (e) {
+          const msg = (e && e.message) ? e.message : String(e);
+          _essais.push(etiquette + ' (' + msg + ')');
+          try { if (window.console && console.warn) console.warn('[SP213] WebLLM — ' + etiquette + ' injoignable : ' + msg); } catch (_) {}
+          throw e;
+        });
+      };
+      return _tenter('copie locale du studio', './app/JS/web-llm.esm.js').catch(function () {
+        return _tenter('paquet npm', '@mlc-ai/web-llm');
       }).catch(function () {
-        return import('https://esm.run/@mlc-ai/web-llm');
+        return _tenter('jsDelivr', 'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/+esm');
       }).catch(function () {
-        return import('https://unpkg.com/@mlc-ai/web-llm/+esm');
+        return _tenter('esm.run', 'https://esm.run/@mlc-ai/web-llm');
+      }).catch(function () {
+        return _tenter('unpkg', 'https://unpkg.com/@mlc-ai/web-llm/+esm');
       }).then(function(mod) {
         if (!mod || !mod.CreateMLCEngine) throw new Error('module WebLLM incomplet');
         window.CreateMLCEngine = mod.CreateMLCEngine;
@@ -10814,7 +10833,7 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
       if (/WebGPU|GPU/.test(message)) throw e;
       /* 🆕 v1.7.580mm — ON DIT LA CAUSE et quoi faire : « Failed to fetch » venait
          d'une bibliothèque injoignable, pas d'un modèle en panne. */
-      throw new Error('impossible de charger le moteur local (' + message + '). La bibliothèque WebLLM doit être téléchargeable depuis le navigateur : vérifiez la connexion Internet (ou un bloqueur de publicité / pare-feu d’entreprise), rechargez la page, puis réessayez. Sinon choisissez un moteur cloud : DeepSeek, OpenAI, Anthropic, OpenRouter ou Groq.');
+      throw new Error('impossible de charger le moteur local (' + message + '). Sources essayées — ' + (_essais.length ? _essais.join(' · ') : 'aucune') + '. Le studio livre pourtant sa propre copie de la bibliothèque (app/JS/web-llm.esm.js) : si elle échoue aussi, ce fichier manque ou n’est pas accessible. Sinon choisissez un moteur cloud : DeepSeek, OpenAI, Anthropic, OpenRouter ou Groq.');
     }).finally(function() {
       state.webllmLoading = false;
       state.webllmPromise = null;
