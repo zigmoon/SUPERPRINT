@@ -2102,7 +2102,17 @@
      refuse la lecture, d'où « Failed to fetch » alors que le fichier répond 200.
      On cherche donc d'abord À CÔTÉ DE L'APPLICATION (/models/), puis seulement sur
      app.zigmoon.com, puis sur Hugging Face. */
-  const WLLM_MIROIR_BASES = ['/models/', 'https://app.zigmoon.com/models/'];
+  /* ⚠️ v1.7.579 — UNE BASE DOIT ÊTRE ABSOLUE.
+     « /models/ » seul faisait échouer WebLLM en « Failed to construct 'URL':
+     Invalid URL » (vu dans le journal de l'utilisateur) : il fabrique ses adresses
+     avec new URL(...) SANS base, et un chemin relatif n'est pas une URL valide.
+     On résout donc la base relative contre l'adresse de la page. */
+  function wllmBases() {
+    const out = [];
+    try { out.push(new URL('/models/', window.location.href).href); } catch (_) {}
+    out.push('https://app.zigmoon.com/models/');
+    return out;
+  }
   function wllmAppConfig(mid, base) {
     if (!mid || !base) return null;
     /* ⚠️ v1.7.579 — LE model_lib EST OBLIGATOIRE ICI.
@@ -8760,7 +8770,7 @@ function spRtfLayoutInfo(src) {
   }
   function spJournalPeindre() {
     if (!_jlListe) return;
-    const couleurs = { err: '#e5484d', warn: '#e5a13d', ok: 'var(--muted)', info: 'var(--text)' };
+    const couleurs = { err: '#ff7b72', warn: '#ffa657', ok: '#a9aeb8', info: '#e8e8ea' };
     let html = '';
     SP_JOURNAL.slice(-200).forEach(function (l) {
       html += '<div style="display:flex;gap:8px;padding:2px 0"><span style="color:var(--muted);flex:0 0 auto">' + l.h + '</span><span style="color:' + (couleurs[l.type] || 'var(--text)') + ';word-break:break-word">' + _jlEsc(l.texte) + '</span></div>';
@@ -8770,11 +8780,15 @@ function spRtfLayoutInfo(src) {
   }
   function spJournalOuvrir() {
     if (_jlPanneau) { _jlPanneau.style.display = 'flex'; spJournalPeindre(); return; }
+    /* v1.7.579 — PANNEAU CENTRÉ ET SOMBRE (demande utilisateur : « au centre de
+       l'écran, évite le jaune, noir ce serait top »). Fond presque noir, texte
+       gris clair, erreurs en rouge doux, avertissements en orange lisible — plus
+       aucun jaune sur fond clair. */
     const p = document.createElement('div');
-    p.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483000;width:min(560px,92vw);max-height:52vh;display:flex;flex-direction:column;background:var(--panel,#fff);color:var(--text,#111);border:1px solid var(--line,#ddd);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.28);font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+    p.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2147483000;width:min(760px,92vw);max-height:72vh;display:flex;flex-direction:column;background:#111214;color:#e8e8ea;border:1px solid #2b2e33;border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.55);font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
     const tete = document.createElement('div');
-    tete.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line,#ddd)';
-    tete.innerHTML = '<strong style="font-size:12px">Journal de fabrication</strong><span style="color:var(--muted);flex:1">ce que fait le studio, en direct</span>';
+    tete.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #2b2e33';
+    tete.innerHTML = '<strong style="font-size:13px;color:#fff">Journal de fabrication</strong><span style="color:#a9aeb8;flex:1">ce que fait le studio, en direct</span>';
     const bCopie = document.createElement('button');
     bCopie.type = 'button'; bCopie.textContent = 'Copier';
     bCopie.style.cssText = 'cursor:pointer;border:1px solid var(--line,#ddd);background:transparent;color:inherit;border-radius:6px;padding:2px 8px';
@@ -9470,6 +9484,19 @@ function spRtfLayoutInfo(src) {
 
     state.busy = true;
     $('sendBtn').disabled = true;
+    /* ⚠️ v1.7.579 — LE MODÈLE D'ABORD, LA MAQUETTE ENSUITE (demande utilisateur).
+       La boîte « SP213 construit votre maquette » tournait pendant que le modèle
+       local se chargeait encore : on croyait que la maquette se construisait alors
+       que rien n'était prêt, et elle « chargeait » indéfiniment. On attend
+       maintenant le moteur local : c'est LUI qui s'affiche, avec sa barre de
+       progression. La boîte de maquette n'apparaît qu'une fois le modèle prêt, et
+       c'est à cet instant précis que la construction commence. */
+    try {
+      if ((state.engine === 'webllm' || state.engine === 'webllm-native') && !state.webllm) {
+        appendChat('assistant', 'Chargement du modèle local avant de construire la maquette…');
+        await ensureWebLLM();
+      }
+    } catch (_) { /* l'erreur est déjà détaillée par ensureWebLLM (journal + message) */ }
     const typingEl = appendTyping();
 
     // 🆕 Loader typo : si l'utilisateur demande une police précise dans son prompt,
@@ -11012,7 +11039,7 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
           if (loader && loader.barEl) loader.barEl.style.width = Math.max(2, Math.min(100, pct)) + '%';
         }
       ;
-      const _essaisMiroir = WLLM_MIROIR_BASES.slice();
+      const _essaisMiroir = wllmBases();
       const _ouvrirCfg = function (cfg, url) {
         return window.CreateMLCEngine(modelId, Object.assign({ initProgressCallback: _progress }, cfg ? { appConfig: cfg } : {})).catch(function (e) {
           try { if (window.console && console.warn) console.warn('[SP213] WebLLM — poids indisponibles (' + (url || 'Hugging Face') + ') : ' + ((e && e.message) || e)); } catch (_) {}
