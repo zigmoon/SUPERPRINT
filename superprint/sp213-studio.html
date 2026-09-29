@@ -8462,7 +8462,7 @@ function spRtfLayoutInfo(src) {
      contacts. MÊME grille, mêmes marges et même typographie sur toutes les pages. */
   function spGabP_cahier(L, n, tot) {
     const e = [], p = L.pal, M = L.t, g = L.g, k = L.k;
-    const secs = M.sections.length ? M.sections : [{ t: M.titre, ps: M.lignes.length ? M.lignes : [M.chapeau] }];
+    const secs = (L.chainees && L.chainees.length) ? L.chainees : (M.sections.length ? M.sections : [{ t: M.titre, ps: M.lignes.length ? M.lignes : [M.chapeau] }]);
     const texte = function (i) { const s = secs[Math.min(i, secs.length - 1)]; return s ? (s.ps.length ? s.ps.join('\n\n') : M.chapeau) : (M.chapeau || ''); };
     // ── couverture : le titre et un grand visuel, rien d'autre
     if (n === 1) {
@@ -8506,8 +8506,8 @@ function spRtfLayoutInfo(src) {
     // ── pages de contenu : deux colonnes, encadrés, photo légendée
     const gw = g.gutter * SP_GAB_K;
     const cw = (L.cw - gw) / 2;
-    const parPage = Math.max(1, Math.ceil((secs.length - 1) / Math.max(1, tot - 3)));
-    const base = 1 + (n - 3) * parPage;
+    const parPage = L.chainees ? 2 : Math.max(1, Math.ceil((secs.length - 1) / Math.max(1, tot - 3)));
+    const base = L.chainees ? ((n - 3) * 2) : (1 + (n - 3) * parPage);
     [0, 1].forEach(function (col) {
       const s = secs[Math.min(base + col, secs.length - 1)];
       if (!s) return;
@@ -8808,6 +8808,53 @@ function spRtfLayoutInfo(src) {
   }
   let SP_GAB_DERNIER_PAL = null;
 
+  /* ══ CHAÎNAGE DES BLOCS IMPORTÉS (Word, OpenDocument, texte brut) ═════════════
+     Défaut mesuré : le cahier posait « deux sections par page », point. Une section
+     longue débordait de sa colonne, une courte laissait un grand vide. On découpe
+     maintenant le document en CHUNKS D'UNE COLONNE : on avance dans les blocs (titres
+     et paragraphes), on coupe un paragraphe trop long à une phrase, et on ouvre une
+     nouvelle colonne dès que la précédente est pleine. Le nombre de pages vient de ce
+     chaînage : le texte du client est lu dans l'ordre, rien n'est perdu, rien ne
+     déborde. */
+  function spGabChainerSections(L, g) {
+    const secs = L.t.sections.length ? L.t.sections : [{ t: L.t.titre, ps: L.t.lignes.length ? L.t.lignes : [L.t.chapeau] }];
+    const gw = g.gutter * SP_GAB_K;
+    const cw = (L.cw - gw) / 2;
+    /* On remplit une colonne jusqu'à ~74 % de sa hauteur seulement : mesuré, un
+       remplissage maximal faisait ensuite déplacer 34 blocs par les passes du studio
+       (le studio réajuste les textes aux marges et déplace ce qui déborde). */
+    const dispo = Math.max(60, (L.ch - L.k * 46) * 0.74);
+    const out = [];
+    let courant = null, used = 0;
+    const ouvrir = function (titre) { courant = { t: titre || '', ps: [] }; out.push(courant); used = 0; };
+    const hP = function (txt) { return spGabH(txt, g.corps, cw * 0.98, 1.5) + L.k * 12; };
+    secs.forEach(function (s) {
+      ouvrir(s.t);
+      (s.ps.length ? s.ps : [L.t.chapeau]).forEach(function (p) {
+        let reste = String(p || '').trim();
+        while (reste) {
+          const h = hP(reste);
+          if (used + h > dispo && used > 0) ouvrir('');
+          if (h <= dispo) { courant.ps.push(reste); used += h; reste = ''; break; }
+          /* paragraphe plus grand qu'une colonne : on le coupe à une PHRASE */
+          const ph = reste.split(/(?<=[.!?])\s+/);
+          let bloc = '';
+          for (let i = 0; i < ph.length; i++) {
+            const essai = bloc ? bloc + ' ' + ph[i] : ph[i];
+            if (bloc && hP(essai) > dispo) break;
+            bloc = essai;
+          }
+          if (!bloc) bloc = reste;
+          courant.ps.push(bloc);
+          used += hP(bloc);
+          reste = reste.slice(bloc.length).trim();
+          if (reste) ouvrir('');
+        }
+      });
+    });
+    return out.length ? out : [{ t: L.t.titre, ps: [L.t.chapeau || ''] }];
+  }
+
   /* ══ LUMINOSITÉ ET GARDE-FOU DE CONTRASTE (notre moteur, mode automatique) ══════
      Règles données par l'utilisateur : INTERDIT un gris clair sous une typographie
      sur fond blanc, et INTERDIT un fond sombre sous une typographie sombre. On mesure
@@ -8832,16 +8879,30 @@ function spRtfLayoutInfo(src) {
       els.forEach(function (e) {
         if (e.type !== 'text' || !e.fill) return;
         const l = Number(e.left) || 0, t = Number(e.top) || 0;
-        let fond = fondPage;
+        /* Panneau réellement DERRIÈRE le texte : celui qui le recouvre le plus, en
+           ignorant le fond de page (sinon il gagnerait toujours). */
+        let fond = fondPage, aire = 0;
+        const wT = Number(e.width) || 0;
         aplats.forEach(function (a) {
           const al = Number(a.left) || 0, at = Number(a.top) || 0, aw = Number(a.width) || 0, ah = Number(a.height) || 0;
-          if (l >= al - 0.6 && l <= al + aw + 0.6 && t >= at - 0.6 && t <= at + ah + 0.6) fond = a.fill;
+          const f = String(a.fill || '');
+          if (f === '#ffffff' || f === String(fondPage)) return;
+          const x1 = Math.max(l, al), y1 = Math.max(t, at);
+          const x2 = Math.min(l + wT, al + aw), y2 = Math.min(t + 14, at + ah);
+          const s = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+          if (s > aire) { aire = s; fond = a.fill; }
         });
         const lumF = spGabLum(fond), lumT = spGabLum(e.fill);
-        if (Math.abs(lumF - lumT) < 0.35) {
-          e.fill = (lumF > 0.5) ? fonce : clair;
-          corriges++;
-        }
+        /* ══ RÈGLE ABSOLUE DU FOND NOIR (demande utilisateur) ══ Sur un fond sombre ou
+           noir la typographie est CLAIRE, sans exception — et ce contrôle ne dépend
+           PAS du panneau trouvé derrière : le studio peut déplacer un bloc après la
+           composition (mesuré : 5 textes #101014 restés sur le fond #0e0e10). */
+        if (L.pal && L.pal.noir && lumT < 0.62) { e.fill = clair; corriges++; return; }
+        /* Sur un fond clair, la typographie est sombre. Plus strict qu'un simple écart
+           de luminosité : aucun cas sombre sur sombre ne passe. */
+        const veuxClair = lumF < 0.45;
+        const ok = veuxClair ? (lumT >= 0.62) : (lumT <= 0.45);
+        if (!ok) { e.fill = veuxClair ? clair : fonce; corriges++; }
       });
     });
     return corriges;
@@ -8975,6 +9036,12 @@ function spRtfLayoutInfo(src) {
        sections — mesuré, les dernières sections étaient purement perdues.) */
     if (!veut && (g.fam === 'cahier' || g.fam === 'brochure') && texte.sections.length > 2) tot = Math.min(32, Math.max(tot, 3 + Math.ceil(texte.sections.length / 2)));
     const spread = (state.viewMode === 'spread');
+    /* CHAÎNAGE des blocs du cahier (documents Word, OpenDocument, texte) : on le
+       calcule AVANT de fixer le nombre de pages, puisque c'est lui qui le détermine. */
+    if (g.fam === 'cahier') {
+      L.chainees = spGabChainerSections(L, g);
+      if (!veut) tot = Math.max(tot, 2 + Math.ceil(L.chainees.length / 2) + 1);
+    }
     /* ══ IMPOSITION DU LIVRE : C'EST LE STUDIO QUI LA FAIT, PAS MOI ══
        spCahierPlanches(n) est la source unique de l'imposition (notes vérifiées) :
        LA PAGE 1 SEULE À DROITE, puis les paires gauche/droite, et LA DERNIÈRE PAGE
