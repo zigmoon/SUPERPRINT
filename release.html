@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.581 — Studio IA: the settings panel now speaks French, English and Japanese and follows language changes live, its scrollbar matches the preview, the Variation button is gone, model lists no longer say “no key” (FREE is enough), our engine is renamed SP213 rock 1.0 and Mistral is removed — plus updates to PDF-YZ, Bird and SuperTyPo.">
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.582 — Studio IA on the phone: the start screen now breathes like a modern assistant (title at the top, prompt box anchored at the bottom, suggestions on one sliding line), the keyboard no longer pushes anything up — plus updates to PDF-YZ, Bird and SuperTyPo.">
 <meta name="keywords" content="SUPER PRINT 1.7.492, SuperPrint, browser DTP editor, home page, blocks, alignment, margins, rhythm">
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="SuperPrint v1.7.581 — Studio IA: the settings panel translated in three languages, a scrollbar identical to the preview, no more “no key” badges (FREE is enough), our engine renamed SP213 rock 1.0, and Mistral removed from the studio.">
+<meta property="og:description" content="SuperPrint v1.7.582 — Studio IA on the phone: title at the top, prompt box and suggestions anchored at the bottom where your thumb lands, a single sliding line of suggestions, and a layout that does not move when the keyboard opens.">
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SuperPrint v1.7.581 — Studio IA: settings panel in French, English and Japanese, preview-grade scrollbar, compact model lists (FREE only), engine renamed SP213 rock 1.0, Mistral removed.">
+<meta name="twitter:description" content="SuperPrint v1.7.582 — Studio IA on the phone: the start screen breathes (title on top, prompt box at the bottom), suggestions on one line, nothing shifts when the keyboard opens.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -704,6 +704,36 @@ footer, footer a { color: var(--after-text-color); }
 
 <main>
 <section class="releases" aria-label="Release notes">
+
+<!-- ===== SUPER PRINT v1.7.582 — Studio IA, pre-home mobile : titre en haut, boite de prompt ancree en bas (modele DeepSeek), suggestions sur une seule ligne glissante ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-582">
+ <h2>SUPER PRINT <span>v1.7.582</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 30 septembre 2026" data-i18n-en="Released September 30, 2026" data-i18n-jp="2026年9月30日公開">Released September 30, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Sur <strong>téléphone</strong>, l'écran de démarrage du <strong>Studio IA</strong> ne se tasse plus en haut de l'écran : il reprend la disposition des assistants modernes — le <strong>titre respire en haut</strong>, la <strong>boîte de prompt et ses suggestions sont ancrées en bas</strong>, là où le pouce arrive, et la respiration reste au milieu. Le clavier ne déplace plus rien." data-i18n-en-html="On a <strong>phone</strong>, the <strong>Studio IA</strong> start screen no longer bunches up at the top: it now follows the layout of modern assistants — the <strong>title breathes at the top</strong>, the <strong>prompt box and its suggestions are anchored at the bottom</strong>, where your thumb lands, and the breathing space stays in the middle. The keyboard no longer moves anything." data-i18n-jp-html="<strong>スマートフォン</strong>で、<strong>Studio IA</strong> のスタート画面が画面上部に詰まらなくなりました。現代的なアシスタントの配置（<strong>タイトルは上部</strong>、<strong>プロンプト欄と候補は親指の届く下部に固定</strong>、余白は中央）を採用しています。キーボードを開いてもレイアウトは動きません。">On a <strong>phone</strong>, the <strong>Studio IA</strong> start screen no longer bunches up at the top: it now follows the layout of modern assistants — the <strong>title breathes at the top</strong>, the <strong>prompt box and its suggestions are anchored at the bottom</strong>, where your thumb lands, and the breathing space stays in the middle. The keyboard no longer moves anything.</p>
+
+ <h3 data-i18n-fr-html="📱 Ce qui n'allait pas (mesuré)" data-i18n-en-html="📱 What was wrong (measured)" data-i18n-jp-html="📱 何が問題だったか（実測）">📱 What was wrong (measured)</h3>
+ <ul>
+  <li data-i18n-fr-html="Sous 720 px de large, l'écran de démarrage passait en <strong>« collé en haut »</strong> avec 60 px de marge : sur un téléphone de 390 × 844, le logo se trouvait à 60 px, la boîte à 148, les suggestions à 317 et le pied à 388 — laissant <strong>418 px de vide en dessous</strong>. D'où l'impression que tout remontait « pour laisser place au clavier »." data-i18n-en-html="Below 720 px wide, the start screen switched to <strong>“stuck to the top”</strong> with 60 px of padding: on a 390 × 844 phone the logo sat at 60 px, the box at 148, the suggestions at 317 and the footer at 388 — leaving <strong>418 px of emptiness below</strong>. That is what made everything look like it was rising “to leave room for the keyboard”." data-i18n-jp-html="幅720px以下では、スタート画面が<strong>「上寄せ」</strong>（余白60px）に切り替わっていました。390×844の端末では、ロゴ60px・入力欄148px・候補317px・フッター388pxで、<strong>下に418pxの空白</strong>が残っていました。これが「キーボードの場所を空けるために上へ寄っている」ように見えた原因です。">Below 720 px wide, the start screen switched to <strong>“stuck to the top”</strong> with 60 px of padding: on a 390 × 844 phone the logo sat at 60 px, the box at 148, the suggestions at 317 and the footer at 388 — leaving <strong>418 px of emptiness below</strong>. That is what made everything look like it was rising “to leave room for the keyboard”.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="✅ Ce qui change" data-i18n-en-html="✅ What changes" data-i18n-jp-html="✅ 変わったこと">✅ What changes</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Titre en haut</strong> (18 → 117 px) qui respire, <strong>vide au milieu</strong> (478 px), puis la <strong>boîte de prompt</strong> (595 → 738), les <strong>suggestions</strong> (756 → 786) et le <strong>pied de page</strong> (798 → 830) ancrés en bas : la marge basse passe à 14 px, plus rien ne flotte." data-i18n-en-html="The <strong>title stays at the top</strong> (18 → 117 px) and breathes, a <strong>wide gap in the middle</strong> (478 px), then the <strong>prompt box</strong> (595 → 738), the <strong>suggestions</strong> (756 → 786) and the <strong>footer</strong> (798 → 830) anchored at the bottom: the bottom margin is now 14 px, nothing floats any more." data-i18n-jp-html="<strong>タイトルは上部</strong>（18→117px）、<strong>中央は余白</strong>（478px）、そして<strong>入力欄</strong>（595→738）・<strong>候補</strong>（756→786）・<strong>フッター</strong>（798→830）を下部に固定。下端の余白は14pxになり、宙に浮いた要素はありません。">The <strong>title stays at the top</strong> (18 → 117 px) and breathes, a <strong>wide gap in the middle</strong> (478 px), then the <strong>prompt box</strong> (595 → 738), the <strong>suggestions</strong> (756 → 786) and the <strong>footer</strong> (798 → 830) anchored at the bottom: the bottom margin is now 14 px, nothing floats any more.</li>
+  <li data-i18n-fr-html="Les <strong>suggestions tiennent sur une seule ligne</strong> qui glisse au doigt (au lieu de trois lignes qui mangeaient la hauteur) ; la boîte se limite à <strong>30 % de la hauteur</strong> d'écran ; les zones sûres de l'iPhone (encoche et barre du bas) sont respectées." data-i18n-en-html="The <strong>suggestions fit on a single line</strong> that slides under your finger (instead of three lines eating the height); the box is capped at <strong>30 % of the screen height</strong>; iPhone safe areas (notch and home bar) are respected." data-i18n-jp-html="<strong>候補は1行</strong>で、指で横にスクロールできます（従来は3行で高さを壓迫していました）。入力欄は<strong>画面高の30%</strong>まで。iPhoneのセーフエリア（ノッチ・ホームバー）にも対応しています。">The <strong>suggestions fit on a single line</strong> that slides under your finger (instead of three lines eating the height); the box is capped at <strong>30 % of the screen height</strong>; iPhone safe areas (notch and home bar) are respected.</li>
+  <li data-i18n-fr-html="<strong>Clavier ouvert</strong> (écran réduit à 390 × 430), tout reste visible — boîte, suggestions et pied — sans défilement. Sur un téléphone <strong>couché</strong> comme sur <strong>ordinateur</strong>, la disposition centrée d'origine est conservée." data-i18n-en-html="With the <strong>keyboard open</strong> (screen reduced to 390 × 430) everything stays visible — box, suggestions and footer — with no scrolling. On a phone held <strong>sideways</strong>, as on a <strong>computer</strong>, the original centred layout is kept." data-i18n-jp-html="<strong>キーボードを開いた状態</strong>（390×430）でも、入力欄・候補・フッターがスクロールなしで見えます。<strong>横向き</strong>のスマートフォンと<strong>パソコン</strong>では、従来の中央寄せレイアウトのままです。">With the <strong>keyboard open</strong> (screen reduced to 390 × 430) everything stays visible — box, suggestions and footer — with no scrolling. On a phone held <strong>sideways</strong>, as on a <strong>computer</strong>, the original centred layout is kept.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="ℹ️ Périmètre" data-i18n-en-html="ℹ️ Scope" data-i18n-jp-html="ℹ️ 対象範囲">ℹ️ Scope</h3>
+ <ul>
+  <li data-i18n-fr-html="<strong>Studio IA</strong> uniquement (sp213-studio.html), et seulement sous 720 px de large : mise en page de l'écran de démarrage sur téléphone. Aucun changement sur l'application SuperPrint, sur le rendu PDF, sur l'import ou l'export de documents. Le paquet npm local (<strong>sp213-local.zip</strong>) est reconstruit à cette version." data-i18n-en-html="<strong>Studio IA</strong> only (sp213-studio.html), and only below 720 px wide: the phone layout of the start screen. No change to the SuperPrint application, to PDF rendering, or to document import and export. The local npm package (<strong>sp213-local.zip</strong>) is rebuilt at this version." data-i18n-jp-html="対象は<strong>Studio IA</strong>（sp213-studio.html）の幅720px以下、スタート画面のスマートフォン向け配置のみ。SuperPrint 本体、PDF 出力、文書の入出力に変更はありません。ローカル npm パッケージ（<strong>sp213-local.zip</strong>）はこのバージョンで再構築しました。"><strong>Studio IA</strong> only (sp213-studio.html), and only below 720 px wide: the phone layout of the start screen. No change to the SuperPrint application, to PDF rendering, or to document import and export. The local npm package (<strong>sp213-local.zip</strong>) is rebuilt at this version.</li>
+ </ul>
+
+</article>
+
 
 <!-- ===== SUPER PRINT v1.7.581 — Studio IA : panneau Reglages traduit fr/en/jp, bouton Variation retire, meme ascenseur que la preview, listes de modeles sans "pas de cle" (FREE suffit), notre moteur renomme SP213 rock 1.0 et Mistral retire ===== -->
 
