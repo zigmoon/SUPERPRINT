@@ -1729,11 +1729,11 @@
       <div id="previewScroll">
         <div id="pagesStack"></div>
       </div>
-      <!-- 🔘 Ouvrir dans SuperPrint — bas au centre de la preview -->
+      <!-- 🔘 ÉDITER avec SuperPrint — bas au centre de la preview -->
       <div id="previewFooter">
         <button id="viewInSpBtn" class="btn-open-sp ghost">
           <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          Ouvrir dans SuperPrint
+          ÉDITER avec SuperPrint
         </button>
       </div>
     </div>
@@ -2414,7 +2414,7 @@
       'preview.zoomOut': 'Zoom -',
       'preview.zoomIn': 'Zoom +',
       'preview.gridBtnTitle': 'Grid (G)',
-      'preview.openSp': 'Open in SuperPrint',
+      'preview.openSp': 'EDIT with SuperPrint',
       'preview.resize': 'Resize (drag)',
       'info.langue': 'Info - language',
       'info.execution': 'Info - execution',
@@ -2555,7 +2555,7 @@
       'preview.zoomOut': 'Zoom -',
       'preview.zoomIn': 'Zoom +',
       'preview.gridBtnTitle': 'Grille (G)',
-      'preview.openSp': 'Ouvrir dans SuperPrint',
+      'preview.openSp': 'ÉDITER avec SuperPrint',
       'preview.resize': 'Redimensionner (glisser)',
       'info.langue': 'Info langue',
       'info.execution': 'Info exécution',
@@ -2696,7 +2696,7 @@
       'preview.zoomOut': 'ズーム -',
       'preview.zoomIn': 'ズーム +',
       'preview.gridBtnTitle': 'グリッド（G）',
-      'preview.openSp': 'SuperPrintで開く',
+      'preview.openSp': 'SuperPrint で編集',
       'preview.resize': 'リサイズ（ドラッグ）',
       'info.langue': '情報 - 言語',
       'info.execution': '情報 - 実行',
@@ -15212,6 +15212,57 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       delBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
       delBtn.addEventListener('click', () => deletePage(p.pageIndex));
       card.appendChild(delBtn);
+
+      /* 🔒 VERROU DE PAGE (demande utilisateur) : en haut à droite de chaque page, sous
+         la bulle d'outils. Les pages composées arrivent VERROUILLÉES — on ne peut pas
+         les modifier par mégarde — et un clic sur la page (ou sur le cadenas) la
+         déverrouille. Verrouillée : aucun objet sélectionnable sur ce canvas. */
+      if (!window.spVerrouillerPage) {
+        const SVG_FERME = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+        const SVG_OUVERT = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 7-1"/></svg>';
+        window.spVerrouillerPage = function (pg, verrou) {
+          if (!pg) return verrou;
+          pg.locked = !!verrou;
+          const c = pg.canvas;
+          if (c) {
+            try {
+              c.selection = !verrou;
+              c.forEachObject(function (o) {
+                if (o._spSel === undefined) { o._spSel = o.selectable !== false; o._spEv = o.evented !== false; }
+                o.selectable = verrou ? false : o._spSel;
+                o.evented = verrou ? false : o._spEv;
+                o.hoverCursor = verrou ? 'default' : 'move';
+              });
+              if (verrou) c.discardActiveObject();
+              c.requestRenderAll();
+            } catch (_) {}
+          }
+          const b = document.querySelector('[data-lock="' + (pg.pageIndex) + '"]');
+          if (b) {
+            b.classList.toggle('sp-lock-ferme', !!verrou);
+            b.title = verrou ? 'Page verrouillée — cliquez pour déverrouiller' : 'Page déverrouillée — cliquez pour verrouiller';
+            b.innerHTML = verrou ? SVG_FERME : SVG_OUVERT;
+          }
+          return verrou;
+        };
+      }
+      const lockBtn = document.createElement('button');
+      lockBtn.className = 'sp-page-del';
+      lockBtn.setAttribute('data-lock', p.pageIndex);
+      lockBtn.style.right = '38px';
+      lockBtn.title = 'Page verrouillée — cliquez pour déverrouiller';
+      lockBtn.setAttribute('aria-label', 'Verrou de page');
+      lockBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+      lockBtn.addEventListener('click', function (e) { e.stopPropagation(); window.spVerrouillerPage(p, !p.locked); });
+      card.appendChild(lockBtn);
+      /* DÉVERROUILLAGE AU CLIC SUR LA PAGE (mais pas sur le cadenas ni la corbeille). */
+      card.addEventListener('click', function (e) {
+        if (e.target && e.target.closest && e.target.closest('[data-lock], .sp-page-del')) return;
+        if (p.locked) window.spVerrouillerPage(p, false);
+      }, true);
+      /* VERROUILLÉ PAR DÉFAUT : appliqué dès que les objets de la page sont posés. */
+      if (p.locked === undefined) p.locked = true;
+      setTimeout(function () { window.spVerrouillerPage(p, p.locked !== false); }, 90);
 
       const wrap = document.createElement('div');
       wrap.className = 'page-canvas-wrap';
