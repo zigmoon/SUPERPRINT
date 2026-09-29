@@ -3958,10 +3958,14 @@
            flash : l'anti-flash pose en tete de page masque deja toute l'interface,
            on ne voit donc RIEN avant elle. */
         setTimeout(function () { try { spStarterOuvrir(); } catch (_) {} }, 120);
-      } else {
-        /* studio ouvert directement : on leve l'anti-flash tout de suite. */
-        try { document.documentElement.classList.remove('sp-avant-prehome'); } catch (e3) {}
       }
+      /* v1.7.579 — L'ANTI-FLASH N'EST PLUS LEVÉ ICI. Depuis que la pré-home est
+         l'écran d'arrivée par défaut, le lever à cet endroit découvrait toute
+         l'interface pendant les quelques centaines de millisecondes qui précèdent
+         son ouverture : c'est le flash que l'utilisateur voit. C'est le bloc
+         d'arrivée, juste en dessous, qui décide : il ouvre la pré-home (laquelle
+         lève l'anti-flash en s'affichant) ou le lève tout de suite si elle a déjà
+         été vue dans cet onglet. */
     } catch (_) {}
     /* ═══ v1.7.579 — LA PRÉ-HOME EST L'ÉCRAN D'ARRIVÉE (demande utilisateur) ═══
        Avant, ouvrir le studio allait directement dans l'interface dès qu'une
