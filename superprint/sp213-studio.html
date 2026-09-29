@@ -3467,6 +3467,9 @@
       if (!el) return;
       const court = (libelle) => String(libelle || '').split(' — ')[0] || libelle;
       const eng = state.engine;
+      /* v1.7.580 — les pastilles du studio suivent le moteur choisi (notre moteur de
+         gabarit affiche ses propres exemples, avec format et nombre de pages). */
+      try { buildQuickChips(); } catch (_) {}
       /* 🆕 v1.7.580 — MOTEUR DE GABARIT : il composait sans nommer le moteur affiché. */
       if (eng === 'gabarit') { el.textContent = 'SP213 gabarit — mise en page locale'; return; }
       if (eng === 'webllm') {
@@ -4334,9 +4337,23 @@
   }
 
   function buildQuickChips() {
-    const chipKeys = ['qc.minimal', 'qc.magazine', 'qc.catalog', 'qc.corporate', 'qc.menu', 'qc.brochure'];
     const wrap = $('quickChips');
+    if (!wrap) return;
     wrap.innerHTML = '';
+    /* v1.7.580 — MOTEUR DE GABARIT : les pastilles deviennent SES exemples. */
+    const exs = (typeof spExemples === 'function') ? spExemples(state.engine) : null;
+    if (exs) {
+      exs.forEach(function (ex) {
+        const b = document.createElement('button');
+        b.className = 'chip';
+        b.textContent = ex[0];
+        b.title = ex[1];
+        b.addEventListener('click', () => { $('promptInput').value = ex[1]; $('promptInput').focus(); });
+        wrap.appendChild(b);
+      });
+      return;
+    }
+    const chipKeys = ['qc.minimal', 'qc.magazine', 'qc.catalog', 'qc.corporate', 'qc.menu', 'qc.brochure'];
     chipKeys.forEach(key => {
       const pair = t(key);
       const label = Array.isArray(pair) ? pair[0] : key;
@@ -7814,6 +7831,60 @@ function spRtfLayoutInfo(src) {
      Les images jointes sont placées dans les zones photo (imageIndex), le studio
      réinjecte la data URI comme pour une réponse d'IA.
      ══════════════════════════════════════════════════════════════════════════ */
+  /* Prompts pré-fabriqués de NOTRE moteur, par langue. Ils remplacent les exemples
+     de la pré-home ET les pastilles du studio quand le moteur de gabarit est choisi
+     (demande utilisateur : « suivant le modèle choisi, les prompts pré-fabriqués
+     changent »). Ils portent tous un format, un nombre de pages ou un objet précis,
+     c'est ce que le moteur sait faire mieux qu'une IA. */
+  const SP_EX_GABARIT = {
+    fr: [
+      ['Cahier 8 pages', "Cahier A4 de 8 pages en double page : la couverture seule porte le titre et un grand visuel, puis un edito court et des pages de contenu en deux colonnes justifiees, encadres, photos legendees, folios en bas."],
+      ['Affiche 40 × 60', "Affiche 40 x 60 cm pour un festival de jazz : titre enorme sur trois lignes, une date, un lieu, un grand visuel, beaucoup d'air."],
+      ['Carte de visite', "Carte de visite 85 x 55 mm : nom en gras, fonction, telephone, courriel, un filet fin de separation, logo discret en haut a droite."],
+      ['Catalogue 4 pages', "Catalogue de 4 pages presentant 8 produits : couverture avec titre et visuel, fiches produit avec image, nom, description et prix, derniere page contact."],
+      ['Menu de restaurant', "Menu de restaurant A4 : entrees, plats et desserts avec prix, titre centre, filets fins, adresse en bas de page."]
+    ],
+    en: [
+      ['8-page booklet', "A4 8-page booklet in spreads: the cover alone carries the title and a large visual, then a short editorial and content pages in two justified columns with boxes and captioned photos, folios at the bottom."],
+      ['40 × 60 poster', "40 x 60 cm poster for a jazz festival: huge three-line title, a date, a venue, a large visual, plenty of white space."],
+      ['Business card', "85 x 55 mm business card: name in bold, job title, phone, email, a thin separator rule, discreet logo top right."],
+      ['4-page catalog', "4-page catalog showing 8 products: cover with title and visual, product cards with image, name, description and price, contact on the last page."],
+      ['Restaurant menu', "A4 restaurant menu: starters, mains and desserts with prices, centred title, thin rules, address at the bottom."]
+    ],
+    jp: [
+      ['8ページ冊子', 'A4 8ページの冊子（見開き）：表紙はタイトルと大きなビジュアルのみ、次に短い巻頭言、本文は2段組み両端揃えで囲みとキャプション付き写真、下部にノンブル。'],
+      ['40×60ポスター', 'ジャズフェスティバルの40×60cmポスター：3行の巨大なタイトル、日付、会場、大きなビジュアル、余白たっぷり。'],
+      ['名刺', '85×55mmの名刺：太字の氏名、役職、電話、メール、細い区切り線、右上に控えめなロゴ。'],
+      ['4ページカタログ', '8商品の4ページカタログ：表紙にタイトルとビジュアル、商品カードに画像・名前・説明・価格、最終ページに連絡先。'],
+      ['レストランメニュー', 'A4レストランメニュー：前菜・メイン・デザートと価格、中央揃えのタイトル、細い罫線、下部に住所。']
+    ]
+  };
+  function spExFam(eng) {
+    if (eng === 'gabarit') return 'gabarit';
+    try {
+      const f = SP_ST_MODELES.filter(function (m) { return m.eng === eng; })[0];
+      if (f && f.usage === 'demo') return 'demo';
+    } catch (_) {}
+    return 'livre';
+  }
+  /* Renvoie les 5 exemples du moteur de gabarit, ou null (on garde alors les
+     exemples historiques, adaptés aux IA). */
+  function spExemples(eng) {
+    if (spExFam(eng) !== 'gabarit') return null;
+    return SP_EX_GABARIT[curLang] || SP_EX_GABARIT.fr;
+  }
+  function spExemplesPeindre() {
+    const eng = (typeof spStEngCourant === 'function') ? spStEngCourant() : state.engine;
+    const exs = spExemples(eng);
+    if (!exs) return false;
+    document.querySelectorAll('#starter .st-ex button').forEach(function (b, i) {
+      if (!exs[i]) return;
+      b.textContent = exs[i][0];
+      b.setAttribute('data-p', exs[i][1]);
+    });
+    return true;
+  }
+
   const SP_GAB_K = 72 / 25.4;                      // mm → px (72 dpi), comme le studio
   const SP_GAB_PAL = {
     chaud:   { a: '#7c2d12', b: '#c2410c', clair: '#fdf4e9', gris: '#e6d9c8', txt: '#1c1917' },
@@ -7840,6 +7911,11 @@ function spRtfLayoutInfo(src) {
     /* Cahier multipage : couverture, édito, pages de contenu à deux colonnes
        justifiées avec encadrés et photos légendées, dernière page contacts. */
     { key: 'qc.cahier',      nom: 'Cahier multipage', fam: 'cahier',     fonts: 'sans',    cols: 2, gutter: 8, mg: [24, 22, 22, 22], titre: 54, chapeau: 14, corps: 9.5, folio: true,  pages: 8, pal: null },
+    { key: 'qc.cv',         nom: 'CV une page',        fam: 'cv',         fonts: 'sans',    cols: 2, gutter: 7, mg: [20, 20, 20, 20], titre: 30, chapeau: 11, corps: 8.5, folio: false, pages: 1, pal: 'neutre' },
+    { key: 'qc.programme',  nom: 'Programme',          fam: 'programme',  fonts: 'sans',    cols: 1, gutter: 0, mg: [22, 22, 20, 22], titre: 40, chapeau: 13, corps: 9.5, folio: true,  pages: 1, pal: 'event' },
+    { key: 'qc.mariage',    nom: 'Menu de mariage',    fam: 'mariage',    fonts: 'serif',   cols: 1, gutter: 0, mg: [26, 30, 24, 30], titre: 42, chapeau: 12, corps: 10,  folio: false, pages: 1, pal: 'luxe' },
+    { key: 'qc.story',      nom: 'Story verticale',    fam: 'story',      fonts: 'display', cols: 1, gutter: 0, mg: [18, 16, 18, 16], titre: 46, chapeau: 13, corps: 10,  folio: false, pages: 1, pal: null },
+    { key: 'qc.bandeau',    nom: 'Bandeau horizontal', fam: 'bandeau',    fonts: 'display', cols: 1, gutter: 0, mg: [14, 18, 14, 18], titre: 40, chapeau: 12, corps: 10,  folio: false, pages: 1, pal: null },
     { key: 'qc.minimal',   nom: 'Affiche manifeste',      fam: 'affiche',    fonts: 'display', cols: 1, gutter: 0, mg: [24, 24, 24, 24], titre: 72, chapeau: 14, corps: 10, folio: false, pages: 1, pal: null },
     { key: 'qc.magazine',  nom: 'Couverture magazine',    fam: 'couverture', fonts: 'serif',   cols: 3, gutter: 7, mg: [22, 22, 22, 22], titre: 54, chapeau: 14, corps: 9.5, folio: false, pages: 1, pal: null },
     { key: 'qc.catalog',   nom: 'Catalogue produits',     fam: 'catalogue',  fonts: 'sans',    cols: 2, gutter: 8, mg: [22, 22, 22, 22], titre: 34, chapeau: 12, corps: 9,   folio: false, pages: 1, pal: null },
@@ -7897,6 +7973,11 @@ function spRtfLayoutInfo(src) {
        sur la carte de restaurant), et plus de « photos » dans le portfolio —
        le mot « photos légendées » envoyait un cahier de 8 pages sur Portfolio. */
     const regles = [
+      ['qc.cv',          /\bcv\b|curriculum|resume|vitae|parcours professionnel/],
+      ['qc.programme',   /programme|planning|horaire|agenda|conducteur|d[ée]roul[ée]/],
+      ['qc.mariage',     /mariage|noces?\b|faire-?part|vin d'honneur|union civile|\bpacs\b/],
+      ['qc.story',       /story|stories|reel|tiktok|9\s*:\s*16|vertical/],
+      ['qc.bandeau',     /bandeau|banni[èe]re|banner|marque-?page|16\s*:\s*9/],
       ['qc.cartevisite', /carte\s+de\s+visite|business\s*card|bristol|85\s*[×x*]\s*55|55\s*[×x*]\s*85/],
       ['qc.cahier',      /cahier|dossier|booklet|livret\s+de|plaquette\s+de|rapport\s+annuel/],
       ['qc.menu',        /menus?\b|carte\b|restaurant|entr[ée]es|plats|desserts|brasserie|bistrot|pizzeria|p[âa]tisserie/],
@@ -8011,6 +8092,30 @@ function spRtfLayoutInfo(src) {
     // Titres venant d'une pièce jointe « modèle » : ils complètent la structure.
     src.titres.forEach(function (t) { if (t.length <= 60 && !M.sections.some(function (s) { return s.t === t; })) M.sections.push({ t: t, ps: [] }); });
     if (M.sections.length && !M.chapeau) M.chapeau = (M.sections[0].ps[0] || '');
+    /* LISTE ÉCRITE DANS UNE PHRASE : « Programme : 18h30 ouverture des portes, 19h
+       concert, 21h tête d'affiche » n'a ni puce ni retour à la ligne. Quand aucune
+       liste n'a été trouvée, on découpe la partie APRÈS le premier deux-points sur
+       les virgules ou points-virgules — programme, menu, mariage et catalogue en
+       vivent (défaut mesuré : le programme ne sortait qu'avec son titre). */
+    if (!M.items.length) {
+      const brut = String(brief || '');
+      const iDeux = brut.indexOf(':');
+      const apres = iDeux >= 0 ? brut.slice(iDeux + 1) : '';
+      const parts = apres.split(/\s*[;,·•]\s+|\s+[–—]\s+/).map(function (x) { return x.trim(); }).filter(function (x) { return x.length > 1; })
+        /* On ÉCARTE les morceaux qui sont des CONSIGNES de mise en page et non des
+           articles : « titre centré », « filets fins », « adresse en bas de page »
+           se retrouvaient servis comme des plats (mesuré). */
+        .filter(function (x) { return !/^(titre|police|typograph|couleur|fond|filet|marge|goutti|folio|align|gras|italique|espacement|hauteur|largeur|adresse en bas)/i.test(x); })
+        .filter(function (x) { return !/(doit|mettez|utilise|respecte|prevoir|prévoir|eviter|éviter)\b/i.test(x); });
+      if (parts.length >= 2 && parts.every(function (x) { return x.length <= 130; })) {
+        parts.forEach(function (x) { M.items.push(spGabItem(x)); M.lignes.push(x); });
+      }
+    }
+    /* Une liste sans titre de section en crée une : c'est elle que lisent les
+       gabarits à liste (menu, mariage, programme, catalogue). */
+    if (!M.sections.length && M.items.length >= 2) {
+      M.sections.push({ t: '', ps: M.items.map(function (i) { return i.nom + (i.prix ? ' ' + i.prix : ''); }) });
+    }
     /* Une pièce jointe « maquette » porte souvent SON titre : quand la demande est
        courte, c'est lui qui fait le titre du document (le document du client prime). */
     if (src.titres.length && String(brief || '').trim().length < 90 && String(src.titres[0]).length <= 62) M.titre = src.titres[0];
@@ -8402,7 +8507,108 @@ function spRtfLayoutInfo(src) {
     if (infos) e.push(spGabT(L.x0, L.y1 - 6, gx, spGabCourt(infos, 110), 8.5, '#6b7280', null, 'left', 1.4));
     return e;
   }
-  const SP_GAB_LAY = { affiche: spGabP_affiche, couverture: spGabP_couverture, catalogue: spGabP_catalogue, rapport: spGabP_rapport, menu: spGabP_menu, brochure: spGabP_brochure, portfolio: spGabP_portfolio, invitation: spGabP_invitation, cartevisite: spGabP_cartevisite, cahier: spGabP_cahier };
+  // 11. CV une page : bandeau d'identité, colonne profil, colonne expériences.
+  function spGabP_cv(L, n, tot) {
+    const e = [], p = L.pal, M = L.t, g = L.g, k = L.k;
+    const bH = Math.min(L.ch * 0.2, k * 120);
+    e.push(spGabR(0, 0, L.W, bH, p.a, 0));
+    e.push(spGabT(L.x0, bH * 0.26, L.cw * 0.6, M.titre, Math.min(26, g.titre * 0.75), '#ffffff', 'bold', 'left', 0.98));
+    const fct = M.surtitre || (M.sections[0] && M.sections[0].t) || '';
+    if (fct) e.push(spGabT(L.x0, bH * 0.66, L.cw * 0.6, spGabCourt(fct, 52), Math.max(8, g.corps * 1.15), '#e5e7eb', null, 'left', 1.2, 60));
+    const infos = (M.infos.length ? M.infos : M.lignes).slice(0, 4);
+    infos.slice(0, 3).forEach(function (t, i) { e.push(spGabT(L.x0 + L.cw * 0.6, bH * 0.26 + i * k * 26, L.cw * 0.4, spGabCourt(t, 42), g.corps, '#ffffff', null, 'right', 1.3)); });
+    const y0 = bH + k * 40, cg = L.cw * 0.32, dd = L.x0 + cg + g.gutter * SP_GAB_K;
+    e.push(spGabT(L.x0, y0, cg, 'Profil', Math.min(13, g.corps * 1.5), p.a, 'bold', 'left', 0.98));
+    e.push(spGabL(L.x0, y0 + k * 26, cg, p.a, 2));
+    e.push(spGabT(L.x0, y0 + k * 40, cg, (infos.length ? infos.join('\n') : (M.chapeau || '')), g.corps, '#4b5563', null, 'left', 1.45));
+    let y = y0;
+    M.sections.slice(0, 4).forEach(function (s) {
+      e.push(spGabT(dd, y, L.cw - cg - k * 20, spGabCourt(s.t, 46), Math.min(14, g.corps * 1.6), p.a, 'bold', 'left', 0.98));
+      y += k * 26;
+      const corps = (s.ps.length ? s.ps : [M.chapeau || '']).join('\n\n');
+      e.push(spGabT(dd, y, L.cw - cg - k * 20, corps, g.corps, '#374151', null, 'left', 1.45));
+      y += Math.max(k * 70, (corps.length / 3.4) * g.corps * 0.4) + k * 16;
+      e.push(spGabL(dd, y - k * 12, L.cw - cg - k * 20, p.gris, 1));
+    });
+    return e;
+  }
+
+  // 12. Programme : heures en vis-à-vis du texte, filets, pied de page.
+  function spGabP_programme(L, n, tot) {
+    const e = [], p = L.pal, M = L.t, g = L.g, k = L.k;
+    if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0, L.cw * 0.6, spGabCourt(M.surtitre, 40)));
+    e.push(spGabT(L.x0, L.y0 + k * 16, L.cw * 0.82, M.titre, g.titre, p.txt, 'bold', 'left', 0.95));
+    e.push(spGabL(L.x0, L.y0 + k * 16 + g.titre * 1.15, L.cw, p.a, 4));
+    let y = L.y0 + k * 16 + g.titre * 1.15 + k * 26;
+    const hx = L.x0 + k * 74;
+    if (M.chapeau) { e.push(spGabT(L.x0, y, L.cw * 0.82, spGabCourt(M.chapeau, 170), g.chapeau, '#4b5563', null, 'left', 1.45)); y += k * 46; }
+    const items = M.items.length ? M.items : M.lignes.map(spGabItem);
+    items.slice(0, 12).forEach(function (it) {
+      const trouve = String(it.nom || '').match(/^\s*(\d{1,2}\s*[h:.]\s*\d{0,2})/);
+      const heure = trouve ? trouve[1].replace(/\s+/g, '') : (it.prix || '');
+      const nom = trouve ? it.nom.replace(trouve[0], '').replace(/^[\s–—-]+/, '') : it.nom;
+      if (heure) e.push(spGabT(L.x0, y, k * 66, heure, Math.min(13, g.corps * 1.5), p.a, 'bold', 'left', 0.98));
+      e.push(spGabT(hx, y, L.x1 - hx, spGabCourt(nom, 54), Math.min(12, g.corps * 1.35), p.txt, 'bold', 'left', 1.05));
+      if (it.description) e.push(spGabT(hx, y + k * 16, L.x1 - hx, spGabCourt(it.description, 92), g.corps, '#6b7280', null, 'left', 1.35));
+      y += it.description ? k * 44 : k * 26;
+      e.push(spGabL(L.x0, y - k * 8, L.cw, p.gris, 1));
+    });
+    return e;
+  }
+
+  // 13. Menu de mariage : deux noms, filets fins, sections centrées, remerciement.
+  function spGabP_mariage(L, n, tot) {
+    const e = [], p = L.pal, M = L.t, g = L.g, k = L.k;
+    e.push(spGabL(L.x0, L.y0 + k * 10, L.cw, p.a, 2));
+    e.push(spGabL(L.x0, L.y0 + k * 14, L.cw, p.a, 0.8));
+    const taille = Math.min(30, g.titre * 0.72);
+    e.push(spGabT(L.x0, L.y0 + k * 34, L.cw, spGabCourt(M.titre, 60), taille, p.txt, 'bold', 'center', 0.98));
+    if (M.surtitre) e.push(spGabT(L.x0, L.y0 + k * 34 + taille * 1.25, L.cw, spGabCourt(M.surtitre, 60), Math.max(9, g.corps * 1.1), p.a, null, 'center', 1.3, 120));
+    let y = L.y0 + k * 120;
+    const secs = M.sections.length ? M.sections : [{ t: '', ps: M.lignes }];
+    secs.forEach(function (s) {
+      if (s.t) { e.push(spGabT(L.x0, y, L.cw, s.t.toUpperCase(), Math.min(12, g.corps * 1.4), p.a, 'bold', 'center', 1.1, 160)); y += k * 20; }
+      (s.ps || []).slice(0, 7).forEach(function (l) {
+        e.push(spGabT(L.x0 + L.cw * 0.08, y, L.cw * 0.84, spGabCourt(spGabItem(l).nom, 70), g.corps, p.txt, null, 'center', 1.35));
+        y += k * 20;
+      });
+      y += k * 14;
+    });
+    e.push(spGabL(L.x0 + L.cw * 0.3, L.y1 - k * 34, L.cw * 0.4, p.a, 2));
+    e.push(spGabT(L.x0, L.y1 - k * 24, L.cw, spGabCourt((M.infos[0] || ''), 90), Math.max(8, g.corps * 1.05), '#6b7280', null, 'center', 1.35, 40));
+    return e;
+  }
+
+  // 14. Story verticale : un message, un visuel, un pied.
+  function spGabP_story(L, n, tot) {
+    const e = [], p = L.pal, M = L.t, g = L.g, k = L.k;
+    e.push(spGabR(0, 0, L.W, k * 10, p.a, 0));
+    if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0 + k * 4, L.cw, spGabCourt(M.surtitre, 34)));
+    e.push(spGabT(L.x0, L.y0 + k * 30, L.cw, M.titre, g.titre, p.txt, 'bold', 'left', 0.95));
+    const yPh = L.y0 + k * 30 + g.titre * 2.4;
+    spGabPhoto(L, e, L.x0, yPh, L.cw, Math.max(k * 120, L.y1 - yPh - k * 80), 'visuel');
+    if (M.chapeau) e.push(spGabT(L.x0, L.y1 - k * 70, L.cw, spGabCourt(M.chapeau, 150), g.chapeau, '#4b5563', null, 'left', 1.45));
+    e.push(spGabL(L.x0, L.y1 - k * 30, L.cw, p.txt, 2));
+    const bas = (M.infos.length ? M.infos : M.lignes).slice(0, 1).join('');
+    if (bas) e.push(spGabT(L.x0, L.y1 - k * 22, L.cw, spGabCourt(bas, 70), Math.max(8, g.corps), '#6b7280', null, 'left', 1.3));
+    e.push(spGabR(0, L.H - k * 10, L.W, k * 10, p.a, 0));
+    return e;
+  }
+
+  // 15. Bandeau horizontal : titre à gauche, informations à droite, filet de pied.
+  function spGabP_bandeau(L, n, tot) {
+    const e = [], p = L.pal, M = L.t, g = L.g, k = L.k;
+    e.push(spGabC(L.x1 - 30, L.H / 2, 30, p.b, 0.18));
+    e.push(spGabR(0, 0, k * 14, L.H, p.a, 0));
+    if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0, L.cw * 0.5, spGabCourt(M.surtitre, 34)));
+    e.push(spGabT(L.x0, L.y0 + k * 16, L.cw * 0.56, M.titre, g.titre, p.txt, 'bold', 'left', 0.95));
+    if (M.chapeau) e.push(spGabT(L.x0, L.y0 + k * 16 + g.titre * 1.2, L.cw * 0.56, spGabCourt(M.chapeau, 120), g.chapeau, '#4b5563', null, 'left', 1.4));
+    const infos = (M.infos.length ? M.infos : M.lignes).slice(0, 3);
+    infos.forEach(function (t, i) { e.push(spGabT(L.x0 + L.cw * 0.64, L.y0 + i * k * 30, L.cw * 0.36, spGabCourt(t, 48), Math.max(9, g.corps * 1.15), p.txt, 'bold', 'right', 1.3)); });
+    e.push(spGabL(L.x0, L.y1 - k * 2, L.cw, p.txt, 2));
+    return e;
+  }
+  const SP_GAB_LAY = { affiche: spGabP_affiche, couverture: spGabP_couverture, catalogue: spGabP_catalogue, rapport: spGabP_rapport, menu: spGabP_menu, brochure: spGabP_brochure, portfolio: spGabP_portfolio, invitation: spGabP_invitation, cartevisite: spGabP_cartevisite, cahier: spGabP_cahier, cv: spGabP_cv, programme: spGabP_programme, mariage: spGabP_mariage, story: spGabP_story, bandeau: spGabP_bandeau };
 
   /* ⚠️ UNITÉ (défaut mesuré, cause de tout le reste) : le studio travaille en
      MILLIMÈTRES (state.pageW = 210 sur A4), pas en pixels. Les gabarits sont
@@ -8474,9 +8680,10 @@ function spRtfLayoutInfo(src) {
     let tot = Math.max(1, veut || g.pages);
     if (!veut && g.pages >= 3) tot = Math.min(24, Math.max(tot, Math.ceil((volume / 2) / 1300)));
     const spread = (state.viewMode === 'spread');
-    /* EN PLANCHES, LA COUVERTURE EST UNE PAGE DE DROITE : on ouvre le cahier par une
-       garde blanche, sinon le titre tombe sur la page de gauche, contre la pliure. */
-    const garde = (spread && tot >= 3 && (g.fam === 'cahier' || g.fam === 'brochure'));
+    /* EN PLANCHES, RECTO-VERSO RÉEL : la page 1 (couverture) tombe sur la page de
+       DROITE, les pages paires à gauche — c'est ce qu'attend une reliure. On ouvre
+       donc tout document de 3 pages et plus par une garde blanche. */
+    const garde = (spread && tot >= 3);
     const pages = [];
     if (garde) pages.push({ pageIndex: 0, elements: [spGabVersMm(spGabR(0, 0, W, H, '#ffffff', 0))] });
     const lay = SP_GAB_LAY[g.fam] || spGabP_affiche;
@@ -8590,6 +8797,8 @@ function spRtfLayoutInfo(src) {
     if (n) n.textContent = f ? f.nom : t('st.model');
     if (g) g.textContent = spStLibelleVersion(eng) || t(f ? f.tk : 'st.model');
     if (b) b.title = f ? (f.nom + ' — ' + t(f.nk)) : t('st.model');
+    /* Les exemples du bas suivent le moteur choisi. */
+    try { spExemplesPeindre(); } catch (_) {}
   }
   /* ══ 🆕 v1.7.580tt — MOTEUR À CLÉ CHOISI DANS LE PRÉ-HOME ═══════════════════
      Demande utilisateur : « dans le sous-menu, quand je pré-sélectionne un moteur
@@ -8805,6 +9014,9 @@ function spRtfLayoutInfo(src) {
       b.textContent = t('st.ex' + i);
       b.setAttribute('data-p', t('st.ex' + i + 'p'));
     });
+    /* v1.7.580 — SI LE MOTEUR DE GABARIT EST CHOISI, les exemples deviennent les
+       SIENS (format, pages, objet précis) : ils suivent le moteur sélectionné. */
+    try { spExemplesPeindre(); } catch (_) {}
     try { spStPeindreBouton(); } catch (_) {}
     try { spStarterPJ(); } catch (_) {}
   }
@@ -9212,8 +9424,29 @@ function spRtfLayoutInfo(src) {
     'poster a4': [210, 297], 'poster a3': [297, 420], 'poster a2': [420, 594],
     'brochure a5': [148, 210], 'livret a5': [148, 210], 'carnet': [148, 210],
     'a5 paysage': [210, 148], 'a4 paysage': [297, 210], 'a3 paysage': [420, 297],
-    'a5 portrait': [148, 210], 'a4 portrait': [210, 297]
+    'a5 portrait': [148, 210], 'a4 portrait': [210, 297],
+    /* 🆕 v1.7.580 — formats BANDEAU, STORY, MARQUE-PAGE et réseaux. Le studio
+       raisonne en millimètres : un 9:16 « imprimable » fait 135 × 240 mm. */
+    'marque-page': [50, 150], 'marque page': [50, 150], 'bookmark': [50, 150],
+    'story': [135, 240], 'stories': [135, 240], 'reel': [135, 240], 'tiktok': [135, 240],
+    'instagram': [150, 150], 'insta': [150, 150], 'post instagram': [150, 150],
+    'bandeau': [600, 200], 'banniere': [600, 200], 'bannière': [600, 200], 'banner': [600, 200],
+    'cv': [210, 297], 'lettre': [210, 297], 'carte postale': [148, 105], 'postale': [148, 105]
   };
+  /* Ratios courants (2:3, 9:16…) : on refuse les heures (« 20:30 ») en n'acceptant
+     que cette liste. La base est de 240 mm sur le grand côté. */
+  const PAGE_RATIOS = { '1:1': 1, '4:5': 0.8, '5:4': 1.25, '9:16': 0.5625, '16:9': 1.7778, '2:3': 0.6667, '3:2': 1.5, '3:4': 0.75, '4:3': 1.3333, '21:9': 2.3333, '1:2': 0.5, '2:1': 2 };
+  function detectPageRatio(prompt) {
+    const m = String(prompt || '').match(/\b(\d{1,2})\s*:\s*(\d{1,2})\b/);
+    if (!m) return null;
+    const cle = m[1] + ':' + m[2];
+    const r = PAGE_RATIOS[cle];
+    if (!r) return null;
+    const base = 240;
+    const w = r >= 1 ? base : Math.round(base * r);
+    const h = r >= 1 ? Math.round(base / r) : base;
+    return { w: w, h: h, label: 'ratio ' + cle + ' (' + w + '×' + h + ' mm)' };
+  }
   function detectPageFormat(prompt) {
     if (!prompt) return null;
     const p = String(prompt).toLowerCase();
@@ -9254,7 +9487,10 @@ function spRtfLayoutInfo(src) {
       const sig = PAGE_FORMATS['a' + sigle[1]];
       return { w: sig[0], h: sig[1], label: 'A' + sigle[1] + ' (' + sig[0] + '×' + sig[1] + ' mm)' };
     }
-    // 3) Formats ISO / courants (mots-clés) — ordre longueur décroissante
+    /* 3) RATIO EXPLICITE (« 9:16 », « 2:3 ») : 240 mm sur le grand côté. */
+    const ratio = detectPageRatio(p);
+    if (ratio) return ratio;
+    // 4) Formats ISO / courants (mots-clés) — ordre longueur décroissante
     const sortedKeys = Object.keys(PAGE_FORMATS).sort((a, b) => b.length - a.length);
     for (const k of sortedKeys) {
       if (new RegExp('\\b' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(p)) {
