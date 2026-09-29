@@ -7834,6 +7834,12 @@ function spRtfLayoutInfo(src) {
      pages du gabarit · folio = numéro de page · pal = palette imposée (null =
      déduite du thème de la demande). */
   const SP_GAB_DESIGN = [
+    /* Formats particuliers : la carte de visite a sa propre mise en page (marges
+       et tailles calculées sur 85 × 55 mm, jamais une grille A4 réduite). */
+    { key: 'qc.cartevisite', nom: 'Carte de visite', fam: 'cartevisite', fonts: 'sans',    cols: 1, gutter: 0, mg: [8, 8, 8, 8],     titre: 13, chapeau: 8,  corps: 7,   folio: false, pages: 1, pal: 'neutre' },
+    /* Cahier multipage : couverture, édito, pages de contenu à deux colonnes
+       justifiées avec encadrés et photos légendées, dernière page contacts. */
+    { key: 'qc.cahier',      nom: 'Cahier multipage', fam: 'cahier',     fonts: 'sans',    cols: 2, gutter: 8, mg: [24, 22, 22, 22], titre: 54, chapeau: 14, corps: 9.5, folio: true,  pages: 8, pal: null },
     { key: 'qc.minimal',   nom: 'Affiche manifeste',      fam: 'affiche',    fonts: 'display', cols: 1, gutter: 0, mg: [24, 24, 24, 24], titre: 72, chapeau: 14, corps: 10, folio: false, pages: 1, pal: null },
     { key: 'qc.magazine',  nom: 'Couverture magazine',    fam: 'couverture', fonts: 'serif',   cols: 3, gutter: 7, mg: [22, 22, 22, 22], titre: 54, chapeau: 14, corps: 9.5, folio: false, pages: 1, pal: null },
     { key: 'qc.catalog',   nom: 'Catalogue produits',     fam: 'catalogue',  fonts: 'sans',    cols: 2, gutter: 8, mg: [22, 22, 22, 22], titre: 34, chapeau: 12, corps: 9,   folio: false, pages: 1, pal: null },
@@ -7858,20 +7864,51 @@ function spRtfLayoutInfo(src) {
     return SP_GAB_PAL.neutre;
   }
 
+  /* NOMBRE DE PAGES RÉELLEMENT DEMANDÉ (« 8 pages », « cahier de huit pages »).
+     Défaut MESURÉ : « Cahier A4 de 8 pages… » ne produisait qu'UNE page, parce
+     que rien ne lisait le nombre. Il prime maintenant sur le gabarit. */
+  function spGabPages(brief) {
+    const s = String(brief || '').toLowerCase();
+    const m = s.match(/(\d{1,2})\s*pages?\b/);
+    if (m) return Math.max(1, Math.min(32, parseInt(m[1], 10)));
+    const mots = { deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8, neuf: 9, dix: 10, onze: 11, douze: 12, seize: 16, vingt: 20 };
+    const k = s.match(/\b(deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|seize|vingt)\s+pages?\b/);
+    return k && mots[k[1]] ? mots[k[1]] : 0;
+  }
+
+  /* TAILLE DE TITRE JUSTE : le titre tient en `lignes` lignes au maximum et ne
+     dépasse jamais le plafond du gabarit. 1 pt = 1 px à 72 dpi (comme partout
+     dans le studio) et un caractère occupe environ 0,52 × la taille : un titre
+     long ne peut donc plus être composé en énorme (l'ancien 72 pt sur 64
+     caractères passait sur quatre lignes, d'où l'impression d'interlignage). */
+  function spGabTailleTitre(txt, largeur, lignes, plafond) {
+    const n = Math.max(1, String(txt || '').replace(/\s+/g, ' ').trim().length);
+    const pt = (largeur * Math.max(1, lignes)) / (0.52 * n);
+    return Math.round(Math.max(11, Math.min(plafond, pt)) * 10) / 10;
+  }
+
   /* Choisit le gabarit : le plus spécifique d'abord. Aucune correspondance =
      affiche manifeste (jamais de page vide). */
   function spGabChoisir(brief) {
     const s = String(brief || '').toLowerCase();
+    const nb = spGabPages(brief);
+    /* « Carte de visite » AVANT « carte » (mesuré : une carte de visite tombait
+       sur la carte de restaurant), et plus de « photos » dans le portfolio —
+       le mot « photos légendées » envoyait un cahier de 8 pages sur Portfolio. */
     const regles = [
-      ['qc.menu',       /menus?\b|carte\b|restaurant|entr[ée]es|plats|desserts|brasserie|bistrot|pizzeria/],
-      ['qc.catalog',    /catalogue|catalog|produits?\b|boutique|tarifs?\b|grille\s+de\s+prix|shop|collection/],
-      ['qc.portfolio',  /portfolio|galerie|r[ée]alisations|projets?\b|book\b|photos?\b|lookbook/],
-      ['qc.invitation', /invitation|faire-?part|mariage|anniversaire|vernissage|c[ée]r[ée]monie|save the date/],
-      ['qc.corporate',  /rapport|corporate|entreprise|soci[ée]t[ée]|kpi|indicateurs?|bilan|activit[ée]|financier|r[ée]sultats?/],
-      ['qc.brochure',   /brochure|livret|plaquette|4\s*pages|quatre\s*pages|d[ée]pliant|catalogue\s+de\s+pr[ée]sentation/],
-      ['qc.magazine',   /magazine|couverture|cover|journal|revue|une\b|presse/],
-      ['qc.minimal',    /affiche|poster|flyer|minimal|manifeste|annonce/]
+      ['qc.cartevisite', /carte\s+de\s+visite|business\s*card|bristol|85\s*[×x*]\s*55|55\s*[×x*]\s*85/],
+      ['qc.cahier',      /cahier|dossier|booklet|livret\s+de|plaquette\s+de|rapport\s+annuel/],
+      ['qc.menu',        /menus?\b|carte\b|restaurant|entr[ée]es|plats|desserts|brasserie|bistrot|pizzeria|p[âa]tisserie/],
+      ['qc.catalog',     /catalogue|catalog|produits?\b|boutique|tarifs?\b|grille\s+de\s+prix|shop|collection/],
+      ['qc.portfolio',   /portfolio|galerie|r[ée]alisations|lookbook|photos?\s+pleine\s+page/],
+      ['qc.magazine',    /magazine|couverture|cover|journal|revue|presse/],
+      ['qc.minimal',     /affiche|poster|flyer|minimal|manifeste|annonce|festival/],
+      ['qc.invitation',  /invitation|faire-?part|mariage|anniversaire|vernissage|c[ée]r[ée]monie|save\s+the\s+date/],
+      ['qc.corporate',   /rapport|corporate|entreprise|soci[ée]t[ée]|kpi|indicateurs?|bilan|activit[ée]|financier|r[ée]sultats?/],
+      ['qc.brochure',    /brochure|plaquette|d[ée]pliant|catalogue\s+de\s+pr[ée]sentation/]
     ];
+    /* Trois pages ou plus = document suivi : le cahier prend la main (sauf menu). */
+    if (nb >= 3 && !/\bmenu|carte\s+de\s+visite/.test(s)) return SP_GAB_DESIGN.filter(function (g) { return g.key === 'qc.cahier'; })[0] || SP_GAB_DESIGN[0];
     for (let i = 0; i < regles.length; i++) {
       if (regles[i][1].test(s)) return SP_GAB_DESIGN.filter(function (g) { return g.key === regles[i][0]; })[0] || SP_GAB_DESIGN[0];
     }
@@ -7986,7 +8023,11 @@ function spRtfLayoutInfo(src) {
     const e = { type: 'text', left: x, top: y, width: w, text: String(texte == null ? '' : texte), fontSize: taille, fill: fill || '#222222' };
     if (poids) e.fontWeight = poids;
     if (align) e.textAlign = align;
-    if (interligne) e.lineHeight = interligne;
+    /* TITRES SERRÉS : au-delà de 18 pt l'interligne ne dépasse JAMAIS 0,95.
+       Retour utilisateur : « les titres sont trop interlignés ». */
+    let lh = Number(interligne) || 0;
+    if (Number(taille) >= 18) lh = Math.min(0.95, lh || 0.95);
+    if (lh) e.lineHeight = lh;
     if (esp) e.charSpacing = esp;
     return e;
   }
@@ -8201,22 +8242,162 @@ function spRtfLayoutInfo(src) {
     e.push(spGabR(0, L.H - 26, L.W, 26, p.a, 0));
     return e;
   }
-  const SP_GAB_LAY = { affiche: spGabP_affiche, couverture: spGabP_couverture, catalogue: spGabP_catalogue, rapport: spGabP_rapport, menu: spGabP_menu, brochure: spGabP_brochure, portfolio: spGabP_portfolio, invitation: spGabP_invitation };
+  /* 9. Carte de visite : mise en page de CARTE (85 × 55 mm), pas une A4 réduite.
+     Marges et tailles calculées sur la hauteur réelle de la page. */
+  function spGabP_cartevisite(L, n, tot) {
+    const e = [], p = L.pal, M = L.t;
+    const m = Math.max(7, Math.min(L.W, L.H) * 0.062);
+    const x0 = m, y0 = m, x1 = L.W - m, y1 = L.H - m, cw = x1 - x0;
+    const nom = M.titre || 'Nom Prénom';
+    e.push(spGabT(x0, y0, cw * 0.76, spGabCourt(nom, 34), Math.max(9, Math.min(13, L.H * 0.082)), p.txt, 'bold', 'left', 0.98));
+    const fct = M.surtitre || (M.items[0] && M.items[0].nom) || '';
+    if (fct) e.push(spGabT(x0, y0 + L.H * 0.2, cw * 0.76, spGabCourt(fct, 42), Math.max(6.5, L.H * 0.052), '#6b7280', null, 'left', 1.25, 55));
+    e.push(spGabC(x1 - L.H * 0.075, y0 + L.H * 0.075, L.H * 0.055, p.a, 1));
+    e.push(spGabL(x0, y1 - L.H * 0.34, cw, p.gris, 1));
+    const infos = (M.infos.length ? M.infos : M.lignes).slice(0, 3);
+    if (infos.length) infos.forEach(function (t, i) { e.push(spGabT(x0, y1 - L.H * 0.28 + i * L.H * 0.088, cw, spGabCourt(t, 48), Math.max(6, L.H * 0.046), '#4b5563', null, 'left', 1.3)); });
+    else if (M.chapeau) e.push(spGabT(x0, y1 - L.H * 0.26, cw, spGabCourt(M.chapeau, 70), Math.max(6, L.H * 0.046), '#4b5563', null, 'left', 1.35));
+    return e;
+  }
+
+  /* 10. Cahier multipage : couverture, édito, pages de contenu à DEUX COLONNES
+     justifiées (encadrés pour les textes courts, photo légendée), dernière page
+     contacts. MÊME grille, mêmes marges et même typographie sur toutes les pages. */
+  function spGabP_cahier(L, n, tot) {
+    const e = [], p = L.pal, M = L.t, g = L.g, k = L.k;
+    const secs = M.sections.length ? M.sections : [{ t: M.titre, ps: M.lignes.length ? M.lignes : [M.chapeau] }];
+    const texte = function (i) { const s = secs[Math.min(i, secs.length - 1)]; return s ? (s.ps.length ? s.ps.join('\n\n') : M.chapeau) : (M.chapeau || ''); };
+    // ── couverture : le titre et un grand visuel, rien d'autre
+    if (n === 1) {
+      const bande = L.H * 0.34;
+      e.push(spGabR(0, 0, L.W, bande, p.a, 0));
+      if (M.surtitre) e.push(spGabT(L.x0, L.y0, L.cw, spGabCourt(M.surtitre, 42).toUpperCase(), 8.5, '#ffffff', 'bold', 'left', 1.1, 200));
+      e.push(spGabT(L.x0, L.y0 + k * 24, L.cw * 0.92, M.titre, g.titre, '#ffffff', 'bold', 'left', 0.95));
+      if (M.chapeau) e.push(spGabT(L.x0, bande - k * 48, L.cw * 0.8, spGabCourt(M.chapeau, 150), g.chapeau, '#f1f5f9', null, 'left', 1.4));
+      spGabPhoto(L, e, L.x0, bande + k * 18, L.cw, L.y1 - bande - k * 58, 'grand visuel');
+      e.push(spGabL(L.x0, L.y1 - k * 24, L.cw, p.txt, 2));
+      e.push(spGabT(L.x0, L.y1 - k * 16, L.cw, spGabCourt(M.surtitre || g.nom, 60), 8, '#6b7280', null, 'left', 1.3, 120));
+      return e;
+    }
+    // ── dernière page : les contacts
+    if (n === tot) {
+      if (M.surtitre) e.push(spGabKicker(L, L.x0, L.y0, L.cw, spGabCourt(M.surtitre, 38)));
+      e.push(spGabL(L.x0, L.y0 + k * 14, L.cw, p.a, 4));
+      e.push(spGabT(L.x0, L.y0 + k * 28, L.cw, 'Contacts', Math.min(26, g.corps * 2.6), p.txt, 'bold', 'left', 0.98));
+      const infos = (M.infos.length ? M.infos : M.lignes).slice(0, 6);
+      const yB = L.y0 + k * 62;
+      const hB = Math.min(L.ch * 0.5, k * 30 + infos.length * k * 17);
+      e.push(spGabR(L.x0, yB, L.cw, hB, p.clair, 4));
+      e.push(spGabL(L.x0, yB, 3, p.a, 3));
+      infos.forEach(function (t, i) { e.push(spGabT(L.x0 + k * 14, yB + k * 14 + i * k * 17, L.cw - k * 28, spGabCourt(t, 92), g.corps + 1, p.txt, null, 'left', 1.35)); });
+      if (M.chapeau) e.push(spGabT(L.x0, L.y1 - k * 44, L.cw, spGabCourt(M.chapeau, 170), g.corps, '#6b7280', null, 'left', 1.45));
+      e.push(spGabR(0, L.H - 14, L.W, 14, p.a, 0));
+      return e;
+    }
+    // ── page 2 : l'édito
+    if (n === 2) {
+      e.push(spGabKicker(L, L.x0, L.y0, L.cw * 0.6, 'édito'));
+      e.push(spGabT(L.x0, L.y0 + k * 16, L.cw * 0.9, spGabCourt(M.chapeau || M.titre, 200), g.chapeau, p.txt, null, 'left', 1.6));
+      e.push(spGabL(L.x0, L.y0 + k * 112, L.cw * 0.34, p.a, 2));
+      if (texte(0)) e.push(spGabT(L.x0, L.y0 + k * 130, L.cw * 0.68, spGabCourt(texte(0), 460), g.corps, '#4b5563', null, 'left', 1.55));
+      if (L.photos.length) spGabPhoto(L, e, L.x1 - L.cw * 0.28, L.y0 + k * 130, L.cw * 0.28, Math.min(L.ch * 0.36, L.y1 - L.y0 - k * 130), 'photo');
+      return e;
+    }
+    // ── pages de contenu : deux colonnes, encadrés, photo légendée
+    const gw = g.gutter * SP_GAB_K;
+    const cw = (L.cw - gw) / 2;
+    const parPage = Math.max(1, Math.ceil((secs.length - 1) / Math.max(1, tot - 3)));
+    const base = 1 + (n - 3) * parPage;
+    [0, 1].forEach(function (col) {
+      const s = secs[Math.min(base + col, secs.length - 1)];
+      if (!s) return;
+      const x = L.x0 + col * (cw + gw);
+      let y = L.y0;
+      /* Titre de la colonne : le titre général ne se répète pas six fois de suite
+         (mesuré) — sans section propre, on annonce une partie numérotée. */
+      const propre = s.t && s.t !== M.titre;
+      e.push(spGabT(x, y, cw, spGabCourt(propre ? s.t : ('Partie ' + ((n - 3) * 2 + col + 1)), 52), Math.min(17, g.corps * 1.8), p.a, 'bold', 'left', 0.98));
+      y += k * 26;
+      e.push(spGabL(x, y, cw * 0.28, p.a, 2));
+      y += k * 14;
+      (s.ps.length ? s.ps : [M.chapeau]).forEach(function (para, j) {
+        if (!para) return;
+        if (para.length <= 130 && j > 0) {
+          /* ENCADRÉ : fond clair + filet, le texte reste à l'intérieur. */
+          const h = Math.max(k * 42, (para.length / 2.4) * g.corps * 0.42 + k * 34);
+          e.push(spGabR(x, y, cw, h, p.clair, 4));
+          e.push(spGabL(x, y, cw, p.a, 2));
+          e.push(spGabT(x + k * 10, y + k * 12, cw - k * 20, para, g.corps, p.txt, null, 'left', 1.45));
+          y += h + k * 14;
+          return;
+        }
+        e.push(spGabT(x, y, cw, para, g.corps, '#374151', null, 'justify', 1.5));
+        y += Math.max(k * 48, (para.length / 3.1) * g.corps * 0.34) + k * 14;
+      });
+      if (col === 1 && L.photos.length) {
+        const hP = Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26));
+        const yP = L.y1 - k * 22 - hP;
+        spGabPhoto(L, e, x, yP, cw, hP, 'photo');
+        e.push(spGabT(x, yP + hP + 4, cw, spGabCourt(secs[Math.min(base, secs.length - 1)].t || 'légende', 58), 7.5, '#6b7280', null, 'left', 1.3));
+      } else if (col === 1 && M.chiffres.length) {
+        /* ENCADRÉ CHIFFRE CLÉ : repris des chiffres réels de la demande. */
+        const c = M.chiffres[(n - 3) % M.chiffres.length];
+        const hB = k * 92;
+        const yB = Math.max(y + k * 18, L.y1 - hB - k * 24);
+        e.push(spGabR(x, yB, cw, hB, p.clair, 4));
+        e.push(spGabL(x, yB, 3, p.a, 3));
+        e.push(spGabT(x + k * 14, yB + k * 16, cw - k * 28, c.v, Math.min(46, g.corps * 5), p.a, 'bold', 'left', 0.95));
+        e.push(spGabT(x + k * 14, yB + k * 62, cw - k * 28, spGabCourt(c.l, 70), g.corps, '#4b5563', null, 'left', 1.35));
+      }
+    });
+    return e;
+  }
+  const SP_GAB_LAY = { affiche: spGabP_affiche, couverture: spGabP_couverture, catalogue: spGabP_catalogue, rapport: spGabP_rapport, menu: spGabP_menu, brochure: spGabP_brochure, portfolio: spGabP_portfolio, invitation: spGabP_invitation, cartevisite: spGabP_cartevisite, cahier: spGabP_cahier };
+
+  /* ⚠️ UNITÉ (défaut mesuré, cause de tout le reste) : le studio travaille en
+     MILLIMÈTRES (state.pageW = 210 sur A4), pas en pixels. Les gabarits sont
+     écrits dans l'échelle du studio historique (px à 72 dpi) : on convertit donc
+     les COORDONNÉES et les TAILLES en millimètres à la sortie, une seule fois.
+     Sans cela les blocs étaient 2,83× trop petits : le garde-fou réduisait la
+     police des titres (11 à 15 pt au lieu de 40) et l'espace réservé restait,
+     d'où l'impression de titres trop interlignés et de pages vides. */
+  const SP_GAB_GEOM = ['left', 'top', 'width', 'height', 'radius', 'rx', 'ry', 'x1', 'x2', 'y1', 'y2'];
+  function spGabVersMm(el) {
+    const o = {};
+    for (const k in el) { if (Object.prototype.hasOwnProperty.call(el, k)) o[k] = el[k]; }
+    SP_GAB_GEOM.forEach(function (k) {
+      if (typeof o[k] === 'number') o[k] = Math.round((o[k] / SP_GAB_K) * 100) / 100;
+    });
+    /* Un filet sous 0,15 mm disparaît à l'impression (et le studio a un plancher). */
+    if (o.type === 'line') o.strokeWidth = Math.max(0.3, Number(o.strokeWidth) || 0.3);
+    return o;
+  }
 
   /* FABRIQUE LE DOCUMENT COMPLET. Règle de cahier (correctif 19) : en double page
      le nombre de pages est TOUJOURS pair — jamais de page seule au centre. */
   function spGabDesign(brief) {
-    const g = spGabChoisir(brief);
+    const veut = spGabPages(brief);
+    const g = Object.assign({}, spGabChoisir(brief));
     const texte = spGabMeta(brief);
-    const M = [g.mg[0], g.mg[1], g.mg[2], g.mg[3]];
-    const W = state.pageW || 595.28, H = state.pageH || 841.89;
+    const W = (state.pageW || 210) * SP_GAB_K, H = (state.pageH || 297) * SP_GAB_K;
+    /* MARGES RELATIVES AU FORMAT : une marge A4 de 22 mm ne laisse rien sur une
+       carte de visite. On plafonne à 5 % du petit côté de la page. */
+    const petit = Math.min(W, H);
+    const M = g.mg.map(function (v) { return Math.min(v, petit * 0.05); });
+    const x0 = M[3] * SP_GAB_K, y0 = M[0] * SP_GAB_K, x1 = W - M[1] * SP_GAB_K, y1 = H - M[2] * SP_GAB_K;
+    const cw = Math.max(20, x1 - x0), ch = Math.max(20, y1 - y0);
+    /* TAILLES RELATIVES AU FORMAT : 72 pt est juste sur A4, absurde sur 85 × 55 mm.
+       Le titre principal a droit à TROIS lignes (couverture mieux affirmée). */
+    g.titre = spGabTailleTitre(texte.titre, cw * 0.94, 3, Math.min(g.titre, H * 0.105));
+    g.chapeau = Math.max(7, Math.min(g.chapeau, H * 0.055));
+    g.corps = Math.max(6.5, Math.min(g.corps, H * 0.045));
     const L = {
       W: W, H: H, g: g, t: texte, pal: spGabPal(brief, g.pal), f: SP_GAB_FONTS[g.fonts] || SP_GAB_FONTS.sans,
-      x0: M[3] * SP_GAB_K, y0: M[0] * SP_GAB_K, x1: W - M[1] * SP_GAB_K, y1: H - M[2] * SP_GAB_K,
+      k: Math.max(0.3, Math.min(1, H / 841.89)),
+      x0: x0, y0: y0, x1: x1, y1: y1, cw: cw, ch: ch,
       photos: texte.photos.slice()
     };
-    L.cw = L.x1 - L.x0; L.ch = L.y1 - L.y0;
-    const tot = Math.max(1, g.pages);
+    const tot = Math.max(1, veut || g.pages);
     const lay = SP_GAB_LAY[g.fam] || spGabP_affiche;
     const pages = [];
     for (let i = 1; i <= tot; i++) {
@@ -8224,10 +8405,10 @@ function spRtfLayoutInfo(src) {
       try { els = lay(L, i, tot) || []; } catch (err) { els = []; }
       els.unshift(spGabR(0, 0, W, H, '#ffffff', 0));
       if (g.folio && i > 1) els = els.concat(spGabFolio(L, i, tot));
-      pages.push({ pageIndex: pages.length, elements: els });
+      pages.push({ pageIndex: pages.length, elements: els.map(spGabVersMm) });
     }
     if (state.doc && state.doc.viewMode === 'spread' && (pages.length % 2) === 1) {
-      pages.push({ pageIndex: pages.length, elements: [spGabR(0, 0, W, H, '#ffffff', 0)] });
+      pages.push({ pageIndex: pages.length, elements: [spGabVersMm(spGabR(0, 0, W, H, '#ffffff', 0))] });
     }
     const posees = texte.photos.length - L.photos.length;
     const j = function (niv, msg) { try { spJournalAjoute(niv, msg); } catch (_) {} };
