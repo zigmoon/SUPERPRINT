@@ -5233,22 +5233,237 @@
     return out;
   }
 
+  /* ══ 🆕 v1.7.583 — LECTURE D'UN PDF : DE VRAIES LIGNES, PUIS DU MARKDOWN ══════════
+     Question utilisateur : « et la compréhension des PDF en PJ et en contexte dans notre
+     modèle ? On passe les PDF en markdown directement ???»
+
+     AVANT (mesuré dans le code) : on recollait les fragments de pdf.js bout à bout
+     (`texte += item.str` + `hasEOL ? '\n' : ' '`) et on ajoutait un marqueur
+     « --- PDF PAGE 3/40 --- ». Résultat : AUCUN titre, AUCUNE liste, AUCUN paragraphe —
+     des lignes hachées, des mots coupés en fin de ligne (« impri- » puis « mable ») et
+     des marqueurs de page qui se retrouvaient dans la maquette. Un PDF composait donc
+     beaucoup moins bien qu'un .docx (dont le lecteur, lui, produit du markdown).
+     MAINTENANT : le PDF suit EXACTEMENT le même chemin que le Word — titres, listes,
+     paragraphes, markdown — et il sert donc aussi bien en CONTENU qu'en CONTEXTE.
+
+     Étapes : 1) regrouper les fragments par LIGNE (position verticale + tolérance liée à
+     la taille du texte) ; 2) recoudre les mots coupés en fin de ligne ; 3) trouver la
+     TAILLE DU CORPS (médiane pondérée par la longueur : une ligne de titre, courte, ne
+     doit pas la fixer) et en déduire les TITRES (#, ##, ###) ; 4) reconnaître les LISTES
+     (puces et numéros) ; 5) lire les DEUX COLONNES dans le bon ordre (gauche puis droite,
+     par paliers de hauteur) ; 6) écarter les EN-TÊTES/PIEDS répétés sur la plupart des
+     pages, qui n'appartiennent pas au contenu. */
+
+  /* Fragments de texte d'une page pdf.js → lignes réelles, avec position, taille, graisse. */
+  function spPdfLignesPage(content) {
+    const bruts = ((content && content.items) || []).filter(function (it) {
+      if (!it || typeof it.str !== 'string' || it.str.replace(/\s/g, '') === '') return false;
+      /* ⚠️ v1.7.583 — TEXTE PIVOTÉ : sur une couverture graphique (titre écrit à la
+         verticale, filets de décoration), pdf.js livre chaque lettre avec une matrice
+         tournée. Mesuré sur le bilan 2025 fourni : « ### m ent •Écou » puis
+         « m u c o d e c r e t » — du bruit pur, pris pour des titres. Une matrice
+         [a,b,c,d,e,f] tournée a b ou c non nuls : on l'écarte, la maquette n'en veut pas. */
+      const tr = it.transform || [1, 0, 0, 1, 0, 0];
+      if (Math.abs(Number(tr[1]) || 0) > 0.01 || Math.abs(Number(tr[2]) || 0) > 0.01) return false;
+      return true;
+    });
+    const lignes = [];
+    bruts.forEach(function (it) {
+      const tr = it.transform || [1, 0, 0, 1, 0, 0];
+      const x = Number(tr[4]) || 0, y = Number(tr[5]) || 0;
+      const h = Math.abs(Number(tr[3])) || Math.abs(Number(tr[0])) || 10;
+      const tol = Math.max(1.4, h * 0.42);
+      let l = null;
+      for (let i = 0; i < lignes.length; i++) { if (Math.abs(lignes[i].y - y) <= tol) { l = lignes[i]; break; } }
+      if (!l) { l = { y: y, taille: h, parts: [] }; lignes.push(l); }
+      if (h > l.taille) l.taille = h;
+      l.parts.push({ x: x, s: String(it.str), h: h, gras: /bold|black|heavy|semi|demi|700|800|900/i.test(String(it.fontName || '')) });
+    });
+    lignes.forEach(function (l) {
+      l.parts.sort(function (a, b) { return a.x - b.x; });
+      let t = '';
+      l.parts.forEach(function (p, i) {
+        if (i) {
+          /* pdf.js coupe parfois un mot au milieu de deux fragments : on n'ajoute une
+             espace que si l'écart horizontal dépasse la largeur estimée du fragment
+             précédent (et qu'aucun des deux n'en porte déjà une). */
+          const av = l.parts[i - 1];
+          const fin = av.x + String(av.s).length * av.h * 0.52;
+          if (p.x > fin + av.h * 0.2 && !/\s$/.test(t) && !/^\s/.test(p.s)) t += ' ';
+        }
+        t += p.s;
+      });
+      l.texte = t.replace(/[\u00A0\u2007\u202F\s]+/g, ' ').trim();
+      l.x = l.parts.length ? l.parts[0].x : 0;
+      l.fin = l.parts.length ? (l.parts[l.parts.length - 1].x + String(l.parts[l.parts.length - 1].s).length * l.parts[l.parts.length - 1].h * 0.52) : 0;
+      l.gras = l.parts.some(function (p) { return p.gras; });
+    });
+    const lignesUtiles = lignes.filter(function (l) { return l.texte !== '' && spPdfLigneUtile(l.texte); });
+    return lignesUtiles.sort(function (a, b) { return b.y - a.y; });
+  }
+
+  /* Une ligne de DÉBRIS n'est pas du texte : des suites de lettres isolées (« d o c u m
+     e n t ») viennent d'un lettrage décoratif ou d'un espacement extrême. On la rejette
+     plutôt que de la laisser devenir un titre ou un paragraphe (mesuré : le bilan 2025
+     produisait 100 « titres » dont la moitié de ce bruit). */
+  function spPdfLigneUtile(t) {
+    const mots = String(t).split(/\s+/).filter(function (m) { return m !== ''; });
+    if (!mots.length) return false;
+    if (!/[A-Za-zÀ-ÿ\u3040-\u30ff\u4e00-\u9faf\u0400-\u04ff]/.test(t)) return false;   // chiffres et signes seuls
+    if (mots.length >= 4) {
+      const courts = mots.filter(function (m) { return m.replace(/[^A-Za-zÀ-ÿ\u3040-\u30ff\u4e00-\u9faf\u0400-\u04ff]/g, '').length <= 2; }).length;
+      if (courts / mots.length >= 0.6) return false;
+    }
+    /* Un vrai texte contient au moins un mot de 3 lettres. */
+    return mots.some(function (m) { return m.replace(/[^A-Za-zÀ-ÿ\u3040-\u30ff\u4e00-\u9faf\u0400-\u04ff]/g, '').length >= 3; });
+  }
+
+  /* En-têtes et pieds répétés (titre courant, nom du document, numéros de page) : ils ne
+     sont pas du contenu. On les repère sur la POSITION (haut/bas de page) ET la RÉPÉTITION
+     (même texte, chiffres remplacés par #) sur au moins la moitié des pages. */
+  function spPdfEntetesPieds(pages) {
+    const compte = Object.create(null);
+    const seuilPage = Math.max(2, Math.ceil(pages.length * 0.5));
+    pages.forEach(function (ls) {
+      const n = ls.length;
+      if (n < 6) return;
+      const haut = Math.max(1, Math.round(n * 0.12)), bas = Math.max(1, Math.round(n * 0.12));
+      ls.forEach(function (l, i) {
+        if (i >= haut && i < n - bas) return;
+        const cle = l.texte.replace(/\d+/g, '#').toLowerCase();
+        if (cle.length < 3 || cle.length > 90) return;
+        compte[cle] = (compte[cle] || 0) + 1;
+      });
+    });
+    const drop = Object.create(null);
+    Object.keys(compte).forEach(function (k) { if (compte[k] >= seuilPage) drop[k] = 1; });
+    return drop;
+  }
+  function spPdfEstEcartee(l, drop) {
+    if (/^(page\s*)?\d{1,4}(\s*\/\s*\d{1,4})?$/i.test(l.texte)) return true;
+    return !!(drop && drop[l.texte.replace(/\d+/g, '#').toLowerCase()]);
+  }
+
+  /* Une page de lignes → markdown (titres, listes, paragraphes). */
+  function spPdfMarkdownPage(lignes, drop) {
+    const gardees = (lignes || []).filter(function (l) { return !spPdfEstEcartee(l, drop); });
+    if (!gardees.length) return '';
+    /* Taille du corps : médiane pondérée par la longueur du texte. */
+    const poids = gardees.map(function (l) { return { t: l.taille, n: Math.min(140, l.texte.length) }; })
+      .sort(function (a, b) { return a.t - b.t; });
+    const total = poids.reduce(function (s, p) { return s + p.n; }, 0);
+    let corps = poids.length ? poids[poids.length - 1].t : 10, cum = 0;
+    for (let i = 0; i < poids.length; i++) { cum += poids[i].n; if (cum >= total / 2) { corps = poids[i].t; break; } }
+    /* Deux colonnes ? (au moins 4 lignes franchement à gauche ET 4 franchement à droite) */
+    const largeur = Math.max.apply(null, gardees.map(function (l) { return l.fin; }).concat([1]));
+    const nG = gardees.filter(function (l) { return l.x < largeur * 0.45; }).length;
+    const nD = gardees.filter(function (l) { return l.x > largeur * 0.5; }).length;
+    const deuxColonnes = (nG >= 4 && nD >= 4 && nD >= gardees.length * 0.3 && largeur > 200);
+    let ordre = gardees.slice();
+    if (deuxColonnes) {
+      const G = ordre.filter(function (l) { return l.x <= largeur * 0.5; });
+      const D = ordre.filter(function (l) { return l.x > largeur * 0.5; });
+      ordre = [];
+      let i = 0, j = 0;
+      while (i < G.length || j < D.length) {
+        if (i < G.length && (j >= D.length || (G[i].y + Math.max(6, corps * 0.9)) >= D[j].y)) { ordre.push(G[i]); i++; }
+        else { ordre.push(D[j]); j++; }
+      }
+    }
+    /* Assemblage. */
+    const out = [];
+    let para = [];
+    let tailleTitre = null;
+    /* ⚠️ v1.7.583 — PAGE DE SOMMAIRE : quand cinq lignes ou plus commencent par un numéro
+       de page (« 6 Qui sommes-nous ? Présentation de… »), c'est une table des matières, pas
+       une suite de titres. Mesuré sur le bilan fourni : le sommaire produisait à lui seul
+       une vingtaine de fausses sections dans la maquette. On le rend donc en LISTE. */
+    const nbToc = gardees.filter(function (l) { return /^\d{1,3}\s+\S/.test(l.texte); }).length;
+    const pageSommaire = (nbToc >= 5);
+    const vider = function () {
+      if (!para.length) return;
+      const p = para.join(' ').replace(/\s+([,;:.!?»])/g, '$1').replace(/\s{2,}/g, ' ').trim();
+      if (p) out.push(p);
+      para = [];
+    };
+    for (let k = 0; k < ordre.length; k++) {
+      const l = ordre[k], t = l.texte, suiv = ordre[k + 1];
+      const ecart = suiv ? (l.y - suiv.y) : 999;
+      const grand = l.taille >= corps * 1.2;
+      const courte = t.length >= 3 && t.length <= 90;
+      const numerote = /^(\d+(\.\d+){0,3}[.)]?\s+\S|chapitre\s+\S|partie\s+\S|annexe\s+\S|sommaire\b|table des mati[èe]res)/i.test(t);
+      /* Un vrai titre COMMENCE par une majuscule, un chiffre ou une lettre sans casse
+         (japonais) : une ligne qui commence en minuscules est une SUITE (de titre ou de
+         paragraphe), jamais un intitulé. Mesuré : « elles sont devenues, au fil de ce
+         semestre » sortait en titre. */
+      const commenceMaj = /^[A-ZÀ-ÖØ-Þ0-9«"'(]/.test(t) || !/[a-zà-ÿ]/.test(t);
+      const titre = !pageSommaire && commenceMaj && courte &&
+        (grand || numerote || (l.gras && ecart > corps * 1.9)) &&
+        /[A-Za-zÀ-ÿ\u3040-\u30ff\u4e00-\u9faf\u0400-\u04ff]/.test(t) && !/[.;:!?]$/.test(t);
+      if (titre) {
+        vider();
+        const niv = l.taille >= corps * 1.7 ? 1 : (l.taille >= corps * 1.34 ? 2 : 3);
+        const marque = '#'.repeat(niv) + ' ';
+        const prec = out.length ? out[out.length - 1] : '';
+        /* ⚠️ v1.7.583 — TITRE SUR PLUSIEURS LIGNES : sur une couverture ou un grand titre,
+           chaque ligne a la même taille et suit la précédente de près (« Bilan », « année
+           2025 », « Licra Loiret »). Trois titres séparés faisaient trois sections dans la
+           maquette ; on recolle tant que la taille est la même et que l'écart reste petit. */
+        const memeTaille = (tailleTitre !== null && Math.abs(tailleTitre - l.taille) <= corps * 0.12);
+        if (prec.indexOf(marque) === 0 && ecart > 0 && ecart <= corps * 1.6 && memeTaille) {
+          out[out.length - 1] = prec + ' ' + t.replace(/^#+\s*/, '');
+        } else {
+          out.push(marque + t.replace(/^#+\s*/, ''));
+        }
+        tailleTitre = l.taille;
+        continue;
+      }
+      tailleTitre = null;
+      /* SUITE D'UN TITRE SUR DEUX LIGNES (« Une attente citoyenne » puis « et médiatique
+         claire ») : on recolle au titre précédent, sans en faire un paragraphe. Sur une
+         COUVERTURE, les lignes du titre respirent beaucoup plus (« Bilan » / « année
+         2025 » / « Licra Loiret ») : l'écart toléré s'ouvre donc quand les deux lignes
+         sont courtes — c'est le cas d'un titre, jamais d'un paragraphe. */
+      const precTitre = out.length && /^#{1,6}\s/.test(out[out.length - 1]);
+      const ecartMax = (out.length && precTitre && out[out.length - 1].length <= 46 && t.length <= 46)
+        ? corps * 3.5 : corps * 1.6;
+      if (!commenceMaj && precTitre && ecart > 0 && ecart <= ecartMax) {
+        out[out.length - 1] = out[out.length - 1] + ' ' + t;
+        continue;
+      }
+      /* Table des matières : une entrée par ligne, en liste. */
+      if (pageSommaire && /^\d{1,3}\s+\S/.test(t)) { vider(); out.push('- ' + t); continue; }
+      const puce = t.match(/^([•·▪◦‣*\-–—]\s+|\bo\s+)(.+)$/);
+      if (puce && puce[2] && puce[2].trim().length > 1) { vider(); out.push('- ' + puce[2].trim()); continue; }
+      const num = t.match(/^\d{1,3}[.)]\s+(.+)$/);
+      if (num && num[1] && num[1].trim().length > 2) { vider(); out.push('- ' + num[1].trim()); continue; }
+      /* Mot coupé en fin de ligne : on recolle SANS espace. */
+      if (para.length && /[\u00AD-]$/.test(para[para.length - 1]) && /^[a-zà-ÿ]/.test(t)) {
+        para[para.length - 1] = para[para.length - 1].replace(/[\u00AD-]$/, '');
+        para.push(t);
+        continue;
+      }
+      if (para.length && ecart > corps * 1.9) vider();   // grand blanc vertical = nouveau paragraphe
+      para.push(t);
+    }
+    vider();
+    return out.join('\n\n');
+  }
+
   async function extractPdfAttachment(file, id, ext) {
     await loadAttachmentLibrary('app/JS/pdf.min.js', () => !!window.pdfjsLib);
     window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'app/JS/pdf.worker.min.js';
     const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-    const pages = [];
+    const pagesLignes = [];
     const imagesTrouvees = [];
     try {
       for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
         const page = await pdf.getPage(pageNumber);
         const content = await page.getTextContent();
-        let text = '';
-        content.items.forEach(item => {
-          text += String(item.str || '');
-          text += item.hasEOL ? '\n' : ' ';
-        });
-        pages.push('--- PDF PAGE ' + pageNumber + ' / ' + pdf.numPages + ' ---\n' + text.replace(/[ \t]+\n/g, '\n').trim());
+        /* 🆕 v1.7.583 — de VRAIES lignes (position, taille, graisse) au lieu d'une
+           concaténation de fragments : c'est ce qui permet les titres, les listes et les
+           paragraphes plus bas. */
+        pagesLignes.push(spPdfLignesPage(content));
         // 🆕 v1.7.406 — images de la page (on n'explore pas 300 pages en images).
         if (pageNumber <= SP_PDF_IMG_MAX_PAGES) {
           try {
@@ -5262,15 +5477,42 @@
       if (typeof pdf.destroy === 'function') await pdf.destroy();
     }
 
+    /* 🆕 v1.7.583 — EN-TÊTES ET PIEDS ÉCARTÉS : une ligne répétée en haut ou en bas de la
+       plupart des pages (« Bilan 2025 », folio, titre courant) n'est pas du contenu. Sans
+       cela, elle devenait un surtitre ou une section dans la maquette. */
+    const ecartees = spPdfEntetesPieds(pagesLignes);
+    const morceaux = pagesLignes.map(function (ls) { return spPdfMarkdownPage(ls, ecartees); })
+      .filter(function (x) { return String(x).trim() !== ''; });
+    /* Un seul saut entre deux pages : les marqueurs « --- PDF PAGE 3/40 --- » ont disparu,
+       ils se retrouvaient tels quels dans la maquette (mesuré). */
+    const texte = morceaux.join('\n\n');
+    const nbTitres = (texte.match(/^#{1,6}\s/gm) || []).length;
+    const nbPuces = (texte.match(/^- /gm) || []).length;
+
     // On garde les PLUS GRANDES si le PDF en contient beaucoup : ce sont les
     // visuels, pas les puces ni les filets decoratifs.
     imagesTrouvees.sort((a, b) => (b.width * b.height) - (a.width * a.height));
     const imagesRetenues = imagesTrouvees.slice(0, SP_PDF_IMG_MAX_COUNT);
 
-    state.attachments.push({ id, name: file.name, type: 'text', text: pages.join('\n\n'),
-      ext, pdf: true, pageCount: pages.length,
+    /* 🆕 v1.7.583 — LE PDF ARRIVE EN MARKDOWN, comme le Word : le moteur y trouve ses
+       sections, ses listes et ses paragraphes, et le rôle (contenu / modèle / contexte)
+       s'applique exactement de la même façon. */
+    state.attachments.push({ id, name: file.name, type: 'text', text: texte,
+      ext, pdf: true, markdown: true, pageCount: pagesLignes.length,
+      titreCount: nbTitres, puceCount: nbPuces,
       imageCount: imagesRetenues.length,
       imagesTotal: imagesTrouvees.length });
+    try {
+      /* Trace de contrôle : elle sert à juger la lecture d'un PDF en un coup d'œil
+         (niveaux de titres + premiers intitulés + début du texte). */
+      const _titres = texte.split('\n').filter(function (l) { return /^#{1,6}\s/.test(l); });
+      const _niv = function (n) { return _titres.filter(function (l) { return l.indexOf('#'.repeat(n) + ' ') === 0; }).length; };
+      console.log('[PDF] « ' + file.name + ' » → markdown : ' + pagesLignes.length + ' page(s), ' +
+        _titres.length + ' titre(s) [H1 ' + _niv(1) + ' · H2 ' + _niv(2) + ' · H3 ' + _niv(3) + '], ' +
+        nbPuces + ' puce(s), ' + texte.length + ' caractères. Titres : ' +
+        _titres.slice(0, 12).map(function (l) { return l.slice(0, 40); }).join(' / ') +
+        ' — texte : ' + texte.slice(0, 180).replace(/\n/g, ' | '));
+    } catch (_) {}
 
     // Chaque image devient une PIECE JOINTE SEPAREE : le modele les place par
     // "imageIndex", exactement comme une image jointe manuellement.
@@ -5286,13 +5528,18 @@
       });
     });
 
-    if (imagesRetenues.length) {
-      appendChat('assistant', 'PDF lu : ' + pages.length + ' page(s) de texte, ' +
-        imagesRetenues.length + ' image(s) extraite(s)' +
-        (imagesTrouvees.length > imagesRetenues.length
-          ? ' sur ' + imagesTrouvees.length + ' detectee(s) — les plus grandes ont ete conservees'
-          : '') + '.');
-    }
+    /* 🆕 v1.7.583 — le message dit ce qui a été COMPRIS, pas seulement « lu » : c'est ce
+       qui permet de juger la lecture d'un PDF (l'utilisateur l'avait demandé). */
+    appendChat('assistant', '📕 « ' + file.name + ' » : ' + pagesLignes.length + ' page(s) converties en markdown — ' +
+      nbTitres + ' titre(s) détecté(s), ' + nbPuces + ' entrée(s) de liste, ' +
+      texte.length.toLocaleString('fr-FR') + ' caractères' +
+      (imagesRetenues.length
+        ? ', ' + imagesRetenues.length + ' image(s) extraite(s)' +
+          (imagesTrouvees.length > imagesRetenues.length
+            ? ' sur ' + imagesTrouvees.length + ' détectée(s) — les plus grandes ont été conservées'
+            : '')
+        : '') +
+      '. Les en-têtes et pieds répétés ont été écartés : la maquette reçoit le contenu, pas la pagination du fichier.');
     renderAttachBar();
   }
 
