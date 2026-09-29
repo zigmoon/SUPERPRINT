@@ -1874,6 +1874,9 @@
       <button type="button" data-ex="3"></button>
       <button type="button" data-ex="4"></button>
       <button type="button" data-ex="5"></button>
+      <!-- 6e pastille : DÉMONSTRATION DU DOCUMENT WORD COMPLEXE (fourni avec le studio).
+           Le clic attache le .docx par le MÊME chemin que le bouton d'import. -->
+      <button type="button" data-ex="6" data-pj="word"></button>
     </div>
     <div class="st-foot">
       <span id="stFormat"></span>
@@ -3461,7 +3464,13 @@
       });
     }
     document.querySelectorAll('#starter .st-ex button').forEach(function (b) {
-      b.addEventListener('click', function () { spStarterExemple(b.getAttribute('data-p') || b.textContent); });
+      b.addEventListener('click', function () {
+        spStarterExemple(b.getAttribute('data-p') || b.textContent);
+        /* Pastille « DOCUMENT WORD COMPLEXE » (fourni avec le studio) : le clic attache
+           le .docx par le MÊME chemin que le bouton d'import — on teste donc exactement
+           ce que vivra l'utilisateur. */
+        if (b.getAttribute('data-pj') === 'word') { try { spExempleWordJoindre(); } catch (_) {} }
+      });
     });
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape' || !spStarterOuvert()) return;
@@ -7776,11 +7785,13 @@ function spRtfLayoutInfo(src) {
     "st.ex3": "4-page catalogue",
     "st.ex4": "8-page booklet",
     "st.ex5": "Business card",
+    "st.ex6": "Complex Word file",
     "st.ex1p": "Minimalist A4 poster for an electronic jazz festival: huge title across two lines at the top, a thin subtitle under it, one large full-width photo in the middle, and a dark band at the bottom with the dates, the city and the website. Plenty of white space around the blocks, deep blue, turquoise and off-white palette, very bold sans-serif title, small and widely spaced body text.",
     "st.ex2p": "A4 magazine cover: strong title across the full width at the top, a full-page photo in the middle, three short teasers lined up along the bottom, issue number and price discreet in a corner. Equal margins, condensed sans-serif headings, thin divider rules, high-contrast palette with a single accent colour.",
     "st.ex3p": "A4 catalogue of 4 pages showing 8 products: page 1 is the cover with the title, one photo and a single strapline; pages 2 to 4 show the products in a regular 2-column grid, each with photo, name, short description and price in bold. Same margins and same gutters on every page, sans-serif section headings, thin divider rules between rows.",
     "st.ex4p": "8-page A4 booklet laid out as spreads: the cover alone carries the title and a large visual, then a short editorial and six pages of consistent content — text in two justified columns, boxed callouts, captioned photos — and a last page with the contact details. Same grid, same margins and same type family throughout, folios at the bottom.",
     "st.ex5p": "85 × 55 mm business card on a light background: name in bold at the top left, job title small just below, contact details aligned along the bottom, one thin horizontal rule as a separator, discreet logo at the top right. Sober typography, small body size, plenty of air, no solid fills.",
+    "st.ex6p": "8-page A4 booklet from the attached Word document: keep its structure (headings, paragraphs, lists, tables), reuse the colours written in the document and place its images.",
     "st.tag.keyReco": "API key · recommended",
     "st.usage.livre": "full book",
     "st.nk.gabarit": "deterministic local typesetting — templates, margins, grids, folios (0 tokens)",
@@ -7825,11 +7836,13 @@ function spRtfLayoutInfo(src) {
     "st.ex3": "Catalogue 4 pages",
     "st.ex4": "Cahier 8 pages",
     "st.ex5": "Carte de visite",
+    "st.ex6": "Word complexe",
     "st.ex1p": "Affiche A4 pour un festival de jazz électronique : titre énorme en haut sur deux lignes, sous-titre fin juste dessous, une grande photo pleine largeur au centre, puis en bas un bandeau sombre avec les dates, la ville et le site. Beaucoup de blanc autour des blocs, palette bleu nuit, turquoise et blanc cassé, titre en sans-serif très grasse, texte courant petit et très espacé.",
     "st.ex2p": "Couverture de magazine A4 : titre fort sur toute la largeur en haut, photo pleine page au centre, trois accroches courtes alignées sur la ligne du bas, numéro et prix discrets dans un coin. Marges égales, titres en sans-serif condensé, filets fins de séparation, palette contrastée avec une couleur d'accent unique.",
     "st.ex3p": "Catalogue A4 de 4 pages présentant 8 produits : page 1 la couverture avec le titre, une photo et une phrase d'accroche ; pages 2 à 4 les produits en grille régulière de 2 colonnes, chacun avec photo, nom, description courte et prix en gras. Mêmes marges et mêmes gouttières sur toutes les pages, titres de section en sans-serif, filets de séparation entre les lignes.",
     "st.ex4p": "Cahier A4 de 8 pages en double page : la couverture seule porte le titre et un grand visuel, puis un édito court et six pages de contenu cohérent — texte en deux colonnes justifiées, encadrés d'encadré, photos légendées — et une dernière page avec les contacts. Même grille, mêmes marges et même famille typographique sur toutes les pages, folios en bas.",
     "st.ex5p": "Carte de visite 85 × 55 mm sur fond clair : nom en gras en haut à gauche, fonction en petit juste dessous, coordonnées alignées en bas de la carte, un filet fin horizontal de séparation, logo discret en haut à droite. Typographie sobre, corps petit, beaucoup d'air, aucun aplat plein.",
+    "st.ex6p": "Cahier A4 de 8 pages à partir du document Word joint : garde sa structure (titres, paragraphes, listes, tableaux), reprend les couleurs écrites dans le document et place ses images.",
     "st.tag.keyReco": "clé API · recommandé",
     "st.usage.livre": "livre complet",
     "st.nk.gabarit": "mise en page locale déterministe — gabarits, marges, grilles, folios (0 jeton)",
@@ -7874,11 +7887,13 @@ function spRtfLayoutInfo(src) {
     "st.ex3": "4ページのカタログ",
     "st.ex4": "8ページの冊子",
     "st.ex5": "名刺",
+    "st.ex6": "複雑なWord文書",
     "st.ex1p": "エレクトロ・ジャズフェスのためのA4ポスター。上部に2行にわたる巨大なタイトル、その下に細いサブタイトル、中央に横幅いっぱいの大きな写真、下部に日付・都市・ウェブサイトを載せた暗い帯。プロックの周りに十分な余白、濃篍・ターコイズ・オフホワイトの配色、タイトルは極太のサンセリフ、本文は小さめで字間を広く。",
     "st.ex2p": "A4雑誌の表紙：上部に幅いっぱいの強いタイトル、中央に全面写真、下部に短い案内を3つ並べ、号数と価格を隅に小さく。均等な余白、縦長のサンセリフ見出し、細い区切り線、アクセントカラー1色のコントラストの強い配色。",
     "st.ex3p": "8商品を紹介するA4・4ページのカタログ：1ページ目は表紙（タイトル・写真・キャッチコピー1行）、2～4ページは2段組みのグリッドで商品ごとに写真・名称・短い説明・太字の価格。全ページで同じ余白と段間、見出しはサンセリフ、行間の区切り線。",
     "st.ex4p": "A4・8ページの冊子（見開き構成）：表紙だけにタイトルと大きなビジュアル、続いて短い巻頭言、内容6ページ（2段組みの両端揃えの本文、囲み記事、キャプション付きの写真）、最後は連絡先のページ。全ページで同じグリッド・余白・書体、ノンブルを下部に。",
     "st.ex5p": "明るい背景の名刺 85 × 55 mm：左上に太字の氏名、その下に小さく役職、下部に連絡先を揃え、細い水平の区切り線、右上に控えめなロゴ。落ち着いたタイポグラフィ、小さい本文、余白を多く、ベタ面は使わない。",
+    "st.ex6p": "添付のWord文書からA4・8ページの冊子：見出し・段落・リスト・表の構造を保ち、文書に書かれた色を引き継ぎ、画像を配置する。",
     "st.tag.keyReco": "APIキー・おすすめ",
     "st.usage.livre": "本格・書籍",
     "st.nk.gabarit": "ローカルで決定的な組版 — テンプレート・余白・グリッド・ノンブル（0トークン）",
@@ -7928,21 +7943,24 @@ function spRtfLayoutInfo(src) {
       ['Affiche 40 × 60', "Affiche 40 x 60 cm pour un festival de jazz : titre enorme sur trois lignes, une date, un lieu, un grand visuel, beaucoup d'air."],
       ['Carte de visite', "Carte de visite 85 x 55 mm : nom en gras, fonction, telephone, courriel, un filet fin de separation, logo discret en haut a droite."],
       ['Catalogue 4 pages', "Catalogue de 4 pages presentant 8 produits : couverture avec titre et visuel, fiches produit avec image, nom, description et prix, derniere page contact."],
-      ['Menu de restaurant', "Menu de restaurant A4 : entrees, plats et desserts avec prix, titre centre, filets fins, adresse en bas de page."]
+      ['Menu de restaurant', "Menu de restaurant A4 : entrees, plats et desserts avec prix, titre centre, filets fins, adresse en bas de page."],
+      ['Word complexe', "Cahier de 8 pages a partir du document Word joint : garde la structure (titres, paragraphes, listes, tableaux), reprend les couleurs du document et place ses images.", 'word']
     ],
     en: [
       ['8-page booklet', "A4 8-page booklet in spreads: the cover alone carries the title and a large visual, then a short editorial and content pages in two justified columns with boxes and captioned photos, folios at the bottom."],
       ['40 × 60 poster', "40 x 60 cm poster for a jazz festival: huge three-line title, a date, a venue, a large visual, plenty of white space."],
       ['Business card', "85 x 55 mm business card: name in bold, job title, phone, email, a thin separator rule, discreet logo top right."],
       ['4-page catalog', "4-page catalog showing 8 products: cover with title and visual, product cards with image, name, description and price, contact on the last page."],
-      ['Restaurant menu', "A4 restaurant menu: starters, mains and desserts with prices, centred title, thin rules, address at the bottom."]
+      ['Restaurant menu', "A4 restaurant menu: starters, mains and desserts with prices, centred title, thin rules, address at the bottom."],
+      ['Complex Word file', "8-page booklet from the attached Word document: keep its structure (headings, paragraphs, lists, tables), reuse the document colours and place its images.", 'word']
     ],
     jp: [
       ['8ページ冊子', 'A4 8ページの冊子（見開き）：表紙はタイトルと大きなビジュアルのみ、次に短い巻頭言、本文は2段組み両端揃えで囲みとキャプション付き写真、下部にノンブル。'],
       ['40×60ポスター', 'ジャズフェスティバルの40×60cmポスター：3行の巨大なタイトル、日付、会場、大きなビジュアル、余白たっぷり。'],
       ['名刺', '85×55mmの名刺：太字の氏名、役職、電話、メール、細い区切り線、右上に控えめなロゴ。'],
       ['4ページカタログ', '8商品の4ページカタログ：表紙にタイトルとビジュアル、商品カードに画像・名前・説明・価格、最終ページに連絡先。'],
-      ['レストランメニュー', 'A4レストランメニュー：前菜・メイン・デザートと価格、中央揃えのタイトル、細い罫線、下部に住所。']
+      ['レストランメニュー', 'A4レストランメニュー：前菜・メイン・デザートと価格、中央揃えのタイトル、細い罫線、下部に住所。'],
+      ['複雑なWord文書', '添付のWord文書から8ページの冊子：見出し・段落・リスト・表の構造を保ち、文書の色を引き継ぎ、画像を配置する。', 'word']
     ]
   };
   function spExFam(eng) {
@@ -7962,11 +7980,17 @@ function spRtfLayoutInfo(src) {
   function spExemplesPeindre() {
     const eng = (typeof spStEngCourant === 'function') ? spStEngCourant() : state.engine;
     const exs = spExemples(eng);
+    /* La 6e pastille (« document Word complexe ») n'appartient qu'à NOTRE moteur : on la
+       masque dès qu'un autre moteur est choisi (sinon elle restait visible, vide). */
+    const six = document.querySelector('#starter .st-ex button[data-ex="6"]');
+    if (six) six.style.display = (exs && exs[5]) ? '' : 'none';
     if (!exs) return false;
     document.querySelectorAll('#starter .st-ex button').forEach(function (b, i) {
       if (!exs[i]) return;
+      b.style.display = '';
       b.textContent = exs[i][0];
       b.setAttribute('data-p', exs[i][1]);
+      if (exs[i][2]) b.setAttribute('data-pj', exs[i][2]); else b.removeAttribute('data-pj');
     });
     return true;
   }
@@ -9917,6 +9941,37 @@ function spRtfLayoutInfo(src) {
     ti.focus();
     spStarterAutoGrow();
   }
+
+  /* ══ PASTILLE DE DÉMONSTRATION : LE DOCUMENT WORD COMPLEXE ═════════════════════════
+     Demande utilisateur : « insère le word complexe dans la préhome, mets nos modèles et
+     regardons s'il l'intègre bien ». Le fichier est livré avec le studio (base64 dans
+     app/JS/word-exemple.js, chargé à la demande) : on en refait un vrai File et on le
+     confie à addAttachment(), EXACTEMENT comme le bouton « Pièces jointes ». Aucun
+     chemin spécial : si ça marche ici, ça marche pour l'utilisateur. */
+  async function spExempleWordJoindre() {
+    const nom = window.SP_WORD_EXEMPLE_NOM || 'document-word-complexe.docx';
+    try {
+      if (!(state.attachments || []).some(function (a) { return a.name === nom; })) {
+        if (!window.SP_WORD_EXEMPLE_B64) {
+          await loadAttachmentLibrary('app/JS/word-exemple.js', function () { return !!window.SP_WORD_EXEMPLE_B64; });
+        }
+        const b64 = window.SP_WORD_EXEMPLE_B64;
+        if (!b64) {
+          appendChat('assistant', 'Exemple Word indisponible : le fichier app/JS/word-exemple.js manque à côté du studio.');
+          return false;
+        }
+        const bin = atob(b64);
+        const octets = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) octets[i] = bin.charCodeAt(i);
+        const fichier = new File([octets], nom, { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        pjModePendant = 'content';
+        addAttachment(fichier);
+      }
+      setTimeout(function () { try { spStarterPJ(); renderAttachBar(); } catch (_) {} }, 1200);
+      return true;
+    } catch (e) { return false; }
+  }
+  window.sp213ExempleWord = spExempleWordJoindre;
   /* Dicter / clavier à l'écran écrivent dans le studio : on suit la valeur pour la
      recopier dans le champ de l'écran de démarrage (sinon le texte semblait perdu). */
   function spStarterSuivreStudio() {
