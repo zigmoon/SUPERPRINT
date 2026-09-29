@@ -8313,19 +8313,100 @@ function spRtfLayoutInfo(src) {
     if (esp) e.charSpacing = esp;
     return e;
   }
-  // Zone photo : la vraie image jointe si elle existe — SINON RIEN.
+  // Zone photo : la vraie image jointe si elle existe — SINON UN FOND GÉNÉRÉ.
   function spGabPhoto(L, e, x, y, w, h, legende) {
     /* L'image jointe est posée par son INDEX : le studio réinjecte la data URI,
        exactement comme pour une réponse d'IA (hydrateUserImages).
-       ⚠️ AVANT : sans photo jointe, on dessinait un cadre clair légendé pour
-       « réserver la place ». Retour utilisateur : « un rectangle avec un rond blanc
-       et un rectangle blanc dedans… cette boîte, supprime-la ». On ne dessine PLUS
-       rien : la page reste du papier. Renvoie true quand une photo a été posée. */
+       ⚠️ SANS PHOTO JOINTE : l'emplacement n'est plus laissé vide (et surtout pas un
+       cadre muet — retour utilisateur : « cette boîte, supprime-la ») : le modèle y
+       pose un FOND GÉNÉRÉ (demande utilisateur : « un générateur de fond automatique
+       … qui s'incluera automatiquement dans les emplacements image prévus »).
+       Renvoie true quand l'emplacement a été rempli. */
+    L.slot = (L.slot || 0) + 1;
     if (L.photos.length) {
       e.push({ type: 'image', imageIndex: L.photos.shift(), left: x, top: y, width: w, height: h });
       return true;
     }
-    return false;
+    e.push(spGabFondAuto(L, x, y, w, h, L.slot));
+    return true;
+  }
+
+  /* ══ GÉNÉRATEUR DE FONDS AUTOMATIQUE ══════════════════════════════════════════════
+     Huit motifs vectoriels (lignes, grille, points, diagonales, vagues, blocs,
+     terrazzo, dégradé) — noir et blanc, teintés de la couleur d'accent, ou colorés.
+     Chaque fond est un SVG au format EXACT de l'emplacement : net à l'impression,
+     quelques centaines d'octets, aucun réseau, aucun coût. Le tirage est DÉTERMINISTE
+     (variation de la demande + numéro d'emplacement) : la même demande redonne la même
+     page. La luminance du fond est mémorisée pour que le garde-fou de contraste sache
+     exactement ce qu'il y a sous la typographie. */
+  let SP_GAB_LUM_IMG = {};
+  const SP_GAB_MOTIFS = ['lignes', 'grille', 'points', 'diagonales', 'vagues', 'blocs', 'terrazzo', 'degrade'];
+  const SP_GAB_MOTIF_LUM = { lignes: 0.93, grille: 0.94, points: 0.93, diagonales: 0.93, vagues: 0.9, blocs: 0.68, terrazzo: 0.88, degrade: 0.78 };
+
+  function spGabMotifSvg(motif, L, graine) {
+    const p = L.pal || {};
+    const sombre = !!p.noir;
+    const papier = sombre ? (p.fond || '#0e0e10') : '#ffffff';
+    const encre = sombre ? '#ffffff' : '#111111';
+    const accent = p.a || '#1f6feb';
+    const teinte = p.clair || '#f5f5f6';
+    let etat = Math.abs(Math.floor(graine || 1)) * 2654435761 % 4294967296;
+    const rnd = function () { etat = (etat * 1103515245 + 12345) % 2147483648; return etat / 2147483648; };
+    let s = '';
+    if (motif === 'lignes') {
+      for (let y = 6; y < 100; y += 7) s += '<line x1="0" y1="' + y + '" x2="100" y2="' + y + '" stroke="' + encre + '" stroke-width="0.35" opacity="0.22"/>';
+    } else if (motif === 'grille') {
+      for (let i = 0; i <= 100; i += 8) {
+        s += '<line x1="' + i + '" y1="0" x2="' + i + '" y2="100" stroke="' + encre + '" stroke-width="0.25" opacity="0.18"/>';
+        s += '<line x1="0" y1="' + i + '" x2="100" y2="' + i + '" stroke="' + encre + '" stroke-width="0.25" opacity="0.18"/>';
+      }
+    } else if (motif === 'points') {
+      for (let y = 5; y < 100; y += 9) for (let x = 5; x < 100; x += 9)
+        s += '<circle cx="' + x + '" cy="' + y + '" r="0.9" fill="' + encre + '" opacity="0.28"/>';
+    } else if (motif === 'diagonales') {
+      for (let i = -100; i < 100; i += 9)
+        s += '<line x1="' + i + '" y1="100" x2="' + (i + 100) + '" y2="0" stroke="' + encre + '" stroke-width="0.35" opacity="0.2"/>';
+    } else if (motif === 'vagues') {
+      for (let k2 = 0; k2 < 7; k2++) {
+        const y2 = 8 + k2 * 14;
+        s += '<path d="M0 ' + y2 + ' Q25 ' + (y2 - 7) + ' 50 ' + y2 + ' T100 ' + y2 + '" fill="none" stroke="' + accent + '" stroke-width="0.5" opacity="0.35"/>';
+      }
+    } else if (motif === 'blocs') {
+      s += '<rect x="0" y="0" width="46" height="34" fill="' + accent + '" opacity="0.22"/>';
+      s += '<rect x="54" y="0" width="46" height="58" fill="' + teinte + '" opacity="0.9"/>';
+      s += '<rect x="8" y="62" width="30" height="30" fill="' + encre + '" opacity="0.14"/>';
+      s += '<rect x="46" y="70" width="54" height="22" fill="' + accent + '" opacity="0.35"/>';
+      s += '<circle cx="24" cy="42" r="9" fill="none" stroke="' + accent + '" stroke-width="0.8" opacity="0.5"/>';
+    } else if (motif === 'terrazzo') {
+      for (let i = 0; i < 26; i++) {
+        const x2 = rnd() * 96, y3 = rnd() * 96, w2 = 3 + rnd() * 7, h2 = 3 + rnd() * 7;
+        const c = (i % 3 === 0) ? accent : ((i % 3 === 1) ? teinte : encre);
+        s += '<rect x="' + x2.toFixed(1) + '" y="' + y3.toFixed(1) + '" width="' + w2.toFixed(1) + '" height="' + h2.toFixed(1) + '" fill="' + c + '" opacity="' + (i % 3 === 2 ? 0.16 : 0.34) + '" transform="rotate(' + Math.round(rnd() * 90) + ' ' + x2.toFixed(1) + ' ' + y3.toFixed(1) + ')"/>';
+      }
+    } else {
+      s += '<defs><linearGradient id="spg" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="' + accent + '" stop-opacity="0.35"/>' +
+        '<stop offset="1" stop-color="' + teinte + '" stop-opacity="0.75"/></linearGradient></defs>';
+      s += '<rect x="0" y="0" width="100" height="100" fill="url(#spg)"/>';
+      s += '<rect x="0" y="92" width="100" height="1.2" fill="' + accent + '" opacity="0.8"/>';
+    }
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none" width="400" height="400">' +
+      '<rect x="0" y="0" width="100" height="100" fill="' + papier + '"/>' + s + '</svg>';
+  }
+
+  function spGabFondAuto(L, x, y, w, h, graine) {
+    /* UN MOTIF PAR PAGE (graphiquement cohérent) : l'indice vient de la page courante,
+       pas de l'emplacement — autrement trois motifs différents se disputaient la même
+       page (mesuré). */
+    const i = Math.abs(Math.floor((L.pageCourante || 0) + (graine || 0) / 3 + (L.n || 0))) % SP_GAB_MOTIFS.length;
+    const motif = SP_GAB_MOTIFS[i];
+    let url = '';
+    try {
+      url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(spGabMotifSvg(motif, L, graine));
+    } catch (_) { url = ''; }
+    const lum = SP_GAB_MOTIF_LUM[motif] || 0.9;
+    if (url) SP_GAB_LUM_IMG[url] = (L.pal && L.pal.noir) ? Math.min(lum, 0.14) : lum;
+    return { type: 'image', imageUrl: url, left: x, top: y, width: w, height: h, opacity: 1 };
   }
   function spGabFolio(L, n, tot) {
     return [spGabL(L.x0, L.y1 + 14, L.cw, L.pal.gris, 1), spGabT(L.x0, L.y1 + 20, L.cw, n + ' / ' + tot, 8, '#8a8f98', null, 'center')];
@@ -8507,9 +8588,9 @@ function spRtfLayoutInfo(src) {
     for (let i = 0; i < 6; i++) {
       const x = L.x0 + (i % 3) * (cw + L.g.gutter), y = y0 + Math.floor(i / 3) * (hh + L.g.gutter * 1.4);
       const legende = spGabPhoto(L, e, x, y, cw, hh, 'projet ' + (i + 1));
-      /* Légende SEULEMENT si une photo occupe la case : sans photo, plus de boîte
-         ni de mot « Projet » orphelin (retour utilisateur). */
-      if (legende) e.push(spGabT(x, y + hh + 6, cw * 0.9, spGabCourt(leg[i] || ('Projet ' + (i + 1)), 40), 8.5, p.txt, 'bold', 'left', 1.25));
+      /* Légende SEULEMENT s'il y a un vrai texte à légender (le fond généré, lui,
+         remplit la case : on n'écrit pas « Projet 3 » dans le vide). */
+      if (legende && leg[i]) e.push(spGabT(x, y + hh + 6, cw * 0.9, spGabCourt(leg[i], 40), 8.5, p.txt, 'bold', 'left', 1.25));
     }
     return e;
   }
@@ -8598,7 +8679,9 @@ function spRtfLayoutInfo(src) {
       e.push(spGabT(L.x0, L.y0 + k * 16, L.cw * 0.9, spGabCourt(M.chapeau || M.titre, 200), g.chapeau, p.txt, null, 'left', 1.6));
       e.push(spGabL(L.x0, L.y0 + k * 112, L.cw * 0.34, p.a, 2));
       if (texte(0)) e.push(spGabT(L.x0, L.y0 + k * 130, L.cw * 0.68, spGabCourt(texte(0), 460), g.corps, '#4b5563', null, 'left', 1.55));
-      if (L.photos.length) spGabPhoto(L, e, L.x1 - L.cw * 0.28, L.y0 + k * 130, L.cw * 0.28, Math.min(L.ch * 0.36, L.y1 - L.y0 - k * 130), 'photo');
+      /* L'emplacement est TOUJOURS rempli : la photo jointe s'il y en a une, sinon un
+         FOND GÉNÉRÉ (le modèle ne laisse plus de trou dans la page). */
+      spGabPhoto(L, e, L.x1 - L.cw * 0.28, L.y0 + k * 130, L.cw * 0.28, Math.min(L.ch * 0.36, L.y1 - L.y0 - k * 130), 'photo');
       return e;
     }
     // ── pages de contenu : deux colonnes, encadrés, photo légendée
@@ -8621,6 +8704,14 @@ function spRtfLayoutInfo(src) {
       y += k * 26;
       e.push(spGabL(x, y, cw * 0.28, p.a, 2));
       y += k * 14;
+      /* ══ COLONNE SANS TEXTE : GRAND VIDE INTERDIT ══ Quand la demande est courte (pas
+         de pièce jointe), une colonne n'avait rien à poser : la page sortait à moitié
+         vide. Le FOND GÉNÉRÉ remplit la colonne (demande utilisateur : « un générateur
+         de fond … qui s'incluera automatiquement dans les emplacements image prévus »). */
+      if (!s.ps.length && !M.chapeau) {
+        spGabPhoto(L, e, x, y, cw, Math.max(L.k * 140, L.y1 - y), 'illustration');
+        return;
+      }
       (s.ps.length ? s.ps : [M.chapeau]).forEach(function (para, j) {
         if (!para) return;
         if (para.length <= 130 && j > 0) {
@@ -8635,7 +8726,14 @@ function spRtfLayoutInfo(src) {
         e.push(spGabT(x, y, cw, para, g.corps, '#374151', null, 'justify', 1.5));
         y += Math.max(k * 48, (para.length / 3.1) * g.corps * 0.34) + k * 14;
       });
-      if (col === 1 && L.photos.length && (L.y1 - k * 22 - Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26))) > y + k * 18) {
+      /* ══ BAS DE COLONNE COURT : FOND GÉNÉRÉ, JAMAIS UN GRAND VIDE ══ Un document
+         client court laissait la moitié de la page en blanc. Le générateur de fonds
+         remplit la place restante (demande utilisateur : « des fonds … qui s'incluront
+         automatiquement dans les emplacements image prévus dans nos maquettes »). */
+      if (y < L.y1 - k * 150) {
+        spGabPhoto(L, e, x, y + k * 20, cw, Math.max(k * 120, L.y1 - y - k * 20), 'illustration');
+      }
+      if (col === 1 && (L.y1 - k * 22 - Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26))) > y + k * 18) {
         const hP = Math.max(k * 60, Math.min(L.y1 - y - k * 20, L.ch * 0.26));
         const yP = L.y1 - k * 22 - hP;
         const legP = spGabPhoto(L, e, x, yP, cw, hP, 'photo');
@@ -9001,21 +9099,45 @@ function spRtfLayoutInfo(src) {
       };
       const Wmm = L.W / SP_GAB_K, Hmm = L.H / SP_GAB_K;
       const voiles = [];
-      const surImage = function (e) {
+      /* Ce qu'il y a SOUS le texte quand une IMAGE le recouvre : on renvoie sa
+         luminosité, mesurée par le studio pour une photo (`att.lum`) ou connue du
+         générateur pour un fond créé par nous. -1 = pas d'image sous ce texte. */
+      const imageSous = function (e) {
         const l = Number(e.left) || 0, t = Number(e.top) || 0, w = Number(e.width) || 0;
         const h = hMm(String(e.text || ''), Number(e.fontSize) || 10, w, Number(e.lineHeight) || 1.3);
+        let lum = -1;
         for (let i4 = 0; i4 < images.length; i4++) {
           const im = images[i4];
           const il = Number(im.left) || 0, it = Number(im.top) || 0, iw = Number(im.width) || 0, ih = Number(im.height) || 0;
-          if (l < il + iw - 1 && il < l + w - 1 && t < it + ih - 1 && it < t + h - 1) return true;
+          if (!(l < il + iw - 1 && il < l + w - 1 && t < it + ih - 1 && it < t + h - 1)) continue;
+          let lu = 0.5;
+          try {
+            if (im.imageUrl && SP_GAB_LUM_IMG[im.imageUrl] !== undefined) lu = SP_GAB_LUM_IMG[im.imageUrl];
+            else if (typeof state !== 'undefined' && state.attachments && typeof im.imageIndex === 'number') {
+              const att = state.attachments[im.imageIndex];
+              if (att && typeof att.lum === 'number' && att.lum >= 0) lu = att.lum;
+            }
+          } catch (_) {}
+          if (lu > lum) lum = lu;
         }
-        return false;
+        return lum;
       };
       els.forEach(function (e) {
         if (e.type !== 'text' || !e.fill) return;
         const l = Number(e.left) || 0, t = Number(e.top) || 0;
-        /* Texte SUR UNE PHOTO : voile + typographie claire, sans exception. */
-        if (surImage(e)) { voiles.push(e); return; }
+        /* TEXTE SUR UNE IMAGE (photo du client ou fond généré) :
+           — typographie déjà lisible sur cette image → on ne touche à RIEN ;
+           — image CLAIRE → encre foncée, sans voile ;
+           — image SOMBRE → voile assez opaque derrière le texte + encre claire. */
+        const lumSous = imageSous(e);
+        if (lumSous >= 0) {
+          const rI = function (a2, b3) { const x = Math.max(a2, b3) + 0.05, y = Math.min(a2, b3) + 0.05; return x / y; };
+          if (rI(lumSous, spGabLum(e.fill)) < 4.5) {
+            if (lumSous >= 0.45) { e.fill = fonce; corriges++; }
+            else voiles.push({ el: e, lum: lumSous });
+          }
+          return;
+        }
         /* Panneau réellement DERRIÈRE le texte : celui qui le recouvre le plus, en
            ignorant le fond de page (sinon il gagnerait toujours). */
         let fond = fondPage, aire = 0;
@@ -9074,29 +9196,15 @@ function spRtfLayoutInfo(src) {
         }
       });
       /* Le VOILE est inséré AVANT son texte (donc dessous), avec sa hauteur réelle. */
-      voiles.forEach(function (e) {
+      voiles.forEach(function (v) {
+        const e = v.el;
         const idx = els.indexOf(e);
         if (idx < 0) return;
         const l = Number(e.left) || 0, t = Number(e.top) || 0, w = Number(e.width) || 0;
         const h = hMm(String(e.text || ''), Number(e.fontSize) || 10, w, Number(e.lineHeight) || 1.3);
-        /* Luminosité de la photo recouverte : le voile est d'autant plus sombre que la
-           photo est claire (0,45 pour une photo sombre, 0,92 pour une photo blanche).
-           Sans cela, une typo claire sur une photo claire restait illisible. */
-        let lumImg = -1;
-        els.filter(function (r3) { return r3.type === 'image'; }).forEach(function (im) {
-          const il = Number(im.left) || 0, it = Number(im.top) || 0, iw = Number(im.width) || 0, ih = Number(im.height) || 0;
-          if (!(l < il + iw - 1 && il < l + w - 1 && t < it + ih - 1 && it < t + h - 1)) return;
-          let lu = 0.5;
-          try {
-            const att = (typeof state !== 'undefined' && state.attachments && typeof im.imageIndex === 'number') ? state.attachments[im.imageIndex] : null;
-            if (att && typeof att.lum === 'number' && att.lum >= 0) lu = att.lum;
-          } catch (_) {}
-          if (lu > lumImg) lumImg = lu;
-        });
-        if (lumImg < 0) lumImg = 0.5;
-        /* Opacité du voile : calculée pour que la typographie claire garde un contraste
-           suffisant MÊME sur une photo blanche (0,95). Sur une photo sombre, 0,55
-           suffit et la photo reste visible. */
+        /* Opacité du voile : d'autant plus sombre que l'image est claire (0,55 sur une
+           image sombre, 0,95 sur une image blanche) — le texte clair reste lisible. */
+        const lumImg = (typeof v.lum === 'number' && v.lum >= 0) ? v.lum : 0.5;
         const opa = Math.max(0.55, Math.min(0.95, 0.55 + 0.40 * lumImg));
         /* La double passe ne doit PAS superposer un second voile au même endroit. */
         const x0 = Math.max(0, l - 2), y0 = Math.max(0, t - 1.5);
@@ -9284,11 +9392,25 @@ function spRtfLayoutInfo(src) {
        page est une vraie 4e de couverture. */
     const livre = (g.fam === 'cahier' || g.fam === 'brochure');
     const galerie = (livre && texte.photos.length > 0 && tot >= 4);
-    if (livre && ((tot + (galerie ? 1 : 0)) % 2) === 1) tot += 1;
+    /* ══ RÈGLE D'IMPRIMEUR : UN CAHIER SE FAIT PAR 4 PAGES ═══════════════════════════
+       Un cahier s'imprime sur des FEUILLES PLIÉES : chaque feuille porte 4 pages. Un
+       cahier de 6 pages n'existe donc pas — l'imprimeur en fabrique 8, dont 2 blanches.
+       On arrondit le total AU MULTIPLE DE 4 SUPÉRIEUR (demande utilisateur : « un cahier
+       ne peut pas faire 6 pages, un cahier marche par 4 pages »). Le studio impose
+       ensuite (page 1 seule à droite, puis les paires, dernière page seule) : avec un
+       multiple de 4 la dernière planche est une vraie double page. */
+    const demande = tot;                                    // pages demandées (avant règle)
+    if (livre) {
+      const totalPagine = Math.max(4, Math.ceil((tot + (galerie ? 1 : 0)) / 4) * 4);
+      tot = totalPagine - (galerie ? 1 : 0);
+    }
+    /* Le générateur de fonds repart proprement à chaque composition (luminances). */
+    SP_GAB_LUM_IMG = {};
     const pages = [];
     const lay = SP_GAB_LAY[g.fam] || spGabP_affiche;
     for (let i = 1; i <= tot; i++) {
       let els = [];
+      L.pageCourante = i;                    // pour le générateur de fonds (un motif par page)
       try { els = lay(L, i, tot) || []; } catch (err) { els = []; }
       /* FOND DE PAGE : blanc, ou le noir chic du thème « premium ». Le fond sombre est
          posé en DEUX rectangles (chacun 46 % de la hauteur) et non en un seul aplat
@@ -9317,7 +9439,7 @@ function spRtfLayoutInfo(src) {
       g2.push(spGabL(L.x0, L.k * 66, L.cw, L.pal.a, 3));
       const cw2 = (L.cw - L.g.gutter * SP_GAB_K) / 2;
       const hh = Math.min(L.ch * 0.24, L.k * 140);
-      for (let i = 0; i < 6 && L.photos.length; i++) {
+      for (let i = 0; i < 6; i++) {
         const x = L.x0 + (i % 2) * (cw2 + L.g.gutter * SP_GAB_K);
         const y = L.k * 80 + Math.floor(i / 2) * (hh + L.k * 22);
         spGabPhoto(L, g2, x, y, cw2, hh, 'photo');
@@ -9361,7 +9483,16 @@ function spRtfLayoutInfo(src) {
     } catch (_) {}
     j('info', 'Format lu : ' + fmt.W + '×' + fmt.H + ' mm, ' + (fmt.carre ? 'carré' : (fmt.pays ? 'paysage' : 'portrait'))
       + (fmt.mini ? ', petit format' : '') + (fmt.bandeau ? ', format bandeau' : '') + (fmt.grandFmt ? ', grand format' : '') + '.');
-    j('info', 'Imposition : ' + (spread ? 'DOUBLE PAGE (planches) — page 1 seule à droite, puis les paires gauche/droite, dernière page seule (total pair)' : 'page simple') + (g.folio ? ', folios' : '') + '.');
+    j('info', 'Imposition : ' + (livre
+      ? ('cahier de ' + pages.length + ' pages — multiple de 4, parce qu\'une feuille pli\u00e9e porte 4 pages')
+      : (spread ? 'double page (planches)' : 'page simple'))
+      + (spread ? ' ; page 1 seule, puis les paires gauche/droite, derni\u00e8re page seule' : '')
+      + (g.folio ? ', folios' : '') + '.');
+    if (livre && tot !== demande) {
+      j('info', 'Mise en pages : ' + demande + ' page(s) demand\u00e9e(s) \u2192 ' + pages.length +
+        ' page(s) compos\u00e9e(s). Un cahier s\'imprime par 4 pages : l\'imprimeur en ferait de toute fa\u00e7on ' +
+        'un multiple de 4, dont des pages blanches. On les remplit plut\u00f4t que de les laisser vides.');
+    }
     j('info', 'Règles : marges ' + M.map(function (v) { return Math.round(v * 10) / 10; }).join('/') + ' mm, ' + g.cols + ' colonne(s), gouttière ' + g.gutter + ' mm, interligne des titres 0,95.');
     j('info', 'Contenu : ' + texte.source + ' — ' + posees + ' photo(s) placée(s), texte ' + (texte.brief.length + srcLen(texte)) + ' caractères.' + (texte.contexte ? ' Pièce(s) jointe(s) en CONTEXTE prises en compte pour le ton et le thème.' : ''));
     return {
