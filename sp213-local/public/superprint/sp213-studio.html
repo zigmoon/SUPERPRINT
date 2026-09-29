@@ -679,11 +679,15 @@
      même bordure) et MÊME APPARITION (au survol de la page). Demande utilisateur :
      « exactement le même style que la corbeille et elle doit arriver au même moment ».
      Il est simplement posé SOUS la corbeille, dans la même colonne. */
+  /* ⚠️ _SP_STUDIO_LOCK_589 — « même aspect exactement » (retour utilisateur : le
+     cadenas et la poubelle n'avaient pas le même CONTOUR). Le contour de la pastille
+     est le MÊME dans les deux états : ce qui distingue « verrouillé » c'est l'ENCRE du
+     cadenas (accent) et la forme du pinceau (fermé / ouvert), jamais le cadre. */
   .sp-page-del.sp-lock { top: 24px; right: -6px; }
-  .sp-page-del.sp-lock.sp-lock-ferme { color: var(--accent, #2f6fed); border-color: var(--accent, #2f6fed); }
+  .sp-page-del.sp-lock.sp-lock-ferme { color: var(--accent, #2f6fed); border-color: var(--border); }
   /* Même pastille, mais le survol d'un cadenas ne doit pas virer au rouge (couleur
      de suppression de la corbeille) : couleur d'accent. */
-  .sp-page-del.sp-lock:hover { color: var(--accent, #2f6fed); border-color: var(--accent, #2f6fed); }
+  .sp-page-del.sp-lock:hover { color: var(--accent, #2f6fed); border-color: var(--border); }
   .sp-page-del.sp-lock svg { pointer-events: none; }
   .page-label {
     text-align: center; font-size: 10px; color: var(--muted); letter-spacing: 0.5px;
@@ -1030,14 +1034,14 @@
      barre d'actions et il attirait l'œil sur une action secondaire. La bordure
      reste DÉCLARÉE transparente (1px) pour que la taille du bouton et
      l'alignement des quatre icônes ne bougent pas d'un pixel. */
-  #attachBtn, #micBtn, #webImgBtn, #kbBtn {
+  #attachBtn, #micBtn, #webImgBtn, #kbBtn, #reglagesBtn {
     flex-shrink: 0; width: 30px; height: 30px; padding: 0; border-radius: 0;
     border: 1px solid transparent; background: transparent; color: var(--text); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: all 0.15s;
   }
-  #attachBtn .ic, #micBtn .ic, #webImgBtn .ic, #kbBtn .ic { width: 14px; height: 14px; }
-  #attachBtn:hover, #micBtn:hover, #webImgBtn:hover, #kbBtn:hover { background: var(--btn-hover); }
+  #attachBtn .ic, #micBtn .ic, #webImgBtn .ic, #kbBtn .ic, #reglagesBtn .ic { width: 14px; height: 14px; }
+  #attachBtn:hover, #micBtn:hover, #webImgBtn:hover, #kbBtn:hover, #reglagesBtn:hover { background: var(--btn-hover); }
   #micBtn:disabled { opacity: .4; cursor: not-allowed; }
   #micBtn.listening { background: #ef4444; color: #fff; }
   #micBtn.listening .ic { animation: micPulse 1s infinite; }
@@ -16484,7 +16488,15 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
        `numeros[i]` = numéros de page RÉELS de la planche. */
     const enDouble = (doc.viewMode === 'spread');
     const cotes = doc.pages.map(p => enDouble ? spCoteSeulePlanche(p, doc.w) : null);
-    const numeros = spNumerosPlanches(doc.pages, cotes);
+    /* ══ _SP_STUDIO_PAGINATION_589 — NUMÉROTATION DES LIBELLÉS ══
+       DÉFAUT MESURÉ (retour utilisateur : « la pagination automatique arrive parfois au
+       milieu de page, c'est étrange ») : en PAGE SIMPLE, spNumerosPlanches() était
+       appelée alors qu'elle compte des PLANCHEs — chaque page recevait donc la
+       numérotation d'une planche de deux pages : les libellés affichaient « Page 1,
+       Page 3, Page 5… Page 23 » pour un document de 12 pages, pendant que les folios
+       imprimés disaient 1, 2, 3… Les deux numérotations se contredisaient. En page
+       simple, chaque carte EST une page : on numérote 1, 2, 3… directement. */
+    const numeros = enDouble ? spNumerosPlanches(doc.pages, cotes) : doc.pages.map(function (p, i) { return [i + 1]; });
     const nbPagesReelles = numeros.reduce((n, a) => n + a.length, 0);
 
     doc.pages.forEach((p, iPage) => {
@@ -16526,7 +16538,19 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         window.spVerrouillerPage = function (pg, verrou) {
           if (!pg) return verrou;
           pg.locked = !!verrou;
-          const c = pg.canvas;
+          /* ══ _SP_STUDIO_LOCK_589 — LE CANEVAS VIT SUR state.pages[i], PAS SUR LA PAGE DU
+             DOCUMENT. L'ancien code lisait `pg.canvas` : on lui passe la page du document
+             (doc.pages[i]) pour qui cette propriété n'existe pas — le cadenas changeait
+             donc d'ICÔNE sans que RIEN ne soit verrouillé (5 objets restaient
+             sélectionnables). C'est exactement le retour utilisateur : « le verrouillage
+             par défaut ne semble pas marcher ». On retrouve le canevas par l'index. */
+          const rec = (function () {
+            try {
+              return (state.pages || []).filter(function (x) { return x && x.pageIndex === pg.pageIndex; })[0] || null;
+            } catch (_) { return null; }
+          })();
+          if (rec) rec.locked = !!verrou;              // l'état suit aussi l'enregistrement d'aperçu
+          const c = pg.canvas || (rec && rec.canvas);
           if (c) {
             /* État mémorisé SUR LE CANEVAS : tout objet ajouté ensuite (guides de grille
                notamment) naît déjà verrouillé. */
