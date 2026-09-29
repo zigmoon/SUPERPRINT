@@ -1359,23 +1359,31 @@
   }
 
   /* Scrollbars — même style que SuperPrint (4px, pouce #ccc) */
+  /* 🆕 v1.7.581 — LE PANNEAU DES RÉGLAGES PORTE LE MÊME ASCENSEUR QUE LA PRÉVIEW
+     (demande utilisateur : « la scrollbar n'est pas la même que celle de la preview
+     dans ce nouvel espace, c'est dommage »). On ajoute simplement son corps à la
+     MÊME règle : largeur, piste et pouce sont donc rigoureusement identiques. */
   #previewScroll::-webkit-scrollbar,
   #chatLog::-webkit-scrollbar,
+  #spReg .rg-body::-webkit-scrollbar,
   #welcome::-webkit-scrollbar {
     width: 4px; height: 4px;
   }
   #previewScroll::-webkit-scrollbar-track,
   #chatLog::-webkit-scrollbar-track,
+  #spReg .rg-body::-webkit-scrollbar-track,
   #welcome::-webkit-scrollbar-track {
     background: var(--bg-workspace);
   }
   #previewScroll::-webkit-scrollbar-thumb,
   #chatLog::-webkit-scrollbar-thumb,
+  #spReg .rg-body::-webkit-scrollbar-thumb,
   #welcome::-webkit-scrollbar-thumb {
     background: #ccc; border-radius: 2px;
   }
   #previewScroll::-webkit-scrollbar-thumb:hover,
   #chatLog::-webkit-scrollbar-thumb:hover,
+  #spReg .rg-body::-webkit-scrollbar-thumb:hover,
   #welcome::-webkit-scrollbar-thumb:hover { background: #999; }
 
   /* ═══ 🆕 v1.7.580 · _SP_STUDIO_PREFS_580 ════════════════════════════════════════
@@ -1579,14 +1587,14 @@
           </span>
         </div>
         <select id="engineSelect">
-          <option value="gabarit">SP213 gabarit — mise en page déterministe (hors ligne, 0 €)</option>
+          <option value="gabarit">SP213 rock 1.0</option>
           <!-- 🆕 DeepSeek en PREMIER (demande utilisateur, 2026-09-12) -->
           <option value="deepseek" selected>DeepSeek (cloud — raisonnement)</option>
           <!-- 🆕 v1.7.580e — LE MOTEUR LOCAL EN 2ᵉ POSITION (demande utilisateur).
                100 % gratuit, AUCUNE clé API, aucun compte : le modèle tourne dans
                le navigateur (WebGPU) et le document ne quitte jamais la machine. -->
-          <option value="webllm-native">Sur cet ordinateur — gratuit, sans clé</option>
-          <option value="webllm">Sur cet ordinateur — gratuit, sans clé (choix du modèle)</option>
+          <option value="webllm-native">Sur cet ordinateur (gratuit)</option>
+          <option value="webllm">Sur cet ordinateur (gratuit) — choix du modèle</option>
           <!-- 🆕 v1.7.580g — Transformers.js : IA dans le navigateur, y compris SANS WebGPU.
                🗑️ v1.7.580w — DEUX MOTEURS RETIRÉS DE LA LISTE, MESURÉS COMME NE
                GÉNÉRANT RIEN DANS LE STUDIO :
@@ -1746,7 +1754,7 @@
         <div class="label-row">
           <label id="wllmLabel">Modèle local (WLLM)</label>
           <span class="info-icon" tabindex="0" aria-label="Info modèle local" data-i18n-aria="info.localModel">?
-            <span class="info-pop" id="wllmPop">Modèle exécuté localement dans votre navigateur (WebGPU). La VRAM indiquée est une estimation de mémoire graphique nécessaire, pas la taille du téléchargement ; la mémoire disponible varie selon l'appareil. Seuls les modèles capables de produire la maquette du studio sont proposés.<br><br>• <b>Qwen2.5 1.5B</b> (recommandé) : le plus léger, environ 1,63 Go de VRAM.<br>• <b>Ministral 3B</b> (Mistral, UE) : plus fiable, environ 2,9 Go.<br>• <b>Qwen2.5 7B</b> : meilleure qualité, environ 5,1 Go (GPU confortable).</span>
+            <span class="info-pop" id="wllmPop">Modèle exécuté localement dans votre navigateur (WebGPU). La VRAM indiquée est une estimation de mémoire graphique nécessaire, pas la taille du téléchargement ; la mémoire disponible varie selon l'appareil. Seuls les modèles capables de produire la maquette du studio sont proposés.<br><br>• <b>Qwen2.5 1.5B</b> (recommandé) : le plus léger, environ 1,63 Go de VRAM.<br>• <b>Qwen2.5 7B</b> : meilleure qualité, environ 5,1 Go (GPU confortable).</span>
           </span>
         </div>
         <select id="wllmModel"></select>
@@ -1980,7 +1988,7 @@
                        droite ; trouve une icône avec des tirettes »). -->
                   <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><circle cx="9" cy="6" r="2.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="12" r="2.3" fill="currentColor" stroke="none"/><circle cx="7" cy="18" r="2.3" fill="currentColor" stroke="none"/></svg>
                 </button>
-                <span class="tip" id="reglagesTip"><b>Réglages</b>Refactorise le document affiché en <b>direct</b> : format (mm, cm, pouces), thème, typographies, taille du texte, interligne, marges, colonnes, couleurs, folios. Le pop-in recouvre la conversation ; validez pour revenir à l'échange. Réservé à notre moteur <b>SP213 gabarit</b> (aucune clé, aucun coût, recomposition instantanée).</span>
+                <span class="tip" id="reglagesTip"><b>Réglages</b>Refactorise le document affiché en <b>direct</b> : format (mm, cm, pouces), thème, typographies, taille du texte, interligne, marges, colonnes, couleurs, folios. Le pop-in recouvre la conversation ; validez pour revenir à l'échange. Réservé à notre moteur <b>SP213 rock 1.0</b> (recomposition instantanée, 0 jeton).</span>
               </span>
               <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
                 <button class="icon-btn" id="micBtn" title="Dicter votre prompt (vocal)">
@@ -2048,7 +2056,7 @@
             <!-- _SP_STUDIO_REGLAGES_586 — RÉGLAGES AUSSI SUR L'ÉCRAN DE DÉMARRAGE (demande
                  utilisateur), avec l'icône à TIRETTES. Visible seulement pour notre
                  moteur SP213 gabarit : lui seul sait recomposer en direct. -->
-            <button class="icon-btn" id="stReglagesBtn" type="button" style="display:none" title="Réglages du document (SP213 gabarit)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><circle cx="9" cy="6" r="2.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="12" r="2.3" fill="currentColor" stroke="none"/><circle cx="7" cy="18" r="2.3" fill="currentColor" stroke="none"/></svg></button>
+            <button class="icon-btn" id="stReglagesBtn" type="button" style="display:none" title="Réglages du document (SP213 rock 1.0)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><circle cx="9" cy="6" r="2.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="12" r="2.3" fill="currentColor" stroke="none"/><circle cx="7" cy="18" r="2.3" fill="currentColor" stroke="none"/></svg></button>
             <!-- _SP_STUDIO_REGLAGES_586 — l'icône « image web (picsum) » est SUPPRIMÉE du
                  studio (demande utilisateur : « supprime Image web picsum partout »). -->
             <button class="icon-btn" id="stMicBtn" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg></button>
@@ -2284,7 +2292,6 @@
      clé : téléchargement unique, puis cache du navigateur (hors ligne possible). */
   const WLLM_MODELS = [
     ['Qwen2.5-1.5B-Instruct-q4f16_1-MLC','Qwen2.5 1.5B — recommandé, le plus léger (env. 1,63 Go VRAM)'],
-    ['Ministral-3-3B-Instruct-2512-BF16-q4f16_1-MLC','Ministral 3B (Mistral, UE) — fiable (env. 2,9 Go VRAM)'],
     ['Qwen2.5-7B-Instruct-q4f16_1-MLC','Qwen2.5 7B — qualité (env. 5,1 Go VRAM)']
   ];
 
@@ -2583,7 +2590,7 @@
       'welcome.orModelLabel': 'OpenRouter model (100% free)',
       'welcome.orModelPop': '100% free models (<b>:free</b> status on OpenRouter). Recommended for SP213 layouts (structured JSON).',
       'welcome.wllmLabel': 'Local model (WLLM)',
-      'welcome.wllmPop': 'Model runs locally in your browser (WebGPU). The VRAM figure is estimated graphics memory, not download size; available memory varies by device.<br><br>• <b>Qwen2.5 1.5B</b> (recommended): balanced for following instructions and structured JSON, about 1.63 GB VRAM.<br>• <b>SmolLM2 1.7B</b>: compact alternative, about 1.77 GB.<br>• <b>Llama 3.2 1B</b>: about 0.88 GB.<br>• <b>Qwen2.5 0.5B</b>: about 0.95 GB, more limited quality.<br>• <b>SmolLM2 360M</b>: about 0.38 GB, for simple tests.<br><br><b>To compose real pages (studio JSON)</b>, prefer a bigger model — still free, still no key:<br>• <b>Ministral 3B</b> (Mistral, EU): balanced, about 2.9 GB.<br>• <b>Llama 3.2 3B</b>: balanced, about 2.3 GB.<br>• <b>Mistral 7B</b> (EU, Apache 2.0): quality, about 4.6 GB.<br>• <b>Qwen2.5 7B</b>: quality, about 5.1 GB. The first load is long (the model is then cached).',
+      'welcome.wllmPop': 'Model runs locally in your browser (WebGPU). The VRAM figure is estimated graphics memory, not download size; available memory varies by device. Only the models that can actually produce this studio\'s layout are offered.<br><br>• <b>Qwen2.5 1.5B</b> (recommended): the lightest, about 1.63 GB VRAM.<br>• <b>Qwen2.5 7B</b>: better quality, about 5.1 GB (roomy GPU; the first load is long, the model is then cached).',
       'welcome.wllmModels': 'WebLLM models (Hugging Face)',
       'welcome.wllmCheck': 'Check WebGPU',
       'welcome.format': 'Document format',
@@ -2724,7 +2731,7 @@
       'welcome.orModelLabel': 'Modèle OpenRouter (100% free)',
       'welcome.orModelPop': 'Modèles 100% gratuits (statut <b>:free</b> sur OpenRouter). Recommandés pour la maquette SP213 (JSON structuré).',
       'welcome.wllmLabel': 'Modèle local (WLLM)',
-      'welcome.wllmPop': 'Modèle exécuté localement dans votre navigateur (WebGPU). La VRAM indiquée est une estimation de mémoire graphique, pas la taille du téléchargement; la mémoire disponible varie selon l\'appareil.<br><br>• <b>Qwen2.5 1.5B</b> (recommandé) : équilibré pour suivre des consignes et produire du JSON, environ 1,63 Go de VRAM.<br>• <b>SmolLM2 1.7B</b> : alternative compacte, environ 1,77 Go.<br>• <b>Llama 3.2 1B</b> : environ 0,88 Go.<br>• <b>Qwen2.5 0.5B</b> : environ 0,95 Go, qualité plus limitée.<br>• <b>SmolLM2 360M</b> : environ 0,38 Go, pour les essais simples.<br><br><b>Pour composer des pages (JSON du studio)</b>, préférez un modèle plus grand — toujours gratuit, sans clé :<br>• <b>Ministral 3B</b> (Mistral, UE) : équilibré, env. 2,9 Go.<br>• <b>Llama 3.2 3B</b> : équilibré, env. 2,3 Go.<br>• <b>Mistral 7B</b> (UE, Apache 2.0) : qualité, env. 4,6 Go.<br>• <b>Qwen2.5 7B</b> : qualité, env. 5,1 Go. Le 1ᵉʳ chargement est long (le modèle reste ensuite en cache).',
+      'welcome.wllmPop': 'Modèle exécuté localement dans votre navigateur (WebGPU). La VRAM indiquée est une estimation de mémoire graphique, pas la taille du téléchargement; la mémoire disponible varie selon l\'appareil. Seuls les modèles capables de produire la maquette du studio sont proposés.<br><br>• <b>Qwen2.5 1.5B</b> (recommandé) : le plus léger, environ 1,63 Go de VRAM.<br>• <b>Qwen2.5 7B</b> : meilleure qualité, environ 5,1 Go (GPU confortable ; le 1ᵉʳ chargement est long, le modèle reste ensuite en cache).',
       'welcome.wllmModels': 'Modèles WebLLM (Hugging Face)',
       'welcome.wllmCheck': 'Vérifier WebGPU',
       'welcome.format': 'Format du document',
@@ -2865,7 +2872,7 @@
       'welcome.orModelLabel': 'OpenRouterモデル（100%無料）',
       'welcome.orModelPop': '100%無料モデル（OpenRouterの<b>:free</b>ステータス）。SP213レイアウト（構造化JSON）に推奨。',
       'welcome.wllmLabel': 'ローカルモデル（WLLM）',
-      'welcome.wllmPop': 'ブラウザ（WebGPU）でローカル実行するモデルです。VRAMの数値はグラフィックメモリの推定値で、ダウンロード容量ではありません。利用可能なメモリは端末によって異なります。<br><br>• <b>Qwen2.5 1.5B</b>（推奨）: 指示への追従と構造化JSONのバランス型、約1.63GB。<br>• <b>SmolLM2 1.7B</b>: コンパクトな代替、約1.77GB。<br>• <b>Llama 3.2 1B</b>: 約0.88GB。<br>• <b>Qwen2.5 0.5B</b>: 約0.95GB、品質は限定的。<br>• <b>SmolLM2 360M</b>: 約0.38GB、簡単なテスト向け。<br><br><b>実際のページ（スタジオのJSON）を組む場合</b>は大きなモデルを推奨。これも無料・キー不要です：<br>• <b>Ministral 3B</b>（Mistral、EU）：バランス型、約2.9GB。<br>• <b>Llama 3.2 3B</b>：バランス型、約2.3GB。<br>• <b>Mistral 7B</b>（EU、Apache 2.0）：高品質、約4.6GB。<br>• <b>Qwen2.5 7B</b>：高品質、約5.1GB。初回の読み込みは長めです（以後はキャッシュされます）。',
+      'welcome.wllmPop': 'ブラウザ（WebGPU）でローカル実行するモデルです。VRAMの数値は必要なグラフィックメモリの推定値で、ダウンロード容量ではありません。利用可能なメモリは端末によって異なります。スタジオのレイアウトを実際に生成できるモデルだけを載せています。<br><br>• <b>Qwen2.5 1.5B</b>（推奨）：最も軽く、約1.63GB。<br>• <b>Qwen2.5 7B</b>：品質重視、約5.1GB（余裕のあるGPU向け。初回読み込みは長め、以後はキャッシュ）。',
       'welcome.wllmModels': 'WebLLMモデル（Hugging Face）',
       'welcome.wllmCheck': 'WebGPUを確認',
       'welcome.format': 'ドキュメント形式',
@@ -3042,6 +3049,276 @@
     "chat.welcomeReady": "SP213 の準備ができました。レイアウトを説明してください（例：「ミニマルな A4 ポスター」）。モデルを変えるには設定を開いてください。",
     "chat.welcomeNoKey": "Studio IA へようこそ。レイアウトを生成するには、まずモデルを選んでください。説明を入力し、必要に応じて設定でモデルを選択します。"
   });
+  /* ══ 🆕 v1.7.581 — LE PANNEAU DES RÉGLAGES PARLE LES TROIS LANGUES ════════════════
+     Demande utilisateur : « termine bien la traduction dans les trois langues de cette
+     boîte de réglage de notre modèle ». Toutes les chaînes du panneau (titres de
+     section, libellés, pastilles, notes, boutons, compte rendu) passent par `t()`, et
+     `setLang()` repeint le panneau s'il est ouvert : changer la langue dans les
+     préférences met la boîte à jour immédiatement, sans la refermer. */
+  Object.assign(I18N.fr, {
+    'reg.titre': 'Réglages de la maquette',
+    'reg.sous': "Refactorisation en direct : le document se recompose pendant que vous bougez les tirettes. Réservé à SP213 rock 1.0.",
+    'reg.fermer': 'Fermer',
+    'reg.annuler': 'Annuler',
+    'reg.valider': 'Valider',
+    'reg.busy': 'recomposition…',
+    'reg.impossible': '⚠ recomposition impossible',
+    'reg.aucun': 'aucun document composé',
+    'reg.pages': '{n} page(s) · {w}×{h} mm',
+    'reg.sec1': 'Format et cotes',
+    'reg.sec2': 'Style de document',
+    'reg.sec3': 'Design et mise en pages',
+    'reg.sec4': 'Typographies et tailles',
+    'reg.sec5': 'Couleurs',
+    'reg.sec6': 'Variation',
+    'reg.largeur': 'Largeur',
+    'reg.hauteur': 'Hauteur',
+    'reg.unite': 'Unité',
+    'reg.bleed': 'Fond perdu',
+    'reg.theme': 'Thème',
+    'reg.marges': 'Marges',
+    'reg.gouttiere': 'Gouttière',
+    'reg.densite': 'Densité du texte',
+    'reg.bande': 'Bande de couverture',
+    'reg.colonnes': 'Colonnes',
+    'reg.folios': 'Folios',
+    'reg.chapitres': 'Titres de section',
+    'reg.encadres': 'Encadrés',
+    'reg.photo': 'Photo de couverture',
+    'reg.policeTitre': 'Police titres',
+    'reg.policeCorps': 'Police corps',
+    'reg.corps': 'Taille du texte',
+    'reg.echelle': 'Échelle des titres',
+    'reg.interligne': 'Interligne',
+    'reg.interlettrage': 'Interlettrage titres',
+    'reg.filets': 'Filets',
+    'reg.caps': 'Titres en capitales',
+    'reg.align': 'Alignement',
+    'reg.accent': 'Accent',
+    'reg.fond': 'Fond des pages',
+    'reg.encre': 'Encre de lecture',
+    'reg.jeu': 'Jeu n°',
+    'reg.oui': 'Oui',
+    'reg.non': 'Non',
+    'reg.justifie': 'Justifié',
+    'reg.gauche': 'À gauche',
+    'reg.auto': 'Auto',
+    'reg.themePolice': 'Celle du thème',
+    'reg.blanc': 'Blanc',
+    'reg.creme': 'Crème',
+    'reg.grisClair': 'Gris clair',
+    'reg.vertPale': 'Vert pâle',
+    'reg.encreNuit': 'Encre (nuit)',
+    'reg.noir': 'Noir',
+    'reg.grisFonce': 'Gris foncé',
+    'reg.clair': 'Clair',
+    'reg.autoTexte': 'Automatique',
+    'reg.reset': '♻️ Réinitialiser',
+    'reg.n1': "La maquette se recompose au format choisi ({k}) : couverture, mise en pages et imposition suivent.",
+    'reg.preset': 'préréglage',
+    'reg.custom': 'personnalisé',
+    'reg.n2': "Un style règle d'un coup thème, typographies, corps, interligne, colonnes, marges, filets et bande. Les tirettes ci-dessous reprennent la main ensuite.",
+    'reg.n3': 'Un fond sombre fait passer la typographie en clair automatiquement (contraste minimum vérifié à chaque recomposition).',
+    'reg.n4': 'Change bande de couverture, place des accents et encadrés sans toucher au texte. « Réinitialiser » remet tous les réglages du thème.',
+    'reg.th.auto': "Automatique (d'après le texte)",
+    'reg.th.sobre': 'Sobre — noir et blanc',
+    'reg.th.mono': 'Tech — bleu / IBM Plex',
+    'reg.th.chaud': 'Chaud — papier crème',
+    'reg.th.douce': 'Doux — nature',
+    'reg.th.event': 'Festif — violet / rose',
+    'reg.th.finance': 'Corporate — bleu nuit',
+    'reg.th.noir': 'Noir chic — fond noir, doré',
+    'reg.f.a4': 'A4', 'reg.f.a5': 'A5', 'reg.f.a4p': 'A4 paysage', 'reg.f.livre69': 'Livre 6 × 9 po',
+    'reg.f.roman58': 'Roman 5 × 8 po', 'reg.f.a3': 'A3', 'reg.f.carte': 'Carte de visite', 'reg.f.carre': 'Carré'
+  });
+  Object.assign(I18N.en, {
+    'reg.titre': 'Layout settings',
+    'reg.sous': 'Live redesign: the document recomposes while you move the sliders. Reserved for SP213 rock 1.0.',
+    'reg.fermer': 'Close',
+    'reg.annuler': 'Cancel',
+    'reg.valider': 'Save',
+    'reg.busy': 'recomposing…',
+    'reg.impossible': '⚠ cannot recompose',
+    'reg.aucun': 'no composed document',
+    'reg.pages': '{n} page(s) · {w}×{h} mm',
+    'reg.sec1': 'Format and trim',
+    'reg.sec2': 'Document style',
+    'reg.sec3': 'Design and layout',
+    'reg.sec4': 'Typefaces and sizes',
+    'reg.sec5': 'Colours',
+    'reg.sec6': 'Variation',
+    'reg.largeur': 'Width',
+    'reg.hauteur': 'Height',
+    'reg.unite': 'Unit',
+    'reg.bleed': 'Bleed',
+    'reg.theme': 'Theme',
+    'reg.marges': 'Margins',
+    'reg.gouttiere': 'Gutter',
+    'reg.densite': 'Text density',
+    'reg.bande': 'Cover band',
+    'reg.colonnes': 'Columns',
+    'reg.folios': 'Folios',
+    'reg.chapitres': 'Section titles',
+    'reg.encadres': 'Boxes',
+    'reg.photo': 'Cover photo',
+    'reg.policeTitre': 'Title typeface',
+    'reg.policeCorps': 'Body typeface',
+    'reg.corps': 'Body size',
+    'reg.echelle': 'Title scale',
+    'reg.interligne': 'Leading',
+    'reg.interlettrage': 'Title letter-spacing',
+    'reg.filets': 'Rules',
+    'reg.caps': 'Uppercase titles',
+    'reg.align': 'Alignment',
+    'reg.accent': 'Accent',
+    'reg.fond': 'Page background',
+    'reg.encre': 'Reading ink',
+    'reg.jeu': 'Set no.',
+    'reg.oui': 'Yes',
+    'reg.non': 'No',
+    'reg.justifie': 'Justified',
+    'reg.gauche': 'Left',
+    'reg.auto': 'Auto',
+    'reg.themePolice': 'Theme default',
+    'reg.blanc': 'White',
+    'reg.creme': 'Cream',
+    'reg.grisClair': 'Light grey',
+    'reg.vertPale': 'Pale green',
+    'reg.encreNuit': 'Ink (night)',
+    'reg.noir': 'Black',
+    'reg.grisFonce': 'Dark grey',
+    'reg.clair': 'Light',
+    'reg.autoTexte': 'Automatic',
+    'reg.reset': '♻️ Reset',
+    'reg.n1': 'The layout recomposes at the chosen format ({k}): cover, page layout and imposition follow.',
+    'reg.preset': 'preset',
+    'reg.custom': 'custom',
+    'reg.n2': 'A style sets theme, typefaces, body size, leading, columns, margins, rules and band in one go. The sliders below take over afterwards.',
+    'reg.n3': 'A dark background automatically switches the type to light (minimum contrast checked at every recomposition).',
+    'reg.n4': 'Changes the cover band, where accents and boxes sit, without touching the text. “Reset” restores all the theme settings.',
+    'reg.th.auto': 'Automatic (from your text)',
+    'reg.th.sobre': 'Sober — black and white',
+    'reg.th.mono': 'Tech — blue / IBM Plex',
+    'reg.th.chaud': 'Warm — cream paper',
+    'reg.th.douce': 'Soft — nature',
+    'reg.th.event': 'Festive — purple / pink',
+    'reg.th.finance': 'Corporate — midnight blue',
+    'reg.th.noir': 'Black chic — dark background, gold',
+    'reg.f.a4': 'A4', 'reg.f.a5': 'A5', 'reg.f.a4p': 'A4 landscape', 'reg.f.livre69': 'Book 6 × 9 in',
+    'reg.f.roman58': 'Novel 5 × 8 in', 'reg.f.a3': 'A3', 'reg.f.carte': 'Business card', 'reg.f.carre': 'Square'
+  });
+  Object.assign(I18N.jp, {
+    'reg.titre': 'レイアウト設定',
+    'reg.sous': 'その場で再構成：スライダーを動かすと文書が組み直されます。SP213 rock 1.0 専用。',
+    'reg.fermer': '閉じる',
+    'reg.annuler': '取消',
+    'reg.valider': '確定',
+    'reg.busy': '再構成中…',
+    'reg.impossible': '⚠ 再構成できません',
+    'reg.aucun': '組版された文書がありません',
+    'reg.pages': '{n} ページ · {w}×{h} mm',
+    'reg.sec1': '用紙と仕上がり',
+    'reg.sec2': '文書スタイル',
+    'reg.sec3': 'デザインとレイアウト',
+    'reg.sec4': '書体とサイズ',
+    'reg.sec5': '色',
+    'reg.sec6': 'バリエーション',
+    'reg.largeur': '幅',
+    'reg.hauteur': '高さ',
+    'reg.unite': '単位',
+    'reg.bleed': '塗り足し',
+    'reg.theme': 'テーマ',
+    'reg.marges': '余白',
+    'reg.gouttiere': '柱間',
+    'reg.densite': '文字の密度',
+    'reg.bande': '表紙の帯',
+    'reg.colonnes': '段組',
+    'reg.folios': 'ノンブル',
+    'reg.chapitres': 'セクション見出し',
+    'reg.encadres': '囲み',
+    'reg.photo': '表紙写真',
+    'reg.policeTitre': '見出し書体',
+    'reg.policeCorps': '本文書体',
+    'reg.corps': '本文サイズ',
+    'reg.echelle': '見出しの倍率',
+    'reg.interligne': '行送り',
+    'reg.interlettrage': '見出しの字間',
+    'reg.filets': '罫線',
+    'reg.caps': '見出しを大文字に',
+    'reg.align': '揃え',
+    'reg.accent': 'アクセント',
+    'reg.fond': 'ページ背景',
+    'reg.encre': '本文の色',
+    'reg.jeu': 'セット番号',
+    'reg.oui': 'する',
+    'reg.non': 'しない',
+    'reg.justifie': '両端揃え',
+    'reg.gauche': '左揃え',
+    'reg.auto': '自動',
+    'reg.themePolice': 'テーマの既定',
+    'reg.blanc': '白',
+    'reg.creme': 'クリーム',
+    'reg.grisClair': '薄灰',
+    'reg.vertPale': '薄緑',
+    'reg.encreNuit': 'インク（夜）',
+    'reg.noir': '黒',
+    'reg.grisFonce': '濃灰',
+    'reg.clair': '明',
+    'reg.autoTexte': '自動',
+    'reg.reset': '♻️ 初期化',
+    'reg.n1': '選んだ用紙（{k}）でレイアウトを組み直します：表紙・ページ割り・面付けも追従します。',
+    'reg.preset': 'プリセット',
+    'reg.custom': 'カスタム',
+    'reg.n2': 'スタイルはテーマ・書体・本文サイズ・行送り・段組・余白・罫線・帯を一度に整えます。その後の微調整は下のスライダーで。',
+    'reg.n3': '暗い背景では本文が自動的に明るい色へ切り替わります（再構成のたびに最低コントラストを確認します）。',
+    'reg.n4': '本文に触れずに、表紙の帯・アクセントの位置・囲みを変えます。「初期化」でテーマの設定をすべて戻します。',
+    'reg.th.auto': '自動（テキストから）',
+    'reg.th.sobre': 'シンプル — 白黒',
+    'reg.th.mono': 'テック — 青 / IBM Plex',
+    'reg.th.chaud': 'ウォーム — クリーム紙',
+    'reg.th.douce': 'ソフト — ナチュラル',
+    'reg.th.event': 'フェス — 紫 / ピンク',
+    'reg.th.finance': 'コーポレート — 紺',
+    'reg.th.noir': '黒シック — 黒地に金',
+    'reg.f.a4': 'A4', 'reg.f.a5': 'A5', 'reg.f.a4p': 'A4 横', 'reg.f.livre69': '書籍 6×9インチ',
+    'reg.f.roman58': '小説 5×8インチ', 'reg.f.a3': 'A3', 'reg.f.carte': '名刺', 'reg.f.carre': '正方形'
+  });
+
+  /* Noms des styles et de l'unité en pouces : ajoutés aux trois dictionnaires. */
+  Object.assign(I18N.fr, { 'reg.pouces': 'po', 'reg.st.roman': 'Roman', 'reg.st.essai': 'Essai', 'reg.st.reportage': 'Reportage', 'reg.st.magazine': 'Magazine', 'reg.st.premium': 'Premium', 'reg.st.minimal': 'Minimal', 'reg.st.nature': 'Nature', 'reg.st.corporate': 'Corporate' });
+  Object.assign(I18N.en, { 'reg.pouces': 'in', 'reg.st.roman': 'Novel', 'reg.st.essai': 'Essay', 'reg.st.reportage': 'Reportage', 'reg.st.magazine': 'Magazine', 'reg.st.premium': 'Premium', 'reg.st.minimal': 'Minimal', 'reg.st.nature': 'Nature', 'reg.st.corporate': 'Corporate' });
+  Object.assign(I18N.jp, { 'reg.pouces': 'インチ', 'reg.st.roman': '小説', 'reg.st.essai': 'エッセイ', 'reg.st.reportage': 'ルポ', 'reg.st.magazine': 'マガジン', 'reg.st.premium': 'プレミアム', 'reg.st.minimal': 'ミニマル', 'reg.st.nature': 'ナチュラル', 'reg.st.corporate': 'コーポレート' });
+
+  /* Mots du panneau qui dépendent du contexte (réservation au moteur, journal, compte
+     rendu) : mêmes clés dans les trois langues. */
+  Object.assign(I18N.fr, {
+    'reg.reserve': "Les réglages en direct sont réservés à notre moteur SP213 rock 1.0 (aucune clé, recomposition instantanée). Choisissez-le dans la liste des moteurs pour régler le document à la tirette.",
+    'reg.journalOpen': 'Réglages ouverts : refactorisation en direct du document (SP213 rock 1.0).',
+    'reg.compte': '⚙️ Réglages appliqués : {w}×{h} mm · fond perdu {bleed} mm · thème {th} · {cols} colonne(s) · corps {corps} pt · interligne {interligne} % · marges {marges} % · densité {densite} % · filets {filets} % · bande {bande} %{caps}{fond} · variation n°{var}{pages}',
+    'reg.comptePages': ' — {n} page(s) recomposée(s) sans modèle (0 jeton).',
+    'reg.comptePoint': '.',
+    'reg.fondOn': 'fond',
+    'reg.capsOn': 'titres en capitales'
+  });
+  Object.assign(I18N.en, {
+    'reg.reserve': 'Live settings are reserved for our SP213 rock 1.0 engine (no key, instant recomposition). Pick it in the engine list to adjust the document with the sliders.',
+    'reg.journalOpen': 'Settings opened: live redesign of the document (SP213 rock 1.0).',
+    'reg.compte': '⚙️ Settings applied: {w}×{h} mm · bleed {bleed} mm · theme {th} · {cols} column(s) · body {corps} pt · leading {interligne} % · margins {marges} % · density {densite} % · rules {filets} % · band {bande} %{caps}{fond} · set no. {var}{pages}',
+    'reg.comptePages': ' — {n} page(s) recomposed with no model (0 tokens).',
+    'reg.comptePoint': '.',
+    'reg.fondOn': 'background',
+    'reg.capsOn': 'uppercase titles'
+  });
+  Object.assign(I18N.jp, {
+    'reg.reserve': 'その場の調整は自社エンジン SP213 rock 1.0 専用です（キー不要・即時に組み直し）。エンジン一覧から選んでください。',
+    'reg.journalOpen': '設定を開きました：文書をその場で再構成します（SP213 rock 1.0）。',
+    'reg.compte': '⚙️ 適用した設定：{w}×{h} mm · 塗り足し {bleed} mm · テーマ {th} · {cols} 段 · 本文 {corps} pt · 行送り {interligne} % · 余白 {marges} % · 密度 {densite} % · 罫線 {filets} % · 帯 {bande} %{caps}{fond} · セット番号 {var}{pages}',
+    'reg.comptePages': ' — モデルなしで {n} ページを組み直しました（0トークン）。',
+    'reg.comptePoint': '。',
+    'reg.fondOn': '背景',
+    'reg.capsOn': '見出しを大文字に'
+  });
+
   // Langue active (EN par défaut)
   let curLang = 'en';
   function setLang(lang, persist) {
@@ -3247,6 +3524,9 @@
        prochain rechargement. spStarterSync() retraduit TOUT (libellés, exemples,
        infobulles, pied de page) et se garde de lui-même si l'écran n'existe pas. */
     try { if (typeof spStarterSync === 'function' && $('starter')) spStarterSync(); } catch(e) {}
+    /* 🆕 v1.7.581 — LE PANNEAU DES RÉGLAGES SUIT LA LANGUE S'IL EST OUVERT : on le
+       repeint, sans le refermer et sans perdre les valeurs en cours. */
+    try { if (typeof spRegPeindre === 'function' && SP_REG_OUVERT) spRegPeindre(); } catch(e) {}
   }
   function t(key, vars) {
     const dict = I18N[curLang] || I18N.en;
@@ -3702,7 +3982,7 @@
          gabarit affiche ses propres exemples, avec format et nombre de pages). */
       try { buildQuickChips(); } catch (_) {}
       /* 🆕 v1.7.580 — MOTEUR DE GABARIT : il composait sans nommer le moteur affiché. */
-      if (eng === 'gabarit') { el.textContent = 'SP213 gabarit — mise en page locale'; return; }
+      if (eng === 'gabarit') { el.textContent = 'SP213 rock 1.0'; return; }
       if (eng === 'webllm') {
         const wm = (WLLM_MODELS.find(x => x[0] === state.wllmModel) || [])[1] || state.wllmModel;
         el.textContent = 'Local — ' + court(wm);
@@ -3815,7 +4095,7 @@
                   : (isNative
                       ? 'SP213 WLLM Native (local avec GPU) : assistant intégré, aucune clé ni réglage — il se charge automatiquement à votre premier message.'
                       : (isGabarit
-                          ? 'SP213 gabarit — notre moteur de mise en page : aucune clé, aucun jeton, il compose tout hors ligne (cahiers, livres, affiches) en respectant le fond perdu et les marges.'
+                          ? 'SP213 rock 1.0 — notre moteur : il compose tout hors ligne (cahiers, livres, affiches) en respectant le fond perdu et les marges. 0 jeton, rien à installer.'
                           : 'SP213 WLLM (local avec GPU) : aucune clé requise — choisissez un modèle et ouvrez le studio.'))))));
       }
       /* 🆕 v1.7.580g — explications des deux moteurs gratuits ajoutés. */
@@ -4361,11 +4641,11 @@
     } catch (_) { return Promise.resolve('api'); }
   }
   function spLibelleChromeIA(etat) {
-    if (etat === 'available') return 'Chrome intégré (Gemini Nano) — prêt, sans clé';
+    if (etat === 'available') return 'Chrome intégré (Gemini Nano) — prêt';
     if (etat === 'downloading') return "Chrome intégré (Gemini Nano) — téléchargement du modèle en cours";
     if (etat === 'unavailable') return "Chrome intégré (Gemini Nano) — indisponible sur cet appareil";
     if (etat === 'downloadable') return 'Chrome intégré (Gemini Nano) — modèle Chrome à télécharger (~2 Go)';
-    return 'Chrome intégré (Gemini Nano) — sans clé';
+    return 'Chrome intégré (Gemini Nano)';
   }
   function spInitChromeIA() {
     const sel = document.getElementById('engineSelect');
@@ -4452,7 +4732,7 @@
       const _short = (label) => String(label || '').split(' — ')[0] || label;
       /* 🆕 v1.7.580 — LE GABARIT N'EST PAS UNE IA : on l'affiche tel quel. */
       if (state.engine === 'gabarit') {
-        $('modelLabel').textContent = 'SP213 gabarit — mise en page locale';
+        $('modelLabel').textContent = 'SP213 rock 1.0';
       } else if (state.engine === 'webllm') {
         const wmName = (WLLM_MODELS.find(x => x[0] === state.wllmModel) || [])[1] || state.wllmModel;
         $('modelLabel').textContent = 'Local — ' + _short(wmName);
@@ -8418,11 +8698,11 @@ function spRtfLayoutInfo(src) {
     "st.pop.engines": "Model for this conversation",
     "st.pop.enginesVer": "Model, then version",
     "st.pop.model": "model",
-    "st.tag.free": "free · no key",
+    "st.tag.free": "free",
     "st.tag.key": "API key",
     "st.tag.freeKey": "free API key",
-    "st.n.chromeai": "Built into Chrome: free, no key.",
-    "st.n.wllmNative": "On this computer: free, no key.",
+    "st.n.chromeai": "Built into Chrome: free.",
+    "st.n.wllmNative": "On this computer: free.",
     "st.n.webllm": "Local model of your choice.",
     "st.n.deepseek": "Cloud: paste your API key.",
     "st.n.openai": "Cloud: paste your API key.",
@@ -8444,7 +8724,7 @@ function spRtfLayoutInfo(src) {
     "st.ex6p": "8-page A4 booklet from the attached Word document: keep its structure (headings, paragraphs, lists, tables), reuse the colours written in the document and place its images.",
     "st.tag.keyReco": "API key · recommended",
     "st.usage.livre": "full book",
-    "st.nk.gabarit": "deterministic local typesetting — templates, margins, grids, folios (0 tokens)",
+    "st.nk.gabarit": "our layout engine — templates, margins, grids, folios (0 tokens)",
     "st.usage.demo": "demo",
   });
   Object.assign(I18N.fr, {
@@ -8469,11 +8749,11 @@ function spRtfLayoutInfo(src) {
     "st.pop.engines": "Moteur pour cette conversation",
     "st.pop.enginesVer": "Moteur, puis modèle",
     "st.pop.model": "modèle",
-    "st.tag.free": "gratuit · sans clé",
+    "st.tag.free": "gratuit",
     "st.tag.key": "clé API",
     "st.tag.freeKey": "clé API gratuite",
-    "st.n.chromeai": "IA intégrée de Chrome, sans clé.",
-    "st.n.wllmNative": "Sur cet ordinateur, sans clé.",
+    "st.n.chromeai": "IA intégrée de Chrome, gratuite.",
+    "st.n.wllmNative": "Sur cet ordinateur, gratuit.",
     "st.n.webllm": "Modèle local au choix.",
     "st.n.deepseek": "Cloud : collez votre clé API.",
     "st.n.openai": "Cloud : collez votre clé API.",
@@ -8495,7 +8775,7 @@ function spRtfLayoutInfo(src) {
     "st.ex6p": "Cahier A4 de 8 pages à partir du document Word joint : garde sa structure (titres, paragraphes, listes, tableaux), reprend les couleurs écrites dans le document et place ses images.",
     "st.tag.keyReco": "clé API · recommandé",
     "st.usage.livre": "livre complet",
-    "st.nk.gabarit": "mise en page locale déterministe — gabarits, marges, grilles, folios (0 jeton)",
+    "st.nk.gabarit": "notre moteur de mise en page — gabarits, marges, grilles, folios (0 jeton)",
     "st.usage.demo": "démo",
   });
   Object.assign(I18N.jp, {
@@ -8520,11 +8800,11 @@ function spRtfLayoutInfo(src) {
     "st.pop.engines": "この会話で使うモデル",
     "st.pop.enginesVer": "モデル → バージョン",
     "st.pop.model": "モデル",
-    "st.tag.free": "無料・キー不要",
+    "st.tag.free": "無料",
     "st.tag.key": "APIキー",
     "st.tag.freeKey": "無料APIキー",
-    "st.n.chromeai": "Chrome 内蔵のAI。無料・キー不要。",
-    "st.n.wllmNative": "このパソコン上で動作。無料・キー不要。",
+    "st.n.chromeai": "Chrome 内蔵のAI。無料。",
+    "st.n.wllmNative": "このパソコン上で動作。無料。",
     "st.n.webllm": "ローカルモデルを選択。",
     "st.n.deepseek": "クラウド：APIキーを貼り付け。",
     "st.n.openai": "クラウド：APIキーを貼り付け。",
@@ -8546,7 +8826,7 @@ function spRtfLayoutInfo(src) {
     "st.ex6p": "添付のWord文書からA4・8ページの冊子：見出し・段落・リスト・表の構造を保ち、文書に書かれた色を引き継ぎ、画像を配置する。",
     "st.tag.keyReco": "APIキー・おすすめ",
     "st.usage.livre": "本格・書籍",
-    "st.nk.gabarit": "ローカルで決定的な組版 — テンプレート・余白・グリッド・ノンブル（0トークン）",
+    "st.nk.gabarit": "自社のレイアウトエンジン — テンプレート・余白・グリッド・ノンブル（0トークン）",
     "st.usage.demo": "デモ",
   });
 
@@ -10600,7 +10880,7 @@ function spRtfLayoutInfo(src) {
     }
     j('info', 'Contenu : ' + texte.source + ' — ' + posees + ' photo(s) placée(s), texte ' + (texte.brief.length + srcLen(texte)) + ' caractères.' + _ctxDit);
     return {
-      reply: 'Maquette « ' + g.nom + ' » posée sans modèle : ' + pages.length + ' page' + (pages.length > 1 ? 's' : '') + ', ' + g.cols + ' colonne(s), gabarit déterministe (0 jeton).',
+      reply: 'Maquette « ' + g.nom + ' » posée sans modèle : ' + pages.length + ' page' + (pages.length > 1 ? 's' : '') + ', ' + g.cols + ' colonne(s), SP213 rock 1.0 (0 jeton).',
       targetPages: pages.length,
       pages: pages
     };
@@ -10621,7 +10901,7 @@ function spRtfLayoutInfo(src) {
     /* 🆕 v1.7.580 — NOTRE PROPRE MOTEUR : il ne demande aucune clé, aucun
        téléchargement, aucune attente, et rend toujours le même document pour la
        même demande (gabarits designés + règles de marges, grilles, folios). */
-    { eng: 'gabarit', nom: 'SP213 gabarit', nk: 'st.nk.gabarit', tk: 'st.tag.free', usage: 'livre' },
+    { eng: 'gabarit', nom: 'SP213 rock 1.0', nk: 'st.nk.gabarit', tk: 'st.tag.free', usage: 'livre' },
     { eng: 'chromeai',      nom: 'Gemini Nano (Chrome)', nk: 'st.n.chromeai',   tk: 'st.tag.free',    usage: 'demo' },
     /* 🆕 v1.7.580oo — DEEPSEEK EN 2ᵉ POSITION (demande utilisateur) : c'est le moteur
        cloud de référence du studio (grand contexte, JSON fiable). Il passe donc juste
@@ -12111,13 +12391,15 @@ function spRtfLayoutInfo(src) {
     } catch (_) { return false; }
   }
 
-  /* ══ 🆕 v1.7.580 — EN-TÊTE DE LA CARTE DU MOTEUR CHOISI ══════════════════════════
-     Nom du moteur + une pastille qui dit EN UN MOT s'il faut une clé, puis une phrase
-     qui dit exactement ce qu'il reste à faire. Aucun sous-menu à ouvrir : la clé se
-     colle dans le champ juste en dessous, et le choix de modèle n'apparaît que s'il y a
-     vraiment plusieurs modèles. Tout est lu dans l'écran lui-même (le <select> et les
-     champs de clé) : aucune dépendance à l'ordre de chargement du studio, et si un
-     élément manque on ne peint simplement rien plutôt que de casser l'écran. */
+  /* ══ 🆕 v1.7.580/581 — EN-TÊTE DE LA CARTE DU MOTEUR CHOISI ══════════════════════
+     Nom du moteur, puis une pastille SEULEMENT s'il faut une clé (« clé API à coller » /
+     « clé enregistrée ») et une phrase qui dit ce qu'il reste à faire. Demande
+     utilisateur : « dans les sous-menus, ne mets pas NO key à ceux qui n'ont pas de clé,
+     cette info ne sert à rien — FREE suffit ». Donc : aucun moteur sans clé n'affiche de
+     pastille, et la carte DISPARAÎT quand elle n'a rien à montrer (notre moteur SP213
+     rock 1.0 n'a ni clé ni modèle à choisir : plus de carte vide, plus de champ inutile).
+     Tout est lu dans l'écran lui-même (le <select> et les champs de clé) : aucune
+     dépendance à l'ordre de chargement du studio. */
   function spPrefsEngCard() {
     const h = $('engHead');
     if (!h) return;
@@ -12136,20 +12418,31 @@ function spRtfLayoutInfo(src) {
       const nom = opt ? String(opt.textContent).split(' — ')[0].replace(/\s*\(.*$/, '').trim() : eng;
       let vers = 0;
       try { vers = spStVersions(eng).length; } catch (_) { vers = 0; }
-      const pastille = !aCle
-        ? '<span class="eng-pill">SANS CLÉ</span>'
-        : '<span class="eng-pill ' + (cleOk ? '' : 'att') + '">' + (cleOk ? 'CLÉ ENREGISTRÉE' : 'CLÉ API À COLLER') + '</span>';
-      const quoi = !aCle
-        ? 'Aucune clé, aucun compte : ce moteur fonctionne tel quel.'
-        : (cleOk
+      const pastille = aCle
+        ? '<span class="eng-pill ' + (cleOk ? '' : 'att') + '">' + (cleOk ? 'CLÉ ENREGISTRÉE' : 'CLÉ API À COLLER') + '</span>'
+        : '';
+      const quoi = aCle
+        ? (cleOk
           ? 'Votre clé est déjà enregistrée dans ce navigateur ; vous pouvez la remplacer ci-dessous.'
-          : 'Collez votre clé ci-dessous : elle reste dans votre navigateur et n\'est jamais partagée.');
+          : 'Collez votre clé ci-dessous : elle reste dans votre navigateur et n\'est jamais partagée.')
+        : '';
       const quoiVers = vers > 1
-        ? ' <b>' + vers + ' modèles disponibles</b> ci-dessous : choisissez celui qui vous convient.'
-        : (vers === 1 ? ' Un seul modèle : rien à choisir.' : '');
+        ? '<b>' + vers + ' modèles disponibles</b> ci-dessous : choisissez celui qui vous convient.'
+        : '';
+      /* Le nom reste TOUJOURS ; le reste seulement s'il y a quelque chose à dire. */
       h.innerHTML = '<span class="eng-nom">' + escapeHtml(nom) + '</span>' + pastille +
-        '<span class="eng-quoi">' + quoi + quoiVers + '</span>';
-      if (h.parentNode) h.parentNode.classList.toggle('att', aCle && !cleOk);
+        ((quoi || quoiVers) ? '<span class="eng-quoi">' + quoi + (quoi && quoiVers ? ' ' : '') + quoiVers + '</span>' : '');
+      const carte = h.parentNode;
+      if (carte) {
+        carte.classList.toggle('att', aCle && !cleOk);
+        /* Carte vide = carte cachée : c'est ce qui retire « sans clé », « rien à
+           installer » et les listes de modèles vides pour notre moteur. */
+        let champs = 0;
+        Array.prototype.forEach.call(carte.querySelectorAll('.field'), function (f) {
+          if (getComputedStyle(f).display !== 'none') champs++;
+        });
+        carte.style.display = champs ? '' : 'none';
+      }
     } catch (_) {}
   }
 
@@ -17116,9 +17409,10 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   const SP_REG_CLE = 'sp213_reglages_v1';
   const SP_REG_POLICES = ['', 'IBM Plex Mono', 'Open Sans', 'Bebas Neue', 'Playfair Display', 'Montserrat', 'Poppins', 'Roboto Condensed', 'Georgia', 'Times New Roman', 'Helvetica'];
   const SP_REG_FORMATS = [
-    [210, 297, 'A4 — 210 × 297 mm'], [148, 210, 'A5 — 148 × 210 mm'], [297, 210, 'A4 paysage — 297 × 210 mm'],
-    [152, 229, 'Livre 6 × 9 po — 152 × 229 mm'], [127, 203, 'Roman 5 × 8 po — 127 × 203 mm'],
-    [297, 420, 'A3 — 297 × 420 mm'], [85, 55, 'Carte de visite — 85 × 55 mm'], [200, 200, 'Carré — 200 × 200 mm']
+    [210, 297, 'A4 — 210 × 297 mm', 'reg.f.a4'], [148, 210, 'A5 — 148 × 210 mm', 'reg.f.a5'],
+    [297, 210, 'A4 paysage — 297 × 210 mm', 'reg.f.a4p'],
+    [152, 229, 'Livre 6 × 9 po — 152 × 229 mm', 'reg.f.livre69'], [127, 203, 'Roman 5 × 8 po — 127 × 203 mm', 'reg.f.roman58'],
+    [297, 420, 'A3 — 297 × 420 mm', 'reg.f.a3'], [85, 55, 'Carte de visite — 85 × 55 mm', 'reg.f.carte'], [200, 200, 'Carré — 200 × 200 mm', 'reg.f.carre']
   ];
   const SP_REG_THEMES = [
     ['auto', 'Automatique (d\'après le texte)'], ['sobre', 'Sobre — noir et blanc'], ['mono', 'Tech — bleu / IBM Plex'],
@@ -17211,85 +17505,87 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const b = $('rgBody');
     if (!b) return;
     const u = spRegMm()[1];
-    const polices = SP_REG_POLICES.map(function (f) { return [f, f ? f : 'Celle du thème']; });
+    const polices = SP_REG_POLICES.map(function (f) { return [f, f ? f : t('reg.themePolice')]; });
+    const OUI = t('reg.oui'), NON = t('reg.non');
+    const ouiNon = [['true', OUI], ['false', NON]];
     const wm = Math.round(20 / u), wM = Math.round(600 / u), wS = (u === 1) ? 1 : 0.1;
     const presetActif = SP_REG_FORMATS.some(function (f) { return f[0] === Number(SP_REG.w) && f[1] === Number(SP_REG.h); });
     let h = '';
     /* ── FORMAT (compacté : pastilles + cotes à tirette sur deux colonnes) ── */
-    h += '<section class="rg-sec"><h4>Format et cotes</h4>';
+    h += '<section class="rg-sec"><h4>' + t('reg.sec1') + '</h4>';
     h += '<div class="rg-chips" style="margin-bottom:10px">' + SP_REG_FORMATS.map(function (f) {
-      const nom = f[2].split(' — ')[0];
+      const nom = t(f[3]);
       const on = (f[0] === Number(SP_REG.w) && f[1] === Number(SP_REG.h));
-      return '<button type="button" class="rg-chip' + (on ? ' on' : '') + '" data-format="' + f[0] + 'x' + f[1] + '" title="' + f[2] + '">' + nom + '</button>';
+      return '<button type="button" class="rg-chip' + (on ? ' on' : '') + '" data-format="' + f[0] + 'x' + f[1] + '" title="' + escapeHtml(nom + ' — ' + f[0] + ' × ' + f[1] + ' mm') + '">' + nom + '</button>';
     }).join('') + '</div>';
     h += '<div class="rg-cols">' +
-      spRegMiniHTML('w', 'Largeur (' + spRegMm()[2] + ')', wm, wM, wS, spRegValUnite(SP_REG.w), '') +
-      spRegMiniHTML('h', 'Hauteur (' + spRegMm()[2] + ')', wm, wM, wS, spRegValUnite(SP_REG.h), '') +
+      spRegMiniHTML('w', t('reg.largeur') + ' (' + spRegMm()[2] + ')', wm, wM, wS, spRegValUnite(SP_REG.w), '') +
+      spRegMiniHTML('h', t('reg.hauteur') + ' (' + spRegMm()[2] + ')', wm, wM, wS, spRegValUnite(SP_REG.h), '') +
       '</div>';
-    h += '<div class="rg-row" style="margin-top:8px"><label>Unité</label><select id="rg_unite" data-reg="unite" style="flex:0 0 70px">' +
-      SP_REG_UNITES.map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === SP_REG.unite ? ' selected' : '') + '>' + x[2] + '</option>'; }).join('') +
-      '</select><label style="flex:0 0 62px">Fond perdu</label>' +
+    h += '<div class="rg-row" style="margin-top:8px"><label>' + t('reg.unite') + '</label><select id="rg_unite" data-reg="unite" style="flex:0 0 70px">' +
+      SP_REG_UNITES.map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === SP_REG.unite ? ' selected' : '') + '>' + (x[0] === 'in' ? t('reg.pouces') : x[2]) + '</option>'; }).join('') +
+      '</select><label style="flex:0 0 62px">' + t('reg.bleed') + '</label>' +
       spRegMiniHTML('bleed', '', 0, 10, 1, Number(SP_REG.bleed) || 3, ' mm').replace('<span></span>', '') +
       '</div>';
-    h += '<div class="rg-note">La maquette se recompose au format choisi (' + (presetActif ? 'préréglage' : 'personnalisé') + ') : couverture, mise en pages et imposition suivent.</div>';
+    h += '<div class="rg-note">' + t('reg.n1', { k: presetActif ? t('reg.preset') : t('reg.custom') }) + '</div>';
     h += '</section>';
     /* ── STYLE GLOBAL (faisceaux cohérents) ── */
-    h += '<section class="rg-sec"><h4>Style de document</h4>';
+    h += '<section class="rg-sec"><h4>' + t('reg.sec2') + '</h4>';
     h += '<div class="rg-chips">' + SP_REG_STYLES.map(function (s) {
-      return '<button type="button" class="rg-chip' + (SP_REG_STYLE === s[0] ? ' on' : '') + '" data-style="' + s[0] + '">' + s[1] + '</button>';
+      return '<button type="button" class="rg-chip' + (SP_REG_STYLE === s[0] ? ' on' : '') + '" data-style="' + s[0] + '">' + t('reg.st.' + s[0]) + '</button>';
     }).join('') + '</div>';
-    h += '<div class="rg-note">Un style règle d\'un coup thème, typographies, corps, interligne, colonnes, marges, filets et bande. Les tirettes ci-dessous reprennent la main ensuite.</div>';
+    h += '<div class="rg-note">' + t('reg.n2') + '</div>';
     h += '</section>';
     /* ── DESIGN ── */
-    h += '<section class="rg-sec"><h4>Design et mise en pages</h4>';
-    h += spRegSelectHTML('theme', 'Thème', SP_REG_THEMES, SP_REG.theme);
+    h += '<section class="rg-sec"><h4>' + t('reg.sec3') + '</h4>';
+    h += spRegSelectHTML('theme', t('reg.theme'), SP_REG_THEMES.map(function (x) { return [x[0], t('reg.th.' + x[0])]; }), SP_REG.theme);
     h += '<div class="rg-cols">' +
-      spRegMiniHTML('marge', 'Marges', 60, 160, 5, Math.round((Number(SP_REG.marge) || 1) * 100), ' %') +
-      spRegMiniHTML('gouttiere', 'Gouttière', 2, 24, 1, Number(SP_REG.gouttiere) || 10, ' mm') +
-      spRegMiniHTML('densite', 'Densité du texte', 60, 98, 2, Math.round((Number(SP_REG.densite) || 0.94) * 100), ' %') +
-      spRegMiniHTML('bande', 'Bande de couverture', 50, 180, 5, Math.round((Number(SP_REG.bande) || 1) * 100), ' %') +
+      spRegMiniHTML('marge', t('reg.marges'), 60, 160, 5, Math.round((Number(SP_REG.marge) || 1) * 100), ' %') +
+      spRegMiniHTML('gouttiere', t('reg.gouttiere'), 2, 24, 1, Number(SP_REG.gouttiere) || 10, ' mm') +
+      spRegMiniHTML('densite', t('reg.densite'), 60, 98, 2, Math.round((Number(SP_REG.densite) || 0.94) * 100), ' %') +
+      spRegMiniHTML('bande', t('reg.bande'), 50, 180, 5, Math.round((Number(SP_REG.bande) || 1) * 100), ' %') +
       '</div>';
-    h += spRegCasesHTML('colonnes', 'Colonnes', [[1, '1'], [2, '2'], [3, '3']], SP_REG.colonnes);
-    h += spRegCasesHTML('folio', 'Folios', [['true', 'Oui'], ['false', 'Non']], SP_REG.folio ? 'true' : 'false');
-    h += spRegCasesHTML('chapitres', 'Titres de section', [['true', 'Oui'], ['false', 'Non']], SP_REG.chapitres ? 'true' : 'false');
-    h += spRegCasesHTML('encadres', 'Encadrés', [['true', 'Oui'], ['false', 'Non']], SP_REG.encadres ? 'true' : 'false');
-    h += spRegCasesHTML('photoCouverture', 'Photo de couverture', [['true', 'Oui'], ['false', 'Non']], SP_REG.photoCouverture ? 'true' : 'false');
+    h += spRegCasesHTML('colonnes', t('reg.colonnes'), [[1, '1'], [2, '2'], [3, '3']], SP_REG.colonnes);
+    h += spRegCasesHTML('folio', t('reg.folios'), ouiNon, SP_REG.folio ? 'true' : 'false');
+    h += spRegCasesHTML('chapitres', t('reg.chapitres'), ouiNon, SP_REG.chapitres ? 'true' : 'false');
+    h += spRegCasesHTML('encadres', t('reg.encadres'), ouiNon, SP_REG.encadres ? 'true' : 'false');
+    h += spRegCasesHTML('photoCouverture', t('reg.photo'), ouiNon, SP_REG.photoCouverture ? 'true' : 'false');
     h += '</section>';
     /* ── TYPOGRAPHIES ── */
-    h += '<section class="rg-sec"><h4>Typographies et tailles</h4>';
-    h += spRegSelectHTML('policeTitre', 'Police titres', polices, SP_REG.policeTitre);
-    h += spRegSelectHTML('policeCorps', 'Police corps', polices, SP_REG.policeCorps);
+    h += '<section class="rg-sec"><h4>' + t('reg.sec4') + '</h4>';
+    h += spRegSelectHTML('policeTitre', t('reg.policeTitre'), polices, SP_REG.policeTitre);
+    h += spRegSelectHTML('policeCorps', t('reg.policeCorps'), polices, SP_REG.policeCorps);
     h += '<div class="rg-cols">' +
-      spRegMiniHTML('corps', 'Taille du texte', 7, 16, 0.5, Number(SP_REG.corps) || 10.5, ' pt') +
-      spRegMiniHTML('echelleTitre', 'Échelle des titres', 70, 150, 5, Math.round((Number(SP_REG.echelleTitre) || 1) * 100), ' %') +
-      spRegMiniHTML('interligne', 'Interligne', 110, 200, 5, Math.round((Number(SP_REG.interligne) || 1.55) * 100), ' %') +
-      spRegMiniHTML('interlettrage', 'Interlettrage titres', 0, 8, 0.5, Number(SP_REG.interlettrage) || 0, '') +
-      spRegMiniHTML('filets', 'Filets', 20, 200, 5, Math.round((Number(SP_REG.filets) || 1) * 100), ' %') +
+      spRegMiniHTML('corps', t('reg.corps'), 7, 16, 0.5, Number(SP_REG.corps) || 10.5, ' pt') +
+      spRegMiniHTML('echelleTitre', t('reg.echelle'), 70, 150, 5, Math.round((Number(SP_REG.echelleTitre) || 1) * 100), ' %') +
+      spRegMiniHTML('interligne', t('reg.interligne'), 110, 200, 5, Math.round((Number(SP_REG.interligne) || 1.55) * 100), ' %') +
+      spRegMiniHTML('interlettrage', t('reg.interlettrage'), 0, 8, 0.5, Number(SP_REG.interlettrage) || 0, '') +
+      spRegMiniHTML('filets', t('reg.filets'), 20, 200, 5, Math.round((Number(SP_REG.filets) || 1) * 100), ' %') +
       '</div>';
-    h += spRegCasesHTML('caps', 'Titres en capitales', [['true', 'Oui'], ['false', 'Non']], SP_REG.caps ? 'true' : 'false');
-    h += spRegSelectHTML('align', 'Alignement', [['justify', 'Justifié'], ['left', 'À gauche']], SP_REG.align);
+    h += spRegCasesHTML('caps', t('reg.caps'), ouiNon, SP_REG.caps ? 'true' : 'false');
+    h += spRegSelectHTML('align', t('reg.align'), [['justify', t('reg.justifie')], ['left', t('reg.gauche')]], SP_REG.align);
     h += '</section>';
     /* ── COULEURS ── */
-    h += '<section class="rg-sec"><h4>Couleurs</h4>';
-    h += '<div class="rg-row"><label for="rg_accent">Accent</label>' +
+    h += '<section class="rg-sec"><h4>' + t('reg.sec5') + '</h4>';
+    h += '<div class="rg-row"><label for="rg_accent">' + t('reg.accent') + '</label>' +
       '<input type="color" id="rg_accent" data-reg="accent" value="' + (SP_REG.accent || '#1f6feb') + '">' +
-      '<button class="rg-chip" type="button" id="rgAccentAuto">Auto</button></div>';
-    h += '<div class="rg-row"><label for="rg_fondPage">Fond des pages</label>' +
+      '<button class="rg-chip" type="button" id="rgAccentAuto">' + t('reg.auto') + '</button></div>';
+    h += '<div class="rg-row"><label for="rg_fondPage">' + t('reg.fond') + '</label>' +
       '<input type="color" id="rg_fondPage" data-reg="fondPage" value="' + (SP_REG.fondPage || '#ffffff') + '">' +
-      '<button class="rg-chip" type="button" id="rgFondAuto">Auto</button></div>';
+      '<button class="rg-chip" type="button" id="rgFondAuto">' + t('reg.auto') + '</button></div>';
     h += '<div class="rg-chips" style="margin-bottom:8px">' +
-      [['', 'Thème'], ['#ffffff', 'Blanc'], ['#fffdf8', 'Crème'], ['#f4f4f5', 'Gris clair'], ['#f7faf5', 'Vert pâle'], ['#0e0e10', 'Encre (nuit)']].map(function (c) {
+      [['', t('reg.theme')], ['#ffffff', t('reg.blanc')], ['#fffdf8', t('reg.creme')], ['#f4f4f5', t('reg.grisClair')], ['#f7faf5', t('reg.vertPale')], ['#0e0e10', t('reg.encreNuit')]].map(function (c) {
         return '<button type="button" class="rg-chip' + (String(SP_REG.fondPage) === c[0] ? ' on' : '') + '" data-fond="' + c[0] + '">' + c[1] + '</button>';
       }).join('') + '</div>';
-    h += spRegSelectHTML('encre', 'Encre de lecture', [['auto', 'Automatique'], ['#101014', 'Noir'], ['#2b2b30', 'Gris foncé'], ['#f5f5f2', 'Clair']], SP_REG.encre);
-    h += '<div class="rg-note">Un fond sombre fait passer la typographie en clair automatiquement (contraste minimum vérifié à chaque recomposition).</div>';
+    h += spRegSelectHTML('encre', t('reg.encre'), [['auto', t('reg.autoTexte')], ['#101014', t('reg.noir')], ['#2b2b30', t('reg.grisFonce')], ['#f5f5f2', t('reg.clair')]], SP_REG.encre);
+    h += '<div class="rg-note">' + t('reg.n3') + '</div>';
     h += '</section>';
     /* ── VARIATION ── */
-    h += '<section class="rg-sec"><h4>Variation</h4>';
-    h += '<div class="rg-cols">' + spRegMiniHTML('variation', 'Jeu n°', 1, 20, 1, SP_REG.variation || 1, '') +
-      '<div class="rg-mini"><span>&nbsp;</span><div class="rg-line"><button class="rg-chip" type="button" id="rgReset">♻️ Réinitialiser</button></div></div>' +
+    h += '<section class="rg-sec"><h4>' + t('reg.sec6') + '</h4>';
+    h += '<div class="rg-cols">' + spRegMiniHTML('variation', t('reg.jeu'), 1, 20, 1, SP_REG.variation || 1, '') +
+      '<div class="rg-mini"><span>&nbsp;</span><div class="rg-line"><button class="rg-chip" type="button" id="rgReset">' + t('reg.reset') + '</button></div></div>' +
       '</div>';
-    h += '<div class="rg-note">Change bande de couverture, place des accents et encadrés sans toucher au texte. « Réinitialiser » remet tous les réglages du thème.</div>';
+    h += '<div class="rg-note">' + t('reg.n4') + '</div>';
     h += '</section>';
     b.innerHTML = h;
     spRegBrancher();
@@ -17452,13 +17748,13 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     spRegSyncFormat();
     const busy = $('rgBusy');
     if (busy) busy.textContent = (n > 0)
-      ? ('✓ ' + n + ' page' + (n > 1 ? 's' : '') + ' · ' + SP_REG.w + '×' + SP_REG.h + ' mm')
-      : '⚠ recomposition impossible';
+      ? ('✓ ' + t('reg.pages', { n: n, w: SP_REG.w, h: SP_REG.h }))
+      : t('reg.impossible');
   }
   function spRegProgrammer() {
     if (SP_REG_TIMER) clearTimeout(SP_REG_TIMER);
     const busy = $('rgBusy');
-    if (busy) busy.textContent = 'recomposition…';
+    if (busy) busy.textContent = t('reg.busy');
     /* Un LIVRE de plusieurs centaines de pages se recompose en quelques secondes :
        on attend que la tirette soit RELÂCHÉE pour les gros documents, sinon la
        recomposition enchaînée rendrait le glissement inutilisable. */
@@ -17484,7 +17780,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     if (!el) return;
     try { spRegBrancherBoutons(); } catch (_) {}
     if (String(state.engine || '') !== 'gabarit') {
-      appendChat('assistant', 'Les réglages en direct sont réservés à notre moteur SP213 gabarit (aucune clé, recomposition instantanée). Choisissez-le dans la liste des moteurs pour régler le document au tirette.');
+      appendChat('assistant', t('reg.reserve'));
       return;
     }
     SP_REG = spRegCharge();
@@ -17498,12 +17794,14 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     spRegPeindre();
     spRegPlacer();
     const busy = $('rgBusy');
-    if (busy) busy.textContent = state.doc && state.doc.pages ? (state.doc.pages.length + ' page(s) · ' + state.pageW + '×' + state.pageH + ' mm') : 'aucun document composé';
+    if (busy) busy.textContent = state.doc && state.doc.pages
+      ? t('reg.pages', { n: state.doc.pages.length, w: state.pageW, h: state.pageH })
+      : t('reg.aucun');
     const b = $('reglagesBtn');
     if (b) b.setAttribute('aria-expanded', 'true');
     document.addEventListener('mousemove', spRegPlacer, true);
     window.addEventListener('resize', spRegPlacer);
-    try { spJournalAjoute('info', 'Réglages ouverts : refactorisation en direct du document (SP213 gabarit).'); } catch (_) {}
+    try { spJournalAjoute('info', t('reg.journalOpen')); } catch (_) {}
   }
   function spRegFermer(valider) {
     const el = $('spReg');
@@ -17521,14 +17819,23 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       spRegSyncFormat();
       window._spReglages = SP_REG;
       try { persistDoc(); } catch (_) {}
-      const resume = '⚙️ Réglages appliqués : ' + SP_REG.w + '×' + SP_REG.h + ' mm · fond perdu ' + (SP_REG.bleed || 0) + ' mm · thème ' +
-        (SP_REG.theme === 'auto' ? 'automatique' : SP_REG.theme) + (SP_REG_STYLE ? (' (style ' + SP_REG_STYLE + ')') : '') +
-        ' · ' + SP_REG.colonnes + ' colonne(s) · corps ' + SP_REG.corps + ' pt · interligne ' + Math.round((Number(SP_REG.interligne) || 1.55) * 100) +
-        ' % · marges ' + Math.round(SP_REG.marge * 100) + ' % · densité ' + Math.round((Number(SP_REG.densite) || 0.94) * 100) +
-        ' % · filets ' + Math.round((Number(SP_REG.filets) || 1) * 100) + ' % · bande ' + Math.round((Number(SP_REG.bande) || 1) * 100) +
-        ' %' + (SP_REG.caps ? ' · titres en capitales' : '') + (SP_REG.fondPage ? (' · fond ' + SP_REG.fondPage) : '') +
-        ' · variation n°' + (SP_REG.variation || 1) +
-        ((state.doc && state.doc.pages) ? (' — ' + state.doc.pages.length + ' page(s) recomposée(s) sans modèle (0 jeton).') : '.');
+      /* Compte rendu : tout passe par le dictionnaire (fr/en/jp). L'unité affichée est
+         celle que l'utilisateur a choisie pour les cotes. */
+      const _th = SP_REG.theme === 'auto' ? t('reg.th.auto') : t('reg.th.' + SP_REG.theme);
+      const resume = t('reg.compte', {
+        w: SP_REG.w, h: SP_REG.h, bleed: (SP_REG.bleed || 0),
+        th: _th + (SP_REG_STYLE ? (' / ' + t('reg.st.' + SP_REG_STYLE)) : ''),
+        cols: SP_REG.colonnes, corps: SP_REG.corps,
+        interligne: Math.round((Number(SP_REG.interligne) || 1.55) * 100),
+        marges: Math.round(SP_REG.marge * 100),
+        densite: Math.round((Number(SP_REG.densite) || 0.94) * 100),
+        filets: Math.round((Number(SP_REG.filets) || 1) * 100),
+        bande: Math.round((Number(SP_REG.bande) || 1) * 100),
+        caps: SP_REG.caps ? (' · ' + t('reg.capsOn')) : '',
+        fond: SP_REG.fondPage ? (' · ' + t('reg.fondOn') + ' ' + SP_REG.fondPage) : '',
+        var: (SP_REG.variation || 1),
+        pages: (state.doc && state.doc.pages) ? t('reg.comptePages', { n: state.doc.pages.length }) : t('reg.comptePoint')
+      });
       appendChat('assistant', resume);
       state.chat.push({ role: 'assistant', text: resume });
       try { persistChat(); } catch (_) {}
@@ -19333,17 +19640,19 @@ là : guide-le vers elle, ne dis jamais qu'elle n'existe pas.
 <div id="spReg" class="hidden" role="dialog" aria-modal="true" aria-label="Réglages de la maquette">
   <div class="rg-head">
     <div>
-      <div class="rg-t">Réglages de la maquette</div>
-      <div class="rg-s" id="rgSub">Refactorisation en direct : le document se recompose pendant que vous bougez les tirettes. Réservé à SP213 gabarit.</div>
+      <div class="rg-t" data-i18n="reg.titre">Réglages de la maquette</div>
+      <div class="rg-s" id="rgSub" data-i18n="reg.sous">Refactorisation en direct : le document se recompose pendant que vous bougez les tirettes. Réservé à SP213 rock 1.0.</div>
     </div>
-    <button class="rg-close" id="rgClose" title="Fermer" aria-label="Fermer">✕</button>
+    <button class="rg-close" id="rgClose" title="Fermer" aria-label="Fermer" data-i18n-title="reg.fermer" data-i18n-aria="reg.fermer">✕</button>
   </div>
   <div class="rg-body" id="rgBody"></div>
   <div class="rg-foot">
     <span class="rg-busy" id="rgBusy"></span>
-    <button class="btn btn-secondary" id="rgDice" type="button" title="Autre variation : bande, accents et encadrés bougent">🎲 Variation</button>
-    <button class="btn btn-secondary" id="rgCancel" type="button">Annuler</button>
-    <button class="btn btn-primary" id="rgOk" type="button">Valider</button>
+    <!-- 🆕 v1.7.581 — LE BOUTON « VARIATION » EST RETIRÉ (demande utilisateur : « supprime
+         le bouton VARIATION qui est à gauche du bouton annuler »). La variation reste
+         réglable par la tirette « Jeu n° » du panneau ; le pied ne garde que l'essentiel. -->
+    <button class="btn btn-secondary" id="rgCancel" type="button" data-i18n="reg.annuler">Annuler</button>
+    <button class="btn btn-primary" id="rgOk" type="button" data-i18n="reg.valider">Valider</button>
   </div>
 </div>
 
