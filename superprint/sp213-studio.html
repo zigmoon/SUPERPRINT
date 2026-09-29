@@ -8714,13 +8714,107 @@ function spRtfLayoutInfo(src) {
     return el;
   }
 
+  /* ══════════════════════════════════════════════════════════════════════
+     🆕 v1.7.579 — JOURNAL DE FABRICATION (l'œil du loader, demande utilisateur)
+     Pendant « SP213 construit votre maquette », un petit œil ouvre un panneau
+     flottant qui montre CE QUI SE PASSE : appels au moteur, taille du prompt,
+     réponses et erreurs, repli sur une page de secours, avertissements WebLLM…
+     Rien n'est inventé : le journal reprend les messages que le studio écrit déjà
+     dans la console (log, info, warn, error), horodatés. Le panneau se met à jour
+     tout seul et reste ouvert pendant les étapes suivantes. Il n'est JAMAIS
+     envoyé au modèle et ne quitte pas le navigateur.
+     ══════════════════════════════════════════════════════════════════════ */
+  const SP_JOURNAL = (window.sp213Journal = window.sp213Journal || []);
+  let _jlPanneau = null, _jlListe = null, _jlAuto = true;
+  function spJournalAjoute(texte, type) {
+    try {
+      const d = new Date();
+      const p = function (n) { return (n < 10 ? '0' : '') + n; };
+      SP_JOURNAL.push({ h: p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()), type: type || 'info', texte: String(texte).replace(/\s+/g, ' ').slice(0, 600) });
+      if (SP_JOURNAL.length > 500) SP_JOURNAL.shift();
+      spJournalPeindre();
+    } catch (_) {}
+  }
+  window.spJournalAjoute = spJournalAjoute;
+  /* Capture des messages déjà écrits par le studio (on rappelle toujours l'original). */
+  (function spJournalBranche() {
+    if (window.__spJournalBranche) return;
+    window.__spJournalBranche = true;
+    ['log', 'info', 'warn', 'error'].forEach(function (n) {
+      const orig = window.console && window.console[n] ? window.console[n].bind(window.console) : null;
+      if (!orig) return;
+      window.console[n] = function () {
+        try {
+          const txt = Array.prototype.map.call(arguments, function (a) {
+            if (typeof a === 'string') return a;
+            try { return JSON.stringify(a).slice(0, 300); } catch (_) { return String(a); }
+          }).join(' ');
+          spJournalAjoute(txt, n === 'error' ? 'err' : (n === 'warn' ? 'warn' : 'ok'));
+        } catch (_) {}
+        return orig.apply(null, arguments);
+      };
+    });
+  })();
+  function _jlEsc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function spJournalPeindre() {
+    if (!_jlListe) return;
+    const couleurs = { err: '#e5484d', warn: '#e5a13d', ok: 'var(--muted)', info: 'var(--text)' };
+    let html = '';
+    SP_JOURNAL.slice(-200).forEach(function (l) {
+      html += '<div style="display:flex;gap:8px;padding:2px 0"><span style="color:var(--muted);flex:0 0 auto">' + l.h + '</span><span style="color:' + (couleurs[l.type] || 'var(--text)') + ';word-break:break-word">' + _jlEsc(l.texte) + '</span></div>';
+    });
+    _jlListe.innerHTML = html || '<div style="color:var(--muted)">Rien encore.</div>';
+    if (_jlAuto) _jlListe.scrollTop = _jlListe.scrollHeight;
+  }
+  function spJournalOuvrir() {
+    if (_jlPanneau) { _jlPanneau.style.display = 'flex'; spJournalPeindre(); return; }
+    const p = document.createElement('div');
+    p.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483000;width:min(560px,92vw);max-height:52vh;display:flex;flex-direction:column;background:var(--panel,#fff);color:var(--text,#111);border:1px solid var(--line,#ddd);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.28);font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+    const tete = document.createElement('div');
+    tete.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line,#ddd)';
+    tete.innerHTML = '<strong style="font-size:12px">Journal de fabrication</strong><span style="color:var(--muted);flex:1">ce que fait le studio, en direct</span>';
+    const bCopie = document.createElement('button');
+    bCopie.type = 'button'; bCopie.textContent = 'Copier';
+    bCopie.style.cssText = 'cursor:pointer;border:1px solid var(--line,#ddd);background:transparent;color:inherit;border-radius:6px;padding:2px 8px';
+    bCopie.addEventListener('click', function () { try { navigator.clipboard.writeText(SP_JOURNAL.map(function (l) { return l.h + '  ' + l.texte; }).join('\n')); bCopie.textContent = 'Copié'; setTimeout(function () { bCopie.textContent = 'Copier'; }, 1200); } catch (_) {} });
+    const bVide = document.createElement('button');
+    bVide.type = 'button'; bVide.textContent = 'Vider';
+    bVide.style.cssText = bCopie.style.cssText;
+    bVide.addEventListener('click', function () { SP_JOURNAL.length = 0; spJournalPeindre(); });
+    const bFerm = document.createElement('button');
+    bFerm.type = 'button'; bFerm.textContent = '✕';
+    bFerm.style.cssText = bCopie.style.cssText;
+    bFerm.addEventListener('click', function () { p.style.display = 'none'; });
+    tete.appendChild(bCopie); tete.appendChild(bVide); tete.appendChild(bFerm);
+    const liste = document.createElement('div');
+    liste.style.cssText = 'overflow:auto;padding:8px 10px;white-space:pre-wrap';
+    liste.addEventListener('scroll', function () { _jlAuto = (liste.scrollHeight - liste.scrollTop - liste.clientHeight) < 24; });
+    p.appendChild(tete); p.appendChild(liste);
+    document.body.appendChild(p);
+    _jlPanneau = p; _jlListe = liste;
+    spJournalPeindre();
+  }
+  function spJournalBouton(btn) {
+    if (!btn) return;
+    btn.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      if (_jlPanneau && _jlPanneau.style.display !== 'none') _jlPanneau.style.display = 'none';
+      else spJournalOuvrir();
+    });
+  }
+  window.spJournalOuvrir = spJournalOuvrir;
+
   function appendTyping() {
     const el = document.createElement('div');
     el.className = 'msg assistant generation-msg';
     const b = document.createElement('div');
     b.className = 'bubble';
-    b.innerHTML = '<div class="generation-loader" role="status" aria-live="polite"><div class="generation-loader-head"><span class="generation-loader-title"></span><span class="generation-loader-step"></span></div><div class="generation-loader-track" aria-hidden="true"><span></span></div><small class="generation-loader-note"></small></div>';
+    b.innerHTML = '<div class="generation-loader" role="status" aria-live="polite"><div class="generation-loader-head"><span class="generation-loader-title"></span><span class="generation-loader-step"></span><button type="button" class="journal-oeil" title="Voir le journal en direct" aria-label="Voir le journal en direct" style="cursor:pointer;border:1px solid var(--line,#ddd);background:transparent;color:var(--muted);border-radius:6px;padding:1px 5px;display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12S5.5 5.5 12 5.5 22.5 12 22.5 12 18.5 18.5 12 18.5 1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3.2"/></svg></button></div><div class="generation-loader-track" aria-hidden="true"><span></span></div><small class="generation-loader-note"></small></div>';
     b.querySelector('.generation-loader-title').textContent = t('chat.generating');
+    /* v1.7.579 — l'œil ouvre le journal de fabrication (spJournalOuvrir). */
+    try { spJournalBouton(b.querySelector('.journal-oeil')); } catch (_) {}
     b.querySelector('.generation-loader-step').textContent = t('chat.genBrief');
     b.querySelector('.generation-loader-note').textContent = t('chat.genNote');
     el.appendChild(b);
