@@ -9,6 +9,33 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.589] — 2026-09-30
+
+_Import long : le bandeau mesure l'immobilité (et dit sa progression) ; plus de blocs d'une ligne de haut ; studio et application d'accord au pixel (hauteur de cadre, marges) ; césure française aux règles du métier_
+
+### Fixed — L'import long garde son bandeau
+- Retour client mesuré (livre de 250 pages avec photos) : le bandeau d'import portait une **minuterie de trois minutes** qui le retirait en annonçant « import interrompu après 3 minutes » alors que l'import continuait (la composition rend la main à chaque image).
+- Le bandeau compte désormais l'**immobilité** : il ne se retire que si plus rien ne bouge depuis cinq minutes (`_SP_IMPBUSY_STALL_MS`), et il affiche la progression (« page N — M blocs posés », clé i18n `impBusyProgress` en FR / EN / JA), poussée tous les cinq segments par `_spFlowBlocksIntoPages` via `window._spImpBusyActivite`.
+- Mesures : seuil ramené à 3 s → bandeau toujours présent à 4,5 s et 6 s tant que l'import progresse, retiré 3 s après la dernière activité ; import réel d'un Word de 60 pages → **66 pages, 66 blocs chaînés, 0 bloc vide**.
+- Second défaut d'import (déjà en place dans cette version) : un bloc posé en fin de colonne pouvait naître **haut de 1 à 5 px** ; on passe maintenant à la colonne suivante s'il ne reste pas la place d'une ligne, et le cadre a un plancher d'une ligne (`_hLigne`). Mesure : 0 bloc sous une ligne après import.
+
+### Fixed — Studio → application : le même document, au pixel
+- **Hauteur des blocs texte** : le studio écrivait `lignes × corps × interligne × 1,13` ; l'application garde le calcul de Fabric (toutes les lignes entières sauf la dernière, qui compte sans son interligne bas). Mesures : 47 px écrits pour 39,6 affichés (14 pt / 1,5), 28 pour 24,4, 67 pour 70,6 (titre 62,5 pt). `spTextBlockHeightPx` utilise maintenant `hauteurCadrePx`, calculé ligne par ligne dans `spMeasureTextBlock` ; `hauteurPx` (hauteur du TEXTE) reste intact pour les passes de mise en page.
+- **Marges** : le studio compose dans 12 / 15 / 18 / 20 mm (proportionnels, `_spEnforceMargins`) mais n'écrivait aucune marge dans le `.sp` → l'application retombait sur 20 mm partout (mesuré sur affiche A5 : repères à 65 px du bord au lieu de 44-38). Nouvelle fonction `spMargesPourExport()`, utilisée par les **deux** écrivains (`buildSPFile`, `buildSPFileFromParsed`) ; un document venu de l'application garde ses marges telles quelles.
+- **Cache de mesure** : `spClearMeasureCache()` n'était appelé nulle part — une mesure faite avant l'arrivée d'une police restait valable toute la session. Il est vidé dans `rerenderAfterFontsReady`.
+- Audit après correction (trois maquettes par la vraie interface du studio, vrai `.sp`, vrai chargeur de l'application, comparaison objet par objet) : **0 écart** sur l'affiche A4, l'affiche A5 avec photos et la brochure de 8 pages / 116 objets ; marges appliquées à l'identique (15 / 20 / 18 / 18).
+
+### Fixed — Césure française
+- Défauts reproduits : « aujourd'hui » → « jour- / d'hui », « États-Unis » → « États-U- / nis », « grand-mère » → « gran- / d-mère » puis « grand-mè- / re » ; le dictionnaire proposait même « grand--mère ».
+- Règles ajoutées dans `spIsValidHyphenBoundary` (`_SP_CESURE_FR_592`, `_SP_CESURE_FR_592B`) : jamais de coupe juste avant une élision (`d'hui`, `qu'un`) ; coupe **au trait d'union** d'un mot composé (`spAjouterTiretsMot`) sans ajouter de second tiret ; minimums comptés **par élément** (2 avant, 3 après) ; aucune coupe brute ne finit sur une apostrophe.
+- Mesures après correction : « États- / Unis » et « grand- / mère » dès 40 px, « au- / jourd'hui » à 50-60 px, paragraphe de 11 lignes avec 4 tirets tous justes. La **justification** était déjà conforme des deux côtés (dernière ligne de paragraphe jamais étirée) et n'est pas touchée.
+- Parité de repli : le studio n'embarque pas le moteur de césure de l'application (mesuré : 12 lignes / 0 tiret contre 11 lignes / 4 tirets, même texte à 120 px). En attendant de lui donner le même moteur, il écrit `enableHyphenation: false` pour les maquettes qu'il compose (`doc._spSansCesure`) et réémet telles quelles les valeurs d'un document venu de l'application. Contrôle : 22 blocs comparés, 0 écart.
+
+### Scope
+- `superprint/app/JS/main.js` + miroir, `superprint/sp213-studio.html` + miroir. Format `.sp` / `.json`, rendu PDF et imports inchangés. Paquet local reconstruit, `version.txt`, `package.json`, `CONTENU.txt`, pages web et `service-worker.js` passent en 1.7.589 (cache `superprint-shell-v1.7.589-cesure-fr-parite-studio`).
+
+---
+
 ## [1.7.588] — 2026-09-30
 
 _Studio IA : le moteur Chrome intégré (Gemini Nano) est SUPPRIMÉ du projet ; site : le moteur ROCK 1 a sa propre page (rock.html), montrée par une vraie pierre 3D low poly en three.js embarqué_

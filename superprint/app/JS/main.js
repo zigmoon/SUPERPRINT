@@ -51,6 +51,11 @@ try { fabric.Object.NUM_FRACTION_DIGITS = 6; } catch (_) {}
 var _spImpBusyEl = null, _spImpBusyChronoEl = null, _spImpBusyNoteEl = null;
 var _spImpBusyLiEls = [], _spImpBusyTimer = null, _spImpBusySecu = null;
 var _spImpBusyT0 = 0, _spImpBusyNoteLongue = '';
+/* ⚠️ v1.7.592 — LA SÉCURITÉ DU BANDEAU COMPTE L'IMMOBILITÉ, PLUS LA DURÉE.
+   Voir _spImpBusyActivite : un import de 250 pages dépasse 3 minutes sans être
+   bloqué pour autant (la composition rend la main à chaque image). */
+var _spImpBusyActiviteT = 0, _spImpBusyProg = '', _spImpBusyNoteBase = '';
+var _SP_IMPBUSY_STALL_MS = 5 * 60 * 1000;
 
 function _spImpBusyCss() {
     if (document.getElementById('spImpBusyCss')) return;
@@ -149,6 +154,10 @@ function _spImpBusy(o) {
     note.className = 'sp-imp-busy-note';
     _spImpBusyNoteEl = document.createElement('span');
     _spImpBusyNoteEl.textContent = opt.note || '';
+    /* v1.7.592 — la note de base et l'avancement sont conservés à part : le
+       chronomètre recompose le texte au lieu d'écraser l'un par l'autre. */
+    _spImpBusyNoteBase = opt.note || '';
+    _spImpBusyProg = '';
     _spImpBusyChronoEl = document.createElement('span');
     _spImpBusyChronoEl.className = 'sp-imp-busy-chrono';
     /* v1.7.579b — le chronomètre est DÉCORATIF pour les lecteurs d'écran : il
@@ -186,19 +195,32 @@ function _spImpBusy(o) {
         if (!_spImpBusyChronoEl) return;
         var s = Math.round((Date.now() - _spImpBusyT0) / 1000);
         _spImpBusyChronoEl.textContent = Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
-        if (s >= 45 && _spImpBusyNoteEl && _spImpBusyNoteLongue) {
-            _spImpBusyNoteEl.textContent = _spImpBusyNoteLongue;
-        }
+        /* v1.7.592 — la phrase affichée dit l'AVANCEMENT quand on le connaît,
+           sinon l'attente : le texte long simplement patienter au bout de 45 s. */
+        var _txt = (s >= 45 && _spImpBusyNoteLongue) ? _spImpBusyNoteLongue : _spImpBusyNoteBase;
+        if (_spImpBusyProg) _txt = _spImpBusyNoteBase ? (_spImpBusyProg + ' — ' + _txt) : _spImpBusyProg;
+        if (_spImpBusyNoteEl && _txt) _spImpBusyNoteEl.textContent = _txt;
     }, 250);
-    _spImpBusySecu = setTimeout(function () {
+    /* ⚠️ v1.7.592 — CE GARDE-FOU COMPTAIT LE TEMPS, IL COMPTE L'IMMOBILITÉ.
+       MESURÉ (import Word de 250 pages avec photos) : il retirait le bandeau au
+       bout de 3 minutes ALORS QUE L'IMPORT CONTINUAIT — le client, croyant
+       l'import terminé, a fermé la fenêtre pendant que le document arrivait
+       encore. Il ne peut donc plus retirer le bandeau que si PLUS RIEN ne bouge
+       (aucun appel à _spImpBusyActivite depuis _SP_IMPBUSY_STALL_MS).
+       Le travail n'est jamais interrompu : on ne coupe que l'affichage d'un
+       import réellement figé — c'est le sens du « pas d'écran bloqué ». */
+    _spImpBusyActiviteT = Date.now();
+    _spImpBusySecu = setInterval(function () {
         var n = opt.nom || '';
+        if (Date.now() - _spImpBusyActiviteT < _SP_IMPBUSY_STALL_MS) return;  /* ça avance : on garde */
         _spImpBusyFin();
         try {
             if (typeof window.spToast === 'function') {
-                window.spToast('Import interrompu après 3 minutes : ' + n, 'warn', 9000);
+                window.spToast('Import immobilisé depuis ' + Math.round(_SP_IMPBUSY_STALL_MS / 60000)
+                    + ' min : ' + n, 'warn', 9000);
             }
         } catch (_) {}
-    }, 180000);
+    }, 10000);
 }
 
 function _spImpBusyEtape(i) {
@@ -221,7 +243,27 @@ function _spImpBusyFin() {
     setTimeout(function () { try { el.remove(); } catch (_) {} }, 120);
 }
 
+/* ⚠️ v1.7.592 — _spImpBusyActivite(texte) : LE TRAVAIL DIT QU'IL AVANCE.
+   Appelée par la composition d'import (tous les 5 segments) : repousse la
+   sécurité du bandeau et remplace la phrase par l'avancement réel.
+   `_spImpBusyStallMs(ms)` rend le seuil réglable — pour MESURER le garde-fou
+   sans attendre 5 minutes. */
+function _spImpBusyActivite(texte) {
+    _spImpBusyActiviteT = Date.now();
+    if (texte != null && texte !== '') {
+        _spImpBusyProg = String(texte);
+        if (_spImpBusyNoteEl) _spImpBusyNoteEl.textContent = _spImpBusyNoteBase
+            ? (_spImpBusyProg + ' — ' + _spImpBusyNoteBase) : _spImpBusyProg;
+    }
+}
+function _spImpBusyStallMs(ms) {
+    var v = Number(ms);
+    if (isFinite(v) && v > 500) _SP_IMPBUSY_STALL_MS = v;
+    return _SP_IMPBUSY_STALL_MS;
+}
 window._spImpBusy = _spImpBusy;
+window._spImpBusyActivite = _spImpBusyActivite;
+window._spImpBusyStallMs = _spImpBusyStallMs;
 window._spImpBusyEtape = _spImpBusyEtape;
 window._spImpBusyFin = _spImpBusyFin;
 window._spImpBusyCss = _spImpBusyCss;
@@ -4909,7 +4951,11 @@ if (window._spGpuEnabled) {
     //   • 3 consonnes et plus                -> avant la dernière (cons|ti)
     // Dans tous les cas : au moins 2 caractères de chaque côté.
     const SP_HYPH_MIN_AVANT = 2;
-    const SP_HYPH_MIN_APRES = 2;
+    /* 🆕 _SP_CESURE_FR_592 — 3 LETTRES APRÈS LE TIRET, PAS 2 (convention française).
+       MESURÉ : « grand-mère » sortait en « grand-mè- | re », laissant « re » seul
+       sur la ligne suivante. Une coupe qui laisserait moins de 3 lettres après le
+       tiret est refusée : le mot passe entier à la ligne suivante. */
+    const SP_HYPH_MIN_APRES = 3;
     const SP_VOYELLES = 'aeiouyàâäéèêëïîôùûüÿœæAEIOUYÀÂÄÉÈÊËÏÎÔÙÛÜŸŒÆ';
     const SP_APOSTROPHES = "'\u2019\u02bc";
     const SP_TIRETS = '-\u2010\u2011\u2013\u2014';
@@ -4920,14 +4966,47 @@ if (window._spGpuEnabled) {
     function spEstLettre(c) { return !!c && /[A-Za-zÀ-ÿ]/.test(c); }
 
     // Une frontière de césure est-elle admissible à la position i ?
+    /* ⚠️ _SP_CESURE_FR_592 — TROIS RÈGLES AJOUTÉES APRÈS MESURE (voir l'en-tête du patch).
+       Elles s'appliquent AUSSI au repli manuel (spSyllabesFR passe par ici). */
     function spIsValidHyphenBoundary(word, i) {
         if (!word || i < SP_HYPH_MIN_AVANT) return false;
         if (word.length - i < SP_HYPH_MIN_APRES) return false;
         const av = word[i - 1], ap = word[i];
         // Jamais juste après (ou juste avant) une apostrophe d'élision…
         if (SP_APOSTROPHES.indexOf(av) !== -1 || SP_APOSTROPHES.indexOf(ap) !== -1) return false;
-        // …ni un trait d'union déjà présent
-        if (SP_TIRETS.indexOf(av) !== -1 || SP_TIRETS.indexOf(ap) !== -1) return false;
+        // …ni juste AVANT un trait d'union (il EST déjà la coupe d'un mot composé).
+        // ⚠️ La frontière JUSTE APRÈS un trait d'union est au contraire la bonne
+        //    coupe (« États- | Unis ») : elle est acceptée ici, et la ligne ne reçoit
+        //    AUCUN tiret supplémentaire (voir sublineHyphenFlags plus bas).
+        if (SP_TIRETS.indexOf(ap) !== -1) return false;
+        /* ① ON NE COUPE JAMAIS JUSTE AVANT UNE ÉLISION (« d'hui », « qu'un », « l'homme »).
+           MESURÉ : « aujourd'hui » sortait en « jour- | d'hui » (le « d' » de l'élision
+           restait accroché) ; et l'interdiction du mot ENTIER, essayée d'abord,
+           transformait la coupe en COUPE BRUTE « aujour | d'hui » (le mot n'avait plus
+           aucune frontière admissible). La coupe « au- | jourd'hui » est, elle,
+           parfaitement française : on ne refuse donc que la frontière qui précède
+           immédiatement l'élision. CF. _SP_CESURE_FR_592B. */
+        if (/^(?:[cdjlmnst]|qu)['\u2019]/i.test(word.slice(i))) return false;
+        /* ② LES 2 (3) CARACTÈRES SE COMPTENT PAR SEGMENT, PAS SUR LE MOT ENTIER.
+           MESURÉ : « États-Unis » → « États-U- | nis » (1 lettre avant le tiret) et
+           « grand-mère » → « gran- | d-mère » : le minimum était vérifié sur le mot
+           ENTIER (8 et 5 caractères), pas sur l'élément coupé.
+           COUPE AU TRAIT D'UNION (word[i-1] est le tiret) : on compte alors l'élément
+           PRÉCÉDENT (« États » dans « États- | Unis ») et il suffit que la suite fasse
+           2 caractères — un mot composé se coupe à ses tirets, ses éléments gardent
+           leur longueur (« c'est- | à-dire »). CF. _SP_CESURE_FR_592B. */
+        const coupeAuTiret = (SP_TIRETS.indexOf(av) !== -1);
+        let debSeg = 0, finSeg = word.length;
+        let g = coupeAuTiret ? (i - 2) : (i - 1);
+        for (let k = g; k >= 0; k--) {
+            if (SP_TIRETS.indexOf(word[k]) !== -1 || SP_APOSTROPHES.indexOf(word[k]) !== -1) { debSeg = k + 1; break; }
+        }
+        if (i - debSeg < SP_HYPH_MIN_AVANT) return false;
+        if (coupeAuTiret) return (word.length - i) >= 2;
+        for (let k = i; k < word.length; k++) {
+            if (SP_TIRETS.indexOf(word[k]) !== -1) { finSeg = k; break; }
+        }
+        if (finSeg - i < SP_HYPH_MIN_APRES) return false;
         return true;
     }
 
@@ -4990,6 +5069,35 @@ if (window._spGpuEnabled) {
         const valides = positions.filter(function (i) { return spIsValidHyphenBoundary(word, i); });
         if (!valides.length) return null;
         if (valides.length === positions.length) return syl;
+        const out = [];
+        let prev = 0;
+        for (const i of valides) { out.push(word.slice(prev, i)); prev = i; }
+        out.push(word.slice(prev));
+        return out.length > 1 ? out : null;
+    }
+
+    /* 🆕 _SP_CESURE_FR_592B — LES TRAITS D'UNION DU MOT SONT DES FRONTIÈRES DE COUPE.
+       MESURÉ : « États-Unis » sortait en « États-U | nis » (coupe brute au milieu de
+       « Unis ») et « grand-mère » en « grand-m | ère » : le dictionnaire ne propose pas
+       la frontière du tiret (« États-U-nis »), et nos règles la refusaient depuis la
+       v1.7.380 — à l'époque parce que l'app AJOUTAIT un tiret et écrivait
+       « grand--mère ». On ajoute donc les positions des traits d'union aux frontières
+       du dictionnaire ; la ligne qui finit déjà par ce tiret n'en reçoit aucun autre
+       (voir sublineHyphenFlags dans _wrapLine). */
+    function spAjouterTiretsMot(word, syl) {
+        if (!word) return null;
+        const pos = [];
+        if (syl && syl.length > 1) {
+            let p = 0;
+            for (let k = 0; k < syl.length - 1; k++) { p += String(syl[k]).length; pos.push(p); }
+        }
+        for (let k = 1; k < word.length - 1; k++) {
+            if (SP_TIRETS.indexOf(word[k]) !== -1) pos.push(k + 1);
+        }
+        const uniq = [];
+        pos.sort(function (a, b) { return a - b; }).forEach(function (i) { if (i > 0 && i < word.length && uniq.indexOf(i) === -1) uniq.push(i); });
+        const valides = uniq.filter(function (i) { return spIsValidHyphenBoundary(word, i); });
+        if (!valides.length) return (syl && syl.length > 1) ? syl : null;
         const out = [];
         let prev = 0;
         for (const i of valides) { out.push(word.slice(prev, i)); prev = i; }
@@ -10817,8 +10925,11 @@ window.spTestDiag = function () {
                         syllables = spFilterSyllables(token, syllables);
                         if (!syllables || syllables.length <= 1) {
                             const fb = fallbackHyphenate(token);
-                            if (fb) syllables = fb; else syllables = [token];
+                            syllables = fb || null;
                         }
+                        /* 🆕 _SP_CESURE_FR_592B — les traits d'union du mot composé sont des
+                           points de coupe : « États- | Unis », jamais « États-U | nis ». */
+                        syllables = spAjouterTiretsMot(token, syllables) || [token];
 
                         if (syllables.length > 1) {
                             let take = 0;
@@ -10855,7 +10966,9 @@ window.spTestDiag = function () {
                                 if (typeof window._spWrapLineWidthFor === 'function') {
                                     try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, _spWrapCtx); } catch (_) {}
                                 }
-                                sublineHyphenFlags.push(true);
+                                /* 🆕 _SP_CESURE_FR_592B — PAS DE TIRET AJOUTÉ QUAND LA LIGNE FINIT
+                                   DÉJÀ PAR LE TRAIT D'UNION DU MOT (« États- | Unis »). */
+                                sublineHyphenFlags.push(SP_TIRETS.indexOf(String(part1).slice(-1)) === -1);
                                 sublineMissingOffsets.push(0);
                                 // 📐 Après la 1re sous-ligne, retirer le retrait première ligne
                                 if (_spIsFirstSubLine && _spFLI) { _spIsFirstSubLine = false; maxWidth = _spBaseMaxWidth; }
@@ -10909,8 +11022,11 @@ window.spTestDiag = function () {
                         syllables = spFilterSyllables(token, syllables);
                         if (!syllables || syllables.length <= 1) {
                             const fb = fallbackHyphenate(token);
-                            if (fb) syllables = fb; else syllables = [token];
+                            syllables = fb || null;
                         }
+                        /* 🆕 _SP_CESURE_FR_592B — les traits d'union du mot composé sont des
+                           points de coupe : « États- | Unis », jamais « États-U | nis ». */
+                        syllables = spAjouterTiretsMot(token, syllables) || [token];
 
                         // B1. Couper sur frontière de syllabes (réserver '-' en mesure, tiret simple)
                         if (syllables.length > 1) {
@@ -10941,7 +11057,9 @@ window.spTestDiag = function () {
                                 if (typeof window._spWrapLineWidthFor === 'function') {
                                     try { maxWidth = window._spWrapLineWidthFor(this, resultLines.length, _spWrapCtx); } catch (_) {}
                                 }
-                                sublineHyphenFlags.push(true);
+                                /* 🆕 _SP_CESURE_FR_592B — PAS DE TIRET AJOUTÉ QUAND LA LIGNE FINIT
+                                   DÉJÀ PAR LE TRAIT D'UNION DU MOT (« États- | Unis »). */
+                                sublineHyphenFlags.push(SP_TIRETS.indexOf(String(part1).slice(-1)) === -1);
                                 sublineMissingOffsets.push(0);
                                 // 📐 Après la 1re sous-ligne, retirer le retrait première ligne
                                 if (_spIsFirstSubLine && _spFLI) { _spIsFirstSubLine = false; maxWidth = _spBaseMaxWidth; }
@@ -10972,6 +11090,11 @@ window.spTestDiag = function () {
                             break;
                         }
                     }
+                    /* 🆕 _SP_CESURE_FR_592B — UNE COUPE BRUTE NE FINIT JAMAIS SUR UNE APOSTROPHE.
+                       MESURÉ : « aujourd'hui » (mot sans frontière admissible) finissait
+                       en « jourd' | hui » : on recule d'un cran pour ne pas détacher
+                       l'élision de son mot. */
+                    if (fit > 1 && SP_APOSTROPHES.indexOf(graphemes[fit - 1]) !== -1) fit--;
 
                     const chunk = graphemes.slice(0, fit).join('');
                     const rest = graphemes.slice(fit).join('');
@@ -38307,6 +38430,16 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             // Cree un bloc, le CHAINE au precedent (UN ID PAR BLOC) et le range.
             function poserBloc(text, opts) {
                 var o = opts || {};
+                /* ⚠️ v1.7.592 — UN BLOC NE SE POSE JAMAIS SUR UNE BANDE DE
+                   QUELQUES PIXELS. MESURÉ : `hFrame = Math.max(1, min(dispo,
+                   hNaturelle))` donnait des blocs de 1 à 5 px de haut quand la
+                   colonne était presque pleine — les « blocs tout petits » que
+                   le recoulement d'une chaîne ne peut plus remonter (leur cadre
+                   ne tient aucun caractère : tout le texte part au bloc suivant).
+                   On passe d'abord à la colonne suivante s'il ne reste pas la
+                   place d'UNE ligne. */
+                var _hLigne = (o.fontSize || bodyPt) * (o.lh || 1.35) * 1.13;
+                if (safe.bottom - cursorY < _hLigne * 1.05) colonneSuivante();
                 var dispo = safe.bottom - cursorY;
                 var box = _spFlowMakeBox(text, colWidth,
                     o.fontSize || bodyPt, !!o.isBold, !!o.isItalic, o.align || align, o.lh);
@@ -38314,7 +38447,9 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 //   souligné d'un run, exposant, taille) est réappliquée ici.
                 if (o.runs && o.runs.length) _spAppliquerRuns(box, o.runs, o.fontSize || bodyPt);
                 var hNaturelle = (typeof box.calcTextHeight === "function") ? box.calcTextHeight() : 0;
-                var hFrame = Math.max(1, Math.min(dispo, hNaturelle));
+                /* v1.7.592 — plancher d'UNE LIGNE (même règle que le masque :
+                   un bloc montre toujours sa première ligne entière). */
+                var hFrame = Math.max(_hLigne, Math.min(dispo, hNaturelle));
 
                 box.set({ left: xColonne(), top: cursorY, width: colWidth });
                 box._fixedWidth = colWidth;
@@ -38344,6 +38479,19 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
 
             for (var s = 0; s < segs.length; s++) {
                 var seg = segs[s];
+                /* v1.7.592 — LE BANDEAU SUIT L'AVANCEMENT RÉEL (et repousse la
+                   sécurité) : tous les 5 segments, on annonce la page en cours et
+                   le nombre de blocs posés. Sans cela, un import de plusieurs
+                   minutes ne montrerait qu'un chronomètre — ce qui a fait croire
+                   à la cliente que tout était terminé. */
+                if (s % 5 === 0) {
+                    try {
+                        var _txt = (typeof translatef === 'function')
+                            ? translatef('impBusyProgress', blocsCrees, pageIdx + 1)
+                            : ('page ' + (pageIdx + 1) + ' — ' + blocsCrees);
+                        if (typeof window._spImpBusyActivite === 'function') window._spImpBusyActivite(_txt);
+                    } catch (_) {}
+                }
 
                 // --- IMAGE : conservee telle quelle, elle coupe le flux ---
                 if (seg.kind === "image") {
@@ -67341,7 +67489,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         /* 🆕 v1.7.579 — bandeau d'import (voir _spImpBusy, tout en haut du fichier). */
         impBusyTitle: "Import en cours",
         impBusyNote: "Rien à valider : l'import continue tout seul. Ne fermez pas l'onglet.",
-        impBusyLong: "Le fichier est volumineux — l'import continue, encore un peu de patience.",
+        impBusyLong: "Le fichier est volumineux — l'import continue, encore un peu de patience. Ne fermez pas la fenêtre : le document est en train d'arriver.",
+        impBusyProgress: "Import en cours — page {1}, {0} blocs posés.",
         impStepLire: "Lecture du fichier",
         impStepAnalyser: "Analyse de la mise en forme",
         impStepClasseur: "Lecture du classeur",
@@ -68268,7 +68417,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         /* 🆕 v1.7.579 — import banner. */
         impBusyTitle: "Import in progress",
         impBusyNote: "Nothing to confirm: the import runs on its own. Do not close the tab.",
-        impBusyLong: "The file is large — the import is still running, thanks for your patience.",
+        impBusyLong: "The file is large — the import is still running, thanks for your patience. Do not close the window: the document is on its way.",
+        impBusyProgress: "Import in progress — page {1}, {0} blocks placed.",
         impStepLire: "Reading the file",
         impStepAnalyser: "Reading the formatting",
         impStepClasseur: "Reading the workbook",
@@ -69103,7 +69253,8 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         /* 🆕 v1.7.579 — 読み込みバナー。 */
         impBusyTitle: "読み込み中",
         impBusyNote: "操作は不要です。読み込みは自動で続きます。タブを閉じないでください。",
-        impBusyLong: "ファイルが大きいため、読み込みを続けています。もうしばらくお待ちください。",
+        impBusyLong: "ファイルが大きいため、読み込みを続けています。もうしばらくお待ちください。ウィンドウを閉じないでください。文書を読み込んでいます。",
+        impBusyProgress: "読み込み中 — {1} ページ、{0} ブロック配置済み。",
         impStepLire: "ファイルを読み込んでいます",
         impStepAnalyser: "書式を解析しています",
         impStepClasseur: "ブックを読み込んでいます",

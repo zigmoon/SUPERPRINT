@@ -1905,9 +1905,18 @@ body { background: var(--paper); }
   color: var(--ink-soft); font-size: 15.5px; line-height: 1.7; }
 .rk-cta { margin: 28px 0 80px; display: flex; flex-wrap: wrap; gap: 12px; }
 
+/* ⚠️ MESURÉ à 390 px : les trois sections avaient un rembourrage latéral de 0 px, le contenu
+   collait aux deux bords de l'écran. La présentation réserve 24 px (18 px sur petit écran) :
+   on reprend exactement la même respiration. */
+#rock-hero, #rock-specs, #rock-quoi { padding-left: 24px; padding-right: 24px; }
+/* MESURÉ à 380 px : la présentation garde aussi 24 px à cette largeur — on ne descend plus à 18 px. */
+
 </style>
 </head>
 <body>
+
+<!-- ══════════════ BARRE QUADRI — LES 4 COULEURS PRIMAIRES, COMME LA PRÉSENTATION ══════════════ -->
+<div class="quadri-bar" aria-hidden="true"><span class="q c"></span><span class="q m"></span><span class="q y"></span><span class="q k"></span></div>
 
 <!-- ══════════════ BANDE DE MARQUE ══════════════ -->
 <header class="brand-header" role="banner">
@@ -2312,6 +2321,8 @@ let largeur = 0, hauteur = 0, actif = 0, survol = -1, vise = 0, vitesse = 0;
 let cibleLever = 0, lever = 0, onde = null, pointeur = null, dernier = null, ancre = null, horloge = null;
 let visible = true, reduit = false, construit = false;
 const marqueurs = [];
+/* Le FOND des facettes : la teinte au repos, et celle qu'elles prennent au survol. */
+const TEINTE_REPOS = new THREE.Color(0x35322e), TEINTE_SURVOL = new THREE.Color(0x1b2327);
 const etatParticules = { v: null, base: null, poussee: null };
 
 function langue() {
@@ -2345,8 +2356,30 @@ function bruit(x, y, z) {
   const s = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453;
   return s - Math.floor(s);
 }
-function geometriePierre() {
-  const g = new THREE.IcosahedronGeometry(1.18, 2);
+/* ── LES CINQ FORMES : à chaque clic, la pierre en prend une autre ──
+   Toutes sont ÉCONOMES (8 à 80 facettes : l'icosaèdre en comptait 320) : un solide low poly dont
+   on DÉPLACE les sommets par un bruit déterministe, puis qu'on DRESSE (étroit en x/z, haut en y,
+   pied élargi) et qu'on RECENTRE — sinon son centre de gravité part vers le haut et l'ombre reste
+   au sol, loin sous elle. */
+const FORMES = [
+  { nom: 'menhir',  solide: 'ico',   rayon: 1.18, detail: 1, ax: 0.60, ay: 1.62, az: 0.60, seuil: -1.02, ecrase: 0.42, recentre: 0.30, b1: 0.36, b2: 0.13 },
+  { nom: 'stele',   solide: 'ico',   rayon: 1.18, detail: 1, ax: 0.42, ay: 1.88, az: 0.50, seuil: -1.20, ecrase: 0.50, recentre: 0.40, b1: 0.30, b2: 0.16 },
+  { nom: 'cristal', solide: 'oct',   rayon: 1.30, detail: 1, ax: 0.62, ay: 1.72, az: 0.62, seuil: -1.30, ecrase: 0.55, recentre: 0.34, b1: 0.22, b2: 0.10 },
+  { nom: 'bloc',    solide: 'boite', rayon: 1.10, detail: 0, ax: 0.78, ay: 1.46, az: 0.72, seuil: -1.10, ecrase: 0.30, recentre: 0.28, b1: 0.14, b2: 0.06 },
+  { nom: 'galet',   solide: 'dodec', rayon: 1.18, detail: 0, ax: 0.86, ay: 1.42, az: 0.86, seuil: -1.05, ecrase: 0.50, recentre: 0.28, b1: 0.28, b2: 0.14 }
+];
+/* La hauteur VISÉE pour chaque forme et la hauteur de sa base : elles sont donc toutes à la même
+   échelle à l'écran, et l'ombre — posée sur la base réelle — les touche toutes. */
+const HAUTEUR_FORME = 2.95, BASE_FORME = -1.28;
+function solideDe(F) {
+  if (F.solide === 'oct') return new THREE.OctahedronGeometry(F.rayon, F.detail);
+  if (F.solide === 'dodec') return new THREE.DodecahedronGeometry(F.rayon, F.detail);
+  if (F.solide === 'boite') return new THREE.BoxGeometry(F.rayon * 1.5, F.rayon * 2.6, F.rayon * 1.4);
+  return new THREE.IcosahedronGeometry(F.rayon, F.detail);
+}
+function geometriePierre(index) {
+  const F = FORMES[index % FORMES.length];
+  const g = solideDe(F);
   const pos = g.attributes.position;
   const v = new THREE.Vector3();
   const base = [];
@@ -2354,17 +2387,61 @@ function geometriePierre() {
     v.fromBufferAttribute(pos, i);
     const n = v.clone().normalize();
     const d = 1
-      + (bruit(n.x * 2.15, n.y * 2.15, n.z * 2.15) - 0.5) * 0.36
-      + (bruit(n.x * 5.4, n.y * 5.4, n.z * 5.4) - 0.5) * 0.13;
-    let x = v.x * d, y = v.y * d * 0.9, z = v.z * d;
-    if (y < -0.62) y = -0.62 - (y + 0.62) * 0.28;   // base posée, comme une pierre
+      + (bruit(n.x * 2.15, n.y * 2.15, n.z * 2.15) - 0.5) * F.b1
+      + (bruit(n.x * 5.4, n.y * 5.4, n.z * 5.4) - 0.5) * F.b2;
+    let x = v.x * d * F.ax, y = v.y * d * F.ay, z = v.z * d * F.az;
+    if (y < F.seuil) y = F.seuil - (y - F.seuil) * F.ecrase;   // le pied s'élargit, pierre dressée
+    y -= F.recentre;                                           // base et sommet équidistants
     base.push([x, y, z]);
     pos.setXYZ(i, x, y, z);
   }
   g.setAttribute('position', pos);
+  /* HARMONISATION — MESURÉ : sans elle la stèle montait à 2,21 (hors cadre quand la pierre se
+     soulève) et le galet s'arrêtait à 1,48 (il flottait sous les autres). On mesure la forme, on
+     la met à l'échelle pour une MÊME hauteur, et on repose sa base à la MÊME altitude. */
+  g.computeBoundingBox();
+  const hBrute = g.boundingBox.max.y - g.boundingBox.min.y;
+  const ech = hBrute > 0.001 ? (HAUTEUR_FORME / hBrute) : 1;
+  const dy = BASE_FORME - g.boundingBox.min.y * ech;
+  for (let i = 0; i < pos.count; i++) {
+    const b = base[i];
+    b[0] *= ech; b[1] = b[1] * ech + dy; b[2] *= ech;
+    pos.setXYZ(i, b[0], b[1], b[2]);
+  }
+  g.setAttribute('position', pos);
   g.computeVertexNormals();
+  g.computeBoundingBox();                            // pour POSER l'ombre sur la base réelle
   g.userData.base = base;                            // pour l'assemblage d'arrivée
   return g;
+}
+
+/* ── Poser une forme : la pierre, ses arêtes vives, son ombre et les cinq pastilles ──
+   MESURÉ avant : les pastilles étaient à 0,95 du centre alors que le corps ne fait plus que 0,72
+   de rayon — elles flottaient devant la pierre. On les pose donc AU RAYON, sur la surface réelle :
+   quelle que soit la forme, chaque face a son point, juste sous la peau de la pierre. */
+const rayonForme = new THREE.Raycaster(), invForme = new THREE.Matrix4();
+function poserForme(index) {
+  if (!pierre || !aretes) return;
+  const g = geometriePierre(index);
+  pierre.geometry.dispose();
+  pierre.geometry = g;
+  aretes.geometry.dispose();
+  aretes.geometry = new THREE.EdgesGeometry(g, 12);
+  const bb = g.boundingBox, cy = (bb.max.y + bb.min.y) / 2;
+  if (ombre) { ombre.position.y = bb.min.y + 0.02; ombre.scale.setScalar(1); }
+  pierre.updateMatrixWorld(true);
+  invForme.copy(pierre.matrixWorld).invert();
+  const o = new THREE.Vector3(0, cy, 0).applyMatrix4(invForme);
+  marqueurs.forEach(function (m, j) {
+    const dir = FACES[j].clone().normalize();
+    rayonForme.set(o, dir.clone().transformDirection(invForme));
+    const hits = rayonForme.intersectObject(pierre, false);
+    const p = hits.length
+      ? hits[0].point.clone().addScaledVector(dir, 0.03)
+      : new THREE.Vector3(dir.x * bb.max.x, cy + dir.y * (bb.max.y - cy), dir.z * bb.max.z);
+    m.point.position.copy(p);
+    m.zone.position.copy(p);
+  });
 }
 
 function init() {
@@ -2376,20 +2453,27 @@ function init() {
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
-  camera.position.set(0, 0.25, 6.65);
+  camera.position.set(0, 0.32, 7.55);
   camera.lookAt(0, 0, 0);
 
   groupe = new THREE.Group();
   scene.add(groupe);
 
-  pierre = new THREE.Mesh(geometriePierre(), new THREE.MeshStandardMaterial({
-    color: 0x9c9383, roughness: 0.6, metalness: 0.06, flatShading: true
+  /* Pierre en GRIS SOMBRE (demande : « des teintes plus noires ou gris sombre ») ; l'émissive
+     cyan est posée ici au repos, ce qui laisse la place au FOND des polygones au survol. */
+  pierre = new THREE.Mesh(geometriePierre(0), new THREE.MeshStandardMaterial({
+    color: 0x35322e, roughness: 0.72, metalness: 0.06, flatShading: true,
+    emissive: CYAN, emissiveIntensity: 0.04,
+    /* AU PREMIER ABORD, ON NE VOIT QUE LE MAILLAGE : les facettes sont un voile presque
+       transparent, ce sont les arêtes cyan qui dessinent la pierre. Au survol, elles SE
+       REMPLISSENT (l'opacité monte dans la boucle). */
+    transparent: true, opacity: 0.05
   }));
   groupe.add(pierre);
 
   aretes = new THREE.LineSegments(
     new THREE.EdgesGeometry(pierre.geometry, 12),
-    new THREE.LineBasicMaterial({ color: CYAN, transparent: true, opacity: 0 })
+    new THREE.LineBasicMaterial({ color: CYAN, transparent: true, opacity: 0.45 })
   );
   groupe.add(aretes);
 
@@ -2397,7 +2481,7 @@ function init() {
   FACES.forEach(function (dir, i) {
     const p = new THREE.Mesh(new THREE.SphereGeometry(0.052, 16, 16),
       new THREE.MeshStandardMaterial({ color: PAPIER, emissive: CYAN, emissiveIntensity: 0.5, roughness: 0.3 }));
-    p.position.copy(dir).multiplyScalar(1.24);
+    p.position.set(dir.x * 0.78, dir.y * 1.62 - 0.18, dir.z * 0.78);
     const zone = new THREE.Mesh(new THREE.SphereGeometry(0.23, 12, 12),
       new THREE.MeshBasicMaterial({ visible: false }));
     zone.position.copy(p.position);
@@ -2411,21 +2495,23 @@ function init() {
   cnv.width = cnv.height = 256;
   const c = cnv.getContext('2d');
   const grad = c.createRadialGradient(128, 128, 4, 128, 128, 126);
-  grad.addColorStop(0, 'rgba(16,13,9,0.34)');
-  grad.addColorStop(0.55, 'rgba(16,13,9,0.11)');
+  grad.addColorStop(0, 'rgba(16,13,9,0.42)');
+  grad.addColorStop(0.55, 'rgba(16,13,9,0.14)');
   grad.addColorStop(1, 'rgba(16,13,9,0)');
   c.fillStyle = grad; c.fillRect(0, 0, 256, 256);
-  ombre = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 2.5),
+  ombre = new THREE.Mesh(new THREE.PlaneGeometry(2.35, 1.55),
     new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, depthWrite: false }));
   ombre.rotation.x = -Math.PI / 2;
-  ombre.position.y = -1.42;
+  /* L'OMBRE EST POSÉE SUR LA BASE RÉELLE DE LA PIERRE (mesurée) : elle ne peut plus s'en
+     détacher. C'est la PIERRE qui monte au survol, pas l'ombre qui descend. */
+  ombre.position.y = pierre.geometry.boundingBox.min.y + 0.02;
   scene.add(ombre);
 
   /* Halo : un anneau fin, tourné, qui respire. */
   halo = new THREE.Mesh(new THREE.RingGeometry(1.40, 1.435, 128),
     new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
-  halo.rotation.x = -Math.PI / 2.35;
-  halo.position.y = -0.15;
+  halo.rotation.x = -Math.PI / 2.08;
+  halo.position.y = -1.14;
   scene.add(halo);
 
   /* Particules : la poussière de l'atelier, poussée au clic. */
@@ -2450,16 +2536,17 @@ function init() {
   /* Onde de choc du clic : un anneau qui s'ouvre et s'efface. */
   onde = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 96),
     new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0, side: THREE.DoubleSide }));
-  onde.rotation.x = -Math.PI / 2.6;
-  onde.position.y = -0.2;
+  onde.rotation.x = -Math.PI / 2.08;
+  onde.position.y = -1.14;
   scene.add(onde);
 
   /* Lumières : papier chaud devant, cyan derrière (arête), ambiance basse. */
-  scene.add(new THREE.HemisphereLight(0xfdf8ef, 0x2a241c, 0.72));
-  const cle = new THREE.DirectionalLight(0xfff2dd, 2.6); cle.position.set(2.6, 3.4, 3.2); scene.add(cle);
-  lumiereRasante = new THREE.DirectionalLight(CYAN, 1.5); lumiereRasante.position.set(-3.2, 1.2, -2.6); scene.add(lumiereRasante);
+  scene.add(new THREE.HemisphereLight(0xfdf8ef, 0x2a241c, 0.85));
+  const cle = new THREE.DirectionalLight(0xfff2dd, 3.0); cle.position.set(2.6, 3.4, 3.2); scene.add(cle);
+  lumiereRasante = new THREE.DirectionalLight(CYAN, 1.35); lumiereRasante.position.set(-3.2, 1.2, -2.6); scene.add(lumiereRasante);
   const contre = new THREE.DirectionalLight(0xffffff, 0.5); contre.position.set(-1.5, -2, 2); scene.add(contre);
 
+  poserForme(0);        /* la forme de départ, et les pastilles posées sur SA surface */
   horloge = new THREE.Clock();
   /* Assemblage d'arrivée : les sommets partent éclatés et se posent en 1,1 s. */
   const pos0 = pierre.geometry.attributes.position;
@@ -2530,7 +2617,7 @@ function init() {
   construit = true;
   /* Repère de mesure (aucun effet sur le rendu) : permet de vérifier la scène depuis la
      console ou un banc de test — même esprit que spTestDiag dans l'application. */
-  window.__rk = { THREE: THREE, scene: scene, camera: camera, rendu: rendu, pierre: pierre, groupe: groupe };
+  window.__rk = { THREE: THREE, scene: scene, camera: camera, rendu: rendu, pierre: pierre, groupe: groupe, aretes: aretes, ombre: ombre, poserForme: poserForme, FORMES: FORMES };
   apres();
 }
 
@@ -2538,6 +2625,9 @@ function init() {
 let tourRestant = 0;
 function cliquer() {
   actif = (actif + 1) % 5;
+  /* LE CLIC CHANGE DE FORME : chaque face a la sienne (ménir, stèle, cristal, bloc, galet) ;
+     l'ombre comme les pastilles se reposent sur la nouvelle surface. */
+  poserForme(actif);
   peindre();
   tournerVers(actif, false);
   vitesse += 0.09;
@@ -2601,14 +2691,16 @@ function apres() {
   lever += (cibleLever - lever) * Math.min(1, dt * 5.5);
   const flotte = reduit ? 0 : Math.sin(t * 0.85) * 0.035;
   /* MESURÉ : à 1 pour 1, la pierre sortait du cadre en se soulevant (haut et bas coupés). */
-  groupe.position.y = lever * 0.62 + flotte;
+  groupe.position.y = lever * 0.5 + flotte;
   groupe.rotation.x = -lever * 0.06;
-  ombre.position.y = -1.42 - lever * 0.18;
-  ombre.scale.setScalar(1 + lever * 0.22);
-  ombre.material.opacity = 1 - lever * 0.45;
+  /* ⚠️ MESURÉ : l'ombre était 0,80 SOUS le pied de la pierre — « il est trop loin de l'ombre ».
+     Elle reste maintenant AU SOL : c'est la pierre qui s'en détache quand elle se soulève. */
+  ombre.scale.setScalar(1 + lever * 0.12);
+  ombre.material.opacity = 1 - lever * 0.4;
 
   if (aretes) {
-    aretes.material.opacity += ((lever > 0.2 ? 0.42 : 0) - aretes.material.opacity) * Math.min(1, dt * 5);
+    /* LES TRAITS BLEUS RESTENT ACTIFS : 0,34 au repos, 0,62 au survol (ils s'éteignaient à 0). */
+    aretes.material.opacity += ((lever > 0.2 ? 0.72 : 0.45) - aretes.material.opacity) * Math.min(1, dt * 5);
     /* MESURÉ : posées pile sur les facettes, les arêtes cyan ne se voyaient pas (z-fighting).
        On les écarte d'un cheveu, d'autant plus qu'elles s'allument : la pierre s'ouvre. */
     aretes.scale.setScalar(1 + aretes.material.opacity * 0.02);
@@ -2617,6 +2709,15 @@ function apres() {
   if (lumiereRasante && !reduit) { lumiereRasante.position.set(Math.cos(t * 0.28) * -3.2, 1.2, Math.sin(t * 0.28) * -3.2); }
   if (pierre && pierre.material.emissiveIntensity > 0) {
     pierre.material.emissiveIntensity = Math.max(0, pierre.material.emissiveIntensity - dt * 0.5);
+  }
+  /* AU SURVOL, C'EST LE FOND DES POLYGONES QUI PREND SA TEINTE : les facettes s'assombrissent
+     et l'émissive cyan monte avec le soulèvement — sans jamais repeindre les arêtes. */
+  if (pierre) {
+    pierre.material.color.copy(TEINTE_REPOS).lerp(TEINTE_SURVOL, Math.min(1, lever * 2.4));
+    pierre.material.emissiveIntensity = Math.max(pierre.material.emissiveIntensity, lever * 0.22);
+    /* LE REMPLISSAGE : 0,05 au repos (on ne voit que le maillage) → 0,95 dès que la pierre est
+       touchée, la matière revient dans les facettes. */
+    pierre.material.opacity = Math.min(0.98, 0.05 + lever * 2.4);
   }
   if (onde && onde.material.opacity > 0) {
     onde.material.opacity = Math.max(0, onde.material.opacity - dt * 1.5);
