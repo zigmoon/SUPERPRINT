@@ -1,0 +1,2614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROCK v1 — the print-first engine | SUPER PRINT</title>
+<meta name="description" content="ROCK v1.0 is SuperPrint's own engine: the first one designed for print, publishing and layout. A deterministic, sober engine — no GPU farm, no retraining, nothing sent: it composes the book and the layout in your browser.">
+<meta name="keywords" content="ROCK v1, SuperPrint engine, print-first AI, eco AI, layout engine, DTP engine, book composition, maquette, no GPU, deterministic layout, Zigmoon">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+<meta name="author" content="Zigmoon">
+<meta name="application-name" content="SuperPrint">
+<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#F7F3EC" media="(min-width: 1001px)">
+<link rel="canonical" href="https://superprint.cc/rock.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ROCK v1 — the print-first engine">
+<meta property="og:description" content="Our own engine, born for print: deterministic composition of books and layouts, in the browser, without a GPU farm.">
+<meta property="og:url" content="https://superprint.cc/rock.html">
+<meta property="og:image" content="https://superprint.cc/icons/icon-512x512.png">
+<link rel="alternate" hreflang="en" href="https://superprint.cc/rock.html">
+<link rel="alternate" hreflang="fr" href="https://superprint.cc/rock.html?lang=fr">
+<link rel="alternate" hreflang="ja" href="https://superprint.cc/rock.html?lang=ja">
+<link rel="stylesheet" href="CSS/fonts.css">
+<style>
+/* ══ La charte ci-dessous est celle de la présentation, reprise TELLE QUELLE (mêmes
+   variables, mêmes composants, mêmes media queries) : la page ROCK v1 est habillée à
+   l'identique, sans divergence possible. ══ */
+
+/* ═══════════════════════════════════════════════════════════════
+   SuperPrint Landing — "Le livre d'atelier" (craft × rêve)
+   Design editorial : papier chaud, encre profonde, accents
+   quadri (CMJN), serif Playfair Display + caps Bebas Neue,
+   IBM Plex (sans/mono) + Noto Sans JP. Aucune emoji.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --paper: #F7F3EC;        /* papier chaud */
+  --paper-2: #EFEAE0;      /* papier plus soutenu */
+  --paper-3: #FFFDF8;      /* carte claire */
+  --ink: #17130D;          /* encre profonde (pas noir pur) */
+  --ink-2: #2A251D;
+  --ink-soft: #332E26;     /* encre adoucie — sombre & lisible, peu de gris */
+  --muted: #756A5B;        /* gris chaud réservé aux notes très secondaires */
+  --line: #DCD3C3;         /* filets dorés clairs */
+  --line-strong: #C4B9A6;
+  --cyan: #00A7C7;         /* quadri cyan */
+  --magenta: #E1237B;      /* quadri magenta */
+  --yellow: #F2B90B;       /* quadri jaune */
+  --white: #FFFFFF;
+  --f-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --f-caps: 'Bebas Neue', 'Arial Narrow', sans-serif;
+  --f-sans: 'IBM Plex Sans', 'Noto Sans JP', sans-serif;
+  --f-mono: 'IBM Plex Mono', 'Fira Code', monospace;
+  --f-ja: 'Noto Sans JP', 'IBM Plex Sans', sans-serif;
+  --ease: cubic-bezier(.22,.61,.36,1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* scrollbar-gutter réserve la place de la scrollbar : pas de saut de mise en page quand elle
+   disparaît (menu mobile ouvert, voir script du burger). */
+html { scroll-behavior: smooth; font-size: 16px; -webkit-text-size-adjust: 100%; scrollbar-gutter: stable; }
+body {
+  font-family: var(--f-sans);
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.7;
+  overflow-x: hidden;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ——— Barre quadri fixée tout en haut de l'écran (4 couleurs plaquées) ——— */
+.quadri-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+  height: 5px; display: flex;
+}
+.quadri-bar .q { flex: 1 1 25%; }
+.quadri-bar .q.c { background: var(--cyan); }
+.quadri-bar .q.m { background: var(--magenta); }
+.quadri-bar .q.y { background: var(--yellow); }
+.quadri-bar .q.k { background: var(--ink); }
+body { padding-top: 5px; }
+
+/* ——— Scrollbar design (WebKit / Chromium / Edge) ——— */
+html { scrollbar-width: thin; scrollbar-color: var(--ink) var(--paper-2); }
+html::-webkit-scrollbar { width: 14px; height: 14px; }
+html::-webkit-scrollbar-track {
+  background:
+    linear-gradient(180deg,
+      var(--cyan) 0, var(--cyan) 14px,
+      var(--paper-2) 14px, var(--paper-2) calc(100% - 14px),
+      var(--yellow) calc(100% - 14px), var(--yellow) 100%);
+}
+html::-webkit-scrollbar-thumb {
+  background: var(--ink);
+  border: 3px solid var(--paper-2);
+  border-radius: 10px;
+  background-clip: padding-box;
+  min-height: 48px;
+}
+html::-webkit-scrollbar-thumb:hover { background: var(--magenta); background-clip: padding-box; }
+html::-webkit-scrollbar-thumb:active { background: var(--ink-2); background-clip: padding-box; }
+html::-webkit-scrollbar-corner { background: var(--paper-2); }
+
+/* ——— Typo de base ——— */
+::selection { background: var(--ink); color: var(--paper); }
+h1,h2,h3,h4 { font-weight: 700; }
+p { color: var(--ink-soft); }
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+section { padding: clamp(72px, 10vw, 140px) 24px; position: relative; }
+.container { max-width: 1180px; margin: 0 auto; position: relative; z-index: 2; }
+
+/* ——— Étiquette de section : numéro de chapitre + filet ——— */
+.section-label {
+  display: flex; align-items: center; gap: 18px;
+  font-family: var(--f-mono);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .42em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 26px;
+}
+.section-label::before { content: ''; width: 34px; height: 2px; background: var(--ink); }
+html[lang="ja"] .section-label { letter-spacing: .2em; }
+
+/* ——— Titres ——— */
+h1, .h1 {
+  font-family: var(--f-display);
+  font-size: clamp(40px, 7vw, 96px);
+  font-weight: 700; line-height: 1.02;
+  letter-spacing: -.015em; color: var(--ink);
+}
+h2, .h2 {
+  font-family: var(--f-display);
+  font-size: clamp(28px, 4.4vw, 58px);
+  font-weight: 700; line-height: 1.08;
+  letter-spacing: -.01em; color: var(--ink);
+  margin-bottom: 22px;
+}
+h3 { font-size: 19px; font-weight: 600; line-height: 1.3; }
+em.display-i { font-style: italic; }
+.lead { font-size: clamp(16px, 1.6vw, 19px); color: var(--ink); max-width: 640px; line-height: 1.75; }
+p { color: var(--ink); }
+p + p { margin-top: 14px; }
+strong { color: var(--ink); font-weight: 600; }
+
+/* ——— Marques quadri (pastilles CMJN, pur design print) ——— */
+.cmyk {
+  display: inline-flex; align-items: center; gap: 6px;
+  vertical-align: middle; margin: 0 4px;
+}
+.cmyk i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.cmyk i.c { background: var(--cyan); }
+.cmyk i.m { background: var(--magenta); }
+.cmyk i.y { background: var(--yellow); }
+.cmyk i.k { background: var(--ink); }
+
+/* ——— Mot fantôme / filigrane (rêve éditorial) ——— */
+.ghost {
+  position: absolute; z-index: 0; pointer-events: none;
+  font-family: var(--f-caps);
+  font-weight: 400; line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(23,19,13,.07);
+  letter-spacing: .04em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* ——— BRAND HEADER (colophon d'ouverture — bande fine) ——— */
+.brand-header {
+  background: var(--paper);
+  /* 🎯 v1.7.417 — PADDING VERTICAL SYMÉTRIQUE.
+     Avant : 6px en haut / 4px en bas -> le logo était décentré de 1,3 px et
+     « flottait » vers le bas. L'écart était faible mais visible sur un logo,
+     parce que rien d'autre ne vient le compenser dans cette bande. */
+  padding: 6px 24px;
+  display: flex; justify-content: center; align-items: center;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.brand-header a { display: inline-flex; text-decoration: none; align-items: center; }
+.brand-header img {
+  height: 40px; width: auto;
+  /* 🎯 v1.7.417 — L'IMAGE EST SUR LA LIGNE DE BASE PAR DÉFAUT.
+     Une image en display:block dans un conteneur flex conserve une petite
+     réserve basse, ce qui la faisait paraître 0,7 px trop haute.
+     display:block + line-height:0 supprime cette réserve héritée du texte. */
+  display: block; line-height: 0; vertical-align: middle;
+}
+/* Sur desktop, on descend légèrement l'icône logo pour l'équilibre optique */
+@media(min-width: 701px){ .brand-header img { transform: translateY(0px); } }
+/* ——— v1.7.578 — RETOUR : LE « DTP & AI STUDIO » REPART À DROITE ———
+   Il avait été mis à gauche par symétrie (v1.7.578, première mouture), puis
+   l'auteur a demandé le retour à l'ordre d'origine : « finalement réinverse le
+   numéro de version, il était mieux à gauche dès le départ ». La pastille de
+   version occupe donc de nouveau la GAUCHE, ce tag la DROITE. Les deux sont en
+   position absolue dans une bande flex : le logo, lui, ne bouge pas d'un
+   pixel, il reste centré. */
+.brand-tag {
+  position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: .3em; text-transform: uppercase; color: var(--muted);
+}
+@media(max-width:680px){ .brand-tag { display:none; } }
+/* ——— DERNIÈRE VERSION, EN HAUT À GAUCHE ———
+   Miroir exact de .brand-tag (qui occupe la droite) : même famille mono, même
+   bande du colophon. Le numéro affiché est celui de l'APPLICATION : c'est un
+   marqueur VIVANT, remplacé à chaque bump (rechercher « brand-ver » dans le
+   plan de bump des releases — ne pas oublier cette ligne). */
+.brand-ver {
+  position: absolute; left: 24px; top: 50%; transform: translateY(-50%);
+  font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .16em; color: var(--ink-soft); line-height: 1;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  padding: 3px 10px; white-space: nowrap;
+}
+/* En mobile la bande est étroite : la pastille reste visible (demande : « dès le
+   départ ») mais se resserre, comme .brand-tag qui s'efface, lui, sous 680 px. */
+@media(max-width:680px){ .brand-ver { left: 14px; font-size: 9px; padding: 2px 8px; letter-spacing: .1em; } }
+
+/* ——— NAVIGATION ——— */
+nav {
+  position: sticky; top: 0; z-index: 120;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  color: var(--ink);
+  /* 🎯 v1.7.417 — 56 -> 66 px (+10 px) et centrage vertical fiable.
+     La hauteur était trop juste : le logo occupait 55,3 px sur 56, donc il ne
+     restait aucune marge pour un centrage optique. */
+  padding: 0 clamp(18px,4vw,40px); height: 66px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+.nav-logo {
+  font-family: var(--f-caps);
+  font-size: 23px; font-weight: 400;
+  letter-spacing: .045em; text-decoration: none;
+  /* 🎯 v1.7.417 — PLUS de height:100%.
+     Avec height:100%, la boîte du logo mesurait 55,3 px dans une nav de 56 px :
+     le texte était centré dans une boîte qui occupait déjà toute la hauteur,
+     donc le moindre décalage de métrique se voyait. On laisse la nav centrer
+     (elle est en align-items:center) : la boîte se réduit à la ligne de texte
+     et le centrage devient exact. */
+  display: inline-flex; align-items: center; line-height: 1;
+  color: var(--ink); white-space: nowrap;
+  /* 🎯 v1.7.417 — CENTRAGE OPTIQUE.
+     « SUPERPRINT » est en capitales et n'a aucune descendante (pas de g, p, q,
+     y, j). Le centre géométrique de la boîte de texte tombe donc AU-DESSUS du
+     centre optique des glyphes — mesuré à -0,8 px. On applique la moitié de
+     cet écart vers le bas : l'œil voit alors le mot parfaitement centré, sans
+     modifier l'alignement avec les autres éléments de la nav. */
+  /* 🆕 v1.7.470 — retour utilisateur : « la typo est trop haute de 5 px » dans la barre
+     rétractée (au scroll). Le centrage optique d'origine valait 0,5 px ; on descend de
+     5 px de plus pour tomber sur l'œil. */
+  /* 🆕 v1.7.472 — le décalage optique de 0,5 px ne vaut QUE pour la barre au repos.
+     Dans la barre RÉTRACTÉE (collée en haut au scroll, classe .is-stuck posée par le
+     script), le mot est 5 px trop haut : c’est là qu’on applique les 5,5 px. */
+  transform: translateY(2px);
+}
+/* 🆕 v1.7.472 — LA VALEUR EST MESURÉE, ET ELLE VAUT POUR LES DEUX ÉTATS.
+   On a mesuré l’ENCRE du mot (le haut des capitales, « SUPERPRINT » n’ayant pas de
+   descendante) contre le milieu exact de la barre :
+     · barre au repos : encre à −1,5 px → le mot était 1,5 px TROP HAUT ;
+     · barre collée    : encre à +3,5 px → le mot était 3,5 px TROP BAS.
+   Une seule valeur, 2 px, corrige les deux. La règle spéciale « is-stuck » (5,5 px)
+   disparaît : elle faisait SAUTER le logotype de 5 px à l’instant où la barre se
+   colle, et c’est ce saut qui se voyait — pas un mauvais centrage de la barre. */
+.nav-logo span { color: var(--muted); letter-spacing: .08em; }
+/* 🆕 v1.7.476 — BARRE RÉTRACTÉE SEULEMENT : le logotype descend de 5 px.
+   Demande précise de l'utilisateur : « en mode rétracté, à gauche, la typo SUPERPRINT est trop
+   haute de 5 px ; ne touche pas à la version non rétractée ». La règle ne s'applique donc QUE
+   lorsque le script pose la classe `is-stuck` (barre collée en haut au scroll) — la barre au
+   repos garde exactement ses 2 px mesurés en v1.7.472. 7 = 2 px de centrage optique + les 5 px
+   demandés. ⚠️ Cette classe n'était utilisée par AUCUN style jusqu'ici : c'est sa première règle,
+   il n'y a donc rien à annuler ailleurs. */
+nav.is-stuck .nav-logo { transform: translateY(5px); }
+.nav-links { display: flex; gap: 2px; align-items: center; height: 100%; }
+.nav-links a {
+  display: inline-flex; align-items: center; justify-content: center; height: 100%; padding: 0 14px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  text-decoration: none; color: var(--ink-soft);
+  position: relative; transition: color .25s var(--ease); line-height: 1;
+}
+.nav-links a::after {
+  /* 🎯 v1.7.417 — bottom suit la nouvelle hauteur de nav (66 px) : le trait
+     reste a la meme distance du bas qu'avant (16 px sur 56 px). */
+  content: ''; position: absolute; left: 14px; right: 14px; bottom: 21px;
+  height: 1px; background: var(--ink);
+  transform: scaleX(0); transform-origin: left; transition: transform .3s var(--ease);
+}
+.nav-links a:hover { color: var(--ink); }
+.nav-links a:hover::after { transform: scaleX(1); }
+.nav-cta {
+  margin-left: 12px; padding: 0 22px !important;
+  background: var(--ink); color: var(--paper) !important;
+  height: 42px !important; align-self: center;
+  letter-spacing: .12em;
+}
+.nav-cta::after { display: none; }
+.nav-cta:hover { background: var(--ink-2); }
+/* 🆕 v1.7.472 — le sélecteur de langue était 0,5 px trop haut : les éléments se centrent
+   dans la zone de contenu de la barre (65 px), alors que la barre en fait 66 avec son
+   filet bas. Une marge haute de 1 px décale le bloc d’un demi-pixel vers le bas, sans
+   transformation (donc sans texte flou). L’encre atterrit alors pile au milieu. */
+.lang-toggle { display: flex; gap: 0; margin-left: 10px; margin-top: 1px; border: 1px solid var(--line-strong); }
+.lang-toggle button {
+  background: transparent; border: none;
+  color: var(--muted); font-family: var(--f-mono);
+  font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  padding: 8px 11px; cursor: pointer; transition: all .25s var(--ease);
+}
+.lang-toggle button + button { border-left: 1px solid var(--line-strong); }
+.lang-toggle button.active, .lang-toggle button:hover { background: var(--ink); color: var(--paper); }
+.nav-tools { display: flex; align-items: center; gap: 10px; }
+
+/* ——— Burger mobile ——— */
+.nav-burger {
+  display: none; flex-direction: column; justify-content: center; gap: 5px;
+  width: 40px; height: 40px; padding: 0; cursor: pointer;
+  background: transparent; border: 1px solid var(--line-strong);
+}
+.nav-burger span { display: block; height: 2px; width: 18px; margin: 0 auto; background: var(--ink); transition: all .3s var(--ease); }
+.nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-burger.open span:nth-child(2) { opacity: 0; }
+.nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ——— Menu mobile déroulant (sous la nav sticky) ——— */
+.mobile-menu {
+  /* 🎯 v1.7.417 — top = hauteur de la nav. Avant : 71 px pour une nav de
+     56 px -> 15 px de vide sous le menu. Maintenant la valeur suit la nav. */
+  position: fixed; top: 66px; left: 0; right: 0; z-index: 119;
+  background: color-mix(in srgb, var(--paper) 96%, transparent);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--line);
+  display: none; flex-direction: column;
+  padding: 10px 20px 20px;
+  /* 🆕 v1.7.472 — PLEIN ÉCRAN (demande utilisateur) : le menu couvre toute la page.
+     Il se place SOUS la barre (z-index 118 contre 120) pour que le bouton burger reste
+     cliquable, et son contenu commence sous la barre grâce au padding-top mesuré à
+     l’ouverture par le script. Il défile si la liste dépasse l’écran. */
+  inset: 0; max-height: none; height: auto; z-index: 118;
+  /* 🆕 v1.7.472 — il défile si la liste dépasse (grande police, petits écrans, japonais) :
+     le colophon et la ligne du bas restent atteignables. */
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  /* 🆕 v1.7.549 — SCROLLBAR INTERNE MASQUÉE : dès que les 3 entrées d'apps ont fait dépasser
+     le contenu de l'écran, une scrollbar par défaut (non stylée, épaisse) apparaissait pile sur
+     la ligne SUPERPRINT + bouton fermer — et sa largeur qui apparaît/disparaît décalait un peu
+     le logo du menu (.mm-colo, centré). Le menu reste scrollable (tactile/molette), juste sans
+     piste visible — comme une scrollbar mobile native. */
+  scrollbar-width: none;
+}
+.mobile-menu::-webkit-scrollbar { display: none; }
+.mobile-menu.open { display: flex; }
+/* 🆕 v1.7.549 — LES TROIS APPS EN TÊTE DE MENU (demande : « afficher les trois app en premier »).
+   Icône + nom, même ligne/filet que les autres entrées mais un peu plus haut (icône 26px) ; le
+   bouton « Ouvrir l'app » en fin de menu devient inutile et est retiré. */
+.mm-app { display: flex; align-items: center; gap: 12px; }
+.mm-app img { width: 26px; height: 26px; border-radius: 6px; flex: 0 0 auto; }
+.mobile-menu a {
+  /* 🆕 v1.7.472 — MÊME TYPO QUE LA NAV, MAIS PLUS GRANDE ET PLUS HAUTE.
+     Le retour du 18/09 (« on dirait que ce n’est pas la même typo ») avait ramené les entrées
+     aux 11 px de la barre : c’était juste, mais sec sur un écran de téléphone. On garde la
+     famille et l’approche de la nav (IBM Plex Mono, .16em, capitales) et on monte à 13 px,
+     avec des lignes de 57 px : le doigt tombe juste, l’œil suit.
+     🆕 v1.7.572 — RESSERRÉ D'UN CRAN (« resserrer un peu l'ensemble des entrées »). Mesuré :
+     3 entrées d'apps de 65 px + 5 entrées de 61 px, contenu total 850 px pour 843 px visibles
+     sur 390×844. Le rembourrage passe de 19 à 14 px par entrée (−80 px), .mm-lang −8 px et
+     .mm-bas −16 px : la liste tient sans défiler sur un écran de 844 px de haut. */
+  font-family: var(--f-mono); font-size: 13px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink); text-decoration: none;
+  padding: 14px 4px; border-bottom: 1px solid var(--line);
+}
+.mobile-menu a.mm-cta { border-bottom: none; background: var(--ink); color: var(--paper); text-align: center; margin-top: 10px; border-radius: 10px; }
+
+/* ——— Sélecteur de langue dans le menu mobile ——— */
+.mm-lang {
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.mm-lang-label {
+  font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .3em; text-transform: uppercase; color: var(--muted);
+}
+.mm-lang-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.mbtn-lang {
+  flex: 1 1 auto; min-width: 90px;
+  font-family: var(--f-mono); font-size: 12px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: 11px 8px; cursor: pointer; border-radius: 10px;
+  color: var(--ink); background: transparent;
+  border: 1px solid var(--line-strong);
+  transition: all .25s var(--ease);
+}
+.mbtn-lang.active, .mbtn-lang:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+
+/* ——— HERO (couverture d'atelier — tout centré) ——— */
+#hero {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(0,167,199,.10), transparent 60%),
+    radial-gradient(900px 500px at 50% 110%, rgba(226,35,123,.08), transparent 55%),
+    var(--paper);
+  color: var(--ink);
+  padding: clamp(28px,4vw,44px) 24px clamp(56px,8vw,96px);
+  overflow: hidden;
+}
+#hero .container { display: flex; flex-direction: column; align-items: center; text-align: center; }
+#hero .ghost { top: -0.12em; left: 50%; transform: translateX(-50%); font-size: clamp(180px, 30vw, 520px); opacity: 1; }
+.hero-kicker {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .4em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: clamp(16px,2.4vw,28px);
+}
+.hero-kicker::before { content:''; display: none; }
+#hero h1 { max-width: 980px; margin-top: 0; }
+#hero h1 .line { display: block; }
+#hero h1 .italic {
+  font-style: italic;
+  background: linear-gradient(100deg, var(--magenta) 0%, var(--cyan) 60%, var(--yellow) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+/* Pastilles quadri CMJN centrées — sous l'installeur */
+.hero-dots {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin: clamp(20px,2.6vw,34px) 0 0;
+}
+.hero-dots .dot { width: 12px; height: 12px; border-radius: 50%; }
+.hero-dots .dot.c { background: var(--cyan); }
+.hero-dots .dot.m { background: var(--magenta); }
+.hero-dots .dot.y { background: var(--yellow); }
+.hero-dots .dot.k { background: var(--ink); }
+#hero .lead { margin-top: clamp(22px,3vw,34px); max-width: 640px; color: var(--ink-soft); margin-left: auto; margin-right: auto; }
+#hero .lead strong { color: var(--ink); }
+.hero-install { margin-top: clamp(20px,2.6vw,36px); max-width: 780px; width: 100%; }
+.hero-lead { margin-top: clamp(16px,2.2vw,28px) !important; }
+/* 🆕 v1.7.498 — DES FILETS, PAS DE FOND (demande : « un fond transparent, pas de fond en fait,
+   juste les filets autour »). Le panneau blanc et son ombre portée faisaient une tache claire au
+   milieu de la couverture ; il ne reste que le filet. Seul le champ de la ligne npx — la seule
+   chose qu'on vient y chercher — garde un fond, et il est blanc (voir .cmd-block). */
+#hero .install-shell {
+  background: transparent; text-align: left;
+  border-color: var(--line-strong); border-radius: 24px;
+  box-shadow: none;
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--f-mono); font-size: 12px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  padding: 17px 30px; text-decoration: none;
+  transition: all .3s var(--ease);
+}
+.btn .arr { transition: transform .3s var(--ease); }
+.btn:hover .arr { transform: translateX(4px); }
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-primary:hover { background: var(--ink-2); box-shadow: 0 14px 34px -18px rgba(23,19,13,.7); }
+.btn-secondary { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+.btn-secondary:hover { background: var(--ink); color: var(--paper); }
+
+/* ——— INSTALLER LOCAL (dans le hero — panneau transparent & arrondi) ——— */
+.install-shell {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  padding: clamp(22px,2.6vw,34px);
+}
+.install-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.install-head .inst-title {
+  font-family: var(--f-caps); font-size: clamp(20px,2vw,26px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.05; color: var(--ink);
+  display: inline-flex; align-items: center; gap: 12px;
+}
+.install-head .inst-title svg { width: 21px; height: 21px; stroke: var(--magenta); stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.install-shell .inst-desc { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 16px; line-height: 1.65; }
+.cmd-block {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--white); color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 6px 8px 6px 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 6px 18px -14px rgba(23,19,13,.5);
+}
+.cmd-os-ic { flex-shrink: 0; display: inline-flex; align-items: center; color: var(--muted); }
+.cmd-block code {
+  flex: 1; font-size: 13px; color: var(--ink); white-space: nowrap; overflow-x: auto;
+  font-family: var(--f-mono); padding: 8px 0; line-height: 1.6; letter-spacing: .02em;
+}
+.cmd-block code::-webkit-scrollbar { height: 4px; }
+.cmd-block code::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+.copy-btn {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 16px; cursor: pointer;
+  background: var(--ink); color: var(--paper);
+  border: 1px solid var(--ink); border-radius: 10px;
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  transition: all .25s var(--ease);
+}
+.copy-btn:hover { background: var(--magenta); border-color: var(--magenta); }
+.copy-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cmd-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; margin-top: 16px; }
+.cmd-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.cmd-tab {
+  font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-soft); background: transparent;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  padding: 8px 16px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: all .25s var(--ease);
+}
+.cmd-tab svg { width: 13px; height: 13px; opacity: .7; }
+.cmd-tab.active, .cmd-tab:hover { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+.cmd-tab.active svg { opacity: 1; }
+.cmd-hint { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--muted); line-height: 1.5; }
+.install-note {
+  margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line-strong);
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em;
+  color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 16px;
+}
+.install-note b { color: var(--ink); font-weight: 600; }
+.install-note .assure { color: var(--ink); font-weight: 600; }
+.install-note .assure + .assure::before { content: '·'; margin-right: 16px; color: var(--muted); font-weight: 400; }
+@media(max-width: 640px){ .cmd-block { flex-wrap: wrap; } .copy-btn { width: 100%; justify-content: center; } .cmd-meta { justify-content: flex-start; } }
+
+/* ——— SECTIONS : rythme papier ——— */
+#value-props, #studio, #use-cases { background: var(--paper); }
+#comparison, #formats, #faq { background: var(--paper-3); }
+#features { background: var(--paper); }
+#vs-indesign { background: var(--paper-2); } /* legacy id kept for anchor */
+.section-head { max-width: 780px; margin-bottom: clamp(30px,5vw,60px); }
+.section-head .lead { margin-top: 8px; }
+
+/* ——— VALUE PROPS (6 arguments, en numérotés) ——— */
+.vp-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; margin-top: 10px;
+  border-bottom: 1px solid var(--line); /* fillet de fermeture de la dernière rangée */
+}
+.vp-card {
+  position: relative;
+  padding: clamp(26px,3.5vw,46px) clamp(24px,3vw,44px);
+  border-top: 1px solid var(--line);
+  background: transparent;
+  transition: background .4s var(--ease);
+  min-height: 250px;
+  display: flex; flex-direction: column;
+}
+.vp-card:nth-child(odd) { border-right: 1px solid var(--line); }
+/* 8 cartes (v1.7.417) : la 7e est impaire et garde son fillet droit,
+   la 8e ferme la rangee. Rien a corriger sur les 6 premieres. */
+.vp-card::after {
+  content:''; position:absolute; left:0; bottom:0; height:3px; width:0;
+  background: linear-gradient(90deg, var(--cyan), var(--magenta), var(--yellow));
+  transition: width .5s var(--ease);
+}
+.vp-card:hover { background: var(--paper-3); }
+.vp-card:hover::after { width: 100%; }
+.vp-icon {
+  font-family: var(--f-display); font-style: italic;
+  font-size: clamp(30px,4vw,44px); color: var(--muted);
+  line-height: 1; margin-bottom: 22px;
+}
+.vp-card h3 {
+  font-family: var(--f-caps);
+  font-size: clamp(19px,2.2vw,26px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.05;
+  margin-bottom: 12px; color: var(--ink);
+}
+.vp-card p { font-size: 14.5px; color: var(--ink-soft); line-height: 1.75; margin-top: auto; }
+
+/* ——— STUDIO SP213 ——— */
+#studio { position: relative; overflow: hidden; }
+#studio .ghost { top: 4%; left: -1vw; font-size: clamp(90px,16vw,260px); }
+#studio .section-head { max-width: 860px; }
+.studio-intro {
+  display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  gap: clamp(24px,4vw,60px); align-items: center;
+}
+.studio-intro h2 { margin-bottom: 14px; }
+.studio-engine {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px;
+}
+.studio-engine .eng {
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+  padding: 8px 13px; border: 1px solid var(--line-strong); color: var(--ink-soft); background: var(--paper-3);
+}
+.studio-engine .eng.on { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+.studio-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--line); border: 1px solid var(--line);
+  margin-top: clamp(36px,5vw,60px);
+}
+.studio-card {
+  background: var(--paper-3); padding: clamp(26px,2.6vw,38px);
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative; transition: background .35s var(--ease);
+}
+.studio-card:hover { background: var(--white); }
+.studio-num {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .22em; color: var(--magenta); margin-bottom: 4px;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.studio-num::after { content:''; height:1px; width: 34px; background: currentColor; opacity:.4; }
+.studio-card h3 {
+  font-family: var(--f-display);
+  font-size: clamp(19px,1.9vw,23px); font-weight: 700; line-height: 1.2;
+}
+.studio-card p { font-size: 13.5px; color: var(--ink-soft); line-height: 1.75; }
+.studio-card p strong { color: var(--ink); font-weight: 600; }
+.studio-band {
+  margin-top: clamp(30px,4vw,46px);
+  background: var(--ink); color: var(--paper);
+  padding: clamp(22px,3vw,34px) clamp(24px,3.5vw,42px);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px;
+}
+.studio-band .sb-txt { font-family: var(--f-display); font-style: italic; font-size: clamp(16px,2vw,22px); max-width: 560px; }
+.studio-band .sb-txt .cmymono { font-family: var(--f-mono); font-style: normal; font-size: .72em; letter-spacing: .2em; color: var(--yellow); }
+.btn-paper { background: var(--paper); color: var(--ink); }
+.btn-paper:hover { background: var(--white); }
+
+/* ——— PREPRESSE — Pantone & séparation de couches ——— */
+#prepress { position: relative; overflow: hidden; background: var(--paper-2); }
+#prepress .ghost { top: 2%; right: -3vw; font-size: clamp(110px,19vw,320px); }
+#prepress .section-head { max-width: 880px; }
+.pp-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--line); border: 1px solid var(--line);
+  margin-top: clamp(30px,4vw,50px);
+}
+.pp-card {
+  background: var(--paper-3); padding: clamp(24px,2.4vw,34px);
+  position: relative; display: flex; flex-direction: column;
+  transition: background .3s var(--ease);
+}
+.pp-card:hover { background: var(--white); }
+.pp-card::before {
+  content:''; position:absolute; left:0; top:0; width:0; height:3px;
+  background: linear-gradient(90deg, var(--cyan), var(--magenta), var(--yellow));
+  transition: width .5s var(--ease);
+}
+.pp-card:hover::before { width: 100%; }
+.pp-num {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .2em; color: var(--cyan); display: block; margin-bottom: 14px;
+}
+.pp-card h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.8vw,21px);
+  font-weight: 400; letter-spacing: .02em; line-height: 1.1;
+  margin-bottom: 10px; color: var(--ink);
+}
+.pp-card p { font-size: 13px; color: var(--ink-soft); line-height: 1.72; }
+.pp-card p strong { color: var(--ink); font-weight: 600; }
+.pp-card code {
+  font-family: var(--f-mono); font-size: .88em;
+  background: var(--paper); border: 1px solid var(--line);
+  padding: 1px 5px; color: var(--ink);
+}
+.pp-tag {
+  display: inline-block; font-family: var(--f-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: .2em; padding: 5px 10px; margin-top: 14px; align-self: flex-start;
+  border: 1px solid var(--cyan); color: var(--cyan); text-transform: uppercase;
+}
+.pp-band {
+  margin-top: clamp(24px,3vw,38px);
+  border: 1px solid var(--ink); border-left-width: 4px;
+  padding: clamp(18px,2.4vw,28px) clamp(20px,3vw,34px);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px;
+  background: var(--paper-3);
+}
+.pp-band-txt {
+  font-family: var(--f-display); font-style: italic;
+  font-size: clamp(14px,1.7vw,18px); line-height: 1.5;
+  color: var(--ink); max-width: 660px; margin: 0;
+}
+.pp-band-txt .pp-mono {
+  font-family: var(--f-mono); font-style: normal; font-size: .84em;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--magenta);
+}
+.pp-band .btn-paper { border: 1px solid var(--ink); flex: 0 0 auto; }
+.pp-band .btn-paper:hover { background: var(--ink); color: var(--paper); }
+
+/* ——— COMPARISON TABLE ——— */
+.cmp-wrapper { overflow-x: auto; margin-top: 8px; }
+table.cmp { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 760px; }
+table.cmp th {
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  padding: 16px 16px; text-align: left;
+  color: var(--ink); border-bottom: 2px solid var(--ink);
+  background: var(--paper-3);
+}
+table.cmp th:first-child { color: var(--muted); font-weight: 600; }
+table.cmp th.hl { background: var(--ink); color: var(--paper); }
+table.cmp td { padding: 15px 16px; border-bottom: 1px solid var(--line); vertical-align: top; background: var(--paper-3); }
+table.cmp td:nth-child(2) { background: var(--paper); }
+table.cmp tbody tr:hover td { background: var(--white); }
+table.cmp tbody tr:hover td:nth-child(2) { background: var(--paper-2); }
+table.cmp .feat { font-weight: 600; color: var(--ink); }
+.chk { color: var(--ink); font-weight: 700; }
+.cross { color: var(--muted); font-weight: 600; }
+.partial { color: var(--ink-soft); font-weight: 600; }
+.price-row td { background: var(--ink) !important; color: var(--paper) !important; font-family: var(--f-mono); font-weight: 600; }
+.price-row .chk, .price-row .cross { color: var(--paper); }
+table.cmp tbody tr.price-row:hover td { background: var(--ink) !important; }
+
+/* ——— FEATURES (chapitre double) ——— */
+.feat-head { display:flex; align-items:flex-end; justify-content:space-between; gap:30px; flex-wrap:wrap; }
+.feat-head .feat-meta { font-family: var(--f-mono); font-size: 12px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
+.feat-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--line); border: 1px solid var(--line);
+  margin-top: clamp(30px,4vw,50px);
+}
+.feat-card { background: var(--paper-3); padding: clamp(24px,2.4vw,34px); position: relative; transition: background .3s var(--ease), transform .3s var(--ease); }
+.feat-card:hover { background: var(--white); }
+.feat-num {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .2em; color: var(--cyan); display: block; margin-bottom: 16px;
+}
+.feat-card h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.8vw,21px);
+  font-weight: 400; letter-spacing: .02em; line-height: 1.1; margin-bottom: 10px; color: var(--ink);
+}
+.feat-card p { font-size: 13px; color: var(--ink-soft); line-height: 1.72; }
+.feat-tag {
+  display: inline-block; font-family: var(--f-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: .2em; padding: 5px 10px; margin-top: 14px;
+  border: 1px solid var(--magenta); color: var(--magenta); text-transform: uppercase;
+}
+.feat-tag.new { background: var(--magenta); color: var(--paper); }
+
+/* ——— USE CASES (table des matières) ——— */
+#use-cases { position: relative; overflow:hidden; }
+#use-cases .ghost { top: 30%; right: -2vw; font-size: clamp(120px,20vw,340px); }
+.uc-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  border-top: 2px solid var(--ink);
+}
+.uc-card {
+  padding: clamp(22px,2.4vw,34px) clamp(16px,1.6vw,24px);
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  background: transparent;
+  transition: background .3s var(--ease);
+}
+.uc-card:nth-child(4n) { border-right: none; }
+.uc-card:hover { background: var(--paper-2); }
+.uc-idx { font-family: var(--f-mono); font-size: 10px; letter-spacing: .22em; color: var(--yellow); display:block; margin-bottom: 14px; }
+.uc-card h3 { font-family: var(--f-display); font-size: clamp(19px,1.9vw,24px); font-weight: 700; margin-bottom: 6px; }
+.uc-card p { font-size: 12.5px; color: var(--ink-soft); line-height: 1.65; }
+
+/* ——— VS DESKTOP (2 colonnes argumentaires) ——— */
+.vs-cols { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px,3vw,40px); margin-top: clamp(24px,4vw,44px); }
+@media(max-width:780px){ .vs-cols { grid-template-columns: 1fr; } }
+.vs-col { border-top: 3px solid var(--ink); padding-top: 26px; }
+.vs-col h3 {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .3em; text-transform: uppercase; color: var(--ink); margin-bottom: 22px;
+}
+.vs-col.vs-win { border-top-color: var(--cyan); }
+.vs-col.vs-defer { border-top-color: var(--muted); }
+.vs-col h3 { display: flex; align-items: center; gap: 12px; }
+.vs-col h3::before { content: ''; width: 22px; height: 2px; background: currentColor; }
+.vs-col ul { list-style: none; display: flex; flex-direction: column; }
+.vs-col li {
+  font-size: 15px; color: var(--ink-soft);
+  padding: 13px 0 13px 28px; position: relative;
+  border-bottom: 1px solid var(--line);
+}
+.vs-col li::before {
+  content: ''; position: absolute; left: 2px; top: 21px;
+  width: 12px; height: 1px; background: var(--ink);
+}
+.vs-col li:last-child { border-bottom: none; }
+
+/* ——— FORMATS ——— */
+.fmt-label {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .34em; text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: center; gap: 16px; margin: 34px 0 14px;
+}
+.fmt-label::after { content:''; flex:1; height:1px; background: var(--line); }
+.fmt-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.fmt-chip {
+  font-family: var(--f-mono); font-size: 11.5px; font-weight: 600;
+  letter-spacing: .12em; padding: 10px 16px; color: var(--ink);
+  border: 1px solid var(--line-strong); background: var(--paper-3);
+  transition: all .25s var(--ease);
+}
+.fmt-chip:hover { transform: translateY(-2px); border-color: var(--ink); }
+.fmt-chip.out { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.fmt-chip.out::before { content:'↗  '; color: var(--yellow); font-weight:700; }
+.fmt-chip.in { color: var(--ink-soft); }
+.fmt-chip.in::before { content:'↙  '; color: var(--cyan); font-weight:700; }
+
+/* ——— FAQ (accordéon élégant) ——— */
+#faq { background: var(--paper-2); }
+.faq-list { margin-top: clamp(24px,4vw,40px); border-top: 2px solid var(--ink); }
+details.faq-item { border-bottom: 1px solid var(--line-strong); background: transparent; transition: background .3s var(--ease); }
+/* v1.7.493 — la question ouverte ne prend AUCUN fond : elle se distingue par son numéro et son signe */
+details.faq-item[open] { background: transparent; }
+summary.faq-q {
+  font-family: var(--f-display);
+  font-size: clamp(17px,2vw,22px); font-weight: 600; color: var(--ink);
+  padding: 22px 12px 22px 0; cursor: pointer;
+  list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 20px;
+}
+summary.faq-q::-webkit-details-marker { display: none; }
+summary.faq-q::after {
+  content: '+'; font-family: var(--f-mono); font-size: 24px; font-weight: 400;
+  color: var(--magenta); line-height: 1; transition: transform .35s var(--ease); flex-shrink: 0;
+}
+details[open] summary.faq-q::after { transform: rotate(45deg); }
+.faq-a {
+  font-size: 15px; color: var(--ink-soft); line-height: 1.8;
+  padding: 0 48px 26px 0; max-width: 820px;
+}
+.faq-a code { font-family: var(--f-mono); background: var(--paper-2); padding: 2px 6px; font-size: 12px; color: var(--ink); border:1px solid var(--line); }
+
+/* ——— CTA FINAL (encre) ——— */
+#cta-final {
+  background: var(--ink); color: var(--paper);
+  text-align: center; overflow: hidden;
+  padding: clamp(80px,10vw,150px) 24px;
+}
+#cta-final::before {
+  content:''; position:absolute; inset:0;
+  background:
+    radial-gradient(900px 400px at 20% -10%, rgba(0,167,199,.16), transparent 60%),
+    radial-gradient(800px 400px at 90% 120%, rgba(226,35,123,.14), transparent 60%);
+}
+#cta-final .ghost { bottom: -0.1em; left: 50%; transform: translateX(-50%); font-size: clamp(140px,22vw,360px); -webkit-text-stroke: 1px rgba(247,243,236,.08); }
+#cta-final h2 { color: var(--paper); font-size: clamp(32px,5vw,72px); margin: 0 auto 26px; }
+#cta-final h2 em { font-style: italic; color: var(--yellow); }
+#cta-final .lead { color: rgba(247,243,236,.72); margin: 0 auto; }
+.cta-btns { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; margin-top: clamp(28px,4vw,44px); position: relative; z-index: 2; }
+.btn-black { background: var(--paper); color: var(--ink); }
+.btn-black:hover { background: var(--white); box-shadow: 0 16px 40px -18px rgba(0,0,0,.6); }
+.btn-outline-black { background: transparent; color: var(--paper); border: 1px solid rgba(247,243,236,.5); }
+.btn-outline-black:hover { background: var(--paper); color: var(--ink); }
+.cta-registration { margin-top: 36px; display:flex; justify-content:center; gap:14px; }
+.cta-registration span { font-family: var(--f-mono); font-size: 10px; letter-spacing: .3em; color: rgba(247,243,236,.5); text-transform: uppercase; }
+
+/* ══════════════ 🆕 v1.7.472 — LE MANUEL, DANS LA PAGE ══════════════
+   « Manuel » quitte la barre du haut (une entrée de nav pour renvoyer vers une autre page,
+   c’était un menu, pas une réponse) et il reste au pied de page. À la place, une vraie zone :
+   quatre portes d’entrée réelles dans documentation.html (#m-start, #m-prefs-intro, #m-export,
+   #fn-tools — des ancres vérifiées, pas des liens vers le haut de la page). */
+.man-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: clamp(12px,1.6vw,20px); }
+@media (max-width: 980px) { .man-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 560px) { .man-grid { grid-template-columns: 1fr; } }
+.man-card {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: clamp(16px,2vw,24px); background: var(--paper-2);
+  border: 1px solid var(--line); text-decoration: none;
+  transition: border-color .3s var(--ease), transform .3s var(--ease);
+}
+.man-card:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.man-num { font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.man-card h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.8vw,22px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.08; color: var(--ink);
+}
+.man-card p { font-size: 13px; line-height: 1.65; color: var(--ink-soft); }
+/* margin-top:auto : les quatre fiches n’ont pas la même longueur de texte, les flèches
+   s’alignent tout en bas des quatre. */
+.man-arr { margin-top: auto; padding-top: 12px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; color: var(--ink); }
+.man-cta { margin-top: clamp(22px,3vw,34px); display: flex; justify-content: center; }
+
+/* ══════════════ 🆕 v1.7.472 — LES AUTEURS ══════════════
+   Le logiciel est signé par deux personnes, et la page ne le disait nulle part : leurs
+   deux noms n’existaient qu’au fond des mentions légales, derrière un clic. Deux fiches,
+   en clair, avec ce que chacune a fait. Même papier que les fiches d’outils, même quadri
+   en pastille, deux colonnes (une seule en mobile). */
+.auteurs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(16px,2.4vw,32px); }
+.auteur {
+  display: flex; flex-direction: column;
+  background: var(--paper-2); border: 1px solid var(--line);
+  padding: clamp(20px,2.6vw,34px);
+  transition: border-color .3s var(--ease);
+}
+.auteur:hover { border-color: var(--line-strong); }
+.auteur-tete { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+/* 🆕 v1.7.498 — LA MARQUE DE L'AUTEUR.
+   🆕 v1.7.499 — SANS PLAQUE : « il ne faut pas de boîte de fond, juste les deux icônes, un peu
+   plus grandes, sans habillage ». Plus de filet, plus de fond, plus de rembourrage : le dessin
+   seul, à la taille du nom qu'il accompagne, et la colonne de droite (pastilles quadri au-dessus
+   du numéro) reste alignée sur le bord opposé. */
+.auteur-marque {
+  flex: 0 0 auto; width: clamp(104px,12vw,148px); height: clamp(104px,12vw,148px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 0; background: none; border: 0;
+}
+.auteur-marque img { width: 100%; height: 100%; display: block; }
+.auteur-signes { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; }
+.auteur-tete { align-items: flex-start; }
+
+.auteur-tete .cmyk { margin: 0; }
+.auteur-num {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted);
+}
+.auteur-nom {
+  font-family: var(--f-caps); font-size: clamp(24px,2.9vw,38px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1; color: var(--ink); margin-bottom: 10px;
+}
+.auteur-role {
+  display: block; font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
+  padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line);
+}
+.auteur p { font-size: 13.5px; line-height: 1.72; color: var(--ink-soft); }
+.auteur p + p { margin-top: 12px; }
+/* margin-top:auto : les deux fiches n’ont pas la même longueur de texte, les liens
+   restent collés au bas des deux — alignés entre eux, sans hauteur forcée. */
+.auteur-liens { margin-top: auto; padding-top: 20px; display: flex; flex-wrap: wrap; gap: 16px; }
+.auteur-liens a {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; color: var(--ink);
+  text-decoration: none; border-bottom: 1px solid var(--line-strong); padding-bottom: 2px;
+  transition: color .25s var(--ease), border-color .25s var(--ease);
+}
+.auteur-liens a:hover { color: var(--muted); border-color: var(--muted); }
+.auteurs-note {
+  margin-top: clamp(22px,3vw,38px); padding-top: clamp(18px,2.4vw,30px);
+  border-top: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 18px 32px;
+}
+.auteurs-note p { font-size: 13.5px; line-height: 1.72; color: var(--ink-soft); max-width: 620px; }
+.auteurs-note p strong { color: var(--ink); }
+@media (max-width: 760px) { .auteurs { grid-template-columns: 1fr; } }
+
+/* ——— FOOTER (colophon) ——— */
+footer {
+  background: var(--ink-2); color: var(--muted);
+  padding: clamp(34px,4.6vw,58px) 24px 32px; position: relative;
+}
+footer .container { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 30px; }
+/* 🆕 v1.7.472 — 320 → 420 px : la ligne des deux noms (58 caractères en monospace, avec
+   l’approche) ne tenait pas sur 320 px et « BRUNET » partait seul à la ligne. Mesuré :
+   il faut 397 px. Le pavé de marque respire mieux et remplit le vide du milieu. */
+.foot-brand { display:flex; flex-direction:column; gap: 12px; max-width: 420px; }
+.foot-logo { font-family: var(--f-caps); font-size: 30px; letter-spacing: .05em; color: var(--paper); text-decoration: none; }
+.foot-brand p { font-size: 12.5px; line-height: 1.7; color: var(--muted); }
+/* 🆕 v1.7.472 — les deux noms dans le colophon : ils ne coûtent pas une ligne de plus
+   puisque le pavé de marque respirait déjà, et ils disent qui publie. */
+.foot-auteurs {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--paper); padding-top: 4px;
+}
+.foot-cols { display:flex; gap: clamp(30px,5vw,80px); flex-wrap: wrap; }
+.foot-cols h4 { font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--paper); margin-bottom: 14px; }
+.foot-links { display: flex; flex-direction: column; gap: 8px; }
+.foot-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color .25s var(--ease), transform .25s var(--ease); display:inline-flex; align-items:center; gap:8px; }
+/* 🆕 v1.7.497 — LE TIRET NE POUSSE PLUS LA COLONNE.
+   Le tiret du survol grandissait de 0 à 14 px. Le lien étant un flex, la ligne s'élargissait de
+   22 px (le tiret + la gouttière de 8 px), la colonne suivait, puis la colonne voisine : tout le
+   pied de page se décalait au passage de la souris. Le tiret garde maintenant SA PLACE et c'est
+   lui qui s'ouvre, par une mise à l'échelle (transform n'occupe pas de place) :
+   rien ne bouge d'un pixel, l'effet reste le même. */
+.foot-links a::before {
+  content:''; flex: 0 0 14px; width: 14px; height:1px; background: var(--yellow);
+  transform: scaleX(0); transform-origin: left center; transition: transform .25s var(--ease);
+}
+.foot-links a:hover { color: var(--paper); }
+.foot-links a:hover::before { transform: scaleX(1); }
+.foot-copy {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; color: var(--muted);
+  width: 100%; text-align: center; padding-top: 20px;
+  border-top: 1px solid rgba(247,243,236,.12); margin-top: 18px;
+  display: flex; flex-direction: column; gap: 10px; align-items: center;
+}
+.foot-note { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .06em; color: rgba(139,129,114,.8); }
+/* 🆕 v1.7.472 — LES LIENS LÉGAUX PASSENT AU CENTRE, SUR UNE SEULE LIGNE.
+   Ils occupaient trois rangées dans la colonne « Projet », qui donnait sa hauteur à tout
+   le pied de page — et la dernière phrase se retrouvait calée à gauche, seule rescapée de
+   la rangée précédente, ce qui ne se lisait pas. Ici, le PIÈGE DE LA v1.7.467 menace de
+   nouveau : ces liens portent data-lang, or une règle de classe (0,1,1) bat le
+   « [data-lang] { display: none } » (0,1,0) — sans l’exception ci-dessous, les six
+   s’afficheraient d’un coup, dans les trois langues. */
+.foot-legal { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 14px; }
+.foot-legal a { font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color .25s var(--ease); }
+.foot-legal a[data-lang] { display: none; }
+html[lang="fr"] .foot-legal a[data-lang="fr"],
+html[lang="en"] .foot-legal a[data-lang="en"],
+html[lang="ja"] .foot-legal a[data-lang="ja"] { display: inline; }
+.foot-legal a:hover { color: var(--paper); }
+.foot-legal .sep { color: rgba(139,129,114,.55); }
+
+/* ── LANG VISIBILITY (inchangé, fonctionnel) ── */
+[data-lang="en"], [data-lang="ja"] { display: none; }
+html[lang="en"] [data-lang="fr"], html[lang="en"] [data-lang="ja"] { display: none; }
+html[lang="en"] [data-lang="en"] { display: block; }
+html[lang="ja"] [data-lang="fr"], html[lang="ja"] [data-lang="en"] { display: none; }
+html[lang="ja"] [data-lang="ja"] { display: block; }
+.inline-en, .inline-ja { display: none; }
+html[lang="en"] .inline-fr, html[lang="en"] .inline-ja { display: none; }
+html[lang="en"] .inline-en { display: inline; }
+html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none; }
+html[lang="ja"] .inline-ja { display: inline; }
+html[lang="ja"] body, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 { letter-spacing: .01em; }
+html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight: 700; }
+
+/* ════════════════════════════════════════════════════════════════
+   v1.7.487 — LA PARTIE « FONCTIONS » : UN SEUL CHAPITRE, HUIT BLOCS.
+
+   Avant : six chapitres empilés (comparatif, prépresse, inventaire, presses, analyse,
+   formats), chacun avec son label, son grand titre et son chapeau — indigeste, et l'ordre
+   ne suivait rien. Maintenant : une partie, huit blocs, une barre identique pour tous
+   (surtitre · titre · repère · signe +), mais un traitement DIFFÉRENT à l'intérieur de
+   chacun pour que l'œil sache où il est :
+     1 applications · 2 les quinze outils (ouverts tous les deux)
+     3 prépresse à l'encre · 4 pastilles de presses · 5 tableau encadré
+     6 deux colonnes face à face · 7 pastilles de formats · 8 planches d'écran
+   Les chapeaux d'origine ne sont pas perdus : ils s'affichent DANS le bloc ouvert. */
+
+/* ——— LE PIÈGE DU FRANÇAIS, RÉGLÉ POUR DE BON (v1.7.486), ET SA RÉCIDIVE (v1.7.487).
+   La langue par défaut n'avait aucune règle forte : tout reposait sur
+   « [data-lang="en"], [data-lang="ja"] { display: none } » (0,1,0), qu'une simple règle de
+   classe (0,1,1) bat — d'où les summaries de FAQ affichés dans les trois langues.
+   Et la leçon a été repassée en 1.7.487 : un « display: -webkit-box » posé sur les cartes
+   pour tenir le texte à trois lignes (règle 1,1,1) réaffichait de la même façon les quinze
+   descriptions dans les trois langues. Les six combinaisons sont donc couvertes ici, en
+   !important : une variante de langue ne doit JAMAIS s'afficher dans une autre langue, quel
+   que soit le style qu'une règle de classe lui donne. Les boutons EN/FR/JA du menu mobile
+   portent le leur plus loin dans la feuille (« html .mm-lang-toggle button[data-lang]
+   { display: inline-flex !important } ») : à poids égal, la dernière règle l'emporte, et ils
+   continuent de s'afficher. */
+/* ——— VERSION LISIBLE DE LA RÈGLE, POUR MÉMOIRE :
+   html[lang="fr"] [data-lang="en"], html[lang="fr"] [data-lang="ja"],
+   html[lang="en"] [data-lang="fr"], html[lang="en"] [data-lang="ja"],
+   html[lang="ja"] [data-lang="fr"], html[lang="ja"] [data-lang="en"] { display: none; } */
+html[lang="fr"] [data-lang="en"], html[lang="fr"] [data-lang="ja"],
+html[lang="en"] [data-lang="fr"], html[lang="en"] [data-lang="ja"],
+html[lang="ja"] [data-lang="fr"], html[lang="ja"] [data-lang="en"] { display: none !important; }
+html[lang="fr"] .inline-en, html[lang="fr"] .inline-ja,
+html[lang="en"] .inline-fr, html[lang="en"] .inline-ja,
+html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !important; }
+
+#features { background: var(--paper); position: relative; overflow: hidden; }
+#features .ghost { top: 2%; right: -4vw; left: auto; font-size: clamp(64px,11vw,180px); }
+.spf-head { max-width: 900px; }
+.spf-note {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; color: var(--muted);
+  margin-top: 14px; text-transform: uppercase;
+}
+
+/* ——— la barre : le geste unique ——— */
+details.spf-fold { border-top: 2px solid var(--ink); margin-top: clamp(26px,3.4vw,44px); }
+details.spf-fold > summary.spf-bar {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px;
+  padding: 20px 0 16px; cursor: pointer; list-style: none; transition: color .25s var(--ease);
+}
+details.spf-fold > summary.spf-bar::-webkit-details-marker { display: none; }
+details.spf-fold > summary.spf-bar:hover { color: var(--magenta); }
+.spf-k {
+  flex: 0 0 100%; font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--magenta); margin-bottom: 2px;
+}
+.spf-t h3 {
+  font-family: var(--f-display); font-size: clamp(23px,3vw,40px); font-weight: 700;
+  line-height: 1.06; letter-spacing: -.01em; margin: 0;
+}
+.spf-m, .spf-m2 {
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .12em; color: var(--muted);
+  margin-left: auto; text-align: right;
+}
+.spf-m2 { margin-left: auto; transform: translateY(2px); }
+.spf-plus {
+  flex: 0 0 auto; font-family: var(--f-mono); font-size: 22px; line-height: 1; color: var(--magenta);
+  transition: transform .35s var(--ease);
+}
+details.spf-fold[open] > summary.spf-bar .spf-plus { transform: rotate(45deg); }
+details.spf-fold[open] > summary.spf-bar { color: var(--ink); }
+.spf-in { padding: 2px 0 6px; }
+.spf-lead { max-width: 820px; margin-bottom: 26px; }
+.spf-lead p { font-size: 15px; line-height: 1.8; color: var(--ink-soft); }
+
+/* ——— 1 · les applications : on garde les grandes cartes, texte tenu à quatre lignes ——— */
+#showcase .apps { margin-top: 4px; }
+#showcase .app p.inline-fr, #showcase .app p.inline-en, #showcase .app p.inline-ja {
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* ——— 2 · les quinze outils : grille serrée, trois colonnes, texte tenu à trois lignes ——— */
+#inventaire .feat-grid { grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 4px; }
+#inventaire .feat-card { padding: clamp(18px,1.9vw,26px); }
+#inventaire .feat-card p {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+#inventaire .feat-card h3 { font-size: 12.5px; letter-spacing: .06em; }
+
+
+
+/* ——— 4 · les presses : pastilles serrées ——— */
+#use-cases .uc-grid { grid-template-columns: repeat(4, minmax(0,1fr)); margin-top: 4px; }
+
+/* ——— 5 · le banc d'essai : le tableau dans un cadre ——— */
+#comparison .cmp-wrapper { border: 1px solid var(--line-strong); background: var(--paper-3); padding: 4px 14px 8px; margin-top: 4px; }
+#comparison .tools-more-wrap { margin-top: 18px; }
+
+/* ——— 6 · face à face : deux colonnes, l'une à l'encre douce, l'autre au papier ——— */
+#vs-indesign .vp-grid { margin-top: 4px; }
+#vs-indesign .vp-card:first-child { background: var(--paper-3); }
+#vs-indesign .vp-card:nth-child(2) { background: var(--white); }
+
+/* ——— 7 · les formats : deux rangées étiquetées ——— */
+#formats .fmt-label { margin-top: 18px; }
+
+/* ——— 8 · les planches : la grille de captures ——— */
+#planches .tgrid { margin-top: 4px; }
+
+/* ——— v1.7.488 — LES SOUFFLETS REPOSENT SUR LE PAPIER.
+   Les cartes, les grilles, le tableau et les pastilles gardaient leur propre fond — plus clair
+   que la page — et faisaient des taches blanches dans les blocs ouverts. Tout redevient
+   transparent : seuls les filets subsistent, et la structure se lit toujours. Le bloc du
+   prépresse est exclu de la règle : c'est le seul qui DOIT garder son fond (encre). */
+details.spf-fold .spf-in > *, details.spf-fold .spf-in .pp-grid, details.spf-fold .spf-in .pp-band, details.spf-fold .spf-in .pp-card,
+details.spf-fold .spf-in .feat-card,
+details.spf-fold .spf-in .uc-card,
+details.spf-fold .spf-in .tcard,
+details.spf-fold .spf-in .tcard-img,
+details.spf-fold .spf-in .tcard-body,
+details.spf-fold .spf-in .vs-cols,
+details.spf-fold .spf-in .vs-col,
+details.spf-fold .spf-in .cmp-wrapper,
+details.spf-fold .spf-in .cmp th,
+details.spf-fold .spf-in .cmp td,
+details.spf-fold .spf-in .fmt-chip { background-color: transparent; }
+details.spf-fold .spf-in .feat-card:hover,
+details.spf-fold .spf-in .uc-card:hover,
+details.spf-fold .spf-in .tcard:hover { background-color: var(--paper-2); }
+/* ——— v1.7.489 — LES BLOCS NE PORTENT PLUS LE FOND DE L'ANCIENNE SECTION.
+   Les identifiants des chapitres ont été gardés — #showcase, #comparison, #formats étaient en
+   papier-3, #prepress et #vs-indesign en papier-2 — et leurs règles de fond avec eux : les blocs
+   sortaient plus clairs que la page, et le prépresse « pas comme les autres ». On neutralise,
+   et on cache les filigranes qui vivaient dans ces sections (celui de la partie suffit). */
+#features details.spf-fold { background: transparent; }
+#features details.spf-fold > .spf-in .ghost { display: none; }
+#comparison .cmp-wrapper { background: transparent; }
+
+/* ——— ET MOINS D'AIR ENTRE LES CHAPITRES : la pile respirait trop ——— */
+details.spf-fold { margin-top: clamp(12px,1.5vw,18px); }
+details.spf-fold > summary.spf-bar { padding: 15px 0 12px; }
+/* ——— v1.7.490 — LE RYTHME ET L'UNITÉ DES FONDS.
+   (1) Le rembourrage général des sections (72 à 140 px) s'appliquait aussi à cette zone : entre
+   les blocs serrés (18 px) et la section suivante, le vide devenait énorme. On l'aligne.
+   (2) Tous les intérieurs de soufflet sont désormais au même fond : plus de bloc à l'encre.
+   (3) La FAQ revient sur la page, numérotée et sur deux colonnes en desktop. */
+#features, #faq, #auteurs { padding: clamp(34px,4vw,56px) 24px; }
+#features, #faq { padding-bottom: 0; }
+.spf-head { max-width: 900px; margin-bottom: clamp(14px,1.8vw,22px); }
+#faq .section-head { margin-bottom: clamp(16px,2.2vw,28px); }
+
+.faq-list { counter-reset: q; }
+.faq-item { counter-increment: q; }
+/* retrait suspendu : le numéro à gauche, le signe + à droite, le texte au milieu */
+#faq summary.faq-q { display: block; position: relative; padding: 20px 44px 20px 46px; }
+#faq summary.faq-q::before {
+  content: counter(q, decimal-leading-zero);
+  position: absolute; left: 0; top: 24px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  color: var(--magenta);
+}
+#faq summary.faq-q::after { position: absolute; right: 0; top: 50%; margin: 0; transform: translateY(-50%); }
+#faq details[open] summary.faq-q::after { transform: translateY(-50%) rotate(45deg); }
+@media (max-width: 980px) { #faq summary.faq-q { padding-left: 40px; } }
+#faq .faq-a { padding-left: 46px; }
+/* deux colonnes en desktop : la colonne ne coupe jamais une question */
+#faq .faq-list { columns: 2; column-gap: clamp(30px,3.6vw,68px); }
+#faq .faq-item { break-inside: avoid; }
+@media (max-width: 980px) { #faq .faq-list { columns: 1; } #faq .faq-a { padding-left: 0; } }
+/* ——— v1.7.491 — LE DESIGN APRÈS LE HERO, REPRIS D'UN BOUT À L'AUTRE.
+   (1) LES SOUFFLETS ÉTAIENT TROP TASSÉS après le resserrage : on desserre d'un cran, sans
+   revenir au vide d'avant (20→30 px entre les blocs, 19/15 px dans la barre, 6/10 px de corps).
+   (2) LA SANS-SERIF entre dans le système : titres de blocs et questions de la FAQ quittent le
+   Playfair — qui reste pour les grands titres et les chapeaux — et passent en --f-sans. Les
+   tailles suivent : une sans-serif lit plus grand à taille égale.
+   (3) LA SECTION DES MAQUETTES portait encore le rembourrage général (72 à 140 px) alors que la
+   partie Fonctions est à 34–56 px : on l'aligne, pour que tout respire du même souffle. */
+details.spf-fold { margin-top: clamp(20px,2.4vw,30px); }
+details.spf-fold > summary.spf-bar { padding: 19px 0 15px; }
+.spf-in { padding: 6px 0 10px; }
+
+#features .spf-t h3 {
+  font-family: var(--f-sans); font-weight: 700; font-size: clamp(19px,2.1vw,29px);
+  line-height: 1.12; letter-spacing: -.005em;
+}
+.spf-k { font-size: 10.5px; letter-spacing: .24em; }
+.spf-m, .spf-m2 { font-size: 10px; }
+
+#faq summary.faq-q {
+  font-family: var(--f-sans); font-weight: 600;
+  font-size: clamp(15.5px,1.5vw,18.5px); line-height: 1.35; letter-spacing: -.002em;
+  padding: 19px 44px 19px 46px;
+}
+#faq summary.faq-q::before { top: 23px; }
+#faq .faq-a { font-size: 14.5px; line-height: 1.75; }
+
+#templates { padding-top: clamp(34px,4vw,56px); padding-bottom: clamp(30px,3.6vw,50px); }
+
+#faq { padding-top: clamp(26px,3vw,44px); padding-bottom: clamp(30px,3.6vw,50px); }
+#cta-final { padding-top: clamp(64px,8vw,120px); }
+/* ——— v1.7.492 — LES BAS DE SECTION.
+   Le paragraphe « SuperPrint est publié par Zigmoon… » collait à la partie suivante, et la FAQ
+   collait à l'appel final : les deux sections avaient reçu « padding-bottom: 0 » pour aligner les
+   souffles — trop court. Un vrai bas de section, de la même famille que les autres (30 à 50 px). */
+#auteurs { padding-bottom: clamp(30px,3.6vw,50px); }
+/* ——— v1.7.493 — LE MOTEUR DE RECHERCHE DE LA FAQ.
+   Un champ unique entre le chapeau et les questions : il filtre les dix questions à la frappe,
+   dans les trois langues (chaque question porte ses trois variantes), efface d'un clic, et
+   prévient quand rien ne correspond. Sans JavaScript, le champ reste là et la liste entière
+   s'affiche — rien n'est perdu. */
+.faq-search { margin: clamp(18px,2.2vw,30px) 0 clamp(8px,1vw,14px); max-width: 720px; }
+.faq-search-lab {
+  display: block; font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--magenta); margin-bottom: 8px;
+}
+.faq-search-boite {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--ink); background: var(--paper);
+  padding: 0 12px; transition: box-shadow .25s var(--ease);
+}
+.faq-search-boite:focus-within { box-shadow: 0 0 0 3px rgba(226,35,123,.16); border-color: var(--magenta); }
+.faq-search-ico { font-family: var(--f-mono); font-size: 17px; color: var(--ink-soft); flex: 0 0 auto; }
+#faqRecherche {
+  flex: 1 1 auto; min-width: 0; border: 0; background: transparent; outline: none;
+  font-family: var(--f-sans); font-size: 15px; color: var(--ink); padding: 13px 0;
+  -webkit-appearance: none; appearance: none;
+}
+#faqRecherche::placeholder { color: var(--muted); }
+#faqRecherche::-webkit-search-cancel-button { display: none; }
+.faq-search-eff {
+  flex: 0 0 auto; font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted); background: transparent; border: 0;
+  cursor: pointer; padding: 6px 2px; display: none;
+}
+.faq-search-boite.pleine .faq-search-eff { display: block; }
+.faq-search-eff:hover { color: var(--magenta); }
+.faq-search-etat {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .12em; color: var(--muted);
+  margin-top: 8px; min-height: 12px;
+}
+.faq-search-vide {
+  font-family: var(--f-sans); font-size: 14.5px; color: var(--ink-soft); margin-top: 10px;
+}
+#faq .faq-item.faq-cache { display: none; }
+#faq .faq-list.vide { border-top-color: var(--line-strong); }
+/* ——— v1.7.494 — LE TRAITEMENT INTÉRIEUR DU SOUFFLET 3, APPLIQUÉ À TOUS.
+   L'utilisateur a désigné son préféré : le bloc du prépresse — un chapeau, une grille encadrée de
+   fiches numérotées (numéro cyan, titre capitales, texte, étiquette), un bandeau de clôture avec
+   une phrase en italique et un bouton. Les soufflets 2, 4, 6 et 7 portaient chacun leur propre
+   traitement (grille nue, pastilles jaunes, deux colonnes de listes, pastilles de formats) : la
+   page se lisait comme quatre mains différentes. Ils prennent maintenant la MÊME recette — ce
+   sont exactement les mêmes classes, donc le même rendu que le soufflet 3. */
+/* 2 · l'inventaire : quinze fiches, l'étiquette « nouveau » reste magenta */
+.pp-tag.new { background: var(--magenta); border-color: var(--magenta); color: var(--paper); }
+#inventaire .pp-card h3 { font-size: clamp(15px,1.6vw,18px); }
+#inventaire .pp-tag { margin-top: auto; }
+#inventaire .pp-card { padding-bottom: clamp(16px,1.8vw,24px); }
+/* 4 · les presses : huit fiches, quatre par rangée pour que le cadre reste plein */
+#use-cases .pp-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+#use-cases .pp-card { padding: clamp(18px,1.9vw,26px); }
+#use-cases .pp-card h3 { font-size: clamp(16px,1.7vw,20px); }
+#use-cases .pp-card p { font-size: 12.5px; line-height: 1.65; }
+#use-cases .pp-tag { margin-top: auto; }
+@media(max-width: 1100px){ #use-cases .pp-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media(max-width: 700px){ #use-cases .pp-grid { grid-template-columns: 1fr; } }
+/* 6 · l'analyse : deux fiches face à face, chacune avec sa liste à tirets */
+#vs-indesign .pp-grid { grid-template-columns: 1fr 1fr; }
+#vs-indesign .pp-card ul { list-style: none; display: flex; flex-direction: column; margin: 4px 0 0; }
+#vs-indesign .pp-card li {
+  font-size: 14px; color: var(--ink-soft); line-height: 1.6;
+  padding: 11px 0 11px 26px; position: relative; border-bottom: 1px solid var(--line);
+}
+#vs-indesign .pp-card li::before {
+  content: ''; position: absolute; left: 2px; top: 19px; width: 12px; height: 1px; background: var(--ink);
+}
+#vs-indesign .pp-card li:last-child { border-bottom: none; }
+@media(max-width: 900px){ #vs-indesign .pp-grid { grid-template-columns: 1fr; } }
+/* 7 · les formes de la page : deux fiches, les pastilles dedans.
+   Rapport d'avarie réparé ici : la remise à plat de la v1.7.488 avait rendu le fond des pastilles
+   transparent ALORS QUE leur couleur de texte était restée « papier » → les six sorties
+   s'affichaient en papier sur papier, invisibles. Le fond encre revient. */
+#formats .pp-card .fmt-grid { margin-top: 4px; }
+#formats .pp-grid { grid-template-columns: 1fr 1fr; }
+@media(max-width: 900px){ #formats .pp-grid { grid-template-columns: 1fr; } }
+#formats .fmt-chip.out { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+#formats .fmt-chip.out:hover { transform: translateY(-2px); }
+#formats .pp-tag { margin-top: auto; }
+
+/* ——— v1.7.494 — LA BARRE DU SOUFFLET SUR TÉLÉPHONE.
+   Le repère de droite (la liste « PDF · DOCX · IDML… » du bloc des formats, ou « 15 outils »
+   de l'inventaire) passe sur deux ou trois lignes en petit écran, et il était aligné à droite :
+   le signe + partait alors tout seul à la ligne suivante, à gauche. On pose le signe dans le
+   coin (comme sur grand écran) et on remet le repère au fer à gauche. */
+@media(max-width: 700px){
+  details.spf-fold > summary.spf-bar { position: relative; padding-right: 34px; }
+  details.spf-fold > summary.spf-bar .spf-plus { position: absolute; right: 0; top: 17px; }
+  .spf-m, .spf-m2 { margin-left: 0; text-align: left; }
+}
+
+/* ——— v1.7.496 — UNE SEULE MARGE ENTRE LES GRANDES RUBRIQUES.
+   Les quatre rubriques de contenu portaient quatre jeux de valeurs : la fin de la partie
+   « Fonctions » valait 0, celle des maquettes 30-50, celle des auteurs 30-50, et les questions
+   fréquentes commençaient plus haut que les autres (26-44 au lieu de 34-56). Mesuré en desktop :
+   175 px après la couverture, 113 entre les maquettes et les fonctions, puis 56 seulement avant
+   les auteurs et 94 avant les questions, et 50 avant le bandeau final — l'œil sentait le trou.
+   Les quatre rubriques prennent donc EXACTEMENT la même marge — celles de « L'inventaire de
+   SuperPrint », qui était déjà à 34-56 px — soit 112 px entre deux rubriques en desktop.
+   Et la fin des questions est plus large (56-96 px) : c'est la dernière marge de la page avant
+   le bandeau final, elle mérite un vrai souffle. */
+#templates, #features, #auteurs, #faq { padding: clamp(34px,4vw,56px) 24px; }
+#faq { padding-bottom: clamp(56px,7vw,96px); }
+
+/* ——— v1.7.498 — LES FILETS VERICAUX DES FICHES, ET UNE SEULE TYPOGRAPHIE.
+   (1) LES FILETS GRIS. La remise à plat des fonds (v1.7.488) avait rendu transparent le fond de
+   la grille des fiches — c'était pourtant LUI qui dessinait les filets : les fiches n'étaient plus
+   séparées que par le cadre extérieur, et la grille de « L'inventaire » perdait ses lignes
+   verticales dès l'ouverture. Le fond de la grille redevient le filet (--line) et les fiches
+   reprennent le papier de la page : les 1 px d'écart entre les fiches se voient, et rien d'autre
+   ne change (les fiches restent au papier de la page, pas de tache claire).
+   (2) UNE SEULE TYPOGRAPHIE À L'INTÉRIEUR DES SOUFFLETS. Le soufflet « La chambre noire » a la
+   bonne mesure : titre de fiche 17-21 px, texte gris 13 px. Mais l'inventaire avait reçu 15-18 px,
+   les presses 16-20 px et 12,5 px, les listes de l'analyse 14 px — quatre intérieurs, quatre
+   tailles. On supprime les exceptions : toutes les fiches prennent la mesure du prépresse. */
+details.spf-fold .spf-in .pp-grid { background: var(--line); }
+details.spf-fold .spf-in .pp-card { background: var(--paper); }
+#inventaire .pp-card h3, #use-cases .pp-card h3 { font-size: clamp(17px,1.8vw,21px); }
+#use-cases .pp-card p { font-size: 13px; line-height: 1.72; }
+#inventaire .pp-card { padding-bottom: clamp(24px,2.4vw,34px); }
+#vs-indesign .pp-card li { font-size: 13px; line-height: 1.72; }
+
+/* ── RESPONSIVE ── */
+@media(max-width: 1000px){
+  .vp-grid { grid-template-columns: 1fr; }
+  .vp-card:nth-child(odd) { border-right: none; }
+  .feat-grid, .studio-grid { grid-template-columns: repeat(2, 1fr); }
+  .pp-grid { grid-template-columns: repeat(2, 1fr); }
+  .uc-grid { grid-template-columns: repeat(2, 1fr); }
+  .uc-card:nth-child(4n) { border-right: 1px solid var(--line); }
+  .uc-card:nth-child(2n) { border-right: none; }
+  .studio-intro { grid-template-columns: 1fr; }
+  nav { justify-content: space-between; }
+  .nav-links { display: none; }
+  .nav-burger { display: flex; }
+  .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
+  .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */
+}
+@media(max-width: 700px){
+  /* 🎯 v1.7.417 — hauteur mobile alignee sur le desktop (66 px) : le menu
+     burger et le logo doivent avoir la meme respiration partout. */
+  nav { padding: 0 16px; height: 66px; position: relative; }
+  .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
+  .nav-tools { margin-left: auto; position: relative; z-index: 2; }
+  section { padding: 64px 20px; }
+  .feat-grid, .studio-grid, .uc-grid { grid-template-columns: 1fr; }
+  .pp-grid { grid-template-columns: 1fr; }
+  .uc-card:nth-child(n) { border-right: none; }
+  .brand-header { padding-top: 18px; }
+  table.cmp td, table.cmp th { padding: 11px 10px; font-size: 12px; }
+  .foot-cols { gap: 24px; }
+  .btn { padding: 15px 22px; font-size: 11px; }
+  .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran */
+  .brand-header img { height: clamp(44px,12vw,56px); }
+  .brand-tag { display: none; }
+  #hero { padding-top: 64px; }
+  #hero .hero-install { display: none; } /* boîte installeur masquée en mobile */
+  #hero .hero-dots { margin-top: 18px; }
+  .hero-kicker { letter-spacing: .24em; font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ——— L'ATELIER EN IMAGES — captures réelles de l'application ——— */
+#showcase { background: var(--paper-3); position: relative; overflow: hidden; }
+#showcase .ghost { top: 5%; right: -3vw; left: auto; font-size: clamp(80px,14vw,230px); }
+.shots { display: grid; gap: clamp(30px,4.4vw,60px); }
+.shot {
+  display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr);
+  gap: clamp(20px,3.6vw,48px); align-items: center;
+}
+.shot:nth-child(even) .shot-img { order: 2; }
+.shot-img {
+  border: 1px solid var(--line-strong); background: var(--paper-2);
+  box-shadow: 0 22px 54px rgba(23,19,13,.13); overflow: hidden;
+}
+.shot-img img { display: block; width: 100%; height: auto; }
+.shot-num {
+  display: block; font-family: var(--f-mono); font-size: 10.5px;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+.shot-txt h3 {
+  font-family: var(--f-caps); font-size: clamp(20px,2.5vw,31px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.06; color: var(--ink); margin-bottom: 12px;
+}
+.shot-txt p { font-size: 14.5px; line-height: 1.75; color: var(--ink-soft); }
+.shot-txt ul { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 9px; }
+.shot-txt li { position: relative; padding-left: 20px; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.shot-txt li::before {
+  content: ''; position: absolute; left: 0; top: 9px; width: 11px; height: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--magenta));
+}
+.news {
+  margin-top: clamp(36px,5vw,68px); padding-top: clamp(24px,3.2vw,36px);
+  border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.5fr);
+  gap: clamp(18px,3vw,44px); align-items: start;
+}
+.news h3 {
+  font-family: var(--f-caps); font-size: clamp(19px,2.2vw,26px); font-weight: 400;
+  letter-spacing: .02em; color: var(--ink); line-height: 1.05; margin-bottom: 10px;
+}
+.news p { font-size: 14.5px; line-height: 1.8; color: var(--ink-soft); }
+.news .news-link {
+  display: inline-block; margin-top: 14px; font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink);
+  border-bottom: 1px solid var(--line-strong); padding-bottom: 3px;
+}
+.news .news-link:hover { border-color: var(--magenta); color: var(--magenta); }
+@media (max-width: 900px) {
+  .shot { grid-template-columns: 1fr; }
+  .shot:nth-child(even) .shot-img { order: 0; }
+  .news { grid-template-columns: 1fr; }
+}
+
+/* ——— GALERIE DES OUTILS — captures d'écran, une par outil ——— */
+.tools { margin-top: clamp(38px,5.4vw,72px); }
+.tools-head { max-width: 760px; margin-bottom: clamp(24px,3.4vw,40px); }
+.tools-head h3 {
+  font-family: var(--f-caps); font-size: clamp(21px,2.6vw,32px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.06; color: var(--ink); margin-bottom: 12px;
+}
+.tools-head p { font-size: 14.5px; line-height: 1.75; color: var(--ink-soft); }
+.tgrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(16px,2.4vw,32px); }
+.tcard {
+  display: flex; flex-direction: column; background: var(--paper-2);
+  border: 1px solid var(--line); transition: border-color .3s var(--ease), transform .3s var(--ease);
+}
+.tcard:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.tcard-img { overflow: hidden; border-bottom: 1px solid var(--line); }
+.tcard-img img { display: block; width: 100%; height: auto; }
+.tcard-body { padding: clamp(14px,1.7vw,22px); }
+.tcard-num {
+  display: block; font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.tcard h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.9vw,23px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.06; color: var(--ink); margin-bottom: 8px;
+}
+.tcard p { font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); }
+
+/* 🆕 v1.7.472 — « LES OUTILS, UN PAR UN » : QUATRE CARTES AU DÉPART, LA SUITE SUR DEMANDE.
+   Treize captures d’affilée noyaient le propos et faisaient télécharger neuf images avant
+   qu’on ait rien lu. Les neuf dernières RESTENT ÉCRITES dans le document — donc lisibles par
+   les moteurs de recherche et trouvables au Ctrl+F — on ne fait que les masquer : un
+   « display:none » suffit à empêcher les images « loading=lazy » de partir sur le réseau. */
+.tgrid > .tcard.is-folded { display: none; }
+.tgrid.is-open > .tcard.is-folded { display: flex; animation: tcardIn .55s var(--ease) both; }
+@keyframes tcardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tgrid.is-open > .tcard.is-folded { animation: none; } }
+
+/* ——— Bouton « Voir tous les outils » ——— (pas de « cursor » ici : le réticule + du site
+   vient de la règle générale « button », une valeur locale l’écraserait) */
+.tools-more-wrap { display: flex; justify-content: center; margin-top: clamp(26px,3.4vw,44px); }
+.tools-more {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink); background: transparent;
+  border: 1px solid var(--line-strong); padding: 15px 22px;
+  transition: background .3s var(--ease), color .3s var(--ease), border-color .3s var(--ease);
+}
+.tools-more:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.tools-more .tm-count {
+  font-size: 10px; letter-spacing: .08em; padding: 2px 7px;
+  border: 1px solid currentColor; opacity: .6;
+}
+.tools-more .tm-less { display: none; }
+.tools-more.is-open .tm-more { display: none; }
+.tools-more.is-open .tm-less { display: inline; }
+/* Déplié, le compteur « +9 » n’a plus rien à annoncer : les neuf sont à l’écran. */
+.tools-more.is-open .tm-count { display: none; }
+.tools-more .tm-chev {
+  width: 14px; height: 14px; flex: 0 0 14px; stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .3s var(--ease);
+}
+.tools-more.is-open .tm-chev { transform: rotate(180deg); }
+
+@media (max-width: 760px) {
+  .tgrid { grid-template-columns: 1fr; }
+}
+
+/* ═══ v1.7.473 — LES TROIS APPLICATIONS (à la place des captures) ═══
+   Même dessin que les entrées du hero : la plaque du logotype, le nom, le texte, un bouton.
+   Deux des trois logotypes sont bicolores : leur plaque passe en blanc bordé, comme ailleurs. */
+.apps { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: clamp(14px,1.8vw,22px); }
+@media (max-width: 900px) { .apps { grid-template-columns: 1fr; } }
+.app { background: var(--paper-3); border: 1px solid var(--line); padding: clamp(18px,2.2vw,26px); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.app .entry-logo { width: 64px; height: 64px; padding: 11px; margin-bottom: 2px; }
+.app h3 { font-family: var(--f-caps); font-size: clamp(20px,2.2vw,26px); font-weight: 400; letter-spacing: .02em; line-height: 1; color: var(--ink); }
+.app p { font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); }
+.app p strong { color: var(--ink); font-weight: 600; }
+.app-go { margin-top: auto; padding-top: 16px; font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); text-decoration: none; }
+.app-go:hover { color: var(--muted); }
+
+/* ═══ v1.7.473 — REPLI GÉNÉRIQUE : mêmes règles que la galerie d'outils, pour le tableau ═══
+   Rien n'est retiré du document (moteurs de recherche, Ctrl+F) : on masque, et le bouton
+   affiche. Un « display:none » suffit aussi à empêcher les images différées de partir. */
+table tr.is-folded { display: none; }
+table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ease) both; }
+@keyframes foldIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { table.is-open tr.is-folded { animation: none; } }
+
+/* ——— HERO : TROIS ENTRÉES — app, studio, SuperTyPo ——— */
+.entries {
+  display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: clamp(12px,1.6vw,20px); margin: clamp(26px,3.4vw,46px) 0 0;
+}
+.entry {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 12px;
+  padding: clamp(14px,1.7vw,21px); background: var(--paper-3);
+  border: 1px solid var(--line); overflow: hidden; text-decoration: none;
+  transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+.entry::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--entry-accent, var(--cyan));
+}
+.entry:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: 0 16px 34px rgba(23,19,13,.13); }
+.entry-logo {
+  flex: 0 0 auto; width: 80.4px; height: 80.4px; background: var(--ink);
+  border-radius: 12px;
+  /* v1.7.467 — garde intérieure : le logotype ne touche plus les bords de la plaque
+     (image 50,4 px, coins plus arrondis). */
+  display: flex; align-items: center; justify-content: center; padding: 15px;
+}
+.entry-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* 🆕 v1.7.472 — LES DEUX ENTRÉES « CLAIRES » (Studio IA et SuperTyPo).
+   Leur plaque de logotype quitte le noir pour un fond blanc bordé d'un gris léger. C'est
+   possible parce que ces deux logotypes sont BICOLORES — vérifié dans les fichiers : du blanc
+   ET du noir dans le même dessin. Sur plaque noire on ne voyait que la part blanche, sur
+   plaque blanche on voit l'autre — le dessin change de lecture, il ne disparaît pas.
+   L'entrée de l'application garde sa plaque noire : son icône est blanche, et c'est son
+   identité. */
+.entry-clair .entry-logo { background: var(--white); border: 1px solid var(--line-strong); }
+.entry-body { min-width: 0; width: 100%; }
+.entry-name {
+  display: block; font-family: var(--f-caps); font-size: clamp(19px,2.1vw,25px);
+  letter-spacing: .02em; line-height: 1.02; color: var(--ink);
+}
+.entry-desc { display: block; margin-top: 6px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.entry-go {
+  display: block; margin-top: 10px; font-family: var(--f-mono); font-size: 10.5px;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--entry-accent, var(--cyan));
+}
+@media (max-width: 900px) {
+  .entries { grid-template-columns: 1fr; }
+  .entry { align-items: center; }
+}
+
+/* ——— CARROUSEL DES MODÈLES (v1.7.465) — pleine largeur, swipe natif ——— */
+#templates {
+  padding: clamp(46px,5.4vw,84px) 0 clamp(34px,4vw,56px);
+  background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+.tpl-head { padding: 0 max(24px, calc((100% - 1180px) / 2)) clamp(22px,2.6vw,34px); }
+.tpl-kicker {
+  display: block; font-family: var(--f-mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+#templates h2 {
+  font-family: var(--f-display); font-size: clamp(26px,3.4vw,42px); line-height: 1.08;
+  color: var(--ink); margin: 0 0 12px; font-weight: 500;
+}
+#templates .tpl-head p { font-size: 15px; line-height: 1.7; color: var(--ink-soft); max-width: 720px; margin: 0; }
+#templates .tpl-head p + p { margin-top: 10px; }
+.tpl-wrap { position: relative; }
+.tpl-rail {
+  display: flex; gap: clamp(12px,1.4vw,18px); align-items: stretch;
+  overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+  scroll-behavior: smooth; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  padding: 4px max(24px, calc((100% - 1180px) / 2)) 22px;
+  scroll-padding-left: max(24px, calc((100% - 1180px) / 2));
+  scroll-padding-right: max(24px, calc((100% - 1180px) / 2));
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.tpl-rail::-webkit-scrollbar { display: none; }
+.tpl-rail:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.tpl-card {
+  flex: 0 0 clamp(196px,19.5vw,244px); scroll-snap-align: start;
+  display: flex; flex-direction: column; text-decoration: none;
+  background: var(--paper-3); border: 1px solid var(--line);
+  padding: 10px 10px 12px;
+  transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+.tpl-card:hover, .tpl-card:focus-visible {
+  /* v1.7.467 — ombre adoucie (elle « écrasait » la maquette) et soulèvement réduit. */
+  transform: translateY(-2px); border-color: var(--line-strong);
+  box-shadow: 0 8px 18px rgba(23,19,13,.06); outline: none;
+}
+.tpl-shot {
+  display: flex; align-items: center; justify-content: center;
+  height: clamp(196px,21.5vw,246px); background: var(--paper);
+  border: 1px solid var(--line); overflow: hidden; margin-bottom: 12px;
+}
+.tpl-shot img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.tpl-info { display: block; margin-bottom: 10px; }
+.tpl-name {
+  display: block; font-family: var(--f-caps); font-size: clamp(16px,1.55vw,19px);
+  line-height: 1.1; letter-spacing: .015em; color: var(--ink);
+}
+.tpl-sub { display: block; margin-top: 4px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.tpl-open {
+  display: flex; align-items: center; gap: 7px; margin-top: auto;
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--ink); padding-top: 9px; border-top: 1px solid var(--line);
+}
+.tpl-arr { transition: transform .3s var(--ease); }
+.tpl-card:hover .tpl-arr { transform: translateX(4px); }
+.tpl-arrow {
+  position: absolute; top: calc(14px + clamp(196px,21.5vw,246px) / 2); transform: translateY(-50%);
+  width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+  background: var(--paper-3); border: 1px solid var(--line-strong); color: var(--ink);
+  cursor: pointer; z-index: 3; transition: background .25s var(--ease), opacity .25s var(--ease);
+}
+.tpl-arrow:hover { background: var(--white); }
+.tpl-arrow[disabled] { opacity: .32; cursor: default; }
+.tpl-arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tpl-prev { left: max(10px, calc((100% - 1180px) / 2 - 54px)); }
+.tpl-next { right: max(10px, calc((100% - 1180px) / 2 - 54px)); }
+.tpl-foot {
+  padding: 14px max(24px, calc((100% - 1180px) / 2)) 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+}
+.tpl-count { color: var(--ink); }
+@media (max-width: 1000px) {
+  #templates { padding: 42px 0 32px; }
+  .tpl-head, .tpl-foot { padding-left: 20px; padding-right: 20px; }
+  .tpl-rail { padding-left: 20px; padding-right: 20px; }
+  .tpl-card { flex-basis: 214px; }
+  .tpl-shot { height: 214px; }
+  .tpl-arrow { top: calc(14px + 214px / 2); width: 38px; height: 38px; }
+  .tpl-prev { left: 6px; } .tpl-next { right: 6px; }
+  .tpl-hint { display: none; }
+}
+@media (max-width: 620px) {
+  .tpl-card { flex-basis: min(74vw, 260px); }
+  .tpl-shot { height: 232px; }
+  .tpl-arrow { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .tpl-rail { scroll-behavior: auto; } }
+
+
+/* ─── v1.7.467 — POP-INS LÉGAUX (Mentions légales / Confidentialité) ───
+   Textes repris de index.html (source unique) et affichés dans les 3 langues.
+   DA de la landing : papier, filets fins, monospace pour les titres. ─── */
+.legal-overlay {
+  position: fixed; inset: 0; z-index: 300; display: none;
+  align-items: center; justify-content: center; padding: 24px;
+  background: rgba(23,19,13,.55);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+.legal-overlay.open { display: flex; }
+.legal-modal {
+  width: 100%; max-width: 760px; max-height: min(86vh, 900px);
+  display: flex; flex-direction: column;
+  background: var(--paper-3); border: 1px solid var(--line-strong);
+  box-shadow: 0 30px 80px rgba(23,19,13,.3);
+}
+.legal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 15px 20px; border-bottom: 1px solid var(--line);
+}
+.legal-title {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink);
+}
+.legal-close {
+  flex: 0 0 auto; width: 30px; height: 30px; cursor: pointer;
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
+}
+.legal-close:hover { background: var(--paper-2); color: var(--ink); }
+.legal-alpha {
+  padding: 10px 20px; border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--yellow) 20%, var(--paper-3));
+  font-family: var(--f-mono); font-size: 10.5px; line-height: 1.5; letter-spacing: .04em; color: var(--ink);
+}
+.legal-body { padding: 22px 24px; overflow-y: auto; font-size: 13px; line-height: 1.75; color: var(--ink-soft); }
+.legal-body h4 {
+  margin: 18px 0 6px; font-family: var(--f-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink);
+}
+.legal-body h4:first-child { margin-top: 0; }
+.legal-body p { margin: 0 0 10px; }
+.legal-body p:last-child { margin-bottom: 0; }
+.legal-body ul { margin: 0 0 10px; padding-left: 18px; }
+.legal-body b, .legal-body strong { color: var(--ink); }
+.legal-body a { color: var(--ink); text-decoration: underline; }
+.legal-body::-webkit-scrollbar { width: 8px; }
+.legal-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+@media (max-width: 700px) {
+  .legal-overlay { padding: 12px; }
+  .legal-head { padding: 12px 14px; }
+  .legal-body { padding: 16px 14px; font-size: 12.5px; line-height: 1.7; }
+  .legal-alpha { padding: 9px 14px; font-size: 10px; }
+}
+
+/* v1.7.467 — les liens du pied de page sont en display:inline-flex (règle .foot-links a),
+   ce qui écrase le masquage par langue : on rétablit la priorité ici. */
+.foot-links a[data-lang] { display: none; }
+html[lang="fr"] .foot-links a[data-lang="fr"],
+html[lang="en"] .foot-links a[data-lang="en"],
+html[lang="ja"] .foot-links a[data-lang="ja"] { display: inline-flex; }
+
+
+/* ── v1.7.471 — CURSEUR : UN PLUS TRÈS FIN ────────────────────────────────
+   Deux traits, c’est tout : un plus fin à l’encre sur la page, le MÊME plus en
+   magenta quadri sur les liens, boutons et cartes — la couleur dit « c’est
+   cliquable » sans faire sauter la forme sous le doigt. Dessiné en SVG dans le
+   CSS (aucune requête, aucun fichier à déployer), doublé d’un halo couleur
+   papier pour rester lisible sur les aplats sombres. */
+html, body { cursor: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'24' height%3D'24' viewBox%3D'0 0 24 24'%3E%3Cg fill%3D'none' stroke%3D'%23F7F3EC' stroke-width%3D'3' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3Cg fill%3D'none' stroke%3D'%2317130D' stroke-width%3D'1' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 12 12, crosshair; }
+body :is(p, h1, h2, h3, h4, li, span, div, section, header, footer, table, img, figure) { cursor: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'24' height%3D'24' viewBox%3D'0 0 24 24'%3E%3Cg fill%3D'none' stroke%3D'%23F7F3EC' stroke-width%3D'3' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3Cg fill%3D'none' stroke%3D'%2317130D' stroke-width%3D'1' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 12 12, crosshair; }
+a, button, [role="button"], summary, .btn, .nav-cta, .entry, .tpl-card, .tcard, .help-card, .help-don { cursor: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'24' height%3D'24' viewBox%3D'0 0 24 24'%3E%3Cg fill%3D'none' stroke%3D'%23F7F3EC' stroke-width%3D'3' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3Cg fill%3D'none' stroke%3D'%23E1237B' stroke-width%3D'1' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 12 12, pointer; }
+input, select, textarea, label { cursor: pointer; }
+.legal-body { cursor: text; }
+
+/* 🆕 v1.7.472 — SÉLECTEUR DE LANGUE DU MENU BURGER : trois blocs carrés qui se touchent,
+   comme la barre du haut (mêmes .lang-toggle / button). Les mots sont courts (FR EN JA),
+   donc les blocs restent des carrés réguliers. */
+.mm-lang-toggle { display: flex; gap: 0; width: max-content; margin: 6px auto 0; }
+.mm-lang-toggle button { flex: 0 0 auto; min-width: 68px; min-height: 44px; font-size: 11px; letter-spacing: .12em; border-radius: 0; }
+
+/* 🆕 v1.7.472 — LE COLOPHON DANS LE MENU (voir le commentaire du HTML) : mêmes métriques
+   que la bande d'origine, pour que rien ne change à l'œil sinon la position.
+   🆕 v1.7.495 — IL NE DESCEND PLUS. Le menu occupe tout l'écran et recouvrait la bande du
+   logotype (« on perd le logo icon le filet dessous ») : on la repose donc dans le menu — mais
+   la v1.7.472 la posait SOUS la barre collante, à la suite du décalage mesuré de la nav, si
+   bien que le logo descendait de 146 px à l'ouverture. La bande est maintenant HORS FLUX et le
+   script la pose exactement sur celle de la page (même haut, même hauteur, même filet) : le
+   logo icon ne bouge pas d'un pixel. Si la bande est sortie de l'écran (page défilée), elle se
+   range sous la barre, comme avant.
+   🆕 v1.7.572 — ET ELLE NE DÉFILE PLUS (« le header qui supporte l'icône scroll avec tout le
+   reste du menu »). Le menu défile (overflow-y: auto) : un élément en position:absolute
+   défilait donc AVEC les entrées, le logo quittait l'écran — mesuré : top 5 au repos puis
+   −204 après 209 px de défilement sur 360×640 (et sur 390×844, 850 px de contenu pour 843
+   visibles : le menu défilait déjà de 7 px, le bandeau bougeait). La bande passe en
+   position:fixed : elle est clouée à la fenêtre, les entrées glissent SOUS elle (elle est
+   positionnée, elles ne le sont pas), et rien ne passe jamais par-dessus. */
+.mm-colo {
+  position: fixed; left: 0; right: 0; top: 5px;         /* 5 px = la hauteur de la barre quadri — voir v1.7.572 ci-dessus */
+  display: none; align-items: flex-start; justify-content: center;   /* affiché menu ouvert */
+  padding: 6px 24px;                 /* LES MÊMES RESPIRATIONS QUE .brand-header, à la lettre */
+  background: var(--paper); border-bottom: 1px solid var(--line);
+  pointer-events: none;
+}
+/* 🆕 v1.7.572 — LE BANDEAU EST SORTI DU MENU (il vit juste APRÈS lui, dans la page).
+   Un élément fixe placé DANS un conteneur qui défile reste solidaire de ce défilement : le
+   menu porte un backdrop-filter, qui crée le bloc conteneur pour ses descendants fixés.
+   Dehors, il est vraiment cloué à la fenêtre — mesuré, il ne bouge plus d'un pixel quand on
+   fait défiler le menu (avant : −104 px après 109 px de défilement). La règle ci-dessous ne
+   l'affiche que lorsque le menu est ouvert, avec le même empilement que lui (118), le menu
+   étant juste avant lui dans la page. */
+.mobile-menu.open + .mm-colo { display: flex; z-index: 118; }
+.mm-colo img { height: 40px; width: auto; display: block; }
+@media(max-width: 700px){
+  .mm-colo { padding-top: 18px; }                          /* idem .brand-header en mobile */
+  .mm-colo img { height: clamp(44px, 12vw, 56px); }
+}
+
+/* 🆕 v1.7.472 — le bas du menu : qui signe, et la version. Petit, espacé, arrêté par un filet.
+   🆕 v1.7.549 — PLUS de margin-top:auto : plaquée tout en bas de l'écran plein (position:fixed
+   inset:0), elle laissait un grand vide entre le sélecteur de langue et la signature sur les
+   menus courts (« la fin de menu est étrange »). Marge fixe : elle suit le contenu, comme le
+   reste du menu. */
+.mm-bas {
+  margin-top: 22px; padding: 14px 4px 4px; border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 5px;
+  font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+}
+/* 🆕 v1.7.472 — CES BOUTONS PORTENT data-lang, ET C’EST LE PIÈGE : le mécanisme trilingue
+   masque tout [data-lang] qui n’est pas la langue courante, donc FR et JA DISPARAISSAIENT du
+   menu (« le sélecteur ne marche pas »). Ce sont des COMMANDES, pas du contenu : elles
+   doivent rester visibles dans les trois cas. */
+html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
+
+
+/* 🆕 v1.7.571 — BULLE WHATSAPP (bas droite), sur la page d'accueil ET sur « Participer ».
+   L'ENCRE EST CELLE DU BOUTON « OUVRIR L'APP » (--ink, survol --ink-2) : aucun vert, aucune
+   couleur nouvelle dans l'interface. z-index 100 : SOUS le menu plein écran (118), sous la
+   barre collante (119) et sous la barre du haut (300). Aucun fondu — le changement de teinte
+   est instantané comme celui du bouton, seules l'échelle et l'ombre bougent au survol.
+   Le numéro est celui de l'atelier : +33 6 71 61 41 10. */
+.sp-wa {
+  position: fixed; right: 22px; bottom: 22px; z-index: 100;
+  width: 58px; height: 58px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink); border: 1px solid var(--ink); text-decoration: none;
+  box-shadow: 0 10px 22px rgba(23,19,13,.22), 0 2px 6px rgba(23,19,13,.12);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease);
+}
+.sp-wa svg { width: 26px; height: 26px; fill: var(--paper); display: block; }
+.sp-wa:hover, .sp-wa:focus-visible {
+  background: var(--ink-2); border-color: var(--ink-2);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 14px 28px rgba(23,19,13,.28), 0 3px 8px rgba(23,19,13,.16);
+}
+.sp-wa:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+@media (max-width: 560px) {
+  .sp-wa { right: 14px; bottom: 14px; width: 52px; height: 52px; }
+  .sp-wa svg { width: 23px; height: 23px; }
+}
+@media (prefers-reduced-motion: reduce) { .sp-wa { transition: none; } }
+@media print { .sp-wa { display: none; } }
+
+/* _PAGE_ROCK_588 — la page ROCK v1 vit désormais dans rock.html. */
+
+/* ══ _PAGE_ROCK_588 — HABILLAGE DE LA PAGE ROCK v1 (au-dessus des règles ci-dessus, qui sont
+   celles de la présentation : variables, typographie, en-tête, navigation, pied de page,
+   boutons, trois langues). Rien n'est chargé de l'extérieur. ══ */
+body { background: var(--paper); }
+:root { --rk-cyan: #00A7C7; --rk-encre: #14110C; }
+
+#rock-hero { position: relative; padding: 44px 0 10px; }
+.rk-vide { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--f-display); font-size: min(78vh, 58vw); line-height: 1; color: var(--ink);
+  opacity: .035; user-select: none; pointer-events: none; }
+.rk-vide-titre { transform: translateY(-2%); }
+.rk-grid { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
+  gap: clamp(24px, 4vw, 64px); align-items: center; position: relative; }
+@media (max-width: 980px) { .rk-grid { grid-template-columns: 1fr; } }
+.rk-texte h1 { font-family: var(--f-display); font-size: clamp(46px, 8.4vw, 104px); line-height: .96;
+  margin: 10px 0 12px; letter-spacing: -.01em; color: var(--ink); }
+.rk-texte h1 em { font-style: normal; font-family: var(--f-caps); font-size: .62em; letter-spacing: .02em;
+  color: var(--rk-cyan); vertical-align: .1em; }
+.rk-texte .lead { margin: 0 0 14px; max-width: 56ch; }
+.rk-eco { display: inline-flex; flex-wrap: wrap; gap: 6px 10px; margin: 8px 0 22px; padding: 8px 14px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--white);
+  font-family: var(--f-mono); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+.rk-boutons { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* ── La scène 3D ── */
+.rk-cadre { position: relative; aspect-ratio: 1 / .92; border: 1px solid var(--line); background:
+  radial-gradient(120% 100% at 30% 12%, #2b2620 0%, #14110c 58%, #0c0a07 100%);
+  overflow: hidden; box-shadow: 0 30px 80px rgba(23,19,13,.22); }
+.rk-cadre::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(247,243,236,.06), rgba(247,243,236,0) 42%); }
+#rkCanvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#rkCanvas:active { cursor: grabbing; }
+.rk-charge, .rk-voile { position: absolute; inset: auto 0 16px; text-align: center; font-family: var(--f-mono);
+  font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: #cfc7b6; z-index: 3; padding: 0 18px; }
+.rk-hud { position: absolute; left: 16px; top: 14px; z-index: 3; display: flex; flex-direction: column; gap: 3px;
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #b9b1a1; }
+.rk-hud b { color: var(--paper); }
+.rk-hud-nom { color: var(--rk-cyan); letter-spacing: .06em; font-size: 12px; text-transform: none; }
+.rk-aide { position: absolute; right: 16px; bottom: 14px; left: 16px; z-index: 3; text-align: right;
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; color: #9c9484; }
+.rk-svg-secours { width: 100%; height: 100%; display: block; }
+.rk-faces { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.rk-puce { font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  padding: 8px 12px; border: 1px solid var(--line); background: var(--white); color: var(--muted);
+  cursor: pointer; transition: color .25s var(--ease), border-color .25s var(--ease), background .25s var(--ease); }
+.rk-puce b { color: var(--ink); margin-right: 4px; }
+.rk-puce:hover { border-color: var(--ink); color: var(--ink); }
+.rk-puce.is-on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.rk-puce.is-on b { color: var(--rk-cyan); }
+
+/* ── Les cinq fonctions ── */
+.rk-fns { list-style: none; margin: 54px 0 0; padding: 0; border-top: 1px solid var(--line); }
+.rk-fn { display: none; padding: 26px 0 6px; border-bottom: 1px solid var(--line); }
+.rk-fn.is-on { display: block; animation: rkFn .5s var(--ease); }
+@keyframes rkFn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
+.rk-fn-num { font-family: var(--f-mono); font-size: 11px; letter-spacing: .22em; color: var(--rk-cyan); }
+.rk-fn h2 { font-family: var(--f-caps); font-size: clamp(30px, 4.6vw, 56px); line-height: 1.02; margin: 6px 0 8px; color: var(--ink); }
+.rk-fn p { margin: 0; max-width: 74ch; color: var(--ink-soft); font-size: 16.5px; line-height: 1.72; }
+@media (prefers-reduced-motion: reduce) { .rk-fn.is-on { animation: none; } }
+
+/* ── Les chiffres ── */
+#rock-specs { padding: 40px 0 6px; }
+.rk-specs { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--line); background: var(--white); }
+@media (max-width: 820px) { .rk-specs { grid-template-columns: repeat(2, 1fr); } }
+.rk-spec { padding: 22px 18px; border-right: 1px solid var(--line); }
+.rk-spec:last-child { border-right: 0; }
+@media (max-width: 820px) { .rk-spec:nth-child(2n) { border-right: 0 } .rk-spec:nth-child(n+3) { border-top: 1px solid var(--line) } }
+.rk-spec b { display: block; font-family: var(--f-caps); font-size: 34px; line-height: 1; color: var(--ink); }
+.rk-spec span { display: block; margin-top: 6px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* ── Périmètre ── */
+#rock-quoi { padding: 64px 0 0; }
+.rk-trois { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); background: var(--white); }
+@media (max-width: 900px) { .rk-trois { grid-template-columns: 1fr; } }
+.rk-carte { padding: 26px 24px; border-right: 1px solid var(--line); }
+.rk-carte:last-child { border-right: 0; }
+@media (max-width: 900px) { .rk-carte { border-right: 0; border-bottom: 1px solid var(--line) } .rk-carte:last-child { border-bottom: 0 } }
+.rk-carte h3 { font-family: var(--f-caps); font-size: 22px; letter-spacing: .02em; margin: 0 0 12px; color: var(--ink); }
+.rk-carte ul { list-style: none; margin: 0; padding: 0; }
+.rk-carte li { position: relative; padding: 7px 0 7px 16px; color: var(--ink-soft); font-size: 15px; line-height: 1.6; }
+.rk-carte li::before { content: ''; position: absolute; left: 0; top: 15px; width: 5px; height: 5px; background: var(--rk-cyan); }
+.rk-note { margin: 30px 0 0; padding: 20px 22px; border-left: 3px solid var(--rk-cyan); background: var(--white);
+  color: var(--ink-soft); font-size: 15.5px; line-height: 1.7; }
+.rk-cta { margin: 28px 0 80px; display: flex; flex-wrap: wrap; gap: 12px; }
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════ BANDE DE MARQUE ══════════════ -->
+<header class="brand-header">
+  <span class="brand-ver">v1.7.588</span>
+  <span class="brand-tag">
+    <span class="inline-fr">Notre moteur</span><span class="inline-en">Our engine</span><span class="inline-ja">私たちのエンジン</span>
+  </span>
+</header>
+
+<nav>
+  <a class="nav-logo" href="index.html">SUPER<span>PRINT</span></a>
+  <div class="nav-links">
+    <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
+    <a href="rock.html" class="active" aria-current="page"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
+    <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+    <a href="index.html#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
+    <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
+    <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+  </div>
+  <div class="nav-tools">
+    <div class="lang-toggle">
+      <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+      <button id="btn-fr" onclick="setLang('fr')">FR</button>
+      <button id="btn-ja" onclick="setLang('ja')">JA</button>
+    </div>
+    <button type="button" class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<main>
+
+<!-- ══════════════ LA PIERRE ══════════════ -->
+<section id="rock-hero">
+  <div class="rk-vide" aria-hidden="true">
+    <span class="rk-vide-titre">R</span>
+  </div>
+  <div class="container rk-grid">
+
+    <div class="rk-texte">
+      <div class="section-label"><span class="inline-fr">Le premier moteur pensé pour l'imprimé</span><span class="inline-en">The first engine designed for print</span><span class="inline-ja">印刷のために設計された最初のエンジン</span></div>
+      <h1>
+        <span class="inline-fr">ROCK <em>v1</em></span><span class="inline-en">ROCK <em>v1</em></span><span class="inline-ja">ROCK <em>v1</em></span>
+      </h1>
+      <p class="lead" data-lang="fr">ROCK n'écrit pas de phrases : il <strong>compose</strong>. Un livre, une maquette, une carte de visite, un catalogue — il pose les blocs, chaîne le texte, impose les pages et pense folios, marges et fond perdu comme un imprimeur.</p>
+      <p class="lead" data-lang="en">ROCK does not write sentences: it <strong>composes</strong>. A book, a layout, a business card, a catalogue — it places the blocks, chains the text, imposes the pages and thinks in folios, margins and bleed like a printer.</p>
+      <p class="lead" data-lang="ja">ROCK は文章を書きません。<strong>組版します</strong>。書籍、レイアウト、名刺、カタログ。ブロックを配置し、テキストを流し込み、ノンブル・余白・塗り足しまで印刷屋の作法でページを面付けします。</p>
+      <p class="rk-eco"><span class="inline-fr">Sobre par construction :</span><span class="inline-en">Sober by construction:</span><span class="inline-ja">構造として省エネ：</span>
+        <span class="inline-fr">0 jeton, 0 GPU, 0 donnée envoyée.</span><span class="inline-en">0 token, 0 GPU, 0 byte sent.</span><span class="inline-ja">トークン0・GPU 0・送信データ0。</span></p>
+      <div class="rk-boutons">
+        <button type="button" class="btn btn-primary" id="rkTourner">
+          <span class="inline-fr">Tourner le rocher</span><span class="inline-en">Turn the rock</span><span class="inline-ja">ロックを回す</span> <span class="arr" aria-hidden="true">→</span>
+        </button>
+        <a class="btn btn-ghost" href="sp213-studio.html"><span class="inline-fr">Essayer dans le Studio</span><span class="inline-en">Try it in the Studio</span><span class="inline-ja">スタジオで試す</span></a>
+      </div>
+    </div>
+
+    <div class="rk-scene">
+      <div class="rk-cadre">
+        <canvas id="rkCanvas" aria-label="ROCK v1 — low-poly rock, three.js"></canvas>
+        <span class="rk-charge" id="rkCharge"><span class="inline-fr">Chargement de la scène…</span><span class="inline-en">Loading the scene…</span><span class="inline-ja">シーンを読み込み中…</span></span>
+        <span class="rk-voile" id="rkVoice" hidden><span class="inline-fr">Votre navigateur ne fournit pas de vue 3D : voici la pierre en dessin vectoriel.</span><span class="inline-en">Your browser provides no 3D view: here is the rock as a vector drawing.</span><span class="inline-ja">お使いのブラウザでは3D表示ができません。ベクター版のロックを表示します。</span></span>
+        <div class="rk-hud" aria-live="polite">
+          <span class="rk-hud-num"><span data-lang="fr">FACE</span><span data-lang="en">FACE</span><span data-lang="ja">面</span> <b id="rkNum">01</b>/05</span>
+          <span class="rk-hud-nom" id="rkNom">—</span>
+        </div>
+        <span class="rk-aide"><span class="inline-fr">Survolez : la pierre se soulève · Glissez : elle tourne · Cliquez : elle présente une fonction</span><span class="inline-en">Hover: the rock lifts · Drag: it turns · Click: it presents a feature</span><span class="inline-ja">ホバーで浮上・ドラッグで回転・クリックで機能を表示</span></span>
+      </div>
+      <div class="rk-faces" id="rkFaces" role="tablist" aria-label="ROCK v1">
+        <button type="button" class="rk-puce is-on" data-face="1" role="tab" aria-selected="true"><b>01</b> <span data-lang="fr">Comprendre</span><span data-lang="en">Understand</span><span data-lang="ja">理解</span></button>
+        <button type="button" class="rk-puce" data-face="2" role="tab" aria-selected="false"><b>02</b> <span data-lang="fr">Hors ligne</span><span data-lang="en">Offline</span><span data-lang="ja">オフライン</span></button>
+        <button type="button" class="rk-puce" data-face="3" role="tab" aria-selected="false"><b>03</b> <span data-lang="fr">Sobre</span><span data-lang="en">Sober</span><span data-lang="ja">省エネ</span></button>
+        <button type="button" class="rk-puce" data-face="4" role="tab" aria-selected="false"><b>04</b> <span data-lang="fr">Imprimeur</span><span data-lang="en">Printer</span><span data-lang="ja">印刷</span></button>
+        <button type="button" class="rk-puce" data-face="5" role="tab" aria-selected="false"><b>05</b> <span data-lang="fr">Documents</span><span data-lang="en">Documents</span><span data-lang="ja">書類</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Les cinq fonctions : du vrai texte, dans les trois langues (le rocher ne contient
+       que des points lumineux ; le contenu de la page reste lisible par les moteurs). -->
+  <div class="container">
+    <ol class="rk-fns" id="rkFns">
+      <li class="rk-fn is-on" data-fn="1">
+        <span class="rk-fn-num">01 / 05</span>
+        <h2 data-lang="fr">Il comprend le métier</h2><h2 data-lang="en">It understands the trade</h2><h2 data-lang="ja">業界を理解する</h2>
+        <p data-lang="fr">ROCK ne devine pas : il lit la demande avec un vocabulaire d'imprimeur — familles de documents, formats, colonnes, palettes, typographie, interdictions — puis il redit ce qu'il a compris, pour qu'une correction se fasse d'un mot.</p>
+        <p data-lang="en">ROCK does not guess: it reads the request with a printer's vocabulary — document families, formats, columns, palettes, typography, prohibitions — then says back what it understood, so a correction takes one word.</p>
+        <p data-lang="ja">ROCK は推測しません。印刷業の語彙で依頼を読み取ります。書類の種類・判型・段組・配色・書体・禁止事項。そして理解した内容を書き戻すため、修正は一言で済みます。</p>
+      </li>
+      <li class="rk-fn" data-fn="2">
+        <span class="rk-fn-num">02 / 05</span>
+        <h2 data-lang="fr">Rien ne sort de votre machine</h2><h2 data-lang="en">Nothing leaves your machine</h2><h2 data-lang="ja">データは端末から出ません</h2>
+        <p data-lang="fr">La maquette et le livre se composent dans le navigateur. Aucun appel réseau, aucun compte, aucune donnée envoyée : votre texte, vos images et vos polices restent chez vous — le studio fonctionne même hors ligne.</p>
+        <p data-lang="en">The layout and the book are composed in the browser. No network call, no account, no data sent: your text, your images and your fonts stay with you — the studio even works offline.</p>
+        <p data-lang="ja">レイアウトも書籍もブラウザ内で組版します。通信も、アカウントも、データ送信もありません。テキスト・画像・フォントは手元に留まり、スタジオはオフラインでも動きます。</p>
+      </li>
+      <li class="rk-fn" data-fn="3">
+        <span class="rk-fn-num">03 / 05</span>
+        <h2 data-lang="fr">Écologique par construction</h2><h2 data-lang="en">Sober by construction</h2><h2 data-lang="ja">構造として省エネ</h2>
+        <p data-lang="fr">Pas d'entraînement à reprendre, pas de ferme de serveurs : un moteur déterministe. La même demande redonne la même page, donc rien à recalculer et rien à consommer — c'est notre façon de faire de l'IA utile sans data center.</p>
+        <p data-lang="en">No training to redo, no server farm: a deterministic engine. The same request gives the same page, so there is nothing to recompute and nothing to burn — that is how we make useful AI without a data centre.</p>
+        <p data-lang="ja">再学習も、サーバーファームも不要。決定論的なエンジンです。同じ依頼は同じページを返すため、再計算も消費もありません。データセンターなしで役立つAIのかたちです。</p>
+      </li>
+      <li class="rk-fn" data-fn="4">
+        <span class="rk-fn-num">04 / 05</span>
+        <h2 data-lang="fr">Il pense comme un imprimeur</h2><h2 data-lang="en">It thinks like a printer</h2><h2 data-lang="ja">印刷のルールで考える</h2>
+        <p data-lang="fr">Recto et verso, cahiers par quatre pages, folios, marges, fond perdu, imposition, chaînage du texte, tons directs : les règles du métier sont dans le moteur, pas dans une option à chercher.</p>
+        <p data-lang="en">Front and back, four-page sections, folios, margins, bleed, imposition, text chaining, spot inks: the trade's rules live in the engine, not in an option you have to hunt for.</p>
+        <p data-lang="ja">表裏、4の倍数の折り、ノンブル、余白、塗り足し、面付け、テキストの流し込み、特色。業界のルールはエンジンの中にあります。</p>
+      </li>
+      <li class="rk-fn" data-fn="5">
+        <span class="rk-fn-num">05 / 05</span>
+        <h2 data-lang="fr">Il lit vos documents</h2><h2 data-lang="en">It reads your documents</h2><h2 data-lang="ja">書類を読み取ります</h2>
+        <p data-lang="fr">Word, PDF, ODT, RTF, Excel : ROCK lit la structure, dresse le plan, retient le ton, le public et les chiffres, puis compose. Un document de client entre, une maquette en sort.</p>
+        <p data-lang="en">Word, PDF, ODT, RTF, Excel: ROCK reads the structure, draws up the plan, keeps the tone, the audience and the figures, then composes. A client document goes in, a layout comes out.</p>
+        <p data-lang="ja">Word・PDF・ODT・RTF・Excel。構造を読み、構成を立て、語調・読者・数値を捉えて組版します。お客様の書類が入り、レイアウトが出てきます。</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ══════════════ LES CHIFFRES ══════════════ -->
+<section id="rock-specs">
+  <div class="container">
+    <div class="rk-specs">
+      <div class="rk-spec"><b>0</b><span data-lang="fr">jeton consommé</span><span data-lang="en">token spent</span><span data-lang="ja">消費トークン</span></div>
+      <div class="rk-spec"><b>0</b><span data-lang="fr">GPU</span><span data-lang="en">GPU</span><span data-lang="ja">GPU</span></div>
+      <div class="rk-spec"><b>0</b><span data-lang="fr">donnée envoyée</span><span data-lang="en">byte sent</span><span data-lang="ja">送信データ</span></div>
+      <div class="rk-spec"><b>3</b><span data-lang="fr">langues comprises</span><span data-lang="en">languages read</span><span data-lang="ja">対応言語</span></div>
+      <div class="rk-spec"><b>v1.0</b><span data-lang="fr">premier moteur</span><span data-lang="en">first engine</span><span data-lang="ja">最初のエンジン</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CE QU'IL FAIT / NE FAIT PAS ══════════════ -->
+<section id="rock-quoi">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-label" data-lang="fr">Périmètre</div>
+      <div class="section-label" data-lang="en">Scope</div>
+      <div class="section-label" data-lang="ja">範囲</div>
+      <h2 data-lang="fr">Un moteur, une mission : la mise en page.</h2>
+      <h2 data-lang="en">One engine, one mission: layout.</h2>
+      <h2 data-lang="ja">エンジンはひとつ、役割は組版。</h2>
+    </div>
+    <div class="rk-trois">
+      <article class="rk-carte">
+        <h3 data-lang="fr">Ce qu'il fait</h3><h3 data-lang="en">What it does</h3><h3 data-lang="ja">できること</h3>
+        <ul>
+          <li data-lang="fr">Analyser une demande écrite et en tirer une maquette complète.</li>
+          <li data-lang="en">Read a written brief and turn it into a complete layout.</li>
+          <li data-lang="ja">書かれた依頼を読み、完全なレイアウトに仕上げます。</li>
+          <li data-lang="fr">Composer des cahiers, des brochures, des affiches, des cartes.</li>
+          <li data-lang="en">Compose booklets, brochures, posters, cards.</li>
+          <li data-lang="ja">冊子・パンフレット・ポスター・カードを組版します。</li>
+          <li data-lang="fr">Lire un document client et en reprendre la structure.</li>
+          <li data-lang="en">Read a client document and reuse its structure.</li>
+          <li data-lang="ja">お客様の書類を読み、構造を引き継ぎます。</li>
+        </ul>
+      </article>
+      <article class="rk-carte">
+        <h3 data-lang="fr">Ce qu'il ne fait pas</h3><h3 data-lang="en">What it does not do</h3><h3 data-lang="ja">できないこと</h3>
+        <ul>
+          <li data-lang="fr">Écrire un roman ou un article : pour le texte libre, le Studio ouvre les grands modèles.</li>
+          <li data-lang="en">Write a novel or an article: for free text, the Studio opens the large models.</li>
+          <li data-lang="ja">小説や記事の執筆。自由な文章はスタジオの大規模モデルを使います。</li>
+          <li data-lang="fr">Dessiner des images : il place les vôtres, ou des photos libres créditées.</li>
+          <li data-lang="en">Draw images: it places yours, or free credited photos.</li>
+          <li data-lang="ja">画像の生成。あなたの画像、または出典付きのフリー写真を配置します。</li>
+          <li data-lang="fr">Traduire : il compose dans la langue de la demande.</li>
+          <li data-lang="en">Translate: it composes in the language of the request.</li>
+          <li data-lang="ja">翻訳。依頼の言語のまま組版します。</li>
+        </ul>
+      </article>
+      <article class="rk-carte">
+        <h3 data-lang="fr">D'où il vient</h3><h3 data-lang="en">Where it comes from</h3><h3 data-lang="ja">生まれ</h3>
+        <ul>
+          <li data-lang="fr">Écrit avec SuperPrint, par les deux mêmes personnes, pour l'imprimé.</li>
+          <li data-lang="en">Written with SuperPrint, by the same two people, for print.</li>
+          <li data-lang="ja">SuperPrint と同じ二人が、印刷のために書き続けています。</li>
+          <li data-lang="fr">Nourri d'une bibliothèque de modèles et d'un vocabulaire de métier.</li>
+          <li data-lang="en">Fed by a library of templates and a trade vocabulary.</li>
+          <li data-lang="ja">テンプレート集と業界の語彙を材料にしています。</li>
+          <li data-lang="fr">Les versions suivantes ajouteront des fonctions, jamais du poids.</li>
+          <li data-lang="en">Later versions will add features, never weight.</li>
+          <li data-lang="ja">今後のバージョンは機能を足し、重さは足しません。</li>
+        </ul>
+      </article>
+    </div>
+    <p class="rk-note" data-lang="fr"><strong>Honnêtement :</strong> ROCK v1.0 est notre premier moteur, écrit pour l'imprimé. Il ne cherche pas à tout faire — il fait la mise en page, et il la fait sans consommer de calcul. Pour rédiger du texte libre, les grands modèles (DeepSeek, OpenAI, Anthropic, OpenRouter, Groq ou un modèle local) restent disponibles dans le Studio : ROCK, lui, compose.</p>
+    <p class="rk-note" data-lang="en"><strong>Honestly:</strong> ROCK v1.0 is our first engine, written for print. It does not try to do everything — it does layout, and it does it without burning compute. To draft free text, the large models (DeepSeek, OpenAI, Anthropic, OpenRouter, Groq or a local model) remain available in the Studio: ROCK composes.</p>
+    <p class="rk-note" data-lang="ja"><strong>正直に：</strong> ROCK v1.0 は印刷のために書かれた最初のエンジンです。何でもできるふりはしません。組版を、計算を浪費せずに行います。自由な文章には、スタジオの大規模モデル（DeepSeek・OpenAI・Anthropic・OpenRouter・Groq・ローカルモデル）をお使いください。ROCK は組版を担います。</p>
+    <div class="rk-cta">
+      <a class="btn btn-primary" href="sp213-studio.html"><span class="inline-fr">Essayer le Studio IA</span><span class="inline-en">Try the AI Studio</span><span class="inline-ja">AIスタジオを試す</span> <span class="arr" aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost" href="documentation.html"><span class="inline-fr">Lire le manuel</span><span class="inline-en">Read the manual</span><span class="inline-ja">マニュアルを読む</span></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="container">
+    <div class="foot-brand">
+      <a class="foot-logo" href="index.html">SUPERPRINT</a>
+      <p class="inline-fr">Un bureau de mise en page professionnelle, né pour la presse et l'édition — dans votre navigateur.</p>
+      <p class="inline-en">A professional layout desk, born for print and publishing — in your browser.</p>
+      <p class="inline-ja">印刷と出版のために生まれたプロのレイアウトデスク — ブラウザの中で。</p>
+      <p class="foot-auteurs">Simon Dupont-Gellert &amp; Clémence Brunet</p>
+    </div>
+    <div class="foot-cols">
+      <div>
+        <h4 data-lang="fr">Navigation</h4><h4 data-lang="en">Navigation</h4><h4 data-lang="ja">ナビゲーション</h4>
+        <div class="foot-links">
+          <a href="app/index.html">SuperPrint Editor</a>
+          <a href="sp213-studio.html" data-lang="fr">Studio SP213</a>
+          <a href="sp213-studio.html" data-lang="en">SP213 Studio</a>
+          <a href="sp213-studio.html" data-lang="ja">SP213スタジオ</a>
+          <a href="supertypo/index.html">SuperTyPo</a>
+          <a href="rock.html" data-lang="fr">Moteur ROCK v1</a>
+          <a href="rock.html" data-lang="en">ROCK v1 engine</a>
+          <a href="rock.html" data-lang="ja">ROCK v1 エンジン</a>
+          <a href="index.html#features" data-lang="fr">Fonctions</a>
+          <a href="index.html#features" data-lang="en">Features</a>
+          <a href="index.html#features" data-lang="ja">機能</a>
+          <a href="documentation.html" data-lang="fr">Manuel</a>
+          <a href="documentation.html" data-lang="en">Manual</a>
+          <a href="documentation.html" data-lang="ja">マニュアル</a>
+          <a href="index.html#faq" data-lang="fr">Questions fréquentes</a>
+          <a href="index.html#faq" data-lang="en">FAQ</a>
+          <a href="index.html#faq" data-lang="ja">よくある質問</a>
+          <a href="help-us.html" data-lang="fr">Participer</a>
+          <a href="help-us.html" data-lang="en">Take part</a>
+          <a href="help-us.html" data-lang="ja">参加する</a>
+        </div>
+      </div>
+      <div>
+        <h4 data-lang="fr">Le projet</h4><h4 data-lang="en">The project</h4><h4 data-lang="ja">プロジェクト</h4>
+        <div class="foot-links">
+          <a href="https://zigmoon.com">zigmoon.com</a>
+          <a href="https://app.zigmoon.com/release.html" data-lang="fr">Journal des versions</a>
+          <a href="https://app.zigmoon.com/release.html" data-lang="en">Changelog</a>
+          <a href="https://app.zigmoon.com/release.html" data-lang="ja">変更履歴</a>
+          <a href="https://x.com/SUPER_PRINT_app" rel="noopener noreferrer" target="_blank">@SUPER_PRINT_app</a>
+          <a href="logos_superprint.zip" download data-lang="fr">Valise logo (SVG + PNG)</a>
+          <a href="logos_superprint.zip" download data-lang="en">Logo kit (SVG + PNG)</a>
+          <a href="logos_superprint.zip" download data-lang="ja">ロゴ一式（SVG・PNG）</a>
+          <a href="dossier_de_presse_superprint.pdf" target="_blank" rel="noopener" data-lang="fr">Dossier de presse (PDF)</a>
+          <a href="dossier_de_presse_superprint.pdf" target="_blank" rel="noopener" data-lang="en">Press kit (PDF)</a>
+          <a href="dossier_de_presse_superprint.pdf" target="_blank" rel="noopener" data-lang="ja">プレスキット（PDF）</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-copy">
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.588</span>
+      <div class="foot-legal">
+        <a href="index.html#legal" data-lang="fr">Mentions légales</a>
+        <a href="index.html#legal" data-lang="en">Legal notice</a>
+        <a href="index.html#legal" data-lang="ja">法的情報</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="index.html#privacy" data-lang="fr">Confidentialité</a>
+        <a href="index.html#privacy" data-lang="en">Privacy</a>
+        <a href="index.html#privacy" data-lang="ja">プライバシー</a>
+      </div>
+      <span class="foot-note" data-lang="fr">SuperPrint est un projet indépendant de Zigmoon. Les marques citées appartiennent à leurs détenteurs.</span>
+      <span class="foot-note" data-lang="en">SuperPrint is an independent project by Zigmoon. All trademarks belong to their owners.</span>
+      <span class="foot-note" data-lang="ja">SuperPrintはZigmoonの独立プロジェクトです。商標はすべて各権利者に帰属します。</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ══════════════ CHANGEMENT DE LANGUE ══════════════
+   Même mécanisme que la présentation : le CSS affiche la variante de la langue du
+   document ([data-lang] et .inline-xx), on ne fait donc que poser html[lang]. */
+function setLang(lang) {
+  document.documentElement.lang = lang;
+  var bf = document.getElementById('btn-fr'), be = document.getElementById('btn-en'), bj = document.getElementById('btn-ja');
+  if (bf) bf.classList.toggle('active', lang === 'fr');
+  if (be) be.classList.toggle('active', lang === 'en');
+  if (bj) bj.classList.toggle('active', lang === 'ja');
+  var _c = document.querySelector('link[rel="canonical"]');
+  if (_c) _c.setAttribute('href', 'https://superprint.cc/rock.html' + (lang === 'en' ? '' : '?lang=' + lang));
+  try { history.replaceState(null, '', location.pathname + (lang === 'en' ? '' : '?lang=' + lang) + location.hash); } catch (e) {}
+  try { localStorage.setItem('sp_landing_lang', lang); localStorage.setItem('sp_lang', lang); } catch (e) {}
+  if (typeof window.rkLangue === 'function') window.rkLangue();
+}
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('sp_landing_lang'); } catch (e) {}
+  var urlLang = new URLSearchParams(location.search).get('lang');
+  var lang = urlLang || saved || 'en';
+  setLang(lang === 'fr' || lang === 'ja' ? lang : 'en');
+})();
+
+/* ── menu mobile ── */
+(function () {
+  var b = document.getElementById('navBurger');
+  if (!b) return;
+  b.addEventListener('click', function () {
+    var ouvert = b.getAttribute('aria-expanded') === 'true';
+    b.setAttribute('aria-expanded', ouvert ? 'false' : 'true');
+    document.body.classList.toggle('mm-open', !ouvert);
+  });
+})();
+</script>
+
+<script type="module">
+/* ══════════════════════════════════════════════════════════════════════════════════
+   ROCK v1 — LA PIERRE EN 3D (three.js, vendu localement : aucun CDN, aucune requête)
+   • low poly : icosaèdre peu subdivisé, sommets DÉPLACÉS par un bruit déterministe,
+     facettes plates (flatShading) — la pierre n'est pas un modèle importé ;
+   • cinq faces marketing : cinq points lumineux posés sur la surface, visés au
+     raycaster (survol) et cliqués (la pierre TOURNE pour présenter cette face) ;
+   • effets : la pierre se soulève au survol, elle s'assemble à l'arrivée, elle
+     tourne d'un tour complet au clic avec une onde de choc et une poussée de
+     particules, et l'on peut la faire tourner à la main (glisser-déposer) ;
+   • sobriété : le rendu s'arrête quand la scène n'est pas visible, pas de post-traitement,
+     et une image vectorielle remplace la 3D si WebGL manque.
+   ══════════════════════════════════════════════════════════════════════════════════ */
+import * as THREE from './JS/three.module.min.js';
+
+const canvas = document.getElementById('rkCanvas');
+const cadre = canvas && canvas.parentElement;
+const charge = document.getElementById('rkCharge');
+const voile = document.getElementById('rkVoice');
+const lesPuces = Array.prototype.slice.call(document.querySelectorAll('.rk-puce'));
+const lesBlocs = Array.prototype.slice.call(document.querySelectorAll('.rk-fn'));
+const elNum = document.getElementById('rkNum');
+const elNom = document.getElementById('rkNom');
+
+/* Les cinq directions des faces marketing (réparties autour de la pierre). */
+const FACES = [
+  new THREE.Vector3(0.62, 0.34, 0.72),
+  new THREE.Vector3(-0.78, 0.16, 0.5),
+  new THREE.Vector3(0.06, -0.42, 0.9),
+  new THREE.Vector3(-0.4, 0.6, -0.66),
+  new THREE.Vector3(0.66, -0.2, -0.78)
+];
+const CYAN = 0x00a7c7, PAPIER = 0xf7f3ec;
+
+let rendu, scene, camera, groupe, pierre, aretes, halo, ombre, particules, lumiereRasante;
+let largeur = 0, hauteur = 0, actif = 0, survol = -1, vise = 0, vitesse = 0;
+let cibleLever = 0, lever = 0, onde = null, pointeur = null, dernier = null, ancre = null, horloge = null;
+let visible = true, reduit = false, construit = false;
+const marqueurs = [];
+const etatParticules = { v: null, base: null, poussee: null };
+
+function langue() {
+  const l = document.documentElement.lang;
+  return (l === 'fr' || l === 'ja') ? l : 'en';
+}
+function nomFace(i) {
+  const b = lesBlocs[i];
+  if (!b) return '—';
+  const h = b.querySelector('h2[data-lang="' + langue() + '"]') || b.querySelector('h2');
+  return h ? h.textContent.trim() : '—';
+}
+function peindre() {
+  lesPuces.forEach(function (p, i) {
+    p.classList.toggle('is-on', i === actif);
+    p.setAttribute('aria-selected', i === actif ? 'true' : 'false');
+  });
+  lesBlocs.forEach(function (b, i) { b.classList.toggle('is-on', i === actif); });
+  if (elNum) elNum.textContent = ('0' + (actif + 1)).slice(-2);
+  if (elNom) elNom.textContent = nomFace(actif);
+  marqueurs.forEach(function (m, i) {
+    if (!m) return;
+    m.point.material.emissiveIntensity = (i === actif) ? 2.4 : (i === survol ? 1.8 : 0.5);
+    m.point.scale.setScalar(i === actif ? 1.5 : (i === survol ? 1.25 : 1));
+  });
+}
+window.rkLangue = peindre;
+
+/* ── Le rocher low poly : un icosaèdre dont on DÉPLACE les sommets ── */
+function bruit(x, y, z) {
+  const s = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453;
+  return s - Math.floor(s);
+}
+function geometriePierre() {
+  const g = new THREE.IcosahedronGeometry(1.18, 2);
+  const pos = g.attributes.position;
+  const v = new THREE.Vector3();
+  const base = [];
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const n = v.clone().normalize();
+    const d = 1
+      + (bruit(n.x * 2.15, n.y * 2.15, n.z * 2.15) - 0.5) * 0.36
+      + (bruit(n.x * 5.4, n.y * 5.4, n.z * 5.4) - 0.5) * 0.13;
+    let x = v.x * d, y = v.y * d * 0.9, z = v.z * d;
+    if (y < -0.62) y = -0.62 - (y + 0.62) * 0.28;   // base posée, comme une pierre
+    base.push([x, y, z]);
+    pos.setXYZ(i, x, y, z);
+  }
+  g.setAttribute('position', pos);
+  g.computeVertexNormals();
+  g.userData.base = base;                            // pour l'assemblage d'arrivée
+  return g;
+}
+
+function init() {
+  rendu = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  rendu.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  rendu.outputColorSpace = THREE.SRGBColorSpace;
+  rendu.toneMapping = THREE.ACESFilmicToneMapping;
+  rendu.toneMappingExposure = 1.06;
+
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+  camera.position.set(0, 0.25, 6.2);
+  camera.lookAt(0, 0, 0);
+
+  groupe = new THREE.Group();
+  scene.add(groupe);
+
+  pierre = new THREE.Mesh(geometriePierre(), new THREE.MeshStandardMaterial({
+    color: 0x8f8778, roughness: 0.66, metalness: 0.07, flatShading: true
+  }));
+  groupe.add(pierre);
+
+  aretes = new THREE.LineSegments(
+    new THREE.EdgesGeometry(pierre.geometry, 12),
+    new THREE.LineBasicMaterial({ color: CYAN, transparent: true, opacity: 0 })
+  );
+  groupe.add(aretes);
+
+  /* Les cinq faces : un point lumineux + une sphère de visée plus large. */
+  FACES.forEach(function (dir, i) {
+    const p = new THREE.Mesh(new THREE.SphereGeometry(0.052, 16, 16),
+      new THREE.MeshStandardMaterial({ color: PAPIER, emissive: CYAN, emissiveIntensity: 0.5, roughness: 0.3 }));
+    p.position.copy(dir).multiplyScalar(1.24);
+    const zone = new THREE.Mesh(new THREE.SphereGeometry(0.23, 12, 12),
+      new THREE.MeshBasicMaterial({ visible: false }));
+    zone.position.copy(p.position);
+    zone.userData.face = i;
+    groupe.add(p); groupe.add(zone);
+    marqueurs.push({ point: p, zone: zone, dir: dir.normalize() });
+  });
+
+  /* Ombre portée : une tache douce (dégradé dessiné) qui rétrécit quand la pierre monte. */
+  const cnv = document.createElement('canvas');
+  cnv.width = cnv.height = 256;
+  const c = cnv.getContext('2d');
+  const grad = c.createRadialGradient(128, 128, 4, 128, 128, 126);
+  grad.addColorStop(0, 'rgba(16,13,9,0.5)');
+  grad.addColorStop(0.55, 'rgba(16,13,9,0.18)');
+  grad.addColorStop(1, 'rgba(16,13,9,0)');
+  c.fillStyle = grad; c.fillRect(0, 0, 256, 256);
+  ombre = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4),
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, depthWrite: false }));
+  ombre.rotation.x = -Math.PI / 2;
+  ombre.position.y = -1.42;
+  scene.add(ombre);
+
+  /* Halo : un anneau fin, tourné, qui respire. */
+  halo = new THREE.Mesh(new THREE.RingGeometry(1.62, 1.66, 128),
+    new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0.22, side: THREE.DoubleSide }));
+  halo.rotation.x = -Math.PI / 2.35;
+  halo.position.y = -0.15;
+  scene.add(halo);
+
+  /* Particules : la poussière de l'atelier, poussée au clic. */
+  const N = 150, pos = new Float32Array(N * 3), base = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const r = 1.9 + bruit(i * 1.7, 3.1, 5.3) * 1.7;
+    const th = bruit(i * 2.3, 1.1, 7.7) * Math.PI * 2;
+    const ph = Math.acos(2 * bruit(i * 3.7, 2.9, 4.1) - 1);
+    const x = r * Math.sin(ph) * Math.cos(th), y = r * Math.cos(ph) * 0.6, z = r * Math.sin(ph) * Math.sin(th);
+    pos[i * 3] = base[i * 3] = x; pos[i * 3 + 1] = base[i * 3 + 1] = y; pos[i * 3 + 2] = base[i * 3 + 2] = z;
+  }
+  const gP = new THREE.BufferGeometry();
+  gP.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  particules = new THREE.Points(gP, new THREE.PointsMaterial({
+    color: CYAN, size: 0.022, transparent: true, opacity: 0.75, depthWrite: false, blending: THREE.AdditiveBlending
+  }));
+  scene.add(particules);
+  etatParticules.v = new Float32Array(N);
+  etatParticules.base = base;
+  etatParticules.poussee = new Float32Array(N);
+
+  /* Onde de choc du clic : un anneau qui s'ouvre et s'efface. */
+  onde = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 96),
+    new THREE.MeshBasicMaterial({ color: PAPIER, transparent: true, opacity: 0, side: THREE.DoubleSide }));
+  onde.rotation.x = -Math.PI / 2.6;
+  onde.position.y = -0.2;
+  scene.add(onde);
+
+  /* Lumières : papier chaud devant, cyan derrière (arête), ambiance basse. */
+  scene.add(new THREE.HemisphereLight(0xfdf8ef, 0x1b1710, 0.55));
+  const cle = new THREE.DirectionalLight(0xfff2dd, 2.5); cle.position.set(2.6, 3.4, 3.2); scene.add(cle);
+  lumiereRasante = new THREE.DirectionalLight(CYAN, 2.1); lumiereRasante.position.set(-3.2, 1.2, -2.6); scene.add(lumiereRasante);
+  const contre = new THREE.DirectionalLight(0xffffff, 0.5); contre.position.set(-1.5, -2, 2); scene.add(contre);
+
+  horloge = new THREE.Clock();
+  /* Assemblage d'arrivée : les sommets partent éclatés et se posent en 1,1 s. */
+  const pos0 = pierre.geometry.attributes.position;
+  const mes = function (t) {
+    const e = Math.min(1, t / 1.1), k = 1 - Math.pow(1 - e, 3);
+    for (let i = 0; i < pos0.count; i++) {
+      const b = pierre.geometry.userData.base[i];
+      const ex = b[0] * 2.7, ey = b[1] * 2.7, ez = b[2] * 2.7;
+      pos0.setXYZ(i, ex + (b[0] - ex) * k, ey + (b[1] - ey) * k, ez + (b[2] - ez) * k);
+    }
+    pos0.needsUpdate = true;
+    if (e < 1) { rendu.render(scene, camera); requestAnimationFrame(function () { mes(t + 16); }); }
+    else { pos0.setXYZ(0, pierre.geometry.userData.base[0][0], pierre.geometry.userData.base[0][1], pierre.geometry.userData.base[0][2]); }
+  };
+  peindre();
+  mes(0);
+
+  /* Interactions */
+  cadre.addEventListener('pointermove', function (e) {
+    const r = canvas.getBoundingClientRect();
+    pointeur = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    if (dernier) {
+      const dx = e.clientX - dernier.x;
+      /* ⚠️ MESURÉ : l'inertie seule ne faisait presque rien tourner — la rotation glissée
+         était aussitôt rappelée vers « vise » (0,008 rad/s constatés, soit 20 fois moins
+         que voulu). On tourne donc la pierre SOUS le doigt, et l'inertie prend le relais
+         au relâchement. */
+      if (e.buttons) { groupe.rotation.y += dx * 0.007; vise = groupe.rotation.y; }
+      vitesse += dx * 0.0016;
+    }
+    dernier = { x: e.clientX, y: e.clientY };
+    if (!e.buttons) cibleLever = 0.3;
+  });
+  cadre.addEventListener('pointerleave', function () { pointeur = null; dernier = null; cibleLever = 0; survol = -1; peindre(); });
+  cadre.addEventListener('pointerdown', function (e) {
+    dernier = { x: e.clientX, y: e.clientY };
+    /* ⚠️ MESURÉ : comparer le relâchement au DERNIER mouvement ne marchait pas — « dernier »
+       est réécrit à chaque mouvement, donc l'écart tombait toujours sous 6 px et TOUT
+       relâchement changeait de face, même une rotation glissée. On mémorise le point d'appui. */
+    ancre = { x: e.clientX, y: e.clientY };
+    cadre.setPointerCapture && cadre.setPointerCapture(e.pointerId);
+  });
+  cadre.addEventListener('pointerup', function (e) {
+    const bouge = ancre ? Math.abs(e.clientX - ancre.x) + Math.abs(e.clientY - ancre.y) : 999;
+    if (bouge < 6) cliquer();
+    dernier = null;
+    ancre = null;
+  });
+  canvas.addEventListener('click', function () { /* le clic est traité au pointerup (pour distinguer le glisser) */ });
+  cadre.addEventListener('pointerenter', function () { cibleLever = 0.3; });
+  var btn = document.getElementById('rkTourner');
+  if (btn) btn.addEventListener('click', cliquer);
+  lesPuces.forEach(function (p, i) { p.addEventListener('click', function () { actif = i; peindre(); tournerVers(i, true); }); });
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') { actif = (actif + 1) % 5; peindre(); tournerVers(actif, true); }
+    if (e.key === 'ArrowLeft') { actif = (actif + 4) % 5; peindre(); tournerVers(actif, true); }
+  });
+
+  const ro = new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }, { threshold: 0.05 });
+  ro.observe(cadre);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) horloge.getDelta(); });
+  reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  redimensionner();
+  window.addEventListener('resize', redimensionner);
+  if (charge) charge.hidden = true;
+  if (voile) voile.hidden = true;
+  construit = true;
+  /* Repère de mesure (aucun effet sur le rendu) : permet de vérifier la scène depuis la
+     console ou un banc de test — même esprit que spTestDiag dans l'application. */
+  window.__rk = { THREE: THREE, scene: scene, camera: camera, rendu: rendu, pierre: pierre, groupe: groupe };
+  apres();
+}
+
+/* ── Le clic : la pierre fait un tour, une onde s'ouvre, les particules partent ── */
+let tourRestant = 0;
+function cliquer() {
+  actif = (actif + 1) % 5;
+  peindre();
+  tournerVers(actif, false);
+  vitesse += 0.09;
+  if (onde) onde.material.opacity = 0.55;
+  for (let i = 0; i < etatParticules.v.length; i++) etatParticules.v[i] = 0.9 + bruit(i, 1.3, 2.7) * 1.4;
+  if (pierre) { pierre.material.emissive = new THREE.Color(CYAN); pierre.material.emissiveIntensity = 0.16; }
+}
+function tournerVers(i, doux) {
+  const d = FACES[i];
+  const cible = -Math.atan2(d.x, d.z);
+  const delta = ((cible - groupe.rotation.y) % (Math.PI * 2) + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+  vise = groupe.rotation.y + delta + (doux ? 0 : (delta >= 0 ? Math.PI * 2 : -Math.PI * 2));
+}
+
+function redimensionner() {
+  if (!rendu) return;
+  const r = cadre.getBoundingClientRect();
+  largeur = Math.max(240, Math.round(r.width));
+  hauteur = Math.max(240, Math.round(r.height));
+  rendu.setSize(largeur, hauteur, false);
+  camera.aspect = largeur / hauteur;
+  camera.updateProjectionMatrix();
+}
+
+/* ── Boucle ── */
+function apres() {
+  requestAnimationFrame(apres);
+  if (!construit) return;
+  let dt = Math.min(0.05, horloge.getDelta());
+  /* ⚠️ GARDE-FOUS DE FINITUDE — MESURÉ : une seule valeur non finie dans la rotation du
+     groupe rend sa matrice de monde NaN, et three.js ne dessine PLUS la pierre du tout
+     (le halo et les particules, eux, restent visibles : on croit que la scène est vide).
+     On remet donc d'aplomb au lieu de laisser un trou. */
+  if (!isFinite(dt)) dt = 0.016;
+  if (!isFinite(vitesse)) vitesse = 0;
+  if (!isFinite(vise)) vise = 0;
+  if (!isFinite(lever)) lever = 0;
+  if (!isFinite(groupe.rotation.y)) groupe.rotation.y = 0;
+  if (!isFinite(groupe.position.y)) groupe.position.y = 0;
+  const t = horloge.elapsedTime;
+
+  /* glisser-déposer + inertie */
+  groupe.rotation.y += vitesse;
+  vitesse *= 0.94;
+  /* rotation automatique vers la face demandée (et retour au repos) */
+  const manque = vise - groupe.rotation.y;
+  groupe.rotation.y += manque * Math.min(1, dt * 3.4);
+  if (Math.abs(manque) < 0.002) vise = groupe.rotation.y + (reduit ? 0 : dt * 0.5);
+
+  if (pointeur && !reduit) {
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(pointeur, camera);
+    const zones = marqueurs.map(function (m) { return m.zone; });
+    const hits = ray.intersectObjects(zones, false);
+    const i = hits.length ? hits[0].object.userData.face : -1;
+    if (i !== survol) { survol = i; peindre(); }
+    if (i >= 0) cibleLever = 0.5;
+  }
+
+  /* la pierre se soulève, son ombre s'élargit */
+  lever += (cibleLever - lever) * Math.min(1, dt * 5.5);
+  const flotte = reduit ? 0 : Math.sin(t * 0.85) * 0.035;
+  /* MESURÉ : à 1 pour 1, la pierre sortait du cadre en se soulevant (haut et bas coupés). */
+  groupe.position.y = lever * 0.62 + flotte;
+  groupe.rotation.x = -lever * 0.06;
+  ombre.position.y = -1.42 - lever * 0.18;
+  ombre.scale.setScalar(1 + lever * 0.22);
+  ombre.material.opacity = 1 - lever * 0.45;
+
+  if (aretes) {
+    aretes.material.opacity += ((lever > 0.2 ? 0.42 : 0) - aretes.material.opacity) * Math.min(1, dt * 5);
+    /* MESURÉ : posées pile sur les facettes, les arêtes cyan ne se voyaient pas (z-fighting).
+       On les écarte d'un cheveu, d'autant plus qu'elles s'allument : la pierre s'ouvre. */
+    aretes.scale.setScalar(1 + aretes.material.opacity * 0.02);
+  }
+  if (halo && !reduit) { halo.rotation.z += dt * 0.22; halo.material.opacity = 0.18 + 0.1 * Math.sin(t * 1.1); }
+  if (lumiereRasante && !reduit) { lumiereRasante.position.set(Math.cos(t * 0.28) * -3.2, 1.2, Math.sin(t * 0.28) * -3.2); }
+  if (pierre && pierre.material.emissiveIntensity > 0) {
+    pierre.material.emissiveIntensity = Math.max(0, pierre.material.emissiveIntensity - dt * 0.5);
+  }
+  if (onde && onde.material.opacity > 0) {
+    onde.material.opacity = Math.max(0, onde.material.opacity - dt * 1.5);
+    onde.scale.setScalar(1 + (0.55 - onde.material.opacity) * 4);
+  }
+  if (particules && !reduit) {
+    const p = particules.geometry.attributes.position, base = etatParticules.base, vv = etatParticules.v;
+    for (let i = 0; i < vv.length; i++) {
+      if (vv[i] > 0) { vv[i] = Math.max(0, vv[i] - dt * 1.2); etatParticules.poussee[i] = Math.sin(vv[i] * Math.PI) * 0.9; }
+      const k = etatParticules.poussee[i];
+      p.setXYZ(i, base[i * 3] * (1 + k), base[i * 3 + 1] * (1 + k) + Math.sin(t * 0.6 + i) * 0.02, base[i * 3 + 2] * (1 + k));
+    }
+    p.needsUpdate = true;
+    particules.rotation.y = t * 0.03;
+  }
+
+  if (visible && !document.hidden) rendu.render(scene, camera);
+}
+
+/* ── Départ : si WebGL manque, on montre une pierre vectorielle (jamais une page vide) ── */
+try {
+  const test = document.createElement('canvas');
+  const ok = !!(window.WebGLRenderingContext && (test.getContext('webgl2') || test.getContext('webgl')));
+  if (!ok) throw new Error('webgl absent');
+  init();
+} catch (e) {
+  if (charge) charge.hidden = true;
+  if (voile) voile.hidden = false;
+  if (canvas) canvas.style.display = 'none';
+  const sec = document.querySelector('.rk-cadre');
+  if (sec) {
+    sec.insertAdjacentHTML('afterbegin',
+      '<svg class="rk-svg-secours" viewBox="0 0 320 300" role="img" aria-label="ROCK v1">' +
+      '<polygon points="44,214 34,180 48,150 70,124 92,96 124,78 168,74 204,84 234,104 256,136 264,172 256,204 228,232 188,248 140,252 92,244 58,232" fill="#8A8069"/>' +
+      '<polygon points="92,96 124,78 112,146" fill="#D2C8B4"/><polygon points="48,150 70,124 112,146" fill="#BFB5A0"/>' +
+      '<polygon points="34,180 48,150 112,146" fill="#A79D86"/><polygon points="44,214 34,180 112,146" fill="#8E846E"/>' +
+      '<polygon points="264,172 256,136 198,182" fill="#9C927B"/><polygon points="256,204 264,172 198,182" fill="#7B735C"/>' +
+      '<polygon points="228,232 256,204 198,182" fill="#5F5945"/><polygon points="188,248 228,232 198,182" fill="#4A4534"/>' +
+      '<polygon points="140,252 188,248 198,182" fill="#3A3527"/><polygon points="92,244 140,252 112,146" fill="#6E664F"/>' +
+      '</svg>');
+  }
+}
+</script>
+</body>
+</html>
