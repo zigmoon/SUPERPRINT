@@ -9,6 +9,40 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.591] — 2026-09-30
+
+_Le Studio IA livre une maquette sans trou : pagination en bas, plus de page vide, et le texte entre guillemets passe avant tout_
+
+### Fixed — la pagination était renvoyée en haut de page (cause mesurée)
+- Le folio était posé à **200,8 mm** sur une page de 210 mm, soit **au-delà de la zone de sécurité** de `_spConstrainDocToPages` (`pageH − 10`). La passe le prenait pour un bloc égaré et le remettait à `top = 15`, puis `_spResolveCollisions` le poussait à 26, 31, 39, 53 ou 61 mm : **la pagination arrivait au milieu haut de la page** (défaut signalé deux fois par l’utilisateur).
+- `spGabFolio` borne maintenant le folio à **12 mm du bord papier** (196 mm sur A5, 285 mm sur A4), et la passe ne renvoie plus en haut un bloc qui **tient** dans la page (`origTop + hauteur <= pageH + 3`). Mesure après : folios à **186 mm** sur 210, côté extérieur.
+
+### Fixed — pages vides et planches fantômes (double page)
+- **Planche blanche** : en mode planche, chaque entrée est une PLANCHE (2 pages) ; la règle « si le document sort impair, on ajoute une page blanche à la fin » comptait donc des planches → un livre de 9 pages (5 planches) recevait une **6e planche entièrement vide** (mesuré : 0 objet, « 11 pages · 6 planches »). Le remplissage ne vaut plus qu’en page simple.
+- **Pages sans contenu réel** (fond, filet et folio seulement) : supprimées, y compris **au milieu** du cahier, avant la 4e de couverture, avec **renumérotation des folios** (les numéros sont écrits dans le texte). Mesure : 12 pages dont 3 vides → **9 pages pleines**, folios 2/9 à 8/9.
+- **Page sans aucun objet** : la passe de report poussait une page de flux dans `finalPages` avant de la remplir ; elle est retirée avant de rendre le document (« 10 pages » dont une feuille blanche).
+- **Tolérance du pli** : `spMoitiesOccupeesPlanches` lisait le fond perdu d’une couverture seule (left = PW − 3 mm) comme un débordement (`tolPli` = 2,37 mm) → la planche « couverture seule » passait pour une double page : libellé « Pages 1–2 » faux **et** relance du moteur par `spVerifierCahierPlanches`, relance qui ajoutait une page et vidait la fin du document. `tolPli` tient compte du fond perdu (4e argument).
+
+### Fixed — le texte entre guillemets est le contenu prioritaire
+- **Défaut grave mesuré** : `SP_GAB_GUILLEMETS` bornait chaque citation à **180 signes** ; au-delà, le guillemet fermant n’était plus atteint → **la citation n’existait pas** (un texte de 205 signes était purement ignoré). Limite relevée à **4000** (300 pour l’apostrophe droite).
+- **Longueur** : premier guillemet **court** = titre ; premier guillemet **long** = corps de texte, le titre se déduisant des premiers mots. Les guillemets suivants : données (date, prix, téléphone) → informations, les autres → **blocs de contenu posés à une place tirée au sort** (tirage reproductible, graine = la demande). Le bloc cité passe **en tête** des sections.
+- **Mélange** : demande ≥ 12 pages + citations maigres (< 1500 signes) + **aucune pièce jointe** → la banque de démonstration remplit la suite (`M.melange`). Une pièce jointe apportant du texte **interdit** toute démonstration.
+- **Chapô = première phrase** du texte cité (le même paragraphe se composait deux fois : accroche de couverture et corps).
+- La **consigne** ne s’imprime plus : le ramassage d’articles « écrits en phrase » ne testait pas `_ecarterDemande` (un pré-prompt anglais sortait en 4e de couverture, à la place des contacts).
+
+### Changed — matière de démonstration
+- Registre `roman` : **6 chapitres** (fr/en/jp) au lieu de 4 ; les recueils de poèmes assument **six** poèmes (titre et chapô corrigés). Purement interne au moteur `gabarit`.
+
+### Verified
+- **Jamais de page seule au milieu** : mesures sur trois cahiers (cotes `0 : DROITE` et `dernière : GAUCHE` uniquement) ; cahiers demandés par les pré-prompts : 4, 8, 12, 24, 32 pages.
+- **Noir sur fond sombre** : livre premium (fondo `#0e0e10`, titre noir sur bande dorée → contraste 5,1) et affiche tout noir (encres claires → 17,97 et 16,41). Aucun texte sous le seuil de lisibilité.
+- Syntaxe des 3 blocs du studio OK, parité **25/25**, zip reconstruit et conforme.
+
+### Scope
+- `superprint/` + `sp213-local/public/superprint/` : `sp213-studio.html` (moteur ROCK 1, composition, imposition) et les fichiers de version. Moteur ROCK 1, rendu PDF et format `.sp` inchangés. Paquet local reconstruit (`version.txt`, `package.json`, `package-lock.json`, `CONTENU.txt`, cache `superprint-shell-v1.7.591-rock-folio-guillemets`).
+
+---
+
 ## [1.7.590] — 2026-09-30
 
 _Finitions mobiles mesurées (Studio IA et pages de présentation), page ROCK v1 en noir, textes de l'accueil réécrits_
