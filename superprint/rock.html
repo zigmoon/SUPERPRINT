@@ -1348,7 +1348,7 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   .nav-burger { display: flex; }
   .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
   .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */
-  /* 🆕 v1.7.590 — MENU OUVERT ET PAGE DÉFILÉE : LA BARRE EST ÉPINGLÉE À LA FENÊTRE.
+  /* 🆕 v1.7.591 — MENU OUVERT ET PAGE DÉFILÉE : LA BARRE EST ÉPINGLÉE À LA FENÊTRE.
      Le verrou de défilement que pose le menu (`overflow: hidden` sur html/body) transforme html
      en conteneur de défilement : `position: sticky` cesse alors d'agir et la barre retombait à sa
      place statique — MESURÉ à 390×844 : top −624 à 700 px de défilement, bouton burger HORS
@@ -1360,7 +1360,7 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
 @media(max-width: 700px){
   /* 🎯 v1.7.417 — hauteur mobile alignee sur le desktop (66 px) : le menu
      burger et le logo doivent avoir la meme respiration partout. */
-  /* ⚠️ v1.7.590 — « position: relative » DÉTRUISAIT la barre collante en mobile.
+  /* ⚠️ v1.7.591 — « position: relative » DÉTRUISAIT la barre collante en mobile.
      MESURÉ à 390×844 : après 600 px de défilement la nav était à top −524, hors écran —
      plus de logotype, plus de burger, le haut de la page vide, et la classe `is-stuck`
      s'appliquait pour rien. C'est ce qui faisait « des trous au scroll ».
@@ -1370,7 +1370,7 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
      aucun décalage optique n'est nécessaire, et le logotype ne saute pas à l'instant où
      elle se colle. */
   nav { padding: 0 16px; height: 66px; position: sticky; top: 5px; }
-  html.sp-menu-ouvert nav { top: 5px; }   /* 🆕 v1.7.590 — barre épinglée : elle reste SOUS la bande quadri */
+  html.sp-menu-ouvert nav { top: 5px; }   /* 🆕 v1.7.591 — barre épinglée : elle reste SOUS la bande quadri */
   nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
@@ -1945,7 +1945,7 @@ body { background: var(--paper); }
   <a href="index.html" aria-label="SuperPrint — Accueil">
     <img src="favicon.png" alt="SuperPrint — logo">
   </a>
-  <span class="brand-ver">v1.7.590</span>
+  <span class="brand-ver">v1.7.591</span>
   <span class="brand-tag">
     <span class="inline-fr">Notre moteur</span><span class="inline-en">Our engine</span><span class="inline-ja">私たちのエンジン</span>
   </span>
@@ -1992,7 +1992,7 @@ body { background: var(--paper); }
   </div>
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.590</span>
+    <span>SuperPrint v1.7.591</span>
   </div>
 </div>
 
@@ -2221,7 +2221,7 @@ body { background: var(--paper); }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.590</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.591</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>
@@ -2275,7 +2275,7 @@ function setLang(lang) {
     burger.setAttribute('aria-expanded', 'false');
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
-    document.documentElement.classList.remove('sp-menu-ouvert');   /* 🆕 v1.7.590 — on déping le la barre */
+    document.documentElement.classList.remove('sp-menu-ouvert');   /* 🆕 v1.7.591 — on déping le la barre */
   }
   function placer() {
     var barre = document.querySelector('nav');
@@ -2294,7 +2294,7 @@ function setLang(lang) {
     var open = menu.classList.toggle('open');
     burger.classList.toggle('open', open);
     burger.setAttribute('aria-expanded', open ? 'true' : 'false');
-    /* 🆕 v1.7.590 — ON MESURE AVANT DE POSER LE VERROU : `overflow: hidden` sur html/body
+    /* 🆕 v1.7.591 — ON MESURE AVANT DE POSER LE VERROU : `overflow: hidden` sur html/body
        DÉTRUIT la position collante, la barre retombe à sa place statique et le bouton burger
        quitte l'écran (mesuré : top −624, menu impossible à refermer). On épingle donc la
        barre quand elle était DÉJÀ collée — jamais dans l'autre cas, sinon elle sauterait vers
