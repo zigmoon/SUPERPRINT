@@ -9,6 +9,31 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.590] — 2026-09-30
+
+_Finitions mobiles mesurées (Studio IA et pages de présentation), page ROCK v1 en noir, textes de l'accueil réécrits_
+
+### Fixed — Studio IA : l'écran de démarrage sur téléphone
+- Deux extrêmes mesurés (390 × 844) : le titre collé au bord haut, la boîte de prompt collée au bord bas, **455 px de vide au milieu** et **14 px seulement sous le pied de page**. Le logotype vient se poser juste au-dessus de la carte et l'air est réparti par **deux ressorts flex** (les pseudo-éléments `::before` / `::after`, `2` au-dessus / `1` en dessous) : un seul groupe, dans le bas du milieu d'écran, **172 px** de respiration sous le pied. `justify-content: flex-start` (et non `center`) pour que le contenu reste atteignable si l'écran est trop court.
+- **Champ de prompt** : il mesurait **98 px** de haut pour un texte d'exemple de **115 px** (quatre lignes en portrait) → texte coupé et barre de défilement dans un champ vide. `min-height: calc(4 * 1.6em + 18px)`.
+- **Clavier** : `#starter:has(#starterInput:focus)::after { flex-grow: 3 }` — le groupe monte de lui-même dès que le champ est actif (mesuré : carte 425 → 299, tout au-dessus du clavier), sans JS ni écouteur.
+- **Sous-menu des modèles** : il descendait à **851 px** sur un écran de 844. `spStPop` mesure maintenant le panneau et sa liste au naturel et retire le titre + les marges de la place disponible (`Math.max(48, placeBas − chrome)`). Il part toujours vers le bas, et la mesure est faite AVANT toute pose (aucun décalage).
+
+### Fixed — Pages de présentation : la barre du haut sur téléphone
+- `nav { position: relative }` dans le bloc `@media (max-width: 700px)` **détruisait la barre collante** (mesuré : après 600 px de défilement la barre était à **−524 px**, hors écran) ; la ligne ne servait qu'à ancrer le logotype centré, or `position: sticky` est aussi un élément positionné.
+- Le **verrou de défilement** du menu burger (`overflow: hidden` sur html/body) annule lui aussi l'adhérence : menu ouvert sur une page défilée, la barre retombait à sa place statique (**−624 px**) et le bouton de fermeture sortait de l'écran. Nouvelle classe `sp-menu-ouvert` sur `<html>` → barre épinglée à la fenêtre, posée **seulement si la barre était déjà collée** (mesure faite avant le verrou).
+- Vérifié sur les trois pages : barre à `top 5` au repos comme en défilement, burger atteignable, menu refermable, **0 trou** sous la bande quadri, 0 erreur JS ; **bureau 1600 px inchangé**.
+
+### Changed — ROCK v1, textes et navigation
+- **ROCK v1** : les cinq points blancs de la pierre sont retirés (la sphère reste en mémoire pour le survol), la maille est toujours visible au repos (`opacity` 0,05 → 0,16), le remplissage au survol est plafonné (0,98 → 0,34). **Toute la couleur cyan quitte la page** (typo, puces, forme polygonale, cage d'arêtes) : il ne reste que le bandeau quadri fixe de 5 px.
+- **Accueil** : chapô de la section maquettes réécrit, trois mots-clés de la marque en gras dans le chapô d'ouverture, entrée « Auteurs » retirée de la barre du haut et du menu burger des trois pages (le lien reste dans le pied de page).
+- **Version** : `rock.html` était resté en 1.7.588 (badge, pied de page) — aligné sur 1.7.590 en même temps que le reste ; `package-lock.json` (resté en 1.7.584) et la première ligne de `CONTENU.txt` (restée en 1.7.587) sont réalignés.
+
+### Scope
+- `superprint/` + `sp213-local/public/superprint/` : `index.html`, `help-us.html`, `rock.html`, `sp213-studio.html`, pages et fichiers de version. Moteur, rendu PDF et format `.sp` inchangés. Paquet local reconstruit (`version.txt`, `package.json`, `package-lock.json`, `CONTENU.txt`, cache `superprint-shell-v1.7.590-mobile-rock-noir`).
+
+---
+
 ## [1.7.589] — 2026-09-30
 
 _Import long : le bandeau mesure l'immobilité (et dit sa progression) ; plus de blocs d'une ligne de haut ; studio et application d'accord au pixel (hauteur de cadre, marges) ; césure française aux règles du métier_

@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.589-cesure-fr-parite-studio';
+const CACHE_NAME = 'superprint-shell-v1.7.590-mobile-rock-noir';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

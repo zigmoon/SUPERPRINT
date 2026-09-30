@@ -1348,11 +1348,30 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   .nav-burger { display: flex; }
   .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
   .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */
+  /* 🆕 v1.7.590 — MENU OUVERT ET PAGE DÉFILÉE : LA BARRE EST ÉPINGLÉE À LA FENÊTRE.
+     Le verrou de défilement que pose le menu (`overflow: hidden` sur html/body) transforme html
+     en conteneur de défilement : `position: sticky` cesse alors d'agir et la barre retombait à sa
+     place statique — MESURÉ à 390×844 : top −624 à 700 px de défilement, bouton burger HORS
+     ÉCRAN, donc menu impossible à refermer. On la cloue en `fixed` au-dessus du menu (121 > 118).
+     ⚠️ La classe n'est posée que si la barre était DÉJÀ collée (voir le script du burger) : sinon
+     elle sauterait vers le haut et recouvrirait la bande du logotype. */
+  html.sp-menu-ouvert nav { position: fixed; left: 0; right: 0; top: 0; z-index: 121; }
 }
 @media(max-width: 700px){
   /* 🎯 v1.7.417 — hauteur mobile alignee sur le desktop (66 px) : le menu
      burger et le logo doivent avoir la meme respiration partout. */
-  nav { padding: 0 16px; height: 66px; position: relative; }
+  /* ⚠️ v1.7.590 — « position: relative » DÉTRUISAIT la barre collante en mobile.
+     MESURÉ à 390×844 : après 600 px de défilement la nav était à top −524, hors écran —
+     plus de logotype, plus de burger, le haut de la page vide, et la classe `is-stuck`
+     s'appliquait pour rien. C'est ce qui faisait « des trous au scroll ».
+     Le `relative` ne servait qu'à donner un repère au logotype en position absolue :
+     `sticky` EST un élément positionné, il joue exactement le même rôle. La barre se colle
+     SOUS la bande quadri (5 px, fixe, toujours visible) : elle n'est donc jamais recouverte,
+     aucun décalage optique n'est nécessaire, et le logotype ne saute pas à l'instant où
+     elle se colle. */
+  nav { padding: 0 16px; height: 66px; position: sticky; top: 5px; }
+  html.sp-menu-ouvert nav { top: 5px; }   /* 🆕 v1.7.590 — barre épinglée : elle reste SOUS la bande quadri */
+  nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
   section { padding: 64px 20px; }
@@ -1831,7 +1850,10 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
    celles de la présentation : variables, typographie, en-tête, navigation, pied de page,
    boutons, trois langues). Rien n'est chargé de l'extérieur. ══ */
 body { background: var(--paper); }
-:root { --rk-cyan: #00A7C7; --rk-encre: #14110C; }
+/* DEMANDE CLIENT (30/09) : AUCUNE COULEUR sur cette page — le cyan décoratif
+   devient l'ENCRE noire. Les marques quadri (barre CMJN, pastilles d'encre) restent :
+   c'est la charte de la maison, pas un accent. */
+:root { --rk-encre: #14110C; }
 
 #rock-hero { position: relative; padding: 44px 0 10px; }
 .rk-grid { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
@@ -1840,7 +1862,7 @@ body { background: var(--paper); }
 .rk-texte h1 { font-family: var(--f-display); font-size: clamp(46px, 8.4vw, 104px); line-height: .96;
   margin: 10px 0 12px; letter-spacing: -.01em; color: var(--ink); }
 .rk-texte h1 em { font-style: normal; font-family: var(--f-caps); font-size: .62em; letter-spacing: .02em;
-  color: var(--rk-cyan); vertical-align: .1em; }
+  color: var(--rk-encre); vertical-align: .1em; }
 .rk-texte .lead { margin: 0 0 14px; max-width: 56ch; }
 .rk-eco { display: inline-flex; flex-wrap: wrap; gap: 6px 10px; margin: 8px 0 22px; padding: 8px 14px;
   border: 1px solid var(--line); border-radius: 999px; background: var(--white);
@@ -1849,7 +1871,7 @@ body { background: var(--paper); }
 
 /* ── La scène 3D ──
    La pierre est POSÉE SUR LA PAGE : le cadre n'a plus de fond (ni boîte sombre, ni fond marron),
-   il ne garde que son filet — et le halo cyan de la scène, qui est le seul « filet bleu ». */
+   il ne garde que son filet — et le halo de la scène, désormais à l'encre (aucune couleur). */
 .rk-cadre { position: relative; aspect-ratio: 1 / .92; border: 1px solid var(--line);
   background: transparent; overflow: hidden; }
 #rkCanvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
@@ -1859,7 +1881,7 @@ body { background: var(--paper); }
 .rk-hud { position: absolute; left: 16px; top: 14px; z-index: 3; display: flex; flex-direction: column; gap: 3px;
   font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .rk-hud b { color: var(--ink); }
-.rk-hud-nom { color: var(--rk-cyan); letter-spacing: .06em; font-size: 12px; text-transform: none; }
+.rk-hud-nom { color: var(--rk-encre); letter-spacing: .06em; font-size: 12px; text-transform: none; }
 .rk-svg-secours { width: 100%; height: 100%; display: block; }
 .rk-faces { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .rk-puce { font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
@@ -1868,14 +1890,14 @@ body { background: var(--paper); }
 .rk-puce b { color: var(--ink); margin-right: 4px; }
 .rk-puce:hover { border-color: var(--ink); color: var(--ink); }
 .rk-puce.is-on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
-.rk-puce.is-on b { color: var(--rk-cyan); }
+.rk-puce.is-on b { color: var(--paper); }
 
 /* ── Les cinq fonctions ── */
 .rk-fns { list-style: none; margin: 54px 0 0; padding: 0; border-top: 1px solid var(--line); }
 .rk-fn { display: none; padding: 26px 0 6px; border-bottom: 1px solid var(--line); }
 .rk-fn.is-on { display: block; animation: rkFn .5s var(--ease); }
 @keyframes rkFn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
-.rk-fn-num { font-family: var(--f-mono); font-size: 11px; letter-spacing: .22em; color: var(--rk-cyan); }
+.rk-fn-num { font-family: var(--f-mono); font-size: 11px; letter-spacing: .22em; color: var(--rk-encre); }
 .rk-fn h2 { font-family: var(--f-caps); font-size: clamp(30px, 4.6vw, 56px); line-height: 1.02; margin: 6px 0 8px; color: var(--ink); }
 .rk-fn p { margin: 0; max-width: 74ch; color: var(--ink-soft); font-size: 16.5px; line-height: 1.72; }
 @media (prefers-reduced-motion: reduce) { .rk-fn.is-on { animation: none; } }
@@ -1900,8 +1922,8 @@ body { background: var(--paper); }
 .rk-carte h3 { font-family: var(--f-caps); font-size: 22px; letter-spacing: .02em; margin: 0 0 12px; color: var(--ink); }
 .rk-carte ul { list-style: none; margin: 0; padding: 0; }
 .rk-carte li { position: relative; padding: 7px 0 7px 16px; color: var(--ink-soft); font-size: 15px; line-height: 1.6; }
-.rk-carte li::before { content: ''; position: absolute; left: 0; top: 15px; width: 5px; height: 5px; background: var(--rk-cyan); }
-.rk-note { margin: 30px 0 0; padding: 20px 22px; border-left: 3px solid var(--rk-cyan); background: var(--white);
+.rk-carte li::before { content: ''; position: absolute; left: 0; top: 15px; width: 5px; height: 5px; background: var(--rk-encre); }
+.rk-note { margin: 30px 0 0; padding: 20px 22px; border-left: 3px solid var(--rk-encre); background: var(--white);
   color: var(--ink-soft); font-size: 15.5px; line-height: 1.7; }
 .rk-cta { margin: 28px 0 80px; display: flex; flex-wrap: wrap; gap: 12px; }
 
@@ -1923,18 +1945,18 @@ body { background: var(--paper); }
   <a href="index.html" aria-label="SuperPrint — Accueil">
     <img src="favicon.png" alt="SuperPrint — logo">
   </a>
-  <span class="brand-ver">v1.7.588</span>
+  <span class="brand-ver">v1.7.590</span>
   <span class="brand-tag">
     <span class="inline-fr">Notre moteur</span><span class="inline-en">Our engine</span><span class="inline-ja">私たちのエンジン</span>
   </span>
 </header>
 
+<!-- _NAV_HERO_590 : entree Auteurs retiree de la top nav -->
 <nav>
   <a class="nav-logo" href="index.html">SUPER<span>PRINT</span></a>
   <div class="nav-links">
     <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
     <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
-    <a href="index.html#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
     <a href="index.html#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
     <a href="rock.html" class="active" aria-current="page"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
@@ -1958,7 +1980,6 @@ body { background: var(--paper); }
   <a href="supertypo/index.html" class="mm-app"><img src="icons/sper_typo.png" alt="" width="26" height="26"><span>SuperTyPo</span></a>
   <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
-  <a href="index.html#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
   <a href="index.html#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
   <a href="rock.html" class="active" aria-current="page"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
@@ -1971,7 +1992,7 @@ body { background: var(--paper); }
   </div>
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.588</span>
+    <span>SuperPrint v1.7.590</span>
   </div>
 </div>
 
@@ -2025,7 +2046,7 @@ body { background: var(--paper); }
   </div>
 
   <!-- Les cinq fonctions : du vrai texte, dans les trois langues (le rocher ne contient
-       que des points lumineux ; le contenu de la page reste lisible par les moteurs). -->
+       aucune image ; le contenu de la page reste lisible par les moteurs). -->
   <div class="container">
     <ol class="rk-fns" id="rkFns">
       <li class="rk-fn is-on" data-fn="1">
@@ -2200,7 +2221,7 @@ body { background: var(--paper); }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.588</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.590</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>
@@ -2254,6 +2275,7 @@ function setLang(lang) {
     burger.setAttribute('aria-expanded', 'false');
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
+    document.documentElement.classList.remove('sp-menu-ouvert');   /* 🆕 v1.7.590 — on déping le la barre */
   }
   function placer() {
     var barre = document.querySelector('nav');
@@ -2272,8 +2294,17 @@ function setLang(lang) {
     var open = menu.classList.toggle('open');
     burger.classList.toggle('open', open);
     burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    /* 🆕 v1.7.590 — ON MESURE AVANT DE POSER LE VERROU : `overflow: hidden` sur html/body
+       DÉTRUIT la position collante, la barre retombe à sa place statique et le bouton burger
+       quitte l'écran (mesuré : top −624, menu impossible à refermer). On épingle donc la
+       barre quand elle était DÉJÀ collée — jamais dans l'autre cas, sinon elle sauterait vers
+       le haut. Le style de la classe `sp-menu-ouvert` est dans le bloc @media(max-width:1000px). */
+    var navEl = document.querySelector('nav');
+    var hautColle = parseFloat(getComputedStyle(navEl).top) || 0;
+    var colle = navEl.getBoundingClientRect().top <= hautColle + 0.5;
     document.documentElement.style.overflow = open ? 'hidden' : '';
     document.body.style.overflow = open ? 'hidden' : '';
+    document.documentElement.classList.toggle('sp-menu-ouvert', open && colle);
     if (open) placer();
   });
   menu.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', close); });
@@ -2287,8 +2318,8 @@ function setLang(lang) {
    ROCK v1 — LA PIERRE EN 3D (three.js, vendu localement : aucun CDN, aucune requête)
    • low poly : icosaèdre peu subdivisé, sommets DÉPLACÉS par un bruit déterministe,
      facettes plates (flatShading) — la pierre n'est pas un modèle importé ;
-   • cinq faces marketing : cinq points lumineux posés sur la surface, visés au
-     raycaster (survol) et cliqués (la pierre TOURNE pour présenter cette face) ;
+   • cinq faces marketing : cinq zones de visée INVISIBLES posées sur la surface —
+     survol au raycaster, clic : la pierre TOURNE pour présenter cette face ;
    • effets : la pierre se soulève au survol, elle s'assemble à l'arrivée, elle
      tourne d'un tour complet au clic avec une onde de choc et une poussée de
      particules, et l'on peut la faire tourner à la main (glisser-déposer) ;
@@ -2314,7 +2345,7 @@ const FACES = [
   new THREE.Vector3(-0.4, 0.6, -0.66),
   new THREE.Vector3(0.66, -0.2, -0.78)
 ];
-const CYAN = 0x00a7c7, PAPIER = 0xf7f3ec;
+const ENCRE = 0x14110c, PAPIER = 0xf7f3ec;   /* aucune couleur : tout est à l'encre */
 
 let rendu, scene, camera, groupe, pierre, aretes, halo, ombre, particules, lumiereRasante;
 let largeur = 0, hauteur = 0, actif = 0, survol = -1, vise = 0, vitesse = 0;
@@ -2322,7 +2353,7 @@ let cibleLever = 0, lever = 0, onde = null, pointeur = null, dernier = null, anc
 let visible = true, reduit = false, construit = false;
 const marqueurs = [];
 /* Le FOND des facettes : la teinte au repos, et celle qu'elles prennent au survol. */
-const TEINTE_REPOS = new THREE.Color(0x35322e), TEINTE_SURVOL = new THREE.Color(0x1b2327);
+const TEINTE_REPOS = new THREE.Color(0x14110c), TEINTE_SURVOL = new THREE.Color(0x000000);
 const etatParticules = { v: null, base: null, poussee: null };
 
 function langue() {
@@ -2459,28 +2490,33 @@ function init() {
   groupe = new THREE.Group();
   scene.add(groupe);
 
-  /* Pierre en GRIS SOMBRE (demande : « des teintes plus noires ou gris sombre ») ; l'émissive
-     cyan est posée ici au repos, ce qui laisse la place au FOND des polygones au survol. */
+  /* Pierre à l'ENCRE comme le reste de la page (demande : « passe tout en noir ») ;
+     l'émissive est NEUTRE (blanc) et très basse, ce qui laisse la place au FOND des polygones
+     au survol sans introduire de couleur. */
   pierre = new THREE.Mesh(geometriePierre(0), new THREE.MeshStandardMaterial({
-    color: 0x35322e, roughness: 0.72, metalness: 0.06, flatShading: true,
-    emissive: CYAN, emissiveIntensity: 0.04,
-    /* AU PREMIER ABORD, ON NE VOIT QUE LE MAILLAGE : les facettes sont un voile presque
-       transparent, ce sont les arêtes cyan qui dessinent la pierre. Au survol, elles SE
-       REMPLISSENT (l'opacité monte dans la boucle). */
-    transparent: true, opacity: 0.05
+    color: 0x14110c, roughness: 0.72, metalness: 0.06, flatShading: true,
+    emissive: 0xffffff, emissiveIntensity: 0.03,
+    /* DEMANDE CLIENT : LE MAILLAGE RESTE VISIBLE EN PERMANENCE — les facettes sont un
+       voile léger (0,16) qui ne disparaît jamais, et le survol ne fait que le teinter
+       un peu plus (voir la boucle). */
+    transparent: true, opacity: 0.16
   }));
   groupe.add(pierre);
 
   aretes = new THREE.LineSegments(
     new THREE.EdgesGeometry(pierre.geometry, 12),
-    new THREE.LineBasicMaterial({ color: CYAN, transparent: true, opacity: 0.45 })
+    new THREE.LineBasicMaterial({ color: ENCRE, transparent: true, opacity: 0.45 })
   );
   groupe.add(aretes);
 
-  /* Les cinq faces : un point lumineux + une sphère de visée plus large. */
+  /* Les cinq faces : une ZONE DE VISÉE INVISIBLE (raycaster au survol, clic pour tourner).
+     DEMANDE CLIENT : plus aucun point blanc posé sur la pierre low poly — la sphère
+     d'ancrage reste construite (peindre() et poserForme() s'en servent), mais elle
+     n'est plus dessinée. */
   FACES.forEach(function (dir, i) {
     const p = new THREE.Mesh(new THREE.SphereGeometry(0.052, 16, 16),
-      new THREE.MeshStandardMaterial({ color: PAPIER, emissive: CYAN, emissiveIntensity: 0.5, roughness: 0.3 }));
+      new THREE.MeshStandardMaterial({ color: PAPIER, emissive: ENCRE, emissiveIntensity: 0.5, roughness: 0.3 }));
+    p.visible = false;
     p.position.set(dir.x * 0.78, dir.y * 1.62 - 0.18, dir.z * 0.78);
     const zone = new THREE.Mesh(new THREE.SphereGeometry(0.23, 12, 12),
       new THREE.MeshBasicMaterial({ visible: false }));
@@ -2509,7 +2545,7 @@ function init() {
 
   /* Halo : un anneau fin, tourné, qui respire. */
   halo = new THREE.Mesh(new THREE.RingGeometry(1.40, 1.435, 128),
-    new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
+    new THREE.MeshBasicMaterial({ color: ENCRE, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
   halo.rotation.x = -Math.PI / 2.08;
   halo.position.y = -1.14;
   scene.add(halo);
@@ -2526,7 +2562,7 @@ function init() {
   const gP = new THREE.BufferGeometry();
   gP.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   particules = new THREE.Points(gP, new THREE.PointsMaterial({
-    color: CYAN, size: 0.02, transparent: true, opacity: 0.55, depthWrite: false
+    color: ENCRE, size: 0.02, transparent: true, opacity: 0.55, depthWrite: false
   }));
   scene.add(particules);
   etatParticules.v = new Float32Array(N);
@@ -2535,15 +2571,16 @@ function init() {
 
   /* Onde de choc du clic : un anneau qui s'ouvre et s'efface. */
   onde = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 96),
-    new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0, side: THREE.DoubleSide }));
+    new THREE.MeshBasicMaterial({ color: ENCRE, transparent: true, opacity: 0, side: THREE.DoubleSide }));
   onde.rotation.x = -Math.PI / 2.08;
   onde.position.y = -1.14;
   scene.add(onde);
 
-  /* Lumières : papier chaud devant, cyan derrière (arête), ambiance basse. */
+  /* Lumières : papier chaud devant, lumière NEUTRE derrière (arête), ambiance basse.
+     Aucune couleur : la cyan qui teintait l'arête devient un blanc chaud très doux. */
   scene.add(new THREE.HemisphereLight(0xfdf8ef, 0x2a241c, 0.85));
   const cle = new THREE.DirectionalLight(0xfff2dd, 3.0); cle.position.set(2.6, 3.4, 3.2); scene.add(cle);
-  lumiereRasante = new THREE.DirectionalLight(CYAN, 1.35); lumiereRasante.position.set(-3.2, 1.2, -2.6); scene.add(lumiereRasante);
+  lumiereRasante = new THREE.DirectionalLight(0xfff6ea, 0.7); lumiereRasante.position.set(-3.2, 1.2, -2.6); scene.add(lumiereRasante);
   const contre = new THREE.DirectionalLight(0xffffff, 0.5); contre.position.set(-1.5, -2, 2); scene.add(contre);
 
   poserForme(0);        /* la forme de départ, et les pastilles posées sur SA surface */
@@ -2633,7 +2670,7 @@ function cliquer() {
   vitesse += 0.09;
   if (onde) onde.material.opacity = 0.55;
   for (let i = 0; i < etatParticules.v.length; i++) etatParticules.v[i] = 0.9 + bruit(i, 1.3, 2.7) * 1.4;
-  if (pierre) { pierre.material.emissive = new THREE.Color(CYAN); pierre.material.emissiveIntensity = 0.16; }
+  if (pierre) { pierre.material.emissive = new THREE.Color(0xffffff); pierre.material.emissiveIntensity = 0.16; }
 }
 function tournerVers(i, doux) {
   const d = FACES[i];
@@ -2699,9 +2736,9 @@ function apres() {
   ombre.material.opacity = 1 - lever * 0.4;
 
   if (aretes) {
-    /* LES TRAITS BLEUS RESTENT ACTIFS : 0,34 au repos, 0,62 au survol (ils s'éteignaient à 0). */
+    /* LES TRAITS D'ENCRE RESTENT ACTIFS : 0,34 au repos, 0,62 au survol (ils s'éteignaient à 0). */
     aretes.material.opacity += ((lever > 0.2 ? 0.72 : 0.45) - aretes.material.opacity) * Math.min(1, dt * 5);
-    /* MESURÉ : posées pile sur les facettes, les arêtes cyan ne se voyaient pas (z-fighting).
+    /* MESURÉ : posées pile sur les facettes, les arêtes ne se voyaient pas (z-fighting).
        On les écarte d'un cheveu, d'autant plus qu'elles s'allument : la pierre s'ouvre. */
     aretes.scale.setScalar(1 + aretes.material.opacity * 0.02);
   }
@@ -2711,13 +2748,14 @@ function apres() {
     pierre.material.emissiveIntensity = Math.max(0, pierre.material.emissiveIntensity - dt * 0.5);
   }
   /* AU SURVOL, C'EST LE FOND DES POLYGONES QUI PREND SA TEINTE : les facettes s'assombrissent
-     et l'émissive cyan monte avec le soulèvement — sans jamais repeindre les arêtes. */
+     et l'émissive neutre monte avec le soulèvement — sans jamais repeindre les arêtes. */
   if (pierre) {
     pierre.material.color.copy(TEINTE_REPOS).lerp(TEINTE_SURVOL, Math.min(1, lever * 2.4));
     pierre.material.emissiveIntensity = Math.max(pierre.material.emissiveIntensity, lever * 0.22);
-    /* LE REMPLISSAGE : 0,05 au repos (on ne voit que le maillage) → 0,95 dès que la pierre est
-       touchée, la matière revient dans les facettes. */
-    pierre.material.opacity = Math.min(0.98, 0.05 + lever * 2.4);
+    /* LE REMPLISSAGE — DEMANDE CLIENT : le maillage est là en permanence (0,16) et le survol
+       ne fait que le TEINTER un peu plus, sans jamais l'effacer : plafond 0,34. L'ancien
+       0,98 était bien trop fort — la pierre devenait un bloc opaque au passage de la souris. */
+    pierre.material.opacity = Math.min(0.34, 0.16 + lever * 0.55);
   }
   if (onde && onde.material.opacity > 0) {
     onde.material.opacity = Math.max(0, onde.material.opacity - dt * 1.5);
