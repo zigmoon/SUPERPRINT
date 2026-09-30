@@ -1061,11 +1061,30 @@ html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !importan
   .nav-burger { display: flex; }
   .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
   .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */
+  /* 🆕 v1.7.590 — MENU OUVERT ET PAGE DÉFILÉE : LA BARRE EST ÉPINGLÉE À LA FENÊTRE.
+     Le verrou de défilement que pose le menu (`overflow: hidden` sur html/body) transforme html
+     en conteneur de défilement : `position: sticky` cesse alors d'agir et la barre retombait à sa
+     place statique — MESURÉ à 390×844 : top −624 à 700 px de défilement, bouton burger HORS
+     ÉCRAN, donc menu impossible à refermer. On la cloue en `fixed` au-dessus du menu (121 > 118).
+     ⚠️ La classe n'est posée que si la barre était DÉJÀ collée (voir le script du burger) : sinon
+     elle sauterait vers le haut et recouvrirait la bande du logotype. */
+  html.sp-menu-ouvert nav { position: fixed; left: 0; right: 0; top: 0; z-index: 121; }
 }
 @media(max-width: 700px){
   /* 🎯 v1.7.417 — hauteur mobile alignee sur le desktop (66 px) : le menu
      burger et le logo doivent avoir la meme respiration partout. */
-  nav { padding: 0 16px; height: 66px; position: relative; }
+  /* ⚠️ v1.7.590 — « position: relative » DÉTRUISAIT la barre collante en mobile.
+     MESURÉ à 390×844 : après 600 px de défilement la nav était à top −524, hors écran —
+     plus de logotype, plus de burger, le haut de la page vide, et la classe `is-stuck`
+     s'appliquait pour rien. C'est ce qui faisait « des trous au scroll ».
+     Le `relative` ne servait qu'à donner un repère au logotype en position absolue :
+     `sticky` EST un élément positionné, il joue exactement le même rôle. La barre se colle
+     SOUS la bande quadri (5 px, fixe, toujours visible) : elle n'est donc jamais recouverte,
+     aucun décalage optique n'est nécessaire, et le logotype ne saute pas à l'instant où
+     elle se colle. */
+  nav { padding: 0 16px; height: 66px; position: sticky; top: 5px; }
+  html.sp-menu-ouvert nav { top: 5px; }   /* 🆕 v1.7.590 — barre épinglée : elle reste SOUS la bande quadri */
+  nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
   section { padding: 64px 20px; }
@@ -1864,13 +1883,14 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
        droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
        du plan de bump de release. -->
-  <span class="brand-ver">v1.7.589</span>
+  <span class="brand-ver">v1.7.590</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
 </header>
 
 <!-- ══════════════ NAVIGATION ══════════════ -->
+<!-- _NAV_HERO_590 : entree Auteurs retiree de la top nav -->
 <nav>
   <a class="nav-logo" href="#hero">
     SUPER<span>PRINT</span>
@@ -1878,7 +1898,6 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <div class="nav-links">
     <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
     <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
-    <a href="index.html#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
     <a href="index.html#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="help-us.html" class="active" aria-current="page"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
@@ -1905,7 +1924,6 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
        décalage de la barre collante et le logo descendait de 146 px à l'ouverture. -->
   <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
-  <a href="index.html#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
   <a href="index.html#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="help-us.html" class="active" aria-current="page"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
   <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
@@ -1924,7 +1942,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.589</span>
+    <span>SuperPrint v1.7.590</span>
   </div>
 </div>
 
@@ -2162,7 +2180,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.589</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.590</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>
@@ -2297,6 +2315,7 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     /* 🆕 v1.7.572 — on relâche le verrou de défilement posé à l'ouverture. */
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
+    document.documentElement.classList.remove('sp-menu-ouvert');   /* 🆕 v1.7.590 — on déping le la barre */
   }
   /* 🆕 v1.7.472 — LE MENU SE POSE SOUS LA BARRE COLLANTE, ET PAS SOUS UNE HAUTEUR FIXE.
      Le header mobile n’est pas une bande unique : bandeau quadri + colophon (logo) + nav
@@ -2356,8 +2375,17 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     /* 🆕 v1.7.572 — verrouille le défilement de fond quand le menu est ouvert (aligné sur
        l'accueil, v1.7.549) : sinon la scrollbar de la page reste active et passe par-dessus la
        ligne du logo / bouton fermer pendant que le menu plein écran est ouvert. */
+    /* 🆕 v1.7.590 — ON MESURE AVANT DE POSER LE VERROU : `overflow: hidden` sur html/body
+       DÉTRUIT la position collante, la barre retombe à sa place statique et le bouton burger
+       quitte l'écran (mesuré : top −624, menu impossible à refermer). On épingle donc la
+       barre quand elle était DÉJÀ collée — jamais dans l'autre cas, sinon elle sauterait vers
+       le haut. Le style de la classe `sp-menu-ouvert` est dans le bloc @media(max-width:1000px). */
+    var navEl = document.querySelector('nav');
+    var hautColle = parseFloat(getComputedStyle(navEl).top) || 0;
+    var colle = navEl.getBoundingClientRect().top <= hautColle + 0.5;
     document.documentElement.style.overflow = open ? 'hidden' : '';
     document.body.style.overflow = open ? 'hidden' : '';
+    document.documentElement.classList.toggle('sp-menu-ouvert', open && colle);
     if (open) spPlacerMenu();          /* mesure au moment où l’on ouvre */
   });
   /* Un ancrage du menu referme et remet la barre en haut, prête pour la prochaine ouverture. */

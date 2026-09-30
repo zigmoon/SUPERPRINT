@@ -1357,17 +1357,45 @@
        pouce arrive), et le vide reste au milieu. Le clavier ne déplace plus rien :
        la boîte est le dernier bloc, le navigateur la remonte juste au-dessus du
        clavier quand on écrit. */
+    /* ══ 🆕 v1.7.590 — LE GROUPE EST « POSÉ », PLUS COLLÉ AUX DEUX BORDS ══════════
+       Retour utilisateur : « c'est super étrange d'avoir le nom Studio IA plaqué en
+       haut, je ne suis pas fan, et le form prompt écrasé en bas ». MESURÉ (390 × 844)
+       sur la version précédente : logotype 48 → 72 px, TROU de 455 px au milieu, carte
+       572 → 738, pied 798 → 830 : 14 px seulement sous le pied.
+       ASTUCE : le logotype quitte le haut de l'écran et vient se POSER juste au-dessus
+       de la carte — titre + carte + suggestions + pied ne font plus qu'UN SEUL groupe.
+       L'air est réparti par DEUX RESSORTS (::before / ::after, qui sont des éléments du
+       flex) : 2 parts au-dessus, 1 en dessous → le groupe tombe dans le bas du milieu
+       d'écran, là où le pouce arrive, avec une vraie respiration sous le pied.
+       · justify-content: flex-start (et non center) : si le contenu dépasse l'écran, il
+         part du HAUT et reste donc toujours atteignable (un centrage coupe le haut).
+       · flex: 0 0 auto : sur un écran très court, les blocs seraient comprimés sinon.
+       · clavier ouvert (:has(#starterInput:focus)) : le ressort du bas grossit, le
+         groupe monte tout seul au-dessus du clavier — aucun JS, aucun écouteur. */
     #starter {
-      padding: calc(18px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
-      justify-content: flex-end;
+      padding: calc(20px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));
+      justify-content: flex-start;
       scroll-padding-bottom: 42vh;
       overscroll-behavior: contain;
     }
-    #starter .st-head { margin: 0 0 auto; padding-top: 30px; }   /* le logo reste en haut */
+    #starter::before, #starter::after { content: ''; flex: 1 1 0; min-height: 0; }
+    #starter::before { flex-grow: 2; }
+    #starter .st-head, #starter .st-wrap, #starter .st-pjlist,
+    #starter .st-ex, #starter .st-foot { flex: 0 0 auto; }
+    #starter .st-head { margin: 0 0 20px; padding-top: 0; }   /* le titre se pose au-dessus de la carte */
+    #starter:has(#starterInput:focus)::after { flex-grow: 3; }   /* clavier ouvert : le groupe monte */
     #starter .st-logo { font-size: 21px; }
     #starter .st-tag { margin-top: 9px; font-size: 12px; }
     #starter .st-card { border-radius: 18px; }
-    #starter textarea { min-height: 62px; max-height: 30vh; font-size: 15.5px; padding: 14px 16px 2px; }
+    /* Le champ était plus court que son propre texte d'exemple : mesuré 98 px de
+       haut pour un texte de 115 px → les 4 lignes du texte d'exemple étaient coupées
+       et une barre de défilement apparaissait dans le champ à vide (retour utilisateur :
+       « le form prompt écrasé »). En portrait le texte passe de 2 lignes (ordinateur) à
+       4 lignes (téléphone) : la hauteur suit maintenant : 4 lignes (1,6 em) + les marges. */
+    #starter textarea {
+      min-height: calc(4 * 1.6em + 18px); max-height: 30vh;
+      font-size: 15.5px; padding: 14px 16px 2px;
+    }
     #starter .st-actions { padding: 2px 6px 7px 8px; gap: 0; }
     #starter .st-modelbtn { max-width: 46%; height: 30px; font-size: 11.5px; }
     /* Suggestions : UNE seule ligne qui glisse au doigt (au lieu de trois lignes qui
@@ -1387,7 +1415,6 @@
   /* Téléphones COUCHÉS (hauteur très courte) : on serre encore pour que la boîte et
      les suggestions tiennent sans ascenseur. */
   @media (max-width: 720px) and (max-height: 520px) {
-    #starter .st-head { padding-top: 2px; }
     #starter .st-tag { display: none; }
     #starter textarea { min-height: 46px; }
     #starter .st-ex { margin-top: 6px; }
@@ -12787,9 +12814,16 @@ function spRtfLayoutInfo(src) {
     try {
       const carte = $('stCard');
       const rc = carte ? carte.getBoundingClientRect() : null;
-      const rh = p.getBoundingClientRect().height;
-      const placeHaut = (rc ? rc.top : window.innerHeight / 2) - 12;
       const placeBas = (rc ? (window.innerHeight - rc.bottom) : window.innerHeight / 2) - 12;
+      /* 🆕 v1.7.590 — LE PANNEAU NE SORT PLUS DE L'ÉCRAN. Mesuré (390 × 844, pré-home
+         mobile) : la carte étant posée plus haut (v1.7.590), le plafond de 240 px
+         laissait le panneau descendre à 851 px sur un écran de 844 → dernière ligne
+         coupée. On mesure donc le panneau ET sa liste au NATUREL (plafond retiré) :
+         leur différence est le titre + les marges du panneau, à retirer de la place
+         disponible sous la carte. La mesure est faite AVANT toute pose : le panneau
+         part TOUJOURS VERS LE BAS (choix v1.7.580nn), sans décalage visible. */
+      body.style.maxHeight = '';
+      const chrome = Math.max(0, Math.round(p.getBoundingClientRect().height - body.getBoundingClientRect().height));
       /* 🆕 v1.7.580nn — TOUJOURS VERS LE BAS (demande utilisateur : « il doit toujours
          partir vers le bas, jamais en haut »). Le basculage automatique au-dessus de
          la carte produisait un FLASH où le panneau partait vers le haut avant de
@@ -12798,7 +12832,11 @@ function spRtfLayoutInfo(src) {
          prend le relais, la liste reste entièrement atteignable. */
       const enBas = true;
       p.classList.toggle('st-pop-bas', enBas);
-      body.style.maxHeight = Math.min(240, Math.max(96, placeBas)) + 'px';
+      /* Plancher à 48 px (et non 96) : sur un écran très court (téléphone couché, mesuré
+         390 px de haut), il ne reste que ~100 px sous la carte — un plancher de 96 px
+         faisait sortir le panneau de 36 px, et 56 px encore de 2 px. À 48 px la liste
+         tient (une ligne + l'ascenseur maison) et rien ne dépasse. */
+      body.style.maxHeight = Math.min(240, Math.max(48, Math.round(placeBas) - chrome)) + 'px';
     } catch (_) {}
   }
   function spStConstruire() {

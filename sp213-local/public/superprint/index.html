@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.589",
+      "softwareVersion": "1.7.590",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -1559,11 +1559,30 @@ details.spf-fold .spf-in .pp-card { background: var(--paper); }
   .nav-burger { display: flex; }
   .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
   .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */
+  /* 🆕 v1.7.590 — MENU OUVERT ET PAGE DÉFILÉE : LA BARRE EST ÉPINGLÉE À LA FENÊTRE.
+     Le verrou de défilement que pose le menu (`overflow: hidden` sur html/body) transforme html
+     en conteneur de défilement : `position: sticky` cesse alors d'agir et la barre retombait à sa
+     place statique — MESURÉ à 390×844 : top −624 à 700 px de défilement, bouton burger HORS
+     ÉCRAN, donc menu impossible à refermer. On la cloue en `fixed` au-dessus du menu (121 > 118).
+     ⚠️ La classe n'est posée que si la barre était DÉJÀ collée (voir le script du burger) : sinon
+     elle sauterait vers le haut et recouvrirait la bande du logotype. */
+  html.sp-menu-ouvert nav { position: fixed; left: 0; right: 0; top: 0; z-index: 121; }
 }
 @media(max-width: 700px){
   /* 🎯 v1.7.417 — hauteur mobile alignee sur le desktop (66 px) : le menu
      burger et le logo doivent avoir la meme respiration partout. */
-  nav { padding: 0 16px; height: 66px; position: relative; }
+  /* ⚠️ v1.7.590 — « position: relative » DÉTRUISAIT la barre collante en mobile.
+     MESURÉ à 390×844 : après 600 px de défilement la nav était à top −524, hors écran —
+     plus de logotype, plus de burger, le haut de la page vide, et la classe `is-stuck`
+     s'appliquait pour rien. C'est ce qui faisait « des trous au scroll ».
+     Le `relative` ne servait qu'à donner un repère au logotype en position absolue :
+     `sticky` EST un élément positionné, il joue exactement le même rôle. La barre se colle
+     SOUS la bande quadri (5 px, fixe, toujours visible) : elle n'est donc jamais recouverte,
+     aucun décalage optique n'est nécessaire, et le logotype ne saute pas à l'instant où
+     elle se colle. */
+  nav { padding: 0 16px; height: 66px; position: sticky; top: 5px; }
+  html.sp-menu-ouvert nav { top: 5px; }   /* 🆕 v1.7.590 — barre épinglée : elle reste SOUS la bande quadri */
+  nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
   .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
   .nav-tools { margin-left: auto; position: relative; z-index: 2; }
   section { padding: 64px 20px; }
@@ -2142,12 +2161,14 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
        droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
        du plan de bump de release. -->
-  <span class="brand-ver">v1.7.589</span>
+  <span class="brand-ver">v1.7.590</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
 </header>
 
+<!-- _NAV_HERO_590 -->
+<!-- _NAV_AUTEURS_591 : entree Auteurs retiree de la top nav et du menu burger -->
 <!-- ══════════════ NAVIGATION ══════════════ -->
 <nav>
   <a class="nav-logo" href="#hero">
@@ -2156,7 +2177,6 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <div class="nav-links">
     <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
     <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
-    <a href="#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
     <a href="#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
@@ -2187,7 +2207,6 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <a href="supertypo/index.html" class="mm-app"><img src="icons/sper_typo.png" alt="" width="26" height="26"><span>SuperTyPo</span></a>
   <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
-  <a href="#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
   <a href="#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
@@ -2205,7 +2224,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.589</span>
+    <span>SuperPrint v1.7.590</span>
   </div>
 </div>
 
@@ -2227,7 +2246,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <div class="hero-kicker" data-lang="en">The first DTP software, 100% online</div>
     <div class="hero-kicker" data-lang="ja">100%オンラインのNo.1レイアウトデスク</div>
 
-    <h1 data-lang="fr"><span class="line">La mise en page</span> <span class="line">professionnelle,</span> <span class="line"><em class="italic">dans votre navigateur.</em></span></h1>
+    <h1 data-lang="fr"><span class="line">La mise en page,</span> <span class="line">de l'écriture à l'édition,</span> <span class="line"><em class="italic">dans votre navigateur.</em></span></h1>
     <h1 data-lang="en"><span class="line">The professional</span> <span class="line">page layout,</span> <span class="line"><em class="italic">in your browser.</em></span></h1>
     <h1 data-lang="ja"><span class="line">プロ仕様の</span> <span class="line">ページレイアウトを、</span> <span class="line"><em class="italic">ブラウザで。</em></span></h1>
 
@@ -2247,7 +2266,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
         <span class="entry-name">Studio IA</span>
         <span class="entry-logo"><img src="icons/studio_print_logo_blanc.png" alt="" width="50" height="50"></span>
         <span class="entry-body">
-          <span class="entry-desc"><span class="inline-fr">Décrivez la maquette : l'IA la compose, vous la signez.</span><span class="inline-en">Describe the layout: the AI composes it, you sign it off.</span><span class="inline-ja">レイアウトを言葉に。AIが組み、あなたが仕上げる。</span></span>
+          <span class="entry-desc"><span class="inline-fr">Décrivez la maquette : l'IA la compose, vous l'éditez.</span><span class="inline-en">Describe the layout: the AI composes it, you sign it off.</span><span class="inline-ja">レイアウトを言葉に。AIが組み、あなたが仕上げる。</span></span>
           <span class="entry-go"><span class="inline-fr">Ouvrir le studio</span><span class="inline-en">Open the studio</span><span class="inline-ja">スタジオを開く</span> →</span>
         </span>
       </a>
@@ -2263,7 +2282,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
     </div>
 
-<p class="lead hero-lead" data-lang="fr">La mise en page professionnelle dans votre navigateur, avec le <strong>studio IA</strong> qui compose une maquette sur une phrase. Import <strong>Word et IDML</strong>, <strong>tons directs Pantone séparés dans le PDF</strong>, export prêt pour l'impression.</p>
+<p class="lead hero-lead" data-lang="fr">Avec <strong>SuperPrint</strong>, la PAO professionnelle devient accessible. Découvrez <strong>Studio IA</strong> : l'outil qui démocratise la création graphique et éditez vos maquettes à l'aide d'utilisateurs avertis. Apportez une singularité à vos typographies avec <strong>SuperTypo</strong>.</p>
     <p class="lead hero-lead" data-lang="en">Professional page layout in your browser, with <strong>Studio IA</strong>, which composes a layout from a sentence. <strong>Word and IDML import</strong>, <strong>Pantone spot inks separated in the PDF</strong>, print-ready export.</p>
     <p class="lead hero-lead" data-lang="ja">ブラウザでプロの組版を。<strong>Studio IA</strong> が一文からレイアウトを組みます。<strong>Word・IDML読み込み</strong>、<strong>Pantone特色をPDFで分版</strong>、印刷対応の書き出し。</p>
 
@@ -2332,7 +2351,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <h2 id="tpl-title" data-lang="fr">46 maquettes prêtes à ouvrir.</h2>
     <h2 data-lang="en">46 layouts ready to open.</h2>
     <h2 data-lang="ja">そのまま開ける 46 点のレイアウト。</h2>
-    <p data-lang="fr">Magazines, rapports, CV, calendriers, livres, menus, cartes de visite, <strong>presse quotidienne en japonais</strong> et <strong>dépliant maisons mobiles</strong> : chaque maquette est composée dans SuperPrint, aux bonnes marges et au bon format. Un clic l'ouvre dans l'application, prête à éditer.</p>
+    <p data-lang="fr">Magazines, rapports, CV, calendriers, livres, menus, cartes de visite, presse quotidienne : chaque maquette est composée dans SuperPrint, aux bonnes marges et au bon format. Un clic et la maquette s'ouvre dans l'application pour l'éditer.</p>
     <p data-lang="en">Magazines, reports, CVs, calendars, books, menus, business cards, <strong>Japanese daily-newspaper layouts</strong> and a <strong>mobile-home brochure</strong>: every layout is composed in SuperPrint, with the right margins and page size. One click opens it in the application, ready to edit.</p>
     <p data-lang="ja">雑誌、レポート、履歴書、カレンダー、書籍、メニュー、名刺、<strong>日本語の新聞レイアウト</strong>と<strong>お品書き</strong>、そしてフランス語のモバイルハウス案内。すべて SuperPrint で、正しい余白と判型で組んであります。クリックするとアプリで開き、そのまま編集できます。</p>
   </div>
@@ -3851,7 +3870,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.589</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.590</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
@@ -3989,6 +4008,7 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     burger.setAttribute('aria-expanded', 'false');
     document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
+    document.documentElement.classList.remove('sp-menu-ouvert');   /* 🆕 v1.7.590 — on déping le la barre */
   }
   /* 🆕 v1.7.472 — LE MENU SE POSE SOUS LA BARRE COLLANTE, ET PAS SOUS UNE HAUTEUR FIXE.
      Le header mobile n’est pas une bande unique : bandeau quadri + colophon (logo) + nav
@@ -4047,8 +4067,17 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
     burger.setAttribute('aria-expanded', open ? 'true' : 'false');
     /* 🆕 v1.7.549 — verrouille le scroll de fond : sinon la scrollbar de la page reste active
        et passe par-dessus la ligne du burger/logo pendant que le menu plein écran est ouvert. */
+    /* 🆕 v1.7.590 — ON MESURE AVANT DE POSER LE VERROU : `overflow: hidden` sur html/body
+       DÉTRUIT la position collante, la barre retombe à sa place statique et le bouton burger
+       quitte l'écran (mesuré : top −624, menu impossible à refermer). On épingle donc la
+       barre quand elle était DÉJÀ collée — jamais dans l'autre cas, sinon elle sauterait vers
+       le haut. Le style de la classe `sp-menu-ouvert` est dans le bloc @media(max-width:1000px). */
+    var navEl = document.querySelector('nav');
+    var hautColle = parseFloat(getComputedStyle(navEl).top) || 0;
+    var colle = navEl.getBoundingClientRect().top <= hautColle + 0.5;
     document.documentElement.style.overflow = open ? 'hidden' : '';
     document.body.style.overflow = open ? 'hidden' : '';
+    document.documentElement.classList.toggle('sp-menu-ouvert', open && colle);
     if (open) spPlacerMenu();          /* mesure au moment où l’on ouvre */
   });
   /* Un ancrage du menu referme et remet la barre en haut, prête pour la prochaine ouverture. */
