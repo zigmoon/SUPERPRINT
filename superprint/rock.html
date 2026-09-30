@@ -1834,10 +1834,6 @@ body { background: var(--paper); }
 :root { --rk-cyan: #00A7C7; --rk-encre: #14110C; }
 
 #rock-hero { position: relative; padding: 44px 0 10px; }
-.rk-vide { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-family: var(--f-display); font-size: min(78vh, 58vw); line-height: 1; color: var(--ink);
-  opacity: .035; user-select: none; pointer-events: none; }
-.rk-vide-titre { transform: translateY(-2%); }
 .rk-grid { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
   gap: clamp(24px, 4vw, 64px); align-items: center; position: relative; }
 @media (max-width: 980px) { .rk-grid { grid-template-columns: 1fr; } }
@@ -1851,22 +1847,19 @@ body { background: var(--paper); }
   font-family: var(--f-mono); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
 .rk-boutons { display: flex; flex-wrap: wrap; gap: 12px; }
 
-/* ── La scène 3D ── */
-.rk-cadre { position: relative; aspect-ratio: 1 / .92; border: 1px solid var(--line); background:
-  radial-gradient(120% 100% at 30% 12%, #2b2620 0%, #14110c 58%, #0c0a07 100%);
-  overflow: hidden; box-shadow: 0 30px 80px rgba(23,19,13,.22); }
-.rk-cadre::after { content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(180deg, rgba(247,243,236,.06), rgba(247,243,236,0) 42%); }
+/* ── La scène 3D ──
+   La pierre est POSÉE SUR LA PAGE : le cadre n'a plus de fond (ni boîte sombre, ni fond marron),
+   il ne garde que son filet — et le halo cyan de la scène, qui est le seul « filet bleu ». */
+.rk-cadre { position: relative; aspect-ratio: 1 / .92; border: 1px solid var(--line);
+  background: transparent; overflow: hidden; }
 #rkCanvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
 #rkCanvas:active { cursor: grabbing; }
 .rk-charge, .rk-voile { position: absolute; inset: auto 0 16px; text-align: center; font-family: var(--f-mono);
-  font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: #cfc7b6; z-index: 3; padding: 0 18px; }
+  font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); z-index: 3; padding: 0 18px; }
 .rk-hud { position: absolute; left: 16px; top: 14px; z-index: 3; display: flex; flex-direction: column; gap: 3px;
-  font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #b9b1a1; }
-.rk-hud b { color: var(--paper); }
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.rk-hud b { color: var(--ink); }
 .rk-hud-nom { color: var(--rk-cyan); letter-spacing: .06em; font-size: 12px; text-transform: none; }
-.rk-aide { position: absolute; right: 16px; bottom: 14px; left: 16px; z-index: 3; text-align: right;
-  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; color: #9c9484; }
 .rk-svg-secours { width: 100%; height: 100%; display: block; }
 .rk-faces { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .rk-puce { font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
@@ -1917,7 +1910,10 @@ body { background: var(--paper); }
 <body>
 
 <!-- ══════════════ BANDE DE MARQUE ══════════════ -->
-<header class="brand-header">
+<header class="brand-header" role="banner">
+  <a href="index.html" aria-label="SuperPrint — Accueil">
+    <img src="favicon.png" alt="SuperPrint — logo">
+  </a>
   <span class="brand-ver">v1.7.588</span>
   <span class="brand-tag">
     <span class="inline-fr">Notre moteur</span><span class="inline-en">Our engine</span><span class="inline-ja">私たちのエンジン</span>
@@ -1928,10 +1924,11 @@ body { background: var(--paper); }
   <a class="nav-logo" href="index.html">SUPER<span>PRINT</span></a>
   <div class="nav-links">
     <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
-    <a href="rock.html" class="active" aria-current="page"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
     <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
     <a href="index.html#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
+    <a href="index.html#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
+    <a href="rock.html" class="active" aria-current="page"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
     <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
   </div>
   <div class="nav-tools">
@@ -1945,14 +1942,39 @@ body { background: var(--paper); }
     </button>
   </div>
 </nav>
+<!-- ══════════════ MENU BURGER (le même que la présentation) ══════════════ -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="app/index.html" class="mm-app"><img src="icons/icon-192x192.png" alt="" width="26" height="26"><span>SuperPrint</span></a>
+  <a href="sp213-studio.html" class="mm-app"><img src="icons/studio_print_logo_blanc.png" alt="" width="26" height="26"><span>Studio IA</span></a>
+  <a href="supertypo/index.html" class="mm-app"><img src="icons/sper_typo.png" alt="" width="26" height="26"><span>SuperTyPo</span></a>
+  <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
+  <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+  <a href="index.html#auteurs"><span class="inline-fr">Auteurs</span><span class="inline-en">Authors</span><span class="inline-ja">著者</span></a>
+  <a href="index.html#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
+  <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
+  <a href="rock.html" class="active" aria-current="page"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
+  <div class="mm-lang">
+    <div class="lang-toggle mm-lang-toggle" role="group" aria-label="Language">
+      <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')" title="English">EN</button>
+      <button class="mbtn-lang" data-lang="fr" onclick="setLang('fr')" title="Français">FR</button>
+      <button class="mbtn-lang" data-lang="ja" onclick="setLang('ja')" title="日本語">JA</button>
+    </div>
+  </div>
+  <div class="mm-bas">
+    <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
+    <span>SuperPrint v1.7.588</span>
+  </div>
+</div>
+
+<!-- Le bandeau du logo du menu : hors flux, cloué à la fenêtre (même règle que la présentation). -->
+<div class="mm-colo" aria-hidden="true">
+  <img src="favicon.png" alt="" width="56" height="56">
+</div>
 
 <main>
 
 <!-- ══════════════ LA PIERRE ══════════════ -->
 <section id="rock-hero">
-  <div class="rk-vide" aria-hidden="true">
-    <span class="rk-vide-titre">R</span>
-  </div>
   <div class="container rk-grid">
 
     <div class="rk-texte">
@@ -1982,7 +2004,6 @@ body { background: var(--paper); }
           <span class="rk-hud-num"><span data-lang="fr">FACE</span><span data-lang="en">FACE</span><span data-lang="ja">面</span> <b id="rkNum">01</b>/05</span>
           <span class="rk-hud-nom" id="rkNom">—</span>
         </div>
-        <span class="rk-aide"><span class="inline-fr">Survolez : la pierre se soulève · Glissez : elle tourne · Cliquez : elle présente une fonction</span><span class="inline-en">Hover: the rock lifts · Drag: it turns · Click: it presents a feature</span><span class="inline-ja">ホバーで浮上・ドラッグで回転・クリックで機能を表示</span></span>
       </div>
       <div class="rk-faces" id="rkFaces" role="tablist" aria-label="ROCK v1">
         <button type="button" class="rk-puce is-on" data-face="1" role="tab" aria-selected="true"><b>01</b> <span data-lang="fr">Comprendre</span><span data-lang="en">Understand</span><span data-lang="ja">理解</span></button>
@@ -2211,15 +2232,44 @@ function setLang(lang) {
   setLang(lang === 'fr' || lang === 'ja' ? lang : 'en');
 })();
 
-/* ── menu mobile ── */
+/* ── menu mobile (burger) ──
+   Même mécanisme que la présentation : menu plein écran sous la barre collante, langues
+   et bas de page dedans, fermeture par Échap ou par un lien. */
 (function () {
-  var b = document.getElementById('navBurger');
-  if (!b) return;
-  b.addEventListener('click', function () {
-    var ouvert = b.getAttribute('aria-expanded') === 'true';
-    b.setAttribute('aria-expanded', ouvert ? 'false' : 'true');
-    document.body.classList.toggle('mm-open', !ouvert);
+  var burger = document.getElementById('navBurger');
+  var menu = document.getElementById('mobileMenu');
+  if (!burger || !menu) return;
+  function close() {
+    burger.classList.remove('open');
+    menu.classList.remove('open');
+    burger.setAttribute('aria-expanded', 'false');
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }
+  function placer() {
+    var barre = document.querySelector('nav');
+    var bande = document.querySelector('.brand-header');
+    var colo = document.querySelector('.mm-colo');
+    var bas = barre ? Math.round(barre.getBoundingClientRect().bottom) : 0;
+    if (!(bas > 0) || bas > window.innerHeight - 90) bas = 66;
+    var rb = bande ? bande.getBoundingClientRect() : null;
+    var hB = rb ? Math.round(rb.height) : 0;
+    var haut = (rb && rb.top >= -1) ? Math.round(rb.top) : (bas + 8);
+    if (colo) { colo.style.top = haut + 'px'; colo.style.height = hB ? (hB + 'px') : ''; }
+    menu.style.paddingTop = (Math.max(bas, haut + hB) + 14) + 'px';
+  }
+  window.addEventListener('resize', function () { if (menu.classList.contains('open')) placer(); });
+  burger.addEventListener('click', function () {
+    var open = menu.classList.toggle('open');
+    burger.classList.toggle('open', open);
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    document.documentElement.style.overflow = open ? 'hidden' : '';
+    document.body.style.overflow = open ? 'hidden' : '';
+    if (open) placer();
   });
+  menu.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', close); });
+  window.addEventListener('resize', function () { if (window.innerWidth > 1000) close(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
 })();
 </script>
 
@@ -2326,14 +2376,14 @@ function init() {
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
-  camera.position.set(0, 0.25, 6.2);
+  camera.position.set(0, 0.25, 6.65);
   camera.lookAt(0, 0, 0);
 
   groupe = new THREE.Group();
   scene.add(groupe);
 
   pierre = new THREE.Mesh(geometriePierre(), new THREE.MeshStandardMaterial({
-    color: 0x8f8778, roughness: 0.66, metalness: 0.07, flatShading: true
+    color: 0x9c9383, roughness: 0.6, metalness: 0.06, flatShading: true
   }));
   groupe.add(pierre);
 
@@ -2361,19 +2411,19 @@ function init() {
   cnv.width = cnv.height = 256;
   const c = cnv.getContext('2d');
   const grad = c.createRadialGradient(128, 128, 4, 128, 128, 126);
-  grad.addColorStop(0, 'rgba(16,13,9,0.5)');
-  grad.addColorStop(0.55, 'rgba(16,13,9,0.18)');
+  grad.addColorStop(0, 'rgba(16,13,9,0.34)');
+  grad.addColorStop(0.55, 'rgba(16,13,9,0.11)');
   grad.addColorStop(1, 'rgba(16,13,9,0)');
   c.fillStyle = grad; c.fillRect(0, 0, 256, 256);
-  ombre = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4),
+  ombre = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 2.5),
     new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cnv), transparent: true, depthWrite: false }));
   ombre.rotation.x = -Math.PI / 2;
   ombre.position.y = -1.42;
   scene.add(ombre);
 
   /* Halo : un anneau fin, tourné, qui respire. */
-  halo = new THREE.Mesh(new THREE.RingGeometry(1.62, 1.66, 128),
-    new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0.22, side: THREE.DoubleSide }));
+  halo = new THREE.Mesh(new THREE.RingGeometry(1.40, 1.435, 128),
+    new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
   halo.rotation.x = -Math.PI / 2.35;
   halo.position.y = -0.15;
   scene.add(halo);
@@ -2381,7 +2431,7 @@ function init() {
   /* Particules : la poussière de l'atelier, poussée au clic. */
   const N = 150, pos = new Float32Array(N * 3), base = new Float32Array(N * 3);
   for (let i = 0; i < N; i++) {
-    const r = 1.9 + bruit(i * 1.7, 3.1, 5.3) * 1.7;
+    const r = 1.72 + bruit(i * 1.7, 3.1, 5.3) * 1.05;
     const th = bruit(i * 2.3, 1.1, 7.7) * Math.PI * 2;
     const ph = Math.acos(2 * bruit(i * 3.7, 2.9, 4.1) - 1);
     const x = r * Math.sin(ph) * Math.cos(th), y = r * Math.cos(ph) * 0.6, z = r * Math.sin(ph) * Math.sin(th);
@@ -2390,7 +2440,7 @@ function init() {
   const gP = new THREE.BufferGeometry();
   gP.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   particules = new THREE.Points(gP, new THREE.PointsMaterial({
-    color: CYAN, size: 0.022, transparent: true, opacity: 0.75, depthWrite: false, blending: THREE.AdditiveBlending
+    color: CYAN, size: 0.02, transparent: true, opacity: 0.55, depthWrite: false
   }));
   scene.add(particules);
   etatParticules.v = new Float32Array(N);
@@ -2399,15 +2449,15 @@ function init() {
 
   /* Onde de choc du clic : un anneau qui s'ouvre et s'efface. */
   onde = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 96),
-    new THREE.MeshBasicMaterial({ color: PAPIER, transparent: true, opacity: 0, side: THREE.DoubleSide }));
+    new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0, side: THREE.DoubleSide }));
   onde.rotation.x = -Math.PI / 2.6;
   onde.position.y = -0.2;
   scene.add(onde);
 
   /* Lumières : papier chaud devant, cyan derrière (arête), ambiance basse. */
-  scene.add(new THREE.HemisphereLight(0xfdf8ef, 0x1b1710, 0.55));
-  const cle = new THREE.DirectionalLight(0xfff2dd, 2.5); cle.position.set(2.6, 3.4, 3.2); scene.add(cle);
-  lumiereRasante = new THREE.DirectionalLight(CYAN, 2.1); lumiereRasante.position.set(-3.2, 1.2, -2.6); scene.add(lumiereRasante);
+  scene.add(new THREE.HemisphereLight(0xfdf8ef, 0x2a241c, 0.72));
+  const cle = new THREE.DirectionalLight(0xfff2dd, 2.6); cle.position.set(2.6, 3.4, 3.2); scene.add(cle);
+  lumiereRasante = new THREE.DirectionalLight(CYAN, 1.5); lumiereRasante.position.set(-3.2, 1.2, -2.6); scene.add(lumiereRasante);
   const contre = new THREE.DirectionalLight(0xffffff, 0.5); contre.position.set(-1.5, -2, 2); scene.add(contre);
 
   horloge = new THREE.Clock();
@@ -2563,14 +2613,14 @@ function apres() {
        On les écarte d'un cheveu, d'autant plus qu'elles s'allument : la pierre s'ouvre. */
     aretes.scale.setScalar(1 + aretes.material.opacity * 0.02);
   }
-  if (halo && !reduit) { halo.rotation.z += dt * 0.22; halo.material.opacity = 0.18 + 0.1 * Math.sin(t * 1.1); }
+  if (halo && !reduit) { halo.rotation.z += dt * 0.22; halo.material.opacity = 0.42 + 0.1 * Math.sin(t * 1.1); }
   if (lumiereRasante && !reduit) { lumiereRasante.position.set(Math.cos(t * 0.28) * -3.2, 1.2, Math.sin(t * 0.28) * -3.2); }
   if (pierre && pierre.material.emissiveIntensity > 0) {
     pierre.material.emissiveIntensity = Math.max(0, pierre.material.emissiveIntensity - dt * 0.5);
   }
   if (onde && onde.material.opacity > 0) {
     onde.material.opacity = Math.max(0, onde.material.opacity - dt * 1.5);
-    onde.scale.setScalar(1 + (0.55 - onde.material.opacity) * 4);
+    onde.scale.setScalar(1 + (0.55 - onde.material.opacity) * 2.2);
   }
   if (particules && !reduit) {
     const p = particules.geometry.attributes.position, base = etatParticules.base, vv = etatParticules.v;
