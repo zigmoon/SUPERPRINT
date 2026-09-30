@@ -9,6 +9,36 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.588] — 2026-09-30
+
+_Studio IA : le moteur Chrome intégré (Gemini Nano) est SUPPRIMÉ du projet ; site : le moteur ROCK 1 a sa propre page (rock.html), montrée par une vraie pierre 3D low poly en three.js embarqué_
+
+### Removed — Gemini Nano retiré du Studio, pas masqué
+- Raison mesurée : le moteur exige un **Chrome de bureau** avec environ **2 Go de modèle téléchargé**, il ne lit **aucun** de nos documents (Word, PDF, Excel) et ne produit donc jamais une vraie page. C'était une entrée de plus dans la liste des modèles qui ne génère rien — exactement ce que la règle du studio interdit.
+- Retirés (16 242 octets par arborescence, dans `superprint/sp213-studio.html` **et** `sp213-local/public/superprint/sp213-studio.html`) : l'entrée de la liste des modèles, l'injection de la balise `<option>` au démarrage (`spInitChromeIA` / `spEtatChromeIA` / `spLibelleChromeIA`), les **trois traductions** `st.n.chromeai`, les branches de libellé (3 endroits), le drapeau `isChrome` et tous ses usages, l'indication au survol, la ligne de moteur par défaut, le délai d'attente, les constantes `NANO_*`, `spNanoRappelSchema` et `callChromeAI` avec sa route.
+- Contrairement aux moteurs retirés auparavant (AI Horde, Transformers.js), **aucun code n'est conservé inerte** : il faudrait le réécrire pour le remettre un jour. Les autres moteurs (WebLLM local, Groq, DeepSeek, OpenAI, OpenRouter, TJS local, démo) sont inchangés.
+
+### Added — La page ROCK v1 (`rock.html`), avec une vraie pierre 3D
+- Nouvelle page **`rock.html`** (157 069 octets, dans les deux arborescences), dans la **charte exacte du site** : la feuille de style de `index.html` est reprise **mot pour mot** (100 956 octets) et seules les règles `/* ══ _PAGE_ROCK_588 …` (classes `.rk-*`) sont ajoutées. Navigation, pied de page, polices et bascule FR / EN / JA identiques.
+- La pierre est un **vrai maillage 3D** — three.js **0.160.1** embarqué dans le projet (`superprint/JS/three.module.min.js`, 670 681 octets, **aucun CDN** au chargement, fonctionne hors ligne, 0 jeton, pas de GPU sollicité) : 540 sommets, facettes plates, arêtes cyan, halo, ombre douce dessinée et poussière d'atelier.
+- Les **cinq fonctions du moteur** sont posées sur la pierre sous forme de cinq points, en trois langues : il comprend le métier / rien ne sort de votre machine / écologique par construction / il pense comme un imprimeur / il lit vos documents.
+- Interactions mesurées : **survol** → la pierre se soulève de 0,32 unité et sa cage d'arêtes s'allume (opacité 0,42) ; **glisser** → elle suit le doigt (0,007 rad par pixel) puis continue sur son élan ; **clic** → un tour complet (rotation + 6,28 rad), une onde de choc, une poussée de poussière et la fonction suivante ; **puces**, **flèches ← / →** et bouton « faire tourner la pierre » équivalents.
+- `prefers-reduced-motion` est respecté (pas de rotation ni de flottement automatiques) et une **pierre vectorielle de secours** s'affiche si WebGL manque : jamais une page vide.
+
+### Fixed — deux défauts de la pierre, trouvés à la mesure
+- **La pierre disparaissait** : une seule valeur non finie dans la rotation du groupe rendait sa matrice de monde `NaN` (16 éléments non finis mesurés) et three.js ne dessinait plus rien du tout — le halo, l'ombre et les particules restaient visibles, ce qui faisait croire à une scène vide. Des garde-fous remettent d'aplomb `dt`, `vitesse`, `vise`, `lever` et les positions.
+- **Un glisser changeait de fonction** : le relâchement était comparé au *dernier mouvement* au lieu du *point d'appui* ; l'écart tombait donc toujours sous le seuil de 6 px et une rotation glissée passait pour un clic. Le point d'appui est maintenant mémorisé.
+- Cadrage corrigé à la mesure : à 1 pour 1, la pierre sortait du cadre en se soulevant (haut et bas coupés) — le soulèvement est appliqué à 0,62 et la caméra reculée.
+
+### Changed — site
+- `index.html` : la section `#rock` (texte, style et script de la pierre, −19 498 octets) est retirée, ses liens de navigation et de pied de page pointent vers `rock.html`. `help-us.html` : ses liens pointent également vers `rock.html`.
+
+### Scope
+- **Studio IA** (`sp213-studio.html`) et **pages du site** (`rock.html`, `index.html`, `help-us.html`). Le moteur d'impression SuperPrint, la mise en page manuelle et le rendu PDF ne sont pas modifiés, et l'import/export `.sp` / `.json` reste inchangé.
+- Le paquet npm local (`sp213-local.zip`) est reconstruit à cette version, **three.js compris** ; `version.txt`, `package.json`, `CONTENU.txt`, `api.html`, `install.html`, `index.html`, `help-us.html`, `documentation.html`, `llms.txt`, `llms-full.txt`, les deux `service-worker.js` et `app/*` passent en 1.7.588, et la parité web ↔ miroir est vérifiée sur 25 fichiers.
+
+---
+
 ## [1.7.587] — 2026-09-30
 
 _Studio IA / ROCK 1 : le texte entre guillemets devient le contenu de la maquette, « recto verso » veut dire deux pages avec un vrai verso, le style se tire au sort quand la demande ne donne pas de couleur, et les bases de la bibliothèque SuperPrint remplacent le texte manquant — jamais celui de l'utilisateur_

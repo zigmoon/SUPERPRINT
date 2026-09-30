@@ -1652,19 +1652,23 @@
                  • AI Horde : une phrase passe, mais JAMAIS une page (refus « Request
                    is not possible » après ~2 min, passerelle en erreur) — le studio
                    retombait toujours sur le moteur local.
-                 • Chrome intégré (Gemini Nano) : RÉACTIVÉ autrement en v1.7.580y
-                   (détection du navigateur) — voir la note ci-dessous.
-               Pour le réactiver : remettre la balise <option> correspondante
-               (le code du moteur est conservé, inerte). -->
-          <!-- 🆕 v1.7.580y — CHROME INTÉGRÉ (GEMINI NANO) : la balise <option> n'est
-               plus écrite ici. Le studio l'AJOUTE lui-même au démarrage, et
-               SEULEMENT si le navigateur expose vraiment l'API (window.LanguageModel
-               ou window.ai.languageModel) — avec l'ÉTAT du modèle dans le libellé
-               (« prêt » / « modèle Chrome à télécharger (~2 Go) » / « téléchargement
-               en cours » / « indisponible sur cet appareil »). Sur Firefox, Safari ou
-               un Chromium sans cette API, l'option reste absente : la liste ne
-               promet rien qui ne puisse générer. (Retour utilisateur du 28/09 :
-               « Chrome intégré (Gemini Nano)… je le vois pas dans les prefs ».) -->
+                 • Chrome intégré (Gemini Nano) : réactivé autrement en v1.7.580y
+                   puis RETIRÉ DÉFINITIVEMENT en v1.7.588 (voir la note ci-dessous).
+               Contrairement aux autres moteurs retirés, son code n'est PAS conservé :
+               il fallait un Chrome de bureau avec ~2 Go de modèle téléchargé, et il ne
+               lisait pas nos documents — il n'avait donc rien à faire ici. -->
+          <!-- 🗑️ v1.7.588 — CHROME INTÉGRÉ (GEMINI NANO) SUPPRIMÉ DU PROJET.
+               Historique : la balise <option> n'était déjà plus écrite en dur depuis la
+               v1.7.580y, le studio l'ajoutait au démarrage si le navigateur exposait
+               l'API (window.LanguageModel). Décision : on retire tout — le moteur ne
+               servait à rien (Chrome de bureau uniquement, ~2 Go de modèle à
+               télécharger, aucune lecture de nos documents), et une entrée de liste qui
+               ne génère pas fait perdre du temps à l'utilisateur. Retirés : l'entrée de
+               liste, l'injection <option>, les 3 traductions, les branches de libellé,
+               le drapeau isChrome, l'indication au survol, le moteur par défaut, le
+               délai d'attente, les constantes NANO_*, spNanoRappelSchema et callChromeAI.
+               Pour le remettre un jour : il faudrait réécrire ces morceaux, rien n'est
+               conservé en place inerte. -->
           <!-- 🗑️ v1.7.580mm — TRANSFORMERS.JS RETIRÉ DE LA LISTE. Sur un processeur
                (le seul cas de figure quand WebGPU manque) il produit quelques mots par
                seconde : il ne rend JAMAIS une page du studio. Retour utilisateur :
@@ -3947,8 +3951,8 @@
       if (vm === 'spread' || vm === 'single') state.viewMode = vm;
       const th = localStorage.getItem(LS.theme);
       if (th !== null) setTheme(th === '1');
-      /* 🆕 v1.7.580y — le moteur enregistré est accepté dès qu'il EXISTE dans la
-         liste (liste figée = « chromeai » et « tjslocal » oubliés). */
+      /* Le moteur enregistré est accepté dès qu'il EXISTE dans la liste : une liste
+         figée en dur oubliait les moteurs ajoutés après coup. */
       const engMem = spMoteurMemorise();
       $('engineSelect').value = engMem;
       state.engine = engMem;
@@ -4103,8 +4107,6 @@
       } else if (eng === 'tjslocal') {
         const tm = (TJS_MODELS.find(x => x[0] === state.tjsModel) || [])[1] || state.tjsModel;
         el.textContent = 'Transformers.js — ' + court(tm);
-      } else if (eng === 'chromeai') {
-        el.textContent = 'Chrome intégré — Gemini Nano';
       } else if (eng === 'openai') {
         el.textContent = court((OPENAI_MODELS.find(x => x[0] === state.oaiModel) || [])[1] || state.oaiModel);
       } else if (eng === 'anthropic') {
@@ -4149,7 +4151,6 @@
       const isGabarit = eng === 'gabarit';
       const isAihorde = eng === 'aihorde';     // 🆕 v1.7.580g
       const isTJS = eng === 'tjslocal';        // 🆕 v1.7.580g
-      const isChrome = eng === 'chromeai';     // 🆕 v1.7.580k
       ['groqFields', 'groqModelField'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = isGroq ? '' : 'none';
@@ -4171,7 +4172,7 @@
         if (el) el.style.display = isAnthropic ? '' : 'none';
       });
       const wllmF = document.getElementById('wllmModelField');
-      if (wllmF) wllmF.style.display = (isGroq || isOR || isDS || isOpenAI || isAnthropic || isNative || isAihorde || isTJS || isChrome || isGabarit) ? 'none' : '';
+      if (wllmF) wllmF.style.display = (isGroq || isOR || isDS || isOpenAI || isAnthropic || isNative || isAihorde || isTJS || isGabarit) ? 'none' : '';
       // 🆕 v1.7.580g — les deux nouveaux moteurs gratuits
       const ahF = document.getElementById('aihordeModelField');
       if (ahF) ahF.style.display = isAihorde ? '' : 'none';
@@ -4213,15 +4214,6 @@
         hint.textContent = 'AI Horde — calcul bénévole mutualisé (association Haidra, financée par NLnet/NGI0). Aucune clé : le studio utilise la clé anonyme. La liste des modèles vient des bénévoles. Vous êtes mis en file d\'attente : comptez de quelques secondes à plusieurs minutes.';
       } else if (hint && isTJS) {
         hint.textContent = 'Transformers.js — modèle exécuté dans votre navigateur, y compris SANS WebGPU (repli processeur : plus lent). Aucune clé, aucune donnée envoyée. Choisissez un petit modèle.';
-      } else if (hint && isChrome) {
-        /* 🆕 v1.7.580y — l'aide dit l'ÉTAT RÉEL du modèle sur cet appareil. */
-        const etatChrome = window._spChromeIAEtat;
-        hint.textContent = "Chrome intégré (Gemini Nano) — l'IA fournie par le navigateur lui-même : aucune clé, aucune installation, environ 3 milliards de paramètres (meilleur que Transformers.js), rien n'est envoyé à Google. Nécessite Chrome 148 ou plus, sur ordinateur."
-          + (etatChrome === 'available' ? ' Le modèle est PRÊT sur cet appareil.'
-            : (etatChrome === 'downloading' ? ' Le modèle est en cours de téléchargement.'
-            : (etatChrome === 'downloadable' ? ' Le modèle se téléchargera au premier envoi (≈ 2 Go, une seule fois).'
-            : " Si le modèle n'est pas installé : chrome://components → « Optimization Guide On Device Model » → Vérifier les mises à jour.")))
-          + ' Fenêtre de contexte réduite (~6 000 tokens) : le studio lui envoie donc les règles de fabrication compactes, la double page (planche, gouttière, couverture seule) et les pièces jointes par extraits ; un document long est composé page par page, une tranche par page.';
       }
       /* 🆕 v1.7.580f — le libellé du moteur/model suit le choix (idem écran d'accueil). */
       majLibelleModele();
@@ -4235,9 +4227,6 @@
       updateEngineUI();
     });
     updateEngineUI();
-    /* 🆕 v1.7.580y — l'option « Chrome intégré (Gemini Nano) » est ajoutée ici
-       (une seule fois), avec l'état réel du modèle de ce navigateur. */
-    spInitChromeIA().then(function () { if (typeof majLibelleModele === 'function') majLibelleModele(); });
 
     $('sendBtn').addEventListener('click', sendMessage);
     $('promptInput').addEventListener('keydown', e => {
@@ -4733,58 +4722,6 @@
     speechListening = false;
   }
 
-  /* ══ 🆕 v1.7.580y — CHROME INTÉGRÉ (GEMINI NANO) : DÉTECTION, PAS SUPPRESSION ══
-     MESURE DU 28/09 : window.LanguageModel existe dans Chromium 150 et
-     availability() répond « downloadable » — mais create() échoue tant que le
-     modèle n'est pas installé (Chrome recopie alors la demande). L'option avait
-     donc été retirée de la liste, et l'utilisateur ne la retrouvait plus.
-     ICI : la balise <option> est ajoutée au démarrage avec l'état du modèle dans
-     son libellé ; si le navigateur n'expose pas l'API, rien n'est ajouté. */
-  function spEtatChromeIA() {
-    const L = window.LanguageModel || (window.ai && window.ai.languageModel) || null;
-    if (!L || typeof L.create !== 'function') return Promise.resolve('absent');
-    if (typeof L.availability !== 'function') return Promise.resolve('api');
-    try {
-      return Promise.resolve(L.availability())
-        .then(function (a) { return String(a || 'api'); })
-        .catch(function () { return 'api'; });
-    } catch (_) { return Promise.resolve('api'); }
-  }
-  function spLibelleChromeIA(etat) {
-    if (etat === 'available') return 'Chrome intégré (Gemini Nano) — prêt';
-    if (etat === 'downloading') return "Chrome intégré (Gemini Nano) — téléchargement du modèle en cours";
-    if (etat === 'unavailable') return "Chrome intégré (Gemini Nano) — indisponible sur cet appareil";
-    if (etat === 'downloadable') return 'Chrome intégré (Gemini Nano) — modèle Chrome à télécharger (~2 Go)';
-    return 'Chrome intégré (Gemini Nano)';
-  }
-  function spInitChromeIA() {
-    const sel = document.getElementById('engineSelect');
-    if (!sel) return Promise.resolve('absent');
-    return spEtatChromeIA().then(function (etat) {
-      window._spChromeIAEtat = etat;
-      if (etat === 'absent') return etat;            // API absente : on ne propose rien
-      if (sel.querySelector('option[value="chromeai"]')) return etat;
-      const opt = document.createElement('option');
-      opt.value = 'chromeai';
-      opt.textContent = spLibelleChromeIA(etat);
-      /* Le moteur local se range avec les autres moteurs locaux : juste avant
-         l'ancien moteur Transformers.js. */
-      const tjs = sel.querySelector('option[value="tjslocal"]');
-      if (tjs) sel.insertBefore(opt, tjs); else sel.appendChild(opt);
-      /* Le moteur ENREGISTRÉ peut être celui-ci : on le remet en place par un
-         vrai événement « change », pour que l'interface (libellé, champs, aide)
-         se mette à jour exactement comme si l'utilisateur l'avait choisi. */
-      try {
-        if (localStorage.getItem('sp213_engine') === 'chromeai') {
-          sel.value = 'chromeai';
-          sel.dispatchEvent(new Event('change'));
-        }
-      } catch (_) {}
-      return etat;
-    }).catch(function () { return 'absent'; });
-  }
-  /* Moteur enregistré : accepté dès qu'il EXISTE dans la liste. La liste figée
-     des versions précédentes oubliait « chromeai » ET « tjslocal ». */
   function spMoteurMemorise() {
     try {
       const eng = localStorage.getItem('sp213_engine');
@@ -4807,8 +4744,8 @@
       //   repli (avant : 'openai' codé en dur, ce qui écrasait l'attribut
       //   `selected` du HTML et faisait afficher « × OpenAI GPT » alors que le
       //   sélecteur montrait DeepSeek).
-      /* 🆕 v1.7.580y — même règle qu'à l'ouverture : le moteur mémorisé est
-         accepté s'il EXISTE dans la liste (chromeai, tjslocal…). */
+      /* Même règle qu'à l'ouverture : le moteur mémorisé est accepté s'il EXISTE
+         dans la liste (tjslocal, webllm…), sinon on retombe sur le repli. */
       const eng = spMoteurMemorise();
       state.engine = eng;
       state.apiKey = key;
@@ -4862,8 +4799,6 @@
            ci-dessous qui écrit state.model = 1er modèle Groq, soit « qwen/qwen3.8-27b ». */
         const tjsName = (TJS_MODELS.find(x => x[0] === state.tjsModel) || [])[1] || state.tjsModel;
         $('modelLabel').textContent = 'Transformers.js — ' + _short(tjsName);
-      } else if (state.engine === 'chromeai') {
-        $('modelLabel').textContent = 'Chrome intégré — Gemini Nano';
       } else {
         $('modelLabel').textContent = state.model;
       }
@@ -8718,8 +8653,6 @@ function spRtfLayoutInfo(src) {
          réellement sélectionné. */
       const tjsName = (TJS_MODELS.find(x => x[0] === state.tjsModel) || [])[1] || state.tjsModel;
       $('modelLabel').textContent = 'Transformers.js — ' + shortModelName(tjsName);
-    } else if (state.engine === 'chromeai') {
-      $('modelLabel').textContent = 'Chrome intégré — Gemini Nano';
     } else {
       $('modelLabel').textContent = state.model;
     }
@@ -9198,8 +9131,7 @@ function spRtfLayoutInfo(src) {
     "st.tag.free": "free",
     "st.tag.key": "API key",
     "st.tag.freeKey": "free API key",
-    "st.n.chromeai": "Built into Chrome: free.",
-    "st.n.wllmNative": "On this computer: free.",
+      "st.n.wllmNative": "On this computer: free.",
     "st.n.webllm": "Local model of your choice.",
     "st.n.deepseek": "Cloud: paste your API key.",
     "st.n.openai": "Cloud: paste your API key.",
@@ -9253,8 +9185,7 @@ function spRtfLayoutInfo(src) {
     "st.tag.free": "gratuit",
     "st.tag.key": "clé API",
     "st.tag.freeKey": "clé API gratuite",
-    "st.n.chromeai": "IA intégrée de Chrome, gratuite.",
-    "st.n.wllmNative": "Sur cet ordinateur, gratuit.",
+      "st.n.wllmNative": "Sur cet ordinateur, gratuit.",
     "st.n.webllm": "Modèle local au choix.",
     "st.n.deepseek": "Cloud : collez votre clé API.",
     "st.n.openai": "Cloud : collez votre clé API.",
@@ -9304,8 +9235,7 @@ function spRtfLayoutInfo(src) {
     "st.tag.free": "無料",
     "st.tag.key": "APIキー",
     "st.tag.freeKey": "無料APIキー",
-    "st.n.chromeai": "Chrome 内蔵のAI。無料。",
-    "st.n.wllmNative": "このパソコン上で動作。無料。",
+      "st.n.wllmNative": "このパソコン上で動作。無料。",
     "st.n.webllm": "ローカルモデルを選択。",
     "st.n.deepseek": "クラウド：APIキーを貼り付け。",
     "st.n.openai": "クラウド：APIキーを貼り付け。",
@@ -12489,7 +12419,6 @@ function spRtfLayoutInfo(src) {
        téléchargement, aucune attente, et rend toujours le même document pour la
        même demande (gabarits designés + règles de marges, grilles, folios). */
     { eng: 'gabarit', nom: 'SP213 rock 1.0', nk: 'st.nk.gabarit', tk: 'st.tag.free', usage: 'livre' },
-    { eng: 'chromeai',      nom: 'Gemini Nano (Chrome)', nk: 'st.n.chromeai',   tk: 'st.tag.free',    usage: 'demo' },
     /* 🆕 v1.7.580oo — DEEPSEEK EN 2ᵉ POSITION (demande utilisateur) : c'est le moteur
        cloud de référence du studio (grand contexte, JSON fiable). Il passe donc juste
        après l'IA intégrée du navigateur, avant les autres services à clé. */
@@ -12535,7 +12464,6 @@ function spRtfLayoutInfo(src) {
     if (dispo.some(function (m) { return m.eng === 'deepseek'; }) && cleOk('deepseek')) return 'deepseek';
     const avecCle = dispo.filter(function (m) { return m.tk !== 'st.tag.free' && cleOk(m.eng); })[0];
     if (avecCle) return avecCle.eng;
-    if (dispo.some(function (m) { return m.eng === 'chromeai'; })) return 'chromeai';
     if (state.engine && dispo.some(function (m) { return m.eng === state.engine; })) return state.engine;
     return dispo.length ? dispo[0].eng : 'deepseek';
   }
@@ -13829,7 +13757,6 @@ function spRtfLayoutInfo(src) {
        (~1 300 tokens), avec l'en-tête du document et ses sections : Nano comprend
        de quoi parle la pièce jointe. Les documents plus longs partent en génération
        PAGE PAR PAGE (tranches + consigne de traitement intégral). */
-    if (state.engine === 'chromeai') return 5000;
     return (state.engine === 'openai' || state.engine === 'groq' || state.engine === 'openrouter' || state.engine === 'deepseek' || state.engine === 'anthropic') ? 60000 : 12000;
   }
 
@@ -14782,7 +14709,7 @@ function spRtfLayoutInfo(src) {
        dizaines de milliers de caractères) alors que Nano a une fenêtre d'environ
        6 000 tokens → « Erreur : The input is too large. » à chaque envoi.
        Chrome Nano et Transformers.js rejoignent donc la branche « petit modèle ». */
-    if (state.engine === 'webllm' || state.engine === 'webllm-native' || state.engine === 'chromeai' || state.engine === 'tjslocal') {
+    if (state.engine === 'webllm' || state.engine === 'webllm-native' || state.engine === 'tjslocal') {
       const isNative = state.engine === 'webllm-native';
       const nativeDigest = isNative ? SP213_NATIVE_DIGEST + '\n\n' : '';
       const p = state.lastPrompt || '';
@@ -15349,7 +15276,7 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     let d = ms;
     if (state.engine === 'aihorde') d = Math.max(d, msForce ? 240000 : 600000);
     if (state.engine === 'webllm' || state.engine === 'webllm-native' ||
-        state.engine === 'chromeai' || state.engine === 'tjslocal') {
+        state.engine === 'tjslocal') {
       const dejaCharge = (state.engine === 'webllm' || state.engine === 'webllm-native') ? !!state.webllm : false;
       d = Math.max(d, dejaCharge ? 900000 : 1800000);
     }
@@ -15373,162 +15300,6 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     });
   }
 
-  /* ═══ 🆕 v1.7.580k — IA INTÉGRÉE DE CHROME (Gemini Nano) ═══
-     Le navigateur fournit lui-même le modèle : aucune clé, aucun téléchargement
-     de notre côté, aucune donnée envoyée à Google. ~3B → nettement meilleur
-     qu'un petit modèle Transformers.js. Chrome 148+ sur ordinateur uniquement.
-
-     🆕 v1.7.580aa — DEMANDE COMPACTE OBLIGATOIRE (+ « The input is too large »).
-     MESURE DU 28/09 : fenêtre de Nano ≈ 6 000 tokens ; le studio lui envoyait le
-     prompt système complet de SuperPrint → refus systématique. On borne donc :
-       • système  : 3 600 caractères (prompt court, voir buildSystemPrompt) ;
-       • demande  : bornée par la VRAIE quota du modèle (session.inputQuota et
-                    session.measureInputUsage quand Chrome les expose), sinon
-                    8 000 caractères ;
-       • rappel de schéma JSON placé à la FIN du message (dernier mot reçu = le
-         format attendu, comme pour Transformers.js) ;
-       • en cas de dépassement malgré tout : on RÉDUIT de moitié et on RÉESSAIE
-         (3 tentatives) au lieu d'abandonner. */
-  /* ⚠️ MESURE du 28/09 : à 3 600 caractères, le prompt système consommait à lui seul
-     la fenêtre du modèle intégré — Chrome créait bien la session mais refusait ENSUITE
-     chaque demande (« The input is too large. ») même réduite au quart : le moteur
-     « Chrome intégré » ne produisait donc jamais rien. Fenêtre ≈ 6 000 tokens en tout
-     (système + demande + réponse) : on réserve la place de la réponse. */
-  const NANO_SYSTEME_MAX = 1400;
-  const NANO_TEXTE_MAX = 8000;
-  function spNanoRappelSchema() {
-    return '\n\nRAPPEL FINAL — RÉPONDS UNIQUEMENT PAR CE JSON (millimètres, nombres nus) :\n' +
-      '{"pages":[{"pageIndex":0,"elements":[{"type":"text","left":15,"top":20,"width":180,"text":"TITRE","fontSize":36,"fill":"#111111"}]}]}\n' +
-      'Types : rectangle|text|circle|line|image · text = {type,left,top,width,text,fontSize,fill} · pas de texte hors du JSON.';
-  }
-  function callChromeAI(messages) {
-    const L = window.LanguageModel || (window.ai && window.ai.languageModel) || null;
-    if (!L || typeof L.create !== 'function') {
-      return Promise.reject(new Error("L'IA intégrée de Chrome n'est pas disponible dans ce navigateur (il faut Chrome 148 ou plus, sur ordinateur). Choisissez un autre moteur : WebLLM ou Transformers.js."));
-    }
-    const systemeBrut = String((messages[0] || {}).content || '');
-    const systeme = systemeBrut.length > NANO_SYSTEME_MAX ? systemeBrut.slice(0, NANO_SYSTEME_MAX) : systemeBrut;
-    const dernier = messages.slice().reverse().find(function (m) { return m.role === 'user'; });
-    const demandeBrute = String((dernier || {}).content || state.lastPrompt || '');
-    const rappel = spNanoRappelSchema();
-    const trop = function (e) {
-      const m = String((e && (e.message || e.name)) || '');
-      return /input is too large|too large|too long|exceed|quota|QuotaExceeded/i.test(m);
-    };
-    /* Longueur visée pour le TEXTE, d'après la vraie quota si elle est exposée. */
-    function texteDansBudget(session, texte) {
-      const quota = Number(session && session.inputQuota) || 0;
-      const reserve = Math.max(300, Math.round(quota * 0.15));
-      const budget = quota ? Math.max(600, quota - reserve) : 0;
-      const mesure = (t) => {
-        if (!budget || !session || typeof session.measureInputUsage !== 'function') return Promise.resolve(0);
-        return Promise.resolve().then(function () { return session.measureInputUsage(t); })
-          .then(function (u) { return Number(u) || 0; }).catch(function () { return 0; });
-      };
-      return mesure(texte).then(function (usage) {
-        // Si la mesure dépasse le budget, on coupe au prorata (jamais à zéro).
-        if (usage > budget && usage > 0) {
-          const garder = Math.max(400, Math.floor(texte.length * (budget / usage) * 0.95));
-          return texte.slice(0, garder) + rappel;
-        }
-        return texte;
-      });
-    }
-    return Promise.resolve()
-      .then(function () { return (typeof L.availability === 'function') ? L.availability() : 'available'; })
-      .then(function (dispo) {
-        if (dispo === 'unavailable') {
-          throw new Error("Le modèle intégré de Chrome n'est pas disponible sur cet appareil (mémoire ou stockage insuffisants). Choisissez le moteur « Sur cet ordinateur » (WebLLM).");
-        }
-        const loader = appendModelLoader('Chrome — préparation du modèle intégré…');
-        /* 🆕 v1.7.580nn — LE PROMPT SYSTÈME AUSSI PEUT ÊTRE TROP LONG.
-           MESURE du 28/09 : avec un prompt système de 3 600 caractères, Chrome
-           refusait la CRÉATION de la session (« Erreur : The input is too large. »,
-           message brut : aucune tentative de repli n'existait à cet endroit) → le
-           moteur « Chrome intégré » ne produisait jamais rien. On retente désormais
-           avec un prompt système réduit (1/2 puis 1/4) au lieu d'abandonner. */
-        const creerSession = function (sys, essai) {
-          return L.create({
-            initialPrompts: [{ role: 'system', content: sys }],
-            monitor: function (m) {
-              if (!m || typeof m.addEventListener !== 'function') return;
-              m.addEventListener('downloadprogress', function (e) {
-                const pct = Math.round(((e && e.loaded) || 0) * 100);
-                if (loader && loader.labelEl) loader.labelEl.textContent = 'Chrome — téléchargement du modèle (une seule fois)… ' + pct + '%';
-                /* v1.7.579 — MÊME BARRE QUE LA GÉNÉRATION DE DOCUMENT (demande utilisateur).
-                   Le pourcentage s'affichait depuis longtemps, mais la barre restait à
-                   zéro : le téléchargement du modèle (parfois long) ne se voyait pas. */
-                if (loader && loader.barEl) loader.barEl.style.width = Math.max(2, Math.min(100, pct)) + '%';
-              });
-            }
-          }).catch(function (e) {
-            if (essai >= 2 || !trop(e) || sys.length <= 400) throw e;
-            try { if (window.console && console.warn) console.warn('[SP213] Chrome Nano : prompt système réduit (' + (essai + 2) + '/3)'); } catch (_) {}
-            return creerSession(sys.slice(0, Math.max(400, Math.floor(sys.length / 2))), essai + 1);
-          });
-        };
-        return creerSession(systeme, 0).then(function (session) {
-          if (loader && loader.el) { try { loader.el.remove(); } catch (_) {} }
-          const base = (demandeBrute.length > NANO_TEXTE_MAX ? demandeBrute.slice(0, NANO_TEXTE_MAX) : demandeBrute) + rappel;
-          // Tentatives : 1) telle quelle (ajustée au budget) ; 2) moitié ; 3) quart.
-          //   Le plancher de 600 caractères évite de réduire à néant : on veut
-          //   toujours transmettre la demande ET le rappel de schéma JSON.
-          const essais = [];
-          return texteDansBudget(session, base).then(function (t0) {
-            essais.push(t0);
-            const demi = Math.max(600, Math.floor(t0.length / 2));
-            if (demi < t0.length) essais.push(t0.slice(0, demi) + rappel);
-            const quart = Math.max(600, Math.floor(t0.length / 4));
-            if (quart < demi) essais.push(t0.slice(0, quart) + rappel);
-            let dernierEchec = null;
-            const tenter = function (i) {
-              if (i >= essais.length) {
-                try { session.destroy(); } catch (_) {}
-                /* 🆕 v1.7.580nn — MESURE du 28/09 : sur un Chromium dont le modèle
-                   on-device n'est PAS installé, `availability()` répond pourtant
-                   « available », `inputQuota` est ABSENT et `measureInputUsage`
-                   n'existe pas : l'API refuse alors toute demande avec « The input is
-                   too large. » et se contente de recopier le texte. Le vrai conseil
-                   n'est donc pas « raccourcissez votre demande » mais « installez le
-                   modèle ». */
-                const _sansModele = (typeof session.inputQuota === 'undefined') || (typeof session.measureInputUsage !== 'function');
-                if (_sansModele) {
-                  throw new Error("Le modèle intégré de Chrome n'est pas installé dans ce navigateur : l'API répond mais recopie la demande au lieu de générer. Ouvrez chrome://components → « Optimization Guide On Device Model » → Vérifier les mises à jour (≈ 2 Go, une seule fois), puis rechargez la page. En attendant, utilisez « Sur cet ordinateur » (WebLLM, gratuit et sans clé), DeepSeek, OpenAI, Anthropic, OpenRouter ou Groq.");
-                }
-                const det = (dernierEchec && dernierEchec.message) ? (' (' + dernierEchec.message + ')') : '';
-                throw new Error("La demande dépasse le contexte de Chrome intégré (Gemini Nano, environ 6 000 tokens)" + det + ". Le studio a déjà réduit le texte au minimum : raccourcissez votre demande, retirez la pièce jointe, ou utilisez « Sur cet ordinateur » (WebLLM) ou DeepSeek, qui ont une grande fenêtre de contexte.");
-              }
-              return Promise.resolve().then(function () { return session.prompt(essais[i]); }).then(function (txt) {
-                try { session.destroy(); } catch (_) {}
-                /* 🆕 v1.7.580y — MESURE : sur un Chromium SANS modèle installé, l'API
-                   ne génère RIEN et RECOPIE la demande (« On-device model is not
-                   available in Chromium, this API is just echoing back the input »).
-                   On le dit franchement, au lieu de laisser croire à une maquette. */
-                const rep = String(txt || '');
-                if (/not available in Chromium|echoing back the input/i.test(rep)) {
-                  throw new Error("Le modèle intégré de Chrome n'est pas encore installé sur cet appareil : Chrome a renvoyé la demande telle quelle au lieu de générer la maquette. Ouvrez chrome://components → « Optimization Guide On Device Model » → Vérifier les mises à jour (≈ 2 Go, une seule fois), ou choisissez le moteur « Sur cet ordinateur » (WebLLM).");
-                }
-                return rep;
-              }, function (e) {
-                if (!trop(e)) { try { session.destroy(); } catch (_) {} throw e; }
-                // Trop volumineux : on réessaie plus court (même session).
-                try { if (window.console && console.warn) console.warn('[SP213] Chrome Nano : entrée trop grande, nouvelle tentative réduite (' + (i + 1) + '/' + essais.length + ')'); } catch (_) {}
-                dernierEchec = e;
-                return tenter(i + 1);
-              });
-            };
-            return tenter(0);
-          });
-        }).catch(function (e) {
-          if (loader && loader.el) { try { loader.el.remove(); } catch (_) {} }
-          throw e;
-        });
-      });
-  }
-
-  /* ═══ 🆕 v1.7.580g — AI HORDE : calcul bénévole, clé anonyme, format OpenAI ═══ */
-  /* Modèles qui ont refusé pendant cette session : on ne les retente pas. */
-  const _hordeKO = [];
   function _hordeUnAppel(modele, messages, maxTok) {
     const body = {
       model: modele,
@@ -15710,7 +15481,6 @@ MODIFICATIONS CHIRURGICALES (si l'utilisateur demande de modifier la maquette ac
     // 🆕 v1.7.580g — moteurs gratuits sans clé
     if (state.engine === 'aihorde') return callAIHorde(messages);
     if (state.engine === 'tjslocal') return callTJS(messages);
-    if (state.engine === 'chromeai') return callChromeAI(messages);
     return callGroq(messages);
   }
 

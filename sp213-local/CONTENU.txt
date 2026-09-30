@@ -24,9 +24,13 @@ src/ .............................. ancien moteur du studio local, debranche
                                            preferez le cloud.
   public/superprint/supertypo/index.html . SUPERTYPO (editeur de police)
   public/superprint/documentation.html ... documentation
+  public/superprint/rock.html ........... ROCK v1 : la page du moteur, avec sa
+                                          pierre 3D low poly (three.js, servie
+                                          EN LOCAL : aucun CDN, 0 jeton)
+  public/superprint/JS/three.module.min.js  three.js 0.160.1 (pierre 3D, hors ligne)
   public/superprint/api.html ............. API
   public/superprint/install.html ......... page du site (source du lanceur)
-  public/superprint/version.txt .......... version du paquet : 1.7.587
+  public/superprint/version.txt .......... version du paquet : 1.7.588
   public/js/fabric.min.js ................ moteur canvas (fabric)
   public/js/mammoth.min.js ............... import de documents Word
 
@@ -51,4 +55,4 @@ INSTALLATION
 
 Telecharge le paquet, installe les dependances et lance le serveur local.
 
-SuperPrint 1.7.584 - 30 septembre 2026 - https://superprint.cc
+SuperPrint 1.7.588 - 30 septembre 2026 - https://superprint.cc
