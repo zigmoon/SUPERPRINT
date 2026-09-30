@@ -3717,6 +3717,17 @@
     if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
       document.fonts.ready.then(function() {
         try {
+          /* 🆕 _SP_PARITE_POLICES_592 — LES MESURES PRISES AVANT LES POLICES SONT PÉRIMÉES.
+             Le cache de spMeasureTextBlock est indexé sur [texte, corps, largeur,
+             interligne, police, graisse, style, interlettrage] : il ne connaît PAS
+             l'état de chargement de la police, et il n'était JAMAIS vidé
+             (spClearMeasureCache n'avait aucun appelant). Une mesure faite avant
+             l'arrivée d'une @font-face restait donc valable toute la session — y
+             compris pour la composition et pour l'export .sp, alors que l'app
+             remesure après document.fonts.ready (_spRefreshTextboxesAfterFontLoad).
+             On vide donc le cache AVANT de re-rendre : le studio et l'app mesurent
+             désormais le même texte avec la même police. */
+          spClearMeasureCache();
           state.pages.forEach(p => {
             if (p && p.canvas && typeof p.canvas.requestRenderAll === 'function') p.canvas.requestRenderAll();
           });
@@ -10414,27 +10425,97 @@ function spRtfLayoutInfo(src) {
     if (M.chapeau) e.push(spGabT(L.x0, L.y1 - k * 32, L.cw, spGabCourt(M.chapeau, 200), g.corps, '#6b7280', null, 'left', 1.45));
     return e;
   }
+  /* ══ _SP_STUDIO_TITRE_592 — LE TITRE D'UNE MAQUETTE N'EST JAMAIS LA DEMANDE ═══════════════
+     MESURÉ au banc (moteur SP213 rock 1.0, demande sans pièce jointe) :
+       « Crée une affiche A4 pour la fête de la musique à Orléans le 21 juin, ambiance
+         festive, beaucoup de couleurs, un grand titre »
+     posait en 44 pt « Crée une affiche pour la fête de la musique à Orléans le 21… » :
+     l'ordre de l'utilisateur, tronqué aux points de suspension, dans le titre. La 586
+     avait retiré les CONSIGNES ; restait l'ORDRE et son contexte.
+     Un titre n'est ni une phrase ni un ordre. Ici, dans cet ordre :
+       1. la PREMIÈRE proposition seule (avant la virgule) ;
+       2. les verbes de demande retirés (« crée », « fais-moi », « je voudrais », « make »…) ;
+       3. le TYPE demandé retiré (« une affiche », « un flyer », « une carte de visite »…) ;
+       4. COUPE au premier complément de lieu ou de date (« à Orléans le 21 juin ») : il
+          part en INFORMATIONS, là où les gabarits posent déjà les contacts ;
+       5. ce qui reste est REFUSÉ si ce n'est pas un titre (plus de 6 mots, plus de 46
+          signes, aucun mot utile, ou encore la moitié de la demande).
+     Quand rien ne passe, la demande ne fournit AUCUN titre : le modèle SuperPrint ou le
+     gabarit prend le relais — la conversation l'annonce déjà (« la demande ne donnait pas
+     encore de texte, je pose donc la base du modèle »). */
+  const SP_GAB_ORDRE = /\b(?:cr[ée]e(?:r|z)?|fais(?!-?part)|faites(?!-?part)|faire(?!-?part)|fabrique(?:r|z)?|g[ée]n[èe]re(?:r|z)?|compose(?:r|z)?|r[ée]alise(?:r|z)?|dessine(?:r|z)?|propose(?:r|z)?|donne(?:r|z)?|je\s+veux|je\s+voudrais|j['’]aimerais|je\s+souhaite|il\s+(?:me\s+)?faut|faudrait|peux[- ]tu|pourrais[- ]tu|merci|svp|s['’]il\s+vous\s+pla[iî]t|make|create|draw|please|作って|作成)\b/gi;
+  const SP_GAB_ORDRE_TEST = new RegExp(SP_GAB_ORDRE.source, 'i');
+  const SP_GAB_TYPE_DEMANDE = /\b(?:une?|des|les?|du|de\s+la|mon|ma|mes|ce|cette)\s+(?:affiches?|posters?|flyers?|tracts?|prospectus|manifestes?|annonces?|brochures?|plaquettes?|d[ée]pliants?|livrets?|booklets?|cahiers?|menus?|cartes?(?:\s+(?:de\s+)?(?:visite|postales?|v[œoe]ux))?|catalogues?|programmes?|invitations?|faire-?parts?|rapports?|livres?|magazines?|revues?|journaux?|portfolios?|bandeaux?|banni[èe]res?|billets?|[ée]tiquettes?|factures?|devis|calendriers?|marque-?pages?)\b/gi;
+  const SP_GAB_TITRE_MOTS = /\b(?:grands?|gros|immense|petits?|[ée]normes?|[ée]l[ée]gants?)\s+titres?\b|\btitres?\s+(?:centr[ée]e?s?|en\s+haut|en\s+gros)\b|\b(?:titre|sous-?titre|surtitre|wording|texte|accroche|slogan|message)\s*[:=]\s*|\bbeaucoup\s+de\b|\bplein\s+de\b|\bun\s+peu\s+de\b|\bfestifs?|festives?|joyeux|joyeuse|convivial\w*|chaleureux|chaleureuse\w*|color[ée]e?s?\b/gi;
+  /* Un lieu ou une date : « à Orléans », « au Caveau », « le 21 juin », « samedi 12 octobre ». */
+  const SP_GAB_TITRE_LIEU = /\s+(?:(?:[àa]|au|aux|en|dans|sur|devant|chez)\s+\p{Lu}|le\s+\d{1,2}\b|\d{1,2}\s+(?:janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[ûu]t|septembre|octobre|novembre|d[ée]cembre)\b|(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\b).*$/iu;
+  function spGabTitreSujet(texte) {
+    let t = String(texte || '');
+    /* 1. La PREMIÈRE proposition : ce qui suit la virgule est une consigne. */
+    t = t.split(/\s*[,;·•]\s*|\s+[–—]\s+/)[0] || '';
+    /* 2. L'ordre, le type demandé, les mots de mise en page. */
+    t = t.replace(SP_GAB_ORDRE, ' ').replace(SP_GAB_TYPE_DEMANDE, ' ').replace(SP_GAB_TITRE_MOTS, ' ');
+    /* ⚠️ NE PAS TOUCHER À L'APOSTROPHE : « d'activité » n'est pas une citation
+       (mesuré : le titre sortait « Rapport d activité »). On ne retire que les
+       guillemets, qui, eux, délimitent le texte à composer. */
+    t = t.replace(/[«»“”"]/g, ' ').replace(/\s{2,}/g, ' ').trim();
+    /* « Affiche pour la fête » → le mot de type en tête saute QUAND il est suivi d'un
+       « pour / avec / sur / à » ; « Menu du réveillon » garde son « Menu ». */
+    t = t.replace(/^(?:une?\s+|le\s+|la\s+|les\s+|des\s+)?(?:affiches?|flyers?|posters?|tracts?|prospectus|brochures?|plaquettes?|d[ée]pliants?|livrets?|menus?|cartes?|catalogues?|programmes?|invitations?|rapports?)\s+(?=(?:pour|avec|sur|[àa])\s)/i, '').trim();
+    /* 3. Lieu et date partent en informations. */
+    let reste = '';
+    const mLieu = t.match(SP_GAB_TITRE_LIEU);
+    if (mLieu && mLieu.index > 6) { reste = t.slice(mLieu.index).trim(); t = t.slice(0, mLieu.index).trim(); }
+    /* 4. Connecteurs orphelins laissés par les retraits. */
+    for (let i = 0; i < 3; i++) {
+      t = t.replace(/^(?:et|avec|sans|puis|pour|dans|sur|de|du|des|d['’]|l['’]|le|la|les|un|une|the|for|with|on|no|en|au|aux|[àa])\s+/i, '').trim();
+      t = t.replace(/\s+(?:et|puis|avec|sans|pour|de|du|des|and|with|le|la|les|un|une|au|aux|[àa])\s*$/i, '').trim();
+      t = t.replace(/\s+(?:et|puis|and)\s+/gi, ' ').replace(/\s{2,}/g, ' ').trim();
+    }
+    t = t.replace(/^[^\wÀ-ÿぁ-んァ-ヶ一-龠]+/, '').replace(/[^\wÀ-ÿぁ-んァ-ヶ一-龠]+$/, '').replace(/\s{2,}/g, ' ').trim();
+    /* 5. Ça n'est un titre que si ça en a l'air. */
+    if (!t || !spGabUtileTexte(t)) return { sujet: '', reste: reste };
+    const mots = t.split(' ').filter(Boolean);
+    /* Un mot de LIAISON seul (« et », « avec »…) n'est pas un titre : mesuré,
+       « Crée une affiche A4 festive et colorée » sortait avec « Et » en grand. */
+    if (/^(?:et|ou|avec|sans|pour|de|du|des|la|le|les|un|une|en|au|aux|and|or|with|the|a)$/i.test(t)) return { sujet: '', reste: reste };
+    if (t.replace(/[^\wÀ-ÿぁ-んァ-ヶ一-龠]/g, '').length < 3) return { sujet: '', reste: reste };
+    if (mots.length > 6 || t.length > 46) return { sujet: '', reste: reste };
+    return { sujet: t.charAt(0).toUpperCase() + t.slice(1), reste: reste };
+  }
+  /* _SP_STUDIO_TITRE_592c — UN TITRE TRONQUÉ AUX POINTS DE SUSPENSION EST REFUSÉ.
+     MESURÉ : « Programme du festival : 18h30 ouverture des portes, 19h concert, 21h
+     tête d'affiche » — demande qui EST le contenu, donc légitimement composée —
+     donnait « Programme du festival : 18h30 ouverture des portes, 19h… » en grand :
+     le début du prompt, coupé. Quand le texte retenu pour le titre dépasse la place,
+     on garde sa PREMIÈRE proposition (« Programme du festival ») ; si elle ne
+     convient pas non plus, on retombe sur la version courte d'avant. */
+  function spGabTitreCourt(x) {
+    const brut = String(x || '');
+    const court = spGabCourt(brut, 64);
+    if (court.indexOf('…') === -1 || brut.indexOf('…') >= 0) return court;
+    const p = brut.replace(/\s+/g, ' ').trim().split(/\s*[:;,·•]\s*/)[0].trim();
+    const mots = p.split(' ').filter(Boolean);
+    if (p.length >= 4 && p.length <= 46 && mots.length <= 6) return p;
+    return court;
+  }
   function spGabSujet(brief) {
-    let s = String(brief || '').replace(/\s+/g, ' ').trim();
-    if (!s || s.length > 300) return { sujet: '', n: 0 };
+    const brut = String(brief || '').replace(/\s+/g, ' ').trim();
     let n = 0;
-    SP_GAB_CONSIGNE.forEach(function (re) { if (re.test(s)) { n++; s = s.replace(re, ' '); } });
+    if (!brut) return { sujet: '', reste: '', n: 0 };
+    /* Trop long pour être une consigne : on ne compte rien (comportement de la 586). */
+    if (brut.length > 300) return { sujet: '', reste: '', n: 0 };
+    /* Les CONSIGNES sont comptées sur TOUTE la demande : le chapô s'en sert. */
+    SP_GAB_CONSIGNE.forEach(function (re) { if (re.test(brut)) n++; });
+    /* Un titre ne se lit que sur une demande COURTE : au-delà, c'est une demande rédigée. */
+    if (brut.length > 180) return { sujet: '', reste: '', n: n };
+    let s = brut;
+    SP_GAB_CONSIGNE.forEach(function (re) { s = s.replace(re, ' '); });
     s = s.replace(/\s{2,}/g, ' ').replace(/\s+([,;·])/g, '$1');
-    /* Découpage en PROPOSITIONS : on jette celles qui ne sont plus qu'un connecteur
-       (« et », « avec », « の ») une fois les consignes retirées. */
-    const bouts = s.split(/\s*[,;·•]\s*|\s+[–—]\s+/).map(function (x) { return x.trim(); })
-      .map(function (x) { return x.replace(/^(?:et|avec|sans|puis|pour|en|au|aux|[àa]|dans|sur|de|du|des|the|for|with|on|no)\s+/i, '').trim(); })
-      .map(function (x) { return x.replace(/^[のをは、,\s]+/, '').trim(); })
-      /* _SP_STUDIO_SUJET_587c — un sujet ne finit JAMAIS sur un connecteur (« … graphiste et ») ni ne
-         garde un « et » orphelin au milieu : les mots de consigne retirés laissent des
-         morceaux vides. */
-      .map(function (x) { return x.replace(/\s+(?:et|puis|avec|sans|pour|de|du|des|and|with)\s*$/i, '').trim(); })
-      .map(function (x) { return x.replace(/\s+(?:et|puis|and)\s+/gi, ' ').replace(/\s{2,}/g, ' ').trim(); })
-      .filter(function (x) { return x.replace(/[^\wÀ-ÿぁ-んァ-ヶ一-龠]/g, '').length >= 3; })
-      .filter(function (x) { return !/^(?:et|avec|sans|puis|pour|de|du|des|the|and|with|no)$/i.test(x); });
-    s = bouts.join(', ').replace(/\s{2,}/g, ' ').replace(/^[,;·\s]+|[,;·\s]+$/g, '').trim();
-    if (s.replace(/[^\wÀ-ÿぁ-んァ-ヶ一-龠]/g, '').length < 3) return { sujet: '', n: n };
-    return { sujet: spGabCourt(s, 62).replace(/[.!?]+$/, ''), n: n };
+    const _t = spGabTitreSujet(s);
+    /* Un « sujet » qui couvre encore la moitié de la demande n'est pas un sujet. */
+    if (!_t.sujet || _t.sujet.length >= 0.5 * brut.length) return { sujet: '', reste: '', n: n };
+    return { sujet: _t.sujet, reste: _t.reste, n: n };
   }
   function spGabMeta(brief) {
     const src = spGabSourcesMemo();
@@ -10445,14 +10526,23 @@ function spRtfLayoutInfo(src) {
        se composait telle quelle en corps de texte dans le livre (vu page 2). On repère les
        blocs qui viennent de la demande et on les écarte du contenu — sans document joint
        (ou en mode « modèle »), la demande reste le contenu, comme avant. */
-    const blocsBrief = (briefTexte && src.corps) ? spGabMarkdown(briefTexte).map(function (b) { return b.x; }) : [];
+    const _blocsBrief = briefTexte ? spGabMarkdown(briefTexte).map(function (b) { return b.x; }) : [];
+    const blocsBrief = src.corps ? _blocsBrief : [];
     const blocs = spGabMarkdown(briefTexte + '\n\n' + src.corps);
     /* _SP_STUDIO_VOCABLE_586 — LE SUJET REMPLACE LA CONSIGNE COMME TITRE (voir spGabSujet).
        Sans pièce jointe, la demande EST le contenu : c'est donc ici, et seulement ici,
        qu'on écarte les mots de consigne pour ne garder que le sujet. Le sujet est POSÉ
        plus bas, après la déclaration de M (aucune référence avant sa déclaration). */
-    let _sujetBrut = { sujet: '', n: 0 };
-    try { if (!src.corps) _sujetBrut = spGabSujet(briefTexte); } catch (_) {}
+    let _sujetBrut = { sujet: '', reste: '', n: 0 };
+    try { _sujetBrut = spGabSujet(briefTexte); } catch (_) {}
+    /* _SP_STUDIO_TITRE_592 — LA DEMANDE EST-ELLE UNE CONSIGNE ? Un ORDRE (« crée… »,
+       « fais-moi… ») ou au moins deux familles de consignes (format + pages + ton…).
+       Si oui, AUCUN de ses blocs ne peut devenir un texte composé (titre, sur-titre) :
+       « le prompt ne doit pas se retrouver dans les titres de la maquette ». */
+    const _demandeConsigne = !src.corps && (_sujetBrut.n >= 2 || SP_GAB_ORDRE_TEST.test(briefTexte));
+    /* La demande s'écarte du CORPS quand elle est une consigne — avec ou sans pièce
+       jointe (repli de la 584, qui ne le faisait qu'avec un document joint). */
+    const _ecarterDemande = src.corps || _demandeConsigne;
     const M = { brief: String(brief || ''), titre: '', surtitre: '', chapeau: '', sections: [], lignes: [], items: [], chiffres: [], infos: [], photos: src.images.slice(), contexte: src.contexte, couleurs: src.couleurs.slice(), corpsLength: src.corps.length, source: src.corps ? 'demande + pièces jointes' : 'demande seule' };
     /* _SP_STUDIO_CTX_585 — LE PLAN DU DOCUMENT EST GARDÉ (niveau + intitulé), pour être
        annoncé et servir de sommaire. Rien n'est inventé : ce sont les titres du
@@ -10466,7 +10556,10 @@ function spRtfLayoutInfo(src) {
        les roses ». On mémorise donc le premier titre de niveau 1 et il PRIME. */
     let h1 = '', titreNiv = 0;
     blocs.forEach(function (b) {
-      if (blocsBrief.indexOf(b.x) !== -1) return;   // consigne de l'utilisateur : écartée du corps
+      /* _SP_STUDIO_TITRE_592 — consigne de l'utilisateur : écartée du corps. MESURÉ :
+         « Rapport d'activité 24 pages pour une association, sommaire et chiffres clés, ton
+         institutionnel » se composait en PARAGRAPHE dans le rapport, sous le titre. */
+      if (_ecarterDemande && _blocsBrief.indexOf(b.x) !== -1) return;
       if (b.t === 'h') {
         /* Un titre sans une seule lettre (« # » seul) n'est pas un titre : on l'écarte
            au lieu d'en faire le titre du document. */
@@ -10560,7 +10653,9 @@ function spRtfLayoutInfo(src) {
     if (!M.titre && src.titres.length && String(brief || '').trim().length < 90 && String(src.titres[0]).length <= 62 && spGabUtileTexte(src.titres[0])) M.titre = src.titres[0];
     if (!spGabUtileTexte(M.titre)) M.titre = '';
     if (!spGabUtileTexte(M.chapeau)) M.chapeau = '';
-    /* _SP_STUDIO_VOCABLE_586 — LE SUJET DE LA DEMANDE DEVIENT LE TITRE (au lieu de la consigne entière). */
+    /* _SP_STUDIO_TITRE_592 — LE SUJET DE LA DEMANDE DEVIENT LE TITRE (voir spGabTitreSujet :
+       un ordre, un format ou un ton n’en font jamais partie). Le LIEU et la DATE qui
+       suivaient partent en INFORMATIONS : c’est là que les gabarits les composent. */
     if (!src.corps && _sujetBrut.sujet) M.titre = _sujetBrut.sujet;
     /* _SP_STUDIO_VOCABLE_586 — LA DEMANDE N'EST PAS UN CHAPÔ QUAND ELLE N'EST QU'UNE CONSIGNE :
        si au moins deux familles de consignes ont été reconnues (format + pages + ton…),
@@ -10589,7 +10684,19 @@ function spRtfLayoutInfo(src) {
       if (_phrase) M.chapeau = spGabCourt(_phrase, 240);
       else if (_cit.mots.length >= 3) M.chapeau = '';
     }
-    if (!M.titre) M.titre = (spGabUtileTexte(M.chapeau) ? M.chapeau : (M.lignes.filter(spGabUtileTexte)[0] || 'Sans titre'));
+    /* _SP_STUDIO_TITRE_592 — LE LIEU ET LA DATE DE LA DEMANDE PARTENT EN INFORMATIONS :
+       c'est là que les gabarits les composent, et cela empêche la base du modèle d'inventer
+       une adresse. Rien n'est repris si l'utilisateur a écrit ses mots entre guillemets
+       (mesuré : « 21 juin » se doublait avec le guillemet « 21 juin, Orléans »). */
+    if (!src.corps && !_cit.mots.length && _sujetBrut.reste && M.infos.indexOf(_sujetBrut.reste) === -1) M.infos.push(spGabCourt(_sujetBrut.reste, 90));
+    /* _SP_STUDIO_TITRE_592 — LE REPLI NE REPREND PLUS LA DEMANDE : quand elle n’est
+       qu’une consigne, ses blocs (chapô, lignes) sont écartés du titre — sinon la phrase
+       de l’utilisateur revenait par la petite porte (mesuré : titre 44 pt tronqué). */
+    const _deLaDemande = function (x) { return !!_demandeConsigne && _blocsBrief.indexOf(x) !== -1; };
+    if (!M.titre) {
+      M.titre = spGabTitreCourt(spGabUtileTexte(M.chapeau) && !_deLaDemande(M.chapeau) ? M.chapeau
+        : (M.lignes.filter(function (x) { return spGabUtileTexte(x) && !_deLaDemande(x); })[0] || 'Sans titre'));
+    }
     M.titre = spGabCourt(M.titre, 64).replace(/[.!?]+$/, '');
     /* Le chapô ne doit JAMAIS être le titre ni son début : sur une demande courte
        d'une seule phrase, le titre est la TRONCATURE du chapô, donc les deux blocs
@@ -10598,7 +10705,9 @@ function spRtfLayoutInfo(src) {
     const memeTexte = function (a, b) { return !!a && !!b && (a === b || a.indexOf(b) === 0 || b.indexOf(a) === 0); };
     if (memeTexte(M.chapeau, M.titre)) M.chapeau = (M.lignes.length ? M.lignes[0] : '');
     if (memeTexte(M.chapeau, M.titre)) M.chapeau = '';
-    const prem = blocs.filter(function (b) { return b.t !== 'h' && b.x !== M.titre; });
+    /* _SP_STUDIO_TITRE_592 — une consigne de la demande ne remonte pas non plus en
+       SUR-TITRE (défaut mesuré : « Crée une affiche A4 » en petites capitales). */
+    const prem = blocs.filter(function (b) { return b.t !== 'h' && b.x !== M.titre && !_deLaDemande(b.x); });
     /* Le sur-titre ne doit JAMAIS être le titre, le chapô, ni un morceau de l'un des
        deux : mesuré, le même texte ressortait en sur-titre ET en titre, donc deux
        blocs superposés (chevauchement signalé par l'utilisateur). */
@@ -13527,6 +13636,15 @@ function spRtfLayoutInfo(src) {
       dl.className = 'btn btn-sm';
       dl.innerHTML = '<svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ' + t('chat.download');
       dl.title = t('chat.download');
+      /* ⚠️ v1.7.591 — SOUS LE DERNIER MESSAGE, LE .sp EST CELUI DE L’APERÇU :
+         le JSON brut du moteur ne contient que les emplacements photo du gabarit,
+         alors que les visuels surnuméraires (photos, SVG, EPS) sont posés après coup
+         par le contrat des pièces jointes. Mesure : 3 visuels à l’écran, 1 seul dans
+         le .sp du message. Le dernier message décrit la maquette AFFICHÉE → on exporte
+         le document courant (même source que ÉDITER et que la barre Sauvegarder). */
+      /* ⚠️ v1.7.591 — le .sp exporté est la maquette AFFICHÉE (voir downloadJSONasSP) :
+         le JSON brut du moteur ignore les visuels posés après coup par le contrat des
+         pièces jointes (mesuré : 3 visuels à l’écran, 1 seul dans le fichier). */
       dl.addEventListener('click', () => downloadJSONasSP(opts.rawJson));
       actions.appendChild(dl);
 
@@ -14674,6 +14792,31 @@ function spRtfLayoutInfo(src) {
       }
       return el;
     });
+  }
+
+  /* ══ 🆕 v1.7.591 _SP_STUDIO_PJ_REFACTO_591 — LES PHOTOS JOINTES SUIVENT LA REFACTORISATION ══
+     Retour utilisateur : « je mets des images en PJ, elles arrivent bien dans la maquette ;
+     mais dès que j'ouvre Réglages et que je change de format, les images disparaissent ».
+     CAUSE MESURÉE (banc 8185, moteur rock 1.0, 2 photos) : notre moteur (spGabDesign) pose
+     les photos par leur INDEX (« imageIndex ») et c'est hydrateUserImages qui réinjecte la
+     data URI — or ce chemin n'était appelé QUE par l'envoi d'un prompt. spRegRecomposer
+     (le pop-in Réglages, refactorisation en direct) construisait le document SANS hydrater :
+     les éléments image partaient donc SANS « imageUrl », et l'aperçu les écarte
+     (buildObject : « if (t === 'image' && el.imageUrl) »). Mesure : avant = 2 images avec
+     data URI ; après un simple passage en A5 = 1 élément image SANS data URI, donc aucune
+     image à l'écran. On hydrate désormais TOUT document construit par buildDocFromParsed :
+     un seul point de passage, et idempotent (un élément qui porte déjà son « imageUrl »
+     n'a plus d'« imageIndex »). */
+  function spHydraterImagesDoc(doc, attachments) {
+    try {
+      const atts = (attachments && attachments.length) ? attachments : (state.attachments || []);
+      if (!atts.length || !doc || !Array.isArray(doc.pages)) return doc;
+      doc.pages.forEach(function (p) {
+        if (!p || !Array.isArray(p.elements) || !p.elements.length) return;
+        p.elements = hydrateUserImages(p.elements, atts);
+      });
+    } catch (_) {}
+    return doc;
   }
 
   // v1.7.392 — Les jetons @BLED@ / @BLED2@ resolvent le fond perdu DANS LA
@@ -17574,10 +17717,16 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       if (!att || !att.dataURL) return;
       const W = doc.w || state.pageW, H = doc.h || state.pageH;
       const surfW = (doc.viewMode === 'spread') ? W * 2 : W;
-      const m = 15;
+      /* ⚠️ v1.7.591 — GÉOMÉTRIE TOUJOURS POSITIVE : la marge fixe de 15 mm donnait
+         une hauteur NÉGATIVE sur un petit format (carte de visite 85 × 55 mm :
+         H − 4 × 15 = −5 mm), donc une image non dessinable — la photo jointe
+         disparaissait de nouveau après un passage aux petites cotes (mesuré au banc).
+         La marge suit le plus petit côté (plafonnée à 15 mm : A4, A5, A3 et les
+         planches sont inchangés), et les deux cotes ont un plancher de 8 mm. */
+      const m = Math.max(3, Math.min(15, Math.min(surfW, H) * 0.12));
       const ratio = (att.width && att.height) ? (att.width / att.height) : 1.5;
-      const largeur = Math.round(Math.min(surfW - m * 2, 140) * 10) / 10;
-      const hauteur = Math.round(Math.min(H - m * 4, largeur / ratio) * 10) / 10;
+      const largeur = Math.round(Math.max(8, Math.min(surfW - m * 2, 140)) * 10) / 10;
+      const hauteur = Math.round(Math.max(8, Math.min(H - m * 2.5, largeur / ratio)) * 10) / 10;
       /* Hauteur RÉELLE d’un bloc : les textes n’ont pas de "height" (mesuré : le
          titre était vu à 0 mm de haut, la photo atterrissait dessus). */
       const hauteurBloc = function (e) {
@@ -17717,6 +17866,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     });
     const effW = state.viewMode === 'spread' ? state.pageW * 2 : state.pageW;
     const doc = { w: state.pageW, h: state.pageH, effW, viewMode: state.viewMode, bleed: state.bleed, pages };
+    /* 🆕 _SP_CESURE_STUDIO_592 — CE DOCUMENT EST COMPOSÉ PAR LE STUDIO, QUI NE SAIT PAS
+       CÉSURER. Le marqueur sert aux écrivains de .sp : ils écriront « pas de césure »
+       pour que l'app ne coupe pas là où cet aperçu n'a rien montré. Un document
+       importé de l'app n'a pas ce marqueur : ses réglages sont donc conservés. */
+    doc._spSansCesure = true;
     // 🆕 2026-08-30 — Validateur de fin de page : les blocs qui dépassent sont
     //   reportés sur une nouvelle page (ou réduits en typo), jamais coupés.
     try { _spConstrainDocToPages(doc); } catch (_) {}
@@ -17746,6 +17900,10 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     /* 🆕 v1.7.580dd — IMPOSITION DU CAHIER (couverture recto / 4e verso, fond perdu
        au chant) : dernière passe, elle raisonne sur les positions définitives. */
     try { _spImpCorrigee = spImposerFeuilletsSeuls(doc); } catch (_) { _spImpCorrigee = 0; }
+    /* 🆕 v1.7.591 — Les photos jointes (data URI) sont réinjectées ICI : c'est le point de
+       passage COMMUN à l'envoi d'un prompt ET à la refactorisation du pop-in Réglages.
+       Sans cela, changer de format effaçait les images de la maquette (mesuré au banc). */
+    try { spHydraterImagesDoc(doc); } catch (_) {}
     return doc;
   }
 
@@ -17899,7 +18057,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     const cle = [txt, fsPt, wMm, lh, fam, poids, style, cs].join('|');
     const memo = _spMeasureCache.get(cle);
     if (memo) return memo;
-    let lignes = 0, hauteurPx = 0;
+    let lignes = 0, hauteurPx = 0, hauteurCadrePx = 0;
     try {
       const tb = new fabric.Textbox(txt, {
         width: wMm * MM_TO_PX,
@@ -17926,6 +18084,19 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       let somme = 0;
       for (let i = 0; i < lignes; i++) somme += tb.getHeightOfLine(i);
       hauteurPx = Math.max(1, somme);
+      /* 🆕 _SP_PARITE_CADRE_592 — LE CADRE, CALCULÉ COMME DANS L'APP.
+         MESURÉ (affiche A5, 14 pt interligne 1,5, 2 lignes) : le studio écrivait
+         47 px (2 lignes entières) et l'app affichait 39,6 px — l'app garde le
+         calcul de Fabric (calcTextHeight) : toutes les lignes entières SAUF LA
+         DERNIÈRE, qui compte sans son interligne bas. On reproduit donc ce calcul
+         À LA SOURCE, ligne par ligne (une ligne = getHeightOfLine, donc les
+         tailles mixtes sont justes aussi), pour que l'aperçu, le .sp et l'app
+         donnent le MÊME cadre. `hauteurPx` (somme des lignes ENTIÈRES) n'est pas
+         touché : c'est la hauteur du TEXTE, dont se servent les passes de mise en
+         page et de collisions. */
+      const _derniereH = (lignes > 0) ? tb.getHeightOfLine(lignes - 1) : 0;
+      const _lhMesure = (typeof tb.lineHeight === 'number' && tb.lineHeight > 0) ? tb.lineHeight : 1;
+      hauteurCadrePx = Math.max(1, somme - _derniereH + _derniereH / _lhMesure);
     } catch (e) {
       // Repli deterministe si Fabric ne peut pas mesurer (police non chargee).
       const fsPx = fsPt * PT_TO_PX;
@@ -17935,8 +18106,10 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       for (let i = 0; i < segs.length; i++) tot += Math.max(1, Math.ceil(segs[i].length / perLine));
       lignes = Math.max(1, tot);
       hauteurPx = lignes * fsPx * lh * SP_TEXT_LINE_MULT;
+      hauteurCadrePx = fsPx * SP_TEXT_LINE_MULT + (lignes - 1) * fsPx * lh * SP_TEXT_LINE_MULT;
     }
-    const res = { lignes: lignes, hauteurPx: hauteurPx, hauteurMm: hauteurPx / MM_TO_PX };
+    if (!(hauteurCadrePx > 0)) hauteurCadrePx = hauteurPx;   // _SP_PARITE_CADRE_592 : dernier repli
+    const res = { lignes: lignes, hauteurPx: hauteurPx, hauteurCadrePx: hauteurCadrePx, hauteurMm: hauteurPx / MM_TO_PX, hauteurCadreMm: hauteurCadrePx / MM_TO_PX };
     /* ══ ⚠️ v1.7.584 — LE CACHE DE MESURE SE VIDAIT AU MILIEU D'UN GROS DOCUMENT ══
        Défaut mesuré (retour utilisateur : « les réglages sont trop lourds sur un document
        de 150 pages, c'est très lent ») : le plafond était de 400 entrées et, au-delà, le
@@ -17983,17 +18156,27 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     //   or cette hauteur est celle du CADRE écrit dans le .sp : sous-estimée,
     //   l'app rogne le texte ; surestimée, elle creuse un vide sous le bloc.
     //   Fabric sait replier exactement le même texte : on lui demande.
-    let lines = 0;
-    try { lines = (spMeasureTextBlock(el) || {}).lignes || 0; } catch (_) { lines = 0; }
+    let lines = 0, cadreMesure = 0;
+    try { const _m = spMeasureTextBlock(el) || {}; lines = _m.lignes || 0; cadreMesure = _m.hauteurCadrePx || 0; } catch (_) { lines = 0; cadreMesure = 0; }
     if (!(lines > 0)) lines = spEstimateTextLines(el);
-    const h = Math.max(fsPx, Math.round(lines * fsPx * lh * SP_TEXT_LINE_MULT));
+    /* 🛡️ _SP_PARITE_CADRE_592 — LA FORMULE DE L'APP, PAS CELLE DU STUDIO.
+       Ancienne formule : lignes × corps × interligne × 1,13 (somme des lignes
+       ENTIÈRES) — mesurée 47 px là où l'app affiche 39,6 px. La mesure Fabric
+       (cadreMesure, cf. spMeasureTextBlock) fait foi ; la formule ne sert que si
+       la mesure est indisponible. */
+    const h = Math.max(fsPx, Math.round(cadreMesure > 0
+      ? cadreMesure
+      : (fsPx * SP_TEXT_LINE_MULT + Math.max(0, lines - 1) * fsPx * lh * SP_TEXT_LINE_MULT)));
     // 🛡️ v1.7.368 — le bloc doit pouvoir contenir ses lignes EXPLICITES.
     //   Un texte de N lignes separees par \n ne peut pas descendre sous
     //   N x fontSize x lineHeight (aucune estimation n'entre en jeu).
     //   Sans ce plancher, l'app ouvrait le document avec une hauteur de cadre
     //   trop courte et rognait les dernieres lignes.
     const nbExplicites = String(el.text || '').split('\n').length;
-    const plancher = Math.round(nbExplicites * fsPx * lh * SP_TEXT_LINE_MULT);
+    /* _SP_PARITE_CADRE_592 — même convention que `h` : la dernière ligne compte sans son
+       interligne bas (sinon un texte de N lignes explicites serait déclaré plus
+       haut par le plancher que par la mesure, et l'app le rognerait). */
+    const plancher = Math.round(fsPx * SP_TEXT_LINE_MULT + Math.max(0, nbExplicites - 1) * fsPx * lh * SP_TEXT_LINE_MULT);
     // 🆕 v1.7.415 — PLANCHER DE LA MESURE REELLE (document venu de l'app).
     //   L'app transporte la hauteur EXACTE de son cadre (_spFrameHeightMm).
     //   L'estimation peut se tromper ; la mesure, non. On ne fait que
@@ -19170,6 +19353,24 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
        d'objets) coûtait cher à CHAQUE mouvement de tirette. parseAIResponse accepte déjà
        un objet (v1.7.393) : on lui donne directement la sortie du moteur. */
     try { doc = buildDocFromParsed(parseAIResponse(out)); } catch (e) { return -1; }
+    /* ══ 🆕 v1.7.591 — AUCUNE PHOTO JOINTE NE DISPARAÎT QUAND ON CHANGE DE FORMAT ══
+       Retour utilisateur : « je mets des images en PJ, elles arrivent bien ; dès que
+       je change de format dans Réglages, les images disparaissent ». MESURÉ au banc :
+       la refactorisation RECOMPOSE le document avec le moteur, et un gabarit n’a qu’un
+       ou deux emplacements photo — la photo surnuméraire, que le contrat de l’envoi
+       (« N photos en contenu = N placements VISIBLES », spVerifierPhotosJointes) avait
+       posée, n’était donc plus là. On applique le MÊME contrat ici, en POSE LOCALE
+       (instantanée, sans réseau) : une photo jointe en contenu reste visible, quel que
+       soit le format choisi. La demande « sans photos » reste respectée.
+       ⚠️ Les cotes viennent du document RECOMPOSÉ (doc.w/doc.h), donc la photo est
+       replacée à l’échelle du nouveau format, jamais à celle de l’ancien. */
+    try {
+      const _attJ = state.attachments || [];
+      if (!state._spSansPhoto && _attJ.length) {
+        const _manquantes = spPhotosAbsentesDuDoc(doc, _attJ);
+        if (_manquantes.length) spPlacerPhotosManquantes(doc, [], _attJ, _manquantes);
+      }
+    } catch (_) {}
     const _t2 = performance.now();
     if (!doc || !doc.pages || !doc.pages.length) return -1;
     try {
@@ -19916,8 +20117,23 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     if (el._spSpotInkName) obj._spSpotInkName = String(el._spSpotInkName).slice(0, 60);
     if (el._spSpotStrokeInkName) obj._spSpotStrokeInkName = String(el._spSpotStrokeInkName).slice(0, 60);
     if (el._spPathFrom) obj._spPathFrom = String(el._spPathFrom).slice(0, 24);
-    if (el.enableHyphenation !== undefined) obj.enableHyphenation = !!el.enableHyphenation;
-    if (el.hyphenLanguage) obj.hyphenLanguage = el.hyphenLanguage;
+    /* 🆕 _SP_CESURE_STUDIO_592 — LA CÉSURE : CE QUE L'APERÇU MONTRE, RIEN DE PLUS.
+       MESURÉ : un bloc marqué « césure français » donnait 12 lignes sans un tiret
+       dans le studio et 11 lignes avec 4 tirets dans l'app (même texte, 120 px).
+       Le studio ne césure pas (son _wrapLine est celui de Fabric, non patché) : sur
+       ses PROPRES maquettes il écrit donc enableHyphenation = false, et l'app ne
+       coupe plus là où l'aperçu n'annonçait rien. Un document venu de l'app (ses
+       textes portent _spFrameHeightMm) garde ses réglages intacts : le trajet
+       app → studio → app reste neutre. Le vrai correctif — faire césurer le studio
+       avec le moteur de l'app — reste à faire. */
+    const _spDocSansCesure = (typeof state !== 'undefined' && state && state.doc && state.doc._spSansCesure === true);
+    const _spTexteDeLApp = (typeof el._spFrameHeightMm === 'number' && el._spFrameHeightMm > 0);
+    if (_spDocSansCesure && !_spTexteDeLApp) {
+      obj.enableHyphenation = false;
+    } else {
+      if (el.enableHyphenation !== undefined) obj.enableHyphenation = !!el.enableHyphenation;
+      if (el.hyphenLanguage) obj.hyphenLanguage = el.hyphenLanguage;
+    }
     if (el._spWrapMode) obj._spWrapMode = el._spWrapMode;
     if (el._spWrapScope) obj._spWrapScope = el._spWrapScope;
     if (typeof el._spWrapTop === 'number') obj._spWrapTop = el._spWrapTop;
@@ -20057,8 +20273,51 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     };
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     ⚠️ _SP_PARITE_CADRE_592 — LES MARGES QUE LE STUDIO APPLIQUE DOIVENT SORTIR DANS LE .sp.
+
+     MESURE DU DÉFAUT (affiche A5, 30/09/2026) : la composition contraint les textes
+     dans petit fond 12×k / tête 15×k / grand fond 18×k / queue 20×k (k = pageW/210
+     borné à 0,55 — cf. _spEnforceMargins, qui tourne sur TOUTE maquette), mais le
+     .sp ne portait AUCUNE marge : l'app retombait sur son défaut de 20 mm partout.
+     Mesuré à l'écran : repères de l'app à 65,2 px du bord (= 20 mm + fond perdu)
+     alors que la maquette tient dans 12,7 mm → « dans l'app les marges sont plus
+     grandes ». Les repères ne sont pas cosmétiques : la recomposition, l'ajout de
+     pages et la redistribution S'EN SERVENT.
+
+     Un document VENU de l'app porte ses propres marges : on les réémet telles
+     quelles (le trajet app → studio → app reste neutre).
+     ══════════════════════════════════════════════════════════════════════════ */
+  function spMargesPourExport() {
+    const src = (state.doc && state.doc.margins && typeof state.doc.margins === 'object') ? state.doc.margins : null;
+    const nombre = (v) => (typeof v === 'number' && isFinite(v) && v >= 0) ? v : null;
+    const plus = (o, repli) => {
+      const c = [nombre(o && o.top), nombre(o && o.bottom), nombre(o && o.inner !== undefined ? o.inner : o.left), nombre(o && o.outer !== undefined ? o.outer : o.right)].filter(function (v) { return v !== null; });
+      return c.length ? Math.max.apply(null, c) : repli;
+    };
+    if (src) {
+      const maxi = nombre(state.doc.margin);
+      return { margins: src, margin: (maxi !== null) ? maxi : plus(src, 20) };
+    }
+    const PW = state.pageW || 210, PH = state.pageH || 297;
+    const k = Math.min(1, Math.max(0.55, PW / 210));
+    const petit = Math.round(Math.min(12 * k, 18 * k - 3) * 10) / 10;
+    const grand = Math.round(18 * k * 10) / 10;
+    const tete = Math.round(15 * k * 10) / 10;
+    const queue = Math.round(20 * k * 10) / 10;
+    /* En page simple, _spEnforceMargins borne à gauche et à droite par le GRAND
+       fond (la plus généreuse) : les marges sont donc égales des deux côtés.
+       En double page, le petit fond est du côté de la PLIURE (inner). */
+    const spread = (state.viewMode === 'spread');
+    const int = spread ? petit : grand;
+    const m = { top: tete, bottom: queue, inner: int, outer: grand, left: int, right: grand };
+    void PH;
+    return { margins: m, margin: Math.max(tete, queue, int, grand) };
+  }
+
   function buildSPFile() {
     if (!state.pages.length) return null;
+    const _spMgExport = spMargesPourExport();   // _SP_PARITE_CADRE_592
     const now = new Date();
     const bleedPx = mmToPx(state.bleed || 3);
     const pageWpx = mmToPx(state.pageW);
@@ -20164,10 +20423,12 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return {
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: spPagesFinal.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
-      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20,
-      /* 🆕 v1.7.459 — 4 marges du document d'origine, telles quelles (null = clé absente). */
-      /* _SP_STUDIO_509_DEBUT — 4 marges du document d'origine, telles quelles (null = clé absente). */
-      margins: (state.doc && state.doc.margins) ? state.doc.margins : undefined, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb',
+      /* ⚠️ _SP_PARITE_CADRE_592 — marges du document : celles de l'app si elles existent,
+         sinon CELLES QUE LA COMPOSITION A APPLIQUÉES (cf. spMargesPourExport).
+         Avant : margin 20 en dur et `margins` absent → l'app ouvrait la maquette
+         avec 20 mm de marge sur les quatre côtés. */
+      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: _spMgExport.margin,
+      margins: _spMgExport.margins, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb',
       /* _SP_STUDIO_509_DEBUT — GRILLE DE COLONNES ROUGES : réécrite TELLE QUELLE (app → studio → app). */
       colGrid: (state.doc && state.doc.colGrid) ? state.doc.colGrid : undefined, styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) hérités de l'app (cf. spCollectSpotInks).
@@ -20406,6 +20667,26 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   // avant tout téléchargement ou transmission à l'app SuperPrint.
   function normalizeSPFile(input) {
     const parsed = typeof input === 'string' ? JSON.parse(input) : input;
+    /* ══ 🆕 v1.7.591 — LES IMAGES JOINTES DU .sp EXPORTÉ DEPUIS UN MESSAGE ══
+       MESURÉ : « Télécharger .sp » sur une maquette de SP213 rock 1.0 donnait
+       rect 1 / textbox 4 / line 2 et ZÉRO image, alors que l’aperçu en affichait une
+       (photo ou EPS/SVG vectoriel). Le JSON du message est la SORTIE BRUTE du moteur,
+       où une image est désignée par son INDEX (« imageIndex ») ; c’est
+       hydrateUserImages() qui remet la data URI — appelée jusque-là pour le seul
+       APERÇU. L’export .sp ET le bouton « Ouvrir dans SuperPrint » passent par ici :
+       on hydrate donc AVANT de construire le fichier, une fois pour les deux.
+       (Un .sp déjà construit porte « _sp » et ses objets « src » : il n’est pas touché.) */
+    try {
+      const _attsPj = state.attachments || [];
+      if (_attsPj.length && parsed && !parsed._sp) {
+        if (Array.isArray(parsed.pages)) {
+          parsed.pages.forEach(function (p) {
+            if (p && Array.isArray(p.elements)) p.elements = hydrateUserImages(p.elements, _attsPj);
+          });
+        }
+        if (Array.isArray(parsed.elements)) parsed.elements = hydrateUserImages(parsed.elements, _attsPj);
+      }
+    } catch (_) {}
     const spFile = parsed && !parsed._sp && (parsed.pages || parsed.elements)
       ? buildSPFileFromParsed(parsed)
       : parsed;
@@ -20426,7 +20707,20 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   // ⬇ Télécharge une maquette IA au format natif .sp
   function downloadJSONasSP(jsonStr) {
     try {
-      const spFile = normalizeSPFile(jsonStr);
+      /* ⚠️ v1.7.591 — LE .sp EST CELUI DE L’APERÇU, pas le JSON brut du moteur.
+         MESURÉ : avec une photo + un SVG + un EPS joints, l’aperçu et ÉDITER portent
+         TROIS images, tandis que ce bouton n’en exportait QU’UNE — un gabarit n’a que
+         les emplacements photo qu’il prévoit, les visuels surnuméraires étant posés
+         après coup (contrat « N photos = N placements visibles »). Le document courant
+         est donc la bonne source (comme ÉDITER et la barre Sauvegarder) ; on ne
+         retombe sur le JSON du message que si le document est vide. */
+      let source = jsonStr;
+      try {
+        const _pages = (state.doc && Array.isArray(state.doc.pages)) ? state.doc.pages : [];
+        const _aDuContenu = _pages.some(function (p) { return p && Array.isArray(p.elements) && p.elements.length > 0; });
+        if (_aDuContenu) { const _courant = buildSPFile(); if (_courant) source = _courant; }
+      } catch (_) {}
+      const spFile = normalizeSPFile(source);
       const blob = new Blob([JSON.stringify(spFile, null, 2)], { type: 'application/x-superprint+json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -20573,6 +20867,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   function buildSPFileFromParsed(parsed) {
     const now = new Date();
     const pages = [];
+    const _spMgExport = spMargesPourExport();   // _SP_PARITE_CADRE_592
     /* 🆕 v1.7.580x — un tableau `pages` VIDE ne doit pas faire ignorer
        `parsed.elements` (le .sp sortait alors vide). */
     if (Array.isArray(parsed.pages) && parsed.pages.length) {
@@ -20606,10 +20901,12 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return {
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
       meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: pages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
-      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: (state.doc && typeof state.doc.margin === 'number' && state.doc.margin >= 0) ? state.doc.margin : 20,
-      /* 🆕 v1.7.459 — 4 marges du document d'origine, telles quelles (null = clé absente). */
-      /* _SP_STUDIO_509_DEBUT — 4 marges du document d'origine, telles quelles (null = clé absente). */
-      margins: (state.doc && state.doc.margins) ? state.doc.margins : undefined, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb',
+      /* ⚠️ _SP_PARITE_CADRE_592 — marges du document : celles de l'app si elles existent,
+         sinon CELLES QUE LA COMPOSITION A APPLIQUÉES (cf. spMargesPourExport).
+         Avant : margin 20 en dur et `margins` absent → l'app ouvrait la maquette
+         avec 20 mm de marge sur les quatre côtés. */
+      document: { format: { width: state.pageW, height: state.pageH, unit: 'mm', orientation: state.pageW > state.pageH ? 'landscape' : 'portrait' }, margin: _spMgExport.margin,
+      margins: _spMgExport.margins, bleed: state.bleed, viewMode: (state.viewMode === 'spread' ? 'spread' : 'single'), colorMode: (state.doc && state.doc.colorMode) ? state.doc.colorMode : 'rgb',
       /* _SP_STUDIO_509_DEBUT — GRILLE DE COLONNES ROUGES : réécrite TELLE QUELLE (app → studio → app). */
       colGrid: (state.doc && state.doc.colGrid) ? state.doc.colGrid : undefined, styles: spCollectStylesBlock() },
       // 🎨 v1.7.350b — tons directs (Pantone) : 1 entrée = 1 couche
