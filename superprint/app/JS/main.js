@@ -51560,6 +51560,121 @@ https://superprint.app
         //   (plume « write on path » invisible dans le PDF vectoriel).
         //   Rendu ensuite via drawSvgPath(d,{x:0,y:pageHeight,scale:1}) : le point
         //   canvas (ax,ay) tombe pile en (ax, pageHeight-ay) = repère PDF y-haut.
+        // 🩹 v1.7.593 — EVEN-ODD (fill-rule) : pdf-lib remplit TOUJOURS en « nonzero »
+        //   (drawSvgPath n'émet que `f`, jamais `f*`). MESURE : un chemin
+        //   fill-rule="evenodd" à deux sous-chemins (cadre + trou) sortait avec le trou
+        //   REMPLI (flux : `140 250 m … h 170 280 m … h f`, zéro `f*`), alors que
+        //   l'aperçu Fabric respecte la règle (ctx.fill('evenodd') mesuré).
+        //   Correctif : on renverse les sous-chemins de profondeur IMPAIRE (les trous
+        //   d'un chemin imbriqué), pour que « nonzero » produise exactement le résultat
+        //   even-odd : trous préservés, en VECTORIEL, sans aplat raster.
+        //   La profondeur est établie par inclusion de boîtes (le cas réel : cadre +
+        //   réserves). Les sous-chemins disjoints (profondeur 0) ne sont pas touchés :
+        //   pour eux nonzero et even-odd donnent déjà le même résultat.
+        function _spNormaliserEnroulementEvenOdd(chemin) {
+            try {
+                if (!Array.isArray(chemin)) return chemin;
+                var sous = [], courant = [];
+                for (var i = 0; i < chemin.length; i++) {
+                    var c = chemin[i]; if (!c || !c.length) continue;
+                    var t = c[0];
+                    if (t === 'M' || t === 'm') {
+                        if (courant.length) sous.push(courant);
+                        courant = [c];
+                    } else {
+                        if (!courant.length) courant.push(['M', 0, 0]);
+                        courant.push(c);
+                        if (t === 'Z' || t === 'z') { sous.push(courant); courant = []; }
+                    }
+                }
+                if (courant.length) sous.push(courant);
+                if (sous.length < 2) return chemin;
+
+                // boîte englobante + liste de points « sur la courbe » d'un sous-chemin
+                var boite = function (sp) {
+                    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, pts = [];
+                    for (var k = 0; k < sp.length; k++) {
+                        var c = sp[k], t = c[0], px = null, py = null;
+                        if (t === 'M' || t === 'L') { px = c[1]; py = c[2]; }
+                        else if (t === 'C') { px = c[5]; py = c[6]; }
+                        else if (t === 'Q') { px = c[3]; py = c[4]; }
+                        if (px === null || !isFinite(px) || !isFinite(py)) continue;
+                        pts.push([px, py]);
+                        if (px < x0) x0 = px; if (px > x1) x1 = px;
+                        if (py < y0) y0 = py; if (py > y1) y1 = py;
+                    }
+                    return { x0: x0, y0: y0, x1: x1, y1: y1, pts: pts };
+                };
+
+                var infos = sous.map(boite);
+                // Sens d'enroulement (aire signée approchée : points sur la courbe)
+                var signe = function (info) {
+                    var pts = info.pts, a = 0;
+                    if (pts.length < 3) return 0;
+                    for (var j = 0; j < pts.length; j++) {
+                        var p = pts[j], q = pts[(j + 1) % pts.length];
+                        a += (p[0] * q[1]) - (q[0] * p[1]);
+                    }
+                    return a;
+                };
+                var signes = infos.map(signe);
+                var retourne = false, res = [];
+                for (var s = 0; s < sous.length; s++) {
+                    var moi = infos[s], sp = sous[s];
+                    if (!isFinite(moi.x0) || moi.pts.length < 3 || Math.abs(signes[s]) < 1e-9) { res = res.concat(sp); continue; }
+                    // Contenant le plus PROCHE (plus petite boîte qui contient strictement la mienne)
+                    var anc = -1;
+                    for (var o = 0; o < infos.length; o++) {
+                        if (o === s) continue;
+                        var a = infos[o];
+                        if (!isFinite(a.x0) || Math.abs(signes[o]) < 1e-9) continue;
+                        if (!(a.x0 <= moi.x0 && a.y0 <= moi.y0 && a.x1 >= moi.x1 && a.y1 >= moi.y1)) continue;
+                        if (a.x0 === moi.x0 && a.y0 === moi.y0 && a.x1 === moi.x1 && a.y1 === moi.y1) continue;
+                        if (anc < 0) anc = o;
+                        else {
+                            var b = infos[anc];
+                            var aireA = (a.x1 - a.x0) * (a.y1 - a.y0), aireB = (b.x1 - b.x0) * (b.y1 - b.y0);
+                            if (aireA < aireB) anc = o;
+                        }
+                    }
+                    // ⚠️ ON NE RENVERSE QUE SI LE SOUS-CHEMIN TOURNE DANS LE MÊME SENS QUE SON
+                    //   CONTENANT : c'est le cas où « nonzero » remplit le trou alors que
+                    //   even-odd le veut vide. Un fichier dont les trous tournent déjà à
+                    //   l'envers est DÉJÀ correct en nonzero → on n'y touche pas (aucune
+                    //   régression possible). Sous-chemins disjoints (sans contenant) :
+                    //   intactes, nonzero = even-odd pour eux.
+                    if (anc >= 0 && ((signes[s] > 0) === (signes[anc] > 0))) {
+                        sp = _spRetournerSousChemin(sous[s]);
+                        if (sp !== sous[s]) retourne = true;
+                    }
+                    res = res.concat(sp);
+                }
+                return retourne ? res : chemin;
+            } catch (e) { return chemin; }
+        }
+
+        // Renverse un sous-chemin (points ET points de contrôle) : même géométrie,
+        // sens d'enroulement opposé.
+        function _spRetournerSousChemin(sp) {
+            var pts = [], ctrls = [];
+            for (var k = 0; k < sp.length; k++) {
+                var c = sp[k], t = c[0];
+                if (t === 'M' || t === 'L') { pts.push([c[1], c[2]]); ctrls.push(null); }
+                else if (t === 'C') { pts.push([c[5], c[6]]); ctrls.push([[c[1], c[2]], [c[3], c[4]]]); }
+                else if (t === 'Q') { pts.push([c[3], c[4]]); ctrls.push([[c[1], c[2]]]); }
+            }
+            if (pts.length < 2) return sp;
+            var out = [['M', pts[pts.length - 1][0], pts[pts.length - 1][1]]];
+            for (var q = pts.length - 1; q > 0; q--) {
+                var ct = ctrls[q], cible = pts[q - 1];
+                if (ct && ct.length === 2) out.push(['C', ct[1][0], ct[1][1], ct[0][0], ct[0][1], cible[0], cible[1]]);
+                else if (ct && ct.length === 1) out.push(['Q', ct[0][0], ct[0][1], cible[0], cible[1]]);
+                else out.push(['L', cible[0], cible[1]]);
+            }
+            out.push(['Z']);
+            return out;
+        }
+
         function _spBuildAbsoluteSvgPath(obj) {
             try {
                 if (!obj || typeof obj.calcTransformMatrix !== 'function') return '';
@@ -51586,8 +51701,18 @@ https://superprint.app
                 };
                 var d = '';
                 if (obj.type === 'path' && Array.isArray(obj.path)) {
-                    for (var i = 0; i < obj.path.length; i++) {
-                        var c = obj.path[i]; if (!c || !c.length) continue;
+                    // 🩹 v1.7.593 — EVEN-ODD : chemin de dessin normalisé (trous renversés)
+                    //   pour que le remplissage « nonzero » de pdf-lib reproduise la règle
+                    //   fill-rule="evenodd" de l'aperçu. Mémoïsé sur l'objet.
+                    var _cmds = obj.path;
+                    if (obj.fillRule === 'evenodd') {
+                        if (!obj._spPathEvenOdd) {
+                            try { obj._spPathEvenOdd = _spNormaliserEnroulementEvenOdd(obj.path); } catch (_) { obj._spPathEvenOdd = obj.path; }
+                        }
+                        _cmds = obj._spPathEvenOdd;
+                    }
+                    for (var i = 0; i < _cmds.length; i++) {
+                        var c = _cmds[i]; if (!c || !c.length) continue;
                         var t = c[0];
                         if (t === 'M') d += 'M ' + tp(c[1], c[2]) + ' ';
                         else if (t === 'L') d += 'L ' + tp(c[1], c[2]) + ' ';
@@ -52873,6 +52998,20 @@ https://superprint.app
 
             // PATH / POLYGON / POLYLINE (formes vectorielles, tracés « plume »)
             if (obj.type === 'polygon' || obj.type === 'polyline' || obj.type === 'path') {
+                // 🩹 v1.7.593 — PEINTURE COMPLEXE (dégradé / motif fabric) : ce chemin ne
+                //   sait pas la rendre. _parsePdfColor() renvoie null (la couleur n'est pas
+                //   une chaîne) et drawSvgPath() est alors appelé SANS couleur : pdf-lib
+                //   n'écrit NI couleur NI remplissage → l'élément DISPARAÎT du PDF
+                //   (mesuré : flux sans opérateur de couleur ni de remplissage, alors que
+                //   l'aperçu l'affiche). On le confie au repli raster, comme le font déjà
+                //   les primitives (rectangle / cercle / ellipse).
+                if ((obj.fill && typeof obj.fill === 'object') || (obj.stroke && typeof obj.stroke === 'object')) {
+                    try {
+                        if (await _spRenderComplexFabricObjectToPdfLib(doc, page, obj, multiplier)) return;
+                    } catch (e) {
+                        console.warn('[pdf-lib] chemin à peinture complexe : repli raster impossible', e);
+                    }
+                }
                 // Coordonnées ABSOLUES (px = pt) via la matrice de transform → rendu
                 // fidèle position/échelle/rotation, y compris tracés « write on path ».
                 var svgPath = _spBuildAbsoluteSvgPath(obj);
