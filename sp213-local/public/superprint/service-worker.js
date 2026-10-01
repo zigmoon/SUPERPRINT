@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.591-rock-folio-guillemets';
+const CACHE_NAME = 'superprint-shell-v1.7.592-filets-rock1';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

@@ -50964,6 +50964,11 @@ https://superprint.app
             var mmToPt = 72 / 25.4;
             var fonts = {};
             var images = {};
+            /* 🧩 _SP_PDF_IMPORT_PLACE_594 — mémo des pages PDF déjà embarquées.
+               Sans lui, 8 copies d'un même PDF importé appelaient 8 fois
+               doc.embedPdf() : le PDF de sortie portait 8 fois le même XObject
+               (poids inutile). Clé = archive + numéro de page + RVB/CMJN. */
+            var _spPdfEmbedMemo = {};
             var multiplier = getQualityMultiplier(options.quality || 'medium');
             var helvetica = null;
             try { helvetica = await doc.embedStandardFont(PDFLib.StandardFonts.Helvetica); } catch(e) {}
@@ -51180,24 +51185,43 @@ https://superprint.app
                             var _reCmNative = !!(options && options.colorMode === 'cmyk');
                             if (_reCmNative && !arc.cmykBuffer) continue; // pas de conversion CMJN → fallback raster
                             var _reSrcBuf = (_reCmNative && arc.cmykBuffer) ? arc.cmykBuffer : arc.buffer;
-                            var embeddedPages = await doc.embedPdf(_reSrcBuf, [srcPageNum - 1]);
-                            var embeddedPdfPage = embeddedPages && embeddedPages[0];
+                            var _memoKey = arcKey + '#' + srcPageNum + '#' + (_reCmNative ? 'k' : 'rgb');
+                            var embeddedPdfPage = _spPdfEmbedMemo[_memoKey];
+                            if (!embeddedPdfPage) {
+                                var embeddedPages = await doc.embedPdf(_reSrcBuf, [srcPageNum - 1]);
+                                embeddedPdfPage = embeddedPages && embeddedPages[0];
+                                if (embeddedPdfPage) _spPdfEmbedMemo[_memoKey] = embeddedPdfPage;
+                            }
                             if (embeddedPdfPage) {
-                                // Remplacer la page courante par la page PDF d'origine
-                                // (on ne dessine pas l'image raster)
+                                /* ══ _SP_PDF_IMPORT_PLACE_594 — LA COPIE VA À SA PLACE ══
+                                   DÉFAUT MESURÉ (audit 2026-10-02, reproduit par la mesure
+                                   avant/après) : la page PDF importée était dessinée
+                                   CENTRÉE et MISE À L'ÉCHELLE DE LA FEUILLE ENTIÈRE
+                                   (scale = min(tgtW/srcW, tgtH/srcH), puis centrage sur
+                                   sheetW × sheetH), en ignorant complètement la position
+                                   et la taille de l'objet posé sur la page. Conséquence
+                                   EXACTE du rapport utilisateur : N copies d'un même PDF
+                                   importé (8 sur une planche) se dessinaient TOUTES au
+                                   MÊME endroit → une seule copie visible à l'export,
+                                   agrandie au format de la feuille, alors que la preview
+                                   en montrait 8. On reprend donc la GÉOMÉTRIE DE L'OBJET
+                                   (bounding rect en px → mm → pt), exactement comme le
+                                   chemin jsPDF (_spEmbedPdfImportsWithPdfLib, l.~56600) et
+                                   comme le chemin natif imposé (_exportImposedPdfLib).
+                                   Largeur/hauteur = celles de l'objet : la page PDF est
+                                   mise à l'échelle de sa boîte, comme le ferait l'image
+                                   raster qu'elle remplace (mêmes scaleX/scaleY).
+                                   ⚠️ offsetX/offsetY (option « Format fini ») sont déjà
+                                   appliqués aux objets AVANT cette boucle → le bounding
+                                   rect est dans le repère de la page de sortie. */
                                 vobj._spPdfReplaced = true;
-                                // Calculer les dimensions de la page d'origine en points
-                                var srcW = embeddedPdfPage.width;
-                                var srcH = embeddedPdfPage.height;
-                                // Largeur de la page courante (mm → pt)
-                                var tgtW = sheetW * mmToPt;
-                                var tgtH = sheetH * mmToPt;
-                                // On dessine la page PDF d'origine centrée, mise à l'échelle
-                                var scale = Math.min(tgtW / srcW, tgtH / srcH);
-                                var dw = srcW * scale, dh = srcH * scale;
-                                var dx = (tgtW - dw) / 2, dy = (tgtH - dh) / 2;
+                                var vbr = vobj.getBoundingRect(true, true);
+                                var vxPt = pxToMm(vbr.left) * mmToPt;
+                                var vwPt = pxToMm(vbr.width) * mmToPt;
+                                var vhPt = pxToMm(vbr.height) * mmToPt;
+                                var vyPt = page.getHeight() - (pxToMm(vbr.top + vbr.height) * mmToPt);
                                 try {
-                                    page.drawPage(embeddedPdfPage, { x: dx, y: dy, width: dw, height: dh });
+                                    page.drawPage(embeddedPdfPage, { x: vxPt, y: vyPt, width: vwPt, height: vhPt });
                                 } catch(e) {
                                     console.warn('[pdf-lib] drawPage failed:', e);
                                     vobj._spPdfReplaced = false;
@@ -71200,7 +71224,10 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         // ===== Font helpers for style modal =====
         function getAllAvailableFontFamilies() {
     // From preloaded known list + any customFonts added
-    const base = ['Open Sans','Poppins','Playfair Display','Bebas Neue','IBM Plex Mono','JetBrains Mono','Fira Code','Space Mono'];
+    /* ⚠️ 2026-10-01 — LES TROIS POLICES 2026 (auto-hébergées dans CSS/fonts.css, 4 graisses
+       chacune) : Newsreader (serif contemporaine, monde du livre), Space Grotesk et
+       Bricolage Grotesque (créatives, communication et design). */
+    const base = ['Open Sans','Poppins','Playfair Display','Bebas Neue','Newsreader','Space Grotesk','Bricolage Grotesque','IBM Plex Mono','JetBrains Mono','Fira Code','Space Mono'];
     const customs = (customFonts || []).map(f => f.name);
     // De-duplicate while preserving order (base first, then customs)
     const seen = new Set();
@@ -71210,6 +71237,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
     return (customFonts || []).some(f => f.name === name);
         }
         function getWeightsForFont(name) {
+    /* ⚠️ 2026-10-01 — les trois polices 2026 sont embarquées en quatre graisses
+       (voir CSS/fonts.css) : on les propose donc dans le sélecteur de graisse. */
+    if (/^(Newsreader|Space Grotesk|Bricolage Grotesque)$/.test(String(name || ''))) return ['300','400','600','700'];
     return fontWeights[name] || ['400'];
         }
         function updateStyleWeightsOptions() {
@@ -83464,6 +83494,8 @@ window._spEnsureGuidesAfterTemplateLoad = _spEnsureGuidesAfterTemplateLoad;
                 
                 if (loadingMsg) loadingMsg.style.display = 'none';
                 if (selectionContent) selectionContent.style.display = 'block';
+                // Réinitialiser l'état de la bascule « fichier / image » de la pop-in
+                try { if (typeof window.spPdfMajImportKind === 'function') window.spPdfMajImportKind(); } catch (_) {}
                 
             } catch (error) {
                 console.error('Erreur lors du chargement du PDF:', error);
@@ -83553,6 +83585,17 @@ window._spEnsureGuidesAfterTemplateLoad = _spEnsureGuidesAfterTemplateLoad;
                     
                     // Gestion du clic pour sélection
                     thumbnailDiv.addEventListener('click', (e) => {
+                        /* 🖼️ _SP_IMPORT_PDF_BLOC_594 — en mode « image », on n'importe
+                           qu'UNE page : le clic REMPLACE la sélection au lieu de l'ajouter
+                           (sinon on croit importer 3 pages alors qu'une seule sera posée). */
+                        const _kindSel = document.querySelector('input[name="pdfImportKind"]:checked');
+                        if (_kindSel && _kindSel.value === 'image') {
+                            document.querySelectorAll('.pdf-page-thumbnail').forEach(t => t.classList.remove('selected'));
+                            thumbnailDiv.classList.add('selected');
+                            selectedPDFPages = [pageNum];
+                            updatePDFSelectionCount();
+                            return;
+                        }
                         const isMultiSelect = e.ctrlKey || e.metaKey || true; // Toujours multi-select pour simplifier
                         
                         // Toggle la sélection de cette page
@@ -83701,6 +83744,14 @@ window._spEnsureGuidesAfterTemplateLoad = _spEnsureGuidesAfterTemplateLoad;
             if (importModeInput && importModeInput.value) {
                 importMode = importModeInput.value;
             }
+
+            /* 🖼️ _SP_IMPORT_PDF_BLOC_594 — TYPE D'IMPORT.
+               « fichier » = comportement historique (pages entières).
+               « image »  = UNE page, posée en bloc sur la page en cours (voir
+                            _spImporterPdfEnBloc) : déplaçable et duplicable. */
+            let importKind = 'file';
+            const importKindInput = document.querySelector('input[name="pdfImportKind"]:checked');
+            if (importKindInput && importKindInput.value) importKind = importKindInput.value;
             
             // Récupérer l'option d'insertion à une page spécifique
             let insertAtPage = null;
@@ -83723,7 +83774,7 @@ window._spEnsureGuidesAfterTemplateLoad = _spEnsureGuidesAfterTemplateLoad;
             closePDFImportModal(true);
             
             try {
-                await importPDFPagesV2(selectedPDFPages, recadrageMode, importMode, insertAtPage);
+                await importPDFPagesV2(selectedPDFPages, recadrageMode, importMode, insertAtPage, importKind);
             } catch (error) {
                 console.error('Erreur import PDF:', error);
                 alert(translatef('alertPdfImportError', error.message));
@@ -83736,9 +83787,37 @@ window._spEnsureGuidesAfterTemplateLoad = _spEnsureGuidesAfterTemplateLoad;
             }
         }
         
+        /* 🖼️ _SP_IMPORT_PDF_BLOC_594 — BASCULE « FICHIER / IMAGE » DE LA POP-IN.
+           En mode « image » les réglages qui ne s'appliquent pas (recadrage de la page,
+           pages simples/planches, insertion à une page) sont masqués et la sélection est
+           ramenée à UNE seule page : c'est la promesse de l'interface. */
+        window.spPdfMajImportKind = function () {
+            try {
+                const kindInput = document.querySelector('input[name="pdfImportKind"]:checked');
+                const isImage = !!(kindInput && kindInput.value === 'image');
+                const bMode = document.getElementById('pdfImportModeBlock');
+                const bRec = document.getElementById('pdfRecadrageBlock');
+                const hint = document.getElementById('pdfImportKindHint');
+                if (bMode) bMode.style.display = isImage ? 'none' : '';
+                if (bRec) bRec.style.display = isImage ? 'none' : '';
+                if (hint) {
+                    hint.innerHTML = isImage
+                        ? 'La page cliquée est posée en <strong>bloc image</strong> sur la page en cours : déplaçable, redimensionnable et duplicable (Ctrl+C / Ctrl+V). Le texte et les objets vectoriels du PDF sont <strong>conservés</strong> à l\'export.'
+                        : 'Les pages choisies sont importées en pages entières (mêmes règles de format et de recadrage qu\'aujourd\'hui).';
+                }
+                if (isImage && selectedPDFPages.length > 1) {
+                    const keep = selectedPDFPages[selectedPDFPages.length - 1];
+                    document.querySelectorAll('.pdf-page-thumbnail').forEach(function (t) {
+                        t.classList.toggle('selected', String(t.dataset.pageNum) === String(keep));
+                    });
+                    selectedPDFPages = [keep];
+                    try { updatePDFSelectionCount(); } catch (_) {}
+                }
+            } catch (_) {}
+        };
+
         // Détecter le format d'un PDF à partir de ses dimensions
-        function detectPDFFormat(widthMM, heightMM) {
-    // Formats standard avec tolérance de 2mm
+        function detectPDFFormat(widthMM, heightMM) {    // Formats standard avec tolérance de 2mm
     const tolerance = 2;
     const formats = [
         { name: 'A4', width: 210, height: 297 },
@@ -92391,8 +92470,14 @@ function _spOfferMissingFontsLoad(missingFonts) {
 window._spOfferMissingFontsLoad = _spOfferMissingFontsLoad;
 
 // Nouvelle version de la fonction d'import PDF avec gestion avancée des modes
-async function importPDFPagesV2(pageNumbers, recadrageMode = 'support', importMode = 'single', insertAtPage = null) {
+async function importPDFPagesV2(pageNumbers, recadrageMode = 'support', importMode = 'single', insertAtPage = null, importKind = 'file') {
     if (!currentPDFDocument || pageNumbers.length === 0) return;
+
+    /* 🖼️ _SP_IMPORT_PDF_BLOC_594 — branche « IMAGE » : une seule page, un seul bloc,
+       posé sur la page EN COURS, sans toucher au format ni créer de page. */
+    if (importKind === 'image') {
+        return await _spImporterPdfEnBloc(pageNumbers[pageNumbers.length - 1]);
+    }
 
     // 🧩 ARCHIVE PDF SOURCE : on garde le buffer du PDF d'origine pour pouvoir
     // ré-embarquer les pages vectorielles TELLES QUELLES à l'export (au lieu de
@@ -92878,6 +92963,136 @@ async function importPDFPagesV2(pageNumbers, recadrageMode = 'support', importMo
         console.error('Erreur import PDF:', error);
         alert(translatef('alertPdfImportFinalError', error.message));
     }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   🖼️ _SP_IMPORT_PDF_BLOC_594 — IMPORT D'UNE PAGE PDF EN « BLOC IMAGE »
+   Demande utilisateur : « il devrait être possible d'importer un pdf en tant
+   qu'“image” ou en tant que “fichier” … l'import en tant qu'“image” ouvre la
+   possibilité d'importer qu'une seule page du pdf (avec choix) dans un bloque
+   image pour pouvoir l'utiliser et la dupliquer sur un fond de page … cet import
+   doit conserver les mêmes attentes (conservation des typos et objets
+   vectoriels) qu'avec le pdf “fichier”. »
+
+   Différence avec l'import « fichier » (importPDFPagesV2) :
+     · UNE SEULE page, choisie dans la galerie (le clic remplace la sélection) ;
+     · AUCUN changement de format, AUCUNE page créée : le bloc est posé sur la page
+       EN COURS, centré dans la zone utile, à sa TAILLE RÉELLE (1 pt PDF = 1 px de
+       document — le document est en 72 dpi, cf. MM_TO_PX) ;
+     · l'objet reste un fabric.Image ordinaire → déplaçable, redimensionnable,
+       duplicable (Ctrl+C / Ctrl+V, Ctrl+D), posable sur un fond de page ;
+     · il porte les MÊMES métadonnées que l'import fichier (_spPdfImport,
+       _spPdfPageNumber, _spPdfContentType, _spPdfArchiveKey, _spPdfSource*MM).
+       À l'export, la page PDF source est donc ré-embarquée TELLE QUELLE (texte
+       sélectionnable + objets vectoriels) à la place du raster — pour le bloc ET
+       pour toutes ses copies (chemins : _spEmbedPdfImportsWithPdfLib pour le
+       moteur jsPDF, et le ré-embarquement natif pdf-lib pour « Format fini » /
+       typographie vectorielle).
+   ══════════════════════════════════════════════════════════════════════════ */
+async function _spImporterPdfEnBloc(pageNum) {
+    if (!currentPDFDocument || !pageNum) return;
+
+    // Archive du PDF source — mêmes clés que l'import « fichier ».
+    if (!window._spPdfArchives) window._spPdfArchives = {};
+    const _archiveKey = 'imp' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    try {
+        if (currentPDFFile && typeof currentPDFFile.arrayBuffer === 'function') {
+            const buf = await currentPDFFile.arrayBuffer();
+            window._spPdfArchives[_archiveKey] = { buffer: buf, pages: [pageNum] };
+        }
+    } catch (_) {}
+
+    const targetCanvas = getActiveCanvas();
+    if (!targetCanvas) return;
+
+    const page = await currentPDFDocument.getPage(pageNum);
+    const unit = page.getViewport({ scale: 1.0 });      // 1 pt PDF = 1 px de document
+    const widthMM = unit.width * 0.352778;
+    const heightMM = unit.height * 0.352778;
+
+    // Résolution d'import : 6×, plafonnée à 220 Mpx (même garde que
+    // importPDFPagesV2 : au-delà, toDataURL/toBlob renvoie une image vide).
+    let renderScale = 6.0;
+    try {
+        const _k = 72 / 25.4;
+        const _maxScale = Math.sqrt((220 * 1e6) / (widthMM * heightMM * _k * _k));
+        if (isFinite(_maxScale) && _maxScale > 0 && _maxScale < renderScale) renderScale = _maxScale;
+    } catch (_) {}
+
+    const viewport = page.getViewport({ scale: renderScale });
+    const cnv = document.createElement('canvas');
+    cnv.width = Math.round(viewport.width);
+    cnv.height = Math.round(viewport.height);
+    await page.render({ canvasContext: cnv.getContext('2d'), viewport: viewport }).promise;
+
+    const contentType = (pdfContentTypes && pdfContentTypes[pageNum]) || 'raster';
+    /* ⚠️ DATA URL, PAS BLOB — défaut mesuré au banc (2026-10-02) : avec une URL
+       blob: révoquée après le chargement, le rendu était correct mais l'objet
+       devenait intransportable — le COPIER-COLLER relançait un chargement de
+       l'URL révoquée (« GET blob:file://… net::ERR_FILE_NOT_FOUND » +
+       « Cannot set properties of null (setting '__spSourceObj') »), et la
+       sauvegarde du document (.sp / autosave) écrivait une URL morte. L'import
+       « fichier » utilise déjà une dataURL (importPDFPagesV2, étape 5) : on fait
+       pareil, l'image est autonome (copies, sauvegarde, rechargement). */
+    const url = cnv.toDataURL('image/png');
+    try { if (typeof page.cleanup === 'function') page.cleanup(); } catch (_) {}
+
+    await new Promise(function (resolve) {
+        fabric.Image.fromURL(url, function (img) {
+            const bleedVal = parseFloat(document.getElementById('bleed').value) || 0;
+            const bleedInfo = targetCanvas.bleedInfo || { left: mmToPx(bleedVal), top: mmToPx(bleedVal) };
+            const zoneW = mmToPx(pageFormat.width);
+            const zoneH = mmToPx(pageFormat.height);
+            // Taille RÉELLE du PDF dans le document (1 pt = 1 px → mmToPx(mm du PDF)),
+            // jamais plus grande que la zone utile (sinon le bloc déborderait de la page).
+            let scale = mmToPx(widthMM) / (img.width || 1);
+            scale = Math.min(scale, zoneW / (img.width || 1), zoneH / (img.height || 1));
+            if (!Number.isFinite(scale) || scale <= 0) scale = zoneW / (img.width || 1);
+
+            img.set({
+                left: bleedInfo.left + zoneW / 2,
+                top: bleedInfo.top + zoneH / 2,
+                originX: 'center',
+                originY: 'center',
+                scaleX: scale,
+                scaleY: scale,
+                selectable: true,
+                hasControls: true,
+                hasBorders: true,
+                lockRotation: false,
+                lockScalingX: false,
+                lockScalingY: false,
+                cornerSize: 8,
+                transparentCorners: false,
+                opacity: 1,
+                visible: true,
+                _spPdfImport: true,
+                _spPdfPageNumber: pageNum,
+                _spPdfSourceWidthMM: widthMM,
+                _spPdfSourceHeightMM: heightMM,
+                _spPdfImportMode: 'single',
+                _spPdfRecadrageMode: 'none',
+                _spPdfContentType: contentType,
+                _spPdfArchiveKey: _archiveKey
+            });
+            img.setCoords();
+            targetCanvas.add(img);
+            try { targetCanvas.setActiveObject(img); } catch (_) {}
+            targetCanvas.requestRenderAll();
+            resolve();
+        }, { crossOrigin: 'anonymous' });
+    });
+
+    try { cnv.width = 0; cnv.height = 0; } catch (_) {}
+    try { saveAllPages(); } catch (_) {}
+    try { debouncedUpdateLayersPanel(); } catch (_) {}
+    try { saveState('Import PDF (bloc image)'); } catch (_) {}
+    try {
+        if (typeof logAI === 'function') {
+            logAI('🖼️ Page ' + pageNum + ' importée en bloc image (' + Math.round(widthMM) + ' × ' + Math.round(heightMM) + ' mm, ' +
+                (contentType === 'raster' ? 'contenu image' : 'contenu vectoriel conservé à l\'export') + '). Déplaçable et duplicable.');
+        }
+    } catch (_) {}
 }
 
 // Event Listener pour le toggle des options personnalisées
