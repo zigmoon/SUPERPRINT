@@ -23631,6 +23631,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
 
     const spPages = state.pages.map((p) => {
       let objects = [];
+      let _errConvPage = null;
       try {
         // Partir du doc mm (éléments propres, sans les guides) plutôt que du canvas
         /* 🆕 v1.7.546 — recherche par CHAMP pageIndex (cf. spDocPagePour). */
@@ -23705,7 +23706,39 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
             objects.push(spAppliquerReglagesTypo({ type: 'image', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, width: (+el.width || 100) * MM_TO_PX, height: (+el.height || 100) * MM_TO_PX, opacity: op, _spAiImageUrl: el.imageUrl, _spAiImageScaleX: 1, _spAiImageScaleY: 1, fill: '#e8e8e8', stroke: 'transparent', strokeWidth: 0, rx: 2, ry: 2, ...spElementTransform(el) }, el));
           }
         });
-      } catch(e) { objects = []; }
+      } catch(e) {
+        /* 🩹 v1.7.593 — AVANT : `catch (e) { objects = []; }` vidait la page en
+           SILENCE (mesuré : .sp remis à l'app = 1 page, 0 objet, aucun message,
+           alors que la maquette est affichée dans l'aperçu). On ne perd plus
+           l'information, et un filet de sécurité transmet le CALQUE de la page. */
+        objects = [];
+        try { console.warn('[studio .sp] conversion de la page ' + (p.pageIndex + 1) + ' échouée :', e); } catch (_) {}
+        _errConvPage = e;
+      }
+      /* 🩹 v1.7.593 — FILET DE SÉCURITÉ : si le document mm ne rend AUCUN objet
+         (état désynchronisé, exception avalée, composition non déversée), on
+         transmet le CALQUE de la page tel quel — c'est le format natif de l'app
+         (`pages[].objects` = JSON Fabric), donc SuperPrint le relit sans risque.
+         Les repères (marges, fond perdu, traits de coupe, guides) sont filtrés
+         comme à l'export de l'app. */
+      if (!objects.length && state.viewMode !== 'spread' && p.canvas && typeof p.canvas.toObject === 'function') {
+        try {
+          const _dump = p.canvas.toObject();
+          if (_dump && Array.isArray(_dump.objects)) {
+            _dump.objects = _dump.objects.filter(o => o && !o.isMargin && !o.isBleed && !o.isTrimBox &&
+              !o.isGuide && !o.isManualGuide && !o.isGridGuide && !o.isBaselineGuide &&
+              !o._isSpreadMirror && !o.excludeFromExport);
+          }
+          if (_dump && Array.isArray(_dump.objects) && _dump.objects.length) {
+            objects = JSON.stringify(_dump);
+            try { console.warn('[studio .sp] page ' + (p.pageIndex + 1) + ' : document mm vide → calque transmis (' + _dump.objects.length + ' objets)'); } catch (_) {}
+          } else if (!_errConvPage) {
+            try { console.warn('[studio .sp] page ' + (p.pageIndex + 1) + ' : ni document mm ni calque — .sp vide'); } catch (_) {}
+          }
+        } catch (eFb) {
+          try { console.warn('[studio .sp] repli calque impossible :', eFb); } catch (_) {}
+        }
+      }
       /* 🆕 v1.7.541 — masterId : lu dans les AFFECTATIONS du document (source autoritaire,
          celle que relit l'application via masters.assignments). state.pages ne le porte
          pas : il est construit par createPageCanvas sous la forme { pageIndex, canvas,
@@ -23715,11 +23748,19 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       return { index: p.pageIndex, label: p.label || ('Page ' + (p.pageIndex + 1)), masterId: _midPage, objects };
     });
 
-    const usedFonts = [...new Set(spPages.flatMap(p => p.objects.filter(o => o && o.fontFamily).map(o => o.fontFamily)))];
-    const usedColors = [...new Set(spPages.flatMap(p => p.objects.filter(o => o && o.fill).map(o => String(o.fill))))].filter(c => /^#/.test(c));
-    const totalObjects = spPages.reduce((n, p) => n + p.objects.length, 0);
-    const textBlocks = spPages.reduce((n, p) => n + p.objects.filter(o => o.type === 'textbox' || o.type === 'text' || o.type === 'i-text').length, 0);
-    const images = spPages.reduce((n, p) => n + p.objects.filter(o => o.type === 'image').length, 0);
+    /* 🩹 v1.7.593 — une page peut désormais porter un CALQUE (chaine JSON native de
+       l'app, filet de sécurité ci-dessus) : les statistiques doivent lire les deux
+       formes, sinon `p.objects.filter` casse et `.length` compte des caractères. */
+    const _objsDe = (pg) => {
+      if (Array.isArray(pg.objects)) return pg.objects;
+      if (typeof pg.objects === 'string') { try { const j = JSON.parse(pg.objects); return (j && Array.isArray(j.objects)) ? j.objects : []; } catch (_) { return []; } }
+      return [];
+    };
+    const usedFonts = [...new Set(spPages.flatMap(p => _objsDe(p).filter(o => o && o.fontFamily).map(o => o.fontFamily)))];
+    const usedColors = [...new Set(spPages.flatMap(p => _objsDe(p).filter(o => o && o.fill).map(o => String(o.fill))))].filter(c => /^#/.test(c));
+    const totalObjects = spPages.reduce((n, p) => n + _objsDe(p).length, 0);
+    const textBlocks = spPages.reduce((n, p) => n + _objsDe(p).filter(o => o.type === 'textbox' || o.type === 'text' || o.type === 'i-text').length, 0);
+    const images = spPages.reduce((n, p) => n + _objsDe(p).filter(o => o.type === 'image').length, 0);
     const shapes = Math.max(0, totalObjects - textBlocks - images);
     // 🛡️ _SP_STUDIO_FIAB_575 — en double page, les PLANCHES deviennent des PAGES
     //   (sinon l'app reçoit 420 mm de contenu sur une page de 210 mm : la moitié
