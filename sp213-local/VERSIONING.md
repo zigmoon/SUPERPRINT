@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.579`** — 28 septembre 2026
+> **Dernière version : `1.7.592`** — 2 octobre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,20 +10,20 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.579` |
+| Version app (affichée) | `1.7.592` |
 | Pastille du colophon (`index.html` **et** `help-us.html`, haut **gauche**) | `vX.Y.Z` dans `<span class="brand-ver">` — 1 occurrence par page (**4 fichiers** avec les 2 arbres) |
-| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.579-fonds-export` |
-| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20260929-v579-fonds-export` (JS) · `?v=20261013-v543-grille-rapide-ia` (CSS) |
-| Badge preview (`spVersionBadge`) | `v1.7.579` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
-| Splash screen | `1.7.579` |
-| Onboarding | `LAYOUT EDITOR — V 1.7.579` + `V 1.7.579 \| 09 2026` |
-| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.579` |
-| Documentation (racine **et** `app/`) | `v1.7.579` (pastille + pieds de page datés + 214 numéros de ligne) |
-| `api.html` (pastille `.version`) | `v1.7.579` |
-| `version.txt` | `1.7.579` |
-| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.579 (September 2026)` |
-| `package.json` + `package-lock.json` (sp213-local) | `1.7.579` |
-| Lanceur npm (`superprint-npm/package.json`) | `1.0.97` (version **indépendante**, voir plus bas) |
+| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.592-filets-rock1` |
+| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261002-v592-filets-rock1` (JS) · `?v=20261013-v543-grille-rapide-ia` (CSS) |
+| Badge preview (`spVersionBadge`) | `v1.7.592` — 5 marqueurs : commentaire, `title` (`JS v456`), `data-sp-js="v456"`, `data-sp-sw`, texte |
+| Splash screen | `1.7.592` |
+| Onboarding | `LAYOUT EDITOR — V 1.7.592` + `V 1.7.592 \| 09 2026` |
+| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.592` |
+| Documentation (racine **et** `app/`) | `v1.7.592` (pastille + pieds de page datés + 214 numéros de ligne) |
+| `api.html` (pastille `.version`) | `v1.7.592` |
+| `version.txt` | `1.7.592` |
+| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.592 (September 2026)` |
+| `package.json` + `package-lock.json` (sp213-local) | `1.7.592` |
+| Lanceur npm (`superprint-npm/package.json`) | `1.0.109` (version **indépendante**, voir plus bas) |
 
 > ⚠️ Trois fichiers sont restés en arrière pendant des releases sans que rien ne le signale :
 > `app/landing.html`, `app/llms.txt` et `app/llms-full.txt` (tous en `1.7.404` jusqu'au

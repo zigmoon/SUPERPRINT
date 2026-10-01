@@ -6,7 +6,7 @@
 
 <!-- ═══ SEO / GEO / AEO — Nous aider (SuperPrint) ═══ -->
 <title>Take part — SuperPrint is independent | Participer | 参加する</title>
-<meta name="description" content="SuperPrint is independent: no investor, no advertising, no subscription, no data resale. Here is what a donation pays for, and what it does not buy. Voluntary donation via PayPal, €19 once.">
+<meta name="description" content="SuperPrint is independent: no investor, no advertising, no subscription, no data resale. Here is what a donation pays for, and what it does not buy. Voluntary subscription via PayPal, €19 per year.">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="author" content="Zigmoon">
 <meta name="theme-color" content="#F7F3EC">
@@ -1692,12 +1692,33 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   background: var(--paper); border: 1px solid var(--line-strong); padding: clamp(20px,2.4vw,30px);
   min-height: 100%; display: flex; flex-direction: column; justify-content: flex-start; gap: 16px;
 }
+/* 01/10/2026 — le cadre porte désormais une PHRASE (plus une étiquette) : casse normale,
+   sans capitales ni interlettrage large, sur la police de lecture. */
 .help-pay-titre {
-  font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--muted);
+  font-family: var(--f-sans); font-size: clamp(13px,1.15vw,14.5px); font-weight: 400;
+  letter-spacing: 0; text-transform: none; line-height: 1.6; color: var(--ink-soft);
   padding-bottom: 14px; border-bottom: 1px solid var(--line);
 }
+.help-pay-apps {
+  display: block; width: fit-content; margin-top: 8px;
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .06em;
+  color: var(--ink); text-decoration: none;
+}
+.help-pay-apps:hover, .help-pay-apps:focus-visible { color: var(--magenta); }
 .help-pay-note { font-size: 12px; line-height: 1.65; color: var(--muted); }
+/* 🆕 01/10/2026 — LE PRIX, EN GRAND, AU-DESSUS DU BOUTON (abonnement : 19 € par an).
+   Le montant est posé par PayPal : la page ne fait que l'afficher. Le bloc est un BLOC
+   (les règles `html[lang] [data-lang]` forcent `display: block` sur la variante courante) :
+   pas de `display: flex` ici, sinon la règle de langue l'écrase. */
+.help-pay-prix { margin: 0; color: var(--ink); }
+.help-pay-montant {
+  font-family: var(--f-display); font-weight: 700; line-height: 1;
+  font-size: clamp(34px,4.4vw,48px); letter-spacing: -.02em;
+}
+.help-pay-periode {
+  font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+}
 
 .help-bug { margin-top: clamp(30px,4vw,50px); border: 1px solid var(--line); background: var(--paper-3); padding: clamp(20px,2.6vw,32px); }
 .help-bug-intro { max-width: 74ch; margin: 0 0 clamp(16px,2vw,24px); font-size: clamp(13.5px,1.25vw,15px); line-height: 1.75; color: var(--ink-soft); }
@@ -1795,7 +1816,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 .help-rule { margin: clamp(17px,2vw,28px) 0; }
 /* ——— v1.7.499 — LES DEUX TITRES QUI RESTENT, À LA TYPOGRAPHIE DU TITRE PRINCIPAL.
    Après la suppression des trois outils et de « ce qu'un don représente », la page n'a plus que
-   deux titres de rubrique — « Faire un don » (dans le bloc de don) et « Trouvé un bug ? ».
+   deux titres de rubrique — « Participer » (dans le bloc de don) et « Trouvé un bug ? ».
    Ils étaient en capitales étroites, à 20-26 px, sous un titre principal de 28-44 px : ils
    passent à la typographie exacte de ce titre principal (Playfair, 28-44 px), comme demandé. */
 .help-don-txt h2, .help-bug .help-h2 {
@@ -1883,7 +1904,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
        droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
        du plan de bump de release. -->
-  <span class="brand-ver">v1.7.591</span>
+  <span class="brand-ver">v1.7.592</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
@@ -1942,7 +1963,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.591</span>
+    <span>SuperPrint v1.7.592</span>
   </div>
 </div>
 
@@ -1988,7 +2009,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <p class="help-lead" data-lang="ja">投資家も広告もサブスクリプションもなく、データの転売も行いません。ソフトウェアは二人で設計・開発・保守しており、業務利用を含めて無料です。これは場当たり的な約束ではなく選択です。いただいた支援は開発時間と、ソフトウェアの運用費に充てられます。</p>
 
       <div class="help-don-txt">
-      <h2 data-lang="fr">Faire un don</h2><h2 data-lang="en">Make a donation</h2><h2 data-lang="ja">寄付する</h2>
+      <h2 data-lang="fr">Participer</h2><h2 data-lang="en">Take part</h2><h2 data-lang="ja">参加する</h2>
       <!-- 🆕 v1.7.497 — LA PHRASE DE CONSENTEMENT DE PAYPAL, AVANT LE PAIEMENT.
            Elle vient du bouton de don (le texte que le donateur accepte) : elle est donc
            affichée ici, dans les trois langues, avant tout le reste. -->
@@ -1998,22 +2019,27 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
       <p data-lang="fr">Paiement traité par PayPal : votre carte reste chez PayPal, nous ne voyons ni votre numéro ni votre adresse. Aucun compte PayPal n'est nécessaire pour payer par carte.</p>
       <p data-lang="en">Payment handled by PayPal — your card stays with PayPal, we never see your number or your address. No PayPal account is needed to pay by card.</p>
       <p data-lang="ja">決済はPayPalが処理します。カード情報はPayPalが保持し、こちらには届きません。カード決済にPayPalアカウントは不要です。</p>
-      <p data-lang="fr">19 €, une fois. Le montant est fixé par le bouton ci-contre et ne se règle pas depuis cette page.</p>
-      <p data-lang="en">€19, once. The amount is set by the button beside this text and is not chosen on this page.</p>
-      <p data-lang="ja">19 ユーロの一度のお支払いです。金額は右のボタンのもので、このページでは設定しません。</p>
+      <p data-lang="fr">19 € par an. Le montant est fixé par le bouton ci-contre et ne se règle pas depuis cette page.</p>
+      <p data-lang="en">€19 per year. The amount is set by the button beside this text and is not chosen on this page.</p>
+      <p data-lang="ja">19 ユーロの年間のお支払いです。金額は右のボタンのもので、このページでは設定しません。</p>
       </div>
     </div>
 
     <div class="help-pay">
       <div class="help-pay-titre">
-        <span data-lang="fr">Paiement par PayPal</span>
-        <span data-lang="en">Payment by PayPal</span>
-        <span data-lang="ja">PayPal でのお支払い</span>
+        <span data-lang="fr">Recevoir les dernières informations sur les nouvelles web-apps, les nouvelles fonctionnalités de SuperPrint, de Cut The Flow, de Bird…</span>
+        <span data-lang="en">Get the latest news about the new web apps and the new features of SuperPrint, Cut The Flow and Bird…</span>
+        <span data-lang="ja">新しいWebアプリ、SuperPrint、Cut The Flow、Birdの新機能に関する最新情報を受け取る</span>
+        <a class="help-pay-apps" href="https://app.zigmoon.com/" target="_blank" rel="noopener"><span class="inline-fr">Toutes nos apps</span><span class="inline-en">All our apps</span><span class="inline-ja">すべてのアプリ</span> <span aria-hidden="true">→</span> app.zigmoon.com</a>
       </div>
-      <div id="paypal-container-DHFGPJBRF88Q4"></div>
-      <p class="help-pay-note" data-lang="fr">Le montant est fixé par le bouton PayPal : 19 €. Votre carte reste chez PayPal : nous ne voyons ni votre numéro, ni votre adresse, ni votre nom.</p>
-      <p class="help-pay-note" data-lang="en">The amount is fixed by the PayPal button: €19. Your card stays with PayPal: we never see your number, your address or your name.</p>
-      <p class="help-pay-note" data-lang="ja">金額は PayPal のボタンで決まります（19 ユーロ）。カード情報は PayPal が保持し、番号・住所・氏名がこちらに届くことはありません。</p>
+      <!-- 🆕 01/10/2026 — LE PRIX, EN GRAND, AU-DESSUS DU BOUTON (abonnement : par an) -->
+      <p class="help-pay-prix" data-lang="fr"><span class="help-pay-montant">19&nbsp;€</span> <span class="help-pay-periode">par an</span></p>
+      <p class="help-pay-prix" data-lang="en"><span class="help-pay-montant">€19</span> <span class="help-pay-periode">per year</span></p>
+      <p class="help-pay-prix" data-lang="ja"><span class="help-pay-montant">19&nbsp;€</span> <span class="help-pay-periode">年間</span></p>
+      <div id="paypal-button-container-P-5EK03990LC067710SNK6YLEQ"></div>
+      <p class="help-pay-note" data-lang="fr">Le montant est fixé par le bouton PayPal : 19 € par an. Votre carte reste chez PayPal : nous ne voyons ni votre numéro, ni votre adresse, ni votre nom.</p>
+      <p class="help-pay-note" data-lang="en">The amount is fixed by the PayPal button: €19 per year. Your card stays with PayPal: we never see your number, your address or your name.</p>
+      <p class="help-pay-note" data-lang="ja">金額は PayPal のボタンで決まります（19 ユーロ／年）。カード情報は PayPal が保持し、番号・住所・氏名がこちらに届くことはありません。</p>
     </div>
   </div>
 
@@ -2180,7 +2206,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.591</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.592</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>
@@ -2685,12 +2711,26 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 </script>
 
-<!-- ═══ Bouton de don PayPal (bouton hébergé, 19 € — montant fixé chez PayPal) ═══ -->
-<script src="https://www.paypal.com/sdk/js?client-id=BAAquYvIhLx-TZn41GHOZViIFLsBZAHw5qCpMSiwnh-UxVNGfQ4dcaKXu7dir8JGoogPhAGSupxrlEUfBY&components=hosted-buttons&disable-funding=venmo&currency=EUR"></script>
+<!-- ═══ Bouton d'abonnement PayPal (abonnement — le plan est fixé chez PayPal) ═══ -->
+<script src="https://www.paypal.com/sdk/js?client-id=AZEcSKlZBWFXnEUCtFLrvTQ4opEq_TPkrApz6aSVSsDSVHOMxLPhPYxHh7vms6_YzvugYFQZUhP5PhW2&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
 <script>
-  if (window.paypal && paypal.HostedButtons) {
-    paypal.HostedButtons({ hostedButtonId: "DHFGPJBRF88Q4" }).render("#paypal-container-DHFGPJBRF88Q4");
-  }
+  paypal.Buttons({
+      style: {
+          shape: 'pill',
+          color: 'blue',
+          layout: 'vertical',
+          label: 'subscribe'
+      },
+      createSubscription: function(data, actions) {
+        return actions.subscription.create({
+          /* Creates the subscription */
+          plan_id: 'P-5EK03990LC067710SNK6YLEQ'
+        });
+      },
+      onApprove: function(data, actions) {
+        alert(data.subscriptionID); // You can add optional success message for the subscriber here
+      }
+  }).render('#paypal-button-container-P-5EK03990LC067710SNK6YLEQ'); // Renders the PayPal button
 </script>
 
 <!-- ═══ v1.7.578 — SOMMAIRE : LA HAUTEUR DE LA NAV, ET LA ZONE COURANTE ═══ -->

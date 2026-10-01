@@ -27,6 +27,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// _SP_STUDIO_ROCK612 — LECTURE D'UNE PAGE DISTANTE (studio : « une URL dans la
+// demande, il doit aller scraper les contenus de base et les réinjecter »).
+//   GET ?lire=<url>  →  { titre, desc, texte }
+// La lecture se fait CÔTÉ SERVEUR : aucun blocage CORS pour le studio, et le HTML
+// est réduit à son texte utile (titre, chapô, titres, paragraphes, listes).
+// Garde-fous : http/https SEULEMENT, aucune adresse locale/privée (anti-SSRF),
+// 6 s de délai, 3 redirections, 512 Ko maximum, texte coupé à 6000 caractères.
+if (isset($_GET['lire'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $url = (string)$_GET['lire'];
+    $parts = @parse_url($url);
+    $hote = isset($parts['host']) ? strtolower($parts['host']) : '';
+    $ok = ($parts && isset($parts['scheme']) && in_array(strtolower($parts['scheme']), ['http', 'https'], true) && $hote !== '');
+    if ($ok && preg_match('/^(localhost|127\.|0\.|10\.|192\.168\.|169\.254\.|\[?::1)/', $hote)) { $ok = false; }
+    if ($ok && preg_match('/^172\.(1[6-9]|2\d|3[01])\./', $hote)) { $ok = false; }
+    if (!$ok) { echo json_encode(['error' => 'url refusee']); exit; }
+    $ctx = stream_context_create(['http' => [
+        'timeout' => 6,
+        'follow_location' => 1,
+        'max_redirects' => 3,
+        'user_agent' => 'SuperPrint/1.0 (lecture de page; +https://superprint.cc)',
+        'ignore_errors' => true
+    ]]);
+    $html = @file_get_contents($url, false, $ctx, 0, 512 * 1024);
+    if ($html === false || $html === '') { echo json_encode(['error' => 'lecture impossible']); exit; }
+    $tit = ''; $desc = '';
+    if (preg_match('#<title[^>]*>(.*?)</title>#is', $html, $m)) { $tit = trim(html_entity_decode(strip_tags($m[1]), ENT_QUOTES, 'UTF-8')); }
+    if (preg_match('#<meta[^>]+(?:name|property)=["\'](?:description|og:description)["\'][^>]*content=["\'](.*?)["\']#is', $html, $m)) { $desc = trim(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8')); }
+    $html = preg_replace('#<(script|style|noscript|svg|iframe|template)\b.*?</\1>#is', ' ', $html);
+    $html = preg_replace('#<br\s*/?>|</(p|div|li|h[1-6]|tr|td)>#is', "\n", $html);
+    $txt = html_entity_decode(strip_tags($html), ENT_QUOTES, 'UTF-8');
+    $txt = preg_replace('/[ \t\x{00A0}]+/u', ' ', $txt);
+    $lignes = [];
+    foreach (preg_split('/\n+/u', $txt) as $l) {
+        $l = trim($l);
+        if ($l === '' || mb_strlen($l, 'UTF-8') < 2) { continue; }
+        $lignes[] = $l;
+        if (count($lignes) >= 160) { break; }
+    }
+    $lignes = array_values(array_unique($lignes));
+    echo json_encode([
+        'titre' => mb_substr($tit, 0, 200, 'UTF-8'),
+        'desc'  => mb_substr($desc, 0, 400, 'UTF-8'),
+        'texte' => mb_substr(implode("\n", $lignes), 0, 6000, 'UTF-8')
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // 🛡️ FIX 2026-04 : autoriser jusqu'à 200 s d'exécution PHP pour laisser le temps
 //    aux longues générations IA (magazine multi-pages avec Claude Sonnet 5,
 //    GPT-5, etc. qui peuvent dépasser 60 s avec 16-32k tokens en sortie).
