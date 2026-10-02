@@ -16528,8 +16528,23 @@ function spRtfLayoutInfo(src) {
     if (/paysage|landscape|horizontal/.test(prompt) && w < h) { const t = w; w = h; h = t; }
     state.pageW = w; state.pageH = h;
     try { localStorage.setItem(LS.dims, JSON.stringify({ w, h })); } catch (_) {}
+    /* 🩹 v1.7.594 — RIEN NE DOIT SE PERDRE : la maquette courante part dans la pile
+       d'annulation AVANT d'être remplacée par la page vierge au nouveau format.
+       Sans cela elle était détruite avant même de savoir si la génération allait
+       réussir, et l'Annuler ne restaurait qu'une page vide (mesuré). */
+    try {
+      if (state.doc && state.doc.pages && state.doc.pages.length) {
+        state.undoStack = state.undoStack || [];
+        state.undoStack.push(JSON.parse(JSON.stringify(state.doc)));
+        if (state.undoStack.length > 30) state.undoStack.shift();
+        state.redoStack = [];
+      }
+    } catch (_) {}
     // Re-rendre une page vierge au bon format (la maquette courante est remplacée).
     newDocument();
+    /* 🩹 la sélection portait des ids de l'ANCIENNE maquette : on la vide, sinon le
+       prochain prompt « retravaille » des éléments qui n'existent plus (no-op muet). */
+    try { clearSelection(); } catch (_) { try { state.selectedIds = []; updateSelectionUI(); } catch (_) {} }
     try {
       const ph = $('pageInfo');
       if (ph) ph.textContent = '1 page · ' + w + '×' + h + ' mm · bleed ' + bled() + ' mm';
@@ -17649,6 +17664,15 @@ function spRtfLayoutInfo(src) {
     }
 
     const userText = txt || '(avec pièce(s) jointe(s))';
+
+    /* 🆕 v1.7.595 — REMPLACEMENT DE TEXTE DIRECT : quand la sélection ne contient
+       que des BLOCS TEXTE et que le message est un texte (entre guillemets, ou un
+       texte court sans consigne de mise en page), on remplace SANS appeler le
+       moteur. Instantané, hors ligne, et impossible à casser.
+       DÉFAUT MESURÉ AVANT : le texte partait au moteur, qui composait une AUTRE
+       maquette ; la fusion ciblée accrochait le bloc sélectionné à un élément
+       quelconque de cette nouvelle maquette → « toute la page bugue ». */
+    if (spRemplacerTexteSelectionne(userText)) { try { persistChat(); } catch (_) {} return; }
     protectCurrentDocumentForPrompt(userText);
     sp213ClearPrompt();
     state.lastPrompt = txt; // pour que buildSystemPrompt détecte multipage/spread
@@ -17683,7 +17707,19 @@ function spRtfLayoutInfo(src) {
     // 🆕 2026-08-30 : si le prompt demande un format de page (A5, carte, etc.),
     // adapter le canvas AVANT la génération → l'IA reçoit le bon format (buildSystemPrompt)
     // et la preview est au bon format (pageW/pageH mis à jour + page vierge re-rendue).
-    try { applyDetectedPageFormat(userText); } catch(_) {}
+    /* 🩹 v1.7.594 — RETRAVAIL CIBLÉ : ON NE TOUCHE JAMAIS AU FORMAT DE PAGE.
+       DÉFAUT MESURÉ (retour utilisateur) : maquette ouverte + « 1 élément sélectionné » +
+       une correction dont le texte contenait un mot de format (carte, affiche, A4, 40x60…)
+       → applyDetectedPageFormat() appelait newDocument() (PAGE VIERGE), puis la fusion
+       ciblée ne retrouvait plus ses ids → rien n'était reposé : document vide, aucune
+       erreur affichée. Le format ne se décide qu'à la COMPOSITION, pas à la retouche. */
+    try {
+      if (state.selectedIds && state.selectedIds.length) {
+        /* retravail ciblé : format de page inchangé */
+      } else {
+        applyDetectedPageFormat(userText);
+      }
+    } catch(_) {}
 
     state.busy = true;
     $('sendBtn').disabled = true;
@@ -17836,6 +17872,15 @@ function spRtfLayoutInfo(src) {
           state.busy = false;
           $('sendBtn').disabled = false;
           return;
+        }
+        /* 🩹 v1.7.594 — RETRAVAIL CIBLÉ QUI N'A RIEN APPLIQUÉ : on le DIT (avant, la
+           seule trace était un console.warn : l'utilisateur voyait « rien ne s'est
+           passé » sans explication, et croyait à un bug silencieux). */
+        if (state.selectedIds && state.selectedIds.length && window._spMergeRemplaces === 0) {
+          const msgCible = "Le retravail ciblé n'a rien pu appliquer : la réponse du moteur ne correspondait à aucun des éléments sélectionnés. Votre maquette est INCHANGÉE — reformulez la correction, ou cliquez « Effacer » sur le bandeau de sélection pour une recomposition complète.";
+          appendChat('assistant', msgCible);
+          state.chat.push({ role: 'assistant', text: msgCible });
+          persistChat();
         }
         /* 🆕 v1.7.580dd — quand l'imposition du cahier a dû être remise d'aplomb,
            on le DIT (correction silencieuse = perte de confiance). */
@@ -21211,6 +21256,94 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     return doc;
   }
 
+  /* 🆕 v1.7.595 — REMPLACEMENT DE TEXTE DIRECT (sélection de blocs texte).
+     Demande utilisateur : « quand un texte est sélectionné, je tape le nouveau texte
+     dans la boîte du prompt et il doit remplacer — avec “ ” ou sans ».
+     Principe : on N'APPELLE PAS le moteur. Un texte appliqué à une sélection de blocs
+     TEXTE est un REMPLACEMENT, pas une composition : c'est instantané, hors ligne, et
+     cela ne peut rien casser. Le tour de passe-passe inverse (envoyer un texte au
+     moteur) lui faisait composer une autre maquette, puis la fusion ciblée accrochait
+     le bloc sélectionné à un élément quelconque de cette nouvelle maquette :
+     « toute la page bugue » (mesuré).
+     Règle de déclenchement :
+       • entre guillemets  « … », " … ", “ … ”, ‘ … ’ → TOUJOURS (sans les guillemets) ;
+       • sans guillemets → texte court (≤ 120 signes) et SANS mot de mise en page ;
+       • sinon → false, le moteur reprend la main (comportement historique).
+     Rend true quand le message a été consommé comme remplacement de texte. */
+  function spRemplacerTexteSelectionne(texteBrut) {
+    try {
+      const sel = (state.selectedIds || []);
+      if (!sel.length) return false;
+      if (!state.doc || !Array.isArray(state.doc.pages)) return false;
+
+      const selSet = new Set(sel);
+      const cibles = [];
+      state.doc.pages.forEach(function (p, pi) {
+        (p.elements || []).forEach(function (el, ei) {
+          if (!el || !el.id || !selSet.has(el.id)) return;
+          const t = String(el.type || '').toLowerCase();
+          if (t === 'text' || t === 'textbox' || t === 'i-text') cibles.push({ pi: pi, ei: ei, el: el });
+        });
+      });
+      if (!cibles.length) return false;            // sélection sans texte → flux normal
+
+      // Charge utile : on retire les guillemets d'encadrement s'il y en a
+      let t = String(texteBrut || '').trim();
+      let mode = null;
+      const m = /^["'«“”]([\s\S]*)["'»“”]$/.exec(t);
+      if (t.length > 1 && m) { t = m[1].trim(); mode = 'entre guillemets'; }
+      if (!mode) {
+        const CONSIGNE = /\b(colonnes?|a[eé]r[eé]|goutti[eè]re|police|typographie|typo|gras|italique|couleur|fond|ajoute|ajouter|supprime|supprimer|enl[eè]ve|retire|d[eé]place|agrandis|r[eé]duis|augmente|diminue|centr[eé]|align[eé]|marge|folio|page|pages|planche|couverture|impos|export|grille|mod[eè]le|gabarit|style|photo|image|logo|trop (grand|petit)|plus (grand|petit)|majuscules|espace|interlettre|renvoi|[0-9]+\s*(mm|pt|px|cm))\b/i;
+        if (CONSIGNE.test(t)) return false;        // c'est une consigne → moteur
+        if (t.length > 120 || /\n\s*\n/.test(t)) return false;
+        mode = 'texte nu';
+      }
+      if (!t) return false;
+
+      // Journal utilisateur (comme un envoi normal, mais sans moteur)
+      appendChat('user', texteBrut);
+      state.chat.push({ role: 'user', text: texteBrut });
+      try { sp213ClearPrompt(); } catch (_) {}
+
+      // Instantané d'annulation
+      try {
+        state.undoStack = state.undoStack || [];
+        state.undoStack.push(JSON.parse(JSON.stringify(state.doc)));
+        if (state.undoStack.length > 30) state.undoStack.shift();
+        state.redoStack = [];
+      } catch (_) {}
+
+      // Remplacement : on garde l'identité, la position, la largeur et les styles
+      let n = 0;
+      cibles.forEach(function (c) {
+        const el = c.el;
+        el.text = t;
+        el._lines = t.split('\n');
+        el._lineId_1 = el.id;
+        el._lines.forEach(function (ln, li) {
+          el['_lineId_' + (li + 1)] = String(el.id).replace(/-l[0-9]+$/, '') + '-l' + (li + 1);
+        });
+        n++;
+      });
+      renderDocument(state.doc);
+      try { ensureMaquetteFonts(state.doc); } catch (_) {}
+      try { persistDoc(); } catch (_) {}
+      try { saveCurrentConv(); } catch (_) {}
+      const apercu = t.length > 60 ? t.slice(0, 60) + '…' : t;
+      const msg = (n > 1 ? n + ' blocs texte remplacés' : 'Bloc texte remplacé')
+        + ' (' + mode + ') : « ' + apercu + ' » — sans repasser par le moteur, le reste de la maquette n\'a pas bougé.';
+      appendChat('assistant', msg);
+      state.chat.push({ role: 'assistant', text: msg });
+      try { persistChat(); } catch (_) {}
+      try { updateSelectionUI(); } catch (_) {}
+      try { console.log('[SP213] remplacement de texte direct (' + mode + ') sur ' + n + ' bloc(s)'); } catch (_) {}
+      return true;
+    } catch (e) {
+      try { console.warn('[SP213] remplacement de texte direct impossible :', e); } catch (_) {}
+      return false;
+    }
+  }
+
   // 🆕 CORRECTION CIBLÉE — fusionne la réponse de l'IA avec la maquette courante.
   // Principe : seuls les éléments sélectionnés (par leur id) sont remplacés par la
   // version renvoyée par l'IA. Tous les autres éléments de l'ancienne maquette sont
@@ -21294,7 +21427,10 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         remplaces++;
       });
       if (!remplaces) {
-        try { console.warn('[SP213] retravail cible : reponse non appariable, maquette inchangee'); } catch (_) {}
+        try { console.warn('[SP213] retravail ciblé : réponse non appariable, maquette inchangée'); } catch (_) {}
+        try { window._spMergeRemplaces = 0; } catch (_) {}
+      } else {
+        try { window._spMergeRemplaces = remplaces; } catch (_) {}
       }
     } else {
       // v1.7.394 — AUCUN element renvoye : on NE SUPPRIME PLUS RIEN.
@@ -22903,7 +23039,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     bar.classList.remove('hidden');
     bar.innerHTML = '';
     const span = document.createElement('span');
-    span.textContent = n + ' élément' + (n > 1 ? 's' : '') + ' sélectionné' + (n > 1 ? 's' : '') + ' — le prochain prompt ne retravaillera que ceux-ci.';
+    span.textContent = n + ' élément' + (n > 1 ? 's' : '') + ' sélectionné' + (n > 1 ? 's' : '') + ' — le prochain prompt ne retravaillera que ceux-ci. Astuce : tapez directement votre nouveau texte (avec ou sans guillemets) pour le REMPLACER sans passer par le moteur ; une consigne de mise en page reste possible, effacez la sélection pour recomposer toute la maquette.';
     bar.appendChild(span);
     const btn = document.createElement('button');
     btn.className = 'sel-clear';
