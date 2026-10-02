@@ -3261,12 +3261,18 @@ function goToPage(pageIndex) {
             const scale = (js && typeof js.glyphScaleOpt === 'number' && js.glyphScaleOpt > 0)
                 ? js.glyphScaleOpt / 100 : 1;
             if (scale === 1) return __spJustFineOrigRenderTextCommon.call(this, ctx, method);
-            // Appliquer un scale horizontal autour du rendu des lignes.
-            // Le repère interne de _renderTextCommon part de (-width/2, ...) ;
-            // pour que le scale reste centré sur l'axe vertical du textbox, on
-            // applique le scale autour de x=0 (le centre interne du repère Fabric).
+            /* ⚠️ v1.7.595 — ÉCHELLE GLYPHE ANCRÉE AU BORD GAUCHE (défaut mesuré : « le texte
+               sort du bloc »). Le repère de Fabric part du CENTRE du bloc (-width/2) : un
+               `scale` autour de x = 0 étirait la ligne des DEUX côtés — le texte débordait
+               à droite ET commençait avant le bord gauche. On décale donc la mise à l'échelle
+               pour que le bord gauche du bloc (x = -width/2) reste FIXE : la ligne s'étend
+               vers la droite, comme une composition juste. */
             ctx.save();
-            try { ctx.scale(scale, 1); } catch (_) {}
+            try {
+                ctx.scale(scale, 1);
+                var _wBox = Number(this.width) || 0;
+                if (_wBox) ctx.translate((_wBox / 2) * (scale - 1) / scale, 0);
+            } catch (_) {}
             try { return __spJustFineOrigRenderTextCommon.call(this, ctx, method); }
             finally { ctx.restore(); }
         };
@@ -4674,6 +4680,29 @@ if (window._spGpuEnabled) {
             // ✅ Sérialiser les propriétés de hauteur/largeur fixe pour le clip
             if (this._fixedHeight) base._fixedHeight = this._fixedHeight;
             if (this._fixedWidth) base._fixedWidth = this._fixedWidth;
+            /* 🎯 v1.7.595 — LA HAUTEUR DE CADRE PART DANS LE .sp / .json.
+               Le Studio sait MESURER un cadre (spTextBlockHeightPx) mais pas le
+               connaître : il lit `_spFrameHeightMm` pour deux choses —
+                 • ne pas ré-estimer un bloc venu de l'app (il s'en sert de PLANCHER) ;
+                 • RECONNAÎTRE un texte de l'app (`_spTexteDeLApp`) et, dans ce cas,
+                   ne pas lui imposer sa propre règle de césure (il désactive la
+                   césure sur ses propres maquettes, jamais sur celles de l'app).
+               L'app n'écrivait cette clé NULLE PART : le Studio repartait donc d'une
+               estimation et se croyait propriétaire du document — un aller-retour
+               app → studio → app changeait la hauteur de cadre et la césure.
+               On écrit la mesure EXISTANTE (cadre fixe) ou la hauteur courante du
+               bloc, en millimètres, arrondie au 1/10 comme le Studio. */
+            try {
+                var _fhMmSrc = (typeof this._fixedHeight === 'number' && this._fixedHeight > 0) ? this._fixedHeight : this.height;
+                /* ⚠️ L'APP N'A PAS DE CONSTANTE `MM_TO_PX` (c'est le nom du STUDIO) :
+                   la première version de ce correctif la testait et ne s'écrivait donc
+                   JAMAIS (mesuré : clé absente du .sp). On utilise `pxToMm`, la
+                   conversion de l'app, avec repli explicite sur 25,4/72. */
+                if (typeof _fhMmSrc === 'number' && _fhMmSrc > 0) {
+                    var _fhMm = (typeof pxToMm === 'function') ? pxToMm(_fhMmSrc) : (_fhMmSrc * 25.4 / 72);
+                    if (isFinite(_fhMm) && _fhMm > 0) base._spFrameHeightMm = Math.round(_fhMm * 10) / 10;
+                }
+            } catch (_) {}
             // 📐 Sérialiser les retraits de paragraphe
             if (this._spIndentLeft) base._spIndentLeft = this._spIndentLeft;
             if (this._spIndentRight) base._spIndentRight = this._spIndentRight;
@@ -5638,6 +5667,16 @@ if (window._spGpuEnabled) {
                        repousser le texte ... en justifier »). */
                     var _wLine = (this.__spWrapWidths && this.__spWrapWidths[i]) || 0;
                     realWidth = (_wLine > 0 && _wLine < this.width - 0.5) ? _wLine : this.width;
+                    /* ⚠️ v1.7.595 — L'ÉCHELLE GLYPHE EST COMPENSÉE DANS LA CIBLE. Le rendu
+                       étire chaque glyphe horizontalement (glyphScaleOpt) : sans cette
+                       division, une ligne étirée DEPASSAIT la colonne (« le texte sort
+                       légèrement du bloc ») et les bords droits de deux lignes voisines ne
+                       tombaient pas au même endroit — les « vaguelettes » signalées. On
+                       vise donc la largeur de colonne DIVISÉE par l'échelle : après
+                       étirement, la ligne finit PILE au bord. */
+                    var _gsJust = (this._justSettings && typeof this._justSettings.glyphScaleOpt === 'number' && this._justSettings.glyphScaleOpt > 0)
+                        ? (this._justSettings.glyphScaleOpt / 100) : 1;
+                    if (_gsJust !== 1) realWidth = realWidth / _gsJust;
                     // ✅ Comportement PAO standard (césure active) :
                     // La dernière ligne de chaque paragraphe n'est JAMAIS étirée.
                     // isEndOfWrapping(i) détecte : dernière ligne OU ligne avant un \n (Enter).
@@ -5707,6 +5746,26 @@ if (window._spGpuEnabled) {
                     var accumulatedSpace = 0;
                     var line = this._textLines[i];
                     var currentLineWidth = this.getLineWidth(i);
+                    /* ⚠️ v1.7.595 — ÉCHELLE GLYPHE BORNÉE PAR LIGNE (règle InDesign).
+                       MESURÉ (glyphScaleOpt 106 %, bloc 300 px) : une ligne dont la largeur
+                       naturelle dépassait la cible (283 px) ne pouvait PAS être ramenée dans
+                       le cadre — la justification ne comprime jamais assez — et le texte
+                       sortait du bloc de 12 px une fois l'échelle appliquée. Comme InDesign,
+                       on plafonne donc l'échelle de CETTE ligne à ce que le cadre autorise
+                       (`colonne / largeur naturelle`) et on n'étire pas : la ligne, réduite,
+                       remplit exactement la colonne. `_renderTextLine` applique la réduction. */
+                    if (_gsJust !== 1 && currentLineWidth > 0.5) {
+                        var _limLigne = realWidth / currentLineWidth;   // realWidth = colonne / échelle
+                        this.__spGlyphScaleLine = this.__spGlyphScaleLine || {};
+                        if (_limLigne < 1) {
+                            /* La ligne est naturellement plus large que la cible : on la réduit
+                               juste assez pour qu'elle remplisse la colonne APRÈS l'échelle
+                               globale (le rendu applique gs × ce ratio). */
+                            this.__spGlyphScaleLine[i] = Math.max(0.5, _limLigne);
+                            continue;          // pas d'étirement : l'échelle réduite remplit la colonne
+                        }
+                        this.__spGlyphScaleLine[i] = 1;
+                    }
 
                     // Guard identique à Fabric.js
                     var spaces;
@@ -5778,6 +5837,31 @@ if (window._spGpuEnabled) {
                         }
 
                         var diffSpace = (targetWidth - currentLineWidth) / numberOfSpaces;
+                        /* ⚠️ v1.7.595 — LA COMPRESSION EST AUTORISÉE (bornée). La justification
+                           ne faisait qu'ÉLARGIR les espaces : une ligne rendue plus large que la
+                           colonne — échelle glyphe < 100 %, interlettrage positif, ou mot très
+                           long — ne pouvait pas revenir dans le bloc. MESURÉ (glyphScaleOpt 106 %,
+                           cible 283 px) : une ligne finissait à 294,6 px, soit 312 px après
+                           étirement, donc 12 px HORS du bloc (défaut signalé par l'utilisateur :
+                           « le texte sort parfois légèrement du bloc texte »). On comprime donc
+                           l'espace, sans jamais descendre sous 42 % de sa largeur naturelle :
+                           le texte reste lisible et les lignes se recollent au bord. */
+                        if (diffSpace < 0) {
+                            var _espNat = 0;
+                            try {
+                                var _cbSp2 = cachedCharBounds[i];
+                                for (var _ks = 0; _ks < line.length; _ks++) {
+                                    if (this._reSpaceAndTab.test(line[_ks])) {
+                                        var _cSp = _cbSp2[_ks];
+                                        if (_cSp) {
+                                            var _wSp = _cSp.width || _cSp.kernedWidth || 0;
+                                            if (_wSp > _espNat) _espNat = _wSp;
+                                        }
+                                    }
+                                }
+                            } catch (_) { _espNat = 0; }
+                            if (_espNat > 0.01 && diffSpace < (-0.58 * _espNat)) diffSpace = -0.58 * _espNat;
+                        }
                         // 🆕 v1.7.136 : indice du premier espace traînant (s'il y en a).
                         // Au-delà de cet indice, on ne touche plus la largeur des
                         // espaces (mais on continue à appliquer accumulatedSpace
@@ -5837,6 +5921,18 @@ if (window._spGpuEnabled) {
             const __spOrigRenderTextLine = fabric.Textbox.prototype._renderTextLine || (fabric.Text && fabric.Text.prototype && fabric.Text.prototype._renderTextLine);
             if (typeof __spOrigRenderTextLine === 'function') {
                 fabric.Textbox.prototype._renderTextLine = function(method, ctx, line, left, top, lineIndex) {
+                    /* ⚠️ v1.7.595 — RÉDUCTION D'ÉCHELLE PAR LIGNE : quand une ligne ne peut pas
+                       tenir dans le cadre avec l'échelle glyphe demandée, la justification lui
+                       applique un plafond (voir `__spGlyphScaleLine`). On la rend donc réduite,
+                       ancrée au bord GAUCHE de la ligne — le texte reste dans le bloc. */
+                    var _ratGL = (this.__spGlyphScaleLine && this.__spGlyphScaleLine[lineIndex]) || 1;
+                    var _reduit = false;
+                    if (_ratGL !== 1) {
+                        ctx.save();
+                        try { ctx.scale(_ratGL, 1); ctx.translate(left * (1 / _ratGL - 1), 0); _reduit = true; }
+                        catch (_) { _reduit = false; }
+                    }
+                    try {
                     __spOrigRenderTextLine.call(this, method, ctx, line, left, top, lineIndex);
 
                     // Ne pas perturber l'édition (sélection/cursor)
@@ -5924,6 +6020,7 @@ if (window._spGpuEnabled) {
                             ctx.restore();
                         }
                     } catch (_) {}
+                    } finally { if (_reduit) { try { ctx.restore(); } catch (_) {} } }
                 };
                 fabric.Textbox.prototype.__spRenderTextLineWrapped = true;
             }
@@ -46388,7 +46485,11 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     rgbBytes = await _spEmbedPdfImportsWithPdfLib(rgbBytes);
                 }
                 /* 🆕 v1.7.519 — _SP_OVERLAY_519 : overlays texte vectoriels. */
-                if (window._spTextOverlays && window._spTextOverlays.length) {
+                /* 🩹 v1.7.595 — PAS D'OVERLAY EN N&B : la couverture raster grisée est toujours
+                   ajoutée dans ce mode et contient déjà ces textes ; les fusionner par-dessus
+                   les dessinait une SECONDE fois (même mécanisme que le double texte du
+                   post-process pdf-lib). */
+                if (window._spTextOverlays && window._spTextOverlays.length && colorMode !== 'bw') {
                     rgbBytes = await _spMergeTextOverlays(rgbBytes, {});
                 }
                 if (_spAnyTextsNeedPostProcess()) {
@@ -48821,6 +48922,19 @@ https://superprint.app
                                 try {
                                     _spMarkTextsPostProcess('std:' + i, _spForceBwRaster ? false : !_hybridAllVector);
                                 } catch (_) {}
+                                /* 🩹 v1.7.595 — N&B : LA TYPOGRAPHIE SE DOUBLAIT. En N&B la couverture
+                                   raster grisée est ajoutée MÊME sur une page 100 % vectorielle
+                                   (`_spForceBwRaster`), et cette raster CONTIENT les textes. Or le
+                                   marquage ci-dessus est PAR PAGE : un texte dont la clé de page ne
+                                   correspondait pas (collecte tardive, planche imposée, pagination)
+                                   gardait `_needsPostProcess` à sa valeur PAR DÉFAUT (= « à réécrire »)
+                                   → pdf-lib le redessinait PAR-DESSUS la raster → DEUX copies
+                                   légèrement décalées (mesuré). En N&B on marque donc TOUS les
+                                   textes « déjà rendus » : c'est la raster qui porte la typographie,
+                                   plus aucun texte n'est réécrit → plus de double. */
+                                if (_spForceBwRaster) {
+                                    try { (window._spPdfTexts || []).forEach(function (tx) { tx._needsPostProcess = false; }); } catch (_) {}
+                                }
                                 // 🛡️ v1.7.292 — FIX P8 : les crop marks sont dessinés
                                 // UNIQUEMENT après le bloc raster (bloc unique L31913).
                                 // Avant, un bloc identique était dessiné ici DANS le try
@@ -52252,7 +52366,7 @@ https://superprint.app
                         try { w = f.widthOfTextAtSize(str, sz); } catch(_) { w = 0; }
                     }
                     if (!w) w = str.length * sz * 0.6;
-                    if (_charSpacingPt) w += Math.max(0, str.length - 1) * _charSpacingPt;
+                    if (_charSpacingPt) w += Math.max(0, str.length) * _charSpacingPt;
                     return w;
                 };
 
@@ -52507,6 +52621,44 @@ https://superprint.app
                         }
                         page.drawText(fragment, o);
                     };
+                    /* 🎯 v1.7.595 — ÉCHELLE HORIZONTALE DES GLYPHES (justification fine).
+                       pdf-lib n'expose pas l'opérateur Tz : on encadre le drawText d'un
+                       `cm` (concatTransformationMatrix) qui étire l'encre AUTOUR DU BORD
+                       GAUCHE du fragment. DÉFAUT MESURÉ avant ce correctif (bloc 300 px
+                       justifié, échelle glyphe 106 %, export « Format fini ») : le code
+                       n'étirait QUE les positions des mots — l'encre des lettres restait
+                       à 100 % — et les largeurs étaient mesurées au canvas alors que
+                       pdf-lib dessine avec la police embarquée. Les bords droits des
+                       lignes pleines sortaient entre 295,5 et 299 px au lieu de 299 px :
+                       les « vaguelettes » signalées par l'utilisateur. Le texte peut
+                       aussi sortir du bloc (échelle non plafonnée par le cadre).
+                       Pour un bloc PIVOTÉ on garde l'ancien tracé (le cm s'applique dans
+                       le repère de la page, pas celui de la ligne) : cas rare, sans effet
+                       sur le défaut signalé. */
+                    var _drawTextRunScaled = function(fragment, localX, st, hScale) {
+                        var _plain = function() { _drawTextRun(fragment, localX, st); };
+                        if (!(hScale > 0) || Math.abs(hScale - 1) < 0.002 || obj.angle) { _plain(); return; }
+                        try {
+                            var ptPos3 = localToPagePt(localX, baselineY_local);
+                            var _f3 = (st && st.font) ? st.font : ef;
+                            var _sz3 = (st && st.sizePt) ? st.sizePt : fontSizePt;
+                            var _c3 = (st && st.fillC) ? st.fillC : fillC;
+                            page.pushOperators(
+                                PDFLib.pushGraphicsState(),
+                                PDFLib.concatTransformationMatrix(hScale, 0, 0, 1, ptPos3.x * (1 - hScale), 0)
+                            );
+                            try {
+                                page.drawText(fragment, {
+                                    x: ptPos3.x, y: ptPos3.y,
+                                    size: _sz3, font: _f3,
+                                    color: PDFLib.rgb(_c3[0] / 255, _c3[1] / 255, _c3[2] / 255),
+                                    opacity: _finalTextOp
+                                });
+                            } finally {
+                                page.pushOperators(PDFLib.popGraphicsState());
+                            }
+                        } catch (_) { _plain(); }
+                    };
                     var _textDecorationRuns = []; // {fromLocal, toLocal, kind}
 
                     // 🎯 v1.7.340 (FIX) : détection fiable des styles per-char de la
@@ -52552,27 +52704,90 @@ https://superprint.app
                     var _spCharLoopEnd = null;
 
                     if (_justify && !_isLastParaLine && !_lineHasCharStyles && tx.indexOf(' ') !== -1) {
-                        // ── JUSTIFICATION : dessine mot à mot en élargissant les
-                        //    espaces pour que la ligne remplisse exactement boxWidth.
+                        /* ⚠️ v1.7.595 — JUSTIFICATION FINE : L'EXPORT DOIT SUIVRE L'APERÇU.
+                           Défaut signalé : « lorsque je change les valeurs de la justification et
+                           que je mets le texte en justifié, sur l'export PDF les bords font des
+                           vaguelettes, et le texte sort légèrement du bloc ».
+                           CAUSE MESURÉE : les trois réglages du panneau Justification
+                           (`_justSettings`) n'étaient lus QUE par le rendu écran —
+                           • `wordSpaceOpt` (intermots) modifie la largeur des espaces à l'écran,
+                             l'export utilisait toujours l'espace « naturel » ;
+                           • `charSpacing` était compté sur (n-1) caractères alors que Fabric
+                             l'ajoute APRÈS CHAQUE caractère : chaque mot exporté manquait un pas
+                             d'interlettrage, l'écart se cumulait avec le nombre de mots ;
+                           • `glyphScaleOpt` (échelle glyphe) n'était pas compté du tout.
+                           Résultat : la largeur de ligne exportée différait de celle de l'aperçu
+                           — un bord droit en dents de scie (« vaguelettes ») et, quand l'échelle
+                           glyphe dépasse 100 %, un texte qui sort du bloc.
+                           Ici la ligne vise EXACTEMENT la largeur de colonne, avec les mêmes
+                           facteurs qu'à l'écran, et l'espace se comprime si nécessaire : le bord
+                           droit tombe toujours sur le bord du bloc, jamais au-delà. */
+                        var _jsOpt = obj._justSettings || {};
+                        var _gsF = (typeof _jsOpt.glyphScaleOpt === 'number' && _jsOpt.glyphScaleOpt > 0)
+                            ? (_jsOpt.glyphScaleOpt / 100) : 1;
+                        var _wsF = (typeof _jsOpt.wordSpaceOpt === 'number' && _jsOpt.wordSpaceOpt > 0)
+                            ? (_jsOpt.wordSpaceOpt / 100) : 1;
+                        /* 🎯 v1.7.595 — MÉTRIQUES DE LA POLICE DU PDF (pas du canvas).
+                           Mesuré : avec les largeurs du canvas, la ligne exportée finissait
+                           entre 295,5 et 299 px pour un bord d'aperçu à 299 px — l'écart se
+                           cumulait mot après mot (dents de scie). pdf-lib dessine avec la
+                           police EMBARQUÉE : on lit donc `widthOfTextAtSize` pour toutes les
+                           largeurs de la justification (repli sur la mesure écran si la
+                           police refuse une chaîne, ex. caractère absent). */
+                        var _advPdf = function (s) {
+                            try { return ef.widthOfTextAtSize(s, fontSizePt); } catch (_) { return _measW(s); }
+                        };
                         var _words = String(tx).split(' ');
                         var _nbSpaces = _words.length - 1;
-                        var _wordsW = _measW(tx.replace(/ /g, ''));
-                        var _spaceW = (_measW(' ') || (fontSizePt * 0.25));
-                        var _availForSpaces = Math.max(0, _spJustifyTarget - _wordsW);
+                        var _natPdf = 0;
+                        try { _natPdf = ef.widthOfTextAtSize(String(tx), fontSizePt); } catch (_) { _natPdf = _measW(tx); }
+                        /* ÉCHELLE RÉELLE DE LA LIGNE : celle du panneau, PLAFONNÉE PAR LE
+                           CADRE (règle InDesign) — une ligne naturellement plus large que la
+                           colonne est réduite juste assez pour la remplir, au lieu d'en
+                           sortir (défaut « le texte sort légèrement du bloc »). */
+                        var _hLine = _gsF;
+                        if (_gsF !== 1 && _natPdf > 0.5 && _spJustifyTarget > 0) {
+                            var _hMax = _spJustifyTarget / _natPdf;
+                            if (_hMax > 0 && _hMax < _hLine) _hLine = Math.max(0.5, _hMax);
+                        }
+                        var _wordsW = 0;
+                        for (var _wi0 = 0; _wi0 < _words.length; _wi0++) {
+                            if (_words[_wi0]) _wordsW += _advPdf(_words[_wi0]) * _hLine;
+                        }
+                        var _spaceW = ((_advPdf(' ') || (fontSizePt * 0.25)) * _wsF) * _hLine;
+                        var _availForSpaces = _spJustifyTarget - _wordsW;
                         var _extraPerSpace = _nbSpaces > 0 ? (_availForSpaces / _nbSpaces - _spaceW) : 0;
-                        if (_extraPerSpace < 0) _extraPerSpace = 0;
+                        /* La compression est AUTORISÉE (elle ne l'était pas) : une ligne rendue
+                           plus large que la colonne ne pouvait pas revenir dans le bloc — c'est
+                           la seconde moitié du défaut signalé. Bornes de lisibilité : l'espace
+                           reste entre 42 % et 400 % de sa largeur naturelle (règles InDesign). */
+                        var _spaceEff = _spaceW + _extraPerSpace;
+                        var _miniSp = _spaceW * 0.42;
+                        var _maxiSp = Math.max(_spaceW * 4, _spaceW + fontSizePt);
+                        if (_spaceEff < _miniSp) _spaceEff = _miniSp;
+                        if (_spaceEff > _maxiSp) _spaceEff = _maxiSp;
+                        /* Les bornes de lisibilité viennent peut-être de mordre : on ajuste
+                           alors l'échelle de la ligne pour que l'ENCRE finisse PILE sur le bord
+                           du bloc, jamais au-delà (la répartition est linéaire → un seul
+                           ajustement suffit). */
+                        var _totalDraw = _wordsW + (_nbSpaces > 0 ? (_nbSpaces * _spaceEff) : 0);
+                        if (_totalDraw > _spJustifyTarget + 0.01 && _totalDraw > 0) {
+                            var _kAjust = _spJustifyTarget / _totalDraw;
+                            _hLine = Math.max(0.5, _hLine * _kAjust);
+                            _wordsW *= _kAjust; _spaceW *= _kAjust; _spaceEff *= _kAjust;
+                        }
                         // Reconstruire la position locale en px objet (unité cohérente
                         //   avec boxWidth, qui est en px canvas à 72 dpi = pt / |sx|).
                         var _cursorL = xStart;
                         for (var _wi = 0; _wi < _words.length; _wi++) {
                             var _wd = _words[_wi];
                             if (_wi > 0) {
-                                // espace (normal + extra), en unité locale
-                                _cursorL += (_spaceW + _extraPerSpace) / Math.abs(sx);
+                                // espace (naturel × intermots × échelle glyphe, ajusté)
+                                _cursorL += _spaceEff / Math.abs(sx);
                             }
                             if (_wd) {
-                                var _wordWpt = _measW(_wd);
-                                _drawTextRun(_wd, _cursorL);
+                                var _wordWpt = _advPdf(_wd) * _hLine;
+                                _drawTextRunScaled(_wd, _cursorL, null, _hLine);
                                 // trace soulignement sur ce mot
                                 _textDecorationRuns.push({ from: _cursorL, to: _cursorL + _wordWpt / Math.abs(sx), kind: 'base' });
                                 _cursorL += _wordWpt / Math.abs(sx);
@@ -52586,6 +52801,22 @@ https://superprint.app
                         //   sortait 63 pt AVANT la fin du texte, au milieu de la ligne.
                         _spCharLoopEnd = _cursorL;
                     } else {
+                        /* 🎯 v1.7.595b — LES RÉGLAGES DU PANNEAU VALENT POUR TOUTES LES LIGNES.
+                           MESURÉ (dernier écart de parité aperçu ↔ export) : sur une ligne NON
+                           justifiée (fin de paragraphe), l'aperçu dessine les espaces à
+                           `wordSpaceOpt` (130 % par défaut dans notre mesure) — le patch
+                           `_measureChar` élargit l'espace pour TOUT le bloc, pas seulement pour
+                           les lignes étirées — alors que l'export dessinait la ligne d'un seul
+                           `drawText` avec l'espace NATUREL. Écart mesuré : 112,7 px à l'écran
+                           contre 109,3 px dans le PDF (≈ 3,4 px sur une ligne courte).
+                           On décompose donc la ligne en MOTS dès qu'un réglage s'applique,
+                           avec les métriques de la police du PDF (mêmes avances que l'encre) et
+                           l'espace = naturel × `wordSpaceOpt` × échelle des glyphes. */
+                        var _jsBloc = obj._justSettings || {};
+                        var _gsBloc = (typeof _jsBloc.glyphScaleOpt === 'number' && _jsBloc.glyphScaleOpt > 0)
+                            ? (_jsBloc.glyphScaleOpt / 100) : 1;
+                        var _wsBloc = (typeof _jsBloc.wordSpaceOpt === 'number' && _jsBloc.wordSpaceOpt > 0)
+                            ? (_jsBloc.wordSpaceOpt / 100) : 1;
                         // ── ALIGNEMENT SIMPLE (left/center/right) + charSpacing
                         //    + STYLES PER-CARACTÈRE (gras/italique/taille/couleur).
                         //    charSpacing ≠ 0 OU styles per-char → dessin caractère
@@ -52696,6 +52927,10 @@ https://superprint.app
                                     //   caractère espace (comportement enlargeSpaces).
                                     _chW += _extraSp;
                                 }
+                                /* 🎯 v1.7.595b — l'espace porte aussi `wordSpaceOpt`, comme à
+                                   l'écran (le patch `_measureChar` élargit l'espace pour tout
+                                   le bloc, pas seulement pour les lignes justifiées). */
+                                if (_ch === ' ' && _wsBloc !== 1) _chW *= _wsBloc;
                                 _cursorC += _chW;
                                 if (_ci < tx.length - 1) _cursorC += _spacingStep;
                             }
@@ -52727,7 +52962,37 @@ https://superprint.app
                                     rotate: drawOpts.rotate
                                 });
                             }
-                            page.drawText(tx, drawOpts);
+                            /* 🎯 v1.7.595 — L'ÉCHELLE DES GLYPHES VAUT POUR TOUTES LES LIGNES
+                               DU BLOC, pas seulement les lignes justifiées. L'aperçu applique
+                               `ctx.scale(glyphScaleOpt)` sur tout le bloc ; l'export ne le
+                               faisait que dans la branche justifiée, donc les DERNIÈRES LIGNES
+                               DE PARAGRAPHE (non justifiées) sortaient 6 % plus courtes que
+                               l'aperçu (mesuré : 103,3 px exportées pour 112,7 px à l'écran,
+                               même bloc). Le faux-gras est laissé au tracé historique (deux
+                               passes) pour ne rien changer à son rendu. */
+                            var _fauxGrasIci = !!(isBold && !fonts[fontKey]);
+                            var _motsLigne = (tx.indexOf(' ') !== -1 && tx.indexOf('\t') === -1) ? String(tx).split(' ') : null;
+                            if (!_fauxGrasIci && _motsLigne && (_gsBloc !== 1 || _wsBloc !== 1)) {
+                                /* Ligne décomposée en mots : chaque mot à sa position, l'espace
+                                   entre eux élargi comme à l'écran. Fin de ligne identique à
+                                   l'aperçu (mesures de la police du PDF). */
+                                var _advPdfB = function (s) {
+                                    try { return ef.widthOfTextAtSize(s, fontSizePt); } catch (_) { return _measW(s); }
+                                };
+                                var _espP = ((_advPdfB(' ') || (fontSizePt * 0.25)) * _wsBloc) * _gsBloc;
+                                var _curB = xStart;
+                                for (var _mb = 0; _mb < _motsLigne.length; _mb++) {
+                                    if (_mb > 0) _curB += _espP / Math.abs(sx);
+                                    if (_motsLigne[_mb]) {
+                                        _drawTextRunScaled(_motsLigne[_mb], _curB, null, _gsBloc);
+                                        _curB += (_advPdfB(_motsLigne[_mb]) * _gsBloc) / Math.abs(sx);
+                                    }
+                                }
+                            } else if (_gsBloc !== 1 && !_fauxGrasIci) {
+                                _drawTextRunScaled(tx, xStart, null, _gsBloc);
+                            } else {
+                                page.drawText(tx, drawOpts);
+                            }
                             _textDecorationRuns.push({ from: xStart, to: xStart + lineWLocal, kind: 'base' });
                         }
                     }
@@ -53099,6 +53364,12 @@ https://superprint.app
                                 var _kNatif = _kForme || _kt === 'text' || _kt === 'i-text' || _kt === 'textbox' || _kt === 'image';
                                 if (!_kForme) _gVec = false;
                                 if (!_kNatif) { _gVec = false; _gMixte = false; break; }
+                                /* 🩹 _SP_SVG_DEGRADE_595 — peinture complexe (dégradé,
+                                   motif, ombre, clipPath, coin arrondi) : le rendu natif
+                                   de l'enfant ne sait pas la peindre et son repli raster
+                                   part hors page (repère du groupe). On rasterise donc le
+                                   GROUPE entier, dont la géométrie est absolue. */
+                                if (_spPeintureComplexeObjet(_gKids[_gk])) { _gVec = false; _gMixte = false; break; }
                             }
                         }
                         if (_gVec) {
@@ -53555,6 +53826,14 @@ https://superprint.app
                     ? window._spImpositionMeta._currentSheetIndex : 0;
                 _spMarkTextsPostProcess('imp:' + _sheetIdxMark, _imposedColorMode === 'bw' ? false : !_impAllVector);
             } catch (_) {}
+            /* 🩹 v1.7.595 — N&B IMPOSÉ : même correctif que la branche standard. En N&B la
+               planche est TOUJOURS couverte par une raster grisée (qui contient les textes) ;
+               un texte dont la clé de planche ne correspondait pas gardait le marquage par
+               défaut (« à réécrire ») → pdf-lib le redessinait par-dessus la raster → texte
+               en DOUBLE. On marque donc tous les textes « déjà rendus » en N&B. */
+            if (_imposedColorMode === 'bw') {
+                try { (window._spPdfTexts || []).forEach(function (tx) { tx._needsPostProcess = false; }); } catch (_) {}
+            }
             // Ne définir skipRaster que si TOUTES les planches de la boucle sont
             // vectorielles. Comme renderImposedSheet est appelé par planche, on
             // fait un ET-logique : si une planche a du raster, on garde false.
@@ -55200,6 +55479,36 @@ https://superprint.app
             return null;
         }
 
+        /* 🩹 _SP_SVG_DEGRADE_595 — UN ENFANT DE GROUPE À PEINTURE COMPLEXE FAIT
+           RASTERISER LE GROUPE ENTIER (audit 2026-10-02, mesure avant/après).
+
+           DÉFAUT MESURÉ (SVG importé « Importer → SVG » avec dégradés, export
+           « Format fini » sans traits de coupe) : le repli raster de l'enfant
+           (`_spRenderComplexFabricObjectToPdfLib`) lit `getBoundingRect()` de
+           l'ENFANT, qui est exprimé dans le REPÈRE DU GROUPE, pas celui de la
+           page. Le flux PDF obtenu le prouve :
+
+               RECT 595x842 @0,0  fill=blanc          (fond de page)
+               IMAGE 401x301 @-200,691                (dégradé : hors page)
+               IMAGE 121x121 @40,841                  (cercle radial : hors page)
+               PATH  fill=rouge (M 111.496 331.496 …) (le triangle, seul survivant)
+
+           Le groupe était posé en (80,80) : la zone du SVG restait donc BLANCHE
+           (rapport utilisateur : « sans les traits de coupe, un blanc apparaît
+           sur l'image »), alors que le chemin jsPDF (svg2pdf) rendait les
+           dégradés correctement — d'où la différence avec « traits de coupe ».
+           Le groupe, lui, a une géométrie ABSOLUE : on le rasterise d'un bloc
+           (le rendu est alors exactement celui de l'aperçu Fabric). */
+        function _spPeintureComplexeObjet(o) {
+            if (!o) return false;
+            if (o.fill && typeof o.fill === 'object') return true;      // dégradé / motif
+            if (o.stroke && typeof o.stroke === 'object') return true;
+            if (o.shadow) return true;
+            if (o.clipPath) return true;
+            if (o.type === 'rect' && ((o.rx || 0) > 0 || (o.ry || 0) > 0)) return true;
+            return false;
+        }
+
         // Classification d'un objet fabric : peut-il être rendu en
         // vectoriel via jsPDF ? Les cas non triviaux (filtres, ombres,
         // gradient, pattern, clipPath) tombent en raster.
@@ -56325,13 +56634,26 @@ https://superprint.app
                     //   entière] (normal), soit les [mots espacés] (justifié).
                     let _segments = null;
                     if (_justifyThisLine) {
+                        /* ⚠️ v1.7.595 — MÊMES FACTEURS QU'À L'ÉCRAN (voir le chemin pdf-lib) :
+                           intermots (wordSpaceOpt) et échelle glyphe (glyphScaleOpt) entrent dans
+                           la largeur des mots et des espaces, la ligne vise exactement la largeur
+                           de colonne, et l'espace peut se COMPRIMER (ligne trop longue : le texte
+                           ne doit jamais sortir du bloc). Sans cela le bord droit de deux lignes
+                           voisines ne tombait pas au même endroit — « vaguelettes » signalées. */
+                        const _jsJ = obj._justSettings || {};
+                        const _gsJ = (typeof _jsJ.glyphScaleOpt === 'number' && _jsJ.glyphScaleOpt > 0) ? (_jsJ.glyphScaleOpt / 100) : 1;
+                        const _wsJ = (typeof _jsJ.wordSpaceOpt === 'number' && _jsJ.wordSpaceOpt > 0) ? (_jsJ.wordSpaceOpt / 100) : 1;
                         const _words = String(text).split(' ');
                         const _nbSpaces = _words.length - 1;
                         let _wordsW = 0;
-                        for (let _wi2 = 0; _wi2 < _words.length; _wi2++) if (_words[_wi2]) _wordsW += _spJWordW(_words[_wi2]);
-                        const _spaceW = (_spJWordW(' ') || (fontSize * 0.25));
-                        const _availForSpaces = Math.max(0, _spJustifyTargetJ - _wordsW);
+                        for (let _wi2 = 0; _wi2 < _words.length; _wi2++) if (_words[_wi2]) _wordsW += _spJWordW(_words[_wi2]) * _gsJ;
+                        const _spaceW = ((_spJWordW(' ') || (fontSize * 0.25)) * _wsJ) * _gsJ;
+                        const _availForSpaces = _spJustifyTargetJ - _wordsW;
                         const _extraPerSpace = _nbSpaces > 0 ? (_availForSpaces / _nbSpaces - _spaceW) : 0;
+                        let _spaceEffJ = _spaceW + _extraPerSpace;
+                        const _miniJ = _spaceW * 0.42, _maxiJ = Math.max(_spaceW * 4, _spaceW + fontSize);
+                        if (_spaceEffJ < _miniJ) _spaceEffJ = _miniJ;
+                        if (_spaceEffJ > _maxiJ) _spaceEffJ = _maxiJ;
                         _segments = [];
                         /* 🩹 v1.7.480 — COLONNES : la boucle partait de 0 au lieu de xStart,
                            donc une ligne JUSTIFIÉE d'une colonne > 0 était dessinée au bord
@@ -56342,10 +56664,10 @@ https://superprint.app
                         let _cur = xStart; // position locale (unité em, même échelle que lineW/boxWidth)
                         for (let _wi3 = 0; _wi3 < _words.length; _wi3++) {
                             const _wd3 = _words[_wi3];
-                            if (_wi3 > 0) _cur += (_spaceW + _extraPerSpace);
+                            if (_wi3 > 0) _cur += _spaceEffJ;
                             if (_wd3) {
                                 _segments.push({ t: _wd3, localX: _cur });
-                                _cur += _spJWordW(_wd3);
+                                _cur += _spJWordW(_wd3) * _gsJ;
                             }
                         }
                     } else if (_spJTabsActifs) {
@@ -73280,10 +73602,73 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                 if (obj.__spWrapWidths && obj.__spWrapWidths[li] > 0) boxWidthJustif = obj.__spWrapWidths[li];
             } catch (_) {}
             var spaces = (lineText.match(/ /g) || []).length;
+            /* 🎯 v1.7.595 — JUSTIFICATION VECTORISÉE ALIGNÉE SUR L'APERÇU.
+               DÉFAUTS MESURÉS avant ce correctif (bloc 300 px justifié, échelle glyphe
+               106 %, export « typo vectorielle ») :
+                 • les réglages du panneau (`_justSettings`) étaient IGNORÉS : ni
+                   `wordSpaceOpt` (intermots), ni `glyphScaleOpt` (échelle des glyphes) ;
+                 • TOUTE ligne contenant des espaces était étirée jusqu'au bord de la
+                   colonne, y compris les DERNIÈRES LIGNES DE PARAGRAPHE, que l'aperçu
+                   laisse courtes (comportement PAO) ;
+                 • aucune compression : une ligne naturellement plus large que la colonne
+                   ne pouvait pas y revenir (« le texte sort légèrement du bloc »).
+               On reproduit donc ici l'algorithme de l'aperçu : cible = colonne / échelle,
+               plafond d'échelle quand la ligne est déjà trop large, espace borné
+               (42 %–400 % du naturel), et pas de justification en fin de paragraphe. */
+            var _jsV = obj._justSettings || {};
+            var _gsV = (typeof _jsV.glyphScaleOpt === 'number' && _jsV.glyphScaleOpt > 0) ? (_jsV.glyphScaleOpt / 100) : 1;
+            var _wsV = (typeof _jsV.wordSpaceOpt === 'number' && _jsV.wordSpaceOpt > 0) ? (_jsV.wordSpaceOpt / 100) : 1;
+            var _finPara = (li === lines.length - 1);
+            try {
+                if (typeof obj.isEndOfWrapping === 'function' && obj.isEndOfWrapping(li)) {
+                    _finPara = true;
+                    /* ⚠️ SAUF si la ligne se termine par un SAUT DOUX (Shift+Enter) : l'aperçu
+                       la JUSTIFIE (comportement PAO). On lit le même Set que lui
+                       (`__spSoftBreakIndices`), sinon une ligne Shift+Enter resterait courte
+                       dans l'export vectoriel alors qu'elle est étirée à l'écran. */
+                    var _softV = obj.__spSoftBreakIndices;
+                    if (_softV && typeof obj._spGetAbsLineEnd === 'function') {
+                        var _endV = obj._spGetAbsLineEnd(li);
+                        if (_endV >= 0) {
+                            var _srcV = String(obj.text || '');
+                            var _pV = _endV;
+                            while (_pV < _srcV.length && (_srcV[_pV] === ' ' || _srcV[_pV] === '\t')) _pV++;
+                            var _idxV = (_srcV[_pV] === '\n') ? _pV : _endV;
+                            var _estDoux = (_softV instanceof Set) ? _softV.has(_idxV)
+                                : (Array.isArray(_softV) ? (_softV.indexOf(_idxV) !== -1) : false);
+                            if (_estDoux) _finPara = false;
+                        }
+                    }
+                }
+            } catch (_) {}
+            var _espNat = 0;
+            try { _espNat = font.getAdvanceWidth(' ', realFontSize, { letterSpacing: letterSpacing }); } catch (_) { _espNat = realFontSize * 0.25; }
+            var _espNatP = _espNat * _wsV;
+            var _natLigne = lineWidths[li] + spaces * (_espNatP - _espNat);   // espaces du panneau comprises
+            var _hLigne = _gsV;
             var extraSpace = 0;
-            if ((textAlign === 'justify' || textAlign.indexOf('justify-') === 0) && spaces > 0 && boxWidthJustif > lineWidths[li]) {
-                extraSpace = (boxWidthJustif - lineWidths[li]) / spaces;
+            var _veutJustif = (textAlign === 'justify' || textAlign.indexOf('justify-') === 0)
+                && spaces > 0 && !_finPara && boxWidthJustif > 0;
+            if (_veutJustif) {
+                var _cible = (_gsV !== 1) ? (boxWidthJustif / _gsV) : boxWidthJustif;
+                if (_natLigne > _cible + 0.01 && _natLigne > 0) {
+                    /* Ligne déjà plus large que la cible : on RÉDUIT l'échelle (règle
+                       InDesign) au lieu d'étirer — la ligne, réduite, remplit la colonne
+                       et reste DANS le bloc. */
+                    _hLigne = Math.max(0.5, _cible / _natLigne);
+                } else {
+                    var _espEff = _espNatP + (_cible - _natLigne) / spaces;
+                    var _mini = _espNatP * 0.42;
+                    var _maxi = Math.max(_espNatP * 4, _espNatP + realFontSize);
+                    if (_espEff < _mini) _espEff = _mini;
+                    if (_espEff > _maxi) _espEff = _maxi;
+                    extraSpace = _espEff - _espNatP;
+                }
             }
+
+            var xStart = 0;
+            if (textAlign === 'center') xStart = (boxWidth - lineWidths[li]) / 2;
+            else if (textAlign === 'right') xStart = boxWidth - lineWidths[li];
 
             var xCursor = xStart;
             var prevGlyphIdx = null;
@@ -73298,7 +73683,9 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                     continue;
                 }
                 if (ch === ' ') {
-                    xCursor += font.getAdvanceWidth(' ', realFontSize, { letterSpacing: letterSpacing }) + extraSpace;
+                    /* v1.7.595 — l'espace porte `wordSpaceOpt` (comme l'aperçu) en plus
+                       de l'espace de justification. */
+                    xCursor += (font.getAdvanceWidth(' ', realFontSize, { letterSpacing: letterSpacing }) * _wsV) + extraSpace;
                     prevGlyphIdx = null; continue;
                 }
                 var glyph = font.charToGlyph(ch);
@@ -73318,7 +73705,28 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
                     //   poser left/top = pathOffset rend les coordonnees absolues
                     //   exactes (avant : left = left + xCursor decalait chaque glyphe
                     //   de son left side bearing, erreur cumulative).
-                    var d = _spOtPathToSVG(gp, left, top, xCursor, lineBaselines[li] || 0, cosA, sinA);
+                    /* 🎯 v1.7.595 — ÉCHELLE HORIZONTALE DE LA LIGNE (justification fine).
+                       L'aperçu étire la ligne avec `ctx.scale(échelle, 1)` ; la
+                       vectorisation dessinait les glyphes à 100 % et n'avançait que les
+                       positions — les bords droits ne tombaient donc pas sur le bord du
+                       bloc (« vaguelettes »). On applique l'échelle AUX CONTOURS (x des
+                       commandes) ET à la position émise, autour du bord GAUCHE de la
+                       ligne : glyphes et positions restent cohérents, comme à l'écran. */
+                    var _gpUse = gp;
+                    if (_hLigne !== 1) {
+                        try {
+                            _gpUse = { commands: gp.commands.map(function (c) {
+                                var n = {};
+                                for (var kk in c) { if (Object.prototype.hasOwnProperty.call(c, kk)) n[kk] = c[kk]; }
+                                if (typeof n.x === 'number') n.x *= _hLigne;
+                                if (typeof n.x1 === 'number') n.x1 *= _hLigne;
+                                if (typeof n.x2 === 'number') n.x2 *= _hLigne;
+                                return n;
+                            }) };
+                        } catch (_) { _gpUse = gp; }
+                    }
+                    var _xEmit = (_hLigne === 1) ? xCursor : (xStart + _hLigne * (xCursor - xStart));
+                    var d = _spOtPathToSVG(_gpUse, left, top, _xEmit, lineBaselines[li] || 0, cosA, sinA);
                     if (d) {
                         var fabPath = new fabric.Path(d, {
                             // AUCUN left/top ni origin : le 'd' est deja en coordonnees
