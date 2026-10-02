@@ -404,6 +404,22 @@
     border-color: color-mix(in srgb, var(--text) 30%, transparent); color: var(--text);
     background: color-mix(in srgb, var(--text) 4%, transparent);
   }
+  /* ≡ _SP_STUDIO_SOUFFLET_619 — LES PRE-PROMPTS EN SOUFFLET (demande utilisateur : « on va
+     ranger mieux les pre-prompts sous forme de soufflet : un (+) sous la deuxieme ligne qui
+     deploie le reste »). Deux lignes restent visibles et le reste attend le bouton.
+     Le repli est fait en JS sur les lignes REELLEMENT mesurees (voir spExSoufflet) : aucun
+     max-height en dur ne peut se tromper selon la police, la langue ou la largeur. */
+  #starter .st-ex-plus {
+    display: block; margin: 10px auto 0; width: 30px; height: 30px; padding: 0;
+    border: 1px solid color-mix(in srgb, var(--text) 16%, transparent); border-radius: 999px;
+    background: transparent; color: color-mix(in srgb, var(--text) 62%, transparent);
+    font: 400 16px/1 inherit; cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s, transform .15s;
+  }
+  #starter .st-ex-plus:hover {
+    border-color: color-mix(in srgb, var(--text) 34%, transparent); color: var(--text);
+    background: color-mix(in srgb, var(--text) 4%, transparent); transform: translateY(-1px);
+  }
   #starter .st-foot {
     margin-top: 24px; text-align: center;
     font: 500 10px/1.9 'IBM Plex Mono', ui-monospace, monospace;
@@ -2172,6 +2188,10 @@
            (spExemplesPeindre remplit par index) : ces trois boutons portent donc les trois
            premiers exemples de SP_EX_GABARIT. Leurs libellés de secours (autres moteurs)
            sont st.ex11 … st.ex13p. -->
+      <button type="button" data-ex="14"></button>
+      <button type="button" data-ex="15"></button>
+      <button type="button" data-ex="16"></button>
+      <button type="button" data-ex="17"></button>
       <button type="button" data-ex="11"></button>
       <button type="button" data-ex="12"></button>
       <button type="button" data-ex="13"></button>
@@ -2193,6 +2213,10 @@
       <button type="button" data-ex="9"></button>
       <button type="button" data-ex="10"></button>
     </div>
+    <!-- ≡ _SP_STUDIO_SOUFFLET_619 — LE (+) DU SOUFFLET, SOUS LA DEUXIEME LIGNE DE PRE-PROMPTS.
+         Il est FRERE de la liste (et non dedans) : le repli masque des pastilles, il ne doit
+         pas masquer le bouton qui les rouvre. Un pictogramme suffit — rien a traduire. -->
+    <button type="button" class="st-ex-plus" id="stExPlusBtn" aria-expanded="false" title="Tous les pré-prompts">+</button>
     <div class="st-foot">
       <span id="stFormat"></span>
       <span class="st-sep">|</span>
@@ -4414,6 +4438,11 @@
       autoGrowPrompt();
     }
     window.addEventListener('resize', autoGrowPrompt);
+    /* ≡ _SP_STUDIO_SOUFFLET_619 — le soufflet des pré-prompts suit la largeur : les deux
+       lignes visibles sont remesurées à chaque redimensionnement (et à chaque changement de
+       langue, qui change la longueur des libellés). Sans cela, élargir la fenêtre laissait
+       des pastilles masquées alors qu'elles tiendraient maintenant en deux lignes. */
+    window.addEventListener('resize', function () { try { spExSoufflet(); } catch (_) {} });
     $('promptInput').addEventListener('input', syncPromptPh);
     // 🆕 _SP_STUDIO_PROMPT_577 — chaque frappe met le brouillon à jour.
     $('promptInput').addEventListener('input', sp213SavePromptDraft);
@@ -4903,7 +4932,8 @@
     /* v1.7.580 — MOTEUR DE GABARIT : les pastilles deviennent SES exemples. */
     const exs = (typeof spExemples === 'function') ? spExemples(state.engine) : null;
     if (exs) {
-      exs.forEach(function (ex) {
+      /* ⚠️ _SP_STUDIO_ROCK625 — ORDRE DIFFÉRENT DE CELUI DE LA PRÉ-HOME (voir spExOrdreUI). */
+      spExOrdreUI(exs).forEach(function (ex) {
         const b = document.createElement('button');
         b.className = 'chip';
         b.textContent = ex[0];
@@ -5829,8 +5859,8 @@
     }
     state.attachments.push({ id: id, name: file.name, type: 'text', text: texte, ext: ext, geant: true, imageCount: 0 });
     renderAttachBar();
-    appendChat('assistant', '📄 « ' + file.name + ' » (« ' + mo + ' Mo) : ' + texte.length.toLocaleString('fr-FR') +
-      ' caractères extraits, ' + info + '. Le document entier est converti en markdown (titres, listes, paragraphes) puis chaîné dans les pages du cahier — rien n\'est écarté. Les images du fichier ne sont pas récupérées.');
+    appendChat('assistant', '📄 « ' + file.name + ' » : ' + texte.length.toLocaleString('fr-FR') +
+      ' caractères, ' + info + '.');
   }
 
   async function spDocSecours(file, id, ext, cause) {
@@ -5994,7 +6024,7 @@
         renderAttachBar();
       });
     } else {
-      appendChat('assistant', '⚠️ « ' + file.name + ' » ignoré : type non pris en charge. Formats acceptés : images (JPG/PNG/WebP/GIF/SVG/BMP), EPS/AI, TXT/MD/CSV/HTML, Word (.doc/.docx), OpenDocument (.odt/.ods/.odp), RTF (.rtf), Excel (.xls/.xlsx) et PDF.');
+      appendChat('assistant', '⚠️ « ' + file.name + ' » ignoré : format non pris en charge (images, EPS/AI, TXT, Word, OpenDocument, RTF, Excel, PDF acceptés).');
       renderAttachBar();
     }
   }
@@ -9638,7 +9668,41 @@ function spRtfLayoutInfo(src) {
     'st.ex13': '正方形の招待状',
     'st.ex13p': '正方形の招待状、展覧会のオープニング用：テラコッタとサンドの配色、巨大な大文字タイトル「VERNISSAGE」、タイトル下に一行「soirée privée — Galerie du Port, Marseille」、日付「10月9日（木）18:30」、テラコッタの大きなベタ面、細い罫線、セリフ体、余白たっぷり、ウォウ効果。'
   });
+  Object.assign(I18N.fr, {
+    'st.ex14': 'Rapport premium 24 pages · planches',
+    'st.ex14p': "Rapport annuel premium A4 de 24 pages en double page (planches) : page de titre seule, sommaire, puis éditorial, faits marquants, chiffres clés, activité par métier, engagements, résultats financiers, perspectives. Une colonne large et aérée, titres de section en très grandes capitales avec lettrage espacé, un grand chiffre en pied de page, encadrés pour les chiffres, tableaux à filets fins, légendes sous les visuels, folios en bas de page. Palette graphite et or, titres à empattements, corps sobre. Si je ne joins aucun document, compose un rapport COMPLET et détaillé avec des chiffres et des légendes de démonstration, à remplacer par les miens.",
+    'st.ex15': 'Magazine 32 pages · planches',
+    'st.ex15p': "Magazine A4 premium de 32 pages en double page (planches) : une manchette en couverture avec grand titre et trois accroches, un sommaire illustré, des dossiers en deux colonnes justifiées avec césure, des citations détachées en grand texte, des portraits pleine page, des légendes courtes, des filets fins et des folios en bas de page. Palette bleu encre et sable, titres en capitales espacées. Si je ne joins aucun texte, compose un numéro COMPLET avec des articles et des citations de démonstration, à remplacer.",
+    'st.ex16': 'Beau livre photo 64 pages · planches',
+    'st.ex16p': "Beau livre photo A4 paysage de 64 pages en double page (planches) : la couverture seule porte un grand visuel plein cadre et un titre discret, puis une alternance de pages d'images pleine page et de pages de texte en une colonne aérée, légendes en petits caractères sous les visuels, beaucoup de blanc, folios discrets en bas de page, papier ivoire, titres à empattements en capitales espacées. Sans visuels joints, compose l'ouvrage COMPLET avec des illustrations vectorielles élégantes et un texte de présentation de démonstration, à remplacer.",
+    'st.ex17': 'Dossier de presse 12 pages · planches',
+    'st.ex17p': "Dossier de presse premium A4 de 12 pages en double page (planches) : couverture avec titre et visuel, page de présentation, chiffres clés en encadrés, biographies, revue de presse en citations détachées, visuels légendés, contacts en dernière page. Deux colonnes justifiées, filets fins, encadrés, folios en bas de page, palette noir et or, titre en capitales espacées. Sans document joint, compose un dossier COMPLET avec un texte et des citations de démonstration, à remplacer."
+  });
+  Object.assign(I18N.en, {
+    'st.ex14': 'Premium annual report, 24 pages · spreads',
+    'st.ex14p': "Premium A4 annual report of 24 pages in two-page spreads: a title page standing alone, a contents page, then the editorial, highlights, key figures, activity by business line, commitments, financial results, outlook. One wide airy column, section titles in very large capitals with wide letter spacing, a large figure at the foot of the page, boxes around the figures, tables with thin rules, captions under the visuals, folios at the bottom. Graphite and gold palette, serif headings, sober body. If I attach no document, compose a COMPLETE detailed report with demonstration figures and captions, to be replaced by mine.",
+    'st.ex15': 'Magazine, 32 pages · spreads',
+    'st.ex15p': "Premium A4 magazine of 32 pages in two-page spreads: a masthead cover with a large title and three teasers, an illustrated contents page, features in two justified columns with hyphenation, pull quotes in large type, full-page portraits, short captions, thin rules and folios at the bottom. Navy blue and sand palette, headings in spaced capitals. If I attach no text, compose a COMPLETE issue with demonstration articles and quotes, to be replaced.",
+    'st.ex16': 'Photo book, 64 pages · spreads',
+    'st.ex16p': "Premium A4 landscape photo book of 64 pages in two-page spreads: the cover alone carries a large full-bleed visual and a discreet title, then alternate full-page image pages and airy one-column text pages, captions in small type under the visuals, plenty of white, discreet folios at the bottom, ivory paper, serif titles in spaced capitals. With no visuals attached, compose the COMPLETE book with elegant vector illustrations and a demonstration presentation text, to be replaced.",
+    'st.ex17': 'Press kit, 12 pages · spreads',
+    'st.ex17p': "Premium A4 press kit of 12 pages in two-page spreads: cover with title and visual, a presentation page, key figures in boxes, biographies, press review as pull quotes, captioned visuals, contacts on the last page. Two justified columns, thin rules, boxes, folios at the bottom, black and gold palette, title in spaced capitals. With no document attached, compose a COMPLETE kit with demonstration text and quotes, to be replaced."
+  });
+  Object.assign(I18N.jp, {
+    'st.ex14': 'プレミアム報告書 24ページ・見開き',
+    'st.ex14p': 'A4・24ページのプレミアム年次報告書（見開き）：タイトルページ単独、目次、巻頭言、ハイライト、主要数値、事業別の活動、取り組み、財務結果、今後の見通し。広く余白のある1段組み、セクション見出しは大きな大文字と広い字間、ページ下部に大きな数字、数値は囲み、表は細い罫線、ビジュアルの下にキャプション、下部にノンブル。グラファイトと金の配色、見出しはセリフ体、本文は落ち着いた書体。文書を添付しない場合は、数値とキャプションの見本入りで完全な報告書を組む。',
+    'st.ex15': 'マガジン 32ページ・見開き',
+    'st.ex15p': 'A4・32ページのプレミアムマガジン（見開き）：表紙は大きなタイトルと3つの案内、図版入りの目次、特集は2段組み両端揃え（ハイフネーションあり）、大きな引用の切り抜き、全ページのポートレート、短いキャプション、細い罫線、下部にノンブル。濃紺とサンドの配色、見出しは字間を広げた大文字。テキストを添付しない場合は、記事と引用の見本入りで完全な1号を組む。',
+    'st.ex16': '写真集 64ページ・見開き',
+    'st.ex16p': 'A4横・64ページのプレミアム写真集（見開き）：表紙は大きな見開きの写真と控えめなタイトル、以降は全面写真のページと余白のある1段組みのテキストページを交互に、ビジュアルの下に小さなキャプション、余白たっぷり、下部に控えめなノンブル、アイボリーの紙、見出しはセリフ体と広い字間。写真を添付しない場合は、上品なベクターイラストと紹介文の見本で完全な写真集を組む。',
+    'st.ex17': 'プレスキット 12ページ・見開き',
+    'st.ex17p': 'A4・12ページのプレミアムプレスキット（見開き）：表紙にタイトルとビジュアル、紹介ページ、主要数値を囲みで、経歴、引用としての報道記事、キャプション付きビジュアル、最終ページに連絡先。2段組み両端揃え、細い罫線、囲み、下部にノンブル、黒と金の配色、見出しは字間を広げた大文字。文書を添付しない場合は、テキストと引用の見本入りで完全なキットを組む。'
+  });
+
   const SP_EX_GABARIT = {
+    /* ≡ _SP_STUDIO_ROCK622 — LIBELLÉS DE SECOURS DES QUATRE NOUVEAUX PRÉ-PROMPTS PREMIUM.
+       La boucle i18n de la pré-home lit la clé qui suit le `data-ex` du bouton (st.ex14 …
+       st.ex17) : ces clés servent quand un AUTRE moteur que ROCK est choisi. */
     fr: [
       ['Cahier 8 pages', "Cahier A4 de 8 pages en double page : la couverture seule porte le titre et un grand visuel, puis un edito court et des pages de contenu en deux colonnes justifiees, encadres, photos legendees, folios en bas."],
       ['Affiche 40 × 60', "Affiche 40 x 60 cm pour un festival de jazz : titre enorme sur trois lignes, une date, un lieu, un grand visuel, beaucoup d'air."],
@@ -9753,6 +9817,14 @@ function spRtfLayoutInfo(src) {
              encres recalculées par le garde-fou de contraste.
          En résumé : ces trois pastilles montrent le haut de gamme du moteur, et servent de
          MODE D'EMPLOI (format + couleurs + guillemets + mot d'audace). */
+      /* ≡ _SP_STUDIO_ROCK622 — LES QUATRE PRÉ-PROMPTS PREMIUM, EN PREMIER (pré-home ET barre de
+         pastilles du studio lisent CETTE liste). Documents longs et complets : format, planches,
+         colonnes, palette, typographie, filets, encadrés, légendes, folios, et ce que le moteur
+         fait sans pièce jointe (document complet de démonstration, annoncé). */
+      ['Rapport premium 24 pages · planches', "Rapport annuel premium A4 de 24 pages en double page (planches) : page de titre seule, sommaire, puis éditorial, faits marquants, chiffres clés, activité par métier, engagements, résultats financiers, perspectives. Une colonne large et aérée, titres de section en très grandes capitales avec lettrage espacé, un grand chiffre en pied de page, encadrés pour les chiffres, tableaux à filets fins, légendes sous les visuels, folios en bas de page. Palette graphite et or, titres à empattements, corps sobre. Si je ne joins aucun document, compose un rapport COMPLET et détaillé avec des chiffres et des légendes de démonstration, à remplacer par les miens."],
+      ['Magazine 32 pages · planches', "Magazine A4 premium de 32 pages en double page (planches) : une manchette en couverture avec grand titre et trois accroches, un sommaire illustré, des dossiers en deux colonnes justifiées avec césure, des citations détachées en grand texte, des portraits pleine page, des légendes courtes, des filets fins et des folios en bas de page. Palette bleu encre et sable, titres en capitales espacées. Si je ne joins aucun texte, compose un numéro COMPLET avec des articles et des citations de démonstration, à remplacer."],
+      ['Beau livre photo 64 pages · planches', "Beau livre photo A4 paysage de 64 pages en double page (planches) : la couverture seule porte un grand visuel plein cadre et un titre discret, puis une alternance de pages d'images pleine page et de pages de texte en une colonne aérée, légendes en petits caractères sous les visuels, beaucoup de blanc, folios discrets en bas de page, papier ivoire, titres à empattements en capitales espacées. Sans visuels joints, compose l'ouvrage COMPLET avec des illustrations vectorielles élégantes et un texte de présentation de démonstration, à remplacer."],
+      ['Dossier de presse 12 pages · planches', "Dossier de presse premium A4 de 12 pages en double page (planches) : couverture avec titre et visuel, page de présentation, chiffres clés en encadrés, biographies, revue de presse en citations détachées, visuels légendés, contacts en dernière page. Deux colonnes justifiées, filets fins, encadrés, folios en bas de page, palette noir et or, titre en capitales espacées. Sans document joint, compose un dossier COMPLET avec un texte et des citations de démonstration, à remplacer."],
       ['Affiche noir et or', "Affiche A2 premium : fond noir, typographie et filets OR, titre très grand en capitales sur deux lignes « NOIR & OR », la date « samedi 18 octobre » et le lieu « Atelier 21 — Lyon » en petit sous le titre, aucun visuel, beaucoup d'air, effet waouh."],
       ['Couverture magazine', "Couverture de magazine A4 : grand titre en très grandes capitales sur toute la largeur « L'ATELIER », sous-titre « numéro 12 — octobre 2026 », trois accroches courtes alignées en bas, un large bandeau BLEU ENCRE, filets fins, palette très contrastée, effet waouh."],
       ['Invitation carrée', "Invitation carrée pour un vernissage : palette TERRACOTTA et sable, titre en très grandes capitales « VERNISSAGE », une ligne sous le titre « soirée privée — Galerie du Port, Marseille », la date « jeudi 9 octobre, 18 h 30 », un large aplat terracotta, filets fins, typographie à empattements, beaucoup d'air, effet waouh."],
@@ -9768,6 +9840,11 @@ function spRtfLayoutInfo(src) {
       ['Recueil de poèmes', "Recueil de poèmes A5 de 12 pages en double page (planches) : un poème par page, vers alignés à gauche, titre du poème en petites capitales, beaucoup d'air sous les vers, folios en bas de page, typographie à empattements. Si je ne joins aucun texte, compose un recueil COMPLET avec des poèmes d'exemple, à remplacer."]
     ],
     en: [
+      /* ⚠️ _SP_STUDIO_ROCK622 — the four new premium pre-prompts, first in the list. */
+      ['Premium annual report, 24 pages · spreads', "Premium A4 annual report of 24 pages in two-page spreads: a title page standing alone, a contents page, then the editorial, highlights, key figures, activity by business line, commitments, financial results, outlook. One wide airy column, section titles in very large capitals with wide letter spacing, a large figure at the foot of the page, boxes around the figures, tables with thin rules, captions under the visuals, folios at the bottom. Graphite and gold palette, serif headings, sober body. If I attach no document, compose a COMPLETE detailed report with demonstration figures and captions, to be replaced by mine."],
+      ['Magazine, 32 pages · spreads', "Premium A4 magazine of 32 pages in two-page spreads: a masthead cover with a large title and three teasers, an illustrated contents page, features in two justified columns with hyphenation, pull quotes in large type, full-page portraits, short captions, thin rules and folios at the bottom. Navy blue and sand palette, headings in spaced capitals. If I attach no text, compose a COMPLETE issue with demonstration articles and quotes, to be replaced."],
+      ['Photo book, 64 pages · spreads', "Premium A4 landscape photo book of 64 pages in two-page spreads: the cover alone carries a large full-bleed visual and a discreet title, then alternate full-page image pages and airy one-column text pages, captions in small type under the visuals, plenty of white, discreet folios at the bottom, ivory paper, serif titles in spaced capitals. With no visuals attached, compose the COMPLETE book with elegant vector illustrations and a demonstration presentation text, to be replaced."],
+      ['Press kit, 12 pages · spreads', "Premium A4 press kit of 12 pages in two-page spreads: cover with title and visual, a presentation page, key figures in boxes, biographies, press review as pull quotes, captioned visuals, contacts on the last page. Two justified columns, thin rules, boxes, folios at the bottom, black and gold palette, title in spaced capitals. With no document attached, compose a COMPLETE kit with demonstration text and quotes, to be replaced."],
       /* ⚠️ 2026-10-01 — les trois pré-prompts premium (voir la liste française). */
       ['Black and gold poster', "A2 premium poster: black background, GOLD typography and rules, huge two-line capital title “NOIR & OR”, the date “Saturday 18 October” and the venue “Atelier 21 — Lyon” small under the title, no visual, plenty of air, wow effect."],
       ['Magazine cover', "A4 magazine cover: huge capital title across the full width “L'ATELIER”, subtitle “issue 12 — October 2026”, three short teasers aligned at the bottom, a large NAVY BLUE band, thin rules, very contrasting palette, wow effect."],
@@ -9784,6 +9861,11 @@ function spRtfLayoutInfo(src) {
       ['Poetry collection', "A5 poetry collection, 12 pages, in two-page spreads: one poem per page, lines flush left, poem title in small capitals, plenty of air under the lines, folios at the bottom, serif typography. If I attach no text, compose a COMPLETE collection with example poems, to be replaced."]
     ],
     jp: [
+      /* ⚠️ _SP_STUDIO_ROCK622 — 新しい4つのプレミアム・プリプロンプト（リストの先頭）。 */
+      ['プレミアム報告書 24ページ・見開き', 'A4・24ページのプレミアム年次報告書（見開き）：タイトルページ単独、目次、巻頭言、ハイライト、主要数値、事業別の活動、取り組み、財務結果、今後の見通し。広く余白のある1段組み、セクション見出しは大きな大文字と広い字間、ページ下部に大きな数字、数値は囲み、表は細い罫線、ビジュアルの下にキャプション、下部にノンブル。グラファイトと金の配色、見出しはセリフ体、本文は落ち着いた書体。文書を添付しない場合は、数値とキャプションの見本入りで完全な報告書を組む。'],
+      ['マガジン 32ページ・見開き', 'A4・32ページのプレミアムマガジン（見開き）：表紙は大きなタイトルと3つの案内、図版入りの目次、特集は2段組み両端揃え（ハイフネーションあり）、大きな引用の切り抜き、全ページのポートレート、短いキャプション、細い罫線、下部にノンブル。濃紺とサンドの配色、見出しは字間を広げた大文字。テキストを添付しない場合は、記事と引用の見本入りで完全な1号を組む。'],
+      ['写真集 64ページ・見開き', 'A4横・64ページのプレミアム写真集（見開き）：表紙は大きな見開きの写真と控えめなタイトル、以降は全面写真のページと余白のある1段組みのテキストページを交互に、ビジュアルの下に小さなキャプション、余白たっぷり、下部に控えめなノンブル、アイボリーの紙、見出しはセリフ体と広い字間。写真を添付しない場合は、上品なベクターイラストと紹介文の見本で完全な写真集を組む。'],
+      ['プレスキット 12ページ・見開き', 'A4・12ページのプレミアムプレスキット（見開き）：表紙にタイトルとビジュアル、紹介ページ、主要数値を囲みで、経歴、引用としての報道記事、キャプション付きビジュアル、最終ページに連絡先。2段組み両端揃え、細い罫線、囲み、下部にノンブル、黒と金の配色、見出しは字間を広げた大文字。文書を添付しない場合は、テキストと引用の見本入りで完全なキットを組む。'],
       /* ⚠️ 2026-10-01 — 日本語の3つのプレミアム・プリプロンプト（フランス語リストを参照）。 */
       ['黒と金のポスター', 'A2のプレミアムポスター：黒背景、文字と罫線は金色、2行の巨大な大文字タイトル「NOIR & OR」、その下に小さく日付「10月18日（土）」と会場「Atelier 21 — Lyon」、ビジュアルなし、余白たっぷり、ウォウ効果。'],
       ['雑誌カバー', 'A4雑誌カバー：幅いっぱいの巨大な大文字タイトル「L\'ATELIER」、サブタイトル「第12号 — 2026年10月」、下部に短い案内を3つ、濃紺の大きな帯、細い罫線、コントラストの強い配色、ウォウ効果。'],
@@ -9841,21 +9923,181 @@ function spRtfLayoutInfo(src) {
     if (spExFam(eng) !== 'gabarit') return null;
     return SP_EX_GABARIT[curLang] || SP_EX_GABARIT.fr;
   }
+  /* ⚠️ _SP_STUDIO_ROCK625 — LES DEUX LISTES DE PRÉ-PROMPTS NE SONT JAMAIS DANS LE MÊME ORDRE.
+     Demande utilisateur : « j'aimerais que les pré-prompts dispo dans la pré-home et dans
+     l'interface en bas à droite ne soient jamais dans le même ordre d'apparition ».
+     Les QUATRE premiers (les pré-prompts premium) restent EN TÊTE des deux côtés — c'est une
+     demande explicite antérieure — et TOUT LE RESTE est mélangé côté interface : les deux
+     listes ne peuvent donc jamais défiler dans le même ordre. Le tirage est fait UNE FOIS
+     PAR SESSION (`sessionStorage`) : l'ordre ne change pas sous les yeux de l'utilisateur à
+     chaque rendu, mais diffère toujours de celui de la pré-home. */
+  function spExOrdreUI(liste) {
+    if (!Array.isArray(liste) || liste.length <= 6) return liste;
+    const tete = liste.slice(0, 4), reste = liste.slice(4);
+    let ord = null;
+    try { ord = JSON.parse(sessionStorage.getItem('sp213_ex_ordre') || 'null'); } catch (_) { ord = null; }
+    if (!Array.isArray(ord) || ord.length !== reste.length) {
+      ord = reste.map(function (_, i) { return i; });
+      for (let i = ord.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = ord[i]; ord[i] = ord[j]; ord[j] = tmp;
+      }
+      try { sessionStorage.setItem('sp213_ex_ordre', JSON.stringify(ord)); } catch (_) {}
+    }
+    return tete.concat(ord.map(function (i) { return reste[i]; }));
+  }
+  /* ≡ _SP_STUDIO_SOUFFLET_619 — LE SOUFFLET DES PRE-PROMPTS ═══════════════════════════
+     Demande utilisateur : « ranger mieux les pre-prompts sous forme de soufflet : un (+)
+     sous la deuxieme ligne qui deploie le reste ».
+     On mesure les LIGNES REELLES (position verticale de chaque pastille) et on masque tout
+     ce qui tombe a partir de la troisieme : peu importe la langue, la longueur des libelles
+     ou la largeur de la fenetre, ce sont toujours les deux premieres lignes qui restent.
+     ⚠️ PIEGE MESURE (a corriger si on touche a ce bloc) : `spExemplesPeindre` masque la
+     pastille 6 hors de notre moteur. Au deuxieme passage (resize), une pastille masquee n'a
+     plus de position (`top` = 0) et serait donc REOUVERTE par erreur. On marque ces
+     pastilles `data-sp-off="1"` et on ne les touche jamais — ni pour mesurer, ni pour
+     replier. */
+  let SP_EX_SOUFFLET_OUVERT = false;
+  /* ⚠️ _SP_STUDIO_ROCK621c — DERNIÈRE PASSE, APRÈS TOUTES CELLES DU STUDIO.
+     MESURÉ (8 tirages du même pré-prompt, 6 collisions restantes) : la passe du moteur
+     (spGabSansImageSurTexte) s'exécute AVANT que le studio ne répartisse les textes
+     (`_spConstrainDocToPages`, `spRemonterTypoFaible`, `_spFitRowsToMargins`,
+     `_spEnforceMargins`, `_spResolveCollisions`) : ces passes DÉPLACENT la typographie et
+     peuvent la faire glisser sous une illustration qui était propre à la sortie du moteur
+     — le défaut réapparaissait donc malgré le correctif.
+     Ici on travaille sur le document FINAL, en millimètres : toute image GÉNÉRÉE
+     (`data:image/svg…` = illustration ou fond procédural) qui recouvre un texte est RETIRÉE.
+     ⚠️ Les PHOTOS DU CLIENT ne sont jamais touchées (elles ne portent pas d'`imageUrl`
+     data:image/svg, mais un `imageIndex`). La typographie passe avant le décor. */
+  function spDocSansImageSurTexte(doc) {
+    if (!doc || !doc.pages) return 0;
+    const hMm = function (t) {
+      const fs = Number(t.fontSize) || 10, w = Number(t.width) || 100, lh = Number(t.lineHeight) || 1.3;
+      const parLigne = Math.max(4, w / (fs * spGabLargeurCar(t.text) * 0.352778));
+      const lignes = Math.max(1, Math.ceil(String(t.text || '').length / parLigne));
+      return lignes * fs * lh * 1.13 * 0.352778;
+    };
+    let retires = 0;
+    doc.pages.forEach(function (pg) {
+      const els = pg.elements || [];
+      /* ⚠️ _SP_STUDIO_ROCK623d — MÊMES RÈGLES QU'AU MOTEUR : les textes VIDES ne comptent pas,
+         et une image de la taille de la page est un FOND (gardé seulement si la page n'a
+         aucun vrai texte). Sans cela, cette passe retirait les pages visuelles que le
+         complément de pages venait de créer. */
+      const txts = els.filter(spGabTexteReel);
+      const pw = Number(doc.w) || 210, ph = Number(doc.h) || 297;
+      pg.elements = els.filter(function (e) {
+        if (!e || e.type !== 'image') return true;
+        if (!e.imageUrl || String(e.imageUrl).indexOf('data:image/svg') !== 0) return true;
+        const l = Number(e.left) || 0, t = Number(e.top) || 0, w = Number(e.width) || 0, h = Number(e.height) || 0;
+        if (w >= pw * 0.9 && h >= ph * 0.9) {
+          /* Fond de page : gardé sur une page visuelle, ou si la demande a réclamé une image
+             de fond (le moteur a alors basculé l'encre) — sinon RETIRÉ. */
+          if (!txts.length) return true;
+          if (SP_GAB_FOND_VOULU) return true;
+          retires++;
+          return false;
+        }
+        if (!txts.length) return true;
+        const touche = txts.some(function (tx) {
+          const tl = Number(tx.left) || 0, tt = Number(tx.top) || 0, tw = Number(tx.width) || 0, th = hMm(tx);
+          return (Math.min(t + h, tt + th) - Math.max(t, tt) > 0.5) && (Math.min(l + w, tl + tw) - Math.max(l, tl) > 0.5);
+        });
+        if (touche) retires++;
+        return !touche;
+      });
+      /* ⚠️ _SP_STUDIO_ROCK626 — FILE DE SÉCURITÉ : AUCUN TEXTE NE DÉPASSE LA PAGE.
+         MESURÉ (pré-prompt japonais sans pièce jointe) : le texte japonais se replie sur
+         DEUX FOIS PLUS de lignes qu'estimé (un idéogramme fait 1 em contre 0,52 pour une
+         lettre latine) et la dernière ligne sortait de la page. On remonte donc tout texte
+         dont le bas dépasse la zone sûre ; si le bloc est trop HAUT pour la place restante
+         (paragraphe entier dans un cadre d'une page), on réduit sa police jusqu'à ce qu'il
+         entre — borné à 62 % de la taille d'origine, jamais de texte coupé. */
+      (pg.elements || []).forEach(function (e) {
+        if (!e || e.type !== 'text') return;
+        if (!String(e.text || '').trim()) return;
+        const basMax = ph - 5;
+        let hh = hMm(e), top = Number(e.top) || 0;
+        if (top + hh <= basMax) return;
+        const fs = Number(e.fontSize) || 10;
+        const dispo = basMax - Math.max(3, top);
+        if (hh > dispo && dispo > 10) {
+          const facteur = Math.max(0.62, dispo / hh);
+          e.fontSize = Math.max(6, Math.round(fs * facteur * 10) / 10);
+          hh = hMm(e);
+        }
+        e.top = Math.max(3, Math.round((basMax - hh) * 100) / 100);
+      });
+    });
+    return retires;
+  }
+
+  function spExSoufflet() {
+    const zone = document.querySelector('#starter .st-ex');
+    const plus = document.getElementById('stExPlusBtn');
+    if (!zone || !plus) return;
+    if (!plus._spBranche) {
+      plus._spBranche = true;
+      plus.addEventListener('click', function () {
+        SP_EX_SOUFFLET_OUVERT = !SP_EX_SOUFFLET_OUVERT;
+        spExSoufflet();
+      });
+    }
+    const bts = Array.prototype.slice.call(zone.querySelectorAll('button[data-ex]'));
+    if (!bts.length) return;
+    /* 1. Remettre en flux ce que le soufflet avait masque (jamais les pastilles desactivees
+          par la langue ou par le moteur). */
+    bts.forEach(function (b) {
+      if (b.getAttribute('data-sp-off') === '1') { b.style.display = 'none'; return; }
+      b.style.display = '';
+    });
+    if (SP_EX_SOUFFLET_OUVERT) {
+      plus.textContent = '−';
+      plus.setAttribute('aria-expanded', 'true');
+      return;
+    }
+    /* 2. Mesurer les lignes REELLES, puis replier a partir de la troisieme. */
+    const tops = bts.map(function (b) { return Math.round(b.getBoundingClientRect().top); });
+    const lignes = [];
+    bts.forEach(function (b, i) {
+      if (b.getAttribute('data-sp-off') === '1') return;
+      if (lignes.indexOf(tops[i]) < 0) lignes.push(tops[i]);
+    });
+    lignes.sort(function (a, b) { return a - b; });
+    const seuil = (lignes.length > 2) ? lignes[2] : Infinity;
+    let caches = 0;
+    bts.forEach(function (b, i) {
+      if (b.getAttribute('data-sp-off') === '1') return;
+      if (tops[i] >= seuil) { b.style.display = 'none'; caches++; }
+    });
+    plus.style.display = caches ? '' : 'none';
+    plus.textContent = '+';
+    plus.setAttribute('aria-expanded', 'false');
+  }
   function spExemplesPeindre() {
     const eng = (typeof spStEngCourant === 'function') ? spStEngCourant() : state.engine;
     const exs = spExemples(eng);
     /* La 6e pastille (« document Word complexe ») n'appartient qu'à NOTRE moteur : on la
        masque dès qu'un autre moteur est choisi (sinon elle restait visible, vide). */
     const six = document.querySelector('#starter .st-ex button[data-ex="6"]');
-    if (six) six.style.display = (exs && exs[5]) ? '' : 'none';
-    if (!exs) return false;
+    if (six) {
+      const garde = (exs && exs[5]) ? '' : 'none';
+      six.style.display = garde;
+      /* ≡ _SP_STUDIO_SOUFFLET_619 — on MARQUE la pastille desactivee : le soufflet ne doit
+         jamais la rouvrir (elle n'a plus de position a mesurer). */
+      if (garde === 'none') six.setAttribute('data-sp-off', '1'); else six.removeAttribute('data-sp-off');
+    }
+    if (!exs) { spExSoufflet(); return false; }
     document.querySelectorAll('#starter .st-ex button').forEach(function (b, i) {
       if (!exs[i]) return;
       b.style.display = '';
+      b.removeAttribute('data-sp-off');
       b.textContent = exs[i][0];
       b.setAttribute('data-p', exs[i][1]);
       if (exs[i][2]) b.setAttribute('data-pj', exs[i][2]); else b.removeAttribute('data-pj');
     });
+    /* Le soufflet se regle APRES la pose des libelles (leurs largeurs changent les lignes). */
+    spExSoufflet();
     return true;
   }
 
@@ -9941,14 +10183,34 @@ function spRtfLayoutInfo(src) {
        relus partout — la cohérence est conservée. Seule la branche des Réglages
        (REG.variation) reste déterministe : c'est elle qui permet de figer une variation
        quand on bouge une tirette. */
-    return { n: SP_GAB_N, v: Math.random(), v2: Math.random(), v3: Math.random(), v4: Math.random(), v5: Math.random() };
+    return { n: SP_GAB_N, v: Math.random(), v2: Math.random(), v3: Math.random(), v4: Math.random(), v5: Math.random(), v6: Math.random(), v7: Math.random() };
   }
 
+  /* ⚠️ _SP_STUDIO_ROCK626 — LARGEUR MOYENNE D'UN CARACTÈRE, EN JAPONAIS AUSSI.
+     MESURÉ (pré-prompt japonais, planche 2-3) : les estimations du moteur supposaient 0,52 em
+     par caractère — la largeur d'une lettre latine. Un idéogramme japonais fait 1 em : chaque
+     bloc japonais était donc cru DEUX FOIS PLUS COURT qu'il n'est, les blocs suivants étaient
+     posés trop haut (« blocs généralement mal placés ») et le débordement n'était jamais vu.
+     On calcule donc le ratio réel de caractères pleine largeur (CJK, kana, hangul, formes de
+     compatibilité) dans la chaîne. */
+  function spGabLargeurCar(txt) {
+    const s = String(txt || '');
+    if (!s) return 0.52;
+    let large = 0;
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      if ((c >= 0x1100 && c <= 0x115F) || (c >= 0x2E80 && c <= 0xA4CF) || (c >= 0xAC00 && c <= 0xD7A3) ||
+          (c >= 0xF900 && c <= 0xFAFF) || (c >= 0xFE30 && c <= 0xFE6F) || (c >= 0xFF00 && c <= 0xFF60) ||
+          (c >= 0xFFE0 && c <= 0xFFE6)) large++;
+    }
+    const r = large / s.length;
+    return 0.52 * (1 - r) + 1.0 * r;
+  }
   /* Hauteur RÉELLE estimée d'un texte (px-units) : c'est ce qui évite qu'un chapô
      soit coupé par un graphisme posé à une hauteur fixe (défaut signalé). */
   function spGabLignes(txt, taille, largeur) {
     const n = Math.max(1, String(txt || '').length);
-    const parLigne = Math.max(6, (Number(largeur) || 100) / (Number(taille) * 0.52));
+    const parLigne = Math.max(6, (Number(largeur) || 100) / (Number(taille) * spGabLargeurCar(txt)));
     return Math.max(1, Math.ceil(n / parLigne));
   }
   function spGabH(txt, taille, largeur, interligne) {
@@ -10025,6 +10287,27 @@ function spRtfLayoutInfo(src) {
     graphite: { a: '#27272a', b: '#52525b', clair: '#f4f4f5', gris: '#d4d4d8', txt: '#111114', fond: '#ffffff' },
     minuit: { a: '#7dd3fc', b: '#38bdf8', clair: '#eaf6ff', gris: '#223046', doux: '#9fb3c8', txt: '#eef4ff', sur: '#eef4ff', fond: '#0b1220', noir: true }
   });
+  /* ══ _SP_STUDIO_ROCK613 — PALETTES SIGNATURE DE LA BIBLIOTHÈQUE DE MODÈLES ═════════════
+     Demande utilisateur : « des modèles premium du type de la asset library de l'app, et
+     des thèmes plus complets et plus quali ». Ces palettes ne sont PAS inventées : elles
+     sont recopiées des THÈMES RÉELS des maquettes de l'app (main.js, table des modèles
+     ~86661+). Elles entrent dans le moteur par DEUX portes : leur mot-clé (voir
+     SP_GAB_THEMES plus bas) et la ROTATION des styles (SP_GAB_ROTATION), donc aussi au
+     hasard sur une demande qui ne cite aucune couleur. */
+  Object.assign(SP_GAB_PAL, {
+    /* « Demeures — Maisons de luxe » · app : fr_magazine_habitat_luxe_24p */
+    demeures: { a: '#8c6b3f', b: '#171412', clair: '#e8e2d8', gris: '#e8e2d8', doux: '#6f6455', txt: '#1a1714', sur: '#f7f5f1', fond: '#f7f5f1' },
+    /* « Matières & architecture » · app : thème archi / essai (#efeeea, or roussi) */
+    archi:    { a: '#a16207', b: '#171614', clair: '#dcd8cf', gris: '#dcd8cf', doux: '#6b6558', txt: '#1c1a17', sur: '#efeeea', fond: '#efeeea' },
+    /* « Mode » · app : en_magazine_fashion_8p (#faf8f5, rouge couture) */
+    couture:  { a: '#b3122c', b: '#14110f', clair: '#e7e0d7', gris: '#e7e0d7', doux: '#6d6259', txt: '#121212', sur: '#faf8f5', fond: '#faf8f5' },
+    /* « Océan » · app : en_magazine_ocean_8p (#f2f7f8, bleu profond) */
+    lagune:   { a: '#0e7490', b: '#04202c', clair: '#d3e6ea', gris: '#d3e6ea', doux: '#4b6a73', txt: '#07222e', sur: '#f2f7f8', fond: '#f2f7f8' },
+    /* « À Table » · app : fr_magazine_recettes_12p (#fffdf8, vert cuisine) */
+    verdure:  { a: '#1f7a4d', b: '#14261c', clair: '#eef0e6', gris: '#eef0e6', doux: '#55604a', txt: '#1d1a15', sur: '#fffdf8', fond: '#fffdf8' },
+    /* « Rapport d'activité premium » · app : fr_rapport_activite_premium_24p (vert institutionnel) */
+    institut: { a: '#0f4c3a', b: '#0e1a16', clair: '#eef3f0', gris: '#dbe5e1', doux: '#4a5c56', txt: '#0d1117', sur: '#ffffff', fond: '#ffffff' }
+  });
   SP_GAB_THEMES.push(
     /* _SP_STUDIO_STYLE_585c — « santé / soin » : couleur et typographie justes (c'était le repli
        spGabPal(), donc des titres en IBM Plex Mono). */
@@ -10045,6 +10328,18 @@ function spRtfLayoutInfo(src) {
     ['prune', /prune|aubergine|mauve\s*fonc/i, SP_GAB_PAL.prune, 'display'],
     ['graphite', /graphite|anthracite|charbon/i, SP_GAB_PAL.graphite, 'sans'],
     ['minuit', /minuit|midnight|nuit\s*bleue|bleu\s*nuit/i, SP_GAB_PAL.minuit, 'mono']
+  );
+  /* ⚠️ _SP_STUDIO_ROCK613 — LES SIX PALETTES SIGNATURE PAR MOT-CLÉ. Les motifs sont choisis
+     pour NE PAS recouvrir les thèmes existants : « bio », « nature », « jardin »,
+     « cuisine », « marin » appartiennent déjà à `douce`, `chaud` et `ocean`, et un thème
+     déjà posé gagne toujours (l'ordre de la table est la règle). */
+  SP_GAB_THEMES.push(
+    ['demeures', /demeures?|art de vivre|maisons? de luxe|immobilier de prestige/i, SP_GAB_PAL.demeures, 'serif'],
+    ['archi', /architect|architecture|urbanisme|b[âa]timent/i, SP_GAB_PAL.archi, 'serif'],
+    ['couture', /couture|fashion|d[ée]fil[ée]|\bmode\b|beaut[ée]/i, SP_GAB_PAL.couture, 'display'],
+    ['lagune', /littoral|archipel|\b[îi]le\b|plong[ée]e|tropical/i, SP_GAB_PAL.lagune, 'sans'],
+    ['verdure', /potager|permaculture|compost|v[ée]g[ée]tal/i, SP_GAB_PAL.verdure, 'sans'],
+    ['institut', /institut|fondation|m[ée]c[ée]nat|acad[ée]mie/i, SP_GAB_PAL.institut, 'sans']
   );
   const SP_GAB_FONTS = {
     display: { titre: 'Bebas Neue', corps: 'Open Sans' },
@@ -10149,11 +10444,7 @@ function spRtfLayoutInfo(src) {
     if (SP_GAB_TYPO_VU === cle) return;
     SP_GAB_TYPO_VU = cle;
     try {
-      appendChat('assistant', '🔤 Typographie « ' + combo.nom + ' » : ' + combo.titre +
-        ' pour les titres, ' + combo.corps + ' pour le corps — tirée au sort parmi ' +
-        SP_GAB_TYPOS.length + ' combinaisons du studio (le tirage tourne à chaque envoi). ' +
-        'Nommez une police — « en Playfair », « en Times », « en Poppins »… — ou ouvrez ' +
-        'les Réglages → Typographie pour la forcer.');
+      appendChat('assistant', '🔤 Typographie « ' + combo.nom + ' ».');
     } catch (_) {}
   }
   /* mg = marges [haut, droite, bas, gauche] en mm · cols = colonnes · pages =
@@ -10871,6 +11162,158 @@ function spRtfLayoutInfo(src) {
       }
   }
   };
+  /* ══ _SP_STUDIO_ROCK615 — LE SUJET DU TEXTE DE DÉMONSTRATION EST TIRÉ AU SORT ═══════════
+     Défaut dénoncé par l'utilisateur (mesuré, 5 envois du MÊME pré-prompt) : la base, la
+     palette, la typographie et le monde changeaient bien, mais le TEXTE DE DÉMONSTRATION
+     était toujours le même — même titre, même chapô, mêmes titres de sections. Résultat :
+     « toujours un peu la même composition ». Les réglages ne font pas un document neuf un
+     titre neuf et un chapô neuf, si.
+     Chaque registre reçoit donc plusieurs SUJETS : titre, surtitre, accroche, premier
+     paragraphe et titres de sections. Le corps de démonstration reste celui du registre
+     (c'est un exemple complet, pas un générateur de phrases), mais la SURFACE de tous les
+     documents change : c'est le seul levier qui fait vraiment varier un rendu sans texte.
+     ⚠️ Sans pièce jointe seulement : dès qu'un document est joint, aucune démonstration
+     n'est posée (règle 611r). Les autres langues gardent leur texte unique sans sujet. */
+  const SP_GAB_DEMO_SUJETS = {
+    fr: {
+      rapport: [
+        { titre: 'Atelier Lumen', surtitre: 'Rapport d’activité 2026 · cosmétiques',
+          accroche: 'Douze formules lancées, deux ateliers agrandis : l’année où la marque a cessé de courir après la demande pour la fabriquer.',
+          ouverture: 'L’atelier a produit 148 000 unités cette année, dont un tiers en recharge. La marge brute progresse de quatre points, portée par la vente directe.',
+          titres: ['L’année en un regard', 'Les formules lancées', 'L’atelier et ses équipes', 'Ce que nous visons'] },
+        { titre: 'Maison Verre & Acier', surtitre: 'Rapport d’activité 2026 · mobilier',
+          accroche: 'Quarante-deux pièces dessinées, dix-huit livrées : le sur-mesure est devenu le cœur du chiffre d’affaires.',
+          ouverture: 'Le carnet de commandes a doublé en dix-huit mois. L’atelier de soudure tourne à trois équipes et le délai moyen reste sous sept semaines.',
+          titres: ['Regard sur l’année', 'Les pièces livrées', 'Atelier et matières', 'Perspectives'] },
+        { titre: 'Domaines de la Côte', surtitre: 'Rapport d’activité 2026 · vins',
+          accroche: 'Un millésime tardif, deux cuvées nouvelles, et la certification bio sur l’ensemble du domaine.',
+          ouverture: 'La récolte a été la plus tardive depuis quinze ans. Le rendement baisse, la concentration monte : les cuvées de garde y gagnent en tenue.',
+          titres: ['Le millésime', 'Les cuvées', 'Le domaine', 'L’année prochaine'] },
+        { titre: 'Céramiques du Vallon', surtitre: 'Rapport d’activité 2026 · céramique',
+          accroche: 'Trois fours, neuf artisans, une gamme table qui représente désormais la moitié des ventes.',
+          ouverture: 'L’atelier a ouvert sa propre boutique en avril. Le passage en vente directe a fait progresser le panier moyen de 22 %.',
+          titres: ['L’année', 'Les collections', 'Les fours et les mains', 'Ce qui vient'] }
+      ],
+      roman: [
+        { titre: 'Les Heures basses', surtitre: 'Roman',
+          accroche: 'Une ville portuaire, un atelier de réparation, et la saison où tout a basculé.',
+          ouverture: 'La lumière tombait de biais sur les bassins, à l’heure où les grues s’arrêtent et où les mouettes prennent le quai pour elles.', titres: [] },
+        { titre: 'Le Jardin d’hiver', surtitre: 'Roman',
+          accroche: 'Une maison de famille, trois générations, et un jardin qu’on n’a jamais fini de refaire.',
+          ouverture: 'On avait laissé la maison telle quelle, avec ses rideaux, ses clefs et son odeur de cire froide.', titres: [] },
+        { titre: 'Route de la Fontaine', surtitre: 'Roman',
+          accroche: 'Un village qui se vide, un fils qui revient, et la route qu’on refait pour la troisième fois.',
+          ouverture: 'Le car s’arrêtait trois fois par semaine, et le reste du temps le bourg n’entendait que ses propres volets.', titres: [] }
+      ],
+      theatre: [
+        { titre: 'Les Deux Sœurs de Vannes', surtitre: 'Comédie en trois actes',
+          accroche: 'Deux sœurs, une maison à vendre et un notaire qui arrive trop tôt.',
+          ouverture: 'La maison de la rue des Remparts, un dimanche matin. Une table, deux chaises, et un carton débordant de photos.', titres: [] },
+        { titre: 'L’Auberge des Naufragés', surtitre: 'Drame en quatre actes',
+          accroche: 'Une côte trop basse, une nuit de tempête, et six personnes qui ne s’attendaient pas à se parler.',
+          ouverture: 'Une salle commune, un feu, des manteaux qui fument devant la grille. Dehors, la mer qui n’arrête pas.', titres: [] }
+      ],
+      poesie: [
+        { titre: 'Chambre d’écho', surtitre: 'Poèmes',
+          accroche: 'Une pièce vide, un mur, et ce qui revient quand on parle tout seul.',
+          ouverture: 'Ce qui parle dans une pièce vide n’est jamais tout à fait nous.', titres: [] },
+        { titre: 'Neige sur les toits', surtitre: 'Poèmes',
+          accroche: 'L’hiver en ville, vu des étages.',
+          ouverture: 'La neige couvre les toits par le bord, comme on tire un drap.', titres: [] },
+        { titre: 'Le Bruit des clefs', surtitre: 'Poèmes',
+          accroche: 'Les serrures, les retours, et ce qu’on verrouille sans y penser.',
+          ouverture: 'On ne verrouille jamais une porte deux fois pour la même raison.', titres: [] }
+      ]
+    },
+    en: {
+      rapport: [
+        { titre: 'Atelier Lumen', surtitre: '2026 activity report · cosmetics',
+          accroche: 'Twelve formulas launched, two workshops enlarged: the year the brand stopped chasing demand to make it.',
+          ouverture: 'The workshop produced 148,000 units this year, a third of them refills. Gross margin is up four points, carried by direct sales.',
+          titres: ['The year at a glance', 'The formulas we launched', 'The workshop and its teams', 'Where we are going'] },
+        { titre: 'Maison Verre & Acier', surtitre: '2026 activity report · furniture',
+          accroche: 'Forty-two pieces drawn, eighteen delivered: bespoke work is now the core of the business.',
+          ouverture: 'The order book has doubled in eighteen months. The welding shop runs three shifts and the lead time stays under seven weeks.',
+          titres: ['Looking back', 'The pieces delivered', 'Workshop and materials', 'What comes next'] },
+        { titre: 'Domaines de la Côte', surtitre: '2026 activity report · wine',
+          accroche: 'A late vintage, two new cuvées, and organic certification across the estate.',
+          ouverture: 'This was the latest harvest in fifteen years. Yields are down, concentration is up: the ageing wines gain in backbone.',
+          titres: ['The vintage', 'The cuvées', 'The estate', 'Next year'] },
+        { titre: 'Céramiques du Vallon', surtitre: '2026 activity report · ceramics',
+          accroche: 'Three kilns, nine makers, and a table range that now accounts for half of sales.',
+          ouverture: 'The workshop opened its own shop in April. Moving to direct sales lifted the average basket by 22%.',
+          titres: ['The year', 'The collections', 'Kilns and hands', 'What comes next'] }
+      ],
+      roman: [
+        { titre: 'The Low Hours', surtitre: 'A novel',
+          accroche: 'A harbour town, a repair workshop, and the season when everything turned.',
+          ouverture: 'Light fell sideways over the docks, at the hour when the cranes stop and the gulls take the quay for themselves.', titres: [] },
+        { titre: 'The Winter Garden', surtitre: 'A novel',
+          accroche: 'A family house, three generations, and a garden nobody ever finished redoing.',
+          ouverture: 'We had left the house as it was, with its curtains, its keys and its smell of cold wax.', titres: [] },
+        { titre: 'Fountain Road', surtitre: 'A novel',
+          accroche: 'A village emptying out, a son coming back, and the road they are mending for the third time.',
+          ouverture: 'The bus stopped three times a week; the rest of the time the village heard only its own shutters.', titres: [] }
+      ],
+      theatre: [
+        { titre: 'The Two Sisters of Vannes', surtitre: 'A comedy in three acts',
+          accroche: 'Two sisters, a house for sale and a notary who arrives too early.',
+          ouverture: 'The house on Remparts Street, a Sunday morning. One table, two chairs, and a box overflowing with photographs.', titres: [] },
+        { titre: 'The Inn of the Castaways', surtitre: 'A drama in four acts',
+          accroche: 'A coast too low, a night of storm, and six people who did not expect to talk to each other.',
+          ouverture: 'A common room, a fire, coats steaming by the grate. Outside, the sea that will not stop.', titres: [] }
+      ],
+      poesie: [
+        { titre: 'Echo Chamber', surtitre: 'Poems',
+          accroche: 'An empty room, a wall, and what comes back when you talk to yourself.',
+          ouverture: 'What speaks in an empty room is never quite ourselves.', titres: [] },
+        { titre: 'Snow on the Roofs', surtitre: 'Poems',
+          accroche: 'Winter in the city, seen from the upper floors.',
+          ouverture: 'Snow covers the roofs from the edge, the way one pulls a sheet.', titres: [] },
+        { titre: 'The Sound of Keys', surtitre: 'Poems',
+          accroche: 'Locks, returns, and what we bolt without thinking.',
+          ouverture: 'No one ever locks a door twice for the same reason.', titres: [] }
+      ]
+    }
+  };
+  let SP_GAB_SUJET_N = 0;
+  function spGabDemoSujet(registre) {
+    const parLangue = SP_GAB_DEMO_SUJETS[curLang] || SP_GAB_DEMO_SUJETS.fr;
+    const liste = parLangue && parLangue[registre];
+    if (!liste || !liste.length) return null;
+    SP_GAB_SUJET_N++;
+    return liste[(SP_GAB_SUJET_N + Math.floor(Math.random() * 997)) % liste.length];
+  }
+  /* Le sujet REMPLACE la surface du texte de démonstration (titre, surtitre, accroche,
+     titres de sections, premier paragraphe). Il ne touche que la démonstration : une
+     demande avec du vrai contenu, des citations ou une pièce jointe ne passe jamais ici. */
+  function spGabSujetAppliquer(M, registre, lot, renommerSections) {
+    if (!M || !registre) return null;
+    const sj = spGabDemoSujet(registre);
+    if (!sj) return null;
+    /* ⚠️ ON NE REMPLACE QUE CE QUI VIENT DE LA DÉMONSTRATION. MESURÉ : un titre donné par
+       l'utilisateur (entre guillemets, ou lu dans une pièce jointe) ne doit JAMAIS être
+       écrasé par un sujet tiré au sort — on ne touche donc un champ que s'il est vide ou
+       s'il porte encore exactement la valeur du lot de démonstration. */
+    const l = lot || {};
+    if ((!M.titre || M.titre === l.titre) && sj.titre) M.titre = sj.titre;
+    if (sj.surtitre && (!M.surtitre || M.surtitre === l.surtitre)) M.surtitre = sj.surtitre;
+    if (sj.accroche && (!M.chapeau || M.chapeau === l.chapeau)) M.chapeau = sj.accroche;
+    const secs = M.sections || [];
+    /* Les titres de sections ne sont renommés que lorsque TOUTE la liste vient du lot
+       (`renommerSections`). Dans un mélange, les premières sections sont les textes de
+       l'utilisateur : on n'y touche pas. */
+    if (renommerSections && sj.titres && sj.titres.length) {
+      for (let i = 0; i < secs.length && i < sj.titres.length; i++) {
+        if (secs[i] && secs[i].t) secs[i].t = sj.titres[i];
+      }
+    }
+    if (sj.ouverture && renommerSections && secs.length && secs[0]) {
+      secs[0].ps = [sj.ouverture].concat(secs[0].ps || []);
+    }
+    M.demoSujet = sj.titre;
+    return sj;
+  }
   /* Registre de démonstration pour ce document : la DEMANDE passe avant la famille
      (« poème » dans un cahier = poèmes ; « théâtre » = pièce). */
   function spGabDemoRegistre(g, brief) {
@@ -10943,6 +11386,7 @@ function spRtfLayoutInfo(src) {
       M.demoRegistre = _dem.registre;
       M.melange = true;
       M.kit = _lot.note;
+      try { spGabSujetAppliquer(M, _dem.registre, _lot, false); } catch (_) {}
       return _lot.note + ' — MÉLANGE : vos textes entre guillemets sont composés EN PREMIER, puis une démonstration remplit les pages demandées.';
     }
     const utiles = (M.items || []).length + (M.lignes || []).length;
@@ -10953,8 +11397,23 @@ function spRtfLayoutInfo(src) {
        sortaient VIDES (« il monte des livres sans texte intérieur »). Si le document n'a
        aucune matière (aucun corps composé, aucune section remplie), on pose un TEXTE
        complet du registre du document — annoncé comme un exemple à remplacer. */
-    const _aDuTexte = !!(M.corpsLength) || (M.consigne !== true) || (M.sections || []).some(function (s) {
-      return s && s.t && s.ps && s.ps.length && String(s.ps.join(' ')).length > 120;
+    /* ⚠️ _SP_STUDIO_ROCK615 — « Y A-T-IL DU TEXTE À COMPOSER ? » : CAUSE RACINE DU DÉFAUT
+       « TOUJOURS LA MÊME COMPOSITION » (mesuré le 2026-10-02).
+       L'ancienne condition commençait par `(M.consigne !== true)` — autrement dit « si la
+       demande n'est pas une consigne, c'est qu'il y a du texte ». C'est faux : un pré-prompt
+       comme « catalogue de 4 pages, produits en deux colonnes, photo, nom, description,
+       prix, filets, folios » n'est PAS une consigne et ne contient POURTANT aucun texte à
+       composer. MESURE : aucun texte de démonstration n'était donc posé, les pages
+       intérieures restaient vides, et cinq envois du MÊME pré-prompt donnaient le même
+       document (seules la palette et la typographie changeaient — d'où « toujours un peu
+       la même composition »).
+       ⚠️ Ne PAS compter `M.lignes` ici : le lexique y met aussi les PHRASES DE LA CONSIGNE
+       découpées, et un pré-prompt long (300 signes) passait alors pour du texte. On mesure
+       exactement ce qui a été composé : le corps détecté et les paragraphes de sections.
+       Les citations entre guillemets et les pièces jointes restent protégées : elles
+       sortent plus haut (`if (_citN && !_mixGui) return null;`). */
+    const _aDuTexte = (Number(M.corpsLength) || 0) > 240 || (M.sections || []).some(function (s) {
+      return s && s.ps && s.ps.length && String(s.ps.join(' ')).length > 120;
     });
     if (_dem && !_aDuTexte) {
       const lot = _dem.lot;
@@ -10965,6 +11424,7 @@ function spRtfLayoutInfo(src) {
       if (!M.infos.length && lot.infos) M.infos = lot.infos.slice();
       M.demoRegistre = _dem.registre;
       M.kit = lot.note;
+      try { spGabSujetAppliquer(M, _dem.registre, lot, true); } catch (_) {}
       return lot.note;
     }
 
@@ -11115,6 +11575,29 @@ function spRtfLayoutInfo(src) {
     couverture: ['sobre', 'encre', 'graphite', 'chaud', 'moka', 'event', 'terracotta', 'prune', 'menthe', 'minuit', 'rosepoudre'],
     _defaut: ['sobre', 'finance', 'encre', 'ardoise', 'olive', 'moka', 'terracotta', 'graphite', 'sable', 'douce']
   };
+  /* ⚠️ _SP_STUDIO_ROCK613 — LES PALETTES SIGNATURE ENTRENT DANS LA ROTATION DES STYLES.
+     Sans cela elles ne sortiraient QUE si la demande cite leur nom : c'est exactement le
+     défaut dénoncé par l'utilisateur (« les modèles premium devraient ressortir parfois
+     dans le random »). Ajout par famille, sans retirer aucun style existant. */
+  (function () {
+    const AJOUT = {
+      cahier: ['demeures', 'institut'], couverture: ['couture', 'demeures'], catalogue: ['archi', 'couture'],
+      brochure: ['institut', 'archi'], rapport: ['institut', 'archi'], presse: ['institut'],
+      brandbook: ['couture', 'archi'], portfolio: ['couture', 'demeures'], presentation: ['institut', 'couture'],
+      magazine: ['couture', 'demeures'], menu: ['verdure'], calendrier: ['verdure', 'lagune'],
+      theatre: ['demeures'], affiche: ['couture', 'lagune'], mariage: ['demeures'],
+      invitation: ['demeures', 'couture'], carteveux: ['demeures'], cartepostale: ['lagune', 'verdure'],
+      programme: ['couture'], etiquette: ['couture', 'verdure'], story: ['couture', 'lagune'],
+      bandeau: ['couture', 'institut'], lettre: ['demeures'], facture: ['institut'],
+      cv: ['institut', 'archi'], billet: ['couture'], _defaut: ['demeures', 'institut', 'lagune']
+    };
+    Object.keys(AJOUT).forEach(function (f) {
+      if (!SP_GAB_ROTATION[f]) return;
+      AJOUT[f].forEach(function (p) {
+        if (SP_GAB_PAL[p] && SP_GAB_ROTATION[f].indexOf(p) < 0) SP_GAB_ROTATION[f].push(p);
+      });
+    });
+  })();
   /* ⚠️ _SP_STUDIO_BASES_609 — FAMILLES TYPOGRAPHIQUES DES PALETTES NOMMÉES : elles n'en
      portent pas dans SP_GAB_THEMES (qui n'a que 7 entrées, les THÈMES). Sans cette
      table, un style tiré au sort hors des 7 thèmes ne s'appliquait pas du tout. */
@@ -11122,7 +11605,9 @@ function spRtfLayoutInfo(src) {
     lavande: 'display', prune: 'display', minuit: 'mono', rosepoudre: 'serif', bordeaux: 'serif',
     terracotta: 'serif', moka: 'serif', sable: 'serif', cuivre: 'serif', olive: 'sans',
     menthe: 'sans', ardoise: 'sans', encre: 'sans', foret: 'sans', ocean: 'sans',
-    graphite: 'sans', sante: 'sans', neutre: 'sans'
+    graphite: 'sans', sante: 'sans', neutre: 'sans',
+    /* ⚠️ _SP_STUDIO_ROCK613 — familles typographiques des palettes signature. */
+    demeures: 'serif', archi: 'serif', couture: 'display', lagune: 'sans', verdure: 'sans', institut: 'sans'
   };
   /* ══ ⚠️ _SP_STUDIO_BASES_609 — BASE DE COMPOSITIONS SUPERPRINT ═══════════════════════
      Demande utilisateur : « dans les rendus avec rock v1, on devait utiliser la asset
@@ -11139,6 +11624,14 @@ function spRtfLayoutInfo(src) {
      ⚠️ N'ajouter ici AUCUNE clé hors de la liste du pop-in : elle ne serait lue par
      personne (voir spGabDesign → REG). Le tirage suit `hasard.v` : il TOURNE À CHAQUE
      ENVOI, y compris pour la même demande. */
+  /* ⚠️ _SP_STUDIO_ROCK613 — LA CHANCE DE TOMBER SUR UN MODÈLE PREMIUM. Demande utilisateur :
+     « je veux 2× plus de chance de tomber dessus » — un tirage sur trois (0,34 ≈ 1/3, soit
+     le double de la proposition initiale à 1/6). Le tirage se fait AVEC `hasard.v6`, une
+     valeur INDÉPENDANTE des autres (voir spGabHasard) : deux documents d'une même session
+     ne basculent pas tous ensemble. Le premium ne change que la STRUCTURE (archétypes
+     `prem: true`) : la palette et la typographie restent celles du thème compris, sauf
+     thème premium explicite (noir & or), qui garde l'or du thème. */
+  const SP_GAB_PREM_CHANCE = 0.34;
   const SP_GAB_BASES = {
     affiche: [
       { nom: 'Affiche manifeste', lib: 'affiche typographique', reg: { marge: 1.15, colonnes: 1, densite: 0.9, echelleTitre: 1.25, bande: 1.25, filets: 0.7, caps: true, interlettrage: 1.5, encadres: false, folio: false, ouverture: 0 } },
@@ -11162,7 +11655,10 @@ function spRtfLayoutInfo(src) {
     catalogue: [
       { nom: 'Catalogue produits', lib: 'fiches produits', reg: { marge: 0.94, colonnes: 2, gouttiere: 8, densite: 0.95, filets: 1.1, bande: 1, encadres: true, chapitres: true, folio: true, ouverture: 1 } },
       { nom: 'Catalogue aéré', lib: 'belle page produit', reg: { marge: 1.18, colonnes: 2, gouttiere: 12, densite: 0.88, filets: 0.7, bande: 0.85, encadres: false, chapitres: true, folio: true, ouverture: 1 } },
-      { nom: 'Catalogue dense', lib: 'tarif général', reg: { marge: 0.86, colonnes: 3, gouttiere: 6, densite: 0.97, corps: 9, filets: 1.4, bande: 1.05, encadres: false, chapitres: true, folio: true, ouverture: 0 } }
+      { nom: 'Catalogue dense', lib: 'tarif général', reg: { marge: 0.86, colonnes: 3, gouttiere: 6, densite: 0.97, corps: 9, filets: 1.4, bande: 1.05, encadres: false, chapitres: true, folio: true, ouverture: 0 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM (demande : « des modèles premium parfois dans le
+         random »). Repris de la bibliothèque de l'app : une pièce par page, grand air. */
+      { nom: 'Catalogue haut de gamme', lib: 'fiche produit premium', prem: true, reg: { marge: 1.28, colonnes: 1, densite: 0.85, echelleTitre: 1.2, filets: 0.45, bande: 1.25, caps: true, interlettrage: 2.5, encadres: false, chapitres: true, folio: true, ouverture: 3 } }
     ],
     cahier: [
       { nom: 'Cahier de lecture', lib: 'livre une colonne', reg: { marge: 1.18, colonnes: 1, gouttiere: 10, densite: 0.93, interligne: 1.62, filets: 0.9, bande: 0.85, caps: false, interlettrage: 0, chapitres: true, encadres: false, folio: true, ouverture: 0 } },
@@ -11177,12 +11673,17 @@ function spRtfLayoutInfo(src) {
     rapport: [
       { nom: 'Rapport annuel', lib: 'rapport institutionnel', reg: { marge: 1.06, colonnes: 2, gouttiere: 8, densite: 0.95, filets: 1.2, bande: 1.1, encadres: true, chapitres: true, folio: true, ouverture: 1 } },
       { nom: 'Note de synthèse', lib: 'note', reg: { marge: 1.14, colonnes: 1, densite: 0.94, filets: 1, bande: 0.8, chapitres: true, encadres: false, folio: true, ouverture: 0 } },
-      { nom: 'Dossier chiffré', lib: 'dossier KPI', reg: { marge: 0.98, colonnes: 2, gouttiere: 9, densite: 0.94, filets: 1.5, bande: 1.2, caps: true, interlettrage: 1, encadres: true, chapitres: true, folio: true, ouverture: 1 } }
+      { nom: 'Dossier chiffré', lib: 'dossier KPI', reg: { marge: 0.98, colonnes: 2, gouttiere: 9, densite: 0.94, filets: 1.5, bande: 1.2, caps: true, interlettrage: 1, encadres: true, chapitres: true, folio: true, ouverture: 1 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : le rapport d'activité de la bibliothèque
+         (fr_rapport_activite_premium_24p) : ouverture pleine page, capitales espacées. */
+      { nom: 'Rapport haut de gamme', lib: 'rapport premium', prem: true, reg: { marge: 1.3, colonnes: 1, densite: 0.86, echelleTitre: 1.25, filets: 0.45, bande: 1.3, caps: true, interlettrage: 2.5, encadres: false, chapitres: true, folio: true, ouverture: 3 } }
     ],
     presse: [
       { nom: 'Dossier de presse', lib: 'presse kit', reg: { marge: 1.08, colonnes: 2, gouttiere: 9, densite: 0.94, filets: 1.2, bande: 1.1, encadres: true, chapitres: true, folio: true, ouverture: 1 } },
       { nom: 'Communiqué', lib: 'communiqué de presse', reg: { marge: 1.16, colonnes: 1, densite: 0.95, filets: 1, bande: 0.85, caps: false, chapitres: true, encadres: false, folio: true, ouverture: 0 } },
-      { nom: 'Revue de presse', lib: 'revue de presse', reg: { marge: 0.92, colonnes: 3, gouttiere: 7, densite: 0.97, filets: 1.5, bande: 1.05, encadres: false, chapitres: true, folio: true, ouverture: 2 } }
+      { nom: 'Revue de presse', lib: 'revue de presse', reg: { marge: 0.92, colonnes: 3, gouttiere: 7, densite: 0.97, filets: 1.5, bande: 1.05, encadres: false, chapitres: true, folio: true, ouverture: 2 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : le dossier de presse « galerie ». */
+      { nom: 'Presse haut de gamme', lib: 'dossier de presse premium', prem: true, reg: { marge: 1.32, colonnes: 1, densite: 0.88, echelleTitre: 1.15, filets: 0.45, bande: 1.15, caps: true, interlettrage: 3, encadres: false, chapitres: true, folio: true, ouverture: 0 } }
     ],
     brandbook: [
       { nom: 'Charte graphique', lib: 'brand book', reg: { marge: 1.12, colonnes: 2, gouttiere: 10, densite: 0.92, filets: 1, bande: 1.2, interlettrage: 1.5, chapitres: true, encadres: true, folio: true, ouverture: 1 } },
@@ -11199,12 +11700,18 @@ function spRtfLayoutInfo(src) {
     cv: [
       { nom: 'CV une colonne', lib: 'CV classique', reg: { marge: 1.14, colonnes: 1, densite: 0.94, filets: 1, bande: 0.9, encadres: false, folio: false, ouverture: 0 } },
       { nom: 'CV deux colonnes', lib: 'CV moderne', reg: { marge: 0.98, colonnes: 2, gouttiere: 8, densite: 0.94, filets: 1.2, bande: 1.2, caps: true, interlettrage: 1, encadres: true, folio: false, ouverture: 0 } },
-      { nom: 'CV portrait', lib: 'CV visuel', reg: { marge: 1.08, colonnes: 2, gouttiere: 7, densite: 0.92, echelleTitre: 1.1, filets: 0.7, bande: 1, encadres: false, folio: false, ouverture: 0 } }
+      { nom: 'CV portrait', lib: 'CV visuel', reg: { marge: 1.08, colonnes: 2, gouttiere: 7, densite: 0.92, echelleTitre: 1.1, filets: 0.7, bande: 1, encadres: false, folio: false, ouverture: 0 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : le CV éditorial de la bibliothèque (une colonne,
+         lettrage large, beaucoup de blanc). */
+      { nom: 'CV éditorial premium', lib: 'CV haut de gamme', prem: true, reg: { marge: 1.34, colonnes: 1, densite: 0.88, corps: 9.5, echelleTitre: 1.3, filets: 0.45, bande: 1.1, caps: true, interlettrage: 2.5, encadres: false, folio: false, ouverture: 0 } }
     ],
     menu: [
       { nom: 'Carte classique', lib: 'carte de restaurant', reg: { marge: 1.2, colonnes: 1, densite: 0.94, filets: 1.1, bande: 0.9, interlettrage: 1, encadres: false, folio: false, ouverture: 0 } },
       { nom: 'Carte en deux colonnes', lib: 'menu bistrot', reg: { marge: 1, colonnes: 2, gouttiere: 10, densite: 0.96, filets: 1.3, bande: 1, encadres: true, folio: false, ouverture: 0 } },
-      { nom: 'Carte du jour', lib: 'ardoise', reg: { marge: 1.26, colonnes: 1, densite: 0.9, echelleTitre: 1.15, filets: 0.6, bande: 1.2, caps: true, interlettrage: 2, encadres: false, folio: false, ouverture: 0 } }
+      { nom: 'Carte du jour', lib: 'ardoise', reg: { marge: 1.26, colonnes: 1, densite: 0.9, echelleTitre: 1.15, filets: 0.6, bande: 1.2, caps: true, interlettrage: 2, encadres: false, folio: false, ouverture: 0 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : la carte gastronomique (filet fin, capitales
+         espacées, très aérée) — bibliothèque de l'app, thème « À Table ». */
+      { nom: 'Carte gastronomique premium', lib: 'carte haut de gamme', prem: true, reg: { marge: 1.36, colonnes: 1, densite: 0.86, filets: 0.45, bande: 0.95, caps: true, interlettrage: 3, encadres: false, folio: false, ouverture: 0 } }
     ],
     mariage: [
       { nom: 'Faire-part classique', lib: 'faire-part', reg: { marge: 1.3, colonnes: 1, densite: 0.9, filets: 0.7, bande: 0.8, interlettrage: 1.5, encadres: false, folio: false, ouverture: 0 } },
@@ -11215,57 +11722,84 @@ function spRtfLayoutInfo(src) {
     invitation: [
       { nom: 'Invitation centrée', lib: 'invitation', reg: { marge: 1.3, colonnes: 1, densite: 0.9, filets: 0.6, bande: 0.85, interlettrage: 1.5, encadres: false, folio: false, ouverture: 0 } },
       { nom: 'Invitation pleine page', lib: 'invitation à visuel', reg: { marge: 1.06, colonnes: 1, densite: 0.92, filets: 0.8, bande: 1.2, encadres: false, folio: false, ouverture: 3 } },
-      { nom: 'Invitation programme', lib: 'invitation + programme', reg: { marge: 1.14, colonnes: 2, gouttiere: 9, densite: 0.94, filets: 1.1, bande: 1.05, encadres: true, folio: false, ouverture: 1 } }
+      { nom: 'Invitation programme', lib: 'invitation + programme', reg: { marge: 1.14, colonnes: 2, gouttiere: 9, densite: 0.94, filets: 1.1, bande: 1.05, encadres: true, folio: false, ouverture: 1 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : l'invitation gravée (une colonne, lettrage). */
+      { nom: 'Invitation gravée premium', lib: 'invitation haut de gamme', prem: true, reg: { marge: 1.38, colonnes: 1, densite: 0.86, filets: 0.45, bande: 0.95, caps: true, interlettrage: 3, encadres: false, folio: false, ouverture: 0 } }
     ],
     programme: [
       { nom: 'Programme de salle', lib: 'programme', reg: { marge: 1.12, colonnes: 2, gouttiere: 9, densite: 0.94, filets: 1.2, bande: 1, encadres: true, chapitres: true, folio: true, ouverture: 1 } },
-      { nom: 'Programme horaire', lib: 'conducteur', reg: { marge: 1.06, colonnes: 3, gouttiere: 7, densite: 0.95, filets: 1.3, bande: 0.9, caps: true, chapitres: true, folio: true, ouverture: 0 } }
+      { nom: 'Programme horaire', lib: 'conducteur', reg: { marge: 1.06, colonnes: 3, gouttiere: 7, densite: 0.95, filets: 1.3, bande: 0.9, caps: true, chapitres: true, folio: true, ouverture: 0 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : le programme de salle de l'édition papier. */
+      { nom: 'Programme premium', lib: 'programme haut de gamme', prem: true, reg: { marge: 1.3, colonnes: 1, densite: 0.88, filets: 0.45, bande: 1.15, caps: true, interlettrage: 2.5, encadres: false, chapitres: true, folio: true, ouverture: 0 } }
     ],
     cartevisite: [
       { nom: 'Carte sobre', lib: 'carte de visite', reg: { marge: 1.3, colonnes: 1, densite: 0.9, corps: 8, filets: 0.6, bande: 0.6, encadres: false, folio: false, ouverture: 0 } },
       { nom: 'Carte filetée', lib: 'carte à filets', reg: { marge: 1.24, colonnes: 1, densite: 0.9, corps: 7.5, filets: 1.3, bande: 0.7, caps: true, interlettrage: 2, encadres: false, folio: false, ouverture: 0 } },
-      { nom: 'Carte centrée', lib: 'carte élégante', reg: { marge: 1.34, colonnes: 1, densite: 0.88, corps: 8, filets: 0.6, bande: 1, interlettrage: 1, encadres: false, folio: false, ouverture: 0 } }
+      { nom: 'Carte centrée', lib: 'carte élégante', reg: { marge: 1.34, colonnes: 1, densite: 0.88, corps: 8, filets: 0.6, bande: 1, interlettrage: 1, encadres: false, folio: false, ouverture: 0 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : la carte de visite « bijou » — tout en lettrage. */
+      { nom: 'Carte de visite premium', lib: 'carte bijou', prem: true, reg: { marge: 1.4, colonnes: 1, densite: 0.86, corps: 8, filets: 0.45, bande: 0.9, caps: true, interlettrage: 3.5, encadres: false, folio: false, ouverture: 0 } }
     ],
     cartepostale: [
       { nom: 'Carte postale photo', lib: 'carte postale', reg: { marge: 0.92, colonnes: 1, densite: 0.92, filets: 0.7, bande: 1.1, encadres: false, folio: false, ouverture: 3 } },
-      { nom: 'Carte postale texte', lib: 'carte postale sobre', reg: { marge: 1.24, colonnes: 1, densite: 0.9, filets: 0.8, bande: 0.85, interlettrage: 1, encadres: false, folio: false, ouverture: 0 } }
+      { nom: 'Carte postale texte', lib: 'carte postale sobre', reg: { marge: 1.24, colonnes: 1, densite: 0.9, filets: 0.8, bande: 0.85, interlettrage: 1, encadres: false, folio: false, ouverture: 0 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : la carte postale de collection. */
+      { nom: 'Carte postale premium', lib: 'carte postale de collection', prem: true, reg: { marge: 1.3, colonnes: 1, densite: 0.88, filets: 0.45, bande: 1, caps: true, interlettrage: 2.5, encadres: false, folio: false, ouverture: 3 } }
     ],
     carteveux: [
       { nom: 'Carte de vœux', lib: 'carte de vœux', reg: { marge: 1.28, colonnes: 1, densite: 0.9, filets: 0.6, bande: 0.9, interlettrage: 1.5, encadres: false, folio: false, ouverture: 0 } },
-      { nom: 'Carte de vœux visuelle', lib: 'carte illustrée', reg: { marge: 1, colonnes: 1, densite: 0.92, filets: 0.7, bande: 1.15, encadres: false, folio: false, ouverture: 3 } }
+      { nom: 'Carte de vœux visuelle', lib: 'carte illustrée', reg: { marge: 1, colonnes: 1, densite: 0.92, filets: 0.7, bande: 1.15, encadres: false, folio: false, ouverture: 3 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : les vœux gravés. */
+      { nom: 'Vœux premium', lib: 'vœux haut de gamme', prem: true, reg: { marge: 1.38, colonnes: 1, densite: 0.86, filets: 0.45, bande: 0.95, caps: true, interlettrage: 3, encadres: false, folio: false, ouverture: 0 } }
     ],
     etiquette: [
       { nom: 'Étiquette sobre', lib: 'étiquette produit', reg: { marge: 1.1, colonnes: 1, densite: 0.92, corps: 7, filets: 1, bande: 0.7, caps: true, encadres: false, folio: false, ouverture: 0 } },
-      { nom: 'Étiquette dense', lib: 'étiquette technique', reg: { marge: 0.9, colonnes: 2, gouttiere: 4, densite: 0.96, corps: 6.5, filets: 1.3, bande: 0.8, encadres: true, folio: false, ouverture: 0 } }
+      { nom: 'Étiquette dense', lib: 'étiquette technique', reg: { marge: 0.9, colonnes: 2, gouttiere: 4, densite: 0.96, corps: 6.5, filets: 1.3, bande: 0.8, encadres: true, folio: false, ouverture: 0 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : l'étiquette de maison (une colonne, lettrage). */
+      { nom: 'Étiquette premium', lib: 'étiquette haut de gamme', prem: true, reg: { marge: 1.24, colonnes: 1, densite: 0.88, corps: 7, filets: 0.45, bande: 0.75, caps: true, interlettrage: 3, encadres: false, folio: false, ouverture: 0 } }
     ],
     billet: [
       { nom: 'Billet numéroté', lib: 'ticket', reg: { marge: 1.04, colonnes: 2, gouttiere: 6, densite: 0.94, corps: 7.5, filets: 1.3, bande: 1, caps: true, encadres: true, folio: false, ouverture: 0 } },
-      { nom: 'Billet événement', lib: 'invitation-billet', reg: { marge: 1.1, colonnes: 1, densite: 0.92, corps: 8, filets: 0.8, bande: 1.2, encadres: false, folio: false, ouverture: 2 } }
+      { nom: 'Billet événement', lib: 'invitation-billet', reg: { marge: 1.1, colonnes: 1, densite: 0.92, corps: 8, filets: 0.8, bande: 1.2, encadres: false, folio: false, ouverture: 2 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : le billet de gala. */
+      { nom: 'Billet premium', lib: 'billet haut de gamme', prem: true, reg: { marge: 1.3, colonnes: 1, densite: 0.88, corps: 8, filets: 0.45, bande: 1.1, caps: true, interlettrage: 2.5, encadres: false, folio: false, ouverture: 0 } }
     ],
     facture: [
       { nom: 'Facture sobre', lib: 'facture', reg: { marge: 1.1, colonnes: 1, densite: 0.95, filets: 1, bande: 0.75, chapitres: true, encadres: false, folio: true, ouverture: 0 } },
-      { nom: 'Facture détaillée', lib: 'facture à colonnes', reg: { marge: 0.96, colonnes: 2, gouttiere: 8, densite: 0.96, filets: 1.3, bande: 0.85, caps: true, chapitres: true, encadres: true, folio: true, ouverture: 0 } }
+      { nom: 'Facture détaillée', lib: 'facture à colonnes', reg: { marge: 0.96, colonnes: 2, gouttiere: 8, densite: 0.96, filets: 1.3, bande: 0.85, caps: true, chapitres: true, encadres: true, folio: true, ouverture: 0 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : le devis/facture d'agence — en-tête ample,
+         lignes aérées, filets fins. */
+      { nom: 'Facture premium', lib: 'facture haut de gamme', prem: true, reg: { marge: 1.26, colonnes: 1, densite: 0.9, filets: 0.45, bande: 0.85, caps: true, interlettrage: 2, chapitres: true, encadres: false, folio: true, ouverture: 0 } }
     ],
     lettre: [
       { nom: 'Papier à en-tête', lib: 'letterhead', reg: { marge: 1.16, colonnes: 1, densite: 0.95, filets: 0.9, bande: 0.8, chapitres: false, encadres: false, folio: false, ouverture: 0 } },
-      { nom: 'En-tête à filet', lib: 'letterhead fileté', reg: { marge: 1.2, colonnes: 1, densite: 0.95, filets: 1.4, bande: 0.7, caps: true, interlettrage: 1.5, encadres: false, folio: false, ouverture: 0 } }
+      { nom: 'En-tête à filet', lib: 'letterhead fileté', reg: { marge: 1.2, colonnes: 1, densite: 0.95, filets: 1.4, bande: 0.7, caps: true, interlettrage: 1.5, encadres: false, folio: false, ouverture: 0 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : le papier à en-tête de maison. */
+      { nom: 'En-tête premium', lib: 'letterhead haut de gamme', prem: true, reg: { marge: 1.3, colonnes: 1, densite: 0.92, filets: 0.45, bande: 0.8, caps: true, interlettrage: 3, encadres: false, folio: false, ouverture: 0 } }
     ],
     calendrier: [
       { nom: 'Calendrier mural', lib: 'calendrier', reg: { marge: 0.96, colonnes: 3, gouttiere: 6, densite: 0.95, filets: 1.3, bande: 1.2, caps: true, encadres: true, folio: false, ouverture: 2 } },
-      { nom: 'Agenda', lib: 'agenda', reg: { marge: 1.08, colonnes: 2, gouttiere: 8, densite: 0.94, filets: 1, bande: 0.9, chapitres: true, encadres: false, folio: false, ouverture: 0 } }
+      { nom: 'Agenda', lib: 'agenda', reg: { marge: 1.08, colonnes: 2, gouttiere: 8, densite: 0.94, filets: 1, bande: 0.9, chapitres: true, encadres: false, folio: false, ouverture: 0 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : le calendrier de maison (une colonne, filet fin). */
+      { nom: 'Calendrier premium', lib: 'calendrier haut de gamme', prem: true, reg: { marge: 1.22, colonnes: 1, densite: 0.88, echelleTitre: 1.25, filets: 0.45, bande: 1.2, caps: true, interlettrage: 2, encadres: false, folio: false, ouverture: 2 } }
     ],
     presentation: [
       { nom: 'Planches sobres', lib: 'présentation', reg: { marge: 1.2, colonnes: 1, densite: 0.9, echelleTitre: 1.2, filets: 0.6, bande: 0.9, encadres: false, folio: false, ouverture: 0 } },
       { nom: 'Planches denses', lib: 'présentation détaillée', reg: { marge: 0.9, colonnes: 2, gouttiere: 8, densite: 0.96, filets: 1.2, bande: 1.1, caps: true, encadres: true, folio: false, ouverture: 1 } },
-      { nom: 'Planches manifeste', lib: 'keynote', reg: { marge: 1.1, colonnes: 1, densite: 0.88, echelleTitre: 1.3, filets: 0.5, bande: 1.3, caps: true, interlettrage: 2, encadres: false, folio: false, ouverture: 3 } }
+      { nom: 'Planches manifeste', lib: 'keynote', reg: { marge: 1.1, colonnes: 1, densite: 0.88, echelleTitre: 1.3, filets: 0.5, bande: 1.3, caps: true, interlettrage: 2, encadres: false, folio: false, ouverture: 3 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : la planche de présentation éditoriale. */
+      { nom: 'Planches premium', lib: 'présentation haut de gamme', prem: true, reg: { marge: 1.32, colonnes: 1, densite: 0.86, echelleTitre: 1.3, filets: 0.45, bande: 1.35, caps: true, interlettrage: 2.5, encadres: false, folio: false, ouverture: 3 } }
     ],
     story: [
       { nom: 'Story manifeste', lib: 'story', reg: { marge: 1.05, colonnes: 1, densite: 0.9, echelleTitre: 1.2, filets: 0.6, bande: 1.2, encadres: false, folio: false, ouverture: 0 } },
-      { nom: 'Story visuelle', lib: 'story photo', reg: { marge: 0.95, colonnes: 1, densite: 0.92, filets: 0.7, bande: 1.1, encadres: false, folio: false, ouverture: 3 } }
+      { nom: 'Story visuelle', lib: 'story photo', reg: { marge: 0.95, colonnes: 1, densite: 0.92, filets: 0.7, bande: 1.1, encadres: false, folio: false, ouverture: 3 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : la story éditoriale (lettrage espacé). */
+      { nom: 'Story premium', lib: 'story haut de gamme', prem: true, reg: { marge: 1.16, colonnes: 1, densite: 0.88, echelleTitre: 1.25, filets: 0.45, bande: 1.3, caps: true, interlettrage: 2.5, encadres: false, folio: false, ouverture: 3 } }
     ],
     bandeau: [
       { nom: 'Bandeau technique', lib: 'bannière', reg: { marge: 0.9, colonnes: 1, densite: 0.94, filets: 1, bande: 1, caps: true, interlettrage: 1, encadres: false, folio: false, ouverture: 0 } },
-      { nom: 'Bandeau éditorial', lib: 'bannière éditoriale', reg: { marge: 1.14, colonnes: 1, densite: 0.9, echelleTitre: 1.15, filets: 0.7, bande: 1.25, encadres: false, folio: false, ouverture: 0 } }
+      { nom: 'Bandeau éditorial', lib: 'bannière éditoriale', reg: { marge: 1.14, colonnes: 1, densite: 0.9, echelleTitre: 1.15, filets: 0.7, bande: 1.25, encadres: false, folio: false, ouverture: 0 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : la bannière de maison. */
+      { nom: 'Bandeau premium', lib: 'bannière haut de gamme', prem: true, reg: { marge: 1.24, colonnes: 1, densite: 0.9, echelleTitre: 1.2, filets: 0.45, bande: 1.35, caps: true, interlettrage: 3, encadres: false, folio: false, ouverture: 0 } }
     ],
     /* ⚠️ _SP_STUDIO_ROCK610 — LES ARCHÉTYPES DU LIVRE DE THÉÂTRE (trois façons réelles de
        composer une pièce : le volume classique à une colonne, la mise en page « de
@@ -11277,17 +11811,122 @@ function spRtfLayoutInfo(src) {
          mettre DEUX SECTIONS sur la même page (une par colonne), donc deux actes côte à
          côte (défaut signalé par l'utilisateur). */
       { nom: 'Théâtre de poche', lib: 'édition de poche, une colonne', reg: { marge: 1.06, colonnes: 1, gouttiere: 10, densite: 0.95, interligne: 1.55, filets: 1, bande: 1, caps: true, chapitres: true, encadres: false, folio: true, ouverture: 1 } },
-      { nom: 'Livret de scène', lib: 'édition aérée', reg: { marge: 1.26, colonnes: 1, densite: 0.9, interligne: 1.68, filets: 0.5, bande: 1.2, caps: false, interlettrage: 0.5, chapitres: true, encadres: false, folio: true, ouverture: 2 } }
+      { nom: 'Livret de scène', lib: 'édition aérée', reg: { marge: 1.26, colonnes: 1, densite: 0.9, interligne: 1.68, filets: 0.5, bande: 1.2, caps: false, interlettrage: 0.5, chapitres: true, encadres: false, folio: true, ouverture: 2 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : la belle édition de théâtre (une colonne — jamais
+         deux actes côte à côte, voir le garde-fou 611d). */
+      { nom: 'Théâtre premium', lib: 'édition de théâtre haut de gamme', prem: true, reg: { marge: 1.34, colonnes: 1, densite: 0.88, interligne: 1.72, filets: 0.45, bande: 1.1, caps: true, interlettrage: 1.5, chapitres: true, encadres: false, folio: true, ouverture: 0 } }
     ],
     _defaut: [
       { nom: 'Fiche claire', lib: 'composition sobre', reg: { marge: 1.14, colonnes: 1, densite: 0.94, filets: 1, bande: 0.9, chapitres: true, encadres: false, folio: true, ouverture: 0 } },
       { nom: 'Affiche typographique', lib: 'composition affiche', reg: { marge: 1.2, colonnes: 1, densite: 0.88, echelleTitre: 1.25, filets: 0.6, bande: 1.2, caps: true, interlettrage: 2, encadres: false, folio: false, ouverture: 0 } },
       { nom: 'Dossier élégant', lib: 'composition dossier', reg: { marge: 1.08, colonnes: 2, gouttiere: 9, densite: 0.93, filets: 1.1, bande: 0.9, encadres: true, chapitres: true, folio: true, ouverture: 1 } },
-      { nom: 'Éditorial en colonnes', lib: 'composition revue', reg: { marge: 0.98, colonnes: 2, gouttiere: 11, densite: 0.94, filets: 1.2, bande: 1.1, caps: true, interlettrage: 1, encadres: true, chapitres: true, folio: true, ouverture: 2 } }
+      { nom: 'Éditorial en colonnes', lib: 'composition revue', reg: { marge: 0.98, colonnes: 2, gouttiere: 11, densite: 0.94, filets: 1.2, bande: 1.1, caps: true, interlettrage: 1, encadres: true, chapitres: true, folio: true, ouverture: 2 } },
+      /* ⚠️ _SP_STUDIO_ROCK613 — PREMIUM : la composition « belle page » (ouverture pleine
+         page, grand air) qui remplace la page sobre sur un tirage premium aléatoire. */
+      { nom: 'Belle page premium', lib: 'composition haut de gamme', prem: true, reg: { marge: 1.3, colonnes: 1, densite: 0.86, echelleTitre: 1.25, filets: 0.45, bande: 1.3, caps: true, interlettrage: 2.5, encadres: false, chapitres: true, folio: true, ouverture: 3 } }
     ]
   };
   // Palette déduite du thème de la demande ET des pièces jointes en « contexte »
   // (une PJ de contexte sert à comprendre le sujet : elle doit donc peser sur le ton).
+  /* ══ _SP_STUDIO_ROCK616 — « FOND BLEU », « TYPO ROSE » : LA COULEUR **ET SA ZONE** ══════
+     Demande utilisateur : « si je dis "fond bleu", "fond rose" dans un prompt il doit
+     comprendre les couleurs et les mots-clés comme fond, background, typo pour appliquer la
+     couleur — et comprendre la ZONE impactée (en, fr, ja) ».
+     MESURÉ : « fond bleu » ne trouvait AUCUNE palette. Les palettes nommées de la charte
+     s'appellent « bleu encre », « bleu clair », « océan », « menthe »… et « bleu » seul ne
+     correspondait à RIEN : la couleur du fond de page n'était jamais lue. On lit donc la
+     couleur nommée ET le mot de zone qui l'accompagne (±20 caractères) :
+       • fond / background / papier / 背景 / 地色 / 底色 → FOND DE PAGE ;
+       • typo / texte / encre / écriture / text / font / 文字 / 字色 → ENCRE ;
+       • sans zone (« couleur », « accent »…) → ACCENT (surtitres, filets, titres).
+     La nuance claire du fond et la nuance sombre de l'encre sont CALCULÉES à partir de la
+     teinte de base : « fond bleu » donne un fond bleu très clair (du papier bleuté, pas un
+     aplat saturé qui écraserait la typographie), et le garde-fou de contraste reprend la
+     main s'il reste un texte illisible. */
+  const SP_GAB_TEINTES = [
+    { mot: /\bbleus?\b|\bblue\b|azure|青|ブルー|藍/, hex: '#2563eb' },
+    { mot: /\broses?\b|\bpink\b|\bblush\b|ピンク|桃色|薔薇色/, hex: '#db2777' },
+    { mot: /\brouges?\b|\bred\b|\b scarlet\b|赤|レッド/, hex: '#dc2626' },
+    { mot: /\bverts?\b|\bgreen\b|緑|グリーン|翠/, hex: '#16a34a' },
+    { mot: /\bjaunes?\b|\byellow\b|黄|イエロー/, hex: '#eab308' },
+    { mot: /\boranges?\b|オレンジ|橙/, hex: '#ea580c' },
+    { mot: /\bviolet\b|\bmauve\b|\bpurple\b|\blilas\b|紫|パープル/, hex: '#7c3aed' },
+    { mot: /\bturquoise\b|\bcyan\b|\bteal\b|\baqua\b|水色|ターコイズ/, hex: '#0d9488' },
+    { mot: /\bbeige\b|\bsable\b|\bcr[eè]me\b|\bcream\b|\bivoire\b|ベージュ|生成り|アイボリー/, hex: '#d9cbb0' },
+    { mot: /\bmarron\b|\bbrown\b|\bbrun\b|茶色|ブラウン|琥珀/, hex: '#78350f' },
+    { mot: /\bgris\b|\bgrey\b|\bgray\b|グレー|灰|灰色/, hex: '#6b7280' },
+    { mot: /\bnoirs?\b|\bblack\b|黒|ブラック/, hex: '#111111' },
+    { mot: /\bblancs?\b|\bwhite\b|白|ホワイト/, hex: '#ffffff' }
+  ];
+  const SP_GAB_ZONE_FOND = /\bfonds?\b|fond\s+de\s+page|\bbackground\b|\bbackdrop\b|\bpapier\b|背景|地色|底色/;
+  const SP_GAB_ZONE_ENCRE = /\btypo(?:graphie)?\b|\btexte?s?\b|\bencre\b|[ée]criture|\btext\b|\bfont\b|\blettermg\b|\blettering\b|\btype\b|文字|字色|活字/;
+  function spGabNuance(hex, f) {
+    const s = String(hex || '').replace('#', '');
+    if (s.length !== 6) return hex;
+    const g2 = function (i) { return ('0' + Math.max(0, Math.min(255, Math.round(parseInt(s.substr(i, 2), 16) * f))).toString(16)).slice(-2); };
+    return '#' + g2(0) + g2(2) + g2(4);
+  }
+  /* Mélange une teinte vers le blanc : « fond bleu » doit donner du PAPIER bleuté. */
+  function spGabClarifier(hex, f) {
+    const s = String(hex || '').replace('#', '');
+    if (s.length !== 6) return hex;
+    const g2 = function (i) {
+      const v = parseInt(s.substr(i, 2), 16);
+      return ('0' + Math.round(v + (255 - v) * f).toString(16)).slice(-2);
+    };
+    return '#' + g2(0) + g2(2) + g2(4);
+  }
+  function spGabCouleursDemandees(brief) {
+    const s = String(brief || '').toLowerCase();
+    const out = { fond: '', encre: '', accent: '' };
+    /* ⚠️ _SP_STUDIO_ROCK616b — LE MOT DE ZONE LE PLUS PROCHE DÉCIDE. MESURÉ sur « Affiche A4
+       élégante avec fond bleu et typo rouge » : en testant « la fenêtre autour de la couleur
+       contient-elle fond / typo ? », la fenêtre de « rouge » contenait AUSSI « fond » (22
+       caractères plus haut) → le fond gagnait les deux fois et l'ENCRE DEMANDÉE N'ÉTAIT
+       JAMAIS APPLIQUÉE. On mesure donc la distance du mot de zone le plus proche, avant et
+       après la couleur : « fond bleu et typo rouge » donne fond→bleu (5 car.) et typo→rouge
+       (5 car.), les deux sont appliqués. */
+    const proche = function (avant, apres, re) {
+      const r = new RegExp(re.source, 'g');
+      let m2, best = 99;
+      while ((m2 = r.exec(avant)) !== null) { best = Math.min(best, avant.length - (m2.index + m2[0].length)); if (r.lastIndex === m2.index) r.lastIndex++; }
+      r.lastIndex = 0;
+      while ((m2 = r.exec(apres)) !== null) { best = Math.min(best, m2.index); if (r.lastIndex === m2.index) r.lastIndex++; }
+      return best;
+    };
+    for (let i = 0; i < SP_GAB_TEINTES.length; i++) {
+      const t = SP_GAB_TEINTES[i];
+      const r = new RegExp(t.mot.source, 'gi');
+      let m;
+      while ((m = r.exec(s)) !== null) {
+        const avant = s.slice(Math.max(0, m.index - 30), m.index);
+        const apres = s.slice(m.index + m[0].length, m.index + m[0].length + 30);
+        const dF = proche(avant, apres, SP_GAB_ZONE_FOND);
+        const dE = proche(avant, apres, SP_GAB_ZONE_ENCRE);
+        if (dF < 99 && dF <= dE) {
+          /* ⚠️ _SP_STUDIO_ROCK624 — « FOND ROUGE » : TRÈS PÂLE OU VIF, AU HASARD.
+             Demande utilisateur : « quand je dis fond rouge c'est un fond rouge avec
+             transparence très pale, il faut des random sur les couleurs, parfois je veux des
+             vrais rouges vifs aussi ». On tire donc la nuance : la plupart du temps un papier
+             très pâle (teinte clarifiée à 88 %, la lisibilité de la typographie est intacte),
+             parfois une VRAIE couleur (clarifiée à 45 %, un aplat franc). Le garde-fou de
+             contraste reprend la main si l'encre devient illisible (il choisit alors noir ou
+             blanc selon le fond). */
+          if (!out.fond) {
+            const _vif = Math.random() < 0.35;
+            out.fond = spGabClarifier(t.hex, t.hex === '#ffffff' ? 0 : (_vif ? 0.45 : 0.88));
+            out.fondVif = _vif;
+          }
+        } else if (dE < 99) {
+          if (!out.encre) out.encre = t.hex;
+        } else if (!out.accent) {
+          out.accent = t.hex;
+        }
+        if (r.lastIndex === m.index) r.lastIndex++;
+      }
+    }
+    return out;
+  }
   function spGabPal(brief, impose, contexte) {
     const s = (String(brief || '') + ' ' + String(contexte || '')).toLowerCase();
     /* ⚠️ 2026-10-01 — UNE COULEUR NOMMÉE DANS LA DEMANDE PASSE AVANT LA FAMILLE.
@@ -11324,7 +11963,14 @@ function spRtfLayoutInfo(src) {
        PAGE » VAUT 1. Le studio est trilingue : une demande peut dire « one-pager »,
        « single page », « 1 page » ou « 片面 ». Sans cela, « one page cover » retombait sur
        le nombre du gabarit (défaut mesuré : 4 pages pour une couverture). */
-    const m = s.match(/(\d{1,2})\s*(?:pages?\b|ページ)/);
+    /* ⚠️ _SP_STUDIO_ROCK623 — TOUTES LES FAÇONS D'ÉCRIRE UN NOMBRE DE PAGES.
+       Demande utilisateur : « sans PJ, 24-pages ou 24 pages ou 24p ou 24 p, en trois langues,
+       doit faire 24 pages RÉELLEMENT ». MESURÉ : « 24-page report » (tiret) et « 24p »
+       n'étaient PAS lus — la demande annonçait 24 pages et le document sortait à 5. On lit
+       donc le nombre suivi de : p / page / pages / ページ / 頁, avec ou sans tiret et avec ou
+       sans espace. On refuse seulement ce qui n'est pas un compte de pages : « 24 pt »,
+       « 24 px », « 24 mm », « 24 € », « 24 % », « 24 h »… */
+    const m = s.match(/(\d{1,2})\s*[-–—]?\s*(?:p\b|pages?\b|ページ|頁)(?!\s*(?:pt|px|pts|mm|cms?|€|\$|%|h\b|g\b|ans?\b|years?\b))/);
     if (m) return Math.max(1, Math.min(32, parseInt(m[1], 10)));
     if (/(?:une?\s+seule\s+page|seule\s+page|only\s+one\s+page|single[\s-]?page|one[\s-]?pager|one[\s-]?sheet|片面|1\s*ページ)/i.test(s)) return 1;
     const mots = { deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8, neuf: 9, dix: 10, onze: 11, douze: 12, seize: 16, vingt: 20, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, twelve: 12, sixteen: 16, twenty: 20 };
@@ -11641,10 +12287,7 @@ function spRtfLayoutInfo(src) {
     /* ⚠️ _SP_STUDIO_FAM_609C — UNE SEULE LIGNE, EN FRANÇAIS COMME LES AUTRES MESSAGES DU
        MOTEUR (« demande comprise », « matière », « style tiré au sort », « grille »).
        Elle dit d'où part la composition et comment la corriger d'un mot. */
-    try { appendChat('assistant', '🗂️ Base SuperPrint « ' + base.nom + ' »' +
-      (base.lib ? (' (' + base.lib + ')') : '') +
-      ' — la demande ne fixait pas la structure : dites « deux colonnes », « très aéré », ' +
-      '« avec encadrés », « sans filets », « folios »… pour l\'ajuster. Le tirage change à chaque envoi.'); } catch (_) {}
+    try { appendChat('assistant', '🗂️ Base « ' + base.nom + ' »' + (base.lib ? (' — ' + base.lib) : '') + '.'); } catch (_) {}
   }
   /* ⚠️ _SP_STUDIO_BASES_609 — LES MOTS DE MISE EN PAGE DEVIENNENT DES RÉGLAGES. Ils
      s'intercalent ENTRE la base (qui donne le point de départ) et l'agencement des
@@ -11677,9 +12320,9 @@ function spRtfLayoutInfo(src) {
     if (SP_COMPRIS_VU === cle) return;
     SP_COMPRIS_VU = cle;
     try {
-      appendChat('assistant', '🧠 Demande comprise : ' + c.phrase + '. ' +
-        (c.sans.photo ? 'Aucune photo ne sera posée. ' : '') +
-        'Dites-le autrement si ce n’est pas ça — je recompose.');
+      /* ⚠️ _SP_STUDIO_ROCK625 — MESSAGES COURTS (demande utilisateur : « dans la conversation,
+         fais des textes de réponse moins longs et avec beaucoup moins de détail »). */
+      appendChat('assistant', '🧠 Compris : ' + c.phrase + '.');
     } catch (_) {}
   }
 
@@ -12278,7 +12921,29 @@ function spRtfLayoutInfo(src) {
        phrase ou après « . ; : ! ? » — pour qu'un texte collé (« the place was… ») ne soit
        jamais pris pour un ordre. */
     const _ordreAnglais = /(?:^|[.;:!?]\s|\n)\s*(?:use|keep|prepare|write|fill|give|respect|include|place|put|insert|replace|build|design|draft|produce|arrange|lay\s+out)\b/i.test(briefTexte);
-    const _demandeConsigne = !src.corps && (_sujetBrut.n >= 2 || SP_GAB_ORDRE_TEST.test(briefTexte) || _ordreAnglais);
+    /* ⚠️ _SP_STUDIO_ROCK615 — UNE CONSIGNE ANGLAISE PEUT ÊTRE DESCRIPTIVE, PAS IMPÉRATIVE.
+       MESURÉ (2026-10-02, cause racine du « toujours la même composition ») : le pré-prompt
+       « 4-page catalog showing 8 products: page 1 the cover with title, visual and one
+       strapline; pages 2 to 4 the products in a regular two-column grid, each with photo,
+       name, short description and bold price; rules between rows and folios at the
+       bottom. » n'était reconnu NI comme ordre (aucun verbe impératif en tête de
+       proposition : « showing », « page 1 the cover »…) NI comme consigne. La demande
+       entière était donc composée COMME TEXTE dans la maquette : titre « 4-PAGE CATALOG
+       SHOWING 8 PRODUCTS », et les phrases de la consigne imprimées dans les blocs —
+       d'où cinq envois rigoureusement identiques, mot pour mot.
+       ⚠️ Compté, jamais testé : il faut AU MOINS DEUX mots de mise en page anglais pour
+       conclure à une consigne, sinon un vrai texte (« the cover of the book », « a broad
+       band of light ») serait écarté du document. */
+    const _motsConsigneEn = (String(briefTexte || '').match(/\b(?:page\s?\d|pages\s?[\d\u2013\u2014-]|two-column|three-column|single-column|multi-column|grid|folios?|bleed|margins?|rules between|ruled|strapline|standfirst|headline|justified|justify|hyphenation|leading|kerning|boxes? around|divider|dividers|banded|sans-?serif|uppercase|teasers?|cover with|title page|spreads?|one act per page|crop marks|cut marks|attached document|attached file)\b/gi) || []).length;
+    /* ⚠️ _SP_STUDIO_ROCK626 — LA CONSIGNE JAPONAISE AUSSI. MESURÉ (pré-prompt japonais
+       « プレミアム報告書 24ページ », sans pièce jointe) : le prompt entier — 250 signes de
+       consignes (pages, couverture, titres de section, colonnes, folios, couleurs…) — était
+       composé COMME TEXTE dans la maquette. Résultat visible : un « titre » de 250 signes
+       japonais mesurant PLUS DE 300 mm de haut sur une page A4, donc à moitié hors du
+       papier, par-dessus les illustrations. Les mots de mise en page japonais manquaient au
+       détecteur (il n'en existait qu'en français et en anglais). Même seuil : DEUX mots. */
+    const _motsConsigneJa = (String(briefTexte || '').match(/(?:ページ|見開き|表紙|タイトル|目次|巻頭|見出し|本文|段組み|ノンブル|ページ番号|キャプション|レイアウト|余白|配色|罫線|囲み|大文字|字間|セリフ|サンセリフ|数値|引用|添付|見本|書体|両端揃え|ハイフネーション|デザイン|構成|作成|ください|ページごと|下部に|上部に|中央に)/g) || []).length;
+    const _demandeConsigne = !src.corps && (_sujetBrut.n >= 2 || SP_GAB_ORDRE_TEST.test(briefTexte) || _ordreAnglais || _motsConsigneEn >= 2 || _motsConsigneJa >= 2);
     /* La demande s'écarte du CORPS quand elle est une consigne — avec ou sans pièce
        jointe (repli de la 584, qui ne le faisait qu'avec un document joint). */
     const _ecarterDemande = src.corps || _demandeConsigne;
@@ -12562,6 +13227,25 @@ function spRtfLayoutInfo(src) {
     if (esp) e.charSpacing = esp;
     return e;
   }
+  /* ⚠️ _SP_STUDIO_ROCK624b — « IMAGE UNIQUEMENT » (fr / en / ja) : LES IMAGES FOURNIES
+     REMPLISSENT TOUS LES EMPLACEMENTS. Demande utilisateur : « STUDIO IA > rock1 > prompt
+     sans PJ TXT, si Image uniquement en JP alors intégration, remplacement des emplacements
+     AVEC LE SVG par les images fournies ». MESURÉ (studio en japonais, « 24ページ 画像のみ »,
+     deux photos jointes) : les deux photos étaient posées sur la couverture et l'édito,
+     puis les douze emplacements du corps recevaient des ILLUSTRATIONS VECTORIELLES —
+     l'utilisateur voyait donc des dessins générés alors qu'il avait fourni ses images.
+     Quand la demande dit « image seulement », on fait donc TOURNER ses images dans tous les
+     emplacements au lieu d'inventer des motifs (elles restent posées par INDEX, le studio
+     réinjecte la data URI). */
+  function spGabImageSeule(brief) {
+    const s = String(brief || '');
+    return /(?:images?|visuels?|photos?)\s*(?:uniquement|seulement|seuls?|only)|(?:uniquement|seulement|only)\s+(?:des\s+)?(?:images?|visuels?|photos?)|images?\s+only|only\s+images?|画像のみ|画像だけ|画像オンリー|写真のみ|写真だけ|画像だけにする/i.test(s);
+  }
+  /* ⚠️ _SP_STUDIO_ROCK624d — « SANS ILLUSTRATION » : un seul prédicat lui aussi, sinon le
+     complément de pages replacerait un motif vectoriel là où le client a demandé du papier nu. */
+  function spGabSansIllustration(brief) {
+    return /(?:sans|pas\s+d[’']?\s*|aucun[e]?\s*)(?:illustrations?|visuels?|dessins?|graphismes?|ornements?)|texte\s+seul|no\s+illustrations?|without\s+illustrations?/i.test(String(brief || ''));
+  }
   // Zone photo : la vraie image jointe si elle existe — SINON UN FOND GÉNÉRÉ.
   function spGabPhoto(L, e, x, y, w, h, legende) {
     /* 🆕 v1.7.584 — « SANS PHOTOS » DANS LA DEMANDE : on ne pose AUCUNE image, et on ne
@@ -12589,6 +13273,22 @@ function spRtfLayoutInfo(src) {
       e.push(spGabFondAuto(L, x, y, w, h, L.slot));
       return true;
     }
+    /* ⚠️ _SP_STUDIO_ROCK617 — PAS DE PHOTO JOINTE : UNE ILLUSTRATION VECTORIELLE prend la
+       place prévue (demande utilisateur). Le mode « fonds » des Réglages garde la priorité
+       s'il a été choisi explicitement, et « sans illustration / sans visuel / texte seul »
+       laisse le papier nu. */
+    if (spGabSansIllustration(L.t && L.t.brief)) return false;
+    /* ⚠️ _SP_STUDIO_ROCK624b — « IMAGE UNIQUEMENT » : les images fournies tournent dans TOUS
+       les emplacements (voir spGabImageSeule) au lieu d'être remplacées par des motifs. */
+    if (L.imageSeule && L.photosToutes && L.photosToutes.length) {
+      const i2 = Math.max(0, (Number(L.slot) || 1) - 1) % L.photosToutes.length;
+      e.push({ type: 'image', imageIndex: L.photosToutes[i2], left: x, top: y, width: w, height: h });
+      return true;
+    }
+    if (SP_GAB_ILLUS) {
+      e.push(spGabIllustration(L, x, y, w, h));
+      return true;
+    }
     return false;
   }
 
@@ -12601,6 +13301,9 @@ function spRtfLayoutInfo(src) {
      page. La luminance du fond est mémorisée pour que le garde-fou de contraste sache
      exactement ce qu'il y a sous la typographie. */
   let SP_GAB_LUM_IMG = {};
+  /* ⚠️ _SP_STUDIO_ROCK625 — LE CLIENT A-T-IL DEMANDÉ UNE IMAGE DE FOND ? Seul cas où un
+     visuel a le droit de couvrir de la typographie (voir spGabImageDeFond). */
+  let SP_GAB_FOND_VOULU = false;
   /* ⚠️ DÉSACTIVÉ POUR LE MOMENT (retour utilisateur : « je n'aime pas tes images pour les
      fonds… je voyais juste des ombres de couleurs discrètes, pas de la géométrie »).
      Le générateur ci-dessous ne trace plus que des OMBRES (dégradés très légers) : le jour
@@ -12704,6 +13407,254 @@ function spRtfLayoutInfo(src) {
     } catch (_) { url = ''; }
     const lum = SP_GAB_MOTIF_LUM[motif] || 0.9;
     if (url) SP_GAB_LUM_IMG[url] = (L.pal && L.pal.noir) ? Math.min(lum, 0.14) : lum;
+    return { type: 'image', imageUrl: url, left: x, top: y, width: w, height: h, opacity: 1 };
+  }
+
+  /* ══ _SP_STUDIO_ROCK617 — ILLUSTRATIONS VECTORIELLES À LA PLACE DES PHOTOS ═══════════
+     Demande utilisateur : « dans rock, si pas de PJ, mettre à la place des espaces prévus
+     pour une photo des illustrations vectorielles artistiques simples, abstraites mais
+     élégantes — et ne pas être répétitif ».
+     Douze motifs dessinés en SVG dans la PALETTE DU DOCUMENT (traits fins, deux ou trois
+     teintes, quelques aplats très légers) : ils remplissent exactement l'emplacement prévu.
+     · Le viewBox suit les PROPORTIONS de l'emplacement : les cercles restent des cercles,
+       les arcs ne sont jamais écrasés (un fond en `preserveAspectRatio="none"` déforme).
+     · Le motif TOURNE avec l'emplacement, la page et la graine du document, et on saute
+       celui du dernier emplacement : deux visuels voisins ne montrent jamais le même
+       dessin, et le document ne recommence pas sur le même motif.
+     · Aucun réseau, aucun octet d'image, net à l'impression à n'importe quelle taille.
+     · La luminance du motif est mémorisée (SP_GAB_LUM_IMG) : le garde-fou de contraste
+       sait exactement ce qu'il y a sous la typographie posée par-dessus.
+     « sans illustration », « sans visuel », « texte seul » ou « no illustration » dans la
+     demande laisse le papier nu. Une pièce jointe photo reprend toujours la place. */
+  const SP_GAB_ILLUS_FORMES = [
+    /* Formes géométriques abstraites */
+    'arcs', 'concentriques', 'obliques', 'quadrillage', 'triangles', 'points', 'vagues',
+    'demidisques', 'escalier', 'losanges', 'soleil', 'bandes',
+    /* _SP_STUDIO_ROCK618 — DIX FORMES DE PLUS : formes libres, anneaux ouverts, chevrons,
+       tiges, carrés, cercles décalés, courbes, éclats, spirale, mosaïque. */
+    'blobs', 'anneaux', 'chevrons', 'tiges', 'carres', 'cerclesdecales', 'courbes', 'eclats', 'spirale', 'mosaique'
+  ];
+  /* ⚠️ _SP_STUDIO_ROCK618 — CINQ DÉGRADÉS « SIMPLES MAIS TRÈS BEAUX » (demande utilisateur),
+     tous en TEINTES LÉGÈRES : dégradé diagonal, dégradé vertical pastel, aurore à deux
+     passages croisés, brume à deux halos, bande diagonale. Les teintes sont CLARIFIÉES à
+     partir de la palette du document : jamais de couleur saturée sur toute la surface, donc
+     la typographie posée par-dessus reste lisible (et le garde-fou de contraste connaît
+     leur luminance). */
+  const SP_GAB_ILLUS_DEGRADES = ['degdiagonal', 'degvertical', 'aurore', 'brume', 'bandediagonale'];
+  const SP_GAB_ILLUS_MOTIFS = SP_GAB_ILLUS_FORMES.concat(SP_GAB_ILLUS_DEGRADES);
+  let SP_GAB_ILLUS = true;
+  let SP_GAB_ILLUS_RECENTS = [];
+  let SP_GAB_ILLUS_DIT = false;
+  function spGabIllustrationSvg(motif, L, ar) {
+    const p = L.pal || {};
+    const accent = p.a || '#1f6feb';
+    const seconde = (p.b && p.b !== accent) ? p.b : accent;
+    const papier = p.noir ? (p.fond || '#0e0e10') : (p.fond || '#ffffff');
+    const W = 100, H = Math.max(30, Math.round(100 * (Number(ar) || 1)));
+    const op = function (v) { return Math.max(0.04, Math.min(0.6, v)).toFixed(2); };
+    let s = '';
+    if (motif === 'arcs') {
+      for (let i = 0; i < 7; i++) {
+        const r = 16 + i * 12, x0 = W * 0.06, y0 = H * 0.94;
+        s += '<path d="M ' + x0 + ' ' + y0 + ' A ' + r + ' ' + r + ' 0 0 1 ' + (x0 + r * 1.42).toFixed(1) + ' ' + y0 + '" stroke="' + accent + '" stroke-width="0.6" fill="none" opacity="' + op(0.5 - i * 0.055) + '"/>';
+      }
+    } else if (motif === 'concentriques') {
+      const cx = (W * 0.68).toFixed(1), cy = (H * 0.36).toFixed(1), step = (Math.min(W, H) / 13).toFixed(1);
+      for (let i = 9; i >= 1; i--) s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (i * step) + '" stroke="' + (i % 3 ? accent : seconde) + '" stroke-width="0.55" fill="none" opacity="' + op(0.34 - i * 0.012) + '"/>';
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (step * 0.9) + '" fill="' + accent + '" opacity="0.55"/>';
+    } else if (motif === 'obliques') {
+      for (let i = -12; i < 26; i++) {
+        const x = i * 7;
+        s += '<line x1="' + x + '" y1="' + H + '" x2="' + (x + H) + '" y2="0" stroke="' + (i % 5 ? accent : seconde) + '" stroke-width="' + (i % 7 ? 0.5 : 1.5) + '" opacity="' + op(i % 7 ? 0.26 : 0.46) + '"/>';
+      }
+    } else if (motif === 'quadrillage') {
+      for (let i = 1; i < 10; i++) s += '<line x1="' + i * 10 + '" y1="0" x2="' + i * 10 + '" y2="' + H + '" stroke="' + accent + '" stroke-width="0.4" opacity="0.2"/>';
+      for (let j = 1; j < Math.round(H / 10); j++) s += '<line x1="0" y1="' + j * 10 + '" x2="' + W + '" y2="' + j * 10 + '" stroke="' + accent + '" stroke-width="0.4" opacity="0.2"/>';
+      s += '<rect x="28" y="' + Math.round(H * 0.28) + '" width="44" height="' + Math.round(H * 0.44) + '" fill="' + seconde + '" opacity="0.12"/>';
+    } else if (motif === 'triangles') {
+      for (let i = 0; i < 6; i++) {
+        const t = 10 + i * 11;
+        s += '<path d="M 0 ' + H + ' L ' + t + ' ' + H + ' L 0 ' + (H - t) + ' Z" fill="' + (i % 2 ? accent : seconde) + '" opacity="' + op(0.42 - i * 0.055) + '"/>';
+      }
+    } else if (motif === 'points') {
+      const lignes = Math.max(2, Math.round(H / 16));
+      for (let i = 0; i < 6; i++) for (let j = 0; j < lignes; j++) {
+        const r = 0.7 + ((i + j) % 4) * 0.8;
+        s += '<circle cx="' + (10 + i * 16 + (j % 2) * 8) + '" cy="' + (10 + j * 16) + '" r="' + r + '" fill="' + ((i + j) % 3 ? accent : seconde) + '" opacity="0.45"/>';
+      }
+    } else if (motif === 'vagues') {
+      for (let k = 0; k < 5; k++) {
+        const y = H * 0.18 + k * (H * 0.15);
+        let d = 'M 0 ' + y.toFixed(1);
+        for (let x = 0; x <= W; x += 20) d += ' Q ' + (x + 10) + ' ' + (y - 8).toFixed(1) + ' ' + (x + 20) + ' ' + y.toFixed(1);
+        s += '<path d="' + d + '" stroke="' + (k % 2 ? seconde : accent) + '" stroke-width="0.6" fill="none" opacity="' + op(0.42 - k * 0.06) + '"/>';
+      }
+    } else if (motif === 'demidisques') {
+      for (let i = 0; i < 5; i++) {
+        const r = 8 + i * 4.5, x = 12 + i * 19;
+        s += '<path d="M ' + (x - r) + ' ' + H + ' A ' + r + ' ' + r + ' 0 0 1 ' + (x + r) + ' ' + H + ' Z" fill="' + (i % 2 ? accent : seconde) + '" opacity="' + op(0.4 - i * 0.05) + '"/>';
+      }
+    } else if (motif === 'escalier') {
+      let d = 'M ' + (W * 0.1).toFixed(1) + ' ' + H;
+      for (let i = 0; i < 7; i++) {
+        const x = (W * 0.1 + i * 11).toFixed(1), y = (H - 8 - i * 8).toFixed(1);
+        d += ' L ' + x + ' ' + y + ' L ' + (Number(x) + 11).toFixed(1) + ' ' + y;
+      }
+      s += '<path d="' + d + '" stroke="' + accent + '" stroke-width="0.9" fill="none" opacity="0.45"/>';
+      s += '<path d="' + d + '" stroke="' + seconde + '" stroke-width="0.5" fill="none" opacity="0.28" transform="translate(4,6)"/>';
+    } else if (motif === 'losanges') {
+      const lignes = Math.max(2, Math.round(H / 18));
+      for (let i = 0; i < 5; i++) for (let j = 0; j < lignes; j++) {
+        const cx = 12 + i * 19, cy = 12 + j * 18;
+        s += '<path d="M ' + cx + ' ' + (cy - 7) + ' L ' + (cx + 7) + ' ' + cy + ' L ' + cx + ' ' + (cy + 7) + ' L ' + (cx - 7) + ' ' + cy + ' Z" stroke="' + ((i + j) % 2 ? accent : seconde) + '" stroke-width="0.5" fill="none" opacity="0.4"/>';
+      }
+    } else if (motif === 'soleil') {
+      const cx = W * 0.5, cy = H * 1.06, ray = Math.max(W, H) * 1.5;
+      for (let i = 0; i <= 26; i++) {
+        const ang = Math.PI * (1 + i / 26);
+        s += '<line x1="' + cx.toFixed(1) + '" y1="' + cy.toFixed(1) + '" x2="' + (cx + Math.cos(ang) * ray).toFixed(1) + '" y2="' + (cy + Math.sin(ang) * ray).toFixed(1) + '" stroke="' + (i % 3 ? accent : seconde) + '" stroke-width="0.5" opacity="' + op(i % 3 ? 0.28 : 0.44) + '"/>';
+      }
+    } else if (motif === 'blobs') {
+      /* FORMES LIBRES : quatre taches douces, courbes de Bézier, jamais deux fois la même
+         (la position et la taille viennent d'un bruit déterministe). */
+      const bru = function (n) { return Math.abs(Math.sin(n * 12.9898) * 43758.5453) % 1; };
+      for (let i = 0; i < 4; i++) {
+        const x = W * (0.16 + 0.68 * bru(i + 1)), y = H * (0.16 + 0.68 * bru(i + 7));
+        const r = Math.min(W, H) * (0.11 + 0.11 * bru(i + 3));
+        s += '<path d="M ' + (x - r).toFixed(1) + ' ' + y.toFixed(1) + ' C ' + (x - r).toFixed(1) + ' ' + (y - r * 1.45).toFixed(1) + ' ' + (x + r).toFixed(1) + ' ' + (y - r * 1.45).toFixed(1) + ' ' + (x + r).toFixed(1) + ' ' + y.toFixed(1) + ' C ' + (x + r).toFixed(1) + ' ' + (y + r * 1.45).toFixed(1) + ' ' + (x - r).toFixed(1) + ' ' + (y + r * 1.45).toFixed(1) + ' ' + (x - r).toFixed(1) + ' ' + y.toFixed(1) + ' Z" fill="' + (i % 2 ? seconde : accent) + '" opacity="' + (0.1 + i * 0.03).toFixed(2) + '"/>';
+      }
+    } else if (motif === 'anneaux') {
+      /* ANNEAUX OUVERTS : des cercles interrompus, décalés — le motif des couvertures
+         d'édition contemporaines. */
+      const cx = W * 0.5, cy = H * 0.52;
+      for (let i = 0; i < 4; i++) {
+        const r = Math.min(W, H) * (0.15 + i * 0.11);
+        s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(1) + '" stroke="' + (i % 2 ? seconde : accent) + '" stroke-width="0.8" fill="none" opacity="' + (0.42 - i * 0.07).toFixed(2) + '" stroke-dasharray="' + (r * 3.1).toFixed(1) + ' ' + (r * 6.3).toFixed(1) + '" stroke-dashoffset="' + (i * r * 0.9).toFixed(1) + '"/>';
+      }
+    } else if (motif === 'chevrons') {
+      for (let i = 0; i < 7; i++) {
+        const y = H * 0.2 + i * H * 0.1;
+        s += '<path d="M ' + (W * 0.18) + ' ' + y.toFixed(1) + ' L ' + (W * 0.5) + ' ' + (y - H * 0.07).toFixed(1) + ' L ' + (W * 0.82) + ' ' + y.toFixed(1) + '" stroke="' + (i % 2 ? accent : seconde) + '" stroke-width="' + (i % 3 ? 0.6 : 1.2) + '" fill="none" opacity="' + (0.4 - i * 0.04).toFixed(2) + '"/>';
+      }
+    } else if (motif === 'tiges') {
+      /* TIGES : un « code-barres » élégant, hauteurs et graisses inégales. */
+      let tx = W * 0.08, k2 = 0;
+      while (tx < W * 0.95 && k2 < 60) {
+        const f = Math.abs(Math.sin(k2 * 5.7)) % 1;
+        const hh = H * (0.25 + 0.6 * f);
+        s += '<line x1="' + tx.toFixed(1) + '" y1="' + (H - hh).toFixed(1) + '" x2="' + tx.toFixed(1) + '" y2="' + H + '" stroke="' + (k2 % 4 ? accent : seconde) + '" stroke-width="' + (k2 % 3 ? 0.7 : 1.8) + '" opacity="' + (0.3 + 0.2 * (1 - f)).toFixed(2) + '"/>';
+        tx += 2.4 + 2.6 * f; k2++;
+      }
+    } else if (motif === 'carres') {
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) {
+        s += '<rect x="' + (8 + i * 22) + '" y="' + (H * 0.14 + j * H * 0.24).toFixed(1) + '" width="18" height="' + (H * 0.2).toFixed(1) + '" stroke="' + ((i + j) % 2 ? accent : seconde) + '" stroke-width="0.6" fill="none" opacity="' + (0.36 - ((i + j) % 3) * 0.06).toFixed(2) + '"/>';
+      }
+      s += '<rect x="30" y="' + (H * 0.38).toFixed(1) + '" width="18" height="' + (H * 0.2).toFixed(1) + '" fill="' + accent + '" opacity="0.14"/>';
+    } else if (motif === 'cerclesdecales') {
+      for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) {
+        const r = 2.2 + ((i * 3 + j) % 4) * 2.1;
+        s += '<circle cx="' + (10 + i * 16 + (j % 2) * 8) + '" cy="' + (H * 0.14 + j * H * 0.22).toFixed(1) + '" r="' + r.toFixed(1) + '" stroke="' + ((i + j) % 3 ? accent : seconde) + '" stroke-width="0.55" fill="none" opacity="0.42"/>';
+      }
+    } else if (motif === 'courbes') {
+      /* COURBES PARALLÈLES : huit pistes souples, comme un ciel de lignes. */
+      for (let k3 = 0; k3 < 8; k3++) {
+        const y0 = H * (0.12 + k3 * 0.11);
+        s += '<path d="M 0 ' + y0.toFixed(1) + ' C ' + (W * 0.3) + ' ' + (y0 - H * 0.12).toFixed(1) + ' ' + (W * 0.7) + ' ' + (y0 + H * 0.12).toFixed(1) + ' ' + W + ' ' + y0.toFixed(1) + '" stroke="' + (k3 % 2 ? accent : seconde) + '" stroke-width="0.6" fill="none" opacity="' + (0.34 - k3 * 0.025).toFixed(2) + '"/>';
+      }
+    } else if (motif === 'eclats') {
+      const cxe = W * 0.5, cye = H * 0.5;
+      for (let i = 0; i < 14; i++) {
+        const a1 = (i / 14) * Math.PI * 2, a2 = a1 + 0.055, ray = Math.max(W, H) * 1.1;
+        s += '<path d="M ' + cxe + ' ' + cye + ' L ' + (cxe + Math.cos(a1) * ray).toFixed(1) + ' ' + (cye + Math.sin(a1) * ray).toFixed(1) + ' L ' + (cxe + Math.cos(a2) * ray).toFixed(1) + ' ' + (cye + Math.sin(a2) * ray).toFixed(1) + ' Z" fill="' + (i % 2 ? accent : seconde) + '" opacity="' + (0.08 + (i % 3) * 0.05).toFixed(2) + '"/>';
+      }
+    } else if (motif === 'spirale') {
+      const cxs = W * 0.5, cys = H * 0.5, tours = 4.5, pts = 200;
+      let ds = '';
+      for (let i = 0; i <= pts; i++) {
+        const t = i / pts, a = t * Math.PI * 2 * tours, r = t * Math.min(W, H) * 0.46;
+        ds += (i ? ' L ' : 'M ') + (cxs + Math.cos(a) * r).toFixed(1) + ' ' + (cys + Math.sin(a) * r * 0.9).toFixed(1);
+      }
+      s += '<path d="' + ds + '" stroke="' + accent + '" stroke-width="0.55" fill="none" opacity="0.4"/>';
+    } else if (motif === 'mosaique') {
+      const fs = [0.1, 0.18, 0.07, 0.22, 0.13, 0.09];
+      let xm = W * 0.06;
+      fs.forEach(function (f, i) {
+        const w2 = W * f;
+        s += '<rect x="' + xm.toFixed(1) + '" y="' + (H * (0.2 + (i % 3) * 0.06)).toFixed(1) + '" width="' + (w2 * 0.86).toFixed(1) + '" height="' + (H * (0.5 - (i % 3) * 0.08)).toFixed(1) + '" fill="' + (i % 2 ? accent : seconde) + '" opacity="' + (0.07 + (i % 3) * 0.04).toFixed(2) + '"/>';
+        xm += w2 + W * 0.012;
+      });
+    } else if (motif === 'degdiagonal') {
+      /* DÉGRADÉ DIAGONAL : trois arrêts, de la teinte claire à la teinte de la palette —
+         simple, doux, jamais saturé. */
+      s += '<defs><linearGradient id="spg" x1="0" y1="1" x2="1" y2="0">' +
+        '<stop offset="0" stop-color="' + spGabClarifier(accent, 0.35) + '" stop-opacity="0.34"/>' +
+        '<stop offset="0.55" stop-color="' + accent + '" stop-opacity="0.12"/>' +
+        '<stop offset="1" stop-color="' + spGabClarifier(seconde, 0.6) + '" stop-opacity="0.05"/></linearGradient></defs>' +
+        '<rect width="' + W + '" height="' + H + '" fill="url(#spg)"/>';
+    } else if (motif === 'degvertical') {
+      /* DÉGRADÉ VERTICAL PASTEL : le ciel d'une affiche, de haut en bas. */
+      s += '<defs><linearGradient id="spg" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="' + spGabClarifier(accent, 0.78) + '" stop-opacity="0.26"/>' +
+        '<stop offset="0.45" stop-color="' + spGabClarifier(seconde, 0.85) + '" stop-opacity="0.12"/>' +
+        '<stop offset="1" stop-color="' + spGabClarifier(accent, 0.92) + '" stop-opacity="0.02"/></linearGradient></defs>' +
+        '<rect width="' + W + '" height="' + H + '" fill="url(#spg)"/>';
+    } else if (motif === 'aurore') {
+      /* AURORE : deux passages croisés qui se fondent, chacun vers le transparent. */
+      s += '<defs>' +
+        '<linearGradient id="spA" x1="0" y1="0" x2="1" y2="0.2"><stop offset="0" stop-color="' + spGabClarifier(accent, 0.5) + '" stop-opacity="0.30"/><stop offset="1" stop-color="' + accent + '" stop-opacity="0"/></linearGradient>' +
+        '<linearGradient id="spB" x1="1" y1="1" x2="0" y2="0.7"><stop offset="0" stop-color="' + spGabClarifier(seconde, 0.55) + '" stop-opacity="0.28"/><stop offset="1" stop-color="' + seconde + '" stop-opacity="0"/></linearGradient>' +
+        '</defs><rect y="0" width="' + W + '" height="' + (H * 0.55).toFixed(1) + '" fill="url(#spA)"/>' +
+        '<rect y="' + (H * 0.4).toFixed(1) + '" width="' + W + '" height="' + (H * 0.6).toFixed(1) + '" fill="url(#spB)"/>';
+    } else if (motif === 'brume') {
+      /* BRUME : deux halos doux croisés, celui d'en haut à droite et celui d'en bas à gauche. */
+      s += '<defs>' +
+        '<radialGradient id="spA" cx="0.78" cy="0.22" r="0.85"><stop offset="0" stop-color="' + spGabClarifier(accent, 0.45) + '" stop-opacity="0.34"/><stop offset="1" stop-color="' + accent + '" stop-opacity="0"/></radialGradient>' +
+        '<radialGradient id="spB" cx="0.2" cy="0.85" r="0.9"><stop offset="0" stop-color="' + spGabClarifier(seconde, 0.55) + '" stop-opacity="0.28"/><stop offset="1" stop-color="' + seconde + '" stop-opacity="0"/></radialGradient>' +
+        '</defs><rect width="' + W + '" height="' + H + '" fill="url(#spA)"/><rect width="' + W + '" height="' + H + '" fill="url(#spB)"/>';
+    } else if (motif === 'bandediagonale') {
+      /* BANDE DIAGONALE : une large bande douce qui traverse le cadre, fondue aux extrémités. */
+      s += '<defs><linearGradient id="spg" x1="0" y1="1" x2="1" y2="0">' +
+        '<stop offset="0.15" stop-color="' + spGabClarifier(accent, 0.3) + '" stop-opacity="0"/>' +
+        '<stop offset="0.5" stop-color="' + spGabClarifier(accent, 0.3) + '" stop-opacity="0.30"/>' +
+        '<stop offset="0.85" stop-color="' + spGabClarifier(seconde, 0.5) + '" stop-opacity="0"/></linearGradient></defs>' +
+        '<rect width="' + W + '" height="' + H + '" fill="url(#spg)"/>';
+    } else {
+      const hs = [0.1, 0.05, 0.15, 0.04, 0.19, 0.07, 0.12];
+      let y = 0;
+      hs.forEach(function (f, i) {
+        const hh = H * f;
+        s += '<rect x="0" y="' + y.toFixed(1) + '" width="' + W + '" height="' + hh.toFixed(1) + '" fill="' + (i % 2 ? seconde : accent) + '" opacity="' + (0.05 + (i % 3) * 0.045).toFixed(2) + '"/>';
+        y += hh + H * 0.035;
+      });
+    }
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + (W * 8) + '" height="' + (H * 8) + '">' +
+      '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="' + papier + '"/>' + s + '</svg>';
+  }
+  function spGabIllustration(L, x, y, w, h) {
+    const ar = (Number(h) || 1) / Math.max(1, Number(w) || 1);
+    /* NE PAS ÊTRE RÉPÉTITIF : la même formule tourne avec l'emplacement, la page et la
+       graine du document ; on écarte en plus les DÉJÀ VUS (les trois derniers emplacements).
+       MESURÉ : avec la seule comparaison au dernier motif, deux visuels voisins pouvaient
+       encore montrer le même dessin. */
+    const base = Math.abs(Math.floor((L.n || 0) * 7 + (L.slot || 0) * 5 + (Number(L.v) || 0) * 997 + (L.pageCourante || 0) * 3));
+    /* ⚠️ _SP_STUDIO_ROCK618 — TROIS EMPLACEMENTS SUR DIX REÇOIVENT UN DÉGRADÉ, les autres une
+       forme (demande utilisateur : « plus de random de forme » ET « des dégradés simples mais
+       très beaux, avec de belles teintes légères »). Le tirage reste déterministe pour une
+       même demande, et les dégradés ne tombent jamais tous ensemble. */
+    const _liste = (((base * 37) % 10) < 3) ? SP_GAB_ILLUS_DEGRADES : SP_GAB_ILLUS_FORMES;
+    const Lg = _liste.length;
+    let i = base % Lg;
+    for (let k = 0; k < 4 && SP_GAB_ILLUS_RECENTS.indexOf(_liste[i]) >= 0; k++) i = (i + 1 + ((base + k) % 5)) % Lg;
+    const motif = _liste[i];
+    SP_GAB_ILLUS_RECENTS.push(motif);
+    if (SP_GAB_ILLUS_RECENTS.length > 5) SP_GAB_ILLUS_RECENTS.shift();
+    let url = '';
+    try { url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(spGabIllustrationSvg(motif, L, ar)); } catch (_) { url = ''; }
+    if (url) SP_GAB_LUM_IMG[url] = (L.pal && L.pal.noir) ? 0.14 : 0.9;
+    if (!SP_GAB_ILLUS_DIT) {
+      SP_GAB_ILLUS_DIT = true;
+      try { appendChat('assistant', '🎨 Aucune image fournie : je pose des illustrations dans la palette. Joignez vos photos, ou dites « sans illustration ».'); } catch (_) {}
+    }
     return { type: 'image', imageUrl: url, left: x, top: y, width: w, height: h, opacity: 1 };
   }
   function spGabFolio(L, n, tot) {
@@ -13193,6 +14144,174 @@ function spRtfLayoutInfo(src) {
   /* 10. Cahier multipage : couverture, édito, pages de contenu à DEUX COLONNES
      justifiées (encadrés pour les textes courts, photo légendée), dernière page
      contacts. MÊME grille, mêmes marges et même typographie sur toutes les pages. */
+  /* ══════ _SP_STUDIO_ROCK614 — MOTIFS DE COMPOSITION ══════════════════════════════
+     Demande utilisateur : « le point 4, ça pourrait être top — fais simple quand même si
+     c'est trop lourd ». Version simple, tenue : DEUX habillages repris des maquettes de la
+     bibliothèque de l'app, sans jamais toucher à la pagination (donc aucune prise de risque
+     sur l'imposition ni sur « une page seule au milieu ») :
+       1. `chiffre` — PIED DE PAGE ÉDITORIAL : bande d'accent pleine largeur et grand
+          numéro de page en clair. Placée SOUS le dernier élément RÉELLEMENT posé de la
+          page, à condition qu'il reste 34 px-units (~12 mm) de libre. Mesuré sur les
+          gabarits : les pages de contenu s'arrêtent bien avant la marge basse, le motif
+          se pose donc la plupart du temps — et quand la page est pleine, il ne se pose
+          pas (le bas est CALCULÉ, jamais deviné : aucun chevauchement possible).
+       2. `photoPleine` — PAGE VISUELLE PLEINE PAGE : une page de contenu sans aucun
+          texte reçoit son visuel en pleine page, fond perdu compris (la signature des
+          beaux livres et des portfolios de la bibliothèque).
+     Le motif est tiré au sort UNE fois par document, pour les documents de 6 pages et
+     plus (sur une affiche ou une carte, un pied de page n'a pas de sens). « sans motif »
+     dans la demande le retire ; « grand chiffre » ou « pleine page » le force. */
+  function spGabMotifPied(L, els, i, tot) {
+    const k = L.k, H = L.H, W = L.W;
+    let bas = 0, textes = 0;
+    els.forEach(function (el) {
+      if (!el || typeof el !== 'object') return;
+      const t = String(el.type || '');
+      /* Les aplats et les images ne comptent PAS : un fond de page couvre toute la page et
+         un grand visuel est justement fait pour porter un texte par-dessus. */
+      if (t === 'text') {
+        const h = Number(el.height) || (Number(el.fontSize) || 10) * 1.2;
+        bas = Math.max(bas, Number(el.top || 0) + h);
+        textes++;
+      } else if (t === 'line') {
+        bas = Math.max(bas, Number(el.top || 0));
+      }
+    });
+    /* ⚠️ MESURÉ (_SP_STUDIO_ROCK614) : sur une page SANS TEXTE, le pied « remplissait » une
+       page que le studio supprime d'ordinaire (toute page sans contenu réel est retirée) —
+       MESURE : le même rapport sortait à 12 pages avec le motif et à 6 sans lui. Le nombre
+       de pages d'un document ne doit JAMAIS dépendre d'un motif décoratif : on ne pose
+       donc rien sur une page que le moteur a laissée vide, elle sera retirée comme avant. */
+    if (!textes) return [];
+    const haut = bas + k * 16;
+    /* ⚠️ MARGE BASSE : le folio du studio est borné à `H − 12 × k` (voir spGabFolio). La
+       bande s'arrête donc à `H − 20 × k` : elle laisse passer le folio sans le toucher. */
+    const basMax = H - k * 20;
+    if (basMax - haut < k * 34) return [];                 // pas de place : on ne pose RIEN
+    /* ⚠️ _SP_STUDIO_ROCK616 — UN PIED DISCRET, PLUS UNE TYPO ÉNORME. Retour utilisateur
+       (pré-prompt « 12-page booklet ») : « typo énorme de pagination » et « doubles
+       paginations ». Le grand numéro était une affiche dans chaque pied de page de livre.
+       La bande reste (c'est un habillage), mais le numéro passe de 52 pt à 24 pt — il
+       reste plus grand que le folio (8 pt) sans crier. La demande « grand chiffre » ou
+       « pied de page éditorial » rétablit la version forte (34 pt). */
+    const _gros = /grand chiffre|pied de page|page de chiffre/i.test(String((L.t && L.t.brief) || ''));
+    const hb = Math.min(k * (_gros ? 64 : 46), basMax - haut);
+    const accent = (L.pal && L.pal.a) || '#111111';
+    const sur = (spGabLum(accent) < 0.5) ? '#ffffff' : ((L.pal && L.pal.txt) || '#111111');
+    const out = [];
+    out.push(spGabR(0, basMax - hb, W, hb, accent, 0));
+    out.push(spGabT(L.x0, basMax - hb + k * (_gros ? 8 : 7), L.cw * 0.62,
+      String(i).padStart(2, '0') + ' / ' + String(tot).padStart(2, '0'),
+      _gros ? Math.min(34, (L.g.corps || 10) * 3.2) : Math.min(24, (L.g.corps || 10) * 2.2), sur, 'bold', 'left', 0.9));
+    if (L.t && L.t.surtitre) {
+      out.push(spGabT(L.x0 + L.cw * 0.4, basMax - hb + k * 12, L.cw * 0.6,
+        spGabCourt(String(L.t.surtitre).toUpperCase(), 48), 8, sur, 'bold', 'right', 1.1, 160));
+    }
+    return out;
+  }
+  /* ⚠️ _SP_STUDIO_ROCK624 — QU'EST-CE QU'UN « TEXTE RÉEL » ? Une seule réponse pour tout le
+     studio : une chaîne de plus de deux caractères qui n'est PAS un folio (« 12 / 24 »).
+     MESURÉ (pré-prompt « 24-pages », journal instrumenté) : les pages 12 à 23 d'un cahier de
+     24 pages portaient « 1 texte » — leur seule pagination — et cette pagination était
+     comptée comme du TEXTE DE COMPOSITION. Conséquence mesurée : le comblement ne posait
+     aucune illustration pleine page (la page « avait du texte »), la règle « aucune page
+     sans contenu réel » retirait ensuite ces douze pages, et le document livrait 12 pages
+     au lieu des 24 demandées. Fond, filets et folios ne sont pas du contenu : c'est
+     exactement ce que dit déjà `_sansContenuReel` pour le retrait. */
+  function spGabTexteReel(e) {
+    if (!e || e.type !== 'text') return false;
+    const s = String(e.text || '').trim();
+    if (!s || s.length <= 2) return false;
+    return !/^\d+\s*\/\s*\d+$/.test(s);
+  }
+  /* ⚠️ _SP_STUDIO_ROCK625 — « IMAGE DE FOND » : le SEUL cas où un visuel a le droit de passer
+     sous de la typographie (demande utilisateur : « les SVG ajoutés n'ont pas le droit de venir
+     par-dessus des blocs de texte, sauf si image de fond précisée (tout le fond dans le prompt) »).
+     On exige une vraie demande de fond PLEIN : « image de fond », « photo de fond plein »,
+     « fond perdu avec image », « background image », 「背景画像」… Un simple « fond bleu » ne
+     déclenche rien (c'est la couleur du papier, traitée par `spGabCouleursDemandees`). */
+  function spGabImageDeFond(brief) {
+    const s = String(brief || '');
+    return /(?:image|photo|visuel)s?\s+(?:de\s+|en\s+|au\s+)?fond|fond\s+(?:plein|total|entier|perdu)?\s*(?:avec\s+)?(?:une\s+)?(?:image|photo)|background\s+(?:image|photo)|full[- ]?(?:page|bleed)\s+(?:image|photo)|背景画像|背景に画像|全面背景|写真を背景/.test(s);
+  }
+  /* ⚠️ _SP_STUDIO_ROCK620 — UNE IMAGE NE RECOUVRE JAMAIS UN TEXTE (règle absolue de
+     l'utilisateur : « une image par-dessus du texte… cela est interdit »).
+     Les passes du studio empilent les TEXTES qui se chevauchent, mais rien ne retirait un
+     visuel décoratif posé sur une ligne de texte — MESURÉ sur l'édito du rapport : 13,8 mm
+     de chapô sous l'illustration. Cette passe est le dernier mot : toute image GÉNÉRÉE
+     (illustration, fond procédural — `imageUrl`) qui recouvre un texte est RETIRÉE.
+     ⚠️ Les PHOTOS JOINTES (`imageIndex`) ne sont jamais retirées : ce sont les contenus du
+     client, c'est au texte de se placer (et les passes de mise en page s'en chargent).
+     Une tolérance de 1,5 unité (~0,5 mm) absorbe les arrondis, rien de plus. */
+  function spGabSansImageSurTexte(els, L) {
+    /* ⚠️ _SP_STUDIO_ROCK620b — LA HAUTEUR D'UN TEXTE SE CALCULE, ELLE N'EST PAS DÉCLARÉE.
+       MESURÉ : la première version de cette passe lisait `e.height`, qui n'existe PAS encore
+       sur un texte à ce stade (il est calculé plus loin, à la conversion en millimètres) :
+       toutes les boîtes de texte avaient une hauteur de zéro et la passe ne voyait AUCUN
+       recouvrement — le défaut signalé restait entier. On mesure donc avec `spGabH()`, la
+       même formule que le composeur.
+       ⚠️ _SP_STUDIO_ROCK620c — ON DÉCALE AVANT DE SUPPRIMER. Retirer l'illustration à chaque
+       contact coûtait cher aux documents (mesuré : 1 seule illustration conservée sur un
+       rapport de 8 pages). Comme une illustration est un ornement, on la DESCEND sous le
+       texte qui la touche tant qu'il reste de la place en bas de page ; si la place manque
+       vraiment, alors seulement elle est retirée. Dans les deux cas : aucun texte recouvert. */
+    const Hpage = (L && Number(L.H)) || 842, Wpage = (L && Number(L.W)) || 595;
+    const boite = function (e) {
+      const l = Number(e.left) || 0, t = Number(e.top) || 0, w = Number(e.width) || 0;
+      const h = Number(e.height) || spGabH(String(e.text || ''), Number(e.fontSize) || 10, w, Number(e.lineHeight) || 1.3);
+      return { l: l, t: t, r: l + w, b: t + h };
+    };
+    const textes = els.filter(spGabTexteReel);
+    /* ⚠️ _SP_STUDIO_ROCK626 — LA PAGINATION AUSSI EST PROTÉGÉE : un visuel qui couvre un folio
+       le rend illisible (et l'utilisateur le décrit comme « le SVG vient par-dessus »). Un
+       FOND de page reste au-dessous du folio, lui : c'est sa place. */
+    const folios = els.filter(function (e) {
+      return e && e.type === 'text' && /^\d+\s*\/\s*\d+$/.test(String(e.text || '').trim());
+    });
+    const touche = function (b, liste) {
+      return liste.some(function (t) {
+        const tb = boite(t);
+        const v = Math.min(b.b, tb.b) - Math.max(b.t, tb.t);
+        const h = Math.min(b.r, tb.r) - Math.max(b.l, tb.l);
+        return v > 1.5 && h > 1.5;
+      });
+    };
+    return els.filter(function (e) {
+      if (!e || e.type !== 'image') return true;
+      if (typeof e.imageIndex === 'number') return true;      // images du client : intouchables
+      const ib = boite(e);
+      const plein = (ib.r - ib.l) >= Wpage * 0.9 && (ib.b - ib.t) >= Hpage * 0.9;
+      if (plein) {
+        /* FOND DE PAGE (tout le fond). Gardé seulement sur une page VISUELLE (aucun texte
+           réel) — ou quand la demande a explicitement réclamé une image de fond, et dans ce
+           cas seul : noir → typographie blanche, clair → encre foncée. */
+        if (!textes.length) return true;
+        if (!SP_GAB_FOND_VOULU) return false;
+        const lum = (SP_GAB_LUM_IMG && SP_GAB_LUM_IMG[e.imageUrl]);
+        const fonce = (typeof lum === 'number') ? (lum < 0.5) : false;
+        textes.forEach(function (t) { t.fill = fonce ? '#ffffff' : '#111111'; });
+        return true;
+      }
+      if (!textes.length) return true;
+      /* ⚠️ _SP_STUDIO_ROCK625 — PLUS DE DÉCALAGE : RETRAIT IMMÉDIAT. Demande utilisateur :
+         « les SVG ajoutés n'ont pas le droit de venir par-dessus des blocs de texte… c'est
+         illisible ». Décaler l'illustration sous le texte la laissait dans la page et la
+         faisait parfois entrer dans un autre bloc ; on ne garde donc QUE les illustrations
+         qui ne touchent AUCUN texte réel. Le décor ne discute pas avec la typographie. */
+      if (touche(ib, textes)) return false;
+      if (folios.length && touche(ib, folios)) return false;
+      return true;
+    });
+  }
+
+  function spGabMotifPhotoPleine(L, els) {
+    if (!L.photos.length) return false;
+    const aDuTexte = els.some(function (el) { return el && String(el.type) === 'text'; });
+    if (aDuTexte) return false;                            // page composée : on n'y touche pas
+    els.push({ type: 'image', imageIndex: L.photos.shift(), left: 0, top: 0, width: L.W, height: L.H });
+    return true;
+  }
+
   function spGabP_cahier(L, n, tot) {
     const e = [], p = L.pal, M = L.t, g = L.g, k = L.k;
     const secs = (L.chainees && L.chainees.length) ? L.chainees : (M.sections.length ? M.sections : [{ t: M.titre, ps: M.lignes.length ? M.lignes : [M.chapeau] }]);
@@ -13288,12 +14407,31 @@ function spRtfLayoutInfo(src) {
     // ── page 2 : l'édito
     if (n === 2) {
       e.push(spGabKicker(L, L.x0, L.y0, L.cw * 0.6, 'édito'));
-      e.push(spGabT(L.x0, L.y0 + k * 16, L.cw * 0.9, spGabCourt(M.chapeau || M.titre, 200), g.chapeau, p.txt, null, 'left', 1.6));
+      const _chap = spGabCourt(M.chapeau || M.titre, 200);
+      const _yChap = L.y0 + k * 16;
+      /* ⚠️ _SP_STUDIO_ROCK621 — LA LARGEUR DU CHAPÔ EST BORNÉE À LA COLONNE.
+         MESURÉ (pré-prompt « catalogue », page 2) : le chapô occupait 90 % de la largeur
+         (21 → 173 mm) alors que l'illustration commence à 72 % (142 mm). Les deux se
+         partageaient donc la MÊME BANDE HORIZONTALE : il suffisait que le chapô prenne une
+         ligne de plus — césure, police rendue plus large — pour qu'il passe SOUS le visuel,
+         et aucune marge verticale ne peut protéger d'un nombre de lignes qui change.
+         Le chapô ne dépasse donc plus la colonne de texte (66 %) : sa bande est à GAUCHE
+         (21 → 132 mm) de l'emplacement (142 → 189 mm). Le croisement est impossible par
+         construction, quel que soit le nombre de lignes. */
+      const _hChap = M.chapeau ? spGabH(_chap, g.chapeau, L.cw * 0.66, 1.6) : 0;
+      e.push(spGabT(L.x0, _yChap, L.cw * 0.66, _chap, g.chapeau, p.txt, null, 'left', 1.6));
       e.push(spGabL(L.x0, L.y0 + k * 112, L.cw * 0.34, p.a, 2));
       if (texte(0)) e.push(spGabT(L.x0, L.y0 + k * 130, L.cw * 0.68, spGabCourt(texte(0), 460), g.corps, '#4b5563', null, 'left', 1.55));
-      /* L'emplacement est TOUJOURS rempli : la photo jointe s'il y en a une, sinon un
-         FOND GÉNÉRÉ (le modèle ne laisse plus de trou dans la page). */
-      spGabPhoto(L, e, L.x1 - L.cw * 0.28, L.y0 + k * 130, L.cw * 0.28, Math.min(L.ch * 0.36, L.y1 - L.y0 - k * 130), 'photo');
+      /* ⚠️ _SP_STUDIO_ROCK620 — L'ILLUSTRATION PASSE SOUS LE CHAPÔ, PAS DESSUS (règle
+         utilisateur : « une image par-dessus du texte… cela est interdit »).
+         MESURÉ (rapport d'activité, page 2) : le chapô descendait à 80 mm et l'image
+         commençait à 66 mm — 13,8 mm de texte recouvert. La position de départ était ÉCRITE
+         EN DUR (`k * 130`) sans regarder la hauteur réelle du chapô ; elle est maintenant
+         CALCULÉE, et l'emplacement disparaît si la place restante est trop faible (mieux
+         vaut du papier que du texte à moitié caché). */
+      const _yImg = Math.max(L.y0 + k * 130, _yChap + _hChap + k * 18);
+      const _hImg = Math.min(L.ch * 0.36, L.y1 - _yImg - k * 40);
+      if (_hImg >= k * 70) spGabPhoto(L, e, L.x1 - L.cw * 0.28, _yImg, L.cw * 0.28, _hImg, 'photo');
       return e;
     }
     // ── pages de contenu : UNE colonne (livre) ou DEUX (seulement si la demande le dit)
@@ -13775,20 +14913,16 @@ function spRtfLayoutInfo(src) {
     if (SP_GAB_MONDE_VU === cle) return;
     SP_GAB_MONDE_VU = cle;
     try {
+      /* ⚠️ _SP_STUDIO_ROCK625 — MESSAGES COURTS. L'utilisateur n'a pas à connaître les
+         index de tirage ni le nombre de variantes : on dit ce qui est posé, en une ligne. */
       if (monde === 'livre') {
-        appendChat('assistant', 'Livre — tirage « ouvrage n°' + SP_GAB_MONDE_IDX + '/' + SP_GAB_MONDE_TOT + ' » : ' +
+        appendChat('assistant', '📕 Livre : ' +
           (SP_GAB_MONDE_COUV_LIB[SP_GAB_COUV_VAR] || 'garde de livre') + ', ' +
-          (SP_GAB_MONDE_FOLIO_LIB[SP_GAB_FOLIO_VAR] || SP_GAB_FOLIO_VAR) + '. ' +
-          'Le monde du livre reste sobre : noir et blanc, typographie à empattements, une seule colonne. ' +
-          'Nommez une police — « en Times », « en Newsreader » — ou ouvrez les Réglages pour figer ce tirage.');
+          (SP_GAB_MONDE_FOLIO_LIB[SP_GAB_FOLIO_VAR] || SP_GAB_FOLIO_VAR) + '.');
       } else {
-        appendChat('assistant', 'Maquette éditoriale — tirage n°' + SP_GAB_MONDE_IDX + '/' + SP_GAB_MONDE_TOT +
-          (SP_GAB_AUDACE >= 2 ? ' · palier CRÉATIF MAX (grande typographie, fond de page teinté, aplats de couleur)' : (SP_GAB_AUDACE >= 1 ? ' · mise en page marquée' : ' · mise en page sage')) +
-          (SP_GAB_OUV_VAR ? (' · ouverture « ' + (SP_GAB_MONDE_OUV_LIB[SP_GAB_OUV_VAR] || SP_GAB_OUV_VAR) + ' »') : ' · ouverture de la famille') +
-          ' · ' + (SP_GAB_MONDE_FOLIO_LIB[SP_GAB_FOLIO_VAR] || SP_GAB_FOLIO_VAR) + '. ' +
-          'Le monde éditorial a droit à la couleur et au graphisme (c\u2019est la communication, pas l\u2019édition) : ' +
-          'le tirage change à chaque envoi, les Réglages le figent.' +
-          (SP_GAB_AUDACE >= 1 ? ' Contraste vérifié : le fond de page reste très clair, les aplats de couleur reçoivent une encre claire.' : ''));
+        appendChat('assistant', '📰 Éditorial : ' +
+          (SP_GAB_AUDACE >= 2 ? 'mise en page créative' : (SP_GAB_AUDACE >= 1 ? 'mise en page marquée' : 'mise en page sage')) +
+          (SP_GAB_OUV_VAR ? (' · ouverture « ' + (SP_GAB_MONDE_OUV_LIB[SP_GAB_OUV_VAR] || SP_GAB_OUV_VAR) + ' »') : '') + '.');
       }
     } catch (_) {}
   }
@@ -14110,7 +15244,7 @@ function spRtfLayoutInfo(src) {
       const l = Number(e.left) || 0, t = Number(e.top) || 0, w = Number(e.width) || 0;
       if (e.type === 'text') {
         const fs = Number(e.fontSize) || 10, lh = Number(e.lineHeight) || 1.3;
-        const parLigne = Math.max(4, w / (fs * 0.52 * K));
+        const parLigne = Math.max(4, w / (fs * spGabLargeurCar(e.text) * K));
         const lignes = Math.max(1, Math.ceil(String(e.text || '').length / parLigne));
         return { l: l, t: t, r: l + w, b: t + lignes * fs * lh * 1.13 * K, txt: String(e.text || '').slice(0, 22), fill: '', type: 'text' };
       }
@@ -14154,7 +15288,27 @@ function spRtfLayoutInfo(src) {
        paragraphe) ne doivent pas faire perdre le corps du document, qui vit alors dans
        M.lignes. On ne prend les sections que si elles portent VRAIMENT du texte. */
     const psSections = L.t.sections.reduce(function (n2, s) { return n2 + ((s.ps || []).length); }, 0);
-    const secs = (L.t.sections.length && psSections) ? L.t.sections : [{ t: L.t.titre, ps: L.t.lignes.length ? L.t.lignes : [L.t.chapeau] }];
+    /* 🩹 v1.7.595 — LE FILET DE SÉCURITÉ EFFAÇAIT LES ACTES (défaut mesuré, retour
+       utilisateur « livre de théâtre A5 ») : quand les sections portent des TITRES mais
+       aucun paragraphe (le corps vit dans L.t.lignes — cas du théâtre et des documents
+       importés), on les remplaçait par UNE SEULE section. Conséquence : plus aucune
+       frontière d'acte, tout le texte empilé sur une ou deux pages — le résultat était
+       « tassé en bas » et les blocs se recouvraient (1 planche = 2 pages mesurée alors
+       que la demande était « un acte par page »). On RÉPARTIT maintenant le corps entre
+       les sections existantes, à parts égales : les titres d'acte sont conservés et,
+       la famille théâtre/cahier étant en UNE colonne, chaque section garde sa page. */
+    const _titresSections = L.t.sections.map(function (s) { return String(s.t || '').trim(); }).join(' ').trim();
+    let secs;
+    if (L.t.sections.length && psSections) {
+      secs = L.t.sections;
+    } else if (L.t.sections.length && _titresSections) {
+      const _corps = (L.t.lignes && L.t.lignes.length) ? L.t.lignes.slice() : [L.t.chapeau || ''];
+      const _par = Math.max(1, Math.ceil(_corps.length / L.t.sections.length));
+      secs = L.t.sections.map(function (s, i) { return { t: s.t, ps: _corps.slice(i * _par, (i + 1) * _par) }; });
+      try { console.log('[SP213] sections sans paragraphes : corps réparti sur ' + secs.length + ' section(s) (frontières d\'acte conservées)'); } catch (_) {}
+    } else {
+      secs = [{ t: L.t.titre, ps: L.t.lignes.length ? L.t.lignes : [L.t.chapeau] }];
+    }
     const gw = g.gutter * SP_GAB_K;
     /* ⚠️ LARGEUR DE COLONNE RÉELLE (retour utilisateur : « quand on parle de livre on fait
        du mono colonne »). Ce chaînage supposait DEUX colonnes en dur : sur une page à une
@@ -14253,7 +15407,11 @@ function spRtfLayoutInfo(src) {
      noir) : c'est lui qui décide de la couleur de la typographie, jamais le thème. */
   function spGabContraste(pages, L, auto) {
     const fondPage = (L.pal && L.pal.fond) || '#ffffff';
-    const fonce = (auto ? '#101014' : ((L.pal && L.pal.txt && spGabLum(L.pal.txt) < 0.5) ? L.pal.txt : '#101014'));
+    /* ⚠️ _SP_STUDIO_ROCK616c — COULEUR DEMANDÉE PAR L'UTILISATEUR (« typo rouge ») : elle
+       passe avant le noir de secours du mode automatique. Sans cela, écrire une couleur
+       dans la demande ne servait à rien : le garde-fou repeignait tout en #101014. */
+    const _encreDem = (L.pal && L.pal.__encreDemandee) ? String(L.pal.__encreDemandee) : '';
+    const fonce = _encreDem || (auto ? '#101014' : ((L.pal && L.pal.txt && spGabLum(L.pal.txt) < 0.5) ? L.pal.txt : '#101014'));
     const clair = (L.pal && L.pal.sur) || '#ffffff';
     let corriges = 0;
     pages.forEach(function (pg) {
@@ -14366,7 +15524,7 @@ function spRtfLayoutInfo(src) {
            n'était plus vu « derrière » lui et gardait son encre sombre — c'est exactement
            le « bloc noir avec typo sombre par-dessus » signalé. `hPx` (unité des éléments)
            sert au recouvrement, `hT` (mm) reste pour le voile. */
-        const _parLignePx = Math.max(4, wT / ((Number(e.fontSize) || 10) * 0.52));
+        const _parLignePx = Math.max(4, wT / ((Number(e.fontSize) || 10) * spGabLargeurCar(e.text)));
         const hPx = Math.max(1, Math.ceil(String(e.text || '').length / _parLignePx)) * (Number(e.fontSize) || 10) * (Number(e.lineHeight) || 1.3) * 1.13;
         const _h1 = (Number(e.fontSize) || 10) * (Number(e.lineHeight) || 1.3) * 1.13;   // une ligne
         const _p1 = panneauDerriere(l, t, wT, _h1);
@@ -14403,6 +15561,23 @@ function spRtfLayoutInfo(src) {
            On ne remplace que si c'est strictement mieux : jamais de dégradation. */
         const ratio = function (a2, b3) { const x = Math.max(a2, b3) + 0.05, y = Math.min(a2, b3) + 0.05; return x / y; };
         if (ratio(lumF, lumT) < 4.5) {
+          /* ⚠️ _SP_STUDIO_ROCK616d — UNE COULEUR DEMANDÉE EST RESPECTÉE, QUITTE À ÊTRE
+             ASSOMBRIE. MESURÉ : « typo rouge » produisait bien un rouge #dc2626, puis CE TRI
+             choisissait la meilleure encre (le noir, contraste 21 contre 3,9) et la couleur
+             demandée par l'utilisateur DISPARAISSAIT du document — il avait raison de dire
+             que le moteur ne comprenait pas les couleurs.
+             On garde donc la TEINTE demandée et on la fonce (ou l'éclaircit sur un fond
+             sombre) par pas de 15 % jusqu'à atteindre 4,5 de contraste : l'utilisateur voit
+             du vert, pas du noir, et la lisibilité est garantie. Si même très foncée la
+             teinte ne suffit pas (jaune sur blanc, par exemple), on retombe sur la meilleure
+             encre : la lisibilité passe avant la couleur. */
+          if (_encreDem) {
+            let teinte = _encreDem;
+            for (let i5 = 0; i5 < 9 && ratio(lumF, spGabLum(teinte)) < 4.5; i5++) {
+              teinte = (lumF < 0.45) ? spGabClarifier(teinte, 0.3) : spGabNuance(teinte, 0.82);
+            }
+            if (ratio(lumF, spGabLum(teinte)) >= 3.0) { e.fill = teinte; corriges++; return; }
+          }
           /* Sur fond SOMBRE on cherche une encre CLAIRE, sur fond CLAIR une encre
              FONCÉE ; on retient la meilleure de ces encres, et on ne remplace que si
              c'est strictement mieux (jamais de dégradation). */
@@ -14428,7 +15603,7 @@ function spRtfLayoutInfo(src) {
       els.forEach(function (e) {
         if (e.type !== 'text') return;
         const l2 = Number(e.left) || 0, t2 = Number(e.top) || 0, w2 = Number(e.width) || 0;
-        const _pl2 = Math.max(4, w2 / ((Number(e.fontSize) || 10) * 0.52));
+        const _pl2 = Math.max(4, w2 / ((Number(e.fontSize) || 10) * spGabLargeurCar(e.text)));
         const h2 = Math.max(1, Math.ceil(String(e.text || '').length / _pl2)) * (Number(e.fontSize) || 10) * (Number(e.lineHeight) || 1.3) * 1.13;
         const _h1b = (Number(e.fontSize) || 10) * (Number(e.lineHeight) || 1.3) * 1.13;
         const _p2 = panneauDerriere(l2, t2, w2, _h1b);
@@ -14610,9 +15785,7 @@ function spRtfLayoutInfo(src) {
         if (SP_GAB_MUET_VU !== _cleMuet) {
           SP_GAB_MUET_VU = _cleMuet;
           appendChat('assistant', '⚠️ ' + _pjMuets.map(function (a) { return '« ' + a.name + ' »'; }).join(', ') +
-            ' : aucun texte n\u2019a pu être lu dans ce document joint (PDF sans couche de texte, numérisation, ou format non textuel). ' +
-            'Aucun texte de démonstration ne sera ajouté — un document client ne se remplit pas de faux texte. ' +
-            'Joignez une version texte (Word, .txt), ou écrivez vos mots entre guillemets si la maquette doit être composée maintenant.');
+            ' : aucun texte lisible dans ce document joint. Joignez une version texte (Word, .txt) — aucun faux texte ne sera ajouté.');
         }
       }
     } catch (_) {}
@@ -14625,9 +15798,8 @@ function spRtfLayoutInfo(src) {
         if (SP_GAB_PLAN_VU !== clePl) {
           SP_GAB_PLAN_VU = clePl;
           const l = texte.plan.slice(0, 8).map(function (x) { return (x.n === 1 ? '■ ' : (x.n === 2 ? '• ' : '· ')) + x.t; });
-          appendChat('assistant', '🧭 Plan lu dans le document : ' + texte.plan.length + ' titre(s) — ' +
-            l.join(' · ') + (texte.plan.length > 8 ? ' …' : '') +
-            (texte.contexteSignaux ? ('. Ton « ' + texte.contexteSignaux.tonEditorial + ' », public « ' + texte.contexteSignaux.public + ' », ' + texte.contexteSignaux.resume.length + ' phrase(s) de résumé.') : ''));
+          appendChat('assistant', '🧭 Plan lu : ' + texte.plan.length + ' titre(s) — ' +
+            l.join(' · ') + (texte.plan.length > 8 ? ' …' : '') + '.');
         }
       }
     } catch (_) {}
@@ -14640,10 +15812,7 @@ function spRtfLayoutInfo(src) {
         const cleCtx = String(brief) + '||ctx||' + _cs.mots.length + '|' + _cs.tonEditorial + '|' + _cs.public;
         if (SP_GAB_CTX_VU !== cleCtx) {
           SP_GAB_CTX_VU = cleCtx;
-          appendChat('assistant', '🧭 Contexte lu : ' + _cs.mots.length + ' mot(s)-clé(s) [' +
-            (_cs.motsCles || _cs.mots).slice(0, 4).join(', ') + '] · ton « ' + _cs.tonEditorial +
-            ' » · public « ' + _cs.public + ' »' + (_cs.entites ? (' · ' + (_cs.entites.dates.length + _cs.entites.montants.length + _cs.entites.sigles.length + _cs.entites.liens.length) + ' entité(s) repérée(s)') : '') +
-            (_cs.resume && _cs.resume.length ? (' · résumé de ' + _cs.resume.length + ' phrase(s)') : '') + '.');
+          appendChat('assistant', '🧭 Contexte lu : ton « ' + _cs.tonEditorial + ' », public « ' + _cs.public + ' ».');
         }
       }
     } catch (_) {}
@@ -14681,23 +15850,16 @@ function spRtfLayoutInfo(src) {
           /* ⚠️ _SP_STUDIO_ROCK611d2 — annonce en français (comme tout le moteur) avec le
              registre en clair, au lieu d'accoler la note du document (dans SA langue). */
           const _libDemo = { theatre: 'théâtre', roman: 'roman', poesie: 'poèmes', rapport: 'rapport d\'activité' }[String(texte.demoRegistre || '')] || 'exemple';
-          appendChat('assistant', '📚 Aucun texte n\'a été fourni : le document aurait eu des pages vides. ' +
-            'Il est donc composé sur un TEXTE DE DÉMONSTRATION (' + _libDemo + ', ' + (texte.sections || []).length + ' section(s)) — ' +
-            'un exemple écrit pour SuperPrint. Donnez vos propres mots ou joignez votre document : ils prendront la place au prochain envoi.');
+          appendChat('assistant', '📚 Aucun texte fourni : texte de démonstration (' + _libDemo + ')' +
+            (texte.demoSujet ? (' — sujet « ' + texte.demoSujet + ' »') : '') + '. Posez votre document, il prendra sa place.');
         } else {
         const _estPlan = (_kit === 'plan de sections repris des modèles SuperPrint');
         const _estBase = /^base\s/i.test(String(_kit));
         const _msgKit = _estPlan
-          ? ('🧩 ' + _kit + ' : votre demande ne disait pas encore vos sections, je pose donc une ossature ' +
-             (_secKit.length ? '(' + _secKit.join(', ') + ') ' : '') +
-             'pour que vous voyiez le rendu. Donnez vos propres titres, ils remplaceront ceux-ci au prochain envoi.')
+          ? ('🧩 ' + _kit + ' ' + (_secKit.length ? '(' + _secKit.join(', ') + ') ' : '') + ': donnez vos propres titres, ils prendront la place.')
           : (_estBase
-            ? ('🧩 ' + _kit + ' : la demande ne donnait pas encore de texte, je pose donc la base du modèle ' +
-               'pour que vous voyiez le rendu. Écrivez vos mots entre guillemets — "Votre titre", ' +
-               '"Votre date" — ils remplaceront ceux-ci au prochain envoi.')
-            : ('🍽️ ' + _kit + ' : votre demande ne contenait pas encore le détail (plats, tarifs, sections), ' +
-               'je compose donc une carte complète pour que vous voyiez le rendu. Donnez vos propres plats et prix, ' +
-               'ils remplaceront ceux-ci au prochain envoi.'));
+            ? ('🧩 ' + _kit + ' : écrivez vos mots entre guillemets, ils prendront la place.')
+            : ('🍽️ ' + _kit + ' : donnez vos plats et vos prix, ils prendront la place.'));
         appendChat('assistant', _msgKit);
         }
       } catch (_) {}
@@ -14843,9 +16005,28 @@ function spRtfLayoutInfo(src) {
           const _mono = _lot.filter(function (x) { return !(Number((x.reg || {}).colonnes) > 1); });
           if (_mono.length) _lot = _mono;
         }
-        if (theme && theme.cle === 'noir') {
-          const _prem = _lot.filter(function (x) { return !!x.prem; });
-          if (_prem.length) _lot = _prem;
+        /* ⚠️ _SP_STUDIO_ROCK613 — LE PREMIUM PASSE DEVANT DEUX FOIS PLUS SOUVENT.
+           MESURÉ AVANT (ROCK612) : `prem` n'était retenu QUE sur un thème noir explicite
+           (« premium », « luxe », « chic », « doré ») — donc jamais sur une demande neutre,
+           alors que la demande est justement « des modèles premium qui ressortent PARFOIS
+           dans le random ». Maintenant :
+             • thème premium explicite → lot premium GARANTI (comportement d'origine) ;
+             • sinon → une CHANCE SUR TROIS (`SP_GAB_PREM_CHANCE` = 0,34, le double du 1/6
+               proposé), tirée avec `hasard.v6`.
+           Le commentaire ROCK612 annonçait déjà ce comportement : il n'était pas câblé. */
+        const _prem = _lot.filter(function (x) { return !!x.prem; });
+        const _vPrem = (typeof hasard.v6 === 'number') ? hasard.v6 : ((hasard.v * 617) % 1);
+        const _premForce = !!(theme && theme.cle === 'noir');
+        if (_prem.length && (_premForce || _vPrem < SP_GAB_PREM_CHANCE)) {
+          _lot = _prem;
+        } else if (_prem.length && _prem.length < _lot.length) {
+          /* ⚠️ MESURÉ AU BANC (_test_prem_613) : sans cette ligne, le taux réel montait à
+             50-56 % au lieu du tiers demandé — le tirage uniforme retombait sur un archétype
+             premium EN PLUS de la chance. On retire donc le premium du lot quand la chance
+             n'a pas parlé : le taux devient exactement SP_GAB_PREM_CHANCE (1 envoi sur 3).
+             Si le lot ne contient QUE du premium (les filtres de format l'ont réduit), on
+             n'enlève rien : mieux vaut un premium qu'un lot vide. */
+          _lot = _lot.filter(function (x) { return !x.prem; });
         }
         const _mise = (_compris && _compris.mise) || {};
         if (_mise.aere || _mise.dense) {
@@ -14906,9 +16087,7 @@ function spRtfLayoutInfo(src) {
           if (SP_GAB_ROT_VU !== _cleVu) {
             SP_GAB_ROT_VU = _cleVu;
             try {
-              appendChat('assistant', '🎨 Style « ' + _rotTheme + ' » tiré au sort pour ce thème de document ' +
-                '(la demande ne donnait pas de couleur ; le tirage tourne à chaque envoi). ' +
-                'Citez une palette — « palette olive », « bleu encre »… — pour la forcer, ou ouvrez les Réglages → Aspect.');
+              appendChat('assistant', '🎨 Style « ' + _rotTheme + ' ».');
             } catch (_) {}
           }
         }
@@ -15139,11 +16318,49 @@ function spRtfLayoutInfo(src) {
       if (REG.papier) { pal.fond = String(REG.papier); pal.clair = (String(REG.papier).toLowerCase() === '#ffffff') ? '#f5f5f6' : '#f8f2e6'; }
       if (REG.encre && REG.encre !== 'auto') pal.txt = String(REG.encre);
     }
+    /* ⚠️ _SP_STUDIO_ROCK616 — LES COULEURS DITES DANS LA DEMANDE (« fond bleu », « typo
+       rose », « background blue », « 背景 青 »). Elles se placent APRÈS le thème et après
+       les couleurs du document client, mais AVANT les Réglages : ce que l'utilisateur a
+       réglé à la main garde le dernier mot, comme partout ailleurs.
+       · accent → couleur d'accent (surtitres, filets, titres de section) ;
+       · fond → FOND DE PAGE (teinte clarifiée : du papier teinté, pas un aplat saturé) ;
+       · encre → couleur de la typographie.
+       Un fond sombre demandé (« fond noir ») passe par le thème noir, jamais par ce chemin :
+       on ne crée pas d'aplat sombre sous une typographie sombre. */
+    const _coul = spGabCouleursDemandees(brief);
+    pal.__fondDemande = '';
+    if (_coul.accent && !pal.noir) { pal.a = _coul.accent; pal.b = spGabNuance(_coul.accent, 0.72); }
+    if (_coul.fond) {
+      pal.fond = _coul.fond;
+      pal.clair = spGabClarifier(_coul.fond, 0.5);
+      pal.gris = spGabNuance(_coul.fond, 0.88);
+      pal.__fondDemande = _coul.fond;
+      /* Pas de typographie claire sur un fond clair (règle utilisateur) : on choisit une
+         encre foncée lisible sur la teinte demandée. */
+      if (spGabLum(_coul.fond) > 0.6 && (!_coul.encre || spGabLum(_coul.encre) > 0.6)) pal.txt = '#1c1917';
+    }
+    if (_coul.encre) pal.txt = _coul.encre;
+    /* ⚠️ _SP_STUDIO_ROCK616c — UNE ENCRE DEMANDÉE DOIT SURVIVRE AU GARDE-FOU DE CONTRASTE.
+       MESURÉ : « fond bleu et typo rouge » donnait bien un fond bleu clair, mais tous les
+       textes ressortaient en #101014 (noir de lecture) — le garde-fou, en mode automatique,
+       corrigeait l'encre vers son noir de secours et la COULEUR DEMANDÉE PAR L'UTILISATEUR
+       disparaissait. On mémorise donc l'encre demandée (si elle est assez foncée pour être
+       lisible sur du papier) et le garde-fou s'en sert comme encre de correction : la
+       couleur demandée est respectée, et la lisibilité reste garantie par les mêmes règles. */
+    if (_coul.encre) { if (spGabLum(_coul.encre) < 0.6) pal.__encreDemandee = _coul.encre; }
+    /* ⚠️ « TYPO BLANCHE » SANS FOND SOMBRE : on ne compose JAMAIS du blanc sur du papier
+       blanc (demande explicite de l'utilisateur, et erreur classique). Si l'encre demandée
+       est très claire alors que le fond de page reste clair, on garde l'encre foncée : le
+       mot est compris, le rendu reste imprimable. */
+    if (_coul.encre && spGabLum(_coul.encre) > 0.78 && spGabLum(pal.fond || '#ffffff') > 0.78 && !pal.noir) {
+      pal.txt = '#1c1917';
+      pal.__encreRefusee = _coul.encre;
+    }
     const L = {
       W: W, H: H, g: g, t: texte, pal: pal, f: polices,
       k: Math.max(0.3, Math.min(1, H / 841.89)), v: hasard.v, n: hasard.n, theme: theme ? theme.cle : 'auto',
       x0: x0, y0: y0, x1: x1, y1: y1, cw: cw, ch: ch,
-      inter: interCorps, align: alignCorps, densite: densite, fondPage: fondPageReg || ((SP_GAB_AUDACE >= 1) ? (pal.clair || '#ffffff') : ''),
+      inter: interCorps, align: alignCorps, densite: densite, fondPage: fondPageReg || pal.__fondDemande || ((SP_GAB_AUDACE >= 1) ? (pal.clair || '#ffffff') : ''),
       /* Palier d'audace lu par la pose des pages (taille des titres de section). */
       audace: SP_GAB_AUDACE,
       filetCoef: REG ? Number(REG.filets) || 1 : 1, caps: !!(REG && REG.caps),
@@ -15154,6 +16371,10 @@ function spRtfLayoutInfo(src) {
       photoCouverture: !(REG && REG.photoCouverture === false),
       pays: fmt.pays, carre: fmt.carre, mini: fmt.mini, bandeau: fmt.bandeau,
       photos: texte.photos.slice(),
+      /* ⚠️ _SP_STUDIO_ROCK624b — la liste COMPLÈTE des images fournies : quand la demande dit
+         « image uniquement », elles tournent dans tous les emplacements. */
+      photosToutes: texte.photos.slice(),
+      imageSeule: spGabImageSeule(brief),
       variante: spGabOuvertureActive(),
       verso: false
     };
@@ -15220,6 +16441,8 @@ function spRtfLayoutInfo(src) {
        UNE page (voir SP_GAB_FAM_UNE_PAGE). Un magazine de N pages, lui, passe par le
        chaînage des sections — déclenché par le nombre DEMANDÉ (veut >= 3), juste après. */
     const _famTjrsMulti = /^(cahier|brochure|theatre|rapport|presse|brandbook|presentation|catalogue)$/.test(String(g.fam || ''));
+    /* ⚠️ _SP_STUDIO_ROCK625 — l'image de fond n'est autorisée que si la demande la réclame. */
+    SP_GAB_FOND_VOULU = spGabImageDeFond(brief);
     if (_famTjrsMulti || (veut >= 3 && SP_GAB_FAM_MULTI.test(String(g.fam || '')))) {
       L.chainees = spGabChainerSections(L, g);
       /* ⚠️ _SP_STUDIO_PAGES_584 — LE NOMBRE DE PAGES SUIVAIT « DEUX COLONNES » EN DUR.
@@ -15261,6 +16484,40 @@ function spRtfLayoutInfo(src) {
           if (!_neuf || !_neuf.length || _neuf.length >= _av) break;
           L.chainees = _neuf;
         }
+        /* ⚠️ _SP_STUDIO_ROCK627 — LA MAQUETTE CONTINUE JUSQU'À LA PAGE DEMANDÉE.
+           Demande utilisateur : « tu dois respecter le livre et continuer la maquette comme le
+           départ, et pas boucher les pages avec des grands fonds ». Quand la cible de pages est
+           plus haute que la matière, on PROLONGE la composition : on reprend les sections du
+           texte de démonstration (elles sont à nous, c'est écrit dans la conversation) et on les
+           poursuit dans la MÊME mise en page, jusqu'à ce que le chaînage atteigne la cible.
+           Aucune page de décor n'est ajoutée, la structure (titre de section, filets, folio,
+           pied de page) reste celle des pages précédentes. Un document CLIENT n'est jamais
+           prolongé (`demoRegistre` n'existe alors pas : on ne réécrit pas le texte du client). */
+        if (texte.demoRegistre && (texte.sections || []).length > 1 && _pagesAvec(L.chainees.length) < tot) {
+          const _base = texte.sections.slice();
+          const _pref = ({ fr: 'Suite', en: 'Continued', jp: '続き' })[spGabLangueBrief(brief)] || 'Suite';
+          let _g3 = 0;
+          while (_g3 < 80 && _pagesAvec(L.chainees.length) < tot) {
+            const _src = _base[_g3 % _base.length];
+            const _src2 = _base[(_g3 + 1) % _base.length];
+            const _n = texte.sections.length + 1;
+            const _tete = String((_src && _src.t) || '').replace(/^[^—–-]{0,26}?[—–-]\s*/, '');
+            texte.sections.push({
+              t: _pref + ' ' + _n + (_tete ? (' — ' + _tete) : ''),
+              /* Deux sections de base par section nouvelle : une page de livre se remplit,
+                 elle ne se contente pas de deux paragraphes. */
+              ps: ((_src && _src.ps) || []).concat((_src2 && _src2.ps) || []).slice()
+            });
+            const _neuf = spGabChainerSections(L, g);
+            _g3++;
+            if (!_neuf || !_neuf.length || _neuf.length <= L.chainees.length) { texte.sections.pop(); break; }
+            L.chainees = _neuf;
+          }
+          if (_g3 > 0) {
+            texte.__prolonge = _g3;
+            try { appendChat('assistant', '📖 Maquette prolongée pour tenir les ' + tot + ' pages : la même mise en page continue (aucune page de décor).'); } catch (_) {}
+          }
+        }
       }
       /* ⚠️ 2026-10-01 — UN LIVRE SE COMPTE EN CAHIERS. Un livre s'imprime par cahiers de
          4 pages : 12, 16, 20, 24, 28, 32… Jamais 8 ni 9. Mesuré : la bulle « Roman »
@@ -15298,8 +16555,14 @@ function spRtfLayoutInfo(src) {
        multiple de 4 la dernière planche est une vraie double page. */
     const demande = tot;                                    // pages demandées (avant règle)
     if (livre) {
-      const totalPagine = Math.max(4, Math.ceil((tot + (galerie ? 1 : 0)) / 4) * 4);
-      tot = totalPagine - (galerie ? 1 : 0);
+      /* ⚠️ _SP_STUDIO_ROCK624c — LE COMPTE DEMANDÉ PASSE AVANT LA RÈGLE DU CAHIER.
+         MESURÉ : « 24ページ » avec deux photos jointes livrait 28 pages — l'arrondi au
+         multiple de 4 se calculait sur `tot + 1` page de galerie (24 + 1 → 28), puis la
+         galerie s'ajoutait encore. On arrondit désormais la CIBLE DEMANDÉE, galerie
+         comprise : 24 demandées → 23 pages de cahier + 1 galerie = 24 pages livrées. */
+      const _cible = veut ? Math.max(4, veut) : (tot + (galerie ? 1 : 0));
+      const totalPagine = Math.max(4, Math.ceil(_cible / 4) * 4);
+      tot = Math.max(4, totalPagine - (galerie ? 1 : 0));
     }
     /* Le générateur de fonds repart proprement à chaque composition (luminances). */
     SP_GAB_LUM_IMG = {};
@@ -15329,6 +16592,28 @@ function spRtfLayoutInfo(src) {
     /* On dit ce qui a été tiré (monde, numéro, couverture, pagination, ouverture) — une fois
        par tirage, et APRÈS la décision d'ouverture pour ne rien annoncer d'inexact. */
     try { spGabDireMonde(brief); } catch (_) {}
+    /* ⚠️ _SP_STUDIO_ROCK614 — LE MOTIF DE COMPOSITION, TIRÉ AU SORT UNE FOIS PAR DOCUMENT.
+       Tirage indépendant (`hasard.v7`) : deux envois successifs de la même demande ne
+       changent pas le motif en même temps que l'archétype et la typographie. Réservé aux
+       documents de 6 pages et plus. La demande garde le dernier mot. */
+    let SP_GAB_MOTIF_VAR = 'aucun';
+    if (tot >= 6) {
+      const _vm = (typeof hasard.v7 === 'number') ? hasard.v7 : ((hasard.v * 733) % 1);
+      SP_GAB_MOTIF_VAR = ['aucun', 'chiffre', 'photoPleine'][Math.floor(_vm * 3) % 3];
+    }
+    if (/sans motif|aucun motif|pas de motif|no ?motifs?/i.test(String(brief || ''))) SP_GAB_MOTIF_VAR = 'aucun';
+    else if (/grand chiffre|pied de page|page de chiffre/i.test(String(brief || ''))) SP_GAB_MOTIF_VAR = 'chiffre';
+    else if (/pleine page|plein cadre|pleine surface/i.test(String(brief || ''))) SP_GAB_MOTIF_VAR = 'photoPleine';
+    let _motifDit = false;
+    let _piedPose = false;
+    /* ⚠️ _SP_STUDIO_ROCK627 — LE LIVRE CONTINUE, IL NE SE BOUCHE PAS.
+       Demande utilisateur : « tu dois respecter le livre et continuer la maquette comme le départ,
+       et pas boucher les pages avec des grands fonds [SVG] ». La version précédente honorait la
+       cible de pages en posant une ILLUSTRATION PLEINE PAGE sur chaque page restée vide : c'était
+       du remplissage, visible et étranger à la maquette. On PROLONGE désormais la composition
+       elle-même — la même mise en page, la même structure, du texte qui continue — et aucune
+       page de décor n'est ajoutée (voir la prolongation de la matière de démonstration plus haut
+       dans cette fonction). */
     for (let i = 1; i <= tot; i++) {
       let els = [];
       L.pageCourante = i;                    // pour le générateur de fonds (un motif par page)
@@ -15336,9 +16621,30 @@ function spRtfLayoutInfo(src) {
          document garde la mise en page du gabarit (aucun risque de déborder). */
       const layPage = (i === 1 && L.variante && !SP_GAB_OUVERTURES_SAUF[g.fam])
         ? (SP_GAB_OUVERTURES[L.variante - 1] || lay) : lay;
+      _piedPose = false;
       /* _SP_STUDIO_WORDING_587 — LA PAGE 2 D'UN RECTO/VERSO EST UN VRAI VERSO (informations, contacts),
          pas une copie du recto (cf. spGabVersoPage). */
       try { els = (L.verso && i === 2) ? (spGabVersoPage(L) || []) : (layPage(L, i, tot) || []); } catch (err) { els = []; }
+      /* ⚠️ _SP_STUDIO_ROCK614 — APPLICATION DES MOTIFS, sur les pages INTÉRIEURES seulement
+         (la couverture, l'édito et la 4e de couverture gardent leur composition). */
+      if (SP_GAB_MOTIF_VAR !== 'aucun' && i > 2 && i < tot) {
+        if (SP_GAB_MOTIF_VAR === 'chiffre') {
+          const _mp = spGabMotifPied(L, els, i, tot);
+          if (_mp.length) {
+            els = els.concat(_mp);
+            _piedPose = true;
+            if (!_motifDit) {
+              _motifDit = true;
+              try { appendChat('assistant', '🖆 Motif : pied de page éditorial.'); } catch (_) {}
+            }
+          }
+        } else if (SP_GAB_MOTIF_VAR === 'photoPleine') {
+          if (spGabMotifPhotoPleine(L, els) && !_motifDit) {
+            _motifDit = true;
+            try { appendChat('assistant', '🖆 Motif : pages visuelles pleine page.'); } catch (_) {}
+          }
+        }
+      }
       /* ⚠️ 2026-10-01 — PALIER CRÉATIF : AUCUN TEXTE ILLISIBLE DEVIENT LISIBLE.
          MESURÉ sur l'affiche A2 noir et or : la date et le lieu sortaient à 9 pt, soit 3 mm
          de haut sur un poster de 594 mm — le contraste ne rattrape pas une taille. Cause :
@@ -15370,10 +16676,30 @@ function spRtfLayoutInfo(src) {
            typographie passe automatiquement en clair. */
         els.unshift(spGabR(0, 0, W, H, L.fondPage || '#ffffff', 0));
       }
-      if (g.folio && i > 1 && i < tot) els = els.concat(spGabFolio(L, i, tot));
+      /* ⚠️ _SP_STUDIO_ROCK616 — UNE SEULE PAGINATION PAR PAGE. MESURÉ (pré-prompt
+         « 12-page booklet ») : le motif « pied de page éditorial » posait une bande et un
+         grand numéro, PUIS le folio du studio posait « 4 / 12 » par-dessus — deux
+         paginations sur la même page, et le folio (gris foncé) se retrouvait sur la bande
+         d'accent sombre (d'où « typo de pagination noire sur un bandeau noir »). Quand la
+         bande porte le numéro, elle EST la pagination : le folio ne s'ajoute pas. */
+      if (g.folio && i > 1 && i < tot && !_piedPose) els = els.concat(spGabFolio(L, i, tot));
       /* ⚠️ _SP_STUDIO_BASES_609 — l'habillage (épaisseur des filets, capitales, interlettrage)
          suit le MÊME faisceau que le reste de la composition : sans cela, la base tirée
          au sort ne pouvait toucher ni les filets ni les capitales. */
+      /* ⚠️ _SP_STUDIO_ROCK627 — PLUS AUCUN COMBLEMENT PAR LE DÉCOR. La cible de pages est tenue
+         par la PROLONGATION de la maquette (matière de démonstration étendue, même mise en page) :
+         les pages que la matière ne remplit pas restent dans la maquette, avec son habillage
+         (filets, folio, pied de page) — comme une page de livre en fin de chapitre. */
+      els = spGabSansImageSurTexte(els, L);
+      /* ⚠️ _SP_STUDIO_ROCK628 — LES FILETS DE LONGUEUR NULLE SONT DES RÉSIDUS. MESURÉ : les
+         gabarits laissent des `line` de longueur zéro (x1 === x2) sur les emplacements qu'ils
+         n'utilisent pas. Sans effet à l'écran, ils faussaient la détection « planche à une
+         seule page » (une planche de couverture paraissait occupée des deux côtés) et
+         gonflaient le compteur d'objets du .sp. On les retire à la sortie. */
+      els = els.filter(function (e) {
+        if (!e || String(e.type) !== 'line') return true;
+        return Math.abs((Number(e.x2) || 0) - (Number(e.x1) || 0)) > 0.5;
+      });
       pages.push({ pageIndex: pages.length, elements: spGabStyler(els, L, SP_GAB_REG_APPLIQUE || window._spReglages).map(spGabVersMm) });
     }
     /* PIÈCES JOINTES IMAGE NON PLACÉES : on ne les jette pas. Un cahier ou une
@@ -15543,6 +16869,12 @@ function spRtfLayoutInfo(src) {
         /* _SP_STUDIO_ROCK611b — même convertisseur que la bascule simple/double. */
         const _pl = spGabPagesVersPlanches(pages, Number(state.pageW) || 210);
         if (_pl.length) { pages.length = 0; _pl.forEach(function (p) { pages.push(p); }); }
+        /* ⚠️ _SP_STUDIO_ROCK629 — LA DERNIÈRE PAGE RESTE SEULE (voir spDegraisserPlanchesSeules) :
+           si la composition a produit une page de trop, la dernière planche redeviendrait une
+           double page. On la nettoie ici, avant l'affichage, plutôt que d'attendre la
+           vérification du cahier (qui alertait sans toujours corriger). */
+        const _deg = spDegraisserPlanchesSeules(pages, tot, Number(state.pageW) || 210);
+        if (_deg) j('info', 'Imposition nettoyée : ' + _deg + ' élément(s) hors de la page seule retiré(s).');
         j('info', 'Imposition posée : ' + _nbPagesComposees + ' page(s) réparties sur ' + pages.length + ' planche(s).');
       } catch (_) {}
     }
@@ -16549,7 +17881,7 @@ function spRtfLayoutInfo(src) {
       const ph = $('pageInfo');
       if (ph) ph.textContent = '1 page · ' + w + '×' + h + ' mm · bleed ' + bled() + ' mm';
     } catch (_) {}
-    appendChat('assistant', '📐 Format détecté : ' + fmt.label + ' — le canevas a été adapté (page ' + w + '×' + h + ' mm). Je génère la maquette à ce format.');
+    appendChat('assistant', '📐 Format : ' + fmt.label + ' (' + w + '×' + h + ' mm).');
     state.chat.push({ role: 'assistant', text: '📐 Format détecté : ' + fmt.label + ' — le canevas a été adapté (page ' + w + '×' + h + ' mm).' });
     return true;
   }
@@ -17822,8 +19154,10 @@ function spRtfLayoutInfo(src) {
       if (hasLayout) {
         // 🆕 Undo/redo : pousser l'ancienne maquette dans la pile d'annulation
         // avant de la remplacer par la nouvelle génération.
+        var _spAncienDocNonVide = false;
         try {
           if (state.doc && state.doc.pages && state.doc.pages.length) {
+            _spAncienDocNonVide = true;
             state.undoStack.push(JSON.parse(JSON.stringify(state.doc)));
             if (state.undoStack.length > 30) state.undoStack.shift();
           }
@@ -17839,7 +19173,20 @@ function spRtfLayoutInfo(src) {
           doc = buildDocFromParsed(parsed);
         }
         state.doc = doc;
+        /* ⚠️ _SP_STUDIO_ROCK625 — l'autorisation d'image de fond vaut pour CETTE demande. */
+        try { SP_GAB_FOND_VOULU = spGabImageDeFond(userText); } catch (_) { SP_GAB_FOND_VOULU = false; }
+        try { const _nIll = spDocSansImageSurTexte(doc); if (_nIll) console.log('[SP213] ' + _nIll + ' illustration(s) retirée(s) : elles recouvraient du texte'); } catch (_) {}
         renderDocument(doc);
+        /* 🩹 v1.7.595 — ON DIT QUE LA MAQUETTE A ÉTÉ REMPLACÉE (demande utilisateur : « je
+           me suis retrouvé avec un mélange des deux maquettes sans explication »). La
+           composition neuve remplace l'ancienne et l'ancienne reste dans Annuler ; si la
+           composition ne rend rien d'exploitable, le message d'échec existe déjà plus bas
+           et la maquette précédente n'est pas touchée. */
+        if (_spAncienDocNonVide && !(state.selectedIds && state.selectedIds.length)) {
+          const _msgRemplace = 'Maquette recomposée : la précédente est conservée dans Annuler (Ctrl+Z).';
+          appendChat('assistant', _msgRemplace);
+          state.chat.push({ role: 'assistant', text: _msgRemplace });
+        }
         /* _SP_STUDIO_VOCABLE_586 — CE QUI A ÉTÉ DEMANDÉ EST-IL LIVRÉ ? Le compte de pages annoncé
            était celui de la composition AVANT les passes de mise en page : la dernière
            section pouvait être reportée sur une page de plus (mesuré : 24 demandées, 25
@@ -17851,10 +19198,7 @@ function spRtfLayoutInfo(src) {
           const _reel = ((doc.viewMode === 'spread') && SP_GAB_PAGES_COMPOSEES)
             ? SP_GAB_PAGES_COMPOSEES : (doc.pages || []).length;
           if (_reel !== SP_GAB_PAGES_VOULUES) {
-            const _msgP = '📄 ' + SP_GAB_PAGES_VOULUES + ' page(s) demandée(s) → ' + _reel + ' page(s) composée(s) : '
-              + (_reel > SP_GAB_PAGES_VOULUES
-                ? 'la fin du document a été reportée sur une page de plus plutôt que d\'être coupée ou posée hors marge.'
-                : 'la matière fournie n\'en remplissait pas tant, j\'ai gardé la maquette plus courte.');
+            const _msgP = '📄 ' + SP_GAB_PAGES_VOULUES + ' page(s) demandée(s), ' + _reel + ' livrée(s).';
             appendChat('assistant', _msgP);
             try { state.chat.push({ role: 'assistant', text: _msgP }); persistChat(); } catch (_) {}
           }
@@ -17923,10 +19267,9 @@ function spRtfLayoutInfo(src) {
         if (gridSpec) {
           applyGridToAllPages(gridSpec);
           state.gridVisible = true;
-          const gridMsg = '📐 Grille posée sur l\'aperçu : ' + gridSpec.cols + ' colonne(s)' +
+          const gridMsg = '📐 Grille : ' + gridSpec.cols + ' colonne(s)' +
             (gridSpec.rows > 0 ? ', ' + gridSpec.rows + ' ligne(s)' : '') +
-            ' (gouttière ' + gridSpec.gutter + ' mm' + (gridSpec.baseline ? ', baseline activée' : '') + '). ' +
-            'Les guides sont non imprimables et déplaçables — vous pouvez les effacer en régénérant.';
+            ', gouttière ' + gridSpec.gutter + ' mm.';
           appendChat('assistant', gridMsg);
           state.chat.push({ role: 'assistant', text: gridMsg });
         }
@@ -21507,7 +22850,13 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         fontStyle: style,
         lineHeight: lh,
         charSpacing: cs,
-        splitByGrapheme: false,
+        /* ⚠️ _SP_STUDIO_ROCK626 — NE JAMAIS FORCER `splitByGrapheme: false`.
+           MESURÉ (capture de la planche 2-3 d'un pré-prompt japonais) : le texte japonais
+           DÉBORDAIT de la page, coupé net au bord droit — Fabric coupe ses lignes sur les
+           ESPACES, qui n'existent pas en japonais. `setLang('jp')` règle bien
+           `fabric.Textbox.prototype.splitByGrapheme = true`, mais cette option EXPLICITE
+           l'écrasait pour chaque bloc créé. On suit donc la langue du studio. */
+        splitByGrapheme: (curLang === 'jp'),
         breakWords: true
       });
       tb.initDimensions();
@@ -21674,7 +23023,7 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         // "OpenSans") sont mappés vers une police self-hosted disponible. Si la
         // police demandée est totalement inconnue, fallback sur Open Sans.
         const fam = normalizeFontFamily(el.fontFamily) || 'Open Sans';
-        const opts = { left, top, width: (+el.width || 200) * MM_TO_PX, fontSize: (+el.fontSize || 14) * PT_TO_PX, fill: el.fill || '#000000', fontFamily: fam, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', opacity, splitByGrapheme: false, breakWords: true, ...transform };
+        const opts = { left, top, width: (+el.width || 200) * MM_TO_PX, fontSize: (+el.fontSize || 14) * PT_TO_PX, fill: el.fill || '#000000', fontFamily: fam, fontWeight: el.fontWeight || 'normal', fontStyle: el.fontStyle || 'normal', textAlign: el.textAlign || 'left', opacity, splitByGrapheme: (curLang === 'jp'), breakWords: true, ...transform };
         if (el.lineHeight != null) opts.lineHeight = +el.lineHeight;
         if (el.charSpacing != null) opts.charSpacing = +el.charSpacing;
         if (el.underline) opts.underline = true;
@@ -21890,9 +23239,32 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     // 2) Dernière planche seule = 4e de couverture, moitié GAUCHE (verso).
     if (doc.pages.length > 1 && deplacerVers(doc.pages[doc.pages.length - 1], 'gauche')) corrigees++;
     // 3) Fond pleine planche → page + CHANT seulement (le fond perdu s'arrête au pli).
-    doc.pages.forEach(function (p) {
+    /* ⚠️ _SP_STUDIO_ROCK631 — LE FOND D'UNE PAGE SEULE S'ARRÊTE AU PLI, MÊME ÉTROIT.
+       DÉFAUT MESURÉ (pré-prompt « Dossier de presse 12 pages · planches », 2026-10-02) :
+       la couverture portait un fond de page à `left 206 × width 218` (206 → 424 mm sur une
+       planche de 420). Le fond ne faisait donc PAS la largeur d'une planche, la règle
+       `w >= PW*2 - 6` ne le recadrait pas, et il DÉBORDAIT du côté de la gouttière de 4 mm
+       (tolérance « traversant le pli » = 3,5 mm) : la planche de couverture était vue comme
+       une VRAIE double page. Trois symptômes mesurés d'une seule cause :
+         • libellé « Pages 1–2 » au lieu de « Page 1 · couverture seule » ;
+         • total annoncé 13 pages pour 12 composées (`spNumerosPlanches` compte 2 pages
+           sur une planche crue double) ;
+         • avertissement faux « la planche 1 devrait porter UNE SEULE page ».
+       On recadre donc AUSSI tout aplat PLEINE HAUTEUR d'au moins une page de large (fond de
+       page avec fond perdu) : le fond perdu reste sur le CHANT, jamais côté reliure. */
+    const _hDoc = (typeof doc.h === 'number' && doc.h > 0) ? doc.h : 297;
+    /* L'imposition ATTENDUE est la référence (spCahierPlanches) : la mesure d'occupation,
+       elle, peut être faussée par le fond que l'on vient précisément corriger. */
+    const _cahDoc = (function () {
+      try { return spCahierPlanches(Math.max(2, Math.round(SP_GAB_PAGES_COMPOSEES || doc.pages.length * 2))); }
+      catch (_) { return []; }
+    })();
+    doc.pages.forEach(function (p, iPl) {
       if (!p || !Array.isArray(p.elements)) return;
-      const cote = spCoteSeulePlanche(p, PW, bl);
+      const _att = _cahDoc[iPl];
+      const cote = (SP_GAB_PAGES_COMPOSEES && _att && (_att.cote === 'droite' || _att.cote === 'gauche'))
+        ? _att.cote
+        : spCoteSeulePlanche(p, PW, bl);
       if (!cote) return;
       const cible = (cote === 'droite') ? { left: PW, width: PW + bl } : { left: -bl, width: PW + bl };
       p.elements.forEach(function (el) {
@@ -21900,7 +23272,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
         const t = String(el.type || '').toLowerCase();
         if (t !== 'rectangle' && t !== 'rect') return;
         const w = (typeof el.width === 'number') ? el.width : 0;
-        if (w > 0 && w >= (PW * 2) - 6) { el.left = cible.left; el.width = cible.width; }
+        const h = (typeof el.height === 'number') ? el.height : 0;
+        const _pleineHauteur = h > 0 && h >= _hDoc * 0.85;      // aplat de page, pas un encadré
+        const _larg = (w > 0 && w >= (PW * 2) - 6)              // décor pleine planche
+          || (_pleineHauteur && w >= PW - 6);                  // fond d'UNE page (+ fond perdu)
+        if (_larg) { el.left = cible.left; el.width = cible.width; }
       });
     });
     return corrigees;
@@ -21914,6 +23290,43 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     if (occ.gauche && !occ.droite) return 'gauche';
     if (occ.droite && !occ.gauche) return 'droite';
     return null;
+  }
+
+  /* ⚠️ _SP_STUDIO_ROCK629 — UNE PLANCHE « PAGE SEULE » NE PORTE QU'UNE PAGE.
+     Demande utilisateur : « je viens de refaire le test avec le pré-prompt poème, il n'a pas bien
+     compris, il termine en double page — la dernière page doit être seule en planche (spread) et
+     en cahier ». MESURÉ (Recueil de poèmes 12 pages) : la composition partait parfois avec UNE PAGE
+     DE TROP (13), la dernière planche devenait donc une vraie double page (folios 12 et 13) au lieu
+     de « Page 12 · 4e de couverture » — la vérification du cahier le signalait mais ne le corrigeait
+     pas toujours.
+     L'imposition dit exactement ce que chaque planche doit porter (`spCahierPlanches`) : ici on
+     enlève, sur les planches à PAGE SEULE, tout élément qui n'est pas du bon côté. Prudent par
+     construction : les filets et points (sans largeur) et les éléments PLEINE PLANCHE (décor
+     débordant, largeur ≥ 120 % de la page) ne sont jamais touchés. */
+  function spDegraisserPlanchesSeules(pages, nbPagesVoulues, PW) {
+    if (!Array.isArray(pages) || !pages.length) return 0;
+    /* ⚠️ Réservé aux CAHIERS (4 pages et plus) : une carte de visite recto-verso tient sur
+       UNE planche à deux pages pleines — la nettoyer viderait le verso. */
+    if (!(Number(nbPagesVoulues) >= 4)) return 0;
+    const W = Number(PW) || 210;
+    const cah = spCahierPlanches(Math.max(2, Math.round(Number(nbPagesVoulues) || pages.length * 2)));
+    if (!cah.length) return 0;
+    let n = 0;
+    pages.forEach(function (p, i) {
+      const c = cah[i];
+      if (!c || (c.cote !== 'gauche' && c.cote !== 'droite')) return;   // vraie double page
+      const avant = (p.elements || []).length;
+      p.elements = (p.elements || []).filter(function (e) {
+        const l = Number(e.left) || 0, w = Number(e.width) || 0;
+        if (!(w > 0)) return true;                                     // filets, points : intacts
+        if (w >= W * 1.2) return true;                                  // décor pleine planche
+        const centre = l + w / 2;
+        if (c.cote === 'gauche') return centre < W + 4;                  // page à GAUCHE : rien à droite
+        return centre > W - 4;                                          // page à DROITE : rien à gauche
+      });
+      n += avant - (p.elements || []).length;
+    });
+    return n;
   }
 
   /* Numéros de page RÉELS de chaque planche : une planche « seule » = 1 page. */
@@ -22109,6 +23522,11 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
        (couverture, 4e de couverture), sinon null (vraie double page).
        `numeros[i]` = numéros de page RÉELS de la planche. */
     const enDouble = (doc.viewMode === 'spread');
+    /* ⚠️ _SP_STUDIO_ROCK629 — FILET DE SÉCURITÉ À CHAQUE AFFICHAGE : une planche à page seule
+       ne porte qu'une page. La reprise du cahier (`spVerifierCahierPlanches`) recompose une
+       planche APRÈS l'imposition : sans ce contrôle ici, la dernière planche redevenait une
+       double page (« il termine en double page » — défaut signalé sur le recueil de poèmes). */
+    if (enDouble) { try { spDegraisserPlanchesSeules(doc.pages, SP_GAB_PAGES_COMPOSEES || 0, doc.w); } catch (_) {} }
     const cotes = doc.pages.map(p => enDouble ? spCoteSeulePlanche(p, doc.w, doc.bleed) : null);
     /* ══ _SP_STUDIO_PAGINATION_589 — NUMÉROTATION DES LIBELLÉS ══
        DÉFAUT MESURÉ (retour utilisateur : « la pagination automatique arrive parfois au
@@ -22264,6 +23682,13 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
          construit que lorsque la page arrive à l'écran (voir spApercuLazy). Le contenu de
          toutes les pages reste dans state.doc : rien n'est perdu, rien n'est résumé. */
       const rec = { pageIndex: p.pageIndex, canvas: null, label: 'Page ' + (p.pageIndex + 1), card: card, _wrap: wrap, _vis: 1 };
+      /* ⚠️ _SP_STUDIO_ROCK625 — TAILLE DE RÉFÉRENCE DE LA CARTE. MESURÉ (document de 24
+         pages) : les cartes pas encore peintes (aperçu paresseux) gardaient leur taille
+         pleine — le zoom ne s'appliquait qu'aux canvas déjà construits — et le contrôle du
+         zoom automatique, qui lit ces cartes, croyait la page toujours trop grande : il
+         descendait jusqu'au plancher (20 %) sans que rien ne change à l'écran. */
+      rec._cadreW = cadreW;
+      rec._cadreH = Math.round(pageHpx + bleedPx * 2);
       let peinte = false;
       const peindre = function () {
         if (peinte) return;
@@ -22361,6 +23786,12 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     if (window.matchMedia('(max-width: 900px)').matches) setMobileStudioView('preview');
     // 🆕 _SP_STUDIO_DESIGN_575 — en double page, on dézoome pour montrer la planche ENTIÈRE
     //   (sans jamais remonter un zoom choisi à la main : voir spZoomAjusterAuxPlanches).
+    /* ⚠️ _SP_STUDIO_ROCK625 — LE ZOOM COURANT EST APPLIQUÉ DÈS LE RENDU. MESURÉ (cahier de
+       24 pages, zoom 50 %) : seules les 6 premières cartes (peintes tout de suite) étaient à
+       l'échelle ; les 18 autres, peintes à la demande, restaient à leur taille pleine et
+       débordaient de l'aperçu. On applique donc le zoom à TOUTES les cartes — peintes ou
+       non — avant le contrôle automatique. */
+    try { applyZoom(); } catch (_) {}
     try { spZoomAjusterAuxPlanches(); } catch (_) {}
   }
 
@@ -23120,7 +24551,16 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   }
   function applyZoom() {
     const z = parseFloat($('zoomSelect').value) || 1;
-    (state.pages || []).forEach(function (p) { spZoomerCanvas(p.canvas, z); });
+    (state.pages || []).forEach(function (p) {
+      if (p.canvas) { spZoomerCanvas(p.canvas, z); return; }
+      /* ⚠️ _SP_STUDIO_ROCK625 — CARTE PAS ENCORE PEINTE : on applique quand même le zoom à
+         sa fenêtre, sinon elle s'affiche à sa taille pleine (et le contrôle automatique du
+         zoom la croit toujours trop grande). La peinture reprendra la main ensuite. */
+      if (p._wrap && p._cadreW) {
+        p._wrap.style.width = Math.round(p._cadreW * z) + 'px';
+        p._wrap.style.height = Math.round((p._cadreH || 0) * z) + 'px';
+      }
+    });
     // Plus AUCUN agrandissement CSS : c'était la cause du flou.
     $('pagesStack').style.transform = 'none';
   }
@@ -23147,48 +24587,73 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     applyZoom();
   }
 
-  /* 🛡️ _SP_STUDIO_DESIGN_575 — EN DOUBLE PAGE, LE STUDIO SE DÉZOOME TOUT SEUL.
+  /* 🛡️ _SP_STUDIO_ROCK625 — LE ZOOM MONTRE TOUJOURS LA PAGE ENTIÈRE À L'ARRIVÉE.
+     Demande utilisateur : « le zoom doit toujours afficher tout le document lors de la
+     première ouverture : quand les maquettes dépassent le format disponible, ce n'est pas
+     normal ». MESURÉ : le dézoom automatique ne s'appliquait QU'EN DOUBLE PAGE (garde
+     `state.viewMode !== 'spread'`) ; en page simple, une affiche 40 × 60 ou une planche
+     paysage arrivait à 100 % avec sa moitié hors de l'aperçu, sans rien pour l'indiquer.
 
-     Demande utilisateur : « en double, il faudrait un dézoom automatique : qu'on voie
-     automatiquement les DOUBLES pages complètes quand il compose en mode spread ».
-     Mesure : une planche A4 double = 420 mm, soit ~1 207 px dans l'aperçu, pour une
-     zone d'aperçu de ~900 px — à 100 %, la moitié droite de la planche était HORS
-     ÉCRAN sans que rien ne l'indique : on croyait la composition coupée.
-
-     RÈGLE (volontairement non intrusive) :
-       · uniquement en mode double page ;
-       · on ne dézoome QUE si la planche ne rentre pas (jamais de zoom arrière sur une
-         planche déjà entière) ;
-       · on ne remonte JAMAIS le zoom : le réglage manuel de l'utilisateur (molette
-         Ctrl, liste des zooms) reste maître tant que la planche tient à l'écran.
-     Appelée à chaque rendu d'une composition (nouvelle maquette, retour de
-     conversation, annuler/rétablir) : c'est le moment où l'échelle doit s'adapter. */
+     RÈGLE :
+       · on ajuste dès qu'un rendu de composition a lieu (nouvelle maquette, retour de
+         conversation, annuler/rétablir, bascule de mode) ;
+       · on tient compte de la LARGEUR ET DE LA HAUTEUR : la page la plus grande doit entrer
+         entièrement dans la zone d'aperçu ;
+       · on ne REMONTE jamais au-delà de 100 % : un document qui tient déjà à l'écran n'est
+         pas agrandi de force, et le zoom manuel (molette Ctrl, liste) reste respecté tant
+         qu'il laisse voir la page entière ;
+       · plancher à 20 % : sur un écran minuscule, un document énorme reste lisible en
+         défilant plutôt que réduit à néant. */
+  let SP_ZOOM_RATTRAPE = false;
+  /* ⚠️ MESURE SUR LE CANVAS, APRÈS LA PEINTURE. MESURÉ : au moment du rendu, les
+     cartes de l'aperçu n'ont pas encore leur taille définitive (canvas paresseux, police,
+     libellé de page) — un fit calculé à cet instant est FAUX et laissait la page dépasser
+     (affiche 40 × 60 : 1 070 px de haut pour une zone de 1 005 px). On mesure donc le
+     canvas RÉEL (getBoundingClientRect : la largeur CSS suit le zoom), et on refait le
+     contrôle une fois, 450 ms plus tard. */
+  function spZoomAjusterMaintenant() {
+    try {
+      const scroll = $('previewScroll');
+      if (!scroll) return;
+      const doc = state.doc;
+      if (!doc || !Number(doc.w) || !Number(doc.h)) return;
+      const dispoL = scroll.clientWidth - 56;          // respiration + barre de défilement
+      const dispoH = scroll.clientHeight - 58;         // libellé de page + respiration
+      if (!(dispoL > 60) || !(dispoH > 120)) return;
+      /* ⚠️ MESURE SUR LE FORMAT, PAS SUR LES CARTES. MESURÉ (affiche 40 × 60, puis cahier de
+         24 pages) : lire la taille des cartes donnait un fit faux — l'aperçu PARESSEUX les
+         peint à la demande, et une carte pas encore peinte n'était pas à l'échelle du zoom.
+         Le format du document et `MM_TO_PX` (1 pt = 1 px, la conversion de `renderDocument`)
+         donnent la taille EXACTE de la page, fond perdu compris. */
+      const bl = Number(doc.bleed) || 0;
+      const enDouble = (state.viewMode === 'spread');
+      const lMm = enDouble ? (Number(doc.effW) || Number(doc.w) * 2) : Number(doc.w);
+      const cadreW = lMm * MM_TO_PX + bl * MM_TO_PX * 2;
+      const cadreH = Number(doc.h) * MM_TO_PX + bl * MM_TO_PX * 2;
+      if (!(cadreW > 0) || !(cadreH > 0)) return;
+      const cible = Math.floor(Math.min(1, dispoL / cadreW, dispoH / cadreH) * 100) / 100;
+      const actuel = parseFloat($('zoomSelect').value) || 1;
+      /* On ne REMONTE jamais le zoom : un document qui tient déjà à l'écran n'est pas
+         agrandi de force, et le zoom manuel (molette Ctrl, liste) reste respecté tant
+         qu'il laisse voir la page entière. */
+      if (cible >= actuel - 0.005) return;
+      setZoomValue(Math.max(0.2, cible));
+    } catch (_) {}
+  }
   function spZoomAjusterAuxPlanches() {
     const scroll = $('previewScroll');
-    const stack = $('pagesStack');
-    if (!scroll || !stack) return;
-    if (state.viewMode !== 'spread') return;
+    if (!scroll) return;
     requestAnimationFrame(function () {
-      try {
-        const cartes = stack.querySelectorAll('.page-card');
-        if (!cartes.length) return;
-        const dispo = scroll.clientWidth - 56;          // respiration + barre de défilement
-        /* 🆕 _SP_STUDIO_CAHIER_576 — ON CALE LE ZOOM SUR LA PLANCHE LA PLUS LARGE.
-           Depuis le cadrage « cahier », la 1re carte peut être la COUVERTURE SEULE
-           (largeur d'une page) : lire la 1re carte surestimait le zoom (une double
-           page débordait alors de l'aperçu). */
-        let naturel = 0;
-        cartes.forEach(function (cr) { if (cr.offsetWidth > naturel) naturel = cr.offsetWidth; });
-        if (!(dispo > 40) || !(naturel > 0)) return;
-        const actuel = parseFloat($('zoomSelect').value) || 1;
-        /* 🆕 v1.7.580bb — la largeur lue est DÉJÀ à l'échelle du zoom (le zoom
-           agrandit le canvas, il ne le transforme plus) : on repasse en largeur
-           NATURELLE pour décider, sinon on comparait deux fois le même zoom. */
-        const naturel0 = naturel / actuel;
-        if (naturel <= dispo) return;                   // ça rentre déjà : on ne touche à rien
-        const z = Math.max(0.1, Math.min(1, Math.floor((dispo / naturel0) * 100) / 100));
-        setZoomValue(z);
-      } catch (_) {}
+      spZoomAjusterMaintenant();
+      /* Un second contrôle après la peinture : sans lui, la mesure prise pendant le rendu
+         (cartes encore à l'ancienne échelle) laissait la page dépasser de la zone. */
+      if (!SP_ZOOM_RATTRAPE) {
+        SP_ZOOM_RATTRAPE = true;
+        setTimeout(function () {
+          SP_ZOOM_RATTRAPE = false;
+          try { spZoomAjusterMaintenant(); } catch (_) {}
+        }, 450);
+      }
     });
   }
   function initPreviewWheelZoom() {
@@ -23544,6 +25009,20 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       obj.textBackgroundColor = el.textBackgroundColor;
     }
     if (typeof el.charSpacing === 'number') obj.charSpacing = el.charSpacing;
+    /* ⚠️ _SP_STUDIO_ROCK630 — LES RÉGLAGES FINS DE JUSTIFICATION SURVIVENT AU TRAJET.
+       Demande utilisateur : « on a la justification et le .sp doit être parfaitement aligné ».
+       MESURÉ : le studio réécrit les attributs un par un (`spAppliquerReglagesTypo`) et
+       `_justSettings` (intermots `wordSpaceOpt`, interlettrage `letterSpaceOpt`, échelle des
+       glyphes `glyphScaleOpt` + leurs bornes) N'ÉTAIT PAS dans la liste. Un document de l'app
+       ouvert puis réenregistré par le studio perdait donc ses réglages de justification, et
+       l'app au retour justifiait les lignes autrement — bord droit en dents de scie.
+       On transmet l'objet tel quel (copie défensive, aucune valeur inventée). */
+    if (el._justSettings && typeof el._justSettings === 'object') {
+      try { obj._justSettings = JSON.parse(JSON.stringify(el._justSettings)); } catch (_) {}
+    }
+    /* Les métriques de ligne du moteur (indispensables au même alignement) suivent le même
+       chemin : sans elles, l'app recalculait un cadre différent du studio. */
+    if (typeof el._spFrameHeightMm === 'number' && el._spFrameHeightMm > 0) obj._spFrameHeightMm = el._spFrameHeightMm;
     if (el.underline) obj.underline = true;
     if (el.linethrough) obj.linethrough = true;
     if (el.overline) obj.overline = true;
