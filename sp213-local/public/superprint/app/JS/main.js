@@ -2658,6 +2658,11 @@ const SP_CUSTOM_PROPS = [
     //   déjà sérialisée par toObject ; vérifié sur un aller-retour .sp.)
     '_spFrameStroke',
     '_spFrameStrokeWidth',
+    /* 🆕 _SP_STUDIO_ROCK631b — EMPLACEMENT PHOTO VIDE : aplat très clair posé par le studio
+       sur une zone photo d'un document suivi (pré-prompts 24/32/64 pages). Le marqueur dit
+       à l'app QUE cet aplat est un emplacement à remplir par une image (et non un décor) ;
+       sans lui, un aller-retour .sp / .json perdait la nature de la zone. */
+    '_spPhotoSlot',
     // 🛡️ FIX 2026-05-01 : flags d'overflow spread + ID stable.
     // Sans ca, sauvegarder en mode single un projet spread strippe les
     // marqueurs et casse le dedoublonnage au retour en spread (objet
@@ -2919,6 +2924,128 @@ function _spSaveDiffereAnnuler() {
 }
 window._spSaveDiffereAnnuler = _spSaveDiffereAnnuler;
 
+/* ═══ _SP_EXPORT_PRET_575 — L'EXPORT PDF NE DOIT JAMAIS PARTIR SUR UN CLICHÉ INCOMPLET ═══
+   Retour utilisateur (Mac Intel lent) : « lorsque je duplique des éléments et que j'exporte en
+   PDF, les éléments n'apparaissent pas ; en refaisant le PDF avec un délai plus long, ils
+   s'exportent bien ».
+
+   MESURE / RELU DANS LE CODE — la chaîne, de bout en bout :
+     1. `confirmExport()` appelle `saveAllPages(true)`, puis compose le PDF **à partir de
+        `pages[]`** (`renderPageToImage` → `loadFromJSON(pages[i].objects)`).
+     2. `saveAllPages(force)` sort EN SILENCE quand une planche est en `loadFromJSON`
+        (garde-fou `if (force && canvases.some(c => c._isLoading)) return;`). Le garde-fou est
+        légitime : on ne sérialise pas une planche à moitié chargée. Mais l'appel d'export ne
+        vérifie pas ce `return` : il croit avoir sauvegardé.
+     3. Résultat : l'export lit un `pages[]` PÉRIMÉ, donc les objets ajoutés ou DUPLIQUÉS juste
+        avant n'y sont pas → ils manquent dans le PDF. L'intermittence vient de là : tout
+        dépend de la fenêtre de chargement, qui est LONGUE sur une machine lente — ce qui
+        explique pourquoi « attendre plus longtemps » réparait le symptôme.
+     4. `saveState()` sait déjà patienter (`_spSaveDiffere`, ligne ~2878, même diagnostic pour
+        la bibliothèque d'assets). L'export, lui, ne patientait pas.
+
+   Correctif : au moment de l'export, on ATTEND d'abord que le document soit réellement prêt
+   (aucune planche en chargement, aucune image encore en décodage), puis on refait la
+   sauvegarde forcée, puis on CONTRÔLE le cliché (ce qui est dessiné doit être enregistré).
+   Aucun délai arbitraire : on teste l'état réel, avec un plafond de patience. */
+function spPlanchesEnChargementPourExport() {
+    try {
+        const cvs = (typeof window._spCanvasCandidats === 'function') ? window._spCanvasCandidats() : [];
+        for (let i = 0; i < cvs.length; i++) {
+            const c = cvs[i];
+            if (!c) continue;
+            /* Planche en cours de `loadFromJSON` : positions/objets partiels. */
+            if (c._isLoading) return true;
+            /* Image ENCORE EN COURS de téléchargement : elle ne dessinerait RIEN.
+               ⚠️ On ne teste QUE `!el.complete`. Une image dont le chargement a ÉCHOUÉ
+               (`complete` vrai + `naturalWidth` 0) ne se chargera JAMAIS : l'attendre
+               ferait patienter 20 s pour rien. Elle est signalée par le reviver
+               `enlivenObjects` (« Objet NON chargé — il sera ABSENT… »), ce qui est
+               l'information utile. */
+            if (typeof window._spImagesEnChargementDuCanvas === 'function'
+                && window._spImagesEnChargementDuCanvas(c) > 0) return true;
+        }
+    } catch (_) {}
+    return false;
+}
+window.spPlanchesEnChargementPourExport = spPlanchesEnChargementPourExport;
+
+/* Nombre d'images du canevas réellement EN COURS de chargement (`complete === false`).
+   (Fabric 5.1.0 : une image dont le chargement a échoué reste `complete` à vrai.) */
+function spImagesEnChargementDuCanvas(fabricCanvas) {
+    let n = 0;
+    const inspecter = function (o) {
+        if (!o) return;
+        try {
+            if (o.type === 'image') {
+                const el = o._element || o._originalElement;
+                if (el && el.tagName === 'IMG' && el.complete === false) n++;
+            }
+            if (Array.isArray(o._objects)) o._objects.forEach(inspecter);
+        } catch (_) {}
+    };
+    try {
+        if (fabricCanvas && typeof fabricCanvas.getObjects === 'function') {
+            fabricCanvas.getObjects().forEach(inspecter);
+        }
+    } catch (_) {}
+    return n;
+}
+window._spImagesEnChargementDuCanvas = spImagesEnChargementDuCanvas;
+
+/* Attend que le document soit prêt pour l'export. Renvoie true si prêt, false si le plafond
+   de patience est atteint (on n'empêche jamais l'export : on le signale et on continue). */
+async function spAttendreDocumentPretPourExport(maxMs) {
+    const plafond = Number(maxMs) || 20000;
+    const fin = Date.now() + plafond;
+    for (;;) {
+        if (!spPlanchesEnChargementPourExport()) return true;
+        if (Date.now() >= fin) {
+            console.warn('[SP export] Document encore en chargement après ' + Math.round(plafond / 1000) + ' s : export lancé malgré tout (des éléments peuvent manquer).');
+            return false;
+        }
+        await new Promise(function (r) { setTimeout(r, 100); });
+    }
+}
+window.spAttendreDocumentPretPourExport = spAttendreDocumentPretPourExport;
+
+/* Contrôle du cliché JUSTE AVANT de composer le PDF : tout ce qui est DESSINÉ doit être
+   ENREGISTRÉ. Si le canevas porte plus d'objets que `pages[]` (cas du doublon/ajout fait
+   pendant un chargement), la sauvegarde forcée a été avalée par son garde-fou : on le dit
+   et on refait la sauvegarde une fois. Renvoie le nombre d'objets manquants (0 = cliché bon). */
+function spControleClicheExportAvantEnvoi() {
+    try {
+        const cvs = (typeof window._spCanvasCandidats === 'function') ? window._spCanvasCandidats() : [];
+        const vus = {};
+        let dessines = 0, stockes = 0;
+        for (let i = 0; i < cvs.length; i++) {
+            const c = cvs[i];
+            if (!c || !c.bleedInfo) continue;
+            const b = c.bleedInfo;
+            const idxs = [];
+            if (typeof b.pageIndex === 'number') idxs.push(b.pageIndex);
+            if (typeof b.leftPageIndex === 'number') idxs.push(b.leftPageIndex);
+            if (typeof b.rightPageIndex === 'number') idxs.push(b.rightPageIndex);
+            for (let k = 0; k < idxs.length; k++) {
+                if (vus[idxs[k]]) continue;
+                vus[idxs[k]] = 1;
+                if (typeof window.spCompterObjetsPage === 'function') stockes += window.spCompterObjetsPage(idxs[k]);
+            }
+            if (typeof window.spCompterObjetsDessines === 'function') dessines += window.spCompterObjetsDessines(c);
+        }
+        /* ⚠️ On ne réagit QUE dans un sens : canevas > cliché = des objets dessinés ne sont pas
+           enregistrés (le doublon manquant). L'inverse (cliché > canevas) est le comportement
+           VOULU de préservation des données d'une planche vide — on n'y touche pas. */
+        const manquants = dessines - stockes;
+        if (manquants > 0) {
+            console.warn('[SP export] Cliché incomplet : ' + dessines + ' objet(s) dessiné(s) pour ' + stockes + ' enregistré(s) (' + manquants + ' manquant(s)). Sauvegarde forcée avant composition du PDF.');
+            try { if (typeof window.saveAllPages === 'function') window.saveAllPages(true); } catch (_) {}
+        }
+        return manquants;
+    } catch (_) { return 0; }
+}
+window.spControleClicheExportAvantEnvoi = spControleClicheExportAvantEnvoi;
+
+
 // ⚡ PERFORMANCE: Debounced updateLayersPanel — évite de reconstruire le DOM trop souvent
 let _updateLayersTimer = null;
 function debouncedUpdateLayersPanel() {
@@ -3053,23 +3180,85 @@ let customFonts = [];
 let clipboard = null;
 let colorProfile = null;
 
+// ══════════════════════════════════════════════════════════════════════
+// ⚠️ 2026-10-03 — UN SEUL ENDROIT VIDE LA SÉLECTION AU CHANGEMENT DE PAGE.
+//
+// Demande utilisateur : « lorsque je sélectionne un objet sur une page et que je
+// change de page, la sélection doit se désélectionner automatiquement à chaque
+// changement de page ».
+//
+// POURQUOI UNE FONCTION UNIQUE : la règle existait déjà dans `goToPage`, mais
+// plusieurs chemins de navigation écrivent `currentPageIndex` sans passer par lui
+// (clic sur la moitié gauche/droite d'une planche, flèches, champ de page, vignettes).
+// Recopier la désélection dans chacun aurait fait quatre copies à maintenir — et
+// c'est exactement comme ça qu'un chemin finit par être oublié. Trois appelants :
+//   · `goToPage()`                — navigation historique ;
+//   · `updatePageIndicator()`     — que TOUS les chemins traversent ;
+//   · les clics gauche/droite d'une planche (`attachSpreadPageEvents`).
+// Un simple re-rendu ne suffit pas : en double page, les DEUX pages vivent sur le
+// MÊME canevas, la sélection y survit donc au changement de page.
+function spDeselectionnerToutPourChangementPage() {
+    try {
+        (canvases || []).forEach(function (c) {
+            try {
+                if (c && c.getActiveObject()) c.discardActiveObject();
+                if (c) c.requestRenderAll();
+            } catch (_) {}
+        });
+        // L'interface suit : panneaux, poignées, barres d'outils.
+        try { if (typeof updateSelectionState === 'function') updateSelectionState(); } catch (_) {}
+    } catch (_) {}
+}
+window.spDeselectionnerToutPourChangementPage = spDeselectionnerToutPourChangementPage;
+
+/* ⚠️ 2026-10-03 — L'ÉTAT RÉEL D'UNE PAGE, LU SUR SON CANEVAS.
+   MESURÉ dans l'app : `saveAllPages()` **NE SUPPRIME PAS** les objets retirés du canevas —
+   un rectangle effacé, puis sauvegardé + re-rendu, RÉAPPARAÎT (la page est restaurée depuis
+   `pages[]`, qui le contenait encore). C'est la racine du défaut signalé :
+   « j'efface le bloc, j'importe un nouveau Word, le bloc effacé réapparaît ».
+   On lit donc ce qui est RÉELLEMENT affiché : les objets du canevas de la page (repères de
+   l'interface écartés), sérialisés comme partout ailleurs. Si la page n'a pas de canevas
+   monté (document fermé, planche non construite), on retombe sur `pages[]`.
+   ⚠️ Contrat de lecture seulement : cette fonction ne modifie jamais `pages[]`. */
+function spObjetsReelsDeLaPage(pageIndex) {
+    const idx = Math.max(0, Math.round(Number(pageIndex) || 0));
+    try {
+        if (typeof canvases !== 'undefined' && canvases && canvases.length) {
+            const cv = canvases.find(function (c) {
+                if (!c) return false;
+                const b = c.bleedInfo || {};
+                return (b.pageIndex === idx) || (b.leftPageIndex === idx) || (b.rightPageIndex === idx);
+            });
+            if (cv && typeof cv.getObjects === 'function') {
+                return cv.getObjects()
+                    .filter(function (o) { return o && !o.excludeFromExport && !o._spGuide; })
+                    .map(function (o) {
+                        return o.toObject(['selectable', 'evented', 'hasControls', 'lockMovementX', 'lockMovementY', 'splitByGrapheme', 'breakWords']);
+                    });
+            }
+        }
+    } catch (_) {}
+    try {
+        if (pages[idx] && pages[idx].objects) {
+            const parsed = typeof pages[idx].objects === 'string' ? JSON.parse(pages[idx].objects) : pages[idx].objects;
+            if (parsed && parsed.objects) return parsed.objects;
+        }
+    } catch (_) {}
+    return [];
+}
+window.spObjetsReelsDeLaPage = spObjetsReelsDeLaPage;
+
 // ==================== FONCTION GLOBALE DE NAVIGATION ====================
 // Permet de naviguer vers une page spécifique
 function goToPage(pageIndex) {
     if (pageIndex < 0 || pageIndex >= pages.length) return false;
     if (currentPageIndex === pageIndex) return true;
     
-    // 🆕 v1.7.174 — Désélectionner TOUS les objets sur TOUS les canvases
-    //   avant de changer de page. Sans cela, un objet sélectionné sur la
-    //   page 1 peut être accidentellement déplacé/modifié quand on passe
-    //   à la page 2 (la sélection persistait dans Fabric.js).
+    // v1.7.174 — Désélectionner TOUS les objets sur TOUS les canvases avant de
+    //   changer de page (un objet sélectionné peut sinon être déplacé/modifié
+    //   par erreur quand on passe à la page suivante).
     try {
-        canvases.forEach(function(c) {
-            if (c && c.getActiveObject()) {
-                c.discardActiveObject();
-            }
-            if (c) c.requestRenderAll();
-        });
+        spDeselectionnerToutPourChangementPage();
         // Sauvegarder l'état de la page qu'on quitte
         if (typeof saveAllPages === 'function') saveAllPages();
     } catch(_) {}
@@ -3642,6 +3831,76 @@ if (window._spGpuEnabled) {
             return __preRotatePatch.call(this, ctx, styleOverride);
         };
         fabric.Object.prototype.drawControls.__spRotatedHandlesPatched = true;
+    }
+})();
+
+/* ═══ _SP_EXPORT_RAPPORT_575 — UNE PHOTO QUI DISPARAÎT DOIT SE VOIR DANS LA CONSOLE ═══
+   Audit 2026-10-03 (« les éléments n'apparaissent pas dans le PDF »). Deux chemins de
+   disparition SILENCIEUSE d'un objet à l'export / au rendu, tous deux identifiés dans le
+   moteur (Fabric 5.1.0) :
+
+   1) `fabric.util.enlivenObjects` — utilisé par `loadFromJSON`, donc par TOUS les chemins
+      d'export (`renderPageToImage`, `renderPageToImageWithBleed`, `renderSpreadToImageForExport`)
+      — **OMET l'objet** quand son chargement échoue (photo introuvable, `blob:` révoqué,
+      fichier local inaccessible, CORS) : il rappelle `fromObject` avec une erreur, laisse la
+      case `undefined` dans la liste et appelle quand même le callback. L'objet est donc absent
+      du canevas d'export, SANS AUCUN MESSAGE. On installe un reviver par défaut qui COMPTE et
+      ANNONCE ces échecs (tout reviver appelant est préservé).
+
+   2) `fabric.Canvas.prototype.toDataURL` — un canevas trop grand ou la mémoire insuffisante
+      (plusieurs photos dupliquées en haute résolution sur une machine lente) peut rendre
+      « data:, » ou un PNG quasi vide : la page sort BLANCHE dans le PDF. On le DÉTECTE et on
+      le dit. Aucun changement de comportement : on n'interrompt jamais l'export. */
+(function () {
+    if (typeof fabric === 'undefined') return;
+
+    if (fabric.util && typeof fabric.util.enlivenObjects === 'function'
+        && !fabric.util.enlivenObjects.__spRapportErreurs) {
+        const _origEnliven = fabric.util.enlivenObjects;
+        fabric.util.enlivenObjects = function (objects, callback, namespace, reviver) {
+            const _rev = function (o, obj, error) {
+                if (error) {
+                    try {
+                        window._spObjetsNonCharges = (window._spObjetsNonCharges || 0) + 1;
+                        const src = (o && o.src) ? String(o.src).slice(0, 90) : '';
+                        console.warn('[SP] Objet NON chargé — il sera ABSENT du rendu et de l\'export : '
+                            + ((o && o.type) || '?') + (src ? ' (' + src + ')' : '')
+                            + (error && error.message ? ' — ' + error.message : ''));
+                    } catch (_) {}
+                }
+                if (typeof reviver === 'function') reviver(o, obj, error);
+            };
+            return _origEnliven.call(this, objects, callback, namespace, _rev);
+        };
+        fabric.util.enlivenObjects.__spRapportErreurs = true;
+        window._spObjetsNonCharges = window._spObjetsNonCharges || 0;
+    }
+
+    if (fabric.Canvas && fabric.Canvas.prototype && typeof fabric.Canvas.prototype.toDataURL === 'function'
+        && !fabric.Canvas.prototype.toDataURL.__spRapportVide) {
+        const _origToDataURL = fabric.Canvas.prototype.toDataURL;
+        fabric.Canvas.prototype.toDataURL = function (opts) {
+            let res = null, err = null;
+            try {
+                res = _origToDataURL.call(this, opts);
+            } catch (e) {
+                err = e;
+            }
+            try {
+                const nb = (typeof this.getObjects === 'function')
+                    ? this.getObjects().filter(o => o && !o.excludeFromExport).length : 0;
+                const suspect = !res || res === 'data:,' || String(res).length < 1000;
+                if (nb > 0 && suspect) {
+                    console.warn('[SP export] Rendu d\'image SUSPECT : ' + nb + ' objet(s) dessiné(s) pour '
+                        + (res ? String(res).length : 0) + ' caractère(s) d\'image'
+                        + (err ? ' — ' + err.message : '')
+                        + '. La page peut sortir vide à l\'export (mémoire ou canevas trop grand).');
+                }
+            } catch (_) {}
+            if (err) throw err;
+            return res;
+        };
+        fabric.Canvas.prototype.toDataURL.__spRapportVide = true;
     }
 })();
 
@@ -17420,16 +17679,63 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
         if (obj._hasSpreadMirror) {
             clearSpreadMirrorObjects(obj);
         }
+        /* 🛡️ FIX 2026-10-03 — DOUBLON AU DÉPLACEMENT D'UN OBJET (signalé : « quand je
+           déplace des objets SVG, parfois il se duplique »).
+
+           MESURÉ / RELU : `sourceCanvas.remove(obj)` est un NO-OP **silencieux** quand
+           `obj` n'appartient pas à `sourceCanvas` (Fabric retire par indexOf → -1 → rien).
+           Or le code amont qui décide de la source admet explicitement plusieurs
+           candidats (« canvas sous le curseur », « canvas de la page active », « premier
+           canvas avec un objet actif » — voir le mousemove global). Si le canvas désigné
+           n'est pas le VRAI propriétaire, le clone est bien posé sur la page cible mais
+           l'original n'est jamais retiré → l'objet existe DEUX FOIS. Le défaut est
+           intermittent (« parfois ») parce qu'il dépend de quel canvas est choisi.
+
+           On cherche donc le VRAI propriétaire avant de cloner/déplacer ; s'il est
+           introuvable, on annule proprement (on retire le clone, on ne laisse rien). */
+        let _vraiSource = sourceCanvas;
+        try {
+            if (!_vraiSource || typeof _vraiSource.getObjects !== 'function'
+                || _vraiSource.getObjects().indexOf(obj) < 0) {
+                _vraiSource = (typeof canvases !== 'undefined' && canvases ? canvases : []).find(function (c) {
+                    return c && typeof c.getObjects === 'function' && c.getObjects().indexOf(obj) >= 0;
+                }) || null;
+            }
+        } catch (_eSrc) { _vraiSource = sourceCanvas; }
+
+        if (!_vraiSource) {
+            console.warn('[SP Transfer] Objet introuvable sur un canvas : transfert ANNULÉ (le clone aurait créé un doublon).');
+            try { targetCanvas.remove(clonedObj); } catch (_) {}
+            try {
+                delete obj._transferPending;
+                delete obj._crossPageTransfer;
+                delete obj._dragSourcePageIndex;
+                delete obj._originalLeft;
+                delete obj._originalTop;
+            } catch (_) {}
+            targetCanvas.requestRenderAll();
+            return;
+        }
+
         // 🛡️ FIX 2026-08-25 : marquer le canvas source pour que le handler
         //   object:removed ne crée PAS d'entrée d'historique « Objet supprimé »
         //   parasite (l'objet n'est pas supprimé, il déménage vers la page cible).
-        sourceCanvas._isTransferring = true;
+        _vraiSource._isTransferring = true;
         try {
-            sourceCanvas.remove(obj);
+            _vraiSource.remove(obj);
         } finally {
-            sourceCanvas._isTransferring = false;
+            _vraiSource._isTransferring = false;
         }
-        sourceCanvas.requestRenderAll();
+        _vraiSource.requestRenderAll();
+        /* Contrôle de sortie : si l'original est encore là, le clone est un DOUBLON
+           visible — on le retire plutôt que de laisser deux exemplaires. */
+        try {
+            if (_vraiSource.getObjects().indexOf(obj) >= 0 && targetCanvas.getObjects().indexOf(clonedObj) >= 0) {
+                console.warn('[SP Transfer] Original non retiré → clone annulé (anti-doublon).');
+                targetCanvas.remove(clonedObj);
+                targetCanvas.requestRenderAll();
+            }
+        } catch (_) {}
         
         // 🔗 Mettre à jour textLinks: les entrées qui pointent vers ce bloc doivent
         // refléter la nouvelle page cible
@@ -18841,6 +19147,13 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         function attachSpreadPageEvents(fabricCanvas, leftPageRect, rightPageRect) {
     // Events page GAUCHE
     leftPageRect.on('mousedown', () => {
+        /* ⚠️ 2026-10-03 — DÉSÉLECTION À CHAQUE CHANGEMENT DE PAGE (voir
+           spDeselectionnerToutPourChangementPage). Les clics sur la moitié gauche ou droite
+           d'une planche sont le chemin de navigation le plus courant en double page, et ils
+           écrivaient `currentPageIndex` sans passer par `goToPage`. */
+        try {
+            if (currentPageIndex !== fabricCanvas.bleedInfo.leftPageIndex) spDeselectionnerToutPourChangementPage();
+        } catch (_) {}
         currentPageIndex = fabricCanvas.bleedInfo.leftPageIndex;
         updatePageIndicator();
         updateSpreadPageSelection(fabricCanvas, 'left');
@@ -18871,6 +19184,10 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     
     // Events page DROITE
     rightPageRect.on('mousedown', () => {
+        /* ⚠️ 2026-10-03 — même désélection que la page gauche (voir la fonction nommée). */
+        try {
+            if (currentPageIndex !== fabricCanvas.bleedInfo.rightPageIndex) spDeselectionnerToutPourChangementPage();
+        } catch (_) {}
         currentPageIndex = fabricCanvas.bleedInfo.rightPageIndex;
         updatePageIndicator();
         updateSpreadPageSelection(fabricCanvas, 'right');
@@ -28453,6 +28770,24 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         }
 
         function updatePageIndicator() {
+    /* ⚠️ 2026-10-03 — LA SÉLECTION SE VIDE À CHAQUE CHANGEMENT DE PAGE.
+       Retour utilisateur : « lorsque je sélectionne un objet sur une page et que je change de
+       page, la sélection doit se désélectionner automatiquement à chaque changement de page ».
+       MESURÉ À LA LECTURE : `goToPage()` le faisait déjà, mais plusieurs chemins de navigation
+       écrivaient `currentPageIndex` SANS passer par lui (clic sur la moitié gauche/droite d'une
+       planche, flèches, champ de page, vignettes) : l'objet de l'autre page restait sélectionné
+       et se déplaçait ensuite avec les flèches.
+       On place donc la règle ICI, à l'endroit que TOUS ces chemins traversent (l'indicateur de
+       page est mis à jour après chaque navigation) : dès que la page courante change, on vide
+       la sélection sur TOUS les canevas. Un simple rendu ne suffit pas : en double page, les
+       deux pages vivent sur le MÊME canevas, la sélection y survit donc au changement. */
+    try {
+        if (typeof window._spPageIndicPrec !== 'number') window._spPageIndicPrec = currentPageIndex;
+        if (window._spPageIndicPrec !== currentPageIndex) {
+            window._spPageIndicPrec = currentPageIndex;
+            spDeselectionnerToutPourChangementPage();
+        }
+    } catch (_) {}
     document.getElementById('pageIndicator').textContent = `${currentPageIndex + 1}/${pages.length}`;
     
     // Mettre à jour l'indicateur visuel de la page active
@@ -38556,8 +38891,40 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 var monId = "spflow_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
                 box.textLinkId = monId;
                 box.isLinkedTextBlock = true;
-
-                var data = box.toObject(SP_CUSTOM_PROPS);
+                /* ⚠️ 2026-10-03 — AUCUN MOT NE DÉPASSE DU CADRE (audit du défaut signalé :
+                   « en import Word 1 colonne, certains mots dépassent vers la droite du bloc
+                   (contour bleu) »).
+                   Tout est déjà en place pour l'éviter — `breakWords: true`,
+                   `splitByGrapheme: false`, largeur = largeur de colonne — MAIS rien ne le
+                   VÉRIFIE après la pose : un mot insécable plus large que la colonne (nom long,
+                   URL, référence) est alors dessiné au-delà du cadre, et en texte JUSTIFIÉ
+                   Fabric étire la ligne au lieu de la couper. On contrôle donc la largeur des
+                   lignes réellement calculées (`__lineWidths`, remplies par le moteur de repli)
+                   et, si une ligne dépasse, on coupe au caractère EN DERNIER RECOURS.
+                   Le repli normal n'est jamais touché : on ne corrige que ce qui dépasse. */
+                var data;
+                try {
+                    const _largMax = function () {
+                        const L = box.__lineWidths;
+                        if (!L || !L.length) return 0;
+                        let m = 0;
+                        for (let i2 = 0; i2 < L.length; i2++) { const w2 = Number(L[i2]) || 0; if (w2 > m) m = w2; }
+                        return m;
+                    };
+                    let _depasse = _largMax();
+                    if (_depasse > colWidth + 0.5) {
+                        /* 1) rappeler la coupure de mots et recalculer */
+                        box.set({ breakWords: true });
+                        try { box.initDimensions(); } catch (_) {}
+                        if (_largMax() > colWidth + 0.5 && box.splitByGrapheme !== true) {
+                            /* 2) dernier recours : couper au caractère (plus aucune ligne ne peut
+                                  dépasser, même un mot insécable). */
+                            box.set({ splitByGrapheme: true });
+                            try { box.initDimensions(); } catch (_) {}
+                        }
+                    }
+                    data = box.toObject(SP_CUSTOM_PROPS);
+                } catch (_) { data = box.toObject(SP_CUSTOM_PROPS); }
                 objs().push(data);
 
                 if (chainPrec) {
@@ -38727,13 +39094,10 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             for (var k = 0; k < cles.length; k++) {
                 var pi = parseInt(cles[k], 10);
                 if (!pages[pi]) continue;
-                var existing = [];
-                if (pages[pi].objects) {
-                    try {
-                        var parsed = typeof pages[pi].objects === "string" ? JSON.parse(pages[pi].objects) : pages[pi].objects;
-                        if (parsed && parsed.objects) existing = parsed.objects;
-                    } catch (_) {}
-                }
+                /* ⚠️ 2026-10-03 — PURGE : on fusionne avec l'état RÉEL du canevas, pas avec
+                   `pages[]` (qui garde les objets supprimés — mesuré). Voir
+                   spObjetsReelsDeLaPage. */
+                var existing = spObjetsReelsDeLaPage(pi);
                 pages[pi].objects = JSON.stringify({ objects: existing.concat(pageObjects[pi]) });
             }
 
@@ -39194,10 +39558,19 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             getPageObjs().push(data);
         }
 
-        function measureTextHeight(text, fontSize, isBold, width) {
+        function measureTextHeight(text, fontSize, isBold, width, lh) {
+            /* ⚠️ 2026-10-03 — L'INTERLIGNE RÉEL COMPTE DANS LA MESURE.
+               DÉFAUT MESURÉ (retour utilisateur : « en texte coulé, 1 colonne, le texte déborde
+               parfois du bloc ; en 2 colonnes, non ») : cette mesure créait un Textbox SANS
+               `lineHeight` — Fabric prend alors son défaut (1,16) — alors que les blocs RÉELLEMENT
+               posés utilisent 1,05 (titres) ou 1,35 (corps). La hauteur mesurée était donc ~14 %
+               plus courte que la hauteur réelle : la dernière ligne sortait du bloc. En 2 colonnes,
+               les blocs sont plus courts (plus de retours à la ligne), l écart restait sous le seuil
+               et le défaut ne se voyait pas. On mesure désormais avec l interligne exact du bloc. */
             const tb = new fabric.Textbox(text, {
                 left: 0, top: 0, width: width, fontSize,
                 fontFamily: 'Open Sans', fontWeight: isBold ? 'bold' : 'normal',
+                lineHeight: (typeof lh === 'number' && lh > 0) ? lh : 1.35,
                 splitByGrapheme: false, breakWords: true
             });
             return tb.height || Math.ceil(fontSize * 1.35);
@@ -39220,13 +39593,13 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         function applySoftHyphenation(text) {
             return String(text).replace(/([A-Za-zÀ-ÖØ-öø-ÿ]{10,})/g, (m) => softHyphenateWord(m));
         }
-        function splitTextToFit(text, fontSize, isBold, width, remainingH) {
+        function splitTextToFit(text, fontSize, isBold, width, remainingH, lh) {
             const words = text.split(' ');
             let lo = 1, hi = words.length, fit = 0;
             while (lo <= hi) {
                 const mid = Math.floor((lo + hi) / 2);
                 const part = applySoftHyphenation(words.slice(0, mid).join(' '));
-                const h = measureTextHeight(part, fontSize, isBold, width);
+                const h = measureTextHeight(part, fontSize, isBold, width, lh);
                 if (h <= remainingH) { fit = mid; lo = mid + 1; } else { hi = mid - 1; }
             }
             const first = applySoftHyphenation(words.slice(0, Math.max(1, fit)).join(' '));
@@ -39311,11 +39684,14 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
             }
             let remaining = safe.bottom - cursorY;
             let text = block.text || '';
+            /* Interligne RÉEL du bloc : 1,05 pour les titres, 1,35 pour le corps — la même
+               valeur que celle posée plus bas. C'est lui qui manquait à mesureTextHeight(). */
+            const _lh = (block.kind === 'text' && (block.tag === 'h1' || block.tag === 'h2' || block.tag === 'h3')) ? 1.05 : 1.35;
             // Scinder si nécessaire pour tenir dans la colonne
             if (text) {
-                const h = measureTextHeight(applySoftHyphenation(text), fontSize, isBold, colWidth);
+                const h = measureTextHeight(applySoftHyphenation(text), fontSize, isBold, colWidth, _lh);
                 if (h > remaining) {
-                    const parts = splitTextToFit(text, fontSize, isBold, colWidth, remaining);
+                    const parts = splitTextToFit(text, fontSize, isBold, colWidth, remaining, _lh);
                     // première partie
                     const tb1 = new fabric.Textbox(parts.first, {
                         left: currentX(), top: cursorY, width: colWidth,
@@ -39330,7 +39706,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     while (rest && rest.length > 0) {
                         if (!gotoNextColumn()) { newPage(); }
                         remaining = safe.bottom - cursorY;
-                        const more = splitTextToFit(rest, fontSize, isBold, colWidth, remaining);
+                        const more = splitTextToFit(rest, fontSize, isBold, colWidth, remaining, _lh);
                         const tb = new fabric.Textbox(more.first, {
                             left: currentX(), top: cursorY, width: colWidth,
                             fontSize, fontFamily: 'Open Sans', fontWeight: isBold ? 'bold' : 'normal',
@@ -39345,7 +39721,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 }
             }
             // Si ça tient tel quel
-            if (cursorY + (text ? measureTextHeight(text, fontSize, isBold, colWidth) : 0) > safe.bottom) {
+            if (cursorY + (text ? measureTextHeight(text, fontSize, isBold, colWidth, _lh) : 0) > safe.bottom) {
                 if (!gotoNextColumn()) { newPage(); }
             }
             if (text) {
@@ -39371,17 +39747,25 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
         }
 
         // ── Écrire directement dans pages[] (bypass saveAllPages qui ne marche pas en spread) ──
+        /* ⚠️ 2026-10-03 — PURGER AVANT DE FUSIONNER (retour utilisateur : « j'efface le bloc,
+           j'importe un nouveau Word, le bloc effacé réapparaît »).
+           CAUSE MESURÉE À LA LECTURE : la fusion ci-dessous relit `pages[pi].objects` pour y
+           AJOUTER le nouvel import. Or la suppression d'un bloc met à jour le CANEVAS, pas
+           toujours `pages[]` — la version périmée de la page contenait donc encore le bloc
+           effacé, et l'import le réécrivait tel quel. On resynchronise d'abord les pages depuis
+           le canevas (la fonction habituelle de l'app), pour que la fusion parte de l'état
+           RÉEL de l'utilisateur et jamais d'un état oublié. */
+        try { if (typeof saveAllPages === 'function') saveAllPages(); } catch (_) {}
         for (const [pidx, objArr] of Object.entries(pageObjects)) {
             const pi = parseInt(pidx);
             if (!pages[pi]) continue;
-            // Fusionner avec les objets existants de la page (si on import sur une page déjà remplie)
-            let existingObjs = [];
-            if (pages[pi].objects) {
-                try {
-                    const parsed = typeof pages[pi].objects === 'string' ? JSON.parse(pages[pi].objects) : pages[pi].objects;
-                    if (parsed && parsed.objects) existingObjs = parsed.objects;
-                } catch (_) {}
-            }
+            /* ⚠️ 2026-10-03 — PURGE AVANT FUSION, SUR L'ÉTAT RÉEL DU CANEVAS.
+               MESURÉ : `saveAllPages()` ne SUPPRIME pas les objets retirés (un rectangle effacé
+               réapparaît après sauvegarde + re-rendu). La fusion ci-dessous relisait donc
+               `pages[pi].objects` — périmé — et réécrivait le bloc que l'utilisateur venait
+               d'effacer. On lit maintenant ce qui est AFFICHÉ (spObjetsReelsDeLaPage) : un bloc
+               supprimé ne peut plus revenir. */
+            const existingObjs = spObjetsReelsDeLaPage(pi);
             const merged = existingObjs.concat(objArr);
             pages[pi].objects = JSON.stringify({ objects: merged });
         }
@@ -39505,7 +39889,15 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     margin: Math.max(5, Math.min(60, parseFloat(document.getElementById('wordOptMargin').value) || 15)),
                     bodyPt: Math.max(6, Math.min(24, parseFloat(document.getElementById('wordOptBody').value) || 11)),
                     imgWidth: Math.max(20, Math.min(400, parseFloat(document.getElementById('wordOptImgW').value) || 120)),
-                    titres: !!document.getElementById('wordOptTitles').checked,
+                    titres: (function () {
+                        /* ⚠️ 2026-10-03 — L'OPTION A ÉTÉ RETIRÉE DE LA POP-IN (demande utilisateur :
+                           « retirer l'option “conserver les titres en grand (hiérarchie Word)” »).
+                           Le comportement par défaut est conservé : la hiérarchie Word est gardée.
+                           On lit la case SI elle existe encore (anciens gabarits, tests, pages en
+                           cache) : sinon, `true` — exactement ce que la case cochée valait. */
+                        const el = document.getElementById('wordOptTitles');
+                        return el ? !!el.checked : true;
+                    })(),
                     imgReelle: !!document.getElementById('wordOptImgReal').checked
                 };
                 nettoyer();
@@ -47973,6 +48365,12 @@ https://superprint.app
 
         async function confirmExport() {
     await window.ensureExportLibs(); // 🚀 Perf : jspdf/svg2pdf/opentype/wawoff2/fontkit/pdf-lib/jszip à la demande
+    /* 🛡️ _SP_EXPORT_RAPPORT_575 — compteur remis à zéro à chaque export : si un objet
+       n'a pas pu être chargé (photo introuvable, `blob:` révoqué, CORS), Fabric l'OMET
+       silencieusement du canevas d'export. Le compteur et les avertissements console
+       (voir le patch `enlivenObjects`) rendent cette disparition VISIBLE : la cause
+       exacte (type + source) est écrite dans la console, au lieu d'un PDF sans l'élément. */
+    try { window._spObjetsNonCharges = 0; } catch (_) {}
     const modal = document.getElementById('exportModal');
     const requestedQuality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'medium';
     const requestedVectorTypography = requestedQuality === 'ultrahd'
@@ -47987,7 +48385,27 @@ https://superprint.app
     //   l'export lit des pages[] périmées → blocs texte supprimés qui
     //   réapparaissent / superposition. saveAllPages(true) force la lecture
     //   du canvas vivant (respecte _isLoading pour éviter une lecture partielle).
+    /* 🛡️ FIX 2026-10-03 (_SP_EXPORT_PRET_575) — PATIENTER AU LIEU DE PERDRE LE CLICHÉ.
+       MESURÉ/RELU : `saveAllPages(true)` sort en SILENCE si une planche est en `loadFromJSON`
+       (`_isLoading`) — et son `return` n'était pas vérifié ici. L'export composait alors le PDF
+       depuis un `pages[]` PÉRIMÉ : les objets ajoutés ou DUPLIQUÉS juste avant manquaient dans
+       le PDF. Sur une machine lente la fenêtre de chargement est longue, d'où l'intermittence
+       (« avec un délai plus long, ça s'exporte »). On attend donc l'état PRÊT (aucune planche en
+       chargement, aucune image en décodage), puis on sauvegarde, puis on CONTRÔLE le cliché. */
+    try {
+        const _attenteNecessaire = (typeof window.spPlanchesEnChargementPourExport === 'function')
+            ? window.spPlanchesEnChargementPourExport() : false;
+        if (_attenteNecessaire && typeof showPageLoader === 'function') {
+            showPageLoader(currentLanguage === 'en' ? 'Preparing pages…'
+                : (currentLanguage === 'ja' ? 'ページを準備中…' : 'Préparation des pages…'));
+        }
+        if (typeof window.spAttendreDocumentPretPourExport === 'function') {
+            await window.spAttendreDocumentPretPourExport(20000);
+        }
+        if (_attenteNecessaire && typeof hidePageLoader === 'function') hidePageLoader();
+    } catch (_eAttente) {}
     try { saveAllPages(true); } catch(_) {}
+    try { if (typeof window.spControleClicheExportAvantEnvoi === 'function') window.spControleClicheExportAvantEnvoi(); } catch (_eCliche) {}
 
     const exportQuality = document.querySelector('input[name="exportQuality"]:checked')?.value || 'medium';
     const colorModeSelected = document.querySelector('input[name="colorMode"]:checked')?.value || 'rgb';
