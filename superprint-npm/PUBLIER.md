@@ -26,7 +26,7 @@ npm login
 npm publish
 ```
 
-C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.108**).
+C'est tout. Le package `superprint` est en ligne (version du paquet : **1.0.109**).
 
 > ⚠️ **npm 12 et preuve de présence (2FA)** : si `npm publish` affiche « Authenticate your account at … Press ENTER to open in the browser… », la publication est **staged** (préparée mais non publiée) et attend une approbation dans le navigateur — ou un code : `npm publish --otp=XXXXXX`. Ne pas relancer `npm publish` tel quel : npm répond **E409 « Cannot publish over previously staged version »**. Dans ce cas, bumper (`npm version patch --no-git-tag-version`) puis republier, ou approuver le stage (`npm stage list`, `npm stage approve <stage-id>`). Vérifier ensuite que la version est bien sur le registre et non seulement en cache local : `Invoke-RestMethod https://registry.npmjs.org/superprint/1.0.NNN` (404 = pas publiée) et `npm view superprint dist-tags`.
 
@@ -54,13 +54,13 @@ Le CLI télécharge 2 fichiers depuis superprint.cc. Ils doivent être à jour s
 | Fichier | Rôle |
 |---|---|
 | `sp213-local.zip` | L'application (téléchargée au 1er lancement, ~58 Mo) — hébergée sur `app.zigmoon.com/sp213-local.zip` |
-| `version.txt` | Version en ligne (`1.7.576`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
+| `version.txt` | Version en ligne (`1.7.596`) — permet la détection de mise à jour. À déployer en même temps que le zip. |
 
 > `version.txt` : si absent, le CLI affiche "Version en ligne : superprint.cc" sans version — pas bloquant, mais mieux vaut le déployer.
 
 > 📦 Le zip est régénéré par **`node _dev/scripts/_make_zip_492.cjs`** (à la racine du repo : il crée `superprint/sp213-local.zip` puis le contrôle). Il n'est **pas commité** dans git (~58 Mo) — il se déploie par FTP sur `app.zigmoon.com/sp213-local.zip`, accompagné de `superprint/version.txt` → `https://superprint.cc/version.txt`.
 
-> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.576**, aligné sur ce qui est EN LIGNE (zip **1.7.576**, 61 941 834 octets vérifiés le 28/09/2026 sur app.zigmoon.com, et `version.txt` = **1.7.576** sur superprint.cc).
+> ⚠️ **Ordre impératif** : téléverser le zip ET le site **avant** d'avancer `MIN_APP_VERSION` dans `cli.mjs`, sinon `npx superprint` s'arrête sur « downloaded version is invalid or older than the online version ». Plancher actuel : **1.7.596**, aligné sur ce qui est EN LIGNE (zip **1.7.596**, 65 873 008 octets vérifiés le 03/10/2026 sur app.zigmoon.com — les 200 000 derniers octets sont identiques au zip local et l'EOCD est présent, donc l'archive est complète —, et `version.txt` = **1.7.596** sur superprint.cc).
 
 > 🔁 **Prochain cycle** : régénérer le zip (`node _dev/scripts/_make_zip_492.cjs`), le téléverser avec `version.txt`, **puis** avancer `MIN_APP_VERSION` d'une ligne dans `cli.mjs`, puis `npm version patch` + `npm publish`.
 
