@@ -7973,6 +7973,10 @@ function spRtfLayoutInfo(src) {
      une couverture, on en choisit une — puis l'habillage tiré (SVG, couleur, bandes, papier)
      se pose par-dessus. Tiré une fois par document, pour NOS pré-prompts seulement. */
   let SP_GAB_COUV_MODE = 0;
+  /* ⚠️ _SP_STUDIO_ROCK631s — LES TIRAGES DE COUVERTURE N'ONT LIEU QU'UNE FOIS par composition.
+     Le tirage vit maintenant dans deux chemins (rotation des styles, et pré-prompt qui nomme
+     sa palette) : ce drapeau empêche le second de rejouer le premier. */
+  let SP_GAB_COUV_TIRE = false;
   /* ⚠️ _SP_STUDIO_ROCK631h — HABILLAGE DE COUVERTURE TIRÉ AU SORT (demande utilisateur :
      « plein de styles de layout, parfois les typo écrites en très gros, parfois des fonds
      SVG, parfois des fonds de couleur… la couverture serait top parfois avec un fond SVG
@@ -10446,12 +10450,15 @@ function spRtfLayoutInfo(src) {
          v2 = archétype SuperPrint (la base de structure) ;
          v3 = combinaison typographique ;
          v4 = palette de la rotation des styles ;
-         v5 = ouverture de couverture (monde éditorial).
+         v5 = ouverture de couverture (monde éditorial) ;
+         v6 = chance de modèle premium ;
+         v7 = motif de composition (pied de page, grand chiffre) ;
+         v8 = grille du document suivi (1, 2 ou 3 colonnes).
        `L.v` reste `v` : à l'intérieur d'un document, tous les tirages sont posés une fois et
        relus partout — la cohérence est conservée. Seule la branche des Réglages
        (REG.variation) reste déterministe : c'est elle qui permet de figer une variation
        quand on bouge une tirette. */
-    return { n: SP_GAB_N, v: Math.random(), v2: Math.random(), v3: Math.random(), v4: Math.random(), v5: Math.random(), v6: Math.random(), v7: Math.random() };
+    return { n: SP_GAB_N, v: Math.random(), v2: Math.random(), v3: Math.random(), v4: Math.random(), v5: Math.random(), v6: Math.random(), v7: Math.random(), v8: Math.random() };
   }
 
   /* ⚠️ _SP_STUDIO_ROCK626 — LARGEUR MOYENNE D'UN CARACTÈRE, EN JAPONAIS AUSSI.
@@ -11063,6 +11070,67 @@ function spRtfLayoutInfo(src) {
           ]],
         ]
       },
+      /* ⚠️ _SP_STUDIO_ROCK631s — LE REGISTRE DE DÉMONSTRATION DU MAGAZINE.
+         MESURÉ (pastille « Magazine 32 pages · planches », 6 envois) : le moteur posait un
+         texte de démonstration de ROMAN (« Le Jardin d’hiver », sur-titre « ROMAN ») sur une
+         demande de magazine — d’où une couverture de livre à sur-titre ROMAN. La cause est
+         dans spGabDemoRegistre : les familles `cahier`, `brochure`, `lettre` ET `couverture`
+         renvoyaient toutes au registre `roman`. Un magazine a maintenant SON registre : un
+         numéro complet — dossier, enquête, portraits, reportage, entretien, chronique — écrit
+         pour SuperPrint, à remplacer par les vrais articles. */
+      magazine: {
+        titre: 'L’Atelier',
+        surtitre: 'Numéro 12 — octobre 2026 · matières et métiers',
+        chapeau: 'Trois dossiers, deux portraits et une enquête : celles et ceux qui réparent la ville, un métier à la fois.',
+        note: 'texte de démonstration (magazine) écrit pour SuperPrint — remplacez-le par vos articles',
+        sections: [
+          ['Enquête — Les mains de la ville', [
+            'Ils sont maçons, vitriers, ébénistes, ferronniers. Nous les avons suivis pendant onze semaines, sur quatorze chantiers, pour comprendre ce qui tient debout une ville quand le budget ne suit pas.',
+            'Premier constat : la réparation coûte moins cher que la démolition dans huit cas sur dix — à condition d’accepter de travailler sur l’existant, ce que les marchés publics découragent encore.',
+            'Deuxième constat : les équipes qui réparent sont plus âgées de neuf ans que celles qui construisent. Le savoir-faire existe, la relève manque.',
+          ]],
+          ['Dossier — Le béton et l’argile', [
+            'Le béton a gagné la ville en trente ans. Il perd du terrain en trois saisons : la terre crue revient dans les cahiers des charges, portée par des architectes qui refusent de climatiser des bureaux neufs.',
+            'Nous avons visité quatre chantiers où l’argile porte les murs. Le confort d’été y est meilleur de six degrés, sans machine.',
+            'Reste la question du temps : un mur en terre sèche demande trois semaines de plus qu’un mur en béton. À l’échelle d’un immeuble, cette différence décide du projet.',
+          ]],
+          ['Portrait — Celle qui répare les toits', [
+            'À cinquante-deux ans, Hélène monte encore sur les toits six jours sur sept. Elle a couvert la moitié des immeubles de la rue des Tanneurs, et elle connaît chaque gouttière par son bruit.',
+            'Elle parle peu, mesure beaucoup. « Un toit, dit-elle, c’est une négociation entre l’eau et la pente. On ne gagne jamais : on retarde. »',
+            'Elle forme deux apprenties depuis mars. Ni l’une ni l’autre n’avait touché une ardoise avant de la rencontrer.',
+          ]],
+          ['Reportage — Nuit blanche au marché', [
+            'À trois heures du matin, les halles sont un chantier : caisses, transpalettes, vapeur. Nous avons passé une nuit avec ceux qui installent la ville avant que la ville ne se réveille.',
+            'Le ballet tient à quinze minutes près. Un camion en retard et c’est toute l’allée qui se décale jusqu’à midi.',
+            'À six heures, quand les premiers clients arrivent, plus rien ne se souvient de la nuit. C’est exactement l’objectif.',
+          ]],
+          ['Entretien — L’architecte qui refuse de démolir', [
+            '« On ne construit pas une ville, on l’entretient. » Paul Vasseur plaide pour la transformation systématique du bâti existant, quitte à renoncer à la signature.',
+            'Il raconte deux projets refusés, un bâtiment sauvé, et la difficulté de faire chiffrer la valeur d’un mur qui tient.',
+            'Sa conclusion est un chiffre : sur les vingt dernières années, son agence a réutilisé 78 % de la matière des bâtiments qu’elle a repris.',
+          ]],
+          ['Chronique — Ce que disent les trottoirs', [
+            'Le trottoir est le seul espace public dont chacun connaît les défauts par cœur : la dalle qui bouge, la grille qui chante, le caniveau qui déborde à la première pluie.',
+            'Nous avons demandé à quarante habitants de dessiner le leur. Aucun n’a dessiné la même chose — et tous ont dessiné le même endroit : le passage devant l’école.',
+          ]],
+          ['Carnet — Cinq ateliers à visiter', [
+            'Un souffleur de verre à la lisière du faubourg, une relieuse qui travaille le papier de récupération, un ferronnier qui fabrique ses outils, une céramiste qui cuit au bois, un ébéniste qui ne jette aucun chute.',
+            'Tous ouvrent leur porte le premier samedi du mois. Aucun ne vend en ligne : la visite fait partie du métier.',
+          ]],
+          ['Point de vue — La ville lente', [
+            'Accélérer un chantier coûte toujours quelque chose : une reprise, un délai de séchage refusé, un détail abandonné. La ville lente n’est pas une nostalgie, c’est une comptabilité.',
+            'Les villes qui réparent le mieux ne sont pas les plus riches : ce sont celles qui gardent leurs équipes d’un chantier à l’autre.',
+          ]],
+          ['Cahier critique — Trois livres sur la matière', [
+            'Un essai sur la terre crue, un album photographique sur les toits de Paris, un manuel de réemploi des matériaux : trois façons de regarder ce qui nous entoure.',
+            'Le plus utile des trois n’est pas le plus beau : c’est le manuel, parce qu’il donne des prix.',
+          ]],
+          ['En fin de numéro — Les outils', [
+            'La truelle à joint creux, le niveau à bulle magnétique, la scie à araser : trois outils que tout le monde connaît et que personne ne sait nommer.',
+            'Nous les avons photographiés chez ceux qui les utilisent tous les jours.',
+          ]],
+        ]
+      },
   },
   en: {
       theatre: {
@@ -11253,6 +11321,60 @@ function spRtfLayoutInfo(src) {
           ]],
         ]
       },
+      /* ⚠️ _SP_STUDIO_ROCK631s — the magazine demonstration register (see the French one). */
+      magazine: {
+        titre: 'The Workshop',
+        surtitre: 'Issue 12 — October 2026 · materials and trades',
+        chapeau: 'Three features, two portraits and one investigation: the people who repair the city, one trade at a time.',
+        note: 'demonstration text (magazine) written for SuperPrint — replace it with your own articles',
+        sections: [
+          ['Investigation — The hands of the city', [
+            'They are bricklayers, glaziers, joiners, blacksmiths. We followed them for eleven weeks, on fourteen sites, to understand what holds a city together when the budget does not follow.',
+            'First finding: repair costs less than demolition in eight cases out of ten — provided you accept working on what already stands, which public procurement still discourages.',
+            'Second finding: the repair crews are nine years older than the building crews. The know-how is there; the next generation is not.',
+          ]],
+          ['Feature — Concrete and clay', [
+            'Concrete won the city in thirty years. It is losing ground in three seasons: raw earth is back in the specifications, pushed by architects who refuse to air-condition new offices.',
+            'We visited four sites where clay carries the walls. Summer comfort there is six degrees better, with no machinery.',
+            'The question is time: a rammed-earth wall takes three weeks longer than a concrete one. Across a whole building, that difference decides the project.',
+          ]],
+          ['Portrait — The woman who mends roofs', [
+            'At fifty-two, Hélène still climbs onto roofs six days a week. She has covered half the buildings on Tanneurs Street, and knows every gutter by its sound.',
+            'She says little and measures a lot. “A roof,” she says, “is a negotiation between water and slope. You never win: you delay.”',
+            'She has been training two apprentices since March. Neither had touched a slate before they met her.',
+          ]],
+          ['Report — A white night at the market', [
+            'At three in the morning the halls are a building site: crates, pallet trucks, steam. We spent a night with the people who install the city before the city wakes up.',
+            'The whole ballet holds to within fifteen minutes. One late lorry and the entire aisle shifts until noon.',
+            'By six, when the first customers arrive, nothing remembers the night. That is precisely the point.',
+          ]],
+          ['Interview — The architect who refuses to demolish', [
+            '“You do not build a city, you maintain it.” Paul Vasseur argues for systematically transforming what already exists, even at the cost of a signature.',
+            'He talks about two projects he turned down, one building he saved, and how hard it is to price the value of a wall that holds.',
+            'His conclusion is a number: over the past twenty years his practice has reused 78 % of the material from the buildings it took on.',
+          ]],
+          ['Column — What the pavements say', [
+            'The pavement is the only public space whose faults everyone knows by heart: the slab that moves, the grate that sings, the gutter that overflows at the first rain.',
+            'We asked forty residents to draw theirs. No two drew the same thing — and all of them drew the same spot: the crossing in front of the school.',
+          ]],
+          ['Notebook — Five workshops to visit', [
+            'A glassblower at the edge of the suburb, a bookbinder working with reclaimed paper, a blacksmith who makes his own tools, a potter who fires with wood, a joiner who wastes no offcut.',
+            'All of them open their doors on the first Saturday of the month. None of them sell online: the visit is part of the trade.',
+          ]],
+          ['Viewpoint — The slow city', [
+            'Speeding up a site always costs something: a rework, a curing time refused, a detail abandoned. The slow city is not nostalgia, it is accounting.',
+            'The cities that repair best are not the richest: they are the ones that keep their crews from one site to the next.',
+          ]],
+          ['Review section — Three books on material', [
+            'An essay on raw earth, a photographic album of Paris roofs, a manual on reusing materials: three ways of looking at what surrounds us.',
+            'The most useful of the three is not the most beautiful: it is the manual, because it gives prices.',
+          ]],
+          ['End of issue — The tools', [
+            'The pointing trowel, the magnetic spirit level, the flush-cutting saw: three tools everybody knows and nobody can name.',
+            'We photographed them with the people who use them every day.',
+          ]],
+        ]
+      },
   },
   jp: {
       theatre: {
@@ -11427,6 +11549,45 @@ function spRtfLayoutInfo(src) {
             '構造的な三つの取り組みが進行中：受注準備の自動化、品質認証、そして両拠点への生産管理の展開。',
           ]],
         ]
+      },
+      /* ⚠️ _SP_STUDIO_ROCK631s — マガジンのデモ原稿（フランス語の登録と同じ役割）。
+         修正前は「雑誌」の指示にも小説のデモ原稿が使われ、表紙に「ROMAN」と出ていた。 */
+      magazine: {
+        titre: 'アトリエ',
+        surtitre: '第12号 — 2026年10月・素材と職人',
+        chapeau: '三つの特集、二つの人物、一つの調査：街を直す人たちを、一つの職人技ずつ追った。',
+        note: 'SuperPrint 用に書かれたデモ誌面です — ご自身の記事に差し替えてください',
+        sections: [
+          ['調査 — 街の手', [
+            '石工、ガラス職人、木工、鍛冶。私たちは十一週間にわたり十四の現場を追い、予算がつかないとき何が街を支えているのかを調べた。',
+            '第一の発見：修理は解体より十回中八回安い。ただし「既にあるもの」を作業対象として受け入れることが条件で、公共調達はまだそれをためらう。',
+            '第二の発見：修理を担う職人たちは、新築の職人より九歳年上である。技術はある。後継がいない。',
+          ]],
+          ['特集 — コンクリートと土', [
+            'コンクリートは三十年で街を制した。そして三季で後退しつつある。土が仕様書に戻ってきた。冷房を嫌う建築家たちが押している。',
+            '土壁の四つの現場を訪ねた。夏の快適さは機械なしで六度良い。',
+            '残るのは時間の問題である。版築の壁はコンクリートより三週間長くかかる。建物全体では、その差が設計を決めてしまう。',
+          ]],
+          ['人物 — 屋根を直す人', [
+            '五十二歳のエレーヌは今も週六日、屋根に上がる。タヌール通りの建物の半分を葺き、どの樋もその音で分かる。',
+            '言葉は少なく、寸法は多い。「屋根は、水と勾配の交渉です。勝てはしない。遅らせるだけ。」',
+            '三月から二人の見習いを預かっている。二人とも、彼女に会うまでスレートに触れたことがなかった。',
+          ]],
+          ['ルポ — 市場の白い夜', [
+            '午前三時、ホールは現場である。木箱、パレットトラック、湯気。街が目を覚ます前に街を組み立てる人たちと一夜を過ごした。',
+            '全体の段取りは十五分の精度で回る。トラックが一台遅れれば、通路一つが正午までずれる。',
+            '六時、最初の客が来るころには、夜の記憶はどこにもない。それが目的である。',
+          ]],
+          ['インタビュー — 壊さない建築家', [
+            '「街は建てるものではなく、手入れするものです。」ポール・ヴァスールは、署名を諦めてでも既存の建物を改修すべきだと主張する。',
+            '断った二つの計画、救った一つの建物、そして「持ちこたえている壁」の価格を説明する難しさを語る。',
+            '結論は数字である。過去二十年、彼の事務所は手がけた建物の素材の七八％を再利用した。',
+          ]],
+          ['コラム — 歩道が語ること', [
+            '歩道は、誰もが欠点を暗記している唯一の公共空間である。動くスラブ、鳴るグレーチング、雨のたびに溢れる側溝。',
+            '四十人の住民に自分の歩道を描いてもらった。同じ絵は一つもなかった。そして全員が同じ場所を描いた。学校前の横断部分である。',
+          ]],
+        ]
       }
   }
   };
@@ -11461,6 +11622,82 @@ function spRtfLayoutInfo(src) {
           accroche: 'Trois fours, neuf artisans, une gamme table qui représente désormais la moitié des ventes.',
           ouverture: 'L’atelier a ouvert sa propre boutique en avril. Le passage en vente directe a fait progresser le panier moyen de 22 %.',
           titres: ['L’année', 'Les collections', 'Les fours et les mains', 'Ce qui vient'] }
+      ],
+      /* ⚠️ _SP_STUDIO_ROCK631s — LES SUJETS DE MAGAZINE (titre du numéro + titres d’articles).
+         Sans eux, le registre magazine sortait toujours le MÊME numéro : le titre de la
+         manchette et les trois accroches ne changeaient jamais d’un envoi à l’autre. Les
+         titres sont ceux des articles, dans l’ordre — la manchette les reprend en pied. */
+      magazine: [
+        { titre: 'L’Atelier', surtitre: 'Numéro 12 — octobre 2026 · matières et métiers',
+          accroche: 'Trois dossiers, deux portraits et une enquête : celles et ceux qui réparent la ville, un métier à la fois.',
+          ouverture: 'Nous avons suivi les équipes de réparation pendant onze semaines, sur quatorze chantiers.',
+          secs: [
+            ['Enquête — Les mains de la ville', [
+              'Ils sont maçons, vitriers, ébénistes, ferronniers. Nous les avons suivis onze semaines sur quatorze chantiers, pour comprendre ce qui tient debout une ville quand le budget ne suit pas.',
+              'Premier constat : la réparation coûte moins cher que la démolition dans huit cas sur dix — à condition d’accepter de travailler sur l’existant, ce que les marchés publics découragent encore.',
+              'Deuxième constat : les équipes qui réparent sont plus âgées de neuf ans que celles qui construisent. Le savoir-faire existe, la relève manque.',
+            ]],
+            ['Portrait — Celle qui répare les toits', [
+              'À cinquante-deux ans, Hélène monte encore sur les toits six jours sur sept. Elle a couvert la moitié des immeubles de la rue des Tanneurs, et elle connaît chaque gouttière par son bruit.',
+              'Elle parle peu, mesure beaucoup. « Un toit, dit-elle, c’est une négociation entre l’eau et la pente. On ne gagne jamais : on retarde. »',
+              'Elle forme deux apprenties depuis mars. Ni l’une ni l’autre n’avait touché une ardoise avant de la rencontrer.',
+            ]],
+            ['Carnet — Cinq ateliers à visiter', [
+              'Un souffleur de verre, une relieuse qui travaille le papier de récupération, un ferronnier qui fabrique ses outils, une céramiste qui cuit au bois, un ébéniste qui ne jette aucune chute.',
+              'Tous ouvrent leur porte le premier samedi du mois. Aucun ne vend en ligne : la visite fait partie du métier.',
+            ]],
+          ] },
+        { titre: 'Traverse', surtitre: 'Numéro 8 — novembre 2026 · la ville qui se répare',
+          accroche: 'Réparer plutôt que démolir coûte moins cher huit fois sur dix — et personne ne veut le financer.',
+          ouverture: 'Le premier immeuble repris sans démolition date de 2019. Depuis, la méthode a gagné onze rues.',
+          secs: [
+            ['Enquête — Réparer moins cher', [
+              'Le premier immeuble repris sans démolition date de 2019. Depuis, la méthode a gagné onze rues et deux équipes municipales.',
+              'Le surcoût du réemploi ne vient jamais de la matière : il vient du temps passé à trier, nettoyer et reposer. À trois semaines près, l’opération bascule.',
+            ]],
+            ['Dossier — Les marchés publics contre la réparation', [
+              'Les cahiers des charges récompensent encore la construction neuve : le prix au mètre carré décide seul, et le réemploi n’y a pas de ligne.',
+              'Trois villes ont réécrit leurs critères. Sur les deux appels d’offres suivants, le surcoût annoncé a disparu — sans hausse du budget.',
+            ]],
+            ['Portrait — Le ferronnier du faubourg', [
+              'Il forge ses propres outils depuis trente ans, dans un atelier de dix-huit mètres carrés, entre la voie ferrée et l’ancien lavoir.',
+              'Ses grilles équipent la moitié des balcons du quartier. Il refuse la galvanisation : « Ce qui dure doit pouvoir se réparer. »',
+            ]],
+          ] },
+        { titre: 'Contrechamp', surtitre: 'Numéro 4 — septembre 2026 · l’envers des chantiers',
+          accroche: 'Ce que les plans ne montrent jamais : les nuits, les délais, les reprises, les mains.',
+          ouverture: 'Un chantier se juge à l’heure où plus personne ne regarde.',
+          secs: [
+            ['Enquête — L’heure invisible', [
+              'Un chantier se juge à l’heure où plus personne ne regarde : entre quatre et six heures du matin.',
+              'Nous avons passé onze nuits sur cinq sites pour mesurer ce qui se décide avant le jour — les reprises, les mises au point, les outillages oubliés.',
+            ]],
+            ['Dossier — Les reprises que l’on cache', [
+              'Sur les quatorze chantiers suivis, neuf ont repris un ouvrage sans le signaler au client.',
+              'Ces reprises représentent 4 % du budget total et, presque toujours, une semaine de délai. Les équipes les considèrent comme normales ; les maîtres d’ouvrage les découvrent à la réception.',
+            ]],
+            ['Portrait — La grutière', [
+              'Elle monte à quarante mètres six jours sur sept, et voit la ville comme personne : les toits, les cours, les travaux des autres.',
+              'Vingt-deux ans de métier, aucune chute. Sa règle tient en une phrase : « On ne prend pas de risque, on prend du temps. »',
+            ]],
+          ] },
+        { titre: 'Le Courant', surtitre: 'Numéro 21 — décembre 2026 · eau, pierre, bois',
+          accroche: 'Trois matières, trois chantiers, et la même question : combien de temps doit durer un bâtiment ?',
+          ouverture: 'L’eau gagne toujours, la pierre tient toujours, le bois travaille toujours.',
+          secs: [
+            ['Enquête — Ce que l’eau décide', [
+              'L’eau gagne toujours : elle fixe l’orientation, la pente, le matériau et, au bout du compte, le budget.',
+              'Trois chantiers suivis pendant un hiver entier le prouvent : les ouvrages qui l’ignorent coûtent deux fois — une fois à la pose, une fois à la reprise.',
+            ]],
+            ['Dossier — La pierre qui tient', [
+              'La pierre tient, mais elle ne pardonne pas l’erreur de pose : un joint mal fait et le mur travaille, un lit mal orienté et la façade s’ouvre.',
+              'Quatre carrières françaises rouvrent pour répondre à la demande, toutes pour des chantiers de réparation.',
+            ]],
+            ['Portrait — Le scieur', [
+              'Il débite le chêne à la scie à cadre, comme son grand-père, dans un atelier qui sent la sciure humide.',
+              'Chaque pièce est numérotée, empilée, et séchée trois ans avant d’être vendue. « Le bois ne se force pas : il se laisse faire. »',
+            ]],
+          ] }
       ],
       roman: [
         { titre: 'Les Heures basses', surtitre: 'Roman',
@@ -11511,6 +11748,79 @@ function spRtfLayoutInfo(src) {
           accroche: 'Three kilns, nine makers, and a table range that now accounts for half of sales.',
           ouverture: 'The workshop opened its own shop in April. Moving to direct sales lifted the average basket by 22%.',
           titres: ['The year', 'The collections', 'Kilns and hands', 'What comes next'] }
+      ],
+      /* ⚠️ _SP_STUDIO_ROCK631s — the magazine subjects (issue name + article titles). */
+      magazine: [
+        { titre: 'The Workshop', surtitre: 'Issue 12 — October 2026 · materials and trades',
+          accroche: 'Three features, two portraits and one investigation: the people who repair the city, one trade at a time.',
+          ouverture: 'We followed the repair crews for eleven weeks, across fourteen sites.',
+          secs: [
+            ['Investigation — The hands of the city', [
+              'They are bricklayers, glaziers, joiners, blacksmiths. We followed them for eleven weeks on fourteen sites, to understand what holds a city together when the budget does not follow.',
+              'First finding: repair costs less than demolition in eight cases out of ten — provided you accept working on what already stands, which public procurement still discourages.',
+              'Second finding: the repair crews are nine years older than the building crews. The know-how is there; the next generation is not.',
+            ]],
+            ['Portrait — The woman who mends roofs', [
+              'At fifty-two, Hélène still climbs onto roofs six days a week. She has covered half the buildings on Tanneurs Street, and knows every gutter by its sound.',
+              'She says little and measures a lot. “A roof,” she says, “is a negotiation between water and slope. You never win: you delay.”',
+              'She has been training two apprentices since March. Neither had touched a slate before they met her.',
+            ]],
+            ['Notebook — Five workshops to visit', [
+              'A glassblower, a bookbinder working with reclaimed paper, a blacksmith who makes his own tools, a potter who fires with wood, a joiner who wastes no offcut.',
+              'All of them open their doors on the first Saturday of the month. None of them sell online: the visit is part of the trade.',
+            ]],
+          ] },
+        { titre: 'Crossing', surtitre: 'Issue 8 — November 2026 · the city that repairs itself',
+          accroche: 'Repairing costs less than demolishing eight times out of ten — and nobody wants to fund it.',
+          ouverture: 'The first building taken on without demolition dates from 2019. Since then the method has won eleven streets.',
+          secs: [
+            ['Investigation — Cheaper to repair', [
+              'The first building taken on without demolition dates from 2019. Since then the method has won eleven streets and two municipal crews.',
+              'The extra cost of reuse never comes from the material: it comes from the time spent sorting, cleaning and re-laying. Within three weeks, the whole job tips the other way.',
+            ]],
+            ['Feature — Procurement against repair', [
+              'Specifications still reward new construction: price per square metre decides alone, and reuse has no line in it.',
+              'Three cities rewrote their criteria. Over the following two tenders the announced extra cost disappeared — with no rise in budget.',
+            ]],
+            ['Portrait — The blacksmith of the suburb', [
+              'He has forged his own tools for thirty years, in an eighteen-square-metre workshop between the railway and the old wash-house.',
+              'His grilles equip half the balconies in the neighbourhood. He refuses galvanising: “What lasts must be repairable.”',
+            ]],
+          ] },
+        { titre: 'Reverse Shot', surtitre: 'Issue 4 — September 2026 · the other side of building sites',
+          accroche: 'What drawings never show: the nights, the delays, the rework, the hands.',
+          ouverture: 'A site is judged at the hour when nobody is watching.',
+          secs: [
+            ['Investigation — The invisible hour', [
+              'A site is judged at the hour when nobody is watching: between four and six in the morning.',
+              'We spent eleven nights on five sites to measure what is decided before daylight — the rework, the briefings, the forgotten tools.',
+            ]],
+            ['Feature — The rework nobody mentions', [
+              'Of the fourteen sites we followed, nine redid a piece of work without telling the client.',
+              'That rework accounts for 4 % of the total budget and, almost always, a week of delay. The crews consider it normal; clients discover it at handover.',
+            ]],
+            ['Portrait — The crane operator', [
+              'She climbs forty metres six days a week, and sees the city as nobody else does: the roofs, the courtyards, other people’s work.',
+              'Twenty-two years in the trade, no falls. Her rule fits in one sentence: “You don’t take a risk, you take time.”',
+            ]],
+          ] },
+        { titre: 'The Current', surtitre: 'Issue 21 — December 2026 · water, stone, wood',
+          accroche: 'Three materials, three sites, and the same question: how long should a building last?',
+          ouverture: 'Water always wins, stone always holds, wood always moves.',
+          secs: [
+            ['Investigation — What water decides', [
+              'Water always wins: it sets the orientation, the slope, the material and, in the end, the budget.',
+              'Three sites followed through a whole winter prove it: structures that ignore water are paid for twice — once when built, once when repaired.',
+            ]],
+            ['Feature — The stone that holds', [
+              'Stone holds, but it does not forgive a bad laying: one poor joint and the wall moves, one misaligned bed and the facade opens.',
+              'Four French quarries are reopening to meet demand, all of it for repair work.',
+            ]],
+            ['Portrait — The sawyer', [
+              'He cuts oak on a frame saw, like his grandfather, in a workshop that smells of damp sawdust.',
+              'Every piece is numbered, stacked and dried for three years before it is sold. “Wood is not forced: it is allowed.”',
+            ]],
+          ] }
       ],
       roman: [
         { titre: 'The Low Hours', surtitre: 'A novel',
@@ -11568,6 +11878,21 @@ function spRtfLayoutInfo(src) {
     if (sj.surtitre && (!M.surtitre || M.surtitre === l.surtitre)) M.surtitre = sj.surtitre;
     if (sj.accroche && (!M.chapeau || M.chapeau === l.chapeau)) M.chapeau = sj.accroche;
     const secs = M.sections || [];
+    /* ⚠️ _SP_STUDIO_ROCK631s — UN SUJET PEUT APPORTER SES PROPRES ARTICLES (titre + texte).
+       MESURÉ (banc des couvertures, 6 envois de la pastille « Magazine 32 pages · planches ») :
+       les sujets ne renommaient que les TITRES, en gardant les PARAGRAPHES du lot de base — la
+       couverture annonçait donc « Portrait — Le scieur » sur un texte parlant d’Hélène et des
+       toits, et « Dossier — La pierre qui tient » sur le béton. Un sujet qui porte `secs`
+       (titre + paragraphes) remplace maintenant les premières sections ENTIÈREMENT : le titre
+       annoncé et la matière composée restent cohérents. Les sections suivantes gardent le lot
+       de base, avec ses propres titres. */
+    if (renommerSections && Array.isArray(sj.secs)) {
+      sj.secs.forEach(function (s, i) {
+        if (!s || !s[0] || !secs[i]) return;
+        secs[i].t = s[0];
+        secs[i].ps = (s[1] || []).slice();
+      });
+    }
     /* Les titres de sections ne sont renommés que lorsque TOUTE la liste vient du lot
        (`renommerSections`). Dans un mélange, les premières sections sont les textes de
        l'utilisateur : on n'y touche pas. */
@@ -11587,11 +11912,19 @@ function spRtfLayoutInfo(src) {
   function spGabDemoRegistre(g, brief) {
     const s = String(brief || '').toLowerCase();
     if (/po[èe]me|po[ée]sie|poems?|poetry|\bvers\b|ha[ïi]ku|sonnet|ballade|詩|ポエム/.test(s)) return 'poesie';
+    /* ⚠️ _SP_STUDIO_ROCK631s — UN MAGAZINE REÇOIT UN NUMÉRO, PAS UN ROMAN.
+       MESURÉ (pastille « Magazine 32 pages · planches », 6 envois) : le texte de démonstration
+       était un ROMAN — titre « Le Jardin d’hiver », sur-titre « ROMAN » composé sur la
+       couverture — parce que la famille `couverture` (une couverture de MAGAZINE) figurait dans
+       la liste des registres « roman » (avec cahier, brochure, lettre). Un magazine a maintenant
+       son propre registre, et la famille `couverture` y renvoie. */
+    if (g && String(g.fam || '') === 'couverture') return 'magazine';
+    if (/magazine|manchette|masthead|\bnum[ée]ro\b|accroches?\b|teasers?\b|マガジン|雑誌/.test(s)) return 'magazine';
     if (g && g.fam === 'theatre') return 'theatre';
     if (/th[ée][âa]tre|mol[iè]re|com[ée]die|trag[ée]die|pi[èe]ce|戯曲|台本/.test(s)) return 'theatre';
     if (g && (g.fam === 'rapport' || g.fam === 'presse' || g.fam === 'brandbook' || g.fam === 'presentation' || g.fam === 'catalogue')) return 'rapport';
     if (/rapport|bilan|activit[ée]|chiffres?|r[ée]sultats?|kpi|事業報告|決算/.test(s)) return 'rapport';
-    if (g && (g.fam === 'cahier' || g.fam === 'brochure' || g.fam === 'lettre' || g.fam === 'couverture')) return 'roman';
+    if (g && (g.fam === 'cahier' || g.fam === 'brochure' || g.fam === 'lettre')) return 'roman';
     return '';
   }
   function spGabDemoTexte(g, brief) {
@@ -12531,6 +12864,12 @@ function spRtfLayoutInfo(src) {
      pourtant parler de PAGES, sinon il annonce « 24 demandées → 13 composées » sur un
      livre complet. */
   let SP_GAB_PAGES_COMPOSEES = 0;
+  /* ⚠️ _SP_STUDIO_ROCK631r — LA MATIÈRE DE LA DERNIÈRE COMPOSITION ÉTAIT-ELLE LA NÔTRE ?
+     Sert au compte rendu de pagination : quand le document fourni par l'utilisateur ne
+     remplit pas le nombre de pages demandé, on le DIT et on explique pourquoi (le studio
+     ne fabrique pas de contenu). Sur un texte de démonstration, au contraire, la maquette
+     est prolongée jusqu'à la cible : il n'y a donc rien à expliquer. */
+  let SP_GAB_DERNIER_DEMO = false;
   /* _SP_STUDIO_WORDING_587 — style tiré au sort : annoncé UNE fois par demande. */
   let SP_GAB_ROT_VU = '';
   /* ⚠️ _SP_STUDIO_BASES_609 — LA BASE SUPERPRINT TIRÉE AU SORT. `SP_GAB_BASE_REG` est le
@@ -15517,9 +15856,158 @@ function spRtfLayoutInfo(src) {
     if (M.surtitre) e.push(spGabT(L.x0 + L.k * 22, L.y0 + L.k * 16, L.cw - L.k * 44, String(M.surtitre).toUpperCase(), 8.5, '#ffffff', 'bold', 'left', 1.1, 220));
     return e;
   }
+  /* ══ ⚠️ _SP_STUDIO_ROCK631s — LES COUVERTURES DE MAGAZINE (MANCHETTES) ══════════════════
+     Demande utilisateur : « retravaille les cover du pré-prompt Magazine 32 pages · planches :
+     elles ne sont pas top et pas toujours avec un titre ».
+     MESURÉ (banc `_dev/scripts/_rock_couvertures.cjs`, 6 envois de la pastille, page 1 relevée
+     élément par élément) : les SIX couvertures étaient la MÊME composition — titre 65 pt sur
+     un bloc noir (#0e0e10), chapô 17 pt, sur-titre « ROMAN » 9 pt, deux aplats — seules la
+     police et la grille du corps changeaient. Or la pastille décrit une MANCHETTE (« grand
+     titre et trois accroches ») : rien de tel n'était composé, et le sur-titre disait « ROMAN »
+     sur un magazine (le registre de démonstration donnait un ROMAN, cf. spGabDemoRegistre).
+     Causes mesurées : pour un magazine de 32 pages, la famille retenue est le CAHIER multipage,
+     dont la 1re page est une couverture de LIVRE ; et les tirages de couverture existants
+     (`SP_GAB_COUV_MODE` : 6 modèles, `SP_GAB_COUV_STYLE`) n'étaient tirés QUE dans la branche
+     « rotation des styles », jamais atteinte ici (la demande nomme sa palette, « bleu encre et
+     sable »).
+     Les trois modèles ci-dessous sont des manchettes de presse magazine. Chacune porte le
+     TITRE en grand (règle de la maison, voir spGabTitreCouvertureAssure) et n'utilise que les
+     fabriques existantes (spGabT / spGabR / spGabL / spGabPhoto) : aucune géométrie nouvelle,
+     aucun risque de dépasser la page. */
+  const spGabManchetteTitre = function (L, M) {
+    const t = String((M && (M.titre || M.surtitre)) ||
+      (M && M.sections && M.sections[0] && M.sections[0].t) || (L.g && L.g.nom) || '');
+    return t.replace(/\s+/g, ' ').trim();
+  };
+  /* 1. LA MANCHETTE CLASSIQUE — le nom en très grandes capitales espacées, une règle d'accent,
+     le numéro, un grand visuel, et LES TROIS ACCROCHES demandées par la pastille, en pied. */
+  function spGabO_manchette(L, n, tot) {
+    const e = [], p = L.pal, M = L.t, k = L.k;
+    const titre = spGabManchetteTitre(L, M);
+    const tk = Math.round(Math.min(L.g.titre * 1.3, L.ch * 0.085) * 10) / 10;
+    const hTitre = spGabH(titre, tk, L.cw, 0.95);
+    e.push(spGabT(L.x0, L.y0 + k * 4, L.cw, titre, tk, p.txt, 'bold', 'left', 0.95, 60));
+    e.push(spGabL(L.x0, L.y0 + k * 10 + hTitre, L.cw, p.a, 6));
+    if (M.surtitre) {
+      e.push(spGabT(L.x0, L.y0 + k * 18 + hTitre, L.cw * 0.62, String(M.surtitre).toUpperCase(),
+        8.5, p.a, 'bold', 'left', 1.1, 200));
+    }
+    const yV = L.y0 + k * 34 + hTitre;
+    const hV = Math.max(k * 80, (L.y1 - k * 58) - yV);
+    if (!spGabPhoto(L, e, L.x0, yV, L.cw, hV, 'photo de couverture')) e.push(spGabR(L.x0, yV, L.cw, hV, p.clair, 0));
+    /* LES TROIS ACCROCHES : une règle, puis trois colonnes (titre court + début d'article). */
+    const yA = L.y1 - k * 52;
+    e.push(spGabL(L.x0, yA, L.cw, p.txt, 2));
+    const acc = (M.sections || []).filter(function (s) { return s && s.t; }).slice(0, 3);
+    const ecart = Math.max(L.g.gutter, 6) * SP_GAB_K;
+    const cw2 = (L.cw - ecart * 2) / 3;
+    acc.forEach(function (s, i) {
+      const x = L.x0 + i * (cw2 + ecart);
+      /* ⚠️ _SP_STUDIO_ROCK631s — LE FILET SÉPARATEUR DOIT ÊTRE VISIBLE. MESURÉ au banc :
+         `k * 0.5` valait 0,18 mm — un filet de 0 pixel de large dans le document composé
+         (relevé : « RECTANGLE … 0x12 »). Un filet de séparation fait au moins un demi-point
+         à l'impression ; on lui donne 0,7 mm et la couleur d'accent, posée DERRIÈRE les textes. */
+      if (i) e.push(spGabR(x - ecart * 0.5, yA + k * 6, Math.max(0.6, k * 2), k * 34, p.a, 0));
+      const tAcc = spGabCourt(s.t, 48);
+      e.push(spGabT(x, yA + k * 8, cw2, tAcc, 10.5, p.txt, 'bold', 'left', 1.2));
+      const ps = (s.ps && s.ps[0]) || '';
+      if (ps) {
+        e.push(spGabT(x, yA + k * 10 + spGabH(tAcc, 10.5, cw2, 1.2), cw2,
+          spGabCourt(ps, 84), 8, '#6b7280', null, 'left', 1.35));
+      }
+    });
+    if (!acc.length && M.chapeau) {
+      e.push(spGabT(L.x0, yA + k * 8, L.cw * 0.8, spGabCourt(M.chapeau, 140), 10, '#6b7280', null, 'left', 1.4));
+    }
+    return e;
+  }
+  /* 2. LA MANCHETTE AU SOMMAIRE — le nom en haut, le SOMMAIRE à gauche (les titres réels des
+     sections, aucun numéro de page inventé), un grand visuel à droite, la ligne du numéro en
+     pied. C'est le modèle « sommaire illustré » de la demande. */
+  function spGabO_manchetteSommaire(L, n, tot) {
+    const e = [], p = L.pal, M = L.t, k = L.k;
+    const titre = spGabManchetteTitre(L, M);
+    const tk = Math.round(Math.min(L.g.titre * 0.92, L.ch * 0.062) * 10) / 10;
+    const hTitre = spGabH(titre, tk, L.cw, 0.95);
+    e.push(spGabT(L.x0, L.y0 + k * 4, L.cw, titre, tk, p.txt, 'bold', 'left', 0.95, 40));
+    e.push(spGabL(L.x0, L.y0 + k * 10 + hTitre, L.cw, p.txt, 2));
+    const yCorps = L.y0 + k * 26 + hTitre;
+    const hCorps = Math.max(k * 90, L.y1 - k * 34 - yCorps);
+    const cwG = L.cw * 0.42;
+    const cwD = L.cw - cwG - k * 20;
+    e.push(spGabT(L.x0, yCorps, cwG, 'SOMMAIRE', 9, p.a, 'bold', 'left', 1.1, 220));
+    let y = yCorps + k * 16;
+    (M.sections || []).filter(function (s) { return s && s.t; }).slice(0, 6).forEach(function (s) {
+      const tS = spGabCourt(s.t, 54);
+      e.push(spGabT(L.x0, y, cwG, tS, 11, p.txt, 'bold', 'left', 1.2));
+      y += spGabH(tS, 11, cwG, 1.2) + k * 7;
+      e.push(spGabL(L.x0, y, cwG, p.clair || p.a, 1));
+      y += k * 9;
+    });
+    const xD = L.x0 + cwG + k * 20;
+    if (!spGabPhoto(L, e, xD, yCorps, cwD, hCorps, 'visuel de couverture')) e.push(spGabR(xD, yCorps, cwD, hCorps, p.clair, 0));
+    if (M.surtitre) {
+      e.push(spGabT(L.x0, L.y1 - k * 20, L.cw, String(M.surtitre).toUpperCase(), 8.5, p.a, 'bold', 'left', 1.1, 200));
+    }
+    return e;
+  }
+  /* 3. LA MANCHETTE PORTRAIT — un visuel plein cadre, un voile sombre en pied, le nom du
+     magazine en haut en clair, la ligne du numéro sur le voile et les accroches en bande basse.
+     Le titre reste TOUJOURS posé : sans visuel, un aplat d'accent tient le rôle du portrait. */
+  function spGabO_manchettePortrait(L, n, tot) {
+    const e = [], p = L.pal, M = L.t, k = L.k;
+    const titre = spGabManchetteTitre(L, M);
+    const hV = L.ch * 0.42;
+    if (!spGabPhoto(L, e, L.x0, L.y0, L.cw, L.ch, 'portrait pleine page')) e.push(spGabR(L.x0, L.y0, L.cw, L.ch, p.a, 0));
+    e.push(Object.assign(spGabR(L.x0, L.y1 - hV, L.cw, hV, '#0e0e10', 0), { opacity: 0.94 }));
+    const tk = Math.round(Math.min(L.g.titre * 1.05, L.ch * 0.072) * 10) / 10;
+    e.push(spGabT(L.x0, L.y0 + k * 10, L.cw, titre, tk, '#ffffff', 'bold', 'left', 0.95, 50));
+    e.push(spGabL(L.x0, L.y0 + k * 16 + spGabH(titre, tk, L.cw, 0.95), L.cw * 0.34, '#ffffff', 4));
+    if (M.surtitre) {
+      e.push(spGabT(L.x0, L.y1 - hV + k * 16, L.cw * 0.6, String(M.surtitre).toUpperCase(),
+        8.5, '#ffffff', 'bold', 'left', 1.1, 200));
+    }
+    const acc = (M.sections || []).filter(function (s) { return s && s.t; }).slice(0, 3);
+    let y = L.y1 - hV + k * 34;
+    acc.forEach(function (s) {
+      const tS = spGabCourt('· ' + s.t, 60);
+      e.push(spGabT(L.x0, y, L.cw * 0.86, tS, 11, '#f2f2ee', 'bold', 'left', 1.25));
+      y += spGabH(tS, 11, L.cw * 0.86, 1.25) + k * 5;
+    });
+    if (!acc.length && M.chapeau) {
+      e.push(spGabT(L.x0, L.y1 - hV + k * 36, L.cw * 0.86, spGabCourt(M.chapeau, 150), 10.5, '#f2f2ee', null, 'left', 1.4));
+    }
+    return e;
+  }
+  /* LA COUVERTURE DE MAGAZINE PORTE TOUJOURS SON TITRE.
+     MESURÉ (même banc) : la 1re page peut sortir SANS titre exploitable — quand la demande est
+     une CONSIGNE (nos pastilles le sont : « pages », « colonnes », « filets », « folios »…),
+     ses mots ne sont pas composés (règle TITRE_592) et le titre vient alors de la seule matière
+     disponible ; s'il manque, la couverture est muette. On vérifie donc la page 1 : si aucun
+     texte n'atteint 16 pt (le seuil d'un titre, quelle que soit la famille), on pose le titre
+     lisible — celui du document, sinon le sur-titre, sinon le titre de la 1re section, sinon le
+     nom de la famille. Aucune couverture ne part sans titre. */
+  function spGabTitreCouvertureAssure(els, L, M) {
+    try {
+      const liste = Array.isArray(els) ? els : [];
+      const aUnTitre = liste.some(function (e) {
+        return e && e.type === 'text' && /\S/.test(String(e.text || '')) && (Number(e.fontSize) || 0) >= 16;
+      });
+      if (aUnTitre) return liste;
+      const titre = spGabManchetteTitre(L, M);
+      if (!titre) return liste;
+      const tk = Math.round(Math.min(L.g.titre * 0.95, L.ch * 0.075) * 10) / 10;
+      const p = L.pal || {};
+      liste.push(spGabT(L.x0, L.y0 + L.ch * 0.18, L.cw, titre, tk, p.txt || '#101014', 'bold', 'left', 0.95));
+      liste.push(spGabL(L.x0, L.y0 + L.ch * 0.18 + spGabH(titre, tk, L.cw, 0.95) + L.k * 10, L.cw * 0.34, p.a || '#1f6feb', 4));
+      return liste;
+    } catch (_) { return els; }
+  }
   /* La mise en page d'ouverture est choisie par l'agencement ; les formats où une
      ouverture pleine page n'a pas de sens (carte, story, bandeau, CV) la gardent. */
   const SP_GAB_OUVERTURES = [spGabO_split, spGabO_bandeau, spGabO_pleine];
+  /* ⚠️ _SP_STUDIO_ROCK631s — LES QUATRE COUVERTURES DE MAGAZINE, TIRÉES AU SORT. */
+  const SP_GAB_COUV_MAG = [spGabO_manchette, spGabO_manchetteSommaire, spGabO_manchettePortrait, spGabP_couverture];
   const SP_GAB_OUVERTURES_SAUF = { cartevisite: 1, story: 1, bandeau: 1, cv: 1 };
 
   /* ⚠️ UNITÉ (défaut mesuré, cause de tout le reste) : le studio travaille en
@@ -16214,6 +16702,7 @@ function spRtfLayoutInfo(src) {
     SP_GAB_PAPIER_TIRE = '';
     SP_GAB_COUV_STYLE = 'papier';
     SP_GAB_COUV_MODE = 0;
+    SP_GAB_COUV_TIRE = false;
     try {
       /* ⚠️ _SP_STUDIO_ROCK631f — COMPARAISON NORMALISÉE. La première version comparait les
          textes à l'identique ; MESURÉ : le drapeau ne se levait jamais (le titre passé par
@@ -16311,6 +16800,7 @@ function spRtfLayoutInfo(src) {
       state._spSansPhoto = false;
     }
     const texte = spGabMeta(brief);
+    try { SP_GAB_DERNIER_DEMO = !!texte.demoRegistre; } catch (_) { SP_GAB_DERNIER_DEMO = false; }
     /* 🆕 v1.7.584 — LA MATIÈRE DE LA BIBLIOTHÈQUE SUPERPRINT, QUAND LA DEMANDE EST MAIGRE.
        Mesuré : la pastille « Menu restaurant » (une phrase de description, aucun plat) ne
        produisait qu'un titre. Le moteur reprend donc la carte type du modèle éponyme de
@@ -16395,7 +16885,7 @@ function spRtfLayoutInfo(src) {
         if (_estDemo) {
           /* ⚠️ _SP_STUDIO_ROCK611d2 — annonce en français (comme tout le moteur) avec le
              registre en clair, au lieu d'accoler la note du document (dans SA langue). */
-          const _libDemo = { theatre: 'théâtre', roman: 'roman', poesie: 'poèmes', rapport: 'rapport d\'activité' }[String(texte.demoRegistre || '')] || 'exemple';
+          const _libDemo = { theatre: 'théâtre', roman: 'roman', poesie: 'poèmes', rapport: 'rapport d\'activité', magazine: 'magazine' }[String(texte.demoRegistre || '')] || 'exemple';
           appendChat('assistant', '📚 Aucun texte fourni : texte de démonstration (' + _libDemo + ')' +
             (texte.demoSujet ? (' — sujet « ' + texte.demoSujet + ' »') : '') + '. Posez votre document, il prendra sa place.');
         } else {
@@ -16443,11 +16933,48 @@ function spRtfLayoutInfo(src) {
         return a.type !== 'image' && spPjModeDe(a) === 'content' && String(a.text || '').length > 0;
       });
     } catch (_) { _pjContenu = false; }
+    /* ⚠️ _SP_STUDIO_ROCK631r — UNE PIÈCE JOINTE NE FIGE PLUS LA MAQUETTE.
+       Demande utilisateur : « quand je mets des PJ qu'il doit transformer, cela ne doit pas
+       tout le temps [donner] la même création ».
+       MESURÉ (banc `_rock_variance_pj.cjs`, 3 envois, pièce jointe rapport.txt en rôle
+       « contenu ») : les signatures différaient bien 3/3 (palette, typographie, archétype et
+       filets tournent), MAIS les trois sorties portaient la MÊME mise en page —
+       « Maquette « Cahier multipage » … 1 colonne(s) » — même quand la demande demandait elle-
+       même un « Rapport premium 24 pages » : un document client de plus de 600 caractères était
+       TOUJOURS renvoyé sur `qc.cahier`. La contrainte est réelle (un texte client de plusieurs
+       pages a besoin d'une mise en page qui CHAÎNE ses sections, sinon deux sections sur trois
+       sont perdues), mais elle n'a aucune raison d'imposer LE MÊME modèle à chaque fois :
+         · la famille DÉJÀ multipage (cahier, rapport, presse, charte, catalogue, présentation,
+           brochure — celles qui chaînent) est RESPECTÉE, elle ne bouge pas ;
+         · une famille d'UNE PAGE (affiche, couverture, feuillet…) reçoit désormais une des six
+           familles multipages TIRÉE AU SORT, au lieu du cahier systématique. */
+    const SP_GAB_FAM_MULTIPAGE_OK = { cahier: true, rapport: true, presse: true, brandbook: true, presentation: true, catalogue: true, brochure: true };
+    const SP_GAB_FAM_MULTIPAGE = ['qc.cahier', 'qc.corporate', 'qc.presse', 'qc.brandbook', 'qc.catalog', 'qc.presentation'];
+    const spGabFamilleMultipageTiree = function (exclureFam) {
+      try {
+        const _lotMP = SP_GAB_FAM_MULTIPAGE
+          .map(function (k) { return SP_GAB_DESIGN.filter(function (x) { return x.key === k; })[0]; })
+          .filter(function (x) { return x && x.fam !== exclureFam; });
+        if (!_lotMP.length) return null;
+        /* Même règle que partout ailleurs : un tirage NEUF à chaque envoi, mais FIGÉ quand on
+           déplace les tirettes des Réglages (REG.variation) — sinon le pop-in des réglages
+           changerait la mise en page sous les yeux de l'utilisateur à chaque réglage. */
+        const REG2 = window._spReglages;
+        let _vFam;
+        if (REG2 && REG2.variation) {
+          const _vv = (((Number(REG2.variation) || 0) * 31 + 11) % 97 + 97) % 97;
+          _vFam = _vv / 97;
+        } else {
+          _vFam = Math.random();
+        }
+        return _lotMP[Math.floor(_vFam * _lotMP.length) % _lotMP.length];
+      } catch (_) { return null; }
+    };
     const _famUnePage = /^(affiche|couverture|bandeau|story|cartevisite|invitation|mariage|programme|calendrier|etiquette|billet|facture|lettre|cartepostale|carteveux)$/.test(String(g.fam || ''));
     const _psContenu = (texte.sections || []).reduce(function (n2, s) { return n2 + ((s.ps || []).length); }, 0);
     const _blocsContenu = _psContenu + (texte.sections || []).length + Math.max(0, (texte.lignes || []).length - (texte.items || []).length);
-    if (_pjContenu && !(_compris && _compris.fam) && _famUnePage && (_blocsContenu >= 3 || Number(texte.corpsLength) >= 120)) {
-      const _cDoc = SP_GAB_DESIGN.filter(function (x) { return x.key === 'qc.cahier'; })[0];
+    if (_pjContenu && !(_compris && _compris.fam) && !SP_GAB_FAM_MULTIPAGE_OK[g.fam] && _famUnePage && (_blocsContenu >= 3 || Number(texte.corpsLength) >= 120)) {
+      const _cDoc = spGabFamilleMultipageTiree(g.fam) || SP_GAB_DESIGN.filter(function (x) { return x.key === 'qc.cahier'; })[0];
       if (_cDoc) g = Object.assign({}, _cDoc);
     }
     /* PIÈCE JOINTE « MAQUETTE » VOLUMINEUSE : on ne jette pas un document client
@@ -16457,8 +16984,8 @@ function spRtfLayoutInfo(src) {
     /* ⚠️ _SP_STUDIO_ROCK610 — le repli « document long » NE DOIT PAS écraser le livre de théâtre :
        une pièce jointe de plus de 600 caractères était renvoyée au cahier multipage, donc
        la famille théâtre disparaissait dès qu'on joignait le texte de la pièce. */
-    if (texte.corpsLength > 600 && g.fam !== 'cahier' && g.fam !== 'cartevisite' && g.fam !== 'theatre') {
-      const c = SP_GAB_DESIGN.filter(function (x) { return x.key === 'qc.cahier'; })[0];
+    if (texte.corpsLength > 600 && !SP_GAB_FAM_MULTIPAGE_OK[g.fam] && g.fam !== 'cartevisite' && g.fam !== 'theatre') {
+      const c = spGabFamilleMultipageTiree(g.fam) || SP_GAB_DESIGN.filter(function (x) { return x.key === 'qc.cahier'; })[0];
       if (c) g = Object.assign({}, c);
     }
     /* ══ DEUX COLONNES SUR DEMANDE (retour utilisateur : « pour notre modèle en livre on
@@ -16626,8 +17153,17 @@ function spRtfLayoutInfo(src) {
            colonnes, 2 d'abord — le document suivi le plus courant) et on l'écrit dans
            l'archétype retenu. Un LIVRE garde une colonne (règle de lecture), et une demande
            écrite par l'utilisateur garde la main : le tirage ne vaut que pour nos textes. */
-        if (SP_GAB_BRIEF_PREPROMPT && !_estLivre && _baseSP && _baseSP.reg) {
-          const _vC = Math.random();
+        /* ⚠️ _SP_STUDIO_ROCK631r — PAS DE TIRAGE DE GRILLE SUR UNE PIÈCE D'UNE PAGE.
+           MESURÉ (banc, pastille « Affiche noir et or » SANS pièce jointe, 4 envois) : deux
+           envois sur quatre annonçaient « Maquette « Affiche manifeste » posée … 3 colonne(s) »
+           et « Grille tirée au sort : 3 colonne(s) » sur une AFFICHE. Une affiche n'a pas de
+           grille de texte : la mise en page d'affiche ne lit même pas les colonnes, donc le
+           tirage ne produisait rien d'autre qu'une annonce fausse (« 3 colonne(s) » sur un
+           poster à un seul bloc). La grille ne se tire donc que sur un document de PLUSIEURS
+           pages, là où elle a un sens. */
+        const _fam1Page = SP_GAB_FAM_UNE_PAGE.test(String(g.fam || ''));
+        if (SP_GAB_BRIEF_PREPROMPT && !_estLivre && !_fam1Page && _baseSP && _baseSP.reg) {
+          const _vC = (typeof hasard.v8 === 'number') ? hasard.v8 : ((hasard.v * 449) % 1);
           const _colT = (_vC < 0.34) ? 1 : ((_vC < 0.82) ? 2 : 3);
           const _large = (Number(state.pageW) || 210) >= 200;
           const _colF = _large ? _colT : Math.min(2, _colT);
@@ -16696,6 +17232,45 @@ function spRtfLayoutInfo(src) {
             return !!SP_GAB_PAL[k];
           });
         })();
+        /* ⚠️ _SP_STUDIO_ROCK631s — HABILLAGE ET MODÈLE DE COUVERTURE, TIRÉS DANS LES DEUX CAS.
+           MESURÉ (banc `_rock_couvertures.cjs`, pastille « Magazine 32 pages · planches »,
+           6 envois) : les six couvertures étaient la même composition, et `window._spGabCouvMode`
+           comme `_spGabCouvStyle` valaient `undefined` — donc les tirages d'habillage et de
+           modèle de couverture n'avaient JAMAIS eu lieu. Cause : ils étaient enfermés dans la
+           branche « rotation des styles », qui ne s'exécute pas quand la demande NOMME sa palette
+           (« Palette bleu encre et sable » → `_compris.theme` vrai). C'est exactement le cas des
+           quatre pré-prompts premium : sur ceux-là, la couverture ne variait pas d'un envoi à
+           l'autre. Le tirage est donc sorti dans cette petite fonction, appelée une seule fois.
+           Elle ne touche ni au THÈME ni à la PALETTE : ceux-ci restent ceux de la demande. */
+        const _tirerHabillage = function () {
+          if (SP_GAB_COUV_TIRE) return;
+          SP_GAB_COUV_TIRE = true;
+          const _vCouv = (typeof hasard.v5 === 'number') ? hasard.v5 : hasard.v;
+          SP_GAB_COUV_STYLE = (_vCouv < 0.28) ? 'papier'
+            : (_vCouv < 0.52) ? 'svg'
+            : (_vCouv < 0.66) ? 'couleur'
+            : (_vCouv < 0.78) ? 'titre' : 'bandes';
+          const _PIEDS = ['exterieur', 'filet-large', 'centre', 'accent', 'discret'];
+          const _vP = Math.random();
+          SP_GAB_FOLIO_VAR = (_vP < 0.34) ? 'exterieur' : _PIEDS[1 + (Math.floor(Math.random() * 4) % 4)];
+          /* HAUT DE PAGE : NEUTRALISÉ POUR L'INSTANT (mesure honnête du 03/10/2026).
+             Le tirage et le générateur existent (`spGabHautVariant`), mais MESURÉ : les
+             éléments posés dans la MARGE HAUTE sont REPOSITIONNÉS par la passe de zone sûre
+             du studio (rien ne reste dans le document final) — et un élément de marge
+             déplacé peut atterrir sur du contenu. On ne livre donc pas un haut de page
+             boiteux : le tirage renvoie 0 tant que le titre courant n'est pas posé
+             proprement. */
+          SP_GAB_HAUT_VAR = 0;
+          SP_GAB_OUV_VAR = Math.floor(Math.random() * 4) % 4;
+          SP_GAB_COUV_MODE = Math.floor(Math.random() * 6) % 6;
+          try {
+            window._spGabCouvStyle = SP_GAB_COUV_STYLE;
+            window._spGabPiedVar = SP_GAB_FOLIO_VAR;
+            window._spGabHautVar = SP_GAB_HAUT_VAR;
+            window._spGabOuvVar = SP_GAB_OUV_VAR;
+            window._spGabCouvMode = SP_GAB_COUV_MODE;
+          } catch (_) {}
+        };
         if (_lot.length) {
           const _vPalP = (typeof hasard.v4 === 'number') ? hasard.v4 : hasard.v;
           const _cleP = _lot[Math.floor(_vPalP * _lot.length) % _lot.length];
@@ -16727,43 +17302,18 @@ function spRtfLayoutInfo(src) {
             /* ⚠️ _SP_STUDIO_ROCK631h — L'HABILLAGE DE COUVERTURE EST TIRÉ ICI, une fois par
                document : papier (rien), fond SVG complet, fond de couleur d'accent, ou très
                grand titre. C'est la variété de « layout » demandée sur le rapport 24 pages. */
-            const _vCouv = (typeof hasard.v5 === 'number') ? hasard.v5 : hasard.v;
-            SP_GAB_COUV_STYLE = (_vCouv < 0.28) ? 'papier'
-              : (_vCouv < 0.52) ? 'svg'
-              : (_vCouv < 0.66) ? 'couleur'
-              : (_vCouv < 0.78) ? 'titre' : 'bandes';
-            /* ⚠️ _SP_STUDIO_ROCK631i — PIED, HAUT ET OUVERTURE DE COUVERTURE TIRÉS ICI.
-               Le pied de page avait cinq tenues mais n'était jamais tiré (remis à
-               « exterieur » à chaque composition) : d'où « cela ne change pas assez ».
-               Le haut de page, lui, n'existait pas. On tire les trois, une fois par
-               document. La couverture tire aussi son OUVERTURE (0 = celle de l'archétype,
-               1 = bandeau, 2 = split, 3 = pleine page) : d'autres modèles de couverture. */
-            const _PIEDS = ['exterieur', 'filet-large', 'centre', 'accent', 'discret'];
-            const _vP = Math.random();
-            SP_GAB_FOLIO_VAR = (_vP < 0.34) ? 'exterieur' : _PIEDS[1 + (Math.floor(Math.random() * 4) % 4)];
-            const _vH = Math.random();
-            /* ⚠️ HAUT DE PAGE : NEUTRALISÉ POUR L'INSTANT (mesure honnête du 03/10/2026).
-               Le tirage et le générateur existent (`spGabHautVariant`), mais MESURÉ : les
-               éléments posés dans la MARGE HAUTE sont REPOSITIONNÉS par la passe de zone sûre
-               du studio (rien ne reste dans le document final) — et un élément de marge
-               déplacé peut atterrir sur du contenu. On ne livre donc pas un haut de page
-               boiteux : le tirage renvoie 0 tant que le titre courant n'est pas posé
-               proprement (marge haute élargie de quelques millimètres, puis contenu décalé). */
-            SP_GAB_HAUT_VAR = 0;
-            void _vH;
-            SP_GAB_OUV_VAR = Math.floor(Math.random() * 4) % 4;
-            /* ⚠️ _SP_STUDIO_ROCK631k — LE MODÈLE DE COUVERTURE (voir SP_GAB_COUV_MODE) :
-               six mises en page existantes, tirées à égalité. 0 = celle du cahier. */
-            SP_GAB_COUV_MODE = Math.floor(Math.random() * 6) % 6;
-            try {
-              window._spGabCouvStyle = SP_GAB_COUV_STYLE;
-              window._spGabPiedVar = SP_GAB_FOLIO_VAR;
-              window._spGabHautVar = SP_GAB_HAUT_VAR;
-              window._spGabOuvVar = SP_GAB_OUV_VAR;
-              window._spGabCouvMode = SP_GAB_COUV_MODE;
-            } catch (_) {}
+            /* ⚠️ _SP_STUDIO_ROCK631s — LE TIRAGE EST SORTI D'ICI (voir _tirerHabillage) :
+               enfermé dans cette branche « rotation des styles », il n'avait jamais lieu quand
+               la demande nommait sa palette — donc jamais sur les quatre pré-prompts premium. */
+            _tirerHabillage();
           }
         }
+        /* ⚠️ _SP_STUDIO_ROCK631s — ET QUAND AUCUN STYLE N'EST TIRÉ AUSSI (demande qui nomme
+           sa palette, roue « Style » des Réglages) : l'habillage et le modèle de couverture
+           se tirent quand même, une seule fois. C'est ce qui rend les couvertures VARIÉES
+           sur les quatre pré-prompts premium — mesuré : sans cet appel, six envois de la
+           pastille « Magazine 32 pages · planches » donnaient six fois la même couverture. */
+        _tirerHabillage();
       }
       if (!theme && !_ditCouleur && !_impose) {
         const _liste = SP_GAB_ROTATION[g.fam] || SP_GAB_ROTATION._defaut;
@@ -17321,9 +17871,18 @@ function spRtfLayoutInfo(src) {
       const _vm = (typeof hasard.v7 === 'number') ? hasard.v7 : ((hasard.v * 733) % 1);
       SP_GAB_MOTIF_VAR = ['aucun', 'chiffre', 'photoPleine'][Math.floor(_vm * 3) % 3];
     }
-    if (/sans motif|aucun motif|pas de motif|no ?motifs?/i.test(String(brief || ''))) SP_GAB_MOTIF_VAR = 'aucun';
-    else if (/grand chiffre|pied de page|page de chiffre/i.test(String(brief || ''))) SP_GAB_MOTIF_VAR = 'chiffre';
-    else if (/pleine page|plein cadre|pleine surface/i.test(String(brief || ''))) SP_GAB_MOTIF_VAR = 'photoPleine';
+    /* ⚠️ _SP_STUDIO_ROCK631r — LE MOTIF N'EST PLUS FIGÉ PAR NOS PROPRES PASTILLES.
+       MESURÉ (banc, pré-prompt « Rapport premium 24 pages », 3 envois) : le motif sortait
+       « pied de page éditorial » TROIS FOIS SUR TROIS. La cause est la même que pour les
+       colonnes et les encadrés : le texte de nos pastilles décrit lui-même la maquette
+       (« filets », « folios », « légendes », « pied de page »…) et ces mots FORÇAIENT le
+       tirage. Sur nos textes, le tirage garde la main (1/3 chacun) ; un texte écrit par
+       l'utilisateur garde le dernier mot, comme partout ailleurs. */
+    if (!SP_GAB_BRIEF_PREPROMPT) {
+      if (/sans motif|aucun motif|pas de motif|no ?motifs?/i.test(String(brief || ''))) SP_GAB_MOTIF_VAR = 'aucun';
+      else if (/grand chiffre|pied de page|page de chiffre/i.test(String(brief || ''))) SP_GAB_MOTIF_VAR = 'chiffre';
+      else if (/pleine page|plein cadre|pleine surface/i.test(String(brief || ''))) SP_GAB_MOTIF_VAR = 'photoPleine';
+    }
     let _motifDit = false;
     let _piedPose = false;
     /* ⚠️ _SP_STUDIO_ROCK631b — EMPLACEMENTS PHOTO VIDES : décidé ICI, une fois `tot`
@@ -17348,6 +17907,13 @@ function spRtfLayoutInfo(src) {
        elle-même — la même mise en page, la même structure, du texte qui continue — et aucune
        page de décor n'est ajoutée (voir la prolongation de la matière de démonstration plus haut
        dans cette fonction). */
+    /* ⚠️ _SP_STUDIO_ROCK631s — LA DEMANDE EST-ELLE UN MAGAZINE ?
+       Aucune devinette : on lit la FAMILLE (une couverture de magazine) ou les mots que la
+       presse magazine emploie et que ROCK sait déjà lire — « magazine », « manchette »,
+       « masthead », « numéro », « accroches ». Un dossier de presse (« revue de presse en
+       citations ») n'en fait donc PAS partie : il garde sa couverture à lui. */
+    const _estMagazine = (String(g.fam || '') === 'couverture')
+      || /magazine|manchette|masthead|\bnum[ée]ro\b|accroches?\b|teasers?\b/i.test(String(brief || ''));
     for (let i = 1; i <= tot; i++) {
       /* ⚠️ _SP_STUDIO_ROCK631i — LE TITRE COURANT DU HAUT DE PAGE (voir spGabHautVariant) :
          le titre court du document, en capitales, dans la marge haute. */
@@ -17369,10 +17935,29 @@ function spRtfLayoutInfo(src) {
           layPage = _MODS[SP_GAB_COUV_MODE] || layPage;
         } catch (_) {}
       }
+      /* ⚠️ _SP_STUDIO_ROCK631s — UN MAGAZINE OUVRE SUR UNE MANCHETTE (voir spGabO_manchette*).
+         MESURÉ (6 envois de la pastille « Magazine 32 pages · planches ») : la couverture était
+         celle d'un LIVRE — titre 65 pt sur un bloc noir, sur-titre « ROMAN » — et rigoureusement
+         la même à chaque fois, alors que la demande décrit « une manchette en couverture avec
+         grand titre et trois accroches ». Les quatre manchettes sont tirées au sort ; la suite
+         du document n'est pas touchée d'une ligne. */
+      if (SP_GAB_BRIEF_PREPROMPT && i === 1 && tot >= 4 && _estMagazine) {
+        const _iMag = (Number(SP_GAB_COUV_MODE) || 0) % SP_GAB_COUV_MAG.length;
+        layPage = SP_GAB_COUV_MAG[_iMag] || SP_GAB_COUV_MAG[0];
+        try { window._spGabCouvMag = _iMag; } catch (_) {}
+      }
       _piedPose = false;
       /* _SP_STUDIO_WORDING_587 — LA PAGE 2 D'UN RECTO/VERSO EST UN VRAI VERSO (informations, contacts),
          pas une copie du recto (cf. spGabVersoPage). */
       try { els = (L.verso && i === 2) ? (spGabVersoPage(L) || []) : (layPage(L, i, tot) || []); } catch (err) { els = []; }
+      /* ⚠️ _SP_STUDIO_ROCK631s — UNE COUVERTURE PORTE TOUJOURS SON TITRE.
+         Demande utilisateur : « elles ne sont pas top et PAS TOUJOURS AVEC UN TITRE ».
+         MESURÉ : quand la demande est une CONSIGNE (nos pastilles le sont : « pages »,
+         « colonnes », « filets », « folios »…), ses mots ne sont pas composés (règle TITRE_592)
+         et le titre vient de la seule matière disponible — s'il manque, la couverture est
+         muette. On vérifie donc la première page : si aucun texte n'atteint 16 pt (le seuil
+         d'un titre, quelle que soit la famille), on pose le titre lisible du document. */
+      if (i === 1) { try { els = spGabTitreCouvertureAssure(els, L, texte); } catch (_) {} }
       /* ⚠️ _SP_STUDIO_ROCK614 — APPLICATION DES MOTIFS, sur les pages INTÉRIEURES seulement
          (la couverture, l'édito et la 4e de couverture gardent leur composition). */
       if (SP_GAB_MOTIF_VAR !== 'aucun' && i > 2 && i < tot) {
@@ -20187,7 +20772,16 @@ function spRtfLayoutInfo(src) {
           const _reel = ((doc.viewMode === 'spread') && SP_GAB_PAGES_COMPOSEES)
             ? SP_GAB_PAGES_COMPOSEES : (doc.pages || []).length;
           if (_reel !== SP_GAB_PAGES_VOULUES) {
-            const _msgP = '📄 ' + SP_GAB_PAGES_VOULUES + ' page(s) demandée(s), ' + _reel + ' livrée(s).';
+            /* ⚠️ _SP_STUDIO_ROCK631r — ON EXPLIQUE L'ÉCART QUAND LA MATIÈRE EST CELLE DU CLIENT.
+               MESURÉ (banc avec pièce jointe) : la demande « Rapport premium 24 pages » et un
+               rapport joint de 2 093 caractères sortaient « 24 page(s) demandée(s), 5 livrée(s) »
+               sans autre explication — de quoi croire à un bug. La règle est pourtant claire :
+               les pages de fin restées vides ne sont pas livrées, et le moteur n'écrit jamais de
+               faux contenu par-dessus le document de quelqu'un. On le dit donc, au lieu de
+               laisser un écart sec. Sur un texte de démonstration (le nôtre), la maquette est
+               PROLONGÉE jusqu'à la cible : aucun écart à expliquer. */
+            const _msgP = '📄 ' + SP_GAB_PAGES_VOULUES + ' page(s) demandée(s), ' + _reel + ' livrée(s).'
+              + (SP_GAB_DERNIER_DEMO ? '' : ' Votre document ne remplit que ces pages : les pages restées vides ne sont pas livrées, et le studio n\'invente pas de contenu pour atteindre le compte.');
             appendChat('assistant', _msgP);
             try { state.chat.push({ role: 'assistant', text: _msgP }); persistChat(); } catch (_) {}
           }
