@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.595-justif-export';
+const CACHE_NAME = 'superprint-shell-v1.7.596-anti-doublon-export';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

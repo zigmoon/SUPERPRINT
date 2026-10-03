@@ -7716,6 +7716,270 @@ function spRtfLayoutInfo(src) {
   function spImagesReglage() {
     try { return localStorage.getItem('sp213_images_mode') || 'jamais'; } catch (_) { return 'jamais'; }
   }
+  /* ══ _SP_STUDIO_ROCK631e — NOTRE BANQUE SVG D'ABORD ══════════════════════════════════
+     Demande utilisateur : « quand on clique sur image je veux que cela utilise en premier
+     lieu notre banque SVG qu'on a design pour remplir les fonds et les espaces photo ».
+     L'icône image (pré-home ET studio) allume donc LA BANQUE : nos motifs vectoriels
+     (`spGabIllustration` : formes + dégradés ; `spGabMotifSvg` : ombres et teintes)
+     remplissent les FONDS et les EMPLACEMENTS PHOTO. Tant que la banque est allumée, le
+     réseau ne prend plus la main : les photos libres du web ne sont cherchées que si la
+     demande les réclame explicitement (voir le garde du chemin d'envoi).
+     Réglage éteint par défaut : sans clic, rien ne change (les emplacements photo restent
+     les boîtes très claires que l'utilisateur remplit lui-même). */
+  function spBanqueSvgOn() {
+    try { return localStorage.getItem('sp213_banque_svg') === '1'; } catch (_) { return false; }
+  }
+  function spBanqueSvgSet(on) {
+    try { localStorage.setItem('sp213_banque_svg', on ? '1' : '0'); } catch (_) {}
+  }
+  /* Lue à chaque composition (spGabDesign) et par spGabPhoto. */
+  let SP_GAB_BANQUE = false;
+  /* ⚠️ _SP_STUDIO_ROCK631q — CHARTE D'UN SITE (demande utilisateur : « si l'utilisateur met une
+     URL dans le prompt avec ROCK, on pourrait extraire le logo, la charte en CSS et quelques
+     photos depuis la home, et le réimplanter en design — styles HORS typographie »).
+     Thème tiré d'un vrai site, posé par `spCharteDepuisUrl` avant la composition ; il passe
+     devant la rotation de styles pour CETTE composition (la demande garde la main). */
+  let SP_GAB_THEME_SITE = null;
+  let SP_GAB_CHARTE_DIT = '';
+
+  /* ⚠️ Application de la charte d'un site : COULEURS + IMAGES, jamais la typographie. */
+  function spMelange(c1, c2, t) {
+    const h2 = function (c) {
+      const s = String(c || '');
+      if (/^#[0-9a-f]{6}$/i.test(s)) return [s.slice(1, 3), s.slice(3, 5), s.slice(5, 7)].map(function (x) { return parseInt(x, 16); });
+      return null;
+    };
+    const A = h2(c1), B = h2(c2);
+    if (!A || !B) return typeof c1 === 'string' && c1 ? c1 : (c2 || '#ffffff');
+    const v = A.map(function (x, i) { return Math.round(x + (B[i] - x) * t); });
+    const p = function (n) { const s = Math.max(0, Math.min(255, n)).toString(16); return s.length === 1 ? '0' + s : s; };
+    return '#' + p(v[0]) + p(v[1]) + p(v[2]);
+  }
+  async function spCharteAppliquer(url) {
+    const rec = await spCharteRecuperer(url);
+    if (!rec.ok) { try { appendChat('assistant', '🔗 Charte : ' + rec.erreur); } catch (_) {} return null; }
+    const site = spCharteAnalyser(rec.html, rec.urlFinale);
+    const fond = site.clair || '#ffffff';
+    const txt = site.fonce || '#101014';
+    const acc = site.accent || site.accentCss || txt;
+    SP_GAB_THEME_SITE = {
+      cle: 'site',
+      pal: Object.assign({}, SP_GAB_PAL.neutre, {
+        a: acc, a2: acc, txt: txt, fond: fond, clair: fond,
+        sur: (function () { try { return spGabLum(fond) < 0.45 ? '#ffffff' : '#ffffff'; } catch (_) { return '#ffffff'; } })(),
+        doux: spMelange(fond, txt, 0.5), gris: spMelange(fond, txt, 0.32), noir: false
+      }),
+      fonts: ''
+    };
+    /* Les images du site deviennent des PIÈCES JOINTES : elles remplissent les emplacements
+       photo par le chemin normal du studio (et le logo en premier : c'est lui qu'on veut sur
+       la couverture). La typographie du site n'est jamais reprise. */
+    let photos = 0;
+    const liste = (site.logo ? [site.logo] : []).concat(site.photos || []);
+    for (let i = 0; i < liste.length && i < 4; i++) {
+      try {
+        const img = await webImgToDataUrl(liste[i]);
+        if (!img || !img.dataUrl) continue;
+        state.attachments.push({
+          type: 'image', name: (i === 0 && site.logo ? 'logo-site' : 'site-' + i),
+          dataUrl: img.dataUrl, width: img.width, height: img.height,
+          origin: 'charte', url: liste[i]
+        });
+        photos++;
+      } catch (_) {}
+    }
+    const dit = '🔗 Charte de ' + site.source + ' : ' + site.nbCouleurs + ' couleur(s) repérée(s)'
+      + (site.accent ? (', accent ' + site.accent) : '')
+      + (site.logo ? ', logo trouvé' : ', pas de logo lisible')
+      + (photos ? (', ' + photos + ' image(s) jointe(s)') : ', aucune image téléchargeable')
+      + '. Typographie : celle du studio (jamais celle du site).';
+    if (SP_GAB_CHARTE_DIT !== dit) { SP_GAB_CHARTE_DIT = dit; try { appendChat('assistant', dit); } catch (_) {} }
+    try { console.log('[SP213] charte du site', site); } catch (_) {}
+    return site;
+  }
+
+  /* L'URL de la première page citée dans le prompt (http/https), ou '' . */
+  function spUrlDansPrompt(txt) {
+    const m = String(txt || '').match(/\bhttps?:\/\/[^\s<>"')]+/i);
+    if (m) return m[0].replace(/[.,;:]+$/, '');
+    /* « www.exemple.com » : on complète en https, mais jamais pour un mot ordinaire. */
+    const m2 = String(txt || '').match(/\b(www\.[a-z0-9-]+\.[a-z]{2,}(?:\/[^\s<>"')]*)?)/i);
+    return m2 ? ('https://' + m2[1].replace(/[.,;:]+$/, '')) : '';
+  }
+
+  /* Va chercher le HTML par NOTRE proxy (voir sp213-charte.php : le navigateur interdit la
+     lecture d'un site distant depuis un fichier local — CORS). */
+  async function spCharteRecuperer(url) {
+    try {
+      const rep = await fetch('sp213-charte.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: 'u=' + encodeURIComponent(url)
+      });
+      if (!rep.ok) return { ok: false, erreur: 'proxy HTTP ' + rep.status };
+      const js = await rep.json();
+      if (!js || !js.ok || !js.html) return { ok: false, erreur: (js && js.erreur) || 'réponse vide' };
+      return { ok: true, html: String(js.html), urlFinale: String(js.urlFinale || url) };
+    } catch (e) {
+      return { ok: false, erreur: 'proxy injoignable (' + (e && e.message ? e.message : 'réseau') + ') — le studio doit être ouvert depuis votre hébergement, pas en fichier local.' };
+    }
+  }
+
+  /* Analyse du HTML : LOGO + PALETTE + PHOTOS. La typographie n'est jamais lue. */
+  function spCharteAnalyser(html, base) {
+    const src = String(html || '');
+    const resoudre = function (u) {
+      const s = String(u || '').trim();
+      if (!s || /^data:/i.test(s)) return '';
+      try { return new URL(s, base).href; } catch (_) { return ''; }
+    };
+    /* ── 1) PALETTE : toutes les couleurs du CSS et des styles inline ────────────────
+       Pondération par l'usage : un fond pèse plus qu'une bordure, qui pèse plus qu'un texte.
+       On écarte `font-family` par construction (on ne lit que des couleurs). */
+    const poids = {};
+    const ajouter = function (c, p) {
+      const k = String(c || '').toLowerCase().replace(/\s+/g, '');
+      if (!/^(#[0-9a-f]{3}|#[0-9a-f]{6}|rgb\(|rgba\()/.test(k)) return;
+      if (/^rgba?\(/.test(k) && /,\s*0(\.\d+)?\s*\)$/.test(k)) return;   // totalement transparent
+      poids[k] = (poids[k] || 0) + p;
+    };
+    /* a) dans les feuilles et les attributs : on repère la propriété qui précède la couleur */
+    const motifs = [
+      { re: /background(?:-color)?\s*:\s*([^;}"']+)/gi, p: 3 },
+      { re: /border(?:-(?:top|right|bottom|left))?-color\s*:\s*([^;}"']+)/gi, p: 2 },
+      { re: /--[a-z0-9-_]+\s*:\s*([^;}"']+)/gi, p: 2 },
+      { re: /(?:^|[;{"'\s])color\s*:\s*([^;}"']+)/gi, p: 1 },
+      { re: /(?:fill|stroke)\s*[:=]\s*["']?([#][0-9a-f]{3,6})/gi, p: 2 }
+    ];
+    motifs.forEach(function (m) {
+      let r;
+      while ((r = m.re.exec(src)) !== null) {
+        const vals = String(r[1]).match(/#[0-9a-f]{3,6}\b|rgba?\([^)]*\)/gi) || [];
+        vals.forEach(function (v) { ajouter(v, m.p); });
+      }
+    });
+    const classes = Object.keys(poids).sort(function (a, b) { return poids[b] - poids[a]; });
+    const hex = function (c) {
+      const s = String(c);
+      if (/^#[0-9a-f]{6}$/.test(s)) return s;
+      if (/^#[0-9a-f]{3}$/.test(s)) return '#' + s[1] + s[1] + s[2] + s[2] + s[3] + s[3];
+      const m = s.match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+      if (!m) return '';
+      const h = function (n) { const v = Math.max(0, Math.min(255, parseInt(n, 10))).toString(16); return v.length === 1 ? '0' + v : v; };
+      return '#' + h(m[1]) + h(m[2]) + h(m[3]);
+    };
+    const lum = function (c) {
+      const s = hex(c); if (!s) return null;
+      const r = parseInt(s.slice(1, 3), 16) / 255, v = parseInt(s.slice(3, 5), 16) / 255, b = parseInt(s.slice(5, 7), 16) / 255;
+      const f = function (x) { return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); };
+      return 0.2126 * f(r) + 0.7152 * f(v) + 0.0722 * f(b);
+    };
+    const sat = function (c) {
+      const s = hex(c); if (!s) return 0;
+      const r = parseInt(s.slice(1, 3), 16), v = parseInt(s.slice(3, 5), 16), b = parseInt(s.slice(5, 7), 16);
+      return (Math.max(r, v, b) - Math.min(r, v, b)) / 255;
+    };
+    let accent = '', fonce = '', clair = '';
+    let mAccent = -1, mFonce = -1, mClair = -1;
+    classes.slice(0, 40).forEach(function (c) {
+      const l = lum(c); if (l === null) return;
+      const s = sat(c);
+      const note = poids[c];
+      if (s > 0.12 && l > 0.06 && l < 0.72 && note > mAccent) { accent = c; mAccent = note + s; }
+      /* ⚠️ L'ENCRE DE TEXTE N'EST PAS L'ACCENT. MESURÉ sur une page d'essai : le rouge de
+         marque (#c8102e) a une luminance sombre ; il était donc aussi retenu comme « encre »
+         et le thème peignait TOUT le texte en rouge. On écarte la couleur déjà choisie comme
+         accent, et on préfère une teinte PEU SATURÉE pour un texte. */
+      if (l < 0.35 && c !== accent && (note - s * 4) > mFonce) { fonce = c; mFonce = note - s * 4; }
+      if (l > 0.80 && note > mClair) { clair = c; mClair = note; }
+    });
+    /* ── 2) LOGO : icône déclarée, puis image dont le nom dit « logo » ─────────────── */
+    let logo = '';
+    const mIcone = src.match(/<link[^>]+rel=["']?(?:apple-touch-icon|icon|shortcut icon)[^>]*>/i);
+    if (mIcone) {
+      const mh = mIcone[0].match(/href=["']([^"']+)["']/i);
+      if (mh) logo = resoudre(mh[1]);
+    }
+    if (!logo) {
+      const imgs = src.match(/<img\b[^>]*>/gi) || [];
+      for (let i = 0; i < imgs.length && i < 80; i++) {
+        const t = imgs[i];
+        if (!/logo|brand|marque|identit/i.test(t)) continue;
+        const mh = t.match(/(?:src|data-src)=["']([^"']+)["']/i);
+        if (mh) { logo = resoudre(mh[1]); break; }
+      }
+    }
+    /* ── 3) PHOTOS : images de contenu + og:image, dédoublonnées, 3 au maximum ─────── */
+    const photos = [];
+    const og = src.match(/<meta[^>]+property=["']og:image["'][^>]*>/i);
+    const dejaVu = {};
+    if (logo) dejaVu[logo] = 1;
+    if (og) {
+      const mc = og[0].match(/content=["']([^"']+)["']/i);
+      if (mc) { const u = resoudre(mc[1]); if (u) { photos.push(u); dejaVu[u] = 1; } }
+    }
+    (src.match(/<img\b[^>]*>/gi) || []).forEach(function (t) {
+      if (photos.length >= 6) return;
+      /* ⚠️ MESURÉ sur page d'essai : sans ce filtre, le logo SVG et un pixel de suivi
+         (pixel-track.gif) entraient dans les « photos » et se retrouvaient proposés comme
+         images de fond. Un logo n'est pas une photo, un pixel de suivi encore moins. */
+      if (/logo|brand|sprite|pixel|track|avatar|icon|banner-?pub/i.test(t)) return;
+      const m = t.match(/(?:src|data-src)=["']([^"']+)["']/i);
+      if (!m) return;
+      const u = resoudre(m[1]);
+      if (!u || dejaVu[u]) return;
+      if (/\.(svg|gif|ico)(\?|#|$)/i.test(u)) return;
+      dejaVu[u] = 1;
+      photos.push(u);
+    });
+    return {
+      source: base,
+      logo: logo,
+      photos: photos.slice(0, 4),
+      accentCss: accent,
+      fonceCss: fonce,
+      clairCss: clair,
+      palette: classes.slice(0, 8),
+      accent: hex(accent) || '',
+      fonce: hex(fonce) || '',
+      clair: hex(clair) || '',
+      nbCouleurs: classes.length
+    };
+  }
+  /* Exposé pour le banc (et pour un usage manuel depuis la console) : c'est une LECTURE, la
+     fonction ne touche ni au document ni aux réglages. */
+  try {
+    window.spCharteAnalyser = spCharteAnalyser;
+    window.spCharteRecuperer = spCharteRecuperer;
+    window.spCharteAppliquer = spCharteAppliquer;
+    window.spUrlDansPrompt = spUrlDansPrompt;
+  } catch (_) {}
+
+  /* Papier tiré au sort pour nos pré-prompts (voir spGabDesign) : '' = pas de tirage. */
+  let SP_GAB_PAPIER_TIRE = '';
+  /* ⚠️ _SP_STUDIO_ROCK631i — HAUT DE PAGE TIRÉ AU SORT (demande utilisateur : « d'autres pied
+     de page, d'autres haut de page, cela ne change pas assez »). 0 = aucun, 1 = titre courant
+     à gauche + filet, 2 = titre centré entre deux filets courts, 3 = bandeau d'accent avec le
+     titre et le numéro en clair. Le PIED existait déjà en cinq tenues (`SP_GAB_FOLIO_VAR` :
+     exterieur, filet-large, centre, accent, discret) mais sa valeur était remise à
+     « exterieur » à chaque composition et n'était JAMAIS tirée : le pied ne changeait donc
+     jamais. Les deux sont maintenant tirés une fois par document. */
+  let SP_GAB_HAUT_VAR = 0;
+  /* ⚠️ _SP_STUDIO_ROCK631k — MODÈLE DE COUVERTURE TIRÉ AU SORT (demande utilisateur : « la
+     couverture du rapport 24 pages premium est toujours la même, sois créatif »).
+     0 = la couverture du cahier (comme avant), 1 = split, 2 = bandeau, 3 = pleine page,
+     4 = couverture de magazine (manchette + accroches), 5 = affiche typographique.
+     Les modèles sont des mises en page QUI EXISTENT déjà dans le studio : on ne bricole pas
+     une couverture, on en choisit une — puis l'habillage tiré (SVG, couleur, bandes, papier)
+     se pose par-dessus. Tiré une fois par document, pour NOS pré-prompts seulement. */
+  let SP_GAB_COUV_MODE = 0;
+  /* ⚠️ _SP_STUDIO_ROCK631h — HABILLAGE DE COUVERTURE TIRÉ AU SORT (demande utilisateur :
+     « plein de styles de layout, parfois les typo écrites en très gros, parfois des fonds
+     SVG, parfois des fonds de couleur… la couverture serait top parfois avec un fond SVG
+     complet »). Valeurs : 'papier' (rien), 'svg' (fond SVG complet, notre banque),
+     'couleur' (aplat pleine page à la couleur d'accent), 'titre' (très grand titre).
+     Tiré une fois par document, pour NOS pré-prompts seulement. */
+  let SP_GAB_COUV_STYLE = 'papier';
   window.sp213ImagesReglage = spImagesReglage;
   function spImagesEnabled() { return !!state.imagesEnabled || spImagesReglage() !== 'jamais'; }
 
@@ -7746,6 +8010,10 @@ function spRtfLayoutInfo(src) {
     try { on = localStorage.getItem(LS.images) === 'on'; } catch(_) {}
     state.imagesEnabled = on;
     spImagesUpdateUI();
+    /* ⚠️ _SP_STUDIO_ROCK631e — LA BANQUE SURVIT AU RECHARGEMENT : le mode des fonds
+       (ombres, dégradés, teintes) vit en mémoire ; on le repose ici quand la banque est
+       allumée, sinon un rechargement de page rendait des fonds nus. */
+    try { spGabFondsRegler(spBanqueSvgOn() ? 'ombres' : 'aucun'); } catch (_) {}
     cb.addEventListener('change', function() { spImagesSetEnabled(cb.checked); });
   }
   window.sp213ImagesInit = spImagesInit;
@@ -12272,6 +12540,14 @@ function spRtfLayoutInfo(src) {
      des filets, des capitales et de l'interlettrage. */
   let SP_GAB_BASE_REG = null, SP_GAB_BASE_NOM = '', SP_GAB_BASE_VU = '';
   let SP_GAB_REG_APPLIQUE = null;
+  /* ⚠️ _SP_STUDIO_ROCK631c — LA DEMANDE COURANTE EST-ELLE UN PRÉ-PROMPT DU STUDIO ?
+     Vrai seulement quand le texte de la demande est, mot pour mot, une entrée de
+     `SP_EX_GABARIT` (nos propres pastilles, dans les trois langues). Sur ces textes,
+     la structure décrite par la phrase (« une colonne large et aérée »…) ne doit plus
+     écraser l'archétype tiré au sort (voir spGabRegMise) : c'est ce qui rendait la
+     même maquette à chaque envoi. Un texte écrit par l'utilisateur n'est jamais
+     concerné : sa demande garde le dernier mot. */
+  let SP_GAB_BRIEF_PREPROMPT = false;
   /* ⚠️ _SP_STUDIO_ROCK610 — LA TYPOGRAPHIE TIRÉE AU SORT. `SP_GAB_TYPO_REG` porte son réglage
      (capitales, interlettrage, échelle des titres, interligne), `SP_GAB_TYPO_NOM` son nom
      (pour l'annonce) et `SP_GAB_TYPO_VU` la demande déjà annoncée. */
@@ -12301,16 +12577,26 @@ function spRtfLayoutInfo(src) {
        et elle est appliquée APRÈS : elle écrasait la demande. Les colonnes demandées
        passent donc par le canal des MOTS DE MISE EN PAGE — elles battent la base et le
        tirage, et l'agencement ou une tirette des Réglages garde le dernier mot. */
-    if (c && c.cols) o.colonnes = Math.max(1, Math.min(3, Number(c.cols) || 1));
-    if (m.aere) { o.marge = 1.18; o.densite = 0.88; o.bande = 0.85; o.filets = 0.7; }
-    if (m.dense) { o.marge = 0.9; o.densite = 0.97; o.bande = 1.05; o.filets = 1.15; }
-    if (m.encadres) o.encadres = true;
-    if (m.filets) o.filets = 1.3;
-    if (m.capitales) o.caps = true;
+    if (c && c.cols && !SP_GAB_BRIEF_PREPROMPT) o.colonnes = Math.max(1, Math.min(3, Number(c.cols) || 1));
+    /* ⚠️ _SP_STUDIO_ROCK631c — SUR UN PRÉ-PROMPT DU STUDIO, LA STRUCTURE VIENT DE L'ARCHÉTYPE.
+       MESURÉ : les quatre pré-prompts longs décrivent leur propre mise en page (« une colonne
+       large et aérée », « deux colonnes justifiées avec césure », « encadrés », « capitales
+       espacées »). Ces mots écrasaient l'archétype TIRÉ AU SORT, parce que la demande passe
+       APRÈS la base dans l'ordre de fusion de `REG` : la maquette sortait donc identique à
+       chaque envoi. Sur nos propres textes (reconnus par égalité, voir spGabBriefPreprompt),
+       colonnes, encadrés, filets et capitales sont laissés à l'archétype : le tirage redevient
+       visible. Le ton, la palette, le format et les éléments demandés (folio, chiffres,
+       légendes) sont conservés. Un texte écrit par l'utilisateur garde le dernier mot. */
+    const _pins = !SP_GAB_BRIEF_PREPROMPT;
+    if (m.aere) { o.marge = 1.18; o.densite = 0.88; o.bande = 0.85; if (_pins) o.filets = 0.7; }
+    if (m.dense) { o.marge = 0.9; o.densite = 0.97; o.bande = 1.05; if (_pins) o.filets = 1.15; }
+    if (m.encadres && _pins) o.encadres = true;
+    if (m.filets && _pins) o.filets = 1.3;
+    if (m.capitales && _pins) o.caps = true;
     if (m.grandtitre) o.echelleTitre = 1.2;
     if (m.folio) o.folio = true;
-    if (sans.encadres) o.encadres = false;
-    if (sans.filets) o.filets = 0.5;
+    if (sans.encadres && _pins) o.encadres = false;
+    if (sans.filets && _pins) o.filets = 0.5;
     if (sans.folios) o.folio = false;
     return o;
   }
@@ -13247,6 +13533,170 @@ function spRtfLayoutInfo(src) {
     return /(?:sans|pas\s+d[’']?\s*|aucun[e]?\s*)(?:illustrations?|visuels?|dessins?|graphismes?|ornements?)|texte\s+seul|no\s+illustrations?|without\s+illustrations?/i.test(String(brief || ''));
   }
   // Zone photo : la vraie image jointe si elle existe — SINON UN FOND GÉNÉRÉ.
+  /* ══ _SP_STUDIO_ROCK631b — EMPLACEMENT PHOTO VIDE (fond très clair) ══════════════════
+     Demande utilisateur (03/10/2026) : « essaie de mettre des emplacements photo vides
+     (fond très light à l'emplacement des photos) ; les emplacements photo ne doivent
+     JAMAIS toucher les blocs typo — au cas où l'utilisateur appuie sur image dans la
+     barre de prompt, cela les remplira au bon endroit ».
+     On pose donc un APLAT TRÈS CLAIR à la place du visuel : la zone est visible dans
+     l'aperçu, dans l'app et dans le .sp, elle ne porte AUCUN texte, et elle occupe
+     exactement le rectangle que le gabarit réservait à la photo (donc aucune
+     re-composition : rien ne bouge autour). Le marqueur `_spPhotoSlot` la désigne pour
+     que l'app sache où poser l'image choisie par l'utilisateur. */
+  function spGabEmplacementPhoto(L, x, y, w, h) {
+    const el = spGabR(x, y, w, h, '#f5f5f7', 0);
+    el.stroke = '#e4e4e8';
+    el.strokeWidth = Math.max(0.3, 0.6 * SP_GAB_K);
+    el._spPhotoSlot = 1;
+    return el;
+  }
+
+  /* ⚠️ _SP_STUDIO_ROCK631b — UN EMPLACEMENT PHOTO NE TOUCHE JAMAIS UN BLOC TYPO.
+     MESURÉ (pré-prompt « Rapport premium 24 pages », 03/10/2026) : l'emplacement posé sur
+     la COUVERTURE (165 × 252 mm) recouvrait trois blocs de texte — un aplat clair sous la
+     typo se voit, et l'utilisateur l'interdit explicitement. La décision ne peut pas être
+     prise au moment de la pose (le titre de couverture est composé APRÈS l'emplacement) :
+     on contrôle donc à la FIN de la page, et on RETIRE l'emplacement fautif — jamais de
+     déplacement (même règle que les SVG sur le texte, ROCK625). Il reste alors uniquement
+     les zones réellement libres, avec une marge de 2 mm : l'image posée là ne pourra pas
+     mordre la typo. */
+  /* ══ ⚠️ _SP_STUDIO_ROCK631d — INTERDIT : ENCRE SOMBRE SUR FOND NOIR ══════════════════
+     Demande utilisateur : « dans studio ia > interdit le bleu foncé (typo) sur fond noir ».
+     DÉFAUT REPRODUIT ET MESURÉ (banc du 03/10/2026, ROCK 1, demande SANS pièce jointe
+     « Affiche A2 premium : fond noir, typographie et filets bleu foncé… ») : la couverture
+     (#0e0e10, luminance 0,004) portait TROIS blocs en #112c6b (luminance 0,03) — ratio de
+     contraste 1,48, illisible — et un bloc en #6692f1 (ratio 5,9, lisible). Le garde-fou de
+     contraste du studio ne les avait pas vus : il juge le PANNEAU derrière la première ligne
+     et la teinte demandée y survivait. Cette passe FINALE ne discute plus : sur une page au
+     fond sombre, toute encre sous 4,5 de contraste est remplacée — et si l'encre est BLEUE,
+     elle est ÉCLAIRCIE dans sa propre teinte (l'utilisateur demandait du bleu : il garde du
+     bleu, lisible). Un panneau CLAIR posé derrière la première ligne rend l'encre sombre
+     parfaitement légitime : on n'y touche pas. */
+  function spGabEncreSurFondSombre(els, L) {
+    const liste = els || [];
+    const lum = function (c) { try { const v = spGabLum(c); return (typeof v === 'number') ? v : 1; } catch (_) { return 1; } };
+    const W = (L && L.W) || 595;
+    const ratio = function (a, b) { const x = Math.max(a, b) + 0.05, y = Math.min(a, b) + 0.05; return x / y; };
+    /* Fond de PAGE : le plus grand aplat qui couvre la largeur. */
+    let fondPage = null, aireF = 0;
+    liste.forEach(function (e) {
+      if (!e || e.type !== 'rectangle' || !e.fill || String(e.fill) === 'transparent') return;
+      const w = Number(e.width) || 0, h = Number(e.height) || 0;
+      if (w < W * 0.9) return;
+      if (w * h > aireF) { aireF = w * h; fondPage = String(e.fill); }
+    });
+    if (!fondPage) fondPage = '#ffffff';
+    const clair = (L && L.pal && L.pal.sur) || '#ffffff';
+    const doux = (L && L.pal && L.pal.doux) || null;
+    const fonce = (L && L.pal && L.pal.txt && lum(L.pal.txt) < 0.5) ? L.pal.txt : '#101014';
+    const bleu = function (c) {
+      const s = String(c || '').trim();
+      if (!/^#([0-9a-f]{6})$/i.test(s)) return false;
+      const r = parseInt(s.slice(1, 3), 16), g = parseInt(s.slice(3, 5), 16), b = parseInt(s.slice(5, 7), 16);
+      return (b > r + 12 && b >= g + 6);
+    };
+    /* ⚠️ LA RÈGLE COMPTE CE QU'IL Y A RÉELLEMENT SOUS LE TEXTE, PAS SEULEMENT LE FOND DE PAGE.
+       MESURÉ après la première version : « AFFICHE » en #09193b sur un PANNEAU #1f1f24
+       (ratio 1,05) passait au travers, parce que le fond de la page A2 n'était pas sombre, et
+       « Une maison de fa… » en #f5f5f2 sur un panneau #c7c7c7 (ratio 1,55, blanc sur gris clair)
+       aussi. On prend donc le plus GRAND rectangle (posé après le fond de page) qui recouvre la
+       première ligne : c'est lui qui décide. */
+    const derriere = function (e) {
+      const l = Number(e.left) || 0, t = Number(e.top) || 0, w = Number(e.width) || 0;
+      const h1 = (Number(e.fontSize) || 10) * (Number(e.lineHeight) || 1.3) * 1.13;
+      const px = l + w * 0.5, py = t + h1 * 0.5;
+      let f = fondPage, aire = 0;
+      liste.forEach(function (a) {
+        if (!a || a.type !== 'rectangle' || !a.fill || String(a.fill) === 'transparent') return;
+        if (String(a.fill) === fondPage) return;
+        const al = Number(a.left) || 0, at = Number(a.top) || 0, aw = Number(a.width) || 0, ah = Number(a.height) || 0;
+        if (!(px >= al - 0.5 && px <= al + aw + 0.5 && py >= at - 0.5 && py <= at + ah + 0.5)) return;
+        if (aw * ah < w * h1 * 0.3) return;                 // encadré minuscule : pas un fond
+        if (aw * ah >= aire) { aire = aw * ah; f = String(a.fill); }
+      });
+      return f;
+    };
+    let n = 0;
+    liste.forEach(function (e) {
+      if (!e || e.type !== 'text') return;
+      /* Un texte posé sur une IMAGE est traité par les voiles du garde-fou de contraste :
+         on ne double jamais cette décision. */
+      const l = Number(e.left) || 0, t = Number(e.top) || 0, w = Number(e.width) || 0;
+      const h1 = (Number(e.fontSize) || 10) * (Number(e.lineHeight) || 1.3) * 1.13;
+      let surImage = false;
+      liste.forEach(function (im) {
+        if (surImage || !im || im.type !== 'image') return;
+        const il = Number(im.left) || 0, it = Number(im.top) || 0, iw = Number(im.width) || 0, ih = Number(im.height) || 0;
+        if (l < il + iw - 1 && il < l + w - 1 && t < it + ih - 1 && it < t + h1 - 1) surImage = true;
+      });
+      if (surImage) return;
+      const fond = derriere(e);
+      const encre = String(e.fill || '#000000');
+      const lF = lum(fond), lE = lum(encre);
+      if (ratio(lF, lE) >= 4.5) return;
+      /* Sur fond sombre → encre CLAIRE ; sur fond clair → encre FONCÉE. Un bleu demandé
+         reste bleu : il est éclairci (ou assombri) dans sa propre teinte. */
+      let cible = (lF < 0.45) ? clair : fonce;
+      if (bleu(encre) && lF < 0.45) {
+        let b2 = encre;
+        for (let i = 0; i < 8 && ratio(lF, lum(b2)) < 4.5; i++) { b2 = spGabClarifier(b2, 0.3); }
+        if (ratio(lF, lum(b2)) > ratio(lF, lum(cible))) cible = b2;
+      }
+      if (ratio(lF, lum(cible)) > ratio(lF, lE) + 0.001) { e.fill = cible; n++; }
+    });
+    if (n) { try { console.log('[SP213] contraste final : ' + n + ' encre(s) corrigée(s)'); } catch (_) {} }
+    return liste;
+  }
+
+  function spGabEmplacementsSansTexte(els, page) {
+    const liste = els || [];
+    const slots = liste.filter(function (e) { return e && e._spPhotoSlot; });
+    if (!slots.length) return liste;
+    const textes = liste.filter(function (e) { return e && /text/i.test(String(e.type)); });
+    if (!textes.length) return liste;
+    /* ⚠️ UNITÉS : appelée sur la page DÉJÀ convertie en millimètres (spGabVersMm, juste avant
+       pages.push ; puis à l'affichage dans renderDocument). MESURÉ : appelée plus tôt, dans la
+       liste d'éléments en px, elle ne trouvait aucun chevauchement (les blocs texte du gabarit
+       n'y portent pas encore leurs cotes définitives) et laissait passer l'emplacement de
+       couverture du « Rapport premium 24 pages » — 3 blocs recouverts. */
+    const marge = 2;                        // mm : l'œil voit l'écart, jamais un contact
+    const touche = function (x, y, w, h) {
+      const x2 = x + w, y2 = y + h;
+      return textes.some(function (tx) {
+        const a1 = +tx.left || 0, b1 = +tx.top || 0, a2 = a1 + (+tx.width || 0), b2 = b1 + (+tx.height || 0);
+        return (Math.min(x2 + marge, a2) - Math.max(x - marge, a1)) > 0 && (Math.min(y2 + marge, b2) - Math.max(y - marge, b1)) > 0;
+      });
+    };
+    const dedans = function (x, y, w, h) {
+      if (!page || !page.w || !page.h) return true;
+      return x >= 4 && y >= 4 && (x + w) <= (page.w - 4) && (y + h) <= (page.h - 4);
+    };
+    /* ⚠️ DÉPLACER PLUTÔT QUE SUPPRIMER : l'utilisateur veut des emplacements photo sur ces
+       maquettes ; un emplacement fautif qui disparaît appauvrit la page. On cherche donc une
+       position libre (glissements de 8 mm, tailles dégressives) et on ne retire qu'en dernier
+       recours. MESURÉ avant : la couverture du 24 pages perdait son emplacement ; après :
+       emplacement conservé, à une autre place, aucune typo touchée. */
+    const DX = [0, -8, 8, -16, 16, -24, 24, -32, 32, -40, 40, -48, 48, -56, 56, -64, 64];
+    const COEF = [1, 0.85, 0.7, 0.55];
+    slots.forEach(function (s) {
+      const x0 = +s.left || 0, y0 = +s.top || 0, w0 = +s.width || 0, h0 = +s.height || 0;
+      for (let c = 0; c < COEF.length; c++) {
+        const w = Math.round(w0 * COEF[c] * 10) / 10, h = Math.round(h0 * COEF[c] * 10) / 10;
+        for (let i = 0; i < DX.length; i++) {
+          for (let j = 0; j < DX.length; j++) {
+            const x = Math.round((x0 + DX[i] + (w0 - w) / 2) * 10) / 10;
+            const y = Math.round((y0 + DX[j] + (h0 - h) / 2) * 10) / 10;
+            if (!dedans(x, y, w, h) || touche(x, y, w, h)) continue;
+            if (x !== x0 || y !== y0 || w !== w0 || h !== h0) { s.left = x; s.top = y; s.width = w; s.height = h; s._spPhotoSlotDeplace = 1; }
+            return;
+          }
+        }
+      }
+      s._spPhotoSlotFautif = 1;             // aucune place libre sur cette page : on retire
+    });
+    return liste.filter(function (e) { return !(e && e._spPhotoSlotFautif); });
+  }
+
   function spGabPhoto(L, e, x, y, w, h, legende) {
     /* 🆕 v1.7.584 — « SANS PHOTOS » DANS LA DEMANDE : on ne pose AUCUNE image, et on ne
        laisse pas non plus un emplacement muet (retour utilisateur : « supprime cette
@@ -13285,6 +13735,21 @@ function spRtfLayoutInfo(src) {
       e.push({ type: 'image', imageIndex: L.photosToutes[i2], left: x, top: y, width: w, height: h });
       return true;
     }
+    /* ⚠️ _SP_STUDIO_ROCK631b — EMPLACEMENT PHOTO VIDE (voir spGabEmplacementPhoto) :
+       sur un document SUIVI (les pré-prompts 24/32/64 pages), l'emplacement réservé à la
+       photo reçoit un APLAT TRÈS CLAIR au lieu d'une illustration vectorielle : c'est la
+       « boîte » que l'utilisateur veut pouvoir remplir en appuyant sur image.
+       Placé APRÈS les gardes : « sans photos » (plus haut) et « sans illustration / texte
+       seul » (juste au-dessus) gardent la main, et dès qu'une photo est jointe, c'est elle
+       qui est posée. */
+    /* ⚠️ _SP_STUDIO_ROCK631e — BANQUE SVG ALLUMÉE (icône image) : l'emplacement photo
+       reçoit un MOTIF DE NOTRE BANQUE au lieu de rester vide. C'est exactement la demande
+       « remplir les fonds et les espaces photo avec notre banque SVG » : nos formes
+       vectorielles, nettes à l'impression, quelques centaines d'octets, aucun réseau. */
+    if (SP_GAB_EMPLACEMENTS_PHOTO && !SP_GAB_BANQUE) {
+      e.push(spGabEmplacementPhoto(L, x, y, w, h));
+      return true;
+    }
     if (SP_GAB_ILLUS) {
       e.push(spGabIllustration(L, x, y, w, h));
       return true;
@@ -13310,6 +13775,12 @@ function spRtfLayoutInfo(src) {
      où on le rallume, ce sera discret. En attendant, les emplacements sans photo restent
      du papier. */
   let SP_GAB_FONDS_AUTO = false;
+  /* ⚠️ _SP_STUDIO_ROCK631b — EMPLACEMENTS PHOTO VIDES (voir spGabEmplacementPhoto) :
+     aplat très clair sur les zones photo d'un DOCUMENT SUIVI, pour que l'utilisateur
+     puisse y poser son image d'un clic. Positionné par spGabDesign (8 pages et plus) ;
+     « sans photos », « sans illustration » et le mode « image uniquement » gardent la
+     main, et une photo jointe est posée avant (branches précédentes de spGabPhoto). */
+  let SP_GAB_EMPLACEMENTS_PHOTO = false;
   /* ══ _SP_STUDIO_STYLE_585 — FONDS PROCÉDURAUX : OMBRES, DÉGRADÉ, GRAIN, TRAME, BICHROMIE ══
      Demande utilisateur : « dégradés, grain, trame, bichromie ». Chaque motif est un
      SVG VECTORIEL au format exact de l'emplacement (net à l'impression, quelques
@@ -13708,6 +14179,30 @@ function spRtfLayoutInfo(src) {
       spGabT(x, yTexte, w, n + ' / ' + tot, 8, '#8a8f98', null, droit ? 'right' : 'left')];
   }
   function spGabKicker(L, x, y, w, texte, align) { return spGabT(x, y, w, String(texte || '').toUpperCase(), 8.5, L.pal.a, 'bold', align || 'left', 1.1, 220); }
+
+  /* ⚠️ _SP_STUDIO_ROCK631i — LES TROIS HAUTS DE PAGE (voir SP_GAB_HAUT_VAR).
+     Tout est posé DANS LA MARGE HAUTE (au-dessus de `L.y0`, le haut de la zone de texte) :
+     rien ne peut donc recouvrir le contenu. Le titre courant est le titre court du document,
+     en capitales : c'est la tenue classique du livre et du rapport. */
+  function spGabHautVariant(L, n, tot, v, titre) {
+    const T = spGabCourt(String(titre || '').toUpperCase(), 46);
+    if (!T) return [];
+    const yFilet = Math.max(L.k * 8, L.y0 - L.k * 13);
+    const yTexte = Math.max(L.k * 5, L.y0 - L.k * 27);
+    if (v === 1) {
+      return [spGabT(L.x0, yTexte, L.cw * 0.7, T, 8, L.pal.a, 'bold', 'left', 1.1, 180),
+        spGabL(L.x0, yFilet, L.cw, L.pal.gris, 0.9)];
+    }
+    if (v === 2) {
+      return [spGabT(L.x0, yTexte, L.cw, T, 8, '#8a8f98', null, 'center', 1.1, 200),
+        spGabL(L.x0, yFilet, L.cw * 0.28, L.pal.gris, 0.9),
+        spGabL(L.x1 - L.cw * 0.28, yFilet, L.cw * 0.28, L.pal.gris, 0.9)];
+    }
+    const clair = (L.pal && L.pal.sur) || '#ffffff';
+    return [spGabR(0, 0, L.W, L.k * 22, L.pal.a, 0),
+      spGabT(L.x0, L.k * 6, L.cw * 0.78, T, 8, clair, 'bold', 'left', 1.1, 180),
+      spGabT(L.x1 - L.cw * 0.2, L.k * 6, L.cw * 0.2, String(n), 8, clair, 'bold', 'right')];
+  }
 
   /* ── LES HUIT MISES EN PAGE ────────────────────────────────────────────── */
   // 1. Affiche manifeste : très grande typo, respiration, bandeau d'informations.
@@ -15710,6 +16205,50 @@ function spRtfLayoutInfo(src) {
        valeur est relevée juste après la lecture (le lexique est lu PLUS BAS dans cette
        fonction : on ne peut pas le référencer ici — zone morte temporelle mesurée). */
     let veut = spGabPages(brief);
+    /* ⚠️ _SP_STUDIO_ROCK631c — LE DRAPEAU « PRÉ-PROMPT » (voir spGabRegMise).
+       Reconnaissance par ÉGALITÉ de texte avec nos propres pastilles : aucune devinette,
+       aucune détection de mots-clés. MESURÉ : sur ces quatre textes, les phrases de mise
+       en page (« deux colonnes justifiées », « encadrés », « capitales espacées ») écrasaient
+       l'archétype tiré au sort — la maquette ne changeait donc jamais de structure. */
+    SP_GAB_BRIEF_PREPROMPT = false;
+    SP_GAB_PAPIER_TIRE = '';
+    SP_GAB_COUV_STYLE = 'papier';
+    SP_GAB_COUV_MODE = 0;
+    try {
+      /* ⚠️ _SP_STUDIO_ROCK631f — COMPARAISON NORMALISÉE. La première version comparait les
+         textes à l'identique ; MESURÉ : le drapeau ne se levait jamais (le titre passé par
+         le DOM et la chaîne du tableau diffèrent d'une apostrophe typographique ou d'une
+         espace insécable). On normalise donc les deux côtés (apostrophes, guillemets,
+         espaces, entités) et on compare les 80 premiers caractères : aucune devinette,
+         aucune détection de mots-clés — c'est bien le texte de NOS pastilles. */
+      const _norm = function (s) {
+        return String(s || '')
+          .replace(/[\u2018\u2019\u02bc]/g, "'").replace(/[\u201c\u201d]/g, '"')
+          .replace(/\u00a0/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+          .replace(/&#0?39;/g, "'").replace(/&nbsp;/g, ' ')
+          .replace(/\s+/g, ' ').trim().toLowerCase();
+      };
+      const _bt = _norm(brief).slice(0, 80);
+      const _tabs = SP_EX_GABARIT || {};
+      /* ⚠️ _SP_STUDIO_ROCK631m — LES PASTILLES COURTES AUSSI (« Affiche noir et or »,
+         « Couverture magazine », « Cahier 12 pages »…). DÉFAUT MESURÉ : la première version
+         exigeait plus de 40 caractères et comparait les 80 premiers — les pastilles courtes
+         n'étaient donc PAS reconnues, le drapeau restait faux et AUCUN tirage ne tournait
+         (mêmes habillage, pied et couverture à chaque envoi). On compare maintenant l'égalité
+         exacte des deux textes normalisés (et le préfixe de 80 caractères seulement quand les
+         deux sont longs). */
+      const _nb2 = _norm(brief);
+      if (_nb2.length > 8 && ['fr', 'en', 'jp'].some(function (l) {
+        return (_tabs[l] || []).some(function (e) {
+          const n2 = _norm(e[1]);
+          if (n2.length <= 8) return false;
+          if (n2 === _nb2) return true;
+          return n2.length > 80 && _nb2.length > 80 && n2.slice(0, 80) === _nb2.slice(0, 80);
+        });
+      })) SP_GAB_BRIEF_PREPROMPT = true;
+      void _bt;
+    } catch (_) { SP_GAB_BRIEF_PREPROMPT = false; }
+    try { window._spGabBriefPreprompt = SP_GAB_BRIEF_PREPROMPT; } catch (_) {}
     let g = Object.assign({}, spGabChoisir(brief));
     /* ══ 🆕 v1.7.584 — CE QUE LA DEMANDE DIT VRAIMENT (LEXIQUE DU MÉTIER) ══
        La famille, les colonnes, le thème, le format et les interdictions sont lus dans la
@@ -15725,7 +16264,14 @@ function spRtfLayoutInfo(src) {
         const d = SP_GAB_DESIGN.filter(function (x) { return x.fam === _famVoulue; })[0];
         if (d) g = Object.assign({}, d);
       }
-      if (_compris.cols) g.cols = _compris.cols;
+      /* ⚠️ _SP_STUDIO_ROCK631g — LE VERROU DE STRUCTURE ÉTAIT ICI.
+         « Une colonne large et aérée » (texte de nos pré-prompts) écrivait `g.cols = 1` À CET
+         ENDROIT, avant toute la chaîne (base SuperPrint, REG, choix de la mise en page) :
+         neutraliser `REG.colonnes` plus loin ne suffisait donc pas — le nombre de colonnes
+         était figé ici, et la maquette ne changeait jamais de grille. Sur nos propres textes,
+         la grille vient de l'archétype tiré au sort ; un texte écrit par l'utilisateur garde
+         le dernier mot, comme avant. */
+      if (_compris.cols && !SP_GAB_BRIEF_PREPROMPT) g.cols = _compris.cols;
       /* ⚠️ _SP_STUDIO_ROCK612 — UN GRAND FORMAT EST MONOCOLONNE, SAUF DEMANDE CONTRAIRE.
          MESURÉ : « COVER 40X60 » (400 × 600 mm) sortait en 3 COLONNES — c'est la grille de
          la famille « couverture magazine » (SP_GAB_DESIGN, cols: 3, pour ses annonces de
@@ -15968,6 +16514,11 @@ function spRtfLayoutInfo(src) {
       const force = SP_GAB_THEMES.filter(function (x) { return x[0] === window._spGabTheme; })[0];
       if (force) theme = { cle: force[0], pal: force[2], fonts: force[3] };
     }
+    /* ⚠️ _SP_STUDIO_ROCK631q — LA CHARTE D'UN SITE PASSE DEVANT LA ROTATION.
+       Elle vient d'un vrai site (couleurs relevées) et s'applique à CETTE composition : le
+       reste (grille, archétype, habillage, pied) continue de tourner. La typographie reste
+       celle du studio : `fonts` est vide dans ce thème. */
+    if (SP_GAB_THEME_SITE && SP_GAB_THEME_SITE.pal) theme = SP_GAB_THEME_SITE;
     const hasard = spGabHasard(brief);
     /* ══ ⚠️ _SP_STUDIO_BASES_609 — LA BASE SUPERPRINT TIRÉE AU SORT ═══════════════════════
        Quand la demande ne fixe PAS la structure (aucun agencement choisi aux
@@ -15979,7 +16530,34 @@ function spRtfLayoutInfo(src) {
        demande (c'est la variété voulue) ; ce qui est réglé aux tirettes l'emporte. */
     let _baseSP = null;
     try {
-      const _bListe = SP_GAB_BASES[g.fam] || SP_GAB_BASES._defaut;
+      let _bListe = SP_GAB_BASES[g.fam] || SP_GAB_BASES._defaut;
+      /* ⚠️ _SP_STUDIO_ROCK631b — LE LOT DES DOCUMENTS SUIVIS S'ÉLARGIT (demande utilisateur :
+         « dans la liste pré-prompt que l'on fait y'a pas le random de plugger, ça retourne
+         toujours la même maquette… les pré-prompts doivent bien randomiser au maximum »).
+         MESURÉ AVANT : toute demande de 3 pages ou plus est renvoyée par `spGabChoisir` sur
+         `qc.cahier` (règle `nb >= 3`), donc le tirage ne disposait que des TROIS archétypes du
+         cahier — d'où la même maquette à chaque envoi. Sur un document suivi (8 pages et
+         plus), on met maintenant en commun les archétypes des familles ÉDITORIALES
+         (cahier, rapport, brochure, presse, catalogue, brandbook, portfolio) : 3 → 25 mises
+         en page réellement différentes (une/deux/trois colonnes, encadrés, filets, ouverture).
+         Le NOMBRE DE PAGES reste celui de la demande : un archétype ne fixe que l'agencement
+         (marges, colonnes, gouttière, densité, filets, capitales, ouverture). Les filtres qui
+         suivent (livre → une colonne, format une page → une colonne, premium) s'appliquent
+         toujours sur le lot élargi. */
+      try {
+        /* MESURÉ : sur le pré-prompt « Rapport premium 24 pages », la famille retenue par
+           spGabChoisir est `rapport` (le mot « Rapport » est vu avant la règle des 3 pages,
+           qui ne se déclenche donc pas ici) — d'où le nom annoncé « Rapport corporate » et
+           un lot de QUATRE archétypes seulement. Le pool couvre donc toutes les familles de
+           DOCUMENTS SUIVIS, chacune gardant ses propres archétypes dedans. */
+        const _famSuivie = ['cahier', 'rapport', 'brochure', 'presse', 'catalogue', 'brandbook', 'portfolio', 'couverture'];
+        if (_famSuivie.indexOf(String(g.fam || '')) !== -1 && spGabPages(brief) >= 8 && !(window._spReglages && window._spReglages.agencement)) {
+          const _noyau = ['cahier', 'rapport', 'brochure', 'presse', 'catalogue', 'brandbook', 'portfolio'];
+          const _pool = [];
+          _noyau.forEach(function (f) { (SP_GAB_BASES[f] || []).forEach(function (x) { _pool.push(x); }); });
+          if (_pool.length > _bListe.length) _bListe = _pool;
+        }
+      } catch (_) {}
       const _agImpose = !!(window._spReglages && window._spReglages.agencement);
       if (_bListe && _bListe.length && !_agImpose) {
         let _lot = _bListe.slice();
@@ -16039,6 +16617,23 @@ function spRtfLayoutInfo(src) {
         /* Tirage de l'archétype : valeur PROPRE (hasard.v2) — voir spGabHasard. */
         const _vBase = (typeof hasard.v2 === 'number') ? hasard.v2 : hasard.v;
         _baseSP = _lot[Math.floor(_vBase * _lot.length) % _lot.length];
+        /* ⚠️ _SP_STUDIO_ROCK631g — LA GRILLE DEVIENT UN TIRAGE À PART ENTIÈRE (nos pré-prompts).
+           MESURÉ APRÈS AVOIR LEVÉ LE VERROU DE `g.cols` : la maquette sortait TOUJOURS en une
+           colonne. La raison est dans la bibliothèque elle-même — presque tous les archétypes
+           de DOCUMENT SUIVI portent `colonnes: 1` (Note de synthèse, Rapport haut de gamme,
+           Presse haut de gamme, Album illustré, Plaquette aérée, Cahier de lecture…) : le
+           tirage ne pouvait donc pas donner autre chose. On tire donc la GRILLE (1, 2 ou 3
+           colonnes, 2 d'abord — le document suivi le plus courant) et on l'écrit dans
+           l'archétype retenu. Un LIVRE garde une colonne (règle de lecture), et une demande
+           écrite par l'utilisateur garde la main : le tirage ne vaut que pour nos textes. */
+        if (SP_GAB_BRIEF_PREPROMPT && !_estLivre && _baseSP && _baseSP.reg) {
+          const _vC = Math.random();
+          const _colT = (_vC < 0.34) ? 1 : ((_vC < 0.82) ? 2 : 3);
+          const _large = (Number(state.pageW) || 210) >= 200;
+          const _colF = _large ? _colT : Math.min(2, _colT);
+          _baseSP = Object.assign({}, _baseSP, { reg: Object.assign({}, _baseSP.reg, { colonnes: _colF }) });
+          try { appendChat('assistant', '🧱 Grille tirée au sort : ' + _colF + ' colonne(s).'); } catch (_) {}
+        }
       }
     } catch (_) { _baseSP = null; }
     SP_GAB_BASE_REG = (_baseSP && _baseSP.reg) ? _baseSP.reg : null;
@@ -16063,6 +16658,113 @@ function spRtfLayoutInfo(src) {
     try {
       const _ditCouleur = !!(_compris && _compris.theme);
       const _impose = !!(window._spGabTheme || (window._spReglages && window._spReglages.theme));
+      /* ⚠️ _SP_STUDIO_ROCK631f — SUR NOS PRÉ-PROMPTS, LA COULEUR TOURNE AUSSI.
+         Demande utilisateur : « les random sur les 4 premiers pré-prompts ne sont pas assez
+         différents en couleur, en style, en fond ».
+         MESURÉ : les quatre textes citent leur palette (« palette graphite et or », « bleu
+         encre et sable », « papier ivoire », « noir et or »). `_compris.theme` était donc
+         vrai, le thème était posé d'avance et la rotation de styles ne se déclenchait
+         JAMAIS : même couleur, même style, même fond à chaque envoi. Sur ces textes, on tire
+         désormais dans un LOT PREMIUM (encres et papiers d'édition). La palette décrite par
+         le brief reste dans le lot : elle ressort encore, mais plus à tous les coups.
+         Ce que l'utilisateur règle à la roue « Style » des Réglages garde la main. */
+      const _LOT_PREM = ['graphite', 'encre', 'minuit', 'moka', 'sable', 'terracotta', 'olive',
+        'bordeaux', 'prune', 'cuivre', 'couture', 'demeures', 'institut', 'archi', 'lagune', 'noir'];
+      if (SP_GAB_BRIEF_PREPROMPT && !_impose) {
+        /* ⚠️ _SP_STUDIO_ROCK631p — LA VARIÉTÉ NE DOIT JAMAIS EFFACER LA DEMANDE.
+           MESURÉ : le pré-prompt « Affiche noir et or » recevait le style « terracotta », puis
+           un fond gris très clair — l'identité noir & or disparaissait, et la typographie
+           claire se retrouvait sur un papier clair. Quand la demande NOMME elle-même une
+           palette sombre (noir, or, doré, encre, graphite, minuit), on ne touche NI au thème
+           NI au papier : le fond reste noir, la typographie reste claire (c'est la règle du
+           garde-fou). La variété continue de venir des autres tirages — archétype, grille,
+           habillage de couverture, pied, ouverture. */
+        const _ditNoirB = /\bnoir|\bdor[ée]\b|\bor\b|graphite|encre|minuit|\bpremium\b/i.test(String(brief || ''));
+        theme = null;
+        const _lot = (function () {
+          /* ⚠️ _SP_STUDIO_ROCK631p — UNE DEMANDE NOIRE RESTE NOIRE.
+             MESURÉ : le pré-prompt « Affiche noir et or » a reçu le style « terracotta » — la
+             rotation des palettes écrasait la palette NOMMÉE par la demande, et le fond noir
+             disparaissait avec elle. La variété ne doit pas effacer ce que l'utilisateur
+             demande : quand le brief nomme un noir, un or, une encre ou un graphite, le tirage
+             se fait dans les palettes SOMBRES (noir, graphite, encre, minuit, prune, bordeaux).
+             Sur les autres pré-prompts, le lot complet reste ouvert. */
+          const _ditNoir = /\bnoir|dor[ée]|\bor\b|graphite|encre|minuit|prune|bordeaux|\bpremium\b|\bluxe\b/i.test(String(brief || ''));
+          const _src = _ditNoir ? ['noir', 'graphite', 'encre', 'minuit', 'prune', 'bordeaux'] : _LOT_PREM;
+          return _src.filter(function (k) {
+            if (k === 'noir') return true;
+            return !!SP_GAB_PAL[k];
+          });
+        })();
+        if (_lot.length) {
+          const _vPalP = (typeof hasard.v4 === 'number') ? hasard.v4 : hasard.v;
+          const _cleP = _lot[Math.floor(_vPalP * _lot.length) % _lot.length];
+          const _fP = SP_GAB_THEMES.filter(function (x) { return x[0] === _cleP; })[0];
+          const _palP = SP_GAB_PAL[_cleP];
+          /* ⚠️ Garde : une demande qui nomme sa palette sombre (« noir et or ») garde SA
+             palette — le tirage ne s'applique qu'aux autres textes (voir _ditNoirB). */
+          if (!_ditNoirB) {
+          if (_fP) {
+            theme = { cle: _fP[0], pal: _fP[2], fonts: _fP[3] };
+          } else if (_palP) {
+            theme = { cle: _cleP, pal: Object.assign({}, SP_GAB_PAL.neutre, _palP), fonts: (SP_GAB_ROT_TYPO[_cleP] || g.fonts || 'sans') };
+          }
+          }
+          if (theme) {
+            _rotTheme = theme.cle;
+            /* Le PAPIER suit le tirage (visible dans « fond ») — jamais sur une palette
+               sombre : le fond y est la page noire elle-même. */
+            if (!(theme.pal && theme.pal.noir)) {
+              const _papiers = ['#ffffff', '#fdfbf7', '#f9f6f0', '#f4f1e9', '#eef2f4', '#f7f4f0'];
+              const _vPa = (typeof hasard.v7 === 'number') ? hasard.v7 : hasard.v;
+              SP_GAB_PAPIER_TIRE = _papiers[Math.floor(_vPa * _papiers.length) % _papiers.length];
+            }
+            const _cleVuP = String(brief) + '||rot||' + _rotTheme;
+            if (SP_GAB_ROT_VU !== _cleVuP) {
+              SP_GAB_ROT_VU = _cleVuP;
+              try { appendChat('assistant', '🎨 Style « ' + _rotTheme + ' ».'); } catch (_) {}
+            }
+            /* ⚠️ _SP_STUDIO_ROCK631h — L'HABILLAGE DE COUVERTURE EST TIRÉ ICI, une fois par
+               document : papier (rien), fond SVG complet, fond de couleur d'accent, ou très
+               grand titre. C'est la variété de « layout » demandée sur le rapport 24 pages. */
+            const _vCouv = (typeof hasard.v5 === 'number') ? hasard.v5 : hasard.v;
+            SP_GAB_COUV_STYLE = (_vCouv < 0.28) ? 'papier'
+              : (_vCouv < 0.52) ? 'svg'
+              : (_vCouv < 0.66) ? 'couleur'
+              : (_vCouv < 0.78) ? 'titre' : 'bandes';
+            /* ⚠️ _SP_STUDIO_ROCK631i — PIED, HAUT ET OUVERTURE DE COUVERTURE TIRÉS ICI.
+               Le pied de page avait cinq tenues mais n'était jamais tiré (remis à
+               « exterieur » à chaque composition) : d'où « cela ne change pas assez ».
+               Le haut de page, lui, n'existait pas. On tire les trois, une fois par
+               document. La couverture tire aussi son OUVERTURE (0 = celle de l'archétype,
+               1 = bandeau, 2 = split, 3 = pleine page) : d'autres modèles de couverture. */
+            const _PIEDS = ['exterieur', 'filet-large', 'centre', 'accent', 'discret'];
+            const _vP = Math.random();
+            SP_GAB_FOLIO_VAR = (_vP < 0.34) ? 'exterieur' : _PIEDS[1 + (Math.floor(Math.random() * 4) % 4)];
+            const _vH = Math.random();
+            /* ⚠️ HAUT DE PAGE : NEUTRALISÉ POUR L'INSTANT (mesure honnête du 03/10/2026).
+               Le tirage et le générateur existent (`spGabHautVariant`), mais MESURÉ : les
+               éléments posés dans la MARGE HAUTE sont REPOSITIONNÉS par la passe de zone sûre
+               du studio (rien ne reste dans le document final) — et un élément de marge
+               déplacé peut atterrir sur du contenu. On ne livre donc pas un haut de page
+               boiteux : le tirage renvoie 0 tant que le titre courant n'est pas posé
+               proprement (marge haute élargie de quelques millimètres, puis contenu décalé). */
+            SP_GAB_HAUT_VAR = 0;
+            void _vH;
+            SP_GAB_OUV_VAR = Math.floor(Math.random() * 4) % 4;
+            /* ⚠️ _SP_STUDIO_ROCK631k — LE MODÈLE DE COUVERTURE (voir SP_GAB_COUV_MODE) :
+               six mises en page existantes, tirées à égalité. 0 = celle du cahier. */
+            SP_GAB_COUV_MODE = Math.floor(Math.random() * 6) % 6;
+            try {
+              window._spGabCouvStyle = SP_GAB_COUV_STYLE;
+              window._spGabPiedVar = SP_GAB_FOLIO_VAR;
+              window._spGabHautVar = SP_GAB_HAUT_VAR;
+              window._spGabOuvVar = SP_GAB_OUV_VAR;
+              window._spGabCouvMode = SP_GAB_COUV_MODE;
+            } catch (_) {}
+          }
+        }
+      }
       if (!theme && !_ditCouleur && !_impose) {
         const _liste = SP_GAB_ROTATION[g.fam] || SP_GAB_ROTATION._defaut;
         /* Tirage du style : valeur PROPRE (hasard.v4) — voir spGabHasard. */
@@ -16360,7 +17062,7 @@ function spRtfLayoutInfo(src) {
       W: W, H: H, g: g, t: texte, pal: pal, f: polices,
       k: Math.max(0.3, Math.min(1, H / 841.89)), v: hasard.v, n: hasard.n, theme: theme ? theme.cle : 'auto',
       x0: x0, y0: y0, x1: x1, y1: y1, cw: cw, ch: ch,
-      inter: interCorps, align: alignCorps, densite: densite, fondPage: fondPageReg || pal.__fondDemande || ((SP_GAB_AUDACE >= 1) ? (pal.clair || '#ffffff') : ''),
+      inter: interCorps, align: alignCorps, densite: densite, fondPage: fondPageReg || pal.__fondDemande || SP_GAB_PAPIER_TIRE || ((SP_GAB_AUDACE >= 1) ? (pal.clair || '#ffffff') : ''),
       /* Palier d'audace lu par la pose des pages (taille des titres de section). */
       audace: SP_GAB_AUDACE,
       filetCoef: REG ? Number(REG.filets) || 1 : 1, caps: !!(REG && REG.caps),
@@ -16564,6 +17266,24 @@ function spRtfLayoutInfo(src) {
       const totalPagine = Math.max(4, Math.ceil(_cible / 4) * 4);
       tot = Math.max(4, totalPagine - (galerie ? 1 : 0));
     }
+    /* ⚠️ _SP_STUDIO_ROCK631c — LE NOMBRE DE PAGES ÉCRIT DANS LA DEMANDE EST LA LOI.
+       Défaut mesuré (banc du 03/10/2026) : le pré-prompt « Magazine 32 pages · planches » a
+       livré UNE FOIS 33 pages pour 32 demandées — la faute est rare (1 envoi sur 7), donc
+       impossible à corriger par un tirage de chance : on pose une règle, pas un pansement.
+       Le compte lu DANS LA DEMANDE (`spGabPages`) est la référence ; quand il tombe juste
+       (multiple de 4 : 12, 24, 32, 64 — la règle d'imprimeur des cahiers) et que la machine
+       s'en est écartée de 1 à 4 pages, on recale `tot` sur la demande.
+       Deux garde-fous, pour ne JAMAIS couper le texte de quelqu'un :
+         · `texte.demoRegistre` — on ne recale que notre PROPRE texte de démonstration ;
+         · écart ≤ 4 pages — un document client vraiment long garde ses pages (aucune perte).
+       Le texte de démonstration, lui, se replie : c'est écrit dans la conversation. */
+    try {
+      const _lu = spGabPages(brief);
+      if (livre && texte.demoRegistre && _lu >= 8 && _lu % 4 === 0 && tot > _lu && (tot - _lu) <= 4) {
+        tot = _lu;
+        j('info', 'Mise en pages : la demande dit ' + _lu + ' page(s) — composition recalée sur ' + _lu + ' (texte de démonstration, aucune perte client).');
+      }
+    } catch (_) {}
     /* Le générateur de fonds repart proprement à chaque composition (luminances). */
     SP_GAB_LUM_IMG = {};
     const pages = [];
@@ -16606,6 +17326,20 @@ function spRtfLayoutInfo(src) {
     else if (/pleine page|plein cadre|pleine surface/i.test(String(brief || ''))) SP_GAB_MOTIF_VAR = 'photoPleine';
     let _motifDit = false;
     let _piedPose = false;
+    /* ⚠️ _SP_STUDIO_ROCK631b — EMPLACEMENTS PHOTO VIDES : décidé ICI, une fois `tot`
+       définitif et avant la boucle des pages. Sur un document SUIVI (8 pages et plus,
+       c'est-à-dire les pré-prompts 24/32/64 pages), les zones que le gabarit réserve à
+       une photo reçoivent un APLAT TRÈS CLAIR au lieu d'une illustration : l'utilisateur
+       voit où l'image ira, et l'app la posera à cet endroit précis (marqueur
+       `_spPhotoSlot`). La demande garde toujours le dernier mot : « sans photos /
+       texte seul / sans illustration » ne pose aucun emplacement. */
+    try {
+      SP_GAB_EMPLACEMENTS_PHOTO = (tot >= 8) && !state._spSansPhoto && !spGabSansIllustration(brief);
+    } catch (_) { SP_GAB_EMPLACEMENTS_PHOTO = false; }
+    /* ⚠️ _SP_STUDIO_ROCK631e — QUI REMPLIT LES FONDS ET LES EMPLACEMENTS PHOTO :
+       la banque SVG quand l'icône image est allumée (voir spBanqueSvgOn), les boîtes
+       très claires sinon. Lu une fois par composition. */
+    try { SP_GAB_BANQUE = spBanqueSvgOn(); } catch (_) { SP_GAB_BANQUE = false; }
     /* ⚠️ _SP_STUDIO_ROCK627 — LE LIVRE CONTINUE, IL NE SE BOUCHE PAS.
        Demande utilisateur : « tu dois respecter le livre et continuer la maquette comme le départ,
        et pas boucher les pages avec des grands fonds [SVG] ». La version précédente honorait la
@@ -16615,12 +17349,26 @@ function spRtfLayoutInfo(src) {
        page de décor n'est ajoutée (voir la prolongation de la matière de démonstration plus haut
        dans cette fonction). */
     for (let i = 1; i <= tot; i++) {
+      /* ⚠️ _SP_STUDIO_ROCK631i — LE TITRE COURANT DU HAUT DE PAGE (voir spGabHautVariant) :
+         le titre court du document, en capitales, dans la marge haute. */
+      const _titreCourant = String((texte && (texte.titre || texte.sujet || texte.chapeau || '')) || g.nom || '').replace(/\s+/g, ' ').trim();
       let els = [];
       L.pageCourante = i;                    // pour le générateur de fonds (un motif par page)
       /* _SP_STUDIO_STYLE_585 — L'OUVERTURE VARIÉE NE TOUCHE QUE LA PREMIÈRE PAGE : la suite du
          document garde la mise en page du gabarit (aucun risque de déborder). */
-      const layPage = (i === 1 && L.variante && !SP_GAB_OUVERTURES_SAUF[g.fam])
+      let layPage = (i === 1 && L.variante && !SP_GAB_OUVERTURES_SAUF[g.fam])
         ? (SP_GAB_OUVERTURES[L.variante - 1] || lay) : lay;
+      /* ⚠️ _SP_STUDIO_ROCK631k — LA COUVERTURE DU RAPPORT CHANGE VRAIMENT (voir SP_GAB_COUV_MODE).
+         Retour utilisateur : « la couverture est toujours la même, sois créatif ». On tire donc
+         une mise en page de couverture parmi celles qui EXISTENT : split, bandeau, pleine page,
+         couverture de magazine, affiche. Aucune nouvelle composition n'est inventée — et la suite
+         du document ne change pas d'une ligne (`lay` reste la mise en page du gabarit). */
+      if (SP_GAB_BRIEF_PREPROMPT && i === 1 && tot >= 4 && SP_GAB_COUV_MODE > 0) {
+        try {
+          const _MODS = [lay, spGabO_split, spGabO_bandeau, spGabO_pleine, spGabP_couverture, spGabP_affiche];
+          layPage = _MODS[SP_GAB_COUV_MODE] || layPage;
+        } catch (_) {}
+      }
       _piedPose = false;
       /* _SP_STUDIO_WORDING_587 — LA PAGE 2 D'UN RECTO/VERSO EST UN VRAI VERSO (informations, contacts),
          pas une copie du recto (cf. spGabVersoPage). */
@@ -16676,12 +17424,20 @@ function spRtfLayoutInfo(src) {
            typographie passe automatiquement en clair. */
         els.unshift(spGabR(0, 0, W, H, L.fondPage || '#ffffff', 0));
       }
+      /* NOTE — l'habillage de couverture (fond SVG / couleur / très grand titre) est posé
+         PLUS BAS, juste avant le garde-fou de contraste : mesuré, posé ici il était retiré
+         par la passe « sans image sur texte » qui suit. */
       /* ⚠️ _SP_STUDIO_ROCK616 — UNE SEULE PAGINATION PAR PAGE. MESURÉ (pré-prompt
          « 12-page booklet ») : le motif « pied de page éditorial » posait une bande et un
          grand numéro, PUIS le folio du studio posait « 4 / 12 » par-dessus — deux
          paginations sur la même page, et le folio (gris foncé) se retrouvait sur la bande
          d'accent sombre (d'où « typo de pagination noire sur un bandeau noir »). Quand la
          bande porte le numéro, elle EST la pagination : le folio ne s'ajoute pas. */
+      /* ⚠️ _SP_STUDIO_ROCK631i — LE HAUT DE PAGE TIRÉ AU SORT (voir spGabHautVariant) :
+         trois tenues, posées dans la marge haute, jamais sur la première ni la dernière page. */
+      if (SP_GAB_BRIEF_PREPROMPT && SP_GAB_HAUT_VAR && i > 1 && i < tot) {
+        try { els = els.concat(spGabHautVariant(L, i, tot, SP_GAB_HAUT_VAR, _titreCourant)); } catch (_) {}
+      }
       if (g.folio && i > 1 && i < tot && !_piedPose) els = els.concat(spGabFolio(L, i, tot));
       /* ⚠️ _SP_STUDIO_BASES_609 — l'habillage (épaisseur des filets, capitales, interlettrage)
          suit le MÊME faisceau que le reste de la composition : sans cela, la base tirée
@@ -16700,8 +17456,126 @@ function spRtfLayoutInfo(src) {
         if (!e || String(e.type) !== 'line') return true;
         return Math.abs((Number(e.x2) || 0) - (Number(e.x1) || 0)) > 0.5;
       });
-      pages.push({ pageIndex: pages.length, elements: spGabStyler(els, L, SP_GAB_REG_APPLIQUE || window._spReglages).map(spGabVersMm) });
+      /* ⚠️ _SP_STUDIO_ROCK631h — L'HABILLAGE DE COUVERTURE (tirage fait dans spGabDesign).
+         POSÉ ICI, après toutes les passes et juste avant le garde-fou de contraste :
+         MESURÉ — posé plus haut (juste après le fond de page), le fond SVG était RETIRÉ par
+         la passe « sans image sur texte » qui suit, et la couverture se retrouvait en papier.
+         Ici : le motif couvre le papier, reste SOUS la typographie, et le garde-fou de
+         contraste le voit (luminance déclarée 0,88 : les motifs de la banque sont des ombres
+         et des dégradés très pâles). Un fond de COULEUR est un aplat de la couleur d'accord :
+         la typographie posée dessus passe en clair automatiquement, c'est le garde-fou qui
+         tranche. */
+      if (SP_GAB_BRIEF_PREPROMPT && i === 1 && SP_GAB_COUV_STYLE !== 'papier') {
+        /* ⚠️ _SP_STUDIO_ROCK631m — BANQUE SVG ÉTEINTE : on ne laisse pas la couverture nue.
+           Demande utilisateur : « applique ce type de changement sur les autres pré-prompts,
+           avec ou sans image SVG d'activé ». Si l'habillage tiré est « svg » mais que la banque
+           d'illustrations est éteinte (Réglages, « sans illustration »), on bascule sur les
+           BANDES vectorielles : la couverture reste habillée, sans dépendre de la banque. */
+        if (SP_GAB_COUV_STYLE === 'svg' && !SP_GAB_ILLUS) SP_GAB_COUV_STYLE = 'bandes';
+        try { window._spGabCouvPose = SP_GAB_COUV_STYLE + '|start'; } catch (_) {}
+        try { window._spGabCouvPose = SP_GAB_COUV_STYLE + '|illus=' + SP_GAB_ILLUS + '|n=' + (els || []).length; } catch (_) {}
+        try {
+          if (SP_GAB_COUV_STYLE === 'svg' && SP_GAB_ILLUS) {
+            /* ⚠️ _SP_STUDIO_ROCK631j — LE PANNEAU SVG DE LA BANQUE, POSÉ DANS UNE ZONE LIBRE.
+               MESURÉ : un motif SVG PLEINE PAGE était retiré par la sécurité « aucune image
+               sous du texte » (spGabSansImageSurTexte, imageIndex absent). La solution n'est
+               pas de contourner cette sécurité, mais de respecter sa règle : on cherche une
+               ZONE LIBRE de la couverture (bandeau bas, bandeau haut, colonne, médaillon) —
+               testée contre les boîtes réelles des textes, marge 2 mm — et on y pose le motif.
+               Il ne touche personne : il est donc CONSERVÉ, et la couverture utilise vraiment
+               notre banque SVG. Si aucune zone n'est libre, on retombe sur les bandes
+               vectorielles (jamais de couverture vide). */
+            const _hTxt = function (e) {
+              const l = Number(e.left) || 0, t = Number(e.top) || 0, w = Number(e.width) || 0;
+              const h = Number(e.height) || spGabH(String(e.text || ''), Number(e.fontSize) || 10, w, Number(e.lineHeight) || 1.3);
+              return { l: l, t: t, r: l + w, b: t + h };
+            };
+            const _textesC = els.filter(function (e) {
+              return e && e.type === 'text' && /\S/.test(String(e.text || ''));
+            });
+            const _libre = function (x, y, w, h) {
+              const m = 2 * SP_GAB_K;
+              return !_textesC.some(function (e) {
+                const b = _hTxt(e);
+                return (Math.min(y + h + m, b.b) - Math.max(y - m, b.t)) > 0 &&
+                  (Math.min(x + w + m, b.r) - Math.max(x - m, b.l)) > 0;
+              });
+            };
+            const _cands = [
+              { x: 0, y: H * 0.62, w: W, h: H * 0.38 },
+              { x: 0, y: 0, w: W, h: H * 0.30 },
+              { x: 0, y: H * 0.22, w: W * 0.42, h: H * 0.56 },
+              { x: W * 0.58, y: H * 0.22, w: W * 0.42, h: H * 0.56 },
+              { x: W * 0.5, y: H * 0.6, w: W * 0.5, h: H * 0.4 }
+            ];
+            let _posee = false;
+            for (let ci2 = 0; ci2 < _cands.length && !_posee; ci2++) {
+              const c2 = _cands[ci2];
+              if (!_libre(c2.x, c2.y, c2.w, c2.h)) continue;
+              const mot = spGabIllustration(L, c2.x, c2.y, c2.w, c2.h);
+              const u2 = mot && String(mot.imageUrl || '');
+              if (u2) {
+                try { SP_GAB_LUM_IMG[u2] = (L.pal && L.pal.noir) ? 0.14 : 0.9; } catch (_) {}
+                els.splice(1, 0, mot);
+                _posee = true;
+                try { window._spGabCouvPose = 'svg-panneau:' + Math.round(c2.w) + 'x' + Math.round(c2.h); } catch (_) {}
+              }
+            }
+            if (!_posee) {
+              const _aB = (L.pal && L.pal.a) || '#1f6feb';
+              const _aC = (L.pal && (L.pal.clair || L.pal.doux)) || _aB;
+              const _sombre = !!(L.pal && L.pal.noir);
+              const _nB = 3 + Math.floor(Math.random() * 3);
+              const _bandes = [];
+              let _yB = 0;
+              for (let b2 = 0; b2 < _nB; b2++) {
+                const _hB = H * (0.06 + Math.random() * 0.14);
+                const _bande = spGabR(0, _yB, W, _hB, (b2 % 2) ? _aC : _aB, 0);
+                try { _bande.opacity = (_sombre ? 0.18 : 0.10) + Math.random() * 0.10; } catch (_) {}
+                _bandes.push(_bande);
+                _yB += _hB + H * 0.03;
+              }
+              _bandes.reverse().forEach(function (b3, iB) { els.splice(1 + iB, 0, b3); });
+              try { window._spGabCouvPose = 'svg->bandes-secours:' + _nB; } catch (_) {}
+            }
+          } else if (SP_GAB_COUV_STYLE === 'bandes') {
+            const _aB = (L.pal && L.pal.a) || '#1f6feb';
+            const _aC = (L.pal && (L.pal.clair || L.pal.doux)) || _aB;
+            const _sombre = !!(L.pal && L.pal.noir);
+            const _nB = 3 + Math.floor(Math.random() * 3);
+            const _bandes = [];
+            let _yB = 0;
+            for (let b2 = 0; b2 < _nB; b2++) {
+              const _hB = H * (0.06 + Math.random() * 0.14);
+              const _bande = spGabR(0, _yB, W, _hB, (b2 % 2) ? _aC : _aB, 0);
+              try { _bande.opacity = (_sombre ? 0.18 : 0.10) + Math.random() * 0.10; } catch (_) {}
+              _bandes.push(_bande);
+              _yB += _hB + H * 0.03;
+            }
+            _bandes.reverse().forEach(function (b3, iB) { els.splice(1 + iB, 0, b3); });
+            try { window._spGabCouvPose = 'bandes:' + _nB; } catch (_) {}
+          } else if (SP_GAB_COUV_STYLE === 'couleur') {
+            els.splice(1, 0, spGabR(0, 0, W, H, (L.pal && L.pal.a) || '#1f6feb', 0));
+          } else if (SP_GAB_COUV_STYLE === 'titre') {
+            let _gros = null;
+            els.forEach(function (e) {
+              if (!e || e.type !== 'text') return;
+              if (!_gros || (Number(e.fontSize) || 0) > (Number(_gros.fontSize) || 0)) _gros = e;
+            });
+            if (_gros) _gros.fontSize = Math.min(160, Math.round((Number(_gros.fontSize) || 40) * 1.35 * 10) / 10);
+          }
+        } catch (_) {}
+      }
+      /* ⚠️ _SP_STUDIO_ROCK631d — DERNIER MOT SUR LES ENCRES (voir la fonction) :
+         aucune encre sombre ne reste sur une page au fond noir ; un bleu est éclairci
+         dans sa propre teinte pour garder ce que la demande voulait. */
+      els = spGabEncreSurFondSombre(els, L);
+      pages.push({ pageIndex: pages.length, elements: spGabEmplacementsSansTexte(spGabStyler(els, L, SP_GAB_REG_APPLIQUE || window._spReglages).map(spGabVersMm)) });
     }
+    /* NOTE — le dernier contrôle des encres était ici : MESURÉ, deux textes de couverture
+       (titre + chapô) restaient BLANCS sur papier clair (#f5f1e8, ratio 1,13) parce qu'une
+       passe postérieure recolorait la couverture. Il est déplacé TOUT À LA FIN de la
+       composition (avant `_nbPagesComposees`), après toutes les passes. */
     /* PIÈCES JOINTES IMAGE NON PLACÉES : on ne les jette pas. Un cahier ou une
        brochure reçoit une GALERIE juste avant la 4e de couverture (demande
        utilisateur : « notre modèle doit vraiment réinjecter les PJ »). */
@@ -16721,6 +17595,25 @@ function spRtfLayoutInfo(src) {
       pages.splice(pages.length - 1, 0, { pageIndex: 0, elements: g2.map(spGabVersMm) });
     }
     pages.forEach(function (p, i) { p.pageIndex = i; });
+    /* ⚠️ _SP_STUDIO_ROCK631b — LE NOMBRE DE PAGES DEMANDÉ EST TENU À LA PAGE PRÈS.
+       Demande utilisateur : « libérer la structure ET verrouiller le nombre de pages d'abord ».
+       MESURÉ (banc du 03/10/2026) : une demande libre de 24 pages livrait 25 pages — une page
+       de queue — dès que la phrase du brief n'imposait plus la mise en page. Un nombre de
+       pages exact est une contrainte d'imprimeur : la queue en trop est retirée, mais JAMAIS
+       la dernière page (c'est la 4e de couverture) — on retire les pages en trop juste AVANT
+       elle, puis on renumérote. Un cahier reste un multiple de 4. */
+    if (veut) {
+      let _veutTotal = Math.max(4, veut);
+      if (livre) _veutTotal = Math.max(4, Math.ceil(_veutTotal / 4) * 4);
+      if (pages.length > _veutTotal && (pages.length - _veutTotal) <= 2) {
+        const _enTrop = pages.length - _veutTotal;
+        const _debut = Math.max(1, pages.length - 1 - _enTrop);
+        pages.splice(_debut, _enTrop);
+        pages.forEach(function (p, i) { p.pageIndex = i; });
+        j('warn', 'Mise en pages : ' + (_veutTotal + _enTrop) + ' page(s) composées pour ' + veut +
+          ' demandée(s) — ' + _enTrop + ' page(s) de fin retirée(s) pour tenir le nombre de pages demandé.');
+      }
+    }
     /* ══ _SP_STUDIO_IMAGES_585 — ATTRIBUTION AUTOMATIQUE DES PHOTOS LIBRES ══════════════════
        Chaque photo du web porte son AUTEUR et sa LICENCE (relevés à la source). La
        ligne est posée dans la MARGE BASSE de la dernière page : cet endroit est vide
@@ -16862,6 +17755,78 @@ function spRtfLayoutInfo(src) {
         try { console.log('[SP213] pages sans contenu retirees : ' + _retirees + ' — document de ' + pages.length + ' page(s).'); } catch (_) {}
       }
     }
+    /* ⚠️ _SP_STUDIO_ROCK631l — DERNIER MOT SUR LES ENCRES, TOUT À LA FIN.
+       Demande utilisateur : « sur des teintes claires (fond clair), typo noire, sur ce modèle
+       premium 24 pages ».
+       MESURÉ (rapport 24 p) : 13 puis 33 textes BLANCS sur papier clair (#f4f1e9 ratio 1,13,
+       #fdfbf7 ratio 1,03) — titres, folios, titres courants. Après ce contrôle, il restait
+       DEUX textes de couverture (titre + chapô) : une passe postérieure recolorait la
+       couverture. Le contrôle est donc posé ICI, après TOUTES les passes (galerie, pages
+       vides, imposition) : fond clair → encre FONCÉE (#101014, le noir du studio), fond
+       sombre → encre CLAIRE. Jamais de dégradation : on ne remplace que si le contraste
+       s'améliore. Un texte posé sur une IMAGE n'est pas touché (les voiles s'en occupent). */
+    try {
+      const _lumC = function (c) { try { const v = spGabLum(c); return (typeof v === 'number') ? v : 1; } catch (_) { return 1; } };
+      const _ratC = function (a, b) { const x = Math.max(a, b) + 0.05, y = Math.min(a, b) + 0.05; return x / y; };
+      let _nC = 0;
+      pages.forEach(function (pg) {
+        const els = (pg && pg.elements) || [];
+        els.forEach(function (e) {
+          if (!e || e.type !== 'text' || !e.fill) return;
+          const l = Number(e.left) || 0, t = Number(e.top) || 0, w = Number(e.width) || 0;
+          const h1 = (Number(e.fontSize) || 10) * (Number(e.lineHeight) || 1.3) * 1.13;
+          const px = l + w * 0.5, py = t + h1 * 0.5;
+          /* ⚠️ _SP_STUDIO_ROCK631o — UN TEXTE POSÉ SUR UNE IMAGE n'était pas examiné (« les
+             voiles s'en occupent »). MESURÉ sur l'« Affiche noir et or » : 3 textes restaient
+             SOMBRES sur un motif sombre de la banque (luminance déclarée 0,14 en thème noir).
+             On lit donc la luminance de l'image (SP_GAB_LUM_IMG) et on applique la MÊME règle
+             absolue : image très sombre → encre claire, image très claire → encre noire. */
+          let lumImg = null;
+          els.forEach(function (im) {
+            if (!im || im.type !== 'image') return;
+            const il = Number(im.left) || 0, it = Number(im.top) || 0, iw = Number(im.width) || 0, ih = Number(im.height) || 0;
+            if (!(l < il + iw - 1 && il < l + w - 1 && t < it + ih - 1 && it < t + h1 - 1)) return;
+            const u = String(im.imageUrl || '');
+            const v = (typeof SP_GAB_LUM_IMG === 'object' && SP_GAB_LUM_IMG && typeof SP_GAB_LUM_IMG[u] === 'number') ? SP_GAB_LUM_IMG[u] : 0.5;
+            lumImg = (lumImg === null) ? v : Math.max(lumImg, v);
+          });
+          if (lumImg !== null) {
+            const lI = lumImg, lE2 = _lumC(e.fill);
+            if (lI < 0.25 && lE2 < 0.45) { e.fill = '#ffffff'; _nC++; return; }
+            if (lI > 0.75 && lE2 > 0.50) { e.fill = '#101014'; _nC++; return; }
+            if (_ratC(lI, lE2) < 4.5) {
+              const cibleI = (lI < 0.45) ? '#ffffff' : '#101014';
+              if (_ratC(lI, _lumC(cibleI)) > _ratC(lI, lE2) + 0.001) { e.fill = cibleI; _nC++; }
+            }
+            return;
+          }
+          let fond = '#ffffff', aire = 0;
+          els.forEach(function (a) {
+            if (!a || a.type !== 'rectangle' || !a.fill || String(a.fill) === 'transparent') return;
+            const aw = Number(a.width) || 0, ah = Number(a.height) || 0;
+            if (aw * ah < w * h1 * 0.3) return;
+            const al = Number(a.left) || 0, at = Number(a.top) || 0;
+            if (!(px >= al - 0.5 && px <= al + aw + 0.5 && py >= at - 0.5 && py <= at + ah + 0.5)) return;
+            if (aw * ah >= aire) { aire = aw * ah; fond = String(a.fill); }
+          });
+          const lF = _lumC(fond), lE = _lumC(e.fill);
+          /* ⚠️ _SP_STUDIO_ROCK631o — RÈGLE ABSOLUE, AVANT TOUT CALCUL DE RATIO.
+             Demande utilisateur : « dans ROCK 1, dans le studio, on n'écrit pas typo noire sur
+             des fonds noirs ».
+             MESURÉ : sur l'« Affiche noir et or », trois textes restaient SOMBRES sur un fond
+             TRÈS sombre. Le ratio WCAG passait (≥ 4,5) parce que les deux luminaisons
+             différaient assez — lisible au calcul, noir sur noir à l'œil. Un ratio n'est donc
+             pas une autorisation : sur un fond TRÈS sombre l'encre est CLAIRE, sur un fond TRÈS
+             clair elle est NOIRE, sans condition d'amélioration. C'est une règle, pas un tri. */
+          if (lF < 0.25 && lE < 0.45) { e.fill = '#ffffff'; _nC++; return; }
+          if (lF > 0.75 && lE > 0.50) { e.fill = '#101014'; _nC++; return; }
+          if (_ratC(lF, lE) >= 4.5) return;
+          const cible = (lF < 0.45) ? '#ffffff' : '#101014';
+          if (_ratC(lF, _lumC(cible)) > _ratC(lF, lE) + 0.001) { e.fill = cible; _nC++; }
+        });
+      });
+      if (_nC) { try { console.log('[SP213] contraste final : ' + _nC + ' encre(s) corrigée(s)'); } catch (_) {} }
+    } catch (_) {}
     let _nbPagesComposees = pages.length;
     SP_GAB_PAGES_COMPOSEES = _nbPagesComposees;
     if (spread && _nbPagesComposees) {
@@ -17279,8 +18244,15 @@ function spRtfLayoutInfo(src) {
     /* Le pop-in Réglages garde son propre objet en mémoire : on le met à jour, sinon
        sa prochaine ouverture réafficherait l'ancien choix. */
     try { if (SP_REG) { SP_REG.images = val; spRegSauve(); } } catch (_) {}
+    /* ⚠️ _SP_STUDIO_ROCK631e — LE CLIC ALLUME LA BANQUE SVG (fonds + emplacements photo).
+       Éteinte : les emplacements restent des boîtes claires et les fonds redeviennent nus. */
+    try { spBanqueSvgSet(on); } catch (_) {}
+    try { spGabFondsRegler(on ? 'ombres' : 'aucun'); } catch (_) {}
+    SP_GAB_BANQUE = !!on;
     try { spImagesUpdateUI(); } catch (_) {}
-    appendChat('assistant', t(on ? 'st.img.on' : 'st.img.off'));
+    let _ditImg = t(on ? 'st.img.on' : 'st.img.off');
+    if (on) _ditImg += ' Banque SVG SuperPrint d\u2019abord : nos motifs vectoriels remplissent les fonds et les emplacements photo (aucun reseau, aucune cle).';
+    appendChat('assistant', _ditImg);
     try { spJournalAjoute('info', t(on ? 'st.img.on' : 'st.img.off')); } catch (_) {}
     spStarterSync();
   }
@@ -19020,9 +19992,26 @@ function spRtfLayoutInfo(src) {
     //   CONTINUE : la consigne texte fait réserver des zones photo grises.
     /* _SP_STUDIO_IMAGES_585 — LE MODE « SUR DEMANDE » N'APPELLE LE RÉSEAU QUE SI LA DEMANDE
        PARLE DE PHOTOS ; « jamais » (défaut) ne fait rien du tout. */
+    /* ⚠️ _SP_STUDIO_ROCK631q — UNE URL DANS LA DEMANDE, AVEC ROCK : ON RELÈVE LA CHARTE DU SITE.
+       Demande utilisateur : « si l'utilisateur met une URL dans le prompt avec ROCK, on pourrait
+       extraire le logo, la charte en CSS et quelques photos depuis la home ».
+       Couleurs + logo + photos, POSÉES AVANT de composer ; la typographie du site n'est jamais
+       reprise (voir spCharteAppliquer). Réservé au moteur local `gabarit` : un moteur distant
+       reçoit le texte, et c'est le studio qui garde la main sur les couleurs. En cas d'échec
+       (studio ouvert en fichier local, proxy absent), on l'annonce et la composition continue
+       normalement — cette fonctionnalité ne bloque jamais une demande. */
+    try {
+      const _urlDem = spUrlDansPrompt(userText);
+      if (_urlDem && String(state.engine) === 'gabarit') await spCharteAppliquer(_urlDem);
+      else if (!_urlDem) SP_GAB_THEME_SITE = null;
+    } catch (_) {}
     const _imgMode = spImagesReglage();
     const _imgVeut = /photos?|images?|visuels?|illustrations?|pictures?|couverture\s+photo/i.test(userText);
-    if (spImagesEnabled() && (_imgMode !== 'demande' || _imgVeut)) {
+    /* ⚠️ _SP_STUDIO_ROCK631e — LA BANQUE SVG PASSE AVANT LE RÉSEAU.
+       Banque allumée : nos motifs vectoriels remplissent déjà les fonds et les
+       emplacements photo ; on n'appelle donc PAS Wikimedia/Openverse (la demande garde
+       la main : elle peut encore réclamer une photo du web, alors on cherche). */
+    if (spImagesEnabled() && !spBanqueSvgOn() && (_imgMode !== 'demande' || _imgVeut)) {
       try {
         const _imgRes = await spImagesAttach(userText);
         if (_imgRes.added) {
@@ -23527,7 +24516,37 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
        planche APRÈS l'imposition : sans ce contrôle ici, la dernière planche redevenait une
        double page (« il termine en double page » — défaut signalé sur le recueil de poèmes). */
     if (enDouble) { try { spDegraisserPlanchesSeules(doc.pages, SP_GAB_PAGES_COMPOSEES || 0, doc.w); } catch (_) {} }
-    const cotes = doc.pages.map(p => enDouble ? spCoteSeulePlanche(p, doc.w, doc.bleed) : null);
+    /* ⚠️ _SP_STUDIO_ROCK631b — FILET DE SÉCURITÉ DES EMPLACEMENTS PHOTO (même logique que le
+       dégraissage ci-dessus) : un emplacement photo ne touche JAMAIS un bloc typo. Le filtre
+       de fin de page de spGabDesign ne suffit pas — la reprise du cahier
+       (spVerifierCahierPlanches) et la fusion ciblée remplacent une planche APRÈS coup et
+       peuvent réintroduire un emplacement fautif (mesuré : la couverture du « Rapport
+       premium 24 pages » gardait un aplat de 165 × 252 mm sur trois blocs de texte).
+       On nettoie donc AUSSI à l'affichage, sur le document réellement montré et exporté. */
+    try { (doc.pages || []).forEach(function (p) { p.elements = spGabEmplacementsSansTexte(p.elements, { w: doc.w, h: doc.h }); }); } catch (_) {}
+    /* ⚠️ _SP_STUDIO_ROCK631n — LE NOMBRE DE PAGES AFFICHÉ SUIT L'IMPOSITION, PAS LA DÉTECTION.
+       DÉFAUT MESURÉ (banc du 03/10/2026) : « Cahier 12 pages » livrait **13 pages** une fois
+       sur deux. Le moteur compose bien 12 pages (verrou de pages actif, mesuré) : c'est le
+       COMPTEUR qui se trompait. Les côtés étaient déduits par `spCoteSeulePlanche`, qui juge
+       sur l'OCCUPATION MESURÉE des deux moitiés d'une planche : dès qu'un élément (filet,
+       fond, texte) effleure le pli de la dernière planche, celle-ci est vue comme une VRAIE
+       double page → elle reçoit deux folios (12 et 13) → total annoncé 13.
+       L'imposition est pourtant connue : `spCahierPlanches(SP_GAB_PAGES_COMPOSEES)` dit
+       exactement ce que chaque planche porte. On la préfère donc à la mesure — mais SEULEMENT
+       quand elle décrit le même nombre de planches que le document (sinon l'utilisateur a
+       ajouté ou supprimé des planches à la main : on repasse à la mesure). La mesure reste
+       le filet de sécurité, elle n'est plus la source de vérité. */
+    let _cahAtt = [];
+    try { if (enDouble && SP_GAB_PAGES_COMPOSEES) _cahAtt = spCahierPlanches(Math.max(2, Math.round(SP_GAB_PAGES_COMPOSEES))); } catch (_) { _cahAtt = []; }
+    const _attFiable = !!(enDouble && _cahAtt.length && _cahAtt.length === doc.pages.length);
+    const cotes = doc.pages.map(function (p, i) {
+      if (!enDouble) return null;
+      if (_attFiable) {
+        const a2 = _cahAtt[i];
+        return (a2 && (a2.cote === 'gauche' || a2.cote === 'droite')) ? a2.cote : null;
+      }
+      return spCoteSeulePlanche(p, doc.w, doc.bleed);
+    });
     /* ══ _SP_STUDIO_PAGINATION_589 — NUMÉROTATION DES LIBELLÉS ══
        DÉFAUT MESURÉ (retour utilisateur : « la pagination automatique arrive parfois au
        milieu de page, c'est étrange ») : en PAGE SIMPLE, spNumerosPlanches() était
@@ -25280,8 +26299,12 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
           }
 
           if (t === 'rectangle' || t === 'rect') {
+            /* ⚠️ _SP_STUDIO_ROCK631b — L'EMPLACEMENT PHOTO VOYAGE AVEC LE .sp : le marqueur
+               `_spPhotoSlot` (aplat très clair posé sur une zone photo d'un document suivi)
+               doit arriver tel quel dans l'app, sinon l'utilisateur perd la possibilité d'y
+               poser son image au bon endroit (et l'aplat deviendrait un rectangle muet). */
             objects.push(spAppliquerReglagesTypo({ type: 'rect', left, top, width, height, fill, opacity: op, scaleX: 1, scaleY: 1,
-              stroke: stroke || '', strokeWidth: strokeW, rx: (el.rx || 0) * MM_TO_PX, ry: (el.ry || 0) * MM_TO_PX, ...spElementTransform(el) }, el));
+              stroke: stroke || '', strokeWidth: strokeW, rx: (el.rx || 0) * MM_TO_PX, ry: (el.ry || 0) * MM_TO_PX, ...(el._spPhotoSlot ? { _spPhotoSlot: 1 } : {}), ...spElementTransform(el) }, el));
           } else if (t === 'circle') {
             objects.push(spAppliquerReglagesTypo({ type: 'circle', left: (el.left != null ? +el.left : 0) * MM_TO_PX + bleedPx, top: (el.top != null ? +el.top : 0) * MM_TO_PX + bleedPx, radius: (+el.radius || 25) * MM_TO_PX, fill, opacity: op, stroke: stroke || '', strokeWidth: strokeW, ...spElementTransform(el) }, el));
           } else if (t === 'ellipse') {

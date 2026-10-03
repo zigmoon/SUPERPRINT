@@ -1,4 +1,4 @@
-SUPERPRINT 1.7.595 - CONTENU DU PAQUET
+SUPERPRINT 1.7.596 - CONTENU DU PAQUET
 ======================================
 
 Ce paquet n'est PAS un site web : c'est le paquet de l'APPLICATION LOCALE,
