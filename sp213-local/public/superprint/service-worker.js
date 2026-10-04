@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.597-manchettes-magazine';
+const CACHE_NAME = 'superprint-shell-v1.7.598-curseur-edition-texte';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
