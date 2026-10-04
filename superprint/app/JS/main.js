@@ -1380,6 +1380,39 @@ function spHardenFabricHiddenTextarea(textObj) {
         //   valeur est sélectionnée, on maintient la sélection via une boucle
         //   requestAnimationFrame pendant ~1.5s (durée pendant laquelle le tap
         //   de fermeture du menu peut intervenir).
+        /* ⚠️ FIX 2026-10-04 — _SP_TXT_CURSEUR_597 : LES INTENTIONS D'ÉDITION ARRÊTENT LA BOUCLE.
+           La boucle « sticky » ci-dessous (ajoutée pour le « Tout sélectionner » natif des
+           appareils tactiles) remet la sélection complète à chaque frame pendant 1 500 ms dès
+           qu'un événement « select » du textarea caché a été vu. MESURÉ : elle écrasait le curseur
+           et toute sélection partielle (flèches comprises) — sur un ordinateur, où le menu
+           natif n'existe pas, elle n'a aucune raison d'être. Deux verrous :
+             • elle ne s'arme plus que sur un appareil TACTILE ;
+             • sur ces appareils, elle s'arrête dès que l'utilisateur tape au clavier
+               (hors modificateur seul) ou clique dans le bloc en édition. */
+        if (!ta._spStickyStopEcoute) {
+            ta._spStickyStopEcoute = true;
+            ta.addEventListener('keydown', function (ev) {
+                const k = ev.key || '';
+                if (k === 'Shift' || k === 'Control' || k === 'Meta' || k === 'Alt') return;
+                ta._spStickyStop = Date.now();
+            }, true);
+            ta.addEventListener('pointerdown', function () { ta._spStickyStop = Date.now(); }, true);
+            ta.addEventListener('blur', function () { ta._spStickyStop = Date.now(); }, true);
+            /* Un CLIC DANS LE BLOC (donc sur le canvas) vaut aussi : l'utilisateur place le
+               curseur — la sélection complète ne doit pas revenir. Un seul écouteur par canvas,
+               le bloc actif est relu à chaque clic. */
+            const _cvSticky = textObj && textObj.canvas;
+            if (_cvSticky && !_cvSticky.__spStickyStopEcoute) {
+                _cvSticky.__spStickyStopEcoute = true;
+                _cvSticky.on('mouse:down', function (ev) {
+                    try {
+                        const ao = _cvSticky.getActiveObject();
+                        if (!ao || !ao.isEditing || !ao.hiddenTextarea) return;
+                        if (ev && ev.target === ao) ao.hiddenTextarea._spStickyStop = Date.now();
+                    } catch (_) {}
+                });
+            }
+        }
         if (!ta._spSelectAllListenerAttached) {
             ta._spSelectAllListenerAttached = true;
             ta.addEventListener('select', () => {
@@ -1418,9 +1451,16 @@ function spHardenFabricHiddenTextarea(textObj) {
                     //   remplace au lieu d'insérer).
                     const _stickyInitialText = textObj.text || '';
                     const _stickyInitialLen = _stickyInitialText.length;
+                    /* La boucle ne sert QU'aux appareils tactiles (voir le commentaire du verrou). */
+                    const _tactileAppareil = (function () {
+                        try { return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); } catch (_) { return false; }
+                    })();
+                    if (!_tactileAppareil) return;
                     const startedAt = Date.now();
                     const stickyTick = () => {
                         if (!textObj.isEditing) return;
+                        /* L'utilisateur a tapé ou cliqué depuis l'armement : on ne réécrit plus rien. */
+                        if (ta._spStickyStop && ta._spStickyStop >= startedAt) return;
                         if (Date.now() - startedAt > 1500) return;
                         const len = textObj.text ? textObj.text.length : 0;
                         // Abort si l'utilisateur a tapé / supprimé / modifié le texte.
@@ -14611,6 +14651,46 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             // l'événement pour que le handler cross-block le traite (sélection texte,
             // pas sélection d'objet)
             const activeObj = canvas.getActiveObject();
+
+            /* ⚠️ FIX 2026-10-04 — _SP_TXT_CURSEUR_597 : SHIFT+CLIC DANS LE BLOC EN ÉDITION
+               = ÉTENDRE LA SÉLECTION (et non la perdre).
+               MESURÉ (banc, cas I6) : shift+clic dans le bloc en cours d'édition laissait
+               tomber la sélection — l'objet n'était plus actif du tout (relevé : « actif: aucun »,
+               édition quittée). Ici, l'app fait ce que l'utilisateur attend : la sélection
+               native s'étend du curseur jusqu'au caractère cliqué (même méthode que la
+               sélection cross-block), et l'événement est arrêté pour que Fabric ne
+               désélectionne pas. Le TEXTE n'est jamais modifié. */
+            if (activeObj && activeObj.isEditing && target === activeObj &&
+                (target.type === 'textbox' || target.type === 'text' || target.type === 'i-text')) {
+                try {
+                    /* Fabric possède ce geste : « setCursorByClick » place le curseur au clic et,
+                       si Shift est enfoncé, ÉTEND la sélection courante. C'est la méthode qu'il
+                       appelle lui-même dans sa gestion du mousedown — on n'en réécrit donc aucune
+                       géométrie. (Repli minimal si la méthode manquait dans une autre version.) */
+                    try {
+                        if (typeof activeObj.setCursorByClick === 'function') {
+                            activeObj.setCursorByClick(domEvent);
+                        } else if (typeof getCharIndexAtPointer === 'function') {
+                            const _ptc = canvas.getPointer(domEvent);
+                            const _idxc = getCharIndexAtPointer(activeObj, _ptc);
+                            const _anc = (typeof activeObj.selectionStart === 'number') ? activeObj.selectionStart : 0;
+                            if (typeof _idxc === 'number' && _idxc >= 0) {
+                                if (_idxc >= _anc) { activeObj.setSelectionStart(_anc); activeObj.setSelectionEnd(_idxc); }
+                                else { activeObj.setSelectionStart(_idxc); activeObj.setSelectionEnd(_anc); }
+                            }
+                        }
+                    } catch (_) {}
+                    activeObj.dirty = true;
+                    if (activeObj.hiddenTextarea) {
+                        try { activeObj.hiddenTextarea.focus(); } catch (_) {}
+                    }
+                    canvas.requestRenderAll();
+                } catch (_) {}
+                domEvent.preventDefault();
+                domEvent.stopPropagation();
+                domEvent.stopImmediatePropagation();
+                return;
+            }
             if (activeObj && activeObj.isEditing &&
                 (activeObj.type === 'textbox' || activeObj.type === 'text') &&
                 (target.type === 'textbox' || target.type === 'text') &&
@@ -14621,7 +14701,28 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                     const head1 = typeof findFirstBlockInChain === 'function' && findFirstBlockInChain(activeObj);
                     const head2 = typeof findFirstBlockInChain === 'function' && findFirstBlockInChain(target);
                     if (head1 && head2 && head1.obj.textLinkId === head2.obj.textLinkId) {
-                        // Même chaîne ! Laisser passer pour sélection texte cross-block
+                        /* ⚠️ FIX 2026-10-04 — _SP_TXT_CURSEUR_597 : LA SÉLECTION CROSS-BLOCK SE FAIT ICI.
+                           MESURÉ (banc, cas II4) : « laisser passer » ne suffisait pas — Fabric
+                           désélectionnait le bloc en édition (le clic porte sur un AUTRE objet)
+                           avant que la sélection cross-block ne soit construite : aucune sélection,
+                           édition perdue. On la construit donc MAINTENANT, avec la méthode de
+                           l'app, et l'événement est arrêté : ni l'objet actif ni le mode édition
+                           ne bougent. Le TEXTE n'est pas modifié. */
+                        try {
+                            const _ptx = canvas.getPointer(domEvent);
+                            const _idxx = (typeof getCharIndexAtPointer === 'function') ? getCharIndexAtPointer(target, _ptx) : 0;
+                            if (typeof startOrExtendCrossBlockSelection === 'function' &&
+                                startOrExtendCrossBlockSelection(activeObj, target, _idxx)) {
+                                domEvent.preventDefault();
+                                domEvent.stopPropagation();
+                                domEvent.stopImmediatePropagation();
+                                return;
+                            }
+                        } catch (_) {}
+                        // Même chaîne : ne jamais transformer ce geste en multi-sélection d'objets
+                        domEvent.preventDefault();
+                        domEvent.stopPropagation();
+                        domEvent.stopImmediatePropagation();
                         return;
                     }
                 } catch (_) {}
@@ -31630,6 +31731,15 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                 return;
             }
             
+            /* ⚠️ FIX 2026-10-04 — _SP_TXT_CURSEUR_597 : LES FLÈCHES RENDENT LA MAIN AU CURSEUR.
+               MESURÉ (bloc chaîné en édition) : la sélection cross-block (tout le texte de la
+               chaîne) survivait à une flèche — le curseur ne bougeait pas et toute sélection
+               partielle était reprise par renderCrossBlockSelection(). Une touche de DÉPLACEMENT
+               annonce une édition locale : on retire les surlignages cross-block (le TEXTE n'est
+               jamais touché) et la touche reste au curseur de Fabric. */
+            if (!cmdOrCtrl && !e.altKey && /^(Arrow(Left|Right|Up|Down)|Home|End|PageUp|PageDown)$/.test(e.key || '')) {
+                if (_crossBlockSel) { cancelCrossBlockSelection(); }
+            }
             // Toute autre touche de caractère (pas un modificateur seul) annule la sélection cross-block
             // pour laisser la frappe normale reprendre
             if (!cmdOrCtrl && !e.altKey && !e.shiftKey && e.key.length === 1) {
@@ -32419,6 +32529,31 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
     // ===== DÉPLACEMENT AU CLAVIER DES OBJETS SÉLECTIONNÉS =====
     if (!isTyping && !cmdOrCtrl && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
         const activeCanvas = getActiveCanvas();
+        /* ⚠️ FIX 2026-10-04 — _SP_TXT_CURSEUR_597 : EN ÉDITION, LA FLÈCHE VA AU CURSEUR.
+           MESURÉ : après un clic dans le bloc, le textarea caché de Fabric perd le focus
+           (activeElement = BODY) ; la touche n'est alors plus arrêtée par Fabric et tombait dans
+           ce bloc — le BLOC se déplaçait de 1 px (10 avec Shift) au lieu de déplacer le curseur.
+           On rend la main au texte : focus repris, et si le navigateur ne peut plus déplacer le
+           curseur, on le déplace avec les méthodes de Fabric (celles de sa propre gestion du
+           clavier). Le bloc ne bouge JAMAIS pendant la saisie. */
+        const _objEdit = activeCanvas && activeCanvas.getActiveObject();
+        if (_objEdit && _objEdit.isEditing &&
+            (_objEdit.type === 'textbox' || _objEdit.type === 'text' || _objEdit.type === 'i-text')) {
+            const _taEdit = _objEdit.hiddenTextarea;
+            if (_taEdit && document.activeElement !== _taEdit) {
+                try { _taEdit.focus({ preventScroll: true }); } catch (_) { try { _taEdit.focus(); } catch (_) {} }
+            }
+            if (document.activeElement !== _taEdit) {
+                try {
+                    if (e.key === 'ArrowLeft' && typeof _objEdit.moveCursorLeft === 'function') _objEdit.moveCursorLeft(e);
+                    else if (e.key === 'ArrowRight' && typeof _objEdit.moveCursorRight === 'function') _objEdit.moveCursorRight(e);
+                    else if (e.key === 'ArrowUp' && typeof _objEdit.moveCursorUp === 'function') _objEdit.moveCursorUp(e);
+                    else if (e.key === 'ArrowDown' && typeof _objEdit.moveCursorDown === 'function') _objEdit.moveCursorDown(e);
+                } catch (_) {}
+            }
+            e.preventDefault();
+            return;
+        }
         if (activeCanvas) {
             const sel = activeCanvas.getActiveObject();
             if (sel && !sel.isMargin && !sel.isBleed && !sel.isGuide && !sel.isManualGuide && !sel.isTrimBox && !sel._isSpreadMirror) {
