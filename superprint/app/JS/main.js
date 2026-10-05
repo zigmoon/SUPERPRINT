@@ -9,6 +9,13 @@
 //   Impact taille JSON : négligeable (~+2-3 octets/propriété).
 try { fabric.Object.NUM_FRACTION_DIGITS = 6; } catch (_) {}
 
+/* 🆕 v1.7.599 — _SP_LANGUE_599 : ON CAPTURE LA REQUÊTE ICI, AU TOUT PREMIER
+   STATEMENT EXÉCUTABLE DU MOTEUR. MESURÉ : plus tard dans le démarrage, l'app a
+   déjà nettoyé l'URL et `window.location.search` est vide — le paramètre
+   `?lang=fr|en|ja` (qui sert à forcer la langue, pour l'essai et le support)
+   n'était donc jamais lu. On le met de côté avant tout nettoyage. */
+try { window.__spBootQuery = window.location.search || ''; } catch (_) {}
+
 // ============================================================================
 // 🆕 v1.7.574 — _SP_DLG_574 : BOÎTES DE DIALOGUE « SUPERPRINT »
 // ----------------------------------------------------------------------------
@@ -3370,8 +3377,10 @@ function goToPage(pageIndex) {
     /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : CONTOUR DU CADRE D'UN BLOC TEXTE.
        Le contour Fabric d'un texte (« stroke ») souligne les GLYPHES, pas la boîte.
        Le contour de cadre vit donc dans _spFrameStroke / _spFrameStrokeWidth et se
-       trace ici, dans le repère LOCAL du bloc (0,0 = coin haut-gauche, ce que ce même
-       fichier utilise déjà pour le repère d'habillage __spWrapMark).
+       trace ici, dans le repère LOCAL du bloc. ATTENTION : dans _render, l'origine
+       locale (0,0) est le CENTRE de la boîte du bloc, pas son coin haut-gauche
+       (Fabric translate le contexte en left + (width + strokeWidth)/2).
+       Voir _SP_CADRE_COIN_599, plus bas, qui redescend au coin exact.
        Tracé APRÈS le rendu natif : il passe par-dessus le fond de cadre (sinon un
        fond opaque le masquerait). L'épaisseur est divisée par l'échelle courante :
        un contour de cadre ne suit pas le redimensionnement du bloc. */
@@ -3393,12 +3402,24 @@ function goToPage(pageIndex) {
                     if (!(_bw > 0) || !(_bh > 0)) return;
                     var _sc = (Math.abs(this.scaleX || 1) + Math.abs(this.scaleY || 1)) / 2;
                     if (!(_sc > 0)) _sc = 1;
+                    /* 🆕 v1.7.599 — _SP_CADRE_COIN_599 : LE REPÈRE LOCAL N'EST PAS LE COIN.
+                       Fabric a déjà translaté le contexte au CENTRE de la boîte :
+                       calcTransformMatrix().e/f = left + (width + strokeWidth)/2 (idem en y).
+                       Écrire strokeRect(0, 0, …) posait donc le cadre au centre, avec un
+                       décalage qui VARIAIT à chaque changement de hauteur du texte
+                       (mesuré : +198,9 / +33,7 px à 1 colonne, +198,9 / +68,1 px à 2 colonnes).
+                       On redescend au coin haut-gauche exact — celui que renvoie
+                       getBoundingRect(true, true) — soit -moitié(largeur + épaisseur).
+                       Le cadre est dès lors solidaire du bloc, comme dans InDesign. */
+                    var _sw = (typeof this.strokeWidth === 'number' && this.strokeWidth > 0) ? this.strokeWidth : 0;
+                    var _ox = -(this.width + _sw) / 2;
+                    var _oy = -(this.height + _sw) / 2;
                     try {
                         ctx.save();
                         ctx.lineWidth = _w / _sc;
                         ctx.lineJoin = 'miter';
                         ctx.strokeStyle = _c;
-                        ctx.strokeRect(0, 0, _bw, _bh);
+                        ctx.strokeRect(_ox, _oy, _bw, _bh);
                         ctx.restore();
                     } catch (_) {}
                 };
@@ -5964,8 +5985,29 @@ if (window._spGpuEnabled) {
                        milieu, la ligne passait de 145,4 px à 400 px et recouvrait
                        la forme sur 8 lignes (retour utilisateur : « la forme doit
                        repousser le texte ... en justifier »). */
+                    /* ⚠️ v1.7.599 — _SP_RETRAIT_599 : LA JUSTIFICATION VISE LA LARGEUR UTILE.
+                       MESURÉ (banc, aperçu, bloc 300 px, justifié, retrait du bloc à gauche 40) :
+                       les lignes partaient bien à 40 px mais étaient étirées jusqu'à 300 px de
+                       large — bord droit à 340, soit 40 px HORS du bloc, exactement la valeur du
+                       retrait (défaut signalé par l'utilisateur). Le repli, lui, était déjà juste :
+                       il travaille sur la largeur UTILE (cf. _wrapLine : rawWidth moins le filet de
+                       sécurité, moins les retraits gauche/droite, moins le retrait de première
+                       ligne). La cible de justification doit être CETTE MÊME largeur, sinon la
+                       ligne, partie du retrait, dépasse d'autant.
+                       Le test « ouvre un paragraphe » est celui de _getLineLeftOffset : première
+                       ligne du texte, ou ligne dont l'offset de style vaut 0. Sans retrait, la
+                       cible reste exactement `this.width` — comportement inchangé. */
+                    var _inL599 = (typeof this._spIndentLeft === 'number' && this._spIndentLeft > 0) ? this._spIndentLeft : 0;
+                    var _inR599 = (typeof this._spIndentRight === 'number' && this._spIndentRight > 0) ? this._spIndentRight : 0;
+                    var _inFLI599 = (typeof this._spFirstLineIndent === 'number' && this._spFirstLineIndent > 0) ? this._spFirstLineIndent : 0;
+                    var _util599 = Math.max(0, this.width - _inL599 - _inR599);
+                    if (_inFLI599 > 0) {
+                        var _ouvrePara599 = (i === 0);
+                        if (!_ouvrePara599 && this._styleMap && this._styleMap[i] && this._styleMap[i].offset === 0) _ouvrePara599 = true;
+                        if (_ouvrePara599) _util599 = Math.max(0, _util599 - _inFLI599);
+                    }
                     var _wLine = (this.__spWrapWidths && this.__spWrapWidths[i]) || 0;
-                    realWidth = (_wLine > 0 && _wLine < this.width - 0.5) ? _wLine : this.width;
+                    realWidth = (_wLine > 0 && _wLine < _util599 - 0.5) ? _wLine : _util599;
                     /* ⚠️ v1.7.595 — L'ÉCHELLE GLYPHE EST COMPENSÉE DANS LA CIBLE. Le rendu
                        étire chaque glyphe horizontalement (glyphScaleOpt) : sans cette
                        division, une ligne étirée DEPASSAIT la colonne (« le texte sort
@@ -5994,7 +6036,19 @@ if (window._spGpuEnabled) {
                     //     (collapse à width=0 en bord droit) → le texte « colle » au bord
                     //     du bloc texte, comme demandé par l'utilisateur.
                     //   • Dernière ligne du bloc → jamais étirée (fin de contenu).
-                    if (i === len - 1) {
+                    /* 🆕 v1.7.599 — _SP_JUSTIF_599 : « JUSTIFY » ÉTIRE TOUTES LES LIGNES.
+                       MESURÉ/CONSTATÉ : ce test ne regardait pas l'alignement — `justify`
+                       et `justify-left` se comportaient donc à l'identique, et le bouton
+                       l'annonçait (« dernière ligne libre »). La règle PAO ci-dessous
+                       (dernière ligne de paragraphe non étirée) doit rester pour
+                       `justify-left` et `justify-right` ; pour `justify` FORCÉ, la
+                       demande est explicite : la dernière ligne du bloc se colle au bord,
+                       et un Enter ne change rien. Le moteur Fabric aligne déjà la dernière
+                       ligne à gauche ou à droite selon le mode (cf. _getLineLeftOffset). */
+                    var _justForce = (String(this.textAlign || '') === 'justify');
+                    if (_justForce) {
+                        skipLine = false;
+                    } else if (i === len - 1) {
                         skipLine = true;
                     } else {
                         var _isEoW = false;
@@ -11622,7 +11676,9 @@ window.spTestDiag = function () {
                   if (_al === 'right') return segLeft + Math.max(0, segWidth - largeurLigne);
                   return segLeft;
                 }
-                if (!indentLeft && !firstLineIndent) return baseOffset;
+                /* _SP_ZONE_TEXTE_599 : le retrait DROIT intervient lui aussi. */
+                const _inRZ = (typeof this._spIndentRight === 'number' && this._spIndentRight > 0) ? this._spIndentRight : 0;
+                if (!indentLeft && !_inRZ && !firstLineIndent) return baseOffset;
 
                 // Déterminer si cette ligne wrappée est la première d'un paragraphe logique
                 let isFirstOfParagraph = false;
@@ -11636,11 +11692,27 @@ window.spTestDiag = function () {
                     }
                 }
 
-                baseOffset += indentLeft;
+                /* _SP_ZONE_TEXTE_599 : LA LIGNE S'ALIGNE DANS LA ZONE UTILE.
+                   L'aperçu n'ajoutait que le retrait GAUCHE à l'alignement de Fabric
+                   (calculé sur la largeur TOTALE) : en centré ou à droite avec un
+                   retrait, la ligne était centrée sur le bloc entier puis décalée —
+                   elle pouvait donc sortir du bloc par la droite, et l'export ne
+                   pouvait pas concorder. On aligne dans la zone utile
+                   [retrait gauche ; largeur − retrait droit], retrait de première
+                   ligne compris : exactement la règle DÉJÀ utilisée par la branche
+                   habillage et par les colonnes de ce même fichier. */
+                let _lwZ = 0;
+                try { _lwZ = this.getLineWidth(lineIndex) || 0; } catch (_) {}
+                let _segLZ = indentLeft;
+                let _segWZ = Math.max(0, this.width - indentLeft - _inRZ);
                 if (isFirstOfParagraph && firstLineIndent) {
-                    baseOffset += firstLineIndent;
+                    _segLZ += firstLineIndent;
+                    _segWZ = Math.max(0, _segWZ - firstLineIndent);
                 }
-                return baseOffset;
+                const _alZ = this.textAlign || 'left';
+                if (_alZ === 'center') return _segLZ + Math.max(0, (_segWZ - _lwZ) / 2);
+                if (_alZ === 'right') return _segLZ + Math.max(0, _segWZ - _lwZ);
+                return _segLZ;
             };
         })();
         // ==================== FIN RETRAITS DE PARAGRAPHE ====================
@@ -52399,7 +52471,34 @@ https://superprint.app
                     var _kk = 0.5522847498307936;   // 4/3 x tan(45 deg / 2)
                     var _segs;
                     if (obj.type === 'rect') {
-                        _segs = [['M', -_hw, -_hh], ['L', _hw, -_hh], ['L', _hw, _hh], ['L', -_hw, _hh], ['Z']];
+                        /* 🆕 v1.7.599 — _SP_ARRONDI_599 : LES COINS ARRONDIS SONT UN TRACÉ.
+                           MESURÉ (banc PDF vs aperçu) : cette fonction ignorait rx/ry et
+                           émettait un rectangle DROIT ; _renderObjToPdfLib classant par
+                           ailleurs « arrondi » en primitive complexe, un rect 120×80 à rx=12
+                           sortait en IMAGE de 500×333 px (300 dpi) au lieu d'un tracé, alors
+                           que le même rectangle SANS arrondi sort en tracé exact. Géométrie
+                           locale centrée (même convention que la branche droite ci-dessous),
+                           rayons bornés à la demi-taille comme Fabric, et quatre Béziers d'un
+                           quart de cercle (k = 4/3·tan(22,5°), déjà défini plus haut). */
+                        var _rxA = Math.max(0, Math.min(Number(obj.rx) || 0, _hw));
+                        var _ryA = Math.max(0, Math.min(Number(obj.ry) || (Number(obj.rx) || 0), _hh));
+                        if (_rxA > 0.01 && _ryA > 0.01) {
+                            var _kxA = _rxA * _kk, _kyA = _ryA * _kk;
+                            _segs = [
+                                ['M', -_hw + _rxA, -_hh],
+                                ['L', _hw - _rxA, -_hh],
+                                ['C', _hw - _rxA + _kxA, -_hh, _hw, -_hh + _ryA - _kyA, _hw, -_hh + _ryA],
+                                ['L', _hw, _hh - _ryA],
+                                ['C', _hw, _hh - _ryA + _kyA, _hw - _rxA + _kxA, _hh, _hw - _rxA, _hh],
+                                ['L', -_hw + _rxA, _hh],
+                                ['C', -_hw + _rxA - _kxA, _hh, -_hw, _hh - _ryA + _kyA, -_hw, _hh - _ryA],
+                                ['L', -_hw, -_hh + _ryA],
+                                ['C', -_hw, -_hh + _ryA - _kyA, -_hw + _rxA - _kxA, -_hh, -_hw + _rxA, -_hh],
+                                ['Z']
+                            ];
+                        } else {
+                            _segs = [['M', -_hw, -_hh], ['L', _hw, -_hh], ['L', _hw, _hh], ['L', -_hw, _hh], ['Z']];
+                        }
                     } else {
                         _segs = [
                             ['M', -_hw, 0],
@@ -52768,6 +52867,10 @@ https://superprint.app
                 // 🆕 v1.7.457 — OPTIONS DE BLOC TEXTE : mêmes retraits et même
                 //   justification verticale que la preview (sinon le PDF se
                 //   recollait en haut du cadre et ignorait les retraits).
+                /* 🆕 v1.7.599 — _SP_CADRE_FIXE_599 : le CADRE du bloc est la boîte du
+                   bloc. On garde donc l'origine AVANT d'ajouter le retrait haut et la
+                   justification verticale, qui ne doivent déplacer que le TEXTE. */
+                var _oyCadre599 = oy;
                 try {
                     var _riT = (typeof obj._spInsetTop === 'number' && obj._spInsetTop > 0) ? obj._spInsetTop : 0;
                     var _riB = (typeof obj._spInsetBottom === 'number' && obj._spInsetBottom > 0) ? obj._spInsetBottom : 0;
@@ -52809,6 +52912,18 @@ https://superprint.app
                         y: anchorY - pxToMm(ry) * mmToPt
                     };
                 };
+                /* _SP_CADRE_FIXE_599 : même conversion SANS le déplacement vertical du
+                   texte (retrait haut / justification verticale). Sert au CADRE. */
+                var localToPagePtCadre = function(lx, ly) {
+                    var lxx = (lx + ox) * sx;
+                    var lyy = (ly + _oyCadre599) * sy;
+                    var rx = lxx * cosA - lyy * sinA;
+                    var ry = lxx * sinA + lyy * cosA;
+                    return {
+                        x: anchorX + pxToMm(rx) * mmToPt,
+                        y: anchorY - pxToMm(ry) * mmToPt
+                    };
+                };
 
                 var align = obj.textAlign || 'left';
 
@@ -52843,10 +52958,10 @@ https://superprint.app
                         if (_spFond530 || _spBord530) {
                             var _spBHPage530 = page.getHeight();
                             var _spQ530 = [
-                                localToPagePt(0, 0),
-                                localToPagePt(_spBW530, 0),
-                                localToPagePt(_spBW530, _spBH530),
-                                localToPagePt(0, _spBH530)
+                                localToPagePtCadre(0, 0),
+                                localToPagePtCadre(_spBW530, 0),
+                                localToPagePtCadre(_spBW530, _spBH530),
+                                localToPagePtCadre(0, _spBH530)
                             ];
                             var _spD530 = 'M ' + _spQ530[0].x + ' ' + (_spBHPage530 - _spQ530[0].y) +
                                 ' L ' + _spQ530[1].x + ' ' + (_spBHPage530 - _spQ530[1].y) +
@@ -52942,7 +53057,14 @@ https://superprint.app
                 //   dur au milieu du bloc, sa ligne de fin était (à tort) étirée, ou
                 //   à l'inverse une vraie dernière ligne courte d'un paragraphe
                 //   final était mal traitée.
+                /* ⚠️ v1.7.599 — _SP_JUSTIF_599 : en `justify` FORCÉ, aucune ligne n'est
+                   « dernière » : l'export étire la fin du bloc comme l'aperçu. La règle
+                   PAO ci-dessous reste entière pour `justify-left` / `justify-right`.
+                   Le mode est lu sur L'OBJET (obj.textAlign), comme dans l'aperçu : même
+                   source, donc aucune divergence possible entre les deux. */
+                var _spJustForce = (String(obj.textAlign || '') === 'justify');
                 var _spIsParaLastLine = function(_li) {
+                    if (_spJustForce) return false;
                     /* 🛡️ v1.7.522 — _SP_JUSTIF_522 : « fin de paragraphe » se juge sur la
                        dernière ligne du TEXTE, jamais sur la dernière ligne RENDUE.
                        Quand le texte déborde du cadre, la dernière ligne visible est
@@ -53014,13 +53136,24 @@ https://superprint.app
 
                     var xStart;
                     var _effAlignRight = (align === 'right') || (_justify && _justifyLastRight && _isLastParaLine && align === 'justify-right');
-                    if (align === 'center') xStart = (boxWidth - _lineWSpaced) / 2;
-                    else if (_effAlignRight) xStart = boxWidth - _lineWSpaced;
-                    else xStart = 0;
+                    /* 🆕 v1.7.599 — _SP_RETRAITS_599 : RETRAITS GAUCHE/DROITE À L'EXPORT.
+                       MESURÉ AVANT (bloc 300×200, retrait 40 px) : l'aperçu décalait le texte
+                       de +40 px, le PDF de 0 pt — les retraits n'étaient lus que par le
+                       découpage des lignes, jamais par le POSITIONNEMENT. On reproduit ici
+                       la règle de l'aperçu (_getLineLeftOffset) : zone utile = largeur −
+                       retraits, la ligne part du retrait gauche puis s'aligne dans la zone.
+                       Seuil de 24 px identique à spColGeom (bloc trop étroit : on ne rogne pas). */
+                    var _inL599 = (typeof obj._spIndentLeft === 'number' && obj._spIndentLeft > 0) ? obj._spIndentLeft : 0;
+                    var _inR599 = (typeof obj._spIndentRight === 'number' && obj._spIndentRight > 0) ? obj._spIndentRight : 0;
+                    if (!(boxWidth - _inL599 - _inR599 > 24)) { _inL599 = 0; _inR599 = 0; }
+                    var _innerW599 = Math.max(0, boxWidth - _inL599 - _inR599);
+                    if (align === 'center') xStart = _inL599 + (_innerW599 - _lineWSpaced) / 2;
+                    else if (_effAlignRight) xStart = _inL599 + _innerW599 - _lineWSpaced;
+                    else xStart = _inL599;
                     /* 🆕 v1.7.458 — COLONNES : largeur de colonne, décalage X
                        et décalage Y pour CETTE ligne. Le nombre de lignes dessinées
                        est déjà limité à la capacité (spCountVisibleLines). */
-                    var _colW = boxWidth, _colOX = 0, _colOY = 0;
+                    var _colW = _innerW599, _colOX = _inL599, _colOY = 0;
                     if (obj._spCols > 1 && typeof window.spColGeomFor === 'function') {
                         try {
                             var _cgx = window.spColGeomFor(obj, li);
@@ -53044,8 +53177,10 @@ https://superprint.app
                     else {
                         var _wrW = (obj.__spWrapWidths && obj.__spWrapWidths[li]) || 0;
                         if (_wrW > 0 && _wrW < boxWidth - 0.5) {
-                            _colW = _wrW;
-                            _colOX = (obj.__spWrapOffsets && obj.__spWrapOffsets[li]) || 0;
+                            /* _SP_RETRAITS_599 : même segment que l'aperçu en habillage
+                               (segLeft = décalage + retrait gauche, segWidth −= retrait gauche). */
+                            _colW = Math.max(0, _wrW - _inL599);
+                            _colOX = ((obj.__spWrapOffsets && obj.__spWrapOffsets[li]) || 0) + _inL599;
                             _colOY = 0;
                             if (align === 'center') xStart = _colOX + (_colW - _lineWSpaced) / 2;
                             else if (_effAlignRight) xStart = _colOX + _colW - _lineWSpaced;
@@ -53057,6 +53192,32 @@ https://superprint.app
                     // 🎯 v1.7.341 (AUDIT) : baseline pré-calculée depuis getHeightOfLine()
                     //   (même valeur que la preview). Fallback sur l'ancien modèle si
                     //   les métriques n'ont pas pu être calculées.
+                    /* _SP_RETRAIT_1RE_LIGNE_599 : RETRAIT DE PREMIÈRE LIGNE À L'EXPORT.
+                       L'aperçu décale la première ligne de chaque paragraphe et réduit
+                       d'autant sa cible de justification (_getLineLeftOffset) ; l'export
+                       ne le lisait pas. On reproduit la même règle, dans la même branche
+                       que l'aperçu (les colonnes l'ignorent, comme lui). */
+                    if (!(obj._spCols > 1)) {
+                        var _fli599 = (typeof obj._spFirstLineIndent === 'number' && obj._spFirstLineIndent > 0) ? obj._spFirstLineIndent : 0;
+                        var _ouvrePara599 = false;
+                        if (_fli599 > 0) {
+                            _ouvrePara599 = (li === 0);
+                            if (!_ouvrePara599) {
+                                try {
+                                    if (obj._styleMap && obj._styleMap[li] && obj._styleMap[li].offset === 0) _ouvrePara599 = true;
+                                } catch (_) {}
+                            }
+                        }
+                        var _utilZone599 = Math.max(0, _innerW599 - (_ouvrePara599 ? _fli599 : 0));
+                        var _wrZone599 = (obj.__spWrapWidths && obj.__spWrapWidths[li]) || 0;
+                        _colW = (_wrZone599 > 0 && _wrZone599 < _utilZone599 - 0.5) ? _wrZone599 : _utilZone599;
+                        _colOX = _inL599 + (((obj.__spWrapOffsets && obj.__spWrapOffsets[li]) || 0) + (_ouvrePara599 ? _fli599 : 0));
+                        _colOY = 0;
+                        if (align === 'center') xStart = _colOX + (_colW - _lineWSpaced) / 2;
+                        else if (_effAlignRight) xStart = _colOX + _colW - _lineWSpaced;
+                        else xStart = _colOX;
+                    }
+
                     var baselineY_local;
                     if (typeof _spLineBaseline[li] === 'number' && isFinite(_spLineBaseline[li])) {
                         baselineY_local = _spLineBaseline[li];
@@ -53628,8 +53789,17 @@ https://superprint.app
                 // 🆕 v1.7.419 — UNE PRIMITIVE SIMPLEMENT PIVOTEE RESTE VECTORIELLE :
                 //   on la dessine en tracé (contour absolu + drawSvgPath) au lieu de
                 //   l'aplatir en image. Le repli raster ne concerne plus que les cas
-                //   vraiment complexes (dégradé, motif, coin arrondi, clipPath, ombre).
-                if (!_hasComplexPrimitive && _hasUnsupportedTransform) {
+                //   vraiment complexes (dégradé, motif, clipPath, ombre).
+                /* 🆕 v1.7.599 — _SP_ARRONDI_599 : LE COIN ARRONDI N'EST PAS UN CAS COMPLEXE.
+                   MESURÉ : il l'était resté, et un simple rectangle arrondi sortait en
+                   bitmap de 300 dpi pendant que ses voisins sortaient en tracés exacts.
+                   Un arrondi N'A ni dégradé, ni motif, ni clipPath, ni ombre : c'est un
+                   tracé, et _spBuildAbsoluteSvgPath sait désormais l'écrire (cf. plus
+                   haut). On ouvre donc la voie vectorielle à ce cas ; tout ce qui est
+                   réellement complexe (ou dont le tracé échoue) garde le repli raster. */
+                var _arrondiVectorisable = _hasRoundedRect
+                    && !_hasComplexPaint && !_hasComplexStroke && !obj.clipPath && !obj.shadow;
+                if ((!_hasComplexPrimitive && _hasUnsupportedTransform) || _arrondiVectorisable) {
                     try {
                         var _dPrim = _spBuildAbsoluteSvgPath(obj);
                         if (_dPrim) {
@@ -56882,7 +57052,43 @@ https://superprint.app
                 const ox = (obj.originX === 'center') ? -boxWidth / 2 : (obj.originX === 'right') ? -boxWidth : 0;
                 const oy = (obj.originY === 'center') ? -totalH / 2 : (obj.originY === 'bottom') ? -totalH : 0;
 
+                /* 🆕 v1.7.599 — _SP_RETRAITS_V_599 : RETRAITS HAUT/BAS ET JUSTIFICATION
+                   VERTICALE DANS LE CHEMIN jsPDF. Ce moteur ne les lisait pas, alors que
+                   le chemin natif pdf-lib les applique depuis la v1.7.457 : le même
+                   document sortait donc différemment selon le mode d'export. Règle
+                   copiée du chemin natif, elle-même copiée de l'aperçu (_getTopOffset) :
+                     · retrait haut   : décale tout le texte vers le bas ;
+                     · retrait bas    : réduit la hauteur utile (plafond de lignes déjà
+                       partagé par spCountVisibleLines) ;
+                     · justification verticale : centré/bas dans la hauteur utile. */
+                let _oy599 = oy;
+                try {
+                    const _riT = (typeof obj._spInsetTop === 'number' && obj._spInsetTop > 0) ? obj._spInsetTop : 0;
+                    const _riB = (typeof obj._spInsetBottom === 'number' && obj._spInsetBottom > 0) ? obj._spInsetBottom : 0;
+                    const _vAl = obj._spVAlign || 'top';
+                    if (_riT) _oy599 += _riT;
+                    if (_vAl !== 'top') {
+                        const _frH = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : (obj.height || 0);
+                        const _utile = Math.max(0, _frH - _riT - _riB);
+                        let _totalBloc = totalH;
+                        try {
+                            if (typeof window.spLineBoxHeight === 'function' && lines.length) {
+                                _totalBloc = Number(window.spLineBoxHeight(obj, lines.length - 1)) || totalH;
+                            }
+                        } catch (_) {}
+                        const _reste = Math.max(0, _utile - _totalBloc);
+                        if (_vAl === 'center') _oy599 += _reste / 2;
+                        else if (_vAl === 'bottom') _oy599 += _reste;
+                    }
+                } catch (_) {}
+
                 const localToMm = (lx, ly) => {
+                    const lxx = (lx + ox) * sx, lyy = (ly + _oy599) * sy;
+                    return [pdfOffsetX + pxToMm(lxx * cosA - lyy * sinA + cx_px), pdfOffsetY + pxToMm(lxx * sinA + lyy * cosA + cy_px)];
+                };
+                /* _SP_CADRE_FIXE_599 : même conversion SANS le déplacement vertical du
+                   texte — c'est celle du CADRE, qui doit rester sur la boîte du bloc. */
+                const localToMmCadre = (lx, ly) => {
                     const lxx = (lx + ox) * sx, lyy = (ly + oy) * sy;
                     return [pdfOffsetX + pxToMm(lxx * cosA - lyy * sinA + cx_px), pdfOffsetY + pxToMm(lxx * sinA + lyy * cosA + cy_px)];
                 };
@@ -56901,11 +57107,11 @@ https://superprint.app
                    Quadrilatère quelconque → pdf.lines() avec retour au 1er point, donc
                    rotation, échelle et origine du bloc sont respectées. */
                 const _spJFontSizeMult = (typeof obj._fontSizeMult === 'number' && obj._fontSizeMult > 0) ? obj._fontSizeMult : 1.13;
-                const _spJQuadFill = function (points, couleur) {
+                const _spJQuadFill = function (points, couleur, _conv) {
                     const _c = _parsePdfColor(couleur);
                     if (!_c || (_c[3] !== undefined && _c[3] <= 0)) return;
                     try {
-                        const _mm = points.map(function (p) { return localToMm(p[0], p[1]); });
+                        const _mm = points.map(function (p) { return (_conv || localToMm)(p[0], p[1]); });
                         const _deltas = [];
                         for (let _k = 1; _k < _mm.length; _k++) {
                             _deltas.push([_mm[_k][0] - _mm[_k - 1][0], _mm[_k][1] - _mm[_k - 1][1]]);
@@ -56917,11 +57123,11 @@ https://superprint.app
                 };
                 /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : même quadrilatère, mais TRACÉ (contour
                    du cadre d'un bloc texte). Épaisseur en unités canvas -> mm. */
-                const _spJQuadStroke = function (points, couleur, largeurPx) {
+                const _spJQuadStroke = function (points, couleur, largeurPx, _conv) {
                     const _c = _parsePdfColor(couleur);
                     if (!_c || (_c[3] !== undefined && _c[3] <= 0)) return;
                     try {
-                        const _mm = points.map(function (p) { return localToMm(p[0], p[1]); });
+                        const _mm = points.map(function (p) { return (_conv || localToMm)(p[0], p[1]); });
                         const _deltas = [];
                         for (let _k = 1; _k < _mm.length; _k++) {
                             _deltas.push([_mm[_k][0] - _mm[_k - 1][0], _mm[_k][1] - _mm[_k - 1][1]]);
@@ -57004,7 +57210,12 @@ https://superprint.app
                 //   exactement comme la preview (Fabric.enlargeSpaces patché).
                 const _spJIsJustify = (align === 'justify' || align === 'justify-left' || align === 'justify-right');
                 const _spJJustifyLastRight = (align === 'justify-right');
+                /* ⚠️ v1.7.599 — _SP_JUSTIF_599 : même règle que l'aperçu et que pdf-lib
+                   (cf. plus haut) : `justify` forcé étire la dernière ligne du bloc.
+                   Mode lu sur l'objet, même source que les deux autres chemins. */
+                const _spJJustForce = (String(obj.textAlign || '') === 'justify');
                 const _spJIsParaLastLine = function(_li) {
+                    if (_spJJustForce) return false;
                     /* 🛡️ v1.7.522 — _SP_JUSTIF_522 : « fin de paragraphe » se juge sur la
                        dernière ligne du TEXTE, jamais sur la dernière ligne RENDUE.
                        Quand le texte déborde du cadre, la dernière ligne visible est
@@ -57102,7 +57313,7 @@ https://superprint.app
                 if (!_collectOnly && obj.backgroundColor) {
                     const _hCadre = (typeof obj._fixedHeight === 'number' && obj._fixedHeight > 0) ? obj._fixedHeight : (obj.height || 0);
                     if (boxWidth > 0 && _hCadre > 0) {
-                        _spJQuadFill([[0, 0], [boxWidth, 0], [boxWidth, _hCadre], [0, _hCadre]], obj.backgroundColor);
+                        _spJQuadFill([[0, 0], [boxWidth, 0], [boxWidth, _hCadre], [0, _hCadre]], obj.backgroundColor, localToMmCadre);
                     }
                 }
                 /* 🆕 v1.7.530 — _SP_BLOC_TEXTE_530 : CONTOUR DU CADRE (chemin jsPDF).
@@ -57115,7 +57326,8 @@ https://superprint.app
                     if (_wCadreC > 0 && _hCadreC > 0) {
                         _spJQuadStroke([[0, 0], [_wCadreC, 0], [_wCadreC, _hCadreC], [0, _hCadreC]],
                             obj._spFrameStroke,
-                            (typeof obj._spFrameStrokeWidth === 'number' ? obj._spFrameStrokeWidth : 1));
+                            (typeof obj._spFrameStrokeWidth === 'number' ? obj._spFrameStrokeWidth : 1),
+                            localToMmCadre);
                     }
                 }
                 for (let i = 0; i < maxLines; i++) {
@@ -57147,7 +57359,14 @@ https://superprint.app
                        se calculent sur la LARGEUR DE COLONNE, la ligne étant
                        dessinée dans SA colonne (décalage X) et à sa position
                        verticale propre (décalage Y). */
-                    var _colWJ = boxWidth, _colOXJ = 0, _colOYJ = 0;
+                    /* 🆕 v1.7.599 — _SP_RETRAITS_599 : mêmes retraits que l'aperçu et que le
+                       chemin pdf-lib. _colWJ / _colOXJ servent à l'alignement ET à la
+                       cible de justification (_spJustifyTargetJ), donc tout suit d'un coup. */
+                    var _inL599J = (typeof obj._spIndentLeft === 'number' && obj._spIndentLeft > 0) ? obj._spIndentLeft : 0;
+                    var _inR599J = (typeof obj._spIndentRight === 'number' && obj._spIndentRight > 0) ? obj._spIndentRight : 0;
+                    if (!(boxWidth - _inL599J - _inR599J > 24)) { _inL599J = 0; _inR599J = 0; }
+                    var _innerW599J = Math.max(0, boxWidth - _inL599J - _inR599J);
+                    var _colWJ = _innerW599J, _colOXJ = _inL599J, _colOYJ = 0;
                     if (obj._spCols > 1 && typeof window.spColGeomFor === 'function') {
                         try {
                             const _cgj = window.spColGeomFor(obj, i);
@@ -57160,10 +57379,31 @@ https://superprint.app
                     else {
                         var _wrWJ = (obj.__spWrapWidths && obj.__spWrapWidths[i]) || 0;
                         if (_wrWJ > 0 && _wrWJ < boxWidth - 0.5) {
-                            _colWJ = _wrWJ;
-                            _colOXJ = (obj.__spWrapOffsets && obj.__spWrapOffsets[i]) || 0;
+                            /* _SP_RETRAITS_599 : même segment que l'aperçu en habillage. */
+                            _colWJ = Math.max(0, _wrWJ - _inL599J);
+                            _colOXJ = ((obj.__spWrapOffsets && obj.__spWrapOffsets[i]) || 0) + _inL599J;
                             _colOYJ = 0;
                         }
+                    }
+                    /* _SP_RETRAIT_1RE_LIGNE_599 : même règle de zone utile que l'aperçu et
+                       que le chemin pdf-lib. Posé AVANT la cible de justification :
+                       _colWJ pilote à la fois la cible et l'alignement qui suit. */
+                    if (!(obj._spCols > 1)) {
+                        const _fli599J = (typeof obj._spFirstLineIndent === 'number' && obj._spFirstLineIndent > 0) ? obj._spFirstLineIndent : 0;
+                        let _ouvrePara599J = false;
+                        if (_fli599J > 0) {
+                            _ouvrePara599J = (i === 0);
+                            if (!_ouvrePara599J) {
+                                try {
+                                    if (obj._styleMap && obj._styleMap[i] && obj._styleMap[i].offset === 0) _ouvrePara599J = true;
+                                } catch (_) {}
+                            }
+                        }
+                        const _utilZone599J = Math.max(0, _innerW599J - (_ouvrePara599J ? _fli599J : 0));
+                        const _wrZone599J = (obj.__spWrapWidths && obj.__spWrapWidths[i]) || 0;
+                        _colWJ = (_wrZone599J > 0 && _wrZone599J < _utilZone599J - 0.5) ? _wrZone599J : _utilZone599J;
+                        _colOXJ = _inL599J + (((obj.__spWrapOffsets && obj.__spWrapOffsets[i]) || 0) + (_ouvrePara599J ? _fli599J : 0));
+                        _colOYJ = 0;
                     }
                     const _spJustifyTargetJ = (_spJHyphenFlag && _hyphenWJ < _colWJ)
                         ? (_colWJ - _hyphenWJ) : _colWJ;
@@ -68199,6 +68439,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alignLeft: "Fer à gauche",
         alignCenter: "Centré",
         alignRight: "Fer à droite",
+        justify: "Justifié — toutes les lignes collées aux deux bords",
         justifyLeft: "Justifié à gauche (dernière ligne à gauche)",
         justifyRight: "Justifié à droite (dernière ligne à droite)",
         hyphenationLabel: "Césure",
@@ -69127,6 +69368,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alignLeft: "Align left",
         alignCenter: "Center",
         alignRight: "Align right",
+        justify: "Justify — every line fills both edges",
         justifyLeft: "Justify left (last line left)",
         justifyRight: "Justify right (last line right)",
         hyphenationLabel: "Hyphenation",
@@ -70086,6 +70328,7 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         alignLeft: "左揃え",
         alignCenter: "中央揃え",
         alignRight: "右揃え",
+        justify: "均等割付（全行を両端揃え）",
         justifyLeft: "均等割付（最終行左）",
         justifyRight: "均等割付（最終行右）",
         hyphenationLabel: "ハイフネーション",
@@ -71299,6 +71542,11 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
         } catch (_) {}
 
         function setLanguage(lang) {
+    /* 🆕 v1.7.599 — _SP_LANGUE_599 : APRÈS LE DÉMARRAGE, C'EST UN CHOIX EXPLICITE.
+       Préférences → « Langue » (#settingsLang) appelle applySettings() → setLanguage().
+       Sans ce marquage, la détection de langue du poste reprendrait la main au
+       démarrage suivant et écraserait le choix de l'utilisateur. */
+    try { if (window.__spLangPret) localStorage.setItem('sp_lang_choisi', '1'); } catch (_) {}
     currentLanguage = lang;
     localStorage.setItem('sp_lang', lang);
     document.documentElement.lang = lang;
@@ -73294,7 +73542,50 @@ FORMAT DE SORTIE JSON (coordonnées en mm, fontSize en pt)
             savedLang = 'en';
             localStorage.setItem('sp_lang', 'en');
         }
+        /* ══════════════════════════════════════════════════════════════════════════
+           🆕 v1.7.599 — _SP_LANGUE_599 : LA LANGUE SUIT CELLE DU POSTE AU DÉMARRAGE.
+           Demande utilisateur : « si l'utilisateur est réglé en FR, charger SuperPrint
+           en FR ; si sa langue est l'anglais, l'US ou une autre langue que le français
+           ou le japonais, afficher l'anglais ; si elle est le japonais, afficher le
+           japonais. »
+           AVANT : quand aucune langue n'était enregistrée (première visite), le code
+           retombait en dur sur 'en' — la configuration du poste n'était JAMAIS lue.
+           MAINTENANT : la langue principale du navigateur décide (fr… / ja… / tout le
+           reste → anglais), SAUF si l'utilisateur a fait un choix explicite, marqué
+           par la clé sp_lang_choisi (posée par ?lang=fr|en|ja, ou par un sélecteur).
+           La détection s'applique à chaque démarrage : si l'utilisateur change la
+           langue de sa machine, l'app suit. setLanguage() enregistre le résultat dans
+           sp_lang, l'affichage reste donc stable ensuite.
+           ══════════════════════════════════════════════════════════════════════════ */
+        try {
+            var _spLangUrl = '';
+            try {
+                /* La requête est relue depuis la CAPTURE du début de fichier : au moment
+                   où l'on passe ici, l'app a déjà pu nettoyer l'URL. */
+                var _spQ = (typeof window.__spBootQuery === 'string') ? window.__spBootQuery : (window.location.search || '');
+                _spLangUrl = String(new URLSearchParams(_spQ).get('lang') || '').toLowerCase();
+            } catch (_) {}
+            if (_spLangUrl === 'fr' || _spLangUrl === 'en' || _spLangUrl === 'ja') {
+                savedLang = _spLangUrl;
+                try { localStorage.setItem('sp_lang_choisi', '1'); } catch (_) {}
+            } else {
+                var _spLangChoixExplicite = false;
+                try { _spLangChoixExplicite = (localStorage.getItem('sp_lang_choisi') === '1'); } catch (_) {}
+                if (!_spLangChoixExplicite) {
+                    var _spLangPoste = '';
+                    try { _spLangPoste = String(navigator.language || (navigator.languages && navigator.languages[0]) || ''); } catch (_) {}
+                    if (!_spLangPoste) { try { _spLangPoste = String(navigator.userLanguage || ''); } catch (_) {} }
+                    _spLangPoste = _spLangPoste.toLowerCase();
+                    if (_spLangPoste.indexOf('fr') === 0) savedLang = 'fr';
+                    else if (_spLangPoste.indexOf('ja') === 0) savedLang = 'ja';
+                    else savedLang = 'en';
+                }
+            }
+        } catch (_) {}
         setLanguage(savedLang);
+        /* Le démarrage a appliqué la langue : tout appel ULTÉRIEUR à setLanguage()
+           est un CHOIX EXPLICITE de l'utilisateur (Préférences → Langue). */
+        try { window.__spLangPret = true; } catch (_) {}
         
         // Charger le thème
         const theme = localStorage.getItem('sp_theme');
@@ -93190,6 +93481,28 @@ window.loadProjectSP = function(fileContent) {
                                 scaleX: targetWidth > 0 && image.width ? targetWidth / image.width : 1,
                                 scaleY: targetHeight > 0 && image.height ? targetHeight / image.height : 1
                             });
+                            /* 🛡️ v1.7.599 — _SP_MARQUEURS_IMAGE_599 : ON NE PERD PLUS LES
+                               MARQUEURS DE L'OBJET REMPLACÉ.
+                               MESURÉ (banc d'aller-retour app → Studio → app) : l'objet
+                               « PDF importé » et l'objet 3D revenaient SANS leurs marqueurs,
+                               car ce remplacement ne recopiait que la géométrie. Le premier
+                               enregistrement suivant les effaçait donc définitivement. Le
+                               défaut ne concerne pas que le Studio : toute image reconstruite
+                               ici perdait son encre directe (Pantone), son identifiant de
+                               chaîne, etc. On recopie donc les propriétés déclarées dans
+                               SP_CUSTOM_PROPS — la liste est celle que l'app sérialise, aucune
+                               clé n'est inventée, et une propriété absente n'est pas créée. */
+                            try {
+                                if (typeof SP_CUSTOM_PROPS !== 'undefined' && Array.isArray(SP_CUSTOM_PROPS)) {
+                                    for (var _pmi = 0; _pmi < SP_CUSTOM_PROPS.length; _pmi++) {
+                                        var _pcle = SP_CUSTOM_PROPS[_pmi];
+                                        if (_pcle === '_spAiImageUrl') continue;
+                                        if (obj[_pcle] !== undefined) {
+                                            try { image[_pcle] = obj[_pcle]; } catch (_) {}
+                                        }
+                                    }
+                                }
+                            } catch (_) {}
                             image._spAiImageUrl = source;
                             try { canvas.remove(obj); } catch (_) {}
                             canvas.insertAt(image, Math.max(0, stackIndex), false);
