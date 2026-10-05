@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.591 — the Studio IA ships layouts with no holes: the folio always sits at the bottom of the page (the cause was measured: a studio pass was sending any block placed past its safe zone back to the top), a double-page document can no longer show a lone page in the middle, and a text written between quotation marks now takes priority over everything (the first short quote is the title, a long one becomes body text)."
-<meta name="keywords" content="SUPER PRINT 1.7.591, SuperPrint, browser DTP editor, Studio IA, ROCK 1, folio, double page spreads, quotations, imposition"
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.601 — the Studio IA shows the words it understood: recognised keywords are highlighted in the prompt box AND on the pre-home, with a discreet capsule that opens the options (neighbouring formats, family synonyms, recto/verso, page count) and rewrites the word in your request. The “+” button goes back to the pre-home, and the two poster pre-prompts are no longer black on black (measured contrast 1.01 before, 18.88 after)."
+<meta name="keywords" content="SUPER PRINT 1.7.601, SuperPrint, browser DTP editor, Studio IA, ROCK 1, keyword capsules, prompt assistant, pre-home, readability, contrast, poster, Pantone"
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="SuperPrint v1.7.600 — spot inks really applied (Pantone, varnish, foil), A5 flyers and A6 postcards with a recto/verso and a postal address back, clipboard shared between tabs, and an undo that loses nothing silently."
+<meta property="og:description" content="SuperPrint v1.7.601 — the studio shows the words it understood (capsules in the prompt box and on the pre-home), the “+” returns to the pre-home, and posters are legible at last (contrast 1.01 to 18.88)."
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SuperPrint v1.7.600 — spot inks applied on the objects, flyer A5 / postcard A6 in recto/verso with a postal address back, clipboard shared between tabs.">
+<meta name="twitter:description" content="SuperPrint v1.7.601 — keyword capsules in the prompt, the “+” back to the pre-home, legible posters.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -76,7 +76,7 @@
 	"name": "Releases — Zigmoon Apps",
 	"description": "Release notes for CUT THE FLOW, SuperPrint, PDF-YZ, Bird and the complete Zigmoon application collection.",
 	"url": "https://app.zigmoon.com/release.html",
-	"dateModified": "2026-10-04",
+	"dateModified": "22026-10-05",
 	"inLanguage": "en-US",
 	"isPartOf": {"@type": "WebSite", "url": "https://app.zigmoon.com/", "name": "Zigmoon Apps"},
 	"publisher": {"@type": "Organization", "name": "Zigmoon", "url": "https://zigmoon.com"}
@@ -707,6 +707,40 @@ footer, footer a { color: var(--after-text-color); }
 
 
 
+
+<!-- ===== SUPER PRINT v1.7.601 — les CAPSULES DES MOTS RECONNUS arrivent dans la boite de prompt ET sur la pre-home (surlignage en place, capsule discrete avec les options qui reecrivent le mot), le « + » des conversations repart sur la pre-home, et les deux posters ne sont plus noirs sur noir (contraste mesure 1,01 avant, 18,88 apres) ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-601">
+ <h2>SUPER PRINT <span>v1.7.601</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 5 octobre 2026" data-i18n-en="Released October 5, 2026" data-i18n-jp="2026年10月5日公開">Released October 5, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Cette version rend le studio LISIBLE : il montre les mots qu’il a compris dans votre demande, et la typographie de ses posters est enfin lisible. Chaque défaut a été mesuré avant et après, dans l’interface réelle (pas seulement dans le moteur)." data-i18n-en-html="This version makes the studio READABLE: it shows the words it understood in your request, and its posters are finally legible. Every defect was measured before and after, in the real interface (not only inside the engine)." data-i18n-jp-html="この版はスタジオを「読める」ものにします。依頼から理解した語を表示し、ポスターの文字もやっと読めます。すべての不具合は実際の画面で前後を実測しています。">This version makes the studio READABLE: it shows the words it understood in your request, and its posters are finally legible. Every defect was measured before and after, in the real interface (not only inside the engine).</p>
+
+ <h3 data-i18n-fr-html="🔤 Les mots reconnus deviennent des capsules" data-i18n-en-html="🔤 Recognised words become capsules" data-i18n-jp-html="🔤 認識した語がカプセルに">🔤 Recognised words become capsules</h3>
+ <ul>
+  <li data-i18n-fr-html="Dans la boîte de prompt ET sur la pré-home, les mots que SP213 rock 1.0 comprend (formats, familles de documents, recto verso, nombre de pages, vocabulaire d’imprimerie) sont SURLIGNÉS à leur place, et une capsule discrète rappelle la valeur lue. La flèche de la capsule ouvre les options — formats voisins, synonymes de famille, recto seul ou recto verso, nombre de pages — et le choix RÉÉCRIT le mot dans votre demande." data-i18n-en-html="In the prompt box AND on the pre-home, the words SP213 rock 1.0 understands (formats, document families, recto verso, page count, print vocabulary) are HIGHLIGHTED where they are, and a discreet capsule recalls the value read. The capsule opens the options — neighbouring formats, family synonyms, single-sided or recto verso, page count — and the choice REWRITES the word in your request." data-i18n-jp-html="プロンプト欄とプリホームの両方で、SP213 rock 1.0 が理解した語（判型、書類の種類、両面、ページ数、印刷用語）がその位置にハイライトされ、控えめなカプセルが読み取った値を示します。カプセルの矢印で選択肢（近い判型、同義の種類、片面／両面、ページ数）が開き、選ぶと依頼の語が書き換わります。">In the prompt box AND on the pre-home, the words SP213 rock 1.0 understands (formats, document families, recto verso, page count, print vocabulary) are HIGHLIGHTED where they are, and a discreet capsule recalls the value read. The capsule opens the options — neighbouring formats, family synonyms, single-sided or recto verso, page count — and the choice REWRITES the word in your request.</li>
+  <li data-i18n-fr-html="Aucune couleur : un voile neutre à 7 % autour du mot, des capsules blanches à 28 %, et la typographie garde la couleur du champ. Les capsules vivent DANS le cadre du champ, au-dessus de la barre d’icônes, et le champ réserve leur hauteur pour ne jamais recouvrir une ligne de texte." data-i18n-en-html="No colour at all: a neutral 7 % veil around the word, white capsules at 28 %, and the type keeps the field’s own colour. The capsules live INSIDE the field frame, above the icon bar, and the field reserves their height so a line of text is never covered." data-i18n-jp-html="色は使いません。語の周りは中性の7%のベール、カプセルは白28%で、文字色は入力欄のものを保ちます。カプセルは入力欄の枠内・アイコンバーの上に置かれ、テキスト行を覆わないよう入力欄が高さを確保します。">No colour at all: a neutral 7 % veil around the word, white capsules at 28 %, and the type keeps the field’s own colour. The capsules live INSIDE the field frame, above the icon bar, and the field reserves their height so a line of text is never covered.</li>
+  <li data-i18n-fr-html="Deux défauts trouvés et corrigés dans cette livraison : le choix de la capsule écrivait dans le champ du STUDIO même quand la capsule appartenait à la pré-home (le texte ne changeait pas, le menu restait ouvert) ; et un mot coupé entre deux lignes recevait un cadre unique de la taille de ses morceaux RÉUNIS — mesuré 614 sur 45 px, c’est-à-dire tout le champ. Chaque morceau de ligne a maintenant son propre cadre." data-i18n-en-html="Two defects found and fixed in this delivery: a capsule choice wrote into the STUDIO field even when the capsule belonged to the pre-home (the text did not change and the menu stayed open); and a word split across two lines received a single frame the size of its parts COMBINED — measured 614 by 45 px, that is, the whole field. Each line fragment now has its own frame." data-i18n-jp-html="この版で見つけて直した不具合は2つ。プリホームのカプセルを選んでもスタジオ側の欄に書き込まれていました（文字が変わらずメニューも開いたまま）。また2行にまたがる語には結合した領域の枠が付いていました（実測614×45px、つまり欄の全体）。現在は行ごとに枠が付きます。">Two defects found and fixed in this delivery: a capsule choice wrote into the STUDIO field even when the capsule belonged to the pre-home (the text did not change and the menu stayed open); and a word split across two lines received a single frame the size of its parts COMBINED — measured 614 by 45 px, that is, the whole field. Each line fragment now has its own frame.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="🖼️ Les posters ne sont plus noirs sur noir" data-i18n-en-html="🖼️ Posters are no longer black on black" data-i18n-jp-html="🖼️ ポスターは黒地に黒文字ではなくなりました">🖼️ Posters are no longer black on black</h3>
+ <ul>
+  <li data-i18n-fr-html="Mesure sur les deux pastilles, trois tirages chacune : le titre sortait à 1,01 de contraste (encre presque noire sur un fond noir) et à 2,75 sur un aplat sombre. Cause trouvée dans le garde-fou de contraste : pour savoir quelle encre convenait, il retenait l’aplat de plus GRANDE AIRE qui contient le texte — c’est-à-dire le fond de page blanc, toujours plus grand que le bandeau posé dessus — et il tournait AVANT les passes du studio qui déplacent les blocs." data-i18n-en-html="Measured on both pre-prompts, three draws each: the title came out at 1.01 contrast (near-black ink on a black background) and 2.75 on a dark fill. The cause was found in the contrast guard: to decide which ink was right, it kept the LARGEST fill containing the text — that is, the white page background, always larger than the band placed over it — and it ran BEFORE the studio passes that move blocks." data-i18n-jp-html="2つのプリプロンプトで各3回の実測：タイトルのコントラストは 1.01（ほぼ黒のインクが黒地に）と、暗いベタ面で 2.75 でした。原因はコントラスト保護にありました。文字を含む「最も大きい」ベタ面（つまり上に載る帯より常に大きい白いページ背景）を基準にしており、しかもブロックを移動するスタジオ側の処理より前に動いていました。">Measured on both pre-prompts, three draws each: the title came out at 1.01 contrast (near-black ink on a black background) and 2.75 on a dark fill. The cause was found in the contrast guard: to decide which ink was right, it kept the LARGEST fill containing the text — that is, the white page background, always larger than the band placed over it — and it ran BEFORE the studio passes that move blocks.</li>
+  <li data-i18n-fr-html="Le fond derrière un texte est maintenant celui qui est JUSTE DERRIÈRE lui (le dernier aplat posé avant, décidé à la majorité de cinq points sur la première ligne), le contrôle est refait APRÈS toutes les passes du studio, et les deux pastilles portent un titre, une date et un lieu entre guillemets — leur phrase de consigne ne s’imprime plus comme titre. Mesure après correction, six tirages : titre 18,88, date 16,8 à 17,4, aucun cas illisible." data-i18n-en-html="The background behind a text is now the one RIGHT BEHIND it (the last fill placed before it, decided by a majority of five sample points on the first line), the check is redone AFTER all the studio passes, and both pre-prompts carry a quoted title, date and venue — their instruction sentence no longer prints as the title. Measured after the fix, six draws: title 18.88, date 16.8 to 17.4, no unreadable case." data-i18n-jp-html="文字の背景は「すぐ後ろにあるもの」（直前に置かれた最後のベタ面。1行目の5点の多数決で決定）になり、チェックはスタジオのすべての処理の後にやり直されます。2つのプリプロンプトは引用符付きのタイトル・日付・会場を持つようになり、指示文がタイトルとして印字されることはなくなりました。修正後の実測（6回）：タイトル 18.88、日付 16.8〜17.4、読めない例はゼロ。">The background behind a text is now the one RIGHT BEHIND it (the last fill placed before it, decided by a majority of five sample points on the first line), the check is redone AFTER all the studio passes, and both pre-prompts carry a quoted title, date and venue — their instruction sentence no longer prints as the title. Measured after the fix, six draws: title 18.88, date 16.8 to 17.4, no unreadable case.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="➕ Le « + » repart sur la pré-home" data-i18n-en-html="➕ The “+” goes back to the pre-home" data-i18n-jp-html="➕ 「＋」はプリホームに戻ります">➕ The “+” goes back to the pre-home</h3>
+ <ul>
+  <li data-i18n-fr-html="Le bouton « + » créait une conversation vide sans jamais montrer la pré-home. Il garde maintenant la conversation en cours dans les onglets, ouvre la pré-home et vide son champ, comme au démarrage." data-i18n-en-html="The “+” button created an empty conversation without ever showing the pre-home. It now keeps the current conversation in the tabs, opens the pre-home and clears its field, exactly as at start-up." data-i18n-jp-html="「＋」は空の会話を作るだけで、プリホームを表示しませんでした。現在は進行中の会話をタブに残し、起動時と同じようにプリホームを開いて欄を空にします。">The “+” button created an empty conversation without ever showing the pre-home. It now keeps the current conversation in the tabs, opens the pre-home and clears its field, exactly as at start-up.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="ℹ️ Périmètre" data-i18n-en-html="ℹ️ Scope" data-i18n-jp-html="ℹ️ 対象範囲">ℹ️ Scope</h3>
+ <ul>
+  <li data-i18n-fr-html="Studio IA (sp213-studio.html) dans les DEUX arborescences, plus les fichiers de version habituels. Le moteur ROCK 1 ne change pas : le banc des seize demandes est inchangé (roman 32 pages, livret 24, rapport 8, carte de visite, affiches, cartes postales). Le paquet local (sp213-local.zip) est reconstruit à cette version et le cache du service worker est renouvelé." data-i18n-en-html="Studio IA (sp213-studio.html) in BOTH trees, plus the usual version files. The ROCK 1 engine does not change: the sixteen-request bench is unchanged (32-page novel, 24-page booklet, 8-page report, business card, posters, postcards). The local package (sp213-local.zip) is rebuilt at this version and the service worker cache is renewed." data-i18n-jp-html="両ツリーの Studio IA（sp213-studio.html）と通常のバージョンファイル。ROCK 1 エンジンは変更なし：16件のベンチは不変（32ページ小説、24ページ冊子、8ページ報告書、名刺、ポスター、ポストカード）。ローカルパッケージ（sp213-local.zip）を再構築し、Service Worker のキャッシュを更新します。">Studio IA (sp213-studio.html) in BOTH trees, plus the usual version files. The ROCK 1 engine does not change: the sixteen-request bench is unchanged (32-page novel, 24-page booklet, 8-page report, business card, posters, postcards). The local package (sp213-local.zip) is rebuilt at this version and the service worker cache is renewed.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.600 — la version « poster et tons directs » : presse-papier PARTAGE entre onglets (copier d une planche, coller sur une autre), annulation FIABLE (plus aucune sauvegarde jetee en silence : sauvegardes differees avec avertissement, restauration ciblee des planches modifiees), ROCK 1 comprend le FLYER A5 et la CARTE POSTALE A6 en RECTO VERSO (verso d adresse avec quatre lignes d ecriture et cadre du timbre), les TONS DIRECTS demandes sont REELLEMENT poses sur les objets (Pantone, vernis selectif, dorure a chaud), et deux pre-prompts POSTER en tete des deux listes ===== -->
 
