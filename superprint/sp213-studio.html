@@ -3664,6 +3664,10 @@
     /* 🆕 v1.7.581 — LE PANNEAU DES RÉGLAGES SUIT LA LANGUE S'IL EST OUVERT : on le
        repeint, sans le refermer et sans perdre les valeurs en cours. */
     try { if (typeof spRegPeindre === 'function' && SP_REG_OUVERT) spRegPeindre(); } catch(e) {}
+    /* _SP_STUDIO_CAPSULES_696 — LES CAPSULES SUIVENT LA LANGUE. MESURÉ : sans cet appel,
+       changer la langue laissait les libelles des capsules dans l'ancienne langue jusqu'a la
+       frappe suivante (celui de la famille vient du dictionnaire). */
+    try { if (typeof spCapsPeindreTout === 'function') spCapsPeindreTout(); } catch(e) {}
   }
   function t(key, vars) {
     const dict = I18N[curLang] || I18N.en;
@@ -5079,27 +5083,50 @@
   }
   /* Les options proposées par une capsule. Le format et le synonyme de famille sont les deux
      cas utiles ; les autres sont des badges (aucun menu). */
+  /* _SP_STUDIO_CAPSULES_696 — L'OPTION EN VIGUEUR EST MONTRÉE ET TOUJOURS PROPOSÉE.
+     MESURÉ : le menu des formats listait « A6 vers A2 » sans dire que « A4 » était déjà
+     choisi, et une valeur hors liste (« 6 pages », « 100 x 150 ») n'y figurait pas du tout —
+     après un essai, impossible de revenir a ce qu'on avait ecrit. Chaque option porte donc
+     son drapeau actif, et la valeur courante est TOUJOURS presente dans la liste. */
+  function spCapsNorm(s) {
+    return String(s || '').toLowerCase().replace(/[\u00a0\u202f]/g, ' ')
+      .replace(/[-\u2010\u2011\u2012\u2013\u2014_\/]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
   function spCapsOptions(o) {
+    const enVigueur = spCapsNorm(o.mot);
+    const marquer = function (liste) {
+      return liste.map(function (x) {
+        return { label: x[0], valeur: x[1], actif: spCapsNorm(x[1]) === enVigueur || spCapsNorm(x[0]) === enVigueur };
+      });
+    };
+    const courante = String(o.valeur || '');
+    const absente = function (liste) {
+      return courante && !liste.some(function (x) { return spCapsNorm(x[1]) === spCapsNorm(courante); });
+    };
     if (o.type === 'format') {
-      return ['A6', 'A5', 'A4', 'A3', 'A2'].map(function (x) { return { label: x, valeur: x }; });
+      const liste = [['A6', 'A6'], ['A5', 'A5'], ['A4', 'A4'], ['A3', 'A3'], ['A2', 'A2']];
+      if (absente(liste)) liste.push([courante, courante]);
+      return marquer(liste);
     }
     if (o.type === 'famille') {
       const mot = String(o.mot || '');
       if (/affiche|poster|flyer|tract|ポスター|チラシ/i.test(mot)) {
-        return [{ label: api('caps.affiche'), valeur: 'affiche' }, { label: api('caps.poster'), valeur: 'poster' },
-                { label: api('caps.flyer'), valeur: 'flyer' }, { label: api('caps.tract'), valeur: 'tract' }];
+        return marquer([[api('caps.affiche'), 'affiche'], [api('caps.poster'), 'poster'],
+                        [api('caps.flyer'), 'flyer'], [api('caps.tract'), 'tract']]);
       }
       if (/carte\s*postale|postcard|ポストカード|はがき/i.test(mot)) {
-        return [{ label: api('caps.cartepostale'), valeur: 'carte postale' }, { label: api('caps.cartevisite'), valeur: 'carte de visite' },
-                { label: api('caps.fairepart'), valeur: 'faire-part de mariage' }];
+        return marquer([[api('caps.cartepostale'), 'carte postale'], [api('caps.cartevisite'), 'carte de visite'],
+                        [api('caps.fairepart'), 'faire-part de mariage']]);
       }
       return [];
     }
     if (o.type === 'faces') {
-      return [{ label: api('caps.rectoSeul'), valeur: 'recto seul' }, { label: api('caps.rectoVerso'), valeur: 'recto verso' }];
+      return marquer([[api('caps.rectoSeul'), 'recto seul'], [api('caps.rectoVerso'), 'recto verso']]);
     }
     if (o.type === 'pages') {
-      return [4, 8, 12, 16, 24, 32, 48].map(function (n) { return { label: n + ' ' + api('caps.pages'), valeur: n + ' pages' }; });
+      const liste = [4, 8, 12, 16, 24, 32, 48].map(function (n) { return [n + ' ' + api('caps.pages'), n + ' pages']; });
+      if (absente(liste)) liste.unshift([courante, courante]);
+      return marquer(liste);
     }
     return [];
   }
@@ -5117,14 +5144,30 @@
          Le voile est un gris neutre (10 %) et les capsules sont blanches à 55 % : elles restent
          lisibles sur un thème clair comme sur un thème sombre, sans introduire de teinte. */
       '.spCapsBox{position:absolute;border-radius:7px;background:rgba(128,128,128,.07);box-shadow:inset 0 0 0 1px rgba(128,128,128,.16);pointer-events:none}',
-      '.spCapsRow{position:absolute;display:flex;flex-wrap:wrap;gap:4px;align-items:flex-start;justify-content:flex-start;pointer-events:none}',
-      '.spCapsK{position:static;pointer-events:auto;font:500 10px/1 "IBM Plex Mono",monospace;letter-spacing:.02em;color:inherit;background:rgba(255,255,255,.28);border:1px solid rgba(128,128,128,.28);border-radius:999px;padding:4px 10px;cursor:pointer;white-space:nowrap;opacity:.82;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);transition:opacity .16s ease,background .16s ease,border-color .16s ease}',
-      '.spCapsK:hover{opacity:1;background:rgba(255,255,255,.5);border-color:rgba(128,128,128,.45)}',
-      '.spCapsFl{display:inline-block;width:0;height:0;margin-left:6px;vertical-align:middle;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:4px solid currentColor;opacity:.5}',
-      '.spCapsK.spCapsNu{cursor:default;background:transparent;border-style:dashed;opacity:.62}',
+      /* ⚠️ _SP_STUDIO_CAPSULES_704 — LE MOT PORTE L'ACTION, LE TRIANGLE EST DANS LE TEXTE.
+         Demande utilisateur : « les bulles de mot sous le prompt ne servent à rien, c'est un
+         doublon ; il faut les triangles directement dans le prompt quand il détecte ». Le cadre
+         du mot reconnu devient cliquable (quand ce mot a des choix) et un petit triangle
+         apparaît à son bord droit — au survol, et tant que son menu est ouvert. Un seul
+         triangle visible à la fois : plus d'empilement quand vingt mots sont reconnus. */
+      '.spCapsBox.spCapsCliq{pointer-events:auto;cursor:pointer}',
+      '.spCapsBox.spCapsCliq:hover,.spCapsBox.spCapsOuvertB{background:rgba(128,128,128,.18);box-shadow:inset 0 0 0 1px rgba(128,128,128,.36)}',
+      '.spCapsTri{position:absolute;right:-3px;top:50%;width:0;height:0;margin-top:-1.5px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:4px solid rgba(120,120,120,.62);opacity:.4;transition:opacity .14s ease}',
+      '.spCapsBox.spCapsCliq:hover .spCapsTri,.spCapsBox.spCapsOuvertB .spCapsTri{opacity:1}',
       '.spCapsMenu{position:absolute;pointer-events:auto;min-width:104px;background:#ffffff;color:#14161a;border:1px solid rgba(0,0,0,.2);border-radius:9px;padding:4px;box-shadow:0 8px 22px rgba(0,0,0,.28);z-index:7;font:400 11px/1.3 "IBM Plex Mono",monospace}',
       '.spCapsMenu button{display:block;width:100%;text-align:left;border:0;background:transparent;color:inherit;padding:5px 8px;border-radius:6px;cursor:pointer;font:inherit}',
       '.spCapsMenu button:hover{background:#eef2f7}',
+      '.spCapsMenu button.spCapsActif{background:#ededed;font-weight:600}',
+      /* _SP_STUDIO_CAPSULES_697 — LE MENU, LA COCHE ET LE VOILE SUIVENT LE THÈME SOMBRE.
+         MESURÉ : le menu restait BLANC sur un studio à #1a1a1a, la coche bleutée jurait avec
+         la DA neutre, et le voile du mot reconnu tombait à #1f1f1f (quasi invisible). */
+      'body.theme-dark .spCapsMenu{background:#242424;color:#eaeaea;border-color:rgba(255,255,255,.18);box-shadow:0 10px 26px rgba(0,0,0,.55)}',
+      'body.theme-dark .spCapsMenu button:hover{background:#303030}',
+      'body.theme-dark .spCapsMenu button.spCapsActif{background:#3a3a3a}',
+      'body.theme-dark .spCapsBox{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}',
+      'body.theme-dark .spCapsBox.spCapsCliq:hover,body.theme-dark .spCapsBox.spCapsOuvertB{background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.34)}',
+      'body.theme-dark .spCapsTri{border-top-color:rgba(255,255,255,.55)}',
+      '.spCapsMenu button.spCapsActif::before{content:"\u2713";display:inline-block;width:11px;margin-right:3px;opacity:.75}',
       '#spCapsBar{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:0 0 5px}',
       '#spCapsBar.spCapsVide{display:none}',
       '.spCapsLab{font:600 9px/1 "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase;opacity:.55;margin-right:2px}',
@@ -5156,41 +5199,79 @@
     ov.setAttribute('aria-hidden', 'true');
     wrap.appendChild(mir);
     wrap.appendChild(ov);
-    const monde = { wrap: wrap, pi: pi, mir: mir, ov: ov };
+    const monde = { wrap: wrap, pi: pi, mir: mir, ov: ov, ro: null, rof: null };
+    /* _SP_STUDIO_CAPSULES_702 — LE CALQUE SUIT LA BOÎTE DU CHAMP. MESURÉ : il restait en
+       retard (calque de 105 px pour un champ de 160 px), donc la ligne de capsules remontait
+       de 60 px et empiétait sur le texte — quel que soit le moment du recalage dans le repeint.
+       L'observateur tranche : même largeur -> recalage seul ; largeur changée -> repeint (les
+       retours à la ligne du texte et les cadres des mots doivent suivre). */
+    if (typeof ResizeObserver === 'function') {
+      try {
+        monde.rof = new ResizeObserver(function () {
+          try {
+            const r = pi.getBoundingClientRect();
+            const lg = String(Math.round(r.width));
+            if (ov.dataset.spCapsL === lg) { spCapsCadrerOv(ov, pi, wrap); return; }
+            ov.dataset.spCapsL = lg;
+            spCapsPeindre(pi);
+          } catch (_) {}
+        });
+        monde.rof.observe(pi);
+      } catch (_) {}
+    }
     SP_CAPS_MONDES.set(pi, monde);
     return monde;
   }
+  /* _SP_STUDIO_CAPSULES_700 — LE CALQUE EST POSÉ SUR LA BOÎTE DU CHAMP (position ET taille).
+     Appelé par le repeint ET par l'observateur : quand la réserve change, le champ grandit et
+     le calque doit suivre, sinon la ligne de capsules remonte dans le texte (mesuré : 17-18 px). */
+  function spCapsCadrerOv(ov, pi, wrap) {
+    try {
+      const r = pi.getBoundingClientRect(), rw = wrap.getBoundingClientRect();
+      ov.style.left = Math.round(r.left - rw.left) + 'px';
+      ov.style.top = Math.round(r.top - rw.top) + 'px';
+      ov.style.width = Math.round(r.width) + 'px';
+      ov.style.height = Math.round(r.height) + 'px';
+      ov.style.right = 'auto';
+      ov.style.bottom = 'auto';
+    } catch (_) {}
+  }
   let SP_CAPS_EN_COURS = false;
-  /* ⚠️ _SP_STUDIO_CAPSULES_688 — UN SEUL REPOSAGE. Changer le padding du champ change les
-     retours à la ligne du texte : la ligne de capsules doit donc être mesurée, la place
-     réservée, PUIS l'ensemble reposé une fois. Le drapeau empêche toute boucle. */
-  let SP_CAPS_REFLOW = false;
+  /* _SP_STUDIO_CAPSULES_703 — LE « SECOND REPOSAGE » DE LA 1.7.601 EST RETIRÉ : il repartait de
+     la réserve minimale et annulait sa propre correction. Il est remplacé par la hauteur de
+     ligne mémorisée sur le champ (data-sp-caps-h) et par les deux observateurs. */
   function spCapsPeindre(champ) {
     if (SP_CAPS_EN_COURS) return;
     const m = spCapsMonde(champ);
     if (!m) return;
     const pi = m.pi, ov = m.ov, mir = m.mir;
     ov.innerHTML = '';
-    let row = null;
     const sansCapsule = function () {
       spCapsReserverPad(pi, false);
       return;
     };
     try {
+      /* _SP_STUDIO_CAPSULES_696 — CHAMP MASQUÉ (pre-home refermee, onglet inactif) : on
+         n'ajoute ni cadre ni reserve. MESURÉ : le champ masqué recevait quand meme ses
+         capsules et une marge basse calculee sur une hauteur de ligne nulle. */
+      const r0 = pi.getBoundingClientRect();
+      if (!r0 || r0.width < 8 || r0.height < 8) return sansCapsule();
       if (!state || String(state.engine) !== 'gabarit') return sansCapsule();
       const txt = String(pi.value || '');
       if (!txt.trim()) return sansCapsule();
       const mots = spCapsMots(txt);
       if (!mots.length) return sansCapsule();
       /* La ligne des capsules est DANS le champ : même marge que le texte, collée en bas. */
-      spCapsReserverPad(pi, true);
-      const csP = getComputedStyle(pi);
-      row = document.createElement('div');
-      row.className = 'spCapsRow';
-      row.style.left = (Math.round(parseFloat(csP.paddingLeft) || 0) + 1) + 'px';
-      row.style.right = (Math.round(parseFloat(csP.paddingRight) || 0) + 1) + 'px';
-      row.style.bottom = '5px';
-      ov.appendChild(row);
+      /* _SP_STUDIO_CAPSULES_699 — ON PART DE LA HAUTEUR DÉJÀ MESURÉE de la ligne (mémoire du
+         champ), et non de 26 px : le repeint ne doit jamais ANNULER une réserve correcte. */
+      /* ⚠️ _SP_STUDIO_CAPSULES_704 — PLUS DE LIGNE DE BULLES DANS LE CHAMP, DONC PLUS DE
+         RÉSERVE DE HAUTEUR : le champ reprend sa hauteur naturelle et rien ne peut recouvrir
+         le texte (c'était le dernier défaut de la 1.7.601 : une ligne qui se repliait à 66 px
+         puis 136 px pour un champ de 113 px). */
+      spCapsReserverPad(pi, false);
+      /* _SP_STUDIO_CAPSULES_704 — L'OBSERVATEUR DE LIGNE (spCapsRo) DISPARAÎT AVEC ELLE.
+         Celui du CHAMP (spCapsMonde, spCapsRof) reste : il recalcule les cadres des mots
+         quand la largeur du champ change (retours à la ligne). */
       SP_CAPS_EN_COURS = true;
       const cs = getComputedStyle(pi);
       const r = pi.getBoundingClientRect(), rw = m.wrap.getBoundingClientRect();
@@ -5212,12 +5293,7 @@
          (pièce jointe, images, micro, double page, envoyer), et les surlignages étaient décalés
          d'autant. On donne donc au calque la position et la taille EXACTES du champ : tout ce
          qu'il contient (surlignages, ligne de capsules) se rapporte à la boîte du champ. */
-      ov.style.left = Math.round(r.left - rw.left) + 'px';
-      ov.style.top = Math.round(r.top - rw.top) + 'px';
-      ov.style.width = Math.round(r.width) + 'px';
-      ov.style.height = Math.round(r.height) + 'px';
-      ov.style.right = 'auto';
-      ov.style.bottom = 'auto';
+      spCapsCadrerOv(ov, pi, m.wrap);
       const ech = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
       let html = '', cur = 0;
       mots.forEach(function (o, i) {
@@ -5244,52 +5320,45 @@
         let morceaux = null;
         try { const l = el.getClientRects(); morceaux = (l && l.length) ? Array.prototype.slice.call(l) : null; } catch (_) { morceaux = null; }
         if (!morceaux) morceaux = [b];
+        /* ⚠️ _SP_STUDIO_CAPSULES_704 — LES OPTIONS SONT LUES AVANT LES CADRES : c'est le MOT
+           (son cadre) qui ouvre le menu, plus une bulle dans une ligne à part. Un mot sans
+           choix garde son cadre discret, sans triangle et sans clic. */
+        const opts = spCapsOptions(o);
         morceaux.forEach(function (fr) {
           if (!fr || !(fr.width > 0) || !(fr.height > 0)) return;
           const fx = fr.left - r.left, fy = fr.top - r.top;
           if (fy + fr.height < -1 || fy > r.height + 1) return;         // morceau hors du cadre
           const bx = document.createElement('div');
-          bx.className = 'spCapsBox';
+          bx.className = 'spCapsBox' + (opts.length ? ' spCapsCliq' : '');
+          bx.setAttribute('data-cp', String(i));
           bx.style.left = Math.round(fx - AIR_X) + 'px';
           bx.style.top = Math.round(fy - AIR_Y) + 'px';
           bx.style.width = Math.round(Math.max(8, fr.width) + AIR_X * 2) + 'px';
           bx.style.height = Math.round(Math.max(9, fr.height) + AIR_Y * 2) + 'px';
+          if (opts.length) {
+            const tri = document.createElement('span');
+            tri.className = 'spCapsTri';
+            bx.appendChild(tri);
+            bx.title = api('caps.titre') + ' : ' + String(o.mot);
+            bx.addEventListener('mousedown', function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              try { spCapsFermerMenu(); } catch (_) {}
+              try { ov.querySelectorAll('.spCapsBox.spCapsOuvertB').forEach(function (x2) { x2.classList.remove('spCapsOuvertB'); }); } catch (_) {}
+              try { bx.classList.add('spCapsOuvertB'); } catch (_) {}
+              const rb = bx.getBoundingClientRect(), ro = ov.getBoundingClientRect();
+              /* ⚠️ _SP_STUDIO_CAPSULES_693 — on transmet LE CHAMP et la position RÉELLE du mot
+                 (bord gauche, bas) : le menu s'ouvre sous le mot et le choix s'écrit dans le bon
+                 champ (la pré-home écrivait dans le studio, défaut mesuré). */
+              spCapsMenu(ov, pi, i, rb.left - ro.left, rb.top - ro.top, opts);
+            });
+          }
           ov.appendChild(bx);
         });
         void x; void y;
-        if (!row) return;                        // dans un forEach on sort par return
-        const opts = spCapsOptions(o);
-        const bt = document.createElement('button');
-        bt.type = 'button';
-        bt.className = 'spCapsK' + (opts.length ? '' : ' spCapsNu');
-        bt.innerHTML = spCapsCourt(o) + (opts.length ? '<span class="spCapsFl"></span>' : '');
-        bt.title = api('caps.titre') + ' : ' + String(o.mot);
-        if (opts.length) {
-          bt.addEventListener('mousedown', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const rb = bt.getBoundingClientRect(), ro = ov.getBoundingClientRect();
-            /* ⚠️ _SP_STUDIO_CAPSULES_693 — on transmet LE CHAMP et la position RÉELLE de la
-               capsule (bord gauche, bas) : le menu s'aligne sur la capsule et le choix s'écrit
-               dans le bon champ (défaut mesuré : la pré-home écrivait dans le studio). */
-            spCapsMenu(ov, pi, i, rb.left - ro.left, rb.top - ro.top, opts);
-          });
-        }
-        row.appendChild(bt);
       });
-      /* La ligne réclame-t-elle plus que la place réservée ? On réserve SA hauteur réelle et on
-         repose une seule fois (les retours à la ligne du texte en dépendent). */
-      if (row && !SP_CAPS_REFLOW) {
-        const hReelle = row.offsetHeight;
-        if (hReelle > 0 && hReelle > 26) {
-          SP_CAPS_REFLOW = true;
-          try { spCapsReserverPad(pi, true, hReelle + 8); } catch (_) {}
-          SP_CAPS_EN_COURS = false;
-          try { spCapsPeindre(pi); } catch (_) {}
-          SP_CAPS_REFLOW = false;
-          return;
-        }
-      }
+      /* _SP_STUDIO_CAPSULES_704 — PLUS DE LIGNE À REPOSER : le calque a été cadré sur la boîte
+         du champ juste après la pose des cadres. */
       void st;
     } catch (_) {
       /* un pépin d'affichage ne doit jamais gêner la saisie */
@@ -5321,6 +5390,7 @@
     return v.length > 18 ? v.slice(0, 17) + '…' : v;
   }
   function spCapsMenu(ov, pi, i, xGauche, yHaut, opts) {
+    try { spCapsEcouter(); } catch (_) {}
     const vieux = ov.querySelector('.spCapsMenu');
     if (vieux) vieux.remove();
     const mn = document.createElement('div');
@@ -5329,6 +5399,8 @@
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = op.label;
+      /* _SP_STUDIO_CAPSULES_696 — L'OPTION EN VIGUEUR EST MARQUÉE (coche + fond clair). */
+      if (op.actif) { b.className = 'spCapsActif'; b.setAttribute('aria-current', 'true'); }
       /* ⚠️ _SP_STUDIO_CAPSULES_693 — le choix s'applique au champ d'où vient la capsule. */
       b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); spCapsRemplacer(pi, i, op.valeur); });
       mn.appendChild(b);
@@ -5346,6 +5418,35 @@
        texte). Il peut donc dépasser le cadre du champ, comme une liste déroulante normale. */
     mn.style.top = Math.round(yHaut - hMn - 6) + 'px';
   }
+  /* _SP_STUDIO_CAPSULES_696 — LE MENU SE REFERME. MESURÉ : un clic à l'extérieur et la
+     touche Échap le laissaient ouvert indéfiniment (seuls le choix d'une option et une
+     nouvelle frappe le fermaient). Trois sorties : clic à l'extérieur, Échap, défilement de
+     la fenêtre. Un clic DANS le menu est ignoré — sinon le bouton serait retiré du document
+     avant d'avoir reçu son propre clic et l'option ne partirait jamais. */
+  function spCapsFermerMenu() {
+    const l = document.querySelectorAll('.spCapsMenu');
+    for (let i = 0; i < l.length; i++) { try { l[i].remove(); } catch (_) {} }
+    /* _SP_STUDIO_CAPSULES_704 — le mot ouvert perd aussi son état (le triangle se referme). */
+    const o = document.querySelectorAll('.spCapsBox.spCapsOuvertB');
+    for (let j = 0; j < o.length; j++) { try { o[j].classList.remove('spCapsOuvertB'); } catch (_) {} }
+    return l.length;
+  }
+  let SP_CAPS_ECOUTE = false;
+  function spCapsEcouter() {
+    if (SP_CAPS_ECOUTE) return;
+    SP_CAPS_ECOUTE = true;
+    document.addEventListener('mousedown', function (e) {
+      const c = e.target;
+      if (c && c.closest && c.closest('.spCapsMenu')) return;
+      spCapsFermerMenu();
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.key === 'Esc') spCapsFermerMenu();
+    }, true);
+    window.addEventListener('scroll', function () { spCapsFermerMenu(); }, true);
+    window.addEventListener('resize', function () { spCapsFermerMenu(); });
+  }
+
   /* ⚠️ _SP_STUDIO_CAPSULES_693 — LE CHAMP EST UN PARAMÈTRE.
      MESURÉ : cette fonction écrivait dans `$('promptInput')` — le champ du STUDIO — même
      quand la capsule appartenait à la PRÉ-HOME : le texte ne changeait pas, et comme aucun
@@ -10771,6 +10872,53 @@ function spRtfLayoutInfo(src) {
     'qc.menu': ['レストランメニュー', "上品なA4レストランメニュー、クリーム色：中央揃えのタイトル、前菜・メイン・デザートと右揃えの価格、セクション間に細い罫線、下部に住所、セリフ書体。"],
     'qc.brochure': ['4ページパンフレット', "A4・4ページの冊子（見開き）：表紙にタイトルとビジュアル、短い巻頭言、2ページの本文は2段組み両端揃えで囲みとキャプション付き写真、下部にノンブル、全ページ同じ余白。"]
   });
+
+  /* ══ ⚠️ _SP_STUDIO_PP_604c — LA RÈGLE DE COULEUR EST ÉCRITE DANS CHAQUE PRÉ-PROMPT ══
+     Demande utilisateur (deux fois) : « quand un fond est sombre, écriture claire, et vice
+     versa — relis tous les pré-prompts, ils doivent appliquer cette règle pour la couleur ».
+     MESURÉ (banc des pré-prompts, 3 envois par pastille, document FINAL après toutes les
+     passes) : « Affiche noir et or » sortait un titre #101014 sur une page #111111 (1,01:1) et
+     « Couverture magazine » un titre #101014 sur un bandeau bleu encre #1e3a8a (1,83:1).
+     Le moteur sait le faire (sa passe de contraste est réparée par PP_604 / PP_604b), mais la
+     DEMANDE ne le disait pas : nos textes décrivent la palette, jamais la lisibilité.
+     La phrase est donc écrite DANS LA DONNÉE, une fois pour les trois langues, APRÈS les trois
+     `Object.assign(SP_EX_GABARIT, …)` et les six pastilles de studio (qc.*) : les deux endroits
+     qui lisent cette liste (barre de pastilles du studio, pré-home) la reçoivent ensemble, et la
+     reconnaissance « pré-prompt » du moteur (spGabDesign, égalité de texte normalisé) continue
+     de fonctionner puisqu'elle lit la même table. La première tentative avait été retirée parce
+     que la phrase faisait imprimer la demande brute : c'est corrigé à part (PP_604c dans
+     buildDocFromParsed — un pré-prompt n'est jamais du texte à composer).
+     ⚠️ PHRASE NEUTRE : aucune couleur, aucun mot que le moteur lit comme une palette ou une
+     audace (« fond noir », « blanc », « crème », « or », « très grand »…). */
+  (function () {
+    const CLAUSE = {
+      fr: ' Ce qui prime avant tout : la lisibilité des couleurs — quand un fond est sombre, l’écriture est claire ; quand le fond est clair, l’écriture est sombre. Jamais d’encre sombre sur un fond sombre, jamais d’encre claire sur un fond clair.',
+      en: ' Above all: colour readability — on a dark background the type is light; on a light background the type is dark. Never dark ink on a dark background, never light ink on a light one.',
+      jp: ' 何より優先すること：色の読みやすさ — 暗い背景では文字は明るく、明るい背景では文字は暗く。暗い背景に暗い文字、明るい背景に明るい文字は禁止。'
+    };
+    const _ajouter = function (e, langue) {
+      const c = CLAUSE[langue];
+      if (!c || !Array.isArray(e) || typeof e[1] !== 'string' || !e[1]) return 0;
+      if (e[1].indexOf(c.trim()) >= 0) return 0;          // déjà écrite : on n'empile pas
+      e[1] = e[1].replace(/\s+$/, '') + c;
+      return 1;
+    };
+    let n = 0;
+    ['fr', 'en', 'jp'].forEach(function (l) {
+      const liste = (SP_EX_GABARIT && SP_EX_GABARIT[l]) || [];
+      liste.forEach(function (e) { n += _ajouter(e, l); });
+    });
+    ['fr', 'en', 'jp'].forEach(function (l) {
+      const T = I18N[l];
+      if (!T) return;
+      Object.keys(T).forEach(function (k) {
+        if (k.indexOf('qc.') !== 0) return;
+        n += _ajouter(T[k], l);
+      });
+    });
+    try { window._spPrepromptsClause = n; } catch (_) {}
+    try { console.log('[SP213] règle de couleur écrite dans ' + n + ' pré-prompt(s).'); } catch (_) {}
+  })();
   function spExFam(eng) {
     if (eng === 'gabarit') return 'gabarit';
     try {
@@ -12603,9 +12751,18 @@ function spRtfLayoutInfo(src) {
        exactement ce qui a été composé : le corps détecté et les paragraphes de sections.
        Les citations entre guillemets et les pièces jointes restent protégées : elles
        sortent plus haut (`if (_citN && !_mixGui) return null;`). */
-    const _aDuTexte = (Number(M.corpsLength) || 0) > 240 || (M.sections || []).some(function (s) {
+    /* ⚠️ _SP_STUDIO_PP_604c — NOS PRÉ-PROMPTS NE SONT JAMAIS DU TEXTE À COMPOSER.
+       MESURÉ (banc A/B, pré-prompt « Couverture magazine », 4 envois avec une phrase de règle
+       ajoutée et 4 sans) : la phrase poussait `corpsLength` au-delà de 240 et la DEMANDE BRUTE
+       s'imprimait dans la maquette (« grand titre en très grandes capitales sur toute la
+       largeur… » posé en corps de texte). Or la ROCK615 dit déjà, dans son propre commentaire,
+       qu'un pré-prompt « n'est PAS une consigne et ne contient POURTANT aucun texte à
+       composer » : quand la demande EST un de nos pré-prompts (égalité de texte reconnue),
+       il n'y a rien à composer — le moteur pose son document de démonstration (chemin `_dem`).
+       Aucun effet sur une demande écrite par l'utilisateur (la reconnaissance est exacte). */
+    const _aDuTexte = !SP_GAB_BRIEF_PREPROMPT && ((Number(M.corpsLength) || 0) > 240 || (M.sections || []).some(function (s) {
       return s && s.ps && s.ps.length && String(s.ps.join(' ')).length > 120;
-    });
+    }));
     if (_dem && !_aDuTexte) {
       const lot = _dem.lot;
       if (!M.titre || /^sans titre$/i.test(M.titre)) M.titre = lot.titre;
@@ -19018,10 +19175,23 @@ function spRtfLayoutInfo(src) {
          une mise en page de couverture parmi celles qui EXISTENT : split, bandeau, pleine page,
          couverture de magazine, affiche. Aucune nouvelle composition n'est inventée — et la suite
          du document ne change pas d'une ligne (`lay` reste la mise en page du gabarit). */
-      if (SP_GAB_BRIEF_PREPROMPT && i === 1 && tot >= 4 && SP_GAB_COUV_MODE > 0) {
+      /* ⚠️ _SP_STUDIO_VARIATION_604 — LA PIÈCE D'UNE PAGE CHANGE AUSSI DE PLAN.
+         MESURÉ (banc des pré-prompts, 17 pastilles × 3 tirages) : les tirages sont distincts
+         (3/3 partout) mais la STRUCTURE ne bouge pas — 60 à 95 % des éléments restent à la même
+         place, et une affiche sort toujours avec le même plan. Cause : ce tirage était enfermé
+         derrière `tot >= 4`, donc jamais fait sur une pièce d'UNE page — or une affiche, un
+         poster, une invitation sont des pièces d'une page. Sur nos pré-prompts et sous quatre
+         pages, on tire donc dans une liste RESTREINTE aux quatre plans valables pour une pièce
+         isolée (le plan du gabarit, split, bandeau, pleine page) : les deux autres portent une
+         famille de document (couverture de magazine, affiche de journal), pas une pièce seule. */
+      const _couvModeTire = SP_GAB_BRIEF_PREPROMPT && i === 1 && SP_GAB_COUV_MODE > 0;
+      if (_couvModeTire) {
         try {
-          const _MODS = [lay, spGabO_split, spGabO_bandeau, spGabO_pleine, spGabP_couverture, spGabP_affiche];
-          layPage = _MODS[SP_GAB_COUV_MODE] || layPage;
+          const _MODS6 = [lay, spGabO_split, spGabO_bandeau, spGabO_pleine, spGabP_couverture, spGabP_affiche];
+          const _MODS = (tot >= 4) ? _MODS6 : [lay, spGabO_split, spGabO_bandeau, spGabO_pleine];
+          const _iMod = (tot >= 4) ? (SP_GAB_COUV_MODE % _MODS6.length) : (SP_GAB_COUV_MODE % _MODS.length);
+          layPage = _MODS[_iMod] || layPage;
+          try { window._spGabCouvPlan = _iMod; } catch (_) {}
         } catch (_) {}
       }
       /* ⚠️ _SP_STUDIO_ROCK631s — UN MAGAZINE OUVRE SUR UNE MANCHETTE (voir spGabO_manchette*).
@@ -23825,7 +23995,16 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
           if (!e || String(e.type) !== 'text' || !e.fill) return;
           if (e._spSpotInk) return;
           const l = Number(e.left) || 0, t = Number(e.top) || 0, wT = Number(e.width) || 0;
-          const hL = Math.max(1, (Number(e.fontSize) || 10) * (Number(e.lineHeight) || 1.3) * 1.13);
+          /* ⚠️ _SP_STUDIO_PP_604 — LES UNITÉS DE LA SONDE. `fontSize` est en POINTS et
+             `top` en MILLIMÈTRES (1 pt = 0,3528 mm). L'ancien calcul ajoutait le corps EN
+             POINTS à une position EN MILLIMÈTRES : sur un titre de 58 pt, la sonde tombait
+             42 mm SOUS la première ligne et échantillonnait un autre aplat que celui qui
+             porte le texte. MESURÉ (banc des pré-prompts, 3 envois par pastille, document
+             FINAL) : « Affiche noir et or » sortait 3 fois sur 3 un titre #101014 sur une
+             page #111111 (1,01:1) et « Couverture magazine » un titre #101014 sur un bandeau
+             #1e3a8a (1,83:1), SANS aucune correction. On lit la première ligne à sa hauteur
+             réelle : corps converti en millimètres. */
+          const hL = Math.max(1, (Number(e.fontSize) || 10) * 0.3528 * (Number(e.lineHeight) || 1.2));
           /* La mesure du studio (voir _SP_STUDIO_TITRE_584) : trois points sur la PREMIÈRE
              LIGNE, et le DERNIER rectangle qui la recouvre — c'est celui qu'on voit dessous. */
           const yL = t + hL * 0.5;
@@ -23834,48 +24013,68 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
              l'aplat sombre (posé dans les marges) ; la passe concluait « fond de page clair » et
              laissait un titre noir sur fond noir (contraste 1,91). La typographie COMMENCE dans
              l'aplat : le début de la ligne et 10 % de sa largeur y sont toujours. */
-          const pts = [[l + Math.min(2, wT * 0.02), yL], [l + wT * 0.1, yL], [l + wT * 0.25, yL], [l + wT * 0.5, yL], [l + wT * 0.75, yL]];
-          /* ⚠️ _SP_STUDIO_ROCK681 — MAJORITÉ DES POINTS, PAS « LE DERNIER QUI PASSE ».
-             MESURÉ : deux tirages de la même demande, titre LARGE à cheval sur une bande sombre
-             (son début) et un panneau clair (sa fin) — l'un était corrigé (12,21 ✔), l'autre
-             laissait un titre BLANC sur le panneau clair (1,12 ✗). Le titre se lit là où il est
-             posé le plus : c'est donc le panneau qui couvre le PLUS de points qui décide. À
-             égalité, le plus grand panneau gagne. */
-          const voix = new Map();
-          let fondRecouvrant = null, aireRecouvrante = 0;
+          /* ⚠️ _SP_STUDIO_PP_604b — LE FOND SE LIT PAR RECOUVREMENT, PAS PAR ÉCHANTILLONNAGE.
+             MESURÉ (banc des pré-prompts, document FINAL, 3 envois par pastille, 05/10/2026) :
+             les cinq points de la ROCK681 sont posés à 2 %, 10 %, 25 %, 50 % et 75 % de la
+             largeur — quatre sur cinq dans la MOITIÉ GAUCHE. Sur un titre à cheval sur un
+             bandeau sombre (à gauche) et la page claire (à droite), la majorité concluait
+             « fond sombre » et la passe posait une encre CLAIRE sur la partie claire :
+             « Poster premium » est passé de 0/3 à 3/3 tirages en défaut (titre #101014 sur
+             page #111111, 1,01:1) alors que son encre était juste. Le vote pouvait donc
+             FABRIQUER le défaut qu'il devait réparer.
+             Règle appliquée, dans cet ordre :
+               1. un APLAT QUI RECOUVRE TOUTE LA BOÎTE DU TEXTE (première ligne, hauteur
+                  réelle du corps) — c'est ce qu'on voit dessous, sans ambiguïté ; le DERNIER
+                  posé gagne (l'ordre du tableau suit l'ordre de dessin) ;
+               2. sinon seulement, la MAJORITÉ d'un échantillonnage NEUTRE — onze points
+                  régulièrement répartis de 0 à 100 % de la largeur, sans biais à gauche.
+             Un texte qui CHEVAUCHE deux fonds reste un défaut de mise en page (il doit être
+             posé sur un seul aplat) : la passe fait au mieux avec ce qu'on lui donne. */
+          const pts = [];
+          for (let i5 = 0; i5 <= 10; i5++) pts.push([l + (wT * i5) / 10, yL]);
+          let fond = null;
           els.forEach(function (a) {
             if (!a || String(a.type) !== 'rectangle' || !a.fill || String(a.fill) === 'transparent') return;
             const aw = Number(a.width) || 0, ah = Number(a.height) || 0;
             if (aw * ah < 4) return;
             const al = Number(a.left) || 0, at = Number(a.top) || 0;
-            const estFondPage = (_W > 0 && _H > 0 && aw >= _W * 0.9 && ah >= _H * 0.9);
-            if (!estFondPage) {
+            if (al <= l + 0.5 && al + aw >= l + wT - 0.5 && at <= t + 0.5 && at + ah >= t + hL - 0.5) {
+              fond = String(a.fill);                      // 1. recouvrement COMPLET de la boîte
+            }
+          });
+          if (!fond) {
+            /* 2. aucun aplat ne couvre la boîte : majorité sur onze points réguliers. */
+            const voix = new Map();
+            let fondRecouvrant = null, aireRecouvrante = 0;
+            els.forEach(function (a) {
+              if (!a || String(a.type) !== 'rectangle' || !a.fill || String(a.fill) === 'transparent') return;
+              const aw = Number(a.width) || 0, ah = Number(a.height) || 0;
+              if (aw * ah < 4) return;
+              const al = Number(a.left) || 0, at = Number(a.top) || 0;
               if (aw * ah > aireRecouvrante &&
                   l < al + aw - 0.5 && al < l + wT - 0.5 && t < at + ah - 0.5 && at < t + hL - 0.5) {
                 aireRecouvrante = aw * ah; fondRecouvrant = String(a.fill);
               }
-            }
-            if (estFondPage) return;                    // le fond de page ne masque pas les panneaux
-            let v = 0;
-            for (let i5 = 0; i5 < pts.length; i5++) {
-              if (pts[i5][0] >= al - 0.5 && pts[i5][0] <= al + aw + 0.5 && pts[i5][1] >= at - 0.5 && pts[i5][1] <= at + ah + 0.5) v++;
-            }
-            if (v > 0) {
-              const cle = String(a.fill);
-              const cur = voix.get(cle) || { n: 0, aire: 0 };
-              cur.n += v; cur.aire = Math.max(cur.aire, aw * ah);
-              voix.set(cle, cur);
-            }
-          });
-          let fond = null;
-          voix.forEach(function (v, cle) {
-            if (!fond) { fond = cle; return; }
-            const meilleur = voix.get(fond);
-            if (v.n > meilleur.n || (v.n === meilleur.n && v.aire > meilleur.aire)) fond = cle;
-          });
-          /* Aucun point couvert : le plus grand aplat qui recouvre la première ligne (hors fond
-             de page) ; sinon seulement, le fond de page. */
-          if (!fond) fond = fondRecouvrant || fondPage;
+              let v = 0;
+              for (let i5 = 0; i5 < pts.length; i5++) {
+                if (pts[i5][0] >= al - 0.5 && pts[i5][0] <= al + aw + 0.5 && pts[i5][1] >= at - 0.5 && pts[i5][1] <= at + ah + 0.5) v++;
+              }
+              if (v > 0) {
+                const cle = String(a.fill);
+                const cur = voix.get(cle) || { n: 0, aire: 0 };
+                cur.n += v; cur.aire = Math.max(cur.aire, aw * ah);
+                voix.set(cle, cur);
+              }
+            });
+            voix.forEach(function (v, cle) {
+              if (!fond) { fond = cle; return; }
+              const meilleur = voix.get(fond);
+              if (v.n > meilleur.n || (v.n === meilleur.n && v.aire > meilleur.aire)) fond = cle;
+            });
+            /* Aucun point couvert : le plus grand aplat qui recouvre la première ligne ; sinon
+               seulement, le fond de page. */
+            if (!fond) fond = fondRecouvrant || fondPage;
+          }
           const lf = lum(fond), le = lum(e.fill);
           if (lf === null || le === null) return;
           if (rat(lf, le) >= 4.5) return;
@@ -24130,6 +24329,14 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
   let _spFiletsDeplaces = 0;
   window.sp213ResolveCollisions = _spResolveCollisions;
   window.sp213CompteurFilets = function () { return _spFiletsDeplaces; };
+  /* ⚠️ _SP_STUDIO_DIAG_604 — LIRE LE DOCUMENT RÉELLEMENT AFFICHÉ.
+     MESURE (banc des pré-prompts) : le JSON publié dans le chat est la sortie BRUTE du
+     moteur, alors que les passes de fin du studio (marges, imposition, contraste après
+     passes) modifient le document APRÈS. Un banc qui lit le JSON du chat mesure donc un
+     document que personne ne voit — mesuré : titre blanc sur papier crème dans le JSON, et
+     l'aperçu corrigé. On expose le document FINAL, en lecture seule, comme les autres
+     diagnostics du studio (sp213ResolveCollisions, spGabControle, sp213CompteurFilets). */
+  window.sp213DocCourant = function () { try { return state.doc; } catch (_) { return null; } };
 
   function _spConstrainDocToPages(doc) {
     if (!doc || !Array.isArray(doc.pages) || !doc.pages.length) return doc;

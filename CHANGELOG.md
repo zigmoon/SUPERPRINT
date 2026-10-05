@@ -9,6 +9,32 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.603] — 2026-10-05
+
+_Triangles dans le prompt, règle de couleur écrite ET appliquée, composition qui varie sur les pièces d’une page_
+
+### Changed — capsules de mots (studio, les deux arborescences)
+- La **ligne de bulles sous la zone de prompt est supprimée**, avec sa réserve de hauteur : elle répétait le mot déjà souligné dans le texte et se repliait sur 2-3 rangs dès 8 mots (66 puis 136 px réservés sous un champ de 113 px). Mesuré : **0 bulle**, `padding-bottom` revenu à sa valeur d’origine (**12 px**), calque aligné sur le champ (**écart 0 px**), **0 cadre hors du champ**.
+- Le **cadre du mot reconnu est cliquable** et porte un **triangle** à son bord droit (léger en permanence, plein au survol et tant que son menu est ouvert) : mesuré 5 mots reconnus → 5 cadres, 4 cliquables, 4 triangles, **une seule capsule accentuée à la fois**.
+- Le **menu s’ouvre sous le mot** ; le choix s’écrit à sa place (mesuré : « Cahier **A5** de 12 pages en double page » depuis un texte qui disait A4), **Échap** ferme sans rien changer, un clic à l’extérieur aussi. Thème sombre suivi (menu, cadre, triangle).
+
+### Fixed — la règle de couleur
+- La **phrase de lisibilité est écrite dans les 19 pastilles ROCK et les 6 pastilles de studio**, dans les **trois langues** (75 textes) : « quand un fond est sombre, l’écriture est claire ; quand le fond est clair, l’écriture est sombre ». Elle ne nomme aucune couleur, donc elle ne fige aucune palette.
+- **Sonde de contraste réparée** (`spContrasteApresPasses`) : elle cherchait le fond **42 mm sous la première ligne** (le corps était ajouté **en points** à une position **en millimètres**) et son échantillonnage était **biaisé à gauche** (4 points sur 5 dans la moitié gauche) — elle pouvait manquer une encre illisible ou en corriger une qui n’avait rien à corriger. Le fond se lit désormais par **recouvrement de la boîte du texte**, sinon par majorité sur 11 points réguliers.
+- **Un pré-prompt n’est plus jamais pris pour du texte à composer** (`_aDuTexte` avec `!SP_GAB_BRIEF_PREPROMPT`) : sans cela, la phrase de règle faisait dépasser `corpsLength > 240` et **la demande brute s’imprimait dans la maquette** (« grand titre en très grandes capitales… » posé en corps de texte). Mesuré après : 4 pastilles × 3 tirages, **aucune** occurrence.
+
+### Added — variété de composition
+- Le **tirage du plan** (`SP_GAB_COUV_MODE`) n’est plus réservé aux documents de **4 pages et plus** : il est tiré aussi sur les pièces d’une page, parmi **quatre plans valables pour une pièce isolée** (plan du gabarit, split, bandeau, pleine page).
+- Mesuré, 4 tirages par pastille : **Poster** 2/9 éléments au même endroit (**avant 6/13**), **Affiche noir et or** 1/6, **encres identiques 0 %** ; « Poster premium » reste volontairement plus stable (son texte demande un bandeau noir plein cadre).
+
+### Vérification
+- Banc `_banc_pp_604.cjs` (Playwright, moteur SP213 rock local) : le document **FINAL**, après toutes les passes, est lu par `window.sp213DocCourant()` — le JSON publié dans le chat est la sortie **brute** du moteur et ne dit rien de ce qui est réellement peint (piège mesuré).
+- **Lisibilité** : rapport de contraste WCAG entre chaque texte et l’aplat qui le porte (unités corrigées : corps en points, positions en millimètres). Campagnes : 17 pastilles × 3 tirages, puis 4 pastilles × 4 tirages → **0 défaut** sur Poster, Poster premium, Affiche noir et or, Couverture magazine (avant : Affiche noir et or 3/3 fautif, contraste 1,01).
+- **Variation** : signature de TOUS les textes (police, corps, contenu, encre) et de TOUS les aplats (couleur, position, taille), comparée deux à deux.
+
+---
+
+
 ## [1.7.602] — 2026-10-05
 
 _Enregistrer sous : le nom du document est demandé AVANT d’écrire, et annuler n’écrit rien_
