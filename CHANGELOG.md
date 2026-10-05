@@ -9,6 +9,25 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.601] — 2026-10-05
+
+_Le studio montre les mots qu’il a compris (capsules dans la boîte de prompt et sur la pré-home), le « + » repart sur la pré-home, et les posters ne sont plus noirs sur noir_
+
+### Added — les capsules des mots reconnus
+- Dans la boîte de prompt **et** sur la pré-home, les mots que ROCK 1 comprend (formats, familles, recto verso, nombre de pages, vocabulaire d’imprimerie) sont **surlignés à leur place** ; une capsule discrète rappelle la valeur lue et ouvre les **options** (formats voisins, synonymes de famille, recto seul / recto verso, nombre de pages) qui **réécrivent le mot** dans la demande. Vocabulaire pris dans `SP_METIER` : une seule source, donc aucune divergence possible avec le moteur.
+- Aucune couleur : voile neutre à **7 %** autour du mot, capsules **blanches à 28 %**, texte à la couleur du champ. Les capsules vivent **dans** le cadre du champ, au-dessus de la barre d’icônes, et le champ **réserve leur hauteur** (padding-bottom, calque miroir au même padding) : aucune ligne de texte n’est jamais recouverte.
+- **Deux défauts corrigés** : (1) le choix d’une capsule écrivait dans le champ du **studio** même quand la capsule appartenait à la pré-home — mesuré : texte inchangé et menu resté ouvert ; il reçoit maintenant **son champ** en paramètre ; (2) un mot coupé entre deux lignes recevait **un cadre unique** de la taille de ses morceaux réunis — mesuré **614 × 45 px**, tout le champ : c’est le défaut d’« encapsulation globale » signalé. Un cadre par **morceau de ligne** (`getClientRects()`).
+
+### Fixed — les deux posters ne sont plus noirs sur noir
+- Mesure sur les deux pastilles, trois tirages chacune, **par l’interface** (donc après les passes du studio) : titre à **1,01** de contraste (encre presque noire sur fond noir) et **2,75** sur un aplat sombre.
+- Cause : le garde-fou de contraste retenait l’aplat de **plus grande aire** contenant le texte — donc le **fond de page blanc**, toujours plus grand que le bandeau posé dessus — et il tournait **avant** les passes du studio qui déplacent les blocs.
+- Correction : le fond derrière un texte est le **dernier aplat posé avant lui** (décidé à la **majorité de cinq points** sur la première ligne), le contrôle est refait **après toutes les passes**, et les deux pastilles portent un **titre, une date et un lieu entre guillemets** (leur phrase de consigne ne s’imprime plus comme titre). Mesure après : **titre 18,88**, date 16,8 à 17,4, six tirages sur six lisibles.
+
+### Changed — le « + » des conversations
+- Il créait une conversation vide sans jamais montrer la pré-home : il garde la conversation en cours dans les onglets, **ouvre la pré-home** et vide son champ.
+
+---
+
 ## [1.7.600] — 2026-10-04
 
 _Le studio applique vraiment ce qu'il annonce : tons directs posés sur les objets, flyer A5 et carte postale A6 en recto verso, presse-papier partagé entre onglets, annulation qui ne perd plus rien en silence_
