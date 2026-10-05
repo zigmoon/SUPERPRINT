@@ -93321,42 +93321,111 @@ function _spRestoreGuides(guidesMap) {
 /**
  * Sauvegarde le projet au format natif .sp
  */
-window.saveProjectSP = function() {
-    // 🛡️ FIX 2026-05-05 v1.7.96 (collab) : déléguer la construction du
-    // spFile à un helper réutilisable par collab.js (broadcast doc:replace).
-    // Le helper appelle déjà saveAllPages() en interne — pas de double-sync.
-    const spFile = window.saveProjectSP_toObject();
-    const stats = (spFile && spFile.meta && spFile.meta.stats) || {};
-    const now = new Date(spFile && spFile._sp ? spFile._sp.modified : Date.now());
-
-    // Sérialiser avec indentation pour lisibilité
-    const json = JSON.stringify(spFile, null, 2);
-    const blob = new Blob([json], { type: 'application/x-superprint+json' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    // Nom de fichier : utilise le nom du projet si défini
-    const projName = (window._spProjectName || '').trim();
-    if (projName) {
-        // Nettoyer le nom pour un fichier valide
-        a.download = projName.replace(/[\\/:*?"<>|]/g, '_') + '.sp';
-    } else {
-        const datePart = now.toISOString().slice(0,10).replace(/-/g, '');
-        const pagePart = (pages || []).length + 'p';
-        const sizePart = `${pageFormat.width}x${pageFormat.height}`;
-        a.download = `superprint-${sizePart}-${pagePart}-${datePart}.sp`;
+/* ⚠️ _SP_APP_NOM_602 — « ENREGISTRER SOUS » : ON DEMANDE LE NOM AVANT D'ÉCRIRE.
+   Demande utilisateur : « lorsque l'on enregistre un document, proposer une popin de nommage
+   avant d'enregistrer ». Le nom proposé est celui du projet s'il existe, sinon le nom construit
+   (format, pages, date). Entrée valide, Échap annule ; le nom accepté est retenu dans
+   `window._spProjectName` et reproposé aux enregistrements suivants. Annuler n'écrit RIEN. */
+window.spNomNettoyer = function (nom) {
+    return String(nom == null ? '' : nom)
+        .replace(/[\\/:*?"<>|]/g, '_')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 120);
+};
+window.spNomLire = function (cle, fr, en, ja) {
+    const lg = (typeof currentLanguage === 'string') ? currentLanguage : 'fr';
+    return (lg === 'en') ? en : (lg === 'ja' ? ja : fr);
+};
+window.spOuvrirNom = function (defaut, extension, cb) {
+    const ov = document.getElementById('spNomModal');
+    /* Sans popin dans la page (autre page hôte), on n'empêche pas d'enregistrer : on écrit. */
+    if (!ov) { if (cb) cb(window.spNomNettoyer(defaut)); return; }
+    const champ = document.getElementById('spNomChamp');
+    const t = document.getElementById('spNomTitre');
+    const aide = document.getElementById('spNomAide');
+    const ok = document.getElementById('spNomOk');
+    const ann = document.getElementById('spNomAnnuler');
+    const fch = document.getElementById('spNomFichier');
+    if (t) t.textContent = window.spNomLire('t', 'Enregistrer sous', 'Save as', '名前を付けて保存');
+    if (aide) aide.textContent = window.spNomLire('a', 'Donnez un nom à votre document : le fichier sera écrit avec ce nom.', 'Give your document a name: the file will be written with it.', '書類に名前を付けてください。その名前でファイルを保存します。');
+    if (ok) ok.textContent = window.spNomLire('o', 'Enregistrer', 'Save', '保存');
+    if (ann) ann.textContent = window.spNomLire('c', 'Annuler', 'Cancel', 'キャンセル');
+    window._spNomCb = cb || null;
+    window._spNomExt = extension || '.sp';
+    if (champ) { champ.value = window.spNomNettoyer(defaut) || ''; }
+    if (fch) fch.textContent = window.spNomLire('f', 'Nom du fichier : ', 'File name: ', 'ファイル名：') + (window.spNomNettoyer(defaut) || '') + window._spNomExt;
+    ov.style.display = 'flex';
+    if (!window._spNomClavier) {
+        window._spNomClavier = true;
+        const majFichier = function () {
+            const f = document.getElementById('spNomFichier');
+            const c = document.getElementById('spNomChamp');
+            if (f && c) f.textContent = window.spNomLire('f', 'Nom du fichier : ', 'File name: ', 'ファイル名：') + window.spNomNettoyer(c.value) + (window._spNomExt || '.sp');
+        };
+        document.addEventListener('keydown', function (e) {
+            const v = document.getElementById('spNomModal');
+            if (!v || v.style.display === 'none') return;
+            if (e.key === 'Enter') { e.preventDefault(); window.spValiderNom(); }
+            else if (e.key === 'Escape') { e.preventDefault(); window.spFermerNom(); }
+        });
+        const c2 = document.getElementById('spNomChamp');
+        if (c2) { c2.addEventListener('input', majFichier); c2.addEventListener('keyup', majFichier); }
     }
-    a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(function () { try { const c = document.getElementById('spNomChamp'); if (c) { c.focus(); c.select(); } } catch (_) {} }, 40);
+};
+window.spFermerNom = function () {
+    const ov = document.getElementById('spNomModal');
+    if (ov) ov.style.display = 'none';
+    window._spNomCb = null;
+};
+window.spValiderNom = function () {
+    const champ = document.getElementById('spNomChamp');
+    const nom = window.spNomNettoyer(champ ? champ.value : '');
+    const cb = window._spNomCb;
+    if (!nom) { try { if (champ) champ.focus(); } catch (_) {} return; }
+    const ov = document.getElementById('spNomModal');
+    if (ov) ov.style.display = 'none';
+    window._spNomCb = null;
+    if (cb) cb(nom);
+};
 
-    
-    // Notification discrète
-    const toast = document.createElement('div');
-    toast.textContent = `✓ Projet sauvegardé (.sp) — ${(pages || []).length} pages, ${stats.totalObjects || 0} objets`;
-    toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:12px 24px;border-radius:8px;font-size:13px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+window.saveProjectSP = function() {
+    /* ⚠️ _SP_APP_NOM_602 — ON DEMANDE LE NOM AVANT D'ÉCRIRE (demande utilisateur).
+       Le nom proposé est celui du projet s'il existe, sinon le nom construit d'avant.
+       Annuler n'écrit RIEN. Le nom accepté est retenu pour les fois suivantes. */
+    // 🛡️ FIX 2026-05-05 v1.7.96 (collab) : la construction du spFile reste déléguée à un helper
+    // réutilisable par collab.js (broadcast doc:replace) — il appelle saveAllPages() en interne.
+    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const defaut = (window._spProjectName || '').trim() ||
+        ('superprint-' + pageFormat.width + 'x' + pageFormat.height + '-' + (pages || []).length + 'p-' + datePart);
+    const ecrire = function (nomFichier) {
+        const spFile = window.saveProjectSP_toObject();
+        const stats = (spFile && spFile.meta && spFile.meta.stats) || {};
+        // Sérialiser avec indentation pour lisibilité
+        const json = JSON.stringify(spFile, null, 2);
+        const blob = new Blob([json], { type: 'application/x-superprint+json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nomFichier + '.sp';
+        a.click();
+        URL.revokeObjectURL(url);
+        // Notification discrète
+        const toast = document.createElement('div');
+        toast.textContent = `✓ Projet sauvegardé (.sp) — ${(pages || []).length} pages, ${stats.totalObjects || 0} objets`;
+        toast.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:12px 24px;border-radius:8px;font-size:13px;z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    };
+    /* La popin de choix de destination se referme : on empile sinon deux fenêtres. */
+    try { if (typeof closeSaveModal === 'function') closeSaveModal(); } catch (_) {}
+    try {
+        window.spOuvrirNom(defaut, '.sp', function (nom) {
+            window._spProjectName = nom;
+            ecrire(nom);
+        });
+    } catch (_) { ecrire(window.spNomNettoyer(defaut) || 'document'); }
 };
 
 /**

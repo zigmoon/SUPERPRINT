@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google" content="notranslate">
 <title>Releases — Zigmoon Apps Changelog & Version History</title>
-<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.601 — the Studio IA shows the words it understood: recognised keywords are highlighted in the prompt box AND on the pre-home, with a discreet capsule that opens the options (neighbouring formats, family synonyms, recto/verso, page count) and rewrites the word in your request. The “+” button goes back to the pre-home, and the two poster pre-prompts are no longer black on black (measured contrast 1.01 before, 18.88 after)."
-<meta name="keywords" content="SUPER PRINT 1.7.601, SuperPrint, browser DTP editor, Studio IA, ROCK 1, keyword capsules, prompt assistant, pre-home, readability, contrast, poster, Pantone"
+<meta name="description" content="Latest Zigmoon release notes. SUPER PRINT v1.7.602 — the Save button asks for the document name BEFORE writing it: the dialog suggests the project name or a built name (format, pages, date), a line under the field shows the full file name and follows your typing, Enter writes that exact file (measured: affiche-salon-2026.sp) and Escape writes nothing at all."
+<meta name="keywords" content="SUPER PRINT 1.7.602, SuperPrint, browser DTP editor, save as dialog, file name, .sp document, Studio IA, ROCK 1"
 <meta name="robots" content="index, follow, max-snippet:-1">
 <meta name="author" content="Zigmoon">
 <link rel="canonical" href="https://app.zigmoon.com/release.html">
@@ -25,7 +25,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="Zigmoon">
 <meta property="og:title" content="Releases — Zigmoon Apps Changelog & Version History">
-<meta property="og:description" content="SuperPrint v1.7.601 — the studio shows the words it understood (capsules in the prompt box and on the pre-home), the “+” returns to the pre-home, and posters are legible at last (contrast 1.01 to 18.88)."
+<meta property="og:description" content="SuperPrint v1.7.602 — Save asks for the name first: Enter writes the named file, Escape writes nothing."
 <meta property="og:url" content="https://app.zigmoon.com/release.html">
 <meta property="og:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 <meta property="og:image:width" content="192">
@@ -36,7 +36,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:site" content="@zigmoon">
 <meta name="twitter:title" content="Releases — Zigmoon Apps Changelog">
-<meta name="twitter:description" content="SuperPrint v1.7.601 — keyword capsules in the prompt, the “+” back to the pre-home, legible posters.">
+<meta name="twitter:description" content="SuperPrint v1.7.602 — the Save dialog names your document before writing it.">
 <meta name="twitter:image" content="https://zigmoon.com/wp-content/uploads/2024/11/cropped-fav_zigmoon-2-192x192.png">
 
 <meta name="theme-color" content="#000000">
@@ -707,6 +707,29 @@ footer, footer a { color: var(--after-text-color); }
 
 
 
+
+<!-- ===== SUPER PRINT v1.7.602 — ENREGISTRER SOUS : le nom du document est demande AVANT d ecrire (popin de nommage, nom de projet repropose, ligne Nom du fichier qui suit la frappe, Entree ecrit le fichier avec ce nom, Echap n ecrit RIEN) ===== -->
+
+<article class="release-block" data-app="superprint" id="superprint-v1-7-602">
+ <h2>SUPER PRINT <span>v1.7.602</span></h2>
+ <div class="release-meta">
+  <span data-i18n-fr="Publié le 5 octobre 2026" data-i18n-en="Released October 5, 2026" data-i18n-jp="2026年10月5日公開">Released October 5, 2026</span>
+ </div>
+
+ <p data-i18n-fr-html="Dans l’application, le bouton Enregistrer écrit désormais un fichier NOMMÉ : le nom est demandé avant l’écriture, et rien n’est écrit si vous annulez. Chaque point a été mesuré dans l’application réelle, téléchargement compris." data-i18n-en-html="In the application, the Save button now writes a NAMED file: the name is asked before writing, and nothing is written if you cancel. Every point was measured in the real application, downloads included." data-i18n-jp-html="アプリの保存ボタンは名前を付けたファイルを書き出すようになりました。書き出し前に名前を尋ね、取り消した場合は何も書き出しません。各項目は実際のアプリ（ダウンロードを含む）で実測しています。">In the application, the Save button now writes a NAMED file: the name is asked before writing, and nothing is written if you cancel. Every point was measured in the real application, downloads included.</p>
+
+ <h3 data-i18n-fr-html="💾 Enregistrer sous" data-i18n-en-html="💾 Save as" data-i18n-jp-html="💾 名前を付けて保存">💾 Save as</h3>
+ <ul>
+  <li data-i18n-fr-html="La popin propose un nom : celui du projet s’il existe déjà, sinon un nom construit à partir du format, du nombre de pages et de la date (mesuré : superprint-210x297-0p-20261005). Une ligne sous le champ montre le nom de fichier complet, et elle suit la frappe." data-i18n-en-html="The dialog suggests a name: the project’s own name if it already has one, otherwise a name built from the format, the page count and the date (measured: superprint-210x297-0p-20261005). A line under the field shows the full file name, and it follows what you type." data-i18n-jp-html="ダイアログは名前を提案します。既にプロジェクト名があればそれを使い、なければ判型・ページ数・日付から組み立てます（実測：superprint-210x297-0p-20261005）。欄の下に完全なファイル名が表示され、入力に追随します。">The dialog suggests a name: the project’s own name if it already has one, otherwise a name built from the format, the page count and the date (measured: superprint-210x297-0p-20261005). A line under the field shows the full file name, and it follows what you type.</li>
+  <li data-i18n-fr-html="Entrée écrit le fichier avec le nom choisi — mesuré : le téléchargement porte exactement affiche-salon-2026.sp. Échap ferme la popin et N’ÉCRIT RIEN (mesuré : aucun téléchargement). Les caractères interdits par les systèmes de fichiers sont remplacés par un tiret bas, et le nom est ramené à 120 signes." data-i18n-en-html="Enter writes the file with the chosen name — measured: the download is exactly affiche-salon-2026.sp. Escape closes the dialog and WRITES NOTHING (measured: no download at all). Characters forbidden by file systems are replaced by an underscore, and the name is capped at 120 characters." data-i18n-jp-html="Enter でその名前のファイルを書き出します。実測ではダウンロード名は affiche-salon-2026.sp そのものでした。Escape は閉じるだけで何も書き出しません（実測：ダウンロードなし）。ファイルシステムで禁止される文字はアンダースコアに置換し、名前は120文字までに収めます。">Enter writes the file with the chosen name — measured: the download is exactly affiche-salon-2026.sp. Escape closes the dialog and WRITES NOTHING (measured: no download at all). Characters forbidden by file systems are replaced by an underscore, and the name is capped at 120 characters.</li>
+  <li data-i18n-fr-html="Le nom accepté est retenu et reproposé à l’enregistrement suivant (mesuré : la popin se rouvre avec affiche-salon-2026), et la popin de choix de destination se referme pour ne jamais empiler deux fenêtres. Si la page qui héberge l’éditeur n’a pas la popin, l’enregistrement se fait comme avant : on n’empêche jamais d’enregistrer." data-i18n-en-html="The accepted name is remembered and suggested again on the next save (measured: the dialog reopens with affiche-salon-2026), and the destination dialog closes so two windows never pile up. If the page hosting the editor has no dialog, the save happens as before: saving is never blocked." data-i18n-jp-html="採用した名前は記憶され、次の保存時に再提案されます（実測：affiche-salon-2026 で開きました）。保存先の選択ダイアログは閉じられ、二重に開くことはありません。エディタを載せているページにダイアログがなければ、従来どおり保存します（保存を妨げることはありません）。">The accepted name is remembered and suggested again on the next save (measured: the dialog reopens with affiche-salon-2026), and the destination dialog closes so two windows never pile up. If the page hosting the editor has no dialog, the save happens as before: saving is never blocked.</li>
+ </ul>
+
+ <h3 data-i18n-fr-html="ℹ️ Périmètre" data-i18n-en-html="ℹ️ Scope" data-i18n-jp-html="ℹ️ 対象範囲">ℹ️ Scope</h3>
+ <ul>
+  <li data-i18n-fr-html="Application (app/index.html et app/JS/main.js) dans les DEUX arborescences, plus les fichiers de version habituels. Le studio et le moteur ROCK 1 ne changent pas. Le paquet local (sp213-local.zip) est reconstruit à cette version et le cache du service worker est renouvelé." data-i18n-en-html="Application (app/index.html and app/JS/main.js) in BOTH trees, plus the usual version files. The studio and the ROCK 1 engine do not change. The local package (sp213-local.zip) is rebuilt at this version and the service worker cache is renewed." data-i18n-jp-html="両ツリーのアプリ（app/index.html と app/JS/main.js）と通常のバージョンファイル。スタジオと ROCK 1 エンジンは変更なし。ローカルパッケージ（sp213-local.zip）を再構築し、Service Worker のキャッシュを更新します。">Application (app/index.html and app/JS/main.js) in BOTH trees, plus the usual version files. The studio and the ROCK 1 engine do not change. The local package (sp213-local.zip) is rebuilt at this version and the service worker cache is renewed.</li>
+ </ul>
+</article>
 
 <!-- ===== SUPER PRINT v1.7.601 — les CAPSULES DES MOTS RECONNUS arrivent dans la boite de prompt ET sur la pre-home (surlignage en place, capsule discrete avec les options qui reecrivent le mot), le « + » des conversations repart sur la pre-home, et les deux posters ne sont plus noirs sur noir (contraste mesure 1,01 avant, 18,88 apres) ===== -->
 
