@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.601`** — 4 octobre 2026
+> **Dernière version : `1.7.602`** — 4 octobre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,19 +10,19 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.601` |
+| Version app (affichée) | `1.7.602` |
 | Pastille du colophon (`index.html` **et** `help-us.html`, haut **gauche**) | `vX.Y.Z` dans `<span class="brand-ver">` — 1 occurrence par page (**4 fichiers** avec les 2 arbres) |
-| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.601-capsules-mots-clefs` |
-| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261005-v601-capsules-mots-clefs` (JS) · `?v=20261013-v543-grille-rapide-ia` (CSS) |
-| Badge preview (`spVersionBadge`) | `v1.7.601` — 5 marqueurs : commentaire, `title` (`JS v601`), `data-sp-js="v601"`, `data-sp-sw`, texte |
-| Splash screen | `1.7.601` |
-| Onboarding | `LAYOUT EDITOR — V 1.7.601` + `V 1.7.601 \| 09 2026` |
-| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.601` |
-| Documentation (racine **et** `app/`) | `v1.7.601` (pastille + pieds de page datés + 214 numéros de ligne) |
-| `api.html` (pastille `.version`) | `v1.7.601` |
-| `version.txt` | `1.7.601` |
-| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.601 (September 2026)` |
-| `package.json` + `package-lock.json` (sp213-local) | `1.7.601` |
+| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.602-enregistrer-sous` |
+| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261005-v602-enregistrer-sous` (JS) · `?v=20261013-v543-grille-rapide-ia` (CSS) |
+| Badge preview (`spVersionBadge`) | `v1.7.602` — 5 marqueurs : commentaire, `title` (`JS v602`), `data-sp-js="v602"`, `data-sp-sw`, texte |
+| Splash screen | `1.7.602` |
+| Onboarding | `LAYOUT EDITOR — V 1.7.602` + `V 1.7.602 \| 09 2026` |
+| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.602` |
+| Documentation (racine **et** `app/`) | `v1.7.602` (pastille + pieds de page datés + 214 numéros de ligne) |
+| `api.html` (pastille `.version`) | `v1.7.602` |
+| `version.txt` | `1.7.602` |
+| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.602 (September 2026)` |
+| `package.json` + `package-lock.json` (sp213-local) | `1.7.602` |
 | Lanceur npm (`superprint-npm/package.json`) | `1.0.110` (version **indépendante**, voir plus bas) |
 
 > ⚠️ Trois fichiers sont restés en arrière pendant des releases sans que rien ne le signale :

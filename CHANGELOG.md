@@ -9,6 +9,22 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.602] — 2026-10-05
+
+_Enregistrer sous : le nom du document est demandé AVANT d’écrire, et annuler n’écrit rien_
+
+### Added — popin « Enregistrer sous » (application)
+- Le bouton **Enregistrer** ouvre une popin de nommage : le nom proposé est celui du **projet** s’il existe, sinon un nom construit (**format, pages, date**) — mesuré : `superprint-210x297-0p-20261005`.
+- Une ligne sous le champ affiche le **nom de fichier complet** et **suit la frappe** (mesuré : `Nom du fichier : affiche-salon-2026.sp`).
+- **Entrée** écrit le fichier avec le nom choisi — mesuré : le téléchargement porte exactement **`affiche-salon-2026.sp`**. **Échap** ferme la popin et **n’écrit rien** (mesuré : aucun téléchargement).
+- Les caractères interdits par les systèmes de fichiers sont remplacés par un tiret bas ; le nom est ramené à **120 signes**. Le nom accepté est **retenu et reproposé** (mesuré : la popin se rouvre avec `affiche-salon-2026`).
+- La popin de **choix de destination** se referme pour ne jamais empiler deux fenêtres ; si la page hôte n’a pas la popin, l’enregistrement se fait comme avant (on n’empêche jamais d’enregistrer).
+
+### Vérification
+- Banc `_banc_nom_602.cjs` : application réelle (`app/index.html`), vrai `window.saveProjectSP()` du bouton Enregistrer, téléchargements capturés par le navigateur. Cinq mesures : popin visible, nom proposé, suivi de la frappe, fichier écrit au nom choisi, annulation sans écriture, nom retenu.
+
+---
+
 ## [1.7.601] — 2026-10-05
 
 _Le studio montre les mots qu’il a compris (capsules dans la boîte de prompt et sur la pré-home), le « + » repart sur la pré-home, et les posters ne sont plus noirs sur noir_
