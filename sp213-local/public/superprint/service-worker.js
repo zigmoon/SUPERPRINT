@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.599-zone-texte-retraits';
+const CACHE_NAME = 'superprint-shell-v1.7.600-poster-tons-directs';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

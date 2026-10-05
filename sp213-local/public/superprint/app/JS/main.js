@@ -2197,6 +2197,42 @@ function _spAssignObjectsIfChanged(pageObj, newStr) {
     if (pageObj.objects !== newStr) pageObj.objects = newStr;
 }
 
+/* ⚡ v1.7.600 — _SP_RESTAURATION_CIBLEE_602 (1/5) : SIGNATURE DE MISE EN PAGE.
+   Un repère de synchronisation n'est valable que si la mise en page n'a pas bougé :
+   changer le format, le fond perdu, les marges ou le mode simple/double change les
+   repères et le découpage des planches — on ne veut alors RIEN sauter. */
+function _spSignatureMiseEnPage() {
+    try {
+        return [pageFormat.width, pageFormat.height, bleed, viewMode,
+                (typeof spMargesMm === 'function' ? JSON.stringify(spMargesMm()) : '')].join('|');
+    } catch (_) { return 'x'; }
+}
+
+/* ⚡ _SP_RESTAURATION_CIBLEE_602 (2/5) : REPÈRE DE SYNCHRONISATION D'UNE PLANCHE.
+   Chaque canvas garde l'INSTANCE de la chaîne pages[i].objects qu'il affiche.
+   Grâce à _spAssignObjectsIfChanged, une planche inchangée garde la même instance
+   d'un état d'historique à l'autre : si le repère pointe sur l'instance à restaurer,
+   la planche est déjà exacte — inutile de la vider puis de la relire. */
+function _spMarquerPlanche(canvas, pageIndex) {
+    try {
+        if (!canvas) return;
+        const b = canvas.bleedInfo || {};
+        /* ⚠️ SÉCURITÉ (relu en audit) : saveAllPages (mode simple) écrit dans
+           pages[index] (index du TABLEAU de canvas) alors que la restauration relit
+           canvases[i].bleedInfo.pageIndex. Les deux coïncident aujourd'hui, mais s'ils
+           divergeaient, ce repère ferait croire qu'une planche est à jour alors qu'elle
+           en affiche une autre — une annulation laisserait alors un contenu figé.
+           On ne pose donc un repère que si le canvas déclare bien afficher la planche
+           attendue ; sinon on efface (un rechargement de trop ne fait aucun dégât). */
+        if (b.pageIndex !== undefined && b.pageIndex !== pageIndex) { _spDemarquerPlanche(canvas); return; }
+        canvas._spMarqueObj = (pages && pages[pageIndex]) ? pages[pageIndex].objects : undefined;
+        canvas._spMarqueSig = _spSignatureMiseEnPage();
+    } catch (_) {}
+}
+function _spDemarquerPlanche(canvas) {
+    try { if (canvas) { canvas._spMarqueObj = undefined; canvas._spMarqueSig = undefined; } } catch (_) {}
+}
+
 // 🛡️ FIX 2026-05-08 (v1.7.110) : copier/coller NE DOIT PAS modifier l'original.
 //   Bug rapporté : après Ctrl+C / Ctrl+V d'une image (ou typo, ou objet),
 //   l'image source bouge légèrement et rétrécit. Causes possibles : Fabric
@@ -2883,6 +2919,64 @@ let isDragging = false;
 let rulersVisible = false;
 let guidesVisible = false;
 let _isRenderingAllPages = false; // Guard: empêche saveState pendant renderAllPages (async)
+
+/* ⚠️ v1.7.600 — _SP_SAVE_FIABLE_602 : ANTI-SILENCE POUR LA MISE EN PAGE.
+   Ce drapeau peut rester bloqué à true (fin de reconstruction perdue, exception dans un
+   callback…). MESURÉ sur un document de 6 pages : il restait vrai, la sauvegarde était
+   jetée SANS UN MOT et l'historique ne se remplissait plus jamais — donc Ctrl+Z sans
+   effet, sans aucune explication pour l'utilisateur. On le surveille et on le libère,
+   avec un bandeau VISIBLE (non bloquant), comme le fait déjà le garde-fou de 10 s de la
+   restauration d'historique. */
+let _spRenderAllPagesDepuis = 0;
+function spAlerteSauvegarde(message) {
+    try {
+        let b = document.getElementById('spAlerteSauvegarde');
+        if (!b) {
+            b = document.createElement('div');
+            b.id = 'spAlerteSauvegarde';
+            b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:2147483000;' +
+                'background:#1d1d1f;color:#fff;padding:12px 18px;border-radius:8px;' +
+                'font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;max-width:min(560px,92vw);text-align:center;' +
+                'box-shadow:0 8px 28px rgba(0,0,0,.35);display:none;';
+            (document.body || document.documentElement).appendChild(b);
+        }
+        b.textContent = message;
+        b.style.display = 'block';
+        if (b._spTimer) clearTimeout(b._spTimer);
+        b._spTimer = setTimeout(function () { try { b.style.display = 'none'; } catch (_) {} }, 14000);
+    } catch (_) {}
+}
+window.spAlerteSauvegarde = spAlerteSauvegarde;
+let _spRenderAverti = false;
+setInterval(function () {
+    try {
+        if (_isRenderingAllPages) {
+            /* Machine modeste : rebâtir les planches d'un gros document peut LÉGITIMEMENT
+               durer longtemps. On ne libère donc rien à 12 s — on prévient, et on continue
+               d'attendre (les modifications sont mises de côté, pas perdues). */
+            if (!_spRenderAllPagesDepuis) { _spRenderAllPagesDepuis = Date.now(); return; }
+            const _duree602 = Date.now() - _spRenderAllPagesDepuis;
+            const _fr = !(typeof currentLanguage !== 'undefined' && currentLanguage === 'en');
+            if (_duree602 > 12000 && !_spRenderAverti) {
+                _spRenderAverti = true;
+                spAlerteSauvegarde(_fr
+                    ? 'SuperPrint : la mise en page prend plus de temps que prévu. Vos modifications sont conservées et seront enregistrées dès que possible.'
+                    : 'SuperPrint: page layout is taking longer than expected. Your changes are kept and will be saved as soon as possible.');
+            }
+            /* 45 s : au-delà, la reconstruction ne peut plus être en cours (le garde-fou de
+               la restauration d'historique, lui, est déjà à 10 s). On libère, et on prévient. */
+            if (_duree602 > 45000) {
+                _spRenderAllPagesDepuis = 0;
+                _spRenderAverti = false;
+                _isRenderingAllPages = false;
+                console.warn('[SP] _isRenderingAllPages libéré de force après 45 s (mise en page bloquée).');
+                spAlerteSauvegarde(_fr
+                    ? 'SuperPrint : la mise en page semblait bloquée ; elle a été interrompue pour ne pas empêcher l\'enregistrement de votre travail. Celui-ci est rattrapé — vous pouvez continuer.'
+                    : 'SuperPrint: page layout appeared stuck and was interrupted so your work could still be saved. It has been caught up — you can continue.');
+            }
+        } else { _spRenderAllPagesDepuis = 0; _spRenderAverti = false; }
+    } catch (_) {}
+}, 2000);
 let _isAddingFromAsset = false; // Guard: empêche double saveState lors d'ajout depuis Assets
 
 // ⚡ PERFORMANCE: Debounced saveState — évite de sérialiser toutes les pages à chaque micro-action
@@ -2890,19 +2984,27 @@ let _saveStateTimer = null;
 let _lastSaveAction = '';
 function debouncedSaveState(action) {
     // GUARD: Ne pas planifier de sauvegarde pendant une restauration ou reconstruction
-    if (_isRestoringState || _isRenderingAllPages || _isAddingFromAsset) return;
+    /* ⚠️ _SP_SAVE_FIABLE_602 : ici aussi on perdait la modification EN SILENCE.
+       _isAddingFromAsset reste un abandon VOULU (le chemin d'ajout depuis la
+       bibliothèque appelle saveState lui-même : le différer créerait un doublon).
+       Pour les deux autres drapeaux, on DIFFÈRE. */
+    if (_isRestoringState || _isRenderingAllPages) { _spSaveDiffere(action); return; }
+    if (_isAddingFromAsset) return;
     _lastSaveAction = action || _lastSaveAction;
     if (_saveStateTimer) clearTimeout(_saveStateTimer);
     // 🆕 v1.7.174 — Debounce adaptatif : 150ms pour les actions légères, 500ms pour les lourdes
     var delay = (action === 'Objet modifié' || action === 'Déplacement') ? 150 : 500;
     _saveStateTimer = setTimeout(() => {
         _saveStateTimer = null;
-        if (_isRestoringState || _isRenderingAllPages || _isAddingFromAsset) {
-            _lastSaveAction = '';
-            return;
-        }
-        if (typeof saveState === 'function') saveState(_lastSaveAction);
+        /* ⚠️ _SP_SAVE_FIABLE_602 : C'ÉTAIT ICI LA PERTE PRINCIPALE. Une reconstruction de
+           planches démarrée pendant les 150/500 ms de temporisation faisait jeter la
+           modification, sans un mot : l'historique restait figé et « Ctrl+Z ne fait
+           rien ». On DIFFÈRE (rejeu dès que tout est retombé) au lieu de perdre. */
+        const _action602 = _lastSaveAction;
         _lastSaveAction = '';
+        if (_isRestoringState || _isRenderingAllPages) { _spSaveDiffere(_action602); return; }
+        if (_isAddingFromAsset) return;
+        if (typeof saveState === 'function') saveState(_action602);
     }, delay);
 }
 
@@ -2938,19 +3040,51 @@ window.flushPendingSaveState = flushPendingSaveState;
 let _spSaveDiffereTimer = null;
 let _spSaveDiffereAction = '';
 let _spSaveDiffereEssais = 0;
+/* ⚠️ _SP_SAVE_FIABLE_602 (relu en audit) : TOUTE ANNULATION/RESTAURATION INVALIDE LES
+   SAUVEGARDES EN ATTENTE. restoreState annulait la temporisation de 150/500 ms mais
+   pas celle-ci : une sauvegarde différée pendant une mise en page pouvait rejouer juste
+   APRÈS le Ctrl+Z, pousser un état identique au contenu restauré (Ctrl+Z « sans effet »)
+   et jeter la pile de rétablissement. Chaque attente retient donc l'ère de restauration
+   en cours ; si l'ère a changé, l'attente est abandonnée au lieu d'être rejouée. */
+let _spRestoreEpoch = 0;
+let _spSaveDiffereEpoque = 0;
 function _spSaveDiffere(action) {
     _spSaveDiffereAction = action || _spSaveDiffereAction || 'Modification';
     if (_spSaveDiffereTimer) return;          /* une seule attente en vol : la plus récente gagne */
     _spSaveDiffereEssais = 0;
+    _spSaveDiffereEpoque = _spRestoreEpoch;
     const tenter = function () {
         _spSaveDiffereTimer = null;
-        const enChargement = (typeof canvases !== 'undefined') && canvases && canvases.some(c => c && c._isLoading);
+        /* ⚠️ _SP_SAVE_FIABLE_602 (relu en audit) : une annulation/restauration est passée
+           par là → le contenu des planches a été remplacé. Rejouer maintenant pousserait un
+           état identique au contenu restauré et jetterait le rétablissement : on abandonne.
+           Ce n'est PAS une perte : l'action en attente portait sur un contenu qui n'existe
+           plus, et le contenu restauré est déjà, lui, dans l'historique. */
+        if (_spRestoreEpoch !== _spSaveDiffereEpoque) {
+            console.warn('[SP] Sauvegarde différée abandonnée : une annulation est survenue entre-temps.');
+            _spSaveDiffereAction = '';
+            return;
+        }
+        /* ⚠️ _SP_SAVE_FIABLE_602 : on attend AUSSI la fin d'une reconstruction de planches
+           et d'une restauration d'historique. MESURÉ : sans cela, saveState sortait en
+           silence pendant ces phases et l'historique restait figé (Ctrl+Z sans effet).
+           ANTI-BOUCLE : la reprise ci-dessous n'appelle saveState QUE lorsque tous les
+           drapeaux sont retombés ; elle ne peut donc pas se re-différer elle-même. */
+        const _enChargementPlanche = (typeof canvases !== 'undefined') && canvases && canvases.some(c => c && c._isLoading);
+        const enChargement = _enChargementPlanche || !!_isRenderingAllPages || !!_isRestoringState;
         if (enChargement) {
-            if (_spSaveDiffereEssais++ < 200) {          /* ~20 s de patience */
+            if (_spSaveDiffereEssais++ < 600) {          /* ~60 s de patience (12 s suffisent au surveillant) */
                 _spSaveDiffereTimer = setTimeout(tenter, 100);
                 return;
             }
-            console.warn('[SP] Sauvegarde différée abandonnée : une planche n\'a jamais fini de charger.');
+            console.warn('[SP] Sauvegarde différée abandonnée : une phase de mise en page n\'a jamais fini.');
+            try {
+                if (typeof window.spAlerteSauvegarde === 'function') {
+                    window.spAlerteSauvegarde((typeof currentLanguage !== 'undefined' && currentLanguage === 'en')
+                        ? 'SuperPrint: your latest changes could not be saved (a layout operation never finished). Press Ctrl+S to avoid losing work.'
+                        : 'SuperPrint : vos dernières modifications n\'ont pas pu être enregistrées (une mise en page ne s\'est jamais terminée). Faites Ctrl+S pour ne rien perdre.');
+                }
+            } catch (_) {}
             _spSaveDiffereAction = '';
             return;
         }
@@ -3225,6 +3359,115 @@ function getPageCenter(canvas) {
 
 let customFonts = [];
 let clipboard = null;
+
+/* ═══ _SP_PRESSE_PAPIER_PARTAGE_603 — LE COPIER/COLLER ENTRE ONGLETS ═══
+   POURQUOI CE BLOC. Le presse-papier ci-dessus est une variable JavaScript de la page :
+   chaque onglet a la sienne, et un onglet neuf démarre donc à null. Le collage commence
+   par « if (activeCanvas && clipboard) » : il ne faisait strictement rien, sans message.
+   Ce n'est pas une restriction du navigateur — deux onglets de la même origine partagent
+   localStorage. On y range donc une forme sérialisée du presse-papier à chaque copie, et
+   on la reconstruit dès que l'onglet reprend le focus : le Ctrl+V existant s'exécute
+   alors normalement, sans toucher à sa logique (paires, multi-sélection, textes chaînés,
+   anti-dérive des sources, décalage progressif des collages…).
+   La reconstruction utilise fabric.util.enlivenObjects — le chemin d'ouverture d'un .sp —
+   donc toutes les propriétés personnalisées survivent. */
+const SP_PRESSE_PAPIER_CLE = 'sp213_presse_papier';
+const SP_PRESSE_PAPIER_MAX = 4500000;   /* ~4,5 Mo : marge sous le quota habituel de 5 Mo */
+let _spPressePapierTs = 0;              /* horodatage du presse-papier EN MÉMOIRE */
+let _spPressePapierAverti = false;
+
+function _spPressePapierSerialiser(v) {
+    try {
+        if (!v) return null;
+        const _un = (o) => (o && typeof o.toObject === 'function') ? o.toObject(SP_CUSTOM_PROPS) : null;
+        if (v.__spMultiClipboard) {
+            const objs = (v.clones || []).map(_un).filter(Boolean);
+            return objs.length ? { v: 1, ts: Date.now(), kind: 'multi', objs: objs } : null;
+        }
+        if (v.__spPairClipboard) {
+            const a = _un(v.shapeClone), b = _un(v.textClone);
+            return (a && b) ? { v: 1, ts: Date.now(), kind: 'pair', objs: [a, b] } : null;
+        }
+        const o = _un(v);
+        return o ? { v: 1, ts: Date.now(), kind: 'single', objs: [o] } : null;
+    } catch (_) { return null; }
+}
+
+/* Remplace la variable du presse-papier ET publie sa version partageable. */
+function _spPressePapierMemoriser(v) {
+    clipboard = v;
+    _spPressePapierTs = Date.now();
+    try {
+        /* Garde-fou de COÛT : inutile de sérialiser une sélection qui dépassera la réserve
+           partagée (elle ferait attendre le Ctrl+C pour rien). On l'écarte avant.
+           Le presse-papier de l'onglet, lui, n'est pas touché. */
+        const _objets = v.__spMultiClipboard ? (v.clones || [])
+            : (v.__spPairClipboard ? [v.shapeClone, v.textClone] : [v]);
+        const _tropLourd = _objets.length > 80 || _objets.some(function (o) {
+            return !!(o && o.type === 'image' && typeof o.src === 'string' && o.src.length > 1200000);
+        });
+        if (_tropLourd) {
+            try { localStorage.removeItem(SP_PRESSE_PAPIER_CLE); } catch (_) {}
+            return v;
+        }
+        const d = _spPressePapierSerialiser(v);
+        if (!d) return v;
+        const s = JSON.stringify(d);
+        if (s.length > SP_PRESSE_PAPIER_MAX) {
+            /* Sélection trop lourde pour être partagée (images) : on efface la réserve
+               périmée pour ne pas coller un vieux contenu, et on continue normalement. */
+            try { localStorage.removeItem(SP_PRESSE_PAPIER_CLE); } catch (_) {}
+            return v;
+        }
+        localStorage.setItem(SP_PRESSE_PAPIER_CLE, s);
+    } catch (e) {
+        if (!_spPressePapierAverti) {
+            _spPressePapierAverti = true;
+            console.warn('[SP] presse-papier partagé indisponible (stockage plein ou navigation privée) : le copier/coller reste local à cet onglet.', e);
+        }
+    }
+    return v;
+}
+
+/* Reconstruit le presse-papier depuis la réserve partagée (autre onglet). */
+function _spPressePapierRecuperer() {
+    try {
+        if (typeof fabric === 'undefined' || !fabric.util || typeof fabric.util.enlivenObjects !== 'function') return;
+        let brut = null;
+        try { brut = localStorage.getItem(SP_PRESSE_PAPIER_CLE); } catch (_) { return; }
+        if (!brut) return;
+        let d = null;
+        try { d = JSON.parse(brut); } catch (_) { return; }
+        if (!d || !d.objs || !d.objs.length) return;
+        /* Le presse-papier en mémoire est PRIORITAIRE : il n'est remplacé que par une
+           copie faite ailleurs et plus récente (le dernier copié est le dernier collé). */
+        if (clipboard && _spPressePapierTs >= (d.ts || 0)) return;
+        fabric.util.enlivenObjects(d.objs, function (objs) {
+            try {
+                if (!objs || !objs.length) return;
+                if (d.kind === 'pair' && objs.length >= 2) {
+                    clipboard = { __spPairClipboard: true, shapeClone: objs[0], textClone: objs[1] };
+                } else if (d.kind === 'multi') {
+                    clipboard = { __spMultiClipboard: true, clones: objs };
+                } else {
+                    clipboard = objs[0];
+                }
+                _spPressePapierTs = d.ts || Date.now();
+            } catch (_) {}
+        }, null);
+    } catch (_) {}
+}
+window.spPressePapier = { memoriser: _spPressePapierMemoriser, recuperer: _spPressePapierRecuperer };
+
+/* Reprise : au démarrage (un onglet neuf n'a rien en mémoire) et dès que l'onglet
+   reprend le focus ou redevient visible (c'est le moment où l'on vient coller). */
+try { setTimeout(function () { _spPressePapierRecuperer(); }, 2500); } catch (_) {}
+try { window.addEventListener('focus', function () { _spPressePapierRecuperer(); }); } catch (_) {}
+try {
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) _spPressePapierRecuperer();
+    });
+} catch (_) {}
 let colorProfile = null;
 
 // ══════════════════════════════════════════════════════════════════════
@@ -14042,6 +14285,11 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
 
         function renderAllPages() {
     const container = document.getElementById('pagesContainer');
+    /* ⚡ _SP_RESTAURATION_CIBLEE_602 : reconstruction COMPLÈTE des planches → les repères
+       de synchronisation ne sont plus garantis, on les efface TOUS. Coût réel : une
+       planche de plus à relire lors de la prochaine annulation ; en échange, il est
+       impossible qu'une planche soit laissée en arrière. */
+    try { canvases.forEach(function (cc) { _spDemarquerPlanche(cc); }); } catch (_) {}
     
     // FIX ACCUMULATION: Incrémenter l'époque de rendu pour invalider les setTimeout en vol
     if (!window._renderEpoch) window._renderEpoch = 0;
@@ -14849,6 +15097,16 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             
         };
         upperCanvas.addEventListener('mousedown', canvas._spShiftClickHandler, true); // Capture phase
+
+        /* 🆕 v1.7.600 — _SP_LASSO_SHIFT_600 : SÉLECTION D'AVANT LE LASSO, PRISE AU PLUS TÔT.
+           MESURÉ : dans 'mouse:down', Fabric a DÉJÀ vidé la sélection (relevé « actifs=[] »
+           alors que deux objets étaient sélectionnés) — la référence y était donc toujours
+           vide et le Shift ne pouvait rien basculer. On la photographie ici, en phase de
+           CAPTURE DOM, donc avant tout traitement de Fabric : c'est l'état voulu par
+           l'utilisateur (ce qui était sélectionné avant de commencer le geste). */
+        upperCanvas.addEventListener('mousedown', function () {
+            try { canvas.__spSelAvant = (canvas.getActiveObjects() || []).slice(); } catch (_) { canvas.__spSelAvant = []; }
+        }, true);
     }
     
     // Mettre à jour la page active dès qu'on clique sur un canvas
@@ -14865,6 +15123,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             const ptr = canvas.getPointer(e.e);
             canvas.__spSelectionStart = { x: ptr.x, y: ptr.y };
         } catch (_) {}
+
         
         if (!target) {
             if (!canvas.selection) canvas.selection = true;
@@ -15687,9 +15946,38 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                     //   "Objet modifié" pour éviter les doublons dans l'historique.
                     if (obj && obj._spPreDragSaved) {
                         obj._spPreDragSaved = false;
-                        // Remplacer le dernier état "Déplacement" par "Objet modifié"
-                        if (history.length > 0 && historyStep >= 0) {
-                            history[historyStep].action = 'Objet modifié';
+                        /* ⚠️ v1.7.600 — _SP_MAJ_ETAT_GLISSEMENT_602 : ON ÉCRIT ENFIN LE
+                           CONTENU D'APRÈS LE GLISSEMENT.
+                           MESURÉ (banc, document de 6 planches, journal instrumenté) : le
+                           mouse:down pousse un instantané d'AVANT le déplacement, puis ce
+                           bloc se contentait de RENOMMER cette entrée. L'entrée courante
+                           gardait donc la position d'AVANT alors que la planche montrait
+                           celle d'APRÈS → Ctrl+Z restaurait un état identique au document
+                           affiché : « Ctrl+Z ne fait rien », le déplacement ne revenait
+                           jamais. Vérifié identique sur la version 1.7.599 publiée : ce
+                           n'est pas une régression récente.
+                           On relit la composition réelle et on met à jour l'entrée
+                           EXISTANTE — toujours UN SEUL Ctrl+Z par geste (pas de doublon). */
+                        const _peutLire602 = !(_isRestoringState || _isRenderingAllPages ||
+                            (canvases && canvases.some(c => c && c._isLoading)));
+                        if (_peutLire602) {
+                            try {
+                                saveAllPages();
+                                window._spLastSaveAllPagesTime = Date.now();
+                                const _st602 = history[historyStep];
+                                if (_st602) {
+                                    _st602.pages = _clonePagesShared(pages);
+                                    _st602.textLinks = _spClone(textLinks);
+                                    _st602.action = 'Objet modifié';
+                                    _st602.timestamp = new Date().toLocaleTimeString('fr-FR');
+                                    _st602._currentPageIndex = currentPageIndex;
+                                }
+                            } catch (e) { console.warn('[SP] état après glissement :', e); }
+                        } else {
+                            /* Planche en cours de chargement : on ne peut pas relire la
+                               composition maintenant. La sauvegarde différée attend la fin
+                               du chargement puis rejoue — aucune modification perdue. */
+                            debouncedSaveState('Objet modifié');
                         }
                         updateHistoryPanel();
                     } else {
@@ -15960,6 +16248,9 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 
                 // Si on a dragué une zone suffisante (> 10px) - augmenté pour éviter les faux positifs
                 if (w > 10 && h > 10) {
+                    /* _SP_LASSO_SHIFT_600 : Shift est lu AU RELÂCHER, comme Fabric et
+                       comme InDesign — l'appuyer pendant le geste suffit donc. */
+                    const _shiftFin = !!(e.e && e.e.shiftKey);
                     
                     const selLeft = Math.min(p1.x, p2.x);
                     const selTop = Math.min(p1.y, p2.y);
@@ -15998,7 +16289,82 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                     const missingObjects = allObjectsInZone.filter(o => !currentSelection.includes(o));
                     
                     
-                    if (missingObjects.length > 0 && currentSelection.length > 0) {
+                    /* 🆕 v1.7.600 — _SP_LASSO_SHIFT_600 : SHIFT = BASCULE (comme InDesign).
+                       MESURÉ AVANT : Shift + lasso sur des objets DÉJÀ sélectionnés les
+                       laissait sélectionnés (A+B → A+B), et un Shift + lasso mixte ne
+                       faisait qu'ajouter (A+B puis A+B+C+D → A+B+C+D au lieu de C+D).
+                       Fabric ne sait qu'ajouter ; on bascule donc nous-mêmes :
+                         sélectionné avant + dans la zone  → désélectionné ;
+                         hors zone                          → conservé ;
+                         dans la zone, pas sélectionné avant → ajouté. */
+                    const _avant600 = canvas.__spSelAvant || [];
+                    if (_shiftFin) {
+                        /* ⚠️ MESURÉ : la zone de ce bloc-là est recalculée avec une boîte
+                           ABSOLUE et recalculée. Un objet déjà groupé dans une
+                           activeSelection renvoie une boîte relative au GROUPE avec
+                           getBoundingRect() : A et B, sélectionnés, sortaient alors de la
+                           zone (le lasso ne les voyait plus) et le Shift ne pouvait pas
+                           les basculer. */
+                        let _zone600 = [];
+                        try {
+                            /* 1) Liste SANS DOUBLON. Un objet déjà groupé apparaît dans
+                               getActiveObjects() et peut aussi figurer dans getObjects() :
+                               le même objet entrait deux fois dans la sélection finale
+                               (mesuré : « A+B+D+D »). */
+                            const _liste600 = [];
+                            (canvas.getObjects() || []).concat(canvas.getActiveObjects() || []).forEach(function (o) {
+                                if (o && _liste600.indexOf(o) === -1) _liste600.push(o);
+                            });
+                            /* 2) Boîte ABSOLUE calculée à la main : getBoundingRect() reste
+                               relatif au groupe pour un objet déjà sélectionné (même avec
+                               (true, true)), ce qui faisait « sortir » A et B de la zone.
+                               calcTransformMatrix() inclut, lui, la transformation du groupe. */
+                            _zone600 = _liste600.filter(function (o) {
+                                if (!o.visible || !o.selectable || o.evented === false) return false;
+                                if (o.isMargin || o.isBleed || o.isGuide || o.isPage || o.isManualGuide || o.isTrimBox || o._isSpreadMirror) return false;
+                                let cx = null, cy = 0, hw = 0, hh = 0;
+                                try {
+                                    const m = o.calcTransformMatrix();
+                                    cx = m[4]; cy = m[5];
+                                    hw = Math.abs(o.width || 0) * Math.hypot(m[0], m[1]) / 2;
+                                    hh = Math.abs(o.height || 0) * Math.hypot(m[2], m[3]) / 2;
+                                } catch (_) {
+                                    let r = null;
+                                    try { r = o.getBoundingRect(true, true); } catch (_) { r = null; }
+                                    if (!r) return false;
+                                    cx = r.left + r.width / 2; cy = r.top + r.height / 2;
+                                    hw = r.width / 2; hh = r.height / 2;
+                                }
+                                if (cx === null) return false;
+                                return !(selRight < cx - hw || selLeft > cx + hw || selBottom < cy - hh || selTop > cy + hh);
+                            });
+                        } catch (_) { _zone600 = allObjectsInZone.slice(); }
+                        const _final600 = [];
+                        _avant600.forEach(function (o) {
+                            if (!_zone600.includes(o) && o.visible !== false && o.selectable) _final600.push(o);
+                        });
+                        _zone600.forEach(function (o) {
+                            if (!_avant600.includes(o)) _final600.push(o);
+                        });
+                        /* Trace de diagnostic (lue par les bancs et le support). */
+                        try {
+                            const _nm600 = function (o) { return o && (o.name || o.type); };
+                            window.__spDernierLasso600 = {
+                                avant: _avant600.map(_nm600),
+                                zone: _zone600.map(_nm600),
+                                final: _final600.map(_nm600)
+                            };
+                        } catch (_) {}
+                        try {
+                            canvas.discardActiveObject();
+                            if (_final600.length === 1) {
+                                canvas.setActiveObject(_final600[0]);
+                            } else if (_final600.length > 1) {
+                                canvas.setActiveObject(new fabric.ActiveSelection(_final600, { canvas: canvas }));
+                            }
+                            canvas.requestRenderAll();
+                        } catch (_) {}
+                    } else if (missingObjects.length > 0 && currentSelection.length > 0) {
                         // Ajouter les objets manquants à la sélection existante
                         
                         const newSelection = [...currentSelection, ...missingObjects];
@@ -16028,6 +16394,7 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             }
             // Reset le point de départ
             canvas.__spSelectionStart = null;
+            canvas.__spSelAvant = null;
         }
 
         const obj = canvas.getActiveObject();
@@ -18246,12 +18613,19 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             } catch(_) {}
             if (_spPerteMajeure(newObjects.length, existingUserCount)) {
                 console.warn('[saveAllPages] page=' + index + ' : refus d\'ecraser ' + existingUserCount + ' objets par ' + newObjects.length + ' (apercu incomplet, plus de la moitie perdue)');
+                /* _SP_RESTAURATION_CIBLEE_602 (3/5) : écriture REFUSÉE → le canvas ne
+                   correspond plus à pages[]. Effacer le repère, sinon une annulation
+                   croirait la planche à jour et ne la rechargerait pas. */
+                _spDemarquerPlanche(fabricCanvas);
             } else if (_hasPendingAsync && existingUserCount >= 2 && newObjects.length < existingUserCount - 1) {
                 console.warn('[saveAllPages] page=' + index + ' : refus d\'ecraser ' + existingUserCount + ' objets par ' + newObjects.length + ' (image asynchrone en cours, BUG 20 guard)');
+                _spDemarquerPlanche(fabricCanvas);
             } else if (newObjects.length > 0 || !pages[index].objects) {
                 _spAssignObjectsIfChanged(pages[index], JSON.stringify({ objects: newObjects }));
+                _spMarquerPlanche(fabricCanvas, index);
             } else if (!existingHasData) {
                 _spAssignObjectsIfChanged(pages[index], JSON.stringify({ objects: newObjects }));
+                _spMarquerPlanche(fabricCanvas, index);
             }
         });
     }
@@ -20901,10 +21275,14 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
 
         // OPTIMISATION: Utilisation de structuredClone pour de meilleures performances
         function saveState(action) {
-    // GUARD: Ne pas sauvegarder pendant une restauration (undo/redo)
-    if (_isRestoringState) return;
-    // GUARD: Ne pas sauvegarder pendant la reconstruction des canvases
-    if (_isRenderingAllPages) return;
+    /* ⚠️ v1.7.600 — _SP_SAVE_FIABLE_602 : ON NE JETTE PLUS UNE SAUVEGARDE.
+       MESURÉ (banc, document de 6 pages, avec ET sans images) : ces deux garde-fous
+       sortaient EN SILENCE, donc la modification n'entrait jamais dans l'historique —
+       le bouton Annuler restait grisé et « Ctrl+Z ne fait rien », sans aucun message.
+       On DIFFÈRE désormais (mêmes réessais que la sauvegarde différée, avertissement
+       visible en dernier recours) au lieu de perdre l'état. */
+    if (_isRestoringState) { if (typeof _spSaveDiffere === 'function') { _spSaveDiffere(action); return; } }
+    if (_isRenderingAllPages) { if (typeof _spSaveDiffere === 'function') { _spSaveDiffere(action); return; } }
     /* 🛡️ v1.7.574 — _SP_SAVE_DIFFERE_574 : AVANT, on sortait ici en silence.
        Conséquence mesurée : un objet ajouté depuis la bibliothèque d'assets pendant qu'une
        AUTRE planche finissait de charger n'était jamais écrit dans pages[] — le rendu suivant
@@ -20919,6 +21297,8 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
     saveAllPages();
     // ⚡ Tracker le timestamp pour éviter la re-sérialisation dans autoSave
     window._spLastSaveAllPagesTime = Date.now();
+
+
     
     if (historyStep < history.length - 1) {
         history = history.slice(0, historyStep + 1);
@@ -20984,7 +21364,9 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         // sans appeler saveAllPages() — à utiliser après renderAllPages() car les
         // canvases sont reconstruits de manière asynchrone (setTimeout).
         function saveStateFromPages(action) {
-    if (_isRestoringState) return;
+    /* ⚠️ _SP_SAVE_FIABLE_602 : même garde-fou silencieux ici (ajout / suppression /
+       duplication de page, changements de format…). On diffère au lieu de perdre. */
+    if (_isRestoringState) { if (typeof _spSaveDiffere === 'function') { _spSaveDiffere(action); return; } }
     
     if (historyStep < history.length - 1) {
         history = history.slice(0, historyStep + 1);
@@ -21061,6 +21443,11 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
         function restoreState(state) {
     // ⚡ Guard immédiat pour empêcher saveState pendant le debounce
     _isRestoringState = true;
+    /* ⚠️ _SP_SAVE_FIABLE_602 (relu en audit) : une restauration invalide toute sauvegarde
+       différée en attente — sinon elle se rejouerait après coup, ajouterait un état
+       identique au contenu restauré et jetterait la pile de rétablissement. */
+    _spRestoreEpoch++;
+    if (typeof _spSaveDiffereAnnuler === 'function') { try { _spSaveDiffereAnnuler(); } catch (_) {} }
     // Marque immediatement la nouvelle generation : tout callback d'un restore
     // anterieur deviendra orphelin et sera ignore.
     _restoreGeneration++;
@@ -21378,6 +21765,23 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
             const pageIndex = info.pageIndex !== undefined ? info.pageIndex : canvasIdx;
             
             if (!pages[pageIndex]) { onCanvasLoaded(); return; }
+
+            /* ⚡ _SP_RESTAURATION_CIBLEE_602 (4/5) : PLANCHES INCHANGÉES = RIEN À FAIRE.
+               pages[i].objects est immuable et son INSTANCE est préservée quand le contenu
+               n'a pas changé : si le repère du canvas pointe sur la même instance que
+               l'état à restaurer, la planche affiche déjà exactement la bonne chose.
+               On évite alors clear() + loadFromJSON + les restaurations de fin de
+               chargement (mesuré : 6 planches relues pour une seule modifiée).
+               Ce n'est pas une supposition : c'est l'identité de la chaîne. */
+            if (viewMode !== 'spread'
+                && fabricCanvas._spMarqueObj !== undefined
+                && fabricCanvas._spMarqueObj === pages[pageIndex].objects
+                && fabricCanvas._spMarqueSig === _spSignatureMiseEnPage()
+                && !fabricCanvas._isLoading) {
+                try { fabricCanvas.requestRenderAll(); } catch (_) {}
+                onCanvasLoaded();
+                return;
+            }
             
             // Retirer tous les objets existants (contenu + guides)
             fabricCanvas.clear();
@@ -21418,10 +21822,14 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                     clearTimeout(_loadJsonTimer);
                     fabricCanvas.renderOnAddRemove = true;
                     fabricCanvas._isLoading = false;
+                    /* _SP_RESTAURATION_CIBLEE_602 (5/5) : le canvas affiche maintenant
+                       exactement pages[pageIndex].objects → le repère est valable. */
+                    _spMarquerPlanche(fabricCanvas, pageIndex);
                     _postLoadCanvas(fabricCanvas, false);
                 });
             } else {
                 // Page vide — juste redessiner les guides
+                _spDemarquerPlanche(fabricCanvas);
                 drawMargins(fabricCanvas, width, height);
                 fabricCanvas.requestRenderAll();
                 onCanvasLoaded();
@@ -32036,7 +32444,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                             });
                         });
                         function _finishMultiCopy() {
-                            clipboard = { __spMultiClipboard: true, clones: clonedChildren.filter(Boolean) };
+                            clipboard = _spPressePapierMemoriser({ __spMultiClipboard: true, clones: clonedChildren.filter(Boolean) });
                             // Reconstruire la sélection visuelle
                             try {
                                 const newSel = new fabric.ActiveSelection(children, { canvas: activeCanvas });
@@ -32058,7 +32466,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                                 const _text = obj._spTextShapeMode ? obj : (_partner._spTextShapeMode ? _partner : obj);
                                 const _shape = (_text === obj) ? _partner : obj;
                                 let _sc = null, _tc = null, _pend = 2;
-                                const _mkPair = () => { clipboard = { __spPairClipboard: true, shapeClone: _sc, textClone: _tc }; };
+                                const _mkPair = () => { clipboard = _spPressePapierMemoriser({ __spPairClipboard: true, shapeClone: _sc, textClone: _tc }); };
                                 _shape.clone(function(c){ _sc = c; if (--_pend === 0) _mkPair(); }, SP_CUSTOM_PROPS);
                                 _text.clone(function(c){ _tc = c; if (--_pend === 0) _mkPair(); }, SP_CUSTOM_PROPS);
                                 return;
@@ -32069,7 +32477,7 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                         //   re-cloner directement (comme Alt+clic), car le double-
                         //   clone d'un objet orphelin corrompt les données de rendu.
                         obj.clone(function(cloned) {
-                            clipboard = cloned;
+                            clipboard = _spPressePapierMemoriser(cloned);
                             // Garder la ref vers la source DANS le clipboard
                             clipboard.__spSourceObj = obj;
                             clipboard.__spSourceCanvas = activeCanvas;
@@ -32561,7 +32969,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             });
                         });
                         function _finishMultiCut() {
-                            clipboard = { __spMultiClipboard: true, clones: clonedChildren.filter(Boolean) };
+                            clipboard = _spPressePapierMemoriser({ __spMultiClipboard: true, clones: clonedChildren.filter(Boolean) });
                             activeCanvas.discardActiveObject();
                             children.forEach(function(child) {
                                 try { activeCanvas.remove(child); } catch(_) {}
@@ -32575,7 +32983,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                     } else {
                         // 🛡️ FIX 2026-06-07 : clone direct SANS propsToInclude
                         obj.clone(function(cloned) {
-                            clipboard = cloned;
+                            clipboard = _spPressePapierMemoriser(cloned);
                             try { activeCanvas.remove(obj); } catch(_) {}
                             activeCanvas.discardActiveObject();
                             activeCanvas.requestRenderAll();
@@ -95056,7 +95464,7 @@ function initMobileTouchContextMenu() {
             //   (comme Alt+clic). Le filtrage pouvait omettre des propriétés
             //   géométriques → forme collée "toute petite".
             obj.clone(function(cloned) {
-                clipboard = cloned;
+                clipboard = _spPressePapierMemoriser(cloned);
             });
         } catch (_) {}
     };

@@ -9,6 +9,35 @@ All notable changes to **SuperPrint** — the web DTP application (`1.7.x`), the
 
 ---
 
+## [1.7.600] — 2026-10-04
+
+_Le studio applique vraiment ce qu'il annonce : tons directs posés sur les objets, flyer A5 et carte postale A6 en recto verso, presse-papier partagé entre onglets, annulation qui ne perd plus rien en silence_
+
+### Added — les tons directs sont réellement posés (Pantone, vernis, dorure)
+- Constat écrit dans le studio : « 0 occurrence de `_spSpotInk` dans tout le fichier ». Le moteur LISAIT « Pantone », « vernis sélectif », « dorure à chaud » et les ANNONÇAIT, mais **aucun objet** ne portait la marque que le studio d'impression lit pour produire une **calque de ton direct** : un fichier annoncé « Pantone » partait chez l'imprimeur **sans ton direct**.
+- `spGabTonsDirects()` marque désormais les objets réellement présents : l'accent du thème reçoit le Pantone (la référence écrite est reprise : « Pantone 485 C »), le titre reçoit la dorure, les aplats graphiques reçoivent le vernis. Mesuré sur une affiche A3 : titre marqué `#C9A227` « Dorure à chaud (foil) », aplat d'accent marqué « Pantone 485 C », deux aplats marqués « Vernis sélectif ».
+- Le vernis ne couvre plus le fond de page (mesuré : il était posé sur les deux demis de fond et un aplat de 361 × 489 mm, donc partout). Seuls les aplats sous 25 % de la page sont marqués — la mesure est faite dans l'unité des éléments (millimètres), pas dans les points du studio.
+- Ce qui n'est pas dans le document n'est pas inventé : le journal dit « compris mais non posé ». Les **traits de coupe** sont annoncés comme **option d'export** (ils ne vivent pas dans le document), avec le fond perdu réel.
+
+### Added — flyer A5 et carte postale A6, recto verso
+- **Formats du métier** posés quand la demande n'en donne aucun : carte postale → **A6** (105 × 148), flyer → **A5** (148 × 210). Mesuré : « flyer pour une soirée » sortait en A4. Le format est décidé **à la lecture de la demande**, pour que la phrase « Compris » dise le format réellement composé.
+- **Recto verso honoré partout** : la garde des grands formats (ROCK612) bloquait aussi une demande explicite — « flyer A5 recto verso » restait sur une page. Graphies reconnues en trois langues : `recto verso`, `recto-verso`, `R°V°`, `r° v°`, `rovo`, `double face`, `two-sided`, `both sides`, `両面` ; « recto seul », « r° seul », « one-sided », `片面` en gardent une.
+- **Verso d'une carte postale = son côté ADRESSE** : zone de message, **quatre lignes d'écriture**, cadre du timbre (avant : le verso d'une carte de visite — nom, fonction, coordonnées). Mesuré sur une carte A6 : lignes d'adresse de 57,8 à 96 mm, pas de 13,8 mm, cadre du timbre 21 × 17,2 mm. Le verso d'un flyer porte les informations (programme, contacts, explications).
+- **Mise en page du recto d'une carte postale** : la famille `cartepostale` n'en avait AUCUNE et tombait sur le repli `spGabP_affiche` (une carte postale sortait comme une affiche).
+
+### Added — deux pré-prompts « Poster » et « Poster premium »
+- En tête des **deux** listes (pré-home et barre de pastilles du studio) : fond créatif composé de motifs graphiques, contraste fort, titre géant, effet waouh. Le premium demande en plus dorure et vernis sélectif (démonstration des tons directs). Le tirage reste au moteur : chaque envoi tire une variante. Vérifié dans l'interface avec le moteur SP213 rock 1.0.
+
+### Fixed — l'annulation ne perd plus rien en silence
+- **Sauvegarde jetée sans un mot** : un `saveState` demandé pendant une restauration ou un rendu était abandonné (un document de 6 pages restait avec **une seule** entrée d'historique, l'annulation grisée plus de 26 s). La sauvegarde est maintenant **différée puis rejouée** (abandonnée proprement si une restauration survient entre-temps), avec une veille qui avertit à 12 s et libère à 45 s ; l'état du glissement enregistre la position d'**après** le déplacement.
+- **Restauration ciblée** : l'annulation ne recharge que les planches **modifiées** (signature de mise en page + marque par planche), au lieu de repeindre tout le document. Mesure : cinq Ctrl+Z sur 3 planches en 227 ms.
+- L'auto-sauvegarde n'est pas perturbée par ces reports (aucune boucle, aucun report rejoué indéfiniment).
+
+### Added — presse-papier partagé entre onglets
+- Ce n'était **pas** une restriction du navigateur : le presse-papier était une variable de la page. Le contenu est désormais partagé (même origine) et reconstruit à l'ouverture de l'onglet, au retour du focus et au changement d'onglet. Mesuré : 3 collages sur 3 (rectangle, texte de bloc, sélection de deux objets). Limites : autre origine, autre profil, fenêtre privée ; sélection d'images au-delà d'environ 4,5 Mo.
+
+---
+
 ## [1.7.591] — 2026-09-30
 
 _Le Studio IA livre une maquette sans trou : pagination en bas, plus de page vide, et le texte entre guillemets passe avant tout_
