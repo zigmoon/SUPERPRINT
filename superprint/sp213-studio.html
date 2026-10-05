@@ -8601,6 +8601,109 @@ function spRtfLayoutInfo(src) {
            suffit donc de la copier TELLE QUELLE pour qu'elle survive au trajet
            app -> studio -> app. Mesuré : 0 occurrence avant ce correctif. */
         if (o._spGabaritLibere) base._spGabaritLibere = true;
+        /* ══════════════════════════════════════════════════════════════════════════
+           🆕 _SP_SANS_PERTE_599 — LES CINQ FAMILLES QUE LE STUDIO PERDAIT.
+           Tout ce qui n'est pas recopié ici est définitivement perdu au retour :
+           les deux écrivains de .sp reconstruisent les objets à la main. On
+           transporte donc la DONNÉE BRUTE, sans l'interpréter, et c'est
+           spAppliquerReglagesTypo (passage UNIQUE des deux écrivains) qui la
+           réécrit. Aucun de ces blocs n'est obligatoire : si l'objet n'en porte
+           pas, le comportement est exactement celui d'avant.
+           ⚠️ Les copies sont DÉFENSIVES (JSON) et ne contiennent jamais de
+           _spOrig : le transport ne peut pas se récurser.
+           ══════════════════════════════════════════════════════════════════════════ */
+        try {
+          const _cloner = (v) => JSON.parse(JSON.stringify(v));
+          const _nb = (v) => (typeof v === 'number' && isFinite(v)) ? v : null;
+
+          /* 1. IMAGE MASQUÉE : marqueurs seuls — l'app refabrique le motif. */
+          if (o._isImageMask && typeof o._maskImageSourceURL === 'string' && o._maskImageSourceURL) {
+            base._spMasque = {
+              url: o._maskImageSourceURL,
+              mode: (typeof o._maskMode === 'string') ? o._maskMode : 'cover',
+              position: (typeof o._maskPosition === 'string') ? o._maskPosition : 'center',
+              ratioX: (_nb(o._maskPositionRatioX) !== null) ? o._maskPositionRatioX : 0.5,
+              ratioY: (_nb(o._maskPositionRatioY) !== null) ? o._maskPositionRatioY : 0.5,
+              zoom: (_nb(o._maskUserZoom) !== null) ? o._maskUserZoom : 1,
+              origFill: (typeof o._originalFill === 'string' && /^#/.test(o._originalFill)) ? o._originalFill : null,
+              origStroke: (typeof o._originalStroke === 'string' && /^#/.test(o._originalStroke)) ? o._originalStroke : null,
+              origStrokeWidth: (_nb(o._originalStrokeWidth) !== null) ? o._originalStrokeWidth : 0
+            };
+            /* L'aperçu du Studio a besoin d'une couleur simple (le motif Fabric
+               n'est pas représentable en mm) : on prend la couleur d'origine,
+               sinon le gris par défaut de l'app. L'app la REMPLACERA au
+               chargement par le motif reconstruit — elle n'est qu'un repli. */
+            if (!base.fill) base.fill = base._spMasque.origFill || '#cccccc';
+          }
+
+          /* 2. COINS ARRONDIS INDIVIDUELS / TRACÉ : la géométrie n'est pas
+                représentable en millimètres, on transporte le tracé tel quel. */
+          if (o.type === 'path' || o._spCornerRadii) {
+            if (Array.isArray(o.path) || o._spCornerRadii) {
+              base._spForme = {
+                path: Array.isArray(o.path) ? _cloner(o.path) : null,
+                pathOffset: (o.pathOffset && typeof o.pathOffset === 'object') ? { x: _nb(o.pathOffset.x) || 0, y: _nb(o.pathOffset.y) || 0 } : null,
+                corners: o._spCornerRadii ? _cloner(o._spCornerRadii) : null,
+                linked: (o._spCornersLinked !== false),
+                ow: _nb(o._spOrigWidth), oh: _nb(o._spOrigHeight),
+                fill: (typeof o.fill === 'string') ? o.fill : null,
+                stroke: (typeof o.stroke === 'string') ? o.stroke : null,
+                strokeWidth: (_nb(o.strokeWidth) !== null) ? o.strokeWidth : 0
+              };
+            }
+          }
+
+          /* 3. MODULE FORME/TEXTE : marqueurs + clipPath (local) + path (absolu).
+             ⚠️ RÉSERVÉ AUX OBJETS TEXTE — MESURÉ au banc d'aller-retour : un objet
+             `path` porte LUI AUSSI une propriété `path` (ses commandes de tracé).
+             Sans ce garde, la forme à coins arrondis recevait les marqueurs du
+             module et la restitution la transformait en TEXTE : la forme
+             disparaissait et l'app levait une erreur au chargement. */
+          const _estTexte = (t === 'text' || t === 'textbox' || t === 'i-text');
+          const _marqueTexte = !!(o._spTextShapeMode || o._isShapeClippedText || o._isCtxPathText);
+          if ((_estTexte && (_marqueTexte || o.path || o.clipPath)) || o._spShapeTextPairId) {
+            base._spFormeTexte = {
+              mode: (typeof o._spTextShapeMode === 'string') ? o._spTextShapeMode : null,
+              cfg: (o._spTextShapeCfg && typeof o._spTextShapeCfg === 'object') ? _cloner(o._spTextShapeCfg) : null,
+              pair: (typeof o._spShapeTextPairId === 'string') ? o._spShapeTextPairId : null,
+              genW: _nb(o._spGenShapeW),
+              inside: !!o._isShapeClippedText,
+              onPath: !!o._isCtxPathText,
+              clip: o.clipPath ? _cloner(o.clipPath) : null,
+              /* Le `path` d'un TEXTE seulement : pour un objet `path`, la propriété
+                 du même nom porte la géométrie et voyage dans `_spForme`. */
+              path: (_estTexte && o.path) ? _cloner(o.path) : null,
+              pathStartOffset: _nb(o.pathStartOffset),
+              pathSide: (typeof o.pathSide === 'string') ? o.pathSide : null,
+              pathAlign: (typeof o.pathAlign === 'string') ? o.pathAlign : null,
+              padding: _nb(o.padding),
+              /* Position ABSOLUE du bloc au moment de la capture : c'est elle qui
+                 permet de décaler le path si le Studio a bougé le texte. */
+              leftPx: _nb(o.left), topPx: _nb(o.top)
+            };
+          }
+
+          /* 4. PDF IMPORTÉ : identité de l'objet (les données du PDF ne sont
+                dans aucun fichier — cf. en-tête). */
+          if (o._spPdfImport) {
+            base._spPdfImport = {
+              page: _nb(o._spPdfPageNumber),
+              wmm: _nb(o._spPdfSourceWidthMM), hmm: _nb(o._spPdfSourceHeightMM),
+              mode: (typeof o._spPdfImportMode === 'string') ? o._spPdfImportMode : null,
+              recadrage: (typeof o._spPdfRecadrageMode === 'string') ? o._spPdfRecadrageMode : null,
+              type: (typeof o._spPdfContentType === 'string') ? o._spPdfContentType : null,
+              cle: (typeof o._spPdfArchiveKey === 'string') ? o._spPdfArchiveKey : null
+            };
+          }
+
+          /* 5. OBJET 3D : le modèle et la vue voyagent tels quels. */
+          if (o._sp3DSource && typeof o._sp3DSource === 'object') {
+            base._sp3D = {
+              source: _cloner(o._sp3DSource),
+              view: (o._sp3DView && typeof o._sp3DView === 'object') ? _cloner(o._sp3DView) : null
+            };
+          }
+        } catch (_) {}
         if (t === 'rect' || t === 'rectangle') {
           return Object.assign(base, { type: 'rectangle',
             width: Math.round(((o.width || 0) / MM_TO_PX) * 10) / 10,
@@ -26603,6 +26706,120 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
 
   function spAppliquerReglagesTypo(obj, el) {
     if (!obj || !el) return obj;
+    /* ══════════════════════════════════════════════════════════════════════════
+       🆕 _SP_SANS_PERTE_599 — RESTITUTION DES CINQ FAMILLES (cf. import).
+
+       C'est le passage UNIQUE des deux écrivains (buildSPFile ET elsToSPObjects) :
+       ce qui est réécrit ici survit donc aux DEUX portes de sortie.
+       • marqueurs : recopiés tels quels (masque, PDF importé, objet 3D,
+         module forme/texte) ;
+       • _spForme : la géométrie d'un tracé (coins arrondis individuels /
+         plume) REMPLACE l'objet construit — le Studio n'en fait qu'une image,
+         qui ne doit pas être publiée à la place de la forme ;
+       • clipPath : recopié tel quel (coordonnées locales, indépendant de la
+         position) ;
+       • path d'un texte « autour / sur le tracé » : recopié et DÉCALÉ du
+         déplacement subi dans le Studio (le tracé est en coordonnées absolues ;
+         sans ce décalage le texte se détacherait de sa forme).
+       Aucun de ces blocs n'est obligatoire : sans marqueur, comportement d'avant.
+       ══════════════════════════════════════════════════════════════════════════ */
+    try {
+      const _cloner = (v) => JSON.parse(JSON.stringify(v));
+      const _bleedPx = ((typeof state !== 'undefined' && state && typeof state.bleed === 'number') ? state.bleed : 0) * MM_TO_PX;
+      const _mmVersPx = (v) => (typeof v === 'number' && isFinite(v)) ? (v * MM_TO_PX + _bleedPx) : null;
+
+      /* ── 2. TRACÉ (coins arrondis individuels / plume) : remplace l'objet ── */
+      if (el._spForme && el._spForme.path) {
+        const f = el._spForme;
+        const _remplace = {
+          type: 'path',
+          path: _cloner(f.path),
+          pathOffset: f.pathOffset ? { x: f.pathOffset.x, y: f.pathOffset.y } : undefined,
+          left: (_mmVersPx(el.left) !== null) ? _mmVersPx(el.left) : 0,
+          top: (_mmVersPx(el.top) !== null) ? _mmVersPx(el.top) : 0,
+          originX: 'left', originY: 'top',
+          scaleX: (typeof el.scaleX === 'number' && el.scaleX > 0) ? el.scaleX : 1,
+          scaleY: (typeof el.scaleY === 'number' && el.scaleY > 0) ? el.scaleY : 1,
+          angle: (typeof el.angle === 'number' && isFinite(el.angle)) ? el.angle : 0,
+          flipX: !!el.flipX, flipY: !!el.flipY,
+          opacity: (typeof el.opacity === 'number' && el.opacity >= 0 && el.opacity <= 1) ? el.opacity : 1,
+          fill: (typeof f.fill === 'string') ? f.fill : '#cccccc',
+          stroke: (typeof f.stroke === 'string') ? f.stroke : '',
+          strokeWidth: (typeof f.strokeWidth === 'number') ? f.strokeWidth : 0
+        };
+        if (f.corners) {
+          _remplace._spCornerRadii = _cloner(f.corners);
+          _remplace._spCornersLinked = !!f.linked;
+        }
+        if (typeof f.ow === 'number') _remplace._spOrigWidth = f.ow;
+        if (typeof f.oh === 'number') _remplace._spOrigHeight = f.oh;
+        /* ⚠️ Le tracé de l'app est en PIXELS (1 px = 1 pt) : le Studio l'avait
+           converti en millimètres puis re-converti ci-dessus — l'arrondi au
+           1/10 de mm reste, comme pour toutes les autres formes. */
+        obj = _remplace;
+      }
+
+      /* ── 1. IMAGE MASQUÉE ── */
+      if (el._spMasque && el._spMasque.url) {
+        const m = el._spMasque;
+        obj._isImageMask = true;
+        obj._maskImageSourceURL = m.url;
+        obj._maskMode = m.mode;
+        obj._maskPosition = m.position;
+        obj._maskPositionRatioX = m.ratioX;
+        obj._maskPositionRatioY = m.ratioY;
+        obj._maskUserZoom = m.zoom;
+        obj._originalFill = m.origFill;
+        obj._originalStroke = m.origStroke;
+        obj._originalStrokeWidth = m.origStrokeWidth;
+      }
+
+      /* ── 3. MODULE FORME/TEXTE ── */
+      if (el._spFormeTexte) {
+        const x = el._spFormeTexte;
+        if (x.mode) obj._spTextShapeMode = x.mode;
+        if (x.cfg) obj._spTextShapeCfg = _cloner(x.cfg);
+        if (x.pair) obj._spShapeTextPairId = x.pair;
+        if (typeof x.genW === 'number') obj._spGenShapeW = x.genW;
+        if (x.inside) obj._isShapeClippedText = true;
+        if (x.onPath) obj._isCtxPathText = true;
+        if (typeof x.padding === 'number') obj.padding = x.padding;
+        if (x.clip) obj.clipPath = _cloner(x.clip);
+        if (x.path) {
+          /* Texte « autour » / « sur le tracé » : le tracé est ABSOLU, on le
+             décale du déplacement subi dans le Studio. Un texte de l'app est un
+             fabric.Text : on force le type, un Textbox ne porte pas de tracé. */
+          const pth = _cloner(x.path);
+          const nvLeft = _mmVersPx(el.left), nvTop = _mmVersPx(el.top);
+          if (nvLeft !== null && typeof x.leftPx === 'number') pth.left = (typeof pth.left === 'number' ? pth.left : 0) + (nvLeft - x.leftPx);
+          if (nvTop !== null && typeof x.topPx === 'number') pth.top = (typeof pth.top === 'number' ? pth.top : 0) + (nvTop - x.topPx);
+          obj.path = pth;
+          obj.type = 'text';
+          if (typeof x.pathStartOffset === 'number') obj.pathStartOffset = x.pathStartOffset;
+          if (x.pathSide) obj.pathSide = x.pathSide;
+          if (x.pathAlign) obj.pathAlign = x.pathAlign;
+        }
+      }
+
+      /* ── 4. PDF IMPORTÉ ── */
+      if (el._spPdfImport) {
+        const g = el._spPdfImport;
+        obj._spPdfImport = true;
+        if (typeof g.page === 'number') obj._spPdfPageNumber = g.page;
+        if (typeof g.wmm === 'number') obj._spPdfSourceWidthMM = g.wmm;
+        if (typeof g.hmm === 'number') obj._spPdfSourceHeightMM = g.hmm;
+        if (g.mode) obj._spPdfImportMode = g.mode;
+        if (g.recadrage) obj._spPdfRecadrageMode = g.recadrage;
+        if (g.type) obj._spPdfContentType = g.type;
+        if (g.cle) obj._spPdfArchiveKey = g.cle;
+      }
+
+      /* ── 5. OBJET 3D ── */
+      if (el._sp3D && el._sp3D.source) {
+        obj._sp3DSource = _cloner(el._sp3D.source);
+        if (el._sp3D.view) obj._sp3DView = _cloner(el._sp3D.view);
+      }
+    } catch (_) {}
     // ══════════════════════════════════════════════════════════════════════
     // 🆕 v1.7.415 — PERSISTANCE DES ATTRIBUTS DE TEXTE (relecture .sp/.json).
     //
@@ -27477,9 +27694,15 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
        l'aperçu (défaut signalé par l'utilisateur). On applique la même imposition
        de planches que l'autre constructeur (spPagesFinal). */
     const pagesFinal = (typeof spImposerPlanchesEnPages === 'function') ? spImposerPlanchesEnPages(pages) : pages;
+    /* ⚠️ _SP_PARITE_STATS_599 — LE COMPTE ANNONCÉ EST CELUI DES PAGES PUBLIÉES.
+       MESURÉ : cet écrivain annonçait « pages.length », soit le nombre de pages
+       AVANT l'imposition des planches, alors que le document porte « pagesFinal »
+       (4 planches → 7 pages : l'app annonçait 4). buildSPFile publie déjà
+       spPagesFinal.length ; on aligne les deux jumeaux. Les compteurs d'OBJETS
+       restent ceux d'avant imposition, comme dans buildSPFile. */
     return {
       _sp: { format: 'SuperPrint Document', version: '1.0.0', engine: 'Fabric.js 5.3.0', created: now.toISOString(), modified: now.toISOString(), generator: 'Studio IA' },
-      meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: pages.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
+      meta: { title: 'Maquette SP213', author: '', description: 'Généré par Studio IA', tags: ['sp213'], stats: { pages: pagesFinal.length, objects: totalObjects, textBlocks, images, shapes, totalObjects } },
       /* ⚠️ _SP_PARITE_CADRE_592 — marges du document : celles de l'app si elles existent,
          sinon CELLES QUE LA COMPOSITION A APPLIQUÉES (cf. spMargesPourExport).
          Avant : margin 20 en dur et `margins` absent → l'app ouvrait la maquette
@@ -27496,6 +27719,14 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
       // 🛡️ v1.7.369 — tons directs filtrés par usage réel (pas de canal fantôme).
       resources: { fonts: usedFonts, colors: usedColors, spotInks: spUsedSpotInks(pages), customFonts: spCustomFontsPourExport() },
       textLinks: {}, guides: {}, masters: (state.doc && state.doc.masters) ? state.doc.masters : { templates: {}, assignments: {} },
+      /* ⚠️ _SP_PARITE_FOLIO_599 — LA CLÉ EXISTE DANS LES DEUX PORTES DE SORTIE.
+         MESURÉ : buildSPFile produit « numberingOverrides » depuis la v1.7.585,
+         cet écrivain-ci ne la produisait pas : le schéma .sp avait donc deux
+         formes selon la porte de sortie. La voie IA n'a jamais d'exception de
+         folio (elle écrit ses numéros en TEXTE, cf. buildSPFile) : la clé vaut
+         un objet vide — exactement comme textLinks et guides sur la ligne
+         au-dessus, et pour la même raison : la clé reste présente. */
+      numberingOverrides: {},
       numbering: { enabled: false, startAt: 1, position: 'bottom-center', fontFamily: 'Open Sans', fontSize: 10, fontColor: '#333333', prefix: '', suffix: '', style: 'decimal', marginBottom: 15, marginSide: 20 },
       pages: pagesFinal
     };
