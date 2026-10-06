@@ -74,6 +74,7 @@
   --magenta: #E1237B;      /* quadri magenta */
   --yellow: #F2B90B;       /* quadri jaune */
   --white: #FFFFFF;
+  --paypal: #FFC439;       /* jaune PayPal — le fond du bouton or officiel */
   --f-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
   --f-caps: 'Bebas Neue', 'Arial Narrow', sans-serif;
   --f-sans: 'IBM Plex Sans', 'Noto Sans JP', sans-serif;
@@ -1643,19 +1644,16 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 .help-don p { margin: 0 0 8px; font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); }
 .help-don .tiny { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--muted); }
 .help-pay { background: var(--paper); border: 1px dashed var(--line-strong); padding: 18px 16px; min-height: 96px; }
-/* ⚠️ v1.7.472 — LA CAUSE RÉELLE DU BOUTON INVISIBLE, TROUVÉE ENFIN, ET CE N'ÉTAIT PAS LA CSP.
-   Le SDK PayPal enveloppe le bouton dans un conteneur qui porte
-   « container-type: inline-size ». Or un élément « inline-size container » a une contribution
-   intrinsèque NULLE (c'est la contrepartie obligatoire de contain: inline-size). Placé comme
-   ENFANT FLEX d'un bloc en « display: flex », il réclame donc une largeur de 0 : mesuré
-   width = 0. Le titre et la description se replient alors à UN CARACTÈRE PAR LIGNE — le titre
-   faisait 1457 px de haut, la description 2408 px — et le bouton de 42 px partait à 5037 px.
-   Mon « overflow: hidden » + « max-height: 148px » d'alors ne corrigeait pas la cause : il
-   COUPAIT le bouton au lieu de le montrer, d'où « le bouton ne marche pas ».
-   Le conteneur doit donc être un BLOC ordinaire (« display: block », la valeur par défaut) :
-   la largeur vaut alors celle du cadre, et le bouton se pose juste après. Aucun plafond de
-   hauteur, aucun overflow caché. */
-.help-pay [id^="paypal-form-fields-container"] { margin: 0 !important; }
+/* 🆕 v1.7.604 — PLUS DE SDK PAYPAL : LES DEUX BOUTONS SONT LES NÔTRES.
+   Le SDK rendait un bouton imposé, marque comprise : impossible d'y mettre notre texte, notre
+   typo, notre jaune. La page envoie maintenant vers la page de paiement du plan — celle-là même
+   que le SDK ouvrait, et où l'on paie par PayPal OU par carte, sans compte. La règle
+   « .help-pay [id^="paypal-form-fields-container"] » est morte avec le SDK.
+   ⚠️ v1.7.472, gardé en mémoire : ce SDK enveloppait son bouton dans un conteneur
+   « container-type: inline-size », dont la contribution intrinsèque est NULLE — posé en enfant
+   flex, il réclamait une largeur de 0 et la colonne s'effondrait à un caractère par ligne
+   (titre de 1457 px de haut, bouton parti à 5037 px). Si le SDK revient un jour, le piège
+   revient avec lui : conteneur en BLOC, jamais en flex, et aucun « overflow: hidden ». */
 /* ═══ v1.7.472 — LES TROIS OUTILS AVEC LEURS ICÔNES, ET LE DÉTAIL DU DON ═══
    Les mêmes plaques que le hero de la landing (.entry-logo, .entry-clair) : le SuperPrint
    garde la sienne, noire, parce que son icône est blanche ; les deux autres passent en blanc
@@ -1702,7 +1700,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 .help-pay-apps {
   display: block; width: fit-content; margin-top: 8px;
   font-family: var(--f-mono); font-size: 11px; letter-spacing: .06em;
-  color: var(--ink); text-decoration: none;
+  color: var(--ink); text-decoration: underline;
 }
 .help-pay-apps:hover, .help-pay-apps:focus-visible { color: var(--magenta); }
 .help-pay-note { font-size: 12px; line-height: 1.65; color: var(--muted); }
@@ -1719,6 +1717,46 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em;
   text-transform: uppercase; color: var(--muted);
 }
+/* 🆕 v1.7.604 — L'OBJET DE L'ABONNEMENT, DIT PAR NOS PROPRES BOUTONS.
+   « S'abonner » sous un logo PayPal se lisait « abonnez-vous à PayPal » — des visiteurs ont cru
+   devoir ouvrir un abonnement PayPal au lieu de souscrire aux news. Les deux boutons disent
+   donc le mot de l'action en toutes lettres — « S'abonner » sur les DEUX boutons, mot identique
+   puisque l'action est la même ; seule la marque change, et c'est elle qui dit le moyen (le P
+   PayPal d'un côté, l'icône carte de l'autre). Le titre du dessus dit l'objet.
+   (1) le titre ci-dessus nomme ce qu'on souscrit ;
+   (2) chaque langue a son lien (locale.x = fr_XC / en_US / ja_JP) : la page de paiement
+       arrive dans la langue de la page.
+   Les variantes portent data-lang, et le masquage global est en « !important » (v1.7.487) :
+   il l'emporte donc bien sur le « display: flex » des boutons.
+   LES PLAQUES NE PORTENT AUCUN FILET. Sur le bouton carte (fond #FFFDF8) la plaque blanche ne
+   se voit pas ; sur le bouton PayPal, dont le fond est le JAUNE PAYPAL (#FFC439), elle passe en
+   TRANSPARENT pour que le P se pose directement sur le jaune — c'est le dessin du bouton or
+   officiel de PayPal, et une pastille blanche au milieu du jaune jurerait. */
+.help-pay-cta {
+  margin: 0; font-family: var(--f-caps); font-weight: 400;
+  font-size: clamp(21px,2.3vw,27px); line-height: 1.15; letter-spacing: .01em; color: var(--ink);
+}
+.help-pay-boutons { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+@media (max-width: 420px) { .help-pay-boutons { grid-template-columns: 1fr; } }
+.help-pay-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 13px 8px; min-height: 108px;
+  background: var(--paper-3); border: 1px solid var(--ink); border-radius: 0;
+  text-align: center; text-decoration: none;
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; line-height: 1.45; color: var(--ink);
+  transition: background .25s var(--ease), color .25s var(--ease);
+}
+.help-pay-btn:hover, .help-pay-btn:focus-visible { background: var(--yellow); }
+.help-pay-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.help-pay-btn-paypal { background: var(--paypal); }
+.help-pay-btn-paypal .help-pay-plaque { background: transparent; }
+.help-pay-plaque {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  height: 38px; padding: 0 10px; background: var(--white);
+}
+.help-pay-plaque img { display: block; height: 32px; width: auto; }
+.help-pay-plaque svg { display: block; height: 28px; width: auto; }
 
 .help-bug { margin-top: clamp(30px,4vw,50px); border: 1px solid var(--line); background: var(--paper-3); padding: clamp(20px,2.6vw,32px); }
 .help-bug-intro { max-width: 74ch; margin: 0 0 clamp(16px,2vw,24px); font-size: clamp(13.5px,1.25vw,15px); line-height: 1.75; color: var(--ink-soft); }
@@ -2019,9 +2057,9 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
       <p data-lang="fr">Paiement traité par PayPal : votre carte reste chez PayPal, nous ne voyons ni votre numéro ni votre adresse. Aucun compte PayPal n'est nécessaire pour payer par carte.</p>
       <p data-lang="en">Payment handled by PayPal — your card stays with PayPal, we never see your number or your address. No PayPal account is needed to pay by card.</p>
       <p data-lang="ja">決済はPayPalが処理します。カード情報はPayPalが保持し、こちらには届きません。カード決済にPayPalアカウントは不要です。</p>
-      <p data-lang="fr">19 € par an. Le montant est fixé par le bouton ci-contre et ne se règle pas depuis cette page.</p>
-      <p data-lang="en">€19 per year. The amount is set by the button beside this text and is not chosen on this page.</p>
-      <p data-lang="ja">19 ユーロの年間のお支払いです。金額は右のボタンのもので、このページでは設定しません。</p>
+      <p data-lang="fr">19 € par an. Le montant est fixé chez PayPal et ne se règle pas depuis cette page.</p>
+      <p data-lang="en">€19 per year. The amount is set at PayPal and is not chosen on this page.</p>
+      <p data-lang="ja">19 ユーロの年間のお支払いです。金額は PayPal 側で決まり、このページでは設定しません。</p>
       </div>
     </div>
 
@@ -2036,10 +2074,52 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
       <p class="help-pay-prix" data-lang="fr"><span class="help-pay-montant">19&nbsp;€</span> <span class="help-pay-periode">par an</span></p>
       <p class="help-pay-prix" data-lang="en"><span class="help-pay-montant">€19</span> <span class="help-pay-periode">per year</span></p>
       <p class="help-pay-prix" data-lang="ja"><span class="help-pay-montant">19&nbsp;€</span> <span class="help-pay-periode">年間</span></p>
-      <div id="paypal-button-container-P-5EK03990LC067710SNK6YLEQ"></div>
-      <p class="help-pay-note" data-lang="fr">Le montant est fixé par le bouton PayPal : 19 € par an. Votre carte reste chez PayPal : nous ne voyons ni votre numéro, ni votre adresse, ni votre nom.</p>
-      <p class="help-pay-note" data-lang="en">The amount is fixed by the PayPal button: €19 per year. Your card stays with PayPal: we never see your number, your address or your name.</p>
-      <p class="help-pay-note" data-lang="ja">金額は PayPal のボタンで決まります（19 ユーロ／年）。カード情報は PayPal が保持し、番号・住所・氏名がこちらに届くことはありません。</p>
+      <!-- 🆕 v1.7.604 — CE QU'ON SOUSCRIT, NOMMÉ JUSTE AU-DESSUS DES BOUTONS.
+           C'est le titre qui porte l'objet de l'abonnement (les news), pour que « S'abonner »
+           ne se lise plus « abonnez-vous à PayPal » à cause du logo. -->
+      <p class="help-pay-cta" data-lang="fr">S'abonner aux news</p>
+      <p class="help-pay-cta" data-lang="en">Subscribe to the news</p>
+      <p class="help-pay-cta" data-lang="ja">ニュースを購読する</p>
+      <!-- 🆕 v1.7.604 — DEUX BOUTONS À NOUS, POUR LE MÊME ABONNEMENT.
+           Le SDK rendait son propre bouton (marque comprise) ; ceux-ci sont les nôtres : le
+           libellé dit l'action en toutes lettres — LE MÊME SUR LES DEUX, puisque l'action est la
+           même : seule la marque change et dit le moyen (le monogramme PayPal, le P, d'un côté ;
+           l'icône carte de l'autre), chacune sur sa plaque — sans filet, et transparente côté
+           PayPal pour que le P se pose sur le jaune PayPal. Le P est plus grand (32 px) que
+           l'icône carte (28 px).
+           Deux liens qui se liraient pareil seraient indiscernables à l'oreille : le P porte son
+           alt, l'icône carte porte un aria-label. Chaque langue a son lien, pour que la page de
+           paiement arrive traduite ; le plan est le même qu'avant :
+           P-5EK03990LC067710SNK6YLEQ, 19 € par an. -->
+      <div class="help-pay-boutons">
+        <a class="help-pay-btn help-pay-btn-paypal" data-lang="fr" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5EK03990LC067710SNK6YLEQ&amp;locale.x=fr_XC" target="_blank" rel="noopener">
+          <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+          <span>S'abonner</span>
+        </a>
+        <a class="help-pay-btn help-pay-btn-paypal" data-lang="en" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5EK03990LC067710SNK6YLEQ&amp;locale.x=en_US" target="_blank" rel="noopener">
+          <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+          <span>Subscribe</span>
+        </a>
+        <a class="help-pay-btn help-pay-btn-paypal" data-lang="ja" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5EK03990LC067710SNK6YLEQ&amp;locale.x=ja_JP" target="_blank" rel="noopener">
+          <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+          <span>購読する</span>
+        </a>
+        <a class="help-pay-btn" data-lang="fr" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5EK03990LC067710SNK6YLEQ&amp;locale.x=fr_XC" target="_blank" rel="noopener">
+          <span class="help-pay-plaque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Carte bancaire"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg></span>
+          <span>S'abonner</span>
+        </a>
+        <a class="help-pay-btn" data-lang="en" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5EK03990LC067710SNK6YLEQ&amp;locale.x=en_US" target="_blank" rel="noopener">
+          <span class="help-pay-plaque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Bank card"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg></span>
+          <span>Subscribe</span>
+        </a>
+        <a class="help-pay-btn" data-lang="ja" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5EK03990LC067710SNK6YLEQ&amp;locale.x=ja_JP" target="_blank" rel="noopener">
+          <span class="help-pay-plaque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="クレジットカード"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg></span>
+          <span>購読する</span>
+        </a>
+      </div>
+      <p class="help-pay-note" data-lang="fr">En vous abonnant, vous recevez toutes les actualités et les nouveautés de SuperPrint et des autres applications d'app.zigmoon.com : 19 € par an, montant fixé par le plan PayPal. Votre carte reste chez PayPal — nous ne voyons ni votre numéro, ni votre adresse, ni votre nom.</p>
+      <p class="help-pay-note" data-lang="en">By subscribing, you receive all the news and new features of SuperPrint and the other apps from app.zigmoon.com: €19 per year, the amount set by the PayPal plan. Your card stays with PayPal — we never see your number, your address or your name.</p>
+      <p class="help-pay-note" data-lang="ja">ご購読いただくと、SuperPrint と app.zigmoon.com の他のアプリの最新情報・新機能をすべて受け取れます（19 ユーロ／年、金額は PayPal のプランで確定）。カード情報は PayPal が保持し、番号・住所・氏名がこちらに届くことはありません。</p>
     </div>
   </div>
 
@@ -2711,27 +2791,13 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 </script>
 
-<!-- ═══ Bouton d'abonnement PayPal (abonnement — le plan est fixé chez PayPal) ═══ -->
-<script src="https://www.paypal.com/sdk/js?client-id=AZEcSKlZBWFXnEUCtFLrvTQ4opEq_TPkrApz6aSVSsDSVHOMxLPhPYxHh7vms6_YzvugYFQZUhP5PhW2&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
-<script>
-  paypal.Buttons({
-      style: {
-          shape: 'pill',
-          color: 'blue',
-          layout: 'vertical',
-          label: 'subscribe'
-      },
-      createSubscription: function(data, actions) {
-        return actions.subscription.create({
-          /* Creates the subscription */
-          plan_id: 'P-5EK03990LC067710SNK6YLEQ'
-        });
-      },
-      onApprove: function(data, actions) {
-        alert(data.subscriptionID); // You can add optional success message for the subscriber here
-      }
-  }).render('#paypal-button-container-P-5EK03990LC067710SNK6YLEQ'); // Renders the PayPal button
-</script>
+<!-- 🆕 v1.7.604 — LE SDK PAYPAL A ÉTÉ RETIRÉ DE CETTE PAGE.
+     Il ne servait qu'à rendre le bouton d'abonnement, or c'est justement son bouton qu'on ne
+     voulait plus : sa marque et son dessin étaient imposés. Les deux boutons du haut sont les
+     nôtres et pointent vers la page de paiement du même plan (P-5EK03990LC067710SNK6YLEQ) :
+     abonner, c'est toujours `actions.subscription.create` côté PayPal, mais c'est la page de
+     paiement du plan qui le fait, pas un script tiers chargé sur cette page.
+     Rien d'autre dans la page ne dépendait de `paypal`. -->
 
 <!-- ═══ v1.7.578 — SOMMAIRE : LA HAUTEUR DE LA NAV, ET LA ZONE COURANTE ═══ -->
 <script>
