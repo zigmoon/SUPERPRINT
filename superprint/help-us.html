@@ -1693,16 +1693,25 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 /* 🆕 v1.7.604 — LA COURONNE DE SIMON DUPONT-GELLERT, AU-DESSUS DU BLOC.
    C'est le MÊME dessin que la fiche d'auteur de l'accueil (img/simon.svg, viewBox 1200x1200,
    encre noire sur fond transparent) et le MÊME traitement : aucune plaque, aucun filet, aucun
-   fond — le dessin se pose sur le papier. Seule l'échelle change : sur l'accueil il est à la
-   taille du nom qu'il accompagne (104-148 px), ici il ouvre le bloc, un cran plus petit
-   (88-120 px). Décoratif (le titre juste en dessous dit ce qu'on reçoit) : aria-hidden. */
+   fond — le dessin se pose sur le papier. Décoratif (le titre juste en dessous dit ce qu'on
+   reçoit) : aria-hidden.
+   RECADRÉE. Mesuré sur le fichier (getBBox des 5 tracés) : l'encre occupe 230 → 970 sur 1200,
+   soit 740/1200 = 61,67 % — donc 19,2 % de VIDE INTERNE de chaque côté. Dans une boîte de
+   120 px, c'était 23 px de blanc en plus de la marge de la page, au-dessus comme en dessous :
+   c'est ce qui donnait l'impression d'une couronne perdue dans son cadre. Le dessin est donc
+   agrandi dans sa boîte (1200/740 = 1,62162, une transformation, pas un recadrage : aucun trait
+   n'est coupé) pour que l'encre la remplisse exactement. La boîte garde sa taille, c'est le
+   dessin qui grandit dedans.
+   MARGES RÉDUITES. Le cadre pose 30 px au-dessus de son contenu et la colonne 16 px entre deux
+   enfants : la couronne reprend 10 px en haut et 6 px en bas (marges négatives, elle seule).
+   Vide autour de l'encre : 20 px au-dessus, 10 px sous elle, au lieu de 53 et 39. */
 .help-pay-marque {
   flex: 0 0 auto; align-self: center;
   width: clamp(88px,9vw,120px); height: clamp(88px,9vw,120px);
   display: flex; align-items: center; justify-content: center;
-  margin: 0; padding: 0; background: none; border: 0;
+  margin: -10px 0 -6px; padding: 0; background: none; border: 0;
 }
-.help-pay-marque img { width: 100%; height: 100%; display: block; }
+.help-pay-marque img { width: 100%; height: 100%; display: block; transform: scale(1.62162); }
 /* 01/10/2026 — le cadre porte désormais une PHRASE (plus une étiquette) : casse normale,
    sans capitales ni interlettrage large, sur la police de lecture. */
 .help-pay-titre {
@@ -1770,6 +1779,62 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 }
 .help-pay-plaque img { display: block; height: 32px; width: auto; }
 .help-pay-plaque svg { display: block; height: 28px; width: auto; }
+
+/* ═══ v1.7.604 — LA POP-IN DE PAIEMENT : ON NE QUITTE PLUS LA PAGE.
+   Les deux boutons ouvraient la page PayPal dans un NOUVEL ONGLET : le visiteur perdait la
+   page, le contexte, et la parenthèse était brutale pour un abonnement à 19 €.
+   VÉRIFIÉ AVANT DE CODER, parce que c'est ce qui décide de tout : la page de paiement PayPal
+   n'envoie NI « X-Frame-Options » NI directive « frame-ancestors » — donc elle s'ENCADRE. Et
+   le test le confirme : chargée dans un iframe de 520x760 depuis superprint.cc en ligne, elle
+   se rend complètement (connexion, « Payer par carte bancaire », les quatre langues). La
+   pop-in est donc possible, et c'est elle qu'on fait.
+   DA reprise des pop-ins légaux de la page (v1.7.467) : voile d'encre à 55 % + flou, cadre au
+   papier, filets fins, titre en monospace. z-index 320 : au-dessus de la barre quadri (300),
+   de la nav (120) et du sommet de sommaire (90), sinon le voile laisserait passer la nav.
+   TROIS GARDE-FOUS, parce qu'un encadrement n'est pas garanti à 100 % : le cadre n'est chargé
+   qu'au premier clic (PayPal ne se charge pas sur la page), un lien « ouvrir dans un onglet »
+   reste dans le pied, et une phrase dit quoi faire quand c'est payé. */
+.pay-pop {
+  position: fixed; inset: 0; z-index: 320; display: none;
+  align-items: center; justify-content: center; padding: 24px;
+  background: rgba(23,19,13,.55);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+.pay-pop.open { display: flex; }
+.pay-pop-cadre {
+  width: 100%; max-width: 560px; height: min(88vh, 820px);
+  display: flex; flex-direction: column;
+  background: var(--paper-3); border: 1px solid var(--line-strong);
+  box-shadow: 0 30px 80px rgba(23,19,13,.3);
+}
+.pay-pop-tete {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 18px; border-bottom: 1px solid var(--line);
+}
+.pay-pop-titre {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink);
+}
+.pay-pop-close {
+  flex: 0 0 auto; width: 30px; height: 30px; cursor: pointer;
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
+}
+.pay-pop-close:hover, .pay-pop-close:focus-visible { background: var(--paper-2); color: var(--ink); }
+.pay-pop-frame { flex: 1 1 auto; width: 100%; border: 0; background: var(--white); }
+.pay-pop-pied {
+  padding: 12px 18px; border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 7px;
+  font-size: 12px; line-height: 1.6; color: var(--muted);
+}
+.pay-pop-pied p { margin: 0; }
+.pay-pop-secours { color: var(--ink); font-family: var(--f-mono); font-size: 11px; letter-spacing: .04em; }
+@media (max-width: 700px) {
+  .pay-pop { padding: 10px; }
+  .pay-pop-cadre { max-width: none; height: 92vh; }
+  .pay-pop-tete { padding: 11px 13px; }
+  .pay-pop-pied { padding: 10px 13px; font-size: 11.5px; }
+}
 
 .help-bug { margin-top: clamp(30px,4vw,50px); border: 1px solid var(--line); background: var(--paper-3); padding: clamp(20px,2.6vw,32px); }
 .help-bug-intro { max-width: 74ch; margin: 0 0 clamp(16px,2vw,24px); font-size: clamp(13.5px,1.25vw,15px); line-height: 1.75; color: var(--ink-soft); }
@@ -2085,9 +2150,9 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
         <img src="img/simon.svg" alt="" width="1200" height="1200" loading="lazy" decoding="async">
       </span>
       <div class="help-pay-titre">
-        <span data-lang="fr">Recevoir les dernières informations sur les nouvelles web-apps, les nouvelles fonctionnalités de SuperPrint, de Cut The Flow, de Bird…</span>
-        <span data-lang="en">Get the latest news about the new web apps and the new features of SuperPrint, Cut The Flow and Bird…</span>
-        <span data-lang="ja">新しいWebアプリ、SuperPrint、Cut The Flow、Birdの新機能に関する最新情報を受け取る</span>
+        <span data-lang="fr">Les actualités et les nouveautés de SuperPrint et de nos autres apps.</span>
+        <span data-lang="en">News and new features from SuperPrint and our other apps.</span>
+        <span data-lang="ja">SuperPrint と他のアプリの最新情報と新機能</span>
         <a class="help-pay-apps" href="https://app.zigmoon.com/" target="_blank" rel="noopener"><span class="inline-fr">Toutes nos apps</span><span class="inline-en">All our apps</span><span class="inline-ja">すべてのアプリ</span> <span aria-hidden="true">→</span> app.zigmoon.com</a>
       </div>
       <!-- 🆕 01/10/2026 — LE PRIX, EN GRAND, AU-DESSUS DU BOUTON (abonnement : par an) -->
@@ -2136,6 +2201,31 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
           <span class="help-pay-plaque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="クレジットカード"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg></span>
           <span>購読する</span>
         </a>
+      </div>
+      <!-- 🆕 v1.7.604 — LA POP-IN DE PAIEMENT. Posée ici, au ras des deux boutons (position
+           fixed : elle ne prend aucune place dans la colonne, le « gap » ne bouge pas).
+           L'iframe est VIDE au chargement — c'est le script, en bas de page, qui lui donne son
+           adresse au premier clic : PayPal n'est donc pas chargé si personne ne paie. -->
+      <div class="pay-pop" id="pay-pop">
+        <div class="pay-pop-cadre" role="dialog" aria-modal="true" aria-labelledby="pay-pop-titre">
+          <div class="pay-pop-tete">
+            <span class="pay-pop-titre" id="pay-pop-titre">
+              <span data-lang="fr">Paiement PayPal · 19 € par an</span>
+              <span data-lang="en">PayPal payment · €19 per year</span>
+              <span data-lang="ja">PayPal でのお支払い · 19 ユーロ／年</span>
+            </span>
+            <button type="button" class="pay-pop-close" id="pay-pop-close">×</button>
+          </div>
+          <iframe class="pay-pop-frame" id="pay-pop-frame" src="about:blank" title="PayPal" referrerpolicy="strict-origin-when-cross-origin" allow="payment"></iframe>
+          <div class="pay-pop-pied">
+            <p data-lang="fr">Le paiement se fait ici, sans quitter la page. Une fois terminé, fermez cette fenêtre.</p>
+            <p data-lang="en">Payment happens here, without leaving the page. Once it is done, close this window.</p>
+            <p data-lang="ja">お支払いはこの画面で完了します。ページを離れる必要はありません。終わりましたらこの画面を閉じてください。</p>
+            <p data-lang="fr">La page reste vide ? <a class="pay-pop-secours" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5EK03990LC067710SNK6YLEQ&amp;locale.x=fr_XC" target="_blank" rel="noopener">Ouvrir le paiement dans un nouvel onglet</a></p>
+            <p data-lang="en">Page stays blank? <a class="pay-pop-secours" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5EK03990LC067710SNK6YLEQ&amp;locale.x=en_US" target="_blank" rel="noopener">Open the payment in a new tab</a></p>
+            <p data-lang="ja">画面が空のままですか？ <a class="pay-pop-secours" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-5EK03990LC067710SNK6YLEQ&amp;locale.x=ja_JP" target="_blank" rel="noopener">新しいタブで支払いを開く</a></p>
+          </div>
+        </div>
       </div>
       <p class="help-pay-note" data-lang="fr">En vous abonnant, vous recevez toutes les actualités et les nouveautés de SuperPrint et des autres applications d'app.zigmoon.com : 19 € par an, montant fixé par le plan PayPal. Votre carte reste chez PayPal — nous ne voyons ni votre numéro, ni votre adresse, ni votre nom.</p>
       <p class="help-pay-note" data-lang="en">By subscribing, you receive all the news and new features of SuperPrint and the other apps from app.zigmoon.com: €19 per year, the amount set by the PayPal plan. Your card stays with PayPal — we never see your number, your address or your name.</p>
@@ -2818,6 +2908,103 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
      abonner, c'est toujours `actions.subscription.create` côté PayPal, mais c'est la page de
      paiement du plan qui le fait, pas un script tiers chargé sur cette page.
      Rien d'autre dans la page ne dépendait de `paypal`. -->
+
+<!-- ═══ v1.7.604 — LA POP-IN DE PAIEMENT ═══
+     Ce que fait ce script, et rien d'autre :
+       • il intercepte le clic sur les DEUX boutons du haut et ouvre la pop-in à la place du
+         nouvel onglet — les liens gardent leur href et leur target, donc sans JavaScript (ou
+         si le script ne tourne pas) le paiement part dans un onglet, comme avant ;
+       • il ne donne son adresse à l'iframe QU'AU PREMIER CLIC : la page n'appelle donc jamais
+         PayPal tant que personne ne clique (ni chargement, ni cookie tiers, ni mesure) ;
+       • il fait le ménage d'usage d'une pop-in : Échap ferme, un clic sur le voile ferme (pas
+         dans le cadre), le fond ne défile plus tant qu'elle est ouverte, le focus entre dans la
+         pop-in à l'ouverture (sur la fermeture) et revient au bouton qui l'a ouverte ;
+       • LIMITE CONNUE, mesurée, qu'aucun code ne peut lever : dès que le visiteur CLIQUE dans
+         le formulaire PayPal, le focus entre dans un document TIERS et Échap n'arrive plus
+         jusqu'ici (la touche part à PayPal). La pop-in se ferme alors par le bouton × ou par le
+         voile, qui restent à la souris — c'est aussi pourquoi le × est en haut à droite et
+         toujours visible ;
+       • il nomme ce qui doit être nommé dans la langue de la page : le cadre (title de
+         l'iframe) et le bouton de fermeture — un aria-label ne peut pas être traduit par le
+         mécanisme data-lang, qui ne masque que des éléments visibles. -->
+<script>
+(function () {
+  var pop = document.getElementById('pay-pop');
+  if (!pop) return;
+
+  var frame = document.getElementById('pay-pop-frame');
+  var fermer = document.getElementById('pay-pop-close');
+  var boutons = document.querySelectorAll('a.help-pay-btn');
+  var ouvertPar = null;
+
+  var mots = {
+    fr: { cadre: 'Paiement PayPal — 19 € par an', fermer: 'Fermer' },
+    en: { cadre: 'PayPal payment — €19 per year', fermer: 'Close' },
+    ja: { cadre: 'PayPal でのお支払い — 19 ユーロ／年', fermer: '閉じる' }
+  };
+  function langue() { return mots[document.documentElement.lang] ? document.documentElement.lang : 'fr'; }
+
+  /* Le lien de secours visible dans le pied (une variante par langue). */
+  function secours() {
+    var l = pop.querySelectorAll('.pay-pop-secours');
+    for (var i = 0; i < l.length; i++) { if (l[i].offsetParent !== null) return l[i]; }
+    return l[0] || null;
+  }
+
+  function ouvrir(bouton) {
+    ouvertPar = bouton;
+    var url = bouton.getAttribute('href');
+    if (frame.getAttribute('src') !== url) frame.setAttribute('src', url);
+    var s = secours();
+    if (s) s.setAttribute('href', url);
+    frame.setAttribute('title', mots[langue()].cadre);
+    fermer.setAttribute('aria-label', mots[langue()].fermer);
+    fermer.setAttribute('title', mots[langue()].fermer);
+    pop.classList.add('open');
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    fermer.focus();
+  }
+
+  function fermerPop() {
+    pop.classList.remove('open');
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+    if (ouvertPar) ouvertPar.focus();
+    ouvertPar = null;
+  }
+
+  for (var i = 0; i < boutons.length; i++) {
+    boutons[i].addEventListener('click', function (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;  // « ouvrir dans un onglet » reste possible
+      e.preventDefault();
+      ouvrir(this);
+    });
+  }
+
+  fermer.addEventListener('click', fermerPop);
+  pop.addEventListener('mousedown', function (e) { if (e.target === pop) fermerPop(); });
+  document.addEventListener('keydown', function (e) {
+    if (!pop.classList.contains('open')) return;
+    if (e.key === 'Escape') { fermerPop(); return; }
+    /* Le tour de tabulation reste dans la pop-in : l'ordre est celui du DOM — fermeture,
+       cadre, lien de secours — et non « la fermeture puis le cadre puis le lien » à la
+       fortune : mesuré, le lien est APRÈS le cadre, donc un piège qui croit le cadre en
+       dernier laisse sortir le focus par le lien. */
+    if (e.key !== 'Tab') return;
+    var ordre = [fermer, frame];
+    var s = secours();
+    if (s) ordre.push(s);
+    var k = ordre.indexOf(document.activeElement);
+    /* « -1 » : le focus est DANS le cadre (document tiers) — le navigateur gère, on n'y touche
+       pas, sinon on lutterait contre l'entrée et la sortie du formulaire PayPal lui-même. */
+    if (k === -1) return;
+    if (e.shiftKey && k === 0) { e.preventDefault(); ordre[ordre.length - 1].focus(); }
+    else if (!e.shiftKey && k === ordre.length - 1) { e.preventDefault(); ordre[0].focus(); }
+  });
+})();
+</script>
+
 
 <!-- ═══ v1.7.578 — SOMMAIRE : LA HAUTEUR DE LA NAV, ET LA ZONE COURANTE ═══ -->
 <script>
