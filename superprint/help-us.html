@@ -1690,6 +1690,19 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   background: var(--paper); border: 1px solid var(--line-strong); padding: clamp(20px,2.4vw,30px);
   min-height: 100%; display: flex; flex-direction: column; justify-content: flex-start; gap: 16px;
 }
+/* 🆕 v1.7.604 — LA COURONNE DE SIMON DUPONT-GELLERT, AU-DESSUS DU BLOC.
+   C'est le MÊME dessin que la fiche d'auteur de l'accueil (img/simon.svg, viewBox 1200x1200,
+   encre noire sur fond transparent) et le MÊME traitement : aucune plaque, aucun filet, aucun
+   fond — le dessin se pose sur le papier. Seule l'échelle change : sur l'accueil il est à la
+   taille du nom qu'il accompagne (104-148 px), ici il ouvre le bloc, un cran plus petit
+   (88-120 px). Décoratif (le titre juste en dessous dit ce qu'on reçoit) : aria-hidden. */
+.help-pay-marque {
+  flex: 0 0 auto; align-self: center;
+  width: clamp(88px,9vw,120px); height: clamp(88px,9vw,120px);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0; padding: 0; background: none; border: 0;
+}
+.help-pay-marque img { width: 100%; height: 100%; display: block; }
 /* 01/10/2026 — le cadre porte désormais une PHRASE (plus une étiquette) : casse normale,
    sans capitales ni interlettrage large, sur la police de lecture. */
 .help-pay-titre {
@@ -2064,6 +2077,13 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
     </div>
 
     <div class="help-pay">
+      <!-- 🆕 v1.7.604 — LA COURONNE DE SIMON DUPONT-GELLERT, reprise de la fiche d'auteur de
+           l'accueil : même fichier (img/simon.svg), même traitement (aucune plaque, le dessin
+           posé sur le papier), seulement plus petite. Décorative : le titre qui suit dit ce
+           qu'on reçoit — un lecteur d'écran n'a rien à faire d'une couronne sans nom. -->
+      <span class="help-pay-marque" aria-hidden="true">
+        <img src="img/simon.svg" alt="" width="1200" height="1200" loading="lazy" decoding="async">
+      </span>
       <div class="help-pay-titre">
         <span data-lang="fr">Recevoir les dernières informations sur les nouvelles web-apps, les nouvelles fonctionnalités de SuperPrint, de Cut The Flow, de Bird…</span>
         <span data-lang="en">Get the latest news about the new web apps and the new features of SuperPrint, Cut The Flow and Bird…</span>
