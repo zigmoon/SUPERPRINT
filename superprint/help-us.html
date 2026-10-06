@@ -1695,19 +1695,23 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
    encre noire sur fond transparent) et le MÊME traitement : aucune plaque, aucun filet, aucun
    fond — le dessin se pose sur le papier. Décoratif (le titre juste en dessous dit ce qu'on
    reçoit) : aria-hidden.
-   RECADRÉE. Mesuré sur le fichier (getBBox des 5 tracés) : l'encre occupe 230 → 970 sur 1200,
-   soit 740/1200 = 61,67 % — donc 19,2 % de VIDE INTERNE de chaque côté. Dans une boîte de
-   120 px, c'était 23 px de blanc en plus de la marge de la page, au-dessus comme en dessous :
+   RECADRÉE PUIS RÉDUITE. Mesuré sur le fichier (getBBox des 5 tracés) : l'encre occupe 230 → 970
+   sur 1200, soit 740/1200 = 61,67 % — donc 19,2 % de VIDE INTERNE de chaque côté. Dans une boîte
+   de 120 px, c'était 23 px de blanc en plus de la marge de la page, au-dessus comme en dessous :
    c'est ce qui donnait l'impression d'une couronne perdue dans son cadre. Le dessin est donc
    agrandi dans sa boîte (1200/740 = 1,62162, une transformation, pas un recadrage : aucun trait
-   n'est coupé) pour que l'encre la remplisse exactement. La boîte garde sa taille, c'est le
-   dessin qui grandit dedans.
+   n'est coupé) pour que l'encre la remplisse exactement.
+   ⚠️ CONSÉQUENCE À NE PAS OUBLIER : l'encre prenait 74 px dans une boîte de 120 (120 × 0,6167) ;
+   une fois la boîte remplie, elle en prenait 120 — la couronne paraissait donc AVOIR GRANDI alors
+   qu'aucune taille n'avait été demandée. La boîte est maintenant réduite d'autant : l'encre fait
+   64 à 80 px selon l'écran, soit la taille qu'elle avait avant le recadrage (74 px), là où deux
+   essais donnaient 120 px puis 96 px — jugés trop grands tous les deux.
    MARGES RÉDUITES. Le cadre pose 30 px au-dessus de son contenu et la colonne 16 px entre deux
    enfants : la couronne reprend 10 px en haut et 6 px en bas (marges négatives, elle seule).
    Vide autour de l'encre : 20 px au-dessus, 10 px sous elle, au lieu de 53 et 39. */
 .help-pay-marque {
   flex: 0 0 auto; align-self: center;
-  width: clamp(88px,9vw,120px); height: clamp(88px,9vw,120px);
+  width: clamp(64px,6.2vw,80px); height: clamp(64px,6.2vw,80px);
   display: flex; align-items: center; justify-content: center;
   margin: -10px 0 -6px; padding: 0; background: none; border: 0;
 }
