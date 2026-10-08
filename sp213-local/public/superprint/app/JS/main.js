@@ -2403,6 +2403,35 @@ function _spIsCopyableObject(o) {
     return true;
 }
 
+/* ⚠️ FIX 2026-10-08 — _SP_SELECTION_SANS_FUITE : UNE SÉLECTION NE RESTE PAS DANS LES OBJETS.
+   MESURÉ (test utilisateur, trois groupes, sept Shift+clic) : `canvas.getObjects()` contenait
+   TROIS groupes ET SEPT `activeSelection` — un fantôme par clic. Cause : `new
+   fabric.ActiveSelection(objets, { canvas })` — l'option `canvas` fait INSCRIRE la sélection
+   comme un objet à part entière du canevas ; l'ancienne, elle, n'était pas retirée. La sélection
+   suivante lisait `activeObj._objects`, y retrouvait la sélection précédente, et l'emboîtait :
+   la liste ne pouvait plus que grossir, donc le RETRAIT d'un membre ne se voyait jamais — le
+   symptôme rapporté (« on ajoute, on ne peut plus désélectionner »), et des objets fantômes
+   qui partaient en plus dans les documents enregistrés.
+   On purge donc les sélections fantômes AVANT d'en construire une, et on filtre les sélections
+   imbriquées quand on relit les membres. Le retrait redevient calculable parce que la liste
+   repart d'un état propre. */
+function _spSelectionSansFuite(objets, canvas) {
+    try {
+        const list = (objets || []).filter(function (o) {
+            return o && o.type !== 'activeSelection' && o.type !== 'ActiveSelection';
+        });
+        if (!canvas || !list.length) return null;
+        try {
+            canvas.getObjects().forEach(function (o) {
+                if (o && (o.type === 'activeSelection' || o.type === 'ActiveSelection')) canvas.remove(o);
+            });
+        } catch (_) {}
+        const sel = new fabric.ActiveSelection(list, { canvas: canvas });
+        canvas.setActiveObject(sel);
+        return sel;
+    } catch (_) { return null; }
+}
+
 // 🛡️ FIX 2026-06-03 (copier/coller : images « fantômes » au collage v2) :
 //   Symptôme rapporté : après un Ctrl+V, une image (ou un bloc) collée sur la
 //   page de destination clignote — elle apparaît / disparaît de façon aléatoire
@@ -14956,9 +14985,70 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             
             // Trouver l'objet sous le curseur
             const pointer = canvas.getPointer(domEvent);
-            const target = canvas.findTarget(domEvent, false);
-            
+            let target = canvas.findTarget(domEvent, false);
+
+            /* ⚠️ FIX 2026-10-08 — _SP_SHIFT_RETRAIT : RETROUVER LE MEMBRE SOUS LE CURSEUR.
+               MESURÉ (banc, 3 groupes écartés, Shift+clic sur un objet DÉJÀ sélectionné) :
+               `findTarget` renvoie NULL. Cause : les membres d'une ActiveSelection sont RETIRÉS
+               de `canvas._objects`, et findTarget ne cherche QUE là (relevé : l'objet cliqué a
+               `getObjects().indexOf(objet) = -1` alors qu'il est bien dans la sélection).
+               Le gestionnaire sortait donc juste en dessous, sur « clic dans le vide », et le
+               RETRAIT ne pouvait JAMAIS avoir lieu : on ne pouvait qu'ajouter. C'est exactement
+               le symptôme rapporté — « la sélection de plusieurs objets fonctionne mais après
+               je ne peux pas les désélectionner les uns après les autres ».
+               On retrouve donc le membre à la main : centre et demi-tailles ABSOLUS par
+               `calcTransformMatrix()` — qui, lui, inclut la transformation du groupe (c'est le
+               procédé que le lasso emploie déjà depuis la v1.7.600) — puis on teste le point.
+               Aucune géométrie n'est réécrite : on ne fait que désigner l'objet visé. */
+            if (!target || target.type === 'activeSelection' || target.type === 'ActiveSelection') {
+                /* ⚠️ FIX 2026-10-08 — _SP_SHIFT_MEMBRE_LOCAL : retrouver le membre de la sélection.
+                   MESURÉ SUR CLIC RÉEL (sélection de trois groupes, clic à l'intérieur) :
+                   `findTarget` ne renvoie PAS null — il renvoie **l'ActiveSelection elle-même**.
+                   Le gestionnaire comparait donc cette sélection aux MEMBRES de la liste, ne la
+                   reconnaissait pas, et l'AJOUTAIT au lieu de basculer l'objet cliqué : le retrait
+                   ne pouvait jamais avoir lieu (et la sélection s'emboîtait — d'où les sept
+                   `activeSelection` fantômes relevés avant la purge, cf. _spSelectionSansFuite).
+                   Le test local, lui, EST juste : mesuré, le point local tombe exactement dans la
+                   boîte du membre cliqué et dans aucun autre.
+                   TROIS PISTES ÉCARTÉES AVANT, TOUTES MESURÉES FAUSSES — ne pas les reprendre :
+                    1) projeter les membres vers le monde avec calcTransformMatrix() : la géométrie
+                       d'un membre est LOCALE (relevé : -280,-45 pour un groupe situé à 100,120) ;
+                    2) écarter la sélection pour que findTarget la retrouve : retrait toujours cassé
+                       et clic simple qui ne sélectionnait plus (régression mesurée au banc) ;
+                    3) `sel.containsPoint()` / `sel.getBoundingRect()` : la sélection rapporte elle
+                       aussi une géométrie locale centrée (relevé : l:-280 w:560 pour des membres à
+                       100…660) → test toujours faux.
+                   CE QUI MARCHE : ramener le curseur dans l'espace LOCAL de la sélection par la
+                   MATRICE INVERSE, puis comparer aux `left/top` des membres (Fabric les range
+                   avec l'origine en haut à gauche et des coordonnées relatives au CENTRE de la
+                   sélection). On parcourt à l'envers : le dernier ajouté est dessus, c'est lui
+                   qu'on clique quand deux objets se recouvrent. */
+                const _selObj = canvas.getActiveObject();
+                const _selMembres = (_selObj && (_selObj.type === 'activeSelection' || _selObj.type === 'ActiveSelection') && typeof _selObj.getObjects === 'function')
+                    ? _selObj.getObjects() : [];
+                if (_selMembres.length > 1) {
+                    let _local = null;
+                    try {
+                        const _inv = fabric.util.invertTransform(_selObj.calcTransformMatrix());
+                        _local = fabric.util.transformPoint(pointer, _inv);
+                    } catch (_) { _local = null; }
+                    if (_local) {
+                        for (let _i = _selMembres.length - 1; _i >= 0; _i--) {
+                            const _o = _selMembres[_i];
+                            if (!_o || _o.selectable === false || _o.visible === false) continue;
+                            if (_o.isMargin || _o.isBleed || _o.isGuide || _o.isTrimBox ||
+                                _o._isSpreadMirror || _o.isPage || _o.isManualGuide) continue;
+                            const _w = Math.abs(_o.width || 0) * Math.abs(_o.scaleX || 1);
+                            const _h = Math.abs(_o.height || 0) * Math.abs(_o.scaleY || 1);
+                            if (_local.x >= _o.left && _local.x <= _o.left + _w &&
+                                _local.y >= _o.top && _local.y <= _o.top + _h) { target = _o; break; }
+                        }
+                    }
+                }
+                /* Le membre n'a pas été trouvé : on rend la main à Fabric avec l'objet d'origine. */
+            }
             if (!target) return; // Clic dans le vide, laisser Fabric gérer
+            if (target.type === 'activeSelection' || target.type === 'ActiveSelection') return; // clic dans la sélection sans membre identifié : Fabric gère
             
             // Filtrer les objets non sélectionnables
             if (target.isMargin || target.isBleed || target.isGuide || target.isTrimBox || 
@@ -15053,7 +15143,13 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             let currentSelection = [];
             if (activeObj) {
                 if (activeObj.type === 'activeSelection') {
-                    currentSelection = activeObj._objects ? [...activeObj._objects] : [];
+                    /* ⚠️ FIX 2026-10-08 — _SP_SELECTION_SANS_FUITE : on écarte les sélections
+                       imbriquées. Une sélection fantôme laissée dans les objets se retrouvait
+                       MEMBRE de la suivante ; la liste ne pouvait alors que grossir, et le
+                       retrait d'un objet ne se voyait jamais (cf. _spSelectionSansFuite). */
+                    currentSelection = (activeObj._objects ? [...activeObj._objects] : []).filter(function (o) {
+                        return o && o.type !== 'activeSelection' && o.type !== 'ActiveSelection';
+                    });
                 } else {
                     currentSelection = [activeObj];
                 }
@@ -15081,13 +15177,19 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
             if (newObjects.length === 1) {
                 canvas.setActiveObject(newObjects[0]);
             } else if (newObjects.length > 1) {
-                const sel = new fabric.ActiveSelection(newObjects, { canvas: canvas });
-                canvas.setActiveObject(sel);
+                /* ⚠️ FIX 2026-10-08 — _SP_SELECTION_SANS_FUITE : constructeur qui purge d'abord les
+                   sélections fantômes restées dans les objets du canevas (mesuré : sept après sept
+                   Shift+clic). Sans cette purge, chaque clic emboîtait la sélection précédente. */
+                _spSelectionSansFuite(newObjects, canvas);
             }
             
             canvas.requestRenderAll();
-            
-            // EMPÊCHER Fabric de traiter ce clic
+            /* ⚠️ FIX 2026-10-07 — _SP_SHIFT_UN_SEUL_GESTIONNAIRE : on marque l'ÉVÉNEMENT DOM
+               traité. Le second gestionnaire (canvas.on('mouse:down'), plus bas) porte la même
+               logique ; sans marque, il la rejouait sur un état déjà modifié et pouvait rétablir
+               l'objet qu'on venait de retirer. La marque est portée par l'événement lui-même, pas
+               par une variable du canevas : elle ne survit donc pas d'un clic au suivant. */
+            try { domEvent.__spShiftHandled = true; } catch (_) {}
             domEvent.preventDefault();
             domEvent.stopPropagation();
             domEvent.stopImmediatePropagation();
@@ -15215,6 +15317,12 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                                 !target.isManualGuide;
             
             if (shiftPressed && isValidTarget) {
+                /* ⚠️ FIX 2026-10-07 — _SP_SHIFT_UN_SEUL_GESTIONNAIRE : si l'intercepteur DOM
+                   (phase de capture, `canvas._spShiftClickHandler`) a déjà traité CE clic, on ne
+                   rejoue rien ici. Deux logiques concurrentes sur le même geste — l'une qui
+                   retire, l'autre qui réapplique — c'est ce qui faisait qu'un objet ne pouvait
+                   plus être désélectionné. */
+                if (e.e && e.e.__spShiftHandled) return;
                 
                 // IMPORTANT: Empêcher le comportement par défaut de Fabric qui a tendance
                 // à désélectionner ou entrer en mode édition sur les Textbox lors d'un Shift+Click.
@@ -15223,7 +15331,11 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 let currentSelection = [];
                 if (activeObj) {
                     if (activeObj.type === 'activeSelection') {
-                        currentSelection = activeObj._objects ? [...activeObj._objects] : [];
+                        /* ⚠️ FIX 2026-10-08 — _SP_SELECTION_SANS_FUITE : mêmes raisons que dans
+                           l'intercepteur DOM — on écarte les sélections imbriquées. */
+                        currentSelection = (activeObj._objects ? [...activeObj._objects] : []).filter(function (o) {
+                            return o && o.type !== 'activeSelection' && o.type !== 'ActiveSelection';
+                        });
                     } else {
                         currentSelection = [activeObj];
                     }
@@ -15253,47 +15365,21 @@ try { window.spComposerBlocGabarit = spComposerBlocGabarit; } catch (_) {}
                 if (objectsToSelect.length === 1) {
                     canvas.setActiveObject(objectsToSelect[0]);
                 } else if (objectsToSelect.length > 1) {
-                    const sel = new fabric.ActiveSelection(objectsToSelect, { 
-                        canvas: canvas,
-                    });
-                    canvas.setActiveObject(sel);
+                    /* ⚠️ FIX 2026-10-08 — _SP_SELECTION_SANS_FUITE : même purge que dans
+                       l'intercepteur DOM (cf. _spSelectionSansFuite). */
+                    _spSelectionSansFuite(objectsToSelect, canvas);
                 }
                 
                 canvas.requestRenderAll();
-                
-                // 5. RÉAPPLIQUER après un court délai pour contrer Fabric.js
-                setTimeout(() => {
-                    try {
-                        const currentActive = canvasRef.getActiveObject();
-                        const expectedCount = objectsToSelect.length;
-                        
-                        // Vérifier si la sélection a été modifiée par Fabric
-                        let needsRestore = false;
-                        if (expectedCount > 1) {
-                            if (!currentActive || currentActive.type !== 'activeSelection') {
-                                needsRestore = true;
-                            } else if (currentActive._objects && currentActive._objects.length !== expectedCount) {
-                                needsRestore = true;
-                            }
-                        } else if (expectedCount === 1) {
-                            if (currentActive !== objectsToSelect[0]) {
-                                needsRestore = true;
-                            }
-                        }
-                        
-                        if (needsRestore) {
-                            canvasRef.discardActiveObject();
-                            if (objectsToSelect.length === 1) {
-                                canvasRef.setActiveObject(objectsToSelect[0]);
-                            } else if (objectsToSelect.length > 1) {
-                                const sel2 = new fabric.ActiveSelection(objectsToSelect, { canvas: canvasRef });
-                                canvasRef.setActiveObject(sel2);
-                            }
-                            canvasRef.requestRenderAll();
-                        }
-                    } catch (_) {}
-                }, 50);
-                
+                /* FIX 2026-10-07 - _SP_SHIFT_UN_SEUL_GESTIONNAIRE : LA RE-APPLICATION DIFFEREE EST SUPPRIMEE.
+                   Elle réappliquait `objectsToSelect` — la liste calculée AVANT le geste — 50 ms
+                   plus tard, « pour contrer Fabric.js ». Mais Fabric n'a rien à contrer : le clic
+                   a déjà été intercepté en phase de capture. Cette reprise écrasait donc, un
+                   vingtième de seconde après, la bascule que le gestionnaire venait de faire, et
+                   rétablissait l'objet qu'on venait de RETIRER de la sélection. C'est exactement
+                   le symptôme rapporté : on ajoute, mais on ne peut plus retirer.
+                   La sélection posée immédiatement au-dessus tient : Fabric ne la touche pas,
+                   l'événement est arrêté juste en dessous. */                
                 // 6. STOPPER TOUT AUTRE TRAITEMENT FABRIC
                 if (e.e) {
                     e.e.preventDefault && e.e.preventDefault();
@@ -32624,7 +32710,6 @@ try { window.spCoordsMondeSerialisation = spCoordsMondeSerialisation; } catch (_
                         if (viewMode === 'spread') optimizeSpreadZIndex();
                         _spRestoreSourceXforms(_pasteSrcSnaps, activeCanvas);
 _spFinalizePasteRender(pastedObjects, activeCanvas);
-_spFinalizePasteRender(pastedObjects, activeCanvas);
                         /* 🆕 v1.7.560 — _SP_REPERE_COLLE_560 : LE REPÈRE DE DÉBORDEMENT SUIT LE
                            BLOC COLLÉ, y compris en COLLAGE MULTIPLE.
                            MESURÉ : le collage d'UN objet crée bien le triangle rouge
@@ -32669,12 +32754,29 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                             return c && (c.type === 'path' || c.type === 'Path');
                         });
                     }
-                    const isMulti = (clonedObj.type === 'activeSelection' || clonedObj.type === 'ActiveSelection' || clonedObj.type === 'group') && !_isVectorizedTextGroup;
+                    /* ⚠️ FIX 2026-10-07 — _SP_COLLE_GROUPE_SVG : UN GROUPE COLLÉ RESTE UN GROUPE.
+                       MESURÉ (banc, SVG importé = groupe de rect + circle + path) : « group »
+                       figurait dans cette expression, donc TOUT groupe était pris pour une
+                       multi-sélection et DÉCOMPOSÉ au collage — l'image SVG revenait en trois
+                       calques séparés (relevé : 4 objets avant, 7 après, et « Path / Circle /
+                       Rect » listés à part dans le panneau des calques). Aggravant, la
+                       géométrie de ce chemin est fausse d'une demi-taille : il transforme le
+                       COIN de l'enfant par la matrice du groupe (qui attend des coordonnées
+                       relatives au CENTRE), puis déclare l'origine « center » — mesuré sur un
+                       rect de 112 × 82 : décalage de 56 × 41 px vers le haut-gauche, et des
+                       positions qui bougeaient encore entre deux relevés.
+                       Les groupes prennent donc le chemin « intact » juste en dessous, déjà
+                       écrit pour les groupes de texte vectorisé. */
+                    const isMulti = (clonedObj.type === 'activeSelection' || clonedObj.type === 'ActiveSelection') && !_isVectorizedTextGroup;
 
                     // 🍏 v1.7.236 : Chemin rapide pour les groupes de texte vectorisé.
                     //   On les ajoute TELS QUELS sans aucune transformation complexe
                     //   (pas de décomposition, pas de clipPath, pas de _spPasteTextboxFix).
-                    if (_isVectorizedTextGroup) {
+                    // ⚠️ FIX 2026-10-07 — _SP_COLLE_GROUPE_SVG : TOUT groupe passe par ici, pas
+                    //   seulement ceux qui ne contiennent que des paths. Un SVG importé est un
+                    //   groupe de formes (rect, circle, path) : c'est un OBJET, il se colle
+                    //   comme tel. Le décalage de +10 px et la sélection sont déjà faits ici.
+                    if (_isVectorizedTextGroup || clonedObj.type === 'group') {
                         clonedObj.set({
                             left: (clonedObj.left || 0) + 10,
                             top: (clonedObj.top || 0) + 10,
@@ -32780,7 +32882,6 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                         activeCanvas.requestRenderAll();
                         if (viewMode === 'spread') optimizeSpreadZIndex();
                         _spRestoreSourceXforms(_pasteSrcSnaps, activeCanvas);
-_spFinalizePasteRender(pastedObjects, activeCanvas);
 _spFinalizePasteRender(pastedObjects, activeCanvas);
                         /* 🆕 v1.7.560 — _SP_REPERE_COLLE_560 : LE REPÈRE DE DÉBORDEMENT SUIT LE
                            BLOC COLLÉ, y compris en COLLAGE MULTIPLE.
@@ -44440,7 +44541,7 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (_) {}
                 try { _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
             })();
-            (async () => {
+            const _opentypeLoad = (async () => {
                 try {
                     if (!window.opentype) return;
                     const bin = atob(String(dataUrl).split(',')[1] || '');
@@ -44469,7 +44570,20 @@ _spFinalizePasteRender(pastedObjects, activeCanvas);
                 const cf = customFonts.find(f => f.name === fontName);
                 if (cf) cf.data = dataUrl;
             }
-            return true;
+            /* ⚠️ FIX 2026-10-07 — _SP_POLICES_SP_ATTENTE : ON REND LA PROMESSE DE CHARGEMENT.
+               Avant, cette fonction rendait `true` aussitôt : le chargement de la police partait
+               bien (FontFace + opentype, tous deux asynchrones), mais PERSONNE ne pouvait savoir
+               quand il était fini. Or c'est exactement ce dont l'ouverture d'un .sp a besoin :
+               `document.fonts.ready` se résout quand il n'y a plus rien EN ATTENTE — et si la
+               FontFace n'a pas encore été ajoutée au document à cet instant, la promesse est
+               déjà tenue, la réparation des métriques passe trop tôt, et le texte reste mesuré
+               avec la police de repli alors que la police finit par être reconnue. C'est le
+               symptôme rapporté mot pour mot : « les polices sont bien reconnues mais la
+               prévisualisation continue à mal s'afficher ».
+               Les appelants qui ignoraient la valeur de retour ne changent pas (une promesse
+               est toujours « vraie ») ; celui qui doit attendre, lui, attend désormais. */
+            return Promise.all([loadFace, _opentypeLoad]).then(function () { return true; },
+                                                             function () { return true; });
         } catch (err) {
             console.warn('[SP-font-restore] Échec enregistrement police', fontName, err);
             return false;
@@ -56251,6 +56365,45 @@ https://superprint.app
             if (tasks.length) {
                 await Promise.all(tasks);
             }
+            /* ⚠️ FIX 2026-10-07 — _SP_METRIQUES_EXPORT : ON INVALIDE LES MÉTRIQUES PAR OBJET.
+               POURQUOI ICI. Cette fonction est le point de passage commun des QUATRE chemins
+               d'export (rendu natif pdf-lib, planches, imposition, PDF/X) : elle vient de charger
+               les polices dont les objets ont besoin. Or les objets qui l'appellent ont été
+               construits par `loadFromJSON` AVANT — donc mesurés, souvent, avec la police de
+               repli : leurs données de ligne (`_textLines`, `__charBounds`, `__lineWidths`,
+               `__lineHeights`) sont déjà calculées et FIGÉES. Purger le cache global de Fabric
+               (`_spResolveFontCache`, appelé juste après) ne les touche pas : ces données vivent
+               SUR l'objet, pas dans le cache. Le texte sortait alors avec l'avance de ligne du
+               repli — c'est le décalage rapporté, et son intermittence (si la police était déjà
+               chargée par l'aperçu, rien ne bougeait).
+               ON REPREND DONC EXACTEMENT L'INVALIDATION DE `_spRefreshTextboxesAfterFontLoad`
+               (la réparation que l'applique déjà pour l'ouverture d'un .sp), qui vide ces cinq
+               champs avant de redemander les dimensions. Les largeurs/hauteurs figées d'un bloc
+               sont restituées : on ne change AUCUNE géométrie voulue par l'utilisateur, on lui
+               rend seulement ses vraies mesures de police. */
+            objects.forEach(function (o) {
+                if (!o) return;
+                if (o.type !== 'textbox' && o.type !== 'text' && o.type !== 'i-text') return;
+                try {
+                    const fixedW = (typeof window.spFixedWidth === 'function') ? window.spFixedWidth(o) : (o._fixedWidth || o.width);
+                    const fixedH = (typeof window.spFixedHeight === 'function') ? window.spFixedHeight(o) : (o._fixedHeight || o.height);
+                    o._styleMap = null;
+                    o._textLines = null;
+                    o.__lineWidths = null;
+                    o.__lineHeights = null;
+                    o.__charBounds = [];
+                    o.__spHyphenFlags = [];
+                    o.__spWrapLineCounter = 0;
+                    o.__spMissingOffsets = [];
+                    o.__spMissingOffsetCounter = 0;
+                    o._clearCache && o._clearCache();
+                    o.initDimensions && o.initDimensions();
+                    if (fixedW) { o._fixedWidth = fixedW; o.width = fixedW; }
+                    if (fixedH) { o._fixedHeight = fixedH; o.height = fixedH; }
+                    o.setCoords && o.setCoords();
+                    o.dirty = true;
+                } catch (_) {}
+            });
         }
 
         // Verifie SYNCHRONEMENT si une police est deja chargee (cache resolu).
@@ -94021,16 +94174,28 @@ window.loadProjectSP = function(fileContent) {
         const spEmbeddedNames = new Set();
         if (Array.isArray(spEmbeddedFonts) && spEmbeddedFonts.length && typeof window._spRegisterCustomFontDataUrl === 'function') {
             try {
+                /* ⚠️ FIX 2026-10-07 — _SP_POLICES_SP_ATTENTE : ON ATTEND LES POLICES DU .sp.
+                   MESURÉ (lecture du code, cf. le rendu posé 300 ms plus bas) : le .sp rendait
+                   ses pages PUIS demandait la réparation des métriques sur `document.fonts.ready`.
+                   Or cette promesse se résout dès qu'il n'y a plus rien en attente : si la
+                   FontFace du .sp est encore en cours de chargement — ou pas encore ajoutée au
+                   document — elle est DÉJÀ tenue, la réparation passe trop tôt, et les blocs
+                   gardent leurs métriques de repli. La police est pourtant bien reconnue : seul
+                   l'affichage reste faux. On attend donc les chargements eux-mêmes, que
+                   `_spRegisterCustomFontDataUrl` rend maintenant. */
+                const _chargementsPolices = [];
                 spEmbeddedFonts.forEach(f => {
                     if (!f || !f.name) return;
                     spEmbeddedNames.add(f.name);
-                    try { window._spRegisterCustomFontDataUrl(f.name, f.data || ''); } catch (_) {}
+                    try {
+                        const _p = window._spRegisterCustomFontDataUrl(f.name, f.data || '');
+                        if (_p && typeof _p.then === 'function') _chargementsPolices.push(_p);
+                    } catch (_) {}
                 });
-                if (document.fonts && document.fonts.ready) {
-                    document.fonts.ready.then(() => {
-                        try { if (typeof _spRefreshTextboxesAfterFontLoad === 'function') _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
-                    }).catch(() => {});
-                }
+                Promise.all(_chargementsPolices).catch(function () {}).then(function () {
+                    try { if (typeof _spRefreshTextboxesAfterFontLoad === 'function') _spRefreshTextboxesAfterFontLoad(); } catch (_) {}
+                    try { canvases.forEach(function (c) { c && c.requestRenderAll(); }); } catch (_) {}
+                });
             } catch (err) { console.warn('[LoadSP] restauration polices embarquées:', err); }
         }
 
