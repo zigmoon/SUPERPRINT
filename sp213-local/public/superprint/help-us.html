@@ -1689,7 +1689,15 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 .help-pay {
   background: var(--paper); border: 1px solid var(--line-strong); padding: clamp(20px,2.4vw,30px);
   min-height: 100%; display: flex; flex-direction: column; justify-content: flex-start; gap: 16px;
+  /* 🆕 v1.7.604 — TOUT LE BLOC EN TYPOGRAPHIE CENTRÉE, à la demande : la couronne, le titre, le
+     lien « Toutes nos apps », le prix, l'appel et la note. Une seule déclaration ici plutôt que
+     six `text-align` sur six règles : c'est le bloc entier qui est centré, et il le reste si on
+     y ajoute une ligne demain. Les boutons centreaient déjà leur libellé.
+     La pop-in de paiement vit dans ce bloc : elle remet `text-align: left` chez elle (voir
+     .pay-pop), sinon son pied et ses phrases se seraient centrés aussi — ils ne le sont pas. */
+  text-align: center;
 }
+/* ⚠️ La couronne se centre par le flex parent, pas par le texte : inchangée. */
 /* 🆕 v1.7.604 — LA COURONNE DE SIMON DUPONT-GELLERT, AU-DESSUS DU BLOC.
    C'est le MÊME dessin que la fiche d'auteur de l'accueil (img/simon.svg, viewBox 1200x1200,
    encre noire sur fond transparent) et le MÊME traitement : aucune plaque, aucun filet, aucun
@@ -1724,7 +1732,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   padding-bottom: 14px; border-bottom: 1px solid var(--line);
 }
 .help-pay-apps {
-  display: block; width: fit-content; margin-top: 8px;
+  display: block; width: fit-content; margin: 8px auto 0;
   font-family: var(--f-mono); font-size: 11px; letter-spacing: .06em;
   color: var(--ink); text-decoration: underline;
 }
@@ -1803,6 +1811,10 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   align-items: center; justify-content: center; padding: 24px;
   background: rgba(23,19,13,.55);
   -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  /* La pop-in est posée dans le bloc de paiement, qui est centré (voir .help-pay) : elle
+     reprend l'alignement à gauche, sinon sa phrase et son lien de secours auraient hérité du
+     centrage — décision d'origine : la pop-in est alignée à gauche, le bloc de paiement non. */
+  text-align: left;
 }
 .pay-pop.open { display: flex; }
 .pay-pop-cadre {
