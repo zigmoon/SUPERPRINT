@@ -7,7 +7,7 @@
     
     <!-- ═══════════════════════════════════════
          SEO / AEO / STRUCTURED DATA
-         SuperPrint 1.7.604 — Zigmoon
+         SuperPrint 1.7.605 — Zigmoon
          ═══════════════════════════════════════ -->
 
     <!-- ── Core meta ──────────────────────── -->
@@ -21,7 +21,7 @@
     <meta name="theme-color" content="#000000">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
     <meta name="application-name" content="SuperPrint">
-    <meta name="generator" content="SuperPrint 1.7.604 — Zigmoon">
+    <meta name="generator" content="SuperPrint 1.7.605 — Zigmoon">
     <meta name="format-detection" content="telephone=no">
     <meta name="revisit-after" content="7 days">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -162,7 +162,7 @@
           "applicationSubCategory": "Desktop Publishing Software",
           "operatingSystem": "Web Browser (Chrome, Firefox, Safari, Edge, Opera)",
           "browserRequirements": "Requires WebGL, Service Workers, Canvas 2D, File API (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)",
-          "softwareVersion": "1.7.604",
+          "softwareVersion": "1.7.605",
           "datePublished": "2026-01-01",
           "dateModified": "2026-08-03",
           "softwareHelp": {"@type": "CreativeWork", "url": "https://superprint.cc/documentation.html"},
@@ -1218,7 +1218,7 @@
             </div>
             <div class="splash-info">
                 <div class="splash-subtitle">ONLINE DTP SOFTWARE</div>
-                <div class="splash-version">1.7.604</div>
+                <div class="splash-version">1.7.605</div>
                 <div class="splash-section">
                     <div class="splash-label">Creators</div>
                     <div class="splash-text">Simon Dupont-Gellert</div>
@@ -1320,7 +1320,7 @@
                 <!-- Step 0 — Welcome -->
                 <div class="ob-step ob-active" id="obStep0">
                     <div class="ob-welcome-logo">SUPER PRINT</div>
-                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.604</div>
+                    <div class="ob-welcome-sub">LAYOUT EDITOR — V 1.7.605</div>
                     <div class="ob-welcome-desc">
                         Welcome to your professional layout editor — 100&nbsp;% browser-based, no install required.<br><br>
                         Take 30&nbsp;seconds to set up your workspace — autosave, GPU performance, and first-launch options. You can change these settings at any time via the ⚙ icon.
@@ -1416,7 +1416,7 @@
                 <div class="login-error" id="loginError" data-translate="loginError">Mot de passe incorrect</div>
             </div>
             <div style="text-align: center; margin-top: 40px; font-size: 10px; color: #999;">
-                V 1.7.604 | 10 2026<br>
+                V 1.7.605 | 10 2026<br>
                 Simon Dupont-Gellert &amp; Clémence brunet
             </div>
         </div>
@@ -1975,6 +1975,10 @@
                             <rect x="6" y="14" width="12" height="8"></rect>
                         </svg>
                     </button>
+                    <!-- 🆕 Aperçu 3D (three.js) : feuilleter la maquette simple/double page dans un studio 3D -->
+                    <button id="sp3dPlayBtn" title="Aperçu 3D — feuilleter la maquette" aria-label="Aperçu 3D" onclick="if(window.SP3DPreview){window.SP3DPreview.open();}else if(typeof window.spShowToast==='function'){window.spShowToast('Aperçu 3D indisponible (three.js non chargé).');}else{console.warn('[SP-3D] module non chargé');}" style="pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; margin: 0; padding: 0 10px; color: #1a1a1a; height: 32px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
                     <button class="btn" id="saveProject" title="Sauvegarder" style="pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
                         <span style="letter-spacing: 0.6px; font-weight: 700; font-size: 11px;">SAVE</span>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2034,6 +2038,13 @@
                             <rect x="7" y="7" width="10" height="10" fill="currentColor" fill-opacity="0.15"></rect>
                         </svg>
                         <span>Pasteboard</span>
+                    </button>
+                    <!-- 🆕 Aperçu 3D (three.js) -->
+                    <button class="mobile-menu-item" id="mobilePlay3D" onclick="try{document.getElementById('mobileMenu').classList.remove('active');}catch(e){} if(window.SP3DPreview){window.SP3DPreview.open();}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"></path>
+                        </svg>
+                        <span>Aperçu 3D</span>
                     </button>
                     <button class="mobile-menu-item" id="mobileSave">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2139,12 +2150,12 @@
 
             <div class="canvas-wrapper">
                 <!-- 🏷️ BADGE VERSION SUPERPRINT (top-left of preview window)
-                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.604). -->
+                     Single source of truth = JSON-LD softwareVersion = documentation (v1.7.605). -->
                 <span id="spVersionBadge"
-                      title="SuperPrint v1.7.604 — internal cache tag: JS v604 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
+                      title="SuperPrint v1.7.605 — internal cache tag: JS v605 (bumped at every deploy to confirm a forced reload picked up the latest assets)"
                       style="position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid #d0d0d0; border-radius: 3px; font-family: ui-monospace, 'Consolas', monospace; font-size: 10px; letter-spacing: 0.4px; color: #555; background: rgba(250,250,250,0.92); white-space: nowrap; user-select: text; cursor: text; pointer-events: auto; z-index: 5;"
-                      data-sp-js="v604"
-                      data-sp-sw="v1.7.604">v1.7.604</span>
+                      data-sp-js="v605"
+                      data-sp-sw="v1.7.605">v1.7.605</span>
                 <!-- 🏷️ BADGE LOCAL (visible seulement quand l'app tourne en local —
                      même aspect que le badge « Local » du studio SP213 : fond noir,
                      texte blanc, 9px, uppercase). Placé SOUS le numéro de version. -->
@@ -5953,9 +5964,9 @@
                          ligne 0-18, bouton 0-33 -> ecart bas de 15 px. -->
                     <span aria-hidden="true" style="display:inline-block;width:1px;height:18px;margin:0 6px;align-self:center;background:rgba(0,0,0,0.12);"></span>
                     <button class="np-tab" id="npTabStudio" onclick="npSwitchTab('studio')" style="padding: 8px 16px; border: none; background: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; color: #1a1a1a; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;"
-                        data-i18n-fr="Studio IA" data-i18n-en="Studio IA" data-i18n-jp="Studio IA"><img src="../icons/studio_print_logo_blanc.svg" alt="" width="15" height="15" aria-hidden="true" style="display: block; flex: 0 0 auto;">Studio IA</button>
+                        data-i18n-fr="Studio IA" data-i18n-en="Studio IA" data-i18n-jp="Studio IA"><img src="../icons/studio_print_logo_blanc.svg" onerror="this.onerror=null;this.src='icons/studio_print_logo_blanc.svg';" alt="" width="15" height="15" aria-hidden="true" style="display: block; flex: 0 0 auto;">Studio IA</button>
                     <button class="np-tab" id="npTabSupertypo" onclick="npSwitchTab('supertypo')" style="padding: 8px 16px; border: none; background: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; color: #1a1a1a; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;"
-                        data-i18n-fr="SuperTyPo" data-i18n-en="SuperTyPo" data-i18n-jp="SuperTyPo"><img src="../icons/sper_typo.svg" alt="" width="15" height="15" aria-hidden="true" style="display: block; flex: 0 0 auto;">SuperTyPo</button>
+                        data-i18n-fr="SuperTyPo" data-i18n-en="SuperTyPo" data-i18n-jp="SuperTyPo"><img src="../icons/sper_typo.svg" onerror="this.onerror=null;this.src='icons/sper_typo.svg';" alt="" width="15" height="15" aria-hidden="true" style="display: block; flex: 0 0 auto;">SuperTyPo</button>
                 </div>
 
                 <div class="np-columns" style="display: flex; gap: 24px;">
@@ -6486,7 +6497,7 @@
     <script src="JS/simple-pen-tool.js?v=20260513-v128-enter-keeps-open" defer></script>
     <script src="JS/mobile-widgets.js?v=20260506-v004-bottomsheet" defer></script>
     <!-- script src="JS/app-logic.js" defer></script --> 
-    <script src="JS/main.js?v=20261008-v604-polices-et-export" defer></script>
+    <script src="JS/main.js?v=20261008-v605-polices-et-export" defer></script>
     <!-- 🎨 v1.7.525 — _SP_NUANCIERS_525 : nuanciers (accordéons) + import .ase.
          Chargé APRÈS main.js : il réutilise le gestionnaire `change` de
          #spotColorSelect au lieu de le réécrire. -->
@@ -6495,6 +6506,10 @@
     <script src="JS/virtual-printer.js?v=20261012-v542-print-reseau" defer></script>
     <script src="JS/collab.js?v=20260907-v016-ux" defer></script>
     <script src="JS/pwa.js?v=20260501-no-double-splash" defer></script>
+    <!-- 🆕 Aperçu 3D (three.js) : module ES autonome, expose window.SP3DPreview.
+         Si three.js n'est pas disponible (ex. ouverture via file://), le bouton
+         PLAY reste inerte et n'impacte pas le reste de l'app. -->
+    <script type="module" src="JS/sp-3d-preview.js?v=20261111-3d-ombre-instant-v14"></script>
 
     <!-- ── Startup session pop-in (Resume / Open / New) ───────────────────────── -->
     <div id="sp-startup-overlay" role="dialog" aria-modal="true" aria-labelledby="sp-startup-title" hidden>

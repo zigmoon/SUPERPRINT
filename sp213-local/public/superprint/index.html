@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.604",
+      "softwareVersion": "1.7.605",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -2161,7 +2161,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
        droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
        du plan de bump de release. -->
-  <span class="brand-ver">v1.7.604</span>
+  <span class="brand-ver">v1.7.605</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
@@ -2178,7 +2178,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
     <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
     <a href="#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-    <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
+    <a href="help-us.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
     <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
   </div>
@@ -2208,7 +2208,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
   <a href="#faq"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-  <a href="help-us.html"><span class="inline-fr">Participer</span><span class="inline-en">Take part</span><span class="inline-ja">参加する</span></a>
+  <a href="help-us.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
        Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
@@ -2224,7 +2224,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.604</span>
+    <span>SuperPrint v1.7.605</span>
   </div>
 </div>
 
@@ -3779,6 +3779,96 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
     </div>
 
+    <!-- ═══ v1.7.605 — FORMULAIRE DE CONTACT (déplacé depuis la page Tarif /help-us.html) ═══ -->
+    <style>
+      /* Formulaire de contact — styles repris de l'ancienne page d'aide. */
+      .help-bug { margin-top: clamp(30px,4vw,50px); border: 1px solid var(--line); background: var(--paper-3); padding: clamp(20px,2.6vw,32px); }
+      .help-bug .help-h2 { margin: 0 0 12px; font-family: var(--f-caps); font-weight: 400; font-size: clamp(20px,2.2vw,26px); color: var(--ink); }
+      .help-bug-intro { max-width: 74ch; margin: 0 0 clamp(16px,2vw,24px); font-size: clamp(13.5px,1.25vw,15px); line-height: 1.75; color: var(--ink-soft); }
+      .help-bug-intro a { color: var(--ink); }
+      .help-bug-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(12px,1.6vw,18px); }
+      .help-bug-grid .plein { grid-column: 1 / -1; }
+      @media (max-width: 700px) { .help-bug-grid { grid-template-columns: 1fr; } }
+      .help-bug label { display: block; margin-bottom: 6px; font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+      .help-bug input, .help-bug textarea { width: 100%; font-family: var(--f-sans); font-size: 13.5px; line-height: 1.6; padding: 11px 13px; color: var(--ink); background: var(--paper); border: 1px solid var(--line-strong); border-radius: 0; }
+      .help-bug input:focus, .help-bug textarea:focus { outline: 2px solid var(--cyan); outline-offset: 1px; }
+      .help-bug textarea { min-height: 150px; resize: vertical; }
+      .help-bug-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 6px; }
+      .help-bug-note { font-size: 12px; line-height: 1.6; color: var(--muted); max-width: 46ch; }
+      .help-sujet { margin: 0; }
+      .help-sujet-titre { margin: 0 0 10px; font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+      .help-sujet-row { display: flex; flex-wrap: wrap; gap: 8px; }
+      .help-sujet-row button { font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line-strong); border-radius: 999px; padding: 8px 15px; cursor: pointer; transition: color .2s cubic-bezier(.22,.61,.36,1), background .2s cubic-bezier(.22,.61,.36,1), border-color .2s cubic-bezier(.22,.61,.36,1); }
+      .help-sujet-row button:hover { color: var(--ink); border-color: var(--ink); }
+      .help-sujet-row button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+      .help-sujet-row button[aria-checked="true"] { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+      .help-sujet-aide { margin: 10px 0 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+      .help-form-err { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--magenta); }
+      .help-bug-grid .help-sujet-row.is-err button { border-color: var(--magenta); color: var(--magenta); }
+      .help-bug-grid .champ.is-err input, .help-bug-grid .champ.is-err textarea { border-color: var(--magenta); }
+      .help-bug input::placeholder, .help-bug textarea::placeholder { color: var(--muted); opacity: 1; }
+    </style>
+
+    <section class="help-bug" id="ecrire">
+      <h2 class="help-h2" data-lang="fr">Un bug, une formation, un conseil, le projet, la presse : écrivez-nous.</h2>
+      <h2 class="help-h2" data-lang="en">A bug, a training course, some advice, the project, the press: write to us.</h2>
+      <h2 class="help-h2" data-lang="ja">不具合、研修、相談、プロジェクト、プレス — ご用件をお書きください。</h2>
+      <p class="help-bug-intro" data-lang="fr">Choisissez d'abord votre sujet : il donne son objet au courrier et il adapte les questions posées sous les champs. Il n'y a <strong>pas de serveur derrière ce formulaire</strong> — le site est statique : le bouton ouvre votre logiciel de courrier avec le message déjà rédigé, adressé à <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>. Vous pouvez aussi écrire directement à cette adresse.</p>
+      <p class="help-bug-intro" data-lang="en">Pick your subject first: it sets the subject line of the e-mail and adapts the questions asked under each field. There is <strong>no server behind this form</strong> — the site is static: the button opens your mail software with the message already written, addressed to <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>. You can also write to that address directly.</p>
+      <p class="help-bug-intro" data-lang="ja">まずご用件をお選びください。それによりメールの件名が決まり、各欄の質問も変わります。このサイトは静的で、<strong>フォームの後ろにサーバーはありません</strong>。ボタンを押すと、<a href="mailto:contact@superprint.cc">contact@superprint.cc</a> 宛ての文面が作成された状態でメールソフトが開きます。直接メールしていただいても構いません。</p>
+
+      <form id="bugForm" class="help-bug-grid" novalidate>
+        <div class="plein champ help-sujet">
+          <p class="help-sujet-titre" data-lang="fr">1 · Votre sujet</p>
+          <p class="help-sujet-titre" data-lang="en">1 · Your subject</p>
+          <p class="help-sujet-titre" data-lang="ja">1 · ご用件</p>
+          <div class="help-sujet-row" role="radiogroup" aria-label="Sujet du message / Message subject">
+            <button type="button" role="radio" aria-checked="false" data-sujet="projet"><span class="inline-fr">Participer au projet</span><span class="inline-en">Join the project</span><span class="inline-ja">プロジェクトに参加</span></button>
+            <button type="button" role="radio" aria-checked="false" data-sujet="formation"><span class="inline-fr">Demander une formation</span><span class="inline-en">Ask for training</span><span class="inline-ja">研修を依頼</span></button>
+            <button type="button" role="radio" aria-checked="false" data-sujet="conseil"><span class="inline-fr">Demander un conseil</span><span class="inline-en">Ask for advice</span><span class="inline-ja">相談したい</span></button>
+            <button type="button" role="radio" aria-checked="false" data-sujet="bug"><span class="inline-fr">Relever un bug</span><span class="inline-en">Report a bug</span><span class="inline-ja">不具合を報告</span></button>
+            <button type="button" role="radio" aria-checked="false" data-sujet="presse"><span class="inline-fr">Presse &amp; médias</span><span class="inline-en">Press &amp; media</span><span class="inline-ja">プレス・メディア</span></button>
+          </div>
+          <p class="help-sujet-aide" data-lang="fr">Le sujet choisi décide de l'objet du courrier et de la question posée sous chaque champ. Un rapport de bug précis vaut un don.</p>
+          <p class="help-sujet-aide" data-lang="en">The subject you pick sets the e-mail subject and the question asked under each field. A precise bug report is worth a donation.</p>
+          <p class="help-sujet-aide" data-lang="ja">選んだご用件が、メールの件名と各欄の質問を決めます。正確な不具合報告は寄付と同じくらい力になります。</p>
+        </div>
+
+        <p class="plein help-form-err" id="formErr" hidden></p>
+
+        <div class="plein champ">
+          <label for="bugOu" data-lang="fr">De quoi s'agit-il ?</label>
+          <label for="bugOu" data-lang="en">What is it about?</label>
+          <label for="bugOu" data-lang="ja">何についてですか？</label>
+          <input id="bugOu" name="ou" type="text" autocomplete="off" placeholder="ex. écran Mise en page, outil Césure, fichier brochure.sp">
+        </div>
+        <div class="champ">
+          <label for="bugQuoi" data-lang="fr">Plus de détails</label>
+          <label for="bugQuoi" data-lang="en">More details</label>
+          <label for="bugQuoi" data-lang="ja">もう少し詳しく</label>
+          <input id="bugQuoi" name="quoi" type="text" autocomplete="off" placeholder="ex. j'ai exporté en PDF, j'ai changé la police">
+        </div>
+        <div class="champ">
+          <label for="bugMail" data-lang="fr">Votre courriel (facultatif, pour la réponse)</label>
+          <label for="bugMail" data-lang="en">Your e-mail (optional, for the reply)</label>
+          <label for="bugMail" data-lang="ja">メールアドレス（任意、返信用）</label>
+          <input id="bugMail" name="mail" type="email" autocomplete="email" placeholder="prenom@domaine.com">
+        </div>
+        <div class="plein champ">
+          <label for="bugCorps" data-lang="fr">Votre message</label>
+          <label for="bugCorps" data-lang="en">Your message</label>
+          <label for="bugCorps" data-lang="ja">本文</label>
+          <textarea id="bugCorps" name="corps" placeholder="Quelques lignes suffisent. Ce que vous faites, ce qui se passe, ce que vous attendiez."></textarea>
+        </div>
+        <div class="help-bug-actions plein">
+          <button type="submit" class="btn btn-primary"><span class="inline-fr">Ouvrir mon courrier</span><span class="inline-en">Open my mail</span><span class="inline-ja">メールを開く</span> <span class="arr" aria-hidden="true">→</span></button>
+          <span class="help-bug-note" data-lang="fr">Le sujet choisi est inscrit dans l'objet du message. La version de SuperPrint, la langue de la page, votre navigateur et l'adresse de la page sont ajoutés automatiquement.</span>
+          <span class="help-bug-note" data-lang="en">Your subject is written into the message subject line. The SuperPrint version, the page language, your browser and the page address are added automatically.</span>
+          <span class="help-bug-note" data-lang="ja">選んだご用件がメールの件名になります。SuperPrint のバージョン、ページの言語、ブラウザ、ページのアドレスは自動的に文面に追加されます。</span>
+        </div>
+      </form>
+    </section>
+
   </div>
 </section>
 <section id="cta-final">
@@ -3851,9 +3941,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
           <a href="#faq" data-lang="fr">Questions fréquentes</a>
           <a href="#faq" data-lang="en">FAQ</a>
           <a href="#faq" data-lang="ja">よくある質問</a>
-          <a href="help-us.html" data-lang="fr">Participer</a>
-          <a href="help-us.html" data-lang="en">Take part</a>
-          <a href="help-us.html" data-lang="ja">参加する</a>
+          <a href="help-us.html" data-lang="fr">Tarif</a>
+          <a href="help-us.html" data-lang="en">Price</a>
+          <a href="help-us.html" data-lang="ja">料金</a>
         </div>
       </div>
       <div>
@@ -3870,7 +3960,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.604</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.605</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
@@ -4632,6 +4722,217 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   filtrer();
   /* la page peut poser la langue APRÈS ce script : on remet l'exemple d'aplomb au chargement */
   window.addEventListener('load', function () { majExemple(); filtrer(); });
+})();
+</script>
+<script>
+/* ═══ v1.7.605 — FORMULAIRE DE CONTACT (FAQ) : cinq sujets, composition du courrier (aucun serveur) ═══ */
+(function () {
+  var form = document.getElementById('bugForm');
+  if (!form) return;
+  var ou = document.getElementById('bugOu');
+  var quoi = document.getElementById('bugQuoi');
+  var mail = document.getElementById('bugMail');
+  var corps = document.getElementById('bugCorps');
+  var rangee = form.querySelector('.help-sujet-row');
+  var err = document.getElementById('formErr');
+  if (!ou || !quoi || !mail || !corps || !rangee) return;
+  var pastilles = Array.prototype.slice.call(rangee.querySelectorAll('button[data-sujet]'));
+
+  /* ── LES CINQ SUJETS ──────────────────────────────────────────────────────
+     « objet » reste en FRANÇAIS : c'est la langue du destinataire
+     (contact@superprint.cc), et l'objet doit être lisible d'un coup d'œil dans
+     une boîte de réception. Les étiquettes et les aides, elles, suivent la
+     langue de la page : l1 = premier champ, l2 = second, l4 = le message,
+     p1/p2/p4 = leur texte grisé. */
+  var D = {
+    projet: {
+      objet: 'Participer au projet',
+      fr: { l1: 'Votre profil, ou ce que vous faites', p1: 'ex. traducteur, illustrateur, étudiant, développeur, imprimeur',
+            l2: 'Comment vous voulez aider', p2: 'ex. traduire, tester, illustrer, relire la documentation, héberger',
+            l4: 'Ce que vous proposez', p4: 'Quelques lignes suffisent : ce que vous aimeriez apporter au projet, et le temps que vous pouvez y mettre.' },
+      en: { l1: 'Your background, or what you do', p1: 'e.g. translator, illustrator, student, developer, printer',
+            l2: 'How you would like to help', p2: 'e.g. translate, test, illustrate, proofread the manual, host',
+            l4: 'What you propose', p4: 'A few lines are enough: what you would like to bring to the project, and how much time you can give.' },
+      ja: { l1: 'あなたの立場・お仕事', p1: '例：翻訳者、イラストレーター、学生、開発者、印刷所',
+            l2: 'どのように協力できるか', p2: '例：翻訳、テスト、イラスト、マニュアルの校正、サーバー提供',
+            l4: 'ご提案の内容', p4: '数行で結構です。プロジェクトに何を加えたいか、どのくらい時間を割けるかをご記入ください。' }
+    },
+    formation: {
+      objet: 'Demande de formation',
+      fr: { l1: 'Le logiciel concerné', p1: 'ex. SuperPrint Editor, Studio IA, SuperTyPo, les trois',
+            l2: 'Votre niveau aujourd\'hui', p2: 'ex. je débute, je fais déjà des livres, je viens d\'un autre logiciel (InDesign, Scribus)',
+            l4: 'Ce que vous voulez apprendre', p4: 'ex. la mise en page, les gabarits, l\'export PDF pour l\'imprimeur, le Studio IA' },
+      en: { l1: 'Which software', p1: 'e.g. SuperPrint Editor, AI Studio, SuperTyPo, all three',
+            l2: 'Your level today', p2: 'e.g. beginner, I already make books, I come from another tool (InDesign, Scribus)',
+            l4: 'What you want to learn', p4: 'e.g. layout, templates, PDF export for the printer, the AI Studio' },
+      ja: { l1: '対象のソフト', p1: '例：SuperPrint Editor、AIスタジオ、SuperTyPo、すべて',
+            l2: '現在の習熟度', p2: '例：初心者、書籍を制作したことがある、他ソフト（InDesign、Scribus）から移行',
+            l4: '学びたいこと', p4: '例：レイアウト、テンプレート、印刷所向けPDF書き出し、AIスタジオ' }
+    },
+    conseil: {
+      objet: 'Demande de conseil',
+      fr: { l1: 'Votre projet', p1: 'ex. un roman 14 × 21, un flyer A5, un catalogue, un PDF pour l\'imprimeur',
+            l2: 'Où vous en êtes', p2: 'ex. rien n\'est commencé, j\'ai un fichier Word, j\'ai déjà un PDF',
+            l4: 'Votre question', p4: 'Décrivez la question en quelques lignes : format, délai, budget, contraintes de l\'imprimeur.' },
+      en: { l1: 'Your project', p1: 'e.g. a 14 × 21 novel, an A5 flyer, a catalogue, a print-ready PDF',
+            l2: 'Where you stand', p2: 'e.g. nothing started, I have a Word file, I already have a PDF',
+            l4: 'Your question', p4: 'Describe your question in a few lines: format, deadline, budget, printer constraints.' },
+      ja: { l1: '制作物', p1: '例：14×21の小説、A5チラシ、カタログ、印刷用PDF',
+            l2: '現在の状況', p2: '例：未着手、Wordファイルがある、PDFがある',
+            l4: 'ご質問', p4: '書式、締切、予算、印刷所の条件などを数行でご記入ください。' }
+    },
+    bug: {
+      objet: 'Rapport de bug',
+      fr: { l1: 'Où ? (écran, outil, ou nom du fichier .sp)', p1: 'ex. écran Mise en page, outil Césure, fichier brochure.sp',
+            l2: 'Ce que vous faisiez', p2: 'ex. j\'ai exporté en PDF, j\'ai changé la police, j\'ai relancé l\'aperçu',
+            l4: 'Ce qui se passe, et ce que vous attendiez', p4: 'ex. le titre reste en gras alors qu\'il est réglé en maigre ; le PDF sort avec une page blanche à la fin.' },
+      en: { l1: 'Where? (screen, tool, or .sp file name)', p1: 'e.g. Layout screen, Hyphenation tool, brochure.sp',
+            l2: 'What you were doing', p2: 'e.g. I exported to PDF, I changed the font, I reopened the preview',
+            l4: 'What happens, and what you expected', p4: 'e.g. the title stays bold although it is set to light; the PDF ends with a blank page.' },
+      ja: { l1: 'どこで？（画面、ツール、.sp ファイル名）', p1: '例：レイアウト画面、ハイフネーション、brochure.sp',
+            l2: '何をしていたか', p2: '例：PDF書き出し、フォント変更、プレビューの再表示',
+            l4: '起きていること、期待していたこと', p4: '例：細字なのにタイトルが太字のまま、PDFの最後に白紙が入る。' }
+    },
+    presse: {
+      objet: 'Presse',
+      fr: { l1: 'Votre support', p1: 'ex. magazine, blog, chaîne vidéo, podcast, université, association',
+            l2: 'Votre échéance', p2: 'ex. avant vendredi, pour le numéro de novembre, sans urgence',
+            l4: 'Votre demande', p4: 'ex. logos haute définition, dossier de presse, captures d\'écran, interview, visuels des auteurs.' },
+      en: { l1: 'Your outlet', p1: 'e.g. magazine, blog, video channel, podcast, university, non-profit',
+            l2: 'Your deadline', p2: 'e.g. before Friday, for the November issue, no rush',
+            l4: 'Your request', p4: 'e.g. high-definition logos, press kit, screenshots, interview, author photos.' },
+      ja: { l1: '媒体・チャンネル', p1: '例：雑誌、ブログ、動画、ポッドキャスト、大学、団体',
+            l2: '締切', p2: '例：金曜まで、11月号向け、急ぎではない',
+            l4: 'ご依頼内容', p4: '例：高解像度ロゴ、プレスキット、画面キャプチャ、インタビュー、著者写真。' }
+    }
+  };
+
+  var ERREURS = {
+    sujet: { fr: 'Choisissez d\'abord votre sujet, puis remplissez le message.',
+             en: 'Pick your subject first, then write your message.',
+             ja: 'まずご用件を選び、本文をご記入ください。' },
+    corps: { fr: 'Ajoutez au moins quelques mots — dans le message, ou dans le premier champ.',
+             en: 'Add at least a few words — in the message, or in the first field.',
+             ja: '本文（または最初の欄）に数行ご記入ください。' }
+  };
+
+  var SUJET = '';
+  function langue() { return (document.documentElement.lang || 'en').toLowerCase().slice(0, 2); }
+  function sujetCourant() { return SUJET ? D[SUJET] : null; }
+
+  function poserEtiquettes(idChamp, cle) {
+    var labs = form.querySelectorAll('label[for="' + idChamp + '"]');
+    Array.prototype.forEach.call(labs, function (lab) {
+      if (!lab.hasAttribute('data-defaut')) lab.setAttribute('data-defaut', lab.textContent);
+      var lg = (lab.getAttribute('data-lang') || 'en');
+      var s = sujetCourant();
+      lab.textContent = (s && s[lg] && s[lg][cle]) ? s[lg][cle] : lab.getAttribute('data-defaut');
+    });
+  }
+  function poserAide(el, cle) {
+    if (!el.hasAttribute('data-defaut')) el.setAttribute('data-defaut', el.getAttribute('placeholder') || '');
+    var s = sujetCourant();
+    var lg = langue();
+    el.setAttribute('placeholder', (s && s[lg] && s[lg][cle]) ? s[lg][cle] : el.getAttribute('data-defaut'));
+  }
+  function ecrireErreur(cle) {
+    if (!err) return;
+    err.setAttribute('data-err', cle);
+    err.textContent = (ERREURS[cle] || {})[langue()] || (ERREURS[cle] || {}).en || '';
+    err.hidden = !err.textContent;
+  }
+  function effacerErreur() {
+    if (err) { err.hidden = true; err.removeAttribute('data-err'); }
+    rangee.classList.remove('is-err');
+    Array.prototype.forEach.call(form.querySelectorAll('.champ.is-err'), function (c) { c.classList.remove('is-err'); });
+  }
+  function maj() {
+    poserEtiquettes('bugOu', 'l1');
+    poserEtiquettes('bugQuoi', 'l2');
+    poserEtiquettes('bugCorps', 'l4');
+    poserAide(ou, 'p1');
+    poserAide(quoi, 'p2');
+    poserAide(corps, 'p4');
+    if (err && !err.hidden && err.getAttribute('data-err')) ecrireErreur(err.getAttribute('data-err'));
+  }
+
+  function choisir(b) {
+    SUJET = b.getAttribute('data-sujet') || '';
+    pastilles.forEach(function (x) { x.setAttribute('aria-checked', x === b ? 'true' : 'false'); });
+    effacerErreur();
+    maj();
+  }
+  pastilles.forEach(function (b) {
+    b.addEventListener('click', function () {
+      choisir(b);
+      if (!ou.value) ou.focus();
+    });
+  });
+  rangee.addEventListener('keydown', function (e) {
+    var k = e.key, i = pastilles.indexOf(document.activeElement);
+    if (i < 0 || ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].indexOf(k) < 0) return;
+    e.preventDefault();
+    var n = (k === 'ArrowRight' || k === 'ArrowDown') ? (i + 1) % pastilles.length : (i - 1 + pastilles.length) % pastilles.length;
+    pastilles[n].focus();
+    choisir(pastilles[n]);
+  });
+
+  [ou, quoi, mail, corps].forEach(function (el) {
+    el.addEventListener('input', function () {
+      var c = el.closest ? el.closest('.champ') : null;
+      if (c) c.classList.remove('is-err');
+      if (err && err.getAttribute('data-err') === 'corps') effacerErreur();
+    });
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = function (el) { return el && el.value ? el.value.trim() : ''; };
+    var vou = v(ou), vquoi = v(quoi), vmail = v(mail), vcorps = v(corps);
+    if (!SUJET) {
+      rangee.classList.add('is-err');
+      ecrireErreur('sujet');
+      if (pastilles[0]) pastilles[0].focus();
+      return;
+    }
+    if (!vcorps && !vou) {
+      var champCorps = corps.closest ? corps.closest('.champ') : null;
+      if (champCorps) champCorps.classList.add('is-err');
+      ecrireErreur('corps');
+      corps.focus();
+      return;
+    }
+    var objet = D[SUJET].objet;
+    var version = (document.querySelector('.brand-ver') || document.querySelector('.splash-version'));
+    var titre = '[SuperPrint] ' + objet + (vou ? ' — ' + vou.slice(0, 60) : '');
+    var lignes = [
+      'Sujet : ' + objet,
+      'De quoi il s\'agit : ' + (vou || '(non précisé)'),
+      'Précisions : ' + (vquoi || '(non précisé)'),
+      '',
+      vcorps || '(à compléter)',
+      '',
+      'Courriel : ' + (vmail || '(non fourni)'),
+      '',
+      '—— informations techniques, ajoutées automatiquement ——',
+      'Version de SuperPrint : ' + (version ? version.textContent.trim() : 'inconnue'),
+      'Langue de la page : ' + langue().toUpperCase(),
+      'Navigateur : ' + navigator.userAgent,
+      'Page : ' + location.href
+    ];
+    var lien = 'mailto:contact@superprint.cc'
+      + '?subject=' + encodeURIComponent(titre)
+      + '&body=' + encodeURIComponent(lignes.join(String.fromCharCode(10)));
+    try { document.dispatchEvent(new CustomEvent('sp:mailto', { detail: { href: lien, sujet: objet } })); } catch (x) {}
+    window.location.href = lien;
+  });
+
+  maj();
+
+  var setLangOrigine = window.setLang;
+  if (typeof setLangOrigine === 'function') {
+    window.setLang = function (l, explicite) { setLangOrigine(l, explicite); maj(); };
+  }
 })();
 </script>
 </body>
