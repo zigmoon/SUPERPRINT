@@ -48,7 +48,12 @@
     // 🎯 Animation « wahou » à l'ouverture : quand une police vient d'être
     //   chargée, les cellules de la grille « éclatent » depuis le centre puis
     //   se rangent (démo type « squelette → grille »).
-    burstIn: false
+    burstIn: false,
+    // 🆕 Anti-double « éclatement » : le lien profond depuis SuperPrint
+    //   (« Éditer la typo ») appelle showFontView() deux fois (réception de la
+    //   fonte en postMessage PUIS relance du deep-link) → sans ce garde, la
+    //   vague d'animation jouait deux fois. Remis à false à chaque NEW chargement.
+    _burstDone: false
   };
 
   const $ = (id) => document.getElementById(id);
@@ -741,6 +746,8 @@
     ST.glyphs = glyphs;
     ST.dirty = false;
     ST.originalBuffer = buf;
+    // 🆕 Nouvelle police → on ré-auto-rise l'animation d'éclatement (une fois).
+    ST._burstDone = false;
     return glyphs;
   }
 
@@ -1522,6 +1529,8 @@
     ST.font = null;
     ST.dirty = sf.glyphs.some(g => g.dirty);
     ST.originalBuffer = null;
+    // 🆕 Nouveau travail chargé → on ré-auto-rise l'animation d'éclatement (une fois).
+    ST._burstDone = false;
     $('modifiedChip').style.display = ST.dirty ? 'inline-flex' : 'none';
   }
 
@@ -2614,8 +2623,12 @@
     $('fontView').style.display = 'flex';
     $('sampleInput').value = ST.sampleChars || defaultSample();
     ST.sampleChars = $('sampleInput').value;
-    // 🎯 Déclencher l'animation « éclatement » à l'apparition de la grille.
-    ST.burstIn = true;
+    // 🎯 Déclencher l'animation « éclatement » à l'apparition de la grille —
+    //    UNE SEULE FOIS par police chargée (voir ST._burstDone).
+    if (!ST._burstDone) {
+      ST.burstIn = true;
+      ST._burstDone = true;
+    }
     buildGlyphGrid();
   }
 
