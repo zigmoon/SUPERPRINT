@@ -1,4 +1,4 @@
-SUPERPRINT 1.7.605 - CONTENU DU PAQUET
+SUPERPRINT 1.7.606 - CONTENU DU PAQUET
 ======================================
 
 Ce paquet n'est PAS un site web : c'est le paquet de l'APPLICATION LOCALE,
@@ -30,7 +30,7 @@ src/ .............................. ancien moteur du studio local, debranche
   public/superprint/JS/three.module.min.js  three.js 0.160.1 (pierre 3D, hors ligne)
   public/superprint/api.html ............. API
   public/superprint/install.html ......... page du site (source du lanceur)
-  public/superprint/version.txt .......... version du paquet : 1.7.605
+  public/superprint/version.txt .......... version du paquet : 1.7.606
   public/js/fabric.min.js ................ moteur canvas (fabric)
   public/js/mammoth.min.js ............... import de documents Word
 
@@ -55,4 +55,4 @@ INSTALLATION
 
 Telecharge le paquet, installe les dependances et lance le serveur local.
 
-SuperPrint 1.7.605 - 4 octobre 2026 - https://superprint.cc
+SuperPrint 1.7.606 - 4 octobre 2026 - https://superprint.cc
