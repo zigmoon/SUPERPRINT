@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.607-studio-ia-et-tarif';
+const CACHE_NAME = 'superprint-shell-v1.7.608-contraste-couverture';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
