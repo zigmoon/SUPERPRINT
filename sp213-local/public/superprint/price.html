@@ -1532,63 +1532,11 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
 
 /* ═══ v1.7.470 — page « nous aider » : mêmes jetons que la landing, mise en page dédiée ═══ */
-/* ═══ v1.7.578 — SOMMAIRE DE LA PAGE : TROIS PASTILLES, COLLÉES SOUS LA NAV ═══
-   La page a trois zones (aider le projet / nous écrire / presse & ressources)
-   mais aucune entrée : il fallait dérouler toute la page pour tomber sur le
-   formulaire ou sur les téléchargements. Trois pastilles numérotées répondent
-   aux deux questions d'un sommaire : « où puis-je aller » et « où suis-je »
-   (celle de la zone affichée passe à l'encre pleine, son numéro au jaune).
-
-   --som-top : la hauteur de la barre collante. Elle vaut 66 px, MESURÉE sur
-   cette page en 1280 comme en 390 px, et le script la remesure au chargement,
-   au redimensionnement et au changement de langue (les libellés changent de
-   longueur). Le sommaire vient donc toujours se coller dessous, au pixel.
-   Le fond est celui de la nav (papier à 92 % + flou) : le contenu passe
-   derrière sans trouer la bande. z-index 90 : sous la nav (120) et sous le
-   menu plein écran (118), donc jamais par-dessus eux. */
-:root { --som-top: 66px; }
-.aide-som {
-  position: sticky; top: var(--som-top); z-index: 90;
-  background: color-mix(in srgb, var(--paper) 92%, transparent);
-  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
-}
-.aide-som-in {
-  max-width: 1180px; margin: 0 auto;
-  padding: 9px clamp(18px,4vw,40px);
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-}
-.aide-som-titre {
-  margin-right: 6px;
-  font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .24em;
-  text-transform: uppercase; color: var(--muted);
-}
-.aide-som a {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--f-mono); font-size: 10.5px; font-weight: 600;
-  letter-spacing: .1em; text-transform: uppercase; text-decoration: none;
-  color: var(--ink); background: var(--paper-3);
-  border: 1px solid var(--line-strong); border-radius: 999px;
-  padding: 7px 14px;
-  transition: background .25s var(--ease), color .25s var(--ease), border-color .25s var(--ease);
-}
-.aide-som a:hover { border-color: var(--ink); }
-.aide-som a .aide-som-n {
-  font-size: 9px; font-weight: 700; letter-spacing: .06em; color: var(--magenta);
-}
-.aide-som a.is-on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
-.aide-som a.is-on .aide-som-n { color: var(--yellow); }
-/* Les trois cibles ne doivent pas se ranger SOUS la nav et le sommaire quand on
-   clique une pastille (l'ancre pose le titre exactement en haut d'écran sinon). */
-#aide, #ecrire, #ressources { scroll-margin-top: calc(var(--som-top) + 58px); }
-/* En mobile la bande est étroite : le mot « sommaire » et les mots longs
-   (« nous », « & ressources ») s'effacent, les trois pastilles tiennent alors
-   sur une ligne à 360 px. */
-@media(max-width:700px){
-  .aide-som-in { padding: 7px clamp(12px,3vw,18px); gap: 6px; }
-  .aide-som-titre, .aide-som-long { display: none; }
-  .aide-som a { font-size: 9.5px; padding: 6px 10px; gap: 6px; letter-spacing: .06em; }
-}
+/* ⚠️ _SP_SOMMAIRE_708 — LE SOMMAIRE A QUITTÉ CETTE PAGE POUR LA FAQ (demande utilisateur :
+   « la page FAQ en a besoin alors que la page tarif n'en a plus besoin »). La page Tarif se lit
+   d'une traite (le hero, puis la grille d'offres) : le sommaire y faisait doublon. Le bloc HTML,
+   le CSS et le script ont été repris à l'identique dans `faq.html`, réglés sur SES trois zones
+   (questions fréquentes → #faq, nous écrire → #ecrire, presse & ressources → #ressources). */
 .help-wrap { max-width: 1180px; margin: 0 auto; padding: clamp(26px,3.4vw,56px) clamp(18px,4vw,40px) clamp(40px,6vw,80px); }
 /* ═══ v1.7.474 — LE RYTHME VERTICAL DE LA PAGE ═══
    Une seule échelle pour toute la page : le titre respire de 12 px avant son texte, un bloc est
@@ -1628,7 +1576,11 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 .help-don-txt p { margin: 0 0 10px; font-size: clamp(14px,1.3vw,16.5px); line-height: 1.7; color: var(--ink-soft); }
 .help-don-news { border-left: 3px solid var(--yellow); padding-left: 14px; color: var(--ink) !important; }
 .help-lead { margin: 14px 0 0; max-width: 68ch; font-size: clamp(14px,1.3vw,16.5px); line-height: 1.7; color: var(--ink-soft); }
-.help-rule { height: 1px; background: var(--line); border: 0; margin: clamp(28px,4vw,46px) 0; }
+/* ⚠️ _SP_TARIF_709 — LE FILET DE SÉPARATION EST COURT ET CENTRÉ (demande utilisateur : « j'aime pas
+   la barre grise de séparation sur toute la largeur dans la page des tarifs avant les 4 offres,
+   fais-la moins large »). Il courait d'un bord à l'autre de la colonne (jusqu'à 1180 px) : c'est un
+   trait décoratif court, centré par marges automatiques, qui marque la respiration sans barrer la page. */
+.help-rule { height: 1px; width: min(140px, 40%); background: var(--line); border: 0; margin: clamp(28px,4vw,46px) auto; }
 .help-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: clamp(14px,1.6vw,20px); }
 .help-card { background: var(--paper-3); border: 1px solid var(--line); padding: clamp(16px,1.8vw,24px); position: relative; }
 .help-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--cyan); }
@@ -1976,7 +1928,9 @@ html[lang="ja"] .help-sujet [data-lang]:not([data-lang="ja"]) { display: none; }
    chaque côté, pour tomber au milieu de l'écart. */
 section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw,56px) 24px; }
 .help-apps, .help-more, .help-bug { margin-top: 0; }
-.help-rule { margin: clamp(17px,2vw,28px) 0; }
+/* _SP_TARIF_709 — marges VERTICALES seulement resserrées ici ; le centrage et la largeur
+   courte (min(140px,40%)) sont posés plus haut et restent valables (marges gauche/droite auto). */
+.help-rule { margin: clamp(17px,2vw,28px) auto; }
 /* ——— v1.7.499 — LES DEUX TITRES QUI RESTENT, À LA TYPOGRAPHIE DU TITRE PRINCIPAL.
    Après la suppression des trois outils et de « ce qu'un don représente », la page n'a plus que
    deux titres de rubrique — « Participer » (dans le bloc de don) et « Trouvé un bug ? ».
@@ -2140,17 +2094,8 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <img src="favicon.png" alt="" width="56" height="56">
 </div>
 
-<!-- ═══ v1.7.578 — SOMMAIRE DE LA PAGE : LES TROIS ZONES, EN HAUT ═══
-     Aide (le projet et le don) / le formulaire / la presse à télécharger.
-     Enfant direct de <body>, avant .help-wrap : c'est ce qui lui permet de
-     coller sous la nav sur toute la hauteur de la page (voir le CSS). -->
-<div class="aide-som" role="navigation" aria-label="Sommaire de la page / Page index / 目次">
-  <div class="aide-som-in">
-    <span class="aide-som-titre"><span class="inline-fr">Sommaire</span><span class="inline-en">On this page</span><span class="inline-ja">目次</span></span>
-    <a href="#aide"><span class="aide-som-n">01</span><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
-    <a href="#tarifs"><span class="aide-som-n">02</span><span class="inline-fr">Les offres</span><span class="inline-en">The offers</span><span class="inline-ja">プラン</span></a>
-  </div>
-</div>
+<!-- ⚠️ _SP_SOMMAIRE_708 — LE SOMMAIRE DE PAGE A ÉTÉ DÉPLACÉ VERS LA FAQ (voir le CSS ci-dessus).
+     La page Tarif n'a plus de barre de sommaire : elle se lit d'une traite. -->
 
 <!-- ══════════════ HERO
 <!-- ══════════════ CONTENU ══════════════ -->
@@ -3024,72 +2969,8 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
 })();
 </script>
 
-
-<!-- ═══ v1.7.578 — SOMMAIRE : LA HAUTEUR DE LA NAV, ET LA ZONE COURANTE ═══ -->
-<script>
-(function () {
-  var som = document.querySelector('.aide-som');
-  if (!som) return;
-  var nav = document.querySelector('nav');
-
-  /* La hauteur de la barre collante n'est pas devinée : elle est mesurée. Une
-     langue plus longue ou un écran plus étroit peut la faire grandir, et le
-     sommaire doit rester collé dessous au pixel. */
-  function poserTop() {
-    if (!nav) return;
-    var h = Math.round(nav.getBoundingClientRect().height);
-    if (h > 0) document.documentElement.style.setProperty('--som-top', h + 'px');
-  }
-
-  var liens = Array.prototype.slice.call(som.querySelectorAll('a[href^="#"]'));
-  var cibles = liens.map(function (a) { return document.querySelector(a.getAttribute('href')); });
-
-  function marquer(courante) {
-    liens.forEach(function (a, i) {
-      var on = cibles[i] === courante;
-      a.classList.toggle('is-on', on);
-      if (on) { a.setAttribute('aria-current', 'true'); } else { a.removeAttribute('aria-current'); }
-    });
-  }
-
-  /* La zone courante est la DERNIÈRE dont le haut est passé sous les deux
-     bandes collantes (nav + sommaire) : lecture directe, sans observateur, et
-     ça marche aussi pour la dernière zone, courte, quand on est en bas de page. */
-  function majZone() {
-    var haut = (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--som-top'), 10) || 66) + 62;
-    var courante = null;
-    for (var i = 0; i < cibles.length; i++) {
-      var c = cibles[i];
-      if (c && c.getBoundingClientRect().top - haut <= 0) courante = c;
-    }
-    if (!courante) courante = cibles[0];
-    if (window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 4) {
-      courante = cibles[cibles.length - 1];
-    }
-    if (courante) marquer(courante);
-  }
-
-  var attente = false;
-  function auDefilement() {
-    if (attente) return;
-    attente = true;
-    requestAnimationFrame(function () { attente = false; majZone(); });
-  }
-
-  poserTop();
-  majZone();
-  window.addEventListener('scroll', auDefilement, { passive: true });
-  window.addEventListener('resize', function () { poserTop(); majZone(); });
-  window.addEventListener('hashchange', function () { setTimeout(majZone, 60); });
-
-  /* setLang est enveloppée (jamais modifiée) : après un changement de langue,
-     les libellés du sommaire ne font plus la même largeur, on remesure. */
-  var setLangOrigine = window.setLang;
-  if (typeof setLangOrigine === 'function') {
-    window.setLang = function (l, explicite) { setLangOrigine(l, explicite); poserTop(); majZone(); };
-  }
-})();
-</script>
+<!-- ⚠️ _SP_SOMMAIRE_708 — LE SCRIPT DU SOMMAIRE A ÉTÉ DÉPLACÉ VERS LA FAQ (voir faq.html).
+     La page Tarif n'a plus de barre de sommaire, donc plus rien à mesurer ni à suivre. -->
 
 </body>
 </html>
