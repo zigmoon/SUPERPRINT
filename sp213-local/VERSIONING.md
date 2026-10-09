@@ -1,6 +1,6 @@
 # SUPERPRINT — VERSIONING (note officielle)
 
-> **Dernière version : `1.7.606`** — 9 octobre 2026
+> **Dernière version : `1.7.607`** — 9 octobre 2026
 > Ce document est la **source de vérité** pour le versioning de SuperPrint.
 > Il décrit OÙ se trouve chaque numéro et COMMENT le bump à chaque release.
 
@@ -10,19 +10,19 @@
 
 | Champ | Valeur |
 |---|---|
-| Version app (affichée) | `1.7.606` |
-| Pastille du colophon (`index.html` **et** `help-us.html`, haut **gauche**) | `vX.Y.Z` dans `<span class="brand-ver">` — 1 occurrence par page (**4 fichiers** avec les 2 arbres) |
-| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.606-polices-et-export` |
-| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261008-v604-polices-et-export` (JS) · `?v=20261013-v543-grille-rapide-ia` (CSS) |
-| Badge preview (`spVersionBadge`) | `v1.7.606` — 5 marqueurs : commentaire, `title` (`JS v604`), `data-sp-js="v604"`, `data-sp-sw`, texte |
-| Splash screen | `1.7.606` |
-| Onboarding | `LAYOUT EDITOR — V 1.7.606` + `V 1.7.606 \| 09 2026` |
-| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.606` |
-| Documentation (racine **et** `app/`) | `v1.7.606` (pastille + pieds de page datés + 214 numéros de ligne) |
-| `api.html` (pastille `.version`) | `v1.7.606` |
-| `version.txt` | `1.7.606` |
-| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.606 (September 2026)` |
-| `package.json` + `package-lock.json` (sp213-local) | `1.7.606` |
+| Version app (affichée) | `1.7.607` |
+| Pastille du colophon (`index.html` **et** `price.html`, haut **gauche**) | `vX.Y.Z` dans `<span class="brand-ver">` — 1 occurrence par page (**4 fichiers** avec les 2 arbres) |
+| Cache Service Worker (app **et** racine) | `superprint-shell-v1.7.607-studio-ia-et-tarif` |
+| Query JS (`main.js`) **et** CSS (`main.css`) | `?v=20261009-v607-studio-ia-et-tarif` (JS) · `?v=20261013-v543-grille-rapide-ia` (CSS) |
+| Badge preview (`spVersionBadge`) | `v1.7.607` — 5 marqueurs : commentaire, `title` (`JS v604`), `data-sp-js="v604"`, `data-sp-sw`, texte |
+| Splash screen | `1.7.607` |
+| Onboarding | `LAYOUT EDITOR — V 1.7.607` + `V 1.7.607 \| 09 2026` |
+| JSON-LD `softwareVersion` (lanceur `index.html` + `landing.html` + `app/index.html` + `app/landing.html`) | `1.7.607` |
+| Documentation (racine **et** `app/`) | `v1.7.607` (pastille + pieds de page datés + 214 numéros de ligne) |
+| `api.html` (pastille `.version`) | `v1.7.607` |
+| `version.txt` | `1.7.607` |
+| `llms.txt` / `llms-full.txt` (racine **et** `app/`) | `1.7.607 (September 2026)` |
+| `package.json` + `package-lock.json` (sp213-local) | `1.7.607` |
 | Lanceur npm (`superprint-npm/package.json`) | `1.0.110` (version **indépendante**, voir plus bas) |
 
 > ⚠️ Trois fichiers sont restés en arrière pendant des releases sans que rien ne le signale :
@@ -57,7 +57,7 @@ Tous les fichiers ci-dessous contiennent le numéro de version. **Chacun doit ê
   **gauche** : elle y a toujours été, l'inversion gauche/droite essayée le 28/09
   a été annulée le jour même, le « PAO & Studio IA » restant à droite) :
   elle doit rester **synchrone avec la version de l'app**
-- `help-us.html` — page composée depuis `index.html` (même feuille de style, même
+- `price.html` — page composée depuis `index.html` (même feuille de style, même
   bandeau, même nav, même pied de page) : elle porte **la même pastille `vX.Y.Z`**,
   à ne pas oublier au bump. Elle contient en plus le **formulaire de contact à cinq
   sujets** (participer, formation, conseil, bug, presse) et la section **Presse &

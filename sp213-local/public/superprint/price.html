@@ -11,14 +11,14 @@
 <meta name="author" content="Zigmoon">
 <meta name="theme-color" content="#F7F3EC">
 
-<link rel="canonical" href="https://superprint.cc/help-us.html">
-<link rel="alternate" hreflang="en" href="https://superprint.cc/help-us.html">
-<link rel="alternate" hreflang="fr" href="https://superprint.cc/help-us.html?lang=fr">
-<link rel="alternate" hreflang="ja" href="https://superprint.cc/help-us.html?lang=ja">
-<link rel="alternate" hreflang="x-default" href="https://superprint.cc/help-us.html">
+<link rel="canonical" href="https://superprint.cc/price.html">
+<link rel="alternate" hreflang="en" href="https://superprint.cc/price.html">
+<link rel="alternate" hreflang="fr" href="https://superprint.cc/price.html?lang=fr">
+<link rel="alternate" hreflang="ja" href="https://superprint.cc/price.html?lang=ja">
+<link rel="alternate" hreflang="x-default" href="https://superprint.cc/price.html">
 
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://superprint.cc/help-us.html">
+<meta property="og:url" content="https://superprint.cc/price.html">
 <meta property="og:title" content="Tarif — SuperPrint | Pricing">
 <meta property="og:description" content="13 € une fois, 39 € par an, ou un don libre : trois façons de soutenir SuperPrint via PayPal. Le logiciel reste gratuit.">
 <meta property="og:image" content="https://superprint.cc/img/og-superprint-1200x630.png">
@@ -1646,14 +1646,14 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
 .help-top--simple .help-intro { align-items: center; text-align: center; }
 .help-top--simple .help-lead { margin-left: auto; margin-right: auto; }
 /* L'ÉNORME €0 DU HERO (sous le titre). */
-.help-hero-price { margin: clamp(6px,1.2vw,16px) 0 0; line-height: .9; }
+.help-hero-price { margin: 0 0 clamp(22px,2.6vw,34px); line-height: .9; }
 .help-hero-amt { font-family: var(--f-display); font-weight: 700; font-size: clamp(80px,15vw,190px); line-height: .9; letter-spacing: -.045em; color: var(--ink); }
 .help-hero-amt sup { font-size: .38em; vertical-align: super; }
 /* L'euro reste PRÈS du chiffre (en FR/JA l'euro est à droite : une petite marge, pas un espace large). */
 .help-hero-amt .inline-fr sup, .help-hero-amt .inline-ja sup { margin-left: .04em; }
 section.help-price { padding: 0; margin-top: clamp(28px,4vw,48px); }
 section.help-price > .help-h2 { text-align: center; }
-section.help-price > .help-ress-intro { text-align: center; margin-left: auto; margin-right: auto; }
+section.help-price > .help-ress-intro { text-align: center; margin-left: auto; margin-right: auto; margin-bottom: clamp(20px,2.6vw,34px); }
 .help-price-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: clamp(14px,1.6vw,20px); align-items: stretch; }
 @media (max-width: 1040px) { .help-price-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
 @media (max-width: 560px) { .help-price-grid { grid-template-columns: 1fr; } }
@@ -1832,8 +1832,12 @@ section.help-price > .help-ress-intro { text-align: center; margin-left: auto; m
 }
 .help-pay-btn:hover, .help-pay-btn:focus-visible { background: var(--yellow); }
 .help-pay-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.help-pay-btn-paypal { background: var(--paypal); }
-.help-pay-btn-paypal .help-pay-plaque { background: transparent; }
+/* ⚠️ Les boutons PayPal NE PORTENT PAS le jaune PayPal en fond : ils se lisent
+   comme les autres boutons (même papier), seul le repère P les distingue. */
+.help-pay-btn-paypal { background: var(--paper-3); }
+.help-pay-btn-paypal .help-pay-plaque { background: var(--white); }
+/* …et pas davantage au SURVOL (le survol jaune est réservé aux autres boutons). */
+.help-pay-btn-paypal:hover, .help-pay-btn-paypal:focus-visible { background: var(--ink); color: var(--paper); }
 .help-pay-plaque {
   display: flex; align-items: center; justify-content: center; gap: 7px;
   height: 38px; padding: 0 10px; background: var(--white);
@@ -2021,8 +2025,8 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   "@graph": [
     {
       "@type": "WebPage",
-      "@id": "https://superprint.cc/help-us.html#page",
-      "url": "https://superprint.cc/help-us.html",
+      "@id": "https://superprint.cc/price.html#page",
+      "url": "https://superprint.cc/price.html",
       "name": "Tarif — SuperPrint | Pricing",
       "description": "Soutenir SuperPrint : 13 € une fois, 39 € par an ou un don libre, via PayPal. Le logiciel reste gratuit.",
       "inLanguage": "en",
@@ -2033,7 +2037,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
       "@type": "BreadcrumbList",
       "itemListElement": [
         { "@type": "ListItem", "position": 1, "name": "SuperPrint", "item": "https://superprint.cc/" },
-        { "@type": "ListItem", "position": 2, "name": "Tarif", "item": "https://superprint.cc/help-us.html" }
+        { "@type": "ListItem", "position": 2, "name": "Tarif", "item": "https://superprint.cc/price.html" }
       ]
     },
     {
@@ -2063,7 +2067,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
        droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
        du plan de bump de release. -->
-  <span class="brand-ver">v1.7.606</span>
+  <span class="brand-ver">v1.7.607</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
@@ -2079,7 +2083,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
     <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
     <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
     <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-    <a href="help-us.html" class="active" aria-current="page"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
+    <a href="price.html" class="active" aria-current="page"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
     <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
   </div>
@@ -2105,7 +2109,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
   <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-  <a href="help-us.html" class="active" aria-current="page"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
+  <a href="price.html" class="active" aria-current="page"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
   <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
   <a href="app/index.html" class="mm-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
@@ -2122,7 +2126,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.606</span>
+    <span>SuperPrint v1.7.607</span>
   </div>
 </div>
 
@@ -2162,11 +2166,11 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
   <h1 class="help-h1" data-lang="en">SuperPrint is free. Forever.</h1>
   <h1 class="help-h1" data-lang="ja">SuperPrint は無料。ずっと。</h1>
 
-  <p class="help-hero-price"><span class="help-hero-amt"><span class="inline-fr">0<sup>€</sup></span><span class="inline-en"><sup>€</sup>0</span><span class="inline-ja">0<sup>€</sup></span></span></p>
-
   <p class="help-lead" data-lang="fr">Indépendant, sans publicité, sans compte, sans abonnement obligatoire. Le logiciel est conçu et maintenu par deux personnes : chaque contribution reste facultative et sert uniquement à financer le développement.</p>
   <p class="help-lead" data-lang="en">Independent, with no advertising, no account and no mandatory subscription. The software is built and maintained by two people: every contribution stays optional and only funds development.</p>
   <p class="help-lead" data-lang="ja">独立していて、広告・アカウント・義務的なサブスクリプションはありません。ソフトウェアは二人で開発・保守しており、支援はすべて任意で、開発費にのみ充てられます。</p>
+
+  <p class="help-hero-price"><span class="help-hero-amt"><span class="inline-fr">0<sup>€</sup></span><span class="inline-en"><sup>€</sup>0</span><span class="inline-ja">0<sup>€</sup></span></span></p>
 
     </div>
 
@@ -2383,9 +2387,9 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
           <a href="faq.html" data-lang="fr">Questions fréquentes</a>
           <a href="faq.html" data-lang="en">FAQ</a>
           <a href="faq.html" data-lang="ja">よくある質問</a>
-          <a href="help-us.html" data-lang="fr">Tarif</a>
-          <a href="help-us.html" data-lang="en">Price</a>
-          <a href="help-us.html" data-lang="ja">料金</a>
+          <a href="price.html" data-lang="fr">Tarif</a>
+          <a href="price.html" data-lang="en">Price</a>
+          <a href="price.html" data-lang="ja">料金</a>
         </div>
       </div>
       <div>
@@ -2410,7 +2414,7 @@ section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.606</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.607</span>
       <div class="foot-legal">
         <a href="index.html#legal" data-lang="fr">Mentions légales</a>
         <a href="index.html#legal" data-lang="en">Legal notice</a>
@@ -2469,7 +2473,7 @@ function setLang(lang, explicite) {
      ignoré). L'adresse doit suivre, d'où le replaceState : sans lui, le canonical
      désignerait une autre URL que celle affichée dans la barre. */
   /* 🆕 v1.7.470 — l'adresse canonique suit la LANGUE *et* la PAGE : la page d'aide
-     (help-us.html) réutilise ce script et doit se déclarer elle-même, pas la racine. */
+     (price.html) réutilise ce script et doit se déclarer elle-même, pas la racine. */
   var _chemin = location.pathname.replace(/\/index\.html$/, '/');
   var _base = 'https://superprint.cc' + _chemin;
   var _ref = (lang === 'en') ? _base : _base + '?lang=' + lang;
