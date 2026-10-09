@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- ═══ SEO / GEO / AEO — SuperPrint Landing ═══ -->
-<title>SuperPrint — Online DTP Software + SP213 AI Studio | Logiciel PAO en ligne | オンラインDTP</title>
-<meta name="description" content="SuperPrint: professional browser-based DTP + SP213 AI layout studio. Pantone spot inks separated into named PDF channels (ISO 32000-2), Word &amp; IDML import, text wrap, print-ready CMYK export, advanced typography. No install, no subscription. English, French, Japanese.">
+<title>FAQ — SuperPrint | Questions fréquentes | Questions often asked | よくある質問</title>
+<meta name="description" content="SuperPrint FAQ: subscription, install, CMYK PDF export, Word and IDML import, privacy, offline use, supported systems, and press resources. Questions fréquentes en anglais, français et japonais.">
 <meta name="keywords" content="online DTP software, browser desktop publishing, Pantone spot colours, PDF channel separation, ISO 32000-2, CMYK export, IDML import, InDesign to web, Word import, text wrap, print layout web app, advanced web typography, hyphenation, SP213 AI studio, no-install DTP, PWA DTP, logiciel PAO en ligne, Pantone, séparation de couches, IDML, import Word, habillage du texte, オンラインDTP, 印刷レイアウト, SuperPrint Zigmoon">
 <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
 <meta name="author" content="Zigmoon">
@@ -35,15 +35,15 @@
      /  = anglais (langue par défaut de la page, <html lang="en">)
      /?lang=fr = français · /?lang=ja = japonais · x-default = /
      setLang() met canonical et og:url à jour pour rester cohérent. -->
-<link rel="canonical" href="https://superprint.cc/">
-<link rel="alternate" hreflang="en" href="https://superprint.cc/">
-<link rel="alternate" hreflang="fr" href="https://superprint.cc/?lang=fr">
-<link rel="alternate" hreflang="ja" href="https://superprint.cc/?lang=ja">
-<link rel="alternate" hreflang="x-default" href="https://superprint.cc/">
+<link rel="canonical" href="https://superprint.cc/faq.html">
+<link rel="alternate" hreflang="en" href="https://superprint.cc/faq.html">
+<link rel="alternate" hreflang="fr" href="https://superprint.cc/faq.html?lang=fr">
+<link rel="alternate" hreflang="ja" href="https://superprint.cc/faq.html?lang=ja">
+<link rel="alternate" hreflang="x-default" href="https://superprint.cc/faq.html">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://superprint.cc/">
+<meta property="og:url" content="https://superprint.cc/faq.html">
 <meta property="og:title" content="SuperPrint — Online DTP Software + SP213 AI Studio">
 <meta property="og:description" content="Professional DTP in your browser + AI layout studio. Pantone spot inks as separate named PDF channels, Word &amp; IDML import, text wrap, print-ready CMYK export. No install, no subscription.">
 <meta property="og:image" content="https://superprint.cc/img/og-superprint-1200x630.png">
@@ -500,6 +500,9 @@ nav.is-stuck .nav-logo { transform: translateY(5px); }
 }
 .nav-links a:hover { color: var(--ink); }
 .nav-links a:hover::after { transform: scaleX(1); }
+/* Page autonome : le lien de la section courante reste souligné. */
+.nav-links a.active { color: var(--ink); }
+.nav-links a.active::after { transform: scaleX(1); }
 .nav-cta {
   margin-left: 12px; padding: 0 22px !important;
   background: var(--ink); color: var(--paper) !important;
@@ -2057,7 +2060,95 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 
 /* _PAGE_ROCK_588 — la page ROCK v1 vit désormais dans rock.html. */
 </style>
-
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "en",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does SuperPrint really require no subscription?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, SuperPrint works with no subscription, no account required, no ads. You open your browser and start creating immediately. Zigmoon develops SuperPrint with an open spirit to democratize professional creation."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is SuperPrint a good professional DTP tool?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SuperPrint provides the essential features of a professional DTP tool directly in the browser: multi-page layout, professional typography with automatic hyphenation, print-ready PDF export, layers, master pages, boolean operations. A solid solution for professional creations without any monthly subscription."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does SuperPrint need to be installed?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. SuperPrint runs entirely in the web browser (Chrome, Firefox, Safari, Edge). No installation, no download, no plugin. It can also be installed as a PWA desktop app from Chrome or Edge by clicking the install icon in the address bar."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can SuperPrint export PDF CMYK for commercial printing?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. SuperPrint has an integrated RGB→CMYK converter and exports PDFs suitable for professional offset printing. It supports CMYK colors, Pantone spot colors and screen proof simulation. The SUPER PRINT CONVERT tool guides you through this workflow."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I import my Word or PDF documents?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. SuperPrint imports your Word (.docx), OpenDocument (.odt), text (.txt, .rtf) and PDF documents, then lays them out automatically with pagination. Your sources arrive as-is on the desk."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is SP213 Studio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SP213 is SuperPrint's AI layout assistant. Describe your layout by text or voice: it generates a complete document (poster, flyer, brochure, catalog, magazine, report) that you then refine in the editor. It runs on DeepSeek, OpenRouter (free), Groq, or a local offline WebLLM model via WebGPU."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are my files secure and private?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. All your data stays 100% local on your device. SuperPrint uses IndexedDB (browser database) for auto-save. No files are ever sent to any server. No account required. Auto-save triggers every 12 seconds."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does SuperPrint work offline?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. SuperPrint is a Progressive Web App (PWA) with a Service Worker. Once loaded at least once, it works entirely offline. Perfect for working on trains, planes or on limited connections."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "SuperPrint vs generalist web design tools — what's the difference?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Unlike generalist web design tools, SuperPrint is focused on professional publishing (DTP): real CMYK color management, master pages, layers, text frame chaining, professional typographic engine with hyphenation. SuperPrint is made for designers, graphic artists and printing professionals. General-audience tools aim at quick creation with predefined templates. SuperPrint gives you total control over your layout."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What operating systems does SuperPrint support?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SuperPrint works on any system with a modern browser: Windows 10/11, macOS, Linux, Chrome OS (Chromebook), iPad (Safari/Chrome). There is no dependency on the operating system."
+      }
+    }
+  ]
+}
+</script>
 </head>
 
 <body>
@@ -2083,13 +2174,13 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 <!-- _NAV_AUTEURS_591 : entree Auteurs retiree de la top nav et du menu burger -->
 <!-- ══════════════ NAVIGATION ══════════════ -->
 <nav>
-  <a class="nav-logo" href="#hero">
+  <a class="nav-logo" href="index.html">
     SUPER<span>PRINT</span>
   </a>
   <div class="nav-links">
-    <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
+    <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
     <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
-    <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
+    <a href="faq.html" class="active" aria-current="page"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
     <a href="help-us.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
     <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
@@ -2117,9 +2208,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <a href="app/index.html" class="mm-app"><img src="icons/icon-192x192.png" alt="" width="26" height="26"><span>SuperPrint</span></a>
   <a href="sp213-studio.html" class="mm-app"><img src="icons/studio_print_logo_blanc.png" alt="" width="26" height="26"><span>Studio IA</span></a>
   <a href="supertypo/index.html" class="mm-app"><img src="icons/sper_typo.png" alt="" width="26" height="26"><span>SuperTyPo</span></a>
-  <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
+  <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
-  <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
+  <a href="faq.html" class="active" aria-current="page"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
   <a href="help-us.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
@@ -2151,1469 +2242,250 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
 </div>
 
 <!-- ══════════════ HERO — COUVERTURE + INSTALLER ══════════════ -->
-<section id="hero">
-  <div class="ghost" aria-hidden="true">PRINT</div>
-  <div class="container">
-    <div class="hero-kicker" data-lang="fr">Le n°1 de la PAO 100% online</div>
-    <div class="hero-kicker" data-lang="en">The first DTP software, 100% online</div>
-    <div class="hero-kicker" data-lang="ja">100%オンラインのNo.1レイアウトデスク</div>
-
-    <h1 data-lang="fr"><span class="line">La mise en page,</span> <span class="line">de l'écriture à l'édition,</span> <span class="line"><em class="italic">dans votre navigateur.</em></span></h1>
-    <h1 data-lang="en"><span class="line">The professional</span> <span class="line">page layout,</span> <span class="line"><em class="italic">in your browser.</em></span></h1>
-    <h1 data-lang="ja"><span class="line">プロ仕様の</span> <span class="line">ページレイアウトを、</span> <span class="line"><em class="italic">ブラウザで。</em></span></h1>
-
-    <!-- ══════════════ TROIS ENTRÉES — APP, STUDIO, SUPERTYPO ══════════════ -->
-    <div class="entries">
-
-      <a class="entry" href="app/index.html" style="--entry-accent:#00A7C7">
-        <span class="entry-name">SuperPrint</span>
-        <span class="entry-logo"><img src="icons/icon-192x192.png" alt="" width="50" height="50"></span>
-        <span class="entry-body">
-          <span class="entry-desc"><span class="inline-fr">Le bureau de PAO complet : mise en page, prépresse, export.</span><span class="inline-en">The complete DTP desk: layout, prepress, export.</span><span class="inline-ja">DTPデスクのすべて — 組版、プリプレス、書き出し。</span></span>
-          <span class="entry-go"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open the app</span><span class="inline-ja">アプリを開く</span> →</span>
-        </span>
-      </a>
-
-      <a class="entry entry-clair" href="sp213-studio.html" style="--entry-accent:#E1237B">
-        <span class="entry-name">Studio IA</span>
-        <span class="entry-logo"><img src="icons/studio_print_logo_blanc.png" alt="" width="50" height="50"></span>
-        <span class="entry-body">
-          <span class="entry-desc"><span class="inline-fr">Décrivez la maquette : l'IA la compose, vous l'éditez.</span><span class="inline-en">Describe the layout: the AI composes it, you sign it off.</span><span class="inline-ja">レイアウトを言葉に。AIが組み、あなたが仕上げる。</span></span>
-          <span class="entry-go"><span class="inline-fr">Ouvrir le studio</span><span class="inline-en">Open the studio</span><span class="inline-ja">スタジオを開く</span> →</span>
-        </span>
-      </a>
-
-      <a class="entry entry-clair" href="supertypo/index.html" style="--entry-accent:#F2B90B">
-        <span class="entry-name">SuperTyPo</span>
-        <span class="entry-logo"><img src="icons/sper_typo.png" alt="" width="50" height="50"></span>
-        <span class="entry-body">
-          <span class="entry-desc"><span class="inline-fr">Les caractères décomposés, redessinés en courbes.</span><span class="inline-en">Letterforms decomposed, redrawn as curves.</span><span class="inline-ja">書体を分解し、曲線で描き直す。</span></span>
-          <span class="entry-go"><span class="inline-fr">Ouvrir SuperTyPo</span><span class="inline-en">Open SuperTyPo</span><span class="inline-ja">SuperTyPo を開く</span> →</span>
-        </span>
-      </a>
-
-    </div>
-
-<p class="lead hero-lead" data-lang="fr">Avec <strong>SuperPrint</strong>, la PAO professionnelle devient accessible. Découvrez <strong>Studio IA</strong> : l'outil qui démocratise la création graphique et éditez vos maquettes à l'aide d'utilisateurs avertis. Apportez une singularité à vos typographies avec <strong>SuperTypo</strong>.</p>
-    <p class="lead hero-lead" data-lang="en">Professional page layout in your browser, with <strong>Studio IA</strong>, which composes a layout from a sentence. <strong>Word and IDML import</strong>, <strong>Pantone spot inks separated in the PDF</strong>, print-ready export.</p>
-    <p class="lead hero-lead" data-lang="ja">ブラウザでプロの組版を。<strong>Studio IA</strong> が一文からレイアウトを組みます。<strong>Word・IDML読み込み</strong>、<strong>Pantone特色をPDFで分版</strong>、印刷対応の書き出し。</p>
-
-    <div class="hero-install">
-      <div class="install-shell">
-        <div class="install-head">
-          <div class="inst-title">
-            <svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"/><path d="M12 19h8"/></svg>
-            <span data-lang="fr">Installer SuperPrint en local</span>
-            <span data-lang="en">Install SuperPrint locally</span>
-            <span data-lang="ja">SuperPrintをローカルにインストール</span>
-          </div>
-        </div>
-        <p class="inst-desc" data-lang="fr">Copiez cette ligne dans votre terminal : elle télécharge le paquet, installe puis lance l'application sur votre machine.</p>
-        <p class="inst-desc" data-lang="en">Copy this line into your terminal: it downloads the package, installs and launches the app on your machine.</p>
-        <p class="inst-desc" data-lang="ja">この行をターミナルにコピーしてください。パッケージをダウンロードし、インストールしてアプリを起動します。</p>
-        <div class="cmd-block">
-          <span id="osIcon" class="cmd-os-ic" aria-hidden="true">
-            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><rect x="0" y="0" width="10.5" height="10.5"/><rect x="13.5" y="0" width="10.5" height="10.5"/><rect x="0" y="13.5" width="10.5" height="10.5"/><rect x="13.5" y="13.5" width="10.5" height="10.5"/></svg>
-          </span>
-          <code id="installCmd">npx.cmd superprint</code>
-          <button type="button" class="copy-btn" data-copy="installCmd">
-            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <span data-lang="fr">Copier</span><span data-lang="en">Copy</span><span data-lang="ja">コピー</span>
-          </button>
-        </div>
-        <div class="cmd-meta">
-          <div class="cmd-tabs">
-            <button class="cmd-tab active" data-os="win" type="button">Windows</button>
-            <button class="cmd-tab" data-os="mac" type="button">macOS</button>
-            <button class="cmd-tab" data-os="linux" type="button">Linux</button>
-          </div>
-          <span class="cmd-hint" id="installHint">PowerShell · npx.cmd bypasses the script ExecutionPolicy block</span>
-        </div>
-        <div class="install-note">
-          <span class="assure inline-fr">Sans abonnement</span>
-          <span class="assure inline-en">No subscription</span>
-          <span class="assure inline-ja">サブスク不要</span>
-          <span class="assure inline-fr">Fonctionne hors-ligne</span>
-          <span class="assure inline-en">Works offline</span>
-          <span class="assure inline-ja">オフラインで動作</span>
-          <span class="assure inline-fr">Aussi en application PWA</span>
-          <span class="assure inline-en">Also a PWA app</span>
-          <span class="assure inline-ja">PWA アプリとしても</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="hero-dots" aria-hidden="true">
-      <span class="dot c"></span><span class="dot m"></span><span class="dot y"></span><span class="dot k"></span>
-    </div>
-
-
-  </div>
-</section>
-
-
-<!-- ══════════════ CARROUSEL DES MODÈLES — v1.7.465 ══════════════
-     Pleine largeur, défilement horizontal natif (swipe mobile), 46 maquettes.
-     Chaque carte ouvre l'application avec le modèle déjà composé. -->
-<section id="templates" aria-labelledby="tpl-title">
-  <div class="tpl-head">
-    <span class="tpl-kicker" data-lang="fr">Modèles inclus</span>
-    <span class="tpl-kicker" data-lang="en">Included templates</span>
-    <span class="tpl-kicker" data-lang="ja">同梱テンプレート</span>
-    <h2 id="tpl-title" data-lang="fr">46 maquettes prêtes à ouvrir.</h2>
-    <h2 data-lang="en">46 layouts ready to open.</h2>
-    <h2 data-lang="ja">そのまま開ける 46 点のレイアウト。</h2>
-    <p data-lang="fr">Magazines, rapports, CV, calendriers, livres, menus, cartes de visite, presse quotidienne : chaque maquette est composée dans SuperPrint, aux bonnes marges et au bon format. Un clic et la maquette s'ouvre dans l'application pour l'éditer.</p>
-    <p data-lang="en">Magazines, reports, CVs, calendars, books, menus, business cards, <strong>Japanese daily-newspaper layouts</strong> and a <strong>mobile-home brochure</strong>: every layout is composed in SuperPrint, with the right margins and page size. One click opens it in the application, ready to edit.</p>
-    <p data-lang="ja">雑誌、レポート、履歴書、カレンダー、書籍、メニュー、名刺、<strong>日本語の新聞レイアウト</strong>と<strong>お品書き</strong>、そしてフランス語のモバイルハウス案内。すべて SuperPrint で、正しい余白と判型で組んであります。クリックするとアプリで開き、そのまま編集できます。</p>
-  </div>
-
-  <div class="tpl-wrap">
-    <button class="tpl-arrow tpl-prev" type="button" aria-label="Précédent">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
-    </button>
-    <div class="tpl-rail" id="tplRail" role="list" tabindex="0" aria-label="Modèles SuperPrint">
-        <!-- 🆕 v1.7.576 — TROIS NOUVELLES MAQUETTES, PLACÉES EN PREMIER :
-             新聞レイアウト (JA, 12 p.), お品書き (JA, 4 p.), Maisons mobiles (FR, 2 p.) -->
-        <a class="tpl-card" href="app/index.html?tpl=ja_journal_news_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/ja_journal_news_12p.jpg" alt="新聞レイアウト — 210×297mm · 12 p. · JA" width="475" height="673" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">新聞レイアウト</span>
-            <span class="tpl-sub">210×297mm · 12 p. · JA</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=ja_restaurant_menu_4p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/ja_restaurant_menu_4p.jpg" alt="お品書き — 210×297mm · 4 p. · JA" width="475" height="673" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">お品書き</span>
-            <span class="tpl-sub">210×297mm · 4 p. · JA</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_maisons_mobiles_2p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_maisons_mobiles_2p.jpg" alt="Maisons mobiles — 210×297mm · 2 p. · FR" width="475" height="673" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Maisons mobiles</span>
-            <span class="tpl-sub">210×297mm · 2 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_magazine_fashion_8p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_fashion_8p.jpg" alt="Fashion Magazine — 148×198mm · 8 p." width="336" height="448" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Fashion Magazine</span>
-            <span class="tpl-sub">148×198mm · 8 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_journal_hair_4p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_journal_hair_4p.jpg" alt="Hair Journal — 210×297mm · 4 p." width="475" height="673" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Hair Journal</span>
-            <span class="tpl-sub">210×297mm · 4 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_magazine_music_8p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_music_8p.jpg" alt="Music Magazine — 148×198mm · 8 p." width="336" height="448" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Music Magazine</span>
-            <span class="tpl-sub">148×198mm · 8 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_magazine_food_8p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_food_8p.jpg" alt="Food Magazine — 148×198mm · 8 p." width="336" height="448" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Food Magazine</span>
-            <span class="tpl-sub">148×198mm · 8 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_restaurant_menu_4p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_restaurant_menu_4p.jpg" alt="Restaurant Menu — 210×297mm · 4 p." width="475" height="673" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Restaurant Menu</span>
-            <span class="tpl-sub">210×297mm · 4 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_business_card_1p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_business_card_1p.jpg" alt="Business Card — 85×55mm · 1 p." width="192" height="124" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Business Card</span>
-            <span class="tpl-sub">85×55mm · 1 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_cv_pro_1p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_cv_pro_1p.jpg" alt="Professional CV — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Professional CV</span>
-            <span class="tpl-sub">210×297mm · 1 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_book_text_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_book_text_12p.jpg" alt="Book — 12p — 148×210mm · 12 p." width="336" height="475" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Book — 12p</span>
-            <span class="tpl-sub">148×210mm · 12 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_magazine_ocean_8p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_ocean_8p.jpg" alt="Marine Life Magazine — 148×198mm · 8 p." width="640" height="863" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Marine Life Magazine</span>
-            <span class="tpl-sub">148×198mm · 8 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_cv_editorial_1p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_cv_editorial_1p.jpg" alt="Editorial CV — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Editorial CV</span>
-            <span class="tpl-sub">210×297mm · 1 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_cv_minimal_1p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_cv_minimal_1p.jpg" alt="Minimal CV — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Minimal CV</span>
-            <span class="tpl-sub">210×297mm · 1 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_book_shapes_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_book_shapes_12p.jpg" alt="Book of Shapes — 12p — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Book of Shapes — 12p</span>
-            <span class="tpl-sub">148×210mm · 12 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_book_theatre_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_book_theatre_12p.jpg" alt="Theatre Play — 12p — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Theatre Play — 12p</span>
-            <span class="tpl-sub">148×210mm · 12 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_calendar_a3_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_calendar_a3_12p.jpg" alt="Calendar A3 2027-2028 — 420×297mm · 12 p." width="640" height="455" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Calendar A3 2027-2028</span>
-            <span class="tpl-sub">420×297mm · 12 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_calendar_2027_a4_portrait_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_calendar_2027_a4_portrait_12p.jpg" alt="Calendar 2027 — A4 portrait — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Calendar 2027 — A4 portrait</span>
-            <span class="tpl-sub">210×297mm · 12 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_calendar_2028_a4_landscape_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_calendar_2028_a4_landscape_12p.jpg" alt="Calendar 2028 — A4 landscape — 297×210mm · 12 p." width="640" height="456" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Calendar 2028 — A4 landscape</span>
-            <span class="tpl-sub">297×210mm · 12 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_calendar_2027_2028_a5_portrait_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_calendar_2027_2028_a5_portrait_12p.jpg" alt="Calendar 2027-2028 — A5 portrait — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Calendar 2027-2028 — A5 portrait</span>
-            <span class="tpl-sub">148×210mm · 12 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_magazine_archi_8p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_archi_8p.jpg" alt="Architecture Magazine — 148×198mm · 8 p." width="640" height="863" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Architecture Magazine</span>
-            <span class="tpl-sub">148×198mm · 8 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_annual_report_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_annual_report_12p.jpg" alt="Annual Report — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Annual Report</span>
-            <span class="tpl-sub">210×297mm · 12 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_annual_report_24p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_annual_report_24p.jpg" alt="Annual Report — 210×297mm · 24 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Annual Report</span>
-            <span class="tpl-sub">210×297mm · 24 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=en_magazine_recipes_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/en_magazine_recipes_12p.jpg" alt="At the Table — French Cooking — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">At the Table — French Cooking</span>
-            <span class="tpl-sub">210×297mm · 12 p. · EN</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_habitat_luxe_24p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_habitat_luxe_24p.jpg" alt="DemEures — Maisons de luxe — 148×198mm · 24 p." width="640" height="863" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">DemEures — Maisons de luxe</span>
-            <span class="tpl-sub">148×198mm · 24 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_recettes_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_recettes_12p.jpg" alt="À Table — Cuisine française — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">À Table — Cuisine française</span>
-            <span class="tpl-sub">210×297mm · 12 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_rapport_activite_premium_24p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_rapport_activite_premium_24p.jpg" alt="Rapport d’activité — 210×297mm · 24 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Rapport d’activité</span>
-            <span class="tpl-sub">210×297mm · 24 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_annual_report_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_annual_report_12p.jpg" alt="Rapport d’activité — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Rapport d’activité</span>
-            <span class="tpl-sub">210×297mm · 12 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_fashion_8p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_fashion_8p.jpg" alt="Magazine Mode — 148×198mm · 8 p." width="640" height="861" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Magazine Mode</span>
-            <span class="tpl-sub">148×198mm · 8 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_journal_hair_4p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_journal_hair_4p.jpg" alt="Journal Coiffure — 210×297mm · 4 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Journal Coiffure</span>
-            <span class="tpl-sub">210×297mm · 4 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_music_8p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_music_8p.jpg" alt="Magazine Musique — 148×198mm · 8 p." width="640" height="861" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Magazine Musique</span>
-            <span class="tpl-sub">148×198mm · 8 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_food_8p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_food_8p.jpg" alt="Magazine Cuisine — 148×198mm · 8 p." width="640" height="861" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Magazine Cuisine</span>
-            <span class="tpl-sub">148×198mm · 8 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_restaurant_menu_4p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_restaurant_menu_4p.jpg" alt="Menu de restaurant — 210×297mm · 4 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Menu de restaurant</span>
-            <span class="tpl-sub">210×297mm · 4 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_business_card_1p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_business_card_1p.jpg" alt="Carte de visite — 85×55mm · 1 p." width="640" height="429" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Carte de visite</span>
-            <span class="tpl-sub">85×55mm · 1 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_cv_pro_1p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_cv_pro_1p.jpg" alt="CV professionnel — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">CV professionnel</span>
-            <span class="tpl-sub">210×297mm · 1 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_book_text_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_book_text_12p.jpg" alt="Livre — 12p — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Livre — 12p</span>
-            <span class="tpl-sub">148×210mm · 12 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_ocean_8p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_ocean_8p.jpg" alt="Magazine Vie marine — 148×198mm · 8 p." width="640" height="861" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Magazine Vie marine</span>
-            <span class="tpl-sub">148×198mm · 8 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_cv_editorial_1p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_cv_editorial_1p.jpg" alt="CV éditorial — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">CV éditorial</span>
-            <span class="tpl-sub">210×297mm · 1 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_cv_minimal_1p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_cv_minimal_1p.jpg" alt="CV minimal — 210×297mm · 1 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">CV minimal</span>
-            <span class="tpl-sub">210×297mm · 1 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_book_shapes_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_book_shapes_12p.jpg" alt="Livre de formes — 12p — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Livre de formes — 12p</span>
-            <span class="tpl-sub">148×210mm · 12 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_book_theatre_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_book_theatre_12p.jpg" alt="Pièce de théâtre — 12p — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Pièce de théâtre — 12p</span>
-            <span class="tpl-sub">148×210mm · 12 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_calendar_a3_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_calendar_a3_12p.jpg" alt="Calendrier A3 2027-2028 — 420×297mm · 12 p." width="640" height="455" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Calendrier A3 2027-2028</span>
-            <span class="tpl-sub">420×297mm · 12 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_calendar_2027_a4_portrait_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_calendar_2027_a4_portrait_12p.jpg" alt="Calendrier 2027 — A4 portrait — 210×297mm · 12 p." width="640" height="898" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Calendrier 2027 — A4 portrait</span>
-            <span class="tpl-sub">210×297mm · 12 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_calendar_2028_a4_landscape_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_calendar_2028_a4_landscape_12p.jpg" alt="Calendrier 2028 — A4 paysage — 297×210mm · 12 p." width="640" height="455" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Calendrier 2028 — A4 paysage</span>
-            <span class="tpl-sub">297×210mm · 12 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_calendar_2027_2028_a5_portrait_12p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_calendar_2027_2028_a5_portrait_12p.jpg" alt="Calendrier 2027-2028 — A5 portrait — 148×210mm · 12 p." width="640" height="896" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Calendrier 2027-2028 — A5 portrait</span>
-            <span class="tpl-sub">148×210mm · 12 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-        <a class="tpl-card" href="app/index.html?tpl=fr_magazine_archi_8p" role="listitem">
-          <span class="tpl-shot"><img src="app/img/template/preview/fr_magazine_archi_8p.jpg" alt="Magazine Architecture — 148×198mm · 8 p." width="640" height="861" loading="lazy" decoding="async"></span>
-          <span class="tpl-info">
-            <span class="tpl-name">Magazine Architecture</span>
-            <span class="tpl-sub">148×198mm · 8 p. · FR</span>
-          </span>
-          <span class="tpl-open"><span class="inline-fr">Ouvrir dans SuperPrint</span><span class="inline-en">Open in SuperPrint</span><span class="inline-ja">SuperPrint で開く</span> <span class="tpl-arr" aria-hidden="true">→</span></span>
-        </a>
-    </div>
-    <button class="tpl-arrow tpl-next" type="button" aria-label="Suivant">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
-    </button>
-  </div>
-
-  <div class="tpl-foot">
-    <span class="tpl-count" id="tplCount">1 / 43</span>
-    <span class="tpl-hint"><span class="inline-fr">Glissez, ou utilisez les flèches</span><span class="inline-en">Drag, or use the arrows</span><span class="inline-ja">ドラッグ、または矢印キー</span></span>
-  </div>
-</section>
-
-<!-- ══════════════ L'ATELIER EN IMAGES — CAPTURES RÉELLES DE L'APPLICATION ══════════════ -->
-<section id="features" class="spf">
-  <div class="ghost" aria-hidden="true">FONCTIONS</div>
-  <div class="container">
-    <div class="section-head spf-head">
-      <div class="section-label" data-lang="fr">L'inventaire de SuperPrint</div>
-      <div class="section-label" data-lang="en">The SuperPrint inventory</div>
-      <div class="section-label" data-lang="ja">SuperPrintの目録</div>
-<h2 data-lang="fr">La PAO, entièrement réinventée dans votre navigateur.</h2>
-      <h2 data-lang="en">DTP, entirely reinvented in your browser.</h2>
-      <h2 data-lang="ja">DTPを、ブラウザでまるごと作り直す。</h2>
-<p class="lead" data-lang="fr">Le bureau de PAO, le studio d'IA et le bureau typographique : trois applications, un seul projet, rien à installer. Chacune s'ouvre d'un clic, chacune travaille dans votre navigateur — et les maquettes passent de l'une à l'autre.</p>
-      <p class="lead" data-lang="en">The DTP desk, the AI studio and the type desk: three applications, one project, nothing to install. Each opens in one click, each works in your browser — and layouts travel from one to the next.</p>
-      <p class="lead" data-lang="ja">DTPデスク、AIスタジオ、書体デスク。3つのアプリ、ひとつのプロジェクト、インストール不要。どれもワンクリックで開き、ブラウザで動きます。レイアウトは行き来します。</p>
-      <p class="spf-note" data-lang="fr">Tout est là, rangé dans l'ordre où l'on s'en sert : ouvrez le bloc qui vous intéresse, refermez-le ensuite.</p>
-      <p class="spf-note" data-lang="en">Everything is here, in the order you use it: open the block you need, close it again afterwards.</p>
-      <p class="spf-note" data-lang="ja">使う順に並んでいます。必要なブロックだけを開いて、また閉じてください。</p>
-    </div>
-
-    <!-- 2 · LES QUINZE OUTILS — ouverts : c'est la liste des fonctions, elle se balaye -->
-    <details class="spf-fold" id="inventaire" data-chapitre="inventaire">
-        <summary class="spf-bar">
-          <div class="spf-k"><span data-lang="fr">L'inventaire</span><span data-lang="en">The inventory</span><span data-lang="ja">目録</span></div>
-          <div class="spf-t"><h3 data-lang="fr">L'inventaire de SuperPrint</h3><h3 data-lang="en">The SuperPrint inventory</h3><h3 data-lang="ja">SuperPrintの目録</h3></div>
-          <span class="spf-m"><span class="spf-m2" data-lang="fr">15 outils — toujours à portée</span><span class="spf-m2" data-lang="en">15 tools — always within reach</span><span class="spf-m2" data-lang="ja">15の道具 — いつでも手の届く場所に</span></span>
-          <span class="spf-plus" aria-hidden="true">+</span>
-        </summary>
-        <div class="spf-in">
-<div class="spf-lead"><p data-lang="fr">Quinze outils, pas un de plus que nécessaire : chaque fonction répond à un geste du métier, du document multi-pages au fichier d’échange.</p><p data-lang="en">Fifteen tools, not one more than needed: every function answers a gesture of the trade, from the multi-page document to the interchange file.</p><p data-lang="ja">15の道具、必要な分だけ。複数ページのドキュメントから交換ファイルまで、どの機能も現場の所作に対応します。</p></div>
-<div class="pp-grid">
-
-      <div class="pp-card">
-        <div class="pp-num">01</div>
-        <h3 data-lang="fr">DOCUMENTS MULTI-PAGES</h3>
-        <h3 data-lang="en">MULTI-PAGE DOCUMENTS</h3>
-        <h3 data-lang="ja">複数ページドキュメント</h3>
-        <p data-lang="fr">Créez des brochures, magazines, catalogues et livres multi-pages avec pagination automatique et gabarits réutilisables.</p>
-        <p data-lang="en">Create brochures, magazines, catalogs and multi-page books with automatic pagination and reusable master pages.</p>
-        <p data-lang="ja">パンフレット、雑誌、カタログ、複数ページの書籍を、自動ページ番号と再利用可能なマスターページで作成。</p>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">02</div>
-        <h3 data-lang="fr">EXPORT PDF CMYK IMPRIMABLE</h3>
-        <h3 data-lang="en">PRINT-READY PDF CMYK</h3>
-        <h3 data-lang="ja">印刷対応CMYK PDF書き出し</h3>
-        <p data-lang="fr">Exportez des PDF adaptés à l'impression professionnelle offset avec conversion RGB→CMYK intégrée, gestion des tons directs Pantone et simulation d'épreuve écran.</p>
-        <p data-lang="en">Export print-ready PDFs with integrated RGB→CMYK conversion, Pantone spot color management and screen proof simulation.</p>
-        <p data-lang="ja">RGB→CMYK変換を内蔵したオフセット印刷対応のPDFを書き出し。Pantone特色管理と画面プルーフシミュレーション付き。</p>
-        <span class="pp-tag new">CMYK</span>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">03</div>
-        <h3 data-lang="fr">IMPORT DE DOCUMENTS</h3>
-        <h3 data-lang="en">DOCUMENT IMPORT</h3>
-        <h3 data-lang="ja">ドキュメント読み込み</h3>
-        <p data-lang="fr">Importez vos textes et documents existants (Word, OpenDocument, PDF) et laissez SuperPrint les mettre en page, avec une pagination automatique.</p>
-        <p data-lang="en">Import your existing texts and documents (Word, OpenDocument, PDF) and let SuperPrint lay them out, with automatic pagination.</p>
-        <p data-lang="ja">既存のテキストやドキュメント（Word、OpenDocument、PDF）を読み込んで、自動ページ番号とともにSuperPrintがレイアウト。</p>
-        <span class="pp-tag new">DOCX · ODT · PDF</span>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">04</div>
-        <h3 data-lang="fr">TYPOGRAPHIE PROFESSIONNELLE</h3>
-        <h3 data-lang="en">PROFESSIONAL TYPOGRAPHY</h3>
-        <h3 data-lang="ja">プロ仕様のタイポグラフィ</h3>
-        <p data-lang="fr">Moteur Hypher pour césure automatique en FR, EN, DE, ES, IT, JA. Espacement de paragraphe, crénage, interlignage, styles de texte avancés.</p>
-        <p data-lang="en">Hypher engine for automatic hyphenation in FR, EN, DE, ES, IT, JA. Paragraph spacing, kerning, leading, advanced text styles.</p>
-        <p data-lang="ja">HypherエンジンによるFR / EN / DE / ES / IT / JAの自動ハイフネーション。段落間隔、カーニング、行送り、高度なテキストスタイル。</p>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">05</div>
-        <h3 data-lang="fr">ACCÉLÉRATION GPU</h3>
-        <h3 data-lang="en">GPU ACCELERATION</h3>
-        <h3 data-lang="ja">GPUアクセラレーション</h3>
-        <p data-lang="fr">Détection WebGL automatique via WEBGL_debug_renderer_info. Promotion de couche CSS (will-change, translateZ). Cache objet Fabric.js par type. Rendu fluide même sur les grands documents.</p>
-        <p data-lang="en">Automatic WebGL detection via WEBGL_debug_renderer_info. CSS layer promotion (will-change, translateZ). Per-type Fabric.js object caching. Smooth rendering even on large documents.</p>
-        <p data-lang="ja">WEBGL_debug_renderer_infoによるWebGL自動検出。CSSレイヤー昇格（will-change、translateZ）。Fabric.jsのタイプ別オブジェクトキャッシュ。大きなドキュメントでも滑らかな描画。</p>
-        <span class="pp-tag new">v1.7.421</span>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">06</div>
-        <h3 data-lang="fr">SAUVEGARDE AUTOMATIQUE</h3>
-        <h3 data-lang="en">AUTO-SAVE</h3>
-        <h3 data-lang="ja">自動保存</h3>
-        <p data-lang="fr">Sauvegarde automatique toutes les 12 secondes dans IndexedDB (stockage local du navigateur). Exportez en .sp, JSON, PDF, PNG, JPG à tout moment.</p>
-        <p data-lang="en">Auto-save every 12 seconds to IndexedDB (browser local storage). Export to .sp, JSON, PDF, PNG, JPG at any time.</p>
-        <p data-lang="ja">12秒ごとにIndexedDB（ブラウザのローカルストレージ）へ自動保存。いつでも .sp / JSON / PDF / PNG / JPG に書き出せます。</p>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">07</div>
-        <h3 data-lang="fr">OPÉRATIONS BOOLÉENNES</h3>
-        <h3 data-lang="en">BOOLEAN OPERATIONS</h3>
-        <h3 data-lang="ja">ブーリアン演算</h3>
-        <p data-lang="fr">Union, soustraction, intersection de formes via le moteur Paper.js intégré — comme dans un logiciel vectoriel professionnel.</p>
-        <p data-lang="en">Shape union, subtract, and intersection via integrated Paper.js engine — like a professional vector software.</p>
-        <p data-lang="ja">Paper.jsエンジンによる図形の合体・減算・交差 — プロのベクターソフトと同じ操作感です。</p>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">08</div>
-        <h3 data-lang="fr">CALQUES &amp; GESTIONNAIRE</h3>
-        <h3 data-lang="en">LAYERS &amp; MANAGER</h3>
-        <h3 data-lang="ja">レイヤー管理</h3>
-        <p data-lang="fr">Gestionnaire de calques complet : verrouillage, visibilité, réorganisation. Isolation de calque pour l'édition précise.</p>
-        <p data-lang="en">Full layer manager: lock, visibility, reorder. Layer isolation for precise editing.</p>
-        <p data-lang="ja">ロック、表示切替、並べ替えを備えたレイヤーマネージャー。レイヤー分離で正確な編集が可能です。</p>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">09</div>
-        <h3 data-lang="fr">IMAGES &amp; PHOTOS</h3>
-        <h3 data-lang="en">IMAGES &amp; PHOTOS</h3>
-        <h3 data-lang="ja">画像＆写真</h3>
-        <p data-lang="fr">Importez vos images PNG, JPG, SVG ou WebP, masquez-les dans une forme, recadrez-les — tout reste net pour l'impression.</p>
-        <p data-lang="en">Import your PNG, JPG, SVG or WebP images, mask them into a shape, crop them — everything stays sharp for print.</p>
-        <p data-lang="ja">PNG / JPG / SVG / WebP画像を読み込み、形にマスク、トリミング — 印刷に必要なシャープさを維持します。</p>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">10</div>
-        <h3 data-lang="fr">GRILLES &amp; REPÈRES</h3>
-        <h3 data-lang="en">GRIDS &amp; GUIDES</h3>
-        <h3 data-lang="ja">グリッド＆ガイド</h3>
-        <p data-lang="fr">Grilles personnalisables, repères magnétiques, règles, magnétisme intelligent (snap-to-guides, snap-to-objects) pour un alignement parfait.</p>
-        <p data-lang="en">Customizable grids, magnetic guides, rulers, smart snapping (snap-to-guides, snap-to-objects) for perfect alignment.</p>
-        <p data-lang="ja">カスタマイズ可能なグリッド、磁気ガイド、ルーラー、スマートスナップ（ガイド / オブジェクト）で完璧な整列を実現。</p>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">11</div>
-        <h3 data-lang="fr">PWA — APPLICATION INSTALLABLE</h3>
-        <h3 data-lang="en">PWA — INSTALLABLE APP</h3>
-        <h3 data-lang="ja">PWA — インストール可能なアプリ</h3>
-        <p data-lang="fr">Installez SuperPrint comme application de bureau depuis votre navigateur (Chrome, Edge). Fonctionne hors-ligne via Service Worker.</p>
-        <p data-lang="en">Install SuperPrint as a desktop app from your browser (Chrome, Edge). Works offline via Service Worker.</p>
-        <p data-lang="ja">ブラウザ（Chrome、Edge）からデスクトップアプリとしてSuperPrintをインストール。Service Workerでオフライン動作。</p>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">12</div>
-        <h3 data-lang="fr">CONFIDENTIALITÉ TOTALE</h3>
-        <h3 data-lang="en">TOTAL PRIVACY</h3>
-        <h3 data-lang="ja">完全なプライバシー</h3>
-        <p data-lang="fr">Toutes vos données restent 100% locales sur votre appareil. Aucun fichier n'est jamais envoyé sur un serveur. Aucun compte requis.</p>
-        <p data-lang="en">All your data stays 100% local on your device. No files are ever sent to any server. No account required.</p>
-        <p data-lang="ja">すべてのデータは端末内に100%ローカル保存。ファイルがサーバーに送信されることはありません。アカウントも不要です。</p>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">13</div>
-        <h3 data-lang="fr">TONS DIRECTS PANTONE &amp; SÉPARATION</h3>
-        <h3 data-lang="en">PANTONE SPOT INKS &amp; SEPARATION</h3>
-        <h3 data-lang="ja">Pantone特色と分版</h3>
-        <p data-lang="fr">Nuancier Pantone intégré, pose d'une encre directe sur forme, texte ou fond. Chaque encre sort dans sa propre couche nommée, dans un espace de couleur /Separation conforme à l'ISO 32000-2 — la quadrichromie reste séparée des Pantone. Profils ICC acceptés pour cadrer la conversion.</p>
-        <p data-lang="en">Built-in Pantone panel, spot ink on a shape, text or background. Every ink leaves in its own named channel, inside an ISO 32000-2 compliant /Separation colour space — process stays apart from Pantone. ICC profiles accepted to frame the conversion.</p>
-        <p data-lang="ja">Pantoneパネル内蔵。図形・テキスト・背景にスポットインキを配置。各インキはISO 32000-2準拠の /Separation 色空間内で固有の名前付きチャンネルとして出力され、プロセス版とは分離されます。ICCプロファイルにも対応。</p>
-        <span class="pp-tag new">/Separation</span>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">14</div>
-        <h3 data-lang="fr">IMPORT IDML (INDESIGN)</h3>
-        <h3 data-lang="en">IDML IMPORT (INDESIGN)</h3>
-        <h3 data-lang="ja">IDML読み込み（InDesign）</h3>
-        <p data-lang="fr">Reprenez un fichier InDesign exporté en IDML : les blocs texte, les stories et la mise en page sont lus et reconstruits dans SuperPrint. Un pont direct depuis vos archives existantes, sans repartir de zéro.</p>
-        <p data-lang="en">Pick up an InDesign file exported as IDML: text frames, stories and layout are read and rebuilt in SuperPrint. A direct bridge from your existing archive, without starting over.</p>
-        <p data-lang="ja">InDesignからIDMLで書き出したファイルを引き継げます。テキストフレーム、ストーリー、レイアウトを読み取り、SuperPrint内で再構築。既存の資産からそのまま続けられます。</p>
-        <span class="pp-tag new">IDML</span>
-      </div>
-
-      <div class="pp-card">
-        <div class="pp-num">15</div>
-        <h3 data-lang="fr">HABILLAGE DU TEXTE</h3>
-        <h3 data-lang="en">TEXT WRAP</h3>
-        <h3 data-lang="ja">テキストの回り込み</h3>
-        <p data-lang="fr">Le texte coule autour d'une boîte ou d'un contour, avec un décalage réglable et un choix de côtés. L'habillage se recompose à chaque déplacement de l'objet et s'applique aussi aux blocs posés à l'intérieur d'une forme.</p>
-        <p data-lang="en">Text flows around a bounding box or a contour, with adjustable offset and per-side control. The wrap recomposes on every move and also applies to frames placed inside a shape.</p>
-        <p data-lang="ja">バウンディングボックスまたは輪郭に沿ってテキストが回り込みます。オフセットと側面を調整可能。オブジェクトの移動ごとに再構成され、図形内に置いたフレームにも適用されます。</p>
-        <span class="pp-tag new">Wrap</span>
-      </div>
-
-    </div>
-<div class="pp-band">
-      <p class="pp-band-txt" data-lang="fr">Les <span class="pp-mono">quinze outils</span> tiennent dans une seule page ouverte — rien à installer, rien à mettre à jour.</p>
-      <p class="pp-band-txt" data-lang="en">All <span class="pp-mono">fifteen tools</span> live in a single open page — nothing to install, nothing to update.</p>
-      <p class="pp-band-txt" data-lang="ja">15の道具は開いた<span class="pp-mono">ひとつのページ</span>の中に。インストールも更新も不要です。</p>
-      <a href="app/index.html" class="btn btn-paper" data-lang="fr">Ouvrir le Bureau SuperPrint</a>
-      <a href="app/index.html" class="btn btn-paper" data-lang="en">Open the SuperPrint desk</a>
-      <a href="app/index.html" class="btn btn-paper" data-lang="ja">SuperPrint デスクを開く</a>
-    </div>
-        </div>
-    </details>
-
-
-    <!-- 3 · LE PRÉPRESSE — replié, et traité à l'encre pour trancher avec le reste -->
-    <details class="spf-fold" id="prepress" data-chapitre="prepress">
-        <summary class="spf-bar">
-          <div class="spf-k"><span data-lang="fr">La chambre noire</span><span data-lang="en">The darkroom</span><span data-lang="ja">暗室</span></div>
-          <div class="spf-t"><h3 data-lang="fr">Le prépresse, là où le fichier devient une plaque.</h3><h3 data-lang="en">Prepress — where the file becomes a plate.</h3><h3 data-lang="ja">プリプレス — ファイルが版になる場所。</h3></div>
-          <span class="spf-m">Pantone · /Separation · ICC</span>
-          <span class="spf-plus" aria-hidden="true">+</span>
-        </summary>
-        <div class="spf-in">
-          <div class="spf-lead"><p data-lang="fr">Un imprimeur ne reçoit pas une image : il reçoit des encres, chacune sur sa plaque. SuperPrint écrit ce découpage dans le PDF lui-même, avec les espaces de couleur normalisés que les RIP savent lire.</p><p data-lang="en">A printer does not receive a picture — they receive inks, each on its own plate. SuperPrint writes that division into the PDF itself, using the standard colour spaces that RIPs understand.</p><p data-lang="ja">印刷所が受け取るのは絵ではなく、版ごとに分かれたインキです。SuperPrintはその分割をPDF自体に書き込み、RIPが解釈できる標準的な色空間を使用します。</p></div>
-<div class="pp-grid">
-
-      <article class="pp-card">
-        <div class="pp-num">01</div>
-        <h3 data-lang="fr">Tons directs Pantone</h3>
-        <h3 data-lang="en">Pantone spot inks</h3>
-        <h3 data-lang="ja">Pantone スポットインキ</h3>
-        <p data-lang="fr">Le nuancier Pantone est intégré : posez une encre directe sur une forme, un texte ou un fond, exactement comme en quadrichromie. Le nom court s'affiche dans la liste (<code>Yellow C</code> plutôt que <code>Pantone Yellow C</code>) pour garder la palette lisible, tandis que le nom complet est conservé pour les filtres et les plaques.</p>
-        <p data-lang="en">The Pantone swatch book is built in: place a spot ink on a shape, a text or a background, exactly as you would a process colour. Short names keep the list readable (<code>Yellow C</code> rather than <code>Pantone Yellow C</code>) while the full name is retained for filters and plates.</p>
-        <p data-lang="ja">Pantoneスウォッチを内蔵。図形・テキスト・背景にスポットインキを、プロセスカラーと同じ感覚で配置できます。一覧では短縮名（<code>Pantone Yellow C</code> ではなく <code>Yellow C</code>）で見やすくし、フィルタと版には完全な名称を保持します。</p>
-        <span class="pp-tag">Spot</span>
-      </article>
-
-      <article class="pp-card">
-        <div class="pp-num">02</div>
-        <h3 data-lang="fr">Séparation des couches</h3>
-        <h3 data-lang="en">Channel separation</h3>
-        <h3 data-lang="ja">チャンネル分版</h3>
-        <p data-lang="fr">Chaque encre directe part dans sa <strong>propre couche nommée</strong>, déclarée dans un espace de couleur <code>/Separation</code> conforme à l'ISO 32000-2 : la technique que les RIP attendent pour produire une plaque dédiée. La quadrichromie reste d'un côté, le Pantone de l'autre — jamais aplatis ensemble.</p>
-        <p data-lang="en">Every spot ink leaves in its <strong>own named channel</strong>, declared in a <code>/Separation</code> colour space compliant with ISO 32000-2 — the technique RIPs expect in order to output a dedicated plate. Process stays on one side, Pantone on the other, never flattened together.</p>
-        <p data-lang="ja">各スポットインキは<strong>固有の名前付きチャンネル</strong>として出力され、ISO 32000-2 準拠の <code>/Separation</code> 色空間で宣言されます。専用の版を出力するためにRIPが求める方式です。プロセスとPantoneは決して統合されません。</p>
-        <span class="pp-tag">/Separation</span>
-      </article>
-
-      <article class="pp-card">
-        <div class="pp-num">03</div>
-        <h3 data-lang="fr">Deux modes, une même exigence</h3>
-        <h3 data-lang="en">Two modes, one standard</h3>
-        <h3 data-lang="ja">2つのモード、1つの基準</h3>
-        <p data-lang="fr">Travaillez en <strong>RVB</strong> pour l'écran ou en <strong>CMJN</strong> pour l'offset : le nuancier Pantone reste accessible dans les deux cas, et le récapitulatif d'export annonce le compte réel de couches (<code>RVB (3) + 1 Pantone</code>, <code>CMJN (4) + 2 Pantone</code>). Plus de chiffre codé en dur.</p>
-        <p data-lang="en">Work in <strong>RGB</strong> for screen or <strong>CMYK</strong> for offset: the Pantone panel stays available in both, and the export summary states the real channel count (<code>RGB (3) + 1 Pantone</code>, <code>CMYK (4) + 2 Pantone</code>). No more hard-coded figure.</p>
-        <p data-lang="ja"><strong>RGB</strong>（画面）でも<strong>CMYK</strong>（オフセット）でも、Pantoneパネルは常に利用可能。書き出し概要は実際のチャンネル数（<code>RGB (3) + Pantone 1</code>、<code>CMYK (4) + Pantone 2</code>）を表示します。固定値はもうありません。</p>
-        <span class="pp-tag">RVB · CMJN</span>
-      </article>
-
-      <article class="pp-card">
-        <div class="pp-num">04</div>
-        <h3 data-lang="fr">Épreuve écran</h3>
-        <h3 data-lang="en">Soft proof</h3>
-        <h3 data-lang="ja">画面プルーフ</h3>
-        <p data-lang="fr">La simulation CMJN projette à l'écran ce que la presse rendra, encres ternes comprises. Ce que vous validez ici n'est plus une surprise sur papier.</p>
-        <p data-lang="en">The CMYK simulation shows on screen what the press will actually render, dull inks included. What you approve here is no longer a surprise on paper.</p>
-        <p data-lang="ja">CMYKシミュレーションは、濁ったインキも含め、印刷機が再現する色を画面上に表示します。ここで承認した内容は、紙の上で驚きにはなりません。</p>
-        <span class="pp-tag">Proof</span>
-      </article>
-
-      <article class="pp-card">
-        <div class="pp-num">05</div>
-        <h3 data-lang="fr">Fond perdu &amp; traits de coupe</h3>
-        <h3 data-lang="en">Bleed &amp; crop marks</h3>
-        <h3 data-lang="ja">塗り足し＆トンボ</h3>
-        <p data-lang="fr">Fond perdu réglable, traits de coupe, imposition multi-pages : le fichier sort prêt pour le façonnage, sans reprise dans un autre outil.</p>
-        <p data-lang="en">Adjustable bleed, crop marks, multi-page imposition: the file leaves ready for finishing, with no rework in another tool.</p>
-        <p data-lang="ja">塗り足し調整、トンボ、複数ページの面付け。仕上げ工程にそのまま渡せる状態で出力されます。</p>
-        <span class="pp-tag">Print</span>
-      </article>
-
-      <article class="pp-card">
-        <div class="pp-num">06</div>
-        <h3 data-lang="fr">Profils ICC</h3>
-        <h3 data-lang="en">ICC profiles</h3>
-        <h3 data-lang="ja">ICCプロファイル</h3>
-        <p data-lang="fr">Chargez un profil ICC (<code>.icc</code> / <code>.icm</code>) pour cadrer la conversion selon le support et la presse visés, plutôt que de subir une conversion générique.</p>
-        <p data-lang="en">Load an ICC profile (<code>.icc</code> / <code>.icm</code>) to frame the conversion for the intended paper and press, instead of enduring a generic one.</p>
-        <p data-lang="ja">ICCプロファイル（<code>.icc</code> / <code>.icm</code>）を読み込み、想定する用紙と印刷機に合わせて変換を制御できます。</p>
-        <span class="pp-tag">ICC</span>
-      </article>
-
-    </div>
-<div class="pp-band">
-      <p class="pp-band-txt" data-lang="fr">Un <span class="pp-mono">Pantone</span> posé dans l'application ressort dans le PDF comme une couche à son nom — vérifié en décodant le fichier flux par flux.</p>
-      <p class="pp-band-txt" data-lang="en">A <span class="pp-mono">Pantone</span> placed in the app comes out of the PDF as a channel under its own name — verified by decoding the file stream by stream.</p>
-      <p class="pp-band-txt" data-lang="ja">アプリで配置した <span class="pp-mono">Pantone</span> は、PDF内で固有の名前を持つチャンネルとして出力されます。ファイルをストリーム単位で解析して検証済み。</p>
-      <a href="index.html" class="btn btn-paper" data-lang="fr">Essayer l'export CMJN</a>
-      <a href="index.html" class="btn btn-paper" data-lang="en">Try the CMYK export</a>
-      <a href="index.html" class="btn btn-paper" data-lang="ja">CMYK書き出しを試す</a>
-    </div>
-        </div>
-    </details>
-
-
-    <!-- 4 · LES PRESSES — replié, en pastilles serrées -->
-    <details class="spf-fold" id="use-cases" data-chapitre="use-cases">
-        <summary class="spf-bar">
-          <div class="spf-k"><span data-lang="fr">Ce qu'on compose ici</span><span data-lang="en">What is composed here</span><span data-lang="ja">ここで組むもの</span></div>
-          <div class="spf-t"><h3 data-lang="fr">Une presse pour chaque projet</h3><h3 data-lang="en">A press for every project</h3><h3 data-lang="ja">あらゆるプロジェクトに一台のプレスを</h3></div>
-          <span class="spf-m">08</span>
-          <span class="spf-plus" aria-hidden="true">+</span>
-        </summary>
-        <div class="spf-in">
-<div class="spf-lead"><p data-lang="fr">Un flyer, une affiche, un catalogue : le format décide des outils. Voici ce qui sort du bureau, du A5 au grand format.</p><p data-lang="en">A flyer, a poster, a catalogue: the format decides the tools. Here is what leaves the desk, from A5 to large format.</p><p data-lang="ja">フライヤー、ポスター、カタログ。形式が道具を決めます。A5から大判まで、デスクから出てくるもの。</p></div>
-
-<div class="pp-grid">
-      <article class="pp-card"><div class="pp-num">01</div><h3 data-lang="fr">Flyers</h3><h3 data-lang="en">Flyers</h3><h3 data-lang="ja">フライヤー</h3><p data-lang="fr">Événements, promotions — A5, A4, carré.</p><p data-lang="en">Events, promotions — A5, A4, square.</p><p data-lang="ja">イベント・販促 — A5、A4、正方形。</p><span class="pp-tag" data-lang="fr">Événement</span><span class="pp-tag" data-lang="en">Event</span><span class="pp-tag" data-lang="ja">イベント</span></article>
-      <article class="pp-card"><div class="pp-num">02</div><h3 data-lang="fr">Affiches</h3><h3 data-lang="en">Posters</h3><h3 data-lang="ja">ポスター</h3><p data-lang="fr">A3, A2, A1, jusqu'au grand format 40×60.</p><p data-lang="en">A3, A2, A1, up to large 40×60 cm.</p><p data-lang="ja">A3、A2、A1、40×60cmの大判まで。</p><span class="pp-tag" data-lang="fr">Grand format</span><span class="pp-tag" data-lang="en">Large format</span><span class="pp-tag" data-lang="ja">大判</span></article>
-      <article class="pp-card"><div class="pp-num">03</div><h3 data-lang="fr">Brochures</h3><h3 data-lang="en">Brochures</h3><h3 data-lang="ja">パンフレット</h3><p data-lang="fr">Triptyques, dépliants, plaquettes d'entreprise.</p><p data-lang="en">Trifolds, leaflets, company brochures.</p><p data-lang="ja">三つ折り、リーフレット、企業パンフレット。</p><span class="pp-tag" data-lang="fr">3 volets</span><span class="pp-tag" data-lang="en">3 folds</span><span class="pp-tag" data-lang="ja">三つ折り</span></article>
-      <article class="pp-card"><div class="pp-num">04</div><h3 data-lang="fr">Magazines</h3><h3 data-lang="en">Magazines</h3><h3 data-lang="ja">雑誌</h3><p data-lang="fr">Bulletins, journaux d'entreprise, presse interne.</p><p data-lang="en">Bulletins, company newspapers, internal press.</p><p data-lang="ja">社内報、企業新聞、社内メディア。</p><span class="pp-tag" data-lang="fr">Multi-pages</span><span class="pp-tag" data-lang="en">Multi-page</span><span class="pp-tag" data-lang="ja">複数ページ</span></article>
-      <article class="pp-card"><div class="pp-num">05</div><h3 data-lang="fr">Catalogues</h3><h3 data-lang="en">Catalogs</h3><h3 data-lang="ja">カタログ</h3><p data-lang="fr">Produits multi-pages, tarifs, fiches techniques.</p><p data-lang="en">Multi-page products, price lists, technical sheets.</p><p data-lang="ja">複数ページの商品、価格表、技術資料。</p><span class="pp-tag" data-lang="fr">Tarifs</span><span class="pp-tag" data-lang="en">Price lists</span><span class="pp-tag" data-lang="ja">価格表</span></article>
-      <article class="pp-card"><div class="pp-num">06</div><h3 data-lang="fr">Supports de cours</h3><h3 data-lang="en">Course material</h3><h3 data-lang="ja">教材</h3><p data-lang="fr">Cours, fiches, manuels, supports de formation.</p><p data-lang="en">Courses, handouts, textbooks, training kits.</p><p data-lang="ja">講座、プリント、教科書、研修資料。</p><span class="pp-tag" data-lang="fr">Formation</span><span class="pp-tag" data-lang="en">Training</span><span class="pp-tag" data-lang="ja">研修</span></article>
-      <article class="pp-card"><div class="pp-num">07</div><h3 data-lang="fr">Documents pro</h3><h3 data-lang="en">Business documents</h3><h3 data-lang="ja">ビジネス文書</h3><p data-lang="fr">Rapports annuels, propositions, présentations.</p><p data-lang="en">Annual reports, proposals, presentations.</p><p data-lang="ja">年次報告、提案書、プレゼン資料。</p><span class="pp-tag" data-lang="fr">Rapports</span><span class="pp-tag" data-lang="en">Reports</span><span class="pp-tag" data-lang="ja">報告書</span></article>
-      <article class="pp-card"><div class="pp-num">08</div><h3 data-lang="fr">Créations culturelles</h3><h3 data-lang="en">Cultural work</h3><h3 data-lang="ja">文化作品</h3><p data-lang="fr">Pochettes, programmes de concert, livrets.</p><p data-lang="en">Album covers, concert programs, booklets.</p><p data-lang="ja">ジャケット、コンサートプログラム、小冊子。</p><span class="pp-tag" data-lang="fr">Culture</span><span class="pp-tag" data-lang="en">Culture</span><span class="pp-tag" data-lang="ja">文化</span></article>
-    </div>
-<div class="pp-band">
-      <p class="pp-band-txt" data-lang="fr">Chaque projet part d’un <span class="pp-mono">format</span>, jamais d’une page blanche.</p>
-      <p class="pp-band-txt" data-lang="en">Every project starts from a <span class="pp-mono">format</span>, never from a blank page.</p>
-      <p class="pp-band-txt" data-lang="ja">どの仕事も白紙からではなく、<span class="pp-mono">形式</span>から始まります。</p>
-      <a href="#templates" class="btn btn-paper" data-lang="fr">Voir les maquettes</a>
-      <a href="#templates" class="btn btn-paper" data-lang="en">See the templates</a>
-      <a href="#templates" class="btn btn-paper" data-lang="ja">テンプレートを見る</a>
-    </div>
-        </div>
-    </details>
-
-
-    <!-- 5 · LE BANC D'ESSAI — replié : le tableau du comparatif -->
-    <details class="spf-fold" id="comparison" data-chapitre="comparison">
-        <summary class="spf-bar">
-          <div class="spf-k"><span data-lang="fr">Sur la table de SuperPrint</span><span data-lang="en">On the worktable</span><span data-lang="ja">作業台の上で</span></div>
-          <div class="spf-t"><h3 data-lang="fr">SuperPrint face aux autres familles de PAO</h3><h3 data-lang="en">SuperPrint against the other DTP families</h3><h3 data-lang="ja">SuperPrint vs 他のDTP各系譜</h3></div>
-          <span class="spf-m">07</span>
-          <span class="spf-plus" aria-hidden="true">+</span>
-        </summary>
-        <div class="spf-in">
-          <div class="spf-lead"><p data-lang="fr">Une comparaison objective des fonctions qui comptent pour la mise en page professionnelle. Case noire : acquis. Case vide : absent.</p><p data-lang="en">An objective comparison of the features that matter for professional layout. Filled cell: included. Empty cell: absent.</p><p data-lang="ja">プロのレイアウトに必要な機能を客観比較。黒い欄＝あり。空欄＝なし。</p></div>
-<div class="cmp-wrapper">
-      <table class="cmp" id="cmpTable" aria-label="Comparison SuperPrint vs DTP categories">
-        <thead>
-          <tr>
-            <th data-lang="fr">Fonctionnalité</th>
-            <th data-lang="en">Feature</th>
-            <th data-lang="ja">機能</th>
-            <th class="hl">SuperPrint</th>
-            <th><span data-lang="fr">Suites PAO desktop payantes</span><span data-lang="en">Paid desktop DTP suites</span><span data-lang="ja">有料デスクトップDTP</span></th>
-            <th><span data-lang="fr">Outils de design web généralistes</span><span data-lang="en">Generalist web design tools</span><span data-lang="ja">一般的なWebデザインツール</span></th>
-            <th><span data-lang="fr">PAO desktop open source</span><span data-lang="en">Open-source desktop DTP</span><span data-lang="ja">オープンソースDTP</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="price-row">
-            <td class="feat" data-lang="fr">Prix</td>
-            <td class="feat" data-lang="en">Price</td>
-            <td class="feat" data-lang="ja">価格</td>
-            <td class="chk"><span data-lang="fr">Sans abonnement</span><span data-lang="en">No subscription</span><span data-lang="ja">サブスク不要</span></td>
-            <td class="cross"><span data-lang="fr">Payant (abonnement ou licence)</span><span data-lang="en">Paid (subscription or license)</span><span data-lang="ja">有料（サブスクまたはライセンス）</span></td>
-            <td class="partial">Freemium</td>
-            <td class="chk">Open source</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Sans installation</td>
-            <td class="feat" data-lang="en">No installation</td>
-            <td class="feat" data-lang="ja">インストール不要</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Documents multi-pages</td>
-            <td class="feat" data-lang="en">Multi-page documents</td>
-            <td class="feat" data-lang="ja">複数ページドキュメント</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="partial">Limité</td>
-            <td class="chk">●</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Export PDF CMYK</td>
-            <td class="feat" data-lang="en">PDF CMYK export</td>
-            <td class="feat" data-lang="ja">CMYK PDF書き出し</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="chk">●</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Import Word / ODT</td>
-            <td class="feat" data-lang="en">Word / ODT import</td>
-            <td class="feat" data-lang="ja">Word / ODT読み込み</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="partial">Limité</td>
-            <td class="partial">Partiel</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Typographie professionnelle</td>
-            <td class="feat" data-lang="en">Professional typography</td>
-            <td class="feat" data-lang="ja">プロ仕様のタイポグラフィ</td>
-            <td class="chk">● Avancée</td>
-            <td class="chk">● Avancée</td>
-            <td class="partial">Basique</td>
-            <td class="partial">Partielle</td>
-          </tr>
-          <tr>
-            <td class="feat" data-lang="fr">Césure automatique multilingue</td>
-            <td class="feat" data-lang="en">Multilingual hyphenation</td>
-            <td class="feat" data-lang="ja">多言語ハイフネーション</td>
-            <td class="chk">● 6 langues</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="partial">Limitée</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Gabarits (Master pages)</td>
-            <td class="feat" data-lang="en">Master pages</td>
-            <td class="feat" data-lang="ja">マスターページ</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="chk">●</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Calques</td>
-            <td class="feat" data-lang="en">Layers</td>
-            <td class="feat" data-lang="ja">レイヤー</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="partial">Limité</td>
-            <td class="chk">●</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Opérations booléennes</td>
-            <td class="feat" data-lang="en">Boolean operations</td>
-            <td class="feat" data-lang="ja">ブーリアン演算</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="partial">Partiel</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Import PDF</td>
-            <td class="feat" data-lang="en">PDF import</td>
-            <td class="feat" data-lang="ja">PDF読み込み</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="partial">Images only</td>
-            <td class="partial">Partiel</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Sauvegarde automatique</td>
-            <td class="feat" data-lang="en">Auto-save</td>
-            <td class="feat" data-lang="ja">自動保存</td>
-            <td class="chk">● 12 sec</td>
-            <td class="chk">●</td>
-            <td class="chk">● Cloud</td>
-            <td class="cross">○</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Mode hors-ligne (PWA)</td>
-            <td class="feat" data-lang="en">Offline mode (PWA)</td>
-            <td class="feat" data-lang="ja">オフライン（PWA）</td>
-            <td class="chk">●</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="chk">●</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Accélération GPU</td>
-            <td class="feat" data-lang="en">GPU Acceleration</td>
-            <td class="feat" data-lang="ja">GPUアクセラレーション</td>
-            <td class="chk">● WebGL</td>
-            <td class="chk">●</td>
-            <td class="cross">○</td>
-            <td class="cross">○</td>
-          </tr>
-          <tr class="is-folded">
-            <td class="feat" data-lang="fr">Confidentialité (données locales)</td>
-            <td class="feat" data-lang="en">Privacy (local data)</td>
-            <td class="feat" data-lang="ja">プライバシー（ローカル保存）</td>
-            <td class="chk">● 100% local</td>
-            <td class="partial"><span data-lang="fr">Cloud propriétaire</span><span data-lang="en">Proprietary cloud</span><span data-lang="ja">独自クラウド</span></td>
-            <td class="cross">○ Cloud</td>
-            <td class="chk">●</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="tools-more-wrap">
-        <button class="tools-more" type="button" data-fold="cmpTable" aria-expanded="false" aria-controls="cmpTable">
-          <span class="tm-more"><span class="inline-fr">Voir la suite du tableau</span><span class="inline-en">Show the rest of the table</span><span class="inline-ja">表の続きを見る</span></span>
-          <span class="tm-less"><span class="inline-fr">Réduire</span><span class="inline-en">Collapse</span><span class="inline-ja">たたむ</span></span>
-          <span class="tm-count" aria-hidden="true">+8</span>
-          <svg class="tm-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-      </div>
-        </div>
-    </details>
-
-
-    <!-- 6 · FACE AUX GRANDES MAISONS — replié : deux colonnes face à face -->
-    <details class="spf-fold" id="vs-indesign" data-chapitre="vs-indesign">
-        <summary class="spf-bar">
-          <div class="spf-k"><span data-lang="fr">L'analyse</span><span data-lang="en">The analysis</span><span data-lang="ja">分析</span></div>
-          <div class="spf-t"><h3 data-lang="fr">SuperPrint face aux grandes maisons</h3><h3 data-lang="en">SuperPrint facing the great houses</h3><h3 data-lang="ja">SuperPrintと大手メゾンの対比</h3></div>
-          <span class="spf-m">12</span>
-          <span class="spf-plus" aria-hidden="true">+</span>
-        </summary>
-        <div class="spf-in">
-          <div class="spf-lead"><p data-lang="fr">Les suites de PAO desktop restent la référence historique de la mise en page. SuperPrint reprend leurs gestes essentiels et les ouvre, dans le navigateur.</p><p data-lang="en">Desktop DTP suites remain the historical reference of layout. SuperPrint takes their essential gestures and opens them, in the browser.</p><p data-lang="ja">デスクトップDTPスイートは今も組版の歴史的な基準です。SuperPrintはその本質的な所作を受け継ぎ、ブラウザで開きます。</p></div>
-<div class="pp-grid">
-      <article class="pp-card"><div class="pp-num">01</div>
-        <h3 data-lang="fr">Ce que SuperPrint apporte</h3>
-        <h3 data-lang="en">What SuperPrint brings</h3>
-        <h3 data-lang="ja">SuperPrintがもたらすもの</h3>
-        <ul>
-          <li data-lang="fr">Sans abonnement</li>
-          <li data-lang="en">No subscription</li>
-          <li data-lang="ja">サブスク不要</li>
-          <li data-lang="fr">Fonctionne dans tout navigateur, sur tout OS (Windows, Mac, Linux, Chromebook)</li>
-          <li data-lang="en">Works in any browser, on any OS (Windows, Mac, Linux, Chromebook)</li>
-          <li data-lang="ja">どのブラウザ・OSでも動作（Windows、Mac、Linux、Chromebook）</li>
-          <li data-lang="fr">Aucune installation ni mise à jour à gérer</li>
-          <li data-lang="en">No installation or updates to manage</li>
-          <li data-lang="ja">インストールやアップデートの管理が不要</li>
-          <li data-lang="fr">Données 100% locales — aucun envoi vers un cloud propriétaire</li>
-          <li data-lang="en">100% local data — nothing sent to any proprietary cloud</li>
-          <li data-lang="ja">データは100%ローカル — 独自クラウドへの送信なし</li>
-          <li data-lang="fr">Import de vos documents (Word, OpenDocument, PDF)</li>
-          <li data-lang="en">Import your documents (Word, OpenDocument, PDF)</li>
-          <li data-lang="ja">既存ドキュメントの読み込み（Word、OpenDocument、PDF）</li>
-          <li data-lang="fr">Studio IA SP213 pour générer des maquettes en langage naturel</li>
-          <li data-lang="en">SP213 AI studio to generate layouts in natural language</li>
-          <li data-lang="ja">自然言語でレイアウトを生成するSP213 AIスタジオ</li>
-          <li data-lang="fr">Accélération GPU disponible dès v0.0.4</li>
-          <li data-lang="en">GPU acceleration available from v0.0.4</li>
-          <li data-lang="ja">v0.0.4からGPUアクセラレーション対応</li>
-          <li data-lang="fr">Projet indépendant, évolutif, communauté Zigmoon</li>
-          <li data-lang="en">Independent project, scalable, Zigmoon community</li>
-          <li data-lang="ja">独立した発展型プロジェクト、Zigmoonコミュニティ</li>
-        </ul><span class="pp-tag" data-lang="fr">Sans abonnement</span><span class="pp-tag" data-lang="en">No subscription</span><span class="pp-tag" data-lang="ja">サブスク不要</span></article>
-      <article class="pp-card"><div class="pp-num">02</div>
-        <h3 data-lang="fr">Quand garder une suite desktop</h3>
-        <h3 data-lang="en">When to keep a desktop suite</h3>
-        <h3 data-lang="ja">デスクトップ版を選ぶ場面</h3>
-        <ul>
-          <li data-lang="fr">Projets d'impression complexes avec flux de production agence</li>
-          <li data-lang="en">Complex print projects with agency production workflows</li>
-          <li data-lang="ja">制作会社のワークフローを伴う複雑な印刷プロジェクト</li>
-          <li data-lang="fr">Livres de plus de 500 pages avec indexation avancée</li>
-          <li data-lang="en">Books over 500 pages with advanced indexing</li>
-          <li data-lang="ja">高度な索引を伴う500ページ超の書籍</li>
-          <li data-lang="fr">Workflows PAO existants imposés par le client</li>
-          <li data-lang="en">Existing DTP workflows imposed by the client</li>
-          <li data-lang="ja">クライアント指定の既存DTPワークフロー</li>
-          <li data-lang="fr">Intégration poussée avec un écosystème créatif propriétaire</li>
-          <li data-lang="en">Deep integration with a proprietary creative ecosystem</li>
-          <li data-lang="ja">独自のクリエイティブエコシステムとの深い統合</li>
-        </ul><span class="pp-tag" data-lang="fr">Cas particuliers</span><span class="pp-tag" data-lang="en">Edge cases</span><span class="pp-tag" data-lang="ja">特殊な案件</span></article>
-    </div>
-<div class="pp-band">
-      <p class="pp-band-txt" data-lang="fr">Le meilleur juge reste l’essai : ouvrez un document, composez une page, <span class="pp-mono">comparez</span>.</p>
-      <p class="pp-band-txt" data-lang="en">The real test is the work itself: open a document, set a page, <span class="pp-mono">compare</span>.</p>
-      <p class="pp-band-txt" data-lang="ja">本当の判定は実際に組むこと。ドキュメントを開いて1ページ組み、<span class="pp-mono">比べて</span>ください。</p>
-      <a href="app/index.html" class="btn btn-paper" data-lang="fr">Essayer maintenant</a>
-      <a href="app/index.html" class="btn btn-paper" data-lang="en">Try it now</a>
-      <a href="app/index.html" class="btn btn-paper" data-lang="ja">今すぐ試す</a>
-    </div>
-        </div>
-    </details>
-
-
-    <!-- 7 · LES FORMATS — replié : deux rangées de pastilles -->
-    <details class="spf-fold" id="formats" data-chapitre="formats">
-        <summary class="spf-bar">
-          <div class="spf-k"><span data-lang="fr">Langues de la page</span><span data-lang="en">Languages of the page</span><span data-lang="ja">ページの言語</span></div>
-          <div class="spf-t"><h3 data-lang="fr">Les formats que la page comprend</h3><h3 data-lang="en">The formats the page understands</h3><h3 data-lang="ja">ページが理解するフォーマット</h3></div>
-          <span class="spf-m">PDF · DOCX · IDML · ODT · RTF · XLSX · ICC · SLA · PNG · JPG · SVG · WebP</span>
-          <span class="spf-plus" aria-hidden="true">+</span>
-        </summary>
-        <div class="spf-in">
-          <div class="spf-lead"><p data-lang="fr">Le langage du document — du PDF d'impression au fichier d'échange — fait partie du métier. SuperPrint parle couramment les deux sens.</p><p data-lang="en">The language of the document — from print PDF to interchange file — is part of the craft. SuperPrint speaks both directions fluently.</p><p data-lang="ja">ドキュメントの言語 — 印刷用PDFから交換ファイルまで — もまた職人の技。SuperPrintは双方向を流暢に話します。</p></div>
-<div class="pp-grid">
-      <article class="pp-card">
-        <div class="pp-num">01</div>
-        <h3 data-lang="fr">Sortie du bureau</h3><h3 data-lang="en">Out of the desk</h3><h3 data-lang="ja">デスクを出る</h3>
-        <div class="fmt-grid">
-      <span class="fmt-chip out">PDF CMYK</span>
-      <span class="fmt-chip out">PDF écran</span>
-      <span class="fmt-chip out">PNG</span>
-      <span class="fmt-chip out">JPG</span>
-      <span class="fmt-chip out">.sp natif</span>
-      <span class="fmt-chip out">JSON</span>
-    </div>
-        <span class="pp-tag" data-lang="fr">6 sorties</span><span class="pp-tag" data-lang="en">6 outputs</span><span class="pp-tag" data-lang="ja">6種類</span>
-      </article>
-      <article class="pp-card">
-        <div class="pp-num">02</div>
-        <h3 data-lang="fr">Entrée dans le bureau</h3><h3 data-lang="en">Into the desk</h3><h3 data-lang="ja">デスクに入る</h3>
-        <div class="fmt-grid">
-      <span class="fmt-chip in">PDF</span>
-      <span class="fmt-chip in">DOCX</span>
-      <span class="fmt-chip in">DOC</span>
-      <span class="fmt-chip in">IDML</span>
-      <span class="fmt-chip in">ODT</span>
-      <span class="fmt-chip in">RTF</span>
-      <span class="fmt-chip in">XLSX</span>
-      <span class="fmt-chip in">ICC</span>
-      <span class="fmt-chip in">SLA</span>
-      <span class="fmt-chip in">.sp</span>
-      <span class="fmt-chip in">JSON</span>
-      <span class="fmt-chip in">PNG</span>
-      <span class="fmt-chip in">JPG</span>
-      <span class="fmt-chip in">SVG</span>
-      <span class="fmt-chip in">WebP</span>
-    </div>
-        <span class="pp-tag" data-lang="fr">15 entrées</span><span class="pp-tag" data-lang="en">15 inputs</span><span class="pp-tag" data-lang="ja">15種類</span>
-      </article>
-    </div>
-<div class="pp-band">
-      <p class="pp-band-txt" data-lang="fr">Un document arrive, une autre version repart — sans <span class="pp-mono">conversion</span>, sans perte.</p>
-      <p class="pp-band-txt" data-lang="en">A document arrives, another version leaves — no <span class="pp-mono">conversion</span>, no loss.</p>
-      <p class="pp-band-txt" data-lang="ja">ドキュメントが入り、別の版が出ていく。<span class="pp-mono">変換</span>も欠落もありません。</p>
-      <a href="app/index.html" class="btn btn-paper" data-lang="fr">Importer un document</a>
-      <a href="app/index.html" class="btn btn-paper" data-lang="en">Import a document</a>
-      <a href="app/index.html" class="btn btn-paper" data-lang="ja">ドキュメントを読み込む</a>
-    </div>
-        </div>
-    </details>
-
-
-    <!-- 8 · LES OUTILS, UN PAR UN — replié : les captures d'écran -->
-    <details class="spf-fold" id="planches" data-chapitre="planches">
-        <summary class="spf-bar">
-          <div class="spf-k"><span data-lang="fr">Une capture par outil</span><span data-lang="en">One capture per tool</span><span data-lang="ja">道具ごとの画面</span></div>
-          <div class="spf-t"><h3 data-lang="fr">Les outils, un par un.</h3><h3 data-lang="en">The tools, one by one.</h3><h3 data-lang="ja">道具をひとつずつ。</h3></div>
-          <span class="spf-m">12</span>
-          <span class="spf-plus" aria-hidden="true">+</span>
-        </summary>
-        <div class="spf-in">
-<div class="spf-lead"><p data-lang="fr">Chaque capture est prise dans l'application, sur une maquette différente : le clic droit, l'habillage, l'écriture dans une forme, la typographie, les couleurs, les calques, les règles et les grilles.</p><p data-lang="en">Every screenshot is taken inside the application, on a different layout each time: right-click, text wrap, writing inside a shape, typography, colours, layers, rulers and grids.</p><p data-lang="ja">すべて実際のアプリ画面で、毎回違うレイアウトを使っています。右クリック、回り込み、図形内の文字、タイポグラフィ、カラー、レイヤー、定規とグリッド。</p></div>
-<div class="tgrid" id="tgridOutils">
-
-        <figure class="tcard">
-          <div class="tcard-img"><img src="img/landing/clic-droit-forme.jpg" width="1600" height="1000" loading="lazy" alt="Clic droit sur une forme"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">01</span>
-            <h3 data-lang="fr">Le clic droit, sur une forme</h3>
-            <h3 data-lang="en">Right-click on a shape</h3>
-            <h3 data-lang="ja">右クリック（図形）</h3>
-            <p data-lang="fr">Écrire dans la forme…, habillage du texte, ordre d'empilement, duplication, suppression : tout part de ce menu.</p>
-            <p data-lang="en">Write in shape…, text wrap, stacking order, duplicate, delete: everything starts here.</p>
-            <p data-lang="ja">図形内に文字を書く、テキストの回り込み、重ね順、複製、削除。すべてこのメニューから。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard">
-          <div class="tcard-img"><img src="img/landing/clic-droit-texte.jpg" width="1600" height="1000" loading="lazy" alt="Clic droit sur un bloc de texte"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">02</span>
-            <h3 data-lang="fr">Le clic droit, sur un texte</h3>
-            <h3 data-lang="en">Right-click on text</h3>
-            <h3 data-lang="ja">右クリック（テキスト）</h3>
-            <p data-lang="fr">Éditer le texte, vectoriser les contours ou la typo, ouvrir le bureau SuperTyPo.</p>
-            <p data-lang="en">Edit the text, vectorise outlines or type, open the SuperTyPo desk.</p>
-            <p data-lang="ja">テキスト編集、輪郭と書体のベクター化、SuperTyPo デスクを開く。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard">
-          <div class="tcard-img"><img src="img/landing/habillage-deux-cotes.jpg" width="1600" height="1000" loading="lazy" alt="Habillage du texte autour d'une forme"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">03</span>
-            <h3 data-lang="fr">L'habillage du texte</h3>
-            <h3 data-lang="en">Text wrap</h3>
-            <h3 data-lang="ja">テキストの回り込み</h3>
-            <p data-lang="fr">Les lignes se replient autour de la forme, la largeur se recalcule ligne après ligne, le décalage se règle en pixels.</p>
-            <p data-lang="en">Lines fold around the shape, the width is recomputed line after line, the standoff is set in pixels.</p>
-            <p data-lang="ja">行が図形を避けて折り返し、各行で有効幅を再計算。余白はピクセル単位で指定できます。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard">
-          <div class="tcard-img"><img src="img/landing/habillage-popin.jpg" width="1600" height="1000" loading="lazy" alt="Réglage de l'habillage du texte"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">04</span>
-            <h3 data-lang="fr">Régler l'habillage</h3>
-            <h3 data-lang="en">Setting the wrap</h3>
-            <h3 data-lang="ja">回り込みの設定</h3>
-            <p data-lang="fr">Aucun, boîte ou contour ; les côtés à habiller, et le décalage en pixels. La page se recompose à la validation.</p>
-            <p data-lang="en">None, box or shape; which sides to wrap, and the standoff in pixels. The page reflows when you confirm.</p>
-            <p data-lang="ja">なし／ボックス／図形に沿う、回り込ませる側、ピクセル単位の余白。確定すると組版がやり直されます。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/habillage-produit.jpg" width="1600" height="1000" loading="lazy" alt="Habillage sur une fiche produit"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">05</span>
-            <h3 data-lang="fr">Habillage sur une fiche</h3>
-            <h3 data-lang="en">Wrap on a product page</h3>
-            <h3 data-lang="ja">商品ページの回り込み</h3>
-            <p data-lang="fr">Un paragraphe, une forme : la composition se refait d'elle-même dès que la forme bouge.</p>
-            <p data-lang="en">One paragraph, one shape: the composition rebuilds itself as soon as the shape moves.</p>
-            <p data-lang="ja">段落ひとつ、図形ひとつ。図形を動かすと組版が自動でやり直されます。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/ecrire-dans-forme.jpg" width="1600" height="1000" loading="lazy" alt="Écrire dans une forme"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">06</span>
-            <h3 data-lang="fr">Écrire dans une forme</h3>
-            <h3 data-lang="en">Write inside a shape</h3>
-            <h3 data-lang="ja">図形の中に書く</h3>
-            <p data-lang="fr">Le texte se replie à l'intérieur d'un cercle, d'un carré ou d'un tracé, sans déborder du cadre.</p>
-            <p data-lang="en">Text folds inside a circle, a square or a path, without escaping the frame.</p>
-            <p data-lang="ja">円・四角・パスの中に文字を流し込みます。枠からはみ出しません。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/panneau-typographie.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Typographie"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">07</span>
-            <h3 data-lang="fr">Typographie</h3>
-            <h3 data-lang="en">Typography</h3>
-            <h3 data-lang="ja">タイポグラフィ</h3>
-            <p data-lang="fr">Césure, interlignage, interlettrage, retraits, filets de paragraphe, taquets de tabulation.</p>
-            <p data-lang="en">Hyphenation, leading, tracking, indents, paragraph rules, tab stops.</p>
-            <p data-lang="ja">ハイフネーション、行送り、字間、インデント、タブ位置。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/panneau-couleurs.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Couleurs"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">08</span>
-            <h3 data-lang="fr">Couleurs</h3>
-            <h3 data-lang="en">Colours</h3>
-            <h3 data-lang="ja">カラー</h3>
-            <p data-lang="fr">Quadrichromie, tons directs nommés, nuanciers : la teinte garde son nom jusqu'au fichier final.</p>
-            <p data-lang="en">CMYK, named spot inks, swatches: the colour keeps its name all the way to the final file.</p>
-            <p data-lang="ja">CMYK、名前付き特色、スウォッチ。色の名前は最終ファイルまで保たれます。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/panneau-calques.jpg" width="1600" height="1000" loading="lazy" alt="Panneau Calques"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">09</span>
-            <h3 data-lang="fr">Calques</h3>
-            <h3 data-lang="en">Layers</h3>
-            <h3 data-lang="ja">レイヤー</h3>
-            <p data-lang="fr">Chaque objet sur sa ligne : verrouiller, masquer, renommer, remonter d'un cran.</p>
-            <p data-lang="en">One line per object: lock, hide, rename, move up a level.</p>
-            <p data-lang="ja">オブジェクトごとに1行。ロック、非表示、名前変更、並べ替え。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/reperes-grille.jpg" width="1600" height="1000" loading="lazy" alt="Règles et grilles"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">10</span>
-            <h3 data-lang="fr">Règles &amp; grilles</h3>
-            <h3 data-lang="en">Rulers &amp; grids</h3>
-            <h3 data-lang="ja">定規とグリッド</h3>
-            <p data-lang="fr">Repères, grille, magnétisme, césure de la grille : la mise en place au millimètre.</p>
-            <p data-lang="en">Guides, grid, snapping: the layout is set to the millimetre.</p>
-            <p data-lang="ja">ガイド、グリッド、スナップ。ミリ単位で配置します。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/atelier-voyage.jpg" width="1600" height="1000" loading="lazy" alt="Une maquette ouverte sur le bureau"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">11</span>
-            <h3 data-lang="fr">Une maquette sur le bureau</h3>
-            <h3 data-lang="en">A layout on the desk</h3>
-            <h3 data-lang="ja">デスクの上のレイアウト</h3>
-            <p data-lang="fr">Les outils à gauche, la page au centre, l'export à droite : rien d'autre à installer.</p>
-            <p data-lang="en">Tools on the left, page in the centre, export on the right: nothing else to install.</p>
-            <p data-lang="ja">左にツール、中央にページ、右に書き出し。ほかに何も要りません。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/supertypo.jpg" width="1600" height="1000" loading="lazy" alt="SuperTyPo, le composeur typographique"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">12</span>
-            <h3 data-lang="fr">SuperTyPo</h3>
-            <h3 data-lang="en">SuperTyPo</h3>
-            <h3 data-lang="ja">SuperTyPo</h3>
-            <p data-lang="fr">Le bureau typographique : étirer, pencher, fondre une lettre sur l'autre, puis renvoyer le mot dans la page.</p>
-            <p data-lang="en">A type desk: stretch, slant, blend one letter into the next, then send the word back into the page.</p>
-            <p data-lang="ja">文字を伸ばし、傾け、重ねて組み、その単語をページへ戻すタイポグラフィ・デスクです。</p>
-          </figcaption>
-        </figure>
-
-        <figure class="tcard is-folded">
-          <div class="tcard-img"><img src="img/landing/studio-ia.jpg" width="1600" height="1000" loading="lazy" alt="Le Studio IA et sa conversation"></div>
-          <figcaption class="tcard-body">
-            <span class="tcard-num">13</span>
-            <h3 data-lang="fr">Studio IA</h3>
-            <h3 data-lang="en">Studio IA</h3>
-            <h3 data-lang="ja">Studio IA</h3>
-            <p data-lang="fr">Décrivez la maquette en une phrase : l'assistant propose la grille, les textes et les images, prêts à ouvrir dans SuperPrint.</p>
-            <p data-lang="en">Describe the layout in one sentence: the assistant drafts the grid, the copy and the images, ready to open in SuperPrint.</p>
-            <p data-lang="ja">レイアウトを一言で説明すると、グリッド・文章・画像を提案し、そのままSuperPrintで開けます。</p>
-          </figcaption>
-        </figure>
-
-      </div>
-<div class="tools-more-wrap">
-        <button class="tools-more" id="toolsMore" type="button" aria-expanded="false" aria-controls="tgridOutils">
-          <span class="tm-more"><span class="inline-fr">Voir tous les outils</span><span class="inline-en">See all the tools</span><span class="inline-ja">すべての道具を見る</span></span>
-          <span class="tm-less"><span class="inline-fr">Replier la galerie</span><span class="inline-en">Collapse the gallery</span><span class="inline-ja">ギャラリーを閉じる</span></span>
-          <span class="tm-count" aria-hidden="true">+9</span>
-          <svg class="tm-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-      </div>
-        </div>
-    </details>
-
-
-  </div>
-</section>
-
-
-
-<!-- ══════════════ 🆕 v1.7.472 — LE MANUEL ══════════════
-     « Manuel » sort de la barre du haut : une entrée de nav qui renvoie vers une autre page
-     n’apprend rien. À la place, une zone qui dit ce qu’il y a dedans, et quatre portes
-     d’entrée réelles dans le manuel (ancres vérifiées dans documentation.html). -->
-
-
-<!-- ══════════════ FAQ ══════════════ -->
-
-
-<!-- ══════════════ 🆕 v1.7.472 — LES AUTEURS — SIMON DUPONT-GELLERT &amp; CLÉMENCE BRUNET ══════════════
-     Le logiciel est signé, et la page ne le disait nulle part : les deux noms n'existaient
-     qu'au fond des mentions légales, derrière un clic. Ils sont maintenant sur la page, en
-     clair, avec ce que chacun a fait. Le balisage schema.org les déclare aussi (author),
-     pour que les moteurs et les assistants sachent à qui attribuer l'application. -->
-<section id="auteurs">
-  <div class="ghost" aria-hidden="true">AUTEURS</div>
+<section id="faq">
   <div class="container">
     <div class="section-head">
-      <div class="section-label" data-lang="fr">Les auteurs</div>
-      <div class="section-label" data-lang="en">The authors</div>
-      <div class="section-label" data-lang="ja">著者</div>
-      <h2 data-lang="fr">Deux auteurs, un bureau.</h2>
-      <h2 data-lang="en">Two authors, one desk.</h2>
-      <h2 data-lang="ja">ふたりの著者、ひとつのデスク。</h2>
-      <p class="lead" data-lang="fr">SuperPrint n'est pas un produit de catalogue : il est écrit, dessiné et composé par deux personnes. Pas d'équipe marketing, pas d'actionnaire, pas de version « entreprise » gardée pour plus tard — le logiciel et cette page sortent du même bureau, et les deux la signent.</p>
-      <p class="lead" data-lang="en">SuperPrint is not a catalogue product: it is written, drawn and composed by two people. No marketing department, no shareholder, no “enterprise edition” held back for later — the software and this page come out of the same desk, and both carry the same two signatures.</p>
-      <p class="lead" data-lang="ja">SuperPrintはカタログ製品ではありません。二人が書き、描き、組み立てています。マーケティング部門も株主も、「あとで出す上位版」もありません。ソフトウェアもこのページも同じデスクから出て、同じ二人の名前が入っています。</p>
+      <div class="section-label" data-lang="fr">Questions fréquentes</div>
+      <div class="section-label" data-lang="en">Frequently asked</div>
+      <div class="section-label" data-lang="ja">よくある質問</div>
+      <h2 data-lang="fr">Les questions que l'on pose souvent au bureau</h2>
+      <h2 data-lang="en">Questions often asked at the desk</h2>
+      <h2 data-lang="ja">デスクでよく聞かれる質問</h2>
     </div>
 
-    <div class="auteurs">
+    <div class="faq-search" role="search">
+      <label class="faq-search-lab" for="faqRecherche">
+        <span data-lang="fr">Chercher dans la FAQ</span>
+        <span data-lang="en">Search the FAQ</span>
+        <span data-lang="ja">FAQ を検索</span>
+      </label>
+      <div class="faq-search-boite">
+        <span class="faq-search-ico" aria-hidden="true">⌕</span>
+        <input id="faqRecherche" type="search" autocomplete="off" spellcheck="false"
+               aria-describedby="faqRechercheAide"
+               data-ph-fr="Un mot, un sujet : export, Pantone, hors-ligne…"
+               data-ph-en="A word, a subject: export, Pantone, offline…"
+               data-ph-ja="キーワード：書き出し、Pantone、オフライン…">
+        <button type="button" class="faq-search-eff" id="faqRechercheEff" aria-label="Effacer">
+          <span data-lang="fr">Effacer</span><span data-lang="en">Clear</span><span data-lang="ja">消去</span>
+        </button>
+      </div>
+      <p class="faq-search-etat" id="faqRechercheAide"></p>
+      <p class="faq-search-vide" id="faqRechercheVide" hidden>
+        <span data-lang="fr">Aucune question ne correspond — essayez un mot plus court.</span>
+        <span data-lang="en">No question matches — try a shorter word.</span>
+        <span data-lang="ja">該当する質問がありません。短い語でお試しください。</span>
+      </p>
+    </div>
 
-      <article class="auteur">
-        <div class="auteur-tete">
-          <!-- 🆕 v1.7.498 — LA MARQUE DE L'AUTEUR. Les deux SVG déposés dans img/ (une couronne
-               pour Simon, un C pour Clémence) sont posés ici, dans une plaque à filets, à l'échelle
-               du papier. Marqués décoratifs : le nom juste en dessous dit déjà qui c'est. -->
-          <span class="auteur-marque" aria-hidden="true">
-            <img src="img/simon.svg" alt="" width="1200" height="1200" loading="lazy" decoding="async">
-          </span>
-          <span class="auteur-signes">
-            <span class="cmyk" aria-hidden="true"><i class="c"></i><i class="m"></i><i class="y"></i><i class="k"></i></span>
-          </span>
-        </div>
-        <h3 class="auteur-nom">Simon Dupont-Gellert</h3>
-        <span class="auteur-role" data-lang="fr">Fondateur · Direction artistique · Développement</span>
-        <span class="auteur-role" data-lang="en">Founder · Art direction · Development</span>
-        <span class="auteur-role" data-lang="ja">創設者 · アートディレクション · 開発</span>
-        <p data-lang="fr">Designer et directeur créatif. Il conçoit et écrit le logiciel : le moteur typographique, l'habillage du texte autour des formes, les opérations booléennes, l'export PDF prêt pour l'impression — et l'interface qui va avec.</p>
-        <p data-lang="en">Designer and creative director. He designs and writes the software: the typographic engine, text wrap around shapes, boolean operations, print-ready PDF export — and the interface that goes with it.</p>
-        <p data-lang="ja">デザイナーでありクリエイティブディレクター。組版エンジン、図形に沿ったテキストの回り込み、ブール演算、印刷用PDF書き出し、そしてそれらを包むインターフェースまで、設計と実装を担っています。</p>
-        <p data-lang="fr">Sa pratique relie direction artistique, UX/UI et technologies créatives. Il a travaillé pour Samsung, Microsoft, ARTE, la Cinémathèque française, Sony, le château de Versailles, Radio Classique et LVMH.</p>
-        <p data-lang="en">His practice links art direction, UX/UI and creative technology. He has worked for Samsung, Microsoft, ARTE, the Cinémathèque française, Sony, the Palace of Versailles, Radio Classique and LVMH.</p>
-        <p data-lang="ja">アートディレクション、UX/UI、クリエイティブテクノロジーを横断して仕事をしています。Samsung、Microsoft、ARTE、シネマテーク・フランセーズ、Sony、ヴェルサイユ宮殿、Radio Classique、LVMH のプロジェクトを手がけてきました。</p>
-        <div class="auteur-liens">
-          <a href="https://app.zigmoon.com" target="_blank" rel="noopener">app.zigmoon.com</a>
-          <a href="https://x.com/zigmoon" target="_blank" rel="noopener">@zigmoon</a>
-        </div>
-      </article>
+    <div class="faq-list">
 
-      <article class="auteur">
-        <div class="auteur-tete">
-          <!-- 🆕 v1.7.498 — LA MARQUE DE L'AUTEUR. Les deux SVG déposés dans img/ (une couronne
-               pour Simon, un C pour Clémence) sont posés ici, dans une plaque à filets, à l'échelle
-               du papier. Marqués décoratifs : le nom juste en dessous dit déjà qui c'est. -->
-          <span class="auteur-marque" aria-hidden="true">
-            <img src="img/clemence.svg" alt="" width="1200" height="1200" loading="lazy" decoding="async">
-          </span>
-          <span class="auteur-signes">
-            <span class="cmyk" aria-hidden="true"><i class="c"></i><i class="m"></i><i class="y"></i><i class="k"></i></span>
-          </span>
-        </div>
-        <h3 class="auteur-nom">Clémence Brunet</h3>
-        <span class="auteur-role" data-lang="fr">Fondatrice · Design graphique</span>
-        <span class="auteur-role" data-lang="en">Founder · Graphic design</span>
-        <span class="auteur-role" data-lang="ja">創設者 · グラフィックデザイン</span>
-        <p data-lang="fr">Designer graphique, spécialisée en typographie, identité visuelle et direction artistique. Elle donne à SuperPrint son identité graphique et sa précision éditoriale : le dessin des gabarits, la composition des pages, la tenue du détail typographique.</p>
-        <p data-lang="en">Graphic designer, specialising in typography, visual identity and art direction. She gives SuperPrint its graphic identity and its editorial precision: how the templates are drawn, how the pages are composed, how the typographic detail is held.</p>
-        <p data-lang="ja">タイポグラフィ、ビジュアルアイデンティティ、アートディレクションを専門とするグラフィックデザイナー。SuperPrintのグラフィックアイデンティティと編集的な精度 — テンプレートの設計、ページの組み方、文字組みの細部 — を担っています。</p>
-        <p data-lang="fr">Sa pratique relie la culture imprimée, la composition et les interfaces numériques : des systèmes clairs, expressifs et faits pour durer.</p>
-        <p data-lang="en">Her practice links printed culture, composition and digital interfaces: clear, expressive systems built to last.</p>
-        <p data-lang="ja">印刷文化、組版、デジタルインターフェースをつなぐ仕事。明快で、表現力があり、長く使える仕組みをつくります。</p>
-        <div class="auteur-liens">
-          <a href="https://2points13.fr" target="_blank" rel="noopener">2points13.fr</a>
-          <a href="https://x.com/2points13" target="_blank" rel="noopener">@2points13</a>
-        </div>
-      </article>
+      <details class="faq-item">
+        <summary class="faq-q"><span data-lang="fr">SuperPrint est-il vraiment sans abonnement ?</span><span data-lang="en">Does SuperPrint really require no subscription?</span><span data-lang="ja">SuperPrintは本当にサブスク不要ですか？</span></summary>
+        <p class="faq-a" data-lang="fr">Oui, SuperPrint fonctionne <strong>sans abonnement, sans compte requis, sans publicité</strong>. Vous ouvrez votre navigateur et vous travaillez immédiatement. Zigmoon développe SuperPrint en open-spirit dans le but de démocratiser la création professionnelle.</p>
+        <p class="faq-a" data-lang="en">Yes, SuperPrint works <strong>with no subscription, no account required, no ads</strong>. You open your browser and start creating immediately. Zigmoon develops SuperPrint with an open spirit to democratize professional creation.</p>
+        <p class="faq-a" data-lang="ja">はい、SuperPrintは<strong>サブスク不要、アカウント不要、広告なし</strong>で動作します。ブラウザを開くだけですぐに制作を開始できます。Zigmoonはプロの創作を民主化するためにオープンな精神でSuperPrintを開発しています。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q"><span data-lang="fr">SuperPrint est-il un bon logiciel de PAO professionnel ?</span><span data-lang="en">Is SuperPrint a good professional DTP tool?</span><span data-lang="ja">SuperPrintは優れたプロ向けDTPツールですか？</span></summary>
+        <p class="faq-a" data-lang="fr">SuperPrint propose les fonctionnalités essentielles d'un logiciel de PAO pro directement dans le navigateur : mise en page multi-pages, typographie professionnelle avec césure automatique, export PDF prêt pour l'impression, calques, gabarits, opérations booléennes. Une solution solide pour les créations professionnelles sans abonnement mensuel.</p>
+        <p class="faq-a" data-lang="en">SuperPrint provides the essential features of a professional DTP tool directly in the browser: multi-page layout, professional typography with automatic hyphenation, print-ready PDF export, layers, master pages, boolean operations. A solid solution for professional creations without any monthly subscription.</p>
+        <p class="faq-a" data-lang="ja">SuperPrintはプロ向けDTPツールの主要機能をブラウザで提供します：複数ページレイアウト、自動ハイフネーション付きのプロ仕様タイポグラフィ、印刷対応PDF書き出し、レイヤー、マスターページ、ブーリアン演算。月額サブスクなしでプロ品質の制作ができる堅実なソリューションです。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q"><span data-lang="fr">Faut-il installer SuperPrint ?</span><span data-lang="en">Does SuperPrint need to be installed?</span><span data-lang="ja">SuperPrintのインストールは必要ですか？</span></summary>
+        <p class="faq-a" data-lang="fr">Non. SuperPrint fonctionne entièrement dans le navigateur web (Chrome, Firefox, Safari, Edge). Aucune installation, aucun téléchargement, aucun plugin. Il peut également être installé comme application PWA sur votre bureau depuis Chrome ou Edge en cliquant sur l'icône d'installation dans la barre d'adresse.</p>
+        <p class="faq-a" data-lang="en">No. SuperPrint runs entirely in the web browser (Chrome, Firefox, Safari, Edge). No installation, no download, no plugin. It can also be installed as a PWA desktop app from Chrome or Edge by clicking the install icon in the address bar.</p>
+        <p class="faq-a" data-lang="ja">いいえ。SuperPrintは完全にWebブラウザ（Chrome、Firefox、Safari、Edge）内で動作します。インストールもダウンロードもプラグインも不要です。また、ChromeやEdgeのアドレスバーのインストールアイコンから、PWAとしてデスクトップにインストールすることもできます。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q"><span data-lang="fr">SuperPrint peut-il exporter en PDF CMYK pour l'imprimerie ?</span><span data-lang="en">Can SuperPrint export PDF CMYK for commercial printing?</span><span data-lang="ja">商業印刷用のCMYK PDFを書き出せますか？</span></summary>
+        <p class="faq-a" data-lang="fr">Oui. SuperPrint dispose d'un convertisseur RGB→CMYK intégré et exporte des fichiers PDF adaptés à l'impression professionnelle offset. Il prend en charge les couleurs CMYK, les tons directs Pantone et la simulation d'épreuve écran. L'outil <code>SUPER PRINT CONVERT</code> vous accompagne dans ce workflow.</p>
+        <p class="faq-a" data-lang="en">Yes. SuperPrint has an integrated RGB→CMYK converter and exports PDFs suitable for professional offset printing. It supports CMYK colors, Pantone spot colors and screen proof simulation. The <code>SUPER PRINT CONVERT</code> tool guides you through this workflow.</p>
+        <p class="faq-a" data-lang="ja">はい。SuperPrintはRGB→CMYK変換を内蔵し、プロのオフセット印刷に対応したPDFを書き出します。CMYKカラー、Pantone特色、画面プルーフシミュレーションに対応。<code>SUPER PRINT CONVERT</code>ツールがこのワークフローを案内します。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q"><span data-lang="fr">Puis-je importer mes documents Word ou PDF ?</span><span data-lang="en">Can I import my Word or PDF documents?</span><span data-lang="ja">WordやPDFのドキュメントを読み込めますか？</span></summary>
+        <p class="faq-a" data-lang="fr">Oui. SuperPrint importe vos documents Word (.docx), OpenDocument (.odt), textes (.txt, .rtf) et pages PDF, puis les met en page automatiquement avec pagination. Vos sources arrivent telles quelles dans le bureau.</p>
+        <p class="faq-a" data-lang="en">Yes. SuperPrint imports your Word (.docx), OpenDocument (.odt), text (.txt, .rtf) and PDF documents, then lays them out automatically with pagination. Your sources arrive as-is on the desk.</p>
+        <p class="faq-a" data-lang="ja">はい。SuperPrintはWord（.docx）、OpenDocument（.odt）、テキスト（.txt / .rtf）、PDFページを読み込み、自動ページ番号付きでレイアウトします。素材はそのままデスクへ届きます。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q"><span data-lang="fr">Qu'est-ce que le studio SP213 ?</span><span data-lang="en">What is SP213 Studio?</span><span data-lang="ja">SP213スタジオとは何ですか？</span></summary>
+        <p class="faq-a" data-lang="fr">SP213 est l'assistant de mise en page par IA de SuperPrint. Décrivez votre maquette en texte ou à la voix : il génère un document complet (affiche, flyer, brochure, catalogue, magazine, rapport) que vous retravaillez ensuite dans l'éditeur. Il fonctionne avec DeepSeek, OpenRouter (gratuit), Groq, ou un modèle local WebLLM hors-ligne via WebGPU.</p>
+        <p class="faq-a" data-lang="en">SP213 is SuperPrint's AI layout assistant. Describe your layout by text or voice: it generates a complete document (poster, flyer, brochure, catalog, magazine, report) that you then refine in the editor. It runs on DeepSeek, OpenRouter (free), Groq, or a local offline WebLLM model via WebGPU.</p>
+        <p class="faq-a" data-lang="ja">SP213はSuperPrintのAIレイアウトアシスタントです。テキストまたは音声でレイアウトを説明すると、完全なドキュメント（ポスター、フライヤー、パンフレット、カタログ、雑誌、レポート）を生成し、その後エディタで仕上げられます。DeepSeek、OpenRouter（無料）、Groq、またはWebGPUによるローカル・オフラインのWebLLMモデルで動作します。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q"><span data-lang="fr">Mes fichiers sont-ils sécurisés et privés ?</span><span data-lang="en">Are my files secure and private?</span><span data-lang="ja">ファイルは安全でプライベートですか？</span></summary>
+        <p class="faq-a" data-lang="fr">Oui. Toutes vos données restent <strong>100% locales sur votre appareil</strong>. SuperPrint utilise IndexedDB (base de données du navigateur) pour la sauvegarde automatique. Aucun fichier n'est jamais envoyé sur un serveur. Aucun compte n'est requis. La sauvegarde automatique se déclenche toutes les 12 secondes.</p>
+        <p class="faq-a" data-lang="en">Yes. All your data stays <strong>100% local on your device</strong>. SuperPrint uses IndexedDB (browser database) for auto-save. No files are ever sent to any server. No account required. Auto-save triggers every 12 seconds.</p>
+        <p class="faq-a" data-lang="ja">はい。すべてのデータは<strong>端末内に100%ローカル保存</strong>されます。SuperPrintは自動保存にIndexedDB（ブラウザのデータベース）を使用。ファイルがサーバーに送信されることはありません。アカウントも不要です。自動保存は12秒ごとに実行されます。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q"><span data-lang="fr">SuperPrint fonctionne-t-il hors-ligne ?</span><span data-lang="en">Does SuperPrint work offline?</span><span data-lang="ja">SuperPrintはオフラインで動作しますか？</span></summary>
+        <p class="faq-a" data-lang="fr">Oui. SuperPrint est une Progressive Web App (PWA) avec Service Worker. Une fois chargé au moins une fois, il fonctionne entièrement hors-ligne. Parfait pour travailler dans le train, en avion ou sur des connexions limitées.</p>
+        <p class="faq-a" data-lang="en">Yes. SuperPrint is a Progressive Web App (PWA) with a Service Worker. Once loaded at least once, it works entirely offline. Perfect for working on trains, planes or on limited connections.</p>
+        <p class="faq-a" data-lang="ja">はい。SuperPrintはService Workerを備えたプログレッシブWebアプリ（PWA）です。一度読み込めば、完全にオフラインで動作します。電車や飛行機、通信制限のある環境での作業に最適です。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q"><span data-lang="fr">SuperPrint vs les outils de design web généralistes — quelle est la différence ?</span><span data-lang="en">SuperPrint vs generalist web design tools — what's the difference?</span><span data-lang="ja">一般的なWebデザインツールとの違いは？</span></summary>
+        <p class="faq-a" data-lang="fr">Contrairement aux outils de design web généralistes, SuperPrint est orienté <strong>publication professionnelle (PAO)</strong> : véritable gestion des couleurs CMYK, gabarits, calques, chaînage de blocs texte, moteur typographique professionnel avec césure. SuperPrint est destiné aux designers, graphistes et professionnels de l'impression. Les outils grand public ciblent la création rapide avec des templates prédéfinis. SuperPrint donne le contrôle total sur votre mise en page.</p>
+        <p class="faq-a" data-lang="en">Unlike generalist web design tools, SuperPrint is focused on <strong>professional publishing (DTP)</strong>: real CMYK color management, master pages, layers, text frame chaining, professional typographic engine with hyphenation. SuperPrint is made for designers, graphic artists and printing professionals. General-audience tools aim at quick creation with predefined templates. SuperPrint gives you total control over your layout.</p>
+        <p class="faq-a" data-lang="ja">一般的なWebデザインツールと異なり、SuperPrintは<strong>プロの出版（DTP）</strong>に特化：本格的なCMYKカラーマネジメント、マスターページ、レイヤー、テキストフレーム連結、ハイフネーション付きプロ仕様タイポグラフィエンジンを備えます。SuperPrintはデザイナー、グラフィックアーティスト、印刷のプロ向けです。一般向けツールが定型テンプレートでの手軽な作成を狙うのに対し、SuperPrintはレイアウトを完全にコントロールできます。</p>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q"><span data-lang="fr">Sur quels systèmes d'exploitation SuperPrint fonctionne-t-il ?</span><span data-lang="en">What operating systems does SuperPrint support?</span><span data-lang="ja">対応OSを教えてください。</span></summary>
+        <p class="faq-a" data-lang="fr">SuperPrint fonctionne sur <strong>tout système disposant d'un navigateur moderne</strong> : Windows 10/11, macOS, Linux, Chrome OS (Chromebook), iPad (Safari/Chrome). Il n'y a aucune dépendance au système d'exploitation.</p>
+        <p class="faq-a" data-lang="en">SuperPrint works on <strong>any system with a modern browser</strong>: Windows 10/11, macOS, Linux, Chrome OS (Chromebook), iPad (Safari/Chrome). There is no dependency on the operating system.</p>
+        <p class="faq-a" data-lang="ja">SuperPrintは<strong>最新のブラウザを搭載したすべてのシステム</strong>で動作します：Windows 10/11、macOS、Linux、Chrome OS（Chromebook）、iPad（Safari / Chrome）。OSへの依存はありません。</p>
+      </details>
 
     </div>
 
-    <div class="auteurs-note">
-      <p data-lang="fr">SuperPrint est publié par <strong>Zigmoon</strong>, le studio de Simon Dupont-Gellert, en synergie avec <strong>2.13</strong> — le collectif d'indépendants qu'ils ont fondé tous les deux.</p>
-      <p data-lang="en">SuperPrint is published by <strong>Zigmoon</strong>, Simon Dupont-Gellert's studio, in synergy with <strong>2.13</strong> — the collective of senior freelances the two of them founded together.</p>
-      <p data-lang="ja">SuperPrint は Simon Dupont-Gellert のスタジオ <strong>Zigmoon</strong> から、<strong>2.13</strong> との協働で公開されています。2.13 は二人が共同で立ち上げたシニア・フリーランスの集まりです。</p>
-      <a class="btn btn-secondary" href="https://2points13.fr/agency.html" target="_blank" rel="noopener"><span class="inline-fr">Découvrir 2.13</span><span class="inline-en">Discover 2.13</span><span class="inline-ja">2.13 を見る</span> <span class="arr" aria-hidden="true">→</span></a>
-    </div>
+    <!-- ═══ v1.7.606 — FORMULAIRE DE CONTACT (déplacé depuis la page Tarif /help-us.html) ═══ -->
+    <style>
+      /* Formulaire de contact — styles repris de l'ancienne page d'aide. */
+      .help-bug { margin-top: clamp(30px,4vw,50px); border: 1px solid var(--line); background: var(--paper-3); padding: clamp(20px,2.6vw,32px); }
+      .help-bug .help-h2 { margin: 0 0 12px; font-family: var(--f-caps); font-weight: 400; font-size: clamp(20px,2.2vw,26px); color: var(--ink); }
+      .help-bug-intro { max-width: 74ch; margin: 0 0 clamp(16px,2vw,24px); font-size: clamp(13.5px,1.25vw,15px); line-height: 1.75; color: var(--ink-soft); }
+      .help-bug-intro a { color: var(--ink); }
+      .help-bug-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(12px,1.6vw,18px); }
+      .help-bug-grid .plein { grid-column: 1 / -1; }
+      @media (max-width: 700px) { .help-bug-grid { grid-template-columns: 1fr; } }
+      .help-bug label { display: block; margin-bottom: 6px; font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+      .help-bug input, .help-bug textarea { width: 100%; font-family: var(--f-sans); font-size: 13.5px; line-height: 1.6; padding: 11px 13px; color: var(--ink); background: var(--paper); border: 1px solid var(--line-strong); border-radius: 0; }
+      .help-bug input:focus, .help-bug textarea:focus { outline: 2px solid var(--cyan); outline-offset: 1px; }
+      .help-bug textarea { min-height: 150px; resize: vertical; }
+      .help-bug-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 6px; }
+      .help-bug-note { font-size: 12px; line-height: 1.6; color: var(--muted); max-width: 46ch; }
+      .help-sujet { margin: 0; }
+      .help-sujet-titre { margin: 0 0 10px; font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+      .help-sujet-row { display: flex; flex-wrap: wrap; gap: 8px; }
+      .help-sujet-row button { font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--line-strong); border-radius: 999px; padding: 8px 15px; cursor: pointer; transition: color .2s cubic-bezier(.22,.61,.36,1), background .2s cubic-bezier(.22,.61,.36,1), border-color .2s cubic-bezier(.22,.61,.36,1); }
+      .help-sujet-row button:hover { color: var(--ink); border-color: var(--ink); }
+      .help-sujet-row button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+      .help-sujet-row button[aria-checked="true"] { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+      .help-sujet-aide { margin: 10px 0 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+      .help-form-err { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--magenta); }
+      .help-bug-grid .help-sujet-row.is-err button { border-color: var(--magenta); color: var(--magenta); }
+      .help-bug-grid .champ.is-err input, .help-bug-grid .champ.is-err textarea { border-color: var(--magenta); }
+      .help-bug input::placeholder, .help-bug textarea::placeholder { color: var(--muted); opacity: 1; }
+
+      /* ═══ PRESSE & RESSOURCES (déplacé depuis la page Tarif) ═══ */
+      .help-ress { margin-top: clamp(30px,4vw,50px); border: 1px solid var(--line); background: var(--paper-3); padding: clamp(20px,2.6vw,32px); }
+      .help-ress .help-h2 { margin: 0 0 12px; font-family: var(--f-caps); font-weight: 400; font-size: clamp(20px,2.2vw,26px); color: var(--ink); }
+      .help-ress-intro { max-width: 74ch; margin: 0 0 clamp(16px,2vw,24px); font-size: clamp(13.5px,1.25vw,15px); line-height: 1.75; color: var(--ink-soft); }
+      .help-ress-intro a { color: var(--ink); }
+      .help-ress-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(12px,1.6vw,18px); }
+      @media (max-width: 700px) { .help-ress-grid { grid-template-columns: 1fr; } }
+      .help-ress-card { display: block; color: var(--ink); text-decoration: none; background: var(--paper); border: 1px solid var(--line-strong); border-left: 3px solid var(--cyan); padding: clamp(16px,2vw,24px); transition: border-color .25s var(--ease), background .25s var(--ease); }
+      .help-ress-card:nth-child(2) { border-left-color: var(--magenta); }
+      .help-ress-card:hover { border-color: var(--ink); }
+      .help-ress-card:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+      .help-ress-kick { display: block; margin-bottom: 8px; font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+      .help-ress-card h3 { font-family: var(--f-caps); font-size: clamp(18px,2vw,23px); font-weight: 400; line-height: 1.06; color: var(--ink); margin-bottom: 8px; }
+      .help-ress-card p { font-size: 13.5px; line-height: 1.75; color: var(--ink-soft); }
+      .help-ress-dl { display: inline-block; margin-top: 12px; font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+      .help-ress-card:hover .help-ress-dl { text-decoration: underline; }
+    </style>
+
+    <section class="help-bug" id="ecrire">
+      <h2 class="help-h2" data-lang="fr">Un bug, une formation, un conseil, le projet, la presse : écrivez-nous.</h2>
+      <h2 class="help-h2" data-lang="en">A bug, a training course, some advice, the project, the press: write to us.</h2>
+      <h2 class="help-h2" data-lang="ja">不具合、研修、相談、プロジェクト、プレス — ご用件をお書きください。</h2>
+      <p class="help-bug-intro" data-lang="fr">Choisissez d'abord votre sujet : il donne son objet au courrier et il adapte les questions posées sous les champs. Il n'y a <strong>pas de serveur derrière ce formulaire</strong> — le site est statique : le bouton ouvre votre logiciel de courrier avec le message déjà rédigé, adressé à <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>. Vous pouvez aussi écrire directement à cette adresse.</p>
+      <p class="help-bug-intro" data-lang="en">Pick your subject first: it sets the subject line of the e-mail and adapts the questions asked under each field. There is <strong>no server behind this form</strong> — the site is static: the button opens your mail software with the message already written, addressed to <a href="mailto:contact@superprint.cc">contact@superprint.cc</a>. You can also write to that address directly.</p>
+      <p class="help-bug-intro" data-lang="ja">まずご用件をお選びください。それによりメールの件名が決まり、各欄の質問も変わります。このサイトは静的で、<strong>フォームの後ろにサーバーはありません</strong>。ボタンを押すと、<a href="mailto:contact@superprint.cc">contact@superprint.cc</a> 宛ての文面が作成された状態でメールソフトが開きます。直接メールしていただいても構いません。</p>
+
+      <form id="bugForm" class="help-bug-grid" novalidate>
+        <div class="plein champ help-sujet">
+          <p class="help-sujet-titre" data-lang="fr">1 · Votre sujet</p>
+          <p class="help-sujet-titre" data-lang="en">1 · Your subject</p>
+          <p class="help-sujet-titre" data-lang="ja">1 · ご用件</p>
+          <div class="help-sujet-row" role="radiogroup" aria-label="Sujet du message / Message subject">
+            <button type="button" role="radio" aria-checked="false" data-sujet="projet"><span class="inline-fr">Participer au projet</span><span class="inline-en">Join the project</span><span class="inline-ja">プロジェクトに参加</span></button>
+            <button type="button" role="radio" aria-checked="false" data-sujet="formation"><span class="inline-fr">Demander une formation</span><span class="inline-en">Ask for training</span><span class="inline-ja">研修を依頼</span></button>
+            <button type="button" role="radio" aria-checked="false" data-sujet="conseil"><span class="inline-fr">Demander un conseil</span><span class="inline-en">Ask for advice</span><span class="inline-ja">相談したい</span></button>
+            <button type="button" role="radio" aria-checked="false" data-sujet="bug"><span class="inline-fr">Relever un bug</span><span class="inline-en">Report a bug</span><span class="inline-ja">不具合を報告</span></button>
+            <button type="button" role="radio" aria-checked="false" data-sujet="presse"><span class="inline-fr">Presse &amp; médias</span><span class="inline-en">Press &amp; media</span><span class="inline-ja">プレス・メディア</span></button>
+          </div>
+          <p class="help-sujet-aide" data-lang="fr">Le sujet choisi décide de l'objet du courrier et de la question posée sous chaque champ. Un rapport de bug précis vaut un don.</p>
+          <p class="help-sujet-aide" data-lang="en">The subject you pick sets the e-mail subject and the question asked under each field. A precise bug report is worth a donation.</p>
+          <p class="help-sujet-aide" data-lang="ja">選んだご用件が、メールの件名と各欄の質問を決めます。正確な不具合報告は寄付と同じくらい力になります。</p>
+        </div>
+
+        <p class="plein help-form-err" id="formErr" hidden></p>
+
+        <div class="plein champ">
+          <label for="bugOu" data-lang="fr">De quoi s'agit-il ?</label>
+          <label for="bugOu" data-lang="en">What is it about?</label>
+          <label for="bugOu" data-lang="ja">何についてですか？</label>
+          <input id="bugOu" name="ou" type="text" autocomplete="off" placeholder="ex. écran Mise en page, outil Césure, fichier brochure.sp">
+        </div>
+        <div class="champ">
+          <label for="bugQuoi" data-lang="fr">Plus de détails</label>
+          <label for="bugQuoi" data-lang="en">More details</label>
+          <label for="bugQuoi" data-lang="ja">もう少し詳しく</label>
+          <input id="bugQuoi" name="quoi" type="text" autocomplete="off" placeholder="ex. j'ai exporté en PDF, j'ai changé la police">
+        </div>
+        <div class="champ">
+          <label for="bugMail" data-lang="fr">Votre courriel (facultatif, pour la réponse)</label>
+          <label for="bugMail" data-lang="en">Your e-mail (optional, for the reply)</label>
+          <label for="bugMail" data-lang="ja">メールアドレス（任意、返信用）</label>
+          <input id="bugMail" name="mail" type="email" autocomplete="email" placeholder="prenom@domaine.com">
+        </div>
+        <div class="plein champ">
+          <label for="bugCorps" data-lang="fr">Votre message</label>
+          <label for="bugCorps" data-lang="en">Your message</label>
+          <label for="bugCorps" data-lang="ja">本文</label>
+          <textarea id="bugCorps" name="corps" placeholder="Quelques lignes suffisent. Ce que vous faites, ce qui se passe, ce que vous attendiez."></textarea>
+        </div>
+        <div class="help-bug-actions plein">
+          <button type="submit" class="btn btn-primary"><span class="inline-fr">Ouvrir mon courrier</span><span class="inline-en">Open my mail</span><span class="inline-ja">メールを開く</span> <span class="arr" aria-hidden="true">→</span></button>
+          <span class="help-bug-note" data-lang="fr">Le sujet choisi est inscrit dans l'objet du message. La version de SuperPrint, la langue de la page, votre navigateur et l'adresse de la page sont ajoutés automatiquement.</span>
+          <span class="help-bug-note" data-lang="en">Your subject is written into the message subject line. The SuperPrint version, the page language, your browser and the page address are added automatically.</span>
+          <span class="help-bug-note" data-lang="ja">選んだご用件がメールの件名になります。SuperPrint のバージョン、ページの言語、ブラウザ、ページのアドレスは自動的に文面に追加されます。</span>
+        </div>
+      </form>
+    </section>
+
+    <!-- ═══ PRESSE & RESSOURCES (déplacé depuis la page Tarif) ═══ -->
+    <section class="help-ress" id="ressources">
+      <h2 class="help-h2" data-lang="fr">Presse &amp; ressources</h2>
+      <h2 class="help-h2" data-lang="en">Press &amp; resources</h2>
+      <h2 class="help-h2" data-lang="ja">プレス・資料</h2>
+      <p class="help-ress-intro" data-lang="fr">Tout ce qui suit est libre d'usage : rien à demander, aucun formulaire à remplir, aucune mention obligatoire. Vous préférez que nous vous l'envoyions ? Utilisez le formulaire de contact ci-dessus, sujet « Presse &amp; médias ».</p>
+      <p class="help-ress-intro" data-lang="en">Everything below is free to use: nothing to ask for, no form to fill in, no mandatory credit. Would you rather we sent it to you? Use the contact form above, subject “Press &amp; media”.</p>
+      <p class="help-ress-intro" data-lang="ja">以下はすべて自由にご利用いただけます。許可申請も書式も、クレジット表記も必要ありません。こちらからお送りする場合は、上のコンタクトフォームで「プレス・メディア」をお選びください。</p>
+      <div class="help-ress-grid">
+        <a class="help-ress-card" href="presse/superprint-dossier-presse.pdf" download>
+          <span class="help-ress-kick">PDF</span>
+          <h3><span class="inline-fr">Dossier de presse</span><span class="inline-en">Press kit</span><span class="inline-ja">プレスキット</span></h3>
+          <p><span class="inline-fr">Le projet, les deux auteurs, la fiche technique, les chiffres et des captures d'écran prêtes à publier.</span><span class="inline-en">The project, the two authors, the technical sheet, the figures and ready-to-publish screenshots.</span><span class="inline-ja">プロジェクト、著者二人、技術仕様、数字、そのまま掲載できる画面キャプチャ。</span></p>
+          <span class="help-ress-dl"><span class="inline-fr">Télécharger le PDF</span><span class="inline-en">Download the PDF</span><span class="inline-ja">PDFをダウンロード</span> <span class="arr" aria-hidden="true">→</span></span>
+        </a>
+        <a class="help-ress-card" href="presse/superprint-logos-hd.zip" download>
+          <span class="help-ress-kick">ZIP</span>
+          <h3><span class="inline-fr">Logos haute définition</span><span class="inline-en">High-definition logos</span><span class="inline-ja">高解像度ロゴ</span></h3>
+          <p><span class="inline-fr">Le logo SuperPrint en haute définition : fond clair et fond foncé, pour l'écran comme pour l'impression.</span><span class="inline-en">The SuperPrint logo in high definition: light and dark backgrounds, for screen and for print.</span><span class="inline-ja">SuperPrintのロゴ（高解像度）。明るい背景用と暗い背景用、画面用と印刷用。</span></p>
+          <span class="help-ress-dl"><span class="inline-fr">Télécharger le .zip</span><span class="inline-en">Download the .zip</span><span class="inline-ja">.zipをダウンロード</span> <span class="arr" aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    </section>
+
   </div>
 </section>
 
-<!-- ══════════════ FINAL CTA — LA PRESSE ══════════════ -->
-<section id="cta-final">
-  <div class="ghost" aria-hidden="true">FEUILLET</div>
-  <div class="container">
-    <div class="hero-kicker" style="justify-content:center;color:rgba(247,243,236,.6);" data-lang="fr">Colophon · Prêt à composer</div>
-    <div class="hero-kicker" style="justify-content:center;color:rgba(247,243,236,.6);" data-lang="en">Colophon · Ready to set</div>
-    <div class="hero-kicker" style="justify-content:center;color:rgba(247,243,236,.6);" data-lang="ja">奥付 · 組む準備はできています</div>
-    <h2 data-lang="fr">Votre première page<br>vous attend <em>sur la presse</em>.</h2>
-    <h2 data-lang="en">Your first page is<br>waiting <em>on the press</em>.</h2>
-    <h2 data-lang="ja">最初のページが<br><em>プレスで</em>待っています。</h2>
-    <p class="lead" data-lang="fr">SuperPrint s'ouvre en quelques secondes. Vos documents sont sauvegardés seuls, sur votre appareil. Aucune inscription, aucun abonnement.</p>
-    <p class="lead" data-lang="en">SuperPrint opens in seconds. Your documents save themselves, on your device. No sign-up, no subscription.</p>
-    <p class="lead" data-lang="ja">SuperPrintは数秒で開きます。ドキュメントは端末に自動保存。登録もサブスクも不要です。</p>
-    <div class="cta-btns">
-      <a href="app/index.html" class="btn btn-black" data-lang="fr">Lancer SuperPrint <span class="arr" aria-hidden="true">→</span></a>
-      <a href="app/index.html" class="btn btn-black" data-lang="en">Open SuperPrint <span class="arr" aria-hidden="true">→</span></a>
-      <a href="app/index.html" class="btn btn-black" data-lang="ja">SuperPrintを開く <span class="arr" aria-hidden="true">→</span></a>
-      <a href="sp213-studio.html" class="btn btn-outline-black" data-lang="fr">Ouvrir le studio IA</a>
-      <a href="sp213-studio.html" class="btn btn-outline-black" data-lang="en">Open the AI studio</a>
-      <a href="sp213-studio.html" class="btn btn-outline-black" data-lang="ja">AIスタジオを開く</a>
-      <a href="documentation.html" class="btn btn-outline-black" data-lang="fr">Lire le manuel</a>
-      <a href="documentation.html" class="btn btn-outline-black" data-lang="en">Read the manual</a>
-      <a href="documentation.html" class="btn btn-outline-black" data-lang="ja">マニュアルを読む</a>
-    </div>
-    <div class="cta-registration">
-      <span class="cmyk" aria-hidden="true"><i class="c"></i><i class="m"></i><i class="y"></i><i class="k"></i></span>
-      <span data-lang="fr">Sans compte · Sans publicité</span>
-      <span data-lang="en">No account · No ads</span>
-      <span data-lang="ja">アカウント不要 · 広告なし</span>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════ FOOTER — COLOPHON ══════════════ -->
 <footer>
   <div class="container">
     <div class="foot-brand">
@@ -3648,9 +2520,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
           <a href="#auteurs" data-lang="fr">Auteurs</a>
           <a href="#auteurs" data-lang="en">Authors</a>
           <a href="#auteurs" data-lang="ja">著者</a>
-          <a href="faq.html" data-lang="fr">Questions fréquentes</a>
-          <a href="faq.html" data-lang="en">FAQ</a>
-          <a href="faq.html" data-lang="ja">よくある質問</a>
+          <a href="#faq" data-lang="fr">Questions fréquentes</a>
+          <a href="#faq" data-lang="en">FAQ</a>
+          <a href="#faq" data-lang="ja">よくある質問</a>
           <a href="help-us.html" data-lang="fr">Tarif</a>
           <a href="help-us.html" data-lang="en">Price</a>
           <a href="help-us.html" data-lang="ja">料金</a>
