@@ -2241,6 +2241,67 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <img src="favicon.png" alt="" width="56" height="56">
 </div>
 
+<!-- ═══ _SP_SOMMAIRE_708 — SOMMAIRE DE LA FAQ : TROIS PASTILLES, COLLÉES SOUS LA NAV ═══
+     Repris de price.html (demande utilisateur : « la page FAQ en a besoin alors que la page
+     tarif n'en a plus besoin ») et réglé sur les TROIS zones de CETTE page : les questions
+     (#faq), le formulaire de contact (#ecrire) et la presse à télécharger (#ressources).
+     Enfant direct de <body> : c'est ce qui lui permet de coller sous la nav sur toute la
+     hauteur (le script remesure la hauteur de la nav au chargement, au redimensionnement et
+     au changement de langue). z-index 90 : sous la nav (120) et sous le menu (118). -->
+<style>
+  :root { --som-top: 66px; }
+  .aide-som {
+    position: sticky; top: var(--som-top); z-index: 90;
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .aide-som-in {
+    max-width: 1180px; margin: 0 auto;
+    padding: 9px clamp(18px,4vw,40px);
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  }
+  .aide-som-titre {
+    margin-right: 6px;
+    font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .24em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .aide-som a {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--f-mono); font-size: 10.5px; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase; text-decoration: none;
+    color: var(--ink); background: var(--paper-3);
+    border: 1px solid var(--line-strong); border-radius: 999px;
+    padding: 7px 14px;
+    transition: background .25s var(--ease), color .25s var(--ease), border-color .25s var(--ease);
+  }
+  .aide-som a:hover { border-color: var(--ink); }
+  .aide-som a .aide-som-n {
+    font-size: 9px; font-weight: 700; letter-spacing: .06em; color: var(--magenta);
+  }
+  .aide-som a.is-on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .aide-som a.is-on .aide-som-n { color: var(--yellow); }
+  /* Les trois cibles ne doivent pas se ranger SOUS la nav et le sommaire quand on
+     clique une pastille (l'ancre pose le titre exactement en haut d'écran sinon). */
+  #faq, #ecrire, #ressources { scroll-margin-top: calc(var(--som-top) + 58px); }
+  /* En mobile la bande est étroite : le mot « sommaire » et le mot long
+     « Presse & ressources » s'effacent, les trois pastilles tiennent alors
+     sur une ligne à 360 px. */
+  @media(max-width:700px){
+    .aide-som-in { padding: 7px clamp(12px,3vw,18px); gap: 6px; }
+    .aide-som-titre, .aide-som-long { display: none; }
+    .aide-som a { font-size: 9.5px; padding: 6px 10px; gap: 6px; letter-spacing: .06em; }
+  }
+</style>
+<div class="aide-som" role="navigation" aria-label="Sommaire de la page / Page index / 目次">
+  <div class="aide-som-in">
+    <span class="aide-som-titre"><span class="inline-fr">Sommaire</span><span class="inline-en">On this page</span><span class="inline-ja">目次</span></span>
+    <a href="#faq"><span class="aide-som-n">01</span><span class="inline-fr">Questions</span><span class="inline-en">Questions</span><span class="inline-ja">質問</span></a>
+    <a href="#ecrire"><span class="aide-som-n">02</span><span class="inline-fr">Nous écrire</span><span class="inline-en">Write to us</span><span class="inline-ja">お問い合わせ</span></a>
+    <a href="#ressources"><span class="aide-som-n">03</span><span class="aide-som-long"><span class="inline-fr">Presse &amp; ressources</span><span class="inline-en">Press &amp; resources</span><span class="inline-ja">プレス・資料</span></span></a>
+  </div>
+</div>
+
 <!-- ══════════════ HERO — COUVERTURE + INSTALLER ══════════════ -->
 <section id="faq">
   <div class="container">
@@ -3514,6 +3575,74 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
   var setLangOrigine = window.setLang;
   if (typeof setLangOrigine === 'function') {
     window.setLang = function (l, explicite) { setLangOrigine(l, explicite); maj(); };
+  }
+})();
+</script>
+
+<!-- ═══ _SP_SOMMAIRE_708 — SOMMAIRE : LA HAUTEUR DE LA NAV, ET LA ZONE COURANTE ═══
+     Repris de price.html. La zone courante est la DERNIÈRE dont le haut est passé sous les
+     deux bandes collantes (nav + sommaire) ; en bas de page, c'est la dernière zone. -->
+<script>
+(function () {
+  var som = document.querySelector('.aide-som');
+  if (!som) return;
+  var nav = document.querySelector('nav');
+
+  /* La hauteur de la barre collante n'est pas devinée : elle est mesurée. Une
+     langue plus longue ou un écran plus étroit peut la faire grandir, et le
+     sommaire doit rester collé dessous au pixel. */
+  function poserTop() {
+    if (!nav) return;
+    var h = Math.round(nav.getBoundingClientRect().height);
+    if (h > 0) document.documentElement.style.setProperty('--som-top', h + 'px');
+  }
+
+  var liens = Array.prototype.slice.call(som.querySelectorAll('a[href^="#"]'));
+  var cibles = liens.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+
+  function marquer(courante) {
+    liens.forEach(function (a, i) {
+      var on = cibles[i] === courante;
+      a.classList.toggle('is-on', on);
+      if (on) { a.setAttribute('aria-current', 'true'); } else { a.removeAttribute('aria-current'); }
+    });
+  }
+
+  /* La zone courante est la DERNIÈRE dont le haut est passé sous les deux
+     bandes collantes (nav + sommaire) : lecture directe, sans observateur, et
+     ça marche aussi pour la dernière zone, courte, quand on est en bas de page. */
+  function majZone() {
+    var haut = (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--som-top'), 10) || 66) + 62;
+    var courante = null;
+    for (var i = 0; i < cibles.length; i++) {
+      var c = cibles[i];
+      if (c && c.getBoundingClientRect().top - haut <= 0) courante = c;
+    }
+    if (!courante) courante = cibles[0];
+    if (window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 4) {
+      courante = cibles[cibles.length - 1];
+    }
+    if (courante) marquer(courante);
+  }
+
+  var attente = false;
+  function auDefilement() {
+    if (attente) return;
+    attente = true;
+    requestAnimationFrame(function () { attente = false; majZone(); });
+  }
+
+  poserTop();
+  majZone();
+  window.addEventListener('scroll', auDefilement, { passive: true });
+  window.addEventListener('resize', function () { poserTop(); majZone(); });
+  window.addEventListener('hashchange', function () { setTimeout(majZone, 60); });
+
+  /* setLang est enveloppée (jamais modifiée) : après un changement de langue,
+     les libellés du sommaire ne font plus la même largeur, on remesure. */
+  var setLangSomOrigine = window.setLang;
+  if (typeof setLangSomOrigine === 'function') {
+    window.setLang = function (l, explicite) { setLangSomOrigine(l, explicite); poserTop(); majZone(); };
   }
 })();
 </script>
