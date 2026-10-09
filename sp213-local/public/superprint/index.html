@@ -77,7 +77,7 @@
       "applicationCategory": "DesignApplication",
       "applicationSubCategory": "Desktop Publishing Software",
       "operatingSystem": "Web Browser — Chrome 90+, Firefox 90+, Safari 14+, Edge 90+",
-      "softwareVersion": "1.7.606",
+      "softwareVersion": "1.7.607",
       "dateModified": "2026-09-18",
       "inLanguage": ["en", "fr", "ja"],
       "featureList": [
@@ -2073,7 +2073,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
        droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
        du plan de bump de release. -->
-  <span class="brand-ver">v1.7.606</span>
+  <span class="brand-ver">v1.7.607</span>
   <span class="brand-tag">
     <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
   </span>
@@ -2090,7 +2090,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
     <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
     <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
     <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-    <a href="help-us.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
+    <a href="price.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
     <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
   </div>
@@ -2120,7 +2120,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
   <a href="#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
   <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
   <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
-  <a href="help-us.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
+  <a href="price.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
     <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
   <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
        Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
@@ -2136,7 +2136,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
        et quelle version — comme au colophon du pied de page, en plus petit. -->
   <div class="mm-bas">
     <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
-    <span>SuperPrint v1.7.606</span>
+    <span>SuperPrint v1.7.607</span>
   </div>
 </div>
 
@@ -3651,9 +3651,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
           <a href="faq.html" data-lang="fr">Questions fréquentes</a>
           <a href="faq.html" data-lang="en">FAQ</a>
           <a href="faq.html" data-lang="ja">よくある質問</a>
-          <a href="help-us.html" data-lang="fr">Tarif</a>
-          <a href="help-us.html" data-lang="en">Price</a>
-          <a href="help-us.html" data-lang="ja">料金</a>
+          <a href="price.html" data-lang="fr">Tarif</a>
+          <a href="price.html" data-lang="en">Price</a>
+          <a href="price.html" data-lang="ja">料金</a>
         </div>
       </div>
       <div>
@@ -3670,7 +3670,7 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
     <div class="foot-copy">
-      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.606</span>
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.607</span>
       <div class="foot-legal">
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
         <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
@@ -3733,7 +3733,7 @@ function setLang(lang, explicite) {
      ignoré). L'adresse doit suivre, d'où le replaceState : sans lui, le canonical
      désignerait une autre URL que celle affichée dans la barre. */
   /* 🆕 v1.7.470 — l'adresse canonique suit la LANGUE *et* la PAGE : la page d'aide
-     (help-us.html) réutilise ce script et doit se déclarer elle-même, pas la racine. */
+     (price.html) réutilise ce script et doit se déclarer elle-même, pas la racine. */
   var _chemin = location.pathname.replace(/\/index\.html$/, '/');
   var _base = 'https://superprint.cc' + _chemin;
   var _ref = (lang === 'en') ? _base : _base + '?lang=' + lang;
@@ -4129,217 +4129,217 @@ document.querySelectorAll('a[href^="#"]').forEach(function(a) {
       o.classList.remove('open');
       document.body.style.overflow = '';
     };
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');
       else if (location.hash === '#privacy') window.openLegal('privacyOverlay');
     } catch (e) {}
-    /* 🆕 v1.7.470 — les autres pages (help-us) renvoient ici avec #legal / #privacy :
+    /* 🆕 v1.7.470 — les autres pages (price) renvoient ici avec #legal / #privacy :
        le pop-in s'ouvre à l'arrivée, sans script dupliqué sur l'autre page. */
     try {
       if (location.hash === '#legal') window.openLegal('legalOverlay');

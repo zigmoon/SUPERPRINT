@@ -4240,7 +4240,12 @@
     }
     document.querySelectorAll('#starter .st-ex button').forEach(function (b) {
       b.addEventListener('click', function () {
-        spStarterExemple(b.getAttribute('data-p') || b.textContent);
+        const txt = b.getAttribute('data-p') || b.textContent;
+        /* _SP_STUDIO_OUTILS_706 — PRÉ-PROMPT À TROUS : si la demande porte des segments
+           entre guillemets (titre, date, lieu…), on propose de les personnaliser AVANT de
+           remplir le champ. Un pré-prompt sans guillemets garde le comportement d'origine. */
+        if (window.spExTrousLancer) window.spExTrousLancer(txt, function (t2) { spStarterExemple(t2); }, b);
+        else spStarterExemple(txt);
         /* Pastille « DOCUMENT WORD COMPLEXE » (fourni avec le studio) : le clic attache
            le .docx par le MÊME chemin que le bouton d'import — on teste donc exactement
            ce que vivra l'utilisateur. */
@@ -5152,7 +5157,14 @@
          triangle visible à la fois : plus d'empilement quand vingt mots sont reconnus. */
       '.spCapsBox.spCapsCliq{pointer-events:auto;cursor:pointer}',
       '.spCapsBox.spCapsCliq:hover,.spCapsBox.spCapsOuvertB{background:rgba(128,128,128,.18);box-shadow:inset 0 0 0 1px rgba(128,128,128,.36)}',
-      '.spCapsTri{position:absolute;right:-3px;top:50%;width:0;height:0;margin-top:-1.5px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:4px solid rgba(120,120,120,.62);opacity:.4;transition:opacity .14s ease}',
+      /* ⚠️ _SP_STUDIO_CAPSULES_705 — LE TRIANGLE NE DÉBORDE PLUS DU MOT.
+         Retour utilisateur : « quand il y a un triangle et que le mot est entouré, laisse
+         un peu d'air à droite du mot, le triangle déborde ». Le triangle était posé à
+         right:-3px, donc 3 px HORS du cadre, et son dessin (8 px de large) partait jusqu'à
+         +7 px au-delà du mot : il mordait le caractère suivant. Le cadre réserve maintenant
+         un air à droite (voir AIR_TRI dans spCapsPeindre) et le triangle se pose DEDANS
+         (right:6px), à 3 px du mot et 2 px du bord du cadre. */
+      '.spCapsTri{position:absolute;right:6px;top:50%;width:0;height:0;margin-top:-1.5px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:4px solid rgba(120,120,120,.62);opacity:.4;transition:opacity .14s ease}',
       '.spCapsBox.spCapsCliq:hover .spCapsTri,.spCapsBox.spCapsOuvertB .spCapsTri{opacity:1}',
       '.spCapsMenu{position:absolute;pointer-events:auto;min-width:104px;background:#ffffff;color:#14161a;border:1px solid rgba(0,0,0,.2);border-radius:9px;padding:4px;box-shadow:0 8px 22px rgba(0,0,0,.28);z-index:7;font:400 11px/1.3 "IBM Plex Mono",monospace}',
       '.spCapsMenu button{display:block;width:100%;text-align:left;border:0;background:transparent;color:inherit;padding:5px 8px;border-radius:6px;cursor:pointer;font:inherit}',
@@ -5316,6 +5328,10 @@
            un cadre par morceau, comme un vrai surlignage. Même élargissement de 4 px / 2 px
            (demande utilisateur : « pas assez d'espace autour du mot »). */
         const AIR_X = 4, AIR_Y = 2;
+        /* ⚠️ _SP_STUDIO_CAPSULES_705 — AIR DROIT POUR LE TRIANGLE (voir .spCapsTri).
+           Un mot reconnu AVEC choix réserve 13 px à droite (au lieu de 4) : le triangle
+           s'y loge sans jamais empiéter sur le caractère suivant, et le mot respire. */
+        const AIR_TRI = 13;
         const lg = Math.max(8, b.width), ht = Math.max(9, b.height);
         let morceaux = null;
         try { const l = el.getClientRects(); morceaux = (l && l.length) ? Array.prototype.slice.call(l) : null; } catch (_) { morceaux = null; }
@@ -5331,9 +5347,12 @@
           const bx = document.createElement('div');
           bx.className = 'spCapsBox' + (opts.length ? ' spCapsCliq' : '');
           bx.setAttribute('data-cp', String(i));
+          /* _SP_STUDIO_CAPSULES_705 — à droite : AIR_X pour tous, AIR_TRI en plus quand
+             le mot a des choix (place du triangle). À gauche : AIR_X, inchangé. */
+          const aireD = opts.length ? AIR_TRI : AIR_X;
           bx.style.left = Math.round(fx - AIR_X) + 'px';
           bx.style.top = Math.round(fy - AIR_Y) + 'px';
-          bx.style.width = Math.round(Math.max(8, fr.width) + AIR_X * 2) + 'px';
+          bx.style.width = Math.round(Math.max(8, fr.width) + AIR_X + aireD) + 'px';
           bx.style.height = Math.round(Math.max(9, fr.height) + AIR_Y * 2) + 'px';
           if (opts.length) {
             const tri = document.createElement('span');
@@ -5490,9 +5509,17 @@
         b.textContent = ex[0];
         b.title = ex[1];
         b.addEventListener('click', () => {
-          $('promptInput').value = ex[1];
-          $('promptInput').dispatchEvent(new Event('input', { bubbles: true }));
-          $('promptInput').focus();
+          /* _SP_STUDIO_OUTILS_706 — pré-prompt à trous : mêmes champs personnalisables que
+             sur la pré-home, écrits cette fois dans la boîte de prompt du studio. */
+          const _p = $('promptInput');
+          const _appl = function (t2) {
+            if (!_p) return;
+            _p.value = t2;
+            _p.dispatchEvent(new Event('input', { bubbles: true }));
+            _p.focus();
+          };
+          if (window.spExTrousLancer) window.spExTrousLancer(ex[1], _appl, b);
+          else _appl(ex[1]);
         });
         wrap.appendChild(b);
       });
@@ -11042,6 +11069,71 @@ function spRtfLayoutInfo(src) {
     return retires;
   }
 
+  /* ══ _SP_STUDIO_OUTILS_706 — RECHERCHE + PRÉ-PROMPT À TROUS ═══════════════════════
+     « Va plus loin » sur l'intelligence du studio : (1) une RECHERCHE dans le soufflet
+     des pré-prompts (ils sont plus de vingt) ; (2) le PRÉ-PROMPT À TROUS — les pastilles
+     premium portent déjà un titre, une date et un lieu ENTRE GUILLEMETS (« NOIR & OR »,
+     « samedi 18 octobre »…) que le moteur imprime tels quels : au clic, un petit panneau
+     propose de les personnaliser avant de composer. Aucun état persistant, aucun changement
+     du moteur : ces deux outils n'écrivent que dans le champ de saisie. */
+  function spExOutilsCss() {
+    if (document.getElementById('spExOutilsCss')) return;
+    const s = document.createElement('style');
+    s.id = 'spExOutilsCss';
+    s.textContent = [
+      '.st-ex-rech{display:flex;justify-content:center;margin:6px 0 2px}',
+      '.st-ex-rech-inp{width:min(280px,72vw);height:30px;padding:0 12px;font:400 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--text);background:var(--input-bg,#fff);border:1px solid var(--border,#d9d9d9);border-radius:15px;outline:none;-webkit-appearance:none;appearance:none}',
+      '.st-ex-rech-inp:focus{border-color:var(--accent,#1a1a1a)}',
+      '.st-ex-rech-inp::-webkit-search-cancel-button{-webkit-appearance:none}',
+      '.spTrousPop{position:fixed;z-index:9999;min-width:220px;max-width:min(340px,92vw);padding:12px;border-radius:12px;background:var(--panel,#fff);color:var(--text,#1a1a1a);border:1px solid var(--border,#d9d9d9);box-shadow:0 16px 40px rgba(0,0,0,.22);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}',
+      '.spTrousH{font:600 11px/1 "IBM Plex Mono",monospace;letter-spacing:.05em;text-transform:uppercase;opacity:.6;margin:0 0 8px}',
+      '.spTrousInp{display:block;width:100%;box-sizing:border-box;height:34px;padding:0 10px;margin:0 0 8px;font:400 13px/1 inherit;color:inherit;background:rgba(128,128,128,.08);border:1px solid var(--border,#d9d9d9);border-radius:8px;outline:none}',
+      '.spTrousInp:focus{border-color:var(--accent,#1a1a1a);background:transparent}',
+      '.spTrousBar{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}',
+      '.spTrousBar button{height:32px;padding:0 14px;border-radius:8px;font:600 12px/1 inherit;cursor:pointer;border:1px solid var(--border,#d9d9d9);background:transparent;color:inherit}',
+      '.spTrousBar .spTrousOk{background:var(--accent,#1a1a1a);color:#fff;border-color:transparent}',
+      '.spTrousBar button:hover{opacity:.88}',
+      'body.theme-dark .spTrousPop{background:#1e1e1e;color:#eaeaea;border-color:rgba(255,255,255,.16)}',
+      'body.theme-dark .spTrousInp{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.16)}',
+      'body.theme-dark .spTrousBar button{border-color:rgba(255,255,255,.22)}',
+      'body.theme-dark .spTrousBar .spTrousOk{background:#f0f0f0;color:#111}'
+    ].join('');
+    document.head.appendChild(s);
+  }
+  function spExNorm(s) {
+    let v = String(s || '').toLowerCase();
+    try { v = v.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (_) {}
+    return v;
+  }
+  let SP_EX_RECH = null;
+  function spExRecherche() {
+    if (SP_EX_RECH && document.body.contains(SP_EX_RECH)) return SP_EX_RECH;
+    const plus = document.getElementById('stExPlusBtn');
+    if (!plus || !plus.parentNode) return null;
+    spExOutilsCss();
+    const wrap = document.createElement('div');
+    wrap.className = 'st-ex-rech';
+    const inp = document.createElement('input');
+    inp.type = 'search';
+    inp.className = 'st-ex-rech-inp';
+    inp.spellcheck = false;
+    const lab = (curLang === 'en') ? 'Search a pre-prompt…' : (curLang === 'jp') ? 'プリプロンプトを検索…' : 'Rechercher un pré-prompt…';
+    inp.placeholder = lab;
+    inp.setAttribute('aria-label', lab);
+    wrap.appendChild(inp);
+    plus.parentNode.insertBefore(wrap, plus);
+    SP_EX_RECH = inp;
+    let tmr = null;
+    inp.addEventListener('input', function () {
+      if (tmr) clearTimeout(tmr);
+      tmr = setTimeout(function () { try { spExSoufflet(); } catch (_) {} }, 120);
+    });
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { inp.value = ''; try { spExSoufflet(); } catch (_) {} }
+    });
+    return inp;
+  }
+
   function spExSoufflet() {
     const zone = document.querySelector('#starter .st-ex');
     const plus = document.getElementById('stExPlusBtn');
@@ -11055,6 +11147,30 @@ function spRtfLayoutInfo(src) {
     }
     const bts = Array.prototype.slice.call(zone.querySelectorAll('button[data-ex]'));
     if (!bts.length) return;
+    /* _SP_STUDIO_OUTILS_706 — la boîte de recherche est créée une seule fois, juste avant
+       le (+). Elle n'apparaît QUE quand le soufflet est déployé (ou qu'une recherche est en
+       cours) : la pré-home garde sa hauteur au repos. */
+    const rech = spExRecherche();
+    const q = rech ? spExNorm(rech.value) : '';
+    /* ⚠️ _SP_STUDIO_OUTILS_706 — LE LIBELLÉ SUIT LA LANGUE. La boîte est créée à
+       l'initialisation, AVANT que setLang() n'applique la langue de la page : son
+       placeholder restait donc en anglais. On le recale à chaque passage. */
+    if (rech) {
+      const lab = (curLang === 'en') ? 'Search a pre-prompt…' : (curLang === 'jp') ? 'プリプロンプトを検索…' : 'Rechercher un pré-prompt…';
+      if (rech.placeholder !== lab) { rech.placeholder = lab; rech.setAttribute('aria-label', lab); }
+    }
+    if (rech && rech.parentNode) rech.parentNode.style.display = (SP_EX_SOUFFLET_OUVERT || q) ? '' : 'none';
+    /* Recherche active : on FILTRE (les pastilles qui matchent restent, les autres partent)
+       et on ne replie rien — on montre tout ce qui correspond, quelle que soit la ligne. */
+    if (q) {
+      bts.forEach(function (b) {
+        if (b.getAttribute('data-sp-off') === '1') { b.style.display = 'none'; return; }
+        const s = spExNorm((b.textContent || '') + ' ' + (b.getAttribute('data-p') || ''));
+        b.style.display = (s.indexOf(q) >= 0) ? '' : 'none';
+      });
+      plus.style.display = 'none';
+      return;
+    }
     /* 1. Remettre en flux ce que le soufflet avait masque (jamais les pastilles desactivees
           par la langue ou par le moteur). */
     bts.forEach(function (b) {
@@ -11084,6 +11200,116 @@ function spRtfLayoutInfo(src) {
     plus.textContent = '+';
     plus.setAttribute('aria-expanded', 'false');
   }
+
+  /* ── PRÉ-PROMPT À TROUS (mini-questionnaire) ─────────────────────────────────── */
+  function spExTrous(txt) {
+    const s = String(txt || '');
+    const res = [];
+    const re = /[«“"]([^»”"\n]{1,80})[»”"]/g;
+    let m, dernier = 0;
+    while ((m = re.exec(s))) {
+      if (m.index > dernier) res.push({ fixe: s.slice(dernier, m.index), val: null });
+      res.push({ fixe: '', val: m[1] });
+      dernier = m.index + m[0].length;
+    }
+    if (dernier < s.length) res.push({ fixe: s.slice(dernier), val: null });
+    return res.some(function (x) { return x.val !== null; }) ? res : [];
+  }
+  let SP_EX_TROUS_POP = null;
+  function spExTrousFermer() {
+    if (SP_EX_TROUS_POP && SP_EX_TROUS_POP.parentNode) SP_EX_TROUS_POP.parentNode.removeChild(SP_EX_TROUS_POP);
+    SP_EX_TROUS_POP = null;
+  }
+  let SP_EX_TROUS_ECOUTE = false;
+  function spExTrousEcouter() {
+    if (SP_EX_TROUS_ECOUTE) return;
+    SP_EX_TROUS_ECOUTE = true;
+    document.addEventListener('mousedown', function (e) {
+      if (!SP_EX_TROUS_POP) return;
+      if (SP_EX_TROUS_POP.contains(e.target)) return;
+      spExTrousFermer();
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && SP_EX_TROUS_POP) spExTrousFermer();
+    }, true);
+    window.addEventListener('resize', function () { spExTrousFermer(); });
+  }
+  /* Ouvre le panneau de personnalisation s'il y a des trous, sinon applique la demande
+     telle quelle. `appliquer(txt)` remplit le bon champ (pré-home ou studio). */
+  function spExTrousLancer(promptTxt, appliquer, ancre) {
+    const base = String(promptTxt || '');
+    let segs = [];
+    try { segs = spExTrous(base); } catch (_) { segs = []; }
+    if (!segs.length) { try { appliquer(base); } catch (_) {} return; }
+    spExOutilsCss();
+    spExTrousEcouter();
+    try { spExTrousFermer(); } catch (_) {}
+    const L = (curLang === 'en') ? { t: 'Customise before generating', gen: 'Generate', skip: 'As is' }
+          : (curLang === 'jp') ? { t: '生成前にカスタマイズ', gen: '生成', skip: 'このまま' }
+          : { t: 'Personnaliser avant de générer', gen: 'Générer', skip: 'Tel quel' };
+    const pop = document.createElement('div');
+    pop.className = 'spTrousPop';
+    const h = document.createElement('div');
+    h.className = 'spTrousH';
+    h.textContent = L.t;
+    pop.appendChild(h);
+    const champs = [];
+    segs.forEach(function (sg) {
+      if (sg.val === null) return;
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'spTrousInp';
+      inp.value = sg.val;
+      inp.spellcheck = false;
+      inp.setAttribute('aria-label', sg.val);
+      champs.push({ inp: inp, sg: sg });
+      pop.appendChild(inp);
+    });
+    const bar = document.createElement('div');
+    bar.className = 'spTrousBar';
+    const bSkip = document.createElement('button');
+    bSkip.type = 'button'; bSkip.className = 'spTrousSkip'; bSkip.textContent = L.skip;
+    const bOk = document.createElement('button');
+    bOk.type = 'button'; bOk.className = 'spTrousOk'; bOk.textContent = L.gen;
+    bar.appendChild(bSkip); bar.appendChild(bOk);
+    pop.appendChild(bar);
+    document.body.appendChild(pop);
+    SP_EX_TROUS_POP = pop;
+    try {
+      const r = (ancre && ancre.getBoundingClientRect) ? ancre.getBoundingClientRect() : null;
+      const pw = pop.offsetWidth, ph = pop.offsetHeight;
+      let x = r ? Math.round(r.left) : Math.round((window.innerWidth - pw) / 2);
+      let y = r ? Math.round(r.bottom + 8) : Math.round((window.innerHeight - ph) / 2);
+      x = Math.max(10, Math.min(x, window.innerWidth - pw - 10));
+      if (y + ph > window.innerHeight - 10) y = Math.max(10, (r ? r.top : window.innerHeight) - ph - 8);
+      pop.style.left = x + 'px';
+      pop.style.top = y + 'px';
+    } catch (_) {}
+    const recomposer = function () {
+      let out = '';
+      segs.forEach(function (sg) {
+        if (sg.val === null) { out += sg.fixe; return; }
+        let v = sg.val;
+        for (let i = 0; i < champs.length; i++) {
+          if (champs[i].sg === sg) { const w = String(champs[i].inp.value).trim(); if (w) v = w; break; }
+        }
+        out += '« ' + v + ' »';
+      });
+      return out;
+    };
+    const finir = function (txt) { try { spExTrousFermer(); } catch (_) {} try { appliquer(txt); } catch (_) {} };
+    bSkip.addEventListener('click', function () { finir(base); });
+    bOk.addEventListener('click', function () { finir(recomposer()); });
+    champs.forEach(function (c) {
+      c.inp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); finir(recomposer()); }
+        else if (e.key === 'Escape') { e.preventDefault(); finir(base); }
+      });
+    });
+    setTimeout(function () { try { if (champs[0]) { champs[0].inp.focus(); champs[0].inp.select(); } } catch (_) {} }, 30);
+  }
+  try { window.spExTrousLancer = spExTrousLancer; } catch (_) {}
+
   function spExemplesPeindre() {
     const eng = (typeof spStEngCourant === 'function') ? spStEngCourant() : state.engine;
     const exs = spExemples(eng);
@@ -18646,7 +18872,14 @@ function spRtfLayoutInfo(src) {
     let _audPalier = 0;
     try {
       const _sAud = String(brief || '').toLowerCase();
-      const _audPlus = /audacieu|cr[ée]atif\s*max|effet\s+wa?ou|wha?ou|\bwow\b|tr[èe]s\s+grand(?:e|s)?\s+(?:typographie|titres?|titre)|grande\s+typographie|typographie\s+tr[èe]s\s+grande|grands?\s+aplats?|aplats?\s+de\s+couleur/.test(_sAud);
+      /* ⚠️ _SP_STUDIO_OUTILS_706 — INTENTIONS DE RENDU « PREMIUM » AJOUTÉES.
+         MESURÉ : nos propres pré-prompts « Poster » et « Poster premium » demandent une
+         affiche « très impactante » avec un « titre géant » — mais aucun de ces mots ne
+         déclenchait le palier CRÉATIF MAX (seuls « waouh », « très grand titre », « aplats »
+         le faisaient). L'affiche sortait donc sage. « impactant », « géant », « spectaculaire »
+         et « grandiose » ouvrent désormais le palier : grand titre, fond de page teinté,
+         encres recalculées par le garde-fou de contraste. */
+      const _audPlus = /audacieu|cr[ée]atif\s*max|effet\s+wa?ou|wha?ou|\bwow\b|tr[èe]s\s+grand(?:e|s)?\s+(?:typographie|titres?|titre)|grande\s+typographie|typographie\s+tr[èe]s\s+grande|grands?\s+aplats?|aplats?\s+de\s+couleur|impactant|spectaculaire|grandiose|g[ée]ant(?:e|s)?|grand\s+format/.test(_sAud);
       const _audUn = /marqu[ée]|affirm[ée]|tr[èe]s\s+contrast|fortement\s+contrast/.test(_sAud);
       if (_audPlus && SP_GAB_AUDACE < 2) SP_GAB_AUDACE = 2;
       else if (!_audPlus && _audUn && SP_GAB_AUDACE < 1) SP_GAB_AUDACE = 1;
@@ -22035,6 +22268,27 @@ function spRtfLayoutInfo(src) {
           appendChat('assistant', _msgRemplace);
           state.chat.push({ role: 'assistant', text: _msgRemplace });
         }
+        /* ⚠️ _SP_STUDIO_RELECTURE_707 — LE CONTRÔLE QUALITÉ EST DIT À L'UTILISATEUR.
+           Les corrections automatiques (contraste, débordements, chevauchements) étaient
+           SILENCIEUSES : on annonce en une phrase ce qui a été rattrapé, et SEULEMENT s'il y
+           a eu correction. C'est ce qui donne aux modèles CLOUD le même niveau de finition
+           visible que le moteur de gabarit, qui les applique dès la source. */
+        try {
+          const rq = doc._spRelecture || {};
+          const en = curLang === 'en', jp = curLang === 'jp';
+          const parts = [];
+          if (rq.encres) parts.push(en ? (rq.encres + ' ink' + (rq.encres > 1 ? 's' : '')) : jp ? (rq.encres + ' 色') : (rq.encres + ' encre' + (rq.encres > 1 ? 's' : '')));
+          if (rq.debordements) parts.push(en ? (rq.debordements + ' overflow' + (rq.debordements > 1 ? 's' : '')) : jp ? (rq.debordements + ' はみ出し') : (rq.debordements + ' débordement' + (rq.debordements > 1 ? 's' : '')));
+          if (rq.chevauchements) parts.push(en ? (rq.chevauchements + ' overlap' + (rq.chevauchements > 1 ? 's' : '')) : jp ? (rq.chevauchements + ' 重なり') : (rq.chevauchements + ' chevauchement' + (rq.chevauchements > 1 ? 's' : '')));
+          if (parts.length) {
+            const _total = (rq.encres || 0) + (rq.debordements || 0) + (rq.chevauchements || 0);
+            const _tete = en ? '🔎 Quality check: ' : jp ? '🔎 品質チェック：' : '🔎 Contrôle qualité : ';
+            const _fin = en ? ' fixed automatically.' : jp ? ' を自動修正しました。' : ' corrigé' + (_total > 1 ? 's' : '') + ' automatiquement.';
+            const msg = _tete + parts.join(', ') + _fin;
+            appendChat('assistant', msg);
+            state.chat.push({ role: 'assistant', text: msg });
+          }
+        } catch (_) {}
         /* _SP_STUDIO_VOCABLE_586 — CE QUI A ÉTÉ DEMANDÉ EST-IL LIVRÉ ? Le compte de pages annoncé
            était celui de la composition AVANT les passes de mise en page : la dernière
            section pouvait être reportée sur une page de plus (mesuré : 24 demandées, 25
@@ -24089,6 +24343,114 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     } catch (_) { return 0; }
   }
 
+  /* ══ _SP_STUDIO_RELECTURE_707 — PASSE DE RELECTURE QUALITÉ (TOUS MOTEURS, CLOUD COMPRIS)
+     Dernier filet de sécurité : après toutes les passes géométriques, on MESURE le document
+     figé et on corrige trois familles de défauts, en comptant chaque correction pour pouvoir
+     l'annoncer. Les modèles CLOUD composent depuis zéro à chaque envoi et n'ont pas, à la
+     source, les garde-fous du moteur de gabarit : c'est ici qu'ils obtiennent le même niveau
+     de finition.
+       1. DÉBORDEMENTS — tout objet NON-TEXTE (photo, forme) dont la boîte sort de la
+          fenêtre de coupe (page + fond perdu) est ramené DANS cette fenêtre. Les passes
+          existantes ne contraignaient que le TEXTE : une photo ou une forme posée au-delà
+          du fond perdu sortait franchement de la maquette. Un FOND PLEINE PAGE (rectangle
+          ou image couvrant ≥ 90 % de la page) est laissé tel quel — son débordement EST
+          le fond perdu voulu.
+       2. CHEVAUCHEMENTS — on recompte les recouvrements TEXTE/TEXTE restants (une passe
+          antérieure peut en réintroduire en déplaçant la typographie) ; s'il en reste, on
+          relance l'anti-recouvrement existant.
+       3. CONTRASTE — mesuré juste après par spContrasteApresPasses, sur le document
+          totalement figé (mêmes règles que le moteur de gabarit).
+     Renvoie { debordements, chevauchements, encres } — tout à 0 s'il n'y a rien à corriger. */
+  function spRelectureQualite(doc) {
+    const R = { debordements: 0, chevauchements: 0, encres: 0 };
+    if (!doc || !Array.isArray(doc.pages)) return R;
+    const effW = Number(doc.effW) || Number(doc.w) || (state && state.pageW) || 210;
+    const H = Number(doc.h) || (state && state.pageH) || 297;
+    const bled = Math.max(0, Number(doc.bleed) || 0);
+    const tol = 0.6;
+    const x0 = -bled - tol, y0 = -bled - tol, x1 = effW + bled + tol, y1 = H + bled + tol;
+    const isText = function (e) { const t = String((e && e.type) || '').toLowerCase(); return t === 'text' || t === 'textbox'; };
+    const boite = function (e) {
+      const t = String((e && e.type) || '').toLowerCase();
+      if (t === 'line') return null;                 // un filet peut sortir en fond perdu
+      if (t === 'circle') { const r = Number(e.radius) || 0; return { l: (Number(e.left) || 0) - r, tp: (Number(e.top) || 0) - r, w: 2 * r, h: 2 * r }; }
+      return { l: Number(e.left) || 0, tp: Number(e.top) || 0, w: Number(e.width) || 0, h: Number(e.height) || 0 };
+    };
+    const arr = function (v) { return Math.round(v * 100) / 100; };
+    doc.pages.forEach(function (pg) {
+      const els = (pg && pg.elements) || [];
+      /* ── 1. DÉBORDEMENTS (objets non-texte hors de la fenêtre de coupe) ── */
+      els.forEach(function (e) {
+        if (!e || isText(e)) return;                 // le texte est déjà contraint par les passes
+        const b = boite(e);
+        if (!b || !(b.w > 0) || !(b.h > 0)) return;
+        if (b.w >= effW * 0.9 && b.h >= H * 0.9) return;   // fond pleine page : débordement voulu
+        if (!((b.l < x0) || (b.tp < y0) || (b.l + b.w > x1) || (b.tp + b.h > y1))) return;
+        let nl = b.l, ntp = b.tp;
+        const nw = Math.min(b.w, x1 - x0), nh = Math.min(b.h, y1 - y0);
+        if (nl < x0) nl = x0;
+        if (nl + nw > x1) nl = x1 - nw;
+        if (ntp < y0) ntp = y0;
+        if (ntp + nh > y1) ntp = y1 - nh;
+        const t = String(e.type || '').toLowerCase();
+        if (t === 'circle') {
+          const r = Math.min(nw, nh) / 2;
+          e.radius = arr(Math.max(0.5, r));
+          e.left = arr(nl + r);
+          e.top = arr(ntp + r);
+        } else {
+          e.left = arr(nl); e.top = arr(ntp);
+          if (typeof e.width === 'number') e.width = arr(nw);
+          if (typeof e.height === 'number') e.height = arr(nh);
+        }
+        R.debordements++;
+      });
+    });
+    /* ── 2. CHEVAUCHEMENTS TEXTE/TEXTE ──
+       On COMPTE toujours AVANT puis APRÈS la passe : on n'annonce que ce qui a été
+       réellement corrigé (un recouvrement que la passe ne peut pas résoudre — bloc
+       déjà en bas de page — n'est donc jamais compté comme « corrigé »). */
+    const compter = function () {
+      let n = 0;
+      doc.pages.forEach(function (pg) {
+        const els = (pg && pg.elements) || [];
+        const txts = els.filter(function (e) { return isText(e) && String(e.text || '').trim() && e.top != null; });
+        if (txts.length < 2) return;
+        const mes = [];
+        txts.forEach(function (e) {
+          const w = (Number(e.width) > 10) ? Number(e.width) : (effW - 30);
+          let hm = 0;
+          try {
+            hm = spMeasureTextBlock({ text: e.text, fontSize: Number(e.fontSize) || 11, width: w,
+              lineHeight: e.lineHeight, fontFamily: e.fontFamily, fontWeight: e.fontWeight, fontStyle: e.fontStyle }).hauteurMm;
+          } catch (_) { hm = (Number(e.fontSize) || 11) * 0.353 * 1.3; }
+          const l = Number(e.left) || 0;
+          mes.push({ l: l, r: l + w, t: Number(e.top) || 0, b: (Number(e.top) || 0) + hm });
+        });
+        for (let i = 0; i < mes.length; i++) {
+          for (let j = i + 1; j < mes.length; j++) {
+            const a = mes[i], c = mes[j];
+            const rh = Math.min(a.r, c.r) - Math.max(a.l, c.l);
+            const lmin = Math.min(a.r - a.l, c.r - c.l);
+            if (lmin <= 0 || rh < lmin * 0.35) continue;
+            if (Math.min(a.b, c.b) - Math.max(a.t, c.t) > 0.8) n++;
+          }
+        }
+      });
+      return n;
+    };
+    const avant = compter();
+    if (avant > 0) {
+      try { _spResolveCollisions(doc); } catch (_) {}     // seconde passe anti-recouvrement
+      R.chevauchements = Math.max(0, avant - compter());
+    }
+    if (R.debordements || R.chevauchements) {
+      try { console.log('[SP213] relecture : ' + R.debordements + ' débordement(s) et ' + R.chevauchements + ' chevauchement(s) corrigé(s)'); } catch (_) {}
+    }
+    return R;
+  }
+  window.sp213RelectureQualite = spRelectureQualite;
+
   function _spResolveCollisions(doc) {
     // (exposee plus bas sur window pour les tests et le diagnostic)
     void 0;
@@ -25593,7 +25955,12 @@ Fond pleine page: left:-${bled()}, top:-${bled()}, width:${state.pageW + bled() 
     /* ⚠️ _SP_STUDIO_ROCK678 — DERNIER MOT SUR LES ENCRES. Ici, TOUTES les passes sont passées
        (contrainte de page, remontée de typo, marges, anti-recouvrement, imposition, images) :
        plus rien ne peut déplacer un bloc sous un autre et rendre une typographie illisible. */
-    try { spContrasteApresPasses(doc); } catch (_) {}
+    /* ⚠️ _SP_STUDIO_RELECTURE_707 — PASSE DE RELECTURE QUALITÉ, JUSTE AVANT LE CONTRASTE.
+       Elle mesure le document figé et corrige les DÉBORDEMENTS (objets non-texte hors fond
+       perdu) et les CHEVAUCHEMENTS texte/texte restants (voir spRelectureQualite). Le
+       contraste est ensuite le tout dernier mot, sur un document plus modifié par personne. */
+    try { doc._spRelecture = spRelectureQualite(doc); } catch (_) { doc._spRelecture = { debordements: 0, chevauchements: 0, encres: 0 }; }
+    try { doc._spRelecture.encres = spContrasteApresPasses(doc) || 0; } catch (_) {}
     return doc;
   }
 

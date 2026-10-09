@@ -203,7 +203,13 @@ import * as THREE from './three.module.min.js';
         try { plan.canvas.renderAll(); } catch (_) {}
         var url = '';
         try {
-            url = plan.canvas.toDataURL({ format: 'png', multiplier: plan.mult, left: plan.left, top: plan.vy, width: plan.width, height: plan.ch });
+            // ⚠️ Le plan mémorise `top` et `height` (et non `vy` / `ch`) : les
+            //    LIRE SOUS LEUR VRAI NOM. Avant, `plan.vy` / `plan.ch` valaient
+            //    `undefined` → la page re-capturée (souvent la COUVERTURE, la
+            //    première planche) était recadrée sans son décalage de pasteboard
+            //    et prenait toute la hauteur : elle apparaissait décalée ou vide,
+            //    comme « perdue » dans l'aperçu 3D.
+            url = plan.canvas.toDataURL({ format: 'png', multiplier: plan.mult, left: plan.left, top: plan.top, width: plan.width, height: plan.height });
         } catch (e) { console.warn('[SP-3D] recapture :', e); }
         if (!url || url.length <= 64) return Promise.resolve(null);
         return loadTextures([url]).then(function (a) { return a[0] || null; });
