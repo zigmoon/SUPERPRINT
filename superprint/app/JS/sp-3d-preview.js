@@ -125,6 +125,35 @@ import * as THREE from './three.module.min.js';
         return [];
     }
 
+    /* ⚠️ _SP3D_PRET_712 — L'APP EST-ELLE PRÊTE À ÊTRE CAPTURÉE ?
+       L'app (main.js) marque chaque planche `_spRenderReady = false` (ou `_isLoading`) pendant
+       son rendu asynchrone, et remet `true` une fois peinte. Tant qu'une seule planche n'est
+       pas prête, capturer donne des images vides (couverture / dos « disparus »). */
+    function canvasesReady() {
+        var cs = getAppCanvases();
+        if (!cs.length) return false;
+        for (var i = 0; i < cs.length; i++) {
+            var c = cs[i];
+            if (c && (c._isLoading || c._spRenderReady === false)) return false;
+        }
+        return true;
+    }
+    // Attend la disponibilité (poll 100 ms, budget 3 s) puis rappelle cb() — DANS TOUS LES CAS.
+    function waitAppReady(cb) {
+        var t0 = performance.now ? performance.now() : Date.now();
+        var essai = 0;
+        var pas = function () {
+            if (!open) return;
+            var pret = false;
+            try { pret = canvasesReady(); } catch (_) {}
+            var now = performance.now ? performance.now() : Date.now();
+            if (pret || (now - t0) > 3000 || essai++ > 40) { cb(); return; }
+            setTimeout(pas, 100);
+        };
+        // Une image au moins, pour laisser la planche se peindre, puis on sonde.
+        try { requestAnimationFrame(function () { setTimeout(pas, 60); }); } catch (_) { pas(); }
+    }
+
     // Rend une planche en PNG (page entière, sans repères ni pasteboard).
     // Reproduit la logique « export » de l'app pour rester fidèle au rendu.
     // ⚠️ On renvoie AUSSI une entrée vide ('') pour une page qui échoue, afin
@@ -824,9 +853,33 @@ import * as THREE from './three.module.min.js';
             fold.position.x = leaf.userData.isLeft ? (-foldW / 2) : (foldW / 2);
         });
         // Ombre de la feuille qui tourne : bord sombre au PIVOT (x local = 0).
-        var ffA = flipper.userData && flipper.userData.foldA;
-        var ffB = flipper.userData && flipper.userData.foldB;
-        [ffA, ffB].forEach(function (f) { if (f) { f.scale.set(foldW, PAGE_H, 1); f.position.x = foldW / 2; } });
+        placeFlipFold(1);
+    }
+
+    /* ⚠️ _SP3D_OMBRE_711 — LE REPLI DE LA FEUILLE QUI TOURNE SUIT LE SENS DU FEUILLETAGE.
+       Défaut signalé : « les ombres ont du mal à revenir dans le sens inverse quand on
+       défile page à page ». MESURÉ (lecture du code) : les deux plans d'ombre du `flipper`
+       (`foldA`/`foldB`) étaient positionnés UNE SEULE FOIS, à `+foldW/2` — c'est-à-dire à
+       DROITE du pivot (la reliure). Or `startFlip(dir)` place la feuille à GAUCHE
+       (`xPos = -pageW/2`) quand on RECULE : l'ombre restait donc du côté droit, loin de la
+       feuille qui tourne → invisible, et l'impression que « l'ombre ne revient pas » en
+       marche arrière. On recale donc le repli à CHAQUE tourne, selon le sens :
+         · dir > 0 (on avance) : repli à DROITE du pivot, encre sombre vers la reliure ;
+         · dir < 0 (on recule) : repli à GAUCHE du pivot, MIRÉ (scale.x négatif) pour que le
+           bord sombre reste bien du côté de la reliure.
+       La position/échelle est recalculée depuis `pageW` (aucune dépendance à l'ordre des
+       appels), et les deux faces (avant z>0 / arrière z<0) sont traitées ensemble. */
+    function placeFlipFold(dir) {
+        if (!flipper || !flipper.userData) return;
+        var foldW = pageW * 0.22;
+        var avant = (dir >= 0);
+        var a = flipper.userData.foldA, b = flipper.userData.foldB;
+        [a, b].forEach(function (f) {
+            if (!f) return;
+            f.scale.set(avant ? foldW : -foldW, PAGE_H, 1);
+            f.position.x = avant ? (foldW / 2) : (-foldW / 2);
+        });
+        flipper.userData.foldDir = (dir >= 0) ? 1 : -1;   // diagnostic (voir _debug)
     }
 
     /* 🎯 CADRAGE ADAPTATIF AU FORMAT : la hauteur de page est fixe (PAGE_H) mais
@@ -961,6 +1014,9 @@ import * as THREE from './three.module.min.js';
 
         var f = flipper.userData.front, b = flipper.userData.back;
         f.position.x = xPos; b.position.x = xPos;
+        /* ⚠️ _SP3D_OMBRE_711 — le repli suit le sens (voir placeFlipFold) : à droite quand
+           on avance, à gauche (miré) quand on recule. Sinon l'ombre « ne revient pas ». */
+        placeFlipFold(dir);
         setMat(f, leafTexture(frontIdx));
         setMat(b, leafTexture(backIdx));
         flipper.rotation.y = 0;
@@ -1146,9 +1202,19 @@ import * as THREE from './three.module.min.js';
             // Laisse le spinner s'afficher ET le document se stabiliser avant la
             // capture (sinon une planche — souvent la couverture — peut être prise
             // encore vide si l'app finissait un rendu).
+            /* ⚠️ _SP3D_PRET_712 — ON ATTEND QUE L'APP AIT FINI DE PEINDRE AVANT DE CAPTURER.
+               Défaut signalé : « la cover et le dos disparaissent parfois ». MESURÉ : la capture
+               partait 90 ms après l'ouverture, sans regarder si les planches étaient PRÊTES. Or
+               l'app rend ses pages de façon ASYNCHRONE et marque chaque planche
+               `_spRenderReady = false` (ou `_isLoading`) tant qu'elle n'est pas peinte (le
+               contenu des planches — `loadSpreadContent` — charge aussi des images en fond).
+               Capter une planche non prête donne une image VIDE (la couverture, la première
+               planche, est la plus exposée) → elle semblait « disparue ». On attend donc que
+               TOUTES les planches soient prêtes (ou un budget de 3 s), comme le fait déjà le
+               studio pour ses propres captures. */
             setTimeout(function () {
                 if (!open) return;
-                requestAnimationFrame(function () {
+                waitAppReady(function () {
                     if (!open) return;
                     try { bootCapture(); } catch (e) { console.warn('[SP-3D] boot :', e); close(); }
                 });
@@ -1209,12 +1275,27 @@ import * as THREE from './three.module.min.js';
 
             // Re-capture des pages dont la texture a échoué (souvent la couverture
             // ou le dos de couverture) → on ne « perd » plus une page.
+            /* ⚠️ _SP3D_PRET_712 — DEUX CHANCES SUPPLÉMENTAIRES, ÉTALÉES DANS LE TEMPS.
+               Une planche qui n'était pas prête au premier essai le devient quelques centaines
+               de ms plus tard : on retente donc les pages vides DEUX fois, avec un délai, et
+               on re-rend la maquette entre les tentatives. La couverture et le dos de
+               couverture (première et dernière planches) étaient les plus exposés. */
             var missingIdx = [];
             for (var mi = 0; mi < arr.length; mi++) if (!arr[mi]) missingIdx.push(mi);
+            var rattraper = function (idx, essai) {
+                return recapturePage(idx).then(function (t) {
+                    if (t) { texes[idx] = t; return true; }
+                    if (essai >= 2) return false;
+                    return new Promise(function (res) {
+                        setTimeout(function () {
+                            try { var cs = getAppCanvases(); if (cs[idx] && cs[idx].renderAll) cs[idx].renderAll(); } catch (_) {}
+                            res(rattraper(idx, essai + 1));
+                        }, essai === 0 ? 220 : 500);
+                    });
+                });
+            };
             if (missingIdx.length) {
-                Promise.all(missingIdx.map(function (idx) {
-                    return recapturePage(idx).then(function (t) { if (t) texes[idx] = t; });
-                })).then(function () {
+                Promise.all(missingIdx.map(function (idx) { return rattraper(idx, 0); })).then(function () {
                     if (open) applyView();   // réapplique les feuilles avec les textures récupérées
                 });
             }
@@ -1339,9 +1420,41 @@ import * as THREE from './three.module.min.js';
                 leafL: leafInfo(leafL), leafR: leafInfo(leafR), flip: leafInfo(flipper),
                 bookX: bookGroup ? +bookGroup.position.x.toFixed(3) : null,
                 foldCount: foldMats.length,
+                // _SP3D_PRET_712 — état de CHAQUE page : texture présente (non papier) et taille.
+                // Permet de voir d'un coup d'œil une couverture / un dos manquant.
+                pages: texes.map(function (t, i) {
+                    return { i: i, ok: !!t, w: (t && t.image && t.image.width) || 0, h: (t && t.image && t.image.height) || 0 };
+                }),
+                appReady: (function () { try { return canvasesReady(); } catch (_) { return null; } })(),
+                // _SP3D_OMBRE_711 — sens et position du repli de la feuille qui tourne :
+                // dir +1 = à droite du pivot (on avance), -1 = à gauche, miré (on recule).
+                flipFold: (flipper && flipper.userData) ? {
+                    dir: flipper.userData.foldDir || 0,
+                    x: flipper.userData.foldA ? +flipper.userData.foldA.position.x.toFixed(3) : null,
+                    sx: flipper.userData.foldA ? +flipper.userData.foldA.scale.x.toFixed(3) : null
+                } : null,
                 ndc: ndc
             } : null;
         },
-        _version: 'v14-ombre-instantanee-flip'
+        // _SP3D_PRET_712 — échantillonne la texture d'une page : renvoie son aspect réel
+        // (moyenne rouge/vert/bleu) pour vérifier qu'une page n'est pas BLANCHE alors
+        // qu'elle devrait avoir du contenu. Sert au diagnostic et aux bancs de test.
+        _pageSample: function (i) {
+            try {
+                var t = texes[i];
+                if (!t || !t.image) return null;
+                var im = t.image;
+                var cv = document.createElement('canvas');
+                cv.width = 24; cv.height = 24;
+                var cx = cv.getContext('2d');
+                cx.drawImage(im, 0, 0, 24, 24);
+                var d = cx.getImageData(0, 0, 24, 24).data;
+                var r = 0, g = 0, b = 0, a = 0;
+                for (var k = 0; k < d.length; k += 4) { r += d[k]; g += d[k + 1]; b += d[k + 2]; a += d[k + 3]; }
+                var n = d.length / 4;
+                return { r: Math.round(r / n), g: Math.round(g / n), b: Math.round(b / n), a: Math.round(a / n) };
+            } catch (_) { return null; }
+        },
+        _version: 'v16-cover-dos-fiables'
     };
 })();
