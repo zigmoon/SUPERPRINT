@@ -62,14 +62,15 @@ SuperPrint is not a single tool: it is a small **family of browser-based creativ
 
 ---
 
-## ✦ Under the hood — Astro & Rust
+## ✦ Under the hood — Astro, Rust & assembly
 
-Beyond the application itself, SuperPrint is developed around two modern, open-source foundations:
+Beyond the application itself, SuperPrint is built on three modern, open-source foundations:
 
 - 🚀 **The website is built with [Astro](https://astro.build)** — the marketing site and the docs are no longer a pile of hand-written HTML pages but an Astro project (`superprint_ASTRO/`) with shared components, a single `<head>` factory and scripts extracted to files. **The published URLs do not change** (`/`, `/faq.html`, `/supertypo/index.html`…) — it is *how the site is served*, not a new app.
 - 🦀 **The computing core is written in [Rust](https://www.rust-lang.org)** (`superprint_rust/`) — pure, dependency-free and testable primitives (typographic units, RGB/CMYK colour, print geometry, and the **spot-ink / PDF separation** engine) compiled to **native and WebAssembly**, so the browser editor can call fast, deterministic, memory-safe code for the heaviest prepress work.
+- ⚙️ **The lowest-level kernels are hand-written in assembly** — [WebAssembly Text](https://webassembly.github.io/spec/core/text/index.html) (`superprint_asm/`), *the assembly of the web*. Small, predictable, GC-free routines for the tightest pixel loops (greyscale luma, Rec. 709), **verified byte-for-byte against the Rust core**.
 
-> These two folders are **not** additional applications: **Astro** is *how the site is built*, **Rust** is *how the heavy maths and PDF writing are done*. The apps you open stay **SuperPrint**, **Studio IA** and **SuperTyPo**.
+> These three folders are **not** additional applications: **Astro** is *how the site is built*, **Rust** is *how the heavy maths and PDF writing are done*, and the **assembly** is *how the tightest loops run*. The apps you open stay **SuperPrint**, **Studio IA** and **SuperTyPo**.
 
 ---
 
@@ -216,7 +217,8 @@ The repository ships **the product only**: the application, the Astro build of i
 | `sp213-local/` | The local distribution (Vite + WebLLM) downloaded by the npm launcher | ✅ |
 | `superprint-npm/` | The `superprint` npm launcher (`npx superprint`) | ✅ |
 | `superprint_ASTRO/` | **The website, rebuilt with [Astro](https://astro.build)** — same published URLs, shared components, scripts extracted to files; builds to `dist/` | ✅ |
-| `superprint_rust/` | **The computing core, in [Rust](https://www.rust-lang.org)** — pure, dependency-free primitives (units, colour, print geometry), compiled to native *and* WebAssembly | ✅ |
+| `superprint_rust/` | **The computing core, in [Rust](https://www.rust-lang.org)** — pure, dependency-free primitives (units, colour, print geometry, spot-ink/PDF separation), compiled to native *and* WebAssembly | ✅ |
+| `superprint_asm/` | **Hand-written assembly kernels** — [WebAssembly Text](https://webassembly.github.io/spec/core/text/index.html) modules for the tightest loops (greyscale luma), verified byte-for-byte against the Rust core | ✅ |
 | `tools/` | Two dependency-free helpers: `serve.mjs` (local static server) and `make-release-zip.mjs` | ✅ |
 | `README.md` · `CHANGELOG.md` · `release.html` · `.gitignore` | Documentation and release notes | ✅ |
 | `_dev/` | Development tooling, logs, backups, fixtures | ❌ ignored |

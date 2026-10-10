@@ -1,0 +1,5 @@
+# Dépendances Node (wabt, l'assembleur WAT → wasm)
+node_modules/
+
+# Sortie d'assemblage (régénérée par `npm run build`)
+dist/

@@ -1,0 +1,16 @@
+{
+  "name": "superprint-asm",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Noyau SuperPrint écrit à la main en WebAssembly Text (WAT) — l'assembleur du web.",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "node tools/test.mjs",
+    "cross-check": "node tools/cross-check.mjs",
+    "verify": "npm run build && npm run test && npm run cross-check"
+  },
+  "devDependencies": {
+    "wabt": "^1.0.39"
+  }
+}

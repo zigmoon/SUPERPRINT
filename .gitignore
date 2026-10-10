@@ -9,12 +9,13 @@
 !/release.html
 # Outils de build / de service du depot (2 scripts + leur notice)
 !/tools/
-# Les 5 dossiers produit
+# Les 6 dossiers produit
 !/superprint/
 !/sp213-local/
 !/superprint-npm/
 !/superprint_ASTRO/
 !/superprint_rust/
+!/superprint_asm/
 
 **/node_modules/
 **/dist/
