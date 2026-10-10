@@ -5,3 +5,10 @@ version = 3
 [[package]]
 name = "superprint-core"
 version = "0.1.0"
+
+[[package]]
+name = "superprint-pdf"
+version = "0.1.0"
+dependencies = [
+ "superprint-core",
+]

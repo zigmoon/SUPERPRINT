@@ -25,17 +25,36 @@ sortie identique (ou meilleure) à la version JS sur un jeu de tests, il n'est
 
 ## Phases
 
-**Phase 0 — socle.** *(fait ici)* Workspace Cargo, crate `superprint-core`
-(unités, couleurs, géométrie), tests unitaires, documentation, outillage.
+**Phase 0 — socle.** ✅ Workspace Cargo, crate `superprint-core` (unités,
+couleurs, géométrie), tests unitaires, documentation, outillage.
 
-**Phase 1 — primitives validées.** Étendre `superprint-core` et **comparer** au
-JS : un script de parité (mêmes entrées → mêmes sorties) avant tout branchement.
+**Phase 1 — primitives validées.** ✅ `superprint-core` étendu et testé
+(36 tests au total dans le workspace). La comparaison JS viendra avec le
+branchement.
 
-**Phase 2 — premier module WASM.** Cible `wasm32`, `wasm-bindgen`, exemple
-branché sur une page de test **isolée** (sans toucher `superprint/`).
+**Phase 2 — premier module WASM.** ✅ En cours. Le crate **`superprint-pdf`**
+(module n° 3) produit un `rlib`/`cdylib` WebAssembly et un **PDF réel**
+(1,1 ko) relu par `pdf-lib` : chaînes `/Separation` nommées, fonction de
+teinte, boîtes de page, flux de contenu.
 
-**Phase 3 — bascule progressive.** Un module à la fois, derrière un drapeau,
-avec **repli JS** si le module Rust n'est pas chargé.
+**Phase 3 — bascule progressive.** ⏳ À venir. Un module à la fois, derrière un
+drapeau, avec **repli JS** si le module Rust n'est pas chargé.
+
+## Avancement des modules
+
+| # | Module | État |
+|---|---|---|
+| 1 | Géométrie d'impression | ✅ `superprint-core::geometry` (+ `superprint-pdf::boxes`) |
+| 2 | Couleurs (RVB/CMJN, gris) | ✅ `superprint-core::color` |
+| 3 | Séparation des tons directs / PDF | ✅ `superprint-pdf` (fondation) |
+| 4 | Traitement d'image | ⏳ |
+| 5 | Césure + habillage du texte | ⏳ |
+| 6 | Analyse de police / typo vectorielle | ⏳ |
+| 7 | Profil ICC | ⏳ |
+
+> Le module n° 3 est une **fondation validée**, pas encore un exporteur complet :
+> il manque ICC, `OutputIntent` PDF/X, polices, images, multi-pages, compression
+> — et la mesure de parité avec la sortie JS de SuperPrint.
 
 ## Décisions prises
 

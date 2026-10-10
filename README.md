@@ -62,6 +62,17 @@ SuperPrint is not a single tool: it is a small **family of browser-based creativ
 
 ---
 
+## ✦ Under the hood — Astro & Rust
+
+Beyond the application itself, SuperPrint is developed around two modern, open-source foundations:
+
+- 🚀 **The website is built with [Astro](https://astro.build)** — the marketing site and the docs are no longer a pile of hand-written HTML pages but an Astro project (`superprint_ASTRO/`) with shared components, a single `<head>` factory and scripts extracted to files. **The published URLs do not change** (`/`, `/faq.html`, `/supertypo/index.html`…) — it is *how the site is served*, not a new app.
+- 🦀 **The computing core is written in [Rust](https://www.rust-lang.org)** (`superprint_rust/`) — pure, dependency-free and testable primitives (typographic units, RGB/CMYK colour, print geometry, and the **spot-ink / PDF separation** engine) compiled to **native and WebAssembly**, so the browser editor can call fast, deterministic, memory-safe code for the heaviest prepress work.
+
+> These two folders are **not** additional applications: **Astro** is *how the site is built*, **Rust** is *how the heavy maths and PDF writing are done*. The apps you open stay **SuperPrint**, **Studio IA** and **SuperTyPo**.
+
+---
+
 ## ✦ Formats
 
 ### Import

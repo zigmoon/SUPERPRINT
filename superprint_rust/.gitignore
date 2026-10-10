@@ -5,6 +5,9 @@
 # Sortie de wasm-pack (à régénérer à chaque build)
 **/pkg/
 
+# PDF de démonstration produit par `examples/spot_page.rs`
+/spot-page.pdf
+
 # Éditeurs
 .vscode/
 .idea/
