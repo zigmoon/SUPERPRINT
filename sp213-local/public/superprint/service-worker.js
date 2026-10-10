@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.609-3d-ombre-et-pages';
+const CACHE_NAME = 'superprint-shell-v1.7.610-coherence-noyaux';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [

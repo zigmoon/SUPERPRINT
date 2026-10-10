@@ -24,7 +24,7 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
 export const SOURCE_ROOT = resolve(ROOT, '_legacy');
 
 /** Version publiée, reprise de `version.txt`. */
-export const VERSION = '1.7.609';
+export const VERSION = '1.7.610';
 
 const NAV_HEADING = { fr: 'Navigation', en: 'Navigation', ja: 'ナビゲーション' };
 const DESK_HEADING = { fr: 'Bureau SuperPrint', en: 'The SuperPrint desk', ja: 'SuperPrint デスク' };

@@ -4,18 +4,18 @@ version = 3
 
 [[package]]
 name = "superprint-core"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "superprint-image"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "superprint-core",
 ]
 
 [[package]]
 name = "superprint-pdf"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "superprint-core",
  "superprint-image",

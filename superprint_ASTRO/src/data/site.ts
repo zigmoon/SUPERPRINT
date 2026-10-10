@@ -9,7 +9,7 @@
 export const SITE = 'https://superprint.cc';
 
 /** Version publiée — doit rester synchrone avec `app/index.html` et le CLAUDE.md. */
-export const VERSION = '1.7.609';
+export const VERSION = '1.7.610';
 
 export const LANGUAGES = ['en', 'fr', 'ja'] as const;
 export type Lang = (typeof LANGUAGES)[number];
