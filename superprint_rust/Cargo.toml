@@ -1,8 +1,11 @@
 # Espace de travail Rust de SuperPrint.
 #
-# Feuille de route : docs/PLAN.md — modules : crates/.
-# Un seul crate pour l'instant (superprint-core), pur Rust, sans dépendances :
-# il compile aussi bien en natif qu'en WebAssembly.
+# Feuille de route : docs/PLAN.md. Trois crates, tous purs Rust et **sans aucune
+# dépendance externe** : ils compilent en natif *et* en WebAssembly.
+#
+#   superprint-core   primitives pures (unités, couleurs, géométrie, color8)
+#   superprint-image  traitement d'image (réduction, DPI, RunLength) — module 4
+#   superprint-pdf    tons directs & écriture PDF (image comprise)   — module 3
 
 [workspace]
 resolver = "2"

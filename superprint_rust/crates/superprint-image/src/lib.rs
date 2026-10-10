@@ -1,8 +1,9 @@
 //! # superprint-image — traitement d'image
 //!
 //! Cœur image du noyau Rust de SuperPrint. Il traite la cause directe du défaut
-//! **PDF de 131 Mo** décrit dans `superprint/RAPPORT-WORKFLOW-415.md` : des
-//! images embarquées **à leur résolution d'origine et non compressées**.
+//! **PDF de 131 Mo** relevé par le rapport de test interne (non publié, conservé
+//! hors du dépôt) : des images embarquées **à leur résolution d'origine et non
+//! compressées**.
 //!
 //! Deux leviers, tous deux portés par ce crate :
 //!

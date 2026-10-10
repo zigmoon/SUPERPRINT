@@ -27,8 +27,8 @@ y = arrondi(0.2126·r + 0.7152·g + 0.0722·b), borné 0..255
 ```
 
 C'est exactement le calcul du chemin « export N&B » de SuperPrint — celui du
-défaut **PDF de 131 Mo** décrit dans `superprint/RAPPORT-WORKFLOW-415.md`
-(images stockées brutes, non compressées).
+défaut **PDF de 131 Mo** relevé par le **rapport de test interne** (non publié,
+conservé hors du dépôt) : images stockées brutes, non compressées.
 
 ### `src/color8.wat` — CMJN ↔ RVB (arithmétique entière)
 
@@ -89,6 +89,9 @@ npm install
 
 ## Vérification
 
+`npm run verify` enchaîne l'assemblage, les tests et la parité Rust. Voici sa
+sortie sur la machine de développement :
+
 ```
 ── luma.wasm (luminance)
 ✓ noir · blanc · gris neutre · primaires (rouge, vert, bleu)
@@ -121,12 +124,14 @@ donner le même octet pour chaque pixel. C'est la preuve que les étages
 `node tools/bench.mjs 4000000` — 4 millions de pixels RVB → gris, sur la
 machine de développement :
 
-| Implémentation | Temps |
+| Implémentation | Temps (4 Mpx) |
 |---|---|
-| WebAssembly (WAT écrit à la main) | **30,0 ms** |
-| JavaScript (boucle pure) | **26,6 ms** |
+| WebAssembly (WAT écrit à la main) | **≈ 30 ms** |
+| JavaScript (boucle pure) | **≈ 27 ms** |
 
-Écart de résultat : **0**.
+Écart de **résultat** : **0**. Ce sont des mesures **indicatives** : elles
+varient de quelques millisecondes d'une exécution à l'autre, et l'ordre de
+grandeur seul compte.
 
 **Lecture honnête** : ici, le JavaScript est légèrement *plus rapide* — le
 moteur V8 excelle sur une boucle aussi simple. WebAssembly n'apporte donc pas
@@ -143,10 +148,11 @@ Aucune promesse de « 10× plus vite » ici : ce document dit ce qui a été mes
 
 ## Limites, honnêtement
 
-Ce module couvre **une** primitive critique, démontrée et mesurée. Ce n'est
-**pas** un portage de SuperPrint en assembleur — un tel portage n'aurait ni
-sens ni fin. Le but est de disposer, au niveau le plus bas, d'une brique
-**prouvée identique** au Rust et au JS, sur laquelle on peut s'appuyer.
+Ces modules couvrent **deux** primitives critiques (luminance, CMJN ↔ RVB),
+démontrées et mesurées. Ce n'est **pas** un portage de SuperPrint en assembleur
+— un tel portage n'aurait ni sens ni fin. Le but est de disposer, au niveau le
+plus bas, de briques **prouvées identiques** au Rust et au JS, sur lesquelles on
+peut s'appuyer.
 
 ## Licence
 

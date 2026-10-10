@@ -8,9 +8,9 @@
 //! - **MediaBox** — le support physique, fond perdu **plus** les traits de
 //!   coupe.
 //!
-//! Le rapport `superprint/RAPPORT-WORKFLOW-415.md` (§5) confirme les valeurs de
-//! SuperPrint : **10 mm par côté** pour les traits de coupe, soit **+20 mm** au
-//! format fini, et **+6 mm** pour un fond perdu de 3 mm.
+//! Le rapport de test interne (§5) confirme les valeurs de SuperPrint :
+//! **10 mm par côté** pour les traits de coupe, soit **+20 mm** au format fini,
+//! et **+6 mm** pour un fond perdu de 3 mm.
 
 use superprint_core::units::mm_to_pt;
 use superprint_core::PageSize;

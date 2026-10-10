@@ -22,7 +22,7 @@ de page que les tests unitaires laissaient passer.
 |---|---|---|---|---|
 | 1 | Géométrie d'impression (fond perdu, traits de coupe, imposition) | haute | faible | déterministe, facile à tester |
 | 2 | Couleurs (RVB/CMJN, niveaux de gris, `luma`) | haute | faible | base du N&B et des planches |
-| 3 | Séparation des tons directs / écriture PDF | très haute | élevée | cible de `RAPPORT-WORKFLOW-415` |
+| 3 | Séparation des tons directs / écriture PDF | très haute | élevée | cible du rapport de test interne (non publié) |
 | 4 | Traitement d'image (N&B, CMJN, réduction, JPEG/Flate) | haute | moyenne | images **brutes** = cause du PDF de 131 Mo — ✅ réduction et RunLength faits ; reste le **décodage** (JPEG/PNG) et Flate |
 | 5 | Césure + habillage du texte | moyenne | moyenne | `Hypher` actuel |
 | 6 | Analyse de police + typographie vectorielle | moyenne | élevée | `opentype.js` actuel |

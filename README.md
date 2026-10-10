@@ -68,7 +68,7 @@ Beyond the application itself, SuperPrint is built on three modern, open-source 
 
 - 🚀 **The website is built with [Astro](https://astro.build)** — the marketing site and the docs are no longer a pile of hand-written HTML pages but an Astro project (`superprint_ASTRO/`) with shared components, a single `<head>` factory and scripts extracted to files. **The published URLs do not change** (`/`, `/faq.html`, `/supertypo/index.html`…) — it is *how the site is served*, not a new app.
 - 🦀 **The computing core is written in [Rust](https://www.rust-lang.org)** (`superprint_rust/`) — pure, dependency-free and testable primitives (typographic units, RGB/CMYK colour, print geometry, **image downsampling**, and the **spot-ink / PDF separation** engine) compiled to **native and WebAssembly**, so the browser editor can call fast, deterministic, memory-safe code for the heaviest prepress work. The image path targets the measured **131 MB PDF** defect directly: pixels are **resampled to the useful resolution** and **filtered**, never written raw.
-- ⚙️ **The lowest-level kernels are hand-written in assembly** — [WebAssembly Text](https://webassembly.github.io/spec/core/text/index.html) (`superprint_asm/`), *the assembly of the web*. Small, predictable, GC-free routines for the tightest pixel loops (greyscale luma, Rec. 709), **verified byte-for-byte against the Rust core**.
+- ⚙️ **The lowest-level kernels are hand-written in assembly** — [WebAssembly Text](https://webassembly.github.io/spec/core/text/index.html) (`superprint_asm/`), *the assembly of the web*. Small, predictable, GC-free routines for the tightest pixel loops (**greyscale luma, Rec. 709**, and **integer RGB ↔ CMYK**), **verified byte-for-byte against the Rust core** — same output, pixel by pixel.
 
 > These three folders are **not** additional applications: **Astro** is *how the site is built*, **Rust** is *how the heavy maths and PDF writing are done*, and the **assembly** is *how the tightest loops run*. The apps you open stay **SuperPrint**, **Studio IA** and **SuperTyPo**.
 
@@ -209,7 +209,7 @@ python -m http.server 8000 --directory superprint
 
 ## ✦ The repository
 
-The repository ships **the product only**: the application, the Astro build of its website, the Rust computing core, and the local / npm helpers. All development tooling (349 scripts, 281 logs, backups, test fixtures) lives outside the repository, in a `_dev/` folder that is git-ignored.
+The repository ships **the product only**: the application, the Astro build of its website, the Rust computing core, the hand-written assembly kernels, and the local / npm helpers. All development tooling (349 scripts, 281 logs, backups, test fixtures) lives outside the repository, in a `_dev/` folder that is git-ignored.
 
 | Path | Role | Tracked |
 |---|---|---|
@@ -218,15 +218,16 @@ The repository ships **the product only**: the application, the Astro build of i
 | `superprint-npm/` | The `superprint` npm launcher (`npx superprint`) | ✅ |
 | `superprint_ASTRO/` | **The website, rebuilt with [Astro](https://astro.build)** — same published URLs, shared components, scripts extracted to files; builds to `dist/` | ✅ |
 | `superprint_rust/` | **The computing core, in [Rust](https://www.rust-lang.org)** — pure, dependency-free primitives (units, colour, print geometry, **image resampling**) plus the **spot-ink / PDF** and **image** engines, compiled to native *and* WebAssembly | ✅ |
-| `superprint_asm/` | **Hand-written assembly kernels** — [WebAssembly Text](https://webassembly.github.io/spec/core/text/index.html) modules for the tightest loops (greyscale luma), verified byte-for-byte against the Rust core | ✅ |
+| `superprint_asm/` | **Hand-written assembly kernels** — [WebAssembly Text](https://webassembly.github.io/spec/core/text/index.html) modules for the tightest pixel loops (**greyscale luma**, **RGB ↔ CMYK**), verified byte-for-byte against the Rust core | ✅ |
 | `tools/` | Two dependency-free helpers: `serve.mjs` (local static server) and `make-release-zip.mjs` | ✅ |
 | `README.md` · `CHANGELOG.md` · `release.html` · `.gitignore` | Documentation and release notes | ✅ |
 | `_dev/` | Development tooling, logs, backups, fixtures | ❌ ignored |
 
 > 🧱 **Not applications.** The apps you *use* are **SuperPrint** (the editor), **Studio IA** and
-> **SuperTyPo**. `superprint_ASTRO/` is the **site** — *how it is served* — and `superprint_rust/`
-> is the **engine** — *how it computes* (WebAssembly). Neither is a separate application to open:
-> the Astro build publishes the very same site, and the Rust core is a library the app can call.
+> **SuperTyPo**. `superprint_ASTRO/` is the **site** (*how it is served*), `superprint_rust/` is
+> the **engine** (*how it computes*, in WebAssembly), and `superprint_asm/` is the **bottom
+> layer** (*how the tightest loops run*). None of them is a separate application to open: the
+> Astro build publishes the very same site, and the Rust core is a library the app can call.
 
 ```bash
 node tools/serve.mjs        # serve superprint/ on http://127.0.0.1:8080

@@ -1,7 +1,7 @@
 //! Géométrie d'impression : format de page, fond perdu, traits de coupe.
 //!
-//! Reprend les conventions mesurées de SuperPrint (voir
-//! `superprint/RAPPORT-WORKFLOW-415.md`) : les traits de coupe réservent
+//! Reprend les conventions mesurées de SuperPrint (rapport de test interne,
+//! non publié, conservé hors du dépôt) : les traits de coupe réservent
 //! **10 mm par côté**, soit **+20 mm** au format fini.
 
 /// Dimensions d'une page, en millimètres.
@@ -30,8 +30,8 @@ impl PageSize {
 
     /// Ajoute des traits de coupe : `+2 × mark_mm` dans les deux dimensions.
     ///
-    /// SuperPrint réserve **10 mm par côté** (donc `+20 mm`) ; cf.
-    /// `RAPPORT-WORKFLOW-415.md`, section 5.
+    /// SuperPrint réserve **10 mm par côté** (donc `+20 mm`) ; cf. le rapport
+    /// de test interne, section 5.
     #[must_use]
     pub fn with_crop_marks(self, mark_mm: f64) -> Self {
         Self {

@@ -1,7 +1,7 @@
 //! **Image XObject** : embarquer une image dans un PDF, réduite et compressée.
 //!
-//! C'est la réponse directe au défaut constaté dans
-//! `superprint/RAPPORT-WORKFLOW-415.md` : le PDF de 131 Mo. La cause n'est pas
+//! C'est la réponse directe au défaut constaté dans le rapport de test interne
+//! (non publié, conservé hors du dépôt) : le PDF de 131 Mo. La cause n'est pas
 //! le PDF lui-même mais ce qu'on y met — des images **à leur résolution
 //! d'origine** et **non compressées**. Un seul cliché de 24 Mpx en RVB brut pèse
 //! 72 Mo ; deux suffisent à faire exploser le fichier.

@@ -16,9 +16,9 @@
 //! pleine (`C1`, teinte 100 %). C'est elle que les visionneuses et les RIP
 //! utilisent pour *afficher* l'encre de remplacement.
 //!
-//! C'est le point que le rapport interne `superprint/RAPPORT-WORKFLOW-415.md`
-//! désigne comme **défaut P0-1** : quand les marqueurs d'encre directe sont
-//! perdus, l'imprimeur reçoit un PDF sans plaque Pantone, sans avertissement.
+//! C'est le point que le rapport de test interne (non publié) désigne comme
+//! **défaut P0-1** : quand les marqueurs d'encre directe sont perdus, l'imprimeur
+//! reçoit un PDF sans plaque Pantone, sans avertissement.
 
 use superprint_core::{Cmyk, Rgb};
 
