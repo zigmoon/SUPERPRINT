@@ -1572,16 +1572,16 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   color: var(--muted); margin-bottom: clamp(10px,1.3vw,16px);
 }
 .fondations-grid {
-  display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
+  display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
   gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
 }
 .fondation {
   display: flex; align-items: center; gap: 12px; min-width: 0;
-  padding: clamp(15px,1.7vw,21px) clamp(15px,1.8vw,24px);
+  padding: clamp(15px,1.7vw,21px) clamp(12px,1.4vw,20px);
   border-left: 1px solid var(--line);
   background: none; text-decoration: none;
 }
-.fondation:first-child { padding-left: 0; border-left: 0; }
+.fondation:first-child { border-left: 0; padding-left: 0; }
 .fondation:last-child { padding-right: 0; }
 .fondation-logo { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
 .fondation-logo img { display: block; width: 26px; height: 26px; }
@@ -1591,16 +1591,25 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   letter-spacing: .02em; line-height: 1.05; color: var(--ink);
 }
 .fondation-desc { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+/* Le chiffre (téléchargements npm) ressort : c'est la seule PREUVE chiffrée du
+   bloc. Il est daté dans le commentaire HTML qui l'entoure — à rafraîchir. */
+.fondation-chiffre { font-family: var(--f-mono); font-size: 12px; color: var(--ink); font-weight: 600; }
+.fondation-date { font-family: var(--f-mono); font-size: 10px; color: var(--muted); }
 /* Sans panneau, l'affordance du survol passe par le SOULIGNEMENT du nom. */
 .fondation:hover .fondation-nom, .fondation:focus-visible .fondation-nom {
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
 }
 .fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .fondations-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .fondation:nth-child(odd) { border-left: 0; padding-left: 0; }
+  .fondation:nth-child(even) { padding-right: 0; }
+  .fondation:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+@media (max-width: 640px) {
   .fondations-grid { grid-template-columns: 1fr; }
-  .fondation { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; padding-right: 0; }
-  .fondation:first-child { border-top: 0; }
-  .fondation:last-child { border-bottom: 0; }
+  .fondation { border-left: 0; padding-left: 0; padding-right: 0; }
+  .fondation:nth-child(n+2) { border-top: 1px solid var(--line); }
 }
 
 /* ——— CARROUSEL DES MODÈLES (v1.7.465) — pleine largeur, swipe natif ——— */

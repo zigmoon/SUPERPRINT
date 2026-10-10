@@ -1811,16 +1811,16 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   color: var(--muted); margin-bottom: clamp(10px,1.3vw,16px);
 }
 .fondations-grid {
-  display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
+  display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
   gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
 }
 .fondation {
   display: flex; align-items: center; gap: 12px; min-width: 0;
-  padding: clamp(15px,1.7vw,21px) clamp(15px,1.8vw,24px);
+  padding: clamp(15px,1.7vw,21px) clamp(12px,1.4vw,20px);
   border-left: 1px solid var(--line);
   background: none; text-decoration: none;
 }
-.fondation:first-child { padding-left: 0; border-left: 0; }
+.fondation:first-child { border-left: 0; padding-left: 0; }
 .fondation:last-child { padding-right: 0; }
 .fondation-logo { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
 .fondation-logo img { display: block; width: 26px; height: 26px; }
@@ -1830,16 +1830,25 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
   letter-spacing: .02em; line-height: 1.05; color: var(--ink);
 }
 .fondation-desc { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+/* Le chiffre (téléchargements npm) ressort : c'est la seule PREUVE chiffrée du
+   bloc. Il est daté dans le commentaire HTML qui l'entoure — à rafraîchir. */
+.fondation-chiffre { font-family: var(--f-mono); font-size: 12px; color: var(--ink); font-weight: 600; }
+.fondation-date { font-family: var(--f-mono); font-size: 10px; color: var(--muted); }
 /* Sans panneau, l'affordance du survol passe par le SOULIGNEMENT du nom. */
 .fondation:hover .fondation-nom, .fondation:focus-visible .fondation-nom {
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
 }
 .fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .fondations-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .fondation:nth-child(odd) { border-left: 0; padding-left: 0; }
+  .fondation:nth-child(even) { padding-right: 0; }
+  .fondation:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+@media (max-width: 640px) {
   .fondations-grid { grid-template-columns: 1fr; }
-  .fondation { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; padding-right: 0; }
-  .fondation:first-child { border-top: 0; }
-  .fondation:last-child { border-bottom: 0; }
+  .fondation { border-left: 0; padding-left: 0; padding-right: 0; }
+  .fondation:nth-child(n+2) { border-top: 1px solid var(--line); }
 }
 
 /* ——— CARROUSEL DES MODÈLES (v1.7.465) — pleine largeur, swipe natif ——— */
@@ -2257,6 +2266,19 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
           </span>
         </a>
 
+        <!-- ⚠️ CHIFFRE À RAFRAÎCHIR : « 5 231 » = téléchargements npm des 30 derniers
+             jours, relevé le 11 octobre 2026 via l'API npmjs
+             (api.npmjs.org/downloads/point/last-month/superprint).
+             Il n'est PAS chargé en direct : le site n'appelle aucun CDN. Changer
+             aussi le « 2026-10 » de la phrase. -->
+        <a class="fondation" href="https://www.npmjs.com/package/superprint" target="_blank" rel="noopener">
+          <span class="fondation-logo"><img src="icons/npm.svg" alt="" width="26" height="26"></span>
+          <span class="fondation-txt">
+            <span class="fondation-nom">npm</span>
+            <span class="fondation-desc"><span class="inline-fr"><span class="fondation-chiffre">5&nbsp;231</span> install.<span class="fondation-chiffre">/30 j</span> <span class="fondation-date">(2026-10)</span></span><span class="inline-en"><span class="fondation-chiffre">5,231</span> installs<span class="fondation-chiffre">/30 d</span> <span class="fondation-date">(2026-10)</span></span><span class="inline-ja"><span class="fondation-chiffre">5,231</span> インストール<span class="fondation-chiffre">/30日</span> <span class="fondation-date">(2026-10)</span></span></span>
+          </span>
+        </a>
+
         <a class="fondation" href="https://www.rust-lang.org" target="_blank" rel="noopener">
           <span class="fondation-logo"><img src="icons/rust.svg" alt="" width="26" height="26"></span>
           <span class="fondation-txt">
@@ -2276,7 +2298,9 @@ html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
       </div>
     </div>
 
-<p class="lead hero-lead" data-lang="fr">Avec <strong>SuperPrint</strong>, la PAO professionnelle devient accessible. Découvrez <strong>Studio IA</strong> : l'outil qui démocratise la création graphique et éditez vos maquettes à l'aide d'utilisateurs avertis. Apportez une singularité à vos typographies avec <strong>SuperTypo</strong>.</p>
+    <!-- L'ACCROCHE PASSE APRÈS LES FONDATIONS. Ordre du hero :
+         entrées → fondations (briques techniques) → accroche → installation. -->
+    <p class="lead hero-lead" data-lang="fr">Avec <strong>SuperPrint</strong>, la PAO professionnelle devient accessible. Découvrez <strong>Studio IA</strong> : l'outil qui démocratise la création graphique et éditez vos maquettes à l'aide d'utilisateurs avertis. Apportez une singularité à vos typographies avec <strong>SuperTypo</strong>.</p>
     <p class="lead hero-lead" data-lang="en">Professional page layout in your browser, with <strong>Studio IA</strong>, which composes a layout from a sentence. <strong>Word and IDML import</strong>, <strong>Pantone spot inks separated in the PDF</strong>, print-ready export.</p>
     <p class="lead hero-lead" data-lang="ja">ブラウザでプロの組版を。<strong>Studio IA</strong> が一文からレイアウトを組みます。<strong>Word・IDML読み込み</strong>、<strong>Pantone特色をPDFで分版</strong>、印刷対応の書き出し。</p>
 

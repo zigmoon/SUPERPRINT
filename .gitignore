@@ -7,6 +7,10 @@
 !/README.md
 !/CHANGELOG.md
 !/release.html
+# La LICENCE du depot. GitHub ne lit QUE ce fichier a la racine : sans lui, le
+# depot apparaissait « sans licence » alors que les 4 sous-dossiers portent
+# l'AGPL-3.0. Il est nomme ici pour échapper a la regle `/*` ci-dessus.
+!/LICENSE
 # Outils de build / de service du depot (2 scripts + leur notice)
 !/tools/
 # Les 6 dossiers produit

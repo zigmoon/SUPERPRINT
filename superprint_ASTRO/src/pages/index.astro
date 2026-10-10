@@ -203,6 +203,19 @@ const navNotes = "<!-- _NAV_HERO_590 -->\n<!-- _NAV_AUTEURS_591 : entree Auteurs
           </span>
         </a>
 
+        <!-- ⚠️ CHIFFRE À RAFRAÎCHIR : « 5 231 » = téléchargements npm des 30 derniers
+             jours, relevé le 11 octobre 2026 via l'API npmjs
+             (api.npmjs.org/downloads/point/last-month/superprint).
+             Il n'est PAS chargé en direct : le site n'appelle aucun CDN. Changer
+             aussi le « 2026-10 » de la phrase. -->
+        <a class="fondation" href="https://www.npmjs.com/package/superprint" target="_blank" rel="noopener">
+          <span class="fondation-logo"><img src="icons/npm.svg" alt="" width="26" height="26"></span>
+          <span class="fondation-txt">
+            <span class="fondation-nom">npm</span>
+            <span class="fondation-desc"><span class="inline-fr"><span class="fondation-chiffre">5&nbsp;231</span> install.<span class="fondation-chiffre">/30 j</span> <span class="fondation-date">(2026-10)</span></span><span class="inline-en"><span class="fondation-chiffre">5,231</span> installs<span class="fondation-chiffre">/30 d</span> <span class="fondation-date">(2026-10)</span></span><span class="inline-ja"><span class="fondation-chiffre">5,231</span> インストール<span class="fondation-chiffre">/30日</span> <span class="fondation-date">(2026-10)</span></span></span>
+          </span>
+        </a>
+
         <a class="fondation" href="https://www.rust-lang.org" target="_blank" rel="noopener">
           <span class="fondation-logo"><img src="icons/rust.svg" alt="" width="26" height="26"></span>
           <span class="fondation-txt">
@@ -222,7 +235,9 @@ const navNotes = "<!-- _NAV_HERO_590 -->\n<!-- _NAV_AUTEURS_591 : entree Auteurs
       </div>
     </div>
 
-<p class="lead hero-lead" data-lang="fr">Avec <strong>SuperPrint</strong>, la PAO professionnelle devient accessible. Découvrez <strong>Studio IA</strong> : l'outil qui démocratise la création graphique et éditez vos maquettes à l'aide d'utilisateurs avertis. Apportez une singularité à vos typographies avec <strong>SuperTypo</strong>.</p>
+    <!-- L'ACCROCHE PASSE APRÈS LES FONDATIONS. Ordre du hero :
+         entrées → fondations (briques techniques) → accroche → installation. -->
+    <p class="lead hero-lead" data-lang="fr">Avec <strong>SuperPrint</strong>, la PAO professionnelle devient accessible. Découvrez <strong>Studio IA</strong> : l'outil qui démocratise la création graphique et éditez vos maquettes à l'aide d'utilisateurs avertis. Apportez une singularité à vos typographies avec <strong>SuperTypo</strong>.</p>
     <p class="lead hero-lead" data-lang="en">Professional page layout in your browser, with <strong>Studio IA</strong>, which composes a layout from a sentence. <strong>Word and IDML import</strong>, <strong>Pantone spot inks separated in the PDF</strong>, print-ready export.</p>
     <p class="lead hero-lead" data-lang="ja">ブラウザでプロの組版を。<strong>Studio IA</strong> が一文からレイアウトを組みます。<strong>Word・IDML読み込み</strong>、<strong>Pantone特色をPDFで分版</strong>、印刷対応の書き出し。</p>
 
