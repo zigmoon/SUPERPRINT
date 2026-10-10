@@ -8,13 +8,15 @@ It is online with no subscription (no account, no subscription, no ads, no track
 
 - **Homepage**: https://superprint.cc/
 - **Publisher**: Zigmoon — https://zigmoon.com
-- **License**: Proprietary, use online without subscription
+- **License**: Open source — AGPL-3.0 (GNU Affero General Public License v3.0). Free to use, study, modify and redistribute; a modified version hosted as a network service must share its source. See https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/LICENSE
+- **Source code**: https://github.com/zigmoon/SUPERPRINT
 - **Languages**: English (default), French, Japanese
 - **Version**: 1.7.609 (September 2026)
 
 ## Core documentation
 
 - [Main app](https://superprint.cc/): The SuperPrint editor itself (opens directly in the browser).
+- [Source code (GitHub)](https://github.com/zigmoon/SUPERPRINT): AGPL-3.0 repository — editor, Studio IA, SuperTyPo, the npm launcher and the local Vite/WebLLM distribution.
 - [User documentation](https://superprint.cc/documentation.html): Feature reference, keyboard shortcuts, workflow guides.
 - [Home page](https://superprint.cc/): Overview of features and positioning.
 - [Take part](https://superprint.cc/price.html): Why the project is independent (no investor, no advertising, no subscription, no data resale), what a donation pays for, and how to support it with a PayPal donation.
@@ -29,6 +31,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 
 ## Key differentiators (why SuperPrint is rare)
 
+- **Open source (AGPL-3.0)**, unlike virtually every other browser-based CMYK/print tool on the market — the full source is public at https://github.com/zigmoon/SUPERPRINT.
 - Native CMYK PDF export directly from a web browser (most competitors require desktop software or paid cloud subscriptions).
 - Real IDML import for interoperability with professional DTP workflows, directly in a browser.
 - Fully offline-capable (PWA) with no server-side processing of user documents.
