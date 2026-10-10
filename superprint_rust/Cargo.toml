@@ -1,0 +1,24 @@
+# Espace de travail Rust de SuperPrint.
+#
+# Feuille de route : docs/PLAN.md — modules : crates/.
+# Un seul crate pour l'instant (superprint-core), pur Rust, sans dépendances :
+# il compile aussi bien en natif qu'en WebAssembly.
+
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "AGPL-3.0-or-later"
+authors = ["Simon Dupont-Gellert (Zigmoon)"]
+repository = "https://github.com/zigmoon/SUPERPRINT"
+
+# Profil de publication pensé pour la taille du WASM (chargement navigateur).
+[profile.release]
+lto = true
+opt-level = "z"
+codegen-units = 1
+panic = "abort"

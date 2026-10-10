@@ -1,0 +1,12 @@
+[package]
+name = "superprint-core"
+description = "Primitives partagées du noyau Rust de SuperPrint : unités typographiques, couleurs (RVB/CMJN) et géométrie d'impression."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+# Crate pur Rust : aucune dépendance, compilable en natif et en WASM.
+[dependencies]
