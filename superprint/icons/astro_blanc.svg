@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="Astro">
+  <!-- La fusée « A », l'étoile et l'orbite.
+       Plein pour la fusée et l'étoile (nettes à 24 px), trait plus épais pour
+       l'orbite, qui doit rester un FIN LISERÉ et non un trait de crayon. -->
+  <path d="M12 2.6 21 20.4H3Z" fill="#FFFFFF"/>
+  <path d="M17.4 2.4l1 2.6 2.6 1-2.6 1-1 2.6-1-2.6-2.6-1 2.6-1z" fill="#FFFFFF"/>
+  <ellipse cx="12" cy="15.6" rx="8.9" ry="2.9" transform="rotate(-12 12 15.6)" fill="none" stroke="#FFFFFF" stroke-width="1.9"/>
+</svg>

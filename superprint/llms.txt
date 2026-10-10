@@ -11,7 +11,7 @@ It is online with no subscription (no account, no subscription, no ads, no track
 - **License**: Open source — AGPL-3.0 (GNU Affero General Public License v3.0). Free to use, study, modify and redistribute; a modified version hosted as a network service must share its source. See https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/LICENSE
 - **Source code**: https://github.com/zigmoon/SUPERPRINT
 - **Languages**: English (default), French, Japanese
-- **Version**: 1.7.610 (September 2026)
+- **Version**: 1.7.611 (September 2026)
 - **Local install**: npx superprint (npm package `superprint`, launcher version 1.0.107) — the same application, downloaded once and run on your machine
 
 ## Core documentation

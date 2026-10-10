@@ -10,7 +10,7 @@
 - **License**: Open source — **AGPL-3.0** (GNU Affero General Public License v3.0). Free to use, study, modify and redistribute; a modified version run as a network service must share its source (AGPL section 13). Full text: https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/LICENSE
 - **Source code**: https://github.com/zigmoon/SUPERPRINT
 - **Trademarks**: "SuperPrint", "SP213" and "SuperTyPo" names and logos remain trademarks of the publisher, governed separately from the code license — see https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/TRADEMARKS.md
-- **Version**: 1.7.610 (September 2026)
+- **Version**: 1.7.611 (September 2026)
 - **Languages (UI)**: English (default), French, Japanese
 - **Price**: €0 online — no account, no subscription, no ads, no tracking
 - **Tech stack**: Vanilla JavaScript + Fabric.js (canvas rendering), PDF.js (PDF import), pdf-lib (CMYK PDF post-processing), jsPDF (PDF export), JSZip (IDML / SLA / ODT), Paper.js (boolean path operations), Mammoth.js (DOCX import), Hypher (hyphenation).
