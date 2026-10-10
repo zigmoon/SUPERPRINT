@@ -15,12 +15,12 @@ parties les plus lourdes et les plus fragiles sont aujourd'hui en JavaScript :
 
 | Domaine | Aujourd'hui | Piste Rust / WASM |
 |---|---|---|
-| Séparation CMJN / tons directs, PDF/X | `pdf-lib` + code maison | cœur PDF typé et testable |
+| Séparation CMJN / tons directs, PDF/X | `pdf-lib` + code maison | cœur PDF typé et testable ✅ n° 3 |
 | Profil ICC | `lcms.wasm` (C compilé) | liaison sûre, ou réimplémentation |
-| Images : niveaux de gris, CMJN, réduction | canvas + JS | traitement pixel par pixel |
+| Images : niveaux de gris, CMJN, réduction | canvas + JS | traitement pixel par pixel ✅ n° 4 |
 | Césure multilingue | `Hypher` (JS) | algorithme rapide et partagé |
 | Analyse de police / métriques | `opentype.js` (JS) | parseur `TTF`/`CFF` performant |
-| Géométrie d'impression (fond perdu, traits, imposition) | JS | noyau déterministe et testé |
+| Géométrie d'impression (fond perdu, traits, imposition) | JS | noyau déterministe et testé ✅ n° 1 |
 
 Contexte : `superprint/RAPPORT-WORKFLOW-415.md` documente les défauts **mesurés**
 sur la chaîne d'export PDF (fichiers de 131 Mo, mode Planches ignoré, tons
@@ -28,7 +28,7 @@ directs perdus au passage par le studio…). **C'est la cible prioritaire.**
 
 ## État actuel
 
-**Deux crates, testés et validés.**
+**Trois crates, testés et validés.**
 
 - **`superprint-core`** — primitives pures : `units` (mm/pt/px/cm/in),
   `color` (RVB/CMJN/luma), `geometry` (fond perdu, traits de coupe).
@@ -36,12 +36,20 @@ directs perdus au passage par le studio…). **C'est la cible prioritaire.**
   Chaînes `/Separation` nommées, fonction de teinte, pile de couleurs
   (quadri CMJN/RVB + encres), boîtes de page (`MediaBox`/`TrimBox`/`BleedBox`)
   et assemblage d'un **PDF 1.7 d'une page** portant réellement les plaques.
+- **`superprint-image`** — **module n° 4** : **traitement d'image**. Tampons
+  typés RVB/gris, **réduction** bilinéaire ou plus proche voisin, ciblage DPI,
+  filtre PDF **RunLength**. C'est la réponse au « PDF de 131 Mo » : les pixels
+  arrivent **réduits** et repartent **compressés**.
 
 > ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
 > `cargo clippy --all-targets -- -D warnings`, `cargo build --target
-> wasm32-unknown-unknown`, et **36 tests unitaires** (`superprint-core` 8,
-> `superprint-pdf` 28) — tous verts. Un PDF réel est produit puis relu par
-> **pdf-lib** (1 page, 196×266 mm, 2 `/Separation`).
+> wasm32-unknown-unknown`, et **65 tests unitaires** (`superprint-core` 12,
+> `superprint-image` 16, `superprint-pdf` 37) — tous verts.
+>
+> Deux PDF réels sont produits puis relus par **pdf-lib** : tons directs seuls
+> (1 page, 196×266 mm, 2 `/Separation`), et tons directs **+ image XObject**
+> (2 273 635 octets de flux pour 4 271 016 octets de pixels bruts).
+> Un `pwsh -File scripts/check.ps1` enchaîne tout, validation comprise.
 
 Aucun module n'est encore branché dans l'application : la parité avec le JS
 sera mesurée avant toute bascule (voir `docs/PLAN.md`).
@@ -93,11 +101,13 @@ superprint_rust/
 ├─ rust-toolchain.toml        version et cibles (stable + wasm32 + wasip1)
 ├─ docs/PLAN.md               feuille de route, inventaire, décisions
 ├─ scripts/
-│  ├─ check.ps1               compile-check sans cargo (natif + wasm32)
+│  ├─ check.ps1               chaîne complète : fmt, check, clippy, wasm, tests, PDF
+│  ├─ demo-image.ps1          produit deux PDF réels et les valide avec pdf-lib
 │  ├─ run-wasi.mjs            exécute un binaire wasm32-wasip1 via Node
-│  └─ validate-pdf.mjs        relit un PDF avec pdf-lib et vérifie tons directs
+│  └─ validate-pdf.mjs        relit un PDF avec pdf-lib (tons directs, image)
 └─ crates/
-   ├─ superprint-core/        primitives pures (units, color, geometry)
+   ├─ superprint-core/        primitives pures (units, color, geometry, color8)
+   ├─ superprint-image/       traitement d'image (module n° 4)
    └─ superprint-pdf/         tons directs & écriture PDF (module n° 3)
 ```
 
@@ -106,19 +116,22 @@ superprint_rust/
 ```powershell
 cd superprint_rust
 
-# Vérification de types, qualité et cible web :
+# Tout, d'un seul coup : formatage, types, lint, WebAssembly, tests et
+# production + validation de deux PDF réels par pdf-lib.
+pwsh -File scripts/check.ps1
+```
+
+Équivalent détaillé :
+
+```powershell
 cargo check --workspace --all-targets
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --check
 cargo build --workspace --target wasm32-unknown-unknown
-
-# Tests unitaires — via WebAssembly, donc SANS linker natif :
 cargo test --target wasm32-wasip1 -- --test-threads=1
 
-# Preuve bout en bout : produire un PDF et le relire avec pdf-lib.
-cargo build --target wasm32-wasip1 -p superprint-pdf --example spot_page
-node scripts/run-wasi.mjs target/wasm32-wasip1/debug/examples/spot_page.wasm spot-page.pdf
-node scripts/validate-pdf.mjs spot-page.pdf
+# Preuve bout en bout : image → PDF, puis relecture par pdf-lib.
+pwsh -File scripts/demo-image.ps1
 ```
 
 ## Relation au reste du dépôt

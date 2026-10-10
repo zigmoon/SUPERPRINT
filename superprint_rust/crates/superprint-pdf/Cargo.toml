@@ -10,3 +10,4 @@ repository.workspace = true
 
 [dependencies]
 superprint-core = { path = "../superprint-core" }
+superprint-image = { path = "../superprint-image" }
