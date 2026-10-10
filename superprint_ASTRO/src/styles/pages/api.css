@@ -1,0 +1,148 @@
+:root {
+    --bg: #f8f8f8; --bg2: #ffffff; --bg3: #f0f0f0; --border: #dcdcdc;
+    --text: #1a1a1a; --text2: #666666; --accent: #0c0c0f;
+    --tag-bg: #e8f0fe; --tag-text: #1d4ed8;
+    --accent-link: #0969da; --sidebar-bg: #ffffff;
+    --code-bg: #f7f7f7; --code-border: #e0e0e0;
+    --kbd-bg: #f5f5f5; --kbd-border: #d0d0d0;
+    --info-bg: #e7f1ff; --info-border: #a8c8f0;
+    --warn-bg: #fff8e6; --warn-border: #e8c14a;
+    --tb-bg: #ffffff; --tb-border: #e0e0e0; --tb-text: #1a1a1a; --tb-text2: #666666;
+    --tb-chip-bg: #f5f5f5; --tb-chip-border: #d9d9d9;
+    --tb-btn-hover: #f2f2f2; --tb-btn-active-bg: #0c0c0f; --tb-btn-active-text: #ffffff;
+    --tb-toggle-border: #d9d9d9;
+    --fn-name: #6639ba;
+  }
+  body.theme-dark {
+    --bg: #121212; --bg2: #1e1e1e; --bg3: #2a2a2a; --border: #333333;
+    --text: #eaeaea; --text2: #999999; --accent: #ffffff;
+    --tag-bg: #1f2a38; --tag-text: #79c0ff;
+    --accent-link: #58a6ff; --sidebar-bg: #1e1e1e;
+    --code-bg: #1a1a1a; --code-border: #2f2f2f;
+    --kbd-bg: #2a2a2a; --kbd-border: #444;
+    --info-bg: #0d1f3c; --info-border: #1f4175;
+    --warn-bg: #2b2413; --warn-border: #6b5a20;
+    --tb-bg: #0c0c0f; --tb-border: #2a2a2a; --tb-text: #ffffff; --tb-text2: rgba(255,255,255,0.6);
+    --tb-chip-bg: rgba(255,255,255,0.08); --tb-chip-border: rgba(255,255,255,0.2);
+    --tb-btn-hover: rgba(255,255,255,0.08); --tb-btn-active-bg: #ffffff; --tb-btn-active-text: #0c0c0f;
+    --tb-toggle-border: rgba(255,255,255,0.25);
+    --fn-name: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--bg); color: var(--text); line-height: 1.6; font-size: 13px;
+  }
+  a { color: var(--accent-link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :where(button, input, a):focus-visible { outline: 2px solid var(--accent-link); outline-offset: 2px; }
+
+  /* ═══ TOPBAR (clair, aligné sur la toolbar SuperPrint — identique à documentation.html) ═══ */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--tb-bg); border-bottom: 1px solid var(--tb-border);
+    display: flex; align-items: center; padding: 0 20px; height: 52px; gap: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .topbar .logo { font-size: 17px; font-weight: 900; letter-spacing: 2.5px; color: var(--tb-text); white-space: nowrap; }
+  .topbar .logo span { color: var(--tb-text); opacity: 0.55; }
+  .topbar .version {
+    font-size: 10px; color: var(--tb-text2); background: var(--tb-chip-bg);
+    border: 1px solid var(--tb-chip-border); padding: 2px 9px; border-radius: 12px; letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .topbar-controls { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .theme-toggle {
+    display: flex; gap: 0; border: 1px solid var(--tb-toggle-border); border-radius: 6px; overflow: hidden;
+    background: transparent;
+  }
+  .theme-toggle button {
+    background: transparent; color: var(--tb-text2); border: none; padding: 6px 10px;
+    cursor: pointer; font-size: 14px; transition: all .2s; line-height: 1;
+  }
+  .theme-toggle button.active { background: var(--tb-btn-active-bg); color: var(--tb-btn-active-text); }
+  .theme-toggle button:hover:not(.active) { background: var(--tb-btn-hover); }
+  .lang-toggle {
+    display: flex; gap: 0; border: 1px solid var(--tb-toggle-border); border-radius: 6px; overflow: hidden;
+    background: transparent;
+  }
+  .lang-toggle button {
+    background: transparent; color: var(--tb-text2); border: none; padding: 6px 14px;
+    cursor: pointer; font-size: 12px; font-weight: 600; transition: all .2s;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .lang-toggle button.active { background: var(--tb-btn-active-bg); color: var(--tb-btn-active-text); }
+  .lang-toggle button:hover:not(.active) { background: var(--tb-btn-hover); }
+
+  /* ─── LAYOUT ─── */
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 84px 24px 80px; }
+
+  /* ─── i18n : n'afficher que la langue active ───
+     `display: revert` restaure le style PAR DÉFAUT de chaque élément
+     (block pour h1/h2/p/div, table-cell pour td/th, inline pour a/span).
+     Sans cela, un simple `display:block` casserait les cellules de tableau
+     et `display:inline` casserait les titres. */
+  [data-lang] { display: none; }
+  body.lang-en [data-lang="en"],
+  body.lang-fr [data-lang="fr"] { display: revert; }
+
+  h1 { font-size: 27px; font-weight: 700; letter-spacing: .4px; margin-bottom: 10px; }
+  .lede { font-size: 14px; color: var(--text2); margin-bottom: 26px; max-width: 720px; line-height: 1.7; }
+  h2 {
+    font-size: 15px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+    margin: 44px 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+  }
+  h3 { font-size: 14px; font-weight: 700; margin: 26px 0 8px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 14px 22px; }
+  li { margin-bottom: 5px; }
+  code { font-family: inherit; background: var(--code-bg); border: 1px solid var(--code-border); padding: 1px 5px; font-size: 12px; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    padding: 14px 16px; overflow-x: auto; margin: 0 0 16px; font-size: 12px; line-height: 1.65;
+  }
+  pre code { background: none; border: 0; padding: 0; }
+  kbd { font-family: inherit; background: var(--kbd-bg); border: 1px solid var(--kbd-border); border-bottom-width: 2px; padding: 1px 6px; font-size: 11px; }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); padding: 20px 22px; margin-bottom: 18px; }
+  .info { background: var(--info-bg); border: 1px solid var(--info-border); padding: 12px 16px; margin-bottom: 18px; font-size: 12.5px; }
+  .warn { background: var(--warn-bg); border: 1px solid var(--warn-border); padding: 12px 16px; margin-bottom: 18px; font-size: 12.5px; }
+
+  /* ─── TABLE DES MÉTHODES ─── */
+  .tbl-wrap { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--border); background: var(--bg2); }
+  table { width: 100%; border-collapse: collapse; margin: 0; font-size: 12.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text2); font-weight: 700; }
+  td.fn { font-weight: 700; color: var(--fn-name); white-space: nowrap; }
+  tbody tr:hover { background: var(--bg3); }
+
+  /* ─── SIGNATURE DE MÉTHODE ─── */
+  .sig {
+    background: var(--code-bg); border-left: 3px solid var(--accent);
+    padding: 8px 12px; margin: 0 0 8px; font-size: 12.5px; font-weight: 700;
+    overflow-x: auto; white-space: nowrap;
+  }
+  .opts { font-size: 12px; color: var(--text2); margin-bottom: 10px; }
+  .opts b { color: var(--text); }
+
+  .footer {
+    margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text2); display: flex; gap: 14px; flex-wrap: wrap;
+  }
+  @media (max-width: 900px) {
+    .topbar {
+      height: auto; min-height: 52px; padding: 8px 12px; gap: 8px;
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+    }
+    .topbar .logo { font-size: 15px; letter-spacing: 2px; min-width: 0; }
+    .topbar .version { display: none; }
+    .topbar-controls { margin-left: 0; gap: 5px; }
+    .wrap { padding-top: 96px; }
+    body { overflow-x: hidden; }
+  }
+  @media (max-width: 430px) {
+    .theme-toggle button { padding: 6px 8px; }
+    .lang-toggle button { padding: 6px 10px; }
+    .wrap { padding-inline: 14px; }
+  }

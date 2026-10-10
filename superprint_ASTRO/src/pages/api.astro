@@ -1,0 +1,265 @@
+---
+/*
+ * ⚠️ Fichier généré par tools/legacy-migration/convert.mjs.
+ * Source d'origine : api.html (conservée dans _legacy/).
+ * Modifier la page ici, puis retirer la source de la liste de conversion.
+ */
+import MinimalLayout from '../layouts/MinimalLayout.astro';
+import '../styles/pages/api.css';
+
+const seo = {
+  "title": "SuperPrint — API (automate your layouts)",
+  "description": "SuperPrint scripting API reference: window.SuperPrint exposes addText, addRect, addCircle, addEllipse, addImage, generateGrid, bulkText, getPages, setPage, loadProject, saveProject, exportPDF and aiGenerate. Automate print layouts from your own JavaScript.",
+  "robots": "index, follow",
+  "canonical": "https://superprint.cc/api.html",
+  "jsonLd": []
+};
+
+const headExtra = "<link rel=\"icon\" type=\"image/png\" href=\"favicon.png\">\r\n<link rel=\"apple-touch-icon\" href=\"icons/icon-192x192.png\">\r\n<link rel=\"stylesheet\" href=\"CSS/fonts.css\">";
+---
+
+<MinimalLayout
+  seo={seo}
+  bodyClass="lang-en"
+  headExtra={headExtra}
+>
+<div class="topbar">
+  <div class="logo">SUPER<span>PRINT</span></div>
+  <span class="version">v1.7.609</span>
+  <div class="topbar-controls">
+    <div class="theme-toggle">
+      <button class="active" onclick="setTheme('light')" title="Light" id="btnLight" aria-label="Light theme">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2v2.2M12 19.8V22M2 12h2.2M19.8 12H22M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M19.4 4.6l-1.6 1.6M6.2 17.8l-1.6 1.6"></path></svg>
+      </button>
+      <button onclick="setTheme('dark')" title="Dark" id="btnDark" aria-label="Dark theme">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
+    </div>
+    <div class="lang-toggle">
+      <button onclick="setLang('fr')">FR</button>
+      <button class="active" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<h1 data-lang="en">SuperPrint API</h1>
+<h1 data-lang="fr">API SuperPrint</h1>
+
+<p class="lede blk" data-lang="en">
+  SuperPrint exposes a scripting API on the global object <code>window.SuperPrint</code> inside the
+  editor. Use it from the browser console, from a <code>&lt;script&gt;</code> you inject, or from an
+  automation tool driving the page. It lets you build layouts programmatically: add text, shapes and
+  images, manage pages, load and save documents, export PDF, and trigger AI generation.
+</p>
+<p class="lede blk" data-lang="fr">
+  SuperPrint expose une API de script sur l'objet global <code>window.SuperPrint</code> à l'intérieur de
+  l'éditeur. Utilisez-la depuis la console du navigateur, depuis un <code>&lt;script&gt;</code> que vous
+  injectez, ou depuis un outil d'automatisation qui pilote la page. Elle permet de construire des
+  maquettes par programme : ajouter du texte, des formes et des images, gérer les pages, charger et
+  enregistrer des documents, exporter en PDF et déclencher la génération par IA.
+</p>
+
+<div class="info blk" data-lang="en">
+  <b>Where to run it.</b> Open <a href="app/index.html">SuperPrint Editor</a>, then press
+  <kbd>F12</kbd> to open the console. The API only exists <b>after a document is open</b>
+  (the editor must be initialised).
+</div>
+<div class="info blk" data-lang="fr">
+  <b>Où l'exécuter.</b> Ouvrez <a href="app/index.html">SuperPrint Editor</a>, puis appuyez sur
+  <kbd>F12</kbd> pour ouvrir la console. L'API n'existe <b>qu'une fois un document ouvert</b>
+  (l'éditeur doit être initialisé).
+</div>
+
+<h2 data-lang="en">Quick start</h2>
+<h2 data-lang="fr">Prise en main</h2>
+
+<pre><code>// Afficher la surface disponible
+console.log(Object.keys(window.SuperPrint));
+
+// Un carton d'invitation, en millimètres
+SuperPrint.addRect(0, 0, 210, 297, &#123; fill: '#f7f3ec' &#125;);
+SuperPrint.addRect(20, 20, 170, 6,  &#123; fill: '#0c0c0f' &#125;);
+SuperPrint.addText(20, 40, 'Ouverture le 14 mars', &#123; fontSize: 28, fontWeight: 'bold' &#125;);
+SuperPrint.addText(20, 70, 'Galerie du Port, 12 quai Sud', &#123; fontSize: 13 &#125;);
+
+SuperPrint.exportPDF(&#123; quality: 'hd', colorMode: 'cmyk' &#125;);</code></pre>
+
+<div class="warn blk" data-lang="en">
+  <b>Units.</b> All coordinates and sizes are in <b>millimetres</b>, relative to the top-left corner of the
+  page. They are converted to canvas pixels internally.
+</div>
+<div class="warn blk" data-lang="fr">
+  <b>Unités.</b> Toutes les coordonnées et tailles sont en <b>millimètres</b>, depuis le coin
+  supérieur gauche de la page. Elles sont converties en pixels du canevas en interne.
+</div>
+
+<h2 data-lang="en">Content methods</h2>
+<h2 data-lang="fr">Méthodes de contenu</h2>
+
+<h3>addText</h3>
+<div class="sig">SuperPrint.addText(x, y, text, options?) → fabric.Textbox</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>width</code> (mm, default 100), <code>fontSize</code>, <code>fontFamily</code>, <code>fontWeight</code>, <code>fill</code>, <code>textAlign</code>.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>width</code> (mm, défaut 100), <code>fontSize</code>, <code>fontFamily</code>, <code>fontWeight</code>, <code>fill</code>, <code>textAlign</code>.</p>
+<pre><code>SuperPrint.addText(20, 20, 'Titre', &#123; fontSize: 24, fontWeight: 'bold', width: 120 &#125;);</code></pre>
+<div class="warn blk" data-lang="en">The first three arguments are required and validated: passing a non-string text or a non-numeric coordinate throws an explicit error.</div>
+<div class="warn blk" data-lang="fr">Les trois premiers arguments sont obligatoires et contrôlés : un texte non-chaîne ou une coordonnée non-numérique lève une erreur explicite.</div>
+
+<h3>addRect</h3>
+<div class="sig">SuperPrint.addRect(x, y, width, height, options?) → fabric.Rect</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>fill</code> (default <code>#cccccc</code>), <code>stroke</code>, <code>strokeWidth</code>.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>fill</code> (défaut <code>#cccccc</code>), <code>stroke</code>, <code>strokeWidth</code>.</p>
+<pre><code>SuperPrint.addRect(20, 20, 60, 40, &#123; fill: '#1a1a1a', stroke: 'none', strokeWidth: 0 &#125;);</code></pre>
+
+<h3>addCircle</h3>
+<div class="sig">SuperPrint.addCircle(x, y, radius, options?)</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>x</code> / <code>y</code> position the centre.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>x</code> / <code>y</code> positionnent le centre.</p>
+
+<h3>addEllipse</h3>
+<div class="sig">SuperPrint.addEllipse(x, y, rx, ry, options?)</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>rx</code> / <code>ry</code> are the two radii, in mm.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>fill</code>, <code>stroke</code>, <code>strokeWidth</code>. <code>rx</code> / <code>ry</code> sont les deux rayons, en mm.</p>
+
+<h3>addImage</h3>
+<div class="sig">SuperPrint.addImage(x, y, imageUrl, options?) → Promise</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>scaleX</code>, <code>scaleY</code>. Returns a Promise resolving to the created image — <b>await it</b> before measuring or exporting.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>scaleX</code>, <code>scaleY</code>. Renvoie une promesse résolue avec l'image créée — <b>attendez-la</b> avant de mesurer ou d'exporter.</p>
+<pre><code>await SuperPrint.addImage(20, 120, 'photo.jpg', &#123; scaleX: 0.5, scaleY: 0.5 &#125;);</code></pre>
+
+<h3>generateGrid</h3>
+<div class="sig">SuperPrint.generateGrid(...)</div>
+<p class="blk" data-lang="en">Creates a set of layout guides on the current page (columns / rows / gutters).</p>
+<p class="blk" data-lang="fr">Crée un jeu de repères de mise en page sur la page courante (colonnes / lignes / gouttières).</p>
+
+<h3>bulkText</h3>
+<div class="sig">SuperPrint.bulkText(...)</div>
+<p class="blk" data-lang="en">Batch text creation — inserts several text blocks in one call, useful for catalogues and lists.</p>
+<p class="blk" data-lang="fr">Création de textes en lot — insère plusieurs blocs en un seul appel, pratique pour les catalogues et les listes.</p>
+
+<h2 data-lang="en">Page &amp; document methods</h2>
+<h2 data-lang="fr">Méthodes page &amp; document</h2>
+
+<h3>getPages</h3>
+<div class="sig">SuperPrint.getPages() → Array</div>
+<p class="blk" data-lang="en">Returns one entry per page: <code>&#123; index, objects, active &#125;</code>.</p>
+<p class="blk" data-lang="fr">Renvoie une entrée par page : <code>&#123; index, objects, active &#125;</code>.</p>
+
+<h3>setPage</h3>
+<div class="sig">SuperPrint.setPage(pageIndex) → Boolean</div>
+<p class="blk" data-lang="en">Switches the active page. Returns <code>false</code> if the index is out of range.</p>
+<p class="blk" data-lang="fr">Change la page active. Renvoie <code>false</code> si l'index est hors limites.</p>
+
+<h3>loadProject</h3>
+<div class="sig">SuperPrint.loadProject(jsonData)</div>
+<p class="blk" data-lang="en">Loads a project from a parsed JSON object (the same structure as the <code>.json</code> export).</p>
+<p class="blk" data-lang="fr">Charge un projet depuis un objet JSON déjà analysé (même structure que l'export <code>.json</code>).</p>
+
+<h3>saveProject</h3>
+<div class="sig">SuperPrint.saveProject() → Object</div>
+<p class="blk" data-lang="en">Flushes all pages and returns the serialised project object. You can <code>JSON.stringify()</code> it and store it wherever you like.</p>
+<p class="blk" data-lang="fr">Synchronise toutes les pages et renvoie l'objet projet sérialisé. Vous pouvez le passer à <code>JSON.stringify()</code> et le stocker où vous voulez.</p>
+
+<h3>exportPDF</h3>
+<div class="sig">SuperPrint.exportPDF(options?) → confirmExport()</div>
+<p class="opts blk" data-lang="en"><b>options:</b> <code>quality</code> (<code>hd</code> = 300 DPI), <code>colorMode</code> (<code>rgb</code> | <code>cmyk</code>). The options pre-set the export dialog, then the export runs.</p>
+<p class="opts blk" data-lang="fr"><b>options :</b> <code>quality</code> (<code>hd</code> = 300 DPI), <code>colorMode</code> (<code>rgb</code> | <code>cmyk</code>). Les options pré-règlent la boîte d'export, puis l'export se lance.</p>
+<pre><code>SuperPrint.exportPDF(&#123; quality: 'hd', colorMode: 'cmyk' &#125;);</code></pre>
+
+<h3>aiGenerate</h3>
+<div class="sig">SuperPrint.aiGenerate(prompt)</div>
+<p class="blk" data-lang="en">Sends a natural-language prompt to the configured AI engine (SP213) and builds the resulting layout on the canvas. Requires an API key configured in the AI panel.</p>
+<p class="blk" data-lang="fr">Envoie une consigne en langage naturel au moteur IA configuré (SP213) et construit la maquette résultante sur le canevas. Nécessite une clé API configurée dans le panneau IA.</p>
+<pre><code>SuperPrint.aiGenerate('A4 poster for a jazz festival, deep blue and gold, bold title');</code></pre>
+
+<h2 data-lang="en">Full reference</h2>
+<h2 data-lang="fr">Référence complète</h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr>
+      <th data-lang="en">Method</th><th data-lang="fr">Méthode</th>
+      <th data-lang="en">Returns</th><th data-lang="fr">Renvoie</th>
+      <th data-lang="en">Purpose</th><th data-lang="fr">Rôle</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="fn">addText(x, y, text, options)</td><td>Textbox</td>
+        <td data-lang="en">Adds a text block</td><td data-lang="fr">Ajoute un bloc texte</td></tr>
+    <tr><td class="fn">addRect(x, y, w, h, options)</td><td>Rect</td>
+        <td data-lang="en">Adds a rectangle</td><td data-lang="fr">Ajoute un rectangle</td></tr>
+    <tr><td class="fn">addCircle(x, y, r, options)</td><td>Circle</td>
+        <td data-lang="en">Adds a circle</td><td data-lang="fr">Ajoute un cercle</td></tr>
+    <tr><td class="fn">addEllipse(x, y, rx, ry, options)</td><td>Ellipse</td>
+        <td data-lang="en">Adds an ellipse</td><td data-lang="fr">Ajoute une ellipse</td></tr>
+    <tr><td class="fn">addImage(x, y, url, options)</td><td>Promise</td>
+        <td data-lang="en">Adds an image (async)</td><td data-lang="fr">Ajoute une image (asynchrone)</td></tr>
+    <tr><td class="fn">generateGrid(...)</td><td>—</td>
+        <td data-lang="en">Creates layout guides</td><td data-lang="fr">Crée des repères de mise en page</td></tr>
+    <tr><td class="fn">bulkText(...)</td><td>—</td>
+        <td data-lang="en">Batch text creation</td><td data-lang="fr">Création de textes en lot</td></tr>
+    <tr><td class="fn">getPages()</td><td>Array</td>
+        <td data-lang="en">Lists the pages</td><td data-lang="fr">Liste les pages</td></tr>
+    <tr><td class="fn">setPage(i)</td><td>Boolean</td>
+        <td data-lang="en">Switches the active page</td><td data-lang="fr">Change la page active</td></tr>
+    <tr><td class="fn">loadProject(json)</td><td>—</td>
+        <td data-lang="en">Loads a project</td><td data-lang="fr">Charge un projet</td></tr>
+    <tr><td class="fn">saveProject()</td><td>Object</td>
+        <td data-lang="en">Serialises the project</td><td data-lang="fr">Sérialise le projet</td></tr>
+    <tr><td class="fn">exportPDF(options)</td><td>—</td>
+        <td data-lang="en">Exports the PDF</td><td data-lang="fr">Exporte le PDF</td></tr>
+    <tr><td class="fn">aiGenerate(prompt)</td><td>—</td>
+        <td data-lang="en">Generates a layout with AI</td><td data-lang="fr">Génère une maquette par IA</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 data-lang="en">Example: a data-driven catalogue</h2>
+<h2 data-lang="fr">Exemple : un catalogue piloté par des données</h2>
+
+<pre><code>const products = [
+  &#123; nom: 'Vase Kano',   prix: '140 EUR', ref: 'VK-014' &#125;,
+  &#123; nom: 'Coupe Sora',  prix: '95 EUR',  ref: 'CS-009' &#125;,
+  &#123; nom: 'Plateau Ito', prix: '180 EUR', ref: 'PI-021' &#125;,
+  &#123; nom: 'Bougeoir Mei',prix: '65 EUR',  ref: 'BM-007' &#125;
+];
+
+SuperPrint.addText(15, 18, 'COLLECTION HIVER 2026', &#123; fontSize: 11, fill: '#C7382B' &#125;);
+SuperPrint.addText(15, 26, 'Objets en pierre et laiton', &#123; fontSize: 30, fontWeight: 'bold' &#125;);
+
+products.forEach((p, i) =&gt; &#123;
+  const col = i % 2, row = Math.floor(i / 2);
+  const x = 15 + col * 92, y = 78 + row * 96;
+  SuperPrint.addRect(x, y, 88, 56, &#123; fill: '#EFE9DD', stroke: 'none' &#125;);
+  SuperPrint.addText(x, y + 60, p.nom,  &#123; fontSize: 14, fontWeight: 'bold' &#125;);
+  SuperPrint.addText(x, y + 68, p.ref,  &#123; fontSize: 8 &#125;);
+  SuperPrint.addText(x + 60, y + 60, p.prix, &#123; fontSize: 20, fontWeight: 'bold', fill: '#C7382B' &#125;);
+&#125;);</code></pre>
+
+<p class="blk" data-lang="en">
+  Combine this with <a href="supertypo/index.html">SuperTyPo</a> for type work, the
+  <a href="sp213-studio.html">SP213 Studio</a> for AI-first layouts, and the
+  <a href="documentation.html">documentation</a> for the interface itself.
+</p>
+<p class="blk" data-lang="fr">
+  À combiner avec <a href="supertypo/index.html">SuperTyPo</a> pour le travail typographique, le
+  <a href="sp213-studio.html">studio SP213</a> pour les maquettes pilotées par IA, et la
+  <a href="documentation.html">documentation</a> pour l'interface elle-même.
+</p>
+
+<div class="footer">
+  <span>SuperPrint</span>
+  <span>·</span>
+  <a href="index.html" data-lang="en">Home</a><a href="index.html" data-lang="fr">Accueil</a>
+  <span>·</span>
+  <a href="documentation.html">Documentation</a>
+  <span>·</span>
+  <a href="https://github.com/zigmoon/SUPERPRINT" target="_blank" rel="noopener">GitHub</a>
+</div>
+
+</div>
+
+<script is:inline src="/JS/pages/api/0-theme.js?v=1.7.609"></script>
+</MinimalLayout>

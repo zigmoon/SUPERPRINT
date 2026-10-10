@@ -1,0 +1,286 @@
+---
+/*
+ * ⚠️ Fichier généré par tools/legacy-migration/convert.mjs.
+ * Source d'origine : rock.html (conservée dans _legacy/).
+ * Modifier la page ici, puis retirer la source de la liste de conversion.
+ */
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import '../styles/pages/rock.css';
+
+const seo = {
+  "title": "ROCK v1 — the print-first engine | SUPER PRINT",
+  "description": "ROCK v1.0 is SuperPrint's own engine: the first one designed for print, publishing and layout. A deterministic, sober engine — no GPU farm, no retraining, nothing sent: it composes the book and the layout in your browser.",
+  "keywords": "ROCK v1, SuperPrint engine, print-first AI, eco AI, layout engine, DTP engine, book composition, maquette, no GPU, deterministic layout, Zigmoon",
+  "robots": "index, follow, max-snippet:-1, max-image-preview:large",
+  "author": "Zigmoon",
+  "applicationName": "SuperPrint",
+  "themeColors": [
+    {
+      "content": "#000000"
+    },
+    {
+      "content": "#F7F3EC",
+      "media": "(min-width: 1001px)"
+    }
+  ],
+  "canonical": "https://superprint.cc/rock.html",
+  "og": {
+    "type": "website",
+    "title": "ROCK v1 — the print-first engine",
+    "description": "Our own engine, born for print: deterministic composition of books and layouts, in the browser, without a GPU farm.",
+    "url": "https://superprint.cc/rock.html",
+    "image": "https://superprint.cc/icons/icon-512x512.png"
+  },
+  "hreflangs": [
+    {
+      "hreflang": "en",
+      "href": "https://superprint.cc/rock.html"
+    },
+    {
+      "hreflang": "fr",
+      "href": "https://superprint.cc/rock.html?lang=fr"
+    },
+    {
+      "hreflang": "ja",
+      "href": "https://superprint.cc/rock.html?lang=ja"
+    }
+  ],
+  "jsonLd": []
+};
+
+const headExtra = "<link rel=\"stylesheet\" href=\"CSS/fonts.css\">";
+const brand = {
+  "ariaLabel": "SuperPrint — Accueil",
+  "version": "1.7.591",
+  "tag": {
+    "fr": "Notre moteur",
+    "en": "Our engine",
+    "ja": "私たちのエンジン"
+  }
+} as const;
+const footer = {
+  "faqHref": "faq.html",
+  "featuresHref": "index.html#features",
+  "authorsHref": null,
+  "heading": {
+    "fr": "Navigation",
+    "en": "Navigation",
+    "ja": "ナビゲーション"
+  },
+  "version": "1.7.591",
+  "pressKit": true,
+  "legal": "anchors"
+} as const;
+const navNotes = "<!-- _NAV_HERO_590 : entree Auteurs retiree de la top nav -->";
+---
+
+<MarketingLayout
+  seo={seo}
+  active={"rock.html"}
+  logoHref="index.html"
+  featuresHref="index.html#features"
+  brand={brand}
+  footer={footer}
+  navNotes={navNotes}
+  headExtra={headExtra}
+>
+<Fragment set:html={"<!-- ══════════════ MENU BURGER (le même que la présentation) ══════════════ -->"} />
+<div class="mobile-menu" id="mobileMenu">
+  <a href="app/index.html" class="mm-app"><img src="icons/icon-192x192.png" alt="" width="26" height="26"><span>SuperPrint</span></a>
+  <a href="sp213-studio.html" class="mm-app"><img src="icons/studio_print_logo_blanc.png" alt="" width="26" height="26"><span>Studio IA</span></a>
+  <a href="supertypo/index.html" class="mm-app"><img src="icons/sper_typo.png" alt="" width="26" height="26"><span>SuperTyPo</span></a>
+  <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
+  <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+  <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
+  <a href="price.html"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
+  <a href="rock.html" class="active" aria-current="page"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
+  <div class="mm-lang">
+    <div class="lang-toggle mm-lang-toggle" role="group" aria-label="Language">
+      <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')" title="English">EN</button>
+      <button class="mbtn-lang" data-lang="fr" onclick="setLang('fr')" title="Français">FR</button>
+      <button class="mbtn-lang" data-lang="ja" onclick="setLang('ja')" title="日本語">JA</button>
+    </div>
+  </div>
+  <div class="mm-bas">
+    <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
+    <span>SuperPrint v1.7.591</span>
+  </div>
+</div>
+
+<Fragment set:html={"<!-- Le bandeau du logo du menu : hors flux, cloué à la fenêtre (même règle que la présentation). -->"} />
+<div class="mm-colo" aria-hidden="true">
+  <img src="favicon.png" alt="" width="56" height="56">
+</div>
+
+<main>
+
+<!-- ══════════════ LA PIERRE ══════════════ -->
+<section id="rock-hero">
+  <div class="container rk-grid">
+
+    <div class="rk-texte">
+      <div class="section-label"><span class="inline-fr">Le premier moteur pensé pour l'imprimé</span><span class="inline-en">The first engine designed for print</span><span class="inline-ja">印刷のために設計された最初のエンジン</span></div>
+      <h1>
+        <span class="inline-fr">ROCK <em>v1</em></span><span class="inline-en">ROCK <em>v1</em></span><span class="inline-ja">ROCK <em>v1</em></span>
+      </h1>
+      <p class="lead" data-lang="fr">ROCK n'écrit pas de phrases : il <strong>compose</strong>. Un livre, une maquette, une carte de visite, un catalogue — il pose les blocs, chaîne le texte, impose les pages et pense folios, marges et fond perdu comme un imprimeur.</p>
+      <p class="lead" data-lang="en">ROCK does not write sentences: it <strong>composes</strong>. A book, a layout, a business card, a catalogue — it places the blocks, chains the text, imposes the pages and thinks in folios, margins and bleed like a printer.</p>
+      <p class="lead" data-lang="ja">ROCK は文章を書きません。<strong>組版します</strong>。書籍、レイアウト、名刺、カタログ。ブロックを配置し、テキストを流し込み、ノンブル・余白・塗り足しまで印刷屋の作法でページを面付けします。</p>
+      <p class="rk-eco"><span class="inline-fr">Sobre par construction :</span><span class="inline-en">Sober by construction:</span><span class="inline-ja">構造として省エネ：</span>
+        <span class="inline-fr">0 jeton, 0 GPU, 0 donnée envoyée.</span><span class="inline-en">0 token, 0 GPU, 0 byte sent.</span><span class="inline-ja">トークン0・GPU 0・送信データ0。</span></p>
+      <div class="rk-boutons">
+        <button type="button" class="btn btn-primary" id="rkTourner">
+          <span class="inline-fr">Tourner le rocher</span><span class="inline-en">Turn the rock</span><span class="inline-ja">ロックを回す</span> <span class="arr" aria-hidden="true">→</span>
+        </button>
+        <a class="btn btn-ghost" href="sp213-studio.html"><span class="inline-fr">Essayer dans le Studio</span><span class="inline-en">Try it in the Studio</span><span class="inline-ja">スタジオで試す</span></a>
+      </div>
+    </div>
+
+    <div class="rk-scene">
+      <div class="rk-cadre">
+        <canvas id="rkCanvas" aria-label="ROCK v1 — low-poly rock, three.js"></canvas>
+        <span class="rk-charge" id="rkCharge"><span class="inline-fr">Chargement de la scène…</span><span class="inline-en">Loading the scene…</span><span class="inline-ja">シーンを読み込み中…</span></span>
+        <span class="rk-voile" id="rkVoice" hidden=""><span class="inline-fr">Votre navigateur ne fournit pas de vue 3D : voici la pierre en dessin vectoriel.</span><span class="inline-en">Your browser provides no 3D view: here is the rock as a vector drawing.</span><span class="inline-ja">お使いのブラウザでは3D表示ができません。ベクター版のロックを表示します。</span></span>
+        <div class="rk-hud" aria-live="polite">
+          <span class="rk-hud-num"><span data-lang="fr">FACE</span><span data-lang="en">FACE</span><span data-lang="ja">面</span> <b id="rkNum">01</b>/05</span>
+          <span class="rk-hud-nom" id="rkNom">—</span>
+        </div>
+      </div>
+      <div class="rk-faces" id="rkFaces" role="tablist" aria-label="ROCK v1">
+        <button type="button" class="rk-puce is-on" data-face="1" role="tab" aria-selected="true"><b>01</b> <span data-lang="fr">Comprendre</span><span data-lang="en">Understand</span><span data-lang="ja">理解</span></button>
+        <button type="button" class="rk-puce" data-face="2" role="tab" aria-selected="false"><b>02</b> <span data-lang="fr">Hors ligne</span><span data-lang="en">Offline</span><span data-lang="ja">オフライン</span></button>
+        <button type="button" class="rk-puce" data-face="3" role="tab" aria-selected="false"><b>03</b> <span data-lang="fr">Sobre</span><span data-lang="en">Sober</span><span data-lang="ja">省エネ</span></button>
+        <button type="button" class="rk-puce" data-face="4" role="tab" aria-selected="false"><b>04</b> <span data-lang="fr">Imprimeur</span><span data-lang="en">Printer</span><span data-lang="ja">印刷</span></button>
+        <button type="button" class="rk-puce" data-face="5" role="tab" aria-selected="false"><b>05</b> <span data-lang="fr">Documents</span><span data-lang="en">Documents</span><span data-lang="ja">書類</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Les cinq fonctions : du vrai texte, dans les trois langues (le rocher ne contient
+       aucune image ; le contenu de la page reste lisible par les moteurs). -->
+  <div class="container">
+    <ol class="rk-fns" id="rkFns">
+      <li class="rk-fn is-on" data-fn="1">
+        <span class="rk-fn-num">01 / 05</span>
+        <h2 data-lang="fr">Il comprend le métier</h2><h2 data-lang="en">It understands the trade</h2><h2 data-lang="ja">業界を理解する</h2>
+        <p data-lang="fr">ROCK ne devine pas : il lit la demande avec un vocabulaire d'imprimeur — familles de documents, formats, colonnes, palettes, typographie, interdictions — puis il redit ce qu'il a compris, pour qu'une correction se fasse d'un mot.</p>
+        <p data-lang="en">ROCK does not guess: it reads the request with a printer's vocabulary — document families, formats, columns, palettes, typography, prohibitions — then says back what it understood, so a correction takes one word.</p>
+        <p data-lang="ja">ROCK は推測しません。印刷業の語彙で依頼を読み取ります。書類の種類・判型・段組・配色・書体・禁止事項。そして理解した内容を書き戻すため、修正は一言で済みます。</p>
+      </li>
+      <li class="rk-fn" data-fn="2">
+        <span class="rk-fn-num">02 / 05</span>
+        <h2 data-lang="fr">Rien ne sort de votre machine</h2><h2 data-lang="en">Nothing leaves your machine</h2><h2 data-lang="ja">データは端末から出ません</h2>
+        <p data-lang="fr">La maquette et le livre se composent dans le navigateur. Aucun appel réseau, aucun compte, aucune donnée envoyée : votre texte, vos images et vos polices restent chez vous — le studio fonctionne même hors ligne.</p>
+        <p data-lang="en">The layout and the book are composed in the browser. No network call, no account, no data sent: your text, your images and your fonts stay with you — the studio even works offline.</p>
+        <p data-lang="ja">レイアウトも書籍もブラウザ内で組版します。通信も、アカウントも、データ送信もありません。テキスト・画像・フォントは手元に留まり、スタジオはオフラインでも動きます。</p>
+      </li>
+      <li class="rk-fn" data-fn="3">
+        <span class="rk-fn-num">03 / 05</span>
+        <h2 data-lang="fr">Écologique par construction</h2><h2 data-lang="en">Sober by construction</h2><h2 data-lang="ja">構造として省エネ</h2>
+        <p data-lang="fr">Pas d'entraînement à reprendre, pas de ferme de serveurs : un moteur déterministe. La même demande redonne la même page, donc rien à recalculer et rien à consommer — c'est notre façon de faire de l'IA utile sans data center.</p>
+        <p data-lang="en">No training to redo, no server farm: a deterministic engine. The same request gives the same page, so there is nothing to recompute and nothing to burn — that is how we make useful AI without a data centre.</p>
+        <p data-lang="ja">再学習も、サーバーファームも不要。決定論的なエンジンです。同じ依頼は同じページを返すため、再計算も消費もありません。データセンターなしで役立つAIのかたちです。</p>
+      </li>
+      <li class="rk-fn" data-fn="4">
+        <span class="rk-fn-num">04 / 05</span>
+        <h2 data-lang="fr">Il pense comme un imprimeur</h2><h2 data-lang="en">It thinks like a printer</h2><h2 data-lang="ja">印刷のルールで考える</h2>
+        <p data-lang="fr">Recto et verso, cahiers par quatre pages, folios, marges, fond perdu, imposition, chaînage du texte, tons directs : les règles du métier sont dans le moteur, pas dans une option à chercher.</p>
+        <p data-lang="en">Front and back, four-page sections, folios, margins, bleed, imposition, text chaining, spot inks: the trade's rules live in the engine, not in an option you have to hunt for.</p>
+        <p data-lang="ja">表裏、4の倍数の折り、ノンブル、余白、塗り足し、面付け、テキストの流し込み、特色。業界のルールはエンジンの中にあります。</p>
+      </li>
+      <li class="rk-fn" data-fn="5">
+        <span class="rk-fn-num">05 / 05</span>
+        <h2 data-lang="fr">Il lit vos documents</h2><h2 data-lang="en">It reads your documents</h2><h2 data-lang="ja">書類を読み取ります</h2>
+        <p data-lang="fr">Word, PDF, ODT, RTF, Excel : ROCK lit la structure, dresse le plan, retient le ton, le public et les chiffres, puis compose. Un document de client entre, une maquette en sort.</p>
+        <p data-lang="en">Word, PDF, ODT, RTF, Excel: ROCK reads the structure, draws up the plan, keeps the tone, the audience and the figures, then composes. A client document goes in, a layout comes out.</p>
+        <p data-lang="ja">Word・PDF・ODT・RTF・Excel。構造を読み、構成を立て、語調・読者・数値を捉えて組版します。お客様の書類が入り、レイアウトが出てきます。</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ══════════════ LES CHIFFRES ══════════════ -->
+<section id="rock-specs">
+  <div class="container">
+    <div class="rk-specs">
+      <div class="rk-spec"><b>0</b><span data-lang="fr">jeton consommé</span><span data-lang="en">token spent</span><span data-lang="ja">消費トークン</span></div>
+      <div class="rk-spec"><b>0</b><span data-lang="fr">GPU</span><span data-lang="en">GPU</span><span data-lang="ja">GPU</span></div>
+      <div class="rk-spec"><b>0</b><span data-lang="fr">donnée envoyée</span><span data-lang="en">byte sent</span><span data-lang="ja">送信データ</span></div>
+      <div class="rk-spec"><b>3</b><span data-lang="fr">langues comprises</span><span data-lang="en">languages read</span><span data-lang="ja">対応言語</span></div>
+      <div class="rk-spec"><b>v1.0</b><span data-lang="fr">premier moteur</span><span data-lang="en">first engine</span><span data-lang="ja">最初のエンジン</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CE QU'IL FAIT / NE FAIT PAS ══════════════ -->
+<section id="rock-quoi">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-label" data-lang="fr">Périmètre</div>
+      <div class="section-label" data-lang="en">Scope</div>
+      <div class="section-label" data-lang="ja">範囲</div>
+      <h2 data-lang="fr">Un moteur, une mission : la mise en page.</h2>
+      <h2 data-lang="en">One engine, one mission: layout.</h2>
+      <h2 data-lang="ja">エンジンはひとつ、役割は組版。</h2>
+    </div>
+    <div class="rk-trois">
+      <article class="rk-carte">
+        <h3 data-lang="fr">Ce qu'il fait</h3><h3 data-lang="en">What it does</h3><h3 data-lang="ja">できること</h3>
+        <ul>
+          <li data-lang="fr">Analyser une demande écrite et en tirer une maquette complète.</li>
+          <li data-lang="en">Read a written brief and turn it into a complete layout.</li>
+          <li data-lang="ja">書かれた依頼を読み、完全なレイアウトに仕上げます。</li>
+          <li data-lang="fr">Composer des cahiers, des brochures, des affiches, des cartes.</li>
+          <li data-lang="en">Compose booklets, brochures, posters, cards.</li>
+          <li data-lang="ja">冊子・パンフレット・ポスター・カードを組版します。</li>
+          <li data-lang="fr">Lire un document client et en reprendre la structure.</li>
+          <li data-lang="en">Read a client document and reuse its structure.</li>
+          <li data-lang="ja">お客様の書類を読み、構造を引き継ぎます。</li>
+        </ul>
+      </article>
+      <article class="rk-carte">
+        <h3 data-lang="fr">Ce qu'il ne fait pas</h3><h3 data-lang="en">What it does not do</h3><h3 data-lang="ja">できないこと</h3>
+        <ul>
+          <li data-lang="fr">Écrire un roman ou un article : pour le texte libre, le Studio ouvre les grands modèles.</li>
+          <li data-lang="en">Write a novel or an article: for free text, the Studio opens the large models.</li>
+          <li data-lang="ja">小説や記事の執筆。自由な文章はスタジオの大規模モデルを使います。</li>
+          <li data-lang="fr">Dessiner des images : il place les vôtres, ou des photos libres créditées.</li>
+          <li data-lang="en">Draw images: it places yours, or free credited photos.</li>
+          <li data-lang="ja">画像の生成。あなたの画像、または出典付きのフリー写真を配置します。</li>
+          <li data-lang="fr">Traduire : il compose dans la langue de la demande.</li>
+          <li data-lang="en">Translate: it composes in the language of the request.</li>
+          <li data-lang="ja">翻訳。依頼の言語のまま組版します。</li>
+        </ul>
+      </article>
+      <article class="rk-carte">
+        <h3 data-lang="fr">D'où il vient</h3><h3 data-lang="en">Where it comes from</h3><h3 data-lang="ja">生まれ</h3>
+        <ul>
+          <li data-lang="fr">Écrit avec SuperPrint, par les deux mêmes personnes, pour l'imprimé.</li>
+          <li data-lang="en">Written with SuperPrint, by the same two people, for print.</li>
+          <li data-lang="ja">SuperPrint と同じ二人が、印刷のために書き続けています。</li>
+          <li data-lang="fr">Nourri d'une bibliothèque de modèles et d'un vocabulaire de métier.</li>
+          <li data-lang="en">Fed by a library of templates and a trade vocabulary.</li>
+          <li data-lang="ja">テンプレート集と業界の語彙を材料にしています。</li>
+          <li data-lang="fr">Les versions suivantes ajouteront des fonctions, jamais du poids.</li>
+          <li data-lang="en">Later versions will add features, never weight.</li>
+          <li data-lang="ja">今後のバージョンは機能を足し、重さは足しません。</li>
+        </ul>
+      </article>
+    </div>
+    <p class="rk-note" data-lang="fr"><strong>Honnêtement :</strong> ROCK v1.0 est notre premier moteur, écrit pour l'imprimé. Il ne cherche pas à tout faire — il fait la mise en page, et il la fait sans consommer de calcul. Pour rédiger du texte libre, les grands modèles (DeepSeek, OpenAI, Anthropic, OpenRouter, Groq ou un modèle local) restent disponibles dans le Studio : ROCK, lui, compose.</p>
+    <p class="rk-note" data-lang="en"><strong>Honestly:</strong> ROCK v1.0 is our first engine, written for print. It does not try to do everything — it does layout, and it does it without burning compute. To draft free text, the large models (DeepSeek, OpenAI, Anthropic, OpenRouter, Groq or a local model) remain available in the Studio: ROCK composes.</p>
+    <p class="rk-note" data-lang="ja"><strong>正直に：</strong> ROCK v1.0 は印刷のために書かれた最初のエンジンです。何でもできるふりはしません。組版を、計算を浪費せずに行います。自由な文章には、スタジオの大規模モデル（DeepSeek・OpenAI・Anthropic・OpenRouter・Groq・ローカルモデル）をお使いください。ROCK は組版を担います。</p>
+    <div class="rk-cta">
+      <a class="btn btn-primary" href="sp213-studio.html"><span class="inline-fr">Essayer le Studio IA</span><span class="inline-en">Try the AI Studio</span><span class="inline-ja">AIスタジオを試す</span> <span class="arr" aria-hidden="true">→</span></a>
+      <a class="btn btn-ghost" href="documentation.html"><span class="inline-fr">Lire le manuel</span><span class="inline-en">Read the manual</span><span class="inline-ja">マニュアルを読む</span></a>
+    </div>
+  </div>
+</section>
+
+</main>
+<Fragment slot="after">
+<script is:inline src="/JS/pages/rock/0-lang-switcher.js?v=1.7.609"></script>
+
+<script is:inline type="module" src="/JS/pages/rock/1-rock-engine.js?v=1.7.609"></script>
+</Fragment>
+</MarketingLayout>

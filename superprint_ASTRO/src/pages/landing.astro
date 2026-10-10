@@ -1,0 +1,34 @@
+---
+/**
+ * Page de secours de l'ancienne URL `/landing.html`.
+ *
+ * v1.7.468 : la landing est devenue la page d'accueil (`index.html`), et le
+ * `.htaccess` renvoie un 301 vers la racine. Cette page ne sert que si le
+ * serveur ignore le `.htaccess` — et l'URL était déjà indexée et servait de
+ * canonical : on n'y laisse donc jamais un 404.
+ *
+ * Elle est volontairement écrite SANS layout : ni bandeau, ni navigation, ni
+ * styles du site n'ont de sens sur une redirection, et le HTML d'origine
+ * n'embarquait que cette coquille minimale.
+ */
+
+const TITLE = 'SuperPrint — page déplacée';
+const CANONICAL = 'https://superprint.cc/';
+---
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{TITLE}</title>
+<link rel="canonical" href={CANONICAL}>
+<meta name="robots" content="noindex, follow">
+<meta http-equiv="refresh" content="0; url=./">
+<!-- Redirection RELATIVE : la copie locale ouverte en file:// fonctionne aussi. -->
+<script is:inline>location.replace('./' + location.search + location.hash);</script>
+</head>
+<body style="margin:0;background:#F7F3EC;color:#17130D;font:14px/1.7 ui-monospace,Consolas,monospace">
+<p style="padding:28px">SuperPrint est maintenant sur <a href="./" style="color:#17130D">superprint.cc</a> — redirection…</p>
+</body>
+</html>

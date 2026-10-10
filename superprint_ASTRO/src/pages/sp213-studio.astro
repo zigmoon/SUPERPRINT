@@ -1,0 +1,682 @@
+---
+/*
+ * ⚠️ Fichier généré par tools/legacy-migration/convert.mjs.
+ * Source d'origine : sp213-studio.html (conservée dans _legacy/).
+ * Modifier la page ici, puis retirer la source de la liste de conversion.
+ */
+import MinimalLayout from '../layouts/MinimalLayout.astro';
+import '../styles/pages/sp213-studio.css';
+
+const seo = {
+  "title": "Studio IA — Layout & Canvas",
+  "google": "notranslate",
+  "description": "Studio IA: compose SuperPrint layouts with AI (DeepSeek, Groq, OpenRouter and local WLLM), live preview and .sp export. Attachments: images, text, Word, Excel and PDF.",
+  "jsonLd": []
+};
+
+const headTop = "<!-- ══ v1.7.580 — LE ROLE D'UNE PIECE JOINTE SUIT LE FICHIER, ET LES PREFERENCES\r\n     PRENNENT LA QUALITE DE LA PRE-HOME ══\r\n     Trois choses dans cette version :\r\n       1. UN CONTEXTE N'EST PLUS COMPOSE. Defaut mesure : le role etait relu au moment\r\n          de l'affichage de la barre des pieces jointes, pas au depot. Un .docx depose\r\n          en CONTEXTE redevenait donc « contenu » des qu'un logo etait depose ensuite\r\n          (2 082 caracteres partis dans la maquette). Le role est desormais memorise\r\n          par depot ET par fichier (SP_PJ_ROLE_DEPOT + spPjModeDe) et relu a chaque\r\n          etape qui en depend : composition, format de page, photos, texte du moteur.\r\n          Une image extraite d'un .docx de contexte reste du contexte : jamais posee.\r\n       2. LE CONTEXTE TRAVAILLE VRAIMENT, ET LE STUDIO LE DIT. Mots-cles, accroche,\r\n          chiffres, noms propres, langue et ton sont extraits du document (rien n'est\r\n          invente) et nourrissent surtitre, chapo, chiffres cles et contacts. Le compte\r\n          rendu affiche ce qui a ete retenu et ce qui n'a PAS ete pose.\r\n       3. PRE-HOME ET PREFERENCES. La pastille d'usage des sous-menus quitte le bleu\r\n          pour l'encre noire (st-u-full / st-u-demo). L'ecran des preferences reprend\r\n          les valeurs de la pre-home (carte arrondie 16 px, ombre douce, champs arrondis\r\n          sur fond teinte, micro-libelles monospace) et une seule carte « moteur »\r\n          (eng-card + eng-head, peinte par spPrefsEngCard) ne montre que ce que le\r\n          moteur reclame : sa cle s'il en demande une, ses modeles s'il y en a plusieurs.\r\n          Aucun sous-menu force : un select a une seule version ne s'affiche plus. -->\r\n<!-- v1.7.579 - ANTI-FLASH : L'INTERFACE DU STUDIO RESTE INVISIBLE TANT QUE LA\r\n     PRE-HOME N'A PAS TRANCHE.\r\n     Arrivee depuis la page de presentation (?home=1), la pre-home ne s'ouvrait\r\n     qu'apres l'initialisation : pendant ce temps on voyait toute l'interface du\r\n     studio, et le pop-in des reglages pouvait s'ouvrir derriere. Le navigateur ne\r\n     peint donc plus rien du corps (visibility, et non display : la mise en page\r\n     reste en place) tant que html porte sp-avant-prehome ; seule la pre-home est\r\n     visible. Le script pose la classe AVANT le premier pixel, la pre-home la\r\n     retire en s'ouvrant, et un delai de secours (2,5 s) evite tout ecran vide. -->\r\n<style>\r\n  html.sp-avant-prehome body{visibility:hidden}\r\n  html.sp-avant-prehome #starter{visibility:visible}\r\n</style>\r\n<script>\r\n  (function () {\r\n    try {\r\n      var r = document.documentElement;\r\n      r.className += ' sp-avant-prehome';\r\n      setTimeout(function () { try { r.classList.remove('sp-avant-prehome'); } catch (e) {} }, 2500);\r\n    } catch (e) {}\r\n  })();\r\n</script>";
+const headExtra = "<script>if(location.protocol!=='file:'){var l=document.createElement('link');l.rel='manifest';l.href='manifest.webmanifest';document.head.appendChild(l);}</script>\r\n<!-- 🎨 Logotype du studio en favicon (spirale). Un SVG est net a toutes les\r\n     tailles ; le PNG sert de repli aux navigateurs sans SVG. -->\r\n<link rel=\"icon\" type=\"image/svg+xml\" href=\"icons/studio_print_logo_blanc.svg\">\r\n<link rel=\"icon\" type=\"image/png\" sizes=\"192x192\" href=\"icons/studio_print_logo_blanc.png\">\r\n<link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"favicon.png\">\r\n<link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"favicon.png\">\r\n<link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"icons/studio_print_logo_blanc.png\">\r\n<!-- Polices self-hosted SuperPrint : affichage correct des typos dans l'aperçu (Bebas Neue, Playfair, Montserrat, Poppins, Open Sans, etc.) -->\r\n<link rel=\"stylesheet\" href=\"CSS/fonts.css?v=20260828-studio\">";
+---
+
+<MinimalLayout
+  seo={seo}
+  translate
+  headTop={headTop}
+  headExtra={headExtra}
+>
+<Fragment set:html={"<!-- ═══════════════ ÉCRAN D'ACCUEIL (DA blanche) ═══════════════ -->"} />
+<div id="welcome">
+  <div class="welcome-inner">
+    <!-- ✕ Croix pour revenir sur l'interface studio -->
+    <button class="welcome-close" id="welcomeCloseBtn" title="Revenir au studio" aria-label="Revenir au studio">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    <div class="welcome-brand">
+      <div class="logo">
+        <img src="icons/studio_print_logo_blanc.svg" alt="Studio IA">
+        <h1>STUDIO IA</h1>
+      </div>
+      <p class="sub" id="welcomeSub">Préférences</p>
+    </div>
+
+    <div class="welcome-card">
+    <p class="desc" id="welcomeDesc">
+      Créez vos maquettes SuperPrint par conversation, puis ouvrez-les directement dans SuperPrint.
+    </p>
+
+    <div class="prefs-grid">
+    <!-- ══ Colonne gauche : Langue + Format ══ -->
+    <div class="prefs-col">
+    <!-- Section 0 : Langue -->
+    <div class="form-section">
+      <div class="form-section-title" data-i18n="prefs.langSection">Langue</div>
+      <div class="field">
+        <div class="label-row">
+          <label data-i18n="prefs.langLabel">Langue de l'interface</label>
+          <span class="info-icon" tabindex="0" aria-label="Info langue" data-i18n-aria="info.langue">?
+            <span class="info-pop" data-i18n="prefs.langPop">Choisissez la langue de l'interface du studio (les prompts IA restent libres).</span>
+          </span>
+        </div>
+        <select id="langSelect">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="jp">日本語</option>
+        </select>
+        <div class="hint" data-i18n="prefs.langHint">English (default) — interface language.</div>
+      </div>
+    </div>
+    <!-- _SP_STUDIO_REGLAGES_586 — Section « Image web (picsum) » SUPPRIMÉE du studio
+         (demande utilisateur : « partout dans le studio, supprime cette option »). -->
+    </div><!-- /prefs-col 1 (Langue — Format ajouté plus bas) -->
+
+    <!-- ══ Colonne 2 : Réglages IA (Moteurs) ══ -->
+    <div class="prefs-col">
+    <!-- Section 1 : Moteurs -->
+    <div class="form-section">
+      <div class="form-section-title" id="enginesSection">
+        Moteurs
+      </div>
+      <div class="field">
+        <div class="label-row">
+          <label id="engineLabel">Back-end d'exécution</label>
+          <span class="info-icon" tabindex="0" aria-label="Info exécution" data-i18n-aria="info.execution">?
+            <span class="info-pop" id="enginePop">SP213 reste le moteur de mise en page. Ce réglage choisit simplement où il s'exécute : <b>Sur cet ordinateur</b> (gratuit, SANS clé API : le modèle tourne dans votre navigateur avec WebGPU, rien ne sort de la machine), DeepSeek (cloud, raisonnement), OpenAI GPT (cloud), Anthropic Claude (cloud), OpenRouter (cloud, modèles gratuits) ou Groq (cloud, rapide).</span>
+          </span>
+        </div>
+        <select id="engineSelect">
+          <option value="gabarit">SP213 rock 1.0</option>
+          <!-- 🆕 DeepSeek en PREMIER (demande utilisateur, 2026-09-12) -->
+          <option value="deepseek" selected="">DeepSeek (cloud — raisonnement)</option>
+          <!-- 🆕 v1.7.580e — LE MOTEUR LOCAL EN 2ᵉ POSITION (demande utilisateur).
+               100 % gratuit, AUCUNE clé API, aucun compte : le modèle tourne dans
+               le navigateur (WebGPU) et le document ne quitte jamais la machine. -->
+          <option value="webllm-native">Sur cet ordinateur (gratuit)</option>
+          <option value="webllm">Sur cet ordinateur (gratuit) — choix du modèle</option>
+          <!-- 🆕 v1.7.580g — Transformers.js : IA dans le navigateur, y compris SANS WebGPU.
+               🗑️ v1.7.580w — DEUX MOTEURS RETIRÉS DE LA LISTE, MESURÉS COMME NE
+               GÉNÉRANT RIEN DANS LE STUDIO :
+                 • AI Horde : une phrase passe, mais JAMAIS une page (refus « Request
+                   is not possible » après ~2 min, passerelle en erreur) — le studio
+                   retombait toujours sur le moteur local.
+                 • Chrome intégré (Gemini Nano) : réactivé autrement en v1.7.580y
+                   puis RETIRÉ DÉFINITIVEMENT en v1.7.588 (voir la note ci-dessous).
+               Contrairement aux autres moteurs retirés, son code n'est PAS conservé :
+               il fallait un Chrome de bureau avec ~2 Go de modèle téléchargé, et il ne
+               lisait pas nos documents — il n'avait donc rien à faire ici. -->
+          <!-- 🗑️ v1.7.588 — CHROME INTÉGRÉ (GEMINI NANO) SUPPRIMÉ DU PROJET.
+               Historique : la balise <option> n'était déjà plus écrite en dur depuis la
+               v1.7.580y, le studio l'ajoutait au démarrage si le navigateur exposait
+               l'API (window.LanguageModel). Décision : on retire tout — le moteur ne
+               servait à rien (Chrome de bureau uniquement, ~2 Go de modèle à
+               télécharger, aucune lecture de nos documents), et une entrée de liste qui
+               ne génère pas fait perdre du temps à l'utilisateur. Retirés : l'entrée de
+               liste, l'injection <option>, les 3 traductions, les branches de libellé,
+               le drapeau isChrome, l'indication au survol, le moteur par défaut, le
+               délai d'attente, les constantes NANO_*, spNanoRappelSchema et callChromeAI.
+               Pour le remettre un jour : il faudrait réécrire ces morceaux, rien n'est
+               conservé en place inerte. -->
+          <!-- 🗑️ v1.7.580mm — TRANSFORMERS.JS RETIRÉ DE LA LISTE. Sur un processeur
+               (le seul cas de figure quand WebGPU manque) il produit quelques mots par
+               seconde : il ne rend JAMAIS une page du studio. Retour utilisateur :
+               « tous les modèles doivent générer quelque chose dans la preview ». Le
+               code du moteur est conservé, inerte (comme AI Horde) : remettre la
+               balise <option> suffit à le réafficher. -->
+          <option value="openai">OpenAI GPT (cloud)</option>
+          <!-- 1.7.544 — Anthropic Claude : même traitement que les autres moteurs cloud. -->
+          <option value="anthropic">Anthropic Claude (cloud)</option>
+          <option value="openrouter">OpenRouter (cloud — 100% free)</option>
+          <option value="groq">Groq (cloud — rapide)</option>
+        </select>
+        <div class="hint" id="engineHint"></div>
+      </div>
+      <!-- ══ 🆕 v1.7.580 — LA CARTE DU MOTEUR CHOISI (un seul bloc, aucun sous-menu) ══
+           Ce que le moteur réclame s'affiche ICI et nulle part ailleurs : sa clé s'il en
+           demande une, ses versions s'il y en a plusieurs. L'en-tête (#engHead) est peint
+           par spPrefsEngCard() : nom du moteur + pastille « sans clé » / « clé API ».
+           Les identifiants des champs ne changent pas : updateEngineUI() les montre et
+           les cache exactement comme avant (le studio ne voit aucune différence). -->
+      <div class="eng-card" id="engineFields">
+        <div class="eng-head" id="engHead"></div>
+      <div class="field field-sep" id="openaiFields">
+        <div class="label-row">
+          <label>Clé API OpenAI</label>
+          <span class="info-icon" tabindex="0" aria-label="Info clé OpenAI">?
+            <span class="info-pop">Votre clé <b>sk-...</b> est stockée uniquement dans votre navigateur et transmise à OpenAI via le proxy SuperPrint.</span>
+          </span>
+        </div>
+        <input id="openaiKey" type="password" placeholder="sk-..." autocomplete="off">
+        <div class="ext-links">
+          <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">Obtenir une clé OpenAI</a>
+          <a href="https://platform.openai.com/docs/models" target="_blank" rel="noopener">Voir les modèles</a>
+        </div>
+      </div>
+      <div class="field field-sep" id="openaiModelField">
+        <div class="label-row">
+          <label>Modèle OpenAI</label>
+          <span class="info-icon" tabindex="0" aria-label="Info modèle OpenAI">?
+            <span class="info-pop"><b>GPT-6 Astra</b> est recommandé pour comprendre les contraintes SuperPrint, produire du JSON structuré et composer des maquettes riches.</span>
+          </span>
+        </div>
+        <select id="openaiModel"></select>
+      </div>
+      <!-- 1.7.544 — Anthropic Claude : clé + choix du modèle -->
+      <div class="field field-sep" id="anthropicFields" style="display:none;">
+        <div class="label-row">
+          <label id="antKeyLabel">Clé API Anthropic</label>
+          <span class="info-icon" tabindex="0" aria-label="Info clé Anthropic">?
+            <span class="info-pop" id="antPop">Votre clé <b>sk-ant-...</b> est stockée uniquement dans votre navigateur (localStorage) et envoyée à Anthropic via le proxy SuperPrint. Elle n'est jamais écrite en dur ni partagée.</span>
+          </span>
+        </div>
+        <input id="anthropicKey" type="password" placeholder="sk-ant-..." autocomplete="off">
+        <div class="ext-links">
+          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" id="antGetLink">Obtenir une clé Anthropic</a>
+          <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank" rel="noopener" id="antModelsLink">Voir les modèles</a>
+        </div>
+      </div>
+      <div class="field field-sep" id="anthropicModelField" style="display:none;">
+        <div class="label-row">
+          <label id="antModelLabel">Modèle Claude</label>
+          <span class="info-icon" tabindex="0" aria-label="Info modèle Claude">?
+            <span class="info-pop" id="antModelPop"><b>Claude Opus 5.5</b> est recommandé (1 M de contexte, 128 K en sortie). Sonnet 5 offre le meilleur rapport vitesse / intelligence, Fable 5.1 vise le raisonnement long et Haiku 4.5 est le plus rapide.</span>
+          </span>
+        </div>
+        <select id="anthropicModel"></select>
+      </div>
+      <!-- DeepSeek : modèles OpenAI-compatibles -->
+      <div class="field field-sep" id="deepseekFields" style="display:none;">
+        <div class="label-row">
+          <label id="dsKeyLabel">Clé API DeepSeek</label>
+          <span class="info-icon" tabindex="0" aria-label="Info clé DeepSeek" data-i18n-aria="info.dsKey">?
+            <span class="info-pop" id="dsPop">Votre clé <b>sk-...</b> est stockée uniquement dans votre navigateur (localStorage) et envoyée à DeepSeek via le proxy local. Elle n'est jamais écrite en dur ni partagée.</span>
+          </span>
+        </div>
+        <input id="deepseekKey" type="password" placeholder="sk-..." autocomplete="off">
+        <div class="ext-links">
+          <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener" id="dsGetLink">Obtenir une clé DeepSeek</a>
+          <a href="https://api-docs.deepseek.com/quick_start/pricing" target="_blank" rel="noopener" id="dsModelsLink">Voir les modèles</a>
+        </div>
+      </div>
+      <div class="field field-sep" id="deepseekModelField" style="display:none;">
+        <div class="label-row">
+          <label id="dsModelLabel">Modèle DeepSeek</label>
+          <span class="info-icon" tabindex="0" aria-label="Info modèle DeepSeek" data-i18n-aria="info.dsModel">?
+            <span class="info-pop" id="dsModelPop">Modèle DeepSeek. <b>deepseek-flash</b> (V4.1) recommandé pour la maquette (1M contexte, vision, JSON structuré). <b>deepseek-v4-pro</b> plus puissant.</span>
+          </span>
+        </div>
+        <select id="deepseekModel"></select>
+      </div>
+      <div class="field field-sep" id="groqFields">
+        <div class="label-row">
+          <label id="groqKeyLabel">Clé API Groq</label>
+          <span class="info-icon" tabindex="0" aria-label="Info clé" data-i18n-aria="info.groqKey">?
+            <span class="info-pop" id="groqPop">Votre clé <b>gsk_...</b> est stockée uniquement dans votre navigateur (localStorage) et envoyée à Groq via le proxy local. Elle n'est jamais écrite en dur ni partagée.</span>
+          </span>
+        </div>
+        <input id="groqKey" type="password" placeholder="gsk_..." autocomplete="off">
+        <div class="ext-links">
+          <a href="https://console.groq.com/keys" target="_blank" rel="noopener" id="groqGetLink">Obtenir une clé Groq</a>
+          <a href="https://console.groq.com/docs/models" target="_blank" rel="noopener" id="groqModelsLink">Voir les modèles</a>
+        </div>
+      </div>
+      <div class="field field-sep" id="groqModelField">
+        <div class="label-row">
+          <label id="groqModelLabel">Modèle Groq</label>
+          <span class="info-icon" tabindex="0" aria-label="Info modèle" data-i18n-aria="info.groqModel">?
+            <span class="info-pop" id="groqModelPop">Modèle exécuté par Groq. Le plus performant pour la mise en page riche est recommandé par défaut.</span>
+          </span>
+        </div>
+        <select id="groqModel"></select>
+      </div>
+      <!-- OpenRouter : modèles 100% gratuits -->
+      <div class="field field-sep" id="openrouterFields" style="display:none;">
+        <div class="label-row">
+          <label id="orKeyLabel">Clé API OpenRouter</label>
+          <span class="info-icon" tabindex="0" aria-label="Info clé OpenRouter" data-i18n-aria="info.orKey">?
+            <span class="info-pop" id="orPop">Votre clé <b>sk-or-...</b> est stockée uniquement dans votre navigateur (localStorage) et envoyée à OpenRouter via le proxy. Créez-en une gratuitement sur <b>openrouter.ai</b> → clés API. Les modèles marqués « free » sont 100% gratuits.</span>
+          </span>
+        </div>
+        <input id="openrouterKey" type="password" placeholder="sk-or-..." autocomplete="off">
+        <div class="ext-links">
+          <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener" id="orGetLink">Obtenir une clé OpenRouter</a>
+          <a href="https://openrouter.ai/models?q=:free" target="_blank" rel="noopener" id="orModelsLink">Voir les modèles gratuits</a>
+        </div>
+      </div>
+      <div class="field field-sep" id="openrouterModelField" style="display:none;">
+        <div class="label-row">
+          <label id="orModelLabel">Modèle OpenRouter (100% free)</label>
+          <span class="info-icon" tabindex="0" aria-label="Info modèle OpenRouter" data-i18n-aria="info.orModel">?
+            <span class="info-pop" id="orModelPop">Modèles 100% gratuits (statut <b>:free</b> sur OpenRouter). Recommandés pour la maquette SP213 (JSON structuré).</span>
+          </span>
+        </div>
+        <select id="openrouterModel"></select>
+      </div>
+      <!-- Modèle local WLLM : multi-choix de modèles WebLLM -->
+      <div class="field field-sep" id="wllmModelField" style="display:none;">
+        <div class="label-row">
+          <label id="wllmLabel">Modèle local (WLLM)</label>
+          <span class="info-icon" tabindex="0" aria-label="Info modèle local" data-i18n-aria="info.localModel">?
+            <span class="info-pop" id="wllmPop">Modèle exécuté localement dans votre navigateur (WebGPU). La VRAM indiquée est une estimation de mémoire graphique nécessaire, pas la taille du téléchargement ; la mémoire disponible varie selon l'appareil. Seuls les modèles capables de produire la maquette du studio sont proposés.<br><br>• <b>Qwen2.5 1.5B</b> (recommandé) : le plus léger, environ 1,63 Go de VRAM.<br>• <b>Qwen2.5 7B</b> : meilleure qualité, environ 5,1 Go (GPU confortable).</span>
+          </span>
+        </div>
+        <select id="wllmModel"></select>
+        <div class="ext-links">
+          <a href="https://huggingface.co/mlc-ai" target="_blank" rel="noopener" id="wllmModelsLink">Modèles WebLLM (Hugging Face)</a>
+          <a href="https://webgpureport.org" target="_blank" rel="noopener" id="wllmCheckLink">Vérifier WebGPU</a>
+        </div>
+      </div>
+      <!-- 🗑️ v1.7.580w — le champ « Modèle AI Horde » a été retiré avec le moteur. -->
+      <!-- 🆕 v1.7.580g — TRANSFORMERS.JS : dans le navigateur, même sans WebGPU -->
+      <div class="field field-sep" id="tjsModelField" style="display:none;">
+        <div class="label-row">
+          <label id="tjsLabel">Modèle Transformers.js</label>
+          <span class="info-icon" tabindex="0" aria-label="Info Transformers.js">?
+            <span class="info-pop">Modèle exécuté <b>dans votre navigateur</b> (Hugging Face Transformers.js). Contrairement à WLLM, il <b>ne demande pas WebGPU</b> : sur une machine sans carte graphique compatible, il travaille sur le processeur — plus lent, mais il fonctionne. Aucune clé, aucune donnée envoyée.</span>
+          </span>
+        </div>
+        <select id="tjsModel"></select>
+        <div class="ext-links">
+          <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noopener">Transformers.js (documentation)</a>
+        </div>
+      </div>
+      </div><!-- /engineFields (carte du moteur choisi) -->
+    </div>
+    </div><!-- /prefs-col 2 (Réglages IA / Moteurs) -->
+
+    <!-- ══ Colonne 1 (suite) : Format du document + Layout ══ -->
+    <div class="prefs-col">
+    <!-- Section 2 : Format du document -->
+    <div class="form-section">
+      <div class="form-section-title" id="formatSection">
+        Format du document
+        <span class="info-icon" tabindex="0" aria-label="Info format" data-i18n-aria="info.format">?
+          <span class="info-pop" id="formatPop">Largeur et hauteur de la page en millimètres (comme dans SuperPrint). Formats courants : A4 210×297, A5 148×210, A3 297×420, carte 85×55.</span>
+        </span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <div class="label-row">
+            <label id="widthLabel">Largeur (mm)</label>
+            <span class="info-icon" tabindex="0" aria-label="Info largeur" data-i18n-aria="info.width">?
+              <span class="info-pop" id="widthPop">Largeur de la page en millimètres. Ex. A4 = 210.</span>
+            </span>
+          </div>
+          <input id="pageW" type="number" value="210" min="20" max="2000">
+        </div>
+        <div class="field">
+          <div class="label-row">
+            <label id="heightLabel">Hauteur (mm)</label>
+            <span class="info-icon" tabindex="0" aria-label="Info hauteur" data-i18n-aria="info.height">?
+              <span class="info-pop" id="heightPop">Hauteur de la page en millimètres. Ex. A4 = 297.</span>
+            </span>
+          </div>
+          <input id="pageH" type="number" value="297" min="20" max="2000">
+        </div>
+      </div>
+
+      <!-- 🆕 v1.7.580ff — « Présentation » (page simple / double page) a QUITTÉ les
+           préférences générales : c'est désormais un réglage PAR CONVERSATION, dans
+           la boîte de prompt (bouton à droite du clavier, icône simple ⇄ spread). Un
+           document peut donc être en page simple dans une conversation et en
+           planches dans une autre. -->
+
+      <!-- v1.7.392 — Fond perdu (bleed) : la valeur que l'IA doit respecter.
+           Avant, le fond perdu valait 3 mm EN DUR dans le prompt : impossible de
+           composer un fond qui deborde de 5 mm. -->
+      <div class="field field-sep">
+        <div class="label-row">
+          <label id="bleedLabel">Fond perdu (bleed)</label>
+          <span class="info-icon" tabindex="0" aria-label="Info fond perdu" data-i18n-aria="info.bleed">?
+            <span class="info-pop" id="bleedPop">Épaisseur de papier qui déborde de la page et sera coupée à la finition. <b>3 mm</b> est la valeur standard, jusqu'à <b>5 mm</b> chez certains imprimeurs. L'IA compose les fonds, photos pleine page et formes décoratives en tenant compte de cette valeur. Le texte, lui, reste toujours à l'intérieur des marges de sécurité.</span>
+          </span>
+        </div>
+        <input id="pageBleed" type="number" value="3" min="0" max="20" step="0.5">
+        <div class="hint" id="bleedHint">Les fonds et photos pleine page débordent de 3 mm et seront coupés à la finition.</div>
+      </div>
+    </div>
+    </div><!-- /prefs-col 1 (Format + Layout) -->
+    </div><!-- /prefs-grid -->
+
+    <!-- CTA discret : bouton compact aligné à droite pour sauvegarder et ouvrir le studio -->
+    <div class="prefs-foot">
+      <button class="btn btn-primary" id="startBtn">Sauvegarder</button>
+    </div>
+    </div>
+  </div>
+</div>
+
+<Fragment set:html={"<!-- _SP_STUDIO_REGLAGES_586 — La modale « recherche d'image web (picsum.photos) » est\n     SUPPRIMÉE du studio (demande utilisateur : cette option ne marche pas bien). -->"} />
+
+<Fragment set:html={"<!-- ═══════════════ STUDIO ═══════════════ -->"} />
+<div id="studio">
+  <div id="topbar">
+    <button class="t-logo" id="homeBtn" type="button" title="Accueil du studio — revenir à la pré-home (vos conversations sont conservées)">
+      <img src="icons/studio_print_logo_blanc.svg" alt="Studio IA" width="28" height="28" style="flex-shrink:0;">
+      STUDIO IA
+    </button>
+    <span class="vsep"></span>
+    <span id="pageInfo" style="font-size:9.5px;color:var(--muted);"></span>
+    <span class="spacer"></span>
+
+    <span class="tip-wrap" tabindex="0">
+      <button class="btn" id="themeTopBtn" title="Basculer thème clair/sombre">
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2v2.2M12 19.8V22M2 12h2.2M19.8 12H22M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M19.4 4.6l-1.6 1.6M6.2 17.8l-1.6 1.6"></path></svg>
+      </button>
+      <span class="tip" id="themeTip"><b>Thème</b>Bascule entre le thème clair et le thème sombre du studio.</span>
+    </span>
+    <span class="tip-wrap" tabindex="0">
+      <button class="btn" id="newDocBtn">
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M12 3v12" stroke="currentColor"></path><polyline points="7 10 12 15 17 10" stroke="currentColor"></polyline><path d="M4 21h16" stroke="currentColor"></path></svg>
+        Importer
+      </button>
+      <span class="tip" id="newTip"><b>Importer</b>Importe une sauvegarde .zip (conversations + maquettes) ou un fichier .sp / .json.</span>
+      <input type="file" id="convImportInput" accept=".zip,.sp,.json" hidden="">
+    </span>
+    <span class="tip-wrap tip-anchor-right" tabindex="0">
+      <button class="btn btn-primary" id="exportSpBtn">
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        Sauvegarder
+      </button>
+      <span class="tip" id="exportTip"><b>Sauvegarder</b>Téléchargez la maquette de cette fenêtre (.sp) ou toutes vos conversations avec leurs maquettes (.zip).</span>
+    </span>
+    <span class="tip-wrap tip-anchor-right" tabindex="0">
+      <button class="icon-btn" id="settingsBtn">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+      <span class="tip" id="settingsTip"><b>Réglages</b>Retour à l'écran d'accueil pour changer le moteur, le modèle, le format ou le mode d'affichage.</span>
+    </span>
+  </div>
+
+  <div id="split">
+    <div id="previewPane">
+      <div id="previewToolbar">
+        <span id="previewTitle">Aperçu</span>
+        <div class="zoom-wrap" style="display:flex;align-items:center;gap:3px;margin-left:auto;margin-right:12px;">
+          <span class="tip-wrap" tabindex="0" style="display:inline-flex;">
+            <button class="icon-btn-sm" id="undoBtn" title="Annuler (Ctrl+Z)"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" stroke="currentColor"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" stroke="currentColor"></path></svg></button>
+            <span class="tip" id="undoTip" style="width:200px;"><b>Annuler</b>Restaure la maquette précédente. Raccourci : Ctrl+Z (⌘+Z sur Mac).</span>
+          </span>
+          <span class="tip-wrap" tabindex="0" style="display:inline-flex;">
+            <button class="icon-btn-sm" id="redoBtn" title="Rétablir (Ctrl+Shift+Z / Ctrl+Y)"><svg class="ic" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5" stroke="currentColor"></path><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" stroke="currentColor"></path></svg></button>
+            <span class="tip" id="redoTip" style="width:200px;"><b>Rétablir</b>Ré-applique la maquette annulée. Raccourci : Ctrl+Shift+Z ou Ctrl+Y (⌘+Shift+Z sur Mac).</span>
+          </span>
+          <span class="tip-wrap" tabindex="0" style="display:inline-flex;margin-left:3px;">
+            <button class="icon-btn-sm" id="zoomOut" title="Zoom -"><svg class="ic" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+            <span class="tip" id="zoomTip1" style="width:200px;"><b>Zoom</b>Réduit / agrandit l'aperçu de la maquette. Ctrl+molette fonctionne aussi.</span>
+          </span>
+          <select id="zoomSelect" style="height:22px;background:var(--input-bg);color:var(--text);border:1px solid var(--input-border);font-family:inherit;font-size:10px;padding:0 3px;border-radius:0;">
+            <option value="0.25">25%</option>
+            <option value="0.5">50%</option>
+            <option value="0.75">75%</option>
+            <option value="1" selected="">100%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+          </select>
+          <span class="tip-wrap" tabindex="0" style="display:inline-flex;">
+            <button class="icon-btn-sm" id="zoomIn" title="Zoom +"><svg class="ic" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+            <span class="tip" id="zoomTip2" style="width:200px;"><b>Zoom</b>Réduit / agrandit l'aperçu de la maquette.</span>
+          </span>
+          <span class="tip-wrap" tabindex="0" style="display:inline-flex;margin-left:3px;">
+            <button class="icon-btn-sm" id="guidesToggle">
+              <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
+            </button>
+            <span class="tip" id="guidesTip" style="width:220px;"><b>Repères</b>Affiche ou masque les repères de maquette (trait de coupe, fonds perdus, marges de sécurité).</span>
+          </span>
+          <span class="tip-wrap" tabindex="0" style="display:inline-flex;margin-left:3px;">
+            <button class="icon-btn-sm" id="gridToggle" title="Grille (G)">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3h18v18H3z"></path><path d="M3 9h18M3 15h18M9 3v18M15 3v18"></path></svg>
+            </button>
+            <span class="tip" id="gridTip" style="width:220px;"><b>Grille</b>Affiche ou masque la grille de composition (colonnes/lignes) posée à la demande dans l'aperçu. Raccourci : G. Non imprimable et déplaçable.</span>
+          </span>
+        </div>
+      </div>
+      <div id="previewScroll">
+        <div id="pagesStack"></div>
+      </div>
+      <!-- 🔘 ÉDITER — bas au centre de la preview (demande utilisateur : « mets juste
+           EDITER, supprime “avec SuperPrint” et mets un crayon comme icône, pas un œil ») -->
+      <div id="previewFooter">
+        <button id="viewInSpBtn" class="btn-open-sp ghost">
+          <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+          ÉDITER
+        </button>
+      </div>
+    </div>
+
+    <!-- 🖱️ Séparateur draggable : ajuste la largeur preview / conversation -->
+    <div id="splitHandle" title="Redimensionner (glisser)" data-i18n-title="preview.resize"></div>
+
+    <div id="chatPane">
+      <div id="chatHead">
+        <span class="dot"></span>
+        <span class="t" id="chatTitle">Conversation</span>
+        <span class="m" id="modelLabel"></span>
+      </div>
+      <!-- 🗂️ Onglets de conversations (même hauteur que #chatHead, scroll horizontal) -->
+      <div id="convTabs" title="Onglets de conversations — double-clic pour renommer"></div>
+      <div id="chatLog"></div>
+      <!-- 🆕 Bandeau de sélection : « N élément(s) sélectionné(s) — retravail ciblé » -->
+      <div id="selectionBar" class="selection-bar hidden"></div>
+      <div id="composer">
+        <div class="quickchips" id="quickChips"></div>
+
+        <!-- Pièces jointes -->
+        <div id="attachBar"></div>
+
+        <div id="composerBox">
+          <div class="prompt-wrap" id="promptWrap">
+            <textarea id="promptInput" rows="3" placeholder=" " aria-label="Prompt"></textarea>
+            <div class="prompt-ph" id="promptPh" aria-hidden="true">Décrivez la maquette… (ex : « Affiche A4 minimaliste pour un festival de jazz »)</div>
+          </div>
+          <div id="composerActions">
+            <div id="attachRow">
+              <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
+                <button class="icon-btn" id="attachBtn" title="Joindre des fichiers (image, texte, Word)">
+                  <svg class="ic" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                </button>
+                <span class="tip" id="attachTip"><b>Pièces jointes</b>Joignez des images, du texte, un document Word (<b>.doc</b> ou <b>.docx</b>), OpenDocument (<b>.odt</b>, <b>.ods</b>, <b>.odp</b>), RTF (<b>.rtf</b>), EPS/AI (vectoriel), Excel (.xls/.xlsx) ou PDF. SP213 lit la <b>structure complète</b> (titres, listes, tableaux, images) et l'intègre dans la maquette.</span>
+              </span>
+              <input type="file" id="attachInput" accept=".jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.eps,.ai,.ps,.txt,.md,.csv,.html,.doc,.docx,.odt,.ods,.odp,.odg,.rtf,.xls,.xlsx,.pdf" multiple="" hidden="">
+              <!-- ══ ⚠️ _SP_STUDIO_ICONES_592 — L'ICÔNE IMAGE EXISTE AUSSI DANS L'INTERFACE ══
+                   Retour utilisateur : « l'icône image est absente dans l'interface
+                   complète ». Même icône, même réglage (clé sp213_images_mode), même
+                   état que la pré-home : aucun fond quand c'est éteint, fond gris quand
+                   c'est allumé. L'infobulle dit l'état en toutes lettres. -->
+              <button class="icon-btn" id="imgBtn" type="button" aria-pressed="false"><!-- ⚠️ _SP_STUDIO_ICONES_592b — NOUVELLE ICÔNE IMAGE (retour utilisateur : « l'icône de l'image
+                     est horrible, change-la »). Cadre arrondi, soleil, ligne de crête :
+                     le pictogramme photo lisible, au lieu de deux traits flottants. -->
+                <svg class="ic ic-pic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.4"></rect><circle cx="8.8" cy="8.8" r="1.8"></circle><path d="M21 15.1l-2.9-2.9a2 2 0 0 0-2.83 0L6.1 21.3"></path></svg></button>
+              <!-- ══ _SP_STUDIO_REGLAGES_586 — ICÔNE RÉGLAGES (demande utilisateur :
+                   « à la place de l'image web picsum qui ne sert à rien, mets réglages »).
+                   Elle ouvre le pop-in de refactorisation en direct du document. Elle
+                   n'apparaît QUE pour notre moteur SP213 gabarit (aucun réglage possible
+                   avec un modèle cloud, qui recompose depuis zéro à chaque envoi). -->
+              <span class="tip-wrap tip-up tip-anchor-right" tabindex="0" id="reglagesTipWrap" style="display:none">
+                <button class="icon-btn" id="reglagesBtn" title="Réglages — refactoriser le document en direct" aria-haspopup="dialog" aria-expanded="false">
+                  <!-- _SP_STUDIO_REGLAGES_586 — ICÔNE À TIRETTES (demande utilisateur :
+                       « je veux une autre icône, on utilise déjà l'engrenage en haut à
+                       droite ; trouve une icône avec des tirettes »). -->
+                  <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line><circle cx="9" cy="6" r="2.3" fill="currentColor" stroke="none"></circle><circle cx="15.5" cy="12" r="2.3" fill="currentColor" stroke="none"></circle><circle cx="7" cy="18" r="2.3" fill="currentColor" stroke="none"></circle></svg>
+                </button>
+                <span class="tip" id="reglagesTip"><b>Réglages</b>Refactorise le document affiché en <b>direct</b> : format (mm, cm, pouces), thème, typographies, taille du texte, interligne, marges, colonnes, couleurs, folios. Le pop-in recouvre la conversation ; validez pour revenir à l'échange. Réservé à notre moteur <b>SP213 rock 1.0</b> (recomposition instantanée, 0 jeton).</span>
+              </span>
+              <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
+                <button class="icon-btn" id="micBtn" title="Dicter votre prompt (vocal)">
+                  <svg class="ic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><line x1="12" y1="18" x2="12" y2="22"></line><line x1="8" y1="22" x2="16" y2="22"></line></svg>
+                </button>
+                <span class="tip" id="micTip"><b>Prompt vocal</b>Cliquez puis parlez : votre voix est transcrite dans la zone de saisie. Recliquez pour arrêter.</span>
+              </span>
+              <!-- ⚠️ _SP_STUDIO_ROCK610 — LE CLAVIER À L'ÉCRAN EST SUPPRIMÉ (demande
+                   utilisateur : « supprime l'icône clavier et la fonction, ce méga clavier
+                   ne sert pas à grand chose »). La dictée vocale, elle, reste. -->
+              <!-- v1.7.391 — Case « Images » retirée (redondante avec le réglage
+                   des préférences du studio). -->
+            </div>
+            <!-- 🆕 v1.7.580hh — PAGE SIMPLE / DOUBLE PAGE : après les icônes de saisie,
+                 la PIÈCE JOINTE reprend la première place (demande utilisateur). -->
+            <button class="icon-btn" id="viewModeBtn" type="button" aria-pressed="false" title="Page simple"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="2.6" y="4" width="8.4" height="16" rx="1"></rect><rect class="pg2" x="13" y="4" width="8.4" height="16" rx="1"></rect><line x1="12" y1="4.6" x2="12" y2="19.4" stroke-dasharray="2 2" stroke-width="1.1"></line></svg></button>
+
+            <span class="tip-wrap tip-up tip-anchor-right" tabindex="0">
+              <button id="sendBtn">
+                <svg class="ic ic-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+              </button>
+              <span class="tip" id="sendTip"><b>Envoyer</b>Génère (ou met à jour) la maquette à partir de votre description et des pièces jointes. Le résultat s'affiche à gauche.</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ══ 🆕 v1.7.580ll — ÉCRAN DE DÉMARRAGE ════════════════════
+       Sobre : fond papier (encre la nuit), AUCUN décor, une carte de prompt centrée,
+       coins légèrement arrondis et une OMBRE TRÈS LÉGÈRE qui suit un peu la souris.
+       TOUS les textes viennent du dictionnaire (fr / en / jp) : la page suit la langue
+       du studio et se rafraîchit dès qu’on la change (voir spStarterLangue). -->
+  <div id="starter" role="dialog" aria-label="Studio IA">
+    <button class="st-theme" id="stThemeBtn" type="button">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2v2.2M12 19.8V22M2 12h2.2M19.8 12H22M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M19.4 4.6l-1.6 1.6M6.2 17.8l-1.6 1.6"></path></svg>
+      <span id="stThemeTxt"></span>
+    </button>
+    <button class="st-skip" id="stSkipBtn" type="button"></button>
+    <div class="st-head">
+      <div class="st-logo">Studio&nbsp;<b>IA</b></div>
+      <div class="st-tag" id="stTag"></div>
+    </div>
+    <div class="st-wrap">
+      <!-- 🆕 OMBRE TRÈS LÉGÈRE : elle glisse sous la carte et suit un peu la souris -->
+      <span class="st-ombre" id="stOmbre" aria-hidden="true"></span>
+      <div class="st-pop" id="stPop" role="listbox" aria-label="Model">
+        <div class="st-pop-h" id="stPopTitle"></div>
+        <div class="st-pop-body" id="stPopBody"></div>
+      </div>
+      <div class="st-card" id="stCard">
+        <div class="st-prompt">
+          <textarea id="starterInput" rows="3"></textarea>
+          <div class="st-actions">
+            <button class="icon-btn" id="stAttachBtn" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></button>
+            <!-- ⚠️ _SP_STUDIO_PREHOME_IMG_609 — « VA CHERCHER DES IMAGES SUR LE WEB » (demande
+                 utilisateur) : même réglage que le pop-in Réglages → Images. Allumée =
+                 auto (photos libres à chaque envoi), éteinte = jamais. -->
+            <button class="icon-btn" id="stImgBtn" type="button" aria-pressed="false"><!-- ⚠️ _SP_STUDIO_ICONES_592b — NOUVELLE ICÔNE IMAGE (retour utilisateur : « l'icône de l'image
+                     est horrible, change-la »). Cadre arrondi, soleil, ligne de crête :
+                     le pictogramme photo lisible, au lieu de deux traits flottants. -->
+                <svg class="ic ic-pic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.4"></rect><circle cx="8.8" cy="8.8" r="1.8"></circle><path d="M21 15.1l-2.9-2.9a2 2 0 0 0-2.83 0L6.1 21.3"></path></svg></button>
+            <!-- ⚠️ _SP_STUDIO_PREHOME_IMG_609 — PLUS D'ICÔNE RÉGLAGES SUR LA PRÉ-HOME (demande
+                 utilisateur : « sur la pré-home ne mets pas les réglages en petite icône ;
+                 une fois dans l'interface complète il la faut, comme actuellement »).
+                 Les réglages se prennent dans le studio, à droite de la pièce jointe. -->
+            <!-- _SP_STUDIO_REGLAGES_586 — l'icône « image web (picsum) » est SUPPRIMÉE du
+                 studio (demande utilisateur : « supprime Image web picsum partout »). -->
+            <button class="icon-btn" id="stMicBtn" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><line x1="12" y1="18" x2="12" y2="22"></line><line x1="8" y1="22" x2="16" y2="22"></line></svg></button>
+            <!-- ⚠️ _SP_STUDIO_ROCK610 — plus d'icône clavier sur la pré-home (supprimée). -->
+            <!-- Page simple / double page : même réglage que le bouton du studio -->
+            <button class="icon-btn" id="stModeBtn" type="button" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="2.6" y="4" width="8.4" height="16" rx="1"></rect><rect class="pg2" x="13" y="4" width="8.4" height="16" rx="1"></rect><line x1="12" y1="4.6" x2="12" y2="19.4" stroke-dasharray="2 2" stroke-width="1.1"></line></svg></button>
+            <span class="st-spacer"></span>
+            <button class="st-modelbtn" id="stModelBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+              <span class="st-mname" id="stModelName"></span>
+              <span class="st-mtag" id="stModelTag"></span>
+              <svg class="ic" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <button class="st-send" id="stSendBtn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="st-pjlist hidden" id="starterPj"></div>
+    <div class="st-ex">
+      <!-- ⚠️ 2026-10-01 — TROIS PRÉ-PROMPTS PREMIUM EN TÊTE (demande utilisateur : « refais
+           trois pré-prompts en premier sous la boîte de prompt sur la pré-home et par-dessus
+           la boîte de prompt dans l'interface ; ces trois nouveaux pré-prompts doivent avoir
+           un rendu parfait et l'effet waouh »). L'ORDRE DU DOM EST L'ORDRE DE LA LISTE
+           (spExemplesPeindre remplit par index) : ces trois boutons portent donc les trois
+           premiers exemples de SP_EX_GABARIT. Leurs libellés de secours (autres moteurs)
+           sont st.ex11 … st.ex13p. -->
+      <button type="button" data-ex="14"></button>
+      <button type="button" data-ex="15"></button>
+      <button type="button" data-ex="16"></button>
+      <button type="button" data-ex="17"></button>
+      <button type="button" data-ex="11"></button>
+      <button type="button" data-ex="12"></button>
+      <button type="button" data-ex="13"></button>
+      <button type="button" data-ex="1"></button>
+      <button type="button" data-ex="2"></button>
+      <button type="button" data-ex="3"></button>
+      <button type="button" data-ex="4"></button>
+      <button type="button" data-ex="5"></button>
+      <!-- 6e pastille : DÉMONSTRATION DU DOCUMENT WORD COMPLEXE (fourni avec le studio).
+           Le clic attache le .docx par le MÊME chemin que le bouton d'import. -->
+      <button type="button" data-ex="6" data-pj="word"></button>
+      <!-- ⚠️ _SP_STUDIO_ROCK610 — DEUX BULLES « LIVRE » (demande utilisateur : un long
+           document EN DOUBLE PAGE, dont un livre de théâtre qui reprend une pièce,
+           par exemple de Molière). Elles portent les pré-prompts de ROCK : elles
+           s'affichent donc quand notre moteur de mise en page est choisi. -->
+      <button type="button" data-ex="7"></button>
+      <button type="button" data-ex="8"></button>
+      <!-- ⚠️ _SP_STUDIO_ROCK611e — DEUX REGISTRES DE PLUS (rapport chiffré, poèmes). -->
+      <button type="button" data-ex="9"></button>
+      <button type="button" data-ex="10"></button>
+    </div>
+    <!-- ≡ _SP_STUDIO_SOUFFLET_619 — LE (+) DU SOUFFLET, SOUS LA DEUXIEME LIGNE DE PRE-PROMPTS.
+         Il est FRERE de la liste (et non dedans) : le repli masque des pastilles, il ne doit
+         pas masquer le bouton qui les rouvre. Un pictogramme suffit — rien a traduire. -->
+    <button type="button" class="st-ex-plus" id="stExPlusBtn" aria-expanded="false" title="Tous les pré-prompts">+</button>
+    <div class="st-foot">
+      <span id="stFormat"></span>
+      <span class="st-sep">|</span>
+      <span id="stMode"></span>
+      <span class="st-sep">|</span>
+      <a href="#" id="stPrefsLink"></a>
+    </div>
+  </div>
+
+  <nav id="mobileDock" aria-label="Studio actions">
+    <button class="mobile-dock-btn" id="mobilePreviewBtn" type="button" aria-label="Show preview">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Preview</span>
+    </button>
+    <button class="mobile-dock-btn active" id="mobileChatBtn" type="button" aria-label="Show chat">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path></svg><span>Chat</span>
+    </button>
+    <button class="mobile-dock-btn" id="mobileNewBtn" type="button" aria-label="Import">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M4 21h16"></path></svg><span>Import</span>
+    </button>
+    <button class="mobile-dock-btn" id="mobileExportBtn" type="button" aria-label="Save">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>Save</span>
+    </button>
+    <button class="mobile-dock-btn" id="mobileSettingsBtn" type="button" aria-label="Studio preferences">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1-2.9 2.9-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21h-4v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1-2.9-2.9.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3v-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1 2.9-2.9.1.1a1.7 1.7 0 0 0 1.8.3 1.7 1.7 0 0 0 1-1.5V3h4v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1 2.9 2.9-.1.1a1.7 1.7 0 0 0-.3 1.8 1.7 1.7 0 0 0 1.5 1h.1v4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg><span>Settings</span>
+    </button>
+  </nav>
+</div>
+
+<script is:inline src="JS/fabric.min.js"></script>
+<script is:inline src="/JS/pages/sp213-studio/0-studio-app.js?v=1.7.609"></script>
+
+<Fragment set:html={"<!-- 🆕 v1.7.420 — POP-IN « RÔLE DE LA PIÈCE JOINTE » (à l'import) : contenu à placer,\n     modèle de structure à suivre, ou contexte pour la compréhension seulement. -->"} />
+<div id="pjModal" class="pj-overlay hidden" role="dialog" aria-modal="true">
+  <div class="pj-card">
+    <div class="pj-head"><span class="pj-title" id="pjTitle"></span><span class="pj-sub" id="pjSub"></span></div>
+    <div class="pj-opts" id="pjOpts"></div>
+    <div class="pj-foot"><button class="btn" id="pjCancel" type="button"></button><button class="btn btn-primary" id="pjOk" type="button"></button></div>
+  </div>
+</div>
+
+<Fragment set:html={"<!-- ⚠️ _SP_STUDIO_ROCK610 — LE CLAVIER À L'ÉCRAN EST SUPPRIMÉ (bouton, voile et panneau) :\n     demande utilisateur « supprime l'icône clavier (et la fonction) dans les deux cas ».\n     La dictée vocale du micro est conservée. -->"} />
+<Fragment set:html={"<!-- ══ _SP_STUDIO_REGLAGES_586 — POP-IN RÉGLAGES (refactorisation en direct) ══\n     Il se pose SUR la colonne de conversation (la preview reste visible à gauche) :\n     les tirettes recomposent le document en direct, « Valider » referme et rend la\n     conversation avec le compte rendu des réglages appliqués. -->"} />
+<div id="spReg" class="hidden" role="dialog" aria-modal="true" aria-label="Réglages de la maquette">
+  <div class="rg-head">
+    <div>
+      <div class="rg-t" data-i18n="reg.titre">Réglages de la maquette</div>
+      <div class="rg-s" id="rgSub" data-i18n="reg.sous">Refactorisation en direct : le document se recompose pendant que vous bougez les tirettes. Réservé à SP213 rock 1.0.</div>
+    </div>
+    <button class="rg-close" id="rgClose" title="Fermer" aria-label="Fermer" data-i18n-title="reg.fermer" data-i18n-aria="reg.fermer">✕</button>
+  </div>
+  <div class="rg-body" id="rgBody"></div>
+  <div class="rg-foot">
+    <span class="rg-busy" id="rgBusy"></span>
+    <!-- 🆕 v1.7.581 — LE BOUTON « VARIATION » EST RETIRÉ (demande utilisateur : « supprime
+         le bouton VARIATION qui est à gauche du bouton annuler »). La variation reste
+         réglable par la tirette « Jeu n° » du panneau ; le pied ne garde que l'essentiel. -->
+    <button class="btn btn-secondary" id="rgCancel" type="button" data-i18n="reg.annuler">Annuler</button>
+    <button class="btn btn-primary" id="rgOk" type="button" data-i18n="reg.valider">Valider</button>
+  </div>
+</div>
+</MinimalLayout>

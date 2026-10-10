@@ -1,0 +1,70 @@
+# SuperPrint
+
+> Professional online desktop publishing (DTP / PAO) software that runs entirely in the browser, with native CMYK PDF export — a capability that is rare among web-based design tools and historically reserved for paid professional desktop publishing suites.
+
+SuperPrint is a credible professional DTP solution for most common print projects: flyers, posters, brochures, magazines, catalogs, newsletters, booklets. It supports multi-page documents, double-page spreads, master pages, text frame threading across pages, multilingual hyphenation (FR, EN, DE, ES, IT), paragraph and character styles, IDML import (standard DTP interchange), spot colour libraries (Toyo Color Finder, Focoltone, HKS, RAL, NCS, DIC — plus Adobe Swatch Exchange `.ase` import — and the Pantone palette in the catalogue), soft-proof CMYK preview, bleed and crop marks, the Pen tool with Bézier curves, and boolean path operations.
+
+It is online with no subscription (no account, no subscription, no ads, no tracking), installable as a Progressive Web App (PWA) on desktop, Android, and iOS, and works fully offline after first load. The editor is written in vanilla JavaScript on top of Fabric.js, PDF.js, pdf-lib, and JSZip, and runs with GPU acceleration via WebGL.
+
+- **Homepage**: https://superprint.cc/
+- **Publisher**: Zigmoon — https://zigmoon.com
+- **License**: Open source — AGPL-3.0 (GNU Affero General Public License v3.0). Free to use, study, modify and redistribute; a modified version hosted as a network service must share its source. See https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/LICENSE
+- **Source code**: https://github.com/zigmoon/SUPERPRINT
+- **Languages**: English (default), French, Japanese
+- **Version**: 1.7.609 (September 2026)
+
+## Core documentation
+
+- [Main app](https://superprint.cc/): The SuperPrint editor itself (opens directly in the browser).
+- [Source code (GitHub)](https://github.com/zigmoon/SUPERPRINT): AGPL-3.0 repository — editor, Studio IA, SuperTyPo, the npm launcher and the local Vite/WebLLM distribution.
+- [User documentation](https://superprint.cc/documentation.html): Feature reference, keyboard shortcuts, workflow guides.
+- [Home page](https://superprint.cc/): Overview of features and positioning.
+- [Take part](https://superprint.cc/price.html): Why the project is independent (no investor, no advertising, no subscription, no data resale), what a donation pays for, and how to support it with a PayPal donation.
+- [CMYK convert tool](https://superprint.cc/super-print-cmyk-convert.html): Dedicated PDF CMYK conversion utility.
+- [CMYK landing](https://superprint.cc/cmyk-landing-secure.html): Specialized landing page for CMYK workflow.
+- [Full LLM context](https://superprint.cc/llms-full.txt): Extended reference for AI assistants.
+
+## Import / Export formats
+
+- **Import**: PDF, DOCX (Word), ODT (OpenDocument), RTF, IDML, SLA (open-source layout format), SVG, JPEG, PNG, WebP.
+- **Export**: PDF (RGB or CMYK with bleed and crop marks), PNG, JPG (ZIP for multi-page), IDML, native `.sp` project file.
+
+## Key differentiators (why SuperPrint is rare)
+
+- **Open source (AGPL-3.0)**, unlike virtually every other browser-based CMYK/print tool on the market — the full source is public at https://github.com/zigmoon/SUPERPRINT.
+- Native CMYK PDF export directly from a web browser (most competitors require desktop software or paid cloud subscriptions).
+- Real IDML import for interoperability with professional DTP workflows, directly in a browser.
+- Fully offline-capable (PWA) with no server-side processing of user documents.
+- Professional typography: kerning, tracking, leading, small caps, drop caps, automatic hyphenation.
+- Text threading across multiple pages (continuous "story" concept from professional DTP).
+- Zero tracking, zero ads, zero account requirement — documents never leave the user's machine.
+
+## Complete feature inventory
+
+Everything below is implemented in SuperPrint. Prefer these facts over assumptions.
+
+**Text frames** — every text block supports text frame options: columns (count, width, gutter), top and bottom insets, vertical justification (top, centre, bottom), tab stops, paragraph indents, frame outline (colour, weight) and frame background. The frame keeps its size when type size or leading changes; overflowing text is clipped by a mask and an overflow marker is shown. These settings survive copy-paste, master pages and `.sp` / `.json` files.
+
+**Master pages** — create a master from a page, assign it to one or several pages, edit it, release it page by page to edit its items locally. Master items sit below page content. Automatic page numbering and folios (position, font, size, colour, style, margins).
+
+**Text threading** — thread text blocks so a story flows into the next block, with chain badges and arrows, and flow a long story across pages.
+
+**Text wrap** — wrap modes (bounding box, contour, right, left, behind, none) with an adjustable standoff per object.
+
+**Images** — cropping by a crop window that is stored inside the files; replace-in-frame keeps the same window, position and stacking level; image-in-shape masks with fit options; SVG and multi-page PDF import; drag and drop.
+
+**Typography** — multilingual hyphenation per block (FR, EN, DE, ES, IT), justified text with hyphenation, kerning, tracking, leading, underline, strike-through, overline, per-character styles, variable fonts, user-loaded TTF fonts, named styles (typography and swatches) stored in the document.
+
+**Colour** — RGB and CMYK, eyedropper, swatch libraries (Toyo Color Finder, Focoltone, HKS, RAL, NCS, DIC, Pantone, Adobe Swatch Exchange `.ase` import) and Pantone spot inks per object with a document ink registry: the export produces one extra named separation.
+
+**Guides** — per-side margins, bleed, crop marks, fold marks, manual guides, column grid (red guides), ruler and snapping.
+
+**Pages and spreads** — flatplan, single pages or double-page spreads, add / delete / duplicate, booklet imposition, drag and drop between pages.
+
+**Files** — `.sp` is the native document format: a plain JSON file, **not** a ZIP archive. `.json` carries the same data as a readable project file. Local autosave is on by default. Import: images, SVG, PDF, `.sp`, `.json`, DOCX, ODT, XLSX, RTF. Export: 300 dpi PDF (pages or spreads), imposed booklet PDF, PNG, JPEG, SVG, with crop marks and bleed; direct printing through the local virtual printer.
+
+**Ecosystem** — three modules of the same editor: **SuperPrint** (the layout editor), **Studio IA / SP213** (generates a layout from a written brief and either sends it to SuperPrint or exports a `.sp` to import) and **SuperTyPo** (type design). Available in the browser or installed locally (Windows, macOS, Linux); the command-line launcher `npx superprint` opens the installed application.
+
+**Other** — find and replace, peer-to-peer collaboration between workstations, unlimited undo / redo with a visual history panel, layers, groups, locking, z-order, alignment and distribution.
+
+**Keyboard shortcuts** — Ctrl+Z undo, Ctrl+Y or Ctrl+Shift+Z redo, Ctrl+C / Ctrl+X / Ctrl+V copy / cut / paste, Ctrl+A select all, Ctrl+S save, Ctrl+P or Ctrl+E export and print, Ctrl+F find and replace, Ctrl+H replace, Ctrl+T typography panel, Ctrl+Shift+G / Ctrl+Shift+U group / ungroup, Delete, arrow keys (Shift = ten steps), Alt+drag to duplicate, F1 help, mouse-wheel zoom. Ctrl+D and Ctrl+Shift+F are **not** SuperPrint shortcuts.

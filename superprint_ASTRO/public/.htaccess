@@ -1,0 +1,67 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# app.zigmoon.com — .htaccess (premier niveau du site)
+#
+# Rôle : rendre les POIDS DES MODÈLES LOCAUX lisibles par le studio IA, servi
+# depuis superprint.cc. Sans autorisation CORS, le navigateur refuse un fichier
+# d'un autre domaine : « Failed to fetch », alors que le fichier répond 200.
+# Mesure du 29/09 : Access-Control-Allow-Origin était VIDE. C'est le seul
+# en-tête qui manquait.
+#
+# ⚠️ Apache uniquement (AllowOverride doit être actif). Sur nginx ce fichier
+# n'est pas lu : l'équivalent nginx est en bas du fichier.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# 1. AUTORISER LA LECTURE DEPUIS UN AUTRE DOMAINE (superprint.cc)
+<IfModule mod_headers.c>
+  Header set Access-Control-Allow-Origin "*"
+  Header set Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+  Header set Access-Control-Allow-Headers "Range"
+  Header set Access-Control-Expose-Headers "Content-Length, Content-Range, Accept-Ranges"
+</IfModule>
+
+# 2. TYPES MIME — le .wasm DOIT être servi en application/wasm, sinon WebLLM ne
+#    peut pas l'instancier (instantiateStreaming échoue) ; les morceaux de poids
+#    sont des binaires .bin.
+<IfModule mod_mime.c>
+  AddType application/wasm .wasm
+  AddType application/octet-stream .bin
+  AddType application/json .json
+</IfModule>
+
+# 3. CACHE LONG pour les modèles : ils ne changent jamais (le nom du dépôt porte
+#    la quantification, donc jamais réécrit en place).
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType application/wasm "access plus 1 year"
+  ExpiresByType application/octet-stream "access plus 1 year"
+</IfModule>
+<IfModule mod_headers.c>
+  <FilesMatch "\.(bin|wasm)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# 4. NE PAS COMPRESSER les poids : .bin et .wasm sont déjà compacts ; gzip ne
+#    ferait que brûler du processeur pendant un téléchargement de 1,6 Go.
+<IfModule mod_deflate.c>
+  SetEnvIfNoCase Request_URI \.(?:bin|wasm)$ no-gzip dont-vary
+</IfModule>
+
+# ───────────────────────────────────────────────────────────────────────────
+# ÉQUIVALENT NGINX (si le serveur n'est pas Apache) — dans le bloc server :
+#
+#   location /models/ {
+#     add_header Access-Control-Allow-Origin "*" always;
+#     add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
+#     types { application/wasm wasm; application/octet-stream bin; }
+#     expires 1y;
+#   }
+#
+# VÉRIFICATION après dépôt, dans un navigateur (ou en ligne de commande) :
+#   https://app.zigmoon.com/models/Qwen2.5-1.5B-Instruct-q4f16_1-MLC/mlc-chat-config.json
+# doit répondre 200, et l'en-tête Access-Control-Allow-Origin doit valoir *.
+#
+# NB : déposer plutôt les modèles SUR superprint.cc (dossier /models/) reste la
+# solution la plus sûre — même domaine que l'application, donc aucun CORS à
+# franchir, et rien à espérer du serveur.
+# ───────────────────────────────────────────────────────────────────────────

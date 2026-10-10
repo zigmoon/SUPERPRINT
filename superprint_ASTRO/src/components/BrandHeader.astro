@@ -1,0 +1,34 @@
+---
+/**
+ * Colophon / bandeau de marque : le logo, la version publiée et la promesse
+ * traduite.
+ *
+ * Trois pages sur quatre affichent la même promesse ; ROCK v1 a la sienne
+ * (« Notre moteur / Our engine / 私たちのエンジン »), sa propre version publiée
+ * et un libellé d'accessibilité différent — d'où les props.
+ */
+import { MARKUP_LANG_ORDER, VERSION } from '../data/site';
+import type { Brand } from '../lib/layout';
+
+const {
+  ariaLabel = 'SuperPrint — Open app',
+  version = VERSION,
+  tag = {
+    fr: 'PAO & Studio IA',
+    en: 'DTP & AI Studio',
+    ja: 'DTP & AIスタジオ',
+  },
+} = Astro.props as Brand;
+---
+
+<!-- ══════════════ COLOPHON / BRAND HEADER ══════════════ -->
+<header class="brand-header" role="banner">
+  <a href="index.html" aria-label={ariaLabel}>
+    <img src="favicon.png" alt="SuperPrint — logo">
+  </a>
+  <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
+       droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
+       du plan de bump de release. -->
+  <span class="brand-ver">v{version}</span>
+  <span class="brand-tag">{MARKUP_LANG_ORDER.map((lang) => <span class={`inline-${lang}`}>{tag[lang]}</span>)}</span>
+</header>

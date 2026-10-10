@@ -1,0 +1,409 @@
+:root {
+    --bg: #ffffff; --bg-workspace: #f2f2f2; --panel: #ffffff; --panel2: #f7f7f7;
+    --border: #d9d9d9; --border-strong: #bbbbbb; --text: #1a1a1a; --muted: #666666;
+    --muted2: #888888; --accent: #1a1a1a; --accent-hover: #333333;
+    --accent-soft: rgba(0,0,0,.06); --accent-border: rgba(0,0,0,.25);
+    --btn-bg: #ffffff; --btn-hover: #f2f2f2; --btn-active-text: #ffffff;
+    --input-bg: #ffffff; --input-border: #d9d9d9; --shadow: rgba(0,0,0,0.08);
+    --code-bg: #f7f7f7; --code-border: #e0e0e0; --ok: #1a7f37;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'IBM Plex Mono', 'Open Sans', ui-monospace, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; }
+
+  .btn {
+    height: 40px; padding: 0 18px; background: var(--btn-bg); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; font-family: inherit;
+    font-size: 12px; letter-spacing: 0.3px; transition: all .15s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border-radius: 0; text-transform: uppercase;
+  }
+  .btn:hover { background: var(--btn-hover); border-color: var(--border-strong); }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn-copy { height: 32px; padding: 0 14px; font-size: 11px; flex-shrink: 0; }
+
+  /* Icônes SVG communes (mêmes valeurs que le studio SP213) */
+  .ic { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .ic-sm { width: 14px; height: 14px; }
+  /* Bouton d'engrenage — même look que le studio (carré 32×32) */
+  .icon-btn {
+    width: 32px; height: 32px; padding: 0; background: var(--btn-bg); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; border-radius: 0; transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--btn-hover); border-color: #999; }
+
+  /* Bouton préférences flottant en haut à droite (même place que le studio) */
+  #homeSettingsBtn {
+    position: fixed; top: 14px; right: 14px; z-index: 100;
+  }
+
+  /* ─── Pop-in préférences de la home ─── */
+  #homeSettingsOverlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200;
+    display: none; align-items: center; justify-content: center; padding: 24px;
+  }
+  #homeSettingsOverlay.open { display: flex; }
+  #homeSettingsModal {
+    width: min(460px, 100%); background: var(--panel); border: 1px solid var(--border);
+    border-top: 3px solid var(--accent); box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    display: flex; flex-direction: column; max-height: 85vh;
+  }
+  #homeSettingsModal .hsm-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 18px; border-bottom: 1px solid var(--border);
+  }
+  #homeSettingsModal .hsm-title { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+  #homeSettingsModal .hsm-close {
+    width: 26px; height: 26px; background: transparent; border: 1px solid var(--border);
+    cursor: pointer; font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; color: var(--muted);
+  }
+  #homeSettingsModal .hsm-close:hover { background: var(--btn-hover); color: var(--text); }
+  #homeSettingsModal .hsm-body { padding: 18px; overflow-y: auto; }
+  #homeSettingsModal .hsm-body::-webkit-scrollbar { width: 8px; }
+  #homeSettingsModal .hsm-body::-webkit-scrollbar-track { background: transparent; }
+  #homeSettingsModal .hsm-body::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 4px; border: 2px solid transparent; background-clip: content-box; }
+  #homeSettingsModal .hsm-body::-webkit-scrollbar-thumb:hover { background: #a8a8a8; background-clip: content-box; }
+  #homeSettingsModal .hsm-section { margin-bottom: 16px; }
+  #homeSettingsModal .hsm-section:last-child { margin-bottom: 0; }
+  #homeSettingsModal .hsm-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; display: block; font-weight: 600; }
+  #homeSettingsModal select {
+    width: 100%; padding: 8px 10px; background: var(--input-bg); color: var(--text);
+    border: 1px solid var(--input-border); font-family: inherit; font-size: 12px; cursor: pointer;
+  }
+
+  #welcome {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); padding: 24px; overflow-y: auto;
+  }
+  .welcome-inner { width: min(760px, 100%); margin: 0 auto; padding-bottom: 54px; }
+  .welcome-brand { text-align: center; margin-bottom: 40px; }
+  .welcome-brand .logo { display: flex; flex-direction: column; align-items: center; gap: 18px; margin-bottom: 18px; }
+
+  /* ─── 🎭 Logotype du header : 3 couches SUPERPOSÉES qui se croisent en fondu.
+     Elles occupent toutes la même case de grille : le bloc ne bouge jamais,
+     quelle que soit la couche affichée (aucun « saut » de la page au survol). ─── */
+  .welcome-brand .logo .logo-stack { display: grid; place-items: center; width: 84px; height: 84px; }
+  .welcome-brand .logo .logo-stack > * {
+    grid-area: 1 / 1; width: 84px; height: 84px;
+    opacity: 0; transition: opacity .22s ease; pointer-events: none;
+  }
+  .welcome-brand .logo .logo-stack > .is-on { opacity: 1; }
+  /* ⚠️ AUCUNE plaque de fond (choix utilisateur, et c'est le bon) :
+     ces logotypes sont BICOLORES — formes pleines BLANCHES + tracés NOIRS
+     (mesuré au rendu : « studio » = spirale, trait noir sur remplissage blanc ;
+     « sper_typo » = logotype-mot dans un cadre). Ils se lisent donc
+     naturellement sur fond CLAIR (par les tracés noirs) comme sur fond
+     SOMBRE (par les formes blanches). Une plaque les aurait enfermés. */
+  .welcome-brand .logo .logo-stack > .ls-plain { background: transparent; }
+  /* 🖊️ Icônes filaires DÉDIÉES (Documentation / API) : SVG en trait fin,
+     couleur du texte (currentColor) → lisibles en clair comme en sombre,
+     sans plaque. Elles occupent la même case de 84 px que les logotypes,
+     donc le header ne bouge pas d'un pixel quand elles apparaissent. */
+  .welcome-brand .logo .logo-stack > .ls-wire {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text);
+  }
+  /* ⚠️ ÉPAISSEUR DU TRAIT — c'est le point qui rendait ces icônes grossières.
+     Le trait est exprimé dans les unités du viewBox PUIS mis à l'échelle :
+       rendu = stroke-width × (taille affichée / largeur du viewBox)
+     1re version : 1.8 × (62 / 24) = **4,6 px** à l'écran → pâteux.
+     Version actuelle : 1.8 × (72 / 96) = **1,35 px** → vrai trait fin.
+     ⚠️ Ne PAS réduire le viewBox sans baisser le stroke-width dans la même
+     proportion, sinon le trait regrossit immédiatement. */
+  .welcome-brand .logo .logo-stack > .ls-wire svg {
+    width: 72px; height: 72px;
+    fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  /* Le titre prend le nom de l'outil au survol (.logo-stack) : fondu doux,
+     et largeur minimale reservee pour que le bloc ne « saute » pas en passant
+     de « SuperPrint » (10 car.) a « API » (3 car.). */
+  .welcome-brand h1 {
+    margin: 0; font-size: 30px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+    transition: opacity .18s ease; min-height: 38px;
+  }
+  .welcome-brand .sub { margin: 8px 0 0; font-size: 13px; color: var(--muted); letter-spacing: .5px; }
+  .welcome-brand .sub .hl { color: var(--text); }
+
+  /* Rembourrage bas plus genereux (36 px) : le hint s'y loge sans coller au filet noir. */
+  .install-section { background: var(--panel); border: 1px solid var(--border); border-bottom: 3px solid var(--accent); padding: 28px 30px 36px; position: relative; }
+  /* Le titre est un conteneur : icone + libelle sur UNE ligne, puis la marge
+     du BAS (11px = 6 + 5 demandes) s'applique vraiment SOUS le titre. */
+  .install-section .is-title { margin: 0 0 11px; }
+  .install-section .is-title-line { font-size: 15px; font-weight: 700; letter-spacing: .5px; display: flex; align-items: center; gap: 8px; }
+  .install-section .is-title svg { width: 18px; height: 18px; stroke: var(--accent); }
+  .install-section .is-desc { font-size: 12px; color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
+
+  .cmd-block {
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    padding: 8px 8px 8px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .cmd-block code {
+    flex: 1; font-size: 12.5px; color: var(--text); white-space: nowrap; overflow-x: auto;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace; padding: 6px 0; line-height: 1.6;
+  }
+  .cmd-block code::-webkit-scrollbar { height: 4px; }
+  .cmd-block code::-webkit-scrollbar-thumb { background: var(--border-strong); }
+  .cmd-os-ic { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--muted2); opacity: .85; }
+
+  /* ─── Onglets d'OS DANS la barre, a gauche du bouton copier ───
+     Ils s'alignent a droite (margin-left:auto) : la commande occupe la
+     gauche, le choix Windows / macOS / Linux touche le bouton « copier ». */
+  .cmd-tabs { display: flex; align-items: center; gap: 3px; flex-shrink: 0; margin-left: auto; }
+  .cmd-tab {
+    font-size: 9.5px; letter-spacing: .6px; text-transform: uppercase; color: var(--muted);
+    background: transparent; border: 1px solid transparent; padding: 4px 7px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+  }
+  .cmd-tab:hover { color: var(--text); background: var(--btn-hover); }
+  .cmd-tab.active { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
+
+  /* Le hint apparait au survol de la barre, POSITIONNE DANS LA MARGE BASSE
+     de la section. ⚠️ En `position: absolute` et non en flux : le contenu
+     du lanceur est centre verticalement, donc un hint qui ajoute de la
+     hauteur ferait remonter TOUTE la page au survol (mesure : 13 px de
+     saut). Ici, zero pixel de decalage.
+     `bottom: 15px` + rembourrage bas de 36 px = 6 px de respiration de
+     chaque cote, pour ne plus coller au filet noir. */
+  .cmd-hint {
+    position: absolute; left: 30px; right: 30px; bottom: 15px;
+    display: none; font-size: 11px; color: var(--muted); line-height: 1.4;
+    text-align: center;
+  }
+  .cmd-block:hover + .cmd-hint, .cmd-hint:hover { display: block; }
+
+  .or-sep { display: flex; align-items: center; gap: 14px; margin: 26px 0 20px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .or-sep::before, .or-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Étiquette de section « en ligne » (au-dessus des 3 boîtes) — même style
+     que le or-sep : fillet - typo - fillet. */
+  .online-label {
+    display: flex; align-items: center; gap: 14px; margin: 0 0 14px;
+    font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted);
+  }
+  .online-label::before, .online-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .online-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .online-row {
+    display: flex; align-items: center; gap: 20px; background: var(--panel);
+    border: 1px solid var(--border);
+    /* Liseré bas FIXE noir (3px) — même taille en normal et au hover :
+       pas de changement de hauteur → aucun tremblement de la page. */
+    border-bottom: 3px solid var(--accent);
+    /* ⚠️ HAUTEUR EXPLICITE — INDISPENSABLE.
+       Dans un conteneur FLEX, le rembourrage vertical ne fixe PAS la
+       hauteur : elle vient du CONTENU. Au survol la description se replie
+       (height: 0), la ligne se réduisait donc de 95 px à 74 px, la page
+       rétrécissait de 21 px et TOUT se décalait de 11 px.
+       Les 4 lignes du bas étaient protégées par la GRILLE (elles s'alignent
+       sur leur voisine) ; l'Editor, SEUL sur sa ligne, ne l'était pas.
+       On fixe donc la hauteur ici. Le rembourrage vertical devient inutile
+       (0) — le rembourrage HORIZONTAL de 30 px est conservé. */
+    height: 95px;
+    padding: 0 30px; text-decoration: none; color: var(--text);
+    transition: border-color .15s;
+    cursor: pointer;
+  }
+  /* 🖱️ Hover : PAS de fond gris, juste la flèche fine noire qui apparaît. */
+  .online-row:hover {
+    background: var(--panel);
+  }
+  /* 🚫 AUCUNE icône dans une ligne de CTA (règle explicite). Les visuels des
+     outils n'apparaissent qu'au survol, dans le header (.logo-stack).
+     Les anciennes règles .on-ic / .sp-editor-ic / .sp-typo-ic sont donc
+     supprimées : plus de glyphe « T » sur l'Editor. */
+  .online-row .on-text {
+    /* ⚠️ `width: auto` est INDISPENSABLE : ce bloc portait un width EXPLICITE
+       (254 px, reliquat d'une ancienne regle) qui écrasait `flex: 1` — mesure
+       `flexGrow: 0, flexBasis: auto`. La ligne ne remplissait donc pas
+       l'espace et la flèche restait COLLÉE au texte au lieu d'être à droite
+       (Editor : 445 px du bord droit, API : 168 px). */
+    width: auto;
+    flex: 1 1 auto;
+    display: flex; flex-direction: column; justify-content: center;
+    /* `stretch` : le bloc de texte prend TOUTE la hauteur de la ligne (dont
+       on a fixé le height ailleurs). C'est ce qui garantit que le titre
+       reste centré verticalement une fois la description repliée au survol. */
+    align-self: stretch;
+    overflow: hidden;
+  }
+  .online-row .on-text b { font-size: 16px; letter-spacing: .4px; text-transform: uppercase; line-height: 1.2; }
+  .online-row .on-text span {
+    display: block; font-size: 12.5px; color: var(--muted);
+    margin-top: 4px; height: 17px; overflow: hidden;
+    transition: opacity .15s, height .2s, margin .2s;
+  }
+  .online-row .btn { flex-shrink: 0; }
+  /* 🡒 Flèche d'accès — fine, noire, sans pastille. Cachée par défaut, glisse au survol. */
+  .online-row .on-arrow {
+    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+    /* 🠒 POUSSÉE À DROITE, avec une marge de respiration.
+       `margin-left: auto` absorbe tout l'espace libre et pousse la flèche
+       contre le bord droit ; `margin-right` garde une petite marge avant le
+       bord intérieur (elle s'ajoute au rembourrage de la ligne : 30 px en
+       desktop, 24 px en mobile).
+       6 px = compromis retenu : la flèche reste détachée du bord sans
+       « flotter » au milieu. Résultat mesuré : 45 px du bord en desktop,
+       31 px en mobile (contre 49 / 35 avec 10 px).
+       La translation de survol est de -8 px : elle donne le glissement. */
+    margin-left: auto;
+    margin-right: 6px;
+    color: var(--text);
+    opacity: 0; transform: translateX(-8px);
+    transition: opacity .18s, transform .18s;
+  }
+  .online-row .on-arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  /* 🖱️ Hover : la description grise se replie (height:0), le titre se centre
+     VERTICALEMENT dans les 40px fixes. La hauteur du bouton ne bouge PAS.
+     Pas de fond gris. */
+  .online-row:hover .on-text span { opacity: 0; height: 0; margin-top: 0; }
+  .online-row:hover .on-arrow {
+    opacity: 1; transform: translateX(0);
+  }
+  /* Le premier bloc (Editor) occupe toute la largeur ; les deux autres (Studio IA
+     + Documentation) partagent la même ligne. */
+  .online-row.on-editor { grid-column: 1 / -1; }
+
+  /* 🔽 Les 4 lignes secondaires (Studio IA, SuperTyPo, Documentation, API) sont
+     VOLONTAIREMENT PLUS BASSES que la ligne Editor (79 px contre 95 px) :
+     l'Editor porte un titre plus long sur 2 niveaux et sert de point
+     d'entrée principal. La GRILLE les aligne 2 à 2, donc elles ne bougent
+     jamais entre elles ; la hauteur explicite garantit qu'elles ne bougent
+     pas non plus au survol. */
+  .online-row:not(.on-editor) { height: 79px; }
+
+  /* ─── Mobile : comme en desktop, on reste sur l'index général, mais on cache
+     toute la partie installation (code terminal à copier-coller) — le visiteur
+     choisit directement entre App / Studio / Documentation. ─── */
+  @media (max-width: 820px) {
+    .or-sep,
+    .install-section {
+      display: none !important;
+    }
+    /* Les 3 boîtes en ligne empilées en pleine largeur */
+    .online-stack {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .online-row,
+    .online-row.on-editor {
+      grid-column: 1 / -1;
+      padding: 0 24px;
+      height: 82px;
+    }
+    .online-row:not(.on-editor) { height: 78px; }
+    /* (aucune icône de ligne : rien à redimensionner en mobile) */
+
+    /* ⚠️ LE TEXTE BOUGE AU SURVOL — CORRIGÉ ICI.
+       MESURE : le titre se décalait de -5 px (Editor) et +2 px (les 4 autres).
+       Mesure aussi : la description de l'Editor était TRONQUÉE (17 px visibles
+       pour 27 px nécessaires -> 2e ligne coupée en permanence).
+       CAUSE UNIQUE : la règle de survol plus bas remettait `height: auto`, donc
+       la description passait de 17 px à sa hauteur NATURELLE (27 px pour
+       l'Editor, 13 px pour les autres) ; le bloc de texte étant centré
+       verticalement, le titre se décalait d'autant.
+       FIX : en mobile, la description garde sa hauteur NATURELLE dans les DEUX
+       états (base et survol) -> aucune variation -> aucun déplacement, et le
+       texte n'est plus tronqué.
+       NB : en mobile le survol ne replie PAS la description (pas de souris),
+       les deux états sont donc volontairement identiques. */
+    .online-row .on-text span { height: auto; }
+
+    /* ─── 📱 Sous-titre de la marque sur 2 LIGNES, SANS tiret ───
+       Desktop : « Toute l'application SuperPrint — PAO + Studio IA SP213 »
+       Mobile  : « Toute l'application SuperPrint »
+                 « PAO + Studio IA SP213 »
+       Le tiret cadratin est supprimé en ramenant la taille de police à 0
+       sur .sub et en la restaurant sur .hl : le tiret (texte brut)
+       disparaît, le contenu de .hl reste net.
+       Les 2 morceaux passent à la ligne : le premier est enveloppé
+       automatiquement (spans inline), le second est forcé par le <br>. */
+    /* On masque le SPAN qui contient le tiret : les 2 lignes conservent leur
+       hauteur normale (l'astuce `font-size: 0` ecrasait la 1re ligne). */
+    .welcome-brand .sub .sp-dash { display: none; }
+    .welcome-brand .sub .sp-br { display: block; }
+
+    /* ⚠️ HAUTEUR DE RÉSERVE — INDISPENSABLE EN MOBILE.
+       MESURE : les 5 phrases du header n'ont pas la même hauteur ici, car
+       elles ne tiennent pas sur le même nombre de lignes :
+         « Toute l'application SuperPrint / PAO + Studio IA SP213 » -> 2 lignes = 31 px
+         « Studio IA — décrivez une maquette… »                   -> 1 ligne  = 15 px
+         « API — pilotez SuperPrint… »                            -> 1 ligne  = 15 px
+       Soit 16 px d'écart : au survol, les 5 boutons se décalaient d'autant.
+       On réserve donc la hauteur du cas le plus haut (2 lignes) et on
+       centre verticalement. La hauteur ne change plus jamais. */
+    /* Mesure des 15 combinaisons (5 etats x 3 langues) : hauteur naturelle
+       31 px en anglais/francais, 27 px en japonais, et **46 px** dans le pire
+       cas (« SuperTyPo — decomposez, retravaillez et exportez la typo » passe
+       sur 3 lignes en francais). On reserve donc le pire cas : la hauteur ne
+       change JAMAIS, quel que soit l'outil survole ou la langue. */
+    .welcome-brand .sub {
+      display: flex; flex-direction: column; justify-content: center;
+      min-height: 46px;
+    }
+    .online-row .on-text b { font-size: 14px; }
+    .online-row .on-text span { font-size: 11.5px; }
+    /* Survol mobile : AUCUN changement de hauteur (sinon le titre bouge). */
+    .online-row:hover .on-text span { opacity: 1; height: auto; margin-top: 4px; }
+
+    /* 🡒 LA FLÈCHE N'APPARAÎT QU'AU SURVOL, COMME EN DESKTOP.
+       AVANT : la règle mobile forçait `opacity: 1`, donc la flèche était
+       visible EN PERMANENCE (et en gris, `color: var(--muted)`).
+       Maintenant on ne surcharge PLUS rien : la flèche hérite des règles
+       de base (opacité 0 au repos, révélation + glissement au survol) tout
+       en conservant ses 10 px de marge à droite. */
+  }
+
+  /* ─── Footer très léger (typo seule) ─── */
+  .home-footer {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px 12px; font-size: 10px; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--muted2); background: linear-gradient(to top, var(--bg) 75%, transparent);
+  }
+  .home-footer a { color: var(--muted2); text-decoration: none; transition: color .15s; }
+  .home-footer a:hover { color: var(--text); text-decoration: underline; }
+  .home-footer .sep { opacity: .5; }
+
+  /* ─── Pop-ins légaux (Mentions légales / Confidentialité / Cookies) ─── */
+  .legal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 300;
+    display: none; align-items: center; justify-content: center; padding: 24px;
+  }
+  .legal-overlay.open { display: flex; }
+  .legal-modal {
+    width: min(560px, 100%); background: var(--panel); border: 1px solid var(--border);
+    border-top: 3px solid var(--accent); box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    display: flex; flex-direction: column; max-height: 85vh;
+  }
+  .legal-modal .hsm-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+  .legal-modal .hsm-title { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+  .legal-modal .hsm-close { width: 26px; height: 26px; background: transparent; border: 1px solid var(--border); cursor: pointer; font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+  .legal-modal .hsm-close:hover { background: var(--btn-hover); color: var(--text); }
+  /* ⚠️ Bandeau d'avertissement ALPHA, en tete des mentions legales. */
+  .legal-modal .legal-alpha {
+    background: #fff4e5; border-bottom: 1px solid #f0d9b5; color: #7a4b00;
+    padding: 11px 22px; font-size: 10.5px; font-weight: 700;
+    letter-spacing: .4px; line-height: 1.5; text-transform: uppercase;
+  }
+  .legal-modal .legal-body { padding: 20px 22px; overflow-y: auto; font-size: 12px; line-height: 1.7; color: var(--text); }
+  .legal-modal .legal-body h4 { margin: 16px 0 6px; font-size: 10.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  .legal-modal .legal-body h4:first-child { margin-top: 0; }
+  .legal-modal .legal-body p { margin: 0 0 10px; }
+  .legal-modal .legal-body p:last-child { margin-bottom: 0; }
+  .legal-modal .legal-body ul { margin: 0 0 10px; padding-left: 18px; }
+  .legal-modal .legal-body a { color: var(--text); }
+  .legal-modal .legal-body::-webkit-scrollbar { width: 8px; }
+  .legal-modal .legal-body::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 4px; }
+
+  #welcome::-webkit-scrollbar { width: 4px; height: 4px; }
+  #welcome::-webkit-scrollbar-track { background: var(--bg-workspace); }
+  #welcome::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+  #welcome::-webkit-scrollbar-thumb:hover { background: #999; }
