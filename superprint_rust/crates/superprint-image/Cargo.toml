@@ -1,6 +1,6 @@
 [package]
-name = "superprint-pdf"
-description = "Cœur PDF du noyau Rust de SuperPrint : tons directs (espaces /Separation), boîtes de page et assemblage PDF minimal."
+name = "superprint-image"
+description = "Traitement d'image du noyau Rust de SuperPrint : tampons RVB/gris, réduction (bilinéaire, plus proche voisin), ciblage DPI et compression RunLength des flux PDF."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -10,4 +10,3 @@ repository.workspace = true
 
 [dependencies]
 superprint-core = { path = "../superprint-core" }
-superprint-image = { path = "../superprint-image" }

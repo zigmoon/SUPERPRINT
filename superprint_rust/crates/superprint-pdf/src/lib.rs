@@ -16,19 +16,22 @@
 //! - [`spot`] — une encre directe et sa transformation de teinte (`/Separation`) ;
 //! - [`colorspace`] — la pile de couleurs d'une page : quadri + encres directes ;
 //! - [`boxes`] — boîtes de page PDF (fond perdu, traits de coupe), en points ;
-//! - [`doc`] — assemblage d'un PDF minimal portant les tons directs.
+//! - [`image`] — image XObject : pixels réduits et compressés, embarqués ;
+//! - [`doc`] — assemblage d'un PDF portant les tons directs (et une image).
 //!
-//! Feuille de route : `superprint_rust/docs/PLAN.md` (module n° 3).
+//! Feuille de route : `superprint_rust/docs/PLAN.md` (modules n° 3 et 4).
 
 #![forbid(unsafe_code)]
 
 pub mod boxes;
 pub mod colorspace;
 pub mod doc;
+pub mod image;
 pub mod object;
 pub mod spot;
 
 pub use boxes::{BoxPoints, PageBoxes};
 pub use colorspace::{ColorStack, QuadriSpace, StackError};
-pub use doc::write_spot_page;
+pub use doc::{write_spot_page, write_spot_page_with_image};
+pub use image::{ImageColorSpace, ImageFilter, ImageXObject};
 pub use spot::{AlternateSpace, SpotError, SpotInk};
