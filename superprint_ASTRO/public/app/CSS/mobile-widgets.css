@@ -1,0 +1,161 @@
+/* Mobile Widget Styles (Docked in Sidebar) */
+
+/* General Section Adjustments */
+.mobile-widget-section {
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.mobile-widget-section .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+}
+
+/* Moved Content Styling */
+.mobile-moved-content {
+    /* Resetting generic widget styles */
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Pathfinder Specific */
+.mobile-widget-section .pathfinder-list {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr); /* 4 buttons per row */
+    gap: 8px;
+}
+
+.mobile-widget-section .pathfinder-item {
+    width: 100%;
+    aspect-ratio: 1; /* Square buttons */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 4px;
+}
+
+/* Typo Styles Specific */
+.mobile-widget-section .typo-styles-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Swatches Specific */
+.mobile-widget-section .swatches-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mobile-widget-section .swatch-add {
+    order: 99;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px dashed #ddd;
+    background: #fafafa;
+    border-radius: 6px;
+    font-size: 11px;
+    text-align: center;
+}
+
+.mobile-widget-section .swatch-item {
+    order: 1;
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 8px;
+    border: 1px solid #e6e6e6;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.mobile-widget-section .swatch-preview {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.08);
+}
+
+.mobile-widget-section .swatch-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.mobile-widget-section .swatch-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #222;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mobile-widget-section .swatch-value {
+    font-size: 10px;
+    color: #777;
+}
+
+.mobile-widget-section .swatch-cmyk {
+    display: none; /* trop dense pour mobile */
+}
+
+/* Filters Specific */
+.mobile-widget-section .filters-list {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+/* Dark Mode Support */
+.theme-dark .mobile-widget-section {
+    border-bottom-color: #333;
+}
+.theme-dark .mobile-widget-section .pathfinder-item {
+    background: #2a2a2a;
+    border-color: #444;
+    color: #eee;
+}
+
+/* Mobile Widget Icons Tweaks - match native sidebar icons weight & color */
+.rightbar-icon-btn.mobile-widget-icon {
+    padding: 10px 0 !important;
+    color: #000;
+}
+
+.rightbar-icon-btn.mobile-widget-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+    stroke-width: 2.1px;
+    stroke: currentColor;
+}
+
+.rightbar-icon-btn.mobile-widget-icon:hover svg {
+    opacity: 1;
+}
+
+.theme-dark .rightbar-icon-btn.mobile-widget-icon {
+    color: #cfcfcf;
+}

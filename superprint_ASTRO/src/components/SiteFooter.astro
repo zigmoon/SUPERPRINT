@@ -1,0 +1,127 @@
+---
+/**
+ * Pied de page des pages marketing.
+ *
+ * Trois variantes cohabitent dans le site d'origine :
+ *   • accueil / FAQ — colonne « Navigation », liens vers les ancres de
+ *     l'accueil, mentions légales en pop-ins, pas de ressources de presse ;
+ *   • tarif — colonne « Bureau SuperPrint », liens vers `index.html#…`,
+ *     valise logo + dossier de presse, mentions légales en ancres ;
+ *   • ROCK v1 — comme le tarif, sans les liens « Auteurs », avec sa version.
+ */
+import { VERSION } from '../data/site';
+import type { Footer } from '../lib/layout';
+
+const {
+  faqHref = 'faq.html',
+  featuresHref = '#features',
+  authorsHref = '#auteurs',
+  heading = { fr: 'Navigation', en: 'Navigation', ja: 'ナビゲーション' },
+  version = VERSION,
+  pressKit = false,
+  legal = 'overlays',
+} = Astro.props as Footer;
+---
+
+<footer>
+  <div class="container">
+    <div class="foot-brand">
+      <a class="foot-logo" href="index.html">SUPERPRINT</a>
+      <p class="inline-fr">Un bureau de mise en page professionnelle, né pour la presse et l'édition — dans votre navigateur.</p>
+      <p class="inline-en">A professional layout desk, born for print and publishing — in your browser.</p>
+      <p class="inline-ja">印刷と出版のために生まれたプロのレイアウトデスク — ブラウザの中で。</p>
+      <!-- 🆕 v1.7.472 — les deux auteurs, dans le colophon : ils ne coûtent pas une ligne de
+           plus et ils disent qui publie. Le copyright les nomme aussi, plus bas. -->
+      <p class="foot-auteurs">Simon Dupont-Gellert &amp; Clémence Brunet</p>
+    </div>
+    <div class="foot-cols">
+      <div>
+        <h4 data-lang="fr">{heading.fr}</h4>
+        <h4 data-lang="en">{heading.en}</h4>
+        <h4 data-lang="ja">{heading.ja}</h4>
+        <div class="foot-links">
+          <a href="app/index.html">SuperPrint Editor</a>
+          <a href="sp213-studio.html" data-lang="fr">Studio SP213</a>
+          <a href="sp213-studio.html" data-lang="en">SP213 Studio</a>
+          <a href="sp213-studio.html" data-lang="ja">SP213スタジオ</a>
+          <a href="supertypo/index.html">SuperTyPo</a>
+          <a href="rock.html" data-lang="fr">Moteur ROCK v1</a>
+          <a href="rock.html" data-lang="en">ROCK v1 engine</a>
+          <a href="rock.html" data-lang="ja">ROCK v1 エンジン</a>
+          <a href={featuresHref} data-lang="fr">Fonctions</a>
+          <a href={featuresHref} data-lang="en">Features</a>
+          <a href={featuresHref} data-lang="ja">機能</a>
+          <a href="documentation.html" data-lang="fr">Manuel</a>
+          <a href="documentation.html" data-lang="en">Manual</a>
+          <a href="documentation.html" data-lang="ja">マニュアル</a>
+          {authorsHref !== null && (
+            <>
+              <a href={authorsHref} data-lang="fr">Auteurs</a>
+              <a href={authorsHref} data-lang="en">Authors</a>
+              <a href={authorsHref} data-lang="ja">著者</a>
+            </>
+          )}
+          <a href={faqHref} data-lang="fr">Questions fréquentes</a>
+          <a href={faqHref} data-lang="en">FAQ</a>
+          <a href={faqHref} data-lang="ja">よくある質問</a>
+          <a href="price.html" data-lang="fr">Tarif</a>
+          <a href="price.html" data-lang="en">Price</a>
+          <a href="price.html" data-lang="ja">料金</a>
+        </div>
+      </div>
+      <div>
+        <h4 data-lang="fr">Le projet</h4>
+        <h4 data-lang="en">The project</h4>
+        <h4 data-lang="ja">プロジェクト</h4>
+        <div class="foot-links">
+          <a href="https://zigmoon.com">zigmoon.com</a>
+          <a href="https://app.zigmoon.com/release.html" data-lang="fr">Journal des versions</a>
+          <a href="https://app.zigmoon.com/release.html" data-lang="en">Changelog</a>
+          <a href="https://app.zigmoon.com/release.html" data-lang="ja">変更履歴</a>
+          <a href="https://x.com/SUPER_PRINT_app" rel="noopener noreferrer" target="_blank">@SUPER_PRINT_app</a>
+          {pressKit && (
+            <>
+              <!-- 🆕 v1.7.580tt — ressources téléchargeables, rangées au premier niveau de
+                   superprint/ : la valise logo (ZIP) et le dossier de presse (PDF). -->
+              <a href="logos_superprint.zip" download data-lang="fr">Valise logo (SVG + PNG)</a>
+              <a href="logos_superprint.zip" download data-lang="en">Logo kit (SVG + PNG)</a>
+              <a href="logos_superprint.zip" download data-lang="ja">ロゴ一式（SVG・PNG）</a>
+              <a href="dossier_de_presse_superprint.pdf" target="_blank" rel="noopener" data-lang="fr">Dossier de presse (PDF)</a>
+              <a href="dossier_de_presse_superprint.pdf" target="_blank" rel="noopener" data-lang="en">Press kit (PDF)</a>
+              <a href="dossier_de_presse_superprint.pdf" target="_blank" rel="noopener" data-lang="ja">プレスキット（PDF）</a>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+    <div class="foot-copy">
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v{version}</span>
+      <div class="foot-legal">
+        {legal === 'overlays' ? (
+          <>
+            <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="fr">Mentions légales</a>
+            <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="en">Legal notice</a>
+            <a href="#" onclick="event.preventDefault();openLegal('legalOverlay');return false;" data-lang="ja">法的情報</a>
+            <span class="sep" aria-hidden="true">·</span>
+            <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="fr">Confidentialité</a>
+            <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="en">Privacy</a>
+            <a href="#" onclick="event.preventDefault();openLegal('privacyOverlay');return false;" data-lang="ja">プライバシー</a>
+          </>
+        ) : (
+          <>
+            <a href="index.html#legal" data-lang="fr">Mentions légales</a>
+            <a href="index.html#legal" data-lang="en">Legal notice</a>
+            <a href="index.html#legal" data-lang="ja">法的情報</a>
+            <span class="sep" aria-hidden="true">·</span>
+            <a href="index.html#privacy" data-lang="fr">Confidentialité</a>
+            <a href="index.html#privacy" data-lang="en">Privacy</a>
+            <a href="index.html#privacy" data-lang="ja">プライバシー</a>
+          </>
+        )}
+      </div>
+      <span class="foot-note" data-lang="fr">SuperPrint est un projet indépendant de Zigmoon. Les marques citées appartiennent à leurs détenteurs.</span>
+      <span class="foot-note" data-lang="en">SuperPrint is an independent project by Zigmoon. All trademarks belong to their owners.</span>
+      <span class="foot-note" data-lang="ja">SuperPrintはZigmoonの独立プロジェクトです。商標はすべて各権利者に帰属します。</span>
+    </div>
+  </div>
+</footer>

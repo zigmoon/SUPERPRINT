@@ -1,0 +1,61 @@
+# SuperPrint
+
+> Professional online desktop publishing (DTP / PAO) software that runs entirely in the browser, with native CMYK PDF export — a capability that is rare among web-based design tools and historically reserved for paid professional desktop publishing suites.
+
+SuperPrint is a credible professional DTP solution for most common print projects: flyers, posters, brochures, magazines, catalogs, newsletters, booklets. It supports multi-page documents, double-page spreads, master pages, text frame threading across pages, multilingual hyphenation (FR, EN, DE, ES, IT), paragraph and character styles, IDML import (standard DTP interchange), spot colour libraries (Toyo Color Finder, Focoltone, HKS, RAL, NCS, DIC — plus Adobe Swatch Exchange `.ase` import — and the Pantone palette in the catalogue), soft-proof CMYK preview, bleed and crop marks, the Pen tool with Bézier curves, and boolean path operations.
+
+It is online with no subscription (no account, no subscription, no ads, no tracking), installable as a Progressive Web App (PWA) on desktop, Android, and iOS, and works fully offline after first load. The editor is written in vanilla JavaScript on top of Fabric.js, PDF.js, pdf-lib, and JSZip, and runs with GPU acceleration via WebGL.
+
+- **Homepage**: https://superprint.cc/
+- **Publisher**: Zigmoon — https://zigmoon.com
+- **License**: Open source — AGPL-3.0 (GNU Affero General Public License v3.0). Free to use, study, modify and redistribute; a modified version hosted as a network service must share its source. See https://github.com/zigmoon/SUPERPRINT/blob/main/superprint/LICENSE
+- **Source code**: https://github.com/zigmoon/SUPERPRINT
+- **Languages**: English (default), French, Japanese
+- **Version**: 1.7.609 (September 2026)
+- **Local install**: npx superprint (npm package `superprint`, launcher version 1.0.107) — the same application, downloaded once and run on your machine
+
+## Core documentation
+
+- [Main app](https://superprint.cc/): The SuperPrint editor itself (opens directly in the browser).
+- [Source code (GitHub)](https://github.com/zigmoon/SUPERPRINT): AGPL-3.0 repository — editor, Studio IA, SuperTyPo, the npm launcher and the local Vite/WebLLM distribution.
+- [User documentation](https://superprint.cc/documentation.html): Feature reference, keyboard shortcuts, workflow guides.
+- [Home page](https://superprint.cc/): Overview of features and positioning.
+- [Take part](https://superprint.cc/price.html): Why the project is independent (no investor, no advertising, no subscription, no data resale), what a donation pays for, and how to support it with a PayPal donation.
+- [CMYK convert tool](https://superprint.cc/super-print-cmyk-convert.html): Dedicated PDF CMYK conversion utility.
+- [CMYK landing](https://superprint.cc/cmyk-landing-secure.html): Specialized landing page for CMYK workflow.
+- [Full LLM context](https://superprint.cc/llms-full.txt): Extended reference for AI assistants.
+- [SP213 AI layout studio](https://superprint.cc/sp213-studio.html): turns a written brief — or an attached DOCX, ODT, RTF, PDF or XLSX — into a print-ready, fully editable layout (local WebLLM or cloud engines). A built-in on-screen keyboard — letters, accents and a glyph layer — makes long briefs comfortable to write on touch screens.
+- [SuperTyPo font editor](https://superprint.cc/supertypo/): decomposes any TTF/OTF/WOFF/WOFF2 into editable outlines and re-exports the typeface.
+
+## Import / Export formats
+
+- **Import**: PDF, DOCX (Word), ODT (OpenDocument), RTF, IDML, SLA (open-source layout format), SVG, JPEG, PNG, WebP.
+- **Export**: PDF (RGB or CMYK with bleed and crop marks), PNG, JPG (ZIP for multi-page), IDML, native `.sp` project file.
+
+## Prepress — spot inks & channel separation
+
+- **Spot ink libraries**: the Colour panel lists several swatch books as accordions — **Toyo Color Finder** (46 shades), **Focoltone** (48), **HKS** (54), **RAL** (191, with French colour names), **NCS** (55), **DIC** (49) — plus **any Adobe Swatch Exchange (`.ase`) file** the user imports, which joins the list under its file name as a new book. The 246-ink **Pantone** palette stays in the catalogue (its own accordion is announced as a coming release). A spot ink can be placed on a shape, a text frame or a background, in RGB mode as well as CMYK mode. Display names are shortened in the palette (`Yellow C` instead of `Pantone Yellow C`) while the full name is preserved for filters and output plates.
+- **Values are indicative**: the shades shipped with the app are screen-preview sRGB conversions, not the manufacturers' official libraries (this is stated in the interface); importing a manufacturer's `.ase` gives its exact values. `.ase` parsing happens entirely in the browser — RGB, CMYK, Lab and grey entries — nothing is uploaded, and imported books are remembered locally (removable with a ✕).
+- **Channel separation**: on export, every spot ink goes into its **own named colour channel**, declared in a `/Separation` colour space compliant with **ISO 32000-2** — the technique RIPs expect in order to produce a dedicated plate. Process colours (RGB or CMYK) stay separate from the spot channels and are never flattened together.
+- **Accurate channel count**: the export summary states the real number of channels for the selected mode — for example `RGB (3) + 1 spot ink` or `CMYK (4) + 2 spot inks`.
+- **ICC profiles**: `.icc` / `.icm` profiles can be loaded to frame the conversion for the intended paper and press.
+- **Soft proof**: on-screen CMYK simulation, including coated / uncoated paper simulation.
+
+## Layout & typography reliability
+
+- **Text wrap**: text flows around a bounding box or a contour, with adjustable offset (standoff) and per-side control (both / left / right). The wrap recomposes on every move of the object, and also applies to a text frame placed **inside** a shape — where the text folds inward without escaping its frame.
+- **Line-accurate height resizing**: dragging a text frame's handles never cuts a line in half and never alters the leading. The height snaps to a whole number of lines, using the same line metrics as the PDF export so preview and output stay consistent. An overflow marker still appears whenever text remains in the frame.
+
+## Recent releases
+
+SuperPrint ships frequent, incremental releases (patch versions `1.7.NNN`). Recent work has
+focused on: consolidating the home page into a single scannable list of expandable sections
+(applications, tool inventory, prepress, press comparison, formats, screenshots), aligning
+spacing and typography across the whole marketing site, moving the FAQ next to the authors
+section, fixing a local-AI (WebLLM) watchdog so a stuck generation can no longer lock the
+editor, and rebuilding the ruler-based Tabulation tool (draggable tab stops, keyboard
+shortcut fixed, live reflow).
+
+- **Full, version-by-version changelog**: https://github.com/zigmoon/SUPERPRINT/blob/main/CHANGELOG.md
+- **Trilingual (FR/EN/JP) release notes**: https://app.zigmoon.com/release.html
+- **Tagged releases and diffs**: https://github.com/zigmoon/SUPERPRINT/tags

@@ -1,0 +1,90 @@
+---
+/**
+ * Rend le bloc SEO/GEO/AEO d'une page à partir d'un objet `Seo`.
+ *
+ * Les valeurs ne sont jamais échappées : elles proviennent d'un HTML déjà
+ * écrit pour être servi tel quel (`&amp;`, `&#8230;`…), et `set:html` conserve
+ * donc exactement le texte d'origine.
+ */
+import type { Seo } from '../lib/seo';
+
+const {
+  title,
+  description,
+  keywords,
+  robots,
+  author,
+  applicationName,
+  themeColors = [],
+  geo,
+  language,
+  coverage,
+  distribution,
+  google,
+  canonical,
+  hreflangs = [],
+  og,
+  twitter,
+  jsonLd = [],
+} = Astro.props as Seo;
+---
+
+<!-- ═══ SEO / GEO / AEO ═══ -->
+<title>{title}</title>
+{description && <meta name="description" content={description} />}{keywords && <meta name="keywords" content={keywords} />}
+{robots && <meta name="robots" content={robots} />}
+{author && <meta name="author" content={author} />}
+{applicationName && <meta name="application-name" content={applicationName} />}
+{google && <meta name="google" content={google} />}
+{themeColors.map((c) => (
+  <meta name="theme-color" content={c.content} media={c.media} />
+))}
+
+{geo && (
+  <Fragment>
+    {geo.region && <meta name="geo.region" content={geo.region} />}
+    {geo.placename && <meta name="geo.placename" content={geo.placename} />}
+    {geo.position && <meta name="geo.position" content={geo.position} />}
+    {geo.icbm && <meta name="ICBM" content={geo.icbm} />}
+  </Fragment>
+)}
+{language && <meta name="language" content={language} />}
+{coverage && <meta name="coverage" content={coverage} />}
+{distribution && <meta name="distribution" content={distribution} />}
+
+{/* Une URL par langue : / = anglais, /?lang=fr, /?lang=ja, x-default = / */}
+{canonical && <link rel="canonical" href={canonical} />}
+{hreflangs.map((a) => (
+  <link rel="alternate" hreflang={a.hreflang} href={a.href} />
+))}
+
+{og && (
+  <Fragment>
+    {og.type && <meta property="og:type" content={og.type} />}
+    {og.url && <meta property="og:url" content={og.url} />}
+    {og.title && <meta property="og:title" content={og.title} />}
+    {og.description && <meta property="og:description" content={og.description} />}
+    {og.image && <meta property="og:image" content={og.image} />}
+    {og.imageWidth && <meta property="og:image:width" content={og.imageWidth} />}
+    {og.imageHeight && <meta property="og:image:height" content={og.imageHeight} />}
+    {og.imageType && <meta property="og:image:type" content={og.imageType} />}
+    {og.imageAlt && <meta property="og:image:alt" content={og.imageAlt} />}
+    {og.siteName && <meta property="og:site_name" content={og.siteName} />}
+    {(og.locales ?? []).map((loc, i) => (
+      <meta property={i === 0 ? 'og:locale' : 'og:locale:alternate'} content={loc} />
+    ))}
+  </Fragment>
+)}
+
+{twitter && (
+  <Fragment>
+    {twitter.card && <meta name="twitter:card" content={twitter.card} />}
+    {twitter.title && <meta name="twitter:title" content={twitter.title} />}
+    {twitter.description && <meta name="twitter:description" content={twitter.description} />}
+    {twitter.image && <meta name="twitter:image" content={twitter.image} />}
+  </Fragment>
+)}
+
+{jsonLd.map((data) => (
+  <Fragment set:html={`<script type="application/ld+json">${data}</script>`} />
+))}

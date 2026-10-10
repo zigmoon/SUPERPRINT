@@ -1,0 +1,284 @@
+---
+/*
+ * ⚠️ Fichier généré par tools/legacy-migration/convert.mjs.
+ * Source d'origine : install.html (conservée dans _legacy/).
+ * Modifier la page ici, puis retirer la source de la liste de conversion.
+ */
+import MinimalLayout from '../layouts/MinimalLayout.astro';
+import '../styles/pages/install.css';
+
+const seo = {
+  "title": "SuperPrint — Online DTP Software & AI Layout Studio",
+  "google": "notranslate",
+  "description": "SuperPrint is a browser-based desktop publishing (DTP) tool: design flyers, catalogs, magazines and posters, export print-ready CMYK PDFs with bleed and crop marks, and generate entire layouts with the SP213 AI studio. No account, works offline. Alpha version.",
+  "keywords": "SuperPrint, online DTP software, desktop publishing, browser page layout, print-ready PDF, CMYK PDF export, bleed and crop marks, Pantone spot colours, IDML import, typography, text wrap, SP213 AI studio, AI layout generator, flyer maker, catalog designer, magazine layout, poster design, WebGPU, offline PWA",
+  "robots": "noindex, follow",
+  "og": {
+    "type": "website",
+    "locales": [
+      "en_US",
+      "fr_FR",
+      "ja_JP"
+    ],
+    "title": "SuperPrint — Online DTP Software & AI Layout Studio",
+    "description": "Design flyers, catalogs, magazines and posters in your browser, export print-ready CMYK PDFs, and generate layouts with the SP213 AI studio. No account, works offline.",
+    "url": "https://superprint.cc/install.html",
+    "image": "https://superprint.cc/favicon.png"
+  },
+  "twitter": {
+    "card": "summary",
+    "title": "SuperPrint — Online DTP Software & AI Layout Studio",
+    "description": "Browser-based DTP software with print-ready CMYK PDF export, plus the SP213 AI studio to generate layouts. No account, offline-capable."
+  },
+  "jsonLd": [
+    "\r\n{\r\n  \"@context\": \"https://schema.org\",\r\n  \"@type\": \"SoftwareApplication\",\r\n  \"name\": \"SuperPrint\",\r\n  \"alternateName\": \"SP213\",\r\n  \"url\": \"https://superprint.cc/\",\r\n  \"description\": \"Browser-based desktop publishing (DTP) software with print-ready CMYK PDF export and the SP213 AI layout studio. Alpha version.\",\r\n  \"applicationCategory\": \"DesignApplication\",\r\n  \"applicationSubCategory\": \"Desktop publishing\",\r\n  \"operatingSystem\": \"Web browser (Chrome, Edge, Firefox, Safari)\",\r\n  \"browserRequirements\": \"Requires JavaScript. WebGPU optional (local AI).\",\r\n  \"softwareVersion\": \"1.7.609\",\r\n  \"releaseNotes\": \"Alpha version — features may change and defects may remain.\",\r\n  \"inLanguage\": [\"en\", \"fr\", \"ja\"],\r\n  \"isAccessibleForFree\": true,\r\n  \"offers\": {\r\n    \"@type\": \"Offer\",\r\n    \"price\": \"0\",\r\n    \"priceCurrency\": \"EUR\",\r\n    \"availability\": \"https://schema.org/InStock\"\r\n  },\r\n  \"author\": [\r\n    { \"@type\": \"Person\", \"name\": \"Simon Dupont-Gellert\" },\r\n    { \"@type\": \"Person\", \"name\": \"Clémence Brunet\" }\r\n  ],\r\n  \"publisher\": {\r\n    \"@type\": \"Organization\",\r\n    \"name\": \"Zigmoon\",\r\n    \"url\": \"https://zigmoon.com\"\r\n  },\r\n  \"featureList\": [\r\n    \"Multi-page documents and double-page spreads\",\r\n    \"Print-ready PDF export (RGB or CMYK, bleed and crop marks)\",\r\n    \"Pantone spot colour channels\",\r\n    \"IDML (InDesign) import\",\r\n    \"Typography: kerning, tracking, hyphenation, text wrap\",\r\n    \"SP213 AI layout studio\",\r\n    \"Works offline (PWA) with no account\"\r\n  ],\r\n  \"potentialAction\": {\r\n    \"@type\": \"SearchAction\",\r\n    \"target\": \"https://superprint.cc/sp213-studio.html\",\r\n    \"query-input\": \"required name=layout\"\r\n  }\r\n}\r\n"
+  ]
+};
+
+const headExtra = "<!-- 🆕 v1.7.468 : plus de canonical ici. Cette page est la page de démarrage de\r\n     l'installation locale, pas une page publique : elle est en noindex, et un\r\n     canonical pointant vers la racine enverrait un signal contradictoire. -->\n\n<!-- 🔍 Données structurées : SoftwareApplication (et non WebSite) pour que\r\n     les moteurs comprennent qu'il s'agit d'un LOGICIEL — avec ses auteurs,\r\n     son prix (gratuit), sa version et son statut alpha. Coherent avec les\r\n     mentions legales. -->\r\n\r\n<link rel=\"icon\" type=\"image/png\" href=\"favicon.png\">\r\n<link rel=\"icon\" type=\"image/png\" sizes=\"192x192\" href=\"icons/icon-192x192.png\">";
+---
+
+<MinimalLayout
+  seo={seo}
+  translate
+  headExtra={headExtra}
+>
+<Fragment set:html={"<!-- ⚙ Préférences (même look/place que le studio SP213 : en haut à droite) -->"} />
+<button class="icon-btn" id="homeSettingsBtn" title="Preferences" aria-label="Preferences" onclick="openHomeSettings()">
+  <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+</button>
+
+<Fragment set:html={"<!-- Pop-in préférences home -->"} />
+<div id="homeSettingsOverlay" onclick="if(event.target === this) closeHomeSettings()">
+  <div id="homeSettingsModal">
+    <div class="hsm-header">
+      <div class="hsm-title" data-i18n="prefsTitle">Preferences</div>
+      <button class="hsm-close" onclick="closeHomeSettings()" aria-label="Close">×</button>
+    </div>
+    <div class="hsm-body">
+      <div class="hsm-section">
+        <label class="hsm-label" for="homeLangSelect" data-i18n="prefsLang">Language</label>
+        <select id="homeLangSelect" onchange="setHomeLang(this.value)">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="ja">日本語</option>
+        </select>
+      </div>
+      <div class="hsm-section">
+        <label class="hsm-label" data-i18n="prefsInfo">About</label>
+        <div style="font-size:11.5px; color:var(--muted); line-height:1.6;" data-i18n="prefsAboutText">SuperPrint — browser-based print layout software + SP213 AI studio.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="welcome">
+  <div class="welcome-inner">
+    <div class="welcome-brand">
+      <div class="logo">
+        <!-- 🎭 Logotype dynamique : la couche visible change au survol des CTA
+             (Studio → logotype Studio, SuperTyPo → logotype SuperTyPo), puis
+             revient au logo SuperPrint dès que la souris quitte le bouton. -->
+        <div class="logo-stack" id="brandLogoStack">
+          <img class="ls-default is-on" src="favicon.png" alt="SuperPrint">
+          <img class="ls-plain ls-studio" src="icons/studio_print_logo_blanc.svg" alt="" aria-hidden="true">
+          <img class="ls-plain ls-typo" src="icons/sper_typo.svg" alt="" aria-hidden="true">
+          <!-- 🖊️ Documentation : feuille a coin replie + lignes de texte.
+               ⚠️ viewBox 96 (et non 24) : le trait de 1,8 y est 4x plus fin
+               a l'ecran. Voir le CSS .ls-wire pour le detail du calcul. -->
+          <span class="ls-wire ls-doc" aria-hidden="true">
+            <svg viewBox="0 0 96 96">
+              <path d="M26 12 H56 L72 28 V84 H26 Z"></path>
+              <path d="M56 12 V28 H72"></path>
+              <path d="M36 44 H62 M36 58 H62 M36 72 H50"></path>
+            </svg>
+          </span>
+          <!-- 🖊️ API : paire d'accolades, symbole du code et des API JSON.
+               (Pas de chevrons : c'est le dessin qui avait ete rejete.) -->
+          <span class="ls-wire ls-api" aria-hidden="true">
+            <svg viewBox="0 0 96 96">
+              <path d="M44 16 C36 16 34 20 34 27 V39 L23 48 L34 57 V69 C34 76 36 80 44 80"></path>
+              <path d="M52 16 C60 16 62 20 62 27 V39 L73 48 L62 57 V69 C62 76 60 80 52 80"></path>
+            </svg>
+          </span>
+        </div>
+        <h1>SuperPrint</h1>
+      </div>
+      <!-- `.sp-br` = saut de ligne affiche UNIQUEMENT en mobile (voir le
+           media query) : la phrase se coupe en 2 lignes, sans tiret. -->
+      <p class="sub" data-i18n="homeSub" data-i18n-html="1"><span class="hl">Professional DTP</span> right in your browser</p>
+    </div>
+
+    <div class="online-stack">
+      <a class="online-row on-editor" href="app/index.html" id="onlineSpBtn">
+        <!-- Aucune icone : les visuels des outils n'apparaissent QU'AU
+             SURVOL, dans le header. Regle valable pour les 5 lignes. -->
+        <div class="on-text">
+          <b>SuperPrint Editor</b>
+          <span data-i18n="editorSub">No installation — runs in the browser</span>
+        </div>
+        <span class="on-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </span>
+      </a>
+      <a class="online-row" href="sp213-studio.html" id="onlineStudioBtn" data-brand="studio">
+        <!-- Pas d'icone de ligne : le logotype n'apparait qu'au survol,
+             dans le header (cf. .logo-stack plus haut). -->
+        <div class="on-text">
+          <b>Studio IA</b>
+          <span data-i18n="studioSub">AI layouts</span>
+        </div>
+        <span class="on-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </span>
+      </a>
+      <a class="online-row" href="supertypo/index.html" id="onlineTypoBtn" data-brand="typo">
+        <!-- Pas d'icone de ligne (cf. Studio IA ci-dessus). -->
+        <div class="on-text">
+          <b>SuperTyPo</b>
+          <span data-i18n="typoSub">Font editor — decompose, redraw, export</span>
+        </div>
+        <span class="on-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </span>
+      </a>
+      <a class="online-row" href="documentation.html" id="onlineDocBtn" data-brand="doc">
+        <!-- Pas d'icone de ligne (cf. Studio IA ci-dessus). -->
+        <div class="on-text">
+          <b>Documentation</b>
+          <span data-i18n="docSub">Manual, shortcuts, complete guide</span>
+        </div>
+        <span class="on-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </span>
+      </a>
+      <!-- 🔌 API SuperPrint : pilotage par script (window.SuperPrint).
+           Le 4e CTA ferme la grille 2x2 (Documentation | API). -->
+      <a class="online-row" href="api.html" id="onlineApiBtn" data-brand="api">
+        <!-- Pas d'icone de ligne (cf. Studio IA ci-dessus). -->
+        <div class="on-text">
+          <b>API</b>
+          <span data-i18n="apiSub">Automate layouts from your own code</span>
+        </div>
+        <span class="on-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </span>
+      </a>
+    </div>
+
+    <div class="or-sep" data-i18n="orLocal">or install locally</div>
+
+    <div class="install-section">
+      <div class="is-title">
+        <div class="is-title-line">
+          <svg viewBox="0 0 24 24"><path d="M4 17l6-6-6-6"></path><path d="M12 19h8"></path></svg>
+          <span data-i18n="installTitle">Install locally</span>
+        </div>
+      </div>
+      <!-- Les onglets d'OS sont DANS la barre, a gauche du bouton copier. -->
+      <div class="cmd-block">
+        <span id="osIcon" class="cmd-os-ic" title="Detected automatically" data-i18n-title="osAuto">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><rect x="0" y="0" width="10.5" height="10.5" fill="currentColor"></rect><rect x="13.5" y="0" width="10.5" height="10.5" fill="currentColor"></rect><rect x="0" y="13.5" width="10.5" height="10.5" fill="currentColor"></rect><rect x="13.5" y="13.5" width="10.5" height="10.5" fill="currentColor"></rect></svg>
+        </span>
+        <code id="installCmd">npx.cmd superprint</code>
+        <div class="cmd-tabs">
+          <button class="cmd-tab active" data-os="win">WIN</button>
+          <button class="cmd-tab" data-os="mac">MACOS</button>
+          <button class="cmd-tab" data-os="linux">LINUX</button>
+        </div>
+        <button class="btn btn-copy" data-copy="installCmd" title="Copy the command" aria-label="Copy the command" data-i18n-title="copyCmd" data-i18n-aria="copyCmd">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        </button>
+      </div>
+      <!-- Hint contextuel : masque par defaut, revele au survol de la barre. -->
+      <span class="cmd-hint" id="installHint">PowerShell · npx.cmd contourne le blocage de scripts (ExecutionPolicy)</span>
+    </div>
+  </div>
+</div>
+
+<Fragment set:html={"<!-- Footer très léger (typo seule) -->"} />
+<footer class="home-footer">
+  <a href="#" onclick="event.preventDefault(); openLegal('legalOverlay'); return false;" data-i18n="footerLegal">Legal notice</a>
+  <span class="sep">·</span>
+  <a href="#" onclick="event.preventDefault(); openLegal('privacyOverlay'); return false;" data-i18n="footerPrivacy">Privacy</a>
+  <span class="sep">·</span>
+  <!-- 🍪 L'entree « Cookies » est retiree du footer : le sujet est traite
+       dans les mentions légales. La modale #cookiesOverlay reste presente
+       dans le DOM (aucun lien externe pointant vers elle n'est casse). -->
+  <a href="https://x.com/SUPER_PRINT_app" target="_blank" rel="noopener noreferrer" data-i18n="footerNews">News</a>
+</footer>
+
+<Fragment set:html={"<!-- Pop-in Mentions légales -->"} />
+<div class="legal-overlay" id="legalOverlay" onclick="if(event.target===this) closeLegal('legalOverlay')">
+  <div class="legal-modal">
+    <div class="hsm-header">
+      <div class="hsm-title" data-i18n="legalTitle">Legal notice</div>
+      <button class="hsm-close" onclick="closeLegal('legalOverlay')" aria-label="Close" data-i18n-aria="closeLabel">×</button>
+    </div>
+    <!-- ⚠️ BANDEAU ALPHA — affiche en haut des mentions legales, dans la
+         langue active (la cle est reecrite par applyHomeLang). -->
+    <div class="legal-alpha" data-i18n="alphaNotice">ALPHA SOFTWARE — provided as is, no warranty. Always check your document before printing.</div>
+    <div class="legal-body" data-i18n="legalBody" data-i18n-html="1">
+      <h4>Publisher</h4>
+      <p>SuperPrint is published by <b>Simon Dupont-Gellert</b> and <b>Clémence Brunet</b>.</p>
+      <h4>Hosting</h4>
+      <p>This site is hosted by <b>OVH</b> — France, European Union. Data is hosted in France.</p>
+      <h4>Publication date</h4>
+      <p>30 August 2026.</p>
+      <h4>Languages</h4>
+      <p>This site is available in English, French and Japanese.</p>
+      <h4>Contact / News</h4>
+      <p><a href="https://x.com/SUPER_PRINT_app" target="_blank" rel="noopener noreferrer">@SUPER_PRINT_app on X</a></p>
+      <h4>Disclaimer — Limitation of liability</h4>
+      <p>SuperPrint is provided free of charge, "as is", without warranty of any kind. It is a design and prepress assistance tool and does not replace professional validation.</p>
+      <p>You are solely responsible for checking your documents before printing: colors, bleed, margins, resolution, fonts and the final result (on-screen rendering may differ from printed output).</p>
+      <p>The publisher cannot be held liable for any failed print, incorrect colors, layout problems, or any other direct or indirect damage resulting from the use of the software — whether the online version, the local installation, or AI-generated layouts (SP213).</p>
+      <p>AI-generated content is provided for assistance only; you must verify and validate every element before use or publication.</p>
+      <p>By using SuperPrint, you acknowledge having read and accepted these terms.</p>
+    </div>
+  </div>
+</div>
+
+<Fragment set:html={"<!-- Pop-in Politique de confidentialité -->"} />
+<div class="legal-overlay" id="privacyOverlay" onclick="if(event.target===this) closeLegal('privacyOverlay')">
+  <div class="legal-modal">
+    <div class="hsm-header">
+      <div class="hsm-title" data-i18n="privacyTitle">Privacy policy</div>
+      <button class="hsm-close" onclick="closeLegal('privacyOverlay')" aria-label="Close" data-i18n-aria="closeLabel">×</button>
+    </div>
+    <div class="legal-body" data-i18n="privacyBody" data-i18n-html="1">
+      <p>SuperPrint does not require an account and does not collect any personal data.</p>
+      <h4>Processing is 100% local</h4>
+      <p>All the work happens in your browser: your documents, images and layouts never leave your machine for rendering.</p>
+      <h4>API keys</h4>
+      <p>The API keys you optionally provide for the AI features are stored only in your browser (local storage) and are sent only to the provider you explicitly choose. They are never sent to SuperPrint servers.</p>
+      <h4>No tracking</h4>
+      <p>No analytics, no advertising trackers, no profiling.</p>
+      <h4>Hosting</h4>
+      <p>This site is hosted in France (OVH), in the European Union, subject to the GDPR.</p>
+      <h4>Local storage</h4>
+      <p>We use local storage to remember your language and preferences. You can clear it at any time from your browser settings.</p>
+    </div>
+  </div>
+</div>
+
+<Fragment set:html={"<!-- Pop-in Cookies -->"} />
+<div class="legal-overlay" id="cookiesOverlay" onclick="if(event.target===this) closeLegal('cookiesOverlay')">
+  <div class="legal-modal">
+    <div class="hsm-header">
+      <div class="hsm-title" data-i18n="cookiesTitle">Cookie policy</div>
+      <button class="hsm-close" onclick="closeLegal('cookiesOverlay')" aria-label="Close" data-i18n-aria="closeLabel">×</button>
+    </div>
+    <div class="legal-body" data-i18n="cookiesBody" data-i18n-html="1">
+      <p>SuperPrint uses only strictly necessary technical cookies and local storage:</p>
+      <ul><li>Language preference</li><li>User settings (theme, layout, etc.)</li></ul>
+      <p>No advertising cookies.</p>
+      <p>No third-party tracking cookies.</p>
+      <p>No profiling.</p>
+      <p>No cookie is shared with third parties.</p>
+    </div>
+  </div>
+</div>
+
+<script is:inline src="/JS/pages/install/0-installer-copy.js?v=1.7.609"></script>
+</MinimalLayout>

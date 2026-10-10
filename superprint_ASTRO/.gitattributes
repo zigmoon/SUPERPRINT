@@ -1,0 +1,23 @@
+# Normalise les fins de ligne : le dépôt stocke du LF, quel que soit le
+# `core.autocrlf` local. Indispensable ici : `_legacy/` et les scripts extraits
+# dans `public/JS/` doivent rester identiques à l'octet près (la conversion et
+# le contrôle de non-régression en dépendent).
+* text=auto eol=lf
+
+# Binaires (jamais de conversion de fin de ligne)
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.woff  binary
+*.woff2 binary
+*.ttf  binary
+*.otf  binary
+*.eot  binary
+*.zip  binary
+*.pdf  binary
+*.wasm binary
+*.icc  binary
+*.icm  binary

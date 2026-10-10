@@ -1,0 +1,59 @@
+---
+/**
+ * Barre de navigation principale : logo, six entrées et outils de langue.
+ *
+ * Les entrées viennent de `src/data/site.ts` ; seules varient selon la page
+ * l'ancre du logo (`#hero` sur l'accueil) et l'entrée marquée « page courante ».
+ */
+import { MARKUP_LANG_ORDER, NAV_ITEMS } from '../data/site';
+
+interface Props {
+  /** `href` de l'entrée à marquer active, ou `null`. */
+  active?: string | null;
+  /** Cible du logo : `#hero` sur l'accueil, `index.html` ailleurs. */
+  logoHref?: string;
+  /** Ancre de la première entrée : `#features` sur l'accueil. */
+  featuresHref?: string;
+}
+
+const {
+  active = null,
+  logoHref = 'index.html',
+  featuresHref = 'index.html#features',
+} = Astro.props;
+
+const items = NAV_ITEMS.map((item, i) => ({
+  ...item,
+  href: i === 0 ? featuresHref : item.href,
+}));
+---
+
+<!-- ══════════════ NAVIGATION ══════════════ -->
+<nav>
+  <a class="nav-logo" href={logoHref}>
+    SUPER<span>PRINT</span>
+  </a>
+  <div class="nav-links">
+    {items.map((item) => (
+      <a
+        href={item.href}
+        class:list={[item.cta ? 'nav-cta' : null, item.href === active ? 'active' : null]}
+        aria-current={item.href === active ? 'page' : undefined}
+      >
+        {MARKUP_LANG_ORDER.map((lang) => (
+          <span class={`inline-${lang}`}>{item.label[lang]}</span>
+        ))}
+      </a>
+    ))}
+  </div>
+  <div class="nav-tools">
+    <div class="lang-toggle">
+      <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+      <button id="btn-fr" onclick="setLang('fr')">FR</button>
+      <button id="btn-ja" onclick="setLang('ja')">JA</button>
+    </div>
+    <button type="button" class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>

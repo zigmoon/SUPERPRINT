@@ -1,0 +1,60 @@
+---
+/**
+ * Layout des pages « marketing » (accueil, FAQ, tarif, ROCK).
+ *
+ * Elles partagent la même coquille : barre quadri, bandeau de marque, barre de
+ * navigation, contenu, pied de page — puis, APRÈS le pied de page, des éléments
+ * volants (bouton WhatsApp, pop-ins légaux) et les scripts. D'où deux slots :
+ * le slot par défaut pour le contenu, `after` pour ce qui suit le pied.
+ *
+ * `navNotes` reçoit les commentaires de repère placés entre le bandeau et la
+ * barre de navigation dans le HTML d'origine (`<!-- _NAV_HERO_590 -->`).
+ */
+import BaseLayout from './BaseLayout.astro';
+import QuadriBar from '../components/QuadriBar.astro';
+import BrandHeader from '../components/BrandHeader.astro';
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import type { Brand, Footer } from '../lib/layout';
+import type { Seo } from '../lib/seo';
+
+interface Props {
+  seo: Seo;
+  /** Variante du bandeau de marque (ROCK v1 a la sienne). */
+  brand?: Brand;
+  /** Variante du pied de page. */
+  footer?: Footer;
+  /** Commentaires de repère à émettre avant la barre de navigation. */
+  navNotes?: string;
+  /** Entrée de nav à marquer active. */
+  active?: string | null;
+  logoHref?: string;
+  featuresHref?: string;
+  bodyClass?: string;
+  headTop?: string;
+  headExtra?: string;
+}
+
+const {
+  seo,
+  brand,
+  footer,
+  navNotes,
+  active = null,
+  logoHref = 'index.html',
+  featuresHref = 'index.html#features',
+  bodyClass,
+  headTop,
+  headExtra,
+} = Astro.props;
+---
+
+<BaseLayout seo={seo} bodyClass={bodyClass} headTop={headTop} headExtra={headExtra}>
+  <QuadriBar />
+  <BrandHeader {...brand} />
+  {navNotes && <Fragment set:html={navNotes} />}
+  <SiteNav active={active} logoHref={logoHref} featuresHref={featuresHref} />
+  <slot />
+  <SiteFooter {...footer} />
+  <slot name="after" />
+</BaseLayout>

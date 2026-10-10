@@ -1,0 +1,11 @@
+# ── Astro / Node ───────────────────────────────────────────────────────────
+node_modules/
+dist/
+.astro/
+.vite/
+*.log
+.DS_Store
+Thumbs.db
+
+# ── Environnement Python (outillage hors-ligne, s'il existe) ────────────────
+.venv/

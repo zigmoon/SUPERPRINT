@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuperPrint — page déplacée</title>
+<!-- v1.7.468 — la landing est devenue la PAGE D'ACCUEIL du site (index.html).
+     Le .htaccess renvoie un 301 vers la racine ; cette page ne sert que si le serveur
+     ignore le .htaccess. L'URL était déjà indexée et servait de canonical : on ne
+     laisse donc jamais un 404 dessus. Redirection RELATIVE pour que la copie locale
+     (ouverte en file://) fonctionne aussi. -->
+<link rel="canonical" href="https://superprint.cc/">
+<meta name="robots" content="noindex, follow">
+<meta http-equiv="refresh" content="0; url=./">
+<script>location.replace('./' + location.search + location.hash);</script>
+</head>
+<body style="margin:0;background:#F7F3EC;color:#17130D;font:14px/1.7 ui-monospace,Consolas,monospace">
+<p style="padding:28px">SuperPrint est maintenant sur <a href="./" style="color:#17130D">superprint.cc</a> — redirection…</p>
+</body>
+</html>

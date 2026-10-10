@@ -1,0 +1,1557 @@
+/* ═══════════════════════════════════════════════
+     DA SuperPrint — IBM Plex Mono, boutons carrés,
+     thème clair + sombre (toggle), icônes SVG fines.
+     ═══════════════════════════════════════════════ */
+  :root {
+    /* Thème clair (défaut, DA SuperPrint) */
+    --bg: #ffffff;
+    --bg-canvas: #ffffff;
+    --bg-workspace: #e8e8e8;
+    --panel: #ffffff;
+    --panel2: #f2f2f2;
+    --border: #d9d9d9;
+    --text: #1a1a1a;
+    --muted: #555555;
+    --accent: #1a1a1a;
+    --accent-hover: #333333;
+    --btn-bg: #ffffff;
+    --btn-hover: #f2f2f2;
+    --btn-active: #1a1a1a;
+    --btn-active-text: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #d9d9d9;
+    --shadow: rgba(0,0,0,0.15);
+    --chat-user: #ececec;
+    --chat-user-text: #1a1a1a;
+    --chat-ai: #f5f5f5;
+    --chip-bg: #ffffff;
+    --chip-hover: #f2f2f2;
+    --ok: #1a7f37;
+    --warn: #b25b00;
+    --attach-bg: #f2f2f2;
+    --bubble-user: #ececec;
+    --bubble-user-text: #1a1a1a;
+    --bubble-ai: #f7f7f7;
+    --bubble-ai-text: #1a1a1a;
+  }
+  body.theme-dark {
+    --bg: #121212;
+    --bg-canvas: #ffffff;
+    --bg-workspace: #181818;
+    --panel: #1e1e1e;
+    --panel2: #2b2b2b;
+    --border: #333333;
+    --text: #eaeaea;
+    --muted: #aaaaaa;
+    --accent: #ffffff;
+    --accent-hover: #cccccc;
+    --btn-bg: #2b2b2b;
+    --btn-hover: #333333;
+    --btn-active: #ffffff;
+    --btn-active-text: #000000;
+    --input-bg: #1a1a1a;
+    --input-border: #333333;
+    --shadow: rgba(0,0,0,0.5);
+    --chat-user: #3a3a3a;
+    --chat-user-text: #f0f0f0;
+    --chat-ai: #262626;
+    --chip-bg: #2b2b2b;
+    --chip-hover: #333333;
+    --ok: #35d07f;
+    --warn: #f5b64a;
+    --attach-bg: #2a2a2a;
+    --bubble-user: #3a3a3a;
+    --bubble-user-text: #f0f0f0;
+    --bubble-ai: #262626;
+    --bubble-ai-text: #eaeaea;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', 'Open Sans', ui-monospace, monospace;
+    overflow: hidden;
+    /* 🔒 Interdire la sélection de texte dans l'interface (sauf zones autorisées) */
+    -webkit-user-select: none; user-select: none;
+  }
+  /* La sélection reste possible dans la préview, le chat et la saisie */
+  /* 🛡️ _SP_STUDIO_DESIGN_575 — LA SÉLECTION EST RÉSERVÉE AU CONTENU, JAMAIS À L'INTERFACE.
+     Demande utilisateur : « ne rends pas sélectionnable le texte qui compose
+     l'interface du studio ». Le réglage global était bien en place, MAIS l'exception
+     désignait TOUTE la zone d'aperçu (#previewScroll) : un glissement de souris y
+     sélectionnait « Planche 1 », « Page 2 », les numéros de folio affichés sous chaque
+     carte… c'est-à-dire l'interface elle-même.
+     Désormais la sélection est autorisée UNIQUEMENT là où il y a du TEXTE À COPIER :
+       · #promptInput  (la demande que l'on tape)
+       · #chatLog      (les messages de l'IA que l'on veut recopier)
+       · input/textarea/select (les champs de réglages)
+     Tout le reste (onglets, libellés, boutons, badges, aperçu) est non sélectionnable. */
+  #promptInput, #chatLog, input, textarea, select {
+    -webkit-user-select: text; user-select: text;
+  }
+  button { font-family: inherit; }
+  :where(button, [role="button"], input, textarea, select, a):focus-visible {
+    outline: 2px solid #ffffff; outline-offset: 2px;
+  }
+
+  /* ══ 🆕 v1.7.580jj — ÉCRAN DE DÉMARRAGE : SOBRE, PAPIER, OMBRE ═══════════════
+     Demandé : « pas de fond avec la grille ni la page derrière, sobre et moderne, fond
+     du papier, fond clair, juste une ombre par dessous, coins légèrement arrondis sur les
+     boîtes de prompt ». AUCUN décor : la grille de ligne de base, la feuille A4, les
+     repères de coupe et le folio ont été RETIRÉS. Il reste une seule carte de prompt
+     centrée, une ombre douce, et un sous-menu des modèles FLOTTANT (le <select>
+     natif ne peut pas être stylé : c'est ce qui donnait l'effet « par défaut »). */
+  #starter {
+    position: fixed; inset: 0; z-index: 120; display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px 56px; overflow: auto;
+    background: var(--bg); color: var(--text);
+  }
+  body.theme-dark #starter {
+    /* Encre PURE : un dégradé de si grand rayon crée des bandes visibles (échelon 8 bits). */
+    background: #0b0c0e;
+  }
+  #starter.on { display: flex; }
+
+  /* Thème et « Passer » : discrets, en haut d'écran. */
+  #starter .st-theme, #starter .st-skip {
+    position: fixed; top: 16px; z-index: 3;
+    background: transparent; border: 0; cursor: pointer;
+    color: color-mix(in srgb, var(--text) 52%, transparent);
+    font: 500 10.5px/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .16em; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 10px; border-radius: 8px;
+    transition: color .15s, background .15s;
+  }
+  #starter .st-theme { left: 12px; }
+  #starter .st-skip { right: 12px; }
+  #starter .st-theme:hover, #starter .st-skip:hover {
+    color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent);
+  }
+  #starter .st-theme .ic { width: 14px; height: 14px; }
+
+  #starter .st-head { text-align: center; margin-bottom: 24px; }
+  #starter .st-logo {
+    font-size: clamp(21px, 3.2vmin, 32px); letter-spacing: .32em; text-indent: .32em;
+    text-transform: uppercase; font-weight: 500; line-height: 1.15;
+  }
+  #starter .st-logo b { font-weight: 700; }
+  #starter .st-tag {
+    margin-top: 12px; font-size: clamp(12px, 1.5vmin, 13.5px); line-height: 1.5;
+    color: var(--muted);
+  }
+
+  /* LA CARTE DE PROMPT : coins légèrement arrondis + une ombre douce dessous. */
+  #starter .st-wrap { position: relative; z-index: 3; width: min(700px, 100%); }
+  #starter .st-card {
+    background: var(--panel);
+    border: 1px solid color-mix(in srgb, var(--text) 9%, transparent);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px var(--shadow), 0 14px 34px color-mix(in srgb, var(--shadow) 60%, transparent);
+    transition: border-color .18s, box-shadow .18s;
+  }
+  #starter .st-card:focus-within {
+    border-color: color-mix(in srgb, var(--text) 22%, transparent);
+    box-shadow: 0 1px 2px var(--shadow), 0 20px 48px color-mix(in srgb, var(--shadow) 78%, transparent);
+  }
+  #starter .st-prompt { display: flex; flex-direction: column; }
+  #starter textarea {
+    width: 100%; min-height: 92px; max-height: 220px; resize: none;
+    border: 0; outline: none; background: transparent; color: var(--text);
+    padding: 20px 22px 4px; font-family: inherit; font-size: 15.5px; line-height: 1.6;
+  }
+  #starter textarea::placeholder { color: color-mix(in srgb, var(--text) 34%, transparent); }
+  #starter .st-actions { display: flex; align-items: center; gap: 2px; padding: 4px 10px 10px 12px; }
+  #starter .st-spacer { flex: 1 1 auto; min-width: 8px; }
+  /* ⚠️ _SP_STUDIO_ICONES_592b — ROND, comme dans la boîte de prompt du studio (demande :
+     « des fonds tous identiques sous les icônes, plutôt arrondi que carré »). */
+  #starter .icon-btn {
+    flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%;
+    background: transparent; border: 1px solid transparent;
+    color: color-mix(in srgb, var(--text) 62%, transparent);
+  }
+  #starter .icon-btn:hover { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
+  #starter .st-send {
+    /* flex 0 0 : sans cela le bouton était ÉCRASÉ dans la rangée sur mobile
+       (mesuré 30 × 40 au lieu de 40 × 40 : la pastille ronde devenait ovale). */
+    flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%; border: 0; margin-left: 4px;
+    background: var(--accent); color: var(--btn-active-text); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: transform .1s, background .15s;
+  }
+  #starter .st-send:hover { background: var(--accent-hover); }
+  #starter .st-send:active { transform: scale(.94); }
+  #starter .st-send .ic { width: 18px; height: 18px; stroke-width: 2.2; }
+  /* ⚠️ _SP_STUDIO_ROCK610 — L'ICÔNE MONTRE TOUJOURS UNE DOUBLE PAGE (demande utilisateur :
+     « affiche toujours en double page ; un côté plus invisible que l'autre : la page de
+     droite plus transparente en simple, et en double les deux pages sont visibles »).
+     Une seule icône, deux feuillets : celui de DROITE est délavé en page simple et
+     pleinement tracé en double page. La forme ne change donc plus jamais. */
+  #starter #stModeBtn .ic .pg2 { opacity: .3; }
+  #starter #stModeBtn.mode-spread .ic .pg2 { opacity: 1; }
+  /* ══ ⚠️ _SP_STUDIO_ICONES_592 — UN SEUL ÉTAT ACTIF POUR TOUTES LES ICÔNES À BASCULE ══
+     Demande utilisateur : « on ne sait pas quand elle est activée ou pas ; je pensais
+     sans aucun fond inactive, un fond gris activée. Attention, tous les icônes doivent
+     marcher avec le même graphisme une fois activées. »
+     Règle unique, une seule langue graphique : ÉTEINTE = aucun fond, aucun cadre, l'icône
+     seule ; ALLUMÉE = fond gris clair + encre pleine. Même gris, même forme, pour l'image
+     et pour la page simple/double, dans la pré-home COMME dans l'interface.
+     ⚠️ DÉFAUT CORRIGÉ (mesuré) : l'icône image gardait un fond rond gris EN PERMANENCE
+     (elle ne disait donc rien) et l'icône page du studio s'allumait en ENCRE D'ACCENT,
+     pas au fond gris de la pré-home — deux graphismes pour un même état. */
+  #starter #stImgBtn, #starter #stModeBtn { background: transparent; border-color: transparent; }
+  #starter #stImgBtn:hover, #starter #stModeBtn:hover { background: color-mix(in srgb, var(--text) 7%, transparent); }
+  #starter #stImgBtn.on, #starter #stModeBtn.mode-spread {
+    background: color-mix(in srgb, var(--text) 12%, transparent); color: var(--text);
+  }
+  #starter #stImgBtn.on:hover, #starter #stModeBtn.mode-spread:hover {
+    background: color-mix(in srgb, var(--text) 16%, transparent);
+  }
+
+  /* DÉCLENCHEUR DU SOUS-MENU (moteur + modèle) */
+  #starter .st-modelbtn {
+    display: inline-flex; align-items: center; gap: 8px; max-width: 52%; flex: 0 1 auto; min-width: 0;
+    height: 32px; padding: 0 10px; border-radius: 9px; cursor: pointer;
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+    border: 1px solid transparent; color: var(--text);
+    font-family: inherit; font-size: 12px; font-weight: 500;
+    transition: background .15s;
+  }
+  #starter .st-modelbtn:hover { background: color-mix(in srgb, var(--text) 9%, transparent); }
+  #starter .st-modelbtn[aria-expanded="true"] { background: color-mix(in srgb, var(--text) 11%, transparent); }
+  #starter .st-modelbtn .st-mname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #starter .st-modelbtn .st-mtag {
+    color: var(--muted); font: 500 9px/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+  }
+  #starter .st-modelbtn .ic { width: 13px; height: 13px; opacity: .55; }
+
+  /* SOUS-MENU FLOTTANT : panneau arrondi, ombre, ascenseur maison. */
+  #starter .st-pop {
+    position: absolute; right: 0; bottom: calc(100% + 10px); z-index: 6;
+    width: min(380px, 100%); display: none;
+    background: var(--panel); color: var(--text);
+    border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+    border-radius: 14px;
+    box-shadow: 0 20px 50px color-mix(in srgb, var(--shadow) 85%, transparent);
+    padding: 8px 0 10px;
+  }
+  #starter .st-pop.on { display: block; }
+  /* Bascule SOUS la carte quand il n'y a pas la place au-dessus (posée en JS). */
+  #starter .st-pop.st-pop-bas { top: calc(100% + 10px); bottom: auto; }
+  #starter .st-pop-h {
+    font: 600 9px/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
+    padding: 8px 18px;
+  }
+  #starter .st-pop-body { max-height: min(46vh, 330px); overflow-y: auto; overscroll-behavior: contain; }
+  #starter .st-pop-body::-webkit-scrollbar { width: 8px; }
+  #starter .st-pop-body::-webkit-scrollbar-track { background: transparent; }
+  #starter .st-pop-body::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--text) 16%, transparent); border-radius: 8px;
+  }
+  #starter .st-pop-body::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 30%, transparent); }
+  #starter .st-row {
+    display: block; width: calc(100% - 12px); margin: 0 6px; text-align: left;
+    background: transparent; border: 0; color: inherit; cursor: pointer;
+    font-family: inherit; padding: 9px 12px; border-radius: 9px;
+    transition: background .12s;
+  }
+  #starter .st-row:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
+  #starter .st-row.on { background: color-mix(in srgb, var(--text) 9%, transparent); }
+  #starter .st-row-t { display: flex; align-items: baseline; gap: 8px; }
+  #starter .st-row-n { font-size: 13px; font-weight: 500; }
+  #starter .st-row-g {
+    margin-left: auto; color: var(--muted);
+    font: 500 8.5px/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+  }
+  #starter .st-row-d { display: block; margin-top: 3px; font-size: 11px; line-height: 1.45; color: var(--muted); }
+  #starter .st-pop-sep { height: 1px; margin: 9px 18px; background: color-mix(in srgb, var(--text) 8%, transparent); }
+
+  /* Pièces jointes, exemples, pied de page. */
+  #starter .st-pjlist {
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+    width: min(700px, 100%); margin-top: 12px;
+  }
+  #starter .st-pj {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+    border-radius: 8px; padding: 5px 9px; font-size: 11px;
+    color: color-mix(in srgb, var(--text) 84%, transparent);
+  }
+  #starter .st-pj .ic { width: 13px; height: 13px; opacity: .6; }
+  #starter .st-pj em {
+    font-style: normal; color: var(--muted);
+    font: 500 9px/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .1em; text-transform: uppercase;
+  }
+  /* 🆕 v1.7.584 — LA CROIX DE LA CAPSULE (demande utilisateur : « mets une petite croix à
+     la fin de la capsule PJ »). Discrète au repos, rouge au survol, elle retire la pièce
+     jointe de l'état : la capsule disparaît ici ET dans la barre du studio. */
+  #starter .st-pj { position: relative; padding-right: 26px; }
+  #starter .st-pj-x {
+    position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+    width: 20px; height: 20px; padding: 0; border: 0; border-radius: 6px;
+    background: transparent; cursor: pointer;
+    color: color-mix(in srgb, var(--text) 42%, transparent);
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: color .15s, background .15s;
+  }
+  #starter .st-pj-x .ic { width: 11px; height: 11px; stroke-width: 2.1; opacity: 1; }
+  #starter .st-pj-x:hover { color: #d32f2f; background: color-mix(in srgb, var(--text) 7%, transparent); }
+  /* ══ 🆕 v1.7.580ll — UNE OMBRE TRÈS LÉGÈRE QUI SUIT UN PEU LA SOURIS ══
+     Décision utilisateur : le logotype en filigrane est RETIRÉ — il ne reste qu'une
+     ombre. C'est une nappe floue de la COULEUR D'OMBRE DU THÈME (var(--shadow)),
+     glissée sous la carte : seuls ses bords dépassent, exactement comme une ombre.
+     Elle se déplace de quelques pixels avec le curseur ; comme on n'anime que le
+     transform, le flou n'est JAMAIS recalculé (aucune secousse, aucun coût). */
+  #starter .st-ombre {
+    position: absolute; left: 20px; right: 20px; top: 44px; bottom: -16px;
+    border-radius: 26px; pointer-events: none; z-index: 0;
+    background: var(--shadow); filter: blur(26px); opacity: .9;
+    transform: translate3d(var(--ox, 0px), var(--oy, 10px), 0);
+    will-change: transform;
+  }
+  /* Nuit : du noir sur du noir ne se verrait pas du tout — on garde la même
+     ombre, simplement peinte en clair (5,5 %), donc toujours aussi discrète. */
+  body.theme-dark #starter .st-ombre { background: rgba(255,255,255,0.055); }
+  /* Plans : l'ombre dessous (0), la carte au-dessus (1) — la carte passe devant sa
+     propre ombre. La carte garde le plan SUPÉRIEUR aux autres blocs, sinon son
+     sous-menu passait derrière les pastilles d'exemples et le pied (mesuré). */
+  #starter .st-card { position: relative; z-index: 1; }
+  #starter .st-head, #starter .st-pjlist,
+  #starter .st-ex, #starter .st-foot { position: relative; z-index: 1; }
+  /* Pastilles d'exemples : PLUS PETITES (retour utilisateur) et plus discrètes,
+     pour ne pas concurrencer la carte de prompt. */
+  #starter .st-ex {
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+    width: min(700px, 100%); margin-top: 16px;
+  }
+  #starter .st-ex button {
+    background: transparent; border: 1px solid color-mix(in srgb, var(--text) 11%, transparent);
+    border-radius: 999px; color: color-mix(in srgb, var(--text) 70%, transparent);
+    padding: 5px 10px; font-size: 10.5px; font-family: inherit; cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  #starter .st-ex button:hover {
+    border-color: color-mix(in srgb, var(--text) 30%, transparent); color: var(--text);
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+  }
+  /* ≡ _SP_STUDIO_SOUFFLET_619 — LES PRE-PROMPTS EN SOUFFLET (demande utilisateur : « on va
+     ranger mieux les pre-prompts sous forme de soufflet : un (+) sous la deuxieme ligne qui
+     deploie le reste »). Deux lignes restent visibles et le reste attend le bouton.
+     Le repli est fait en JS sur les lignes REELLEMENT mesurees (voir spExSoufflet) : aucun
+     max-height en dur ne peut se tromper selon la police, la langue ou la largeur. */
+  #starter .st-ex-plus {
+    display: block; margin: 10px auto 0; width: 30px; height: 30px; padding: 0;
+    border: 1px solid color-mix(in srgb, var(--text) 16%, transparent); border-radius: 999px;
+    background: transparent; color: color-mix(in srgb, var(--text) 62%, transparent);
+    font: 400 16px/1 inherit; cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s, transform .15s;
+  }
+  #starter .st-ex-plus:hover {
+    border-color: color-mix(in srgb, var(--text) 34%, transparent); color: var(--text);
+    background: color-mix(in srgb, var(--text) 4%, transparent); transform: translateY(-1px);
+  }
+  #starter .st-foot {
+    margin-top: 24px; text-align: center;
+    font: 500 10px/1.9 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: color-mix(in srgb, var(--text) 40%, transparent);
+  }
+  #starter .st-foot a {
+    color: color-mix(in srgb, var(--text) 72%, transparent); text-decoration: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--text) 24%, transparent);
+  }
+  #starter .st-foot a:hover { color: var(--text); border-color: var(--text); }
+  #starter .st-sep { margin: 0 9px; opacity: .55; }
+  @media (max-width: 720px) {
+    #starter .st-head { margin-bottom: 18px; }
+    #starter .st-logo { letter-spacing: .26em; text-indent: .26em; }
+    #starter .st-pop { width: 100%; }
+    #starter .st-modelbtn { max-width: 58%; }
+    #starter .st-modelbtn .st-mtag { display: none; }
+    #starter .st-ex button { padding: 4px 9px; font-size: 10px; }
+  }
+  /* Icônes SVG communes */
+  .ic { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .ic-sm { width: 14px; height: 14px; }
+  .ic-lg { width: 22px; height: 22px; }
+
+  /* ─────────── Boutons DA SuperPrint (carrés) ─────────── */
+  .btn {
+    height: 32px; padding: 0 12px; background: var(--btn-bg); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; font-family: inherit;
+    font-size: 11px; letter-spacing: 0.3px; transition: all 0.15s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border-radius: 0; box-sizing: border-box; text-transform: uppercase;
+  }
+  .btn:hover { background: var(--btn-hover); border-color: #999; }
+  .btn.active { background: var(--btn-active); color: var(--btn-active-text); border-color: var(--btn-active); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: var(--btn-active-text); border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn-secondary { background: transparent; color: var(--muted); border-color: var(--input-border); }
+  .btn-secondary:hover { background: rgba(0,0,0,0.05); border-color: #999; color: var(--text); }
+
+  .icon-btn {
+    width: 32px; height: 32px; padding: 0; background: var(--btn-bg); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; border-radius: 0; transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--btn-hover); border-color: #999; }
+  /* Variante compacte pour la barre de la preview (zoom + repères) */
+  .icon-btn-sm {
+    width: 22px; height: 22px; padding: 0; background: var(--btn-bg); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; border-radius: 0; transition: all 0.15s;
+  }
+  .icon-btn-sm:hover { background: var(--btn-hover); border-color: #999; }
+  .icon-btn-sm .ic { width: 12px; height: 12px; }
+
+  /* ─────────── Écran d'accueil (boîte centrée, DA blanche) ─────────── */
+  #welcome {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; align-items: flex-start; justify-content: center;
+    background: var(--bg);
+    padding: 24px 20px;
+    overflow-y: auto;
+  }
+  #welcome.hidden { display: none; }
+  /* margin:auto => centré verticalement quand la place le permet, scrollable
+     (haut accessible) quand la carte dépasse le viewport — évite le logo coupé. */
+  .welcome-inner { width: min(880px, 100%); margin: auto; position: relative; }
+  /* ✕ Croix pour revenir au studio — tout en haut à droite de l'ÉCRAN (fixed),
+     pas de la carte : toujours visible même si la carte défile. */
+  .welcome-close {
+    position: fixed; top: 14px; right: 14px; width: 34px; height: 34px; padding: 0;
+    background: transparent; color: var(--muted); border: 1px solid transparent; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; transition: all .15s; z-index: 60;
+  }
+  .welcome-close svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+  .welcome-close:hover { color: var(--text); border-color: var(--border); background: var(--panel2); }
+  .welcome-brand { text-align: center; margin-bottom: 16px; }
+  .welcome-brand .logo { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .welcome-brand .logo img { width: 64px; height: 64px; background: #fff; }
+  .welcome-brand h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
+  .welcome-brand .sub { margin: 4px 0 0; font-size: 11px; color: var(--muted); letter-spacing: 2px; }
+  .welcome-card {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 18px 22px 18px;
+  }
+  .welcome-card p.desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0 0 14px; }
+  /* Carte des préférences en 2 colonnes sur desktop :
+     colonne 1 = Langue + Format du document / Layout,
+     colonne 2 = Réglages IA (Moteurs, sur toute la hauteur). */
+  .welcome-card .prefs-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; align-items: start;
+  }
+  .welcome-card .prefs-grid > .prefs-col:nth-child(1) { grid-column: 1; grid-row: 1; }        /* Langue */
+  .welcome-card .prefs-grid > .prefs-col:nth-child(2) { grid-column: 2; grid-row: 1 / span 2; } /* Moteurs */
+  .welcome-card .prefs-grid > .prefs-col:nth-child(3) { grid-column: 1; grid-row: 2; }        /* Format */
+  /* Ligne grise légère de séparation entre Langue et Format (colonne 1) */
+  .welcome-card .prefs-grid > .prefs-col:nth-child(3) .form-section:first-of-type {
+    border-top: 1px solid var(--border); padding-top: 14px; margin-top: 2px;
+  }
+  @media (max-width: 760px) {
+    .welcome-card .prefs-grid { grid-template-columns: 1fr; }
+    .welcome-card .prefs-grid > .prefs-col:nth-child(1),
+    .welcome-card .prefs-grid > .prefs-col:nth-child(2),
+    .welcome-card .prefs-grid > .prefs-col:nth-child(3) { grid-column: 1; grid-row: auto; }
+  }
+  /* Mobile : l'écran de préférences s'affiche en pleine largeur, scrollable,
+     avec moins de padding (la croix fixed reste en haut à droite). */
+  @media (max-width: 600px) {
+    #welcome { padding: 16px 10px 24px; }
+    .welcome-inner { width: 100%; }
+    .welcome-card { padding: 14px 14px 18px; }
+    .welcome-brand .logo img { width: 52px; height: 52px; }
+    .welcome-brand h1 { font-size: 20px; }
+    .field input, .field select { font-size: 16px; } /* évite le zoom iOS sur focus */
+    .row2 { gap: 8px; }
+    .welcome-close { top: 10px; right: 10px; }
+  }
+  .field { margin-bottom: 7px; }
+  .field.field-sep { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 3px; }
+  .field label { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 4px; }
+  .field input, .field select {
+    width: 100%; padding: 6px 9px; border-radius: 0;
+    border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text);
+    font-size: 12px; font-family: inherit; line-height: 1.4;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .hint { font-size: 9.5px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+  .ext-links { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; }
+  .ext-links a { font-size: 9.5px; color: var(--accent); text-decoration: none; opacity: .85; }
+  .ext-links a:hover { text-decoration: underline; opacity: 1; }
+  .theme-switch { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+
+  /* ─── Sections du formulaire d'accueil ─── */
+  .form-section { margin-bottom: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .form-section:first-of-type { border-top: none; padding-top: 0; }
+  .form-section-title {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); font-weight: 700; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* ─── Libellé avec icône info (bulle) ─── */
+  .label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .label-row label { margin-bottom: 0; }
+
+  /* CTA d'ouverture du studio : bouton fin et discret (pas de gros bloc noir) */
+  #startBtn {
+    height: 30px; padding: 0 22px; font-size: 10px; letter-spacing: .5px;
+  }
+  /* Boutons Page simple / Double page : compacts (plus petits que les .btn par défaut) */
+  .viewmode-btn {
+    height: 26px; padding: 0 10px; font-size: 9px; letter-spacing: .3px;
+  }
+  .info-icon {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 15px; height: 15px; border: 1px solid var(--muted); border-radius: 50%;
+    color: var(--muted); font-size: 10px; line-height: 1; cursor: help; flex-shrink: 0;
+    background: transparent;
+  }
+  .info-icon:hover { color: var(--text); border-color: var(--text); }
+  .info-icon .info-pop {
+    position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%) translateY(4px);
+    width: 240px; max-width: 70vw; background: var(--panel); color: var(--text);
+    border: 1px solid var(--border); padding: 10px 12px; font-size: 11px; line-height: 1.5;
+    font-weight: 400; text-transform: none; letter-spacing: 0.2px; text-align: left;
+    box-shadow: 0 8px 30px var(--shadow); border-radius: 0; z-index: 60;
+    opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .15s, transform .15s, visibility .15s;
+    white-space: normal;
+  }
+  .info-icon:hover .info-pop, .info-icon:focus-within .info-pop {
+    opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0);
+  }
+  /* Flèche de la bulle */
+  .info-icon .info-pop::after {
+    content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 6px solid transparent; border-top-color: var(--border);
+  }
+
+  /* ─── Bulles d'aide enrichies (tooltips) sur les boutons du studio ─── */
+  .tip-wrap { position: relative; display: inline-flex; }
+  .tip-wrap .tip {
+    position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%) translateY(-4px);
+    width: 260px; max-width: 78vw; background: var(--panel); color: var(--text);
+    border: 1px solid var(--border); padding: 12px 14px; font-size: 11px; line-height: 1.55;
+    font-weight: 400; text-transform: none; letter-spacing: 0.2px; text-align: left;
+    box-shadow: 0 12px 36px var(--shadow); border-radius: 0; z-index: 90;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .15s, transform .15s, visibility .15s;
+    white-space: normal;
+  }
+  .tip-wrap .tip b { display: block; margin-bottom: 3px; font-size: 11px; letter-spacing: .4px; text-transform: uppercase; }
+  .tip-wrap:hover .tip, .tip-wrap:focus-within .tip {
+    opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0);
+  }
+  .tip-wrap .tip::after {
+    content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    border: 6px solid transparent; border-bottom-color: var(--border);
+  }
+  /* Variante : bulle qui s'ouvre vers le bas pour les boutons du bas (prompt) */
+  .tip-wrap.tip-up .tip {
+    top: auto; bottom: calc(100% + 10px); transform: translateX(-50%) translateY(4px);
+  }
+  .tip-wrap.tip-up:hover .tip, .tip-wrap.tip-up:focus-within .tip { transform: translateX(-50%) translateY(0); }
+  .tip-wrap.tip-up .tip::after {
+    bottom: auto; top: 100%; border-bottom-color: transparent; border-top-color: var(--border);
+  }
+  /* Variante : bulle ancrée à DROITE (pour les boutons de la top-nav près du
+     bord droit : Exporter, Réglages) — la bulle s'étend vers la GAUCHE pour
+     ne jamais être coupée par le bord de l'écran. */
+  .tip-wrap.tip-anchor-right .tip {
+    left: auto; right: 0; transform: translateX(0) translateY(-4px);
+  }
+  .tip-wrap.tip-anchor-right:hover .tip, .tip-wrap.tip-anchor-right:focus-within .tip {
+    transform: translateX(0) translateY(0);
+  }
+  .tip-wrap.tip-anchor-right .tip::after {
+    left: auto; right: 14px; transform: none;
+  }
+  /* Variante : bulle de la boîte de prompt (boutons du bas à droite) —
+     ouvre vers le HAUT et est ancrée à DROITE pour ne jamais être coupée
+     par le bord droit de l'écran. */
+  .tip-wrap.tip-up.tip-anchor-right .tip {
+    top: auto; bottom: calc(100% + 10px); left: auto; right: 0;
+    transform: translateX(0) translateY(4px);
+  }
+  .tip-wrap.tip-up.tip-anchor-right:hover .tip, .tip-wrap.tip-up.tip-anchor-right:focus-within .tip {
+    transform: translateX(0) translateY(0);
+  }
+  .tip-wrap.tip-up.tip-anchor-right .tip::after {
+    bottom: auto; top: 100%; left: auto; right: 14px; transform: none;
+    border-bottom-color: transparent; border-top-color: var(--border);
+  }
+  /* 🚫 Après 3 apparitions dans la session, les tooltips sont désactivés
+     (classe posée par initTipLimit sur <body>). */
+  body.tips-disabled .tip-wrap .tip {
+    display: none !important;
+  }
+
+  /* ─────────── Studio (split view) ─────────── */
+  #studio { display: none; flex-direction: column; height: 100%; }
+  #studio.active { display: flex; }
+
+  /* Topbar DA SuperPrint */
+  #topbar {
+    flex-shrink: 0; height: 48px; display: flex; align-items: center; gap: 8px;
+    padding: 0 12px; background: var(--panel); border-bottom: 1px solid var(--border);
+  }
+  #topbar .t-logo {
+    font-weight: 900; letter-spacing: 1px; font-size: 13px; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+    /* ⚠️ 2026-10-01 — LE LOGOTYPE EST DEVENU UN BOUTON (demande utilisateur :
+       « STUDIO IA doit être cliquable et renvoyer vers la pré-home »). Les cotes de
+       la barre ne bougent pas d'un pixel : marges négatives sur le padding ajouté. */
+    background: transparent; border: 0; padding: 4px 6px; margin-left: -6px;
+    border-radius: 8px; font-family: inherit; cursor: pointer;
+  }
+  #topbar .t-logo:hover { background: var(--btn-hover); }
+  #topbar .t-logo:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  /* Logotype : aucun fond blanc sous l'icône (surtout en thème sombre). */
+  #topbar .t-logo img { background: transparent !important; }
+  body.theme-dark #topbar .t-logo img { background: transparent !important; }
+  #topbar .t-logo .badge { background: var(--accent); color: var(--btn-active-text); padding: 2px 6px; font-size: 9px; }
+  #topbar .t-title { font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
+  #topbar .vsep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+  #topbar .spacer { flex: 1; }
+
+  #split { flex: 1; display: flex; min-height: 0; }
+
+  /* 🖱️ Séparateur draggable preview ↔ conversation : 1px discret GRIS (comme les
+     autres traits de l'interface), NOIR au survol / drag. Curseur col-resize. */
+  #splitHandle {
+    flex-shrink: 0; width: 1px; cursor: col-resize;
+    background: var(--border); position: relative; z-index: 20;
+    transition: background .15s;
+  }
+  #splitHandle:hover, #splitHandle.dragging { background: #000; }
+  body.theme-dark #splitHandle { background: #333; }
+  body.theme-dark #splitHandle:hover, body.theme-dark #splitHandle.dragging { background: #fff; }
+
+  /* gauche : aperçu — 2/3 de la largeur (fond BLANC, pas de gris) */
+  #previewPane {
+    flex: 1 1 66.6%; min-width: 0; display: flex; flex-direction: column;
+    background: #ffffff;
+  }
+  #previewToolbar {
+    flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+    /* Même hauteur que #chatHead (droite) : padding vertical 10px */
+    padding: 9px 12px 10px; background: var(--panel); border-bottom: 1px solid var(--border);
+    font-size: 10px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase;
+    min-height: 42px;
+  }
+  #previewScroll { flex: 1; overflow: auto; padding: 28px; background: #ffffff; }
+  /* Pied de preview : bouton « Ouvrir dans SuperPrint » centré en bas.
+     Ligne grise très fine en haut du pied (thème clair), discrète en sombre. */
+  #previewFooter {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    padding: 12px; background: transparent; border-top: 1px solid #c8c8c8;
+  }
+  body.theme-dark #previewFooter { border-top: 1px solid #333; }
+  .btn-open-sp {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 0 22px; height: 40px; border-radius: 999px; cursor: pointer;
+    background: var(--accent); color: var(--btn-active-text);
+    border: 1px solid var(--accent); font-family: inherit; font-size: 11px;
+    letter-spacing: 0.4px; text-transform: uppercase; transition: all .15s;
+  }
+  .btn-open-sp:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  /* Variante TRANSPARENTE : fond neutre, bordure discrète — se fond dans la preview */
+  .btn-open-sp.ghost {
+    background: transparent; color: var(--text); border-color: var(--border);
+  }
+  .btn-open-sp.ghost:hover { background: var(--btn-hover); border-color: #999; }
+  /* Thème sombre : le fond de la preview devient sombre (gris très foncé),
+     les pages restent blanches (canvas). Le label des pages s'éclaircit. */
+  body.theme-dark #previewScroll { background: #1a1a1a; }
+  body.theme-dark #previewPane { background: #1a1a1a; }
+  body.theme-dark #previewFooter { background: transparent; }
+  body.theme-dark .page-label { color: #aaa; }
+  #pagesStack { display: flex; flex-direction: column; align-items: center; gap: 32px; }
+  .page-card { background: transparent; position: relative; display: flex; flex-direction: column; align-items: center; }
+  /* Corbeille de suppression de page (apparaît au survol de la carte) */
+  .sp-page-del {
+    position: absolute; top: -6px; right: -6px; width: 26px; height: 26px; padding: 0;
+    background: var(--panel); color: var(--muted); border: 1px solid var(--border);
+    border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center;
+    justify-content: center; z-index: 10; opacity: 0; pointer-events: none;
+    transition: opacity .15s, color .15s, border-color .15s;
+  }
+  .page-card:hover .sp-page-del { opacity: 1; pointer-events: auto; }
+  .sp-page-del:hover { color: #d32f2f; border-color: #d32f2f; }
+  /* 🔒 VERROU DE PAGE — MÊME PASTILLE QUE LA CORBEILLE (même taille 26 px, même rond,
+     même bordure) et MÊME APPARITION (au survol de la page). Demande utilisateur :
+     « exactement le même style que la corbeille et elle doit arriver au même moment ».
+     Il est simplement posé SOUS la corbeille, dans la même colonne. */
+  /* ⚠️ _SP_STUDIO_LOCK_589 — « même aspect exactement » (retour utilisateur : le
+     cadenas et la poubelle n'avaient pas le même CONTOUR). Le contour de la pastille
+     est le MÊME dans les deux états : ce qui distingue « verrouillé » c'est l'ENCRE du
+     cadenas (accent) et la forme du pinceau (fermé / ouvert), jamais le cadre. */
+  .sp-page-del.sp-lock { top: 24px; right: -6px; }
+  .sp-page-del.sp-lock.sp-lock-ferme { color: var(--accent, #2f6fed); border-color: var(--border); }
+  /* Même pastille, mais le survol d'un cadenas ne doit pas virer au rouge (couleur
+     de suppression de la corbeille) : couleur d'accent. */
+  .sp-page-del.sp-lock:hover { color: var(--accent, #2f6fed); border-color: var(--border); }
+  .sp-page-del.sp-lock svg { pointer-events: none; }
+  .page-label {
+    text-align: center; font-size: 10px; color: var(--muted); letter-spacing: 0.5px;
+    /* 📄 Pied de page : le libelle « Page N » etait place AU-DESSUS du canvas.
+       Il est desormais SOUS le canvas. Marge de 26 px (et non 8) : a 8 px le numero
+       collait encore la page, ce qui le faisait lire comme une suite du format.
+       ⚠️ Ne pas confondre avec le haut : ce sont deux respirations distinctes. */
+    margin-top: 26px; margin-bottom: 0;
+  }
+  .page-canvas-wrap {
+    background: #fff; box-shadow: 0 4px 20px var(--shadow); line-height: 0; position: relative;
+  }
+  .page-canvas-wrap canvas { display: block; }
+  /* 🆕 _SP_STUDIO_CAHIER_576 — CADRAGE « CAHIER » : une planche qui ne porte
+     qu'UNE page (couverture, 4e de couverture) est montrée SEULE, à la largeur
+     d'une page. La fenêtre est plus étroite que le canvas et le rogne. */
+  .page-canvas-wrap.cadre-page-seule { overflow: hidden; }
+
+  /* 🗑️ 2026-09-07 : pop-in de chargement du modèle local (#modelLoader) retirée —
+     la bulle « SP213 is building your layout » dans le chat est l'unique loader. */
+
+  /* droite : conversation — 1/3 de la largeur (2/3 pour la preview) */
+  #chatPane {
+    flex: 1 1 33.3%; min-width: 300px; max-width: 45%; display: flex; flex-direction: column;
+    background: var(--panel);
+  }
+  #chatHead {
+    flex-shrink: 0; padding: 10px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+    min-height: 42px;
+  }
+  #chatHead .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  #chatHead .t { font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+  #chatHead .m { font-size: 10px; color: var(--muted); margin-left: auto; }
+
+  /* 🗂️ Onglets de conversations (barre horizontale sous #chatHead) */
+  #convTabs {
+    flex-shrink: 0; display: flex; align-items: center; gap: 4px;
+    padding: 6px 10px; border-bottom: 1px solid var(--border);
+    background: var(--panel); min-height: 42px;
+    /* ⚠️ PAS de « scrollbar-width: thin » ICI (mesuré : 11 px au lieu de 4 px).
+       En Chrome, dès que scrollbar-width n'est plus « auto », les règles
+       ::-webkit-scrollbar sont IGNORÉES : l'onglet gardait une barre native pendant
+       que l'aperçu affichait la sienne (4 px) — c'était LA différence signalée. */
+    overflow-x: auto; overflow-y: hidden;
+  }
+  /* 🆕 v1.7.580mm — MÊME ASCENSEUR QUE L'APERÇU. Retour utilisateur : « la
+     scrollbar des conversations n'est pas la même que celle de la preview, elle est
+     mieux celle de la preview » : l'onglet avait un pouce #bbb sans piste, l'aperçu
+     un pouce #ccc arrondi sur la piste du fond d'atelier. On copie l'aperçu. */
+  #convTabs::-webkit-scrollbar { height: 4px; }
+  #convTabs::-webkit-scrollbar-track { background: var(--bg-workspace); }
+  #convTabs::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+  #convTabs::-webkit-scrollbar-thumb:hover { background: #999; }
+  .conv-tab {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+    max-width: 180px; padding: 6px 12px; cursor: pointer;
+    background: var(--btn-bg); color: var(--muted);
+    border: 1px solid var(--border); font-size: 10px; letter-spacing: 0.3px;
+    border-radius: 999px; /* 🫧 Bulles */
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .conv-tab:hover { color: var(--text); border-color: #999; background: var(--btn-hover); }
+  .conv-tab.active { background: var(--accent); color: var(--btn-active-text); border-color: var(--accent); }
+  .conv-tab .t-label { overflow: hidden; text-overflow: ellipsis; }
+  .conv-tab .t-edit, .conv-tab .t-x {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; padding: 0; font-size: 12px; line-height: 1;
+    border: 0; background: transparent; border-radius: 50%; color: inherit; opacity: .7; flex-shrink: 0;
+  }
+  .conv-tab .t-edit:hover { opacity: 1; }
+  .conv-tab .t-x:hover { opacity: 1; color: #d32f2f; }
+  .conv-add {
+    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; padding: 0; background: var(--btn-bg); color: var(--text);
+    border: 1px solid var(--border); cursor: pointer; border-radius: 999px; /* 🫧 */
+  }
+  .conv-add:hover { background: var(--btn-hover); border-color: #999; }
+  body.theme-dark #chatPane,
+  body.theme-dark #chatHead,
+  body.theme-dark #convTabs,
+  body.theme-dark #composer { background: var(--panel); color: var(--text); }
+  body.theme-dark .conv-tab {
+    background: var(--btn-bg); color: #d0d0d0; border-color: #454545;
+  }
+  body.theme-dark .conv-tab:hover { background: var(--btn-hover); color: #ffffff; border-color: #707070; }
+  body.theme-dark .conv-tab.active { background: #f2f2f2; color: #111111; border-color: #f2f2f2; }
+  body.theme-dark .conv-tab .t-edit,
+  body.theme-dark .conv-tab .t-x { color: inherit; }
+  body.theme-dark .conv-add { background: var(--btn-bg); color: #f2f2f2; border-color: #454545; }
+  body.theme-dark .conv-add:hover { background: var(--btn-hover); border-color: #707070; }
+
+  #chatLog { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 92%; display: flex; flex-direction: column; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.assistant { align-self: flex-start; align-items: flex-start; }
+  /* Bulles : user à droite = FOND BLANC, bordure fine (pas de filet noir voyant) ;
+     assistant à gauche = fond très clair (actuel). Typo système clean. */
+  .bubble {
+    padding: 8px 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+    border-radius: 12px; max-width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  .msg.user .bubble { background: #ffffff; color: var(--text); border: 1px solid var(--border); border-bottom-right-radius: 4px; }
+  .msg.assistant .bubble { background: var(--bubble-ai); color: var(--bubble-ai-text); border: 1px solid transparent; border-bottom-left-radius: 4px; }
+  body.theme-dark .msg.user .bubble {
+    background: var(--bubble-user); color: var(--bubble-user-text); border-color: #4a4a4a;
+  }
+  body.theme-dark .msg.assistant .bubble {
+    background: var(--bubble-ai); color: var(--bubble-ai-text); border-color: #303030;
+  }
+  /* ⚠️ 2026-10-01 — PETITE ICÔNE SVG DEVANT UN MESSAGE (elle remplace l'emoji qui ouvrait
+     le message). Dessinée au TRAIT, en `currentColor` : elle prend la couleur du texte,
+     donc elle tient dans le thème clair comme dans le thème sombre. */
+  .msg-ic { display: inline-block; width: 15px; height: 15px; margin-right: 7px; vertical-align: -3px; }
+  .msg-ic svg { display: block; width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .msg .meta { font-size: 10px; color: var(--muted); margin-top: 4px; padding: 0 4px; display: flex; gap: 8px; align-items: center; }
+  .badge {
+    font-size: 9px; padding: 2px 8px; letter-spacing: 0.5px; background: rgba(26,127,55,.12);
+    color: var(--ok); border: 1px solid rgba(26,127,55,.4); text-transform: uppercase;
+  }
+  .badge-warn { background: rgba(239,68,68,.12); color: #ef4444; border-color: rgba(239,68,68,.4); }
+  details.jsonbox { margin-top: 8px; font-size: 11px; }
+  details.jsonbox summary { cursor: pointer; color: var(--muted); }
+
+  /* Actions sous un message (télécharger .sp, ouvrir dans l'app, replier le code) */
+  .msg-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+  .msg-actions .btn { height: 30px; padding: 0 12px; font-size: 10px; }
+  .msg-actions .btn svg { width: 13px; height: 13px; }
+  .code-collapse { width: 100%; margin-bottom: 4px; }
+  .code-collapse .code-pre {
+    background: var(--bg3, #f0f0f0); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; font-size: 10.5px; line-height: 1.45; color: var(--text);
+    white-space: pre-wrap; word-break: break-word; max-height: 220px; overflow-y: auto;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  /* Thème sombre : code sur fond sombre + texte clair (pas de blanc aveuglant) */
+  body.theme-dark .code-collapse .code-pre {
+    background: #1a1a1a; border-color: #333; color: #d4d4d4;
+  }
+  .code-collapse.collapsed .code-pre { display: none; }
+  .code-toggle { align-self: flex-start; }
+  /* Scrollbar du code : fine et discrète */
+  .code-pre::-webkit-scrollbar { width: 6px; height: 6px; }
+  .code-pre::-webkit-scrollbar-track { background: transparent; }
+  .code-pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .code-pre::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+  .code-pre { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  details.jsonbox pre {
+    background: #0c0e13; border: 1px solid var(--border); border-radius: 0;
+    padding: 10px; overflow: auto; max-height: 260px; font-size: 10px; color: #a9b6d6;
+  }
+
+  /* 🆕 Bandeau de sélection (retravail ciblé) : indique que des éléments de la
+     preview sont sélectionnés et seront les seuls retravaillés par le prochain prompt. */
+  #selectionBar {
+    flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+    padding: 7px 12px; margin: 0 10px 6px;
+    background: rgba(26,127,55,.10); border: 1px solid rgba(26,127,55,.35);
+    color: var(--text); font-size: 10.5px; line-height: 1.4;
+  }
+  #selectionBar.hidden { display: none; }
+  #selectionBar .sel-clear {
+    margin-left: auto; flex-shrink: 0; cursor: pointer; background: transparent;
+    border: 1px solid var(--border); color: var(--muted); padding: 2px 8px; font-size: 10px;
+    text-transform: uppercase; letter-spacing: .3px;
+  }
+  #selectionBar .sel-clear:hover { color: #d32f2f; border-color: #d32f2f; }
+
+  /* ─────────── Boîte de prompt + pièces jointes ─────────── */
+  #composer { flex-shrink: 0; padding: 10px 12px 12px; border-top: 1px solid var(--border); }
+  /* ══ ⚠️ _SP_STUDIO_ICONES_592 — LES PRÉ-PROMPTS EN UNE SEULE RANGÉE « SWIPE » ══
+     Demande utilisateur : « je souhaite avoir les prompts en swipe pour prendre moins de
+     hauteur, au-dessus de la barre de prompt ». Mesure avant : dix pastilles se repliaient
+     sur TROIS à QUATRE rangées (environ 70 px de haut) au-dessus de la boîte de prompt.
+     Maintenant : UNE rangée, défilement horizontal (molette à la souris, glisser au doigt),
+     barre de défilement invisible, et une ombre sur le bord droit qui dit qu'il reste des
+     pastilles. L'ordre et le libellé des pastilles ne changent pas. */
+  .quickchips {
+    display: flex; flex-wrap: nowrap; gap: 4px; margin-bottom: 6px;
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none; padding-bottom: 2px;
+    --sp-rail-fade: 18px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--sp-rail-fade)), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--sp-rail-fade)), transparent 100%);
+  }
+  .quickchips::-webkit-scrollbar { display: none; }
+  .quickchips.sp-rail-fin {
+    -webkit-mask-image: none; mask-image: none;
+  }
+  .quickchips.sp-glisse { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+  .chip {
+    flex: 0 0 auto; white-space: nowrap; scroll-snap-align: start;
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 0; padding: 3px 8px; cursor: pointer; font-size: 8.5px; letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .chip:hover { color: var(--text); border-color: var(--accent); }
+
+  /* 🆕 v1.7.580ff — BOUTON PAGE SIMPLE / DOUBLE PAGE de la boîte de prompt.
+     Demandé « à droite du clavier », avec une icône single ou spread. Le réglage
+     appartient à la CONVERSATION (voir spBasculerModeAffichage). */
+  /* ⚠️ _SP_STUDIO_ROCK610 — même icône que la pré-home : TOUJOURS une double page, le
+     feuillet de droite délavé en page simple et plein en double page. */
+  #viewModeBtn .ic .pg2 { opacity: .3; }
+  #viewModeBtn.mode-spread .ic .pg2 { opacity: 1; }
+  /* 🆕 v1.7.580gg — SANS CADRE GRIS : uniquement l'icône (demande utilisateur). */
+  #viewModeBtn, #imgBtn {
+    flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%;
+    background: transparent; border-color: transparent; color: var(--muted);
+  }
+  #viewModeBtn:hover, #imgBtn:hover { background: var(--btn-hover); border-color: transparent; color: var(--text); }
+  /* ⚠️ _SP_STUDIO_ICONES_592 — MÊME FOND GRIS QUE LA PRÉ-HOME quand c'est allumé (l'encre d'accent
+     faisait un second graphisme pour le même état). Les Réglages ouverts prennent ce fond
+     elles aussi : un seul signal pour « c'est actif ». */
+  #viewModeBtn.mode-spread, #imgBtn.on, #reglagesBtn[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--text) 12%, transparent); border-color: transparent; color: var(--text);
+  }
+  #viewModeBtn.mode-spread:hover, #imgBtn.on:hover { background: color-mix(in srgb, var(--text) 16%, transparent); }
+  #viewModeBtn .ic { width: 17px; height: 17px; }
+
+  /* Attach bar (pièces jointes) */
+  #attachBar {
+    display: none; flex-wrap: wrap; gap: 6px; padding: 6px 0;
+    margin-bottom: 6px; border-bottom: 1px dashed var(--border);
+  }
+  #attachBar.visible { display: flex; }
+  /* 🆕 v1.7.580gg — PAS DE CADRE GRIS : la pastille se lit à son fond teinté.
+     L'icône reste EN PREMIER et s'aligne sur la première ligne (le nom). */
+  .attach-chip {
+    display: inline-flex; align-items: flex-start; gap: 6px;
+    background: var(--attach-bg); border: 1px solid transparent;
+    padding: 4px 8px; font-size: 10px; color: var(--text); max-width: 230px;
+  }
+  .attach-chip > .ic, .attach-chip > svg { margin-top: 1px; }
+  /* 🆕 v1.7.580ff — DEUX LIGNES : le nom, puis le type (ou la dimension) DESSOUS.
+     Côte à côte, il n'y avait pas la place : le nom était sacrifié. */
+  .attach-chip .txt { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+  .attach-chip .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .attach-chip .type { color: var(--muted); font-size: 9px; text-transform: uppercase; }
+  .attach-chip .rm {
+    background: transparent; border: none; color: var(--muted); cursor: pointer;
+    width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px; padding: 0;
+  }
+  .attach-chip .rm:hover { color: #d32f2f; }
+  /* 🆕 v1.7.420 — BADGE DE RÔLE de la pièce jointe (cliquable pour changer) */
+  .attach-chip .mode { font-size: 9px; letter-spacing: .4px; text-transform: uppercase; padding: 1px 5px;
+    border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-family: inherit; }
+  .attach-chip .mode:hover { border-color: #999; color: var(--text); }
+  .attach-chip .mode.mode-content { color: #1a7f37; border-color: #1a7f37; }
+  .attach-chip .mode.mode-template { color: #8a6d00; border-color: #8a6d00; }
+  .attach-chip .mode.mode-context { color: var(--muted); }
+  /* 🆕 v1.7.420 — POP-IN de choix du rôle (à l'import d'une PJ) */
+  .pj-overlay { position: fixed; inset: 0; z-index: 130; display: flex; align-items: center; justify-content: center; padding: 3vh 3vw; background: rgba(12,12,12,.42); }
+  /* 🆕 v1.7.582 — DÉPÔT DE FICHIERS (glisser-déposer depuis le bureau) : un cadre
+     visible sur TOUT l'écran, donc aussi sur la préhome et sur la boîte de prompt.
+     Au-dessus de l'écran de démarrage (z 120) et des pop-in (z 130). */
+  #spDepot {
+    position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--bg, #fff) 72%, transparent); backdrop-filter: blur(2px);
+    pointer-events: none;
+  }
+  #spDepot.on { display: flex; }
+  #spDepot .cadre {
+    border: 2px dashed var(--accent, #2f6fed); border-radius: 14px;
+    padding: 34px 48px; text-align: center; background: var(--panel, #fff);
+    box-shadow: 0 10px 34px var(--shadow, rgba(0,0,0,.18)); color: var(--text, #111);
+    font-size: 15px; font-weight: 600; max-width: 78vw;
+  }
+  #spDepot .cadre small { display: block; margin-top: 8px; font-weight: 400; opacity: .72; font-size: 12px; }
+  body.theme-dark .pj-overlay { background: rgba(0,0,0,.6); }
+  .pj-overlay.hidden { display: none; }
+  .pj-card { width: min(680px, 96vw); max-height: 92vh; overflow: auto; background: var(--panel); border: 1px solid var(--border); box-shadow: 0 30px 90px var(--shadow); }
+  .pj-head { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .pj-title { display: block; font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+  .pj-sub { display: block; margin-top: 6px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+  /* 🆕 v1.7.422 — TROIS COLONNES sur laptop/desktop, cascade sur mobile/tablette. */
+  .pj-opts { padding: 12px 18px 4px; display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .pj-opt { display: flex; gap: 10px; align-items: flex-start; padding: 11px 12px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; text-align: left; font-family: inherit; height: 100%; box-sizing: border-box; }
+  .pj-opt:hover { background: var(--btn-hover); }
+  .pj-opt.on { border-color: var(--btn-active); background: var(--btn-hover); }
+  .pj-opt .pj-ico { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+  .pj-opt .pj-ico svg { width: 22px; height: 22px; }
+  .pj-opt.on .pj-ico { color: var(--text); }
+  .pj-opt .pt { display: block; font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; }
+  .pj-opt .pd { display: block; margin-top: 4px; font-size: 11px; color: var(--muted); line-height: 1.45; }
+  .pj-opt .pk { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: var(--muted); margin-top: 4px; }
+  @media (min-width: 721px) {
+    .pj-opts { grid-template-columns: repeat(3, 1fr); gap: 12px; align-items: stretch; }
+    .pj-opt { flex-direction: column; gap: 8px; padding: 14px 14px 16px; }
+    .pj-opt .pj-ico svg { width: 30px; height: 30px; }
+  }
+  .pj-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 18px 16px; }
+
+  /* 🆕 v1.7.386 — le champ occupe TOUTE la largeur, la barre d'actions passe
+     DESSOUS (avant : colonne de 72 px collee a droite, boutons eparpilles). */
+  #composerBox { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+  /* Wrapper du prompt : contient le textarea + un placeholder overlay aligné au
+     MÊME endroit que le texte tapé (même padding-top, même line-height) pour que
+     curseur et placeholder coïncident parfaitement. */
+  /* 🆕 v1.7.386 — 3 lignes minimum (90 px = 3 x 21 + 24 de padding + bordure).
+     L'auto-agrandissement JS fait grandir jusqu'a 8 lignes, puis defilement. */
+  .prompt-wrap {
+    width: 100%; min-width: 0; position: relative; min-height: 90px; max-height: 194px;
+    display: flex;
+  }
+  /* Boîte de prompt : LES QUATRE COINS arrondis au MÊME rayon (5 px max),
+     assez haute (3 lignes par défaut), transparente pour laisser voir le
+     placeholder overlay quand le champ est vide.
+     🆕 _SP_STUDIO_PROMPT_577 — retour utilisateur : « la boîte de prompt doit
+     avoir les mêmes 4 angles ; actuellement seuls les coins du bas sont
+     visibles et pas ceux du haut ». Le rayon reste PLAFONNÉ à 5 px (identité
+     anguleuse de SuperPrint) mais s'applique aux QUATRE coins
+     (avant : border-radius: 0 0 5px 5px — deux coins bas seulement). */
+  #promptInput {
+    flex: 1; resize: none; min-height: 90px; max-height: 194px; width: 100%;
+    background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 5px;
+    color: var(--text); padding: 12px 14px; font-size: 14px; line-height: 1.5; overflow-y: auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  #promptInput:focus { outline: none; border-color: var(--accent); }
+  /* ══ _SP_STUDIO_PROMPT_584 — PLUS DE DOUBLE TEXTE DANS LA BOÎTE DE PROMPT ══
+     Retour utilisateur : « dans la boîte de prompt, parfois j'ai deux textes qui se
+     mélangent, du coup c'est illisible ». Cause mesurée : l'ANCIEN placeholder était
+     un calque HTML (#promptPh) SUPERPOSÉ au textarea ; il n'était masqué que par la
+     classe .has-text, posée uniquement par l'événement « input ». Or plusieurs
+     chemins posent le texte SANS émettre « input » (envoi depuis l'écran de démarrage,
+     restauration, dictée) : le calque restait alors visible PAR-DESSUS le texte tapé.
+     Correctif : on n'utilise PLUS le calque — le placeholder NATIF du textarea (aligné
+     par le navigateur, donc toujours juste) et il n'existe plus deux textes possibles. */
+  .prompt-ph { display: none !important; }
+  #promptInput::placeholder { color: var(--muted); opacity: 1; }
+  #promptInput:focus { outline: none; border-color: var(--accent); }
+  /* Scrollbar de la boîte de prompte : INVISIBLE (scroll à la molette) pour ne
+     pas gêner la saisie. Elle n'apparaît que si le texte dépasse (survol). */
+  #promptInput::-webkit-scrollbar { width: 6px; }
+  #promptInput::-webkit-scrollbar-track { background: transparent; }
+  #promptInput::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; }
+  #promptInput:hover::-webkit-scrollbar-thumb { background: var(--border); }
+  #promptInput::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+  #promptInput { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+  #promptInput:hover { scrollbar-color: var(--border) transparent; }
+  /* 🆕 v1.7.386 — barre d'actions HORIZONTALE sous le champ :
+     [ 📎  🌐  🎤 ] ......... [ Envoyer ]   (Envoyer pousse a droite) */
+  #composerActions { display: flex; flex-direction: row; gap: 8px; align-items: center; }
+  #attachRow { display: flex; gap: 8px; align-items: center; flex: 0 0 auto; }
+  /* ⚠️ margin-left:auto doit etre sur l'ENFANT DIRECT du flex (le .tip-wrap),
+     pas sur le bouton : un margin sur un petit-fils ne pousse rien. */
+  #composerActions > .tip-wrap:last-child { margin-left: auto; }
+  /* Bouton Envoyer : étiré jusqu'au bas (aligné avec le micro) */
+  /* 🆕 v1.7.386 — pousse a droite par margin-left:auto (au lieu d'un flex:1
+     qui l'etirait sous les icones). Largeur minimale pour rester lisible. */
+  #sendBtn {
+    flex: 0 0 auto; width: 34px; height: 34px; min-width: 0; min-height: 0; margin-left: auto; padding: 0; border-radius: 50%; border: none;
+    background: var(--accent); color: var(--btn-active-text); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+  }
+  #sendBtn:hover:not(:disabled) { background: var(--accent-hover); }
+  #sendBtn:active:not(:disabled) { transform: scale(0.92); }
+  #sendBtn:disabled { opacity: .35; cursor: not-allowed; }
+
+  /* v1.7.394 — Retour utilisateur : « je trouve pas assez fort visuellement quand
+     c'est un retravail par zone ». Le cadre du bloc passe en ambre et la barre
+     d'information #selectionBar est renforcee (bord gauche epais + graisse). */
+  #selectionBar { border-left-width: 4px !important; font-weight: 600; letter-spacing: .2px; }
+  /* ⚠️ _SP_STUDIO_ICONES_592b — RONDS, PAS CARRÉS (demande utilisateur) : « des fonds tous
+     identiques sous les icônes pour dire actif / inactif, plutôt arrondi que carré ».
+     La pièce jointe, l'image, les réglages et le micro partagent donc la MÊME forme et
+     le MÊME fond que les icônes à bascule de la même rangée. (Commentaire d'origine :
+     boutons pièce jointe + micro compacts, à droite de la zone de saisie.) */
+  /* 🆕 v1.7.386 — 30 px (au lieu de 20) : vraie cible de clic, icone 14 px. */
+  /* 🆕 v1.7.606 — les actions (image web, micro) sont de simples icônes
+     sans bordure.
+     🆕 _SP_STUDIO_DESIGN_575 — la PIÈCE JOINTE perd son filet à son tour :
+     retour utilisateur « ne met pas de filet qui entoure l'icône (trombone) en
+     bas à droite sous la prompt box ». Le contour était le DERNIER cadre de la
+     barre d'actions et il attirait l'œil sur une action secondaire. La bordure
+     reste DÉCLARÉE transparente (1px) pour que la taille du bouton et
+     l'alignement des quatre icônes ne bougent pas d'un pixel. */
+  #attachBtn, #micBtn, #webImgBtn, #reglagesBtn, #imgBtn, #viewModeBtn {
+    flex-shrink: 0; width: 30px; height: 30px; padding: 0; border-radius: 50%;
+    border: 1px solid transparent; background: transparent; color: var(--text); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  #attachBtn .ic, #micBtn .ic, #webImgBtn .ic, #reglagesBtn .ic { width: 14px; height: 14px; }
+  #attachBtn:hover, #micBtn:hover, #webImgBtn:hover, #reglagesBtn:hover { background: var(--btn-hover); }
+  #micBtn:disabled { opacity: .4; cursor: not-allowed; }
+  #micBtn.listening { background: #ef4444; color: #fff; }
+  #micBtn.listening .ic { animation: micPulse 1s infinite; }
+  @keyframes micPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+  #webImgBtn.offline { opacity: .35; pointer-events: none; }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     _SP_STUDIO_REGLAGES_586 — POP-IN « RÉGLAGES » (refactorisation EN DIRECT)
+     Demande utilisateur : « mets réglages à la place de l'image web, un pop-in de
+     refactorisation/random du document en cours, des tirettes pour le design, les
+     typographies, les styles, les tailles, les couleurs, la possibilité de changer
+     de format (mm, cm…), et que ça recouvre toute la conversation pour laisser la
+     place au réglage dynamique ; une fois validé, la colonne de droite revient ».
+     DA SuperPrint : angles droits, libellés en mono, accent de l'interface.
+     ══════════════════════════════════════════════════════════════════════ */
+  #spReg { position: fixed; z-index: 140; display: flex; flex-direction: column;
+    background: var(--panel); border-left: 1px solid var(--border);
+    box-shadow: -24px 0 60px var(--shadow); }
+  #spReg.hidden { display: none; }
+  .rg-head { flex-shrink: 0; padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .rg-head .rg-t { font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+  .rg-head .rg-s { font-size: 10px; color: var(--muted); line-height: 1.45; margin-top: 3px; }
+  .rg-close { margin-left: auto; width: 28px; height: 28px; flex: 0 0 auto; border: 1px solid var(--border); background: transparent;
+    color: var(--text); cursor: pointer; font-size: 13px; line-height: 1; }
+  .rg-close:hover { background: var(--btn-hover); }
+  .rg-body { flex: 1 1 auto; overflow-y: auto; padding: 14px 14px 20px; display: flex; flex-direction: column; gap: 14px; }
+  .rg-sec { border: 1px solid var(--border); padding: 11px 12px 13px; }
+  .rg-sec > h4 { font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; font-weight: 700; }
+  .rg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .rg-row:last-child { margin-bottom: 0; }
+  .rg-row > label { flex: 0 0 92px; font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+  .rg-row input[type=range] { flex: 1 1 auto; min-width: 0; accent-color: var(--accent); }
+  .rg-row .rg-v { flex: 0 0 62px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; }
+  .rg-row input[type=number], .rg-row input[type=text], .rg-row select {
+    flex: 1 1 auto; min-width: 0; height: 28px; background: var(--input-bg); border: 1px solid var(--input-border);
+    color: var(--text); font-size: 11px; padding: 0 6px; font-family: inherit; }
+  .rg-row input[type=color] { flex: 0 0 42px; height: 28px; padding: 0; border: 1px solid var(--input-border); background: var(--input-bg); }
+  /* _SP_STUDIO_REGLAGES_586 — MISE EN PAGE COMPACTE : deux mini-tirettes par ligne et
+     pastilles pour les choix courts (demande utilisateur : « condense un peu cette
+     partie, on prend trop en hauteur »). */
+  .rg-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+  .rg-mini { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .rg-mini > span { font-size: 9.5px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+  .rg-mini .rg-line { display: flex; align-items: center; gap: 6px; }
+  .rg-mini input[type=range] { flex: 1 1 auto; min-width: 0; accent-color: var(--accent); }
+  .rg-mini .rg-v { flex: 0 0 auto; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; min-width: 40px; text-align: right; font-weight: 400; }
+  .rg-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rg-chip { font-size: 10px; letter-spacing: .4px; padding: 5px 8px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); cursor: pointer; text-transform: uppercase; font-family: inherit; border-radius: 0; }
+  .rg-chip:hover { background: var(--btn-hover); }
+  .rg-chip.on { background: var(--accent); color: var(--btn-active-text); border-color: var(--accent); }
+  .rg-row input[type=checkbox] { accent-color: var(--accent); }
+  .rg-2 { display: flex; gap: 8px; align-items: center; }
+  .rg-note { font-size: 10px; color: var(--muted); line-height: 1.5; margin-top: 6px; }
+  .rg-foot { flex-shrink: 0; border-top: 1px solid var(--border); padding: 10px 12px; display: flex; gap: 8px; align-items: center; }
+  .rg-foot .btn { height: 32px; }
+  .rg-busy { font-size: 10px; color: var(--muted); margin-right: auto; font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  @media (max-width: 720px) {
+    #spReg { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; border-left: none; }
+  }
+
+  /* ── Modale image web (picsum) ── */
+  .webimg-modal {
+    position: fixed; inset: 0; z-index: 90; display: flex;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(2px);
+  }
+  .webimg-modal.hidden { display: none; }
+  .webimg-card {
+    width: min(460px, 92vw); background: var(--panel); border: 1px solid var(--border);
+    border-radius: 0; box-shadow: 0 30px 80px var(--shadow);
+    display: flex; flex-direction: column; max-height: 92vh;
+  }
+  .webimg-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  }
+  .webimg-close {
+    background: transparent; border: none; color: var(--muted); cursor: pointer;
+    width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .webimg-close:hover { color: var(--text); }
+  .webimg-close svg { width: 14px; height: 14px; }
+  .webimg-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+  .webimg-field { display: flex; flex-direction: column; gap: 4px; }
+  .webimg-field label { font-size: 10px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); }
+  .webimg-field input, .webimg-field select {
+    height: 30px; background: var(--input-bg); color: var(--text);
+    border: 1px solid var(--input-border); font-family: inherit; font-size: 12px;
+    padding: 0 8px; border-radius: 0;
+  }
+  .webimg-row { display: flex; gap: 12px; }
+  .webimg-row .webimg-field { flex: 1; }
+  .webimg-preview {
+    height: 150px; background: var(--panel2); border: 1px dashed var(--border);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: relative; color: var(--muted); font-size: 11px;
+  }
+  .webimg-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .webimg-actions { display: flex; gap: 8px; }
+  .webimg-actions .btn { flex: 1; justify-content: center; }
+  .webimg-hint { font-size: 10px; color: var(--muted); line-height: 1.5; }
+
+  .typing { display: inline-flex; gap: 4px; align-items: center; padding: 6px 2px; }
+  .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: .2s; }
+  .typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100% { opacity:.25; } 40% { opacity:1; } }
+  .generation-msg { width: min(100%, 440px); max-width: 100%; }
+  .generation-msg .bubble { width: 100%; padding: 11px 12px; }
+  .generation-loader { display: flex; flex-direction: column; gap: 7px; min-width: 240px; }
+  .generation-loader-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .generation-loader-title { font-size: 11px; font-weight: 700; color: var(--text); }
+  .generation-loader-step { font-size: 9px; color: var(--muted); text-align: right; }
+  .generation-loader-track { position: relative; height: 4px; overflow: hidden; background: var(--panel2); border: 1px solid var(--border); }
+  .generation-loader-track span { position: absolute; inset-block: 0; width: 38%; background: var(--accent); animation: generationSlide 1.35s ease-in-out infinite; }
+  .generation-loader-note { font-size: 9px; line-height: 1.4; color: var(--muted); }
+  @keyframes generationSlide { 0% { left: -40%; } 55% { left: 58%; } 100% { left: 102%; } }
+  @media (prefers-reduced-motion: reduce) { .generation-loader-track span { animation-duration: 3s; } }
+
+  /* 🆕 Loader typo : indique le chargement des polices dans la conversation */
+  .typo-loader { display: flex; align-items: center; gap: 8px; }
+  .typo-loader-label { font-size: 11px; color: var(--muted); letter-spacing: .2px; }
+
+  /* 🆕 v1.7.580mm — CHARGEMENT D'UN MODÈLE LOCAL. Demande utilisateur : « met le
+     loader AU-DESSUS du traitement Loading local model… 61 % » et « pas d'emoji à
+     la fin du load ». La barre de progression est donc le premier élément du bloc,
+     le pourcentage vient en dessous, et la fin du chargement s'annonce en clair. */
+  .model-loader { display: flex; flex-direction: column; gap: 7px; min-width: 200px; max-width: 100%; }
+  .model-loader-track { display: block; height: 4px; border-radius: 2px; overflow: hidden; background: var(--panel2); }
+  .model-loader-track i { display: block; height: 100%; width: 0; border-radius: 2px; background: var(--accent); transition: width .3s ease; }
+  .model-loader-label { font-size: 11px; color: var(--muted); letter-spacing: .2px; }
+
+  /* 🆕 État actif des boutons de toolbar (grille, repères…) */
+  .icon-btn-sm.active { background: var(--btn-hover); border-color: #999; color: var(--accent); }
+  .icon-btn-sm.active .ic { color: var(--accent); }
+
+  /* 🆕 v1.7.580mm — champ de clé à saisir (mis en avant quand les réglages s'ouvrent
+     d'eux-mêmes parce que le moteur choisi n'a pas encore sa clé). */
+  .cle-a-saisir { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  .zoom-wrap { display: flex; align-items: center; gap: 2px; }
+  .zoom-wrap select { height: 28px; background: var(--input-bg); color: var(--text); border: 1px solid var(--input-border); font-family: inherit; font-size: 11px; padding: 0 4px; border-radius: 0; }
+
+  #mobileDock { display: none; }
+
+  @media (max-width: 900px) {
+    #studio { height: 100dvh; min-height: 0; }
+    #topbar { display: none !important; }
+    #split { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+    #splitHandle { display: none; }
+    #previewPane, #chatPane { position: absolute; inset: 0; width: 100%; min-width: 0; max-width: none; display: none; }
+    body.mobile-view-preview #previewPane { display: flex; }
+    body.mobile-view-chat #chatPane { display: flex; }
+    #previewPane { background: var(--bg-workspace); border: 0; }
+    #previewToolbar { min-height: 46px; padding: 8px; overflow-x: auto; overflow-y: hidden; }
+    #previewToolbar > span:first-child { position: sticky; left: 0; background: var(--panel); padding-right: 8px; z-index: 1; }
+    #previewToolbar .zoom-wrap { min-width: max-content; margin-right: 0 !important; }
+    #previewScroll { padding: 16px 12px; overscroll-behavior: contain; }
+    /* 🎨 MOBILE UNIQUEMENT : la barre qui soutient « Ouvrir dans SuperPrint » est
+       BLANCHE — le fond du pied était TRANSPARENT, donc on voyait le gris de
+       l'espace de travail (#e8e8e8) derrière le bouton. On reprend exactement la
+       couleur du canevas (#ffffff clair / #1a1a1a sombre) pour que la barre et la
+       zone des pages se lisent d'un seul tenant. */
+    #previewFooter { padding: 7px 10px; min-height: 54px; background: #ffffff; }
+    body.theme-dark #previewFooter { background: #1a1a1a; }
+    .btn-open-sp { width: 100%; max-width: 320px; min-height: 40px; }
+    #chatPane { background: var(--panel); }
+    #chatHead { min-height: 44px; padding: 8px 12px; }
+    #chatTitle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #modelLabel { max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #convTabs { min-height: 40px; padding: 5px 8px; }
+    .conv-tab { min-height: 30px; }
+    #chatLog { padding: 12px; overscroll-behavior: contain; }
+    #selectionBar { margin: 0 8px 6px; }
+    #composer { padding: 8px 10px max(10px, env(safe-area-inset-bottom)); background: var(--panel); }
+    .quickchips { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; padding-bottom: 4px; scrollbar-width: none; }
+    .quickchips::-webkit-scrollbar { display: none; }
+    .chip { flex: 0 0 auto; min-height: 30px; padding: 5px 9px; }
+    #attachBar.visible { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+    #attachBar .attach-chip { flex: 0 0 auto; max-width: min(260px, 76vw); }
+    #composerBox { width: 100%; flex-direction: column; gap: 8px; }
+    /* 🆕 v1.7.386 — 96 px = 3 lignes a 16 px (evite aussi le zoom auto sur iOS). */
+    .prompt-wrap { width: 100%; min-width: 0; }
+    .prompt-wrap, #promptInput { min-height: 96px; max-height: 220px; }
+    #promptInput { font-size: 16px; padding: 11px 12px; }
+    .prompt-ph { left: 12px; right: 12px; padding-top: 11px; font-size: 13px; }
+    #composerActions { width: 100%; display: flex; flex-direction: row; gap: 8px; align-items: center; }
+    #composerActions > .tip-wrap { display: flex; flex: 0 0 auto; }
+    #composerActions > .tip-wrap:last-child { flex: 1; min-width: 0; margin-left: auto; }
+    #attachRow { flex: 0 0 auto; }
+    #attachBtn, #micBtn, #webImgBtn, #viewModeBtn { width: 42px; height: 42px; }
+    #attachBtn .ic, #micBtn .ic, #webImgBtn .ic, #viewModeBtn .ic { width: 17px; height: 17px; }
+    /* 🆕 v1.7.580y — le bouton Envoyer était ÉTIRÉ sur mobile : « width: 100% »
+       sur 42 px de haut, avec border-radius: 50%, donnait un OVALE (≈ 150 × 42).
+       Retour utilisateur du 28/09 : « il ne garde pas sa forme ronde ». Il reste
+       maintenant ROND (42 × 42, vraie cible tactile) et poussé à droite. */
+    #sendBtn {
+      flex: 0 0 42px; width: 42px; min-width: 42px; max-width: 42px;
+      height: 42px; min-height: 42px; max-height: 42px;
+      margin-left: auto; padding: 0; border-radius: 50%;
+    }
+    .msg { max-width: 96%; }
+    .bubble { font-size: 14px; }
+    .tip-wrap .tip { display: none !important; }
+    button, select, textarea, input { touch-action: manipulation; }
+    /* ══ 🆕 v1.7.582 — PRÉ-HOME MOBILE : LA DISPOSITION DE DEEPSEEK ═════════════════
+       Retour utilisateur : « en mobile tout remonte vers le haut comme s'il voulait
+       laisser place au clavier ouvert, c'est étrange ». MESURÉ sur un téléphone
+       390 × 844 : logo 60→132 px, boîte 148→293, exemples 317→370, pied 388→426 — et
+       418 px de vide SOUS le pied. Tout était donc tassé en haut de l'écran.
+       On reprend la disposition des assistants modernes (DeepSeek) : le titre respire
+       en haut, la BOÎTE DE PROMPT et ses suggestions sont ANCRÉES EN BAS (là où le
+       pouce arrive), et le vide reste au milieu. Le clavier ne déplace plus rien :
+       la boîte est le dernier bloc, le navigateur la remonte juste au-dessus du
+       clavier quand on écrit. */
+    /* ══ 🆕 v1.7.590 — LE GROUPE EST « POSÉ », PLUS COLLÉ AUX DEUX BORDS ══════════
+       Retour utilisateur : « c'est super étrange d'avoir le nom Studio IA plaqué en
+       haut, je ne suis pas fan, et le form prompt écrasé en bas ». MESURÉ (390 × 844)
+       sur la version précédente : logotype 48 → 72 px, TROU de 455 px au milieu, carte
+       572 → 738, pied 798 → 830 : 14 px seulement sous le pied.
+       ASTUCE : le logotype quitte le haut de l'écran et vient se POSER juste au-dessus
+       de la carte — titre + carte + suggestions + pied ne font plus qu'UN SEUL groupe.
+       L'air est réparti par DEUX RESSORTS (::before / ::after, qui sont des éléments du
+       flex) : 2 parts au-dessus, 1 en dessous → le groupe tombe dans le bas du milieu
+       d'écran, là où le pouce arrive, avec une vraie respiration sous le pied.
+       · justify-content: flex-start (et non center) : si le contenu dépasse l'écran, il
+         part du HAUT et reste donc toujours atteignable (un centrage coupe le haut).
+       · flex: 0 0 auto : sur un écran très court, les blocs seraient comprimés sinon.
+       · clavier ouvert (:has(#starterInput:focus)) : le ressort du bas grossit, le
+         groupe monte tout seul au-dessus du clavier — aucun JS, aucun écouteur. */
+    #starter {
+      padding: calc(20px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));
+      justify-content: flex-start;
+      scroll-padding-bottom: 42vh;
+      overscroll-behavior: contain;
+    }
+    #starter::before, #starter::after { content: ''; flex: 1 1 0; min-height: 0; }
+    #starter::before { flex-grow: 2; }
+    #starter .st-head, #starter .st-wrap, #starter .st-pjlist,
+    #starter .st-ex, #starter .st-foot { flex: 0 0 auto; }
+    #starter .st-head { margin: 0 0 20px; padding-top: 0; }   /* le titre se pose au-dessus de la carte */
+    #starter:has(#starterInput:focus)::after { flex-grow: 3; }   /* clavier ouvert : le groupe monte */
+    #starter .st-logo { font-size: 21px; }
+    #starter .st-tag { margin-top: 9px; font-size: 12px; }
+    #starter .st-card { border-radius: 18px; }
+    /* Le champ était plus court que son propre texte d'exemple : mesuré 98 px de
+       haut pour un texte de 115 px → les 4 lignes du texte d'exemple étaient coupées
+       et une barre de défilement apparaissait dans le champ à vide (retour utilisateur :
+       « le form prompt écrasé »). En portrait le texte passe de 2 lignes (ordinateur) à
+       4 lignes (téléphone) : la hauteur suit maintenant : 4 lignes (1,6 em) + les marges. */
+    #starter textarea {
+      min-height: calc(4 * 1.6em + 18px); max-height: 30vh;
+      font-size: 15.5px; padding: 14px 16px 2px;
+    }
+    #starter .st-actions { padding: 2px 6px 7px 8px; gap: 0; }
+    #starter .st-modelbtn { max-width: 46%; height: 30px; font-size: 11.5px; }
+    /* Suggestions : UNE seule ligne qui glisse au doigt (au lieu de trois lignes qui
+       mangeaient la hauteur) — même geste que les pastilles de DeepSeek. */
+    #starter .st-ex {
+      margin-top: 10px; flex-wrap: nowrap; justify-content: flex-start;
+      overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+      -webkit-overflow-scrolling: touch; padding-bottom: 2px;
+    }
+    #starter .st-ex::-webkit-scrollbar { display: none; }
+    #starter .st-ex button { flex: 0 0 auto; padding: 6px 10px; font-size: 11px; }
+    #starter .st-pjlist { width: 100%; margin-top: 8px; }
+    #starter .st-foot { margin-top: 12px; font-size: 9.5px; line-height: 1.7; }
+    #starter .st-theme, #starter .st-skip { top: calc(8px + env(safe-area-inset-top)); }
+    #starter .st-ombre { filter: blur(18px); opacity: .72; left: 14px; right: 14px; }
+  }
+  /* Téléphones COUCHÉS (hauteur très courte) : on serre encore pour que la boîte et
+     les suggestions tiennent sans ascenseur. */
+  @media (max-width: 720px) and (max-height: 520px) {
+    #starter .st-tag { display: none; }
+    #starter textarea { min-height: 46px; }
+    #starter .st-ex { margin-top: 6px; }
+    #starter .st-foot { margin-top: 6px; }
+  }
+  @media (max-width: 720px) {
+    #mobileDock {
+      flex: 0 0 calc(62px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+      padding: 5px 5px max(5px, env(safe-area-inset-bottom)); gap: 2px; background: var(--panel);
+      border-top: 1px solid var(--border); box-shadow: 0 -8px 24px rgba(0,0,0,.08); z-index: 70;
+    }
+    .mobile-dock-btn {
+      min-width: 0; border: 0; background: transparent; color: var(--muted); cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      font: 700 9px/1 'IBM Plex Mono', monospace; text-transform: uppercase;
+    }
+    .mobile-dock-btn .ic { width: 19px; height: 19px; }
+    .mobile-dock-btn.active { color: var(--text); background: var(--btn-hover); }
+    .mobile-dock-btn:active { transform: translateY(1px); }
+  }
+
+  /* Scrollbars — même style que SuperPrint (4px, pouce #ccc) */
+  /* 🆕 v1.7.581 — LE PANNEAU DES RÉGLAGES PORTE LE MÊME ASCENSEUR QUE LA PRÉVIEW
+     (demande utilisateur : « la scrollbar n'est pas la même que celle de la preview
+     dans ce nouvel espace, c'est dommage »). On ajoute simplement son corps à la
+     MÊME règle : largeur, piste et pouce sont donc rigoureusement identiques. */
+  #previewScroll::-webkit-scrollbar,
+  #chatLog::-webkit-scrollbar,
+  #spReg .rg-body::-webkit-scrollbar,
+  #welcome::-webkit-scrollbar {
+    width: 4px; height: 4px;
+  }
+  #previewScroll::-webkit-scrollbar-track,
+  #chatLog::-webkit-scrollbar-track,
+  #spReg .rg-body::-webkit-scrollbar-track,
+  #welcome::-webkit-scrollbar-track {
+    background: var(--bg-workspace);
+  }
+  #previewScroll::-webkit-scrollbar-thumb,
+  #chatLog::-webkit-scrollbar-thumb,
+  #spReg .rg-body::-webkit-scrollbar-thumb,
+  #welcome::-webkit-scrollbar-thumb {
+    background: #ccc; border-radius: 2px;
+  }
+  #previewScroll::-webkit-scrollbar-thumb:hover,
+  #chatLog::-webkit-scrollbar-thumb:hover,
+  #spReg .rg-body::-webkit-scrollbar-thumb:hover,
+  #welcome::-webkit-scrollbar-thumb:hover { background: #999; }
+
+  /* ═══ 🆕 v1.7.580 · _SP_STUDIO_PREFS_580 ════════════════════════════════════════
+     ÉCRAN DES PRÉFÉRENCES : MÊME QUALITÉ QUE L'ÉCRAN DE DÉMARRAGE.
+     Demande utilisateur : « la pop-in des préférences n'est pas assez qualitative,
+     regarde la qualité de la pré-home pour les champs et les sous-menus ». On reprend
+     donc EXACTEMENT les valeurs de la pré-home : carte à coins arrondis (16 px), ombre
+     douce en deux couches, champs à 10 px de rayon sur un fond très légèrement teinté
+     de l'encre, micro-libellés en monospace espacé. AUCUNE logique ne change : mêmes
+     identifiants, mêmes champs, mêmes libellés — uniquement l'aspect.
+     ═══════════════════════════════════════════════════════════════════════════════ */
+  #welcome .welcome-inner { width: min(900px, 100%); }
+  #welcome .welcome-brand { margin-bottom: 20px; }
+  #welcome .welcome-brand .logo img { width: 56px; height: 56px; background: transparent; }
+  #welcome .welcome-brand h1 {
+    font-size: clamp(20px, 2.6vmin, 24px); font-weight: 500;
+    letter-spacing: .28em; text-indent: .28em;
+  }
+  #welcome .welcome-brand .sub {
+    margin-top: 10px; font: 500 10px/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
+  }
+  #welcome .welcome-card {
+    background: var(--panel);
+    border: 1px solid color-mix(in srgb, var(--text) 9%, transparent);
+    border-radius: 16px; padding: 20px 22px 18px;
+    box-shadow: 0 1px 2px var(--shadow), 0 14px 34px color-mix(in srgb, var(--shadow) 60%, transparent);
+  }
+  #welcome .welcome-card p.desc { font-size: 12.5px; line-height: 1.55; margin-bottom: 16px; }
+  #welcome .welcome-close {
+    border-radius: 10px; border-color: transparent;
+  }
+  #welcome .welcome-close:hover {
+    border-color: color-mix(in srgb, var(--text) 14%, transparent);
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+  }
+  #welcome .prefs-grid { gap: 0 26px; }
+  #welcome .form-section {
+    border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+    padding-top: 14px; margin-bottom: 14px;
+  }
+  #welcome .form-section:first-of-type { border-top: none; padding-top: 0; }
+  #welcome .form-section-title {
+    font: 700 9.5px/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: color-mix(in srgb, var(--text) 55%, transparent); margin-bottom: 10px;
+  }
+  #welcome .field { margin-bottom: 12px; }
+  #welcome .field.field-sep {
+    border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); padding-top: 12px;
+  }
+  #welcome .field label {
+    font: 500 9px/1 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px;
+  }
+  #welcome .label-row { margin-bottom: 7px; gap: 7px; }
+  #welcome .field input, #welcome .field select {
+    border-radius: 10px; padding: 9px 11px; font-size: 12.5px; line-height: 1.45;
+    border: 1px solid color-mix(in srgb, var(--text) 13%, transparent);
+    background: color-mix(in srgb, var(--text) 3%, transparent);
+  }
+  #welcome .field input::placeholder { color: color-mix(in srgb, var(--text) 32%, transparent); }
+  #welcome .field input:focus, #welcome .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  #welcome .hint { font-size: 10.5px; line-height: 1.5; margin-top: 6px; }
+  #welcome .ext-links { gap: 6px 14px; margin-top: 7px; }
+  #welcome .ext-links a { font-size: 10px; opacity: 1; }
+  #welcome .row2 { gap: 10px; }
+  #welcome .info-icon {
+    width: 16px; height: 16px; font-size: 10px;
+    border-color: color-mix(in srgb, var(--text) 26%, transparent);
+  }
+  #welcome .info-icon .info-pop {
+    border-radius: 12px; border-color: color-mix(in srgb, var(--text) 12%, transparent);
+    padding: 11px 13px; font-size: 11.5px;
+    box-shadow: 0 10px 30px color-mix(in srgb, var(--shadow) 80%, transparent);
+  }
+  #welcome .info-icon .info-pop::after { border-top-color: color-mix(in srgb, var(--text) 12%, transparent); }
+  #welcome .btn { border-radius: 10px; }
+  #welcome #startBtn { height: 34px; padding: 0 20px; font-size: 10.5px; letter-spacing: .16em; }
+  #welcome .prefs-foot {
+    display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+  }
+
+  /* ═══ 🆕 v1.7.580 — LA CARTE DU MOTEUR CHOISI ═══════════════════════════════════
+     Un seul bloc, juste sous le choix du moteur : il ne montre QUE ce que ce moteur
+     réclame — sa clé s'il en demande une, ses versions s'il y en a plusieurs. Aucun
+     sous-menu à ouvrir, aucun champ inutile qui traîne (demande utilisateur : « ne fais
+     pas forcer de sous-menu pour les modèles… la clé à placer doit être simple et
+     cohérente »). Tant que la clé manque, le bloc est souligné par la couleur d'accent :
+     on voit d'un coup d'œil ce qu'il reste à faire.
+     ═══════════════════════════════════════════════════════════════════════════════ */
+  #welcome .eng-card {
+    margin-top: 6px; padding: 13px 15px 2px; border-radius: 12px;
+    background: color-mix(in srgb, var(--text) 3%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+    transition: border-color .18s;
+  }
+  #welcome .eng-card.att { border-color: color-mix(in srgb, var(--accent) 65%, transparent); }
+  #welcome .eng-card .field.field-sep:first-of-type { border-top: 0; padding-top: 0; }
+  #welcome .eng-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+  #welcome .eng-nom { font-size: 13px; font-weight: 500; }
+  #welcome .eng-pill {
+    font: 600 8.5px/1 'IBM Plex Mono', ui-monospace, monospace; letter-spacing: .14em;
+    text-transform: uppercase; padding: 5px 9px; border-radius: 999px;
+    background: #14151a; color: #fff;
+  }
+  body.theme-dark #welcome .eng-pill { background: #ececf0; color: #14151a; }
+  #welcome .eng-pill.libre {
+    background: transparent; color: var(--muted);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 20%, transparent);
+  }
+  #welcome .eng-pill.att { background: var(--accent); color: var(--btn-active-text); }
+  #welcome .eng-quoi { flex: 1 1 100%; font-size: 11px; line-height: 1.5; color: var(--muted); }
+  #welcome .field input.cle-a-saisir {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+
+  /* ═══ 🆕 v1.7.580 — LA PASTILLE D'USAGE DE LA PRÉ-HOME PASSE AU NOIR ═════════════
+     Demande utilisateur : « dans les sous-menus, ne mets pas de pastille bleue, mets
+     une noire ». C'était un bleu (#1f6feb) posé en style en ligne ; c'est désormais une
+     classe : encre pleine pour « livre complet », contour discret pour « démo ». En
+     thème sombre on inverse (claire sur fond sombre) pour rester lisible.
+     ═══════════════════════════════════════════════════════════════════════════════ */
+  #starter .st-u {
+    display: inline-block; margin-right: 6px; padding: 0 7px; border-radius: 8px;
+    font: 600 8.5px/15px 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: .12em; text-transform: uppercase; vertical-align: 1px;
+  }
+  #starter .st-u-full { background: #14151a; color: #fff; }
+  body.theme-dark #starter .st-u-full { background: #ececf0; color: #14151a; }
+  #starter .st-u-demo {
+    background: transparent; color: var(--muted);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 20%, transparent);
+  }

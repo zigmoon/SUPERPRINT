@@ -1,0 +1,28 @@
+{
+  "name": "superprint",
+  "version": "1.7.609",
+  "private": true,
+  "type": "module",
+  "description": "SuperPrint — logiciel PAO en ligne + Studio IA SP213. Site statique généré par Astro.",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "convert": "node tools/legacy-migration/convert.mjs",
+    "verify": "node tools/legacy-migration/verify.mjs",
+    "analyze": "node tools/legacy-migration/analyze.mjs",
+    "astro": "astro"
+  },
+  "engines": {
+    "node": ">=20.3.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "astro": "^7.3.8",
+    "entities": "^8.1.0",
+    "parse5": "^8.0.1",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,31 @@
+---
+/**
+ * Layout des pages « outil » : documentation, API, installation, studio SP213
+ * et SuperTyPo. Ces pages n'ont ni barre quadri, ni bandeau de marque, ni barre
+ * de navigation : elles portent leur propre en-tête.
+ */
+import BaseLayout from './BaseLayout.astro';
+import type { Seo } from '../lib/seo';
+
+interface Props {
+  seo: Seo;
+  lang?: string;
+  translate?: boolean;
+  bodyClass?: string;
+  headTop?: string;
+  headExtra?: string;
+}
+
+const { seo, lang, translate, bodyClass, headTop, headExtra } = Astro.props;
+---
+
+<BaseLayout
+  seo={seo}
+  lang={lang}
+  translate={translate}
+  bodyClass={bodyClass}
+  headTop={headTop}
+  headExtra={headExtra}
+>
+  <slot />
+</BaseLayout>

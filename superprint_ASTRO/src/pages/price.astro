@@ -1,0 +1,342 @@
+---
+/*
+ * ⚠️ Fichier généré par tools/legacy-migration/convert.mjs.
+ * Source d'origine : price.html (conservée dans _legacy/).
+ * Modifier la page ici, puis retirer la source de la liste de conversion.
+ */
+import MarketingLayout from '../layouts/MarketingLayout.astro';
+import '../styles/pages/price.css';
+
+const seo = {
+  "title": "Tarif — SuperPrint | Pricing | 料金",
+  "description": "Soutenir SuperPrint : paiement facultatif via PayPal — 13 € une fois, 39 € par an (abonnement aux actualités, résiliable à tout moment), ou un don au montant libre. Chaque application reste gratuite.",
+  "robots": "index, follow, max-image-preview:large",
+  "author": "Zigmoon",
+  "themeColors": [
+    {
+      "content": "#F7F3EC"
+    }
+  ],
+  "canonical": "https://superprint.cc/price.html",
+  "hreflangs": [
+    {
+      "hreflang": "en",
+      "href": "https://superprint.cc/price.html"
+    },
+    {
+      "hreflang": "fr",
+      "href": "https://superprint.cc/price.html?lang=fr"
+    },
+    {
+      "hreflang": "ja",
+      "href": "https://superprint.cc/price.html?lang=ja"
+    },
+    {
+      "hreflang": "x-default",
+      "href": "https://superprint.cc/price.html"
+    }
+  ],
+  "og": {
+    "type": "website",
+    "url": "https://superprint.cc/price.html",
+    "title": "Tarif — SuperPrint | Pricing",
+    "description": "13 € une fois, 39 € par an, ou un don libre : trois façons de soutenir SuperPrint via PayPal. Le logiciel reste gratuit.",
+    "image": "https://superprint.cc/img/og-superprint-1200x630.png",
+    "imageWidth": "1200",
+    "imageHeight": "630",
+    "siteName": "Zigmoon",
+    "locales": [
+      "fr_FR",
+      "en_US",
+      "ja_JP"
+    ]
+  },
+  "twitter": {
+    "card": "summary_large_image",
+    "title": "Tarif — SuperPrint | Pricing",
+    "description": "13 € une fois, 39 € par an ou un don libre — soutien facultatif via PayPal.",
+    "image": "https://superprint.cc/img/og-superprint-1200x630.png"
+  },
+  "jsonLd": [
+    "\r\n{\r\n  \"@context\": \"https://schema.org\",\r\n  \"@graph\": [\r\n    {\r\n      \"@type\": \"WebPage\",\r\n      \"@id\": \"https://superprint.cc/price.html#page\",\r\n      \"url\": \"https://superprint.cc/price.html\",\r\n      \"name\": \"Tarif — SuperPrint | Pricing\",\r\n      \"description\": \"Soutenir SuperPrint : 13 € une fois, 39 € par an ou un don libre, via PayPal. Le logiciel reste gratuit.\",\r\n      \"inLanguage\": \"en\",\r\n      \"isPartOf\": { \"@type\": \"WebSite\", \"url\": \"https://superprint.cc/\", \"name\": \"SuperPrint\" },\r\n      \"primaryImageOfPage\": \"https://superprint.cc/img/og-superprint-1200x630.png\"\r\n    },\r\n    {\r\n      \"@type\": \"BreadcrumbList\",\r\n      \"itemListElement\": [\r\n        { \"@type\": \"ListItem\", \"position\": 1, \"name\": \"SuperPrint\", \"item\": \"https://superprint.cc/\" },\r\n        { \"@type\": \"ListItem\", \"position\": 2, \"name\": \"Tarif\", \"item\": \"https://superprint.cc/price.html\" }\r\n      ]\r\n    },\r\n    {\r\n      \"@type\": \"Organization\",\r\n      \"name\": \"Zigmoon\",\r\n      \"url\": \"https://superprint.cc/\",\r\n      \"founder\": [\r\n        { \"@type\": \"Person\", \"name\": \"Simon Dupont-Gellert\" },\r\n        { \"@type\": \"Person\", \"name\": \"Clémence Brunet\" }\r\n      ]\r\n    }\r\n  ]\r\n}\r\n"
+  ]
+};
+
+const headExtra = "<link rel=\"icon\" type=\"image/png\" href=\"favicon.png\">\r\n<link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"favicon.png\">\r\n<link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"favicon.png\">\r\n<link rel=\"icon\" type=\"image/png\" sizes=\"96x96\" href=\"icons/icon-96x96.png\">\r\n<link rel=\"icon\" type=\"image/png\" sizes=\"192x192\" href=\"icons/icon-192x192.png\">\r\n<link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"icons/icon-192x192.png\">\r\n\r\n<!-- 🆕 v1.7.472 — LES FONTES DE LA LANDING. Sans cette feuille, la page d’aide tombait sur les\r\n     polices système et n’avait plus DU TOUT la typographie de la home (Bebas Neue pour les\r\n     capitales, IBM Plex Mono pour les libellés, IBM Plex Sans et Noto Sans JP pour le texte). -->\r\n<!-- 🆕 v1.7.477 — LES DEUX POLICES CRITIQUES SONT PRÉCHARGÉES.\r\n     « Bebas Neue » (le mot SUPERPRINT de la barre) et « Playfair Display » (les grands titres)\r\n     sont en « font-display: swap » : sans préchargement, le navigateur peint d'abord une police\r\n     de repli — le mot apparaît dans une autre typo, plus claire — puis la remplace dès que le\r\n     fichier arrive. Le préchargement les fait partir AVEC le HTML, donc à la première peinture.\r\n     « crossorigin » est obligatoire : les polices sont toujours demandées en CORS. -->\r\n<link rel=\"preload\" href=\"CSS/fonts/BebasNeue-400-normal-latin.woff2\" as=\"font\" type=\"font/woff2\" crossorigin>\r\n<link rel=\"preload\" href=\"CSS/fonts/PlayfairDisplay-400-normal-latin.woff2\" as=\"font\" type=\"font/woff2\" crossorigin>\r\n<link rel=\"stylesheet\" href=\"CSS/fonts.css\">\n\n<!-- 🆕 v1.7.477 — DONNÉES STRUCTURÉES DE CETTE PAGE. Elle n'en avait aucune (mesuré :\r\n     0 bloc JSON-LD), alors qu'elle est publique et indexable. Trois objets autonomes, sans\r\n     référence à un identifiant défini ailleurs : la page, son fil d'Ariane, et l'éditeur.\r\n     Volontairement AUCUN balisage « don » ou « prix » : le montant est fixé chez PayPal et une\r\n     donnée structurée doit être exacte — mieux vaut rien qu'une valeur qu'on ne peut pas tenir. -->";
+const footer = {
+  "faqHref": "faq.html",
+  "featuresHref": "index.html#features",
+  "authorsHref": "index.html#auteurs",
+  "heading": {
+    "fr": "Bureau SuperPrint",
+    "en": "The SuperPrint desk",
+    "ja": "SuperPrint デスク"
+  },
+  "pressKit": true,
+  "legal": "anchors"
+} as const;
+const navNotes = "<!-- _NAV_HERO_590 : entree Auteurs retiree de la top nav -->";
+---
+
+<MarketingLayout
+  seo={seo}
+  active={"price.html"}
+  logoHref="#hero"
+  featuresHref="index.html#features"
+  footer={footer}
+  navNotes={navNotes}
+  headExtra={headExtra}
+>
+<div class="mobile-menu" id="mobileMenu">
+  <!-- 🆕 v1.7.472 — LE COLOPHON NE DISPARAÎT PLUS QUAND LE MENU S'OUVRE.
+       Le menu couvre toute la page (demande précédente) ; en s'ouvrant, il cachait donc la
+       bande du logotype et son filet — « on perd le logo icon le filet dessous ». On la
+       reproduit ici à l'identique : la même icône, les mêmes respirations et le même filet.
+       🆕 v1.7.496 — ET ELLE RESTE À SA PLACE : la bande est hors flux, et le script la pose
+       exactement sur celle de la page (même haut, même hauteur). Avant, elle suivait le
+       décalage de la barre collante et le logo descendait de 146 px à l'ouverture. -->
+  <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
+  <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+  <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
+  <a href="price.html" class="active" aria-current="page"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
+  <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
+  <a href="app/index.html" class="mm-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+  <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
+       Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
+       que setLang() continue de marquer la langue choisie. -->
+  <div class="mm-lang">
+    <div class="lang-toggle mm-lang-toggle" role="group" aria-label="Language">
+      <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')" title="English">EN</button>
+      <button class="mbtn-lang" data-lang="fr" onclick="setLang('fr')" title="Français">FR</button>
+      <button class="mbtn-lang" data-lang="ja" onclick="setLang('ja')" title="日本語">JA</button>
+    </div>
+  </div>
+  <!-- 🆕 v1.7.472 — le bas du menu était un grand vide. Deux lignes l'arrêtent : qui signe,
+       et quelle version — comme au colophon du pied de page, en plus petit. -->
+  <div class="mm-bas">
+    <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
+    <span>SuperPrint v1.7.609</span>
+  </div>
+</div>
+
+<Fragment set:html={"<!-- 🆕 v1.7.572 — LE BANDEAU DU LOGO, HORS DU MENU (voir la règle CSS).\n     Dans le menu qui défile, un bandeau « fixe » restait solidaire du défilement : il portait\n     un backdrop-filter, qui crée le bloc conteneur (mesuré : top 5 au repos, −104 après\n     109 px de défilement sur 360×640). Posé ici, il est cloué à la fenêtre et ne bouge plus.\n     Il ne s'affiche que menu ouvert : « .mobile-menu.open + .mm-colo » (le menu est juste\n     au-dessus). -->"} />
+<div class="mm-colo" aria-hidden="true">
+  <img src="favicon.png" alt="" width="56" height="56">
+</div>
+
+<Fragment set:html={"<!-- ⚠️ _SP_SOMMAIRE_708 — LE SOMMAIRE DE PAGE A ÉTÉ DÉPLACÉ VERS LA FAQ (voir le CSS ci-dessus).\n     La page Tarif n'a plus de barre de sommaire : elle se lit d'une traite. -->"} />
+
+<Fragment set:html={"<!-- ══════════════ HERO\n<!-- ══════════════ CONTENU ══════════════ -->"} />
+<div class="help-wrap">
+
+  <div class="help-top help-top--simple" id="aide">
+    <div class="help-intro">
+  <p class="help-kicker" data-lang="fr">Tarif</p>
+  <p class="help-kicker" data-lang="en">Pricing</p>
+  <p class="help-kicker" data-lang="ja">料金</p>
+
+  <h1 class="help-h1" data-lang="fr">SuperPrint est gratuit. Pour toujours.</h1>
+  <h1 class="help-h1" data-lang="en">SuperPrint is free. Forever.</h1>
+  <h1 class="help-h1" data-lang="ja">SuperPrint は無料。ずっと。</h1>
+
+  <p class="help-lead" data-lang="fr">Indépendant, sans publicité, sans compte, sans abonnement obligatoire. Le logiciel est conçu et maintenu par deux personnes : chaque contribution reste facultative et sert uniquement à financer le développement.</p>
+  <p class="help-lead" data-lang="en">Independent, with no advertising, no account and no mandatory subscription. The software is built and maintained by two people: every contribution stays optional and only funds development.</p>
+  <p class="help-lead" data-lang="ja">独立していて、広告・アカウント・義務的なサブスクリプションはありません。ソフトウェアは二人で開発・保守しており、支援はすべて任意で、開発費にのみ充てられます。</p>
+
+  <p class="help-hero-price"><span class="help-hero-amt"><span class="inline-fr">0<sup>€</sup></span><span class="inline-en"><sup>€</sup>0</span><span class="inline-ja">0<sup>€</sup></span></span></p>
+
+    </div>
+
+    <!-- ═══ v1.7.606 — LA POP-IN DE PAIEMENT (déplacée telle quelle depuis l'ancien bloc
+         d'abonnement). Elle est en position fixe et vide au chargement : PayPal n'est chargé
+         qu'au premier clic. -->
+    <div class="pay-pop" id="pay-pop">
+      <div class="pay-pop-cadre" role="dialog" aria-modal="true" aria-labelledby="pay-pop-titre">
+        <div class="pay-pop-tete">
+          <span class="pay-pop-titre" id="pay-pop-titre">
+            <span data-lang="fr">Paiement PayPal · 39 € par an</span>
+            <span data-lang="en">PayPal payment · €39 per year</span>
+            <span data-lang="ja">PayPal でのお支払い · 39 ユーロ／年</span>
+          </span>
+          <button type="button" class="pay-pop-close" id="pay-pop-close">×</button>
+        </div>
+        <iframe class="pay-pop-frame" id="pay-pop-frame" src="about:blank" title="PayPal" referrerpolicy="strict-origin-when-cross-origin" allow="payment"></iframe>
+        <div class="pay-pop-pied">
+          <p data-lang="fr">Le paiement se fait ici, sans quitter la page. Une fois terminé, fermez cette fenêtre.</p>
+          <p data-lang="en">Payment happens here, without leaving the page. Once it is done, close this window.</p>
+          <p data-lang="ja">お支払いはこの画面で完了します。ページを離れる必要はありません。終わりましたらこの画面を閉じてください。</p>
+          <p data-lang="fr">La page reste vide ? <a class="pay-pop-secours" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=fr_XC" target="_blank" rel="noopener">Ouvrir le paiement dans un nouvel onglet</a></p>
+          <p data-lang="en">Page stays blank? <a class="pay-pop-secours" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=en_US" target="_blank" rel="noopener">Open the payment in a new tab</a></p>
+          <p data-lang="ja">画面が空のままですか？ <a class="pay-pop-secours" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=ja_JP" target="_blank" rel="noopener">新しいタブで支払いを開く</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="help-rule">
+
+  <!-- ═══ v1.7.606 — LA GRILLE DE PRIX : QUATRE BOÎTES ═══
+       Toutes les fonctions sont gratuites. Les trois autres boîtes sont des soutiens
+       facultatifs, via PayPal (13 € une fois, 39 €/an pour les news, don libre). -->
+  <section class="help-price" id="tarifs">
+    <h2 class="help-h2" data-lang="fr">Quatre façons d'en profiter</h2>
+    <h2 class="help-h2" data-lang="en">Four ways to take part</h2>
+    <h2 class="help-h2" data-lang="ja">4つの参加方法</h2>
+    <p class="help-ress-intro" data-lang="fr">SuperPrint est gratuit, sans compte et sans abonnement obligatoire. Le soutien reste toujours facultatif.</p>
+    <p class="help-ress-intro" data-lang="en">SuperPrint is free, with no account and no mandatory subscription. Support is always optional.</p>
+    <p class="help-ress-intro" data-lang="ja">SuperPrint は無料で、アカウントも義務的なサブスクもありません。支援はいつでも任意です。</p>
+
+    <div class="help-price-grid">
+
+      <!-- 01 — GRATUIT -->
+      <article class="help-price-card help-price-card--free">
+        <div class="help-price-no"><b data-lang="fr">Gratuit</b><b data-lang="en">Free</b><b data-lang="ja">無料</b><i>01 / 04</i></div>
+        <h3 class="help-price-h" data-lang="fr">Utiliser SuperPrint, pour toujours</h3>
+        <h3 class="help-price-h" data-lang="en">Use SuperPrint, forever</h3>
+        <h3 class="help-price-h" data-lang="ja">SuperPrint をずっと使う</h3>
+        <p class="help-price-amt-row">
+          <span class="help-price-amt"><span class="inline-fr">0<sup>€</sup></span><span class="inline-en"><sup>€</sup>0</span><span class="inline-ja">0<sup>€</sup></span></span>
+          <span class="help-price-per" data-lang="fr">toujours gratuit</span>
+          <span class="help-price-per" data-lang="en">always free</span>
+          <span class="help-price-per" data-lang="ja">いつでも無料</span>
+        </p>
+        <ul class="help-price-list">
+          <li><span class="inline-fr">Toutes les fonctions, sans limite</span><span class="inline-en">Every feature, no limit</span><span class="inline-ja">すべての機能を制限なく</span></li>
+          <li><span class="inline-fr">Sans compte, sans pub, sans tracking</span><span class="inline-en">No account, no ads, no tracking</span><span class="inline-ja">アカウント・広告・追跡なし</span></li>
+          <li><span class="inline-fr">Vos documents restent sur votre appareil</span><span class="inline-en">Your files stay on your device</span><span class="inline-ja">データは端末内に保存</span></li>
+          <li><span class="inline-fr">Installable (PWA), fonctionne hors ligne</span><span class="inline-en">Installable PWA, works offline</span><span class="inline-ja">PWA対応・オフライン動作</span></li>
+        </ul>
+        <div class="help-price-foot">
+          <a class="help-pay-btn" data-nopop="" href="index.html"><span class="inline-fr">Ouvrir SuperPrint</span><span class="inline-en">Open SuperPrint</span><span class="inline-ja">SuperPrint を開く</span></a>
+          <p class="help-price-note"><span class="inline-fr">Aucun paiement requis</span><span class="inline-en">No payment needed</span><span class="inline-ja">支払いは不要です</span></p>
+        </div>
+      </article>
+
+      <!-- 02 — SOUTIEN 13 € (une fois) -->
+      <article class="help-price-card">
+        <div class="help-price-no"><b data-lang="fr">Soutien</b><b data-lang="en">Support</b><b data-lang="ja">支援</b><i>02 / 04</i></div>
+        <h3 class="help-price-h" data-lang="fr">Soutenir le développement</h3>
+        <h3 class="help-price-h" data-lang="en">Back the development</h3>
+        <h3 class="help-price-h" data-lang="ja">開発を支援する</h3>
+        <p class="help-price-amt-row">
+          <span class="help-price-amt"><span class="inline-fr">13<sup>€</sup></span><span class="inline-en"><sup>€</sup>13</span><span class="inline-ja">13<sup>€</sup></span></span>
+          <span class="help-price-per" data-lang="fr">paiement unique</span>
+          <span class="help-price-per" data-lang="en">one-time</span>
+          <span class="help-price-per" data-lang="ja">一回払い</span>
+        </p>
+        <ul class="help-price-list">
+          <li><span class="inline-fr">Un simple merci, sans contrepartie</span><span class="inline-en">A simple thank-you, nothing in return</span><span class="inline-ja">見返りのないシンプルなお礼</span></li>
+          <li><span class="inline-fr">Aide à financer nouveautés et correctifs</span><span class="inline-en">Helps fund new features and fixes</span><span class="inline-ja">新機能と修正の資金に</span></li>
+          <li><span class="inline-fr">Garde les apps gratuites et sans pub</span><span class="inline-en">Keeps the apps free and ad-free</span><span class="inline-ja">アプリを無料・広告なしに保つ</span></li>
+        </ul>
+        <div class="help-price-foot">
+          <a class="help-pay-btn help-pay-btn-paypal" data-nopop="" href="https://www.paypal.com/ncp/payment/XJAWAFJVMT55C" target="_blank" rel="noopener">
+            <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+            <span class="inline-fr">Soutenir 13 €</span><span class="inline-en">Support €13</span><span class="inline-ja">13ユーロ支援</span>
+          </a>
+          <p class="help-price-note"><span class="inline-fr">Paiement sécurisé · PayPal</span><span class="inline-en">Secure payment · PayPal</span><span class="inline-ja">PayPalで安全に決済</span></p>
+        </div>
+      </article>
+
+      <!-- 03 — NEWS 39 €/an (abonnement, ouvre la pop-in PayPal) -->
+      <article class="help-price-card">
+        <div class="help-price-no"><b data-lang="fr">Nouveautés</b><b data-lang="en">News</b><b data-lang="ja">最新情報</b><i>03 / 04</i></div>
+        <h3 class="help-price-h" data-lang="fr">Suivre chaque nouveauté</h3>
+        <h3 class="help-price-h" data-lang="en">Follow every new feature</h3>
+        <h3 class="help-price-h" data-lang="ja">すべての新機能を追う</h3>
+        <p class="help-price-amt-row">
+          <span class="help-price-amt"><span class="inline-fr">39<sup>€</sup></span><span class="inline-en"><sup>€</sup>39</span><span class="inline-ja">39<sup>€</sup></span></span>
+          <span class="help-price-per" data-lang="fr">par an</span>
+          <span class="help-price-per" data-lang="en">per year</span>
+          <span class="help-price-per" data-lang="ja">年額</span>
+        </p>
+        <ul class="help-price-list">
+          <li><span class="inline-fr">Les nouveautés par email, toute l'année</span><span class="inline-en">The news by email, all year long</span><span class="inline-ja">最新情報を一年中メールで</span></li>
+          <li><span class="inline-fr">Les nouvelles versions et fonctions, expliquées</span><span class="inline-en">New releases and features, explained</span><span class="inline-ja">新リリースと新機能を解説</span></li>
+          <li><span class="inline-fr">Résiliable à tout moment sur PayPal</span><span class="inline-en">Cancel anytime on PayPal</span><span class="inline-ja">PayPalでいつでも解約可能</span></li>
+        </ul>
+        <div class="help-price-foot">
+          <div class="help-pay-boutons">
+            <a class="help-pay-btn help-pay-btn-paypal" data-lang="fr" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=fr_XC" target="_blank" rel="noopener">
+              <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+              <span>S'abonner</span>
+            </a>
+            <a class="help-pay-btn help-pay-btn-paypal" data-lang="en" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=en_US" target="_blank" rel="noopener">
+              <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+              <span>Subscribe</span>
+            </a>
+            <a class="help-pay-btn help-pay-btn-paypal" data-lang="ja" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=ja_JP" target="_blank" rel="noopener">
+              <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+              <span>購読する</span>
+            </a>
+          </div>
+          <p class="help-price-note"><span class="inline-fr">Paiement sécurisé · PayPal</span><span class="inline-en">Secure payment · PayPal</span><span class="inline-ja">PayPalで安全に決済</span></p>
+        </div>
+      </article>
+
+      <!-- 04 — DON LIBRE -->
+      <article class="help-price-card">
+        <div class="help-price-no"><b data-lang="fr">Don</b><b data-lang="en">Donation</b><b data-lang="ja">寄付</b><i>04 / 04</i></div>
+        <h3 class="help-price-h" data-lang="fr">Soutenir tout le projet</h3>
+        <h3 class="help-price-h" data-lang="en">Fully back the project</h3>
+        <h3 class="help-price-h" data-lang="ja">プロジェクト全体を支援</h3>
+        <p class="help-price-amt-row">
+          <span class="help-price-amt help-price-amt--txt" data-lang="fr">Votre montant</span>
+          <span class="help-price-amt help-price-amt--txt" data-lang="en">Your amount</span>
+          <span class="help-price-amt help-price-amt--txt" data-lang="ja">金額は自由</span>
+          <span class="help-price-per" data-lang="fr">défini sur PayPal</span>
+          <span class="help-price-per" data-lang="en">set on PayPal</span>
+          <span class="help-price-per" data-lang="ja">PayPalで設定</span>
+        </p>
+        <ul class="help-price-list">
+          <li><span class="inline-fr">Vous choisissez le montant</span><span class="inline-en">You choose the amount</span><span class="inline-ja">金額はあなたが決めます</span></li>
+          <li><span class="inline-fr">Finance serveurs, domaine et nouvelles apps</span><span class="inline-en">Funds servers, domain and new apps</span><span class="inline-ja">サーバー・ドメイン・新アプリの資金に</span></li>
+          <li><span class="inline-fr">Préserve l'indépendance du projet</span><span class="inline-en">Keeps the project independent</span><span class="inline-ja">プロジェクトの独立性を守る</span></li>
+        </ul>
+        <div class="help-price-foot">
+          <a class="help-pay-btn help-pay-btn-paypal" data-nopop="" href="https://www.paypal.com/donate/?hosted_button_id=NN7G32H7LZH8A" target="_blank" rel="noopener">
+            <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+            <span class="inline-fr">Faire un don</span><span class="inline-en">Donate</span><span class="inline-ja">寄付する</span>
+          </a>
+          <p class="help-price-note"><span class="inline-fr">Paiement sécurisé · PayPal</span><span class="inline-en">Secure payment · PayPal</span><span class="inline-ja">PayPalで安全に決済</span></p>
+        </div>
+      </article>
+
+    </div>
+
+    <p class="help-price-foot2" data-lang="fr">Paiement traité par PayPal : votre carte reste chez PayPal, nous ne voyons ni votre numéro ni votre adresse. Aucun compte PayPal n'est nécessaire pour payer par carte.</p>
+    <p class="help-price-foot2" data-lang="en">Payment handled by PayPal — your card stays with PayPal, we never see your number or your address. No PayPal account is needed to pay by card.</p>
+    <p class="help-price-foot2" data-lang="ja">決済はPayPalが処理します。カード情報はPayPalが保持し、こちらには届きません。カード決済にPayPalアカウントは不要です。</p>
+  </section>
+
+
+
+
+
+
+
+
+  <!-- ═══ v1.7.606 — LE FORMULAIRE DE CONTACT A ÉTÉ DÉPLACÉ DANS LA FAQ ═══
+       (faq.html). Cette page Tarifs n'a plus de formulaire. -->
+  <p class="help-note" data-lang="fr">Une question, un bug, une formation, un conseil ou la presse ? Le formulaire de contact se trouve désormais dans la <a href="faq.html">FAQ</a>.</p>
+  <p class="help-note" data-lang="en">A question, a bug, a training course, some advice or the press? The contact form now lives in the <a href="faq.html">FAQ</a>.</p>
+  <p class="help-note" data-lang="ja">ご質問・不具合・研修・ご相談・プレスに関するお問い合わせは、<a href="faq.html">FAQ</a> のフォームをご利用ください。</p>
+</div>
+<Fragment slot="after">
+<Fragment set:html={"<!-- ══════════════ BULLE WHATSAPP — bas droite ══════════════\n     🆕 v1.7.571 — contact direct avec l'atelier, sur la page d'accueil ET sur « Participer ».\n     Le lien wa.me exige le numéro au format international, sans « + » ni espaces :\n     33671614110 pour +33 6 71 61 41 10. Pas de data-lang : un numéro et un nom de messagerie\n     ne se traduisent pas — le libellé vit dans title / aria-label, donc il ne peut pas\n     « fuiter » d'une langue à l'autre (piège connu des pages composées). -->"} />
+<a class="sp-wa" href="https://wa.me/33671614110" target="_blank" rel="noopener noreferrer" title="WhatsApp — +33 6 71 61 41 10" aria-label="WhatsApp — +33 6 71 61 41 10">
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path></svg>
+</a>
+<script is:inline src="/JS/pages/price/0-lang-switcher.js?v=1.7.609"></script>
+
+<Fragment set:html={"<!-- ═══ v1.7.578 — FORMULAIRE DE CONTACT : cinq sujets, composition du courrier (aucun serveur) ═══ -->"} />
+<script is:inline src="/JS/pages/price/1-bug-form.js?v=1.7.609"></script>
+
+<Fragment set:html={"<!-- 🆕 v1.7.604 — LE SDK PAYPAL A ÉTÉ RETIRÉ DE CETTE PAGE.\n     Il ne servait qu'à rendre le bouton d'abonnement, or c'est justement son bouton qu'on ne\n     voulait plus : sa marque et son dessin étaient imposés. Les deux boutons du haut sont les\n     nôtres et pointent vers la page de paiement du même plan (P-5EK03990LC067710SNK6YLEQ) :\n     abonner, c'est toujours `actions.subscription.create` côté PayPal, mais c'est la page de\n     paiement du plan qui le fait, pas un script tiers chargé sur cette page.\n     Rien d'autre dans la page ne dépendait de `paypal`. -->"} />
+
+<Fragment set:html={"<!-- ═══ v1.7.604 — LA POP-IN DE PAIEMENT ═══\n     Ce que fait ce script, et rien d'autre :\n       • il intercepte le clic sur les DEUX boutons du haut et ouvre la pop-in à la place du\n         nouvel onglet — les liens gardent leur href et leur target, donc sans JavaScript (ou\n         si le script ne tourne pas) le paiement part dans un onglet, comme avant ;\n       • il ne donne son adresse à l'iframe QU'AU PREMIER CLIC : la page n'appelle donc jamais\n         PayPal tant que personne ne clique (ni chargement, ni cookie tiers, ni mesure) ;\n       • il fait le ménage d'usage d'une pop-in : Échap ferme, un clic sur le voile ferme (pas\n         dans le cadre), le fond ne défile plus tant qu'elle est ouverte, le focus entre dans la\n         pop-in à l'ouverture (sur la fermeture) et revient au bouton qui l'a ouverte ;\n       • LIMITE CONNUE, mesurée, qu'aucun code ne peut lever : dès que le visiteur CLIQUE dans\n         le formulaire PayPal, le focus entre dans un document TIERS et Échap n'arrive plus\n         jusqu'ici (la touche part à PayPal). La pop-in se ferme alors par le bouton × ou par le\n         voile, qui restent à la souris — c'est aussi pourquoi le × est en haut à droite et\n         toujours visible ;\n       • il nomme ce qui doit être nommé dans la langue de la page : le cadre (title de\n         l'iframe) et le bouton de fermeture — un aria-label ne peut pas être traduit par le\n         mécanisme data-lang, qui ne masque que des éléments visibles. -->"} />
+<script is:inline src="/JS/pages/price/2-pay-pop.js?v=1.7.609"></script>
+
+<Fragment set:html={"<!-- ⚠️ _SP_SOMMAIRE_708 — LE SCRIPT DU SOMMAIRE A ÉTÉ DÉPLACÉ VERS LA FAQ (voir faq.html).\n     La page Tarif n'a plus de barre de sommaire, donc plus rien à mesurer ni à suivre. -->"} />
+</Fragment>
+</MarketingLayout>

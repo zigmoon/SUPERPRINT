@@ -9,10 +9,11 @@
 !/release.html
 # Outils de build / de service du depot (2 scripts + leur notice)
 !/tools/
-# Les 3 dossiers produit
+# Les 4 dossiers produit
 !/superprint/
 !/sp213-local/
 !/superprint-npm/
+!/superprint_ASTRO/
 
 **/node_modules/
 **/dist/
@@ -26,6 +27,10 @@ superprint/sp213-local.zip
 superprint/ORGANISATION.md
 superprint/RAPPORT-MODELES.md
 superprint/VERSIONING.md
+# (idem pour la version Astro : mêmes règles que le dossier classique)
+superprint_ASTRO/ORGANISATION.md
+superprint_ASTRO/VERSIONING.md
+superprint_ASTRO/RAPPORT-*.md
 
 # ══════════════════════════════════════════════════════════════════════════
 # v1.7.404 — FILET DE SECURITE : jamais d'outillage de dev dans le site

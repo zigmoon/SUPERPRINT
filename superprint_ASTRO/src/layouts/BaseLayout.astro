@@ -1,0 +1,45 @@
+---
+/**
+ * Coquille HTML du site : `<!DOCTYPE>`, `<html>`, `<head>` et `<body>`.
+ *
+ * Tout ce qui est propre à une page passe par le slot `head` ; le corps par le
+ * slot par défaut. `headTop` permet d'injecter des balises AVANT le viewport
+ * (le studio s'en sert pour ses correctifs de premier rendu), `headExtra` APRÈS
+ * le bloc SEO (icônes, préchargements, feuilles de style).
+ */
+import SeoBlock from '../components/Seo.astro';
+import type { Seo } from '../lib/seo';
+
+interface Props {
+  seo: Seo;
+  lang?: string;
+  /** `<html translate="no">` — pages outils (studio, SuperTyPo, install). */
+  translate?: boolean;
+  bodyClass?: string;
+  headTop?: string;
+  headExtra?: string;
+}
+
+const {
+  seo,
+  lang = 'en',
+  translate = false,
+  bodyClass,
+  headTop,
+  headExtra,
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang={lang} translate={translate ? 'no' : undefined}>
+<head>
+<meta charset="UTF-8">
+{headTop && <Fragment set:html={headTop} />}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<SeoBlock {...seo} />
+{headExtra && <Fragment set:html={headExtra} />}
+</head>
+<body class={bodyClass}>
+<slot />
+</body>
+</html>

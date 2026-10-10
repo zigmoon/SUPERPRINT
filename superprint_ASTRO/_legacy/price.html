@@ -1,0 +1,2976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ═══ SEO / GEO / AEO — Nous aider (SuperPrint) ═══ -->
+<title>Tarif — SuperPrint | Pricing | 料金</title>
+<meta name="description" content="Soutenir SuperPrint : paiement facultatif via PayPal — 13 € une fois, 39 € par an (abonnement aux actualités, résiliable à tout moment), ou un don au montant libre. Chaque application reste gratuite.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="author" content="Zigmoon">
+<meta name="theme-color" content="#F7F3EC">
+
+<link rel="canonical" href="https://superprint.cc/price.html">
+<link rel="alternate" hreflang="en" href="https://superprint.cc/price.html">
+<link rel="alternate" hreflang="fr" href="https://superprint.cc/price.html?lang=fr">
+<link rel="alternate" hreflang="ja" href="https://superprint.cc/price.html?lang=ja">
+<link rel="alternate" hreflang="x-default" href="https://superprint.cc/price.html">
+
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://superprint.cc/price.html">
+<meta property="og:title" content="Tarif — SuperPrint | Pricing">
+<meta property="og:description" content="13 € une fois, 39 € par an, ou un don libre : trois façons de soutenir SuperPrint via PayPal. Le logiciel reste gratuit.">
+<meta property="og:image" content="https://superprint.cc/img/og-superprint-1200x630.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="Zigmoon">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tarif — SuperPrint | Pricing">
+<meta name="twitter:description" content="13 € une fois, 39 € par an ou un don libre — soutien facultatif via PayPal.">
+<meta name="twitter:image" content="https://superprint.cc/img/og-superprint-1200x630.png">
+
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<link rel="icon" type="image/png" sizes="96x96" href="icons/icon-96x96.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png">
+
+<!-- 🆕 v1.7.472 — LES FONTES DE LA LANDING. Sans cette feuille, la page d’aide tombait sur les
+     polices système et n’avait plus DU TOUT la typographie de la home (Bebas Neue pour les
+     capitales, IBM Plex Mono pour les libellés, IBM Plex Sans et Noto Sans JP pour le texte). -->
+<!-- 🆕 v1.7.477 — LES DEUX POLICES CRITIQUES SONT PRÉCHARGÉES.
+     « Bebas Neue » (le mot SUPERPRINT de la barre) et « Playfair Display » (les grands titres)
+     sont en « font-display: swap » : sans préchargement, le navigateur peint d'abord une police
+     de repli — le mot apparaît dans une autre typo, plus claire — puis la remplace dès que le
+     fichier arrive. Le préchargement les fait partir AVEC le HTML, donc à la première peinture.
+     « crossorigin » est obligatoire : les polices sont toujours demandées en CORS. -->
+<link rel="preload" href="CSS/fonts/BebasNeue-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="CSS/fonts/PlayfairDisplay-400-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="CSS/fonts.css">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   SuperPrint Landing — "Le livre d'atelier" (craft × rêve)
+   Design editorial : papier chaud, encre profonde, accents
+   quadri (CMJN), serif Playfair Display + caps Bebas Neue,
+   IBM Plex (sans/mono) + Noto Sans JP. Aucune emoji.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --paper: #F7F3EC;        /* papier chaud */
+  --paper-2: #EFEAE0;      /* papier plus soutenu */
+  --paper-3: #FFFDF8;      /* carte claire */
+  --ink: #17130D;          /* encre profonde (pas noir pur) */
+  --ink-2: #2A251D;
+  --ink-soft: #332E26;     /* encre adoucie — sombre & lisible, peu de gris */
+  --muted: #756A5B;        /* gris chaud réservé aux notes très secondaires */
+  --line: #DCD3C3;         /* filets dorés clairs */
+  --line-strong: #C4B9A6;
+  --cyan: #00A7C7;         /* quadri cyan */
+  --magenta: #E1237B;      /* quadri magenta */
+  --yellow: #F2B90B;       /* quadri jaune */
+  --white: #FFFFFF;
+  --paypal: #FFC439;       /* jaune PayPal — le fond du bouton or officiel */
+  --f-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --f-caps: 'Bebas Neue', 'Arial Narrow', sans-serif;
+  --f-sans: 'IBM Plex Sans', 'Noto Sans JP', sans-serif;
+  --f-mono: 'IBM Plex Mono', 'Fira Code', monospace;
+  --f-ja: 'Noto Sans JP', 'IBM Plex Sans', sans-serif;
+  --ease: cubic-bezier(.22,.61,.36,1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--f-sans);
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.7;
+  overflow-x: hidden;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ——— Barre quadri fixée tout en haut de l'écran (4 couleurs plaquées) ——— */
+.quadri-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+  height: 5px; display: flex;
+}
+.quadri-bar .q { flex: 1 1 25%; }
+.quadri-bar .q.c { background: var(--cyan); }
+.quadri-bar .q.m { background: var(--magenta); }
+.quadri-bar .q.y { background: var(--yellow); }
+.quadri-bar .q.k { background: var(--ink); }
+body { padding-top: 5px; }
+
+/* ——— Scrollbar design (WebKit / Chromium / Edge) ——— */
+html { scrollbar-width: thin; scrollbar-color: var(--ink) var(--paper-2); }
+html::-webkit-scrollbar { width: 14px; height: 14px; }
+html::-webkit-scrollbar-track {
+  background:
+    linear-gradient(180deg,
+      var(--cyan) 0, var(--cyan) 14px,
+      var(--paper-2) 14px, var(--paper-2) calc(100% - 14px),
+      var(--yellow) calc(100% - 14px), var(--yellow) 100%);
+}
+html::-webkit-scrollbar-thumb {
+  background: var(--ink);
+  border: 3px solid var(--paper-2);
+  border-radius: 10px;
+  background-clip: padding-box;
+  min-height: 48px;
+}
+html::-webkit-scrollbar-thumb:hover { background: var(--magenta); background-clip: padding-box; }
+html::-webkit-scrollbar-thumb:active { background: var(--ink-2); background-clip: padding-box; }
+html::-webkit-scrollbar-corner { background: var(--paper-2); }
+
+/* ——— Typo de base ——— */
+::selection { background: var(--ink); color: var(--paper); }
+h1,h2,h3,h4 { font-weight: 700; }
+p { color: var(--ink-soft); }
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+section { padding: clamp(72px, 10vw, 140px) 24px; position: relative; }
+.container { max-width: 1180px; margin: 0 auto; position: relative; z-index: 2; }
+
+/* ——— Étiquette de section : numéro de chapitre + filet ——— */
+.section-label {
+  display: flex; align-items: center; gap: 18px;
+  font-family: var(--f-mono);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .42em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 26px;
+}
+.section-label::before { content: ''; width: 34px; height: 2px; background: var(--ink); }
+html[lang="ja"] .section-label { letter-spacing: .2em; }
+
+/* ——— Titres ——— */
+h1, .h1 {
+  font-family: var(--f-display);
+  font-size: clamp(40px, 7vw, 96px);
+  font-weight: 700; line-height: 1.02;
+  letter-spacing: -.015em; color: var(--ink);
+}
+h2, .h2 {
+  font-family: var(--f-display);
+  font-size: clamp(28px, 4.4vw, 58px);
+  font-weight: 700; line-height: 1.08;
+  letter-spacing: -.01em; color: var(--ink);
+  margin-bottom: 22px;
+}
+h3 { font-size: 19px; font-weight: 600; line-height: 1.3; }
+em.display-i { font-style: italic; }
+.lead { font-size: clamp(16px, 1.6vw, 19px); color: var(--ink); max-width: 640px; line-height: 1.75; }
+p { color: var(--ink); }
+p + p { margin-top: 14px; }
+strong { color: var(--ink); font-weight: 600; }
+
+/* ——— Marques quadri (pastilles CMJN, pur design print) ——— */
+.cmyk {
+  display: inline-flex; align-items: center; gap: 6px;
+  vertical-align: middle; margin: 0 4px;
+}
+.cmyk i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.cmyk i.c { background: var(--cyan); }
+.cmyk i.m { background: var(--magenta); }
+.cmyk i.y { background: var(--yellow); }
+.cmyk i.k { background: var(--ink); }
+
+/* ——— Mot fantôme / filigrane (rêve éditorial) ——— */
+.ghost {
+  position: absolute; z-index: 0; pointer-events: none;
+  font-family: var(--f-caps);
+  font-weight: 400; line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(23,19,13,.07);
+  letter-spacing: .04em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* ——— BRAND HEADER (colophon d'ouverture — bande fine) ——— */
+.brand-header {
+  background: var(--paper);
+  /* 🎯 v1.7.417 — PADDING VERTICAL SYMÉTRIQUE.
+     Avant : 6px en haut / 4px en bas -> le logo était décentré de 1,3 px et
+     « flottait » vers le bas. L'écart était faible mais visible sur un logo,
+     parce que rien d'autre ne vient le compenser dans cette bande. */
+  padding: 6px 24px;
+  display: flex; justify-content: center; align-items: center;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.brand-header a { display: inline-flex; text-decoration: none; align-items: center; }
+.brand-header img {
+  height: 40px; width: auto;
+  /* 🎯 v1.7.417 — L'IMAGE EST SUR LA LIGNE DE BASE PAR DÉFAUT.
+     Une image en display:block dans un conteneur flex conserve une petite
+     réserve basse, ce qui la faisait paraître 0,7 px trop haute.
+     display:block + line-height:0 supprime cette réserve héritée du texte. */
+  display: block; line-height: 0; vertical-align: middle;
+}
+/* Sur desktop, on descend légèrement l'icône logo pour l'équilibre optique */
+@media(min-width: 701px){ .brand-header img { transform: translateY(0px); } }
+/* ——— v1.7.578 — RETOUR : LE « DTP & AI STUDIO » REPART À DROITE ———
+   Il avait été mis à gauche par symétrie (v1.7.578, première mouture), puis
+   l'auteur a demandé le retour à l'ordre d'origine : « finalement réinverse le
+   numéro de version, il était mieux à gauche dès le départ ». La pastille de
+   version occupe donc de nouveau la GAUCHE, ce tag la DROITE. Les deux sont en
+   position absolue dans une bande flex : le logo, lui, ne bouge pas d'un
+   pixel, il reste centré. */
+.brand-tag {
+  position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+  font-family: var(--f-mono); font-size: 10px;
+  letter-spacing: .3em; text-transform: uppercase; color: var(--muted);
+}
+@media(max-width:680px){ .brand-tag { display:none; } }
+/* ——— DERNIÈRE VERSION, EN HAUT À GAUCHE ———
+   Miroir exact de .brand-tag (qui occupe la droite) : même famille mono, même
+   bande du colophon. Le numéro affiché est celui de l'APPLICATION : c'est un
+   marqueur VIVANT, remplacé à chaque bump (rechercher « brand-ver » dans le
+   plan de bump des releases — ne pas oublier cette ligne). */
+.brand-ver {
+  position: absolute; left: 24px; top: 50%; transform: translateY(-50%);
+  font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .16em; color: var(--ink-soft); line-height: 1;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  padding: 3px 10px; white-space: nowrap;
+}
+/* En mobile la bande est étroite : la pastille reste visible (demande : « dès le
+   départ ») mais se resserre, comme .brand-tag qui s'efface, lui, sous 680 px. */
+@media(max-width:680px){ .brand-ver { left: 14px; font-size: 9px; padding: 2px 8px; letter-spacing: .1em; } }
+
+/* ——— NAVIGATION ——— */
+nav {
+  position: sticky; top: 0; z-index: 120;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  color: var(--ink);
+  /* 🎯 v1.7.417 — 56 -> 66 px (+10 px) et centrage vertical fiable.
+     La hauteur était trop juste : le logo occupait 55,3 px sur 56, donc il ne
+     restait aucune marge pour un centrage optique. */
+  padding: 0 clamp(18px,4vw,40px); height: 66px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+.nav-logo {
+  font-family: var(--f-caps);
+  font-size: 23px; font-weight: 400;
+  letter-spacing: .045em; text-decoration: none;
+  /* 🎯 v1.7.417 — PLUS de height:100%.
+     Avec height:100%, la boîte du logo mesurait 55,3 px dans une nav de 56 px :
+     le texte était centré dans une boîte qui occupait déjà toute la hauteur,
+     donc le moindre décalage de métrique se voyait. On laisse la nav centrer
+     (elle est en align-items:center) : la boîte se réduit à la ligne de texte
+     et le centrage devient exact. */
+  display: inline-flex; align-items: center; line-height: 1;
+  color: var(--ink); white-space: nowrap;
+  /* 🎯 v1.7.417 — CENTRAGE OPTIQUE.
+     « SUPERPRINT » est en capitales et n'a aucune descendante (pas de g, p, q,
+     y, j). Le centre géométrique de la boîte de texte tombe donc AU-DESSUS du
+     centre optique des glyphes — mesuré à -0,8 px. On applique la moitié de
+     cet écart vers le bas : l'œil voit alors le mot parfaitement centré, sans
+     modifier l'alignement avec les autres éléments de la nav. */
+  /* 🆕 v1.7.470 — retour utilisateur : « la typo est trop haute de 5 px » dans la barre
+     rétractée (au scroll). Le centrage optique d'origine valait 0,5 px ; on descend de
+     5 px de plus pour tomber sur l'œil. */
+  /* 🆕 v1.7.472 — le décalage optique de 0,5 px ne vaut QUE pour la barre au repos.
+     Dans la barre RÉTRACTÉE (collée en haut au scroll, classe .is-stuck posée par le
+     script), le mot est 5 px trop haut : c’est là qu’on applique les 5,5 px. */
+  transform: translateY(2px);
+}
+/* 🆕 v1.7.472 — LA VALEUR EST MESURÉE, ET ELLE VAUT POUR LES DEUX ÉTATS.
+   On a mesuré l’ENCRE du mot (le haut des capitales, « SUPERPRINT » n’ayant pas de
+   descendante) contre le milieu exact de la barre :
+     · barre au repos : encre à −1,5 px → le mot était 1,5 px TROP HAUT ;
+     · barre collée    : encre à +3,5 px → le mot était 3,5 px TROP BAS.
+   Une seule valeur, 2 px, corrige les deux. La règle spéciale « is-stuck » (5,5 px)
+   disparaît : elle faisait SAUTER le logotype de 5 px à l’instant où la barre se
+   colle, et c’est ce saut qui se voyait — pas un mauvais centrage de la barre. */
+.nav-logo span { color: var(--muted); letter-spacing: .08em; }
+/* 🆕 v1.7.476 — BARRE RÉTRACTÉE SEULEMENT : le logotype descend de 5 px.
+   Demande précise de l'utilisateur : « en mode rétracté, à gauche, la typo SUPERPRINT est trop
+   haute de 5 px ; ne touche pas à la version non rétractée ». La règle ne s'applique donc QUE
+   lorsque le script pose la classe `is-stuck` (barre collée en haut au scroll) — la barre au
+   repos garde exactement ses 2 px mesurés en v1.7.472. 7 = 2 px de centrage optique + les 5 px
+   demandés. ⚠️ Cette classe n'était utilisée par AUCUN style jusqu'ici : c'est sa première règle,
+   il n'y a donc rien à annuler ailleurs. */
+nav.is-stuck .nav-logo { transform: translateY(5px); }
+.nav-links { display: flex; gap: 2px; align-items: center; height: 100%; }
+.nav-links a {
+  display: inline-flex; align-items: center; justify-content: center; height: 100%; padding: 0 14px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  text-decoration: none; color: var(--ink-soft);
+  position: relative; transition: color .25s var(--ease); line-height: 1;
+}
+.nav-links a::after {
+  /* 🎯 v1.7.417 — bottom suit la nouvelle hauteur de nav (66 px) : le trait
+     reste a la meme distance du bas qu'avant (16 px sur 56 px). */
+  content: ''; position: absolute; left: 14px; right: 14px; bottom: 21px;
+  height: 1px; background: var(--ink);
+  transform: scaleX(0); transform-origin: left; transition: transform .3s var(--ease);
+}
+.nav-links a:hover { color: var(--ink); }
+.nav-links a:hover::after { transform: scaleX(1); }
+.nav-cta {
+  margin-left: 12px; padding: 0 22px !important;
+  background: var(--ink); color: var(--paper) !important;
+  height: 42px !important; align-self: center;
+  letter-spacing: .12em;
+}
+.nav-cta::after { display: none; }
+.nav-cta:hover { background: var(--ink-2); }
+/* 🆕 v1.7.472 — le sélecteur de langue était 0,5 px trop haut : les éléments se centrent
+   dans la zone de contenu de la barre (65 px), alors que la barre en fait 66 avec son
+   filet bas. Une marge haute de 1 px décale le bloc d’un demi-pixel vers le bas, sans
+   transformation (donc sans texte flou). L’encre atterrit alors pile au milieu. */
+.lang-toggle { display: flex; gap: 0; margin-left: 10px; margin-top: 1px; border: 1px solid var(--line-strong); }
+.lang-toggle button {
+  background: transparent; border: none;
+  color: var(--muted); font-family: var(--f-mono);
+  font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  padding: 8px 11px; cursor: pointer; transition: all .25s var(--ease);
+}
+.lang-toggle button + button { border-left: 1px solid var(--line-strong); }
+.lang-toggle button.active, .lang-toggle button:hover { background: var(--ink); color: var(--paper); }
+.nav-tools { display: flex; align-items: center; gap: 10px; }
+
+/* ——— Burger mobile ——— */
+.nav-burger {
+  display: none; flex-direction: column; justify-content: center; gap: 5px;
+  width: 40px; height: 40px; padding: 0; cursor: pointer;
+  background: transparent; border: 1px solid var(--line-strong);
+}
+.nav-burger span { display: block; height: 2px; width: 18px; margin: 0 auto; background: var(--ink); transition: all .3s var(--ease); }
+.nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-burger.open span:nth-child(2) { opacity: 0; }
+.nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ——— Menu mobile déroulant (sous la nav sticky) ——— */
+.mobile-menu {
+  /* 🎯 v1.7.417 — top = hauteur de la nav. Avant : 71 px pour une nav de
+     56 px -> 15 px de vide sous le menu. Maintenant la valeur suit la nav. */
+  position: fixed; top: 66px; left: 0; right: 0; z-index: 119;
+  background: color-mix(in srgb, var(--paper) 96%, transparent);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--line);
+  display: none; flex-direction: column;
+  padding: 10px 20px 20px;
+  /* 🆕 v1.7.472 — PLEIN ÉCRAN (demande utilisateur) : le menu couvre toute la page.
+     Il se place SOUS la barre (z-index 118 contre 120) pour que le bouton burger reste
+     cliquable, et son contenu commence sous la barre grâce au padding-top mesuré à
+     l’ouverture par le script. Il défile si la liste dépasse l’écran. */
+  inset: 0; max-height: none; height: auto; z-index: 118;
+  /* 🆕 v1.7.472 — il défile si la liste dépasse (grande police, petits écrans, japonais) :
+     le colophon et la ligne du bas restent atteignables. */
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  /* 🆕 v1.7.572 — SCROLLBAR INTERNE MASQUÉE (aligné sur l'accueil, v1.7.549) : dès que le
+     contenu dépasse l'écran, une scrollbar par défaut (non stylée, épaisse) apparaissait pile
+     sur la ligne SUPERPRINT + bouton fermer, et sa largeur qui apparaît/disparaît décalait le
+     logo du menu. Le menu reste défilable, juste sans piste visible. */
+  scrollbar-width: none;
+}
+.mobile-menu::-webkit-scrollbar { display: none; }
+.mobile-menu.open { display: flex; }
+.mobile-menu a {
+  /* 🆕 v1.7.472 — MÊME TYPO QUE LA NAV, MAIS PLUS GRANDE ET PLUS HAUTE.
+     Le retour du 18/09 (« on dirait que ce n’est pas la même typo ») avait ramené les entrées
+     aux 11 px de la barre : c’était juste, mais sec sur un écran de téléphone. On garde la
+     famille et l’approche de la nav (IBM Plex Mono, .16em, capitales) et on monte à 13 px,
+     avec des lignes de 57 px : le doigt tombe juste, l’œil suit.
+     🆕 v1.7.572 — RESSERRÉ D'UN CRAN (« resserrer un peu l'ensemble des entrées »). Mesuré :
+     3 entrées d'apps de 65 px + 5 entrées de 61 px, contenu total 850 px pour 843 px visibles
+     sur 390×844. Le rembourrage passe de 19 à 14 px par entrée (−80 px), .mm-lang −8 px et
+     .mm-bas −16 px : la liste tient sans défiler sur un écran de 844 px de haut. */
+  font-family: var(--f-mono); font-size: 13px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink); text-decoration: none;
+  padding: 14px 4px; border-bottom: 1px solid var(--line);
+}
+.mobile-menu a.mm-cta { border-bottom: none; background: var(--ink); color: var(--paper); text-align: center; margin-top: 10px; border-radius: 10px; }
+
+/* ——— Sélecteur de langue dans le menu mobile ——— */
+.mm-lang {
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.mm-lang-label {
+  font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .3em; text-transform: uppercase; color: var(--muted);
+}
+.mm-lang-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.mbtn-lang {
+  flex: 1 1 auto; min-width: 90px;
+  font-family: var(--f-mono); font-size: 12px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: 11px 8px; cursor: pointer; border-radius: 10px;
+  color: var(--ink); background: transparent;
+  border: 1px solid var(--line-strong);
+  transition: all .25s var(--ease);
+}
+.mbtn-lang.active, .mbtn-lang:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+
+/* ——— HERO (couverture d'atelier — tout centré) ——— */
+#hero {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(0,167,199,.10), transparent 60%),
+    radial-gradient(900px 500px at 50% 110%, rgba(226,35,123,.08), transparent 55%),
+    var(--paper);
+  color: var(--ink);
+  padding: clamp(28px,4vw,44px) 24px clamp(56px,8vw,96px);
+  overflow: hidden;
+}
+#hero .container { display: flex; flex-direction: column; align-items: center; text-align: center; }
+#hero .ghost { top: -0.12em; left: 50%; transform: translateX(-50%); font-size: clamp(180px, 30vw, 520px); opacity: 1; }
+.hero-kicker {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .4em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: clamp(16px,2.4vw,28px);
+}
+.hero-kicker::before { content:''; display: none; }
+#hero h1 { max-width: 980px; margin-top: 0; }
+#hero h1 .line { display: block; }
+#hero h1 .italic {
+  font-style: italic;
+  background: linear-gradient(100deg, var(--magenta) 0%, var(--cyan) 60%, var(--yellow) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+/* Pastilles quadri CMJN centrées — sous l'installeur */
+.hero-dots {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin: clamp(20px,2.6vw,34px) 0 0;
+}
+.hero-dots .dot { width: 12px; height: 12px; border-radius: 50%; }
+.hero-dots .dot.c { background: var(--cyan); }
+.hero-dots .dot.m { background: var(--magenta); }
+.hero-dots .dot.y { background: var(--yellow); }
+.hero-dots .dot.k { background: var(--ink); }
+#hero .lead { margin-top: clamp(22px,3vw,34px); max-width: 640px; color: var(--ink-soft); margin-left: auto; margin-right: auto; }
+#hero .lead strong { color: var(--ink); }
+.hero-install { margin-top: clamp(20px,2.6vw,36px); max-width: 780px; width: 100%; }
+.hero-lead { margin-top: clamp(16px,2.2vw,28px) !important; }
+#hero .install-shell {
+  background: var(--white); text-align: left;
+  border-color: var(--line); border-radius: 24px;
+  box-shadow: 0 24px 54px -30px rgba(23,19,13,.5);
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--f-mono); font-size: 12px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  padding: 17px 30px; text-decoration: none;
+  transition: all .3s var(--ease);
+}
+.btn .arr { transition: transform .3s var(--ease); }
+.btn:hover .arr { transform: translateX(4px); }
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-primary:hover { background: var(--ink-2); box-shadow: 0 14px 34px -18px rgba(23,19,13,.7); }
+.btn-secondary { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+.btn-secondary:hover { background: var(--ink); color: var(--paper); }
+
+/* ——— INSTALLER LOCAL (dans le hero — panneau transparent & arrondi) ——— */
+.install-shell {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  padding: clamp(22px,2.6vw,34px);
+}
+.install-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.install-head .inst-title {
+  font-family: var(--f-caps); font-size: clamp(20px,2vw,26px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.05; color: var(--ink);
+  display: inline-flex; align-items: center; gap: 12px;
+}
+.install-head .inst-title svg { width: 21px; height: 21px; stroke: var(--magenta); stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.install-shell .inst-desc { font-size: 13.5px; color: var(--ink-soft); margin-bottom: 16px; line-height: 1.65; }
+.cmd-block {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--paper-3); color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 6px 8px 6px 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 6px 18px -14px rgba(23,19,13,.5);
+}
+.cmd-os-ic { flex-shrink: 0; display: inline-flex; align-items: center; color: var(--muted); }
+.cmd-block code {
+  flex: 1; font-size: 13px; color: var(--ink); white-space: nowrap; overflow-x: auto;
+  font-family: var(--f-mono); padding: 8px 0; line-height: 1.6; letter-spacing: .02em;
+}
+.cmd-block code::-webkit-scrollbar { height: 4px; }
+.cmd-block code::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+.copy-btn {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 16px; cursor: pointer;
+  background: var(--ink); color: var(--paper);
+  border: 1px solid var(--ink); border-radius: 10px;
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  transition: all .25s var(--ease);
+}
+.copy-btn:hover { background: var(--magenta); border-color: var(--magenta); }
+.copy-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cmd-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; margin-top: 16px; }
+.cmd-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.cmd-tab {
+  font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-soft); background: transparent;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  padding: 8px 16px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: all .25s var(--ease);
+}
+.cmd-tab svg { width: 13px; height: 13px; opacity: .7; }
+.cmd-tab.active, .cmd-tab:hover { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+.cmd-tab.active svg { opacity: 1; }
+.cmd-hint { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--muted); line-height: 1.5; }
+.install-note {
+  margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line-strong);
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em;
+  color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 16px;
+}
+.install-note b { color: var(--ink); font-weight: 600; }
+.install-note .assure { color: var(--ink); font-weight: 600; }
+.install-note .assure + .assure::before { content: '·'; margin-right: 16px; color: var(--muted); font-weight: 400; }
+@media(max-width: 640px){ .cmd-block { flex-wrap: wrap; } .copy-btn { width: 100%; justify-content: center; } .cmd-meta { justify-content: flex-start; } }
+
+/* ——— SECTIONS : rythme papier ——— */
+#value-props, #studio, #use-cases { background: var(--paper); }
+#comparison, #formats, #faq { background: var(--paper-3); }
+#features { background: var(--paper); }
+#vs-indesign { background: var(--paper-2); } /* legacy id kept for anchor */
+.section-head { max-width: 780px; margin-bottom: clamp(30px,5vw,60px); }
+.section-head .lead { margin-top: 8px; }
+
+/* ——— VALUE PROPS (6 arguments, en numérotés) ——— */
+.vp-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; margin-top: 10px;
+  border-bottom: 1px solid var(--line); /* fillet de fermeture de la dernière rangée */
+}
+.vp-card {
+  position: relative;
+  padding: clamp(26px,3.5vw,46px) clamp(24px,3vw,44px);
+  border-top: 1px solid var(--line);
+  background: transparent;
+  transition: background .4s var(--ease);
+  min-height: 250px;
+  display: flex; flex-direction: column;
+}
+.vp-card:nth-child(odd) { border-right: 1px solid var(--line); }
+/* 8 cartes (v1.7.417) : la 7e est impaire et garde son fillet droit,
+   la 8e ferme la rangee. Rien a corriger sur les 6 premieres. */
+.vp-card::after {
+  content:''; position:absolute; left:0; bottom:0; height:3px; width:0;
+  background: linear-gradient(90deg, var(--cyan), var(--magenta), var(--yellow));
+  transition: width .5s var(--ease);
+}
+.vp-card:hover { background: var(--paper-3); }
+.vp-card:hover::after { width: 100%; }
+.vp-icon {
+  font-family: var(--f-display); font-style: italic;
+  font-size: clamp(30px,4vw,44px); color: var(--muted);
+  line-height: 1; margin-bottom: 22px;
+}
+.vp-card h3 {
+  font-family: var(--f-caps);
+  font-size: clamp(19px,2.2vw,26px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.05;
+  margin-bottom: 12px; color: var(--ink);
+}
+.vp-card p { font-size: 14.5px; color: var(--ink-soft); line-height: 1.75; margin-top: auto; }
+
+/* ——— STUDIO SP213 ——— */
+#studio { position: relative; overflow: hidden; }
+#studio .ghost { top: 4%; left: -1vw; font-size: clamp(90px,16vw,260px); }
+#studio .section-head { max-width: 860px; }
+.studio-intro {
+  display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  gap: clamp(24px,4vw,60px); align-items: center;
+}
+.studio-intro h2 { margin-bottom: 14px; }
+.studio-engine {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px;
+}
+.studio-engine .eng {
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+  padding: 8px 13px; border: 1px solid var(--line-strong); color: var(--ink-soft); background: var(--paper-3);
+}
+.studio-engine .eng.on { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+.studio-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--line); border: 1px solid var(--line);
+  margin-top: clamp(36px,5vw,60px);
+}
+.studio-card {
+  background: var(--paper-3); padding: clamp(26px,2.6vw,38px);
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative; transition: background .35s var(--ease);
+}
+.studio-card:hover { background: var(--white); }
+.studio-num {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .22em; color: var(--magenta); margin-bottom: 4px;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.studio-num::after { content:''; height:1px; width: 34px; background: currentColor; opacity:.4; }
+.studio-card h3 {
+  font-family: var(--f-display);
+  font-size: clamp(19px,1.9vw,23px); font-weight: 700; line-height: 1.2;
+}
+.studio-card p { font-size: 13.5px; color: var(--ink-soft); line-height: 1.75; }
+.studio-card p strong { color: var(--ink); font-weight: 600; }
+.studio-band {
+  margin-top: clamp(30px,4vw,46px);
+  background: var(--ink); color: var(--paper);
+  padding: clamp(22px,3vw,34px) clamp(24px,3.5vw,42px);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px;
+}
+.studio-band .sb-txt { font-family: var(--f-display); font-style: italic; font-size: clamp(16px,2vw,22px); max-width: 560px; }
+.studio-band .sb-txt .cmymono { font-family: var(--f-mono); font-style: normal; font-size: .72em; letter-spacing: .2em; color: var(--yellow); }
+.btn-paper { background: var(--paper); color: var(--ink); }
+.btn-paper:hover { background: var(--white); }
+
+/* ——— PREPRESSE — Pantone & séparation de couches ——— */
+#prepress { position: relative; overflow: hidden; background: var(--paper-2); }
+#prepress .ghost { top: 2%; right: -3vw; font-size: clamp(110px,19vw,320px); }
+#prepress .section-head { max-width: 880px; }
+.pp-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--line); border: 1px solid var(--line);
+  margin-top: clamp(30px,4vw,50px);
+}
+.pp-card {
+  background: var(--paper-3); padding: clamp(24px,2.4vw,34px);
+  position: relative; display: flex; flex-direction: column;
+  transition: background .3s var(--ease);
+}
+.pp-card:hover { background: var(--white); }
+.pp-card::before {
+  content:''; position:absolute; left:0; top:0; width:0; height:3px;
+  background: linear-gradient(90deg, var(--cyan), var(--magenta), var(--yellow));
+  transition: width .5s var(--ease);
+}
+.pp-card:hover::before { width: 100%; }
+.pp-num {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .2em; color: var(--cyan); display: block; margin-bottom: 14px;
+}
+.pp-card h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.8vw,21px);
+  font-weight: 400; letter-spacing: .02em; line-height: 1.1;
+  margin-bottom: 10px; color: var(--ink);
+}
+.pp-card p { font-size: 13px; color: var(--ink-soft); line-height: 1.72; }
+.pp-card p strong { color: var(--ink); font-weight: 600; }
+.pp-card code {
+  font-family: var(--f-mono); font-size: .88em;
+  background: var(--paper); border: 1px solid var(--line);
+  padding: 1px 5px; color: var(--ink);
+}
+.pp-tag {
+  display: inline-block; font-family: var(--f-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: .2em; padding: 5px 10px; margin-top: 14px; align-self: flex-start;
+  border: 1px solid var(--cyan); color: var(--cyan); text-transform: uppercase;
+}
+.pp-band {
+  margin-top: clamp(24px,3vw,38px);
+  border: 1px solid var(--ink); border-left-width: 4px;
+  padding: clamp(18px,2.4vw,28px) clamp(20px,3vw,34px);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px;
+  background: var(--paper-3);
+}
+.pp-band-txt {
+  font-family: var(--f-display); font-style: italic;
+  font-size: clamp(14px,1.7vw,18px); line-height: 1.5;
+  color: var(--ink); max-width: 660px; margin: 0;
+}
+.pp-band-txt .pp-mono {
+  font-family: var(--f-mono); font-style: normal; font-size: .84em;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--magenta);
+}
+.pp-band .btn-paper { border: 1px solid var(--ink); flex: 0 0 auto; }
+.pp-band .btn-paper:hover { background: var(--ink); color: var(--paper); }
+
+/* ——— COMPARISON TABLE ——— */
+.cmp-wrapper { overflow-x: auto; margin-top: 8px; }
+table.cmp { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 760px; }
+table.cmp th {
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  padding: 16px 16px; text-align: left;
+  color: var(--ink); border-bottom: 2px solid var(--ink);
+  background: var(--paper-3);
+}
+table.cmp th:first-child { color: var(--muted); font-weight: 600; }
+table.cmp th.hl { background: var(--ink); color: var(--paper); }
+table.cmp td { padding: 15px 16px; border-bottom: 1px solid var(--line); vertical-align: top; background: var(--paper-3); }
+table.cmp td:nth-child(2) { background: var(--paper); }
+table.cmp tbody tr:hover td { background: var(--white); }
+table.cmp tbody tr:hover td:nth-child(2) { background: var(--paper-2); }
+table.cmp .feat { font-weight: 600; color: var(--ink); }
+.chk { color: var(--ink); font-weight: 700; }
+.cross { color: var(--muted); font-weight: 600; }
+.partial { color: var(--ink-soft); font-weight: 600; }
+.price-row td { background: var(--ink) !important; color: var(--paper) !important; font-family: var(--f-mono); font-weight: 600; }
+.price-row .chk, .price-row .cross { color: var(--paper); }
+table.cmp tbody tr.price-row:hover td { background: var(--ink) !important; }
+
+/* ——— FEATURES (chapitre double) ——— */
+.feat-head { display:flex; align-items:flex-end; justify-content:space-between; gap:30px; flex-wrap:wrap; }
+.feat-head .feat-meta { font-family: var(--f-mono); font-size: 12px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
+.feat-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--line); border: 1px solid var(--line);
+  margin-top: clamp(30px,4vw,50px);
+}
+.feat-card { background: var(--paper-3); padding: clamp(24px,2.4vw,34px); position: relative; transition: background .3s var(--ease), transform .3s var(--ease); }
+.feat-card:hover { background: var(--white); }
+.feat-num {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .2em; color: var(--cyan); display: block; margin-bottom: 16px;
+}
+.feat-card h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.8vw,21px);
+  font-weight: 400; letter-spacing: .02em; line-height: 1.1; margin-bottom: 10px; color: var(--ink);
+}
+.feat-card p { font-size: 13px; color: var(--ink-soft); line-height: 1.72; }
+.feat-tag {
+  display: inline-block; font-family: var(--f-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: .2em; padding: 5px 10px; margin-top: 14px;
+  border: 1px solid var(--magenta); color: var(--magenta); text-transform: uppercase;
+}
+.feat-tag.new { background: var(--magenta); color: var(--paper); }
+
+/* ——— USE CASES (table des matières) ——— */
+#use-cases { position: relative; overflow:hidden; }
+#use-cases .ghost { top: 30%; right: -2vw; font-size: clamp(120px,20vw,340px); }
+.uc-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  border-top: 2px solid var(--ink);
+}
+.uc-card {
+  padding: clamp(22px,2.4vw,34px) clamp(16px,1.6vw,24px);
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  background: transparent;
+  transition: background .3s var(--ease);
+}
+.uc-card:nth-child(4n) { border-right: none; }
+.uc-card:hover { background: var(--paper-2); }
+.uc-idx { font-family: var(--f-mono); font-size: 10px; letter-spacing: .22em; color: var(--yellow); display:block; margin-bottom: 14px; }
+.uc-card h3 { font-family: var(--f-display); font-size: clamp(19px,1.9vw,24px); font-weight: 700; margin-bottom: 6px; }
+.uc-card p { font-size: 12.5px; color: var(--ink-soft); line-height: 1.65; }
+
+/* ——— VS DESKTOP (2 colonnes argumentaires) ——— */
+.vs-cols { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px,3vw,40px); margin-top: clamp(24px,4vw,44px); }
+@media(max-width:780px){ .vs-cols { grid-template-columns: 1fr; } }
+.vs-col { border-top: 3px solid var(--ink); padding-top: 26px; }
+.vs-col h3 {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .3em; text-transform: uppercase; color: var(--ink); margin-bottom: 22px;
+}
+.vs-col.vs-win { border-top-color: var(--cyan); }
+.vs-col.vs-defer { border-top-color: var(--muted); }
+.vs-col h3 { display: flex; align-items: center; gap: 12px; }
+.vs-col h3::before { content: ''; width: 22px; height: 2px; background: currentColor; }
+.vs-col ul { list-style: none; display: flex; flex-direction: column; }
+.vs-col li {
+  font-size: 15px; color: var(--ink-soft);
+  padding: 13px 0 13px 28px; position: relative;
+  border-bottom: 1px solid var(--line);
+}
+.vs-col li::before {
+  content: ''; position: absolute; left: 2px; top: 21px;
+  width: 12px; height: 1px; background: var(--ink);
+}
+.vs-col li:last-child { border-bottom: none; }
+
+/* ——— FORMATS ——— */
+.fmt-label {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .34em; text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: center; gap: 16px; margin: 34px 0 14px;
+}
+.fmt-label::after { content:''; flex:1; height:1px; background: var(--line); }
+.fmt-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.fmt-chip {
+  font-family: var(--f-mono); font-size: 11.5px; font-weight: 600;
+  letter-spacing: .12em; padding: 10px 16px; color: var(--ink);
+  border: 1px solid var(--line-strong); background: var(--paper-3);
+  transition: all .25s var(--ease);
+}
+.fmt-chip:hover { transform: translateY(-2px); border-color: var(--ink); }
+.fmt-chip.out { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.fmt-chip.out::before { content:'↗  '; color: var(--yellow); font-weight:700; }
+.fmt-chip.in { color: var(--ink-soft); }
+.fmt-chip.in::before { content:'↙  '; color: var(--cyan); font-weight:700; }
+
+/* ——— FAQ (accordéon élégant) ——— */
+#faq { background: var(--paper-2); }
+.faq-list { margin-top: clamp(24px,4vw,40px); border-top: 2px solid var(--ink); }
+details.faq-item { border-bottom: 1px solid var(--line-strong); background: transparent; transition: background .3s var(--ease); }
+details.faq-item[open] { background: var(--paper-3); }
+summary.faq-q {
+  font-family: var(--f-display);
+  font-size: clamp(17px,2vw,22px); font-weight: 600; color: var(--ink);
+  padding: 22px 12px 22px 0; cursor: pointer;
+  list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 20px;
+}
+summary.faq-q::-webkit-details-marker { display: none; }
+summary.faq-q::after {
+  content: '+'; font-family: var(--f-mono); font-size: 24px; font-weight: 400;
+  color: var(--magenta); line-height: 1; transition: transform .35s var(--ease); flex-shrink: 0;
+}
+details[open] summary.faq-q::after { transform: rotate(45deg); }
+.faq-a {
+  font-size: 15px; color: var(--ink-soft); line-height: 1.8;
+  padding: 0 48px 26px 0; max-width: 820px;
+}
+.faq-a code { font-family: var(--f-mono); background: var(--paper-2); padding: 2px 6px; font-size: 12px; color: var(--ink); border:1px solid var(--line); }
+
+/* ——— CTA FINAL (encre) ——— */
+#cta-final {
+  background: var(--ink); color: var(--paper);
+  text-align: center; overflow: hidden;
+  padding: clamp(80px,10vw,150px) 24px;
+}
+#cta-final::before {
+  content:''; position:absolute; inset:0;
+  background:
+    radial-gradient(900px 400px at 20% -10%, rgba(0,167,199,.16), transparent 60%),
+    radial-gradient(800px 400px at 90% 120%, rgba(226,35,123,.14), transparent 60%);
+}
+#cta-final .ghost { bottom: -0.1em; left: 50%; transform: translateX(-50%); font-size: clamp(140px,22vw,360px); -webkit-text-stroke: 1px rgba(247,243,236,.08); }
+#cta-final h2 { color: var(--paper); font-size: clamp(32px,5vw,72px); margin: 0 auto 26px; }
+#cta-final h2 em { font-style: italic; color: var(--yellow); }
+#cta-final .lead { color: rgba(247,243,236,.72); margin: 0 auto; }
+.cta-btns { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; margin-top: clamp(28px,4vw,44px); position: relative; z-index: 2; }
+.btn-black { background: var(--paper); color: var(--ink); }
+.btn-black:hover { background: var(--white); box-shadow: 0 16px 40px -18px rgba(0,0,0,.6); }
+.btn-outline-black { background: transparent; color: var(--paper); border: 1px solid rgba(247,243,236,.5); }
+.btn-outline-black:hover { background: var(--paper); color: var(--ink); }
+.cta-registration { margin-top: 36px; display:flex; justify-content:center; gap:14px; }
+.cta-registration span { font-family: var(--f-mono); font-size: 10px; letter-spacing: .3em; color: rgba(247,243,236,.5); text-transform: uppercase; }
+
+/* ══════════════ 🆕 v1.7.472 — LE MANUEL, DANS LA PAGE ══════════════
+   « Manuel » quitte la barre du haut (une entrée de nav pour renvoyer vers une autre page,
+   c’était un menu, pas une réponse) et il reste au pied de page. À la place, une vraie zone :
+   quatre portes d’entrée réelles dans documentation.html (#m-start, #m-prefs-intro, #m-export,
+   #fn-tools — des ancres vérifiées, pas des liens vers le haut de la page). */
+.man-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: clamp(12px,1.6vw,20px); }
+@media (max-width: 980px) { .man-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 560px) { .man-grid { grid-template-columns: 1fr; } }
+.man-card {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: clamp(16px,2vw,24px); background: var(--paper-2);
+  border: 1px solid var(--line); text-decoration: none;
+  transition: border-color .3s var(--ease), transform .3s var(--ease);
+}
+.man-card:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.man-num { font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.man-card h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.8vw,22px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.08; color: var(--ink);
+}
+.man-card p { font-size: 13px; line-height: 1.65; color: var(--ink-soft); }
+/* margin-top:auto : les quatre fiches n’ont pas la même longueur de texte, les flèches
+   s’alignent tout en bas des quatre. */
+.man-arr { margin-top: auto; padding-top: 12px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; color: var(--ink); }
+.man-cta { margin-top: clamp(22px,3vw,34px); display: flex; justify-content: center; }
+
+/* ══════════════ 🆕 v1.7.472 — LES AUTEURS ══════════════
+   Le logiciel est signé par deux personnes, et la page ne le disait nulle part : leurs
+   deux noms n’existaient qu’au fond des mentions légales, derrière un clic. Deux fiches,
+   en clair, avec ce que chacune a fait. Même papier que les fiches d’outils, même quadri
+   en pastille, deux colonnes (une seule en mobile). */
+.auteurs { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(16px,2.4vw,32px); }
+.auteur {
+  display: flex; flex-direction: column;
+  background: var(--paper-2); border: 1px solid var(--line);
+  padding: clamp(20px,2.6vw,34px);
+  transition: border-color .3s var(--ease);
+}
+.auteur:hover { border-color: var(--line-strong); }
+.auteur-tete { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.auteur-tete .cmyk { margin: 0; }
+.auteur-num {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted);
+}
+.auteur-nom {
+  font-family: var(--f-caps); font-size: clamp(24px,2.9vw,38px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1; color: var(--ink); margin-bottom: 10px;
+}
+.auteur-role {
+  display: block; font-family: var(--f-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
+  padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line);
+}
+.auteur p { font-size: 13.5px; line-height: 1.72; color: var(--ink-soft); }
+.auteur p + p { margin-top: 12px; }
+/* margin-top:auto : les deux fiches n’ont pas la même longueur de texte, les liens
+   restent collés au bas des deux — alignés entre eux, sans hauteur forcée. */
+.auteur-liens { margin-top: auto; padding-top: 20px; display: flex; flex-wrap: wrap; gap: 16px; }
+.auteur-liens a {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; color: var(--ink);
+  text-decoration: none; border-bottom: 1px solid var(--line-strong); padding-bottom: 2px;
+  transition: color .25s var(--ease), border-color .25s var(--ease);
+}
+.auteur-liens a:hover { color: var(--muted); border-color: var(--muted); }
+.auteurs-note {
+  margin-top: clamp(22px,3vw,38px); padding-top: clamp(18px,2.4vw,30px);
+  border-top: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 18px 32px;
+}
+.auteurs-note p { font-size: 13.5px; line-height: 1.72; color: var(--ink-soft); max-width: 620px; }
+.auteurs-note p strong { color: var(--ink); }
+@media (max-width: 760px) { .auteurs { grid-template-columns: 1fr; } }
+
+/* ——— FOOTER (colophon) ——— */
+footer {
+  background: var(--ink-2); color: var(--muted);
+  padding: clamp(34px,4.6vw,58px) 24px 32px; position: relative;
+}
+footer .container { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 30px; }
+/* 🆕 v1.7.472 — 320 → 420 px : la ligne des deux noms (58 caractères en monospace, avec
+   l’approche) ne tenait pas sur 320 px et « BRUNET » partait seul à la ligne. Mesuré :
+   il faut 397 px. Le pavé de marque respire mieux et remplit le vide du milieu. */
+.foot-brand { display:flex; flex-direction:column; gap: 12px; max-width: 420px; }
+.foot-logo { font-family: var(--f-caps); font-size: 30px; letter-spacing: .05em; color: var(--paper); text-decoration: none; }
+.foot-brand p { font-size: 12.5px; line-height: 1.7; color: var(--muted); }
+/* 🆕 v1.7.472 — les deux noms dans le colophon : ils ne coûtent pas une ligne de plus
+   puisque le pavé de marque respirait déjà, et ils disent qui publie. */
+.foot-auteurs {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--paper); padding-top: 4px;
+}
+.foot-cols { display:flex; gap: clamp(30px,5vw,80px); flex-wrap: wrap; }
+.foot-cols h4 { font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--paper); margin-bottom: 14px; }
+.foot-links { display: flex; flex-direction: column; gap: 8px; }
+.foot-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color .25s var(--ease), transform .25s var(--ease); display:inline-flex; align-items:center; gap:8px; }
+/* 🆕 v1.7.497 — LE TIRET NE POUSSE PLUS LA COLONNE.
+   Le tiret du survol grandissait de 0 à 14 px. Le lien étant un flex, la ligne s'élargissait de
+   22 px (le tiret + la gouttière de 8 px), la colonne suivait, puis la colonne voisine : tout le
+   pied de page se décalait au passage de la souris. Le tiret garde maintenant SA PLACE et c'est
+   lui qui s'ouvre, par une mise à l'échelle (transform n'occupe pas de place) :
+   rien ne bouge d'un pixel, l'effet reste le même. */
+.foot-links a::before {
+  content:''; flex: 0 0 14px; width: 14px; height:1px; background: var(--yellow);
+  transform: scaleX(0); transform-origin: left center; transition: transform .25s var(--ease);
+}
+.foot-links a:hover { color: var(--paper); }
+.foot-links a:hover::before { transform: scaleX(1); }
+.foot-copy {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; color: var(--muted);
+  width: 100%; text-align: center; padding-top: 20px;
+  border-top: 1px solid rgba(247,243,236,.12); margin-top: 18px;
+  display: flex; flex-direction: column; gap: 10px; align-items: center;
+}
+.foot-note { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .06em; color: rgba(139,129,114,.8); }
+/* 🆕 v1.7.472 — LES LIENS LÉGAUX PASSENT AU CENTRE, SUR UNE SEULE LIGNE.
+   Ils occupaient trois rangées dans la colonne « Projet », qui donnait sa hauteur à tout
+   le pied de page — et la dernière phrase se retrouvait calée à gauche, seule rescapée de
+   la rangée précédente, ce qui ne se lisait pas. Ici, le PIÈGE DE LA v1.7.467 menace de
+   nouveau : ces liens portent data-lang, or une règle de classe (0,1,1) bat le
+   « [data-lang] { display: none } » (0,1,0) — sans l’exception ci-dessous, les six
+   s’afficheraient d’un coup, dans les trois langues. */
+.foot-legal { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 14px; }
+.foot-legal a { font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color .25s var(--ease); }
+.foot-legal a[data-lang] { display: none; }
+html[lang="fr"] .foot-legal a[data-lang="fr"],
+html[lang="en"] .foot-legal a[data-lang="en"],
+html[lang="ja"] .foot-legal a[data-lang="ja"] { display: inline; }
+.foot-legal a:hover { color: var(--paper); }
+.foot-legal .sep { color: rgba(139,129,114,.55); }
+
+/* ── LANG VISIBILITY (inchangé, fonctionnel) ── */
+[data-lang="en"], [data-lang="ja"] { display: none; }
+html[lang="en"] [data-lang="fr"], html[lang="en"] [data-lang="ja"] { display: none; }
+html[lang="en"] [data-lang="en"] { display: block; }
+html[lang="ja"] [data-lang="fr"], html[lang="ja"] [data-lang="en"] { display: none; }
+html[lang="ja"] [data-lang="ja"] { display: block; }
+.inline-en, .inline-ja { display: none; }
+html[lang="en"] .inline-fr, html[lang="en"] .inline-ja { display: none; }
+html[lang="en"] .inline-en { display: inline; }
+html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none; }
+html[lang="ja"] .inline-ja { display: inline; }
+html[lang="ja"] body, html[lang="ja"] h1, html[lang="ja"] h2, html[lang="ja"] h3 { letter-spacing: .01em; }
+html[lang="ja"] h1, html[lang="ja"] h2 { font-family: var(--f-sans); font-weight: 700; }
+
+/* 🆕 v1.7.486 — LE PIÈGE DU FRANÇAIS, RÉGLÉ POUR DE BON.
+   La langue par défaut n’avait aucune règle forte : tout reposait sur
+   « [data-lang="en"], [data-lang="ja"] { display: none } » (0,1,0), qu’une simple règle de
+   classe (0,1,1) bat. Résultat : dans les dix questions de la FAQ, les summaries des trois
+   langues s’affichaient d’un coup, et la grille des maquettes mêlait deux kickers et quatre
+   titres anglais au texte français. Les règles fortes existaient pour l’anglais et le
+   japonais, pas pour le français : la voici, au même poids (0,2,1). Pas de !important — les
+   boutons EN/FR/JA du menu mobile portent déjà le leur (« html .mm-lang-toggle
+   button[data-lang] ») et continuent de s’afficher. */
+/* v1.7.487 — les six combinaisons, en !important (une règle de classe posant un « display »
+   sur un élément de langue réaffichait les variantes des autres langues, sur l’accueil) : */
+html[lang="fr"] [data-lang="en"], html[lang="fr"] [data-lang="ja"],
+html[lang="en"] [data-lang="fr"], html[lang="en"] [data-lang="ja"],
+html[lang="ja"] [data-lang="fr"], html[lang="ja"] [data-lang="en"] { display: none !important; }
+html[lang="fr"] .inline-en, html[lang="fr"] .inline-ja,
+html[lang="en"] .inline-fr, html[lang="en"] .inline-ja,
+html[lang="ja"] .inline-fr, html[lang="ja"] .inline-en { display: none !important; }
+
+/* 🆕 v1.7.486 — ATTENTION AU NOM « data-fold ». La home a déjà son repli générique
+   (v1.7.473) : il balaie « [data-fold] », cherche l’id égal à la valeur, et s’il ne trouve
+   aucun « .is-folded » dans la cible il masque le parent du bouton. Un repli de chapitre
+   porte donc « data-chapitre », pas « data-fold » — sinon le chapitre entier disparaît. */
+/* ——— « VOIR PLUS » : un chapitre annoncé, son corps à la demande (data-chapitre) ——— */
+.fold { margin: clamp(18px,2.4vw,28px) 0 clamp(6px,1vw,10px); border: 1px solid var(--line-strong); background: var(--paper); }
+.fold > summary.fold-sum {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink); padding: 16px 18px; cursor: pointer;
+  list-style: none; transition: background .25s var(--ease);
+}
+.fold > summary.fold-sum::-webkit-details-marker { display: none; }
+.fold > summary.fold-sum:hover { background: var(--paper-2); }
+.fold > summary.fold-sum::after {
+  content: '+'; font-family: var(--f-mono); font-size: 18px; line-height: 1; color: var(--magenta);
+  transition: transform .35s var(--ease); flex-shrink: 0;
+}
+.fold[open] > summary.fold-sum { border-bottom: 1px solid var(--line-strong); background: var(--paper-2); }
+.fold[open] > summary.fold-sum::after { transform: rotate(45deg); }
+.fold > .fold-inner { padding: 4px 0 2px; }
+[data-chapitre] > .fold-inner > .pp-band:last-child,
+[data-chapitre] > .fold-inner > .cmp-wrapper:last-child { margin-bottom: 0; }
+
+/* ── RESPONSIVE ── */
+@media(max-width: 1000px){
+  .vp-grid { grid-template-columns: 1fr; }
+  .vp-card:nth-child(odd) { border-right: none; }
+  .feat-grid, .studio-grid { grid-template-columns: repeat(2, 1fr); }
+  .pp-grid { grid-template-columns: repeat(2, 1fr); }
+  .uc-grid { grid-template-columns: repeat(2, 1fr); }
+  .uc-card:nth-child(4n) { border-right: 1px solid var(--line); }
+  .uc-card:nth-child(2n) { border-right: none; }
+  .studio-intro { grid-template-columns: 1fr; }
+  nav { justify-content: space-between; }
+  .nav-links { display: none; }
+  .nav-burger { display: flex; }
+  .nav-tools .lang-toggle { display: none; } /* langues rangées dans le burger en tablette/mobile */
+  .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran : plus de décalage figé */
+  /* 🆕 v1.7.591 — MENU OUVERT ET PAGE DÉFILÉE : LA BARRE EST ÉPINGLÉE À LA FENÊTRE.
+     Le verrou de défilement que pose le menu (`overflow: hidden` sur html/body) transforme html
+     en conteneur de défilement : `position: sticky` cesse alors d'agir et la barre retombait à sa
+     place statique — MESURÉ à 390×844 : top −624 à 700 px de défilement, bouton burger HORS
+     ÉCRAN, donc menu impossible à refermer. On la cloue en `fixed` au-dessus du menu (121 > 118).
+     ⚠️ La classe n'est posée que si la barre était DÉJÀ collée (voir le script du burger) : sinon
+     elle sauterait vers le haut et recouvrirait la bande du logotype. */
+  html.sp-menu-ouvert nav { position: fixed; left: 0; right: 0; top: 0; z-index: 121; }
+}
+@media(max-width: 700px){
+  /* 🎯 v1.7.417 — hauteur mobile alignee sur le desktop (66 px) : le menu
+     burger et le logo doivent avoir la meme respiration partout. */
+  /* ⚠️ v1.7.591 — « position: relative » DÉTRUISAIT la barre collante en mobile.
+     MESURÉ à 390×844 : après 600 px de défilement la nav était à top −524, hors écran —
+     plus de logotype, plus de burger, le haut de la page vide, et la classe `is-stuck`
+     s'appliquait pour rien. C'est ce qui faisait « des trous au scroll ».
+     Le `relative` ne servait qu'à donner un repère au logotype en position absolue :
+     `sticky` EST un élément positionné, il joue exactement le même rôle. La barre se colle
+     SOUS la bande quadri (5 px, fixe, toujours visible) : elle n'est donc jamais recouverte,
+     aucun décalage optique n'est nécessaire, et le logotype ne saute pas à l'instant où
+     elle se colle. */
+  nav { padding: 0 16px; height: 66px; position: sticky; top: 5px; }
+  html.sp-menu-ouvert nav { top: 5px; }   /* 🆕 v1.7.591 — barre épinglée : elle reste SOUS la bande quadri */
+  nav.is-stuck .nav-logo { transform: translateY(2px); }   /* même valeur qu'au repos : aucun saut */
+  .nav-logo { font-size: 22px; position: absolute; left: 0; right: 0; justify-content: center; margin: 0 auto; z-index: 1; }
+  .nav-tools { margin-left: auto; position: relative; z-index: 2; }
+  section { padding: 64px 20px; }
+  .feat-grid, .studio-grid, .uc-grid { grid-template-columns: 1fr; }
+  .pp-grid { grid-template-columns: 1fr; }
+  .uc-card:nth-child(n) { border-right: none; }
+  .brand-header { padding-top: 18px; }
+  table.cmp td, table.cmp th { padding: 11px 10px; font-size: 12px; }
+  .foot-cols { gap: 24px; }
+  .btn { padding: 15px 22px; font-size: 11px; }
+  .mobile-menu { top: 0; } /* 🆕 v1.7.472 — plein écran */
+  .brand-header img { height: clamp(44px,12vw,56px); }
+  .brand-tag { display: none; }
+  #hero { padding-top: 64px; }
+  #hero .hero-install { display: none; } /* boîte installeur masquée en mobile */
+  #hero .hero-dots { margin-top: 18px; }
+  .hero-kicker { letter-spacing: .24em; font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ——— L'ATELIER EN IMAGES — captures réelles de l'application ——— */
+#showcase { background: var(--paper-3); position: relative; overflow: hidden; }
+#showcase .ghost { top: 5%; right: -3vw; left: auto; font-size: clamp(80px,14vw,230px); }
+.shots { display: grid; gap: clamp(30px,4.4vw,60px); }
+.shot {
+  display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr);
+  gap: clamp(20px,3.6vw,48px); align-items: center;
+}
+.shot:nth-child(even) .shot-img { order: 2; }
+.shot-img {
+  border: 1px solid var(--line-strong); background: var(--paper-2);
+  box-shadow: 0 22px 54px rgba(23,19,13,.13); overflow: hidden;
+}
+.shot-img img { display: block; width: 100%; height: auto; }
+.shot-num {
+  display: block; font-family: var(--f-mono); font-size: 10.5px;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+.shot-txt h3 {
+  font-family: var(--f-caps); font-size: clamp(20px,2.5vw,31px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.06; color: var(--ink); margin-bottom: 12px;
+}
+.shot-txt p { font-size: 14.5px; line-height: 1.75; color: var(--ink-soft); }
+.shot-txt ul { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 9px; }
+.shot-txt li { position: relative; padding-left: 20px; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.shot-txt li::before {
+  content: ''; position: absolute; left: 0; top: 9px; width: 11px; height: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--magenta));
+}
+.news {
+  margin-top: clamp(36px,5vw,68px); padding-top: clamp(24px,3.2vw,36px);
+  border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.5fr);
+  gap: clamp(18px,3vw,44px); align-items: start;
+}
+.news h3 {
+  font-family: var(--f-caps); font-size: clamp(19px,2.2vw,26px); font-weight: 400;
+  letter-spacing: .02em; color: var(--ink); line-height: 1.05; margin-bottom: 10px;
+}
+.news p { font-size: 14.5px; line-height: 1.8; color: var(--ink-soft); }
+.news .news-link {
+  display: inline-block; margin-top: 14px; font-family: var(--f-mono); font-size: 11px;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink);
+  border-bottom: 1px solid var(--line-strong); padding-bottom: 3px;
+}
+.news .news-link:hover { border-color: var(--magenta); color: var(--magenta); }
+@media (max-width: 900px) {
+  .shot { grid-template-columns: 1fr; }
+  .shot:nth-child(even) .shot-img { order: 0; }
+  .news { grid-template-columns: 1fr; }
+}
+
+/* ——— GALERIE DES OUTILS — captures d'écran, une par outil ——— */
+.tools { margin-top: clamp(38px,5.4vw,72px); }
+.tools-head { max-width: 760px; margin-bottom: clamp(24px,3.4vw,40px); }
+.tools-head h3 {
+  font-family: var(--f-caps); font-size: clamp(21px,2.6vw,32px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.06; color: var(--ink); margin-bottom: 12px;
+}
+.tools-head p { font-size: 14.5px; line-height: 1.75; color: var(--ink-soft); }
+.tgrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(16px,2.4vw,32px); }
+.tcard {
+  display: flex; flex-direction: column; background: var(--paper-2);
+  border: 1px solid var(--line); transition: border-color .3s var(--ease), transform .3s var(--ease);
+}
+.tcard:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.tcard-img { overflow: hidden; border-bottom: 1px solid var(--line); }
+.tcard-img img { display: block; width: 100%; height: auto; }
+.tcard-body { padding: clamp(14px,1.7vw,22px); }
+.tcard-num {
+  display: block; font-family: var(--f-mono); font-size: 10px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.tcard h3 {
+  font-family: var(--f-caps); font-size: clamp(17px,1.9vw,23px); font-weight: 400;
+  letter-spacing: .02em; line-height: 1.06; color: var(--ink); margin-bottom: 8px;
+}
+.tcard p { font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); }
+
+/* 🆕 v1.7.472 — « LES OUTILS, UN PAR UN » : QUATRE CARTES AU DÉPART, LA SUITE SUR DEMANDE.
+   Treize captures d’affilée noyaient le propos et faisaient télécharger neuf images avant
+   qu’on ait rien lu. Les neuf dernières RESTENT ÉCRITES dans le document — donc lisibles par
+   les moteurs de recherche et trouvables au Ctrl+F — on ne fait que les masquer : un
+   « display:none » suffit à empêcher les images « loading=lazy » de partir sur le réseau. */
+.tgrid > .tcard.is-folded { display: none; }
+.tgrid.is-open > .tcard.is-folded { display: flex; animation: tcardIn .55s var(--ease) both; }
+@keyframes tcardIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tgrid.is-open > .tcard.is-folded { animation: none; } }
+
+/* ——— Bouton « Voir tous les outils » ——— (pas de « cursor » ici : le réticule + du site
+   vient de la règle générale « button », une valeur locale l’écraserait) */
+.tools-more-wrap { display: flex; justify-content: center; margin-top: clamp(26px,3.4vw,44px); }
+.tools-more {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink); background: transparent;
+  border: 1px solid var(--line-strong); padding: 15px 22px;
+  transition: background .3s var(--ease), color .3s var(--ease), border-color .3s var(--ease);
+}
+.tools-more:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.tools-more .tm-count {
+  font-size: 10px; letter-spacing: .08em; padding: 2px 7px;
+  border: 1px solid currentColor; opacity: .6;
+}
+.tools-more .tm-less { display: none; }
+.tools-more.is-open .tm-more { display: none; }
+.tools-more.is-open .tm-less { display: inline; }
+/* Déplié, le compteur « +9 » n’a plus rien à annoncer : les neuf sont à l’écran. */
+.tools-more.is-open .tm-count { display: none; }
+.tools-more .tm-chev {
+  width: 14px; height: 14px; flex: 0 0 14px; stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .3s var(--ease);
+}
+.tools-more.is-open .tm-chev { transform: rotate(180deg); }
+
+@media (max-width: 760px) {
+  .tgrid { grid-template-columns: 1fr; }
+}
+
+/* ═══ v1.7.473 — LES TROIS APPLICATIONS (à la place des captures) ═══
+   Même dessin que les entrées du hero : la plaque du logotype, le nom, le texte, un bouton.
+   Deux des trois logotypes sont bicolores : leur plaque passe en blanc bordé, comme ailleurs. */
+.apps { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: clamp(14px,1.8vw,22px); }
+@media (max-width: 900px) { .apps { grid-template-columns: 1fr; } }
+.app { background: var(--paper-3); border: 1px solid var(--line); padding: clamp(18px,2.2vw,26px); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.app .entry-logo { width: 64px; height: 64px; padding: 11px; margin-bottom: 2px; }
+.app h3 { font-family: var(--f-caps); font-size: clamp(20px,2.2vw,26px); font-weight: 400; letter-spacing: .02em; line-height: 1; color: var(--ink); }
+.app p { font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); }
+.app p strong { color: var(--ink); font-weight: 600; }
+.app-go { margin-top: auto; padding-top: 16px; font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); text-decoration: none; }
+.app-go:hover { color: var(--muted); }
+
+/* ═══ v1.7.473 — REPLI GÉNÉRIQUE : mêmes règles que la galerie d'outils, pour le tableau ═══
+   Rien n'est retiré du document (moteurs de recherche, Ctrl+F) : on masque, et le bouton
+   affiche. Un « display:none » suffit aussi à empêcher les images différées de partir. */
+table tr.is-folded { display: none; }
+table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ease) both; }
+@keyframes foldIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { table.is-open tr.is-folded { animation: none; } }
+
+/* ——— HERO : TROIS ENTRÉES — app, studio, SuperTyPo ——— */
+.entries {
+  display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: clamp(12px,1.6vw,20px); margin: clamp(26px,3.4vw,46px) 0 0;
+}
+.entry {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 12px;
+  padding: clamp(14px,1.7vw,21px); background: var(--paper-3);
+  border: 1px solid var(--line); overflow: hidden; text-decoration: none;
+  transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+.entry::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--entry-accent, var(--cyan));
+}
+.entry:hover { transform: translateY(-3px); border-color: var(--line-strong); box-shadow: 0 16px 34px rgba(23,19,13,.13); }
+.entry-logo {
+  flex: 0 0 auto; width: 80.4px; height: 80.4px; background: var(--ink);
+  border-radius: 12px;
+  /* v1.7.467 — garde intérieure : le logotype ne touche plus les bords de la plaque
+     (image 50,4 px, coins plus arrondis). */
+  display: flex; align-items: center; justify-content: center; padding: 15px;
+}
+.entry-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* 🆕 v1.7.472 — LES DEUX ENTRÉES « CLAIRES » (Studio IA et SuperTyPo).
+   Leur plaque de logotype quitte le noir pour un fond blanc bordé d'un gris léger. C'est
+   possible parce que ces deux logotypes sont BICOLORES — vérifié dans les fichiers : du blanc
+   ET du noir dans le même dessin. Sur plaque noire on ne voyait que la part blanche, sur
+   plaque blanche on voit l'autre — le dessin change de lecture, il ne disparaît pas.
+   L'entrée de l'application garde sa plaque noire : son icône est blanche, et c'est son
+   identité. */
+.entry-clair .entry-logo { background: var(--white); border: 1px solid var(--line-strong); }
+.entry-body { min-width: 0; width: 100%; }
+.entry-name {
+  display: block; font-family: var(--f-caps); font-size: clamp(19px,2.1vw,25px);
+  letter-spacing: .02em; line-height: 1.02; color: var(--ink);
+}
+.entry-desc { display: block; margin-top: 6px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.entry-go {
+  display: block; margin-top: 10px; font-family: var(--f-mono); font-size: 10.5px;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--entry-accent, var(--cyan));
+}
+@media (max-width: 900px) {
+  .entries { grid-template-columns: 1fr; }
+  .entry { align-items: center; }
+}
+
+/* ——— CARROUSEL DES MODÈLES (v1.7.465) — pleine largeur, swipe natif ——— */
+#templates {
+  padding: clamp(46px,5.4vw,84px) 0 clamp(34px,4vw,56px);
+  background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+.tpl-head { padding: 0 max(24px, calc((100% - 1180px) / 2)) clamp(22px,2.6vw,34px); }
+.tpl-kicker {
+  display: block; font-family: var(--f-mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+#templates h2 {
+  font-family: var(--f-display); font-size: clamp(26px,3.4vw,42px); line-height: 1.08;
+  color: var(--ink); margin: 0 0 12px; font-weight: 500;
+}
+#templates .tpl-head p { font-size: 15px; line-height: 1.7; color: var(--ink-soft); max-width: 720px; margin: 0; }
+#templates .tpl-head p + p { margin-top: 10px; }
+.tpl-wrap { position: relative; }
+.tpl-rail {
+  display: flex; gap: clamp(12px,1.4vw,18px); align-items: stretch;
+  overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+  scroll-behavior: smooth; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+  padding: 4px max(24px, calc((100% - 1180px) / 2)) 22px;
+  scroll-padding-left: max(24px, calc((100% - 1180px) / 2));
+  scroll-padding-right: max(24px, calc((100% - 1180px) / 2));
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.tpl-rail::-webkit-scrollbar { display: none; }
+.tpl-rail:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.tpl-card {
+  flex: 0 0 clamp(196px,19.5vw,244px); scroll-snap-align: start;
+  display: flex; flex-direction: column; text-decoration: none;
+  background: var(--paper-3); border: 1px solid var(--line);
+  padding: 10px 10px 12px;
+  transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+.tpl-card:hover, .tpl-card:focus-visible {
+  /* v1.7.467 — ombre adoucie (elle « écrasait » la maquette) et soulèvement réduit. */
+  transform: translateY(-2px); border-color: var(--line-strong);
+  box-shadow: 0 8px 18px rgba(23,19,13,.06); outline: none;
+}
+.tpl-shot {
+  display: flex; align-items: center; justify-content: center;
+  height: clamp(196px,21.5vw,246px); background: var(--paper);
+  border: 1px solid var(--line); overflow: hidden; margin-bottom: 12px;
+}
+.tpl-shot img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.tpl-info { display: block; margin-bottom: 10px; }
+.tpl-name {
+  display: block; font-family: var(--f-caps); font-size: clamp(16px,1.55vw,19px);
+  line-height: 1.1; letter-spacing: .015em; color: var(--ink);
+}
+.tpl-sub { display: block; margin-top: 4px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.tpl-open {
+  display: flex; align-items: center; gap: 7px; margin-top: auto;
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--ink); padding-top: 9px; border-top: 1px solid var(--line);
+}
+.tpl-arr { transition: transform .3s var(--ease); }
+.tpl-card:hover .tpl-arr { transform: translateX(4px); }
+.tpl-arrow {
+  position: absolute; top: calc(14px + clamp(196px,21.5vw,246px) / 2); transform: translateY(-50%);
+  width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+  background: var(--paper-3); border: 1px solid var(--line-strong); color: var(--ink);
+  cursor: pointer; z-index: 3; transition: background .25s var(--ease), opacity .25s var(--ease);
+}
+.tpl-arrow:hover { background: var(--white); }
+.tpl-arrow[disabled] { opacity: .32; cursor: default; }
+.tpl-arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tpl-prev { left: max(10px, calc((100% - 1180px) / 2 - 54px)); }
+.tpl-next { right: max(10px, calc((100% - 1180px) / 2 - 54px)); }
+.tpl-foot {
+  padding: 14px max(24px, calc((100% - 1180px) / 2)) 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+}
+.tpl-count { color: var(--ink); }
+@media (max-width: 1000px) {
+  #templates { padding: 42px 0 32px; }
+  .tpl-head, .tpl-foot { padding-left: 20px; padding-right: 20px; }
+  .tpl-rail { padding-left: 20px; padding-right: 20px; }
+  .tpl-card { flex-basis: 214px; }
+  .tpl-shot { height: 214px; }
+  .tpl-arrow { top: calc(14px + 214px / 2); width: 38px; height: 38px; }
+  .tpl-prev { left: 6px; } .tpl-next { right: 6px; }
+  .tpl-hint { display: none; }
+}
+@media (max-width: 620px) {
+  .tpl-card { flex-basis: min(74vw, 260px); }
+  .tpl-shot { height: 232px; }
+  .tpl-arrow { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .tpl-rail { scroll-behavior: auto; } }
+
+
+/* ─── v1.7.467 — POP-INS LÉGAUX (Mentions légales / Confidentialité) ───
+   Textes repris de index.html (source unique) et affichés dans les 3 langues.
+   DA de la landing : papier, filets fins, monospace pour les titres. ─── */
+.legal-overlay {
+  position: fixed; inset: 0; z-index: 300; display: none;
+  align-items: center; justify-content: center; padding: 24px;
+  background: rgba(23,19,13,.55);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+.legal-overlay.open { display: flex; }
+.legal-modal {
+  width: 100%; max-width: 760px; max-height: min(86vh, 900px);
+  display: flex; flex-direction: column;
+  background: var(--paper-3); border: 1px solid var(--line-strong);
+  box-shadow: 0 30px 80px rgba(23,19,13,.3);
+}
+.legal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 15px 20px; border-bottom: 1px solid var(--line);
+}
+.legal-title {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--ink);
+}
+.legal-close {
+  flex: 0 0 auto; width: 30px; height: 30px; cursor: pointer;
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
+}
+.legal-close:hover { background: var(--paper-2); color: var(--ink); }
+.legal-alpha {
+  padding: 10px 20px; border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--yellow) 20%, var(--paper-3));
+  font-family: var(--f-mono); font-size: 10.5px; line-height: 1.5; letter-spacing: .04em; color: var(--ink);
+}
+.legal-body { padding: 22px 24px; overflow-y: auto; font-size: 13px; line-height: 1.75; color: var(--ink-soft); }
+.legal-body h4 {
+  margin: 18px 0 6px; font-family: var(--f-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink);
+}
+.legal-body h4:first-child { margin-top: 0; }
+.legal-body p { margin: 0 0 10px; }
+.legal-body p:last-child { margin-bottom: 0; }
+.legal-body ul { margin: 0 0 10px; padding-left: 18px; }
+.legal-body b, .legal-body strong { color: var(--ink); }
+.legal-body a { color: var(--ink); text-decoration: underline; }
+.legal-body::-webkit-scrollbar { width: 8px; }
+.legal-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+@media (max-width: 700px) {
+  .legal-overlay { padding: 12px; }
+  .legal-head { padding: 12px 14px; }
+  .legal-body { padding: 16px 14px; font-size: 12.5px; line-height: 1.7; }
+  .legal-alpha { padding: 9px 14px; font-size: 10px; }
+}
+
+/* v1.7.467 — les liens du pied de page sont en display:inline-flex (règle .foot-links a),
+   ce qui écrase le masquage par langue : on rétablit la priorité ici. */
+.foot-links a[data-lang] { display: none; }
+html[lang="fr"] .foot-links a[data-lang="fr"],
+html[lang="en"] .foot-links a[data-lang="en"],
+html[lang="ja"] .foot-links a[data-lang="ja"] { display: inline-flex; }
+
+
+/* ── v1.7.471 — CURSEUR : UN PLUS TRÈS FIN ────────────────────────────────
+   Deux traits, c’est tout : un plus fin à l’encre sur la page, le MÊME plus en
+   magenta quadri sur les liens, boutons et cartes — la couleur dit « c’est
+   cliquable » sans faire sauter la forme sous le doigt. Dessiné en SVG dans le
+   CSS (aucune requête, aucun fichier à déployer), doublé d’un halo couleur
+   papier pour rester lisible sur les aplats sombres. */
+html, body { cursor: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'24' height%3D'24' viewBox%3D'0 0 24 24'%3E%3Cg fill%3D'none' stroke%3D'%23F7F3EC' stroke-width%3D'3' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3Cg fill%3D'none' stroke%3D'%2317130D' stroke-width%3D'1' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 12 12, crosshair; }
+body :is(p, h1, h2, h3, h4, li, span, div, section, header, footer, table, img, figure) { cursor: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'24' height%3D'24' viewBox%3D'0 0 24 24'%3E%3Cg fill%3D'none' stroke%3D'%23F7F3EC' stroke-width%3D'3' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3Cg fill%3D'none' stroke%3D'%2317130D' stroke-width%3D'1' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 12 12, crosshair; }
+a, button, [role="button"], summary, .btn, .nav-cta, .entry, .tpl-card, .tcard, .help-card, .help-don { cursor: url("data:image/svg+xml;utf8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'24' height%3D'24' viewBox%3D'0 0 24 24'%3E%3Cg fill%3D'none' stroke%3D'%23F7F3EC' stroke-width%3D'3' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3Cg fill%3D'none' stroke%3D'%23E1237B' stroke-width%3D'1' stroke-linecap%3D'round'%3E%3Cpath d%3D'M12 3v6M12 15v6M3 12h6M15 12h6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 12 12, pointer; }
+input, select, textarea, label { cursor: pointer; }
+.legal-body { cursor: text; }
+
+/* 🆕 v1.7.472 — SÉLECTEUR DE LANGUE DU MENU BURGER : trois blocs carrés qui se touchent,
+   comme la barre du haut (mêmes .lang-toggle / button). Les mots sont courts (FR EN JA),
+   donc les blocs restent des carrés réguliers. */
+.mm-lang-toggle { display: flex; gap: 0; width: max-content; margin: 6px auto 0; }
+.mm-lang-toggle button { flex: 0 0 auto; min-width: 68px; min-height: 44px; font-size: 11px; letter-spacing: .12em; border-radius: 0; }
+
+/* 🆕 v1.7.472 — LE COLOPHON DANS LE MENU (voir le commentaire du HTML) : mêmes métriques
+   que la bande d'origine, pour que rien ne change à l'œil sinon la position.
+   🆕 v1.7.496 — IL NE DESCEND PLUS (même correction que sur l'accueil en v1.7.495). Le menu
+   occupe tout l'écran et recouvrait la bande du logotype (« on perd le logo icon le filet
+   dessous ») : on la repose donc dans le menu — mais elle était empilée SOUS la barre collante,
+   après le décalage mesuré de la nav, si bien que le logo descendait de 146 px à l'ouverture.
+   La bande est maintenant HORS FLUX et le script la pose exactement sur celle de la page (même
+   haut, même hauteur, même filet) : le logo icon ne bouge pas d'un pixel. Si la bande est sortie
+   de l'écran (page défilée), elle se range sous la barre, comme avant.
+   🆕 v1.7.572 — ET ELLE NE DÉFILE PLUS (« le header qui supporte l'icône scroll avec tout le
+   reste du menu »). Le menu défile (overflow-y: auto) : un élément en position:absolute
+   défilait donc AVEC les entrées, le logo quittait l'écran — mesuré : top 5 au repos puis
+   −204 après 209 px de défilement sur 360×640 (et sur 390×844, 850 px de contenu pour 843
+   visibles : le menu défilait déjà de 7 px, le bandeau bougeait). La bande passe en
+   position:fixed : elle est clouée à la fenêtre, les entrées glissent SOUS elle (elle est
+   positionnée, elles ne le sont pas), et rien ne passe jamais par-dessus. */
+.mm-colo {
+  position: fixed; left: 0; right: 0; top: 5px;         /* 5 px = la hauteur de la barre quadri — voir v1.7.572 ci-dessus */
+  display: none; align-items: flex-start; justify-content: center;   /* affiché menu ouvert */
+  padding: 6px 24px;                 /* LES MÊMES RESPIRATIONS QUE .brand-header, à la lettre */
+  background: var(--paper); border-bottom: 1px solid var(--line);
+  pointer-events: none;
+}
+/* 🆕 v1.7.572 — LE BANDEAU EST SORTI DU MENU (il vit juste APRÈS lui, dans la page).
+   Un élément fixe placé DANS un conteneur qui défile reste solidaire de ce défilement : le
+   menu porte un backdrop-filter, qui crée le bloc conteneur pour ses descendants fixés.
+   Dehors, il est vraiment cloué à la fenêtre — mesuré, il ne bouge plus d'un pixel quand on
+   fait défiler le menu (avant : −104 px après 109 px de défilement). La règle ci-dessous ne
+   l'affiche que lorsque le menu est ouvert, avec le même empilement que lui (118), le menu
+   étant juste avant lui dans la page. */
+.mobile-menu.open + .mm-colo { display: flex; z-index: 118; }
+.mm-colo img { height: 40px; width: auto; display: block; }
+@media(max-width: 700px){
+  .mm-colo { padding-top: 18px; }                          /* idem .brand-header en mobile */
+  .mm-colo img { height: clamp(44px, 12vw, 56px); }
+}
+
+/* 🆕 v1.7.472 — le bas du menu : qui signe, et la version. Petit, espacé, arrêté par un filet. */
+.mm-bas {
+  /* 🆕 v1.7.572 — margin-top:auto → 22 px. Aligné sur l'accueil (v1.7.549) : plaquée au bas
+     d'un menu plein écran, la signature laissait un grand vide AU MILIEU du menu (« fin de
+     menu étrange »). Une marge fixe la fait suivre le contenu. */
+  margin-top: 22px; padding: 14px 4px 4px; border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 5px;
+  font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+}
+/* 🆕 v1.7.472 — CES BOUTONS PORTENT data-lang, ET C’EST LE PIÈGE : le mécanisme trilingue
+   masque tout [data-lang] qui n’est pas la langue courante, donc FR et JA DISPARAISSAIENT du
+   menu (« le sélecteur ne marche pas »). Ce sont des COMMANDES, pas du contenu : elles
+   doivent rester visibles dans les trois cas. */
+html .mm-lang-toggle button[data-lang] { display: inline-flex !important; }
+
+
+
+
+/* ═══ v1.7.470 — page « nous aider » : mêmes jetons que la landing, mise en page dédiée ═══ */
+/* ⚠️ _SP_SOMMAIRE_708 — LE SOMMAIRE A QUITTÉ CETTE PAGE POUR LA FAQ (demande utilisateur :
+   « la page FAQ en a besoin alors que la page tarif n'en a plus besoin »). La page Tarif se lit
+   d'une traite (le hero, puis la grille d'offres) : le sommaire y faisait doublon. Le bloc HTML,
+   le CSS et le script ont été repris à l'identique dans `faq.html`, réglés sur SES trois zones
+   (questions fréquentes → #faq, nous écrire → #ecrire, presse & ressources → #ressources). */
+.help-wrap { max-width: 1180px; margin: 0 auto; padding: clamp(26px,3.4vw,56px) clamp(18px,4vw,40px) clamp(40px,6vw,80px); }
+/* ═══ v1.7.474 — LE RYTHME VERTICAL DE LA PAGE ═══
+   Une seule échelle pour toute la page : le titre respire de 12 px avant son texte, un bloc est
+   séparé du suivant de 18 à 26 px, le filet de 26 à 40 px. Les écarts étaient jusqu'ici donnés
+   bloc par bloc (34 px, 28 px, 18 px, 8 px selon les endroits) — c'est ce qui donnait l'impression
+   que les titres étaient posés au hasard. Aucune couleur ni taille de texte n'est touchée. */
+.help-kicker { margin: 0; }
+.help-h1 { margin-top: 10px; }
+.help-don-txt { margin-top: clamp(18px,2.2vw,26px); }
+.help-h2, .help-don-h2, .help-card h2, .help-more-grid h3, .help-apps .help-h2 { margin: 0 0 12px; }
+.help-rule { margin: clamp(26px,3.4vw,40px) 0; }
+/* 🆕 v1.7.497 — LES MÊMES MARGES QUE L'ACCUEIL (v1.7.496).
+   Les sections de cette page portaient le rembourrage général du site — section { padding:
+   clamp(72px,10vw,140px) } — soit jusqu'à 140 px de vide vertical, quand l'accueil est à 34-56.
+   Mesuré : plus du double d'une page à l'autre. Elles prennent exactement le demi-souffle de
+   l'accueil, et l'écart entre les blocs suit : 112 px entre deux rubriques en desktop. */
+section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw,56px) 24px; }
+.help-apps, .help-more, .help-bug { margin-top: clamp(34px,4vw,56px); }
+.help-rule { margin: clamp(34px,4vw,56px) 0; }
+.help-card p:last-child, .help-more-grid p:last-child { margin-bottom: 0; }
+.help-kicker { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
+.help-h1 { margin: 14px 0 0; font-family: var(--f-display); font-weight: 700; line-height: 1.1; letter-spacing: -.012em; font-size: clamp(28px,3.4vw,44px); color: var(--ink); }
+/* ═══ v1.7.473 — DEUX COLONNES DÈS LE HAUT : LE TEXTE ÉTROIT, LE PAIEMENT LARGE ═══
+   Le texte est plafonné à 400 px (une colonne de lecture, pas une pleine largeur), le cadre
+   PayPal prend tout le reste ET toute la hauteur de la ligne : c'est la zone d'action qui
+   porte l'importance. Sous 900 px, une seule colonne, le texte d'abord. */
+.help-top { display: grid; grid-template-columns: minmax(0,2fr) minmax(0,1fr); gap: clamp(22px,3vw,52px); align-items: stretch; }
+@media (max-width: 900px) { .help-top { grid-template-columns: 1fr; gap: clamp(18px,3vw,28px); } }
+.help-intro { display: flex; flex-direction: column; }
+.help-don-txt { margin-top: clamp(20px,2.6vw,30px); padding-top: clamp(14px,1.8vw,20px); border-top: 1px solid var(--line); }
+.help-don-h2 { margin: 0 0 8px; font-family: var(--f-caps); font-weight: 400; font-size: clamp(20px,2.2vw,26px); letter-spacing: .01em; color: var(--ink); }
+/* 🆕 v1.7.497 — MÊME TAILLE QUE LE RESTE (13 px → la taille du texte courant de la page).
+   La ligne des 19 € était en 10,5 px mono, la phrase PayPal en 13 px : sous le chapeau, qui est
+   à 14-16,5 px, la partie la plus utile de la page se lisait en tout petit. Tout passe à la
+   taille du texte courant, et la phrase de consentement (voir le HTML) prend un filet à gauche
+   pour se distinguer sans rétrécir. */
+.help-don-txt p { margin: 0 0 10px; font-size: clamp(14px,1.3vw,16.5px); line-height: 1.7; color: var(--ink-soft); }
+.help-don-news { border-left: 3px solid var(--yellow); padding-left: 14px; color: var(--ink) !important; }
+.help-lead { margin: 14px 0 0; max-width: 68ch; font-size: clamp(14px,1.3vw,16.5px); line-height: 1.7; color: var(--ink-soft); }
+/* ⚠️ _SP_TARIF_709 — LE FILET DE SÉPARATION EST COURT ET CENTRÉ (demande utilisateur : « j'aime pas
+   la barre grise de séparation sur toute la largeur dans la page des tarifs avant les 4 offres,
+   fais-la moins large »). Il courait d'un bord à l'autre de la colonne (jusqu'à 1180 px) : c'est un
+   trait décoratif court, centré par marges automatiques, qui marque la respiration sans barrer la page. */
+.help-rule { height: 1px; width: min(140px, 40%); background: var(--line); border: 0; margin: clamp(28px,4vw,46px) auto; }
+.help-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: clamp(14px,1.6vw,20px); }
+.help-card { background: var(--paper-3); border: 1px solid var(--line); padding: clamp(16px,1.8vw,24px); position: relative; }
+.help-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--cyan); }
+.help-card:nth-child(2)::before { background: var(--magenta); }
+.help-card:nth-child(3)::before { background: var(--yellow); }
+.help-card h2 { margin: 0 0 10px; font-family: var(--f-mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); }
+.help-card p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); }
+.help-card p:last-child { margin-bottom: 0; }
+.help-card ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); }
+/* ═══ v1.7.606 — LA GRILLE DE PRIX : QUATRE BOÎTES (modèle app.zigmoon.com) ═══
+   Le haut de page devient un titre court puis une grille de quatre boîtes : Gratuit / Soutien
+   13 € / News 39 €/an / Don libre. Le hero n'a plus qu'une colonne (l'ancienne colonne de
+   paiement a migré dans la boîte « News »). */
+.help-top--simple { grid-template-columns: 1fr; }
+.help-top--simple .help-intro { align-items: center; text-align: center; }
+.help-top--simple .help-lead { margin-left: auto; margin-right: auto; }
+/* L'ÉNORME €0 DU HERO (sous le titre). */
+.help-hero-price { margin: 0 0 clamp(22px,2.6vw,34px); line-height: .9; }
+.help-hero-amt { font-family: var(--f-display); font-weight: 700; font-size: clamp(80px,15vw,190px); line-height: .9; letter-spacing: -.045em; color: var(--ink); }
+.help-hero-amt sup { font-size: .38em; vertical-align: super; }
+/* L'euro reste PRÈS du chiffre (en FR/JA l'euro est à droite : une petite marge, pas un espace large). */
+.help-hero-amt .inline-fr sup, .help-hero-amt .inline-ja sup { margin-left: .04em; }
+section.help-price { padding: 0; margin-top: clamp(28px,4vw,48px); }
+section.help-price > .help-h2 { text-align: center; }
+section.help-price > .help-ress-intro { text-align: center; margin-left: auto; margin-right: auto; margin-bottom: clamp(20px,2.6vw,34px); }
+.help-price-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: clamp(14px,1.6vw,20px); align-items: stretch; }
+@media (max-width: 1040px) { .help-price-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 560px) { .help-price-grid { grid-template-columns: 1fr; } }
+.help-price-card { display: flex; flex-direction: column; background: var(--paper-3); border: 1px solid var(--line); border-top: 3px solid var(--cyan); padding: clamp(18px,2vw,26px); }
+.help-price-card:nth-child(2) { border-top-color: var(--magenta); }
+.help-price-card:nth-child(3) { border-top-color: var(--yellow); }
+.help-price-card:nth-child(4) { border-top-color: var(--ink); }
+.help-price-card--free { background: var(--paper); border-color: var(--ink); }
+.help-price-no { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.help-price-no b { font-weight: 700; color: var(--ink); }
+.help-price-no i { font-style: normal; }
+.help-price-h { margin: 12px 0 0; min-height: 2.16em; font-family: var(--f-caps); font-weight: 400; font-size: clamp(20px,2.1vw,26px); line-height: 1.08; letter-spacing: .01em; color: var(--ink); }
+.help-price-amt-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; margin: 14px 0 0; }
+.help-price-amt { font-family: var(--f-display); font-weight: 700; font-size: clamp(34px,4vw,46px); line-height: 1; letter-spacing: -.02em; color: var(--ink); }
+.help-price-amt sup { font-size: .45em; vertical-align: super; }
+/* L'euro reste PRÈS du chiffre (en FR/JA l'euro est à droite : une petite marge, pas un espace large). */
+.help-price-amt .inline-fr sup, .help-price-amt .inline-ja sup { margin-left: .05em; }
+.help-price-amt--txt { font-size: clamp(20px,2.2vw,26px); }
+/* Strut : un espace de largeur nulle au corps des grands prix, pour que « Votre montant »
+   partage exactement la même ligne de base que €0 / €13 / €39. */
+.help-price-amt--txt::before { content: '\200B'; font-size: clamp(34px,4vw,46px); }
+.help-price-per { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.help-price-list { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 9px; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); }
+.help-price-list li { position: relative; padding-left: 18px; }
+.help-price-list li::before { content: ''; position: absolute; left: 0; top: .5em; width: 7px; height: 7px; background: var(--cyan); }
+.help-price-card:nth-child(2) .help-price-list li::before { background: var(--magenta); }
+.help-price-card:nth-child(3) .help-price-list li::before { background: var(--yellow); }
+.help-price-card:nth-child(4) .help-price-list li::before { background: var(--ink); }
+.help-price-foot { margin-top: auto; padding-top: 18px; display: grid; gap: 10px; }
+.help-price-card .help-pay-btn { min-height: 74px; }
+.help-price-card .help-pay-boutons { grid-template-columns: 1fr; }
+.help-price-note { margin: 0; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; line-height: 1.6; color: var(--muted); }
+.help-price-foot2 { max-width: 74ch; margin: clamp(18px,2.2vw,24px) 0 0; font-size: clamp(13px,1.2vw,15px); line-height: 1.7; color: var(--ink-soft); }
+.help-don { margin: clamp(28px,4vw,46px) 0 0; border: 1px solid var(--line-strong); background: var(--paper-3); padding: clamp(20px,2.6vw,34px); display: grid; grid-template-columns: minmax(0,1fr) minmax(240px,340px); gap: clamp(18px,2.4vw,34px); align-items: start; }
+@media (max-width: 820px) { .help-don { grid-template-columns: 1fr; } }
+.help-don h2 { margin: 0 0 8px; font-family: var(--f-caps); font-weight: 400; font-size: clamp(22px,2.4vw,30px); color: var(--ink); }
+.help-don p { margin: 0 0 8px; font-size: 13.5px; line-height: 1.7; color: var(--ink-soft); }
+.help-don .tiny { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .06em; color: var(--muted); }
+.help-pay { background: var(--paper); border: 1px dashed var(--line-strong); padding: 18px 16px; min-height: 96px; }
+/* 🆕 v1.7.604 — PLUS DE SDK PAYPAL : LES DEUX BOUTONS SONT LES NÔTRES.
+   Le SDK rendait un bouton imposé, marque comprise : impossible d'y mettre notre texte, notre
+   typo, notre jaune. La page envoie maintenant vers la page de paiement du plan — celle-là même
+   que le SDK ouvrait, et où l'on paie par PayPal OU par carte, sans compte. La règle
+   « .help-pay [id^="paypal-form-fields-container"] » est morte avec le SDK.
+   ⚠️ v1.7.472, gardé en mémoire : ce SDK enveloppait son bouton dans un conteneur
+   « container-type: inline-size », dont la contribution intrinsèque est NULLE — posé en enfant
+   flex, il réclamait une largeur de 0 et la colonne s'effondrait à un caractère par ligne
+   (titre de 1457 px de haut, bouton parti à 5037 px). Si le SDK revient un jour, le piège
+   revient avec lui : conteneur en BLOC, jamais en flex, et aucun « overflow: hidden ». */
+/* ═══ v1.7.472 — LES TROIS OUTILS AVEC LEURS ICÔNES, ET LE DÉTAIL DU DON ═══
+   Les mêmes plaques que le hero de la landing (.entry-logo, .entry-clair) : le SuperPrint
+   garde la sienne, noire, parce que son icône est blanche ; les deux autres passent en blanc
+   bordé de gris, parce que leurs logotypes sont bicolores et lisibles sur les deux fonds.
+   On ne réinvente donc rien : c'est le même dessin que la page d'accueil. */
+.help-h2 { margin: 0 0 10px; font-family: var(--f-caps); font-weight: 400; font-size: clamp(22px,2.8vw,34px); letter-spacing: .01em; line-height: 1.06; color: var(--ink); }
+.help-apps { margin-top: clamp(30px,4vw,50px); }
+.help-apps-intro { max-width: 68ch; margin: 0 0 clamp(18px,2.4vw,28px); font-size: clamp(14px,1.3vw,16px); line-height: 1.7; color: var(--ink-soft); }
+.help-apps-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: clamp(14px,1.8vw,22px); }
+@media (max-width: 820px) { .help-apps-grid { grid-template-columns: 1fr; } }
+.help-app { background: var(--paper-3); border: 1px solid var(--line); padding: clamp(18px,2.2vw,26px); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.help-app .entry-logo { width: 64px; height: 64px; padding: 11px; margin-bottom: 4px; }
+.help-app h3 { font-family: var(--f-caps); font-size: clamp(19px,2.1vw,25px); font-weight: 400; letter-spacing: .02em; line-height: 1; color: var(--ink); }
+.help-app p { font-size: 13px; line-height: 1.7; color: var(--ink-soft); }
+.help-app-go { margin-top: auto; padding-top: 14px; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); text-decoration: none; }
+.help-app-go:hover { color: var(--muted); }
+.help-more { margin-top: clamp(30px,4vw,50px); }
+.help-more-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(14px,1.8vw,22px); }
+@media (max-width: 820px) { .help-more-grid { grid-template-columns: 1fr; } }
+.help-more-grid article { background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--cyan); padding: clamp(16px,2vw,24px); }
+.help-more-grid article:nth-child(2) { border-left-color: var(--magenta); }
+.help-more-grid article:nth-child(3) { border-left-color: var(--yellow); }
+.help-more-grid article:nth-child(4) { border-left-color: var(--ink); }
+.help-more-grid h3 { font-family: var(--f-caps); font-size: clamp(18px,2vw,23px); font-weight: 400; line-height: 1.06; color: var(--ink); margin-bottom: 8px; }
+.help-more-grid p { font-size: 13.5px; line-height: 1.75; color: var(--ink-soft); }
+.help-more-sig { margin: clamp(18px,2.4vw,28px) 0 0; font-family: var(--f-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+/* ═══ v1.7.472 — LA COLONNE DE DON, ET LE FORMULAIRE DE SIGNALEMENT ═══
+   Le don remonte juste sous le titre : c'est la raison de la page, il ne doit pas falloir
+   défiler pour le trouver. Et il redevient une VRAIE colonne : les deux côtés de la grille
+   s'étirent à la même hauteur, le cadre PayPal se remplit au lieu de flotter plus petit que
+   son contenu. */
+.help-don { margin: clamp(22px,3vw,34px) 0 0; align-items: stretch; }
+.help-pay {
+  background: var(--paper); border: 1px solid var(--line-strong); padding: clamp(20px,2.4vw,30px);
+  min-height: 100%; display: flex; flex-direction: column; justify-content: flex-start; gap: 16px;
+  /* 🆕 v1.7.604 — TOUT LE BLOC EN TYPOGRAPHIE CENTRÉE, à la demande : la couronne, le titre, le
+     lien « Toutes nos apps », le prix, l'appel et la note. Une seule déclaration ici plutôt que
+     six `text-align` sur six règles : c'est le bloc entier qui est centré, et il le reste si on
+     y ajoute une ligne demain. Les boutons centreaient déjà leur libellé.
+     La pop-in de paiement vit dans ce bloc : elle remet `text-align: left` chez elle (voir
+     .pay-pop), sinon son pied et ses phrases se seraient centrés aussi — ils ne le sont pas. */
+  text-align: center;
+}
+/* ⚠️ La couronne se centre par le flex parent, pas par le texte : inchangée. */
+/* 🆕 v1.7.604 — LA COURONNE DE SIMON DUPONT-GELLERT, AU-DESSUS DU BLOC.
+   C'est le MÊME dessin que la fiche d'auteur de l'accueil (img/simon.svg, viewBox 1200x1200,
+   encre noire sur fond transparent) et le MÊME traitement : aucune plaque, aucun filet, aucun
+   fond — le dessin se pose sur le papier. Décoratif (le titre juste en dessous dit ce qu'on
+   reçoit) : aria-hidden.
+   RECADRÉE PUIS RÉDUITE. Mesuré sur le fichier (getBBox des 5 tracés) : l'encre occupe 230 → 970
+   sur 1200, soit 740/1200 = 61,67 % — donc 19,2 % de VIDE INTERNE de chaque côté. Dans une boîte
+   de 120 px, c'était 23 px de blanc en plus de la marge de la page, au-dessus comme en dessous :
+   c'est ce qui donnait l'impression d'une couronne perdue dans son cadre. Le dessin est donc
+   agrandi dans sa boîte (1200/740 = 1,62162, une transformation, pas un recadrage : aucun trait
+   n'est coupé) pour que l'encre la remplisse exactement.
+   ⚠️ CONSÉQUENCE À NE PAS OUBLIER : l'encre prenait 74 px dans une boîte de 120 (120 × 0,6167) ;
+   une fois la boîte remplie, elle en prenait 120 — la couronne paraissait donc AVOIR GRANDI alors
+   qu'aucune taille n'avait été demandée. La boîte est maintenant réduite d'autant : l'encre fait
+   64 à 80 px selon l'écran, soit la taille qu'elle avait avant le recadrage (74 px), là où deux
+   essais donnaient 120 px puis 96 px — jugés trop grands tous les deux.
+   MARGES RÉDUITES. Le cadre pose 30 px au-dessus de son contenu et la colonne 16 px entre deux
+   enfants : la couronne reprend 10 px en haut et 6 px en bas (marges négatives, elle seule).
+   Vide autour de l'encre : 20 px au-dessus, 10 px sous elle, au lieu de 53 et 39. */
+.help-pay-marque {
+  flex: 0 0 auto; align-self: center;
+  width: clamp(64px,6.2vw,80px); height: clamp(64px,6.2vw,80px);
+  display: flex; align-items: center; justify-content: center;
+  margin: -10px 0 -6px; padding: 0; background: none; border: 0;
+}
+.help-pay-marque img { width: 100%; height: 100%; display: block; transform: scale(1.62162); }
+/* 01/10/2026 — le cadre porte désormais une PHRASE (plus une étiquette) : casse normale,
+   sans capitales ni interlettrage large, sur la police de lecture. */
+.help-pay-titre {
+  font-family: var(--f-sans); font-size: clamp(13px,1.15vw,14.5px); font-weight: 400;
+  letter-spacing: 0; text-transform: none; line-height: 1.6; color: var(--ink-soft);
+  padding-bottom: 14px; border-bottom: 1px solid var(--line);
+}
+.help-pay-apps {
+  display: block; width: fit-content; margin: 8px auto 0;
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .06em;
+  color: var(--ink); text-decoration: underline;
+}
+.help-pay-apps:hover, .help-pay-apps:focus-visible { color: var(--magenta); }
+.help-pay-note { font-size: 12px; line-height: 1.65; color: var(--muted); }
+/* 🆕 01/10/2026 — LE PRIX, EN GRAND, AU-DESSUS DU BOUTON (abonnement : 19 € par an).
+   Le montant est posé par PayPal : la page ne fait que l'afficher. Le bloc est un BLOC
+   (les règles `html[lang] [data-lang]` forcent `display: block` sur la variante courante) :
+   pas de `display: flex` ici, sinon la règle de langue l'écrase. */
+.help-pay-prix { margin: 0; color: var(--ink); }
+.help-pay-montant {
+  font-family: var(--f-display); font-weight: 700; line-height: 1;
+  font-size: clamp(34px,4.4vw,48px); letter-spacing: -.02em;
+}
+.help-pay-periode {
+  font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+}
+/* 🆕 v1.7.604 — L'OBJET DE L'ABONNEMENT, DIT PAR NOS PROPRES BOUTONS.
+   « S'abonner » sous un logo PayPal se lisait « abonnez-vous à PayPal » — des visiteurs ont cru
+   devoir ouvrir un abonnement PayPal au lieu de souscrire aux news. Les deux boutons disent
+   donc le mot de l'action en toutes lettres — « S'abonner » sur les DEUX boutons, mot identique
+   puisque l'action est la même ; seule la marque change, et c'est elle qui dit le moyen (le P
+   PayPal d'un côté, l'icône carte de l'autre). Le titre du dessus dit l'objet.
+   (1) le titre ci-dessus nomme ce qu'on souscrit ;
+   (2) chaque langue a son lien (locale.x = fr_XC / en_US / ja_JP) : la page de paiement
+       arrive dans la langue de la page.
+   Les variantes portent data-lang, et le masquage global est en « !important » (v1.7.487) :
+   il l'emporte donc bien sur le « display: flex » des boutons.
+   LES PLAQUES NE PORTENT AUCUN FILET. Sur le bouton carte (fond #FFFDF8) la plaque blanche ne
+   se voit pas ; sur le bouton PayPal, dont le fond est le JAUNE PAYPAL (#FFC439), elle passe en
+   TRANSPARENT pour que le P se pose directement sur le jaune — c'est le dessin du bouton or
+   officiel de PayPal, et une pastille blanche au milieu du jaune jurerait. */
+.help-pay-cta {
+  margin: 0; font-family: var(--f-caps); font-weight: 400;
+  font-size: clamp(21px,2.3vw,27px); line-height: 1.15; letter-spacing: .01em; color: var(--ink);
+}
+.help-pay-boutons { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+@media (max-width: 420px) { .help-pay-boutons { grid-template-columns: 1fr; } }
+.help-pay-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 13px 8px; min-height: 108px;
+  background: var(--paper-3); border: 1px solid var(--ink); border-radius: 0;
+  text-align: center; text-decoration: none;
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; line-height: 1.45; color: var(--ink);
+  transition: background .25s var(--ease), color .25s var(--ease);
+}
+.help-pay-btn:hover, .help-pay-btn:focus-visible { background: var(--yellow); }
+.help-pay-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* ⚠️ Les boutons PayPal NE PORTENT PAS le jaune PayPal en fond : ils se lisent
+   comme les autres boutons (même papier), seul le repère P les distingue. */
+.help-pay-btn-paypal { background: var(--paper-3); }
+.help-pay-btn-paypal .help-pay-plaque { background: var(--white); }
+/* …et pas davantage au SURVOL (le survol jaune est réservé aux autres boutons). */
+.help-pay-btn-paypal:hover, .help-pay-btn-paypal:focus-visible { background: var(--ink); color: var(--paper); }
+.help-pay-plaque {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  height: 38px; padding: 0 10px; background: var(--white);
+}
+.help-pay-plaque img { display: block; height: 32px; width: auto; }
+.help-pay-plaque svg { display: block; height: 28px; width: auto; }
+
+/* ═══ v1.7.604 — LA POP-IN DE PAIEMENT : ON NE QUITTE PLUS LA PAGE.
+   Les deux boutons ouvraient la page PayPal dans un NOUVEL ONGLET : le visiteur perdait la
+   page, le contexte, et la parenthèse était brutale pour un abonnement à 19 €.
+   VÉRIFIÉ AVANT DE CODER, parce que c'est ce qui décide de tout : la page de paiement PayPal
+   n'envoie NI « X-Frame-Options » NI directive « frame-ancestors » — donc elle s'ENCADRE. Et
+   le test le confirme : chargée dans un iframe de 520x760 depuis superprint.cc en ligne, elle
+   se rend complètement (connexion, « Payer par carte bancaire », les quatre langues). La
+   pop-in est donc possible, et c'est elle qu'on fait.
+   DA reprise des pop-ins légaux de la page (v1.7.467) : voile d'encre à 55 % + flou, cadre au
+   papier, filets fins, titre en monospace. z-index 320 : au-dessus de la barre quadri (300),
+   de la nav (120) et du sommet de sommaire (90), sinon le voile laisserait passer la nav.
+   TROIS GARDE-FOUS, parce qu'un encadrement n'est pas garanti à 100 % : le cadre n'est chargé
+   qu'au premier clic (PayPal ne se charge pas sur la page), un lien « ouvrir dans un onglet »
+   reste dans le pied, et une phrase dit quoi faire quand c'est payé. */
+.pay-pop {
+  position: fixed; inset: 0; z-index: 320; display: none;
+  align-items: center; justify-content: center; padding: 24px;
+  background: rgba(23,19,13,.55);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  /* La pop-in est posée dans le bloc de paiement, qui est centré (voir .help-pay) : elle
+     reprend l'alignement à gauche, sinon sa phrase et son lien de secours auraient hérité du
+     centrage — décision d'origine : la pop-in est alignée à gauche, le bloc de paiement non. */
+  text-align: left;
+}
+.pay-pop.open { display: flex; }
+.pay-pop-cadre {
+  width: 100%; max-width: 560px; height: min(88vh, 820px);
+  display: flex; flex-direction: column;
+  background: var(--paper-3); border: 1px solid var(--line-strong);
+  box-shadow: 0 30px 80px rgba(23,19,13,.3);
+}
+.pay-pop-tete {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 18px; border-bottom: 1px solid var(--line);
+}
+.pay-pop-titre {
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink);
+}
+.pay-pop-close {
+  flex: 0 0 auto; width: 30px; height: 30px; cursor: pointer;
+  background: transparent; border: 1px solid var(--line); color: var(--muted);
+  font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
+}
+.pay-pop-close:hover, .pay-pop-close:focus-visible { background: var(--paper-2); color: var(--ink); }
+.pay-pop-frame { flex: 1 1 auto; width: 100%; border: 0; background: var(--white); }
+.pay-pop-pied {
+  padding: 12px 18px; border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 7px;
+  font-size: 12px; line-height: 1.6; color: var(--muted);
+}
+.pay-pop-pied p { margin: 0; }
+.pay-pop-secours { color: var(--ink); font-family: var(--f-mono); font-size: 11px; letter-spacing: .04em; }
+@media (max-width: 700px) {
+  .pay-pop { padding: 10px; }
+  .pay-pop-cadre { max-width: none; height: 92vh; }
+  .pay-pop-tete { padding: 11px 13px; }
+  .pay-pop-pied { padding: 10px 13px; font-size: 11.5px; }
+}
+
+.help-bug { margin-top: clamp(30px,4vw,50px); border: 1px solid var(--line); background: var(--paper-3); padding: clamp(20px,2.6vw,32px); }
+.help-bug-intro { max-width: 74ch; margin: 0 0 clamp(16px,2vw,24px); font-size: clamp(13.5px,1.25vw,15px); line-height: 1.75; color: var(--ink-soft); }
+.help-bug-intro a { color: var(--ink); }
+.help-bug-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: clamp(12px,1.6vw,18px); }
+.help-bug-grid .plein { grid-column: 1 / -1; }
+@media (max-width: 700px) { .help-bug-grid { grid-template-columns: 1fr; } }
+.help-bug label { display: block; margin-bottom: 6px; font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  /* v1.7.472 — les étiquettes portent data-lang : sans cette règle, la mise en
+     forme « .help-bug label » l'emporte sur le masquage global et les trois langues
+     s'empilent au-dessus de chaque champ. Même correctif que sur la page d'accueil. */
+  html[lang="fr"] .help-bug label[data-lang]:not([data-lang="fr"]),
+  html[lang="en"] .help-bug label[data-lang]:not([data-lang="en"]),
+  html[lang="ja"] .help-bug label[data-lang]:not([data-lang="ja"]) { display: none; }
+.help-bug input, .help-bug textarea {
+  width: 100%; font-family: var(--f-sans); font-size: 13.5px; line-height: 1.6;
+  padding: 11px 13px; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line-strong); border-radius: 0;
+}
+.help-bug input:focus, .help-bug textarea:focus { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.help-bug textarea { min-height: 150px; resize: vertical; }
+.help-bug-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 6px; }
+.help-bug-note { font-size: 12px; line-height: 1.6; color: var(--muted); max-width: 46ch; }
+/* ═══ v1.7.578 — LE FORMULAIRE DE CONTACT, REPENSÉ ═══
+   (1) LE SUJET SE CHOISIT D'ABORD, en cinq pastilles, avant les champs — c'était
+       la demande : « il faudrait plusieurs choix au départ de celui-ci ».
+   (2) CHAQUE CHAMP PORTE UNE AIDE GRISÉE (placeholder) : on comprend quoi écrire
+       sans même lire l'étiquette.
+   (3) LE SUJET CHOISI DÉCIDE de l'objet du courrier ET de la question posée sous
+       chaque champ : les étiquettes et les aides sont réécrites en JS, dans les
+       trois langues de la page (les textes du HTML servent de repli).
+   Piège de langue connu depuis 1.7.472 : une règle de classe bat le
+   « [data-lang] { display: none } », d'où l'exception :not() ci-dessous. */
+.help-sujet { margin: 0; }
+.help-sujet-titre { margin: 0 0 10px; font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+html[lang="fr"] .help-sujet [data-lang]:not([data-lang="fr"]),
+html[lang="en"] .help-sujet [data-lang]:not([data-lang="en"]),
+html[lang="ja"] .help-sujet [data-lang]:not([data-lang="ja"]) { display: none; }
+.help-sujet-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.help-sujet-row button {
+  font-family: var(--f-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-soft); background: var(--paper);
+  border: 1px solid var(--line-strong); border-radius: 999px; padding: 8px 15px;
+  cursor: pointer; transition: color .2s var(--ease), background .2s var(--ease), border-color .2s var(--ease);
+}
+.help-sujet-row button:hover { color: var(--ink); border-color: var(--ink); }
+.help-sujet-row button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.help-sujet-row button[aria-checked="true"] { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+.help-sujet-aide { margin: 10px 0 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+.help-form-err { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--magenta); }
+.help-bug-grid .help-sujet-row.is-err button { border-color: var(--magenta); color: var(--magenta); }
+.help-bug-grid .champ.is-err input, .help-bug-grid .champ.is-err textarea { border-color: var(--magenta); }
+.help-bug input::placeholder, .help-bug textarea::placeholder { color: var(--muted); opacity: 1; }
+
+
+.help-note { margin: 18px 0 0; font-size: 13px; line-height: 1.7; color: var(--muted); }.help-note a { color: var(--ink); }
+
+
+/* la page courante garde le trait de la nav, comme au survol (la landing n'a que :hover) */
+.nav-links a[aria-current="page"] { color: var(--ink); }
+.nav-links a[aria-current="page"]::after { transform: scaleX(1); }
+/* ——— v1.7.497 — LE RYTHME DE LA PAGE D'AIDE, ALIGNÉ SUR L'ACCUEIL (posé en fin de feuille).
+   Le rembourrage de ces sections valait encore celui du site entier — section { padding:
+   clamp(72px,10vw,140px) } — soit jusqu'à 140 px de vide vertical, quand l'accueil est à 34-56.
+   Mesuré, plus du double d'une page à l'autre : « elles sont très trop grandes ». Elles prennent
+   le demi-souffle de l'accueil, et c'est CE REMBOURRAGE SEUL qui fait l'écart entre deux grandes
+   rubriques : 112 px en desktop, 80 px à 1000, 68 px à 390 — les valeurs exactes de l'accueil.
+   ⚠️ La marge propre de .help-apps et .help-more (50 px, écrite plus haut) doit tomber : sans ça,
+   elle s'ajoute au rembourrage. Le filet de séparation, lui, prend la moitié de ce souffle de
+   chaque côté, pour tomber au milieu de l'écart. */
+section.help-apps, section.help-more, section.help-bug { padding: clamp(34px,4vw,56px) 24px; }
+.help-apps, .help-more, .help-bug { margin-top: 0; }
+/* _SP_TARIF_709 — marges VERTICALES seulement resserrées ici ; le centrage et la largeur
+   courte (min(140px,40%)) sont posés plus haut et restent valables (marges gauche/droite auto). */
+.help-rule { margin: clamp(17px,2vw,28px) auto; }
+/* ——— v1.7.499 — LES DEUX TITRES QUI RESTENT, À LA TYPOGRAPHIE DU TITRE PRINCIPAL.
+   Après la suppression des trois outils et de « ce qu'un don représente », la page n'a plus que
+   deux titres de rubrique — « Participer » (dans le bloc de don) et « Trouvé un bug ? ».
+   Ils étaient en capitales étroites, à 20-26 px, sous un titre principal de 28-44 px : ils
+   passent à la typographie exacte de ce titre principal (Playfair, 28-44 px), comme demandé. */
+.help-don-txt h2, .help-bug .help-h2 {
+  font-family: var(--f-display); font-weight: 700; line-height: 1.1;
+  letter-spacing: -.012em; font-size: clamp(28px,3.4vw,44px); color: var(--ink);
+}
+/* 🆕 v1.7.571 — BULLE WHATSAPP (bas droite), sur la page d'accueil ET sur « Participer ».
+   L'ENCRE EST CELLE DU BOUTON « OUVRIR L'APP » (--ink, survol --ink-2) : aucun vert, aucune
+   couleur nouvelle dans l'interface. z-index 100 : SOUS le menu plein écran (118), sous la
+   barre collante (119) et sous la barre du haut (300). Aucun fondu — le changement de teinte
+   est instantané comme celui du bouton, seules l'échelle et l'ombre bougent au survol.
+   Le numéro est celui de l'atelier : +33 6 71 61 41 10. */
+.sp-wa {
+  position: fixed; right: 22px; bottom: 22px; z-index: 100;
+  width: 58px; height: 58px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink); border: 1px solid var(--ink); text-decoration: none;
+  box-shadow: 0 10px 22px rgba(23,19,13,.22), 0 2px 6px rgba(23,19,13,.12);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease);
+}
+.sp-wa svg { width: 26px; height: 26px; fill: var(--paper); display: block; }
+.sp-wa:hover, .sp-wa:focus-visible {
+  background: var(--ink-2); border-color: var(--ink-2);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 14px 28px rgba(23,19,13,.28), 0 3px 8px rgba(23,19,13,.16);
+}
+.sp-wa:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+@media (max-width: 560px) {
+  .sp-wa { right: 14px; bottom: 14px; width: 52px; height: 52px; }
+  .sp-wa svg { width: 23px; height: 23px; }
+}
+@media (prefers-reduced-motion: reduce) { .sp-wa { transition: none; } }
+@media print { .sp-wa { display: none; } }
+</style>
+<!-- 🆕 v1.7.477 — DONNÉES STRUCTURÉES DE CETTE PAGE. Elle n'en avait aucune (mesuré :
+     0 bloc JSON-LD), alors qu'elle est publique et indexable. Trois objets autonomes, sans
+     référence à un identifiant défini ailleurs : la page, son fil d'Ariane, et l'éditeur.
+     Volontairement AUCUN balisage « don » ou « prix » : le montant est fixé chez PayPal et une
+     donnée structurée doit être exacte — mieux vaut rien qu'une valeur qu'on ne peut pas tenir. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://superprint.cc/price.html#page",
+      "url": "https://superprint.cc/price.html",
+      "name": "Tarif — SuperPrint | Pricing",
+      "description": "Soutenir SuperPrint : 13 € une fois, 39 € par an ou un don libre, via PayPal. Le logiciel reste gratuit.",
+      "inLanguage": "en",
+      "isPartOf": { "@type": "WebSite", "url": "https://superprint.cc/", "name": "SuperPrint" },
+      "primaryImageOfPage": "https://superprint.cc/img/og-superprint-1200x630.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "SuperPrint", "item": "https://superprint.cc/" },
+        { "@type": "ListItem", "position": 2, "name": "Tarif", "item": "https://superprint.cc/price.html" }
+      ]
+    },
+    {
+      "@type": "Organization",
+      "name": "Zigmoon",
+      "url": "https://superprint.cc/",
+      "founder": [
+        { "@type": "Person", "name": "Simon Dupont-Gellert" },
+        { "@type": "Person", "name": "Clémence Brunet" }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+
+<body>
+
+<!-- ══════════════ BARRE QUADRI ══════════════ -->
+<div class="quadri-bar" aria-hidden="true"><span class="q c"></span><span class="q m"></span><span class="q y"></span><span class="q k"></span></div>
+
+<!-- ══════════════ COLOPHON / BRAND HEADER ══════════════ -->
+<header class="brand-header" role="banner">
+  <a href="index.html" aria-label="SuperPrint — Open app">
+    <img src="favicon.png" alt="SuperPrint — logo">
+  </a>
+  <!-- Dernière version publiée, en haut à GAUCHE (la .brand-tag est en haut à
+       droite). Doit rester SYNCHRONE avec la version de l'app : marqueur vivant
+       du plan de bump de release. -->
+  <span class="brand-ver">v1.7.609</span>
+  <span class="brand-tag">
+    <span class="inline-fr">PAO &amp; Studio IA</span><span class="inline-en">DTP &amp; AI Studio</span><span class="inline-ja">DTP &amp; AIスタジオ</span>
+  </span>
+</header>
+
+<!-- ══════════════ NAVIGATION ══════════════ -->
+<!-- _NAV_HERO_590 : entree Auteurs retiree de la top nav -->
+<nav>
+  <a class="nav-logo" href="#hero">
+    SUPER<span>PRINT</span>
+  </a>
+  <div class="nav-links">
+    <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
+    <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+    <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
+    <a href="price.html" class="active" aria-current="page"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
+    <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
+    <a href="app/index.html" class="nav-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+  </div>
+  <div class="nav-tools">
+    <div class="lang-toggle">
+      <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+      <button id="btn-fr" onclick="setLang('fr')">FR</button>
+      <button id="btn-ja" onclick="setLang('ja')">JA</button>
+    </div>
+    <button type="button" class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <!-- 🆕 v1.7.472 — LE COLOPHON NE DISPARAÎT PLUS QUAND LE MENU S'OUVRE.
+       Le menu couvre toute la page (demande précédente) ; en s'ouvrant, il cachait donc la
+       bande du logotype et son filet — « on perd le logo icon le filet dessous ». On la
+       reproduit ici à l'identique : la même icône, les mêmes respirations et le même filet.
+       🆕 v1.7.496 — ET ELLE RESTE À SA PLACE : la bande est hors flux, et le script la pose
+       exactement sur celle de la page (même haut, même hauteur). Avant, elle suivait le
+       décalage de la barre collante et le logo descendait de 146 px à l'ouverture. -->
+  <a href="index.html#features"><span class="inline-fr">Fonctions</span><span class="inline-en">Features</span><span class="inline-ja">機能</span></a>
+  <a href="documentation.html"><span class="inline-fr">Manuel</span><span class="inline-en">Manual</span><span class="inline-ja">マニュアル</span></a>
+  <a href="faq.html"><span class="inline-fr">FAQ</span><span class="inline-en">FAQ</span><span class="inline-ja">FAQ</span></a>
+  <a href="price.html" class="active" aria-current="page"><span class="inline-fr">Tarif</span><span class="inline-en">Price</span><span class="inline-ja">料金</span></a>
+  <a href="rock.html"><span class="inline-fr">ROCK v1</span><span class="inline-en">ROCK v1</span><span class="inline-ja">ROCK v1</span></a>
+  <a href="app/index.html" class="mm-cta"><span class="inline-fr">Ouvrir l'app</span><span class="inline-en">Open app</span><span class="inline-ja">アプリを開く</span></a>
+  <!-- 🆕 v1.7.472 — même sélecteur que le desktop : trois blocs rectangles qui se touchent.
+       Mêmes classes donc mêmes bordures et même bloc actif ; .mbtn-lang est conservée pour
+       que setLang() continue de marquer la langue choisie. -->
+  <div class="mm-lang">
+    <div class="lang-toggle mm-lang-toggle" role="group" aria-label="Language">
+      <button class="mbtn-lang active" data-lang="en" onclick="setLang('en')" title="English">EN</button>
+      <button class="mbtn-lang" data-lang="fr" onclick="setLang('fr')" title="Français">FR</button>
+      <button class="mbtn-lang" data-lang="ja" onclick="setLang('ja')" title="日本語">JA</button>
+    </div>
+  </div>
+  <!-- 🆕 v1.7.472 — le bas du menu était un grand vide. Deux lignes l'arrêtent : qui signe,
+       et quelle version — comme au colophon du pied de page, en plus petit. -->
+  <div class="mm-bas">
+    <span>Simon Dupont-Gellert &amp; Clémence Brunet</span>
+    <span>SuperPrint v1.7.609</span>
+  </div>
+</div>
+
+<!-- 🆕 v1.7.572 — LE BANDEAU DU LOGO, HORS DU MENU (voir la règle CSS).
+     Dans le menu qui défile, un bandeau « fixe » restait solidaire du défilement : il portait
+     un backdrop-filter, qui crée le bloc conteneur (mesuré : top 5 au repos, −104 après
+     109 px de défilement sur 360×640). Posé ici, il est cloué à la fenêtre et ne bouge plus.
+     Il ne s'affiche que menu ouvert : « .mobile-menu.open + .mm-colo » (le menu est juste
+     au-dessus). -->
+<div class="mm-colo" aria-hidden="true">
+  <img src="favicon.png" alt="" width="56" height="56">
+</div>
+
+<!-- ⚠️ _SP_SOMMAIRE_708 — LE SOMMAIRE DE PAGE A ÉTÉ DÉPLACÉ VERS LA FAQ (voir le CSS ci-dessus).
+     La page Tarif n'a plus de barre de sommaire : elle se lit d'une traite. -->
+
+<!-- ══════════════ HERO
+<!-- ══════════════ CONTENU ══════════════ -->
+<div class="help-wrap">
+
+  <div class="help-top help-top--simple" id="aide">
+    <div class="help-intro">
+  <p class="help-kicker" data-lang="fr">Tarif</p>
+  <p class="help-kicker" data-lang="en">Pricing</p>
+  <p class="help-kicker" data-lang="ja">料金</p>
+
+  <h1 class="help-h1" data-lang="fr">SuperPrint est gratuit. Pour toujours.</h1>
+  <h1 class="help-h1" data-lang="en">SuperPrint is free. Forever.</h1>
+  <h1 class="help-h1" data-lang="ja">SuperPrint は無料。ずっと。</h1>
+
+  <p class="help-lead" data-lang="fr">Indépendant, sans publicité, sans compte, sans abonnement obligatoire. Le logiciel est conçu et maintenu par deux personnes : chaque contribution reste facultative et sert uniquement à financer le développement.</p>
+  <p class="help-lead" data-lang="en">Independent, with no advertising, no account and no mandatory subscription. The software is built and maintained by two people: every contribution stays optional and only funds development.</p>
+  <p class="help-lead" data-lang="ja">独立していて、広告・アカウント・義務的なサブスクリプションはありません。ソフトウェアは二人で開発・保守しており、支援はすべて任意で、開発費にのみ充てられます。</p>
+
+  <p class="help-hero-price"><span class="help-hero-amt"><span class="inline-fr">0<sup>€</sup></span><span class="inline-en"><sup>€</sup>0</span><span class="inline-ja">0<sup>€</sup></span></span></p>
+
+    </div>
+
+    <!-- ═══ v1.7.606 — LA POP-IN DE PAIEMENT (déplacée telle quelle depuis l'ancien bloc
+         d'abonnement). Elle est en position fixe et vide au chargement : PayPal n'est chargé
+         qu'au premier clic. -->
+    <div class="pay-pop" id="pay-pop">
+      <div class="pay-pop-cadre" role="dialog" aria-modal="true" aria-labelledby="pay-pop-titre">
+        <div class="pay-pop-tete">
+          <span class="pay-pop-titre" id="pay-pop-titre">
+            <span data-lang="fr">Paiement PayPal · 39 € par an</span>
+            <span data-lang="en">PayPal payment · €39 per year</span>
+            <span data-lang="ja">PayPal でのお支払い · 39 ユーロ／年</span>
+          </span>
+          <button type="button" class="pay-pop-close" id="pay-pop-close">×</button>
+        </div>
+        <iframe class="pay-pop-frame" id="pay-pop-frame" src="about:blank" title="PayPal" referrerpolicy="strict-origin-when-cross-origin" allow="payment"></iframe>
+        <div class="pay-pop-pied">
+          <p data-lang="fr">Le paiement se fait ici, sans quitter la page. Une fois terminé, fermez cette fenêtre.</p>
+          <p data-lang="en">Payment happens here, without leaving the page. Once it is done, close this window.</p>
+          <p data-lang="ja">お支払いはこの画面で完了します。ページを離れる必要はありません。終わりましたらこの画面を閉じてください。</p>
+          <p data-lang="fr">La page reste vide ? <a class="pay-pop-secours" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=fr_XC" target="_blank" rel="noopener">Ouvrir le paiement dans un nouvel onglet</a></p>
+          <p data-lang="en">Page stays blank? <a class="pay-pop-secours" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=en_US" target="_blank" rel="noopener">Open the payment in a new tab</a></p>
+          <p data-lang="ja">画面が空のままですか？ <a class="pay-pop-secours" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=ja_JP" target="_blank" rel="noopener">新しいタブで支払いを開く</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="help-rule">
+
+  <!-- ═══ v1.7.606 — LA GRILLE DE PRIX : QUATRE BOÎTES ═══
+       Toutes les fonctions sont gratuites. Les trois autres boîtes sont des soutiens
+       facultatifs, via PayPal (13 € une fois, 39 €/an pour les news, don libre). -->
+  <section class="help-price" id="tarifs">
+    <h2 class="help-h2" data-lang="fr">Quatre façons d'en profiter</h2>
+    <h2 class="help-h2" data-lang="en">Four ways to take part</h2>
+    <h2 class="help-h2" data-lang="ja">4つの参加方法</h2>
+    <p class="help-ress-intro" data-lang="fr">SuperPrint est gratuit, sans compte et sans abonnement obligatoire. Le soutien reste toujours facultatif.</p>
+    <p class="help-ress-intro" data-lang="en">SuperPrint is free, with no account and no mandatory subscription. Support is always optional.</p>
+    <p class="help-ress-intro" data-lang="ja">SuperPrint は無料で、アカウントも義務的なサブスクもありません。支援はいつでも任意です。</p>
+
+    <div class="help-price-grid">
+
+      <!-- 01 — GRATUIT -->
+      <article class="help-price-card help-price-card--free">
+        <div class="help-price-no"><b data-lang="fr">Gratuit</b><b data-lang="en">Free</b><b data-lang="ja">無料</b><i>01 / 04</i></div>
+        <h3 class="help-price-h" data-lang="fr">Utiliser SuperPrint, pour toujours</h3>
+        <h3 class="help-price-h" data-lang="en">Use SuperPrint, forever</h3>
+        <h3 class="help-price-h" data-lang="ja">SuperPrint をずっと使う</h3>
+        <p class="help-price-amt-row">
+          <span class="help-price-amt"><span class="inline-fr">0<sup>€</sup></span><span class="inline-en"><sup>€</sup>0</span><span class="inline-ja">0<sup>€</sup></span></span>
+          <span class="help-price-per" data-lang="fr">toujours gratuit</span>
+          <span class="help-price-per" data-lang="en">always free</span>
+          <span class="help-price-per" data-lang="ja">いつでも無料</span>
+        </p>
+        <ul class="help-price-list">
+          <li><span class="inline-fr">Toutes les fonctions, sans limite</span><span class="inline-en">Every feature, no limit</span><span class="inline-ja">すべての機能を制限なく</span></li>
+          <li><span class="inline-fr">Sans compte, sans pub, sans tracking</span><span class="inline-en">No account, no ads, no tracking</span><span class="inline-ja">アカウント・広告・追跡なし</span></li>
+          <li><span class="inline-fr">Vos documents restent sur votre appareil</span><span class="inline-en">Your files stay on your device</span><span class="inline-ja">データは端末内に保存</span></li>
+          <li><span class="inline-fr">Installable (PWA), fonctionne hors ligne</span><span class="inline-en">Installable PWA, works offline</span><span class="inline-ja">PWA対応・オフライン動作</span></li>
+        </ul>
+        <div class="help-price-foot">
+          <a class="help-pay-btn" data-nopop href="index.html"><span class="inline-fr">Ouvrir SuperPrint</span><span class="inline-en">Open SuperPrint</span><span class="inline-ja">SuperPrint を開く</span></a>
+          <p class="help-price-note"><span class="inline-fr">Aucun paiement requis</span><span class="inline-en">No payment needed</span><span class="inline-ja">支払いは不要です</span></p>
+        </div>
+      </article>
+
+      <!-- 02 — SOUTIEN 13 € (une fois) -->
+      <article class="help-price-card">
+        <div class="help-price-no"><b data-lang="fr">Soutien</b><b data-lang="en">Support</b><b data-lang="ja">支援</b><i>02 / 04</i></div>
+        <h3 class="help-price-h" data-lang="fr">Soutenir le développement</h3>
+        <h3 class="help-price-h" data-lang="en">Back the development</h3>
+        <h3 class="help-price-h" data-lang="ja">開発を支援する</h3>
+        <p class="help-price-amt-row">
+          <span class="help-price-amt"><span class="inline-fr">13<sup>€</sup></span><span class="inline-en"><sup>€</sup>13</span><span class="inline-ja">13<sup>€</sup></span></span>
+          <span class="help-price-per" data-lang="fr">paiement unique</span>
+          <span class="help-price-per" data-lang="en">one-time</span>
+          <span class="help-price-per" data-lang="ja">一回払い</span>
+        </p>
+        <ul class="help-price-list">
+          <li><span class="inline-fr">Un simple merci, sans contrepartie</span><span class="inline-en">A simple thank-you, nothing in return</span><span class="inline-ja">見返りのないシンプルなお礼</span></li>
+          <li><span class="inline-fr">Aide à financer nouveautés et correctifs</span><span class="inline-en">Helps fund new features and fixes</span><span class="inline-ja">新機能と修正の資金に</span></li>
+          <li><span class="inline-fr">Garde les apps gratuites et sans pub</span><span class="inline-en">Keeps the apps free and ad-free</span><span class="inline-ja">アプリを無料・広告なしに保つ</span></li>
+        </ul>
+        <div class="help-price-foot">
+          <a class="help-pay-btn help-pay-btn-paypal" data-nopop href="https://www.paypal.com/ncp/payment/XJAWAFJVMT55C" target="_blank" rel="noopener">
+            <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+            <span class="inline-fr">Soutenir 13 €</span><span class="inline-en">Support €13</span><span class="inline-ja">13ユーロ支援</span>
+          </a>
+          <p class="help-price-note"><span class="inline-fr">Paiement sécurisé · PayPal</span><span class="inline-en">Secure payment · PayPal</span><span class="inline-ja">PayPalで安全に決済</span></p>
+        </div>
+      </article>
+
+      <!-- 03 — NEWS 39 €/an (abonnement, ouvre la pop-in PayPal) -->
+      <article class="help-price-card">
+        <div class="help-price-no"><b data-lang="fr">Nouveautés</b><b data-lang="en">News</b><b data-lang="ja">最新情報</b><i>03 / 04</i></div>
+        <h3 class="help-price-h" data-lang="fr">Suivre chaque nouveauté</h3>
+        <h3 class="help-price-h" data-lang="en">Follow every new feature</h3>
+        <h3 class="help-price-h" data-lang="ja">すべての新機能を追う</h3>
+        <p class="help-price-amt-row">
+          <span class="help-price-amt"><span class="inline-fr">39<sup>€</sup></span><span class="inline-en"><sup>€</sup>39</span><span class="inline-ja">39<sup>€</sup></span></span>
+          <span class="help-price-per" data-lang="fr">par an</span>
+          <span class="help-price-per" data-lang="en">per year</span>
+          <span class="help-price-per" data-lang="ja">年額</span>
+        </p>
+        <ul class="help-price-list">
+          <li><span class="inline-fr">Les nouveautés par email, toute l'année</span><span class="inline-en">The news by email, all year long</span><span class="inline-ja">最新情報を一年中メールで</span></li>
+          <li><span class="inline-fr">Les nouvelles versions et fonctions, expliquées</span><span class="inline-en">New releases and features, explained</span><span class="inline-ja">新リリースと新機能を解説</span></li>
+          <li><span class="inline-fr">Résiliable à tout moment sur PayPal</span><span class="inline-en">Cancel anytime on PayPal</span><span class="inline-ja">PayPalでいつでも解約可能</span></li>
+        </ul>
+        <div class="help-price-foot">
+          <div class="help-pay-boutons">
+            <a class="help-pay-btn help-pay-btn-paypal" data-lang="fr" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=fr_XC" target="_blank" rel="noopener">
+              <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+              <span>S'abonner</span>
+            </a>
+            <a class="help-pay-btn help-pay-btn-paypal" data-lang="en" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=en_US" target="_blank" rel="noopener">
+              <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+              <span>Subscribe</span>
+            </a>
+            <a class="help-pay-btn help-pay-btn-paypal" data-lang="ja" href="https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3PG62396V52073510NLDMABY&amp;locale.x=ja_JP" target="_blank" rel="noopener">
+              <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+              <span>購読する</span>
+            </a>
+          </div>
+          <p class="help-price-note"><span class="inline-fr">Paiement sécurisé · PayPal</span><span class="inline-en">Secure payment · PayPal</span><span class="inline-ja">PayPalで安全に決済</span></p>
+        </div>
+      </article>
+
+      <!-- 04 — DON LIBRE -->
+      <article class="help-price-card">
+        <div class="help-price-no"><b data-lang="fr">Don</b><b data-lang="en">Donation</b><b data-lang="ja">寄付</b><i>04 / 04</i></div>
+        <h3 class="help-price-h" data-lang="fr">Soutenir tout le projet</h3>
+        <h3 class="help-price-h" data-lang="en">Fully back the project</h3>
+        <h3 class="help-price-h" data-lang="ja">プロジェクト全体を支援</h3>
+        <p class="help-price-amt-row">
+          <span class="help-price-amt help-price-amt--txt" data-lang="fr">Votre montant</span>
+          <span class="help-price-amt help-price-amt--txt" data-lang="en">Your amount</span>
+          <span class="help-price-amt help-price-amt--txt" data-lang="ja">金額は自由</span>
+          <span class="help-price-per" data-lang="fr">défini sur PayPal</span>
+          <span class="help-price-per" data-lang="en">set on PayPal</span>
+          <span class="help-price-per" data-lang="ja">PayPalで設定</span>
+        </p>
+        <ul class="help-price-list">
+          <li><span class="inline-fr">Vous choisissez le montant</span><span class="inline-en">You choose the amount</span><span class="inline-ja">金額はあなたが決めます</span></li>
+          <li><span class="inline-fr">Finance serveurs, domaine et nouvelles apps</span><span class="inline-en">Funds servers, domain and new apps</span><span class="inline-ja">サーバー・ドメイン・新アプリの資金に</span></li>
+          <li><span class="inline-fr">Préserve l'indépendance du projet</span><span class="inline-en">Keeps the project independent</span><span class="inline-ja">プロジェクトの独立性を守る</span></li>
+        </ul>
+        <div class="help-price-foot">
+          <a class="help-pay-btn help-pay-btn-paypal" data-nopop href="https://www.paypal.com/donate/?hosted_button_id=NN7G32H7LZH8A" target="_blank" rel="noopener">
+            <span class="help-pay-plaque"><img src="https://www.paypalobjects.com/paypal-ui/logos/svg/paypal-mark-color.svg" alt="PayPal" width="48" height="48"></span>
+            <span class="inline-fr">Faire un don</span><span class="inline-en">Donate</span><span class="inline-ja">寄付する</span>
+          </a>
+          <p class="help-price-note"><span class="inline-fr">Paiement sécurisé · PayPal</span><span class="inline-en">Secure payment · PayPal</span><span class="inline-ja">PayPalで安全に決済</span></p>
+        </div>
+      </article>
+
+    </div>
+
+    <p class="help-price-foot2" data-lang="fr">Paiement traité par PayPal : votre carte reste chez PayPal, nous ne voyons ni votre numéro ni votre adresse. Aucun compte PayPal n'est nécessaire pour payer par carte.</p>
+    <p class="help-price-foot2" data-lang="en">Payment handled by PayPal — your card stays with PayPal, we never see your number or your address. No PayPal account is needed to pay by card.</p>
+    <p class="help-price-foot2" data-lang="ja">決済はPayPalが処理します。カード情報はPayPalが保持し、こちらには届きません。カード決済にPayPalアカウントは不要です。</p>
+  </section>
+
+
+
+
+
+
+
+
+  <!-- ═══ v1.7.606 — LE FORMULAIRE DE CONTACT A ÉTÉ DÉPLACÉ DANS LA FAQ ═══
+       (faq.html). Cette page Tarifs n'a plus de formulaire. -->
+  <p class="help-note" data-lang="fr">Une question, un bug, une formation, un conseil ou la presse ? Le formulaire de contact se trouve désormais dans la <a href="faq.html">FAQ</a>.</p>
+  <p class="help-note" data-lang="en">A question, a bug, a training course, some advice or the press? The contact form now lives in the <a href="faq.html">FAQ</a>.</p>
+  <p class="help-note" data-lang="ja">ご質問・不具合・研修・ご相談・プレスに関するお問い合わせは、<a href="faq.html">FAQ</a> のフォームをご利用ください。</p>
+</div>
+
+<footer>
+  <div class="container">
+    <div class="foot-brand">
+      <a class="foot-logo" href="index.html">SUPERPRINT</a>
+      <p class="inline-fr">Un bureau de mise en page professionnelle, né pour la presse et l'édition — dans votre navigateur.</p>
+      <p class="inline-en">A professional layout desk, born for print and publishing — in your browser.</p>
+      <p class="inline-ja">印刷と出版のために生まれたプロのレイアウトデスク — ブラウザの中で。</p>
+      <!-- 🆕 v1.7.472 — les deux auteurs, dans le colophon : ils ne coûtent pas une ligne de
+           plus et ils disent qui publie. Le copyright les nomme aussi, plus bas. -->
+      <p class="foot-auteurs">Simon Dupont-Gellert &amp; Clémence Brunet</p>
+    </div>
+    <div class="foot-cols">
+      <div>
+        <h4 data-lang="fr">Bureau SuperPrint</h4>
+        <h4 data-lang="en">The SuperPrint desk</h4>
+        <h4 data-lang="ja">SuperPrint デスク</h4>
+        <div class="foot-links">
+          <a href="app/index.html">SuperPrint Editor</a>
+          <a href="sp213-studio.html" data-lang="fr">Studio SP213</a>
+          <a href="sp213-studio.html" data-lang="en">SP213 Studio</a>
+          <a href="sp213-studio.html" data-lang="ja">SP213スタジオ</a>
+          <a href="supertypo/index.html">SuperTyPo</a>
+          <a href="rock.html" data-lang="fr">Moteur ROCK v1</a>
+          <a href="rock.html" data-lang="en">ROCK v1 engine</a>
+          <a href="rock.html" data-lang="ja">ROCK v1 エンジン</a>
+          <a href="index.html#features" data-lang="fr">Fonctions</a>
+          <a href="index.html#features" data-lang="en">Features</a>
+          <a href="index.html#features" data-lang="ja">機能</a>
+          <a href="documentation.html" data-lang="fr">Manuel</a>
+          <a href="documentation.html" data-lang="en">Manual</a>
+          <a href="documentation.html" data-lang="ja">マニュアル</a>
+          <a href="index.html#auteurs" data-lang="fr">Auteurs</a>
+          <a href="index.html#auteurs" data-lang="en">Authors</a>
+          <a href="index.html#auteurs" data-lang="ja">著者</a>
+          <a href="faq.html" data-lang="fr">Questions fréquentes</a>
+          <a href="faq.html" data-lang="en">FAQ</a>
+          <a href="faq.html" data-lang="ja">よくある質問</a>
+          <a href="price.html" data-lang="fr">Tarif</a>
+          <a href="price.html" data-lang="en">Price</a>
+          <a href="price.html" data-lang="ja">料金</a>
+        </div>
+      </div>
+      <div>
+        <h4 data-lang="fr">Le projet</h4>
+        <h4 data-lang="en">The project</h4>
+        <h4 data-lang="ja">プロジェクト</h4>
+        <div class="foot-links">
+          <a href="https://zigmoon.com">zigmoon.com</a>
+          <a href="https://app.zigmoon.com/release.html" data-lang="fr">Journal des versions</a>
+          <a href="https://app.zigmoon.com/release.html" data-lang="en">Changelog</a>
+          <a href="https://app.zigmoon.com/release.html" data-lang="ja">変更履歴</a>
+          <a href="https://x.com/SUPER_PRINT_app" rel="noopener noreferrer" target="_blank">@SUPER_PRINT_app</a>
+          <!-- 🆕 v1.7.580tt — ressources téléchargeables, rangées au premier niveau de
+               superprint/ : la valise logo (ZIP) et le dossier de presse (PDF). -->
+          <a href="logos_superprint.zip" download data-lang="fr">Valise logo (SVG + PNG)</a>
+          <a href="logos_superprint.zip" download data-lang="en">Logo kit (SVG + PNG)</a>
+          <a href="logos_superprint.zip" download data-lang="ja">ロゴ一式（SVG・PNG）</a>
+          <a href="dossier_de_presse_superprint.pdf" target="_blank" rel="noopener" data-lang="fr">Dossier de presse (PDF)</a>
+          <a href="dossier_de_presse_superprint.pdf" target="_blank" rel="noopener" data-lang="en">Press kit (PDF)</a>
+          <a href="dossier_de_presse_superprint.pdf" target="_blank" rel="noopener" data-lang="ja">プレスキット（PDF）</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-copy">
+      <span>© 2026 Simon Dupont-Gellert &amp; Clémence Brunet — SuperPrint v1.7.609</span>
+      <div class="foot-legal">
+        <a href="index.html#legal" data-lang="fr">Mentions légales</a>
+        <a href="index.html#legal" data-lang="en">Legal notice</a>
+        <a href="index.html#legal" data-lang="ja">法的情報</a>
+        <span class="sep" aria-hidden="true">·</span>
+        <a href="index.html#privacy" data-lang="fr">Confidentialité</a>
+        <a href="index.html#privacy" data-lang="en">Privacy</a>
+        <a href="index.html#privacy" data-lang="ja">プライバシー</a>
+      </div>
+      <span class="foot-note" data-lang="fr">SuperPrint est un projet indépendant de Zigmoon. Les marques citées appartiennent à leurs détenteurs.</span>
+      <span class="foot-note" data-lang="en">SuperPrint is an independent project by Zigmoon. All trademarks belong to their owners.</span>
+      <span class="foot-note" data-lang="ja">SuperPrintはZigmoonの独立プロジェクトです。商標はすべて各権利者に帰属します。</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ══════════════ BULLE WHATSAPP — bas droite ══════════════
+     🆕 v1.7.571 — contact direct avec l'atelier, sur la page d'accueil ET sur « Participer ».
+     Le lien wa.me exige le numéro au format international, sans « + » ni espaces :
+     33671614110 pour +33 6 71 61 41 10. Pas de data-lang : un numéro et un nom de messagerie
+     ne se traduisent pas — le libellé vit dans title / aria-label, donc il ne peut pas
+     « fuiter » d'une langue à l'autre (piège connu des pages composées). -->
+<a class="sp-wa" href="https://wa.me/33671614110" target="_blank" rel="noopener noreferrer"
+   title="WhatsApp — +33 6 71 61 41 10" aria-label="WhatsApp — +33 6 71 61 41 10">
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+<script>
+// ── Language switcher ──
+/* Ajoute (ou retire) « ?lang=xx » sur les liens vers les trois outils. Les paramètres
+   déjà présents (?tpl=…, ?from=…) sont conservés. Fonction déclarée : elle est hissée,
+   donc utilisable par setLang() juste en dessous. */
+function appliquerLangueAuxLiens(lang) {
+  var outils = ["app/index.html", "sp213-studio.html", "supertypo/index.html"];
+  document.querySelectorAll("a[href]").forEach(function (a) {
+    var href = a.getAttribute("href") || "";
+    var q = href.indexOf("?");
+    var chemin = (q < 0 ? href : href.slice(0, q));
+    if (outils.indexOf(chemin.replace(/^\.\//, "")) < 0) return;
+    var params = new URLSearchParams(q < 0 ? "" : href.slice(q + 1));
+    if (lang === "en") params["delete"]("lang"); else params.set("lang", lang);
+    var s = params.toString();
+    a.setAttribute("href", chemin + (s ? "?" + s : ""));
+  });
+}
+function setLang(lang, explicite) {
+  document.documentElement.lang = lang;
+  document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ja').classList.toggle('active', lang === 'ja');
+  // Langues du menu mobile
+  document.querySelectorAll('.mbtn-lang').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-lang') === lang);
+  });
+  /* 🆕 v1.7.468 — Référencement trilingue : chaque langue a son URL et se déclare
+     elle-même en canonical (un hreflang pointant vers une URL canonisée ailleurs est
+     ignoré). L'adresse doit suivre, d'où le replaceState : sans lui, le canonical
+     désignerait une autre URL que celle affichée dans la barre. */
+  /* 🆕 v1.7.470 — l'adresse canonique suit la LANGUE *et* la PAGE : la page d'aide
+     (price.html) réutilise ce script et doit se déclarer elle-même, pas la racine. */
+  var _chemin = location.pathname.replace(/\/index\.html$/, '/');
+  var _base = 'https://superprint.cc' + _chemin;
+  var _ref = (lang === 'en') ? _base : _base + '?lang=' + lang;
+  var _c = document.querySelector('link[rel="canonical"]');
+  if (_c) _c.setAttribute('href', _ref);
+  var _o = document.querySelector('meta[property="og:url"]');
+  if (_o) _o.setAttribute('content', _ref);
+  try {
+    history.replaceState(null, '', location.pathname + (lang === 'en' ? '' : '?lang=' + lang) + location.hash);
+  } catch (e) {}
+  try { localStorage.setItem('sp_landing_lang', lang); } catch(e) {}
+  /* 🆕 v1.7.503 — LA LANGUE CHOISIE ICI SUIT LE VISITEUR DANS NOS LOGICIELS.
+     On écrit la clé PARTAGÉE `sp_lang` (celle que relisent l'application et le studio)
+     et on pose « ?lang=xx » sur les liens des trois outils : le choix s'applique donc
+     à l'ouverture, même si le stockage local est bloqué ou vidé.
+     `explicite === false` = langue de référence par défaut (anglais) : on n'écrit RIEN,
+     sinon une simple visite sur cette page remettrait à zéro un choix fait dans l'app. */
+  if (explicite !== false) {
+    try { localStorage.setItem('sp_lang', lang); } catch (e) {}
+  }
+  appliquerLangueAuxLiens(lang);
+}
+
+// ── Langue initiale : ANGLAIS PAR DÉFAUT ──
+//   🎯 v1.7.417 — On ne se base PLUS sur navigator.language.
+//   Avant : la détection du navigateur faisait qu'un visiteur francophone voyait
+//   la page en français, alors que le document se déclare <html lang="en">, que
+//   les métadonnées et le JSON-LD sont en anglais, que les hreflang donnent
+//   x-default à la page SANS paramètre, et que llms.txt / llms-full.txt sont en
+//   anglais. Cette incohérence nuisait au référencement : le moteur voyait de
+//   l'anglais, l'utilisateur du français.
+//   Ordre de priorité conservé :
+//     1. ?lang=xx    — les hreflang et les liens partagés gardent la main ;
+//     2. préférence enregistrée — si l'utilisateur a choisi FR ou JP, on la respecte ;
+//     3. anglais     — sinon, la langue de référence.
+(function() {
+  var saved = null;
+  try { saved = localStorage.getItem('sp_landing_lang'); } catch(e) {}
+  var params = new URLSearchParams(location.search);
+  var urlLang = params.get('lang');
+  var lang = urlLang || saved || 'en';
+  /* `false` sur la branche par défaut : l'anglais de référence n'est pas un choix,
+     on n'écrase donc pas la préférence enregistrée par l'application. */
+  if (lang === 'fr') setLang('fr');
+  else if (lang === 'ja') setLang('ja');
+  else setLang('en', false);
+})();
+
+// ── Smooth anchor scrolling for nav ──
+document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+  a.addEventListener('click', function(e) {
+    /* v1.7.467 — `href="#"` (liens des pop-ins légaux) donnait querySelector('#') :
+       sélecteur invalide, erreur en console. On ignore les ancres vides. */
+    var href = this.getAttribute('href');
+    if (!href || href.length < 2) return;
+    var target = document.querySelector(href);
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// ── Menu mobile (burger) ──
+(function () {
+  var burger = document.getElementById('navBurger');
+  var menu = document.getElementById('mobileMenu');
+  if (!burger || !menu) return;
+  function close() {
+    burger.classList.remove('open');
+    menu.classList.remove('open');
+    burger.setAttribute('aria-expanded', 'false');
+    /* 🆕 v1.7.572 — on relâche le verrou de défilement posé à l'ouverture. */
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+    document.documentElement.classList.remove('sp-menu-ouvert');   /* 🆕 v1.7.591 — on déping le la barre */
+  }
+  /* 🆕 v1.7.472 — LE MENU SE POSE SOUS LA BARRE COLLANTE, ET PAS SOUS UNE HAUTEUR FIXE.
+     Le header mobile n’est pas une bande unique : bandeau quadri + colophon (logo) + nav
+     collante. Un « top: 66px » figé recouvrait donc le colophon et laissait la fin du menu
+     sortir de l’écran. On mesure le bas de la nav À L’OUVERTURE et on borne la hauteur au
+     reste visible ; on refait la mesure au redimensionnement et à la rotation. */
+  function spPlacerMenu() {
+    var barre = document.querySelector('nav');
+    var bande = document.querySelector('.brand-header');
+    var colo = document.querySelector('.mm-colo');   /* 🆕 v1.7.572 — il est HORS du menu (voir la règle CSS) */
+    var bas = barre ? Math.round(barre.getBoundingClientRect().bottom) : 0;
+    if (!(bas > 0) || bas > window.innerHeight - 90) bas = 66;
+    /* 🆕 v1.7.496 — LE LOGO NE DESCEND PLUS. Le colophon du menu n'est plus empilé sous la barre
+       collante : on le repose EXACTEMENT sur la bande de la page (même haut, même hauteur),
+       donc le logo icon ne bouge pas à l'ouverture. Quand la bande de la page est sortie de
+       l'écran (page défilée), on la range sous la barre — sinon elle passerait derrière elle. */
+    var rb = bande ? bande.getBoundingClientRect() : null;
+    var hB = rb ? Math.round(rb.height) : 0;
+    var haut = (rb && rb.top >= -1) ? Math.round(rb.top) : (bas + 8);
+    if (colo) {
+      colo.style.top = haut + 'px';
+      colo.style.height = hB ? (hB + 'px') : '';
+    }
+    /* 🆕 v1.7.472 — menu PLEIN ÉCRAN : il occupe tout le viewport et c'est son contenu qui
+       démarre sous la barre (padding), la barre restant au-dessus pour fermer — et sous le
+       colophon s'il a été rangé là. */
+    /* 🆕 v1.7.572 — l'air sous la barre passe de 8 à 14 px (les entrées « étaient un peu
+       hautes ») : le bandeau du logo étant en position:fixed, il est hors flux, et c'est ce
+       rembourrage qui réserve sa place au-dessus de la première entrée. */
+    menu.style.paddingTop = (Math.max(bas, haut + hB) + 14) + 'px';
+    menu.style.maxHeight = '';
+    menu.style.top = '';
+  }
+  /* 🆕 v1.7.472 — LA BARRE EST « RÉTRACTÉE » QUAND ELLE EST COLLÉE EN HAUT.
+     Le logotype n’a pas le même centrage optique au repos et une fois collé : on pose une
+     classe quand le défilement atteint le haut de la nav (mesuré, pas une valeur en dur). */
+  (function () {
+    var barre = document.querySelector('nav');
+    if (!barre) return;
+    function majEtat() {
+      var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+      var haut = barre.getBoundingClientRect().top + y;   /* position naturelle dans la page */
+      var colle = y >= (haut - 1);
+      barre.classList.toggle('is-stuck', colle);
+      if (menu.classList.contains('open')) spPlacerMenu();
+    }
+    window.addEventListener('scroll', majEtat, { passive: true });
+    window.addEventListener('resize', majEtat);
+    majEtat();
+  })();
+  window.addEventListener('resize', function () { if (menu.classList.contains('open')) spPlacerMenu(); });
+  window.addEventListener('orientationchange', function () { if (menu.classList.contains('open')) spPlacerMenu(); });
+  burger.addEventListener('click', function () {
+    var open = menu.classList.toggle('open');
+    burger.classList.toggle('open', open);
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    /* 🆕 v1.7.572 — verrouille le défilement de fond quand le menu est ouvert (aligné sur
+       l'accueil, v1.7.549) : sinon la scrollbar de la page reste active et passe par-dessus la
+       ligne du logo / bouton fermer pendant que le menu plein écran est ouvert. */
+    /* 🆕 v1.7.591 — ON MESURE AVANT DE POSER LE VERROU : `overflow: hidden` sur html/body
+       DÉTRUIT la position collante, la barre retombe à sa place statique et le bouton burger
+       quitte l'écran (mesuré : top −624, menu impossible à refermer). On épingle donc la
+       barre quand elle était DÉJÀ collée — jamais dans l'autre cas, sinon elle sauterait vers
+       le haut. Le style de la classe `sp-menu-ouvert` est dans le bloc @media(max-width:1000px). */
+    var navEl = document.querySelector('nav');
+    var hautColle = parseFloat(getComputedStyle(navEl).top) || 0;
+    var colle = navEl.getBoundingClientRect().top <= hautColle + 0.5;
+    document.documentElement.style.overflow = open ? 'hidden' : '';
+    document.body.style.overflow = open ? 'hidden' : '';
+    document.documentElement.classList.toggle('sp-menu-ouvert', open && colle);
+    if (open) spPlacerMenu();          /* mesure au moment où l’on ouvre */
+  });
+  /* Un ancrage du menu referme et remet la barre en haut, prête pour la prochaine ouverture. */
+  menu.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', function () { menu.style.paddingTop = ''; menu.style.top = ''; menu.style.maxHeight = ''; });
+  });
+  menu.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', close);
+  });
+  // Ferme si redimensionnement vers desktop
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 1000) close();
+  });
+  // Ferme à l'appui sur Échap
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+})();
+
+// ── Installateur local : OS + onglets + copie ──
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var INSTALL_CMDS = { win: 'npx.cmd superprint', mac: 'npx superprint', linux: 'npx superprint' };
+  var INSTALL_HINTS = {
+    win: { en: 'PowerShell · npx.cmd bypasses the script ExecutionPolicy block', fr: 'PowerShell · npx.cmd contourne le blocage de scripts (ExecutionPolicy)', ja: 'PowerShell · npx.cmd はスクリプト実行ポリシーの制限を回避します' },
+    mac: { en: 'Terminal · installs and launches SuperPrint (requires Node.js)', fr: 'Terminal · installe et lance SuperPrint (requiert Node.js)', ja: 'ターミナル · SuperPrint をインストールして起動します（Node.js が必要）' },
+    linux: { en: 'Terminal · installs and launches SuperPrint (requires Node.js)', fr: 'Terminal · installe et lance SuperPrint (requiert Node.js)', ja: 'ターミナル · SuperPrint をインストールして起動します（Node.js が必要）' }
+  };
+  var OS_ICONS = {
+    win: '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><rect x="0" y="0" width="10.5" height="10.5"/><rect x="13.5" y="0" width="10.5" height="10.5"/><rect x="0" y="13.5" width="10.5" height="10.5"/><rect x="13.5" y="13.5" width="10.5" height="10.5"/></svg>',
+    mac: '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.56-1.702"/></svg>',
+    linux: '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 12 18.5 4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12 12 5 5.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12 12 6.2 19.2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/></svg>'
+  };
+  function langKey() { try { var l = localStorage.getItem('sp_landing_lang'); return (l === 'fr' || l === 'ja') ? l : 'en'; } catch(e) { return 'en'; } }
+  function setOsIcon(os) { var ic = $('osIcon'); if (ic) ic.innerHTML = OS_ICONS[os] || OS_ICONS.win; }
+  function applyOS(os) {
+    var tab = document.querySelector('.cmd-tab[data-os="' + os + '"]') || document.querySelector('.cmd-tab[data-os="win"]');
+    document.querySelectorAll('.cmd-tab').forEach(function (t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    var key = tab.getAttribute('data-os');
+    $('installCmd').textContent = INSTALL_CMDS[key];
+    var hints = INSTALL_HINTS[key] || {};
+    $('installHint').textContent = hints[langKey()] || hints.en || '';
+    setOsIcon(key);
+  }
+  document.querySelectorAll('.cmd-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () { applyOS(tab.getAttribute('data-os')); });
+  });
+  var ua = navigator.userAgent || '';
+  var os = /Windows/i.test(ua) ? 'win' : (/Mac|iPhone|iPad|iPod/i.test(ua) ? 'mac' : (/Linux|X11|CrOS/i.test(ua) ? 'linux' : 'win'));
+  if (document.querySelector('.cmd-tab')) applyOS(os);
+
+  document.querySelectorAll('[data-copy="installCmd"]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = ($('installCmd').textContent || '').trim();
+      var oldHTML = btn.innerHTML;
+      var doneLabel = { fr: 'Copié', en: 'Copied', ja: 'コピー済み' }[langKey()] || 'Copied';
+      var done = function () {
+        btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="20 6 9 17 4 12"/></svg>' + '<span>' + doneLabel + '</span>';
+        btn.style.pointerEvents = 'none';
+        setTimeout(function () { btn.innerHTML = oldHTML; btn.style.pointerEvents = ''; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text, done); });
+      } else { fallbackCopy(text, done); }
+    });
+  });
+  function fallbackCopy(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove(); done();
+  }
+})();
+</script>
+
+<!-- ═══ v1.7.578 — FORMULAIRE DE CONTACT : cinq sujets, composition du courrier (aucun serveur) ═══ -->
+<script>
+(function () {
+  var form = document.getElementById('bugForm');
+  if (!form) return;
+  var ou = document.getElementById('bugOu');
+  var quoi = document.getElementById('bugQuoi');
+  var mail = document.getElementById('bugMail');
+  var corps = document.getElementById('bugCorps');
+  var rangee = form.querySelector('.help-sujet-row');
+  var err = document.getElementById('formErr');
+  if (!ou || !quoi || !mail || !corps || !rangee) return;
+  var pastilles = Array.prototype.slice.call(rangee.querySelectorAll('button[data-sujet]'));
+
+  /* ── LES CINQ SUJETS ──────────────────────────────────────────────────────
+     « objet » reste en FRANÇAIS : c'est la langue du destinataire
+     (contact@superprint.cc), et l'objet doit être lisible d'un coup d'œil dans
+     une boîte de réception. Les étiquettes et les aides, elles, suivent la
+     langue de la page : l1 = premier champ, l2 = second, l4 = le message,
+     p1/p2/p4 = leur texte grisé. */
+  var D = {
+    projet: {
+      objet: 'Participer au projet',
+      fr: { l1: 'Votre profil, ou ce que vous faites', p1: 'ex. traducteur, illustrateur, étudiant, développeur, imprimeur',
+            l2: 'Comment vous voulez aider', p2: 'ex. traduire, tester, illustrer, relire la documentation, héberger',
+            l4: 'Ce que vous proposez', p4: 'Quelques lignes suffisent : ce que vous aimeriez apporter au projet, et le temps que vous pouvez y mettre.' },
+      en: { l1: 'Your background, or what you do', p1: 'e.g. translator, illustrator, student, developer, printer',
+            l2: 'How you would like to help', p2: 'e.g. translate, test, illustrate, proofread the manual, host',
+            l4: 'What you propose', p4: 'A few lines are enough: what you would like to bring to the project, and how much time you can give.' },
+      ja: { l1: 'あなたの立場・お仕事', p1: '例：翻訳者、イラストレーター、学生、開発者、印刷所',
+            l2: 'どのように協力できるか', p2: '例：翻訳、テスト、イラスト、マニュアルの校正、サーバー提供',
+            l4: 'ご提案の内容', p4: '数行で結構です。プロジェクトに何を加えたいか、どのくらい時間を割けるかをご記入ください。' }
+    },
+    formation: {
+      objet: 'Demande de formation',
+      fr: { l1: 'Le logiciel concerné', p1: 'ex. SuperPrint Editor, Studio IA, SuperTyPo, les trois',
+            l2: 'Votre niveau aujourd\'hui', p2: 'ex. je débute, je fais déjà des livres, je viens d\'un autre logiciel (InDesign, Scribus)',
+            l4: 'Ce que vous voulez apprendre', p4: 'ex. la mise en page, les gabarits, l\'export PDF pour l\'imprimeur, le Studio IA' },
+      en: { l1: 'Which software', p1: 'e.g. SuperPrint Editor, AI Studio, SuperTyPo, all three',
+            l2: 'Your level today', p2: 'e.g. beginner, I already make books, I come from another tool (InDesign, Scribus)',
+            l4: 'What you want to learn', p4: 'e.g. layout, templates, PDF export for the printer, the AI Studio' },
+      ja: { l1: '対象のソフト', p1: '例：SuperPrint Editor、AIスタジオ、SuperTyPo、すべて',
+            l2: '現在の習熟度', p2: '例：初心者、書籍を制作したことがある、他ソフト（InDesign、Scribus）から移行',
+            l4: '学びたいこと', p4: '例：レイアウト、テンプレート、印刷所向けPDF書き出し、AIスタジオ' }
+    },
+    conseil: {
+      objet: 'Demande de conseil',
+      fr: { l1: 'Votre projet', p1: 'ex. un roman 14 × 21, un flyer A5, un catalogue, un PDF pour l\'imprimeur',
+            l2: 'Où vous en êtes', p2: 'ex. rien n\'est commencé, j\'ai un fichier Word, j\'ai déjà un PDF',
+            l4: 'Votre question', p4: 'Décrivez la question en quelques lignes : format, délai, budget, contraintes de l\'imprimeur.' },
+      en: { l1: 'Your project', p1: 'e.g. a 14 × 21 novel, an A5 flyer, a catalogue, a print-ready PDF',
+            l2: 'Where you stand', p2: 'e.g. nothing started, I have a Word file, I already have a PDF',
+            l4: 'Your question', p4: 'Describe your question in a few lines: format, deadline, budget, printer constraints.' },
+      ja: { l1: '制作物', p1: '例：14×21の小説、A5チラシ、カタログ、印刷用PDF',
+            l2: '現在の状況', p2: '例：未着手、Wordファイルがある、PDFがある',
+            l4: 'ご質問', p4: '書式、締切、予算、印刷所の条件などを数行でご記入ください。' }
+    },
+    bug: {
+      objet: 'Rapport de bug',
+      fr: { l1: 'Où ? (écran, outil, ou nom du fichier .sp)', p1: 'ex. écran Mise en page, outil Césure, fichier brochure.sp',
+            l2: 'Ce que vous faisiez', p2: 'ex. j\'ai exporté en PDF, j\'ai changé la police, j\'ai relancé l\'aperçu',
+            l4: 'Ce qui se passe, et ce que vous attendiez', p4: 'ex. le titre reste en gras alors qu\'il est réglé en maigre ; le PDF sort avec une page blanche à la fin.' },
+      en: { l1: 'Where? (screen, tool, or .sp file name)', p1: 'e.g. Layout screen, Hyphenation tool, brochure.sp',
+            l2: 'What you were doing', p2: 'e.g. I exported to PDF, I changed the font, I reopened the preview',
+            l4: 'What happens, and what you expected', p4: 'e.g. the title stays bold although it is set to light; the PDF ends with a blank page.' },
+      ja: { l1: 'どこで？（画面、ツール、.sp ファイル名）', p1: '例：レイアウト画面、ハイフネーション、brochure.sp',
+            l2: '何をしていたか', p2: '例：PDF書き出し、フォント変更、プレビューの再表示',
+            l4: '起きていること、期待していたこと', p4: '例：細字なのにタイトルが太字のまま、PDFの最後に白紙が入る。' }
+    },
+    presse: {
+      objet: 'Presse',
+      fr: { l1: 'Votre support', p1: 'ex. magazine, blog, chaîne vidéo, podcast, université, association',
+            l2: 'Votre échéance', p2: 'ex. avant vendredi, pour le numéro de novembre, sans urgence',
+            l4: 'Votre demande', p4: 'ex. logos haute définition, dossier de presse, captures d\'écran, interview, visuels des auteurs.' },
+      en: { l1: 'Your outlet', p1: 'e.g. magazine, blog, video channel, podcast, university, non-profit',
+            l2: 'Your deadline', p2: 'e.g. before Friday, for the November issue, no rush',
+            l4: 'Your request', p4: 'e.g. high-definition logos, press kit, screenshots, interview, author photos.' },
+      ja: { l1: '媒体・チャンネル', p1: '例：雑誌、ブログ、動画、ポッドキャスト、大学、団体',
+            l2: '締切', p2: '例：金曜まで、11月号向け、急ぎではない',
+            l4: 'ご依頼内容', p4: '例：高解像度ロゴ、プレスキット、画面キャプチャ、インタビュー、著者写真。' }
+    }
+  };
+
+  var ERREURS = {
+    sujet: { fr: 'Choisissez d\'abord votre sujet, puis remplissez le message.',
+             en: 'Pick your subject first, then write your message.',
+             ja: 'まずご用件を選び、本文をご記入ください。' },
+    corps: { fr: 'Ajoutez au moins quelques mots — dans le message, ou dans le premier champ.',
+             en: 'Add at least a few words — in the message, or in the first field.',
+             ja: '本文（または最初の欄）に数行ご記入ください。' }
+  };
+
+  var SUJET = '';
+  function langue() { return (document.documentElement.lang || 'en').toLowerCase().slice(0, 2); }
+  function sujetCourant() { return SUJET ? D[SUJET] : null; }
+
+  /* Le texte du HTML est conservé comme repli : tant qu'aucun sujet n'est choisi,
+     on remet exactement ce que la page déclarait. */
+  function poserEtiquettes(idChamp, cle) {
+    var labs = form.querySelectorAll('label[for="' + idChamp + '"]');
+    Array.prototype.forEach.call(labs, function (lab) {
+      if (!lab.hasAttribute('data-defaut')) lab.setAttribute('data-defaut', lab.textContent);
+      var lg = (lab.getAttribute('data-lang') || 'en');
+      var s = sujetCourant();
+      lab.textContent = (s && s[lg] && s[lg][cle]) ? s[lg][cle] : lab.getAttribute('data-defaut');
+    });
+  }
+  function poserAide(el, cle) {
+    if (!el.hasAttribute('data-defaut')) el.setAttribute('data-defaut', el.getAttribute('placeholder') || '');
+    var s = sujetCourant();
+    var lg = langue();
+    el.setAttribute('placeholder', (s && s[lg] && s[lg][cle]) ? s[lg][cle] : el.getAttribute('data-defaut'));
+  }
+  function ecrireErreur(cle) {
+    if (!err) return;
+    err.setAttribute('data-err', cle);
+    err.textContent = (ERREURS[cle] || {})[langue()] || (ERREURS[cle] || {}).en || '';
+    err.hidden = !err.textContent;
+  }
+  function effacerErreur() {
+    if (err) { err.hidden = true; err.removeAttribute('data-err'); }
+    rangee.classList.remove('is-err');
+    Array.prototype.forEach.call(form.querySelectorAll('.champ.is-err'), function (c) { c.classList.remove('is-err'); });
+  }
+  /* Réécrit tout l'affichage du formulaire : au choix du sujet, au changement de
+     langue, et une fois au chargement. */
+  function maj() {
+    poserEtiquettes('bugOu', 'l1');
+    poserEtiquettes('bugQuoi', 'l2');
+    poserEtiquettes('bugCorps', 'l4');
+    poserAide(ou, 'p1');
+    poserAide(quoi, 'p2');
+    poserAide(corps, 'p4');
+    if (err && !err.hidden && err.getAttribute('data-err')) ecrireErreur(err.getAttribute('data-err'));
+  }
+
+  function choisir(b) {
+    SUJET = b.getAttribute('data-sujet') || '';
+    pastilles.forEach(function (x) { x.setAttribute('aria-checked', x === b ? 'true' : 'false'); });
+    effacerErreur();
+    maj();
+  }
+  pastilles.forEach(function (b) {
+    b.addEventListener('click', function () {
+      choisir(b);
+      if (!ou.value) ou.focus();
+    });
+  });
+  /* Flèches ← → pour passer d'un sujet à l'autre, comme un vrai groupe de boutons radio. */
+  rangee.addEventListener('keydown', function (e) {
+    var k = e.key, i = pastilles.indexOf(document.activeElement);
+    if (i < 0 || ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].indexOf(k) < 0) return;
+    e.preventDefault();
+    var n = (k === 'ArrowRight' || k === 'ArrowDown') ? (i + 1) % pastilles.length : (i - 1 + pastilles.length) % pastilles.length;
+    pastilles[n].focus();
+    choisir(pastilles[n]);
+  });
+
+  [ou, quoi, mail, corps].forEach(function (el) {
+    el.addEventListener('input', function () {
+      var c = el.closest ? el.closest('.champ') : null;
+      if (c) c.classList.remove('is-err');
+      if (err && err.getAttribute('data-err') === 'corps') effacerErreur();
+    });
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = function (el) { return el && el.value ? el.value.trim() : ''; };
+    var vou = v(ou), vquoi = v(quoi), vmail = v(mail), vcorps = v(corps);
+    if (!SUJET) {
+      rangee.classList.add('is-err');
+      ecrireErreur('sujet');
+      if (pastilles[0]) pastilles[0].focus();
+      return;
+    }
+    if (!vcorps && !vou) {
+      var champCorps = corps.closest ? corps.closest('.champ') : null;
+      if (champCorps) champCorps.classList.add('is-err');
+      ecrireErreur('corps');
+      corps.focus();
+      return;
+    }
+    var objet = D[SUJET].objet;
+    var version = (document.querySelector('.brand-ver') || document.querySelector('.splash-version'));
+    var titre = '[SuperPrint] ' + objet + (vou ? ' — ' + vou.slice(0, 60) : '');
+    var lignes = [
+      'Sujet : ' + objet,
+      'De quoi il s\'agit : ' + (vou || '(non précisé)'),
+      'Précisions : ' + (vquoi || '(non précisé)'),
+      '',
+      vcorps || '(à compléter)',
+      '',
+      'Courriel : ' + (vmail || '(non fourni)'),
+      '',
+      '—— informations techniques, ajoutées automatiquement ——',
+      'Version de SuperPrint : ' + (version ? version.textContent.trim() : 'inconnue'),
+      'Langue de la page : ' + langue().toUpperCase(),
+      'Navigateur : ' + navigator.userAgent,
+      'Page : ' + location.href
+    ];
+    var lien = 'mailto:contact@superprint.cc'
+      + '?subject=' + encodeURIComponent(titre)
+      + '&body=' + encodeURIComponent(lignes.join(String.fromCharCode(10)));
+    /* Le site est statique : la navigation « mailto: » part vers le logiciel de
+       courrier du visiteur, aucun test ne peut l'observer. Cet événement publie
+       l'URL composée, sans rien changer au comportement. */
+    try { document.dispatchEvent(new CustomEvent('sp:mailto', { detail: { href: lien, sujet: objet } })); } catch (x) {}
+    window.location.href = lien;
+  });
+
+  maj();
+
+  /* Le changement de langue doit réécrire étiquettes, aides et message d'erreur :
+     setLang est déclarée plus haut dans la page, on l'enveloppe sans la modifier. */
+  var setLangOrigine = window.setLang;
+  if (typeof setLangOrigine === 'function') {
+    window.setLang = function (l, explicite) { setLangOrigine(l, explicite); maj(); };
+  }
+})();
+</script>
+
+<!-- 🆕 v1.7.604 — LE SDK PAYPAL A ÉTÉ RETIRÉ DE CETTE PAGE.
+     Il ne servait qu'à rendre le bouton d'abonnement, or c'est justement son bouton qu'on ne
+     voulait plus : sa marque et son dessin étaient imposés. Les deux boutons du haut sont les
+     nôtres et pointent vers la page de paiement du même plan (P-5EK03990LC067710SNK6YLEQ) :
+     abonner, c'est toujours `actions.subscription.create` côté PayPal, mais c'est la page de
+     paiement du plan qui le fait, pas un script tiers chargé sur cette page.
+     Rien d'autre dans la page ne dépendait de `paypal`. -->
+
+<!-- ═══ v1.7.604 — LA POP-IN DE PAIEMENT ═══
+     Ce que fait ce script, et rien d'autre :
+       • il intercepte le clic sur les DEUX boutons du haut et ouvre la pop-in à la place du
+         nouvel onglet — les liens gardent leur href et leur target, donc sans JavaScript (ou
+         si le script ne tourne pas) le paiement part dans un onglet, comme avant ;
+       • il ne donne son adresse à l'iframe QU'AU PREMIER CLIC : la page n'appelle donc jamais
+         PayPal tant que personne ne clique (ni chargement, ni cookie tiers, ni mesure) ;
+       • il fait le ménage d'usage d'une pop-in : Échap ferme, un clic sur le voile ferme (pas
+         dans le cadre), le fond ne défile plus tant qu'elle est ouverte, le focus entre dans la
+         pop-in à l'ouverture (sur la fermeture) et revient au bouton qui l'a ouverte ;
+       • LIMITE CONNUE, mesurée, qu'aucun code ne peut lever : dès que le visiteur CLIQUE dans
+         le formulaire PayPal, le focus entre dans un document TIERS et Échap n'arrive plus
+         jusqu'ici (la touche part à PayPal). La pop-in se ferme alors par le bouton × ou par le
+         voile, qui restent à la souris — c'est aussi pourquoi le × est en haut à droite et
+         toujours visible ;
+       • il nomme ce qui doit être nommé dans la langue de la page : le cadre (title de
+         l'iframe) et le bouton de fermeture — un aria-label ne peut pas être traduit par le
+         mécanisme data-lang, qui ne masque que des éléments visibles. -->
+<script>
+(function () {
+  var pop = document.getElementById('pay-pop');
+  if (!pop) return;
+
+  var frame = document.getElementById('pay-pop-frame');
+  var fermer = document.getElementById('pay-pop-close');
+  var boutons = document.querySelectorAll('a.help-pay-btn');
+  var ouvertPar = null;
+
+  var mots = {
+    fr: { cadre: 'Paiement PayPal — 39 € par an', fermer: 'Fermer' },
+    en: { cadre: 'PayPal payment — €39 per year', fermer: 'Close' },
+    ja: { cadre: 'PayPal でのお支払い — 39 ユーロ／年', fermer: '閉じる' }
+  };
+  function langue() { return mots[document.documentElement.lang] ? document.documentElement.lang : 'fr'; }
+
+  /* Le lien de secours visible dans le pied (une variante par langue). */
+  function secours() {
+    var l = pop.querySelectorAll('.pay-pop-secours');
+    for (var i = 0; i < l.length; i++) { if (l[i].offsetParent !== null) return l[i]; }
+    return l[0] || null;
+  }
+
+  function ouvrir(bouton) {
+    ouvertPar = bouton;
+    var url = bouton.getAttribute('href');
+    if (frame.getAttribute('src') !== url) frame.setAttribute('src', url);
+    var s = secours();
+    if (s) s.setAttribute('href', url);
+    frame.setAttribute('title', mots[langue()].cadre);
+    fermer.setAttribute('aria-label', mots[langue()].fermer);
+    fermer.setAttribute('title', mots[langue()].fermer);
+    pop.classList.add('open');
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    fermer.focus();
+  }
+
+  function fermerPop() {
+    pop.classList.remove('open');
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+    if (ouvertPar) ouvertPar.focus();
+    ouvertPar = null;
+  }
+
+  for (var i = 0; i < boutons.length; i++) {
+    boutons[i].addEventListener('click', function (e) {
+      if (this.hasAttribute('data-nopop')) return;  // offre ponctuelle / don : ouverture directe en onglet
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;  // « ouvrir dans un onglet » reste possible
+      e.preventDefault();
+      ouvrir(this);
+    });
+  }
+
+  fermer.addEventListener('click', fermerPop);
+  pop.addEventListener('mousedown', function (e) { if (e.target === pop) fermerPop(); });
+  document.addEventListener('keydown', function (e) {
+    if (!pop.classList.contains('open')) return;
+    if (e.key === 'Escape') { fermerPop(); return; }
+    /* Le tour de tabulation reste dans la pop-in : l'ordre est celui du DOM — fermeture,
+       cadre, lien de secours — et non « la fermeture puis le cadre puis le lien » à la
+       fortune : mesuré, le lien est APRÈS le cadre, donc un piège qui croit le cadre en
+       dernier laisse sortir le focus par le lien. */
+    if (e.key !== 'Tab') return;
+    var ordre = [fermer, frame];
+    var s = secours();
+    if (s) ordre.push(s);
+    var k = ordre.indexOf(document.activeElement);
+    /* « -1 » : le focus est DANS le cadre (document tiers) — le navigateur gère, on n'y touche
+       pas, sinon on lutterait contre l'entrée et la sortie du formulaire PayPal lui-même. */
+    if (k === -1) return;
+    if (e.shiftKey && k === 0) { e.preventDefault(); ordre[ordre.length - 1].focus(); }
+    else if (!e.shiftKey && k === ordre.length - 1) { e.preventDefault(); ordre[0].focus(); }
+  });
+})();
+</script>
+
+<!-- ⚠️ _SP_SOMMAIRE_708 — LE SCRIPT DU SOMMAIRE A ÉTÉ DÉPLACÉ VERS LA FAQ (voir faq.html).
+     La page Tarif n'a plus de barre de sommaire, donc plus rien à mesurer ni à suivre. -->
+
+</body>
+</html>
