@@ -33,7 +33,7 @@
   <img alt="Print" src="https://img.shields.io/badge/print-CMYK%20%2B%20spot%20inks-E1237B?style=flat-square">
   <img alt="AI" src="https://img.shields.io/badge/AI-cloud%20or%20local-F2B90B?style=flat-square">
   <img alt="UI" src="https://img.shields.io/badge/UI-FR%20%7C%20EN%20%7C%20JP-17130D?style=flat-square">
-  <img alt="License" src="https://img.shields.io/badge/license-Proprietary-red?style=flat-square">
+  <img alt="License" src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square">
 </p>
 
 ---
@@ -264,26 +264,35 @@ SuperPrint is designed to be **privacy-friendly**:
 
 ## ✦ License
 
-**Proprietary license — all rights reserved.** SuperPrint is **not** open source. It runs in a
-browser, so its code is readable, but readable is not free to reuse.
-See the full text in [LICENSE](LICENSE).
+**GNU Affero General Public License v3.0 (AGPL-3.0) — free and open source.**
+SuperPrint — the page-layout editor, the SP213 AI layout studio, the SuperTyPo font editor,
+their source code, documentation and build tooling — is **free software**: you may use,
+study, modify and redistribute it under the terms of the AGPL-3.0. See the full text in
+[`superprint/LICENSE`](superprint/LICENSE).
 
-Copyright (c) 2026 Simon Dupont-Gellert (Zigmoon) · 2.13. All rights reserved.
+Copyright (C) 2026 Simon Dupont-Gellert (Zigmoon) · 2.13.
 
-You may **use** SuperPrint at [superprint.cc](https://superprint.cc) and through its local launcher
-(`npx superprint`), and **everything you produce belongs to you** — your documents, images, fonts,
-templates and your exported PDF / PNG / JPG files.
+**In short** — use SuperPrint for any purpose, including commercially, with no fee and no
+account; read, study and modify the source; redistribute the original or a modified version
+under the same license. If you run a **modified** version as a network service that users
+interact with remotely (for example, hosting your own fork at a public URL), **section 13**
+of the AGPL requires you to offer those users the complete corresponding source code,
+including your changes. Everything **you produce** with SuperPrint belongs to you — your
+documents, images, fonts, templates and your exported PDF / PNG / JPG files.
 
-You may **not** copy, redistribute, resell, host, mirror, modify, create derivative works from,
-remove the copyright notices, or reuse the code, the templates and the asset library — including to
-build, train or improve a competing product or an AI model — without written permission.
+**Trademarks.** The AGPL-3.0 licenses the *code*, not the *name*: "SuperPrint", "SP213" and
+"SuperTyPo", and their logos, are trademarks of Simon Dupont-Gellert (Zigmoon), governed
+separately — see [`superprint/TRADEMARKS.md`](superprint/TRADEMARKS.md). A public or commercial
+fork must not present itself under these names in a way that implies official origin or
+endorsement.
 
-Commercial licensing, custom builds, white-labelling, self-hosting and partnerships:
+**Third-party components** bundled with the application (Fabric.js, pdf-lib, pdf.js, JSZip,
+Mammoth, SheetJS, WebLLM, Little CMS `lcms-wasm`), the bundled fonts and the colour-library
+names (Pantone, Toyo, Focoltone, HKS, RAL, NCS, DIC) keep their own licenses and trademarks,
+which prevail over the AGPL-3.0 for the parts they cover — see
+[`superprint/NOTICE.md`](superprint/NOTICE.md). The shade values shipped with the application
+are indicative sRGB conversions, not the manufacturers' official libraries — a manufacturer's
+own `.ase` file can be imported for exact values.
+
+Commercial licensing, custom builds, white-labelling and partnerships:
 **contact@superprint.cc** · **all@2points13.fr**
-
-Third-party components bundled with the application (Fabric.js, pdf-lib, pdf.js, JSZip, Mammoth,
-SheetJS, WebLLM, Little CMS `lcms-wasm`), the bundled fonts and the colour-library names (Pantone,
-Toyo, Focoltone, HKS, RAL, NCS, DIC) keep their own licenses and trademarks, which prevail over this
-one for the parts they cover. The shade values shipped with the application are indicative sRGB
-conversions, not the manufacturers' official libraries — a manufacturer's own `.ase` file can be
-imported for exact values.
