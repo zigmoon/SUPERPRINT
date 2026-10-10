@@ -12,6 +12,7 @@
 #![forbid(unsafe_code)]
 
 pub mod color;
+pub mod color8;
 pub mod geometry;
 pub mod units;
 
