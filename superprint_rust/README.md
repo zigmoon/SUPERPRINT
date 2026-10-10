@@ -28,22 +28,23 @@ directs perdus au passage par le studio…). **C'est la cible prioritaire.**
 
 ## État actuel
 
-**Socle en place et vérifié** (voir *Vérifier*). Ce dépôt contient
-aujourd'hui :
+**Deux crates, testés et validés.**
 
-- un **workspace Cargo** prêt à accueillir les modules ;
-- un crate **`superprint-core`** avec 3 modules de primitives pures —
-  `units` (mm/pt/px/cm/in), `color` (RVB/CMJN/luma), `geometry`
-  (fond perdu, traits de coupe) — chacun couvert par des tests unitaires.
+- **`superprint-core`** — primitives pures : `units` (mm/pt/px/cm/in),
+  `color` (RVB/CMJN/luma), `geometry` (fond perdu, traits de coupe).
+- **`superprint-pdf`** — **module n° 3** : **tons directs & écriture PDF**.
+  Chaînes `/Separation` nommées, fonction de teinte, pile de couleurs
+  (quadri CMJN/RVB + encres), boîtes de page (`MediaBox`/`TrimBox`/`BleedBox`)
+  et assemblage d'un **PDF 1.7 d'une page** portant réellement les plaques.
 
-C'est une **fondation**, pas encore la version Rust complète de SuperPrint : la
-feuille de route (`docs/PLAN.md`) décrit les 7 modules visés et leur ordre.
+> ✅ **Vérifié** : `cargo fmt --check`, `cargo check --all-targets`,
+> `cargo clippy --all-targets -- -D warnings`, `cargo build --target
+> wasm32-unknown-unknown`, et **36 tests unitaires** (`superprint-core` 8,
+> `superprint-pdf` 28) — tous verts. Un PDF réel est produit puis relu par
+> **pdf-lib** (1 page, 196×266 mm, 2 `/Separation`).
+
 Aucun module n'est encore branché dans l'application : la parité avec le JS
-sera mesurée avant toute bascule.
-
-> Vérifié : `cargo fmt --check`, `cargo check --all-targets`,
-> `cargo clippy -D warnings` et `cargo build --target wasm32-unknown-unknown`
-> passent tous (0 erreur, 0 avertissement).
+sera mesurée avant toute bascule (voir `docs/PLAN.md`).
 
 ## Prérequis
 
@@ -51,8 +52,8 @@ sera mesurée avant toute bascule.
 # 1. Installer Rust (rustup)
 winget install --id Rustlang.Rustup
 
-# 2. Ajouter la cible navigateur
-rustup target add wasm32-unknown-unknown
+# 2. Ajouter les cibles : navigateur + tests
+rustup target add wasm32-unknown-unknown wasm32-wasip1
 
 # 3. (plus tard) l'outil de packaging WASM
 cargo install wasm-pack
@@ -61,16 +62,21 @@ cargo install wasm-pack
 ## ⚠️ État de la chaîne de build (Windows)
 
 **Smart App Control** est **désactivé** (`VerifiedAndReputablePolicyState = 0`) :
-`cargo` et le linker WebAssembly fonctionnent donc à nouveau.
+`cargo` et le linker WebAssembly fonctionnent.
 
 | Commande | État |
 |---|---|
-| `cargo check --workspace` | ✅ fonctionne |
-| `cargo build --target wasm32-unknown-unknown` | ✅ fonctionne (cible du produit) |
-| `cargo test` | ❌ nécessite le **linker natif MSVC** (`link.exe`) |
+| `cargo check` · `cargo clippy` · `cargo fmt` | ✅ |
+| `cargo build --target wasm32-unknown-unknown` | ✅ (cible du produit) |
+| `cargo test --target wasm32-wasip1` | ✅ **les tests tournent** (via WebAssembly, sans linker natif) |
+| `cargo test` (natif) | ❌ nécessite le linker **MSVC** (`link.exe`) |
 
-Pour les **tests natifs**, il reste à installer les **Build Tools C++** (au niveau
-machine → **PowerShell en administrateur**) :
+**Astuce** : là où Visual Studio manque, les tests s'exécutent **en WebAssembly**
+via `--target wasm32-wasip1` (lancés par Node). Le fichier `.cargo/config.toml`
+branche le lanceur ; voir `scripts/run-wasi.mjs`.
+
+Pour les **tests natifs**, installer les **Build Tools C++** (niveau machine →
+**PowerShell en administrateur**) :
 
 ```powershell
 winget install --id Microsoft.VisualStudio.2022.BuildTools `
@@ -78,20 +84,21 @@ winget install --id Microsoft.VisualStudio.2022.BuildTools `
   --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
-En attendant, `scripts/check.ps1` compile-vérifie le crate (natif + wasm32) sans
-`cargo`, et `cargo build --target wasm32-unknown-unknown` couvre la cible web.
-
 ## Structure
 
 ```
 superprint_rust/
+├─ .cargo/config.toml         lanceur WASI pour `cargo test --target wasm32-wasip1`
 ├─ Cargo.toml                 espace de travail (workspace)
-├─ rust-toolchain.toml        version et cibles (stable + wasm32)
-├─ scripts/check.ps1          compile-check sans cargo (contourne Smart App Control)
+├─ rust-toolchain.toml        version et cibles (stable + wasm32 + wasip1)
 ├─ docs/PLAN.md               feuille de route, inventaire, décisions
+├─ scripts/
+│  ├─ check.ps1               compile-check sans cargo (natif + wasm32)
+│  ├─ run-wasi.mjs            exécute un binaire wasm32-wasip1 via Node
+│  └─ validate-pdf.mjs        relit un PDF avec pdf-lib et vérifie tons directs
 └─ crates/
-   └─ superprint-core/        primitives pures (aucune dépendance)
-      └─ src/{units,color,geometry}.rs
+   ├─ superprint-core/        primitives pures (units, color, geometry)
+   └─ superprint-pdf/         tons directs & écriture PDF (module n° 3)
 ```
 
 ## Vérifier
@@ -99,17 +106,19 @@ superprint_rust/
 ```powershell
 cd superprint_rust
 
-# Vérification de types + cible web (fonctionnent déjà) :
-cargo check --workspace
+# Vérification de types, qualité et cible web :
+cargo check --workspace --all-targets
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --check
 cargo build --workspace --target wasm32-unknown-unknown
 
-# Compile-check de secours, sans cargo :
-pwsh -File scripts/check.ps1
+# Tests unitaires — via WebAssembly, donc SANS linker natif :
+cargo test --target wasm32-wasip1 -- --test-threads=1
 
-# Tests unitaires (nécessitent les Build Tools C++, voir ci-dessus) :
-cargo test --workspace
-cargo clippy --all-targets
-cargo fmt --check
+# Preuve bout en bout : produire un PDF et le relire avec pdf-lib.
+cargo build --target wasm32-wasip1 -p superprint-pdf --example spot_page
+node scripts/run-wasi.mjs target/wasm32-wasip1/debug/examples/spot_page.wasm spot-page.pdf
+node scripts/validate-pdf.mjs spot-page.pdf
 ```
 
 ## Relation au reste du dépôt

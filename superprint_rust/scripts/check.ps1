@@ -1,32 +1,46 @@
-# Compile-check de superprint-core SANS cargo.
+# Vérification complète du noyau Rust de SuperPrint.
 #
-# Pourquoi : sur la machine de développement, Smart App Control bloque
-# `cargo.exe` et le linker (`rust-lld`, erreur 4551). `rustc` reste utilisable :
-# ce script vérifie donc que le crate compile, en natif ET pour wasm32.
+# Enchaîne : formatage, types, lint, build WebAssembly et tests.
+# Les tests tournent en WebAssembly (`wasm32-wasip1`, lancés par Node), ce qui
+# évite d'exiger le linker natif MSVC de Visual Studio.
 #
 # Usage : pwsh -File scripts/check.ps1
-# Retour : code 0 si tout compile, 1 sinon.
+# Retour : 0 si tout passe, 1 sinon.
 
 $ErrorActionPreference = 'Stop'
 
-$root  = Split-Path $PSScriptRoot -Parent
-$rustc = Join-Path $HOME '.cargo\bin\rustc.exe'
+$root = Split-Path $PSScriptRoot -Parent
+$env:Path = "$(Join-Path $HOME '.cargo\bin');$env:Path"
+$cargo = Join-Path $HOME '.cargo\bin\cargo.exe'
 
-if (-not (Test-Path $rustc)) {
-  throw "rustc introuvable : $rustc (installe Rust : winget install Rustlang.Rustup)"
+if (-not (Test-Path $cargo)) {
+  throw "cargo introuvable : $cargo (installe Rust : winget install Rustlang.Rustup)"
 }
 
-$src = Join-Path $root 'crates/superprint-core/src/lib.rs'
-$out = Join-Path $env:TEMP 'superprint_core_check'
+Push-Location $root
+$ok = $true
 
-Write-Host "rustc : $(& $rustc --version)" -ForegroundColor Cyan
+function Step($label, $script) {
+  Write-Host "-- $label" -ForegroundColor Cyan
+  & $script
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "   x echec : $label" -ForegroundColor Red
+    $script:ok = $false
+  }
+}
 
-Write-Host "1/2 compilation native (rlib)..." -ForegroundColor Cyan
-& $rustc --edition 2021 --crate-type lib --deny warnings $src -o "$out.rlib"
-if ($LASTEXITCODE -ne 0) { throw "echec compilation native" }
+Step 'cargo fmt --check'                    { & $cargo fmt --check }
+Step 'cargo check --all-targets'            { & $cargo check --workspace --all-targets }
+Step 'cargo clippy -- -D warnings'          { & $cargo clippy --workspace --all-targets -- -D warnings }
+Step 'cargo build (wasm32-unknown-unknown)' { & $cargo build --workspace --target wasm32-unknown-unknown }
+Step 'cargo test (wasm32-wasip1)'           { & $cargo test --target wasm32-wasip1 -- --test-threads=1 }
 
-Write-Host "2/2 compilation wasm32 (rlib)..." -ForegroundColor Cyan
-& $rustc --edition 2021 --target wasm32-unknown-unknown --crate-type rlib --deny warnings $src -o "$out.wasm.rlib"
-if ($LASTEXITCODE -ne 0) { throw "echec compilation wasm32" }
+Pop-Location
 
-Write-Host "OK : superprint-core compile en natif et en wasm32." -ForegroundColor Green
+if ($ok) {
+  Write-Host "`nOK : tout est vert (fmt, check, clippy, wasm, tests)." -ForegroundColor Green
+  exit 0
+}
+
+Write-Host "`nECHEC : au moins une etape a echoue." -ForegroundColor Red
+exit 1
