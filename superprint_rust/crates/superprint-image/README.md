@@ -1,8 +1,8 @@
 # superprint-image
 
 Cœur **traitement d'image** du noyau Rust de SuperPrint. C'est la réponse
-directe au défaut « **PDF de 131 Mo** » du rapport interne
-`superprint/RAPPORT-WORKFLOW-415.md`.
+directe au défaut « **PDF de 131 Mo** » relevé par le **rapport de test
+interne** (non publié, conservé hors du dépôt).
 
 | Module | Rôle |
 |---|---|

@@ -15,8 +15,8 @@ faire exploser le fichier.
 
 ## Ce que ça corrige
 
-Le rapport interne `superprint/RAPPORT-WORKFLOW-415.md` désigne deux défauts
-majeurs. Ce crate traite les deux.
+Un **rapport de test interne** (non publié, conservé hors du dépôt) désigne deux
+défauts majeurs. Ce crate traite les deux.
 
 **Défaut P0-1 — perte des tons directs.** Quand les marqueurs d'encre directe
 sont perdus, l'imprimeur reçoit un PDF **sans plaque Pantone, sans

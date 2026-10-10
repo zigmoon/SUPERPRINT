@@ -7,16 +7,21 @@
 
 ## Démarrage
 
-Servez le dossier `superprint/` (racine) en HTTP, puis ouvrez `supertypo/index.html`.
+Dans cette version Astro, la page SuperTyPo est **générée**
+(`src/pages/supertypo/index.astro`, produit à partir de
+`_legacy/supertypo/index.html`) et ses ressources sont **servies** depuis
+`public/supertypo/`.
 
 ```powershell
-cd superprint
-python -m http.server 8890
-# → http://localhost:8890/supertypo/index.html
+npm install
+npm run dev
+# → http://localhost:4321/supertypo/index.html
 ```
 
+Après `npm run build`, la page est dans `dist/supertypo/index.html`.
+
 Zéro dépendance externe : `opentype.min.js` (parser/générateur de polices) et
-`wawoff2.js` (décompresseur WOFF2) sont copiés depuis `app/JS/`.
+`wawoff2.js` (décompresseur WOFF2) sont servis depuis `public/supertypo/JS/`.
 
 > Dans SuperPrint (éditeur), l'onglet **« SuperTyPo »** du dialogue *Nouveau projet*
 > ouvre directement cette application.
@@ -25,9 +30,9 @@ Zéro dépendance externe : `opentype.min.js` (parser/générateur de polices) e
 
 - **Interface FR / EN / JP** — sélecteur de langue dans la topbar (persisté en
   `localStorage` `st_lang`). Toute l'UI est traduite.
-- **Design aligné SuperPrint** — tokens repris de `superprint/app` (topbar blanche,
+- **Design aligné SuperPrint** — tokens repris de `public/app` (topbar blanche,
   IBM Plex Mono, zone de travail `#e8e8e8`, thème sombre `#121212`). Polices
-  self-hosted (Bebas Neue + IBM Plex Mono) copiées dans `CSS/fonts/`.
+  self-hosted (Bebas Neue + IBM Plex Mono) servies depuis `public/supertypo/CSS/fonts/`.
 - **Booléens** (panneau Contours de l'éditeur) : sélectionnez 2 contours (boutons
   **A/B** sur chaque ligne) puis **Union / Soustraction / Intersection**.
   *v1 : combinaison de tracés + winding evenodd* (la soustraction/intersection
@@ -74,14 +79,18 @@ Zéro dépendance externe : `opentype.min.js` (parser/générateur de polices) e
 ## Structure
 
 ```
-supertypo/
-├─ index.html          UI (topbar + grille + éditeur + aide)
-├─ CSS/supertypo.css   Design (DA SuperPrint : clair/sombre)
+src/pages/supertypo/index.astro   page générée (topbar + grille + éditeur + aide)
+public/supertypo/
+├─ CSS/supertypo.css   Design (DA SuperPrint : clair/sombre) + polices self-hosted
 └─ JS/
    ├─ supertypo.js     Tout le moteur (état, import contours, grille, éditeur, export)
-   ├─ opentype.min.js  Parser / générateur TTF (copié depuis app/JS)
+   ├─ opentype.min.js  Parser / générateur TTF
    └─ wawoff2.js       Décompresseur WOFF2 (chargé à la demande)
 ```
+
+> Dans la version **classique** du dépôt, ce README vit à côté du code
+> (`superprint/supertypo/`) ; ici, l'unique fichier de ce dossier est le README :
+> le code est réparti entre `src/pages/supertypo/` et `public/supertypo/`.
 
 ## Convention de coordonnées (important)
 

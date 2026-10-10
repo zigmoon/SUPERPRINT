@@ -22,9 +22,10 @@ parties les plus lourdes et les plus fragiles sont aujourd'hui en JavaScript :
 | Analyse de police / métriques | `opentype.js` (JS) | parseur `TTF`/`CFF` performant |
 | Géométrie d'impression (fond perdu, traits, imposition) | JS | noyau déterministe et testé ✅ n° 1 |
 
-Contexte : `superprint/RAPPORT-WORKFLOW-415.md` documente les défauts **mesurés**
-sur la chaîne d'export PDF (fichiers de 131 Mo, mode Planches ignoré, tons
-directs perdus au passage par le studio…). **C'est la cible prioritaire.**
+Contexte : un **rapport de test interne** (non publié, conservé hors du dépôt)
+documente les défauts **mesurés** sur la chaîne d'export PDF (fichiers de
+131 Mo, mode Planches ignoré, tons directs perdus au passage par le studio…).
+**C'est la cible prioritaire.**
 
 ## État actuel
 
