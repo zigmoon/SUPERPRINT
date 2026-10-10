@@ -18,8 +18,9 @@ serrées sur les pixels**.
 
 ## Ce que contient ce dépôt
 
-Un module écrit à la main, `src/luma.wat` : la **luminance Rec. 709**
-(RVB → niveaux de gris) sur un tampon de pixels.
+Deux modules écrits à la main.
+
+### `src/luma.wat` — luminance Rec. 709 (RVB → niveaux de gris)
 
 ```wat
 y = arrondi(0.2126·r + 0.7152·g + 0.0722·b), borné 0..255
@@ -29,13 +30,29 @@ C'est exactement le calcul du chemin « export N&B » de SuperPrint — celui du
 défaut **PDF de 131 Mo** décrit dans `superprint/RAPPORT-WORKFLOW-415.md`
 (images stockées brutes, non compressées).
 
+### `src/color8.wat` — CMJN ↔ RVB (arithmétique entière)
+
+```wat
+RVB → CMJN :  max = max(r,g,b) ; k = 255 - max
+              c = ((max - r)·255 + max/2) / max      (idem m, y)
+CMJN → RVB :  kc = 255 - k
+              r = ((255 - c)·kc + 127) / 255         (idem g, b)
+```
+
+Tout est **entier** (divisions tronquées) : le résultat est reproductible au bit
+près et ne dépend d'aucun réglage de virgule flottante. C'est la brique de la
+chaîne **imprimeur** (conversion d'image CMJN).
+
 **Fonctions exportées**
 
-| Fonction | Rôle |
-|---|---|
-| `luma_rgb_to_gray8(src, dst, n)` | Lit `n` triplets RVB à `src`, écrit `n` octets de gris à `dst` |
-| `luma_rgb(r, g, b)` | Luminance d'un seul pixel RVB |
-| `memory` | Mémoire linéaire du module (512 pages = 32 Mio) |
+| Fonction | Module | Rôle |
+|---|---|---|
+| `luma_rgb_to_gray8(src, dst, n)` | `luma` | Lit `n` triplets RVB à `src`, écrit `n` octets de gris à `dst` |
+| `luma_rgb(r, g, b)` | `luma` | Luminance d'un seul pixel RVB |
+| `rgb_to_cmyk(src, dst, n)` | `color8` | Lit `n` triplets RVB, écrit `n` quadruplets CMJN |
+| `cmyk_to_rgb(src, dst, n)` | `color8` | Lit `n` quadruplets CMJN, écrit `n` triplets RVB |
+| `rgb_to_cmyk_px` · `cmyk_to_rgb_px` | `color8` | Un pixel, résultat empaqueté en `i64` |
+| `memory` | — | Mémoire linéaire (512 pages = 32 Mio) |
 
 ## Point délicat, traité
 
@@ -44,6 +61,11 @@ L'arrondi doit être **identique à celui du noyau Rust** (`f64::round` :
 demi-point exact. On utilise donc `floor(y + 0.5)` — et **surtout pas**
 `f64.nearest` de WebAssembly, qui arrondit au pair et donnerait un autre
 résultat. Le fichier `src/luma.wat` le documente.
+
+Pour **CMJN ↔ RVB**, le piège est ailleurs : si l'on **tronque** à l'aller et
+qu'on arrondit au retour, l'aller-retour dérive d'un cran sur **près d'un pixel
+sur deux** (mesuré : 9720 écarts sur 20 000). Les deux sens arrondissent donc :
+l'aller-retour redevient exact (0 écart sur 20 000).
 
 ## Prérequis
 
@@ -60,22 +82,28 @@ npm install
 | Commande | Rôle |
 |---|---|
 | `npm run build` | Assemble `src/*.wat` → `dist/*.wasm` (via `wabt`) |
-| `npm test` | Tests du module : cas connus, tampon, diagonale de gris, bornage |
-| `npm run cross-check` | **Parité avec le noyau Rust** (`luma_dump`, 5000 triplets) |
+| `npm test` | Tests des deux modules : cas connus, tampons, aller-retour, bornage |
+| `npm run cross-check` | **Parité avec le noyau Rust** (`luma_dump` + `color8_dump`, 5000 pixels chacun) |
 | `node tools/bench.mjs` | WebAssembly contre JavaScript sur un grand tampon |
 | `npm run verify` | `build` + `test` + `cross-check` |
 
 ## Vérification
 
 ```
+── luma.wasm (luminance)
 ✓ noir · blanc · gris neutre · primaires (rouge, vert, bleu)
 ✓ tampon de 1000 pixels identique au calcul de référence
-✓ diagonale de gris (256 valeurs)
-✓ aucune luminance hors 0..255
-✓ parité Rust ↔ WebAssembly : 2000 triplets, 0 écart
+── color8.wasm (RVB ↔ CMJN)
+✓ rouge pur · blanc · noir → CMJN attendus
+✓ RVB → CMJN : 20 000 pixels conformes à la référence
+✓ CMJN → RVB : 20 000 pixels conformes à la référence
+✓ aller-retour RVB → CMJN → RVB : 20 000 pixels, 0 écart
+── parité Rust ↔ WebAssembly
+✓ luma   : 5000 pixels, 0 écart
+✓ color8 : 5000 pixels, 0 écart
 ```
 
-La vérification croisée compare, **entrée par entrée**, la sortie du module
+La vérification croisée compare, **entrée par entrée**, la sortie des modules
 WebAssembly et celle du noyau Rust (`superprint_rust`) : les deux doivent
 donner le même octet pour chaque pixel. C'est la preuve que les étages
 **JS (référence) → Rust → WebAssembly** concordent.
