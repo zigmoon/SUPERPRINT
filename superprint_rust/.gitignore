@@ -1,0 +1,14 @@
+# Sortie de compilation Rust
+/target/
+**/target/
+
+# Sortie de wasm-pack (à régénérer à chaque build)
+**/pkg/
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+
+# Divers
+.DS_Store

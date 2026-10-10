@@ -197,16 +197,23 @@ python -m http.server 8000 --directory superprint
 
 ## ✦ The repository
 
-The repository ships **the product only** — three folders, two build helpers and four root files. All development tooling (349 scripts, 281 logs, backups, test fixtures) lives outside the repository, in a `_dev/` folder that is git-ignored.
+The repository ships **the product only**: the application, the Astro build of its website, the Rust computing core, and the local / npm helpers. All development tooling (349 scripts, 281 logs, backups, test fixtures) lives outside the repository, in a `_dev/` folder that is git-ignored.
 
 | Path | Role | Tracked |
 |---|---|---|
-| `superprint/` | The complete web application: editor, landing, Studio IA, SuperTyPo, documentation, script API | ✅ |
+| `superprint/` | **The application** — editor, landing, Studio IA, SuperTyPo, documentation, script API (deployed as-is) | ✅ |
 | `sp213-local/` | The local distribution (Vite + WebLLM) downloaded by the npm launcher | ✅ |
 | `superprint-npm/` | The `superprint` npm launcher (`npx superprint`) | ✅ |
+| `superprint_ASTRO/` | **The website, rebuilt with [Astro](https://astro.build)** — same published URLs, shared components, scripts extracted to files; builds to `dist/` | ✅ |
+| `superprint_rust/` | **The computing core, in [Rust](https://www.rust-lang.org)** — pure, dependency-free primitives (units, colour, print geometry), compiled to native *and* WebAssembly | ✅ |
 | `tools/` | Two dependency-free helpers: `serve.mjs` (local static server) and `make-release-zip.mjs` | ✅ |
 | `README.md` · `CHANGELOG.md` · `release.html` · `.gitignore` | Documentation and release notes | ✅ |
 | `_dev/` | Development tooling, logs, backups, fixtures | ❌ ignored |
+
+> 🧱 **Not applications.** The apps you *use* are **SuperPrint** (the editor), **Studio IA** and
+> **SuperTyPo**. `superprint_ASTRO/` is the **site** — *how it is served* — and `superprint_rust/`
+> is the **engine** — *how it computes* (WebAssembly). Neither is a separate application to open:
+> the Astro build publishes the very same site, and the Rust core is a library the app can call.
 
 ```bash
 node tools/serve.mjs        # serve superprint/ on http://127.0.0.1:8080
