@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="26" height="26" role="img" aria-label="Astro">
+  <!-- La fusee A, l'etoile et l'orbite.
+       Plein pour la fusee et l'etoile (nettes a 26 px), trait plus epais pour
+       l'orbite, qui doit rester un FIN LISERE et non un trait de crayon.
+       Couleur FIGEE a l'encre de la charte (#17130D) : un SVG charge par une
+       balise img est isole et n'heriterait pas de `currentColor`.
+       NB : aucun double tiret dans un commentaire XML, c'est interdit. -->
+  <path d="M12 2.6 21 20.4H3Z" fill="#17130D"/>
+  <path d="M17.4 2.4l1 2.6 2.6 1-2.6 1-1 2.6-1-2.6-2.6-1 2.6-1z" fill="#17130D"/>
+  <ellipse cx="12" cy="15.6" rx="8.9" ry="2.9" transform="rotate(-12 12 15.6)" fill="none" stroke="#17130D" stroke-width="1.9"/>
+</svg>

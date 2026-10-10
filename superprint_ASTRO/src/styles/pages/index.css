@@ -1560,41 +1560,47 @@ table.is-open tr.is-folded { display: table-row; animation: foldIn .45s var(--ea
    GitHub, Rust et Astro ne sont pas des applications : ce sont les briques sur
    lesquelles SuperPrint est construit. Elles sont donc présentées PLUS BAS et
    PLUS PETITES que les trois entrées — la hiérarchie doit rester lisible : on
-   ouvre une app, on ne « visite » pas une fondation. Le logotype est blanc sur
-   plaque d'encre, exactement comme les plaques des trois entrées. */
+   ouvre une app, on ne « visite » pas une fondation.
+   AUCUN PANNEAU : les trois colonnes tombent DANS LE FOND DE PAGE (aucune carte
+   blanche, aucune plaque sous le logotype). Elles sont simplement séparées par
+   des FILETS — le motif déjà employé par le site pour ses grilles. Le logotype
+   suit la couleur d'encre : il est posé sur le papier, pas posé dessus. */
 .fondations { margin: clamp(26px,3.2vw,42px) 0 0; }
 .fondations-titre {
   display: block; text-align: center; font-family: var(--f-mono);
   font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: clamp(12px,1.5vw,18px);
+  color: var(--muted); margin-bottom: clamp(10px,1.3vw,16px);
 }
 .fondations-grid {
   display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
-  gap: clamp(10px,1.3vw,16px);
+  gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
 }
 .fondation {
   display: flex; align-items: center; gap: 12px; min-width: 0;
-  padding: clamp(12px,1.4vw,16px); background: var(--paper-3);
-  border: 1px solid var(--line); text-decoration: none;
-  transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+  padding: clamp(15px,1.7vw,21px) clamp(15px,1.8vw,24px);
+  border-left: 1px solid var(--line);
+  background: none; text-decoration: none;
 }
-.fondation:hover, .fondation:focus-visible {
-  transform: translateY(-2px); border-color: var(--line-strong);
-  box-shadow: 0 10px 22px rgba(23,19,13,.10); outline: none;
-}
-.fondation-logo {
-  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 10px;
-  background: var(--ink); display: flex; align-items: center; justify-content: center;
-}
-.fondation-logo img { display: block; width: 24px; height: 24px; }
+.fondation:first-child { padding-left: 0; border-left: 0; }
+.fondation:last-child { padding-right: 0; }
+.fondation-logo { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
+.fondation-logo img { display: block; width: 26px; height: 26px; }
 .fondation-txt { min-width: 0; }
 .fondation-nom {
   display: block; font-family: var(--f-caps); font-size: clamp(15px,1.5vw,18px);
   letter-spacing: .02em; line-height: 1.05; color: var(--ink);
 }
 .fondation-desc { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+/* Sans panneau, l'affordance du survol passe par le SOULIGNEMENT du nom. */
+.fondation:hover .fondation-nom, .fondation:focus-visible .fondation-nom {
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
+}
+.fondation:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
 @media (max-width: 900px) {
   .fondations-grid { grid-template-columns: 1fr; }
+  .fondation { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; padding-right: 0; }
+  .fondation:first-child { border-top: 0; }
+  .fondation:last-child { border-bottom: 0; }
 }
 
 /* ——— CARROUSEL DES MODÈLES (v1.7.465) — pleine largeur, swipe natif ——— */
