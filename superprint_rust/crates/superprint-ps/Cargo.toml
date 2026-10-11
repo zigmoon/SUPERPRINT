@@ -1,0 +1,12 @@
+[package]
+name = "superprint-ps"
+description = "Lecture de PostScript du noyau Rust de SuperPrint : en-tete DSC, BoundingBox, et un interpreteur SUR d'un sous-ensemble de PostScript qui rend les chemins, les couleurs et les peintures d'un fichier .eps ou .ai — ce que le produit confiait a sp-eps-import.js."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+superprint-path = { path = "../superprint-path" }

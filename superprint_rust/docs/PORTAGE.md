@@ -16,11 +16,11 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-11) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 13 crates, tests compris) | **28 608 lignes** |
-| dont annotations `#[test]` | 684 tests, tous verts |
+| Rust (`crates/`, 16 crates, tests compris) | **37 189 lignes** |
+| dont annotations `#[test]` | 847 tests, tous verts |
 | exports `sp_*` de la frontière C | **43** (0 import) |
 | module livrable | 379 Ko |
-| étapes de contrôle (`scripts/check.ps1`) | **22** |
+| étapes de contrôle (`scripts/check.ps1`) | **25** |
 | JavaScript applicatif (hors bibliothèques tierces) | **125 944 lignes** |
 | dont `main.js` | 99 157 lignes |
 | dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
@@ -30,21 +30,29 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 
 | Métrique | Mesure | Ce qu'elle dit |
 |---|---|---|
-| **Domaines terminés** | **10 / 11** → **91 %** | l'avancement réel du travail identifié |
-| dont **branchés** dans l'application | **1 / 10** construits → **10 %** | ce qui sert vraiment à l'utilisateur |
-| **Volume JS porté** (somme des plages citées) | **6 512 / 18 803** → **35 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 28 608 / 111 501 → **25,7 %** | ⚠️ le plus trompeur des quatre |
+| **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
+| dont **branchés** dans l'application | **1 / 11** construits → **9 %** | ce qui sert vraiment à l'utilisateur |
+| **Volume JS porté** (somme des plages citées) | **12 526 / 18 803** → **67 %** | le poids du travail restant |
+| **Lignes** Rust / JS | 37 189 / 111 501 → **33,4 %** | ⚠️ le plus trompeur des quatre |
 
 Les 11 domaines, nommés, avec leur état : **césure** ✅ (le seul branché) ·
 **compression Flate** ✅ · **imposition** ✅ · **prépresse** ✅ · **nuanciers** ✅ ·
 **image** ✅ · **profils ICC** ✅ · **PDF/X** ✅ · **pagination et chaînage** ✅ ·
-**géométrie vectorielle / Pathfinder** ✅ · **import docx/EPS/IDML** 🟠 **non fait,
-et assumé**.
+**géométrie vectorielle / Pathfinder** ✅ · **import docx/odt/idml/EPS/AI** ✅.
 
-Le domaine restant est celui qui demande le plus de code pour le moins de valeur
-immédiate (une chaîne ZIP + XML, plus un sous-ensemble de PostScript). Il est
-declé « plus tard » depuis le début, et il ne bouge pas : c'est le seul endroit du
-document où l'avancement n'est pas mesuré par un script de contrôle.
+**Aucun domaine n'est ouvert.** Ce qui reste ne sont plus des domaines, mais des
+**limites à l'intérieur de domaines terminés** — et elles sont toutes écrites, dans
+les sections B correspondantes, sous le titre « ce qui n'est pas fait ». Les plus
+notables : le `.doc` binaire (OLE2) et le modèle de cellules du `.xlsx` ne sont pas
+lus ; le RTF est **reconnu mais pas analysé** ; `arct`/`arcto` sont **refusés** et
+non interprétés ; un `clip` est **enregistré mais non appliqué** ; et les `.ai`
+enregistrés en PDF sont **refusés** au lieu d'être lus (le noyau écrit du PDF, il
+n'en lit pas).
+
+Le portage n'est pas fini pour autant : sur les 11 domaines, **un seul est
+branché**. Les dix autres sont mesurés, testés, et offerts — utiliser le noyau
+suppose de changer une ligne dans `main.js`, et la règle de ce dépôt est de ne pas
+y toucher (section F).
 
 Pourquoi le ratio par lignes trompe : il compare du Rust qui contient ses tests, un
 écrivain PDF complet **sans équivalent JS**, et 4 000 lignes de lecteur de polices,
@@ -56,11 +64,11 @@ facile. **Le seul chiffre à suivre est le premier : les domaines.**
 > reste le seul composant que l'application utilise réellement.** La compression
 > est employée par notre propre exporteur ; l'imposition, la réduction d'image,
 > le prépresse, les nuanciers, les filtres d'image, la lecture ICC, la
-déclaration PDF/X, la pagination et le Pathfinder sont **mesurés et offerts** par
-> `SuperPrintBranchement` (ou livrés comme crates), mais ne remplacent rien dans
-> l'espace de travail (voir la section F, et la raison : les fonctions
-> correspondantes de `main.js` sont privées à son IIFE, et le prépresse attend un
-> pont qui n'existe pas encore).
+déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
+> **mesurés et offerts** par `SuperPrintBranchement` (ou livrés comme crates),
+> mais ne remplacent rien dans l'espace de travail (voir la section F, et la
+> raison : les fonctions correspondantes de `main.js` sont privées à son IIFE, et
+> le prépresse attend un pont qui n'existe pas encore).
 
 ---
 
@@ -94,6 +102,9 @@ déclaration PDF/X, la pagination et le Pathfinder sont **mesurés et offerts** 
 | 24 | **PDF/X** (XMP, `OutputIntent`, revendication) | `pdf::xmp`, `pdf::document` | `pdf-lib` relit le paquet XMP et les quatre clés de conformité | 🟢 offert |
 | 25 | **Pagination et chaînage** | `superprint-flow` | invariante vérifiée (16 cas), défaut de la méthode du produit **mesuré** (18 coupures au milieu d'un mot contre 0) | 🟢 offert |
 | 26 | **Géométrie vectorielle et Pathfinder** | `superprint-path` | surface du résultat vérifiée sur **212 000 points**, 45 identités d'aires | 🟢 offert |
+| 27 | **Conteneur ZIP** (lecture, DEFLATE, CRC-32) | `superprint-zip` | 10 fichiers réels relus par un lecteur écrit à part : **56 entrées, 569 826 octets identiques** | 🟢 offert |
+| 28 | **Formats documentaires** `.docx` / `.odt` / `.idml` | `superprint-doc` | 10 documents réels, **1 414 paragraphes identiques** ; invariante de texte sur 328 000 caractères | 🟢 offert |
+| 29 | **PostScript / EPS** (en-tête DSC, interpréteur borné) | `superprint-ps` | 4 témoins, **174 sommets** comparés à un interpréteur écrit à part ; tolérance **mesurée** sur la courbe vraie | 🟢 offert |
 
 ---
 
@@ -369,19 +380,133 @@ surface, avec joins et extrémités) et les décalages de courbe. Ils sont utile
 ne sont pas ce que le produit demandait au Pathfinder ; ils viendraient avec
 l'import SVG et le rendu de plume.
 
-### B8. Import de documents 🟠 (toujours pas fait, et c'est le seul)
+### B8. Import de documents 🟠 → ✅ (fait, et mesuré)
 
-| Étape | Source | Remarque |
+| Étape | Source | Rust |
 |---|---|---|
-| `.docx` / `.xlsx` / `.odt` / `.ods` | `sp-doc-import.js` (1 233 l.) | ZIP + XML → demande un décodeur ZIP (`inflate` : ✅ fait) |
-| RTF, HTML, TXT | `sp-doc-import.js` | analyse syntaxique, portable |
-| EPS / AI (PostScript) | `sp-eps-import.js` (869 l.) | sous-ensemble PostScript — gros morceau |
-| IDML (InDesign) | `main.js` 41812-45723 | ZIP + XML, ~4 000 l. de JS |
-| SVG | délégué au navigateur | parseur XML + `path::{Courbe, Polygone}`, désormais disponibles |
+| Conteneur ZIP (annuaire central, entrées, DEFLATE, CRC-32) | `JSZip` (bibliothèque tierce) | ✅ `superprint-zip` |
+| `.docx` (OOXML) | `sp-doc-import.js` (1 233 l.) + `mammoth.min.js` (621 Ko) | ✅ `superprint-doc::docx` |
+| `.odt` (OpenDocument) | `sp-doc-import.js` + `DOMParser` du navigateur | ✅ `superprint-doc::odt` |
+| `.idml` (InDesign) | `main.js` 41812-45723 (~3 900 l.) | ✅ `superprint-doc::idml` |
+| EPS / AI (PostScript) | `sp-eps-import.js` (869 l.) | ✅ `superprint-ps` |
+| RTF, HTML, TXT | `sp-doc-import.js` | ❌ **reconnus mais non analysés** (voir plus bas) |
+| SVG | délégué au navigateur | ❌ à faire : le parseur XML existe désormais |
 
-C'est le **seul** domaine encore ouvert. Ce qui existe déjà et servira :
-`compress::inflate` pour le ZIP, `path::Courbe` et `path::Polygone` pour les tracés
-importés.
+Le domaine se découpe en trois, et chacun a sa preuve.
+
+#### B8a. Le conteneur ZIP
+
+`superprint-zip` lit l'**annuaire central** — et pas les en-têtes locaux — parce que
+c'est le seul endroit où la taille et le CRC font foi : un en-tête local peut
+déclarer des tailles nulles quand le fichier a été écrit en flux. Il décompresse le
+DEFLATE avec le `compress::inflate` du noyau, vérifie le **CRC-32** de chaque entrée
+(sa propre table, construite par un `const fn`), refuse les noms qui sortent du
+dossier (`../`), le multi-volume, le ZIP64, le chiffrement, et la méthode BZIP2.
+Il **reconnaît la saveur** du contenu : `%PDF-`, `%!PS`, `PK`, l'en-tête OLE2 du
+`.doc` binaire, `{\rtf`, `<?xml`.
+
+**Deux trouvailles mesurées, et gênantes pour l'utilisateur :**
+
+- `_dev/fixtures-396/renomme.odt` **est un RTF**, pas un document OpenDocument. Le
+  lecteur le dit maintenant (`nature : rtf`) au lieu d'échouer sans expliquer ;
+- `_dev/fixtures/Logo_licra_vecto.ai` **est un PDF 1.6**, pas du PostScript —
+  Illustrator enregistre ses `.ai` en PDF dès que la compatibilité PDF est active,
+  ce qui est le défaut. C'est ce fichier qui a décidé de la conception de B8c.
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| fichiers réels relus par un lecteur ZIP écrit à part | 10 fichiers, **56 entrées, 569 826 octets identiques au bit près** |
+| archives fabriquées à la main (cas limites) | 8, dont annuaire vide et commentaire d'annuaire |
+| refus nommés | 14 (tronquée, méthode inconnue, CRC abîmé, chiffrée, nom suspect…) |
+
+#### B8b. Les formats documentaires : `.docx`, `.odt`, `.idml`
+
+`superprint-doc` contient son **propre analyseur XML** (~350 lignes, sans
+dépendance) et trois lecteurs. Les paragraphes sont recollés depuis les `run`
+(`<w:r>`, `<text:p>`, `<Content>`) avec style, niveau de titre, liste, alignement,
+tableau, image et note de bas de page. Les mesures de page sont converties depuis
+les unités d'origine : vingtièmes de point pour OOXML, `mm`/`cm`/`in`/`pt` pour
+OpenDocument, points pour IDML.
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| paragraphes comparés à un extracteur écrit à part | 10 documents réels, **1 414 paragraphes, tous identiques** |
+| formats de page recalculés dans l'autre sens | 10 / 10 (A4 en twips → **210,0086 mm**, pas 210,06) |
+| invariante de texte (rien de perdu, rien d'inventé) | `_gros_120p.docx`, **328 000 caractères** |
+| refus nommés | RTF renommé, PDF renommé, archive sans document, XML abîmé, entité inconnue |
+
+**Trois fautes trouvées dans le noyau par ces contrôles, et corrigées** : les entités
+XML n'étaient résolues que dans les **attributs** (`&amp;` restait littéral dans le
+texte) ; le contenu `CDATA` était résolu alors qu'il doit rester littéral ; et la
+recherche d'entité était trop large, au point de lire `AT&T et R&amp;D` comme une
+entité nommée `T et R&amp`.
+
+#### B8c. PostScript, EPS et `.ai` — le morceau qu'on croyait ingrat
+
+**PostScript est un langage, pas un format.** Un `.eps` réel commence par un
+**prologue** qui définit ses abréviations (`/m /moveto load def`, `/f /fill load def`)
+et le corps du dessin n'emploie que celles-là. Chercher `moveto` dans le texte ne
+trouverait rien ; chercher `m` trouverait n'importe quoi. Il faut donc **exécuter**,
+et c'est un interpréteur qui est écrit là — borné, et sans `unsafe`.
+
+La machine tient dans une seule fonction (`operateur`), avec **136 opérateurs**
+interprétés, dont les **abréviations réelles** (`m`, `l`, `c`, `v`, `y`, `h`, `re`,
+`f`, `S`, `q`, `Q`, `W`, `gs`…). Les matrices suivent la convention de PostScript
+(`concat` **pré**-multiplie), ce qui fait qu'un `10 10 translate 2 2 scale` place
+l'échelle dans le repère local — comme tout programme PostScript le suppose. Les
+courbes sont **transformées avant d'être aplaties** : aplatir d'abord puis
+transformer donnerait un écart multiplié par l'échelle.
+
+**Quatre bornes, et ce qu'elles protègent :** 5 000 000 de pas d'exécution (une
+boucle infinie écrite dans le fichier), 64 niveaux d'appel (une procédure qui
+s'appelle elle-même), 100 000 dessins, 10 000 objets de pile.
+
+**Refuser ou signaler : ce n'est pas la même chose, et c'est un choix mesuré.**
+
+- un opérateur **connu mais non interprété** est **refusé**, avec sa raison, parce
+  que son ignorance **perd du dessin** : `show` (le texte demanderait police, corps
+  et approches), `image`, `forall`, `loop`, `arct`, `file`, l'horloge, la mémoire,
+  les paramètres d'appareil. **51 refus nommés** ;
+- un opérateur **inconnu** est **signalé sans arrêter la lecture**, parce qu'un EPS
+  réel arrive souvent avec un prologue tronqué. `/GS0 gs` en est l'exemple le plus
+  courant, et refuser tout le fichier pour un marqueur d'état sans effet
+  géométrique rendrait l'import inutilisable sur des fichiers valides. Les noms sont
+  relevés, comptés et rendus dans le rapport — ce n'est pas un silence, et c'est
+  différent de ce que fait le produit, qui ignore silencieusement.
+
+Un interpréteur PostScript strict lèverait `undefined` dans le second cas. L'écart
+est **assumé et mesuré**, et il est le seul du domaine.
+
+| Contrôle | Résultat mesuré |
+|---|---|
+| dessins et sommets comparés à un interpréteur écrit à part | 4 témoins EPS, **11 dessins, 174 sommets**, écart sous 1e-6 |
+| aires connues par construction (rectangle, triangle) | 18 000 / 2 200 / 80 000 / 34 000 / 67 600 — exactes au dix-millième |
+| tolérance d'aplatissement, **par l'écart à la courbe vraie** | 0,5 → écart **0,474** ; 0,05 → **0,0366** ; 0,005 → **0,0023** |
+| un cercle de rayon 40 | aire à **0,1 %** de π r², boîte au centième |
+| refus nommés | **20 / 20**, chacun nomme l'opérateur *et* la raison |
+| opérateur inconnu | signalé, et le dessin est quand même lu |
+
+**Ce qui n'est pas fait, et qui est écrit ici pour ne pas être découvert :**
+
+- `arct` et `arcto` (arc tangent à deux droites) sont **refusés**, pas approximés ;
+- un `clip` est **enregistré** comme un dessin, mais **non appliqué** aux formes
+  suivantes : découper vraiment demande une algèbre de régions, et l'avertissement
+  est posé. Le produit, lui, ne le conserve pas du tout ;
+- le **texte** n'est pas interprété (donc pas de libellés) ;
+- **`s` n'est pas deviné** : la spécification le donne pour `scale`, le produit le
+  lit comme `stroke` (`sp-eps-import.js`, ligne 643). Deviner reviendrait, dans un
+  cas sur deux, à changer la géométrie en silence. Le noyau le **signale** ;
+- les `.ai` **enregistrés en PDF** sont refusés, en expliquant pourquoi et en
+  renvoyant à Illustrator : le noyau écrit du PDF, il n'en lit pas ;
+- le **RTF** est reconnu mais non analysé, et le `.doc` binaire (OLE2) non plus ;
+- le `.xlsx` n'est pas lu comme un classeur : son XML est atteignable, mais le
+  modèle de cellules n'est pas porté ;
+- l'**import SVG** attend toujours : le parseur XML et la géométrie sont là, la
+  correspondance des commandes de chemin reste à écrire.
+
+Ces limites sont les mêmes que celles du produit, à deux exceptions près — et les
+deux vont dans le même sens : le noyau **refuse** là où le produit **ignore**
+(`show`, `arct`), et il **conserve** ce que le produit **jette** (`clip`).
 
 ### B9. Profil ICC (module 7) 🟡 → ✅ (fait, et mesuré)
 
@@ -517,8 +642,9 @@ Du plus utile au moins utile, en tenant compte du risque :
 | ~~9~~ | ~~Lecture de profil ICC~~ | ✅ **fait et mesuré** — et l'écart des profils Adobe à la spécification est publié |
 | ~~10~~ | ~~Réduction d'image~~ | ✅ **fait et mesuré** — remonté au rang 4 : c'était le défaut de **justesse** le plus net |
 | ~~11~~ | ~~Pathfinder~~ | ✅ **fait et mesuré** — 212 000 points vérifiés contre la définition ensembliste |
-| **12** | **Import ZIP + XML (docx, idml, odt)** | 🟠 **le seul qui reste** — gros, mais `inflate` est fait |
-| **13** | **PostScript / EPS** | 🟠 sous-ensemble de PostScript : le morceau le plus ingrat du lot |
+| ~~12~~ | ~~Conteneur ZIP~~ | ✅ **fait et mesuré** — 10 fichiers réels, 56 entrées, 569 826 octets identiques |
+| ~~13~~ | ~~Import docx / odt / idml~~ | ✅ **fait et mesuré** — 1 414 paragraphes identiques, invariante sur 328 000 caractères |
+| ~~14~~ | ~~PostScript / EPS~~ | ✅ **fait et mesuré** — 4 témoins, tolérance vérifiée sur la courbe vraie, 20 refus nommés |
 
 **Ce qui est porté n'est pas pour autant branché, et ce qui est branché n'est
 pas pour autant utile.** Les leçons, à relire avant de brancher le composant
@@ -536,10 +662,11 @@ suivant :
 
 Rester à brancher, parmi ce qui existe : les conversions de couleurs, les unités,
 le RunLength. L'imposition, la réduction d'image, le prépresse, les nuanciers, les
-filtres, la lecture ICC, la déclaration PDF/X, le chaînage et le Pathfinder sont
-**offerts** par `SuperPrintBranchement` (ou livrés comme crates), mais pas branchés :
-les fonctions correspondantes de `main.js` sont privées à son IIFE, et la règle est
-de **ne pas modifier** `main.js`. Voir la section F pour la ligne exacte à changer.
+filtres, la lecture ICC, la déclaration PDF/X, le chaînage, le Pathfinder et
+l'import de documents sont **offerts** par `SuperPrintBranchement` (ou livrés comme
+crates), mais pas branchés : les fonctions correspondantes de `main.js` sont privées
+à son IIFE, et la règle est de **ne pas modifier** `main.js`. Voir la section F pour
+la ligne exacte à changer.
 
 ---
 
@@ -567,6 +694,9 @@ Aucun portage n'est déclaré fait sans une comparaison avec le JS existant, lu
 | **PDF/X** | `pdf-lib` + contrôle d'équilibre XML + comparaison octet par octet du profil | **déclaration exacte, refus des trois mensonges, et contrôle négatif** |
 | **Pagination et chaînage** | invariante de caractères + méthode du produit rejouée en JS | **16 cas sans perte, 18 coupures au milieu d'un mot contre 0, 101 recompositions contre 1** |
 | **Géométrie vectorielle** | définition ensembliste des opérations, appliquée aux entrées en JS | **212 000 points sans désaccord, 45 identités d'aires, 0 refus injustifié** |
+| **Conteneur ZIP** | lecteur ZIP écrit à part (annuaire + `inflateRawSync`), archives fabriquées à la main | **56 entrées, 569 826 octets identiques au bit près**, 14 refus nommés, saveur reconnue |
+| **Import docx / odt / idml** | analyseur XML et extracteurs écrits à part, plus une invariante de texte | **1 414 paragraphes identiques**, 328 000 caractères sans perte, 3 fautes du noyau trouvées |
+| **Import PostScript** | interpréteur PostScript écrit à part (lexeur, pile, matrice, aplatissement) | **174 sommets identiques à 1e-6**, aires connues exactes, tolérance mesurée sur la courbe vraie |
 | **Branchement césure (colle)** | `hypher.js` + dictionnaires du produit | **5 langues, 2 433 mots identiques** |
 | **Branchement césure (livré)** | fichiers réels de `superprint/app/JS/` | **2 129 mots × 5 langues, réversibilité et repli** |
 | **Branchement imposition + réduction** | fichiers réels, dans un bac à sable navigateur | **plan conforme, composants indépendants de la césure** |

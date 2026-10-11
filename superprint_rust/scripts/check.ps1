@@ -215,6 +215,19 @@ Step 'import : docx, odt et idml contre un extracteur independant, et invariante
   if ($LASTEXITCODE -eq 0) { node scripts/validate-doc.mjs }
 }
 
+# Validation de l'IMPORT POSTSCRIPT : .eps, et les .ai enregistres en EPS. Le
+# controle confronte le noyau a un INTERPRETEUR ECRIT A PART (son propre lexeur,
+# sa propre pile, sa propre matrice, son propre aplatissement), dessin par dessin
+# et sommet par sommet, sur les fichiers reels du depot. Puis il verifie les
+# AIRES CONNUES par construction, la TOLERANCE D'APLATISSEMENT PAR LA MESURE de
+# l'ecart a la courbe vraie, les REFUS NOMMES (le texte, les images) contre les
+# SIGNALEMENTS qui ne bloquent pas, et le fait qu'un .ai qui est un PDF est
+# refuse en le disant.
+Step 'postscript : en-tete DSC, dessins, tolerance mesuree et refus nommes' {
+  & $cargo build -p superprint-ps --example ps_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-ps.mjs }
+}
+
 Pop-Location
 
 if ($ok) {

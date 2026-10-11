@@ -86,6 +86,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "superprint-ps"
+version = "0.2.0"
+dependencies = [
+ "superprint-path",
+]
+
+[[package]]
 name = "superprint-swatch"
 version = "0.2.0"
 dependencies = [
