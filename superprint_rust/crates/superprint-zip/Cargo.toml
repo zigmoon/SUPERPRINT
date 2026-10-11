@@ -1,0 +1,12 @@
+[package]
+name = "superprint-zip"
+description = "Lecture du conteneur ZIP du noyau Rust de SuperPrint : annuaire central, en-tetes locaux, entrees stockees ou compressees, et verification du CRC. C'est le contenant des fichiers .docx, .odt, .xlsx et .idml."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+superprint-compress = { path = "../superprint-compress" }

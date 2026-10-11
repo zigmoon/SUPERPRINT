@@ -104,3 +104,10 @@ dependencies = [
  "superprint-preflight",
  "superprint-text",
 ]
+
+[[package]]
+name = "superprint-zip"
+version = "0.2.0"
+dependencies = [
+ "superprint-compress",
+]

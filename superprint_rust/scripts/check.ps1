@@ -192,6 +192,17 @@ Step 'vecteurs : aplatissement dans la tolerance, et Pathfinder verifie par la s
   if ($LASTEXITCODE -eq 0) { node scripts/validate-path.mjs }
 }
 
+# Validation du CONTENEUR ZIP : un .docx, un .odt, un .xlsx et un .idml sont la
+# meme chose — une archive ZIP contenant du XML. Le noyau en a un lecteur ; le
+# controle le confronte a un lecteur ECRIT A PART (annuaire central + zlib de
+# Node) sur les fichiers reels du depot, entree par entree. Puis il eprouve les
+# refus : .doc renomme, .rtf renomme, archive tronquee, CRC abime, chiffree,
+# methode BZIP2, nom qui sort de l'archive.
+Step 'conteneur ZIP : fichiers reels contre un lecteur independant, et refus' {
+  & $cargo build -p superprint-zip --example zip_dump --target wasm32-wasip1 --release
+  if ($LASTEXITCODE -eq 0) { node scripts/validate-zip.mjs }
+}
+
 Pop-Location
 
 if ($ok) {
