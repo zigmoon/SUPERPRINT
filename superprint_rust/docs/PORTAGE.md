@@ -16,12 +16,12 @@ Les lignes sont **mesurées, pas estimées** (relevé du 2026-10-11) :
 
 | | |
 |---|---|
-| Rust (`crates/`, 16 crates, tests compris) | **37 550 lignes** |
-| dont annotations `#[test]` | 858 tests, tous verts |
-| exports `sp_*` de la frontière C | **44** (0 import) |
-| module livrable | 380 Ko |
-| étapes de contrôle (`scripts/check.ps1`) | **26** |
-| JavaScript applicatif (hors bibliothèques tierces) | **125 944 lignes** |
+| Rust (`crates/`, 17 crates, tests compris) | **37 942 lignes** |
+| dont annotations `#[test]` | 863 tests, tous verts |
+| exports `sp_*` de la frontière C | **48** (0 import), sur **deux** modules |
+| modules livrables | 380 Ko (noyau) + **245 Ko** (import PostScript, à la demande) |
+| étapes de contrôle (`scripts/check.ps1`) | **28** |
+| JavaScript applicatif (hors bibliothèques tierces) | **126 581 lignes** |
 | dont `main.js` | 99 157 lignes |
 | dont `web-llm.esm.js` (IA réseau, non portable) | 14 291 lignes |
 
@@ -31,14 +31,22 @@ pas la même chose. Dire « 16 % » sans préciser serait trompeur.
 | Métrique | Mesure | Ce qu'elle dit |
 |---|---|---|
 | **Domaines terminés** | **11 / 11** → **100 %** | l'avancement réel du travail identifié |
-| dont **branchés** dans l'application | **2 / 11** construits → **18 %** | ce qui sert vraiment à l'utilisateur |
-| **Volume JS porté** (somme des plages citées) | **13 000 / 18 803** → **69 %** | le poids du travail restant |
-| **Lignes** Rust / JS | 37 550 / 111 501 → **33,7 %** | ⚠️ le plus trompeur des quatre |
+| dont **branchés** dans l'application | **2 / 11** construits, **+** l'import PostScript | ce qui sert vraiment à l'utilisateur |
+| **Volume JS porté** (somme des plages citées) | **13 787 / 18 803** → **73 %** | le poids du travail restant |
+| **Lignes** Rust / JS | 37 942 / 112 138 → **33,8 %** | ⚠️ le plus trompeur des quatre |
 
-Les 11 domaines, nommés, avec leur état : **césure** ✅ (le seul branché) ·
+La plage ajoutée par l'import PostScript est mesurée ainsi : dans
+`superprint/app/JS/sp-eps-import.js` (939 lignes), tout ce qui précède
+`toFabricGroup` — c'est-à-dire l'analyse et l'interprétation — occupe les lignes
+27 à 813, soit **787 lignes**. Ce qui suit (la construction des objets Fabric, le
+SVG, le score d'interface) reste en JavaScript, parce que c'est du dessin dans le
+navigateur.
+
+Les 11 domaines, nommés, avec leur état : **césure** ✅ (branché) ·
 **compression Flate** ✅ · **imposition** ✅ · **prépresse** ✅ · **nuanciers** ✅ ·
 **image** ✅ · **profils ICC** ✅ · **PDF/X** ✅ · **pagination et chaînage** ✅ ·
-**géométrie vectorielle / Pathfinder** ✅ · **import docx/odt/idml/EPS/AI** ✅.
+**géométrie vectorielle / Pathfinder** ✅ · **import docx/odt/idml/EPS/AI** ✅
+(le PostScript **branché**, le docx non). **Conversion de couleurs** ✅ (branchée).
 
 **Aucun domaine n'est ouvert.** Ce qui reste ne sont plus des domaines, mais des
 **limites à l'intérieur de domaines terminés** — et elles sont toutes écrites, dans
@@ -49,8 +57,10 @@ non interprétés ; un `clip` est **enregistré mais non appliqué** ; et les `.
 enregistrés en PDF sont **refusés** au lieu d'être lus (le noyau écrit du PDF, il
 n'en lit pas).
 
-Le portage n'est pas fini pour autant : sur les 11 domaines, **un seul est
-branché**. Les dix autres sont mesurés, testés, et offerts — utiliser le noyau
+Le portage n'est pas fini pour autant : sur les 11 domaines, **deux sont
+branchés**, plus **la moitié d'un troisième** (l'import : le PostScript est
+branché, le docx ne l'est pas). Les huit autres sont mesurés, testés, et
+offerts — utiliser le noyau
 suppose de changer une ligne dans `main.js`, et la règle de ce dépôt est de ne pas
 y toucher (section F).
 
@@ -61,8 +71,9 @@ pas quand un module est fini, et il bougerait beaucoup si on portait une plage
 facile. **Le seul chiffre à suivre est le premier : les domaines.**
 
 > ⚠️ **Ce qui est porté n'est pas pour autant branché.** Aujourd'hui, **deux
-> composants tournent réellement en Rust** : la césure et la conversion RVB →
-> CMJN. La compression
+> composants tournent réellement en Rust** dans l'espace de travail — la césure et
+> la conversion RVB →
+> CMJN — plus **l'import PostScript**, entièrement interprété par le noyau. La compression
 > est employée par notre propre exporteur ; l'imposition, la réduction d'image,
 > le prépresse, les nuanciers, les filtres d'image, la lecture ICC, la
 déclaration PDF/X, la pagination, le Pathfinder et l'import de documents sont
@@ -509,6 +520,15 @@ Ces limites sont les mêmes que celles du produit, à deux exceptions près — 
 deux vont dans le même sens : le noyau **refuse** là où le produit **ignore**
 (`show`, `arct`), et il **conserve** ce que le produit **jette** (`clip`).
 
+**Le PostScript est branché** (voir la section F, « L'import PostScript ») :
+`main.js` accepte un `window.SPEps` déjà posé, il n'y a donc eu aucune ligne à
+y ajouter. L'interpréteur vient de `crates/superprint-ps`, et le noyau est
+livré dans **son propre** module WebAssembly (245 Ko, chargé à la demande) pour ne
+pas alourdir celui du démarrage. Le **docx, l'odt, l'idml et le SVG restent
+offerts** : leur point d'accroche est `_spImportDocxFile`, mais l'analyse y est
+enchevêtrée avec `mammoth` et la génération de HTML, donc avec `flowHtmlIntoPages`
+qui est privée à l'IIFE de `main.js`.
+
 ### B9. Profil ICC (module 7) 🟡 → ✅ (fait, et mesuré)
 
 Lire l'en-tête et les balises d'un profil ICC. La **transformation** reste à
@@ -747,6 +767,9 @@ aurait forcément dupliqué ces règles.
 | `superprint/app/JS/superprint-branchement.js` | **le branchement** |
 | `superprint/app/index.html` | deux lignes `<script>`, après les dictionnaires |
 | `superprint/app/service-worker.js` | les trois fichiers précachés, `CACHE_NAME` incrémenté |
+| `superprint/app/JS/superprint_eps.wasm` | le noyau **import PostScript** (copie de `dist/`), **non précaché** |
+| `superprint/app/JS/superprint-eps.js` | sa colle, elle **précachée** (elle est demandée au démarrage) |
+| `superprint/app/index.html` | une troisième ligne `<script>`, sous les deux autres |
 
 ### Les garanties
 
@@ -862,6 +885,109 @@ propage un `NaN` jusque dans le PDF ; le noyau **refuse** (`BAD_INPUT`) et
 n'écrit rien dans le tampon. Un code d'erreur laisse l'appelant se rabattre,
 alors qu'un `NaN` dans un fichier livré ne se voit qu'à l'impression.
 
+### L'import PostScript : le premier import passé en Rust
+
+C'est le premier domaine d'**import** branché, et le seul dont le point d'accroche
+était déjà écrit par le produit. `main.js` (`main.js:41439`) fait exactement :
+
+```js
+function _spEpsEnsureModule() {
+    if (window.SPEps) return Promise.resolve(window.SPEps);   // ← le joint
+    … charge JS/sp-eps-import.js …
+}
+```
+
+Le produit **accepte donc qu'un `window.SPEps` existe déjà**, et se sert du sien
+seulement s'il n'y en a pas. Poser sa propre implémentation ne demande donc
+**aucune ligne dans `main.js`** : c'est le même mécanisme que la césure, mais
+cette fois l'objet entier est remplaçable.
+
+#### Deux modules, et pourquoi
+
+La première tentative a été d'ajouter l'interpréteur au module existant (crate
+`superprint-wasm`, une *feature* `eps`). **Mesure : 380 Ko → 540 Ko.** Or
+`superprint_core.wasm` est **précaché** : ces 160 Ko auraient été téléchargés par
+**tout le monde**, y compris les utilisateurs qui n'ouvrent jamais un `.eps`.
+
+Le noyau PostScript vit donc dans **son propre crate**, `superprint-eps-wasm`, et
+dans son propre module :
+
+| | Noyau | Import PostScript |
+|---|---|---|
+| crate | `superprint-wasm` | `superprint-eps-wasm` |
+| fichier | `superprint_core.wasm` | `superprint_eps.wasm` |
+| taille mesurée | 380 Ko | 245 Ko |
+| exports `sp_*` | 44 | 4 |
+| quand | au démarrage | **à la demande** |
+| qui paie | tout le monde | ceux qui importent un `.eps` |
+
+Le second n'est **pas** dans `APP_SHELL` du service worker : il est récupéré au
+premier `dragover` de fichier ou au premier contact avec le bouton d'import,
+puis mis en cache par la stratégie habituelle. Aucun utilisateur ne le télécharge
+sans avoir manifesté l'intention d'importer.
+
+> **Le gain n'est pas la taille, et il faut le dire.** 245 Ko de Rust remplacent
+> 44 Ko de JavaScript : le module est **cinq fois plus gros** que ce qu'il
+> remplace. Le gain est ailleurs — la même source unique pour l'interpréteur
+> (partagée avec l'outil de contrôle, et non plus une deuxième implémentation à
+> maintenir), la correction mesurée, et un interpréteur qui n'est plus réécrit à
+> chaque retouche. Prétendre que le PostScript en Rust fait gagner du poids serait
+> faux.
+
+#### Le contrat : mesuré, pas recopié
+
+`sp-eps-import.js` expose **onze** noms. En relever la liste et la reproduire
+serait une supposition. `scripts/validate-eps-branchement.mjs` **lit `main.js`**
+et relève ce qui est réellement appelé sur l'objet du module :
+
+```js
+const bloc = mainJs.slice(indexOf('function _spEpsEnsureModule'),
+                          indexOf('function initEpsImport'));
+const utilises = [...new Set([...bloc.matchAll(/\bmod\.([A-Za-z_$][\w$]*)/g)].map(m => m[1]))];
+// → detect, extractPsText, importance, parse, toFabricGroup   (cinq, pas onze)
+```
+
+Résultat : `main.js` appelle **cinq** fonctions. Les six autres — `lireEntete`,
+`tokenize`, `toSvg`, `toSvgDataUrl`, `version`, `MM_PER_PT` — ne sont lues par
+**aucune ligne de l'application**. Les quatre premières restent donc **absentes**
+de la colle : les ajouter serait du code mort, et le contrôle le vérifie
+explicitement. `version` et `MM_PER_PT` sont posés pour le diagnostic.
+
+Ce contrôle-là a une deuxième vertu : le jour où `main.js` appellera un nom de
+plus, le test échoue **avant** que l'import ne casse.
+
+#### La course, et le repli
+
+`main.js` lit `if (window.SPEps)` **au moment du dépôt**. Si le fichier est lâché
+plus vite que le noyau ne se charge, `main.js` charge son module JavaScript —
+c'est-à-dire exactement le comportement d'aujourd'hui. La colle ne pose
+`window.SPEps` **qu'une fois le noyau prêt et ses quatre exports vérifiés** : il
+n'existe donc aucun instant où un `window.SPEps` incomplet serait visible.
+
+L'avance est prise sur les signaux d'intention : `dragover`, `drop`,
+`pointerdown` et `click` sur `importEpsBtn`, et `pointerdown` sur `importBtn`. Un
+glisser-déposer dure plus qu'un `fetch` local de 245 Ko ; le choix d'un fichier
+dans une boîte de dialogue aussi. Dans le cas contraire, le module JavaScript
+sert le premier import, et le suivant passe au noyau. Si le noyau ne se charge
+pas du tout, **`window.SPEps` reste absent** et rien ne change pour l'utilisateur.
+
+#### Ce que le noyau a corrigé, et que le JavaScript ne faisait pas
+
+L'interpréteur est celui qui est testé depuis le début
+(`crates/superprint-ps`, 4 096 lignes, 86 tests). Les fautes relevées en le
+mesurant — `]` et `}` refusés par le lexeur, `/nom` qui bouclait à l'infini,
+`{ … }` exécuté au lieu d'être empilé, `rmoveto` mélangeant deux repères, `arc`
+avec une longueur de poignée fausse hors des quarts de tour, `q`/`Q`
+d'Illustrator absents de la liste des opérateurs connus — étaient toutes dans
+l'interpréteur Rust, mais elles décrivent **ce qu'un interpréteur PostScript doit
+faire** ; le contrôle `scripts/validate-ps.mjs` les empêche de revenir.
+
+Le noyau **reproduit** en revanche l'incohérence de `cmjnVersHex` du produit
+(une conversion naïve, distincte de `_spCmykConvert`) : elle est reproduite, pas
+corrigée, pour la même raison que le GCR — changer la couleur d'un tracé importé
+changerait un PDF livré sans que personne ne l'ait demandé.
+
+
 ### Ce que le branchement ne fait pas
 
 Il ne replie **rien** en JavaScript. Si le module WebAssembly est refusé par le
@@ -920,8 +1046,7 @@ qui fait perdre confiance. Il attend donc son pont, et il le dit.
 
 ### La mesure, et l'anti-dérive
 
-Quatre contrôles de branchement, tous dans `check.ps1` :
-- `scripts/validate-branchement.mjs` — la colle et le noyau contre les
+Six contrôles de branchement, tous dans `check.ps1` :- `scripts/validate-branchement.mjs` — la colle et le noyau contre les
   dictionnaires du produit, cinq langues.
 - `scripts/validate-branchement-app.mjs` — les **fichiers livrés** évalués dans
   un contexte qui imite le navigateur (ordre de `index.html`, `fetch` simulé),
@@ -934,6 +1059,14 @@ Quatre contrôles de branchement, tous dans `check.ps1` :
   traits de coupe contre le **code de `main.js` extrait tel quel**.
 - `scripts/validate-cmyk.mjs` — la conversion RVB → CMJN du noyau contre celle
   du produit, sur **655 024 conversions**, et le défaut du GCR **mesuré**.
+- `scripts/validate-eps-branchement.mjs` — l'import PostScript de bout en bout :
+  la colle évaluée dans un contexte qui imite le navigateur, le **contrat
+  mesuré dans `main.js`** (les cinq noms réellement appelés, et l'absence
+  vérifiée des quatre autres), la transformation de repère vérifiée **sur les
+  témoins réels** (`M10 110` / `L190 110` / `Z`), et le **repli** exercé avec un
+  noyau volontairement absent.
+- `scripts/verifier-eps-wasm.mjs` — le noyau seul : détection, `%%BeginPreview`
+  sauté, `.ai`-qui-est-un-PDF refusé, `show` refusé **et nommé**.
 
 Un composant qui en rend un autre dépendant est un défaut : c'est ce que le
 troisième contrôle ci-dessus interdit. Lier le chargement du noyau à la présence
@@ -941,8 +1074,9 @@ d'un fichier de motifs ferait échouer deux composants parce qu'un troisième n'
 pas trouvé ses données.
 
 Une étape du même fichier compare les **empreintes SHA-256** de
-`web/superprint-core.js` et `dist/superprint_core.wasm` avec leurs copies dans
-`superprint/app/JS/`. Sans elle, le contrôle vérifierait autre chose que ce qui
+`web/superprint-core.js`, `dist/superprint_core.wasm`, `web/superprint-eps.js`
+et `dist/superprint_eps.wasm` avec leurs copies dans `superprint/app/JS/`. Sans
+elle, le contrôle vérifierait autre chose que ce qui
 est livré.
 
 ### Ce que la mesure a appris — lire avant de brancher le composant suivant
@@ -981,3 +1115,28 @@ un cache à poser : c'est presque toujours là que se trouve le gain.
 La césure reste branchée parce qu'elle a été demandée et qu'elle est
 **mesurée identique** — mais elle est le contre-exemple à garder en tête, pas
 le modèle.
+
+Trois autres enseignements, tirés de l'import PostScript :
+
+3. **Un contrat se mesure, il ne se recopie pas.** Le module JavaScript
+   d'origine déclare onze noms ; `main.js` en appelle cinq. Écrire la colle à
+   partir du *module* aurait produit du code mort, et laisser croire à une
+   couverture qui n'existe pas. Le contrôle lit donc `main.js`, et il échouera
+   le jour où un nom de plus sera appelé.
+
+4. **Un module précaché grossit pour tout le monde.** Ajouter l'interpréteur au
+   noyau déjà précaché a coûté 160 Ko à des utilisateurs qui n'importeront
+   jamais un `.eps`. Un crate séparé, un module séparé, un chargement à la
+   demande : le coût tombe à zéro pour qui n'en a pas besoin. La règle générale :
+   **ce qui est rare va dans son propre module.**
+
+5. **Un branchement ne fait pas toujours gagner de la place.** Ici le module
+   Rust (245 Ko) est cinq fois plus gros que le JavaScript qu'il remplace
+   (44 Ko). Le gain est la source unique et la correction mesurée, pas le poids.
+   Présenter l'inverse serait une affirmation fausse — et ce document en a déjà
+   corrigé une, sur les « cent accroches » (plus haut).
+
+6. **Un signe d'intention vaut un préchargement.** `dragover`, `pointerdown` :
+   ces gestes précèdent toujours l'import de plusieurs centaines de
+   millisecondes, et suffisent à charger 245 Ko depuis le cache local. Aucun
+   octet n'est dépensé, et le noyau est là quand on en a besoin.

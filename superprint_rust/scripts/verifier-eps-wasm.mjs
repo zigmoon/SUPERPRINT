@@ -90,7 +90,7 @@ function lire(rapport) {
       case '!entete': sortie.entete = { version: c[1], createur: c[2], titre: c[3], eps: c[4] === '1' }; break;
       case '!bbox': sortie.bbox = c.slice(1).map(Number); break;
       case '!superficie': sortie.superficie = c.slice(1).map(Number); break;
-      case '!stats': sortie.stats = { dessins: +c[1], sommets: +c[2], inconnus: +c[3], blocs: +c[4], pages: +c[5] }; break;
+      case '!stats': sortie.stats = { dessins: +c[1], sommets: +c[2], inconnus: +c[3], blocs: +c[4], pages: +c[5], objets: +c[6] }; break;
       case '!dessin': sortie.dessins.push({ peinture: c[2], epaisseur: c[3], espace: c[4], composantes: c.slice(5, 5 + +c[5]).map(Number), sousChemins: [], nbSous: +c[6 + +c[5]] }); break;
       case '!sous': {
         const d = sortie.dessins[+c[1]];

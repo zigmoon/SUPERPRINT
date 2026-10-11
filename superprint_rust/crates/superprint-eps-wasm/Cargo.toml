@@ -1,0 +1,30 @@
+[package]
+name = "superprint-eps-wasm"
+description = "Frontière C de l'import PostScript/EPS de SuperPrint : un module WebAssembly à part, chargé seulement quand l'utilisateur ouvre un .eps."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+# ## Pourquoi un crate à part, et pas une fonctionnalité de `superprint-wasm`
+#
+# Le module principal est **précaché** par le service worker : il est donc
+# téléchargé par tout le monde. Le mesurer l'a montré : y ajouter l'interpréteur
+# PostScript le faisait passer de 380 à 540 Ko, soit **+160 Ko pour des
+# utilisateurs qui n'importeront jamais un fichier PostScript**.
+#
+# Une fonctionnalité `eps` sur `superprint-wasm` aurait produit un second module
+# contenant **tout le noyau en double** (380 Ko) plus l'EPS : 540 Ko, pour un
+# usage ponctuel. Ce crate ne dépend que de `superprint-ps`, donc le module
+# livré est celui de l'EPS **seul** — et il remplace avantageusement les 44 Ko de
+# `sp-eps-import.js`, chargés eux aussi à la demande.
+#
+# C'est le même motif que le service worker, appliqué au noyau : ce qui ne sert
+# pas au plus grand nombre ne se télécharge pas pour tout le monde.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+superprint-ps = { path = "../superprint-ps" }

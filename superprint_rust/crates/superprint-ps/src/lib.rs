@@ -102,6 +102,12 @@ pub struct Valeurs {
     pub blocs_ignores: usize,
     /// Nombre de `showpage`.
     pub pages: usize,
+    /// Nombre d'objets **exécutés** par la machine.
+    ///
+    /// Sert au score d'utilité de la colle (`stats.tokens` dans le produit) : le
+    /// rapport entre opérateurs inconnus et objets exécutés est ce qui distingue
+    /// un EPS conforme d'un fichier lu de travers.
+    pub objets: usize,
     /// Ce qui a été accepté sans effet, ou enregistré sans être appliqué.
     pub avertissements: Vec<String>,
 }

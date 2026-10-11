@@ -23,17 +23,4 @@ superprint-image = { path = "../superprint-image" }
 superprint-impose = { path = "../superprint-impose" }
 superprint-pdf = { path = "../superprint-pdf" }
 superprint-preflight = { path = "../superprint-preflight" }
-# Optionnel : l'interpréteur PostScript et sa géométrie pèsent 160 Ko dans le
-# module livré. Ils ne servent QUE si l'utilisateur importe un EPS, alors que
-# le module principal est précaché par le service worker et donc téléchargé par
-# tout le monde. Les mettre derrière une fonctionnalité permet de produire deux
-# modules depuis ce même crate : le principal sans l'EPS, et `superprint_eps`
-# avec — chargé à la demande, exactement comme l'était `sp-eps-import.js`.
-superprint-ps = { path = "../superprint-ps", optional = true }
 superprint-text = { path = "../superprint-text" }
-
-[features]
-# `--features eps` produit le module d'import EPS (`dist/superprint_eps.wasm`).
-# Sans elle, rien de PostScript n'entre dans le binaire : c'est la garantie que
-# le module précaché ne grossit pas d'un octet.
-eps = ["dep:superprint-ps"]

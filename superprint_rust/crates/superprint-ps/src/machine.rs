@@ -1342,6 +1342,7 @@ impl Machine {
             },
             blocs_ignores: self.blocs_ignores,
             pages: self.pages,
+            objets: self.pas,
             avertissements: self.avertissements,
         }
     }

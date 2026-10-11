@@ -83,7 +83,10 @@ Step 'branchement : la colle contre les dictionnaires du produit' { node scripts
 Step 'colle livree identique a celle du depot' {
   $paires = @(
     @{ Source = 'web/superprint-core.js'; Livree = '../superprint/app/JS/superprint-core.js' },
-    @{ Source = 'dist/superprint_core.wasm'; Livree = '../superprint/app/JS/superprint_core.wasm' }
+    @{ Source = 'dist/superprint_core.wasm'; Livree = '../superprint/app/JS/superprint_core.wasm' },
+    # Meme regle pour l'import PostScript : la colle ET son noyau.
+    @{ Source = 'web/superprint-eps.js'; Livree = '../superprint/app/JS/superprint-eps.js' },
+    @{ Source = 'dist/superprint_eps.wasm'; Livree = '../superprint/app/JS/superprint_eps.wasm' }
   )
   $identiques = $true
   foreach ($paire in $paires) {
@@ -245,6 +248,15 @@ Step 'couleurs : parite bit a bit avec main.js, et le defaut du GCR mesure' {
 # principal doit rester a 380 Ko — c'est la raison d'etre de la separation.
 Step 'module EPS : detection, analyse reelle, et zero surcout pour les autres' {
   node scripts/verifier-eps-wasm.mjs
+}
+
+# Validation du BRANCHEMENT de l'import PostScript : la colle est evaluee dans un
+# contexte qui imite le navigateur, le CONTRAT est 
+# **mesure dans main.js** (quels noms sont vraiment appeles sur l'objet du module)
+# au lieu d'etre recopie, la transformation de repere est verifiee sur les
+# temoins reels, et le repli est exerce avec un noyau absent.
+Step 'import EPS branche : contrat mesure dans main.js, repere, repli' {
+  node scripts/validate-eps-branchement.mjs
 }
 
 Pop-Location

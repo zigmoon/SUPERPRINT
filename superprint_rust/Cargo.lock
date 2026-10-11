@@ -22,6 +22,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "superprint-eps-wasm"
+version = "0.2.0"
+dependencies = [
+ "superprint-ps",
+]
+
+[[package]]
 name = "superprint-flow"
 version = "0.2.0"
 dependencies = [
@@ -117,7 +124,6 @@ dependencies = [
  "superprint-impose",
  "superprint-pdf",
  "superprint-preflight",
- "superprint-ps",
  "superprint-text",
 ]
 

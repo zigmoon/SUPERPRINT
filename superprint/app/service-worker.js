@@ -3,7 +3,7 @@
    App-shell precache + smart fetch strategies + clean updates.
    ───────────────────────────────────────────────────────────── */
 
-const CACHE_NAME = 'superprint-shell-v1.7.614-rust-prepresse';
+const CACHE_NAME = 'superprint-shell-v1.7.614-rust-eps';
 
 /* ── App shell (precached on install) ─────────────────────── */
 const APP_SHELL = [
@@ -58,6 +58,13 @@ const APP_SHELL = [
   './JS/superprint-core.js',
   './JS/superprint-branchement.js',
   './JS/superprint_core.wasm',
+  // 🦀 Import PostScript : la colle seulement.
+  // Le noyau (superprint_eps.wasm, 245 Ko) reste VOLONTAIREMENT hors du
+  // précache, comme lcms ci-dessus : il ne sert qu'aux imports .eps, et
+  // précaher 245 Ko que la plupart des utilisateurs n'ouvriront jamais serait
+  // du gaspillage. Il est récupéré à la demande via la stratégie cache-first,
+  // et mis en cache à ce moment-là : le deuxième import est donc local.
+  './JS/superprint-eps.js',
   './CSS/fonts.css',
   './CSS/fonts/BebasNeue-400-normal-latin.woff2',
   './CSS/fonts/BebasNeue-400-normal-latin-ext.woff2',

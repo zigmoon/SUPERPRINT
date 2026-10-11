@@ -31,6 +31,7 @@ if ($profile -eq 'release') { $commun += '--release' }
 $dist = Join-Path $root 'dist'
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
 $built = Join-Path $root "target\wasm32-unknown-unknown\$profile\superprint_wasm.wasm"
+$builtEps = Join-Path $root "target\wasm32-unknown-unknown\$profile\superprint_eps_wasm.wasm"
 
 # ── 1. Le module principal, SANS l'EPS ────────────────────────────────────────
 #
@@ -49,15 +50,24 @@ Write-Host "OK : $final ($ko Ko)" -ForegroundColor Green
 
 # ── 2. Le module d'import PostScript / EPS ────────────────────────────────────
 #
-# Même crate, fonctionnalité `eps`. Il n'est JAMAIS précaché : la colle
-# `web/superprint-eps.js` le demande au moment où l'utilisateur ouvre un `.eps`,
-# exactement comme `sp-eps-import.js` l'était avant. Le coût pour les autres
-# utilisateurs est donc nul — c'est ce que la mesure imposait.
-Write-Host "-- cargo build ($profile, features=eps)" -ForegroundColor Cyan
-& $cargo @commun '--features' 'eps'
+# Un crate À PART (`superprint-eps-wasm`), et non une fonctionnalité du
+# précédent. La différence est mesurée : une fonctionnalité aurait produit un
+# second module contenant TOUT le noyau en double (380 Ko) plus l'EPS, soit
+# 540 Ko. Ce crate ne dépend que de `superprint-ps` : le module livré fait
+# 245 Ko, et il n'est JAMAIS précaché — la colle `web/superprint-eps.js` le
+# demande quand l'utilisateur ouvre un `.eps`, exactement comme
+# `sp-eps-import.js` (44 Ko) l'était avant.
+#
+# ⚠️ Ce module est PLUS GROS que le JavaScript qu'il remplace (245 Ko contre
+# 44 Ko), et c'est un fait à dire : WebAssembly rattrape le JavaScript à partir
+# d'une certaine taille de code, pas en dessous. Le gain n'est donc pas la
+# taille, c'est que le même code serve le noyau et le navigateur — et que les
+# bornes et les refus nommés y soient vérifiés par des tests.
+Write-Host "-- cargo build -p superprint-eps-wasm ($profile)" -ForegroundColor Cyan
+& $cargo build -p superprint-eps-wasm --target wasm32-unknown-unknown $(if ($profile -eq 'release') { '--release' })
 if ($LASTEXITCODE -ne 0) { Pop-Location; throw 'compilation du module EPS impossible' }
 $finalEps = Join-Path $dist 'superprint_eps.wasm'
-Copy-Item $built $finalEps -Force
+Copy-Item $builtEps $finalEps -Force
 $koEps = [math]::Round((Get-Item $finalEps).Length / 1KB, 1)
 Write-Host "OK : $finalEps ($koEps Ko)" -ForegroundColor Green
 

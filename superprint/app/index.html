@@ -573,6 +573,17 @@
          Retirer ces deux lignes remet l'application à l'identique. -->
     <script src="JS/superprint-core.js?v=20261011-v615-rust-couleurs" defer></script>
     <script src="JS/superprint-branchement.js?v=20261011-v615-rust-couleurs" defer></script>
+    <!-- 🦀 Import PostScript/EPS branché sur son PROPRE noyau Rust.
+         Deuxième module, et c'est délibéré : le noyau de césure/couleurs
+         (superprint_core.wasm, 380 Ko) est téléchargé par tout le monde, alors
+         que l'interpréteur PostScript ne sert qu'à ceux qui importent un .eps.
+         Il vit donc à part (245 Ko) et n'est chargé QU'À L'INTENTION : au
+         premier survol de fichier ou contact avec le bouton d'import, jamais au
+         démarrage. `window.SPEps` n'est posé qu'une fois le noyau prêt ;
+         jusque-là, `main.js` charge `JS/sp-eps-import.js` comme avant. Si le
+         noyau ne se charge pas, rien ne change pour l'utilisateur.
+         Retirer cette ligne remet l'application à l'identique. -->
+    <script src="JS/superprint-eps.js?v=20261011-v616-rust-eps" defer></script>
     <!-- ⚠️ pdfjsLib.GlobalWorkerOptions.workerSrc est configuré par ensurePdfImportLib()
          (main.js) juste après le chargement à la demande de JS/pdf.min.js.
          Toute ressource externe est bannie (politique 100% local). -->
