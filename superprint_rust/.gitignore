@@ -8,6 +8,21 @@
 # PDF de démonstration produits par les exemples
 /spot-page.pdf
 /spot-image-page.pdf
+/wasm-page.pdf
+/wasm-page-image.pdf
+
+# `dist/` n'est PAS listé ici parce que la règle `**/dist/` du .gitignore RACINE
+# s'en charge déjà — même traitement que `superprint_asm/dist/`, qui n'est pas
+# versionné non plus. Rien n'est forcé avec `git add -f` : la politique du dépôt
+# est que les sorties de compilation ne sont jamais commitées.
+#
+# L'artefact `dist/superprint_core.wasm` est donc à REGÉNÉRER :
+#
+#     pwsh -File scripts/build-wasm.ps1
+#
+# Ce n'est pas une perte : `scripts/validate-wasm.mjs` refuse un module dont la
+# version ne correspond plus au `Cargo.toml`, et `scripts/check.ps1` rebâtit et
+# revalide l'ensemble à chaque exécution.
 
 # Éditeurs
 .vscode/

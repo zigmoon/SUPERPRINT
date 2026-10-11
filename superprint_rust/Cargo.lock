@@ -20,3 +20,12 @@ dependencies = [
  "superprint-core",
  "superprint-image",
 ]
+
+[[package]]
+name = "superprint-wasm"
+version = "0.2.0"
+dependencies = [
+ "superprint-core",
+ "superprint-image",
+ "superprint-pdf",
+]

@@ -1,11 +1,16 @@
 # Espace de travail Rust de SuperPrint.
 #
-# Feuille de route : docs/PLAN.md. Trois crates, tous purs Rust et **sans aucune
-# dépendance externe** : ils compilent en natif *et* en WebAssembly.
+# Feuille de route : docs/PLAN.md. Quatre crates. Les trois premiers sont purs
+# Rust et **sans aucune dépendance externe** ; le quatrième est la frontière C.
 #
 #   superprint-core   primitives pures (unités, couleurs, géométrie, color8)
 #   superprint-image  traitement d'image (réduction, DPI, RunLength) — module 4
 #   superprint-pdf    tons directs & écriture PDF (image comprise)   — module 3
+#   superprint-wasm   frontière C, SEUL crate en `cdylib` : il produit le
+#                     `dist/superprint_core.wasm` chargeable par un navigateur
+#
+# Les trois premiers portent `#![forbid(unsafe_code)]` : tout l'`unsafe` de la
+# frontière est concentré dans `superprint-wasm`.
 
 [workspace]
 resolver = "2"

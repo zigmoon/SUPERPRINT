@@ -1,0 +1,21 @@
+[package]
+name = "superprint-wasm"
+description = "Surface C du noyau Rust de SuperPrint, compilée en WebAssembly pour le navigateur (cdylib, sans wasm-bindgen)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+# Le SEUL crate du workspace produit en `cdylib` (donc en `.wasm` chargeable par
+# un navigateur) en plus du `rlib`. Les trois crates du noyau restent des
+# bibliothèques Rust pures : c'est ici, et uniquement ici, que se trouve le
+# `unsafe` de la frontière C.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+superprint-core = { path = "../superprint-core" }
+superprint-image = { path = "../superprint-image" }
+superprint-pdf = { path = "../superprint-pdf" }

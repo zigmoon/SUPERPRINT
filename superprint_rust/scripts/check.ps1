@@ -42,6 +42,12 @@ Step 'cargo test (wasm32-wasip1)'           { & $cargo test --target wasm32-wasi
 # laissaient passer.
 Step 'démonstration image → PDF + pdf-lib'  { pwsh -File (Join-Path $PSScriptRoot 'demo-image.ps1') | Out-Null }
 
+# Validation du MODULE LIVRABLE : le .wasm navigateur est construit, chargé sans
+# aucun import, comparé octet pour octet aux modules WAT écrits à la main, et ses
+# PDF sont relus par pdf-lib. C'est l'étape qui distingue « bibliothèque Rust »
+# de « module utilisable par le site ».
+Step 'module wasm navigateur + parité + pdf-lib' { pwsh -File (Join-Path $PSScriptRoot 'demo-wasm.ps1') | Out-Null }
+
 Pop-Location
 
 if ($ok) {
