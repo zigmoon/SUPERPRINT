@@ -87,14 +87,38 @@ impl<'a> Compositeur<'a> {
     /// c'est à l'utilisateur d'agrandir le bloc ou de réduire le corps.
     #[must_use]
     pub fn composer(&self, texte: &str, largeur: f64) -> Vec<Ligne> {
+        self.composer_avec_largeurs(texte, &|_| largeur)
+    }
+
+    /// Compose `texte` avec une largeur qui peut **dépendre du rang de ligne**.
+    ///
+    /// Sert aux alinéas : la première ligne d'un paragraphe qui rentre de 10 mm
+    /// n'a pas la même largeur que les suivantes. C'est la même règle gloutonne
+    /// que [`Compositeur::composer`] — une seule règle, écrite une fois, avec la
+    /// largeur tirée du rang courant. Composer le paragraphe à la largeur la plus
+    /// étroite serait exact mais gâcherait la place des autres lignes ; le
+    /// composer deux fois pour recoller le résultat donnerait un autre découpage.
+    #[must_use]
+    pub fn composer_avec_largeurs(
+        &self,
+        texte: &str,
+        largeur_de_ligne: &dyn Fn(usize) -> f64,
+    ) -> Vec<Ligne> {
         let mut lignes = Vec::new();
         for paragraphe in texte.split('\n') {
-            self.composer_paragraphe(paragraphe, largeur, &mut lignes);
+            let depart = lignes.len();
+            self.composer_paragraphe(paragraphe, depart, largeur_de_ligne, &mut lignes);
         }
         lignes
     }
 
-    fn composer_paragraphe(&self, paragraphe: &str, largeur: f64, lignes: &mut Vec<Ligne>) {
+    fn composer_paragraphe(
+        &self,
+        paragraphe: &str,
+        depart: usize,
+        largeur_de_ligne: &dyn Fn(usize) -> f64,
+        lignes: &mut Vec<Ligne>,
+    ) {
         let mots: Vec<&str> = paragraphe.split_whitespace().collect();
         if mots.is_empty() {
             return;
@@ -109,6 +133,9 @@ impl<'a> Compositeur<'a> {
         loop {
             let mut ligne = String::new();
             let mut tiret = false;
+            /* La largeur se relit à chaque ligne : c'est le seul changement par
+            rapport à la composition d'une seule largeur. */
+            let largeur = largeur_de_ligne(lignes.len() - depart);
 
             while let Some(mot) = a_placer.pop_front() {
                 let candidat = if ligne.is_empty() {

@@ -1,0 +1,13 @@
+[package]
+name = "superprint-flow"
+description = "Pagination et chaînage du noyau Rust de SuperPrint : répartir un texte composé sur une chaîne de cadres, avec des lignes exactes, en un seul passage, et sans jamais perdre de caractère."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+superprint-core = { path = "../superprint-core" }
+superprint-text = { path = "../superprint-text" }
